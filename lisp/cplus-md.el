@@ -1,4 +1,4 @@
-;;; c++-mode.el --- C++ code editing commands for Emacs
+;;; cplus-md.el --- C++ code editing commands for Emacs
 ;;; Copyright (C) 1985, 1992 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
@@ -515,7 +515,11 @@ Returns nil if line starts inside a string, t if in a comment."
 		 ;; previous line of the statement.
 		 (progn
 		   (c-backward-to-start-of-continued-exp containing-sexp)
-		   (+ c-continued-statement-offset (current-column)))
+		   (+ c-continued-statement-offset (current-column)
+                      (if (save-excursion (goto-char indent-point)
+					  (skip-chars-forward " \t")
+					  (eq (following-char) ?{))
+			  c-continued-brace-offset 0)))
 	       ;; This line starts a new statement.
 	       ;; Position following last unclosed open.
 	       (goto-char containing-sexp)
@@ -785,7 +789,7 @@ The fill lines remain a comment."
 ;; (defconst c++-defun-header-strong
 ;;   (let*
 ;;       (; valid identifiers
-;;        ;; There's a real wierdness here -- if I switch the below
+;;        ;; There's a real weirdness here -- if I switch the below
 ;;        (id "\\(\\w\\|_\\)+")
 ;;        ;; to be
 ;;        ;; (id "\\(_\\|\\w\\)+")
@@ -910,4 +914,4 @@ The fill lines remain a comment."
 ;; 	(beginning-of-line 1)))
 ;;     (goto-char restore)))
 
-;;; c++-mode.el ends here
+;;; cplus-md.el ends here

@@ -1,4 +1,39 @@
+Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.14 released.
+
+Wed Jun 16 19:46:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+        Bring mumbleclean targets into conformance with GNU coding standards.
+	* Makefile.in (distclean): Call clean to do most of the work.
+	Delete aixcc.c and TAGS.
+	(realclean): Just call distclean.
+	
+	* Makefile.in: Remember, spaces are not tabs.
+
+Sun Jun 13 14:10:38 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (CPP_CFLAGS): New variable.
+	Use it instead of ALL_CFLAGS when compiling a .c file.
+	(getopt.o, getopt1.o): Add explicit compilation commands.
+
+Thu Jun 10 23:03:26 1993  Mark D. Baushke  (mdb@cisco.com)
+
+	* etags.c: Reinstate old -f option as an alias for -o for
+	installed base uses.
+
+Wed Jun  9 00:06:03 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* emacsserver.c (main): When we're passing a `struct sockaddr_un'
+	to bind or accept, cast the pointer, to avoid warnings on systems
+	which declare prototypes for this.
+	* emacsclient.c (main): Same.
+
+	* Makefile.in (YACC): New variable, to be set by top-level Makefile.
+
 Tue Jun  8 03:14:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.13 released.
 
 	* wakeup.c: Include sys/types.h, too; I think that's where time_t
 	comes from, not sys/time.h.

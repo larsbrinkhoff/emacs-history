@@ -1,7 +1,7 @@
 @c This is part of the Emacs manual.
 @c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
-@node Command Arguments, Manifesto, Service, Top
+@node Command Arguments, Antinews, Service, Top
 @appendix Command Line Options and Arguments
 @cindex command line arguments
 @cindex arguments (from shell)
@@ -30,18 +30,18 @@ command line.
 
 @menu
 * Ordinary Arguments::	Arguments to visit files, load libraries,
-			  and call functions
+			  and call functions.
 * Initial Options::     Arguments that must come at the start of the command.
 * Command Example::     Examples of using command line arguments.
 * Resume Arguments::	Specifying arguments when you resume a running Emacs.
 
-* Display X::       Changing the default display and using remote login.
-* Font X::	    Choosing a font for text, under X.
-* Colors X::	    Choosing colors, under X.
-* Window Size X::   Start-up window size, under X.
-* Borders X::	    Internal and external borders, under X.
-* Icons X::         Choosing what sort of icon to use, under X.
-* Resources X::     Advanced use of classes and resources, under X.
+* Display X::           Changing the default display and using remote login.
+* Font X::	        Choosing a font for text, under X.
+* Colors X::	        Choosing colors, under X.
+* Window Size X::       Start-up window size, under X.
+* Borders X::	        Internal and external borders, under X.
+* Icons X::             Choosing what sort of icon to use, under X.
+* Resources X::         Advanced use of classes and resources, under X.
 @end menu
 
 @node Ordinary Arguments

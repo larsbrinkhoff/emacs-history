@@ -163,8 +163,9 @@ buffer because you can read the text while keeping the Summary buffer
 selected.
 
 @menu
-* Newsgroup Buffer:: A buffer for listing newsgroups.
-* Summary Buffer::   A buffer for listing subjects and other important headers.
+* Newsgroup Buffer::  A buffer for listing newsgroups.
+* Summary Buffer::    A buffer for listing subjects and other important
+                        headers. 
 @end menu
 
 @node Newsgroup Buffer

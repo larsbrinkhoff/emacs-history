@@ -54,9 +54,11 @@ the text you tried to kill into the kill ring, so you can yank it into
 other buffers.
 
 @menu
-* Deletion::
-* Killing by Lines::
-* Other Kill Commands::
+* Deletion::            Commands for deleting small amounts of text and
+                          blank areas.
+* Killing by Lines::    How to kill entire lines of text at one time.
+* Other Kill Commands:: Commands to kill large regions of text and
+                          syntactic units such as words and sentences. 
 @end menu
 
 @node Deletion

@@ -17,14 +17,14 @@ replacement command called @code{query-replace} which asks interactively
 which occurrences to replace.
 
 @menu
-* Incremental Search::     Search happens as you type the string.
-* Nonincremental Search::  Specify entire string and then search.
-* Word Search::            Search for sequence of words.
-* Regexp Search::          Search for match for a regexp.
-* Regexps::                Syntax of regular expressions.
-* Search Case::            To ignore case while searching, or not.
-* Replace::                Search, and replace some or all matches.
-* Other Repeating Search:: Operating on all matches for some regexp.
+* Incremental Search::      Search happens as you type the string.
+* Nonincremental Search::   Specify entire string and then search.
+* Word Search::             Search for sequence of words.
+* Regexp Search::           Search for match for a regexp.
+* Regexps::                 Syntax of regular expressions.
+* Search Case::             To ignore case while searching, or not.
+* Replace::                 Search, and replace some or all matches.
+* Other Repeating Search::  Operating on all matches for some regexp.
 @end menu
 
 @node Incremental Search, Nonincremental Search, Search, Search

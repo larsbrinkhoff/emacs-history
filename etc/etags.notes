@@ -91,7 +91,7 @@ Enhancements to make:
 
    * Generalize file suffix stuff -- clumsy and verbose now.  Should
      be config-file- or environment variable- or option-driven.
-   * Treat C++ "operator token" as a single identifier -- canonicalicalize
+   * Treat C++ "operator token" as a single identifier -- canonicalize
      to leave one space between "operator" and token when token is
      an identifier, no space when token is an operator.
    * Make a tag for a struct tag in plain C as `struct name' (likewise
@@ -127,7 +127,7 @@ Enhancements to make:
      ("domain" keyword), so these can be taken out of the etags source.
    * For C++, "::" is only understood if it occurs between identifiers with no
      intervening whitespace.  This style of C++ function definition:
-     	   returnntype classname::
+     	   returntype classname::
 	   functionname(formals) {
 	        ...
 	   }

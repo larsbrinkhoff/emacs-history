@@ -700,9 +700,22 @@ DEFUN ("delete-window", Fdelete_window, Sdelete_window, 0, 1, "",
 
   /* Are we trying to delete any frame's selected window?  */
   {
-    Lisp_Object frame = WINDOW_FRAME (XWINDOW (window));
+    Lisp_Object frame, pwindow;
 
-    if (EQ (window, FRAME_SELECTED_WINDOW (XFRAME (frame))))
+    /* See if the frame's selected window is either WINDOW
+       or any subwindow of it, by finding all that window's parents
+       and comparing each one with WINDOW.  */
+    frame = WINDOW_FRAME (XWINDOW (window));
+    pwindow = FRAME_SELECTED_WINDOW (XFRAME (frame));
+
+    while (!NILP (pwindow))
+      {
+	if (EQ (window, pwindow))
+	  break;
+	pwindow = XWINDOW (pwindow)->parent;
+      }
+
+    if (EQ (window, pwindow))
       {
 	Lisp_Object alternative = Fnext_window (window, Qlambda, Qnil);
 
@@ -840,6 +853,9 @@ windows, eventually ending up back at the window you started with.\n\
 		   : Qnil);
   else if (! EQ (all_frames, Qt))
     all_frames = Qnil;
+  /* Now all_frames is t meaning search all frames,
+     nil meaning search just current frame,
+     or a window, meaning search the frame that window belongs to.  */
 
   /* Do this loop at least once, to get the next window, and perhaps
      again, if we hit the minibuffer and that is not acceptable.  */
@@ -942,6 +958,9 @@ windows, eventually ending up back at the window you started with.\n\
 		   : Qnil);
   else if (! EQ (all_frames, Qt))
     all_frames = Qnil;
+  /* Now all_frames is t meaning search all frames,
+     nil meaning search just current frame,
+     or a window, meaning search the frame that window belongs to.  */
 
   /* Do this loop at least once, to get the previous window, and perhaps
      again, if we hit the minibuffer and that is not acceptable.  */
@@ -970,7 +989,12 @@ windows, eventually ending up back at the window you started with.\n\
 		 met.  */
 	      tem = prev_frame (tem, all_frames);
 #endif
-	    tem = FRAME_ROOT_WINDOW (XFRAME (tem));
+	    /* If this frame has a minibuffer, find that window first,
+	       because it is conceptually the last window in that frame.  */
+	    if (FRAME_HAS_MINIBUF_P (XFRAME (tem)))
+	      tem = FRAME_MINIBUF_WINDOW (XFRAME (tem));
+	    else
+	      tem = FRAME_ROOT_WINDOW (XFRAME (tem));
 
 	    break;
 	  }
@@ -1033,8 +1057,9 @@ argument ALL_FRAMES is non-nil, cycle through all frames.")
 
 /* Look at all windows, performing an operation specified by TYPE
    with argument OBJ.
-   If FRAMES is Qt, look at all frames, if Qnil, look at just the selected
-   frame.  If FRAMES is a frame, just look at windows on that frame.
+   If FRAMES is Qt, look at all frames;
+                Qnil, look at just the selected frame;
+	        a frame, just look at windows on that frame.
    If MINI is non-zero, perform the operation on minibuffer windows too.
 */
 
@@ -1102,6 +1127,8 @@ window_loop (type, obj, mini, frames)
   best_window = Qnil;
   for (;;)
     {
+      FRAME_PTR w_frame = XFRAME (WINDOW_FRAME (XWINDOW (w)));
+
       /* Pick the next window now, since some operations will delete
 	 the current window.  */
 #ifdef MULTI_FRAME
@@ -1113,17 +1140,15 @@ window_loop (type, obj, mini, frames)
 	   Or we know this isn't a MULTI_FRAME Emacs, so who cares?  */
 	next_window = Fnext_window (w, mini ? Qt : Qnil, Qt);
 
-      if (!MINI_WINDOW_P (XWINDOW (w))
+      if (! MINI_WINDOW_P (XWINDOW (w))
 	  || (mini && minibuf_level > 0))
 	switch (type)
 	  {
 	  case GET_BUFFER_WINDOW:
-#if 0
 	    /* Ignore invisible and iconified frames.  */
-	    if (! FRAME_VISIBLE_P (XFRAME (WINDOW_FRAME (XWINDOW (w))))
-		|| FRAME_ICONIFIED_P (XFRAME (WINDOW_FRAME (XWINDOW (w)))))
+	    if (! FRAME_VISIBLE_P (w_frame)
+		|| FRAME_ICONIFIED_P (w_frame))
 	      break;
-#endif
 	    if (XBUFFER (XWINDOW (w)->buffer) == XBUFFER (obj))
 	      return w;
 	    break;
@@ -1248,8 +1273,9 @@ frame, search only that frame.\n")
 
 DEFUN ("get-buffer-window", Fget_buffer_window, Sget_buffer_window, 1, 2, 0,
   "Return a window currently displaying BUFFER, or nil if none.\n\
-If optional argument FRAMES is t, search all frames.  If FRAME is a\n\
-frame, search only that frame.\n")
+If optional argument FRAME is t, search all visible frames.\n\
+If FRAME is nil, search only the selected frame.\n\
+If FRAME is a frame, search only that frame.\n")
   (buffer, frame)
     Lisp_Object buffer, frame;
 {
@@ -1352,9 +1378,8 @@ check_frame_size (frame, rows, cols)
   /* For height, we have to see whether the frame has a minibuffer, and
      whether it wants a mode line.  */
   int min_height =
-    ((FRAME_MINIBUF_ONLY_P (frame)
-      || ! FRAME_HAS_MINIBUF_P (frame))
-     ? MIN_SAFE_WINDOW_HEIGHT
+    (FRAME_MINIBUF_ONLY_P (frame) ? MIN_SAFE_WINDOW_HEIGHT - 1
+     : (! FRAME_HAS_MINIBUF_P (frame)) ? MIN_SAFE_WINDOW_HEIGHT
      : 2 * MIN_SAFE_WINDOW_HEIGHT - 1);
 
   if (*rows < min_height)
@@ -2266,7 +2291,7 @@ showing that buffer, popping the buffer up if necessary.")
   return Qnil;
 }
 
-DEFUN ("scroll-left", Fscroll_left, Sscroll_left, 1, 1, "P",
+DEFUN ("scroll-left", Fscroll_left, Sscroll_left, 0, 1, "P",
   "Scroll selected window display ARG columns left.\n\
 Default for ARG is window width minus 2.")
   (arg)
@@ -2284,7 +2309,7 @@ Default for ARG is window width minus 2.")
 				      + XINT (arg)));
 }
 
-DEFUN ("scroll-right", Fscroll_right, Sscroll_right, 1, 1, "P",
+DEFUN ("scroll-right", Fscroll_right, Sscroll_right, 0, 1, "P",
   "Scroll selected window display ARG columns right.\n\
 Default for ARG is window width minus 2.")
   (arg)

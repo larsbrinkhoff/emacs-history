@@ -459,10 +459,10 @@ You can then give commands interactively.
 @end table
 
 @menu
-* Single Shell::         How to run one shell command and return.
-* Interactive Shell::    Permanent shell taking input via Emacs.
-* Shell Mode::           Special Emacs commands used with permanent shell.
-* History: Shell History. Repeating previous commands in a shell buffer.
+* Single Shell::           How to run one shell command and return.
+* Interactive Shell::      Permanent shell taking input via Emacs.
+* Shell Mode::             Special Emacs commands used with permanent shell.
+* History: Shell History.  Repeating previous commands in a shell buffer.
 @end menu
 
 @node Single Shell
@@ -636,7 +636,7 @@ Interrupt the shell or its current subjob if any
 (@code{comint-interrupt-subjob}).
 
 @item C-c C-z
-@kindex C-c C-\ @r{(Shell mode)}
+@kindex C-c C-z @r{(Shell mode)}
 @findex comint-stop-subjob
 Stop the shell or its current subjob if any (@code{comint-stop-subjob}).
 
@@ -1168,7 +1168,6 @@ userenced and properbose.  Have fun.  Your buggestions are welcome.
 @cindex boredom
 @findex hanoi
 @findex yow
-@findex blackbox
 @findex gomoku
 @findex mpuz
 @cindex tower of Hanoi
@@ -1181,7 +1180,7 @@ bored, try an argument of 9.  Sit back and watch.
   If you want a little more personal involvement, try @kbd{M-x gomoku},
 which plays the game Go Moku with you.
 
-@findex blackbbox
+@findex blackbox
 @findex mpuz
 @cindex puzzles
   @kbd{M-x blackbox} and @kbd{M-x mpuz} are two kinds of puzzles.

@@ -85,7 +85,7 @@ PROBE	equ	-128		; safety buffer for C compiler scratch
 	set	MAXREG,22	# d2-d7, a2-a5, fp2-fp7 may have been saved
 	global	_alloca
 _alloca:
-	mov.l	(%sp)+,%a0	# return addess
+	mov.l	(%sp)+,%a0	# return address
 	mov.l	(%sp)+,%d0	# number of bytes to allocate
 	mov.l	%sp,%a1		# save old sp for register copy
 	mov.l	%sp,%d1		# compute new sp
@@ -113,7 +113,7 @@ alloca:
 #ifdef MOTOROLA_DELTA
 /* slightly modified version of alloca to motorola sysV/68 pcc - based
    compiler. 
-   this compiler saves used regfisters relative to %sp instead of %fp.
+   this compiler saves used registers relative to %sp instead of %fp.
    alright, just make new copy of saved register set whenever we allocate
    new space from stack..
    this is true at last until SVR3V5.1 . bug has reported to Motorola. */
@@ -126,7 +126,7 @@ alloca:
 	mov.l	%sp,%d1		# compute new value of sp to d1
         sub.l	%d0,%d1		# pseudo-allocate by moving stack pointer
 	sub.l	&MAXREG*4,%d1	# allocate more space for saved regs.
-	mov.l	%d1,%sp		# actual alloaction.
+	mov.l	%d1,%sp		# actual allocation.
 	move.w	&MAXREG-1,%d0	# d0 counts saved regs.
 	mov.l	%a2,%d1		# preserve a2.
 	mov.l	%sp,%a2		# make pointer to new reg save area.

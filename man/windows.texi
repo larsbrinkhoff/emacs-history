@@ -46,6 +46,12 @@ it.  Also, all commands that display information in a window, including
 (@code{list-buffers}), work by switching buffers in a nonselected window
 without affecting the selected window.
 
+  When multiple windows show the same buffer, they can have different
+regions, because they can have different values of point.  This means
+that in Transient Mark mode, each window highlights a different part of
+the buffer.  The part that is highlighted in the selected window is the
+region that editing commands use.
+
   Each window has its own mode line, which displays the buffer name,
 modification status and major and minor modes of the buffer that is
 displayed in the window.  @xref{Mode Line}, for full details on the mode
@@ -183,7 +189,7 @@ window.  This runs @code{find-file-read-only-other-window}.
 
 @table @kbd
 @item C-x 0
-Get rid of the selected window (@code{kill-window}).  That is a zero.
+Get rid of the selected window (@code{delete-window}).  That is a zero.
 @item C-x 1
 Get rid of all windows except the selected one (@code{delete-other-windows}).
 @item C-x ^

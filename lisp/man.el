@@ -51,7 +51,7 @@
 ;; Eric Rose <erose@jessica.stanford.edu>, submitted manual.el which
 ;; provided a very nice manual browsing mode.
 
-;; This package was available as `superman.el' from the LCD paackage
+;; This package was available as `superman.el' from the LCD package
 ;; for some time before it was accepted into Emacs 19.  The entry
 ;; point and some other names have been changed to make it a drop-in
 ;; replacement for the old man.el package.
@@ -126,7 +126,7 @@ in all sections.")
   "*Association list of bogus sections to real section numbers.
 Some manpages (e.g. the Sun C++ 2.1 manpages) have section numbers in
 their references which Un*x man(1) does not recognize.  This
-assocation list is used to translate those sections, when found, to
+association list is used to translate those sections, when found, to
 the associated section number.")
 
 (defvar Man-filter-list
@@ -139,6 +139,7 @@ the associated section number.")
       "-e '/^[ \\t]*Hewlett-Packard[ \\t]*- [0-9]* -.*$/d'"
       "-e '/^ *Page [0-9]*.*(printed [0-9\\/]*)$/d'"
       "-e '/^Printed [0-9].*[0-9]$/d'"
+      "-e '/^[ \\t]*X Version 1[01].*Release [0-9]/d'"
       "-e '/^Sun Microsystems.*Last change:/d'"
       "-e '/^Sun Release [0-9].*[0-9]$/d'"
       "-e '/^\\n$/D'"
@@ -419,6 +420,13 @@ Universal argument ARG, is passed to Man-getpage-in-background."
 	 (if (string= default-entry "")
 	     (error "No man args given.")
 	   (setq man-args default-entry)))
+    ;; Recognize the subject(section) syntax.
+    (if (string-match "^[ \t]*\\([^( \t]+\\)[ \t]*(\\([^)]+\\))[ \t]*$"
+		      man-args)
+	(setq man-args
+	      (concat (substring man-args (match-beginning 2) (match-end 2))
+		      " "
+		      (substring man-args (match-beginning 1) (match-end 1)))))
     (if Man-downcase-section-letters-p
 	(setq man-args (Man-downcase man-args)))
     (Man-getpage-in-background man-args (consp arg))
@@ -437,11 +445,14 @@ Man-reuse-okay-p is non-nil."
 	(Man-notify-when-ready buffer)
       (message "Invoking man %s in background..." man-args)
       (setq buffer (generate-new-buffer bufname))
-      (set-process-sentinel
-       (start-process "man" buffer "sh" "-c"
-		      (format (Man-build-man-command) man-args))
-       'Man-bgproc-sentinel))
-    ))
+      (let ((process-environment process-environment))
+	;; Prevent any attempt to use display terminal fanciness.
+	(setenv "TERM" "dumb")
+	(set-process-sentinel
+	 (start-process "man" buffer "sh" "-c"
+			(format (Man-build-man-command) man-args))
+	 'Man-bgproc-sentinel))
+    )))
 
 (defun Man-notify-when-ready (man-buffer)
   "Notify the user when MAN-BUFFER is ready.
@@ -559,7 +570,8 @@ The following key bindings are currently in effect in the buffer:
   (use-local-map Man-mode-map)
   (goto-char (point-min))
   (Man-build-page-list)
-  (Man-goto-page 1))
+  (Man-goto-page 1)
+  (run-hooks 'Man-mode-hook))
 
 (defun Man-build-section-alist ()
   "Build the association list of manpage sections."
@@ -723,7 +735,11 @@ background. Universal argument ARG is passed to Man-getpage-in-background."
     (goto-char page-start)
     (narrow-to-region page-start page-end)
     (Man-build-section-alist)
-    (Man-build-references-alist)
+    ;; Don't let bugs in Man-build-references-alist
+    ;; interfere with ordinary use of this package.
+    (condition-case nil
+	(Man-build-references-alist)
+      (error))
     (widen)
     (narrow-to-region page-start page-end)
     (goto-char (point-min))))

@@ -48,7 +48,7 @@ may contain even `F', `b', `i' and `s'.")
 (defvar dired-chown-program
   (if (memq system-type '(hpux dgux usg-unix-v silicon-graphics-unix))
       "chown" "/etc/chown")
-  "Name of chown command (usully `chown' or `/etc/chown').")
+  "Name of chown command (usually `chown' or `/etc/chown').")
 
 ;;;###autoload
 (defvar dired-ls-F-marks-symlinks nil
@@ -824,7 +824,7 @@ Keybindings:
   (dired-sort-other dired-actual-switches t)
   (run-hooks 'dired-mode-hook))
 
-;; Ideosyncratic dired commands that don't deal with marks.
+;; Idiosyncratic dired commands that don't deal with marks.
 
 (defun dired-quit ()
   "Bury the current dired buffer."
@@ -1542,21 +1542,27 @@ Optional argument means return a file name relative to `default-directory'."
 
 (defun dired-repeat-over-lines (arg function)
   ;; This version skips non-file lines.
-  (beginning-of-line)
-  (while (and (> arg 0) (not (eobp)))
-    (setq arg (1- arg))
+  (let ((pos (make-marker)))
     (beginning-of-line)
-    (while (and (not (eobp)) (dired-between-files)) (forward-line 1))
-    (save-excursion (funcall function))
-    (forward-line 1))
-  (while (and (< arg 0) (not (bobp)))
-    (setq arg (1+ arg))
-    (forward-line -1)
-    (while (and (not (bobp)) (dired-between-files)) (forward-line -1))
-    (beginning-of-line)
-    (save-excursion (funcall function))
-    (dired-move-to-filename))
-  (dired-move-to-filename))
+    (while (and (> arg 0) (not (eobp)))
+      (setq arg (1- arg))
+      (beginning-of-line)
+      (while (and (not (eobp)) (dired-between-files)) (forward-line 1))
+      (save-excursion
+	(forward-line 1)
+	(move-marker pos (1+ (point))))
+      (save-excursion (funcall function))
+      ;; Advance to the next line--actually, to the line that *was* next.
+      ;; (If FUNCTION inserted some new lines in between, skip them.)
+      (goto-char pos))
+    (while (and (< arg 0) (not (bobp)))
+      (setq arg (1+ arg))
+      (forward-line -1)
+      (while (and (not (bobp)) (dired-between-files)) (forward-line -1))
+      (beginning-of-line)
+      (save-excursion (funcall function)))
+    (move-marker pos nil)
+    (dired-move-to-filename)))
 
 (defun dired-between-files ()
   ;; Point must be at beginning of line
@@ -1716,10 +1722,19 @@ A prefix argument says to unflag those files instead."
   (interactive "P")
   (let ((dired-marker-char (if unflag-p ?\040 dired-del-marker)))
     (dired-mark-if
-     ;; It is less than general to check for ~ here,
+     ;; It is less than general to check for # here,
      ;; but it's the only way this runs fast enough.
      (and (save-excursion (end-of-line)
-			  (eq (preceding-char) ?#))
+                          (or
+                           (eq (preceding-char) ?#)
+                           ;; Handle executables in case of -F option.
+                           ;; We need not worry about the other kinds
+                           ;; of markings that -F makes, since they won't
+                           ;; appear on real auto-save files.
+                           (if (eq (preceding-char) ?*)
+                               (progn
+                                 (forward-char -1)
+                                 (eq (preceding-char) ?#)))))
 	  (not (looking-at dired-re-dir))
 	  (let ((fn (dired-get-filename t t)))
 	    (if fn (auto-save-file-name-p
@@ -1735,16 +1750,16 @@ With prefix argument, unflag these files."
      ;; It is less than general to check for ~ here,
      ;; but it's the only way this runs fast enough.
      (and (save-excursion (end-of-line)
-                            (or
-                             (eq (preceding-char) ?~)
-			     ;; Handle executables in case of -F option.
-			     ;; We need not worry about the other kinds
-			     ;; of markings that -F makes, since they won't
-			     ;; appear on real backup files.
-                             (if (eq (preceding-char) ?*)
-                                 (progn
-                                   (forward-char -1)
-                                   (eq (preceding-char) ?~)))))
+			  (or
+			   (eq (preceding-char) ?~)
+			   ;; Handle executables in case of -F option.
+			   ;; We need not worry about the other kinds
+			   ;; of markings that -F makes, since they won't
+			   ;; appear on real backup files.
+			   (if (eq (preceding-char) ?*)
+			       (progn
+				 (forward-char -1)
+				 (eq (preceding-char) ?~)))))
 	  (not (looking-at dired-re-dir))
 	  (let ((fn (dired-get-filename t t)))
 	    (if fn (backup-file-name-p fn))))

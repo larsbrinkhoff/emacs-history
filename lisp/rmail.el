@@ -75,7 +75,7 @@ It is useful to set this variable in the site customisation file.")
 *Non-nil means automatically delete a message that is copied to a file.")
 
 ;;;###autoload
-(defconst rmail-primary-inbox-list nil "\
+(defvar rmail-primary-inbox-list nil "\
 *List of files which are inboxes for user's primary mail file `~/RMAIL'.
 `nil' means the default, which is (\"/usr/spool/mail/$USER\")
 \(the name varies depending on the operating system,
@@ -234,7 +234,7 @@ that file, but does not copy any new mail into the file."
       ;; Show the first unseen message, which might be from a previous session
       ;; or might have been just read in by rmail-get-new-mail.  Must
       ;; determine already unseen messages first, as rmail-get-new-mail
-      ;; positions on the first new messsage, thus marking it as seen.
+      ;; positions on the first new message, thus marking it as seen.
       (rmail-show-message existing-unseen))))
 
 ;; Given the value of MAILPATH, return a list of inbox file names.

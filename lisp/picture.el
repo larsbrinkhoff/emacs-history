@@ -34,6 +34,7 @@
   "Move to column COLUMN in current line.
 Differs from `move-to-column' in that it creates or modifies whitespace
 if necessary to attain exactly the specified column."
+  (or (natnump column) (setq column 0))
   (move-to-column column)
   (let ((col (current-column)))
     (if (< col column)
@@ -44,7 +45,7 @@ if necessary to attain exactly the specified column."
 	    (delete-char -1)
             (indent-to col)
             (move-to-column column))))
-    ;; This call will go away when Emacs gets real horizonal autoscrolling
+    ;; This call will go away when Emacs gets real horizontal autoscrolling
     (hscroll-point-visible)))
 
 
@@ -57,7 +58,7 @@ If scan reaches end of buffer, stop there without error."
   (interactive "P")
   (if arg (forward-line (1- (prefix-numeric-value arg))))
   (beginning-of-line)
-  ;; This call will go away when Emacs gets real horizonal autoscrolling
+  ;; This call will go away when Emacs gets real horizontal autoscrolling
   (hscroll-point-visible))
 
 (defun picture-end-of-line (&optional arg)
@@ -68,7 +69,7 @@ If scan reaches end of buffer, stop there without error."
   (if arg (forward-line (1- (prefix-numeric-value arg))))
   (beginning-of-line)
   (skip-chars-backward " \t" (prog1 (point) (end-of-line)))
-  ;; This call will go away when Emacs gets real horizonal autoscrolling
+  ;; This call will go away when Emacs gets real horizontal autoscrolling
   (hscroll-point-visible))
 
 (defun picture-forward-column (arg)
@@ -238,7 +239,7 @@ always moves to the beginning of a line."
       (end-of-line)
       (if (eobp) (newline) (forward-char 1))
       (setq arg (1- arg))))
-  ;; This call will go away when Emacs gets real horizonal autoscrolling
+  ;; This call will go away when Emacs gets real horizontal autoscrolling
   (hscroll-point-visible))
 
 (defun picture-open-line (arg)
@@ -248,7 +249,7 @@ With positive argument insert that many lines."
   (save-excursion
    (end-of-line)
    (open-line arg))
-  ;; This call will go away when Emacs gets real horizonal autoscrolling
+  ;; This call will go away when Emacs gets real horizontal autoscrolling
   (hscroll-point-visible))
 
 (defun picture-duplicate-line ()
@@ -262,6 +263,28 @@ With positive argument insert that many lines."
      (forward-line -1)
      (insert contents))))
 
+;; Like replace-match, but overwrites.
+(defun picture-replace-match (newtext fixedcase literal)
+  (let (ocolumn change pos)
+    (goto-char (setq pos (match-end 0)))
+    (setq ocolumn (current-column))
+    ;; Make the replacement and undo it, to see how it changes the length.
+    (let ((buffer-undo-list nil)
+	  list1)
+      (replace-match newtext fixedcase literal)
+      (setq change (- (current-column) ocolumn))
+      (setq list1 buffer-undo-list)
+      (while list1
+	(setq list1 (primitive-undo 1 list1))))
+    (goto-char pos)
+    (if (> change 0)
+	(delete-region (point)
+		       (progn
+			 (move-to-column-force (+ change (current-column)))
+			 (point))))
+    (replace-match newtext fixedcase literal)
+    (if (< change 0)
+	(insert-char ?\ (- change)))))
 
 ;; Picture Tabs
 

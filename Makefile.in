@@ -37,12 +37,14 @@ MAKE = make  # BSD doesn't have it as a default.
 # ==================== Things `configure' Might Edit ====================
 
 CC=@CC@
+CPP=@CPP@
 C_SWITCH_SYSTEM=@c_switch_system@
 ALLOCA=@ALLOCA@
 LN_S=@LN_S@
 CFLAGS=@CFLAGS@
 C_SWITCH_X_SITE=@C_SWITCH_X_SITE@
 LD_SWITCH_X_SITE=@LD_SWITCH_X_SITE@
+YACC=@YACC@
 
 ### These help us choose version- and architecture-specific directories
 ### to install files in.
@@ -256,6 +258,7 @@ lib-src/Makefile: ${srcdir}/lib-src/Makefile.in Makefile
 	  -e 's|^\(VPATH *=\).*$$|\1'"${srcdir}"'/lib-src|'		\
 	  -e 's|^\(archlibdir *=\).*$$|\1'"${archlibdir}"'|'		\
 	  -e 's|^\(ALLOCA *=\).*$$|\1'"${ALLOCA}"'|'			\
+	  -e 's|^\(YACC *=\).*$$|\1'"${YACC}"'|'			\
 	  -e 's|^CC *=.*$$|CC='"${CC}"'|'				\
 	  -e 's|^CFLAGS *=.*$$|CFLAGS='"${CFLAGS}"'|' \
 	  -e 's|^C_SWITCH_SYSTEM *=.*$$|C_SWITCH_SYSTEM='"${C_SWITCH_SYSTEM}"'|' \
@@ -273,12 +276,13 @@ src/Makefile: ${srcdir}/src/Makefile.in Makefile
 	  echo "# Emacs build tree instead, or editing" ;		\
 	  echo "# \`${srcdir}/src/Makefile.in' itself." ;		\
 	  sed < ${srcdir}/src/Makefile.in				\
-	  -e 's|^\(srcdir *=\).*$$|\1'"${srcdir}"'/src|'		\
-	  -e 's|^\(VPATH *=\).*$$|\1'"${srcdir}"'/src|'			\
-	  -e 's|^CC *=.*$$|CC='"${CC}"'|'				\
-	  -e 's|^LN_S *=.*$$|LN_S='"${LN_S}"'|'				\
-	  -e 's|^CFLAGS *=.*$$|CFLAGS='"${CFLAGS}"'|' 			\
-	  -e 's|^\(LD_SWITCH_X_SITE *=\).*$$|\1'"${LD_SWITCH_X_SITE}"'|'	\
+	  -e 's|^\(srcdir *=\).*$$|\1${srcdir}/src|'			\
+	  -e 's|^\(VPATH *=\).*$$|\1${srcdir}/src|'			\
+	  -e 's|^CC *=.*$$|CC=${CC}|'					\
+	  -e 's|^CPP *=.*$$|CPP=${CPP}|'				\
+	  -e 's|^LN_S *=.*$$|LN_S=${LN_S}|'				\
+	  -e 's|^CFLAGS *=.*$$|CFLAGS=${CFLAGS}|' 			\
+	  -e 's|^\(LD_SWITCH_X_SITE *=\).*$$|\1${LD_SWITCH_X_SITE}|'	\
 	  -e '/^# DIST: /d') > src/Makefile.tmp
 	@${srcdir}/move-if-change src/Makefile.tmp src/Makefile
 	chmod -w src/Makefile
@@ -381,52 +385,99 @@ mkdir: FRC.mkdir
 	  `echo ${locallisppath} | sed 's/:/ /'`
 	chmod 777 ${COPYDESTS} ${lockdir}
 
+### Delete all the installed files that the `install' target would
+### create (but not the noninstalled files such as `make all' would
+### create).
+###
+### Don't delete the lisp and etc directories if they're in the source tree.
+uninstall:
+	(cd lib-src; 					\
+	 $(MAKE) ${MFLAGS} uninstall			\
+	    prefix=${prefix} exec_prefix=${exec_prefix}	\
+	    bindir=${bindir} libdir=${libdir} archlibdir=${archlibdir})
+	for dir in ${lispdir} ${etcdir} ; do 		\
+	  case `(cd $${dir} ; pwd)` in			\
+	    `(cd ${srcdir} ; pwd)`* ) ;;		\
+	    * ) rm -rf $${dir} ;;			\
+	  esac ;					\
+	  case $${dir} in				\
+	    ${datadir}/emacs/${version}/* )		\
+	      rm -rf ${datadir}/emacs/${version}	\
+	    ;;						\
+	  esac ;					\
+	done
+	(cd ${infodir}; rm -f cl* emacs* forms* info* vip*)
+	(cd ${mandir};  rm -f emacs.1 etags.1 ctags.1)
+	(cd ${bindir};  rm -f emacs-${version} emacs)
+
+
 ### Some makes seem to remember that they've built something called FRC,
 ### so you can only use a given FRC once per makefile.
 FRC FRC.src.paths.h FRC.src FRC.lib-src FRC.mkdir:
-
+FRC.mostlyclean FRC.clean FRC.distclean FRC.realclean:
 
 # ==================== Cleaning up and miscellanea ====================
 
-### `clean'
-###	 Delete all files from the current directory that are normally
-###	 created by building the program.  Don't delete the files that
-###	 record the configuration.  Also preserve files that could be made
-###	 by building, but normally aren't because the distribution comes
-###	 with them.
 ### `mostlyclean'
-###	 Like `clean', but may refrain from deleting a few files that
-###	 people normally don't want to recompile.  For example, the
-###	 `mostlyclean' target for GCC does not delete `libgcc.a', because
-###	 recompiling it is rarely necessary and takes a lot of time.
+###      Like `clean', but may refrain from deleting a few files that people
+###      normally don't want to recompile.  For example, the `mostlyclean'
+###      target for GCC does not delete `libgcc.a', because recompiling it
+###      is rarely necessary and takes a lot of time.
+mostlyclean: FRC.mostlyclean
+	(cd src;      make ${MFLAGS} mostlyclean)
+	(cd oldXMenu; make ${MFLAGS} mostlyclean)
+	(cd lib-src;  make ${MFLAGS} mostlyclean)
+	(cd man;      make ${MFLAGS} mostlyclean)
+
+### `clean'
+###      Delete all files from the current directory that are normally
+###      created by building the program.  Don't delete the files that
+###      record the configuration.  Also preserve files that could be made
+###      by building, but normally aren't because the distribution comes
+###      with them.
 ### 
-clean mostlyclean:
-	cd src; $(MAKE) clean
-	cd lib-src; $(MAKE) clean
-	cd oldXMenu; $(MAKE) clean
-	if [ `(cd ${etcdir} && /bin/pwd)` != `(cd etc && /bin/pwd)` ] ; then \
-	  cd etc; $(MAKE) clean; \
-	else true; \
-	fi
+###      Delete `.dvi' files here if they are not part of the distribution.
+clean: FRC.clean
+	(cd src;      make ${MFLAGS} clean)
+	(cd oldXMenu; make ${MFLAGS} clean)
+	(cd lib-src;  make ${MFLAGS} clean)
+	(cd man;      make ${MFLAGS} clean)
 
 ### `distclean'
-###	 Delete all files from the current directory that are created by
-###	 configuring or building the program.  This should leave only the
-###	 files that would be in the distribution.
-distclean:
-	for i in ${SUBDIR}; do (cd $$i; $(MAKE) ${MFLAGS} distclean); done
-	-(cd lock; rm *)
-	-rm config.status config-tmp-*
+###      Delete all files from the current directory that are created by
+###      configuring or building the program.  If you have unpacked the
+###      source and built the program without creating any other files,
+###      `make distclean' should leave only the files that were in the
+###      distribution.
+top_distclean=\
+	rm -f config.status build-install ; \
+	rm -f Makefile ${SUBDIR_MAKEFILES} ; \
+	(cd lock ; rm *)
+distclean: FRC.distclean
+	(cd src;      make ${MFLAGS} distclean)
+	(cd oldXMenu; make ${MFLAGS} distclean)
+	(cd lib-src;  make ${MFLAGS} distclean)
+	(cd man;      make ${MFLAGS} distclean)
+	${top_distclean}
+	
 
 ### `realclean'
-###	 Delete everything from the current directory that can be
-###	 reconstructed with this makefile.  This typically includes
-###	 everything deleted by distclean, plus more: C source files
-###	 produced by Bison, tags tables, info files, and so on.
-realclean:
-	for i in ${SUBDIR}; do (cd $$i; $(MAKE) ${MFLAGS} realclean); done
-	(cd lock; rm *)
-	rm config.status
+###      Delete everything from the current directory that can be
+###      reconstructed with this Makefile.  This typically includes
+###      everything deleted by distclean, plus more: C source files
+###      produced by Bison, tags tables, info files, and so on.
+### 
+###      One exception, however: `make realclean' should not delete
+###      `configure' even if `configure' can be remade using a rule in the
+###      Makefile.  More generally, `make realclean' should not delete
+###      anything that needs to exist in order to run `configure' and then
+###      begin to build the program.
+realclean: FRC.realclean
+	(cd src;      make ${MFLAGS} realclean)
+	(cd oldXMenu; make ${MFLAGS} realclean)
+	(cd lib-src;  make ${MFLAGS} realclean)
+	(cd man;      make ${MFLAGS} realclean)
+	${top_distclean}
 
 ### This doesn't actually appear in the coding standards, but Karl
 ### says GCC supports it, and that's where the configuration part of
@@ -474,11 +525,16 @@ relock:
 	(cd src; make relock)
 
 TAGS tags:	lib-src
-	(cd ${srcdir} ; lib-src/etags --output=./src/TAGS \
-	 src/*.[ch] lisp/*.el lisp/term/*.el)
+	(cd ${srcdir}/src; \
+	 ../lib-src/etags *.[ch] ../lisp/*.el ../lisp/term/*.el)
 
 check:
 	@echo "We don't have any tests for GNU Emacs yet."
 
 dist:
 	cd ${srcdir}; make-dist
+
+info:
+	(cd ${srcdir}/man; make ${MFLAGS} info)
+dvi:
+	(cd ${srcdir}/man; make ${MFLAGS} dvi)

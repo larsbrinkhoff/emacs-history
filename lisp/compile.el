@@ -39,15 +39,20 @@
 
 (defvar compilation-error-list nil
   "List of error message descriptors for visiting erring functions.
-Each error descriptor is a cons (or nil).  Its car is a marker pointing to
-an error message.  If its cdr is a marker, it points to the text of the
-line the message is about.  If its cdr is a cons, that cons's car is a cons
-\(DIRECTORY . FILE\), specifying the file the message is about, and its cdr
-is the number of the line the message is about.  Or its cdr may be nil if
-that error is not interesting.
+Each error descriptor is a cons (or nil).  Its car is a marker
+pointing to an error message.  If its cdr is a marker, it points to
+the text of the line the message is about.  If its cdr is a cons, that
+cons's car is the name of the file the message is about, and its cdr
+is the number of the line the message is about.  Or its cdr may be nil
+if that error is not interesting.
 
 The value may be t instead of a list; this means that the buffer of
-error messages should be reparsed the next time the list of errors is wanted.")
+error messages should be reparsed the next time the list of errors is wanted.
+
+Some other commands (like `diff') use this list to control the error
+message tracking facilites; if you change its structure, you should make
+sure you also change those packages.  Perhaps it is better not to change
+it at all.")
 
 (defvar compilation-old-error-list nil
   "Value of `compilation-error-list' after errors were parsed.")
@@ -731,7 +736,10 @@ See variables `compilation-parse-errors-function' and
 		(or (markerp (cdr next-error))
 		    ;; This error has a filename/lineno pair.
 		    ;; Find the file and turn it into a marker.
-		    (let* ((fileinfo (car (cdr next-error)))
+		    (let* ((fileinfo
+			    (cons (file-name-directory (car (cdr next-error)))
+				  (file-name-nondirectory
+				   (car (cdr next-error)))))
 			   (buffer (compilation-find-file (cdr fileinfo)
 							  (car fileinfo)
 							  (car next-error))))

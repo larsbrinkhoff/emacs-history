@@ -291,7 +291,7 @@ update_status (p)
   p->raw_status_high = Qnil;
 }
 
-/*  Convert a process status work in Unix format to 
+/*  Convert a process status word in Unix format to 
     the list that we use internally.  */
 
 Lisp_Object
@@ -1078,7 +1078,7 @@ start_process_unwind (proc)
     abort ();
 
   /* Was PROC started successfully?  */
-  if (XPROCESS (proc)->pid <= 0)
+  if (XINT (XPROCESS (proc)->pid) <= 0)
     remove_process (proc);
 
   return Qnil;
@@ -1265,7 +1265,7 @@ create_process (process, new_argv, current_dir)
 	  ioctl (xforkin, TIOCSCTTY, 0);
 #endif
 #else /* not HAVE_SETSID */
-#ifdef USG
+#if defined (USG) && !defined (IRIX)
 	/* It's very important to call setpgrp() here and no time
 	   afterwards.  Otherwise, we lose our controlling tty which
 	   is set when we open the pty. */
@@ -1282,7 +1282,7 @@ create_process (process, new_argv, current_dir)
 	    int j = open ("/dev/tty", O_RDWR, 0);
 	    ioctl (j, TIOCNOTTY, 0);
 	    close (j);
-#ifndef USG
+#if !defined (USG) || defined (IRIX)
 	    /* In order to get a controlling terminal on some versions
 	       of BSD, it is necessary to put the process in pgrp 0
 	       before it opens the terminal.  */
@@ -1478,7 +1478,7 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
     report_file_error ("error creating socket", Fcons (name, Qnil));
 
  loop:
-  if (connect (s, &address, sizeof address) == -1)
+  if (connect (s, (struct sockaddr *) &address, sizeof address) == -1)
     {
       int xerrno = errno;
       if (errno == EINTR)
@@ -1683,7 +1683,7 @@ static int waiting_for_user_input_p;
    If read_kbd is a pointer to a struct Lisp_Process, then the
      function returns true iff we received input from that process
      before the timeout elapsed.
-   Otherwise, return true iff we recieved input from any process.  */
+   Otherwise, return true iff we received input from any process.  */
 
 wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
      int time_limit, microsecs;
@@ -2082,16 +2082,7 @@ read_process_output (proc, channel)
       specbind (Qinhibit_quit, Qt);
       call2 (outstream, proc, make_string (chars, nchars));
 
-      /* Deactivate the mark now, so it doesn't happen
-	 *after* the following command.  */
-      if (!NILP (current_buffer->mark_active))
-	{
-	  if (!NILP (Vdeactivate_mark) && !NILP (Vtransient_mark_mode))
-	    {
-	      current_buffer->mark_active = Qnil;
-	      call1 (Vrun_hooks, intern ("deactivate-mark-hook"));
-	    }
-	}
+      /* Handling the process output should not deactivate the mark.  */
       Vdeactivate_mark = odeactivate;
 
 #ifdef VMS
@@ -2153,17 +2144,7 @@ read_process_output (proc, channel)
       if (XFASTINT (old_begv) != BEGV || XFASTINT (old_zv) != ZV)
 	Fnarrow_to_region (old_begv, old_zv);
 
-      /* Deactivate the mark now, so it doesn't happen
-	 *after* the following command.  */
-      if (!NILP (current_buffer->mark_active))
-	{
-	  if (!NILP (Vdeactivate_mark) && !NILP (Vtransient_mark_mode))
-	    {
-	      current_buffer->mark_active = Qnil;
-	      call1 (Vrun_hooks, intern ("deactivate-mark-hook"));
-	    }
-	}
-
+      /* Handling the process output should not deactivate the mark.  */
       Vdeactivate_mark = odeactivate;
 
       current_buffer->read_only = old_read_only;
@@ -2819,7 +2800,7 @@ sigchld_handler (signo)
 	    synch_process_retcode = WRETCODE (w);
 	  else if (WIFSIGNALED (w))
 #ifndef VMS
-	    synch_process_death = sys_siglist[WTERMSIG (w)];
+	    synch_process_death = (char *) sys_siglist[WTERMSIG (w)];
 #else
 	    synch_process_death = sys_errlist[WTERMSIG (w)];
 #endif
@@ -3121,7 +3102,7 @@ extern int frame_garbaged;
    do_display != 0 means redisplay should be done to show subprocess
    output that arrives.  This version of the function ignores it.
 
-   Return true iff we recieved input from any process.  */
+   Return true iff we received input from any process.  */
 
 int
 wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)

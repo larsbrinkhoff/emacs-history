@@ -234,7 +234,7 @@ emacs_blocked_malloc (size)
 
   BLOCK_INPUT;
   __malloc_hook = old_malloc_hook;
-  value = malloc (size);
+  value = (void *) malloc (size);
   __malloc_hook = emacs_blocked_malloc;
   UNBLOCK_INPUT;
 
@@ -250,7 +250,7 @@ emacs_blocked_realloc (ptr, size)
 
   BLOCK_INPUT;
   __realloc_hook = old_realloc_hook;
-  value = realloc (ptr, size);
+  value = (void *) realloc (ptr, size);
   __realloc_hook = emacs_blocked_realloc;
   UNBLOCK_INPUT;
 
@@ -359,7 +359,7 @@ mark_interval_tree (tree)
   { if (!NULL_INTERVAL_P (i)) mark_interval_tree (i); }
 
 /* The oddity in the call to XUNMARK is necessary because XUNMARK
-   expands to an assigment to its argument, and most C compilers don't
+   expands to an assignment to its argument, and most C compilers don't
    support casts on the left operand of `='.  */
 #define UNMARK_BALANCE_INTERVALS(i) 				\
 {                                   				\
@@ -1444,7 +1444,7 @@ clear_marks ()
   If the object referred to has not been seen yet, recursively mark
   all the references contained in it.
 
-   If the object referenced is a short string, the referrencing slot
+   If the object referenced is a short string, the referencing slot
    is threaded into a chain of such slots, pointed to from
    the `size' field of the string.  The actual string size
    lives in the last slot in the chain.  We recognize the end

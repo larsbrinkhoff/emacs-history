@@ -853,4 +853,7 @@ absolute rather than relative to some directory on the SEARCH-PATH."
 	    (symbol-function 'read-file-name-internal))
       (fset 'read-file-name-internal 'PC-read-include-file-name-internal)))
 
+
+(provide 'complete)
+
 ;;; End.

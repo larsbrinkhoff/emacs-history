@@ -28,7 +28,7 @@ XMenuRecompute(display, menu)
     
     /*
      * If there are no panes in the menu then return failure
-     * beacuse the menu is not initialized.
+     * because the menu is not initialized.
      */
     if (menu->p_count == 0) {
 	_XMErrorCode = XME_NOT_INIT;

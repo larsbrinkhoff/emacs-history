@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -119,7 +119,7 @@ NOTE-END */
 
 /* #define VIRT_ADDR_VARIES */
 
-/* For University of Utah 4.3bsd implemetation on HP300s.
+/* For University of Utah 4.3bsd implementation on HP300s.
    The #ifndef __GNUC__ definitions are required for the "standard" cc,
    a very old, brain-dead version of PCC. */
 

@@ -326,7 +326,7 @@ Return t if file exists.")
   /* If file name is magic, call the handler.  */
   handler = Ffind_file_name_handler (str);
   if (!NILP (handler))
-    return call2 (handler, Qload, str);
+    return call5 (handler, Qload, str, noerror, nomessage, nosuffix);
 
   /* Avoid weird lossage with null string as arg,
      since it would try to load a directory as a Lisp file */

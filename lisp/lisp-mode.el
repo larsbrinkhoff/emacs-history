@@ -371,7 +371,7 @@ of the start of the containing expression."
 		 (parse-partial-sexp (point) last-sexp 0 t)
 		 (backward-prefix-chars)))))
       ;; Point is at the point to indent under unless we are inside a string.
-      ;; Call indentation hook except when overriden by lisp-indent-offset
+      ;; Call indentation hook except when overridden by lisp-indent-offset
       ;; or if the desired indentation has already been computed.
       (let ((normal-indent (current-column)))
         (cond ((elt state 3)
@@ -414,7 +414,8 @@ of the start of the containing expression."
       (let ((function (buffer-substring (point)
 					(progn (forward-sexp 1) (point))))
 	    method)
-	(setq method (get (intern-soft function) 'lisp-indent-function))
+	(setq method (or (get (intern-soft function) 'lisp-indent-function)
+			 (get (intern-soft function) 'lisp-indent-hook)))
 	(cond ((or (eq method 'defun)
 		   (and (null method)
 			(> (length function) 3)

@@ -23,12 +23,15 @@
 
 ;;; Commentary:
 
-;; Lisp ediing commands to go with Lisp major mode.
+;; Lisp editing commands to go with Lisp major mode.
 
 ;;; Code:
 
 (defvar defun-prompt-regexp nil
   "Non-nil => regexp to ignore, before the `(' that starts a defun.")
+
+(defvar parens-require-spaces t
+  "Non-nil => `insert-parentheses' should insert whitespace as needed.")
 
 (defun forward-sexp (&optional arg)
   "Move forward across one balanced expression (sexp).
@@ -195,18 +198,22 @@ The defun marked is the one that contains point or follows point."
 
 (defun insert-parentheses (arg)
   "Put parentheses around next ARG sexps.  Leave point after open-paren.
-No argument is equivalent to zero: just insert () and leave point between."
+No argument is equivalent to zero: just insert `()' and leave point between.
+This command also sometimes inserts a space before and after,
+depending on the surrounding characters."
   (interactive "P")
   (if arg (setq arg (prefix-numeric-value arg))
     (setq arg 0))
   (or (eq arg 0) (skip-chars-forward " \t"))
-  (and (memq (char-syntax (preceding-char)) '(?w ?_ ?\) ))
+  (and parens-require-spaces
+       (memq (char-syntax (preceding-char)) '(?w ?_ ?\) ))
        (insert " "))
   (insert ?\()
   (save-excursion
     (or (eq arg 0) (forward-sexp arg))
     (insert ?\))
-    (and (memq (char-syntax (following-char)) '(?w ?_ ?\( ))
+    (and parens-require-spaces
+	 (memq (char-syntax (following-char)) '(?w ?_ ?\( ))
 	 (insert " "))))
 
 (defun move-past-close-and-reindent ()

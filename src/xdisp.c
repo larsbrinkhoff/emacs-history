@@ -332,7 +332,8 @@ echo_area_display ()
       {
 	int i;
 
-	for (i = vpos + 1; i < vpos + XWINDOW (minibuf_window)->height; i++)
+	for (i = vpos + 1;
+	     i < vpos + XFASTINT (XWINDOW (minibuf_window)->height); i++)
 	  {
 	    get_display_line (f, i, 0);
 	    display_string (XWINDOW (minibuf_window), vpos,
@@ -950,6 +951,8 @@ redisplay_window (window, just_this_one)
   else if (just_this_one && !MINI_WINDOW_P (w)
 	   && point >= startp
 	   && XFASTINT (w->last_modified)
+	   /* or else vmotion on first line won't work.  */
+	   && ! NILP (w->start_at_line_beg)
 	   && ! EQ (w->window_end_valid, Qnil)
 	   && do_id && !clip_changed
 	   && !blank_end_of_window
@@ -1076,7 +1079,7 @@ done:
 	  start = startp - BEGV;
 	  /* I don't think this is guaranteed to be right.  For the
 	     moment, we'll pretend it is.  */
-	  end = (Z - XINT (w->window_end_pos)) - BEGV;
+	  end = (Z - XINT (w->window_end_pos));
 
 	  if (end < start) end = start;
 	  if (whole < (end - start)) whole = end - start;
@@ -1085,7 +1088,7 @@ done:
 	start = end = whole = 0;
 
       /* Indicate what this scroll bar ought to be displaying now.  */
-      (*set_vertical_scroll_bar_hook) (w, end - start, whole, start - 1);
+      (*set_vertical_scroll_bar_hook) (w, end - start, whole, start);
 
       /* Note that we actually used the scroll bar attached to this window,
 	 so it shouldn't be deleted at the end of redisplay.  */
@@ -1597,9 +1600,11 @@ copy_rope (t, s, from, face)
 
   while (n--)
     {
-      if (t >= s) *t = MAKE_GLYPH (GLYPH_CHAR (*f),
-				   (GLYPH_FACE (*f)
-				    ? GLYPH_FACE (*f)
+      int glyph = XFASTINT (*f);
+
+      if (t >= s) *t = MAKE_GLYPH (GLYPH_CHAR (glyph),
+				   (GLYPH_FACE (glyph)
+				    ? GLYPH_FACE (glyph)
 				    : face));
       ++t;
       ++f;
@@ -1623,9 +1628,11 @@ copy_part_of_rope (t, s, from, len, face)
 
   while (n--)
     {
-      if (t >= s) *t = MAKE_GLYPH (GLYPH_CHAR (*f),
-				   (GLYPH_FACE (*f)
-				    ? GLYPH_FACE (*f)
+      int glyph = XFASTINT (*f);
+
+      if (t >= s) *t = MAKE_GLYPH (GLYPH_CHAR (glyph),
+				   (GLYPH_FACE (glyph)
+				    ? GLYPH_FACE (glyph)
 				    : face));
       ++t;
       ++f;
@@ -1665,7 +1672,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
   register unsigned char *p;
   GLYPH *endp;
   register GLYPH *startp;
-  register GLYPH *p1prev;
+  register GLYPH *p1prev = 0;
   FRAME_PTR f = XFRAME (w->frame);
   int tab_width = XINT (current_buffer->tab_width);
   int ctl_arrow = !NILP (current_buffer->ctl_arrow);
@@ -1932,10 +1939,16 @@ display_text_line (w, start, vpos, hpos, taboffset)
   /* by backing up over it */
   if (p1 > endp)
     {
-      /* Start the next line with that same character */
-      pos--;
-      /* but at a negative hpos, to skip the columns output on this line.  */
-      val.hpos += p1prev - endp;
+      /* Don't back up if we never actually displayed any text.
+	 This occurs when the minibuffer prompt takes up the whole line.  */
+      if (p1prev)
+	{
+	  /* Start the next line with that same character */
+	  pos--;
+	  /* but at negative hpos, to skip the columns output on this line.  */
+	  val.hpos += p1prev - endp;
+	}
+
       /* Keep in this line everything up to the continuation column.  */
       p1 = endp;
     }
@@ -2049,14 +2062,17 @@ display_text_line (w, start, vpos, hpos, taboffset)
       unsigned char *p = XSTRING (Voverlay_arrow_string)->data;
       int i;
       int len = XSTRING (Voverlay_arrow_string)->size;
+      int arrow_end;
 
       if (len > width)
 	len = width;
       for (i = 0; i < len; i++)
 	startp[i] = p[i];
-      if (desired_glyphs->used[vpos] <
-	  (len + startp - desired_glyphs->glyphs[vpos]))
-	desired_glyphs->used[vpos] = len + startp - desired_glyphs->glyphs[vpos];
+
+      /* Bug in SunOS 4.1.1 compiler requires this intermediate variable.  */
+      arrow_end = (startp - desired_glyphs->glyphs[vpos]) + len;
+      if (desired_glyphs->used[vpos] < arrow_end)
+	desired_glyphs->used[vpos] = arrow_end;
 
       overlay_arrow_seen = 1;
     }

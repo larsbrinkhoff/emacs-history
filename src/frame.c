@@ -326,7 +326,7 @@ make_terminal_frame ()
 
 DEFUN ("select-frame", Fselect_frame, Sselect_frame, 1, 2, "e",
   "Select the frame FRAME.\n\
-Subseqent editing commands apply to its selected window.\n\
+Subsequent editing commands apply to its selected window.\n\
 The selection of FRAME lasts until the next time the user does\n\
 something to select a different frame, or until the next time this\n\
 function is called.")
@@ -394,7 +394,7 @@ to that frame.")
   choose_minibuf_frame ();
 
   /* We want to make sure that the next event generates a frame-switch
-     event to the appropriate frame.  This seems kludgey to me, but
+     event to the appropriate frame.  This seems kludgy to me, but
      before you take it out, make sure that evaluating something like
      (select-window (frame-root-window (new-frame))) doesn't end up
      with your typing being interpreted in the new frame instead of
@@ -743,6 +743,8 @@ A frame may not be deleted if its minibuffer is used by other frames.")
 
 DEFUN ("mouse-position", Fmouse_position, Smouse_position, 0, 0, 0,
   "Return a list (FRAME X . Y) giving the current mouse frame and position.\n\
+The position is given in character cells, where (0, 0) is the\n\
+upper-left corner.\n\
 If Emacs is running on a mouseless terminal or hasn't been programmed\n\
 to read the mouse position, it returns the selected frame for FRAME\n\
 and nil for X and Y.")
@@ -754,23 +756,22 @@ and nil for X and Y.")
   Lisp_Object x, y;
   unsigned long long_dummy;
 
+  f = selected_frame;
+  x = y = Qnil;
+
+  /* It's okay for the hook to refrain from storing anything.  */
   if (mouse_position_hook)
     (*mouse_position_hook) (&f,
 			    &lispy_dummy, &party_dummy,
 			    &x, &y,
 			    &long_dummy);
-  else
-    {
-      f = selected_frame;
-      x = y = Qnil;
-    }
 
   XSET (lispy_dummy, Lisp_Frame, f);
-  return Fcons (lispy_dummy, Fcons (make_number (x), make_number (y)));
+  return Fcons (lispy_dummy, Fcons (x, y));
 }
 
 DEFUN ("set-mouse-position", Fset_mouse_position, Sset_mouse_position, 3, 3, 0,
-  "Move the mouse pointer to the center of cell (X,Y) in FRAME.\n\
+  "Move the mouse pointer to the center of character cell (X,Y) in FRAME.\n\
 WARNING:  If you use this under X, you should do `unfocus-frame' afterwards.")
   (frame, x, y)
      Lisp_Object frame, x, y;
@@ -1061,7 +1062,7 @@ store_frame_param (f, prop, val)
 	error ("Surrogate minibuffer windows must be minibuffer windows.");
 
       if (FRAME_HAS_MINIBUF_P (f) || FRAME_MINIBUF_ONLY_P (f))
-	error ("Can't change the surrogate minibuffer of a frame with its own minibuffer.");
+	error ("can't change the surrogate minibuffer of a frame with its own minibuffer");
 
       /* Install the chosen minibuffer window, with proper buffer.  */
       f->minibuffer_window = val;
@@ -1207,8 +1208,8 @@ For a terminal screen, the value is always 1.")
 
 DEFUN ("frame-pixel-height", Fframe_pixel_height, 
        Sframe_pixel_height, 0, 1, 0,
-  "Return a FRAME's heightin pixels.\n\
-For a terminal frame, the result really gives the sizes in characters.\n\
+  "Return a FRAME's height in pixels.\n\
+For a terminal frame, the result really gives the height in characters.\n\
 If FRAME is omitted, the selected frame is used.")
   (frame)
      Lisp_Object frame;
@@ -1234,7 +1235,7 @@ If FRAME is omitted, the selected frame is used.")
 DEFUN ("frame-pixel-width", Fframe_pixel_width, 
        Sframe_pixel_width, 0, 1, 0,
   "Return FRAME's width in pixels.\n\
-For a terminal frame, the result really gives the sizes in characters.\n\
+For a terminal frame, the result really gives the width in characters.\n\
 If FRAME is omitted, the selected frame is used.")
   (frame)
      Lisp_Object frame;

@@ -144,7 +144,7 @@ XMenuCreate(display, parent, def_env)
   GC inact_GC_noexpose;
 
   XColor color_def;		/* Temp color definition holder. */
-  XColor screen_def;		/* Temp screen color defintion holder */
+  XColor screen_def;		/* Temp screen color definition holder */
   XColor p_bdr_color;		/* Color of border. */
   XColor s_bdr_color;		/* Color of highlight. */
   XColor p_frg_color;		/* Color of pane foreground color. */
@@ -158,8 +158,8 @@ XMenuCreate(display, parent, def_env)
 
   Pixel p_bdr_pixel;	        /* Pane border pixel. */
   Pixel s_bdr_pixel;	        /* Selection border pixel. */
-  Pixel p_frg_pixel;	        /* Pane forground pixel. */
-  Pixel s_frg_pixel;	        /* Selection forground pixel. */
+  Pixel p_frg_pixel;	        /* Pane foreground pixel. */
+  Pixel s_frg_pixel;	        /* Selection foreground pixel. */
   Pixel bkgnd_pixel;	        /* Menu background pixel. */
 
   int *width, *height;

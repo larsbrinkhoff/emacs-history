@@ -81,6 +81,11 @@ int inhibit_window_system;
    priority; Those functions have their own extern declaration.  */
 int emacs_priority;
 
+#ifdef BSD
+/* See sysdep.c.  */
+extern int inherited_pgroup;
+#endif
+
 #ifdef HAVE_X_WINDOWS
 /* If non-zero, -d was specified, meaning we're using some window system. */
 int display_arg;
@@ -130,7 +135,7 @@ fatal_error_signal (sig)
     {
       fatal_error_in_progress = 1;
 
-      shut_down_emacs (sig, 0);
+      shut_down_emacs (sig, 0, Qnil);
     }
 
 #ifdef VMS
@@ -292,17 +297,14 @@ main (argc, argv, envp)
 #endif
 
   clearerr (stdin);
-#if 0 /* Without EMACS_SET_TTY_PGRP, this causes Emacs to hang
-	 when run under a non-job-control shell.
-	 EMACS_SET_TTY_PGRP seems correct, but breaks even more.  */
+
 #ifdef BSD
   {
-    int pid = getpid ();
-    setpgrp (0, pid);
-    EMACS_SET_TTY_PGRP (0, &pid);
+    inherited_pgroup = getpgrp (0);
+    setpgrp (0, getpid ());
   }
 #endif
-#endif
+
 
 #ifdef APOLLO
 #ifndef APOLLO_SR10
@@ -646,7 +648,6 @@ all of which are called before Emacs is actually killed.")
 /* #ifdef VMS
   stop_vms_input ();
  #endif  */
-  stuff_buffered_input (arg);
 
   shut_down_emacs (0, 0);
 
@@ -671,20 +672,18 @@ all of which are called before Emacs is actually killed.")
 
    This is called by fatal signal handlers, X protocol error handlers,
    and Fkill_emacs.  */
+
 void
-shut_down_emacs (sig, no_x)
+shut_down_emacs (sig, no_x, stuff)
      int sig, no_x;
+     Lisp_Object stuff;
 {
   /* If we are controlling the terminal, reset terminal modes */
 #ifdef EMACS_HAVE_TTY_PGRP
   {
     int tpgrp;
     if (EMACS_GET_TTY_PGRP (0, &tpgrp) != -1
-#ifdef GETPGRP_NO_ARG
-	&& tpgrp == getpgrp ())
-#else
 	&& tpgrp == getpgrp (0))
-#endif
       {
 	fflush (stdout);
 	reset_sys_modes ();
@@ -696,6 +695,8 @@ shut_down_emacs (sig, no_x)
   fflush (stdout);
   reset_sys_modes ();
 #endif
+
+  stuff_buffered_input (stuff);
 
   kill_buffer_processes (Qnil);
   Fdo_auto_save (Qt, Qnil);

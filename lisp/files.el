@@ -45,7 +45,7 @@ the name it is linked to.")
 
 ;;; Turn off backup files on VMS since it has version numbers.
 (defconst make-backup-files (not (eq system-type 'vax-vms))
-  "*Create a backup of each file when it is saved for the first time.
+  "*Non-nil means make a backup of a file the first time it is saved.
 This can be done by renaming the file or by copying.
 
 Renaming means that Emacs renames the existing file so that it is a
@@ -254,8 +254,7 @@ Not actually set up until the first time you you use it.")
 	 cd-list)))
 
 (defun cd-absolute (dir)
-  "Change current directory to given absolute path DIR."
-  (interactive "DChange default directory: ")
+  "Change current directory to given absolute file name DIR."
   (setq dir (expand-file-name dir))
   (if (not (eq system-type 'vax-vms))
       (setq dir (file-name-as-directory dir)))
@@ -267,27 +266,25 @@ Not actually set up until the first time you you use it.")
 
 (defun cd (dir)
   "Make DIR become the current buffer's default directory.
-If your environment imcludes a $CDPATH variable, cd tries each one of that
-colon-separated list of directories when resolving a relative cd."
+If your environment includes a `CDPATH' variable, try each one of that
+colon-separated list of directories when resolving a relative directory name."
   (interactive "FChange default directory: ")
-  (let ((first (aref dir 0)))
-    (if (or (= first ?/) (= first ?~))
-	(cd-absolute (expand-file-name dir))
-      (if (null cd-path)
-	  (let ((trypath (parse-colon-path (getenv "CDPATH"))))
-	    (setq cd-path (or trypath (list "./")))))
-      (if (not (catch 'found
-		 (mapcar
-		  (function (lambda (x)
-			      (let ((f (expand-file-name (concat x dir))))
-				(if (file-directory-p f)
-				    (progn
-				      (cd-absolute f)
-				      (throw 'found t))))))
-		  cd-path)
-		 nil))
-	  (error "No such directory on your cd path.")))
-    ))
+  (if (file-name-absolute-p dir)
+      (cd-absolute (expand-file-name dir))
+    (if (null cd-path)
+	(let ((trypath (parse-colon-path (getenv "CDPATH"))))
+	  (setq cd-path (or trypath (list "./")))))
+    (if (not (catch 'found
+	       (mapcar
+		(function (lambda (x)
+			    (let ((f (expand-file-name (concat x dir))))
+			      (if (file-directory-p f)
+				  (progn
+				    (cd-absolute f)
+				    (throw 'found t))))))
+		cd-path)
+	       nil))
+	(error "No such directory found via CDPATH environment variable"))))
 
 (defun load-file (file)
   "Load the Lisp file named FILE."
@@ -332,16 +329,25 @@ containing it, until no links are left at any level."
 	;; If these are equal, we have the (or a) root directory.
 	(or (string= dir dirfile)
 	    (setq dir (file-name-as-directory (file-truename dirfile))))
-	;; Put it back on the file name.
-	(setq filename (concat dir (file-name-nondirectory filename)))
-	;; Is the file name the name of a link?
-	(setq target (file-symlink-p filename))
-	(if target
-	    ;; Yes => chase that link, then start all over
-	    ;; since the link may point to a directory name that uses links.
-	    (file-truename (expand-file-name target dir))
-	  ;; No, we are done!
-	  filename)))))
+	(if (equal ".." (file-name-nondirectory filename))
+	    (directory-file-name (file-name-directory (directory-file-name dir)))
+	  (if (equal "." (file-name-nondirectory filename))
+	      (directory-file-name dir)
+	    ;; Put it back on the file name.
+	    (setq filename (concat dir (file-name-nondirectory filename)))
+	    ;; Is the file name the name of a link?
+	    (setq target (file-symlink-p filename))
+	    (if target
+		;; Yes => chase that link, then start all over
+		;; since the link may point to a directory name that uses links.
+		;; We can't safely use expand-file-name here
+		;; since target might look like foo/../bar where foo
+		;; is itself a link.  Instead, we handle . and .. above.
+		(if (file-name-absolute-p target)
+		    (file-truename target)
+		  (file-truename (concat dir target)))
+	      ;; No, we are done!
+	      filename)))))))
 
 (defun file-chase-links (filename)
   "Chase links in FILENAME until a name that is not a link.
@@ -509,10 +515,14 @@ Type \\[describe-variable] directory-abbrev-alist RET for more information."
     ;; Compute and save the abbreviated homedir name.
     ;; We defer computing this until the first time it's needed, to
     ;; give time for directory-abbrev-alist to be set properly.
+    ;; We include a slash at the end, to avoid spurious matches
+    ;; such as `/usr/foobar' when the home dir is `/usr/foo'.
     (or abbreviated-home-dir
 	(setq abbreviated-home-dir
 	      (let ((abbreviated-home-dir "$foo"))
-		(concat "^" (abbreviate-file-name (expand-file-name "~"))))))
+		(concat "^" (abbreviate-file-name (expand-file-name "~"))
+			"\\(/\\|$\\)"))))
+						  
     ;; If FILENAME starts with the abbreviated homedir,
     ;; make it start with `~' instead.
     (if (string-match abbreviated-home-dir filename)
@@ -528,6 +538,7 @@ Type \\[describe-variable] directory-abbrev-alist RET for more information."
 				       (1- (length abbreviated-home-dir))))
 			  "/"
 			"")
+		      (substring filename (match-beginning 1) (match-end 1))
 		      (substring filename (match-end 0)))))
     filename))
 
@@ -1009,7 +1020,9 @@ If `enable-local-variables' is nil, this function does not check for a
 	((memq var ignored-local-variables)
 	 nil)
 	;; "Setting" eval means either eval it or do nothing.
-	((eq var 'eval)
+	;; Likewise for setting hook variables.
+	((or (eq var 'eval)
+	     (string-match "-hooks?$\\|-functions?$" (symbol-name var)))
 	 (if (and (not (string= (user-login-name) "root"))
 		  (or (eq enable-local-eval t)
 		      (and enable-local-eval
@@ -1019,9 +1032,12 @@ If `enable-local-variables' is nil, this function does not check for a
 			       (beginning-of-line)
 			       (set-window-start (selected-window) (point)))
 			     (setq enable-local-eval
-				   (y-or-n-p (format "Process `eval' local variable in file %s? "
+				   (y-or-n-p (format "Process `eval' or hook local variables in file %s? "
 						     (file-name-nondirectory buffer-file-name))))))))
-	     (save-excursion (eval val))
+	     (if (eq var 'eval)
+		 (save-excursion (eval val))
+	       (make-local-variable var)
+	       (set var val))
 	   (message "Ignoring `eval:' in file's local variables")))
 	;; Ordinary variable, really set it.
 	(t (make-local-variable var)
@@ -1079,7 +1095,8 @@ if you wish to pass an empty string as the argument."
 	 (setq backup-inhibited t)))
   ;; If auto-save was not already on, turn it on if appropriate.
   (if (not buffer-auto-save-file-name)
-      (auto-save-mode (and buffer-file-name auto-save-default))
+      (and buffer-file-name auto-save-default
+	   (auto-save-mode t))
     ;; If auto save is on, start using a new name.
     ;; We deliberately don't rename or delete the old auto save
     ;; for the old visited file name.  This is because perhaps
@@ -1374,7 +1391,8 @@ the last real save, but optional arg FORCE non-nil means delete anyway."
 	      (setq buffer-file-name
 		    (expand-file-name (read-file-name "File to save in: ") nil)
 		    default-directory (file-name-directory buffer-file-name))
-	      (auto-save-mode auto-save-default)))
+	      (and auto-save-default (not buffer-auto-save-file-name)
+		   (auto-save-mode t))))
 	(or (verify-visited-file-modtime (current-buffer))
 	    (not (file-exists-p buffer-file-name))
 	    (yes-or-no-p
@@ -1570,8 +1588,17 @@ or multiple mail buffers, etc."
     (set-buffer-modified-p (buffer-modified-p)))) ; force mode line update
 
 (defun make-directory (dir &optional parents)
-  "Create the directory DIR and any nonexistent parent dirs."
-  (interactive "FMake directory: \nP")
+  "Create the directory DIR and any nonexistent parent dirs.
+Interactively, the default choice of directory to create
+is the current default directory for file names.
+That is useful when you have visited a file in a nonexistint directory.
+
+Noninteractively, the second (optional) argument PARENTS says whether
+to create parent directories if they don't exist."
+  (interactive
+   (list (read-file-name "Make directory: " default-directory default-directory
+			 nil nil)
+	 t))
   (let ((handler (find-file-name-handler dir)))
     (if handler
 	(funcall handler 'make-directory dir parents)
@@ -1846,7 +1873,7 @@ If WILDCARD, it also runs the shell specified by `shell-file-name'."
 	  ;; would mean that our line of output would not display
 	  ;; FILE's name as given.  To really address the problem that
 	  ;; SunOS 4.1.3 has, we need to find the right switch to get
-	  ;; a descripton of the link itself.
+	  ;; a description of the link itself.
 	  ;; (let (symlink)
 	  ;;   (while (setq symlink (file-symlink-p file))
 	  ;;     (setq file symlink)))

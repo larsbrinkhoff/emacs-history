@@ -173,7 +173,7 @@ Lisp_Object Qcursor_type;
 Lisp_Object Qfont;
 Lisp_Object Qforeground_color;
 Lisp_Object Qgeometry;
-Lisp_Object Qicon;
+/* Lisp_Object Qicon; */
 Lisp_Object Qicon_left;
 Lisp_Object Qicon_top;
 Lisp_Object Qicon_type;
@@ -192,7 +192,7 @@ Lisp_Object Qx_frame_parameter;
 
 /* The below are defined in frame.c. */
 extern Lisp_Object Qheight, Qminibuffer, Qname, Qonly, Qwidth;
-extern Lisp_Object Qunsplittable, Qmenu_bar_lines, Qicon;
+extern Lisp_Object Qunsplittable, Qmenu_bar_lines;
 
 extern Lisp_Object Vwindow_system_version;
 
@@ -584,7 +584,7 @@ x_set_mouse_color (f, arg, oldval)
   BLOCK_INPUT;
 #ifdef HAVE_X11
 
-  /* It's not okay to crash if the user selects a screwey cursor.  */
+  /* It's not okay to crash if the user selects a screwy cursor.  */
   x_catch_errors ();
 
   if (!EQ (Qnil, Vx_pointer_shape))
@@ -1856,7 +1856,7 @@ be shared by the new frame.")
   f->display.x = (struct x_display *) xmalloc (sizeof (struct x_display));
   bzero (f->display.x, sizeof (struct x_display));
 
-  /* Some temprorary default values for height and width. */
+  /* Some temporary default values for height and width. */
   width = 80;
   height = 40;
   f->display.x->left_pos = -1;
@@ -2227,22 +2227,24 @@ fonts), even if they match PATTERN and FACE.")
 			      &info); /* info_return */
   UNBLOCK_INPUT;
 
-  {
-    Lisp_Object *tail;
-    int i;
+  list = Qnil;
 
-    list = Qnil;
-    tail = &list;
-    for (i = 0; i < num_fonts; i++)
-      if (! size_ref 
-	  || same_size_fonts (&info[i], size_ref))
-	{
-	  *tail = Fcons (build_string (names[i]), Qnil);
-	  tail = &XCONS (*tail)->cdr;
-	}
+  if (names)
+    {
+      Lisp_Object *tail;
+      int i;
 
-    XFreeFontInfo (names, info, num_fonts);
-  }
+      tail = &list;
+      for (i = 0; i < num_fonts; i++)
+	if (! size_ref 
+	    || same_size_fonts (&info[i], size_ref))
+	  {
+	    *tail = Fcons (build_string (names[i]), Qnil);
+	    tail = &XCONS (*tail)->cdr;
+	  }
+
+      XFreeFontInfo (names, info, num_fonts);
+    }
 
   return list;
 }
@@ -2821,7 +2823,7 @@ clip_contour_top (y_pos, x_pos)
     }
 }
 
-/* Erase the top horzontal lines of the contour, and then extend
+/* Erase the top horizontal lines of the contour, and then extend
    the contour upwards. */
 
 static void
@@ -3351,8 +3353,15 @@ also be depressed for NEWSTRING to appear.")
 	  mod = Fcar (rest);
 	  CHECK_STRING (mod, 3);
 	  modifier_list[i] = XStringToKeysym ((char *) XSTRING (mod)->data);
+#ifndef HAVE_X11R5
+	  if (modifier_list[i] == NoSymbol
+	      || !(IsModifierKey (modifier_list[i]) 
+                   || ((unsigned)(modifier_list[i]) == XK_Mode_switch)
+                   || ((unsigned)(modifier_list[i]) == XK_Num_Lock)))
+#else
 	  if (modifier_list[i] == NoSymbol
 	      || !IsModifierKey (modifier_list[i]))
+#endif
 	    error ("Element is not a modifier keysym");
 	  i++;
 	}
@@ -3475,7 +3484,7 @@ arg XRM_STRING is a string of resources in xrdb format.")
   else
     xrm_option = (unsigned char *) 0;
   xrdb = x_load_resources (x_current_display, xrm_option, EMACS_CLASS);
-#if defined (HAVE_X11R5) && ! defined (NO_XRM_SET_DATBASE)
+#if defined (HAVE_X11R5) || defined (HAVE_XRMSETDATABASE)
   XrmSetDatabase (x_current_display, xrdb);
 #else
   x_current_display->db = xrdb;
@@ -3596,8 +3605,6 @@ syms_of_xfns ()
   staticpro (&Qforeground_color);
   Qgeometry = intern ("geometry");
   staticpro (&Qgeometry);
-  Qicon = intern ("icon");
-  staticpro (&Qicon);
   Qicon_left = intern ("icon-left");
   staticpro (&Qicon_left);
   Qicon_top = intern ("icon-top");

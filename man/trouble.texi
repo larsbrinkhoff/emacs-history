@@ -99,14 +99,14 @@ executing.  @xref{Undo}.
 normally, and how to recognize them and correct them.
 
 @menu
-* DEL Gets Help::      What to do if @key{DEL} doesn't delete
-* Stuck Recursive::    `[...]' in mode line around the parentheses
-* Screen Garbled::     Garbage on the screen
-* Text Garbled::       Garbage in the text
-* Unasked-for Search:: Spontaneous entry to incremental search
-* Emergency Escape::   Emergency escape---
-                        What to do if Emacs stops responding
-* Total Frustration::  When you are at your wits' end.
+* DEL Gets Help::       What to do if @key{DEL} doesn't delete.
+* Stuck Recursive::     `[...]' in mode line around the parentheses.
+* Screen Garbled::      Garbage on the screen.
+* Text Garbled::        Garbage in the text.
+* Unasked-for Search::  Spontaneous entry to incremental search.
+* Emergency Escape::    Emergency escape---
+                          What to do if Emacs stops responding.
+* Total Frustration::   When you are at your wits' end.
 @end menu
 
 @node DEL Gets Help
@@ -272,10 +272,10 @@ we want to hear about bugs you encounter in case we do want to fix them.
 to do so effectively, you must know when and how to do it.
 
 @menu
-* Criteria:  Bug Criteria.	Have you really found a bug?
-* Understanding Bug Reporting::	How to report a bug effectively.
-* Checklist::			Steps to follow for a good bug report.
-* Sending Patches::		How to send a patch for GNU Emacs.
+* Criteria:  Bug Criteria.	 Have you really found a bug?
+* Understanding Bug Reporting::	 How to report a bug effectively.
+* Checklist::			 Steps to follow for a good bug report.
+* Sending Patches::		 How to send a patch for GNU Emacs.
 @end menu
 
 @node Bug Criteria
@@ -375,10 +375,18 @@ the way you entered the text.@refill
 @subsection Checklist for Bug Reports
 
   The best way to send a bug report is to mail it electronically to the
-Emacs maintainers at @samp{bug-gnu-emacs@@prep.ai.mit.edu}.  Please do
-not post the bug report as netnews; mail is more reliable than netnews
-about reporting your correct address, which we may need in order to ask
-you for more information.
+Emacs maintainers at @samp{bug-gnu-emacs@@prep.ai.mit.edu}.
+
+  If you'd like to read the bug reports, you can find them on the
+repeater newsgroup @samp{gnu.emacs.bugs}; keep in mind, however, that as
+a spectator you should not criticize anything about what you see there.
+The purpose of bug reports is to give information to the Emacs
+maintainers.  Spectators are welcome only as long as they do not
+interfere with this.
+
+  Please do not post bug reports using netnews; mail is more reliable
+than netnews about reporting your correct address, which we may need in
+order to ask you for more information.
 
   If you can't send electronic mail, then mail the bug report on paper
 to this address:
@@ -577,7 +585,7 @@ Here are some things that are not necessary:
 @itemize @bullet
 @item
 A description of the envelope of the bug---this is not necessary for a
-reproduceable bug.
+reproducible bug.
 
 Often people who encounter a bug spend a lot of time investigating
 which changes to the input file will make the bug go away and which

@@ -8,9 +8,9 @@
 
 ;; Subsequently modified by RMS.
 
-;;; This version incorporates changes up to version 2.08 of the 
+;;; This version incorporates changes up to version 2.10 of the 
 ;;; Zawinski-Furuseth compiler.
-(defconst byte-compile-version "FSF 2.08")
+(defconst byte-compile-version "FSF 2.10")
 
 ;; This file is part of GNU Emacs.
 
@@ -38,8 +38,9 @@
 
 ;;; ========================================================================
 ;;; Entry points:
-;;;	byte-recompile-directory, byte-compile-file, batch-byte-compile,
-;;;	byte-compile, compile-defun
+;;;	byte-recompile-directory, byte-compile-file,
+;;;     batch-byte-compile, batch-byte-recompile-directory,
+;;;	byte-compile, compile-defun,
 ;;;	display-call-tree
 ;;; (byte-compile-buffer and byte-compile-and-load-file were turned off
 ;;;  because they are not terribly useful and get in the way of completion.)
@@ -101,16 +102,8 @@
 ;;; byte-compile-compatibility	Whether the compiler should
 ;;;				generate .elc files which can be loaded into
 ;;;				generic emacs 18.
-;;; byte-compile-single-version	Normally the byte-compiler will consult the
-;;;				above two variables at runtime, but if this 
-;;;				is true before the compiler itself is loaded/
-;;;				compiled, then the runtime checks will not be
-;;;				made, and compilation will be slightly faster.
-;;;				To use this, start up a fresh emacs, set this
-;;;				to t, reload the compiler's .el files, and
-;;;				recompile.  Don't do this in an emacs that has
-;;;				already had the compiler loaded.
-;;; byte-compile-overwrite-file	If nil, delete old .elc files before saving.
+;;; emacs-lisp-file-regexp	Regexp for the extension of source-files;
+;;;				see also the function byte-compile-dest-file.
 
 ;;; New Features:
 ;;;
@@ -143,20 +136,21 @@
 ;;;
 ;;;  o  The form `eval-when-compile' is like progn, except that the body
 ;;;     is evaluated at compile-time.  When it appears at top-level, this
-;;;     is analagous to the Common Lisp idiom (eval-when (compile) ...).
+;;;     is analogous to the Common Lisp idiom (eval-when (compile) ...).
 ;;;     When it does not appear at top-level, it is similar to the
 ;;;     Common Lisp #. reader macro (but not in interpreted code.)
 ;;;
 ;;;  o  The form `eval-and-compile' is similar to eval-when-compile, but
 ;;;	the whole form is evalled both at compile-time and at run-time.
 ;;;
-;;;  o  The command Meta-X byte-compile-and-load-file does what you'd think.
-;;;
 ;;;  o  The command compile-defun is analogous to eval-defun.
 ;;;
 ;;;  o  If you run byte-compile-file on a filename which is visited in a 
 ;;;     buffer, and that buffer is modified, you are asked whether you want
 ;;;     to save the buffer before compiling.
+;;;
+;;;  o  byte-compiled files now start with the string `;ELC'.
+;;;     Some versions of `file' can be customized to recognize that.
 
 (require 'backquote)
 
@@ -203,13 +197,15 @@
 You may want to redefine `byte-compile-dest-file' if you change this.")
 
 (or (fboundp 'byte-compile-dest-file)
-    ;; The user may want to redefine this,
+    ;; The user may want to redefine this along with emacs-lisp-file-regexp,
     ;; so only define it if it is undefined.
     (defun byte-compile-dest-file (filename)
       "Convert an Emacs Lisp source file name to a compiled file name."
       (setq filename (file-name-sans-versions filename))
       (cond ((eq system-type 'vax-vms)
 	     (concat (substring filename 0 (string-match ";" filename)) "c"))
+	    ((string-match emacs-lisp-file-regexp filename)
+	     (concat (substring filename 0 (match-beginning 0)) ".elc"))
 	    (t (concat filename "c")))))
 
 ;; This can be the 'byte-compile property of any symbol.
@@ -339,7 +335,7 @@ expanded by the compiler as when expanded by the interpreter.")
 (defvar byte-compile-macro-environment byte-compile-initial-macro-environment
   "Alist of macros defined in the file being compiled.
 Each element looks like (MACRONAME . DEFINITION).  It is
-\(MACRONAME . nil) when a function is redefined as a function.")
+\(MACRONAME . nil) when a macro is redefined as a function.")
 
 (defvar byte-compile-function-environment nil
   "Alist of functions defined in the file being compiled.
@@ -407,7 +403,7 @@ Each element is (INDEX . VALUE)")
 (byte-defop  24 -1 byte-varbind	"for binding a variable")
 (byte-defop  32  0 byte-call	"for calling a function")
 (byte-defop  40  0 byte-unbind	"for unbinding special bindings")
-;; codes 8-47 are consumed by the preceeding opcodes
+;; codes 8-47 are consumed by the preceding opcodes
 
 ;; unused: 48-55
 
@@ -1067,8 +1063,10 @@ don't ask and compile the file anyway."
   (interactive "DByte recompile directory: \nP")
   (if arg
       (setq arg (prefix-numeric-value arg)))
-  (save-some-buffers)
-  (set-buffer-modified-p (buffer-modified-p)) ;Update the mode line.
+  (if noninteractive
+      nil
+    (save-some-buffers)
+    (set-buffer-modified-p (buffer-modified-p))) ;Update the mode line.
   (let ((directories (list (expand-file-name directory)))
 	(file-count 0)
 	(dir-count 0)
@@ -1076,7 +1074,7 @@ don't ask and compile the file anyway."
     (displaying-byte-compile-warnings
      (while directories
        (setq directory (car directories))
-       (message "Checking %s..." directory)
+       (or noninteractive (message "Checking %s..." directory))
        (let ((files (directory-files directory))
 	     source dest)
 	 (while files
@@ -1096,7 +1094,9 @@ don't ask and compile the file anyway."
 			(and arg
 			     (or (eq 0 arg)
 				 (y-or-n-p (concat "Compile " source "? "))))))
-		 (progn (byte-compile-file source)
+		 (progn (if (and noninteractive (not byte-compile-verbose))
+			    (message "Compiling %s..." source))
+			(byte-compile-file source)
 			(setq file-count (1+ file-count))
 			(if (not (eq last-dir directory))
 			    (setq last-dir directory
@@ -1309,6 +1309,22 @@ With argument, insert value in current buffer after the form."
   (save-excursion
     (set-buffer outbuffer)
     (goto-char 1)
+    ;;
+    ;; The magic number of .elc files is ";ELC", or 0x3B454C43.  After that is
+    ;; the file-format version number (18 or 19) as a byte, followed by some
+    ;; nulls.  The primary motivation for doing this is to get some binary
+    ;; characters up in the first line of the file so that `diff' will simply
+    ;; say "Binary files differ" instead of actually doing a diff of two .elc
+    ;; files.  An extra benefit is that you can add this to /etc/magic:
+    ;;
+    ;; 0	string		;ELC		GNU Emacs Lisp compiled file,
+    ;; >4	byte		x		version %d
+    ;;
+    (insert
+     ";ELC"
+     (if (byte-compile-version-cond byte-compile-compatibility) 18 19)
+     "\000\000\000\n"
+     )
     (insert ";;; compiled by " (user-login-name) "@" (system-name) " on "
 	    (current-time-string) "\n;;; from file " filename "\n")
     (insert ";;; emacs version " emacs-version ".\n")
@@ -1563,15 +1579,14 @@ With argument, insert value in current buffer after the form."
 	(if (not (stringp (nth 3 form)))
 	    ;; No doc string to make-docfile; insert form in normal code.
 	    (byte-compile-keep-pending
-	     (list 'fset (list 'quote name)
+	     (list 'defalias (list 'quote name)
 		   (cond ((not macrop)
 			  code)
 			 ((eq 'make-byte-code (car-safe code))
 			  (list 'cons ''macro code))
 			 ((list 'quote (if macrop
 					   (cons 'macro new-one)
-					 new-one)))))
-	     'byte-compile-two-args)
+					 new-one))))))
 	  ;; Output the form by hand, that's much simpler than having
 	  ;; b-c-output-file-form analyze the defalias.
 	  (byte-compile-flush-pending)
@@ -1893,8 +1908,8 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 	   (if (memq fn '(t nil))
 	       (byte-compile-warn "%s called as a function" fn))
 	   (if (and handler
-		    (or (byte-compile-version-cond
-			 byte-compile-compatibility)
+		    (or (not (byte-compile-version-cond
+			      byte-compile-compatibility))
 			(not (get (get fn 'byte-opcode) 'emacs19-opcode))))
 	       (funcall handler form)
 	     (if (memq 'callargs byte-compile-warnings)
@@ -2015,9 +2030,9 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 
 (defmacro byte-defop-compiler19 (function &optional compile-handler)
   ;; Just like byte-defop-compiler, but defines an opcode that will only
-  ;; be used when byte-compile-compatibility is true.
+  ;; be used when byte-compile-compatibility is false.
   (if (and (byte-compile-single-version)
-	   (not byte-compile-compatibility))
+	   byte-compile-compatibility)
       ;; #### instead of doing nothing, this should do some remprops,
       ;; #### to protect against the case where a single-version compiler
       ;; #### is loaded into a world that has contained a multi-version one.
@@ -2205,7 +2220,7 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 (defun byte-compile-associative (form)
   (if (cdr form)
       (let ((opcode (get (car form) 'byte-opcode)))
-	;; To compile all the args first may enable some optimizaions.
+	;; To compile all the args first may enable some optimizations.
 	(mapcar 'byte-compile-form (setq form (cdr form)))
 	(while (setq form (cdr form))
 	  (byte-compile-out opcode 0)))
@@ -2234,8 +2249,8 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 	   (mapcar 'byte-compile-form (cdr form))
 	   (byte-compile-out
 	    (aref [byte-list1 byte-list2 byte-list3 byte-list4] (1- count)) 0))
-	  ((and (< count 256) (byte-compile-version-cond
-			       byte-compile-compatibility))
+	  ((and (< count 256) (not (byte-compile-version-cond
+				    byte-compile-compatibility)))
 	   (mapcar 'byte-compile-form (cdr form))
 	   (byte-compile-out 'byte-listN count))
 	  (t (byte-compile-normal-call form)))))
@@ -2250,8 +2265,8 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 	  ;; Concat of one arg is not a no-op if arg is not a string.
 	  ((= count 0)
 	   (byte-compile-form ""))
-	  ((and (< count 256) (byte-compile-version-cond
-			       byte-compile-compatibility))
+	  ((and (< count 256) (not (byte-compile-version-cond
+				    byte-compile-compatibility)))
 	   (mapcar 'byte-compile-form (cdr form))
 	   (byte-compile-out 'byte-concatN count))
 	  ((byte-compile-normal-call form)))))
@@ -2310,7 +2325,7 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 
 (defun byte-compile-funarg (form)
   ;; (mapcar '(lambda (x) ..) ..) ==> (mapcar (function (lambda (x) ..)) ..)
-  ;; for cases where it's guarenteed that first arg will be used as a lambda.
+  ;; for cases where it's guaranteed that first arg will be used as a lambda.
   (byte-compile-normal-call
    (let ((fn (nth 1 form)))
      (if (and (eq (car-safe fn) 'quote)
@@ -2350,8 +2365,8 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 (defun byte-compile-insert (form)
   (cond ((null (cdr form))
 	 (byte-compile-constant nil))
-	((and (byte-compile-version-cond
-	       byte-compile-compatibility)
+	((and (not (byte-compile-version-cond
+		    byte-compile-compatibility))
 	      (<= (length form) 256))
 	 (mapcar 'byte-compile-form (cdr form))
 	 (if (cdr (cdr form))
@@ -2649,9 +2664,20 @@ If FORM is a lambda or a macro, byte-compile it as a function."
     (let ((clauses (cdr (cdr (cdr form))))
 	  compiled-clauses)
       (while clauses
-	(let ((clause (car clauses)))
+	(let* ((clause (car clauses))
+               (condition (car clause)))
+          (cond ((not (symbolp condition))
+                 (byte-compile-warn
+                   "%s is not a symbol naming a condition (in condition-case)"
+                   (prin1-to-string condition)))
+                ((not (or (eq condition 't)
+			  (and (stringp (get condition 'error-message))
+			       (consp (get condition 'error-conditions)))))
+                 (byte-compile-warn
+                   "%s is not a known condition name (in condition-case)" 
+                   condition)))
 	  (setq compiled-clauses
-		(cons (cons (car clause)
+		(cons (cons condition
 			    (byte-compile-top-level-body
 			     (cdr clause) for-effect))
 		      compiled-clauses)))
@@ -2991,6 +3017,21 @@ For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\""
 	      (get (car err) 'error-message)
 	      (prin1-to-string (cdr err)))
      nil)))
+
+(defun batch-byte-recompile-directory ()
+  "Runs `byte-recompile-directory' on the dirs remaining on the command line.
+Must be used only with `-batch', and kills Emacs on completion.
+For example, invoke `emacs -batch -f batch-byte-recompile-directory .'."
+  ;; command-line-args-left is what is left of the command line (startup.el)
+  (defvar command-line-args-left)	;Avoid 'free variable' warning
+  (if (not noninteractive)
+      (error "batch-byte-recompile-directory is to be used only with -batch"))
+  (or command-line-args-left
+      (setq command-line-args-left '(".")))
+  (while command-line-args-left
+    (byte-recompile-directory (car command-line-args-left))
+    (setq command-line-args-left (cdr command-line-args-left)))
+  (kill-emacs 0))
 
 
 (make-obsolete 'mod '%)

@@ -11,7 +11,7 @@
 # 4 = resume emacs under X
 # 5 = new emacs under suntools
 # 6 = resume emacs under suntools
-# 7 = new emacs under X and suntools - doesn't make any sence, so use X
+# 7 = new emacs under X and suntools - doesn't make any sense, so use X
 # 8 = resume emacs under X and suntools - doesn't make any sense, so use X
 set EMACS_PATTERN="^\[[0-9]\]  . Stopped ............ $EMACS"
 

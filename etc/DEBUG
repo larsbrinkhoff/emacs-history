@@ -36,7 +36,7 @@ All Lisp errors go through there.
 
 It is useful, when debugging, to have a guaranteed way
 to return to the debugger at any time.  If you are using
-interrupt-drived input, which is the default, then Emacs is using
+interrupt-driven input, which is the default, then Emacs is using
 RAW mode and the only way you can do it is to store
 the code for some character into the variable stop_character:
 
@@ -107,7 +107,7 @@ terminal, and the termscript file contains all characters it sent to
 the terminal.  The use of the directory `~/' prevents interference
 with any other user.
 
-If you have unreproduceable display problems, put those two expressions
+If you have irreproducible display problems, put those two expressions
 in your ~/.emacs file.  When the problem happens, exit the Emacs that
 you were running, kill it, and rename the two files.  Then you can start
 another Emacs without clobbering those files, and use it to examine them.

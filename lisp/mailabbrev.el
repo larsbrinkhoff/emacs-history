@@ -70,7 +70,7 @@
 ;;; (This is bogus because mail-delivery programs want commas, not spaces,
 ;;; but that's what the file format is, so we have to live with it.)
 ;;;
-;;; If you like, you can call the function define-mail-alias to define your
+;;; If you like, you can call the function define-mail-abbrev to define your
 ;;; mail aliases instead of using a .mailrc file.  When you call it in this
 ;;; way, addresses are separated by commas.
 ;;;
@@ -80,7 +80,7 @@
 ;;; this.  One solution to this, if you are on a system whose /bin/mail doesn't
 ;;; work that way, (and you still want to be able to /bin/mail to send mail in
 ;;; addition to emacs) is to define minimal aliases (without full names) in
-;;; your .mailrc file, and use define-mail-alias to redefine them when sending
+;;; your .mailrc file, and use define-mail-abbrev to redefine them when sending
 ;;; mail from emacs; this way, mail sent from /bin/mail will work, and mail
 ;;; sent from emacs will be pretty.
 ;;;
@@ -92,7 +92,7 @@
 ;;;     fred, ethyl, larry, curly, moe
 ;;;
 ;;; Aliases may also contain forward references; the alias of "everybody" can
-;;; preceed the aliases of "group1" and "group2".
+;;; precede the aliases of "group1" and "group2".
 ;;;
 ;;; This code also understands the "source" .mailrc command, for reading
 ;;; aliases from some other file as well.
@@ -209,7 +209,7 @@ no aliases, which is represented by this being a table with no entries.)")
 		     (start (progn (skip-chars-forward " \t") (point))))
 		(end-of-line)
 ;		(message "** %s \"%s\"" name (buffer-substring start (point)))(sit-for 1)
-		(define-mail-alias
+		(define-mail-abbrev
 		    name
 		    (buffer-substring start (point))
 		    t))))
@@ -227,7 +227,7 @@ no aliases, which is represented by this being a table with no entries.)")
 This has to contain a comma, so \", \" is a reasonable value.  You might 
 also want something like \",\\n    \" to get each address on its own line.")
 
-;; define-mail-alias sets this flag, which causes mail-resolve-all-aliases
+;; define-mail-abbrev sets this flag, which causes mail-resolve-all-aliases
 ;; to be called before expanding abbrevs if it's necessary.
 (defvar mail-abbrev-aliases-need-to-be-resolved t)
 
@@ -235,8 +235,8 @@ also want something like \",\\n    \" to get each address on its own line.")
 ;; stuff parsed from the .mailrc file.
 ;;
 ;;;###autoload
-(defun define-mail-alias (name definition &optional from-mailrc-file)
-  "Define NAME as a mail-alias that translates to DEFINITION.
+(defun define-mail-abbrev (name definition &optional from-mailrc-file)
+  "Define NAME as a mail-abbrev that translates to DEFINITION.
 If DEFINITION contains multiple addresses, separate them with commas."
   ;; When this is called from build-mail-abbrevs, the third argument is
   ;; true, and we do some evil space->comma hacking like /bin/mail does.
@@ -362,7 +362,7 @@ turned on.")
 
 (defvar mail-mode-header-syntax-table
   (let ((tab (copy-syntax-table text-mode-syntax-table)))
-    ;; This makes the characters "@%!._-" be considered symbol-consituents
+    ;; This makes the characters "@%!._-" be considered symbol-constituents
     ;; but not word-constituents, so forward-sexp will move you over an
     ;; entire address, but forward-word will only move you over a sequence
     ;; of alphanumerics.  (Clearly the right thing.)
@@ -460,7 +460,8 @@ characters which may be a part of the name of a mail-alias.")
 	     ;; the mail-mode-header-syntax-table.
 
 	     (set-syntax-table mail-mode-header-syntax-table)
-	     (or (eq (char-syntax last-command-char) ?_)
+	     (or (and (integerp last-command-char)
+		      (eq (char-syntax last-command-char) ?_))
 		 (let ((pre-abbrev-expand-hook nil)) ; That's us; don't loop.
 		   ;; Use this table so that abbrevs can have hyphens in them.
 		   (set-syntax-table mail-abbrev-syntax-table)

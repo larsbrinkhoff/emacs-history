@@ -292,37 +292,6 @@ s/w project life cycle.	 We specialize in UNIX, GNU Development Tools
 
 Updated: 4/29/91
 
-Equivalent Software HB		<ingwa@isy.liu.se>
-Repslagaregatan 34	     or <jonas-y@isy.liu.se>
-582 22	Linkoping
-SWEDEN
-+46  (0)13  13 54 21
-
-Equivalent Software HB is the worlds second(?) company dedicated to
-supporting free UNIX software.	The owners have more than 5 years of
-UNIX experience, both as system adminstrators and programmers.	We
-also have extensive experience in maintaining the GNU programs, both
-administrating it and fixing bugs.
-
-Services offered:
-
- - Installation and custumizing GNU and other free software.  We will
-   make free software as easy to install and use as shrink wrapped
-   programs.
- - Customization and porting.
- - Subscriptions to new versions which we will send monthly or with
-   any other interval.
- - Finding, Recommending and Investigation of free software in any
-   area of the customers choise.
- - Regular consulting.	We prefer smaller jobs, but are willing to
-   consider larger ones.  We can work through the Internet, but prefer
-   jobs in Sweden.
-
-Rates: For software items, request our price list.
-       For consulting, 450 SEK/hour.
-
-Entered: 2/14/92
-
 Free Software Association of Germany
 Michaela Merz
 Heimatring 19
@@ -496,7 +465,7 @@ Qualifications: BS Math/CS 1985: Carnegie Mellon University
 	customization in universities and industry.  Extensive
 	troubleshooting and user support experience.
 
-Updated:10/10/91
+Updated: 10/10/91
 
 Scott J. Kramer		<sjk@aura.nbn.com>
 P.O. Box 3392
@@ -633,7 +602,7 @@ Experience: Installed and supported these + other gnu programs in our
 Degrees: Master of Engineering in CS. Currently working towards a PhD
 	 in Distributed computing and programming languages.
 
-Updated: 1 Dec 1991
+Updated: 1 Dec 91
 
 Mojave Systems		<mojsys!support@uunet.uu.net>
 1254 Harvard Avenue
@@ -677,7 +646,7 @@ Unix Free software: X11, GNU, TeX, etc.
 
 Rates: $150/hour
 
-Updated: Dec 1991
+Updated: Dec 91
 
 Adam J. Richter <adam@soda.berkeley.edu>	...!ucbvax!soda!adam
 409 Evelyn Avenue, Apartment 312		(510) 528-3209
@@ -719,7 +688,38 @@ Experience: 11 years of Unix work. Heavy on System administration.
 	I have supported VAxes, HP's with HPUX, HP's with 4.3 BSD,
 	Sequent's, Next's and a few other misc. machines.
 
-Updated: 28 Oct 1991
+Updated: 28 Oct 91
+
+Signum Support AB		<info@signum.se>
+Box 2044     _			...!seunet!signum!info
+S-580 02 Linkoping, Sweden
++46 13 21 46 00 voice
++46 13 21 47 00 fax
+
+Signum Support AB is a company dedicated to supporting, developing
+and distributing free software for, including but not limited to,
+UNIX systems. The people behind Signum Support AB have many years
+of general UNIX experience, both as system administrators and as
+programmers, and also extensive experience in maintaining the GNU
+programs, both administrating it and finding and fixing bugs.
+
+Services offered:
+
+ - Installation and customizing GNU and other free software.  We will
+   make free software as easy to install and use as shrink wrapped
+   programs.
+ - Warranty protection. 
+ - Customization and porting.
+ - Subscriptions to new versions which we will send monthly or with
+   any other interval.
+ - Finding, Recommending and Investigation of free software in any
+   area of the customers choise.
+ - Regular consulting.
+
+Rates: For software items, request our price list.
+       For consulting, 400-800 SEK/hour.
+
+Entered: 11 Jun 93
 
 Steve Simmons		<scs@lokkur.dexter.mi.us>
 Inland Sea

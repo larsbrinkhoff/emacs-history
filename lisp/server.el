@@ -98,6 +98,11 @@ When a buffer is marked as \"done\", it is removed from this list.")
 ;; Changing major modes should not erase this local.
 (put 'server-buffer-clients 'permanent-local t)
 
+(defvar server-window nil
+  "*The window to use for selecting Emacs server buffers.
+If nil, use the selected window.
+If it is a frame, use the frame's selected window.")
+
 (defvar server-temp-file-regexp "^/tmp/Re\\|/draft$"
   "*Regexp which should match filenames of temporary files
 which are deleted and reused after each edit
@@ -183,7 +188,7 @@ Prefix arg means just kill any existing server communications subprocess."
       (server-visit-files files client)
       ;; CLIENT is now a list (CLIENTNUM BUFFERS...)
       (setq server-clients (cons client server-clients))
-      (switch-to-buffer (nth 1 client))
+      (server-switch-buffer (nth 1 client))
       (run-hooks 'server-switch-hook)
       (message (substitute-command-keys
 		"When done with a buffer, type \\[server-edit].")))))
@@ -294,6 +299,10 @@ starts server process and that is all.  Invoked by \\[server-edit]."
 (defun server-switch-buffer (next-buffer)
   "Switch to another buffer, preferably one that has a client.
 Arg NEXT-BUFFER is a suggestion; if it is a live buffer, use it."
+  (cond ((windowp server-window)
+	 (select-window server-window))
+	((framep server-window)
+	 (select-window (frame-selected-window server-window))))
   (if next-buffer
       (if (and (bufferp next-buffer)
 	       (buffer-name next-buffer))

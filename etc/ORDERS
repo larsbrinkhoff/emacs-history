@@ -172,7 +172,7 @@ The tape includes source code for:
 * GNU time
 * GNU tput (a portable way to allow shell scripts to use special terminal
   capabilities)
-* Taylor UUCP (the GNU implemetation of the UUCP communication suite)
+* Taylor UUCP (the GNU implementation of the UUCP communication suite)
 * wdiff (report diffs on a word by word basis)
 * GNU fileutils (chgrp, chmod, chown, cp, dd, df, du, install, ln, ls, mkdir,
   mkfifo, mknod, mktime, mv, mvdir, rm, rmdir, touch & vdir)
@@ -195,6 +195,7 @@ GNU Experimental Tape
 The tape includes source code for:
 * GCC 2 (the GNU C/C++/Objective-C Compiler with many new features)
 * The Manual `Using and Porting GNU CC 2', as Texinfo source
+* Compiled binaries of GCC for Sun Solaris systems
 * GNU binary file utilities 2 (ar, gprof, ld, nm, ranlib, size, & strip -
   completely rewritten to use the BFD library)
 * BFD (Binary File Descriptor Library)

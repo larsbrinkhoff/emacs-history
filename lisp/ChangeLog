@@ -1,3 +1,342 @@
+Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.14 released.
+
+Thu Jun 17 19:41:01 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-citation-hook): New hook var.
+	(mail-yank-original): Use that hook if not nil.
+
+	* sc.el: Change usage comment.
+
+Thu Jun 17 18:57:01 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* faces.el (make-face-bold, make-face-italic,
+	make-face-bold-italic, make-face-unbold, make-face-unitalic):
+	Always pass the frame parameter to internal-try-face-font; we only
+	want to set the face for this frame.
+
+	* faces.el (make-face-bold, make-face-italic,
+	make-face-bold-italic, make-face-unbold, make-face-unitalic):
+	Fix error messages.
+
+Thu Jun 17 00:12:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* faces.el (set-face-background-pixmap, face-background-pixmap):
+	Functions commented out.
+
+	* mouse.el (mouse-start-secondary): New function.
+	(mouse-set-secondary, mouse-drag-secondary): New functions.
+	(mouse-kill-secondary, mouse-secondary-save-then-kill): New functions.
+
+	* term/vt200.el: Translate F11 (ESC [ 23 ~) to ESC.
+	* term/vt201.el, term/vt220.el, term/vt240.el: Likewise.
+
+	* autoload.el (generate-file-autoloads): Undo previous change
+	because make-docfile requires defvar doc string to start on first line.
+
+	* cplus-md.el: Renamed from c++-mode.el.
+	* cplus-md1.el: Renamed from c++-mode-1.el.
+
+	* vc.el (vc-rename-file): Remove periods from error messages.
+	(vc-backend-logentry-check, vc-revert-buffer): Likewise.
+	(vc-retrieve-snapshot, vc-create-snapshot): Likewise.
+	(vc-diff, vc-finish-logentry, vc-steal-lock): Likewise.
+	(vc-register, vc-next-action-on-file, vc-registration-error): Likewise.
+	(vc-cancel-version): Add space to end of question.
+
+	* menu-bar.el (mouse-menu-choose-yank): New function.
+	Put it in the edit menu.
+	(yank-menu-length): New variable.
+
+Wed Jun 16 20:16:10 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* subr.el (event-basic-type): Deal with listy events properly.
+
+Wed Jun 16 23:06:58 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* autoload.el (make-autoload): Use memq once instead eq twice.
+	(generate-file-autoloads): For non-autoloads, copy the defn textually
+	rather than printing it after reading.
+
+	* autoload.el (generate-autoload-cookie, update-autoloads-here):
+	Doc fixes.
+
+Wed Jun 16 17:21:51 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* frame.el (set-frame-configuration): Don't try to set a frame's
+	minibuffer.  This parameter can't be changed, so that would signal
+	an error.
+
+Wed Jun 16 13:42:25 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* assoc.el (aput): Doc fix.
+
+	* ls-lisp.el (insert-directory): If no handler, convert SWITCHES
+	from a string to a list of characters.
+
+	* disass.el (disassemble-internal): If function is autoload, load it.
+
+	* lisp.el (parens-require-spaces): Var renamed and sense changed.
+	(insert-parentheses): Corresponding changes.
+
+	* rmailout.el (rmail-output): Use insert-file-contents to look at
+	beginning of output file.
+
+	* term/x-win.el (x-switch-definitions): Fix -iconic.
+
+	* bytecomp.el (byte-compile-file-form-defmumble): Typo in prev change.
+
+Tue Jun 15 03:56:34 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* server.el (server-process-filter): Use server-switch-buffer.
+
+	* gud.el (gud-xdb-directories): Renamed from gud-xdb-paths.
+	Defvar moved earlier.  All uses changed.
+	(gud-xdb-debugger-startup): Rename local var `paths'.
+	(gud-xdb-file-name): Likewise.
+
+	* inf-lisp.el (inferior-lisp-buffer): Move defvar earlier.
+
+	* mailalias.el (define-mail-alias): Remove excess whitespace better.
+
+	* mailabbrev.el (define-mail-abbrev): Renamed from define-mail-alias.
+	(build-mail-abbrevs): Use new name.
+
+	* bytecomp.el (byte-compile-file-form-defmumble): Use defalias
+	for named function, even if no doc string.
+
+	* dired.el (dired-repeat-over-lines): Going fwd, skip new lines
+	that FUNCTION inserts after the current line.
+	Going backwd, no need for dired-move-to-filename each time.
+
+Tue Jun 15 21:10:22 1993  Shane Hartman  (shane@nugget.spr.com)
+
+        * gud.el (xdb): New debugger supported (xdb under HPUX-PARISC).
+        (gud-xdb-debugger-startup): New function.
+        (gud-xdb-file-name, gud-xdb-accumulation): New functions.
+        (gud-xdb-marker-filter, gud-xdb-paths, gud-xdb-find-file): New.
+
+Mon Jun 14 14:53:25 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lisp.el (parens-dont-require-spaces): New variable.
+	(insert-parentheses): Obey that variable.
+
+	* emerge.el (emerge-make-diff3-list): Pass ancestor second.
+	(emerge-extract-diffs3): Replace group-1 with group-2.
+	(emerge-handle-local-variables): Pass no arg to hack-local-variables.
+
+	* picture.el (picture-replace-match): New function.
+	* dabbrev.el (dabbrev-expand): Do all changes with replace-match.
+	In picture-mode, use picture-replace-match instead.
+
+Mon Jun 14 10:57:43 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* holidays.el: Eval calendar-holidays; don't just use its value.
+
+	* complete.el: (provide 'complete).
+
+Mon Jun 14 03:10:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.el (balance-windows): Total rewrite.
+
+Sun Jun 13 00:33:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* bytecomp.el (byte-compile-file): Undo previous change.
+	(batch-byte-recompile-directory): Doc fix.
+
+	* isearch.el (isearch-highlight): If no face `isearch', use `region'.
+
+	* c-mode.el (c-indent-line): Call c-backward-to-start-of-if
+	in the case of else following a close brace.
+
+	* man.el (Man-getpage-in-background): Use TERM=dumb to prevent
+	terminal control sequences in the output.
+
+Sat Jun 12 16:58:04 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (abbreviate-file-name): Match home dir with no /
+	if nothing else follows.
+
+	* finder.el (finder-find-library): New function.
+	(finder-commentary): Use it.
+
+	* forms.el, forms-pass.el, forms-d2.el, forms-dat.el, forms.README:
+	Moved from subdir forms-mode.  Subdir deleted.
+
+Sat Jun 12 16:03:03 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el (forms--change-commands): 
+	Use (function (lambda ...)) instead of '(lambda...).
+
+	* forms.el: Provide `forms' as well as `forms-mode'.
+	(forms-new-record-filter, forms-modified-record-filter): Add defvars.
+
+Sat Jun 12 02:53:34 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (make-directory): By default create dir default-dir. 
+
+Fri Jun 11 11:46:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* vc.el (vc-backend-diff): Always use -q option.
+
+	* files.el (file-truename): Don't use expand-file-name to merge
+	a link target into the previous dir.  Handle .. and . explicitly.
+
+	* env.el (setenv): Treat case as significant.
+
+	* mailabbrev.el (sendmail-pre-abbrev-expand-hook):
+	If last-command-char is not a character, don't check char-syntax.
+
+	* inf-lisp.el: Doc fixes. 
+	(run-lisp): Add autoload.
+	(inferior-lisp-mode-map): Explicitly make local prefix keys.
+
+	* cmulisp.el: File deleted.
+
+	* server.el (server-window): New variable.
+	(server-switch-buffer): Use it.
+
+	* flow-ctrl.el (enable-flow-control): Don't alter the 8-bit flag.
+
+	* man.el (Man-filter-list): Add an element for X man pages.
+	(Man-goto-page): Continue past errors in Man-build-references-alist.
+
+	* rmailout.el (rmail-output-to-rmail-file): Use the smart default
+	in the prompt.
+
+	* register.el (view-register): Handle file name values.
+
+	* etags.el (etags-tags-completion-table): When skipping the noise
+	before the tag name, let it end with any char not allowed in a tag.
+
+	* files.el (cd): Use file-name-absolute-p.
+	(cd-absolute): No longer interactive.
+
+	* echistory.el (electric-history-map): Don't use fillarray;
+	make default bindings instead.  Bind up, down, home, next, prior.
+
+Fri Jun 11 05:44:40 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* frame.el (frame-initialize): Remember to actually traverse
+	initial-frame-alist.
+
+	* gud.el (gud-last-last-frame): New variable.
+	(gud-display-frame): Save the frame we displayed in
+	gud-last-last-frame.
+	(gud-refresh): Force gud-display-frame to jump to the last frame
+	displayed, even if it has already done so once.
+
+	* man.el (manual-entry): Recognize the subject(section) syntax.
+
+	* picture.el (move-to-column-force): If column is negative, go
+	flush left.
+
+	* simple.el (hscroll-point-visible): Work as documented in the
+	docstring for hscroll-step.
+
+Fri Jun 11 00:04:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lisp-mode.el (lisp-indent-function): Look for either
+	lisp-indent-hook or lisp-indent-function property.
+
+	* files.el (make-backup-files): Doc fix.
+
+	* mouse.el (mouse-set-mark-fast): New function.
+	(mouse-show-mark): New function.
+	(mouse-kill-ring-save, mouse-save-then-kill): Use them.
+	(mouse-save-then-kill): Don't let kill-region alter this-command.
+	Check last-command accordingly.
+	(mouse-split-window-vertically): Handle scroll bar events.
+
+Thu Jun 10 13:41:06 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-primary-inbox-list): Use defvar, not defconst.
+
+	* files.el (basic-save-buffer): Cal auto-save-mode with t as arg
+	if and only if auto save was off and default is on.
+	(set-visited-file-name): Likewise.
+
+	* simple.el (append-to-buffer): Interactively, supply all 3 args.
+	Allow nonexistent buffers.
+
+	* files.el (abbreviate-file-name): Make abbreviated-home-dir
+	from `~/', not from just `~'.
+	(hack-one-local-variable): Query for ...-hook(s) and ..-function(s)
+	as the `eval' variable.
+
+	* ispell.el: Doc fixes.
+	(ispell-command, ispell-command-options): New defvars.
+	(start-ispell): Use them.
+
+	* ange-ftp.el (ange-ftp-multi-msgs): Add 331-.
+
+	* man.el (Man-mode): Run Man-mode-hook.
+
+	* bibtex.el (bibtex-mode-map): Use tex-insert-quote, not TeX-...
+
+Thu Jun 10 15:16:11 1993  Shane Hartman  (shane@nugget.spr.com)
+
+        * c++-mode.el (calculate-c++-indent): Respect
+        c-continued-brace-offset (as in c-mode.el).
+
+Thu Jun 10 06:39:46 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* frame.el (frame-initialize): When deleting geometry
+	specifications from initial-frame-alist, remember that they may
+	occur more than once, and do, if the -geometry option was
+	specified as well as a .geometry resource.
+
+	* scroll-bar.el (scroll-bar-mode): Variable deleted.
+	(scroll-bar-mode): Function changed to consult default-frame-alist
+	instead of the variable.
+
+	* gnus.el (gnus-start-news-server): If no server has been
+	specificed, but gnus-nntp-service is nil, don't ask for a server
+	name; use the local host.
+
+	* ange-ftp.el (ange-ftp-make-directory): Take second optional
+	argument parents, like the original.  Implement it.
+
+	* gnus.el (gnus-newsrc-to-gnus-format): Change regexp which
+	matches .newsrc lines for better performance under the new regexp
+	routines.
+
+Thu Jun 10 13:40:44 1993  Dave Gillespie  (daveg@synaptics.com)
+
+	* bytecomp.el: Bug fixes and upgrade to match Zawinski's v2.10.
+	(byte-compile-dest-file): Added support for emacs-lisp-file-regexp.
+	(byte-recompile-directory): Several things involving `noninteractive'.
+	(byte-compile-file): Changed prompting in read-file-name.
+	(byte-compile-insert-header): Put a magic number at top of .elc files,
+	fixed backwards test of byte-compile-compatibility.
+	(byte-compile-form, byte-defop-compiler19, byte-compile-list,
+	byte-compile-concat, byte-compile-insert): Likewise.
+	(byte-compile-condition-case): Added checking for unknown conditions.
+	(batch-byte-recompile-directory): New function.
+
+Wed Jun  9 05:43:49 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* compile.el (compilation-error-list): When we haven't yet
+	generated a marker for the source position of an error message,
+	store (FILENAME . LINE-NUMBER), not ((DIRECTORY . FILE)
+	LINE-NUMBER).  Doc fix.
+	(next-error, compilation-parse-errors): Adjusted appropriately.
+
+	* scroll-bar.el (scroll-bar-set-window-start): Remember that the
+	scroll bar numbers reflect the accessible region of the buffer,
+	not the entire buffer.
+
+Tue Jun  8 12:28:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dired.el (dired-flag-auto-save-files): Ignore `*' added by ls -F.
+
+	* sc.el (sc-mark): Use mark-marker.
+
+Tue Jun  8 08:28:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.13 released.
+
 Tue Jun  8 00:40:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* fortran.el (fortran-indent-new-line): Renamed from
@@ -6,6 +345,14 @@ Tue Jun  8 00:40:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	* mouse.el (mouse-drag-region-1): Un-comment-out this function.
 
 	* info.el (Info-follow-reference): Fix completion defaulting.
+
+Mon Jun  7 21:47:37 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+        * calendar.el (calendar-current-time-zone): Change variable names
+        to make them more readable.
+        (calendar-time-zone, calendar-standard-time-zone-name,
+        calendar-daylight-time-zone-name, calendar-daylight-savings-ends,
+        calendar-daylight-savings-starts): Don't autload them.
 
 Mon Jun  7 00:25:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -164,6 +511,13 @@ Fri Jun  4 01:16:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* flow-ctrl.el (enable-flow-control): Doc fix.
 
+Thu Jun  3 20:01:19 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+        * calendar.el (calendar-holidays): Quote it to delay evaluation
+        until it's needed.
+
+        * holidays.el (calendar-holiday-list): Eval calendar-holidays.
+
 Thu Jun  3 00:47:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* sendmail.el (mail-do-fcc): Omit first 2 lines when appending
@@ -235,6 +589,27 @@ Wed Jun  2 12:56:57 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* frame.el (frame-initialize): Delete geometry parms
 	from initial-frame-alist.
+
+Wed Jun  2 09:59:02 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+        * calendar.el (calendar-daylight-savings-starts): Mention use of
+        nil value in documentation string.
+        (calendar-daylight-time-offset): New variable.
+        (calendar-daylight-savings-switchover-time):  New variable.
+        (calendar-mode): Mention them.
+        (calendar-time-zone, calendar-print-astro-day-number,
+        calendar-time-display-form): Change Universal Time (UT) to
+        Coordinated Universal Time (UTC). 
+
+        *solar.el (solar-setup, solar-ephemeris-time, sunrise-sunset): Change
+        Universal Time (UT) to Coordinated Universal Time (UTC).
+        (solar-time-string): Use calendar-daylight-time-offset instead of
+        1 hr, and use calendar-daylight-savings-switchover-time instead of
+        midnight.  Add an optional parameter to allow forcing the use of
+        standard or daylight savings time.  Fix code so it works in
+        southern hemisphere (start of dst precedes end of dst in a
+        calendar year) and when dst either starts or ends in a calendar
+        year, but not both.
 
 Tue Jun  1 17:40:30 1993  Ken  Manheimer  (klm@coil.nist.gov)
 
@@ -332,7 +707,7 @@ Mon May 31 20:29:00 1993  Richard Stallman  (rms@wookumz.gnu.ai.mit.edu)
 
 Mon May 31 19:59:12 1993  Junio Hamano  (junio@twinsun.com)
 
-	* lisp/window.el (count-windows): PROC argument of
+	* window.el (count-windows): PROC argument of
 	walk-windows takes an argument.
 
 Mon May 31 00:20:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)

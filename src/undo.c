@@ -26,6 +26,8 @@ and this notice must be preserved on all copies.  */
 /* Last buffer for which undo information was recorded.  */
 Lisp_Object last_undo_buffer;
 
+Lisp_Object Qinhibit_read_only;
+
 /* Record an insertion that just happened or is about to happen,
    for LENGTH characters at position BEG.
    (It is possible to record an insertion before or after the fact
@@ -94,7 +96,7 @@ record_delete (beg, length)
   XFASTINT (lend) = beg + length;
 
   /* If point isn't at start of deleted range, record where it is.  */
-  if (PT != sbeg)
+  if (PT != XFASTINT (sbeg))
     current_buffer->undo_list
       = Fcons (make_number (PT), current_buffer->undo_list);
 
@@ -283,10 +285,11 @@ truncate_undo_list (list, minsize, maxsize)
 DEFUN ("primitive-undo", Fprimitive_undo, Sprimitive_undo, 2, 2, 0,
   "Undo N records from the front of the list LIST.\n\
 Return what remains of the list.")
-  (count, list)
-     Lisp_Object count, list;
+  (n, list)
+     Lisp_Object n, list;
 {
-  register int arg = XINT (count);
+  int count = specpdl_ptr - specpdl;
+  register int arg = XINT (n);
 #if 0  /* This is a good feature, but would make undo-start
 	  unable to do what is expected.  */
   Lisp_Object tem;
@@ -297,6 +300,10 @@ Return what remains of the list.")
   if (NILP (tem))
     list = Fcdr (list);
 #endif
+
+  /* Don't let read-only properties interfere with undo.  */
+  if (NILP (current_buffer->read_only))
+    specbind (Qinhibit_read_only, Qt);
 
   while (arg > 0)
     {
@@ -325,7 +332,7 @@ Return what remains of the list.")
 
 		  high = Fcar (cdr);
 		  low = Fcdr (cdr);
-		  mod_time = (high << 16) + low;
+		  mod_time = (XFASTINT (high) << 16) + XFASTINT (low);
 		  /* If this records an obsolete save
 		     (not matching the actual disk file)
 		     then don't mark unmodified.  */
@@ -336,9 +343,10 @@ Return what remains of the list.")
 #endif /* CLASH_DETECTION */
 		  Fset_buffer_modified_p (Qnil);
 		}
-	      if (EQ (car, Qnil))
+#ifdef USE_TEXT_PROPERTIES
+	      else if (EQ (car, Qnil))
 		{
-		  /* Element (t prop val beg . end) records property change.  */
+		  /* Element (nil prop val beg . end) is property change.  */
 		  Lisp_Object beg, end, prop, val;
 
 		  prop = Fcar (cdr);
@@ -350,6 +358,7 @@ Return what remains of the list.")
 
 		  Fput_text_property (beg, end, prop, val, Qnil);
 		}
+#endif /* USE_TEXT_PROPERTIES */
 	      else if (XTYPE (car) == Lisp_Int && XTYPE (cdr) == Lisp_Int)
 		{
 		  /* Element (BEG . END) means range was inserted.  */
@@ -399,11 +408,14 @@ Return what remains of the list.")
       arg--;
     }
 
-  return list;
+  return unbind_to (count, list);
 }
 
 syms_of_undo ()
 {
+  Qinhibit_read_only = intern ("inhibit-read-only");
+  staticpro (&Qinhibit_read_only);
+
   defsubr (&Sprimitive_undo);
   defsubr (&Sundo_boundary);
 }

@@ -362,7 +362,7 @@ even if a buffer with that name exists.")
     {
       sprintf (number, "<%d>", ++count);
       gentemp = concat2 (name, build_string (number));
-      tem = Fstring_equal (name, ignore);
+      tem = Fstring_equal (gentemp, ignore);
       if (!NILP (tem))
 	return gentemp;
       tem = Fget_buffer (gentemp);
@@ -585,7 +585,7 @@ If BUFFER is omitted or nil, some interesting buffer is returned.")
       if (XSTRING (XBUFFER (buf)->name)->data[0] == ' ')
 	continue;
       if (NILP (visible_ok))
-	tem = Fget_buffer_window (buf, Qnil);
+	tem = Fget_buffer_window (buf, Qt);
       else
 	tem = Qnil;
       if (NILP (tem))
@@ -1106,11 +1106,7 @@ list_buffers_1 (files)
 
   current_buffer->read_only = Qt;
   set_buffer_internal (old);
-/* Foo.  This doesn't work since temp_output_buffer_show sets point to 1
-  if (desired_point)
-    XBUFFER (Vstandard_output)->text.pointloc = desired_point;
- */
-  return Qnil;
+  return make_number (desired_point);
 }
 
 DEFUN ("list-buffers", Flist_buffers, Slist_buffers, 0, 1, "P",
@@ -1124,9 +1120,18 @@ The R column contains a % for buffers that are read-only.")
   (files)
      Lisp_Object files;
 {
-  internal_with_output_to_temp_buffer ("*Buffer List*",
-				       list_buffers_1, files);
-  return Qnil;
+  int count = specpdl_ptr - specpdl;
+  Lisp_Object desired_point;
+
+  desired_point =
+    internal_with_output_to_temp_buffer ("*Buffer List*",
+					 list_buffers_1, files);
+
+  record_unwind_protect (save_excursion_restore, save_excursion_save ());
+  Fset_buffer (build_string ("*Buffer List*"));
+  SET_PT (XINT (desired_point));
+  
+  return unbind_to (count, Qnil);
 }
 
 DEFUN ("kill-all-local-variables", Fkill_all_local_variables, Skill_all_local_variables,
@@ -1709,7 +1714,7 @@ OVERLAY.")
 
 
 DEFUN ("overlays-at", Foverlays_at, Soverlays_at, 1, 1, 0,
-  "Return a list of the overays that contain position POS.")
+  "Return a list of the overlays that contain position POS.")
   (pos)
      Lisp_Object pos;
 {

@@ -203,7 +203,7 @@ Set it to either \`yes' or \`no'."
             val=`eval echo '$'$index`
 	  fi
 	  x_includes="${val}"
-	  C_SWITCH_X_SITE="-I${x_includes}"
+	  C_SWITCH_X_SITE="-I\"${x_includes}\""
         ;;
 	"x_libraries" )
 	  ## If the value was omitted, get it from the next argument.
@@ -219,7 +219,7 @@ Set it to either \`yes' or \`no'."
             val=`eval echo '$'$index`
 	  fi
 	  x_libraries="${val}"
-	  LD_SWITCH_X_SITE="-L${x_libraries}"
+	  LD_SWITCH_X_SITE="-L\"${x_libraries}\""
         ;;
 
 	## Should this use the "development configuration"?
@@ -228,7 +228,7 @@ Set it to either \`yes' or \`no'."
 	  inst_paths='#disabled# '
 	;;
 
-	## Has the user specifiec an installation prefix?
+	## Has the user specified an installation prefix?
 	"prefix" )
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
@@ -245,7 +245,7 @@ Set it to either \`yes' or \`no'."
 	  prefix="${val}"
         ;;
 
-	## Has the user specifiec an installation prefix?
+	## Has the user specified an installation prefix?
 	"exec_prefix" )
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
@@ -365,21 +365,11 @@ if [ `pwd` != `(cd ${srcdir} && pwd)` ] \
 fi
 
 ### Make the necessary directories, if they don't exist.
-if [ ! -d ./src ]; then
-  mkdir ./src
-fi
-if [ ! -d ./lib-src ]; then
-  mkdir ./lib-src
-fi
-if [ ! -d ./cpp ]; then
-  mkdir ./cpp
-fi
-if [ ! -d ./oldXMenu ]; then
-  mkdir ./oldXMenu
-fi
-if [ ! -d ./etc ]; then
-  mkdir ./etc
-fi
+for dir in ./src ./lib-src ./cpp ./oldXMenu ./etc ; do
+  if [ ! -d ${dir} ]; then
+    mkdir ${dir}
+  fi
+done
 
 #### Given the configuration name, set machfile and opsysfile to the
 #### names of the m/*.h and s/*.h files we should use.
@@ -493,6 +483,11 @@ case "${configuration}" in
     machine=cydra5 opsys=usg5-3
   ;;
 
+  ## Data General AViiON Machines
+  m88k-dg-dgux* )
+    machine=aviion opsys=dgux
+  ;;
+
   ## DECstations
   mips-dec-ultrix[0-3].* | mips-dec-ultrix4.0 | mips-dec-bsd4.2 )
     machine=pmax opsys=bsd4-2
@@ -507,6 +502,9 @@ case "${configuration}" in
   ## Motorola Delta machines
   m68*-motorola-sysv* )
     machine=delta opsys=usg5-3
+  ;;
+  m88k-motorola-sysv4* )
+    machine=delta88k opsys=usg5-4
   ;;
   m88k-motorola-sysv* | m88k-motorola-m88kbcs* )
     machine=delta88k opsys=usg5-3
@@ -552,9 +550,13 @@ case "${configuration}" in
   m68*-hp-bsd* )
     machine=hp9000s300 opsys=bsd4-3
   ;;
-  ## HP/UX 8 doesn't run on these machines, so use HP/UX 7.
+  ## HP/UX 7, 8 and 9 are supported on these machines.
   m68*-hp-hpux* )
-    machine=hp9000s300 opsys=hpux
+    case "`uname -r`" in
+      *.08.* ) machine=hp9000s300 opsys=hpux8 ;;
+      *.09.* ) machine=hp9000s300 opsys=hpux9 ;;
+      *) machine=hp9000s300 opsys=hpux ;;
+    esac
   ;;
 
   ## HP 9000 series 700 and 800, running HP/UX
@@ -633,22 +635,15 @@ case "${configuration}" in
   i[34]86-intsys-sysv* )
     machine=is386 opsys=usg5-2-2
   ;;
-  ## Intel 386 machines where we don't care about the manufacturer
-  i[34]86-*-* )
-    machine=intel386
-    case "${configuration}" in
-      *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
-      *-isc2.2 )		opsys=isc2-2 ;;
-      *-isc* )			opsys=isc3-0 ;;
-      *-esix5* )		opsys=esix5r4 ;;
-      *-esix* )			opsys=esix ;;
-      *-xenix* )		opsys=xenix ;;
-      *-linux* )		opsys=linux ;;
-      *-sco3.2v4* )		opsys=sco4 ;;
-      *-bsd386* )		opsys=bsd386 ;;
-      *-386bsd )	        opsys=386bsd ;;
-      ## Otherwise, we'll fall through to the generic opsys code at the bottom.
-    esac
+
+  ## Prime EXL
+  i386-prime-sysv* )
+    machine=i386 opsys=usg5-3
+  ;;
+
+  ## Sequent Symmetry
+  i386-sequent-bsd* )
+    machine=symmetry opsys=bsd4-3
   ;;
 
   ## Intel 860
@@ -740,11 +735,6 @@ case "${configuration}" in
     machine=plexus opsys=usg5-2
   ;;
 
-  ## Prime EXL
-  i386-prime-sysv* )
-    machine=i386 opsys=usg5-3
-  ;;
-
   ## Pyramid machines
   ## I don't really have any idea what sort of processor the Pyramid has,
   ## so I'm assuming it is its own architecture.
@@ -758,10 +748,6 @@ case "${configuration}" in
   ;;
   ns32k-sequent-bsd4.3 )
     machine=sequent opsys=bsd4-3
-  ;;
-  ## Sequent Symmetry
-  i386-sequent-bsd* )
-    machine=symmetry opsys=bsd4-3
   ;;
 
   ## SONY machines
@@ -870,6 +856,24 @@ case "${configuration}" in
     machine=wicat opsys=usg5-2
   ;;
 
+  ## Intel 386 machines where we don't care about the manufacturer
+  i[34]86-*-* )
+    machine=intel386
+    case "${configuration}" in
+      *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
+      *-isc2.2 )		opsys=isc2-2 ;;
+      *-isc* )			opsys=isc3-0 ;;
+      *-esix5* )		opsys=esix5r4 ;;
+      *-esix* )			opsys=esix ;;
+      *-xenix* )		opsys=xenix ;;
+      *-linux* )		opsys=linux ;;
+      *-sco3.2v4* )		opsys=sco4 ;;
+      *-bsd386* )		opsys=bsd386 ;;
+      *-386bsd )	        opsys=386bsd ;;
+      ## Otherwise, we'll fall through to the generic opsys code at the bottom.
+    esac
+  ;;
+
   * )
     unported=true
   ;;
@@ -929,6 +933,7 @@ dnl checks for programs
 AC_LN_S
 AC_PROG_CPP
 AC_PROG_INSTALL
+AC_PROG_YACC
 
 dnl checks for UNIX variants that set `DEFS'
 
@@ -945,7 +950,7 @@ AC_RETSIGTYPE
 
 dnl checks for functions
 AC_ALLOCA
-AC_HAVE_FUNCS(gettimeofday gethostname dup2 rename)
+AC_HAVE_FUNCS(gettimeofday gethostname dup2 rename closedir)
 
 dnl checks for structure members
 AC_STRUCT_TM
@@ -955,6 +960,7 @@ dnl checks for compiler characteristics
 AC_CONST
 
 dnl checks for operating system services
+AC_LONG_FILE_NAMES
 
 dnl other checks for UNIX variants
 [
@@ -1100,8 +1106,8 @@ echo '
 ' > ${tempcname}
 # The value of CPP is a quoted variable reference, so we need to do this
 # to get its actual value...
-foo=`eval "echo $CPP"`
-eval `${foo} ${tempcname} \
+CPP=`eval "echo $CPP"`
+eval `${CPP} -Isrc ${tempcname} \
        | grep '@configure@' \
        | sed -e 's/^@configure@ \([^=]*=\)\(.*\)$/\1"\2"/'`
 rm ${tempcname}
@@ -1123,6 +1129,23 @@ if [ x"${REL_ALLOC}" = x ]; then
 fi
 
 LISP_FLOAT_TYPE=yes
+
+
+#### Add the X libraries to the list, and check for some functions found there.
+CFLAGS_save="$CFLAGS"
+CFLAGS="${CFLAGS} ${LD_SWITCH_X_SITE}"
+]
+AC_HAVE_LIBRARY(-lXbsd)
+[
+LIBS_save="$LIBS"
+if [ "${HAVE_X11}" = "yes" ] ; then
+  LIBS="-lX11 ${LIBS}"
+fi
+]
+AC_HAVE_FUNCS(XrmSetDatabase random)
+[
+CFLAGS="$CFLAGS_save"
+LIBS="$LIBS_save"
 
 
 #### Find out which version of Emacs this is.

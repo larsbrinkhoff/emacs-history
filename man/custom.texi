@@ -18,20 +18,23 @@ put something in your @file{.emacs} file or other appropriate file to do the
 customization in each session.  @xref{Init File}.
 
 @menu
-* Minor Modes::     Each minor mode is one feature you can turn on
-                     independently of any others.
-* Variables::       Many Emacs commands examine Emacs variables
-                     to decide what to do; by setting variables,
-                     you can control their functioning.
-* Keyboard Macros:: A keyboard macro records a sequence of keystrokes
-                     to be replayed with a single command.
-* Key Bindings::    The keymaps say what command each key runs.
-                     By changing them, you can "redefine keys".
+* Minor Modes::              Each minor mode is one feature you can turn on
+                               independently of any others.
+* Variables::                Many Emacs commands examine Emacs variables
+                               to decide what to do; by setting variables,
+                               you can control their functioning.
+* Keyboard Macros::          A keyboard macro records a sequence of
+                               keystrokes to be replayed with a single
+                               command. 
+* Key Bindings::             The keymaps say what command each key runs.
+                               By changing them, you can "redefine keys".
 * Keyboard Translations::    If your keyboard passes an undesired code
-                     for a key, you can tell Emacs to substitute another code.
-* Syntax::          The syntax table controls how words and expressions
-                     are parsed.
-* Init File::       How to write common customizations in the @file{.emacs} file.
+                               for a key, you can tell Emacs to
+                               substitute another code. 
+* Syntax::                   The syntax table controls how words and
+                                expressions are parsed.
+* Init File::                How to write common customizations in the
+                               @file{.emacs} file. 
 @end menu
 
 @node Minor Modes
@@ -208,6 +211,9 @@ explicitly stated, affects only the current Emacs session.
 
 @node Edit Options
 @subsection Editing Variable Values
+
+These two functions make it easy to display all the user edit options
+and change some of them.
 
 @table @kbd
 @item M-x list-options
@@ -705,17 +711,17 @@ interactive use.  Like every Lisp function, a command has a function
 name which usually consists of lower case letters and hyphens.
 
 @menu
-* Keymaps::        Generalities.  The global keymap.
-* Prefix Keymaps:: Keymaps for prefix keys.
-* Local Keymaps::  Major and minor modes have their own keymaps.
+* Keymaps::          Generalities.  The global keymap.
+* Prefix Keymaps::   Keymaps for prefix keys.
+* Local Keymaps::    Major and minor modes have their own keymaps.
 * Minibuffer Maps::  The minibuffer uses its own local keymaps.
-* Rebinding::      How to redefine one key's meaning conveniently.
-* Init Rebinding:: Rebinding keys with your init file, @file{.emacs}.
-* Function Keys::  Rebinding terminal function keys.
-* Mouse Buttons::  Rebinding mouse buttons in Emacs.
-* Disabling::      Disabling a command means confirmation is required
-                    before it can be executed.  This is done to protect
-                    beginners from surprises.
+* Rebinding::        How to redefine one key's meaning conveniently.
+* Init Rebinding::   Rebinding keys with your init file, @file{.emacs}.
+* Function Keys::    Rebinding terminal function keys.
+* Mouse Buttons::    Rebinding mouse buttons in Emacs.
+* Disabling::        Disabling a command means confirmation is required
+                       before it can be executed.  This is done to protect
+                       beginners from surprises.
 @end menu
 
 @node Keymaps
@@ -1301,11 +1307,12 @@ file} because it specifies how to initialize Emacs for you.  You can use
 the command line switches @samp{-q} and @samp{-u} to tell Emacs whether
 to load an init file, and which one (@pxref{Entering Emacs}).
 
-  There can also be a @dfn{default init file}, which is the library named
-@file{default.el}, found via the standard search path for libraries.  The
-Emacs distribution contains no such library; your site may create one for
-local customizations.  If this library exists, it is loaded whenever you
-start Emacs.  But your init file, if any, is loaded first; if it sets
+  There can also be a @dfn{default init file}, which is the library
+named @file{default.el}, found via the standard search path for
+libraries.  The Emacs distribution contains no such library; your site
+may create one for local customizations.  If this library exists, it is
+loaded whenever you start Emacs (except when you specify @samp{-q}).
+But your init file, if any, is loaded first; if it sets
 @code{inhibit-default-init} non-@code{nil}, then @file{default} is not
 loaded.
 

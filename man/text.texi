@@ -29,16 +29,16 @@ each for a particular text formatter.  Thus, for input to @TeX{}, you would
 use @TeX{} mode; for input to nroff, Nroff mode.
 
 @menu
-* Words::       Moving over and killing words.
-* Sentences::   Moving over and killing sentences.
-* Paragraphs::	Moving over paragraphs.
-* Pages::	Moving over pages.
-* Filling::     Filling or justifying text
-* Case::        Changing the case of text
-* Text Mode::   The major modes for editing text files.
-* Outline Mode::The major mode for editing outlines.
-* TeX Mode::    The major modes for editing input to the formatter TeX.
-* Nroff Mode::  The major mode for editing input to the formatter nroff.
+* Words::         Moving over and killing words.
+* Sentences::     Moving over and killing sentences.
+* Paragraphs::	  Moving over paragraphs.
+* Pages::	  Moving over pages.
+* Filling::       Filling or justifying text.
+* Case::          Changing the case of text.
+* Text Mode::     The major modes for editing text files.
+* Outline Mode::  The major mode for editing outlines.
+* TeX Mode::      The major modes for editing input to the formatter TeX.
+* Nroff Mode::    The major mode for editing input to the formatter nroff.
 @end menu
 
 @node Words
@@ -330,9 +330,9 @@ text it may no longer be properly filled; then you can use the explicit
 fill commands to fill the paragraph again.
 
 @menu
-* Auto Fill::	  Auto Fill mode breaks long lines automatically.
-* Fill Commands:: Commands to refill paragraphs and center lines.
-* Fill Prefix::   Filling when every line is indented or in a comment, etc.
+* Auto Fill::	   Auto Fill mode breaks long lines automatically.
+* Fill Commands::  Commands to refill paragraphs and center lines.
+* Fill Prefix::    Filling when every line is indented or in a comment, etc.
 @end menu
 
 @node Auto Fill
@@ -700,9 +700,10 @@ all back yanks the invisible lines and they remain invisible.
 the hook @code{outline-mode-hook} (@pxref{Hooks}).
 
 @menu
-* Format: Outline Format.	  What the text of an outline looks like.
-* Motion: Outline Motion.	  Special commands for moving through outlines.
-* Visibility: Outline Visibility. Commands to control what is visible.
+* Format: Outline Format.	   What the text of an outline looks like.
+* Motion: Outline Motion.	   Special commands for moving through
+                                     outlines. 
+* Visibility: Outline Visibility.  Commands to control what is visible.
 @end menu
 
 @node Outline Format
@@ -903,9 +904,9 @@ no visible indication of the presence of invisible lines.
 
 @node TeX Mode
 @section @TeX{} Mode
-@cindex TeX mode
-@cindex LaTeX mode
-@cindex SliTeX mode
+@cindex @TeX{} mode
+@cindex La@TeX{} mode
+@cindex Sli@TeX{} mode
 @findex tex-mode
 @findex plain-tex-mode
 @findex latex-mode
@@ -965,7 +966,7 @@ Move forward past the next unmatched close brace (@code{up-list}).
 @end table
 
 @findex tex-insert-quote
-@kindex " @r{(TeX mode)}
+@kindex " @r{(@TeX{} mode)}
   In @TeX{}, the character @samp{"} is not normally used; we use
 @samp{``} to start a quotation and @samp{''} to end one.  To make
 editing easier under this formatting convention, @TeX{} mode overrides
@@ -990,9 +991,9 @@ mode, the previous @samp{$} position is shown as if it were a match, even
 though they are actually unrelated.
 
 @findex tex-insert-braces
-@kindex C-c @{ @r{(TeX mode)}
+@kindex C-c @{ @r{(@TeX{} mode)}
 @findex up-list
-@kindex C-c @} @r{(TeX mode)}
+@kindex C-c @} @r{(@TeX{} mode)}
   @TeX{} uses braces as delimiters that must match.  Some users prefer
 to keep braces balanced at all times, rather than inserting them
 singly.  Use @kbd{C-c @{} (@code{tex-insert-braces}) to insert a pair of
@@ -1002,7 +1003,7 @@ text that belongs inside.  Afterward, use the command @kbd{C-c @}}
 
 @findex validate-tex-region
 @findex tex-terminate-paragraph
-@kindex LFD @r{(TeX mode)}
+@kindex LFD @r{(@TeX{} mode)}
   There are two commands for checking the matching of braces.  @key{LFD}
 (@code{tex-terminate-paragraph}) checks the paragraph before point, and
 inserts two newlines to start a new paragraph.  It prints a message in the
@@ -1036,7 +1037,7 @@ Close the last unended block for La@TeX{} (@code{tex-close-latex-block}).
 @end table
 
 @findex tex-latex-block
-@kindex C-c C-o @r{(LaTeX mode)}
+@kindex C-c C-o @r{(La@TeX{} mode)}
   In La@TeX{} input, @samp{\begin} and @samp{\end} commands are used to
 group blocks of text.  To insert a @samp{\begin} and a matching
 @samp{\end} (on a new line following the @samp{\begin}), use @kbd{C-c
@@ -1058,7 +1059,7 @@ to add @samp{theorem}, @samp{corollary}, and @samp{proof}, include the line
 to your @file{.emacs} file.
 
 @findex tex-close-latex-block
-@kindex C-c C-e @r{(LaTeX mode)}
+@kindex C-c C-e @r{(La@TeX{} mode)}
   In La@TeX{} input, @samp{\begin} and @samp{\end} commands must balance.
 You can use @kbd{C-c C-e} (@code{tex-close-latex-block}) to insert
 automatically a matching @samp{\end} to match the last unmatched @samp{\begin}.
@@ -1100,13 +1101,13 @@ Show the printer queue (@code{tex-show-print-queue}).
 @end table
 
 @findex tex-buffer
-@kindex C-c C-b @r{(TeX mode)}
+@kindex C-c C-b @r{(@TeX{} mode)}
 @findex tex-print
-@kindex C-c C-p @r{(TeX mode)}
+@kindex C-c C-p @r{(@TeX{} mode)}
 @findex tex-view
-@kindex C-c C-v @r{(TeX mode)}
+@kindex C-c C-v @r{(@TeX{} mode)}
 @findex tex-show-print-queue
-@kindex C-c C-q @r{(TeX mode)}
+@kindex C-c C-q @r{(@TeX{} mode)}
   You can pass the current buffer through an inferior @TeX{} by means of
 @kbd{C-c C-b} (@code{tex-buffer}).  The formatted output appears in a
 temporary; to print it, type @kbd{C-c C-p} (@code{tex-print}).
@@ -1116,7 +1117,7 @@ ability to display @TeX{} output files, you can preview the output on
 the terminal with @kbd{C-c C-v} (@code{tex-view}).
 
 @cindex @code{TEXINPUTS} environment variable
-@vindex tex-directory @r{(V19)}
+@vindex tex-directory
   You can specify the directory to use for running @TeX{} by setting the
 variable @code{tex-directory}.  @code{"."} is the default value.  If
 your environment variable @code{TEXINPUTS} contains relative directory
@@ -1152,9 +1153,9 @@ the file name with @samp{*} in the command string.  For example,
 @end example
 
 @findex tex-kill-job
-@kindex C-c C-k @r{(TeX mode)}
+@kindex C-c C-k @r{(@TeX{} mode)}
 @findex tex-recenter-output-buffer
-@kindex C-c C-l @r{(TeX mode)}
+@kindex C-c C-l @r{(@TeX{} mode)}
   The terminal output from @TeX{}, including any error messages, appears
 in a buffer called @samp{*tex-shell*}.  If @TeX{} gets an error, you can
 switch to this buffer and feed it input (this works as in Shell mode;
@@ -1167,7 +1168,7 @@ you see that its output is no longer useful.  Using @kbd{C-c C-b} or
 @kbd{C-c C-r} also kills any @TeX{} process still running.@refill
 
 @findex tex-region
-@kindex C-c C-r @r{(TeX mode)}
+@kindex C-c C-r @r{(@TeX{} mode)}
   You can also pass an arbitrary region through an inferior @TeX{} by typing
 @kbd{C-c C-r} (@code{tex-region}).  This is tricky, however, because most files
 of @TeX{} input contain commands at the beginning to set parameters and
@@ -1177,7 +1178,7 @@ part of the file as containing essential commands; it is included before
 the specified region as part of the input to @TeX{}.  The designated part
 of the file is called the @dfn{header}.
 
-@cindex header (TeX mode)
+@cindex header (@TeX{} mode)
   To indicate the bounds of the header in Plain @TeX{} mode, you insert two
 special strings in the file.  Insert @samp{%**start of header} before the
 header, and @samp{%**end of header} after it.  Each string must appear
@@ -1192,7 +1193,7 @@ you to use in any case, so nothing special needs to be done to identify the
 header.
 
 @findex tex-file
-@kindex C-c C-f @r{(TeX mode)}
+@kindex C-c C-f @r{(@TeX{} mode)}
   The commands (@code{tex-buffer}) and (@code{tex-region}) do all of their
 work in a temporary directory, and do not have available any of the auxiliary
 files needed by @TeX{} for cross-references; these commands are generally
@@ -1204,7 +1205,7 @@ any modified buffers.  Generally, you need to use (@code{tex-file})
 twice to get cross-references correct.
 
 @findex tex-bibtex-file
-@kindex C-c TAB @r{(TeX mode)}
+@kindex C-c TAB @r{(@TeX{} mode)}
 @vindex tex-bibtex-command
   For La@TeX{} files, you can use Bib@TeX{} to process the auxiliary
 file for the current buffer's file.  Bib@TeX{} looks up bibliographic
@@ -1230,7 +1231,7 @@ Starting the @TeX{} shell runs the hook @code{tex-shell-hook}.
 @xref{Hooks}.
 
 @node TeX Distrib
-@subsection Unix TeX Distribution
+@subsection Unix @TeX{} Distribution
 
 @c !!! Here is information about obtaining TeX.  Update it whenever.
 @c     Last updated by Noah Friedman on 18 Apr 1993

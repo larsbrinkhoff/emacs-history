@@ -1448,7 +1448,7 @@ July\or August\or September\or October\or November\or December\fi
 \def\tablez #1#2#3#4#5#6{%
 \aboveenvbreak %
 \begingroup %
-\def\Edescription{\Etable}% Neccessary kludge.
+\def\Edescription{\Etable}% Necessary kludge.
 \let\itemindex=#1%
 \ifnum 0#3>0 \advance \leftskip by #3\mil \fi %
 \ifnum 0#4>0 \tableindent=#4\mil \fi %
@@ -1931,18 +1931,22 @@ July\or August\or September\or October\or November\or December\fi
   \noindent
   %
   % Insert the text of the index entry.  TeX will do line-breaking on it.
-  #1%
-  %
-  % If we must, put the page number on a line of its own, and fill out
-  % this line with blank space.  (The \hfil is overwhelmed with the
-  % fill leaders glue in \indexdotfill if the page number does fit.)
-  \hfil\penalty50
-  \null\nobreak\indexdotfill % Have leaders before the page number.
-  %
-  % The `\ ' here is removed by the implicit \unskip that TeX does as
-  % part of (the primitive) \par.  Without it, a spurious underfull
-  % \hbox ensues.
-  \ #2% The page number ends the paragraph.
+  \leavevmode#1%
+  \setbox0=\hbox{#2}%
+  %\showbox0%
+  \ifdim\wd0=0pt\ \else%
+    %
+    % If we must, put the page number on a line of its own, and fill out
+    % this line with blank space.  (The \hfil is overwhelmed with the
+    % fill leaders glue in \indexdotfill if the page number does fit.)
+    \hfil\penalty50
+    \null\nobreak\indexdotfill % Have leaders before the page number.
+    %
+    % The `\ ' here is removed by the implicit \unskip that TeX does as
+    % part of (the primitive) \par.  Without it, a spurious underfull
+    % \hbox ensues.
+    \ \box0% The page number ends the paragraph.
+  \fi%
   \par
 \endgroup}
 
@@ -2700,8 +2704,8 @@ July\or August\or September\or October\or November\or December\fi
 % Space between chapter (or whatever) number and the title.
 \def\labelspace{\hskip1em \relax}
 
-\def\dopageno#1{{\rm #1}}
-\def\doshortpageno#1{{\rm #1}}
+\def\dopageno#1{{\rm#1}}
+\def\doshortpageno#1{{\rm#1}}
 
 \def\chapentryfonts{\secfonts \rm}
 \def\secentryfonts{\textfonts}

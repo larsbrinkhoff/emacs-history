@@ -12,15 +12,18 @@ making changes in programs.  This chapter deals with commands that assist
 in the larger process of developing and maintaining programs.
 
 @menu
-* Compilation::       Compiling programs in languages other than Lisp
-                        (C, Pascal, etc.)
-* Debuggers::	      Running symbolic debuggers for non-Lisp programs.
-* Executing Lisp::    Various modes for editing Lisp programs, with
-                        different facilities for running the Lisp programs.
+* Compilation::                   Compiling programs in languages other
+                                    than Lisp (C, Pascal, etc.)
+* Debuggers::	                  Running symbolic debuggers for
+                                    non-Lisp programs. 
+* Executing Lisp::                Various modes for editing Lisp programs, 
+                                    with different facilities for running
+                                    the Lisp programs. 
 * Libraries: Lisp Libraries.      Creating Lisp programs to run in Emacs.
 * Interaction: Lisp Interaction.  Executing Lisp in an Emacs buffer.
-* Eval: Lisp Eval.    Executing a single Lisp expression in Emacs.
-* External Lisp::     Communicating through Emacs with a separate Lisp.
+* Eval: Lisp Eval.                Executing a single Lisp expression in Emacs.
+* External Lisp::                 Communicating through Emacs with a
+                                    separate Lisp. 
 @end menu
 
 @node Compilation
@@ -428,7 +431,7 @@ globally.
 * Lists::               Expressions with balanced parentheses.
 * List Commands::       The commands for working with list and sexps.
 * Defuns::              Each program is made up of separate functions.
-                         There are editing commands to operate on them.
+                          There are editing commands to operate on them.
 * Program Indent::      Adjusting indentation to show the nesting.
 * Matching::            Insertion of a close-delimiter flashes matching open.
 * Comments::            Inserting, killing, and aligning comments.

@@ -1,4 +1,89 @@
+Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.14 released.
+
+Thu Jun 17 00:53:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* make-dist: If using gzip, create distribution with '.gz' extension.
+
+	* make-dist (lisp/term): This doesn't have a ChangeLog anymore.
+	(lisp/forms-mode): This doesn't exist anymore.
+
+	* configure.in: Look for the closedir function.
+
+Wed Jun 16 16:48:35 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in (CPP): Autoconf sets this to a shell variable
+	reference, which doesn't work when it's edited into a makefile.
+	Expand that variable reference.
+
+	* Makefile.in (CPP): New variable.
+	(src/Makefile): Edit CPP into src/Makefile.
+
+	* Makefile.in (src/Makefile): Don't bother exiting single quotes
+	and entering double quotes to get the values of LD_SWITCH_X_SITE
+	and the other make variables; make substitutes them in anyway.
+
+	* Makefile.in (uninstall): Don't remove the lisp and etc
+	directories if they're in the source tree.
+
+        Bring mumbleclean targets into conformance with GNU coding standards.
+	* Makefile.in (mostlyclean, clean): Separate these two; just have
+	them pass the request to the subdirectory makefiles.
+	(distclean): Pass the request down, and then get rid of the
+	files configure built, and get rid of the Makefiles.
+	(realclean): Pass the request down, and then do the same things
+	distclean does.
+	(uninstall, info, dvi): New targets.
+
+	* configure.in: Move clause for PC-compatible i386 box to the end
+	of the case statement, to avoid masking configurations below.
+
+	* configure.in: Add case for m88k-motorola-sysv4.
+
+	* configure.in: Add support for HP/UX versions 7, 8, and 9 on
+	the HP 68000 machines.
+
+	* configure.in: Put the arguments to LD_SWITCH_X_SITE's and
+	C_SWITCH_X_SITE's -L and -I switches in quotes, so the
+	preprocessor won't fiddle with them.
+
+Sun Jun 13 04:23:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (TAGS): cd to src to run etags.
+
+Sat Jun 12 05:54:23 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in (version): Check the X libraries for XrmSetDatabase
+	and random, and see if we have -lXbsd.
+
+Fri Jun 11 02:35:54 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: Pass "-Isrc" to the CPP we run to examine the
+	s/*.h and m/*.h files.  Martin Tomes
+	<mt00@controls.eurotherm.co.uk> says ISC Unix 3.0.1 needs it.
+
+Thu Jun 10 19:03:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Move i386-prime-sysv* and i386-sequent-bsd*
+	above the general i386 alternative.
+
+Thu Jun 10 01:45:45 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: Recognize configuration name for Data General
+	AViiON machines.
+	
+	* configure.in: Use AC_LONG_FILE_NAMES.
+
+Wed Jun  9 00:05:06 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: Test for bison.
+	* Makefile.in (YACC): New variable.
+	(lib-src/Makefile.in): Edit YACC into the makefile.
+
 Tue Jun  8 02:42:18 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Version 19.13 released.
 
 	* configure.in (CFLAGS): Don't set this according to the value of
 	the GCC shell variable.  Instead, consult the machine and system

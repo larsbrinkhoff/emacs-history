@@ -577,13 +577,16 @@ $(OLDXMENU): really-oldXMenu
 
 /* Encode the values of these two macros in Make variables,
    so we can use $(...) to substitute their values within "...".  */
+C_SWITCH_MACHINE_1 = C_SWITCH_MACHINE
 C_SWITCH_SYSTEM_1 = C_SWITCH_SYSTEM
 C_SWITCH_SITE_1 = C_SWITCH_SITE
 C_SWITCH_X_SITE_1 = C_SWITCH_X_SITE
 really-oldXMenu:
 	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS \
+    CC='${CC}' CFLAGS='${CFLAGS}' MAKE='${MAKE}' \
     "C_SWITCH_SITE=$(C_SWITCH_SITE_1)" \
     "C_SWITCH_X_SITE=$(C_SWITCH_X_SITE_1)" \
+    "C_SWITCH_MACHINE=$(C_SWITCH_MACHINE_1)" \
     "C_SWITCH_SYSTEM=$(C_SWITCH_SYSTEM_1)"
 	@true  /* make -t should not create really-oldXMenu.  */
 #endif /* ! defined (HAVE_X11) */
@@ -631,7 +634,7 @@ alloca.o : alloca.s config.h
 /* Xenix, in particular, needs to run assembler via cc.  */
 	$(CC) -c allocax.s
 	mv allocax.o alloca.o
-	rm allocax.s allocax.c
+	rm allocax.s allocatem.c
 #endif /* HAVE_ALLOCA */
 #endif /* ! defined (C_ALLOCA) */
 

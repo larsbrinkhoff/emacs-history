@@ -30,7 +30,7 @@
  *				pointer is left untouched and XM_FAILURE
  *				is returned.  
  *
- *			2)	When a selection request is recieved (i.e.,
+ *			2)	When a selection request is received (i.e.,
  *				when the specified mouse event occurs) the
  *				data pointer will be set to the data
  *				associated with the particular selection
@@ -381,7 +381,7 @@ XMenuActivate(display, menu, p_num, s_num, x_pos, y_pos, event_mask, data)
     case ButtonRelease:
 		*p_num = cur_p->serial;
 		/*
-		 * Check to see if there is a current selecion.
+		 * Check to see if there is a current selection.
 		 */
 		if (cur_s != NULL) {
 		    /*

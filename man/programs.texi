@@ -1055,13 +1055,15 @@ global variables, data types, and anything else convenient.  Each name
 recorded is called a @dfn{tag}.
 
 @menu
-* Tag Syntax::
-* Create Tag Table::
-* Select Tag Table::
-* Find Tag::
-* Tags Search::
-* Tags Stepping::
-* List Tags::
+* Tag Syntax::          Tag syntax for various types of code and text
+                          files.  
+* Create Tag Table::    Creating a tag table with @code{etags}.
+* Select Tag Table::    How to visit a tag table.
+* Find Tag::            Commands to find the definition of a specific
+                          tag. 
+* Tags Search::         Using a tag table for searching and replacing.
+* Tags Stepping::       Visiting files in a tag table, one by one.
+* List Tags::           Listing and finding tags defined in a file.
 @end menu
 
 @node Tag Syntax
@@ -1780,6 +1782,17 @@ this command moves forward to the end of the containing preprocessor
 conditional.  When going backwards, @samp{#elif} acts like @samp{#else}
 followed by @samp{#if}.  When going forwards, @samp{#elif} is ignored.
 
+@item M-x c-macro-expand
+@cindex macro expansion in C
+@cindex expansion of C macros
+@findex c-macro-expand
+When you are debugging C code that uses macros, sometimes it is hard to
+figure out precisely how the macros expand.  The command @kbd{M-x
+c-macro-expand} runs the C preprocessor and shows you what expansion
+results from the region.  The portion of the buffer before the region is
+also included in preprocessing, for the sake of macros defined there,
+but the output from this part isn't shown.
+
 @item M-x c-backslash-region
 @findex c-backslash-region
 Insert or align @samp{\} characters at the ends of the lines of the
@@ -1822,12 +1835,12 @@ unlike those of other languages.
 runs the hook @code{fortran-mode-hook} (@pxref{Hooks}).
 
 @menu
-* Motion: Fortran Motion.     Moving point by statements or subprograms.
-* Indent: Fortran Indent.     Indentation commands for Fortran.
-* Comments: Fortran Comments. Inserting and aligning comments.
-* Autofill: Fortran Autofill. Auto fill minor mode for Fortran.
-* Columns: Fortran Columns.   Measuring columns for valid Fortran.
-* Abbrev: Fortran Abbrev.     Built-in abbrevs for Fortran keywords.
+* Motion: Fortran Motion.      Moving point by statements or subprograms.
+* Indent: Fortran Indent.      Indentation commands for Fortran.
+* Comments: Fortran Comments.  Inserting and aligning comments.
+* Autofill: Fortran Autofill.  Auto fill minor mode for Fortran.
+* Columns: Fortran Columns.    Measuring columns for valid Fortran.
+* Abbrev: Fortran Abbrev.      Built-in abbrevs for Fortran keywords.
 @end menu
 
   Fortran mode was contributed by Michael Prange.  It has been updated by
@@ -1878,11 +1891,11 @@ indicators and continuation line flags) appear in the columns that are
 required for standard Fortran.
 
 @menu
-* Commands: ForIndent Commands. Commands for indenting Fortran.
-* Contline: ForIndent Cont.     How continuation lines indent.
-* Numbers:  ForIndent Num.      How line numbers auto-indent.
-* Conv:     ForIndent Conv.     Conventions you must obey to avoid trouble.
-* Vars:     ForIndent Vars.     Variables controlling Fortran indent style.
+* Commands: ForIndent Commands.  Commands for indenting Fortran.
+* Contline: ForIndent Cont.      How continuation lines indent.
+* Numbers:  ForIndent Num.       How line numbers auto-indent.
+* Conv:     ForIndent Conv.      Conventions you must obey to avoid trouble.
+* Vars:     ForIndent Vars.      Variables controlling Fortran indent style.
 @end menu
 
 @node ForIndent Commands

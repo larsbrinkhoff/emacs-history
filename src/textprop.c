@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -32,7 +32,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
   It is assumed that for any interval plist, a property appears
   only once on the list.  Although some code i.e., remove_properties,
   handles the more general case, the uniqueness of properties is
-  neccessary for the system to remain consistent.  This requirement
+  necessary for the system to remain consistent.  This requirement
   is enforced by the subrs installing properties onto the intervals. */
 
 /* The rest of the file is within this conditional */
@@ -713,8 +713,6 @@ is the string or buffer containing the text.")
   register int s, len;
 
   props = validate_plist (props);
-  if (NILP (props))
-    return Qnil;
 
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);

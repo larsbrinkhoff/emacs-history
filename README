@@ -1,4 +1,4 @@
-This directory tree holds version 19.13 of GNU Emacs, the extensible,
+This directory tree holds version 19.14 of GNU Emacs, the extensible,
 customizable, self-documenting real-time display editor.
 
 See the files `etc/NEWS' and `etc/news.texi' for information on new
@@ -16,6 +16,11 @@ Emacs for several architectures installed simultaneously.
 
 The file PROBLEMS contains information on many common problems that
 occur in building, installing and running Emacs.
+
+Reports of bugs in Emacs should be sent to the mailing list
+bug-gnu-emacs@prep.ai.mit.edu.  See the "Bugs" node of the info tree
+for more information on how to report bugs.  See `etc/MAILINGLISTS'
+for more information on mailing lists relating to GNU products.
 
 The `etc' subdirectory contains several other files, named in
 capital letters, which you should look at when installing GNU Emacs.

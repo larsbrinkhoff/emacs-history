@@ -365,9 +365,9 @@ the markers.
 	default-B	the merge buffer contains the B variant by default,
 			but this difference hasn't been selected yet, so
 			change-default commands can alter it
-	prefer-A	in a three-file merge, the A variant is the prefered
+	prefer-A	in a three-file merge, the A variant is the preferred
 			choice
-	prefer-B	in a three-file merge, the B variant is the prefered
+	prefer-B	in a three-file merge, the B variant is the preferred
 			choice")
 (emerge-defvar-local emerge-current-difference -1
   "The difference that is currently selected.")
@@ -653,8 +653,8 @@ This is *not* a user option, since Emerge uses it for its own processing.")
    (shell-command
     (format "%s %s %s %s %s"
 	    emerge-diff3-program emerge-diff-options
-	    (emerge-protect-metachars file-ancestor)
 	    (emerge-protect-metachars file-A)
+	    (emerge-protect-metachars file-ancestor)
 	    (emerge-protect-metachars file-B))
     t))
   (emerge-prepare-error-list emerge-diff3-ok-lines-regexp)
@@ -671,17 +671,17 @@ This is *not* a user option, since Emerge uses it for its own processing.")
        (beginning-of-line 2)
        (let ((agreement (buffer-substring (match-beginning 1) (match-end 1))))
 	 ;; if the A and B files are the same, ignore the difference
-	 (if (not (string-equal agreement "1"))
+	 (if (not (string-equal agreement "2"))
 	     (setq list
 		   (cons 
-		    (let (group-2 group-3 pos)
+		    (let (group-1 group-3 pos)
 		      (setq pos (point))
-		      (setq group-2 (emerge-get-diff3-group "2"))
+		      (setq group-1 (emerge-get-diff3-group "1"))
 		      (goto-char pos)
 		      (setq group-3 (emerge-get-diff3-group "3"))
-		      (vector (car group-2) (car (cdr group-2))
+		      (vector (car group-1) (car (cdr group-1))
 			      (car group-3) (car (cdr group-3))
-			      (cond ((string-equal agreement "2") 'prefer-A)
+			      (cond ((string-equal agreement "1") 'prefer-A)
 				    ((string-equal agreement "3") 'prefer-B)
 				    (t 'default-A))))
 		    list))))))
@@ -1073,7 +1073,7 @@ Otherwise, the A or B file present is copied to the output file."
 	     (t
 	      (error "Unrecognized entry"))))
 	;; If the match on the entry pattern failed
-	(error "Unparseable entry")))
+	(error "Unparsable entry")))
     ;; Make sure that file-A and file-B are present
     (if (not (or (and file-A file-B) file-out))
 	(error "Must have both `A' and `B' entries"))
@@ -1374,7 +1374,7 @@ These characteristics are restored by `emerge-restore-buffer-characteristics'."
 (defun emerge-handle-local-variables ()
   (if emerge-process-local-variables
       (condition-case err
-	  (hack-local-variables t)
+	  (hack-local-variables)
 	(error (message "Local-variables error in merge buffer: %s"
 			(prin1-to-string err))))))
 
@@ -2008,7 +2008,7 @@ Use C-u l to reset the windows afterward."
 
 (defun emerge-join-differences (arg)
   "Join the selected difference with the following one.
-With a prefix argument, join with the preceeding one."
+With a prefix argument, join with the preceding one."
   (interactive "P")
   (let ((n emerge-current-difference))
     ;; adjust n to be first difference to join
@@ -2288,11 +2288,11 @@ the nearest previous difference."
        (if (< index emerge-number-of-differences)
 	   index
 	 (error "No difference contains or follows point")))
-      ;; if the arg is negative, select the preceeding difference
+      ;; if the arg is negative, select the preceding difference
       (t
        (if (> index 0)
 	   (1- index)
-	 (error "No difference contains or preceeds point")))))))
+	 (error "No difference contains or precedes point")))))))
 
 (defun emerge-line-numbers ()
   "Display the current line numbers.

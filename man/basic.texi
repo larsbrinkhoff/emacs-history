@@ -16,7 +16,7 @@ start the tutorial, type @kbd{Control-h t} (@code{help-with-tutorial}).
 @menu
 * Inserting Text::     Inserting text by simply typing it.
 * Moving Point::       How to move the cursor to the place where you want to
-		       change something.
+		         change something.
 * Erasing::	       Deleting and killing text.
 * Files: Basic Files.  Visiting, creating, and saving files.
 * Help: Basic Help.    Asking what a character does.

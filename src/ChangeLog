@@ -1,4 +1,429 @@
+Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.14 released.
+
+Thu Jun 17 15:05:29 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* m/iris4d.h (LIB_STANDARD): Do *not* include -lbsd.  We are
+	now calling the BSD[sg]etpgrp functions directly, so this library
+	is not needed; it just provides the BSD[sg]etpgrp functions under
+	the [sg]etpgrp names.
+
+	* callproc.c [IRIX] (child_setup): Don't call setpgrp this time.
+	It's already been called up in Fcall_process, and create_process.
+
+	* callproc.c (Fcall_process, child_setup): If IRIX is #defined,
+	call setpgrp with arguments, even if USG is #defined.
+	* process.c [IRIX] (create_process): Don't call setpgrp before
+	opening the pty.  Call it after doing the TIOCNOTTY ioctl.
+
+	* xfaces.c (compute_base_face): Initialize the face's stipple.
+	Although we don't use this feature now, face_eql notices it.
+
+	* xfaces.c (compute_base_face): Set cached_index to an invalid
+	index, to avoid an unnecessary comparison.
+
+	* keyboard.c (read_key_sequence): Don't confuse mock input with
+	function-key-map expansion, and continue reading mock events when
+	the current sequence is unbound.
+
+	* keyboard.c (read_key_sequence): After providing a prefix symbol
+	for a mouse event, modify the mouse event to indicate that that
+	won't need to be done again, by putting the event's position
+	symbol in a list.
+
+	* keyboard.c (read_key_sequence): When returning mock input which
+	has run off the end of the current maps, make sure the events get
+	echoed, and make it into this-command-keys.
+
+	* keyboard.c (read_key_sequence): When re-reading a previously
+	read mouse click which requires a prefix symbol, make sure to set
+	last_real_key_start appropriately, so we can properly drop
+	button-down events.
+
+Thu Jun 17 00:07:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ymakefile (really-oldXMenu): Pass C_SWITCH_MACHINE down.
+
+	* intervals.c (verify_interval_modification): Don't just test
+	Qread_only prop; use INTERVAL_WRITABLE_P.
+
+	* syntax.c (scan_lists, Fforward_comment): #if 0 the code
+	to treat two-character comment enders with a special shortcut.
+
+Wed Jun 16 22:16:40 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* config.h.in (HAVE_CLOSEDIR): Add an #undef for autoconf to
+	change.
+	* sysdep.c (closedir): Only define this if autoconf can't find
+	HAVE_CLOSEDIR.  If we're running under solaris (defined (sun) &&
+	defined (USG5_4)), then don't free the buffer separately.
+
+	* keyboard.c (read_key_sequence): If we add events to a key
+	sequence that didn't come from the input stream (e.g. `mode-line'
+	prefixing a mouse click, or an expansion from function-key-map),
+	and end up with a sequence that runs off the end of the current
+	maps, return the entire key sequence, not just the initial portion
+	which was bound or unbound.
+
+	* xdisp.c (redisplay_window): Do not subtract one from start
+	before passing it to the set_vertical_scroll_bar_hook.
+
+	* lisp.h (CHECK_LIST, CHECK_STRING, CHECK_CONS, CHECK_SYMBOL,
+	CHECK_VECTOR, CHECK_BUFFER, CHECK_WINDOW, CHECK_LIVE_WINDOW,
+	CHECK_PROCESS, CHECK_NUMBER, CHECK_NATNUM, CHECK_MARKER,
+	CHECK_NUMBER_COERCE_MARKER, CHECK_FLOAT, CHECK_NUMBER_OR_FLOAT,
+	CHECK_NUMBER_OR_FLOAT_COERCE_MARKER, CHECK_OVERLAY): Wrap a do
+	... while (0) around these compound statements to make them
+	syntactically equivalent to a single statement.
+
+Wed Jun 16 18:37:24 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* editfns.c (Finsert_buffer_substring): Doc fix.
+
+Wed Jun 16 10:12:49 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	Don't let the 'B' interactive spec default to buffers viewed in
+	any visible frame.
+	* buffer.c (Fother_buffer): Pass Qt as the second argument
+	to Fget_buffer_window.
+	* window.c (window_loop): In GET_BUFFER_WINDOW case, ignore
+	non-visible frames.
+	(Fget_buffer_window): Change doc string to mention that passing Qt
+	for the FRAME argument returns windows on visible frames only.
+
+        Changes for correct pgrp behavior; approach suggested by Bob
+	Glickstein <bobg@zindigo.z-code.com>:
+	* m/iris4d.h (LIB_STANDARD): Do list -lbsd here.
+	* s/irix4-0.h (getpgrp, setpgrp): #define these to call BSDgetpgrp
+	and BSDsetpgrp.
+	(GETPGRP_NO_ARG): Don't #define this.
+	* emacs.c (main): Don't test GETPGRP_NO_ARG.
+	* sysdep.c (sys_suspend): Don't test GETPGRP_NO_ARG.
+
+	* Makefile.in (CPP): New variable, set by the top-level Makefile.
+
+	* m/delta88k.h (HAVE_GETTIMEOFDAY): Don't #define this; autoconf
+	takes care of that.
+	(LIBS_SYSTEM): Don't attempt to #define this if we already have a
+	definition of LIB_SYSTEM from s/usg5-4.h.
+
+	* unexec.c [HPUX] (sbrk): This returns a void *.
+
+	* window.c (check_frame_size): Allow minibuffer-only frames to be
+	one line high.
+
+	* frame.c (store_frame_param): Fix error message punctuation.
+
+	* callproc.c [IRIX] (child_setup): Don't set the pgroup.
+
+	* s/isc3-0.h (memmove): #define this to call safe_bcopy.
+
+	* buffer.c (list_buffers_1): Return the desired point.
+	(Flist_buffers): Put point there in the buffer summary.
+
+        Bring mumbleclean targets into conformance with GNU coding standards.
+	* Makefile.in (mostlyclean): New target.
+	(clean): Just call mostlyclean.  Get rid of ../etc/DOC too.
+	(distclean): Use clean to do most of the work.
+	Get rid of ../etc/DOC-* too.
+	(realclean): New target.
+
+	* xdisp.c (redisplay_window): Do not subtract BEGV to compute
+	the scroll bar handle's end.
+
+Tue Jun 15 03:47:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xmenu.c (xmenu_show): Store 0 in *ERROR at the beginning.
+
+	* fileio.c (Finsert_file_contents): Two new args, BEG and END.
+
+	* intervals.c (adjust_intervals_for_insertion): By default, copy
+	properties from before the insertion.
+
+Mon Jun 14 13:29:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* syntax.c (scan_sexps_forward): Set state.comstart to before the
+	comment starter, not after.
+
+	* xmenu.c (Fx_popup_menu): Call keymap_panes right in one-keymap case.
+
+Mon Jun 14 11:06:35 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* s/linux.h (LIBS_MACHINE, HAVE_SYSVIPC): Set the former to -lipc,
+	and #define the latter.
+
+	* xdisp.c (display_text_line): Use temporary variable.
+
+Mon Jun 14 03:05:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (Fdelete_window): Handle deleting a parent of the
+	selected window.
+
+Sun Jun 13 04:10:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (Fset_visited_file_modtime): Don't give the handler
+	the filename as an argument.
+
+	* syntax.c (scan_lists, Fforward_comment): Pass 0 as commentstop arg
+	to scan_sexps_forward.
+	(scan_sexps_forward, char_quoted): Now static.
+	(describe_syntax, describe_syntax_1): Now static.
+
+	* undo.c (Fprimitive_undo): Rename arg to N to avoid conflict.
+
+	* window.c (Fdelete_window): Mostly undo last change.
+	Don't initialize `frame' in the declaration.
+
+	* Make prefix keys work with keymap inheritance
+	by creating an inheritance structure for each subkeymap
+	that we create in the inheriting keymap.
+	* keymap.c (access_keymap): New arg NOINHERIT.  All calls changed.
+	(define_as_prefix): New function.
+	(Fdefine_key): Use them.
+
+Sat Jun 12 19:52:07 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* emacs.c (shut_down_emacs): New arg STUFF.  Stuff input here.
+	(Fkill_emacs, fatal_error_signal): Pass new arg.
+	* xterm.c (x_connection_closed): Pass new arg.
+
+	* dired.c (Ffile_attributes): Give -1 as size if size won't fit.
+
+	* intervals.c (set_point): When moving over invis chars,
+	don't screw up at end of buffer.
+
+	* eval.c (call5, call6): New functions.
+	(call1, call2, call3, call4): Renumber the args.
+	* lread.c (Fload): Use call5.
+	* fileio.c (Fcopy_file): Pass all the args to the handler.
+	(Fwrite_region): Use call6.
+	(Frename_file): Look for handler for newname.
+	(Fadd_name_to_file): Pass arg ok_if_already_exists to handler.
+	(Fmake_symbolic_link): Likewise.
+	(Ffile_newer_than_file_p): Check both file names for handler.
+
+Sat Jun 12 13:35:37 1993  John Hughes  (john@moonlite.CalvaCom.fr)
+
+	* term.c (term_get_fkeys): Use `prior', not `previous', for %8/kP.
+
+Sat Jun 12 13:00:03 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* sysdep.c (child_setup_tty): Remove duplicate settings for VQUIT
+	and VINTR.
+
+	* sysdep.c [ultrix] (init_sys_modes): Don't set LLITOUT; it
+	disables the meta key.
+
+	* frame.c (Fmouse_position, Fset_mouse_position): Doc fix.
+
+	* xfns.c [! HAVE_X11R5] (Fx_rebind_key): Recognize that
+	XK_Mode_switch and XK_Num_Lock are modifier keysyms too.
+
+	* xterm.c (XTset_vertical_scroll_bar): Use double type for
+	intermediate results in scaling.
+
+Sat Jun 12 12:56:36 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* undo.c (syms_of_undo): Set up Qinhibit_read_only.
+	(Fprimitive_undo): Sometimes bind inhibit-read-only to t.
+
+	* minibuf.c (read_minibuf): Set and use mini_frame only if MULTI_FRAME.
+
+	* xdisp.c (echo_area_display): Use XFASTINT on ->height.
+	(copy_rope, copy_part_of_rope): Access *f as Lisp_Object.
+
+	* window.c (Fdelete_window): Make `frame' a FRAME_PTR and use as such.
+
+	* undo.c (record_delete): Always use XFASTINT on sbeg.
+	(Fprimitive_undo): Add missing `else'.  Add USE_TEXT_PROPERTIES
+	conditional for calling Fput_text_property.  Use XINT on high, low.
+
+	* process.c (start_process_unwind): Use XINT.
+
+	* syntax.c (Fset_syntax_table): Add XFASTINT.
+
+Sat Jun 12 05:30:40 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xterm.c (x_error_quitter, x_io_error_quitter): Remove calls to
+	abort.  We can always run Emacs with _Xdebug set to 1.
+
+	* ymakefile (really-oldXMenu): Remember backslash to extend command.
+
+	* keyboard.c (read_key_sequence): When we generate a prefix symbol
+	for a mouse event, store the actual mouse event in
+	unread_command_events, so we don't lose it if the symbol isn't
+	bound to a prefix.
+
+	* config.h.in (HAVE_XRMSETDATABASE, HAVE_RANDOM, HAVE_LIBXBSD):
+	Add #undefs for these.
+	Dyke out code requesting -lXbsd and HAVE_RANDOM for XFREE386.
+	* xfns.c (Fx_open_connection): Test HAVE_XRMSETDATABASE instead of
+	NO_XRM_SET_DATABASE; the latter isn't used any more.
+	* m/delta88k, m/tekXD88.h, s/linux.h, s/usg5-4-2.h (HAVE_RANDOM):
+	Dyke out these #definitions; to avoid conflict with autoconf.
+
+	* ymakefile (really-oldXMenu): Explicitly pass CC, CFLAGS, and
+	MAKE to the oldXMenu make.
+
+	* window.c (Fprevious_window): Use FRAME_HAS_MINIBUF_P to decide
+	if the frame has a minibuffer; FRAME_MINIBUF_WINDOW points to the
+	surrogate on minibufferless frames, not nil.
+
+Sat Jun 12 00:43:07 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_char): Set c properly as a Lisp int.
+	(command_loop_1): Delete spurious use of XINT on c, a char.
+
+	* frame.c: Doc fixes.
+
+	* data.c (cons_to_long): Declare top, bot as Lisp_Object.
+
+	* floatfns.c (Fexpt): New local `val' for making integer to return.
+
+	* keymap.c (Fcopy_keymap): Check Fkeymapp value with NILP.
+	(get_keymap_1): Add missing semicolon.
+	(describe_vector_princ): Align to column 16.
+
+	* emacs.c (main) [GETPGRP_NO_ARG]: Really pass no arg to getpgrp.
+
+Fri Jun 11 16:49:38 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (XTmouse_position): Don't set *f at all unless we win.
+
+	* process.c (read_process_output): Don't deactivate the mark.
+	Do restore Vdeactivate_mark, so that no one else deactivates it.
+
+	* buffer.c (Fgenerate_new_buffer_name): GENTEMP is the value to
+	compare against IGNORE.
+
+Fri Jun 11 12:15:29 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+        Interact properly with shells lacking job control (sh, rc, es...)
+	* sysdep.c [BSD] (inherited_pgroup): New variable.
+	(narrow_foreground_group, widen_foreground_group): New functions.
+	(init_sys_modes): Call narrow_foreground_group.
+	(reset_sys_modes): Call widen_foreground_group.
+	* emacs.c [BSD] (inherited_pgroup): Add extern declaration.
+	[BSD] (main): Set inherited_pgroup, and put ourselves in our own
+	pgroup.
+
+Fri Jun 11 11:41:04 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (syms_of_xfns): Don't set up Qicon.
+	(Qicon): Declaration deleted.
+	* frame.h (Qicon): Declared.
+
+	* frame.c (Fmouse_position): Set up defaults before calling the hook.
+
+Fri Jun 11 07:17:59 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xdisp.c (redisplay_window): Don't call try_window_id if the
+	window isn't starting at the beginning of the line.
+
+	* window.c (Fprevious_window): Typo.
+
+Fri Jun 11 03:13:54 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ymakefile (alloca.o): Delete allocatem.c, not allocax.c.
+
+	* textprop.c (Fset_text_properties): No special case for props = nil.
+
+	* xfns.c (Fx_list_fonts): If names is 0, just return nil.
+
+Fri Jun 11 02:43:09 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xterm.c (x_new_font): If font_names is zero, that's all the
+	indication we get that no matches were found.
+
+	* s/isc3-0.h (LIB_X11_LIB): #undef this, to remove the value
+	inherited from usg5-3.h; ISC doesn't have libX11_s.
+	(LIBX11_SYSTEM): Link against the static -lc, not -lc_s.
+
+Thu Jun 10 17:14:25 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lread.c (Fload): Forward all 4 args to magic-name handler.
+
+Thu Jun 10 03:25:20 1993  Shane Hartman  (shane@nugget.spr.com)
+
+        * window.c (Fscroll_left): Make argument optional.
+        (Fscroll_right): Ditto.
+
+Thu Jun 10 01:18:09 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* search.c (Flooking_at, Fstring_match, fast_string_match,
+	search_buffer): Don't block input while calling searching and
+	matching functions.  These functions may not call malloc under
+	Emacs anyway, and we need to be able to check for C-g.
+
+	* xrdb.c (get_user_db): Get the screen-specific database too.
+
+	* syntax.c (scan_lists, Fforward_comment): Call scan_sexps_forward
+	with the proper number of arguments.
+
+	* sysdep.c: Remove clause for DGUX support of FASYNC; add clause
+	to #undef FASYNC if BROKEN_FASYNC is #defined.
+
+	* filelock.c: Test HAVE_LONG_FILE_NAMES, not SHORT_FILE_NAMES, to
+	interface nicely with autoconf.
+	* m/delta.h: Don't #define SHORT_FILE_NAMES; autoconf does this
+	for us.
+
+	* s/dgux.h: Changes from Paul M Reilly <pmr@rock.concert.net>:
+	(BSD4_4, SVR4, HAVE_SETSID, HAVE_UNIX_DOMAIN): #define these.
+	(FIRST_PTY_LETTER): This is 'r', not 'p'.
+	(HAVE_TERMIO, SIGNALS_VIA_CHARACTERS): Don't #define these.
+	(HAVE_TERMIOS): #define these instead.
+	(XREBINDKEYSYM):  Don't #define.
+	Test THIS_IS_YMAKEFILE instead of MAKING_MAKEFILE.
+	(sigmask, sigpause): #undef these after #including <signal.h>.
+	(LD_SWITCH_SYSTEM, START_FILES, LIBS_SYSTEM, LIB_GCC): #define
+	these to avoid problems with /lib/crt0.o.
+	(C_DEBUG_SWITCH, C_OPTIMIZE_SWITCH): #define these.
+
+	* s/dgux.h (BROKEN_FASYNC): #define this.
+
+	* fileio.c (Frename_file): Pass all arguments to the file name handler.
+	* eval.c (call4): New function.
+
+Wed Jun  9 00:36:00 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* s/linux.h (SIGNALS_VIA_CHARACTERS): Don't #define this.
+
+	* process.c (sigchld_handler): Add cast, to avoid warnings on Linux.
+	(Fopen_network_stream): Cast the second argument to connect, to
+	avoid warnings on any system that provides prototypes for connect.
+
+	* xdisp.c (display_text_line): Handle case where line ends in a
+	continuation character but we never actually displayed any buffer
+	text (due to minibuffer prompt).
+
+	* xterm.c (x_is_vendor_fkey): New function.
+	(XTread_socket): Call it to recognize vendor-specific function keys.
+
+	* s/dgux.h: Move #definition of SYSTEM_MALLOC outside of
+	MAKING_MAKEFILE conditional.  No harm.
+
+	* xfaces.c (init_frame_faces): Remove assumption that the selected
+	frame must be an X frame whenever there is already an X frame.
+
+Tue Jun  8 23:54:04 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* alloc.c (emacs_blocked_malloc, emacs_blocked_realloc): Cast the
+	return values of malloc and realloc, to placate compilers.
+
+Tue Jun  8 12:24:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (Fprevious_window): When changing frames,
+	use the new frame's minibuffer if any.
+
+	* intervals.h (INTERVAL_WRITABLE_P): Fix backwards tests.
+
+	* m/tekXD88.h: Rewrite by author.
+
 Tue Jun  8 00:38:15 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Version 19.13 released.
 
 	* ymakefile (C_DEBUG_SWITCH, C_OPTIMIZE_SWITCH): Remove these;
 	people shouldn't edit this file to choose optimization and

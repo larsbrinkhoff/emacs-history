@@ -575,7 +575,7 @@ main (argc, argv)
   for (;;)
     {
       int opt;
-      opt = getopt_long (argc, argv, "aCdDo:StTi:BFuvxwVH", longopts, 0);
+      opt = getopt_long (argc, argv, "aCdDo:f:StTi:BFuvxwVH", longopts, 0);
 
       if (opt == EOF)
 	break;
@@ -600,11 +600,12 @@ main (argc, argv)
 	case 'D':
 	  constantypedefs = 0;
 	  break;
+	case 'f':
 	case 'o':
 	  if (outfile)
 	    {
 	      fprintf (stderr,
-		       "%s: -o flag may only be given once\n", progname);
+		       "%s: -%c flag may only be given once\n", progname, opt);
 	      goto usage;
 	    }
 	  outfile = optarg;
@@ -834,7 +835,7 @@ process_file (file)
 }
 
 /*
- * This routine sets up the boolean psuedo-functions which work
+ * This routine sets up the boolean pseudo-functions which work
  * by setting boolean flags dependent upon the corresponding character
  * Every char which is NOT in that string is not a white char.  Therefore,
  * all of the array "_wht" is set to FALSE, and then the elements
@@ -2845,7 +2846,7 @@ readline (linebuffer, stream)
   register char *pend;
   int newline;			/* 1 if ended with newline, 0 if ended with EOF */
 
-  pend = p + linebuffer->size;	/* Separate to avoind 386/IX compiler bug.  */
+  pend = p + linebuffer->size;	/* Separate to avoid 386/IX compiler bug.  */
 
   while (1)
     {

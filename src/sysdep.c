@@ -104,10 +104,14 @@ extern char *sys_errlist[];
 #endif
 #endif /* not 4.1 bsd */
 
-/* Get DGUX definition for FASYNC - DJB */
-#ifdef DGUX
-#include <sys/file.h>
-#endif /* DGUX */
+#ifdef BROKEN_FASYNC
+/* On some systems (DGUX comes to mind real fast) FASYNC causes
+   background writes to the terminal to stop all processes in the
+   process group when invoked under the csh (and probably any shell
+   with job control). This stops Emacs dead in its tracks when coming
+   up under X11. */
+#undef FASYNC
+#endif
 
 #include <sys/ioctl.h>
 #include "systty.h"
@@ -437,7 +441,7 @@ child_setup_tty (out)
   s.main.c_oflag &= ~OLCUC;	/* Disable map of lower case to upper on
 				   output */
 #if 0
-  /* Said to be unnecesary:  */
+  /* Said to be unnecessary:  */
   s.main.c_cc[VMIN] = 1;	/* minimum number of characters to accept  */
   s.main.c_cc[VTIME] = 0;	/* wait forever for at least 1 character  */
 #endif
@@ -462,7 +466,6 @@ child_setup_tty (out)
   s.main.c_iflag &= ~IGNBRK;
   s.main.c_iflag &= ~BRKINT;
   /* QUIT and INTR work better as signals, so disable character forms */
-  s.main.c_cc[VQUIT] = 0377;
   s.main.c_cc[VINTR] = 0377;
 #ifdef SIGNALS_VIA_CHARACTERS
   /* the QUIT and INTR character are used in process_send_signal
@@ -568,11 +571,7 @@ sys_suspend ()
 #else
 #ifdef SIGTSTP
 
-#ifdef GETPGRP_NO_ARG
-  EMACS_KILLPG (getpgrp (), SIGTSTP);
-#else
   EMACS_KILLPG (getpgrp (0), SIGTSTP);
-#endif
 
 #else /* No SIGTSTP */
 #ifdef USG_JOBCTRL /* If you don't know what this is don't mess with it */
@@ -697,7 +696,7 @@ reset_sigio ()
   unrequest_sigio ();
 }
 
-#ifdef FASYNC		/* F_SETFL does not imply existance of FASYNC */
+#ifdef FASYNC		/* F_SETFL does not imply existence of FASYNC */
 
 request_sigio ()
 {
@@ -751,6 +750,54 @@ unrequest_sigio ()
 #endif /* STRIDE */
 #endif /* FASYNC */
 #endif /* F_SETFL */
+
+/* Saving and restoring the process group of Emacs's terminal.  */
+
+#ifdef BSD
+
+/* The process group of which Emacs was a member when it initially
+   started.
+
+   If Emacs was in its own process group (i.e. inherited_pgroup ==
+   getpid ()), then we know we're running under a shell with job
+   control (Emacs would never be run as part of a pipeline).
+   Everything is fine.
+
+   If Emacs was not in its own process group, then we know we're
+   running under a shell (or a caller) that doesn't know how to
+   separate itself from Emacs (like sh).  Emacs must be in its own
+   process group in order to receive SIGIO correctly.  In this
+   situation, we put ourselves in our own pgroup, forcibly set the
+   tty's pgroup to our pgroup, and make sure to restore and reinstate
+   the tty's pgroup just like any other terminal setting.  If
+   inherited_group was not the tty's pgroup, then we'll get a
+   SIGTTmumble when we try to change the tty's pgroup, and a CONT if
+   it goes foreground in the future, which is what should happen.  */
+int inherited_pgroup;
+
+/* Split off the foreground process group to Emacs alone.
+   When we are in the foreground, but not started in our own process
+   group, redirect the TTY to point to our own process group.  We need
+   to be in our own process group to receive SIGIO properly.  */
+narrow_foreground_group ()
+{
+  int me = getpid ();
+
+  setpgrp (0, inherited_pgroup);
+  if (inherited_pgroup != me)
+    EMACS_SET_TTY_PGRP (0, &me);
+  setpgrp (0, me);
+}
+
+/* Set the tty to our original foreground group.  */
+widen_foreground_group ()
+{
+  if (inherited_pgroup != getpid ())
+    EMACS_SET_TTY_PGRP (0, &inherited_pgroup);
+  setpgrp (0, inherited_pgroup);
+}
+
+#endif
 
 /* Getting and setting emacs_tty structures.  */
 
@@ -830,7 +877,7 @@ emacs_set_tty (fd, settings, waitp)
      of the requested actions could not be performed.
      We must read settings back to ensure tty setup properly.
      AIX requires this to keep tty from hanging occasionally."  */
-  /* This make sure that we dont loop indefinetly in here.  */
+  /* This make sure that we don't loop indefinitely in here.  */
   for (i = 0 ; i < 10 ; i++)
     if (tcsetattr (fd, waitp ? TCSAFLUSH : TCSADRAIN, &settings->main) < 0)
       {
@@ -978,6 +1025,11 @@ init_sys_modes ()
 #endif
 #endif /* not VMS */
 
+#ifdef BSD
+  if (! read_socket_hook && EQ (Vwindow_system, Qnil))
+    narrow_foreground_group ();
+#endif
+
   EMACS_GET_TTY (input_fd, &old_tty);
 
   if (!read_socket_hook && EQ (Vwindow_system, Qnil))
@@ -1112,6 +1164,11 @@ init_sys_modes ()
 #endif
 
       tty.lmode = LDECCTQ | LLITOUT | LPASS8 | LNOFLSH | old_tty.lmode;
+#ifdef ultrix
+      /* Under Ultrix 4.2a, leaving this out doesn't seem to hurt
+	 anything, and leaving it in breaks the meta key.  Go figure.  */
+      tty.lmode &= ~LLITOUT;
+#endif
       
 #ifdef BSD4_1
       lmode = tty.lmode;
@@ -1162,7 +1219,7 @@ init_sys_modes ()
     }
 
 #ifdef F_SETFL
-#ifdef F_GETOWN		/* F_SETFL does not imply existance of F_GETOWN */
+#ifdef F_GETOWN		/* F_SETFL does not imply existence of F_GETOWN */
   if (interrupt_input)
     {
       old_fcntl_owner = fcntl (0, F_GETOWN, 0);
@@ -1311,7 +1368,7 @@ reset_sys_modes ()
 #endif
 
 #ifdef F_SETFL
-#ifdef F_SETOWN		/* F_SETFL does not imply existance of F_SETOWN */
+#ifdef F_SETOWN		/* F_SETFL does not imply existence of F_SETOWN */
   if (interrupt_input)
     {
       reset_sigio ();
@@ -1329,6 +1386,10 @@ reset_sys_modes ()
 
 #ifdef AIX
   hft_reset ();
+#endif
+
+#ifdef BSD
+  widen_foreground_group ();
 #endif
 }
 
@@ -2395,7 +2456,7 @@ sys_abort ()
 #ifdef VMS
 #ifdef LINK_CRTL_SHARE
 #ifdef SHAREABLE_LIB_BUG
-/* Variables declared noshare and initialized in shareable libraries
+/* Variables declared noshare and initialized in sharable libraries
    cannot be shared.  The VMS linker incorrectly forces you to use a private
    version which is uninitialized... If not for this "feature", we
    could use the C library definition of sys_nerr and sys_errlist. */
@@ -2516,7 +2577,7 @@ sys_write (fildes, buf, nbyte)
  *	to names for our own functions in sysdep.c that do the system call
  *	with retries.  Actually, for portability reasons, it is good
  *	programming practice, as this example shows, to limit all actual
- *	system calls to a single occurance in the source.  Sure, this
+ *	system calls to a single occurrence in the source.  Sure, this
  *	adds an extra level of function call overhead but it is almost
  *	always negligible.   Fred Fish, Unisoft Systems Inc.
  */
@@ -2802,7 +2863,7 @@ char *sys_siglist[NSIG + 1] =
   "power-fail restart",			 /* 19 SIGPWR    */
   "window size changed",		 /* 20 SIGWINCH  */
   "undefined",				 /* 21           */
-  "pollable event occured",		 /* 22 SIGPOLL   */
+  "pollable event occurred",		 /* 22 SIGPOLL   */
   "sendable stop signal not from tty",	 /* 23 SIGSTOP   */
   "stop signal from tty",		 /* 24 SIGSTP    */
   "continue a stopped process",		 /* 25 SIGCONT   */
@@ -2856,16 +2917,22 @@ char *sys_siglist[NSIG + 1] =
 
 #include <dirent.h>
 
-#ifndef AIX
+#ifndef HAVE_CLOSEDIR
 int
 closedir (dirp)
      register DIR *dirp;              /* stream from opendir */
 {
   sys_close (dirp->dd_fd);
-  xfree ((char *) dirp->dd_buf);       /* directory block defined in <dirent.h> */
+
+  /* Some systems (like Solaris) allocate the buffer and the DIR all
+     in one block.  Why in the world are we freeing this ourselves
+     anyway?  */
+#if ! (defined (sun) && defined (USG5_4))
+  xfree ((char *) dirp->dd_buf); /* directory block defined in <dirent.h> */
+#endif
   xfree ((char *) dirp);
 }
-#endif /* not AIX */
+#endif /* not HAVE_CLOSEDIR */
 #endif /* SYSV_SYSTEM_DIR */
 
 #ifdef NONSYSTEM_DIR_LIBRARY
@@ -3574,7 +3641,7 @@ creat_copy_attrs (old, new)
 sys_creat (va_alist)
      va_dcl
 {
-  va_list list_incrementor;
+  va_list list_incrementer;
   char *name;
   int mode;
   int rfd;			/* related file descriptor */
@@ -3588,12 +3655,12 @@ sys_creat (va_alist)
   extern int vms_stmlf_recfm;
 
   va_count (count);
-  va_start (list_incrementor);
-  name = va_arg (list_incrementor, char *);
-  mode = va_arg (list_incrementor, int);
+  va_start (list_incrementer);
+  name = va_arg (list_incrementer, char *);
+  mode = va_arg (list_incrementer, int);
   if (count > 2)
-    rfd = va_arg (list_incrementor, int);
-  va_end (list_incrementor);
+    rfd = va_arg (list_incrementer, int);
+  va_end (list_incrementer);
   if (count > 2)
     {
       /* Use information from the related file descriptor to set record
@@ -4102,7 +4169,7 @@ rename (from, to)
    are renaming.
 
    We could use the chmod function, but Eunichs uses 3 bits per user category
-   to describe the protection, and VMS uses 4 (write and delete are seperate
+   to describe the protection, and VMS uses 4 (write and delete are separate
    bits).  To maintain portability, the VMS implementation of `chmod' wires
    the W and D bits together.  */
 

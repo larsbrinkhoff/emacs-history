@@ -391,53 +391,49 @@ make and distribute copies of the Emacs manual.  The TeX source to the
 manual is also included in the Emacs source distribution.
 .PP
 .SH FILES
-/usr/local/emacs/src - C source files and object files
+/usr/local/info - files for the Info documentation browser
+(a subsystem of Emacs) to refer to.  Currently not much of Unix
+is documented here, but the complete text of the Emacs reference
+manual is included in a convenient tree structured form.
 
-/usr/local/emacs/lisp - Lisp source files and compiled files
+/usr/local/lib/emacs/$VERSION/src - C source files and object files
+
+/usr/local/lib/emacs/$VERSION/lisp - Lisp source files and compiled files
 that define most editing commands.  Some are preloaded;
 others are autoloaded from this directory when used.
   
-/usr/local/emacs/man - sources for the Emacs reference manual.
-
-/usr/local/emacs/etc - various programs that are used with
+/usr/local/lib/emacs/$VERSION/etc - various programs that are used with
 GNU Emacs, and some files of information.
 
-/usr/local/emacs/etc/DOC.* - contains the documentation
+/usr/local/lib/emacs/$VERSION/etc/DOC.* - contains the documentation
 strings for the Lisp primitives and preloaded Lisp functions
 of GNU Emacs.  They are stored here to reduce the size of
 Emacs proper.
 
-/usr/local/emacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
+/usr/local/lib/emacs/$VERSION/etc/DIFF discusses GNU Emacs vs. Twenex
+Emacs;
 .br
-/usr/local/emacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
+/usr/local/lib/emacs/$VERSION/etc/CCADIFF discusses GNU Emacs vs. CCA
+Emacs;
 .br
-/usr/local/emacs/etc/GOSDIFF discusses GNU Emacs vs. Gosling Emacs.
+/usr/local/lib/emacs/$VERSION/etc/GOSDIFF discusses GNU Emacs
+vs. Gosling Emacs.
 .br
-/usr/local/emacs/etc/SERVICE lists people offering various services
-to assist users of GNU Emacs, including education, troubleshooting,
-porting and customization.
+/usr/local/lib/emacs/$VERSION/etc/SERVICE lists people offering
+various services to assist users of GNU Emacs, including education,
+troubleshooting, porting and customization.
 .br
 These files also have information useful to anyone wishing to write
 programs in the Emacs Lisp extension language, which has not yet been fully
 documented.
 
-/usr/local/emacs/info - files for the Info documentation browser
-(a subsystem of Emacs) to refer to.  Currently not much of Unix
-is documented here, but the complete text of the Emacs reference
-manual is included in a convenient tree structured form.
-
-/usr/local/emacs/lock - holds lock files that are made for all
+/usr/local/lib/emacs/lock - holds lock files that are made for all
 files being modified in Emacs, to prevent simultaneous modification
 of one file by two users.
 
-/usr/local/emacs/cpp - the GNU cpp, needed for building Emacs on
-certain versions of Unix where the standard cpp cannot handle long
-names for macros.
-
-/usr/local/emacs/shortnames - facilities for translating long names to
-short names in C code, needed for building Emacs on certain versions
-of Unix where the C compiler cannot handle long names for functions
-or variables.
+/usr/local/lib/emacs/$VERSION/$ARCHITECTURE/cpp - the GNU cpp, needed
+for building Emacs on certain versions of Unix where the standard cpp
+cannot handle long names for macros.
 
 .\" START DELETING HERE IF YOU'RE NOT USING X
 /usr/lib/X11/rgb.txt - list of valid X color names.

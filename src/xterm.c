@@ -703,7 +703,7 @@ XTclear_frame ()
 /* Invert the middle quarter of the frame for .15 sec.  */
 
 /* We use the select system call to do the waiting, so we have to make sure
-   it's avaliable.  If it isn't, we just won't do visual bells.  */
+   it's available.  If it isn't, we just won't do visual bells.  */
 #if defined (HAVE_TIMEVAL) && defined (HAVE_SELECT)
 
 /* Subtract the `struct timeval' values X and Y,
@@ -1288,7 +1288,7 @@ static void XTframe_rehighlight ();
 /* The focus has changed.  Update the frames as necessary to reflect
    the new situation.  Note that we can't change the selected frame
    here, because the lisp code we are interrupting might become confused.
-   Each event gets marked with the frame in which it occured, so the
+   Each event gets marked with the frame in which it occurred, so the
    lisp code can tell when the switch took place by examining the events.  */
 
 static void
@@ -1355,42 +1355,7 @@ XTframe_rehighlight ()
     }
 }
 
-/* Mouse clicks and mouse movement.  Rah.  */
-#ifdef HAVE_X11
-
-/* Given a pixel position (PIX_X, PIX_Y) on the frame F, return
-   glyph co-ordinates in (*X, *Y).  Set *BOUNDS to the rectangle
-   that the glyph at X, Y occupies, if BOUNDS != 0.  */
-static void
-pixel_to_glyph_coords (f, pix_x, pix_y, x, y, bounds)
-     FRAME_PTR f;
-     register unsigned int pix_x, pix_y;
-     register int *x, *y;
-     XRectangle *bounds;
-{
-  pix_x = PIXEL_TO_CHAR_COL (f, pix_x);
-  pix_y = PIXEL_TO_CHAR_ROW (f, pix_y);
-
-  if (bounds)
-    {
-      bounds->width  = FONT_WIDTH  (f->display.x->font);
-      bounds->height = FONT_HEIGHT (f->display.x->font);
-      bounds->x = CHAR_TO_PIXEL_COL (f, pix_x);
-      bounds->y = CHAR_TO_PIXEL_ROW (f, pix_y);
-    }
-
-  if (pix_x < 0) pix_x = 0;
-  else if (pix_x > f->width) pix_x = f->width;
-
-  if (pix_y < 0) pix_y = 0;
-  else if (pix_y > f->height) pix_y = f->height;
-
-  *x = pix_x;
-  *y = pix_y;
-}
-
-/* Any buttons grabbed. */
-unsigned int x_mouse_grabbed;
+/* Keyboard processing - modifier keys, vendor-specific keysyms, etc. */
 
 /* Which modifier keys are on which modifier bits?
 
@@ -1540,6 +1505,59 @@ x_emacs_to_x_modifiers (state)
 	  | ((state & meta_modifier)		? x_meta_mod_mask  : 0));
 }
 
+/* Return true iff KEYSYM is a vendor-specific keysym that we should
+   return as a function key.  If you add a keysym to this, you should
+   make sure that the tables make_lispy_event uses contain a suitable
+   name for it.  */
+static int
+x_is_vendor_fkey (sym)
+     KeySym sym;
+{
+  return 0
+#ifdef DXK_Remove
+    || (sym == DXK_Remove)
+#endif
+      ;
+}
+
+
+/* Mouse clicks and mouse movement.  Rah.  */
+#ifdef HAVE_X11
+
+/* Given a pixel position (PIX_X, PIX_Y) on the frame F, return
+   glyph co-ordinates in (*X, *Y).  Set *BOUNDS to the rectangle
+   that the glyph at X, Y occupies, if BOUNDS != 0.  */
+static void
+pixel_to_glyph_coords (f, pix_x, pix_y, x, y, bounds)
+     FRAME_PTR f;
+     register unsigned int pix_x, pix_y;
+     register int *x, *y;
+     XRectangle *bounds;
+{
+  pix_x = PIXEL_TO_CHAR_COL (f, pix_x);
+  pix_y = PIXEL_TO_CHAR_ROW (f, pix_y);
+
+  if (bounds)
+    {
+      bounds->width  = FONT_WIDTH  (f->display.x->font);
+      bounds->height = FONT_HEIGHT (f->display.x->font);
+      bounds->x = CHAR_TO_PIXEL_COL (f, pix_x);
+      bounds->y = CHAR_TO_PIXEL_ROW (f, pix_y);
+    }
+
+  if (pix_x < 0) pix_x = 0;
+  else if (pix_x > f->width) pix_x = f->width;
+
+  if (pix_y < 0) pix_y = 0;
+  else if (pix_y > f->height) pix_y = f->height;
+
+  *x = pix_x;
+  *y = pix_y;
+}
+
+/* Any buttons grabbed. */
+unsigned int x_mouse_grabbed;
+
 /* Prepare a mouse-event in *RESULT for placement in the input queue.
 
    If the event is a button press, then note that we have grabbed
@@ -1611,7 +1629,7 @@ static XRectangle last_mouse_glyph;
 
 /* The scroll bar in which the last X motion event occurred.
 
-   If the last X motion event occured in a scroll bar, we set this
+   If the last X motion event occurred in a scroll bar, we set this
    so XTmouse_position can know whether to report a scroll bar motion or
    an ordinary motion.
 
@@ -1682,6 +1700,8 @@ static void x_scroll_bar_report_motion ();
    Set *time to the server timestamp for the time at which the mouse
    was at this position.
 
+   Don't store anything if we don't have a valid set of values to report.
+
    This clears the mouse_moved flag, so we can wait for the next mouse
    movement.  This also calls XQueryPointer, which will cause the
    server to give us another MotionNotify when the mouse moves
@@ -1695,6 +1715,8 @@ XTmouse_position (f, bar_window, part, x, y, time)
      Lisp_Object *x, *y;
      unsigned long *time;
 {
+  FRAME_PTR f1;
+
   BLOCK_INPUT;
 
   if (! NILP (last_mouse_scroll_bar))
@@ -1772,28 +1794,32 @@ XTmouse_position (f, bar_window, part, x, y, time)
 	   never use them in that case.)  */
 
 	/* Is win one of our frames?  */
-	*f = x_window_to_frame (win);
+	f1 = x_window_to_frame (win);
       
 	/* If not, is it one of our scroll bars?  */
-	if (! *f)
+	if (! f1)
 	  {
 	    struct scroll_bar *bar = x_window_to_scroll_bar (win);
 
 	    if (bar)
 	      {
-		*f = XFRAME (WINDOW_FRAME (XWINDOW (bar->window)));
+		f1 = XFRAME (WINDOW_FRAME (XWINDOW (bar->window)));
 		win_x = parent_x;
 		win_y = parent_y;
 	      }
 	  }
 
-	if (*f)
+	if (f1)
 	  {
-	    pixel_to_glyph_coords (*f, win_x, win_y, &win_x, &win_y,
+	    /* Ok, we found a frame.  Convert from pixels to characters
+	       and store all the values.  */
+
+	    pixel_to_glyph_coords (f1, win_x, win_y, &win_x, &win_y,
 				   &last_mouse_glyph);
 
 	    *bar_window = Qnil;
 	    *part = 0;
+	    *f = f1;
 	    XSET (*x, Lisp_Int, win_x);
 	    XSET (*y, Lisp_Int, win_y);
 	    *time = last_mouse_movement_time;
@@ -2009,7 +2035,7 @@ x_scroll_bar_set_handle (bar, start, end, rebuild)
   UNBLOCK_INPUT;
 }
 
-/* Move a scroll bar around on the screen, to accomodate changing
+/* Move a scroll bar around on the screen, to accommodate changing
    window configurations.  */
 static void
 x_scroll_bar_move (bar, top, left, width, height)
@@ -2109,8 +2135,8 @@ XTset_vertical_scroll_bar (window, portion, whole, position)
 	x_scroll_bar_set_handle (bar, 0, top_range, 0);
       else
 	{
-	  int start = (position * top_range) / whole;
-	  int end = ((position + portion) * top_range) / whole;
+	  int start = ((double) position * top_range) / whole;
+	  int end = ((double) (position + portion) * top_range) / whole;
 
 	  x_scroll_bar_set_handle (bar, start, end, 0);
 	}
@@ -2317,7 +2343,7 @@ x_scroll_bar_handle_click (bar, event, emacs_event)
 
     /* Same deal here as the other #if 0.  */
 #if 0
-    /* Clicks on the handle are always reported as occuring at the top of 
+    /* Clicks on the handle are always reported as occurring at the top of 
        the handle.  */
     if (emacs_event->part == scroll_bar_handle)
       emacs_event->x = bar->start;
@@ -2881,7 +2907,8 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 			  && (unsigned)(keysym) < XK_KP_Space)
 #endif
 		      || IsKeypadKey (keysym)       /* 0xff80 <= x < 0xffbe */
-		      || IsFunctionKey (keysym))    /* 0xffbe <= x < 0xffe1 */
+		      || IsFunctionKey (keysym)     /* 0xffbe <= x < 0xffe1 */
+		      || x_is_vendor_fkey (orig_keysym)) /* wherever */
 		    {
 		      if (temp_index == sizeof temp_buffer / sizeof (short))
 			temp_index = 0;
@@ -3754,7 +3781,7 @@ x_connection_closed ()
   if (_Xdebug)
     abort ();
 
-  shut_down_emacs (0, 1);
+  shut_down_emacs (0, 1, Qnil);
 
   exit (70);
 }
@@ -3776,9 +3803,11 @@ x_error_quitter (display, error)
   fprintf (stderr, "X protocol error: %s on protocol request %d\n",
 	   buf, error->request_code);
 
+#if 0
   /* While we're testing Emacs 19, we'll just dump core whenever we
      get an X error, so we can figure out why it happened.  */
   abort ();
+#endif
 
   x_connection_closed ();
 }
@@ -3793,9 +3822,11 @@ x_io_error_quitter (display)
   fprintf (stderr, "Connection to X server %s lost.\n",
 	   XDisplayName (DisplayString (display)));
 
+#if 0
   /* While we're testing Emacs 19, we'll just dump core whenever we
      get an X error, so we can figure out why it happened.  */
   abort ();
+#endif
 
   x_connection_closed ();
 }
@@ -3916,6 +3947,11 @@ x_new_font (f, fontname)
   font_names = (char **) XListFontsWithInfo (x_current_display, fontname,
 					     1024, &n_matching_fonts,
 					     &font_info);
+  /* Apparently it doesn't set n_matching_fonts to zero when it can't
+     find any matches; font_names == 0 is the only clue.  */
+  if (! font_names)
+    n_matching_fonts = 0;
+
   /* Don't just give up if n_matching_fonts is 0.
      Apparently there's a bug on Suns: XListFontsWithInfo can
      fail to find a font, but XLoadQueryFont may still find it.  */
@@ -4295,7 +4331,7 @@ x_make_frame_invisible (f)
 			 DefaultScreen (x_current_display)))
     {
       UNBLOCK_INPUT_RESIGNAL;
-      error ("can't notify window manager of window withdrawl");
+      error ("can't notify window manager of window withdrawal");
     }
 
 #else /* ! defined (HAVE_X11R4) */

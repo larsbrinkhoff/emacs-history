@@ -42,7 +42,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Define INTERRUPT_INPUT to make interrupt_input = 1 the default (use SIGIO)
 
    SIGIO can be used only on systems that implement it (4.2 and 4.3).
-   CBREAK mode has two disadvatages
+   CBREAK mode has two disadvantages
      1) At least in 4.2, it is impossible to handle the Meta key properly.
         I hear that in system V this problem does not exist.
      2) Control-G causes output to be discarded.
@@ -179,7 +179,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_UNISTD_H	      /* for getpagesize.h */
 #define NO_SIOCTL_H           /* don't have sioctl.h */
 
+#if 0 /* autoconf should take care of this.  */
 #define HAVE_RANDOM           /* is builtin */
+#endif
 #define HAVE_CLOSEDIR
 #define HAVE_GETPAGESIZE
 #define HAVE_VFORK
@@ -209,5 +211,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Work around a bug in glibc with _longjmp. */
 #define C_SWITCH_SYSTEM -D_BSD_SOURCE
 
-/* Let's try this out, just in case.  */
-#define SIGNALS_VIA_CHARACTERS
+/* Let's try this out, just in case.
+   Nah.  Rik Faith <faith@cs.unc.edu> says it doesn't work well.  */
+/* #define SIGNALS_VIA_CHARACTERS */
+
+/* Rob Malouf <malouf@csli.stanford.edu> says:
+   SYSV IPC is standard a standard part of Linux since version 0.99pl10,
+   and is a very common addition to previous versions.  */
+#define LIBS_MACHINE -lipc
+#define HAVE_SYSVIPC

@@ -811,7 +811,7 @@ Mo|omron|Omron 8025AG:\
 	:so=\Ef:sr=\ET:up=\EA:ve=:vs=\EN:
 Mp|plasma|plasma panel:\
 	:am:le=^H:bs:cl=^L:co#85:ho=^^:li#45:nd=\030:up=\026:do=^J:
-Mq|pty|psuedo teletype:\
+Mq|pty|pseudo teletype:\
 	:do=^J:co#80:li#24:am:cl=\EJ:le=^H:bs:cm=\EG%+ %+ :nd=\EC:\
 	:up=\EA:ce=\EK:cd=\EL:al=\EP:dl=\EN:ic=\EO:\
 	:so=\Ea$:se=\Eb$:us=\Ea!:ue=\Eb!:
@@ -966,7 +966,7 @@ S1|wsiris|iris40|iris emulating a 40 line visual 50 (approximately):\
 #	Briefly, the settings are for the following modes:
 #	   (values are for bit set/clear with * indicating our preference
 #	    and the value used to test these termcaps)
-#	Note that many of these settings are irelevent to the termcap
+#	Note that many of these settings are irrelevant to the termcap
 #	and are just set to the default mode of the terminal as shipped
 #	by the factory.
 #
@@ -1007,7 +1007,7 @@ S1|wsiris|iris40|iris emulating a 40 line visual 50 (approximately):\
 #	transmit all characters/transmit only selected characters*
 #	transmit all selected areas/transmit only 1 selected area*
 #
-#	transmit/do not transmit line seperators to host*
+#	transmit/do not transmit line separators to host*
 #	transmit/do not transmit page tab stops tabs to host*
 #	transmit/do not transmit column tab stop tabs to host*
 #	transmit/do not transmit graphics control (underline,inverse..)*
@@ -1046,7 +1046,7 @@ S1|wsiris|iris40|iris emulating a 40 line visual 50 (approximately):\
 #
 # D menu: 0110 1001   1   0
 #	LF is newline/LF is down one line, same column*
-#	wrap to preceeding line if move left from col 1*/don't wrap
+#	wrap to preceding line if move left from col 1*/don't wrap
 #	wrap to next line if move right from col 80*/don't wrap
 #	backspace is/is not destructive*
 #
@@ -1345,7 +1345,7 @@ P1|ansi.sys|ansisys|PC-DOS 3.1 ANSI.SYS:\
 # (^U and ^D are already defined for tn3270).  The ESC is safe for vi but it
 # does "beep".  ESC ESC i is used for Ins to avoid tn3270 ESC i for coltab.
 # Left arrow is always BS, because PC-dos can tolerate this change.
-# Caution: vi is limited to 256 string bytes, longer crashes or wierds vi.
+# Caution: vi is limited to 256 string bytes, longer crashes or weirds vi.
 # Consequently the End keypad key could not be set (it is relatively safe and
 # actually useful because it sends ^@ O, which beeps and opens a line above).
 P2|ansi.sysk|ansisysk|PC-DOS 3.1 ANSI.SYS with keypad redefined for vi:\
@@ -1497,7 +1497,7 @@ X5|4025|4027|4024|tek4025|tek4027|tek4024|4025cu|4027cu|tektronix 4024/4025/4027
 # Other modes may be set according to communication requirements.
 # If the command character is inadvertently changed, termcap can't restore it.
 # Insert-character cannot be made to work on both top and bottom rows.
-# Clear-to-end-of-display emulation via !DLI 988 is too groady to use, alas.
+# Clear-to-end-of-display emulation via !DLI 988 is too grody to use, alas.
 # There also seems to be a problem with vertical motion, perhaps involving
 # delete/insert-line, following a typed carriage return.  This terminal sucks.
 # Delays not specified; use "stty ixon -ixany" to enable DC3/DC1 flow control!
@@ -1536,7 +1536,7 @@ Xq|4107-s|tek4107-s|Tektronix 4107 with sysline but no memory:\
 	:es:hs:i2=\E7\E[?6l\E[2K\E[?6h\E8:ts=\E7\E[?6l\E[2K\E[;%i%df:\
 	:fs=\E[?6h\E8:ds=\E7\E[?6l\E[2K\E[?6h\E8:tc=4107:
 # From cbosg!teklabs!davem Wed Sep 16 21:11:41 1981
-# Here's the comamnd file that I use to get rogue to work on the 4025.
+# Here's the command file that I use to get rogue to work on the 4025.
 # It should work with any program using the old curses (e.g. it better
 # not try to scroll, or cursor addressing won't work.  Also, you can't
 # see the cursor.)
@@ -1904,7 +1904,7 @@ cf|c100-rv-s|concept-rv-s|concept100-rv-s|c100rvs|slow reverse concept 100:\
 # it in the list of terminals in reorder, since the first vt100 in
 # /etc/termcap is the one that it will find.  The choice is between
 # nam (no automatic margins) and am (automatic margins), as determined
-# by the wrapline switch (group 3 #2).  I presonally recommend turning
+# by the wrapline switch (group 3 #2).  I personally recommend turning
 # on the bit and using vt100-am, since having stuff hammer on the right
 # margin is sort of hard to read.  However, the xn glitch does not occur
 # if you turn the bit off.
@@ -2965,7 +2965,7 @@ wj|wy75ap|wyse75ap|wy-75ap|wyse-75ap|Wyse WY-75 Applications and Cursor keypad:\
 #		24 line screen with status line.
 #
 #	The vt220 mode permits more function keys but it wipes out
-#	the escape key.  I strongly reccomend that f11 be set to
+#	the escape key.  I strongly recommend that f11 be set to
 #	escape (esc).
 #	The terminal may have to be set for 8 data bits and 2 stop
 #	bits for the arrow keys to work.
@@ -3054,7 +3054,7 @@ y6|t1061|teleray 1061:\
 	:li#24:nd=\EC:pt:se=\ER@:so= \ERD:\
 	:is=\Ee\EU01^Z1\EV\EU02^Z2\EV\EU03^Z3\EV\EU04^Z4\EV\EU05^Z5\EV\EU06^Z6\EV\EU07^Z7\EV\EU08^Z8\EV\Ef:\
 	:up=\EA:us=\ERH:ue=\ER@:xs:xt:sg#2:ug#1:
-# "Teleray Arpa Special", offically designated as
+# "Teleray Arpa Special", officially designated as
 # "Teleray Arpa network model 10" with "Special feature 720".
 # This is the new (1981) fast microcode updating the older "arpa" proms
 # (which gave meta-key and pgmmable-fxn keys).  720 is much much faster,
@@ -3304,11 +3304,11 @@ Y0|yterm10|yterm 1.0 UCB ascii.kbd:\
 	:ku=^K:kd=^J:kl=^H:kr=^L:kh=^^:ma=h\012jklH:\
 	:k0=\E0:k1=\E1:k2=\E2:k3=\E3:k4=\E4:k5=\E5:k6=\E6:k7=\E7:k8=\E8:k9=\E9:\
 	:vs=^O\E[7i\E[m\E[?7h\E[?3g\r\EHY0      \EH        \EH        \EH        \EH        \EH        \EH        \EH        \EH        \EH\r:
-# YTERM varient version 1.1.  (gts 9-13-84)  Version 1.1 has :xn:.
+# YTERM variant version 1.1.  (gts 9-13-84)  Version 1.1 has :xn:.
 Y1|yterm11|yterm 1.1 UCB ascii.kbd:\
 	:xn:is=^O\E[7i\E[m\E[?7h\E[?3g\r\EHY1  for \EHYTERM 1.\EH1 with A\EHSCII.KBD\EH 9-13-84\EH        \EH        \EH        \EH        \EH\n:\
 	:tc=yterm10:
-# YTERM 1.0 varient no autowrap or tabs
+# YTERM 1.0 variant no autowrap or tabs
 # X does not remember autowrap or tabs when T is deleted and restarted.
 Y2|yterm10nat|yterm 1.0 UCB ascii.kbd no autowrap or tabs:\
 	:am@:pt@:vs=^O\E[7i\E[m\E[?7l\E[?3g\rY2\r:\

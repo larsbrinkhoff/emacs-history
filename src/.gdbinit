@@ -156,6 +156,7 @@ Print $ as a scrollbar pointer.
 end
 
 set print pretty on
+set print sevenbit-strings
 
 unset environment TERMCAP
 unset environment TERM

@@ -22,7 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
 #include <alloca.h>
 #endif
 
-/* Envoke the comparison function, returns either 0, < 0, or > 0. */
+/* Invoke the comparison function, returns either 0, < 0, or > 0. */
 #define CMP(A,B) ((*cmp)((A),(B)))
 
 /* Byte-wise swap two items of size SIZE. */
@@ -68,7 +68,7 @@ typedef struct
    3. Only quicksorts TOTAL_ELEMS / MAX_THRESH partitions, leaving
       insertion sort to order the MAX_THRESH items within each partition.  
       This is a big win, since insertion sort is faster for small, mostly
-      sorted array segements.
+      sorted array segments.
    
    4. The larger of the two sub-partitions is always pushed onto the
       stack first, with the algorithm then concentrating on the

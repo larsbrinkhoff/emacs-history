@@ -198,8 +198,11 @@ Motorola Delta 147 (m68k-motorola-sysv)
   Motorola Delta boxes running System V/68 release 3.
   (tested on sys1147 with SVR3V5).
 
-Motorola Delta 187 (m88k-motorola-sysv or m88k-motorola-m88kbcs)
+Motorola Delta 187 (m88k-motorola-sysv,
+		    m88k-motorola-sysvr4, or
+		    m88k-motorola-m88kbcs)
 
+  As of version 19.13, Emacs is reported to run under SYSVr3 and SYSVr4.
   Machine support added in version 19.
   HAVE_X_MENU does not work due to lack of insque.
  
@@ -294,7 +297,7 @@ Hewlett-Packard 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
   a s200 (upgraded) or s310.
 
   Define the symbol HPUX_NET if you have the optional network features
-  that include the `netunam' system call.  This is refered to as
+  that include the `netunam' system call.  This is referred to as
   Network Services (NS/9000) in HP literature.
 
 HP 9000 series 500: not supported.
@@ -310,8 +313,8 @@ HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux)
   840.  Use hppa1.1 for the 700 series and hppa1.0 for the 800
   series machines.  (Emacs may not actually care which one you use.)
 
-  It hasn't been tested on the 700's at all.  If you try it out on
-  this system, please send us comments and patches.
+  As of version 19.13, Emacs is reported to build (using GCC) and run
+  on HP 9000/700 series machines running HP/UX versions 8.07 and 9.01.
 
   If you are running HP-UX release 8.0 or later, you need the optional
   "C/ANSI C" software in order to build Emacs (older releases of HP-UX
@@ -396,9 +399,9 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
   you specify does not matter, and you can use any name you like
   (but it should not contain any dashes).
 
-  18.58 should support a wide variety of operating systems.
-  Make sure to use i386-*-isc2.2 for Interactive 386/ix version
-	2.2 or later.
+  When using the ISC configurations, be sure to specify the isc
+	version number - for example, if you're running ISC 3.0, use
+	i386-unknown-isc3.0 as your configuration name.
   Use i386-*-esix for Esix; Emacs runs as of version 19.6.
   Use i386-*-linux for Linux; Emacs runs as of version 19.7.
   Use i386-intsys-sysv for Integrated Solutions 386 machines.
@@ -656,7 +659,8 @@ Stride (m68k-stride-sysv)
   It may be possible to run on their V.1 system but changes
   in the s- file would be needed.
 
-Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
+Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
+			       sparc-sun-solaris2.*)
 
   Emacs runs on Sparcs and Sun 3's, as of version 19.7.
 

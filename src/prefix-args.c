@@ -39,7 +39,7 @@ main (argc, argv)
   if (argc < 1)
     {
       fprintf (stderr, "Usage: %s PREFIX ARGS...\n\
-Echo each ARG preceeded by PREFIX and a space.\n", progname);
+Echo each ARG preceded by PREFIX and a space.\n", progname);
       exit (2);
     }
 

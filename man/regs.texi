@@ -24,11 +24,11 @@ Display a description of what register @var{r} contains.
 @end table
 
 @menu
-* Position: RegPos.    Saving positions in registers.
-* Text: RegText.       Saving text in registers.
-* Rectangle: RegRect.  Saving rectangles in registers.
+* Position: RegPos.           Saving positions in registers.
+* Text: RegText.              Saving text in registers.
+* Rectangle: RegRect.         Saving rectangles in registers.
 * Configurations: RegConfig.  Saving window configurations in registers.
-* Files: RegFiles.     File names in registers.
+* Files: RegFiles.            File names in registers.
 @end menu
 
 @node RegPos

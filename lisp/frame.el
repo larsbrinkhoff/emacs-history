@@ -54,7 +54,7 @@ Parameters specified here supersede the values given in
 Pop-up frames are used for completions, help, and the like.
 This variable can be set in your init file, like this:
   (setq pop-up-frame-alist '((width . 80) (height . 20)))
-These supercede the values given in `default-frame-alist'.")
+These supersede the values given in `default-frame-alist'.")
 
 (setq pop-up-frame-function
       (function (lambda ()
@@ -102,12 +102,14 @@ These supercede the values given in `default-frame-alist'.")
 	      ;; so that we won't reapply them in frame-notice-user-settings.
 	      ;; It would be wrong to reapply them then,
 	      ;; because that would override explicit user resizing.
-	      (setq initial-frame-alist
-		    (delq (assq 'height initial-frame-alist)
-			  (delq (assq 'width initial-frame-alist)
-				(delq (assq 'left initial-frame-alist)
-				      (delq (assq 'top initial-frame-alist)
-					    initial-frame-alist)))))
+	      ;; Remember that they may occur more than once.
+	      (let ((tail initial-frame-alist))
+		(while (consp tail)
+		  (if (and (consp (car tail))
+			   (memq (car (car tail)) '(height width top left)))
+		      (setq initial-frame-alist
+			    (delq tail initial-frame-alist)))
+		  (setq tail (cdr tail))))
 	      ;; Handle `reverse' as a parameter.
 	      (if (cdr (or (assq 'reverse initial-frame-alist)
 			   (assq 'reverse default-frame-alist)
@@ -118,11 +120,16 @@ These supercede the values given in `default-frame-alist'.")
 		     frame-initial-frame
 		     ;; Must set cursor-color after background color.
 		     ;; So put it first.
-		     (list (cons 'cursor-color (cdr (assq 'background-color params)))
-			   (cons 'foreground-color (cdr (assq 'background-color params)))
-			   (cons 'background-color (cdr (assq 'foreground-color params)))
-			   (cons 'mouse-color (cdr (assq 'background-color params)))
-			   (cons 'border-color (cdr (assq 'background-color params)))))))))
+		     (list (cons 'cursor-color
+				 (cdr (assq 'background-color params)))
+			   (cons 'foreground-color
+				 (cdr (assq 'background-color params)))
+			   (cons 'background-color
+				 (cdr (assq 'foreground-color params)))
+			   (cons 'mouse-color
+				 (cdr (assq 'background-color params)))
+			   (cons 'border-color
+				 (cdr (assq 'background-color params)))))))))
 
 	;; At this point, we know that we have a frame open, so we 
 	;; can delete the terminal frame.
@@ -244,7 +251,7 @@ These supercede the values given in `default-frame-alist'.")
 ;;;; Creation of additional frames, and other frame miscellanea
 
 ;;; Return some frame other than the current frame, creating one if
-;;; neccessary.  Note that the minibuffer frame, if separate, is not
+;;; necessary.  Note that the minibuffer frame, if separate, is not
 ;;; considered (see next-frame).
 (defun get-other-frame ()
   (let ((s (if (equal (next-frame (selected-frame)) (selected-frame))
@@ -344,7 +351,14 @@ configuration, and other parameters set as specified in CONFIGURATION."
 	       (let ((parameters (assq frame config-alist)))
 		 (if parameters
 		     (progn
-		       (modify-frame-parameters frame (nth 1 parameters))
+		       (modify-frame-parameters
+			frame
+			;; Since we can't set a frame's minibuffer status, 
+			;; we might as well omit the parameter altogether.
+			(let* ((parms (nth 1 parameters))
+			       (mini (assq 'minibuffer parms)))
+			  (if mini (setq parms (delq mini parms)))
+			  parms))
 		       (set-window-configuration (nth 2 parameters)))
 		   (setq frames-to-delete (cons frame frames-to-delete))))))
 	    (frame-list))

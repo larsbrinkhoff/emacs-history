@@ -1584,6 +1584,7 @@ A prefix arg makes KEEP-TIME non-nil.")
   Lisp_Object handler;
   struct gcpro gcpro1, gcpro2;
   int count = specpdl_ptr - specpdl;
+  Lisp_Object args[6];
 
   GCPRO2 (filename, newname);
   CHECK_STRING (filename, 0);
@@ -1594,12 +1595,12 @@ A prefix arg makes KEEP-TIME non-nil.")
   /* If the input file name has special constructs in it,
      call the corresponding file handler.  */
   handler = Ffind_file_name_handler (filename);
-  if (!NILP (handler))
-    return call3 (handler, Qcopy_file, filename, newname);
   /* Likewise for output file name.  */
-  handler = Ffind_file_name_handler (newname);
+  if (NILP (handler))
+    handler = Ffind_file_name_handler (newname);
   if (!NILP (handler))
-    return call3 (handler, Qcopy_file, filename, newname);
+    return call5 (handler, Qcopy_file, filename, newname,
+		  ok_if_already_exists, keep_date);
 
   if (NILP (ok_if_already_exists)
       || XTYPE (ok_if_already_exists) == Lisp_Int)
@@ -1747,8 +1748,11 @@ This is what happens in interactive use with M-x.")
   /* If the file name has special constructs in it,
      call the corresponding file handler.  */
   handler = Ffind_file_name_handler (filename);
+  if (NILP (handler))
+    handler = Ffind_file_name_handler (newname);
   if (!NILP (handler))
-    return call3 (handler, Qrename_file, filename, newname);
+    return call4 (handler, Qrename_file,
+		  filename, newname, ok_if_already_exists);
 
   if (NILP (ok_if_already_exists)
       || XTYPE (ok_if_already_exists) == Lisp_Int)
@@ -1807,7 +1811,8 @@ This is what happens in interactive use with M-x.")
      call the corresponding file handler.  */
   handler = Ffind_file_name_handler (filename);
   if (!NILP (handler))
-    return call3 (handler, Qadd_name_to_file, filename, newname);
+    return call4 (handler, Qadd_name_to_file, filename, newname,
+		  ok_if_already_exists);
 
   if (NILP (ok_if_already_exists)
       || XTYPE (ok_if_already_exists) == Lisp_Int)
@@ -1858,7 +1863,8 @@ This happens for interactive use with M-x.")
      call the corresponding file handler.  */
   handler = Ffind_file_name_handler (filename);
   if (!NILP (handler))
-    return call3 (handler, Qmake_symbolic_link, filename, linkname);
+    return call4 (handler, Qmake_symbolic_link, filename, linkname,
+		  ok_if_already_exists);
 
   if (NILP (ok_if_already_exists)
       || XTYPE (ok_if_already_exists) == Lisp_Int)
@@ -2316,6 +2322,8 @@ otherwise, if FILE2 does not exist, the answer is t.")
   /* If the file name has special constructs in it,
      call the corresponding file handler.  */
   handler = Ffind_file_name_handler (abspath1);
+  if (NILP (handler))
+    handler = Ffind_file_name_handler (abspath2);
   if (!NILP (handler))
     return call3 (handler, Qfile_newer_than_file_p, abspath1, abspath2);
 
@@ -2331,15 +2339,18 @@ otherwise, if FILE2 does not exist, the answer is t.")
 }
 
 DEFUN ("insert-file-contents", Finsert_file_contents, Sinsert_file_contents,
-  1, 2, 0,
+  1, 4, 0,
   "Insert contents of file FILENAME after point.\n\
-Returns list of absolute pathname and length of data inserted.\n\
+Returns list of absolute file name and length of data inserted.\n\
 If second argument VISIT is non-nil, the buffer's visited filename\n\
 and last save file modtime are set, and it is marked unmodified.\n\
 If visiting and the file does not exist, visiting is completed\n\
-before the error is signaled.")
-  (filename, visit)
-     Lisp_Object filename, visit;
+before the error is signaled.\n\n\
+The optional third and fourth arguments BEG and END\n\
+specify what portion of the file to insert.\n\
+If VISIT is non-nil, BEG and END must be nil.")
+  (filename, visit, beg, end)
+     Lisp_Object filename, visit, beg, end;
 {
   struct stat st;
   register int fd;
@@ -2348,6 +2359,7 @@ before the error is signaled.")
   int count = specpdl_ptr - specpdl;
   struct gcpro gcpro1;
   Lisp_Object handler, val;
+  int total;
 
   val = Qnil;
 
@@ -2363,7 +2375,7 @@ before the error is signaled.")
   handler = Ffind_file_name_handler (filename);
   if (!NILP (handler))
     {
-      val = call3 (handler, Qinsert_file_contents, filename, visit);
+      val = call5 (handler, Qinsert_file_contents, filename, visit, beg, end);
       st.st_mtime = 0;
       goto handled;
     }
@@ -2402,12 +2414,32 @@ before the error is signaled.")
   if (st.st_size < 0)
     error ("File size is negative");
 
+  if (!NILP (beg) || !NILP (end))
+    if (!NILP (visit))
+      error ("Attempt to visit less than an entire file");
+
+  if (!NILP (beg))
+    CHECK_NUMBER (beg, 0);
+  else
+    XFASTINT (beg) = 0;
+
+  if (!NILP (end))
+    CHECK_NUMBER (end, 0);
+  else
+    {
+      XSETINT (end, st.st_size);
+      if (XINT (end) != st.st_size)
+	error ("maximum buffer size exceeded");
+    }
+
+  total = XINT (end) - XINT (beg);
+
   {
     register Lisp_Object temp;
 
     /* Make sure point-max won't overflow after this insertion.  */
-    XSET (temp, Lisp_Int, st.st_size + Z);
-    if (st.st_size + Z != XINT (temp))
+    XSET (temp, Lisp_Int, total);
+    if (total != XINT (temp))
       error ("maximum buffer size exceeded");
   }
 
@@ -2415,12 +2447,18 @@ before the error is signaled.")
     prepare_to_modify_buffer (point, point);
 
   move_gap (point);
-  if (GAP_SIZE < st.st_size)
-    make_gap (st.st_size - GAP_SIZE);
-    
+  if (GAP_SIZE < total)
+    make_gap (total - GAP_SIZE);
+
+  if (XINT (beg) != 0)
+    {
+      if (lseek (fd, XINT (beg), 0) < 0)
+	report_file_error ("Setting file position", Fcons (filename, Qnil));
+    }
+
   while (1)
     {
-      int try = min (st.st_size - inserted, 64 << 10);
+      int try = min (total - inserted, 64 << 10);
       int this;
 
       /* Allow quitting out of the actual I/O.  */
@@ -2495,7 +2533,7 @@ before the error is signaled.")
 			 Fcons (make_number (inserted),
 				Qnil)));
 }
-
+
 DEFUN ("write-region", Fwrite_region, Swrite_region, 3, 5,
   "r\nFWrite region to file: ",
   "Write current region into specified file.\n\
@@ -2553,16 +2591,9 @@ to the file, instead of any buffer contents, and END is ignored.")
 
   if (!NILP (handler))
     {
-      Lisp_Object args[7];
       Lisp_Object val;
-      args[0] = handler;
-      args[1] = Qwrite_region;
-      args[2] = start;
-      args[3] = end;
-      args[4] = filename;
-      args[5] = append;
-      args[6] = visit;
-      val = Ffuncall (7, args);
+      val = call6 (handler, Qwrite_region, start, end,
+		   filename, append, visit);
 
       /* Do this before reporting IO error
 	 to avoid a "file has changed on disk" warning on
@@ -2909,7 +2940,8 @@ An argument specifies the modification time value to use\n\
 	 call the corresponding file handler.  */
       handler = Ffind_file_name_handler (filename);
       if (!NILP (handler))
-	return call3 (handler, Qset_visited_file_modtime, filename, Qnil);
+	/* The handler can find the file name the same way we did.  */
+	return call3 (handler, Qset_visited_file_modtime, Qnil);
       else if (stat (XSTRING (filename)->data, &st) >= 0)
 	current_buffer->modtime = st.st_mtime;
     }

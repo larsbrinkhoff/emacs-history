@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -59,7 +59,7 @@ NOTE-END  */
 
 #define NO_UNION_TYPE
 
-/* Sun can't write competant compilers */
+/* Sun can't write competent compilers */
 #define COMPILER_REGISTER_BUG
 
 /* XINT must explicitly sign-extend */

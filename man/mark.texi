@@ -151,6 +151,12 @@ Quitting with @kbd{C-g} deactivates the mark.
 because the Zmacs editor on the MIT Lisp Machine handled the mark in a
 similar way.
 
+  When multiple windows show the same buffer, they can have different
+regions, because they can have different values of point.  In Transient
+Mark mode, each window highlights its own region.  The part that is
+highlighted in the selected window is the region that editing commands
+use.  @xref{Windows}.
+
 @node Using Region
 @section Operating on the Region
 

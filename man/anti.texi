@@ -1,0 +1,418 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+
+@node Antinews, Manifesto, Command Arguments, Top
+@appendix Emacs 18 Antinews
+
+For those users who live backwards in time, here is information about
+downgrading to Emacs version 18.  We hope you will enjoy the greater
+simplicity that results from the absence of many Emacs 19 features.
+
+@heading Packages Removed
+
+To reduce the size of the distribution, we have eliminated numerous
+packages including GNUS, VC (version control), Hexl (for editing
+binary files), Edebug, Emerge, Mpuz, Spook, and Gomoku.
+
+Major modes removed in Emacs 18 include C++ mode, Awk mode, Icon mode,
+Asm mode, Makefile mode, Perl mode and SGML mode.
+
+The function @code{enable-flow-control} does not exist; see the file
+@file{PROBLEMS} in the Emacs distribution for directions for coping
+with flow control.
+
+The Calendar feature provided is a very simple one.  All it can do is
+display three months, by default centered around the current month.
+If you give it a numeric argument, that specifies the number of months
+forward or back.
+
+@heading Fundamental Changes
+
+Auto save and garbage collection happen only while you are typing,
+never while you are idle.  This is to make them more like affectionate
+pets.  Think of them as cats that like to sit on your terminal only
+when you are working there.
+
+Transient Mark mode and Line Number mode are absent in Emacs 18.  If
+you are an Emacs user, you are smart enough to keep track of the mark
+in your head, and you don't need line numbers because you can search
+for precisely the text you want.
+
+There are no menu bars or scroll bars; no faces, text properties or
+overlays.
+
+There are no minibuffer history commands.
+
+There is only one frame, so the Emacs 19 @kbd{C-x 5} command series is
+meaningless.  Instead, @kbd{C-x 5} in Emacs 18 splits the selected window
+horizontally (like @kbd{C-x 3} in Emacs 19).
+
+Another simplification in Emacs 18 is that all input events are
+characters.  Function keys and arrow keys are represented as sequences
+of characters; the terminal-specific Emacs Lisp file for your terminal
+is responsible for defining them.  Mouse buttons are defined by a
+special keymap, @code{mouse-map}.  See the file @file{x-mouse.el} for
+how to bind mouse clicks.
+
+Character codes 128 and above always display using @samp{\@var{nnn}}
+notation.  For codes 0 through 31, you can choose between
+@samp{\@var{nnn}} and @samp{^@var{c}} by setting the variable
+@code{ctl-arrow}; but that is the only thing you can specify about how
+character codes should display.
+
+You can't refer to files on other machines using special ``magic''
+file names.  Instead, you must use the @code{ftp} library with
+commands such as @kbd{M-x ftp-find-file} and @kbd{M-x
+ftp-write-file}.
+
+The character for terminating an incremental search is now @key{ESC},
+not @key{RET} as in Emacs 19.  If you type @key{RET}, that searches
+for a newline; thus, you can insert a newline in the search string
+just as you would insert it in the text.
+
+@heading Key Binding Changes
+
+The key for @code{backward-paragraph} is now @kbd{M-[}.  The key for
+@code{forward-paragraph} is now @kbd{M-]}.
+
+The command @code{repeat-complex-command} is now on @kbd{C-x @key{ESC}}.
+
+The register commands have different key bindings:
+
+@table @kbd
+@item C-x /
+@code{point-to-register}
+@item C-x j
+@code{jump-to-register}
+@item C-x x
+@code{copy-to-register}
+@item C-x g
+@code{insert-register}
+@item C-x r
+@code{copy-rectangle-to-register}
+@end table
+
+The narrowing commands have also been moved:
+
+@table @kbd
+@item C-x n
+@code{narrow-to-region}
+@item C-x p
+@code{narrow-to-page}
+@item C-x w
+@code{widen}
+@end table
+
+And the abbrev commands as well:
+
+@table @kbd
+@item C-x C-a
+@code{add-mode-abbrev}
+@item C-x +
+@code{add-global-abbrev}
+@item C-x C-h
+@code{inverse-add-mode-abbrev}
+@item C-x -
+@code{inverse-add-global-abbrev}
+@item C-x `
+@code{expand-abbrev}
+@end table
+
+There are no key bindings for the rectangle commands.
+
+@kbd{C-x a} now runs the command @code{append-to-buffer}.
+
+The key bindings @kbd{C-x 4 r} and @kbd{C-x 4 C-o} do not exist.
+
+The help commands @kbd{C-h C-f}, @kbd{C-h C-k} and @kbd{C-h p}
+do not exist in Emacs 18.
+
+The command @kbd{C-M-l} (@code{reposition-window}) is absent.
+Likewise @kbd{C-M-r} (@code{isearch-backward-regexp}).
+
+The ``two column'' commands starting with @kbd{C-x 6} don't exist in
+Emacs 18.
+
+The @TeX{} mode bindings of @kbd{C-c @{} and @kbd{C-c @}} have been
+moved to @kbd{M-@{} and @kbd{M-@}}.  (These commands are
+@code{up-list} and @code{tex-insert-braces}; they are the @TeX{}
+equivalents of @kbd{M-(} and @kbd{M-)}.)
+
+@heading Incremental Search Changes
+
+As mentioned above, the character for terminating an incremental
+search is now @key{ESC}, not @key{RET} as in Emacs 19.  If you type
+@key{RET}, that searches for a newline; thus, you can insert a newline
+in the search string just as you would insert it in the text.
+
+There is no ring of previous search strings in Emacs 18.  You can reuse
+the most recent search string, but that's all.
+
+If @code{case-fold-search} is non-@code{nil}, then incremental
+search is @emph{always} case-insensitive.  Typing an upper-case letter
+in the search string has no effect on this.
+
+Spaces in the incremental search string match only spaces.
+
+The meanings of the special search characters are no longer controlled
+by a keymap.  Instead, particular variables named @code{search-@dots{}-char}
+specify the character that should have a particular function.
+For example, @kbd{C-s} repeats the search because the value of
+@code{search-repeat-char} is @code{?\C-s}.
+
+@heading Editing Command Changes
+
+@kbd{C-n} (@code{next-line}) does not check the variable
+@code{next-line-add-newlines}.
+
+The sexp commands such as @kbd{C-M-f} no longer know anything about
+comments, in modes such as Lisp mode where the end of a comment is the
+end of the line.  They treat the text inside a comment as if it were
+actual code.  If comments containing unbalanced parentheses cause
+trouble, you can use the commands @kbd{C-M-n} and @kbd{C-M-p}, which
+do ignore comments.
+
+You can't store file names in registers, and there are no frame
+configurations at all.  The command @kbd{M-x string-rectangle} does not
+exist either.
+
+The undo command in Emacs 18 is not careful about where to leave point
+when you undo a deletion.  It ends up at one end or the other of the
+text just undeleted.  You must be on the lookout for this, and move
+point appropriately.
+
+Kill commands do nothing useful in read-only buffers.  They just beep.
+
+@kbd{M-z @var{c}} in Emacs 18 kills up to but not including the first
+occurrence of @var{c}.  If @var{c} does not occur in the buffer after
+point, @kbd{M-z} kills the whole rest of the buffer.
+
+The function @code{erase-buffer} is not a command in Emacs 18.  You
+can call it from a Lisp program, but not interactively.  The
+motivation for this is to protect you from accidentally deleting (not
+killing) the entire text of a buffer that you want to keep.  With
+subsequent changes in even earlier Emacs versions (such as version
+18.54), you might be unable to undo the @code{erase-buffer}.
+
+@kbd{M-x fill-nonuniform-paragraphs} and Adaptive Fill mode do not exist.
+
+@heading Other Brief Notes
+
+Outline mode exists only as a major mode, not as a minor mode.
+
+@kbd{M-!} (@code{shell-command}) always runs the command synchronously,
+even if the command ends with @samp{&}.
+
+Emacs 18 has no special mode for change log files.  It is a good idea
+to use Indented Text mode, and specify 8 as the value of the variable
+@code{left-margin}.
+
+The command @kbd{M-x comment-region} does not exist.
+The command @kbd{M-x super-apropos} does not exist.
+
+@kbd{C-x q} (@code{kbd-macro-query}) now uses @kbd{C-d} to terminate
+all iterations of the keyboard macro, rather than @key{ESC}.
+
+The @kbd{M-x setenv} command is missing in Emacs 18.
+
+@kbd{M-$} now uses the Unix spell program instead of the GNU program
+Ispell.  If the word around point is a misspelling, it asks you for a
+replacement.
+
+To check spelling of larger units of text, use @kbd{M-x spell-region}
+or @kbd{M-x spell-buffer}.  These commands check all words in the specified
+piece of text.  For each word that is not correct, they ask you to
+specify a replacement, and then replace each occurrence.
+
+@kbd{M-x gdb} still exists in Emacs 18.  @kbd{M-x dbx} exists, but is
+somewhat different (use @kbd{C-h m} to find the details).  @kbd{M-x
+sdb} does not exist at all, but who wants to use SDB?
+
+In Buffer Menu mode, the commands @kbd{%} and @kbd{C-o} don't work in
+Emacs 18.  The @kbd{v} command has been eliminated and merged with the
+@kbd{q} command, which now exits the buffer menu, displaying all the
+buffers that you have marked.
+
+The View commands (such as @kbd{M-x view-buffer} and @kbd{M-x
+view-file}) now use recursive edits.  When you exit viewing, the
+recursive edit returns to its caller.
+
+Emacs 18, like most programs, interprets command line options only when
+it is started--not later on.
+
+The variable to control whether files can set local variables is called
+@code{inhibit-local-variables}.  A non-@code{nil} value means ask the
+user before obeying any local variables lists.
+
+The user option for controlling use of the @code{eval} local variable
+is now called @code{inhibit-local-eval}.  A non-@code{nil} value means
+to ask the user before obeying any @code{eval} local variable.
+
+@heading File Handling Changes
+
+As mentioned above, you can't refer to files on other machines using
+special ``magic'' file names.  Instead, you must use the @code{ftp}
+library with commands such as @kbd{M-x ftp-find-file} and @kbd{M-x
+ftp-write-file}.
+
+When you run @kbd{M-x revert-buffer} with no prefix argument, if the
+buffer has an auto save file more recent that the visited file,
+@code{revert-buffer} asks whether to revert from the auto save file
+instead.
+
+When @kbd{C-x s} (@code{save-some-buffers}) offers to save each buffer,
+you have only two choices: save it, or don't save it.
+
+@kbd{M-x recover-file} turns off Auto Save mode in the current buffer.
+To turn it on again, use @kbd{M-x auto-save-mode}.
+
+The command @kbd{M-x rename-uniquely} does not exist; instead, use
+@kbd{M-x rename-buffer} and try various names until you find one that
+isn't in use.  Completion can make this easier.
+
+The directory name abbreviation feature is gone in Emacs 18.
+
+Emacs 18 has no idea of file truenames, and does not try to detect
+when you visit a file via a symbolic link.  You should check manually
+when you visit a file, so as to edit it in the directory where it is
+actually stored.  This way you can make sure that backup files and
+change log entries go in the proper directory.
+
+@kbd{M-x compare-windows} ignores any prefix argument and always
+considers case and whitespace differences significant.  As for the
+other ways of comparing files, @kbd{M-x diff} and @kbd{M-x
+diff-backup}, they don't exist at all.
+
+@heading Mail Changes
+
+@samp{%} is now a word-component character in Mail mode.  This is to
+be compatible with Text mode.
+
+The variable @code{mail-signature} is not meaningful; if you wish to
+insert your signature in a mail message, you must type @kbd{C-c C-w}.
+
+Mail aliases expand only when you send the message---never when you
+type them in.
+
+Rmail now gets new mail into your primary mail file from @file{~/mbox}
+as well as from your system inbox file.  This is handy if you
+occasionally check your newest mail with the @code{mail} program;
+whatever you have looked at and saved with @code{mail} will be brought
+into Rmail the next time you run Rmail.
+
+The Rmail summary buffer is now much simpler.  Only a few special
+commands are available there: @kbd{n}, @kbd{p}, and @kbd{j} for motion,
+@kbd{d} and @kbd{u} for deletion, and @key{SPC} and @key{DEL} for
+scrolling the message.  To do anything else, you must go to the Rmail
+buffer.  Also, changes in the Rmail buffer don't update the summary;
+to do that, you must make a new summary.
+
+The Rmail command @code{rmail-resend} (accessible via @kbd{f} with a
+prefix argument in Emacs 19) does not exist in Emacs 18.  Neither does
+@code{rmail-retry-failure} (@kbd{M-m} in Emacs 19).
+
+The @kbd{e} command is now ``expunge'', just like @kbd{x}.  To edit
+the current message, type @kbd{w}, which works in Emacs 19 as well.
+If you type @kbd{e} meaning to edit, and it expunges instead---well,
+you shouldn't have deleted those messages if you still wanted them.
+
+The @kbd{<} and @kbd{b} commands have been removed in Emacs 18.
+Likewise @kbd{C-M-t} (@code{rmail-summarize-by-topic}) and 
+@kbd{M-x unrmail}.  Rmail in Emacs 18 is so good, that we can't
+imagine anyone who has tried it would ever wish to use another mail
+reader.
+
+The default output file for @kbd{o} is now always the last file that
+you used with @kbd{o}.  The variable @code{rmail-output-file-alist}
+has no special meaning.
+
+Emacs 18 Rmail does not know anything about Content Length fields in
+messages.
+
+@heading C Mode Changes
+
+In C mode, the keys @kbd{M-a} and @kbd{M-e} now have their usual meanings:
+motion by sentences.  This is useful while editing the comments in a C
+program, but not useful for editing code.  We hope this will encourage
+you to write lots of comments.
+
+The commands @kbd{M-x c-up-conditional} and @kbd{M-x c-backslash-region} have
+been removed entirely in Emacs 18.
+
+@heading Compilation Changes
+
+@kbd{M-x compile} now has a much simpler and faster parser for error
+messages.  However, it understands fewer different formats for error
+messages, and is not as easy to customize.
+
+There is no special mode for compilation buffers.  When you select the
+compilation buffer itself, it is just ordinary text.
+
+Speaking of selecting the compilation buffer, you do need to do that
+from time to time to see whether the compilation has finished, because
+Emacs 18 does not display @samp{Compiling} in the mode line to tell
+you the compilation is still going.
+
+@heading Shell Mode
+
+Shell mode in Emacs 18 does nothing special for the keys @key{TAB}, 
+@kbd{M-?}, @kbd{C-a}, @kbd{C-d}.  The commands @kbd{M-x dirs} and
+@kbd{M-x send-invisible} are also gone.
+
+The history commands @kbd{M-p} and so on are not available either;
+instead, use @kbd{C-c C-y} (@code{copy-last-shell-input}).  This
+copies the previous bunch of shell input, and inserts it into the
+buffer before point.  No final newline is inserted, and the input
+copied is not resubmitted until you type @key{RET}.
+
+Use @kbd{C-c C-d} to send an ``end of file'' to the shell process.
+
+@heading Dired Changes
+
+For simplicity, Dired in Emacs 18 supports just one kind of mark: the
+deletion flag, @samp{*}.  The Emacs 19 Dired commands for flagging
+files do work in Emacs 18, but all the other mark-related commands do
+not.
+
+The Dired subdirectory commands don't exist in Emacs 18.  A Dired buffer
+can contain only one directory.  In particular, this means that 
+the variable @code{dired-listing-switches} must not contain the @samp{R}
+option.  (The @samp{F} option is also not allowed.)
+
+The commands for using @code{find} with Dired have been removed for
+simplicity, also.
+ 
+Emacs 18 Dired provides the following commands for manipulating files
+immediately, and no others.  All of these commands apply to the file
+listed on the current line.
+
+@table @kbd
+@item c
+Copies the file described on the current line.  You must supply a file name
+to copy to, using the minibuffer.
+@item f
+Visits the file described on the current line.  It is just like typing
+@kbd{C-x C-f} and supplying that file name.  If the file on this line is a
+subdirectory, @kbd{f} actually causes Dired to be invoked on that
+subdirectory.
+@item G
+Change the group of the file described on the current line.
+@item M
+Change the file mode of the file described on the current line.
+@item o
+Like @kbd{f}, but uses another window to display the file's buffer.  The
+Dired buffer remains visible in the first window.  This is like using
+@kbd{C-x 4 C-f} to visit the file.
+@item O
+Change the owner of the file described on the current line.
+(On most systems, you must be a superuser to do this.)
+@item r
+Renames the file described on the current line.  You must supply a file
+name to rename to, using the minibuffer.
+@item v
+Views the file described on this line using @kbd{M-x view-file}.  Viewing a
+file is like visiting it, but is slanted toward moving around in the file
+conveniently and does not allow changing the file.
+@end table
+

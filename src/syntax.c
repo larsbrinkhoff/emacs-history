@@ -27,6 +27,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 Lisp_Object Qsyntax_table_p;
 
+static void scan_sexps_forward ();
+static int char_quoted ();
+
 int words_include_escapes;
 
 /* This is the internal form of the parse state used in parse-partial-sexp.  */
@@ -173,7 +176,8 @@ One argument, a syntax table.")
   table = check_syntax_table (table);
   current_buffer->syntax_table = table;
   /* Indicate that this buffer now has a specified syntax table.  */
-  current_buffer->local_var_flags |= buffer_local_flags.syntax_table;
+  current_buffer->local_var_flags
+    |= XFASTINT (buffer_local_flags.syntax_table);
   return table;
 }
 
@@ -327,6 +331,7 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3,
 
 /* Dump syntax table to buffer in human-readable format */
 
+static void
 describe_syntax (value)
     Lisp_Object value;
 {
@@ -443,7 +448,7 @@ describe_syntax (value)
   insert_string ("\n");
 }
 
-Lisp_Object
+static Lisp_Object
 describe_syntax_1 (vector)
      Lisp_Object vector;
 {
@@ -679,6 +684,7 @@ between them, return t; otherwise return nil.")
 
 	  if (code == Sendcomment && !quoted)
 	    {
+#if 0
 	      if (code != SYNTAX (c))
 		/* For a two-char comment ender, we can assume
 		   it does end a comment.  So scan back in a simple way.  */
@@ -704,6 +710,7 @@ between them, return t; otherwise return nil.")
 		    }
 		  break;
 		}
+#endif /* 0 */
 
 	      /* Look back, counting the parity of string-quotes,
 		 and recording the comment-starters seen.
@@ -774,7 +781,7 @@ between them, return t; otherwise return nil.")
 		      }
 
 		    /* If we find another earlier comment-ender,
-		       any comment-starts earier than that don't count
+		       any comment-starts earlier than that don't count
 		       (because they go with the earlier comment-ender).  */
 		    if (code == Sendcomment
 			&& SYNTAX_COMMENT_STYLE (FETCH_CHAR (from)) == comstyle)
@@ -804,7 +811,7 @@ between them, return t; otherwise return nil.")
 		       last passed a comment starter.  */
 		    struct lisp_parse_state state;
 		    scan_sexps_forward (&state, find_defun_start (comment_end),
-					comment_end - 1, -10000, 0, Qnil);
+					comment_end - 1, -10000, 0, Qnil, 0);
 		    if (state.incomment)
 		      from = state.comstart;
 		    else
@@ -1071,6 +1078,7 @@ scan_lists (from, count, depth, sexpflag)
 	    case Sendcomment:
 	      if (!parse_sexp_ignore_comments)
 		break;
+#if 0
 	      if (code != SYNTAX (c))
 		/* For a two-char comment ender, we can assume
 		   it does end a comment.  So scan back in a simple way.  */
@@ -1091,6 +1099,7 @@ scan_lists (from, count, depth, sexpflag)
 		    }
 		  break;
 		}
+#endif /* 0 */
 
 	      /* Look back, counting the parity of string-quotes,
 		 and recording the comment-starters seen.
@@ -1161,7 +1170,7 @@ scan_lists (from, count, depth, sexpflag)
 		      }
 
 		    /* If we find another earlier comment-ender,
-		       any comment-starts earier than that don't count
+		       any comment-starts earlier than that don't count
 		       (because they go with the earlier comment-ender).  */
 		    if (code == Sendcomment
 			&& SYNTAX_COMMENT_STYLE (FETCH_CHAR (from)) == comstyle)
@@ -1191,7 +1200,7 @@ scan_lists (from, count, depth, sexpflag)
 		       last passed a comment starter.  */
 		    struct lisp_parse_state state;
 		    scan_sexps_forward (&state, find_defun_start (comment_end),
-					comment_end - 1, -10000, 0, Qnil);
+					comment_end - 1, -10000, 0, Qnil, 0);
 		    if (state.incomment)
 		      from = state.comstart;
 		    else
@@ -1237,6 +1246,7 @@ scan_lists (from, count, depth, sexpflag)
   /* NOTREACHED */
 }
 
+static int
 char_quoted (pos)
      register int pos;
 {
@@ -1320,6 +1330,7 @@ This includes chars with \"quote\" or \"prefix\" syntax (' or p).")
    If STOPBEFORE is nonzero, stop at the start of an atom.
    If COMMENTSTOP is nonzero, stop at the start of a comment.  */
 
+static void
 scan_sexps_forward (stateptr, from, end, targetdepth,
 		    stopbefore, oldstate, commentstop)
      struct lisp_parse_state *stateptr;
@@ -1403,14 +1414,18 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
     {
       code = SYNTAX (FETCH_CHAR (from));
       from++;
-      if (from < end && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from - 1))
-	  && SYNTAX_COMSTART_SECOND (FETCH_CHAR (from)))
+      if (code == Scomment)
+	state.comstart = from-1;
+      
+      else if (from < end && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from - 1))
+	       && SYNTAX_COMSTART_SECOND (FETCH_CHAR (from)))
 	{
 	  /* Record the comment style we have entered so that only
 	     the comment-end sequence of the same style actually
 	     terminates the comment section.  */
 	  code = Scomment;
 	  state.comstyle = SYNTAX_COMMENT_STYLE (FETCH_CHAR (from));
+	  state.comstart = from-1;
 	  from++;
 	}
 
@@ -1464,7 +1479,6 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 
 	case Scomment:
 	  state.incomment = 1;
-	  state.comstart = from;
 	startincomment:
 	  if (commentstop)
 	    goto done;

@@ -73,7 +73,7 @@ the textsw "STUFF" selection.
 be called the "Right-Margin" region.  The scroll bar region is basically
 the rightmost five columns (see documentation on variable scrollbar-width).
 Mouse hits in this region can have special bindings, currently those binding
-effect scrolling of the window, and so are refered to as the "Scroll-bar"
+effect scrolling of the window, and so are referred to as the "Scroll-bar"
 region.
 
    For information on what mouse bindings are in effect, use the command
@@ -109,14 +109,14 @@ etc/emacs.icon:
     The "Kitchen Sink" GNU Emacs icon.
 
 src/sunfns.c:
-    This contains the auxilary functions that allow elisp code to interact
+    This contains the auxiliary functions that allow elisp code to interact
 with the sunwindows, selection, and menu functions.
 
 lisp/sun-mouse.el:
     Defines the lisp function which is called when a mouse hit is found
 in the input queue.  This handler decodes the mouse hit via a keymap-like
 structure sensitive to a particular window and where in the window the
-hit occured (text-region, right-margin, mode-line).  Three variables
+hit occurred (text-region, right-margin, mode-line).  Three variables
 are bound (*mouse-window* *mouse-x* *mouse-y*) and the selected function
 is called. 
     See documentation on "define-mouse" or look at lisp/sun-fns.el

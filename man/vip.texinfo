@@ -183,7 +183,7 @@ The recommended way to load VIP automatically is to include the line:
 @noindent
 in your @file{.emacs} file.  The @file{.emacs} file is placed in your home
 directory and it will be executed every time you invoke Emacs.  If you wish
-to be in vi mode whenver Emacs starts up, you can include the following
+to be in vi mode whenever Emacs starts up, you can include the following
 line in your @file{.emacs} file instead of the above line:
 @example
 (setq term-setup-hook 'vip-mode)
@@ -1615,7 +1615,7 @@ Search backward incrementally (@code{isearch-backward}).
 Search forward incrementally (@code{isearch-forward}).
 @item @var{n} C-t
 @kindex 024 @kbd{C-t} (@code{transpose-chars})
-Interchange charcters around point, moving forward one character.  With
+Interchange characters around point, moving forward one character.  With
 count @var{n}, take character before point and drag it forward past @var{n}
 other characters.  If no argument and at end of line, the previous two
 characters are exchanged (@code{transpose-chars}).

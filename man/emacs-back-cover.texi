@@ -1,0 +1,77 @@
+\input rotate
+
+\font\title=ptmb at20pt
+\font\body=ptmr at12pt
+\font\file=pcrr at12pt
+\font\cite=ptmro at12pt
+\font\price=ptmr at10pt
+
+\baselineskip=13pt
+\parskip=13pt
+\parindent=0pt
+
+\nopagenumbers
+
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+\hsize=7in
+\vsize=9.25in
+
+\voffset=-1in
+\hoffset=-1in
+
+\hbox to7in{%
+  \vbox to9.25in{
+    \hsize=6in
+    \leftskip=.75in
+    \rightskip=.25in
+
+    \vskip1.5in
+
+    \title
+    \hfil GNU Emacs\hfil
+
+    \body
+    GNU Emacs is the premier text editor and programming environment for
+    workstations and high-end PCs.  This manual tells you how to get
+    started with Emacs, how to write simple messages as well as complex
+    documents, and how to use special modes for editing, compiling, and
+    debugging programs.  It also explains how to handle multiple files and
+    directories and multiple windows, and how to customize your environment.
+
+    GNU Emacs provides autosave, multiple undos and redos, transparent
+    access to remote file systems, multiple backups, support for version
+    control systems, and a Lisp interpreter.  In addition, Emacs integrates
+    {\file make}, {\file grep}, {\file diff}, and other utilities into a single
+    environment.  There are modes for programming in over a dozen different
+    languages.  Emacs not only works with plain character terminals but also
+    is fully integrated with the X Window System.
+
+    Emacs includes an on-line, easy to follow tutorial and a built-in help
+    system that describes all of Emacs's features.
+
+    This is the 8th Edition of the {\cite GNU Emacs Manual}.  It is written
+    by Richard M.{} Stallman, who wrote the original Emacs.  This edition
+    describes the new features and improvements in version 19, but can also
+    be used with the older version 18.
+
+    \vfil
+
+    \leftskip=0pt
+    \rightskip=0pt
+
+    \parfillskip=0pt\hfil%
+    ISBN-1-882114-02-7
+
+    \vskip.5in
+  }%
+  \setbox0=\vbox to1in{
+    \vfil\hskip.5in
+    {\price FSF $\bullet$ US\$25.00 $\bullet$ Printed in USA}
+    \vskip.5in
+  }%
+  \rotl0%
+}
+
+\eject\bye

@@ -17,16 +17,16 @@ rename, and append to files, keep multiple versions of them, and operate
 on file directories.
 
 @menu
-* File Names::   How to type and edit file name arguments.
-* Visiting::     Visiting a file prepares Emacs to edit the file.
-* Saving::       Saving makes your changes permanent.
-* Reverting::    Reverting cancels all the changes not saved.
-* Auto Save::    Auto Save periodically protects against loss of data.
-* File Aliases:: Handling multiple names for one file.
-* Version Control:: 
-* ListDir::      Listing the contents of a file directory.
+* File Names::       How to type and edit file name arguments.
+* Visiting::         Visiting a file prepares Emacs to edit the file.
+* Saving::           Saving makes your changes permanent.
+* Reverting::        Reverting cancels all the changes not saved.
+* Auto Save::        Auto Save periodically protects against loss of data.
+* File Aliases::     Handling multiple names for one file.
+* Version Control::  Version control systems (RCS and SCCS).
+* ListDir::          Listing the contents of a file directory.
 * Comparing Files::  Finding where two files differ.
-* Misc File Ops:: Other things you can do on files.
+* Misc File Ops::    Other things you can do on files.
 @end menu
 
 @node File Names
@@ -406,9 +406,9 @@ values returned by the hook functions do matter.  This is why they have
 names ending in @samp{-hooks} rather than @samp{-hook}.  @xref{Hooks}.
 
 @menu
-* Backup::       How Emacs saves the old version of your file.
-* Interlocking:: How Emacs protects against simultaneous editing
-                  of one file by two users.
+* Backup::        How Emacs saves the old version of your file.
+* Interlocking::  How Emacs protects against simultaneous editing
+                    of one file by two users.
 @end menu
 
 @node Backup
@@ -436,7 +436,7 @@ the file again, a new backup file will be made by the next save.
 
 @menu
 * Names: Backup Names.		How backup files are named;
-				Choosing single or numbered backup files.
+				  choosing single or numbered backup files.
 * Deletion: Backup Deletion.	Emacs deletes excess numbered backups.
 * Copying: Backup Copying.	Backups can be made by copying or renaming.
 @end menu
@@ -677,9 +677,10 @@ so that they do not interfere with the execution of commands you have been
 typing.
 
 @menu
-* Files: Auto Save Files.
-* Control: Auto Save Control.
-* Recover::		Recovering text from auto-save files.
+* Files: Auto Save Files.       The file where auto-saved changes are
+                                  actually made until you save the file.
+* Control: Auto Save Control.   Controlling when and how often to auto-save.
+* Recover::		        Recovering text from auto-save files.
 @end menu
 
 @node Auto Save Files
@@ -833,16 +834,24 @@ RCS or SCCS, so you hardly have to know which one of them you are
 using.
 
 @menu
-* Concepts of VC::
-* Editing with VC::
-* Variables for Check-in/out::
-* Comparing Versions::
-* VC Status::
-* Renaming and VC::
-* Snapshots::
-* Log Entries::
-* Change Logs and VC::
-* Version Headers::
+* Concepts of VC::              Basic version control information;
+                                  checking files in and out.
+* Editing with VC::             Commands for editing a file maintained
+                                  with version control.
+* Variables for Check-in/out::  Variables that affect the commands used
+                                  to check files in or out.
+* Log Entries::                 Logging your changes.
+* Change Logs and VC::          Generating a change log file from log
+                                  entries. 
+* Comparing Versions::          How to compare two versions of a file.
+* VC Status::                   Commands to view the VC status of files and
+                                  look at log entries.
+* Renaming and VC::             A command to rename both the source and
+                                  master file correctly.
+* Snapshots::                   How to make and use snapshots, a set of
+                                  file versions that can be treated as a unit.
+* Version Headers::             Inserting version control headers into
+                                  working files.
 @end menu
 
 @node Concepts of VC
@@ -1264,7 +1273,7 @@ system that is ready for distribution to users.
 
 @menu
 * Making Snapshots::		The snapshot facilities.
-* Snapshot Caveats::		Things to be careful of, when using snapshots.
+* Snapshot Caveats::		Things to be careful of when using snapshots.
 @end menu
 
 @node Making Snapshots

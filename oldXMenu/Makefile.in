@@ -78,7 +78,9 @@ OBJS =  Activate.o \
 	SetSel.o \
       XDelAssoc.o XLookAssoc.o XCrAssoc.o XDestAssoc.o XMakeAssoc.o
 
-ALL_CFLAGS=$(CFLAGS) $(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_X_SITE)
+ALL_CFLAGS=$(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_X_SITE) \
+  $(C_SWITCH_MACHINE) $(CPPFLAGS) $(CFLAGS)
+
 .c.o:
 	$(CC) -c ${ALL_CFLAGS} $<
 
@@ -91,8 +93,12 @@ libXMenu11.a: $(OBJS) $(EXTRA)
 #If running ranlib fails, probably there is none.
 #That's ok.  So don't stop the build.
 
+FRC.mostlyclean:
+mostlyclean: FRC.mostlyclean
+	rm libXMenu11.a ${OBJS} ${EXTRA}
+clean: mostlyclean
 distclean: clean
-clean::
-	$(RM_CMD) \#* libXMenu11.a *.o
+realclean: distclean
+
 tags::
 	$(TAGS) -t *.[ch]

@@ -97,6 +97,10 @@ and this notice must be preserved on all copies.  */
 #undef const
 #undef UNEXEC_SRC
 #undef HAVE_LIBDNET
+#undef HAVE_XRMSETDATABASE
+#undef HAVE_RANDOM
+#undef HAVE_LIBXBSD
+#undef HAVE_CLOSEDIR
 
 /* If using GNU, then support inline function declarations. */
 #ifdef __GNUC__
@@ -186,6 +190,7 @@ and this notice must be preserved on all copies.  */
 #endif
 #endif
 
+#if 0 /* This should be taken care of by autoconf now.  */
 /* joe@zircon.uucp says that in order to use XFree386, you have to
    link against -lXbsd, which insists on defining the random
    function.
@@ -196,12 +201,13 @@ and this notice must be preserved on all copies.  */
 #define LIBX11_SYSTEM -lXbsd
 #define HAVE_RANDOM
 #endif
+#endif
 
 /* Some of the files of Emacs which are intended for use with other
    programs assume that if you have a config.h file, you must declare
    the type of getenv.
 
-   This declaration shouldn't appear when alloca.s or ymakfile
+   This declaration shouldn't appear when alloca.s or ymakefile
    includes config.h.  */
 #ifndef NOT_C_CODE
 extern char *getenv ();

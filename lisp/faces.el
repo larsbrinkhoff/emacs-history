@@ -65,11 +65,11 @@ If the optional argument FRAME is given, report on face FACE in that frame.
 Otherwise report on the defaults for face FACE (for new frames)."
   (aref (internal-get-face face frame) 5))
 
-(defsubst face-background-pixmap (face &optional frame)
- "Return the background pixmap name of face FACE, or nil if unspecified.
-If the optional argument FRAME is given, report on face FACE in that frame.
-Otherwise report on the defaults for face FACE (for new frames)."
- (aref (internal-get-face face frame) 6))
+;;(defsubst face-background-pixmap (face &optional frame)
+;; "Return the background pixmap name of face FACE, or nil if unspecified.
+;;If the optional argument FRAME is given, report on face FACE in that frame.
+;;Otherwise report on the defaults for face FACE (for new frames)."
+;; (aref (internal-get-face face frame) 6))
 
 (defsubst face-underline-p (face &optional frame)
  "Return t if face FACE is underlined.
@@ -102,19 +102,19 @@ in that frame; otherwise change each frame."
   (interactive (internal-face-interactive "background"))
   (internal-set-face-1 face 'background color 5 frame))
 
-(defsubst set-face-background-pixmap (face name &optional frame)
-  "Change the background pixmap of face FACE to PIXMAP.
-PIXMAP should be a string, the name of a file of pixmap data.
-The directories listed in the `x-bitmap-file-path' variable are searched.
+;;(defsubst set-face-background-pixmap (face name &optional frame)
+;;  "Change the background pixmap of face FACE to PIXMAP.
+;;PIXMAP should be a string, the name of a file of pixmap data.
+;;The directories listed in the `x-bitmap-file-path' variable are searched.
 
-Alternatively, PIXMAP may be a list of the form (WIDTH HEIGHT DATA)
-where WIDTH and HEIGHT are the size in pixels,
-and DATA is a string, containing the raw bits of the bitmap.  
+;;Alternatively, PIXMAP may be a list of the form (WIDTH HEIGHT DATA)
+;;where WIDTH and HEIGHT are the size in pixels,
+;;and DATA is a string, containing the raw bits of the bitmap.  
 
-If the optional FRAME argument is provided, change only
-in that frame; otherwise change each frame."
-  (interactive (internal-face-interactive "background-pixmap"))
-  (internal-set-face-1 face 'background-pixmap name 6 frame))
+;;If the optional FRAME argument is provided, change only
+;;in that frame; otherwise change each frame."
+;;  (interactive (internal-face-interactive "background-pixmap"))
+;;  (internal-set-face-1 face 'background-pixmap name 6 frame))
 
 (defsubst set-face-underline-p (face underline-p &optional frame)
   "Specify whether face FACE is underlined.  (Yes if UNDERLINE-P is non-nil.)
@@ -503,12 +503,12 @@ If NOERROR is non-nil, return nil on failure."
 		     (face-font 'default frame)
 		     (cdr (assq 'font (frame-parameters frame)))))
       (or (and (setq f2 (x-make-font-bold font))
-	       (internal-try-face-font face f2))
+	       (internal-try-face-font face f2 frame))
 	  (and (setq f2 (x-make-font-demibold font))
-	       (internal-try-face-font face f2))))
+	       (internal-try-face-font face f2 frame))))
     (or (not (equal ofont (face-font face)))
 	(and (not noerror)
-	     (error "No %s version of %S" face ofont)))))
+	     (error "No bold version of %S" font)))))
 
 (defun make-face-italic (face &optional frame noerror)
   "Make the font of the given face be italic, if possible.  
@@ -527,12 +527,12 @@ If NOERROR is non-nil, return nil on failure."
 		     (face-font 'default frame)
 		     (cdr (assq 'font (frame-parameters frame)))))
       (or (and (setq f2 (x-make-font-italic font))
-	       (internal-try-face-font face f2))
+	       (internal-try-face-font face f2 frame))
 	  (and (setq f2 (x-make-font-oblique font))
-	       (internal-try-face-font face f2))))
+	       (internal-try-face-font face f2 frame))))
     (or (not (equal ofont (face-font face)))
 	(and (not noerror)
-	     (error "No %s version of %S" face ofont)))))
+	     (error "No italic version of %S" font)))))
 
 (defun make-face-bold-italic (face &optional frame noerror)
   "Make the font of the given face be bold and italic, if possible.  
@@ -554,25 +554,25 @@ If NOERROR is non-nil, return nil on failure."
 	       (not (equal font f2))
 	       (setq f3 (x-make-font-bold f2))
 	       (not (equal f2 f3))
-	       (internal-try-face-font face f3))
+	       (internal-try-face-font face f3 frame))
 	  (and (setq f2 (x-make-font-oblique font))
 	       (not (equal font f2))
 	       (setq f3 (x-make-font-bold f2))
 	       (not (equal f2 f3))
-	       (internal-try-face-font face f3))
+	       (internal-try-face-font face f3 frame))
 	  (and (setq f2 (x-make-font-italic font))
 	       (not (equal font f2))
 	       (setq f3 (x-make-font-demibold f2))
 	       (not (equal f2 f3))
-	       (internal-try-face-font face f3))
+	       (internal-try-face-font face f3 frame))
 	  (and (setq f2 (x-make-font-oblique font))
 	       (not (equal font f2))
 	       (setq f3 (x-make-font-demibold f2))
 	       (not (equal f2 f3))
-	       (internal-try-face-font face f3))))
+	       (internal-try-face-font face f3 frame))))
     (or (not (equal ofont (face-font face)))
 	(and (not noerror)
-	     (error "No %s version of %S" face ofont)))))
+	     (error "No bold italic version of %S" font)))))
 
 (defun make-face-unbold (face &optional frame noerror)
   "Make the font of the given face be non-bold, if possible.  
@@ -591,10 +591,10 @@ If NOERROR is non-nil, return nil on failure."
 		      (face-font 'default frame)
 		      (cdr (assq 'font (frame-parameters frame)))))
       (setq font (x-make-font-unbold font1))
-      (if font (internal-try-face-font face font)))
+      (if font (internal-try-face-font face font frame)))
     (or (not (equal ofont (face-font face)))
 	(and (not noerror)
-	     (error "No %s version of %S" face ofont)))))
+	     (error "No unbold version of %S" font1)))))
 
 (defun make-face-unitalic (face &optional frame noerror)
   "Make the font of the given face be non-italic, if possible.  
@@ -613,10 +613,10 @@ If NOERROR is non-nil, return nil on failure."
 		      (face-font 'default frame)
 		      (cdr (assq 'font (frame-parameters frame)))))
       (setq font (x-make-font-unitalic font1))
-      (if font (internal-try-face-font face font)))
+      (if font (internal-try-face-font face font frame)))
     (or (not (equal ofont (face-font face)))
 	(and (not noerror)
-	     (error "No %s version of %S" face ofont)))))
+	     (error "No unitalic version of %S" font1)))))
 
 ;;; Make the builtin faces; the C code knows these as faces 0, 1, and 2,
 ;;; respectively, so they must be the first three faces made.

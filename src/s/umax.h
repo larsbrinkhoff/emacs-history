@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -51,7 +51,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Define INTERRUPT_INPUT to make interrupt_input = 1 the default (use SIGIO)
 
    SIGIO can be used only on systems that implement it (4.2 and 4.3).
-   CBREAK mode has two disadvatages
+   CBREAK mode has two disadvantages
      1) At least in 4.2, it is impossible to handle the Meta key properly.
         I hear that in system V this problem does not exist.
      2) Control-G causes output to be discarded.

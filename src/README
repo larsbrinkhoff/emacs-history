@@ -8,7 +8,7 @@ See the files ../README and then ../INSTALL for installation instructions.
 Under Unix, the file `Makefile.in' is used as a template by the script
 `../configure' to produce `Makefile'.  The `Makefile' then uses `cpp'
 to produce the machine-dependent `ymakefile' from `xmakefile';
-`ymakefile' is the file which actually controlls the compilation of
+`ymakefile' is the file which actually controls the compilation of
 Emacs.  Most of this should work transparently to the user; you should
 only need to run `../configure', and then type `make'.
 

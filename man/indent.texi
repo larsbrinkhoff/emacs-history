@@ -54,10 +54,10 @@ indents to the next tab stop column.  You can set the tab stops with
 @kbd{M-x edit-tab-stops}.
 
 @menu
-* Indentation Commands:: Various commands and techniques for indentation.
-* Tab Stops::            You can set arbitrary "tab stops" and then
-                         indent to the next tab stop when you want to.
-* Just Spaces::          You can request indentation using just spaces.
+* Indentation Commands::  Various commands and techniques for indentation.
+* Tab Stops::             You can set arbitrary "tab stops" and then
+                            indent to the next tab stop when you want to.
+* Just Spaces::           You can request indentation using just spaces.
 @end menu
 
 @node Indentation Commands, Tab Stops, Indentation, Indentation

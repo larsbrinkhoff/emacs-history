@@ -6,6 +6,44 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.14.
+
+* If you call `get-buffer-window' passing t as its second argument, it
+will only search for windows on visible frames.  Previously, passing t
+as the secord argument caused `get-buffer-window' to search all
+frames, visible or not.
+
+* If you call `other-buffer' with a nil or omitted second argument, it
+will ignore buffers displayed windows on any visible frame, not just
+the selected frame.
+
+* You can specify a window or a frame for C-x # to use when
+selects a server buffer.  Set the variable server-window
+to the window or frame that you want.
+
+* The command M-( now inserts spaces outside the open-parentheses in
+some cases--depending on the syntax classes of the surrounding
+characters.  If the variable `parens-dont-require-spaces' is non-nil,
+it inhibits insertion of these spaces.
+
+* The GUD package now supports the debugger known as xdb on HP/UX
+systems.  Use M-x xdb.  The variable `gud-xdb-directories' lets you
+specify a list of directories to search for source code.
+
+* If you are using the mailabbrev package, you should note that its
+function for defining an alias is now called `define-mail-abbrev'.
+This package no longer contains a definition for `define-mail-alias';
+that name is used only in mailaliases.
+
+* Inserted characters now inherit the properties of the text before
+them, by default, rather than those of the following text.
+
+* The function `insert-file-contents' now takes optional arguments BEG
+and END that specify which part of the file to insert.  BEG defaults to
+0 (the beginning of the file), and END defaults to the end of the file.
+
+If you specify BEG or END, then the argument VISIT must be nil.
+
 Changes in version 19.13.
 
 * Magic file names can now handle the `load' operation.
@@ -571,7 +609,7 @@ These bindings have been removed:
 C-c C-r		(was comint-show-output; now gud-cont)
 
 Since GUD mode uses comint, it uses comint's input history commands,
-superceding C-c C-y (copy-last-shell-input):
+superseding C-c C-y (copy-last-shell-input):
   M-p		comint-next-input
   M-n		comint-previous-input
   M-r		comint-previous-similar-input
@@ -845,7 +883,7 @@ operation needed to change the file's writeability) but it will also
 perform initial checkin on an unregistered file.
 
 By default, VC uses RCS if RCS is installed on your machine;
-otherwise, SCCS.  If you want to make the choice explicity, you can do
+otherwise, SCCS.  If you want to make the choice explicitly, you can do
 it by setting `vc-default-back-end' to the symbol `RCS' or the symbol
 `SCCS'.
 
@@ -930,7 +968,7 @@ directions to Emerge: "fast" mode and "edit" mode.
 
 In Fast mode, Emerge commands are single characters, and ordinary
 Emacs commands are disabled.  This makes Emerge operations fast, but
-prevents you from doing more than selecing the A or the B version of
+prevents you from doing more than selecting the A or the B version of
 differences.  In Edit mode, all emerge commands use the C-c prefix,
 and the usual Emacs commands are available.  This allows editing the
 merge buffer, but slows down Emerge operations.  Edit and fast modes
@@ -1345,7 +1383,7 @@ subdirectory.  A prefix argument serves as a repeat count.
 *** `M-$' hides all subdirectories, leaving only their header lines.
 Or, if at least one subdirectory is currently hidden, it makes
 everything visible again.  You can use this command to get an overview
-in very deep directory trees or to move quickly to subdirectoriess far
+in very deep directory trees or to move quickly to subdirectories far
 away.
 
 ** Editing the Dired Buffer
@@ -1385,7 +1423,7 @@ ordinary Dired commands are available.
 If you want to test the contents of files, rather than their names, use
 `find-grep-dired'.  This command takes two minibuffer arguments,
 DIRECTORY and REGEXP; it selects all the files in
-DIRECTORY or its subdiretories that contain a match for
+DIRECTORY or its subdirectories that contain a match for
 REGEXP.  It works by running `find' and `grep'.
 
 The most general command in this series is `find-dired', which lets

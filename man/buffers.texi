@@ -44,7 +44,7 @@ the value in other buffers.  @xref{Locals}.
 * Misc Buffer::     Renaming; changing read-onliness; copying text.
 * Kill Buffer::     Killing buffers you no longer need.
 * Several Buffers:: How to go through the list of all buffers
-                     and operate variously on several of them.
+                      and operate variously on several of them.
 @end menu
 
 @node Select Buffer

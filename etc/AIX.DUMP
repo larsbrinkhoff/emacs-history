@@ -57,7 +57,7 @@ has been modified as follows:
 
         2) Pure data is defined as a shared memory segment and attached
            automatically as read-only data during initialization.  This
-           allows the pure data to be a shared resource amoung all Emacs
+           allows the pure data to be a shared resource among all Emacs
            processes.  The shared memory segment size is PURESIZE bytes.
            If the shared memory segment is unavailable or invalid, a new
            shared memory segment is created and the impure data save file
@@ -146,7 +146,7 @@ has been modified as follows:
 
 
            Sections two and three contain the preloaded data which is
-           resotred at locations _data and initial sbrk(0) respectively.
+           restored at locations _data and initial sbrk(0) respectively.
 
            The reason two separate sections are needed is that process
            initialization allocates data (via malloc) prior to main()

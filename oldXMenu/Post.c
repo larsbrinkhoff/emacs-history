@@ -10,7 +10,7 @@
  *			the menu for user selection.  The user is allowed to
  *			specify the mouse button event mask that will be used
  *			to identify a selection request.  When a selection 
- *			request is recieved (i.e., when the specified mouse
+ *			request is received (i.e., when the specified mouse
  *			event occurs) the data  returned will be either the
  *			data associated with the particular selection active
  *			at the time of the selection request or NULL if no

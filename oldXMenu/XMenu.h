@@ -179,7 +179,7 @@ typedef struct _xmenu {
     XMMode menu_mode;		/* Menu display mode. */
     int freeze;			/* Freeze server mode? */
     int aeq;			/* Asynchronous Event Queueing mode? */
-    int recompute;		/* Recompute menu dependecies? */
+    int recompute;		/* Recompute menu dependencies? */
     Window parent;		/* Menu's parent window. */
     int width;			/* Overall menu width. */
     int height;			/* Overall menu height. */

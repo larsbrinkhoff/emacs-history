@@ -389,7 +389,7 @@ them.
 
 4) Typing `make src/Makefile lib-src/Makefile' builds the
 makefiles for the subdirectories, editing in the values for the path
-variables you establed in step 3.
+variables you established in step 3.
 
 -- or --
 

@@ -643,7 +643,7 @@ if you provide a numeric argument.)
   The @kbd{m} (@code{rmail-mail}) command is used to start editing an
 outgoing message that is not a reply.  It leaves the header fields empty.
 Its only difference from @kbd{C-x 4 m} is that it makes the Rmail buffer
-accessible for @kbd{C-c y}, just as @kbd{r} does.  Thus, @kbd{m} can be
+accessible for @kbd{C-c C-y}, just as @kbd{r} does.  Thus, @kbd{m} can be
 used to reply to or forward a message; it can do anything @kbd{r} or @kbd{f}
 can do.@refill
 

@@ -224,7 +224,7 @@ Example:
 @item forms-read-only
 If set to a value other than @code{nil}, the data file is treated
 read-only. If the data file can not be written into, read-only mode is
-enforced. The default value for @code{forms-read-only} is derieved from
+enforced. The default value for @code{forms-read-only} is derived from
 the access permissions of the data file.@*
 Example:
 @example
@@ -339,7 +339,7 @@ quoted to prevent them from being evaluated too early:
       ))
 @end example
 
-Alternativily, instead of quoting the functions, the whole list may be
+Alternatively, instead of quoting the functions, the whole list may be
 quoted: 
 
 @example
@@ -858,7 +858,7 @@ used to fill to the column."
 @section Credits
 
 Forms mode is developed by Johan Vromans @code{<jv@@mh.nl>} at Multihouse
-Reseach in the Netherlands. 
+Research in the Netherlands. 
 
 Harald Hanche-Olsen @code{<hanche@@imf.unit.no>} supplied the idea for
 the new record filter, and provided better replacements for some

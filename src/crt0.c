@@ -479,6 +479,7 @@ char **argv_value;
 	asm("	comm	float_soft, 4");
 	asm("	comm	flag_68881, 4");
 	asm("	comm	flag_68010, 4");
+	asm("	comm	flag_68040, 4");
 	asm("	comm	flag_fpa, 4");
 
 #endif /* new hp assembler */

@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -148,7 +148,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define _setjmp setjmp
 #define _longjmp longjmp
 
-/* On USG systems the system calls are interruptable by signals
+/* On USG systems the system calls are interruptible by signals
  that the user program has elected to catch.  Thus the system call
  must be retried in these cases.  To handle this without massive
  changes in the source code, we remap the standard system call names

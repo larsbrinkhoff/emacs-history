@@ -59,7 +59,7 @@
      { USER=rms EDITOR=emacs PATH=.:/gnubin:/hacks }
 
      * "env DISPLAY=gnu:0 nemacs"
-        calls "nemacs" in the envionment
+        calls "nemacs" in the environment
 	{ USER=rms EDITOR=emacs PATH=.:/gnubin:/hacks DISPLAY=gnu:0 }
 
      * "env - USER=foo /hacks/hack bar baz"

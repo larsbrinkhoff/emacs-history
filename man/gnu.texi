@@ -1,7 +1,7 @@
 @c This is part of the Emacs manual.
 @c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
-@node Manifesto,, Command Arguments, Top
+@node Manifesto,, Antinews, Top
 @unnumbered The GNU Manifesto
 
 @quotation
@@ -30,17 +30,16 @@ careless.  The intention was that nobody would have to pay for
 clear, and people often interpret them as saying that copies of GNU
 should always be distributed at little or no charge.  That was never the
 intent; later on, the manifesto mentions the possibility of companies
-providing the service of distribution for a profit.
-
-Subsequently I have learned to distinguish carefully between ``free'' in
-the sense of freedom and ``free'' in the sense of price.  Free software
-is software that users have the freedom to distribute and change.  Some
-users may obtain copies at no charge, while others pay to obtain
-copies---and if the funds help support improving the software, so much
-the better.  The important thing is that everyone who has a copy has the
-freedom to cooperate with others in using it.}  Several other volunteers
-are helping me.  Contributions of time, money, programs and equipment
-are greatly needed.
+providing the service of distribution for a profit.  Subsequently I have
+learned to distinguish carefully between ``free'' in the sense of
+freedom and ``free'' in the sense of price.  Free software is software
+that users have the freedom to distribute and change.  Some users may
+obtain copies at no charge, while others pay to obtain copies---and if
+the funds help support improving the software, so much the better.  The
+important thing is that everyone who has a copy has the freedom to
+cooperate with others in using it.} Several other volunteers are helping
+me.  Contributions of time, money, programs and equipment are greatly
+needed.
 
 So far we have an Emacs text editor with Lisp for writing editor commands,
 a source level debugger, a yacc-compatible parser generator, a linker, and
@@ -277,7 +276,7 @@ to get a competitive edge.''
 GNU will remove operating system software from the realm of competition.
 You will not be able to get an edge in this area, but neither will your
 competitors be able to get an edge over you.  You and they will compete in
-other areas, while benefitting mutually in this one.  If your business is
+other areas, while benefiting mutually in this one.  If your business is
 selling an operating system, you will not like GNU, but that's tough on
 you.  If your business is something else, GNU can save you from being
 pushed into the expensive business of selling operating systems.

@@ -55,11 +55,11 @@ to make a new @samp{*mail} buffer.  Once you've done that, you can work
 with each mail buffer independently.
 
 @menu
-* Format: Mail Format.    Format of the mail being composed.
-* Headers: Mail Headers.  Details of permitted mail header fields.
-* Aliases: Mail Aliases.  Abbreviating and grouping mail addresses.
-* Mode: Mail Mode.        Special commands for editing mail being composed.
-* Spook: Distracting NSA. How to distract the NSA's attention.
+* Format: Mail Format.     Format of the mail being composed.
+* Headers: Mail Headers.   Details of permitted mail header fields.
+* Aliases: Mail Aliases.   Abbreviating and grouping mail addresses.
+* Mode: Mail Mode.         Special commands for editing mail being composed.
+* Spook: Distracting NSA.  How to distract the NSA's attention.
 @end menu
 
 @node Mail Format

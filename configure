@@ -195,7 +195,7 @@ Set it to either \`yes' or \`no'."
             val=`eval echo '$'$index`
 	  fi
 	  x_includes="${val}"
-	  C_SWITCH_X_SITE="-I${x_includes}"
+	  C_SWITCH_X_SITE="-I\"${x_includes}\""
         ;;
 	"x_libraries" )
 	  ## If the value was omitted, get it from the next argument.
@@ -211,7 +211,7 @@ Set it to either \`yes' or \`no'."
             val=`eval echo '$'$index`
 	  fi
 	  x_libraries="${val}"
-	  LD_SWITCH_X_SITE="-L${x_libraries}"
+	  LD_SWITCH_X_SITE="-L\"${x_libraries}\""
         ;;
 
 	## Should this use the "development configuration"?
@@ -220,7 +220,7 @@ Set it to either \`yes' or \`no'."
 	  inst_paths='#disabled# '
 	;;
 
-	## Has the user specifiec an installation prefix?
+	## Has the user specified an installation prefix?
 	"prefix" )
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
@@ -237,7 +237,7 @@ Set it to either \`yes' or \`no'."
 	  prefix="${val}"
         ;;
 
-	## Has the user specifiec an installation prefix?
+	## Has the user specified an installation prefix?
 	"exec_prefix" )
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
@@ -357,21 +357,11 @@ if [ `pwd` != `(cd ${srcdir} && pwd)` ] \
 fi
 
 ### Make the necessary directories, if they don't exist.
-if [ ! -d ./src ]; then
-  mkdir ./src
-fi
-if [ ! -d ./lib-src ]; then
-  mkdir ./lib-src
-fi
-if [ ! -d ./cpp ]; then
-  mkdir ./cpp
-fi
-if [ ! -d ./oldXMenu ]; then
-  mkdir ./oldXMenu
-fi
-if [ ! -d ./etc ]; then
-  mkdir ./etc
-fi
+for dir in ./src ./lib-src ./cpp ./oldXMenu ./etc ; do
+  if [ ! -d ${dir} ]; then
+    mkdir ${dir}
+  fi
+done
 
 #### Given the configuration name, set machfile and opsysfile to the
 #### names of the m/*.h and s/*.h files we should use.
@@ -485,6 +475,11 @@ case "${configuration}" in
     machine=cydra5 opsys=usg5-3
   ;;
 
+  ## Data General AViiON Machines
+  m88k-dg-dgux* )
+    machine=aviion opsys=dgux
+  ;;
+
   ## DECstations
   mips-dec-ultrix[0-3].* | mips-dec-ultrix4.0 | mips-dec-bsd4.2 )
     machine=pmax opsys=bsd4-2
@@ -499,6 +494,9 @@ case "${configuration}" in
   ## Motorola Delta machines
   m68*-motorola-sysv* )
     machine=delta opsys=usg5-3
+  ;;
+  m88k-motorola-sysv4* )
+    machine=delta88k opsys=usg5-4
   ;;
   m88k-motorola-sysv* | m88k-motorola-m88kbcs* )
     machine=delta88k opsys=usg5-3
@@ -544,9 +542,13 @@ case "${configuration}" in
   m68*-hp-bsd* )
     machine=hp9000s300 opsys=bsd4-3
   ;;
-  ## HP/UX 8 doesn't run on these machines, so use HP/UX 7.
+  ## HP/UX 7, 8 and 9 are supported on these machines.
   m68*-hp-hpux* )
-    machine=hp9000s300 opsys=hpux
+    case "`uname -r`" in
+      *.08.* ) machine=hp9000s300 opsys=hpux8 ;;
+      *.09.* ) machine=hp9000s300 opsys=hpux9 ;;
+      *) machine=hp9000s300 opsys=hpux ;;
+    esac
   ;;
 
   ## HP 9000 series 700 and 800, running HP/UX
@@ -625,22 +627,15 @@ case "${configuration}" in
   i[34]86-intsys-sysv* )
     machine=is386 opsys=usg5-2-2
   ;;
-  ## Intel 386 machines where we don't care about the manufacturer
-  i[34]86-*-* )
-    machine=intel386
-    case "${configuration}" in
-      *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
-      *-isc2.2 )		opsys=isc2-2 ;;
-      *-isc* )			opsys=isc3-0 ;;
-      *-esix5* )		opsys=esix5r4 ;;
-      *-esix* )			opsys=esix ;;
-      *-xenix* )		opsys=xenix ;;
-      *-linux* )		opsys=linux ;;
-      *-sco3.2v4* )		opsys=sco4 ;;
-      *-bsd386* )		opsys=bsd386 ;;
-      *-386bsd )	        opsys=386bsd ;;
-      ## Otherwise, we'll fall through to the generic opsys code at the bottom.
-    esac
+
+  ## Prime EXL
+  i386-prime-sysv* )
+    machine=i386 opsys=usg5-3
+  ;;
+
+  ## Sequent Symmetry
+  i386-sequent-bsd* )
+    machine=symmetry opsys=bsd4-3
   ;;
 
   ## Intel 860
@@ -732,11 +727,6 @@ case "${configuration}" in
     machine=plexus opsys=usg5-2
   ;;
 
-  ## Prime EXL
-  i386-prime-sysv* )
-    machine=i386 opsys=usg5-3
-  ;;
-
   ## Pyramid machines
   ## I don't really have any idea what sort of processor the Pyramid has,
   ## so I'm assuming it is its own architecture.
@@ -750,10 +740,6 @@ case "${configuration}" in
   ;;
   ns32k-sequent-bsd4.3 )
     machine=sequent opsys=bsd4-3
-  ;;
-  ## Sequent Symmetry
-  i386-sequent-bsd* )
-    machine=symmetry opsys=bsd4-3
   ;;
 
   ## SONY machines
@@ -862,6 +848,24 @@ case "${configuration}" in
     machine=wicat opsys=usg5-2
   ;;
 
+  ## Intel 386 machines where we don't care about the manufacturer
+  i[34]86-*-* )
+    machine=intel386
+    case "${configuration}" in
+      *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
+      *-isc2.2 )		opsys=isc2-2 ;;
+      *-isc* )			opsys=isc3-0 ;;
+      *-esix5* )		opsys=esix5r4 ;;
+      *-esix* )			opsys=esix ;;
+      *-xenix* )		opsys=xenix ;;
+      *-linux* )		opsys=linux ;;
+      *-sco3.2v4* )		opsys=sco4 ;;
+      *-bsd386* )		opsys=bsd386 ;;
+      *-386bsd )	        opsys=386bsd ;;
+      ## Otherwise, we'll fall through to the generic opsys code at the bottom.
+    esac
+  ;;
+
   * )
     unported=true
   ;;
@@ -903,10 +907,8 @@ opsysfile="s/${opsys}.h"
 
 trap 'rm -f conftest* core; exit 1' 1 3 15
 
-# Needed for some versions of `tr' so that character classes in `[]' work.
-if test "${LANG+set}" = "set" ; then
-   LANG=C
-fi
+# NLS nuisances.
+LANG=C; LC_ALL=C; export LANG; export LC_ALL;
 
 rm -f conftest*
 compile='${CC-cc} $CFLAGS $DEFS conftest.c -o conftest $LIBS >/dev/null 2>&1'
@@ -1004,6 +1006,7 @@ if test -z "$CPP"; then
   CPP='${CC-cc} -E'
   cat > conftest.c <<EOF
 #include <stdio.h>
+Syntax Error
 EOF
 err=`eval "($CPP \$DEFS conftest.c >/dev/null) 2>&1"`
 if test -z "$err"; then
@@ -1053,6 +1056,29 @@ fi
 INSTALL=${INSTALL-cp}
 INSTALL_PROGRAM=${INSTALL_PROGRAM-'$(INSTALL)'}
 INSTALL_DATA=${INSTALL_DATA-'$(INSTALL)'}
+
+for p in 'bison -y' byacc
+do
+if test -z "$YACC"; then
+  # Extract the first word of `$p', so it can be a program name with args.
+  set dummy $p; word=$2
+  echo checking for $word
+  IFS="${IFS= 	}"; saveifs="$IFS"; IFS="${IFS}:"
+  for dir in $PATH; do
+    test -z "$dir" && dir=.
+    if test -f $dir/$word; then
+      YACC="$p"
+      break
+    fi
+  done
+  IFS="$saveifs"
+fi
+
+test -n "$YACC" -a -n "$verbose" && echo "	setting YACC to $YACC"
+
+test -n "$YACC" && break
+done
+test -n "$YACC" || YACC="yacc"
 
 
 
@@ -1449,7 +1475,7 @@ fi
 rm -f conftest*
 fi
 
-for func in gettimeofday gethostname dup2 rename
+for func in gettimeofday gethostname dup2 rename closedir
 do
 trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
 echo checking for ${func}
@@ -1624,6 +1650,32 @@ fi
 rm -f conftest*
 
 
+echo checking for long file names
+lost=false
+# Test for long file names in all the places we know might matter:
+#      .		the current directory, where building will happen
+#      /tmp		where it might want to write temporary files
+#      /usr/tmp		likewise
+#      $prefix		where we will be installing things
+#      $exec_prefix	likewise
+for dir in . /tmp /usr/tmp $prefix $exec_prefix ; do
+  (echo 1 > $dir/conftest9012345) 2>/dev/null
+  (echo 2 > $dir/conftest9012346) 2>/dev/null
+  val=`cat $dir/conftest9012345 2>/dev/null`
+  test -f $dir/conftest9012345 && test "$val" = 1 || lost=true
+  rm -f $dir/conftest9012345 $dir/conftest9012346
+done
+$lost || {
+test -n "$verbose" && \
+echo '	defining' HAVE_LONG_FILE_NAMES
+DEFS="$DEFS -DHAVE_LONG_FILE_NAMES=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_FILE_NAMES\${SEDdB}HAVE_LONG_FILE_NAMES\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_LONG_FILE_NAMES\${SEDuB}HAVE_LONG_FILE_NAMES\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_LONG_FILE_NAMES\${SEDeB}HAVE_LONG_FILE_NAMES\${SEDeC}1\${SEDeD}
+"
+}
+
+
 
 
 
@@ -1787,8 +1839,8 @@ echo '
 ' > ${tempcname}
 # The value of CPP is a quoted variable reference, so we need to do this
 # to get its actual value...
-foo=`eval "echo $CPP"`
-eval `${foo} ${tempcname} \
+CPP=`eval "echo $CPP"`
+eval `${CPP} -Isrc ${tempcname} \
        | grep '@configure@' \
        | sed -e 's/^@configure@ \([^=]*=\)\(.*\)$/\1"\2"/'`
 rm ${tempcname}
@@ -1810,6 +1862,83 @@ if [ x"${REL_ALLOC}" = x ]; then
 fi
 
 LISP_FLOAT_TYPE=yes
+
+
+#### Add the X libraries to the list, and check for some functions found there.
+CFLAGS_save="$CFLAGS"
+CFLAGS="${CFLAGS} ${LD_SWITCH_X_SITE}"
+
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lXbsd"
+have_lib=""
+echo checking for -lXbsd
+cat > conftest.c <<EOF
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  have_lib="1"
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   {
+test -n "$verbose" && \
+echo '	defining' HAVE_LIBXBSD
+DEFS="$DEFS -DHAVE_LIBXBSD=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LIBXBSD\${SEDdB}HAVE_LIBXBSD\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_LIBXBSD\${SEDuB}HAVE_LIBXBSD\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_LIBXBSD\${SEDeB}HAVE_LIBXBSD\${SEDeC}1\${SEDeD}
+"
+}
+
+   LIBS="${LIBS} -lXbsd"
+fi
+
+
+LIBS_save="$LIBS"
+if [ "${HAVE_X11}" = "yes" ] ; then
+  LIBS="-lX11 ${LIBS}"
+fi
+
+for func in XrmSetDatabase random
+do
+trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
+echo checking for ${func}
+cat > conftest.c <<EOF
+#include <ctype.h>
+int main() { exit(0); }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_${func}) || defined (__stub___${func})
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char ${func}(); ${func}();
+#endif
+ }
+EOF
+if eval $compile; then
+  {
+test -n "$verbose" && \
+echo '	defining' ${trfunc}
+DEFS="$DEFS -D${trfunc}=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}${trfunc}\${SEDdB}${trfunc}\${SEDdC}1\${SEDdD}
+\${SEDuA}${trfunc}\${SEDuB}${trfunc}\${SEDuC}1\${SEDuD}
+\${SEDeA}${trfunc}\${SEDeB}${trfunc}\${SEDeC}1\${SEDeD}
+"
+}
+
+fi
+rm -f conftest*
+done
+
+
+CFLAGS="$CFLAGS_save"
+LIBS="$LIBS_save"
 
 
 #### Find out which version of Emacs this is.
@@ -1998,10 +2127,14 @@ if test -n "$prefix"; then
 fi
 if test -n "$exec_prefix"; then
   prsub="$prsub
-s%^exec_prefix\\([ 	]*\\)=\\([ 	]*\\).*$%\
-exec_prefix\\1=\\2$exec_prefix%"
+s%^exec_prefix\\([ 	]*\\)=\\([ 	]*\\).*$%exec_prefix\\1=\\2$exec_prefix%"
 fi
-DEFS="`echo \"$DEFS\" | sed 's%[&\\\]%\\\&%g'`"
+cat >conftest.def <<EOF
+$DEFS
+EOF
+escape_ampersand_and_backslash='s%[&\\]%\\&%g'
+DEFS=`sed "$escape_ampersand_and_backslash" <conftest.def`
+rm -f conftest.def
 
 trap 'rm -f config.status; exit 1' 1 3 15
 echo creating config.status
@@ -2031,6 +2164,7 @@ CPP='$CPP'
 INSTALL='$INSTALL'
 INSTALL_PROGRAM='$INSTALL_PROGRAM'
 INSTALL_DATA='$INSTALL_DATA'
+YACC='$YACC'
 ALLOCA='$ALLOCA'
 configuration='$configuration'
 version='$version'
@@ -2075,6 +2209,7 @@ s%@CPP@%$CPP%g
 s%@INSTALL@%$INSTALL%g
 s%@INSTALL_PROGRAM@%$INSTALL_PROGRAM%g
 s%@INSTALL_DATA@%$INSTALL_DATA%g
+s%@YACC@%$YACC%g
 s%@ALLOCA@%$ALLOCA%g
 s%@configuration@%$configuration%g
 s%@version@%$version%g

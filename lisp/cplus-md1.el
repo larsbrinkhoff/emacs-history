@@ -1,4 +1,4 @@
-;;; c++-mode.el --- major mode for editing C++ (and C) code
+;;; cplus-md1.el --- major mode for editing C++ (and C) code
 
 ;; Author: 1992 Barry A. Warsaw, Century Computing Inc. <bwarsaw@cen.com>
 ;;         1987 Dave Detlefs and Stewart Clamen
@@ -616,7 +616,7 @@ auto-newline algorithm. Sometimes you want it and sometimes you don't.
 So now auto-newline (and its companion feature, hungry-delete-key) can
 be toggled on and off on the fly.  Hungry-delete-key is the optional
 behavior of the delete key so that, when enabled, hitting the delete
-key once consumes all preceeding whitespace, unless point is within a
+key once consumes all preceding whitespace, unless point is within a
 literal (defined as a C or C++ comment, or string).  Inside literals,
 and with hungry-delete-key disabled, the delete key just calls the
 function in variable c++-delete-function.
@@ -1479,7 +1479,7 @@ c++-untame-characters."
   "Skip backwards over syntactic whitespace.
 Syntactic whitespace is defined as lexical whitespace, C and C++ style
 comments, and preprocessor directives. Search no farther back than
-optional LIM.  If LIM is ommitted, beginning-of-defun is used."
+optional LIM.  If LIM is omitted, beginning-of-defun is used."
   (let ((lim (or lim (c++-point 'bod)))
 	literal stop)
     (if (and c++-backscan-limit
@@ -1536,7 +1536,7 @@ optional LIM.  If LIM is ommitted, beginning-of-defun is used."
   "Skip backwards over syntactic whitespace.
 Syntactic whitespace is defined as lexical whitespace, C and C++ style
 comments, and preprocessor directives. Search no farther back than
-optional LIM.  If LIM is ommitted, beginning-of-defun is used."
+optional LIM.  If LIM is omitted, beginning-of-defun is used."
   (save-restriction
     (let ((parse-sexp-ignore-comments t)
 	  donep boi char
@@ -1568,7 +1568,7 @@ optional LIM.  If LIM is ommitted, beginning-of-defun is used."
   "Skip backwards over syntactic whitespace.
 Syntactic whitespace is defined as lexical whitespace, C and C++ style
 comments, and preprocessor directives. Search no farther back than
-optional LIM.  If LIM is ommitted, beginning-of-defun is used."
+optional LIM.  If LIM is omitted, beginning-of-defun is used."
   (save-restriction
     (let ((lim (or lim (c++-point 'bod)))
 	  donep boi char)
@@ -1629,7 +1629,7 @@ used."
 			   (narrow-to-region (point) here)
 			   (re-search-forward
 			    ;; this regexp matches a double quote
-			    ;; which is preceeded by an even number
+			    ;; which is preceded by an even number
 			    ;; of backslashes, including zero
 			    "\\([^\\]\\|^\\)\\(\\\\\\\\\\)*\"" here 'move)))
 		    'string))
@@ -1640,7 +1640,7 @@ used."
 			   (narrow-to-region (point) here)
 			   (re-search-forward
 			    ;; this matches a single quote which is
-			    ;; preceeded by zero or two backslashes.
+			    ;; preceded by zero or two backslashes.
 			    "\\([^\\]\\|^\\)\\(\\\\\\\\\\)?'"
 			    here 'move)))
 		    'string))
@@ -1896,7 +1896,7 @@ point of the beginning of the C++ definition."
 (defun c++-cont-indent (ipnt char lim)
   "Calculate the indentation for a continued statement.
 IPNT is the indentation point; CHAR is the character before the
-indentation point, excluding any intervenine whitespace; LIM is the
+indentation point, excluding any intervening whitespace; LIM is the
 minimum point to search backwards to"
   (let ((charlist '(nil ?\000 ?\, ?\; ?\} ?\: ?\{))
 	streamop-pos here)
@@ -2199,7 +2199,7 @@ BOD is the beginning of the C++ definition."
 	  ;; and the beginning of the first argument.
 	  (goto-char (1+ containing-sexp))
 	  ;; we want to skip any whitespace b/w open paren and
-	  ;; first argurment. this handles while (thing) style
+	  ;; first argument. this handles while (thing) style
 	  ;; and while( thing ) style
 	  (skip-chars-forward " \t")
 	  (current-column)))
@@ -2522,7 +2522,7 @@ if nonNIL, use c++-defun-header-strong")
 (defconst c++-defun-header-strong
   (let*
       (; valid identifiers
-       ;; There's a real wierdness here -- if I switch the below
+       ;; There's a real weirdness here -- if I switch the below
        (id "\\(\\w\\|_\\)+")
        ;; to be
        ;; (id "\\(_\\|\\w\\)+")
@@ -2732,5 +2732,5 @@ function definition.")
 ;; this is sometimes useful
 (provide 'c++-mode)
 
-;;; c++-mode.el ends here
+;;; cplus-md1.el ends here
 

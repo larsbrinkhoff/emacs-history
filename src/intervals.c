@@ -655,7 +655,7 @@ adjust_intervals_for_insertion (tree, position, length)
       /* If both intervals are sticky here, then default to the
          left-most one.  But perhaps we should create a new
 	 interval here instead... */
-      if (END_STICKY_P (prev))
+      if (END_STICKY_P (prev) || ! FRONT_STICKY_P (i))
 	i = prev;
     }
 
@@ -837,7 +837,7 @@ interval_deletion_adjustment (tree, from, amount)
   /* Never reach here */
 }
 
-/* Effect the adjustments neccessary to the interval tree of BUFFER
+/* Effect the adjustments necessary to the interval tree of BUFFER
    to correspond to the deletion of LENGTH characters from that buffer
    text.  The deletion is effected at position START (relative to the
    buffer). */
@@ -881,7 +881,7 @@ adjust_intervals_for_deletion (buffer, start, length)
     }
 }
 
-/* Make the adjustments neccessary to the interval tree of BUFFER to
+/* Make the adjustments necessary to the interval tree of BUFFER to
    represent an addition or deletion of LENGTH characters starting
    at position START.  Addition or deletion is indicated by the sign
    of LENGTH. */
@@ -1096,7 +1096,7 @@ make_new_interval (intervals, start, length)
    had its appropriate sticky property set (front_sticky, rear_sticky),
    the new text has only its properties.  If one of the sticky properties
    is set, then the new text "sticks" to that region and its properties
-   depend on merging as above.  If both the preceding and succeding
+   depend on merging as above.  If both the preceding and succeeding
    intervals to the new text are "sticky", then the new text retains
    only its properties, as if neither sticky property were set.  Perhaps
    we should consider merging all three sets of properties onto the new
@@ -1315,7 +1315,10 @@ set_point (position, buffer)
     {
       toprev = to;
       to = next_interval (to);
-      position = to->position;
+      if (NULL_INTERVAL_P (to))
+	position = BUF_ZV (buffer);
+      else
+	position = to->position;
     }
 
   buffer->text.pt = position;
@@ -1476,21 +1479,22 @@ verify_interval_modification (buf, start, end)
 
       if (NULL_INTERVAL_P (prev))
 	{
-	  after = textget (i->plist, Qread_only);
-	  if (! NILP (after))
+	  if (! INTERVAL_WRITABLE_P (i))
 	    error ("Attempt to insert within read-only text");
 	}
       else if (NULL_INTERVAL_P (i))
 	{
-	  before = textget (prev->plist, Qread_only);
-	  if (! NILP (before))
+	  if (! INTERVAL_WRITABLE_P (prev))
 	    error ("Attempt to insert within read-only text");
 	}
       else
 	{
 	  before = textget (prev->plist, Qread_only);
 	  after = textget (i->plist, Qread_only);
-	  if (! NILP (before) && EQ (before, after))
+	  if (! NILP (before) && EQ (before, after)
+	      /* This checks Vinhibit_read_only properly
+		 for the common value of the read-only property.  */
+	      && ! INTERVAL_WRITABLE_P (i))
 	    error ("Attempt to insert within read-only text");
 	}
 
