@@ -2332,9 +2332,9 @@ Optional prefix ARG means justify paragraph as well."
 	    (beginning-of-line)
 	    ;; Move up to first line of this comment.
 	    (while (and (not (bobp))
-			(looking-at "[ \t]*//"))
+			(looking-at "[ \t]*//[ \t]*[^ \t\n]"))
 	      (forward-line -1))
-	    (if (not (looking-at ".*//"))
+	    (if (not (looking-at ".*//[ \t]*[^ \t\n]"))
 		(forward-line 1))
 	    ;; Find the comment start in this line.
 	    (re-search-forward "[ \t]*//[ \t]*")

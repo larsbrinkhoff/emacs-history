@@ -381,26 +381,33 @@ These variables are used only on particular configurations:
 @item COMSPEC
 On MS-DOS, the name of the command interpreter to use.  This is used to
 make a default value for the @code{SHELL} environment variable.
+
 @item NAME
 On MS-DOS, this variable defaults to the value of the @code{USER}
 variable.
+
 @item TEMP
 @itemx TMP
 On MS-DOS, these specify the name of the directory for storing temporary
 files in.
+
 @item EMACSTEST
-On MS-DOS, this is the name of the file where Emacs writes a full log
-of the internal terminal emulator operation.  Useful when submitting
-bugs.
+On MS-DOS, this specifies a file to use to log the operation of the
+internal terminal emulator.  This feature is useful for submitting bug
+reports.
+
 @item EMACSCOLORS
-Used on MS-DOS systems to set screen colors early so that the screen
-won't momentarily flash the default colors at startup.  The value of
-this variable should be 2-character encoding of the foreground (the
-first character) and the background (the second character) colors of
-the default face.  Each character should be a hexadecimal code of the
-color on a standard PC text-mode display.  Only 3 lower bits of the
-background color are actually used, because PC display cannot use more
-than 8 background colors.
+Used on MS-DOS systems to set screen colors early, so that the screen
+won't momentarily flash the default colors when Emacs starts up.  The
+value of this variable should be two-character encoding of the
+foreground (the first character) and the background (the second
+character) colors of the default face.  Each character should be the
+hexadecimal code for the desired color on a standard PC text-mode
+display.
+
+Only the low three bits of the background color are actually used,
+because the PC display supports only eight background colors.
+
 @item WINDOW_GFX
 Used when initializing the Sun windows system.
 @end table
@@ -884,9 +891,12 @@ Color name for text.
 @item @code{geometry} (class @code{Geometry})
 Window size and position.  Be careful not to specify this resource as
 @samp{emacs*geometry}, because that may affect individual menus as well
-as the Emacs frame itself.  If this resource specifies a position, that
-affects only the initial Emacs frame and frames with explicitly
-specified names; but the size (if specified) applies to all frames.
+as the Emacs frame itself.
+
+If this resource specifies a position, that position applies only to the
+initial Emacs frame (or, in the case of a resource for a specific frame
+name, only that frame).  However, the size if specified here applies to
+all frames.
 
 @item @code{iconName} (class @code{Title})
 Name to display in the icon.

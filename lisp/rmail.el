@@ -147,19 +147,20 @@ still the current message in the Rmail buffer.")
   "Regexp marking the end of an mmdf message")
 
 (defvar rmail-message-filter nil
-  "If non nil, a filter function for new messages in RMAIL.
-Called with region narrowed to the message, including headers.")
+  "If non-nil, a filter function for new messages in RMAIL.
+Called with region narrowed to the message, including headers,
+before obeying `rmail-ignored-headers'.")
 
 (defvar rmail-reply-prefix "Re: "
   "String to prepend to Subject line when replying to a message.")
 
-;; Some mailers use "Re(2):" or "Re^2:" or "Re: Re:".
+;; Some mailers use "Re(2):" or "Re^2:" or "Re: Re:" or "Re[2]".
 ;; This pattern should catch all the common variants.
-(defvar rmail-reply-regexp "\\`\\(Re\\(([0-9]+)\\|\\^[0-9]+\\)?: *\\)*"
-  "Regexp to delete from Subject line before inserting rmail-reply-prefix.")
+(defvar rmail-reply-regexp "\\`\\(Re\\(([0-9]+)\\|\\[[0-9]+\\]\\|\\^[0-9]+\\)?: *\\)*"
+  "Regexp to delete from Subject line before inserting `rmail-reply-prefix'.")
 
 (defvar rmail-display-summary nil
-  "If non nil, the summary buffer is always displayed.")
+  "If non-nil, Rmail always displays the summary buffer.")
 
 (defvar rmail-mode-map nil)
 
@@ -232,10 +233,15 @@ Called with region narrowed to the message, including headers.")
      ;;		From: Joe User
      ;;			<joe@y.z>
      ;; can yield `From Joe User Fri Mar 22 08:11:15 1996'.
+     ;; The mailbox can be removed or be replaced by white space, e.g.
+     ;;		From: "Joe User"{space}{tab}
+     ;;			<joe@y.z>
+     ;; can yield `From {space}{tab} Fri Mar 22 08:11:15 1996',
+     ;; where {space} and {tab} represent the Ascii space and tab characters.
      ;; We want to match the results of any of these manglings.
      ;; The following regexp rejects names whose first characters are
      ;; obviously bogus, but after that anything goes.
-     "\\([^\0-\r \^?].*\\)? "
+     "\\([^\0-\b\n-\r\^?].*\\)? "
 
      ;; The time the message was sent.
      "\\([^\0-\r \^?]+\\) +"				; day of the week

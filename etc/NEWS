@@ -5,6 +5,15 @@ See the end for copying conditions.
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
 
+* Changes in Emacs 19.33.
+
+** Bibtex mode no longer turns on Auto Fill automatically.  (No major
+mode should do that--it is the user's choice.)
+
+** The variable normal-auto-fill-function specifies the function to
+use for auto-fill-functyion, if and when Auto Fill is turned on.
+Major modes can set this locally to alter how Auto Fill works.
+
 * Editing Changes in Emacs 19.32
 
 ** C-x f with no argument now signals an error.

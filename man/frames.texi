@@ -774,8 +774,9 @@ or reserved keywords.
 
 @findex font-lock-mode
 @findex turn-on-font-lock
-  The command @kbd{M-x font-lock-mode} turns the mode on or off.  The
-function @code{turn-on-font-lock} unconditionally enables Font Lock
+  The command @kbd{M-x font-lock-mode} turns Font Lock mode on or off
+according to the argument, and toggles the mode when it has no argument.
+The function @code{turn-on-font-lock} unconditionally enables Font Lock
 mode.  This is useful in mode-hook functions.  For example, to enable
 Font Lock mode whenever you edit a C file, you can do this:
 

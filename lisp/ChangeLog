@@ -1,3 +1,52 @@
+Sun Aug 11 03:36:03 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.33 released.
+
+	* cc-mode.el (c-fill-paragraph): Fix regexp for finding C++ comment
+	paragraphs.
+
+Sat Aug 10 20:19:06 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* isearch.el (isearch-whitespace-chars): If isearch-invalid-regexp,
+	insert just a space.
+
+Wed Aug  7 15:44:08 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* iso-acc.el (iso-languages, french): Remove non-French combinations.
+	Add ~c, "e, "i, `u.
+
+	* simple.el (normal-auto-fill-function): New variable.
+	(auto-fill-mode): Use that instead of constant 'do-auto-fill.
+
+	* bibtex.el (bibtex-mode): Set normal-auto-fill-function locally;
+	don't set auto-fill-function.  Don't turn on Auto Fill mode.
+
+Tue Aug  6 14:28:51 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* rmail.el (rmail-reply-regexp, rmail-message-filter): Doc fix.
+	(rmail-reply-regexp): Match Re[2].
+
+Mon Aug  5 03:19:02 1996  Simon Marshall  <simon@spiff.gnu.ai.mit.edu>
+
+	* help.el (help-font-lock-keywords): Fully undo rms July 26 change.
+
+Mon Aug  5 00:14:17 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* dabbrev.el (dabbrev--last-case-pattern): New variable.
+	(dabbrev-expand): Set it for ordinary expansions;
+	use it when copying successive words.
+
+Sat Aug  3 17:26:41 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* imenu.el (imenu-update-menubar): Fix code to install the new menu.
+
+	* info.el (Info-find-node): Use pop-to-buffer.
+
+Fri Aug  2 22:53:56 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* rmail.el (rmail-unix-mail-delimiter): Allow space or tab as
+	first character in mailbox part of `From ' line.
+
 Thu Aug  1 18:36:15 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
 
 	* Version 19.32 released.
@@ -405,6 +454,17 @@ Tue Jul  2 17:13:04 1996  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
 Tue Jul  2 17:12:20 1996  Barry A. Warsaw  <reporter@python.org>
 
 	* reporter.el: Major rewrite.
+	The variable `reporter-prompt-for-summary-p' can take a string value.
+
+	The variable `mail-user-agent' provides configuration to the end
+	user.  This variable contains a symbol indicating which Emacs mail
+	package the user would like for composing outgoing mail.
+
+	Mail package authors now use `define-mail-user-agent' to define
+	symbols appropriate for use with `mail-user-agent'.  Three such
+	symbols are predefined: `sendmail-user-agent' (for Emacs
+	sendmail.el), `vm-user-agent' (for Kyle Jones' VM package), and
+	`mh-e-user-agent' (for the MH-E package).
 
 Tue Jul  2 19:36:28 1996  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
 
@@ -4747,7 +4807,7 @@ Wed Nov 22 14:55:12 1995  Barry Warsaw  <bwarsaw@anthem (Barry Warsaw)>
 Wed Nov 22 14:03:08 1995  Geoff Voelker  <voelker@cs.washington.edu>
 
 	* makefile.nt (install, clean): Don't use switches to del not
-	supported by Win95.
+	supported by Windows 95.
 
 Tue Nov 21 00:12:36 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 

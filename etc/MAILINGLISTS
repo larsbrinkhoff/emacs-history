@@ -42,7 +42,7 @@ Many of the GNU mailing lists are very large and are received by many
 people.  Please don't send them anything that is not seriously important
 to all their readers.  All GNU mailing lists are unmoderated, mail
 reflectors, except info-gnu, info-gnu-emacs, info-gcc, info-g++,
-info-gnu-fortran, info-gnu-utils, info-gnu-chess and info-gnu-shogi.
+info-gnu-fortran, info-gnu-chess and info-gnu-shogi.
 
 All addresses below are in internet format.  Consult the mail guru for
 your computer to figure out address syntaxes from other networks.  From
@@ -250,19 +250,37 @@ gnu-misc-discuss is likely to be less useful than sending them to the
 appropriate mailing list or gnUSENET newsgroup, since more technical
 people read those.
 
-* hurd-ann-request@prep.ai.mit.edu to subscribe to hurd-ann
-** gnUSENET newsgroup: gnu.hurd.announce
-** Send announcements to: hurd-ann@prep.ai.mit.edu
+* bug-hurd-request@prep.ai.mit.edu to subscribe to bug-hurd
+** gnUSENET newsgroup: gnu.hurd.bug
+** Hurd bug reports to: bug-hurd@prep.ai.mit.edu
 
-This list distributes progress reports on the GNU Hurd.  It is also to
-ask people for various kinds of help on the Hurd.  It is NOT for general
-discussion.
+This list distributes bug reports for, fixes for bugs in, and
+suggestions for improvements in the GNU Hurd to its active developers.
 
-The list is filtered to remove items meant for hurd-ann-request, that
-can be answered by the moderator without bothering the list, or should
-have been sent to another list.
+No info-gnu-hurd list is planned.  Announcements about the GNU Hurd will
+be made to the list info-gnu@prep.ai.mit.edu (see above).
 
-See section '* General Information about info-* lists'.
+See section '* General Information about bug-* lists and reporting
+program bugs'.
+
+* help-hurd-request@prep.ai.mit.edu to subscribe to help-hurd
+** gnUSENET newsgroup: gnu.hurd.help
+** Send contributions to: help-hurd@prep.ai.mit.edu
+
+This list is the place for users and installers of the GNU Hurd to ask
+for help.
+
+No info-gnu-hurd list is planned.  Announcements about the GNU Hurd will
+be made to the list info-gnu@prep.ai.mit.edu (see above).
+
+See section '* General Information about help-* lists'.
+
+* hurd-ann-request@prep.ai.mit.edu IS NOW DEFUNCT
+** gnUSENET newsgroup: NEVER EXISTED
+** DEAD address: hurd-ann@prep.ai.mit.edu
+
+This list is dead.  Announcements about the GNU Hurd will be made to the
+list info-gnu@prep.ai.mit.edu (see above).
 
 * bug-gnu-emacs-request@prep.ai.mit.edu to subscribe to bug-gnu-emacs
 ** gnUSENET newsgroup: gnu.emacs.bug
@@ -745,8 +763,6 @@ This list distributes, to the active maintainers of these programs, bug
 reports and fixes for, and suggestions for improvements in GNU programs
 not covered by other bug-* mailing lists/gnu.*.bug newsgroups.
 
-Subscribers to bug-gnu-utils get all info-gnu-utils messages.
-
 See section '* General Information about bug-* lists and reporting
 program bugs'.
 
@@ -762,19 +778,12 @@ bug-gnu-utils@prep.ai.mit.edu instead.
 
 See section '* General Information about help-* lists'.
 
-* info-gnu-utils-request@prep.ai.mit.edu to subscribe to info-gnu-utils
-** gnUSENET newsgroup: gnu.utils.announce
-** Send announcements to: info-gnu-utils@prep.ai.mit.edu
+* info-gnu-utils-request@prep.ai.mit.edu IS NOW DEFUNCT
+** a gnUSENET newsgroup bever existed
+** DEAD address: info-gnu-utils@prep.ai.mit.edu
 
-This list distributes announcements and progress reports on GNU programs
-not covered by other GNU mailing lists/gnu.* newsgroups.  It is NOT for
-general discussion; please use help-gnu-utils for that.
-
-The list is filtered to remove items meant for info-gnu-utils-request,
-that can be answered by the moderator without bothering the list, or
-should have been sent to another list.
-
-See section '* General Information about info-* lists'.
+This list is dead.  Announcements about GNU Utilities will be made to the
+list info-gnu@prep.ai.mit.edu (see above).
 
 * info-cvs-request@prep.ai.mit.edu to subscribe to info-cvs.
 ** USENET newsgroup: (none)

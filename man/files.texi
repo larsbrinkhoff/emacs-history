@@ -804,15 +804,15 @@ auto-save file, and asks once again whether to recover that file.
 recover are present in Emacs buffers.  You should then save them.  Only
 this---saving them---updates the files themselves.
 
-  Interrupted sessions are recorded in files named
-@file{.saves-@var{pid}-@var{hostname}} in your home directory.  You can
-turn off the recording of sessions by setting the variable
-@code{auto-save-list-file-name} to @code{nil}.  (Doing that in your
-@file{.emacs} file has no effect---instead, set
-@code{auto-save-list-file-prefix} to @code{nil}).  You can store the
-current session in a different place by setting the variable to a
-different file name, but you'll have to redefine @code{recover-session}
-separately to make it look for the new name.
+@vindex auto-save-list-file-prefix
+  Interrupted sessions are recorded for later recovery in files named
+@file{~/.saves-@var{pid}-@var{hostname}}.  The @samp{~/.saves} portion of
+these names comes from the value of @code{auto-save-list-file-prefix}.
+You can arrange to record sessions in a different place by setting that
+variable in your @file{.emacs} file, but you'll have to redefine
+@code{recover-session} as well to make it look in the new place.  If you
+set @code{auto-save-list-file-prefix} to @code{nil} in your
+@file{.emacs} file, sessions are not recorded for recovery.
 
 @node File Aliases
 @section File Name Aliases
@@ -1128,9 +1128,7 @@ it and then decide not to change it.
 most recent checked in version.  @kbd{C-x v c} also offers to revert
 your work file and buffer to the previous version (the one that precedes
 the version that is deleted).  If you say @kbd{no}, then VC keeps your
-changes in the buffer and locks the file.  It also unexpands version
-headers so that they don't contain wrong information.  @xref{Version
-Headers}.
+changes in the buffer and locks the file.
 
   The no-revert option is useful when you have checked in a change and
 then discover a trivial error in it; you can cancel the erroneous
@@ -1815,7 +1813,7 @@ headers.
 @subsection Customizing VC
 
   There are many ways of customizing VC.  The variables that control its
-behaviour fall into three categories, described in the following
+behavior fall into three categories, described in the following
 sections.
 
 @menu
@@ -1843,7 +1841,7 @@ files are always kept.)
 
 @vindex vc-follow-symlinks
   Editing a version-controlled file through a symbolic link can be
-dangerous.  It bypasses the version control system--you can edit the
+dangerous.  It bypasses the version control system---you can edit the
 file without checking it out, and fail to check your changes in.  Also,
 your changes might overwrite those of another user.  To protect against
 this, VC checks each symbolic link that you visit, to see if it points
@@ -1853,8 +1851,8 @@ to a file under version control.
 symbolic link points to a version-controlled file.  If it is @code{nil},
 VC only displays a warning message.  If it is @code{t}, VC automatically
 follows the link, and visits the real file instead, telling you about
-this in the echo area.  If the variable is @code{ask} (the default), VC
-asks you each time what to do.
+this in the echo area.  If the value is @code{ask} (the default), VC
+asks you each time whether to follow the link.
 
 @node VC Status Retrieval
 @subsubsection VC Status Retrieval

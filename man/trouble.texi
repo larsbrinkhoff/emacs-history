@@ -255,7 +255,7 @@ recover from.  Typically the one you want is the most recent one.  Move
 point to the one you choose, and type @kbd{C-c C-c}.
 
   Then @code{recover-session} asks about each of the files that you were
-editing during that session.  It asks whether to recover each file.  If
+editing during that session; it asks whether to recover that file.  If
 you answer @kbd{y} for a file, it shows the dates of that file and its
 auto-save file, then asks once again whether to recover that file.  For
 the second question, you must confirm with @kbd{yes}.  If you do, Emacs

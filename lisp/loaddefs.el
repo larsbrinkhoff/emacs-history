@@ -1007,7 +1007,7 @@ Vectors work just like lists.  Nested backquotes are permitted." nil (quote macr
 
 ;;;***
 
-;;;### (autoloads (bibtex-mode) "bibtex" "bibtex.el" (12773 35096))
+;;;### (autoloads (bibtex-mode) "bibtex" "bibtex.el" (12811 48222))
 ;;; Generated autoloads from bibtex.el
 
 (autoload (quote bibtex-mode) "bibtex" "\
@@ -2015,7 +2015,7 @@ SYNTAX should be \" \", \"w\", \".\" or \"_\"." nil nil)
 
 ;;;***
 
-;;;### (autoloads (c-set-style java-mode objc-mode c++-mode c-mode) "cc-mode" "cc-mode.el" (12697 61020))
+;;;### (autoloads (c-set-style java-mode objc-mode c++-mode c-mode) "cc-mode" "cc-mode.el" (12814 19012))
 ;;; Generated autoloads from cc-mode.el
 
 (autoload (quote c-mode) "cc-mode" "\
@@ -2090,7 +2090,7 @@ Set cc-mode variables to use one of several different indentation styles.
 STYLENAME is a string representing the desired style from the list of
 styles described in the variable `c-style-alist'.  See that variable
 for details of setting up styles." t nil)
-(fset 'set-c-style           'c-set-style)
+ (fset 'set-c-style           'c-set-style)
 
 ;;;***
 
@@ -2330,7 +2330,7 @@ Edit display information for cpp conditionals." t nil)
 
 ;;;***
 
-;;;### (autoloads (dabbrev-expand dabbrev-completion) "dabbrev" "dabbrev.el" (12800 14378))
+;;;### (autoloads (dabbrev-expand dabbrev-completion) "dabbrev" "dabbrev.el" (12805 29976))
 ;;; Generated autoloads from dabbrev.el
 
 (define-key esc-map "/" (quote dabbrev-expand))
@@ -4765,7 +4765,7 @@ Switches to the buffer `*ielm*', or creates it if it does not exist." t nil)
 
 ;;;***
 
-;;;### (autoloads (imenu imenu-add-to-menubar) "imenu" "imenu.el" (12734 56173))
+;;;### (autoloads (imenu imenu-add-to-menubar) "imenu" "imenu.el" (12803 55621))
 ;;; Generated autoloads from imenu.el
 
 (defvar imenu-generic-expression nil "\
@@ -4860,7 +4860,7 @@ of `inferior-lisp-program').  Runs the hooks from
 
 ;;;***
 
-;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info-standalone info) "info" "info.el" (12758 13973))
+;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info-standalone info) "info" "info.el" (12810 40350))
 ;;; Generated autoloads from info.el
  (add-hook 'same-window-buffer-names "*info*")
 
@@ -4927,7 +4927,7 @@ For example, invoke \"emacs -batch -f batch-info-validate $info/ ~/*.info\"" nil
 
 ;;;***
 
-;;;### (autoloads (iso-accents-mode) "iso-acc" "iso-acc.el" (12704 56790))
+;;;### (autoloads (iso-accents-mode) "iso-acc" "iso-acc.el" (12810 18245))
 ;;; Generated autoloads from iso-acc.el
 
 (autoload (quote iso-accents-mode) "iso-acc" "\
@@ -6615,7 +6615,7 @@ variable." t nil)
 
 ;;;***
 
-;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (12786 33193))
+;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (12807 37215))
 ;;; Generated autoloads from rmail.el
 
 (defvar rmail-dont-reply-to-names nil "\

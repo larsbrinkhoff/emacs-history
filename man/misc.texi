@@ -20,20 +20,18 @@ diversions and amusements.
 
 Gnus is an Emacs package primarily designed for reading and posting
 Usenet news.  It can also be used to read and respond to messages from a
-number of other sources -- mail, remote directories, digests, and so
-on. 
+number of other sources---mail, remote directories, digests, and so on.
 
-This section introduces Gnus and describes several basic features.
-
+Here we introduce Gnus and describe several basic features.
 @ifinfo
-@xref{Top, Gnus}.
+For full details, see @ref{Top, Gnus,, gnus, The Gnus Manual}.
 @end ifinfo
 @iftex
-For more information, run @kbd{M-x info} and select the Gnus
+For full details on Gnus, type @kbd{M-x info} and then select the Gnus
 manual.
 @end iftex
 
-@findex Gnus
+@findex gnus
 To start Gnus, type @kbd{M-x gnus @key{RET}}.
 
 @menu
@@ -80,7 +78,7 @@ newsgroups listed in the group buffer, type @kbd{L} or @kbd{A k} to get
 a listing of all the groups.  Then type @kbd{u} to toggle
 subscription to groups.
 
-The first time you start Gnus, Gnus will subscribe you to a select few
+The first time you start Gnus, Gnus subscribes you to a few selected
 groups.  All other groups start out as @dfn{killed groups} for you; you
 can list them with @kbd{A k}.  All new groups that subsequently come to
 exist at the news server become @dfn{zombie groups} for you; type @kbd{A
@@ -107,9 +105,9 @@ displayed in the article buffer in a large window, below the summary
 buffer in its small window.
 @end enumerate
 
-  Each Gnus buffer has its own special commands, but commands that do
-the similar things have similar key bindings.  Here are commands for the
-group and summary buffers:
+  Each Gnus buffer has its own special commands; however, the meanings
+of any given key in the various Gnus buffers are usually analogous, even
+if not identical.  Here are commands for the group and summary buffers:
 
 @table @kbd
 @kindex q @r{(Gnus Group mode)}
@@ -1025,12 +1023,12 @@ an option starting with @samp{-}.  For example, to use a printer named
   The variable @code{lpr-command} specifies the name of the printer
 program to run; the default value depends on your operating system type.
 On most systems, the default is @code{"lpr"}.  The variable
-@code{lpr-headers-switches} similarly specifies the extra switches to use
-to make page headers.  The variable @code{lpr-add-switches} controls
+@code{lpr-headers-switches} similarly specifies the extra switches to
+use to make page headers.  The variable @code{lpr-add-switches} controls
 whether to supply @samp{-T} and @samp{-J} options (suitable for
-@code{lpr}) to the printer program: @code{nil} means don't do
-so.@code{lpr-add-switches} should be @code{nil} if your printer program
-is not like @code{lpr}.
+@code{lpr}) to the printer program: @code{nil} means don't add them.
+@code{lpr-add-switches} should be @code{nil} if your printer program is
+not compatible with @code{lpr}.
 
 @node Postscript, Sorting, Hardcopy, Top
 @section Postscript Hardcopy
@@ -1309,8 +1307,8 @@ buffer.
 
   There are three ways to enter two-column mode:
 
-@table @kbd
-@item f2 2  or  C-x 6 2
+@table @asis
+@item @kbd{f2 2} or @kbd{C-x 6 2}
 @kindex f2 2
 @kindex C-x 6 2
 @findex 2C-two-columns
@@ -1323,7 +1321,7 @@ changed.
 This command is appropriate when the current buffer is empty or contains
 just one column and you want to add another column.
 
-@item f2 s  or  C-x 6 s
+@item @kbd{f2 s} or @kbd{C-x 6 s}
 @kindex f2 s
 @kindex C-x 6 s
 @findex 2C-split
@@ -1337,7 +1335,8 @@ continues to the end of the buffer.
 This command is appropriate when you have a buffer that already contains
 two-column text, and you wish to separate the columns temporarily.
 
-@item f2 b  or  C-x 6 b @var{buffer} @key{RET}
+@item @kbd{f2 b @var{buffer} @key{RET}}
+@itemx @kbd{C-x 6 b @var{buffer} @key{RET}}
 @kindex f2 b
 @kindex C-x 6 b
 @findex 2C-associate-buffer
@@ -1457,7 +1456,7 @@ the previous Emacs session had.
 @findex desktop-save
 The first time you save the state of the Emacs session, you must do it
 manually, with the command @kbd{M-x desktop-save}.  Once you have done
-that, exiting Emacs will save the state again--not only the present
+that, exiting Emacs will save the state again---not only the present
 Emacs session, but also subsequent sessions.  You can also save the
 state at any time, without exiting Emacs, by typing @kbd{M-x
 desktop-save} again.

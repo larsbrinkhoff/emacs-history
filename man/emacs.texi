@@ -3,7 +3,7 @@
 @ifinfo
 @c The edition number appears in several places in this file
 This corresponds to the twelfth edition of the @cite{GNU Emacs Manual},
-for Emacs version 19.32.
+for Emacs version 19.33.
 @c Please REMEMBER to update edition number in *three* places in this file.
 
 Published by the Free Software Foundation
@@ -63,7 +63,7 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Twelfth Edition, Updated for Emacs Version 19.32
+@center Twelfth Edition, Updated for Emacs Version 19.33
 @sp 5
 @center Richard Stallman
 @page
@@ -71,10 +71,10 @@ original English.
 Copyright @copyright{} 1985, 1986, 1987, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 @sp 2
 Twelfth Edition @*
-Updated for Emacs Version 19.32, @*
-June 1996
+Updated for Emacs Version 19.33, @*
+August 1996
 
-ISBN 1-882114-83-3
+ISBN 1-882114-05-1
 @sp 1
 Published by the Free Software Foundation @*
 59 Temple Place, Suite 330 @*
@@ -110,7 +110,7 @@ Cover art by Etienne Suvasa.
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.32.
+corresponds to GNU Emacs version 19.33.
 
 @end ifinfo
 

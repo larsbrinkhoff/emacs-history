@@ -1,6 +1,37 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Emacs crashes when you use Bibtex mode.
+
+This happens if your system puts a small limit on stack size.  You can
+prevent the problem by using a suitable shell command (often `ulimit')
+to raise the stack size limit before you run Emacs.
+
+Patches to raise the stack size limit automatically in `main'
+(src/emacs.c) on various systems would be greatly appreciated.
+
+* Emacs crashes with SIGBUS or SIGSEGV on HPUX 9 after you delete a frame.
+
+We think this is due to a bug in the X libraries provided by HP.  With
+the alternative X libraries in /usr/contrib/mitX11R5/lib, the problem
+does not happen.
+
+* Posting a message with GNUS says "You appear to have a misconfigured system."
+
+On some systems, primarily SunOS 4.1.x and some versions of SunOS 5,
+the `system-name' function doesn't return a fully qualified domain
+name.  Then Gnus/Message generates addresses that look like
+<USER@MACHINE> with no domain name, which is invalid.
+
+You can work around this by setting `user-mail-address'
+`mail-host-address' to an appropriate value, like this:
+
+  (setq mail-host-address "MACHINE.DOMAIN")
+
+or
+
+  (setq user-mail-address "USER@MACHINE.DOMAIN")
+
 * Problems running Perl under Emacs on Windows NT/95.
 
 `perl -de 0' just hangs when executed in an Emacs subshell.
@@ -91,7 +122,7 @@ There are two DJGPP library bugs which cause problems:
   * After you shell to DOS, Ctrl-Break kills Emacs.
 
 To work around these bugs, you can use two files in the msdos
-subdirectory: `is-exec.c' and `sigaction.c'.  Compile them and link
+subdirectory: `is_exec.c' and `sigaction.c'.  Compile them and link
 them into the Emacs executable `temacs'; then they will replace the
 incorrect library functions.
 

@@ -1,3 +1,36 @@
+Sun Aug 11 03:36:03 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.33 released.
+
+Sat Aug 10 14:50:46 1996  Marcus Daniels  <marcus@sayre.sysc.pdx.edu>
+
+	* configure.in (i[3456]86-sequent-ptx4*, i[3456]86-sequent-sysv4*):
+	Fix previous change.
+
+Thu Aug  8 23:00:10 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* configure.in (i[3456]86-sequent-ptx4*, i[3456]86-sequent-sysv4*):
+	New alternative.
+
+Wed Aug  7 17:58:37 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* configure.in (alpha-dec-osf*): Specify GCC_TEST_OPTIONS
+	and NON_GCC_TEST_OPTIONS.
+
+Tue Aug  6 00:31:20 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* configure.in (LOCALTIME_CACHE): Don't put a string literal
+	"TZ=..." in environ.
+
+Sun Aug  4 16:33:35 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* make-dist (msdos): Add is_exec.c, sigaction.c to distribution.
+
+Sat Aug  3 17:27:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* configure.in (*-sunos4.1.[3-9]*noshare): Move this before
+	the more general *-sunos4.1.[3-9]* clause.
+
 Wed Jul 31 13:52:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
 
 	* Version 19.32 released.

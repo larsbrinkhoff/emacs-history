@@ -18,7 +18,9 @@ Windows 95.  If you do that, most of this chapter does not apply;
 instead, you get behavior much closer to what is documented in the rest
 of the manual, including support for long file names, multiple frames,
 scroll bars, mouse menus, and subprocesses.  However, the section on
-text files and binary files does still apply.
+text files and binary files does still apply.  There are also two
+sections at the end of this chapter which apply specifically for Windows
+NT and 95.
 
 @menu
 * Keyboard and Mouse on MS-DOS::
@@ -98,8 +100,9 @@ what colors and faces are available and what they look like.
   Multiple frames (@pxref{Frames}) are supported on MS-DOS, but they all
 overlap, so you only see a single frame at any given moment.  That
 single visible frame occupies the entire screen.  When you run Emacs
-under MS-Windows 3.x, the visible frame can take less than the full 
-screen, but you still cannot see more than a single frame.
+under Windows version 3, you can make the visible frame smaller than
+the full screen, but Emacs still cannot display more than a single
+frame at a time.
 
 @cindex frame size under MS-DOS
 @findex mode4350
@@ -177,14 +180,14 @@ Names}) without losing some of the original file name characters.  For
 example, the name of a backup file for @file{docs.txt} is
 @file{docs.tx~} even if single backup is used.
 
-@cindex file names under Win95 DOS box
-@cindex long filenames on MS-DOS under Win95
-  When Emacs runs as DOS application under Win95, it can support long
-filenames like other Win95 programs.  If long filenames are supported,
-Emacs doesn't truncate and doesn't change filenames you type, but uses
-them verbatim.  It also doesn't convert filenames to lower case.  To get
-long filename support, you should set @code{LFN} to @code{y} in the
-environment before starting Emacs.
+@cindex file names under Windows 95/NT
+@cindex long file names on MS-DOS under Windows 95/NT
+  If you run Emacs as a DOS application under Windows 95 or NT, you can
+turn on support for long file names.  If you do that, Emacs doesn't
+truncate file names or convert them to lower case; instead, it uses the
+file names that you specify, verbatim.  To enable long file name
+support, set the environment variable @code{LFN} to @samp{y} before
+starting Emacs.
 
 @cindex @code{HOME} directory under MS-DOS
   MS-DOS has no notion of home directory, so Emacs on MS-DOS pretends
@@ -235,51 +238,53 @@ system.
 @node Printing and MS-DOS
 @section Printing and MS-DOS
 
-@vindex dos-printer
   Printing commands, such as @code{lpr-buffer} (@pxref{Hardcopy}) and
 @code{ps-print-buffer} (@pxref{Postscript}) can work in MS-DOS by
-sending the output to one of the printer ports, if Unix-style @code{lpr}
-program is is unavailable.  A few DOS-specific variables determine how
-this works.  If you want to use your local printer in the usual
-DOS-style printing, set the @code{dos-printer} variable to the name of
-the port to which your printer is connected, like @code{"LPT2"} or
-@code{"COM1"} (for serial printers); the default is @code{"PRN"}, the
-default local printer port.  You can set @code{dos-printer} to a name of
-the file, in which case the output will be appended to that file; or you
-can set it to @code{"NUL"} to make the printed output silently disappear
-into the great void.  If you set @code{dos-printer} to a name of a file,
-it's best to make its pathname absolute or relative to the Emacs home
-directory (like @file{"~/printed.dat"}).  That is because Emacs actually
-changes the working directory to the directory of the file you are
-editing, so if the name of the file in @code{dos-printer} is relative,
-you will end up with several such files, each one in the directory of
-the buffer from which the printing was done, which is probably not what
-you wanted.
+sending the output to one of the printer ports, if a Unix-style @code{lpr}
+program is unavailable.  A few DOS-specific variables control how this
+works.
+
+@vindex dos-printer
+  If you want to use your local printer, printing on it in the usual DOS
+manner, then set the Lisp variable @code{dos-printer} to the name of the
+printer port---for example. @code{"PRN"}, the usual local printer port
+(that's the default), or @code{"LPT2"} or @code{"COM1"} for a serial
+printer.  You can also set @code{dos-printer} to a file name, in which
+case ``printed'' output is actually appended to that file.  If you set
+@code{dos-printer} to @code{"NUL"}, printed output is silently
+discarded.
+
+  If you set @code{dos-printer} to a file name, it's best to use an
+absolute file name.  Emacs changes the working directory according to
+the default directory of the current buffer, so if the file name in
+@code{dos-printer} is relative, you will end up with several such files,
+each one in the directory of the buffer from which the printing was
+done.
 
 @findex print-buffer, under MS-DOS
 @findex print-region, under MS-DOS
 @vindex lpr-headers-switches, under MS-DOS
   The commands @code{print-buffer} and @code{print-region} call the
 @code{pr} program, or use special switches to the @code{lpr} program, to
-produce headers on each printed page.  MS-DOS doesn't have these programs
-usually, so by default, the variable @code{lpr-headers-switches} is set
-so that the requests to print page headers are silently ignored, and
-@code{print-buffer} and @code{print-region} produce the same output as
-@code{lpr-buffer} and @code{lpr-region}, respectively.  If you have a
-port of @code{pr} program (e.g., from GNU Textutils), set
-@code{lpr-headers-switches} to nil; Emacs will then call @code{pr} to
-produce the page headers, and will then write the output to the printer
-port named by @code{dos-printer}.
+produce headers on each printed page.  MS-DOS doesn't normally have
+these programs, so by default, the variable @code{lpr-headers-switches}
+is set so that the requests to print page headers are silently ignored.
+Thus, @code{print-buffer} and @code{print-region} produce the same
+output as @code{lpr-buffer} and @code{lpr-region}, respectively.  If you
+do have a suitable @code{pr} program (e.g., from GNU Textutils), set
+@code{lpr-headers-switches} to @code{nil}; Emacs will then call
+@code{pr} to produce the page headers, and print the resulting output as
+specified by @code{dos-printer}.
 
 @vindex print-region-function under MS-DOS
 @cindex lpr usage under MS-DOS
 @vindex lpr-command, under MS-DOS
 @vindex lpr-switches, under MS-DOS
   Finally, if you do have an @code{lpr} work-alike, you can set
-@code{print-region-function} to nil.  This will cause Emacs to use
-@code{lpr} for printing, as it does under Unix.  (If the name of the
-program isn't @code{lpr}, you can set @code{lpr-command} variable and
-@code{lpr-switches} as appropriate.)
+@code{print-region-function} to @code{nil}.  Then Emacs uses @code{lpr}
+for printing, as on other systems.  (If the name of the program isn't
+@code{lpr}, set the @code{lpr-command} variable to specify where to find
+it.)
 
 @findex ps-print-buffer, under MS-DOS
 @findex ps-print-buffer-with-faces, under MS-DOS
@@ -294,21 +299,22 @@ program isn't @code{lpr}, you can set @code{lpr-command} variable and
 @vindex ps-lpr-switches, under MS-DOS
   A separate variable, @code{dos-ps-printer}, defines how PostScript
 files should be printed.  If its value is a string, it is used as the
-name of the device (or a file) to which PostScript output is sent, like
+name of the device (or file) to which PostScript output is sent, just as
 @code{dos-printer} is used for non-PostScript printing.  (These are two
-distinct variables because on MS-DOS, you might have two different
-printers attached to two different ports, only one of which is a
-PostScript printer.)  If @code{dos-ps-printer} is anything else but a
-string, Emacs will use the variables @code{ps-lpr-command} and
-@code{ps-lpr-switches} (@pxref{Postscript}) to print PostScript files.
-Thus, if you have a non-PostScript printer, you can set these variables
-to the name and the switches appropriate for a PostScript interpreter
-program (e.g., Ghostscript).  For example, to use Ghostscript for
-printing on an Epson printer connected to @code{"LPT2"} port, put this
-on your @file{.emacs} file:
+distinct variables in case you have two printers attached to two
+different ports, and only one of them is a PostScript printer.)  If the
+value of @code{dos-ps-printer} is not a string, then the variables
+@code{ps-lpr-command} and @code{ps-lpr-switches} (@pxref{Postscript})
+control how to print PostScript files.  Thus, if you have a
+non-PostScript printer, you can set these variables to the name and the
+switches appropriate for a PostScript interpreter program (e.g.,
+Ghostscript).
+
+  For example, to use Ghostscript for printing on an Epson printer
+connected to @samp{LPT2} port, put this on your @file{.emacs} file:
 
 @example
-(setq dos-ps-printer t)  ; anything but a string
+(setq dos-ps-printer t)  ; @r{Anything but a string.}
 (setq ps-lpr-command "c:/gs/gs386")
 (setq ps-lpr-switches '("-q" "-dNOPAUSE"
 			"-sDEVICE=epson"

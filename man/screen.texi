@@ -139,9 +139,8 @@ add @samp{done} at the end when they are finished.
 @samp{*Messages*}.  (We have not explained buffers yet; see
 @ref{Buffers}, for more information about them.)  If you miss a message
 that appears briefly on the screen, you can switch to the
-@samp{*Messages*} buffer to see it again.  Garbage collection messages
-are omitted from @samp{*Messages*}, and successive progress messages are
-often collapsed into one.
+@samp{*Messages*} buffer to see it again.  Successive progress messages
+are often collapsed into one.
 
 @vindex message-log-max
   The size of @samp{*Messages*} is limited to a certain number of lines.

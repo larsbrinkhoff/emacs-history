@@ -76,7 +76,7 @@ on the screen.
 @cindex Makefile mode
 @cindex Tcl mode
   Emacs also has major modes for the programming languages Lisp, Scheme
-(a variant of Lisp), Awk, C, C++, Objective-C, Java, Fortran, Icon,
+(a variant of Lisp), Awk, C, C++, Fortran, Icon, Java, Objective-C,
 Pascal, Perl and Tcl.  There is also a major mode for makefiles, called
 Makefile mode.
 
@@ -661,31 +661,34 @@ way, a @dfn{substatement} indicates the line after an @code{if},
 @code{else}, @code{while}, @code{do}, @code{switch}, and @code{for}
 statements.
 
+@cindex syntactic component
+@cindex syntactic symbol
+@vindex c-syntactic-context
   After a line has been analyzed syntactically for indentation, the
 global variable @code{c-syntactic-context} contains a list that
-describes the results.  Each element in this list is a cons cell
-containing a syntactic symbol and (optionally) its corresponding buffer
-position.  There may be more than one element in a component list, and
-syntactic symbols need not always have corresponding buffer positions.
+describes the results.  Each element in this list is a a @dfn{syntactic
+component}: a cons cell containing a syntactic symbol and (optionally)
+its corresponding buffer position.  There may be several elements in a
+component list; typically only one element has a buffer position.
 
 @node Indentation Calculation
 @subsubsection  Step 2---Indentation Calculation
 @cindex Indentation Calculation
 
   The C indentation mechanism calculates the indentation for the current
-line using the list of syntactic components derived from syntactic
-analysis.  Each component contributes to the final total indentation of
-the line in two ways.
+line using the list of syntactic components, @code{c-syntactic-context},
+derived from syntactic analysis.  Each component is a cons cell that
+contains a syntactic symbol and may also contain a pointer to a location
+in the buffer.
 
-  First, it looks up the syntactic symbol in the @code{c-offsets-alist}
-variable, which is an association list of syntactic symbols and the
-offsets to apply for those symbols.  It then adds the offset
-corresponding to the syntactic symbol to the running total.@refill
-
-  Second, if the component has a relative buffer position, it adds the
-column number of that position to the running total.  It computes the
-final total indentation for the current line by summing up the offsets
-and columns for each syntactic component on that line.
+  Each component contributes to the final total indentation of the line
+in two ways.  First, the syntactic symbol identifies an element of
+@code{c-offsets-alist}, which is an association list mapping syntactic
+symbols into indentation offsets.  Each syntactic symbol's offset adds
+to the total indentation.  Second, if the component includes a buffer
+position, the column number of that position adds to the indentation.
+All these offsets and column numbers, added together, give the total
+indentation.
 
   The following examples demonstrate the workings of the C indentation
 mechanism:
@@ -699,23 +702,23 @@ mechanism:
 6: @}
 @end example
 
-  Suppose that the point is on line 3 and you type @key{TAB} to reindent
-the line.  Remember that the syntactic component list for that line is:
+  Suppose that point is on line 3 and you type @key{TAB} to reindent the
+line.  As explained above (@pxref{Syntactic Analysis}), the syntactic
+component list for that line is:
 
 @example
 ((defun-block-intro . 28))
 @end example
 
-  So first the indentation engine is going to look up
-@code{defun-block-intro} in the @code{c-offsets-alist} variable.
-Suppose that it finds the integer 2; it adds this to the running total
-(initialized to zero), yielding a running total indentation of 2
-spaces.
+  In this case, the indentation calculation first looks up
+@code{defun-block-intro} in the @code{c-offsets-alist} alist.  Suppose
+that it finds the integer 2; it adds this to the running total
+(initialized to zero), yielding a updated total indentation of 2 spaces.
 
-  Next, it goes to buffer position 28 and asks for the current column.
-Since the brace at buffer position 28 is in column zero, it adds 0 to
-the running total, and since there is only one syntactic component on
-the list for this line, the total indentation for the line is 2 spaces.
+  The next step is to find the column number of buffer position 28.
+Since the brace at buffer position 28 is in column zero, this adds 0 to
+the running total.  Since this line has only one syntactic component,
+the total indentation for the line is 2 spaces.
 
 @example
 1: int add (int val, int incr, int doit)
@@ -728,22 +731,20 @@ the list for this line, the total indentation for the line is 2 spaces.
 8: @}
 @end example
 
-  If you type @key{TAB} on line 4 in the example above, the same basic
-process is performed, despite the differences in the syntactic component
-list.  Remember that the list for this line is:
+  If you type @key{TAB} on line 4, the same process is performed, but
+with different data.  The syntactic component list for this line is:
 
-@c ??? Check this
 @example
 ((substatement-open . 43))
 @end example
 
-   Here, the indentation engine first looks up the
-@code{substatement-open} symbol in @code{c-offsets-alist}.  We assume
-the offset for this symbol is 2.  At this point the running total is 2
-(0 + 2 = 2).  It then goes to buffer position 43, which is the @samp{i}
-in @code{if} on line 3.  This character is in the second column on that
-line, so adding this to the running total yields a total indentation of
-4 spaces.@refill
+   Here, the indentation calculation's first job is to look up the
+symbol @code{substatement-open} in @code{c-offsets-alist}.  Let's assume
+that the offset for this symbol is 2.  At this point the running total
+is 2 (0 + 2 = 2).  Then it adds the column number of buffer position 43,
+which is the @samp{i} in @code{if} on line 3.  This character is in
+column 2 on that line.  Adding this yields a total indentation of 4
+spaces.
 
 @vindex c-strict-syntax-p
    If a syntactic symbol in the analysis of a line does not appear in
@@ -771,22 +772,23 @@ Set the indentation offset for syntactic symbol @var{symbol}
 new indentation offset.
 @end table
 
-   The @code{c-offsets-alist} variable controls the amount of indentation
-to give to each syntactic component.  Its value is an association list,
-and each element of the list has the form @code{(@var{syntactic-symbol}
-. @var{offset})}.  By changing the offsets for various syntactic
-components, you can customize indentation in fine detail.
+   The @code{c-offsets-alist} variable controls the amount of
+indentation to give to each syntactic symbol.  Its value is an
+association list, and each element of the list has the form
+@code{(@var{syntactic-symbol} . @var{offset})}.  By changing the offsets
+for various syntactic symbols, you can customize indentation in fine
+detail.
 
    Each offset value in @code{c-offsets-alist} can be an integer, a
 function or variable name, or one of the following symbols: @code{+},
 @code{-}, @code{++}, or @code{--}, indicating positive or negative
 multiples of the variable @code{c-basic-offset}.  Thus, if you want to
-change the levels of indentation to be 3 spaces instead of 2 spaces, you
-can probably get this result by setting @code{c-basic-offset} to 3.
+change the levels of indentation to be 3 spaces instead of 2 spaces, set
+@code{c-basic-offset} to 3.
 
    Using a function as the offset value provides the ultimate flexibility
 in customizing indentation.  The function is called with a single
-argument containing the @code{cons} of the syntactic element symbol and
+argument containing the @code{cons} of the syntactic symbol and
 the relative indent point.  The function should return an integer
 offset.
 
@@ -798,14 +800,14 @@ specify the syntactic symbol, then the offset you want.  @xref{Syntactic
 Symbols}, for a list of valid syntactic symbols and their meanings.
 
    The variable @code{c-offsets-alist-default} holds the default settings
-for offsets of syntactic elements.  @emph{Do not change this value!}
+for the offsets of the syntactic symbols.  @emph{Do not change this value!}
 
 @node Syntactic Symbols
 @subsubsection Syntactic Symbols
 
-   Here is the list of valid syntactic element symbols for C mode
-indentation.  Normally most of these symbols are assigned offsets in
-@code{c-offsets-alist}.
+   Here is a table of valid syntactic symbols for C mode
+indentation, with their syntactic meanings.  Normally, most of these
+symbols are assigned offsets in @code{c-offsets-alist}.
 
 @table @code
 @item string
@@ -902,7 +904,7 @@ On the first line after an @code{if}, @code{while}, @code{for},
 @code{do}, or @code{else}.
 
 @item substatement-open
-On the brace that opens a @var{substatement} block.
+On the brace that opens a substatement block.
 
 @item case-label
 On a @code{case} or @code{default} label.
@@ -967,12 +969,12 @@ indentation behavior of C mode and related mode.
 @table @code
 @item c-offsets-alist
 @vindex c-offsets-alist
-Association list of syntactic element symbols and their indentation
+Association list of syntactic symbols and their indentation
 offsets.  @xref{Changing Indent Style}, for details.
 
 @item c-offsets-alist-default
 @vindex c-offsets-alist-default
-Default settings for offsets of syntactic elements.  @xref{Changing
+Default settings for the offsets of the syntactic symbols.  @xref{Changing
 Indent Style}.
 
 @item c-style-alist
@@ -997,8 +999,8 @@ default in C mode and Objective C mode.
 
 @item c-special-indent-hook
 @vindex c-special-indent-hook
-Hook for user-defined special indentation adjustments.  This hook gets
-called after a line is indented by the mode.
+Hook for user-defined special indentation adjustments.  This hook is
+called after a line is indented by C mode and related modes.
 @end table
 
   The variable @code{c-style-alist} specifies the predefined indentation
@@ -2331,7 +2333,7 @@ changes made in these buffers would get in each other's way.
 files fully.  Emacs can't do anything else until @code{diff} finishes.
 Perhaps in the future someone will change Emerge to do the comparison in
 the background when the input files are large---then you could keep on
-doing other things with Emacs until Emerge gets ready to accept
+doing other things with Emacs until Emerge is ready to accept
 commands.
 
 @vindex emerge-startup-hook
@@ -2363,7 +2365,7 @@ Objective-C and Java modes.
 @findex c-up-conditional
 Move point back to the containing preprocessor conditional, leaving the
 mark behind.  A prefix argument acts as a repeat count.  With a negative
-argument, move the point forward to the end of the containing
+argument, move point forward to the end of the containing
 preprocessor conditional.  When going backwards, @code{#elif} is treated
 like @code{#else} followed by @code{#if}.  When going forwards,
 @code{#elif} is ignored.@refill
@@ -2386,7 +2388,7 @@ argument, move backward.
 @kindex ESC a
 @findex c-beginning-of-statement
 Move point to the beginning of the innermost C statement.  If point is
-already at the beginning of a statement, it moves to the beginning of
+already at the beginning of a statement, move to the beginning of
 the preceding statement.  With prefix argument @var{n}, move back
 @var{n} @minus{} 1 statements.
 
@@ -2421,9 +2423,12 @@ negative, move forward.  C++ nomenclature means a symbol name in the
 style of NamingSymbolsWithMixedCaseAndNoUnderlines; each capital letter
 begins a section or word.
 
+In the GNU project, we recommend using underscores to separate words
+within an identifier in C or C++, rather than using case distinctions.
+
 @item M-x c-forward-into-nomenclature
 @findex c-forward-into-nomenclature
-Move the point forward to end of a C++ nomenclature section or word.
+Move point forward to end of a C++ nomenclature section or word.
 With prefix argument @var{n}, move @var{n} times.
 @end table
 
@@ -2448,7 +2453,7 @@ command @kbd{C-c C-a}:
 @item C-c C-a
 @kindex C-c C-a @r{(C mode)}
 @findex c-toggle-auto-state
-Toggle the auto-newline feature (@code{c-toggle-auto-state}.  With a
+Toggle the auto-newline feature (@code{c-toggle-auto-state}).  With a
 prefix argument, this command turns the auto-newline feature on if the
 argument is positive, and off if it is negative.
 @end table
@@ -2478,12 +2483,13 @@ with elements of the following form: @code{(@var{syntactic-symbol}
 . @var{nl-list})}.  Most of the syntactic symbols that appear in
 @code{c-offsets-alist} are meaningful here as well.
 
-   The list @var{nl-list} may contain either of the symbols @code{before}
-or @code{after}, or both; or it may be @code{nil}.  When a brace is
-inserted, the syntactic context it defines is looked up in
+   The list @var{nl-list} may contain either of the symbols
+@code{before} or @code{after}, or both; or it may be @code{nil}.  When a
+brace is inserted, the syntactic context it defines is looked up in
 @code{c-hanging-braces-alist}; if it is found, the @var{nl-list} is used
-to determine where newlines are inserted.  If not found, the default is
-to insert a newline both before and after braces.
+to determine where newlines are inserted: either before the brace,
+after, or both.  If not found, the default is to insert a newline both
+before and after braces.
 
    The variable @code{c-hanging-colons-alist} controls the insertion of
 newlines before and after inserted colons.  It is an association list
@@ -2491,10 +2497,11 @@ with elements of the following form: @code{(@var{syntactic-symbol}
 . @var{nl-list})}.  The list @var{nl-list} may contain either of the
 symbols @code{before} or @code{after}, or both; or it may be @code{nil}.
 
-   When a colon is inserted, the language element that it defines is
-looked up in this list, and if found, the @var{nl-list} is used to
-determine where newlines are inserted.  If the language element for the
-colon is not found in this list, no newlines are inserted.
+   When a colon is inserted, the syntactic symbol it defines is looked
+up in this list, and if found, the @var{nl-list} is used to determine
+where newlines are inserted: either before the brace, after, or both.
+If the syntactic symbol is not found in this list, no newlines are
+inserted.
 
    Electric characters can also delete newlines automatically when the
 auto-newline feature is enabled.  This feature makes auto-newline more
@@ -2545,7 +2552,7 @@ To turn this feature on or off, use @kbd{C-c C-d}:
 @item C-c C-d
 @kindex C-c C-d
 @findex c-toggle-hungry-state
-Toggle the hungry-delete feature (@code{c-toggle-hungry-state}.  With a
+Toggle the hungry-delete feature (@code{c-toggle-hungry-state}).  With a
 prefix argument, this command turns the hungry-delete feature on if the
 argument is positive, and off if it is negative.
 
@@ -2553,10 +2560,9 @@ argument is positive, and off if it is negative.
 @kindex C-c C-t
 @findex c-toggle-auto-hungry-state
 Toggle the auto-newline and hungry-delete features, both at once
-(@code{c-toggle-auto-hungry-state}.
+(@code{c-toggle-auto-hungry-state}).
 @end table
 
-@vindex c-delete-function
 @vindex c-hungry-delete-key
    The variable @code{c-hungry-delete-key} controls whether the
 hungry-delete feature is enabled.
@@ -2592,7 +2598,7 @@ output from this part isn't shown.
 
 When you are debugging C code that uses macros, sometimes it is hard to
 figure out precisely how the macros expand.  With this command, you
-don't have to figure it out; you can see the results.
+don't have to figure it out; you can see the expansions.
 
 @item C-c C-\
 @findex c-backslash-region
@@ -2636,13 +2642,13 @@ comment format.
 This variable specifies how to reindent block comments.  The C modes
 support five styles of block comments:
 
-@example
- style 1:    style 2 (GNU):    style 3:     style 4:     style 5:
- /*          /* Blah           /*           /*           /*
-    blah        blah.  */       * blah      ** blah      blah
-    blah                        * blah      ** blah      blah
-    */                          */          */           */
-@end example
+@smallexample
+ style 1:    style 2 (GNU):   style 3:    style 4:    style 5:
+ /*          /* Blah          /*          /*          /*
+    blah        blah.  */      * blah     ** blah     blah
+    blah                       * blah     ** blah     blah
+    */                         */         */          */
+@end smallexample
 
 @noindent
 For the styles 1 through 4, @code{c-block-comments-indent-p} should be
@@ -2651,6 +2657,7 @@ For the styles 1 through 4, @code{c-block-comments-indent-p} should be
 
 This variable has no effect on the indentation of the comment-start
 itself or on insertion of asterisks when auto-filling C comments.
+It does not affect @kbd{M-q} either.
 @c ???   In any case, you still have to insert the asterisks
 @c ???   manually.
 
@@ -2666,8 +2673,7 @@ Just an integer as value is equivalent to @code{(@var{val} . 0)}.
 
 @item c-comment-start-regexp
 @vindex c-comment-start-regexp
-This buffer-local variable specifies how comments begin.
-@c ???
+This buffer-local variable specifies how to recognize the start of a comment.
 
 @item c-hanging-comment-ender-p
 @vindex c-hanging-comment-ender-p

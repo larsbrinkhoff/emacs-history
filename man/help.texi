@@ -238,7 +238,7 @@ matches for the specified regular expression.
 
 @findex apropos-value
   The @code{apropos-value} command is like @code{apropos} except that it
-searches symbol's values for matches for the specified regular
+searches symbols' values for matches for the specified regular
 expression.  This command does not check function definitions or
 property lists by default; specify a numeric argument if you want it to
 check them.

@@ -1,3 +1,82 @@
+Sun Aug 11 03:36:03 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.33 released.
+
+Sat Aug 10 19:40:45 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* s/sco5.h (POSIX_SIGNALS): Don't define it, #undef instead.
+	(NO_SOCKETS_IN_FILE_SYSTEM): Definition deleted.
+	(sigblock): New definition.
+
+Sat Aug 10 14:53:42 1996  Marcus Daniels  <marcus@sayre.sysc.pdx.edu>
+
+	* m/sequent-ptx.h (LOAD_AVE_TYPE, FSCALE, LOAD_AVE_CVT):
+	Undef them before defining.
+
+	* s/ptx4.h: Fix include file name.
+ 	(NO_FILIO_H): Move definition.
+
+Fri Aug  9 18:04:00 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* m/alpha.h [__ELF__] (UNEXEC): Use unexelf1.c.
+
+Fri Aug 9 13:57:53 1996 David Mosberger-Tang  <davidm@azstarnet.com>
+
+	* unexelf1.c: New file, copied from unexelf.c.
+	[__alpha__]: Include <sym.h> to get COFF debugging
+ 	info declarations for .mdebug section.
+	[__GNU_LIBRARY__ - 0 >= 6]: Include <link.h>.
+	[notdef ElfW]: Define backwards compatible ElfW macro.
+	(unexec) [__alpha__]: Add code to update Alpha COFF symbol table
+ 	(.mdebug section).
+	(unexec) [__alpha__]: Work around binutils-2.7 bug: for Alpha ELF
+ 	sometimes unneeded data relocs do not get elided properly which
+ 	results in reloc entries that contain all zeroes.
+
+	* m/alpha.h [__ELF__ && __GNUC__] (C_SWITCH_MACHINE): Add -fno-common.
+	(TEXT_START, DATA_START, DATA_SEG_BITS, UNEXEC): Define only if
+ 	__ELF__ is not defined.
+	(LINUX_SBRK_BUG): Define only if LINUX and __GNU_LIBRARY__ < 6.
+	(NO_TERMIO): Always define this.  No Alpha system should need
+ 	termio.
+	(COFF, DATA_END): Define only if __ELF__ is not defined.
+
+Thu Aug  8 16:04:53 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* s/usg5-4.h: Don't include filio.h if NO_FILIO_H.
+
+	* s/ptx4.h: New file.
+
+	* config.in (GETTIMEOFDAY_ONE_ARGUMENT): Conditionalize on
+	HAVE_GETTIMEOFDAY.
+
+Wed Aug  7 15:01:42 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* xmenu.c (xmenu_show): Set dummy.state.
+  	Set dummy.button appropriately.
+	(popup_get_selection) [USE_MOTIF]: Set event.xbutton.button.
+
+	* s/osf1.h (LD_SWITCH_SYSTEM): New definition.
+
+Tue Aug  6 00:31:20 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* editfns.c (set_time_zone_rule): Don't put a string literal
+	"TZ=..." in environ.
+
+Mon Aug  5 00:31:20 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* minibuf.c (Fread_from_minibuffer): Make position 0 in the initial
+	input mean the beginning.
+
+Sun Aug  4 17:56:02 1996  Eli Zaretskii  <eliz@is.elta.co.il>
+
+	* callproc.c (Fcall_process_region) [DOS_NT]: Avoid downcasing
+	the `X' characters in the template passed to `mktemp'.
+
+Fri Aug  2 21:38:54 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* widget.c (EmacsFrameSetCharSize): Call do_pending_window_change.
+
 Wed Jul 31 13:52:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
 
 	* Version 19.32 released.
@@ -890,7 +969,7 @@ Sun May 12 13:42:54 1996  Richard Stallman  <rms@delasyd.gnu.ai.mit.edu>
 Sun May 12 11:32:48 1996  Eli Zaretskii  <eliz@is.elta.co.il>
 
 	* dosfns.c (init_dosfns) [DJGPP >= 2]: Make `opendir' preserve
-	filename case (under Win95) and find hidden files.
+	filename case (under Windows 95) and find hidden files.
 
 	* msdos.c (Fmsdos_downcase_filename): Don't change the argument,
 	return a copy.
@@ -925,7 +1004,7 @@ Sat May 11 06:55:09 1996  Richard Stallman  <rms@delasyd.gnu.ai.mit.edu>
 Sat May 11 02:37:28 1996  Geoff Voelker  <voelker@cs.washington.edu>
 
 	* ntheap.c (allocate_heap): Bump heap base up to 27MB to
-	satisfy Win95.
+	satisfy Windows 95.
 
 Fri May 10 20:47:16 1996  Richard Stallman  <rms@delasyd.gnu.ai.mit.edu>
 
@@ -1059,8 +1138,8 @@ Fri May  3 14:30:22 1996  Andrw Innes <andrewi@harlequin.co.uk>
 	ntproc.c and simplified to match other changes (all handles are
 	already non-inheritable).
 
-	(get_emacs_configuration): Detect Windows flavour (Win95 or NT) at
-	run-time.  Change OS name for Windows 95 to be "win95".
+	(get_emacs_configuration): Detect Windows flavour (Windows 95 or
+	NT) at run-time.  Change OS name for Windows 95 to be "win95".
 
 	(fd_info): New variable. Array of extra info for file descriptors
 	needed for pipe/socket support.
@@ -1135,7 +1214,7 @@ Fri May  3 14:30:22 1996  Andrw Innes <andrewi@harlequin.co.uk>
 	(reader_thread): Return nonzero upon failure.  Use _sys_read_ahead.
 	(create_child): Add child_process and parent PID arguments.
 	Don't create input event or thread structures here.
-	Fixup Win95 negative process IDs.
+	Fixup Windows 95 negative process IDs.
 	(register_child): Don't set consumed event; instead, set thread
 	status so that select will release it.
 	(remove_child): Renamed to reap_process.  Only free resources
@@ -2543,7 +2622,7 @@ Sat Jan 20 19:18:03 1996  Andrew Innes  <andrewi@harlequin.co.uk>
 Sat Jan 20 19:18:03 1996  Geoff Voelker  <voelker@cs.washington.edu>
 
 	* ntterm.c (clear_frame): Use FillConsoleOutput* calls instead of
-	ScrollConsoleScreenBuffer (which has a bug on Win95).
+	ScrollConsoleScreenBuffer (which has a bug on Windows 95).
 
 	* ntinevt.c (WIN32_KEY_SHIFTED): Macro undefined.
 	(win32_number_shift_map): Array undefined.
@@ -3310,7 +3389,7 @@ Thu Nov 23 15:07:13 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.
 Wed Nov 22 13:58:36 1995  Geoff Voelker  <voelker@cs.washington.edu>
 
 	* makefile.nt (DOC, clean): Don't use switches to del not supported
-	by Win95.
+	by Windows 95.
 
 Wed Nov 22 07:35:25 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
@@ -3641,7 +3720,7 @@ Mon Nov 6 15:52:37 1995  Kevin Gallo  <kgallo@microsoft.com>
 	(OBJ1): Remove lastfile.obj.
 	(LIBS, TEMACS): Use TLASTLIB.
 	(LIBS) [NTGUI]: Use TLIBW32 and GUI libs.
-	(EMACS): Remove Win95 conditional.
+	(EMACS): Remove Windows 95 conditional.
 	(clean): Remove paths.h.
 
 Mon Nov  6 15:06:38 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>

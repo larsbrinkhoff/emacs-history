@@ -341,8 +341,8 @@ Simon Marshall wrote:
 @item
 @file{fast-lock.el}, which caches the face data computed by Font Lock mode, and
 @item
-@file{lazy-lock.el}, which makes Font Lock mode fontification become
-demand-driven and/or defer-driven.
+@file{lazy-lock.el}, which delays fontification in Font Lock mode
+until text is actually displayed.
 @end itemize
 
 @item

@@ -11,7 +11,7 @@
 
 @titlepage
 @title Viper Is a Package for Emacs Rebels
-@subtitle a Vi emulator for GNU Emacs 19 and XEmacs 19
+@subtitle a Vi emulator for GNU Emacs
 @subtitle June 1996, Viper Version 2.90
 
 @author Masahiko Sato (VIP 3.5)
@@ -60,7 +60,7 @@ it is a VI Plan for Emacs Rescue
 and/or a venomous VI PERil.
 @end example
 
-Technically speaking, Viper is a Vi emulation package for GNU Emacs 19 and
+Technically speaking, Viper is a Vi emulation package for Emacs 19 and
 XEmacs 19. Because of its reliance on minor mode keymaps, Viper will not
 work under Emacs 18. Viper implements most Vi and Ex commands. It gives you
 the best of both worlds: Vi keystrokes for editing combined with the GNU
@@ -116,7 +116,7 @@ it is a VI Plan for Emacs Rescue
 and/or a venomous VI PERil.
 @end example
 
-Technically speaking, Viper is a Vi emulation package for GNU Emacs 19 and
+Technically speaking, Viper is a Vi emulation package for Emacs 19 and
 XEmacs 19. Because of its reliance on minor mode keymaps,
 it will not work under Emacs 18. Viper contains virtually all of
 Vi and Ex functionality and much more. It gives you the best of both
@@ -189,7 +189,7 @@ Emacs can edit several files at once. A file in Emacs is placed in a
 @dfn{buffer} that usually has the same name as the file. Buffers are also used
 for other purposes, such as shell interfaces, directory editing, etc.
 @xref{Dired,,Directory Editor,emacs,The
-Gnu Emacs Manual}, for an example.@refill
+GNU Emacs Manual}, for an example.@refill
 
 A buffer has a distinguished position called the @dfn{point}.
 A @dfn{point} is always between 2 characters, and is @dfn{looking at}
@@ -1254,6 +1254,7 @@ the value can be @code{'reformed-vi} or @code{'emacs}.
 Changes to @code{vip-syntax-preference} should be done in the hooks to
 various major modes. Furthermore, for these changes to take effect, you
 should execute @code{(vip-update-alphanumeric-class)} right after changing
+the value of @code{vip-syntax-preference}.
 
 The above discussion of the meaning of Viper's words concerns only Viper's
 movement commands. In regular expressions, words remain the same as in
@@ -2452,7 +2453,7 @@ The Gnu Emacs Manual}, for more information on tags.
 
 The following two commands are normally bound to a mouse click and are part
 of Viper. They work only if Emacs runs as an application under X
-Windows (or under some other window system for which a port of GNU Emacs 19
+Windows (or under some other window system for which a port of Emacs 19
 is available). Clicking the mouse when Emacs is invoked in an Xterm window
 (using @code{emacs -nw}) will do no good.
 

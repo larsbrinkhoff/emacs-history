@@ -7,7 +7,7 @@
 
   For those users who live backwards in time, here is information about
 downgrading to Emacs version 19.28 or 19.29.  We hope you will enjoy the
-greater simplicity that results from the absence of certain Emacs 19.30
+greater simplicity that results from the absence of certain Emacs 19.33
 features.
 
 @itemize @bullet
@@ -105,15 +105,20 @@ you use must appear in this order: @samp{-t}, @samp{-d}, @samp{-nw},
 @samp{-u} or @samp{-user}, @samp{-debug-init}.
 
 @item
-Many improvements which make various Emacs command work on MS-DOS are
-gone.  For instance, you cannot print from within Emacs, @samp{Dired}
-doesn't support shell wildcards in filenames, some packages use
-filenames which are illegal in MS-DOS, @samp{display-time} doesn't work,
-@samp{font-lock} won't work unless you create some faces by hand first,
-and @samp{call-process} cannot redirect @code{stderr}.  As an additional
-bonus, you get random characters inserted into the buffer without a
-warning (unless you're smart enough to discover that setting
-@var{visible-bell} makes this problem to go away).  In a word, it's a
-great relief for those who still need proof that MS-DOG isn't an
-operating system for someone who uses Emacs.
+Many special-case kludges for MS-DOS have been removed.  This means
+that many features don't work on MS-DOS; however, the code of Emacs
+is much simpler.
+
+For instance, you cannot print from within Emacs, Dired doesn't support
+shell wildcards in filenames, some Lisp packages won't work because
+their standard filenames are invalid on MS-DOS, @code{display-time}
+doesn't work, Font Lock mode won't work unless you create some faces by
+hand first, and @code{call-process} cannot redirect @code{stderr}.
+
+As an additional bonus, you get random characters inserted into the
+buffer without a warning (unless you're clever enough to discover that
+setting @code{visible-bell} makes this problem to go away).
+
+In a word, it's a great relief for those who still need proof that
+MS-DOG isn't a real operating system.
 @end itemize

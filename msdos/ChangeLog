@@ -1,6 +1,16 @@
+Sun Aug 11 03:36:03 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.33 released.
+
+Sun Aug  4 02:14:33 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* is_exec.c: Renamed from is-exec.c.
+
 Sat Jul 27 00:14:21 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
 
 	* Version 19.32 released.
+
+	* is-exec.c, sigaction.c: New files.
 
 Wed Jul 24 11:04:24 1996  Eli Zaretskii  <eliz@is.elta.co.il>
 

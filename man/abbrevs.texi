@@ -391,16 +391,16 @@ expansion is copied without conversion.
 are actually Lisp expressions which are evaluated each time a decision
 needs to be made.  If the expression's value is non-@code{nil}, then
 case is ignored in searching, or converted on replacement, respectively.
-If the expression's value is @code{nil}, the action is not done.  The
-default values let the variables @code{case-fold-search} (@pxref{Search
-Case}) and @code{case-replace} (@pxref{Replacement and Case}) control
-what to do.
+If the expression's value is @code{nil}, case is not ignored or not
+converted.  The default values let the variables @code{case-fold-search}
+(@pxref{Search Case}) and @code{case-replace} (@pxref{Replacement and
+Case}) control what to do.
 
 @vindex dabbrev-abbrev-char-regexp
-  The variable @code{dabbrev-abbrev-char-regexp}, if non-@code{nil}
-controls which characters are part of a word, for dynamic expansion
+  The variable @code{dabbrev-abbrev-char-regexp}, if non-@code{nil},
+controls which characters are considered part of a word, for dynamic expansion
 purposes.  The regular expression must match just one character, never
-two or more.  The same regular expression also determines what
+two or more.  The same regular expression also determines which
 characters are part of an expansion.  The value @code{nil} has a special
 meaning: abbreviations are made of word characters, but expansions are
 made of word and symbol characters.

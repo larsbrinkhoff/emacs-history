@@ -344,7 +344,7 @@ Generate a calendar for one Monday-starting week
 Generate a Filofax-style two-weeks-at-a-glance calendar
 (@code{cal-tex-cursor-filofax-2week}).
 @item t f W
-Generate a Filofax-style one-weeks-at-a-glance calendar
+Generate a Filofax-style one-week-at-a-glance calendar
 (@code{cal-tex-cursor-filofax-week}).
 @item t y
 Generate a calendar for one year
@@ -639,7 +639,7 @@ Goodman-Martinez-Thompson correlation in its calculations.
 Their calendar consists of twelve 30-day months followed by an extra
 five day period.  Once every fourth year they add a leap day to this
 extra period to make it six days.  The Ethiopic calendar is identical in
-structure, but has a different year numbers and month names.
+structure, but has different year numbers and month names.
 
 @cindex Persian calendar
   The Persians use a solar calendar based on a design of Omar Khayyam.
@@ -702,7 +702,7 @@ Display Ethiopic date for selected day
 (@code{calendar-print-ethiopic-date}).
 @findex calendar-print-persian-date
 @item p p
-Display Perisan date for selected day
+Display Persian date for selected day
 (@code{calendar-print-persian-date}).
 @findex calendar-print-mayan-date
 @item p m

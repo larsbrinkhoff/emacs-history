@@ -1761,7 +1761,7 @@ the first line of the statement.  Here is the lisp code (from the
 Custom indent functions take a single argument, which is a syntactic
 component cons cell (see @ref{Syntactic Analysis}).  The
 function returns an integer offset value that will be added to the
-running total indentation for the lne.  Note that what actually gets
+running total indentation for the line.  Note that what actually gets
 returned is the difference between the column that the first stream
 operator is on, and the column of the buffer relative position passed in
 the function's argument.  Remember that @code{cc-mode} automatically
@@ -2389,7 +2389,7 @@ include: @code{knr-argdecl-intro}, @code{knr-argdecl}, and the
 @cindex   Performance Issues
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-C and it's derivative languages are highly complex creatures.  Often,
+C and its derivative languages are highly complex creatures.  Often,
 ambiguous code situations arise that require @code{cc-mode} to scan
 large portions of the buffer to determine syntactic context.  Some
 pathological code can cause @code{cc-mode} to slow down considerably.
@@ -2438,13 +2438,13 @@ at.
 @vindex recognize-knr-p (c-)
 For the latter problem, I would suggest converting to ANSI style
 protocols, and turning the variable @code{c-recognize-knr-p} to
-@code{nil} (this is it's default value for all modes).
+@code{nil} (this is its default value for all modes).
 
 @vindex cc-lobotomy-pith-list
 For the former problem, you might want to investigate some of the
 speed-ups provided for you in the file @file{cc-lobotomy.el}, which
 is part of the canonical @code{cc-mode} distribution.  As mentioned
-previous, @code{cc-mode} always trades accuracy for speed, however it is
+previously, @code{cc-mode} always trades accuracy for speed; however it is
 recognized that sometimes you need speed and can sacrifice some accuracy
 in indentation.  The file @file{cc-lobotomy.el} contains hacks that
 will ``dumb down'' @code{cc-mode} in some specific ways, making that
