@@ -1365,7 +1365,8 @@ process_coff_symbol (cs, aux)
 
   if (ISFCN (cs->c_type))
     {
-      SYMBOL_TYPE (sym) = decode_function_type (cs, cs->c_type, aux);
+      SYMBOL_TYPE (sym) 
+	= lookup_function_type (decode_function_type (cs, cs->c_type, aux));
       SYMBOL_CLASS (sym) = LOC_BLOCK;
       if (cs->c_sclass == C_STAT)
 	add_symbol_to_list (sym, &file_symbols);

@@ -330,18 +330,33 @@ new_tty (ttyname)
 }
 
 /* Start an inferior process and returns its pid.
-   ALLARGS is a vector of program-name and args.
+   ALLARGS is a string containing shell command to run the program.
    ENV is the environment vector to pass.  */
+
+#ifndef SHELL_FILE
+#define SHELL_FILE "/bin/sh"
+#endif
 
 int
 create_inferior (allargs, env)
-     char **allargs;
+     char *allargs;
      char **env;
 {
   int pid;
+  char *shell_command;
   extern int sys_nerr;
   extern char *sys_errlist[];
   extern int errno;
+
+  /* If desired, concat something onto the front of ALLARGS.
+     SHELL_COMMAND is the result.  */
+#ifdef SHELL_COMMAND_CONCAT
+  shell_command = (char *) alloca (strlen (SHELL_COMMAND_CONCAT) + strlen (allargs) + 1);
+  strcpy (shell_command, SHELL_COMMAND_CONCAT);
+  strcat (shell_command, allargs);
+#else
+  shell_command = allargs;
+#endif
 
   /* exec is said to fail if the executable is open.  */
   close_exec_file ();
@@ -352,6 +367,8 @@ create_inferior (allargs, env)
 
   if (pid == 0)
     {
+      char *args[4];
+
 #ifdef TIOCGPGRP
       /* Run inferior in a separate process group.  */
       setpgrp (getpid (), getpid ());
@@ -367,9 +384,15 @@ create_inferior (allargs, env)
       signal (SIGINT, SIG_DFL);  */
 
       ptrace (0);
-      execle ("/bin/sh", "sh", "-c", allargs, 0, env);
 
-      fprintf (stderr, "Cannot exec /bin/sh: %s.\n",
+      args[0] = "sh";
+      args[1] = "-c";
+      args[2] = shell_command;
+      args[3] = 0;
+
+      execve (SHELL_FILE, args, env);
+
+      fprintf (stderr, "Cannot exec %s: %s.\n", SHELL_FILE,
 	       errno < sys_nerr ? sys_errlist[errno] : "unknown error");
       fflush (stderr);
       _exit (0177);
@@ -400,6 +423,18 @@ kill_inferior ()
   ptrace (8, inferior_pid, 0, 0);
   wait (0);
   inferior_died ();
+}
+
+/* This is used when GDB is exiting.  It gives less chance of error.*/
+
+kill_inferior_fast ()
+{
+  if (remote_debugging)
+    return;
+  if (inferior_pid == 0)
+    return;
+  ptrace (8, inferior_pid, 0, 0);
+  wait (0);
 }
 
 inferior_died ()
@@ -698,6 +733,8 @@ store_inferior_registers (regno)
 {
   register unsigned int regaddr;
   char buf[80];
+  extern char registers[];
+  int i;
 
 #ifdef UMAX_PTRACE
   unsigned int offset = 0;
@@ -710,23 +747,33 @@ store_inferior_registers (regno)
   if (regno >= 0)
     {
       regaddr = register_addr (regno, offset);
-      errno = 0;
-      ptrace (6, inferior_pid, regaddr, read_register (regno));
-      if (errno != 0)
+      for (i = 0; i < REGISTER_RAW_SIZE (regno); i += sizeof(int))
 	{
-	  sprintf (buf, "writing register number %d", regno);
-	  perror_with_name (buf);
+	  errno = 0;
+	  ptrace (6, inferior_pid, regaddr,
+		  *(int *) &registers[REGISTER_BYTE (regno) + i]);
+	  if (errno != 0)
+	    {
+	      sprintf (buf, "writing register number %d(%d)", regno, i);
+	      perror_with_name (buf);
+	    }
+	  regaddr += sizeof(int);
 	}
     }
   else for (regno = 0; regno < NUM_REGS; regno++)
     {
       regaddr = register_addr (regno, offset);
-      errno = 0;
-      ptrace (6, inferior_pid, regaddr, read_register (regno));
-      if (errno != 0)
+      for (i = 0; i < REGISTER_RAW_SIZE (regno); i += sizeof(int))
 	{
-	  sprintf (buf, "writing register number %d", regno);
-	  perror_with_name (buf);
+	  errno = 0;
+	  ptrace (6, inferior_pid, regaddr,
+		  *(int *) &registers[REGISTER_BYTE (regno) + i]);
+	  if (errno != 0)
+	    {
+	      sprintf (buf, "writing register number %d(%d)", regno, i);
+	      perror_with_name (buf);
+	    }
+	  regaddr += sizeof(int);
 	}
     }
 }

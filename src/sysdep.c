@@ -20,6 +20,7 @@ and this notice must be preserved on all copies.  */
 
 
 #include <signal.h>
+#include <setjmp.h>
 
 #include "config.h"
 #include "lisp.h"
@@ -164,6 +165,10 @@ extern char *sys_errlist[];
 #ifdef NONSYSTEM_DIR_LIBRARY
 #include "ndir.h"
 #endif /* NONSYSTEM_DIR_LIBRARY */
+
+#ifndef sigmask
+#define sigmask(no) (1L << ((no) - 1))
+#endif
 
 /* Define SIGCHLD as an alias for SIGCLD.  There are many conditionals
    testing SIGCHLD.  */
@@ -432,6 +437,17 @@ child_setup_tty (out)
 #ifdef HPUX
   s.c_cflag = (s.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
 #endif HPUX
+#ifdef IBMRTAIX
+/* AIX enhanced edit looses NULs, so disable it */
+  s.c_line = 0;
+  s.c_iflag &= ~ASCEDIT;
+/* QUIT and INTR work better as signals, so disable character forms */
+  s.c_cc[VQUIT] = 0377;
+  s.c_cc[VINTR] = 0377;
+  s.c_cc[VEOL] = 0377;
+  s.c_lflag &= ~ISIG;
+  s.c_cflag = (s.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
+#endif /* IBMRTAIX */
 
 #else /* not HAVE_TERMIO */
   s.sg_flags &= ~(ECHO | CRMOD | ANYP | ALLDELAY | RAW | LCASE | CBREAK | TANDEM);
@@ -443,12 +459,12 @@ child_setup_tty (out)
   if (interrupt_input)
     reset_sigio ();
 #endif /* BSD4_1 */
-#ifdef MASSCOMP
+#ifdef RTU
   {
     int zero = 0;
     ioctl (out, FIOASYNC, &zero);
   }
-#endif /* MASSCOMP */
+#endif /* RTU */
 }
 
 #endif /* subprocesses */
@@ -473,7 +489,12 @@ sys_suspend ()
 
   parent_id = getppid ();
   if (parent_id && parent_id != 0xffffffff)
-    return LIB$ATTACH (&parent_id) & 1;
+    {
+      int oldsig = signal (SIGINT, SIG_IGN);
+      int status = LIB$ATTACH (&parent_id) & 1;
+      signal (SIGINT, oldsig);
+      return status;
+    }
   return -1;
 #else
 #ifdef BSD
@@ -747,6 +768,11 @@ init_sys_modes ()
 #ifdef VSWTCH
       sg.c_cc[VSWTCH] = CDEL;	/* Turn off shell layering use of C-z */
 #endif /* VSWTCH */
+#ifdef IBMRTAIX
+      /* AIX enhanced edit loses NULs, so disable it */
+      sg.c_line = 0;
+      sg.c_iflag &= ~ASCEDIT;
+#endif
 #else /* if not HAVE_TERMIO */
 #ifdef VMS
       sg.tt_char |= TT$M_NOECHO | TT$M_EIGHTBIT;
@@ -768,6 +794,16 @@ init_sys_modes ()
 #else
       ioctl (0, TIOCSETN, &sg);
 #endif /* not VMS */
+
+#ifdef TCXONC
+      /* This code added to insure that if flow-control is not to be used we have 
+	 an unlocked screen at the start. */
+      if (!flow_control) ioctl (0, TCXONC, 1);
+#endif
+
+#ifdef IBMRTAIX
+      hft_init ();
+#endif
 
 #ifdef F_SETFL
 #ifdef F_GETOWN		/* F_SETFL does not imply existance of F_GETOWN */
@@ -965,6 +1001,10 @@ reset_sys_modes ()
 #else /* not VMS */
   while (ioctl (0, TCSETAW, &old_gtty) < 0 && errno == EINTR);
 #endif /* not VMS */
+
+#ifdef IBMRTAIX
+  hft_reset ();
+#endif
 }
 
 #ifdef VMS
@@ -1009,14 +1049,14 @@ queue_kbd_input ()
 
 int input_count;
 
-static int ast_active;
-
 /* Ast routine that is called when keyboard input comes in
    in accord with the SYS$QIO above.  */
 
 kbd_input_ast ()
 {
   register int c = -1;
+  int old_errno = errno;
+
   if (waiting_for_ast)
     SYS$SETEF (input_ef);
   waiting_for_ast = 0;
@@ -1044,11 +1084,9 @@ kbd_input_ast ()
   if (! stop_input)
     queue_kbd_input ();
   if (c >= 0)
-    {
-      ast_active = 1;
-      kbd_buffer_store_char (c);
-      ast_active = 0;
-    }
+    kbd_buffer_store_char (c);
+
+  errno = old_errno;
 }
 
 /* Wait until there is something in kbd_buffer.  */
@@ -1102,7 +1140,7 @@ end_kbd_input()
   fflush (stdout);
   sleep (1);
 #endif
-  if (ast_active)  /* Don't wait if suspending from kbd_buffer_store_char! */
+  if (LIB$AST_IN_PROG ())  /* Don't wait if suspending from kbd_buffer_store_char! */
     {
       SYS$CANCEL (input_chan);
       return;
@@ -1351,6 +1389,15 @@ get_system_name ()
 #define SELECT_PAUSE 1
 int select_alarmed;
 
+/* For longjmp'ing back to read_input_waiting.  */
+
+jmp_buf read_alarm_throw;
+
+/* Nonzero if the alarm signal should throw back to read_input_waiting.
+   The read_socket_hook function sets this to 1 while it is waiting.  */
+
+int read_alarm_should_throw;
+
 select_alarm ()
 {
   select_alarmed = 1;
@@ -1359,6 +1406,8 @@ select_alarm ()
 #else /* not BSD4_1 */
   signal (SIGALRM, SIG_IGN);
 #endif /* not BSD4_1 */
+  if (read_alarm_should_throw)
+    longjmp (read_alarm_throw, 1);
 }
 
 /* Only rfds are checked and timeout must point somewhere */
@@ -1499,7 +1548,13 @@ read_input_waiting ()
   int val;
 
   if (read_socket_hook)
-    val = (*read_socket_hook) (0, kbd_buffer, 256 * BUFFER_SIZE_FACTOR);
+    {
+      read_alarm_should_throw = 0;
+      if (! setjmp (read_alarm_throw))
+	val = (*read_socket_hook) (0, kbd_buffer, 256 * BUFFER_SIZE_FACTOR);
+      else
+	val = -1;
+    }
   else
     val = read (fileno (stdin), kbd_buffer, 1);
 
@@ -1890,6 +1945,41 @@ sys_write (fildes, buf, nbyte)
 
 char *sys_siglist[NSIG + 1] =
 {
+#ifdef IBMRTAIX
+/* AIX has changed the signals a bit */
+  "bogus signal",			/* 0 */
+  "hangup",				/* 1  SIGHUP */
+  "interrupt",				/* 2  SIGINT */
+  "quit",				/* 3  SIGQUIT */
+  "illegal instruction",		/* 4  SIGILL */
+  "trace trap",				/* 5  SIGTRAP */
+  "IOT instruction",			/* 6  SIGIOT */
+  "crash likely",			/* 7  SIGDANGER */
+  "floating point exception",		/* 8  SIGFPE */
+  "kill",				/* 9  SIGKILL */
+  "bus error",				/* 10 SIGBUS */
+  "segmentation violation",		/* 11 SIGSEGV */
+  "bad argument to system call",	/* 12 SIGSYS */
+  "write on a pipe with no one to read it", /* 13 SIGPIPE */
+  "alarm clock",			/* 14 SIGALRM */
+  "software termination signum",	/* 15 SIGTERM */
+  "user defined signal 1",		/* 16 SIGUSR1 */
+  "user defined signal 2",		/* 17 SIGUSR2 */
+  "death of a child",			/* 18 SIGCLD */
+  "power-fail restart",			/* 19 SIGPWR */
+  "bogus signal",			/* 20 */
+  "bogus signal",			/* 21 */
+  "bogus signal",			/* 22 */
+  "bogus signal",			/* 23 */
+  "bogus signal",			/* 24 */
+  "LAN I/O interrupt",			/* 25 SIGAIO */
+  "PTY I/O interrupt",			/* 26 SIGPTY */
+  "I/O intervention required",		/* 27 SIGIOINT */
+  "HFT grant",				/* 28 SIGGRANT */
+  "HFT retract",			/* 29 SIGRETRACT */
+  "HFT sound done",			/* 30 SIGSOUND */
+  "HFT input ready",			/* 31 SIGMSG */
+#else /* not IBMRTAIX */
   "bogus signal",			/* 0 */
   "hangup",				/* 1  SIGHUP */
   "interrupt",				/* 2  SIGINT */
@@ -1910,6 +2000,7 @@ char *sys_siglist[NSIG + 1] =
   "user defined signal 2",		/* 17 SIGUSR2 */
   "death of a child",			/* 18 SIGCLD */
   "power-fail restart",			/* 19 SIGPWR */
+#endif /* not IBMRTAIX */
   0
   };
 
@@ -1929,16 +2020,16 @@ char *
 getwd (pathname)
      char *pathname;
 {
-  char *npath;
+  char *npath, *spath;
   extern char *getcwd ();
 
-  npath = getcwd ((char *) 0, MAXPATHLEN);
+  spath = npath = getcwd ((char *) 0, MAXPATHLEN);
   /* On Altos 3068, getcwd can return @hostname/dir, so discard
      up to first slash.  Should be harmless on other systems.  */
   while (*npath && *npath != '/')
     npath++;
   strcpy (pathname, npath);
-  free (npath);			/* getcwd uses malloc */
+  free (spath);			/* getcwd uses malloc */
   return pathname;
 }
 
@@ -3386,3 +3477,66 @@ srandom (seed)
   srand (seed);
 }
 #endif /* VMS */
+
+#ifdef IBMRTAIX
+
+/* Get files for keyboard remapping */
+#define HFNKEYS 2
+#include <sys/hft.h>
+#include <sys/devinfo.h>
+
+/* Called from init_sys_modes.  */
+hft_init ()
+{
+  /* On AIX the default hft keyboard mapping uses backspace rather than delete
+     as the rubout key's ASCII code.  Here this is changed.  The bug is that
+     there's no way to determine the old mapping, so in reset_sys_modes
+     we need to assume that the normal map had been present.  Of course, this
+     code also doesn't help if on a terminal emulator which doesn't understand
+     HFT VTD's. */
+  {
+    struct hfbuf buf;
+    struct hfkeymap keymap;
+
+    buf.hf_bufp = (char *)&keymap;
+    buf.hf_buflen = sizeof (keymap);
+    keymap.hf_nkeys = 2;
+    keymap.hfkey[0].hf_kpos = 15;
+    keymap.hfkey[0].hf_kstate = HFMAPCHAR | HFSHFNONE;
+    keymap.hfkey[0].hf_page = '<';
+    keymap.hfkey[0].hf_char = 127;
+    keymap.hfkey[1].hf_kpos = 15;
+    keymap.hfkey[1].hf_kstate = HFMAPCHAR | HFSHFSHFT;
+    keymap.hfkey[1].hf_page = '<';
+    keymap.hfkey[1].hf_char = 127;
+    hftctl (0, HFSKBD, &buf);
+  }
+  /* The HFT system on AIX doesn't optimize for scrolling, so it's really ugly
+     at times.  Here we determine if we are on an HFT by trying to get an
+     HFT error code.  If this call works, we must be on an HFT. */
+  if (ioctl (0, HFQEIO, 0) != -1)
+    line_ins_del_ok = char_ins_del_ok = 0;
+}
+
+/* Reset the rubout key to backspace. */
+
+hft_reset ()
+{
+  struct hfbuf buf;
+  struct hfkeymap keymap;
+
+  buf.hf_bufp = (char *)&keymap;
+  buf.hf_buflen = sizeof(keymap);
+  keymap.hf_nkeys = 2;
+  keymap.hfkey[0].hf_kpos = 15;
+  keymap.hfkey[0].hf_kstate = HFMAPCHAR | HFSHFNONE;
+  keymap.hfkey[0].hf_page = '<';
+  keymap.hfkey[0].hf_char = 8;
+  keymap.hfkey[1].hf_kpos = 15;
+  keymap.hfkey[1].hf_kstate = HFMAPCHAR | HFSHFSHFT;
+  keymap.hfkey[1].hf_page = '<';
+  keymap.hfkey[1].hf_char = 8;
+  hftctl (0, HFSKBD, &buf);
+}
+
+#endif IBMRTAIX

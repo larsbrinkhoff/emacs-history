@@ -274,7 +274,7 @@ With a negative prefix arg sorts in reverse order.
 
 For example: to sort lines in the region by the first word on each line
  starting with the letter \"f\",
- RECORD-REGEXP would be \"^.*$\" and KEY \"\<f\w*\>\""
+ RECORD-REGEXP would be \"^.*$\" and KEY \"\\<f\\w*\\>\""
   (interactive "P\nsRegexp specifying records to sort: 
 sRegexp specifying key within record: \nr")
   (cond ((or (equal key-regexp "") (equal key-regexp "\\&"))

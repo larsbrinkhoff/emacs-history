@@ -123,7 +123,7 @@
   (Helper-help-scroller))
 
 (defun Helper-describe-bindings ()
-  "Describe current local key bindings."
+  "Describe local key bindings of current mode."
   (interactive)
   (message "Making binding list...")
   (save-window-excursion (describe-bindings))

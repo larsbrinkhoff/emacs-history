@@ -162,3 +162,9 @@ extern int sign_extend_temp;
 
 /* Tell alloca.c which direction stack grows.  */
 #define STACK_DIRECTION -1
+
+/* Compensate for error in signal.h.  */
+#if NSIG==19
+#undef NSIG
+#define NSIG 20
+#endif

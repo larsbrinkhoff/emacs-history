@@ -21,6 +21,7 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 #include <stdio.h>
 #include "defs.h"
 #include "initialize.h"
+#include "param.h"
 #include "symtab.h"
 #include "value.h"
 
@@ -68,7 +69,7 @@ value_print (val, stream, format)
 	  for (i = 0; i < n && i < print_max; i++)
 	    {
 	      QUIT;
-	      printchar (VALUE_CONTENTS (val)[i], stream);
+	      printchar (VALUE_CONTENTS (val)[i], stream, '"');
 	    }
 	  if (i < n)
 	    fprintf (stream, "...");
@@ -145,7 +146,7 @@ val_print (type, valaddr, address, stream, format)
 	      for (i = 0; i < len && i < print_max; i++)
 		{
 		  QUIT;
-		  printchar (valaddr[i], stream);
+		  printchar (valaddr[i], stream, '"');
 		}
 	      if (i < len)
 		fprintf (stream, "...");
@@ -191,7 +192,7 @@ val_print (type, valaddr, address, stream, format)
 	      read_memory (unpack_long (type, valaddr) + i, &c, 1);
 	      if (c == 0)
 		break;
-	      printchar (c, stream);
+	      printchar (c, stream, '"');
 	    }
 	  fputc ('"', stream);
 	  if (i == print_max)
@@ -268,7 +269,7 @@ val_print (type, valaddr, address, stream, format)
       if (TYPE_LENGTH (type) == 1)
 	{
 	  fprintf (stream, " '");
-	  printchar (unpack_long (type, valaddr), stream);
+	  printchar (unpack_long (type, valaddr), stream, '\'');
 	  fputc ('\'', stream);
 	}
       break;

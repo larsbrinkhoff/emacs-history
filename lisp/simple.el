@@ -941,6 +941,8 @@ With argument 0, interchanges line point is in with line mark is in."
       (setq arg (1+ arg)))))
 
 (defun transpose-subr-1 ()
+  (if (> (min end1 end2) (max start1 start2))
+      (error "Don't have two things to transpose"))
   (let ((word1 (buffer-substring start1 end1))
 	(word2 (buffer-substring start2 end2)))
     (delete-region start2 end2)

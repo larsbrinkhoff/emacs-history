@@ -270,7 +270,7 @@ tested on many kinds of terminals.
 
 3) The termcap entry is wrong.
 
-See the file TERMS in this directory for information on changes
+See the file etc/TERMS for information on changes
 that are known to be needed in commonly used termcap entries
 for certain terminals.
 

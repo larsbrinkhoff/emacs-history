@@ -44,7 +44,9 @@ and this notice must be preserved on all copies.  */
 #endif
 
 #ifdef APOLLO
+#ifndef APOLLO_SR10
 #include <default_acl.h>
+#endif
 #endif
 
 #ifndef O_RDWR
@@ -55,6 +57,9 @@ and this notice must be preserved on all copies.  */
 
 /* Command line args from shell, as list of strings */
 Lisp_Object Vcommand_line_args;
+
+/* Hook run by `kill-emacs' before it does really anything.  */
+Lisp_Object Vkill_emacs_hook;
 
 /* Set nonzero after Emacs has started up the first time.
   Prevents reinitialization of the Lisp world and keymaps
@@ -201,10 +206,12 @@ main (argc, argv, envp)
   clearerr (stdin);
 
 #ifdef APOLLO
+#ifndef APOLLO_SR10
   /* If USE_DOMAIN_ACLS environment variable exists,
      use ACLs rather than UNIX modes. */
   if (egetenv ("USE_DOMAIN_ACLS"))
     default_acl (USE_DEFACL);
+#endif
 #endif /* APOLLO */
 
 #ifndef SYSTEM_MALLOC
@@ -294,6 +301,22 @@ main (argc, argv, envp)
 #ifdef SIGXFSZ
       signal (SIGXFSZ, fatal_error_signal);
 #endif SIGXFSZ
+
+#ifdef IBMRTAIX
+      signal (SIGDANGER, fatal_error_signal);
+      signal (20, fatal_error_signal);
+      signal (21, fatal_error_signal);
+      signal (22, fatal_error_signal);
+      signal (23, fatal_error_signal);
+      signal (24, fatal_error_signal);
+      signal (SIGAIO, fatal_error_signal);
+      signal (SIGPTY, fatal_error_signal);
+      signal (SIGIOINT, fatal_error_signal);
+      signal (SIGGRANT, fatal_error_signal);
+      signal (SIGRETRACT, fatal_error_signal);
+      signal (SIGSOUND, fatal_error_signal);
+      signal (SIGMSG, fatal_error_signal);
+#endif
     }
 
   noninteractive1 = noninteractive;
@@ -449,6 +472,9 @@ return ARG as the exit program code.")
   Lisp_Object answer;
   int i;
 
+  if (!NULL (Vkill_emacs_hook))
+    call0 (Vkill_emacs_hook);
+
   if (feof (stdin))
     arg = Qt;
   if (!noninteractive && NULL (arg))
@@ -601,4 +627,9 @@ syms_of_emacs ()
 
   DEFVAR_BOOL ("noninteractive", &noninteractive1,
     "Non-nil means Emacs is running without interactive terminal.");
+
+  Vkill_emacs_hook = Qnil;
+
+  DEFVAR_LISP ("kill-emacs-hook", &Vkill_emacs_hook,
+    "Function called, if non-nil, whenever kill-emacs is called.");
 }

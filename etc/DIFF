@@ -580,8 +580,8 @@ Libraries of commands, and init files, are written in Lisp.
 libraries conventionally have names ending in .el, while the
 init file is named .emacs and is in your home directory.
 
-Use  Meta-x load  to load a library.  Most standard libararies load
-automatically if you try to use the commands in them.
+Use  Meta-x load-library  to load a library.  Most standard libraries
+load automatically if you try to use the commands in them.
 
 Meta-x byte-compile-file filename
 compiles the file into byte code which loads and runs faster
@@ -592,7 +592,7 @@ Meta-x byte-recompile-directory directoryname
 compiles all files in the specified directory (globbing not allowed)
 which have been compiled before but have been changed since then.
 
-Meta-x  load automatically checks for a compiled file
+Meta-x load-library automatically checks for a compiled file
 before loading the source file.
 
 Libraries once loaded do not retain their identity within GNU

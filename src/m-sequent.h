@@ -152,7 +152,3 @@ and this notice must be preserved on all copies.  */
   sprintf (ptyname, "/dev/pty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
 #define PTY_TTY_NAME_SPRINTF \
   sprintf (ptyname, "/dev/tty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
-
-/* Use dk.h, not dkstat.h, in loadst.c.  */
-
-#define DK_HEADER_FILE

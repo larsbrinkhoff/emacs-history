@@ -1,3 +1,315 @@
+Thu Sep  1 14:22:30 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.52 released.
+
+	* fortran.el (fortran-split-line): Add space before continuation-char.
+
+Mon Aug 29 15:57:20 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* mh-e.el: New version from Larus.
+
+Sun Aug 21 21:05:08 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* view.el (view-mode): Initially view-scroll-size is nil.
+	(view-scroll-size): If it's nil, return (view-window-size).
+
+Thu Aug 18 14:21:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fill.el (justify-current-line): Skip fill-prefix before whitespace.
+
+	* spell.el (spell-region): Change minibuffer prompt.
+
+Mon Aug 15 19:37:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* add-log.el (add-change-log-entry): Log filename is now an arg;
+	prompt for it with `interactive'.
+	(add-change-log-entry-other-window): Always use default log filename
+	and never prompt for anything.
+
+Sat Aug 13 14:59:02 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* simula.el: New version from obh.
+
+	* add-log.el (add-change-log-entry): New arg OTHER-WINDOW.
+	(add-change-log-entry-other-window): New fn.
+	* loaddefs.el: Autoload that fn and put on C-x 4 a.
+
+Thu Aug 11 22:43:01 1988  Chris Hanson  (cph at kleph)
+
+	* xscheme.el (xscheme-cd): New function to guarantee that `cd'
+	happens in Scheme process buffer.
+
+Mon Aug  8 08:09:17 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* life.el, saveconf.el, doctex.el: New files.
+
+	* files.el (create-file-buffer): Avoid empty buffer name for root dir.
+	* dired.el (dired-find-buffer): Let create-file-buffer do more work.
+	(dired-noselect): Use directory-file-name, file-name-as-directory.
+
+Thu Aug  4 15:26:44 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.el (server-process-filter): Handle +NNN to specify linenum.
+	(server-visit-files): Arg is now alist of (FILENAME . LINENUM).
+
+	* server.el (server-visit-files): criterion for revert is if either
+	buffer or file has changed.
+
+	* abbrev.el: Doc fix.
+	* files.el:
+
+Wed Aug  3 12:28:05 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
+
+	* texinfo.el: Changed fill-colum from 75 to 72.  The larger
+	fill-column causes numerous overfull hboxes in TeX when you are
+	writing Emacs Lisp code that will be formatted as a Texinfo example.
+
+Sun Jul 31 06:46:43 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* rmailsum.el (rmail-new-summary): Always go to line for current msg.
+	(rmail-summary-exit): Delete just current window, and that
+	only if Rmail was already in another window.
+
+Fri Jul 29 13:45:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* tags.el: provide 'tags.
+
+Tue Jul 26 16:30:30 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* info.el (Info-follow-reference): Handle extra newlines, tabs or
+	spaces inside of cross-references.
+
+	* outline.el: doc fix.
+
+Sat Jul 23 17:05:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loaddefs.el: autoload texinfo-format-region.
+
+Fri Jul 22 05:11:50 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* simple.el (transpose-subr-1): Error if regions overlap.
+
+	* dired.el (dired-flag-file-deleted): Directories no longer special.
+	* dired.el (dired-do-deletions): If deleting a dir, run `rmdir'.
+
+Tue Jul 19 00:43:31 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ftp.el (ftp-find-file-or-directory): Typo in arg name.
+
+Mon Jul 18 00:24:40 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* c-fill.el: New file.
+
+	* compile.el (compilation-error-regexp): Exclude colon from filename.
+
+Sun Jul 17 13:43:49 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* view.el: `h' ran undefined command; make it like `?'.
+
+Sat Jul 16 22:25:36 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* spell.el (spell-region): Run spell-filter to alter the text
+	before actual checking.
+
+Fri Jul 15 04:10:30 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* rmailsum.el (rmail-make-basic-summary-line): If sender is self,
+	show recipient instead, with `to:'.
+
+Wed Jul 13 13:36:36 1988  Richard Stallman  (rms at wheat-chex.ai.mit.edu)
+
+	* files.el (auto-save-file-name-p): doc fix.
+
+Tue Jul 12 21:58:17 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Handle RTU like sysV.
+
+Sun Jul 10 14:43:44 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* compile.el (compile1): use set-buffer, not switch-to-buffer.
+
+	* startup.el (command-line): strip hyphens one by one from TERM type.
+
+Tue Jul  5 15:11:42 1988  Chris Hanson  (cph at kleph)
+
+	* texinfmt.el: Add support for @defun and related commands.
+
+Tue Jul  5 14:00:46 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadup.el: Avoid setting the global variable `name'.
+
+Mon Jul  4 12:21:03 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-make-in-reply-to-field): Use doublequotes, not
+	parens, around sender name in rfc822 mode.
+
+	* info.el (Info-read-subfile):  Don't lose if subfile header isn't
+	same length as main file header.
+
+Sun Jul  3 10:37:05 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* shell.el (shell-send-input): Put bound on search for prompt.
+
+Fri Jul  1 10:07:14 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* autoinsert.el: New file.
+
+	* text-mode.el (center-region): Don't let end-of-region
+	become wrong when insertion/deletion is done.
+
+	* info.el (Info-find-node): Typo in regexp.
+	(Info-following-node-name): At open paren, continue to close.
+
+	* tags.el (list-tags): Terminate scan on end-of-buffer.
+
+Thu Jun 30 10:09:19 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loaddefs.el (auto-mode-alist): C mode for `.cc'.
+
+Mon Jun 27 12:22:11 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Treat unisoft like usg.
+
+	* texinfo.el (texinfo-show-structure): New function.
+	(texinfo-insert-*): Several new functions.
+	(texinfo-mode-map): New keymap.
+
+	* dired.el: provide 'dired.
+
+Thu Jun 23 11:02:37 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (hack-local-variables): Ignore `eval' if running as root.
+
+Wed Jun 22 10:33:39 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* nroff-mode.el (nroff-brace-table): Add G1 vs G2.
+
+Tue Jun 21 04:43:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* spell.el (spell-region, spell-string): Fix typo `spell-cmd'.
+
+Sun Jun 19 15:35:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lpr.el (lpr-command): New variable holds the shell command to
+	print a file (normally "lpr").
+
+Wed Jun 15 06:13:32 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rnewspost.el (news-inews): run news-inews-hook.
+
+	* rmail.el (rmail-show-message): run rmail-show-message-hook.
+
+Sun Jun 12 10:55:47 1988  Richard Stallman  (rms at gluteus.ai.mit.edu)
+
+	* keypad.el: Additional conventional chars added in the comments.
+
+	* text-mode.el: erroneously installed text-mode-syntax-table
+	in current buffer.
+
+Thu Jun  9 05:28:48 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fill.el (fill-region-as-paragraph): Err if fill-prefix is
+	too long for the fill-column.
+
+	* texinfmt.el (texinfo-format-{region,buffer-1}): Make sure buffer
+	ends in a newline.
+
+Tue Jun  7 12:47:31 1988  Chris Hanson  (cph at kleph)
+
+	* xscheme.el (xscheme-process-filter-alist): add escape sequence
+	which instructs Emacs to change the working directory of the
+	Scheme process buffer.  This change is required for Scheme runtime
+	library version 14.
+
+Thu Jun  2 06:36:43 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): avoid insert-buffer (too high level).
+
+Tue May 31 18:12:10 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* outline.el: Must put `\(...\)' around outline-regexp
+	when prepending `^'.
+
+Mon May 30 17:30:18 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fortran.el, hanoi.el, helper.el, info.el, mlconvert.el, modula2.el,
+	rmail.el, sendmail.el, sort.el, underline.el: doc fixes.
+	* loaddefs.el: autoload doc fixes.
+
+Sat May 28 05:19:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* help.el (print-help-return-message): Handle pop-up-windows = nil.
+
+	* nroff-mode.el (nroff-brace-table): Add more pairs, for some mm macros
+	(nroff-comment-indent): Recognize ' like period.
+	(nroff-mode): .SK and .OP separate pages.
+
+	* shell.el (lisp-send-defun): Install new, corrected no-process check.
+
+Fri May 27 21:28:20 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* c-mode.el (electric-c-terminator): Tests to distinguish labels
+	from other uses of colon failed if inserting at end of buffer.
+
+Tue May 24 15:09:32 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* texinfmt.el (texinfo-parse-expanded-arg): like texinfo-parse-line-arg
+	but expand commands inside the arg.
+	(texinfo-index): Use that.
+	(@end ifinfo): Discard terminating newline.
+
+Mon May 23 12:45:52 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* files.el (file-name-sans-versions): VMS version can be sep. by `.'.
+	Also delete mysterious line that removes `$__$'.
+
+Sun May 22 14:28:56 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* gdb.el (gdb-filter-accumulate-marker): Empty gdb-filter-accumulate
+	since its contents are now in STRING.
+
+	* rnews.el (news-get-pruned-list-of-files): catch errors for
+	read-protected directories.
+
+Fri May 20 00:54:22 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* meese.el: Bind off buffer-read-only while changing buffer.
+	Don't add protect-innocence-hook twice.
+
+	* sendmail.el (mail-do-fcc): If fcc file is in a buffer, append there.
+
+Mon May 16 21:17:39 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* bibtex.el (bibtex-mode): Delete some keys that were vt100 keypad.
+	(bibtex-DEAthesis): Delete this and its key definition.
+	(bibtex-sun-*): Insert functions.
+
+Sun May 15 19:35:59 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loaddefs.el: Doc fix.
+
+Thu May 12 17:47:35 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* tex-mode.el (TeX-region): Pass nil to make-shell as startfile arg.
+
+Wed May 11 14:20:41 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* shell.el (make-shell): If PROGRAM is nil, default like M-x shell.
+
+	* tex-mode.el (TeX-region): Used eliminated fn. expand-directory-name.
+
+Tue May 10 21:45:09 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* shell.el (lisp-send-defun): Undo last change.
+
+	* loaddefs.el (rmail-primary-inbox-list): Doc fix.
+
+Sun May  8 15:15:45 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* man.el (manual-entry): Handle section names > 1 letter.
+
+	* paths.el (manual-formatted-*): Add alternative for Xenix.
+
 Fri May  6 10:49:12 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
 
 	* Version 18.51 released.

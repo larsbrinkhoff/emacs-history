@@ -21,7 +21,7 @@
 ;;; Requires C-Scheme release 5 or later
 ;;; Changes to Control-G handler require runtime version 13.85 or later
 
-;;; $Header: xscheme.el,v 1.17 88/04/28 18:52:03 GMT cph Exp $
+;;; $Header: xscheme.el,v 1.19 88/08/12 02:41:22 GMT cph Exp $
 
 (require 'scheme)
 
@@ -734,6 +734,8 @@ When called, the current buffer will be the Scheme process-buffer.")
 	xscheme-process-filter:simple-action)
     (?v xscheme-write-value
 	xscheme-process-filter:string-action)
+    (?w xscheme-cd
+	xscheme-process-filter:string-action)
     (?z xscheme-display-process-buffer
 	xscheme-process-filter:simple-action)
     (?c xscheme-unsolicited-read-char
@@ -858,6 +860,11 @@ the remaining input.")
     ("[Visiting environment]" . "[Evaluator]")
     ("[Environment Inspector]" . "[Where]"))
   "An alist which maps the Scheme command interpreter type to a print string.")
+
+(defun xscheme-cd (directory-string)
+  (save-excursion
+    (set-buffer (xscheme-process-buffer))
+    (cd directory-string)))
 
 (defun xscheme-prompt-for-confirmation (prompt-string)
   (xscheme-send-char (if (y-or-n-p prompt-string) ?y ?n)))

@@ -196,7 +196,7 @@ the rubber-band outline of the new window will appear on the new X display."
 
 	    ;; Not defvar!  This is not DEFINING this variable, just specifying
 	    ;; a value for it.
-	    (setq term-setup-hook 'x-pop-up-window)
+	    (setq window-setup-hook 'x-pop-up-window)
 
 	    ;; Process switch settings made by .emacs file.
 	    (while x-switches

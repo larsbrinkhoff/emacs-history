@@ -78,12 +78,11 @@ and this notice must be preserved on all copies.  */
 
 #define SWITCH_ENUM_BUG
 
-#if 0
 /* These three lines were new in 18.50.  They were said to permit
-   a demand-paged executable, but someone else says they don't work.  */
+   a demand-paged executable, but someone else says they don't work.
+   Someone else says they do.  They didn't work because errno was an
+   initialized variable in crt0.c, and because of %splimit (also therein),
+   both of which have been fixed now. */
 #define SECTION_ALIGNMENT 0x03ff
 #define SEGMENT_MASK 0xffff
-#define LD_SWITCH_MACHINE  -z
-#else
-#define LD_SWITCH_MACHINE -s -N
-#endif
+#define LD_SWITCH_MACHINE -z

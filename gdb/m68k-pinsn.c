@@ -23,7 +23,7 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 #include "defs.h"
 #include "param.h"
 #include "symtab.h"
-#include "m68k-opcode.h"
+#include "opcode.h"
 
 /* 68k instructions are never longer than this many bytes.  */
 #define MAXLEN 22

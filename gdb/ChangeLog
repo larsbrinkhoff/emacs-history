@@ -1,3 +1,153 @@
+Sat Sep  3 12:05:36 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 2.8 released.
+
+	* valprint.c: include param.h.
+
+	* inflow.c (store_inferior_registers): Fix typo and missing decl.
+
+Thu Sep  1 13:18:22 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 2.7 released.
+
+	* m-hp9k320bsd.h: New file supports BSD on hp9000 series 300.
+
+Tue Aug 30 17:54:50 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-news.h ({EXTRACT,STORE}_RETURN_VALUE): Handle floating pt values.
+
+	* inflow.c (store_inferior_registers) [usual case]:
+	Handle registers longer than one word.
+
+Sat Aug 27 00:19:32 1988  Richard Stallman  (rms at spiff)
+
+	* inflow.c (create_inferior): Use execve to avoid NEWSOS bug in execle.
+
+Wed Aug 10 20:36:36 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-news.h: Define READ_DBX_FORMAT, {EXTRACT,STORE}_RETURN_VALUE.
+	(INVALID_FLOAT): Add 2nd argument.
+	(vprintf): Define to call _doprnt.
+
+Tue Jul 26 03:05:28 1988  Peter TerMaat  (pete at corn-chex.ai.mit.edu)
+
+	* symmisc.c: (print_symtabs)  Check the status of the fopen and
+	call perror_with_name if needed.
+
+Sat Jul 23 00:14:20 1988  Peter TerMaat  (pete at corn-chex.ai.mit.edu)
+
+	* printcmd.c: (delete_display) Check for existence of display
+	chain before deleting anything.
+
+Thu Jul  7 08:47:03 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* main.c: New vars win_argv, win_argc, win_prgm to talk to xgdb.
+
+Thu Jul  7 02:05:29 1988  Pete TerMaat  (pete at frosted-flakes.ai.mit.edu)
+
+	* dbxread.c: (define_symbol) store static functions ('f') in the
+	same way as global functions ('F') -- that is, as `function of
+	type X' rather than as `X'.
+
+Mon Jul  4 17:07:31 1988  Pete TerMaat  (pete at frosted-flakes.ai.mit.edu)
+
+	* dbxread.c: (read_dbx_symtab) Avoid reading symbol tables of
+	libraries by checking for symbols which begin with "-l" (in
+	addition to those which end with ".o").
+
+Mon Jun 27 23:27:51 1988  Pete TerMaat  (pete at frosted-flakes.ai.mit.edu)
+
+	* dbxread.c: (define_symbol) and coffread.c: (process_coff_symbol)
+	If the current symbol is a function, assign its type to be 
+	`function of type X' rather than `X'.  TYPE_TARGET_TYPE (symbol)
+	is `X'
+
+	* findvar.c: (locate_var_value, read_var_value) got rid of checks
+	for LOC_BLOCK which called `lookup_function_type'.  These checks
+	are no longer needed because of the change to dbxread.c.
+
+	* infcmd.c: (finish_command) Now uses target_type instead of type
+	for functions, in keeping with the change to dbxread.c.
+
+Sat Jun 25 00:24:09 1988  Pete TerMaat  (pete at corn-chex.ai.mit.edu)
+
+	* infrun.c: (normal_stop) Added a check for permissions on the
+	exec file before printing the "You have encountered a bug in sh"
+	message.  Apparently on some systems an attempt by the shell to
+	exec an	unexecutable file had resulted in the "You have 
+	encountered" message.
+
+Wed Jun 22 00:00:02 1988  Pete TerMaat  (pete at corn-chex.ai.mit.edu)
+
+	* config.gdb: installed shell script to make the proper links to
+	param.h, m-init.h, opcode.h, and pinsn.c, given a machine name.
+
+Tue Jun 21 23:55:09 1988  Pete TerMaat  (pete at corn-chex.ai.mit.edu)
+
+	* m-suninit.h, m-isi-ov.h, m-news800.h: moved to m-sun3init.h, 
+	m-isi.h, m-news.h for consistency.
+
+Fri Jun 17 21:24:48 1988  Pete TerMaat  (pete at lucky-charms.ai.mit.edu)
+
+	* m-umax.h: (FIX_CALL_DUMMY): fixed typo (the last `flipped' was
+	`fliped')
+
+	* m-pn.h, m-npl.h: added #define gould, since this is needed in
+	core.c.
+
+Tue Jun 14 04:07:50 1988  Pete TerMaat  (pete at lucky-charms.ai.mit.edu)
+
+	* Removed unused variables from m-pn.h, m-npl.h in
+	FRAME_FIND_SAVED_REGS, PUSH_DUMMY_FRAME, and POP_FRAME.
+
+Mon Jun 13 05:57:47 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* inflow.c (create_inferior): Allow two macros SHELL_FILE and
+	SHELL_COMMAND_CONCAT, if defined, to customize how the shell is run.
+
+Thu Jun  9 05:42:20 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* breakpoint.c (ignore_command): P was used before initialized.
+
+Fri Jun  3 06:52:25 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dbxread.c (read_dbx_symtab): Change handling of N_NBTEXT (Gould).
+
+Mon May 30 22:48:48 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* main.c (main, disconnect): Handle SIGHUP by killing inferior.
+	* inflow.c (kill_inferior_fast): New function used to do that.
+
+	* utils.c (printchar): New 3rd arg is the string's delimiter,
+	which is the char that needs backslashing.
+	* valprint.c (value_print, val_print): Pass new arg.
+	* expprint.c (print_subexp): Pass new arg.
+
+Mon May 23 14:54:54 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* source.c (print_source_lines): New arg NOERROR nonzero means
+	if file is not found just print message and return (don't throw).
+	Callers changed here and in stack.c.
+
+Sun May 22 14:22:54 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* source.c (identify_source_line): Set defaults for `list' command.
+
+	* dbxread.c (sort_syms): If not sorting the block, reverse it, so
+	that for a parm declared register the register comes before the parm.
+
+	* defs.h: declare alloca.
+
+Fri May 20 15:02:50 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* values.c (value_of_internalvar): `return' stmt was missing.
+
+Tue May 10 23:03:29 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* source.c ({forward,reverse}_search_command, print_source_lines):
+	Line number symtab->nlines is just barely in range.
+	(find_source_lines): Newline as last char in file doesn't start a line.
+
 Thu May  5 15:04:40 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
 
 	* Version 2.6.

@@ -41,12 +41,14 @@ the next time the list of errors is wanted.")
 (defvar compilation-error-message nil
   "Message to print when no more matches for compilation-error-regexp are found")
 
+;; The filename excludes colons to avoid confusion when error message
+;; starts with digits.
 (defvar compilation-error-regexp
-  "\\([^ \n]+\\(: *\\|, line \\|(\\)[0-9]+\\)\\|\\([0-9]+ *of *[^ \n]+\\)"
+  "\\([^ :\n]+\\(: *\\|, line \\|(\\)[0-9]+\\)\\|\\([0-9]+ *of *[^ \n]+\\)"
   "Regular expression for filename/linenumber in error in compilation log.")
 
 (defun compile (command)
-  "Compile the program including the current buffer.  Default: run make.
+  "Compile the program including the current buffer.  Default: run `make'.
 Runs COMMAND, a shell command, in a separate process asynchronously
 with output going to the buffer *compilation*.
 You can then use the command \\[next-error] to find the next error message
@@ -91,7 +93,7 @@ to find the text that grep hits refer to."
     (terpri))
   (let ((regexp compilation-error-regexp))
     (save-excursion
-      (switch-to-buffer "*compilation*")
+      (set-buffer "*compilation*")
       (make-local-variable 'compilation-error-regexp)
       (setq compilation-error-regexp regexp)))
   (set-process-sentinel compilation-process 'compilation-sentinel)

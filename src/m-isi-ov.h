@@ -53,11 +53,19 @@ and this notice must be preserved on all copies.  */
 
 /* Data type of load average, as read out of kmem.  */
 
+#ifdef BSD4_3
+#define LOAD_AVE_TYPE long
+#else
 #define LOAD_AVE_TYPE double
+#endif BSD4_3
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 
+#ifdef BSD4_3
+#define LOAD_AVE_CVT(x) (int) (((double) (x)) * 100.0 / FSCALE)
+#else
 #define LOAD_AVE_CVT(x) ((int) ((x) * 100.0))
+#endif
 
 /* Mask for address bits within a memory segment */
 
@@ -76,3 +84,15 @@ and this notice must be preserved on all copies.  */
 
 #define A_TEXT_OFFSET(HDR) sizeof(HDR)
 #define A_TEXT_SEEK(HDR) sizeof(HDR)
+
+/* A few changes for the newer systems.  */
+
+#ifdef BSD4_3
+#define HAVE_ALLOCA
+/* The following line affects crt0.c.  */
+#undef m68k
+
+#undef LIB_STANDARD
+#define LIB_STANDARD -lmc -lc
+#define C_DEBUG_SWITCH -20 -O -X23
+#endif

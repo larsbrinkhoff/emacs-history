@@ -15,7 +15,7 @@ $ cc /debug sorted_doc.c
 $ cc /debug qsort.c
 $ link sorted_doc.obj,qsort.obj,vmslink.opt/opt
 $ cc /debug etags_vmslib.c
-$ cc /debug /obj=etags.obj /define=ETAGS etags_vms.c
+$ cc /debug etags.c
 $ link etags.obj,etags_vmslib.obj,vmslink.opt/opt
 $ goto finish
 $
@@ -31,7 +31,7 @@ $ cc /debug sorted-doc.c
 $ cc /debug qsort.c
 $ link sorted-doc.obj,qsort.obj,vmslink.opt/opt
 $ cc /debug etags-vmslib.c
-$ cc /debug /obj=etags.obj /define=ETAGS etags-vms.c
+$ cc /debug etags.c
 $ link etags.obj,etags-vmslib.obj,vmslink.opt/opt
 $
 $finish:

@@ -22,6 +22,11 @@
 (defvar spell-command "spell"
   "*Command to run the spell program.")
 
+(defvar spell-filter nil
+  "*Filter function to process text before passing it to spell program.
+This function might remove text-processor commands.
+nil means don't alter the text before checking it.")
+
 (defun spell-buffer ()
   "Check spelling of every word in the buffer.
 For each incorrect word, you are asked for the correct spelling
@@ -36,7 +41,7 @@ as its \"correct\" spelling; then the query replace is skipped."
 If it is not correct, ask user for the correct spelling
 and query-replace the entire buffer to substitute it."
   (interactive)
-  (let (beg end)
+  (let (beg end spell-filter)
     (save-excursion
      (if (not (looking-at "\\<"))
 	 (forward-word -1))
@@ -47,7 +52,9 @@ and query-replace the entire buffer to substitute it."
 
 (defun spell-region (start end &optional description)
   "Like spell-buffer but applies only to region.
-From program, applies from START to END."
+Used in a program, applies from START to END.
+DESCRIPTION is an optional string naming the unit being checked:
+for example, \"word\"."
   (interactive "r")
   (let ((buf (get-buffer-create " *temp*")))
     (save-excursion
@@ -55,20 +62,21 @@ From program, applies from START to END."
      (widen)
      (erase-buffer))
     (message "Checking spelling of %s..." (or description "region"))
-    (if (= ?\n (char-after (1- end)))
+    (if (and (null spell-filter) (= ?\n (char-after (1- end))))
 	(if (string= "spell" spell-command)
 	    (call-process-region start end "spell" nil buf)
 	  (call-process-region start end shell-file-name
-			       nil buf nil "-c" spell-cmd))
+			       nil buf nil "-c" spell-command))
       (let ((oldbuf (current-buffer)))
 	(save-excursion
 	 (set-buffer buf)
 	 (insert-buffer-substring oldbuf start end)
-	 (insert ?\n)
+	 (or (bolp) (insert ?\n))
+	 (if spell-filter (funcall spell-filter))
 	 (if (string= "spell" spell-command)
 	     (call-process-region (point-min) (point-max) "spell" t buf)
 	   (call-process-region (point-min) (point-max) shell-file-name
-				t buf nil "-c" spell-cmd)))))
+				t buf nil "-c" spell-command)))))
     (message "Checking spelling of %s...%s"
 	     (or description "region")
 	     (if (save-excursion
@@ -89,8 +97,10 @@ From program, applies from START to END."
 				      (progn (end-of-line) (point))))
 	 (forward-char 1)
 	 (delete-region (point-min) (point))
-	 (setq newword (read-input (concat "Replacement for " word ": ")
-				   word))
+	 (setq newword
+	       (read-input (concat "`" word
+				   "' not recognized; edit a replacement: ")
+			   word))
 	 (flush-lines (concat "^" (regexp-quote word) "$")))
 	(if (not (equal word newword))
 	    (progn
@@ -112,7 +122,7 @@ From program, applies from START to END."
 	 (call-process-region (point-min) (point-max) "spell"
 			      t t)
        (call-process-region (point-min) (point-max) shell-file-name
-			    t t nil "-c" spell-cmd))
+			    t t nil "-c" spell-command))
      (if (= 0 (buffer-size))
 	 (message "%s is correct" string)
        (goto-char (point-min))

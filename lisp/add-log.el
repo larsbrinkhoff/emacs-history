@@ -19,14 +19,20 @@
 ;; and this notice must be preserved on all copies.
 
 
-;; >> Potential lossage if two people edit change log at same time.
-;; >> Maybe should lock file and unlock when written out.
-
-(defun add-change-log-entry (&optional whoami)
+(defun add-change-log-entry (whoami file-name &optional other-window)
   "Find change log file and add an entry for today.
-With ARG, prompt for name and site of person."
-  (interactive "P")
-  (let* ((default (if (eq system-type 'vax-vms) "$CHANGE_LOG$.TXT" "ChangeLog"))
+First arg (interactive prefix) non-nil means prompt for user name and site.
+Second arg is file name of change log.
+Optional third arg OTHER-WINDOW non-nil means visit in other window."
+  (interactive
+   (list current-prefix-arg
+	 (let ((default
+		 (if (eq system-type 'vax-vms) "$CHANGE_LOG$.TXT" "ChangeLog")))
+	   (expand-file-name
+	    (read-file-name (format "Log file (default %s): " default)
+			    nil default)))))
+  (let* ((default
+	   (if (eq system-type 'vax-vms) "$CHANGE_LOG$.TXT" "ChangeLog"))
 	 (full-name (if whoami
 			(read-input "Full name: " (user-full-name))
 		      (user-full-name)))
@@ -39,20 +45,18 @@ With ARG, prompt for name and site of person."
 		       (user-login-name)))
 	 (site-name (if whoami
 			(read-input "Site name: " (system-name))
-		      (system-name)))
-	 (file-name (expand-file-name
-		      (read-file-name (format "Log file (default %s): " default)
-				      nil default))))
+		      (system-name))))
     (if (file-directory-p file-name)
 	(setq file-name (concat (file-name-as-directory file-name)
 				default)))
-    (find-file file-name)
+    (if other-window (find-file-other-window file-name) (find-file file-name))
     (or (eq major-mode 'indented-text-mode)
 	(progn
 	  (indented-text-mode)
 	  (setq left-margin 8)
 	  (setq fill-column 74)))
     (auto-fill-mode 1)
+    (undo-boundary)
     (goto-char (point-min))
     (if (not (and (looking-at (substring (current-time-string) 0 10))
 		  (save-excursion (re-search-forward "(.* at")
@@ -75,4 +79,7 @@ With ARG, prompt for name and site of person."
     (indent-to left-margin)
     (insert "* ")))
 
-
+(defun add-change-log-entry-other-window ()
+  "Find change log file in other window, and add an entry for today."
+  (interactive)
+  (add-change-log-entry nil default-directory t))

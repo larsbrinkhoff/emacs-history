@@ -1,5 +1,5 @@
 /* Indentation functions.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -55,7 +55,8 @@ representations of the character between the start of the previous line\n\
 and point.  (eg control characters will have a width of 2 or 4, tabs\n\
 will have a variable width)\n\
 Ignores finite width of screen, which means that this function may return\n\
-values greater than (screen-width)",
+values greater than (screen-width).\n\
+Whether the line is visible (if `selective-display' is t) has no effect.",
   Lisp_Int, XSETINT, current_column ())
 
 int
@@ -95,6 +96,8 @@ current_column ()
 	  col++;
 	}
       else if (c == '\n')
+	break;
+      else if (c == '\r' && EQ (bf_cur->selective_display, Qt))
 	break;
       else if (c == '\t')
 	{
@@ -245,6 +248,8 @@ passed values greater than (screen-width)")
     {
       int c = CharAt (pos);
       if (c == '\n')
+	break;
+      if (c == '\r' && EQ (bf_cur->selective_display, Qt))
 	break;
       pos++;
       col++;

@@ -127,7 +127,7 @@ be the return value for that line (i. e. if it is selected.")
   Lisp_Object ltitle, selection;
   Lisp_Object XEmacsMenu();
   int i, j;
-  BLOCK_INPUT_DECLARE ()
+  BLOCK_INPUT_DECLARE ();
 
   check_xterm();
 #ifdef X11

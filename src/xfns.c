@@ -29,13 +29,16 @@ and this notice must be preserved on all copies.  */
 #include "xterm.h"
 #include "dispextern.h"
 #include "termchar.h"
-#ifndef HPUX
+#include <fcntl.h>
+#include <setjmp.h>
+
+#ifdef HAVE_TIMEVAL
+#ifndef USG
 #include <sys/time.h>
 #else
 #include <time.h>
-#endif /* HPUX */
-#include <fcntl.h>
-#include <setjmp.h>
+#endif /* USG */
+#endif
 
 #ifdef HAVE_X_WINDOWS
 

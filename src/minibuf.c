@@ -86,8 +86,11 @@ read_minibuf (map, prefix, prompt, expflag)
   int count = specpdl_ptr - specpdl;
   struct gcpro gcpro1, gcpro2;
 
+  if (XTYPE (prompt) != Lisp_String)
+    prompt = build_string ("");
+
   /* Emacs in -batch mode calls minibuffer: print the prompt.  */
-  if (noninteractive && XTYPE (prompt) == Lisp_String)
+  if (noninteractive)
     printf ("%s", XSTRING (prompt)->data);
 
   if (!enable_recursive_minibuffers &&

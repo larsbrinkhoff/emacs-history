@@ -106,7 +106,7 @@ This is actually the length of whatever outline-regexp matches."
 
 (defun outline-next-preface ()
   "Skip forward to just before the next heading line."
-  (if (re-search-forward (concat "[\n\^M]" outline-regexp)
+  (if (re-search-forward (concat "[\n\^M]\\(" outline-regexp "\\)")
 			 nil 'move)
       (goto-char (match-beginning 0)))
   (if (memq (preceding-char) '(?\n ?\^M))
@@ -115,7 +115,7 @@ This is actually the length of whatever outline-regexp matches."
 (defun outline-next-heading ()
   "Move to the next (possibly invisible) heading line."
   (interactive)
-  (if (re-search-forward (concat "[\n\^M]" outline-regexp)
+  (if (re-search-forward (concat "[\n\^M]\\(" outline-regexp "\\)")
 			 nil 'move)
       (goto-char (1+ (match-beginning 0)))))
 
@@ -124,7 +124,7 @@ This is actually the length of whatever outline-regexp matches."
 or to beginning of this line if it is a heading line."
   (beginning-of-line)
   (or (outline-on-heading-p)
-      (re-search-backward (concat "^" outline-regexp) nil 'move)))
+      (re-search-backward (concat "^\\(" outline-regexp "\\)") nil 'move)))
 
 (defun outline-on-heading-p ()
   "Return T if point is on a header line."
@@ -141,7 +141,7 @@ A heading line is one that starts with a `*' (or that outline-regexp matches)."
   (if (< arg 0)
       (beginning-of-line)
     (end-of-line))
-  (re-search-forward (concat "^" outline-regexp) nil nil arg)
+  (re-search-forward (concat "^\\(" outline-regexp "\\)") nil nil arg)
   (beginning-of-line))
 
 (defun outline-previous-visible-heading (arg)
@@ -152,9 +152,9 @@ A heading line is one that starts with a `*' (or that outline-regexp matches)."
   (outline-next-visible-heading (- arg)))
 
 (defun outline-flag-region (from to flag)
-  "Hides or shows lines from FROM to TO, according to FLAG.  If FLAG
-is \\n (newline character) then text is hidden, while if FLAG is \\^M
-\(control-M) the text is shown."
+  "Hides or shows lines from FROM to TO, according to FLAG.
+If FLAG is `\\n' (newline character) then text is shown,
+while if FLAG is `\\^M' (control-M) the text is hidden."
   (let ((modp (buffer-modified-p)))
     (unwind-protect
         (subst-char-in-region from to

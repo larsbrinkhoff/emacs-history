@@ -16,7 +16,7 @@
 ;;; hanoi - user callable Towers of Hanoi
 ;;;
 (defun hanoi (nrings)
-  "Towers of Hanoi diversion"
+  "Towers of Hanoi diversion.  Argument is number of rings."
   (interactive
    (list (if (null current-prefix-arg)
 	     3

@@ -212,9 +212,6 @@ read_var_value (var, frame)
   int val = SYMBOL_VALUE (var);
   register int len;
 
-  if (SYMBOL_CLASS (var) == LOC_BLOCK)
-    type = lookup_function_type (type);
-
   v = allocate_value (type);
   VALUE_LVAL (v) = lval_memory;	/* The most likely possibility.  */
   len = TYPE_LENGTH (type);
@@ -350,9 +347,6 @@ locate_var_value (var, frame)
   struct type *type = SYMBOL_TYPE (var);
 
   if (frame == 0) frame = selected_frame;
-
-  if (SYMBOL_CLASS (var) == LOC_BLOCK)
-    type = lookup_function_type (type);
 
   switch (SYMBOL_CLASS (var))
     {

@@ -1,5 +1,5 @@
 /* Buffer manipulation primitives for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -806,7 +806,7 @@ SetBfp (p)
 {
   register struct buffer *c = bf_cur;
   register struct window *w = XWINDOW (selected_window);
-  register struct buffer *swb;
+  register struct buffer *swb = 0;
   register Lisp_Object tail, valcontents;
   enum Lisp_Type tem;
 

@@ -294,6 +294,7 @@ to get the buffer displayed.  It gets one argument, the buffer to display.")
   name = Feval (Fcar (args));
   UNGCPRO;
 
+  CHECK_STRING (name, 0);
   temp_output_buffer_setup (XSTRING (name)->data);
   buf = Vstandard_output;
 

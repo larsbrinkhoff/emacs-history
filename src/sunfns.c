@@ -424,8 +424,8 @@ The MENU argument is a vector containing (STRING . VALUE) pairs.\n\
 The VALUE of the selected item is returned.\n\
 If the VALUE of the first pair is nil, then the first STRING will be used\n\
 as a menu label.")
-      (Window, X_Position, Y_Position, Button, MEnu)
-      Lisp_Object Window, X_Position, Y_Position, Button, MEnu;
+      (window, X_Position, Y_Position, Button, MEnu)
+      Lisp_Object window, X_Position, Y_Position, Button, MEnu;
 {
   Menu menu;
   int button, xpos, ypos;
@@ -435,14 +435,14 @@ as a menu label.")
   
   CHECK_NUMBER(X_Position, 0);
   CHECK_NUMBER(Y_Position, 1);
-  CHECK_WINDOW(Window, 2);
+  CHECK_WINDOW(window, 2);
   CHECK_NUMBER(Button, 3);
   CHECK_VECTOR(MEnu, 4);
 
   CHECK_GFX (Qnil);
 
-  xpos = CtoSX (XWINDOW(Window)->left + XINT(X_Position));
-  ypos = CtoSY (XWINDOW(Window)->top  + XINT(Y_Position));
+  xpos = CtoSX (XWINDOW(window)->left + XINT(X_Position));
+  ypos = CtoSY (XWINDOW(window)->top  + XINT(Y_Position));
 #ifdef  Menu_Base_Kludge
   {static Lisp_Object symbol[2];
    symbol[0] = Fintern (sm_kludge_string, Qnil);

@@ -1183,7 +1183,7 @@ static void
 sort_syms ()
 {
   register struct symtab *s;
-  register int i, nbl;
+  int i, nbl;
   register struct blockvector *bv;
   register struct block *b;
 
@@ -1197,6 +1197,18 @@ sort_syms ()
 	  if (BLOCK_SHOULD_SORT (b))
 	    qsort (&BLOCK_SYM (b, 0), BLOCK_NSYMS (b),
 		   sizeof (struct symbol *), compare_symbols);
+	  else
+	    {
+	      int lastindex = BLOCK_NSYMS (b) - 1;
+	      register int j;
+	      for (j = (lastindex - 1) / 2; j >= 0; j--)
+		{
+		  register struct symbol *sym;
+		  sym = BLOCK_SYM (b, j);
+		  BLOCK_SYM (b, j) = BLOCK_SYM (b, lastindex - j);
+		  BLOCK_SYM (b, lastindex - j) = sym;
+		}
+	    }
 	}
     }
 }
@@ -1478,17 +1490,19 @@ read_dbx_symtab (desc, stringtab, nlistlen)
 	process_one_symbol (type, bufp->n_desc,
 			    bufp->n_value, namestring);
       /* A static text symbol whose name ends in ".o"
-	 can only mean the start of another object file.
+	 or begins with "-l" means the start of another object file.
 	 So end the symtab of the source file we have been processing.
 	 This is how we avoid counting the libraries as part
 	 or the last source file.
 	 Also this way we find end of first object file (crt0).  */
-      else if ((type == N_TEXT
+      else if (
 #ifdef N_NBTEXT
-		|| type == N_NBTEXT
+	       (type == N_NBTEXT)
+#else
+	       (type == N_TEXT)
 #endif
-		)
-	       && !strcmp (namestring + strlen (namestring) - 2, ".o"))
+	       && (!strcmp (namestring + strlen (namestring) - 2, ".o")
+	       ||  !strncmp (namestring, "-l", 2)))
 	{
 	  if (num_object_files++ == 1)
 	    first_object_file_end = bufp->n_value;
@@ -1875,7 +1889,15 @@ define_symbol (value, string, desc)
 	= lookup_pointer_type (lookup_function_type (read_type (&p)));
     }
   else
-    SYMBOL_TYPE (sym) = read_type (&p);
+    {
+      struct type *type = read_type (&p);
+
+      if ((deftype == 'F' || deftype == 'f')
+	  && TYPE_CODE (type) != TYPE_CODE_FUNC)
+	SYMBOL_TYPE (sym) = lookup_function_type (type);
+      else
+	SYMBOL_TYPE (sym) = type;
+    }
 
   switch (deftype)
     {

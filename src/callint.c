@@ -321,9 +321,13 @@ retry:
 	  break;
 
 	case 'f':		/* Existing file name. */
+	  /* On VMS, treat 'f' like 'F', because 'f' fails to work
+	     for multivalued logical names or for explicit versions.  */
+#ifndef VMS
 	  args[i] = Fread_file_name (build_string (prompt),
 				     Qnil, Qnil, Qlambda);
 	  break;
+#endif
 
 	case 'F':		/* Possibly nonexistent file name. */
 	  args[i] = Fread_file_name (build_string (prompt),
@@ -354,13 +358,13 @@ retry:
 	  break;
 
 	case 'P':		/* Prefix arg in raw form.  Does no I/O.  */
-	have_prefix_arg:
 	  args[i] = prefix_arg;
 	  /* visargs[i] = Qnil; */
 	  varies[i] = -1;
 	  break;
 
 	case 'p':		/* Prefix arg converted to number.  No I/O. */
+	have_prefix_arg:
 	  args[i] = Fprefix_numeric_value (prefix_arg);
 	  /* visargs[i] = Qnil; */
 	  varies[i] = -1;
@@ -415,7 +419,7 @@ retry:
       if (varies[i] == 0)
 	arg_from_tty = 1;
 
-      if (NULL (visargs[i]))
+      if (NULL (visargs[i]) && XTYPE (args[i]) == Lisp_String)
 	visargs[i] = args[i];
 
       tem = (unsigned char *) index (tem, '\n');

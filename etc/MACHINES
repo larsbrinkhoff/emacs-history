@@ -1,5 +1,5 @@
 This is a list of the status of GNU Emacs on various machines and systems.
-Last updated 27 April 1988
+Last updated 31 August 1988
 
 Systems:
   For each type of system, the name of the appropriate s- header file
@@ -50,6 +50,11 @@ System V rel 2.2 (s-usg5-2-2.h)
   NO_REMAP.  It is not yet known whether this applies to all
   machines running 5.2.2.
 
+System V rel 3 (s-usg5-3.h)
+
+  Some versions of this system support ptys and BSD-style sockets.
+  On such systems, you should define HAVE_PTYS and HAVE_SOCKETS in config.h.
+
 Ultrix
 
   This is DEC's name for Berkeley 4.2.
@@ -78,16 +83,22 @@ Xenix
 
   If you want Emacs to work with Smail (installed as /usr/bin/smail)
   then add the line   #define SMAIL  to config.h.
+
+  The file etc/XENIX suggests some useful things to do to Xenix
+  to make the Emacs meta key work.
 
 Machines:
   For each type of machine, the names of the m- and s- header files
   are given.
 
-Alliant (m-alliant.h or m-alliant1.h; s-bsd4-2.h)
+Alliant (m-alliant4.h or m-alliant.h or m-alliant1.h; s-bsd4-2.h)
 
-  18.37 worked with minor changes that are merged into 18.38
+  18.52 works on system version 4.  Previous Emacs versions were
+  known to work on previous system versions.
+
   Use m-alliant1.h on version 1 of their operating system
   and use m-alliant.h on version 2 or 3.
+  Use m-alliant4.h on version 4.
 
 Altos 3068 (m-altos.h; s-usg5-2.h)
 
@@ -108,7 +119,7 @@ Amdahl UTS (m-amdahl.h; s-usg5-2-2.h)
 
 Apollo running Domain (m-apollo.h; s-bsd4-2.h)
 
-  Was broken in 18.47; perhaps has been fixed in 18.48.
+  18.52 works, to some extent.
   Code for dumping Emacs has been written, but we cannot
   distribute it yet.
   There are reports of bugs in cc -O on this system.
@@ -141,16 +152,13 @@ AT&T 3b2, 3b5, 3b15, 3b20 (m-att3b.h; s-usg5-2-2.h)
   The MAXMEM may also prevent Emacs from running.  The file
   3B-MAXMEM in this directory explains how to increase MAXMEM.
 
-AT&T 7300 (m-7300.h; s-usg5-2-2.h)
+AT&T 7300 or 3b1 (m-7300.h; s-usg5-2-2.h)
 
-  Changes merged as of 17.57.  Minor fixes needed for 18.41
-  merged in 18.48.
+  18.52 seems to work.  If you have strange troubles with dumping Emacs,
+  delete the last few lines from m-7300.h and recompile.  These lines
+  are supposed to produce a sharable executable.
 
-  18.49 and up contain some changes in m-7300.h which are said to
-  produce a sharable executable, but other users say they don't work
-  at all.  I have no reliable information on the situation.
-
-  m-7300.h defines SHORTNAMS because operating system versions
+  m-7300.h defines SHORTNAMES because operating system versions
   older than 3.5 did not support long symbol names.  Version 3.5 does
   support them, so you can remove the #define SHORTNAMES in that version.
 
@@ -170,8 +178,8 @@ Convex (m-convex.h; s-bsd4-2.h)
 
 Cydra 5 (m-cydra5.h; s-usg5-3.h)
 
-  Changes merged in 18.51, but I had to simplify them,
-  so they may have been broken.
+  18.51 worked in one version of their operating system but stopped
+  working in a newer version.  This has not been fixed.
 
 Dual running System V (m-dual.h; s-usg5-2.h)
 
@@ -260,14 +268,31 @@ HP 9000 series 800 (Spectrum) (m-hp9000s800.h; s-hpux.h)
   running HP-UX.  It has been moderately tested on the Series
   840.
 
-IBM RT/PC (m-ibmrt.h; s-bsd4-2.h or s-usg5-2-2.h)
+High Level Hardware Orion (m-orion.h; s-bsd4-2.h)
 
-  Use s-usg5-2-2.h for AIX and s-bsd-4-2.h for the 4.2-like system.
-  Dumping does not currently work on AIX.
+  This is the original microprogrammed hardware.
+  m- file ought to work.
 
-Integrated Solutions `Optimum V' (m-isi-ov.h; s-bsd4-2.h)
+High Level Hardware Orion 1/05 (m-orion105.h; s-bsd4-2.h)
 
-  Version 18.45 should work (running on a Optimum V (VME bus, 68020)
+  Changes merged in 18.52.  This is the one with the Clipper cpu.
+
+  C compiler has a bug; it loops compiling eval.c.
+  Compile it by hand without optimization.
+
+IBM RT/PC (m-ibmrt.h or m-ibmrt-aix.h; s-bsd4-2.h or s-usg5-2-2.h)
+
+  18.52 works on both operating systems.
+  Use s-bsd-4-2.h for the 4.2-like system and s-usg5-2-2.h for AIX.
+
+  On AIX, the file /usr/lib/samples/hft/hftctl.c must be compiled into
+  hftctl.o, with this result left in the src directory (hftctl.c is
+  part of the standard AIX distribution).
+
+Integrated Solutions `Optimum V' (m-isi-ov.h; s-bsd4-2.h or s-bsd4-3.h)
+
+  18.52 said to work on some sort of ISI machine.
+  Version 18.45 worked (running on a Optimum V (VME bus, 68020)
   BSD 4.2 (3.05e) system).  18.42 is reported to work on
   a Qbus 68010 system.  Has not been tried on `WorkStation' `Cluster
   Compute Node' `Cluster WorkStation' or `Server Node'  (Love the
@@ -275,10 +300,18 @@ Integrated Solutions `Optimum V' (m-isi-ov.h; s-bsd4-2.h)
 
   Compilation with -O is rumored to break something.
 
-Intel 80386 (m-intel386.h; s-bsd4-2.h or s-usg5-2-2.h or s-xenix.h)
+  On recent system versions, you may need to undefine the macro UMAX
+  in etc/loadst.c and src/getpagesize.h.  They stupidly defined this
+  in a system header file, which confuses Emacs (which thinks that UMAX
+  indicates the Umax operating system).
+
+Intel 80386 (m-intel386.h; s-bsd4-2.h, s-usg5-2-2.h, s-usg5-3.h or s-xenix.h)
 
   Changes merged in 18.50 for all three operating systems.
   If you are using Xenix, see notes above under Xenix.
+  Note one version of system V.3 lacks the pty and socket support
+  that the V.3 normally (I am told) has; in this case, you should
+  #undef HAVE_PTYS and HAVE_SOCKETS in config.h.
 
 Iris 2500 (m-irist.h; s-iris3-5.h or s-iris3-6.h)
 
@@ -292,9 +325,15 @@ Iris 2500 Turbo (m-irist.h; s-iris3-5.h or s-iris3-6.h)
 
 Iris 4D (m-iris4d.h; s-iris3-6.h)
 
-  Changes for 18.49 are merged in 18.50.
+  Changes for 18.49 are merged in 18.50.  18.52 seems to work.
 
   Note that the compilation of etc/loadst.c requires the option -lmld.
+
+Macintosh
+
+  We are boycotting Apple because of Apple's efforts to take away
+  our freedom to write free software compatible with hoarded software.
+  See the file APPLE in this directory for more information.
 
 Masscomp (m-masscomp.h; s-rtu.h)
 
@@ -302,6 +341,15 @@ Masscomp (m-masscomp.h; s-rtu.h)
   with minor fixes that are included in 18.37.  However, bizarre behavior
   was reported for 18.36 on a Masscomp (model and version unknown but probably
   a 68020 system).  The report sounds like a compiler bug.
+
+  A compiler bug affecting statements like 
+    unsigned char k; unsigned char *p;... x = p[k];
+  has been reported for "C version 1.2 under RTU 3.1".  We do not wish
+  to take the time to install the numerous workarounds required to
+  compensate for this bug; go complain to Masscomp.
+
+  For RTU version 3.1, define FIRST_PTY_LETTER to be 'p' in s-rtu.h
+  (or #undef and redefine it in config.h) so that ptys will be used.
 
   GNU Emacs is said to have no chance of compiling on RTU versions
   prior to v3.0.
@@ -346,10 +394,17 @@ Pyramid (m-pyramid.h; s-bsd4-2.h)
   happens to you, change src/m-pyramid.h to define
   C_DEBUG_SWITCH with an empty definition.
 
+  Some old system versions may require you to define PYRAMID_OLD
+  in when alloca.s is preprocessed, in order to define _longjmp and _setjmp.
+
 Sequent Balance (m-sequent.h; s-bsd4-2.h)
 
-  Emacs 18.51 should work on system version 3.0.
+  Emacs 18.51 should work on system version 3.0.  18.52 is said to work.
   Delete some lines at the end of m-sequent.h for earlier system versions.
+
+SONY News-800 (m-news800.h; s-bsd4-2.h)
+
+  18.52 should work.
 
 Stride (m-stride.h; s-usg5-2.h)
 
@@ -364,10 +419,11 @@ Sun 1, 2 and 3 (m-sun1.h, m-sun2.h, m-sun3.h; s-bsd4-2.h or s-sunos4.h)
   All are derived from Berkeley 4.2.  Emacs 17 has run on all of them.
   Whether you should use m-sun1.h, m-sun2.h or m-sun3.h depends
   on the VERSION OF THE OPERATING SYSTEM you have.
-  You will need to use m-sun3.h on Sun 2's running
-  SunOS releases 3 and up.
+  You will need to use m-sun3.h on Sun 2's running SunOS release 3.
 
   For SunOS release 4 on a Sun 3, use m-sun3.h and s-sunos4.h.
+  See the file etc/SUNBUG for how to solve problems caused by bugs in
+  the "export" version of SunOS 4.
 
   If you want to use SunWindows, define HAVE_SUN_WINDOWS
   in config.h to enable a special interface called `emacstool'.
@@ -394,15 +450,21 @@ Sun 4 (m-sparc.h; s-bsd4-2.h or s-sunos4.h)
   perhaps with a small change.
 
   Use s-sunos4.h for operating system version 4.
+  See the file etc/SUNBUG for how to solve problems caused by bugs in
+  the "export" version of SunOS 4.
 
-Sun Roadrunner (m-sun386.h; s-bsd4-2.h?)
+Sun Roadrunner (m-sun386.h; s-sunos4.h)
 
   Changes merged in 18.51.
 
-Tahoe (m-tahoe.h; s-bsd4-2.h)
+Tahoe (m-tahoe.h; s-bsd4-2.h or s-bsd4-3.h)
 
-  18.41 known to work on some Tahoes, but a compiler bug intervenes
-  on others.  It works in Unisys 1r4 (not in 1r3) and CCI I.21.
+  18.52 known to work on some Tahoes, but a compiler bug intervenes
+  on others.  Some Emacs versions have worked in Unisys 1r4
+  (not in 1r3) and CCI I.21.
+
+  If you have trouble compiling etc/loadst.c, turn off the definition
+  of DKSTAT_HEADER_FILE in m-tahoe.h.
 
 Tektronix 16000 box (6130?) (m-16000.h; s-bsd4-2.h)
 
@@ -411,6 +473,10 @@ Tektronix 16000 box (6130?) (m-16000.h; s-bsd4-2.h)
 Tektronix 4300 (m-tex4300.h; s-bsd4-3.h)
 
   Emacs 18.51 should work.
+
+Ustation E30 (SS5E) (m-ustation.h; s-unipl5-2.h).
+
+  Changes merged in 18.52; don't know whether they work.
 
 Vax running Berkeley Unix (m-vax.h; s-bsd4-1.h, s-bsd4-2.h or s-bsd4-3.h)
 

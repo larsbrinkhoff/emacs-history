@@ -139,4 +139,4 @@ and this notice must be preserved on all copies.  */
 
 #define XMARKBIT(a) ((a) < 0)
 #define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
-#define XUNMARK(a) ((a) = (((a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
+#define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))

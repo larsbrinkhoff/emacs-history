@@ -561,7 +561,8 @@ DEFUN ("symbol-value", Fsymbol_value, Ssymbol_value, 1, 1, 0, "Return SYMBOL's v
 	Then we set REALVALUE out of that element, and store into BUFFER.
  	Note that REALVALUE can be a forwarding pointer. */
 
-      if (bf_cur != XBUFFER (XCONS (XCONS (valcontents)->cdr)->car))
+      tem1 = XCONS (XCONS (valcontents)->cdr)->car;
+      if (NULL (tem1) || bf_cur != XBUFFER (tem1))
 	{
 	  tem1 = XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car;
           Fsetcdr (tem1, do_symval_forwarding (XCONS (valcontents)->car));
@@ -882,13 +883,10 @@ From now on the default value will apply in this buffer.")
   if (!NULL (tem))
     bf_cur->local_var_alist = Fdelq (tem, bf_cur->local_var_alist);
 
-  /* Put the symbol into a consistent state,
-     set up for access in the current buffer with the default value */
-
-  tem = XCONS (XCONS (valcontents)->cdr)->cdr;
-  XCONS (tem)->car = tem;
-  XCONS (XCONS (valcontents)->cdr)->car = Fcurrent_buffer ();
-  store_symval_forwarding (sym, XCONS (valcontents)->car, XCONS (tem)->cdr);
+  /* Make sure symbol does not think it is set up for this buffer;
+     force it to look once again for this buffer's value */
+  if (bf_cur == XBUFFER (XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car))
+    XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car = Qnil;
 
   return sym;
 }
@@ -1574,4 +1572,7 @@ init_data ()
     return;
 #endif /* CANNOT_DUMP */
   signal (SIGFPE, arith_error);
+#ifdef uts
+  signal (SIGEMT, arith_error);
+#endif /* uts */
 }

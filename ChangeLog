@@ -1,0 +1,14 @@
+Tue Aug 30 13:43:43 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (install.sysv): Use cpio, not tar.
+
+Wed Aug  3 19:20:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (lockdir): Rename `lock' target.
+	Depend on it from install*, not from `all'.
+
+Mon May 16 02:08:08 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* Makefile: Changed LIBDIR and BINDIR back to /usr/local/{emacs,bin}
+	to match build-install and paths.h.
+

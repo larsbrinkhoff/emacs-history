@@ -2457,7 +2457,7 @@ the stack pointer, or the contents of any memory location or any
 register other than the program counter.  If line @var{linenum} is in
 a different function from the one currently executing, the results may
 be wild if the two functions expect different patterns of arguments or
-of local variables.  For his reason, the @samp{jump} command requests
+of local variables.  For this reason, the @samp{jump} command requests
 confirmation if the specified line is not in the function currently
 executing.  However, even wild results are predictable based on
 changing the program counter.

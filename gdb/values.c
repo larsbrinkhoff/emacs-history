@@ -330,6 +330,7 @@ value_of_internalvar (var)
   register value val = value_copy (var->value);
   VALUE_LVAL (val) = lval_internalvar;
   VALUE_INTERNALVAR (val) = var;
+  return val;
 }
 
 void

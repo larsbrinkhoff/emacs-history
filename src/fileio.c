@@ -1,5 +1,5 @@
 /* File IO for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -1019,13 +1019,25 @@ that the old one has.  (This works on only some systems.)")
 #ifdef HAVE_TIMEVAL
       if (!NULL (keep_date))
 	{
+#ifdef USE_UTIME
+/* AIX has utimes() in compatibility package, but it dies.  So use good old
+   utime interface instead. */
+	  struct {
+	    time_t atime;
+	    time_t mtime;
+	  } tv;
+	  tv.atime = st.st_atime;
+	  tv.mtime = st.st_mtime;
+	  utime (XSTRING (newname)->data, &tv);
+#else /* not USE_UTIME */
 	  struct timeval timevals[2];
 	  timevals[0].tv_sec = st.st_atime;
 	  timevals[1].tv_sec = st.st_mtime;
 	  timevals[0].tv_usec = timevals[1].tv_usec = 0;
 	  utimes (XSTRING (newname)->data, timevals);
+#endif /* not USE_UTIME */
 	}
-#endif
+#endif /* HAVE_TIMEVALS */
 
 #ifdef APOLLO
       if (!egetenv ("USE_DOMAIN_ACLS"))
@@ -1335,7 +1347,7 @@ DEFUN ("file-writable-p", Ffile_writable_p, Sfile_writable_p, 1, 1, 0,
 }
 
 DEFUN ("file-directory-p", Ffile_directory_p, Sfile_directory_p, 1, 1, 0,
-  "Return t if file FILENAME is the name of a directory-file\n\
+  "Return t if file FILENAME is the name of a directory as a file.\n\
 A directory name spec may be given instead; then the value is t\n\
 if the directory so specified exists and really is a directory.")
   (filename)

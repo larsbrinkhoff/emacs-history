@@ -220,7 +220,10 @@ If the current buffer now contains an empty file that you just visited
   "Create a suitably named buffer for visiting FILENAME, and return it.
 FILENAME (sans directory) is used unchanged if that name is free;
 otherwise a string <2> or <3> or ... is appended to get an unused name."
-  (generate-new-buffer (file-name-nondirectory filename)))
+  (let ((lastname (file-name-nondirectory filename)))
+    (if (string= lastname "")
+	(setq lastname filename))
+    (generate-new-buffer lastname)))
 
 (defun find-file-noselect (filename &optional nowarn)
   "Read file FILENAME into a buffer and return the buffer.
@@ -431,7 +434,9 @@ for current buffer."
 		       (funcall (intern (concat (downcase (symbol-name val))
 						"-mode"))))
 		      ((eq var 'eval)
-		       (eval val))
+		       (if (string= (user-login-name) "root")
+			   (message "Ignoring `eval:' in file's local variables")
+			 (eval val)))
 		      (t (make-local-variable var)
 			 (set var val))))))))))
 
@@ -481,8 +486,11 @@ Makes buffer visit that file, and marks it not modified."
   (save-buffer))
 
 (defun backup-buffer ()
-  "Make a backup of the disk file visited by the current buffer.
-This is done before saving the buffer the first time."
+  "Make a backup of the disk file visited by the current buffer, if appropriate.
+This is normally done before saving the buffer the first time.
+If the value is non-nil, it is the result of `file-modes' on the original file;
+this means that the caller, after saving the buffer, should change the modes
+of the new file to agree with the old modes."
   (and make-backup-files
        (not buffer-backed-up)
        (file-exists-p buffer-file-name)
@@ -539,7 +547,7 @@ redefine it."
   (substring name 0
 	     (if (eq system-type 'vax-vms)
 		 (or (string-match ";[0-9]+\\'" name)
-		     (string-match "\\$__\\$\\'" name)
+		     (string-match ".[0-9]+\\'" name)
 		     (length name))
 	       (or (string-match "\\.~[0-9]+~\\'" name)
 		   (string-match "~\\'" name)
@@ -919,7 +927,7 @@ See also auto-save-file-name-p."
     (expand-file-name (concat "#%" (buffer-name) "#"))))
 
 (defun auto-save-file-name-p (filename)
-  "Return t if FILENAME can be yielded by make-auto-save-file-name.
+  "Return non-nil if FILENAME can be yielded by make-auto-save-file-name.
 FILENAME should lack slashes.
 You can redefine this for customization."
   (string-match "^#.*#$" filename))

@@ -219,6 +219,8 @@ news-reply-mode."
 	      subject (mail-fetch-field "subject")))
       (widen)
       (goto-char (point-min))
+      (run-hooks 'news-inews-hook)
+      (goto-char (point-min))
       (search-forward (concat "\n" mail-header-separator "\n"))
       (replace-match "\n\n")
       (goto-char (point-max))

@@ -186,6 +186,7 @@ the GDB commands `cd DIR' and `directory'."
 	(gdb-filter-scan-input proc string))))
 
 (defun gdb-filter-accumulate-marker (proc string)
+  (setq gdb-filter-accumulator nil)
   (if (> (length string) 1)
       (if (= (aref string 1) ?\032)
 	  (let ((end (string-match "\n" string)))

@@ -345,7 +345,7 @@ puts point on the blank line between them."
 (defun TeX-start-shell ()
   (require 'shell)
   (save-excursion
-    (set-buffer (make-shell "TeX-shell" nil 'nostartfile "-v"))
+    (set-buffer (make-shell "TeX-shell" nil nil "-v"))
     (setq TeX-shell-map (copy-keymap shell-mode-map))
     (TeX-define-common-keys TeX-shell-map)
     (use-local-map TeX-shell-map)))
@@ -380,7 +380,8 @@ of TeX-trailer is appended to the temporary file after the region."
   (or TeX-zap-file (setq TeX-zap-file (make-temp-name "#tz")))
   (let ((tex-out-file (concat TeX-zap-file ".tex"))
 	(temp-buffer (get-buffer-create " TeX-Output-Buffer"))
-	(zap-directory (expand-directory-name TeX-directory)))
+	(zap-directory
+	 (file-name-as-directory (expand-file-name TeX-directory))))
     (save-excursion
       (save-restriction
 	(widen)

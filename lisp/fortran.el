@@ -208,7 +208,7 @@ Variables controlling indentation style and extra features:
     Default value is fixed.
  fortran-comment-indent-char
     Character to be inserted instead of space for full-line comment
-    indentation.  (default SPC)
+    indentation.  (default is a space)
  fortran-minimum-statement-indent
     Minimum indentation for fortran statements. (default 6)
  fortran-line-number-indent
@@ -373,8 +373,8 @@ The key typed is executed unless it is SPC."
   (interactive)
   (delete-horizontal-space)
   (if (save-excursion (beginning-of-line) (looking-at comment-line-start-skip))
-      (insert ?\n comment-line-start ?\  )
-      (insert ?\n fortran-continuation-char))
+      (insert "\n" comment-line-start " ")
+    (insert "\n " fortran-continuation-char))
   (fortran-indent-line))
 
 (defun delete-horizontal-regexp (chars)

@@ -42,9 +42,10 @@ main ()
   exit (1);
 }
 
-#else /* BSD or IPC */
+#else /* BSD or HAVE_SYSVIPC */
 
-#ifdef BSD   /* BSD code is very different from SYSV IPC code */
+#if defined (BSD) && ! defined (HAVE_SYSVIPC)
+/* BSD code is very different from SYSV IPC code */
 
 #include <sys/file.h>
 #include <sys/types.h>

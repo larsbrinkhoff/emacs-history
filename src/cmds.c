@@ -192,7 +192,7 @@ ARG was explicitly specified.")
 }
 
 DEFUN ("self-insert-command", Fself_insert_command, Sself_insert_command, 1, 1, "p",
-  "Insert this character.")
+  "Insert this character.  Prefix arg is repeat-count.")
   (arg)
      Lisp_Object arg;
 {
@@ -200,8 +200,8 @@ DEFUN ("self-insert-command", Fself_insert_command, Sself_insert_command, 1, 1, 
 
   while (XINT (arg) > 0)
     {
-      SelfInsert (last_command_char, XINT (arg) != 0);
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
+      SelfInsert (last_command_char, XFASTINT (arg) != 0);
     }
   return Qnil;
 }
@@ -237,7 +237,7 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
       if (flag)
 	InsCStr (&c1, 1);
       else
-	SelfInsert ('\n', !NULL (arg1));
+	SelfInsert ('\n', XFASTINT (arg1) > 1);
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
     }
 

@@ -29,7 +29,6 @@
 (if text-mode-syntax-table
     ()
   (setq text-mode-syntax-table (make-syntax-table))
-  (set-syntax-table text-mode-syntax-table)
   (modify-syntax-entry ?\" ".   " text-mode-syntax-table)
   (modify-syntax-entry ?\\ ".   " text-mode-syntax-table)
   (modify-syntax-entry ?' "w   " text-mode-syntax-table))
@@ -106,10 +105,12 @@ See center-line for more info."
       (let ((tem to))
 	(setq to from from tem)))
   (save-excursion
-    (goto-char from)
-    (while (< (point) to)
-      (center-line)
-      (forward-line 1))))
+    (save-restriction
+      (narrow-to-region from to)
+      (goto-char from)
+      (while (not (eobp))
+	(center-line)
+	(forward-line 1)))))
 
 (defun center-line ()
   "Center the line point is on, within the width specified by `fill-column'.

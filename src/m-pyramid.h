@@ -60,3 +60,7 @@ and this notice must be preserved on all copies.  */
 /* Don't use the ordinary -g for debugging in cc */
 
 #define C_DEBUG_SWITCH -gx
+
+/* Reenable this #define for old versions of the Pyramid system.  */
+
+/* #define PYRAMID_OLD */

@@ -52,6 +52,11 @@ and this notice must be preserved on all copies.  */
 #endif /* not VMS */
 #endif /* LOAD_AVE_TYPE */
 
+/* Note on some machines this defines `vector' as a typedef,
+   so make sure we don't use that name in this file.  */
+#undef vector
+#define vector *****
+
 #ifdef NULL
 #undef NULL
 #endif
@@ -624,16 +629,16 @@ See also the function  nreverse, which is used more often.")
      Lisp_Object list;
 {
   Lisp_Object length;
-  register Lisp_Object *vector;
+  register Lisp_Object *vec;
   register Lisp_Object tail;
   register int i;
 
   length = Flength (list);
-  vector = (Lisp_Object *) alloca (XINT (length) * sizeof (Lisp_Object));
+  vec = (Lisp_Object *) alloca (XINT (length) * sizeof (Lisp_Object));
   for (i = XINT (length) - 1, tail = list; i >= 0; i--, tail = Fcdr (tail))
-    vector[i] = Fcar (tail);
+    vec[i] = Fcar (tail);
 
-  return Flist (XINT (length), vector);
+  return Flist (XINT (length), vec);
 }
 
 Lisp_Object merge ();

@@ -12,6 +12,21 @@ Also, this is not an endorsement of the people listed here.
 We have no opinions and usually no information about the abilities of
 any specific person.  We provide this list to enable you to contact
 service providers and decide for yourself whether to hire one.
+
+Before FSF will list your name in the GNU Service Directory, we ask
+that you agree informally to the following terms:
+
+1. You will not restrict (except by copyleft) the use or distribution
+of any software, documentation, or other information you supply anyone
+in the course of modifying, extending, or supporting GNU software.
+This includes any information specifically designed to ameliorate the
+use of GNU software.
+
+2. You will not take advantage of contact made through the Service
+Directory to advertise an unrelated business (e.g., sales of
+non-GNU-related proprietary information).  You may spontaneously
+mention your availability for general consulting, but you should not
+promote the unrelated business unless the client asks.
 
 Giuseppe Attardi <mcvax!delphi!dipisa!attardi>
 Dipartimento di Informatica
@@ -146,11 +161,22 @@ Rates: $60/hr.
 
 Entered: 11/04/86
 
-Fen Labalme <sun!well!fen>, <sun!megatest!fen>
+Mike Haertel <mike@wheaties.ai.mit.edu>
+St. Olaf College
+Northfield, MN  55057
+
+Experience: Unix Systems programmer at St. Olaf for several years.
+Spent summer of 1988 at FSF writing and modifying various programs.
+
+Rates: $35/hr.
+
+Entered: 12 Aug 88
+
+Fen Labalme <hoptoad!well!fen@cgl.ucsf.edu>
 Information Anarchy, Inc.
-309 Cedar Street, Suite 45
-Santa Cruz, CA 95060
-(408) 462-5022
+40 Carl St. #4
+San Francisco CA 94117   
+(415) 731-1915
 EMACS: questions answered, installation, teaching (all levels), elisp and C
 	extensions and customization, porting, troubleshooting, hand holding
 UNIX BSD 4.2 only: RPC channels, NFS connections and IPC buffers
@@ -238,7 +264,7 @@ Rate:	Task- and time-dependent; non-monetary offers considered.
 
 Entered: 11/05/86
 
-Lee McLoughlin <lmjm@doc.ic.ac.uk> <seismo!mcvax!doc.ic.ac.uk!lmjm>
+Lee McLoughlin <lmjm@doc.ic.ac.uk> <uunet!mcvax!doc.ic.ac.uk!lmjm>
 Department of Computing, Imperial College,
 180 Queens Gate, London. SW7 2BZ
 01-589-5111 X 5032
@@ -316,7 +342,7 @@ Degree: MIT CS BS 1983.
 Entered 18 Dec 1987
 
 Hedley K.J. Rainnie  <hedley@alaya.nyu.edu>
-UUCP: {seismo|ihnp4|allegra|harvard}!cmcl2!alaya!hedley
+UUCP: {uunet|ihnp4|allegra|harvard}!cmcl2!alaya!hedley
 
 545 West End Ave Apt 11E
 NY NY 10024
@@ -379,7 +405,7 @@ HP-UX on the HP series 200.
 Entered: 1/31/86
 
 Richard M. Stallman  <rms@prep.ai.mit.edu>
-UUCP:  {mit-eddie,ucbvax,seismo,harvard,uw-beaver}!prep.ai.mit.edu!rms
+UUCP:  {mit-eddie,ucbvax,uunet,harvard,uw-beaver}!prep.ai.mit.edu!rms
 545 Tech Sq, rm 703
 Cambridge, MA 02139
 Emacs: anything whatever
@@ -433,3 +459,60 @@ I've ported many programs to SysIII/SysV Unix
 Sliding scale rates, barter possible, lower rates for non-profits
 
 Entered: 1/30/86
+
+Leonard H. Tower Jr.
+36 Porter Street
+Somerville, MA  02143, USA
++1 (617) 623-7739
+tower@wheaties.ai.mit.edu
+
+Will work on most GNU software.
+Installation, handholding, trouble shooting, extensions, teaching.
+
+Rates: 40.00/hour + travel expenses.  Negotiable for non-profits.
+
+Experience: Have hacked on over a dozen architectures in many languages.  Have
+system mothered several varieties of Unixes.  Assisted rms with the front end
+of gcc and it's back-end support.  Resume available on request.
+
+Entered: 07/19/88
+
+Randall D. Smith
+30 Newbern Street, Apartment 3
+Jamaica Plain, MA 02130, USA
++1 (617) 983-0276
+randy@wheaties.ai.mit.edu
+
+Will work on most GNU software.
+Installation, handholding, trouble shooting, extensions, teaching,
+Gcc, Gdb, and GNU-emacs ports.
+
+Rates: Upward from 40.00/hour depending on my expertise in the area of the 
+job.
+
+Experience: 4 years of intensive experience with Unix and C including
+system hacking and modification.  Experience in porting GNU-emacs (to
+SGI Iris 4D) and Gcc (to use Sun fpa chip; in progress).  Experience
+voluteering for the GNU project on other GNU programs (current).
+Resume available on request.
+
+Entered: 07/22/88
+
+James W. Thompson  <jthomp@convex.com>
+		   <{uiucdcs,sun,uunet,harvard,killer,usenix}!convex!jthomp>
+1615 Villanova Ave.
+Richardson, Tx. 75081 USA
++1 (214) 437-3156
+
+EMACS/GDB: installation, porting, troubleshooting, hand holding.  
+Emacs elisp & C extensions and customization.
+
+EXPERIENCE:  Have hacked many (10+) different architectures in 
+C, lisp, & Fortran.   Thurough understanding of BSD networking/NFS/RPC.
+Responsible for Convex port of GNU emacs, gdb.  8 years system 'mothering'
+experiance.  Resume available on request.
+
+Rates:  30.00/hour + travel expenses.  Free for non-profits.
+
+Entered: 9/3/88
+

@@ -149,3 +149,13 @@ and this notice must be preserved on all copies.  */
 
 #define INTERRUPTABLE_OPEN
 #define INTERRUPTABLE_IO
+
+/* The "fsync" call on RTU versions 3.0 and 3.1 is badly broken!
+   This hack below isn't the best solution, but without it this
+   program will cause the whole system to hang!  !@#$#%$ Masscomp!  */
+
+#define fsync(x) 0	/* "Comment out" fsync calls */
+
+/* RTU has IPC instead of Unix-domain sockets.  */
+
+#define HAVE_SYSVIPC

@@ -33,7 +33,7 @@ and this notice must be preserved on all copies.  */
 #include "x11term.h"
 #include "dispextern.h"
 #include "termchar.h"
-#ifdef HPUX
+#ifdef USG
 #include <time.h>
 #else
 #include <sys/time.h>
@@ -62,6 +62,8 @@ extern struct Lisp_Vector *MouseMap;
 
 extern XEvent *XXm_queue[XMOUSEBUFSIZE];
 extern int XXm_queue_num;
+extern int XXm_queue_in;
+extern int XXm_queue_out;
 extern char *fore_color;
 extern char *back_color;
 extern char *brdr_color;
@@ -71,7 +73,6 @@ extern char *curs_color;
 extern unsigned long fore;
 extern unsigned long back;
 extern unsigned long brdr;
-extern unsigned long mous;
 extern unsigned long curs;
 
 extern int XXborder;
@@ -90,6 +91,7 @@ extern int PendingExposure;
 extern char *default_window;
 extern char *desiredwindow;
 
+extern int XXscreen;
 extern Window XXwindow;
 extern Cursor EmacsCursor;
 extern short MouseCursor[], MouseMask[];
@@ -163,10 +165,10 @@ DEFUN ("x-set-foreground-color", Fx_set_foreground_color,
 		fore = cdef.pixel;
 	else
 		if (fore_color && !strcmp (fore_color, "black"))
-			fore = BlackPixel(XXdisplay, 0);
+			fore = BlackPixel (XXdisplay, XXscreen);
 		else
 			if (fore_color && !strcmp (fore_color, "white"))
-				fore = WhitePixel(XXdisplay,0);
+				fore = WhitePixel (XXdisplay, XXscreen);
 			else
 				fore_color = save_color;
 
@@ -204,10 +206,10 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
 		back = cdef.pixel;
 	else
 		if (back_color && !strcmp (back_color, "white"))
-			back = WhitePixel(XXdisplay,0);
+			back = WhitePixel (XXdisplay, XXscreen);
 		else
 			if (back_color && !strcmp (back_color, "black"))
-				back = BlackPixel(XXdisplay,0);
+				back = BlackPixel (XXdisplay, XXscreen);
 			else
 				back_color = save_color;
 
@@ -247,13 +249,13 @@ DEFUN ("x-set-border-color", Fx_set_border_color, Sx_set_border_color, 1, 1,
 		brdr = cdef.pixel;
 	else
 		if (brdr_color && !strcmp (brdr_color, "black"))
-			brdr = BlackPixel(XXdisplay,0);
+			brdr = BlackPixel (XXdisplay, XXscreen);
 		else
 			if (brdr_color && !strcmp (brdr_color, "white"))
-				brdr = WhitePixel(XXdisplay,0);
+				brdr = WhitePixel (XXdisplay, XXscreen);
 			else {
 				brdr_color = "black";
-				brdr = BlackPixel(XXdisplay,0);
+				brdr = BlackPixel (XXdisplay, XXscreen);
 			}
 
 	if (XXborder) {
@@ -290,10 +292,10 @@ DEFUN ("x-set-cursor-color", Fx_set_cursor_color, Sx_set_cursor_color, 1, 1,
 		curs = cdef.pixel;
 	else
 		if (curs_color && !strcmp (curs_color, "black"))
-			curs = BlackPixel(XXdisplay,0);
+			curs = BlackPixel (XXdisplay, XXscreen);
 		else
 			if (curs_color && !strcmp (curs_color, "white"))
-				curs = WhitePixel(XXdisplay,0);
+				curs = WhitePixel (XXdisplay, XXscreen);
 			else
 				curs_color = save_color;
 
@@ -312,37 +314,42 @@ DEFUN ("x-set-mouse-color", Fx_set_mouse_color, Sx_set_mouse_color, 1, 1,
   (arg)
      Lisp_Object arg;
 {
-	BLOCK_INPUT_DECLARE ();
-	XColor cdef;
-	char *save_color;
+  BLOCK_INPUT_DECLARE ();
+  char *save_color;
 
-	check_xterm ();
-	CHECK_STRING (arg,1);
-	save_color = mous_color;
-	mous_color = (char *) xmalloc (XSTRING (arg)->size + 1);
-	bcopy (XSTRING (arg)->data, mous_color, XSTRING (arg)->size + 1);
+  check_xterm ();
+  CHECK_STRING (arg,1);
+  save_color = mous_color;
+  mous_color = (char *) xmalloc (XSTRING (arg)->size + 1);
+  bcopy (XSTRING (arg)->data, mous_color, XSTRING (arg)->size + 1);
 
-	BLOCK_INPUT ();
+  BLOCK_INPUT ();
 
-	if (mous_color && XXisColor &&
-	    XParseColor (XXdisplay, XXColorMap, mous_color, &cdef) &&
-	    XAllocColor (XXdisplay, XXColorMap, &cdef))
-		mous = cdef.pixel;
-	else
-		if (mous_color && !strcmp (mous_color, "black"))
-			mous = BlackPixel(XXdisplay,0);
-		else
-			if (mous_color && !strcmp (mous_color, "white"))
-				mous = WhitePixel(XXdisplay,0);
-			else
-				mous_color = save_color;
+  if (! x_set_cursor_colors ())
+    mous_color = save_color;
 
-	XRecolorCursor (XXdisplay, EmacsCursor, mous, back);
-	XFlush (XXdisplay);
+  XFlush (XXdisplay);
 	
-	UNBLOCK_INPUT ();
-	return Qt;
+  UNBLOCK_INPUT ();
+  return Qt;
 }   
+
+/* Set the actual X cursor colors from `mous_color' and `back_color'.  */
+
+int
+x_set_cursor_colors ()
+{
+  XColor forec, backc;
+
+  if (XXisColor && mous_color
+      && XParseColor (XXdisplay, XXColorMap, mous_color, &forec)
+      && XParseColor (XXdisplay, XXColorMap, back_color, &backc))
+    {
+      XRecolorCursor (XXdisplay, EmacsCursor, &forec, &backc);
+      return 1;
+    }
+  else return 0;
+}
 
 DEFUN ("x-color-p", Fx_color_p, Sx_color_p, 0, 0, 0,
        "Returns t if the display is a color X terminal.")
@@ -517,20 +524,29 @@ the appropriate function to act upon this event.")
   ()
 {
 	XEvent event;
-	register Lisp_Object Mouse_Cmd;
+	register Lisp_Object mouse_cmd;
 	register char com_letter;
 	register char key_mask;
 	register Lisp_Object tempx;
 	register Lisp_Object tempy;
 	extern Lisp_Object get_keyelt ();
+	extern int meta_prefix_char;
 	
 	check_xterm ();
 
 	if (XXm_queue_num) {
-		event = *XXm_queue[XXm_queue_num-1];
-		free (XXm_queue[--XXm_queue_num]);
+		event = *XXm_queue[XXm_queue_out];
+		free (XXm_queue[XXm_queue_out]);
+		XXm_queue_out = (XXm_queue_out + 1) % XMOUSEBUFSIZE;
+		XXm_queue_num--;
 		com_letter = 3-(event.xbutton.button & 3);
 		key_mask = (event.xbutton.state & 15) << 4;
+		/* Report meta in 2 bit, not in 8 bit.  */
+		if (key_mask & 0x80)
+		  {
+		    key_mask |= 0x20;
+		    key_mask &= ~0x80;
+		  }
 		com_letter |= key_mask;
 		if (event.type == ButtonRelease)
 			com_letter |= 0x04;
@@ -547,14 +563,15 @@ the appropriate function to act upon this event.")
 		XSET (tempy, Lisp_Int, event.xbutton.y+XXyoffset);*/
 		Vx_mouse_abs_pos = Fcons (tempx, Fcons (tempy, Qnil));
 		Vx_mouse_item = make_number (com_letter);
-		Mouse_Cmd = get_keyelt (access_keymap (MouseMap, com_letter));
-		if (NULL (Mouse_Cmd)) {
+		mouse_cmd
+		  = get_keyelt (access_keymap (MouseMap, com_letter));
+		if (NULL (mouse_cmd)) {
 			if (event.type != ButtonRelease)
 				Ding ();
 			Vx_mouse_pos = Qnil;
 		}
 		else
-			return call1 (Mouse_Cmd, Vx_mouse_pos);
+			return call1 (mouse_cmd, Vx_mouse_pos);
 	}
 	return Qnil;
 }
@@ -582,8 +599,10 @@ otherwise, wait for an event.")
 	/*** ??? Surely you don't mean to busy wait??? */
 
 	if (XXm_queue_num) {
-		event = *XXm_queue[XXm_queue_num-1];
-		free (XXm_queue[--XXm_queue_num]);
+		event = *XXm_queue[XXm_queue_out];
+		free (XXm_queue[XXm_queue_out]);
+		XXm_queue_out = (XXm_queue_out + 1) % XMOUSEBUFSIZE;
+		XXm_queue_num--;
 		com_letter = 3-(event.xbutton.button & 3);
 		key_mask = (event.xbutton.state & 15) << 4;
 		com_letter |= key_mask;

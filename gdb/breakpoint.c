@@ -879,13 +879,12 @@ ignore_command (args, from_tty)
      char *args;
      int from_tty;
 {
-  register char *p;
+  register char *p = args;
   register int num;
 
   if (p == 0)
     error_no_arg ("a breakpoint number");
   
-  p = args;
   while (*p >= '0' && *p <= '9') p++;
   if (*p && *p != ' ' && *p != '\t')
     error ("First argument must be a breakpoint number.");

@@ -1,5 +1,5 @@
 /* X Communication module for terminals which understand the X protocol.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -50,11 +50,11 @@ static char *rcsid_TrmXTERM_c = "$Header: xterm.c,v 1.28 86/08/27 13:30:57 rlk E
 #include <sys/types.h>
 #endif
 
-#ifndef USG
+#if !defined(USG) || defined(IBMRTAIX)
 #include <sys/time.h>
 #else
 #include <time.h>
-#endif /* USG */
+#endif /* USG and not IBMRTAIX */
 
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -74,6 +74,11 @@ static char *rcsid_TrmXTERM_c = "$Header: xterm.c,v 1.28 86/08/27 13:30:57 rlk E
 #include "sinkmask.h"
 #include <X/Xkeyboard.h>
 /*#include <X/Xproto.h>	*/
+
+/* Allow config to specify default font.  */
+#ifndef X_DEFAULT_FONT
+#define X_DEFAULT_FONT "vtsingle"
+#endif
 
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #define max(a,b) ((a)>(b) ? (a) : (b))
@@ -152,8 +157,6 @@ int brdr;
 int curs;
 int mous;
 
-int (*handler)();
-
 static WindowInfo windowinfo;
 WindowInfo rootwindowinfo;
 
@@ -171,6 +174,7 @@ static XREPBUFFER XXqueue;/* Used for storing up ExposeRegion */
 int XXborder;
 int XXInternalBorder;
 
+int (*handler)();
 
 extern Display *XOpenDisplay ();
 extern Window XCreateWindow ();
@@ -212,7 +216,7 @@ XTchange_line_highlight (new_highlight, vpos, first_unused_hpos)
 {
   HLmode (new_highlight);
   XTtopos (vpos, 0);
-  XTclear_end_of_line (0);
+  x_clear_end_of_line (0);
 }
 
 
@@ -303,11 +307,12 @@ cleanup ()
   HLmode (0);
 }
 
-/* wipes out numcols columns starting a current column on the current line */
-  
+/* Erase current line from column cursX to column END.
+   Leave cursor at END.  */
+
 static
-XTclear_end_of_line (first_blank)
-     register int first_blank;
+XTclear_end_of_line (end)
+     register int end;
 {
   register int numcols;
 
@@ -319,28 +324,71 @@ XTclear_end_of_line (first_blank)
     {
       return;
     }
-  if (first_blank >= screen_width)
-    {
-      return;
-    }
-  if (first_blank < 0)
-    first_blank = 0;
-  numcols = screen_width - first_blank;
+
+  if (end >= screen_width)
+    end = screen_width;
+  if (end <= cursX)
+    return;
+
+  numcols = end - cursX;
   {
     BLOCK_INPUT_DECLARE ()
 
     BLOCK_INPUT ();
-    if (cursY == VisibleY && VisibleX >= first_blank)
+    if (cursY == VisibleY && VisibleX >= cursX && VisibleX < end)
       {
 	if (CursorExists) CursorToggle ();
       }
-    XPixSet (XXwindow, 
-	     first_blank * fontinfo->width + XXInternalBorder, 
-	     cursY * fontinfo->height+XXInternalBorder, 
+    XPixSet (XXwindow,
+	     cursX * fontinfo->width + XXInternalBorder,
+	     cursY * fontinfo->height+XXInternalBorder,
 	     fontinfo->width * numcols,
 	     fontinfo->height,
-	     back);	
-    XTtopos (cursY, first_blank);
+	     back);
+    XTtopos (cursY, end);
+    UNBLOCK_INPUT ();
+  }
+}
+
+/* Erase current line from column START to right margin.
+   Leave cursor at START.  */
+
+static
+x_clear_end_of_line (start)
+     register int start;
+{
+  register int numcols;
+
+#ifdef XDEBUG
+  fprintf (stderr, "x_clear_end_of_line\n");
+
+#endif
+  if (cursY < 0 || cursY >= screen_height)
+    {
+      return;
+    }
+
+  if (start < 0)
+    start = 0;
+  if (start >= screen_width)
+    return;
+
+  numcols = screen_width - start;
+  {
+    BLOCK_INPUT_DECLARE ()
+
+    BLOCK_INPUT ();
+    if (cursY == VisibleY && VisibleX >= start)
+      {
+	if (CursorExists) CursorToggle ();
+      }
+    XPixSet (XXwindow,
+	     start * fontinfo->width + XXInternalBorder,
+	     cursY * fontinfo->height+XXInternalBorder,
+	     fontinfo->width * numcols,
+	     fontinfo->height,
+	     back);
+    XTtopos (cursY, start);
     UNBLOCK_INPUT ();
   }
 }
@@ -362,7 +410,7 @@ XTclear_screen ()
 #endif
   HLmode (0);
   CursorExists = 0;
-  
+
   cursX = 0;
   cursY = 0;
   SavedX = 0;
@@ -439,32 +487,17 @@ writechars (start, end)
     }
   if (InUpdate)
     {
-      if (DesiredScreen[cursY + 1])
-	{
-	  temp_length = DesiredScreen[cursY + 1]->length;
-	}
-      else
-	temp_length = 0;
-      if (temp_length > 0)
+      if (end != start - 1)
 	{
 	  XText (XXwindow,
-		 XXInternalBorder,
+		 (cursX * fontinfo->width+XXInternalBorder),
 		 (cursY * fontinfo->height+XXInternalBorder),
-		 &DesiredScreen[cursY + 1]->body[0],
-		 temp_length,
+		 start,
+		 end + 1 - start,
 		 fontinfo->id,
 		 (CurHL ? back : fore),
 		 (CurHL ? fore : back));
-	  if (temp_length < screen_width)
-	    {
-	      XTclear_end_of_line (temp_length);
-	    }
-	  XTtopos (cursY, temp_length);
-	}
-      else
-	{
-	  XTclear_end_of_line (0);
-	  XTtopos (cursY, 0);
+	  XTtopos (cursY, cursX + end - start + 1);
 	}
     }
   else
@@ -501,7 +534,7 @@ writechars (start, end)
 }
 
 
-static 
+static
 XTwrite_chars (start, len)
      register char *start;
      register int len;
@@ -512,8 +545,8 @@ XTwrite_chars (start, len)
   writechars (start, start + len - 1);
 }
 
-/* The following routine is for the deaf or for the pervert who prefers 
- * that his terminal flashes at him rather than beep at him.
+/* The following routine is for the deaf or for the pervert who prefers
+ * that his terminal flash at him rather than beep at him.
  */
 
 static int flashedback;
@@ -586,14 +619,14 @@ XTfeep ()
  * screen (either where it is or last was) is tracked with VisibleX,Y.
  * Gnu Emacs code tends to assume a cursor exists in hardward at cursX,Y
  * and that output text will appear there.  During updates, the cursor is
- * supposed to be blinked out and will only reappear after the update 
+ * supposed to be blinked out and will only reappear after the update
  * finishes.
  */
 
 CursorToggle ()
 {
   register struct display_line **ActiveScreen;
-  if (!WindowMapped) 
+  if (!WindowMapped)
     {
       CursorExists = 0;
       return 0;
@@ -621,18 +654,18 @@ CursorToggle ()
 	  XText (XXwindow,
 		 VisibleX * fontinfo->width+XXInternalBorder,
 		 VisibleY * fontinfo->height+XXInternalBorder,
-		 &ActiveScreen[VisibleY + 1]->body[VisibleX], 1, 
+		 &ActiveScreen[VisibleY + 1]->body[VisibleX], 1,
 		 fontinfo->id,
 		 fore, back);
 	}
       else
 	{
-	    XText (XXwindow,
-		   VisibleX * fontinfo->width+XXInternalBorder,
-		   VisibleY * fontinfo->height+XXInternalBorder,
-		   &ActiveScreen[VisibleY + 1]->body[VisibleX], 1, 
-		   fontinfo->id,
-		   back, curs);
+	  XText (XXwindow,
+		 VisibleX * fontinfo->width+XXInternalBorder,
+		 VisibleY * fontinfo->height+XXInternalBorder,
+		 &ActiveScreen[VisibleY + 1]->body[VisibleX], 1,
+		 fontinfo->id,
+		 back, curs);
 	}
     }
   else if (CursorExists)
@@ -644,10 +677,10 @@ CursorToggle ()
     }
   else
     {
-    XPixSet (XXwindow,
-	     VisibleX * fontinfo->width+XXInternalBorder,
-	     VisibleY * fontinfo->height+XXInternalBorder,
-	     fontinfo->width, fontinfo->height, curs);
+      XPixSet (XXwindow,
+	       VisibleX * fontinfo->width+XXInternalBorder,
+	       VisibleY * fontinfo->height+XXInternalBorder,
+	       fontinfo->width, fontinfo->height, curs);
     }
   CursorExists = !CursorExists;
   /* Cursor has either been blinked in */
@@ -664,7 +697,7 @@ CursorToggle ()
 /* region, this routine makes sure it is gone so that dumprectangle can */
 /* toggle it back into existance if dumprectangle is invoked when not in */
 /* the midst of a screen update. */
-static 
+static
 ClearCursor ()
 {
   BLOCK_INPUT_DECLARE ()
@@ -695,7 +728,7 @@ ClearCursor ()
 
 static
 XTupdate_begin ()
-{	
+{
   BLOCK_INPUT_DECLARE ()
 
   BLOCK_INPUT ();
@@ -704,7 +737,7 @@ XTupdate_begin ()
 #endif
 
   InUpdate = 1;
-  if (CursorExists) 
+  if (CursorExists)
     {
       CursorToggle ();
     }
@@ -720,7 +753,7 @@ XTupdate_begin ()
 
 static
 XTupdate_end ()
-{	
+{
   BLOCK_INPUT_DECLARE ()
 
   BLOCK_INPUT ();
@@ -827,10 +860,9 @@ XTins_del_lines (vpos, n)
   XTtopos (vpos, 0);
   if (n >= 0) stufflines (n);
   else scraplines (-n);
-		
 }
 
-static 
+static
 XTinsert_chars (start, len)
      register char *start;
      register int len;
@@ -841,7 +873,7 @@ XTinsert_chars (start, len)
   writechars (start, start + len - 1);
 }
 
-static 
+static
 XTdelete_chars (n)
      register int n;
 {
@@ -862,7 +894,7 @@ stufflines (n)
 
   if (cursY >= flexlines)
     return;
-  
+
   if (!WindowMapped)
     {
       bitblt = 0;
@@ -918,7 +950,7 @@ scraplines (n)
       bitblt = 0;
       return;
     }
-  
+
   if (cursY >= flexlines)
     return;
   BLOCK_INPUT ();
@@ -959,7 +991,7 @@ scraplines (n)
     }
   /* if (!InUpdate) CursorToggle (); */
 }
-	
+
 /* Substitutes for standard read routine.  Under X not interested in individual
  * bytes but rather individual packets.
  */
@@ -969,7 +1001,7 @@ XTread_socket (sd, bufp, numchars)
      register char *bufp;
      register int numchars;
 {
-  
+
   int count;
   char *where_mapping;
   int nbytes;
@@ -979,7 +1011,7 @@ XTread_socket (sd, bufp, numchars)
   /* XKeyPressedEvent event; */
   /*  typedef struct reply {XEvent event; struct reply *next} Reply;
       Reply *replies = NULL;*/
-	
+
   BLOCK_INPUT ();
   count = 0;
   if (numchars <= 0)
@@ -990,6 +1022,17 @@ XTread_socket (sd, bufp, numchars)
 #ifdef SIGIO
   while (bitblt || XPending () != 0)
 #else
+#ifndef HAVE_SELECT
+  if (! (fcntl (fileno (stdin), F_GETFL, 0) & O_NDELAY))
+    {
+      extern int read_alarm_should_throw;
+      if (CursorExists)
+	xfixscreen ();
+      read_alarm_should_throw = 1;
+      XPeekEvent (&XXEvent);
+      read_alarm_should_throw = 0;
+    }
+#endif
   while (XPending () != 0)
 #endif
     {
@@ -1090,7 +1133,7 @@ XTread_socket (sd, bufp, numchars)
 #ifndef HPUX
 	case ButtonReleased:
 #endif
-	  switch (spacecheck (Xxrepbuffer.mindex, 
+	  switch (spacecheck (Xxrepbuffer.mindex,
 			      Xxrepbuffer.rindex,
 			      Xxrepbuffer.windex, 0))
 	    {
@@ -1125,8 +1168,14 @@ XTread_socket (sd, bufp, numchars)
     }*/
   if (count < 0)
     count = 0;
-#ifndef HPUX
-  if (CursorExists)
+#ifdef HAVE_SELECT
+  if (CursorExists
+#ifdef O_NDELAY
+#ifdef F_GETFL
+      && (! (fcntl (fileno (stdin), F_GETFL, 0) & O_NDELAY))
+#endif
+#endif
+      )
     xfixscreen ();
 #endif
   UNBLOCK_INPUT ();
@@ -1139,15 +1188,15 @@ refreshicon ()
   BLOCK_INPUT_DECLARE ()
 
   BLOCK_INPUT ();
-  if (XXIconWindow) 
+  if (XXIconWindow)
     XBitmapBitsPut (XXIconWindow, 0,  0, sink_width, sink_height,
-		    sink_bits, BlackPixel, WhitePixel, 
+		    sink_bits, BlackPixel, WhitePixel,
 		    XXIconMask, GXcopy, AllPlanes);
   XFlush ();
   UNBLOCK_INPUT ();
 }
 
-XBitmapIcon () 
+XBitmapIcon ()
 {
   BLOCK_INPUT_DECLARE ()
 
@@ -1161,7 +1210,7 @@ XBitmapIcon ()
   UNBLOCK_INPUT ();
 }
 
-XTextIcon () 
+XTextIcon ()
 {
   BLOCK_INPUT_DECLARE ()
 
@@ -1182,11 +1231,42 @@ XTextIcon ()
 /* Exit gracefully from gnuemacs, doing an autosave and giving a status.
  */
 
-XExitGracefully ()
+XExitGracefully (disp, event)
+     Display *disp;
+     XErrorEvent *event;
 {
   XCleanUp ();
   exit (70);
 }
+
+x_io_error (disp)
+     Display *disp;
+{
+  XCleanUp ();
+  exit (71);
+}
+
+#if 0
+/* This kludge overcomes the failure to handle EAGAIN and EINTR
+   in a certain version of X for 386 running system V.  */
+
+x_io_error (disp, a, b, c, nwrite)
+     Display *disp;
+{
+  extern _XSend ();
+  unsigned int pc = ((unsigned int *)&disp)[-1];
+  if (pc - (unsigned int)&_XSend - 100 < 100
+       && (errno == EAGAIN || errno == EINTR))
+    {
+      /* We were called by `writedata' erroneously.
+	 Modify a local variable which `writedata'
+	 will subtract from the number of bytes to be written.  */
+      nwrite = 0;
+      return;
+    }
+  abort ();
+}
+#endif
 
 xfixscreen ()
 {
@@ -1196,7 +1276,6 @@ xfixscreen ()
 
   BLOCK_INPUT ();
   dumpqueue ();
-#ifndef HPUX
   /* Check that the connection is in fact open.  This works by doing a nop */
   /* (well, almost) write operation.  If there is an XIOerror or a */
   /* SIGPIPE, exit gracefully.  This fixes the loop-on-logout bug.*/
@@ -1204,7 +1283,6 @@ xfixscreen ()
   XPixFill (XXwindow, 0, 0, 1, 1, back, ClipModeClipped, GXnoop, AllPlanes);
   XFlush ();
   /* XIOErrorHandler (0); */
-#endif
   if (PendingIconExposure)
     {
       refreshicon ();
@@ -1283,7 +1361,7 @@ x_term_init ()
   informflag = 1;
   MetaFlag = 1;
   visible_bell = 1;
-#ifndef HPUX
+#ifdef SIGIO
   interrupt_input = 1;
 #endif
   inverse_video = 1;
@@ -1312,7 +1390,7 @@ x_term_init ()
   char_ins_del_ok = 0;         /* just as fast to write the line */
   line_ins_del_ok = 1;         /* we'll just blt 'em */
   fast_clear_end_of_line = 1;  /* X does this well */
-  memory_below_screen = 0;	/* we don't remember what scrolls 
+  memory_below_screen = 0;	/* we don't remember what scrolls
 				   off the bottom */
   dont_calculate_costs = 1;
 
@@ -1327,9 +1405,8 @@ x_term_init ()
   XXyoffset = 0;
   XXdebug = 0;
 
-  handler = XExitGracefully;
-  XErrorHandler (handler);
-  XIOErrorHandler (handler);
+  XErrorHandler (XExitGracefully);
+  XIOErrorHandler (x_io_error);
 
   progname = "emacs";
   if (option = XGetDefault (progname,"ReverseVideo"))
@@ -1350,9 +1427,15 @@ x_term_init ()
   curs_color = XGetDefault (progname,"Cursor");
 
   temp_font  = XGetDefault (progname,"BodyFont");
-  if (temp_font == 0) temp_font = "vtsingle";
+  if (temp_font == 0) temp_font = X_DEFAULT_FONT;
   XXcurrentfont = (char *) xmalloc (strlen (temp_font) + 1);
   strcpy (XXcurrentfont, temp_font);
+
+  /* If user has specified a special keymap for use with Emacs, use it. */
+  {
+    char *temp = XGetDefault (progname, "KeyMap");
+    if (temp) XUseKeymap (temp);
+  }
 
   if (DisplayCells () > 2)
     {
@@ -1479,7 +1562,7 @@ x_term_init ()
       mous = BlackPixel;
     }
     */
-  
+
   XXpid = getpid ();
   if (XXcurrentfont == (char *) 0)
     {
@@ -1515,7 +1598,7 @@ x_term_init ()
 
   XXIconWindow = XCreateWindow (RootWindow, 0, 0, sink_width, sink_height,
 				2, WhitePixmap, (Pixmap) NULL);
-  
+
   if (!XXIconWindow)
     {
       fprintf (stderr, "Unable to create icon window.\n");
@@ -1530,7 +1613,7 @@ x_term_init ()
 		  /* fontinfo->width * 1, fontinfo->height * 1, */
 		  fontinfo->width, fontinfo->height);
 
-#if defined (BSD) || defined (HPUX)
+#if defined (BSD) || defined (HPUX) || defined (IBMRTAIX)
   if (gethostname (&iconidentity[sizeof (ICONTAG) - 1],
 		   (MAXICID - 1) - sizeof (ICONTAG)))
 #endif
@@ -1675,23 +1758,23 @@ XFlipColor ()
   XRedrawDisplay ();
   if (curs == WhitePixel)
     {
-	curs = BlackPixel;
-	curs_color = "black";
+      curs = BlackPixel;
+      curs_color = "black";
     }
   else if (curs == BlackPixel)
     {
-	curs = WhitePixel;
-	curs_color = "white";
+      curs = WhitePixel;
+      curs_color = "white";
     }
   if (mous == WhitePixel)
     {
-	mous = BlackPixel;
-	mous_color = "black";
+      mous = BlackPixel;
+      mous_color = "black";
     }
   else if (mous == BlackPixel)
     {
-	mous = WhitePixel;
-	mous_color = "white";
+      mous = WhitePixel;
+      mous_color = "white";
     }
   temp_curs = XCreateCursor (16, 16, MouseCursor, MouseMask, 0, 0,
 			     mous, back, GXcopy);

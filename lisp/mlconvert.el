@@ -19,7 +19,7 @@
 ;; and this notice must be preserved on all copies.
 
 (defun convert-mocklisp-buffer ()
-  "Convert buffer of mocklisp code into real lisp."
+  "Convert buffer of Mocklisp code to real Lisp that GNU Emacs can run."
   (interactive)
   (emacs-lisp-mode)
   (set-syntax-table (copy-sequence (syntax-table)))

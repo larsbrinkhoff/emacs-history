@@ -127,7 +127,7 @@ print_frame_info (fi, level, source, args)
 	{
 	  if (mid_statement)
 	    printf ("0x%x\t", fi->pc);
-	  print_source_lines (sal.symtab, sal.line, sal.line + 1);
+	  print_source_lines (sal.symtab, sal.line, sal.line + 1, 1);
 	}
       current_source_line = max (sal.line - 5, 1);
     }

@@ -72,12 +72,13 @@ and this notice must be preserved on all copies.  */
  *	Define HAVE_PTYS if the system supports pty devices.
  */
 
-#define HAVE_PTYS
-#define SYSV_PTYS
+/* Some versions of V.3 have this, but not all.
+   #define HAVE_PTYS
+   #define SYSV_PTYS  */
 
 /* Define HAVE_SOCKETS if system supports 4.2-compatible sockets.  */
 
-#define HAVE_SOCKETS
+/* #define HAVE_SOCKETS */
 
 /*
  *	Define NONSYSTEM_DIR_LIBRARY to make Emacs emulate
@@ -195,3 +196,8 @@ and this notice must be preserved on all copies.  */
 /* Use terminfo instead of termcap.  */
 
 #define TERMINFO
+
+/* X needs to talk on the network, so search the network library.  */
+
+#define LIBX10_SYSTEM -lnsl_s
+#define LIBX11_SYSTEM -lnsl_s

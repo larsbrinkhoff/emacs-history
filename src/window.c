@@ -1617,6 +1617,11 @@ function for more information.")
   Lisp_Object new_current_buffer;
   int k;
 
+  /* Save screen height here so we can go back to it at the end.  */
+  int previous_screen_height = screen_height;
+  int previous_screen_width = screen_width;
+  int screen_size_change = 0;
+
   while (XTYPE (arg) != Lisp_Window_Configuration)
     {
       /* the function window-configuration-p isn't actually defined
@@ -1627,15 +1632,12 @@ function for more information.")
   data = (struct save_window_data *) XVECTOR (arg);
   saved_windows = XVECTOR (data->saved_windows);
 
-  if (XFASTINT (data->screen_height) != screen_height ||
-      XFASTINT (data->screen_width) != screen_width)
+  /* Set the screen height to the value it had at save time.  */
+  if (XFASTINT (data->screen_height) != screen_height
+      || XFASTINT (data->screen_width) != screen_width)
     {
-      /* Presumably something clever could be done.
-	 However, it doesn't seem worth the effort */
-      error ("Screen size changed: is %dx%d, was %dx%d.",
-	     screen_height, screen_width,
-	     XFASTINT (data->screen_height),
-	     XFASTINT (data->screen_width));
+      change_screen_size (data->screen_height, data->screen_width, 0);
+      screen_size_change = 1;
     }
 
   windows_or_buffers_changed++;
@@ -1730,6 +1732,10 @@ function for more information.")
 	    }
 	}
     }
+
+  /* Set the screen height to the value it had before this function.  */
+  if (screen_size_change)
+    change_screen_size (previous_screen_height, previous_screen_width, 0);
 
   Fselect_window (data->current_window);
   if (!NULL (new_current_buffer))

@@ -221,8 +221,9 @@ if that value is non-nil."
 			(and (eq last-command-char ?:)
 			     (not (looking-at "case[ \t]"))
 			     (save-excursion
-			       (forward-word 2)
-			       (<= (point) end)))
+			       (forward-word 1)
+			       (skip-chars-forward " \t")
+			       (< (point) end)))
 			(progn
 			  (beginning-of-defun)
 			  (let ((pps (parse-partial-sexp (point) end)))

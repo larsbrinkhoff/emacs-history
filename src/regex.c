@@ -183,20 +183,39 @@ init_syntax_once ()
 #define SIGN_EXTEND_CHAR(x) (x)
 #endif
 
-/* compile_pattern takes a regular-expression descriptor string in the user's format
-  and converts it into a buffer full of byte commands for matching.
+static int obscure_syntax = 0;
 
-  pattern   is the address of the pattern string
-  size      is the length of it.
-  bufp	    is a  struct re_pattern_buffer *  which points to the info
+/* Specify the precise syntax of regexp for compilation.
+   This provides for compatibility for various utilities
+   which historically have different, incompatible syntaxes.
+
+   The argument SYNTAX is a bit-mask containing the two bits
+   RE_NO_BK_PARENS and RE_NO_BK_VBAR.  */
+
+int
+re_set_syntax (syntax)
+{
+  int ret;
+
+  ret = obscure_syntax;
+  obscure_syntax = syntax;
+  return ret;
+}
+
+/* re_compile_pattern takes a regular-expression string
+   and converts it into a buffer full of byte commands for matching.
+
+  PATTERN   is the address of the pattern string
+  SIZE      is the length of it.
+  BUFP	    is a  struct re_pattern_buffer *  which points to the info
 	    on where to store the byte commands.
 	    This structure contains a  char *  which points to the
 	    actual space, which should have been obtained with malloc.
-	    compile_pattern may use  realloc  to grow the buffer space.
+	    re_compile_pattern may use  realloc  to grow the buffer space.
 
   The number of bytes of commands can be found out by looking in
   the  struct re_pattern_buffer  that bufp pointed to,
-  after compile_pattern returns.
+  after re_compile_pattern returns.
 */
 
 #define PATPUSH(ch) (*b++ = (char) (ch))
@@ -327,9 +346,28 @@ re_compile_pattern (pattern, size, bufp)
       switch (c)
 	{
 	case '$':
+	  if (obscure_syntax & RE_TIGHT_VBAR)
+	    {
+	      if (! (obscure_syntax & RE_CONTEXT_INDEP_OPS) && p != pend)
+		goto normal_char;
+	      /* Make operand of last vbar end before this `$'.  */
+	      if (fixup_jump)
+		store_jump (fixup_jump, jump, b);
+	      fixup_jump = 0;
+	      PATPUSH (endline);
+	      break;
+	    }
+
 	  /* $ means succeed if at end of line, but only in special contexts.
-	    If randonly in the middle of a pattern, it is a normal character. */
-	  if (p == pend || (*p == '\\' && (p[1] == ')' || p[1] == '|')))
+	    If randomly in the middle of a pattern, it is a normal character. */
+	  if (p == pend || *p == '\n'
+	      || (obscure_syntax & RE_CONTEXT_INDEP_OPS)
+	      || (obscure_syntax & RE_NO_BK_PARENS
+		  ? *p == ')'
+		  : *p == '\\' && p[1] == ')')
+	      || (obscure_syntax & RE_NO_BK_VBAR
+		  ? *p == '|'
+		  : *p == '\\' && p[1] == '|'))
 	    {
 	      PATPUSH (endline);
 	      break;
@@ -338,15 +376,30 @@ re_compile_pattern (pattern, size, bufp)
 
 	case '^':
 	  /* ^ means succeed if at beg of line, but only if no preceding pattern. */
-	  if (laststart) goto normal_char;
-	  PATPUSH (begline);
+
+	  if (laststart && p[-2] != '\n'
+	      && ! (obscure_syntax & RE_CONTEXT_INDEP_OPS))
+	    goto normal_char;
+	  if (obscure_syntax & RE_TIGHT_VBAR)
+	    {
+	      if (p != pattern + 1
+		  && ! (obscure_syntax & RE_CONTEXT_INDEP_OPS))
+		goto normal_char;
+	      PATPUSH (begline);
+	      begalt = b;
+	    }
+	  else
+	    PATPUSH (begline);
 	  break;
 
-	case '*':
 	case '+':
 	case '?':
+	  if (obscure_syntax & RE_BK_PLUS_QM)
+	    goto normal_char;
+	handle_plus:
+	case '*':
 	  /* If there is no previous pattern, char not special. */
-	  if (!laststart)
+	  if (!laststart && ! (obscure_syntax & RE_CONTEXT_INDEP_OPS))
 	    goto normal_char;
 	  /* If there is a sequence of repetition chars,
 	     collapse it down to equivalent to just one.  */
@@ -359,12 +412,35 @@ re_compile_pattern (pattern, size, bufp)
 	      if (p == pend)
 		break;
 	      PATFETCH (c);
-	      if (!(c == '*' || c == '+' || c == '?'))
+	      if (c == '*')
+		;
+	      else if (!(obscure_syntax & RE_BK_PLUS_QM)
+		       && (c == '+' || c == '?'))
+		;
+	      else if ((obscure_syntax & RE_BK_PLUS_QM)
+		       && c == '\\')
+		{
+		  int c1;
+		  PATFETCH (c1);
+		  if (!(c1 == '+' || c1 == '?'))
+		    {
+		      PATUNFETCH;
+		      PATUNFETCH;
+		      break;
+		    }
+		  c = c1;
+		}
+	      else
 		{
 		  PATUNFETCH;
 		  break;
 		}
 	    }
+
+	  /* Star, etc. applied to an empty pattern is equivalent
+	     to an empty pattern.  */
+	  if (!laststart)
+	    break;
 
 	  /* Now we know whether 0 matches is allowed,
 	     and whether 2 or more matches is allowed.  */
@@ -393,8 +469,8 @@ re_compile_pattern (pattern, size, bufp)
 	  break;
 
 	case '[':
-	  if (b - bufp->buffer
-	      > bufp->allocated - 3 - (1 << BYTEWIDTH) / BYTEWIDTH)
+	  while (b - bufp->buffer
+		 > bufp->allocated - 3 - (1 << BYTEWIDTH) / BYTEWIDTH)
 	    /* Note that EXTEND_BUFFER clobbers c */
 	    EXTEND_BUFFER;
 
@@ -413,7 +489,7 @@ re_compile_pattern (pattern, size, bufp)
 	    {
 	      PATFETCH (c);
 	      if (c == ']' && p != p1 + 1) break;
-	      if (*p == '-')
+	      if (*p == '-' && p[1] != ']')
 		{
 		  PATFETCH (c1);
 		  PATFETCH (c1);
@@ -427,10 +503,34 @@ re_compile_pattern (pattern, size, bufp)
 	    }
 	  /* Discard any bitmap bytes that are all 0 at the end of the map.
 	     Decrement the map-length byte too. */
-	  while (b[-1] > 0 && b[b[-1] - 1] == 0)
+	  while ((int) b[-1] > 0 && b[b[-1] - 1] == 0)
 	    b[-1]--;
 	  b += b[-1];
 	  break;
+
+	case '(':
+	  if (! (obscure_syntax & RE_NO_BK_PARENS))
+	    goto normal_char;
+	  else
+	    goto handle_open;
+
+	case ')':
+	  if (! (obscure_syntax & RE_NO_BK_PARENS))
+	    goto normal_char;
+	  else
+	    goto handle_close;
+
+	case '\n':
+	  if (! (obscure_syntax & RE_NEWLINE_OR))
+	    goto normal_char;
+	  else
+	    goto handle_bar;
+
+	case '|':
+	  if (! (obscure_syntax & RE_NO_BK_VBAR))
+	    goto normal_char;
+	  else
+	    goto handle_bar;
 
         case '\\':
 	  if (p == pend) goto invalid_pattern;
@@ -438,6 +538,9 @@ re_compile_pattern (pattern, size, bufp)
 	  switch (c)
 	    {
 	    case '(':
+	      if (obscure_syntax & RE_NO_BK_PARENS)
+		goto normal_backsl;
+	    handle_open:
 	      if (stackp == stacke) goto nesting_too_deep;
 	      if (regnum < RE_NREGS)
 	        {
@@ -454,6 +557,9 @@ re_compile_pattern (pattern, size, bufp)
 	      break;
 
 	    case ')':
+	      if (obscure_syntax & RE_NO_BK_PARENS)
+		goto normal_backsl;
+	    handle_close:
 	      if (stackp == stackb) goto unmatched_close;
 	      begalt = *--stackp + bufp->buffer;
 	      if (fixup_jump)
@@ -471,6 +577,9 @@ re_compile_pattern (pattern, size, bufp)
 	      break;
 
 	    case '|':
+	      if (obscure_syntax & RE_NO_BK_VBAR)
+		goto normal_backsl;
+	    handle_bar:
 	      insert_jump (on_failure_jump, begalt, b + 6, b);
 	      pending_exact = 0;
 	      b += 3;
@@ -555,8 +664,15 @@ re_compile_pattern (pattern, size, bufp)
 	      PATPUSH (duplicate);
 	      PATPUSH (c1);
 	      break;
+
+	    case '+':
+	    case '?':
+	      if (obscure_syntax & RE_BK_PLUS_QM)
+		goto handle_plus;
+
 	    default:
-	      /* You might think it wuld be useful for \ to mean
+	    normal_backsl:
+	      /* You might think it would be useful for \ to mean
 		 not to translate; but if we don't translate it
 		 it will never match anything.  */
 	      if (translate) c = translate[c];
@@ -568,7 +684,9 @@ re_compile_pattern (pattern, size, bufp)
 	normal_char:
 	  if (!pending_exact || pending_exact + *pending_exact + 1 != b
 	      || *pending_exact == 0177 || *p == '*' || *p == '^'
-	      || *p == '+' || *p == '?')
+	      || ((obscure_syntax & RE_BK_PLUS_QM)
+		  ? *p == '\\' && (p[1] == '+' || p[1] == '?')
+		  : (*p == '+' || *p == '?')))
 	    {
 	      laststart = b;
 	      PATPUSH (exactn);
@@ -920,8 +1038,10 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 	  else
 	    {
 	      register unsigned char c;
-	      if (startpos >= size1) c = string2[startpos - size1];
-	      else c = string1[startpos];
+	      if (startpos >= size1)
+		c = string2[startpos - size1];
+	      else
+		c = string1[startpos];
 	      c &= 0xff;
 	      if (translate ? !fastmap[translate[c]] : !fastmap[c])
 		goto advance;
@@ -967,6 +1087,7 @@ re_match (pbufp, string, size, pos, regs)
 
 int re_max_failures = 2000;
 
+static int bcmp_translate();
 /* Match the pattern described by PBUFP
    against data which is the virtual concatenation of STRING1 and STRING2.
    SIZE1 and SIZE2 are the sizes of the two data strings.
@@ -986,21 +1107,21 @@ int re_max_failures = 2000;
 int
 re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
      struct re_pattern_buffer *pbufp;
-     char *string1, *string2;
+     unsigned char *string1, *string2;
      int size1, size2;
      int pos;
      struct re_registers *regs;
      int mstop;
 {
-  register char *p = pbufp->buffer;
-  register char *pend = p + pbufp->used;
+  register unsigned char *p = (unsigned char *) pbufp->buffer;
+  register unsigned char *pend = p + pbufp->used;
   /* End of first string */
-  char *end1;
+  unsigned char *end1;
   /* End of second string */
-  char *end2;
+  unsigned char *end2;
   /* Pointer just past last char to consider matching */
-  char *end_match_1, *end_match_2;
-  register char *d, *dend;
+  unsigned char *end_match_1, *end_match_2;
+  register unsigned char *d, *dend;
   register int mcnt;
   unsigned char *translate = (unsigned char *) pbufp->translate;
 
@@ -1012,8 +1133,9 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
     If a failure happens and the innermost failure point is dormant,
     it discards that failure point and tries the next one. */
 
-  char **stackb = (char **) alloca (2 * NFAILURES * sizeof (char *));
-  char **stackp = stackb, **stacke = &stackb[2 * NFAILURES];
+  unsigned char *initial_stack[2 * NFAILURES];
+  unsigned char **stackb = initial_stack;
+  unsigned char **stackp = stackb, **stacke = &stackb[2 * NFAILURES];
 
   /* Information on the "contents" of registers.
      These are pointers into the input strings; they record
@@ -1026,9 +1148,9 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
      regstart_seg1[regnum] is true iff regstart[regnum] points into string1,
      and regend_seg1[regnum] is true iff regend[regnum] points into string1.  */
 
-  char *regstart[RE_NREGS];
-  char *regend[RE_NREGS];
-  char regstart_seg1[RE_NREGS], regend_seg1[RE_NREGS];
+  unsigned char *regstart[RE_NREGS];
+  unsigned char *regend[RE_NREGS];
+  unsigned char regstart_seg1[RE_NREGS], regend_seg1[RE_NREGS];
 
   /* Set up pointers to ends of strings.
      Don't allow the second string to be empty unless both are empty.  */
@@ -1058,7 +1180,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
      to mark ones that no \( or \) has been seen for.  */
 
   for (mcnt = 0; mcnt < sizeof (regend) / sizeof (*regend); mcnt++)
-    regend[mcnt] = (char *) -1;
+    regend[mcnt] = (unsigned char *) -1;
 
   /* `p' scans through the pattern as `d' scans through the data.
      `dend' is the end of the input string that `d' points within.
@@ -1099,7 +1221,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
  		regs->end[0] = d - string2 + size1;
  	      for (mcnt = 1; mcnt < RE_NREGS; mcnt++)
 		{
-		  if (regend[mcnt] == (char *) -1)
+		  if (regend[mcnt] == (unsigned char *) -1)
 		    {
 		      regs->start[mcnt] = -1;
 		      regs->end[mcnt] = -1;
@@ -1148,12 +1270,11 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	case duplicate:
 	  {
 	    int regno = *p++;   /* Get which register to match against */
-	    register char *d2, *dend2;
+	    register unsigned char *d2, *dend2;
 
 	    d2 = regstart[regno];
- 	    dend2 = (regstart_seg1[regno] == regend_seg1[regno])
-	            ? regend[regno]
-		    : end_match_1;
+ 	    dend2 = ((regstart_seg1[regno] == regend_seg1[regno])
+		     ? regend[regno] : end_match_1);
 	    while (1)
 	      {
 		/* Advance to next segment in register contents, if necessary */
@@ -1185,7 +1306,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	  /* fetch a data character */
 	  PREFETCH;
 	  /* Match anything but a newline.  */
-	  if ((translate ? translate[*(unsigned char *)d++] : *d++) == '\n')
+	  if ((translate ? translate[*d++] : *d++) == '\n')
 	    goto fail;
 	  break;
 
@@ -1195,16 +1316,16 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	    /* Nonzero for charset_not */
 	    int not = 0;
 	    register int c;
-	    if (*(p - 1) == (char) charset_not)
+	    if (*(p - 1) == (unsigned char) charset_not)
 	      not = 1;
 
 	    /* fetch a data character */
 	    PREFETCH;
 
 	    if (translate)
-	      c = translate [*(unsigned char *)d];
+	      c = translate [*d];
 	    else
-	      c = *(unsigned char *)d;
+	      c = *d;
 
 	    if (c < *p * BYTEWIDTH
 		&& p[1 + c / BYTEWIDTH] & (1 << (c % BYTEWIDTH)))
@@ -1246,17 +1367,18 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	case on_failure_jump:
 	  if (stackp == stacke)
 	    {
-	      char **stackx;
+	      unsigned char **stackx;
 	      if (stacke - stackb > re_max_failures)
 		return -2;
-	      stackx = (char **) alloca (2 * (stacke - stackb) * sizeof (char *));
+	      stackx = (unsigned char **) alloca (2 * (stacke - stackb)
+					 * sizeof (char *));
 	      bcopy (stackb, stackx, (stacke - stackb) * sizeof (char *));
-	      stackp += stackx - stackb;
+	      stackp = stackx + (stackp - stackb);
 	      stacke = stackx + 2 * (stacke - stackb);
 	      stackb = stackx;
 	    }
 	  mcnt = *p++ & 0377;
-	  mcnt += SIGN_EXTEND_CHAR (*p) << 8;
+	  mcnt += SIGN_EXTEND_CHAR (*(char *)p) << 8;
 	  p++;
 	  *stackp++ = mcnt + p;
 	  *stackp++ = d;
@@ -1267,37 +1389,39 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 
 	case maybe_finalize_jump:
 	  mcnt = *p++ & 0377;
-	  mcnt += SIGN_EXTEND_CHAR (*p) << 8;
+	  mcnt += SIGN_EXTEND_CHAR (*(char *)p) << 8;
 	  p++;
 	  /* Compare what follows with the begining of the repeat.
 	     If we can establish that there is nothing that they would
 	     both match, we can change to finalize_jump */
 	  if (p == pend)
-	    p[-3] = (char) finalize_jump;
-	  else if (*p == (char) exactn || *p == (char) endline)
+	    p[-3] = (unsigned char) finalize_jump;
+	  else if (*p == (unsigned char) exactn
+		   || *p == (unsigned char) endline)
 	    {
-	      register int c = *p == (char) endline ? '\n' : p[2];
-	      register char *p1 = p + mcnt;
+	      register int c = *p == (unsigned char) endline ? '\n' : p[2];
+	      register unsigned char *p1 = p + mcnt;
 	      /* p1[0] ... p1[2] are an on_failure_jump.
 		 Examine what follows that */
-	      if (p1[3] == (char) exactn && p1[5] != c)
-		p[-3] = (char) finalize_jump;
-	      else if (p1[3] == (char) charset || p1[3] == (char) charset_not)
+	      if (p1[3] == (unsigned char) exactn && p1[5] != c)
+		p[-3] = (unsigned char) finalize_jump;
+	      else if (p1[3] == (unsigned char) charset
+		       || p1[3] == (unsigned char) charset_not)
 		{
-		  int not = p1[3] == (char) charset_not;
+		  int not = p1[3] == (unsigned char) charset_not;
 		  if (c < p1[4] * BYTEWIDTH
 		      && p1[5 + c / BYTEWIDTH] & (1 << (c % BYTEWIDTH)))
 		    not = !not;
 		  /* not is 1 if c would match */
 		  /* That means it is not safe to finalize */
 		  if (!not)
-		    p[-3] = (char) finalize_jump;
+		    p[-3] = (unsigned char) finalize_jump;
 		}
 	    }
 	  p -= 2;
-	  if (p[-1] != (char) finalize_jump)
+	  if (p[-1] != (unsigned char) finalize_jump)
 	    {
-	      p[-1] = (char) jump;
+	      p[-1] = (unsigned char) jump;
 	      goto nofinalize;
 	    }
 
@@ -1311,16 +1435,18 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	case jump:
 	nofinalize:
 	  mcnt = *p++ & 0377;
-	  mcnt += SIGN_EXTEND_CHAR (*p) << 8;
+	  mcnt += SIGN_EXTEND_CHAR (*(char *)p) << 8;
 	  p += mcnt + 1;	/* The 1 compensates for missing ++ above */
 	  break;
 
 	case dummy_failure_jump:
 	  if (stackp == stacke)
 	    {
-	      char **stackx = (char **) alloca (2 * (stacke - stackb) * sizeof (char *));
+	      unsigned char **stackx
+		= (unsigned char **) alloca (2 * (stacke - stackb)
+					     * sizeof (char *));
 	      bcopy (stackb, stackx, (stacke - stackb) * sizeof (char *));
-	      stackp += stackx - stackb;
+	      stackp = stackx + (stackp - stackb);
 	      stacke = stackx + 2 * (stacke - stackb);
 	      stackb = stackx;
 	    }
@@ -1333,8 +1459,8 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	      || d == end2  /* Points to end */
 	      || (d == end1 && size2 == 0)) /* Points to end */
 	    break;
-	  if ((SYNTAX (((unsigned char *)d)[-1]) == Sword)
-	      != (SYNTAX (d == end1 ? *(unsigned char *)string2 : *(unsigned char *)d) == Sword))
+	  if ((SYNTAX (d[-1]) == Sword)
+	      != (SYNTAX (d == end1 ? *string2 : *d) == Sword))
 	    break;
 	  goto fail;
 
@@ -1343,49 +1469,49 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	      || d == end2  /* Points to end */
 	      || (d == end1 && size2 == 0)) /* Points to end */
 	    goto fail;
-	  if ((SYNTAX (((unsigned char *)d)[-1]) == Sword)
-	      != (SYNTAX (d == end1 ? *(unsigned char *)string2 : *(unsigned char *)d) == Sword))
+	  if ((SYNTAX (d[-1]) == Sword)
+	      != (SYNTAX (d == end1 ? *string2 : *d) == Sword))
 	    goto fail;
 	  break;
 
 	case wordbeg:
 	  if (d == end2  /* Points to end */
 	      || (d == end1 && size2 == 0) /* Points to end */
-	      || SYNTAX (*(unsigned char *) (d == end1 ? string2 : d)) != Sword) /* Next char not a letter */
+	      || SYNTAX (* (d == end1 ? string2 : d)) != Sword) /* Next char not a letter */
 	    goto fail;
 	  if (d == string1  /* Points to first char */
-	      || SYNTAX (((unsigned char *)d)[-1]) != Sword)  /* prev char not letter */
+	      || SYNTAX (d[-1]) != Sword)  /* prev char not letter */
 	    break;
 	  goto fail;
 
 	case wordend:
 	  if (d == string1  /* Points to first char */
-	      || SYNTAX (((unsigned char *)d)[-1]) != Sword)  /* prev char not letter */
+	      || SYNTAX (d[-1]) != Sword)  /* prev char not letter */
 	    goto fail;
 	  if (d == end2  /* Points to end */
 	      || (d == end1 && size2 == 0) /* Points to end */
-	      || SYNTAX (d == end1 ? *(unsigned char *)string2 : *(unsigned char *)d) != Sword) /* Next char not a letter */
+	      || SYNTAX (d == end1 ? *string2 : *d) != Sword) /* Next char not a letter */
 	    break;
 	  goto fail;
 
 #ifdef emacs
 	case before_dot:
 	  if (((d - string2 <= (unsigned) size2)
-	       ? d - (char *) bf_p2 : d - (char *) bf_p1)
+	       ? d - bf_p2 : d - bf_p1)
 	      <= point)
 	    goto fail;
 	  break;
 
 	case at_dot:
 	  if (((d - string2 <= (unsigned) size2)
-	       ? d - (char *) bf_p2 : d - (char *) bf_p1)
+	       ? d - bf_p2 : d - bf_p1)
 	      == point)
 	    goto fail;
 	  break;
 
 	case after_dot:
 	  if (((d - string2 <= (unsigned) size2)
-	       ? d - (char *) bf_p2 : d - (char *) bf_p1)
+	       ? d - bf_p2 : d - bf_p1)
 	      >= point)
 	    goto fail;
 	  break;
@@ -1398,7 +1524,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	  mcnt = *p++;
 	matchsyntax:
 	  PREFETCH;
-	  if (SYNTAX (*(unsigned char *)d++) != (enum syntaxcode) mcnt) goto fail;
+	  if (SYNTAX (*d++) != (enum syntaxcode) mcnt) goto fail;
 	  break;
 	  
 	case notwordchar:
@@ -1409,17 +1535,17 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	  mcnt = *p++;
 	matchnotsyntax:
 	  PREFETCH;
-	  if (SYNTAX (*(unsigned char *)d++) == (enum syntaxcode) mcnt) goto fail;
+	  if (SYNTAX (*d++) == (enum syntaxcode) mcnt) goto fail;
 	  break;
 #else
 	case wordchar:
 	  PREFETCH;
-	  if (SYNTAX (*(unsigned char *)d++) == 0) goto fail;
+	  if (SYNTAX (*d++) == 0) goto fail;
 	  break;
 	  
 	case notwordchar:
 	  PREFETCH;
-	  if (SYNTAX (*(unsigned char *)d++) != 0) goto fail;
+	  if (SYNTAX (*d++) != 0) goto fail;
 	  break;
 #endif not emacs
 
@@ -1442,7 +1568,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	      do
 		{
 		  PREFETCH;
-		  if (translate[*(unsigned char *)d++] != *p++) goto fail;
+		  if (translate[*d++] != *p++) goto fail;
 		}
 	      while (--mcnt);
 	    }
@@ -1573,13 +1699,19 @@ static char upcase[0400] =
     0370, 0371, 0372, 0373, 0374, 0375, 0376, 0377
   };
 
-main ()
+main (argc, argv)
+     int argc;
+     char **argv;
 {
   char pat[80];
   struct re_pattern_buffer buf;
   int i;
   char c;
   char fastmap[(1 << BYTEWIDTH)];
+
+  /* Allow a command argument to specify the style of syntax.  */
+  if (argc > 1)
+    obscure_syntax = atoi (argv[1]);
 
   buf.allocated = 40;
   buf.buffer = (char *) malloc (buf.allocated);

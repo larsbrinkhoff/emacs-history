@@ -97,8 +97,7 @@ USER and PASSWORD are defaulted from the values used when
 		(list nil (not (null current-prefix-arg)))))
   (ftp-find-file-or-directory host file nil user password))
 
-(defun ftp-find-file-or-directory
-  (host file-name filep &optional user password)
+(defun ftp-find-file-or-directory (host file filep &optional user password)
   "FTP to HOST to get FILE.  Third arg is t for file, nil for directory.
 Log in as USER with PASSWORD.  If USER is nil or PASSWORD is nil or t,
 we prompt for the user name and password."

@@ -72,7 +72,7 @@
   (define-key view-mode-map "'" 'View-back-to-mark)
   (define-key view-mode-map "@" 'View-back-to-mark)  
   (define-key view-mode-map "x" 'exchange-point-and-mark)
-  (define-key view-mode-map "h" 'View-give-help)
+  (define-key view-mode-map "h" 'Helper-describe-bindings)
   (define-key view-mode-map "?" 'Helper-describe-bindings)
   (define-key view-mode-map "\C-h" 'Helper-help)
   (define-key view-mode-map "\C-n" 'next-line)
@@ -164,7 +164,7 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 ;  and they are not easy to fix.
 ;  (interactive)
   (let* ((view-buffer-window (selected-window))
-	 (view-scroll-size (1- (window-height view-buffer-window))))
+	 (view-scroll-size nil))
     (unwind-protect
 	(let ((buffer-read-only t)
 	      (mode-line-buffer-identification
@@ -194,7 +194,8 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 
 (defun view-window-size () (1- (window-height view-buffer-window)))
 
-(defun view-scroll-size () (min (view-window-size) view-scroll-size))
+(defun view-scroll-size ()
+  (min (view-window-size) (or view-scroll-size (view-window-size))))
 
 (defvar view-hook nil
   "If non-nil, its value is called when viewing buffer or file.")

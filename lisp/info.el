@@ -49,7 +49,7 @@ or nil if current info file is not split into subfiles.")
 Marker points nowhere if file has no tag table.")
 
 (defun info ()
-  "Create a buffer for Info, the documentation browser program."
+  "Enter Info, the documentation browser."
   (interactive)
   (if (get-buffer "*info*")
       (switch-to-buffer "*info*")
@@ -67,7 +67,7 @@ Marker points nowhere if file has no tag table.")
 	(setq temp (expand-file-name filename
 				     ;; Use Info's default dir
 				     ;; unless the filename starts with `./'.
-				     (if (not (string-match "^./" filename))
+				     (if (not (string-match "^\\./" filename))
 					 Info-directory)))
 	(if (file-exists-p temp)
 	    (setq filename temp)
@@ -174,8 +174,7 @@ Marker points nowhere if file has no tag table.")
   (goto-char (point-min))
   (search-forward "\n\^_")
   (let (lastfilepos
-	lastfilename
-	(header-length (point)))
+	lastfilename)
     (forward-line 2)
     (catch 'foo
       (while (not (looking-at "\^_"))
@@ -197,7 +196,9 @@ Marker points nowhere if file has no tag table.")
 	  (insert-file-contents lastfilename)
 	  (set-buffer-modified-p nil)
 	  (setq Info-current-subfile lastfilename)))
-    (+ (- nodepos lastfilepos) header-length)))
+    (goto-char (point-min))
+    (search-forward "\n\^_")
+    (+ (- nodepos lastfilepos) (point))))
 
 ;; Select the info node that point is in.
 (defun Info-select-node ()
@@ -341,9 +342,12 @@ Marker points nowhere if file has no tag table.")
   (buffer-substring
    (point)
    (progn
-    (skip-chars-forward (or allowedchars "^,\t\n"))
-    (skip-chars-backward " ")
-    (point))))
+     (while (looking-at (concat "[" (or allowedchars "^,\t\n") "]"))
+       (skip-chars-forward (concat (or allowedchars "^,\t\n") "("))
+       (if (looking-at "(")
+	   (skip-chars-forward "^)")))
+     (skip-chars-backward " ")
+     (point))))
 
 (defun Info-next ()
   "Go to the next node of this node."
@@ -387,16 +391,15 @@ NAME may be an abbreviation of the reference name."
 	 completions str i)
      (save-excursion
        (goto-char (point-min))
-       (while (re-search-forward "\\*note[ \n]*[^:\t]*:" nil t)
+       (while (re-search-forward "\\*note[ \n]*[^:]*:" nil t)
 	 (setq str (buffer-substring
 		    (+ (match-beginning 0) 6)
 		    (1- (point))))
 	 (setq i 0)
-	 (while (setq i (string-match "\n" str i))
-	   (aset str i ?\ ))
-	 (while (setq i (string-match "  +" str i))
-	   (setq str (concat (substring str 0 (1+ i))
-			     (substring str (match-end 0)))))
+	 (while (setq i (string-match "[ \n\t]+" str i))
+	   (setq str (concat (substring str 0 i) " "
+			     (substring str (match-end 0))))
+	   (setq i (1+ i)))
 	 (setq completions
 	       (cons (cons str nil)
 		     completions))))
@@ -405,14 +408,18 @@ NAME may be an abbreviation of the reference name."
        (error "No cross-references in this node"))))
   (let (target beg i (str (concat "\\*note " footnotename)))
     (while (setq i (string-match " " str i))
-      (setq str (concat (substring str 0 i) "[ \n]*" (substring str (1+ i))))
-      (setq i (+ i 5)))
+      (setq str (concat (substring str 0 i) "[ \t\n]+" (substring str (1+ i))))
+      (setq i (+ i 6)))
     (save-excursion
       (goto-char (point-min))
       (or (re-search-forward str nil t)
 	  (error "No cross-reference named %s" footnotename))
       (goto-char (+ (match-beginning 0) 5))
       (setq target (Info-extract-menu-node-name "Bad format cross reference")))
+    (while (setq i (string-match "[ \t\n]+" target i))
+      (setq target (concat (substring target 0 i) " "
+			   (substring target (match-end 0))))
+      (setq i (+ i 1)))
     (Info-goto-node target)))
 
 (defun Info-extract-menu-node-name (&optional errmessage)

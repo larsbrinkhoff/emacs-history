@@ -59,6 +59,12 @@ static char dirbuf[MAXPATHLEN];
 
 int inhibit_windows = 0;
 
+/* Hook for window manager argument parsing.  */
+
+int *win_argc;
+char **win_argv;
+char *win_prgm;
+
 /* Function to call before reading a command, if nonzero.
    The function receives two args: an input stream,
    and a prompt string.  */
@@ -82,7 +88,7 @@ static char *prompt;
 
 char *line;
 int linesize;
-
+
 /* This is how `error' returns to command level.  */
 
 jmp_buf to_top_level;
@@ -125,6 +131,16 @@ catch_errors (func, arg, errstring)
   bcopy (saved, to_top_level, sizeof (jmp_buf));
   return val;
 }
+
+/* Handler for SIGHUP.  */
+
+static void
+disconnect ()
+{
+  kill_inferior_fast ();
+  signal (SIGHUP, SIG_DFL);
+  kill (getpid (), SIGHUP);
+}
 
 main (argc, argv, envp)
      int argc;
@@ -145,6 +161,10 @@ main (argc, argv, envp)
 
   getwd (dirbuf);
   current_directory = dirbuf;
+
+  win_argc = &argc;
+  win_argv = argv;
+  win_prgm = argv[0];
 
 #ifdef SET_STACK_LIMIT_HUGE
   {
@@ -183,6 +203,8 @@ main (argc, argv, envp)
 
   signal (SIGINT, request_quit);
   signal (SIGQUIT, SIG_IGN);
+  if (signal (SIGHUP, SIG_IGN) != SIG_IGN)
+    signal (SIGHUP, disconnect);
 
   if (!quiet)
     print_gdb_version ();

@@ -303,11 +303,16 @@ find_source_lines (s, desc)
   nlines = 1;
   while (p != end)
     {
-      if (*p++ == '\n')
+      if (*p++ == '\n'
+	  /* A newline at the end does not start a new line.  */
+	  && p != end)
 	{
 	  if (nlines == lines_allocated)
-	    line_charpos = (int *) xrealloc (line_charpos,
-					     sizeof (int) * (lines_allocated *= 2));
+	    {
+	      lines_allocated *= 2;
+	      line_charpos = (int *) xrealloc (line_charpos,
+					       sizeof (int) * lines_allocated);
+	    }
 	  line_charpos[nlines++] = p - data;
 	}
     }
@@ -403,6 +408,10 @@ identify_source_line (s, line, mid_statement)
   printf ("\032\032%s:%d:%d:%s\n", s->fullname,
 	  line, s->line_charpos[line - 1],
 	  mid_statement ? "middle" : "beg");
+  current_source_line = line;
+  first_line_listed = line;
+  last_line_listed = line;
+  current_source_symtab = s;
   return 1;
 }
 
@@ -410,9 +419,10 @@ identify_source_line (s, line, mid_statement)
    starting with line number LINE and stopping before line number STOPLINE.  */
 
 void
-print_source_lines (s, line, stopline)
+print_source_lines (s, line, stopline, noerror)
      struct symtab *s;
      int line, stopline;
+     int noerror;
 {
   register int c;
   register int desc;
@@ -421,12 +431,18 @@ print_source_lines (s, line, stopline)
 
   desc = openp (source_path, 0, s->filename, O_RDONLY, 0, &s->fullname);
   if (desc < 0)
-    perror_with_name (s->filename);
+    {
+      extern int errno;
+      if (! noerror)
+	perror_with_name (s->filename);
+      print_sys_errmsg (s->filename, errno);
+      return;
+    }
 
   if (s->line_charpos == 0)
     find_source_lines (s, desc);
 
-  if (line < 1 || line >= s->nlines)
+  if (line < 1 || line > s->nlines)
     {
       close (desc);
       error ("Line number out of range; %s has %d lines.",
@@ -493,7 +509,7 @@ list_command (arg, from_tty)
       if (current_source_symtab == 0)
 	error ("No default source file yet.  Do \"help list\".");
       print_source_lines (current_source_symtab, current_source_line,
-			  current_source_line + 10);
+			  current_source_line + 10, 0);
       return;
     }
 
@@ -504,7 +520,7 @@ list_command (arg, from_tty)
 	error ("No default source file yet.  Do \"help list\".");
       print_source_lines (current_source_symtab,
 			  max (first_line_listed - 10, 1),
-			  first_line_listed);
+			  first_line_listed, 0);
       return;
     }
 
@@ -584,14 +600,15 @@ list_command (arg, from_tty)
     error ("No default source file yet.  Do \"help list\".");
   if (dummy_beg)
     print_source_lines (sal_end.symtab, max (sal_end.line - 9, 1),
-			sal_end.line + 1);
+			sal_end.line + 1, 0);
   else if (sal.symtab == 0)
     error ("No default source file yet.  Do \"help list\".");
   else if (no_end)
-    print_source_lines (sal.symtab, max (sal.line - 5, 1), sal.line + 5);
+    print_source_lines (sal.symtab, max (sal.line - 5, 1), sal.line + 5, 0);
   else
     print_source_lines (sal.symtab, sal.line,
-			dummy_end ? sal.line + 10 : sal_end.line + 1);
+			dummy_end ? sal.line + 10 : sal_end.line + 1,
+			0);
 }
 
 /* Print info on range of pc's in a specified line.  */
@@ -670,7 +687,7 @@ forward_search_command (regex, from_tty)
   if (current_source_symtab->line_charpos == 0)
     find_source_lines (current_source_symtab, desc);
 
-  if (line < 1 || line >= current_source_symtab->nlines)
+  if (line < 1 || line > current_source_symtab->nlines)
     {
       close (desc);
       error ("Expression not found");
@@ -702,7 +719,7 @@ forward_search_command (regex, from_tty)
 	/* Match! */
 	fclose (stream);
 	print_source_lines (current_source_symtab,
-			   line, line+1);
+			   line, line+1, 0);
 	current_source_line = max (line - 5, 1);
 	return;
       }
@@ -740,7 +757,7 @@ reverse_search_command (regex, from_tty)
   if (current_source_symtab->line_charpos == 0)
     find_source_lines (current_source_symtab, desc);
 
-  if (line < 1 || line >= current_source_symtab->nlines)
+  if (line < 1 || line > current_source_symtab->nlines)
     {
       close (desc);
       error ("Expression not found");
@@ -773,7 +790,7 @@ reverse_search_command (regex, from_tty)
 	  /* Match! */
 	  fclose (stream);
 	  print_source_lines (current_source_symtab,
-			      line, line+1);
+			      line, line+1, 0);
 	  current_source_line = max (line - 5, 1);
 	  return;
 	}

@@ -1,5 +1,5 @@
 ;; Scheme mode, and its idiosyncratic commands.
-;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 ;; Adapted from Lisp mode by Bill Rozas, jinx@prep.
 
 ;; This file is part of GNU Emacs.
@@ -24,7 +24,7 @@
 ;; of special forms.  Probably the code should be merged at some point 
 ;; so that there is sharing between both libraries.
 
-;;; $Header: scheme.el,v 1.6 88/04/25 12:53:38 GMT cph Exp $
+;;; $Header: scheme.el,v 1.7 88/07/15 20:20:00 GMT cph Exp $
 
 (provide 'scheme)
 
@@ -394,6 +394,7 @@ of the start of the containing expression."
 
 (put 'begin 'scheme-indent-hook 0)
 (put 'case 'scheme-indent-hook 1)
+(put 'delay 'scheme-indent-hook 0)
 (put 'do 'scheme-indent-hook 2)
 (put 'lambda 'scheme-indent-hook 1)
 (put 'let 'scheme-indent-hook 'scheme-let-indent)

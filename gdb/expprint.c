@@ -173,7 +173,7 @@ print_subexp (exp, pos, stream, prec)
       (*pos) += 2 + (nargs + sizeof (union exp_element)) / sizeof (union exp_element);
       fprintf (stream, "\"");
       for (tem = 0; tem < nargs; tem++)
-	printchar ((&exp->elts[pc + 1].string)[tem], stream);
+	printchar ((&exp->elts[pc + 1].string)[tem], stream, '"');
       fprintf (stream, "\"");
       return;
 

@@ -1167,7 +1167,8 @@ Fourth arg INTERACTIVE if non-nil says function can be called interactively.\n\
 Fifth arg MACRO if non-nil says the function is really a macro.\n\
 Third through fifth args give info about the real definition.\n\
 They default to nil.\n\
-If FUNCTION is already defined, this does nothing and returns nil.")
+If FUNCTION is already defined other than as an autoload,\n\
+this does nothing and returns nil.")
   (function, file, docstring, interactive, macro)
      Lisp_Object function, file, docstring, interactive, macro;
 {

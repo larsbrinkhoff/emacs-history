@@ -50,6 +50,8 @@
 ;; h -- home-position key
 ;; k -- delete key or remove key.
 ;; l -- left-arrow
+;; p -- portrait mode
+;; q -- landscape mode
 ;; r -- right-arrow
 ;; s -- select key
 ;; t -- clear tab this column key
@@ -63,7 +65,7 @@
 ;; 0 ... 9 -- keypad key labelled with that digit,
 ;;   but only if that key is not also an arrow key.
 
-;; C-@, C-a, ... C-i, C-j, C-k -- numbered function keys 0 through 11.
+;; C-@, C-a, ... C-x -- numbered function keys 0 through 24.
 ;; These are used for function keys with no labels but numbers,
 ;; and may also be used for function keys with labels
 ;; that we have not defined letters for.

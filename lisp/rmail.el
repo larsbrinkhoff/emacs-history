@@ -355,7 +355,7 @@ w	Edit the current message.  C-c C-c to return to Rmail."
     (bury-buffer obuf)))
 
 (defun rmail-input (filename)
-  "Run RMAIL on FILENAME."
+  "Run RMAIL on file FILENAME."
   (interactive "FRun rmail on RMAIL file: ")
   (rmail filename))
 
@@ -907,6 +907,7 @@ Assumes that the visible text of the message is not changed by FUNCTION."
 	  (narrow-to-region (point) end))
 	(goto-char (point-min))
 	(rmail-display-labels)
+	(run-hooks 'rmail-show-message-hook)
 	(if blurb
 	    (message blurb))))))
 
@@ -1231,7 +1232,7 @@ original message into it."
 				       tem))
 				 message-id)
 			       message-id
-			       (concat message-id " (" tem ")"))
+			       (concat message-id " \"" tem "\""))
 		     message-id nil date nil))
 	  (or field
 	      (setq field (prin1-to-string tem))))

@@ -1,4 +1,11 @@
-@setfilename cl
+\input texinfo    @c -*-texinfo-*-
+@setfilename ../info/cl
+@settitle Common Lisp Extensions
+
+@iftex
+@finalout
+@end iftex
+
 Copyright (C) 1987 Cesar Quiroz
 
 @node Top, Generalities,,(DIR)
@@ -842,3 +849,5 @@ Also, the rather gross @code{loop} macros that are out there in many
 Lisp systems could be helpful to some
 people (but then think of a @code{lisp-indent-hook} that handles them
 properly). @refill
+
+@bye

@@ -6,13 +6,15 @@
 #
 # make distclean	to delete everything that wasn't in the distribution
 #	This is a very dangerous thing to do!
+# make clean
+#       This is a little less dangerous.
 
 SHELL = /bin/sh
 
 # Where to install things
 # Note that on system V you must change MANDIR to /use/local/man/man1.
-LIBDIR= /usr/new/lib/emacs
-BINDIR= /usr/new
+LIBDIR= /usr/local/emacs
+BINDIR= /usr/local/bin
 MANDIR= /usr/man/man1
 
 # Flags passed down to subdirectory makefiles.
@@ -29,7 +31,7 @@ COPYDIR= etc info lisp
 # Subdirectories to clean
 CLEANDIR= ${COPYDIR} lisp/term
 
-all:	src/paths.h ${SUBDIR} lock
+all:	src/paths.h ${SUBDIR}
 
 src/paths.h: Makefile src/paths.h-dist
 	/bin/sed 's;/usr/local/emacs;${LIBDIR};' < src/paths.h-dist > src/paths.h
@@ -41,7 +43,7 @@ src:	etc
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS} all
 
-install: all mkdir
+install: all mkdir lockdir
 	-if [ `/bin/pwd` != `(cd ${LIBDIR}; /bin/pwd)` ] ; then \
 		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xBf - ) ;\
 		for i in ${CLEANDIR}; do \
@@ -58,13 +60,15 @@ install: all mkdir
 	-rm -f ${BINDIR}/emacs
 	mv ${BINDIR}/xemacs ${BINDIR}/emacs
 
-install.sysv: all mkdir
-	tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpvf - )
-	for i in ${CLEANDIR}; do \
-		 rm -rf ${LIBDIR}/$$i/RCS; \
-		 rm -f ${LIBDIR}/$$i/\#*; \
-		 rm -f ${LIBDIR}/$$i/*~; \
-	done
+install.sysv: all mkdir lockdir
+	-if [ `/bin/pwd` != `(cd ${LIBDIR}; /bin/pwd)` ] ; then \
+		find ${COPYDIR} -print | cpio -pdum ${LIBDIR} ;\
+		for i in ${CLEANDIR}; do \
+			(rm -rf ${LIBDIR}/$$i/RCS; \
+			 rm -f ${LIBDIR}/$$i/\#*; \
+			 rm -f ${LIBDIR}/$$i/*~); \
+		done \
+	fi
 	-cpset etc/loadst ${BINDIR}/loadst 2755 bin sys
 	-cpset etc/etags ${BINDIR}/etags 755 bin bin
 	-cpset etc/ctags ${BINDIR}/ctags 755 bin bin
@@ -72,9 +76,9 @@ install.sysv: all mkdir
 	-/bin/rm -f ${BINDIR}/emacs
 	-cpset src/xemacs ${BINDIR}/emacs 1755 bin bin
   
-install.xenix: all mkdir
+install.xenix: all mkdir lockdir
 	if [ `pwd` != `(cd ${LIBDIR}; pwd)` ] ; then \
-		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpvf - ) ;\
+		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpf - ) ;\
 		for i in ${CLEANDIR}; do \
 			(rm -rf ${LIBDIR}/$$i/RCS; \
 			 rm -f ${LIBDIR}/$$i/\#*; \
@@ -102,7 +106,10 @@ mkdir: FRC
 distclean:
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} distclean); done
 
-lock:
+clean:
+	cd src; make clean
+
+lockdir:
 	-mkdir ${LIBDIR}/lock
 	-chmod 777 ${LIBDIR}/lock
 

@@ -191,6 +191,18 @@ Summary:
 #ifndef __OBSTACKS__
 #define __OBSTACKS__
 
+/* We use subtraction of (char *)0 instead of casting to int
+   because on word-addressable machines a simple cast to int
+   may ignore the byte-within-word field of the pointer.  */
+
+#ifndef __PTR_TO_INT
+#define __PTR_TO_INT(P) ((P) - (char *)0)
+#endif
+
+#ifndef __INT_TO_PTR
+#define __INT_TO_PTR(P) ((P) + (char *)0)
+#endif
+
 struct _obstack_chunk		/* Lives at front of each chunk. */
 {
   char  *limit;			/* 1 past end of this chunk */
@@ -240,8 +252,8 @@ int obstack_room (struct obstack *obstack);
 void obstack_1grow_fast (struct obstack *obstack, int data_char);
 void obstack_blank_fast (struct obstack *obstack, int size);
 
-void * object_base (struct obstack *obstack);
-void * object_next_free (struct obstack *obstack);
+void * obstack_base (struct obstack *obstack);
+void * obstack_next_free (struct obstack *obstack);
 int obstack_alignment_mask (struct obstack *obstack);
 int obstack_chunk_size (struct obstack *obstack);
 
@@ -269,7 +281,7 @@ int obstack_chunk_size (struct obstack *obstack);
 #define obstack_alignment_mask(h) ((h)->alignment_mask)
 
 #define obstack_init(h) \
-  _obstack_begin ((h), 4096 - 4, 0, obstack_chunk_alloc, obstack_chunk_free)
+  _obstack_begin ((h), 0, 0, obstack_chunk_alloc, obstack_chunk_free)
 
 #define obstack_begin(h, size) \
   _obstack_begin ((h), (size), 0, obstack_chunk_alloc, obstack_chunk_free)
@@ -345,11 +357,11 @@ int obstack_chunk_size (struct obstack *obstack);
 ({ struct obstack *__o = (OBSTACK);					\
    void *value = (void *) __o->object_base;				\
    __o->next_free							\
-     = (char*)((int)(__o->next_free+__o->alignment_mask)		\
-	       & ~ (__o->alignment_mask));				\
+     = __INT_TO_PTR ((__PTR_TO_INT (__o->next_free)+__o->alignment_mask)\
+		     & ~ (__o->alignment_mask));			\
    ((__o->next_free - (char *)__o->chunk				\
      > __o->chunk_limit - (char *)__o->chunk)				\
-    ? __o->next_free = __o->chunk_limit : 0);				\
+    ? (__o->next_free = __o->chunk_limit) : 0);				\
    __o->object_base = __o->next_free;					\
    value; })
 
@@ -409,15 +421,15 @@ extern struct obstack *_obstack;
  (obstack_grow0 ((h), (where), (length)), obstack_finish ((h)))
 
 #define obstack_finish(h)  						\
-( (h)->temp = (int) (h)->object_base,					\
+( (h)->temp = __PTR_TO_INT ((h)->object_base),				\
   (h)->next_free							\
-    = (char*)((int)((h)->next_free+(h)->alignment_mask)			\
-	      & ~ ((h)->alignment_mask)),				\
+    = __INT_TO_PTR ((__PTR_TO_INT ((h)->next_free)+(h)->alignment_mask)	\
+		    & ~ ((h)->alignment_mask)),				\
   (((h)->next_free - (char *)(h)->chunk					\
     > (h)->chunk_limit - (char *)(h)->chunk)				\
-   ? (h)->next_free = (h)->chunk_limit : 0),				\
+   ? ((h)->next_free = (h)->chunk_limit) : 0),				\
   (h)->object_base = (h)->next_free,					\
-  (char *) (h)->temp)
+  __INT_TO_PTR ((h)->temp))
 
 #ifdef __STDC__
 #define obstack_free(h,obj)						\

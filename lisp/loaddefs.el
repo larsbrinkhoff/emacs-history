@@ -193,6 +193,7 @@ Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
 				("^/tmp/fol/" . text-mode)
 				("/Message[0-9]*$" . text-mode)
 				("\\.y$" . c-mode)
+				("\\.cc$" . c-mode)
 				("\\.scm.[0-9]*$" . scheme-mode)
 				;; .emacs following a directory delimiter
 				;; in either Unix or VMS syntax.
@@ -214,7 +215,16 @@ Keymap for subcommands of C-x 4")
 (autoload 'add-change-log-entry "add-log"
   "\
 Find change log file and add an entry for today.
-With ARG, prompt for name and site of person."
+First arg (interactive prefix) non-nil means prompt for user name and site.
+Second arg is file name of change log.
+Optional third arg OTHER-WINDOW non-nil means visit in other window."
+  t)
+
+(define-key ctl-x-4-map "a" 'add-change-log-entry-other-window)
+
+(autoload 'add-change-log-entry-other-window "add-log"
+  "\
+Find change log file in other window, and add an entry for today."
   t)
 
 (autoload '\` "backquote"
@@ -234,7 +244,7 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 Recompile every .el file in DIRECTORY that needs recompilation.
 This is if a .elc file exists but is older than the .el file.
 If the .elc file does not exist, offer to compile the .el file
-only if a prefix argument has been specified." 
+only if a prefix argument has been specified."
   t)
 
 (autoload 'batch-byte-compile "bytecomp"
@@ -282,11 +292,8 @@ The number of commands listed is controlled by  list-command-history-max.
 The command history is filtered by  list-command-history-filter  if non-nil.
 
 Like Emacs-Lisp Mode except that characters do not insert themselves and
-Digits provide prefix arguments.  Tab does not indent.  Instead these
-commands are provided:
-     LF, CR	Move to the next line in the history.
-     Delete	Move to the previous line in the history.
-
+Digits provide prefix arguments.  Tab does not indent.
+\\{command-history-map}
 Calls the value of  command-history-hook  if that is non-nil
 The Command History listing is recomputed each time this mode is
 invoked."
@@ -298,7 +305,7 @@ Edit and re-evaluate complex command with name matching PATTERN.
 Matching occurrences are displayed, most recent first, until you
 select a form for evaluation.  If PATTERN is empty (or nil), every form
 in the command history is offered.  The form is placed in the minibuffer
-for editing and the result is evaluated.  Prefix args don't count."
+for editing and the result is evaluated."
   t)
 
 
@@ -377,14 +384,16 @@ Undoes effect of debug-on-entry on FUNCTION."
 Request FUNCTION to invoke debugger each time it is called.
 If the user continues, FUNCTION's execution proceeds.
 Works by modifying the definition of FUNCTION,
-which must be written in Lisp, not predefined."
+which must be written in Lisp, not predefined.
+Use `cancel-debug-on-entry' to cancel the effect of this command.
+Redefining FUNCTION also does that."
   t)
 
 (define-key ctl-x-map "d" 'dired)
 
 (autoload 'dired "dired"
   "\
-\"Edit\" directory DIRNAME.  Delete some files in it.
+\"Edit\" directory DIRNAME--delete, rename, print, etc. some files in it.
 Dired displays a list of files in DIRNAME.
 You can move around in it with the usual commands.
 You can flag files for deletion with C-d
@@ -401,8 +410,7 @@ Type `h' after entering dired for more info."
 
 (autoload 'dired-noselect "dired"
   "\
-Find or create a dired buffer, return it, don't select it.
-Call like dired.")
+Like M-x dired but returns the dired buffer as value, does not select it.")
 
 (autoload 'dissociated-press "dissociate"
   "\
@@ -410,9 +418,10 @@ Dissociate the text of the current buffer.
 Output goes in buffer named *Dissociation*,
 which is redisplayed each time text is added to it.
 Every so often the user must say whether to continue.
-If ARG is positive, require ARG words of continuity.
-If ARG is negative, require -ARG chars of continuity.
-Default is 2." t)
+If ARG is positive, require ARG chars of continuity.
+If ARG is negative, require -ARG words of continuity.
+Default is 2."
+  t)
 
 (autoload 'doctor "doctor"
   "\
@@ -473,8 +482,8 @@ Space or !	edit then evaluate current line in history inside
 		   The previous window configuration is restored
 		   unless the invoked command changes it.
 C-c C-c, C-], Q	Quit and restore previous window configuration.
-LF, CR		Move to the next line in the history.
-Delete		Move to the previous line in the history.
+LFD, RET	Move to the next line in the history.
+DEL		Move to the previous line in the history.
 ?		Provides a complete list of commands.
 
 Calls the value of  electric-command-history-hook  if that is non-nil
@@ -485,7 +494,10 @@ The Command History listing is recomputed each time this mode is invoked."
   "\
 Begin emulating DEC's EDT editor.
 Certain keys are rebound; including nearly all keypad keys.
-Use \\[edt-emulation-off] to undo all rebindings except the keypad keys."
+Use \\[edt-emulation-off] to undo all rebindings except the keypad keys.
+Note that this function does not work if called directly from the .emacs file.
+Instead, the .emacs file should do (setq term-setup-hook 'edt-emulation-on)
+Then this function will be called at the time when it will work."
   t)
 
 (autoload 'fortran-mode "fortran"
@@ -494,7 +506,7 @@ Major mode for editing fortran code.
 Tab indents the current fortran line correctly. 
 `do' statements must not share a common `continue'.
 
-Type `;?' to display a list of built-in abbrevs for Fortran keywords.
+Type `;?' or `;\\[help-command]' to display a list of built-in abbrevs for Fortran keywords.
 
 Variables controlling indentation style and extra features:
 
@@ -508,7 +520,7 @@ Variables controlling indentation style and extra features:
  fortran-continuation-indent
     Extra indentation appled to continuation statements.  (default 5)
  fortran-comment-line-column
-    Amount of indentation for text within full-line comments.
+    Amount of indentation for text within full-line comments. (default 6)
  fortran-comment-indent-style
     nil    means don't change indentation of text in full-line comments,
     fixed  means indent that text at column fortran-comment-line-column
@@ -516,18 +528,20 @@ Variables controlling indentation style and extra features:
  	      indentation for a line of code.
     Default value is fixed.
  fortran-comment-indent-char
-    Single-character string to be inserted instead of space for 
-    full-line comment indentation.  (default \" \")
+    Character to be inserted instead of space for full-line comment
+    indentation.  (default is a space)
+ fortran-minimum-statement-indent
+    Minimum indentation for fortran statements. (default 6)
  fortran-line-number-indent
     Maximum indentation for line numbers.  A line number will get
     less than this much indentation if necessary to avoid reaching
-    column 5.  Default is 1.
+    column 5.  (default 1)
  fortran-check-all-num-for-matching-do
     Non-nil causes all numbered lines to be treated as possible 'continue'
     statements.  (default nil)
  fortran-continuation-char
-    Single-character string to be inserted in column 5 of a continuation
-    line.  (default \"$\")
+    character to be inserted in column 5 of a continuation line.
+    (default $)
  fortran-comment-region
     String inserted by \\[fortran-comment-region] at start of each line in 
     region.  (default \"c$$$\")
@@ -545,8 +559,8 @@ with no args, if that value is non-nil.
 (autoload 'ftp-find-file "ftp"
   "\
 FTP to HOST to get FILE, logging in as USER with password PASSWORD.
-Interactively, HOST and FILE are specified by reading a string with colon separating
- the host from the filename.
+Interactively, HOST and FILE are specified by reading a string with
+ a colon character separating the host from the filename.
 USER and PASSWORD are defaulted from the values used when
  last ftping from HOST (unless password-remembering is disabled).
  Supply a password of the symbol `t' to override this default
@@ -556,8 +570,8 @@ USER and PASSWORD are defaulted from the values used when
 (autoload 'ftp-write-file "ftp"
   "\
 FTP to HOST to write FILE, logging in as USER with password PASSWORD.
-Interactively, HOST and FILE are specified by reading a string with colon separating
- the host from the filename.
+Interactively, HOST and FILE are specified by reading a string with colon
+separating the host from the filename.
 USER and PASSWORD are defaulted from the values used when
  last ftping from HOST (unless password-remembering is disabled).
  Supply a password of the symbol `t' to override this default
@@ -566,7 +580,10 @@ USER and PASSWORD are defaulted from the values used when
 
 (autoload 'gdb "gdb"
   "\
-Run gdb on program FILE in buffer *gdb-FILE*."
+Run gdb on program FILE in buffer *gdb-FILE*.
+The directory containing FILE becomes the initial working directory
+and source-file directory for GDB.  If you wish to change this, use
+the GDB commands `cd DIR' and `directory'."
   t)
 
 (autoload 'set-gosmacs-bindings "gosmacs"
@@ -577,7 +594,7 @@ Use \\[set-gnu-bindings] to restore previous global bindings."
 
 (autoload 'hanoi "hanoi"
   "\
-Towers of Hanoi diversion.  Arg is number of rings."
+Towers of Hanoi diversion.  Argument is number of rings."
   t)
 
 (autoload 'Helper-help "helper"
@@ -592,7 +609,7 @@ Describe local key bindings of current mode."
 
 (autoload 'info "info"
   "\
-Enter Info documentation browser."
+Enter Info, the documentation browser."
   t)
 
 (autoload 'Info-tagify "informat"
@@ -609,7 +626,7 @@ Check that every node pointer points to an existing node."
 (autoload 'Info-split "informat"
   "\
 Split an info file into an indirect file plus bounded-size subfiles.
-Each subfile will be up 50000 characters plus one node.
+Each subfile will be up to 50000 characters plus one node.
 
 To use this command, first visit a large Info file that has a tag table.
 The buffer is modified into a (small) indirect info file
@@ -640,6 +657,7 @@ Like Lisp mode, plus these special commands:
   C-x z -- transfer to Lisp job and transmit saved text.
   M-C-c -- transfer to Liszt (Lisp compiler) job
 	   and transmit saved text.
+\\{ledit-mode-map}
 To make Lisp mode automatically change to Ledit mode,
 do (setq lisp-mode-hook 'ledit-from-lisp-mode)"
   t)
@@ -648,25 +666,25 @@ do (setq lisp-mode-hook 'ledit-from-lisp-mode)"
 
 (autoload 'lpr-buffer "lpr"
   "\
-Print contents of buffer as with Unix command `lpr'.
+Print buffer contents as with Unix command `lpr'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
   t)
 
 (autoload 'print-buffer "lpr"
   "\
-Print contents of buffer as with Unix command `lpr -p'.
+Print buffer contents as with Unix command `lpr -p'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
   t)
 
 (autoload 'lpr-region "lpr"
   "\
-Print contents of region as with Unix command `lpr'.
+Print region contents as with Unix command `lpr'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
   t)
 
 (autoload 'print-region "lpr"
   "\
-Print contents of region as with Unix command `lpr -p'.
+Print region contents as with Unix command `lpr -p'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
   t)
 
@@ -679,6 +697,8 @@ Second argument KEYS non-nil means also record the keys it is on.
 This Lisp code will, when executed, define the kbd macro with the
 same definition it has now.  If you say to record the keys,
 the Lisp code will also rebind those keys to the macro.
+Only global key bindings are recorded since executing this Lisp code
+always makes global bindings.
 
 To save a kbd macro, visit a file of Lisp code such as your ~/.emacs,
 use this command, and then save the file."
@@ -729,11 +749,15 @@ where SECTION is the desired section of the manual, as in `tty(4)'."
 
 (autoload 'mh-rmail "mh-e"
   "\
-Read your mail with mh." t)
+Inc(orporate) new mail (no arg) or scan a MH mail box (arg given).
+This front end uses the MH mail system, which uses different conventions
+from the usual mail system."
+  t)
 
 (autoload 'mh-smail "mh-e"
   "\
-Compose and send mail with mh." t)
+Send mail using the MH mail system."
+  t)
 
 (autoload 'convert-mocklisp-buffer "mlconvert"
   "\
@@ -761,7 +785,9 @@ Control-C followed by the first character of the construct.
   Control-c Control-c compile           Control-x ` next-error
   Control-c Control-l link
 
-   m2-indent controls the number of spaces for each indentation."
+   m2-indent controls the number of spaces for each indentation.
+   m2-compile-command holds the command to compile a Modula-2 program.
+   m2-link-command holds the command to link a Modula-2 program."
   t)
 
 (setq disabled-command-hook 'disabled-command-hook)
@@ -803,7 +829,44 @@ Type \\[describe-mode] in that buffer for a list of commands."
 
 (autoload 'outline-mode "outline"
   "\
-Set up Emacs for editing an outline, doing selective hiding of text."
+Set major mode for editing outlines with selective display.
+Headings are lines which start with asterisks: one for major headings,
+two for subheadings, etc.  Lines not starting with asterisks are body lines. 
+
+Body text or subheadings under a heading can be made temporarily
+invisible, or visible again.  Invisible lines are attached to the end 
+of the heading, so they move with it, if the line is killed and yanked
+back.  A heading with text hidden under it is marked with an ellipsis (...).
+
+Commands:
+C-c C-n   outline-next-visible-heading      move by visible headings
+C-c C-p   outline-previous-visible-heading
+C-c C-f   outline-forward-same-level        similar but skip subheadings
+C-c C-b   outline-backward-same-level
+C-c C-u   outline-up-heading		    move from subheading to heading
+
+Meta-x hide-body	make all text invisible (not headings).
+Meta-x show-all		make everything in buffer visible.
+
+The remaining commands are used when point is on a heading line.
+They apply to some of the body or subheadings of that heading.
+C-c C-h   hide-subtree	make body and subheadings invisible.
+C-c C-s   show-subtree	make body and subheadings visible.
+C-c C-i   show-children	make direct subheadings visible.
+		 No effect on body, or subheadings 2 or more levels down.
+		 With arg N, affects subheadings N levels down.
+M-x hide-entry	   make immediately following body invisible.
+M-x show-entry	   make it visible.
+M-x hide-leaves	   make body under heading and under its subheadings invisible.
+		     The subheadings remain visible.
+M-x show-branches  make all subheadings at all levels visible.
+
+The variable outline-regexp can be changed to control what is a heading.
+A line is a heading if outline-regexp matches something at the
+beginning of the line.  The longer the match, the deeper the level.
+
+Turning on outline mode calls the value of text-mode-hook and then of
+outline-mode-hook, if they are non-nil."
   t)
 
 (autoload 'edit-picture "picture"
@@ -811,10 +874,10 @@ Set up Emacs for editing an outline, doing selective hiding of text."
 Switch to Picture mode, in which a quarter-plane screen model is used.
 Printing characters replace instead of inserting themselves with motion
 afterwards settable by these commands:
-  M-`	  Move left after insertion.
-  M-'	  Move right after insertion.
-  M--	  Move up after insertion.
-  M-=	  Move down after insertion.
+  C-c <	  Move left after insertion.
+  C-c >	  Move right after insertion.
+  C-c ^	  Move up after insertion.
+  C-c .	  Move down after insertion.
   C-c `	  Move northwest (nw) after insertion.
   C-c '	  Move northeast (ne) after insertion.
   C-c /	  Move southwest (sw) after insertion.
@@ -834,7 +897,7 @@ with these commands:
 You can edit tabular text with these commands:
   M-Tab	  Move to column beneath (or at) next interesting charecter.
 	    `Indents' relative to a previous line.
-  Tab	  Move to next stop in local tab stop list.
+  Tab	  Move to next stop in tab stop list.
   C-c Tab Set tab stops according to context of this line.
 	    With ARG resets tab stops to default (global) value.
 	    See also documentation of variable	picture-tab-chars
@@ -849,9 +912,9 @@ You can manipulate text with these commands:
   C-o	  Open blank line(s) beneath current line.
 You can manipulate rectangles with these commands:
   C-c C-k Clear (or kill) a rectangle and save it.
-  C-c k	  Like C-c C-k except rectangle is saved in named register.
+  C-c C-w Like C-c C-k except rectangle is saved in named register.
   C-c C-y Overlay (or insert) currently saved rectangle at point.
-  C-c y	  Like C-c C-y except rectangle is taken from named register.
+  C-c C-x Like C-c C-y except rectangle is taken from named register.
   \\[copy-rectangle-to-register]   Copies a rectangle to a register.
   \\[advertised-undo]   Can undo effects of rectangle overlay commands
 	    commands if invoked soon enough.
@@ -944,8 +1007,7 @@ Type \\[describe-mode] once reading news to get a list of rnews commands."
 
 (autoload 'news-post-news "rnewspost"
   "\
-Edit a new USENET news article to be posted.
-
+Begin editing a new USENET news article to be posted.
 Type \\[describe-mode] once editing the article to get a list of commands."
   t)
 (fset 'sendnews 'news-post-news)
@@ -955,8 +1017,8 @@ Type \\[describe-mode] once editing the article to get a list of commands."
   "\
 Read and edit incoming mail.
 Moves messages into file named by  rmail-file-name  (a babyl format file)
- and edits that file in Rmail Mode.
-Type \\[describe-mode] once editing that file, for a list of Rmail commands.
+ and edits that file in RMAIL Mode.
+Type \\[describe-mode] once editing that file, for a list of RMAIL commands.
 
 May be called with filename as argument;
 then performs rmail editing on that file,
@@ -965,7 +1027,7 @@ but does not copy any new mail into the file."
 
 (autoload 'rmail-input "rmail"
   "\
-Run Rmail on file FILENAME."
+Run RMAIL on file FILENAME."
   t)
 
 (defconst rmail-dont-reply-to-names nil "\
@@ -974,14 +1036,14 @@ nil means don't reply to yourself.")
 
 (defvar rmail-default-dont-reply-to-names "info-" "\
 A regular expression specifying part of the value of the default value of
-the variable   rmail-dont-reply-to-names   for when the user does not set
-rmail-dont-reply-to-names explicitly.  (The other part of the default
+the variable `rmail-dont-reply-to-names', for when the user does not set
+`rmail-dont-reply-to-names' explicitly.  (The other part of the default
 value is the user's name.)
 It is useful to set this variable in the site customisation file.")
 
 (defconst rmail-primary-inbox-list  nil "\
-List of files which are inboxes for user's primary mail file ~/RMAIL.
-`nil' means the default, which is ("~/mbox" "/usr/spool/mail/$USER")
+*List of files which are inboxes for user's primary mail file ~/RMAIL.
+`nil' means the default, which is (\"~/mbox\" \"/usr/spool/mail/$USER\")
 (the second name varies depending on the operating system).")
 
 (defconst rmail-ignored-headers "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^received:\\|^[a-z-]*message-id:\\|^summary-line:\\|^errors-to:" "\
@@ -1001,9 +1063,22 @@ With argument, asks for a command line."
 
 (autoload 'scheme-mode "scheme"
   "\
-Set up things for editing scheme code,
-or for running emacs as an inferior editor under scheme
-to edit and zap functions."
+Major mode for editing Scheme code.
+Editing commands are similar to those of lisp-mode.
+
+In addition, if an inferior Scheme process is running, some additional
+commands will be defined, for evaluating expressions and controlling
+the interpreter, and the state of the process will be displayed in the
+modeline of all Scheme buffers.  The names of commands that interact
+with the Scheme process start with \"xscheme-\".  For more information
+see the documentation for xscheme-interaction-mode.
+
+Commands:
+Delete converts tabs to spaces as it moves back.
+Blank lines separate paragraphs.  Semicolons start comments.
+\\{scheme-mode-map}
+Entry to this mode calls the value of scheme-mode-hook
+if that value is non-nil."
   t)
 
 (autoload 'scribe-mode "scribe"
@@ -1054,7 +1129,7 @@ or t meaning should be initialized from .mailrc.")
 
 (autoload 'mail-other-window "sendmail"
   "\
-Like mail command but displays in other window."
+Like `mail' command, but display mail buffer in another window."
   t)
 
 (autoload 'mail "sendmail"
@@ -1064,7 +1139,8 @@ Returns with message buffer selected; value t if message freshly initialized.
 While editing message, type C-c C-c to send the message and exit.
 
 Various special commands starting with C-c are available in sendmail mode
-to move to message header fields.  Type C-c ? for a list of them.
+to move to message header fields:
+\\{mail-mode-map}
 
 If mail-self-blind is non-nil, a BCC to yourself is inserted
 when the message is initialized.
@@ -1079,7 +1155,7 @@ If mail-setup-hook is bound, its value is called with no arguments
 after the message is initialized.  It can add more default fields.
 
 When calling from a program, the second through fifth arguments
- TO, SUBJECT, CC and IN-REPLY-TO specify if non-nil
+ TO, SUBJECT, IN-REPLY-TO and CC specify if non-nil
  the initial contents of those header fields.
  These arguments should not have final newlines.
 The sixth argument REPLYBUFFER is a buffer whose contents
@@ -1102,7 +1178,9 @@ Allow this Emacs process to be a server for client processes.
 This starts a server communications subprocess through which
 client \"editors\" can send your editing commands to this Emacs job.
 To use the server, set up the program `etc/emacsclient' in the
-Emacs distribution as your standard \"editor\"."
+Emacs distribution as your standard \"editor\".
+
+Prefix arg means just kill any existing server communications subprocess."
   t)
 
 (autoload 'run-lisp "shell"
@@ -1114,8 +1192,23 @@ Run an inferior Lisp process, input and output via buffer *lisp*."
   "\
 Run an inferior shell, with I/O through buffer *shell*.
 If buffer exists but shell process is not running, make new shell.
+Program used comes from variable explicit-shell-file-name,
+ or (if that is nil) from the ESHELL environment variable,
+ or else from SHELL if there is no ESHELL.
+If a file ~/.emacs_SHELLNAME exists, it is given as initial input
+ (Note that this may lose due to a timing error if the shell
+  discards input when it starts up.)
 The buffer is put in shell-mode, giving commands for sending input
-and controlling the subjobs of the shell.  See shell-mode."
+and controlling the subjobs of the shell.  See shell-mode.
+See also variable shell-prompt-pattern.
+
+The shell file name (sans directories) is used to make a symbol name
+such as `explicit-csh-arguments'.  If that symbol is a variable,
+its value is used as a list of arguments when invoking the shell.
+Otherwise, one argument `-i' is passed to the shell.
+
+Note that many people's .cshrc files unconditionally clear the prompt.
+If yours does, you will probably want to change it."
   t)
 
 (autoload 'sort-lines "sort"
@@ -1163,7 +1256,12 @@ FIELD, BEG and END.  BEG and END specify region to sort."
 Sort lines in region alphabetically by a certain range of columns.
 For the purpose of this command, the region includes
 the entire line that point is in and the entire line the mark is in.
-The column positions of point and mark bound the range of columns to sort on."
+The column positions of point and mark bound the range of columns to sort on.
+A prefix argument means sort into reverse order.
+
+Note that sort-columns uses the sort utility program and therefore
+cannot work on text containing TAB characters.  Use M-x untabify
+to convert tabs to spaces before sorting."
   t)
 
 (autoload 'sort-regexp-fields "sort"
@@ -1183,7 +1281,7 @@ With a negative prefix arg sorts in reverse order.
 
 For example: to sort lines in the region by the first word on each line
  starting with the letter \"f\",
- RECORD-REGEXP would be \"^.*$\" and KEY \"\<f\w*\>\""
+ RECORD-REGEXP would be \"^.*$\" and KEY \"\\<f\\w*\\>\""
   t)
 
 
@@ -1233,7 +1331,7 @@ The variable tab-width controls the action."
 
 (autoload 'find-tag "tags"
   "\
-Find next tag (in current tag table) whose name contains TAGNAME.
+Find tag (in current tag table) whose name contains TAGNAME.
  Selects the buffer that the tag is contained in
 and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
@@ -1250,7 +1348,7 @@ See documentation of variable tags-file-name."
 (autoload 'find-tag-other-window "tags"
   "\
 Find tag (in current tag table) whose name contains TAGNAME.
- Selects the buffer that the tag is contained in
+ Selects the buffer that the tag is contained in in another window
 and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
 around or before point is used as the tag name.
@@ -1263,7 +1361,9 @@ See documentation of variable tags-file-name."
 
 (autoload 'list-tags "tags"
   "\
-Display list of tags in file FILE."
+Display list of tags in file FILE.
+FILE should not contain a directory spec
+unless it has one in the tag table."
   t)
 
 (autoload 'next-file "tags"
@@ -1275,24 +1375,26 @@ initializes to the beginning of the list of files in the tag table."
 
 (autoload 'tags-apropos "tags"
   "\
-Display list of all tags in tag table that contain STRING."
+Display list of all tags in tag table REGEXP matches."
   t)
 
 (define-key esc-map "," 'tags-loop-continue)
 (autoload 'tags-loop-continue "tags"
   "\
-Continue last tags-search or tags-query-replace command.
+Continue last \\[tags-search] or \\[tags-query-replace] command.
 Used noninteractively with non-nil argument
 to begin such a command.  See variable tags-loop-form."
   t)
 
 (autoload 'tag-table-files "tags"
   "\
-Return a list of files in the current tag table.")
+Return a list of files in the current tag table.
+File names returned are absolute.")
 
 (autoload 'tags-query-replace "tags"
   "\
-Query-replace FROM with TO through all files listed in tag table.
+Query-replace-regexp FROM with TO through all files listed in tag table.
+Third arg DELIMITED (prefix arg) means replace only word-delimited matches.
 If you exit (C-G or ESC), you can resume the query-replace
 with the command \\[tags-loop-continue].
 
@@ -1331,8 +1433,7 @@ and any input typed when BUFFER is the current Emacs buffer is sent to that
 program an keyboard input.
 
 Interactively, BUFFER defaults to \"*terminal*\" and PROGRAM and ARGS
-are parsed from an input-string using `sh' (which means that the ~user
-filename-naming convention doesn't work.  Isn't un*x wonderful?).
+are parsed from an input-string using your usual shell.
 WIDTH and HEIGHT are determined from the size of the current window
 -- WIDTH will be one less than the window's width, HEIGHT will be its height.
 
@@ -1361,18 +1462,29 @@ work with `terminfo' we will try to use it."
   "\
 Major mode for editing files of input for LaTeX.
 Makes $ and } display the characters they match.
-Makes \" insert `` or '' as appropriate.
-
-Use \\[validate-TeX-buffer] to check buffer for paragraphs containing
-mismatched $'s or braces.
+Makes \" insert `` when it seems to be the beginning of a quotation,
+and '' when it appears to be the end; it inserts \" only after a \\.
 
 Use \\[TeX-region] to run LaTeX on the current region, plus the preamble
 copied from the top of the file (containing \\documentstyle, etc.),
 running LaTeX under a special subshell.  \\[TeX-buffer] does the whole buffer.
-\\[TeX-print] prints the .dvi file made by either of those.
+\\[TeX-print] prints the .dvi file made by either of these.
+
+Use \\[validate-TeX-buffer] to check buffer for paragraphs containing
+mismatched $'s or braces.
 
 Special commands:
 \\{TeX-mode-map}
+
+Mode variables:
+TeX-directory
+	Directory in which to create temporary files for TeX jobs
+	run by \\[TeX-region] or \\[TeX-buffer].
+TeX-dvi-print-command
+	Command string used by \\[TeX-print] to print a .dvi file.
+TeX-show-queue-command
+	Command string used by \\[TeX-show-print-queue] to show the print
+	queue that \\[TeX-print] put your job on.
 
 Entering LaTeX mode calls the value of text-mode-hook,
 then the value of TeX-mode-hook, and then the value
@@ -1383,18 +1495,29 @@ of LaTeX-mode-hook."
   "\
 Major mode for editing files of input for plain TeX.
 Makes $ and } display the characters they match.
-Makes \" insert `` or '' as appropriate.
-
-Use \\[validate-TeX-buffer] to check buffer for paragraphs containing
-mismatched $'s or braces.
+Makes \" insert `` when it seems to be the beginning of a quotation,
+and '' when it appears to be the end; it inserts \" only after a \\.
 
 Use \\[TeX-region] to run TeX on the current region, plus a \"header\"
 copied from the top of the file (containing macro definitions, etc.),
 running TeX under a special subshell.  \\[TeX-buffer] does the whole buffer.
-\\[TeX-print] prints the .dvi file made by either of those.
+\\[TeX-print] prints the .dvi file made by either of these.
+
+Use \\[validate-TeX-buffer] to check buffer for paragraphs containing
+mismatched $'s or braces.
 
 Special commands:
 \\{TeX-mode-map}
+
+Mode variables:
+TeX-directory
+	Directory in which to create temporary files for TeX jobs
+	run by \\[TeX-region] or \\[TeX-buffer].
+TeX-dvi-print-command
+	Command string used by \\[TeX-print] to print a .dvi file.
+TeX-show-queue-command
+	Command string used by \\[TeX-show-print-queue] to show the print
+	queue that \\[TeX-print] put your job on.
 
 Entering plain-TeX mode calls the value of text-mode-hook,
 then the value of TeX-mode-hook, and then the value
@@ -1405,7 +1528,9 @@ of plain-TeX-mode-hook."
   "\
 Major mode for editing files of input for TeX or LaTeX.
 Trys to intuit whether this file is for plain TeX or LaTeX and
-calls plain-tex-mode or latex-mode."
+calls plain-tex-mode or latex-mode.  If it cannot be determined
+(e.g., there are no commands in the file), the value of
+TeX-default-mode is used."
   t)
 
 (fset 'TeX-mode 'tex-mode)
@@ -1416,7 +1541,7 @@ calls plain-tex-mode or latex-mode."
   "\
 Major mode for editing texinfo files.
 These are files that are input for TEX and also to be turned
-into Info files by M-x texinfo-format-buffer.
+into Info files by \\[texinfo-format-buffer].
 These files must be written in a very restricted and
 modified version of TEX input format.
 
@@ -1428,7 +1553,19 @@ which is set up so expression commands skip texinfo bracket groups."
   "\
 Process the current buffer as texinfo code, into an Info file.
 The Info file output is generated in a buffer
-visiting the Info file name specified in the @setfilename command."
+visiting the Info file names specified in the @setfilename command.
+
+Non-nil argument (prefix, if interactive) means don't make tag table
+and don't split the file if large.  You can use Info-tagify and
+Info-split to do these manually."
+  t)
+
+(autoload 'texinfo-format-region "texinfmt"
+  "\
+Convert the the current region of the Texinfo file to Info format.
+This lets you see what that part of the file will look like in Info.
+The command is bound to \\[texinfo-format-region].  The text that is
+converted to Info is stored in a temporary buffer."
   t)
 
 (autoload 'batch-texinfo-format "texinfmt"
@@ -1436,7 +1573,8 @@ visiting the Info file name specified in the @setfilename command."
 Runs  texinfo-format-buffer  on the files remaining on the command line.
 Must be used only with -batch, and kills emacs on completion.
 Each file will be processed even if an error occurred previously.
-For example, invoke \"emacs -batch -f batch-texinfo-format $docs/ ~/*.texinfo\""
+For example, invoke
+  \"emacs -batch -funcall batch-texinfo-format $docs/ ~/*.texinfo\"."
   nil)
 
 (autoload 'display-time "time"
@@ -1500,16 +1638,10 @@ Therefore, it is recommended that you assign it to a key.
 Major differences between this mode and real vi :
 
 * Limitations and unsupported features
-  - Lines can be deleted/yanked with dd/yy etc., but to put back saved text as
-    lines you need to specify it explicitly (use 9p/P.  Any numeric arg
-    greater than one will do.)
-  - Search patterns with line offset (e.g. /pat/+3 or /pat/z.)
-    are not supported.
+  - Search patterns with line offset (e.g. /pat/+3 or /pat/z.) are
+    not supported.
   - Ex commands are not implemented; try ':' to get some hints.
   - No line undo (i.e. the 'U' command), but multi-undo is a standard feature.
-  - IMPORTANT: '1G' will go to the end of current buffer, NOT the first line
-    (due to a technical difficulty with using 'G' command as an argument to
-    the operators).  Use 'g' command instead.
 
 * Modifications
   - The stopping positions for some point motion commands (word boundary,
@@ -1561,7 +1693,42 @@ Calls the value of  view-hook  if that is non-nil."
 
 (autoload 'view-mode "view"
   "\
-Major mode for viewing text but not editing it.")
+Major mode for viewing text but not editing it.
+Letters do not insert themselves.  Instead these commands are provided.
+Most commands take prefix arguments.  Commands dealing with lines
+default to \"scroll size\" lines (initially size of window).
+Search commands default to a repeat count of one.
+M-< or <	move to beginning of buffer.
+M-> or >	move to end of buffer.
+C-v or Space	scroll forward lines.
+M-v or DEL	scroll backward lines.
+CR or LF	scroll forward one line (backward with prefix argument).
+z		like Space except set number of lines for further
+		   scrolling commands to scroll by.
+C-u and Digits	provide prefix arguments.  `-' denotes negative argument.
+=		prints the current line number.
+g		goes to line given by prefix argument.
+/ or M-C-s	searches forward for regular expression
+\\ or M-C-r	searches backward for regular expression.
+n		searches forward for last regular expression.
+p		searches backward for last regular expression.
+C-@ or .	set the mark.
+x		exchanges point and mark.
+C-s or s	do forward incremental search.
+C-r or r	do reverse incremental search.
+@ or '		return to mark and pops mark ring.
+		  Mark ring is pushed at start of every
+		  successful search and when jump to line to occurs.
+		  The mark is set on jump to buffer start or end.
+? or h		provide help message (list of commands).
+C-h		provides help (list of commands or description of a command).
+C-n		moves down lines vertically.
+C-p		moves upward lines vertically.
+C-l		recenters the screen.
+q or C-c	exit view-mode and return to previous buffer.
+
+Entry to this mode calls the value of  view-hook  if non-nil.
+\\{view-mode-map}")
 
 (autoload 'vip-mode "vip"
   "\
@@ -1576,7 +1743,7 @@ in the Emacs distribution."
 Return or display a Zippy quotation" t)
 (autoload 'psychoanalyze-pinhead "yow"
   "\
-Zippy goes to the analyst" t)
+Zippy goes to the analyst." t)
 
 
 (define-key esc-map "\C-f" 'forward-sexp)

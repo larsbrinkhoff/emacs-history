@@ -12,7 +12,3 @@
    and is counted in hdr.a_text.  */
 
 #define A_TEXT_OFFSET(HDR) sizeof (HDR)
-
-/* Use dk.h, not dkstat.h, in loadst.c.  */
-
-#define DK_HEADER_FILE

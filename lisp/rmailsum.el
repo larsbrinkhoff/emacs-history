@@ -104,8 +104,7 @@ nil for FUNCTION means all messages."
       (setq minor-mode-alist (list ": " description))
       (setq rmail-buffer rbuf
 	    rmail-total-messages total)
-      (if (> new-summary-line-count 0)
-	  (rmail-summary-goto-msg mesg t))))
+      (rmail-summary-goto-msg mesg t)))
   (message "Computing summary lines...done"))
 
 (defun rmail-make-summary-line (msg)
@@ -207,27 +206,42 @@ nil for FUNCTION means all messages."
 		    (t "??????"))))
 	  "  "
 	  (save-excursion
-	    (if (not (re-search-forward "^From:" nil t))
+	    (if (not (re-search-forward "^From:[ \t]*" nil t))
 		"                         "
-	      (progn (skip-chars-forward " \t")
-		     (let* ((from (mail-strip-quoted-names
-				   (buffer-substring
-				    (1- (point))
-				    (progn (end-of-line)
-					   (skip-chars-backward " ")
-					   (point)))))
-			    (len (length from))
-			    (mch (string-match "[@%]" from))
-			    lo)
-		       (format "%25s"
-			       (if (or (not mch) (<= len 25))
-				   (substring from (max 0 (- len 25)))
-				 (substring from
-					    (setq lo (cond ((< (- mch 9) 0) 0)
-							   ((< len (+ mch 16))
-							    (- len 25))
-							   (t (- mch 9))))
-					    (min len (+ lo 25)))))))))
+	      (let* ((from (mail-strip-quoted-names
+			    (buffer-substring
+			     (1- (point))
+			     (progn (end-of-line)
+				    (skip-chars-backward " \t")
+				    (point)))))
+		     len mch lo)
+		(if (string-match (concat "^"
+					  (regexp-quote (user-login-name))
+					  "\\($\\|@\\)")
+				  from)
+		    (save-excursion
+		      (goto-char (point-min))
+		      (if (not (re-search-forward "^To:[ \t]*" nil t))
+			  nil
+			(setq from
+			      (concat "to: "
+				      (mail-strip-quoted-names
+				       (buffer-substring
+					(point)
+					(progn (end-of-line)
+					       (skip-chars-backward " \t")
+					       (point)))))))))
+		(setq len (length from))
+		(setq mch (string-match "[@%]" from))
+		(format "%25s"
+			(if (or (not mch) (<= len 25))
+			    (substring from (max 0 (- len 25)))
+			  (substring from
+				     (setq lo (cond ((< (- mch 9) 0) 0)
+						    ((< len (+ mch 16))
+						     (- len 25))
+						    (t (- mch 9))))
+				     (min len (+ lo 25))))))))
 	  "  #"
 	  (if (re-search-forward "^Subject:" nil t)
 	      (progn (skip-chars-forward " \t")
@@ -401,7 +415,11 @@ Entering this mode calls value of hook variable rmail-summary-mode-hook."
 (defun rmail-summary-exit ()
   "Exit rmail summary, remaining within rmail."
   (interactive)
-  ;; Switch to the rmail buffer after burying this one.
-  ;; Tricky since variable rmail-buffer is local.
-  (pop-to-buffer (prog1 rmail-buffer (bury-buffer (current-buffer))))
-  (delete-other-windows))
+  (bury-buffer (current-buffer))
+  (if (get-buffer-window rmail-buffer)
+      ;; Select the window with rmail in it, then delete this window.
+      (select-window (prog1
+			 (get-buffer-window rmail-buffer)
+		       (delete-window (selected-window))))
+    ;; Switch to the rmail buffer in this window.
+    (switch-to-buffer rmail-buffer)))

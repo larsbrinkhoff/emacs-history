@@ -1,5 +1,5 @@
 /* Newly written part of redisplay code.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -94,6 +94,9 @@ Lisp_Object Vwindow_system;	/* nil or a symbol naming the window system
 				   under which emacs is running
 				   ('x is the only current possibility) */
 
+/* Version number of window system, or nil if no window system.  */
+Lisp_Object Vwindow_system_version;
+
 /* Nonzero means reading single-character input with prompt
    so put cursor on minibuffer after the prompt.  */
 
@@ -116,6 +119,12 @@ FILE *termscript;	/* Stdio stream being used for copy of all kbdinput.  */
 struct cm Wcm;		/* Structure for info on cursor positioning */
 
 extern short ospeed;	/* Output speed (from sg_ospeed) */
+
+int in_display;		/* 1 if in redisplay: can't handle SIGWINCH now.  */
+
+int delayed_size_change;  /* 1 means SIGWINCH happened when not safe.  */
+int delayed_screen_height;  /* Remembered new screen height.  */
+int delayed_screen_width;   /* Remembered new screen width.  */
 
 /* Use these to chain together free lines */
 
@@ -533,13 +542,14 @@ direct_output_forward_char (n)
   return 1;
 }
 
+/* Update the actual terminal screen based on the data in DesiredScreen.
+   Value is nonzero if redisplay stopped due to pending input.
+   FORCE nonzero means do not stop for pending input.  */
+
 /* At the time this function is called,
- no line is common to PhysScreen and DesiredScreen.
- That is true again when this function returns. */
+   no line is common to PhysScreen and DesiredScreen.
+   That is true again when this function returns. */
 
-/* `force' nonzero means do not stop for pending input */
-
-/* Value is nonzero if redisplay stopped due to pending input */
 update_screen (force, inhibit_hairy_id)
      int force;
      int inhibit_hairy_id;
@@ -843,6 +853,35 @@ update_line (old, new, vpos)
 	nbody[nlen++] = ' ';
     }
 
+  /* If there's no i/d char, quickly do the best we can without it.  */
+  if (!char_ins_del_ok)
+    {
+      int i,j;
+
+      for (i = 0; i < nlen; i++)
+	{
+	  if (i >= olen || nbody[i] != obody[i])
+	    {
+	      /* We found a non-matching char.  */
+	      topos (vpos, i);
+	      for (j = 1; (i + j < nlen &&
+			   (i + j >= olen || nbody[i+j] != obody[i+j]));
+		   j++);
+	      /* Output this run of non-matching chars.  */ 
+	      write_chars (nbody + i, j);
+	      i += j - 1;
+	      /* Now find the next non-match.  */
+	    }
+	}
+      /* Clear the rest of the line, or the non-clear part of it.  */
+      if (olen > nlen)
+	{
+	  topos (vpos, nlen);
+	  clear_end_of_line (olen);
+	}
+      return;
+    }
+
   if (!olen)
     {
       nsp = (must_write_spaces || new->highlighted)
@@ -1077,20 +1116,54 @@ DEFUN ("screen-width", Fscreen_width, Sscreen_width, 0, 0, 0,
 window_change_signal ()
 {
   int width, height;
+  extern int errno;
+  int old_errno = errno;
+
   get_screen_size (&width, &height);
   change_screen_size (height, width, 0);
   signal (SIGWINCH, window_change_signal);
+
+  errno = old_errno;
 }
 #endif /* SIGWINCH */
+
+/* Prevent window-change signals from being handled.  */
+hold_window_change ()
+{
+  in_display = 1;
+}
+
+/* Allow waiting window-change signals to be handled.  */
+unhold_window_change ()
+{
+  in_display = 0;
+  /* If window_change_signal should have run before, run it now.  */
+  if (delayed_size_change)
+#ifdef SIGWINCH
+    kill (getpid (), SIGWINCH);
+#else
+    change_screen_size (delayed_screen_height, delayed_screen_width, 0);
+#endif
+}
 
 /* Change the screen height and/or width.  Values may be given as zero to
    indicate no change is to take place. */
 change_screen_size (newlength, newwidth, pretend)
      register int newlength, newwidth, pretend;
 {
-  if ((newlength == 0 || newlength == screen_height)
-	  && (newwidth == 0 || newwidth == screen_width))
+  /* If we can't deal with the change now, queue it for later.  */
+  if (in_display)
+    {
+      delayed_screen_width = newwidth;
+      delayed_screen_height = newlength;
+      delayed_size_change = 1;
       return;
+    }
+
+  delayed_size_change = 0;
+  if ((newlength == 0 || newlength == screen_height)
+      && (newwidth == 0 || newwidth == screen_width))
+    return;
   if (newlength && newlength != screen_height)
     {
       if (newlength > MScreenLength)
@@ -1317,6 +1390,11 @@ init_display ()
 	  x_term_init ();
 	  Vxterm = Qt;
 	  Vwindow_system = intern ("x");
+#ifdef X11
+	  Vwindow_system_version = make_number (11);
+#else
+	  Vwindow_system_version = make_number (10);
+#endif
 	  goto term_init_done;
 	}
 #endif /* HAVE_X_WINDOWS */
@@ -1374,8 +1452,11 @@ syms_of_display ()
     "*Non-nil means no need to redraw entire screen after suspending.\n\
 It is up to you to set this variable to inform Emacs.");
   DEFVAR_LISP ("window-system", &Vwindow_system,
-    "A symbol naming the window-system under which emacs is running,\n\
-\(such as `x' or `x11') or nil if emacs is running on an ordinary terminal.");
+    "A symbol naming the window-system under which Emacs is running,\n\
+\(such as `x'), or nil if emacs is running on an ordinary terminal.");
+  DEFVAR_LISP ("window-system-version", &Vwindow_system_version,
+    "Version number of the window system Emacs is running under.");
+  Vwindow_system_version = Qnil;
   DEFVAR_BOOL ("cursor-in-echo-area", &cursor_in_echo_area,
     "Non-nil means put cursor in minibuffer after any message displayed there.");
 

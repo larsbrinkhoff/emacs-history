@@ -85,7 +85,7 @@ and this notice must be preserved on all copies.  */
 
 /* Define HAVE_SOCKETS if system supports 4.2-compatible sockets.  */
 
-/* #define HAVE_SOCKETS */
+#define HAVE_SOCKETS
 
 /*
  *	Define NONSYSTEM_DIR_LIBRARY to make Emacs emulate
@@ -209,12 +209,14 @@ and this notice must be preserved on all copies.  */
 
 #define static
 
-/* Define extra libraries to load */
+/* Define extra libraries to load.
+   This should have -lBSD, but that library is said to make
+   `signal' fail to work.  */
 
 #ifdef HPUX_NET
-#define LIBS_SYSTEM -lBSD -ln
+#define LIBS_SYSTEM -ln
 #else
-#define LIBS_SYSTEM -lBSD
+#define LIBS_SYSTEM
 #endif
 
 /* Some additional system facilities exist.  */
@@ -223,11 +225,18 @@ and this notice must be preserved on all copies.  */
 #define HAVE_GETTIMEOFDAY
 #define HAVE_VFORK
 
+/* The following maps shared exec file to demand loaded exec.
+   Don't do this as demand loaded exec is broken in hpux.  */
+
+#if 0
+
 /* Adjust a header field for the executable file about to be dumped.  */
 
 #define ADJUST_EXEC_HEADER   \
   hdr.a_magic = ((ohdr.a_magic.file_type == OLDMAGIC.file_type) ?  \
 		 NEWMAGIC : ohdr.a_magic);
+
+#endif
 
 /* Baud-rate values in tty status have nonstandard meanings.  */
 

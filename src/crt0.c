@@ -156,7 +156,7 @@ int errno;
 char **environ;
 #endif
 
-#if defined(orion) || defined(pyramid) || defined(celerity) || defined(ALLIANT)
+#if defined(orion) || defined(pyramid) || defined(celerity) || defined(ALLIANT) || defined(clipper)
 
 #ifdef ALLIANT
 /* _start must initialize _curbrk and _minbrk on the first startup;
@@ -168,7 +168,11 @@ extern unsigned char end;
 unsigned char *_setbrk = &end;
 #endif
 
-_start (argc, argv, envp)
+#ifndef DUMMIES
+#define DUMMIES
+#endif
+
+_start (DUMMIES argc, argv, envp)
      int argc;
      char **argv, **envp;
 {
@@ -182,7 +186,7 @@ _start (argc, argv, envp)
   exit (main (argc, argv, envp));
 }
 
-#endif /* orion or pyramid or celerity or alliant */
+#endif /* orion or pyramid or celerity or alliant or clipper */
 
 #if defined (ns16000) && !defined (sequent) && !defined (UMAX)
 
@@ -340,11 +344,16 @@ start1 (CRT0_DUMMIES argc, xargv)
   
 #ifdef ISI68K
 /* Added by ESM Sun May 24 12:44:02 1987 to get new ISI library to work */
+#ifdef BSD4_3
+static foo () {
+#endif
 	asm ("	.globl  is68020");
 	asm ("is68020:");
+#ifndef BSD4_3
 	asm ("	.long   0x00000000");
 	asm ("	.long   0xffffffff");
 /* End of stuff added by ESM */
+#endif
 	asm ("	.text");
 	asm ("	.globl	__start");
 	asm ("__start:");
@@ -353,6 +362,9 @@ start1 (CRT0_DUMMIES argc, xargv)
 	asm ("	jbsr	_start1");
 	asm ("	unlk	fp");
 	asm ("	rts");
+#ifdef BSD4_3
+      }
+#endif
 #else /* not ISI68K */
 
 _start ()
@@ -447,6 +459,8 @@ char **argv_value;
 	asm("	fmov.l	&0x7480,%fpcr");
 #endif /* HPUX_68010 */
 	asm("skip_float:");
+	asm("	subx.w	%d1,%d1");
+	asm("	mov.w	%d1,flag_68010");
 	asm("	mov.l	4(%a7),%d0");
 	asm("	beq.b	skip_1");
 	asm("	mov.l	%d0,%a0");
@@ -477,6 +491,7 @@ char **argv_value;
 	asm("	trap	&0");
 	asm("	comm	float_soft, 4");
 	asm("	comm	flag_68881, 4");
+	asm("	comm	flag_68010, 4");
 	
 #endif /* new hp assembler */
 #endif /* hp9000s300 */

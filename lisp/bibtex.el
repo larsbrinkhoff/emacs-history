@@ -19,17 +19,22 @@
 ;;; Trouble is, in Emacs 18.44 you can't have a mode-specific mouse binding,
 ;;; so it will remain active in all windows.  Yuck!
 
+;;; Bengt Martensson 88-05-06:
+;;; Added Sun menu support.  Locally bound to right mouse button in 
+;;; bibtex-mode.  Emacs 18.49 allows local mouse bindings!!
+;;; Commented out vtxxx-keys and DEAthesis.  Changed documentation slightly.
+
 (defvar bibtex-mode-syntax-table nil "")
 (defvar bibtex-mode-abbrev-table nil "")
 (define-abbrev-table 'bibtex-mode-abbrev-table ())
 (defvar bibtex-mode-map (make-sparse-keymap) "")
 
 (defun bibtex-mode () 
-  "Major mode for editing bibtex files.
-
+  "Major mode for editing bibtex files.  Commands:
 \\{bibtex-mode-map}
 
-A command such as \\[bibtex-Book] will outline the fields for a BibTeX book entry.
+A command such as \\[bibtex-Book] will outline the fields for a BibTeX
+book entry.
 
 The optional fields are preceded by ""OPT"", thus ignored by BibTeX.
 Use \\[bibtex-remove-opt] to remove ""OPT"" on the current line.
@@ -38,7 +43,9 @@ Use \\[bibtex-find-it] to position the dot at the end of the string on the same 
 Use \\[bibtex-next-position] to move to the next position to fill in.  Use \\[kill-current-line]
 to kill the whole line.
 
-(bibtex-x-environment) binds a mode-specific X menu to control+right
+M-x bibtex-x-environment binds a mode-specific X menu to control+right
+mouse button.
+M-x bibtex-sun-environment binds a mode-specific Sun menu to right
 mouse button.
 
 Fields:
@@ -119,13 +126,13 @@ if that value is non-nil."
 
   (define-key bibtex-mode-map "\t" 'bibtex-find-it)
   (define-key bibtex-mode-map "\n" 'bibtex-next-position)
-  (define-key bibtex-mode-map "\e[25~" 'bibtex-next-position)
-  (define-key bibtex-mode-map "\C-c""" 'bibtex-remove-double-quotes)
-  (define-key bibtex-mode-map "\C-c\eOS" 'kill-current-line)
+  ;;(define-key bibtex-mode-map "\e[25~" 'bibtex-next-position)
+  (define-key bibtex-mode-map "\C-c\"" 'bibtex-remove-double-quotes)
+  ;;(define-key bibtex-mode-map "\C-c\eOS" 'kill-current-line)
   (define-key bibtex-mode-map "\C-c\C-k" 'kill-current-line)
   (define-key bibtex-mode-map "\C-c\C-a" 'bibtex-Article)
   (define-key bibtex-mode-map "\C-c\C-b" 'bibtex-Book)
-  (define-key bibtex-mode-map "\C-c\C-d" 'bibtex-DEAthesis)
+  ;;(define-key bibtex-mode-map "\C-c\C-d" 'bibtex-DEAthesis)
   (define-key bibtex-mode-map "\C-c\C-c" 'bibtex-InProceedings)
   (define-key bibtex-mode-map "\C-c\C-i" 'bibtex-InBook)
   (define-key bibtex-mode-map "\C-ci" 'bibtex-InCollection)
@@ -194,11 +201,11 @@ if that value is non-nil."
   (bibtex-entry "Booklet" '("title")
 		'("author" "howpublished" "address" "month" "year" "note")))
 
-;; France: Dipl\^{o}me d'Etudes Approfondies (similar to Master's)
-(defun bibtex-DEAthesis ()
-  (interactive)
-  (bibtex-entry "DEAthesis" '("author" "title" "school" "year")
-		'("address" "month" "note")))
+;;; France: Dipl\^{o}me d'Etudes Approfondies (similar to Master's)
+;(defun bibtex-DEAthesis ()
+;  (interactive)
+;  (bibtex-entry "DEAthesis" '("author" "title" "school" "year")
+;		'("address" "month" "note")))
 
 (defun bibtex-InBook ()
   (interactive)
@@ -237,7 +244,7 @@ if that value is non-nil."
 
 (defun bibtex-PhdThesis ()
   (interactive)
-  (bibtex-entry "PhdThesis" '("author" "title" "school" "year")
+  (bibtex-entry "PhDThesis" '("author" "title" "school" "year")
 		'("address" "month" "note")))
 
 (defun bibtex-Proceedings ()
@@ -331,8 +338,8 @@ if that value is non-nil."
 	     ("Book" . bibtex-Book)
 	     ("Booklet" . bibtex-Booklet)
 	     ("Master's Thesis" . bibtex-MastersThesis)
-	     ("DEA Thesis" . bibtex-DEAthesis)
-	     ("Phd. Thesis" . bibtex-PhdThesis)
+	     ;;("DEA Thesis" . bibtex-DEAthesis)
+	     ("PhD. Thesis" . bibtex-PhdThesis)
 	     ("Technical Report" . bibtex-TechReport)
 	     ("technical Manual" . bibtex-Manual)
 	     ("Conference Proceedings" . bibtex-Proceedings)
@@ -357,3 +364,63 @@ if that value is non-nil."
   (require 'x-mouse)
   (define-key mouse-map x-button-c-right 'bibtex-x-help)
   )
+
+;; Please don't send anything to bug-gnu-emacs about these Sunwindows functions
+;; since we aren't interested.  See etc/SUN-SUPPORT for the reasons why
+;; we consider this nothing but a distraction from our work.
+
+(defmenu bibtex-sun-entry-menu 
+  ("Article In Conf. Proc."
+   (lambda () (eval-in-window *menu-window* (bibtex-InProceedings))))
+  ("Article In Journal"
+   (lambda () (eval-in-window *menu-window* (bibtex-Article))))
+  ("Book"
+   (lambda () (eval-in-window *menu-window* (bibtex-Book))))
+  ("Booklet"
+   (lambda () (eval-in-window *menu-window* (bibtex-Booklet))))
+  ("Master's Thesis"
+   (lambda () (eval-in-window *menu-window* (bibtex-MastersThesis))))
+  ;;("DEA Thesis" bibtex-DEAthesis)
+  ("PhD. Thesis"
+   (lambda () (eval-in-window *menu-window* (bibtex-PhdThesis))))
+  ("Technical Report"
+   (lambda () (eval-in-window *menu-window* (bibtex-TechReport))))
+  ("Technical Manual"
+   (lambda () (eval-in-window *menu-window* (bibtex-Manual))))
+  ("Conference Proceedings"
+   (lambda () (eval-in-window *menu-window* (bibtex-Proceedings))))
+  ("In A Book"
+   (lambda () (eval-in-window *menu-window* (bibtex-InBook))))
+  ("In A Collection"
+   (lambda () (eval-in-window *menu-window* (bibtex-InCollection))))
+  ("Miscellaneous"
+   (lambda () (eval-in-window *menu-window* (bibtex-Misc))))
+  ("Unpublished"
+   (lambda () (eval-in-window *menu-window* (bibtex-Unpublished)))))
+
+(defmenu bibtex-sun-menu
+  ("BibTeX menu")
+  ("add entry" . bibtex-sun-entry-menu)
+  ("add string"
+   (lambda () (eval-in-window *menu-window* (bibtex-string))))
+  ;("next field" bibtex-next-position)
+  ;("to end of field" bibtex-find-it)
+;  ("remove OPT"
+;   (lambda () (eval-in-window *menu-window* (bibtex-remove-opt))))
+;  ("remove quotes"
+;   (lambda () (eval-in-window *menu-window* (bibtex-remove-double-quotes))))
+;  ("remove this line"
+;   (lambda () (eval-in-window *menu-window* (kill-current-line))))
+  ("describe BibTeX mode"
+   (lambda () (eval-in-window *menu-window* (describe-mode))))
+  ("Main Emacs menu" . emacs-menu))
+ 
+(defun bibtex-sun-menu-eval (window x y)
+  "Pop-up menu of BibTeX commands."
+  (sun-menu-evaluate window (1+ x) (1- y) 'bibtex-sun-menu))
+
+(defun bibtex-sun-environment ()
+  "Set up sun menus for BibTeX mode.  Call it as bibtex-mode-hook, or interactively"
+  (interactive)
+  (local-set-mouse  '(text right) 'bibtex-sun-menu-eval))
+

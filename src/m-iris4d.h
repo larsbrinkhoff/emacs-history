@@ -184,7 +184,8 @@ and this notice must be preserved on all copies.  */
 #define XSETPNTR(a, b) XSET(a, XTYPE(a), b)
 
 #define XMARKBIT(a) ((a) < 0)
-#define XUNMARK(a) ((a) = (((a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
+#define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
+#define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
 
 /* The entry-point label (start of text segment) is `start', not `__start'.  */
 #define DEFAULT_ENTRY_ADDRESS start

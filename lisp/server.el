@@ -130,42 +130,52 @@ Prefix arg means just kill any existing server communications subprocess."
       nil
     (setq string (substring string (match-end 0)))
     (let ((client (list (substring string 0 (string-match " " string))))
-	  (filenames nil))
+	  (files nil)
+	  (lineno 1))
       (setq string (substring string (match-end 0)))
       (while (string-match "[^ ]+ " string)
-	(setq filenames
-	      (cons (substring string (match-beginning 0) (1- (match-end 0)))
-		    filenames))
-	(setq string (substring string (match-end 0))))
-      (server-visit-files filenames client)
+	(let ((arg
+	       (substring string (match-beginning 0) (1- (match-end 0)))))
+	  (setq string (substring string (match-end 0)))
+	  (if (string-match "\\`\\+[0-9]+\\'" arg)
+	      (setq lineno (read (substring arg 1)))
+	    (setq files
+		  (cons (list arg lineno)
+			files))
+	    (setq lineno 1))))
+      (server-visit-files files client)
       ;; CLIENT is now a list (CLIENTNUM BUFFERS...)
       (setq server-clients (cons client server-clients))
       (switch-to-buffer (nth 1 client))
       (message (substitute-command-keys
 		"When done with a buffer, type \\[server-edit].")))))
 
-(defun server-visit-files (filenames client)
-  "Finds FILES and returns the list CLIENT with the buffers nconc'd."
+(defun server-visit-files (files client)
+  "Finds FILES and returns the list CLIENT with the buffers nconc'd.
+FILES is an alist whose elements are (FILENAME LINENUMBER)."
   (let (client-record)
-    (while filenames
+    (while files
       (save-excursion
-	;; If there is an existing buffer that's not modified, revert it.
+	;; If there is an existing buffer modified or the file is modified,
+	;; revert it.
 	;; If there is an existing buffer with deleted file, offer to write it.
- 	(let* ((filen (car filenames))
+ 	(let* ((filen (car (car files)))
 	       (obuf (get-file-buffer filen)))
  	  (if (and obuf (set-buffer obuf))
  	      (if (file-exists-p filen)
- 		  (if (buffer-modified-p obuf) nil
- 		    (revert-buffer t nil))
+ 		  (if (or (not (verify-visited-file-modtime obuf))
+			  (buffer-modified-p obuf))
+		      (revert-buffer t nil))
  		(if (y-or-n-p
  		     (concat "File no longer exists: "
  			     filen
  			     ", write buffer to file? "))
  		    (write-file filen)))
  	    (set-buffer (find-file-noselect filen))))
+	(goto-line (nth 1 (car files)))
   	(setq server-buffer-clients (cons (car client) server-buffer-clients))
   	(setq client-record (cons (current-buffer) client-record)))
-        (setq filenames (cdr filenames)))
+        (setq files (cdr files)))
     (nconc client client-record)))
 
 (defun server-buffer-done (buffer)

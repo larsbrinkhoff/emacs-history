@@ -432,5 +432,5 @@ extern CORE_ADDR ns32k_get_enter_addr ();
 	*((int *) (((char *) dummyname)+CALL_DUMMY_ADDR)) = flipped;	\
 	flipped = - nargs * 4;					\
 	flip_bytes (&flipped, 4);				\
-	*((int *) (((char *) dummyname)+CALL_DUMMY_NARGS)) = fliped;	\
+	*((int *) (((char *) dummyname)+CALL_DUMMY_NARGS)) = flipped;	\
 }

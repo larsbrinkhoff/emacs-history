@@ -584,8 +584,9 @@ write_chars (start, len)
 
   /* Don't dare write in last column of bottom line, if AutoWrap,
      since that would scroll the whole screen on some terminals.  */
+
   if (AutoWrap && curY + 1 == screen_height
-      && curX + len == screen_width)
+      && curX + len - (chars_wasted[curY] & 077) == screen_width)
     len --;
 
   cmplus (len);

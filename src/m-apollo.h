@@ -43,6 +43,12 @@ and this notice must be preserved on all copies.  */
 
 #define APOLLO
 
+/* Assume we use s-bsd4-3.h for system version 10.  */
+
+#ifdef BSD4_3
+#define APOLLO_SR10
+#endif
+
 /* Use type int rather than a union, to represent Lisp_Object */
 
 #define NO_UNION_TYPE
@@ -69,7 +75,7 @@ and this notice must be preserved on all copies.  */
 #define VALBITS 26
 #define GCTYPEBITS 5
 
-/* Prevent -lg from being used for debugging.  Not implemented?  */
+/* Prevent -lg from being used for debugging.  Not needed.  */
 
 #define LIBS_DEBUG
 
@@ -87,4 +93,6 @@ and this notice must be preserved on all copies.  */
 
 /* Apollo's bcopy said to lose on more than 16k bytes in SR9.5.  */
 
+#ifndef APOLLO_SR10
 #undef BSTRING
+#endif

@@ -150,7 +150,7 @@ _alloca:
 	move.l	sp,a0		; save old SP value for register copy
 	move.l	d1,sp		; set the new SP value
 	tst.b	-4096(sp)	; grab an extra page (to cover caller)
-	move.l	a2,d1		; save caller's register
+	move.l	a2,d1		; save callers register
 	move.l	sp,a2
 	move.w	#MAXREG-1,d0	; # of longwords to copy
 loop:	move.l	(a0)+,(a2)+	; copy registers...
@@ -244,6 +244,7 @@ _alloca: addw $3,pr0	# add 3 (dec) to first argument
 	movw sp,pr0	# ret. current SP
 	ret
 
+#ifdef PYRAMID_OLD /* This isn't needed in system version 4.  */
 .globl __longjmp
 .globl _longjmp
 .globl __setjmp
@@ -251,6 +252,7 @@ _alloca: addw $3,pr0	# add 3 (dec) to first argument
 
 __longjmp: jump _longjmp
 __setjmp:  jump _setjmp
+#endif
 
 #endif /* pyramid */
 

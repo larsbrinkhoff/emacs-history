@@ -1,5 +1,5 @@
 /* Tags file maker to go with GNUmacs
-   Copyright (C) 1984, 1987 Free Software Foundation, Inc. and Ken Arnold
+   Copyright (C) 1984, 1987, 1988 Free Software Foundation, Inc. and Ken Arnold
 
 			   NO WARRANTY
 
@@ -102,6 +102,23 @@ what you give them.   Help stamp out software-hoarding!  */
  on the name with which the program is invoked
  (but we don't normally compile it that way).  */
 
+/* On VMS, CTAGS is not useful, so always do ETAGS.  */
+#ifdef VMS
+#ifndef ETAGS
+#define ETAGS
+#endif
+#endif
+
+/* Exit codes for success and failure.  */
+
+#ifdef VMS
+#define	GOOD	(1)
+#define BAD	(0)
+#else
+#define	GOOD	(0)
+#define	BAD	(1)
+#endif
+
 #define	reg	register
 #define	logical	char
 
@@ -115,6 +132,10 @@ what you give them.   Help stamp out software-hoarding!  */
 #define	isgood(arg)	(_gd[arg])	/* T if char can be after ')'	*/
 
 #define	max(I1,I2)	(I1 > I2 ? I1 : I2)
+
+/* cause token checking for typedef, struct, union, enum to distinguish
+   keywords from identifier-prefixes (e.g. struct vs struct_tag).  */
+#define istoken(s, tok, len) (!strncmp(s,tok,len) && endtoken(*((s)+(len))))
 
 struct	nd_st {			/* sorting structure			*/
 	char	*name;			/* function or type name	*/
@@ -138,7 +159,7 @@ logical gotone,				/* found a func already on line	*/
 	/* typedefs are recognized using a simple finite automata,
 	 * tydef is its state variable.
 	 */
-typedef enum {none, begin, middle, end } TYST;
+typedef enum {none, begin, tag_ok, middle, end } TYST;
 
 TYST tydef = none;
 
@@ -153,20 +174,20 @@ char    *curfile,		/* current input file name		*/
 	*white	= " \f\t\n",	/* white chars				*/
 	*endtk	= " \t\n\"'#()[]{}=-+%*/&|^~!<>;,.:?",
 				/* token ending chars			*/
-	*begtk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
+	*begtk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz$",
 				/* token starting chars			*/
-	*intk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789",
+	*intk	= "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz$0123456789",
 				/* valid in-token chars			*/
 	*notgd	= ",;";		/* non-valid after-function chars	*/
 
-int	file_num;		/* current file number			*/
-int	aflag;			/* -a: append to tags */
-int	tflag;			/* -t: create tags for typedefs */
-int	uflag;			/* -u: update tags */
-int	wflag;			/* -w: suppress warnings */
-int	vflag;			/* -v: create vgrind style index output */
-int	xflag;			/* -x: create cxref style output */
-int	eflag;			/* -e: emacs style output */
+int	file_num = 0;		/* current file number			*/
+int	aflag = 0;		/* -a: append to tags */
+int	tflag = 0;		/* -t: create tags for typedefs */
+int	uflag = 0;		/* -u: update tags */
+int	wflag = 0;		/* -w: suppress warnings */
+int	vflag = 0;		/* -v: create vgrind style index output */
+int	xflag = 0;		/* -x: create cxref style output */
+int	eflag = 0;		/* -e: emacs style output */
 
 /* Name this program was invoked with.  */
 char *progname;
@@ -196,6 +217,7 @@ struct linebuffer
 
 struct linebuffer lb, lb1;
 
+#if 0  /* VMS now provides the `system' function.  */
 #ifdef VMS
 
 #include <descrip.h>
@@ -212,8 +234,8 @@ system (buf)
   LIB$SPAWN(&command);
 }
 #endif /* VMS */
+#endif /* 0 */
 
-
 main(ac,av)
      int	ac;
      char	*av[];
@@ -221,6 +243,13 @@ main(ac,av)
   char cmd[100];
   int i;
   int fflag = 0;
+  char *this_file;
+#ifdef VMS
+  char got_err;
+
+  extern char *gfnames();
+  extern char *massage_name();
+#endif
 
   progname = av[0];
 
@@ -245,6 +274,8 @@ main(ac,av)
 	{
 	  switch(av[1][i])
 	    {
+#ifndef VMS  /* These options are useful only with ctags,
+		and VMS can't input them, so just omit them.  */
 	    case 'B':
 	      searchar='?';
 	      eflag = 0;
@@ -253,6 +284,7 @@ main(ac,av)
 	      searchar='/';
 	      eflag = 0;
 	      break;
+#endif
 	    case 'a':
 	      aflag++;
 	      break;
@@ -279,10 +311,12 @@ main(ac,av)
 	    case 't':
 	      tflag++;
 	      break;
+#ifndef VMS
 	    case 'u':
 	      uflag++;
 	      eflag = 0;
 	      break;
+#endif
 	    case 'w':
 	      wflag++;
 	      break;
@@ -306,8 +340,12 @@ main(ac,av)
   if (ac <= 1)
     {
     usage:
+#ifdef VMS
+      fprintf (stderr, "Usage: %s [-aetwvx] [-f outfile] file ...\n", progname);
+#else
       fprintf (stderr, "Usage: %s [-BFaetuwvx] [-f outfile] file ...\n", progname);
-      exit(1);
+#endif
+      exit(BAD);
     }
 
   if (outfile == 0)
@@ -329,33 +367,52 @@ main(ac,av)
 	{
 	  fprintf (stderr, "%s: ", progname);
 	  perror (outfile);
-	  exit (1);
+	  exit (BAD);
 	}
     }
 
-  for (file_num = 1; file_num < ac; file_num++)
+  file_num = 1;
+#ifdef VMS
+  for (ac--, av++;
+       (this_file = gfnames (&ac, &av, &got_err)) != NULL; file_num++)
     {
-      find_entries(av[file_num]);
-      if (eflag)
+      if (got_err)
 	{
-	  fprintf (outf, "\f\n%s,%d\n",
-		   av[file_num], total_size_of_entries (head));
-	  put_entries (head);
-	  free_tree (head);
-	  head = NULL;
+	  error("Can't find file %s\n", this_file);
+	  ac--, av++;
+	}
+      else
+	{
+	  this_file = massage_name (this_file);
+#else     
+  for (; file_num < ac; file_num++)
+    {
+      this_file = av[file_num];
+      if (1)
+	{
+#endif
+	  find_entries (this_file);
+	  if (eflag)
+	    {
+	      fprintf (outf, "\f\n%s,%d\n",
+		       this_file, total_size_of_entries (head));
+	      put_entries (head);
+	      free_tree (head);
+	      head = NULL;
+	    }
 	}
     }
 
   if (eflag)
     {
       fclose (outf);
-      exit (0);
+      exit (GOOD);
     }
 
   if (xflag)
     {
       put_entries(head);
-      exit(0);
+      exit(GOOD);
     }
   if (uflag)
     {
@@ -373,16 +430,18 @@ main(ac,av)
     {
       fprintf (stderr, "%s: ", outfile);
       perror(outfile);
-      exit(1);
+      exit(BAD);
     }
   put_entries(head);
   fclose(outf);
+#ifndef VMS
   if (uflag)
     {
       sprintf(cmd, "sort %s -o %s", outfile, outfile);
       system(cmd);
     }
-  exit(0);
+#endif
+  exit(GOOD);
 }
 
 /*
@@ -702,8 +761,16 @@ total_size_of_entries(node)
  * This routine finds functions and typedefs in C syntax and adds them
  * to the list.
  */
+#ifdef VMS
+long vmslinecharno;
+#define VMS_SET_LINECHARNO	(vmslinecharno = ftell(inf))
+#else
+#define VMS_SET_LINECHARNO
+#endif
+
 #define CNL_SAVE_NUMBER \
 { \
+  VMS_SET_LINECHARNO; \
   linecharno = charno; lineno++; \
   charno += 1 + readline (&lb, inf); \
   lp = lb.buffer; \
@@ -795,7 +862,7 @@ C_entries ()
 	    number = 1;
 	  continue;
 	case '{':
-	  if (tydef == begin)
+	  if (tydef == tag_ok)
 	    {
 	      tydef=middle;
 	    }
@@ -824,13 +891,20 @@ C_entries ()
 		  char *lp1 = lp;
 		  int line = lineno;
 		  long linestart = linecharno;
-		  int tem = consider_token (&lp1, token, &f);
+#ifdef VMS
+		  long vmslinestart = vmslinecharno;
+#endif
+		  int tem = consider_token (&lp1, token, &f, level);
 		  lp = lp1;
 		  if (tem)
 		    {
 		      if (linestart != linecharno)
 			{
+#ifdef VMS
+			  getline (vmslinestart);
+#else
 			  getline (linestart);
+#endif
 			  strncpy (tok, token + (lb1.buffer - buf),
 				   tp-token+1);
 			  tok[tp-token+1] = 0;
@@ -867,9 +941,9 @@ C_entries ()
  * It updates the input line * so that the '(' will be
  * in it when it returns.
  */
-consider_token (lpp, token, f)
+consider_token (lpp, token, f, level)
      char **lpp, *token;
-     int *f;
+     int *f, level;
 {
   reg char *lp = *lpp;
   reg char c;
@@ -907,20 +981,30 @@ consider_token (lpp, token, f)
 	}
     }
   /* check for the typedef cases		*/
-  if (tflag && !strncmp(token, "typedef", 7))
+  if (tflag && istoken(token, "typedef", 7))
     {
       tydef=begin;
       goto badone;
     }
-  if (tydef==begin && (!strncmp(token, "struct", 6) ||
-		       !strncmp(token, "union", 5) || !strncmp(token, "enum", 4)))
+  if (tydef==begin && (istoken(token, "struct", 6) ||
+		       istoken(token, "union", 5) || istoken(token, "enum", 4)))
   {
+    tydef=tag_ok;      
     goto badone;
   }
-  if (tydef==begin)
+  if (tydef==tag_ok)
+    {
+      tydef=middle;
+      goto badone;
+    }
+  if (tydef==begin)		/* e.g. typedef ->int<- */
     {
       tydef=end;
       goto badone;
+    }
+  if (tydef==middle && level == 0) /* e.g. typedef struct tag ->struct_t<- */
+    {
+      tydef=end;
     }
   if (tydef==end)
     {
@@ -1551,7 +1635,7 @@ fatal (s1, s2)
      char *s1, *s2;
 {
   error (s1, s2);
-  exit (1);
+  exit (BAD);
 }
 
 /* Print error message.  `s1' is printf control string, `s2' is arg for it. */

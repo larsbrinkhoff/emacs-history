@@ -113,14 +113,27 @@ what you give them.   Help stamp out software-hoarding!  */
 
 /* Determine default alignment.  */
 struct fooalign {char x; double d;};
-#define DEFAULT_ALIGNMENT ((int) &(((struct fooalign *) 0)->d))
+#define DEFAULT_ALIGNMENT ((char *)&((struct fooalign *) 0)->d - (char *)0)
+/* If malloc were really smart, it would round addresses to DEFAULT_ALIGNMENT.
+   But in fact it might be less smart and round addresses to as much as
+   DEFAULT_ROUNDING.  So we prepare for it to do that.  */
+union fooround {long x; double d;};
+#define DEFAULT_ROUNDING (sizeof (union fooround))
+
+/* When we copy a long block of data, this is the unit to do it with.
+   On some machines, copying successive ints does not work;
+   in such a case, redefine COPYING_UNIT to `long' (if that works)
+   or `char' as a last resort.  */
+#ifndef COPYING_UNIT
+#define COPYING_UNIT int
+#endif
 
 /* The non-GNU-C macros copy the obstack into this global variable
    to avoid multiple evaluation.  */
 
 struct obstack *_obstack;
 
-/* Initialize an obstack H for use.  Specify chunk size SIZE.
+/* Initialize an obstack H for use.  Specify chunk size SIZE (0 means default).
    Objects start on multiples of ALIGNMENT (0 means use default).
    CHUNKFUN is the function to use to allocate chunks,
    and FREEFUN the function to free them.  */
@@ -137,6 +150,16 @@ _obstack_begin (h, size, alignment, chunkfun, freefun)
 
   if (alignment == 0)
     alignment = DEFAULT_ALIGNMENT;
+  if (size == 0)
+    /* Default size is what GNU malloc can fit in a 4096-byte block.
+       Pick a number small enough that when rounded up to DEFAULT_ROUNDING
+       it is still smaller than 4096 - 4.  */
+    {
+      int extra = 4;
+      if (extra < DEFAULT_ROUNDING)
+	extra = DEFAULT_ROUNDING;
+      size = 4096 - extra;
+    }
 
   h->chunkfun = (struct _obstack_chunk * (*)()) chunkfun;
   h->freefun = freefun;
@@ -180,8 +203,10 @@ _obstack_newchunk (h, length)
   /* Move the existing object to the new chunk.
      Word at a time is fast and is safe because these
      structures are aligned at least that much.  */
-  for (i = (obj_size + sizeof (int) - 1) / sizeof (int) - 1; i >= 0; i--)
-    ((int *)new_chunk->contents)[i] = ((int *)h->object_base)[i];
+  for (i = (obj_size + sizeof (COPYING_UNIT) - 1) / sizeof (COPYING_UNIT) - 1;
+       i >= 0; i--)
+    ((COPYING_UNIT *)new_chunk->contents)[i]
+      = ((COPYING_UNIT *)h->object_base)[i];
 
   h->object_base = new_chunk->contents;
   h->next_free = h->object_base + obj_size;
@@ -222,6 +247,10 @@ _obstack_free (h, obj)
     abort ();
 }
 
+#if 0
+/* These are now turned off because the applications do not use it
+   and it uses bcopy via obstack_grow, which causes trouble on sysV.  */
+
 /* Now define the functional versions of the obstack macros.
    Define them to simply use the corresponding macros to do the job.  */
 
@@ -330,3 +359,5 @@ POINTER (obstack_copy0) (obstack, pointer, length)
 }
 
 #endif /* __STDC__ */
+
+#endif /* 0 */

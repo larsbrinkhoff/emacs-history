@@ -265,12 +265,14 @@ extern char *start_of_data ();		/* Start of initialized data */
 #ifndef USG
 #ifndef STRIDE
 #ifndef UMAX
+#ifndef sun386
 /* I have a suspicion that these are turned off on all systems
    and can be deleted.  Try it in version 19.  */
 #include <filehdr.h>
 #include <aouthdr.h>
 #include <scnhdr.h>
 #include <syms.h>
+#endif /* not sun386 */
 #endif /* not UMAX */
 #endif /* Not STRIDE */
 #endif /* not USG */
@@ -310,7 +312,7 @@ static EXEC_HDR_TYPE hdr, ohdr;
 
 #else /* not HPUX */
 
-#if defined (USG) && !defined (IRIS)
+#if defined (USG) && !defined (IBMRTAIX) && !defined (IRIS)
 static struct bhdr hdr, ohdr;
 #define a_magic fmagic
 #define a_text tsize
@@ -324,10 +326,10 @@ static struct bhdr hdr, ohdr;
     (((x).fmagic)!=OMAGIC && ((x).fmagic)!=NMAGIC &&\
      ((x).fmagic)!=FMAGIC && ((x).fmagic)!=IMAGIC)
 #define NEWMAGIC FMAGIC
-#else /* IRIS or not USG */
+#else /* IRIS or IBMRTAIX or not USG */
 static EXEC_HDR_TYPE hdr, ohdr;
 #define NEWMAGIC ZMAGIC
-#endif /* IRIS or not USG */
+#endif /* IRIS or IBMRTAIX not USG */
 #endif /* not HPUX */
 
 static int unexec_text_start;
@@ -879,7 +881,7 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
   AUXENT auxentry;
 #else
   struct syment symentry;
-  struct auxent auxentry;
+  union auxent auxentry;
 #endif
 
   if (!lnnoptr || !f_hdr.f_symptr)

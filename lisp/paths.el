@@ -53,7 +53,7 @@
   "Name of user's primary mail file.")
 
 (defconst rmail-spool-directory
-  (if (memq system-type '(hpux usg-unix-v))
+  (if (memq system-type '(hpux usg-unix-v unisoft-unix rtu))
       "/usr/mail/"
     "/usr/spool/mail/")
   "Name of directory used by system mailer for delivering new mail.
@@ -78,9 +78,11 @@ the terminal-initialization file to be loaded.")
 ;; judging by the list of directories below.  You can't get the dir
 ;; for a section by appending the section number to any one prefix.
 ;; But it turns out that a string that's wrong does no harm here.
-(defconst manual-formatted-dir-prefix "/usr/man/cat"
+(defconst manual-formatted-dir-prefix
+  (if (file-exists-p "/usr/man/cat.C")  ;; Check for Xenix.
+      "/usr/man/cat." "/usr/man/cat")
   "Prefix for directories containing formatted manual pages.
-Append a section-number or letter to get a directory name.")
+Append a section-number or section-name to get a directory name.")
 
 (defconst manual-formatted-dirlist
   (cond ((eq system-type 'hpux)
@@ -95,6 +97,10 @@ Append a section-number or letter to get a directory name.")
 	   "/usr/contrib/man/cat5" "/usr/contrib/man/cat6"
 	   "/usr/contrib/man/cat7" "/usr/contrib/man/cat1m"
 	   "/usr/contrib/man/cat8"))
+	 ((file-exists-p "/usr/man/cat.C")  ; Xenix
+	  '("/usr/man/cat.C" "/usr/man/cat.CP" "/usr/man/cat.CT"
+	    "/usr/man/cat.DOS/" "/usr/man/cat.F" "/usr/man/cat.HW"
+	    "/usr/man/cat.M/" "/usr/man/cat.S" "/usr/man/cat.LOCAL"))
 	 ((file-exists-p "/usr/man/cat1")
 	  '("/usr/man/cat1" "/usr/man/cat2" "/usr/man/cat3"
 	    "/usr/man/cat4" "/usr/man/cat5" "/usr/man/cat6"

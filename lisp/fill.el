@@ -50,6 +50,8 @@ From program, pass args FROM, TO and JUSTIFY-FLAG."
       ;; The first line may not even have a fill prefix.
       (and fpre
 	   (progn
+	     (if (>= (length fill-prefix) fill-column)
+		 (error "fill-prefix too long for specified width"))
 	     (goto-char (point-min))
 	     (forward-line 1)
 	     (while (not (eobp))
@@ -139,6 +141,7 @@ means justify as well."
    (save-restriction
     (let (ncols beg)
       (beginning-of-line)
+      (forward-char (length fill-prefix))
       (skip-chars-forward " \t")
       (setq beg (point))
       (end-of-line)

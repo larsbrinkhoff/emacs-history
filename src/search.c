@@ -45,10 +45,6 @@ unsigned char downcase_table[01000] = {0};	/* folds upper to lower case */
  /* trt[x]=x, trt[x]=(+ 3 (logand x, 0370)), trt[x]='a', and the */
  /* downcase table. */
 
-#ifdef C_ALLOCA
-int static_BM_tab[0400];    /* if alloca is slow don't use it */
-#endif
-
 /* We compile regexps into this buffer and then use it for searching. */
 
 struct re_pattern_buffer searchbuf;
@@ -571,7 +567,8 @@ search_buffer (string, pos, lim, n, RE, trt)
   else				/* non-RE case */
     {
 #ifdef C_ALLOCA
-      BM_tab = &static_BM_tab[0];
+      int BM_tab_space[0400];
+      BM_tab = &BM_tab_space[0];
 #else
       BM_tab = (int *) alloca (0400 * sizeof (int));
 #endif
@@ -1116,7 +1113,7 @@ Zero means the entire text matched by the whole regexp.")
 DEFUN ("match-data", Fmatch_data, Smatch_data, 0, 0, 0,
   "Return list containing all info on what the last search matched.\n\
 Element 2N is (match-beginning N); element 2N + 1 is (match-end N).\n\
-All are represented as markers.")
+All the elements are markers or nil (nil if the Nth pair didn't match).")
   ()
 {
   Lisp_Object data[2 * RE_NREGS];
@@ -1158,7 +1155,10 @@ LIST should have been created by calling match-data previously.")
     {
       marker = Fcar (list);
       if (NULL (marker))
-	search_regs.start[i] = -1;
+	{
+	  search_regs.start[i] = -1;
+	  list = Fcdr (list);
+	}
       else
 	{
 	  CHECK_MARKER (marker, 0);

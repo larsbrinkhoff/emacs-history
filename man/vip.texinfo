@@ -25,6 +25,10 @@
 @setfilename ../info/vip
 @settitle VIP
 
+@iftex
+@finalout
+@end iftex
+
 @titlepage
 @sp 10
 @center @titlefont{VIP}
@@ -178,7 +182,7 @@ The recommended way to load VIP automatically is to include the line:
 @end example
 @noindent
 in your @file{.emacs} file.  The @file{.emacs} file is placed in your home
-directly and it will be executed every time you invoke Emacs.  If you wish
+directory and it will be executed every time you invoke Emacs.  If you wish
 to be in vi mode whenver Emacs starts up, you can include the following
 line in your @file{.emacs} file instead of the above line:
 @example
@@ -1065,7 +1069,7 @@ Move point to the previous line keeping the current column
 @kindex 053 @kbd{+} (@code{vip-next-line-at-bol})
 Move point to the next line at the first non-white character.  If point is
 on the last line of the buffer, a new line will be created and point will
-move to the beginning of that lin (@code{vip-next-line-at-bol}).
+move to the beginning of that line (@code{vip-next-line-at-bol}).
 @item -
 @kindex 055 @kbd{-} (@code{vip-previous-line-at-bol})
 Move point to the previous line at the first non-white character
@@ -1430,7 +1434,7 @@ deleted/yanked text from anonymous register. Given a register name
 argument, the content of the named register will be put back.  Given a
 count, the command will be repeated that many times. This command also
 checks if the text to put back ends with a new line character, and if so
-the text will be but below the current line (@code{vip-put-back}).
+the text will be put below the current line (@code{vip-put-back}).
 @item P
 @kindex 120 @kbd{P} (@code{vip-Put-back})
 Insert at point most recently deleted/yanked text from anonymous register.
@@ -1883,8 +1887,8 @@ customizing VIP.
 @menu
 * Customizing Constants::	How to change values of constants.
 * Customizing Key Bindings::	How to change key bindings.
-* Adding Lisp Code::		Most powerful way of customization.
 @end menu
+
 @node Customizing Constants, Customizing Key Bindings, Customization, Customization
 @section Customizing Constants
 An easy way to customize VIP is to change the values of constants used

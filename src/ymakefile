@@ -1,5 +1,5 @@
 /* Makefile for GNU Emacs.
-   Copyright (C) 1985, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -28,6 +28,10 @@ cppdir = ../cpp/
 
 #define NO_SHORTNAMES
 #include "config.h"
+
+/* On some machines #define register is done in config;
+   don't let it interfere with this file.  */
+#undef register
 
 /* Some machines don't find the standard C libraries in the usual place.  */
 #ifndef LIB_STANDARD
@@ -101,7 +105,7 @@ STARTFILES = START_FILES
    if requested by configuration.  */
 
 #ifdef LD_TEXT_START_ADDR
-STARTFLAGS = -T LD_TEXT_START_ADDR -e LD_TEXT_START_ADDR
+STARTFLAGS = -T LD_TEXT_START_ADDR -e __start
 #endif
 
 LD=ld
@@ -148,22 +152,30 @@ CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
 #define LIBX11_MACHINE
 #endif
 
+#ifndef LIBX10_SYSTEM
+#define LIBX10_SYSTEM
+#endif
+
+#ifndef LIBX11_SYSTEM
+#define LIBX11_SYSTEM
+#endif
+
 #ifdef HAVE_X_WINDOWS
 #ifdef X11
 #ifdef HAVE_X_MENU
 XOBJ = x11term.o x11fns.o xmenu.o
-LIBX = -lXMenu -loldX -lX11 LIBX11_MACHINE
+LIBX = -lXMenu -loldX -lX11 LIBX11_MACHINE LIBX11_SYSTEM
 #else
 XOBJ = x11term.o x11fns.o
-LIBX = -lX11 LIBX11_MACHINE
+LIBX = -lX11 LIBX11_MACHINE LIBX11_SYSTEM
 #endif
 #else /* not X11 */
 #ifdef HAVE_X_MENU
 XOBJ= xterm.o xfns.o xmenu.o
-LIBX= -lXMenu -lX LIBX10_MACHINE
+LIBX= -lXMenu -lX LIBX10_MACHINE LIBX10_SYSTEM
 #else
 XOBJ= xterm.o xfns.o
-LIBX= -lX LIBX10_MACHINE
+LIBX= -lX LIBX10_MACHINE LIBX10_SYSTEM
 #endif /* not HAVE_X_MENU */
 #endif /* not X11 */
 #endif /* HAVE_X_WINDOWS */
@@ -326,9 +338,9 @@ alloca.o : alloca.s config.h
 /* $(CPP) is cc -E, which may get confused by filenames
    that do not end in .c.  So copy file to a safe name.  */
 	cp alloca.s allocatem.c
-	$(CPP) allocatem.c | \
 /* remove any ^L, blank lines, and preprocessor comments,
    since some assemblers barf on them */
+	$(CPP) allocatem.c | \
 	sed -e 's///' -e 's/^#.*//' | \
 	sed -n -e '/^..*$$/p' > allocatem.s
 	-rm -f alloca.o
@@ -355,7 +367,7 @@ crt0.o : crt0.c config.h
 	$(CC) -c $(CFLAGS) C_SWITCH_ASM crt0.c
 dired.o : dired.c commands.h buffer.h config.h 
 dispnew.o : dispnew.c commands.h window.h buffer.h dispextern.h termchar.h termopts.h cm.h config.h
-doc.o : doc.c config.h paths.h
+doc.o : doc.c buffer.h config.h paths.h
 doprnt.o : doprnt.c
 editfns.o : editfns.c window.h buffer.h config.h 
 emacs.o : emacs.c commands.h config.h 
@@ -382,9 +394,9 @@ search.o : search.c regex.h commands.h buffer.h syntax.h config.h
 syntax.o : syntax.c syntax.h buffer.h commands.h config.h 
 sysdep.o : sysdep.c config.h dispextern.h termhooks.h termchar.h termopts.h window.h
 term.o : term.c termchar.h termhooks.h termopts.h config.h cm.h
-termcap.o : termcap.c
+termcap.o : termcap.c config.h
 terminfo.o : terminfo.c config.h
-tparam.o : tparam.c
+tparam.o : tparam.c config.h
 undo.o : undo.c buffer.h commands.h undo.h config.h 
 UNEXEC : config.h
 window.o : window.c indent.h commands.h window.h buffer.h config.h termchar.h
@@ -404,7 +416,7 @@ alloc.o : alloc.c window.h buffer.h config.h
 bytecode.o : bytecode.c buffer.h config.h 
 data.o : data.c buffer.h config.h 
 eval.o : eval.c commands.h config.h
-fns.o : fns.c commands.h config.h
+fns.o : fns.c buffer.h commands.h config.h
 print.o : print.c process.h window.h buffer.h config.h 
 lread.o : lread.c buffer.h paths.h config.h 
 
@@ -412,7 +424,7 @@ lread.o : lread.c buffer.h paths.h config.h
    OTHER_FILES, OBJECTS_SYSTEM and OBJECTS_MACHINE
    select which of these should be compiled.  */
 
-sunfns.o  : sunfns.c config.h
+sunfns.o  : sunfns.c buffer.h config.h
 
 ${etcdir}emacstool: ${etcdir}emacstool.c
 	cd ${etcdir}; make ${MFLAGS} emacstool

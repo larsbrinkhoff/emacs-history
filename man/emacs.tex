@@ -539,7 +539,7 @@ terms identical to those contained in this License Agreement
 protection to some or all third parties, at your option).
 
 @item
-if the modified program serves as a debugger, cause it, when
+if the modified program serves as a text editor, cause it, when
 started running in the simplest and usual way, to print an
 announcement including a valid copyright notice ``Copyright
 @copyright{} 1988 Free Software Foundation, Inc.'' (or with the
@@ -1033,7 +1033,7 @@ Conversely, if you remove the prefix definition of @kbd{C-x 4}, then
   This manual is full of passages that tell you what particular keys do.
 But Emacs does not assign meanings to keys directly.  Instead, Emacs
 assigns meanings to @dfn{functions}, and then gives keys their meanings by
-@dfn{binding} them to functions. 
+@dfn{binding} them to functions.
 
   A function is a Lisp object that can be executed as a program.  Usually
 it is a Lisp symbol which has been given a function definition; every
@@ -1160,14 +1160,14 @@ keys in Emacs were inspired by the standard Berkeley Unix meanings of
 @kbd{C-z} and @kbd{C-c}, but that is their only relationship with
 Unix.  You could customize these keys to do anything (@pxref{Keymaps}).
 
-@c??? What about system V here?
+@c ??? What about system V here?
 
 @node Command Switches, Basic, Exiting, Top
 @section Command Line Switches and Arguments
 @cindex command line arguments
 @cindex arguments (from shell)
 
-  
+
   GNU Emacs supports command line arguments to request various actions
 when invoking Emacs.  These are for compatibility with other editors and
 for sophisticated activities.  They are not needed for ordinary editing
@@ -1282,7 +1282,7 @@ emacs *.c
 @noindent
 passes each @code{.c} file as a separate argument to Emacs, so that Emacs
 visits each file (@pxref{Visiting}).
-  
+
   Here is an advanced example that assumes you have a Lisp program
 file called @file{hack-c-program.el} which, when loaded, performs some
 useful operation on current buffer, expected to be a C program.
@@ -1337,7 +1337,7 @@ a printing character and then type @key{DEL}, they cancel out.
 a newline character in the buffer.  If point is in the middle of a line,
 @key{RET} splits the line.  Typing @key{DEL} when the cursor is at the
 beginning of a line rubs out the newline before the line, thus joining the
-line with the preceding line.  
+line with the preceding line.
 
   Emacs will split lines automatically when they become too long, if you
 turn on a special mode called @dfn{Auto Fill} mode.  @xref{Filling}, for
@@ -2299,7 +2299,7 @@ that is how you ask for help about using @kbd{C-h}.
 you to go ahead and type the option.  It prompts with a string
 
 @smallexample
-A, B, C, F, I, K, L, M, N, S, T, V, W, C-c, C-d, C-n, C-w or C-h for more help: 
+A, B, C, F, I, K, L, M, N, S, T, V, W, C-c, C-d, C-n, C-w or C-h for more help:
 @end smallexample
 
 @noindent
@@ -3494,7 +3494,7 @@ were not there.
 
 @node Display Vars,, Selective Display, Display
 @section Variables Controlling Display
- 
+
   This section contains information for customization only.  Beginning
 users should skip it.
 
@@ -4347,7 +4347,7 @@ answer.
 the character executed as a command.  To restart the @code{query-replace},
 use @kbd{C-x @key{ESC}}, which repeats the @code{query-replace} because it
 used the minibuffer to read its arguments.  @xref{Repetition, C-x ESC}.
-  
+
 @node Other Repeating Search,, Replace, Search
 @section Other Search-and-Loop Commands
 
@@ -4486,7 +4486,7 @@ characters between the words do not move.  For example, @w{@samp{FOO, BAR}}
 transposes into @w{@samp{BAR, FOO}} rather than @samp{@w{BAR FOO,}}.
 
   @kbd{C-M-t} (@code{transpose-sexps}) is a similar command for transposing
-two expressions (@pxref{Lists}), and @kbd {C-x C-t} (@code{transpose-lines})
+two expressions (@pxref{Lists}), and @kbd{C-x C-t} (@code{transpose-lines})
 exchanges lines.  They work like @kbd{M-t} except in determining the
 division of the text into syntactic units.
 
@@ -5415,7 +5415,7 @@ auto-saving (that is, files whose names begin and end with @samp{#}).
 backups for files that were edited (that is, files whose names end with
 @samp{~}).
 
-@vindex dired-new-versions
+@vindex dired-kept-versions
   @kbd{.} (Period) flags just some of the backup files for deletion: only
 numeric backups that are not among the oldest few nor the newest few
 backups of any one file.  Normally @code{dired-kept-versions} (not
@@ -5630,7 +5630,7 @@ marks the selected buffer.  Here is an example of a buffer list:@refill
     net.emacs      343885 Fundamental   /u/rms/net.emacs
     fileio.c       27691 C              /u2/emacs/src/fileio.c
     NEWS           67340 Text           /u2/emacs/etc/NEWS
-    *scratch*	   0	 Lisp Interaction 
+    *scratch*	   0	 Lisp Interaction
 @end smallexample
 
 @noindent
@@ -6180,8 +6180,6 @@ mode, @key{TAB} implements a subtle and sophisticated indentation style that
 knows about many aspects of C syntax.
 
 @kindex TAB
-@kindex LFD
-@findex indent-new-line
   In Text mode, @key{TAB} runs the command @code{tab-to-tab-stop}, which
 indents to the next tab stop column.  You can set the tab stops with
 @kbd{M-x edit-tab-stops}.
@@ -6294,7 +6292,7 @@ tab stops every eight columns.
 
 @example
         :       :       :       :       :       :
-0         1         2         3         4        
+0         1         2         3         4
 0123456789012345678901234567890123456789012345678
 To install changes, type C-c C-c
 @end example
@@ -6496,19 +6494,31 @@ tex-mode} does not guess right.@refill
 * Printing: TeX Print.    Commands for printing part of a file with TeX.
 @end menu
 
-  @TeX{} for Berkeley Unix can be obtained on a 1600bpi tar tape for a $100
-distribution fee from
+  @TeX{} for Unix systems can be obtained from the University of Washington
+for a distribution fee.
+
+  To order a full distribution, send $140.00 for a 1/2 inch
+9-track tape, $165.00 for two 4-track 1/4 inch cartridge tapes
+(foreign sites $150.00, for 1/2 inch, $175.00 for 1/4 inch, to cover
+the extra postage) payable to the University of Washington to:
 
 @display
-Pierre MacKay
-Department of Computer Science, FR-35
+The Director
+Northwest Computer Support Group,  DW-10
 University of Washington
-Seattle, WA 98195
+Seattle, Washington 98195
 @end display
 
 @noindent
-It would work on system V as well if that version of Unix had a reasonable
-Pascal compiler.  Outside the U.S., add $10 to cover extra costs.
+Purchase orders are acceptable, but there is an extra charge of
+$10.00, to pay for processing charges. (Total of $150 for domestic
+sites, $175 for foreign sites).
+
+  The normal distribution is a tar tape, blocked 20, 1600 bpi, on an
+industry standard 2400 foot half-inch reel.  The physical format for
+the 1/4 inch streamer cartridges uses QIC-11, 8000 bpi, 4-track
+serpentine recording for the SUN.  Also, SystemV tapes can be written
+in cpio format, blocked 5120 bytes, ASCII headers.
 
 @node TeX Editing,TeX Print,TeX Mode,TeX Mode
 @subsubsection @TeX{} Editing Commands
@@ -6577,7 +6587,7 @@ for a few seconds and pushes a mark at that spot.  Scanning continues
 until the whole buffer has been checked or until you type another key.
 The positions of the last several paragraphs with mismatches can be
 found in the mark ring (@pxref{Mark Ring}).
-  
+
   Note that square brackets and parentheses are matched in @TeX{} mode, not
 just braces.  This is wrong for the purpose of checking @TeX{} syntax.
 However, parentheses and square brackets are likely to be used in text as
@@ -7851,7 +7861,7 @@ that start inside strings, or C preprocessor lines when in C mode.
   Another way to specify the range to be re-indented is with point and
 mark.  The command @kbd{C-M-\} (@code{indent-region}) applies @key{TAB} to every line
 whose first character is between point and mark.
- 
+
 @node Lisp Indent, C Indent, Multi-line Indent, Grinding
 @subsection Customizing Lisp Indentation
 @cindex customization
@@ -8980,8 +8990,8 @@ actual positions in the line are standard Fortran.
 the display.
 
 @kindex C-c C-w (Fortran mode)
-@findex fortran-create-window
-  For even more help, use @kbd{C-c C-w} (@code{fortran-create-window}), a
+@findex fortran-window-create
+  For even more help, use @kbd{C-c C-w} (@code{fortran-window-create}), a
 command which splits the current window horizontally, making a window 72
 columns wide.  By editing in this window you can immediately see when you
 make a line too wide to be correct Fortran.
@@ -9126,7 +9136,7 @@ set the prompt only if there already is a prompt.  In @code{csh}, here is
 how to do it:
 
 @example
-if ($?prompt) set prompt = ... 
+if ($?prompt) set prompt = ...
 @end example
 
 @node Lisp Modes, Lisp Libraries, Compilation, Running
@@ -9724,7 +9734,7 @@ This command is useful if you have typed in text using abbrevs but forgot
 to turn on Abbrev mode first.  It may also be useful together with a
 special set of abbrev definitions for making several global replacements at
 once.  This command is effective even if Abbrev mode is not enabled.
-  
+
 @node Editing Abbrevs, Saving Abbrevs, Expanding Abbrevs, Abbrevs
 @section Examining and Editing Abbrevs
 
@@ -11022,12 +11032,12 @@ whose message is deleted, undeletes that message, and selects it in Rmail.
 
 @kindex SPC (Rmail summary)
 @kindex DEL (Rmail summary)
-@findex rmail-summary-scroll-down
-@findex rmail-summary-scroll-up
+@findex rmail-summary-scroll-msg-down
+@findex rmail-summary-scroll-msg-up
   When moving through messages with the summary buffer, it is convenient to
 be able to scroll the message while remaining in the summary window.
-The commands @key{SPC} (@code{rmail-summary-scroll-up}) and @key{DEL}
-(@code{rmail-summary-scroll-down}) do this.  They scroll the message just
+The commands @key{SPC} (@code{rmail-summary-scroll-msg-up}) and @key{DEL}
+(@code{rmail-summary-scroll-msg-down}) do this.  They scroll the message just
 as those same keys do when the Rmail buffer is selected.@refill
 
 @kindex x (Rmail summary)
@@ -11087,7 +11097,7 @@ message a copy of the current Rmail message; normally this is the message
 you are replying to, but you can also switch to the Rmail buffer, select a
 different message, switch back, and yank new current message.  Normally the
 yanked message is indented four spaces and has most header fields deleted
-from it; an argument to @kbd{C-c y} specifies the amount to indent, and
+from it; an argument to @kbd{C-c C-y} specifies the amount to indent, and
 @kbd{C-u C-c C-y} does not indent at all and does not delete any header
 fields.@refill
 
@@ -11733,10 +11743,10 @@ editors.  Standard facilities can emulate these:
 Turn on EDT emulation with @kbd{M-x edt-emulation-on}.  @kbd{M-x
 edt-emulation-off} restores normal Emacs command bindings.
 
-Most of the EDT emulation commands are keypad keys, and most standard Emacs
-key bindings are still available.  The EDT emulation rebindings are done in
-the global keymap, so there is no problem switching buffers or major modes
-while in EDT emulation.
+Most of the EDT emulation commands are keypad keys, and most standard
+Emacs key bindings are still available.  The EDT emulation rebindings
+are done in the global keymap, so there is no problem switching
+buffers or major modes while in EDT emulation.
 
 @item Gosling Emacs
 @findex set-gosmacs-bindings
@@ -12628,9 +12638,9 @@ has this class in both C and Lisp.
 The class of punctuation characters that do not fit into any other
 special class.
 @item (
-The class of opening delimiters. 
+The class of opening delimiters.
 @item )
-The class of closing delimiters. 
+The class of closing delimiters.
 @item '
 The class of expression-adhering characters.  These characters are
 part of a symbol if found within or adjacent to one, and are part
@@ -13320,14 +13330,14 @@ say what mode you are in.
   If the manifestation of the bug is an Emacs error message, it is
 important to report not just the text of the error message but a backtrace
 showing how the Lisp program in Emacs arrived at the error.  To make the
-backtrace, you must execute the Lisp expression @code{(setq debug-on-error@ t)}
-before the error happens (that is to say, you must execute that expression
-and then make the bug happen).  This causes the Lisp debugger to run
-(@pxref{Lisp Debug}).  The debugger's backtrace can be copied as text into
-the bug report.  This use of the debugger is possible only if you know how
-to make the bug happen again.  Do note the error message the first time the
-bug happens, so if you can't make it happen again, you can report at least
-that.
+backtrace, you must execute the Lisp expression 
+@code{(setq @w{debug-on-error t})} before the error happens (that is to
+say, you must execute that expression and then make the bug happen).  This
+causes the Lisp debugger to run (@pxref{Lisp Debug}).  The debugger's
+backtrace can be copied as text into the bug report.  This use of the
+debugger is possible only if you know how to make the bug happen again.  Do
+note the error message the first time the bug happens, so if you can't make
+it happen again, you can report at least that.
 
   Check whether any programs you have loaded into the Lisp world, including
 your @file{.emacs} file, set any variables that may affect the functioning

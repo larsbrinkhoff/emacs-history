@@ -19,6 +19,8 @@
 ;; and this notice must be preserved on all copies.
 
 
+(provide 'tags)
+
 (defvar tag-table-files nil
   "List of file names covered by current tag table.
 nil means it has not been computed yet; do (tag-table-files) to compute it.")
@@ -276,7 +278,7 @@ unless it has one in the tag table."
      (goto-char 1)
      (search-forward (concat "\f\n" string ","))
      (forward-line 1)
-     (while (not (looking-at "\f"))
+     (while (not (or (eobp) (looking-at "\f")))
        (princ (buffer-substring (point)
 				(progn (skip-chars-forward "^\177")
 				       (point))))

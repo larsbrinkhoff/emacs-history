@@ -1,6 +1,114 @@
-GNU Emacs NEWS -- history of user-visible changes.  12-Feb-1988
+GNU Emacs NEWS -- history of user-visible changes.  17-Aug-1988
 Copyright (C) 1988 Free Software Foundation, Inc.
 See the end for copying conditions.
+
+Changes in version 18.52.
+
+* X windows version 10 is supported under system V.
+
+* Pop-up menus are now supported with the same Lisp interface in
+both version 10 and 11 of X windows.
+
+* C-x 4 a is a new command to edit a change-log entry in another window.
+
+* The emacs client program now allows an option +NNN to specify the
+line number to go to in the file whose name follows.  Thus,
+    emacsclient foo.c +45 bar.c
+will find the files `foo.c' and `bar.c', going to line 45 in `bar.c'.
+
+* Dired allows empty directories to be deleted like files.
+
+* When the terminal type is used to find a terminal-specific file to
+run, Emacs now tries the entire terminal type first.  If that doesn't
+yield a file that exists, the last hyphen and what follows it is
+stripped.  If that doesn't yield a file that exists, the previous
+hyphen is stripped, and so on until all hyphens are gone.  For
+example, if the terminal type is `aaa-48-foo', Emacs will try first
+`term/aaa-48-foo.el', then `term/aaa-48.el' and finally `term/aaa.el'.
+
+Underscores now receive the same treatment as hyphens.
+
+* Texinfo features: @defun, etc.  texinfo-show-structure.
+New template commands.  texinfo-format-region.
+
+* The special "local variable" `eval' is now ignored if you are running
+as root.
+
+* New command `c-macro-expand' shows the result of C macro expansion
+in the region.  It works using the C preprocessor, so its results
+are completely accurate.
+
+* Errors in trying to auto save now flash error messages for a few seconds.
+
+* Killing a buffer now sends SIGHUP to the buffer's process.
+
+* New hooks.
+
+** `spell-region' now allows you to filter the text before spelling-checking.
+If the value of `spell-filter' is non-nil, it is called, with no arguments,
+looking at a temporary buffer containing a copy of the text to be checked.
+It can alter the text freely before the spell program sees it.
+
+** The variable `lpr-command' now specifies the command to be used when
+you use the commands to print text (such as M-x print-buffer).
+
+** Posting netnews now calls the value of `news-inews-hook' (if not nil)
+as a function of no arguments before the actual posting.
+
+** Rmail now calls the value of `rmail-show-message-hook' (if not nil)
+as a function of no arguments, each time a new message is selected.
+
+** `kill-emacs' calls the value of `kill-emacs-hook' as a function of no args.
+
+* New libraries.
+See the source code of each library for more information.
+
+** icon.el: a major mode for editing programs written in Icon.
+
+** life.el: a simulator for the cellular automaton "life".  Load the
+library and run M-x life.
+
+** doctex.el: a library for converting the Emacs `etc/DOC' file of
+documentation strings into TeX input.
+
+** saveconf.el: a library which records the arrangement of windows and
+buffers when you exit Emacs, and automatically recreates the same
+setup the next time you start Emacs.
+
+** uncompress.el: a library that automatically uncompresses files
+when you visit them.
+
+** c-fill.el: a mode for editing filled comments in C.
+
+** kermit.el: an extended version of shell-mode designed for running kermit.
+
+** spook.el: a library for adding some "distract the NSA" keywords to every
+message you send.
+
+** hideif.el: a library for hiding parts of a C program based on preprocessor
+conditionals.
+
+** autoinsert.el: a library to put in some initial text when you visit
+a nonexistent file.  The text used depends on the major mode, and
+comes from a directory of files created by you.
+
+* New programming features.
+
+** The variable `window-system-version' now contains the version number
+of the window system you are using (if appropriate).  When using X windows,
+its value is either 10 or 11.
+
+** (interactive "N") uses the prefix argument if any; otherwise, it reads
+a number using the minibuffer.
+
+** VMS: there are two new functions `vms-system-info' and `shrink-to-icon'.
+The former allows you to get many kinds of system status information.
+See its self-documentation for full details.
+The second is used with the window system: it iconifies the Emacs window.
+
+** VMS: the new function `define-logical-name' allows you to create
+job-wide logical names.  The old function `define-dcl-symbol' has been
+removed.
 
 Changes in version 18.50.
 

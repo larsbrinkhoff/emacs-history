@@ -320,7 +320,8 @@ openp (path, str, suffix, storeptr, exec_only)
 	  /* Concatenate path element/specified name with the suffix.  */
 	  strncpy (fn, XSTRING (filename)->data, XSTRING (filename)->size);
 	  fn[XSTRING (filename)->size] = 0;
-	  strncat (fn, nsuffix, lsuffix);
+	  if (lsuffix != 0)  /* Bug happens on CCI if lsuffix is 0.  */
+	    strncat (fn, nsuffix, lsuffix);
 
 	  /* Ignore file if it's a directory.  */
 	  if (stat (fn, &st) >= 0
@@ -793,7 +794,7 @@ read_list (flag, readcharfun)
 		return val;
 	      return Fsignal (Qinvalid_read_syntax, Fcons (make_string (". in wrong context", 18), Qnil));
 	    }
-	  return Fsignal (Qinvalid_read_syntax, Fcons (make_string ("] in a list", 13), Qnil));
+	  return Fsignal (Qinvalid_read_syntax, Fcons (make_string ("] in a list", 11), Qnil));
 	}
       tem = (read_pure && flag <= 0
 	     ? pure_cons (elt, Qnil)
@@ -1239,10 +1240,14 @@ init_read ()
   for (; !NULL (normal_path); normal_path = XCONS (normal_path)->cdr)
     {
       Lisp_Object dirfile;
-      dirfile = Fdirectory_file_name (Fcar (normal_path));
-      if (access (XSTRING (dirfile)->data, 0) < 0)
-	printf ("Warning: lisp library (%s) does not exist.\n",
-		XSTRING (Fcar (normal_path))->data);
+      dirfile = Fcar (normal_path);
+      if (!NULL (dirfile))
+	{
+	  dirfile = Fdirectory_file_name (dirfile);
+	  if (access (XSTRING (dirfile)->data, 0) < 0)
+	    printf ("Warning: lisp library (%s) does not exist.\n",
+		    XSTRING (Fcar (normal_path))->data);
+	}
     }
 
   Vvalues = Qnil;

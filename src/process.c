@@ -1,5 +1,5 @@
 /* Asynchronous subprocess control for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -56,11 +56,11 @@ and this notice must be preserved on all copies.  */
 
 #else /* not IRIS, not UNIPLUS */
 #ifdef HAVE_TIMEVAL
-#ifdef USG
+#if defined(USG) && !defined(IBMRTAIX)
 #include <time.h>
-#else /* HAVE_TIMEVAL, not USG */
+#else /* IBMRTAIX or not USG */
 #include <sys/time.h>
-#endif /* USG */
+#endif /* IBMRTAIX or not USG */
 #endif /* HAVE_TIMEVAL */
 
 #endif /* not UNIPLUS */
@@ -237,11 +237,11 @@ pty (ptyv)
 #ifdef HPUX
 	sprintf (ptyname, "/dev/ptym/pty%c%x", c, i);
 #else
-#ifdef MASSCOMP
+#ifdef RTU
 	sprintf (ptyname, "/dev/pty%x", i);
 #else
 	sprintf (ptyname, "/dev/pty%c%x", c, i);
-#endif /* not MASSCOMP */
+#endif /* not RTU */
 #endif /* not HPUX */
 #endif /* no PTY_NAME_SPRINTF */
 
@@ -999,7 +999,7 @@ create_process (process, new_argv)
 	    ioctl (j, TIOCNOTTY, 0);
 	    close (j);
 
-#if !defined (MASSCOMP) && !defined(UNIPLUS)
+#if !defined (RTU) && !defined(UNIPLUS)
 #ifdef USG
 	    setpgrp ();
 #endif
@@ -1010,7 +1010,7 @@ create_process (process, new_argv)
 
 	    if (xforkin < 0)
 	      abort ();
-#endif /* not UNIPLUS and not MASSCOMP */
+#endif /* not UNIPLUS and not RTU */
 	  }
 #endif /* TIOCNOTTY */
 #endif /* HAVE_PTYS */
@@ -1364,10 +1364,14 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
       if (read_kbd && kbd_count)
 	nfds = 0;
       else
-#ifndef HPUX
-	nfds = select (MAXDESC, &Available, 0, &Exception, &timeout);
-#else
+#ifdef IBMRTAIX
 	nfds = select (MAXDESC, &Available, 0, 0, &timeout);
+#else
+#ifdef HPUX
+	nfds = select (MAXDESC, &Available, 0, 0, &timeout);
+#else
+	nfds = select (MAXDESC, &Available, 0, &Exception, &timeout);
+#endif
 #endif
       xerrno = errno;
 
@@ -1862,7 +1866,7 @@ kill_buffer_processes (buffer)
 	  if (NETCONN_P (proc))
 	    deactivate_process (proc);
 	  else if (XFASTINT (XPROCESS (proc)->infd))
-	    sig_process (proc, SIGKILL, Qnil, 1);
+	    sig_process (proc, SIGHUP, Qnil, 1);
 	}
     }
 }
@@ -1913,7 +1917,8 @@ child_sig (signo)
   WAITTYPE w;
   Lisp_Object tail, proc;
   register struct Lisp_Process *p;
-  
+  int old_errno = errno;
+
 #ifdef BSD4_1
   extern int synch_process_pid;
   extern int sigheld;
@@ -1943,6 +1948,7 @@ loop:
       sigheld &= ~sigbit (SIGCHLD);
       sigrelse (SIGCHLD);
 #endif
+      errno = old_errno;
       return;
     }
 #else
@@ -1994,6 +2000,7 @@ loop:
 #else
  ignore:
   signal (signo, child_sig);
+  errno = old_errno;
 #endif /* not USG */
 }
 

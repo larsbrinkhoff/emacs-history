@@ -38,9 +38,10 @@ main ()
   exit (1);
 }
 
-#else /* BSD && IPC */
+#else /* BSD or HAVE_SYSVIPC */
 
-#ifdef BSD /* BSD code is very different from SYSV IPC code */
+#if defined(BSD) && ! defined (HAVE_SYSVIPC)
+/* BSD code is very different from SYSV IPC code */
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -99,7 +100,14 @@ main (argc, argv)
 
   for (i = 1; i < argc; i++)
     {
-      if (*argv[i] != '/')
+      if (*argv[i] == '+')
+	{
+	  char *p = argv[i] + 1;
+	  while (*p >= '0' && *p <= '9') p++;
+	  if (*p != 0)
+	    fprintf (out, "%s/", cwd);
+	}
+      else if (*argv[i] != '/')
 	fprintf (out, "%s/", cwd);
       fprintf (out, "%s ", argv[i]);
     }
@@ -137,8 +145,7 @@ main (argc, argv)
       (struct msgbuf *) malloc (sizeof *msgp + BUFSIZ);
   struct msqid_ds * msg_st;
   char *homedir, *getenv (), buf[BUFSIZ];
-  FILE *out;
-  char *getwd (), gwdirb[BUFSIZ], *cwd;
+  char *getwd (), *getcwd (), gwdirb[BUFSIZ], *cwd;
   if (argc < 2)
     {
       printf ("Usage: %s [filename]\n", argv[0]);
@@ -170,8 +177,14 @@ main (argc, argv)
     {
       if (*argv[0] != '/')
 	{
+	  char *val;
 	  cwd = gwdirb; *cwd = '\0';
-	  if (getcwd (gwdirb, sizeof gwdirb))
+#ifdef BSD
+	  val = getwd (gwdirb);
+#else
+	  val = getcwd (gwdirb, sizeof gwdirb);
+#endif
+	  if (val != 0)
 	    {
 	      strcat (cwd, "/");
 	    }
@@ -203,7 +216,6 @@ main (argc, argv)
   strcpy (buf, msgp->mtext);
 
   printf ("Got back: %s\n", buf);
-  fclose (out);
   exit (0);
 }
 

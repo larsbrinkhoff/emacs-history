@@ -769,7 +769,15 @@ Using ls was found to be too slow in a previous version."
 		     (not (file-readable-p file-directory)))
 		 nil
 	       (setq news-list-of-files
-		     (setq tem (directory-files file-directory)))
+		     (condition-case error
+			 (directory-files file-directory)
+		       (file-error
+			(if (string= (nth 2 error) "permission denied")
+			    (message "Newsgroup %s is read-protected"
+				     gp-list)
+			  (signal 'file-error (cdr error)))
+			nil)))
+	       (setq tem news-list-of-files)
 	       (while tem
 		 (if (or (not (string-match "^[0-9]*$" (car tem)))
 			 ;; dont get confused by directories that look like numbers

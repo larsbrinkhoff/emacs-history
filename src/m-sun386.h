@@ -56,9 +56,7 @@ and this notice must be preserved on all copies.  */
 /* Roadrunner uses 'COFF' format */
 #define COFF
 
-/* included due to bogus crap in roadrunner sys/file.h */
-/* #define FNDELAY         00004           /* non-blocking reads */
-#define	O_NDELAY	FNDELAY	/* Non-blocking I/O */
-
-#define C_SWITCH_SYSTEM -Bstatic       /* avoid dynamic linking */
-#define LD_SWITCH_SYSTEM -n -Bstatic
+#define C_SWITCH_MACHINE -Bstatic       /* avoid dynamic linking */
+#define LD_SWITCH_MACHINE -n -Bstatic
+/* Get rid of the -e __start that s-sunos4.h does.  */
+#undef LD_SWITCH_SYSTEM

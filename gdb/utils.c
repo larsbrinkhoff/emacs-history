@@ -399,10 +399,14 @@ parse_escape (string_ptr)
     }
 }
 
+/* Print the character CH on STREAM as part of the contents
+   of a literal string whose delimiter is QUOTER.  */
+
 void
-printchar (ch, stream)
+printchar (ch, stream, quoter)
      unsigned char ch;
      FILE *stream;
+     int quoter;
 {
   register int c = ch;
   if (c < 040 || c >= 0177)
@@ -426,7 +430,7 @@ printchar (ch, stream)
     }
   else
     {
-      if (c == '\\' || c == '"' || c == '\'')
+      if (c == '\\' || c == quoter)
 	fputc ('\\', stream);
       fputc (c, stream);
     }

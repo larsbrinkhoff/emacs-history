@@ -10,7 +10,11 @@ all: ${EXECUTABLES}
 
 distclean:
 	-rm -f ${EXECUTABLES} *~ \#* DOC* core
-	
+
+# This justs verifies that the non-ASCII characters
+# in the file `testfile' have no been clobbered by
+# whatever means were used to copy and distribute Emacs.
+# If they were clobbered, all the .elc files were clobbered too.
 test-distrib: test-distrib.c
 	$(CC) -o test-distrib test-distrib.c
 	./test-distrib

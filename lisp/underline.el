@@ -35,7 +35,7 @@ which specify the range to operate on."
        (forward-char 1)))))
 
 (defun ununderline-region (start end)
-  "Remove allunderlining (overstruck underscores) in the region.
+  "Remove all underlining (overstruck underscores) in the region.
 Called from program, takes two arguments START and END
 which specify the range to operate on."
   (interactive "r")

@@ -1,31 +1,105 @@
 /* Prepare Tex index dribble output into an actual index.
-   Copyright (C) Richard M. Stallman 1984, 1987
+   Copyright (C) 1987 Free Software Foundation, Inc.
 
-   Permission is granted to anyone to make or distribute
-   verbatim copies of this program
-   provided that the copyright notice and this permission notice are preserved;
-   and provided that the recipient is not asked to waive or limit his right to
-   redistribute copies as permitted by this permission notice;
-   and provided that anyone possessing a machine-executable copy
-   is granted access to copy the source code, in machine-readable form,
-   in some reasonable manner.
+		       NO WARRANTY
 
-   Permission is granted to distribute derived works or enhanced versions of
-   this program under the above conditions with the additional condition
-   that the entire derivative or enhanced work
-   must be covered by a permission notice identical to this one.
+  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
 
-   Anything distributed as part of a package containing portions derived
-   from this program, which cannot in current practice perform its function
-   usefully in the absence of what was derived directly from this program,
-   is to be considered as forming, together with the latter,
-   a single work derived from this program,
-   which must be entirely covered by a permission notice identical to this one
-   in order for distribution of the package to be permitted.
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
+OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
+DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
+A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
+PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
+
+		GENERAL PUBLIC LICENSE TO COPY
+
+  1. You may copy and distribute verbatim copies of this source file
+as you receive it, in any medium, provided that you conspicuously
+and appropriately publish on each copy a valid copyright notice
+"Copyright (C) 1987 Free Software Foundation, Inc.", and include
+following the copyright notice a verbatim copy of the above disclaimer
+of warranty and of this License.
+
+  2. You may modify your copy or copies of this source file or
+any portion of it, and copy and distribute such modifications under
+the terms of Paragraph 1 above, provided that you also do the following:
+
+    a) cause the modified files to carry prominent notices stating
+    that you changed the files and the date of any change; and
+
+    b) cause the whole of any work that you distribute or publish,
+    that in whole or in part contains or is a derivative of this
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
+
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
+
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
+
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
+
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
+
+  4. You may not copy, sublicense, distribute or transfer this program
+except as expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer this program is void and
+your rights to use the program under this License agreement shall be
+automatically terminated.  However, parties who have received computer
+software programs from you with this License Agreement will not have
+their licenses terminated so long as such parties remain in full compliance.
+
+  5. If you wish to incorporate parts of this program into other free
+programs whose distribution conditions are different, write to the Free
+Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet
+worked out a simple rule that can be stated here, but we will often permit
+this.  We will be guided by the two goals of preserving the free status of
+all derivatives of our free software and of promoting the sharing and reuse of
+software.
 
  In other words, you are welcome to use, share and improve this program.
  You are forbidden to forbid anyone else to use, share and improve
  what you give them.   Help stamp out software-hoarding!  */
+
 
 #include <stdio.h>
 #include <ctype.h>
@@ -779,7 +853,7 @@ readline (linebuffer, stream)
   return p - buffer;
 }
 
-/* Sort the input files together when they are too big to sort in core */
+/* Sort an input file too big to sort in core.  */
 
 void
 sort_offline (infile, nfiles, total, outfile)
@@ -793,12 +867,19 @@ sort_offline (infile, nfiles, total, outfile)
   int i;
   struct linebuffer lb;
   long linelength;
+  int failure = 0;
 
   initbuffer (&lb);
 
   /* Read in one line of input data.  */
 
   linelength = readline (&lb, istream);
+
+  if (lb.buffer[0] != '\\')
+    {
+      error ("%s: not a texinfo index file", infile);
+      return;
+    }
 
   /* Split up the input into `ntemps' temporary files, or maybe fewer,
     and put the new files' names into `tempfiles' */
@@ -825,6 +906,13 @@ sort_offline (infile, nfiles, total, outfile)
 
 	  linelength = readline (&lb, istream);
 	  if (!linelength && feof (istream)) break;
+
+	  if (lb.buffer[0] != '\\')
+	    {
+	      error ("%s: not a texinfo index file", infile);
+	      failure = 1;
+	      goto fail;
+	    }
 	}
       fclose (ostream);
       if (feof (istream)) break;
@@ -832,6 +920,7 @@ sort_offline (infile, nfiles, total, outfile)
 
   free (lb.buffer);
 
+ fail:
   /* Record number of temp files we actually needed.  */
 
   ntemps = i;
@@ -842,11 +931,14 @@ sort_offline (infile, nfiles, total, outfile)
   for (i = 0; i < ntemps; i++)
     {
       char *newtemp = maketempname (++tempcount);
-      sort_in_core (&tempfiles[i], 1, MAX_IN_CORE_SORT, newtemp);
+      sort_in_core (&tempfiles[i], MAX_IN_CORE_SORT, newtemp);
       if (!keep_tempfiles)
         unlink (tempfiles[i]);
       tempfiles[i] = newtemp;
     }
+
+  if (failure)
+    return;
 
   /* Merge the tempfiles together and indexify */
 
@@ -888,6 +980,12 @@ sort_in_core (infile, total, outfile)
 
   close (desc);
 
+  if (file_size > 0 && data[0] != '\\')
+    {
+      error ("%s: not a texinfo index file", infile);
+      return;
+    }
+
   init_char_order ();
 
   /* Sort routines want to know this address */
@@ -908,6 +1006,11 @@ sort_in_core (infile, total, outfile)
   /* Parse the input file's data, and make entries for the lines.  */
 
   nextline = parsefile (infile, nextline, file_data, file_size);
+  if (nextline == 0)
+    {
+      error ("%s: not a texinfo index file", infile);
+      return;
+    }
 
   /* Sort the lines */
 
@@ -957,9 +1060,10 @@ sort_in_core (infile, total, outfile)
 }
 
 /* Parse an input string in core into lines.
- `data' is the input string, and `size' is its length.
- Data goes in `linearray' starting at `nextline'.
- The value returned is the first entry in `linearray' still unused.  */
+   DATA is the input string, and SIZE is its length.
+   Data goes in LINEARRAY starting at NEXTLINE.
+   The value returned is the first entry in LINEARRAY still unused.
+   Value 0 means input file contents are invalid.  */
 
 char **
 parsefile (filename, nextline, data, size)
@@ -977,12 +1081,12 @@ parsefile (filename, nextline, data, size)
 
   while (p != end)
     {
+      if (p[0] != '\\')
+	return 0;
+
       *line = p;
       while (*p && *p != '\n') p++;
       if (p != end) p++;
-
-  /* This feature will be installed later.  */
-  /*      if (discard_empty_lines && p == *line + 1) continue;  */
 
       line++;
       if (line == linearray + lines)
@@ -1120,7 +1224,8 @@ indexify (line, ostream)
 	}
 
       /* If this primary has a different initial, include an entry for the initial */
-      if (initiallength != lastinitiallength || strcmp (initial, lastinitial))
+      if (initiallength != lastinitiallength ||
+	  strncmp (initial, lastinitial, initiallength))
 	{
 	  fprintf (ostream, "\\initial {");
 	  fwrite (initial, 1, initiallength, ostream);
@@ -1467,7 +1572,7 @@ fatal (s1, s2)
 error (s1, s2)
      char *s1, *s2;
 {
-  printf ("texi: ");
+  printf ("texindex: ");
   printf (s1, s2);
   printf ("\n");
 }

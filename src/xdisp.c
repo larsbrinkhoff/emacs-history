@@ -1,5 +1,5 @@
 /* Display generation from window structure and buffer text.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -198,8 +198,10 @@ message (m, a1, a2, a3)
       doprnt (message_buf, sizeof message_buf - 1, m, 3, &a1);
 #endif /* NO_ARG_ARRAY */
       minibuf_message = message_buf;
+      hold_window_change ();
       display_minibuf_message ();
       update_screen (1, 1);
+      unhold_window_change ();
     }
 }
 
@@ -217,8 +219,10 @@ message1 (m)
   else if (INTERACTIVE)
     {
       minibuf_message = m;
+      hold_window_change ();
       display_minibuf_message ();
       update_screen (1, 1);
+      unhold_window_change ();
     }
 }
 
@@ -283,6 +287,8 @@ DoDsp (SaveMiniBuf)
 
   if (noninteractive)
     return;
+
+  hold_window_change ();
 
   if (screen_garbaged)
     {
@@ -417,6 +423,11 @@ update:
 	  last_arrow_position = Qt;
 	  last_arrow_string = Qt;
 	}
+      /* If we pause after scrolling, some lines in PhysScreen may be null
+	 and then preserve_other_columns won't be able to preserve all
+	 the vertical-bar separators.  So avoid using it in that case.  */
+      if (XFASTINT (w->width) != screen_width)
+	RedoModes = 1;
     }
 
   /* Now text on screen agrees with windows, so
@@ -460,6 +471,8 @@ update:
 
   if (interrupt_input)
     request_sigio ();
+
+  unhold_window_change ();
 }
 
 mark_window_display_accurate (window, flag)
@@ -472,10 +485,11 @@ mark_window_display_accurate (window, flag)
     {
       w = XWINDOW (window);
 
-      XFASTINT (w->last_modified)
-	= !flag ? 0
-	  : XBUFFER (w->buffer) == bf_cur
-	    ? bf_modified : XBUFFER (w->buffer)->text.modified;
+      if (!NULL (w->buffer))
+	XFASTINT (w->last_modified)
+	  = !flag ? 0
+	    : XBUFFER (w->buffer) == bf_cur
+	      ? bf_modified : XBUFFER (w->buffer)->text.modified;
       w->window_end_valid = Qt;
       w->redo_mode_line = Qnil;
 
@@ -1806,6 +1820,9 @@ decode_mode_spec (w, c, maxwidth)
 	return "[[[... ";
       else
 	return ("[[[[[[[[[[" + 10 - (RecurseDepth - MinibufDepth));
+
+    case '%':
+      return "%";
 
     case ']': 
       if (RecurseDepth - MinibufDepth > 10)

@@ -277,8 +277,11 @@ static int gotpool;
 
 char *_malloc_base;
 
+static void getpool ();
+
 /* Cause reinitialization based on job parameters;
   also declare where the end of pure storage is. */
+void
 malloc_init (start, warnfun)
      char *start;
      void (*warnfun) ();
@@ -289,8 +292,20 @@ malloc_init (start, warnfun)
   warnlevel = 0;
   warnfunction = warnfun;
 }
+
+/* Return the maximum size to which MEM can be realloc'd
+   without actually requiring copying.  */
+
+int
+malloc_usable_size (mem)
+     char *mem;
+{
+  int blocksize = 8 << (((struct mhead *) mem) - 1) -> mh_index;
+
+  return blocksize - sizeof (struct mhead) - EXTRA;
+}
 
-static
+static void
 morecore (nu)			/* ask system for more memory */
      register int nu;		/* size index to get more of  */
 {
@@ -397,7 +412,7 @@ morecore (nu)			/* ask system for more memory */
 #endif
 }
 
-static
+static void
 getpool ()
 {
   register int nu;

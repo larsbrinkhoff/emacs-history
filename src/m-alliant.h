@@ -1,7 +1,8 @@
-/* m-alliant.h
+/* m-alliant.h  Alliant machine running system version 2 or 3.
    Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
    Note that for version 1 of the Alliant system
    you should use m-alliant1.h instead of this file.
+   Use m-alliant4.h for version 4.
 
 This file is part of GNU Emacs.
 
@@ -38,7 +39,7 @@ and this notice must be preserved on all copies.  */
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
 
-#ifdef ALLIANT1
+#ifdef ALLIANT_1
 #define NO_ARG_ARRAY
 #endif
 

@@ -87,11 +87,15 @@ PREPARATION
  use `-O' instead.  If you do have a debugger that works,
  it is probably best to use `-g' so that you are not
  helpless in the face of a problem.
+  
+7) If you wish to compile with GCC, you should use -traditional.
+ This is needed for certain include files.  For more info, refer
+ the INSTALL file of GCC.
 
-7) Refer to the file $BUILD/etc/TERMS for information on
+8) Refer to the file $BUILD/etc/TERMS for information on
  fields you may wish to add to various termcap entries.
 
-8) Run `make' in the main directory of the Emacs distribution
+9) Run `make' in the main directory of the Emacs distribution
  to finish building and installing Emacs in the standard way.
  You are done!
 

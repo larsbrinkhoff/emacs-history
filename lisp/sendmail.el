@@ -285,7 +285,17 @@ the user from the mailer."
 	  (forward-char -5)
 	  (insert ?>)))
       (while fcc-list
-	(write-region (point-min) (point-max) (car fcc-list) t)
+	(let ((buffer (get-file-buffer (car fcc-list))))
+	  (if buffer
+	      ;; File is present in a buffer => append to that buffer.
+	      (let ((curbuf (current-buffer))
+		    (beg (point-min)) (end (point-max)))
+		(save-excursion
+		  (set-buffer buffer)
+		  (goto-char (point-max))
+		  (insert-buffer-substring curbuf beg end)))
+	    ;; Else append to the file directly.
+	    (write-region (point-min) (point-max) (car fcc-list) t)))
 	(setq fcc-list (cdr fcc-list))))
     (kill-buffer tembuf)))
 
@@ -392,7 +402,7 @@ and don't delete any header fields."
 
 (defun mail (&optional noerase to subject in-reply-to cc replybuffer)
   "Edit a message to be sent.  Argument means resume editing (don't erase).
-Returns with message buffer seleted; value t if message freshly initialized.
+Returns with message buffer selected; value t if message freshly initialized.
 While editing message, type C-c C-c to send the message and exit.
 
 Various special commands starting with C-c are available in sendmail mode
@@ -430,7 +440,7 @@ The sixth argument REPLYBUFFER is a buffer whose contents
 	      t)))
 
 (defun mail-other-window (&optional noerase to subject in-reply-to cc replybuffer)
-  "Like \"mail\" command, but display mail buffer in another window."
+  "Like `mail' command, but display mail buffer in another window."
   (interactive "P")
   (let ((pop-up-windows t))
     (pop-to-buffer "*mail*"))

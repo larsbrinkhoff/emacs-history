@@ -51,7 +51,7 @@ closing requests for requests that are used in matched pairs."
   (make-local-variable 'nroff-electric-mode)
   ;; now define a bunch of variables for use by commands in this mode
   (make-local-variable 'page-delimiter)
-  (setq page-delimiter "^\\.bp")
+  (setq page-delimiter "^\\.\\(bp\\|SK\\|OP\\)")
   (make-local-variable 'paragraph-start)
   (setq paragraph-start (concat "^[.']\\|" paragraph-start))
   (make-local-variable 'paragraph-separate)
@@ -83,7 +83,7 @@ Puts a full-stop before comments on a line by themselves."
 		1)
 	    (if (save-excursion
 		  (backward-char 1)
-		  (looking-at "^\\."))
+		  (looking-at "^[.']"))
 		1
 	      (max comment-column
 		   (* 8 (/ (+ (current-column)
@@ -143,13 +143,23 @@ An argument is a repeat count; negative means move forward."
     (".CD" . ".DE")
     (".BD" . ".DE")
     (".DS" . ".DE")
+    (".DF" . ".DE")
     (".FS" . ".FE")
     (".KS" . ".KE")
     (".KF" . ".KE")
+    (".LB" . ".LE")
+    (".AL" . ".LE")
+    (".BL" . ".LE")
+    (".DL" . ".LE")
+    (".ML" . ".LE")
+    (".RL" . ".LE")
+    (".VL" . ".LE")
     (".RS" . ".RE")
     (".TS" . ".TE")
     (".EQ" . ".EN")
     (".PS" . ".PE")
+    (".BS" . ".BE")
+    (".G1" . ".G2")			; grap
     (".na" . ".ad b")
     (".nf" . ".fi")
     (".de" . "..")))

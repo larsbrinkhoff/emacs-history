@@ -1,3 +1,3 @@
 /* Define the current version number of GDB.  */
 
-char *version = "2.6";
+char *version = "2.7";

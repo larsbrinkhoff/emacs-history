@@ -1,6 +1,6 @@
 %% TeX macros to handle texinfo files
 
-%   Copyright (C) 1985, 1986 Richard M. Stallman
+%   Copyright (C) 1985, 1986, 1988 Richard M. Stallman
 
 %		       NO WARRANTY
 
@@ -101,7 +101,7 @@
 %You are forbidden to forbid anyone else to use, share and improve
 %what you give them.   Help stamp out software-hoarding!
 
-\def\texinfoversion{1}
+\def\texinfoversion{1.13}
 \message{Loading texinfo package [Version \texinfoversion]:}
 \message{}
 
@@ -283,7 +283,7 @@
 
 % @@ prints an @
 % Kludge this until the fonts are right (grr).
-\def\@{{\sf @}}
+\def\@{{\sf \char '100}}
 
 % Define @` and @' to be the same as ` and '
 % but suppressing ligatures.
@@ -373,6 +373,16 @@
 
 \long\def\ignore #1\end ignore{}
 
+\outer\def\ifset{\parsearg\ifsetxxx}
+
+\def\ifsetxxx #1#2\end ifset{%
+\expandafter\ifx\csname IF#1\endcsname\relax \else #2\fi}
+
+\outer\def\ifclear{\parsearg\ifclearxxx}
+
+\def\ifclearxxx #1#2\end ifclear{%
+\expandafter\ifx\csname IF#1\endcsname\relax #2\fi}
+
 % Some texinfo constructs that are trivial in tex
 
 \def\iftex{}
@@ -406,7 +416,7 @@
 
 % Font-change commands.
 
-%% Try out Computer Modern fonts at a little bigger than \magstephalf
+%% Try out Computer Modern fonts at \magstephalf
 \font\tenrm=cmr10 scaled \magstephalf
 \font\tentt=cmtt10 scaled \magstephalf
 \font\tenbf=cmb10 scaled \magstephalf
@@ -415,6 +425,11 @@
 \font\tensf=cmss10 scaled \magstephalf
 \def\li{\sf}
 \font\tensc=cmcsc10 scaled \magstephalf
+
+% Fonts for @defun, etc.
+\font\defbf=cmbx10 scaled \magstep1 %was 1314
+\let\deftt=\tentt
+\def\df{\let\tt=\deftt \defbf}
 
 % Font for title
 \font\titlerm = cmbx10 scaled \magstep5
@@ -524,31 +539,35 @@
 \def\oddfooting{\parsearg\oddfootingxxx}
 \def\everyfooting{\parsearg\everyfootingxxx}
 
-\def\evenheadingxxx #1{\evenheadingyyy #1\|\|\|\|\finish}
-\def\evenheadingyyy #1\|#2\|#3\|#4\finish{%
+{\catcode`\@=0 %
+
+\gdef\evenheadingxxx #1{\evenheadingyyy #1@|@|@|@|\finish}
+\gdef\evenheadingyyy #1@|#2@|#3@|#4\finish{%
 \global\evenheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
 
-\def\oddheadingxxx #1{\oddheadingyyy #1\|\|\|\|\finish}
-\def\oddheadingyyy #1\|#2\|#3\|#4\finish{%
+\gdef\oddheadingxxx #1{\oddheadingyyy #1@|@|@|@|\finish}
+\gdef\oddheadingyyy #1@|#2@|#3@|#4\finish{%
 \global\oddheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
 
-\def\everyheadingxxx #1{\everyheadingyyy #1\|\|\|\|\finish}
-\def\everyheadingyyy #1\|#2\|#3\|#4\finish{%
+\gdef\everyheadingxxx #1{\everyheadingyyy #1@|@|@|@|\finish}
+\gdef\everyheadingyyy #1@|#2@|#3@|#4\finish{%
 \global\evenheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}
 \global\oddheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
 
-\def\evenfootingxxx #1{\evenfootingyyy #1\|\|\|\|\finish}
-\def\evenfootingyyy #1\|#2\|#3\|#4\finish{%
+\gdef\evenfootingxxx #1{\evenfootingyyy #1@|@|@|@|\finish}
+\gdef\evenfootingyyy #1@|#2@|#3@|#4\finish{%
 \global\evenfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
 
-\def\oddfootingxxx #1{\oddfootingyyy #1\|\|\|\|\finish}
-\def\oddfootingyyy #1\|#2\|#3\|#4\finish{%
+\gdef\oddfootingxxx #1{\oddfootingyyy #1@|@|@|@|\finish}
+\gdef\oddfootingyyy #1@|#2@|#3@|#4\finish{%
 \global\oddfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
 
-\def\everyfootingxxx #1{\everyfootingyyy #1\|\|\|\|\finish}
-\def\everyfootingyyy #1\|#2\|#3\|#4\finish{%
+\gdef\everyfootingxxx #1{\everyfootingyyy #1@|@|@|@|\finish}
+\gdef\everyfootingyyy #1@|#2@|#3@|#4\finish{%
 \global\evenfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}
 \global\oddfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+%
+}% unbind the catcode of @.
 
 % @headings on   turns them on.
 % @headings off  turns them off.
@@ -566,18 +585,27 @@
 % title on inside top of left hand pages, and page numbers on outside top
 % edge of all pages.
 \def\HEADINGSon{
+\pagealignmacro
 \global\pageno=1
-\global\evenfootline={\thisfile\hfil}
-\global\oddfootline={\thisfile\hfil}
+\global\evenfootline={\hfil}
+\global\oddfootline={\hfil}
 \global\evenheadline={\line{\folio\hfil\thistitle}}
 \global\oddheadline={\line{\thischapter\hfil\folio}}
 }
 
 % Subroutines used in generating headings
-\def\today{\ifcase\month\or
+% Produces Day Month Year style of output.
+\def\today{\number\day\space
+\ifcase\month\or
 January\or February\or March\or April\or May\or June\or
 July\or August\or September\or October\or November\or December\fi
-\space\number\day, \number\year}
+\space\number\year}
+
+% Use this if you want the Month Day, Year style of output.
+%\def\today{\ifcase\month\or
+%January\or February\or March\or April\or May\or June\or
+%July\or August\or September\or October\or November\or December\fi
+%\space\number\day, \number\year}
 
 % @settitle line...  specifies the title of the document, for headings
 % It generates no output of its own
@@ -789,6 +817,7 @@ July\or August\or September\or October\or November\or December\fi
 \def\doind #1#2{%
 {\indexdummies % Must do this here, since \bf, etc expand at this stage
 \count10=\lastpenalty %
+\escapechar=`\\%
 {\let\folio=0% Expand all macros now EXCEPT \folio
 \def\rawbackslashxx{\indexbackslash}% \indexbackslash isn't defined now
 % so it will be output as is; and it will print as backslash in the indx.
@@ -801,6 +830,7 @@ July\or August\or September\or October\or November\or December\fi
 \def\dosubind #1#2#3{%
 {\indexdummies % Must do this here, since \bf, etc expand at this stage
 \count10=\lastpenalty %
+\escapechar=`\\%
 {\let\folio=0%
 \def\rawbackslashxx{\indexbackslash}%
 \edef\temp{%
@@ -850,7 +880,7 @@ July\or August\or September\or October\or November\or December\fi
 
 \def\doprintindex#1{\tex %
 \catcode`\%=\other\catcode`\&=\other\catcode`\#=\other
-\catcode`\@=\other\catcode`\$=\other\catcode`\_=\other
+\catcode`\$=\other\catcode`\_=\other
 \catcode`\~=\other
 \def\indexbackslash{\rawbackslashxx}
 \indexfonts\rm \tolerance=9500 \advance\baselineskip -1pt
@@ -864,9 +894,15 @@ July\or August\or September\or October\or November\or December\fi
 % These macros are used by the sorted index file itself.
 % Change them to control the appearance of the index.
 
+% Same as \bigskipamount except no shrink.
+% \balancecolumns gets confused if there is any shrink.
+\newskip\initialskipamount \initialskipamount 12pt plus4pt
+
 \outer\def\initial #1{%
 {\let\tentt=\sectt \let\sf=\sectt
-\bigbreak\line{\secbf#1\hfill}\kern 2pt\penalty3000}}
+\ifdim\lastskip<\initialskipamount
+\removelastskip \penalty-200 \vskip \initialskipamount\fi
+\line{\secbf#1\hfill}\kern 2pt\penalty3000}}
 
 \outer\def\entry #1#2{
 {\parfillskip=0in \parskip=0in \parindent=0in
@@ -948,6 +984,7 @@ July\or August\or September\or October\or November\or December\fi
 \gdef\thissection{#1}\gdef\thischapter{#1}%
 \let\rawbackslash=\relax%
 \edef\temp{{\realbackslash chapentry {#1}{\the\chapno}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp  %
 \donoderef %
 }
@@ -958,6 +995,7 @@ July\or August\or September\or October\or November\or December\fi
 \chapmacro {#1}{Appendix \appendixletter}%
 \gdef\thischapter{#1}\gdef\thissection{#1}%
 \edef\temp{{\realbackslash chapentry {#1}{Appendix \appendixletter}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp  %
 \unnumbnoderef %
 }
@@ -968,6 +1006,7 @@ July\or August\or September\or October\or November\or December\fi
 \unnumbchapmacro {#1}%
 \gdef\thischapter{#1}\gdef\thissection{#1}%
 \edef\temp{{\realbackslash unnumbchapentry {#1}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp  %
 \unnumbnoderef %
 }
@@ -978,6 +1017,7 @@ July\or August\or September\or October\or November\or December\fi
 \gdef\thissection{#1}\secheading {#1}{\the\chapno}{\the\secno}%
 \edef\temp{{\realbackslash secentry %
 {#1}{\the\chapno}{\the\secno}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \donoderef %
 \penalty 10000 %
@@ -990,6 +1030,7 @@ July\or August\or September\or October\or November\or December\fi
 \gdef\thissection{#1}\secheading {#1}{\appendixletter}{\the\secno}%
 \edef\temp{{\realbackslash secentry %
 {#1}{\appendixletter}{\the\secno}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \unnumbnoderef %
 \penalty 10000 %
@@ -1000,6 +1041,7 @@ July\or August\or September\or October\or November\or December\fi
 \plainsecheading {#1}\gdef\thissection{#1}%
 \edef\temp{{\realbackslash unnumbsecentry %
 {#1}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \unnumbnoderef %
 \penalty 10000 %
@@ -1011,6 +1053,7 @@ July\or August\or September\or October\or November\or December\fi
 \subsecheading {#1}{\the\chapno}{\the\secno}{\the\subsecno}%
 \edef\temp{{\realbackslash subsecentry %
 {#1}{\the\chapno}{\the\secno}{\the\subsecno}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \donoderef %
 \penalty 10000 %
@@ -1022,6 +1065,7 @@ July\or August\or September\or October\or November\or December\fi
 \subsecheading {#1}{\appendixletter}{\the\secno}{\the\subsecno}%
 \edef\temp{{\realbackslash subsecentry %
 {#1}{\appendixletter}{\the\secno}{\the\subsecno}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \unnumbnoderef %
 \penalty 10000 %
@@ -1032,6 +1076,7 @@ July\or August\or September\or October\or November\or December\fi
 \plainsecheading {#1}\gdef\thissection{#1}%
 \edef\temp{{\realbackslash unnumbsubsecentry %
 {#1}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \unnumbnoderef %
 \penalty 10000 %
@@ -1043,6 +1088,7 @@ July\or August\or September\or October\or November\or December\fi
 \subsubsecheading {#1}{\the\chapno}{\the\secno}{\the\subsecno}{\the\subsubsecno}%
 \edef\temp{{\realbackslash subsubsecentry %
 {#1}{\the\chapno}{\the\secno}{\the\subsecno}{\the\subsubsecno}{\noexpand\folio}}}%\
+\escapechar=`\\%
 \write \contentsfile \temp %
 \donoderef %
 \penalty 10000 %
@@ -1054,6 +1100,7 @@ July\or August\or September\or October\or November\or December\fi
 \subsubsecheading {#1}{\appendixletter}{\the\secno}{\the\subsecno}{\the\subsubsecno}%
 \edef\temp{{\realbackslash subsubsecentry %
 {#1}{\appendixletter}{\the\secno}{\the\subsecno}{\the\subsubsecno}{\noexpand\folio}}}%\
+\escapechar=`\\%
 \write \contentsfile \temp %
 \unnumbnoderef %
 \penalty 10000 %
@@ -1064,6 +1111,7 @@ July\or August\or September\or October\or November\or December\fi
 \plainsecheading {#1}\gdef\thissection{#1}%
 \edef\temp{{\realbackslash unnumbsubsubsecentry %
 {#1}{\noexpand\folio}}}%
+\escapechar=`\\%
 \write \contentsfile \temp %
 \unnumbnoderef %
 \penalty 10000 %
@@ -1101,9 +1149,19 @@ July\or August\or September\or October\or November\or December\fi
 \def\chapoddpage{\chappager \ifodd\pageno \else \hbox to 0pt{} \chappager\fi}
 
 \def\setchapternewpage #1 {\csname CHAPPAG#1\endcsname}
-\def\CHAPPAGoff{\global\let\pchapsepmacro=\chapbreak}
-\def\CHAPPAGon{\global\let\pchapsepmacro=\chappager}
-\def\CHAPPAGodd{\global\let\pchapsepmacro=\chapoddpage}
+
+\def\CHAPPAGoff{
+\global\let\pchapsepmacro=\chapbreak
+\global\let\pagealignmacro=\chappager}
+
+\def\CHAPPAGon{
+\global\let\pchapsepmacro=\chappager
+\global\let\pagealignmacro=\chappager}
+
+\def\CHAPPAGodd{
+\global\let\pchapsepmacro=\chapoddpage
+\global\let\pagealignmacro=\chapoddpage}
+
 \CHAPPAGon
 
 \def\CHAPFplain{
@@ -1167,7 +1225,7 @@ July\or August\or September\or October\or November\or December\fi
 
 \def\finishcontents{%
 \ifnum\pageno>0 %
-\par\vfill\supereject %
+\pagealignmacro %
 \immediate\closeout \contentsfile%
 \pageno=-1		% Request roman numbered pages
 \fi}
@@ -1197,12 +1255,14 @@ July\or August\or September\or October\or November\or December\fi
 \def\subsecentry ##1##2##3##4##5{}
 \def\subsubsecentry ##1##2##3##4##5##6{}
 \def\unnumbsecentry ##1##2{}
+\def\unnumbsubsecentry ##1##2{}
+\def\unnumbsubsubsecentry ##1##2{}
 \let\medbreak=\smallbreak
 \input \jobname.toc
 }
 \vfill \eject}
 
-\outer\def\bye{\par\vfill\supereject\tracingstats=1\ptexend}
+\outer\def\bye{\pagealignmacro\tracingstats=1\ptexend}
 
 % These macros generate individual entries in the table of contents
 % The first argument is the chapter or section name.
@@ -1260,16 +1320,17 @@ July\or August\or September\or October\or November\or December\fi
 \catcode`\|=12
 \catcode`\<=12
 \catcode`\>=12
-
+\escapechar=`\\
+%
 \let\{=\ptexlbrace
 \let\}=\ptexrbrace
 \let\.=\ptexdot
 \let\*=\ptexstar
-\def\@={@}
+\def\@={@}%
 \let\bullet=\ptexbullet
 \let\b=\ptexb \let\c=\ptexc \let\i=\ptexi \let\t=\ptext \let\l=\ptexl
 \let\L=\ptexL
-
+%
 \let\Etex=\endgroup}
 
 % Define @lisp ... @endlisp.
@@ -1420,6 +1481,268 @@ July\or August\or September\or October\or November\or December\fi
 \advance \rightskip by \lispnarrowing 
 \advance \leftskip by \lispnarrowing}
 
+\message{defuns,}
+% Define formatter for defuns
+% First, allow user to change definition object font (\df) internally
+\def\setdeffont #1 {\csname DEF#1\endcsname}
+
+\newskip\defbodyindent \defbodyindent=36pt
+\newskip\defargsindent \defargsindent=50pt
+\newskip\deftypemargin \deftypemargin=12pt
+\newskip\deflastargmargin \deflastargmargin=18pt
+
+\newcount\parencount
+% define \functionparens, which makes ( and ) and & do special things.
+% \functionparens affects the group it is contained in.
+\def\activeparens{%
+\catcode`\(=\active \catcode`\)=\active \catcode`\&=\active
+\catcode`\[=\active \catcode`\]=\active}
+{\activeparens % Now, smart parens don't turn on until &foo (see \amprm)
+\gdef\functionparens{\boldbrax\let&=\amprm\parencount=0 }
+\gdef\boldbrax{\let(=\opnr\let)=\clnr\let[=\lbrb\let]=\rbrb}
+
+% Definitions of (, ) and & used in args for functions.
+% This is the definition of ( outside of all parentheses.
+\gdef\oprm#1 {{\rm\char`\(}#1 \bf \let(=\opnested %
+\global\advance\parencount by 1 }
+%
+% This is the definition of ( when already inside a level of parens.
+\gdef\opnested{\char`\(\global\advance\parencount by 1 }
+%
+\gdef\clrm{% Print a paren in roman if it is taking us back to depth of 0.
+% also in that case restore the outer-level definition of (.
+\ifnum \parencount=1 {\rm \char `\)}\sl \let(=\oprm \else \char `\) \fi
+\global\advance \parencount by -1 }
+% If we encounter &foo, then turn on ()-hacking afterwards
+\gdef\amprm#1 {{\rm\&#1}\let(=\oprm \let)=\clrm\ }
+%
+\gdef\normalparens{\boldbrax\let&=\ampnr}
+} % End of definition inside \activeparens
+%% These parens (in \boldbrax) actually are a little bolder than the
+%% contained text.  This is especially needed for [ and ]
+\def\opnr{{\sf\char`\(}} \def\clnr{{\sf\char`\)}} \def\ampnr{\&}
+\def\lbrb{{\tt\char`\[}} \def\rbrb{{\tt\char`\]}}
+
+% First, defname, which formats the header line itself.
+% #1 should be the function name.
+% #2 should be the type of definition, such as "Function".
+
+\def\defname #1#2{%
+\leftskip = 0in  %
+\noindent        %
+\setbox0=\hbox{\hskip \deflastargmargin{\rm #2}\hskip \deftypemargin}%
+\dimen0=\hsize \advance \dimen0 by -\wd0 % compute size for first line
+\dimen1=\hsize \advance \dimen1 by -\defargsindent %size for continuations
+\parshape 2 0in \dimen0 \defargsindent \dimen1     %
+% Now output arg 2 ("Function" or some such)
+% ending at \deftypemargin from the right margin,
+% but stuck inside a box of width 0 so it does not interfere with linebreaking
+\rlap{\rightline{{\rm #2}\hskip \deftypemargin}}%
+\tolerance=10000 \hbadness=10000    % Make all lines underfull and no complaints
+{\df #1}\enskip        % Generate function name
+}
+
+% Actually process the body of a definition
+% #1 should be the terminating control sequence, such as \Edefun.
+% #2 should be the "another name" control sequence, such as \defunx.
+% #3 should be the control sequence that actually processes the header,
+%    such as \defunheader.
+
+\def\defparsebody #1#2#3{\begingroup\inENV% Environment for definitionbody
+\medbreak %
+% Define the end token that this defining construct specifies
+% so that it will exit this group.
+\def#1{\endgraf\endgroup\medbreak}%
+\def#2{\begingroup\obeylines\activeparens\spacesplit#3}%
+\parindent=0in \leftskip=\defbodyindent %
+\begingroup\obeylines\activeparens\spacesplit#3}
+
+\def\defmethparsebody #1#2#3#4 {\begingroup\inENV %
+\medbreak %
+% Define the end token that this defining construct specifies
+% so that it will exit this group.
+\def#1{\endgraf\endgroup\medbreak}%
+\def#2##1 {\begingroup\obeylines\activeparens\spacesplit{#3{##1}}}%
+\parindent=0in \leftskip=\defbodyindent %
+\begingroup\obeylines\activeparens\spacesplit{#3{#4}}}
+
+% Split up #2 at the first space token.
+% call #1 with two arguments:
+%  the first is all of #2 before the space token,
+%  the second is all of #2 after that space token.
+% If #2 contains no space token, all of it is passed as the first arg
+% and the second is passed as empty.
+
+{\obeylines
+\gdef\spacesplit#1#2^^M{\endgroup\spacesplitfoo{#1}#2 \relax\spacesplitfoo}%
+\long\gdef\spacesplitfoo#1#2 #3#4\spacesplitfoo{%
+\ifx\relax #3%
+#1{#2}{}\else #1{#2}{#3#4}\fi}}
+
+% So much for the things common to all kinds of definitions.
+
+% Define @defun.
+
+% First, define the processing that is wanted for arguments of \defun
+% Use this to expand the args and terminate the paragraph they make up
+
+\def\defunargs #1{\functionparens \sl #1%
+\ifnum\parencount=0 \else \errmessage{unbalanced parens in @def arguments}\fi%
+\interlinepenalty=10000
+\endgraf\vskip -\parskip \penalty 10000}
+
+% Do complete processing of one @defun or @defunx line already parsed.
+
+% @deffn Command forward-char nchars
+
+\def\deffn{\defmethparsebody\Edeffn\deffnx\deffnheader}
+
+\def\deffnheader #1#2#3{\doind {fn}{#2}%
+\begingroup\defname {#2}{#1}\defunargs{#3}\endgroup}
+
+% @defun == @deffn Function
+
+\def\defun{\defparsebody\Edefun\defunx\defunheader}
+
+\def\defunheader #1#2{\doind {fn}{#1}% Make entry in function index
+\begingroup\defname {#1}{Function}%
+\defunargs {#2}\endgroup %
+}
+
+% @defmac == @deffn Macro
+
+\def\defmac{\defparsebody\Edefmac\defmacx\defmacheader}
+
+\def\defmacheader #1#2{\doind {fn}{#1}% Make entry in function index
+\begingroup\defname {#1}{Macro}%
+\defunargs {#2}\endgroup %
+}
+
+% @defspec == @deffn Special Form
+
+\def\defspec{\defparsebody\Edefspec\defspecx\defspecheader}
+
+\def\defspecheader #1#2{\doind {fn}{#1}% Make entry in function index
+\begingroup\defname {#1}{Special form}%
+\defunargs {#2}\endgroup %
+}
+
+% This definition is run if you use @defunx
+% anywhere other than immediately after a @defun or @defunx.
+
+\def\deffnx #1 {\errmessage{@deffnx in invalid context}}
+\def\defunx #1 {\errmessage{@defunx in invalid context}}
+\def\defmacx #1 {\errmessage{@defmacx in invalid context}}
+\def\defspecx #1 {\errmessage{@defspecx in invalid context}}
+
+% @defmethod, and so on
+
+% @defop {Funny Method} foo-class frobnicate argument
+
+\def\defop #1 {\def\defoptype{#1}%
+\defmethparsebody\Edefop\defopx\defopheader}
+
+\def\defopheader #1#2#3{\dosubind {fn}{#2}{on #1}% Make entry in function index
+\begingroup\defname {#2}{\defoptype{} on #1}%
+\defunargs {#3}\endgroup %
+}
+
+% @defmethod == @defop Method
+
+\def\defmethod{\defmethparsebody\Edefmethod\defmethodx\defmethodheader}
+
+\def\defmethodheader #1#2#3{\dosubind {fn}{#2}{on #1}% entry in function index
+\begingroup\defname {#2}{Operation on #1}%
+\defunargs {#3}\endgroup %
+}
+
+% @defcv {Class Option} foo-class foo-flag
+
+\def\defcv #1 {\def\defcvtype{#1}%
+\defmethparsebody\Edefcv\defcvx\defcvheader}
+
+\def\defcvarheader #1#2#3{%
+\dosubind {vr}{#2}{of #1}% Make entry in var index
+\begingroup\defname {#2}{\defcvtype of #1}%
+\defvarargs {#3}\endgroup %
+}
+
+% @defivar == @defcv {Instance Variable}
+
+\def\defivar{\defmethparsebody\Edefivar\defivarx\defivarheader}
+
+\def\defivarheader #1#2#3{%
+\dosubind {vr}{#2}{of #1}% Make entry in var index
+\begingroup\defname {#2}{Instance variable of #1}%
+\defvarargs {#3}\endgroup %
+}
+
+% These definitions are run if you use @defmethodx, etc.,
+% anywhere other than immediately after a @defmethod, etc.
+
+\def\defopx #1 {\errmessage{@defopx in invalid context}}
+\def\defmethodx #1 {\errmessage{@defmethodx in invalid context}}
+\def\defcvx #1 {\errmessage{@defcvx in invalid context}}
+\def\defivarx #1 {\errmessage{@defivarx in invalid context}}
+
+% Now @defvar
+
+% First, define the processing that is wanted for arguments of @defvar.
+% This is actually simple: just print them in roman.
+% This must expand the args and terminate the paragraph they make up
+\def\defvarargs #1{\normalparens #1%
+\interlinepenalty=10000
+\endgraf\vskip -\parskip \penalty 10000}
+
+% @defvr Counter foo-count
+
+\def\defvr{\defmethparsebody\Edefvr\defvrx\defvrheader}
+
+\def\defvrheader #1#2#3{\doind {vr}{#2}%
+\begingroup\defname {#2}{#1}\defvarargs{#3}\endgroup}
+
+% @defvar == @defvr Variable
+
+\def\defvar{\defparsebody\Edefvar\defvarx\defvarheader}
+
+\def\defvarheader #1#2{\doind {vr}{#1}% Make entry in var index
+\begingroup\defname {#1}{Variable}%
+\defvarargs {#2}\endgroup %
+}
+
+% @defopt == @defvr {User Option}
+
+\def\defopt{\defparsebody\Edefopt\defoptx\defoptheader}
+
+\def\defoptheader #1#2{\doind {vr}{#1}% Make entry in var index
+\begingroup\defname {#1}{User Option}%
+\defvarargs {#2}\endgroup %
+}
+
+% This definition is run if you use @defvarx
+% anywhere other than immediately after a @defvar or @defvarx.
+
+\def\defvrx #1 {\errmessage{@defvrx in invalid context}}
+\def\defvarx #1 {\errmessage{@defvarx in invalid context}}
+\def\defoptx #1 {\errmessage{@defoptx in invalid context}}
+
+% Now define @deftp
+% Args are printed in bold, a slight difference from @defvar.
+
+\def\deftpargs #1{\bf \defvarargs{#1}}
+
+% @deftp Class window height width ...
+
+\def\deftp{\defmethparsebody\Edeftp\deftpx\deftpheader}
+
+\def\deftpheader #1#2#3{\doind {tp}{#2}%
+\begingroup\defname {#2}{#1}\deftpargs{#3}\endgroup}
+
+% This definition is run if you use @deftpx, etc
+% anywhere other than immediately after a @deftp, etc.
+
+\def\deftpx #1 {\errmessage{@deftpx in invalid context}}
+
 \message{cross reference,}
 % Define cross-reference macros
 \newwrite \auxfile
@@ -1438,10 +1761,15 @@ July\or August\or September\or October\or November\or December\fi
 
 \def\pxref #1{see \xrefX [#1,,,,,,,]}
 \def\xref #1{See \xrefX [#1,,,,,,,]}
-\def\xrefX [#1,#2,#3,#4,#5,#6]{\refx{#1-snt} [%
-{\setbox0=\hbox{\losespace#3{}}%
-\ifdim \wd0 =0pt \losespace#1{}\else\unhbox0\fi}],
-page\tie \refx{#1-pg}}
+\def\xrefX [#1,#2,#3,#4,#5,#6]{%
+\setbox1=\hbox{\i{\losespace#5{}}}%
+\setbox0=\hbox{\losespace#3{}}%
+\ifdim \wd0 =0pt \setbox0=\hbox{\losespace#1{}}\fi%
+\ifdim \wd1 >0pt%
+section \unhbox0{} in \unhbox1%
+\else%
+\refx{#1-snt} [\unhbox0], page\tie \refx{#1-pg}%
+\fi }
 
 % \dosetq is the interface for calls from other macros
 
@@ -1555,6 +1883,30 @@ section\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
 
 \openout \auxfile=\jobname.aux
 
+% Footnotes.
+
+\newcount \footnoteno
+
+\def\supereject{\par\penalty -20000\footnoteno =0 }
+
+\let\ptexfootnote=\footnote
+
+{\catcode `\@=11
+\gdef\footnote{\global\advance \footnoteno by \@ne
+\edef\thisfootno{$^{\the\footnoteno}$}%
+\let\@sf\empty
+\ifhmode\edef\@sf{\spacefactor\the\spacefactor}\/\fi
+\thisfootno\@sf\parsearg\footnotezzz}
+
+\gdef\footnotezzz #1{\insert\footins{
+\interlinepenalty\interfootnotelinepenalty
+\splittopskip\ht\strutbox % top baseline for broken footnotes
+\splitmaxdepth\dp\strutbox \floatingpenalty\@MM
+\leftskip\z@skip \rightskip\z@skip \spaceskip\z@skip \xspaceskip\z@skip
+\footstrut\hang\textindent{\thisfootno}#1\strut}}
+
+}%end \catcode `\@=11
+
 % End of control word definitions.
 
 \message{and turning on texinfo input format.}
@@ -1573,6 +1925,9 @@ section\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
 \parskip 18pt plus 1pt
 \baselineskip 15pt
 \advance\topskip by 1.2cm
+
+% Prevent underfull vbox error messages.
+\vbadness=10000
 
 % Use @smallbook to reset parameters for 7x9.5 format
 \def\smallbook{
@@ -1634,6 +1989,9 @@ section\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
 
 % \normalbackslash outputs one backslash in fixed width font.
 \def\normalbackslash{{\tt\rawbackslashxx}}
+
+% Say @foo, not \foo, in error messages.
+\escapechar=`\@
 
 %% These look ok in all fonts, so just make them not special.  The @rm below
 %% makes sure that the current font starts out as the newly loaded cmr10

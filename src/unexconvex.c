@@ -248,8 +248,6 @@ pointer looks like an int) but not on all machines.
 
 #ifndef CANNOT_UNEXEC /* most of rest of file */
 
-#ifndef mips  /* mips machine requires completely separate code.  */
-
 #include <a.out.h>
 /* Define getpagesize () if the system does not.
    Note that this may depend on symbols defined in a.out.h
@@ -899,4 +897,5 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
 
 #endif /* COFF */
 
+#endif /* not CANNOT_UNEXEC */
 #endif /* not CANNOT_DUMP */

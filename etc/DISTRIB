@@ -51,10 +51,8 @@ GNU Emacs is distributed with no warranty (see the General Public
 License for full details), and neither I nor the Free Software
 Foundation promises any kind of support or assistance to users.  The
 foundation keeps a list of people who are willing to offer support and
-assistance for hire.  We will list anyone who agrees never to ask
-customers to keep secret anything they are told or given as part of
-the support.  It is usually in a file named SERVICE in the same
-directory as this file.
+assistance for hire.  It is usually in a file named SERVICE in the
+same directory as this file.
 
 However, I plan to continue to improve GNU Emacs and keep it reliable,
 so please send me any complaints and suggestions you have.  I will
@@ -94,7 +92,7 @@ information on GNU, see the file GNU in this directory.
 			President of the Free Software Foundation
 
 		Free Software Foundation Order Form
-			    26 April 1988
+			    31 May 1988
 
 All software and publications are distributed with permission to
 copy and redistribute.
@@ -105,6 +103,7 @@ ________ $150	GNU Emacs source code, on a 1600bpi industry standard
 		mag tape in tar format.  The tape also contains:
 		* GDB (the GNU source-level C debugger)
 		* MIT Scheme (a dialect of Lisp)
+		* T, Yale's implementation of Scheme
 		* Hack (a rogue-like game)
 		* Bison (a free, compatible replacement for yacc)
 		* The X window system (a window system for bitmap
@@ -123,10 +122,13 @@ ________ $150	GNU C Compiler source code, on a 1600bpi industry standard
 		* Bison (a free, compatible replacement for yacc)
 		* The X window system (a window system for bitmap
 		  displays written at MIT) (version 11r2)
-		* GNU versions of ld, make, size, nm and strip
+		* GNU versions of ld, make, gprof, size, nm and strip
 		* Flex (Vern Paxson fast rewrite of lex)
 
 ________ $175   Same data as above on a Sun DC300XL 1/4" cartridge tape.
+
+________ $150   GNU C compiler sources and executables for VMS
+		in a special self-loading format; also assembler and Bison.
 
 ________  $15	GNU Emacs manual (~300 pages).  These manuals are phototypeset
 		and offset printed, with illustrated covers, a GBC plastic ring
@@ -136,7 +138,7 @@ Thus, a 1600 bpi tape and one Emacs manual come to $165.
 
 ________  $10   GDB Manual (~55 pages, side stapled.)
 
-________  $10	Texinfo Manual (~30 pages, side stapled.  Texinfo is GNU's
+________  $10	Texinfo Manual (~100 pages, side stapled.  Texinfo is GNU's
 		structured documentation system, included with GNU Emacs
 		This manual describes how to write Texinfo documents).
 

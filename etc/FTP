@@ -1,4 +1,4 @@
-How to get GNU Software by Internet FTP or by UUCP.  Last updated 9 Apr 1988
+How to get GNU Software by Internet FTP or by UUCP.  Last updated 4 June 1988
 
 * No Warranties
 
@@ -80,6 +80,36 @@ It can be found separately in the directory /u2/emacs/dist/gdb as
 65 separate files.  If there is a demand, separate tar files of
 GDB can be made available.
 
+** The VMS version of GCC and How To FTP It.
+
+Jonathan Corbet has made the "bootstrap files" for the GNU C compiler
+available for pseudo-anonymous FTP on rdss.ucar.edu.  The full gcc
+sources are also available, for anybody who wants to start from scratch.
+
+Jonathan Corbet also requests that you please limit your access to
+outside the hours of 8-6 (mountain time) on weekdays.  RDSS is a
+*very* busy machine during the day.  Jonathan notes, "I don't think I
+have to tell you what will happen if my users feel they are being
+slowed down by outside people grabbing software."
+
+The procedure is this: FTP to rdss.ucar.edu (128.117.80.1), and log in
+with a username of FTP, password FTP.  Cd into the [.gcc] directory,
+and grab either or both of these files:
+	bootstrap.bck	The bootstrap files -- not much more than the
+			.exe files.  About 1.3 mb.
+	gcc.bck		The full-blown gcc source code.  About 5mb.
+Both of these files are backup savesets, and should thus be grabbed
+in binary mode.
+
+SPAN people can grab the same files from rdss::du:[ftp.gcc].  If your
+node database does not know about rdss, use 9452 instead.
+
+Jonathan Corbet is with the
+National Center for Atmospheric Research, Field Observing Facility
+Internet:	corbet@rdss.ucar.edu
+SPAN:		rdss::corbet	(rdss = 9452)
+Usenet:		...!ncar!rdss!corbet
+
 ** Other GNU Software and How To FTP It.
 
 This software is available on prep.ai.mit.edu under directory
@@ -91,15 +121,15 @@ by hackers who like to test software.  M.N indicates a version number.
 
 Bison			bison.tar
 GNU Assembler (gas)	gas-dist.tar	BETA TEST
-GNU C Compiler (gcc)	gcc.tar-M.N	BETA TEST
+GNU C Compiler (gcc)	gcc.tar-M.N	Late BETA TEST
 GNU C++ Compiler (g++)	g++.tar-M.N	BETA TEST
 GNU C++ Library		dist-libg++.tar.Z	BETA TEST
 GNU C++ Debugger (gdb+)	gdb+.tar-M.N.Z	BETA TEST
 GNU AWK (gawk)		awk.tar		BETA TEST
-GNU versions of ld, make, size, nm and strip
+GNU versions of ld, make, gprof, size, nm and strip
 			binutils.tar	BETA TEST
 GNU Chess		gnuchess.tar.Z
-A GNU Button		button88.02.ps
+GNU Buttons and Designs	button.M.N.ps
 
 ** Alternative Internet FTP Sources
 
@@ -142,13 +172,13 @@ some Appletalk stuff, and some of the Internet Requests For Comment
 (RFC).  See their periodic postings on the Usenet newsgroup
 comp.sources.d for informational updates.  Current details from Karl
 Kleinpaste <karl@tut.cis.ohio-state.edu> or <karl@ohio-state.arpa> or
-<...!cbosgd!osu-cis!karl>; or Bob Sutterfield <bob@the-same-places>.
+<...!osu-cis!karl>; or Bob Sutterfield <bob@the-same-places>.
 
 Information on how to uucp some GNU programs is available via
 electronic mail from: arnold@skeeve.UUCP, ihnp4!hutch!barber,
-hqda-ai!merlin, hao!scicom!qetzal!upba!ugn!nepa!denny,
+hqda-ai!merlin, hao!scicom!qetzal!upba!ugn!nepa!denny, acornrc!bob,
 gatech!uflorida!codas!killer!wisner, mit-eddie!bloom-beacon!ht!spt!gz,
-and postmaster@uunet.uu.net.
+bigtex!james and postmaster@uunet.uu.net.
 
 * If You Like The Software
 

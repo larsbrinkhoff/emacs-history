@@ -12,6 +12,9 @@ doall:
 distclean:
 	-rm -f paths.h config.h emacs-* temacs xemacs xmakefile core *~ \#* *.o
 
+clean:
+	-rm -f temacs xemacs xmakefile core \#* *.o
+
 xemacs: xmakefile doxemacs
 
 doxemacs:
@@ -32,4 +35,4 @@ xmakefile: ymakefile config.h
 	rm -f junk.c
 
 tags:
-	etags *.h *.c ../lisp/*.el
+	etags [a-z]*.h [a-z]*.c ../lisp/[a-z]*.el

@@ -38,16 +38,25 @@ where SECTION is the desired section of the manual, as in `tty(4)'."
       (let ((dirlist manual-formatted-dirlist)
 	    (case-fold-search nil)
 	    name)
-	(if (and section (file-exists-p
-			   (setq name (concat manual-formatted-dir-prefix
-					      (substring section 0 1)
-					      "/"
-					      topic "." section))))
+	(if (and section (or (file-exists-p
+			       (setq name (concat manual-formatted-dir-prefix
+						  (substring section 0 1)
+						  "/"
+						  topic "." section)))
+			     (file-exists-p
+			       (setq name (concat manual-formatted-dir-prefix
+						  section
+						  "/"
+						  topic "." section)))))
 	    (insert-man-file name)
 	  (while dirlist
 	    (let* ((dir (car dirlist))
-		   (name1 (concat dir "/"
-				  topic "." (or section (substring dir -1))))
+		   (name1 (concat dir "/" topic "."
+				  (or section
+				      (substring
+					dir
+					(1+ (or (string-match "\\.[^./]*$" dir)
+						-2))))))
 		   completions)
 	      (if (file-exists-p name1)
 		  (insert-man-file name1)

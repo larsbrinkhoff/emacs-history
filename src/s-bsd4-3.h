@@ -123,7 +123,3 @@ and this notice must be preserved on all copies.  */
    is named _avenrun.  */
 
 #define LDAV_SYMBOL "_avenrun"
-
-/* Use dk.h, not dkstat.h, in loadst.c.  */
-
-#define DK_HEADER_FILE

@@ -753,6 +753,9 @@ delete_display (num)
 {
   register struct display *d1, *d;
 
+  if (!display_chain)
+    error ("No display number %d.", num);
+
   if (display_chain->number == num)
     {
       d1 = display_chain;

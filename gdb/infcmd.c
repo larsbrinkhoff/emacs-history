@@ -474,9 +474,8 @@ finish_command (arg, from_tty)
       struct type *value_type;
       register value val;
 
-      if (TYPE_CODE (SYMBOL_TYPE (function)) != TYPE_CODE_VOID)
-	value_type = SYMBOL_TYPE (function);
-      else
+      value_type = TYPE_TARGET_TYPE (SYMBOL_TYPE (function));
+      if (TYPE_CODE (value_type) == TYPE_CODE_VOID)
 	return;
 
       val = value_being_returned (value_type, stop_registers);

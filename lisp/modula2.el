@@ -78,7 +78,7 @@
 "This is a mode intended to support program development in Modula-2.
 All control constructs of Modula-2 can be reached by typing
 Control-C followed by the first character of the construct.
-
+\\{m2-mode-map}
   Control-c b begin         Control-c c case
   Control-c d definition    Control-c e else
   Control-c f for           Control-c h header

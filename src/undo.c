@@ -37,10 +37,10 @@ static struct UndoRec *LastUndoRec;
 static struct buffer *LastUndoBuf;
 
 /* Record progress of undoing */
-static NUndone;
-static NCharsLeft;
-static LastUndoneC;
-static LastUndone;
+static int NUndone;
+static int NCharsLeft;
+static int LastUndoneC;
+static int LastUndone;
 static struct buffer *LastUndoneBuf;
 
 Lisp_Object Fundo_boundary ();
@@ -419,7 +419,7 @@ then call undo-more one or more times to undo them.")
 	  break;
 
 	default: 
-	  error ("Something rotten in undo");
+	  error ("Changes to great to be undone");
 	  return Qnil;
 	}
     }

@@ -107,17 +107,23 @@
 	  (message "Dumping data as file temacs.dump")
 	  (dump-emacs "temacs.dump" "temacs")
 	  (kill-emacs))
-      (setq name (concat "emacs-" emacs-version))
-      (while (string-match "[^-+_.a-zA-Z0-9]+" name)
-	(setq name (concat (downcase (substring name 0 (match-beginning 0)))
-			   "-"
-			   (substring name (match-end 0)))))
-      (message "Dumping under names xemacs and %s" name)
+      (let ((name (concat "emacs-" emacs-version)))
+	(while (string-match "[^-+_.a-zA-Z0-9]+" name)
+	  (setq name (concat (downcase (substring name 0 (match-beginning 0)))
+			     "-"
+			     (substring name (match-end 0)))))
+	(message "Dumping under names xemacs and %s" name))
       (condition-case ()
 	  (delete-file "xemacs")
 	(file-error nil))
       (dump-emacs "xemacs" "temacs")
-      (add-name-to-file "xemacs" name t)
+      ;; Recompute NAME now, so that it isn't set when we dump.
+      (let ((name (concat "emacs-" emacs-version)))
+	(while (string-match "[^-+_.a-zA-Z0-9]+" name)
+	  (setq name (concat (downcase (substring name 0 (match-beginning 0)))
+			     "-"
+			     (substring name (match-end 0)))))
+	(add-name-to-file "xemacs" name t))
       (kill-emacs)))
 
 ;; Avoid error if user loads some more libraries now.

@@ -247,7 +247,7 @@ tgetst1 (ptr, area)
     {
       /* Compute size of block needed (may overestimate) */
       p = ptr;
-      while ((c = *p++) && c != ':');
+      while ((c = *p++) && c != ':' && c != '\n');
       ret = (char *) xmalloc (p - ptr + 1);
     }
   else
@@ -257,7 +257,7 @@ tgetst1 (ptr, area)
   /* Also process ^ and \ abbreviations.  */
   p = ptr;
   r = ret;
-  while ((c = *p++) && c != ':')
+  while ((c = *p++) && c != ':' && c != '\n')
     {
       if (c == '^')
 	c = *p++ & 037;

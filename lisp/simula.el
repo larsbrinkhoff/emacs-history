@@ -1,21 +1,28 @@
-;;			 --- Simula Mode ---
-;;
-;;			   Ole Bj|rn Hessen
-;;				(OBH)
-;;
-;;			  University of Oslo
-;;		       Institute of Informatics
-;;
-;;			  September 6, 1987
-;; Copyright (C) 1987 Ole Bj|rn Hessen.
-;; FSF is granted to do whatever they like to this file
-;; including deleting the copyright.
+;;			 --- Simula Mode for GNU Emacs
+;; Copyright (C) 1988 Free Software Foundation, Inc.
 
-;; This is my first lisp program gt 10 lines
-;; This program is most of all an experiment, using a string to represent
-;; a visible form on screen. This is not the true way, I believe. But
-;; nevertheless useful. This program are not _designed_ to be fast!
+;; This file is part of GNU Emacs.
 
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY.  No author or distributor
+;; accepts responsibility to anyone for the consequences of using it
+;; or for whether it serves any particular purpose or works at all,
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
+
+;; Everyone is granted permission to copy, modify and redistribute
+;; GNU Emacs, but only under the conditions described in the
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
+;; Written by Ole Bj|rn Hessen.
+;; Disclaimer: This is my first lisp program > 10 lines, and -- most of
+;; all an experiment using reg-exp to represent forms on the screen.
+;; The parser parses simula backward, an impossible job.
+;; Well, I nearly lost!! Luckily, hhe@ifi.uio.no plan to make a better one.
 
 (defvar simula-label "^[A-Za-z_{|}]+:")
 (defvar simula-CE "else\\b\\|when\\b\\|otherwise\\b")
@@ -43,8 +50,8 @@
 
 (define-abbrev-table 'simula-mode-abbrev-table ())
 
-(defvar Capitalize-Simula-Keywords t
-  "non-nil if Capitalize keywords")
+(defvar Simula-Keyword-Abbrev-File "simula.defns"
+  "nil if not to load the Capitalize Keywords feature")
 
 (defvar simula-mode-ignore-directives t
   "Set to non nil if doesn't use % comment type lines.")
@@ -88,9 +95,6 @@
   (setq simula-mode-map (make-sparse-keymap))
   (define-key simula-mode-map "\t" 'simula-indent)
   (define-key simula-mode-map "\r" 'simula-abbrev-expand-and-lf)
-  ;; I like to use `Return' as my favorite newline-and-indent key.
-  ;; As an author of this crap, I want Simula Mode to use that key.
-  ;; Hopefully, FSF will not change it.
   (define-key simula-mode-map "" 'backward-delete-char-untabify))
 
 
@@ -128,13 +132,22 @@
   (setq comment-multi-line t)
   (setq local-abbrev-table simula-mode-abbrev-table)
   ;;Capitalize-Simula-Keywords ought to run a hook!!!
-  (if Capitalize-Simula-Keywords
+  (if Simula-Keyword-Abbrev-File
       (progn
 	(setq abbrev-mode t)
 	(if Read-Simula-Keywords
 	    ()
-	  (read-abbrev-file "simula.defns")
-;;---------------------------^^^^^^^^^^^^^^ Change this !!
+	  (condition-case err
+	      (read-abbrev-file Simula-Keyword-Abbrev-File)
+	    (file-error
+	     (with-output-to-temp-buffer "*Help*"
+	       (princ "Simula Mode can't load the Capitalize Simula ")
+	       (princ "Keyword abbrev file\n\n")
+	       (princ "Please do one of the following:\n")
+	       (princ "1. Include this line in your .emacs file:\n")
+	       (princ "   (setq Simula-Keyword-Abbrev-File nil)\n")
+	       (princ "2. Make a decent abbrev file by your self\n")
+	       (princ "3. Mail obh@ifi.uio.no requesting the abbrev file\n"))))
 	  (setq Read-Simula-Keywords t))))
   (funcall simula-indent-mode)		;set indentation
   (run-hooks 'simula-mode-hook))
@@ -428,7 +441,7 @@
 	  ((looking-at simula-BE) (save-simula-BB-BE))
 
 	  ((and (not indent)		;if already found, skip this FB
-		 (looking-at simula-FB))
+		(looking-at simula-FB))
 	    (setq simula-form-starter
 		  (buffer-substring (point) (match-end 0)))
 	    (setq simula-FB-hpos (current-column))
@@ -625,9 +638,10 @@
 (defun simula-Nice-indent-mode ()
   (interactive)
   (setq Simula-While-Form
-	'( ("while .*do.*begin\n.*\nend;@" (1 3) (0 0))
-	   ("while .*do.*begin\n.*@" (1 6) (1 6))
-	   ("while .*do.*begin.*@" (0 0) (1 6))
+	'( ("while.*begin.*end;@" (0 0) (1 0))
+	   ("while .*do.*begin\n.*\n.*end;@" (1 0) (0 0))
+	   ("while .*do.*begin\n.*@" (1 3) (1 3))
+	   ("while .*do.*begin.*@" (0 0) (1 3))
 	   ("while .*do\n.*begin\n.*\n.*end;@" (2 0) (0 0))
 	   ("while .*do\n.*begin\n.*@" (2 3) (2 3))
 	   ("while .*do\n.*begin@" (1 3) (2 3))
@@ -636,6 +650,7 @@
 	   ("while .*do@" (0 0) (1 3))))
   (setq Simula-Default-Form
 	'( ("begin.*end;@" (0 0) (0 0))
+	   ("while .*do.*begin\n.*\n.*end;@" (0 0) (0 0))
 	   ("begin.*@" (0 0) (2 3))
 	   ("begin\n.*\n.*end.*@" (0 0) (0 0))
 	   ("begin\n.*end;@" (2 3) (0 0))
@@ -648,7 +663,8 @@
 	   ("\n.*@" (0 0) (0 0))
 	   ("." (0 0) (0 3))))
   (setq Simula-If-Form
-	'( ("if .*begin.*@" (0 0) (2 3))
+	'( ("if.*begin.*end;@" (0 0) (1 0))
+	   ("if .*begin.*@" (0 0) (2 3))
 	   ("if .*else@" (0 0) (0 0))
 	   ("if .*;@" (0 0) (0 0))
 	   ("if .*@" (0 0) (0 3))
@@ -671,17 +687,18 @@
 	   ("else\n.*begin\n.*@" (2 3) (2 3))
 	   ("else\n.*begin\n.*\n.*end.*@" (2 0) (0 0))))
   (setq Simula-For-Form
-	'( ("for .*do.*;@" (0 0) (0 0))
+	'( ("for .*begin.*end;@" (0 0) (1 0))
+	   ("for .*do.*;@" (0 0) (0 0))
 	   ("for .*do@" (0 0) (1 3))
 	   ("for .*do\n.*begin@" (1 3) (2 3))
 	   ("for .*do\n.*begin\n.*@" (2 3) (2 3))
 	   ("for .*do\n.*begin\n.*\n.*end.*@" (1 3) (0 0))
 	   ("for .*do\n.*;@" (1 3) (0 0))
 	   ("for .*do\n.*begin.*\n.*end.*@" (1 3) (0 0))
-	   ("for .*do.*begin@" (0 0) (2 3))
-	   ("for .*do.*begin\n.*end.*@" (2 3) (0 0))
-	   ("for .*do.*begin\n.*@" (2 3) (2 3))
-	   ("for .*do.*begin\n.*\n.*end.*@" (2 0) (0 0))))
+	   ("for .*do.*begin@" (0 0) (1 3))
+	   ("for .*do.*begin\n.*end.*@" (1 3) (0 0))
+	   ("for .*do.*begin\n.*@" (1 3) (1 3))
+	   ("for .*do.*begin\n.*\n.*end.*@" (1 0) (0 0))))
   (setq Simula-Inspect-Form
 	'( ("inspect .*do.*;@" (0 0) (0 0))
 	   ("inspect .*do@" (0 0) (1 3))

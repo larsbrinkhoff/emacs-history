@@ -161,7 +161,12 @@ If yours does, you will probably want to change it."
 				  (screen-width))
 			  "TERM=emacs"
 			  "EMACS=t"
-			  "-" program switches))
+			  "-"
+			  (or program explicit-shell-file-name
+			      (getenv "ESHELL")
+			      (getenv "SHELL")
+			      "/bin/sh")
+			  switches))
 	(cond (startfile
 	       ;;This is guaranteed to wait long enough
 	       ;;but has bad results if the shell does not prompt at all
@@ -204,7 +209,10 @@ This regexp should start with \"^\"."
 	(insert ?\n)
 	(move-marker last-input-end (point)))
     (beginning-of-line)
-    (re-search-forward shell-prompt-pattern nil t)
+    ;; Exclude the shell prompt, if any.
+    (re-search-forward shell-prompt-pattern
+		       (save-excursion (end-of-line) (point))
+		       t)
     (let ((copy (buffer-substring (point)
 				  (progn (forward-line 1) (point)))))
       (goto-char (point-max))
@@ -407,8 +415,8 @@ With argument, force redisplay and scrolling of the *lisp* buffer.
 Variable `inferior-lisp-load-command' controls formatting of
 the `load' form that is set to the Lisp process."
   (interactive "P")
-  (or (get-buffer-process (current-buffer))
-      (error "Current buffer has no process"))
+  (or (get-process "lisp")
+      (error "No current lisp process"))
   (save-excursion
    (end-of-defun)
    (let ((end (point))

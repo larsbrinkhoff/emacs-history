@@ -127,14 +127,19 @@ definitions made by the terminal-specific file.")
     ;; Load library for our terminal type.
     ;; User init file can set term-file-prefix to nil to prevent this.
     (and term-file-prefix (not noninteractive)
-	 (load (if window-system
-		   (concat term-file-prefix
+	 (if window-system
+	     (load (concat term-file-prefix
 			   (symbol-name window-system)
 			   "-win")
-		   (concat term-file-prefix
-			   (substring (getenv "TERM") 0
-				      (string-match "[-_]" (getenv "TERM")))))
-	       t t))
+		   t t)
+	   (let ((term (getenv "TERM"))
+		 hyphend)
+	     (while (and term
+			 (not (load (concat term-file-prefix term) t t)))
+	       ;; Strip off last hyphen and what follows, then try again
+	       (if (setq hyphend (string-match "[-_][^-_]+$" term))
+		   (setq term (substring term 0 hyphend))
+		 (setq term nil))))))
     (command-line-1 args)
     (if noninteractive (kill-emacs t))))
 

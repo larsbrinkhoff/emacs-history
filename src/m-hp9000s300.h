@@ -107,7 +107,9 @@ and this notice must be preserved on all copies.  */
 
 /* This library is needed with -g, on the 200/300 only.  */
 
+#if !defined(__GNUC__) || defined(__HPUX_ASM__)
 #define LIBS_DEBUG /usr/lib/end.o
+#endif
 
 /* The symbol FIONREAD is defined, but the feature does not work
    on the 200/300.  */
@@ -128,21 +130,23 @@ and this notice must be preserved on all copies.  */
 #endif
 
 /* Define the BSTRING functions in terms of the sysV functions.
-   Version 6 of HP-UX supplies these in the BSD library. */
+   Version 6 of HP-UX supplies these in the BSD library,
+   but that library has reported bugs in `signal'.  */
 
-#ifdef HPUX_5
+/* #ifdef HPUX_5 */
 #define bcopy(a,b,s)	memcpy (b,a,s)
 #define bzero(a,s)	memset (a,0,s)
 #define bcmp		memcmp
-#endif
+/* #endif */
 
 /* On USG systems these have different names.
-   Version 6 of HP-UX supplies these in the BSD library. */
+   Version 6 of HP-UX supplies these in the BSD library,
+   which we currently want to avoid using.  */
 
-#ifdef HPUX_5
+/* #ifdef HPUX_5 */
 #define index strchr
 #define rindex strrchr
-#endif
+/* #endif */
 
 /* Define C_SWITCH_MACHINE to be +X if you want the s200/300
  * Emacs to run on both 68010 and 68020 based hp-ux's.
@@ -158,7 +162,7 @@ and this notice must be preserved on all copies.  */
    They are required for compiling the X11 interface files. */
 
 #ifndef HPUX_5
-#ifndef __GNU__
+#ifndef __GNUC__
 #define C_SWITCH_MACHINE -Wc,-Nd4000,-Ns3000
 #endif
 #endif

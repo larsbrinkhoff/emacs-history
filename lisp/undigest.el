@@ -18,6 +18,7 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+;; note Interent RFP934
 
 (defun undigestify-rmail-message ()
   "Break up a digest message into its constituent messages.

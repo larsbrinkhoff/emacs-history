@@ -22,6 +22,10 @@
 ;(defconst lpr-switches nil
 ;  "*List of strings to pass as extra switch args to lpr when it is invoked.")
 
+(defvar lpr-command (if (eq system-type 'usg-unix-v)
+			"lp" "lpr")
+  "Shell command for printing a file")
+
 (defun lpr-buffer ()
   "Print buffer contents as with Unix command `lpr'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
@@ -60,8 +64,7 @@
 	  (untabify (point-min) (point-max))
 	  (setq start (point-min) end (point-max))))
      (apply 'call-process-region
-	    (nconc (list start end (if (eq system-type 'usg-unix-v)
-				       "lp" "lpr")
+	    (nconc (list start end lpr-command
 			 nil nil nil
 			 "-J" name "-T" name)
 		   switches))

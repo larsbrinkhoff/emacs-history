@@ -62,9 +62,7 @@
 		  blist nil)
 	  (setq blist (cdr blist)))))
     (or found
-	(progn (if (string-match "/$" dirname)
-		   (setq dirname (substring dirname 0 -1)))
-	       (create-file-buffer (file-name-nondirectory dirname))))))
+	(create-file-buffer (directory-file-name dirname)))))
 
 (defun dired (dirname)
   "\"Edit\" directory DIRNAME--delete, rename, print, etc. some files in it.
@@ -86,12 +84,9 @@ Type `h' after entering dired for more info."
 (defun dired-noselect (dirname)
   "Like M-x dired but returns the dired buffer as value, does not select it."
   (or dirname (setq dirname default-directory))
-  (if (string-match "./$" dirname)
-      (setq dirname (substring dirname 0 -1)))
-  (setq dirname (expand-file-name dirname))
-  (and (not (string-match "/$" dirname))
-       (file-directory-p dirname)
-       (setq dirname (concat dirname "/")))
+  (setq dirname (expand-file-name (directory-file-name dirname)))
+  (if (file-directory-p dirname)
+      (setq dirname (file-name-as-directory dirname)))
   (let ((buffer (dired-find-buffer dirname)))
     (save-excursion
       (set-buffer buffer)
@@ -218,10 +213,8 @@ With arg, repeat over several lines."
   (dired-repeat-over-lines arg
     '(lambda ()
        (let ((buffer-read-only nil))
-	 (if (looking-at "  d")
-	     nil
-	   (delete-char 1)
-	   (insert "D"))))))
+	 (delete-char 1)
+	 (insert "D")))))
 
 (defun dired-summary ()
   (interactive)
@@ -586,10 +579,14 @@ start with #."
 	      (goto-char (cdr (car l)))
 	      (let ((buffer-read-only nil))
 		(condition-case ()
-		    (progn (delete-file (concat default-directory
-						(car (car l))))
-			   (delete-region (point)
-					  (progn (forward-line 1) (point))))
+		    (let ((fn (concat default-directory (car (car l)))))
+		      (if (file-directory-p fn)
+			  (progn
+			    (call-process "rmdir" nil nil nil fn)
+			    (if (file-exists-p fn) (delete-file fn)))
+			(delete-file fn))
+		      (delete-region (point)
+				     (progn (forward-line 1) (point))))
 		  (error (delete-char 1)
 			 (insert " ")
 			 (setq failures (cons (car (car l)) failures)))))
@@ -597,3 +594,5 @@ start with #."
 	    (if failures
 		(message "Deletions failed: %s"
 			 (prin1-to-string failures))))))))
+
+(provide 'dired)

@@ -14,7 +14,7 @@ we'll use the following abbreviations:
 	  then type the character <chr>.  "<ESC>" stands for the
 	  key labelled "ALT" or "ESC".
 
-Important note: if you must exit at some point, type C-z.
+Important note: to end the Emacs session, type C-x C-c.  (Two characters.)
 The characters ">>" at the left margin indicate directions for you to
 try using a command.  For instance:
 <<Blank lines inserted here by startup of help-with-tutorial>>
@@ -502,8 +502,8 @@ command (or, more generally, with `%emacs', which works even if your
 most recent job was some other).  On systems where suspending is not
 possible, C-z creates a subshell running under Emacs to give you the
 chance to run other programs and return to Emacs afterward, but it
-does not truly "exit" from Emacs.  In this case, you must ask an
-expert on your computer how to get back to Emacs from the subshell.
+does not truly "exit" from Emacs.  In this case, the shell command
+`exit' is the usual way to get back to Emacs from the subshell.
 
 You would use C-x C-c if you were about to log out.  You would
 also use it to exit an Emacs invoked under mail handling programs

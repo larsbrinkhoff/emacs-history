@@ -1,3 +1,51 @@
+Thu Aug  4 19:42:45 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c: Args like +DIGITS are passed through unchanged.
+
+Tue Jul 12 22:08:00 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.c: If both BSD and HAVE_SYSVIPC, use the latter.
+	* emacsclient.c: Likewise.
+	In the HAVE_SYSVIPC alternative, if BSD, use getwd instead of getcwd.
+
+Thu Jun 23 08:40:53 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Handle `typedef struct foo {' (price@mcc.com).
+	(istoken) New string-comparison macro.
+	(consider_token): New arg `level'.  New state `tag_ok' in `tydef'.
+
+Tue Jun 14 04:25:58 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Changes for VMS.
+	Always define ETAGS on VMS.
+	Define macros GOOD and BAD for success and failure exit codes.
+	(begtk, intk): Allow `$' in identifiers
+	(main): Don't support -B, -F or -u on VMS.
+	Alternate loop for scanning filename arguments.
+	(system): Delete definition of this function.
+
+	* etags-vmslib.c (system): Undefine this; VMS now provides it.
+
+Wed Jun  8 08:18:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c: Prevent multiple-def errors on BSD and BSD4_3
+	around include of param.h.  (Like fns.c.)
+
+Mon May 16 01:06:26 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c (load_average): Move load-average code to this new fn.
+	Add conditionals to compute load ave on UMAX.
+
+Sat May 14 01:24:53 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* loadst.c: Change DK_HEADER_FILE to DKSTAT_HEADER_FILE
+	with opposite sense.
+
+Fri May 13 18:09:39 1988  Chris Hanson  (cph at kleph)
+
+	* emacsclient.c: Delete references to unused variable `out'.  This
+	caused a bus error when used under hp-ux.
+
 Fri May  6 10:42:31 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
 
 	* loadst.c: Control dk.h conditional with DK_HEADER_FILE.

@@ -33,20 +33,10 @@ and this notice must be preserved on all copies.  */
 static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrench Exp $";
 #endif	lint
 
-#include "config.h"
-
-#ifdef HAVE_X_WINDOWS
-
-#include "lisp.h"
-#undef NULL
-
-/* On 4.3 this loses if it comes after x11term.h.  */
+/* On 4.3 this loses if it comes after x11term.h.
+   On hp-ux it loses if it comes after config.h.  */
 #include <signal.h>
-
-/* This may include sys/types.h, and that somehow loses
-   if this is not done before the other system files.  */
-
-#include "x11term.h"
+#include <sys/ioctl.h>
 
 /* Load sys/types.h if not already loaded.
    In some systems loading it twice is suicidal.  */
@@ -54,12 +44,38 @@ static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrenc
 #include <sys/types.h>
 #endif
 
-#ifdef HPUX
+#include "config.h"
+
+#ifdef HAVE_X_WINDOWS
+
+#include "lisp.h"
+#undef NULL
+
+/* Allow m- file to inhibit use of interrupt-driven input.  */
+#ifdef BROKEN_FIONREAD
+#undef FIONREAD
+#endif
+
+/* We are unable to use interrupts if FIONREAD is not available,
+   so flush SIGIO so we won't try.  */
+#ifndef FIONREAD
+#ifdef SIGIO
+#undef SIGIO
+#endif
+#endif
+
+/* This may include sys/types.h, and that somehow loses
+   if this is not done before the other system files.
+   However, perhaps the problem has been avoided by loading types.h above.  */
+
+#include "x11term.h"
+
+#ifdef USG
 #include <time.h>
 #else
 #include <sys/time.h>
 #endif
-#include <sys/ioctl.h>
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -94,7 +110,7 @@ int pixelwidth,pixelheight;
 char *progname;
 
 XEvent *XXm_queue[XMOUSEBUFSIZE];
-int XXm_queue_num;
+int XXm_queue_num, XXm_queue_in, XXm_queue_out;
 
 char *XXcurrentfont;
 XFontStruct *fontinfo;
@@ -107,6 +123,9 @@ int configure_pending;
 extern struct display_line *DesiredScreen[], *PhysScreen[];
 extern int initialized;
 extern int screen_width, screen_height;
+
+/* Function for init_keyboard to call with no args (if nonzero).  */
+extern void (*keyboard_init_hook) ();
 
 extern char *alternate_display;
 extern int xargc;
@@ -141,6 +160,7 @@ static int InUpdate;		/* many of functions here may be invoked
 				 * can be slightly different */
 
 Display *XXdisplay;
+int XXscreen;
 Window XXwindow;
 GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp;
 XGCValues XXgcv;
@@ -157,7 +177,6 @@ unsigned long fore;	/* Variables to store pixel values */
 unsigned long back;
 unsigned long brdr;
 unsigned long curs;
-unsigned long mous;
 
 char *desiredwindow;
 
@@ -167,8 +186,39 @@ int XXborder;			/* Window border width */
 int XXInternalBorder;		/* Internal border width */
 int updated[MAXHEIGHT];
 
+static char  *temp_font;                /* needed because of loading hacks */
+static char  *temp_reverseVideo;
+static char  *temp_borderWidth;
+static char  *temp_internalBorder;
+
+struct _xdeftab 
+{
+  char *iname;			/* instance name */
+  char *cname;			/* class name (fake it) */
+  char **varp;			/* variable to set */
+};
+
+static struct _xdeftab xDefaultsValueTable[]
+ = {
+     { "reverseVideo",	"ReverseVideo",		&temp_reverseVideo },
+     { "borderWidth",	"BorderWidth",		&temp_borderWidth },
+     { "internalBorder","BorderWidth",		&temp_internalBorder },
+     { "borderColor",	"BorderColor",		&brdr_color },
+     { "background",	"Background",		&back_color },
+     { "foreground",	"Foreground",		&fore_color },
+     { "pointerColor",	"Foreground",		&mous_color },
+     { "cursorColor",	"Foreground",		&curs_color },
+     { "font",		"Font",			&temp_font },
+     { "geometry",	"Geometry",		&desiredwindow },
+     { "title",		"Title",		&XXheader },
+     { "iconName",	"Title",		&XXicon_name },
+     { NULL,		NULL,			NULL }
+   };
+
 
 int (*handler)();
+
+static void x_init_1 ();
 
 char *rindex();
 
@@ -202,7 +252,7 @@ XTchange_line_highlight (new_highlight, vpos, first_unused_hpos)
 {
 	HLmode (new_highlight);
 	XTtopos (vpos, 0);
-	XTclear_end_of_line (0);
+	x_clear_end_of_line (0);
 }
 
 
@@ -281,46 +331,88 @@ cleanup ()
 	HLmode (0);
 }
 
-/* wipes out numcols columns starting a current column on the current line */
+/* Erase current line from current column to column END.
+   Leave cursor at END.  */
 
-XTclear_end_of_line (first_blank)
-     register int first_blank;
+XTclear_end_of_line (end)
+     register int end;
 {
-	register int numcols;
-	BLOCK_INPUT_DECLARE ();
+  register int numcols;
+  BLOCK_INPUT_DECLARE ();
 
 #ifdef XDEBUG
-	fprintf (stderr, "XTclear_end_of_line (blank %d)\n",first_blank);
+  fprintf (stderr, "XTclear_end_of_line (to %d)\n",end);
 #endif
 
-	if (cursY < 0 || cursY >= screen_height)
-		return;
+  if (cursY < 0 || cursY >= screen_height)
+    return;
 
-	if (cursY < 0 || cursY >= screen_height)
-		return;
-	if (first_blank >= screen_width)
-		return;
-	if (first_blank < 0)
-		first_blank = 0;
-	numcols = screen_width - first_blank;
-	BLOCK_INPUT ();
-	if (cursY == VisibleY && VisibleX >= first_blank)
-		if (CursorExists) CursorToggle ();
-	if (CurHL)
-		XFillRectangle (XXdisplay, XXwindow, XXgc_norm,
-				first_blank*XXfontw+XXInternalBorder,
-				cursY*XXfonth+XXInternalBorder,
-				XXfontw*numcols,
-				XXfonth);
-	else
-		XClearArea (XXdisplay, XXwindow,
-			    first_blank*XXfontw+XXInternalBorder,
-			    cursY*XXfonth+XXInternalBorder,
-			    XXfontw*numcols,
-			    XXfonth,
-			    0);
-	XTtopos (cursY, first_blank);
-	UNBLOCK_INPUT ();
+  if (end <= cursX)
+    return;
+  if (end >= screen_width)
+    end = screen_width;
+
+  numcols = end - cursX;
+  BLOCK_INPUT ();
+  if (cursY == VisibleY && VisibleX >= cursX && VisibleX < end)
+    if (CursorExists) CursorToggle ();
+  if (CurHL)
+    XFillRectangle (XXdisplay, XXwindow, XXgc_norm,
+		    cursX*XXfontw+XXInternalBorder,
+		    cursY*XXfonth+XXInternalBorder,
+		    XXfontw*numcols,
+		    XXfonth);
+  else
+    XClearArea (XXdisplay, XXwindow,
+		cursX*XXfontw+XXInternalBorder,
+		cursY*XXfonth+XXInternalBorder,
+		XXfontw*numcols,
+		XXfonth,
+		0);
+  XTtopos (cursY, end);
+  UNBLOCK_INPUT ();
+}
+
+/* Erase current line from column START to right margin.
+   Leave cursor at START.  */
+
+x_clear_end_of_line (start)
+     register int start;
+{
+  register int numcols;
+  BLOCK_INPUT_DECLARE ();
+
+#ifdef XDEBUG
+  fprintf (stderr, "x_clear_end_of_line (start %d)\n",first_blank);
+#endif
+
+  if (cursY < 0 || cursY >= screen_height)
+    return;
+
+  if (start >= screen_width)
+    return;
+  if (start < 0)
+    start = 0;
+
+  numcols = screen_width - start;
+  BLOCK_INPUT ();
+  if (cursY == VisibleY && VisibleX >= start)
+    if (CursorExists) CursorToggle ();
+  if (CurHL)
+    XFillRectangle (XXdisplay, XXwindow, XXgc_norm,
+		    start*XXfontw+XXInternalBorder,
+		    cursY*XXfonth+XXInternalBorder,
+		    XXfontw*numcols,
+		    XXfonth);
+  else
+    XClearArea (XXdisplay, XXwindow,
+		start*XXfontw+XXInternalBorder,
+		cursY*XXfonth+XXInternalBorder,
+		XXfontw*numcols,
+		XXfonth,
+		0);
+  XTtopos (cursY, start);
+  UNBLOCK_INPUT ();
 }
 
 XTreset_terminal_modes ()
@@ -425,11 +517,11 @@ updateline (first)
 				  &DesiredScreen[cursY + 1]->body[first],
 				  temp_length);
 		if (temp_length < screen_width)
-			XTclear_end_of_line (temp_length);
+			x_clear_end_of_line (temp_length);
 		XTtopos (cursY, temp_length);
 	}
 	else {
-		XTclear_end_of_line (0);
+		x_clear_end_of_line (0);
 		XTtopos (cursY, 0);
 	}
 	UNBLOCK_INPUT ();
@@ -438,50 +530,62 @@ updateline (first)
 writechars (start, end)
 	register char *start, *end;
 {
-	register int temp_length;
-	BLOCK_INPUT_DECLARE ();
+  register int temp_length;
+  BLOCK_INPUT_DECLARE ();
 
 #ifdef XDEBUG
-	fprintf(stderr, "writechars (cursX %d temp_len %d InUpd %d)\n",
-		cursX, end-start+1, InUpdate);
+  fprintf(stderr, "writechars (cursX %d temp_len %d InUpd %d)\n",
+	  cursX, end-start+1, InUpdate);
 #endif XDEBUG
 	
-	BLOCK_INPUT ();
-	if (InUpdate) {
-		updateline(0);
-		UNBLOCK_INPUT ();
-		return;
-	}
+  BLOCK_INPUT ();
+
+  if ((cursY < 0) || (cursY >= screen_height))
+    {
+      UNBLOCK_INPUT ();
+      return;
+    }
+
+  if (CursorExists)
+    CursorToggle ();
 
 
-	if ((cursY < 0) || (cursY >= screen_height)) {
-		UNBLOCK_INPUT ();
-		return;
-	}
-	if (CursorExists)
-		CursorToggle ();
-	if ((VisibleX < 0) || (VisibleX >= screen_width)) {
-		UNBLOCK_INPUT ();
-		return;
-	}
-	if ((VisibleY < 0) || (VisibleY >= screen_height)) {
-		UNBLOCK_INPUT ();
-		return;
-	}
-	if (((end - start) + VisibleX) >= screen_width)
-		end = start + (screen_width - (VisibleX + 1));
-	if (end >= start) {
-		XDrawImageString (XXdisplay, XXwindow,
-				  CurHL ? XXgc_rev : XXgc_norm,
-				  (VisibleX * XXfontw+XXInternalBorder),
-				  VisibleY * XXfonth+XXInternalBorder+XXbase,
-				  start,
-				  ((end - start) + 1));
-		VisibleX = VisibleX + (end - start) + 1;
-	}
-	if (!CursorExists)
-		CursorToggle ();
-	UNBLOCK_INPUT ();
+  if (InUpdate)
+    {
+      XDrawImageString (XXdisplay, XXwindow,
+			CurHL ? XXgc_rev : XXgc_norm,
+			cursX*XXfontw+XXInternalBorder,
+			cursY*XXfonth+XXInternalBorder+XXbase,
+			start,
+			end - start + 1);
+      XTtopos (cursY, temp_length);
+
+      UNBLOCK_INPUT ();
+      return;
+    }
+
+  if ((VisibleX < 0) || (VisibleX >= screen_width)) {
+    UNBLOCK_INPUT ();
+    return;
+  }
+  if ((VisibleY < 0) || (VisibleY >= screen_height)) {
+    UNBLOCK_INPUT ();
+    return;
+  }
+  if (((end - start) + VisibleX) >= screen_width)
+    end = start + (screen_width - (VisibleX + 1));
+  if (end >= start) {
+    XDrawImageString (XXdisplay, XXwindow,
+		      CurHL ? XXgc_rev : XXgc_norm,
+		      (VisibleX * XXfontw+XXInternalBorder),
+		      VisibleY * XXfonth+XXInternalBorder+XXbase,
+		      start,
+		      ((end - start) + 1));
+    VisibleX = VisibleX + (end - start) + 1;
+  }
+  if (!CursorExists)
+    CursorToggle ();
+  UNBLOCK_INPUT ();
 }
 
 static
@@ -508,8 +612,8 @@ XTflash ()
 
 	BLOCK_INPUT ();
 	XXgc_temp = XCreateGC(XXdisplay, XXwindow, 0, &gcv_temp);
-	XSetState(XXdisplay, XXgc_temp, WhitePixel(XXdisplay,0),
-		  BlackPixel(XXdisplay,0), GXinvert,
+	XSetState(XXdisplay, XXgc_temp, WhitePixel (XXdisplay, XXscreen),
+		  BlackPixel(XXdisplay, XXscreen), GXinvert,
 		  AllPlanes);
 
 	XFillRectangle (XXdisplay, XXwindow, XXgc_temp, 0, 0,
@@ -615,10 +719,10 @@ CursorToggle ()
 					VisibleY*XXfonth+XXInternalBorder,
 					XXfontw - 1, XXfonth - 1);
 		else
-			XFillRectangle (XXdisplay, XXwindow, XXgc_norm,
-					VisibleX*XXfontw+XXInternalBorder,
-					VisibleY*XXfonth+XXInternalBorder,
-					XXfontw, XXfonth);
+			XDrawImageString(XXdisplay, XXwindow, XXgc_curs,
+				    VisibleX*XXfontw+XXInternalBorder,
+				    VisibleY*XXfonth+XXInternalBorder+XXbase,
+				    " ", 1);
 	      }
 
 	CursorExists = !CursorExists;
@@ -1115,6 +1219,15 @@ internal_socket_read(bufp, numchars)
   KeySym keysym;
 
   BLOCK_INPUT ();
+#ifndef HAVE_SELECT
+  if (! (fcntl (fileno (stdin), F_GETFL, 0) & O_NDELAY))
+    {
+      extern int read_alarm_should_throw;
+      read_alarm_should_throw = 1;
+      XPeekEvent (XXdisplay,&event);
+      read_alarm_should_throw = 0;
+    }
+#endif
   while (XPending (XXdisplay)) {
     XNextEvent (XXdisplay,&event);
     event.type &= 0177;		/* Mask out XSendEvent indication */
@@ -1156,10 +1269,19 @@ internal_socket_read(bufp, numchars)
 
     case Expose:
       if (configure_pending) {
+	int width, height;
 	if (event.xexpose.count)
 	  break;
-	change_screen_size ((pixelheight-2*XXInternalBorder)/XXfonth,
-			    (pixelwidth-2*XXInternalBorder)/XXfontw);
+	/* This is absolutely, amazingly gross.
+	 * However, without it, emacs will core
+	 * dump if the window gets too small.  And
+	 * uwm is too brain-damaged to handle
+	 * large minimum size windows. */
+	width = (pixelwidth-2*XXInternalBorder)/XXfontw;
+	height = (pixelheight-2*XXInternalBorder)/XXfonth;
+	if (width > 11 && height > 4)
+		change_screen_size (height, width, 0);
+	dumprectangle (0,0,pixelheight,pixelwidth);
 	configure_pending = 0;
 	break;
       }
@@ -1212,7 +1334,7 @@ internal_socket_read(bufp, numchars)
 	strcat(mapping_buf,"z");
 #else
 	strcat(mapping_buf,"~");
-#endif sun
+#endif /* sun */
 	nbytes = strlen(mapping_buf);
       }
       else {
@@ -1257,9 +1379,10 @@ internal_socket_read(bufp, numchars)
       --numchars;
       if (XXm_queue_num == XMOUSEBUFSIZE)
 	break;
-      XXm_queue[XXm_queue_num] = (XEvent *)
-	malloc(sizeof(XEvent));
-      *XXm_queue[XXm_queue_num++] = event;
+      XXm_queue[XXm_queue_in] = (XEvent *) malloc (sizeof(XEvent));
+      *XXm_queue[XXm_queue_in] = event;
+      XXm_queue_num++;
+      XXm_queue_in = (XXm_queue_in + 1) % XMOUSEBUFSIZE;
       break;
     }
   }
@@ -1309,53 +1432,51 @@ xfixscreen ()
 /* ------------------------------------------------------------
  */
 static int  reversevideo;
-static char  *temp_font;
 
 static int
-XT_GetDefaults(class)
-    char  *class;
+XT_GetDefaults (class)
+    char *class;
 {
-    char  *option;
-    char  *tfont;
+  register char  *option;
+  register struct _xdeftab *entry;
 
+  /*
+   * Walk the table reading in the resources.  Instance names supersede
+   * class names.
+   */
 
-    if (option = XGetDefault(XXdisplay, class, "ReverseVideo"))
-	if (!strcmp (option, "on"))
-	    reversevideo = 1;
+  for (entry = xDefaultsValueTable; entry->iname; entry++)
+    {
+      if (!(option = XGetDefault (XXdisplay, class, entry->iname)))
+	option = XGetDefault (XXdisplay, class, entry->cname);
+      if (option && entry->varp)
+	*entry->varp = option;
+    }
 
-    if (option = XGetDefault(XXdisplay, class, "BorderWidth"))
-	XXborder = atoi (option);
+  /*
+   * Now set global variables that aren't character strings; yes it would
+   * be nice to do this automatically as part of the scanning step, but this
+   * is less likely to screw up.  The real answer is to use the resource
+   * manager.
+   */
 
-    if (option = XGetDefault(XXdisplay, class, "InternalBorder"))
-	XXInternalBorder = atoi (option);
+  if (temp_reverseVideo)
+    {
+      if (strcmp (temp_reverseVideo, "on") == 0)
+	reversevideo = 1;
+      else if (strcmp (temp_reverseVideo, "off") == 0)
+	reversevideo = 0;
+    }
 
-    if (!(brdr_color = XGetDefault(XXdisplay, class, "Border")))
-	brdr_color = XGetDefault(XXdisplay, class, "BorderColor");
+  if (temp_borderWidth) 
+    XXborder = atoi (temp_borderWidth);
 
-    if (option = XGetDefault(XXdisplay, class, "Background"))
-	back_color = XGetDefault(XXdisplay, class, "Background");
+  if (temp_internalBorder)
+    XXInternalBorder = atoi (temp_internalBorder);
 
-    if (option = XGetDefault(XXdisplay, class, "Foreground"))
-	fore_color = XGetDefault(XXdisplay, class, "Foreground");
-
-    if (option = XGetDefault(XXdisplay, class, "Mouse"))
-	mous_color = XGetDefault(XXdisplay, class, "Mouse");
-
-    if (option = XGetDefault(XXdisplay, class, "Cursor"))
-	curs_color = XGetDefault(XXdisplay, class, "Cursor");
-
-    if (option = XGetDefault(XXdisplay, class, "Geometry"))
-	desiredwindow = option;
-    /* In X11 .BodyFont was renamed to .Font, (see the resource
-       manager documentation), but allow backward compatibility.
-       First look for .Font and if that fails look at .BodyFont.  */
-    if (option = XGetDefault(XXdisplay, class, "Font"))
-      temp_font = option;
-    else if (option = XGetDefault(XXdisplay, class, "BodyFont"))
-      temp_font = option;
+  return 0;
 }
-
-
+
 x_term_init ()
 {
 	register char *vardisplay;
@@ -1363,15 +1484,11 @@ x_term_init ()
 	register char **xxargv;
 	char *ptr;
 	XColor cdef;
-	XColor cursor_fore, cursor_back;
 
 	extern char *getenv ();
 	extern XTinterrupt_signal ();
 	extern char *malloc ();
 	extern Lisp_Object Vxterm, Vxterm1, Qt;
-#ifndef HPUX
-	extern void request_sigio ();
-#endif
 	extern int XIgnoreError();
 	int  ix;
 	
@@ -1388,19 +1505,16 @@ x_term_init ()
 		exit (-99);	
 	}
 
-	XXisColor = DisplayCells(XXdisplay,0)>2;
-	XXColorMap = DefaultColormap(XXdisplay,0);
+	XXscreen = DefaultScreen (XXdisplay);
+	XXisColor = DisplayCells (XXdisplay, XXscreen) > 2;
+	XXColorMap = DefaultColormap (XXdisplay, XXscreen);
 
-	x_init_1 ();
 	WindowMapped = 0;
 	baud_rate = 9600;
 	min_padding_speed = 10000;
 	must_write_spaces = 1;
 	MetaFlag = 1;
 	visible_bell = 1;
-#ifndef HPUX
-	interrupt_input = 1;
-#endif
 	inverse_video = 0;
 	configure_pending = 0;
 	
@@ -1439,6 +1553,8 @@ x_term_init ()
 
 	XXdebug = 0;
 	XXm_queue_num = 0;
+	XXm_queue_in = 0;
+	XXm_queue_out = 0;
 
 	handler = XIgnoreError;
 	XSetErrorHandler (handler);
@@ -1575,7 +1691,7 @@ x_term_init ()
 			        xxargv++;
 
 			        fore_color =
-				    (char *) xmalloc (sizeof (*xxargv)+1);
+				    (char *) xmalloc (strlen (*xxargv)+1);
 			        strcpy (fore_color, *xxargv);
 
 				xxargc--;
@@ -1586,7 +1702,7 @@ x_term_init ()
 			        xxargv++;
 
 				back_color =
-				    (char *) xmalloc (sizeof (*xxargv)+1);
+				    (char *) xmalloc (strlen (*xxargv)+1);
 				strcpy (back_color, *xxargv);
 
 				xxargc--;
@@ -1597,7 +1713,7 @@ x_term_init ()
 				xxargv++;
 
 				brdr_color =
-				    (char *) xmalloc (sizeof (*xxargv)+1);
+				    (char *) xmalloc (strlen (*xxargv)+1);
 				strcpy (brdr_color, *xxargv);
 
 				xxargc--;
@@ -1608,7 +1724,7 @@ x_term_init ()
 				xxargv++;
 
 				curs_color =
-				    (char *) xmalloc (sizeof (*xxargv)+1);
+				    (char *) xmalloc (strlen (*xxargv)+1);
 				strcpy (curs_color, *xxargv);
 
 				xxargc--;
@@ -1619,7 +1735,7 @@ x_term_init ()
 				xxargv++;
 
 				mous_color =
-				    (char *) xmalloc (sizeof (*xxargv)+1);
+				    (char *) xmalloc (strlen (*xxargv)+1);
 				strcpy (mous_color, *xxargv);
 
 				xxargc--;
@@ -1635,56 +1751,55 @@ x_term_init ()
 	/*  Now, actually Parse and Set colors...
 	 */
 	if (XXisColor) {
-		if (fore_color &&
-		    XParseColor (XXdisplay, XXColorMap, fore_color, &cdef) &&
-		    XAllocColor (XXdisplay, XXColorMap, &cdef))
-			fore = cdef.pixel;
-		else {
-			fore_color = "black";
-			fore = BlackPixel(XXdisplay,0);
-		}
+	  if (fore_color || back_color)
+	    reversevideo = 0;
+	  if (fore_color &&
+	      XParseColor (XXdisplay, XXColorMap, fore_color, &cdef) &&
+	      XAllocColor (XXdisplay, XXColorMap, &cdef))
+	    fore = cdef.pixel;
+	  else {
+	    fore_color = "black";
+	    fore = BlackPixel (XXdisplay, XXscreen);
+	  }
 
-		if (back_color &&
-		    XParseColor (XXdisplay, XXColorMap, back_color, &cdef) &&
-		    XAllocColor (XXdisplay, XXColorMap, &cdef))
-			back = cdef.pixel;
-		else {
-			back_color = "white";
-			back = WhitePixel(XXdisplay,0);
-		}
+	  if (back_color &&
+	      XParseColor (XXdisplay, XXColorMap, back_color, &cdef) &&
+	      XAllocColor (XXdisplay, XXColorMap, &cdef))
+	    back = cdef.pixel;
+	  else {
+	    back_color = "white";
+	    back = WhitePixel (XXdisplay, XXscreen);
+	  }
 
-		if (curs_color &&
-		    XParseColor (XXdisplay, XXColorMap, curs_color, &cdef) &&
-		    XAllocColor (XXdisplay, XXColorMap, &cdef))
-			curs = cdef.pixel;
-		else {
-			curs_color = "black";
-			curs = BlackPixel(XXdisplay,0);
-		}
+	  if (curs_color &&
+	      XParseColor (XXdisplay, XXColorMap, curs_color, &cdef) &&
+	      XAllocColor (XXdisplay, XXColorMap, &cdef))
+	    curs = cdef.pixel;
+	  else {
+	    curs_color = "black";
+	    curs = BlackPixel (XXdisplay, XXscreen);
+	  }
 
-		if (mous_color &&
-		    XParseColor (XXdisplay, XXColorMap, mous_color, &cdef) &&
-		    XAllocColor (XXdisplay, XXColorMap, &cdef))
-			mous = cdef.pixel;
-		else {
-			mous_color = "black";
-			mous = BlackPixel(XXdisplay,0);
-		}
+	  if (mous_color &&
+	      XParseColor (XXdisplay, XXColorMap, mous_color, &cdef) &&
+	      XAllocColor (XXdisplay, XXColorMap, &cdef))
+	    ;
+	  else mous_color = "black";
 
-		if (brdr_color &&
-		    XParseColor (XXdisplay, XXColorMap, brdr_color, &cdef) &&
-		    XAllocColor (XXdisplay, XXColorMap, &cdef))
-			brdr = cdef.pixel;
-		else {
-			brdr_color = "black";
-			brdr = BlackPixel(XXdisplay,0);
-		}
+	  if (brdr_color &&
+	      XParseColor (XXdisplay, XXColorMap, brdr_color, &cdef) &&
+	      XAllocColor (XXdisplay, XXColorMap, &cdef))
+	    brdr = cdef.pixel;
+	  else {
+	    brdr_color = "black";
+	    brdr = BlackPixel (XXdisplay, XXscreen);
+	  }
 	}
 	else {
 		fore_color  = curs_color = mous_color = brdr_color = "black";
-		fore = curs = mous = brdr = BlackPixel(XXdisplay,0);
+		fore = curs = brdr = BlackPixel (XXdisplay, XXscreen);
 		back_color = "white";
-		back = WhitePixel(XXdisplay,0);
+		back = WhitePixel (XXdisplay, XXscreen);
 	}
 
 
@@ -1699,22 +1814,18 @@ x_term_init ()
 		tempname = fore_color;
 		fore_color = back_color;
 		back_color = tempname;
-		if (curs == WhitePixel(XXdisplay,0)) {
-			curs = BlackPixel(XXdisplay,0);
+		if (curs == WhitePixel (XXdisplay, XXscreen)) {
+			curs = BlackPixel (XXdisplay, XXscreen);
 			curs_color = "black";
 		}
-		else if (curs == BlackPixel(XXdisplay,0)) {
-			curs = WhitePixel(XXdisplay,0);
+		else if (curs == BlackPixel (XXdisplay, XXscreen)) {
+			curs = WhitePixel (XXdisplay, XXscreen);
 			curs_color = "white";
 		}
-		if (mous == WhitePixel(XXdisplay,0)) {
-			mous = BlackPixel(XXdisplay,0);
+		if (!strcmp (mous_color, "white"))
 			mous_color = "black";
-		}
-		else if (mous == BlackPixel(XXdisplay,0)) {
-			mous = WhitePixel(XXdisplay,0);
+		else if (!strcmp (mous_color, "black"))
 			mous_color = "white";
-		}
 	}
 
 
@@ -1743,34 +1854,17 @@ x_term_init ()
 
 	XInitWindow ();
 
-
-	cursor_fore.pixel = fore;
-	cursor_fore.flags = 0;
-	cursor_back.pixel = back;
-	cursor_back.flags = 0;
-
-	/* Enable interrupt_input because otherwise we cannot asynchronously
-	   detect C-g sent as a keystroke event from the X server.  */
-	Fset_input_mode (Qt, Qnil);
-/*
-  Bullshit.  It may not work wonderfully, but it works.
-  Don't prevent me from using this.  -- cph
-	if (! interrupt_input)
-	  fatal ("Emacs/X interface requires interrupt-driven I/O\n\
-which does not work on this operating system.\n");
-*/
-#ifndef HPUX
-	request_sigio();
-#endif
+	keyboard_init_hook = x_init_1;
 }
 
+/* Initialize for keyboard input using X.
+   This is called by init_keyboard via keyboard_init_hook.  */
+
+static void
 x_init_1 ()
 {
 #ifdef F_SETOWN
 	extern int old_fcntl_owner;
-#endif
-#ifndef HPUX
-	extern void init_sigio (), request_sigio (), unrequest_sigio ();
 #endif
 
 	dup2 (ConnectionNumber(XXdisplay), 0);
@@ -1778,19 +1872,16 @@ x_init_1 ()
 	ConnectionNumber(XXdisplay) = 0;	/* Looks a little strange?
 						 * check the def of the macro;
 						 * it is a genuine lvalue */
-#ifndef HPUX
-	init_sigio ();
-	request_sigio ();
-#endif
 	setpgrp (0,getpid());
 	
 #ifdef F_SETOWN
 	old_fcntl_owner = fcntl (0, F_GETOWN, 0);
 	fcntl (0, F_SETOWN, getpid ());
 #endif
-#ifndef HPUX
-	unrequest_sigio ();
-#endif
+
+	/* Enable interrupt_input because otherwise we cannot asynchronously
+	   detect C-g sent as a keystroke event from the X server.  */
+	Fset_input_mode (Qt, Qnil);
 }
 
 XSetFlash ()
@@ -1870,6 +1961,7 @@ XFlipColor ()
 {
 	int tempcolor;
 	char *tempname;
+	XColor forec, backc;
 	BLOCK_INPUT_DECLARE ();
 
 	BLOCK_INPUT ();
@@ -1894,27 +1986,25 @@ XFlipColor ()
 	XXgc_norm = XXgc_rev;
 	XXgc_rev = XXgc_temp;
 
+	x_set_cursor_colors ();
+
 	XRedrawDisplay ();
-	if (curs == WhitePixel(XXdisplay,0)) {
-		curs = BlackPixel(XXdisplay,0);
+	if (curs == WhitePixel (XXdisplay, XXscreen)) {
+		curs = BlackPixel (XXdisplay, XXscreen);
 		curs_color = "black";
 	}
 	else
-		if (curs == BlackPixel(XXdisplay,0)) {
-			curs = WhitePixel(XXdisplay,0);
+		if (curs == BlackPixel (XXdisplay, XXscreen)) {
+			curs = WhitePixel (XXdisplay, XXscreen);
 			curs_color = "white";
 		}
 	XSetState (XXdisplay, XXgc_curs, back, curs, GXinvert, AllPlanes);
 
-	if (mous == WhitePixel(XXdisplay,0)) {
-		mous = BlackPixel(XXdisplay,0);
-		mous_color = "black";
-	}
-	else
-		if (mous == BlackPixel(XXdisplay,0)) {
-			mous = WhitePixel(XXdisplay,0);
-			mous_color = "white";
-		}
+	if (!strcmp (mous_color, "white"))
+	  mous_color = "black";
+	else if (!strcmp (mous_color, "black"))
+	  mous_color = "white";
+
 	CursorToggle ();
 	XFlush (XXdisplay);
 	UNBLOCK_INPUT ();
@@ -2051,22 +2141,22 @@ XT_Set_Icon_Title(w)
 }
 
 
-/* ------------------------------------------------------------
- */
+/* Arg PR carries value returned by XGeometry at startup, or 0.  */
+
 static int
-XT_Set_Size_Hints(w, x, y, width, height, do_resize)
+XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     int  x, y;			/* only used at Startup: do_resize == FALSE */
     int  width, height;
     Window  w;
     Bool  do_resize;
+    int pr;
 {
     XSizeHints  sizehints;
 
+    sizehints.flags = (pr & (WidthValue | HeightValue)) ? USSize : PSize;
 
-    if (!desiredwindow || !*desiredwindow)
-	sizehints.flags = (do_resize) ? PSize : PPosition|PSize;
-    else
-	sizehints.flags = (do_resize) ? USSize : USPosition|USSize;
+    if (!do_resize)
+      sizehints.flags |= (pr & (XValue | YValue)) ? USPosition : PPosition;
 
     sizehints.flags |= PResizeInc|PMinSize;
 
@@ -2095,6 +2185,22 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize)
 
     sizehints.min_width = XXfontw*MINWIDTH+2*XXInternalBorder;
     sizehints.min_height = XXfonth*MINHEIGHT+2*XXInternalBorder;
+
+    /*
+     * Until the new X Inter-Client Communications Conventions are adopted,
+     * the minimum sizes are really the base sizes.
+     */
+#ifdef XICCC
+    sizehints.base_width = 2 * XXInternalBorder;
+    sizehints.base_height = 2 * XXInternalBorder;
+    sizehints.min_width = XXfontw * MINWIDTH + sizehints.base_width;
+    sizehints.min_height = XXfonth * MINHEIGHT + sizehints.base_height;
+    sizehints.flags |= PBaseSize;
+#else
+    /* old, broken versions */
+    sizehints.min_width = 2 * XXInternalBorder;
+    sizehints.min_height = 2 * XXInternalBorder;
+#endif
 
     XSetNormalHints(XXdisplay, w, &sizehints);
 }
@@ -2154,7 +2260,7 @@ XT_Set_WM_Hints(w)
 XSetWindowSize(rows, cols)
     int rows, cols;
 {
-    XT_Set_Size_Hints(XXwindow, 0, 0, cols, rows, NO_MANAGER);
+    XT_Set_Size_Hints(XXwindow, 0, 0, cols, rows, NO_MANAGER, 0);
 }
 
 
@@ -2165,9 +2271,10 @@ XInitWindow ()
 {
     extern int xargc;
     extern char **xargv;
-    int x, y, width, height;
+    int x, y, width, height, pr;
     char  *dp;
     Window  desktop;
+    XColor forec, backc;
 
 
     if ( (fontinfo = XT_CalcForFont(XXcurrentfont))
@@ -2175,12 +2282,10 @@ XInitWindow ()
       fatal ("X server unable to find requested font `%s'.\n",
 	     (XXcurrentfont == NULL) ? "(null)" :  XXcurrentfont);
 
-    XGeometry (XXdisplay, 0, (desiredwindow && *desiredwindow) ?
-	       desiredwindow : default_window,
-	       default_window, XXborder, XXfontw, XXfonth,
-	       XXInternalBorder*2, XXInternalBorder*2,
-	       &x, &y, &width, &height);
-
+    pr = XGeometry (XXdisplay, 0, desiredwindow, default_window,
+		    XXborder, XXfontw, XXfonth,
+		    XXInternalBorder*2, XXInternalBorder*2,
+		    &x, &y, &width, &height);
 
     /*  Which desktop do we start up on?
      */
@@ -2223,6 +2328,9 @@ XInitWindow ()
 			  &XXgcv);
 
     EmacsCursor = XCreateFontCursor(XXdisplay, XC_left_ptr);
+
+    x_set_cursor_colors ();
+
     XDefineCursor (XXdisplay, XXwindow, EmacsCursor);
 
     CursorExists = 0;
@@ -2236,7 +2344,7 @@ XInitWindow ()
     XT_Set_Host(XXwindow);
     XT_Set_Title(XXwindow);
     XT_Set_Icon_Title(XXwindow);
-    XT_Set_Size_Hints(XXwindow, x, y, width, height, False);
+    XT_Set_Size_Hints(XXwindow, x, y, width, height, False, pr);
     XT_Set_Zoom_Sizes(XXwindow);
     XT_Set_WM_Hints(XXwindow);
 

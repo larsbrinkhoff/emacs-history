@@ -140,8 +140,7 @@ and this notice must be preserved on all copies.  */
 #define sigsetmask(mask)	/* Null expansion */
 
 /* The IRIS defines SIGIO in signal.h, but doesn't implement it. */
-/* raible@orville.nas.nasa.gov says this isn't necessary any more.  */
-/* #undef SIGIO */
+#undef SIGIO
 
 #define LIBS_MACHINE -lbsd -ldbm -lPW
 #define C_SWITCH_MACHINE -I/usr/include/bsd

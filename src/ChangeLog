@@ -1,3 +1,428 @@
+Wed Aug 31 02:45:27 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* Version 1.27 released.
+
+	* x11term.c (XT_GetDefaults): Replaced entire function.
+
+	* unexhp9k800.c: #endif was missing.
+
+	* crt0.c [hp9000s300]: New variable flag_68010.
+
+Tue Aug 30 15:23:40 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-isi-ov.h (LOAD_AVE_{CVT,TYPE}): On 4.3, different definitions.
+
+	* m-iris4d.h: Define XSETMARKBIT.
+
+Mon Aug 29 16:00:03 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-ibmrt.h (CANNOT_DUMP): Was defined by mistake in last change.
+
+	* m-amdahl.h (NSIG): If it's 19, make it 20.
+	Overrides Amdahl's mistake.
+
+Sat Aug 27 14:47:42 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11fns.c, x11term.c (XXscreen): New variable, default screen number.
+	All calls to BlackPixel, WhitePixel, DisplayCells, DefaultColormap
+	pass this.
+
+Fri Aug 26 12:25:02 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* data.c (init_data) [uts]: Handle SIGEMT.
+
+	* m-apollo.h (APOLLO_SR10): Define this if BSD4_3.
+	(BSTRING): If APOLLO_SR10, don't alter this.
+
+	* emacs.c [APOLLO]: If APOLLO_SR10, omit the acl code.
+
+	* filemode.c (ftypelet): If S_IFIFO==S_IFSOCK, avoid duplicate cases.
+
+	* m-alliant4.h: Add missing `*/'.
+
+Thu Aug 25 15:35:46 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11term.c (writechars): Don't call updateline;
+	output just the chars that are specified; don't clear to end.
+
+	* m-ibmrt-aix.h: Define getwd.  Define bcopy, etc. as macros.
+	Define LIBX10_MACHINE and change LIBS_MACHINE.
+
+Wed Aug 24 11:55:33 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* xterm.c (XTread_socket): If HAVE_SELECT, call xfixscreen
+	before waiting.
+
+	* dispnew.c (update_line): comments added.
+
+	* xterm.c (writechars): Output only the chars specified
+	even if in update; don't clear to end.
+	(XTread_socket): Check O_NDELAY only if it and F_GETFL are defined.
+	(x_term_init) [IBMRTAIX]: do call gethostname.
+	() [IBMRTAIX]: Include sys/time, not time.
+
+Tue Aug 23 20:24:48 1988  Chris Hanson  (cph at kleph)
+
+	* xterm.c (XTread_socket): Do not call `xfixscreen' if O_NDELAY is
+	set.  On hpux, this causes an I/O error.
+
+Tue Aug 23 06:33:18 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-news800.h: define HAVE_ALLOCA.
+
+Mon Aug 22 20:11:15 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* keyboard.c (read_avail_input) [no FIONREAD]: Always set O_NDELAY.
+
+Sun Aug 21 16:02:47 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* xterm.c, x11term.c (XTclear_end_of_line):
+	Arg was misinterpreted as place to *start* clearing.
+	(x_clear_end_of_line): New fn does what XTclear_end_of_line did.
+	All callers in this file changed.
+
+	* sysdep.c [USG] (getwd): Free the entire string retd by getcwd.
+
+Sat Aug 20 12:11:05 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-ibmrt.h: Delete the USG conditionals.
+
+	* m-ibmrt-aix.h: New file.
+
+	* process.c (wait_reading_process_input) [IBMRTAIX]: Do `select'
+	as on HPUX.
+	* process.c [IBMRTAIX]: Use sys/time.h.
+
+	* dispnew.c (update_line): Handle case of !char_ins_del_ok.
+
+	* xterm.c (x_term_init): Use X keymap spec'd in user's xdefaults.
+	Also use macro X_DEFAULT_FONT to determine ultimate default font.
+
+	* sysdep.c (child_setup_tty) [IBMRTAIX]: Turn off extra tty features.
+	(init_sys_modes) [IBMRTAIX]: Turn off enhanced line editor.
+	Also, call hft_init.
+	(init_sys_modes) [TCXONC]: Make sure output isn't stopped.
+	(reset_sys_modes) [IBMRTAIX]: Call hft_reset.
+	(hft_init, hft_reset): New function.
+	(sys_siglist) [IBMRTAIX]: Alternate signal defs.
+
+	* unexec.c: Treat IBMRTAIX like IRIS.
+
+	* fileio.c (Fcopy_file): If USE_UTIME, use `utime' instead of `utimes'.
+
+	* emacs.c (main) [IBMRTAIX]: Handle additional fatal signals.
+
+Fri Aug 19 11:30:52 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* search.c (Fstore_match_data): Failed to skip the 2nd nil in a pair.
+
+	* search.c (search_buffer) [C_ALLOCA]: Use auto space for BM_tab.
+
+Thu Aug 18 22:10:09 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* keyboard.c: Declare errno.
+
+Mon Aug 15 17:16:30 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-news800.h: Define COMPILER_REGISTER_BUG and LIBS_TERMCAP.
+
+Fri Aug 12 13:37:02 1988  Mike Haertel  (mike at spiff.ai.mit.edu)
+
+	* m-7300.h: Made it understand how do undump a demand-paged
+	executable.
+
+Thu Aug 11 19:31:56 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* unexec.c (adjust_lnnoptrs): auxent is a union, not a struct.
+
+Wed Aug 10 00:13:33 1988  Chris Hanson  (cph at kleph)
+
+	* keyboard.c (read_avail_input): Do not set O_NDELAY if
+	`read_socket_hook' is in use.  This causes Xlib to get an IO error
+	under X10, and could potentially do the same for X11.
+
+	* s-hpux.h (ADJUST_EXEC_HEADER): Undefine this.  Demand loaded
+	exec format doesn't work correctly in hpux.
+	(HAVE_SOCKETS): hpux has BSD-style sockets.
+
+	* xfns.c, xterm.c, x11term.c, x11fns.c: Conditionalize "time.h"
+	inclusion on USG instead of HPUX.
+
+	* xterm.c, x11term.c (XTread_socket): Conditionalize call to
+	`XPeekEvent' on `HAVE_SELECT'.
+
+	* xterm.c: Supply missing definition of `handler'.
+
+Tue Aug  9 19:08:53 1988  Chris Hanson  (cph at kleph)
+
+	* indent.c (current-column): fix typo.
+
+	* keyboard.c, undo.c: add explicit storage class to several
+	variable declarations so that GCC does not generate warning
+	message.
+
+Mon Aug  8 07:50:50 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* eval.c: doc fix.
+
+Thu Aug  4 15:23:18 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fileio.c: Doc fix.
+
+	* keymap.c (Fwhere_is_internal): Call get_keyelt.
+
+Wed Aug  3 19:11:50 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* unexec.c [sun386]: control header files, like STRIDE, etc.
+
+	* s-sunos4.h: Define LD_SWITCH_SYSTEM, not LD_SWITCH_MACHINE.
+	* m-sun386.h: Vice versa.
+	(O_NDELAY): Delete definition; duplicates s-sunos4.h.
+	(LD_SWITCH_SYSTEM): Undefine this, since the s-sunos4.h defn
+	is wrong for the 386.
+
+Sun Jul 31 09:38:14 1988  Richard Stallman  (rms at juicy-juice.lcs.mit.edu)
+
+	* sysdep.c (select_alarm): If read_alarm_should_throw, throw back
+	to read_input_waiting.
+	(read_input_waiting): Call setjmp, so that can be done.
+	* xterm.c (XTread_socket) [no SIGIO]:
+	If O_NDELAY not set, wait for an event.
+	Set read_alarm_should_throw while waiting.
+	* x11term.c (internal_socket_read): Similar change.
+
+	* x11fns.c (Fx_set_mouse_color): Don't free save_color; can be literal.
+	* x11term.c (x_term_init): Clear reversevideo if fg or bg color specd.
+
+Thu Jul 28 11:12:47 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* print.c (Fwith_output_to_temp_buffer): Detect error for non-strings.
+
+Fri Jul 22 06:05:00 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* s-usg5-3.h: Define LIBX{10,11}_SYSTEM.
+
+	* ymakefile: New variables LIBX{10,11}_SYSTEM to be set in s- file.
+
+	* xterm.c (XExitGracefully): Declare the args, for debugging.
+	(x_io_error): New function now used as handler for X I/O errors.
+
+	* xfns.c [not HAVE_TIMEVAL]: Don't include any time.h.
+
+	* sysdep.c (sys_suspend) [VMS]: Ignore SIGINT while suspended.
+
+	* undo.c (Fundo_more): Better err msg.
+
+Mon Jul 18 01:06:55 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* indent.c (current_column, Fmove_to_column): ignore invisible lines.
+
+	* keyboard.c (command_loop_1): No direct output if selective display.
+
+Sun Jul 17 13:56:29 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ymakefile (LD_TEXT_START_FLAGS): -e should be __start, not address.
+
+	* m-orion105.h: New file.
+
+Fri Jul 15 03:16:06 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* alloca.s (pyramid): Define _setjmp, _longjmp only if PYRAMID_OLD.
+
+Tue Jul 12 21:56:32 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* s-rtu.h (fsync): Define this as no-op.
+
+	* process.c, sysdep.c: Rename MASSCOMP flag to RTU.
+
+Sun Jul 10 14:30:37 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* term.c (write_chars): Compensate for wasted_chars when comparing curX
+
+Tue Jul  5 14:43:42 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lread.c (openp): Don't call strncat if lsuffix is 0.
+
+Tue Jun 28 19:57:22 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* callint.c (Fcall_interactively): On VMS, treat 'f' like 'F'.
+
+Mon Jun 27 18:01:54 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacs.c (Fkill_emacs): Run kill-emacs-hook.
+
+Thu Jun 23 08:16:02 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ymakefile: Add missing dependencies.
+
+	* cmds.c (Fself_insert_command): Pass correct 2nd arg to SelfInsert.
+
+	* ymakefile: Avoid newline after cpp in commands for alloca.s.
+
+Wed Jun 22 09:26:41 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ymakefile: #undef register, in case m- or s- defines it.
+
+Tue Jun 21 04:57:54 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* unexhp9k800.c: Complete replacement.
+
+	* x11fns.c (x_set_cursor_colors): Send current colors to X server.
+	(Fx_set_mouse_color): Use that function.
+	* x11term.c (XFlipColor, XInitWindow): Use that function.
+	Variable `mous' deleted; handle reverse video for `mous_color'
+	by checking it with `strcmp'.
+
+	* x11term.c (x_term_init): `sizeof' was used for strings, in mallocing.
+	Delete unused vars `cursor_fore' and `cursor_back'.
+
+	* x11term.c (CursorToggle): Make solid cursor proper color
+	when no text char is there.
+
+	* x11term.c (XT_Set_Size_Hints): New arg PR.
+	At startup, it's the value from XGeometry, else 0.
+	Use it when setting the flags (which dims are user-specified).
+	
+	* x11term.c (XT_Set_Size_Hints): Conditional for XICCC.
+
+	* x11term.c (internal_socket_read): Don't call change_window_size
+	with arguments too small for it to handle.
+
+	* dispnew.c (window_change_signal, {un,}hold_window_change):
+	If a signal happens during update_screen, just set flag;
+	resignal when update_screen finishes.
+	* xdisp.c (DoDsp, message, message1): Call {un,}hold_window_change.
+
+	* dispnew.c (Vwindow_system_version): New variable.
+	(syms_of_dispnew, init_display): Set this variable.
+
+	* callint.c (Fcall_interactively): For `N', convert prefix to number.
+
+Sat Jun 18 06:21:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* termcap.c (tgetst1): Tolerate missing colon at end of entry.
+
+Wed Jun 15 01:08:52 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* data.c (Fkill_local_variable): Used to clobber other buffer's value.
+
+Tue Jun 14 03:08:38 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11fns.c, x11term.c: "Mouse queue" was a stack; make it a queue.
+	New vars XXm_queue_in, XXm_queue_out.
+	(Fx_{proc,get}_mouse_event): Use XXm_queue_out as fetch index.
+	(internal_socket_read): Use XXm_queue_in as store index.
+	(x_term_init): Init the new vars.
+
+Fri Jun 10 08:09:01 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* window.c (Fset_window_configuration): Handle change in screen size.
+
+	* s-hpux.h: Delete -lBSD from LIBS_SYSTEM.
+	* m-hp9000s300.h: Define string fns as macros even in version 6.
+
+Wed Jun  8 22:17:15 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* buffer.c (SetBfp): Initialize `swb'.  This matters when SetBfp
+	is called during initialization, on Masscomp.
+
+Fri Jun  3 07:28:20 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c (kbd_input_ast, end_kbd_input): Eliminate `ast_active'.
+	(end_kbd_input): Use LIB$AST_IN_PROG.
+
+	* lread.c (init_read): Don't be confused by Qnil in normal_path.
+
+	* data.c (Fsymbol_value): Check nullness of per-buffer sym's buffer.
+
+	* callint.c (Fcall_interactively): Don't put non-strings into visargs.
+
+Thu Jun  2 04:28:42 1988  Richard Stallman  (rms at rice-krispies.ai.mit.edu)
+
+	* keyboard.c (read_avail_input, input_available_signal):
+	Make `buf' as long as kbd_buffer.
+
+Wed Jun  1 04:29:18 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* xdisp.c (decode_mode_spec): Output `%%' as a `%'.
+
+	* sysdep.c (kbd_input_ast): Save and restore errno.
+	* keyboard.c (input_available_signal, interrupt_signal): Likewise.
+	* dispnew.c (window_change_signal): Likewise.
+	* process.c (child_sig): Likewise.
+
+Tue May 31 03:22:14 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11fns.c (Fx_proc_mouse_event): When looking up a meta-click,
+	look for the meta-prefix-char first.
+
+	* xmenu.c (Fx_popup_menu): Typo calling BLOCK_INPUT_DECLARE.
+
+Sat May 28 02:28:59 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* s-iris3-{5,6}.h: Undo Jan 11 change.
+
+Mon May 23 15:04:34 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* minibuf.c (read_minibuf): If PROMPT's not a string, make it one.
+
+Sun May 22 16:09:07 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* m-alliant.h: Typo made m-alliant1.h lose.
+	* m-alliant4.h: New file.
+
+	* fns.c (Freverse): Rename `vector' to `vec'.
+	On alliant, `vector' is a typedef in param.h.
+
+Fri May 20 00:32:07 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* process.c (kill_buffer_processes): Send SIGHUP, not SIGKILL.
+
+Thu May 19 16:38:15 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* m-mips.h, m-iris4d.h (XUNMARK): Cast unsigned before shifting.
+
+	* m-sequent.h: No need for DKSTAT_HEADER_FILE.
+
+Mon May 16 21:03:11 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* x11term.c: First include system headers, then config.h, then maybe
+	undef FIONREAD and SIGIO, then read x11term.h which depends on them.
+
+Sun May 15 12:16:56 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* keyboard.c (get_input_pending): Hold SIGIO around read_avail_input.
+
+Sat May 14 01:23:49 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* keyboard.c (init_keyboard): Call keyboard_init_hook if nonzero.
+	* x11term.c (x_init_1): Move all keyboard-related inits here.
+	(x_term_init): Don't call x_init_1; put it in keyboard_init_hook.
+
+	* m-sun3.h, s-sunos4.h, s-bsd4-3.h: Delete DK_HEADER_FILE.
+	* m-sequent.h: Change it to DKSTAT_HEADER_FILE.
+
+Fri May 13 22:38:12 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* xdisp.c (DoDsp): if pause, and window is partial-width,
+	next redisplay must do all windows since preserve_other_columns
+	may lack the data to work right if we just did scrolling.
+
+Fri May 13 13:56:45 1988  Chris Hanson  (cph at kleph)
+
+	* m-hp9000s300.h: Conditionalize a couple of things on `__GNUC__'.
+
+Thu May 12 16:51:24 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* xdisp.c (mark_window_display_accurate): Don't use XBUFFER on nil.
+
+	* keyboard.c (keys_of_keyboard): Change ndefkey to defkey.
+	* keymap.c (keys_of_keymap): Change ndefkey to defkey.
+
+Tue May 10 22:49:36 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* sysdep.c: Define sigmask.
+
 Fri May  6 10:41:46 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
 
 	* Version 18.51 released.

@@ -98,7 +98,9 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
        (funcall (or function 'message)
 		(substitute-command-keys
 		 (if (one-window-p t)
-		     "Type \\[delete-other-windows] to remove help window."
+		     (if pop-up-windows
+			 "Type \\[delete-other-windows] to remove help window."
+		       "Type \\[switch-to-buffer] RET to remove help window.")
 		   "Type \\[switch-to-buffer-other-window] RET to restore old contents of help window.")))))
 
 (defun describe-key (key)

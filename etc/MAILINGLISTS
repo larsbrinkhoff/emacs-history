@@ -1,64 +1,248 @@
-Mailing lists for GNU Emacs:		Last updated 20 Dec 87
+    GNU Project electronic mailing lists.  Last Updated 15 Aug 1988
 
-Bug reports, fixes for bugs, and suggestions for improvements in GNU
-Emacs should be sent to bug-gnu-emacs@prep.ai.mit.edu (Internet
-address) or ...!ucbvax!prep.ai.mit.edu!bug-gnu-emacs (UUCP address).
+* GNU mailing lists are also distributed as USENET news groups
 
-Bug reports, fixes for bugs, and suggestions for improvements in GDB
-(Gnu's DeBugger) should be sent to bug-gdb@prep.ai.mit.edu (Internet
-address) or ...!ucbvax!prep.ai.mit.edu!bug-gdb (UUCP address).
+The mailing lists are gated both ways with the gnu.all newsgroups at
+ohio-state.edu.  The one-to-one correspondence is indicated below.  If
+you don't know if your site is on USENET, ask your system administrator.
+If you are a USENET site and don't get the gnu.all newsgroups, please
+ask your USENET administrator to get them.  If he has your feeds ask
+their feeds, you should win.  And everyone else wins: newsgroups make
+better use of the limited bandwidth of the computer networks and your
+home machine than mailing list traffic; and staying off the mailing
+lists make better use of the people who maintain the lists and the
+machines that the GNU people working with rms use (i.e. we have more
+time to produce code!!).  Thanx.
 
-If you think something is a bug in Emacs, it might be one; or, it
+
+* Getting the mailing lists directly
+
+If several users at your site or local network would like to read a list
+and you aren't a USENET site, Project GNU would prefer if you would set
+up one address that redistributes locally.  This reduces overhead on our
+machine, your gateway machine, and the network(s) used to transport the
+mail from us to you.
+
+
+* How to subscribe and reporting bugs in the mailing lists
+
+Send messages ABOUT these lists, such as reports of mail problems, or
+requests to be added or removed, to info-gnu-emacs-request (or
+info-gnu-request, bug-gdb-request, etc.), NOT to info-gnu-emacs (or
+info-gnu, etc.).  These <LIST_NAME>-request addresses go only to the
+people who can do something about your requests or problems, and thus
+avoids disturbing everyone else.
+
+All GNU mailing lists are unmoderated, mail reflectors, except info-gnu.
+They are very large lists, please don't send them anything that is not
+seriously important to many people.
+
+All addresses below are in internet format.  Consult the mail guru for
+your computer to figure out address syntaxes from other networks.  From
+UUCP machines:
+	..!ucbvax!prep.ai.mit.edu!ADDRESS
+	..!mit-eddie!mit-prep!ADDRESS
+
+
+* Specific Requests for Information to: gnu@prep.ai.mit.edu
+
+Specific requests for information about obtaining GNU software, or GNU
+activities in Cambridge and elsewhere can be directed to:
+gnu@prep.ai.mit.edu
+
+
+* General Information about info-* lists
+
+Most of the time, when you reply to a message sent to an info-* list,
+the reply should not go to the info-* list.  But most mailer reading
+programs supply all the recipients of the original as recipients of the
+reply, by default.  Make a point of deleting the info-* address from the
+list when it does not belong.  This prevents bothering all readers of a
+list, and reduces network congestion.
+
+
+* General Information about bug-* lists and reporting program bugs
+
+If you think something is a bug in a program, it might be one; or, it
 might be a misunderstanding or even a feature.  Before beginning to
-report bugs, please read the section ``Reporting Emacs Bugs'' toward
-the end of the GNU Emacs reference manual (or the built-in Info
-system) for a discussion of how and when to send in bug reports.
+report bugs, please read the section ``Reporting Emacs Bugs'' toward the
+end of the GNU Emacs reference manual (or GEM's built-in Info system)
+for a discussion of how and when to send in bug reports.  Always include
+the version number of the program, as well as the operating system and
+machine the program was ran on.  A debugger backtrace of any core dump,
+can also be useful.  Be careful to separate out hypothesis from fact!
+For GNU Emacs bugs, type "M-x emacs-version"!
 
 Do not expect an answer for a bug report, except sometimes in the form
 of a fix for the bug in the next release.  Reporting a bug is done to
 get the bug fixed for everyone.  Likewise, we maintainers fix bugs in
 order to help the entire community.  We see no such duty to aid
-individuals one at a time, such as by sending them individual
-messages, and have no time to do this since we are busy doing things
-for the entire community.  If you want help for yourself in
-particular, you may have to hire someone.  You might find one by
-looking in the the service list (file SERVICE in this directory).
+individuals one at a time, such as by sending them individual messages,
+and have no time to do this since we are busy doing things for the
+entire community.  If you want help for yourself in particular, you may
+have to hire someone.  The GNU project maintains a list of people
+providing such services.  It is distributed with GNU Emacs in file
+../etc/SERVICE, and can be requested from gnu@prep.ai.mit.edu.
 
-Anything addressed to the implementors and maintainers of GNU Emacs
-should be sent only to bug-gnu-emacs, NOT to info-gnu-emacs.
+Anything addressed to the implementors and maintainers of a GNU program
+via a bug-* list, should NOT be sent to the corresponding info-* list.
+Bug reports reach the GNU maintainers quickest when they are sent to the
+bug-* mailing list submittal address.  Bug reports sent to the gnu.*.bug
+newsgroups can be delayed several days.  Bug reports sent to the comp.*
+never make it to GNU maintainers - mail them directly!
 
-Information and questions addressed to the general user community are
-sent to info-gnu-emacs@prep.ai.mit.edu (Internet address) or
-...!ucbvax!prep.ai.mit.edu!info-gnu-emacs (UUCP address).  This list
-forwards one way onto the USENET newsgroup comp.emacs (once known as
-net.emacs).  (Users at non-USENET sites may receive articles from
-comp.emacs by subscribing to: unix-emacs@bbncc5.arpa, by making their
-request to: unix-emacs-request@bbncc5.arpa.)  Since it is a very large
-list, don't send it anything that is not seriously important to many
-people.
 
-Most of the time, when you reply to a message sent to info-gnu-emacs,
-the reply should not go to info-gnu-emacs.  But most mailer reading
-programs supply all the recipients of the original as recipients of
-the reply, by default.  Make a point of deleting info-gnu-emacs from
-the list when it does not belong.
+* info-gnu-request@prep.ai.mit.edu to subscribe to info-gnu
+** USENET newsgroup: gnu.announce
+** List submittal address: info-gnu@prep.ai.mit.edu
 
-Another list, info-gnu@prep.ai.mit.edu, is used for progress reports
-for the GNU project in general, and for requests for people to do
-work.
+This list distributes progress reports on the GNU Project, and asks
+people for various kinds of help.  It is NOT for general discussion.
 
-The list, gnu-manual@a.cs.uiuc.edu, is a working group whose
-volunteers write, proofread and comment on the developing GNU Emacs
-Lisp programmers' manual.
+The list is filtered to remove items meant for info-gnu-request, that
+can be answered by the moderator without bothering the list, or should
+have been sent to another list.
 
-There are also mailing lists for other GNU programs.  Specific
-information about these mailing lists. obtaining GNU software, or GNU
-activities in Cambridge and elsewhere can be directed to:
-gnu@prep.ai.mit.edu
 
-Send messages ABOUT these lists, such as reports of mail problems, or
-requests to be added or removed, to info-gnu-emacs-request (or
-info-gnu-request, bug-gnu-emacs-request, bug-gdb-request, etc), NOT to
-info-gnu-emacs, etc.  *-request goes only to the people who can do
-something about your requests and problems, and thus avoids disturbing
-everyone else.
+* bug-gnu-emacs-request@prep.ai.mit.edu to subscribe to bug-gnu-emacs
+** USENET newsgroup: gnu.emacs.bug
+** Gnu Emacs bug reports to: bug-gnu-emacs@prep.ai.mit.edu
+
+This list distributes bug reports, fixes for bugs, and suggestions for
+improvements in GNU Emacs to the active maintainers of GNU Emacs.  It is
+the place to report GNU Emacs bugs by all users of GNU Emacs.
+
+Subscribers to bug-gnu-emacs automatically receive all info-gnu-emacs
+messages.
+
+
+* info-gnu-emacs-request@prep.ai.mit.edu to subscribe to info-gnu-emacs
+** USENET newsgroup: gnu.emacs
+** submittal address: info-gnu-emacs@prep.ai.mit.edu
+
+This list covers general questions and announcements about GNU Emacs.
+Since it is a very large list, send it only those items that are
+seriously important to many people.  It is also gated one way to
+USENET's newsgroup comp.emacs (once known as net.emacs).  Do not report
+GNU Emacs bugs to comp.emacs, instead mail them to
+bug-gnu-emacs@prep.ai.mit.edu.  Users at non-USENET sites may receive
+articles from comp.emacs by making their request to:
+unix-emacs-request@bbncc5.arpa.
+
+
+* vms-gnu-emacs-request@harvard.harvard.edu to subscribe to vms-gnu-emacs
+** USENET newsgroup: gnu.emacs.vms
+** submittal address: vms-gnu-emacs@harvard.harvard.edu
+*** UUCP: ..!uunet!harvard!vms-gnu-emacs-request
+
+This list was a working group who did the initial port of GNU Emacs to
+the VMS operating system.  It still discusses problems and solutions to
+the VMS port and the distribution of it.
+
+
+* gnu-manual-request@a.cs.uiuc.edu to subscribe to gnu-manual
+** USENET newsgroup: gnu.emacs.lisp.manual
+** submittal address: gnu-manual@a.cs.uiuc.edu
+*** UUCP: ..!ihnp4!uiucdcs!gnu-manual-request
+
+This list is a working group whose volunteers write, proofread and
+comment on the developing GNU Emacs Lisp programmers manual.
+
+
+* bug-gdb-request@prep.ai.mit.edu to subscribe to bug-gdb
+** USENET newsgroup: gnu.gdb.bug
+** GDB bug reports to: bug-gdb@prep.ai.mit.edu
+
+This list distributes bug reports, fixes for bugs, and suggestions for
+improvements in GDB (Gnu's DeBugger) to the active maintainers of GDB.
+It is the place to report GDB bugs by all users of GDB.
+
+Always report the version number gdb reports on startup, as well as the
+operating system and hardware.
+
+There is neither a info-gdb list nor a gnu.gdb newsgroup at this time.
+
+* bug-gcc-request@prep.ai.mit.edu to subscribe to bug-gcc
+** USENET newsgroup: gnu.gcc.bug
+** GCC bug reports to: bug-gcc@prep.ai.mit.edu
+
+This list distributes bug reports, fixes for bugs, and suggestions for
+improvements in the GNU C Compiler to its active developers.  It is the
+place to report GCC bugs by all testers of GCC.  The GNU C Compiler
+still has bugs in it, and is not quite ready for everyday use.
+
+Always report the version number of gcc, as well as the operating system
+and hardware.
+
+Subscribers to bug-gcc automatically receive all info-gcc messages.
+
+
+* info-gcc-request@prep.ai.mit.edu to subscribe to info-gcc
+** USENET newsgroup: gnu.gcc
+** submittal address: info-gcc@prep.ai.mit.edu
+
+This list reports new releases and proven bug fixes to testers of the
+GNU C Compiler.
+
+
+* bug-g++-request@prep.ai.mit.edu to subscribe to bug-g++
+** USENET newsgroup: gnu.g++.bug
+** G++ and GDB+ bug reports: bug-g++@prep.ai.mit.edu
+
+This list distributes bug reports, fixes for bugs, and suggestions for
+improvements in the GNU C++ Compiler and it's debugger GDB+ to their
+active developers.  It is the place to report G++ and GDB+ bugs by all
+testers of G++ and GDB+.  The GNU C++ Compiler is still in test release,
+and is NOT ready for everyday use.
+
+Always report the version number of g++, as well as the operating system
+and hardware.
+
+G++ uses the GNU C-Compiler back end.  Active developers may wish to
+subscribe to bug-gcc@prep.ai.mit.edu as well.
+
+GDB+ uses much code from GDB.  Active developers may wish to subscribe
+to bug-gdb@prep.ai.mit.edu as well.
+
+Subscribers to bug-g++ automatically receive all info-g++ messages.
+
+
+* info-g++-request@prep.ai.mit.edu to subscribe to info-g++
+** USENET newsgroup: gnu.g++
+** submittal address: info-g++@prep.ai.mit.edu
+
+This list reports new releases, informations about ports and proven bug
+fixes to testers of the GNU C++ Compiler.  It is also gated one way to
+USENET's newsgroup comp.lang.c++.  Do not report g++ bugs to
+comp.lang.c++, mail them to bug-g++@prep.ai.mit.edu instead.
+
+
+* info-gnu-chess-request@prep.ai.mit.edu to subscribe to info-gnu-chess
+** USENET newsgroup: gnu.chess
+** submittal address: info-gnu-chess@prep.ai.mit.edu
+
+This list reports new releases and information about the program GNU
+Chess.
+
+
+* bug-gnu-utils-request@prep.ai.mit.edu to subscribe to bug-gnu-utils
+** USENET newsgroup: gnu.utils.bug
+** GNU Utilities bug reports to: bug-gnu-utils@prep.ai.mit.edu
+
+This list distributes bug reports, fixes for bugs, and suggestions for
+improvements in GNU programs not covered by other bug-* mailing
+lists/gnu.*.bug newsgrpups to the active maintainers of these programs.
+It is the place to report bugs in these GNU programs by all users of
+them.
+
+Always report the version number of the GNU program, as well as the
+operating system and hardware.
+
+There is neither a info-gnu-utils list nor a gnu.utils newsgroup at this
+time.
+
+
+Local variables:
+mode: outline
+fill-column: 72
+End:

@@ -161,11 +161,13 @@ fn_exp(out, in)
 	return(retval);
 }	
 
+#ifndef OLD  /* Newer versions of VMS do provide `system'.  */
 system(cmd)
      char *cmd;
 {
   fprintf(stderr, "system() function not implemented under VMS\n");
 }
+#endif
 
 #define	VERSION_DELIM	';'
 char *massage_name(s)

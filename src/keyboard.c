@@ -1,5 +1,5 @@
 /* Keyboard input; editor command loop.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -36,6 +36,8 @@ and this notice must be preserved on all copies.  */
 #include "buffer.h"
 #include <setjmp.h>
 #include <errno.h>
+
+extern int errno;
 
 /* Get FIONREAD, if it is available.  */
 #ifdef USG
@@ -116,9 +118,9 @@ int unread_command_char;
 
 int meta_prefix_char;
 
-static auto_save_interval;	/* The number of keystrokes between
+static int auto_save_interval;	/* The number of keystrokes between
 				   auto-saves. */
-static Keystrokes;		/* The number of keystrokes since the last
+static int Keystrokes;		/* The number of keystrokes since the last
 				   auto-save. */
 
 Lisp_Object last_command;	/* Previous command, represented by a Lisp object.
@@ -191,6 +193,10 @@ int flow_control;
 #define sigpausex(sig) sigpause (sig)
 #endif /* BSD4_1 */
 
+#ifndef sigmask
+#define sigmask(no) (1L << ((no) - 1))
+#endif
+
 /* We are unable to use interrupts if FIONREAD is not available,
    so flush SIGIO so we won't try. */
 #ifndef FIONREAD
@@ -199,13 +205,16 @@ int flow_control;
 #endif
 #endif
 
+/* Function for init_keyboard to call with no args (if nonzero).  */
+void (*keyboard_init_hook) ();
+
 static void read_avail_input ();
 static void get_input_pending ();
 
 static char KeyBuf[40];		/* Buffer for keys from get_char () */
-static NextK;			/* Next index into KeyBuf */
-static echo_keystrokes;		/* > 0 if we are to echo keystrokes */
-static Echo1;			/* Stuff for final echo */
+static int NextK;		/* Next index into KeyBuf */
+static int echo_keystrokes;	/* > 0 if we are to echo keystrokes */
+static int Echo1;		/* Stuff for final echo */
 unsigned char *keys_prompt;	/* String to display in front of echoed keystrokes, or 0 */
 
 #define	min(a,b)	((a)<(b)?(a):(b))
@@ -586,6 +595,7 @@ command_loop_1 ()
 		      && (XFASTINT (XWINDOW (selected_window)->last_point)
 			  == point)
 		      && !windows_or_buffers_changed
+		      && EQ (bf_cur->selective_display, Qnil)
 		      && !detect_input_pending ()
 		      && NULL (Vexecuting_macro))
 		    no_redisplay = direct_output_forward_char (1);
@@ -601,6 +611,7 @@ command_loop_1 ()
 		      && (XFASTINT (XWINDOW (selected_window)->last_point)
 			  == point)
 		      && !windows_or_buffers_changed
+		      && EQ (bf_cur->selective_display, Qnil)
 		      && !detect_input_pending ()
 		      && NULL (Vexecuting_macro))
 		    no_redisplay = direct_output_forward_char (-1);
@@ -624,6 +635,7 @@ command_loop_1 ()
 			  != point)
 		    || bf_modified <= bf_cur->save_modified
 		    || windows_or_buffers_changed
+		    || !EQ (bf_cur->selective_display, Qnil)
 		    || detect_input_pending ()
 		    || !NULL (Vexecuting_macro);
 		  if (SelfInsert (last_command_char, 0))
@@ -671,6 +683,8 @@ int echo_now;
 /* Alarm interrupt calls this and requests echoing at earliest safe time. */
 request_echo ()
 {
+  int old_errno = errno;
+
   /* Note: no need to reestablish handler on USG systems
      because it is established, if approriate, each time an alarm is requested.  */
 #ifdef subprocesses
@@ -697,6 +711,8 @@ request_echo ()
 #ifdef BSD4_1
   sigunhold (SIGALRM);
 #endif
+
+  errno = old_errno;
 }
 
 /* read a character from the keyboard; call the redisplay if needed */
@@ -990,8 +1006,20 @@ get_input_pending (addr)
      are necessarily kbd chars.  So process all the input
      and see how many kbd chars we got.  */
 #endif
+#ifdef SIGIO
+  {
+    /* It seems there is a timing error such that a SIGIO can be handled here
+       and cause kbd_count to become nonzero even though raising of SIGIO
+       has already been turned off.  */
+    int mask = sigblock (sigmask (SIGIO));
+    if (kbd_count == 0)
+      read_avail_input (*addr);
+    sigsetmask (mask);
+  }
+#else
   /* If we can't count the input, read it (if any) and see what we got.  */
   read_avail_input (*addr);
+#endif
   *addr = kbd_count;
 #endif
 }
@@ -1014,7 +1042,7 @@ read_avail_input (nread)
   /* This function is not used on VMS.  */
 #ifndef VMS
 #ifdef FIONREAD
-  char buf[64 * BUFFER_SIZE_FACTOR];
+  char buf[256 * BUFFER_SIZE_FACTOR];
   register char *p;
   register int i;
 
@@ -1057,7 +1085,9 @@ read_avail_input (nread)
       kbd_count = (*read_socket_hook) (0, kbd_buffer, sizeof kbd_buffer);
     }
   else
-    kbd_count = read (fileno (stdin), kbd_buffer, sizeof kbd_buffer);
+    {
+      kbd_count = read (fileno (stdin), kbd_buffer, sizeof kbd_buffer);
+    }
   if (kbd_count == -1 && errno == EAGAIN)
     kbd_count = 0;
   fcntl (fileno (stdin), F_SETFL, 0);
@@ -1093,9 +1123,11 @@ gobble_input ()
 input_available_signal (signo)
      int signo;
 {
-  unsigned char buf[64 * BUFFER_SIZE_FACTOR];
+  unsigned char buf[256 * BUFFER_SIZE_FACTOR];
   int nread;
   register int i;
+  /* Must preserve main program's value of errno.  */
+  int old_errno = errno;
 #ifdef BSD4_1
   extern int select_alarmed;
 #endif
@@ -1147,6 +1179,7 @@ input_available_signal (signo)
 #ifdef BSD4_1
   sigfree ();
 #endif
+  errno = old_errno;
 }
 #endif /* SIGIO */
 
@@ -1684,6 +1717,8 @@ clear_waiting_for_input ()
 interrupt_signal ()
 {
   char c;
+  /* Must preserve main program's value of errno.  */
+  int old_errno = errno;
   extern Lisp_Object Vwindow_system;
 
 #ifdef USG
@@ -1760,6 +1795,8 @@ interrupt_signal ()
 
   if (waiting_for_input && !echoing)
     quit_throw_to_get_char ();
+
+  errno = old_errno;
 }
 
 /* Handle a C-g by making get_char return C-g.  */
@@ -1831,6 +1868,9 @@ init_keyboard ()
 
   sigfree ();
   dribble = 0;
+
+  if (keyboard_init_hook)
+    (*keyboard_init_hook) ();
 }
 
 syms_of_keyboard ()
@@ -1938,5 +1978,5 @@ keys_of_keyboard ()
   defkey (CtlXmap, Ctl ('Z'), "suspend-emacs");
   defkey (ESCmap, Ctl ('C'), "exit-recursive-edit");
   defkey (GlobalMap, Ctl (']'), "abort-recursive-edit");
-  ndefkey (ESCmap, 'x', "execute-extended-command");
+  defkey (ESCmap, 'x', "execute-extended-command");
 }

@@ -1,5 +1,5 @@
 /* Manipulation of keymaps
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -806,6 +806,8 @@ sequence found, rather than a list of all possible key sequences.")
 	      i++;
 	    }
 
+	  elt = get_keyelt (elt);
+
 	  /* End this iteration if this element does not match
 	     the target.  */
 
@@ -1344,6 +1346,6 @@ an exact match of one of the completions is required.");
 
 keys_of_keymap ()
 {
-  ndefkey (GlobalMap, 033, "ESC-prefix");
-  ndefkey (GlobalMap, Ctl('X'), "Control-X-prefix");
+  defkey (GlobalMap, 033, "ESC-prefix");
+  defkey (GlobalMap, Ctl('X'), "Control-X-prefix");
 }
