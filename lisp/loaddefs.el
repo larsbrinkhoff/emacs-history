@@ -373,7 +373,7 @@ for \\[find-tag] (which see)."
 (define-key ctl-x-map "rk" 'kill-rectangle)
 (define-key ctl-x-map "ry" 'yank-rectangle)
 (define-key ctl-x-map "ro" 'open-rectangle)
-(define-key ctl-x-map "rt" 'fill-rectangle)
+(define-key ctl-x-map "rt" 'string-rectangle)
 (define-key ctl-x-map "rw" 'window-configuration-to-register)
 (define-key ctl-x-map "rf" 'frame-configuration-to-register)
 
@@ -429,11 +429,16 @@ for \\[find-tag] (which see)."
 ;;;(sort-regexp-fields nil "\n*.*\n.*from \\(.*\\)[^]*" "\\1"
 ;;;		    (point-min) (point-max))
 
-;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11318 13833))
+;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11337 52470))
 ;;; Generated autoloads from add-log.el
 
 (defvar change-log-default-name nil "\
 *Name of a change log file for \\[add-change-log-entry].")
+
+(defvar add-log-current-defun-function nil "\
+*If non-nil, function to guess name of current function from surrounding text.
+\\[add-change-log-entry] calls this function (if nil, `add-log-current-defun'
+instead) with no arguments.  It returns a string or nil if it cannot guess.")
 
 (autoload (quote find-change-log) "add-log" "\
 Find a change log file for \\[add-change-log-entry] and return the name.
@@ -454,9 +459,8 @@ Third arg OTHER-WINDOW non-nil means visit in other window." t nil)
 
 (autoload (quote add-change-log-entry-other-window) "add-log" "\
 Find change log file in other window and add an entry for today.
-First arg (interactive prefix) non-nil means prompt for user name and site.
-Second arg is file name of change log.
-Interactively, with a prefix argument, the file name is prompted for." t nil)
+Optional arg (interactive prefix) non-nil means prompt for user name and site.
+Second arg is file name of change log.  If nil, uses `change-log-default-name'." t nil)
 (define-key ctl-x-4-map "a" 'add-change-log-entry-other-window)
 
 (autoload (quote change-log-mode) "add-log" "\
@@ -584,12 +588,14 @@ a function gets defined or redefined." t nil)
 
 ;;;***
 
-;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11336 60199))
+;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11339 39555))
 ;;; Generated autoloads from ange-ftp.el
 
 (autoload (quote ange-ftp-hook-function) "ange-ftp" nil nil nil)
 
-(or (assoc "^/[^/:]*\\([^/:]:\\|\\'\\)" file-name-handler-alist) (setq file-name-handler-alist (cons (quote ("^/[^/:]*\\([^/:]:\\|\\'\\)" . ange-ftp-hook-function)) file-name-handler-alist)))
+(or (assoc "^/[^/:]*[^/:]:" file-name-handler-alist) (setq file-name-handler-alist (cons (quote ("^/[^/:]*[^/:]:" . ange-ftp-hook-function)) file-name-handler-alist)))
+
+(or (assoc "^/[^/:]*\\'" file-name-handler-alist) (setq file-name-handler-alist (cons (quote ("^/[^/:]*\\'" . ange-ftp-completion-hook-function)) file-name-handler-alist)))
 
 ;;;***
 
@@ -1594,7 +1600,7 @@ If `compare-ignore-case' is non-nil, changes in case are also ignored." t nil)
 
 ;;;***
 
-;;;### (autoloads (next-error grep compile) "compile" "compile.el" (11332 51733))
+;;;### (autoloads (next-error compilation-minor-mode grep compile) "compile" "compile.el" (11358 55857))
 ;;; Generated autoloads from compile.el
 
 (defvar compilation-mode-hook nil "\
@@ -1643,6 +1649,11 @@ to find the text that grep hits refer to.
 This command uses a special history list for its arguments, so you can
 easily repeat a grep command." t nil)
 
+(autoload (quote compilation-minor-mode) "compile" "\
+Toggle compilation minor mode.
+With arg, turn compilation mode on if and only if arg is positive.
+See `compilation-mode'." t nil)
+
 (autoload (quote next-error) "compile" "\
 Visit next compilation error message and corresponding source code.
 This operates on the output from the \\[compile] command.
@@ -1665,6 +1676,27 @@ See variables `compilation-parse-errors-function' and
 `compilation-error-regexp-alist' for customization ideas." t nil)
 
 (define-key ctl-x-map "`" (quote next-error))
+
+;;;***
+
+;;;### (autoloads (shuffle-vector cookie-snarf cookie-insert cookie) "cookie1" "cookie1.el" (11337 43735))
+;;; Generated autoloads from cookie1.el
+
+(autoload (quote cookie) "cookie1" "\
+Return a random phrase from PHRASE-FILE.  When the phrase file
+is read in, display STARTMSG at beginning of load, ENDMSG at end." nil nil)
+
+(autoload (quote cookie-insert) "cookie1" "\
+Insert random phrases from PHRASE-FILE; COUNT of them.  When the phrase file
+is read in, display STARTMSG at beginning of load, ENDMSG at end." nil nil)
+
+(autoload (quote cookie-snarf) "cookie1" "\
+Reads in the PHRASE-FILE, returns it as a vector of strings.  Emit
+STARTMSG and ENDMSG before and after.  Caches the result; second and
+subsequent calls on the same file won't go to disk." nil nil)
+
+(autoload (quote shuffle-vector) "cookie1" "\
+Randomly permute the elements of VECTOR (all permutations equally likely)" nil nil)
 
 ;;;***
 
@@ -3744,6 +3776,58 @@ See the command `outline-mode' for more information on this mode." t nil)
 
 ;;;***
 
+;;;### (autoloads (perl-mode) "perl-mode" "perl-mode.el" (11360 25587))
+;;; Generated autoloads from perl-mode.el
+
+(autoload (quote perl-mode) "perl-mode" "\
+Major mode for editing Perl code.
+Expression and list commands understand all Perl brackets.
+Tab indents for Perl code.
+Comments are delimited with # ... \\n.
+Paragraphs are separated by blank lines only.
+Delete converts tabs to spaces as it moves back.
+\\{perl-mode-map}
+Variables controlling indentation style:
+ perl-tab-always-indent
+    Non-nil means TAB in Perl mode should always indent the current line,
+    regardless of where in the line point is when the TAB command is used.
+ perl-tab-to-comment
+    Non-nil means that for lines which don't need indenting, TAB will
+    either delete an empty comment, indent an existing comment, move 
+    to end-of-line, or if at end-of-line already, create a new comment.
+ perl-nochange
+    Lines starting with this regular expression will not be auto-indented.
+ perl-indent-level
+    Indentation of Perl statements within surrounding block.
+    The surrounding block's indentation is the indentation
+    of the line on which the open-brace appears.
+ perl-continued-statement-offset
+    Extra indentation given to a substatement, such as the
+    then-clause of an if or body of a while.
+ perl-continued-brace-offset
+    Extra indentation given to a brace that starts a substatement.
+    This is in addition to perl-continued-statement-offset.
+ perl-brace-offset
+    Extra indentation for line if it starts with an open brace.
+ perl-brace-imaginary-offset
+    An open brace following other text is treated as if it were
+    this far to the right of the start of its line.
+ perl-label-offset
+    Extra indentation for line that is a label.
+
+Various indentation styles:       K&R  BSD  BLK  GNU  LW
+  perl-indent-level                5    8    0    2    4
+  perl-continued-statement-offset  5    8    4    2    4
+  perl-continued-brace-offset      0    0    0    0   -4
+  perl-brace-offset               -5   -8    0    0    0
+  perl-brace-imaginary-offset      0    0    4    0    0
+  perl-label-offset               -5   -8   -2   -2   -2
+
+Turning on Perl mode calls the value of the variable perl-mode-hook with no 
+args, if that value is non-nil." t nil)
+
+;;;***
+
 ;;;### (autoloads (picture-mode) "picture" "picture.el" (11292 51488))
 ;;; Generated autoloads from picture.el
 
@@ -4162,7 +4246,7 @@ scribe-electric-parenthesis
 
 ;;;***
 
-;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11334 11290))
+;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11352 5490))
 ;;; Generated autoloads from sendmail.el
 
 (defvar mail-self-blind nil "\
@@ -4247,12 +4331,9 @@ Like `mail' command, but display mail buffer in another window." t nil)
 
 (autoload (quote mail-other-frame) "sendmail" "\
 Like `mail' command, but display mail buffer in another frame." t nil)
-
-(define-key ctl-x-map "m" (quote mail))
-
-(define-key ctl-x-4-map "m" (quote mail-other-window))
-
-(define-key ctl-x-5-map "m" (quote mail-other-frame))
+(define-key ctl-x-map "m" 'mail)
+(define-key ctl-x-4-map "m" 'mail-other-window)
+(define-key ctl-x-5-map "m" 'mail-other-frame)
 
 ;;;***
 
@@ -4283,8 +4364,7 @@ Use \\[sgml-validate] to validate your document with an SGML parser." t nil)
 ;;;### (autoloads (shell) "shell" "shell.el" (11336 59243))
 ;;; Generated autoloads from shell.el
 
-(defvar shell-prompt-pattern "^[^#$%>
-]*[#$%>] *" "\
+(defvar shell-prompt-pattern "^[^#$%>\n]*[#$%>] *" "\
 Regexp to match prompts in the inferior shell.
 Defaults to \"^[^#$%>\\n]*[#$%>] *\", which works pretty well.
 This variable is used to initialise `comint-prompt-regexp' in the 

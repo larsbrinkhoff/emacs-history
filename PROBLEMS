@@ -1,14 +1,39 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
-* Inability to send an Alt-modified key, while using Emacs with X Windows.
+* Watch out for .emacs files and EMACSLOADPATH environment vars
 
-If you have tried to bind an Alt key as a command, and it does not
-work to type the command, the first thing you should check is whether
-the key is getting through to Emacs.  To do this, type C-h c followed
-by the Alt-modified key.  C-h c should say what kind of event it
-read.  If it says it read an Alt key, then make sure you have made the
-key binding correctly.
+These control the actions of Emacs.
+~/.emacs is your Emacs init file.
+EMACSLOADPATH overrides which directories the function
+"load" will search.
+
+If you observe strange problems, check for these and get rid
+of them, then try again.
+
+* After running emacs once, subsequent invocations crash.
+
+Some versions of SVR4 have a serious bug in the implementation of the
+mmap () system call in the kernel; this causes emacs to run correctly
+the first time, and then crash when run a second time.
+
+Contact your vendor and ask for the mmap bug fix; in the mean time,
+you may be able to work around the problem by adding a line to your
+operating system description file (whose name is reported by the
+configure script) that reads:
+#define SYSTEM_MALLOC
+This makes Emacs use memory less efficiently, but seems to work around
+the kernel bug.
+
+* Inability to send an Alt-modified key, when Emacs is communicating
+directly with an X server.
+
+If you have tried to bind an Alt-modified key as a command, and it
+does not work to type the command, the first thing you should check is
+whether the key is getting through to Emacs.  To do this, type C-h c
+followed by the Alt-modified key.  C-h c should say what kind of event
+it read.  If it says it read an Alt-modified key, then make sure you
+have made the key binding correctly.
 
 If C-h c reports an event that doesn't have the Alt modifier, it may
 be because your X server has no key for the Alt modifier.  The X
@@ -29,6 +54,9 @@ If your keyboard does not have keys named Alt, you can use some other
 keys.  Use the keysym command in xmodmap to turn a function key (or
 some other 'spare' key) into Alt_L or into Alt_R, and then use the
 commands show above to make them modifier keys.
+
+Note that if you have Alt keys but no Meta keys, Emacs translates Alt
+into Meta.  This is because of the great importance of Meta in Emacs.
 
 * `Pid xxx killed due to text modification or page I/O error'
 
@@ -129,19 +157,6 @@ One cause of such problems is having (setq term-file-prefix nil) in
 your .emacs file.  Another cause is a bad value of EMACSLOADPATH in
 the environment.
 
-* Emacs starts in a directory other than the one that is current in the shell.
-
-If the PWD environment variable exists, Emacs uses this variable as
-the initial working directory.
-
-Some shells automatically update this variable, while other shells fail
-to do so.  If you use two such shells in combination, the variable can
-end up wrong.  This confuses Emacs.
-
-The solution is to put something in the start-up file for the shell
-that does not update PWD, to get rid of that environment variable.
-For example, in csh, use `unsetenv PWD'.
-
 * Emacs gets error message from linker on Sun.
 
 If the error message says that a symbol such as `f68881_used' or
@@ -214,16 +229,6 @@ On a Sun, running Emacs on one machine with the X server on another
 may not work if you have used the unshared system libraries.  This
 is because the unshared libraries fail to use YP for host name lookup.
 As a result, the host name you specify may not be recognized.
-
-* Watch out for .emacs files and EMACSLOADPATH environment vars
-
-These control the actions of Emacs.
-~/.emacs is your Emacs init file.
-EMACSLOADPATH overrides which directories the function
-"load" will search.
-
-If you observe strange problems, check for these and get rid
-of them, then try again.
 
 * Shell mode ignores interrupts on Apollo Domain
 
@@ -474,8 +479,10 @@ Here's an example:
 
 (enable-flow-control-on "vt200" "vt300" "vt101" "vt131")
 
-An even more drastic measure is to make Emacs use flow control.
-To do this, evaluate the Lisp expression (set-input-mode nil t).
+An even more drastic measure is to make Emacs use flow control.  To do
+this, evaluate the Lisp expression (set-input-mode nil t META).  (The
+argument META should be t if you have a meta key, and nil otherwise.)
+
 Emacs will then interpret C-s and C-q as flow control commands.  (More
 precisely, it will allow the kernel to do so as it usually does.)  You
 will lose the ability to use them for Emacs commands.  Also, as a

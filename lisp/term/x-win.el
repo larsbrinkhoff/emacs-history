@@ -100,7 +100,7 @@
 		("-ms" .	x-handle-switch)
 		("-itype" .	x-handle-switch)
 		("-i" 	.	x-handle-switch)
-		("-iconic" .	x-handle-switch)
+		("-iconic" .	x-handle-iconic)
 		("-xrm" .       x-handle-xrm-switch)
 		("-cr" .	x-handle-switch)
 		("-vb" .	x-handle-switch)
@@ -125,7 +125,6 @@
     ("-cr" cursor-color)
     ("-itype" icon-type t)
     ("-i" icon-type t)
-    ("-iconic" visibility icon)
     ("-vb" vertical-scroll-bars t)
     ("-hb" horizontal-scroll-bars t)
     ("-bd" border-color)
@@ -144,6 +143,11 @@
 			    (car x-invocation-args))
 		      default-frame-alist)
 		x-invocation-args (cdr x-invocation-args))))))
+
+;; Make -iconic apply only to the initial frame!
+(defun x-handle-iconic (switch)
+  (setq initial-frame-alist
+	(cons '(visibility . icon) initial-frame-alist)))
 
 ;; Handler for switches of the form "-switch n"
 (defun x-handle-numeric-switch (switch)
@@ -455,7 +459,17 @@ This returns ARGS with the arguments that have been processed removed."
 
 ;;;; Function keys
 
-(substitute-key-definition 'suspend-emacs 'iconify-frame global-map)
+(defun iconify-or-deiconify-frame ()
+  "Iconify the selected frame, or deiconify if it's currently an icon."
+  (interactive)
+  (if (eq (cdr (assq 'visibility (frame-parameters))) t)
+      (iconify-frame)
+    (let ((foo (selected-frame)))
+      (make-frame-invisible foo)
+      (make-frame-visible foo))))
+
+(substitute-key-definition 'suspend-emacs 'iconify-or-deiconify-frame
+			   global-map)
 
 ;; Map certain keypad keys into ASCII characters
 ;; that people usually expect.
@@ -491,14 +505,22 @@ This returns ARGS with the arguments that have been processed removed."
 ;;; from x-cut-buffer-or-selection-value.
 (defvar x-last-selected-text nil)
 
-;;; Make TEXT, a string, the primary and clipboard X selections.
-;;; If you are running xclipboard, this means you can effectively
-;;; have a window on a copy of the kill-ring.
+;;; It is said that overlarge strings are slow to put into the cut buffer.
+;;; Note this value is overridden below.
+(defvar x-cut-buffer-max 20000
+  "Max number of characters to put in the cut buffer.")
+
+;;; Make TEXT, a string, the primary X selection.
 ;;; Also, set the value of X cut buffer 0, for backward compatibility
 ;;; with older X applications.
+;;; gildea@lcs.mit.edu says it's not desirable to put kills
+;;; in the clipboard.
 (defun x-select-text (text &optional push)
-  (x-set-cut-buffer text push)
-  (x-set-selection 'CLIPBOARD text)
+  ;; Don't send the cut buffer too much text.
+  ;; It becomes slow, and if really big it causes errors.
+  (if (< (length text) x-cut-buffer-max)
+      (x-set-cut-buffer text push)
+    (x-set-cut-buffer "" push))
   (x-set-selection 'PRIMARY text)
   (setq x-last-selected-text text))
 
@@ -508,11 +530,11 @@ This returns ARGS with the arguments that have been processed removed."
 (defun x-cut-buffer-or-selection-value ()
   (let (text)
 
-    ;; Consult the cut buffer, then the selection.  Treat empty strings
+    ;; Consult the selection, then the cut buffer.  Treat empty strings
     ;; as if they were unset.
-    (setq text (x-get-cut-buffer 0))
+    (setq text (x-get-selection 'PRIMARY))
     (if (string= text "") (setq text nil))
-    (or text (setq text (x-get-selection 'PRIMARY)))
+    (or text (setq text (x-get-cut-buffer 0)))
     (if (string= text "") (setq text nil))
 
     (cond
@@ -547,6 +569,9 @@ This returns ARGS with the arguments that have been processed removed."
 
 (setq frame-creation-function 'x-create-frame-with-faces)
 
+(setq x-cut-buffer-max (min (- (/ (x-server-max-request-size) 2) 100)
+			    x-cut-buffer-max))
+
 ;; Apply a geometry resource to the initial frame.  Put it at the end
 ;; of the alist, so that anything specified on the command line takes
 ;; precedence.
@@ -566,7 +591,7 @@ This returns ARGS with the arguments that have been processed removed."
 ;; Set x-selection-timeout, measured in milliseconds.
 (let ((res-selection-timeout
        (x-get-resource "selectionTimeout" "SelectionTimeout")))
-  (setq x-selection-timeout 5000)
+  (setq x-selection-timeout 20000)
   (if res-selection-timeout
       (setq x-selection-timeout (string-to-number res-selection-timeout))))
 

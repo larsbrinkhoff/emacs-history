@@ -84,7 +84,8 @@ This association list has elements of the form
 optional doc string DOC.  Certain %-escapes in the string arguments
 are interpreted specially if present.  These are:
 
-  %f	name of current source file. 
+  %f	name (without directory) of current source file. 
+  %d	directory of current source file. 
   %l	number of current source line
   %e	text of the C lvalue or function-call expression surrounding point.
   %a	text of the hexadecimal address surrounding point
@@ -119,7 +120,7 @@ we're in the GUD buffer)."
 ;; Used by gud-refresh, which should cause gud-display-frame to redisplay
 ;; the last frame, even if it's been called before and gud-last-frame has
 ;; been set to nil.
-(defvar gud-last-last-frame)
+(defvar gud-last-last-frame nil)
 
 ;; All debugger-specific information is collected here.
 ;; Here's how it works, in case you ever need to add a debugger to the mode.
@@ -155,21 +156,58 @@ we're in the GUD buffer)."
 (defun gud-gdb-massage-args (file args)
   (cons "-fullname" (cons file args)))
 
+;; There's no guarantee that Emacs will hand the filter the entire
+;; marker at once; it could be broken up across several strings.  We
+;; might even receive a big chunk with several markers in it.  If we
+;; receive a chunk of text which looks like it might contain the
+;; beginning of a marker, we save it here between calls to the
+;; filter.
+(defvar gud-gdb-marker-acc "")
+
 (defun gud-gdb-marker-filter (string)
-  (if (string-match  "\032\032\\([^:\n]*\\):\\([0-9]*\\):.*\n" string)
-      (progn
-	(setq gud-last-frame
-	      (cons
-	       (substring string (match-beginning 1) (match-end 1))
-	       (string-to-int
-		(substring string (match-beginning 2) (match-end 2)))))
-	;; this computation means the ^Z^Z-initiated marker in the
-	;; input string is never emitted.
-	(concat
-	 (substring string 0 (match-beginning 0))
-	 (substring string (match-end 0))
-	 ))
-    string))
+  (save-match-data
+    (setq gud-gdb-marker-acc (concat gud-gdb-marker-acc string))
+    (let ((output ""))
+
+      ;; Process all the complete markers in this chunk.
+      (while (string-match "^\032\032\\([^:\n]*\\):\\([0-9]*\\):.*\n"
+			   gud-gdb-marker-acc)
+	(setq
+
+	 ;; Extract the frame position from the marker.
+	 gud-last-frame
+	 (cons (substring gud-gdb-marker-acc (match-beginning 1) (match-end 1))
+	       (string-to-int (substring gud-gdb-marker-acc
+					 (match-beginning 2)
+					 (match-end 2))))
+
+	 ;; Append any text before the marker to the output we're going
+	 ;; to return - we don't include the marker in this text.
+	 output (concat output
+			(substring gud-gdb-marker-acc 0 (match-beginning 0)))
+
+	 ;; Set the accumulator to the remaining text.
+	 gud-gdb-marker-acc (substring gud-gdb-marker-acc (match-end 0))))
+
+      ;; Does the remaining text look like it might end with the
+      ;; beginning of another marker?  If it does, then keep it in
+      ;; gud-gdb-marker-acc until we receive the rest of it.  Since we
+      ;; know the full marker regexp above failed, it's pretty simple to
+      ;; test for marker starts.
+      (if (string-match "^\032.*\\'" gud-gdb-marker-acc)
+	  (progn
+	    ;; Everything before the potential marker start can be output.
+	    (setq output (concat output (substring gud-gdb-marker-acc
+						   0 (match-beginning 0))))
+
+	    ;; Everything after, we save, to combine with later input.
+	    (setq gud-gdb-marker-acc
+		  (substring gud-gdb-marker-acc (match-beginning 0))))
+
+	(setq output (concat output gud-gdb-marker-acc)
+	      gud-gdb-marker-acc ""))
+
+      output)))
 
 (defun gud-gdb-find-file (f)
   (find-file-noselect f))
@@ -299,8 +337,12 @@ and source-file directory for your debugger."
   (cons file args))
 
 (defun gud-dbx-marker-filter (string)
-  (if (string-match
-       "stopped in .* at line \\([0-9]*\\) in file \"\\([^\"]*\\)\"" string)
+  (if (or (string-match
+         "stopped in .* at line \\([0-9]*\\) in file \"\\([^\"]*\\)\""
+         string)
+        (string-match
+         "signal .* in .* at line \\([0-9]*\\) in file \"\\([^\"]*\\)\""
+         string))
       (setq gud-last-frame
 	    (cons
 	     (substring string (match-beginning 2) (match-end 2))
@@ -330,8 +372,10 @@ and source-file directory for your debugger."
 
   (gud-common-init command-line)
 
-  (gud-def gud-break  "stop at \"%f\":%l"
+  (gud-def gud-break  "file \"%d%f\"\nstop at %l"
 	   			  "\C-b" "Set breakpoint at current line.")
+;;  (gud-def gud-break  "stop at \"%f\":%l"
+;;	   			  "\C-b" "Set breakpoint at current line.")
   (gud-def gud-remove "clear %l"  "\C-d" "Remove breakpoint at current line")
   (gud-def gud-step   "step %p"	  "\C-s" "Step one line with display.")
   (gud-def gud-stepi  "stepi %p"  "\C-i" "Step one instruction with display.")
@@ -721,42 +765,44 @@ Obeying it means displaying in another window the specified file and line."
 (defun gud-format-command (str arg)
   (let ((insource (not (eq (current-buffer) gud-comint-buffer))))
     (if (string-match "\\(.*\\)%f\\(.*\\)" str)
-	(progn
-	  (setq str (concat
-		     (substring str (match-beginning 1) (match-end 1))
-		     (file-name-nondirectory (if insource
-						 (buffer-file-name)
-					       (car gud-last-frame)))
-		     (substring str (match-beginning 2) (match-end 2))))))
+	(setq str (concat
+		   (substring str (match-beginning 1) (match-end 1))
+		   (file-name-nondirectory (if insource
+					       (buffer-file-name)
+					     (car gud-last-frame)))
+		   (substring str (match-beginning 2) (match-end 2)))))
+    (if (string-match "\\(.*\\)%d\\(.*\\)" str)
+	(setq str (concat
+		   (substring str (match-beginning 1) (match-end 1))
+		   (file-name-directory (if insource
+					    (buffer-file-name)
+					  (car gud-last-frame)))
+		   (substring str (match-beginning 2) (match-end 2)))))
     (if (string-match "\\(.*\\)%l\\(.*\\)" str)
-	(progn
-	  (setq str (concat
-		     (substring str (match-beginning 1) (match-end 1))
-		     (if insource
-			 (save-excursion
-			   (beginning-of-line)
-			   (save-restriction (widen) 
-					     (1+ (count-lines 1 (point)))))
-		       (cdr gud-last-frame))
-		     (substring str (match-beginning 2) (match-end 2))))))
+	(setq str (concat
+		   (substring str (match-beginning 1) (match-end 1))
+		   (if insource
+		       (save-excursion
+			 (beginning-of-line)
+			 (save-restriction (widen) 
+					   (1+ (count-lines 1 (point)))))
+		     (cdr gud-last-frame))
+		   (substring str (match-beginning 2) (match-end 2)))))
     (if (string-match "\\(.*\\)%e\\(.*\\)" str)
-	(progn
-	  (setq str (concat
-		     (substring str (match-beginning 1) (match-end 1))
-		     (find-c-expr)
-		     (substring str (match-beginning 2) (match-end 2))))))
+	(setq str (concat
+		   (substring str (match-beginning 1) (match-end 1))
+		   (find-c-expr)
+		   (substring str (match-beginning 2) (match-end 2)))))
     (if (string-match "\\(.*\\)%a\\(.*\\)" str)
-	(progn
-	  (setq str (concat
-		     (substring str (match-beginning 1) (match-end 1))
-		     (gud-read-address)
-		     (substring str (match-beginning 2) (match-end 2))))))
+	(setq str (concat
+		   (substring str (match-beginning 1) (match-end 1))
+		   (gud-read-address)
+		   (substring str (match-beginning 2) (match-end 2)))))
     (if (string-match "\\(.*\\)%p\\(.*\\)" str)
-	(progn
-	  (setq str (concat
-		     (substring str (match-beginning 1) (match-end 1))
-		     (if arg (int-to-string arg) "")
-		     (substring str (match-beginning 2) (match-end 2))))))
+	(setq str (concat
+		   (substring str (match-beginning 1) (match-end 1))
+		   (if arg (int-to-string arg) "")
+		   (substring str (match-beginning 2) (match-end 2)))))
     )
   str
   )

@@ -375,13 +375,16 @@ Other major modes are defined by comparison with this one."
 
 (put 'eval-expression 'disabled t)
 
-;; We define this, rather than making  eval  interactive,
+(defvar read-expression-history nil)
+
+;; We define this, rather than making `eval' interactive,
 ;; for the sake of completion of names like eval-region, eval-current-buffer.
 (defun eval-expression (expression)
   "Evaluate EXPRESSION and print value in minibuffer.
 Value is also consed on to front of the variable `values'."
   (interactive (list (read-from-minibuffer "Eval: "
-					   nil read-expression-map t)))
+					   nil read-expression-map t
+					   'read-expression-history)))
   (setq values (cons (eval expression) values))
   (prin1 (car values) t))
 
@@ -627,8 +630,8 @@ then call `undo-more' one or more times to undo them."
       (error "No further undo information"))
   (setq pending-undo-list (primitive-undo count pending-undo-list)))
 
-(defvar last-shell-command "")
-(defvar last-shell-command-on-region "")
+(defvar shell-command-history nil
+  "History list for some commands that read shell commands.")
 
 (defun shell-command (command &optional flag)
   "Execute string COMMAND in inferior shell; display output, if any.
@@ -637,7 +640,8 @@ If COMMAND ends in ampersand, execute it asynchronously.
 Optional second arg non-nil (prefix arg, if interactive)
 means insert output in current buffer after point (leave mark after it).
 This cannot be done asynchronously."
-  (interactive (list (read-string "Shell command: " last-shell-command)
+  (interactive (list (read-from-minibuffer "Shell command: "
+					   nil nil nil 'shell-command-history)
 		     current-prefix-arg))
   (if flag
       (progn (barf-if-buffer-read-only)
@@ -732,8 +736,8 @@ even though that buffer is not automatically displayed.  If there is no output
 or output is inserted in the current buffer then `*Shell Command Output*' is
 deleted." 
   (interactive (list (region-beginning) (region-end)
-		     (read-string "Shell command on region: "
-				  last-shell-command-on-region)
+		     (read-from-minibuffer "Shell command on region: "
+					   nil nil nil 'shell-command-history)
 		     current-prefix-arg
 		     (prefix-numeric-value current-prefix-arg)))
   (if flag
@@ -1095,9 +1099,7 @@ system cut and paste."
 	      ;; If user quit, deactivate the mark
 	      ;; as C-g would as a command.
 	      (and quit-flag mark-active
-		   (progn
-		     (message "foo")	;XXX what is this here for?  --roland
-		     (deactivate-mark))))
+		   (deactivate-mark)))
 	  (let* ((killed-text (current-kill 0))
 		 (message-len (min (length killed-text) 40)))
 	    (if (= (point) beg)
@@ -1262,6 +1264,7 @@ a mistake; see the documentation of `set-mark'."
 ;; run deactivate-mark-hook.  This shorthand should simplify.
 (defsubst deactivate-mark ()
   "Deactivate the mark by setting `mark-active' to nil.
+\(That makes a difference only in Transient Mark mode.)
 Also runs the hook `deactivate-mark-hook'."
   (setq mark-active nil)
   (run-hooks 'deactivate-mark-hook))
@@ -1283,9 +1286,13 @@ store it in a Lisp variable.  Example:
 
    (let ((beg (point))) (forward-line 1) (delete-region beg (point)))."
 
-  (setq mark-active t)
-  (run-hooks 'activate-mark-hook)
-  (set-marker (mark-marker) pos (current-buffer)))
+  (if pos
+      (progn
+	(setq mark-active t)
+	(run-hooks 'activate-mark-hook)
+	(set-marker (mark-marker) pos (current-buffer)))
+    (deactivate-mark)
+    (set-marker (mark-marker) pos (current-buffer))))
 
 (defvar mark-ring nil
   "The list of saved former marks of the current buffer,
@@ -1902,16 +1909,22 @@ Setting this variable automatically makes it local to the current buffer.")
 	    (if (save-excursion
 		  (goto-char fill-point)
 		  (not (bolp)))
-		;; If point is at the fill-point, do not `save-excursion'.
-		;; Otherwise, if a comment prefix or fill-prefix is inserted,
-		;; point will end up before it rather than after it.
-		(if (save-excursion
-		      (skip-chars-backward " \t")
-		      (= (point) fill-point))
-		    (indent-new-comment-line)
-		  (save-excursion
-		    (goto-char fill-point)
-		    (indent-new-comment-line)))
+		(let ((prev-column (current-column)))
+		  ;; If point is at the fill-point, do not `save-excursion'.
+		  ;; Otherwise, if a comment prefix or fill-prefix is inserted,
+		  ;; point will end up before it rather than after it.
+		  (if (save-excursion
+			(skip-chars-backward " \t")
+			(= (point) fill-point))
+		      (indent-new-comment-line)
+		    (save-excursion
+		      (goto-char fill-point)
+		      (indent-new-comment-line)))
+		  ;; If making the new line didn't reduce the hpos of
+		  ;; the end of the line, then give up now;
+		  ;; trying again will not help.
+		  (if (>= (current-column) prev-column)
+		      (setq give-up t)))
 	      ;; No place to break => stop trying.
 	      (setq give-up t)))))))
 
@@ -2197,29 +2210,29 @@ it were the arg to `interactive' (which see) to interactively read the value."
 
 ;; Define the major mode for lists of completions.
 
-(defvar completion-mode-map nil)
-(or completion-mode-map
+(defvar completion-list-mode-map nil)
+(or completion-list-mode-map
     (let ((map (make-sparse-keymap)))
       (define-key map [mouse-2] 'mouse-choose-completion)
-      (setq completion-mode-map map)))
+      (setq completion-list-mode-map map)))
 
 ;; Completion mode is suitable only for specially formatted data.
-(put 'completion-mode 'mode-class 'special)
+(put 'completion-list-mode 'mode-class 'special)
 
-(defun completion-mode ()
+(defun completion-list-mode ()
   "Major mode for buffers showing lists of possible completions.
-Type \\<completion-mode-map>\\[mouse-choose-completion] to select
+Type \\<completion-list-mode-map>\\[mouse-choose-completion] to select
 a completion with the mouse."
   (interactive)
   (kill-all-local-variables)
-  (use-local-map completion-mode-map)
-  (setq mode-name "Completion")
-  (setq major-mode 'completion-mode)
-  (run-hooks 'completion-mode-hook))
+  (use-local-map completion-list-mode-map)
+  (setq mode-name "Completion List")
+  (setq major-mode 'completion-list-mode)
+  (run-hooks 'completion-list-mode-hook))
 
 (defun completion-setup-function ()
   (save-excursion
-    (completion-mode)
+    (completion-list-mode)
     (goto-char (point-min))
     (if window-system
 	(insert (substitute-command-keys

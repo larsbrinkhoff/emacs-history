@@ -142,11 +142,11 @@ The value is set in the current buffer, which should be the buffer
 visiting FILE."
   (interactive (list buffer-file-name nil))
   (let ((vc-type (vc-backend-deduce file)))
-    (if vc-type
-        (setq vc-mode
-              (concat " " (or label (symbol-name vc-type))
-		      (if (and vc-rcs-status (eq vc-type 'RCS))
-                          (vc-rcs-status file)))))
+    (setq vc-mode
+	  (and vc-type
+	       (concat " " (or label (symbol-name vc-type))
+		       (if (and vc-rcs-status (eq vc-type 'RCS))
+			   (vc-rcs-status file)))))
     ;; force update of mode line
     (set-buffer-modified-p (buffer-modified-p))
     vc-type))
@@ -157,7 +157,8 @@ visiting FILE."
   ;; If FILE is registered but not locked, return " REV" if there is a head
   ;; revision and " @@" otherwise.
   ;; If FILE is locked then return all locks in a string of the
-  ;; form " LOCKER1:REV1 LOCKER2:REV2 ...".
+  ;; form " LOCKER1:REV1 LOCKER2:REV2 ...", where "LOCKERi:" is empty if you
+  ;; are the locker, and otherwise is the name of the locker followed by ":".
 
   ;; Algorithm: 
 
@@ -205,20 +206,24 @@ visiting FILE."
 	    (setq found (re-search-forward "^locks\\([^;]*\\);" nil t)))
 
           (if found
-	      ;; Clean control characters from text.
-	      (let* ((locks
+	      ;; Clean control characters and self-locks from text.
+	      (let* ((lock-pattern
+		      (concat "[ \b\t\n\v\f\r]+\\("
+			      (regexp-quote (user-login-name))
+			      ":\\)?"))
+		     (locks
 		      (save-restriction
 			(narrow-to-region (match-beginning 1) (match-end 1))
 			(goto-char (point-min))
-			(while (re-search-forward "[ \b\t\n\v\f\r]+" nil t)
-			  (replace-match " " t t))
+			(while (re-search-forward lock-pattern nil t)
+			  (replace-match (if (eobp) "" "-") t t))
 			(buffer-string)))
 		     (status
 		      (if (not (string-equal locks ""))
 			  locks
 			(goto-char (point-min))
 			(if (looking-at "head[ \b\t\n\v\f\r]+\\([.0-9]+\\)")
-			    (concat " " (buffer-substring (match-beginning 1)
+			    (concat "-" (buffer-substring (match-beginning 1)
 							  (match-end 1)))
 			  " @@"))))
 		;; Clean work buffer.

@@ -81,6 +81,9 @@ These supersede the values given in `default-frame-alist'.")
 ;;; If we create the initial frame, this is it.
 (defvar frame-initial-frame nil)
 
+;; Record the parameters used in frame-initialize to make the initial frame.
+(defvar frame-initial-frame-alist)
+
 ;;; startup.el calls this function before loading the user's init
 ;;; file - if there is no frame with a minibuffer open now, create
 ;;; one to display messages while loading the init file.
@@ -95,6 +98,8 @@ These supersede the values given in `default-frame-alist'.")
 	;; minibuffer spec.
 	(or (delq terminal-frame (minibuffer-frame-list))
 	    (progn
+	      (setq frame-initial-frame-alist
+		    (append initial-frame-alist default-frame-alist))
 	      (setq default-minibuffer-frame
 		    (setq frame-initial-frame
 			  (new-frame initial-frame-alist)))
@@ -224,13 +229,32 @@ These supersede the values given in `default-frame-alist'.")
 	      (redirect-frame-focus frame-initial-frame new)
 
 	      ;; Finally, get rid of the old frame.
-	      (delete-frame frame-initial-frame))
+	      (delete-frame frame-initial-frame t))
 
 	  ;; Otherwise, we don't need all that rigamarole; just apply
 	  ;; the new parameters.
-	  (modify-frame-parameters frame-initial-frame
-				   (append initial-frame-alist
-					   default-frame-alist))))
+	  (let (newparms allparms tail)
+	    (setq allparms (append initial-frame-alist
+				   default-frame-alist))
+	    (setq tail allparms)
+	    ;; Find just the parms that have changed since we first
+	    ;; made this frame.  Those are the ones actually set by
+	    ;; the init file.  For those parms whose values we already knew
+	    ;; (such as those spec'd by command line options)
+	    ;; it is undesirable to specify the parm again
+	    ;; once the user has seen the frame and been able to alter it
+	    ;; manually.
+	    (while tail
+	      (let (newval oldval)
+		(setq oldval (cdr (assq (car (car tail))
+					frame-initial-frame-alist)))
+		(setq newval (cdr (assq (car (car tail)) allparms)))
+		(or (eq oldval newval)
+		    (setq newparms
+			  (cons (cons (car (car tail)) newval) newparms))))
+	      (setq tail (cdr tail)))
+	    (modify-frame-parameters frame-initial-frame
+				     (nreverse newparms)))))
 
     ;; Restore the original buffer.
     (set-buffer old-buffer)
@@ -326,6 +350,25 @@ the user during startup."
   (cdr param-list))
 
 
+(defun other-frame (arg)
+  "Select the ARG'th different visible frame, and raise it.
+All frames are arranged in a cyclic order.
+This command selects the frame ARG steps away in that order.
+A negative ARG moves in the opposite order."
+  (interactive "p")
+  (let ((frame (selected-frame)))
+    (while (> arg 0)
+      (setq frame (next-frame frame))
+      (while (not (eq (frame-visible-p frame) t))
+	(setq frame (next-frame frame)))
+      (setq arg (1- arg)))
+    (while (< arg 0)
+      (setq frame (previous-frame frame))
+      (while (not (eq (frame-visible-p frame) t))
+	(setq frame (previous-frame frame)))
+      (setq arg (1- arg)))
+    (raise-frame frame)
+    (select-frame frame)))
 
 ;;;; Frame configurations
 
@@ -511,6 +554,7 @@ should use `set-frame-width' instead."
 
 (define-key ctl-x-5-map "2" 'new-frame)
 (define-key ctl-x-5-map "0" 'delete-frame)
+(define-key ctl-x-5-map "o" 'other-frame)
 
 (provide 'frame)
 

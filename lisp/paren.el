@@ -36,12 +36,15 @@
 
 (defvar show-paren-mismatch-face nil)
 
+(defvar show-paren-face 'region
+  "*Name of face to use for showing the matching paren.")
+
 ;; Find the place to show, if there is one,
 ;; and show it until input arrives.
 (defun show-paren-command-hook ()
   (if window-system
       (let (pos dir mismatch (oldpos (point))
-		(face 'region))
+		(face show-paren-face))
 	(cond ((eq (char-syntax (following-char)) ?\()
 	       (setq dir 1))
 	      ((eq (char-syntax (preceding-char)) ?\))
@@ -81,7 +84,8 @@
 			       (progn
 				 (setq show-paren-mismatch-face
 				       (make-face 'paren-mismatch))
-				 (set-face-background 'paren-mismatch 'purple))))
+				 (set-face-background 'paren-mismatch
+						      "purple"))))
 		      (if show-paren-mismatch-face
 			  (setq face show-paren-mismatch-face)
 			(message "Paren mismatch"))))
@@ -92,7 +96,9 @@
 		   ;; before point as well as its matching open.
 		   (progn
 		     (if show-paren-overlay-1
-			 (move-overlay show-paren-overlay-1 (+ (point) dir) (point))
+			 (move-overlay show-paren-overlay-1
+				       (+ (point) dir) (point)
+				       (current-buffer))
 		       (setq show-paren-overlay-1
 			     (make-overlay (- pos dir) pos)))
 		     (overlay-put show-paren-overlay-1 'face face))
@@ -102,7 +108,8 @@
 		      (delete-overlay show-paren-overlay-1)))
 	       ;; Turn on highlighting for the matching paren.
 	       (if show-paren-overlay
-		   (move-overlay show-paren-overlay (- pos dir) pos)
+		   (move-overlay show-paren-overlay (- pos dir) pos
+				 (current-buffer))
 		 (setq show-paren-overlay
 		       (make-overlay (- pos dir) pos)))
 	       (overlay-put show-paren-overlay 'face face))
@@ -118,7 +125,14 @@
     (progn
       (setq blink-paren-function nil)
       (add-hook 'post-command-hook 'show-paren-command-hook)))
-
+;;; This is in case paren.el is preloaded.
+(add-hook 'window-setup-hook
+	  (function (lambda ()
+		      (if window-system
+			  (progn
+			    (setq blink-paren-function nil)
+			    (add-hook 'post-command-hook
+				      'show-paren-command-hook))))))
 (provide 'paren)
 
 ;;; paren.el ends here

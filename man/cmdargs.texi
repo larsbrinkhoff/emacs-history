@@ -86,8 +86,13 @@ order that they appear in this table.
 Use @var{device} as the device for terminal input and output.
 
 @item -d @var{display}
-When running with the X window system, use the display named @var{display}
+When running with the X Window System, use the display named @var{display}
 to make the window that serves as Emacs's terminal.
+
+@item -nw
+Don't communicate directly with X, disregarding the @code{DISPLAY}
+environment variable even if it is set.  @samp{-nw} stands for
+``non-window.''
 
 @cindex batch mode
 @item -batch
@@ -409,10 +414,10 @@ borders.  The frame's position is measured from the outside edge of the
 external border.
 
   Use the @samp{-ib @var{n}} option to specify an internal border
-@var{n} pixels wide.  The default is 1.  Use @samp{-b @var{n}} to
+@var{n} pixels wide.  The default is 1.  Use @samp{-bw @var{n}} to
 specify the width of the external border (though the window manager may
-add to this on certain edges).  The default width of the external border
-is 2.
+not pay attention to what you specify).  The default width of the
+external border is 2.
 
 @node Icons X
 @appendixsec Icons
@@ -490,9 +495,10 @@ invoke to run Emacs.  If Emacs is installed under a different name, it
 look for resources under that name instead of @samp{emacs}.
 
   You can tell Emacs to use a different name instead of the name of the
-executable file, with the option @samp{-rn @var{name}}.  Then that Emacs
+executable file, with the option @samp{-name @var{name}}.  Then that Emacs
 job uses @var{name} instead of @samp{Emacs} to look up all of its option
-values in the X resource file.
+values in the X resource file.  This option also specifies the title for
+the initial frame.
 
   The resources that name Emacs invocations also belong to a class; its
 name is @samp{Emacs}.  To specify options for all Emacs jobs, no matter
@@ -504,6 +510,12 @@ Emacs.BorderWidth: 2
 Emacs.borderWidth: 4
 @end example
 
+  You can specify a string of additional resource values for Emacs to
+use with the command line option @samp{-xrm @var{data}}.  The text
+@var{data} should have the same format that you would use inside a
+file of X resources.  Resources specified this way take precedence
+over all others. 
+
   The following table lists the resource names that designate options
 for Emacs, each with the class that it belongs to:
 
@@ -511,9 +523,9 @@ for Emacs, each with the class that it belongs to:
 @item @code{background} (class @code{Background})
 Background color name.
 
-@item @code{bitmapIcon} (class @code{BitMapIcon})
-Use kitchen sink icon if @samp{on}, let the window manager choose an icon if
-@samp{off}.
+@item @code{bitmapIcon} (class @code{BitmapIcon})
+Use a bitmap icon (a picture of a GNU) if @samp{on}, let the window
+manager choose an icon if @samp{off}.
 
 @item @code{borderColor} (class @code{BorderColor})
 Color name for external border.

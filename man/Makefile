@@ -52,15 +52,19 @@ emacs.dvi: ${EMACSSOURCES}
 
 ../info/cl: cl.texinfo
 	makeinfo cl.texinfo
-cl.dvi: cl.texi
+cl.dvi: cl.texinfo
 
 ../info/forms: forms.texinfo
 	makeinfo forms.texinfo
-forms.dvi: forms.texi
+forms.dvi: forms.texinfo
 
 ../info/vip: vip.texinfo
 	makeinfo vip.texinfo
-vip.dvi: vip.texi
+vip.dvi: vip.texinfo
+
+../info/gnus: gnus.texi
+	makeinfo gnus.texi
+gnus.dvi: gnus.texi
 
 mostlyclean:
 	rm -f *.log *.cp *.fn *.ky *.pg *.vr *.o core

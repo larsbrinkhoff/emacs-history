@@ -26,11 +26,13 @@ frame.
 
 @menu
 * Mouse Commands::     Moving, cutting, and pasting, with the mouse.
+* Secondary Selection::Cutting without altering point and mark.
 * Creating Frames::    Creating additional Emacs frames with various contents.
 * Frame Parameters::   Changing the colors and other modes of frames.
 * Scroll Bars::        How to enable and disable scroll bars; how to use them.
 * Menu Bars::          Enabling and disabling the menu bar.
 * Faces::              How to change the display style using faces.
+* Modifying Faces::    How to change what a particular face looks like.
 * Misc X::             Iconifying and deleting frames.  Region highlighting.
 @end menu
 
@@ -93,6 +95,60 @@ to insert the text from the selection.
   To copy text from another X window, use the ``cut'' or ``copy'' command
 of the program operating the other window, to select the text you want.
 Then yank it in Emacs with @kbd{C-y} or @key{Mouse-2}.
+
+@cindex primary selection
+@cindex cut buffer
+@cindex selection, primary
+  When Emacs puts text into the kill ring, or rotates text to the front
+of the kill ring, it sets the @dfn{primary selection} in the X server.
+This is how other X clients can access the text.  Emacs also stores the
+text in the cut buffer, if the text is short enough
+(@code{x-cut-buffer-max} specifies the maximum number of characters);
+putting long strings in the cut buffer can be slow.
+
+  When you yank in Emacs, Emacs checks for a primary selection in
+another program; after that, it checks for text in the cut buffer.  
+
+@node Secondary Selection
+@section Secondary Selection
+@cindex secondary selection
+
+  The @dfn{secondary selection} is another way of selecting text using
+X.  It does not use point or the mark, so you can use it to kill text
+without setting point or the mark.
+
+@table @kbd
+@findex mouse-set-secondary
+@kindex drag-M-mouse-1
+@item drag-M-mouse-1
+Set the secondary selection, with one end at the place where you press
+down the button, and the other end at the place where you release it
+(@code{mouse-set-secondary}).  In Transient Mark mode, highlighting
+appears and changes as you drag.
+
+If you move the mouse off the top or bottom of the window while
+dragging, the window scrolls at a steady rate until you move the mouse
+back into the window.  This way, you can mark regions that don't fit
+entirely on the screen.
+
+@findex mouse-start-secondary
+@kindex M-mouse-1
+@item M-mouse-1
+Set one endpoint for the @dfn{secondary selection}
+(@code{mouse-start-secondary}).
+
+@findex mouse-secondary-save-then-kill
+@kindex M-mouse-3
+@item M-mouse-3
+Make a secondary selection, using the place specified with @kbd{M-mouse-1}
+as the other end (@code{mouse-secondary-save-then-kill}).  A second click
+at the same place kills the secondary selection just made.
+
+@findex mouse-kill-secondary
+@kindex M-mouse-2
+@item M-mouse-2
+Kill the secondary selection (@code{mouse-kill-secondary}).
+@end table
 
 @node Creating Frames
 @section Creating Frames
@@ -270,6 +326,18 @@ style of this face with the commands below.  @xref{Setting Mark}, for
 more information about Transient Mark mode and activation and
 deactivation of the mark.
 
+  One easy way to use faces is to turn on Font-Lock mode.
+This minor mode, which is always local to a particular buffer, arranges
+to choose faces according to the syntax of the text you are editing.
+It can recognize comments and strings in any major mode; for several
+major modes, it can also recognize and properly highlight various other
+important parts of the text.  To get the full benefit of Font-Lock mode,
+you need to choose a default font which has bold, italic, and bold-italic
+variants.
+
+@node Modifying Faces
+@section Modifying Faces
+
   Here are the commands for users to change the font of a face.
 
 @cindex bold font
@@ -329,11 +397,13 @@ Swap the foreground and background colors of face @var{face}.
 @section Miscellaneous X Window Features
 
 @kindex C-z
-@findex iconify-frame
+@findex iconify-or-deiconify-frame
   To iconify the selected Emacs frame, type @kbd{C-z}.  The normal meaning
 of @kbd{C-z}, to suspend Emacs, is not useful under a window system, so
 it has a different binding in that case (the command
-@code{iconify-frame}).
+@code{iconify-or-deiconify-frame}).
+
+  If you type this command on an Emacs icon, it deiconifies the frame.
 
 @kindex C-x 5 0
 @findex delete-frame

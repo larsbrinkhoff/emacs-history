@@ -107,7 +107,15 @@
      '(or revert-buffer-function revert-buffer-insert-file-contents-function
 	  (and (buffer-file-name)
 	       (not (verify-visited-file-modtime (current-buffer))))))
-(put 'delete-frame 'menu-enable '(cdr (visible-frame-list)))
+;; Permit deleting frame if it would leave a visible or iconified frame.
+(put 'delete-frame 'menu-enable
+     '(let ((frames (frame-list))
+	    (count 0))
+	(while frames
+	  (if (cdr (assq 'visibility (frame-parameters (car frames))))
+	      (setq count (1+ count)))
+	  (setq frames (cdr frames)))
+	(> count 1)))
 (put 'kill-this-buffer 'menu-enable '(kill-this-buffer-enabled-p))
 
 (put 'advertised-undo 'menu-enable
@@ -173,68 +181,88 @@ and selects that window."
 	(if (> (length buffers) buffers-menu-max-size)
 	    (setcdr (nthcdr buffers-menu-max-size buffers) nil)))
     (setq menu
-	  (list "Buffer Menu"
-		(cons "Select Buffer"
-		      (let ((tail buffers)
-			    (maxbuf 0)
-			    (maxlen 0)
-			    head)
-			(while tail
-			  (or (eq ?\ (aref (buffer-name (car tail)) 0))
-			      (setq maxbuf
-				    (max maxbuf
-					 (length (buffer-name (car tail))))))
-			  (setq tail (cdr tail)))
-			(setq tail buffers)
-			(while tail
-			  (let ((elt (car tail)))
-			    (if (not (string-match "^ "
-						   (buffer-name elt)))
-				(setq head (cons
-					    (cons
-					     (format
-					      (format "%%%ds  %%s%%s  %%s"
-						      maxbuf)
-					      (buffer-name elt)
-					      (if (buffer-modified-p elt) "*" " ")
-					      (save-excursion
-						(set-buffer elt)
-						(if buffer-read-only "%" " "))
-					      (or (buffer-file-name elt) ""))
-					     elt)
-					    head)))
-			    (and head (> (length (car (car head))) maxlen)
-				 (setq maxlen (length (car (car head))))))
-			  (setq tail (cdr tail)))
-			(nconc (reverse head)
-			       (list (cons (concat (make-string (max 0 (- (/ maxlen 2) 8)) ?\ )
-						   "List All Buffers")
-					   'list-buffers)))))))
+	  (cons "Select Buffer"
+		(let ((tail buffers)
+		      (maxbuf 0)
+		      (maxlen 0)
+		      head)
+		  (while tail
+		    (or (eq ?\ (aref (buffer-name (car tail)) 0))
+			(setq maxbuf
+			      (max maxbuf
+				   (length (buffer-name (car tail))))))
+		    (setq tail (cdr tail)))
+		  (setq tail buffers)
+		  (while tail
+		    (let ((elt (car tail)))
+		      (if (not (string-match "^ "
+					     (buffer-name elt)))
+			  (setq head (cons
+				      (cons
+				       (format
+					(format "%%%ds  %%s%%s  %%s"
+						maxbuf)
+					(buffer-name elt)
+					(if (buffer-modified-p elt)
+					    "*" " ")
+					(save-excursion
+					  (set-buffer elt)
+					  (if buffer-read-only "%" " "))
+					(or (buffer-file-name elt) ""))
+				       elt)
+				      head)))
+		      (and head (> (length (car (car head))) maxlen)
+			   (setq maxlen (length (car (car head))))))
+		    (setq tail (cdr tail)))
+		  (nconc (nreverse head)
+			 (list (cons
+				(concat (make-string (max (- (/ maxlen
+								2)
+							     8)
+							  0) ?\ )
+					"List All Buffers")
+				'list-buffers))))))
+    (setq menu (list menu))
 
+    (if (cdr (frame-list))
+	(setq menu
+	      (cons (cons "Select Frame"
+			  (mapcar (lambda (frame)
+				    (cons (cdr (assq 'name
+						     (frame-parameters frame)))
+					  frame))
+				  (frame-list)))
+		    menu)))
+    (setq menu (cons "Buffer and Frame Menu" menu))
 
     (let ((buf (x-popup-menu (if (listp event) event
 			       (cons '(0 0) (selected-frame)))
 			     menu))
 	  (window (and (listp event) (posn-window (event-start event)))))
-      (if (eq buf 'list-buffers)
-	  (list-buffers)
-	(if buf
-	    (if complex-buffers-menu-p
-		(let ((action (x-popup-menu (if (listp event) event
-					      (cons '(0 0) (selected-frame)))
-					    '("Buffer Action"
-					      (""
-					       ("Save Buffer" . save-buffer)
-					       ("Kill Buffer" . kill-buffer)
-					       ("Select Buffer" . switch-to-buffer))))))
-		  (if (eq action 'save-buffer)
-		      (save-excursion
-			(set-buffer buf)
-			(save-buffer))
-		    (funcall action buf)))
-	      (and (windowp window)
-		   (select-window window))
-	      (switch-to-buffer buf)))))))
+      (cond ((framep buf)
+	     (make-frame-visible buf)
+	     (raise-frame buf)
+	     (select-frame buf))
+	    ((eq buf 'list-buffers)
+	     (list-buffers))
+	    (buf
+	     (if complex-buffers-menu-p
+		 (let ((action (x-popup-menu
+				(if (listp event) event
+				  (cons '(0 0) (selected-frame)))
+				'("Buffer Action"
+				  (""
+				   ("Save Buffer" . save-buffer)
+				   ("Kill Buffer" . kill-buffer)
+				   ("Select Buffer" . switch-to-buffer))))))
+		   (if (eq action 'save-buffer)
+		       (save-excursion
+			 (set-buffer buf)
+			 (save-buffer))
+		     (funcall action buf)))
+	       (and (windowp window)
+		    (select-window window))
+	       (switch-to-buffer buf)))))))
 
 ;; this version is too slow
 ;;;(defun format-buffers-menu-line (buffer)
@@ -253,34 +281,39 @@ and selects that window."
 ;;;	       mode-name
 ;;;	       (or (buffer-file-name) ""))))))
 
-(defvar menu-bar-mode nil)
-
 (defun menu-bar-mode (flag)
   "Toggle display of a menu bar on each frame.
 This command applies to all frames that exist and frames to be
 created in the future.
 With a numeric argument, if the argument is negative,
 turn off menu bars; otherwise, turn on menu bars."
-  (interactive "P")
-  (setq menu-bar-mode (if (null flag) (not menu-bar-mode)
-			  (or (not (numberp flag)) (>= flag 0))))
-  (let ((parameter (assq 'menu-bar-lines default-frame-alist)))
-    (if (consp parameter)
-	(setcdr parameter (if menu-bar-mode 1 0))
-      (setq default-frame-alist
-	    (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
-		  default-frame-alist))))
-  (let ((frames (frame-list)))
-    (while frames
-      ;; Turn menu bar on or off in existing frames.
-      ;; (Except for minibuffer-only frames.)
-      (or (eq 'only (cdr (assq 'minibuffer (frame-parameters (car frames)))))
-	  (modify-frame-parameters
-	   (car frames)
-	   (list (if menu-bar-mode
-		     '(menu-bar-lines . 1)
-		   '(menu-bar-lines . 0)))))
-      (setq frames (cdr frames)))))
+ (interactive "P")
+ (if flag (setq flag (prefix-numeric-value flag)))
+
+ ;; Obtain the current setting by looking at default-frame-alist.
+ (let ((menu-bar-mode
+	(not (zerop (let ((assq (assq 'menu-bar-lines default-frame-alist)))
+		      (if assq (cdr assq) 0))))))
+
+   ;; Tweedle it according to the argument.
+   (setq menu-bar-mode (if (null flag) (not menu-bar-mode)
+			 (or (not (numberp flag)) (>= flag 0))))
+
+   ;; Apply it to default-frame-alist.
+   (let ((parameter (assq 'menu-bar-lines default-frame-alist)))
+     (if (consp parameter)
+	 (setcdr parameter (if menu-bar-mode 1 0))
+       (setq default-frame-alist
+	     (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
+		   default-frame-alist))))
+
+   ;; Apply it to existing frames.
+   (let ((frames (frame-list)))
+     (while frames
+       (modify-frame-parameters (car frames)
+				(list (cons 'menu-bar-lines
+					    (if menu-bar-mode 1 0))))
+       (setq frames (cdr frames))))))
 
 ;; Make frames created from now on have a menu bar.
 (if window-system

@@ -95,7 +95,15 @@ _XMWinQueInit()
 	/*
 	 * Blank the queue structure.
 	 */
-	bzero(&_XMWinQue, sizeof(XMWinQue));
+	register int i;
+
+	for (i = 0; i < S_QUE_SIZE; i++)
+	  _XMWinQue.sq[i] = 0;
+
+	for (i = 0; i < P_QUE_SIZE; i++)
+	  _XMWinQue.pq[i] = 0;
+
+	_XMWinQue.sq_size = _XMWinQue.pq_size = 0;
 
 	/*
 	 * Initialize the next free location pointers.

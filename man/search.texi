@@ -153,13 +153,16 @@ use @kbd{C-r} instead of @kbd{C-s} to start the search, because @kbd{C-r}
 is also a key running a command (@code{isearch-backward}) to search
 backward.
 
-  The characters @kbd{C-y} and @kbd{C-w} can be used in incremental search
-to grab text from the buffer into the search string.  This makes it
-convenient to search for another occurrence of text at point.  @kbd{C-w}
-copies the word after point as part of the search string, advancing
-point over that word.  Another @kbd{C-s} to repeat the search will then
-search for a string including that word.  @kbd{C-y} is similar to @kbd{C-w}
-but copies all the rest of the current line into the search string.
+  The characters @kbd{C-y} and @kbd{C-w} can be used in incremental
+search to grab text from the buffer into the search string.  This makes
+it convenient to search for another occurrence of text at point.
+@kbd{C-w} copies the word after point as part of the search string,
+advancing point over that word.  Another @kbd{C-s} to repeat the search
+will then search for a string including that word.  @kbd{C-y} is similar
+to @kbd{C-w} but copies all the rest of the current line into the search
+string.  Both @kbd{C-y} and @kbd{C-w} convert the text they copy to
+lower case if the search is current not case-sensitive; this is so the
+search remains case-insensitive.
 
 @vindex isearch-mode-map
   To customize the special characters that incremental search understands,
@@ -488,7 +491,6 @@ strings.@refill
 
 @item
 To mark a matched substring for future reference.
-
 @end enumerate
 
 This last application is not a consequence of the idea of a
@@ -514,6 +516,10 @@ For example, @samp{\(.*\)\1} matches any newline-free string that is
 composed of two identical halves.  The @samp{\(.*\)} matches the first
 half, which may be anything, but the @samp{\1} that follows must match
 the same exact text.
+
+If a particular @samp{\( @dots{} \)} construct matches more than once
+(which can easily happen if it is followed by @samp{*}), only the last
+match is recorded.
 
 @item \`
 matches the empty string, provided it is at the beginning
@@ -751,6 +757,7 @@ or a match for @var{regexp} are:
 @kindex DEL (query-replace)
 @kindex , (query-replace)
 @kindex ESC (query-replace)
+@kindex RET (query-replace)
 @kindex . (query-replace)
 @kindex ! (query-replace)
 @kindex ^ (query-replace)

@@ -631,14 +631,12 @@ closed -- for a network stream connection that is closed.\n\
 nil -- if arg is a process name and no such process exists.\n\
 PROCESS may be a process, a buffer, the name of a process or buffer, or\n\
 nil, indicating the current buffer's process.")
-/* command -- for a command channel opened to Emacs by another process.\n\
-   external -- for an i/o channel opened to Emacs by another process.\n\  */
   (proc)
      register Lisp_Object proc;
 {
   register struct Lisp_Process *p;
   register Lisp_Object status;
-  proc = get_process (proc);
+  proc = Fget_process (proc);
   if (NILP (proc))
     return proc;
   p = XPROCESS (proc);
@@ -807,6 +805,19 @@ Value is t if a query was formerly required.")
 
   return Fnull (tem);
 }
+
+#if 0 /* Turned off because we don't currently record this info
+	 in the process.  Perhaps add it.  */
+DEFUN ("process-connection", Fprocess_connection, Sprocess_connection, 1, 1, 0,
+ "Return the connection type of `PROCESS'.\n\
+The value is `nil' for a pipe,\n\
+`t' or `pty' for a pty, or `stream' for a socket connection.")
+  (process)
+     Lisp_Object process;
+{
+  return XPROCESS (process)->type;
+}
+#endif
 
 Lisp_Object
 list_processes_1 ()
@@ -1801,7 +1812,10 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       /* Wait till there is something to do */
 
       Available = input_wait_mask;
-      if (! XINT (read_kbd) && wait_for_cell == 0)
+      /* We used to have  && wait_for_cell == 0
+	 but that led to lossage handling selection_request events:
+	 within one, we would start to handle another.  */
+      if (! XINT (read_kbd))
 	FD_CLR (0, &Available);
 
       /* If frame size has changed or the window is newly mapped,
@@ -1880,7 +1894,9 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       /* If there is any, return immediately
 	 to give it higher priority than subprocesses */
 
-      if ((XINT (read_kbd) || wait_for_cell)
+      /* We used to do his if wait_for_cell,
+	 but that caused infinite recursion in selection request events.  */
+      if ((XINT (read_kbd))
 	  && detect_input_pending ())
 	{
 	  swallow_events ();
@@ -2985,16 +3001,7 @@ init_process ()
       proc_buffered_char[i] = -1;
     }
 }
-#if 0
-DEFUN ("process-connection", Fprocess_connection, Sprocess_connection, 0, 1, 0,
- "Return the connection type of `PROCESS'.  This can be nil (pipe),\n\
-t or pty (pty) or stream (socket connection).")
-  (process)
-     Lisp_Object process;
-{
-  return XPROCESS (process)->type;
-}
-#endif
+
 syms_of_process ()
 {
 #ifdef HAVE_SOCKETS
@@ -3211,9 +3218,9 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 
 
 DEFUN ("get-buffer-process", Fget_buffer_process, Sget_buffer_process, 1, 1, 0,
-  "Return the (or, a) process associated with BUFFER.\n\
-This copy of Emacs has not been built to support subprocesses, so this\n\
-function always returns nil.")
+  /* Don't confused make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (name)
      register Lisp_Object name;
 {

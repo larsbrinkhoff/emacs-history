@@ -1,6 +1,54 @@
-Thu Jul 15 22:03:13 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+Sun Aug  8 01:15:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
-	* Version 19.17 released.
+	* Version 19.18 released.
+
+Wed Aug  4 18:51:10 1993  Francesco Potorti`  (pot@spiff.gnu.ai.mit.edu)
+
+	* etags.c (L_isdef, L_isquote, L_getit): small optimisations.
+	(L_funcs): the (foo::defmumble stuff now should work.
+	(consider_token): function returned random value--corrected.
+	(C_entries): corrected == versus = typo.
+
+Sun Aug  1 18:14:02 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* etags.c (put_entries): For NODE->rewritten, put pattern before
+	\177 and name after, not vice versa.
+
+Sun Aug  1 03:45:14 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* timer.c (main): Generate a SIGIO as soon as we've initialized.
+
+Fri Jul 30 15:54:59 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (FINCST): added the fignore status. Means we are
+	after the parameter list and before the open curly brace.
+	Allows correct parsing of C++ constructors.
+	(C_entries, consider_token): make use of fignore.
+	(consider_token): reset funcdef when next_token_is_func: when in
+	ctags mode makes DEFVAR and others work better.
+	(L_isquote): function that recognises the "(quote" string.
+	(L_getit): ignore quoting via "'" or "(quote".  Useful for defalias.
+
+Thu Jul 29 12:57:38 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs-checkin: Don't check whether a file is readable until we have
+	decided not to ignore it.
+
+Tue Jul 20 01:16:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (etags): Depend on ../src/config.h.
+
+	* emacsserver.c: Include types.h before file.h.
+
+Mon Jul 19 15:10:15 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install): Use .n, not .new, for temporary filenames.
+
+Sun Jul 18 15:10:15 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+    	* Version 19.17 released.
+
+Thu Jul 15 22:03:13 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 
 	* etags.c (print_help): Break up the very long strings containing
 	the help message into shorter strings, to placate chintzy C

@@ -143,6 +143,12 @@ example, if you redefine @kbd{C-f} as a prefix, @kbd{C-f C-k} automatically
 becomes a key (complete, unless you define it too as a prefix).
 Conversely, if you remove the prefix definition of @kbd{C-x 4}, then
 @kbd{C-x 4 f} (or @kbd{C-x 4 @var{anything}}) is no longer a key.
+
+  Typing the help character (@kbd{C-h}) after a prefix character usually
+displays a list of the commands starting with that prefix.  There are a
+few prefix characters for which this doesn't work---for historical 
+reasons, they have other meanings for @kbd{C-h} which are not easy to
+change.
   
 @node Commands, Text Characters, Keys, Top
 @section Keys and Commands

@@ -132,7 +132,6 @@
 ;;; or lack thereof, depends on certain conditions.
 
 (defun dun-special-object ()
-
   (if (= dun-current-room computer-room)
       (if dun-computer
 	  (dun-mprincl 
@@ -149,9 +148,15 @@
 your objects, to give off an eerie glow."))
   (if (and (= dun-current-room fourth-vermont-intersection) dun-hole)
       (progn
-	(dun-mprincl"You fall into a hole in the ground.")
-	(setq dun-current-room vermont-station)
-	(dun-describe-room vermont-station)))
+	(if (not dun-inbus)
+	    (progn
+	      (dun-mprincl"You fall into a hole in the ground.")
+	      (setq dun-current-room vermont-station)
+	      (dun-describe-room vermont-station))
+	  (progn
+	    (dun-mprincl 
+"The bus falls down a hole in the ground and explodes.")
+	    (dun-die "burning")))))
 
   (if (> dun-current-room endgame-computer-room)
       (progn
@@ -1033,7 +1038,7 @@ for a moment, then straighten yourself up.
   (let (which i newques)
     (setq i 0)
     (setq newques nil)
-    (setq which (% (abs (random)) (length dun-endgame-questions)))
+    (setq which (random (length dun-endgame-questions)))
     (dun-mprincl "Your question is:")
     (dun-mprincl (setq dun-endgame-question (car 
 					     (nth which 
@@ -2985,11 +2990,11 @@ drwxr-xr-x  3 root     staff          2048 Jan 1 1970 ..")
 
 
 (random t)
-(setq tloc (+ 60 (% (abs (random)) 18)))
+(setq tloc (+ 60 (random 18)))
 (dun-replace dun-room-objects tloc 
 	     (append (nth tloc dun-room-objects) (list 18)))
 
-(setq tcomb (+ 100 (% (abs (random)) 899)))
+(setq tcomb (+ 100 (random 899)))
 (setq dun-combination (prin1-to-string tcomb))
 
 ;;;;
@@ -3326,3 +3331,5 @@ File not found")))
   (dun-mprinc "\n")
   (setq dun-batch-mode t)
   (dun-batch-loop))
+
+

@@ -1,3 +1,70 @@
+Sun Aug  8 13:42:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.18 released.
+
+	* make-dist (src): Don't put gnu-hp300 in dist.
+	(src, lisp): Include OChangeLog in dist.
+
+Sun Aug  8 01:52:55 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in: Test for presence of logb and frexp functions.
+
+Thu Aug  5 17:10:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (machine): Add i370-ibm-aix*.
+
+Tue Aug  3 02:55:17 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in (function checks): Test for mkdir and rmdir.
+
+	* configure.in (function checks): Don't test for random and bcopy
+	only when we're building with X; look for them all the time.
+
+Fri Jul 30 21:07:00 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in: Test for availability of bcopy functions, searching
+	the X libraries if we're using X.
+
+	* configure.in: Test for the presence of/usr/lpp/X11/bin/smt.exp,
+	and #define HAVE_AIX_SMT_EXP if we do.  This is present in some
+	versions of AIX, and needs to be passed to the loader.
+
+	* configure.in: Test for the availablility of the
+	XScreenResourceString function.
+
+Fri Jul 30 20:54:58 1993  David J. MacKenzie  (djm@frob.eng.umd.edu)
+
+	* configure.in: If we found X on our own, set C_SWITCH_X_SITE and
+	LD_SWITCH_X_SITE and assume --with-x11.
+	Only look for X11 files if we weren't told about a window system
+	or if we were told to use X11 but not told where.
+	Search the libraries from the s and/or m files when checking for
+	functions. 
+
+	* configure.in: Remove any trailing slashes in prefix and exec_prefix.
+
+Tue Jul 27 19:43:41 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* make-dist: Include lisp/dired.todo in the distribution.
+
+Fri Jul 23 15:51:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Add code to set HAVE_INET_SOCKETS.
+
+Wed Jul 21 18:05:58 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: If we do find x_includes and x_libraries
+	via AC_FIND_X, set C_SWITCH_X_SITE and LD_SWITCH_X_SITE.
+
+Mon Jul 19 15:19:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Include src/gnu-hp300 in the dist.
+
+	* configure.in (canonical): New variable holds the canonicalized
+	configuration.  Don't alter `configuration'.  Use `configuration'
+	for Makefile.in for file naming.
+	(testing x_includes and x_libraries): Use =, not ==.
+
 Sat Jul 17 19:53:06 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 
 	* Version 19.17 released.

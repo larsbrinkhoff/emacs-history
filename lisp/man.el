@@ -125,6 +125,8 @@ in all sections.")
 
 (defvar Man-section-translations-alist
   '(("3C++" . "3")
+    ("3X" . "3")                        ; Xlib man pages
+    ("3X11" . "3")
     ("1-UCB" . ""))
   "*Association list of bogus sections to real section numbers.
 Some manpages (e.g. the Sun C++ 2.1 manpages) have section numbers in
@@ -147,12 +149,12 @@ the associated section number.")
       "-e '/^Sun Release [0-9].*[0-9]$/d'"
       "-e '/^\\n$/D'"
       ))
-    ("awk '"
-     ("BEGIN { blankline=0; anonblank=0; }"
-      "/^$/ { if (anonblank==0) next; }"
-      "{ anonblank=1; }"
-      "/^$/ { blankline++; next; }"
-      "{ if (blankline>0) { print \"\"; blankline=0; } print $0; }"
+    ("awk '\n"
+     ("BEGIN { blankline=0; anonblank=0; }\n"
+      "/^$/ { if (anonblank==0) next; }\n"
+      "{ anonblank=1; }\n"
+      "/^$/ { blankline++; next; }\n"
+      "{ if (blankline>0) { print \"\"; blankline=0; } print $0; }\n"
       "'"
       ))
      )
@@ -185,18 +187,19 @@ the manpage buffer.")
 (defvar Man-section-regexp "[0-9][a-zA-Z+]*"
   "*Regular expression describing a manpage section within parentheses.")
 
-(defvar Man-heading-regexp "^[A-Z]"
+(defvar Man-heading-regexp "^ ?[A-Z]"
   "*Regular expression describing a manpage heading entry.")
 
 (defvar Man-see-also-regexp "SEE ALSO"
   "*Regular expression for SEE ALSO heading (or your equivalent).
 This regexp should not start with a `^' character.")
 
-(defvar Man-first-heading-regexp "^NAME$\\|^No manual entry for .*$"
+(defvar Man-first-heading-regexp "^ ?NAME$\\|^ ?No manual entry for .*$"
   "*Regular expression describing first heading on a manpage.
 This regular expression should start with a `^' character.")
 
-(defvar Man-reference-regexp "[-a-zA-Z0-9_.]+\\(([0-9][a-zA-Z+]*)\\)?"
+(defvar Man-reference-regexp
+  "[-a-zA-Z0-9_][-a-zA-Z0-9_.]*\\(([0-9][a-zA-Z+]*)\\)?"
   "*Regular expression describing a reference in the SEE ALSO section.")
 
 (defvar Man-switches ""
@@ -386,6 +389,10 @@ default section number is selected from `Man-auto-section-alist'."
 ;; ======================================================================
 ;; top level command and background process sentinel
 
+;;; This alias makes completion more predictable if ignoring case.
+;;;###autoload
+(defalias 'man 'manual-entry)
+
 ;;;###autoload
 (defun manual-entry (arg)
   "Get a Un*x manual page and put it in a buffer.
@@ -428,7 +435,7 @@ start a background process even if a buffer already exists and
 	(Man-notify-when-ready buffer)
       (message "Invoking man %s in background..." man-args)
       (setq buffer (generate-new-buffer bufname))
-      (let ((process-environment process-environment))
+      (let ((process-environment (copy-sequence process-environment)))
 	;; Prevent any attempt to use display terminal fanciness.
 	(setenv "TERM" "dumb")
 	(set-process-sentinel
@@ -460,14 +467,14 @@ See the variable `Man-notify' for the different notification behaviors."
 
 (defun Man-set-fonts ()
   (goto-char (point-min))
-  (while (re-search-forward "\\(.\b.\\)+" nil t)
+  (while (re-search-forward "\\(.\b\\)+" nil t)
     (let ((st (match-beginning 0)) (en (match-end 0)))
       (goto-char st)
       (if window-system
-	  (put-text-property st en 'face 
+	  (put-text-property st (if (= en (point-max)) en (1+ en)) 'face 
 			     (if (looking-at "_") 'underline 'bold)))
       (while (and (< (point) en) (looking-at ".\b"))
-	(replace-match "") (forward-char 1)))))
+	(replace-match "")))))
 
 (defun Man-bgproc-sentinel (process msg)
   "Manpage background process sentinel."
@@ -593,9 +600,8 @@ The following key bindings are currently in effect in the buffer:
 	  (back-to-indentation)
 	  (while (and (not (eobp)) (/= (point) runningpoint))
 	    (setq runningpoint (point))
-	    (let* ((bow (point))
-		   (eow (re-search-forward Man-reference-regexp end t))
-		   (word (buffer-substring bow (match-end 0)))
+	    (let* ((eow (re-search-forward Man-reference-regexp end t))
+		   (word (buffer-substring (match-beginning 0) (match-end 0)))
 		   (len (1- (length word))))
 	      (if (not eow) nil
 		(if hyphenated
@@ -655,7 +661,7 @@ The following key bindings are currently in effect in the buffer:
 Returns t if section is found, nil otherwise."
   (let ((curpos (point)))
     (goto-char (point-min))
-    (if (re-search-forward (concat "^" section) (point-max) t)
+    (if (re-search-forward (concat "^\\s-?" section) (point-max) t)
 	(progn (beginning-of-line) t)
       (goto-char curpos)
       nil)

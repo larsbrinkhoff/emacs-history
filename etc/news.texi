@@ -884,8 +884,8 @@ Major modes should use this hook variable rather than
 @code{write-file-hooks}.
 
 @item
-The hook @code{after-save-hook} runs just after a buffer has been saved
-in its visited file.
+The hook @code{after-save-buffer-hook} runs just after a buffer has been
+saved in its visited file.
 
 @item
 The new function @code{set-default-file-modes} sets the file protection

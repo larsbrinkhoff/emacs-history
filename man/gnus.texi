@@ -13,11 +13,12 @@
 @synindex pg cp
 @c      @smallbook
 @comment %**end of header (This is for running Texinfo on a region.)
-
 @tex
 \overfullrule=0pt
 %\global\baselineskip 30pt      % For printing in double spaces
 @end tex
+
+@ifinfo
 
 This file documents GNUS, the GNU Emacs newsreader.
 
@@ -41,6 +42,31 @@ permission notice identical to this one.
 
 Permission is granted to copy and distribute translations of this manual
 into another language, under the above conditions for modified versions.
+@end ifinfo
+
+@titlepage
+@title GNUS Manual
+
+@author by Masanobu Umeda
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1989, 1990, 1993 Free Software Foundation, Inc. 
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+
+Cover art by Etienne Suvasa.
+@end titlepage
+@page
 
 @node Top
 @top The GNUS News Reader

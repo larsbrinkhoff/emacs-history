@@ -22,7 +22,7 @@
 %You are forbidden to forbid anyone else to use, share and improve
 %what you give them.   Help stamp out software-hoarding!
 
-\def\texinfoversion{2.108}
+\def\texinfoversion{2.112}
 \message{Loading texinfo package [Version \texinfoversion]:}
 
 % Print the version number if in a .fmt file.
@@ -679,6 +679,11 @@ where each line of input produces a line of output.}
     \let\tenrm = \nullfont  \let\tenit = \nullfont  \let\tensl = \nullfont
     \let\tenbf = \nullfont  \let\tentt = \nullfont  \let\smallcaps = \nullfont
     \let\tensf = \nullfont
+    % Similarly for index fonts (mostly for their use in
+    % smallexample)
+    \let\indrm = \nullfont  \let\indit = \nullfont  \let\indsl = \nullfont
+    \let\indbf = \nullfont  \let\indtt = \nullfont  \let\indsc = \nullfont
+    \let\indsf = \nullfont
     %
     % Don't complain when characters are missing from the fonts.
     \tracinglostchars = 0
@@ -1140,7 +1145,7 @@ where each line of input produces a line of output.}
    \def\titlezzz##1{\leftline{\titlefont{##1}}
 		    % print a rule at the page bottom also.
 		    \finishedtitlepagefalse
-		    \vskip4pt \hrule height 4pt \vskip4pt}%
+		    \vskip4pt \hrule height 4pt width \hsize \vskip4pt}%
    % No rule at page bottom unless we print one at the top with @title.
    \finishedtitlepagetrue
    %
@@ -1180,7 +1185,7 @@ where each line of input produces a line of output.}
 }
 
 \def\finishtitlepage{%
-   \vskip4pt \hrule height 2pt
+   \vskip4pt \hrule height 2pt width \hsize
    \vskip\titlepagebottomglue
    \finishedtitlepagetrue
 }
@@ -1354,14 +1359,18 @@ July\or August\or September\or October\or November\or December\fi
 % They also define \itemindex
 % to index the item name in whatever manner is desired (perhaps none).
 
+\newif\ifitemxneedsnegativevskip
+
+\def\itemxpar{\par\ifitemxneedsnegativevskip\vskip-\parskip\nobreak\fi}
+
 \def\internalBitem{\smallbreak \parsearg\itemzzz}
-\def\internalBitemx{\par \parsearg\itemzzz}
+\def\internalBitemx{\itemxpar \parsearg\itemzzz}
 
 \def\internalBxitem "#1"{\def\xitemsubtopix{#1} \smallbreak \parsearg\xitemzzz}
-\def\internalBxitemx "#1"{\def\xitemsubtopix{#1} \par \parsearg\xitemzzz}
+\def\internalBxitemx "#1"{\def\xitemsubtopix{#1} \itemxpar \parsearg\xitemzzz}
 
 \def\internalBkitem{\smallbreak \parsearg\kitemzzz}
-\def\internalBkitemx{\par \parsearg\kitemzzz}
+\def\internalBkitemx{\itemxpar \parsearg\kitemzzz}
 
 \def\kitemzzz #1{\dosubind {kw}{\code{#1}}{for {\bf \lastfunction}}%
                  \itemzzz {#1}}
@@ -1377,9 +1386,9 @@ July\or August\or September\or October\or November\or December\fi
   \nobreak % This prevents a break before @itemx.
   %
   % Be sure we are not still in the middle of a paragraph.
-  {\parskip = 0in
-  \par
-  }%
+  %{\parskip = 0in
+  %\par
+  %}%
   %
   % If the item text does not fit in the space we have, put it on a line
   % by itself, and do not allow a page break either before or after that
@@ -1387,7 +1396,15 @@ July\or August\or September\or October\or November\or December\fi
   % command is, e.g., @kindex, the whatsit would get put into the
   % horizontal list on a line by itself, resulting in extra blank space.
   \ifdim \wd0>\itemmax
-    \setbox0=\hbox{\hskip \leftskip \hskip -\tableindent \unhbox0}\box0
+    %
+    % Make this a paragraph so we get the \parskip glue and wrapping,
+    % but leave it ragged-right.
+    \begingroup
+      \advance\leftskip by-\tableindent
+      \advance\hsize by\tableindent
+      \advance\rightskip by0pt plus1fil
+      \leavevmode\unhbox0\par
+    \endgroup
     %
     % We're going to be starting a paragraph, but we don't want the
     % \parskip glue -- logically it's part of the @item we just started.
@@ -1397,15 +1414,18 @@ July\or August\or September\or October\or November\or December\fi
     % we can't prevent a possible page break at the following
     % \baselineskip glue.
     \nobreak
+    \endgroup
+    \itemxneedsnegativevskipfalse
   \else
     % The item text fits into the space.  Start a paragraph, so that the
     % following text (if any) will end up on the same line.  Since that
     % text will be indented by \tableindent, we make the item text be in
     % a zero-width box.
     \noindent
-    \rlap{\hskip -\tableindent\box0}%
+    \rlap{\hskip -\tableindent\box0}\ignorespaces%
+    \endgroup%
+    \itemxneedsnegativevskiptrue%
   \fi
-  \endgroup
 }
 
 \def\item{\errmessage{@item while not in a table}}
@@ -1448,7 +1468,7 @@ July\or August\or September\or October\or November\or December\fi
 \def\tablez #1#2#3#4#5#6{%
 \aboveenvbreak %
 \begingroup %
-\def\Edescription{\Etable}% Necessary kludge.
+\def\Edescription{\Etable}% Neccessary kludge.
 \let\itemindex=#1%
 \ifnum 0#3>0 \advance \leftskip by #3\mil \fi %
 \ifnum 0#4>0 \tableindent=#4\mil \fi %
@@ -1931,10 +1951,11 @@ July\or August\or September\or October\or November\or December\fi
   \noindent
   %
   % Insert the text of the index entry.  TeX will do line-breaking on it.
-  \leavevmode#1%
-  \setbox0=\hbox{#2}%
-  %\showbox0%
-  \ifdim\wd0=0pt\ \else%
+  #1%
+  % If there are no page numbers, don't output a line of dots.
+  \def\tempa{#2}
+  \def\tempb{}
+  \ifx\tempa\tempb\ \else
     %
     % If we must, put the page number on a line of its own, and fill out
     % this line with blank space.  (The \hfil is overwhelmed with the
@@ -1945,7 +1966,7 @@ July\or August\or September\or October\or November\or December\fi
     % The `\ ' here is removed by the implicit \unskip that TeX does as
     % part of (the primitive) \par.  Without it, a spurious underfull
     % \hbox ensues.
-    \ \box0% The page number ends the paragraph.
+    \ #2% The page number ends the paragraph.
   \fi%
   \par
 \endgroup}
@@ -2704,8 +2725,8 @@ July\or August\or September\or October\or November\or December\fi
 % Space between chapter (or whatever) number and the title.
 \def\labelspace{\hskip1em \relax}
 
-\def\dopageno#1{{\rm#1}}
-\def\doshortpageno#1{{\rm#1}}
+\def\dopageno#1{{\rm #1}}
+\def\doshortpageno#1{{\rm #1}}
 
 \def\chapentryfonts{\secfonts \rm}
 \def\secentryfonts{\textfonts}
@@ -3108,7 +3129,7 @@ July\or August\or September\or October\or November\or December\fi
 \advance\leftskip by \defbodyindent \advance \rightskip by \defbodyindent
 \exdentamount=\defbodyindent
 \begingroup %
-\catcode 61=\active %
+\catcode 61=\active % 61 is `='
 \obeylines\activeparens\spacesplit#3}
 
 \def\defmethparsebody #1#2#3#4 {\begingroup\inENV %
@@ -3151,55 +3172,54 @@ July\or August\or September\or October\or November\or December\fi
 \catcode 61=\active %
 \obeylines\spacesplit#3}
 
-\def\defvrparsebody #1#2#3#4 {\begingroup\inENV %
-\medbreak %
-% Define the end token that this defining construct specifies
-% so that it will exit this group.
-\def#1{\endgraf\endgroup\medbreak}%
-\def#2##1 {\begingroup\obeylines\spacesplit{#3{##1}}}%
-\parindent=0in
-\advance\leftskip by \defbodyindent \advance \rightskip by \defbodyindent
-\exdentamount=\defbodyindent
-\begingroup\obeylines\spacesplit{#3{#4}}}
+% This is used for \def{tp,vr}parsebody.  It could probably be used for
+% some of the others, too, with some judicious conditionals.
+% 
+\def\parsebodycommon#1#2#3{%
+  \begingroup\inENV %
+  \medbreak %
+  % Define the end token that this defining construct specifies
+  % so that it will exit this group.
+  \def#1{\endgraf\endgroup\medbreak}%
+  \def#2##1 {\begingroup\obeylines\spacesplit{#3{##1}}}%
+  \parindent=0in
+  \advance\leftskip by \defbodyindent \advance \rightskip by \defbodyindent
+  \exdentamount=\defbodyindent
+  \begingroup\obeylines
+}
 
-% This seems to work right in all cases.
-\let\deftpparsebody=\defvrparsebody
-% This fails to work.  When given `@deftp {Data Type} foo_t',
-% it thinks the type name is just `f'.
-%%% This is the same as all the others except for the last line.  We need
-%%% to parse the arguments differently for @deftp, since the ``attributes''
-%%% there are optional.
-%%%
-%%\def\deftpparsebody #1#2#3#4 {\begingroup\inENV %
-%%\medbreak %
-%%% Define the end token that this defining construct specifies
-%%% so that it will exit this group.
-%%\def#1{\endgraf\endgroup\medbreak}%
-%%\def#2##1 {\begingroup\obeylines\spacesplit{#3{##1}}}%
-%%\parindent=0in
-%%\advance\leftskip by \defbodyindent \advance \rightskip by \defbodyindent
-%%\exdentamount=\defbodyindent
-%%\begingroup\obeylines\parsetpheaderline{#3{#4}}}
+\def\defvrparsebody#1#2#3#4 {%
+  \parsebodycommon{#1}{#2}{#3}%
+  \spacesplit{#3{#4}}%
+}
 
-%%{\obeylines %
-%%  % Parse the type name and any attributes (field names, etc.).
-%%  % #1 is the beginning of the macro call that will produce the output,
-%%  %   i.e., \deftpheader{CLASS}; this is passed from \deftpparsebody.
-%%  % #2 is the type name, e.g., `struct termios'.
-%%  % #3 is the (possibly empty) attribute list.
-%%  %
-%%  \gdef\parsetpheaderline#1#2#3^^M{%
-%%    \endgroup % Started in \deftpparsebody.
-%%    %
-%%    % If the attribute list is in fact empty, there will be no space after
-%%    % #2; so we can't put a space in our TeX parameter list.  But if it
-%%    % isn't empty, then #3 will begin with an unwanted space.
-%%    \def\theargs{\ignorespaces #3}%
-%%    %
-%%    % Call the macro to produce the output.
-%%    #1{#2}\theargs %
-%%  }%
-%%}
+% This loses on `@deftp {Data Type} {struct termios}' -- it thinks the
+% type is just `struct', because we lose the braces in `{struct
+% termios}' when \spacesplit reads its undelimited argument.  Sigh.
+% \let\deftpparsebody=\defvrparsebody
+%
+% So, to get around this, we put \empty in with the type name.  That
+% way, TeX won't find exactly `{...}' as an undelimited argument, and
+% won't strip off the braces.
+%
+\def\deftpparsebody #1#2#3#4 {%
+  \parsebodycommon{#1}{#2}{#3}%
+  \spacesplit{\parsetpheaderline{#3{#4}}}\empty
+}
+
+% Fine, but then we have to eventually remove the \empty *and* the
+% braces (if any).  That's what this does, putting the result in \tptemp.
+% 
+\def\removeemptybraces\empty#1\relax{\def\tptemp{#1}}%
+
+% After \spacesplit has done its work, this is called -- #1 is the final
+% thing to call, #2 the type name (which starts with \empty), and #3
+% (which might be empty) the arguments.
+% 
+\def\parsetpheaderline#1#2#3{%
+  \removeemptybraces#2\relax
+  #1{\tptemp}{#3}%
+}%
 
 \def\defopvarparsebody #1#2#3#4#5 {\begingroup\inENV %
 \medbreak %
@@ -3299,7 +3319,10 @@ July\or August\or September\or October\or November\or December\fi
 % #1 is the classification, #2 the data type, #3 the name, #4 the args.
 \def\deftypefnheaderx #1#2#3 #4\relax{%
 \doind {fn}{\code{#3}}% Make entry in function index
-\begingroup\defname {\code{#2} #3}{#1}%
+\begingroup
+\normalparens % notably, turn off `&' magic, which prevents
+%               at least some C++ text from working
+\defname {\code{#2} #3}{#1}%
 \deftypefunargs {#4}\endgroup %
 \catcode 61=\other % Turn off change made in \defparsebody
 }

@@ -250,6 +250,8 @@ in the buffer that the occurrences were found in.
 				   (+ 2 (* 2 occur-nlines)))
 				  (t 1)))))
 	 (pos (nth occur-number occur-pos-list)))
+    (or pos
+	(error "No occurrence on this line"))
     (pop-to-buffer occur-buffer)
     (goto-char (marker-position pos))))
 
@@ -276,7 +278,9 @@ It serves as a menu to find any of the occurrences in this buffer.
   (interactive (list (let* ((default (car regexp-history))
 			    (input 
 			     (read-from-minibuffer
-			      (format "List lines matching regexp (default `%s'): " default)
+			      (if default
+				  (format "List lines matching regexp (default `%s'): " default)
+				"List lines matching regexp: ")
 			      nil nil nil
 			      'regexp-history)))
 		       (if (> (length input) 0) input

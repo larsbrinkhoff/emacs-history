@@ -79,7 +79,7 @@ nil means use indentation.")
 (defvar mail-indentation-spaces 3
   "*Number of spaces to insert at the beginning of each cited line.
 Used by `mail-yank-original' via `mail-yank-cite'.")
-(defvar mail-yank-hooks '(mail-indent-citation)
+(defvar mail-yank-hooks nil
   "Obsolete hook for modifying a citation just inserted in the mail buffer.
 Each hook function can find the citation between (point) and (mark t).
 And each hook function should leave point and mark around the citation
@@ -298,7 +298,8 @@ Prefix arg means don't delete this window."
   "Bury this mail buffer."
   (let ((newbuf (other-buffer (current-buffer))))
     (bury-buffer (current-buffer))
-    (if (and (cdr (assq 'dedicated (frame-parameters)))
+    (if (and (fboundp 'frame-parameters)
+	     (cdr (assq 'dedicated (frame-parameters)))
 	     (not (null (delq (selected-frame) (visible-frame-list)))))
 	(delete-frame (selected-frame))
       (if (and (not arg)
@@ -677,7 +678,9 @@ and don't delete any header fields."
 					   mail-indentation-spaces)))
 	    (if mail-citation-hook
 		(run-hooks 'mail-citation-hook)
-	      (run-hooks 'mail-yank-hooks))))
+	      (if mail-yank-hooks
+		  (run-hooks 'mail-yank-hooks)
+		(mail-indent-citation)))))
 	;; This is like exchange-point-and-mark, but doesn't activate the mark.
 	;; It is cleaner to avoid activation, even though the command
 	;; loop would deactivate the mark because we inserted text.
@@ -830,16 +833,11 @@ The seventh argument ACTIONS is a list of actions to take
     (pop-to-buffer "*mail*"))
   (mail noerase to subject in-reply-to cc replybuffer sendactions))
 
-
-;;;###autoload
-(define-key ctl-x-map "m" 'mail)
-
-;;;###autoload
-(define-key ctl-x-4-map "m" 'mail-other-window)
-
-;;;###autoload
-(define-key ctl-x-5-map "m" 'mail-other-frame)
-
+;;; Do not execute these when sendmail.el is loaded,
+;;; only in loaddefs.el.
+;;;###autoload (define-key ctl-x-map "m" 'mail)
+;;;###autoload (define-key ctl-x-4-map "m" 'mail-other-window)
+;;;###autoload (define-key ctl-x-5-map "m" 'mail-other-frame)
 
 ;;; Do not add anything but external entries on this page.
 

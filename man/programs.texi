@@ -919,6 +919,12 @@ close parenthesis.  Then you can type @kbd{M-)}, which moves past the
 close parenthesis, deleting any indentation preceding it (in this example
 there is none), and indenting with @key{LFD} after it.
 
+@vindex parens-dont-require-spaces
+  @kbd{M-(} may insert a space before the open parenthesis, depending on
+the syntax class or the preceding character.  Set
+@code{parens-dont-require-spaces} to a non-@code{nil} value if you wish
+to inhibit this.
+
 @node Symbol Completion
 @section Completion for Symbol Names
 @cindex completion (symbol names)

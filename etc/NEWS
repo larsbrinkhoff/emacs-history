@@ -6,6 +6,146 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.18.
+
+* Typing C-z in an iconified Emacs frame now deiconifies it.
+
+* hilit19 is a new library for automatic highlighting of parts of the
+text in the buffer, based on its meaning and context.
+
+* Killing no longer sends the killed text to the X clipboard.
+And large strings are not put in the cut buffer either.
+The variable x-cut-buffer-max specifies the maximum number of characters
+to put in the cut buffer.
+
+* The new command C-x 5 o (other-frame) selects different frames,
+successively, in cyclic order.  It does for frames what C-x o
+does for windows.
+
+* The command M-ESC (eval-expression) has its own command history.
+
+* The commands M-! and M-| for running shell commands have their own
+command history.
+
+* If the directory containing the Emacs executable has a sibling named
+`lisp', that `lisp' directory is added to the end of `load-path'
+(provided you don't override the normal value with the EMACSLOADPATH
+environment variable).  This feature may make it easier to move
+an installed Emacs from place to place.
+
+* M-x validate-tex-buffer now records the locations of mismatches
+found in the `*Occur*' buffer.  You can go to that buffer and type C-c
+C-c to visit a particular mismatch.
+
+* There are new commands in Shell mode.
+
+C-c C-n and C-c C-p move point to the next or previous shell input line.
+
+C-c C-d is now another way to send an end-of-file to the subshell.
+
+* Changes to calendar/diary.
+
+Time zone data is now determined automatically, including the
+start/stop days and times of daylight savings time.  The code now
+works correctly almost anywhere in the world.
+
+The format of the holiday specifications has changed and IS NO LONGER
+COMPATIBLE with the old (version 18) format.  See the documentation of
+the variable calendar-holidays for details of the new, improved
+format.
+
+The hook `diary-display-hook' has been split into two:
+diary-display-hook which should be used ONLY for the display and
+`diary-hook' which should be used for appointment notification.  If
+diary-display-hook is nil (the default), simple-diary-display is
+used.  This allows the diary hooks to be correctly set with add-hook.
+
+The forms used for dates in diary entries and general display are no
+longer autoloaded, but set at load time; this means they will be set
+correctly based on values you assign to various variables.
+
+* The functions x-rebind-key and x-rebind-keys have been deleted,
+because you can accomplish the same job by binding keys to keyboard
+macros.
+
+* Emacs now distinguishes double and triple drag events and double and
+triple button-down events.  These work analogously to double and
+triple click events.
+
+Double drag events, if not defined, convert to ordinary click events.
+Double down events, if not defined, convert first to ordinary down
+events, which are then discarded if not defined.  Triple events that
+are not defined convert to the corresponding double event; if that is
+also not defined, it may convert further.
+
+* The new function event-click-count returns the number of clicks,
+from an event which is a list.  It is 1 for an ordinary click, drag,
+or button-down event, 2 for a double event, and 3 or more for a triple
+event.
+
+* The new function previous-frame is like next-frame, but moves
+around through the set of existing frames in the opposite order.
+
+* The post-command-hook now runs even after commands that get an error
+and return to top level.  As a consequence of the same change, this
+hook also runs before Emacs reads the first command.  That might sound
+paradoxical, as if this hook were the same as the pre-command-hook.
+Actually, they are not similar; the latter runs before *execution* of
+a command, but after it has been read.
+
+* You can turn off the text property hooks that run when point moves
+to certain places in the buffer, by binding inhibit-point-motion-hooks
+to a non-nil value.
+
+* Inserting a string with no text properties into the buffer normally
+inherits the properties of the preceding character.  You can now
+control this inheritence by setting the front-sticky and
+rear-nonsticky properties of a character.
+
+If you make a character's front-sticky property t, then insertion
+before the character inherits its properties.  If you make the
+rear-nonsticky property t, then insertion after the character does not
+inherit its properties.  You can regard characters as normally being
+rear-sticky and not front-sticky, and this is why insertion normally
+inherits from the previous character.
+
+If neither side of an insertion is suitably sticky, then the inserted
+text gets no properties.  If both sides are sticky, then the inserted
+text gets the properties of both sides, with the previous character's
+properties taking precedence when both sides have a property in
+common.
+
+You can also specify stickiness for individual properties.  To do so,
+use a list of property names as the value of the front-sticky property
+or the rear-nonsticky property.  For example, if a character has a
+rear-nonsticky property whose value is (face read-only), then
+insertion after the character will not inherit its face property or
+read-only property (if any), but will inherit any other properties.
+
+The merging of properties when both sides of the insertion are sticky
+takes place one property at a time.  If the preceding character is
+rear-sticky for the property, and the property is non-nil, it
+dominates.  Otherwise, the following character's property value is
+used if it is front-sticky for that property.
+
+* If you give a character a non-nil `invisible' text property, the
+character does not appear on the screen.  This works much like
+selective display.
+
+The details of this feature are likely to change in future Emacs
+versions.
+
+* In Info, when you go to a node, it runs the normal hook
+Info-selection-hook.
+
+* You can use the new function `invocation-directory' to get the name
+of the directory containing the Emacs executable that was run.
+
+* Entry to the minibuffer runs the normal hook minibuffer-setup-hook.
+
+* The new function minibuffer-window-active-p takes one argument, a
+minibuffer window, and returns t if the window is currently active.
+
 Changes in version 19.17.
 
 * When Emacs displays a list of completions in a buffer, 

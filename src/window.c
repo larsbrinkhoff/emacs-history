@@ -480,9 +480,13 @@ DEFUN ("window-end", Fwindow_end, Swindow_end, 0, 1, 0,
 {
   Lisp_Object value;
   struct window *w = decode_window (window);
-  
+  Lisp_Object buf;
+
+  buf = w->buffer;
+  CHECK_BUFFER (buf, 0);
+
   XSET (value, Lisp_Int,
-	BUF_Z (current_buffer) - XFASTINT (w->window_end_pos));
+	BUF_Z (XBUFFER (buf)) - XFASTINT (w->window_end_pos));
 
   return value;
 }
@@ -1405,12 +1409,16 @@ check_frame_size (frame, rows, cols)
      FRAME_PTR frame;
      int *rows, *cols;
 {
-  /* For height, we have to see whether the frame has a minibuffer, and
-     whether it wants a mode line.  */
+  /* For height, we have to see:
+     whether the frame has a minibuffer, 
+     whether it wants a mode line, and
+     whether it has a menu bar.  */
   int min_height =
     (FRAME_MINIBUF_ONLY_P (frame) ? MIN_SAFE_WINDOW_HEIGHT - 1
      : (! FRAME_HAS_MINIBUF_P (frame)) ? MIN_SAFE_WINDOW_HEIGHT
      : 2 * MIN_SAFE_WINDOW_HEIGHT - 1);
+  if (FRAME_MENU_BAR_LINES (frame) > 0)
+    min_height += FRAME_MENU_BAR_LINES (frame);
 
   if (*rows < min_height)
     *rows = min_height;
@@ -1575,6 +1583,8 @@ BUFFER can be a buffer or buffer name.")
     }
 
   w->buffer = buffer;
+  w->window_end_pos = 0;
+  w->window_end_valid = Qnil;
   w->hscroll = 0;
   Fset_marker (w->pointm,
 	       make_number (BUF_PT (XBUFFER (buffer))),

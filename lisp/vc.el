@@ -214,8 +214,8 @@ the master name of FILE; this is appended to an optional list of FLAGS."
 	  (print (cons command squeezed))
 	  (next-line 1)
 	  (pop-to-buffer "*vc*")
-	  (vc-shrink-to-fit)
 	  (goto-char (point-min))
+	  (shrink-window-if-larger-than-buffer)
 	  (error "Running %s...FAILED (%s)" command
 		 (if (integerp status)
 		     (format "status %d" status)
@@ -584,15 +584,48 @@ popped up to accept a comment."
 
 ;;; Here is a checkin hook that may prove useful to sites using the
 ;;; ChangeLog facility supported by Emacs.
-(defun vc-comment-to-change-log ()
-  "Update change log from VC change comments entered for the current file.
-See `vc-update-change-log'."
-  (interactive)
-  (let ((log (find-change-log)))
-    (if log
-	(vc-update-change-log
-	 (file-relative-name buffer-file-name
-			     (file-name-directory (expand-file-name log)))))))
+(defun vc-comment-to-change-log (&optional whoami file-name)
+  "Enter last VC comment into change log file for current buffer's file.
+Optional arg (interactive prefix) non-nil means prompt for user name and site.
+Second arg is file name of change log.  \
+If nil, uses `change-log-default-name'."
+  (interactive (if current-prefix-arg
+		   (list current-prefix-arg
+			 (prompt-for-change-log-name))))
+  (let (;; Extract the comment first so we get any error before doing anything.
+	(comment (ring-ref vc-comment-ring 0))
+	;; Don't let add-change-log-entry insert a defun name.
+	(add-log-current-defun-function 'ignore)
+	end)
+    ;; Call add-log to do half the work.
+    (add-change-log-entry whoami file-name t t)
+    ;; Insert the VC comment, leaving point before it.
+    (setq end (save-excursion (insert comment) (point-marker)))
+    (if (looking-at "\\s *\\s(")
+	;; It starts with an open-paren, as in "(foo): Frobbed."
+	;; So remove the ": " add-log inserted.
+	(delete-char -2))
+    ;; Canonicalize the white space between the file name and comment.
+    (just-one-space)
+    ;; Indent rest of the text the same way add-log indented the first line.
+    (let ((indentation (current-indentation)))
+      (save-excursion
+	(while (< (point) end)
+	  (forward-line 1)
+	  (indent-to indentation))
+	(setq end (point))))
+    ;; Fill the inserted text, preserving open-parens at bol.
+    (let ((paragraph-separate (concat paragraph-separate "\\|^\\s *\\s("))
+	  (paragraph-start (concat paragraph-start "\\|^\\s *\\s(")))
+      (beginning-of-line)
+      (fill-region (point) end))
+    ;; Canonicalize the white space at the end of the entry so it is
+    ;; separated from the next entry by a single blank line.
+    (skip-syntax-forward " " end)
+    (delete-char (- (skip-syntax-backward " ")))
+    (or (eobp) (looking-at "\n\n")
+	(insert "\n"))))
+
 
 (defun vc-finish-logentry (&optional nocomment)
   "Complete the operation implied by the current log entry."
@@ -706,7 +739,8 @@ and two version designators specifying which versions to compare."
   (if historic
       (call-interactively 'vc-version-diff)
     (if (or (null buffer-file-name) (null (vc-name buffer-file-name)))
-	(error "There is no version-control master associated with this buffer"))
+	(error
+	 "There is no version-control master associated with this buffer"))
     (let ((file buffer-file-name)
 	  unchanged)
       (or (and file (vc-name file))
@@ -729,14 +763,9 @@ and two version designators specifying which versions to compare."
 	    (progn
 	      (setq unchanged t)
 	      (message "No changes to %s since latest version." file))
-	  (vc-shrink-to-fit)
-	  (goto-char (point-min)))
-
-	)
-      (not unchanged)
-      )
-    )
-  )
+	  (goto-char (point-min))
+	  (shrink-window-if-larger-than-buffer)))
+      (not unchanged))))
 
 (defun vc-version-diff (file rel1 rel2)
   "For FILE, report diffs between two stored versions REL1 and REL2 of it.
@@ -918,11 +947,11 @@ on a buffer attached to the file named in the current Dired buffer line."
     (if nonempty
 	(progn
 	  (pop-to-buffer "*vc-status*" t)
-	  (vc-shrink-to-fit)
-	  (goto-char (point-min)))
+	  (goto-char (point-min))
+	  (shrink-window-if-larger-than-buffer)))
       (message "No files are currently %s under %s"
 	       (if verbose "registered" "locked") default-directory))
-    ))
+    )
 
 (or (boundp 'minor-mode-map-alist)
     (fset 'vc-directory 'vc-directory-18))
@@ -1019,8 +1048,8 @@ levels in the snapshot."
       (progn
 	(vc-backend-print-log buffer-file-name)
 	(pop-to-buffer (get-buffer-create "*vc*"))
-	(vc-shrink-to-fit)
 	(goto-char (point-min))
+	(shrink-window-if-larger-than-buffer)
 	)
     (vc-registration-error buffer-file-name)
     )
@@ -1452,9 +1481,7 @@ Return nil if there is no such person."
    (progn			;; SCCS
      (vc-do-command 0 "unget" file nil)
      (vc-do-command 0 "get" file nil))
-   (progn
-     (delete-file file)		;; RCS
-     (vc-do-command 0 "co" file "-u")))
+   (vc-do-command 0 "co" file "-f" "-u")) ;; RCS.  This deletes the work file.
   (vc-file-setprop file 'vc-locking-user nil)
   (message "Reverting %s...done" file)
   )
@@ -1462,15 +1489,12 @@ Return nil if there is no such person."
 (defun vc-backend-steal (file &optional rev)
   ;; Steal the lock on the current workfile.  Needs RCS 5.6.2 or later for -M.
   (message "Stealing lock on %s..." file)
-  (progn
-    (vc-do-command 0 "unget" file "-n" (if rev (concat "-r" rev)))
-    (vc-do-command 0 "get" file "-g" (if rev (concat "-r" rev)))
-    )
-  (progn
-    (vc-do-command 0 "rcs" "-M" (concat "-u" rev) file)
-    (delete-file file)
-    (vc-do-command 0 "rcs" (concat "-l" rev) file)
-    )
+  (vc-backend-dispatch file
+   (progn
+     (vc-do-command 0 "unget" file "-n" (if rev (concat "-r" rev)))
+     (vc-do-command 0 "get" file "-g" (if rev (concat "-r" rev)))
+     )
+   (vc-do-command 0 "rcs" "-M" (concat "-u" rev) (concat "-l" rev) file))
   (vc-file-setprop file 'vc-locking-user (user-login-name))
   (message "Stealing lock on %s...done" file)
   )  
@@ -1615,13 +1639,6 @@ Global user options:
   )
 
 ;;; These things should probably be generally available
-
-(defun vc-shrink-to-fit ()
-  "Shrink window vertically until it's just large enough to contain its text."
-  (let ((minsize (1+ (count-lines (point-min) (point-max)))))
-    (if (< minsize (window-height))
-	(let ((window-min-height 2))
-	  (shrink-window (- (window-height) minsize))))))
 
 (defun vc-file-tree-walk (func &rest args)
   "Walk recursively through default directory.

@@ -378,7 +378,6 @@ See the documentation of diary-date-forms for an explanation.")
   "*List of pseudo-patterns describing the European patterns of date used.
 See the documentation of diary-date-forms for an explanation.")
 
-;;;###autoload
 (defvar diary-date-forms
   (if european-calendar-style
       european-date-diary-pattern
@@ -418,7 +417,6 @@ See the documentation of calendar-date-display-forms for an explanation.")
   "*Pseudo-pattern governing the way a date appears in the American style.
 See the documentation of calendar-date-display-forms for an explanation.")
 
-;;;###autoload
 (defvar calendar-date-display-form
   (if european-calendar-style
       european-calendar-display-form
@@ -497,17 +495,23 @@ diary entries from various included files, each day's entries sorted into
 lexicographic order.")
 
 ;;;###autoload
-(defvar diary-display-hook 'simple-diary-display
+(defvar diary-hook nil
+  "*List of functions called after the display of the diary.
+Can be used for appointment notification.")
+
+;;;###autoload
+(defvar diary-display-hook nil
   "*List of functions that handle the display of the diary.
+If nil (the default), `simple-diary-display' will be used.  Use `ignore' for no
+diary display.
 
 Ordinarily, this just displays the diary buffer (with holidays indicated in
 the mode line), if there are any relevant entries.  At the time these
 functions are called, the variable `diary-entries-list' is a list, in order
 by date, of all relevant diary entries in the form of ((MONTH DAY YEAR)
 STRING), where string is the diary entry for the given date.  This can be
-used, for example, to handle appointment notification, prepare a different
-buffer for display (perhaps combined with holidays), or produce hard copy
-output.
+used, for example, a different buffer for display (perhaps combined with
+holidays), or produce hard copy output.
 
 A function `fancy-diary-display' is provided as an alternative
 choice for this hook; this function prepares a special noneditable diary
@@ -597,7 +601,7 @@ See the documentation for `calendar-holidays' for details.")
 See the documentation for `calendar-holidays' for details.")
 
 ;;;###autoload
-(defvar hebrew-holidays
+(defvar hebrew-holidays-1
   '((holiday-rosh-hashanah-etc)
     (if all-hebrew-calendar-holidays
         (holiday-julian
@@ -612,8 +616,11 @@ See the documentation for `calendar-holidays' for details.")
                           (list m 1 y))))))
              (if (zerop (% (1+ year) 4))
                  22
-               21))) "\"Tal Umatar\" (evening)"))
-    (if all-hebrew-calendar-holidays
+               21))) "\"Tal Umatar\" (evening)"))))
+
+;;;###autoload
+(defvar hebrew-holidays-2
+  '((if all-hebrew-calendar-holidays
         (holiday-hanukkah)
       (holiday-hebrew 9 25 "Hanukkah"))
     (if all-hebrew-calendar-holidays
@@ -629,8 +636,11 @@ See the documentation for `calendar-holidays' for details.")
              11 10))
        "Tzom Teveth"))
     (if all-hebrew-calendar-holidays
-        (holiday-hebrew 11 15 "Tu B'Shevat"))
-    (if all-hebrew-calendar-holidays
+        (holiday-hebrew 11 15 "Tu B'Shevat"))))
+
+;;;###autoload
+(defvar hebrew-holiday-3
+  '((if all-hebrew-calendar-holidays
         (holiday-hebrew
          11
          (let ((m displayed-month)
@@ -657,8 +667,11 @@ See the documentation for `calendar-holidays' for details.")
                           (list 11 16 h-year))))))
                   (day (extract-calendar-day s-s)))
              day))
-         "Shabbat Shirah"))
-    (holiday-passover-etc)
+         "Shabbat Shirah"))))
+
+;;;###autoload
+(defvar hebrew-holidays-4
+  '((holiday-passover-etc)
     (if (and all-hebrew-calendar-holidays
              (let* ((m displayed-month)
                     (y displayed-year)
@@ -671,7 +684,11 @@ See the documentation for `calendar-holidays' for details.")
                  (= 21 (% year 28)))))
         (holiday-julian 3 26 "Kiddush HaHamah"))
     (if all-hebrew-calendar-holidays
-        (holiday-tisha-b-av-etc)))
+        (holiday-tisha-b-av-etc))))
+
+;;;###autoload
+(defvar hebrew-holidays (append hebrew-holidays-1 hebrew-holidays-2
+				hebrew-holidays-3 hebrew-holidays-4)
   "*Jewish holidays.
 See the documentation for `calendar-holidays' for details.")
 
@@ -1392,6 +1409,8 @@ the inserted text.  Value is always t."
   (define-key calendar-mode-map "\e<"   'calendar-beginning-of-year)
   (define-key calendar-mode-map "\e>"   'calendar-end-of-year)
   (define-key calendar-mode-map "\C-@"  'calendar-set-mark)
+  ;; Many people are used to typing C-SPC and getting C-@.
+  (define-key calendar-mode-map [?\C-\ ] 'calendar-set-mark)
   (define-key calendar-mode-map "\C-x\C-x" 'calendar-exchange-point-and-mark)
   (define-key calendar-mode-map "\e=" 'calendar-count-days-region)
   (define-key calendar-mode-map "gd"  'calendar-goto-date)

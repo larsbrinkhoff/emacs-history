@@ -57,7 +57,7 @@ done
 if [ ! -d src -o ! -f src/lisp.h -o ! -d lisp -o ! -f lisp/version.el ]; then
   echo "${progname}: Can't find \`src/lisp.h' and \`lisp/version.el'." >&2
   echo "${progname} must be run in the top directory of the Emacs" >&2
-  echo "distribution tree.  Cd to that directory and try again." >&2
+  echo "distribution tree.  cd to that directory and try again." >&2
   exit 1
 fi
 
@@ -159,7 +159,7 @@ echo "Making links to \`lisp'."
  ln [a-zA-Z]*.dat forms.README ../${tempdir}/lisp
  ## simula.el doesn't keep abbreviations in simula.defns any more.
  ## ln [a-zA-Z]*.defns ../${tempdir}/lisp
- ln ChangeLog README ../${tempdir}/lisp
+ ln ChangeLog OChangeLog README dired.todo ../${tempdir}/lisp
  cd ../${tempdir}/lisp
  rm -f TAGS =*
  rm -f site-init site-init.el site-init.elc
@@ -202,7 +202,7 @@ echo "Making links to \`src'."
  test -f ../${tempdir}/src/gmalloc.c || cp gmalloc.c ../${tempdir}/src
  ln [a-zA-Z]*.h ../${tempdir}/src
  ln [a-zA-Z]*.s ../${tempdir}/src
- ln README Makefile.in ymakefile ChangeLog config.h.in paths.h.in \
+ ln README Makefile.in ymakefile ChangeLog OChangeLog config.h.in paths.h.in \
     ../${tempdir}/src
  ln .gdbinit .dbxinit ../${tempdir}/src
  ln *.opt vms-pp.trans ../${tempdir}/src

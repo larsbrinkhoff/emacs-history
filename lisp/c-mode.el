@@ -642,6 +642,8 @@ Returns nil if line starts inside a string, t if in a comment."
 				     ;; Make sure the "function decl" we found
 				     ;; is not inside a comment.
 				     (progn
+				       ;; Move back to the `(' starting arglist
+				       (goto-char lim)
 				       (beginning-of-line)
 				       (while (and (not comment)
 						   (search-forward "/*" lim t))
@@ -955,10 +957,10 @@ If within a string or comment, move by sentences instead of statements."
   (beginning-of-defun)
   (backward-paragraph))
 
+;; Idea of ENDPOS is, indent each line, stopping when
+;; ENDPOS is encountered.  But it's too much of a pain to make that work.
 (defun indent-c-exp (&optional endpos)
-  "Indent each line of the C grouping following point.
-If optional arg ENDPOS is given, indent each line, stopping when
-ENDPOS is encountered."
+  "Indent each line of the C grouping following point."
   (interactive)
   (let* ((indent-stack (list nil))
 	 (opoint (point))  ;; May be altered below.
@@ -969,13 +971,15 @@ ENDPOS is encountered."
 		      (save-excursion (forward-char 1)
 				      (beginning-of-defun)
 				      (setq funbeg (point)))
+		      (setq opoint funbeg)
 		      ;; Try to find containing open,
 		      ;; but don't scan past that fcn-start.
 		      (save-restriction
 			(narrow-to-region funbeg (point))
 			(condition-case nil
 			    (save-excursion
-			      (backward-up-list 1) (point))
+			      (backward-up-list 1)
+			      (point))
 			  ;; We gave up: must be between fcns.
 			  ;; Set opoint to beg of prev fcn
 			  ;; since otherwise calculate-c-indent
@@ -987,7 +991,7 @@ ENDPOS is encountered."
 	 restart outer-loop-done inner-loop-done state ostate
 	 this-indent last-sexp
 	 at-else at-brace at-while
-	 last-depth
+	 last-depth this-point
 	 (next-depth 0))
     ;; If the braces don't match, get an error right away.
     (save-excursion
@@ -998,6 +1002,12 @@ ENDPOS is encountered."
 	(and (re-search-forward
 	      comment-start-skip
 	      (save-excursion (end-of-line) (point)) t)
+	     ;; Make sure this isn't a comment alone on a line
+	     ;; (which should be indented like code instead).
+	     (save-excursion
+	       (goto-char (match-beginning 0))
+	       (skip-chars-backward " \t")
+	       (not (bolp)))
 	     ;; Make sure the comment starter we found
 	     ;; is not actually in a string or quoted.
 	     (let ((new-state
@@ -1025,9 +1035,12 @@ ENDPOS is encountered."
 	  (if (and (car (cdr (cdr state)))
 		   (>= (car (cdr (cdr state))) 0))
 	      (setq last-sexp (car (cdr (cdr state)))))
-	  (if (or (nth 4 ostate))
+	  ;; If this line started within a comment, indent it as such.
+	  (if (or (nth 4 ostate) (nth 7 ostate))
 	      (c-indent-line))
-	  (if (or (nth 3 state))
+	  ;; If it ends outside of comments or strings, exit the inner loop.
+	  ;; Otherwise move on to next line.
+	  (if (or (nth 3 state) (nth 4 state) (nth 7 state))
 	      (forward-line 1)
 	    (setq inner-loop-done t)))
 	(and endpos
@@ -1060,7 +1073,12 @@ ENDPOS is encountered."
 							(point)))))
 	  (forward-line 1)
 	  (skip-chars-forward " \t")
-	  (if (eolp)
+	  ;; Don't really reindent if the line is just whitespace,
+	  ;; or if it is past the endpos.
+	  ;; (The exit test in the outer while
+	  ;; does not exit until we have passed the first line
+	  ;; past the region.)
+	  (if (or (eolp) (and endpos (>= (point) endpos)))
 	      nil
 	    (if (and (car indent-stack)
 		     (>= (car indent-stack) 0))
@@ -1072,6 +1090,7 @@ ENDPOS is encountered."
 		  ;; Is it a new statement?  Is it an else?
 		  ;; Find last non-comment character before this line
 		  (save-excursion
+		    (setq this-point (point))
 		    (setq at-else (looking-at "else\\W"))
 		    (setq at-brace (= (following-char) ?{))
 		    (setq at-while (looking-at "while\\b"))
@@ -1092,6 +1111,9 @@ ENDPOS is encountered."
 						  (current-indentation))))
 			    ((and at-while (c-backward-to-start-of-do opoint))
 			     (setq this-indent (current-indentation)))
+			    ((eq (preceding-char) ?\,)
+			     (goto-char this-point)
+			     (setq this-indent (calculate-c-indent)))
 			    (t (setq this-indent (car indent-stack)))))))
 	      ;; Just started a new nesting level.
 	      ;; Compute the standard indent for this level.
@@ -1099,6 +1121,10 @@ ENDPOS is encountered."
 			   (if (car indent-stack)
 			       (- (car indent-stack))
 			     opoint))))
+		;; t means we are in a block comment and should
+		;; calculate accordingly.
+		(if (eq val t)
+		    (setq val (calculate-c-indent-within-comment)))
 		(setcar indent-stack
 			(setq this-indent val))))
 	    ;; Adjust line indentation according to its contents
@@ -1111,7 +1137,9 @@ ENDPOS is encountered."
 	    (if (= (following-char) ?})
 		(setq this-indent (- this-indent c-indent-level)))
 	    (if (= (following-char) ?{)
-		(setq this-indent (+ this-indent c-brace-offset)))
+		(if (zerop (current-column))
+		    (setq this-indent 0)
+		  (setq this-indent (+ this-indent c-brace-offset))))
 	    ;; Don't leave indentation in empty lines.
 	    (if (eolp) (setq this-indent 0))
 	    ;; Put chosen indentation into effect.
@@ -1156,10 +1184,35 @@ ENDPOS is encountered."
 (defun c-indent-region (start end)
   (save-excursion
     (goto-char start)
-    (let ((endmark (copy-marker end)))
-      (and (bolp) (not (eolp))
-	   (c-indent-line))
-      (indent-c-exp endmark)
+    (let ((endmark (copy-marker end))
+	  (c-tab-always-indent t))
+      (while (and (bolp) (not (eolp)))
+	;; Indent one line as with TAB.
+	(let ((shift-amt (c-indent-line))
+	      nextline sexpend)
+	  (save-excursion
+	    ;; Find beginning of following line.
+	    (save-excursion
+	      (forward-line 1) (setq nextline (point)))
+	    ;; Find first beginning-of-sexp for sexp extending past this line.
+	    (beginning-of-line)
+	    (while (< (point) nextline)
+	      (condition-case nil
+		  (progn
+		    (forward-sexp 1)
+		    (setq sexpend (point-marker)))
+		(error (setq sexpend nil)
+		       (goto-char nextline)))
+	      (skip-chars-forward " \t\n")))
+	  ;; If that sexp ends within the region,
+	  ;; indent it all at once, fast.
+	  (if (and sexpend (> sexpend nextline) (<= sexpend endmark))
+	      (progn
+		(indent-c-exp)
+		(goto-char sexpend)))
+	  ;; Move to following line and try again.
+	  (and sexpend (set-marker sexpend nil))
+	  (forward-line 1)))
       (set-marker endmark nil))))
 
 (defun set-c-style (style &optional global)

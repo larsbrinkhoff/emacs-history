@@ -401,6 +401,18 @@ difference between this and @code{write-file-hooks} is that changing the
 major mode does clear this variable, and setting the visited file name
 does not clear it.
 
+  The hook functions are responsible for writing backup files, if you
+want that to be done.  Here is how:
+
+@example
+(or buffer-backed-up (backup-buffer))
+@end example
+
+@noindent
+You might also wish to save the file modes value returned by
+@code{backup-buffer} and use that to set the mode bits of the file
+that you write.  This is what happens ordinarily when backups are made.
+ 
   The hook variables described here are not normal hooks, because the
 values returned by the hook functions do matter.  This is why they have
 names ending in @samp{-hooks} rather than @samp{-hook}.  @xref{Hooks}.
@@ -899,8 +911,8 @@ mode line displays @samp{RCS} or @samp{SCCS} to inform you that version
 control is in use, and also (in case you care) which low-level system
 the file is actually stored in.  Normally, such a source file is
 read-only, and the mode line indicates this with @samp{%%}.  With RCS,
-the mode line also indicates the head version, which is normally also
-the version you are looking at.
+the mode line also indicates the number of the head version, which is
+normally also the version you are looking at.
 
   These are the commands for editing a file maintained with
 version control:
@@ -928,9 +940,7 @@ commands except for @kbd{C-x C-q} start with @kbd{C-x v}.)
   When you want to modify a file maintained with version control, type
 @kbd{C-x C-q} (@code{vc-toggle-read-only}).  This @dfn{checks out} the
 file, and tells RCS or SCCS to lock the file.  This means making the
-file writable for you (but not for anyone else).  The mode line
-indicates that you have locked the file by showing your name and
-a colon before the version number.
+file writable for you (but not for anyone else).
 
 @cindex log entry
   When you are finished editing the file, type @kbd{C-x C-q} again.
@@ -1046,6 +1056,12 @@ value from the function says to mistrust the file permissions.
   If you find that the file permissions of work files are changed
 erroneously, set @code{vc-mistrust-permissions} to @code{t}.  Then VC
 always checks the master file to determine the file's status.
+
+@vindex vc-path
+  You can specify additional directories to search for version control
+programs by setting the variable @code{vc-path}.  These directories
+are searched before the usual search path.  The proper result usually
+happens automatically.
 
 @node Log Entries
 @subsection Log Entries

@@ -96,6 +96,9 @@ This command must be bound to a mouse click."
 This must be bound to a mouse click."
   (interactive "e")
   (let ((posn (event-start click)))
+    (and (window-minibuffer-p (posn-window posn))
+	 (not (minibuffer-window-active-p (posn-window posn)))
+	 (error "Minibuffer window is not active"))
     (select-window (posn-window posn))
     (if (numberp (posn-point posn))
 	(goto-char (posn-point posn)))))
@@ -168,12 +171,11 @@ This must be bound to a button-down mouse event."
 		     (nth 3 bounds)
 		   ;; Don't count the mode line.
 		   (1- (nth 3 bounds)))))
-    (select-window start-window)
-    (goto-char start-point)
+    (mouse-set-point start-event)
     (move-overlay mouse-drag-overlay
 		  start-point start-point
 		  (window-buffer start-window))
-    (setq mark-active nil)
+    (deactivate-mark)
     (let (event end end-point)
       (track-mouse
 	(while (progn
@@ -219,10 +221,11 @@ This must be bound to a button-down mouse event."
       (if (and (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
 	       (eq (posn-window (event-end event)) start-window)
 	       (numberp (posn-point (event-end event))))
-	  (goto-char (posn-point (event-end event))))
-      (if (= (point) start-point)
-	  (setq mark-active nil)
-	(set-mark start-point))
+	  (progn
+	    (mouse-set-point event)
+	    (if (= (point) start-point)
+		(deactivate-mark)
+	      (set-mark start-point))))
       (delete-overlay mouse-drag-overlay))))
 
 ;;;! (defun mouse-drag-region (click)
@@ -347,12 +350,23 @@ which prepares for a second click to delete the text."
 	;; If this is the second time we've called
 	;; mouse-save-then-kill, delete the text from the buffer.
 	(progn
+	  ;; Delete just one char, so in case buffer is being modified
+	  ;; for the first time, the undo list records that fact.
+	  (delete-region (point)
+			 (+ (point) (if (> (mark) (point)) 1 -1)))
+	  ;; Now delete the rest of the specified region,
+	  ;; but don't record it.
 	  (let ((buffer-undo-list t))
 	    (delete-region (point) (mark)))
-	  ;; Make the undo list by hand so it is shared.
 	  (if (not (eq buffer-undo-list t))
-	      (setq buffer-undo-list
-		    (cons (cons (car kill-ring) (point)) buffer-undo-list))))
+	      (let ((tail buffer-undo-list))
+		;; Search back in buffer-undo-list for the string
+		;; that came from the first delete-region.
+		(while (and tail (not (stringp (car (car tail)))))
+		  (setq tail (cdr tail)))
+		;; Replace it with an entry for the entire deleted text.
+		(and tail
+		     (setcar tail (cons (car kill-ring) (point)))))))
       ;; Otherwise, save this region.
       (mouse-set-mark-fast click)
       (kill-ring-save (point) (mark t))
@@ -456,7 +470,7 @@ which prepares for a second click to delete the text."
 	  ;; Make the undo list by hand so it is shared.
 	  (if (not (eq buffer-undo-list t))
 	      (setq buffer-undo-list
-		    (cons (cons (car kill-ring) start)
+		    (cons (cons (car kill-ring) (marker-position start))
 			  buffer-undo-list))))
       ;; Otherwise, save this region.
       (save-excursion
@@ -843,6 +857,7 @@ and selects that window."
 ;; Choose a completion with the mouse.
 
 (defun mouse-choose-completion (event)
+  "Click on an alternative in the `*Completions*' buffer to choose it."
   (interactive "e")
   (let (choice)
     (save-excursion
@@ -861,24 +876,42 @@ and selects that window."
 		    (not (string= tail (substring choice 0 (length tail))))))
 	(forward-char 1))
       (insert choice)
-      (delete-region (point) (point-max)))))
+      (delete-region (point) (point-max))
+      (minibuffer-complete-and-exit))))
 
 ;; Font selection.
+
+(defun font-menu-add-default ()
+  (let* ((default (cdr (assq 'font (frame-parameters (selected-frame)))))
+	 (font-alist x-fixed-font-alist)
+	 (elt (assoc "Misc" font-alist)))
+    (if (assoc "Default" elt)
+	(delete (assoc "Default" elt) elt))
+    (setcdr elt
+	    (cons (cons "Default"
+			(cdr (assq 'font (frame-parameters (selected-frame)))))
+		  (cdr elt)))))
 
 (defvar x-fixed-font-alist
   '("Font menu"
     ("Misc"
+     ("6x10" "-misc-fixed-medium-r-semicondensed--10-110-75-75-c-60-*-1")
+     ("6x12" "-misc-fixed-medium-r-semicondensed--12-110-75-75-c-60-*-1")
+     ("6x13" "-misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-*-1")
+     ("lucida 13"
+      "-b&h-lucidatypewriter-medium-r-normal-sans-0-0-0-0-m-0-*-1")
+     ("7x13" "-misc-fixed-medium-r-normal--13-120-75-75-c-70-*-1")
+     ("7x14" "-misc-fixed-medium-r-normal--14-130-75-75-c-70-*-1")
+     ("9x15" "-misc-fixed-medium-r-normal--15-140-*-*-c-*-*-1")
+     ("")
+     ("clean 8x8" "-schumacher-clean-medium-r-normal--*-80-*-*-c-*-*-1")
+     ("clean 8x14" "-schumacher-clean-medium-r-normal--*-140-*-*-c-*-*-1")
+     ("clean 8x10" "-schumacher-clean-medium-r-normal--*-100-*-*-c-*-*-1")
+     ("clean 8x16" "-schumacher-clean-medium-r-normal--*-160-*-*-c-*-*-1")
+     ("")
+     ("sony 8x16" "-sony-fixed-medium-r-normal--16-120-100-100-c-80-*-1")
+     ("")
      ("fixed" "fixed")
-     ("6x10" "6x10")
-     ("6x12" "6x12")
-     ("6x13" "6x13")
-     ("7x13" "7x13")
-     ("7x14" "7x14")
-     ("8x13" "8x13")
-     ("8x13 bold" "8x13bold")
-     ("8x16" "8x16")
-     ("9x15" "9x15")
-     ("9x15 bold" "9x15bold")
      ("10x20" "10x20")
      ("11x18" "11x18")
      ("12x24" "12x24"))
@@ -923,8 +956,15 @@ and selects that window."
   (interactive
    (x-popup-menu last-nonmenu-event x-fixed-font-alist))
   (if font
-      (modify-frame-parameters (selected-frame)
-			       (list (cons 'font font)))))
+      (progn (modify-frame-parameters (selected-frame)
+				      (list (cons 'font font)))
+	     ;; Update some standard faces too.
+	     (set-face-font 'bold nil (selected-frame)) 
+	     (make-face-bold 'bold (selected-frame) t)
+	     (set-face-font 'italic nil (selected-frame))
+	     (make-face-italic 'italic (selected-frame) t)
+	     (set-face-font 'bold-italic nil (selected-frame))
+	     (make-face-bold-italic 'bold-italic (selected-frame) t))))
 
 ;;; Bindings for mouse commands.
 
@@ -999,9 +1039,9 @@ and selects that window."
   '("List all keystroke commands" . describe-bindings))
 
 (define-key help-admin-map "n"
-  '("view Emacs news" . view-emacs-news))
+  '("View Emacs news" . view-emacs-news))
 (define-key help-admin-map "l"
-  '("View the GNU Emacs license" . describe-copying))
+  '("View Emacs copying conditions" . describe-copying))
 (define-key help-admin-map "d"
   '("Describe distribution" . describe-distribution))
 (define-key help-admin-map "w"

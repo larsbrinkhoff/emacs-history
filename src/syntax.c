@@ -1390,7 +1390,6 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 	 style a. if it is non-nil, we are in comment style b */
       oldstate = Fcdr (oldstate);
       oldstate = Fcdr (oldstate);
-      oldstate = Fcdr (oldstate);
       tem = Fcar (oldstate);
       state.comstyle = !NILP (tem);
     }
@@ -1590,20 +1589,20 @@ Parsing stops at TO or when certain criteria are met;\n\
 If fifth arg STATE is omitted or nil,\n\
  parsing assumes that FROM is the beginning of a function.\n\
 Value is a list of eight elements describing final state of parsing:\n\
- 1. depth in parens.\n\
- 2. character address of start of innermost containing list; nil if none.\n\
- 3. character address of start of last complete sexp terminated.\n\
- 4. non-nil if inside a string.\n\
+ 0. depth in parens.\n\
+ 1. character address of start of innermost containing list; nil if none.\n\
+ 2. character address of start of last complete sexp terminated.\n\
+ 3. non-nil if inside a string.\n\
     (it is the character that will terminate the string.)\n\
- 5. t if inside a comment.\n\
- 6. t if following a quote character.\n\
- 7. the minimum paren-depth encountered during this scan.\n\
- 8. t if in a comment of style `b'.\n\
+ 4. t if inside a comment.\n\
+ 5. t if following a quote character.\n\
+ 6. the minimum paren-depth encountered during this scan.\n\
+ 7. t if in a comment of style `b'.\n\
 If third arg TARGETDEPTH is non-nil, parsing stops if the depth\n\
 in parentheses becomes equal to TARGETDEPTH.\n\
 Fourth arg STOPBEFORE non-nil means stop when come to\n\
  any character that starts a sexp.\n\
-Fifth arg STATE is a seven-list like what this function returns.\n\
+Fifth arg STATE is an eight-list like what this function returns.\n\
 It is used to initialize the state of the parse.  Its second and third
 elements are ignored.
 Sixth args COMMENTSTOP non-nil means stop at the start of a comment.")

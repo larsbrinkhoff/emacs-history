@@ -59,6 +59,9 @@ Lisp_Object Vcommand_line_args;
    names discarded.  */
 Lisp_Object Vinvocation_name;
 
+/* The directory name from which Emacs was invoked.  */
+Lisp_Object Vinvocation_directory;
+
 /* Hook run by `kill-emacs' before it does really anything.  */
 Lisp_Object Vkill_emacs_hook;
 
@@ -159,6 +162,17 @@ init_cmdargs (argc, argv, skip_args)
   register int i;
 
   Vinvocation_name = Ffile_name_nondirectory (build_string (argv[0]));
+  Vinvocation_directory = Ffile_name_directory (build_string (argv[0]));
+  /* If we got no directory in argv[0], search PATH to find where
+     Emacs actually came from.  */
+  if (NILP (Vinvocation_directory))
+    {
+      Lisp_Object found;
+      int yes = openp (Vexec_path, Vinvocation_name,
+		       "", &found, 1);
+      if (yes)
+	Vinvocation_directory = Ffile_name_directory (found);
+    }
 
   Vcommand_line_args = Qnil;
 
@@ -176,6 +190,14 @@ Any directory names are omitted.")
   ()
 {
   return Fcopy_sequence (Vinvocation_name);
+}
+
+DEFUN ("invocation-directory", Finvocation_directory, Sinvocation_directory,
+  0, 0, 0,
+  "Return the directory name in which the Emacs executable was located")
+  ()
+{
+  return Fcopy_sequence (Vinvocation_directory);
 }
 
 
@@ -469,10 +491,12 @@ main (argc, argv, envp)
      until calling init_callproc.  */
   set_process_environment ();
 
+  init_buffer ();	/* Init default directory of main buffer */
+
+  init_callproc ();	/* Must precede init_cmdargs and init_sys_modes.  */
+  init_cmdargs (argc, argv, skip_args);	/* Must precede init_lread.  */
   init_lread ();
 
-  init_cmdargs (argc, argv, skip_args);	/* Create list Vcommand_line_args */
-  init_buffer ();	/* Init default directory of main buffer */
   if (!noninteractive)
     {
 #ifdef VMS
@@ -481,7 +505,6 @@ main (argc, argv, envp)
       init_display ();	/* Determine terminal type.  init_sys_modes uses results */
     }
   init_keyboard ();	/* This too must precede init_sys_modes */
-  init_callproc ();	/* And this too. */
 #ifdef VMS
   init_vmsproc ();	/* And this too. */
 #endif /* VMS */
@@ -603,14 +626,14 @@ main (argc, argv, envp)
 
   initialized = 1;
 
-#ifdef sun
-  /* sun's localtime() has a bug.  it caches the value of the time
+#if defined (sun) || defined (LOCALTIME_CACHE)
+  /* sun's localtime has a bug.  it caches the value of the time
      zone rather than looking it up every time.  Since localtime() is
      called to bolt the undumping time into the undumped emacs, this
-     results in localtime() ignoring the TZ environment variable.
-     This flushes the new TZ value into localtime(). */
-  tzset();
-#endif /* sun */
+     results in localtime ignoring the TZ environment variable.
+     This flushes the new TZ value into localtime. */
+  tzset ();
+#endif /* defined (sun) || defined (LOCALTIME_CACHE) */
 
   /* Enter editor command loop.  This never returns.  */
   Frecursive_edit ();
@@ -863,6 +886,7 @@ syms_of_emacs ()
   defsubr (&Skill_emacs);
 
   defsubr (&Sinvocation_name);
+  defsubr (&Sinvocation_directory);
 
   DEFVAR_LISP ("command-line-args", &Vcommand_line_args,
     "Args passed by shell to Emacs, as a list of strings.");
@@ -890,4 +914,6 @@ it to change priority.  (Emacs sets its uid back to the real uid.)");
 
   staticpro (&Vinvocation_name);
   Vinvocation_name = Qnil;
+  staticpro (&Vinvocation_directory);
+  Vinvocation_directory = Qnil;
 }

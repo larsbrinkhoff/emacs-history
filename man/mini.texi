@@ -175,6 +175,14 @@ command names).  Thus, @samp{fo} does not complete to @samp{Foo}.
 Completion does ignore case distinctions for certain arguments in which
 case does not matter.
 
+@menu
+* Example: Completion Example.
+* Commands: Completion Commands.
+* Strict Completion::
+* Options: Completion Options.
+@end menu
+
+@node Completion Example
 @subsection Completion Example
 
 @kindex TAB @r{(completion)}
@@ -198,6 +206,7 @@ have @samp{auto-fill-mode} in the minibuffer after typing just @kbd{au
 the minibuffer it is bound to the command @code{minibuffer-complete}
 when completion is available.
 
+@node Completion Commands
 @subsection Completion Commands
 
   Here is a list of the completion commands defined in the minibuffer
@@ -216,6 +225,14 @@ first as described below (@code{minibuffer-complete-and-exit}).
 @item ?
 Print a list of all possible completions of the text in the minibuffer
 (@code{minibuffer-list-completions}).
+@kindex Mouse-2
+@findex mouse-choose-completion
+@item Mouse-2
+Clicking mouse button 2 on a completion in the list of possible
+completions chooses that completion (@code{mouse-choose-completion}).
+Like the above commands, this command is used while you are in the
+minibuffer; but click in the list of completions, not in the minibuffer
+itself.
 @end table
 
 @kindex SPC
@@ -228,6 +245,9 @@ but it stops completing after @samp{fill-}.  This gives
 way to @samp{auto-fill-mode}.  @key{SPC} in the minibuffer when
 completion is available runs the command
 @code{minibuffer-complete-word}.
+
+@node Strict Completion
+@subsection Strict Completion
 
   There are three different ways that @key{RET} can work in completing
 minibuffers, depending on how the argument will be used.
@@ -265,6 +285,9 @@ a window whenever there is more than one possibility for the very next
 character.  Also, typing @kbd{?} explicitly requests such a list.  If
 the list of completions is long, you can scroll it with @kbd{C-M-v}
 (@pxref{Other Window}).
+
+@node Completion Options
+@subsection Completion Options
 
 @vindex completion-ignored-extensions
   When completion is done on file names, certain file names are usually

@@ -132,6 +132,10 @@ Lisp_Object Qkill_buffer_hook;
 
 Lisp_Object Qoverlayp;
 
+Lisp_Object Qmodification_hooks;
+Lisp_Object Qinsert_in_front_hooks;
+Lisp_Object Qinsert_behind_hooks;
+
 /* For debugging; temporary.  See set_buffer_internal.  */
 /* Lisp_Object Qlisp_mode, Vcheck_symbol; */
 
@@ -1612,10 +1616,12 @@ buffer.")
   else
     /* Redisplay the area the overlay has just left, or just enclosed.  */
     {
-      Lisp_Object o_beg = OVERLAY_START (overlay);
-      Lisp_Object o_end = OVERLAY_END   (overlay);
+      Lisp_Object o_beg;
+      Lisp_Object o_end;
       int change_beg, change_end;
 
+      o_beg = OVERLAY_START (overlay);
+      o_end = OVERLAY_END   (overlay);
       o_beg = OVERLAY_POSITION (o_beg);
       o_end = OVERLAY_POSITION (o_end);
 
@@ -1899,7 +1905,7 @@ verify_overlay_modification (start, end)
        tail = XCONS (tail)->cdr)
     {
       int startpos, endpos;
-      int ostart, oend;
+      Lisp_Object ostart, oend;
 
       overlay = XCONS (tail)->car;
 
@@ -1933,7 +1939,7 @@ verify_overlay_modification (start, end)
        tail = XCONS (tail)->cdr)
     {
       int startpos, endpos;
-      int ostart, oend;
+      Lisp_Object ostart, oend;
 
       overlay = XCONS (tail)->car;
 
@@ -2154,6 +2160,12 @@ syms_of_buffer ()
   staticpro (&Qpermanent_local);
   staticpro (&Qkill_buffer_hook);
   staticpro (&Qoverlayp);
+  staticpro (&Qmodification_hooks);
+  Qmodification_hooks = intern ("modification-hooks");
+  staticpro (&Qinsert_in_front_hooks);
+  Qinsert_in_front_hooks = intern ("insert-in-front-hooks");
+  staticpro (&Qinsert_behind_hooks);
+  Qinsert_behind_hooks = intern ("insert-behind-hooks");
 
   Qoverlayp = intern ("overlayp");
 
@@ -2359,6 +2371,8 @@ until the tab is filled in.\n\
 If `overwrite-mode-binary', self-insertion replaces newlines and tabs too.\n\
 Automatically becomes buffer-local when set in any fashion.");
 
+#if 0 /* The doc string is too long for some compilers,
+	 but make-docfile can find it in this comment.  */
   DEFVAR_PER_BUFFER ("buffer-display-table", &current_buffer->display_table,
 		     Qnil,
     "Display table that controls display of the contents of current buffer.\n\
@@ -2378,6 +2392,9 @@ The remaining five elements control the display of\n\
     a vector of characters).\n\
 If this variable is nil, the value of `standard-display-table' is used.\n\
 Each window can have its own, overriding display table.");
+#endif
+  DEFVAR_PER_BUFFER ("buffer-display-table", &current_buffer->display_table,
+		     Qnil, "");
 
 /*DEFVAR_LISP ("debug-check-symbol", &Vcheck_symbol,
     "Don't ask.");
@@ -2414,6 +2431,8 @@ The functions are run using the `run-hooks' function.");
   Qfirst_change_hook = intern ("first-change-hook");
   staticpro (&Qfirst_change_hook);
 
+#if 0 /* The doc string is too long for some compilers,
+	 but make-docfile can find it in this comment.  */
   DEFVAR_PER_BUFFER ("buffer-undo-list", &current_buffer->undo_list, Qnil,
     "List of undo entries in current buffer.\n\
 Recent changes come first; older changes follow newer.\n\
@@ -2443,6 +2462,9 @@ nil marks undo boundaries.  The undo command treats the changes\n\
 between two undo boundaries as a single step to be undone.\n\
 \n\
 If the value of the variable is t, undo information is not recorded.");
+#endif
+  DEFVAR_PER_BUFFER ("buffer-undo-list", &current_buffer->undo_list, Qnil,
+    "");
 
   DEFVAR_PER_BUFFER ("mark-active", &current_buffer->mark_active, Qnil, 
     "Non-nil means the mark and region are currently active in this buffer.\n\

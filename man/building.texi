@@ -155,9 +155,10 @@ if ($?prompt) set prompt = ...
 @cindex XDB
 
 @c Do you believe in GUD?
-The GUD (Grand Unified Debugger) library provides an interface to various
-symbolic debuggers from within Emacs.  We recommend the debugger GDB,
-which is free software, but you can also run DBX or SDB if you have them.
+The GUD (Grand Unified Debugger) library provides an interface to
+various symbolic debuggers from within Emacs.  We recommend the debugger
+GDB, which is free software, but you can also run DBX, SDB or XDB if you
+have them.
 
 @menu
 * Starting GUD::	How to start a debugger subprocess.
@@ -169,7 +170,7 @@ which is free software, but you can also run DBX or SDB if you have them.
 @node Starting GUD
 @subsection Starting GUD
 
-  There are three commands for starting a debugger, each corresponding
+  There are four commands for starting a debugger, each corresponding
 to a particular debugger program.
 
 @table @kbd
@@ -183,6 +184,13 @@ exists, it just switches to that buffer.
 @findex dbx
 Similar, but run DBX instead of GDB.
 
+@item M-x xdb @key{RET} @var{file} @key{RET}
+@findex xdb
+@vindex gud-xdb-directories
+Similar, but run XDB instead of GDB.  Use the variable
+@code{gud-xdb-directories} to specify directories to search for source
+files.
+
 @item M-x sdb @key{RET} @var{file} @key{RET}
 @findex sdb
 Similar, but run SDB instead of GDB.
@@ -194,10 +202,6 @@ If you have not visited a tags table or the tags table doesn't list one
 of the functions, you get a message saying @samp{The sdb support
 requires a valid tags table to work}.  If this happens, generate a valid
 tags table in the working directory and try again.
-
-@item M-x xdb
-@findex xdb
-Similar, but run XDB instead of GDB.
 @end table
 
   You can only run one debugger process at a time.

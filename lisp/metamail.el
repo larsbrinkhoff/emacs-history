@@ -1,8 +1,9 @@
-;;; Metamail interface for GNU Emacs
+;;; metamail.el --- Metamail interface for GNU Emacs
+
 ;; Copyright (C) 1993 Masanobu UMEDA
 
 ;; Author: Masanobu UMEDA <umerin@mse.kyutech.ac.jp>
-;; Version: $Header: metamail.el,v 1.3 93/06/21 15:37:28 umerin Exp $
+;; Version: $Header: metamail.el,v 1.5 93/07/08 21:56:49 umerin Exp $
 ;; Keywords: mail, news, mime, multimedia
 
 ;; This file is part of GNU Emacs.
@@ -26,7 +27,7 @@
 ;; LCD Archive Entry:
 ;; metamail|Masanobu UMEDA|umerin@mse.kyutech.ac.jp|
 ;; Metamail interface for GNU Emacs|
-;; $Date: 93/06/21 15:37:28 $|$Revision: 1.3 $|~/misc/metamail.el.Z|
+;; $Date: 93/07/08 21:56:49 $|$Revision: 1.5 $|~/misc/metamail.el.Z|
 
 ;; Note: Metamail does not have all options which is compatible with
 ;; the environment variables.  For that reason, matamail.el have to
@@ -42,23 +43,29 @@
 (defvar metamail-program-name "metamail"
   "*Metamail program name.")
 
-(defvar metamail-environment "KEYHEADS='*';export KEYHEADS;"
-  "*Environment variables for Metamail.
-It must be an emtpy string or a string terminated with ';'.")
+(defvar metamail-environment '("KEYHEADS=*")
+  "*Environment variables passed to `metamail'.
+It must ba a list of strings that have the format ENVVARNAME=VALUE.")
 
 (defvar metamail-switches '("-m" "emacs" "-x" "-d" "-z")
-  "*Switches for Metamail program.
+  "*Switches for `metamail' program.
 -z is required to remove zap file.")
 
-(defun metamail-buffer (&optional buffer)
-  "Process current buffer through 'metamail'.
-Optional argument BUFFER specifies a buffer to be filled (nil means current)."
+(defun metamail-buffer (&optional buffer nodisplay)
+  "Process current buffer through `metamail'.
+Optional 1st argument BUFFER specifies a buffer to be filled (nil
+means current).
+Optional 2nd argument NODISPLAY non-nil means buffer is not
+redisplayed as output is inserted."
   (interactive)
-  (metamail-region (point-min) (point-max) buffer))
+  (metamail-region (point-min) (point-max) buffer nodisplay))
 
-(defun metamail-region (beg end &optional buffer)
+(defun metamail-region (beg end &optional buffer nodisplay)
   "Process current region through 'metamail'.
-Optional argument BUFFER specifies a buffer to be filled (nil means current)."
+Optional 1st argument BUFFER specifies a buffer to be filled (nil
+means current).
+Optional 2nd argument NODISPLAY non-nil means buffer is not
+redisplayed as output is inserted."
   (interactive "r")
   (let ((curbuf (current-buffer))
 	(buffer-read-only nil)
@@ -74,24 +81,21 @@ Optional argument BUFFER specifies a buffer to be filled (nil means current)."
       (if (eq curbuf (current-buffer))
 	  (delete-region beg end)
 	(delete-region (point-min) (point-max)))
-      ;; We have to pass the environment variable KEYHEADS to /bin/sh
-      ;; to display all header fields.  Metamail should have an
-      ;; optional argument to pass such information directly.
-      (apply (function call-process)
-	     "/bin/sh"
-	     nil
-	     t				;Output to current buffer
-	     t				;Force redisplay
-	     (list "-c"
-		   ;; Construct environment and the command.
-		   (concat
-		    metamail-environment
-		    metamail-program-name
-		    " "
-		    (mapconcat (function identity) metamail-switches " ")
-		    " "
-		    metafile
-		    )))
+      ;; We have to pass the environment variable KEYHEADS to display
+      ;; all header fields.  Metamail should have an optional argument
+      ;; to pass such information directly.
+      (let ((process-environment
+	     (append metamail-environment process-environment)))
+	(apply (function call-process)
+	       metamail-program-name
+	       nil
+	       t			;Output to current buffer
+	       (not nodisplay)		;Force redisplay
+	       (append metamail-switches (list metafile))))
+      ;; `metamail' may not delete the temporary file!
+      (condition-case error
+	  (delete-file metafile)
+	(error nil))
       )))
 
 ;(defun metamail-region (beg end &optional buffer)

@@ -15,8 +15,7 @@ File: dir	Node: Top	This is the top of the INFO tree
 * Info: (info).		Documentation browsing system.
 * Emacs: (emacs).	The extensible self-documenting text editor.
 * VIP: (vip).		A VI-emulation for Emacs.
-* Forms: (forms).	Forms mode is an Emacs package
-			  that lets the user edit a data structure
-			  by filling in a form.
+* Forms: (forms).	Emacs package for editing data bases
+			  by filling in forms.
 * GNUS: (gnus).		The news reader GNUS.
 * CL: (cl).		Partial Common Lisp support for Emacs Lisp.

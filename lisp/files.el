@@ -229,6 +229,16 @@ and ignores this variable.")
     (defalias 'lock-buffer 'ignore))
 (or (fboundp 'unlock-buffer)
     (defalias 'unlock-buffer 'ignore))
+
+;; This hook function provides support for ange-ftp host name
+;; completion.  It runs the usual ange-ftp hook, but only for
+;; completion operations.  Having this here avoids the need
+;; to load ange-ftp when it's not really in use.
+(defun ange-ftp-completion-hook-function (op &rest args)
+  (if (memq op '(file-name-completion file-name-all-completions))
+      (apply 'ange-ftp-hook-function op args)
+    (let (file-name-handler-alist)
+      (apply op args))))
 
 (defun pwd ()
   "Show the current default directory."
@@ -247,9 +257,11 @@ Not actually set up until the first time you you use it.")
 	 (while (setq cd-colon (string-match ":" cd-path cd-start))
 	   (setq cd-list
 		 (nconc cd-list
-			(list (substitute-in-file-name
-			       (file-name-as-directory
-				(substring cd-path cd-start cd-colon))))))
+			(list (if (= cd-start cd-colon)
+				   nil
+				(substitute-in-file-name
+				 (file-name-as-directory
+				  (substring cd-path cd-start cd-colon)))))))
 	   (setq cd-start (+ cd-colon 1)))
 	 cd-list)))
 
@@ -682,7 +694,7 @@ Finishes by calling the functions in `find-file-hooks'."
 	   (msg
 	    (cond ((and error (file-attributes buffer-file-name))
 		   (setq buffer-read-only t)
-		   "File exists, but is read-protected.")
+		   "File exists, but cannot be read.")
 		  ((not buffer-read-only)
 		   (if (and warn
 			    (file-newer-than-file-p (make-auto-save-file-name)
@@ -821,12 +833,12 @@ If `enable-local-variables' is nil, this function does not check for a
       (if (and enable-local-variables
 	       ;; Don't look for -*- if this file name matches any
 	       ;; of the regexps in inhibit-local-variables-regexps.
-	       (not (let ((temp inhibit-local-variables-regexps))
-		      (while (and temp
-				  (not (string-match (car temp)
-						     buffer-file-name)))
-			(setq temp (cdr temp)))
-		      (not temp)))
+	       (let ((temp inhibit-local-variables-regexps))
+		 (while (and temp
+			     (not (string-match (car temp)
+						buffer-file-name)))
+		   (setq temp (cdr temp)))
+		 (not temp))
 	       (search-forward "-*-" (save-excursion
 				       ;; If the file begins with "#!"
 				       ;; (exec interpreter magic), look
@@ -1391,12 +1403,8 @@ the last real save, but optional arg FORCE non-nil means delete anyway."
 	      (rename-buffer buffer-new-name)))
 	;; If buffer has no file name, ask user for one.
 	(or buffer-file-name
-	    (progn
-	      (setq buffer-file-name
-		    (expand-file-name (read-file-name "File to save in: ") nil)
-		    default-directory (file-name-directory buffer-file-name))
-	      (and auto-save-default (not buffer-auto-save-file-name)
-		   (auto-save-mode t))))
+	    (set-visited-file-name
+	     (expand-file-name (read-file-name "File to save in: ") nil)))
 	(or (verify-visited-file-modtime (current-buffer))
 	    (not (file-exists-p buffer-file-name))
 	    (yes-or-no-p
@@ -1868,7 +1876,11 @@ If WILDCARD, it also runs the shell specified by `shell-file-name'."
       (if (eq system-type 'vax-vms)
 	  (vms-read-directory file switches (current-buffer))
 	(if wildcard
-	    (let ((default-directory (file-name-directory file)))
+	    ;; Run ls in the directory of the file pattern we asked for.
+	    (let ((default-directory
+		    (if (file-name-absolute-p file)
+			(file-name-directory file)
+		      (file-name-directory (expand-file-name file)))))
 	      (call-process shell-file-name nil t nil
 			    "-c" (concat insert-directory-program
 					 " -d " switches " "

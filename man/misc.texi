@@ -436,6 +436,10 @@ the mark, except that the text on each line to the left or right of the
 rectangle moves along with the text inside the rectangle.
 @xref{Rectangles}.
 
+@vindex sort-fold-case
+  Many of the sort commands ignore case differences when comparing, if
+@code{sort-fold-case} is non-@code{nil}.
+
 @node Shell, Narrowing, Sorting, Top
 @section Running Shell Commands from Emacs
 @cindex subshell
@@ -1019,6 +1023,10 @@ selects the next one.
 to arrive at it with @kbd{C-x #}.  But @kbd{C-x #} is the only way to
 say that you are ``finished'' with one.
 
+@vindex server-window
+  If you set the variable @code{server-window} to a window or a frame,
+@kbd{C-x #} displays the server buffer in that window or in that frame.
+
   While @code{mail} or another application is waiting for
 @code{emacsclient} to finish, @code{emacsclient} does not read terminal
 input.  So the terminal that @code{mail} was using is effectively
@@ -1189,6 +1197,10 @@ inside a box by tomography.  @code{mpuz} displays a multiplication
 puzzle with letters standing for digits in a code that you must
 guess---to guess a value, type a letter and then the digit you think it
 stands for.
+
+@findex dunnet
+  @kbd{M-x dunnet} runs an adventure-style exploration game, which is
+a bigger sort of puzzle.
 
   When you are frustrated, try the famous Eliza program.  Just do
 @kbd{M-x doctor}.  End each input by typing @kbd{RET} twice.

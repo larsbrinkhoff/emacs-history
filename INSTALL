@@ -24,9 +24,12 @@ insufficient, you will get an error in the command `temacs -batch -l
 loadup dump', found in `./src/ymakefile', or possibly when running the
 final dumped Emacs.
  
-Building Emacs requires about 30 Mb of disk space.  Installed, Emacs
-occupies about 20 Mb; this includes the executable files, lisp
-libraries, miscellaneous data files, and on-line documentation.
+Building Emacs requires about 30 Mb of disk space (including the Emacs
+sources).  Once installed, Emacs occupies about 20 Mb in the file
+system where it is installed; this includes the executable files, Lisp
+libraries, miscellaneous data files, and on-line documentation.  If
+the building and installation take place in different directories,
+then the installation procedure momentarily requires 30+20 Mb.
 
 2) Consult `./etc/MACHINES' to see what configuration name you should
 give to the `configure' program.  That file sometimes offers hints for
@@ -71,6 +74,11 @@ for GCC in your load path, and use it if present.
 The `--srcdir=DIR' option specifies that the configuration and build
 processes should look for the Emacs source code in DIR, when DIR is
 not the current directory.
+
+You can use `--srcdir' to build Emacs for several different machine
+types from a single source directory.  Make separate build directories
+for the different configuration types, and in each one, build Emacs
+specifying the common source directory with `--srcdir'.
 
 The `--prefix=PREFIXDIR' option specifies where the installation process
 should put emacs and its data files.  This defaults to `/usr/local'.

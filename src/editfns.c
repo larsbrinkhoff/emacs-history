@@ -312,10 +312,15 @@ save_excursion_restore (info)
   Fset_marker (current_buffer->mark, tem, Fcurrent_buffer ());
   unchain_marker (tem);
   tem = Fcdr (Fcdr (info));
+#if 0 /* We used to make the current buffer visible in the selected window
+	 if that was true previously.  That avoids some anomalies.
+	 But it creates others, and it wasn't documented, and it is simpler
+	 and cleaner never to alter the window/buffer connections.  */
   tem1 = Fcar (tem);
   if (!NILP (tem1)
       && current_buffer != XBUFFER (XWINDOW (selected_window)->buffer))
     Fswitch_to_buffer (Fcurrent_buffer (), Qnil);
+#endif /* 0 */
 
   tem1 = current_buffer->mark_active;
   current_buffer->mark_active = Fcdr (tem);
@@ -1492,17 +1497,10 @@ Case is ignored if `case-fold-search' is non-nil in the current buffer.")
 void
 syms_of_editfns ()
 {
-  DEFVAR_LISP ("system-name", &Vsystem_name,
-	       "The name of the machine Emacs is running on.");
-  
-  DEFVAR_LISP ("user-full-name", &Vuser_full_name,
-	       "The full name of the user logged in.");
-
-  DEFVAR_LISP ("user-name", &Vuser_name,
-	       "The user's name, based on the effective uid.");
-
-  DEFVAR_LISP ("user-real-name", &Vuser_real_name,
-	       "The user's name, base upon the real uid.");
+  staticpro (&Vuser_name);
+  staticpro (&Vuser_full_name);
+  staticpro (&Vuser_real_name);
+  staticpro (&Vsystem_name);
 
   defsubr (&Schar_equal);
   defsubr (&Sgoto_char);

@@ -1506,11 +1506,7 @@ duplicates what `expand-file-name' does.")
 }
 
 /* A slightly faster and more convenient way to get
-   (directory-file-name (expand-file-name FOO)).  The return value may
-   have had its last character zapped with a '\0' character, meaning
-   that it is acceptable to system calls, but not to other lisp
-   functions.  Callers should make sure that the return value doesn't
-   escape.  */
+   (directory-file-name (expand-file-name FOO)).  */
 
 Lisp_Object
 expand_and_dir_to_file (filename, defdir)
@@ -1530,11 +1526,8 @@ expand_and_dir_to_file (filename, defdir)
      stat behaves differently depending!  */
   if (XSTRING (abspath)->size > 1
       && XSTRING (abspath)->data[XSTRING (abspath)->size - 1] == '/')
-    {
-      if (EQ (abspath, filename))
-	abspath = Fcopy_sequence (abspath);
-      XSTRING (abspath)->data[XSTRING (abspath)->size - 1] = 0;
-    }
+    /* We cannot take shortcuts; they might be wrong for magic file names.  */
+    abspath = Fdirectory_file_name (abspath);
 #endif
   return abspath;
 }
@@ -2446,7 +2439,7 @@ If VISIT is non-nil, BEG and END must be nil.")
       error ("maximum buffer size exceeded");
   }
 
-  if (NILP (visit))
+  if (NILP (visit) && total > 0)
     prepare_to_modify_buffer (point, point);
 
   move_gap (point);
@@ -3004,6 +2997,12 @@ Non-nil second argument means save only current buffer.")
   char *omessage = echo_area_glyphs;
   extern int minibuf_level;
   int do_handled_files;
+  Lisp_Object oquit;
+
+  /* Ordinarily don't quit within this function,
+     but don't make it impossible to quit (in case we get hung in I/O).  */
+  oquit = Vquit_flag;
+  Vquit_flag = Qnil;
 
   /* No GCPRO needed, because (when it matters) all Lisp_Object variables
      point to non-strings reached from Vbuffer_alist.  */
@@ -3077,6 +3076,8 @@ Non-nil second argument means save only current buffer.")
 
   if (auto_saved && NILP (no_message))
     message1 (omessage ? omessage : "Auto-saving...done");
+
+  Vquit_flag = oquit;
 
   auto_saving = 0;
   return Qnil;

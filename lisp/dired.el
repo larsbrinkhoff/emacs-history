@@ -1,6 +1,6 @@
 ;;; dired.el --- directory-browsing commands
 
-;; Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1993 Free Software Foundation, Inc.
 
 ;; Author: Sebastian Kremer <sk@thp.uni-koeln.de>.
 ;; Version: 6
@@ -489,13 +489,17 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
     (if (consp dir-or-list)
 	(setq dirname (car dir-or-list))
       (setq dirname dir-or-list))
-    (if (equal default-directory dirname)	;; i.e., (file-directory-p dirname)
+    (if (and (equal default-directory dirname)
+	     (not (consp dir-or-list)))
+	;; If we are reading a whole single directory...
 	(dired-insert-directory dir-or-list dired-actual-switches nil t)
       (if (not (file-readable-p
 		(directory-file-name (file-name-directory dirname))))
 	  (error "Directory %s inaccessible or nonexistent" dirname)
-	;; else assume it contains wildcards:
-	(dired-insert-directory dir-or-list dired-actual-switches t)
+	;; Else assume it contains wildcards,
+	;; unless it is an explicit list of files.
+	(dired-insert-directory dir-or-list dired-actual-switches
+				(not (listp dir-or-list)))
 	(save-excursion		;; insert wildcard instead of total line:
 	  (goto-char (point-min))
 	  (insert "wildcard " (file-name-nondirectory dirname) "\n"))))))
@@ -506,9 +510,9 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   ;; list.
   (if (consp dir-or-list)
       (progn
-      (mapcar
-       (function (lambda (x) (insert-directory x switches wildcard full-p)))
-       (cdr dir-or-list)))
+	(mapcar
+	 (function (lambda (x) (insert-directory x switches wildcard full-p)))
+	 (cdr dir-or-list)))
     (insert-directory dir-or-list switches wildcard full-p))
   (setq dired-directory dir-or-list))
 
@@ -722,14 +726,6 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   (define-key dired-mode-map "\C-_" 'dired-undo)
   (define-key dired-mode-map "\C-xu" 'dired-undo)
   )
-
-(or (member '(dired-sort-mode dired-sort-mode) minor-mode-alist)
-    ;; Test whether this has already been done in case dired is reloaded
-    ;; There may be several elements with dired-sort-mode as car.
-    (setq minor-mode-alist
-	  (cons '(dired-sort-mode dired-sort-mode)
-		;; dired-sort-mode is nil outside dired
-		minor-mode-alist)))
 
 ;; Make menu bar items.
 
@@ -807,6 +803,8 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   '("Next Marked" . dired-next-marked-file))
 (define-key dired-mode-map [menu-bar mark marks]
   '("Change Marks..." . dired-change-marks))
+(define-key dired-mode-map [menu-bar mark unmark-all]
+  '("Unmark All" . dired-unmark-all-files-no-query))
 (define-key dired-mode-map [menu-bar mark symlinks]
   '("Mark Symlinks" . dired-mark-symlinks))
 (define-key dired-mode-map [menu-bar mark directories]
@@ -815,11 +813,9 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   '("Mark Old Backups" . dired-clean-directory))
 (define-key dired-mode-map [menu-bar mark executables]
   '("Mark Executables" . dired-mark-executables))
-(define-key dired-mode-map [menu-bar mark unmark-all]
-  '("Unmark All" . dired-unmark-all-files))
-(define-key dired-mode-map [menu-bar mark files]
+(define-key dired-mode-map [menu-bar mark backup-files]
   '("Flag Backup Files" . dired-flag-backup-files))
-(define-key dired-mode-map [menu-bar mark files]
+(define-key dired-mode-map [menu-bar mark auto-save-files]
   '("Flag Auto-save Files" . dired-flag-auto-save-files))
 (define-key dired-mode-map [menu-bar mark deletion]
   '("Flag" . dired-flag-file-deletion))
@@ -947,7 +943,6 @@ Keybindings:
        dired-directory)
   (set (make-local-variable 'dired-actual-switches)
        (or switches dired-listing-switches))
-  (make-local-variable 'dired-sort-mode)
   (dired-sort-other dired-actual-switches t)
   (run-hooks 'dired-mode-hook))
 
@@ -1911,6 +1906,11 @@ OLD and NEW are both characters used to mark files."
 	  (subst-char-in-region (match-beginning 0)
 				(match-end 0) old new))))))
 
+(defun dired-unmark-all-files-no-query ()
+  "Remove all marks from all files in the Dired buffer."
+  (interactive)
+  (dired-unmark-all-files ?\r))
+
 (defun dired-unmark-all-files (mark &optional arg)
   "Remove a specific mark (or any mark) from every file.
 After this command, type the mark character to remove, 
@@ -2007,23 +2007,19 @@ Thus, use \\[backward-page] to find the beginning of a group of errors."
   (concat "^-[^t" dired-ls-sorting-switches "]+$")
   "Regexp recognized by dired to set `by name' mode.")
 
-(defvar dired-sort-mode nil
-  "Whether Dired sorts by name, date etc. (buffer-local).")
-;; This is nil outside dired buffers so it can be used in the modeline
-
 (defun dired-sort-set-modeline ()
   ;; Set modeline display according to dired-actual-switches.
   ;; Modeline display of "by name" or "by date" guarantees the user a
   ;; match with the corresponding regexps.  Non-matching switches are
   ;; shown literally.
-  (setq dired-sort-mode
+  (setq mode-name
 	(let (case-fold-search)
 	  (cond ((string-match dired-sort-by-name-regexp dired-actual-switches)
-		 " by name")
+		 "Dired by name")
 		((string-match dired-sort-by-date-regexp dired-actual-switches)
-		 " by date")
+		 "Dired by date")
 		(t
-		 (concat " " dired-actual-switches)))))
+		 (concat "Dired " dired-actual-switches)))))
   ;; update mode line:
   (set-buffer-modified-p (buffer-modified-p)))
 

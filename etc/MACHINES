@@ -125,6 +125,11 @@ AT&T 3b2, 3b5, 3b15, 3b20 (we32k-att-sysv)
   The MAXMEM may also prevent Emacs from running.  The file
   3B-MAXMEM in this directory explains how to increase MAXMEM.
 
+  On some of these machines, you may need to define IN_SCCS_ID
+  in config.h to make Emacs work.  Supposedly you can tell whether
+  this is necessary by checking something in /usr/include/sys/time.h;
+  we do not know precisely what.
+
 AT&T 7300 or 3b1 (m68k-att-sysv)
 
   18.52 worked.  If you have strange troubles with dumping
@@ -206,10 +211,20 @@ DECstation (mips-dec-ultrix or mips-dec-osf)
 
 Motorola Delta 147 (m68k-motorola-sysv)
 
-  Emacs runs as of version 19.6.
+  Emacs runs as of version 19.17.
 
   Motorola Delta boxes running System V/68 release 3.
-  (tested on sys1147 with SVR3V5).
+  Tested on 147 board with SVR3V7, no X and gcc.
+  Tested on 167 board with SVR3V7, no X, cc, gnucc and gcc.
+
+  There are three ways to use the gnucc provided with R3V7.  Either
+  link /bin/ccd/cc to /bin/cc and then configure (supposing that CC
+  is unset or set to cc).  Or configure like this: `CC=/bin/ccd/cc
+  configure', or else configure like this: `CC=gnucc configure'.
+
+  If you have not installed the optional NSE package (Network Services
+  Extensions), then edit src/m/delta.h and remove the line where
+  HAVE_SOCKETS is defined.
 
 Motorola Delta 187 (m88k-motorola-sysv,
 		    m88k-motorola-sysvr4, or
@@ -340,6 +355,15 @@ HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux)
 	     HP-UX SLLIC/OPTIMIZER  HP-UX.09.00.23  02/18/93
 	     Ucode Code Generator - HP-UX.09.00.23.5 (patch)  2/18/93
 
+  For 700 series machines, the HP-UX patch needed is known as
+  PHSS_2653.  (Perhaps for 800 series machines as well; we don't
+  know.)  If you are on the Internet, you should be able to obtain
+  this patch by using telnet to access the machine
+  support.mayfield.hp.com and logging in as "hpslreg" and following
+  the instructions there.  Do not ask FSF for further support on
+  this.  If you have any trouble obtaining the patch, contact HP
+  Software Support.
+
   If you are running HP/UX release 8.0 or later, you need the optional
   "C/ANSI C" software in order to build Emacs (older releases of HP/UX
   do not require any special software).  If the file "/etc/filesets/C"
@@ -443,8 +467,9 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
   If you are using Esix, see notes at end under Esix.
   If you are using SCO Unix, see notes at end under SCO.
 
-  On 386bsd, you should use GNU make, not the system's make.
-  Assuming it's installed as gmake, do `gmake install MAKE=gmake'.
+  On 386bsd, netbsd and freebsd, you should use GNU make, not the
+  system's make.  Assuming it's installed as gmake, do `gmake install
+  MAKE=gmake'.
 
   If you are using System V release 4.2, you may find that `cc -E'
   puts spurious spaces in `src/xmakefile'.  If that happens,
@@ -655,7 +680,9 @@ Sequent Balance (ns32k-sequent-bsd4.2 or ns32k-sequent-bsd4.3)
 
 Sequent Symmetry (i386-sequent-bsd)
 
-  Emacs 19 should work.
+  Emacs 19 should work.  However, if you compile with the Sequent compiler,
+  you may find Emacs does not restore the terminal settings on exit.
+  If this happens, compile with GCC.
 
 SONY News (m68k-sony-bsd4.2 or m68k-sony-bsd4.3)
 
@@ -700,14 +727,15 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   On Solaris 2, you need to install patch 100947-02 to fix a system bug.
   Presumably this patch comes from Sun.  You must alter the definition of
   LD_SWITCH_SYSTEM if your X11 libraries are not in /usr/openwin/lib.
-  You must make sure that /usr/ucblib is not in your path.
+  You must make sure that /usr/ucblib is not in your LD_LIBRARY_PATH.
 
-  On Solaris 2, Emacs 19.12 currently expects certain optional packages
-  to be installed.  This may be changed in the future.
-
-  There are three machine files for the different versions of SunOS
-  that run on the Motorola 68000 processors.  All are derived from
-  Berkeley 4.2.  Emacs 17 has run on all of them.
+  On Solaris 2.2, with a multiprocessor SparcCenter 1000, Emacs 19.17 is
+  reported to hang sometimes if it exits while it has one or more
+  subprocesses (e.g. the `wakeup' subprocess used by `display-time').
+  Emacs and its subprocesses become zombies, and in their zombie state
+  slow down their host and disable rlogin and telnet.  This is most
+  likely due to a bug in Solaris 2.2's multiprocessor support,
+  rather than an Emacs bug.
 
   If you have trouble using open-network-stream, get the distribution
   of `bind' (the BSD name-server), build libresolv.a, and link Emacs
@@ -722,7 +750,9 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
 
   We recommend that you instead use the X window system, which
   has technical advantages, is an industry standard, and is also
-  free software.
+  free software.  The FSF does not support the SunWindows code;
+  we installed it only on the understanding we would not let it
+  divert our efforts from what we think is important.
 
   If you are compiling for X windows, and the X window library was
   compiled to use the 68881, then you must edit config.h according

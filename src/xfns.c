@@ -58,6 +58,12 @@ static XrmDatabase xrdb;
 /* The class of this X application.  */
 #define EMACS_CLASS "Emacs"
 
+#ifdef HAVE_X11R4
+#define MAXREQUEST(dpy) (XMaxRequestSize (dpy))
+#else
+#define MAXREQUEST(dpy) ((dpy)->max_request_size)
+#endif
+
 /* The name we're using in resource queries.  */
 Lisp_Object Vx_resource_name;
 
@@ -547,6 +553,8 @@ x_set_background_color (f, arg, oldval)
       XSetBackground (x_current_display, f->display.x->normal_gc,
 		      f->display.x->background_pixel);
       XSetForeground (x_current_display, f->display.x->reverse_gc,
+		      f->display.x->background_pixel);
+      XSetForeground (x_current_display, f->display.x->cursor_gc,
 		      f->display.x->background_pixel);
       XSetWindowBackground (x_current_display, FRAME_X_WINDOW (f),
 			    f->display.x->background_pixel);
@@ -1107,7 +1115,7 @@ static void
 validate_x_resource_name ()
 {
   if (! STRINGP (Vx_resource_name))
-    Vx_resource_name = make_string ("emacs");
+    Vx_resource_name = make_string ("emacs", 5);
 }
 
 
@@ -1753,13 +1761,27 @@ be shared by the new frame.")
   {
     Lisp_Object font;
 
-    /* Try out a font which we know has bold and italic variations.  */
+    font = x_get_arg (parms, Qfont, "font", "Font", string);
     BLOCK_INPUT;
-    font = x_new_font (f, "-*-*-medium-r-*-*-*-*-*-*-c-*-iso8859-1");
+    /* First, try whatever font the caller has specified.  */
+    if (STRINGP (font))
+      font = x_new_font (f, XSTRING (font)->data);
+    /* Try out a font which we hope has bold and italic variations.  */
+    if (!STRINGP (font))
+      font = x_new_font (f, "-misc-fixed-medium-r-normal-*-*-120-*-*-c-*-iso8859-1");
+    if (! STRINGP (font))
+      font = x_new_font (f, "-*-*-medium-r-normal-*-*-120-*-*-c-*-iso8859-1");
+    if (! STRINGP (font))
+      /* This was formerly the first thing tried, but it finds too many fonts
+	 and takes too long.  */
+      font = x_new_font (f, "-*-*-medium-r-*-*-*-*-*-*-c-*-iso8859-1");
+    /* If those didn't work, look for something which will at least work.  */
+    if (! STRINGP (font))
+      font = x_new_font (f, "-*-fixed-*-*-*-*-*-120-*-*-c-*-iso8859-1");
     UNBLOCK_INPUT;
     if (! STRINGP (font))
-      font = build_string ("-*-fixed-*-*-*-*-*-120-*-*-c-*-iso8859-1");
-    
+      font = build_string ("fixed");
+
     x_default_parameter (f, parms, Qfont, font, 
 			 "font", "Font", string);
   }
@@ -2362,6 +2384,18 @@ DEFUN ("x-display-color-cells", Fx_display_color_cells, Sx_display_color_cells,
   Display *dpy = x_current_display;
   check_x ();
   return make_number (DisplayCells (dpy, DefaultScreen (dpy)));
+}
+
+DEFUN ("x-server-max-request-size", Fx_server_max_request_size,
+       Sx_server_max_request_size,
+  0, 1, 0,
+  "Returns the maximum request size of the X server FRAME is using.")
+  (frame)
+     Lisp_Object frame;
+{
+  Display *dpy = x_current_display;
+  check_x ();
+  return make_number (MAXREQUEST (dpy));
 }
 
 DEFUN ("x-server-vendor", Fx_server_vendor, Sx_server_vendor, 0, 1, 0,
@@ -3345,6 +3379,9 @@ DEFUN ("x-get-cut-buffer", Fx_get_cut_buffer, Sx_get_cut_buffer, 0, 0, 0,
 }
 #endif	/* X10 */
 
+#if 0 /* I'm told these functions are superfluous
+	 given the ability to bind function keys.  */
+
 #ifdef HAVE_X11
 DEFUN ("x-rebind-key", Fx_rebind_key, Sx_rebind_key, 3, 3, 0,
 "Rebind X keysym KEYSYM, with MODIFIERS, to generate NEWSTRING.\n\
@@ -3441,6 +3478,7 @@ See the documentation of `x-rebind-key' for more information.")
   return Qnil;
 }
 #endif /* HAVE_X11 */
+#endif /* 0 */
 
 #ifdef HAVE_X11
 Visual *
@@ -3522,7 +3560,7 @@ Optional second arg XRM_STRING is a string of resources in xrdb format.")
 			   (char *) XSTRING (Vx_resource_name)->data,
 			   EMACS_CLASS);
   UNBLOCK_INPUT;
-#if defined (HAVE_X11R5)
+#ifdef HAVE_XRMSETDATABASE
   XrmSetDatabase (x_current_display, xrdb);
 #else
   x_current_display->db = xrdb;
@@ -3673,7 +3711,7 @@ syms_of_xfns ()
     "The buffer offset of the character under the pointer.");
   mouse_buffer_offset = 0;
 
-  DEFVAR_INT ("x-pointer-shape", &Vx_pointer_shape,
+  DEFVAR_LISP ("x-pointer-shape", &Vx_pointer_shape,
     "The shape of the pointer when over text.\n\
 Changing the value does not affect existing frames\n\
 unless you set the mouse color.");
@@ -3687,7 +3725,6 @@ Emacs initially sets `x-resource-name' to the name under which Emacs\n\
 was invoked, or to the value specified with the `-name' or `-rn'\n\
 switches, if present.");
   Vx_resource_name = Qnil;
-  staticpro (&Vx_resource_name);
 
 #if 0
   DEFVAR_INT ("x-nontext-pointer-shape", &Vx_nontext_pointer_shape,
@@ -3723,6 +3760,7 @@ switches, if present.");
   defsubr (&Sx_display_color_p);
   defsubr (&Sx_list_fonts);
   defsubr (&Sx_color_defined_p);
+  defsubr (&Sx_server_max_request_size);
   defsubr (&Sx_server_vendor);
   defsubr (&Sx_server_version);
   defsubr (&Sx_display_pixel_width);
@@ -3735,9 +3773,9 @@ switches, if present.");
   defsubr (&Sx_display_visual_class);
   defsubr (&Sx_display_backing_store);
   defsubr (&Sx_display_save_under);
+#if 0
   defsubr (&Sx_rebind_key);
   defsubr (&Sx_rebind_keys);
-#if 0
   defsubr (&Sx_track_pointer);
   defsubr (&Sx_grab_pointer);
   defsubr (&Sx_ungrab_pointer);

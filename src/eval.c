@@ -746,7 +746,8 @@ until TEST returns nil.")
 
   test = Fcar (args);
   body = Fcdr (args);
-  while (tem = Feval (test), !NILP (tem))
+  while (tem = Feval (test),
+	 (!EQ (Vmocklisp_arguments, Qt) ? XINT (tem) : !NILP (tem)))
     {
       QUIT;
       Fprogn (body);
@@ -912,10 +913,7 @@ unwind_to_catch (catch, value)
   catch->val = value;
 
   /* Restore the polling-suppression count.  */
-  if (catch->poll_suppress_count > poll_suppress_count)
-    abort ();
-  while (catch->poll_suppress_count < poll_suppress_count)
-    start_polling ();
+  set_poll_suppress_count (catch->poll_suppress_count);
 
   do
     {
@@ -1414,8 +1412,7 @@ do_autoload (fundef, funname)
 
   fun = Findirect_function (fun);
 
-  if (XTYPE (fun) == Lisp_Cons
-      && EQ (XCONS (fun)->car, Qautoload))
+  if (!NILP (Fequal (fun, fundef)))
     error ("Autoloading failed to define function %s",
 	   XSYMBOL (funname)->name->data);
 }

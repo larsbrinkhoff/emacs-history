@@ -26,6 +26,9 @@ You should then type one of those characters.
   Typing a third @kbd{C-h} displays a description of what the options mean;
 it still waits for you to type an option.  To cancel, type @kbd{C-g}.
 
+  @kbd{C-h} means ``help'' in various other contexts as well.  For example,
+in @code{query-replace}, it describes the options available.
+
 @menu
 * Help Summary::	Brief list of all Help commands.
 * Key Help::		Asking what a key does in Emacs.

@@ -1039,12 +1039,12 @@ or:
 @node Function Keys
 @subsection Rebinding Function Keys
 
-  Key sequences can contain function keys as well as ordinary characters.
-Just as Lisp characters (actually integers) represent keyboard
-characters, Lisp symbols represent function keys.  If the function key
-has a word as its label, then that word is also the name of the
-corresponding Lisp symbol.  Here are the Lisp names for other function
-keys:
+  Key sequences can contain function keys as well as ordinary
+characters.  Just as Lisp characters (actually integers) represent
+keyboard characters, Lisp symbols represent function keys.  If the
+function key has a word as its label, then that word is also the name of
+the corresponding Lisp symbol.  Here are the conventional Lisp names for
+other function keys:
 
 @table @asis
 @item @code{left}, @code{up}, @code{right}, @code{down}
@@ -1073,7 +1073,12 @@ Keypad keys with digits.
 Keypad PF keys.
 @end table
 
-A key sequence which contains non-characters must be a vector rather
+  These names are conventional, but some systems (especially when using
+X windows) may use different names.  To make certain what symbol is used
+for a given function key on your terminal, type @kbd{C-h c} followed by
+that key.
+
+  A key sequence which contains non-characters must be a vector rather
 than a string.  To write a vector, write square brackets containing the
 vector elements.  Write spaces to separate the elements.  If an element
 is a symbol, simply write the symbol's name---no delimiters or
@@ -1081,14 +1086,14 @@ punctuation are needed.  If an element is a character, write a Lisp
 character constant, which is @samp{?} followed by the character as it
 would appear in a string.
 
-Thus, to bind function key @samp{f1} to the command @code{rmail}, write
+  Thus, to bind function key @samp{f1} to the command @code{rmail}, write
 the following:
 
 @example
 (global-set-key [f1] 'rmail)
 @end example
 
-To bind the right-arrow key to the command @code{forward-char},
+  To bind the right-arrow key to the command @code{forward-char},
 you can use this expression:
 
 @example
@@ -1147,16 +1152,64 @@ redefine the second mouse button to split the current window:
 before the word @samp{mouse}.  For example, dragging the left button
 generates a @code{drag-mouse-1} event.
 
-  You can also request events when the mouse button is pressed down.
-These events start with @samp{down-} instead of @samp{drag-}.  Such
-events are generated only if they have key bindings.  When you get a
-button-down event, a corresponding click or drag event will always
+  You can also define events that occur when a mouse button is pressed
+down.  These events start with @samp{down-} instead of @samp{drag-}.
+Such events are generated only if they have key bindings.  When you get
+a button-down event, a corresponding click or drag event will always
 follow.
+
+@cindex double clicks
+@cindex triple clicks
+  If you wish, you can distinguish single, double, and triple clicks.  A
+double click means clicking a mouse button twice in approximately the
+same place.  The first click generates an ordinary click event.  The
+second click, if it comes soon enough, generates a double-click event
+instead.  The event type for a double click event starts with
+@samp{double-}: for example, @samp{double-mouse-3}.
+
+  This means that you can give a special meaning to the second click at
+the same place, but it must act on the assumption that the ordinary
+single click definition has run when the first click was received.
+
+  This constrains what you can do with double clicks, but user interface
+designers say that this constraint ought to be followed in any case.  A
+double click should do something similar to the single click, only
+``more so''.  The command for the double-click event should perform the
+extra work for the double click.
+
+  If a double-click event has no binding, it changes to the
+corresponding single-click event.  Thus, if you don't define a
+particular double click specially, it executes the single-click command
+twice.
+
+  Emacs also supports triple-click events whose names start with
+@samp{triple-}.  Emacs does not distinguish quadruple clicks as event
+types; clicks beyond the third generate additional triple-click events.
+However, the full number of clicks is recorded in the event list, so you
+can distinguish if you really want to.  We don't recommend distinct
+meanings for more than three clicks, but sometimes it is useful for
+subsequent clicks to cycle through the same set of three meanings, so
+that four clicks are equivalent to one click, five are equivalent to
+two, and six are equivalent to three.
+
+  Emacs also records multiple presses in drag and button-down events.
+For example, when you press a button twice, then move the mouse while
+holding the button, Emacs gets a @samp{double-drag-} event.  And at the
+moment when you press it down for the second time, Emacs gets a
+@samp{double-down-} event (which is ignored, like all button-down
+events, if it has no binding).
+
+@vindex double-click-time
+  The variable @code{double-click-time} specifies how long may elapse
+between clicks that are recognized as a pair.  Its value is measured
+in milliseconds.  If the value is @code{nil}, double clicks are not
+detected at all.  If the value is @code{t}, then there is no time
+limit.
 
   The symbols for mouse events also indicate the status of the modifier
 keys, with the usual prefixes @samp{C-}, @samp{M-}, @samp{H-},
-@samp{s-}, @samp{A-} and @samp{S-}.  These always follow @samp{drag-} or
-@samp{down-}.
+@samp{s-}, @samp{A-} and @samp{S-}.  These always precede @samp{double-}
+or @samp{triple-}, which always precede @samp{drag-} or @samp{down-}.
 
   A frame includes areas that don't show text from the buffer, such as
 the mode line and the scroll bar.  You can tell whether a mouse button

@@ -381,12 +381,12 @@ therefore, a general way of merging one file of messages into another.
 
 @table @kbd
 @item o @var{file} @key{RET}
-Append a copy of the current message to the file @var{file},
-writing it in Rmail file format (@code{rmail-output-to-rmail-file}).
+Append a copy of the current message to the file @var{file}, writing it
+in Rmail file format by default (@code{rmail-output-to-rmail-file}).
 
 @item C-o @var{file} @key{RET}
 Append a copy of the current message to the file @var{file},
-writing it in Unix mail file format (@code{rmail-output}).
+writing it in Unix mail file format by default (@code{rmail-output}).
 @end table
 
 @kindex o @r{(Rmail)}
@@ -407,10 +407,12 @@ the current message to a specified file, in inbox file format.  This
 is useful for moving messages into files to be read by other mail
 processors that do not understand Rmail format.
 
-  The @kbd{o} and @kbd{C-o} commands are actually equivalent when
-you specify an existing file; both commands check the file's contents
-to determine which format to use (Rmail or inbox).  Which command
-you use makes a difference when you specify a nonexistent file.
+  The @kbd{o} and @kbd{C-o} commands are actually equivalent (aside from
+having separate file name defaults) when you specify an existing file;
+both commands check the file's contents to determine which format to use
+(Rmail or inbox).  But it does matter which command you use when you
+specify a nonexistent file; @kbd{o} starts it in Rmail format, while
+@kbd{C-o} starts it in inbox format.
 
 @vindex rmail-delete-after-output
   Copying a message with @kbd{o} or @kbd{C-o} gives the original copy of

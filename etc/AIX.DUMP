@@ -1,5 +1,8 @@
 The following text was written by someone at IBM to describe an older
-version of the code for dumping on AIX.
+version of the code for dumping on AIX.  It does NOT apply to
+the current version of Emacs.  It is included in case someone
+is curious.
+
 
 I (rms) couldn't understand the code, and I can't fully understand
 this text either.  I rewrote the code to use the same basic

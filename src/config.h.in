@@ -111,7 +111,16 @@ and this notice must be preserved on all copies.  */
 
 #undef HAVE_LIBXBSD
 #undef HAVE_XRMSETDATABASE
+#undef HAVE_XSCREENRESOURCESTRING
+
+#undef HAVE_MKDIR
+#undef HAVE_RMDIR
 #undef HAVE_RANDOM
+#undef HAVE_BCOPY
+#undef HAVE_LOGB
+#undef HAVE_FREXP
+
+#undef HAVE_AIX_SMT_EXP
 
 /* If using GNU, then support inline function declarations. */
 #ifdef __GNUC__
@@ -192,6 +201,13 @@ and this notice must be preserved on all copies.  */
 /* SIGTYPE is the macro we actually use.  */
 #ifndef SIGTYPE
 #define SIGTYPE RETSIGTYPE
+#endif
+
+/* The rest of the code currently tests the CPP symbol BSTRING.
+   Override any claims made by the system-description files.  */
+#undef BSTRING
+#ifdef HAVE_BCOPY
+#define BSTRING
 #endif
 
 /* Non-ANSI C compilers usually don't have volatile.  */

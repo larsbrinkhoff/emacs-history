@@ -83,6 +83,19 @@ If ALL-FRAMES is neither nil nor t, stick strictly to the selected frame."
 	     (funcall proc walk-windows-current)
 	     (not (eq walk-windows-current walk-windows-start))))))
 
+(defun minibuffer-window-active-p (window)
+  "Return t if WINDOW (a minibuffer window) is now active."
+  ;; nil nil means include WINDOW's frame
+  ;; and other frames using WINDOW as minibuffer,
+  ;; and include minibuffer if active.
+  (let ((prev (previous-window window nil nil)))
+    ;; If PREV equals WINDOW, WINDOW must be on a minibuffer-only frame
+    ;; and it's not currently being used.  So return nil.
+    (and (not (eq window prev))
+	 (let ((should-be-same (next-window prev nil nil)))
+	   ;; If next-window doesn't reverse previous-window,
+	   ;; WINDOW must be outside the cycle specified by nil nil.
+	   (eq should-be-same window)))))
 
 ;;;; Keymap support.
 
@@ -191,7 +204,7 @@ KEY must contain just one event type--it must be a string or vector
 of length 1."
   (or (keymapp keymap)
       (signal 'wrong-type-argument (list 'keymapp keymap)))
-  (if (> (length key) 0)
+  (if (> (length key) 1)
       (error "multi-event key specified in `define-key-after'"))
   (let ((tail keymap) done inserted
 	(first (aref key 0)))
@@ -227,7 +240,8 @@ and then modifies one entry in it."
 	  (> to   (length keyboard-translate-table)))
       (progn
 	(let* ((i (length keyboard-translate-table))
-	       (table (make-string (- 256 i) 0)))
+	       (table (concat keyboard-translate-table
+			      (make-string (- 256 i) 0))))
 	  (while (< i 256)
 	    (aset table i i)
 	    (setq i (1+ i)))
@@ -295,7 +309,8 @@ The normal global definition of the character C-x indirects to this keymap.")
 (defun event-modifiers (event)
   "Returns a list of symbols representing the modifier keys in event EVENT.
 The elements of the list may include `meta', `control',
-`shift', `hyper', `super', `alt', `click', `drag', and `down'."
+`shift', `hyper', `super', `alt', `click', `double', `triple', `drag',
+and `down'."
   (let ((type event))
     (if (listp type)
 	(setq type (car type)))
@@ -350,6 +365,11 @@ The return value is of the form
    (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
 The `posn-' functions access elements of such lists."
   (nth (if (consp (nth 2 event)) 2 1) event))
+
+(defsubst event-click-count (event)
+  "Return the multi-click count of EVENT, a click or drag event.
+The return value is a positive integer."
+  (if (integerp (nth 2 event)) (nth 2 event) 1))
 
 (defsubst posn-window (position)
   "Return the window in POSITION.
@@ -459,12 +479,20 @@ If it is a list, the elements are called, in order, with no arguments."
 Don't change it.")
 
 (defun add-hook (hook function &optional append)
-  "Add to the value of HOOK the function FUNCTION unless already present (it
-becomes the first hook on the list unless optional APPEND is non-nil, in
-which case it becomes the last).  HOOK should be a symbol, and FUNCTION may be
-any valid function.  HOOK's value should be a list of functions, not a single
-function.  If HOOK is void, it is first set to nil."
+  "Add to the value of HOOK the function FUNCTION.
+FUNCTION is not added if already present.
+FUNCTION is added (if necessary) at the beginning of the hook list
+unless the optional argument APPEND is non-nil, in which case
+FUNCTION is added at the end.
+
+HOOK should be a symbol, and FUNCTION may be any valid function.  If
+HOOK is void, it is first set to nil.  If HOOK's value is a single
+function, it is changed to a list of functions."
   (or (boundp hook) (set hook nil))
+  ;; If the hook value is a single function, turn it into a list.
+  (let ((old (symbol-value hook)))
+    (if (or (not (listp old)) (eq (car old) 'lambda))
+	(set hook (list old))))
   (or (if (consp function)
 	  ;; Clever way to tell whether a given lambda-expression
 	  ;; is equal to anything in the hook.

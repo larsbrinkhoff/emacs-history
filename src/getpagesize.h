@@ -1,8 +1,4 @@
-#ifdef BSD
-#ifndef BSD4_1
-#define HAVE_GETPAGESIZE
-#endif
-#endif
+/* Emulate getpagesize on systems that lack it.  */
 
 #ifndef HAVE_GETPAGESIZE
 
@@ -29,10 +25,11 @@
 #define CLSIZE 1
 #endif /* no CLSIZE */
 #else /* no NBPG */
+#ifdef NBPC
 #define getpagesize() NBPC
+#endif /* NBPC */
 #endif /* no NBPG */
 #endif /* no EXEC_PAGESIZE */
 #endif /* no _SC_PAGESIZE */
 
 #endif /* not HAVE_GETPAGESIZE */
-

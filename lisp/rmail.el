@@ -126,7 +126,7 @@ Called with region narrowed to unformatted header.")
 (defvar rmail-last-multi-labels nil)
 (defvar rmail-last-file nil)
 (defvar rmail-last-regexp nil)
-(defvar rmail-last-rmail-file nil)
+(defvar rmail-last-rmail-file (expand-file-name "~/XMAIL"))
 
 ;;; Regexp matching the delimiter of messages in UNIX mail format
 ;;; (UNIX From lines), minus the initial ^.  Note that if you change
@@ -201,8 +201,6 @@ that file, but does not copy any new mail into the file."
 					 nil nil t))))
   (or rmail-last-file
       (setq rmail-last-file (expand-file-name "~/xmail")))
-  (or rmail-last-rmail-file
-      (setq rmail-last-rmail-file (expand-file-name "~/XMAIL")))
   (let* ((file-name (expand-file-name (or file-name-arg rmail-file-name)))
 	 (existed (get-file-buffer file-name)))
     ;; Like find-file, but in the case where a buffer existed
@@ -284,7 +282,8 @@ that file, but does not copy any new mail into the file."
 		   (looking-at "\n*From ")))
 	(let ((buffer-read-only nil))
 	  (message "Converting to Babyl format...")
-	  (narrow-to-region (point) (point-max))
+;;; If file needs conversion, convert it all.
+;;;	  (narrow-to-region (point) (point-max))
 	  (rmail-convert-to-babyl-format)
 	  (message "Converting to Babyl format...done")))))
 
@@ -966,7 +965,8 @@ argument causes us to read a file name and use that file as the inbox."
 		  ;; have a From: field.
 		  (if has-from
 		      ""
-		    "From: \\1\n")))))))))
+		    "From: \\1\n"))
+		t)))))))
 
 ;;;; *** Rmail Message Formatting and Header Manipulation ***
 
@@ -980,8 +980,9 @@ argument causes us to read a file name and use that file as the inbox."
     (delete-char 1)
     (insert ?1)
     (forward-line 1)
-    (if (looking-at "Summary-line: ")
-	(forward-line 1))
+    (let ((case-fold-search t))
+      (if (looking-at "Summary-line: ")
+	  (forward-line 1)))
     (if (looking-at "\\*\\*\\* EOOH \\*\\*\\*\n")
 	(delete-region (point)
 		       (progn (forward-line 1) (point))))
@@ -1020,8 +1021,9 @@ argument causes us to read a file name and use that file as the inbox."
 	(progn (delete-char 1)
 	       (insert ?0)
 	       (forward-line 1)
-	       (if (looking-at "Summary-Line:")
-		   (forward-line 1))
+	       (let ((case-fold-search t))
+		 (if (looking-at "Summary-Line:")
+		     (forward-line 1)))
 	       (insert "*** EOOH ***\n")
 	       (forward-char -1)
 	       (search-forward "\n*** EOOH ***\n")
@@ -1654,7 +1656,7 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
 
 (defun rmail-start-mail (&rest args)
   (if rmail-mail-new-frame
-      (progn
+      (prog1
 	(apply 'mail-other-frame args)
 	(modify-frame-parameters (selected-frame)
 				 '((dedicated . t))))
@@ -1813,7 +1815,7 @@ see the documentation of `rmail-resend'."
 	;; Otherwise, use another window for the mail buffer
 	;; so that the Rmail buffer remains visible
 	;; and sending the mail will get back to it.
-	(if (funcall (if (one-window-p t)
+	(if (funcall (if (and (not rmail-mail-new-frame) (one-window-p t))
 			 (function mail)
 		       (function rmail-start-mail))
 		     nil nil subject nil nil nil
@@ -1824,10 +1826,10 @@ see the documentation of `rmail-resend'."
 				       "forwarded" t msgnum))))
 				 (current-buffer)
 				 rmail-current-message)))
-	    (save-excursion
-	      (goto-char (point-max))
-	      (forward-line 1)
-	      (insert-buffer forward-buffer)))))))
+	  (save-excursion
+	    (goto-char (point-max))
+	    (forward-line 1)
+	    (insert-buffer forward-buffer)))))))
 
 (defun rmail-resend (address &optional from comment mail-alias-file)
   "Resend current message to ADDRESSES.
@@ -1854,6 +1856,15 @@ typically for purposes of moderating a list."
 	  (set-buffer tembuf)
 	  (insert-buffer-substring mailbuf)
 	  (goto-char (point-min))
+	  ;; Delete any Sender field, since that's not specifyable.
+	  (if (re-search-forward "^Sender:" nil t)
+	      (let (beg)
+		(beginning-of-line)
+		(setq beg (point))
+		(forward-line 1)
+		(while (looking-at "[ \t]")
+		  (forward-line 1))
+		(delete-region beg (point))))
 	  ;;>> Insert resent-from:
 	  (insert "Resent-From: " from "\n")
 	  (insert "Resent-Date: " (mail-rfc822-date) "\n")

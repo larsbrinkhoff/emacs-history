@@ -577,7 +577,9 @@ thinks of them as integers.
 To show a variable's value in Lisp syntax, first print its value, then
 use the GDB command @code{pr} to print the Lisp object in Lisp syntax.
 (If you must use another debugger, call the function @code{debug_print}
-with the object as an argument.)
+with the object as an argument.)  The @code{pr} command is defined
+by the file @file{src/.gdbinit} in the Emacs distribution, and it works
+only if you are debugging a running process (not with a core dump).
 @end itemize
 
 Here are some things that are not necessary:

@@ -109,7 +109,7 @@ are used."
 			 (substring name 0 (match-beginning 0))
 		       name)))
 	(print-length nil)
-	(floating-output-format "%20e")
+	(float-output-format "%.20e")
 	(done-any nil)
 	(visited (get-file-buffer file))
 	output-end)
@@ -167,10 +167,11 @@ are used."
 				     (elt (cdr p)))
 				(setcdr p nil)
 				(princ "\n(" outbuf)
-				(mapcar (function (lambda (elt)
-						    (prin1 elt outbuf)
-						    (princ " " outbuf)))
-					autoload)
+				(let ((print-escape-newlines t))
+				  (mapcar (function (lambda (elt)
+						      (prin1 elt outbuf)
+						      (princ " " outbuf)))
+					  autoload))
 				(princ "\"\\\n" outbuf)
 				(princ (substring
 					(prin1-to-string (car elt)) 1)
@@ -263,7 +264,10 @@ autoloads go somewhere else.")
 	  (if (save-excursion
 		(set-buffer (find-file-noselect file))
 		(save-excursion
-		  (search-forward generate-autoload-cookie nil t)))
+		  (save-restriction
+		    (widen)
+		    (goto-char (point-min))
+		    (search-forward generate-autoload-cookie nil t))))
 	      ;; There are autoload cookies in FILE.
 	      ;; Have the user tell us where to put the new section.
 	      (progn

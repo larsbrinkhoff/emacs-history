@@ -31,7 +31,7 @@
 				the nlist n_name element is a pointer,
 				not an array.
    NLIST_NAME_UNION		struct nlist has an n_un member, not n_name.
-   LINUX_LDAV_FILE		[LINUX]: Name of file containing load averages.
+   LINUX_LDAV_FILE		[__linux__]: File containing load averages.
 
    Specific system predefines this file uses, aside from setting
    default values if not emacs:
@@ -49,7 +49,7 @@
    UMAX
    UMAX4_3
    VMS
-   LINUX			Linux: assumes /proc filesystem mounted.
+   __linux__			Linux: assumes /proc filesystem mounted.
    				Support from Michael K. Johnson.
 
    In addition, to avoid nesting many #ifdefs, we internally set
@@ -71,6 +71,13 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+
+/* Exclude all the code except the test program at the end
+   if the system has its own `getloadavg' function.  */
+
+#ifndef HAVE_GETLOADAVG
+
 
 /* The existing Emacs configuration files define a macro called
    LOAD_AVE_CVT, which accepts a value of type LOAD_AVE_TYPE, and
@@ -124,7 +131,7 @@
 #define SUNOS_5
 #endif
 
-#if defined (__osf__) && defined (__alpha__)
+#if defined (__osf__) && (defined (__alpha) || defined (__alpha__))
 #define OSF_ALPHA
 #endif
 
@@ -190,6 +197,14 @@
 
 #endif /* No LOAD_AVE_TYPE.  */
 
+#ifdef OSF_ALPHA
+/* <sys/param.h> defines an incorrect value for FSCALE on Alpha OSF/1,
+   according to ghazi@noc.rutgers.edu.  */
+#undef FSCALE
+#define FSCALE 1024.0
+#endif
+
+
 #ifndef	FSCALE
 
 /* SunOS and some others define FSCALE in sys/param.h.  */
@@ -203,6 +218,9 @@
 #endif
 
 #if defined (sgi) || defined (sequent)
+/* Sometimes both MIPS and sgi are defined, so FSCALE was just defined
+   above under #ifdef MIPS.  But we want the sgi value.  */
+#undef FSCALE
 #define	FSCALE 1000.0
 #endif
 
@@ -454,7 +472,7 @@ getloadavg (loadavg, nelem)
   elem = -1;
 #endif
 
-#if !defined (LDAV_DONE) && defined (LINUX)
+#if !defined (LDAV_DONE) && defined (__linux__)
 #define LDAV_DONE
 #undef LOAD_AVE_TYPE
 
@@ -484,7 +502,7 @@ getloadavg (loadavg, nelem)
 
   return elem;
 
-#endif /* LINUX */
+#endif /* __linux__ */
 
 #if !defined (LDAV_DONE) && defined (NeXT)
 #define LDAV_DONE
@@ -795,6 +813,8 @@ getloadavg (loadavg, nelem)
   return -1;
 #endif
 }
+
+#endif /* ! HAVE_GETLOADAVG */
 
 #ifdef TEST
 void
@@ -806,9 +826,6 @@ main (argc, argv)
 
   if (argc > 1)
     naptime = atoi (argv[1]);
-
-  if (naptime == 0)
-    naptime = 5;
 
   while (1)
     {
@@ -830,7 +847,12 @@ main (argc, argv)
 	printf ("15-minute: %f  ", avg[2]);
       if (loads > 0)
 	putchar ('\n');
+
+      if (naptime == 0)
+	break;
       sleep (naptime);
     }
+
+  exit (0);
 }
 #endif /* TEST */

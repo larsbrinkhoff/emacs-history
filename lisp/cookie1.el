@@ -30,8 +30,7 @@
 ;; the NSA Trunk Trawler.
 ;;
 ;; The two entry points are `cookie' and `cookie-insert'.  The helper
-;; functions `pick-random' and `shuffle-vector' may be of interest to
-;; programmers.
+;; function `shuffle-vector' may be of interest to programmers.
 ;;
 ;; The code expects phrase files to be in one of two formats:
 ;;
@@ -63,6 +62,7 @@
 (defvar cookie-cache (make-vector 511 0)
   "Cache of cookie files that have already been snarfed.")
 
+;;;###autoload
 (defun cookie (phrase-file startmsg endmsg)
   "Return a random phrase from PHRASE-FILE.  When the phrase file
 is read in, display STARTMSG at beginning of load, ENDMSG at end."
@@ -70,6 +70,7 @@ is read in, display STARTMSG at beginning of load, ENDMSG at end."
     (shuffle-vector cookie-vector)
     (aref cookie-vector 1)))
 
+;;;###autoload
 (defun cookie-insert (phrase-file &optional count startmsg endmsg)
   "Insert random phrases from PHRASE-FILE; COUNT of them.  When the phrase file
 is read in, display STARTMSG at beginning of load, ENDMSG at end."
@@ -88,6 +89,7 @@ is read in, display STARTMSG at beginning of load, ENDMSG at end."
 	   (insert " ")
 	   (cookie1 (1- arg) cookie-vec))))
 
+;;;###autoload
 (defun cookie-snarf (phrase-file startmsg endmsg)
   "Reads in the PHRASE-FILE, returns it as a vector of strings.  Emit
 STARTMSG and ENDMSG before and after.  Caches the result; second and
@@ -118,14 +120,11 @@ subsequent calls on the same file won't go to disk."
 	  (message endmsg)
 	  (set sym (apply 'vector result)))))))
 
-(defun pick-random (n)
-  "Returns a random number from 0 to N-1 inclusive."
-  (% (logand 0777777 (random)) n))
-
 ; Thanks to Ian G Batten <BattenIG@CS.BHAM.AC.UK>
 ; [of the University of Birmingham Computer Science Department]
 ; for the iterative version of this shuffle.
 ;
+;;;###autoload
 (defun shuffle-vector (vector)
   "Randomly permute the elements of VECTOR (all permutations equally likely)"
   (let ((i 0)
@@ -133,7 +132,7 @@ subsequent calls on the same file won't go to disk."
 	temp
 	(len (length vector)))
     (while (< i len)
-      (setq j (+ i (pick-random (- len i))))
+      (setq j (+ i (random (- len i))))
       (setq temp (aref vector i))
       (aset vector i (aref vector j))
       (aset vector j temp)

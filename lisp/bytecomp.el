@@ -1055,11 +1055,14 @@ otherwise pop it")
 (defun byte-recompile-directory (directory &optional arg)
   "Recompile every `.el' file in DIRECTORY that needs recompilation.
 This is if a `.elc' file exists but is older than the `.el' file.
+Files in subdirectories of DIRECTORY are processed also.
 
 If the `.elc' file does not exist, normally the `.el' file is *not* compiled.
 But a prefix argument (optional second arg) means ask user,
 for each such `.el' file, whether to compile it.  Prefix argument 0 means
-don't ask and compile the file anyway."
+don't ask and compile the file anyway.
+
+A nonzero prefix argument also means ask about each subdirectory."
   (interactive "DByte recompile directory: \nP")
   (if arg
       (setq arg (prefix-numeric-value arg)))
@@ -1097,6 +1100,8 @@ don't ask and compile the file anyway."
 		 (progn (if (and noninteractive (not byte-compile-verbose))
 			    (message "Compiling %s..." source))
 			(byte-compile-file source)
+			(or noninteractive
+			    (message "Checking %s..." directory))
 			(setq file-count (1+ file-count))
 			(if (not (eq last-dir directory))
 			    (setq last-dir directory

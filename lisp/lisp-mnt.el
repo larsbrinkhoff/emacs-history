@@ -5,7 +5,7 @@
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Maintainer: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Created: 14 Jul 1992
-;; Version: $Id: lisp-mnt.el,v 1.3 1993/04/14 03:34:42 eric Exp $
+;; Version: $Id: lisp-mnt.el,v 1.4 1993/07/26 18:40:03 rms Exp $
 ;; Keywords: docs
 ;; Bogus-Bureaucratic-Cruft: Gruad will get you if you don't watch out!
 
@@ -314,7 +314,7 @@
       )))
 
 (defun lm-commentary (&optional file)
-  ;; Return the commentary region of a file, as a string."
+  ;; Return the commentary region of a file, as a string.
   (save-excursion
     (if file
 	(find-file file))

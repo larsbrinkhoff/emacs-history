@@ -27,7 +27,7 @@ etc = $(dot)$(dot)/etc/
 shortnamesdir = $(dot)$(dot)/shortnames/
 cppdir = $(dot)$(dot)/cpp/
 oldXMenudir = $(dot)$(dot)/oldXMenu/
-config_h = ${srcdir}/config.h
+config_h = config.h
 
 /* just to be sure the sh is used */
 SHELL=/bin/sh
@@ -147,6 +147,10 @@ CC = C_COMPILER
 #endif
 
 #ifndef ORDINARY_LINK
+
+#ifndef CRT0_COMPILE
+#define CRT0_COMPILE $(CC) -c $(ALL_CFLAGS) C_SWITCH_ASM 
+#endif
 
 #ifndef START_FILES
 #ifdef NO_REMAP
@@ -583,12 +587,14 @@ C_SWITCH_SYSTEM_1 = C_SWITCH_SYSTEM
 C_SWITCH_SITE_1 = C_SWITCH_SITE
 C_SWITCH_X_SITE_1 = C_SWITCH_X_SITE
 C_SWITCH_X_MACHINE_1 = C_SWITCH_X_MACHINE
+C_SWITCH_X_SYSTEM_1 = C_SWITCH_X_SYSTEM
 really-oldXMenu:
 	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS \
     CC='${CC}' CFLAGS='${CFLAGS}' MAKE='${MAKE}' \
-    "C_SWITCH_SITE=$(C_SWITCH_SITE_1)" \
     "C_SWITCH_X_SITE=$(C_SWITCH_X_SITE_1)" \
     "C_SWITCH_X_MACHINE=$(C_SWITCH_X_MACHINE_1)" \
+    "C_SWITCH_X_SYSTEM=$(C_SWITCH_X_SYSTEM_1)" \
+    "C_SWITCH_SITE=$(C_SWITCH_SITE_1)" \
     "C_SWITCH_MACHINE=$(C_SWITCH_MACHINE_1)" \
     "C_SWITCH_SYSTEM=$(C_SWITCH_SYSTEM_1)"
 	@true  /* make -t should not create really-oldXMenu.  */
@@ -658,7 +664,7 @@ cm.o : cm.c cm.h termhooks.h $(config_h)
 cmds.o : cmds.c syntax.h buffer.h commands.h $(config_h) 
 pre-crt0.o : pre-crt0.c
 crt0.o : crt0.c $(config_h)
-	$(CC) -c $(ALL_CFLAGS) C_SWITCH_ASM ${srcdir}/crt0.c
+	CRT0_COMPILE ${srcdir}/crt0.c
 dired.o : dired.c commands.h buffer.h $(config_h) regex.h
 dispnew.o : dispnew.c commands.h frame.h window.h buffer.h dispextern.h \
    termchar.h termopts.h termhooks.h cm.h disptab.h systty.h systime.h $(config_h)
@@ -722,15 +728,9 @@ xrdb.o : xrdb.c $(config_h)
 
 /* The files of Lisp proper */
 
-/* We're trying to track down what we suspect is a hardware problem on
-   one of our machines.  This should expand to the argument
-   -DDEBUG_MOLE on mole.gnu.ai.mit.edu, and to the empty string on all
-   other machines.  */
-DEBUG_MOLE=`("${srcdir}/gnu-hp300") 2>/dev/null`
-
 alloc.o : alloc.c frame.h window.h buffer.h  puresize.h syssignal.h \
  blockinput.h $(config_h) INTERVAL_SRC
-	$(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) ${DEBUG_MOLE} $<
+	$(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) $<
 
 bytecode.o : bytecode.c buffer.h $(config_h) 
 data.o : data.c buffer.h puresize.h syssignal.h $(config_h)

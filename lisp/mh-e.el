@@ -48,7 +48,7 @@
 ;;; Modified by James Larus, BBN, July 1984 and UCB, 1984 & 1985.
 ;;; Rewritten for GNU Emacs, James Larus 1985.  larus@ginger.berkeley.edu
 ;;; Modified by Stephen Gildea 1988.  gildea@bbn.com
-(defconst mh-e-RCS-id "$Header: /home/fsf/rms/e19/lisp/RCS/mh-e.el,v 1.14 1993/07/17 00:18:04 rms Exp $")
+(defconst mh-e-RCS-id "$Header: /home/fsf/rms/e19/lisp/RCS/mh-e.el,v 1.16 1993/08/09 00:08:55 rms Exp $")
 
 ;;; Code:
 

@@ -570,11 +570,12 @@ prev_frame (frame, minibuf)
     return prev;
 }
 
+
 DEFUN ("next-frame", Fnext_frame, Snext_frame, 0, 2, 0,
   "Return the next frame in the frame list after FRAME.\n\
 By default, skip minibuffer-only frames.\n\
 If omitted, FRAME defaults to the selected frame.\n\
-If optional argument MINIFRAME is non-nil, include minibuffer-only frames.\n\
+If optional argument MINIFRAME is nil, exclude minibuffer-only frames.\n\
 If MINIFRAME is a window, include only frames using that window for their\n\
 minibuffer.\n\
 If MINIFRAME is non-nil and not a window, include all frames.")
@@ -591,13 +592,36 @@ If MINIFRAME is non-nil and not a window, include all frames.")
   return next_frame (frame, miniframe);
 }
 
+DEFUN ("previous-frame", Fprevious_frame, Sprevious_frame, 0, 2, 0,
+  "Return the previous frame in the frame list before FRAME.\n\
+By default, skip minibuffer-only frames.\n\
+If omitted, FRAME defaults to the selected frame.\n\
+If optional argument MINIFRAME is nil, exclude minibuffer-only frames.\n\
+If MINIFRAME is a window, include only frames using that window for their\n\
+minibuffer.\n\
+If MINIFRAME is non-nil and not a window, include all frames.")
+  (frame, miniframe)
+     Lisp_Object frame, miniframe;
+{
+  Lisp_Object tail;
+
+  if (NILP (frame))
+    XSET (frame, Lisp_Frame, selected_frame);
+  else
+    CHECK_LIVE_FRAME (frame, 0);
+
+  return prev_frame (frame, miniframe);
+}
+
 
-DEFUN ("delete-frame", Fdelete_frame, Sdelete_frame, 0, 1, "",
+DEFUN ("delete-frame", Fdelete_frame, Sdelete_frame, 0, 2, "",
   "Delete FRAME, permanently eliminating it from use.\n\
 If omitted, FRAME defaults to the selected frame.\n\
-A frame may not be deleted if its minibuffer is used by other frames.")
-  (frame)
-     Lisp_Object frame;
+A frame may not be deleted if its minibuffer is used by other frames.\n\
+Normally, you may not delete a frame if all other frames are invisible,\n\
+but if the second optional argument FORCE is non-nil, you may do so.")
+  (frame, force)
+     Lisp_Object frame, force;
 {
   struct frame *f;
 
@@ -615,9 +639,29 @@ A frame may not be deleted if its minibuffer is used by other frames.")
   if (! FRAME_LIVE_P (f))
     return Qnil;
 
-  /* Are there any other frames besides this one?  */
-  if (f == selected_frame && EQ (next_frame (frame, Qt), frame))
-    error ("Attempt to delete the only frame");
+  /* If all other frames are invisible, refuse to delete.
+     (Exception: allow deleting the terminal frame when using X.)  */
+  if (f == selected_frame && NILP (force))
+    {
+      Lisp_Object frames;
+      int count = 0;
+
+      for (frames = Vframe_list;
+	   CONSP (frames);
+	   frames = XCONS (frames)->cdr)
+	{
+	  Lisp_Object this = XCONS (frames)->car;
+
+	  if (FRAME_VISIBLE_P (XFRAME (this))
+	      || FRAME_ICONIFIED_P (XFRAME (this))
+	      /* Allow deleting the terminal frame when at least
+		 one X frame exists!  */
+	      || FRAME_X_P (XFRAME (this)) && !FRAME_X_P (f))
+	    count++;
+	}
+      if (count == 1)
+	error ("Attempt to delete the only frame");
+    }
 
   /* Does this frame have a minibuffer, and is it the surrogate
      minibuffer for any other frame?  */
@@ -1352,9 +1396,9 @@ DEFUN ("set-frame-size", Fset_frame_size, Sset_frame_size, 3, 3, 0,
 DEFUN ("set-frame-position", Fset_frame_position, 
        Sset_frame_position, 3, 3, 0,
   "Sets position of FRAME in pixels to XOFFSET by YOFFSET.\n\
-If XOFFSET or YOFFSET are negative, they are interpreted relative to\n\
-the leftmost or bottommost position FRAME could occupy without going\n\
-off the screen.")
+This is actually the position of the upper left corner of the frame.\n\
+Negative values for XOFFSET or YOFFSET are interpreted relative to\n\
+the rightmost or bottommost possible position (that stays within the screen).")
   (frame, xoffset, yoffset)
      Lisp_Object frame, xoffset, yoffset;
 {
@@ -1468,6 +1512,7 @@ For values specific to the separate minibuffer frame, see\n\
   defsubr (&Sframe_selected_window);
   defsubr (&Sframe_list);
   defsubr (&Snext_frame);
+  defsubr (&Sprevious_frame);
   defsubr (&Sdelete_frame);
   defsubr (&Smouse_position);
   defsubr (&Sset_mouse_position);

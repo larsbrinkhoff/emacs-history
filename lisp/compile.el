@@ -39,12 +39,12 @@
 
 (defvar compilation-error-list nil
   "List of error message descriptors for visiting erring functions.
-Each error descriptor is a cons (or nil).  Its car is a marker
-pointing to an error message.  If its cdr is a marker, it points to
-the text of the line the message is about.  If its cdr is a cons, that
-cons's car is the name of the file the message is about, and its cdr
-is the number of the line the message is about.  Or its cdr may be nil
-if that error is not interesting.
+Each error descriptor is a cons (or nil).  Its car is a marker pointing to
+an error message.  If its cdr is a marker, it points to the text of the
+line the message is about.  If its cdr is a cons, that cons's car is a cons
+\(DIRECTORY . FILE\), specifying the file the message is about, and its cdr
+is the number of the line the message is about.  Or its cdr may be nil if
+that error is not interesting.
 
 The value may be t instead of a list; this means that the buffer of
 error messages should be reparsed the next time the list of errors is wanted.
@@ -137,7 +137,9 @@ of[ \t]+\"?\\([^\"\n]+\\)\"?:" 3 2)
     ;;	"foo.f", line 3: Error: syntax error near end of statement
     ;; IBM RS6000:
     ;;  "vvouch.c", line 19.5: 1506-046 (S) Syntax error.
-    ("\"\\([^,\" \n\t]+\\)\", line \\([0-9]+\\)[:.]" 1 2)
+    ;; Unknown compiler:
+    ;;  File "foobar.ml", lines 5-8, characters 20-155: blah blah
+    ("\"\\([^,\" \n\t]+\\)\", lines? \\([0-9]+\\)[:.,-]" 1 2)
 
     ;; MIPS RISC CC - the one distributed with Ultrix:
     ;;	ccom: Error: foo.c, line 2: syntax error
@@ -389,6 +391,7 @@ Runs `compilation-mode-hook' with `run-hooks' (which see)."
   "Non-nil when in compilation-minor-mode.
 In this minor mode, all the error-parsing commands of the
 Compilation major mode are available.")
+(make-variable-buffer-local 'compilation-minor-mode)
 
 (or (assq 'compilation-minor-mode minor-mode-alist)
     (setq minor-mode-alist (cons '(compilation-minor-mode " Compilation")
@@ -398,6 +401,7 @@ Compilation major mode are available.")
 					   compilation-minor-mode-map)
 				     minor-mode-map-alist)))
 
+;;;###autoload
 (defun compilation-minor-mode (&optional arg)
   "Toggle compilation minor mode.
 With arg, turn compilation mode on if and only if arg is positive.
@@ -507,11 +511,22 @@ Does NOT find the source line like \\[next-error]."
   (compilation-next-error (- n)))
 
 
-(defun compile-file-of-error (data)
+;; Given an elt of `compilation-error-list', return an object representing
+;; the referenced file which is equal to (but not necessarily eq to) what
+;; this function would return for another error in the same file.
+(defsubst compilation-error-filedata (data)
   (setq data (cdr data))
   (if (markerp data)
-      (buffer-file-name (marker-buffer data))
+      (marker-buffer data)
     (car data)))
+
+;; Return a string describing a value from compilation-error-filedata.
+;; This value is not necessarily useful as a file name, but should be
+;; indicative to the user of what file's errors are being referred to.
+(defsubst compilation-error-filedata-file-name (filedata)
+  (if (bufferp filedata)
+      (buffer-file-name filedata)
+    (car filedata)))
 
 (defun compilation-next-file (n)
   "Move point to the next error for a different file than the current one."
@@ -521,7 +536,7 @@ Does NOT find the source line like \\[next-error]."
   (setq compilation-last-buffer (current-buffer))
 
   (let ((reversed (< n 0))
-	errors file)
+	errors filedata)
 
     (if (not reversed)
 	(setq errors (or (compile-error-at-point)
@@ -539,19 +554,23 @@ Does NOT find the source line like \\[next-error]."
 	(setq errors (cdr errors))))
 
     (while (> n 0)
-      (setq file (compile-file-of-error (car errors)))
+      (setq filedata (compilation-error-filedata (car errors)))
 
-      ;; Skip past the other errors for this file.
-      (while (string= file
-		      (compile-file-of-error
-		       (car (or errors
-				(if reversed
-				    (error "%s the first erring file" file)
-				  (let ((compilation-error-list nil))
-				    ;; Parse some more.
-				    (compile-reinitialize-errors nil nil 2)
-				    (setq errors compilation-error-list)))
-				(error "%s is the last erring file" file)))))
+      ;; Skip past the following errors for this file.
+      (while (equal filedata
+		    (compilation-error-filedata
+		     (car (or errors
+			      (if reversed
+				  (error "%s the first erring file"
+					 (compilation-error-filedata-file-name
+					  filedata))
+				(let ((compilation-error-list nil))
+				  ;; Parse some more.
+				  (compile-reinitialize-errors nil nil 2)
+				  (setq errors compilation-error-list)))
+			      (error "%s is the last erring file" 
+				     (compilation-error-filedata-file-name
+				      filedata))))))
 	(setq errors (cdr errors)))
 
       (setq n (1- n)))
@@ -741,10 +760,7 @@ See variables `compilation-parse-errors-function' and
 		(or (markerp (cdr next-error))
 		    ;; This error has a filename/lineno pair.
 		    ;; Find the file and turn it into a marker.
-		    (let* ((fileinfo
-			    (cons (file-name-directory (car (cdr next-error)))
-				  (file-name-nondirectory
-				   (car (cdr next-error)))))
+		    (let* ((fileinfo (car (cdr next-error)))
 			   (buffer (compilation-find-file (cdr fileinfo)
 							  (car fileinfo)
 							  (car next-error))))
@@ -1030,12 +1046,9 @@ See variable `compilation-parse-errors-function' for the interface it uses."
 	     ;; Extract the file name and line number from the error message.
 	     (let ((beginning-of-match (match-beginning 0)) ;looking-at nukes
 		   (filename
-		    (save-excursion
-		      (goto-char (match-end (nth 1 alist)))
-		      (skip-chars-backward " \t")
-		      (let ((name (buffer-substring (match-beginning (nth 1 alist))
-						    (point))))
-			(expand-file-name name default-directory))))
+		    (cons default-directory
+			  (buffer-substring (match-beginning (nth 1 alist))
+					    (match-end (nth 1 alist)))))
 		   (linenum (save-restriction
 			      (narrow-to-region
 			       (match-beginning (nth 2 alist))

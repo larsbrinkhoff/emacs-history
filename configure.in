@@ -203,7 +203,6 @@ Set it to either \`yes' or \`no'."
             val=`eval echo '$'$index`
 	  fi
 	  x_includes="${val}"
-	  C_SWITCH_X_SITE="-I\"${x_includes}\""
         ;;
 	"x_libraries" )
 	  ## If the value was omitted, get it from the next argument.
@@ -219,7 +218,6 @@ Set it to either \`yes' or \`no'."
             val=`eval echo '$'$index`
 	  fi
 	  x_libraries="${val}"
-	  LD_SWITCH_X_SITE="-L\"${x_libraries}\""
         ;;
 
 	## Should this use the "development configuration"?
@@ -381,7 +379,7 @@ done
 
 ### Canonicalize the configuration name.
 echo "Checking the configuration name."
-if configuration=`${srcdir}/config.sub "${configuration}"` ; then : ; else
+if canonical=`${srcdir}/config.sub "${configuration}"` ; then : ; else
   exit $?
 fi
 
@@ -409,7 +407,7 @@ fi
 ### confusion between `system' and `release' levels'."
 
 machine='' opsys='' unported='false'
-case "${configuration}" in
+case "${canonical}" in
 
   ## Alliant machines
   ## Strictly speaking, we need the version of the alliant operating
@@ -605,6 +603,9 @@ case "${configuration}" in
   i386-ibm-aix1.[23] | i386-ibm-aix* )
     machine=ibmps2-aix opsys=usg5-3
   ;;
+  i370-ibm-aix*)
+    machine=ibm370aix opsys=usg5-3
+  ;;
   rs6000-ibm-aix3.1 )
     machine=ibmrs6000 opsys=aix3-1
   ;;
@@ -778,7 +779,7 @@ case "${configuration}" in
 
   ## Suns
   *-sun-sunos* | *-sun-bsd* | *-sun-solaris* )
-    case "${configuration}" in
+    case "${canonical}" in
       m68*-sunos1* )	machine=sun1 ;;
       m68*-sunos2* )	machine=sun2 ;;
       m68* )		machine=sun3 ;;
@@ -786,7 +787,7 @@ case "${configuration}" in
       sparc* )		machine=sparc ;;
       * )		unported=true ;;
     esac
-    case "${configuration}" in
+    case "${canonical}" in
       *-sunos4.0*	  ) opsys=sunos4-0 ;;
       *-sunos4.1.3*	  ) opsys=sunos4-1-3 ;;
       *-sunos4* | *-sunos ) opsys=sunos4-1 ;;
@@ -842,7 +843,7 @@ case "${configuration}" in
   ## Vaxen.
   vax-dec-* )
     machine=vax
-    case "${configuration}" in
+    case "${canonical}" in
       *-bsd4.1 ) 					opsys=bsd4-1 ;;
       *-bsd4.2 | *-ultrix[0-3].* | *-ultrix4.0 )	opsys=bsd4-2 ;;
       *-bsd4.3 | *-ultrix* ) 				opsys=bsd4-3 ;;
@@ -869,7 +870,7 @@ case "${configuration}" in
   ## Intel 386 machines where we don't care about the manufacturer
   i[34]86-*-* )
     machine=intel386
-    case "${configuration}" in
+    case "${canonical}" in
       *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
       *-isc2.2 )		opsys=isc2-2 ;;
       *-isc* )			opsys=isc3-0 ;;
@@ -896,7 +897,7 @@ esac
 ### runs, it's cleaner to make it explicit in the case statement
 ### above.
 if [ x"${opsys}" = x ]; then
-  case "${configuration}" in
+  case "${canonical}" in
     *-bsd4.[01] )	opsys=bsd4-1 ;;
     *-bsd4.2 )		opsys=bsd4-2 ;;
     *-bsd4.3 )		opsys=bsd4-3 ;;
@@ -913,7 +914,7 @@ if [ x"${opsys}" = x ]; then
 fi
 
 if $unported ; then
-  (echo "${progname}: Emacs hasn't been ported to \`${configuration}' systems."
+  (echo "${progname}: Emacs hasn't been ported to \`${canonical}' systems."
    echo "${progname}: Check \`etc/MACHINES' for recognized configuration names."
   ) >&2
   exit 1
@@ -952,15 +953,8 @@ AC_HAVE_HEADERS(sys/timeb.h sys/time.h)
 AC_STDC_HEADERS
 AC_TIME_WITH_SYS_TIME
 
-dnl checks for library files
-AC_HAVE_LIBRARY(-ldnet)
-
 dnl checks for typedefs
 AC_RETSIGTYPE
-
-dnl checks for functions
-AC_ALLOCA
-AC_HAVE_FUNCS(gettimeofday gethostname dup2 rename closedir)
 
 dnl checks for structure members
 AC_STRUCT_TM
@@ -998,31 +992,48 @@ case "${with_x10}" in
   ;;
 esac
 
-### If the user hasn't specified where we should find X, try
-### letting autoconf figure that out.
-if [ "0${x_includes}" == 0 ] && [ "0${x_libraries}" == 0 ]; then
-  ]
-    AC_FIND_X
-  [
-fi
-
 case "${window_system}" in
   "none" | "x11" | "x10" ) ;;
   "" )
-    echo "  No window system specified.  Looking for X11."
-    window_system=none
-    if [ -r /usr/lib/libX11.a \
+    # --x-includes or --x-libraries implies --with-x11.
+    if [ -n "${x_includes}" ] || [ -n "${x_libraries}" ]; then
+      window_system=x11
+    else
+      echo "  No window system specified.  Looking for X11."
+      # If the user didn't specify a window system and we found X11, use it.
+      if [ -r /usr/lib/libX11.a \
 	 -o -d /usr/include/X11 \
          -o -d /usr/X386/include \
 	 -o -d ${x_includes}/X11 ]; then
-      window_system=x11
+        window_system=x11
+      fi
     fi
   ;;
   * )
-    echo "Don't specify the window system more than once." >&2
+    echo "Don't specify a window system more than once." >&2
     exit 1
   ;;
 esac
+
+case "${window_system}" in
+  "" | "x11" )
+    ### If the user hasn't specified where we should find X, try
+    ### letting autoconf figure that out.
+    if [ -z "${x_includes}" ] && [ -z "${x_libraries}" ]; then
+      ]
+      AC_FIND_X
+      [
+    fi
+    if [ -n "${x_includes}" ] || [ -n "${x_libraries}" ]; then
+      window_system=x11
+    fi
+  ;;
+esac
+
+[ -z "${window_system}" ] && window_system=none
+
+[ -n "${x_libraries}" ] && LD_SWITCH_X_SITE="-L${x_libraries}"
+[ -n "${x_includes}" ] && C_SWITCH_X_SITE="-I${x_includes}"
 
 case "${window_system}" in
   x11 )
@@ -1075,6 +1086,19 @@ echo '
 #endif
 @configure@ libsrc_libs=LIBS_MACHINE LIBS_SYSTEM
 @configure@ c_switch_system=C_SWITCH_SYSTEM
+
+#ifndef LIB_X11_LIB
+#define LIB_X11_LIB
+#endif
+
+#ifndef LIBX11_MACHINE
+#define LIBX11_MACHINE
+#endif
+
+#ifndef LIBX11_SYSTEM
+#define LIBX11_SYSTEM
+#endif
+@configure@ LIBX=LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
 
 #ifdef UNEXEC
 @configure@ unexec=UNEXEC
@@ -1129,33 +1153,43 @@ fi
 LISP_FLOAT_TYPE=yes
 
 
-#### Add the X libraries to the list, and check for some functions found there.
-CFLAGS_save="$CFLAGS"
-CFLAGS="${CFLAGS} ${LD_SWITCH_X_SITE}"
-]
-AC_HAVE_LIBRARY(-lXbsd)
-[
-LIBS_save="$LIBS"
-if [ "${HAVE_X11}" = "yes" ] ; then
-  LIBS="-lX11 ${LIBS}"
-fi
-]
-AC_HAVE_FUNCS(XrmSetDatabase random)
-[
-CFLAGS="$CFLAGS_save"
-LIBS="$LIBS_save"
+#### Add the libraries to LIBS and check for some functions.
 
-case "${window_system}:${LIBS}" in
-  x11:*-lXbsd* )
-    if [ -d /usr/X386/include ]; then
+]
+DEFS="$c_switch_system $DEFS"
+LIBS="$libsrc_libs"
+
+dnl If found, this defines HAVE_LIBDNET, which m/pmax.h checks,
+dnl and also adds -ldnet to LIBS, which Autoconf uses for checks.
+AC_HAVE_LIBRARY(-ldnet)
+
+AC_HAVE_LIBRARY(-lXbsd, LD_SWITCH_X_SITE="$LD_SWITCH_X_SITE -lXbsd"
+    if test -d /usr/X386/include; then
       HAVE_XFREE386=yes
-      if [ "${C_SWITCH_X_SITE}" = "" ]; then
-	C_SWITCH_X_SITE="-I/usr/X386/include"
-      fi
-    fi
-  ;;
-esac
+      test -z "${C_SWITCH_X_SITE}" && C_SWITCH_X_SITE="-I/usr/X386/include"
+    fi)
 
+if test "${HAVE_X11}" = "yes"; then
+  DEFS="$C_SWITCH_X_SITE $DEFS"
+  LIBS="$LD_SWITCH_X_SITE $LIBX $LIBS"
+  AC_HAVE_FUNCS(XrmSetDatabase XScreenResourceString)
+fi
+
+AC_ALLOCA
+AC_HAVE_FUNCS(gettimeofday gethostname dup2 rename closedir mkdir rmdir random bcopy logb frexp)
+
+ok_so_far=true
+AC_FUNC_CHECK(socket, , ok_so_far=)
+if test -n "$ok_so_far"; then
+  AC_HEADER_CHECK(netinet/in.h, , ok_so_far=)
+fi
+if test -n "$ok_so_far"; then
+  AC_HEADER_CHECK(arpa/inet.h, , ok_so_far=)
+fi
+if test -n "$ok_so_far"; then
+  AC_DEFINE(HAVE_INET_SOCKETS)
+fi
+[
 #### Find out which version of Emacs this is.
 version=`grep 'defconst[	 ]*emacs-version' ${srcdir}/lisp/version.el \
 	 | sed -e 's/^.*"\([0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`
@@ -1165,8 +1199,15 @@ if [ x"${version}" = x ]; then
   exit 1
 fi
 
+if [ -f /usr/lpp/X11/bin/smt.exp ]; then
+  ]
+  AC_DEFINE(HAVE_AIX_SMT_EXP)
+  [
+fi
+
 
 #### Specify what sort of things we'll be editing into Makefile and config.h.
+### Use configuration here uncanonicalized to avoid exceeding size limits.
 ]
 AC_SUBST(configuration)
 AC_SUBST(version)
@@ -1214,7 +1255,7 @@ fi
 #### Report on what we decided to do.
 echo "
 
-Configured for \`${configuration}'.
+Configured for \`${canonical}'.
 
   Where should the build process find the source code?    ${srcdir}
   What operating system and machine description files should Emacs use?
@@ -1227,5 +1268,11 @@ Configured for \`${configuration}'.
   Where do we find X Windows libraries?                   }${x_libraries}
 
 "
+
+# Remove any trailing slashes in these variables.
+test -n "${prefix}" &&
+  prefix=`echo "${prefix}" | sed 's,\([^/]\)/*$,\1,'`
+test -n "${exec_prefix}" &&
+  exec_prefix=`echo "${exec_prefix}" | sed 's,\([^/]\)/*$,\1,'`
 ]
 AC_OUTPUT(Makefile)

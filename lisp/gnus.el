@@ -1,6 +1,9 @@
 ;;; GNUS: an NNTP-based News Reader for GNU Emacs
 ;; Copyright (C) 1987, 1988, 1989, 1990, 1993 Free Software Foundation, Inc.
-;; $Header: /home/fsf/rms/e19/lisp/RCS/gnus.el,v 1.23 1993/07/17 18:56:09 rms Exp $
+
+;; Author: Masanobu UMEDA <umerin@mse.kyutech.ac.jp>
+;; Version: $Header: /home/fsf/rms/e19/lisp/RCS/gnus.el,v 1.26 1993/07/28 08:35:38 rms Exp $
+;; Keywords: news
 
 ;; This file is part of GNU Emacs.
 
@@ -80,38 +83,23 @@
 ;;     If you are not allowed to create the Info file to the standard
 ;;     Info-directory, create it in your private directory and set the
 ;;     variable gnus-info-directory to that directory.
-
-;; GNUS Mailing List:
-;; There are two mailing lists for GNUS lovers in the world:
 ;;
-;;	info-gnus@flab.fujitsu.co.jp, and
-;;	info-gnus-english@tut.cis.ohio-state.edu.
-;;
-;; They are intended to exchange useful information about GNUS, such
-;; as bug fixes, useful hooks, and extensions.  The major difference
-;; between the lists is what the official language is.  Both Japanese
-;; and English are available in info-gnus, while English is only
-;; available in info-gnus-english. There is no need to subscribe to
-;; info-gnus if you cannot read Japanese messages, because most of the
-;; discussion and important announcements will be sent to
-;; info-gnus-english. Moreover, if you can read gnu.emacs.gnus
-;; newsgroup of USENET, you need not, either. info-gnus-english and
-;; gnu.emacs.gnus are linked each other.
-;;
-;; Please send subscription request to:
-;;
-;; 	info-gnus-request@flab.fujitsu.co.jp, or
-;;	info-gnus-english-request@cis.ohio-state.edu
+;; For getting more information about GNUS, consult USENET newsgorup
+;; gnu.emacs.gnus.
 
 ;; TO DO:
 ;; (1) Incremental update of active info.
-;; (2) GNUS own poster.
-;; (3) Multi-GNUS (Talking to many hosts same time).
-;; (4) Asynchronous transmission of large messages.
+;; (2) Asynchronous transmission of large messages.
+
+;;; Code:
 
 (provide 'gnus)
 (require 'nntp)
 (require 'mail-utils)
+
+(defvar gnus-default-nntp-server nil
+  "*Specify default NNTP server.
+This variable should be defined in paths.el.")
 
 (defvar gnus-nntp-server (or (getenv "NNTPSERVER") gnus-default-nntp-server)
   "*The name of the host running NNTP server.
@@ -124,10 +112,10 @@ Initialized from the NNTPSERVER environment variable.")
 Go to a local news spool if its value is nil.")
 
 (defvar gnus-startup-file "~/.newsrc"
-  "*Your .newsrc file. Use `.newsrc-SERVER' instead if exists.")
+  "*Your `.newsrc' file.  Use `.newsrc-SERVER' instead if exists.")
 
 (defvar gnus-signature-file "~/.signature"
-  "*Your .signature file. Use `.signature-DISTRIBUTION' instead if exists.")
+  "*Your `.signature' file.  Use `.signature-DISTRIBUTION' instead if exists.")
 
 (defvar gnus-use-cross-reference t
   "*Specifies what to do with cross references (Xref: field).
@@ -150,7 +138,7 @@ confirmation is required for selecting the newsgroup.")
 Initialized from the AUTHORCOPY environment variable.
 
 Articles are saved using a function specified by the the variable
-gnus-author-copy-saver (rmail-output is default) if a file name is
+`gnus-author-copy-saver' (`rmail-output' is default) if a file name is
 given.  Instead, if the first character of the name is `|', the
 contents of the article is piped out to the named program. It is
 possible to save an article in an MH folder as follows:
@@ -202,8 +190,9 @@ The function is called with NEWSGROUP, HEADERS, and optional LAST-FILE.")
   "*File name of a KILL file.")
 
 (defvar gnus-novice-user t
-  "*Non-nil means that you are a novice to USENET.  If non-nil,
-verbose messages may be displayed or your confirmations may be required.")
+  "*Non-nil means that you are a novice to USENET.
+If non-nil, verbose messages may be displayed
+or your confirmations may be required.")
 
 (defvar gnus-interactive-catchup t
   "*Require your confirmation when catching up a newsgroup if non-nil.")
@@ -212,7 +201,7 @@ verbose messages may be displayed or your confirmations may be required.")
   "*Newsgroup, subject, and distribution will be asked for if non-nil.")
 
 (defvar gnus-interactive-exit t
-  "*Require your confirmation when exiting gnus if non-nil.")
+  "*Require your confirmation when exiting GNUS if non-nil.")
 
 (defvar gnus-user-login-name nil
   "*The login name of the user.
@@ -233,8 +222,8 @@ Got from the NAME environment variable if undefined.")
 
 (defvar gnus-thread-hide-subtree nil
   "*Non-nil means hide thread subtrees initially.
-If non-nil, you have to run the command gnus-summary-show-thread by
-hand or by using gnus-select-article-hook to show hidden threads.")
+If non-nil, you have to run the command `gnus-summary-show-thread' by
+hand or by using `gnus-select-article-hook' to show hidden threads.")
 
 (defvar gnus-thread-hide-killed t
   "*Non-nil means hide killed thread subtrees automatically.")
@@ -247,7 +236,7 @@ If it is non-nil, some commands work with subjects do not work properly.")
   "*Indentation of thread subtrees.")
 
 (defvar gnus-ignored-newsgroups "^to\\..*$"
-  "*A regular expression used to ignore uninterested newsgroups in the active file.
+  "*A regexp to match uninteresting newsgroups in the active file.
 Any lines in the active file matching this regular expression are
 removed from the newsgroup list before anything else is done to it,
 thus making them effectively invisible.")
@@ -281,14 +270,14 @@ result must be a string excluding `[' and `]'.")
 (defvar gnus-auto-select-first t
   "*Select the first unread article automagically if non-nil.
 If you want to prevent automatic selection of the first unread article
-in some newsgroups, set the variable to nil in gnus-select-group-hook
-or gnus-apply-kill-hook.")
+in some newsgroups, set the variable to nil in `gnus-select-group-hook'
+or `gnus-apply-kill-hook'.")
 
 (defvar gnus-auto-select-next t
   "*Select the next newsgroup automagically if non-nil.
 If the value is t and the next newsgroup is empty, GNUS will exit
 Summary mode and go back to Group mode.  If the value is neither nil
-nor t, GNUS will select the following unread newsgroup. Especially, if
+nor t, GNUS will select the following unread newsgroup.  Especially, if
 the value is the symbol `quietly', the next unread newsgroup will be
 selected without any confirmations.")
 
@@ -301,7 +290,7 @@ selected without any confirmations.")
 (defvar gnus-auto-mail-to-author nil
   "*Insert `To: author' of the article when following up if non-nil.
 Mail is sent using the function specified by the variable
-gnus-mail-send-method.")
+`gnus-mail-send-method'.")
 
 (defvar gnus-break-pages t
   "*Break an article into pages if non-nil.
@@ -335,37 +324,36 @@ The function is expected to process current buffer as a MIME message.")
 (defvar gnus-mail-reply-method
   (function gnus-mail-reply-using-mail)
   "*Function to compose reply mail.
-The function gnus-mail-reply-using-mail uses usual sendmail mail
-program.  The function gnus-mail-reply-using-mhe uses mh-e mail
+The function `gnus-mail-reply-using-mail' uses usual sendmail mail
+program.  The function `gnus-mail-reply-using-mhe' uses the MH-E mail
 program.  You can use yet another program by customizing this variable.")
 
 (defvar gnus-mail-forward-method
   (function gnus-mail-forward-using-mail)
   "*Function to forward current message to another user.
-The function gnus-mail-reply-using-mail uses usual sendmail mail
-program. You can use yet another program by customizing this variable.")
+The function `gnus-mail-reply-using-mail' uses usual sendmail mail
+program.  You can use yet another program by customizing this variable.")
 
 (defvar gnus-mail-other-window-method
   (function gnus-mail-other-window-using-mail)
   "*Function to compose mail in other window.
-The function gnus-mail-other-window-using-mail uses usual sendmail
-mail program.  The function gnus-mail-other-window-using-mhe uses mh-e
+The function `gnus-mail-other-window-using-mail' uses the usual sendmail
+mail program.  The function `gnus-mail-other-window-using-mhe' uses the MH-E
 mail program.  You can use yet another program by customizing this variable.")
 
 (defvar gnus-mail-send-method send-mail-function
   "*Function to mail a message too which is being posted as an article.
-The message must have To: or Cc: field.  The value of the variable
-send-mail-function is the default function which uses sendmail mail
-program.")
+The message must have To: or Cc: field.  The default is copied from
+the variable `send-mail-function'.")
 
 (defvar gnus-subscribe-newsgroup-method
   (function gnus-subscribe-alphabetically)
   "*Function called with a newsgroup name when new newsgroup is found.
-The function gnus-subscribe-randomly inserts a new newsgroup a the
-beginning of newsgroups.  The function gnus-subscribe-alphabetically
+The function `gnus-subscribe-randomly' inserts a new newsgroup a the
+beginning of newsgroups.  The function `gnus-subscribe-alphabetically'
 inserts it in strict alphabetic order.  The function
-gnus-subscribe-hierarchically inserts it in hierarchical newsgroup
-order.  The function gnus-subscribe-interactively asks for your decision.")
+`gnus-subscribe-hierarchically' inserts it in hierarchical newsgroup
+order.  The function `gnus-subscribe-interactively' asks for your decision.")
 
 (defvar gnus-group-mode-hook nil
   "*A hook for GNUS Group Mode.")
@@ -405,109 +393,110 @@ If you want to run a special decoding program like nkf, use this hook.")
 If you want to sort Summary buffer by date and then by subject, you
 can use the following hook:
 
-(setq gnus-select-group-hook
-      (function
-       (lambda ()
-	 ;; First of all, sort by date.
-	 (gnus-keysort-headers
-	  (function string-lessp)
-	  (function
-	   (lambda (a)
-	     (gnus-sortable-date (gnus-header-date a)))))
-	 ;; Then sort by subject string ignoring `Re:'.
-	 ;; If case-fold-search is non-nil, case of letters is ignored.
-	 (gnus-keysort-headers
-	  (function string-lessp)
-	  (function
-	   (lambda (a)
-	     (if case-fold-search
-		 (downcase (gnus-simplify-subject (gnus-header-subject a) t))
-	       (gnus-simplify-subject (gnus-header-subject a) t)))))
-	 )))
+\(setq gnus-select-group-hook
+      (list
+       (function
+	(lambda ()
+	  ;; First of all, sort by date.
+	  (gnus-keysort-headers
+	   (function string-lessp)
+	   (function
+	    (lambda (a)
+	      (gnus-sortable-date (gnus-header-date a)))))
+	  ;; Then sort by subject string ignoring `Re:'.
+	  ;; If case-fold-search is non-nil, case of letters is ignored.
+	  (gnus-keysort-headers
+	   (function string-lessp)
+	   (function
+	    (lambda (a)
+	      (if case-fold-search
+		  (downcase (gnus-simplify-subject (gnus-header-subject a) t))
+		(gnus-simplify-subject (gnus-header-subject a) t)))))
+	  ))))
 
 If you'd like to simplify subjects like the
 `gnus-summary-next-same-subject' command does, you can use the
 following hook:
 
-(setq gnus-select-group-hook
-      (function
-       (lambda ()
-	 (mapcar (function
-		  (lambda (header)
-		    (nntp-set-header-subject
-		     header
-		     (gnus-simplify-subject
-		      (gnus-header-subject header) 're-only))))
-		 gnus-newsgroup-headers))))
+\(setq gnus-select-group-hook
+      (list
+       (function
+	(lambda ()
+	  (mapcar (function
+		   (lambda (header)
+		     (nntp-set-header-subject
+		      header
+		      (gnus-simplify-subject
+		       (gnus-header-subject header) 're-only))))
+		  gnus-newsgroup-headers)))))
 
 In some newsgroups author name is meaningless. It is possible to
 prevent listing author names in GNUS Summary buffer as follows:
 
-(setq gnus-select-group-hook
-      (function
-       (lambda ()
-	 (cond ((string-equal \"comp.sources.unix\" gnus-newsgroup-name)
-		(setq gnus-optional-headers
-		      (function gnus-optional-lines)))
-	       (t
-		(setq gnus-optional-headers
-		      (function gnus-optional-lines-and-from)))))))")
+\(setq gnus-select-group-hook
+      (list
+       (function
+	(lambda ()
+	  (cond ((string-equal \"comp.sources.unix\" gnus-newsgroup-name)
+		 (setq gnus-optional-headers
+		       (function gnus-optional-lines)))
+		(t
+		 (setq gnus-optional-headers
+		       (function gnus-optional-lines-and-from))))))))")
 
 (defvar gnus-select-article-hook
-  (function (lambda () (gnus-summary-show-thread)))
+  '(gnus-summary-show-thread)
   "*A hook called when an article is selected.
 The default hook shows conversation thread subtrees of the selected
-article automatically as follows:
-
-(setq gnus-select-article-hook
-      (function 
-       (lambda ()
-	 (gnus-summary-show-thread))))
+article automatically using `gnus-summary-show-thread'.
 
 If you'd like to run RMAIL on a digest article automagically, you can
 use the following hook:
 
-(setq gnus-select-article-hook
-      (function
-       (lambda ()
-	 (gnus-summary-show-thread)
-	 (cond ((string-equal \"comp.sys.sun\" gnus-newsgroup-name)
-		(gnus-summary-rmail-digest))
-	       ((and (string-equal \"comp.text\" gnus-newsgroup-name)
-		     (string-match \"^TeXhax Digest\"
-				   (gnus-header-subject gnus-current-headers)))
-		(gnus-summary-rmail-digest)
-		)))))")
+\(setq gnus-select-article-hook
+      (list
+       (function
+	(lambda ()
+	  (gnus-summary-show-thread)
+	  (cond ((string-equal \"comp.sys.sun\" gnus-newsgroup-name)
+		 (gnus-summary-rmail-digest))
+		((and (string-equal \"comp.text\" gnus-newsgroup-name)
+		      (string-match \"^TeXhax Digest\"
+				    (gnus-header-subject gnus-current-headers)))
+		 (gnus-summary-rmail-digest)
+		 ))))))")
 
 (defvar gnus-select-digest-hook
-  (function
-   (lambda ()
-     ;; Reply-To: is required by `undigestify-rmail-message'.
-     (or (mail-position-on-field "Reply-to" t)
-	 (progn
-	   (mail-position-on-field "Reply-to")
-	   (insert (gnus-fetch-field "From"))))))
+  (list
+   (function
+    (lambda ()
+      ;; Reply-To: is required by `undigestify-rmail-message'.
+      (or (mail-position-on-field "Reply-to" t)
+	  (progn
+	    (mail-position-on-field "Reply-to")
+	    (insert (gnus-fetch-field "From")))))))
   "*A hook called when reading digest messages using Rmail.
 This hook can be used to modify incomplete digest articles as follows
-(this is the default):
+\(this is the default):
 
-(setq gnus-select-digest-hook
-      (function
-       (lambda ()
-	 ;; Reply-To: is required by `undigestify-rmail-message'.
-	 (or (mail-position-on-field \"Reply-to\" t)
-	     (progn
-	       (mail-position-on-field \"Reply-to\")
-	       (insert (gnus-fetch-field \"From\")))))))")
+\(setq gnus-select-digest-hook
+      (list
+       (function
+	(lambda ()
+	  ;; Reply-To: is required by `undigestify-rmail-message'.
+	  (or (mail-position-on-field \"Reply-to\" t)
+	      (progn
+		(mail-position-on-field \"Reply-to\")
+		(insert (gnus-fetch-field \"From\"))))))))")
 
 (defvar gnus-rmail-digest-hook nil
   "*A hook called when reading digest messages using Rmail.
 This hook is intended to customize Rmail mode for reading digest articles.")
 
-(defvar gnus-apply-kill-hook (function gnus-apply-kill-file)
+(defvar gnus-apply-kill-hook '(gnus-apply-kill-file)
   "*A hook called when a newsgroup is selected and summary list is prepared.
 This hook is intended to apply a KILL file to the selected newsgroup.
-The function `gnus-apply-kill-file' is called defaultly.
+The function `gnus-apply-kill-file' is called by default.
 
 Since a general KILL file is too heavy to use only for a few
 newsgroups, I recommend you to use a lighter hook function. For
@@ -515,30 +504,33 @@ example, if you'd like to apply a KILL file to articles which contains
 a string `rmgroup' in subject in newsgroup `control', you can use the
 following hook:
 
-(setq gnus-apply-kill-hook
-      (function
-       (lambda ()
-	 (cond ((string-match \"control\" gnus-newsgroup-name)
-		(gnus-kill \"Subject\" \"rmgroup\")
-		(gnus-expunge \"X\"))))))")
+\(setq gnus-apply-kill-hook
+      (list
+       (function
+	(lambda ()
+	  (cond ((string-match \"control\" gnus-newsgroup-name)
+		 (gnus-kill \"Subject\" \"rmgroup\")
+		 (gnus-expunge \"X\")))))))")
 
 (defvar gnus-mark-article-hook
-  (function
-   (lambda ()
-     (or (memq gnus-current-article gnus-newsgroup-marked)
-	 (gnus-summary-mark-as-read gnus-current-article))
-     (gnus-summary-set-current-mark "+")))
+  (list
+   (function
+    (lambda ()
+      (or (memq gnus-current-article gnus-newsgroup-marked)
+	  (gnus-summary-mark-as-read gnus-current-article))
+      (gnus-summary-set-current-mark "+"))))
   "*A hook called when an article is selected at the first time.
 The hook is intended to mark an article as read (or unread)
 automatically when it is selected.
 
 If you'd like to mark as unread (-) instead, use the following hook:
 
-(setq gnus-mark-article-hook
-      (function
-       (lambda ()
-	 (gnus-summary-mark-as-unread gnus-current-article)
-	 (gnus-summary-set-current-mark \"+\"))))")
+\(setq gnus-mark-article-hook
+      (list
+       (function
+        (lambda ()
+	  (gnus-summary-mark-as-unread gnus-current-article)
+	  (gnus-summary-set-current-mark \"+\")))))")
 
 (defvar gnus-prepare-article-hook (list (function gnus-inews-insert-signature))
   "*A hook called after preparing body, but before preparing header fields.
@@ -605,8 +597,15 @@ use this; if non-nil, use no host name (user name only)")
 
 ;; Internal variables.
 
-(defconst gnus-version "GNUS 3.15"
+(defconst gnus-version "GNUS 4.1"
   "Version numbers of this version of GNUS.")
+
+(defconst gnus-emacs-version
+  (progn
+    (string-match "[0-9]*" emacs-version)
+    (string-to-int (substring emacs-version
+			      (match-beginning 0) (match-end 0))))
+  "Major version number of this emacs.")
 
 (defvar gnus-info-nodes
   '((gnus-group-mode		"(gnus)Newsgroup Commands")
@@ -1211,8 +1210,9 @@ If optional argument CONFIRM is non-nil, ask NNTP server."
 (defun gnus-group-startup-message ()
   "Insert startup message in current buffer."
   ;; Insert the message.
-  (insert "
-                   GNUS Version 3.15
+  (insert
+   (format "
+                   %s
 
          NNTP-based News Reader for GNU Emacs
 
@@ -1223,7 +1223,7 @@ know. I will fix your problems in the next release.
 Comments, suggestions, and bug fixes are welcome.
 
 Masanobu UMEDA
-umerin@mse.kyutech.ac.jp")
+umerin@mse.kyutech.ac.jp" gnus-version))
   ;; And then hack it.
   ;; 57 is the longest line.
   (indent-rigidly (point-min) (point-max) (/ (max (- (window-width) 57) 0) 2))
@@ -6569,9 +6569,14 @@ If optional argument RAWFILE is non-nil, the raw startup file is read."
     ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(.*\\)$"
     ;; Suggested by composer@bucsf.bu.edu (Jeff Kellem)
     ;; but no longer viable because of extensive backtracking in Emacs 19:
-    ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\(...\\)*.*\\)$" nil t)
+    ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\(...\\)*.*\\)$"
+    ;; but, the following causes trouble on some case:
+    ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\|[^ \t\n].*\\)$"
     (while (re-search-forward
-	    "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\|[^ \t\n].*\\)$" nil t)
+	    (if (= gnus-emacs-version 18)
+		"^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\(...\\)*.*\\)$"
+	      "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(.*\\)$")
+	    nil t)
       (setq newsgroup (buffer-substring (match-beginning 1) (match-end 1)))
       ;; Check duplications of newsgroups.
       ;; Note: Checking the duplications takes very long time.
@@ -6943,3 +6948,5 @@ otherwise, if FILE2 does not exist, the answer is t."
 ;;Local variables:
 ;;eval: (put 'gnus-eval-in-buffer-window 'lisp-indent-hook 1)
 ;;end:
+
+;;; gnus.el ends here

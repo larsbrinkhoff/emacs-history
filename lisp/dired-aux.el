@@ -43,7 +43,9 @@
 (defun dired-diff (file &optional switches)
   "Compare file at point with file FILE using `diff'.
 FILE defaults to the file at the mark.
-The prompted-for file is the first file given to `diff'."
+The prompted-for file is the first file given to `diff'.
+With prefix arg, prompt for second argument SWITCHES,
+ which is options for `diff'."
   (interactive
    (let ((default (if (mark t)
 		      (save-excursion (goto-char (mark t))
@@ -54,23 +56,28 @@ The prompted-for file is the first file given to `diff'."
 				       (concat "(default " default ") ")
 				     ""))
 			   (dired-current-directory) default t)
-	   (if (fboundp 'diff-read-switches)
-	       (diff-read-switches "Options for diff: ")))))
-  (if switches				; Emacs 19's diff has but two
-      (diff file (dired-get-filename t) switches) ; args (yet ;-)
-    (diff file (dired-get-filename t))))
+	   (if current-prefix-arg
+	       (read-string "Options for diff: "
+			    (if (stringp diff-switches)
+				diff-switches
+			      (mapconcat 'identity diff-switches " ")))))))
+  (diff file (dired-get-filename t) switches))
 
 ;;;###autoload
 (defun dired-backup-diff (&optional switches)
   "Diff this file with its backup file or vice versa.
 Uses the latest backup, if there are several numerical backups.
 If this file is a backup, diff it with its original.
-The backup file is the first file given to `diff'."
-  (interactive (list (if (fboundp 'diff-read-switches)
-			 (diff-read-switches "Diff with switches: "))))
-  (if switches
-      (diff-backup (dired-get-filename) switches)
-    (diff-backup (dired-get-filename))))
+The backup file is the first file given to `diff'.
+With prefix arg, prompt for argument SWITCHES which is options for `diff'."
+  (interactive
+    (if current-prefix-arg
+	(list (read-string "Options for diff: "
+			   (if (stringp diff-switches)
+			       diff-switches
+			     (mapconcat 'identity diff-switches " "))))
+      nil))
+  (diff-backup (dired-get-filename) switches))
 
 (defun dired-do-chxxx (attribute-name program op-symbol arg)
   ;; Change file attributes (mode, group, owner) of marked files and
@@ -473,7 +480,14 @@ and use this command with a prefix argument (the value does not matter)."
 	 (from-file (dired-get-filename))
 	 (new-file (dired-compress-file from-file)))
     (if new-file
-	(progn (dired-update-file-line new-file) nil)
+	(let ((start (point)))
+	  ;; Remove any preexisting entry for the name NEW-FILE.
+	  (condition-case nil
+	      (dired-remove-entry new-file)
+	    (error nil))
+	  (goto-char start)
+	  ;; Now replace the current line with an entry for NEW-FILE.
+	  (dired-update-file-line new-file) nil)
       (dired-log (concat "Failed to compress" from-file))
       from-file)))
 
@@ -496,12 +510,22 @@ and use this command with a prefix argument (the value does not matter)."
 	   (if (not (dired-check-process (concat "Uncompressing " file)
 					 "gunzip" file))
 	       (substring file 0 -3)))
+	  ;; For .z, try gunzip.  It might be an old gzip file,
+	  ;; or it might be from compact? pack? (which?) but gunzip handles
+	  ;; both.
+	  ((let (case-fold-search)
+	     (string-match "\\.z$" file))
+	   (if (not (dired-check-process (concat "Uncompressing " file)
+					 "gunzip" file))
+	       (substring file 0 -3)))
 	  (t
 	   ;;; Try gzip; if we don't have that, use compress.
 	   (condition-case nil
 	       (if (not (dired-check-process (concat "Compressing " file)
 					     "gzip" "-f" file))
-		   (concat file ".gz"))
+		   (cond ((file-exists-p (concat file ".gz"))
+			  (concat file ".gz"))
+			 (t (concat file ".z"))))
 	     (file-error
 	      (if (not (dired-check-process (concat "Compressing " file)
 					    "compress" "-f" file))

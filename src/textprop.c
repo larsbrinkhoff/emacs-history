@@ -43,20 +43,22 @@ Lisp_Object Qmouse_left;
 Lisp_Object Qmouse_entered;
 Lisp_Object Qpoint_left;
 Lisp_Object Qpoint_entered;
-Lisp_Object Qmodification_hooks;
-Lisp_Object Qinsert_in_front_hooks;
-Lisp_Object Qinsert_behind_hooks;
 Lisp_Object Qcategory;
 Lisp_Object Qlocal_map;
 
 /* Visual properties text (including strings) may have. */
 Lisp_Object Qforeground, Qbackground, Qfont, Qunderline, Qstipple;
-Lisp_Object Qinvisible, Qread_only;
+Lisp_Object Qinvisible, Qread_only, Qhidden;
+
+/* Sticky properties */
+Lisp_Object Qfront_sticky, Qrear_nonsticky;
 
 /* If o1 is a cons whose cdr is a cons, return non-zero and set o2 to
    the o1's cdr.  Otherwise, return zero.  This is handy for
    traversing plists.  */
 #define PLIST_ELT_P(o1, o2) (CONSP (o1) && CONSP ((o2) = XCONS (o1)->cdr))
+
+Lisp_Object Vinhibit_point_motion_hooks;
 
 
 /* Extract the interval at the position pointed to by BEGIN from
@@ -544,7 +546,36 @@ If the value is non-nil, it is a position greater than POS, never equal.")
     return Qnil;
 
   return next->position - (XTYPE (object) == Lisp_String);
-;
+}
+
+/* Return 1 if there's a change in some property between BEG and END.  */
+
+int
+property_change_between_p (beg, end)
+     int beg, end;
+{
+  register INTERVAL i, next;
+  Lisp_Object object, pos;
+
+  XSET (object, Lisp_Buffer, current_buffer);
+  XFASTINT (pos) = beg;
+
+  i = validate_interval_range (object, &pos, &pos, soft);
+  if (NULL_INTERVAL_P (i))
+    return 0;
+
+  next = next_interval (i);
+  while (! NULL_INTERVAL_P (next) && intervals_equal (i, next))
+    {
+      next = next_interval (next);
+      if (next->position >= end)
+	return 0;
+    }
+
+  if (NULL_INTERVAL_P (next))
+    return 0;
+
+  return 1;
 }
 
 DEFUN ("next-single-property-change", Fnext_single_property_change,
@@ -1181,6 +1212,11 @@ syms_of_textprop ()
 percentage by which the left interval tree should not differ from the right.");
   interval_balance_threshold = 8;
 
+  DEFVAR_LISP ("inhibit-point-motion-hooks", &Vinhibit_point_motion_hooks,
+	       "If nonnil, don't call the text property values of\n\
+`point-left' and `point-entered'.");
+  Vinhibit_point_motion_hooks = Qnil;
+	       
   /* Common attributes one might give text */
 
   staticpro (&Qforeground);
@@ -1197,10 +1233,16 @@ percentage by which the left interval tree should not differ from the right.");
   Qread_only = intern ("read-only");
   staticpro (&Qinvisible);
   Qinvisible = intern ("invisible");
+  staticpro (&Qhidden);
+  Qhidden = intern ("hidden");
   staticpro (&Qcategory);
   Qcategory = intern ("category");
   staticpro (&Qlocal_map);
   Qlocal_map = intern ("local-map");
+  staticpro (&Qfront_sticky);
+  Qfront_sticky = intern ("front-sticky");
+  staticpro (&Qrear_nonsticky);
+  Qrear_nonsticky = intern ("rear-nonsticky");
 
   /* Properties that text might use to specify certain actions */
 
@@ -1212,12 +1254,6 @@ percentage by which the left interval tree should not differ from the right.");
   Qpoint_left = intern ("point-left");
   staticpro (&Qpoint_entered);
   Qpoint_entered = intern ("point-entered");
-  staticpro (&Qmodification_hooks);
-  Qmodification_hooks = intern ("modification-hooks");
-  staticpro (&Qinsert_in_front_hooks);
-  Qinsert_in_front_hooks = intern ("insert-in-front-hooks");
-  staticpro (&Qinsert_behind_hooks);
-  Qinsert_behind_hooks = intern ("insert-behind-hooks");
 
   defsubr (&Stext_properties_at);
   defsubr (&Sget_text_property);
