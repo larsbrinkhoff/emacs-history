@@ -100,6 +100,7 @@ struct buffer buffer_local_types;
 
 Lisp_Object Fset_buffer ();
 void set_buffer_internal ();
+static void call_overlay_mod_hooks ();
 
 /* Alist of all buffer names vs the buffers. */
 /* This used to be a variable, but is no longer,
@@ -399,14 +400,15 @@ No argument or nil as argument means use the current buffer.")
 DEFUN ("buffer-local-variables", Fbuffer_local_variables,
   Sbuffer_local_variables, 0, 1, 0,
   "Return an alist of variables that are buffer-local in BUFFER.\n\
-Each element looks like (SYMBOL . VALUE) and describes one variable.\n\
+Most elements look like (SYMBOL . VALUE), describing one variable.\n\
+For a symbol that is locally unbound, just the symbol appears in the value.\n\
 Note that storing new VALUEs in these elements doesn't change the variables.\n\
 No argument or nil as argument means use current buffer as BUFFER.")
   (buffer)
      register Lisp_Object buffer;
 {
   register struct buffer *buf;
-  register Lisp_Object val;
+  register Lisp_Object result;
 
   if (NILP (buffer))
     buf = current_buffer;
@@ -416,23 +418,34 @@ No argument or nil as argument means use current buffer as BUFFER.")
       buf = XBUFFER (buffer);
     }
 
+  result = Qnil;
+
   {
     /* Reference each variable in the alist in our current buffer.
        If inquiring about the current buffer, this gets the current values,
        so store them into the alist so the alist is up to date.
        If inquiring about some other buffer, this swaps out any values
        for that buffer, making the alist up to date automatically.  */
-    register Lisp_Object tem;
-    for (tem = buf->local_var_alist; CONSP (tem); tem = XCONS (tem)->cdr)
+    register Lisp_Object tail;
+    for (tail = buf->local_var_alist; CONSP (tail); tail = XCONS (tail)->cdr)
       {
-	Lisp_Object v1 = Fsymbol_value (XCONS (XCONS (tem)->car)->car);
+	Lisp_Object val, elt;
+
+	elt = XCONS (tail)->car;
+
 	if (buf == current_buffer)
-	  XCONS (XCONS (tem)->car)->cdr = v1;
+	  val = find_symbol_value (XCONS (elt)->car);
+	else
+	  val = XCONS (elt)->cdr;
+
+	/* If symbol is unbound, put just the symbol in the list.  */
+	if (EQ (val, Qunbound))
+	  result = Fcons (XCONS (elt)->car, result);
+	/* Otherwise, put (symbol . value) in the list.  */
+	else
+	  result = Fcons (Fcons (XCONS (elt)->car, val), result);
       }
   }
-
-  /* Make a copy of the alist, to return it.  */
-  val = Fcopy_alist (buf->local_var_alist);
 
   /* Add on all the variables stored in special slots.  */
   {
@@ -446,12 +459,13 @@ No argument or nil as argument means use current buffer as BUFFER.")
 	if (mask == -1 || (buf->local_var_flags & mask))
 	  if (XTYPE (*(Lisp_Object *)(offset + (char *)&buffer_local_symbols))
 	      == Lisp_Symbol)
-	    val = Fcons (Fcons (*(Lisp_Object *)(offset + (char *)&buffer_local_symbols),
-				*(Lisp_Object *)(offset + (char *)buf)),
-			 val);
+	    result = Fcons (Fcons (*(Lisp_Object *)(offset + (char *)&buffer_local_symbols),
+				   *(Lisp_Object *)(offset + (char *)buf)),
+			    result);
       }
   }
-  return (val);
+
+  return result;
 }
 
 
@@ -1866,6 +1880,100 @@ DEFUN ("overlay-put", Foverlay_put, Soverlay_put, 3, 3, 0,
     = Fcons (prop, Fcons (value, plist));
 
   return value;
+}
+
+/* Run the modification-hooks of overlays that include
+   any part of the text in START to END.
+   Run the insert-before-hooks of overlay starting at END,
+   and the insert-after-hooks of overlay ending at START.  */
+
+void
+verify_overlay_modification (start, end)
+     Lisp_Object start, end;
+{
+  Lisp_Object prop, overlay, tail;
+  int insertion = EQ (start, end);
+
+  for (tail = current_buffer->overlays_before;
+       CONSP (tail);
+       tail = XCONS (tail)->cdr)
+    {
+      int startpos, endpos;
+      int ostart, oend;
+
+      overlay = XCONS (tail)->car;
+
+      ostart = OVERLAY_START (overlay);
+      oend = OVERLAY_END (overlay);
+      endpos = OVERLAY_POSITION (oend);
+      if (XFASTINT (start) > endpos)
+	break;
+      startpos = OVERLAY_POSITION (ostart);
+      if (XFASTINT (end) == startpos && insertion)
+	{
+	  prop = Foverlay_get (overlay, Qinsert_in_front_hooks);
+	  call_overlay_mod_hooks (prop, overlay, start, end);
+	}
+      if (XFASTINT (start) == endpos && insertion)
+	{
+	  prop = Foverlay_get (overlay, Qinsert_behind_hooks);
+	  call_overlay_mod_hooks (prop, overlay, start, end);
+	}
+      if (insertion
+	  ? (XFASTINT (start) > startpos && XFASTINT (end) < endpos)
+	  : (XFASTINT (start) >= startpos && XFASTINT (end) <= endpos))
+	{
+	  prop = Foverlay_get (overlay, Qmodification_hooks);
+	  call_overlay_mod_hooks (prop, overlay, start, end);
+	}
+    }
+
+  for (tail = current_buffer->overlays_after;
+       CONSP (tail);
+       tail = XCONS (tail)->cdr)
+    {
+      int startpos, endpos;
+      int ostart, oend;
+
+      overlay = XCONS (tail)->car;
+
+      ostart = OVERLAY_START (overlay);
+      oend = OVERLAY_END (overlay);
+      startpos = OVERLAY_POSITION (ostart);
+      if (XFASTINT (end) < startpos)
+	break;
+      if (XFASTINT (end) == startpos && insertion)
+	{
+	  prop = Foverlay_get (overlay, Qinsert_in_front_hooks);
+	  call_overlay_mod_hooks (prop, overlay, start, end);
+	}
+      if (XFASTINT (start) == endpos && insertion)
+	{
+	  prop = Foverlay_get (overlay, Qinsert_behind_hooks);
+	  call_overlay_mod_hooks (prop, overlay, start, end);
+	}
+      if (insertion
+	  ? (XFASTINT (start) > startpos && XFASTINT (end) < endpos)
+	  : (XFASTINT (start) >= startpos && XFASTINT (end) <= endpos))
+	{
+	  prop = Foverlay_get (overlay, Qmodification_hooks);
+	  call_overlay_mod_hooks (prop, overlay, start, end);
+	}
+    }
+}
+
+static void
+call_overlay_mod_hooks (list, overlay, start, end)
+     Lisp_Object list, overlay, start, end;
+{
+  struct gcpro gcpro1;
+  GCPRO1 (list);
+  while (!NILP (list))
+    {
+      call3 (Fcar (list), overlay, start, end);
+      list = Fcdr (list);
+    }
+  UNGCPRO;
 }
 
 /* Somebody has tried to store NEWVAL into the buffer-local slot with

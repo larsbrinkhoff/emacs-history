@@ -40,8 +40,14 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
     alpha:OSF1:1.*:*)
 	echo alpha-dec-osf${UNAME_RELEASE}
         exit 0 ;;
-    sun4*:SunOS:[5-9].*:*)
-	echo sparc-sun-solaris2
+    sun4*:SunOS:5.*:*)
+	echo sparc-sun-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
+	exit 0 ;;
+    sun4*:SunOS:6*:*)
+	# According to config.sub, this is the proper way to canonicalize
+	# SunOS6.  Hard to guess exactly what SunOS6 will be like, but
+	# it's likely to be more like Solaris than SunOS4.
+	echo sparc-sun-solaris3`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit 0 ;;
     sun4*:SunOS:*:*)
 	echo sparc-sun-sunos${UNAME_RELEASE}
@@ -76,6 +82,9 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
     *:BOSX:*:*)
 	echo rs6000-bull-bosx
 	exit 0 ;;
+    DPX/2?00:B.O.S.:*:*)
+	echo m68k-bull-sysv3
+	exit 0 ;;
     9000/31?:HP-UX:*:*)
 	echo m68000-hp-hpux
 	exit 0 ;;
@@ -87,6 +96,12 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	exit 0 ;;
     9000/8??:HP-UX:*:*)
 	echo hppa1.0-hp-hpux
+	exit 0 ;;
+    9000/8??:4.3bsd:*:* | 9000/8?7:4.3bsd:*:* )
+	echo hppa1.1-hp-bsd
+	exit 0 ;;
+    9000/8??:4.3bsd:*:*)
+	echo hppa1.0-hp-bsd
 	exit 0 ;;
     C1*:ConvexOS:*:*)
 	echo c1-convex-bsd
@@ -107,7 +122,11 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	echo ${UNAME_MACHINE}-unknown-linux
 	exit 0 ;;
     i[34]86:UNIX_SV:4.*:*)
-	echo i486-unknown-sysv4
+	if grep Novell /usr/include/link.h >/dev/null 2>/dev/null; then
+		echo ${UNAME_MACHINE}-univel-sysv${UNAME_RELEASE}
+	else
+		echo ${UNAME_MACHINE}-unknown-sysv${UNAME_RELEASE}
+	fi
 	exit 0 ;;
     i[34]86:*:3.2:*)
 	if /bin/uname -X 2>/dev/null >/dev/null ; then
@@ -124,9 +143,12 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	exit 0 ;;
     M680[234]0:*:R3V[567]*:*)
 	test -r /sysV68 && echo 'm68k-motorola-sysv' && exit 0 ;;
+    33??:*:4.0:*)
+	uname -p 2>/dev/null | grep 86 >/dev/null \
+	  && echo i486-ncr-sysv4 && exit 0 ;;
 esac
 
-echo '(No uname command or uname output not recognized.)' 1>&2
+#echo '(No uname command or uname output not recognized.)' 1>&2
 #echo "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" 1>&2
 
 cat >dummy.c <<EOF
@@ -141,6 +163,10 @@ main()
 
 #if defined(hp300) && !defined(hpux)
   printf("m68k-hp-bsd\n"); exit(0);
+#endif
+
+#if defined(NeXT)
+  printf("m68k-next-bsd\n"); exit(0);
 #endif
 
 #if defined (MULTIMAX) || defined (n16)
@@ -159,6 +185,19 @@ main()
   printf("i386-unknown-bsd\n"); exit(0);
 #endif
 
+#if defined(sequent)
+#if defined(i386)
+  printf("i386-sequent-dynix\n"); exit(0);
+#endif
+#if defined (ns32000)
+  printf("ns32k-sequent-dynix\n"); exit(0);
+#endif
+#endif
+
+#if defined(_SEQUENT_)
+  printf("i386-sequent-ptx\n"); exit(0);
+#endif
+
   exit (1);
 }
 EOF
@@ -166,6 +205,6 @@ EOF
 ${CC-cc} dummy.c -o dummy && ./dummy && rm dummy.c dummy && exit 0
 rm -f dummy.c dummy
 
-echo '(Unable to guess system type)' 1>&2
+#echo '(Unable to guess system type)' 1>&2
 
 exit 1

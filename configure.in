@@ -449,8 +449,13 @@ case "${configuration}" in
     machine=7300 opsys=usg5-2-2
   ;;
 
+  ## Bull dpx2
+  m68*-bull-sysv3* )
+    machine=dpx2 opsys=usg5-3
+  ;;
+
   ## Bull sps7
-  m68*-bull-sysv* )
+  m68*-bull-sysv2* )
     machine=sps7 opsys=usg5-2
   ;;
 
@@ -992,6 +997,14 @@ case "${with_x10}" in
     window_system=${window_system}x10
   ;;
 esac
+
+### If the user hasn't specified where we should find X, try
+### letting autoconf figure that out.
+if [ "0${x_includes}" == 0 ] && [ "0${x_libraries}" == 0 ]; then
+  ]
+    AC_FIND_X
+  [
+fi
 
 case "${window_system}" in
   "none" | "x11" | "x10" ) ;;

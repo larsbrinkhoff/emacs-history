@@ -1,3 +1,32 @@
+Thu Jul 15 22:03:13 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Version 19.17 released.
+
+	* etags.c (print_help): Break up the very long strings containing
+	the help message into shorter strings, to placate chintzy C
+	compilers which can't handle strings that long.
+
+	* wakeup.c: Use CPP tangle from autoconf manual to #include the
+	correct combination of <time.h> and <sys/time.h>.
+
+Thu Jul  8 18:10:44 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (alloca): removed all references to it.
+	(main): now calls xnew instead of alloca for portability.
+	(../src/config.h): included only if HAVE_CONFIG_H.
+	(const): void definition removed--config.h takes care of it.
+
+Thu Jul  8 18:35:28 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (consider_token): was `==', now is `='.
+	(consider_token): DEFUNs now treated like funcs in ctags mode.
+
+	* etags.c (LEVEL_OK_FOR_FUNCDEF): removed.
+	(C_entries): optimized the test that used LEVEL_OK_FOR_FUNCDEF.
+	(C_entries): removed a piece of useless code.
+	(C_entries): making typedef tags is delayed until a semicolon
+	is met.  This handles "typedef int X, Y, Z;" correctly.
+
 Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.16 released.

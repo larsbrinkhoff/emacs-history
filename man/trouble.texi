@@ -161,7 +161,7 @@ results.
   If a large portion of text appears to be missing at the beginning or
 end of the buffer, check for the word @samp{Narrow} in the mode line.
 If it appears, the text is still present, but temporarily off-limits.
-To make it accessible again, type @kbd{C-x w}.  @xref{Narrowing}.
+To make it accessible again, type @kbd{C-x n w}.  @xref{Narrowing}.
 
 @node Unasked-for Search
 @subsection Spontaneous Entry to Incremental Search

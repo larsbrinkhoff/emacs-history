@@ -1,3 +1,28 @@
+Sat Jul 17 19:53:06 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Version 19.17 released.
+
+	* Makefile.in (src/Makefile): Propagate C_SWITCH_SYSTEM to the src
+	directory's makefile.  This allows the invocation of CPP which
+	builds xmakefile to receive these switches.  The SunSoft C
+	preprocessor inserts spaces between tokens if it doesn't get the
+	-Xs flag requested in src/s/sol2.h.
+
+Mon Jul 12 14:43:38 1993  Frederic Pierresteguy  (F.Pierresteguy@frcl.bull.fr)
+
+	* configure.in (m68k-bull-sysv3): new config.
+
+Sat Jul 10 01:17:31 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in: Use the autoconf AC_FIND_X macro to try to find
+	the X Windows libraries.
+
+Wed Jul  7 05:57:15 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* make-dist (tempdir): Don't create lisp/forms-mode directory in
+	the distribution.  Those files aren't kept in their own
+	subdirectory any more.
+
 Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.16 released.

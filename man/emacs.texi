@@ -110,7 +110,7 @@ The Emacs Editor
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.16.
+corresponds to GNU Emacs version 19.17.
 
 @end ifinfo
 @menu
@@ -808,11 +808,11 @@ editors, all sharing common principles of organization.  For information on
 the underlying philosophy of Emacs and the lessons learned from its
 development, write for a copy of AI memo 519a, ``Emacs, the Extensible,
 Customizable Self-Documenting Display Editor'', to Publications Department,
-Artificial Intelligence Lab, 545 Tech Square, Cambridge, MA 02139, USA.  At
+Artificial Intelligence Lab, 545 Tech Square, Cambridge, MA 02139, USA@.  At
 last report they charge $2.25 per copy.  Another useful publication is LCS
 TM-165, ``A Cookbook for an Emacs'', by Craig Finseth, available from
 Publications Department, Laboratory for Computer Science, 545 Tech Square,
-Cambridge, MA 02139, USA.  The price today is $3.
+Cambridge, MA 02139, USA@.  The price today is $3.
 
 This edition of the manual is intended for use with GNU Emacs installed on
 Unix systems.  GNU Emacs can also be used on VMS systems, which have
@@ -850,7 +850,7 @@ General Public License.  In other words, the program must be free for you
 when you get it, not just free for the manufacturer.
 
 You can also order copies of GNU Emacs from the Free Software
-Foundation, on various magnetic media or on CD-ROM.  This is a
+Foundation, on various magnetic media or on CD-ROM@.  This is a
 convenient and reliable way to get a copy; it is also a good way to help
 fund our work.  (The Foundation has always received most of its funds in
 this way.)  An order form is included at the end of manuals printed by
@@ -1171,12 +1171,12 @@ of promoting the sharing and reuse of software generally.
 
 @item
 BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN
+FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW@.  EXCEPT WHEN
 OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
 PROVIDE THE PROGRAM ``AS IS'' WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
 OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS
-TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE@.  THE ENTIRE RISK AS
+TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU@.  SHOULD THE
 PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,
 REPAIR OR CORRECTION.
 
@@ -1222,7 +1222,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE@.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License

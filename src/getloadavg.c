@@ -436,7 +436,7 @@ static kvm_t *kd;
 
 /* Put the 1 minute, 5 minute and 15 minute load averages
    into the first NELEM elements of LOADAVG.
-   Return the number written (never more than 3),
+   Return the number written (never more than 3, but may be less than NELEM),
    or -1 if an error occurred.  */
 
 int
@@ -494,12 +494,8 @@ getloadavg (loadavg, nelem)
   struct processor_set_basic_info info;
   unsigned info_count;
 
-  if (nelem > 1)
-    {
-      /* We only know how to get the 1-minute average for this system.  */
-      errno = EINVAL;
-      return -1;
-    }
+  /* We only know how to get the 1-minute average for this system,
+     so even if the caller asks for more than 1, we only return 1.  */
 
   if (!getloadavg_initialized)
     {
@@ -699,7 +695,6 @@ getloadavg (loadavg, nelem)
   /* Get the address of LDAV_SYMBOL.  */
   if (offset == 0)
     {
-#ifndef SUNOS_5
 #ifndef sgi
 #ifndef NLIST_STRUCT
       strcpy (nl[0].n_name, LDAV_SYMBOL);
@@ -714,6 +709,7 @@ getloadavg (loadavg, nelem)
 #endif /* not NLIST_NAME_UNION */
 #endif /* NLIST_STRUCT */
 
+#ifndef SUNOS_5
       if (nlist (KERNEL_FILE, nl) >= 0)
 	/* Omit "&& nl[0].n_type != 0 " -- it breaks on Sun386i.  */
 	{
@@ -722,6 +718,7 @@ getloadavg (loadavg, nelem)
 #endif
 	  offset = nl[0].n_value;
 	}
+#endif  /* !SUNOS_5 */
 #else /* sgi */
       int ldav_off;
 
@@ -729,7 +726,6 @@ getloadavg (loadavg, nelem)
       if (ldav_off != -1)
 	offset = (long) ldav_off & 0x7fffffff;
 #endif /* sgi */
-#endif  /* !SUNOS_5 */
     }
 
   /* Make sure we have /dev/kmem open.  */
@@ -740,10 +736,14 @@ getloadavg (loadavg, nelem)
       if (channel >= 0)
 	getloadavg_initialized = 1;
 #else /* SUNOS_5 */
+      /* We pass 0 for the kernel, corefile, and swapfile names
+	 to use the currently running kernel.  */
       kd = kvm_open (0, 0, 0, O_RDONLY, 0);
       if (kd != 0) 
 	{
+	  /* nlist the currently running kernel.  */
 	  kvm_nlist (kd, nl);
+	  offset = nl[0].n_value;
 	  getloadavg_initialized = 1;
 	}
 #endif /* SUNOS_5 */

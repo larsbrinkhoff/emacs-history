@@ -126,8 +126,12 @@ or when it is used with \\[next-error] or \\[compile-goto-error].")
     ;; which is regexp Impressionism - it matches almost anything!
     ("([ \t]*\\([^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\))" 1 2)
 
-    ;; Line 45 of "foo.c": bloofel undefined (who does this?)
-    ("\n[Ll]ine[ \t]+\\([0-9]+\\)[ \t]+of[ \t]+\"\\([^\"\n]+\\)\":" 2 1)
+    ;; Ultrix 3.0 f77:
+    ;;  Error on line 3 of t.f: Execution error unclassifiable statement    
+    ;; Unknown who does this:
+    ;;  Line 45 of "foo.c": bloofel undefined
+    ("\n\\(Error on \\)?[Ll]ine[ \t]+\\([0-9]+\\)[ \t]+\
+of[ \t]+\"?\\([^\"\n]+\\)\"?:" 3 2)
 
     ;; Apollo cc, 4.3BSD fc:
     ;;	"foo.f", line 3: Error: syntax error near end of statement
@@ -913,7 +917,12 @@ See variable `compilation-parse-errors-function' for the interface it uses."
     ;; Don't parse the first two lines as error messages.
     ;; This matters for grep.
     (if (bobp)
-	(forward-line 2))
+	(progn
+	  (forward-line 2)
+	  ;; Move back so point is before the newline.
+	  ;; This matters because some error regexps use \n instead of ^
+	  ;; to be faster.
+	  (forward-char -1)))
 
     ;; Compile all the regexps we want to search for into one.
     (setq regexp (concat "\\(" compilation-enter-directory-regexp "\\)\\|"

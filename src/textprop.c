@@ -44,6 +44,8 @@ Lisp_Object Qmouse_entered;
 Lisp_Object Qpoint_left;
 Lisp_Object Qpoint_entered;
 Lisp_Object Qmodification_hooks;
+Lisp_Object Qinsert_in_front_hooks;
+Lisp_Object Qinsert_behind_hooks;
 Lisp_Object Qcategory;
 Lisp_Object Qlocal_map;
 
@@ -276,9 +278,14 @@ set_properties (properties, interval, object)
 	   sym = XCONS (value)->cdr)
 	if (! EQ (property_value (properties, XCONS (sym)->car),
 		  XCONS (value)->car))
-	  record_property_change (interval->position, LENGTH (interval),
-				  XCONS (sym)->car, XCONS (value)->car,
-				  object);
+	  {
+	    modify_region (XBUFFER (object),
+			   make_number (interval->position),
+			   make_number (interval->position + LENGTH (interval)));
+	    record_property_change (interval->position, LENGTH (interval),
+				    XCONS (sym)->car, XCONS (value)->car,
+				    object);
+	  }
 
       /* For each new property that has no value at all in the old plist,
 	 make an undo record binding it to nil, so it will be removed.  */
@@ -286,9 +293,14 @@ set_properties (properties, interval, object)
 	   PLIST_ELT_P (sym, value);
 	   sym = XCONS (value)->cdr)
 	if (EQ (property_value (interval->plist, XCONS (sym)->car), Qunbound))
-	  record_property_change (interval->position, LENGTH (interval),
-				  XCONS (sym)->car, Qnil,
-				  object);
+	  {
+	    modify_region (XBUFFER (object),
+			   make_number (interval->position),
+			   make_number (interval->position + LENGTH (interval)));
+	    record_property_change (interval->position, LENGTH (interval),
+				    XCONS (sym)->car, Qnil,
+				    object);
+	  }
     }
 
   /* Store new properties.  */
@@ -338,11 +350,11 @@ add_properties (plist, i, object)
 	    /* Record this change in the buffer, for undo purposes.  */
 	    if (XTYPE (object) == Lisp_Buffer)
 	      {
-		record_property_change (i->position, LENGTH (i),
-					sym1, Fcar (this_cdr), object);
 		modify_region (XBUFFER (object),
 			       make_number (i->position),
 			       make_number (i->position + LENGTH (i)));
+		record_property_change (i->position, LENGTH (i),
+					sym1, Fcar (this_cdr), object);
 	      }
 
 	    /* I's property has a different value -- change it */
@@ -356,11 +368,11 @@ add_properties (plist, i, object)
 	  /* Record this change in the buffer, for undo purposes.  */
 	  if (XTYPE (object) == Lisp_Buffer)
 	    {
-	      record_property_change (i->position, LENGTH (i),
-				      sym1, Qnil, object);
 	      modify_region (XBUFFER (object),
 			     make_number (i->position),
 			     make_number (i->position + LENGTH (i)));
+	      record_property_change (i->position, LENGTH (i),
+				      sym1, Qnil, object);
 	    }
 	  i->plist = Fcons (sym1, Fcons (val1, i->plist));
 	  changed++;
@@ -394,12 +406,12 @@ remove_properties (plist, i, object)
 	{
 	  if (XTYPE (object) == Lisp_Buffer)
 	    {
-	      record_property_change (i->position, LENGTH (i),
-				      sym, Fcar (Fcdr (current_plist)),
-				      object);
 	      modify_region (XBUFFER (object),
 			     make_number (i->position),
 			     make_number (i->position + LENGTH (i)));
+	      record_property_change (i->position, LENGTH (i),
+				      sym, Fcar (Fcdr (current_plist)),
+				      object);
 	    }
 
 	  current_plist = Fcdr (Fcdr (current_plist));
@@ -415,11 +427,11 @@ remove_properties (plist, i, object)
 	    {
 	      if (XTYPE (object) == Lisp_Buffer)
 		{
-		  record_property_change (i->position, LENGTH (i),
-					  sym, Fcar (Fcdr (this)), object);
 		  modify_region (XBUFFER (object),
 				 make_number (i->position),
 				 make_number (i->position + LENGTH (i)));
+		  record_property_change (i->position, LENGTH (i),
+					  sym, Fcar (Fcdr (this)), object);
 		}
 
 	      Fsetcdr (Fcdr (tail2), Fcdr (Fcdr (this)));
@@ -676,7 +688,7 @@ Return t if any property value actually changed, nil otherwise.")
       else
 	{
 	  unchanged = i;
-	  i = split_interval_right (unchanged, s - unchanged->position + 1);
+	  i = split_interval_right (unchanged, s - unchanged->position);
 	  copy_properties (unchanged, i);
 	}
     }
@@ -700,7 +712,7 @@ Return t if any property value actually changed, nil otherwise.")
 
 	  /* i doesn't have the properties, and goes past the change limit */
 	  unchanged = i;
-	  i = split_interval_left (unchanged, len + 1);
+	  i = split_interval_left (unchanged, len);
 	  copy_properties (unchanged, i);
 	  add_properties (properties, i, object);
 	  return Qt;
@@ -756,12 +768,12 @@ is the string or buffer containing the text.")
   if (i->position != s)
     {
       unchanged = i;
-      i = split_interval_right (unchanged, s - unchanged->position + 1);
+      i = split_interval_right (unchanged, s - unchanged->position);
 
       if (LENGTH (i) > len)
 	{
 	  copy_properties (unchanged, i);
-	  i = split_interval_left (i, len + 1);
+	  i = split_interval_left (i, len);
 	  set_properties (props, i, object);
 	  return Qt;
 	}
@@ -785,7 +797,7 @@ is the string or buffer containing the text.")
       if (LENGTH (i) >= len)
 	{
 	  if (LENGTH (i) > len)
-	    i = split_interval_left (i, len + 1);
+	    i = split_interval_left (i, len);
 
 	  if (NULL_INTERVAL_P (prev_changed))
 	    set_properties (props, i, object);
@@ -851,7 +863,7 @@ Return t if any property was actually removed, nil otherwise.")
       else
 	{
 	  unchanged = i;
-	  i = split_interval_right (unchanged, s - unchanged->position + 1);
+	  i = split_interval_right (unchanged, s - unchanged->position);
 	  copy_properties (unchanged, i);
 	}
     }
@@ -875,7 +887,7 @@ Return t if any property was actually removed, nil otherwise.")
 
 	  /* i has the properties, and goes past the change limit */
 	  unchanged = i;
-	  i = split_interval_left (i, len + 1);
+	  i = split_interval_left (i, len);
 	  copy_properties (unchanged, i);
 	  remove_properties (props, i, object);
 	  return Qt;
@@ -885,6 +897,76 @@ Return t if any property was actually removed, nil otherwise.")
       modified += remove_properties (props, i, object);
       i = next_interval (i);
     }
+}
+
+DEFUN ("text-property-any", Ftext_property_any,
+       Stext_property_any, 4, 5, 0,
+  "Check text from START to END to see if PROP is ever `eq' to VALUE.\n\
+If so, return the position of the first character whose PROP is `eq'\n\
+to VALUE.  Otherwise return nil.\n\
+The optional fifth argument, OBJECT, is the string or buffer\n\
+containing the text.")
+  (start, end, prop, value, object)
+       Lisp_Object start, end, prop, value, object;
+{
+  register INTERVAL i;
+  register int e, pos;
+
+  if (NILP (object))
+    XSET (object, Lisp_Buffer, current_buffer);
+  i = validate_interval_range (object, &start, &end, soft);
+  e = XINT (end);
+
+  while (! NULL_INTERVAL_P (i))
+    {
+      if (i->position >= e)
+	break;
+      if (EQ (textget (i->plist, prop), value))
+	{
+	  pos = i->position;
+	  if (pos < XINT (start))
+	    pos = XINT (start);
+	  return make_number (pos - (XTYPE (object) == Lisp_String));
+	}
+      i = next_interval (i);
+    }
+  return Qnil;
+}
+
+DEFUN ("text-property-not-all", Ftext_property_not_all,
+       Stext_property_not_all, 4, 5, 0,
+  "Check text from START to END to see if PROP is ever not `eq' to VALUE.\n\
+If so, return the position of the first character whose PROP is not\n\
+`eq' to VALUE.  Otherwise, return nil.\n\
+The optional fifth argument, OBJECT, is the string or buffer\n\
+containing the text.")
+  (start, end, prop, value, object)
+       Lisp_Object start, end, prop, value, object;
+{
+  register INTERVAL i;
+  register int s, e;
+
+  if (NILP (object))
+    XSET (object, Lisp_Buffer, current_buffer);
+  i = validate_interval_range (object, &start, &end, soft);
+  if (NULL_INTERVAL_P (i))
+    return (NILP (value) || EQ (start, end)) ? Qt : Qnil;
+  s = XINT (start);
+  e = XINT (end);
+
+  while (! NULL_INTERVAL_P (i))
+    {
+      if (i->position >= e)
+	break;
+      if (! EQ (textget (i->plist, prop), value))
+	{
+	  if (i->position > s)
+	    s = i->position;
+	  return make_number (s - (XTYPE (object) == Lisp_String));
+	}
+      i = next_interval (i);
+    }
+  return Qnil;
 }
 
 #if 0 /* You can use set-text-properties for this.  */
@@ -919,13 +1001,13 @@ is the string or buffer containing the text.")
       /* If there are properties here, then this text will be modified. */
       if (! NILP (i->plist))
 	{
-	  i = split_interval_right (unchanged, s - unchanged->position + 1);
+	  i = split_interval_right (unchanged, s - unchanged->position);
 	  i->plist = Qnil;
 	  modified++;
 
 	  if (LENGTH (i) > len)
 	    {
-	      i = split_interval_right (i, len + 1);
+	      i = split_interval_right (i, len);
 	      copy_properties (unchanged, i);
 	      return Qt;
 	    }
@@ -965,7 +1047,7 @@ is the string or buffer containing the text.")
 	    }
 
           if (LENGTH (i) > len)
-            i = split_interval_left (i, len + 1);
+            i = split_interval_left (i, len);
 	  if (! NULL_INTERVAL_P (prev_changed))
 	    merge_interval_left (i);
 	  else
@@ -1132,6 +1214,10 @@ percentage by which the left interval tree should not differ from the right.");
   Qpoint_entered = intern ("point-entered");
   staticpro (&Qmodification_hooks);
   Qmodification_hooks = intern ("modification-hooks");
+  staticpro (&Qinsert_in_front_hooks);
+  Qinsert_in_front_hooks = intern ("insert-in-front-hooks");
+  staticpro (&Qinsert_behind_hooks);
+  Qinsert_behind_hooks = intern ("insert-behind-hooks");
 
   defsubr (&Stext_properties_at);
   defsubr (&Sget_text_property);
@@ -1143,6 +1229,8 @@ percentage by which the left interval tree should not differ from the right.");
   defsubr (&Sput_text_property);
   defsubr (&Sset_text_properties);
   defsubr (&Sremove_text_properties);
+  defsubr (&Stext_property_any);
+  defsubr (&Stext_property_not_all);
 /*  defsubr (&Serase_text_properties); */
 /*  defsubr (&Scopy_text_properties); */
 }

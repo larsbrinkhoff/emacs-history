@@ -715,6 +715,18 @@ nothing is displayed.  This is to prevent scanning for the matching
 delimiter from wasting lots of time when there is no match.  The default
 is 12,000.
 
+@cindex @code{paren} library
+  When using X Windows, you can request a more powerful kind of
+automatic parenthesis matching by loading the @code{paren} library.
+To load it, type @kbd{M-x load-library @key{RET} paren @key{RET}}.
+This library turns off the usual kind of matching parenthesis display
+and substitutes another: whenever point is after a close parenthesis,
+the close parenthesis and its matching open parenthesis are both
+highlighted; otherwise, if point is before an open parenthesis, the
+matching close parenthesis is highlighted.  (There is no need to
+highlight the open parenthesis after point because the cursor appears on
+top of that character.)
+
 @node Comments
 @section Manipulating Comments
 @cindex comments
@@ -1772,15 +1784,28 @@ comment.
 filling C comments.  (We assume you don't want to fill the actual C code
 in a C program.)
 
-@item M-x c-up-conditional
+@item C-c C-u
+@kindex C-c C-u @r{(C mode)}
 @findex c-up-conditional
-In C mode, @code{c-up-conditional} moves back to the containing
-preprocessor conditional, setting the mark where point was previously.
+Move back to the containing preprocessor conditional, setting the mark
+at the starting point (@code{c-up-conditional}).
 
 A prefix argument acts as a repeat count.  With a negative argument,
 this command moves forward to the end of the containing preprocessor
 conditional.  When going backwards, @samp{#elif} acts like @samp{#else}
 followed by @samp{#if}.  When going forwards, @samp{#elif} is ignored.
+
+@item C-c C-n
+@kindex C-c C-n @r{(C mode)}
+@findex c-forward-conditional
+Move forward across the next preprocessor conditional, setting the mark
+at the starting point (@code{c-forward-conditional}).
+
+@item C-c C-p
+@kindex C-c C-p @r{(C mode)}
+@findex c-backward-conditional
+Move backward across the previous preprocessor conditional, setting the
+at the starting point (@code{c-backward-conditional}).
 
 @item M-x c-macro-expand
 @cindex macro expansion in C

@@ -447,8 +447,18 @@ struct interval
   unsigned int position;	/* Cache of interval's character position  */
   struct interval *left;	/* Intervals which precede me. */
   struct interval *right;	/* Intervals which succeed me. */
-  struct interval *parent;	/* Parent in the tree, or the Lisp_Object
-				   containing this interval tree. */
+
+  /* Parent in the tree, or the Lisp_Object containing this interval tree.
+
+     The mark bit on the root interval of an interval tree says
+     whether we have started (and possibly finished) marking the
+     tree.  If GC comes across an interval tree whose root's parent
+     field has its markbit set, it leaves the tree alone.
+
+     You'd think we could store this information in the parent object
+     somewhere (after all, that should be visited once and then
+     ignored too, right?), but strings are GC'd strangely.  */
+  struct interval *parent;
 
   /* The remaining components are `properties' of the interval.
      The first four are duplicates for things which can be on the list,
@@ -460,7 +470,11 @@ struct interval
 				       before this interval goes into it. */
   unsigned char rear_sticky;	    /* Likewise for just after it. */
 
-  Lisp_Object plist;		    /* Properties of this interval. */
+  /* Properties of this interval.
+     The mark bit on this field says whether this particular interval
+     tree node has been visited.  Since intervals should never be
+     shared, GC aborts if it seems to have visited an interval twice.  */
+  Lisp_Object plist;
 };
 
 typedef struct interval *INTERVAL;
@@ -980,6 +994,7 @@ extern Lisp_Object Qsetting_constant, Qinvalid_read_syntax;
 extern Lisp_Object Qinvalid_function, Qwrong_number_of_arguments, Qno_catch;
 extern Lisp_Object Qend_of_file, Qarith_error;
 extern Lisp_Object Qbeginning_of_buffer, Qend_of_buffer, Qbuffer_read_only;
+extern Lisp_Object Qmark_inactive;
 
 extern Lisp_Object Qrange_error, Qdomain_error, Qsingularity_error;
 extern Lisp_Object Qoverflow_error, Qunderflow_error;
@@ -1286,6 +1301,10 @@ extern Lisp_Object Fexecute_kbd_macro ();
 /* defined in undo.c */
 extern Lisp_Object Fundo_boundary ();
 extern Lisp_Object truncate_undo_list ();
+
+/* defined in textprop.c */
+extern Lisp_Object Qmodification_hooks;
+extern Lisp_Object Qinsert_in_front_hooks, Qinsert_behind_hooks;
 
 /* Nonzero means Emacs has already been initialized.
    Used during startup to detect startup of dumped Emacs.  */

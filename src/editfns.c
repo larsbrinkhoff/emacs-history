@@ -197,9 +197,11 @@ static Lisp_Object
 region_limit (beginningp)
      int beginningp;
 {
+  extern Lisp_Object Vmark_even_if_inactive; /* Defined in callint.c. */
   register Lisp_Object m;
-  if (!NILP (Vtransient_mark_mode) && NILP (current_buffer->mark_active))
-    error ("There is no region now");
+  if (!NILP (Vtransient_mark_mode) && NILP (Vmark_even_if_inactive)
+      && NILP (current_buffer->mark_active))
+    Fsignal (Qmark_inactive, Qnil);
   m = Fmarker_position (current_buffer->mark);
   if (NILP (m)) error ("There is no region now");
   if ((point < XFASTINT (m)) == beginningp)
@@ -1394,29 +1396,34 @@ Use %% to put a single % into the output.")
 
   {
     register int nstrings = n + 1;
-    register unsigned char **strings
-      = (unsigned char **) alloca (nstrings * sizeof (unsigned char *));
 
+    /* Allocate twice as many strings as we have %-escapes; floats occupy
+       two slots, and we're not sure how many of those we have.  */
+    register unsigned char **strings
+      = (unsigned char **) alloca (2 * nstrings * sizeof (unsigned char *));
+    int i;
+
+    i = 0;
     for (n = 0; n < nstrings; n++)
       {
 	if (n >= nargs)
-	  strings[n] = (unsigned char *) "";
+	  strings[i++] = (unsigned char *) "";
 	else if (XTYPE (args[n]) == Lisp_Int)
 	  /* We checked above that the corresponding format effector
 	     isn't %s, which would cause MPV.  */
-	  strings[n] = (unsigned char *) XINT (args[n]);
+	  strings[i++] = (unsigned char *) XINT (args[n]);
 #ifdef LISP_FLOAT_TYPE
 	else if (XTYPE (args[n]) == Lisp_Float)
 	  {
 	    union { double d; int half[2]; } u;
 
 	    u.d = XFLOAT (args[n])->data;
-	    strings[n++] = (unsigned char *) u.half[0];
-	    strings[n] = (unsigned char *) u.half[1];
+	    strings[i++] = (unsigned char *) u.half[0];
+	    strings[i++] = (unsigned char *) u.half[1];
 	  }
 #endif
 	else
-	  strings[n] = XSTRING (args[n])->data;
+	  strings[i++] = XSTRING (args[n])->data;
       }
 
     /* Format it in bigger and bigger buf's until it all fits. */
@@ -1425,7 +1432,7 @@ Use %% to put a single % into the output.")
 	buf = (char *) alloca (total + 1);
 	buf[total - 1] = 0;
 
-	length = doprnt (buf, total + 1, strings[0], end, nargs, strings + 1);
+	length = doprnt (buf, total + 1, strings[0], end, i-1, strings + 1);
 	if (buf[total - 1] == 0)
 	  break;
 

@@ -84,7 +84,7 @@ struct backtrace
 
 /* Non-nil disable property on a command means
    do not execute it; call disabled-command-hook's value instead.  */
-Lisp_Object Qdisabled, Vdisabled_command_hook;
+Lisp_Object Qdisabled, Qdisabled_command_hook;
 
 #define NUM_RECENT_KEYS (100)
 int recent_keys_index;	/* Index for storing next element into recent_keys */
@@ -129,6 +129,9 @@ Lisp_Object Vhelp_form;
 
 /* Command to run when the help character follows a prefix key.  */
 Lisp_Object Vprefix_help_command;
+
+/* List of items that should move to the end of the menu bar.  */
+Lisp_Object Vmenu_bar_final_items;
 
 /* Character that causes a quit.  Normally C-g.
 
@@ -242,6 +245,7 @@ unsigned long last_event_timestamp;
 Lisp_Object Qself_insert_command;
 Lisp_Object Qforward_char;
 Lisp_Object Qbackward_char;
+Lisp_Object Qundefined;
 
 /* read_key_sequence stores here the command definition of the
    key sequence that it reads.  */
@@ -986,6 +990,14 @@ command_loop_1 ()
 
       if (i == 0)		/* End of file -- happens only in */
 	return Qnil;		/* a kbd macro, at the end.  */
+      /* -1 means read_key_sequence got a menu that was rejected.
+	 Just loop around and read another command.  */
+      if (i == -1)
+	{
+	  cancel_echoing ();
+	  this_command_key_count = 0;
+	  continue;
+	}
 
       last_command_char = keybuf[i - 1];
 
@@ -1292,7 +1304,9 @@ static Lisp_Object kbd_buffer_get_event ();
 
    If USED_MOUSE_MENU is non-zero, then we set *USED_MOUSE_MENU to 1
    if we used a mouse menu to read the input, or zero otherwise.  If
-   USED_MOUSE_MENU is zero, *USED_MOUSE_MENU is left alone.  */
+   USED_MOUSE_MENU is zero, *USED_MOUSE_MENU is left alone.
+
+   Value is t if we showed a menu and the user rejected it.  */
 
 Lisp_Object
 read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
@@ -3147,7 +3161,7 @@ menu_bar_items ()
      in the current keymaps, or nil where it is not a prefix.  */
   Lisp_Object *maps;
 
-  Lisp_Object def, tem;
+  Lisp_Object def, tem, tail;
 
   Lisp_Object result;
 
@@ -3186,7 +3200,7 @@ menu_bar_items ()
 
   result = Qnil;
 
-  for (mapno = 0; mapno < nmaps; mapno++)
+  for (mapno = nmaps - 1; mapno >= 0; mapno--)
     {
       if (! NILP (maps[mapno]))
 	def = get_keyelt (access_keymap (maps[mapno], Qmenu_bar, 1, 0));
@@ -3196,6 +3210,15 @@ menu_bar_items ()
       tem = Fkeymapp (def);
       if (!NILP (tem))
 	result = menu_bar_one_keymap (def, result);
+    }
+
+  for (tail = Vmenu_bar_final_items; CONSP (tail); tail = XCONS (tail)->cdr)
+    {
+      Lisp_Object elt;
+
+      elt = Fassq (XCONS (tail)->car, result);
+      if (!NILP (elt))
+	result = Fcons (elt, Fdelq (elt, result));
     }
 
   result = Fnreverse (result);
@@ -3227,6 +3250,9 @@ menu_bar_one_keymap (keymap, result)
 		result = menu_bar_item (key, item_string,
 					Fcdr (binding), result);
 	    }
+	  else if (EQ (binding, Qundefined))
+	    result = menu_bar_item (key, item_string,
+				    binding, result);
 	}
       else if (XTYPE (item) == Lisp_Vector)
 	{
@@ -3245,6 +3271,9 @@ menu_bar_one_keymap (keymap, result)
 		    result = menu_bar_item (key, item_string,
 					    Fcdr (binding), result);
 		}
+	      else if (EQ (binding, Qundefined))
+		result = menu_bar_item (key, item_string,
+					binding, result);
 	    }
 	}
     }
@@ -3256,8 +3285,16 @@ static Lisp_Object
 menu_bar_item (key, item_string, def, result)
      Lisp_Object key, item_string, def, result;
 {
-  Lisp_Object tem, elt;
+  Lisp_Object tem;
   Lisp_Object enabled;
+
+  if (EQ (def, Qundefined))
+    {
+      /* If a map has an explicit nil as definition,
+	 discard any previously made menu bar item.  */
+      tem = Fassq (key, result);
+      return Fdelq (tem, result);
+    }
 
   /* See if this entry is enabled.  */
   enabled = Qt;
@@ -3273,8 +3310,8 @@ menu_bar_item (key, item_string, def, result)
 
   /* Add an entry for this key and string
      if there is none yet.  */
-  elt = Fassq (key, result);
-  if (!NILP (enabled) && NILP (elt))
+  tem = Fassq (key, result);
+  if (!NILP (enabled) && NILP (tem))
     result = Fcons (Fcons (key, Fcons (item_string, Qnil)), result);
 
   return result;
@@ -3283,10 +3320,9 @@ menu_bar_item (key, item_string, def, result)
 static int echo_flag;
 static int echo_now;
 
-/* Read a character like read_char but optionally prompt based on maps
-   in the array MAPS.  NMAPS is the length of MAPS.  Return nil if we
-   decided not to read a character, because there are no menu items in
-   MAPS.
+/* Read a character using menus based on maps in the array MAPS.
+   NMAPS is the length of MAPS.  Return nil if there are no menus in the maps.
+   Return t if we displayed a menu but the user rejected it.
 
    PREV_EVENT is the previous input event, or nil if we are reading
    the first event of a key sequence.
@@ -3361,7 +3397,7 @@ read_char_menu_prompt (nmaps, maps, prev_event, used_mouse_menu)
 	  value = XCONS (value)->car;
 	}
       if (NILP (value))
-	XSET (value, Lisp_Int, quit_char);
+	value = Qt;
       if (used_mouse_menu)
 	*used_mouse_menu = 1;
       return value;
@@ -3592,6 +3628,7 @@ follow_key (key, nmaps, current, defs, next)
    storing it in KEYBUF, a buffer of size BUFSIZE.
    Prompt with PROMPT.
    Return the length of the key sequence stored.
+   Return -1 if the user rejected a command menu.
 
    Echo starting immediately unless `prompt' is 0.
 
@@ -3829,6 +3866,11 @@ read_key_sequence (keybuf, bufsize, prompt)
 
 	  key = read_char (!prompt, nmaps, submaps, last_nonmenu_event,
 			   &used_mouse_menu);
+
+	  /* read_char returns t when it shows a menu and the user rejects it.
+	     Just return -1.  */
+	  if (EQ (key, Qt))
+	    return -1;
 
 	  /* read_char returns -1 at the end of a macro.
 	     Emacs 18 handles this by returning immediately with a
@@ -4126,16 +4168,27 @@ read_key_sequence (keybuf, bufsize, prompt)
 		 function key map and it's a suffix of the current
 		 sequence (i.e. fkey_end == t), replace it with
 		 the binding and restart with fkey_start at the end. */
-	      if (XTYPE (fkey_next) == Lisp_Vector
+	      if ((VECTORP (fkey_next) || STRINGP (fkey_next))
 		  && fkey_end == t)
 		{
-		  t = fkey_start + XVECTOR (fkey_next)->size;
+		  int len = Flength (fkey_next);
+
+		  t = fkey_start + len;
 		  if (t >= bufsize)
 		    error ("key sequence too long");
 
-		  bcopy (XVECTOR (fkey_next)->contents,
-			 keybuf + fkey_start,
-			 (t - fkey_start) * sizeof (keybuf[0]));
+		  if (VECTORP (fkey_next))
+		    bcopy (XVECTOR (fkey_next)->contents,
+			   keybuf + fkey_start,
+			   (t - fkey_start) * sizeof (keybuf[0]));
+		  else if (STRINGP (fkey_next))
+		    {
+		      int i;
+
+		      for (i = 0; i < len; i++)
+			XFASTINT (keybuf[fkey_start + i]) =
+			  XSTRING (fkey_next)->data[i];
+		    }
 		  
 		  mock_input = t;
 		  fkey_start = fkey_end = t;
@@ -4237,6 +4290,11 @@ sequences, where they wouldn't conflict with ordinary bindings.  See\n\
   i = read_key_sequence (keybuf, (sizeof keybuf/sizeof (keybuf[0])),
 			 NILP (prompt) ? 0 : XSTRING (prompt)->data);
 
+  if (i == -1)
+    {
+      Vquit_flag = Qt;
+      QUIT;
+    }
   UNGCPRO;
   return make_event_array (i, keybuf);
 }
@@ -4264,7 +4322,7 @@ Otherwise, that is done only if an arg is read using the minibuffer.")
     {
       tem = Fget (cmd, Qdisabled);
       if (!NILP (tem))
-	return call1 (Vrun_hooks, Vdisabled_command_hook);
+	return call1 (Vrun_hooks, Qdisabled_command_hook);
     }
 
   while (1)
@@ -4538,7 +4596,7 @@ On such systems, Emacs starts a subshell instead of suspending.")
      with a window system; but suspend should be disabled in that case.  */
   get_frame_size (&width, &height);
   if (width != old_width || height != old_height)
-    change_frame_size (0, height, width, 0, 0);
+    change_frame_size (selected_frame, height, width, 0, 0);
 
   /* Run suspend-resume-hook.  */
   if (!NILP (Vrun_hooks))
@@ -4898,6 +4956,9 @@ struct event_head head_table[] = {
 
 syms_of_keyboard ()
 {
+  Qdisabled_command_hook = intern ("disabled-command-hook");
+  staticpro (&Qdisabled_command_hook);
+
   Qself_insert_command = intern ("self-insert-command");
   staticpro (&Qself_insert_command);
 
@@ -4909,6 +4970,9 @@ syms_of_keyboard ()
 
   Qdisabled = intern ("disabled");
   staticpro (&Qdisabled);
+
+  Qundefined = intern ("undefined");
+  staticpro (&Qundefined);
 
   Qpre_command_hook = intern ("pre-command-hook");
   staticpro (&Qpre_command_hook);
@@ -5018,10 +5082,6 @@ syms_of_keyboard ()
   defsubr (&Sset_input_mode);
   defsubr (&Scurrent_input_mode);
   defsubr (&Sexecute_extended_command);
-
-  DEFVAR_LISP ("disabled-command-hook", &Vdisabled_command_hook,
-    "Value is called instead of any command that is disabled\n\
-\(has a non-nil `disabled' property).");
 
   DEFVAR_LISP ("last-command-char", &last_command_char,
     "Last input event that was part of a command.");
@@ -5180,6 +5240,11 @@ Buffer modification stores t in this variable.");
   DEFVAR_LISP ("lucid-menu-bar-dirty-flag", &Vlucid_menu_bar_dirty_flag,
     "t means menu bar, specified Lucid style, needs to be recomputed.");
   Vlucid_menu_bar_dirty_flag = Qnil;
+
+  DEFVAR_LISP ("menu-bar-final-items", &Vmenu_bar_final_items,
+    "List of menu bar items to move to the end of the menu bar.\n\
+The elements of the listare event types that may have menu bar bindings.");
+  Vmenu_bar_final_items = Qnil;
 }
 
 keys_of_keyboard ()

@@ -1,3 +1,450 @@
+Sun Jul 18 02:38:03 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.17 released.
+
+	* makeinfo.el: Don't (require 'texinfmt) - that file doesn't exist
+	any more.
+
+	* files.el (insert-directory): Doc fix.
+
+	* files.el (insert-directory): If FULL-DIRECTORY-P is non-nil,
+	add "." component to the end of the path, so that if file is a
+	symlink, we get the contents of the directory, not the symlink
+	itself.
+
+Sat Jul 17 13:25:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* tar-mode.el (tar-extract): Use view-exit-action to kill viewed buf.
+
+	* view.el: Doc fixes; some args renamed.
+
+	* gnus.el (gnus-info-nodes): Update node names.
+
+	* makeinfo.el (makeinfo-options): Fix option syntax in initial value.
+
+	* texinfo.el (texinfo-mode): Undo changes mistakenly added with
+	previous batch: texinfo-{start,end}-of-header are now tex-...
+
+Sat Jul 17 18:13:11 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el: New version 2.0.
+	Redesigned and rewritten to use Emacs 19 text properties. 
+	Requires Emacs 19.16 or later.
+
+Sat Jul 17 01:58:36 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* term/x-win.el: Include (invocation-name) in the error messages
+	which might occur during startup.
+
+	* shell.el (shell-process-pushd): Fix syntax error in
+	condition-case.
+
+Fri Jul 16 20:16:57 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* menu-bar.el (revert-buffer): Make menu-enable form more accurate
+	using revert-buffer-function and verify-visited-file-modtime.
+	(menu-bar-help-menu): Put back under global-map.
+	(menu-bar-final-items): Set it.
+
+	* mh-e.el (mh-yank-hooks): Use (mark t).
+	(mh-new-draft-name): Likewise.
+
+Fri Jul 16 16:30:18 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* comint.el (comint-{next,prev}-prompt, comint-send-eof): New defuns.
+	(comint-mode-map): Bind C-c C-n, C-c C-p, and C-c C-d to those.
+	Bind C-c C-y to comint-previous-input, for compatibility with v18
+	shell.el.
+
+Fri Jul 16 15:53:38 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* advice.el (ad-start-advice-on-load): Initialize to t.
+
+Fri Jul 16 04:45:14 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* term/x-win.el: Make the `-rn NAME' option specify a resource
+	name, as documented, and not a resource database string.  Make
+	`-name NAME' act like `-rn NAME' and also set the name of the
+	initial frame.
+	(command-switch-alist): Process the `-rn' and `-name' options
+	using the x-handle-name-rn-switch function.
+	(x-handle-name-rn-switch): New function, which sets the
+	x-resource-name variable.
+	(opening connection): Make sure x-resource-name is valid.  If it's
+	not a string, set it to (invocation-name), with any periods or
+	asterisks changed to hyphens.
+
+	* term/x-win.el: Make the `-xrm STRING' option specify a resource
+	database string.  `-rn' used to behave this way.
+	(command-switch-alist): Process the `-xrm' switch using
+	x-handle-xrm-switch.
+	(x-handle-xrm-switch): Renamed from x-handle-rn-switch; this
+	function does the right thing for `-xrm', not for `-rn'.
+
+Fri Jul 16 00:11:29 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-bury): If selected frame is dedicated,
+	and there are other visible frames, delete this frame.
+
+	* rmail.el (rmail-mail-new-frame): New variable.
+	(rmail-start-mail): New function.
+	(rmail-mail, rmail-continue, rmail-reply, rmail-forward)
+	(rmail-retry-failure): Use rmail-start-mail.
+
+Thu Jul 15 01:29:45 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* faces.el (face-equal): Don't mess with face-background-pixmap.
+
+	* ispell.el (ispell-menu-map): Add missing quote in defalias.
+	(ispell-window-configuration): Initialize to nil.
+
+	* vc-hooks.el (vc-rcs-status): Make work buffer's name start w/ space.
+
+	* simple.el (completion-setup-function): Insert the mouse help message
+	only if non-nil `window-system'.
+
+	* paren.el: Enable the hook only if window-system.
+	Clear blink-paren-function at the same time.
+	(show-paren-command-hook): If after a closeparen,
+	highlight that closeparen as well as matching open.
+	Use a different color for a mismatch, if color screen.
+
+Thu Jul 15 01:07:51 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* assoc.el (asort): First argument should be named alist-symbol,
+	not assoc-symbol.
+
+Wed Jul 14 23:52:20 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* server.el (server-done): Let save-buffer make the backup,
+	so that make-backup-files remains effective.
+
+	* loaddefs.el: Delete C-x a C-h binding.
+
+	* menu-bar.el (help-menu-bar-map): Put the Help item in this map.
+
+Wed Jul 14 23:46:02 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* isearch.el (isearch-edit-string): Bind isearch-nonincremental to
+	its own value, not to nil.
+
+Wed Jul 14 23:35:51 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* hippie-exp.el: Renamed from hippie.el.
+
+Wed Jul 14 23:08:17 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* compile.el (compilation-parse-errors): After skipping two lines,
+	move one char back so point is before the newline.
+
+Wed Jul 14 21:55:13 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* gud.el (gud-debugger-startup): Replaced with gud-massage-args.
+	(gud-{gdb,sdb,xdb}-debugger-startup): Replaced with gud-*-massage-args.
+	(gdb, sdb, xdb): Argument is command line, not args for it.  Remove
+	debugger name from prompt and put it in the default input instead.
+	Overload gud-massage-args instead of gud-debugger-startup.
+	(gud-chop-words): New function; subr for gud-common-init.
+	(gud-common-init): Argument is command line, not args for it.
+	Rewritten to use gud-chop-words instead of temp buffer and kludge
+	involving read.  Find the program name as the first word of the
+	command line.  Use make-comint and gud-massage-args in place of
+	gud-debugger-startup. 
+	Expand the file name before passing it to gud-massage-args.
+
+Wed Jul 14 19:38:00 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* spook.el (snarf-spooks): Restore function.
+
+	* cookie1.el (cookie-cache): New defvar.
+	(cookie-snarf): Cache cookies in cookie-cache, not in obarray (idiot).
+	Also store the modtime and punt the cache when it changes.
+
+Wed Jul 14 19:14:37 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	Changes from Anders Holst, to bring hippie-expand up to version 1.2:
+	* hippie-exp.el (hippie-expand-max-buffers): New variable.
+	(try-expand-line-all-buffers, try-expand-list-all-buffers,
+	try-expand-dabbrev-all-buffers): Use it.
+	(try-expand-list, try-expand-list-all-buffers): New functions.
+	(he-string-beg, he-string-end, he-search-loc): These values are
+	now markers, not integers.  Uses changed.
+	(he-reset-string, he-substitute-string): Use a marker to preserve
+	the old position of point.
+	(try-expand-all-abbrevs): handle case the same way as the
+        usual expand-abbrev (which is not a very good way, but for
+        consistency...). 
+	(he-dabbrev-beg): Use `skip-syntax' instead of `skip-chars', to
+        adjust its behavior to different modes.
+	(hippie-expand): Don't messages which try function it is using,
+        when the expansion itself is done in the minibuffer (it was very
+        annoying to have the message obscuring the expansion).
+	(try-complete-file-name, try-complete-file-name-partially,
+	try-complete-lisp-symbol, try-complete-lisp-symbol-partially,
+	try-expand-line, try-expand-line-all-buffers,
+	try-expand-all-abbrevs, try-expand-dabbrev,
+	try-expand-dabbrev-all-buffers): No unnecessary "resetting" of the
+	epansion, when no expansion is done (caused the buffer to be
+	marked as changed, although nothing was done, among other things).
+	(he-reset-string): Undoing of last expansion at a later occasion, now
+        undoes correctly (before, it garbled things up).
+	(make-hippie-expand-function): now uses "(function ...)" 
+        instead of "'" (matters for compilation).
+	(try-expand-line, try-expand-line-all-buffers,
+	he-line-search-regexp): uses `comint-prompt-regexp' instead of
+	`shell-prompt-pattern', to strip off prompt in process buffers.
+
+Wed Jul 14 16:56:19 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* autoload.el (generate-file-autoloads):
+	Fix FILE truename hacking to substring
+	SOURCE-TRUENAME instead of FILE.
+
+Tue Jul 13 01:51:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* faces.el (copy-face): New arg NEW-FRAME.
+	(list-faces-display): New command.
+
+	* simple.el (completion-mode): New major mode.
+	(completion-setup-function): New function.
+	Add it to completion-setup-hook.
+
+	* mouse.el (mouse-choose-completion): New function.
+
+	* dunnet.el: Many functions and variables renamed.
+
+	* sendmail.el (mail-bury): New function.
+	(mail-send-and-exit): Call mail-bury.
+	(mail-dont-send): New command, with menu bar binding.
+
+	* compare-w.el (compare-windows-skip-whitespace): New function.
+	(compare-windows): Use that.
+	(compare-windows-whitespace): Value is now regexp.
+
+	* rmail.el (rmail-insert-inbox-text): If inbox is not in the
+	spool dir, try copying before renaming.
+
+Tue Jul 13 00:38:53 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* shell.el (shell-prompt-pattern): Don't match more than one line.
+	Doc fix.
+
+	* bytecomp.el (byte-compile-from-buffer): Bind float-output-format
+	to "%.20e", not "%20e"; the latter is always ignored, since it
+	doesn't have a decimal point after the percent sign.
+
+Mon Jul 12 23:17:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* autoload.el (generate-file-autoloads): Correctly detect when the
+	buffer receiving the autoload forms is in a parent of or the same
+	directory as FILE, even in the presence of symlinks.
+
+Mon Jul 12 23:57:14 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* subr.el (define-key-after): Error if KEY has two elements.
+
+	* dired.el (dired-mode-map): Add menu bar items.
+
+Mon Jul 12 23:17:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* autoload.el (generate-file-autoloads): Correctly detect when the
+	buffer receiving the autoload forms is in a parent of or the same
+	directory as FILE.
+
+Mon Jul 12 16:44:47 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* ange-ftp.el: Install the correct regexp in
+	file-name-handler-alist.
+
+	* term/x-win.el: Recognize affirmative values for reverseVideo
+	properly.  Include "on" in the list of recognized values.
+
+Mon Jul 12 15:11:55 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc-hooks.el (vc-rcs-status): Include head version number
+	in mode line if there are no locks.
+
+Mon Jul 12 14:36:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* menu-bar.el (menu-bar-file-menu): Add menu item for dired.
+
+	* menu-bar.el (ispell-menu-map): New autoload definition.
+	(menu-bar-edit-menu): Add "Spell" item.
+	* ispell.el (ispell-menu-map): New keymap--both fn and var.
+
+	* loaddefs.el (mode-line-buffer-identification): Doc fix.
+
+Sat Jul 10 23:28:50 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* calendar.el (calendar-holidays): Don't autoload this; its value
+	must be set after the user's .emacs file is loaded.
+
+Sat Jul 10 01:15:54 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* paren.el (show-paren-command-hook): Do nothing if not window-system.
+
+Fri Jul  9 00:04:12 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmailout.el (rmail-output): If file is an Rmail file,
+	use rmail-output-to-rmail-file.
+	(rmail-output-to-rmail-file): If file exists
+	and is not an Rmail file, use rmail-output.
+	If we find an element in rmail-output-file-alist, eval it.
+	(rmail-file-p): New function.
+	(rmail-output-file-alist): Now contains expressions to eval.
+
+	* font-lock.el: New file.
+
+	* bytecomp.el (byte-compile-setq-default):
+	Generate a progn of calls to set-default, then compile it.
+
+	* menu-bar.el (mouse-menu-bar-buffers):
+	Don't lose if all buffer names are short.
+
+	* dunnet.el: New file.
+
+Thu Jul  8 19:31:58 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* loaddefs.el (global-map): Bind M-next to scroll-other-window.
+
+	* compile.el (compilation-error-regexp-alist):
+	Broaden ``Line N of "FILE": msg'' regexp
+	to also match Ultrix f77: ``Error on line N of FILE: msg''.
+
+Thu Jul  8 18:42:14 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Make everything that deactivates the mark do it consistently.
+	* simple.el (deactivate-mark): New function.
+	(kill-ring-save, pop-mark, keyboard-quit): Call it.
+	* ispell.el (ispell):
+	Call deactivate-mark instead of setting mark-active directly.  Do
+	this regardless of transient-mark-mode.
+	* isearch.el (isearch-done):
+	Call deactivate-mark instead of setting mark-active
+	directly.  Do this regardless of transient-mark-mode.
+
+Thu Jul  8 20:51:51 1993  Richard Stallman  (rms@churchy.gnu.ai.mit.edu)
+
+	* files.el (basic-save-buffer): Use after-save-hook.
+
+Thu Jul  8 17:46:22 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* simple.el: Put error-conditions and error-message properties on
+	'mark-inactive.
+	(mark): Signal 'mark-inactive instead of using error with a message.
+
+Thu Jul  8 17:14:43 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* mailabbrev.el (mail-abbrev-end-of-buffer): Fix interactive spec
+	to "P", same as end-of-buffer.
+
+Thu Jul  8 15:06:38 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* hanoi.el: Add (provide 'hanoi).
+
+Wed Jul  7 18:19:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (file-relative-name): If we use default-directory,
+	call expand-file-name anyway.
+
+	* texnfo-upd.el (texinfo-update-node): Bind auto-fill-hook
+	as well as auto-fill-function.
+	(texinfo-sequential-node-update): Likewise.
+
+Wed Jul  7 09:25:37 1993  Robert J. Chassell  (bob at grackle)
+
+        * texnfo-upd.el: Fix typo re `texinfo-sequential-node-update.'
+        Ensure that no commands depend on the value of
+        case-fold-search.
+	Rewrite messages.  Avoid using `mark-whole-buffer'.
+
+	(texinfo-start-menu-description):
+        New function to insert title as description in a menu. 
+        (texinfo-make-menu-list): Remove automatic title insertion.
+	(texinfo-master-menu): Error message if file
+        contains too few nodes for a master menu.
+	Handle the case where no master menu was inserted.
+        (texinfo-insert-master-menu-list): Only attempt to insert detailed
+        master menu if there is one.
+        Insert a master menu only after `Top' node and before next node.
+
+        (texinfo-check-for-node-name): Offer section title as prompt.
+        (texinfo-copy-next-section-title): Copy title correctly.
+	Handle failure to find @node.
+        (texinfo-copy-menu): Error message if menu empty.
+        (texinfo-pointer-name):  Find only those
+        section commands that are accompanied by `@node' lines.
+        (texinfo-section-types-regexp): Look for subh and subs, not just sub.
+        (texinfo-make-one-menu): Copy node-name correctly for message.
+        (texinfo-copy-menu-title): Copy title as it
+        should rather than node line.
+
+        (texinfo-find-higher-level-node): Stop search at limit.
+	Special handling for `top' and `chapter' levels.
+        (texinfo-copy-menu-title): Rewrite to handle outer include files.
+        (texinfo-multi-file-update): Update all nodes properly (and sooner);
+        rewrite doc string and interactive. Copy title properly.
+        (texinfo-all-menus-update): Fixed typo that
+        caused the function to create a master menu when it shouldn't.
+        Update pre-existing master menu, if there is one.
+
+	(texinfo-incorporate-descriptions): Use a regexp search to look for 
+	both kinds of menu item.
+	(texinfo-menu-indent-description): Likewise.
+	(texinfo-incorporate-menu-entry-names): New function.
+	(texinfo-insert-menu): Handle both kinds of menu item.
+ 	(texinfo-multi-files-insert-main-menu): Likewise.
+	(texinfo-update-node): Pass t as second arg to push-mark.
+	(texinfo-sequential-node-update): Likewise.
+	(texinfo-insert-node-lines): Bind `title' at a higher level.
+	Don't find previous @node if it's close.
+	Take region to process as arguments.
+	(texinfo-multiple-files-update): Handle prefix arg better within
+	`interactive'.  Canonicalize the blank lines.
+
+Wed Jul  7 16:13:57 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* autoload.el (update-file-autoloads):
+	Correctly do nothing when there are no cookies.
+
+Wed Jul  7 15:58:54 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* menu-bar.el (mouse-menu-choose-yank):
+	Change menu title to "Choose Next Yank".
+
+Wed Jul  7 03:19:41 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc-hooks.el (vc-rcs-status): Removed unused variable `status'.
+
+	* rmail.el (rmail-resend): Use RFC 822 style date in Resent-Date: line.
+	* sendmail.el (mail-do-fcc): Likewise, for appending Date: lines to
+	RMAIL mode buffers.  Use new `mail-rfc822-time-zone' function
+	to simplify pinhead generation.
+	* mail-utils.el (mail-rfc822-time-zone, mail-rfc822-date): New fns.
+
+Wed Jul  7 02:26:31 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* files.el (cd-absolute): Use abbreviate-file-name on expansion of DIR.
+
+	* gud.el: Add (provide 'gud).
+
+	* files.el (basic-save-buffer):
+	Invoke after-save-hook, not after-save-hooks.
+
+	* time.el (display-time-file-nonempty-p): Use file-chase-links.
+
+	* bytecomp.el (byte-compile-setq-default): Handle multiple pairs
+	args like setq (as the setq-default subr does).
+
+	* autoload.el: Doc fix.
+
+Tue Jul  6 18:07:14 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-variables): Compare truename as well as given name
+	against rmail-file-name.
+
+	* man.el (Man-mode-line-format): Add a space after global-mode-string.
+
 Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.16 released.

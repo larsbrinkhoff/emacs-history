@@ -122,11 +122,13 @@ are used."
     ;; subdirectory of the current buffer's directory, we'll make it
     ;; relative to the current buffer's directory.
     (setq file (expand-file-name file))
-    (if (and (< (length default-directory) (length file))
-	     (string= default-directory
-		      (substring file 0 (length default-directory))))
-	(progn
-	  (setq file (substring file (length default-directory)))))
+    (let* ((source-truename (file-truename file))
+	   (dir-truename (file-name-as-directory
+			  (file-truename default-directory)))
+	   (len (length dir-truename)))
+      (if (and (< len (length source-truename))
+	       (string= dir-truename (substring source-truename 0 len)))
+	  (setq file (substring source-truename len))))
 
     (message "Generating autoloads for %s..." file)
     (save-excursion
@@ -235,7 +237,6 @@ autoloads go somewhere else.")
 	  (widen)
 	  (goto-char (point-min))
 	  (while (search-forward generate-autoload-section-header nil t)
-	    (or done (setq done 'seen))
 	    (let ((form (condition-case ()
 			    (read (current-buffer))
 			  (end-of-file nil))))
@@ -257,20 +258,27 @@ autoloads go somewhere else.")
 		      (generate-file-autoloads file))
 		    (setq done t))))))
 	(if done
+	    ;; There was an existing section and we have updated it.
 	    ()
-	  ;; Have the user tell us where to put the section.
-	  (save-window-excursion
-	    (switch-to-buffer (current-buffer))
-	    (with-output-to-temp-buffer "*Help*"
-	      (princ (substitute-command-keys
-		      (format "\
+	  (if (save-excursion
+		(set-buffer (find-file-noselect file))
+		(save-excursion
+		  (search-forward generate-autoload-cookie nil t)))
+	      ;; There are autoload cookies in FILE.
+	      ;; Have the user tell us where to put the new section.
+	      (progn
+		(save-window-excursion
+		(switch-to-buffer (current-buffer))
+		(with-output-to-temp-buffer "*Help*"
+		  (princ (substitute-command-keys
+			  (format "\
 Move point to where the autoload section
 for %s should be inserted.
 Then do \\[exit-recursive-edit]."
-			      file))))
-	    (recursive-edit)
-	    (beginning-of-line))
-	  (generate-file-autoloads file)))
+				  file))))
+		(recursive-edit)
+		(beginning-of-line))
+		(generate-file-autoloads file)))))
       (if (interactive-p) (save-buffer))
       (if (and (null existing-buffer)
 	       (setq existing-buffer (get-file-buffer file)))
@@ -328,7 +336,7 @@ on directories.  Must be used only with -batch, and kills Emacs on completion.
 Each file will be processed even if an error occurred previously.
 For example, invoke \"emacs -batch -f batch-update-autoloads *.el\""
   (if (not noninteractive)
-      (error "batch-update-file-autoloads is to be used only with -batch"))
+      (error "batch-update-autoloads is to be used only with -batch"))
   (let ((lost nil)
 	(args command-line-args-left))
     (while args

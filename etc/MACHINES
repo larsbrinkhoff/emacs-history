@@ -136,7 +136,18 @@ AT&T 7300 or 3b1 (m68k-att-sysv)
   support them, so you can remove the #define SHORTNAMES in that
   version.
 
-Bull sps7 (m68k-bull-sysv)
+Bull DPX/2 models 2nn or 3nn (m68k-bull-sysv3)
+
+  19.12 works fine either with cc or gcc. 
+
+  You should compile with all the POSIX stuff: undef _SYSV and define
+  _POSIX_SOURCE, _XOPEN_SOURCE and _BULL_SOURCE.
+
+  On bos2.00.45 there is a bug that makes the F_SETOWN fcntl() 
+  call enters in an infinite loop. F_SETOWN_BUG has been defined to avoid 
+  calling it.
+
+Bull sps7 (m68k-bull-sysv2)
 
   Changes partially merged in version 19, but some fixes are probably required.
 
@@ -270,14 +281,14 @@ Hewlett-Packard 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
 
   Version 19 works under BSD.
 
-  These machines are 68000-series CPUs running HP-UX
+  These machines are 68000-series CPUs running HP/UX
   (a derivative of sysV with some BSD features) or BSD 4.3 ported by Utah.
   The operating system suffix determines which system Emacs is built for.
 
-  Series 200 HPUX runs Emacs only if it has the "HP-UX upgrade".
+  Series 200 HPUX runs Emacs only if it has the "HP/UX upgrade".
 
-  If you are running HP-UX release 8.0 or later, you need the optional
-  "C/ANSI C" software in order to build Emacs (older releases of HP-UX
+  If you are running HP/UX release 8.0 or later, you need the optional
+  "C/ANSI C" software in order to build Emacs (older releases of HP/UX
   do not require any special software).  If the file "/etc/filesets/C"
   exists on your machine, you have this software, otherwise you do not.
 
@@ -292,7 +303,7 @@ Hewlett-Packard 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
   processor and a 5.+ kernel has the new compiler.
 
   Define C_SWITCH_MACHINE to be +X to make a version of Emacs that
-  runs on both 68010 and 68020 based hp-ux's.
+  runs on both 68010 and 68020 based HP/UX's.
 
   Define HPUX_68010 if you are using the new assembler, for
   a system that has a 68010 without a 68881.  This is to say,
@@ -311,15 +322,26 @@ HP 9000 series 500: not supported.
 HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux)
 
   These files support HP's Precision Architecture machines
-  running HP-UX.  It has been moderately tested on the Series
+  running HP/UX.  It has been moderately tested on the Series
   840.  Use hppa1.1 for the 700 series and hppa1.0 for the 800
   series machines.  (Emacs may not actually care which one you use.)
 
-  As of version 19.13, Emacs is reported to build (using GCC) and run
+  As of version 19.16, Emacs is reported to build (using GCC) and run
   on HP 9000/700 series machines running HP/UX versions 8.07 and 9.01.
 
-  If you are running HP-UX release 8.0 or later, you need the optional
-  "C/ANSI C" software in order to build Emacs (older releases of HP-UX
+  Some people report trouble using the GNU memory allocator under
+  HP/UX version 9.  We are told that these problems go away if you
+  obtain the latest patches for the HP/UX C compiler.  James J Dempsey
+  <jjd@spserv.bbn.com> says that this set of versions works for him:
+    /bin/cc:
+	    HP92453-01 A.09.28 HP C Compiler
+    /lib/ccom:
+	    HP92453-01 A.09.28 HP C Compiler
+	     HP-UX SLLIC/OPTIMIZER  HP-UX.09.00.23  02/18/93
+	     Ucode Code Generator - HP-UX.09.00.23.5 (patch)  2/18/93
+
+  If you are running HP/UX release 8.0 or later, you need the optional
+  "C/ANSI C" software in order to build Emacs (older releases of HP/UX
   do not require any special software).  If the file "/etc/filesets/C"
   exists on your machine, you have this software, otherwise you do not.
 
@@ -569,13 +591,13 @@ NCR Tower 32 (m68k-ncr-sysv2 or m68k-ncr-sysv3)
 NeXT (m68k-next-bsd, m68k-next-mach2)
 
   Emacs 19 has not been tested extensively yet, but it seems to work
-  in a NeXTStep 3.0 terminal window.  You may need to specify -traditional
-  when src/Makefile builds xmakefile.
+  in a NeXTStep 3.0 terminal window, and under the X server called
+  co-Xist.  You may need to specify -traditional when src/Makefile
+  builds xmakefile.
 
-  Multiple frames (new with Emacs 19) might work with X, but this has
-  not not been tested yet.  NeXT users might want to implement direct
-  operation with NeXTStep, but from the point of view of the GNU project,
-  that is a distraction.
+  NeXT users might want to implement direct operation with NeXTStep,
+  but from the point of view of the GNU project, that is a
+  distraction.
 
   Thanks to Thorsten Ohl for working on the NeXT port of Emacs 19.
 
@@ -854,7 +876,7 @@ System V rel 2 (usg5.2)
   If you find that the character Meta-DEL makes Emacs crash,
   find where function init_sys_modes in sysdep.c sets sg.c_cc[VQUIT]
   and make it store 7 there.  I have as yet no evidence of whether
-  this problem, known in HP-UX, exists in other system V versions.
+  this problem, known in HP/UX, exists in other system V versions.
 
 System V rel 2.2 (usg5.2.2)
 

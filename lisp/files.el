@@ -255,7 +255,7 @@ Not actually set up until the first time you you use it.")
 
 (defun cd-absolute (dir)
   "Change current directory to given absolute file name DIR."
-  (setq dir (expand-file-name dir))
+  (setq dir (abbreviate-file-name (expand-file-name dir)))
   (if (not (eq system-type 'vax-vms))
       (setq dir (file-name-as-directory dir)))
   (if (not (file-directory-p dir))
@@ -1321,9 +1321,8 @@ Value is a list whose car is the name for the backup file
 (defun file-relative-name (filename &optional directory)
   "Convert FILENAME to be relative to DIRECTORY (default: default-directory)."
   (setq filename (expand-file-name filename)
-	directory (file-name-as-directory (if directory
-					      (expand-file-name directory)
-					      default-directory)))
+	directory (file-name-as-directory (expand-file-name
+					   (or directory default-directory))))
   (file-relative-name-1 directory))
 
 (defun save-buffer (&optional args)
@@ -1483,7 +1482,7 @@ the last real save, but optional arg FORCE non-nil means delete anyway."
 	;; If the auto-save file was recent before this command,
 	;; delete it now.
 	(delete-auto-save-file-if-necessary recent-save)
-	(run-hooks 'after-save-hooks))
+	(run-hooks 'after-save-hook))
     (message "(No changes need to be saved)")))
 
 (defun save-some-buffers (&optional arg exiting)
@@ -1853,7 +1852,7 @@ and `list-directory-verbose-switches'."
 ;;   		 dired-after-subdir-garbage (defines what a "total" line is)
 ;;   - variable dired-subdir-regexp
 (defun insert-directory (file switches &optional wildcard full-directory-p)
-  "Insert directory listing for of FILE, formatted according to SWITCHES.
+  "Insert directory listing for FILE, formatted according to SWITCHES.
 Leaves point after the inserted text.
 Optional third arg WILDCARD means treat FILE as shell wildcard.
 Optional fourth arg FULL-DIRECTORY-P means file is a directory and
@@ -1874,18 +1873,12 @@ If WILDCARD, it also runs the shell specified by `shell-file-name'."
 			    "-c" (concat insert-directory-program
 					 " -d " switches " "
 					 (file-name-nondirectory file))))
-	  ;; Barry Margolin says: "SunOS 4.1.3 (and SV and POSIX?)
-	  ;; lists the link if we give a link to a directory - yuck!"
-	  ;; That's why we used to chase symlinks.  But we don't want
-	  ;; to chase links before passing the filename to ls; that
-	  ;; would mean that our line of output would not display
-	  ;; FILE's name as given.  To really address the problem that
-	  ;; SunOS 4.1.3 has, we need to find the right switch to get
-	  ;; a description of the link itself.
-	  ;; (let (symlink)
-	  ;;   (while (setq symlink (file-symlink-p file))
-	  ;;     (setq file symlink)))
-	  (call-process insert-directory-program nil t nil switches file))))))
+	  ;; SunOS 4.1.3, SVr4 and others need the "." to list the
+	  ;; directory if FILE is a symbolic link.
+	  (call-process insert-directory-program nil t nil switches
+			(if full-directory-p
+			    (concat (file-name-as-directory file) ".")
+			  file)))))))
 
 (defun save-buffers-kill-emacs (&optional arg)
   "Offer to save each buffer, then kill this Emacs process.

@@ -51,7 +51,13 @@ This is normally the left button.
 @item drag-mouse-1
 Move point to where you release the mouse, and set the mark where you
 initially clicked the mouse (@code{mouse-set-region}).  Thus, you can
-specify both ends of the region.
+specify both ends of the region.  In Transient Mark mode, the region
+highlighting appears and changes as you drag.
+
+If you move the mouse off the top or bottom of the window while
+dragging, the window scrolls at a steady rate until you move the mouse
+back into the window.  This way, you can mark regions that don't fit
+entirely on the screen.
 
 @item mouse-2
 Yank the last kill text, where you click (@code{mouse-yank-at-click}).
@@ -248,6 +254,12 @@ determined by combining several faces.  Which faces to use is always set
 up by Lisp programs, at present, by means of text properties and
 overlays.  Any aspect of the display style that isn't specified by
 overlays or text properties comes from the frame itself.
+
+@findex list-faces-display
+  To see what faces are currently defined, and what they look like, type
+@kbd{M-x list-faces-display}.  It's possible for a given face to look
+different in different frames; this command shows the appearance in the
+frame in which you type it.
 
 @cindex @code{region} face
 @cindex region highlighting

@@ -24,35 +24,6 @@ EXTRA=insque.o
          RM_CMD = $(RM) *.CKP *.ln *.BAK *.bak *.o core errs ,* *~ *.a \
 			tags TAGS make.log
 
-SRCS =  ${srcdir}/Activate.c \
-	${srcdir}/AddPane.c \
-	${srcdir}/AddSel.c \
-	${srcdir}/ChgPane.c \
-	${srcdir}/ChgSel.c \
-	${srcdir}/Create.c \
-	${srcdir}/DelPane.c \
-	${srcdir}/DelSel.c \
-	${srcdir}/Destroy.c \
-	${srcdir}/Error.c \
-	${srcdir}/EvHand.c \
-	${srcdir}/FindPane.c \
-	${srcdir}/FindSel.c \
-	${srcdir}/InsPane.c \
-	${srcdir}/InsSel.c \
-	${srcdir}/Internal.c \
-	${srcdir}/Locate.c \
-	${srcdir}/Post.c \
-	${srcdir}/Recomp.c \
-	${srcdir}/SetAEQ.c \
-	${srcdir}/SetFrz.c \
-	${srcdir}/SetPane.c \
-	${srcdir}/SetSel.c \
-	${srcdir}/XDelAssoc.c \
-	${srcdir}/XLookAssoc.c \
-	${srcdir}/XCrAssoc.c \
-	${srcdir}/XDestAssoc.c \
-	${srcdir}/XMakeAssoc.c
-
 OBJS =  Activate.o \
 	AddPane.o \
 	AddSel.o \
@@ -78,13 +49,13 @@ OBJS =  Activate.o \
 	SetSel.o \
       XDelAssoc.o XLookAssoc.o XCrAssoc.o XDestAssoc.o XMakeAssoc.o
 
+all:: libXMenu11.a
+
 ALL_CFLAGS=$(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_X_SITE) \
   $(C_SWITCH_MACHINE) $(CPPFLAGS) $(CFLAGS) -DEMACS_BITMAP_FILES
 
 .c.o:
 	$(CC) -c ${ALL_CFLAGS} $<
-
-all:: libXMenu11.a
 
 libXMenu11.a: $(OBJS) $(EXTRA)
 	$(RM) $@
@@ -92,6 +63,36 @@ libXMenu11.a: $(OBJS) $(EXTRA)
 	-$(RANLIB) $@
 #If running ranlib fails, probably there is none.
 #That's ok.  So don't stop the build.
+
+Activate.o: Activate.c XMenuInt.h XMenu.h X10.h
+AddPane.o: AddPane.c XMenuInt.h XMenu.h X10.h
+AddSel.o: AddSel.c XMenuInt.h XMenu.h X10.h
+ChgPane.o: ChgPane.c XMenuInt.h XMenu.h X10.h
+ChgSel.o: ChgSel.c XMenuInt.h XMenu.h X10.h
+Create.o: Create.c XMenuInt.h XMenu.h X10.h
+DelPane.o: DelPane.c XMenuInt.h XMenu.h X10.h
+DelSel.o: DelSel.c XMenuInt.h XMenu.h X10.h
+Destroy.o: Destroy.c XMenuInt.h XMenu.h X10.h
+Error.o: Error.c XMenuInt.h XMenu.h X10.h
+EvHand.o: EvHand.c XMenuInt.h XMenu.h X10.h
+FindPane.o: FindPane.c XMenuInt.h XMenu.h X10.h
+FindSel.o: FindSel.c XMenuInt.h XMenu.h X10.h
+InsPane.o: InsPane.c XMenuInt.h XMenu.h X10.h
+InsSel.o: InsSel.c XMenuInt.h XMenu.h X10.h
+Internal.o: Internal.c XMenuInt.h XMenu.h X10.h
+Locate.o: Locate.c XMenuInt.h XMenu.h X10.h
+Post.o: Post.c XMenuInt.h XMenu.h X10.h
+Recomp.o: Recomp.c XMenuInt.h XMenu.h X10.h
+SetAEQ.o: SetAEQ.c XMenuInt.h XMenu.h X10.h
+SetFrz.o: SetFrz.c XMenuInt.h XMenu.h X10.h
+SetPane.o: SetPane.c XMenuInt.h XMenu.h X10.h
+SetSel.o: SetSel.c XMenuInt.h XMenu.h X10.h
+XDelAssoc.o: XDelAssoc.c X10.h
+XLookAssoc.o: XLookAssoc.c X10.h
+XCrAssoc.o: XCrAssoc.c X10.h
+XDestAssoc.o: XDestAssoc.c X10.h
+XMakeAssoc.o: XMakeAssoc.c X10.h
+insque.o: insque.c
 
 FRC.mostlyclean:
 mostlyclean: FRC.mostlyclean

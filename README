@@ -1,5 +1,13 @@
-This directory tree holds version 19.16 of GNU Emacs, the extensible,
+This directory tree holds version 19.17 of GNU Emacs, the extensible,
 customizable, self-documenting real-time display editor.
+
+Please note that version 19 of Emacs is still in beta-test.  Although
+you may well encounter bugs in this release, we encourage you to use
+it, find the bugs, and report them; your bug reports are valuable
+contributions to the FSF, since they allow us to notice and fix
+problems on machines we don't have, or in code we don't use often.
+See the "Bugs" node of the info tree for more information on how to
+report bugs.
 
 See the files `etc/NEWS' and `etc/news.texi' for information on new
 features and other user-visible changes since the last version of

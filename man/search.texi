@@ -776,7 +776,8 @@ could also type @kbd{C-x u} to undo the replacement; this exits the
 @code{query-replace}, so if you want to do further replacement you must use
 @kbd{C-x @key{ESC} @key{RET}} to restart (@pxref{Repetition}).
 
-@item @key{ESC}
+@item @key{RET}
+@itemx @key{ESC}
 to exit without doing any more replacements.
 
 @item .@: @r{(Period)}

@@ -403,9 +403,14 @@ currently visited, the copying is done into the other file's Emacs buffer
 instead.  You should eventually save it on disk.
 
   The @kbd{C-o} (@code{rmail-output}) command in Rmail appends a copy of
-the current message to a specified file, in Unix mail file format.  This
+the current message to a specified file, in inbox file format.  This
 is useful for moving messages into files to be read by other mail
 processors that do not understand Rmail format.
+
+  The @kbd{o} and @kbd{C-o} commands are actually equivalent when
+you specify an existing file; both commands check the file's contents
+to determine which format to use (Rmail or inbox).  Which command
+you use makes a difference when you specify a nonexistent file.
 
 @vindex rmail-delete-after-output
   Copying a message with @kbd{o} or @kbd{C-o} gives the original copy of
@@ -431,27 +436,6 @@ If there's a match for @var{regexp} in the current message, then the
 default file name for output is @var{filename}.  If multiple elements
 match the message, the first matching element decides the default file
 name.
-
-  Normally you should use only @kbd{o} to output messages to other Rmail
-files, never @kbd{C-o}.  But it is also safe if you always use @kbd{C-o},
-never @kbd{o}.  When a file is visited in Rmail, the last message is
-checked, and if it is in Unix format, the entire file is scanned and all
-Unix-format messages are converted to Rmail format.  (The reason for
-checking the last message is that scanning the file is slow and most Rmail
-files have only Rmail format messages.)  If you use @kbd{C-o} consistently,
-the last message is sure to be in Unix format, so Rmail will convert all
-messages properly.
-
-  The case where you might want to use @kbd{C-o} always, instead of @kbd{o}
-always, is when you or other users want to append mail to the same file
-from other mail processors.  Other mail processors probably do not know
-Rmail format but do know Unix format.
-
-  In any case, always use @kbd{o} to add to an Rmail file that is being
-visited in Rmail.  Adding messages with @kbd{C-o} to the actual disk
-file will trigger a ``simultaneous editing'' warning when you ask to
-save the Emacs buffer.  The messages you added to the file will then be
-lost if you do save the buffer.
 
 @node Rmail Labels
 @section Labels
@@ -652,6 +636,13 @@ can do.@refill
   The @kbd{c} (@code{rmail-continue}) command resumes editing the
 @samp{*mail*} buffer, to finish editing an outgoing message you were
 already composing, or to alter a message you have sent.@refill
+
+@vindex rmail-mail-new-frame
+  If you set the variable @code{rmail-mail-new-frame} to a
+non-@code{nil} value, then all the Rmail commands to start sending a
+message create a new frame to edit it in.  This frame is deleted when
+you send the message, or when you use the @samp{Don't Send} item in the
+@samp{Mail} menu.
 
 @node Rmail Summary
 @section Summaries

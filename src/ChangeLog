@@ -1,3 +1,299 @@
+Sun Jul 18 00:17:28 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Version 19.17 released.
+
+	* xfns.c (Fx_create_frame): Block input around call to
+	x_new_font.  Test if the return value is a string, not if it's
+	nil; x_new_font can return things besides nil and strings, to
+	indicate error conditions.
+
+	* window.c [not MULTI_FRAME] (Fdelete_windows_on): Set FRAME
+	argument to Qt, instead of trying to typecheck it.
+
+	* ymakefile (config_h): Set this to ${srcdir}/config.h; all the
+	source dependencies mention $(config_h), but until now it never
+	had a value.
+
+	* xfns.c (Fx_open_connection): Don't trust HAVE_XRMSETDATABASE;
+	use XrmSetDatabase only when HAVE_X11R5 is defined.
+
+	* dispnew.c (direct_output_for_insert): By the time this function
+	is called, we have already inserted the character into the buffer;
+	the proper buffer position to pass to compute_char_face is point
+	- 1, not point.
+
+Sat Jul 17 02:45:04 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Makefile.in (C_SWITCH_SYSTEM): New variable, set by top-level
+	Makefile.
+	(xmakefile): Pass it to the C preprocessor.
+
+	* window.c (Fdelete_windows_on): New optional argument FRAME; if
+	nil, delete windows on all frames.  If t, delete windows on the
+	selected frame only.  If a frame, delete windows on that frame
+	only.
+
+	* intervals.c (split_interval_left, split_interval_right): Change
+	OFFSET argument of these functions to be origin 0, not origin 1.
+	This is what all the callers currently want.
+	* intervals.c, textprop.c: All callers changed.
+
+	* textprop.c (Ftext_property_not_all): Renamed from
+	Ftext_property_all, and changed sense of return value, so that it
+	returns useful information if not all characters have properties
+	EQ to value.  Now all the existential and universal questions can
+	be asked.
+
+	* textprop.c (syms_of_textprop): Don't forget defsubr for
+	Stext_property_all. 
+
+	* textprop.c (Ftext_property_any, Ftext_property_all): Use EQ to
+	compare property values, not Fequal.
+
+	* xterm.c (x_term_init): Adjust message printed when we can't
+	connect to the X server.
+
+	* xfns.c (Vx_resource_name): Renamed from Vxrdb_name, and made a
+	lisp-visible variable, so lisp/term/x-win.el can set it.  Doc it
+	for "internal use only"; no need for NEWS entry.
+	(validate_x_resource_name): New function.
+	(Fx_get_resource): Doc fix.  References to Vxrdb_name renamed.  Call
+	validate_x_resource_name.
+	(x_window): References to Vxrdb_name renamed.  Call
+	validate_x_resource_name.
+	(Fx_open_connection): References to Vxrdb_name renamed.  Instead
+	of setting and validating its value here, just call
+	validate_x_resource_name.
+	(syms_of_xfns): Add DEFVAR_LISP for Vx_resource_name.
+
+Fri Jul 16 21:43:32 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (Vhelp_menu_bar_map): Deleted.
+	(menu_bar_items): Move elts for events in Vmenu_bar_final_items to end.
+	(syms_of_keyboard): Corresponding changes.
+
+Thu Jul 15 20:52:15 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+        Consistently use the mark bit of the root interval's parent field
+	to say whether or not the interval tree has been visited (and skip
+	it when revisited), and the mark bit of the plist field to say
+	whether or not that interval has been visited (and abort if
+	revisited); don't try to use the plist mark bit for both
+	meanings.
+	* alloc.c (mark_interval_tree): Don't test if the interval tree
+	has already been visited here; let the MARK_INTERVAL_TREE macro do
+	that; avoid function call overhead.  Mark the interval tree as
+	having been visited by setting TREE->parent's mark bit.
+	(MARK_INTERVAL_TREE): If the tree has been visited (according to
+	I->parent's mark bit), don't call mark_interval_tree.
+	(gc_sweep): Rebalance the interval trees of those large strings
+	which are still alive.  This also clears the mark bits of those
+	trees' root intervals' parent fields.
+	(compact_strings): Rebalance the interval tree of each small
+	strings which is still alive.  This also clears the mark bits of
+	that tree's root interval's parent field.  Since the string has
+	moved, update the root interval's parent pointer to contain the
+	new address.
+	* lisp.h (struct interval): Doc fix; explain the roles of the mark
+	bits of the parent and plist members.
+
+	* termhooks.h: In order to avoid declaring struct input_event
+	(which contains Lisp_Objects) in those .c files which need access
+	to the terminal hooks but don't #include lisp.h (like cm.c), test
+	to see if the macro CONSP is #defined.  We used to test XINT, but
+	config.h will #define that everywhere on systems that use tailored
+	tagging schemes.
+
+	* window.c (Fnext_window, Fprevious_window): Put these docstrings
+	in comments; the strings are too long for some C compilers.
+
+	* s/hpux9.h: Doc fix.
+
+Thu Jul 15 19:05:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* ymakefile (DEBUG_MOLE): New variable; a shell expression which
+	expands to -DDEBUG_MOLE on HP 9000/300's in the domain
+	gnu.ai.mit.edu, and the empty string on all other machines.
+	(alloc.o): Cite ${DEBUG_MOLE}, so DEBUG_MOLE is #defined when
+	compiling on mole.
+
+Thu Jul 15 02:01:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_char_menu_prompt): If the user rejects a menu,
+	return t.  This makes read_char also return t.
+	(read_key_sequence): If read_char returned t, return -1.
+	(Fread_key_sequence): If read_key_sequence returned -1, quit.
+	(command_loop_1): If read_key_sequence returned -1, loop around.
+
+Thu Jul 15 00:56:31 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* keyboard.c (menu_bar_one_keymap): If the key's binding is the
+	symbol `undefined', don't try to take that symbol's cdr before
+	passing it to menu_bar_item; pass the `undefined' binding itself,
+	so menu_bar_item can remove bindings for the same key from result.
+
+Wed Jul 14 12:02:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* buffer.c (Fbuffer_local_variables): For local var that is unbound,
+	put just the symbol in the result, not a cons of (symbol . value).
+
+	* keyboard.c (Qdisabled_command_hook): New variable.
+	(Vdisabled_command_hook): Deleted.
+	(syms_of_keyboard): Corresponding changes.
+	(Fcommand_execute): Use Qdisabled_command_hook.
+
+	* alloc.c (mark_object) [DEBUG_MOLE]: Add abort at beginning.
+
+	* keyboard.c (Vhelp_menu_bar_map): New var.
+	(syms_of_keyboard): Set up Lisp var for it.
+	(menu_bar_items): Use Vhelp_menu_bar_map.
+
+Wed Jul 14 00:14:31 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* textprop.c (Ftext_property_any, Ftext_property_all): New
+	functions, from David Gillespie.
+	* intervals.h (Ftext_property_any, Ftext_property_all): Declare them.
+
+	* keyboard.c (read_key_sequence): Accept both strings and vectors
+	as bindings in function-key-map.
+    	* keymap.c (Vfunction_key_map in syms_of_keymap): Doc fix.
+
+	* keyboard.c (Fsuspend_emacs): Pass selected_frame as the first
+	argument to change_frame_size, not 0.  This function may be called
+	in an Emacs compiled with multi-frame support.
+
+Tue Jul 13 17:25:32 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* xterm.c (XTread_socket, UnmapNotify case): Add missing comment
+	terminator.
+
+	* intervals.c (graft_intervals_into_buffer): Properly compute
+	length of buffer.
+
+Tue Jul 13 17:03:09 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* minibuf.c (Fdisplay_completion_list): Run completion-setup-hook.
+
+Mon Jul 12 18:46:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* textprop.c (Qinsert_in_front_hooks, Qinsert_behind_hooks): New vars.
+	(syms_of_textprop): Set them up.
+	* lisp.h (Qinsert_in_front_hooks, Qinsert_behind_hooks): Declared.
+	(Qmodification_hooks): Declared.
+
+	* intervals.c (verify_interval_modification):
+	For insertion, run the insert-in-front-hooks and insert-behind-hooks,
+	not the modification-hooks.
+	* buffer.c (verify_overlay_modification): New function.
+	(call_overlay_mod_hooks): New function.
+	* insdel.c (prepare_to_modify_buffer): Call that.
+
+	* keyboard.c (Qundefined): New variable.
+	(syms_of_keyboard): Set up Qundefined.
+	(menu_bar_items): Don't reverse the items.
+	Process the maps in reverse order.
+	(menu_bar_item): If definition is `undefined',
+	delete any menu bar item already made, and don't make one.
+
+Mon Jul 12 16:41:12 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* print.c (float_to_string): Distinguish between a precision of
+	zero and an omitted precision.  Do allow %.0f to produce strings
+	containing no decimal point or exponent.
+	(syms_of_print): Doc fix for float-output-format.
+
+	* xfns.c (x_set_frame_parameters): Don't set the frame's size and
+	position unless those parameters are actually specified in ALIST.
+
+	* syntax.c (Fmodify_syntax_entry): Doc fix.
+
+Mon Jul 12 14:43:38 1993  Frederic Pierresteguy  (F.Pierresteguy@frcl.bull.fr)
+
+	* xterm.c, sysdep.c (F_SETOWN_BUG): Defined.
+	* m/dpx2.h: New file.
+
+Sat Jul 10 19:23:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* textprop.c (set_properties): Call modify_region.
+	(remove_properties): Call modify_region before record_property_change.
+	(add_properties): Likewise.
+
+Sat Jul 10 18:49:26 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* xrdb.c: Implement search for app-defaults directory and
+	localized default databases, along with some other functionality
+	provided by Xt.
+	#include <stdio.h>, since we call sprintf.
+	[emacs] (malloc, realloc, free): #define these to xmalloc,
+	xrealloc, and xfree.
+	(x_get_string_resource, file_p): Add forward declarations for
+	these.
+	(x_customization_string): New variable.
+	(x_get_customization_string): New function.
+	(gethomedir): Return malloc'ed space of the right size, instead of
+	writing into a fixed-size buffer; this means that our callers do
+	not impose an arbitrary limit on file name length.
+	(magic_file_p): Rewrite of decode_magic; actually do the
+	substitutions, instead of expanding all %-escapes to "".  Support
+	the customization string.  Return 0 or the expanded file name,
+	instead of just zero or one.  Allocate the space for the expanded
+	file name ourselves, instead of writing into a fixed-size buffer
+	passed to us; this removes an arbitrary limit.
+	(search_magic_path): Rewrite of magic_searchpath_decoder.  Return
+	0 or the expanded file name, instead of just zero or one.
+	Allocate the space for the expanded file name ourselves, instead
+	of writing into a fixed-size buffer passed to us; this means that
+	our callers do not impose an arbitrary limit on file name length.
+	(get_system_app): Changed to work with search_magic_path.
+	(get_user_app): Rewritten to work with search_magic_path, and not
+	to assume that the values of XAPPLRESDIR is a single directory.
+	(get_user_db): Properly use the new version of gethomedir.
+	(get_environ_db): Remove arbitrary limit on length of host name.
+	(x_load_resources): Take a new argument, myname.  Call get_user_db
+	early to obtain the customization string.
+	Changes to stand-alone testing code.
+	* xfns.c (Fx_open_connection): Set Vxrdb_name early, and pass it
+	to x_load_resources.
+
+	* keymap.c (syms_of_keymap): Doc fix.
+
+Fri Jul  9 17:41:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (wait_reading_process_input): If wait_for_cell, do call
+	swallow_events and do_pending_window_change when appropriate.
+
+Thu Jul  8 19:45:22 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* editfns.c (region_limit): Declare Vmark_even_if_inactive.
+
+	* callint.c (syms_of_callint):
+	Fix DEFVAR_LISP for Vmark_even_if_inactive to use right
+	Lisp symbol name (without V prepended).
+
+Thu Jul  8 17:43:11 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* callint.c (check_mark): Don't check mark-active unless in
+	transient-mark-mode.  
+	For inactive mark, signal mark-inactive instead of error with a
+	message.
+	* editfns.c (region_limit): Don't error if Vmark_even_if_inactive
+	is set.
+	When the mark is inactive and that is a no-no, signal
+	mark-inactive instead of using error with a message.
+	* data.c (syms_of_data): Staticpro Qmark_inactive.
+	* data.c: Define Qmark_inactive.
+	(syms_of_data): Initialize it.
+	* lisp.h: Declare Qmark_inactive.
+
+Wed Jul  7 03:58:15 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* editfns.c (Fformat): Since floats occupy two elements in the
+	argument list passed to doprnt, we must use separate indices for
+	the array of arguments passed to Fformat, and the array of
+	arguments to be passed to doprnt.
+
+	* .gdbinit (xfloat): New command.
+
 Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.16 released.

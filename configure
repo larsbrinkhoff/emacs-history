@@ -441,8 +441,13 @@ case "${configuration}" in
     machine=7300 opsys=usg5-2-2
   ;;
 
+  ## Bull dpx2
+  m68*-bull-sysv3* )
+    machine=dpx2 opsys=usg5-3
+  ;;
+
   ## Bull sps7
-  m68*-bull-sysv* )
+  m68*-bull-sysv2* )
     machine=sps7 opsys=usg5-2
   ;;
 
@@ -910,7 +915,7 @@ machfile="m/${machine}.h"
 opsysfile="s/${opsys}.h"
 
 
-trap 'rm -f conftest* core; exit 1' 1 3 15
+trap 'rm -fr conftest* core; exit 1' 1 3 15
 
 # NLS nuisances.
 # These must not be set unconditionally because not all systems understand
@@ -1714,6 +1719,29 @@ case "${with_x10}" in
   ;;
 esac
 
+### If the user hasn't specified where we should find X, try
+### letting autoconf figure that out.
+if [ "0${x_includes}" == 0 ] && [ "0${x_libraries}" == 0 ]; then
+  
+    # If we find X, set shell vars x_includes and x_libraries to the paths.
+echo checking for X include and library files with xmkmf
+rm -fr conftestdir
+if mkdir conftestdir; then
+  cd conftestdir
+  cat < /dev/null > Imakefile
+  if xmkmf >/dev/null 2>/dev/null && test -f Makefile; then
+    eval `sed -n \
+    -e 's,.* INCROOT *=[^/]*,x_includes=,p' \
+    -e 's,.* USRLIBDIR *=[^/]*,x_libraries=,p' \
+    Makefile`
+  fi
+  cd ..
+  rm -fr conftestdir
+fi
+
+  
+fi
+
 case "${window_system}" in
   "none" | "x11" | "x10" ) ;;
   "" )
@@ -2140,7 +2168,7 @@ do
   esac
 done
 
-trap 'rm -f Makefile src/config.h conftest*; exit 1' 1 3 15
+trap 'rm -fr Makefile src/config.h conftest*; exit 1' 1 3 15
 CC='$CC'
 LN_S='$LN_S'
 CPP='$CPP'

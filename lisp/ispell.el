@@ -1,6 +1,6 @@
 ;;; ispell.el --- this is the GNU EMACS interface to GNU ISPELL version 4.
 
-;;Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+;;Copyright (C) 1990, 1991, 1993 Free Software Foundation, Inc.
 
 ;; Keywords: wp
 
@@ -62,7 +62,7 @@ and need not be mentioned here.")
 
 ;; Non-nil means we have started showing an alternatives window.
 ;; This is the window config from before then.
-(defvar ispell-window-configuration)
+(defvar ispell-window-configuration nil)
 
 ;t when :dump command needed
 (defvar ispell-dump-needed nil)
@@ -213,6 +213,24 @@ that have not already been dumped will be lost."
 (defun ispell-tex-buffer-p ()
   (memq major-mode '(plain-TeX-mode LaTeX-mode)))
 
+(defvar ispell-menu-map (make-sparse-keymap "Spell"))
+(defalias 'ispell-menu-map ispell-menu-map)
+
+(define-key ispell-menu-map [reload-ispell]
+  '("Reload Dictionary" . reload-ispell))
+
+(define-key ispell-menu-map [ispell-next]
+  '("Continue Check" . ispell-next))
+
+(define-key ispell-menu-map [ispell-region]
+  '("Check Region" . ispell-region))
+
+(define-key ispell-menu-map [ispell-buffer]
+  '("Check Buffer" . ispell))
+
+(define-key ispell-menu-map [ispell-word]
+  '("Check Word" . ispell-word))
+
 ;;;###autoload
 (defun ispell (&optional buf start end)
   "Run Ispell over current buffer's visited file.
@@ -245,10 +263,7 @@ q, \\[keyboard-quit]	Leave the command loop.  You can come back later with \\[is
       (error "Can't find buffer"))
   ;; Deactivate the mark, because we'll do it anyway if we change something,
   ;; and a region highlight while in the Ispell loop is distracting.
-  (if transient-mark-mode
-      (progn
-	(setq mark-active nil)
-	(run-hooks 'deactivate-mark-hook)))
+  (deactivate-mark)
   (save-excursion
     (set-buffer buf)
     (let ((filename buffer-file-name)

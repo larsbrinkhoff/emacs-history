@@ -25,6 +25,8 @@
 
 (define-key global-map [menu-bar] (make-sparse-keymap "menu-bar"))
 (defvar menu-bar-help-menu (make-sparse-keymap "Help"))
+;; Put Help item last.
+(setq menu-bar-final-items '(help))
 (define-key global-map [menu-bar help] (cons "Help" menu-bar-help-menu))
 (defvar menu-bar-edit-menu (make-sparse-keymap "Edit"))
 (define-key global-map [menu-bar edit] (cons "Edit" menu-bar-edit-menu))
@@ -42,12 +44,15 @@
 (define-key menu-bar-file-menu [write-file]
   '("Save Buffer As..." . write-file))
 (define-key menu-bar-file-menu [save-buffer] '("Save Buffer" . save-buffer))
+(define-key menu-bar-file-menu [dired] '("Open Directory..." . dired))
 (define-key menu-bar-file-menu [open-file] '("Open File..." . find-file))
 (define-key menu-bar-file-menu [new-frame] '("New Frame" . new-frame))
 
+
+(define-key menu-bar-edit-menu [spell] '("Spell..." . ispell-menu-map))
 (define-key menu-bar-edit-menu [fill] '("Fill" . fill-region))
 (define-key menu-bar-edit-menu [clear] '("Clear" . delete-region))
-(define-key menu-bar-edit-menu [choose-selection]
+(define-key menu-bar-edit-menu [choose-next-paste]
   '("Choose Next Paste" . mouse-menu-choose-yank))
 (define-key menu-bar-edit-menu [paste] '("Paste" . yank))
 (define-key menu-bar-edit-menu [copy] '("Copy" . kill-ring-save))
@@ -62,6 +67,8 @@
 (put 'undo 'menu-enable '(if (eq last-command 'undo)
 			     pending-undo-list
 			   (consp buffer-undo-list)))
+
+(autoload 'ispell-menu-map "ispell" nil t 'keymap)
 
 (define-key menu-bar-help-menu [emacs-tutorial]
   '("Emacs Tutorial" . help-with-tutorial))
@@ -96,7 +103,10 @@
     (> count 1)))
 
 (put 'save-buffer 'menu-enable '(buffer-modified-p))
-(put 'revert-buffer 'menu-enable '(and (buffer-modified-p) (buffer-file-name)))
+(put 'revert-buffer 'menu-enable
+     '(or revert-buffer-function revert-buffer-insert-file-contents-function
+	  (and (buffer-file-name)
+	       (not (verify-visited-file-modtime (current-buffer))))))
 (put 'delete-frame 'menu-enable '(cdr (visible-frame-list)))
 (put 'kill-this-buffer 'menu-enable '(kill-this-buffer-enabled-p))
 
@@ -126,7 +136,7 @@ A subsequent \\[yank] yanks the choice just selected."
 		       kill-ring))
 	 (arg (x-popup-menu event 
 			    (list "Yank Menu"
-				  (cons "Pick Selection" menu)))))
+				  (cons "Choose Next Yank" menu)))))
     ;; A mouse click outside the menu returns nil.
     ;; Avoid a confusing error from passing nil to rotate-yank-pointer.
     ;; XXX should this perhaps do something other than simply return? -rm
@@ -197,7 +207,7 @@ and selects that window."
 				 (setq maxlen (length (car (car head))))))
 			  (setq tail (cdr tail)))
 			(nconc (reverse head)
-			       (list (cons (concat (make-string (- (/ maxlen 2) 8) ?\ )
+			       (list (cons (concat (make-string (max 0 (- (/ maxlen 2) 8)) ?\ )
 						   "List All Buffers")
 					   'list-buffers)))))))
 

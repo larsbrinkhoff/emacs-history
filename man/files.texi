@@ -898,7 +898,9 @@ can do both of them with a single Emacs command: @w{@kbd{C-x C-q}}
 mode line displays @samp{RCS} or @samp{SCCS} to inform you that version
 control is in use, and also (in case you care) which low-level system
 the file is actually stored in.  Normally, such a source file is
-read-only, and the mode line indicates this with @samp{%%}.
+read-only, and the mode line indicates this with @samp{%%}.  With RCS,
+the mode line also indicates the head version, which is normally also
+the version you are looking at.
 
   These are the commands for editing a file maintained with
 version control:
@@ -926,7 +928,9 @@ commands except for @kbd{C-x C-q} start with @kbd{C-x v}.)
   When you want to modify a file maintained with version control, type
 @kbd{C-x C-q} (@code{vc-toggle-read-only}).  This @dfn{checks out} the
 file, and tells RCS or SCCS to lock the file.  This means making the
-file writable for you (but not for anyone else).
+file writable for you (but not for anyone else).  The mode line
+indicates that you have locked the file by showing your name and
+a colon before the version number.
 
 @cindex log entry
   When you are finished editing the file, type @kbd{C-x C-q} again.
@@ -956,7 +960,9 @@ attempt to visit the file with Emacs creates it again.
 you try to check out a file that is locked, @kbd{C-x C-q} asks you
 whether you want to ``steal the lock.''  If you say yes, the file
 becomes locked by you, but a message is sent to the person who had
-formerly locked the file, to inform him of what has happened.
+formerly locked the file, to inform him of what has happened.  The mode
+line indicates that a file is locked by someone else by displaying the
+login name of that person, before the version number.
 
 @kindex C-x v u
 @findex vc-revert-buffer

@@ -1,6 +1,6 @@
 ;;; vc-hooks.el --- resident support for version-control
 
-;; Copyright (C) 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Version: 5.3
@@ -152,11 +152,11 @@ visiting FILE."
     vc-type))
 
 (defun vc-rcs-status (file)
-  ;; Return string " [LOCKER:REV]" if FILE under RCS control, otherwise nil,
-  ;; for placement in modeline by `vc-mode-line'.
-
-  ;; If FILE is not locked then return just "".  If the FILE is locked
-  ;; then return *all* the locks currently set, in a single string of the
+  ;; Return string for placement in modeline by `vc-mode-line'.
+  ;; If FILE is not registered under RCS, return nil.
+  ;; If FILE is registered but not locked, return " REV" if there is a head
+  ;; revision and " @@" otherwise.
+  ;; If FILE is locked then return all locks in a string of the
   ;; form " LOCKER1:REV1 LOCKER2:REV2 ...".
 
   ;; Algorithm: 
@@ -166,12 +166,10 @@ visiting FILE."
   ;; 2. Insert the first few characters of the master file into a work
   ;; buffer.
   ;;  
-  ;; 3. Search work buffer for line starting with "date" indicating enough
-  ;; of header was included; if not found, then keep inserting characters
-  ;; until "date" is located.
+  ;; 3. Search work buffer for "locks...;" phrase; if not found, then
+  ;; keep inserting more characters until the phrase is found.
   ;; 
-  ;; 4. Search work buffer for line starting with "locks", extract
-  ;; all the locks currently enabled, and remove control characters
+  ;; 4. Extract the locks, and remove control characters
   ;; separating them, like newlines; the string " user1:revision1
   ;; user2:revision2 ..." is returned.
 
@@ -179,9 +177,10 @@ visiting FILE."
 
   ;; The output doesn't show which version you are actually looking at.
   ;; The modeline can get quite cluttered when there are multiple locks.
+  ;; The head revision is probably not what you want if you've used `rcs -b'.
 
   (let ((master (vc-name file))
-	found status)
+	found)
 
     ;; If master file exists, then parse its contents, otherwise we return the 
     ;; nil value of this if form.
@@ -189,7 +188,7 @@ visiting FILE."
         (save-excursion
 
           ;; Create work buffer.
-          (set-buffer (get-buffer-create "*vc-rcs-status*"))
+          (set-buffer (get-buffer-create " *vc-rcs-status*"))
           (setq buffer-read-only nil
                 default-directory (file-name-directory master))
           (erase-buffer)
@@ -207,13 +206,21 @@ visiting FILE."
 
           (if found
 	      ;; Clean control characters from text.
-	      (let ((status
-		     (save-restriction
-		       (narrow-to-region (match-beginning 1) (match-end 1))
-		       (goto-char (point-min))
-		       (while (re-search-forward "[ \b\t\n\v\f\r]+" nil t)
-			 (replace-match " " t t))
-		       (buffer-string))))
+	      (let* ((locks
+		      (save-restriction
+			(narrow-to-region (match-beginning 1) (match-end 1))
+			(goto-char (point-min))
+			(while (re-search-forward "[ \b\t\n\v\f\r]+" nil t)
+			  (replace-match " " t t))
+			(buffer-string)))
+		     (status
+		      (if (not (string-equal locks ""))
+			  locks
+			(goto-char (point-min))
+			(if (looking-at "head[ \b\t\n\v\f\r]+\\([.0-9]+\\)")
+			    (concat " " (buffer-substring (match-beginning 1)
+							  (match-end 1)))
+			  " @@"))))
 		;; Clean work buffer.
 		(erase-buffer)
 		(set-buffer-modified-p nil)

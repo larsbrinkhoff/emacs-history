@@ -72,7 +72,7 @@
 
 (defconst mode-line-buffer-identification (purecopy '("Emacs: %12b"))
   "Mode-line control for identifying the buffer being displayed.
-Its default value is \"Emacs: %17b\".  Major modes that edit things
+Its default value is \"Emacs: %12b\".  Major modes that edit things
 other than ordinary files may change this (e.g. Info, Dired,...)")
 
 (make-variable-buffer-local 'mode-line-buffer-identification)
@@ -236,6 +236,7 @@ for \\[find-tag] (which see)."
 (define-key global-map [down]		'next-line)
 (define-key global-map [prior]		'scroll-down)
 (define-key global-map [next]		'scroll-up)
+(define-key global-map [M-next]		'scroll-other-window)
 (define-key global-map [end]		'end-of-buffer)
 (define-key global-map [begin]		'beginning-of-buffer)
 ;; (define-key global-map [select]		'function-key-error)
@@ -407,7 +408,7 @@ for \\[find-tag] (which see)."
 (define-key ctl-x-map "a+" 'add-mode-abbrev)
 (define-key ctl-x-map "aig" 'inverse-add-global-abbrev)
 (define-key ctl-x-map "ail" 'inverse-add-mode-abbrev)
-(define-key ctl-x-map "a\C-h" 'inverse-add-global-abbrev)
+;; (define-key ctl-x-map "a\C-h" 'inverse-add-global-abbrev)
 (define-key ctl-x-map "a-" 'inverse-add-global-abbrev)
 (define-key ctl-x-map "ae" 'expand-abbrev)
 (define-key ctl-x-map "a'" 'expand-abbrev)
@@ -428,7 +429,7 @@ for \\[find-tag] (which see)."
 ;;;(sort-regexp-fields nil "\n*.*\n.*from \\(.*\\)[^]*" "\\1"
 ;;;		    (point-min) (point-max))
 
-;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11285 49636))
+;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11318 13833))
 ;;; Generated autoloads from add-log.el
 
 (defvar change-log-default-name nil "\
@@ -467,10 +468,10 @@ Runs `change-log-mode-hook'." t nil)
 
 ;;;***
 
-;;;### (autoloads (ad-start-advice defadvice ad-add-advice) "advice" "advice.el" (11266 60950))
+;;;### (autoloads (ad-start-advice defadvice ad-add-advice) "advice" "advice.el" (11335 1783))
 ;;; Generated autoloads from advice.el
 
-(defvar ad-start-advice-on-load nil "\
+(defvar ad-start-advice-on-load t "\
 *Non-NIL will start advice magic when this file gets loaded.
 Also see function `ad-start-advice'.")
 
@@ -583,12 +584,12 @@ a function gets defined or redefined." t nil)
 
 ;;;***
 
-;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11287 33186))
+;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11336 60199))
 ;;; Generated autoloads from ange-ftp.el
 
 (autoload (quote ange-ftp-hook-function) "ange-ftp" nil nil nil)
 
-(or (assoc "^/[^/:]+:" file-name-handler-alist) (setq file-name-handler-alist (cons (quote ("^/[^/:]+:" . ange-ftp-hook-function)) file-name-handler-alist)))
+(or (assoc "^/[^/:]*\\([^/:]:\\|\\'\\)" file-name-handler-alist) (setq file-name-handler-alist (cons (quote ("^/[^/:]*\\([^/:]:\\|\\'\\)" . ange-ftp-hook-function)) file-name-handler-alist)))
 
 ;;;***
 
@@ -672,7 +673,7 @@ Special commands:\\{asm-mode-map}
 
 ;;;***
 
-;;;### (autoloads (batch-update-autoloads update-directory-autoloads update-autoloads-here update-file-autoloads) "autoload" "autoload.el" (11295 42814))
+;;;### (autoloads (batch-update-autoloads update-directory-autoloads update-autoloads-here update-file-autoloads) "autoload" "autoload.el" (11332 29335))
 ;;; Generated autoloads from autoload.el
 
 (autoload (quote update-file-autoloads) "autoload" "\
@@ -972,7 +973,7 @@ a reflection." t nil)
 
 ;;;***
 
-;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11295 23399))
+;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11336 59225))
 ;;; Generated autoloads from bytecomp.el
 
 (autoload (quote byte-recompile-directory) "bytecomp" "\
@@ -1022,7 +1023,7 @@ For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\"" nil n
 
 ;;;***
 
-;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11292 39079))
+;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11327 35047))
 ;;; Generated autoloads from calendar.el
 
 (defvar view-diary-entries-initially nil "\
@@ -1054,9 +1055,9 @@ The marking symbol is specified by the variable `diary-entry-marker'.")
 *The symbol used to mark dates that have diary entries.")
 
 (defvar view-calendar-holidays-initially nil "\
-*If t, the holidays for the current three month period will be displayed
-on entry.  The holidays are displayed in another window when the calendar is
-first displayed.")
+*If t, holidays for current three month period will be displayed on entry.
+The holidays are displayed in another window when the calendar is first
+displayed.")
 
 (defvar mark-holidays-in-calendar nil "\
 *If t, dates of holidays will be marked in the calendar window.
@@ -1066,22 +1067,31 @@ The marking symbol is specified by the variable `calendar-holiday-marker'.")
 *The symbol used to mark notable dates in the calendar.")
 
 (defvar all-hebrew-calendar-holidays nil "\
-*If nil, the holidays from the Hebrew calendar that are shown will
-include only those days of such major interest as to appear on secular
-calendars.  If t, the holidays shown in the calendar will include all
-special days that would be shown on a complete Hebrew calendar.")
+*If nil, show only major holidays from the Hebrew calendar.
+
+If nil, the only holidays from the Hebrew calendar shown will be those days of
+such major interest as to appear on secular calendars.
+
+If t, the holidays shown in the calendar will include all special days that
+would be shown on a complete Hebrew calendar.")
 
 (defvar all-christian-calendar-holidays nil "\
-*If nil, the holidays from the Christian calendar that are shown will
-include only those days of such major interest as to appear on secular
-calendars.  If t, the holidays shown in the calendar will include all
-special days that would be shown on a complete Christian calendar.")
+*If nil, show only major holidays from the Christian calendar.
+
+If nil, the only holidays from the Christian calendar shown will be those days
+of such major interest as to appear on secular calendars.
+
+If t, the holidays shown in the calendar will include all special days that
+would be shown on a complete Christian calendar.")
 
 (defvar all-islamic-calendar-holidays nil "\
-*If nil, the holidays from the Islamic calendar that are shown will
-include only those days of such major interest as to appear on secular
-calendars.  If t, the holidays shown in the calendar will include all
-special days that would be shown on a complete Islamic calendar.")
+*If nil, show only major holidays from the Islamic calendar.
+
+If nil, the only holidays from the Islamic calendar shown will be those days
+of such major interest as to appear on secular calendars.
+
+If t, the holidays shown in the calendar will include all special days that
+would be shown on a complete Islamic calendar.")
 
 (defvar calendar-load-hook nil "\
 *List of functions to be called after the calendar is first loaded.
@@ -1217,35 +1227,31 @@ Diary files can contain directives to include the contents of other files; for
 details, see the documentation for the variable `list-diary-entries-hook'.")
 
 (defvar diary-nonmarking-symbol "&" "\
-*The symbol used to indicate that a diary entry is not to be marked in the
-calendar window.")
+*Symbol indicating that a diary entry is not to be marked in the calendar.")
 
 (defvar hebrew-diary-entry-symbol "H" "\
-*The symbol used to indicate that a diary entry is according to the
-Hebrew calendar.")
+*Symbol indicating a diary entry according to the Hebrew calendar.")
 
 (defvar islamic-diary-entry-symbol "I" "\
-*The symbol used to indicate that a diary entry is according to the
-Islamic calendar.")
+*Symbol indicating a diary entry according to the Islamic calendar.")
 
 (defvar diary-include-string "#include" "\
-*The string used to indicate the inclusion of another file of diary entries
-in diary-file.  See the documentation for the function
-`include-other-diary-files'.")
+*The string indicating inclusion of another file of diary entries.
+See the documentation for the function `include-other-diary-files'.")
 
 (defvar sexp-diary-entry-symbol "%%" "\
 *The string used to indicate a sexp diary entry in diary-file.
 See the documentation for the function `list-sexp-diary-entries'.")
 
 (defvar abbreviated-calendar-year t "\
-*Interpret a two-digit year DD in a diary entry as being either 19DD or
-20DD, as appropriate, for the Gregorian calendar; similarly for the Hebrew and
-Islamic calendars.  If this variable is nil, years must be written in full.")
+*Interpret a two-digit year DD in a diary entry as either 19DD or 20DD.
+For the Gregorian calendar; similarly for the Hebrew and Islamic calendars.
+If this variable is nil, years must be written in full.")
 
 (defvar european-calendar-style nil "\
-*Use the European style of dates in the diary and in any displays.  If this
-variable is t, a date 1/2/1990 would be interpreted as February 1, 1990.
-The accepted European date styles are
+*Use the European style of dates in the diary and in any displays.
+If this variable is t, a date 1/2/1990 would be interpreted as February 1,
+1990.  The accepted European date styles are
 
             DAY/MONTH
             DAY/MONTH/YEAR
@@ -1289,22 +1295,20 @@ current word of the diary entry, so in no case can the pattern match more than
 a portion of the first word of the diary entry.")
 
 (defvar european-calendar-display-form (quote ((if dayname (concat dayname ", ")) day " " monthname " " year)) "\
-*The pseudo-pattern that governs the way a Gregorian date is formatted
-in the European style.  See the documentation of calendar-date-display-forms
-for an explanation.")
+*Pseudo-pattern governing the way a date appears in the European style.
+See the documentation of calendar-date-display-forms for an explanation.")
 
 (defvar american-calendar-display-form (quote ((if dayname (concat dayname ", ")) monthname " " day ", " year)) "\
-*The pseudo-pattern that governs the way a Gregorian date is formatted
-in the American style.  See the documentation of calendar-date-display-forms
-for an explanation.")
+*Pseudo-pattern governing the way a date appears in the American style.
+See the documentation of calendar-date-display-forms for an explanation.")
 
 (defvar calendar-date-display-form (if european-calendar-style european-calendar-display-form american-calendar-display-form) "\
-*The pseudo-pattern that governs the way a Gregorian date is formatted
-as a string by the function `calendar-date-string'.  A pseudo-pattern is a
-list of expressions that can involve the keywords `month', `day', and
-`year', all numbers in string form, and `monthname' and `dayname', both
-alphabetic strings.  For example, the ISO standard would use the pseudo-
-pattern
+*Pseudo-pattern governing the way a date appears.
+
+Used by the function `calendar-date-string', a pseudo-pattern is a list of
+expressions that can involve the keywords `month', `day', and `year', all
+numbers in string form, and `monthname' and `dayname', both alphabetic
+strings.  For example, the ISO standard would use the pseudo- pattern
 
        '(year \"-\" month \"-\" day)
 
@@ -1320,44 +1324,16 @@ would give the usual American style in fixed-length fields.
 
 See the documentation of the function `calendar-date-string'.")
 
-(defvar calendar-time-display-form (quote (12-hours ":" minutes am-pm (if time-zone " (") time-zone (if time-zone ")"))) "\
-*The pseudo-pattern that governs the way a time of day is formatted.
-
-A pseudo-pattern is a list of expressions that can involve the keywords
-`12-hours', `24-hours', and `minutes',  all numbers in string form,
-and `am-pm' and `time-zone',  both alphabetic strings.
-
-For example, the form
-
-  '(24-hours \":\" minutes
-    (if time-zone \" (\") time-zone (if time-zone \")\"))
-
-would give military-style times like `21:07 (UT)'.")
-
-(defvar calendar-latitude nil "\
-*Latitude of `calendar-location-name' in degrees, + north, - south.
-For example, 40.7 for New York City.")
-
-(defvar calendar-longitude nil "\
-*Longitude of `calendar-location-name' in degrees, + east, - west.
-For example, -74.0 for New York City.")
-
-(defvar calendar-location-name (quote (let ((float-output-format "%.1f")) (format "%s%s, %s%s" (abs calendar-latitude) (if (> calendar-latitude 0) "N" "S") (abs calendar-longitude) (if (> calendar-longitude 0) "E" "W")))) "\
-*An expression that evaluates to the name of the location at
-`calendar-longitude', calendar-latitude'.  Default value is just the latitude,
-longitude pair.")
-
 (defvar print-diary-entries-hook (quote lpr-buffer) "\
-*List of functions to be called after a temporary buffer is prepared with
-the diary entries currently visible in the diary buffer.  The default just
-does the printing.  Other uses might include, for example, rearranging the
-lines into order by day and time, saving the buffer instead of deleting it, or
-changing the function used to do the printing.")
+*List of functions called after a temporary diary buffer is prepared.
+The buffer shows only the diary entries currently visible in the diary
+buffer.  The default just does the printing.  Other uses might include, for
+example, rearranging the lines into order by day and time, saving the buffer
+instead of deleting it, or changing the function used to do the printing.")
 
 (defvar list-diary-entries-hook nil "\
-*List of functions to be called after the diary file is culled for
-relevant entries. It is to be used for diary entries that are not found in
-the diary file.
+*List of functions called after diary file is culled for relevant entries.
+It is to be used for diary entries that are not found in the diary file.
 
 A function `include-other-diary-files' is provided for use as the value of
 this hook.  This function enables you to use shared diary files together
@@ -1404,10 +1380,11 @@ if that day is a holiday; if you want such days to be shown in the fancy
 diary buffer, set the variable `diary-list-include-blanks' to t.")
 
 (defvar nongregorian-diary-listing-hook nil "\
-*List of functions to be called for the diary file and included files as
-they are processed for listing diary entries.  You can use any or all of
-`list-hebrew-diary-entries' and `list-islamic-diary-entries'.  The
-documentation for these functions describes the style of such diary entries.")
+*List of functions called for listing diary file and included files.
+As the files are processed for diary entries, these functions are used to cull
+relevant entries.  You can use either or both of `list-hebrew-diary-entries'
+and `list-islamic-diary-entries'.  The documentation for these functions
+describes the style of such diary entries.")
 
 (defvar mark-diary-entries-hook nil "\
 *List of functions called after marking diary entries in the calendar.
@@ -1424,24 +1401,26 @@ part of the mark-diary-entries-hook, you will probably also want to use the
 function `include-other-diary-files' as part of the list-diary-entries-hook.")
 
 (defvar nongregorian-diary-marking-hook nil "\
-*List of functions to be called as the diary file and included files are
-processed for marking diary entries.  You can use either or both of
-mark-hebrew-diary-entries and mark-islamic-diary-entries.  The documentation
-for these functions describes the style of such diary entries.")
+*List of functions called for marking diary file and included files.
+As the files are processed for diary entries, these functions are used to cull
+relevant entries.  You can use either or both of `mark-hebrew-diary-entries'
+and `mark-islamic-diary-entries'.  The documentation for these functions
+describes the style of such diary entries.")
 
 (defvar diary-list-include-blanks nil "\
-*If nil, do not include days with no diary entry in the list of diary
-entries.  Such days will then not be shown in the the fancy diary buffer,
-even if they are holidays.")
+*If nil, do not include days with no diary entry in the list of diary entries.
+Such days will then not be shown in the the fancy diary buffer, even if they
+are holidays.")
 
 (defvar holidays-in-diary-buffer t "\
-*If t, the holidays will be indicated in the mode line of the diary buffer
-(or in the fancy diary buffer next to the date).  This slows down the diary
-functions somewhat; setting it to nil will make the diary display faster.")
+*If t, the holidays will be indicated in the diary display.
+The holidays will be given in the mode line of the diary buffer, or in the
+fancy diary buffer next to the date.  This slows down the diary functions
+somewhat; setting it to nil will make the diary display faster.")
 
-(defvar general-holidays (quote ((fixed 1 1 "New Year's Day") (float 1 1 3 "Martin Luther King Day") (fixed 2 2 "Ground Hog Day") (fixed 2 14 "Valentine's Day") (float 2 1 3 "President's Day") (fixed 3 17 "St. Patrick's Day") (fixed 4 1 "April Fool's Day") (float 5 0 2 "Mother's Day") (float 5 1 -1 "Memorial Day") (fixed 6 14 "Flag Day") (float 6 0 3 "Father's Day") (fixed 7 4 "Independence Day") (float 9 1 1 "Labor Day") (float 10 1 2 "Columbus Day") (fixed 10 31 "Halloween") (fixed 11 11 "Veteran's Day") (float 11 4 4 "Thanksgiving"))) "\
-*General holidays.  Default value is for the United States.  See the
-documentation for `calendar-holidays' for details.")
+(defvar general-holidays (quote ((holiday-fixed 1 1 "New Year's Day") (holiday-float 1 1 3 "Martin Luther King Day") (holiday-fixed 2 2 "Ground Hog Day") (holiday-fixed 2 14 "Valentine's Day") (holiday-float 2 1 3 "President's Day") (holiday-fixed 3 17 "St. Patrick's Day") (holiday-fixed 4 1 "April Fool's Day") (holiday-float 5 0 2 "Mother's Day") (holiday-float 5 1 -1 "Memorial Day") (holiday-fixed 6 14 "Flag Day") (holiday-float 6 0 3 "Father's Day") (holiday-fixed 7 4 "Independence Day") (holiday-float 9 1 1 "Labor Day") (holiday-float 10 1 2 "Columbus Day") (holiday-fixed 10 31 "Halloween") (holiday-fixed 11 11 "Veteran's Day") (holiday-float 11 4 4 "Thanksgiving"))) "\
+*General holidays.  Default value is for the United States.
+See the documentation for `calendar-holidays' for details.")
 
 (defvar local-holidays nil "\
 *Local holidays.
@@ -1451,114 +1430,21 @@ See the documentation for `calendar-holidays' for details.")
 *User defined holidays.
 See the documentation for `calendar-holidays' for details.")
 
-(defvar hebrew-holidays (quote ((rosh-hashanah-etc) (if all-hebrew-calendar-holidays (julian 11 (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (if (zerop (% (1+ year) 4)) 22 21))) "\"Tal Umatar\" (evening)")) (if all-hebrew-calendar-holidays (hanukkah) (hebrew 9 25 "Hanukkah")) (if all-hebrew-calendar-holidays (hebrew 10 (let ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list displayed-month 28 displayed-year)))))) (if (= (% (calendar-absolute-from-hebrew (list 10 10 h-year)) 7) 6) 11 10)) "Tzom Teveth")) (if all-hebrew-calendar-holidays (hebrew 11 15 "Tu B'Shevat")) (if all-hebrew-calendar-holidays (hebrew 11 (let ((m displayed-month) (y displayed-year)) (increment-calendar-month m y 1) (let* ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list m (calendar-last-day-of-month m y) y))))) (s-s (calendar-hebrew-from-absolute (if (= (% (calendar-absolute-from-hebrew (list 7 1 h-year)) 7) 6) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 17 h-year))) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 16 h-year)))))) (day (extract-calendar-day s-s))) day)) "Shabbat Shirah")) (passover-etc) (if (and all-hebrew-calendar-holidays (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (= 21 (% year 28))))) (julian 3 26 "Kiddush HaHamah")) (if all-hebrew-calendar-holidays (tisha-b-av-etc)))) "\
+(defvar hebrew-holidays (quote ((holiday-rosh-hashanah-etc) (if all-hebrew-calendar-holidays (holiday-julian 11 (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (if (zerop (% (1+ year) 4)) 22 21))) "\"Tal Umatar\" (evening)")) (if all-hebrew-calendar-holidays (holiday-hanukkah) (holiday-hebrew 9 25 "Hanukkah")) (if all-hebrew-calendar-holidays (holiday-hebrew 10 (let ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list displayed-month 28 displayed-year)))))) (if (= (% (calendar-absolute-from-hebrew (list 10 10 h-year)) 7) 6) 11 10)) "Tzom Teveth")) (if all-hebrew-calendar-holidays (holiday-hebrew 11 15 "Tu B'Shevat")) (if all-hebrew-calendar-holidays (holiday-hebrew 11 (let ((m displayed-month) (y displayed-year)) (increment-calendar-month m y 1) (let* ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list m (calendar-last-day-of-month m y) y))))) (s-s (calendar-hebrew-from-absolute (if (= (% (calendar-absolute-from-hebrew (list 7 1 h-year)) 7) 6) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 17 h-year))) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 16 h-year)))))) (day (extract-calendar-day s-s))) day)) "Shabbat Shirah")) (holiday-passover-etc) (if (and all-hebrew-calendar-holidays (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (= 21 (% year 28))))) (holiday-julian 3 26 "Kiddush HaHamah")) (if all-hebrew-calendar-holidays (holiday-tisha-b-av-etc)))) "\
 *Jewish holidays.
 See the documentation for `calendar-holidays' for details.")
 
-(defvar christian-holidays (quote ((if all-christian-calendar-holidays (fixed 1 6 "Epiphany")) (easter-etc) (if all-christian-calendar-holidays (greek-orthodox-easter)) (if all-christian-calendar-holidays (fixed 8 15 "Assumption")) (if all-christian-calendar-holidays (advent)) (fixed 12 25 "Christmas") (if all-christian-calendar-holidays (julian 12 25 "Eastern Orthodox Christmas")))) "\
+(defvar christian-holidays (quote ((if all-christian-calendar-holidays (holiday-fixed 1 6 "Epiphany")) (holiday-easter-etc) (if all-christian-calendar-holidays (holiday-greek-orthodox-easter)) (if all-christian-calendar-holidays (holiday-fixed 8 15 "Assumption")) (if all-christian-calendar-holidays (holiday-advent)) (holiday-fixed 12 25 "Christmas") (if all-christian-calendar-holidays (holiday-julian 12 25 "Eastern Orthodox Christmas")))) "\
 *Christian holidays.
 See the documentation for `calendar-holidays' for details.")
 
-(defvar islamic-holidays (quote ((islamic 1 1 (format "Islamic New Year %d" (let ((m displayed-month) (y displayed-year)) (increment-calendar-month m y 1) (extract-calendar-year (calendar-islamic-from-absolute (calendar-absolute-from-gregorian (list m (calendar-last-day-of-month m y) y))))))) (if all-islamic-calendar-holidays (islamic 1 10 "Ashura")) (if all-islamic-calendar-holidays (islamic 3 12 "Mulad-al-Nabi")) (if all-islamic-calendar-holidays (islamic 7 26 "Shab-e-Mi'raj")) (if all-islamic-calendar-holidays (islamic 8 15 "Shab-e-Bara't")) (islamic 9 1 "Ramadan Begins") (if all-islamic-calendar-holidays (islamic 9 27 "Shab-e Qadr")) (if all-islamic-calendar-holidays (islamic 10 1 "Id-al-Fitr")) (if all-islamic-calendar-holidays (islamic 12 10 "Id-al-Adha")))) "\
+(defvar islamic-holidays (quote ((holiday-islamic 1 1 (format "Islamic New Year %d" (let ((m displayed-month) (y displayed-year)) (increment-calendar-month m y 1) (extract-calendar-year (calendar-islamic-from-absolute (calendar-absolute-from-gregorian (list m (calendar-last-day-of-month m y) y))))))) (if all-islamic-calendar-holidays (holiday-islamic 1 10 "Ashura")) (if all-islamic-calendar-holidays (holiday-islamic 3 12 "Mulad-al-Nabi")) (if all-islamic-calendar-holidays (holiday-islamic 7 26 "Shab-e-Mi'raj")) (if all-islamic-calendar-holidays (holiday-islamic 8 15 "Shab-e-Bara't")) (holiday-islamic 9 1 "Ramadan Begins") (if all-islamic-calendar-holidays (holiday-islamic 9 27 "Shab-e Qadr")) (if all-islamic-calendar-holidays (holiday-islamic 10 1 "Id-al-Fitr")) (if all-islamic-calendar-holidays (holiday-islamic 12 10 "Id-al-Adha")))) "\
 *Islamic holidays.
 See the documentation for `calendar-holidays' for details.")
 
-(defvar solar-holidays (quote ((if (fboundp (quote atan)) (solar-equinoxes-solstices)) (sexp (eval calendar-daylight-savings-starts) "Daylight Savings Time Begins") (sexp (eval calendar-daylight-savings-ends) "Daylight Savings Time Ends"))) "\
+(defvar solar-holidays (quote ((if (fboundp (quote atan)) (solar-equinoxes-solstices)) (progn (require (quote cal-dst)) (funcall (quote holiday-sexp) calendar-daylight-savings-starts (quote (format "Daylight Savings Time Begins %s" (if (fboundp (quote atan)) (solar-time-string (/ calendar-daylight-savings-switchover-time (float 60)) date (quote standard)) ""))))) (funcall (quote holiday-sexp) calendar-daylight-savings-ends (quote (format "Daylight Savings Time Ends %s" (if (fboundp (quote atan)) (solar-time-string (/ (- calendar-daylight-savings-switchover-time calendar-daylight-time-offset) (float 60)) date (quote daylight)) "")))))) "\
 *Sun-related holidays.
 See the documentation for `calendar-holidays' for details.")
-
-(defvar calendar-holidays (quote (append general-holidays local-holidays other-holidays christian-holidays hebrew-holidays islamic-holidays solar-holidays)) "\
-*List of notable days for the command M-x holidays.
-
-Additional holidays are easy to add to the list, just put them in the list
-`other-holidays' in your .emacs file.  Similarly, by setting any of
-`general-holidays', `local-holidays' `christian-holidays', `hebrew-holidays',
-`islamic-holidays', or `solar-holidays' to nil in your .emacs file, you can
-eliminate unwanted categories of holidays.  The intention is that (in the US)
-`local-holidays' be set in site-init.el and `other-holidays' be set by the
-user.
-
-The possible holiday-forms are as follows:
-
-    (fixed MONTH DAY STRING)   a fixed date on the Gregorian calendar
-    (float MONTH DAYNAME K STRING) the Kth DAYNAME in MONTH on the Gregorian
-                               calendar (0 for Sunday, etc.); K<0 means
-                               count back from the end of the month
-    (hebrew MONTH DAY STRING)  a fixed date on the Hebrew calendar
-    (islamic MONTH DAY STRING) a fixed date on the Islamic calendar
-    (julian MONTH DAY STRING)  a fixed date on the Julian calendar
-    (sexp SEXP STRING)         SEXP is a Gregorian-date-valued expression
-                               in the variable `year'; if it evaluates to
-                               a visible date, that's the holiday; if it
-                               evaluates to nil, there's no holiday
-    (if BOOLEAN HOLIDAY-FORM &optional HOLIDAY-FORM) gives a choice between
-                               two holidays based on the value of BOOLEAN
-    (FUNCTION &optional ARGS)  dates requiring special computation; ARGS,
-                               if any, are passed in a list to the function
-                               `calendar-holiday-function-FUNCTION'
-
-For example, to add Bastille Day, celebrated in France on July 14, add
-
-     (fixed 7 14 \"Bastille Day\")
-
-to the list.  To add Hurricane Supplication Day, celebrated in the Virgin
-Islands on the fourth Monday in August, add
-
-     (float 8 1 4 \"Hurricane Supplication Day\")
-
-to the list (the last Monday would be specified with `-1' instead of `4').
-To add the last day of Hanukkah to the list, use
-
-     (hebrew 10 2 \"Last day of Hanukkah\")
-
-since the Hebrew months are numbered with 1 starting from Nisan, while to
-add the Islamic feast celebrating Mohammed's birthday use
-
-     (islamic 3 12 \"Mohammed's Birthday\")
-
-since the Islamic months are numbered from 1 starting with Muharram.  To
-add Thomas Jefferson's birthday, April 2, 1743 (Julian), use
-
-     (julian 4 2 \"Jefferson's Birthday\")
-
-To include a holiday conditionally, use the if or the sexp form.  For example,
-to include American presidential elections, which occur on the first Tuesday
-after the first Monday in November of years divisible by 4, add
-
-     (sexp (if (zerop (% year 4))
-               (calendar-gregorian-from-absolute
-                  (1+ (calendar-dayname-on-or-before
-                        1 (+ 6 (calendar-absolute-from-gregorian
-                                 (list 11 1 year)))))))
-            \"US Presidential Election\")
-
-or
-
-     (if (zerop (% displayed-year 4))
-         (fixed 11
-                (extract-calendar-day
-                 (calendar-gregorian-from-absolute
-                  (1+ (calendar-dayname-on-or-before
-                       1 (+ 6 (calendar-absolute-from-gregorian
-                               (list 11 1 displayed-year)))))))
-                \"US Presidential Election\"))
-
-to the list.  To include the phases of the moon, add
-
-     (lunar-phases)
-
-to the holiday list, where `calendar-holiday-function-lunar-phases' is an
-Emacs-Lisp function that you've written to return a (possibly empty) list of
-the relevant VISIBLE dates with descriptive strings such as
-
-     (((2 6 1989) \"New Moon\") ((2 12 1989) \"First Quarter Moon\") ... )
-
-The fixed, float, hebrew, islamic, julian, sexp, and if forms are implemented
-by the inclusion of the functions `calendar-holiday-function-fixed',
-`calendar-holiday-function-float', `calendar-holiday-function-hebrew',
-`calendar-holiday-function-islamic', `calendar-holiday-function-julian',
-`calendar-holiday-function-sexp', and `calendar-holiday-function-if',
-respectively.")
 
 (autoload (quote calendar) "calendar" "\
 Display a three-month calendar in another window.
@@ -1608,9 +1494,9 @@ in the window.  If it is not visible, the hooks given by the variable
 to be replaced by asterisks to highlight it whenever it is in the window." t nil)
 
 (autoload (quote list-yahrzeit-dates) "calendar" "\
-List of Yahrzeit dates for *Gregorian* DEATH-DATE from START-YEAR to
-END-YEAR.  When called interactively from the calendar window,
-the date of death is taken from the cursor position." t nil)
+List Yahrzeit dates for *Gregorian* DEATH-DATE from START-YEAR to END-YEAR.
+When called interactively from the calendar window, the date of death is taken
+from the cursor position." t nil)
 
 ;;;***
 
@@ -1682,7 +1568,7 @@ The Command History listing is recomputed each time this mode is invoked." t nil
 
 ;;;***
 
-;;;### (autoloads (make-comint) "comint" "comint.el" (11285 51131))
+;;;### (autoloads (make-comint) "comint" "comint.el" (11335 3957))
 ;;; Generated autoloads from comint.el
 
 (autoload (quote make-comint) "comint" "\
@@ -1694,7 +1580,7 @@ the process.  Any more args are arguments to PROGRAM." nil nil)
 
 ;;;***
 
-;;;### (autoloads (compare-windows) "compare-w" "compare-w.el" (11181 53258))
+;;;### (autoloads (compare-windows) "compare-w" "compare-w.el" (11330 25785))
 ;;; Generated autoloads from compare-w.el
 
 (autoload (quote compare-windows) "compare-w" "\
@@ -1708,7 +1594,7 @@ If `compare-ignore-case' is non-nil, changes in case are also ignored." t nil)
 
 ;;;***
 
-;;;### (autoloads (next-error grep compile) "compile" "compile.el" (11286 57626))
+;;;### (autoloads (next-error grep compile) "compile" "compile.el" (11332 51733))
 ;;; Generated autoloads from compile.el
 
 (defvar compilation-mode-hook nil "\
@@ -1782,8 +1668,8 @@ See variables `compilation-parse-errors-function' and
 
 ;;;***
 
-;;;### (autoloads (c++-mode) "cplus-md" "/home/fsf/rms/e19/lisp/cplus-md.el" (11296 5913))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/cplus-md.el
+;;;### (autoloads (c++-mode) "cplus-md" "cplus-md.el" (11296 5913))
+;;; Generated autoloads from cplus-md.el
 
 (autoload (quote c++-mode) "cplus-md" "\
 Major mode for editing C++ code.  Very much like editing C code.
@@ -1920,7 +1806,7 @@ When OFF, typed text is just inserted at point." t nil)
 
 ;;;***
 
-;;;### (autoloads (diary) "diary" "diary.el" (11176 61361))
+;;;### (autoloads (diary) "diary" "diary.el" (11300 39849))
 ;;; Generated autoloads from diary.el
 
 (autoload (quote diary) "diary" "\
@@ -1931,7 +1817,7 @@ execution in a .emacs file." t nil)
 
 ;;;***
 
-;;;### (autoloads (diff-backup diff) "diff" "diff.el" (11276 57004))
+;;;### (autoloads (diff-backup diff) "diff" "diff.el" (11302 33003))
 ;;; Generated autoloads from diff.el
 
 (autoload (quote diff) "diff" "\
@@ -1948,7 +1834,7 @@ The backup file is the first file given to `diff'." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-hide-all dired-hide-subdir dired-tree-down dired-tree-up dired-kill-subdir dired-mark-subdir-files dired-goto-subdir dired-prev-subdir dired-maybe-insert-subdir dired-downcase dired-upcase dired-do-symlink-regexp dired-do-hardlink-regexp dired-do-copy-regexp dired-do-rename-regexp dired-do-rename dired-do-hardlink dired-do-symlink dired-do-copy dired-create-directory dired-string-replace-match dired-do-redisplay dired-do-load dired-do-byte-compile dired-do-compress dired-do-kill-lines dired-do-shell-command dired-do-print dired-do-chown dired-do-chgrp dired-do-chmod dired-backup-diff dired-diff) "dired-aux" "dired-aux.el" (11285 51153))
+;;;### (autoloads (dired-hide-all dired-hide-subdir dired-tree-down dired-tree-up dired-kill-subdir dired-mark-subdir-files dired-goto-subdir dired-prev-subdir dired-maybe-insert-subdir dired-downcase dired-upcase dired-do-symlink-regexp dired-do-hardlink-regexp dired-do-copy-regexp dired-do-rename-regexp dired-do-rename dired-do-hardlink dired-do-symlink dired-do-copy dired-create-directory dired-string-replace-match dired-do-redisplay dired-do-load dired-do-byte-compile dired-do-compress dired-do-kill-lines dired-do-shell-command dired-do-print dired-do-chown dired-do-chgrp dired-do-chmod dired-backup-diff dired-diff) "dired-aux" "dired-aux.el" (11315 32230))
 ;;; Generated autoloads from dired-aux.el
 
 (autoload (quote dired-diff) "dired-aux" "\
@@ -2124,7 +2010,7 @@ Use \\[dired-hide-subdir] to (un)hide a particular subdirectory." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "dired.el" (11293 33078))
+;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "dired.el" (11330 12951))
 ;;; Generated autoloads from dired.el
 
 (defvar dired-listing-switches "-al" "\
@@ -2282,6 +2168,14 @@ Default is 2." t nil)
 
 (autoload (quote doctor) "doctor" "\
 Switch to *doctor* buffer and start giving psychotherapy." t nil)
+
+;;;***
+
+;;;### (autoloads (dunnet) "dunnet" "dunnet.el" (11331 7826))
+;;; Generated autoloads from dunnet.el
+
+(autoload (quote dunnet) "dunnet" "\
+Switch to *dungeon* buffer and start game." t nil)
 
 ;;;***
 
@@ -2823,6 +2717,50 @@ to get the effect of a C-q." nil nil)
 
 ;;;***
 
+;;;### (autoloads (font-lock-mode) "font-lock" "/home/fsf/rms/e19/lisp/font-lock.el" (11325 54485))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/font-lock.el
+
+(defvar font-lock-mode-hook nil "\
+Function or functions to run on entry to Font Lock mode.")
+
+(autoload (quote font-lock-mode) "font-lock" "\
+Toggle Font Lock mode.
+With arg, turn Font Lock mode on if and only if arg is positive.
+
+When Font Lock mode is enabled, text is fontified as you type it:
+
+ - comments are displayed in `font-lock-comment-face';
+     (That is a variable whose value should be a face name.)
+ - strings are displayed in `font-lock-string-face';
+ - documentation strings are displayed in `font-lock-doc-string-face';
+ - function and variable names in their defining forms are displayed
+   in `font-lock-function-name-face';
+ - and certain other expressions are displayed in other faces
+   according to the value of the variable `font-lock-keywords'.
+
+When you turn Font Lock mode on/off, the buffer is fontified/defontified.
+To fontify a buffer without having newly typed text become fontified, you
+can use \\[font-lock-fontify-buffer]." t nil)
+
+;;;***
+
+;;;### (autoloads (forms-find-file-other-window forms-find-file forms-mode) "forms" "forms.el" (11336 20307))
+;;; Generated autoloads from forms.el
+
+(autoload (quote forms-mode) "forms" "\
+Major mode to visit files in a field-structured manner using a form.
+
+Commands (prefix with C-c if not in read-only mode):
+\\{forms-mode-map}" t nil)
+
+(autoload (quote forms-find-file) "forms" "\
+Visit a file in Forms mode." t nil)
+
+(autoload (quote forms-find-file-other-window) "forms" "\
+Visit a file in Forms mode in other window." t nil)
+
+;;;***
+
 ;;;### (autoloads (fortran-mode) "fortran" "fortran.el" (11285 51227))
 ;;; Generated autoloads from fortran.el
 
@@ -2903,7 +2841,7 @@ with no args, if that value is non-nil." t nil)
 
 ;;;***
 
-;;;### (autoloads (gnus) "gnus" "gnus.el" (11289 23134))
+;;;### (autoloads (gnus) "gnus" "gnus.el" (11336 19282))
 ;;; Generated autoloads from gnus.el
 
 (autoload (quote gnus) "gnus" "\
@@ -2952,7 +2890,7 @@ Use \\[set-gnu-bindings] to restore previous global bindings." t nil)
 
 ;;;***
 
-;;;### (autoloads (xdb dbx sdb gdb) "gud" "gud.el" (11294 14606))
+;;;### (autoloads (xdb dbx sdb gdb) "gud" "gud.el" (11332 46975))
 ;;; Generated autoloads from gud.el
 
 (autoload (quote gdb) "gud" "\
@@ -2980,7 +2918,7 @@ directories if your program contains sources from more than one directory." t ni
 
 ;;;***
 
-;;;### (autoloads (hanoi) "hanoi" "hanoi.el" (11285 51253))
+;;;### (autoloads (hanoi) "hanoi" "hanoi.el" (11324 28709))
 ;;; Generated autoloads from hanoi.el
 
 (autoload (quote hanoi) "hanoi" "\
@@ -2999,7 +2937,7 @@ Provide help for current mode." t nil)
 
 ;;;***
 
-;;;### (autoloads (hexl-find-file hexl-mode) "hexl" "hexl.el" (11270 30440))
+;;;### (autoloads (hexl-find-file hexl-mode) "hexl" "hexl.el" (11319 6522))
 ;;; Generated autoloads from hexl.el
 
 (autoload (quote hexl-mode) "hexl" "\
@@ -3127,6 +3065,38 @@ is first activated.")
 
 ;;;***
 
+;;;### (autoloads (make-hippie-expand-function hippie-expand) "hippie-exp" "hippie-exp.el" (11336 59237))
+;;; Generated autoloads from hippie-exp.el
+
+(defvar hippie-expand-try-functions-list (quote (try-complete-file-name try-expand-all-abbrevs try-expand-line try-expand-dabbrev try-expand-dabbrev-all-buffers try-complete-lisp-symbol)) "\
+The list of expansion functions tried in order by `hippie-expand'.
+To change the behavior of `hippie-expand', remove, change the order of,
+or insert functions in this list.")
+
+(defvar hippie-expand-verbose t "\
+*Non-nil makes `hippie-expand' output which function it is trying.")
+
+(defvar hippie-expand-max-buffers nil "\
+*The maximum number of buffers (apart from the current) searched.
+If nil, all buffers are searched.")
+
+(autoload (quote hippie-expand) "hippie-exp" "\
+Try to expand text before point, using multiple methods.
+The expansion functions in `hippie-expand-try-functions-list' are
+tried in order, until a possible expansion is found.  Repeated
+application of `hippie-expand' inserts successively possible
+expansions.  
+With a positive numeric argument, jumps directly to the ARG next
+function in this list.  With a negative argument or just \\[universal-argument], 
+undoes the expansion." t nil)
+
+(autoload (quote make-hippie-expand-function) "hippie-exp" "\
+Construct a function similar to `hippie-expand'.
+Make it use the expansion functions in TRY-LIST.  An optional second
+argument VERBOSE non-nil makes the function verbose." nil t)
+
+;;;***
+
 ;;;### (autoloads (inferior-lisp) "inf-lisp" "inf-lisp.el" (11294 14427))
 ;;; Generated autoloads from inf-lisp.el
 
@@ -3179,7 +3149,7 @@ of `inferior-lisp-program').  Runs the hooks from
 
 ;;;***
 
-;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info) "info" "info.el" (11284 6220))
+;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info) "info" "info.el" (11299 35162))
 ;;; Generated autoloads from info.el
 
 (autoload (quote info) "info" "\
@@ -3230,7 +3200,7 @@ For example, invoke \"emacs -batch -f batch-info-validate $info/ ~/*.info\"" nil
 
 ;;;***
 
-;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11291 62895))
+;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11332 65354))
 ;;; Generated autoloads from ispell.el
 
 (autoload (quote ispell) "ispell" "\
@@ -3343,7 +3313,7 @@ Print region contents as with Unix command `lpr -p'.
 
 ;;;***
 
-;;;### (autoloads (phases-of-moon) "lunar" "lunar.el" (11176 61371))
+;;;### (autoloads (phases-of-moon) "lunar" "lunar.el" (11298 18264))
 ;;; Generated autoloads from lunar.el
 
 (autoload (quote phases-of-moon) "lunar" "\
@@ -3435,7 +3405,7 @@ and then select the region of un-tablified names and use
 
 ;;;***
 
-;;;### (autoloads nil "mail-utils" "mail-utils.el" (11267 45112))
+;;;### (autoloads nil "mail-utils" "mail-utils.el" (11323 3305))
 ;;; Generated autoloads from mail-utils.el
 
 (defvar mail-use-rfc822 nil "\
@@ -3445,7 +3415,7 @@ often correct parser.")
 
 ;;;***
 
-;;;### (autoloads (define-mail-abbrev build-mail-abbrevs mail-abbrevs-setup) "mailabbrev" "mailabbrev.el" (11294 13814))
+;;;### (autoloads (define-mail-abbrev build-mail-abbrevs mail-abbrevs-setup) "mailabbrev" "mailabbrev.el" (11324 36346))
 ;;; Generated autoloads from mailabbrev.el
 
 (autoload (quote mail-abbrevs-setup) "mailabbrev" nil nil nil)
@@ -3563,20 +3533,20 @@ Previous contents of that buffer are killed first." t nil)
 
 ;;;***
 
-;;;### (autoloads (manual-entry) "man" "man.el" (11291 27435))
+;;;### (autoloads (manual-entry) "man" "man.el" (11321 63369))
 ;;; Generated autoloads from man.el
 
 (autoload (quote manual-entry) "man" "\
 Get a Un*x manual page and put it in a buffer.
-This command is the top-level command in the man package. It runs a Un*x
+This command is the top-level command in the man package.  It runs a Un*x
 command to retrieve and clean a manpage in the background and places the
-results in a Man-mode (manpage browsing) buffer. See variable
-Man-notify for what happens when the buffer is ready.
-Universal argument ARG, is passed to Man-getpage-in-background." t nil)
+results in a Man mode (manpage browsing) buffer.  See variable
+`Man-notify' for what happens when the buffer is ready.
+Universal argument ARG, is passed to `Man-getpage-in-background'." t nil)
 
 ;;;***
 
-;;;### (autoloads (map-y-or-n-p) "map-ynp" "map-ynp.el" (11253 12506))
+;;;### (autoloads (map-y-or-n-p) "map-ynp" "map-ynp.el" (11319 45784))
 ;;; Generated autoloads from map-ynp.el
 
 (autoload (quote map-y-or-n-p) "map-ynp" "\
@@ -3621,7 +3591,7 @@ Returns the number of actions taken." nil nil)
 
 ;;;***
 
-;;;### (autoloads (mh-smail mh-rmail) "mh-e" "mh-e.el" (11285 53112))
+;;;### (autoloads (mh-smail mh-rmail) "mh-e" "mh-e.el" (11335 17728))
 ;;; Generated autoloads from mh-e.el
 
 (autoload (quote mh-rmail) "mh-e" "\
@@ -3724,7 +3694,7 @@ Type \\[describe-mode] in that buffer for a list of commands." t nil)
 
 ;;;***
 
-;;;### (autoloads (outline-minor-mode outline-mode) "outline" "outline.el" (11282 47668))
+;;;### (autoloads (outline-minor-mode outline-mode) "outline" "outline.el" (11319 20136))
 ;;; Generated autoloads from outline.el
 
 (autoload (quote outline-mode) "outline" "\
@@ -4023,19 +3993,19 @@ buffer." t nil)
 
 ;;;***
 
-;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11288 623))
+;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11334 11170))
 ;;; Generated autoloads from rmail.el
 
 (defvar rmail-dont-reply-to-names nil "\
 *A regexp specifying names to prune of reply to messages.
-nil means dont reply to yourself.")
+A value of nil means exclude your own name only.")
 
 (defvar rmail-default-dont-reply-to-names "info-" "\
 A regular expression specifying part of the value of the default value of
 the variable `rmail-dont-reply-to-names', for when the user does not set
 `rmail-dont-reply-to-names' explicitly.  (The other part of the default
 value is the user's name.)
-It is useful to set this variable in the site customisation file.")
+It is useful to set this variable in the site customization file.")
 
 (defvar rmail-ignored-headers "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^received:\\|^message-id:\\|^summary-line:" "\
 *Gubbish headers one would rather not see.")
@@ -4048,6 +4018,9 @@ It is useful to set this variable in the site customisation file.")
 `nil' means the default, which is (\"/usr/spool/mail/$USER\")
 (the name varies depending on the operating system,
 and the value of the environment variable MAIL overrides it).")
+
+(defvar rmail-mail-new-frame nil "\
+*Non-nil means Rmail makes a new frame for composing outgoing mail.")
 
 (autoload (quote rmail) "rmail" "\
 Read and edit incoming mail.
@@ -4119,7 +4092,7 @@ Display current buffer in rot 13 in another window." t nil)
 
 ;;;***
 
-;;;### (autoloads (sc-cite-original) "sc" "sc.el" (11285 51468))
+;;;### (autoloads (sc-cite-original) "sc" "sc.el" (11297 261))
 ;;; Generated autoloads from sc.el
 
 (autoload (quote sc-cite-original) "sc" "\
@@ -4189,7 +4162,7 @@ scribe-electric-parenthesis
 
 ;;;***
 
-;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11281 27134))
+;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11334 11290))
 ;;; Generated autoloads from sendmail.el
 
 (defvar mail-self-blind nil "\
@@ -4283,7 +4256,7 @@ Like `mail' command, but display mail buffer in another frame." t nil)
 
 ;;;***
 
-;;;### (autoloads (server-start) "server" "server.el" (11294 22183))
+;;;### (autoloads (server-start) "server" "server.el" (11332 54913))
 ;;; Generated autoloads from server.el
 
 (autoload (quote server-start) "server" "\
@@ -4307,14 +4280,19 @@ Use \\[sgml-validate] to validate your document with an SGML parser." t nil)
 
 ;;;***
 
-;;;### (autoloads (shell) "shell" "shell.el" (11275 52454))
+;;;### (autoloads (shell) "shell" "shell.el" (11336 59243))
 ;;; Generated autoloads from shell.el
 
-(defvar shell-prompt-pattern "^[^#$%>]*[#$%>] *" "\
+(defvar shell-prompt-pattern "^[^#$%>
+]*[#$%>] *" "\
 Regexp to match prompts in the inferior shell.
-Defaults to \"^[^#$%>]*[#$%>] *\", which works pretty well.
+Defaults to \"^[^#$%>\\n]*[#$%>] *\", which works pretty well.
 This variable is used to initialise `comint-prompt-regexp' in the 
 shell buffer.
+
+The pattern should probably not match more than one line.  If it does,
+shell-mode may become confused trying to distinguish prompt from input
+on lines which don't start with a prompt.
 
 This is a fine thing to set in your `.emacs' file.")
 
@@ -4342,8 +4320,42 @@ Otherwise, one argument `-i' is passed to the shell.
 
 ;;;***
 
-;;;### (autoloads (sunrise-sunset) "solar" "solar.el" (11292 39058))
+;;;### (autoloads (sunrise-sunset) "solar" "solar.el" (11310 32522))
 ;;; Generated autoloads from solar.el
+
+(defvar calendar-time-display-form (quote (12-hours ":" minutes am-pm (if time-zone " (") time-zone (if time-zone ")"))) "\
+*The pseudo-pattern that governs the way a time of day is formatted.
+
+A pseudo-pattern is a list of expressions that can involve the keywords
+`12-hours', `24-hours', and `minutes',  all numbers in string form,
+and `am-pm' and `time-zone',  both alphabetic strings.
+
+For example, the form
+
+  '(24-hours \":\" minutes
+    (if time-zone \" (\") time-zone (if time-zone \")\"))
+
+would give military-style times like `21:07 (UTC)'.")
+
+(defvar calendar-latitude nil "\
+*Latitude of `calendar-location-name' in degrees, + north, - south.
+For example, 40.7 for New York City.
+It may not be a good idea to set this in advance for your site;
+if there may be users running Emacs at your site
+who are physically located elsewhere, they would get the wrong
+value and might not know how to override it.")
+
+(defvar calendar-longitude nil "\
+*Longitude of `calendar-location-name' in degrees, + east, - west.
+For example, -74.0 for New York City.
+It may not be a good idea to set this in advance for your site;
+if there may be users running Emacs at your site
+who are physically located elsewhere, they would get the wrong
+value and might not know how to override it.")
+
+(defvar calendar-location-name (quote (let ((float-output-format "%.1f")) (format "%s%s, %s%s" (abs calendar-latitude) (if (> calendar-latitude 0) "N" "S") (abs calendar-longitude) (if (> calendar-longitude 0) "E" "W")))) "\
+*Expression evaluating to name of `calendar-longitude', calendar-latitude'.
+Default value is just the latitude, longitude pair.")
 
 (autoload (quote sunrise-sunset) "solar" "\
 Local time of sunrise and sunset for today.  Accurate to +/- 2 minutes.
@@ -4461,11 +4473,14 @@ Check spelling of string supplied as argument." t nil)
 
 ;;;***
 
-;;;### (autoloads (spook) "spook" "spook.el" (11274 56066))
+;;;### (autoloads (snarf-spooks spook) "spook" "spook.el" (11332 39077))
 ;;; Generated autoloads from spook.el
 
 (autoload (quote spook) "spook" "\
 Adds that special touch of class to your outgoing mail." t nil)
+
+(autoload (quote snarf-spooks) "spook" "\
+Return a vector containing the lines from `spook-phrases-file'." nil nil)
 
 ;;;***
 
@@ -4488,7 +4503,7 @@ The variable `tab-width' controls the spacing of tab stops." t nil)
 
 ;;;***
 
-;;;### (autoloads (tar-mode) "tar-mode" "tar-mode.el" (11275 52507))
+;;;### (autoloads (tar-mode) "tar-mode" "tar-mode.el" (11336 20101))
 ;;; Generated autoloads from tar-mode.el
 
 (autoload (quote tar-mode) "tar-mode" "\
@@ -4754,7 +4769,7 @@ subshell is initiated, the value of tex-shell-hook is called." t nil)
 
 ;;;***
 
-;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11283 53395))
+;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11336 13830))
 ;;; Generated autoloads from texinfo.el
 
 (autoload (quote texinfo-mode) "texinfo" "\
@@ -4764,15 +4779,14 @@ Major mode for editing Texinfo files.
 \\{texinfo-mode-map}
 
   These are files that are used as input for TeX to make printed manuals
-and also to be turned into Info files by \\[texinfo-format-buffer] or
-`makeinfo'.  These files must be written in a very restricted and
+and also to be turned into Info files with \\[makeinfo-buffer] or
+the `makeinfo' program.  These files must be written in a very restricted and
 modified version of TeX input format.
 
   Editing commands are like text-mode except that the syntax table is
 set up so expression commands skip Texinfo bracket groups.  To see
 what the Info version of a region of the Texinfo file will look like,
-use \\[texinfo-format-region].  This command runs Info on the current region
-of the Texinfo file and formats it properly.
+use \\[makeinfo-region], which runs `makeinfo' on the current region.
 
   You can show the structure of a Texinfo file with \\[texinfo-show-structure].
 This command shows the structure of a Texinfo file by listing the
@@ -4827,7 +4841,7 @@ value of texinfo-mode-hook." t nil)
 
 ;;;***
 
-;;;### (autoloads (display-time) "time" "time.el" (11279 41068))
+;;;### (autoloads (display-time) "time" "time.el" (11322 20891))
 ;;; Generated autoloads from time.el
 
 (defvar display-time-day-and-date nil "\
@@ -5094,7 +5108,7 @@ The buffer in question is current when this function is called." nil nil)
 
 ;;;***
 
-;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11289 15564))
+;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11321 6270))
 ;;; Generated autoloads from vc.el
 
 (defvar vc-checkin-hook nil "\
@@ -5171,6 +5185,7 @@ Find change log file and add entries from recent RCS logs.
 The mark is left at the end of the text prepended to the change log.
 With prefix arg of C-u, only find log entries for the current buffer's file.
 With any numeric prefix arg, find log entries for all files currently visited.
+Otherwise, find log entries for all registered files in the default directory.
 From a program, any arguments are passed to the `rcs2log' script." t nil)
 
 ;;;***
@@ -5225,7 +5240,7 @@ Syntax table and abbrevs while in vi mode remain as they were in Emacs." t nil)
 
 ;;;***
 
-;;;### (autoloads (view-mode view-buffer-other-window view-buffer view-file-other-window view-file) "view" "view.el" (11277 39824))
+;;;### (autoloads (view-mode view-buffer-other-window view-buffer view-file-other-window view-file) "view" "view.el" (11336 19791))
 ;;; Generated autoloads from view.el
 
 (autoload (quote view-file) "view" "\
@@ -5236,7 +5251,7 @@ are defined for moving around in the buffer.
 Space scrolls forward, Delete scrolls backward.
 For list of all View commands, type ? or h while viewing.
 
-Calls the value of  view-hook  if that is non-nil." t nil)
+This command runs the normal hook `view-hook'." t nil)
 
 (autoload (quote view-file-other-window) "view" "\
 View FILE in View mode in other window.
@@ -5247,7 +5262,7 @@ are defined for moving around in the buffer.
 Space scrolls forward, Delete scrolls backward.
 For list of all View commands, type ? or h while viewing.
 
-Calls the value of  view-hook  if that is non-nil." t nil)
+This command runs the normal hook `view-hook'." t nil)
 
 (autoload (quote view-buffer) "view" "\
 View BUFFER in View mode, returning to previous buffer when done.
@@ -5257,19 +5272,20 @@ are defined for moving around in the buffer.
 Space scrolls forward, Delete scrolls backward.
 For list of all View commands, type ? or h while viewing.
 
-Calls the value of  view-hook  if that is non-nil." t nil)
+This command runs the normal hook `view-hook'." t nil)
 
 (autoload (quote view-buffer-other-window) "view" "\
 View BUFFER in View mode in another window,
-returning to original buffer when done  ONLY if 
-prefix argument not-return is nil (as by default).
-  The usual Emacs commands are not available; instead,
+returning to original buffer when done *only* if 
+prefix argument NOT-RETURN is nil (which is the default).
+
+The usual Emacs commands are not available in View mode; instead,
 a special set of commands (mostly letters and punctuation)
 are defined for moving around in the buffer.
 Space scrolls forward, Delete scrolls backward.
 For list of all View commands, type ? or h while viewing.
 
-Calls the value of  view-hook  if that is non-nil." t nil)
+This command runs the normal hook `view-hook'." t nil)
 
 (autoload (quote view-mode) "view" "\
 Major mode for viewing text but not editing it.
@@ -5306,7 +5322,8 @@ C-p		moves upward lines vertically.
 C-l		recenters the screen.
 q or C-c	exit view-mode and return to previous buffer.
 
-Entry to this mode calls the value of  view-hook  if non-nil.
+Entry to this mode runs the normal hook `view-hook'.
+
 \\{view-mode-map}" nil nil)
 
 ;;;***

@@ -145,8 +145,9 @@ check_mark ()
   Lisp_Object tem = Fmarker_buffer (current_buffer->mark);
   if (NILP (tem) || (XBUFFER (tem) != current_buffer))
     error ("The mark is not set now");
-  if (NILP (current_buffer->mark_active) && NILP (Vmark_even_if_inactive))
-    error ("The mark is not active now");
+  if (!NILP (Vtransient_mark_mode) && NILP (Vmark_even_if_inactive)
+      && NILP (current_buffer->mark_active))
+    Fsignal (Qmark_inactive, Qnil);
 }
 
 
@@ -661,7 +662,7 @@ Bound each time `call-interactively' is called;\n\
 may be set by the debugger as a reminder for itself.");
   Vcommand_debug_status = Qnil;
 
-  DEFVAR_LISP ("Vmark-even-if-inactive", &Vmark_even_if_inactive,
+  DEFVAR_LISP ("mark-even-if-inactive", &Vmark_even_if_inactive,
     "*Non-nil means you can use the mark even when inactive.\n\
 This option makes a difference in Transient Mark mode.\n\
 When the option is non-nil, deactivation of the mark\n\

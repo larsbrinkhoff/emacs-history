@@ -1244,7 +1244,7 @@ With argument, insert value in current buffer after the form."
   ;; buffer --> output-buffer, or buffer --> eval form, return nil
   (let (outbuffer)
     (let (;; Prevent truncation of flonums and lists as we read and print them
-	  (float-output-format "%20e")
+	  (float-output-format "%.20e")
 	  (case-fold-search nil)
 	  (print-length nil)
 	  ;; Simulate entry to byte-compile-top-level
@@ -2420,9 +2420,14 @@ If FORM is a lambda or a macro, byte-compile it as a function."
     (setq for-effect nil)))
 
 (defun byte-compile-setq-default (form)
-  (byte-compile-form
-   (cons 'set-default (cons (list 'quote (nth 1 form))
-			    (nthcdr 2 form)))))
+  (let ((args (cdr form))
+	setters)
+    (while args
+      (setq setters
+	    (cons (list 'set-default (list 'quote (car args)) (car (cdr args)))
+		  setters))
+      (setq args (cdr (cdr args))))
+    (byte-compile-form (cons 'progn (nreverse setters)))))
 
 (defun byte-compile-quote (form)
   (byte-compile-constant (car (cdr form))))

@@ -146,6 +146,13 @@ document xprocess
 Print the address of the struct Lisp_process which the Lisp_Object $ points to.
 end
 
+define xfloat
+print ((struct Lisp_Float *) (($ & 0x00ffffff) | $data_seg_bits))->data
+end
+document xfloat
+Print $ assuming it is a lisp floating-point number.
+end
+
 define xscrollbar
 print (struct scrollbar *) (($ & 0x00ffffff) | $data_seg_bits)
 output *$

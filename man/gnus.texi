@@ -7,6 +7,10 @@
 @finalout
 @end iftex
 @setchapternewpage odd
+@synindex fn cp
+@synindex vr cp
+@synindex ky cp
+@synindex pg cp
 @c      @smallbook
 @comment %**end of header (This is for running Texinfo on a region.)
 
@@ -38,11 +42,8 @@ permission notice identical to this one.
 Permission is granted to copy and distribute translations of this manual
 into another language, under the above conditions for modified versions.
 
-@node Reading News
-@section Introduction
-
-@c ??? Make gnus-save-all-headers t by default, and don't mention it here
-@c !!! Default value is changed in the source.
+@node Top
+@top The GNUS News Reader
 
 @cindex NNTP
 You can read netnews within Emacs using the GNUS package.  GNUS uses the
@@ -56,8 +57,22 @@ on.
 While the author of GNUS recommends pronouncing it as ``news'', we
 recommend pronouncing it as ``gnoose'', to avoid confusion.
 
-@node Starting up, Buffers of GNUS, Introduction, Top
-@section Starting up GNUS
+@menu
+* Starting Up::
+* Buffers of GNUS::
+* Newsgroup Commands::
+* Summary Commands::
+* Article Commands::
+* Startup File::
+* Kill File::
+* Troubleshooting::
+* Customization::
+* Reporting Bugs::
+* Index::
+@end menu
+
+@node Starting Up
+@chapter Starting GNUS
 
 @ifinfo
   This chapter describes how to get started GNUS, how to use a local
@@ -66,12 +81,11 @@ news spool directly, and how to read private directory.
 
 @menu
 * Getting Started::     How to get started GNUS.
-* Local News Spool::    How to use a local news spool.
-* Private Directory::   How to read a private directory.
+* Finding the News::    Configuring how GNUS gets access to the news.
 @end menu
 
 @node Getting Started
-@subsection Getting Started GNUS
+@section Getting Started GNUS
 @cindex invoke GNUS
 @cindex run GNUS
 
@@ -89,8 +103,8 @@ Run GNUS using the default NNTP server.
 Run GNUS without using the default NNTP server.
 @end table
 
-@node GNUS Server
-@subsection Telling GNUS Where To Find the News
+@node Finding the News
+@section Telling GNUS Where To Find the News
 
 Somehow or other, GNUS has to know how to find the current netnews.
 Usually this means it has to know the hostname of the NNTP server.
@@ -134,7 +148,7 @@ such as @kbd{g} that report additional newly-arrived articles work by
 rereading the active file.
 
 @node Buffers of GNUS
-@subsection Buffers Used by GNUS
+@chapter Buffers Used by GNUS
 @cindex GNUS buffers
 @cindex buffers of GNUS
 @cindex GNUS windows
@@ -169,7 +183,7 @@ selected.
 @end menu
 
 @node Newsgroup Buffer
-@subsection Newsgroup Buffer
+@section Newsgroup Buffer
 @cindex Newsgroup buffer
 @cindex Group mode
 
@@ -209,7 +223,7 @@ The name of the newsgroup.
 @end table
 
 @node Summary Buffer
-@subsection Summary Buffer
+@section Summary Buffer
 @cindex Summary buffer (GNUS)
 @cindex Summary mode (GNUS)
 
@@ -258,7 +272,7 @@ customization.
 @end ifset
 
 @node Newsgroup Commands
-@section Newsgroup Commands
+@chapter Newsgroup Commands
 
   The Newsgroup buffer normally lists the newsgroups which you subscribe
 to and which contain unread articles.  But not always---some of the
@@ -268,13 +282,13 @@ in this buffer are mostly concerned with subscribing and unsubscribing.
 @menu
 * Browsing Newsgroups::         Moving around in the Newsgroup buffer.
 * Selecting a Newsgroup::       Selecting a newsgroup to read articles.
-* Maintenance::                 Maintaining newsgroups.
+* Maintaining Subscriptions::   Subscribing and unsubscribing, etc.
 * Exiting GNUS::                How to exit GNUS.
 * Other Newsgroup Commands::    Other miscellaneous commands.
 @end menu
 
 @node Browsing Newsgroups
-@subsection Browsing Newsgroups
+@section Browsing Newsgroups
 
 Most of the newsgroup commands operate on the group described by the
 current line.  To use them, you need to move the cursor to the group you
@@ -348,7 +362,7 @@ in.  Type @kbd{C-x w} (@code{widen}) to widen visibility to the whole
 buffer.
 
 @node Selecting a Newsgroup
-@subsection Selecting a Newsgroup
+@section Selecting a Newsgroup
 @cindex select newsgroup
 @cindex read newsgroup
 
@@ -414,8 +428,8 @@ prepares all articles.
 customization.
 @end ifset
 
-@node Maintaining Newsgroups
-@subsection Maintaining Newsgroups
+@node Maintaining Subscriptions
+@section Maintaining Subscriptions
 
 This section explains how to subscribe and unsubscribe, as well as other
 related activities.  Most of the commands operate on the newsgroup
@@ -438,8 +452,6 @@ Mark all articles in the newsgroup  as read
 @item l
 @kindex l (Group Mode)
 @findex gnus-group-list-groups
-@c ??? Is this completely true?
-@c !!! Yes.
 Show only the newsgroups which you now subscribe to and which now
 contain unread and saved articles (@code{gnus-group-list-groups}).
 
@@ -493,8 +505,6 @@ yank earlier kills, in last-in first-out order.
 Exchange current newsgroup and previous newsgroup.
 (@code{gnus-group-transpose-groups}).@refill
 
-@c ??? This is a name change; now it's gnus-browse-killed-groups.
-@c !!! Renamed in the source.
 @item M-x gnus-list-killed-groups
 @findex gnus-list-killed-groups
 @c !!! I think this key binding is useful.
@@ -542,10 +552,8 @@ newsgroup name interactively, and toggles its subscription flag.  This
 is the usual way to subscribe to new groups.  (You can also type @kbd{L}
 and then use @kbd{u} on the groups you want to read.)  You can also
 arrange to subscribe automatically to some or all newly created
-newsgroups using the options line in your startup file.
-@c ??? What is the name of the startup file?
-@c !!! Usually ~/.newsrc is used.
-@c @xref{Startup File}, for more information.
+newsgroups using the options line in your startup file, @file{~/.newsrc}.
+@xref{Startup File}, for more information.
 
 @cindex kill newsgroups
 @cindex yank newsgroups
@@ -582,8 +590,8 @@ that you have unsubscribed or killed are deleted also.
   The @kbd{g} command rereads the active file to get updated lists of
 articles available to be read.
 
-@node Exiting GNUS, Other Newsgroup Commands, Maintenance, Newsgroup Commands
-@subsection Exiting GNUS
+@node Exiting GNUS
+@section Exiting GNUS
 
 @table @kbd
 @item z
@@ -632,13 +640,8 @@ file.
   The hook @code{gnus-exit-gnus-hook} is called when exiting GNUS, and
 the hook @code{gnus-suspend-gnus-hook} is called when suspending GNUS.
 
-@c ??? Commented out because these commands kill the buffers themselves.
-@c ??? Does anyone know what this was supposed to mean?
-@c If you want to clear out Emacs buffers which were created by GNUS and
-@c remain afterwards, use these hooks.
-
 @node Other Newsgroup Commands,, Exiting GNUS, Newsgroup Commands
-@subsection Miscellaneous Commands
+@section Miscellaneous Commands
 
   Other miscellaneous Group mode commands are described here.
 
@@ -646,8 +649,8 @@ the hook @code{gnus-suspend-gnus-hook} is called when suspending GNUS.
 @item a
 @kindex a (Group Mode)
 @findex gnus-group-post-news
-Compose a new article (@code{gnus-group-post-news}).  @xref{Followup and
-Reply}, for more information.
+Compose a new article (@code{gnus-group-post-news}).  @xref{Posting
+Articles}, for more information.
 
 @item M-k
 @kindex M-k (Group Mode)
@@ -686,8 +689,8 @@ Enter Info and display the node describing Group mode
 @end ignore
 @end table
 
-@node Summary Commands, Article Commands, Newsgroup Commands, Top
-@section Summary Commands
+@node Summary Commands
+@chapter Summary Commands
 
   The Summary buffer shows you a summary of the contents of a single
 newsgroup, with one line for each article.  You can move around in the
@@ -703,12 +706,14 @@ do almost all news reading tasks while staying in the Summary buffer.
 * Referencing Articles::        Referencing parent articles.
 * Saving Articles::             Saving articles in your favorite format.
 * Sorting Headers::             Sorting the Summary buffer.
-* Followup and Reply::          Followup and reply commands.
+* Posting Articles::            How to post a new article or followup article.
+* Forward and Reply::           How to mail a reply to a message,
+                                  or forward the message by mail.
 * Exiting Newsgroup::           How to exit the current newsgroup.
 @end menu
 
-@node Reading Articles, Searching Articles, Summary Commands, Summary Commands
-@subsection Reading Articles
+@node Reading Articles
+@section Reading Articles
 
 @kindex SPC (Summary Mode)
 @findex gnus-summary-next-page
@@ -733,7 +738,7 @@ available.
 @end menu
 
 @node Summary Motion
-@subsubsection Cursor Motion in the Summary Buffer
+@subsection Cursor Motion in the Summary Buffer
 
   For moving around in the Summary buffer, you can use these special
 commands as well as the usual cursor motion commands.
@@ -776,7 +781,7 @@ Do an incremental search on headers (@code{isearch-forward}).
 @end table
 
 @node Reading an Article
-@subsubsection Commands to Read Articles
+@subsection Commands to Read Articles
 
 @table @kbd
 @item @key{SPC}
@@ -786,7 +791,6 @@ Do an incremental search on headers (@code{isearch-forward}).
 screenful or to the next article (@code{gnus-summary-next-page})
 
 @c ??? This should be moved to another letter, but which?
-@c !!! G is moved ot C-x C-s, instead.
 @item g
 @kindex g (Summary Mode)
 @findex gnus-summary-show-article
@@ -890,7 +894,7 @@ fields are ignored.)  If you want to see the whole header, type @code{t}
 the uninteresting header fields again.
 
 @node Scrolling
-@subsubsection Scrolling Within an Article
+@subsection Scrolling Within an Article
 
   This section describes the commands you can type in the Summary
 buffer to scroll the Article buffer.  (If you want to scroll the
@@ -935,7 +939,7 @@ customization.
 @end ignore
 
 @node Moving Among Articles
-@subsubsection Moving Among Articles
+@subsection Moving Among Articles
 
   These commands move point in the Summary buffer to a different line
 and display that line's article.
@@ -999,10 +1003,12 @@ Read the first unread article
 @kindex l (Summary Mode)
 @findex gnus-summary-goto-last-article
 Read the article selected last (@code{gnus-summary-goto-last-article}).
+@ignore
 If you repeat @kbd{l}, it keeps moving to articles that you read
 longer and longer ago.
 @c ??? That isn't implemented yet.
 @c !!! I hope in the next version.
+@end ignore
 
 @c Equivalent to C-u <n> j g.
 @c !!! Remove key binding.
@@ -1056,7 +1062,7 @@ selected automatically.
 @end ignore
 
 @node Marking Articles
-@subsubsection Marking Articles
+@subsection Marking Articles
 @cindex article status
 @cindex mark articles
 
@@ -1183,7 +1189,7 @@ and saved articles.  (There are no spaces in that command; we inserted
 spaces for clarity when showing it here.)
 
 @node Thread-based Reading
-@subsubsection Reading Based on Conversation Threads
+@subsection Reading Based on Conversation Threads
 @cindex threads (in GNUS)
 @cindex references between articles
 
@@ -1294,7 +1300,7 @@ variable @code{gnus-show-threads} to non-@code{nil}.
 @end ifset
 
 @node Digest Articles
-@subsubsection Reading Digest Articles
+@subsection Reading Digest Articles
 @cindex digest articles
 
   @dfn{Digest article} is a message containing many messages in
@@ -1340,12 +1346,12 @@ regexp which separates digested messages.
 @findex gnus-summary-rmail-digest
 @vindex gnus-select-article-hook
 @cindex Rmail
-@c ??? Fix the xref.
   The command @kbd{C-d} (@code{gnus-summary-rmail-digest}) runs Rmail on
 a digest article and makes it possible to read messages not in digest
-form using Rmail Mode.  @xref{Rmail, Rmail, emacs}, for more
-information on Rmail Mode.  Use the hook @code{gnus-select-article-hook}
-to run Rmail on digest articles automatically.
+form using Rmail Mode.  @xref{Rmail,,, emacs, The GNU Emacs Manual}, for
+more information on Rmail Mode.  Use the hook
+@code{gnus-select-article-hook} to run Rmail on digest articles
+automatically.
 
 @vindex gnus-select-digest-hook
 @cindex incomplete digest articles
@@ -1364,7 +1370,7 @@ summary of the digest article is also displayed automatically when Rmail
 is invoked.
 
 @node Searching Articles
-@subsection Searching Articles
+@section Searching Articles
 @cindex search for articles
 
 @table @kbd
@@ -1421,7 +1427,7 @@ regular expression matches the contents of the specified header field.
 It executes the key sequence in each such message.
 
 @node Referencing Articles
-@subsection Referencing Articles
+@section Referencing Articles
 @cindex refer to articles
 
 @table @kbd
@@ -1454,7 +1460,7 @@ commands.
 contained in the text of an article.  @xref{Article Commands}.
 
 @node Saving Articles
-@subsection Saving Articles
+@section Saving Articles
 @cindex save articles
 
   GNUS supports four different formats for saving articles: Rmail
@@ -1489,8 +1495,6 @@ saves the article text verbatim.  The default value is
 commands that you can bind to other keys.)
 
 @vindex gnus-article-save-directory
-@c ??? Is this right?
-@c !!! Yes.
 @cindex @code{SAVEDIR} environment variable
   The variable @code{gnus-article-save-directory} specifies the default
 directory for saving articles.  If you don't set this variable
@@ -1515,7 +1519,7 @@ with @var{newsgroup}, @var{headers}, and optional
 @end ifset
 
 @node Sorting Headers
-@subsection Sorting Headers
+@section Sorting Headers
 @cindex sort headers
 
   GNUS can sort the Summary buffer by number, subject, date, or author
@@ -1558,9 +1562,8 @@ is selected using the hook @code{gnus-select-group-hook}
 (@pxref{Hooks}).
 
 @node Posting Articles
-@subsection Posting Articles
+@section Posting Articles
 @cindex followup to article
-@cindex reply to article
 @cindex cancel article
 @cindex post article
 
@@ -1573,16 +1576,12 @@ Compose a new article (@code{gnus-summary-post-news}).
 @item f
 @kindex f (Summary Mode)
 @findex gnus-summary-followup
-@c ??? Name is to be changed; now gnus-summary-post-reply
-@c !!! Renamed in the source.
 Compose a followup to the current article
 (@code{gnus-summary-followup}).
 
 @item F
 @kindex F (Summary Mode)
 @findex gnus-summary-followup-with-original
-@c ??? Name is to be changed; now gnus-summary-post-reply-with-original
-@c !!! Renamed in the source.
 Compose a followup, and insert the original article right away
 (@code{gnus-summary-followup-with-original}).
 
@@ -1642,7 +1641,9 @@ reached.  The command @kbd{C} (@code{gnus-summary-cancel-article}) is
 intended to do this.  First select the offending article as current,
 then type @kbd{C}.
 
-@node Replying with Mail
+@node Forward and Reply
+@section Forwarding Messages and Replying To Them
+@cindex reply to article
 
 @table @kbd
 @item r
@@ -1672,16 +1673,14 @@ Compose a mail message in other window (@code{gnus-summary-mail-other-window}).
 @findex gnus-summary-reply
 @kindex R (Summary Mode)
 @findex gnus-summary-reply-with-original
-@c ??? Names are to be changed; they are currently gnus-summary-mail-reply
-@c ??? and gnus-summary-mail-reply-with-original
-@c !!! Renamed in the source.
   Use the command @kbd{r} (@code{gnus-summary-reply}) to mail a reply to
 the author of the article.  Type @kbd{C-c C-y} to yank the text of the
 article you are replying to.  The command @kbd{R}
 (@code{gnus-summary-reply-with-original}) yanks the original article
 automatically.
 
-  @xref{Mail Mode}, for information on how to finish sending the reply.
+  @xref{Mail Mode,,,emacs,The GNU Emacs Manual}, for information on how
+to finish sending the reply.
 
 @ignore
 @cindex Mail Mode
@@ -1705,7 +1704,7 @@ emacs}, for more information on Mail Mode.@refill
 @end ignore
 
 @node Exiting Newsgroup
-@subsection Exiting the Current Newsgroup
+@section Exiting the Current Newsgroup
 
   @dfn{Exiting} a newsgroup means going back to the Newsgroup buffer and
 (normally) saving the changes you have made in the status of articles.
@@ -1725,8 +1724,6 @@ Exit the current newsgroup without saving information about article
 status (@code{gnus-summary-quit}).  The effect is to cancel all the
 status changes that took place while you were reading this newsgroup.
 
-@c ??? This is a pending change.  The command is now G.
-@c !!! C-x C-s is used in the source.
 @item C-x C-s
 @kindex C-x C-s (Summary Mode)
 @findex gnus-summary-reselect-current-group
@@ -1746,10 +1743,6 @@ containing unread articles.
 @end ignore
 @end table
 
-@c ??? Does this reread the active file?
-@c ??? If so, it should be g.
-@c ??? If not, it should be C-x C-s.
-@c !!! C-x C-s in the source.
 @kindex C-x C-s (Summary Mode)
 @findex gnus-summary-reselect-current-group
   The command @kbd{C-x C-s} (@code{gnus-summary-reselect-current-group})
@@ -1760,7 +1753,7 @@ articles in the newsgroup.
 
 @ignore
 @node Other Summary Commands
-@subsection Miscellaneous Commands
+@section Miscellaneous Commands
 
   Other miscellaneous commands are described here.
 
@@ -1802,13 +1795,14 @@ Describe Summary Mode commands briefly
 @findex gnus-info-find-node
 @cindex read Info file
 @cindex Info
-Read Info on Summary Mode (@code{gnus-info-find-node}).
-@xref{Texinfo Manual}, to prepare an Info file of GNUS.
+Read Info on Summary Mode (@code{gnus-info-find-node}).  @xref{Top,
+Texinfo, Texinfo, texinfo, The Texinfo Manual}, to prepare an Info file
+of GNUS.
 @end table
 @end ignore
 
 @node Article Commands
-@section Article Commands
+@chapter Article Commands
 
 GNUS displays one article at a time, in a buffer called the Article
 buffer.  When you select an article, GNUS puts the Article buffer on the
@@ -1842,11 +1836,7 @@ Select another article by following a cross reference
 a Message-ID included in the text of the article.  Move point to a
 message ID before using this command.
 
-@c ??? This is a change not yet made.
-@c ??? As of now, the character is o and the command name 
-@c ??? is gnus-article-pop-article.
-@c !!! This is wrong.  gnus-article-pop-article pops reference history,
-@c !!! and goes back along the history.
+@c ??? This is unclear.  I cannot tell what it means--rms.
 @item o
 @kindex o (Article Mode)
 @findex gnus-article-pop-article
@@ -1863,8 +1853,6 @@ moves back to articles that were selected longer and longer ago.
 
 @item h
 @kindex h (Article Mode)
-@c ??? This name is yet to be changed; currently gnus-article-show-subject
-@c !!! Renamed in the source.
 @findex gnus-article-show-summary
 Reconfigure Emacs windows to show the Summary buffer above the Article
 buffer and select the Summary buffer
@@ -1885,13 +1873,14 @@ Describe Article Mode commands briefly
 @findex gnus-info-find-node
 @cindex read Info file
 @cindex Info
-Read Info on Article Mode (@code{gnus-info-find-node}).
-@xref{Texinfo Manual}, to prepare an Info file of GNUS.
+Read Info on Article Mode (@code{gnus-info-find-node}).  @xref{Top,
+Texinfo, Texinfo, texinfo, The Texinfo Manual} to prepare an Info file
+of GNUS.
 @end ignore
 @end table
 
 @node Startup File
-@subsection The Startup File
+@chapter The Startup File
 @cindex startup file
 @cindex quick startup file
 @cindex raw startup file
@@ -1931,7 +1920,7 @@ Newsgroups buffer (@code{gnus-group-force-update}).
 @end table
 
 @node Kill File
-@section Kill File
+@chapter Kill File
 @cindex Kill file
 
   A @dfn{kill} file contains lisp expressions to be applied to a
@@ -1954,7 +1943,7 @@ newsgroup.
 @end menu
 
 @node Making a Kill File
-@subsection Making a Kill File
+@section Making a Kill File
 
   A kill file is simply a file of Lisp code that is loaded (i.e.,
 evaluated) while the Summary buffer is current.  In order to work
@@ -2032,7 +2021,7 @@ After GNUS has finished applying the appropriate kill files, if the
 newsgroup has no articles left, GNUS exits that newsgroup right away.
 
 @node Editing Kill Files
-@subsection Editing Kill Files
+@section Editing Kill Files
 
 You can use these GNUS commands to find a kill file for editing:
 
@@ -2100,8 +2089,9 @@ Save the kill file and then return to the previous buffer
 @findex gnus-info-find-node
 @cindex read Info file
 @cindex Info
-Read Info on kill file (@code{gnus-info-find-node}).
-@xref{Texinfo Manual}, to prepare an Info file of GNUS.
+Read Info on kill file (@code{gnus-info-find-node}).  @xref{Top,
+Texinfo, Texinfo, texinfo, The Texinfo Manual}, to prepare an Info file
+of GNUS.
 @end ignore
 @end table
 
@@ -2115,8 +2105,8 @@ began editing the kill file.  If you gave the command @kbd{M-k} or
 at that time supplies the string to search for, from its own subject or
 author.
 
-@node Example of a Kill File
-@subsection Example of a Kill File
+@node Kill File Example
+@section Example of a Kill File
 
   This is a real example of a local kill file for newsgroup
 @samp{control}.
@@ -2133,7 +2123,7 @@ author.
 @end example
 
 @node Names of Kill Files
-@subsection Names of Kill Files
+@section Names of Kill Files
 
 @vindex gnus-article-save-directory
 @vindex gnus-kill-file-name
@@ -2150,7 +2140,7 @@ name is @file{@var{newsgroup}.KILL}.  Otherwise, it is
 from the newsgroup name by changing all periods to slashes.
 
 @node Background Kills
-@subsection Background Kill Processing
+@section Background Kill Processing
 @cindex batch kill processing
 
   Kill processing can take a long time.  If you don't want to wait for
@@ -2168,7 +2158,7 @@ specifies all newsgroups not yet decided.  These interpretations are the
 same as the options line of the startup file (@pxref{Startup File}).
 
 @node Advanced Kills
-@subsection Advanced Kill Processing
+@section Advanced Kill Processing
 
 @findex gnus-apply-kill-file
 @vindex gnus-apply-kill-hook
@@ -2261,8 +2251,8 @@ and the variables for localization.
 Specifies the name of the host running the NNTP server.  The variable is
 initialized from the @code{NNTPSERVER} environment variable.  If the
 server name is preceded by a colon such as @samp{:Mail}, the user's
-private directory @file{~/Mail} is used as a news spool.  @xref{NNTP
-Server}, and @pxref{Private Directory}, for more information.
+private directory @file{~/Mail} is used as a news spool.  @xref{Finding
+the News}, for more information.
 
 @vindex gnus-nntp-service
 @cindex NNTP service
@@ -2270,8 +2260,7 @@ Server}, and @pxref{Private Directory}, for more information.
 Specifies a service name of NNTP, usually a string @code{"nntp"}.  In a
 few instances, it must be the number @code{119}.  To use a local news
 spool of your machine rather than NNTP, set the variable to @code{nil}.
-@xref{NNTP Service}, and @pxref{Local News Spool}, for more
-information.
+@xref{Finding the News}, for more information.
 
 @c !!! gnus-your-domain is renamed to gnus-local-domain.
 @vindex gnus-local-domain
@@ -2283,8 +2272,11 @@ Specifies the domain which is the domain part of your mail address
 excluding the local host name of your machine.  The environment variable
 @code{DOMAINNAME} is used instead if defined.  If the function
 @code{system-name} returns the full Internet name, there is no need to
-define the domain.  @xref{Domain,, Domain and Organization}, for more
+define the domain.
+@ignore
+  @xref{Domain,, Domain and Organization}, for more
 information.
+@end ignore
 
 @c !!! gnus-your-organization is renamed ot gnus-local-organization.
 @vindex gnus-local-organization
@@ -2294,9 +2286,12 @@ information.
 Specifies the organization you belong to.  The environment variable
 @code{ORGANIZATION} is used instead if defined.  If the value begins
 with a slash, it is taken as the name of a file whose contents are read
-for the value.  @xref{Domain,, Domain and Organization}, for more
+for the value.
+@ignore
+  @xref{Domain,, Domain and Organization}, for more
 information.
-  
+@end ignore
+
 @cindex time zone
 @cindex Date field
 @cindex RFC822
@@ -2344,7 +2339,10 @@ Non-@code{nil} means the local host name of your machine will not appear
 in the @samp{From:} field of article headers.  If the variable is a
 string, it is used as your domain instead of the definition by the
 variable @code{gnus-local-domain} or the environment variable
-@code{DOMAINNAME}.  @xref{GENERICFROM}, for more information.
+@code{DOMAINNAME}.
+@ignore
+  @xref{GENERICFROM}, for more information.
+@end ignore
 
 @vindex gnus-use-generic-path
 @cindex GENERICPATH
@@ -2353,8 +2351,11 @@ variable @code{gnus-local-domain} or the environment variable
 Non-@code{nil} means the NNTP server name will not appear in the
 @samp{Path:} field of article headers.  If the variable is a string, it
 is used in the @samp{Path:} field as the NNTP server name instead of the
-definition by the variable @code{gnus-nntp-server}.  @xref{GENERICPATH},
+definition by the variable @code{gnus-nntp-server}.
+@ignore
+@xref{GENERICPATH},
 for more information.
+@end ignore
 
 @vindex gnus-ignored-newsgroups
 @item gnus-ignored-newsgroups
@@ -2866,16 +2867,6 @@ in an article.
 @xref{Hooks}, to change optional headers according to selected
 newsgroups.
 
-@vindex gnus-info-directory
-@cindex Info
-@item gnus-info-directory
-@vindex Info-directory
-
-Specifies a directory where the GNUS Info file is placed.  It is not
-necessary to change this variable unless you install an Info file in a
-directory different from the variable @code{Info-directory}.
-@xref{Texinfo Manual}, for more information.
-
 @cindex MIME
 @pindex metamail
 @findex metamail-buffer
@@ -3015,7 +3006,7 @@ The following final example must be the most useful for you who want not
 to add new newsgroups automatically.  This definition subscribes a new
 newsgroup first, and then kills it.  The killed newsgroups can be added
 to the subscription list interactively using Browse-Killed Mode
-(@pxref{Maintenance}).
+(@pxref{Maintaining Subscriptions}).
 
 @findex gnus-subscribe-newsgroup
 @findex gnus-kill-newsgroup
@@ -3038,8 +3029,11 @@ to the subscription list interactively using Browse-Killed Mode
 @item nntp-buggy-select
 Non-@code{nil} means the select routine of your operating system is
 buggy.  GNUS may hang up while waiting for NNTP server responses.  The
-problem may be solved by setting the variable to @code{t}.  @xref{NNTP
+problem may be solved by setting the variable to @code{t}.
+@ignore
+  @xref{NNTP
 Problems}, for more information.
+@end ignore
 
 @vindex nntp-maximum-request
 @cindex large newsgroup
@@ -3048,7 +3042,10 @@ Specifies the maximum number of requests to be sent to the NNTP server
 at one time.  GNUS may hang up while retrieving headers of a large
 newsgroup because sending many requests to the NNTP server without
 reading replies to them causes deadlock.  In this case, set the variable
-to a lower number.  @xref{NNTP Problems}, for more information.
+to a lower number.
+@ignore
+  @xref{NNTP Problems}, for more information.
+@end ignore
 
 @vindex nntp-large-newsgroup
 @cindex large newsgroup
@@ -3073,13 +3070,12 @@ while reading news from slow terminal.@refill
 @item tcp-program-name
 @pindex tcp.c
 @pindex tcp
-@pindex telnet
-Specifies a program which establishes communications between Emacs and
-the NNTP server.  Its default value is @file{telnet}.  Alternative is
-@file{tcp} which is distributed as @file{tcp.c} with other files of GNUS
-(@pxref{Files of GNUS}).  If your Emacs has the function
-@code{open-network-stream}, there is no need to define this variable.
-
+This variable specifies the name of the program which establishes
+communications between Emacs and the NNTP server.  Its default value is
+@code{"tcp"}.  (the program @code{tcp} comes with GNU Emacs.)  This
+variable is relevant only if you load the library @file{tcp.el}, which
+you should do only if your Emacs does not have the function
+@code{open-network-stream}.
 @end table
 
 @node Spool Variables
@@ -3505,8 +3501,8 @@ if its value is non-@code{nil}.  This hook is intended to change the way
 of backing up the startup file.
 @end table
 
-@node Troubleshooting GNUS
-@section Troubleshooting GNUS
+@node Troubleshooting
+@chapter Troubleshooting GNUS
 
 @vindex nntp-buggy-select
   Emacs may hang up while waiting for NNTP server responses.  This may
@@ -3604,24 +3600,8 @@ error.
 
   @inforef{Bugs, Reporting Bugs, emacs}, for more information.
 
-@node Key Index
-@unnumbered Key (Character) Index
-@printindex ky
-
-@node Command Index
-@unnumbered Command and Function Index
-@printindex fn
-
-@node Variable Index
-@unnumbered Variable Index
-@printindex vr
-
-@node Program Index
-@unnumbered Program Index
-@printindex pg
-
-@node Concept Index
-@unnumbered Concept Index
+@node Index
+@unnumbered Index
 @printindex cp
 
 @summarycontents

@@ -24,8 +24,12 @@
 #include "config.h"
 #endif
 
-#if !__STDC__ && !defined(const) && IN_GCC
+#ifndef __STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
+#ifndef const
 #define const
+#endif
 #endif
 
 /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.  */
@@ -181,7 +185,9 @@ my_index (str, chr)
 }
 
 /* If using GCC, we can safely declare strlen this way.
-   If not using GCC, it is ok not to declare it.  */
+   If not using GCC, it is ok not to declare it.
+   (Supposedly there are some machines where it might get a warning,
+   but changing this conditional to __STDC__ is too risky.)  */
 #ifdef __GNUC__
 #ifdef IN_GCC
 #include "gstddef.h"

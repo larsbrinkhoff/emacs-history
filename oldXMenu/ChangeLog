@@ -1,3 +1,14 @@
+Mon Jul 19 02:02:12 1993  Richard Stallman  (rms@sugar-bombs.gnu.ai.mit.edu)
+
+	* Version 19.17 released.
+
+Wed Jul  7 03:13:22 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in: Write out the dependencies for the object files;
+	otherwise, VPATH won't work.
+
+	* Makefile.in: Re-arrange, to put `all' target at the top.
+
 Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.16 released.

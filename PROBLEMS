@@ -1,6 +1,35 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Inability to send an Alt-modified key, while using Emacs with X Windows.
+
+If you have tried to bind an Alt key as a command, and it does not
+work to type the command, the first thing you should check is whether
+the key is getting through to Emacs.  To do this, type C-h c followed
+by the Alt-modified key.  C-h c should say what kind of event it
+read.  If it says it read an Alt key, then make sure you have made the
+key binding correctly.
+
+If C-h c reports an event that doesn't have the Alt modifier, it may
+be because your X server has no key for the Alt modifier.  The X
+server that comes from MIT does not set up the Alt modifier by
+default.
+
+If your keyboard has keys named Alt, you can enable them as follows:
+
+    xmodmap -e 'add mod2 = Alt_L'
+    xmodmap -e 'add mod2 = Alt_R'
+
+If the keyboard has just one key named Alt, then only one of those
+commands is needed.  The modifier `mod2' is a reasonable choice if you
+are using an unmodified MIT version of X.  Otherwise, choose any
+modifier bit not otherwise used.
+
+If your keyboard does not have keys named Alt, you can use some other
+keys.  Use the keysym command in xmodmap to turn a function key (or
+some other 'spare' key) into Alt_L or into Alt_R, and then use the
+commands show above to make them modifier keys.
+
 * `Pid xxx killed due to text modification or page I/O error'
 
 On HP/UX, you can get that error when the Emacs executable is on an NFS

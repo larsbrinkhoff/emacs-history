@@ -1094,11 +1094,10 @@ system cut and paste."
 	      (goto-char opoint)
 	      ;; If user quit, deactivate the mark
 	      ;; as C-g would as a command.
-	      (and quit-flag transient-mark-mode mark-active
+	      (and quit-flag mark-active
 		   (progn
-		     (message "foo")
-		     (setq mark-active nil)
-		     (run-hooks 'deactivate-mark-hook))))
+		     (message "foo")	;XXX what is this here for?  --roland
+		     (deactivate-mark))))
 	  (let* ((killed-text (current-kill 0))
 		 (message-len (min (length killed-text) 40)))
 	    (if (= (point) beg)
@@ -1244,6 +1243,9 @@ When the option is non-nil, deactivation of the mark
 turns off region highlighting, but commands that use the mark
 behave as if the mark were still active.")
 
+(put 'mark-inactive 'error-conditions '(mark-inactive error))
+(put 'mark-inactive 'error-message "The mark is not active now")
+
 (defun mark (&optional force)
   "Return this buffer's mark value as integer; error if mark inactive.
 If optional argument FORCE is non-nil, access the mark value
@@ -1254,7 +1256,15 @@ If you are using this in an editing command, you are most likely making
 a mistake; see the documentation of `set-mark'."
   (if (or force mark-active mark-even-if-inactive)
       (marker-position (mark-marker))
-    (error "The mark is not currently active")))
+    (signal 'mark-inactive nil)))
+
+;; Many places set mark-active directly, and several of them failed to also
+;; run deactivate-mark-hook.  This shorthand should simplify.
+(defsubst deactivate-mark ()
+  "Deactivate the mark by setting `mark-active' to nil.
+Also runs the hook `deactivate-mark-hook'."
+  (setq mark-active nil)
+  (run-hooks 'deactivate-mark-hook))
 
 (defun set-mark (pos)
   "Set this buffer's mark to POS.  Don't use this function!
@@ -1331,8 +1341,7 @@ Does not set point.  Does nothing if mark ring is empty."
       (progn
 	(setq mark-ring (nconc mark-ring (list (copy-marker (mark-marker)))))
 	(set-marker (mark-marker) (+ 0 (car mark-ring)) (current-buffer))
-	(if transient-mark-mode
-	    (setq mark-active nil))
+	(deactivate-mark)
 	(move-marker (car mark-ring) nil)
 	(if (null (mark t)) (ding))
 	(setq mark-ring (cdr mark-ring)))))
@@ -2146,10 +2155,7 @@ in the mode line."
 During execution of Lisp code, this character causes a quit directly.
 At top-level, as an editor command, this simply beeps."
   (interactive)
-  (and transient-mark-mode mark-active
-       (progn
-	 (setq mark-active nil)
-	 (run-hooks 'deactivate-mark-hook)))
+  (deactivate-mark)
   (signal 'quit nil))
 
 (define-key global-map "\C-g" 'keyboard-quit)
@@ -2188,7 +2194,38 @@ it were the arg to `interactive' (which see) to interactively read the value."
 					   'arg))
 	       (eval-minibuffer (format "Set %s to value: " var)))))))
   (set var val))
+
+;; Define the major mode for lists of completions.
 
+(defvar completion-mode-map nil)
+(or completion-mode-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map [mouse-2] 'mouse-choose-completion)
+      (setq completion-mode-map map)))
+
+;; Completion mode is suitable only for specially formatted data.
+(put 'completion-mode 'mode-class 'special)
+
+(defun completion-mode ()
+  "Major mode for buffers showing lists of possible completions.
+Type \\<completion-mode-map>\\[mouse-choose-completion] to select
+a completion with the mouse."
+  (interactive)
+  (kill-all-local-variables)
+  (use-local-map completion-mode-map)
+  (setq mode-name "Completion")
+  (setq major-mode 'completion-mode)
+  (run-hooks 'completion-mode-hook))
+
+(defun completion-setup-function ()
+  (save-excursion
+    (completion-mode)
+    (goto-char (point-min))
+    (if window-system
+	(insert (substitute-command-keys
+		 "Click \\[mouse-choose-completion] on a completion to select it.\n\n")))))
+
+(add-hook 'completion-setup-hook 'completion-setup-function)
 
 ;;;; Keypad support.
 

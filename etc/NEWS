@@ -1,4 +1,4 @@
-GNU Emacs NEWS -- history of user-visible changes.  18 Jun 1993
+GNU Emacs NEWS -- history of user-visible changes.  7 Jul 1993
 Copyright (C) 1993 Free Software Foundation, Inc.
 See the end for copying conditions.
 
@@ -6,12 +6,201 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.17.
+
+* When Emacs displays a list of completions in a buffer, 
+you can select a completion by clicking mouse button 2
+on that completion.
+
+* Use the command `list-faces-display' to display a list of 
+all the currently defined faces, showing what they look like.
+
+* Menu bar items from local maps now come after the usual items.
+
+* The Help menu bar item always comes last in the menu bar.
+
+* If you enable Font-Lock mode on a buffer containing a program
+(certain languages such as C and Lisp are supported), everything you
+type is automatically given a face property appropriate to its
+syntactic role.  For example, there are faces for comments, string
+constants, names of functions being defined, and so on.
+
+* Dunnet, an adventure game, is now available.
+
+* Several major modes now have their own menu bar items, 
+including Dired, Rmail, and Sendmail.  We would like to add 
+suitable menu bar items to other major modes.
+
+* The key binding C-x a C-h has been eliminated.
+This is because it got in the way of the general feature of typing
+C-h after a prefix character.  If you want to run
+inverse-add-global-abbrev, you can use C-x a - or C-x a i g instead.
+
+* If you set the variable `rmail-mail-new-frame' to a non-nil value,
+all the Rmail commands to send mail make a new frame to do it in.
+When you send the message, or use the menu bar command not to send it,
+that frame is deleted.
+
+* In Rmail, the o and C-o commands are now almost interchangeable.
+Both commands check the format of the file you specify, and append
+the message to it in Rmail format if it is an Rmail file, and in
+inbox file format otherwise.  C-o and o are different only when you
+specify a new file.
+
+* The function `copy-face' now takes an optional fourth argument
+NEW-FRAME.  If you specify this, it copies the definition of face
+OLD-FACE on frame FRAME to face NEW-NAME on frame NEW-FRAME.
+
+* A local map can now cancel out one of the global map's menu items.
+Just define that subcommand of the menu item with `undefined'
+as the definition.  For example, this cancels out the `Buffers' item
+for the current major mode:
+
+    (local-set-key [menu-bar buffer] 'undefined)
+
+* To put global items at the end of the menu bar, use the new variable
+`menu-bar-final-items'.  It should be a list of symbols--event types
+bound in the menu bar.  The menu bar items for these symbols are
+moved to the end.
+
+* The list returned by `buffer-local-variables' now contains cons-cell
+elements of the form (SYMBOL . VALUE) only for buffer-local variables
+that have values.  For unbound buffer-local variables, the variable
+name (symbol) appears directly as an element of the list.
+
+* The `modification-hooks' property of a character no longer affects
+insertion; it runs only for deletion and modification of the character.
+
+To detect insertion, use `insert-in-front-hooks' and
+`insert-behind-hooks' properties.  The former runs when text is
+inserted immediately preceding the character that has the property;
+the latter runs when text is inserted immediately following the
+character.
+
+* Buffer modification now runs hooks belonging to overlays as well as
+hooks belonging to characters.  If an overlay has a
+`modification-hooks' property, it applies to any change to text in the
+overlay, and any insertion within the overlay.  If the overlay has a
+`insert-in-front-hooks' property, it runs for insertion at the
+beginning boundary of the overlay.  If the overlay has an
+`insert-behind-hooks' property, it runs for insertion at the end
+boundary of the overlay.
+
+The values of these properties should be lists of functions.  Each
+function is called, receiving as arguments the overlay in question,
+followed by the bounds of the range being modified.
+
+* The new `-name NAME' option directs Emacs to search for its X
+resources using the name `NAME', and sets the title of the initial
+frame.  This argument was added for consistency with other X clients.
+
+* The new `-xrm DATABASE' option tells Emacs to treat the string
+DATABASE as the text of an X resource database.  Emacs searches
+DATABASE for resource values, in addition to the usual places.  This
+argument was added for consistency with other X clients.
+
+* Emacs now searches for X resources in the files specified by the
+XFILESEARCHPATH, XUSERFILESEARCHPATH, and XAPPLRESDIR environment
+variables, emulating the functionality provided by programs written
+using Xt.  Because of this change, Emacs will now notice system-wide
+application defaults files, as other X clients do.
+
+XFILESEARCHPATH and XUSERFILESEARCHPATH should be a list of file names
+separated by colons; XAPPLRESDIR should be a list of directory names
+separated by colons.
+
+Emacs searches for X resources
+  + specified on the command line, with the `-xrm RESOURCESTRING'
+    option,
+  + then in the value of the XENVIRONMENT environment variable,
+    - or if that is unset, in the file named ~/.Xdefaults-HOSTNAME if it exists
+      (where HOSTNAME is the hostname of the machine Emacs is running on),
+  + then in the screen-specific and server-wide resource properties
+    provided by the server,
+    - or if those properties are unset, in the file named ~/.Xdefaults
+      if it exists,
+  + then in the files listed in XUSERFILESEARCHPATH,
+    - or in files named LANG/Emacs in directories listed in XAPPLRESDIR
+      (where LANG is the value of the LANG environment variable), if
+      the LANG environment variable is set,
+    - or in files named Emacs in the directories listed in XAPPLRESDIR
+    - or in ~/LANG/Emacs (if the LANG environment variable is set),
+    - or in ~/Emacs,
+  + then in the files listed in XFILESEARCHPATH.
+
+The paths in the variables XFILESEARCHPATH, XUSERFILESEARCHPATH, and
+XAPPLRESDIR may contain %-escapes (like the control strings passed to
+the the Emacs lisp `format' function or C printf function), which
+Emacs expands.
+
+%N is replaced by the string "Emacs" wherever it occurs.
+%T is replaced by "app-defaults" wherever it occurs.
+%S is replaced by the empty string wherever it occurs.
+%L and %l are replaced by the value of the LANG environment variable; if LANG
+   is not set, Emacs does not use that directory or file name at all.
+%C is replaced by the value of the resource named "customization"
+   (class "Customization"), as retrieved from the server's resource
+   properties or the user's ~/.Xdefaults file, or the empty string if
+   that resource doesn't exist.
+
+So, for example,
+  if XFILESEARCHPATH is set to the value
+    "/usr/lib/X11/%L/%T/%N%C:/usr/lib/X11/%T/%N%C:/usr/lib/X11/%T/%N",
+  and the LANG environment variable is set to
+    "english",
+  and the customization resource is the string
+    "-color",
+then, in the last step of the process described above, Emacs checks
+for resources in the first of the following files that is present and
+readable:
+	/usr/lib/X11/english/app-defaults/Emacs-color
+	/usr/lib/X11/app-defaults/Emacs-color
+	/usr/lib/X11/app-defaults/Emacs
+If the LANG environment variable is not set, then Emacs never uses the
+first element of the path, "/usr/lib/X11/%L/%T/%N%C", because it
+contains the %L escape.
+
+If XFILESEARCHPATH is unset, Emacs uses the default value
+"/usr/lib/X11/%L/app-defaults/Emacs%C:\
+/usr/lib/X11/app-defaults/Emacs%C:\
+/usr/lib/X11/%L/app-defaults/Emacs:\
+/usr/lib/X11/app-defaults/Emacs"
+
+This feature was added for consistency with other X applications.
+
+* The new function `text-property-any' scans the region of text from
+START to END to see if any character's property PROP is `eq' to
+VALUE.  If so, it returns the position of the first such character.
+Otherwise, it returns nil.
+
+The optional fifth argument, OBJECT, specifies the string or buffer to
+be examined.
+
+* The new function `text-property-not-all' scans the region of text from
+START to END to see if any character's property PROP is not `eq' to
+VALUE.  If so, it returns the position of the first such character.
+Otherwise, it returns nil.
+
+The optional fifth argument, OBJECT, specifies the string or buffer to
+be examined.
+
+* The function `delete-windows-on' now takes an optional second
+argument FRAME, which specifies which frames it should affect.
+  + If FRAME is nil or omitted, then `delete-windows-on' deletes windows
+    showing BUFFER (its first argument) on all frames.
+  + If FRAME is t, then `delete-windows-on' only deletes windows on the
+    selected frame; other frames are unaffected.
+  + If FRAME is a frame, then `delete-windows-on' only deletes windows on
+    the given frame; other frames are unaffected.
+
+
 Changes in version 19.16.
 
 * When dragging the mouse to select a region, Emacs now highlights the
-region as you drag.  If you continue the drag beyond the boundaries of
-the window, Emacs scrolls its text until you return the mouse to the
-window, or release the button.
+region as you drag (if Transient Mark mode is enabled).  If you
+continue the drag beyond the boundaries of the window, Emacs scrolls
+the window at a steady rate until you either move the mouse back into
+the window or release the button.
 
 * RET now exits `query-replace' and `query-replace-regexp'; this makes it
 more consistent with the incremental search facility, which uses RET
@@ -27,7 +216,7 @@ and c-backward-conditional).
 strings in the kill ring; click on one to select it as the text 
 to be yanked ("pasted") the next time you yank.
 
-* If you enable Transient Mark mode and set mark-even-if-inactive to
+* If you enable Transient Mark mode and set `mark-even-if-inactive' to
 non-nil, then the region is highlighted in a transient fashion just as
 normally in Transient Mark mode, but the mark really remains active
 all the time; commands that use the region can be used even if the
@@ -40,12 +229,10 @@ that start with that prefix.
 directories named by the variable `vc-path'; its value should be a
 list of strings.
 
-* VC now displays in the mode line the head version number of the file
-you are visiting.  This follows the string `RCS' or `SCCS'.
-If that version is locked, the name of the person who has locked it
-appears before the version number, with a colon between them.
-If other versions are locked, name/version pairs for those versions
-follow the head version number.
+* If you are visiting a file that has locks registered under RCS,
+VC now displays each lock's owner and version number in the mode line
+after the string `RCS'.  If there are no locks, VC displays the head
+version number.
 
 * When using X, if you load the `paren' library, Emacs automatically
 underlines or highlights the matching paren whenever point is

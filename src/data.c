@@ -43,7 +43,7 @@ Lisp_Object Qerror, Qquit, Qwrong_type_argument, Qargs_out_of_range;
 Lisp_Object Qvoid_variable, Qvoid_function, Qcyclic_function_indirection;
 Lisp_Object Qsetting_constant, Qinvalid_read_syntax;
 Lisp_Object Qinvalid_function, Qwrong_number_of_arguments, Qno_catch;
-Lisp_Object Qend_of_file, Qarith_error;
+Lisp_Object Qend_of_file, Qarith_error, Qmark_inactive;
 Lisp_Object Qbeginning_of_buffer, Qend_of_buffer, Qbuffer_read_only;
 Lisp_Object Qintegerp, Qnatnump, Qsymbolp, Qlistp, Qconsp;
 Lisp_Object Qstringp, Qarrayp, Qsequencep, Qbufferp;
@@ -1943,6 +1943,7 @@ syms_of_data ()
   Qbeginning_of_buffer = intern ("beginning-of-buffer");
   Qend_of_buffer = intern ("end-of-buffer");
   Qbuffer_read_only = intern ("buffer-read-only");
+  Qmark_inactive = intern ("mark-inactive");
 
   Qlistp = intern ("listp");
   Qconsp = intern ("consp");
@@ -2125,6 +2126,7 @@ syms_of_data ()
   staticpro (&Qbeginning_of_buffer);
   staticpro (&Qend_of_buffer);
   staticpro (&Qbuffer_read_only);
+  staticpro (&Qmark_inactive);
 
   staticpro (&Qlistp);
   staticpro (&Qconsp);
