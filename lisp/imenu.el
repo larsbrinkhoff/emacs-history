@@ -64,8 +64,6 @@
 ;;; Customizable variables
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar imenu-use-keymap-menu nil
-  "*Non-nil means use a keymap when making the mouse menu.")
 
 (defvar imenu-auto-rescan nil
   "*Non-nil means Imenu should always rescan the buffers.")
@@ -709,43 +707,35 @@ Returns t for rescan and otherwise a position number."
 		   index-alist)
 		 (or title (buffer-name))))
 	 position)
-    (and imenu-use-keymap-menu
-	 (setq menu (imenu--create-keymap-1 (car menu) 
-					    (if (< 1 (length (cdr menu)))
-						(cdr menu)
-					      (cdr (cadr menu))))))
-
-    (or imenu-use-keymap-menu
-	(setq menu (list "Imenu" (delq nil menu))))
+    (setq menu (imenu--create-keymap-1 (car menu) 
+				       (if (< 1 (length (cdr menu)))
+					   (cdr menu)
+					 (cdr (cadr menu)))))
     (setq position (x-popup-menu event menu))
-    (if imenu-use-keymap-menu
-	(progn
-	  (cond 
-	   ((and (listp position)
-		 (numberp (car position))
-		 (stringp (nth (1- (length position)) position)))
-	    (setq position (nth (1- (length position)) position)))
-	   ((and (stringp (car position))
-		 (null (cdr position)))
-	    (setq position (car position))))))
-    (cond
-     ((eq position nil)
-      position)
-     ((listp position)
-      (imenu--mouse-menu position event
-			 (if title
-			     (concat title imenu-level-separator
-				     (car (rassq position index-alist)))
-			   (car (rassq position index-alist)))))
-     ((stringp position)
-      (or (string= position (car imenu--rescan-item))
-	  (imenu--in-alist position index-alist)))
-     ((or (= position (cdr imenu--rescan-item))
-	  (and (stringp position)
-	       (string= position (car imenu--rescan-item))))
-      t)
-     (t
-      (rassq position index-alist)))))
+    (cond ((and (listp position)
+		(numberp (car position))
+		(stringp (nth (1- (length position)) position)))
+	   (setq position (nth (1- (length position)) position)))
+	  ((and (stringp (car position))
+		(null (cdr position)))
+	   (setq position (car position))))
+    (cond ((eq position nil)
+	   position)
+	  ((listp position)
+	   (imenu--mouse-menu position event
+			      (if title
+				  (concat title imenu-level-separator
+					  (car (rassq position index-alist)))
+				(car (rassq position index-alist)))))
+	  ((stringp position)
+	   (or (string= position (car imenu--rescan-item))
+	       (imenu--in-alist position index-alist)))
+	  ((or (= position (cdr imenu--rescan-item))
+	       (and (stringp position)
+		    (string= position (car imenu--rescan-item))))
+	   t)
+	  (t
+	   (rassq position index-alist)))))
 
 (defun imenu-choose-buffer-index (&optional prompt alist)
   "Let the user select from a buffer index and return the chosen index.
@@ -851,7 +841,7 @@ See `imenu-choose-buffer-index' for more information."
   (interactive
    (list (save-restriction 
 	   (widen)
-	   (car (imenu-choose-buffer-index)))))
+	   (imenu-choose-buffer-index))))
   ;; Convert a string to an alist element.
   (if (stringp index-item)
       (setq index-item (assoc index-item (imenu--make-index-alist))))

@@ -1,3 +1,16 @@
+Sat Jul 27 00:14:21 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.32 released.
+
+Wed Jul 24 11:04:24 1996  Eli Zaretskii  <eliz@is.elta.co.il>
+
+	* mainmake.v2 (TAGS): Make sure bin/etags.exe is current.  Make
+	the rules always generate TAGS.
+
+Sun Jun  9 13:21:51 1996  Eli Zaretskii  <eliz@is.elta.co.il>
+
+	* sed2.inp: Don't undef MULTI_FRAME.
+
 Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
 
 	* Version 19.31 released.

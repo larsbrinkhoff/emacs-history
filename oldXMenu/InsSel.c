@@ -73,7 +73,17 @@ XMenuInsertSelection(menu, p_num, s_num, data, label, active)
     /*
      * Fill the XMSelect structure.
      */
-    select->type = SELECTION;
+    if (!strcmp (label, "--") || !strcmp (label, "---"))
+      {
+	select->type = SEPARATOR;
+	select->active = 0;
+      }
+    else
+      {
+	select->type = SELECTION;
+	select->active = active;
+      }
+
     select->active = active;
     select->serial = -1;
     select->label = label;

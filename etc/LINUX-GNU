@@ -14,55 +14,70 @@ example, GNU Emacs, the GNU C compiler, the GNU C library, Bash, and
 Ghostscript.  The components in this last category are "GNU software".
 The GNU system consists of all three categories together.
 
-The GNU project is not just about developing and distributing free
-software.  The heart of the GNU project is an idea: that software
-should be free, and that the users' freedom is worth defending.  For
-if people have freedom but do not value it, they will not keep it for
-long.  In order to make freedom last, we have to teach people to value
-it.
+The GNU project is not just about developing and distributing some
+useful free software.  The heart of the GNU project is an idea: that
+software should be free, and that the users' freedom is worth
+defending.  For if people have freedom but do not consciously
+appreciate it, they will not keep it for long.  If we want to make
+freedom last, we need to call people's attention to the freedoms they
+have in free software.
 
 The GNU project's method is that free software and the idea of users'
 freedom support each other.  We develop GNU software, and as people
 encounter GNU programs or the GNU system and start to use them, they
 also think about the GNU idea.  The software shows that the idea can
-work in practice.  People who come to agree with the idea are likely
-to write additional free software.  Thus, the software embodies the
-idea, spreads the idea, and grows from the idea.
+work in practice.  Some of these people come to agree with the idea,
+and then they are more likely to write additional free software.
+Thus, the software embodies the idea, spreads the idea, and grows from
+the idea.
 
-This method was working well--until someone combined the Linux kernel
-with the GNU system (which still lacked a kernel), and called the
-combination a "Linux system."
+By 1992, we had found or written all of the essential major components
+of the system except the kernel, which we were writing.  (This kernel
+consists of the Mach microkernel plus the GNU HURD.  Currently it is
+running but not ready for users.  We are hoping for an alpha release
+soon.)
 
-The Linux kernel is a free Unix-compatible kernel written by Linus
-Torvalds.  It was not written specifically for the GNU project, but
-the Linux kernel and the GNU system work together well.  In fact,
-adding Linux to the GNU system brought the system to completion: it
-made a free Unix-compatible operating system available for use.
+Then the Linux kernel became available.  Linux is a free
+Unix-compatible kernel initially written by Linus Torvalds.  It was
+not written for the GNU project, but Linux and the almost-complete GNU
+system made a useful combination.  This combination provided all the
+major essential components of a Unix-compatible operating system, and
+with some work, people made it into a usable system.  It was a variant
+GNU system, based on the Linux kernel.
 
-But ironically, the practice of calling it a "Linux system" undermines
-our method of communicating the GNU idea.  At first impression, a
-"Linux system" sounds like something completely distinct from the "GNU
-system."  And that is what most users think it is.
+Ironically, the popularity of these systems undermines our method of
+communicating the GNU idea to people who use GNU.  These systems are
+mostly the same as the GNU system--the main difference being the
+choice of kernel.  But people usually call them "Linux systems".  At
+first impression, a "Linux system" sounds like something completely
+distinct from the "GNU system," and that is what most users think it
+is.
 
 Most introductions to the "Linux system" acknowledge the role played
 by the GNU software components.  But they don't say that the system as
-a whole is more or less the same GNU system that the GNU project has
-been compiling for a decade.  They don't say that the idea of a free
-Unix-like system originates from the GNU project.  So most users don't
-know these things.
+a whole is a variant of the GNU system that the GNU project has been
+compiling for a decade.  They don't say that the goal of a free
+Unix-like system like this one came from the GNU project.  So most
+users don't know these things.
 
-This leads many of those users to identify themselves as a separate
-community of "Linux users", distinct from the GNU user community.
-They use all of the GNU software; in fact, they use almost all of the
-GNU system; but they don't think of themselves as GNU users, and they
-may not think about the GNU idea.
+Since human beings tend to correct their first impressions less than
+subsequent information calls for, those users who later learn about
+the relationship between these systems and the GNU project still often
+underestimate it.
+
+This leads many users to identify themselves as a separate community
+of "Linux users", distinct from the GNU user community.  They use all
+of the GNU software; in fact, they use almost all of the GNU system;
+but they don't think of themselves as GNU users, and often they don't
+think that the GNU idea relates to them.
 
 It leads to other problems as well--even hampering cooperation on
 software maintenance.  Normally when users change a GNU program to
 make it work better on a particular system, they send the change to
 the maintainer of that program; then they work with the maintainer,
-explaining the change, arguing for it and sometimes rewriting it, to
-get it installed.
+explaining the change, arguing for it, and sometimes rewriting it for
+the sake of the overall coherence and maintainability of the package,
+to get the patch installed.
 
 But people who think of themselves as "Linux users" are more likely to
 release a forked "Linux-only" version of the GNU program, and consider
@@ -70,8 +85,8 @@ the job done.  We want each and every GNU program to work "out of the
 box" on Linux-based systems; but if the users do not help, that goal
 becomes much harder to achieve.
 
-So how should the GNU project respond?  What should we do now to
-spread the idea that freedom for computer users is important?
+How should the GNU project deal with this problem?  What should we do
+now to spread the idea that freedom for computer users is important?
 
 We should continue to talk about the freedom to share and change
 software--and to teach other users to value these freedoms.  If we
@@ -81,16 +96,17 @@ a variety of free software, it makes sense for to think about
 encouraging others to write additional free software, instead of
 additional proprietary software.
 
-We should not accept the splitting of the community in two.  Instead
-we should spread the word that "Linux systems" are variant GNU
-systems--that users of these systems are GNU users, and that they
-ought to consider the GNU philosophy which brought these systems into
-existence.
+We should not accept the idea of two separate communities for GNU and
+Linux.  Instead we should spread understanding that "Linux systems"
+are variants of the GNU system, and that the users of these systems
+are as GNU users as well as Linux users (users of the Linux kernel).
+Users who know this will naturally tend to take a look at the GNU
+philosophy which brought these systems into existence.
 
-This article is one way of doing that.  Another way is to use the
-terms "Linux-based GNU system" (or "GNU/Linux system" or "Lignux" for
-short) to refer to the combination of the Linux kernel and the GNU
-system.
+I've written this article as one way of doing that.  Another way is to
+use the terms "Linux-based GNU system" or "GNU/Linux system", instead
+of "Linux system," when you write about or mention such a system.
+
 
 Copyright 1996 Richard Stallman
 Verbatim copying and redistribution is permitted

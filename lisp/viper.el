@@ -8,7 +8,7 @@
 
 ;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
-(defconst viper-version "2.86 of March 14, 1996"
+(defconst viper-version "2.90 of June 19, 1996"
   "The current version of Viper")
 
 ;; This file is part of GNU Emacs.
@@ -24,8 +24,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -88,7 +89,7 @@
 ;;    The same macro name can have several different definitions:
 ;;    one global, several definitions for various major modes, and
 ;;    definitions for specific buffers.
-;;    Bffer-specific definitions override mode-specific
+;;    Buffer-specific definitions override mode-specific
 ;;    definitions, which, in turn, override global definitions.
 ;;
 ;;
@@ -100,8 +101,8 @@
 
 ;;; Acknowledgements:
 ;;  -----------------
-;;  Bug reports and ideas contributed by the following users
-;;  have helped improve Viper and the various versions of VIP.
+;;  Bug reports and ideas contributed by many users have helped
+;;  improve Viper and the various versions of VIP.
 ;;  See the on-line manual for a complete list of contributors. 
 ;;
 ;;
@@ -155,8 +156,8 @@
 ;;  For instance,  C-c will not have its standard Emacs binding
 ;;  and so many of the goodies of Emacs are not available.
 ;;
-;;  An skilled user, should set vip-expert-level to at least 3. This will
-;;  enable ;;  C-c and many Emacs facilities will become available.
+;;  A skilled user should set vip-expert-level to at least 3. This will
+;;  enable `C-c' and many Emacs facilities will become available.
 ;;  In this case, vip-vi-diehard-minor-mode is inactive.
 ;;
 ;;  Viper gurus should have at least
@@ -820,8 +821,7 @@ These buffers can be cycled through via :R and :P commands.")
 (defvar vip-always t
   "t means, arrange that vi-state will be a default.")
 
-(defvar vip-custom-file-name (cond ((memq system-type '(vax-vms axp-vms))
-				    "sys$login:.vip")
+(defvar vip-custom-file-name (cond (vip-vms-os-p "sys$login:.vip")
 				   ((memq system-type '(emx ms-dos))
 				    "/_vip")
 				   ((memq system-type '(windows-nt windows-95))
@@ -830,6 +830,7 @@ These buffers can be cycled through via :R and :P commands.")
 				    "~/.vip"))
   "Viper customisation file.
 This variable must be set _before_ loading Viper.")
+
 
 (defvar vip-spell-function 'ispell-region
   "Spell function used by #s<move> command to spell.")
@@ -1257,19 +1258,17 @@ Technically speaking, Viper is a Vi emulation package for GNU Emacs 19 and
 XEmacs 19.  It supports virtually all of Vi and Ex functionality, extending
 and improving upon much of it.
 
-   1. Viper supports Vi at several levels. Level 1 is the closest to
-      Vi, level 5 provides the most flexibility to depart from many Vi
-      conventions.
+   1. Viper supports Vi at several levels. Level 1 is the closest to Vi,
+      level 5 provides the most flexibility to depart from many Vi conventions.
       
       You will be asked to specify your user level in a following screen.
    
-      If you select user level 1 then the keys ^X, ^C, ^Z, and ^G will
-      behave as in VI, to smooth transition to Viper for the beginners. 
-      However, to use Emacs productively, you are advised to reach user
-      level 3 or higher. 
+      If you select user level 1 then the keys ^X, ^C, ^Z, and ^G will behave
+      as in VI, to smooth transition to Viper for the beginners. However, to
+      use Emacs productively, you are advised to reach user level 3 or higher. 
       
       If your user level is 2 or higher, ^X and ^C will invoke Emacs
-      functions,as usual in Emacs; ^Z will toggle vi/emacs modes, and
+      functions,as usual in Emacs; ^Z will toggle vi/emacs modes, and 
       ^G will be the usual Emacs's keyboard-quit (something like ^C in VI).
    
    2. Vi exit functions (e.g., :wq, ZZ) work on INDIVIDUAL files -- they
@@ -1280,9 +1279,8 @@ and improving upon much of it.
    
    6. Emacs Meta functions are invoked by typing `_' or `\\ ESC'.
       On a window system, the best way is to use the Meta-key.
-   7. Try \\[keyboard-quit] and \\[abort-recursive-edit] repeatedly,
-      if something funny happens. This would abort the current editing
-      command. 
+   7. Try \\[keyboard-quit] and \\[abort-recursive-edit] repeatedly,if
+      something funny happens. This would abort the current editing command. 
       
 You can get more information on Viper by:
 
@@ -1298,8 +1296,11 @@ This startup message appears whenever you load Viper, unless you type `y' now."
 			 'vip-inhibit-startup-message
 			 "Viper startup message inhibited"
 			 vip-custom-file-name t))
-		    (kill-buffer (current-buffer))))
-	      (message " ")
+		    ;;(kill-buffer (current-buffer))
+		    (message
+		     "The last message is in buffer `Viper Startup Message'")
+		    (sit-for 4)
+		    ))
 	      (vip-set-expert-level 'dont-change-unless)))
 	(vip-change-state-to-vi))))
 	
@@ -1791,8 +1792,8 @@ behaves as in Emacs, any number of multiple escapes is allowed."
 (defun vip-prefix-arg-value (event com)
   (let (value)
     ;; read while number
-    (while (and (numberp event) (>= event ?0) (<= event ?9))
-      (setq value (+ (* (if (numberp value) value 0) 10) (- event ?0)))
+    (while (and (vip-characterp event) (>= event ?0) (<= event ?9))
+      (setq value (+ (* (if (vip-characterp value) value 0) 10) (- event ?0)))
       (setq event (vip-read-event-convert-to-char)))
     
     (setq prefix-arg value)
@@ -1901,11 +1902,11 @@ behaves as in Emacs, any number of multiple escapes is allowed."
        last-command-char   
        (cond ((null arg) nil)
 	     ((consp arg) (car arg))
-	     ((numberp arg) arg)
+	     ((integerp arg) arg)
 	     (t (error vip-InvalidCommandArgument)))
        (cond ((null arg) nil)
 	     ((consp arg) (cdr arg))
-	     ((numberp arg) nil)
+	     ((integerp arg) nil)
 	     (t (error vip-InvalidCommandArgument))))
     (quit (setq vip-use-register nil)
 	  (signal 'quit nil)))
@@ -3559,15 +3560,16 @@ called from vip-repeat, the char last used is used.  This behaviour is
 controlled by the sign of prefix numeric value."
   (interactive "P")
   (let ((val (vip-p-val arg))
-	(com (vip-getcom arg)))
+	(com (vip-getcom arg))
+	(cmd-representation (nth 5 vip-d-com)))
     (if (> val 0)
 	;; this means that the function was called interactively
 	(setq vip-f-char (read-char)
 	      vip-f-forward t
 	      vip-f-offset nil)
       ;; vip-repeat --- set vip-F-char from command-keys
-      (setq vip-F-char (if (stringp (nth 5 vip-d-com))
-			   (vip-seq-last-elt (nth 5 vip-d-com))
+      (setq vip-F-char (if (stringp cmd-representation)
+			   (vip-seq-last-elt cmd-representation)
 			 vip-F-char)
 	    vip-f-char vip-F-char)
       (setq val (- val)))
@@ -3584,15 +3586,16 @@ controlled by the sign of prefix numeric value."
   "Go up to char ARG forward on line."
   (interactive "P")
   (let ((val (vip-p-val arg))
-	(com (vip-getcom arg)))
+	(com (vip-getcom arg))
+	(cmd-representation (nth 5 vip-d-com)))
     (if (> val 0)
 	;; this means that the function was called interactively
 	(setq vip-f-char (read-char)
 	      vip-f-forward t
 	      vip-f-offset t)
       ;; vip-repeat --- set vip-F-char from command-keys
-      (setq vip-F-char (if (stringp (nth 5 vip-d-com))
-			   (vip-seq-last-elt (nth 5 vip-d-com))
+      (setq vip-F-char (if (stringp cmd-representation)
+			   (vip-seq-last-elt cmd-representation)
 			 vip-F-char)
 	    vip-f-char vip-F-char)
       (setq val (- val)))
@@ -3609,15 +3612,16 @@ controlled by the sign of prefix numeric value."
   "Find char ARG on line backward."
   (interactive "P")
   (let ((val (vip-p-val arg))
-	(com (vip-getcom arg)))
+	(com (vip-getcom arg))
+	(cmd-representation (nth 5 vip-d-com)))
     (if (> val 0)
 	;; this means that the function was called interactively
 	(setq vip-f-char (read-char)
 	      vip-f-forward nil
 	      vip-f-offset nil)
       ;; vip-repeat --- set vip-F-char from command-keys
-      (setq vip-F-char (if (stringp (nth 5 vip-d-com))
-			   (vip-seq-last-elt (nth 5 vip-d-com))
+      (setq vip-F-char (if (stringp cmd-representation)
+			   (vip-seq-last-elt cmd-representation)
 			 vip-F-char)
 	    vip-f-char vip-F-char)
       (setq val (- val)))
@@ -3634,15 +3638,16 @@ controlled by the sign of prefix numeric value."
   "Go up to char ARG backward on line."
   (interactive "P")
   (let ((val (vip-p-val arg))
-	(com (vip-getcom arg)))
+	(com (vip-getcom arg))
+	(cmd-representation (nth 5 vip-d-com)))
     (if (> val 0)
 	;; this means that the function was called interactively
 	(setq vip-f-char (read-char)
 	      vip-f-forward nil
 	      vip-f-offset t)
       ;; vip-repeat --- set vip-F-char from command-keys
-      (setq vip-F-char (if (stringp (nth 5 vip-d-com))
-			   (vip-seq-last-elt (nth 5 vip-d-com))
+      (setq vip-F-char (if (stringp cmd-representation)
+			   (vip-seq-last-elt cmd-representation)
 			 vip-F-char)
 	    vip-f-char vip-F-char)
       (setq val (- val)))
@@ -3776,8 +3781,9 @@ controlled by the sign of prefix numeric value."
 (defun vip-paren-match (arg)
   "Go to the matching parenthesis."
   (interactive "P")
-  (let ((com (vip-getcom arg)))
-    (if (numberp arg)
+  (let ((com (vip-getcom arg))
+	anchor-point)
+    (if (integerp arg)
 	(if (or (> arg 99) (< arg 1))
 	    (error "Prefix must be between 1 and 99")
 	  (goto-char
@@ -3785,20 +3791,33 @@ controlled by the sign of prefix numeric value."
 	       (* (/ (point-max) 100) arg)
 	     (/ (* (point-max) arg) 100)))
 	  (back-to-indentation))
-      (let (lim)
+      (let (beg-lim end-lim)
 	(if (and (eolp) (not (bolp))) (forward-char -1))
+	(if (not (looking-at "[][(){}]"))
+	    (setq anchor-point (point)))
 	(save-excursion
+	  (beginning-of-line)
+	  (setq beg-lim (point))
 	  (end-of-line)
-	  (setq lim (point)))
-	(if (re-search-forward "[][(){}]" lim t) 
-	    (backward-char) 
-	  (error "No matching character on line")))
+	  (setq end-lim (point)))
+	(cond ((re-search-forward "[][(){}]" end-lim t) 
+	       (backward-char) )
+	      ((re-search-backward "[][(){}]" beg-lim t))
+	      (t
+	       (error "No matching character on line"))))
       (cond ((looking-at "[\(\[{]")
 	     (if com (vip-move-marker-locally 'vip-com-point (point)))
 	     (forward-sexp 1)
 	     (if com
 		 (vip-execute-com 'vip-paren-match nil com)
 	       (backward-char)))
+	    (anchor-point
+	     (if com
+		 (progn
+		   (vip-move-marker-locally 'vip-com-point anchor-point)
+		   (forward-char 1)
+		   (vip-execute-com 'vip-paren-match nil com)
+		   )))
 	    ((looking-at "[])}]")
 	     (forward-char)
 	     (if com (vip-move-marker-locally 'vip-com-point (point)))
@@ -4531,7 +4550,7 @@ cursor move past the beginning of line."
 	    (vip-change-state-to-replace t))
 	(kill-region (vip-replace-start)
 		     (vip-replace-end))
-	(vip-restore-cursor-color)
+	(vip-hide-replace-overlay)
 	(vip-change-state-to-insert))
     (error ;; make sure that the overlay doesn't stay.
            ;; go back to the original point
@@ -4916,7 +4935,7 @@ sensitive for VI-style look-and-feel."
   
   (interactive)
   
-  (if (not (numberp vip-expert-level)) (setq vip-expert-level 0))
+  (if (not (natnump vip-expert-level)) (setq vip-expert-level 0))
   
   (save-window-excursion
     (delete-other-windows)
@@ -5310,7 +5329,7 @@ Mail anyway (y or n)? ")
     (setq
      unread-command-events
      (append
-      (cond ((numberp arg) (list (character-to-event arg)))
+      (cond ((vip-characterp arg) (list (character-to-event arg)))
 	    ((eventp arg)  (list arg))
 	    ((stringp arg) (mapcar 'character-to-event arg))
 	    ((vectorp arg) (append arg nil)) ; turn into list
@@ -5323,7 +5342,7 @@ Mail anyway (y or n)? ")
 (defun vip-eventify-list-xemacs (lis)
   (mapcar
    (function (lambda (elt)
-	       (cond ((numberp elt) (character-to-event elt))
+	       (cond ((vip-characterp elt) (character-to-event elt))
 		     ((eventp elt)  elt)
 		     (t (error
 			 "vip-eventify-list-xemacs: can't convert to event, %S"
@@ -5377,42 +5396,45 @@ Mail anyway (y or n)? ")
     "Run `vip-change-state-to-vi' on entry."
     (vip-change-state-to-vi))
 
-  (defvar makefile-mode-hook nil)
+  (defvar makefile-mode-hook)
   (add-hook 'makefile-mode-hook 'viper-mode)
 
-  (defvar help-mode-hook nil)
+  (defvar help-mode-hook)
   (add-hook 'help-mode-hook 'viper-mode)
 
-  (defvar awk-mode-hook nil)
+  (defvar awk-mode-hook)
   (add-hook 'awk-mode-hook 'viper-mode)
   
-  (defvar html-mode-hook nil)
+  (defvar html-mode-hook)
   (add-hook 'html-mode-hook 'viper-mode)
-  (defvar html-helper-mode-hook nil)
+  (defvar html-helper-mode-hook)
   (add-hook 'html-helper-mode-hook 'viper-mode)
   
-  (defvar emacs-lisp-mode-hook nil)
+  (defvar emacs-lisp-mode-hook)
   (add-hook 'emacs-lisp-mode-hook 'viper-mode)
 
-  (defvar lisp-mode-hook nil)
+  (defvar lisp-mode-hook)
   (add-hook 'lisp-mode-hook 'viper-mode)
   
-  (defvar bibtex-mode-hook nil) 	    		
+  (defvar bibtex-mode-hook)
   (add-hook 'bibtex-mode-hook 'viper-mode) 	  
       
-  (defvar cc-mode-hook nil)
+  (defvar cc-mode-hook)
   (add-hook 'cc-mode-hook 'viper-mode)
       
-  (defvar c-mode-hook nil)
+  (defvar c-mode-hook)
   (add-hook 'c-mode-hook 'viper-mode)
       
-  (defvar c++-mode-hook nil)
+  (defvar c++-mode-hook)
   (add-hook 'c++-mode-hook 'viper-mode)
   
-  (defvar lisp-interaction-mode-hook nil)
+  (defvar lisp-interaction-mode-hook)
   (add-hook 'lisp-interaction-mode-hook 'viper-mode)
+
+  (defvar fortran-mode-hook)
+  (add-hook 'fortran-mode-hook 'vip-mode)
       
-  (defvar text-mode-hook nil)
+  (defvar text-mode-hook)
   (add-hook 'text-mode-hook 'viper-mode)
       
   (add-hook 'completion-list-mode-hook 'viper-mode)  
@@ -5421,7 +5443,7 @@ Mail anyway (y or n)? ")
   (add-hook 'perl-mode-hook     'viper-mode)  
   (add-hook 'tcl-mode-hook     'viper-mode)  
   
-  (defvar emerge-startup-hook nil)
+  (defvar emerge-startup-hook)
   (add-hook 'emerge-startup-hook 'vip-change-state-to-emacs)
   ;; Run vip-change-state-to-vi after quitting emerge.
   (vip-eval-after-load
@@ -5455,14 +5477,14 @@ Mail anyway (y or n)? ")
       (vip-change-state-to-vi)))
   
   ;; Emacs shell, ange-ftp, and comint-based modes
-  (defvar comint-mode-hook nil)
+  (defvar comint-mode-hook)
   (add-hook 'comint-mode-hook 'vip-change-state-to-insert)
   (add-hook 'comint-mode-hook 'vip-comint-mode-hook)
   
   ;; Shell scripts
-  (defvar sh-mode-hook nil)
+  (defvar sh-mode-hook)
   (add-hook 'sh-mode-hook 'viper-mode)
-  (defvar ksh-mode-hook nil)
+  (defvar ksh-mode-hook)
   (add-hook 'ksh-mode-hook 'viper-mode)
   
   ;; Dired
@@ -5471,22 +5493,18 @@ Mail anyway (y or n)? ")
 
   (if vip-emacs-p
       (progn
-	(defvar view-mode-hook nil
-	  "View hook. Run after view mode.")
+	(defvar view-mode-hook)
 	(add-hook 'view-mode-hook 'vip-change-state-to-emacs))
     (defadvice view-minor-mode (after vip-view-ad activate)
       "Switch to Emacs state in View mode."
       (vip-change-state-to-emacs))
-    (defvar view-hook nil
-      "View hook. Run after view mode.")
+    (defvar view-hook)
     (add-hook 'view-hook 'vip-change-state-to-emacs))
   
   ;; For VM users.
   ;; Put summary and other VM buffers in Emacs state.
-  (defvar vm-mode-hooks nil 
-    "This hook is run after vm is started.")
-  (defvar vm-summary-mode-hooks nil 
-    "This hook is run after vm switches to summary mode.")
+  (defvar vm-mode-hooks)
+  (defvar vm-summary-mode-hooks)
   (add-hook 'vm-mode-hooks   'vip-change-state-to-emacs)
   (add-hook 'vm-summary-mode-hooks   'vip-change-state-to-emacs)
   

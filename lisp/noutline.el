@@ -132,7 +132,6 @@ in the file it applies to.")
 (defvar outline-minor-mode nil
   "Non-nil if using Outline mode as a minor mode of some other mode.")
 (make-variable-buffer-local 'outline-minor-mode)
-(put 'outline-minor-mode 'permanent-local t)
 (or (assq 'outline-minor-mode minor-mode-alist)
     (setq minor-mode-alist (append minor-mode-alist
 				   (list '(outline-minor-mode " Outl")))))
@@ -251,6 +250,11 @@ See the command `outline-mode' for more information on this mode."
 	  (> (prefix-numeric-value arg) 0)))
   (if outline-minor-mode
       (progn
+	(make-local-hook 'change-major-mode-hook)
+	;; Turn off this mode if we change major modes.
+	(add-hook 'change-major-mode-hook
+		  '(lambda () (outline-minor-mode -1))
+		  nil t)
 	(make-local-variable 'line-move-ignore-invisible)
 	(setq line-move-ignore-invisible t)
 	;; Cause use of ellipses for invisible text.
@@ -308,13 +312,14 @@ Only visible heading lines are considered."
   (beginning-of-line)
   (or (outline-on-heading-p)
       (let (found)
-	(while (not found)
-	  (setq found
-		(and (re-search-backward (concat "^\\(" outline-regexp "\\)")
-					 nil t)
-		     (outline-visible))))
-	found)
-      (error "before first heading")))
+	(save-excursion
+	  (while (not found)
+	    (or (re-search-backward (concat "^\\(" outline-regexp "\\)")
+				    nil t)
+		(error "before first heading"))
+	    (setq found (and (outline-visible) (point)))))
+	(goto-char found)
+	found)))
 
 (defun outline-on-heading-p ()
   "Return t if point is on a (visible) heading line."
@@ -580,7 +585,7 @@ With argument, move up ARG levels."
   (interactive "p")
   (outline-back-to-heading)
   (if (eq (funcall outline-level) 1)
-      (error ""))
+      (error "Already at top level of the outline"))
   (while (and (> (funcall outline-level) 1)
 	      (> arg 0)
 	      (not (bobp)))
@@ -603,7 +608,7 @@ Stop at the first and last subheadings of a superior heading."
 	    (setq arg (1- arg)))
 	(progn
 	  (setq arg 0)
-	  (error ""))))))
+	  (error "No following same-level heading"))))))
 
 (defun outline-get-next-sibling ()
   "Move to next heading of the same level, and return point or nil if none."
@@ -630,7 +635,7 @@ Stop at the first and last subheadings of a superior heading."
 	    (setq arg (1- arg)))
 	(progn
 	  (setq arg 0)
-	  (error ""))))))
+	  (error "No previous same-level heading"))))))
 
 (defun outline-get-last-sibling ()
   "Move to next heading of the same level, and return point or nil if none."

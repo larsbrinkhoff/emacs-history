@@ -35,7 +35,7 @@
 
 % This automatically updates the version number based on RCS.
 \def\deftexinfoversion$#1: #2 ${\def\texinfoversion{#2}}
-\deftexinfoversion$Revision: 2.172 $
+\deftexinfoversion$Revision: 2.174 $
 \message{Loading texinfo package [Version \texinfoversion]:}
 
 % If in a .fmt file, print the version number
@@ -626,6 +626,7 @@ where each line of input produces a line of output.}
 % incorrectly.
 %
 \def\ignoremorecommands{%
+  \let\defcodeindex = \relax
   \let\defcv = \relax
   \let\deffn = \relax
   \let\deffnx = \relax
@@ -666,7 +667,6 @@ where each line of input produces a line of output.}
   \let\set = \relax
   \let\clear = \relax
   \let\item = \relax
-  \let\message = \relax
 }
 
 % Ignore @ignore ... @end ignore.
@@ -1190,6 +1190,7 @@ where each line of input produces a line of output.}
 \def\ctrl #1{{\tt \rawbackslash \hat}#1}
 
 \let\file=\samp
+\let\email=\samp
 \let\url=\samp % perhaps include a hypertex \special eventually
 
 % @code is a modification of @t,

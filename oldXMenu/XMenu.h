@@ -67,7 +67,7 @@ extern char *_XMErrorList[];
  *
  * An XMSelect is a menu selection object with a label and a data pointer.
  */
-typedef enum _xmwintype {PANE, SELECTION, PL_HEADER, SL_HEADER} XMWType;
+typedef enum _xmwintype {PANE, SELECTION, PL_HEADER, SL_HEADER, SEPARATOR} XMWType;
 
 typedef struct _xmwindow {
     struct _xmwindow *next;	/* Next obj pointer (for emacs_insque). */

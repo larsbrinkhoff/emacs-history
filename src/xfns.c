@@ -89,8 +89,10 @@ extern void _XEditResCheckMessages ();
    Library.  */
 extern LWLIB_ID widget_id_tick;
 
+#ifdef USE_LUCID
 /* This is part of a kludge--see lwlib/xlwmenu.c.  */
-XFontStruct *xlwmenu_default_font;
+extern XFontStruct *xlwmenu_default_font;
+#endif
 
 extern void free_frame_menubar ();
 #endif /* USE_X_TOOLKIT */
@@ -169,7 +171,6 @@ Lisp_Object Qborder_width;
 Lisp_Object Qbox;
 Lisp_Object Qcursor_color;
 Lisp_Object Qcursor_type;
-Lisp_Object Qfont;
 Lisp_Object Qforeground_color;
 Lisp_Object Qgeometry;
 Lisp_Object Qicon_left;
@@ -1003,12 +1004,13 @@ x_real_positions (f, xptr, yptr)
 	 If so, we get an error in XTranslateCoordinates.
 	 Detect that and try the whole thing over.  */
       if (! x_had_errors_p (FRAME_X_DISPLAY (f)))
-	break;
+	{
+	  x_uncatch_errors (FRAME_X_DISPLAY (f));
+	  break;
+	}
 
       x_uncatch_errors (FRAME_X_DISPLAY (f));
     }
-
-  x_uncatch_errors (FRAME_X_DISPLAY (f));
 
   *xptr = f->output_data.x->left_pos - win_x;
   *yptr = f->output_data.x->top_pos - win_y;
@@ -3010,7 +3012,7 @@ This function is an internal primitive--use `make-frame' instead.")
   long window_prompting = 0;
   int width, height;
   int count = specpdl_ptr - specpdl;
-  struct gcpro gcpro1;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
   Lisp_Object display;
   struct x_display_info *dpyinfo;
   Lisp_Object parent;
@@ -3048,6 +3050,11 @@ This function is an internal primitive--use `make-frame' instead.")
   if (! NILP (parent))
     CHECK_NUMBER (parent, 0);
 
+  /* make_frame_without_minibuffer can run Lisp code and garbage collect.  */
+  /* No need to protect DISPLAY because that's not used after passing
+     it to make_frame_without_minibuffer.  */
+  frame = Qnil;
+  GCPRO4 (parms, parent, name, frame);
   tem = x_get_arg (parms, Qminibuffer, 0, 0, symbol);
   if (EQ (tem, Qnone) || NILP (tem))
     f = make_frame_without_minibuffer (Qnil, kb, display);
@@ -3061,11 +3068,10 @@ This function is an internal primitive--use `make-frame' instead.")
   else
     f = make_frame (1);
 
+  XSETFRAME (frame, f);
+
   /* Note that X Windows does support scroll bars.  */
   FRAME_CAN_HAVE_SCROLL_BARS (f) = 1;
-
-  XSETFRAME (frame, f);
-  GCPRO1 (frame);
 
   f->output_method = output_x_window;
   f->output_data.x = (struct x_output *) xmalloc (sizeof (struct x_output));
@@ -3143,7 +3149,7 @@ This function is an internal primitive--use `make-frame' instead.")
 			 "font", "Font", string);
   }
 
-#ifdef USE_X_TOOLKIT
+#ifdef USE_LUCID
   /* Prevent lwlib/xlwmenu.c from crashing because of a bug
      whereby it fails to get any font.  */
   xlwmenu_default_font = f->output_data.x->font;
@@ -5032,8 +5038,6 @@ syms_of_xfns ()
   staticpro (&Qcursor_color);
   Qcursor_type = intern ("cursor-type");
   staticpro (&Qcursor_type);
-  Qfont = intern ("font");
-  staticpro (&Qfont);
   Qforeground_color = intern ("foreground-color");
   staticpro (&Qforeground_color);
   Qgeometry = intern ("geometry");

@@ -556,6 +556,9 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
   (setq parse-sexp-ignore-comments t)
   (make-local-variable 'compare-windows-whitespace)
   (setq compare-windows-whitespace 'tex-categorize-whitespace)
+  (make-local-variable 'skeleton-further-elements)
+  (setq skeleton-further-elements
+	  '((indent-line-function 'indent-relative-maybe)))
   (make-local-variable 'facemenu-add-face-function)
   (make-local-variable 'facemenu-end-add-face)
   (make-local-variable 'facemenu-remove-face-function)
@@ -649,11 +652,17 @@ for the invalidity you want to see."
       (save-excursion
 	(goto-char (point-max))
 	(while (and (not (input-pending-p)) (not (bobp)))
-	  (let ((end (point)))
+	  (let ((end (point))
+		prev-end)
 	    ;; Scan the previous paragraph for invalidities.
-	    (search-backward "\n\n" nil 'move)
+	    (if (search-backward "\n\n" nil t)
+		(progn
+		  (setq prev-end (point))
+		  (forward-char 2))
+	      (goto-char (setq prev-end (point-min))))
 	    (or (tex-validate-region (point) end)
-		(let* ((end (save-excursion (forward-line 1) (point)))
+		(let* ((oend end)
+		       (end (save-excursion (forward-line 1) (point)))
 		       start tem)
 		  (beginning-of-line)
 		  (setq start (point))
@@ -676,7 +685,8 @@ for the invalidity you want to see."
 		    (setq occur-pos-list (cons tem occur-pos-list))
 		    (insert-buffer-substring buffer start end)
 		    (forward-char (- start end))
-		    (insert (format "%3d: " linenum))))))))
+		    (insert (format "%3d: " linenum)))))
+	    (goto-char prev-end))))
       (save-excursion
 	(set-buffer standard-output)
 	(if (null occur-pos-list)
@@ -698,6 +708,7 @@ area if a mismatch is found."
 	    (while (< 0 (setq max-possible-sexps (1- max-possible-sexps)))
 	      (forward-sexp 1)))
 	(error
+	  (skip-syntax-forward " .>")
 	  (setq failure-point (point)))))
     (if failure-point
 	(progn
@@ -728,25 +739,20 @@ A prefix arg inhibits the checking."
     (insert ?})))
 
 ;;; Like tex-insert-braces, but for LaTeX.
-(defun tex-latex-block (name)
-  "Creates a matching pair of lines `\\begin{NAME}' and `\\end{NAME}' at point.
+(define-skeleton tex-latex-block
+  "Create a matching pair of lines \\begin[OPT]{NAME} and \\end{NAME} at point.
 Puts point on a blank line between them."
-  (interactive
-   (prog2
-      (barf-if-buffer-read-only)
-      (list
-       (completing-read "LaTeX block name: "
-			(mapcar 'list
-                                (append standard-latex-block-names
-                                        latex-block-names))))))
-  (let ((col (current-column)))
-    (insert (format "\\begin{%s}\n" name))
-    (indent-to col)
-    (save-excursion
-      (insert ?\n)
-      (indent-to col)
-      (insert-string (format "\\end{%s}" name))
-      (if (eobp) (insert ?\n)))))
+  (completing-read "LaTeX block name: "
+		   (mapcar 'list
+			   (append standard-latex-block-names
+				   latex-block-names)))
+  "\\begin["
+  (skeleton-read "[options]: ") & ?\] | -1
+  ?\{
+  str
+  ?\} \n
+  _ \n
+  "\\end{" str ?\})
 
 (defun tex-last-unended-begin ()
   "Leave point at the beginning of the last `\\begin{...}' that is unended."

@@ -47,6 +47,9 @@ extern void reinvoke_input_signal (void);
 /* from dispnew.c */
 extern int change_frame_size (FRAME_PTR, int, int, int, int);
 
+/* from w32fns.c */
+extern Lisp_Object Vwin32_alt_is_meta;
+
 /* Event queue */
 #define EVENT_QUEUE_SIZE 50
 static INPUT_RECORD event_queue[EVENT_QUEUE_SIZE];
@@ -103,7 +106,7 @@ win32_kbd_mods_to_emacs (DWORD mods)
     mods &= ~ (RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED);
 
   if (mods & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
-    retval = meta_modifier;
+    retval = ((NILP (Vwin32_alt_is_meta)) ? alt_modifier : meta_modifier);
   
   if (mods & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
     {
@@ -521,7 +524,7 @@ win32_read_socket (int sd, struct input_event *bufp, int numchars,
   
   for (;;)
     {
-      nev = fill_queue (waitp != 0);
+      nev = fill_queue (0);
       if (nev <= 0)
         {
 	  /* If nev == -1, there was some kind of error

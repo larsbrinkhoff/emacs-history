@@ -308,7 +308,8 @@ You can specify the inbox file(s) for any Rmail file with the command
 instead of storing the data in inbox files.  @code{movemail} can work
 with POP if you compile it with the macro @code{MAIL_USE_POP} defined,
 and then install it setuid to @code{root}.  It is safe to install
-@code{movemail} in this way.
+@code{movemail} in this way.  Note: @code{movemail} only works with POP3,
+not with older versions of POP.
 
 @cindex @code{MAILHOST} environment variable
 @cindex POP inboxes
@@ -318,7 +319,14 @@ form @samp{po:@var{username}}.  @code{movemail} handles such a name by
 opening a connection to the POP server.  The @code{MAILHOST} environment
 variable specifies the machine to look for the server on.
 
-  There are three reason for having separate Rmail files and inboxes.
+@vindex rmail-pop-password
+@vindex rmail-pop-password-required
+  Accessing mail via POP may require a password.  If the variable
+@code{rmail-pop-password} is non-@code{nil}, it specifies the password
+to use for POP.  Alternatively, if @code{rmail-pop-password-required} is
+non-@code{nil}, then Rmail asks you for the password to use.
+
+  There are two reasons for having separate Rmail files and inboxes.
 
 @enumerate
 @item
@@ -328,10 +336,6 @@ about the alternatives, and it need only understand how to convert all
 of them to Rmail's own format.
 
 @item
-The inbox file format usually doesn't provide a place for all the
-information that Rmail records.
-
-@item
 It is very cumbersome to access an inbox file without danger of losing
 mail, because it is necessary to interlock with mail delivery.
 Moreover, different operating systems use different interlocking
@@ -339,6 +343,12 @@ techniques.  The strategy of moving mail out of the inbox once and for
 all into a separate Rmail file avoids the need for interlocking in all
 the rest of Rmail, since only Rmail operates on the Rmail file.
 @end enumerate
+
+  Rmail was written to use Babyl format as its internal format.  Since
+then, we have recognized that the usual inbox format on Unix and GNU
+systems is adequate for the job, and we plan to change Rmail to use that
+as its internal format.  However, the Rmail file will still be separate
+from the inbox file, even on systems where their format is the same.
 
   When getting new mail, Rmail first copies the new mail from the inbox
 file to the Rmail file; then it saves the Rmail file; then it truncates
@@ -656,10 +666,10 @@ the reply command with a numeric argument: @kbd{C-u r} or @kbd{1 r}.
   Once the @samp{*mail*} buffer has been initialized, editing and
 sending the mail goes as usual (@pxref{Sending Mail}).  You can edit the
 presupplied header fields if they are not right for you.  You can also
-use the commands of Mail mode, including @kbd{C-c C-y} to yank in the
-message that you are replying to, and @kbd{C-c C-q} to fill what was
-thus yanked.  You can also switch to the Rmail buffer, select a
-different message, switch back, and yank the new current message.
+use the commands of Mail mode (@pxref{Mail Mode}), including @kbd{C-c
+C-y} which yanks in the message that you are replying to.  You can
+switch to the Rmail buffer, select a different message there, switch
+back, and yank the new current message.
 
 @kindex M-m @r{(Rmail)}
 @findex rmail-retry-failure

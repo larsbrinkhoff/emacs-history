@@ -1,4 +1,4 @@
-							-*- text -*-
+ 							-*- text -*-
 GNU Service Directory
 ---------------------
 
@@ -38,7 +38,29 @@ For a current copy of this directory, or to have yourself listed, ask:
 	gnu@prep.ai.mit.edu
 
 ** Please keep the entries in this file alphabetical **
+
+Magnus Alvestad <magnus@login.eunet.no>
 
+GNU Emacs, GCC, the Unix tools.
+
+Rates: Free, or from $50/hour.
+
+Entered:  1996-07-09
+
+AO UrbanSoft <info@usoft.spb.su>
+St. Petersburg State University Science Campus
+St. Petersburg, Russia
+www.usoft.spb.ru
+AO UrbanSoft packages, markets and supports
+industry standard free software products,
+including the Linux operating system and
+TeX document compiler.
+The company also provides programming
+services based on TeX, HTML, WWW and Perl.
+
+Rates approximately 20 USD per hour.
+
+Updated: 1996-06-26
 
 Joseph Arceneaux        	<jla@ai.mit.edu>
 PO Box 460633			http://www.samsara.com/~jla
@@ -65,27 +87,28 @@ Time and material rates around $150 USD per hour, depending upon the
 particular job.  I am also very interested in fixed-bid jobs.  For
 selected non-profit organizations with worthy goals, I work for free.
 
-Updated: 17Oct95
+Updated: 1995-10-17
 
-Gerd Aschemann		<aschemann@Informatik.TH-Darmstadt.de>
+Gerd Aschemann		<Aschemann@Informatik.TH-Darmstadt.de>
 Osannstr. 49
 D-64285 Darmstadt
 Tel.: +49 6151 16 2259
 http://www.informatik.th-darmstadt.de/~ascheman/
 
 - System Administrator (UNIX) at CS Department, TU Darmstadt, Germany
-- 15 years expirience with CS, Systemadministration on different platforms
--  8 years with UNIX/Networking/FreeWare/GNU/X11
--  6 years organizer of Operating Systems and Distributed Systems courses
+- 16 years expirience with CS, Systemadministration on different platforms
+-  9 years with UNIX/Networking/FreeWare/GNU/X11
+-  7 years organizer of Operating Systems and Distributed Systems courses
 - Lectures on System and Network Administration
-- Platforms: Solaris, SunOS, Ultrix, OSF1, HP-UX, Linux, FreeBSD, AIX
+- Platforms: Solaris, SunOS, Ultrix, OSF1, HP-UX, Linux, FreeBSD, AIX, SCO
+- Distributed Platforms and Information Systems (CORBA, WWW, Java, FTP)
 - Experience with parallel environments (Connection Machine, Meiko, Parsytec)
 - Consultant for other UNIX users at TU Darmstadt
 
 Rates are at 100,-- DM (~60 US$) per hour minimum, depending on the job.
 I am willing to travel for sufficiently large jobs.
 
-Updated: 17Oct95
+Updated: 1996-06-24
 
 Giuseppe Attardi	<attardi@di.unipi.it>
 Dipartimento di Informatica
@@ -93,10 +116,118 @@ Corso Italia 40
 I-56125 Pisa, Italy
 +39 50 887-244
 
-GNU: help on obtaininig GNU, for italian sites.
+GNU: help on obtaining GNU, for italian sites.
 
-Updated: 5Apr94
+Updated: 1994-04-05
 
+			Basis Technology Corp.
+		     One Kendall Square, Bldg 200
+			 Cambridge, MA 02139
+				U.S.A.
+
+			 Tel: +1-617-252-5636
+			 Fax: +1-617-252-9150
+		      E-mail: <info@basistech.com>
+		    Web: http://www.basistech.com
+
+Technical Expertise:
+  Multilingual software development
+  Internationalization and localization of software products
+  International character encodings, including Unicode, ISO-10646,
+    ISO-2022, ISO-8859-n, JIS, KSC5601, BIG5, GB2312
+  Translation of technical materials into Japanese, Korean, and Chinese
+    including HTML, SGML, RTF, MIF, etc.
+
+GNU-related Services:
+  Custom internationalization and localization of GNU software, or
+    applications developed using GNU tools (GCC, G++, Emacs Lisp, etc.)
+  Custom multilingual application development based on MULE.
+
+GNU Contributions:
+  Organized 1992, 1993, and 1994 fund-raising seminars and lecture
+    tours for FSF in Japan.
+  Negotiated book royalty agreements with Japanese publishers on
+    behalf of the FSF.
+  Negotiated hardware contributions from Japanese PC vendors to
+    the FSF.
+
+Contacts:
+  Carl Hoffman, Steve Cohen, or Karen Watts
+
+Entered:  1996-07-15
+^_
+Laurent Bernardin
+16, rue Dicks
+L-6944 Niederanven
+Luxemburg
+<bernardin@inf.ethz.ch>
++41 1 632 7469
+
+Support and installation of all GNU software.
+
+Expertise: C, C++, Java, Motif, X, Unix administration, network security
+
+Rates: ~60 US$ / hour (Flux 2000.-)
+
+Entered:  1996-07-16
+^_
+Paul Black                                      <paulb@triode.apana.org.au>
+Sydney, Australia
+
+     I am available for general consulting on GNU software.  My specific
+areas of interest are:
+	- general C, C++, ADA and APL programming
+	- Gnu/unix utilities
+	- Troff
+	- Real Time Software
+	- Linux
+	- IP Comms, SMTP, NNTP, HTTP and WWW
+	- Simulation
+
+I am happy to provide free consulting/services if the work is of the order of
+a couple of hours. If more time is required, I am happy to negotiate depending
+on the nature of the work, my indicative rate is $40 per hour.
+
+Entered: 1996-07-10
+^_
+Keith Bostic
+
+	I'm interested in supporting/extending the ex/vi editors,
+	which I wrote.  On-site or by email, rates are based on the
+	project.  <bostic@cs.berkeley.edu>
+
+Entered:  1996-07-15
+^_
+Philip Brown
+<phil@mitre.org>
+(703) 893-8967 (prefer email)
+Northern-VA, D.C. Area
+Rates: $40/Hr; less for educational or charitable organizations
+
+Systems Supported:
+	 HP9000/7xx running HP/UX 8.07 - 10.X
+	 IBM RS6000 running AIX 3.2.X
+	 Also SGI/Indy and Sun/Sparcs
+
+Software Supported:
+	 Most all FSF (Gnu) software
+	 esp. GCC, Emacs, Binutils, GS, etc...
+
+Statement:
+
+	I'd be more than happy to assist anyone in my area with acquiring,
+	installing, and configuring any FSF tools/utilities on any of the
+	above systems.  I can help with other systems but I won't make any
+	guarantees about them...  I'm also willing to share my many years
+	of experience with anyone having difficulty with these tools.  I've
+	been installing and using them for about 5 years now and I'll
+	swear by their quality and the people/principles that made them
+	available.
+
+			Phil Brown
+
+Entered:  1996-07-15
+^_
 James Craig Burley
 97 Arrowhead Circle
 Ashland, MA 01721-1987
@@ -119,14 +250,16 @@ Expertise:
     Extensive experience with a variety of operating systems, hardware,
 	languages, and so on
 
-Rate: $70/hour -- willing to consider flat-fee arrangements
+Rate: $90/hour -- willing to consider flat-fee arrangements
 
-Updated: 14Aug95
+Updated: 1996-06-26
 
-Michael I. Bushnell		<mib@gnu.ai.mit.edu>
-545 Technology Square, NE43-426
-Cambridge, MA  02139
-(617) 253-8568
+Michael I. Bushnell, p/BSG	<mib@gnu.ai.mit.edu>
+Becket House
+66 Highland Ave. No. 8
+Somerville, MA  02143
+(617) 623-0654
+
 
 All GNU software: Installation, customization, answering simple or
 		  complex questions, bug fixing, extension.
@@ -140,14 +273,15 @@ I am willing to travel for sufficiently large jobs.
 
 Rates: $100/hr, negotiable, less for non-profit organizaions.
 
-Updated: 5Apr94
+Updated: 1996-07-09
 
-C2V			Renaud Dumeur <renaud@ccv.fr>
-82 bd Haussmann		Michel Delval <mfd@ccv.fr>
-75009 Paris		Jean-Alain Le Borgne <jalb@ccv.fr>
+C2V			Michel Delval <mfd@ccv.fr>
+82 bd Haussmann		Jean-Alain Le Borgne <jalb@ccv.fr>
+75008 Paris
 France
-Tel (1) 40.08.07.07
-Fax (1) 43.87.35.99
+Tel (33 1) 40.08.07.07
+Fax (33 1) 43.87.35.99
+Compuserve 100413,1012
 
 We offer source or source+binary distribution, installation, training,
 maintenance, technical support, consulting, specific development and
@@ -164,7 +298,7 @@ since they were first available.
 Rates: from 2000 FF/day to 150 000 FF/year, 40% discount for
 educational institutions, add taxes and expenses.  Ask for list.
 
-Entered: 5May94
+Updated:  1996-06-26
 
 Contributed Software
 Graefestr. 76
@@ -185,8 +319,35 @@ sites and configuration management.  Traveling is no problem.
 
 Free Archive login for downloading on above modem numbers.
 
-Updated: 5Apr94
+Updated: 1994-04-05
+^_
+Kevin Cosgrove  	<kevinc@dOink.COM>
+
+
+	I can help folks with porting & installation of many GNU
+	and X packages on a variety of Unix platforms.
+
+
+	My rates depend on the scope of each project but range
+	from $35 to $90 per hour.
+
+Entered:  1996-07-15
 
+Couvares Consulting
+146 Mill Lane
+Amherst, MA 01002, USA
+Phone: (413) 253-2589
+EMail: <couvares@family.hampshire.edu>
+Contact: Peter F. Couvares
+
+Type of support: We offer phone/email support, installation, ongoing
+     administration, training, programming, and specialized consulting for
+     free software and other UNIX systems.
+
+Sample prices: USD50/hour commercial, USA25/hour nonprofit, sliding scale for individuals.
+
+Entered:  1996-07-15
+^-
 Stuart Cracraft		<cracraft@ai.mit.edu>
 25682 Cresta Loma
 Laguna Niguel, Ca.
@@ -204,8 +365,8 @@ of GNU Chess (original author), GNU Shogi, GNU Go. Ported GNU Emacs
 to Solaris (System V Release 4). Expertise in C, Emacs Lisp, and Perl.
 Customized programming also available.
 
-Entered: 5Apr94
-
+Updated: 1996-06-26
+^_
 Cygnus Support			<info@cygnus.com>
 1937 Landings Drive		...uunet!cygint!info
 Mountain View, CA 94043 USA
@@ -228,30 +389,49 @@ additions to the existing matrix of over 65 supported platform
 configurations.
 
 Updated: 2Feb95
+^_
+Marcus G. Daniels              <marcus@sysc.pdx.edu>
+31060 S. Kaufman Rd.           <marcusd@gnu.ai.mit.edu>
+Canby, OR  97013-9520
+(503) 651-2694
+
+I can customize, extend, port, and repair many types of free software.
+I maintain the CLISP Common Lisp implementation and contribute to
+several GNU packages, such as Emacs.  Ten years of C and Unix
+experience.
+
+Consulting rates are negotiable, but starting at around $40 US/hr.
+I like fixed price contracts.  Commuting about the Pacific Northwest US
+is practical for me and travel is fine for larger projects.
+
+Feel free to email me if you have a problem in mind or would like an
+estimate.  I may also be able to assist in redirecting you.
+
+Entered: 1996-07-15
 
 Edgar Der-Danieliantz	<EDD@AIC.NET> <edd@ns.aic.net> <edd@arminco.com>
-P.O. Box 10			
-Yerevan 375009 AM	
+P.O. Box 10
+Yerevan 375009 AM
 ARMENIA
- 
-Support for GCC (C & Objective C), X Window System, 
+
+Support for GCC (C & Objective C), X Window System,
 World Wide Web, x86-based embedded systems, logic programming, etc.
- 
+
 Via Internet (mail, talk, irc, etc.)
- 
+
 Experience:
    OS's: 4.3 & 4.4 BSD, SVR3.2 & 4.2, FreeBSD, Linux,
       NetBSD, SCO, Solaris, SunOS, Ultrix, NEXTSTEP, UnixWare.
    Languages: C, C++, Objective C, Pascal, Tcl/Tk, Perl,
       Bourne Shell, PostScript, HTML, Prolog.
    Platforms: Intel, SPARC, Mac, VAX, NeXT.
- 
+
 Rates: Depending on type of work, appx $20/hour. Contact for more information.
    Negotiable for individuals and non-profit organizations.
    FREE for individuals who can't pay. Your 'Thanks!' just enough! :-)
    Payment by international wire transfer.
 
-Entered: 6Mar96
+Entered: 1996-03-06
 
 Free Software Association of Germany
 Michaela Merz
@@ -273,7 +453,7 @@ organizations		   :   40 US$ / hour
 ert (24h Emergency
 response team)		   :  300 US$ / hour
 
-Entered: 14Apr94
+Entered: 1994-04-14
 
 Noah Friedman             <friedman@prep.ai.mit.edu>
 Building 600, Suite 214             2002-A Guadalupe St. #214
@@ -296,10 +476,10 @@ Fees negotiable, averaging $60-$75/hour.  I can work in the Austin, TX area
 or anywhere accessible on the Internet.  For larger jobs I may be willing
 to travel.
 
-Updated: 16Aug95
+Updated: 1996-06-26
 
 Ronald F. Guilmette	<rfg@monkeys.com>
-Infinite Monkeys & Co.
+RG Consulting
 1751 East Roseville Pkwy. #1828
 Roseville, CA 95661
 Tel: +1 916 786 7945
@@ -339,26 +519,7 @@ Other qualifications:
 
 Rates:		Variable depending upon contract duration.  Call for quote.
 
-Updated: 23Sep95
-
-Hundred Acre Consulting		<info@pooh.com>
-1155 W Fourth St Ste 225
-PO Box 6209
-Reno NV 89513-6209
-(702)-348-7299
-Hundred Acre is a consulting group providing support and development
-services to organizations of all sizes.	 We support GNU C++ and C in
-particular, but also provide support for all other GNU software and
-certain non-GNU public domain software as well.	 We work on a "service
-contract" basis for support -- for a yearly fee, we provide multiple
-levels of email and toll free telephone support, and free updates and
-bug fixes. The highersupport levels have on-site support.  Development
-is charged on either an hourly or fixed bid basis.
-
-Consulting rates: $70 to $90 per hour, or fixed bid.
-Support contracts:  Several levels, from $495 to $90000 per year.
-
-Updated: 27Dec94
+Updated: 1996-06-26
 
 Interactive Information Limited
 
@@ -383,34 +544,24 @@ You can contact us
 		 Edinburgh EH3 9HH
 		 Scotland
 
-Entered: 13Nov95
+Entered: 1995-11-13
 
-Scott D. Kalter			<sdk@mithril.com)
+Scott D. Kalter			<sdk@twinsun.com>
 2032 Corral Canyon
 Malibu, CA 90265-9503
 Home: (310) 456-0254
 
-Emacs:	Eoops, Elisp, and C level customization/extension training for
-	general use and customization user support, installation, and
-	troubleshooting.
+Very familiar with all levels of Elisp programming.  Taught Emacs use
+and customization in universities and industry.  Extensive
+troubleshooting and user support experience.  Co-developed an
+object-oriented extension to Elisp (Eoops) that can be used for
+projects.  Extensive Elisp level modification for rapid prototyping of
+designs used in groupware research.  This includes the development of
+an infrastructure to support multiple, communicating Emacs processes.
 
-Rates:	$50/hr
-	May answer brief and interesting questions for free.
-	Prefer e-mail communication to telephone.
+Prefer e-mail communication to telephone calls.
 
-Qualifications: BS Math/CS 1985: Carnegie Mellon University
-		MS CS 1988: UCLA
-
-	Very familiar with all levels of elisp programming.  Taught
-	Emacs use and customization in universities and industry.  Extensive
-	troubleshooting and user support experience.  Co-developed an
-	object-oriented extension to Elisp that can be used for
-	projects.  Extensive Elisp level modification for  rapid
-	prototyping of designs used in groupware research.  This
-	includes the development of an infrastructure to support
-	multiple, communicating Emacs processes.
-
-Updated: 6Apr94
+Updated:  1996-07-15
 
 KAMAN SCIENCES CORPORATION
 258 GENESEE STREET
@@ -432,8 +583,52 @@ hourly or as a fixed price contract.
 
 Consulting rates: $70 to $200 per hour.
 
-Entered: 13Jan95
+Entered: 1995-01-13
+^_
+Ehud Karni      <kehud@simonwiesel.net.il>
+
+I am an UNIX system programmer. My skills include writing in C and scripts.
+
+In the GNU domain, I consider myself an expert on Emacs.  I have written several
+packages in emacs-lisp (.el) including: better Hebrew support, another marking
+system, emulation for CDC full screen editor (FSE), COBOL mode, mathematical
+expression computing, and enhancements to vc.el (customization) and to ange-ftp
+(added Novell and NT operating systems).
+     I have installed and tested Emacs and my el's on several machines: DG,
+HP, Alpha (OSF) and PC (DOS).
+     I installed and worked with several other GNU packages - RCS, Gmake, GCC
+and more, but I'm not an expert in these packages.
+
+I work in Israel and my normal rate is $40 per hour.
+
+Entered:  1996-07-15
 
+Joseph R. Kiniry		<kiniry@cs.caltech.edu>
+Caltech Mailstop 256-80		http://www.cs.caltech.edu/~kiniry/
+Pasadena, CA 91125
+Phone: 818-395-6846
+Fax: 818-792-4257
+
+Long-term high-level consultant in a variety of domains.  See
+http://www.cs.caltech.edu/~kiniry/resume.html for more information on
+professional and academic background.
+
+I provide installation, porting, debugging, customization, design, and
+development of GNU and other UNIX and non-UNIX software.  I am or have
+been a certified developer with Microsoft, SunSoft, NeXT, and Amiga.
+I have a great deal of development and management experience and an
+extremely broad background which contributes to my excellent system
+integration capabilities.  I have a special expertise and conduct
+research in distributed technologies.
+
+Time and material rates for local work vary regionally, but are
+currently $200 per hour on the west coast.  Other rates apply for
+long-term jobs (day rates, travel, etc.) and remote work (usually 1/2
+fee).  I am interested in fixed-bid jobs and will work for lower rates
+for non-profit organizations and educational institutions.
+
+Entered: 1996-07-24
+^_
 Scott J. Kramer		<sjk@aura.nbn.com>
 P.O. Box 620207
 Woodside, CA  94062
@@ -449,22 +644,45 @@ Systems Administration:	 Sun (SunOS & Solaris) and SGI (IRIX)
 
 Rate:	Task- and time-dependent; non-monetary offers accepted.
 
-Updated: 12Apr94
-
-Fen Labalme		      <fen@comedia.com)
-Broadcatch Technologies
-40 Carl St. #4		       WE ARE EVERYWHERE
-San Francisco CA 94117		JUST SAY "KNOW"
-(415) 731-1174			 ARE YOU KIND?
+Updated: 1994-04-12
+^_
+Bradley M. Kuhn
+<bkuhn@acm.org>
+http://www.smart.net/~bkuhn
 
-Rates:	$80 hour (negotiable); quick email or phone questions free.
-	Lower rates -- free of barter -- for schools and non-profits.
+I am available for primarily Unix system administration consulting, including
+but not limited to installation, configuration and integration of GNU tools
+and other copy-lefted software such as GNU/Linux.
+
+I am particularly skilled at user hand-holding and assisting in the
+integration of GNU and other copy-lefted software into new environments that
+have not used such tools in the past.
+
+Please visit my homepage for more information on my background and skills.
+
+I am available for both 1099 (preferred) and W2 contracting in the Baltimore,
+MD metropolitan area.  My rate is in the $40/hour range, depending on the
+circumstances.  Rates for non-profit organizations are substantially lower,
+and possibly free.
+
+Entered: 1996-07-15
+
+Fen Labalme                    <fen@comedia.com>
+CoMedia Consulting             //www.comedia.com
+40 Carl Street #4
+San Francisco CA 94117         WE ARE EVERYWHERE
+(415) 731-1174        		JUST SAY "KNOW"
 
 Consulting, installation, customization and training for GNU Emacs,
-and selected other GNU & network software (but not G++).  I have been
-hacking Emacs since '76 when it was TECO and ^R macros (don't ask).
+and selected other GNU & network software.  Design & implementation
+of free software projects, as well as software engineering & system
+design.  I have been hacking Emacs since '76 when it was TECO and ^R
+macros (don't ask), and am inter/intra-network, UNIX & Web friendly.
 
-Updated: 6Apr94
+Rates:	$75 hour & up, depending;  flat rate jobs considered.
+	Lower rates, barter or free for selected non-profits.
+
+Updated: 1996-07-15
 
 Greg Lehey
 LEMIS
@@ -480,13 +698,15 @@ Services: Supply, porting, installation, consultation on all GNU
 products.
 
 Experience: 20 years OS and compiler experience, portations of most
-GNU products.  Author of ported software CD-ROM for Unix 4.2.
+GNU products.  Author of ported software CD-ROM for Unix 4.2, "Porting
+UNIX Software" (O'Reilly), "Installing and Running FreeBSD" and "The
+Complete FreeBSD" (both Walnut Creek).
 
 Rates: Choice of DM 150 per hour or hotline rates 3 DM per minute + 10
 DM per phone call. Quick questions may be free. Limited free support
 available for purchasers of LEMIS CD-ROMs.
 
-Updated: 21Feb95
+Updated: 1996-07-06
 
 Marty Leisner	   <leisner@sdsp.mc.xerox.com>
 332 Shaftsbury Road
@@ -499,63 +719,168 @@ Experience: 12 years C/Unix, 7 years DOS.
 Degree :    BS CS, Cornell University
 Rates:	    $75/hr
 
-
-
 marty
 <leisner@sdsp.mc.xerox.com>  <leisner@eso.mc.xerox.com>
 
-Updated: 15Apr94
+Updated: 1994-04-15
+^_
+Rohan Lenard                		<rjl@wr.com.au>
+32 Holtermann St,
+Crows Nest, NSW 2065
+AUSTRALIA
++61 411250024
+
+* The person behind much of bug-g++@prep.ai.mit.edu interaction - also known
+  as <rjl@iassf.easams.com.au>.
+
+* Interested in providing first line support down-under.
+
+Experience: 10+ years C/Unix, 6+ years C++
+            Extensive experience with GNU tools, cross-compilers,
+            embedded/hosted systems, realtime, simulations,
+            and military software.
+
+Degrees:    BSc (CS), BE (Comms), University of Melbourne
+
+Rates:      AUS $75+/hr neg.
+
+Entered: 1996-07-17
+^_
+Reuven M. Lerner		<reuven@netvision.net.il>
+17 Disraeli Street
+Haifa 34333
+Israel
+Telephone: 04-824-2265 (within Israel)
+       +972-4-824-2265 (outside of Israel)
+http://www.netvision.net.il/php/reuven
+
+- System and network administration, especially Linux systems and
+  networks
+- Administration, training, and programming for Internet nodes and
+  World-Wide Web sites
+- Installation, support and training in the use of Linux, Emacs, Perl,
+  and other free software
+- Expertise in C, Emacs Lisp, and Perl
+
+Consulting rates: $50-75/hour, less for non-profit organizations.
+
+Entered: 1996-07-10
 
 Richard Levitte             (in TeX: Richard Levitte
-Södra Långgatan 39, II               S\"odra L{\aa}nggatan 39, II
-S-171 49  Solna                      S-171 49  Solna
+Levitte Programming                  Levitte Programming
+Spannvdgen 38, I                     Spannv\"agen 28, I
+S-161 43  Bromma                     S-161 43  Bromma
 Sweden                               Sweden)
-Tel.nr.:  +46 (8) 18 30 99	(there is an answering machine)
-e-mail:	  <levitte@e.kth.se> (preferred)
-	  <levitte@vms.stacken.kth.se>
+Tel.nr.:  +46 (8) 26 52 47      (there is an answering machine)
+e-mail:   <levitte@lp.se>
 
 What I do:
-	Primarly I work on GNU software for VMS, both VAX and AXP.  I
-	also work on GNU stuff for Unix on occasion.  I'm familiar with
-	SunOS (version 4.x.x), BSD (version 4.2 and up),
-	Ultrix (version 4.2 and up).
-	I've been porting GNU Emacs to VMS since spring 1991.  This
-	includes versions 18.57 to 18.59 and version 19.22.
-	I maintain GNU vmslib.
+        Primarly I work on GNU software for VMS, both VAX and AXP.  I
+        also work on GNU stuff for Unix on occasion.  I'm familiar with
+        SunOS (version 4.x.x), BSD (version 4.2 and up),
+        Ultrix (version 4.2 and up) and Linux/Slackware.
+        I've been porting GNU Emacs to VMS since spring 1991.  This
+        includes versions 18.57 to 18.59 and versions 19.22 and 19.28.
+        I've also ported a few other programs, most notably autoconf
+        version 1.x.  Version 2.x is underway at the time of updating
+        this entry.
+        I maintain GNU vmslib.
 
 Programs supported:
-	GNU vmslib:	extending, installation, upgrading aid,
-			simple and complex questions, you name it.
-	GNU Emacs:	porting, extending, installation, upgrading aid,
-			customization, simple or complex questions,
-			training, you name it.
-	GNU autoconf:	porting, extending, installation, upgrading aid.
-	GNU zip, diffutils, m4, patch, texinfo:
-			porting, installation, upgrading aid.
-	GNU C/C++:	installation, upgrading aid.  I might start to
-			hack at it some day.
+        GNU vmslib:     extending, installation, upgrading aid,
+                        simple and complex questions, you name it.
+        GNU Emacs:      porting, extending, installation, upgrading aid,
+                        customization, simple or complex questions,
+                        training, you name it.
+        GNU autoconf:   porting, extending, installation, upgrading aid.
+        GNU zip, diffutils, m4, patch, texinfo:
+                        porting, installation, upgrading aid.
+        GNU C/C++:      installation, upgrading aid.  I might start to
+                        hack at it some day.
 
 The list of programs I currently support represents both my interests and
 current priorities.  Your interest and funding can influence my priorities.
 
 Experience:
-	Fluent in C, C++, Emacs Lisp, Pascal as well as assembler
-	on VAX, Motorola 680x0, Intel 8086 and 80x86.  Modified key
-	elements in Emacs (e.g., memory and process management) to work
-	transparently on VMS.  I have very good knowledge in the VMS
-	operating system, as well as MS-DOS and IBM PC compatibles.
-	I have worked for four and a half years as a VMS system manager.
-	I've also provided consulting services on IBM PC compatibles,
-	as well as held classes for IBM PC users.
-	A reference list is available on request.
+        Fluent in TeX/LaTeX, C, C++, Perl, Emacs Lisp, Pascal as well as
+        assembler on VAX, Motorola 680x0, Intel 8086 and 80x86.  Modified
+        key elements in Emacs (e.g., memory and process management) to
+        work transparently on VMS.  I have very good knowledge in the VMS
+        operating system, as well as MS-DOS and IBM PC compatibles.
+        I'm also knowledged in the a few Unix flavors.
+        I have worked for four and a half years as a VMS system manager.
+        I've also provided consulting services on IBM PC compatibles,
+        as well as held classes for IBM PC users.
+        A reference list is available on request.
 
 Your Rate:
-	$50-$80/hour (400-700 SEK in sweden), plus expenses.  My rates
-	are negotiable, depending on how interesting the project is to me.
+        $70-$100/hour (500-800 SEK in sweden), plus expenses.  My rates
+        are negotiable, depending on how interesting the project is to me.
+        $70-$100/hour (500-800 SEK in sweden), plus expenses.  My rates
+        are negotiable, depending on how interesting the project is to me.
 
-
-Entered: 18Aug94
+Updated: 1996-06-26
 
+Gord Matzigkeit                      <gord@gnu.ai.mit.edu>
+2220 Capitol Hill Crescent           http://www.enci.ucalgary.ca/~gord/
+Calgary, Alberta   T2M 4B9           Voice: (403) 282-1387
+CANADA                               BBS:   (403) 282-3919
+
+I care more about people than I do computers.  I enjoy helping novices
+learn more about free software, and I want to make free software fit
+*your needs* rather than vice versa.
+
+I am eager to help install badly-behaved source code packages, and have
+experience fixing them to conform to GNU standards.
+
+I am the maintainer of GNU dld and GNU libtool.  I am very interested in
+dynamic technology, especially adaptive and highly flexible systems.
+
+I have administered free and proprietary systems in the departments of
+Civil, Electrical, and Undergraduate Engineering at the University of
+Calgary.  I know how to diagnose a complex existing computer system and
+incrementally replace it with a superior free system without disrupting
+service.
+
+I have over 2 years of experience with all the major free operating
+systems: FreeBSD, GNU/Hurd, GNU/Linux, and NetBSD.  I also have
+experience with some of the Project Athena distributed system tools:
+Hesiod, Kerberos 5, Moira, and Zephyr.
+
+I don't believe in making more money than I need.  My rates start at
+$10/hr (dirt cheap).  When I am not starving, I do not charge worthy
+non-profit organizations.
+
+Entered:  1996-07-15
+^_
+Andrew McCallum
+6623 Dalzell Place
+Pittsburgh, PA  15217
+Home: (412) 422-0688
+<mccallum@cs.cmu.edu>
+http://www.cs.rochester.edu/u/mccallum
+
+Services:     Support, enhancements, new development in:
+		GNU Objective C
+		GNUstep, both graphical and non-graphical.
+		GNUstep Base Library: libgnustep-base
+		(especially Distributed Objects)
+		Interface between Objective-C and Guile or TCL: libguileobjc.
+
+Experience:	10+ years of UNIX experience.
+		Programming for NeXTSTEP since version 0.8, 1988.
+		MA and PhD in Computer Science.
+		Extensive work on GNU Objective C Runtime.
+		Author of GNUstep Base Library, including Distributed Objects
+		FSF Chief Maintainer of the GNUstep Project.
+		Contributor to GCC, Emacs, Guile.
+		C, Objective-C, Postscript, Scheme, Lisp, ELisp, Linux.
+		English and Francais.
+
+Rates:		$90-$150 / hour, negotiable, depending on many variables.
+
+Entered: 1996-07-15
+^_
 Roland McGrath		<roland@frob.com>
 545 Tech Sq, Rm 426
 Cambridge, MA  02139
@@ -575,7 +900,7 @@ am working full-time for the FSF on the GNU Hurd, so I am likely to take on
 only jobs that either can be done entirely via the Internet and are
 short-term, or that are very interesting.
 
-Updated: 21Jan95
+Updated: 1995-01-21
 
 Erik Naggum		<erik@naggum.no>
 P.O. Box 1570 Vika	http://www.naggum.no
@@ -601,6 +926,110 @@ fees, without limits to distance.
 Please call only about actual work, I prefer mail for all other questions.
 
 I accept VISA and Mastercard, preferred for remote jobs and small amounts.
+
+Updated: 1996-06-28
+^_
+NET-Community                   <sales@net-community.com>
+38403 Pelton Road               http://www.net-community.com
+Willoughby, OH 44094 USA        finger info@net-community.com
+1-800-919-0060 voice
+1-216-946-7884 voice
+1-216-953-5829 fax
+
+NET-Community provides support for the complete GNUstep toolset including
+the Objective-C runtime within GCC, the GNUstep Base Library, the GNUstep
+GUI Library, the GNUstep X/DPS GUI Backend, and the GNUstep Database
+Library. NET-Community also provides support for its own MediaBook software
+including the MediaBook Random Library and the MediaBook Speech Synthesis
+Library.  NET-Community actively supports and develops free software on all 
+GNUstep platforms; a portion of the proceeds, usually 20%, generated from 
+CD-ROM sales go towards additional development and enhancement of GNUstep.
+
+Entered: 1996-07-25
+^_
+  Open Systems Consultants a.s
+  St. Olavsgt. 24
+  N-0166 OSLO
+  NORWAY
+
+Phone:               Fax:
+  +47 22 20 40 50    +47 22 20 02 85
+
+Web:                 E-mail:
+  http://www.osc.no  <gnu-support@osc.no>
+
+Open Systems Consultants a.s can provide programming support for all
+GNU software -- extending or adopting it to meet customer needs.
+Prices vary with software and project.  Hourly fees are in the $80-120
+range.  Fixed-priced projects are also available.  No phone support.
+
+Entered:  1996-07-17
+^_
+Francesco Potorti` <F.Potorti@cnuce.cnr.it>
+Via S.Stefano, 8
+56123 Pisa, Italy
+Tel. (050)560671
+
+Emacs:	installation and maintenance, training and tutorials,
+	customisation, extensions, troubleshooting.  Author of some of
+	the packages in the emacs distribution, has made the porting
+	of emacs to the Motorola Delta architecture.
+
+Other:	installation and maintenance of GNU software.  Experience with
+	RCS, gperf, etags, smail, indent, diff, gawk, gcc, screen.  Is
+	the current maintainer of etags.
+
+Rates:	30-80 KL/hr, depending on experience on the particular task.
+	Average is 50 KL/hr $50/hr.
+	Prefer e-mail communication to telephone.
+
+Qualifications: Electronic Engineering degree, Pisa.  Full time
+	researcher in CNUCE-CNR.
+	Familiar with elisp programming and porting of C programs.
+
+Entered: 1996-07-10
+^_
+Dipl.-Inform. Klaus Kdmpf		<kkaempf@progis.de>
+proGIS Software
+Jakobstr. 117
+D-52064 Aachen
+Germany
+http://www.progis.de
+Tel +49 241 470670
+Fax +49 241 4706729
+
+- 15 years C/Unix experience
+- 6 years VMS experience
+- Ported BFD library, Binutils, GNU Assembler, and GNU C
+  to openVMS/Alpha.
+
+We do a lot of cross-platform (Unix-VMS-WindowsNT) development
+mostly with the GNU compiler environment. We are actively
+supporting GNU software on openVMS/Alpha.
+
+Rates start at 160.- DM / hour for support and
+installation. Larger projects are negotiable.
+
+Entered: 1996-07-25
+^_
+Quiotix Corporation
+Menlo Park, CA
+
+Contact: Jeffrey Siegal
+         jbs@quiotix.com
+         415 324-0535
+
+Area of focus: Embedded systems--using GNU software to develop for
+embedded systems, porting GNU software to embedded systems, extending GNU
+software to better support embedded environments, developing new tools and
+utilities for embedded development using GNU software.
+
+Services: porting, development, support, project management, advisory
+consulting.
+
+Rates: $125-$250/hour or fixed fees depending on services provided.
+
+Entered:  1996-07-10
 
 Wolfgang S. Rupprecht		<wolfgang@wsrcc.com>
 47 Esparito Ave.
@@ -613,13 +1042,14 @@ author of the floating point additions in Emacs 19.
 
 Rates:	$95/hr.
 
-Updated: 14Apr94
+Updated: 1996-07-03
 
 Signum Support AB		<info@signum.se>
-Box 2044     _			...!seunet!signum!info
-S-580 02 Linkoping, Sweden
+Teknikringen 8
+S-583 30 Linkoping, Sweden
 +46 13 21 46 00 voice
 +46 13 21 47 00 fax
+http://www.signum.se
 
 Signum Support AB is a company dedicated to supporting, developing
 and distributing free software for, including but not limited to,
@@ -630,6 +1060,9 @@ programs, both administrating it and finding and fixing bugs.
 
 Services offered:
 
+ - Support on Internet service software, especially the free
+   Readynet Internet server we have developed for Linux and Solaris.
+ - Support on Linux.
  - Installation and customizing GNU and other free software.  We will
    make free software as easy to install and use as shrink wrapped
    programs.
@@ -642,9 +1075,9 @@ Services offered:
  - Regular consulting.
 
 Rates: For software items, request our price list.
-       For consulting, 400-800 SEK/hour.
+       For consulting, 700-900 SEK/hour.
 
-Updated: 14Apr94
+Updated: 1996-06-26
 
 Small Business Systems, Inc.		<postmaster@anomaly.sbs.com>
 Box 17220, Route 104
@@ -655,44 +1088,70 @@ Rate:	Varies depending on complexity of task.
 	Hourly and fixed-rate contracts are available.
 Programs Supported:	All
 
-Updated: 14Apr94
-
-Julian H. Stacey.  <stacey@freefall.cdrom.com>
-Vector Systems Ltd, Holz Strasse 27d, D 80469 Munich (Muenchen), GERMANY.
-Tel. +49 89 268616  (089 268616 in Germany)  09:00-21:00 Timezone=GMT+01:00
+Updated: 1994-04-14
+^_
+Jon Solomon                     <jsol@gnu.ai.mit.edu>
+235 Main St., Apt 3C-1
+East Hartford, Conn. 06118
++1 860 939-5573
 
-Sources: All FSF/GNU, FreeBSD-current, X-Windows, XFree86, NetBSD, Mach, etc.
-	(Plus various other things, such as, but not limited to:
-	  blas blt cflow CAD cnews crypt dvi2lj eispack elm encryption expect
-	  ezd f2c flexfax gic gopher info-zip ingres inn jpeg kermit ksh
-	  less lha linpack md5 mh mprof mtools mush nntp octave pbmplus
-	  popper sather sc schemetoc slurp sml spreadsheet sup tcl tcl-dp
-	  tcsh tcx term tex tiff tk top trn unarj ups urt wine xlock xv
-	  xview xxgdb zmodem zip zircon zoo zsh.)
-Media:	QIC 1/4" Cartridge 525M, 150M, & 60M, TEAC CAS-60 60M Cassette,
-	CD-ROM, Floppies 1.4M & 1.2 & 720K & 360K. DAT arrangeable.
-	Postal Service C.O.D.(=`Nachnahme') or pre payment available.
+Maintains all GNU software... Available for General Consulting
+(contact me if you are interested)...
+Sendmail a specialty... Can answer questions pertaining to the
+installation, maintainence, bug reporting and fixing for
+most GNU products... Adhering to the FSF/GNU copyleft for all
+work... (I only charge for the time it takes to do the above,
+the software (and most GNU copyleft'd software) is free.
+I can make tapes for you if you need that...
+
+Entered: 1996-04-09
+^_
+Julian H. Stacey.	<jhs@freebsd.org>	http://www.freebsd.org/~jhs/
+Tel. +49 89 268616 (089 268616)			Time zone: +01:00
+Vector Systems Ltd,  Holz Strasse 27d,  D 80469 Munich (Muenchen),  Germany.
+
+NO FREE HELPDESK !
+	Do Not Phone Me Unless You Either
+	  - Send me a DM 100 Eurocheque, 7 days before phoning, Or...
+	  - Start by negotiating the contract for my consultancy fees !
+	I earn my living from consultancy fees.
+	I contribute code to public domain software projects.
+	I don't mind giving a little free help occasionally,
+	But be reasonable, define the human parameters First,
+	Before you explain your technical wishes.
+Those I Hate Hearing From:
+	Those who phone late evening, with complex weird problems,
+	who want my time for free, who make no effort to speak my language
+	(English), who are too lazy or mean to phone me a week or so later
+	to hear any follow-up, who are too lazy to find a friend's
+	email for me to forward Internet news/mail group follow-up to,
+	who want me make expensive long distance calls phoning them back,
+	after I've spent my free time on their problems.
+	To those people: ... Don't phone me !  & I won't phone you !
 Commercial Consultancy:
-	Custom Designs, Provision & support of FreeBSD or Unix, C, FSF tools,
-	X Windows, own tools, systems engineering, hardware interfacing,
-	multi lingual European, Cyrillic & Chinese tools & systems,
-	Unix, MSDOS, real time etc, communications & scientific & industrial.
-DEUTSCH + FRANCAIS:
+	Unix C X-Windows, Internet, with FSF FreeBSD etc.
+	Systems engineering, hardware interfacing, real time, comms &
+	scientific industrial, even Cyrillic & Chinese etc.
+Commercial Rate:
+	DM/hr ~130-170.  No Emacs.  DM 1.5 = $1USA, DM 2.3 = 1 British Pound
+Work Place:
+	Munich Germany, anywhere on the Internet.
+Resume, Company Profile:
+	See my web page.
+Free Sources:
+	FSF, FreeBSD current & releases, X-Windows, XFree86, NetBSD etc
+	will be available for ISDN public access ftp around 8/96.
+	Dial in, & write your own tapes for postal delivery.
+	Access details available later via http://www.freebsd.org/~jhs/
+	QIC 1/4" 525M, 150M, & 60M, CAS-60M Cassette, Floppies. DM 100.
+Deutsch & Francais:  I'm British,
 	Man kann mir in Deutsch schreiben, (oder mich anrufen).
 	Je comprend Francais, mais je n'ecris pas des responses en Francais.
-	(Contact me in English, German, or French).
-FREE for Symmetric Computer Systems Model 375 owners:
-	Free Binaries & sources on SCS/375's TEAC 50/60M Cassette, for:
-	GCC-1.40, UUCP-1.4, Ghostscript 2.3, Tar-1.08, Gzip-1.2.2 etc.
-	(Native SCS compiler can't compile GCC on this NSC32016 based BSD4.2)
-On Request:  Resume, Company Profile, Index of public & proprietary tools,
-Rate:	~120 DM/hour. ~100DM/Cartridge.	 (1.5DM = $1 USA = 0.6 UK Pounds @4/'94)
-Short enquiries free. (Kurze Anfragen Ohne Gebuhr).
+Free GCC-1.40 for Symmetric Computer Systems Model 375 (native cc fails):
 
-Updated: 14Jun94
+Updated: 1996-06-28
 
-Richard M. Stallman	<rms@prep.ai.mit.edu>
-UUCP:  {mit-eddie,ucbvax,uunet,harvard,uw-beaver}!ai.mit.edu!rms
+Richard M. Stallman	<rms@gnu.ai.mit.edu>
 545 Tech Sq, Rm 430
 Cambridge, MA 02139
 
@@ -703,7 +1162,7 @@ Original inventor of Emacs and main author of GNU Emacs and GCC.
 
 Rates: $6/min or $250/hr.
 
-Updated: 14Apr94
+Updated: 1996-06-26
 
 JoS-Ware Comp Tech	Johan Svensson <support@spird.jos.ec.lu.se>
 Box 739
@@ -729,13 +1188,14 @@ Rates:	550SEK (+ tax) per hour within Sweden
 	US $70 per hour outside Sweden for educational org.
 	Note: fees may vary and special arrangements may be considered
 
-Entered: 7Apr94
+Entered: 1994-04-07
 
-Kayvan Sylvan <kayvan@satyr.Sylvan.COM>
+Kayvan Sylvan <kayvan@sylvan.com>
 Sylvan Associates
 879 Lewiston Drive
-San Jose, CA 95136
-Phone: 408-978-1407
+San Jose, CA 95136-1517
+Phone: (408) 978-1407
+Fax:   (408) 978-1417
 
 I will help you port, install and customize GNU Emacs, GCC, G++,
 bison, and other GNU tools on almost any architechture and operating
@@ -743,17 +1203,52 @@ system. Questions answered. GNU C and lisp hacking available. I will
 also do ongoing support and periodic upgrades if you get on my GNU
 software subscription list.
 
-Rates: $60-$100/hour, depending on type of work. Substantial discounts
+Rates: $70-$100/hour, depending on type of work. Substantial discounts
 for long-term contracts and also for educational or non-profit
 institutions.
 
-Experience: Many different Unix systems (2.9BSD to 4.4BSD, SVR3 and
-SVR4, Linux, Xenix). Systems programming and system administration on all
+Experience: Many different Unix systems (2.9BSD to 4.4BSD, Xenix, SVR3 and
+SVR4, Linux, FreeBSD). Systems programming and system administration on all
 brands of Unix. Kernel hacking experience. Lots of porting experience.
-I can port anything to anything (within reason).
 
-Updated: 14Apr94
+Updated: 1996-06-26
 
+TerraTel AB <info@netg.se>
+Tankeg=E5ngen 4
+S-417 56 G=F6teborg, Sweden
++46 31 50 79 40 voice
++46 31 50 79 39 fax
+http://www.netg.se
+
+TerraTel AB is a company that does consultant jobs and holds courses
+in the fields of Unix software, TCP/IP networking and Internet
+applications. The people behind TerraTel AB have many years
+of general UNIX experience, both as system administrators and as
+programmers, and also extensive experience in maintaining the GNU
+programs; in administration as well as finding and fixing bugs.
+
+Services offered:
+
+- Installation and customizing GNU and other free software.  We will
+  make free software as easy to install and use as shrink wrapped
+  programs.
+- Service and support subscriptions.
+- Warranty protection.
+- Customization and porting.
+- Subscriptions to new versions which we will send monthly or with
+  any other interval.
+- Finding, recommending and investigating free software in any
+  area of the customers choice.
+- Regular consulting.
+- Support on Internet service software, especially the free
+- Support on Linux.
+- Freeware based courses in Unix usage, C, C++, or any GNU tools
+
+Rates: For courses, contact us for a quote,
+For consulting, $60-120/hour, depending on contract length.
+
+Entered:  1996-07-15
+^_
 Leonard H. Tower Jr.	<tower@prep.ai.mit.edu>
 36 Porter Street
 Somerville, MA	02143, USA
@@ -766,34 +1261,17 @@ Rates: 100.00/hour + travel expenses.  Negotiable for non-profits.
 
 Experience: Have hacked on over a dozen architectures in many languages.  Have
 system mothered several varieties of Unixes.  Assisted rms with the front end
-of gcc and it's back-end support.  Resume available on request.
+of gcc and its back-end support.  Resume available on request.
 
-Entered: 14Apr94
+Updated: 1996-06-29
 
-UrbanSoft AO  <info@usoft.spb.su>
-68 Malooktinskii Prospect
-St. Petersburg, Russia	195272
-
-Custom GhostScript and TeX programming by e-mail.
-Database documents, directories, standard forms.
-
-UrbanSoft uses a portion of its revenues to contribute
-diskette distributions of GNU software to Russian
-universities (most of which lack FTP access).
-
-Rates: 30,000 rubles (currently USD 16.80) per hour.
-       Fixed rate contracts also possible.
-       Payable by bank transfer.
-
-Updated: 20Apr94
-
-noris network
+noris network GmbH
 Matthias Urlichs
 Schleiermacherstrasse 12
 90491 Nuernberg
 Germany
-Phone: +49 911 9959621
-Fax: +49 911 5980150
+Phone: +49 911 59818-0
+Fax: +49 911 59818-11
 <info@noris.de>
 http://info.noris.de/ (German)
 
@@ -820,8 +1298,28 @@ Rates:
   Willing to travel for sufficiently large jobs.
   Rates don't include taxes.
 
-Entered: 16Aug94
+Updated: 1996-07-05
 
+Paul C.A. van Gool
+      <P.vanGool@LR.TUDelft.NL>
+
+Address: Faculty of Aerospace Engineering
+         Delft University of Technology
+         Kluyverweg 1,  2629 HS Delft
+         The Netherlands
+
+Phone: +31-15-2785312
+Fax  : +31-15-2786480
+
+I would like to provide unpaid support for the following things:
+
+- C
+- C++
+- f2c
+- compilation and installation of most GNU packages
+
+Entered:  1996-07-15
+^_
 Joe Wells <jbw@cs.bu.edu>
 Postal Address:
   care of: Boston University Computer Science Department
@@ -865,8 +1363,41 @@ Rates: $65/hour as an independent contractor.
        travel and telephone expenses.
        higher rates if extensive travel is required.
 
-Updated: 27Sep94.
+Updated: 1994-09-27
+^_
+
+Arne Wichmann
+
+EMail: <aw@math.uni-sb.de>
+Telephone on request.
+
+I support GNU software on the following platforms:
+
+Linux
+SunOS 4.X 5.X
+HPUX 9.X
+other platforms on request.
+
+Usual rates: 20DM per hour. Free support for private people as time
+permits.
+
+Entered: 1996-07-22
 
+Jody Winston
+xprt Computer Consulting, Inc.
+731 Voyager
+Houston, TX, 77058
+(713) 480-UNIX, <jody@sccsi.com>
+
+We have supported, installed, and used the entire GNU software suite
+for over 8 years on many different Unix platforms.  We have written
+character device drivers and proc file systems for custom hardware
+running on Linux.  In addition, we have developed a custom X11 server
+and X input extensions. Our consulting rate is $150.00 US dollars per
+hour, negotiable, plus a per diem for out of town work.
+
+Entered:  1996-07-15
+^_
 Herb Wood
 phone: 1-415-789-7173
 email: <ru@ccnext.ucsf.edu>
@@ -877,14 +1408,14 @@ new pieces of information at a fast rate.  This is not my strong point.
 Rather, I excel in domains that require knowledge of the slightly more
 theoretical parts of computer science --for example, logic, formal methods of
 program development, and functional programming.  I can write, and I have
-"tutoring" (teaching one-on-one) experience, an, unlike some programmers,
+"tutoring" (teaching one-on-one) experience, and, unlike some programmers,
 I enjoy doing these things.
 
 I have spend a lot of time looking at the Emacs Lisp sources and customizing
 Emacs and VM.  I think I can customize Emacs and its packages quickly and
 effectively.
 
-Entered: 30Jul95
+Entered: 1995-07-30
 
 Yggdrasil Computing, Inc./ Freesoft, Inc.	<info@yggdrasil.com>
 4880 Stevens Creek Blvd. Ste. 205
@@ -892,8 +1423,24 @@ San Jose, CA  95129
 (408) 261-6630
 (800) 261 6630
 
-Updated: 14Apr94
+Updated: 1994-04-14
 
+Lige Zhou
+Consultant
+Open Technologies Corporation
+Sun Lotus Bldg.2nd Floor
+2-9-1 Chuou, Nakano-ku, Tokyo 164 Japan
+Tel: +81-3-3365-2911 Fax: +81-3-3365-2920
+E-mail: <zhou@opentech.co.jp>
+
+I have two years of experience porting and supporting GNU C Compiler and
+GNU Assember at the Wingnut project of SRA, Inc., Tokyo.
+
+I can provide free consultation on these products if the problem is not
+time-consuming.
+
+Entered:  1996-07-15
+^_
 
 For a current copy of this directory, or to have yourself listed, ask:
 	gnu@prep.ai.mit.edu

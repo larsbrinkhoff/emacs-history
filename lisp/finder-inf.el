@@ -303,6 +303,9 @@
     ("ediff-mult.el"
         "support for multi-file/multi-buffer processing in Ediff"
         nil)
+    ("ediff-ptch.el"
+        "Ediff's  patch support"
+        nil)
     ("ediff-util.el"
         "the core commands and utilities of ediff"
         nil)
@@ -447,12 +450,18 @@
     ("gnus-cus.el"
         "User friendly customization of Gnus"
         (help  news))
+    ("gnus-demon.el"
+        "daemonic Gnus behaviour"
+        (news))
     ("gnus-edit.el"
         "Gnus SCORE file editing"
         (news  help))
     ("gnus-ems.el"
         "functions for making Gnus work under different Emacsen"
         (news))
+    ("gnus-gl.el"
+        "an interface to GroupLens for Gnus"
+        (news  score))
     ("gnus-kill.el"
         "kill commands for Gnus"
         (news))
@@ -462,8 +471,26 @@
     ("gnus-msg.el"
         "mail and post interface for Gnus"
         (news))
+    ("gnus-nocem.el"
+        "NoCeM pseudo-cancellation treatment"
+        (news))
+    ("gnus-salt.el"
+        "alternate summary mode interfaces for Gnus"
+        nil)
     ("gnus-score.el"
         "scoring code for Gnus"
+        (news))
+    ("gnus-setup.el"
+        "Initialization & Setup for Gnus 5"
+        (news))
+    ("gnus-soup.el"
+        "SOUP packet writing support for Gnus"
+        (news  mail))
+    ("gnus-srvr.el"
+        "virtual server support for Gnus"
+        (news))
+    ("gnus-topic.el"
+        "a folding minor mode for Gnus group buffers"
         (news))
     ("gnus-uu.el"
         "extract (uu)encoded files in Gnus"
@@ -582,6 +609,9 @@
     ("kermit.el"
         "additions to shell mode for use with kermit, etc."
         (comm))
+    ("lazy-lock.el"
+        "Lazy demand-driven fontification for fast Font Lock mode."
+        (faces files))
     ("ledit.el"
         "Emacs side of ledit interface"
         nil)
@@ -645,6 +675,9 @@
     ("mailalias.el"
         "expand and complete mailing address aliases"
         (mail))
+    ("mailheader.el"
+        "Mail header parsing, merging, formatting"
+        (tools  mail  news))
     ("mailpost.el"
         "RMAIL coupler to /usr/uci/post mailer"
         (mail))
@@ -669,6 +702,9 @@
     ("menu-bar.el"
         "define a default menu bar."
         (internal))
+    ("message.el"
+        "composing mail and news messages"
+        (mail  news))
     ("metamail.el"
         "Metamail interface for GNU Emacs"
         (mail  news  mime  multimedia))
@@ -726,6 +762,9 @@
     ("nnbabyl.el"
         "rmail mbox access for Gnus"
         (news  mail))
+    ("nndb.el"
+        "nndb access for Gnus"
+        (news))
     ("nndir.el"
         "single directory newsgroup access for Gnus"
         (news))
@@ -737,7 +776,7 @@
         (news  mail))
     ("nnfolder.el"
         "mail folder access for Gnus"
-        (news  mail))
+        (mail))
     ("nnheader.el"
         "header access macros for Gnus and its backends"
         (news))
@@ -755,6 +794,12 @@
         (news  mail))
     ("nnml.el"
         "mail spool access for Gnus"
+        (news  mail))
+    ("nnoo.el"
+        "OO Gnus Backends"
+        (news))
+    ("nnsoup.el"
+        "SOUP access for Gnus"
         (news  mail))
     ("nnspool.el"
         "spool access for GNU Emacs"
@@ -848,7 +893,7 @@
         nil)
     ("reporter.el"
         "customizable bug reporting of lisp programs"
-        (bug reports lisp))
+        (maint mail tools))
     ("reposition.el"
         "center a Lisp function or comment on the screen"
         nil)
@@ -909,6 +954,9 @@
     ("scheme.el"
         "Scheme mode, and its idiosyncratic commands."
         (languages  lisp))
+    ("score-mode.el"
+        "mode for editing Gnus score files"
+        (news  mail))
     ("scribe.el"
         "scribe mode, and its idiosyncratic commands."
         (wp))
@@ -957,6 +1005,9 @@
     ("skeleton.el"
         "Lisp language extension for writing statement skeletons"
         (extensions  abbrev  languages  tools))
+    ("smtpmail.el"
+        nil
+        (mail))
     ("solar.el"
         "calendar functions for solar events."
         (calendar))

@@ -1,6 +1,6 @@
 ;;; comint.el --- general command interpreter in a window stuff
 
-;; Copyright (C) 1988, 90, 92, 93, 94, 95 Free Software Foundation, Inc.
+;; Copyright (C) 1988, 90, 92, 93, 94, 95, 96 Free Software Foundation, Inc.
 
 ;; Author: Olin Shivers <shivers@cs.cmu.edu>
 ;; Adapted-by: Simon Marshall <simon@gnu.ai.mit.edu>
@@ -107,34 +107,35 @@
 ;; Buffer Local Variables:
 ;;============================================================================
 ;; Comint mode buffer local variables:
-;;     comint-prompt-regexp    - string       comint-bol uses to match prompt
-;;     comint-delimiter-argument-list - list  For delimiters and arguments
-;;     comint-last-input-start - marker       Handy if inferior always echoes
-;;     comint-last-input-end   - marker       For comint-kill-output command
-;;     comint-input-ring-size  - integer      For the input history
-;;     comint-input-ring       - ring             mechanism
-;;     comint-input-ring-index - number           ...
-;;     comint-input-autoexpand - symbol           ...
-;;     comint-input-ignoredups - boolean          ...
-;;     comint-last-input-match - string           ...
-;;     comint-dynamic-complete-functions - hook   For the completion mechanism
-;;     comint-completion-fignore - list           ...
-;;	comint-file-name-quote-list - list	   ...
-;;     comint-get-old-input    - function     Hooks for specific 
-;;     comint-input-filter-functions - hook     process-in-a-buffer
-;;     comint-output-filter-functions - hook    function modes.
-;;     comint-input-filter     - function         ...
-;;     comint-input-sender	- function         ...
-;;     comint-eol-on-send	- boolean          ...
-;;     comint-process-echoes   - boolean          ...
-;;     comint-scroll-to-bottom-on-input - symbol For scroll behavior
-;;     comint-scroll-to-bottom-on-output - symbol ...
-;;     comint-scroll-show-maximum-output - boolean...
+;;  comint-prompt-regexp    		string	comint-bol uses to match prompt
+;;  comint-delimiter-argument-list	list	For delimiters and arguments
+;;  comint-last-input-start		marker	Handy if inferior always echoes
+;;  comint-last-input-end		marker	For comint-kill-output command
+;;  comint-input-ring-size		integer	For the input history
+;;  comint-input-ring			ring	mechanism
+;;  comint-input-ring-index		number	...
+;;  comint-input-autoexpand		symbol	...
+;;  comint-input-ignoredups		boolean	...
+;;  comint-last-input-match		string	...
+;;  comint-dynamic-complete-functions	hook   For the completion mechanism
+;;  comint-completion-fignore		list	...
+;;  comint-file-name-chars		string	...
+;;  comint-file-name-quote-list		list	...
+;;  comint-get-old-input		function Hooks for specific 
+;;  comint-input-filter-functions	hook	process-in-a-buffer
+;;  comint-output-filter-functions	hook	function modes.
+;;  comint-input-filter			function ...
+;;  comint-input-sender			function ...
+;;  comint-eol-on-send			boolean	...
+;;  comint-process-echoes		boolean	...
+;;  comint-scroll-to-bottom-on-input	symbol	For scroll behavior
+;;  comint-scroll-to-bottom-on-output	symbol	...
+;;  comint-scroll-show-maximum-output	boolean	...	
 ;;
 ;; Comint mode non-buffer local variables:
-;;     comint-completion-addsuffix - boolean/cons  For file name completion
-;;     comint-completion-autolist  - boolean      behavior
-;;     comint-completion-recexact  - boolean      ...
+;;  comint-completion-addsuffix		boolean/cons	For file name
+;;  comint-completion-autolist		boolean		completion behavior
+;;  comint-completion-recexact		boolean		...
 
 (defvar comint-prompt-regexp "^"
   "Regexp to recognise prompts in the inferior process.
@@ -262,7 +263,10 @@ This variable is buffer-local.")
 (defvar comint-output-filter-functions '(comint-postoutput-scroll-to-bottom) 
   "Functions to call after output is inserted into the buffer.
 One possible function is `comint-postoutput-scroll-to-bottom'.
-These functions get one argument, a string containing the text just inserted.
+These functions get one argument, a string containing the text as originally
+inserted.  Note that this might not be the same as the buffer contents between
+`comint-last-output-start' and the buffer's `process-mark', if other filter
+functions have already modified the buffer.
 
 This variable is buffer-local.")
 
@@ -393,6 +397,7 @@ Entry to this mode runs the hooks on `comint-mode-hook'."
   (make-local-variable 'comint-ptyp)
   (make-local-variable 'comint-exec-hook)
   (make-local-variable 'comint-process-echoes)
+  (make-local-variable 'comint-file-name-chars)
   (make-local-variable 'comint-file-name-quote-list)
   (run-hooks 'comint-mode-hook))
 
@@ -895,7 +900,7 @@ See `comint-magic-space' and `comint-replace-by-expanded-history-before-point'.
 Returns t if successful."
   (interactive)
   (if (and comint-input-autoexpand
-	   (string-match "[!^]" (funcall comint-get-old-input))
+	   (string-match "!\\|^\\^" (funcall comint-get-old-input))
 	   (save-excursion (beginning-of-line)
 			   (looking-at comint-prompt-regexp)))
       ;; Looks like there might be history references in the command.
@@ -1166,11 +1171,11 @@ Similarly for Soar, Scheme, etc."
 			  (comint-replace-by-expanded-history t)
 			  (let ((copy (buffer-substring pmark (point))))
 			    (delete-region pmark (point))
-			    (insert input)
+			    (insert-before-markers input)
 			    copy))))
           (if comint-process-echoes
               (delete-region pmark (point))
-	    (insert ?\n))
+	    (insert-before-markers ?\n))
 	  (if (and (funcall comint-input-filter history)
 		   (or (null comint-input-ignoredups)
 		       (not (ring-p comint-input-ring))
@@ -1280,12 +1285,11 @@ This function should be in the list `comint-output-filter-functions'."
 		     (select-window window)
 		     (if (and (< (point) (process-mark process))
 			      (or (eq scroll t) (eq scroll 'all)
-				  ;; Maybe user wants point to jump to the end.
+				  ;; Maybe user wants point to jump to end.
 				  (and (eq scroll 'this) (eq selected window))
 				  (and (eq scroll 'others) (not (eq selected window)))
-				  ;; If point was at the end, keep it at the end.
-				  (>= (point)
-				      (- (process-mark process) (length string)))))
+				  ;; If point was at the end, keep it at end.
+				  (>= (point) comint-last-output-start)))
 			 (goto-char (process-mark process)))
 		     ;; Optionally scroll so that the text
 		     ;; ends at the bottom of the window.
@@ -1303,7 +1307,7 @@ This function should be in the list `comint-output-filter-functions'."
 This function could be on `comint-output-filter-functions' or bound to a key."
   (interactive)
   (save-excursion
-    (goto-char (point-max))
+    (goto-char (process-mark (get-buffer-process (current-buffer))))
     (forward-line (- comint-buffer-maximum-size))
     (beginning-of-line)
     (delete-region (point-min) (point))))
@@ -1439,7 +1443,7 @@ Then send it to the process running in the current buffer.
 The string is sent using `comint-input-sender'.
 Security bug: your string can still be temporarily recovered with
 \\[view-lossage]."
-  (interactive "P") ; Defeat snooping via C-x esc
+  (interactive "P") ; Defeat snooping via C-x ESC ESC
   (let ((proc (get-buffer-process (current-buffer))))
     (if (not proc)
 	(error "Current buffer has no process")
@@ -1823,8 +1827,16 @@ Note that this applies to `comint-dynamic-complete-filename' only.")
 This is used by comint's and shell's completion functions, and by shell's
 directory tracking functions.")
 
+(defvar comint-file-name-chars
+  (if (memq system-type '(ms-dos windows-nt))
+      "~/A-Za-z0-9_^$!#%&{}@`'.()-"
+    "~/A-Za-z0-9+@:_.$#%,={}-")
+  "String of characters valid in a file name.
+
+This is a good thing to set in mode hooks.")
+
 (defvar comint-file-name-quote-list nil
-  "List of characters to quote with `\' when in a file name.
+  "List of characters to quote with `\\' when in a file name.
 
 This is a good thing to set in mode hooks.")
 
@@ -1854,12 +1866,30 @@ inside of a \"[...]\" (see `skip-chars-forward')."
 	  (progn (store-match-data (list (point) here))
 		 (match-string 0))))))
 
+(defun comint-substitute-in-file-name (filename)
+  "Return FILENAME with environment variables substituted.
+Supports additional environment variable syntax of the command
+interpreter (e.g., the percent notation of cmd.exe on NT)."
+  (let ((name (substitute-in-file-name filename)))
+    (if (memq system-type '(ms-dos windows-nt))
+	(let (env-var-name
+	      env-var-val)
+	  (save-match-data
+	    (while (string-match "%\\([^\\\\/]*\\)%" name)
+	      (setq env-var-name 
+		    (substring name (match-beginning 1) (match-end 1)))
+	      (setq env-var-val (if (getenv env-var-name)
+				    (getenv env-var-name)
+				  ""))
+	      (setq name (replace-match env-var-val nil nil name))))))
+    name))
 
 (defun comint-match-partial-filename ()
   "Return the filename at point, or nil if non is found.
 Environment variables are substituted.  See `comint-word'."
-  (let ((filename (comint-word "~/A-Za-z0-9+@:_.$#%,={}-")))
-    (and filename (substitute-in-file-name (comint-unquote-filename filename)))))
+  (let ((filename (comint-word comint-file-name-chars)))
+    (and filename (comint-substitute-in-file-name 
+		   (comint-unquote-filename filename)))))
 
 
 (defun comint-quote-filename (filename)
@@ -1880,8 +1910,10 @@ Magic characters are those in `comint-file-name-quote-list'."
   (if (null comint-file-name-quote-list)
       filename
     (save-match-data
-      (while (string-match "\\\\\\(.\\)" filename)
-	(setq filename (replace-match "\\1" nil nil filename)))
+      (let ((i 0))
+	(while (string-match "\\\\\\(.\\)" filename i)
+	  (setq filename (replace-match "\\1" nil nil filename))
+	  (setq i (+ 1 (match-beginning 0)))))
       filename)))
 
 
@@ -1910,17 +1942,22 @@ completions listing is dependent on the value of `comint-completion-autolist'.
 Returns t if successful."
   (interactive)
   (if (comint-match-partial-filename)
-      (prog2 (or (window-minibuffer-p (selected-window))
-		 (message "Completing file name..."))
-	  (comint-dynamic-complete-as-filename))))
-
+      (let ((directory-sep-char (if (memq system-type '(ms-dos windows-nt))
+				    ?\\
+				  ?/)))
+	(prog2 (or (window-minibuffer-p (selected-window))
+		   (message "Completing file name..."))
+	    (comint-dynamic-complete-as-filename)))))
 
 (defun comint-dynamic-complete-as-filename ()
   "Dynamically complete at point as a filename.
 See `comint-dynamic-complete-filename'.  Returns t if successful."
-  (let* ((completion-ignore-case nil)
+  (let* ((completion-ignore-case (memq system-type '(ms-dos windows-nt)))
 	 (completion-ignored-extensions comint-completion-fignore)
-	 (file-name-handler-alist nil)
+	 ;; If we bind this, it breaks remote directory tracking in rlogin.el.
+	 ;; I think it was originally bound to solve file completion problems,
+	 ;; but subsequent changes may have made this unnecessary.  sm.
+	 ;;(file-name-handler-alist nil)
 	 (minibuffer-p (window-minibuffer-p (selected-window)))
 	 (success t)
 	 (dirsuffix (cond ((not comint-completion-addsuffix) "")
@@ -1992,7 +2029,7 @@ Returns `partial' if completed as far as possible with the completion matches.
 Returns `listed' if a completion listing was shown.
 
 See also `comint-dynamic-complete-filename'."
-  (let* ((completion-ignore-case nil)
+  (let* ((completion-ignore-case (memq system-type '(ms-dos windows-nt)))
 	 (suffix (cond ((not comint-completion-addsuffix) "")
 		       ((not (consp comint-completion-addsuffix)) " ")
 		       (t (cdr comint-completion-addsuffix))))
@@ -2033,8 +2070,11 @@ See also `comint-dynamic-complete-filename'."
 (defun comint-dynamic-list-filename-completions ()
   "List in help buffer possible completions of the filename at point."
   (interactive)
-  (let* ((completion-ignore-case nil)
-	 (file-name-handler-alist nil)
+  (let* ((completion-ignore-case (memq system-type '(ms-dos windows-nt)))
+	 ;; If we bind this, it breaks remote directory tracking in rlogin.el.
+	 ;; I think it was originally bound to solve file completion problems,
+	 ;; but subsequent changes may have made this unnecessary.  sm.
+	 ;;(file-name-handler-alist nil)
 	 (filename (or (comint-match-partial-filename) ""))
 	 (pathdir (file-name-directory filename))
 	 (pathnondir (file-name-nondirectory filename))

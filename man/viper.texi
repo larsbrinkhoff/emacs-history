@@ -12,7 +12,7 @@
 @titlepage
 @title Viper Is a Package for Emacs Rebels
 @subtitle a Vi emulator for GNU Emacs 19 and XEmacs 19
-@subtitle January 1996, Viper Version 2.85
+@subtitle June 1996, Viper Version 2.90
 
 @author Masahiko Sato (VIP 3.5)
 @author Aamod Sane (VIP 4.4)
@@ -25,8 +25,7 @@
 @unnumbered Distribution
 
 @noindent
-Copyright @copyright{} 1991 Aamod Sane @*
-Copyright @copyright{} 1994 Michael Kifer
+Copyright @copyright{} 1995, 1996 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -1717,10 +1716,21 @@ before Viper is loaded. Note that you
 have to set it as a string inside double quotes.
 @item vip-spell-function 'ispell-region
 Function used by the command @kbd{#c<move>} to spell.
-@item ex-find-file-shell "csh"
-Shell used to interpret filenames. If you have problems with Csh, change
-to something else. Note that you have to set it as a string inside
-double quotes.
+@item ex-nontrivial-find-file-function
+The value of this variable is the function used to find all files that
+match a wildcard. This is usually done when the user types @kbd{:e} and
+specifies a wildcard in the file name (or if the file name contains unusual
+symbols (e.g., a space). Viper provides two functions for this: one for
+Unix-like systems (@code{vip-ex-nontrivial-find-file-unix}) and one for
+DOS, W95, and NT (@code{vip-ex-nontrivial-find-file-ms}). If the default
+function doesn't quite do what you expect or if you prefer to use ``fancy''
+shells, you may have to write your own version of this function and make it
+into the value of @code{ex-nontrivial-find-file-function}.  Use
+@code{vip-ex-nontrivial-find-file-unix} and
+@code{vip-ex-nontrivial-find-file-ms} as examples.
+@vindex @code{ex-nontrivial-find-file-function}.
+@findex @code{vip-ex-nontrivial-find-file-ms}
+@findex @code{vip-ex-nontrivial-find-file-unix}
 @item ex-cycle-other-window t
 If @code{t}, @kbd{:n} and @kbd{:b} will cycle through files in another
 window, if one exists.
@@ -1864,7 +1874,6 @@ can include a line like this in your @file{.vip} file:
 @vindex @code{vip-ex-style-editing-in-insert}
 @vindex @code{vip-custom-file-name}
 @vindex @code{vip-spell-function}
-@vindex @code{ex-find-file-shell}
 @vindex @code{ex-cycle-other-window}
 @vindex @code{ex-cycle-through-non-files}
 @vindex @code{vip-automatic-iso-accents}
@@ -2883,7 +2892,7 @@ useful features. Here is a (hopefully) complete list of contributors:
 jjm@@hplb.hpl.hp.com (Jean-Jacques Moreau), jl@@cse.ogi.edu (John
 Launchbury), rxga@@ulysses.att.com, jamesm@@bga.com (D.J. Miller II),
 ascott@@fws214.intel.com (Andy Scott), toma@@convex.convex.com,
-gvr@@cs.brown.edu, dave@@hellgate.utah.edu, cook@@biostat.wisc.edu
+dave@@hellgate.utah.edu, cook@@biostat.wisc.edu
 (Tom Cook), lindstro@@biostat.wisc.edu (Mary Lindstrom),
 edmonds@@edmonds.home.cs.ubc.ca (Brian Edmonds), mveiga@@dit.upm.es
 (Marcelino Veiga Tuimil), dwight@@toolucky.llnl.gov (Dwight Shih),
@@ -2899,10 +2908,14 @@ pogrell@@informatik.hu-berlin.de (Lutz Pogrell),
 csdayton@@midway.uchicago.edu (Soren Dayton),
 pradyut@@cs.uchicago.edu (Pradyut Shah),
 vrenjak@@sun1.racal.com (Milan Vrenjak),
-georger@@microcrafts.com (George V. Reilly),
+gvr@@halcyon.com (George V. Reilly),
 whicken@@dragon.parasoft.com (Wendell Hicken),
 terra@@diku.dk (Morten Welinder),
-James Kanze (kanze@@gabi-soft.fr)
+kanze@@gabi-soft.fr (James Kanze),
+hatazaki@@bach.convex.com (Takao Hatazaki),
+sawdey@@lcse.umn.edu (Aaron Sawdey),
+jobrien@@hchp.org (John O'Brien),
+mrb@@Eng.Sun.COM (Martin Buchholz)
 @end example
 
 

@@ -121,10 +121,6 @@ extern void _XEditResCheckMessages ();
 #include <string.h>
 #endif
 
-#ifdef SOLARIS2
-#define X_CONNECTION_LOCK_FLAG XlibDisplayWriting
-#endif
-
 #ifndef min
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #endif
@@ -147,6 +143,8 @@ Lisp_Object x_display_name_list;
    In that case, the XT functions assume that `selected_frame'
    is the frame to apply to.  */
 extern struct frame *updating_frame;
+
+extern waiting_for_input;
 
 /* This is a frame waiting to be autoraised, within XTread_socket.  */
 struct frame *pending_autoraise_frame;
@@ -198,6 +196,8 @@ static int curs_y;
 /* Where the mouse was last time we reported a mouse event.  */
 static FRAME_PTR last_mouse_frame;
 static XRectangle last_mouse_glyph;
+
+static Lisp_Object last_mouse_press_frame;
 
 /* The scroll bar in which the last X motion event occurred.
 
@@ -3213,6 +3213,22 @@ struct x_display_info *XTread_socket_fake_io_error;
    This variable is used for cycling thru the displays.  */
 static struct x_display_info *next_noop_dpyinfo;
 
+#define SET_SAVED_MENU_EVENT(size) { \
+  if (f->output_data.x->saved_menu_event == 0) \
+    f->output_data.x->saved_menu_event = (XEvent*)xmalloc (sizeof (XEvent)); \
+  bcopy (&event, f->output_data.x->saved_menu_event, size); \
+  if (numchars >= 1) \
+    { \
+      bufp->kind = menu_bar_activate_event; \
+      XSETFRAME (bufp->frame_or_window, f); \
+      bufp++; \
+      count++; \
+      numchars--; \
+    } \
+  }
+#define SET_SAVED_BUTTON_EVENT SET_SAVED_MENU_EVENT (sizeof (XButtonEvent))
+#define SET_SAVED_KEY_EVENT SET_SAVED_MENU_EVENT (sizeof (XKeyEvent))
+
 /* Read events coming from the X server.
    This routine is called by the SIGIO handler.
    We return as soon as there are no more events to be read.
@@ -3228,8 +3244,8 @@ static struct x_display_info *next_noop_dpyinfo;
 int
 XTread_socket (sd, bufp, numchars, waitp, expected)
      register int sd;
-     register struct input_event *bufp;
-     register int numchars;
+     /* register */ struct input_event *bufp;
+     /* register */ int numchars;
      int waitp;
      int expected;
 {
@@ -3302,7 +3318,12 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 
       while (XPending (dpyinfo->display) != 0)
 	{
+#ifdef USE_X_TOOLKIT
+          /* needed to raise Motif submenus */
+	  XtAppNextEvent (Xt_app_con, &event);
+#else
 	  XNextEvent (dpyinfo->display, &event);
+#endif
 	  event_found = 1;
 
 	  switch (event.type)
@@ -3351,7 +3372,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 			      XSetCommand (FRAME_X_DISPLAY (f),
 					   event.xclient.window,
 					   initial_argv, initial_argc);
-			    else
+			    else if (f)
 			      XSetCommand (FRAME_X_DISPLAY (f),
 					   event.xclient.window,
 					   0, 0);
@@ -3556,7 +3577,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		  /* We can't distinguish, from the event, whether the window
 		     has become iconified or invisible.  So assume, if it
 		     was previously visible, than now it is iconified.
-		     We depend on x_make_frame_invisible to mark it iconified.  */
+		     We depend on x_make_frame_invisible to mark it invisible.  */
 		  if (FRAME_VISIBLE_P (f) || FRAME_ICONIFIED_P (f))
 		    f->async_iconified = 1;
 
@@ -3612,6 +3633,21 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		     80 fixed a bug whereby meta chars made his Emacs hang.  */
 		  unsigned char copy_buffer[81];
 		  int modifiers;
+
+#if 0 /* This was how we made f10 work in Motif.
+	 The drawback is, you can't type at Emacs when the
+	 the mouse is in the menu bar.  So it is better to
+	 turn off f10 in Motif and let Emacs handle it.  */
+#ifdef USE_MOTIF
+                  if (lw_window_is_in_menubar (event.xkey.window,
+                                               f->output_data.x->menubar_widget
+                                               ))
+                    {
+                      SET_SAVED_KEY_EVENT;
+                      break;
+                    }
+#endif /* USE_MOTIF */
+#endif /* 0 */
 
 		  event.xkey.state
 		    |= x_emacs_to_x_modifiers (FRAME_X_DISPLAY_INFO (f),
@@ -4017,20 +4053,30 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		    && event.xbutton.y < f->output_data.x->menubar_height
 		    && event.xbutton.same_screen)
 		  {
-		    if (f->output_data.x->saved_button_event == 0)
-		      f->output_data.x->saved_button_event
-			= (XButtonEvent *) xmalloc (sizeof (XButtonEvent)); 
-		    bcopy (&event, f->output_data.x->saved_button_event,
-			   sizeof (XButtonEvent));
-		    if (numchars >= 1)
-		      {
-			bufp->kind = menu_bar_activate_event;
-			XSETFRAME (bufp->frame_or_window, f);
-			bufp++;
-			count++;
-			numchars--;
-		      }
+		    SET_SAVED_BUTTON_EVENT;
+		    XSETFRAME (last_mouse_press_frame, f);
 		  }
+		else if (event.type == ButtonPress)
+		  {
+		    last_mouse_press_frame = Qnil;
+		    goto OTHER;
+		  }
+#ifdef USE_MOTIF /* This should do not harm for Lucid,
+		    but I am trying to be cautious.  */
+		else if (event.type == ButtonRelease)
+		  {
+		    if (!NILP (last_mouse_press_frame))
+		      {
+			f = XFRAME (last_mouse_press_frame);
+			if (f->output_data.x)
+			  {
+			    SET_SAVED_BUTTON_EVENT;
+			  }
+		      }
+		    else 
+		      goto OTHER;
+		  }
+#endif /* USE_MOTIF */
 		else
 		  goto OTHER;
 #endif /* USE_X_TOOLKIT */
@@ -4516,7 +4562,7 @@ x_connection_closed (display, error_message)
 
   if (x_display_list == 0)
     {
-      fprintf (stderr, "%s", error_message);
+      fprintf (stderr, "%s\n", error_message);
       shut_down_emacs (0, 0, Qnil);
       exit (70);
     }
@@ -4528,6 +4574,7 @@ x_connection_closed (display, error_message)
   sigunblock (sigmask (SIGALRM));
   TOTALLY_UNBLOCK_INPUT;
 
+  clear_waiting_for_input ();
   error ("%s", error_message);
 }
 
@@ -4546,7 +4593,7 @@ x_error_quitter (display, error)
      original error handler.  */
 
   XGetErrorText (display, error->error_code, buf, sizeof (buf));
-  sprintf (buf1, "X protocol error: %s on protocol request %d\n",
+  sprintf (buf1, "X protocol error: %s on protocol request %d",
 	   buf, error->request_code);
   x_connection_closed (display, buf1);
 }
@@ -4567,55 +4614,19 @@ x_io_error_quitter (display)
 
 /* Handle SIGPIPE, which can happen when the connection to a server
    simply goes away.  SIGPIPE is handled by x_connection_signal.
-   It works by sending a no-op command to each X server connection.
-   When we try a connection that has closed, we get SIGPIPE again.
-   But this time, it is handled by x_connection_signal_1.
-   That function knows which connection we were testing,
-   so it closes that one.
+   Don't need to do anything, because the write which caused the 
+   SIGPIPE will fail, causing Xlib to invoke the X IO error handler,
+   which will do the appropriate cleanup for us. */
    
-   x_connection_closed never returns,
-   so if more than one connection was lost at once,
-   we only find one.  But XTread_socket keeps trying them all,
-   so it will notice the other closed one sooner or later.  */
-   
-
-static struct x_display_info *x_connection_signal_dpyinfo;
-
-static SIGTYPE x_connection_signal ();
-
-static SIGTYPE
-x_connection_signal_1 (signalnum)	/* If we don't have an argument, */
-     int signalnum;		/* some compilers complain in signal calls. */
-{
-  signal (SIGPIPE, x_connection_signal);
-  x_connection_closed (x_connection_signal_dpyinfo->display,
-		       "connection was lost");
-}
-
 static SIGTYPE
 x_connection_signal (signalnum)	/* If we don't have an argument, */
      int signalnum;		/* some compilers complain in signal calls. */
 {
-  x_connection_signal_dpyinfo = x_display_list;
-
-  sigunblock (sigmask (SIGPIPE));
-
-  while (x_connection_signal_dpyinfo)
-    {
-      signal (SIGPIPE, x_connection_signal_1);
-
-      x_connection_close_if_hung (x_connection_signal_dpyinfo);
-
-      XNoOp (x_connection_signal_dpyinfo->display);
-
-      XSync (x_connection_signal_dpyinfo->display, False);
-
-      /* Each time we get here, cycle through the displays now open.  */
-      x_connection_signal_dpyinfo = x_connection_signal_dpyinfo->next;
-    }
-
-  /* We should have found some closed connection.  */
-  abort ();
+#ifdef USG
+  /* USG systems forget handlers when they are used;
+     must reestablish each time */
+  signal (signalnum, x_connection_signal);
+#endif /* USG */
 }
 
 /* A buffer for storing X error messages.  */
@@ -5438,6 +5449,11 @@ x_iconify_frame (f)
 	x_wm_set_window_state (f, IconicState);
       /* This was XtPopup, but that did nothing for an iconified frame.  */
       XtMapWidget (f->output_data.x->widget);
+      /* The server won't give us any event to indicate
+	 that an invisible frame was changed to an icon,
+	 so we have to record it here.  */
+      f->iconified = 1;
+      f->async_iconified = 1;
       UNBLOCK_INPUT;
       return;
     }
@@ -6225,50 +6241,9 @@ syms_of_xterm ()
 
   staticpro (&Qvendor_specific_keysyms);
   Qvendor_specific_keysyms = intern ("vendor-specific-keysyms");
+
+  staticpro (&last_mouse_press_frame);
+  last_mouse_press_frame = Qnil;
 }
-
-/* Avoid warnings or errors from including Xlibint.h.
-   We don't need these functions for the rest of this file.  */
-#undef bzero
-#undef bcopy
-#undef bcmp
-#undef min
-#undef max
-
-#ifdef X_CONNECTION_LOCK_FLAG
-#define free loserfree
-#define malloc losermalloc
-#define exit loserexit
-#define abort loserabort
-/* For XlibDisplayWriting */
-#include <X11/Xlibint.h>
-#endif
-
-/* Check whether display connection DPYINFO is hung
-   because its thread-interlock is locked.
-   If it is, close the connection.
-   Do nothing if this system does not have a thread interlock.  */
-
-x_connection_close_if_hung (dpyinfo)
-     struct x_display_info *dpyinfo;
-{      
-  /* This tests (1) whether X_CONNECTION_LOCK_FLAG is defined at all,
-     and (2) whether the name it is defined as is itself defined.
-     (It ought to have been defined by Xlibint.h.  */
-#if X_CONNECTION_LOCK_FLAG
-
-  if (dpyinfo->display->flags & X_CONNECTION_LOCK_FLAG)
-    {
-      /* If the thread-interlock is locked, assume this connection is dead.
-	 This assumes that the library does not make other threads
-	 that can be locking the display legitimately.  */
-
-      dpyinfo->display->flags &= ~X_CONNECTION_LOCK_FLAG;
-      x_connection_closed (dpyinfo->display, "connection was lost");
-    }
-#endif /* X_CONNECTION_LOCK_FLAG */
-}
-
-/* Don't put any additional functions here!  */
 
 #endif /* not HAVE_X_WINDOWS */

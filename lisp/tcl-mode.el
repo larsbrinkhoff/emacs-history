@@ -150,7 +150,7 @@ Should be a list of strings.")
   "Default expressions to highlight in TCL modes.")
 
 (defvar tcl-imenu-generic-expression
-  '("^[ \t]*proc[ \t]+\\(\\(\\s_\\|\\sw\\)+\\)" 1)
+  '((nil "^[ \t]*proc[ \t]+\\(\\(\\s_\\|\\sw\\)+\\)" 1))
   "Imenu generic expression for tcl-mode.  See `imenu-generic-expression'.")
 
 

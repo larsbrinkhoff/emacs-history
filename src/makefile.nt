@@ -16,8 +16,9 @@
 #  GNU General Public License for more details.
 #  
 #  You should have received a copy of the GNU General Public License
-#  along with GNU Emacs; see the file COPYING.  If not, write to
-#  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+#  along with GNU Emacs; see the file COPYING.  If not, write to the
+#  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+#  Boston, MA 02111-1307, USA.
 #
 
 # 
@@ -160,7 +161,7 @@ paths.h:	..\nt\paths.h
 #
 # Make sure we have the DOC file in the right place.
 #
-DOC		= obj\etc\DOC-X
+DOC		= $(OBJDIR)\etc\DOC-X
 $(DOC):;	cd ..\lib-src 
 		- $(DEL) DOC-X
 		$(MAKE) -f makefile.nt all
@@ -231,7 +232,7 @@ install:        all
 # 
 clean:;         - $(DEL) *~ *.pdb config.h paths.h
 		- $(DEL_TREE) deleted
-		- $(DEL_TREE) obj
+		- $(DEL_TREE) $(OBJDIR)
 
 #
 # These files are the ones that compile conditionally on CANNOT_DUMP...

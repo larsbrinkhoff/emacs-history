@@ -1,3 +1,20 @@
+Wed Jul 31 13:52:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.32 released.
+
+Tue Jul 16 19:22:57 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* makefile.nt (clean): Use OBJDIR macro.
+
+Mon Jun  3 11:40:33 1996  Kim F. Storm  <kfs@olicom.dk>
+
+        * runemacs.c (CHOOSE_NEWEST_EXE): New parameter macro.
+	Not defined by default.
+	(WinMain): Add conditional testing CHOOSE_NEWEST_EXE.
+	(WinMain): Convert backslashes to slashes in env var values.
+
+        * addpm.c (env_vars): Use slashes, not backslashes.
+
 Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
 
 	* Version 19.31 released.

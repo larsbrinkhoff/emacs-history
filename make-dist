@@ -21,8 +21,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GNU Emacs; see the file COPYING.  If not, write to
-# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+# along with GNU Emacs; see the file COPYING.  If not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
 
 progname="$0"
 
@@ -126,15 +127,19 @@ if [ "${bogosities}" != "" ]; then
 fi
 rm -f /tmp/el /tmp/elc
 
+### Check for .el files that would overflow the 14-char limit if compiled.
+long=`find lisp -name '[a-zA-Z0-9]??????????*.el' -print`
+if [ "$long" != "" ]; then
+  echo "The following .el file names are too long:"
+  echo "$long"
+fi
+
 ### Make sure configure is newer than configure.in.
 if [ "x`ls -t configure configure.in | head -1`" != "xconfigure" ]; then
   echo "\`./configure.in' is newer than \`./configure'" >&2
   echo "Running autoconf" >&2
   autoconf || { x=$?; echo Autoconf FAILED! >&2; exit $x; }
 fi
-
-### Update getdate.c.
-(cd lib-src; make -f Makefile getdate.c YACC="bison -y")
 
 echo "Updating Info files"
 

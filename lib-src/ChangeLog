@@ -1,3 +1,67 @@
+Wed Jul 31 13:52:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.32 released.
+
+Tue Jul 23 14:41:32 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* etags.c (readline_internal) [DOS_NT]: Don't include CRs when
+	computing character positions in source files.
+
+Tue Jul 16 19:20:25 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* makefile.nt (clean): Use OBJDIR macro.
+
+Tue Jul 16 18:08:18 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* cvtmail.c, sorted-doc.c, yow.c, emacsserver.c: Undo previous change.
+
+Mon Jul 15 17:10:20 1996  David Mosberger-Tang <davidm@AZStarNet.com>
+
+	* cvtmail.c, sorted-doc.c, yow.c: [__GNU_LIBRARY__]: Use <string.h>.
+	* emacsserver.c (main) [__GNU_LIBRARY__]: Use size_t for fromlen.
+	* etags.c, fakemail.c, profile.c: Declare main as int, not void.
+
+Mon Jul 15 15:56:14 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* ntlib.h: Correct return type of getwd.
+	* ntlib.c (getwd): Correct return type.
+
+Tue Jul  2 17:56:47 1996  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* emacsserver.c (main) [HAVE_SOCKETS]: Call rewind before writing
+	to infile.
+
+Mon Jul 01 16:00:07 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* makefile.nt: Remove all references to wakeup.
+
+Fri Jun 28 16:51:32 1996  Francesco Potorti`  <F.Potorti@cnuce.cnr.it>
+
+	* etags.c (C_stab_entry): New keywords for C++ namespace, bool,
+	explicit, mutable, typename.
+
+Sat Jun 29 02:16:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* emacsclient.c (main) [HAVE_SOCKETS]: Use two separate stdio
+	streams, one for sending and one for reading the reply.
+
+Fri Jun 21 01:43:45 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Makefile.in (timer, timer.o, getdate.o, $(srcdir)/getdate.c)
+	(wakeup): Target deleted.
+	(UTILITIES): Delete wakeup and timer.
+
+	* wakeup.c, timer.c, getdate.y, getdate.c: Files deleted.
+
+Tue Jun 11 10:27:00 1996  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* etags.c (etags_getcwd) [DOS_NT]: Change conditional to MSDOS only.
+	* makefile.nt (ETAGS_CFLAGS): Define HAVE_GETCWD macro.
+
+Thu Jun  6 10:05:51 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* etags.c (main): Copy cwd when appending slash.
+
 Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
 
 	* Version 19.31 released.

@@ -37,7 +37,10 @@
 (make-variable-buffer-local 'view-mode)
 
 (defvar view-mode-auto-exit nil
-  "Non-nil means scrolling past the end of buffer exits View mode.")
+  "Non-nil means scrolling past the end of buffer exits View mode.
+Some commands, such as \\[view-file], set this to t locally;
+the only way to override that is to set it to nil using `view-mode-hook'.")
+
 (make-variable-buffer-local 'view-mode-auto-exit)
 
 (defvar view-old-buffer-read-only nil)
@@ -184,10 +187,13 @@ This command runs the normal hook `view-mode-hook'."
 ;;;###autoload
 (defun view-mode (&optional arg)
   "Toggle View mode.
-If you use this function to turn on View mode,
-\"exiting\" View mode does nothing except turn View mode off.
-The other way to turn View mode on is by calling
-`view-mode-enter'.
+With a prefix argument, turn View mode on if the argument is >= zero
+and off if it is not.
+
+If you use this function to turn on View mode, then subsequently
+\"exiting\" View mode does nothing except turn View mode off.  The
+other way to turn View mode on is by calling `view-mode-enter';
+that is what Lisp programs usually use.
 
 Letters do not insert themselves.  Instead these commands are provided.
 Most commands take prefix arguments.  Commands dealing with lines

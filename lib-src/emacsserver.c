@@ -81,6 +81,7 @@ extern int errno;
 #define FD_ZERO(p) (*(p) = 0)
 #endif /* no FD_SET */
 
+int
 main ()
 {
   char system_name[32];
@@ -228,6 +229,7 @@ main ()
 
 	  /* Transfer text from Emacs to the client, up to a newline.  */
 	  infile = openfiles[infd];
+	  rewind (infile);
 	  while (1)
 	    {
 	      if (fgets (string, BUFSIZ, stdin) == 0)

@@ -470,6 +470,14 @@ Boston, MA 02111-1307 USA
   We do not promise to fix the bug; but if the bug is serious,
 or ugly, or easy to fix, chances are we will want to.
 
+@findex report-emacs-bug
+  A convenient way to send a bug report for Emacs is to use the command
+@kbd{M-x report-emacs-bug}.  This sets up a mail buffer (@pxref{Sending
+Mail}) and automatically inserts @emph{some} of the essential
+information.  However, it cannot supply all the necessary information;
+you should still read and follow the guidelines below, so you can enter
+the other crucial information by hand before you send the message.
+
   To enable maintainers to investigate a bug, your report
 should include all these things:
 

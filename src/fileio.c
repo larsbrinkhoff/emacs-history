@@ -106,6 +106,10 @@ extern char *strerror ();
 #ifdef WINDOWSNT
 #define IS_DRIVE(x) isalpha (x)
 #endif
+/* Need to lower-case the drive letter, or else expanded
+   filenames will sometimes compare inequal, because
+   `expand-file-name' doesn't always down-case the drive letter.  */
+#define DRIVE_LETTER(x) (tolower (x))
 #endif
 
 #ifdef VMS
@@ -1059,7 +1063,7 @@ See also the function `substitute-in-file-name'.")
 	  if (strcmp (nm - 2, XSTRING (name)->data) != 0)
 	    {
 	      name = make_string (nm - 2, p - nm + 2);
-	      XSTRING (name)->data[0] = drive;
+	      XSTRING (name)->data[0] = DRIVE_LETTER (drive);
 	      XSTRING (name)->data[1] = ':';
 	    }
 	  return name;
@@ -1153,7 +1157,7 @@ See also the function `substitute-in-file-name'.")
 	{
 	  /* Either nm starts with /, or drive isn't mounted. */
 	  newdir = alloca (4);
-	  newdir[0] = drive;
+	  newdir[0] = DRIVE_LETTER (drive);
 	  newdir[1] = ':';
 	  newdir[2] = '/';
 	  newdir[3] = 0;
@@ -1252,9 +1256,14 @@ See also the function `substitute-in-file-name'.")
 
   if (newdir)
     {
-      /* Get rid of any slash at the end of newdir.  */
+      /* Get rid of any slash at the end of newdir, unless newdir is
+       just // (an incomplete UNC name). */
       length = strlen (newdir);
-      if (IS_DIRECTORY_SEP (newdir[length - 1]))
+      if (IS_DIRECTORY_SEP (newdir[length - 1])
+#ifdef WINDOWSNT
+	  && !(length == 2 && IS_DIRECTORY_SEP (newdir[0]))
+#endif
+	  )
 	{
 	  unsigned char *temp = (unsigned char *) alloca (length);
 	  bcopy (newdir, temp, length - 1);
@@ -1378,6 +1387,8 @@ See also the function `substitute-in-file-name'.")
 	{
 	  while (o != target && (--o) && !IS_DIRECTORY_SEP (*o))
 	    ;
+	  if (o == target && IS_ANY_SEP (*o))
+	    ++o;
 	  p += 3;
 	}
       else
@@ -1396,7 +1407,7 @@ See also the function `substitute-in-file-name'.")
     {
       if (!drive) abort ();
       target -= 2;
-      target[0] = drive;
+      target[0] = DRIVE_LETTER (drive);
       target[1] = ':';
     }
   CORRECT_DIR_SEPS (target);
@@ -2067,7 +2078,7 @@ A prefix arg makes KEEP-TIME non-nil.")
      copyable by us. */
   input_file_statable_p = (fstat (ifd, &st) >= 0);
 
-#ifndef MSDOS
+#if !defined (MSDOS) || __DJGPP__ > 1
   if (out_st.st_mode != 0
       && st.st_dev == out_st.st_dev && st.st_ino == out_st.st_ino)
     {
@@ -2523,7 +2534,7 @@ check_executable (filename)
   struct stat st;
   if (stat (filename, &st) < 0)
     return 0;
-#ifdef WINDOWSNT
+#if defined (WINDOWSNT) || (defined (MSDOS) && __DJGPP__ > 1)
   return ((st.st_mode & S_IEXEC) != 0);
 #else
   return (S_ISREG (st.st_mode)
@@ -2534,8 +2545,8 @@ check_executable (filename)
 	  || (st.st_mode & S_IFMT) == S_IFDIR);
 #endif /* not WINDOWSNT */
 #else /* not DOS_NT */
-#ifdef HAVE_EACCESS
-  return (eaccess (filename, 1) >= 0);
+#ifdef HAVE_EUIDACCESS
+  return (euidaccess (filename, 1) >= 0);
 #else
   /* Access isn't quite right because it uses the real uid
      and we really want to test with the effective uid.
@@ -2557,8 +2568,8 @@ check_writable (filename)
     return 0;
   return (st.st_mode & S_IWRITE || (st.st_mode & S_IFMT) == S_IFDIR);
 #else /* not MSDOS */
-#ifdef HAVE_EACCESS
-  return (eaccess (filename, 2) >= 0);
+#ifdef HAVE_EUIDACCESS
+  return (euidaccess (filename, 2) >= 0);
 #else
   /* Access isn't quite right because it uses the real uid
      and we really want to test with the effective uid.
@@ -2829,10 +2840,10 @@ DEFUN ("file-modes", Ffile_modes, Sfile_modes, 1, 1, 0,
 
   if (stat (XSTRING (absname)->data, &st) < 0)
     return Qnil;
-#ifdef MSDOS
+#if defined (MSDOS) && __DJGPP__ < 2
   if (check_executable (XSTRING (absname)->data))
     st.st_mode |= S_IEXEC;
-#endif /* MSDOS */
+#endif /* MSDOS && __DJGPP__ < 2 */
 
   return make_number (st.st_mode & 07777);
 }

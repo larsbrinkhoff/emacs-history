@@ -207,7 +207,7 @@ nil for FUNCTION means all messages."
 	    (setq buffer-read-only t)
 	    (rmail-summary-mode)
 	    (make-local-variable 'minor-mode-alist)
-	    (setq minor-mode-alist (list '(t (concat ": " description))))
+	    (setq minor-mode-alist (list (list t (concat ": " description))))
 	    (setq rmail-buffer rbuf
 		  rmail-summary-redo redo-form
 		  rmail-total-messages total))))
@@ -334,6 +334,15 @@ nil for FUNCTION means all messages."
 					     (match-end 4)))
 			     (buffer-substring
 			      (match-beginning 2) (match-end 2))))
+		    ((re-search-forward "\\(19\\|20\\)\\([0-9][0-9]\\)-\\([01][0-9]\\)-\\([0-3][0-9]\\)"
+		      (save-excursion (end-of-line) (point)) t)
+		     (format "%2s%2s%2s"
+			     (buffer-substring
+			      (match-beginning 2) (match-end 2))
+			     (buffer-substring
+			      (match-beginning 3) (match-end 3))
+			     (buffer-substring
+			      (match-beginning 4) (match-end 4))))
 		    (t "??????"))))
 	  "  "
 	  (save-excursion
@@ -356,7 +365,14 @@ nil for FUNCTION means all messages."
 		(if (string-match (concat "^\\("
 					  (regexp-quote (user-login-name))
 					  "\\($\\|@\\)\\|"
-					  (regexp-quote user-mail-address)
+					  (regexp-quote
+					   ;; Don't lose if run from init file
+					   ;; where user-mail-address is not
+					   ;; set yet.
+					   (or user-mail-address
+					       (concat (user-login-name) "@"
+						       (or mail-host-address
+							   (system-name)))))
 					  "\\>\\)")
 				  from)
 		    (save-excursion
@@ -453,17 +469,23 @@ messages, or backward if NUMBER is negative."
   "Show next message with LABEL.  Defaults to last labels used.
 With prefix argument N moves forward N messages with these labels."
   (interactive "p\nsMove to next msg with labels: ")
-  (save-excursion
-    (set-buffer rmail-buffer)
-    (rmail-next-labeled-message n labels)))
+  (let (msg)
+    (save-excursion
+      (set-buffer rmail-buffer)
+      (rmail-next-labeled-message n labels)
+      (setq msg rmail-current-message))
+    (rmail-summary-goto-msg msg)))
 
 (defun rmail-summary-previous-labeled-message (n labels)
   "Show previous message with LABEL.  Defaults to last labels used.
 With prefix argument N moves backward N messages with these labels."
   (interactive "p\nsMove to previous msg with labels: ")
-  (save-excursion
-    (set-buffer rmail-buffer)
-    (rmail-previous-labeled-message n labels)))
+  (let (msg)
+    (save-excursion
+      (set-buffer rmail-buffer)
+      (rmail-previous-labeled-message n labels)
+      (setq msg rmail-current-message))
+    (rmail-summary-goto-msg msg)))
 
 (defun rmail-summary-next-same-subject (n)
   "Go to the next message in the summary having the same subject.
@@ -720,6 +742,7 @@ Commands for sorting the summary:
   (setq rmail-summary-mode-map (make-keymap))
   (suppress-keymap rmail-summary-mode-map)
   (define-key rmail-summary-mode-map "a"      'rmail-summary-add-label)
+  (define-key rmail-summary-mode-map "b"      'rmail-summary-bury)
   (define-key rmail-summary-mode-map "c"      'rmail-summary-continue)
   (define-key rmail-summary-mode-map "d"      'rmail-summary-delete-forward)
   (define-key rmail-summary-mode-map "\C-d"   'rmail-summary-delete-backward)
@@ -812,6 +835,9 @@ Commands for sorting the summary:
 
 (define-key rmail-summary-mode-map [menu-bar summary]
   (cons "Summary" (make-sparse-keymap "Summary")))
+
+(define-key rmail-summary-mode-map [menu-bar summary senders]
+  '("By Senders..." . rmail-summary-by-senders))
 
 (define-key rmail-summary-mode-map [menu-bar summary labels]
   '("By Labels..." . rmail-summary-by-labels))
@@ -1040,6 +1066,17 @@ advance to the previous message."
   (pop-to-buffer rmail-buffer)
   (beginning-of-buffer)
   (pop-to-buffer rmail-summary-buffer))
+
+(defun rmail-summary-bury ()
+  "Bury the Rmail buffer and the Rmail summary buffer."
+  (interactive)
+  (let ((buffer-to-bury (current-buffer)))
+    (let (window)
+      (while (setq window (get-buffer-window rmail-buffer))
+	(set-window-buffer window (other-buffer rmail-buffer)))
+      (bury-buffer rmail-buffer))
+    (switch-to-buffer (other-buffer buffer-to-bury))
+    (bury-buffer buffer-to-bury)))
 
 (defun rmail-summary-quit ()
   "Quit out of Rmail and Rmail summary."

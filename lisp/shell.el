@@ -130,16 +130,27 @@ This is a fine thing to set in your `.emacs' file.")
 (defvar shell-delimiter-argument-list '(?\| ?& ?< ?> ?\( ?\) ?\;)
   "List of characters to recognise as separate arguments.
 This variable is used to initialize `comint-delimiter-argument-list' in the
-shell buffer.  The default is (?\\| ?& ?< ?> ?\\( ?\\) ?\\;).
+shell buffer.  The value may depend on the operating system or shell.
+
+This is a fine thing to set in your `.emacs' file.")
+
+(defvar shell-file-name-chars
+  (if (memq system-type '(ms-dos windows-nt))
+      "~/A-Za-z0-9_^$!#%&{}@`'.()-"
+    "~/A-Za-z0-9+@:_.$#%,={}-")
+  "String of characters valid in a file name.
+This variable is used to initialize `comint-file-name-chars' in the
+shell buffer.  The value may depend on the operating system or shell.
 
 This is a fine thing to set in your `.emacs' file.")
 
 (defvar shell-file-name-quote-list
-  (append shell-delimiter-argument-list '(?\  ?\* ?\! ?\" ?\' ?\`))
+  (if (memq system-type '(ms-dos windows-nt))
+      nil
+    (append shell-delimiter-argument-list '(?\  ?\* ?\! ?\" ?\' ?\`)))
   "List of characters to quote when in a file name.
 This variable is used to initialize `comint-file-name-quote-list' in the
-shell buffer.  The default is (?\  ?\* ?\! ?\" ?\' ?\`) plus characters
-in `shell-delimiter-argument-list'.
+shell buffer.  The value may depend on the operating system or shell.
 
 This is a fine thing to set in your `.emacs' file.")
 
@@ -185,6 +196,13 @@ This mirrors the optional behavior of tcsh.")
 
 (defvar shell-cd-regexp "cd"
   "*Regexp to match subshell commands equivalent to cd.")
+
+(defvar shell-chdrive-regexp
+  (if (memq system-type '(ms-dos windows-nt)) 
+      ; NetWare allows the five chars between upper and lower alphabetics.
+      "[]a-zA-Z^_`\\[\\\\]:"
+    nil)
+  "*If non-nil, is regexp used to track drive changes.")
 
 (defvar explicit-shell-file-name nil
   "*If non-nil, is file name to use for explicitly requested inferior shell.")
@@ -287,10 +305,10 @@ Customization: Entry to this mode runs the hooks on `comint-mode-hook' and
 `comint-input-filter-functions' are run.  After each shell output, the hooks
 on `comint-output-filter-functions' are run.
 
-Variables `shell-cd-regexp', `shell-pushd-regexp' and `shell-popd-regexp'
-are used to match their respective commands, while `shell-pushd-tohome',
-`shell-pushd-dextract' and `shell-pushd-dunique' control the behavior of the
-relevant command.
+Variables `shell-cd-regexp', `shell-chdrive-regexp', `shell-pushd-regexp' 
+and `shell-popd-regexp' are used to match their respective commands, 
+while `shell-pushd-tohome', `shell-pushd-dextract' and `shell-pushd-dunique' 
+control the behavior of the relevant command.
 
 Variables `comint-completion-autolist', `comint-completion-addsuffix',
 `comint-completion-recexact' and `comint-completion-fignore' control the
@@ -314,6 +332,7 @@ buffer."
   (setq comint-prompt-regexp shell-prompt-pattern)
   (setq comint-completion-fignore shell-completion-fignore)
   (setq comint-delimiter-argument-list shell-delimiter-argument-list)
+  (setq comint-file-name-chars shell-file-name-chars)
   (setq comint-file-name-quote-list shell-file-name-quote-list)
   (setq comint-dynamic-complete-functions shell-dynamic-complete-functions)
   (make-local-variable 'paragraph-start)
@@ -441,9 +460,9 @@ default directory to track these commands.
 You may toggle this tracking on and off with M-x dirtrack-toggle.
 If emacs gets confused, you can resync with the shell with M-x dirs.
 
-See variables `shell-cd-regexp', `shell-pushd-regexp', and `shell-popd-regexp',
-while `shell-pushd-tohome', `shell-pushd-dextract' and `shell-pushd-dunique'
-control the behavior of the relevant command.
+See variables `shell-cd-regexp', `shell-chdrive-regexp', `shell-pushd-regexp',
+and  `shell-popd-regexp', while `shell-pushd-tohome', `shell-pushd-dextract', 
+and `shell-pushd-dunique' control the behavior of the relevant command.
 
 Environment variables are expanded, see function `substitute-in-file-name'."
   (if shell-dirtrackp
@@ -459,15 +478,20 @@ Environment variables are expanded, see function `substitute-in-file-name'."
 	      (cond ((string-match (concat "\\`\\(" shell-popd-regexp
 					   "\\)\\($\\|[ \t]\\)")
 				   cmd)
-		     (shell-process-popd (substitute-in-file-name arg1)))
+		     (shell-process-popd (comint-substitute-in-file-name arg1)))
 		    ((string-match (concat "\\`\\(" shell-pushd-regexp
 					   "\\)\\($\\|[ \t]\\)")
 				   cmd)
-		     (shell-process-pushd (substitute-in-file-name arg1)))
+		     (shell-process-pushd (comint-substitute-in-file-name arg1)))
 		    ((string-match (concat "\\`\\(" shell-cd-regexp
 					   "\\)\\($\\|[ \t]\\)")
 				   cmd)
-		     (shell-process-cd (substitute-in-file-name arg1))))
+		     (shell-process-cd (comint-substitute-in-file-name arg1)))
+		    ((and shell-chdrive-regexp
+			  (string-match (concat "\\`\\(" shell-chdrive-regexp
+						"\\)\\($\\|[ \t]\\)")
+					cmd))
+		     (shell-process-cd (comint-substitute-in-file-name cmd))))
 	      (setq start (progn (string-match "[; \t]*" str end) ; skip again
 				 (match-end 0)))))
 	(error "Couldn't cd"))))
@@ -738,7 +762,7 @@ See `shell-dynamic-complete-filename'.  Returns t if successful."
 
 
 (defun shell-match-partial-variable ()
-  "Return the variable at point, or nil if non is found."
+  "Return the shell variable at point, or nil if none is found."
   (save-excursion
     (let ((limit (point)))
       (if (re-search-backward "[^A-Za-z0-9_{}]" nil 'move)

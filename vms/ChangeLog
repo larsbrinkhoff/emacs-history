@@ -1,34 +1,4 @@
-Please note that Jim Blandy knows nothing about Emacs' VMS support, even
-though his name appears here.  A better person to ask might be Richard
-Levitte <LEVITTE@e.kth.se>.
-
-Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
-
-	* Version 19.16 released.
-
-Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
-
-	* version 19.15 released.
-
-Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
-
-	* Version 19.14 released.
-
-Tue Jun  8 08:29:36 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
-
-	* Version 19.13 released.
-
-Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
-
-	* Version 19.9 released.
-
-Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
-
-	* Version 19.8 released.
-
-Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
-
-        * Version 19.7 released.
+For information abut VMS support, contact Richard Levitte <LEVITTE@lp.se>.
 
 Sat Sep 19 16:15:54 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 

@@ -13,166 +13,156 @@ an Emacs session for later resumption, emulating other editors, various
 diversions and amusements.
 
 @end iftex
-@node GNUS, Shell, Calendar/Diary, Top
-@section GNUS
-@cindex @sc{gnus}
+@node Gnus, Shell, Calendar/Diary, Top
+@section Gnus
+@cindex Gnus
 @cindex reading netnews
 
-  @sc{gnus} is an Emacs subsystem for reading and responding to netnews.  You
-can use @sc{gnus} to browse through news groups, look at summaries of
-articles in specific group, and read articles of interest.  You can
-respond to authors or write replies to all the readers of a news group.
+Gnus is an Emacs package primarily designed for reading and posting
+Usenet news.  It can also be used to read and respond to messages from a
+number of other sources -- mail, remote directories, digests, and so
+on. 
 
-  This section introduces @sc{gnus} and describes several basic
-features.
+This section introduces Gnus and describes several basic features.
+
 @ifinfo
-@xref{Top, GNUS, GNUS, gnus}.
+@xref{Top, Gnus}.
 @end ifinfo
 @iftex
-For more information, run @kbd{M-x info} and select the @sc{gnus}
+For more information, run @kbd{M-x info} and select the Gnus
 manual.
 @end iftex
 
-@findex gnus
-To start @sc{gnus}, type @kbd{M-x gnus @key{RET}}.
+@findex Gnus
+To start Gnus, type @kbd{M-x gnus @key{RET}}.
 
 @menu
-* Buffers of GNUS::	   The Newsgroups, Summary and Article buffers.
-* GNUS Startup::	   What you should know about starting GNUS.
-* Summary of GNUS::	   A short description of the basic GNUS commands.
+* Buffers of Gnus::	   The group, summary and article buffers.
+* Gnus Startup::	   What you should know about starting Gnus.
+* Summary of Gnus::	   A short description of the basic Gnus commands.
 @end menu
 
-@node Buffers of GNUS
-@subsection GNUS's Three Buffers
+@node Buffers of Gnus
+@subsection Gnus Buffers
 
-@sc{gnus} creates and uses three Emacs buffers, each with its own
-particular purpose and its own major mode.
+As opposed to most normal Emacs packages, Gnus uses a number of
+different buffers to display information and to receive commands.  The
+three buffers users spend most of their time in are the @dfn{group
+buffer}, the @dfn{summary buffer} and the @dfn{article buffer}.  
 
-The @dfn{Newsgroup buffer} contains a list of newsgroups.  This is the
-first buffer that @sc{gnus} displays when it starts up.  Normally the list
-contains only the newsgroups to which you subscribe (which are listed in
-your @file{.newsrc} file) and which contain unread articles.  Use this
-buffer to select a specific newsgroup.
+The @dfn{group buffer} contains a list of groups.  This is the first
+buffer Gnus displays when it starts up.  It normally displays only the
+groups to which you subscribe and that contain unread articles.  Use
+this buffer to select a specific group.
 
-The @dfn{Summary buffer} lists the articles in a single newsgroup,
-including their subjects, their numbers, and who posted them.  @sc{gnus}
-creates a Summary buffer for a newsgroup when you select the group in
-the Newsgroup buffer.  Use this buffer to select an article.
+The @dfn{summary buffer} lists one line for each article in a single
+group.  By default, the author, the subject and the line number are
+displayed for each article, but this is customizable, like most aspects
+of Gnus display.  The summary buffer is created when you select a group
+in the group buffer, and is killed when you exit the group.  Use this
+buffer to select an article.
 
-The @dfn{Article buffer} displays the text of an article.  You rarely
-need to select this buffer because you can scroll through it while
-remaining in the Summary buffer.
+The @dfn{article buffer} displays the article.  In normal Gnus usage,
+you don't select this buffer---all useful article-oriented commands work
+in the summary buffer.  But you can select the article buffer, and
+execute all Gnus commands from that buffer, if you want to.
 
-@node GNUS Startup
-@subsection When GNUS Starts Up
+@node Gnus Startup
+@subsection When Gnus Starts Up
 
-At startup, @sc{gnus} reads your @file{.newsrc} news initialization file
+At startup, Gnus reads your @file{.newsrc} news initialization file
 and attempts to communicate with the local news server, which is a
 repository of news articles.  The news server need not be the same
 computer you are logged in on.
 
-If you start @sc{gnus} and connect to the server, but do not see any
-newsgroups listed in the Newsgroup buffer, type @kbd{L} to get a listing
-of all the newsgroups.  Then type @kbd{u} to unsubscribe from the
-newsgroups you don't want to read.  (You can move point to a particular
-group using @kbd{n} and @kbd{p} or the usual Emacs commands.)
+If you start Gnus and connect to the server, but do not see any
+newsgroups listed in the group buffer, type @kbd{L} or @kbd{A k} to get
+a listing of all the groups.  Then type @kbd{u} to toggle
+subscription to groups.
 
-The first time you start @sc{gnus}, it subscribes automatically to every
-newsgroup that exists.  Subsequently, @sc{gnus} subscribes automatically
-to all newly created newsgroups.  You can unsubscribe groups with
-@kbd{u}.  You can inhibit automatic subscription by adding the following
-line to your @file{~/.newsrc} file:
+The first time you start Gnus, Gnus will subscribe you to a select few
+groups.  All other groups start out as @dfn{killed groups} for you; you
+can list them with @kbd{A k}.  All new groups that subsequently come to
+exist at the news server become @dfn{zombie groups} for you; type @kbd{A
+z} to list them.  You can subscribe to a group shown in these lists
+using the @kbd{u} command.
 
-@example
-options -n !all !all.all
-@end example
+When you quit Gnus with @kbd{q}, it automatically records in your
+@file{.newsrc} and @file{.newsrc.eld} initialization files the
+subscribed or unsubscribed status of all groups.  You should normally
+not edit these files manually, but you may if you know how.
 
-When you quit @sc{gnus} with @kbd{q}, it automatically records in your
-@file{.newsrc} initialization file the subscribed or unsubscribed status
-of all newsgroups, except for groups you have ``killed''.  (You do not
-need to edit this file yourself, but you may.)  When new newsgroups come
-into existence, @sc{gnus} subscribes to them automatically; if you don't
-want to read them, use @kbd{u} to unsubscribe from them.
-
-@node Summary of GNUS
-@subsection Summary of GNUS Commands
+@node Summary of Gnus
+@subsection Summary of Gnus Commands
 
 Reading news is a two step process:
 
 @enumerate
 @item
-Choose a newsgroup in the Newsgroup buffer.
+Choose a group in the group buffer.
 
 @item
-Select articles from the Summary buffer.  Each article selected is
-displayed in the Article buffer in a large window, below the Summary
+Select articles from the summary buffer.  Each article selected is
+displayed in the article buffer in a large window, below the summary
 buffer in its small window.
 @end enumerate
 
-  Each @sc{gnus} buffer has its own special commands, but commands that
-do the similar things have similar key bindings.  Here are commands for the
-Newsgroup and Summary buffers:
+  Each Gnus buffer has its own special commands, but commands that do
+the similar things have similar key bindings.  Here are commands for the
+group and summary buffers:
 
 @table @kbd
-@kindex z @r{(GNUS Group mode)}
-@findex gnus-group-suspend
-@item z
-In the Newsgroup buffer, suspend @sc{gnus}.  You can return to @sc{gnus} later by
-selecting the Newsgroup buffer and typing @kbd{g} to get newly arrived
-articles.
-
-@kindex q @r{(GNUS Group mode)}
+@kindex q @r{(Gnus Group mode)}
 @findex gnus-group-exit
 @item q
-In the Newsgroup buffer, update your @file{.newsrc} initialization file
-and quit @sc{gnus}.
+In the group buffer, update your @file{.newsrc} initialization file
+and quit Gnus.
 
-In the Summary buffer, exit the current newsgroup and return to the
-Newsgroup buffer.  Thus, typing @kbd{q} twice quits @sc{gnus}.
+In the summary buffer, exit the current group and return to the
+group buffer.  Thus, typing @kbd{q} twice quits Gnus.
 
-@kindex L @r{(GNUS Group mode)}
+@kindex L @r{(Gnus Group mode)}
 @findex gnus-group-list-all-groups
 @item L
-In the Newsgroup buffer, list all the newsgroups available on your news
+In the group buffer, list all the groups available on your news
 server (except those you have killed).  This may be a long list!
 
-@kindex l @r{(GNUS Group mode)}
+@kindex l @r{(Gnus Group mode)}
 @findex gnus-group-list-groups
 @item l
-In the Newsgroup buffer, list only the newsgroups to which you subscribe
-and which contain unread articles.
+In the group buffer, list only the groups to which you subscribe and
+which contain unread articles.
 
-@kindex u @r{(GNUS Group mode)}
+@kindex u @r{(Gnus Group mode)}
 @findex gnus-group-unsubscribe-current-group
-@cindex subscribe newsgroups
-@cindex unsubscribe newsgroups
+@cindex subscribe groups
+@cindex unsubscribe groups
 @item u
-In the Newsgroup buffer, unsubscribe from (or subscribe to) the
-newsgroup listed in the line that point is on.  When you quit @sc{gnus}
-by typing @kbd{q}, @sc{gnus} lists in your @file{.newsrc} file which
-groups you have subscribed to.  The next time you start @sc{gnus}, you
-won't see this group initially, because @sc{gnus} normally displays only
-subscribed-to groups.
+In the group buffer, unsubscribe from (or subscribe to) the group listed
+in the line that point is on.  When you quit Gnus by typing @kbd{q},
+Gnus lists in your @file{.newsrc} file which groups you have subscribed
+to.  The next time you start Gnus, you won't see this group,
+because Gnus normally displays only subscribed-to groups.
 
-@kindex C-k @r{(GNUS)}
+@kindex C-k @r{(Gnus)}
 @findex gnus-group-kill-group
 @item C-k
-In the Newsgroup buffer, ``kill'' the current line's newsgroup---don't
+In the group buffer, ``kill'' the current line's group---don't
 even list it in @file{.newsrc} from now on.  This affects future
-@sc{gnus} sessions as well as the present session.
+Gnus sessions as well as the present session.
 
-When you quit @sc{gnus} by typing @kbd{q}, @sc{gnus} writes information
+When you quit Gnus by typing @kbd{q}, Gnus writes information
 in the file @file{.newsrc} describing all newsgroups except those you
 have ``killed.''
 
-@kindex SPC @r{(GNUS)}
+@kindex SPC @r{(Gnus)}
 @findex gnus-group-read-group
 @item @key{SPC}
-In the Newsgroup buffer, select the group on the line under the cursor
+In the group buffer, select the group on the line under the cursor
 and display the first unread article in that group.
 
 @need 1000
-In the Summary buffer, 
+In the summary buffer, 
 
 @itemize @bullet
 @item
@@ -187,77 +177,53 @@ Select the next unread article if at the end of the current article.
 
 Thus, you can move through all the articles by repeatedly typing @key{SPC}.
 
-@kindex DEL @r{(GNUS)}
+@kindex DEL @r{(Gnus)}
 @item @key{DEL}
-In the Newsgroup Buffer, move point to the previous newsgroup containing
+In the group buffer, move point to the previous group containing
 unread articles.
 
 @findex gnus-summary-prev-page
-In the Summary buffer, scroll the text of the article backwards.
+In the summary buffer, scroll the text of the article backwards.
 
-@kindex n @r{(GNUS)}
+@kindex n @r{(Gnus)}
 @findex gnus-group-next-unread-group
 @findex gnus-summary-next-unread-article
 @item n
-Move point to the next unread newsgroup, or select the next unread
-article.
+Move point to the next unread group, or select the next unread article.
 
-@kindex p @r{(GNUS)}
+@kindex p @r{(Gnus)}
 @findex gnus-group-prev-unread-group
 @findex gnus-summary-prev-unread-article
 @item p
-Move point to the previous unread newsgroup, or select the previous
+Move point to the previous unread group, or select the previous
 unread article.
 
-@kindex C-n @r{(GNUS Group mode)}
+@kindex C-n @r{(Gnus Group mode)}
 @findex gnus-group-next-group
-@kindex C-p @r{(GNUS Group mode)}
+@kindex C-p @r{(Gnus Group mode)}
 @findex gnus-group-prev-group
-@kindex C-n @r{(GNUS Summary mode)}
+@kindex C-n @r{(Gnus Summary mode)}
 @findex gnus-summary-next-subject
-@kindex C-p @r{(GNUS Summary mode)}
+@kindex C-p @r{(Gnus Summary mode)}
 @findex gnus-summary-prev-subject
 @item C-n
 @itemx C-p
 Move point to the next or previous item, even if it is marked as read.
-This does not select the article or newsgroup on that line.
+This does not select the article or group on that line.
 
-@kindex s @r{(GNUS Summary mode)}
+@kindex s @r{(Gnus Summary mode)}
 @findex gnus-summary-isearch-article
 @item s
-In the Summary buffer, do an incremental search of the current text in
-the Article buffer, just as if you switched to the Article buffer and
+In the summary buffer, do an incremental search of the current text in
+the article buffer, just as if you switched to the article buffer and
 typed @kbd{C-s}.
 
-@kindex M-s @r{(GNUS Summary mode)}
+@kindex M-s @r{(Gnus Summary mode)}
 @findex gnus-summary-search-article-forward
 @item M-s @var{regexp} RET
-In the Summary buffer, search forward for articles containing a match
+In the summary buffer, search forward for articles containing a match
 for @var{regexp}.
 
-@c kindex C-c C-s C-n @r{(GNUS Summary mode)}
-@findex gnus-summary-sort-by-number
-@c kindex C-c C-s C-s @r{(GNUS Summary mode)}
-@findex gnus-summary-sort-by-subject
-@c kindex C-c C-s C-d @r{(GNUS Summary mode)}
-@findex gnus-summary-sort-by-date
-@c kindex C-c C-s C-a @r{(GNUS Summary mode)}
-@findex gnus-summary-sort-by-author
-@item C-c C-s C-n
-@itemx C-c C-s C-s
-@itemx C-c C-s C-d
-@itemx C-c C-s C-a
-In the Summary buffer, sort the list of articles by number, subject,
-date, or author.
-
-@kindex C-M-n @r{(GNUS Summary mode)}
-@findex gnus-summary-next-same-subject
-@kindex C-M-p @r{(GNUS Summary mode)}
-@findex gnus-summary-prev-same-subject
-@item C-M-n
-@itemx C-M-p
-In the Summary buffer, read the next or previous article with the same
-subject as the current article.
 @end table
 
 @ignore
@@ -265,79 +231,77 @@ subject as the current article.
 @subsection Where to Look Further
 
 @c Too many references to the name of the manual if done with xref in TeX!
-@sc{gnus} is powerful and customizable.  Here are references to a few
+Gnus is powerful and customizable.  Here are references to a few
 @ifinfo
 additional topics:
 
 @end ifinfo
 @iftex
-additional topics in @cite{The GNUS Manual}:
+additional topics in @cite{The Gnus Manual}:
 
 @itemize @bullet
 @item
 Follow discussions on specific topics.@*
-See section ``Thread-based Reading''.
+See section ``Threading.''
 
 @item
-Read digests. See section ``Digest Articles''
+Read digests.  See section ``Document Groups.''
 
 @item
 Refer to and jump to the parent of the current article.@*
-See section ``Referencing Articles''.
-
+See section ``Finding the Parent.''
 
 @item
 Refer to articles by using Message-IDs included in the messages.@*
-See section ``Article Commands''.
+See section ``Article Keymap.''
 
 @item
-Save articles. See section ``Saving Articles''.
+Save articles.  See section ``Saving Articles.''
 
 @item
-Create filters that preselect which articles you will see, according to
-regular expressions in the articles or their headers.@*
-See section ``Kill File''.
+Have Gnus score articles according to various criteria, like author
+name, subject, or string in the body of the articles.@*
+See section ``Scoring.''
 
 @item
 Send an article to a newsgroup.@*
-See section ``Posting Articles''.
+See section ``Composing Messages.''
 @end itemize
 @end iftex
 @ifinfo
 @itemize @bullet
 @item
 Follow discussions on specific topics.@*
-@xref{Thread-based Reading, , Reading Based on Conversation Threads,
-gnus, The GNUS Manual}.
+@xref{Threading, , Reading Based on Conversation Threads,
+gnus, The Gnus Manual}.
 
 @item
-Read digests. @xref{Digest Articles, , , gnus, The GNUS Manual}.
+Read digests. @xref{Document Groups, , , gnus, The Gnus Manual}.
 
 @item
 Refer to and jump to the parent of the current article.@*
-@xref{Referencing Articles, , , gnus, The GNUS Manual}.
-
+@xref{Finding the Parent, , , gnus, The Gnus Manual}.
 
 @item
 Refer to articles by using Message-IDs included in the messages.@*
-@xref{Article Commands, , , gnus, The GNUS Manual}.
+@xref{Article Keymap, , , gnus, The Gnus Manual}.
 
 @item
-Save articles. @xref{Saving Articles, , , gnus, The GNUS Manual}.
+Save articles. @xref{Saving Articles, , , gnus, The Gnus Manual}.
 
 @item
-Create filters that preselect which articles you will see, according to
-regular expressions in the articles or their headers.@*
-@xref{Kill File, , , gnus, The GNUS Manual}. 
+Have Gnus score articles according to various criteria, like author
+name, subject, or string in the body of the articles.@*
+@xref{Scoring, , , gnus, The Gnus Manual}. 
 
 @item
 Send an article to a newsgroup.@*
-@xref{Posting Articles, , , gnus, The GNUS Manual}.
+@xref{Composing Messages, , , gnus, The Gnus Manual}.
 @end itemize
 @end ifinfo
 @end ignore
 
-@node Shell, Emacs Server, GNUS, Top
+@node Shell, Emacs Server, Gnus, Top
 @section Running Shell Commands from Emacs
 @cindex subshell
 @cindex shell commands
@@ -1491,9 +1455,12 @@ the previous Emacs session had.
 
 @noindent
 @findex desktop-save
-Then, to enable state saving in a particular Emacs session, use the
-command @kbd{M-x desktop-save}.  Once you have done this, the state of
-this Emacs session will be saved when you exit Emacs.
+The first time you save the state of the Emacs session, you must do it
+manually, with the command @kbd{M-x desktop-save}.  Once you have done
+that, exiting Emacs will save the state again--not only the present
+Emacs session, but also subsequent sessions.  You can also save the
+state at any time, without exiting Emacs, by typing @kbd{M-x
+desktop-save} again.
 
   In order for Emacs to recover the state from a previous session, you
 must start it with the same current directory as you used when you

@@ -447,7 +447,7 @@ main (argc, argv, envp)
 	}
       else
 	{
-	  printf ("%s\n", XSTRING (tem)->data);
+	  printf ("GNU Emacs %s\n", XSTRING (tem)->data);
 	  exit (0);
 	}
     }
@@ -675,13 +675,13 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
 #endif
       )
     {
-      sigblockx (SIGHUP);
+      sigblock (sigmask (SIGHUP));
       /* In --batch mode, don't catch SIGHUP if already ignored.
 	 That makes nohup work.  */
       if (! noninteractive
 	  || signal (SIGHUP, SIG_IGN) != SIG_IGN)
 	signal (SIGHUP, fatal_error_signal);
-      sigunblockx (SIGHUP);
+      sigunblock (sigmask (SIGHUP));
     }
 
   if (
@@ -1054,7 +1054,6 @@ struct standard_args standard_args[] =
   { "-T", "--title", 10, 1 },
   { "-title", 0, 10, 1 },
   { "-name", "--name", 10, 1 },
-  { "-rn", 0, 10, 1 },
   { "-xrm", "--xrm", 10, 1 },
   { "-r", "--reverse-video", 5, 0 },
   { "-rv", 0, 5, 0 },

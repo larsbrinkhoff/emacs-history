@@ -36,6 +36,20 @@ Cambridge, MA 02139, USA.
 #include <config.h>
 #endif
 
+#if defined (__cplusplus) || (defined (__STDC__) && __STDC__)
+#undef	__P
+#define	__P(args)	args
+#undef	__ptr_t
+#define	__ptr_t		void *
+#else /* Not C++ or ANSI C.  */
+#undef	__P
+#define	__P(args)	()
+#undef	const
+#define	const
+#undef	__ptr_t
+#define	__ptr_t		char *
+#endif /* C++ or ANSI C.  */
+
 #if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
 #include <string.h>
 #else
@@ -66,20 +80,6 @@ Cambridge, MA 02139, USA.
 extern "C"
 {
 #endif
-
-#if defined (__cplusplus) || (defined (__STDC__) && __STDC__)
-#undef	__P
-#define	__P(args)	args
-#undef	__ptr_t
-#define	__ptr_t		void *
-#else /* Not C++ or ANSI C.  */
-#undef	__P
-#define	__P(args)	()
-#undef	const
-#define	const
-#undef	__ptr_t
-#define	__ptr_t		char *
-#endif /* C++ or ANSI C.  */
 
 #if defined (__STDC__) && __STDC__
 #include <stddef.h>
@@ -407,7 +407,7 @@ align (size)
 
 /* Get SIZE bytes, if we can get them starting at END.
    Return the address of the space we got.
-   If we cannot get space at END, fail and return -1.  */
+   If we cannot get space at END, fail and return 0.  */
 static __ptr_t get_contiguous_space __P ((__malloc_ptrdiff_t, __ptr_t));
 static __ptr_t
 get_contiguous_space (size, position)

@@ -122,6 +122,8 @@ static HANDLE dir_find_handle = INVALID_HANDLE_VALUE;
 static int    dir_is_fat;
 static char   dir_pathname[MAXPATHLEN+1];
 
+extern Lisp_Object Vwin32_downcase_file_names;
+
 DIR *
 opendir (char *filename)
 {
@@ -197,6 +199,15 @@ readdir (DIR *dirp)
   strcpy (dir_static.d_name, find_data.cFileName);
   if (dir_is_fat)
     _strlwr (dir_static.d_name);
+  else if (!NILP (Vwin32_downcase_file_names))
+    {
+      register char *p;
+      for (p = dir_static.d_name; *p; p++)
+	if (*p >= 'a' && *p <= 'z')
+	  break;
+      if (!*p)
+	_strlwr (dir_static.d_name);
+    }
   
   return &dir_static;
 }
@@ -378,17 +389,73 @@ srandom (int seed)
   srand (seed);
 }
 
+/* Normalize filename by converting all path separators to
+   the specified separator.  Also conditionally convert upper
+   case path name components to lower case.  */
+
+static void
+normalize_filename (fp, path_sep)
+     register char *fp;
+     char path_sep;
+{
+  char sep;
+  char *elem;
+
+  /* Always lower-case drive letters a-z, even if the filesystem
+     preserves case in filenames.
+     This is so filenames can be compared by string comparison
+     functions that are case-sensitive.  Even case-preserving filesystems
+     do not distinguish case in drive letters.  */
+  if (fp[1] == ':' && *fp >= 'A' && *fp <= 'Z')
+    {
+      *fp += 'a' - 'A';
+      fp += 2;
+    }
+
+  if (NILP (Vwin32_downcase_file_names))
+    {
+      while (*fp)
+	{
+	  if (*fp == '/' || *fp == '\\')
+	    *fp = path_sep;
+	  fp++;
+	}
+      return;
+    }
+
+  sep = path_sep;		/* convert to this path separator */
+  elem = fp;			/* start of current path element */
+
+  do {
+    if (*fp >= 'a' && *fp <= 'z')
+      elem = 0;			/* don't convert this element */
+
+    if (*fp == 0 || *fp == ':')
+      {
+	sep = *fp;		/* restore current separator (or 0) */
+	*fp = '/';		/* after conversion of this element */
+      }
+
+    if (*fp == '/' || *fp == '\\')
+      {
+	if (elem && elem != fp)
+	  {
+	    *fp = 0;		/* temporary end of string */
+	    _strlwr (elem);	/* while we convert to lower case */
+	  }
+	*fp = sep;		/* convert (or restore) path separator */
+	elem = fp + 1;		/* next element starts after separator */
+	sep = path_sep;
+      }
+  } while (*fp++);
+}
+
 /* Destructively turn backslashes into slashes.  */
 void
 dostounix_filename (p)
      register char *p;
 {
-  while (*p)
-    {
-      if (*p == '\\')
-	*p = '/';
-      p++;
-    }
+  normalize_filename (p, '/');
 }
 
 /* Destructively turn slashes into backslashes.  */
@@ -396,12 +463,7 @@ void
 unixtodos_filename (p)
      register char *p;
 {
-  while (*p)
-    {
-      if (*p == '/')
-	*p = '\\';
-      p++;
-    }
+  normalize_filename (p, '\\');
 }
 
 /* Remove all CR's that are followed by a LF.
@@ -533,6 +595,7 @@ init_environment ()
     static char * env_vars[] = 
     {
       "HOME",
+      "PRELOAD_WINSOCK",
       "emacs_dir",
       "EMACSLOADPATH",
       "SHELL",
@@ -937,10 +1000,54 @@ sys_mkdir (const char * path)
   return _mkdir (map_win32_filename (path, NULL));
 }
 
+/* Because of long name mapping issues, we need to implement this
+   ourselves.  Also, MSVC's _mktemp returns NULL when it can't generate
+   a unique name, instead of setting the input template to an empty
+   string.
+
+   Standard algorithm seems to be use pid or tid with a letter on the
+   front (in place of the 6 X's) and cycle through the letters to find a
+   unique name.  We extend that to allow any reasonable character as the
+   first of the 6 X's.  */
 char *
 sys_mktemp (char * template)
 {
-  return (char *) map_win32_filename ((const char *) _mktemp (template), NULL);
+  char * p;
+  int i;
+  unsigned uid = GetCurrentThreadId ();
+  static char first_char[] = "abcdefghijklmnopqrstuvwyz0123456789!%-_@#";
+
+  if (template == NULL)
+    return NULL;
+  p = template + strlen (template);
+  i = 5;
+  /* replace up to the last 5 X's with uid in decimal */
+  while (--p >= template && p[0] == 'X' && --i >= 0)
+    {
+      p[0] = '0' + uid % 10;
+      uid /= 10;
+    }
+
+  if (i < 0 && p[0] == 'X')
+    {
+      i = 0;
+      do
+	{
+	  int save_errno = errno;
+	  p[0] = first_char[i];
+	  if (sys_access (template, 0) < 0)
+	    {
+	      errno = save_errno;
+	      return template;
+	    }
+	}
+      while (++i < sizeof (first_char));
+    }
+
+  /* Template is badly formed or else we can't generate a unique name,
+     so return empty string */
+  template[0] = 0;
+  return template;
 }
 
 int
@@ -954,11 +1061,20 @@ int
 sys_rename (const char * oldname, const char * newname)
 {
   char temp[MAX_PATH];
+  DWORD attr;
 
   /* MoveFile on Win95 doesn't correctly change the short file name
-     alias when oldname has a three char extension and newname has the
-     same first three chars in its extension.  To avoid problems, on
-     Win95 we rename to a temporary name first.  */
+     alias in a number of circumstances (it is not easy to predict when
+     just by looking at oldname and newname, unfortunately).  In these
+     cases, renaming through a temporary name avoids the problem.
+
+     A second problem on Win95 is that renaming through a temp name when
+     newname is uppercase fails (the final long name ends up in
+     lowercase, although the short alias might be uppercase) UNLESS the
+     long temp name is not 8.3.
+
+     So, on Win95 we always rename through a temp name, and we make sure
+     the temp name has a long extension to ensure correct renaming.  */
 
   strcpy (temp, map_win32_filename (oldname, NULL));
 
@@ -966,21 +1082,27 @@ sys_rename (const char * oldname, const char * newname)
     {
       char * p;
 
-      unixtodos_filename (temp);
       if (p = strrchr (temp, '\\'))
 	p++;
       else
 	p = temp;
       strcpy (p, "__XXXXXX");
-      _mktemp (temp);
+      sys_mktemp (temp);
+      /* Force temp name to require a manufactured 8.3 alias - this
+	 seems to make the second rename work properly. */
+      strcat (temp, ".long");
       if (rename (map_win32_filename (oldname, NULL), temp) < 0)
 	return -1;
     }
 
   /* Emulate Unix behaviour - newname is deleted if it already exists
-     (at least if it is a file; don't do this for directories). */
+     (at least if it is a file; don't do this for directories).
+     However, don't do this if we are just changing the case of the file
+     name - we will end up deleting the file we are trying to rename!  */
   newname = map_win32_filename (newname, NULL);
-  if (GetFileAttributes (newname) != -1)
+  if (stricmp (newname, temp) != 0
+      && (attr = GetFileAttributes (newname)) != -1
+      && (attr & FILE_ATTRIBUTE_DIRECTORY) == 0)
     {
       _chmod (newname, 0666);
       _unlink (newname);
@@ -1287,24 +1409,47 @@ unsigned long (PASCAL *pfn_inet_addr) (const char * cp);
 int (PASCAL *pfn_gethostname) (char * name, int namelen);
 struct hostent * (PASCAL *pfn_gethostbyname) (const char * name);
 struct servent * (PASCAL *pfn_getservbyname) (const char * name, const char * proto);
+  
+/* SetHandleInformation is only needed to make sockets non-inheritable. */
+BOOL (WINAPI *pfn_SetHandleInformation) (HANDLE object, DWORD mask, DWORD flags);
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT	1
+#endif
 
-static int have_winsock;
-static HANDLE winsock_lib;
+HANDLE winsock_lib;
+static int winsock_inuse;
 
-static void
+BOOL
 term_winsock (void)
 {
-  if (have_winsock)
+  if (winsock_lib != NULL && winsock_inuse == 0)
     {
-      pfn_WSACleanup ();
-      FreeLibrary (winsock_lib);
+      /* Not sure what would cause WSAENETDOWN, or even if it can happen
+	 after WSAStartup returns successfully, but it seems reasonable
+	 to allow unloading winsock anyway in that case. */
+      if (pfn_WSACleanup () == 0 ||
+	  pfn_WSAGetLastError () == WSAENETDOWN)
+	{
+	  if (FreeLibrary (winsock_lib))
+	  winsock_lib = NULL;
+	  return TRUE;
+	}
     }
+  return FALSE;
 }
 
-static void
-init_winsock ()
+BOOL
+init_winsock (int load_now)
 {
   WSADATA  winsockData;
+
+  if (winsock_lib != NULL)
+    return TRUE;
+
+  pfn_SetHandleInformation = NULL;
+  pfn_SetHandleInformation
+    = (void *) GetProcAddress (GetModuleHandle ("kernel32.dll"),
+			       "SetHandleInformation");
 
   winsock_lib = LoadLibrary ("wsock32.dll");
 
@@ -1335,17 +1480,36 @@ init_winsock ()
       LOAD_PROC( getservbyname );
       LOAD_PROC( WSACleanup );
 
+#undef LOAD_PROC
+
       /* specify version 1.1 of winsock */
       if (pfn_WSAStartup (0x101, &winsockData) == 0)
         {
-	  have_winsock = TRUE;
-	  return;
+	  if (winsockData.wVersion != 0x101)
+	    goto fail;
+
+	  if (!load_now)
+	    {
+	      /* Report that winsock exists and is usable, but leave
+		 socket functions disabled.  I am assuming that calling
+		 WSAStartup does not require any network interaction,
+		 and in particular does not cause or require a dial-up
+		 connection to be established. */
+
+	      pfn_WSACleanup ();
+	      FreeLibrary (winsock_lib);
+	      winsock_lib = NULL;
+	    }
+	  winsock_inuse = 0;
+	  return TRUE;
 	}
 
     fail:
       FreeLibrary (winsock_lib);
+      winsock_lib = NULL;
     }
-  have_winsock = FALSE;
+
+  return FALSE;
 }
 
 
@@ -1356,7 +1520,7 @@ int h_errno = 0;
    are already in <sys/socket.h> */
 static void set_errno ()
 {
-  if (!have_winsock)
+  if (winsock_lib == NULL)
     h_errno = EINVAL;
   else
     h_errno = pfn_WSAGetLastError ();
@@ -1377,7 +1541,7 @@ static void set_errno ()
 
 static void check_errno ()
 {
-  if (h_errno == 0 && have_winsock)
+  if (h_errno == 0 && winsock_lib != NULL)
     pfn_WSASetLastError (0);
 }
 
@@ -1400,7 +1564,7 @@ sys_socket(int af, int type, int protocol)
   long s;
   child_process * cp;
 
-  if (!have_winsock)
+  if (winsock_lib == NULL)
     {
       h_errno = ENETDOWN;
       return INVALID_SOCKET;
@@ -1437,16 +1601,27 @@ sys_socket(int af, int type, int protocol)
 
 	    parent = GetCurrentProcess ();
 
-	    DuplicateHandle (parent,
-			     (HANDLE) s,
-			     parent,
-			     &new_s,
-			     0,
-			     FALSE,
-			     DUPLICATE_SAME_ACCESS);
-	    pfn_closesocket (s);
-	    fd_info[fd].hnd = new_s;
-	    s = (SOCKET) new_s;
+	    /* Apparently there is a bug in NT 3.51 with some service
+	       packs, which prevents using DuplicateHandle to make a
+	       socket handle non-inheritable (causes WSACleanup to
+	       hang).  The work-around is to use SetHandleInformation
+	       instead if it is available and implemented. */
+	    if (!pfn_SetHandleInformation
+		|| !pfn_SetHandleInformation ((HANDLE) s,
+					      HANDLE_FLAG_INHERIT,
+					      HANDLE_FLAG_INHERIT))
+	      {
+		DuplicateHandle (parent,
+				 (HANDLE) s,
+				 parent,
+				 &new_s,
+				 0,
+				 FALSE,
+				 DUPLICATE_SAME_ACCESS);
+		pfn_closesocket (s);
+		s = (SOCKET) new_s;
+	      }
+	    fd_info[fd].hnd = (HANDLE) s;
 	  }
 #endif
 
@@ -1469,6 +1644,7 @@ sys_socket(int af, int type, int protocol)
 	      fd_info[ fd ].cp = cp;
 
 	      /* success! */
+	      winsock_inuse++;	/* count open sockets */
 	      return fd;
 	    }
 
@@ -1487,7 +1663,7 @@ sys_socket(int af, int type, int protocol)
 int
 sys_bind (int s, const struct sockaddr * addr, int namelen)
 {
-  if (!have_winsock)
+  if (winsock_lib == NULL)
     {
       h_errno = ENOTSOCK;
       return SOCKET_ERROR;
@@ -1509,7 +1685,7 @@ sys_bind (int s, const struct sockaddr * addr, int namelen)
 int
 sys_connect (int s, const struct sockaddr * name, int namelen)
 {
-  if (!have_winsock)
+  if (winsock_lib == NULL)
     {
       h_errno = ENOTSOCK;
       return SOCKET_ERROR;
@@ -1530,28 +1706,28 @@ sys_connect (int s, const struct sockaddr * name, int namelen)
 u_short
 sys_htons (u_short hostshort)
 {
-  return (have_winsock) ?
+  return (winsock_lib != NULL) ?
     pfn_htons (hostshort) : hostshort;
 }
 
 u_short
 sys_ntohs (u_short netshort)
 {
-  return (have_winsock) ?
+  return (winsock_lib != NULL) ?
     pfn_ntohs (netshort) : netshort;
 }
 
 unsigned long
 sys_inet_addr (const char * cp)
 {
-  return (have_winsock) ?
+  return (winsock_lib != NULL) ?
     pfn_inet_addr (cp) : INADDR_NONE;
 }
 
 int
 sys_gethostname (char * name, int namelen)
 {
-  if (have_winsock)
+  if (winsock_lib != NULL)
     return pfn_gethostname (name, namelen);
 
   if (namelen > MAX_COMPUTERNAME_LENGTH)
@@ -1566,7 +1742,7 @@ sys_gethostbyname(const char * name)
 {
   struct hostent * host;
 
-  if (!have_winsock)
+  if (winsock_lib == NULL)
     {
       h_errno = ENETDOWN;
       return NULL;
@@ -1584,7 +1760,7 @@ sys_getservbyname(const char * name, const char * proto)
 {
   struct servent * serv;
 
-  if (!have_winsock)
+  if (winsock_lib == NULL)
     {
       h_errno = ENETDOWN;
       return NULL;
@@ -1633,13 +1809,16 @@ sys_close (int fd)
 	    }
 	  if (i == MAXDESC)
 	    {
-#if defined (HAVE_SOCKETS) && !defined (SOCK_REPLACE_HANDLE)
+#ifdef HAVE_SOCKETS
 	      if (fd_info[fd].flags & FILE_SOCKET)
 		{
-		  if (!have_winsock) abort ();
+#ifndef SOCK_REPLACE_HANDLE
+		  if (winsock_lib == NULL) abort ();
 
 		  pfn_shutdown (SOCK_HANDLE (fd), 2);
 		  rc = pfn_closesocket (SOCK_HANDLE (fd));
+#endif
+		  winsock_inuse--; /* count open sockets */
 		}
 #endif
 	      delete_child (cp);
@@ -1892,7 +2071,7 @@ sys_read (int fd, char * buffer, unsigned int count)
 #ifdef HAVE_SOCKETS
 	  else /* FILE_SOCKET */
 	    {
-	      if (!have_winsock) abort ();
+	      if (winsock_lib == NULL) abort ();
 
 	      /* do the equivalent of a non-blocking read */
 	      pfn_ioctlsocket (SOCK_HANDLE (fd), FIONREAD, &waiting);
@@ -1952,7 +2131,7 @@ sys_write (int fd, const void * buffer, unsigned int count)
 #ifdef HAVE_SOCKETS
   if (fd_info[fd].flags & FILE_SOCKET)
     {
-      if (!have_winsock) abort ();
+      if (winsock_lib == NULL) abort ();
       nchars =  pfn_send (SOCK_HANDLE (fd), buffer, count, 0);
       if (nchars == SOCKET_ERROR)
         {
@@ -1978,15 +2157,25 @@ term_ntproc ()
 #endif
 }
 
-extern BOOL can_run_dos_process;
 extern BOOL dos_process_running;
 
 void
 init_ntproc ()
 {
 #ifdef HAVE_SOCKETS
-  /* initialise the socket interface if available */
-  init_winsock ();
+  /* Initialise the socket interface now if available and requested by
+     the user by defining PRELOAD_WINSOCK; otherwise loading will be
+     delayed until open-network-stream is called (win32-has-winsock can
+     also be used to dynamically load or reload winsock).
+
+     Conveniently, init_environment is called before us, so
+     PRELOAD_WINSOCK can be set in the registry. */
+
+  /* Always initialize this correctly. */
+  winsock_lib = NULL;
+
+  if (getenv ("PRELOAD_WINSOCK") != NULL)
+    init_winsock (TRUE);
 #endif
 
   /* Initial preparation for subprocess support: replace our standard
@@ -2048,8 +2237,18 @@ init_ntproc ()
     fdopen (2, "w");
   }
 
-  /* Only allow Emacs to run DOS programs on Win95. */
-  can_run_dos_process = (GetVersion () & 0x80000000);
+  /* Restrict Emacs to running only one DOS program at a time (with any
+     number of Win32 programs).  This is to prevent the user from
+     running into problems with DOS programs being run in the same VDM
+     under both Windows 95 and Windows NT.
+
+     Note that it is possible for Emacs to run DOS programs in separate
+     VDMs, but unfortunately the pipe implementation on Windows 95 then
+     fails to report when the DOS process exits (which is supposed to
+     break the pipe).  Until this bug is fixed, or we can devise a
+     work-around, we must try to avoid letting the user start more than
+     one DOS program if possible.  */
+
   dos_process_running = FALSE;
 
   /* unfortunately, atexit depends on implementation of malloc */

@@ -91,22 +91,23 @@
 (define-key help-map "q" 'help-quit)
 
 (defvar help-font-lock-keywords
-  (let ((name-char "[-+a-zA-Z0-9_*]") (sym-char "[-+a-zA-Z0-9_:*]"))
-    (list
-     ;;
-     ;; The symbol itself.
-     (list (concat "\\`\\(" name-char "+\\)\\(:\\)?")
-	   '(1 (if (match-beginning 2)
-		   font-lock-function-name-face
-		 font-lock-variable-name-face)
-	       nil t))
-     ;;
-     ;; Words inside `' which tend to be symbol names.
-     (list (concat "`\\(" sym-char sym-char "+\\)'")
-	   1 'font-lock-reference-face t)
-     ;;
-     ;; CLisp `:' keywords as references.
-     (list (concat "\\<:" sym-char "+\\>") 0 'font-lock-reference-face t)))
+  (eval-when-compile
+    (let ((name-char "[-+a-zA-Z0-9_*]") (sym-char "[-+a-zA-Z0-9_:*]"))
+      (list
+       ;;
+       ;; The symbol itself.
+       (list (concat "\\`\\(" name-char "+\\)\\(\\(:\\)\\|\\('\\)\\)")
+	     '(1 (if (match-beginning 3)
+		     font-lock-function-name-face
+		   font-lock-variable-name-face)
+		 nil t))
+       ;;
+       ;; Words inside `' which tend to be symbol names.
+       (list (concat "`\\(" sym-char sym-char "+\\)'")
+	     1 'font-lock-reference-face t)
+       ;;
+       ;; CLisp `:' keywords as references.
+       (list (concat "\\<:" sym-char "+\\>") 0 'font-lock-reference-face t))))
   "Default expressions to highlight in Help mode.")
 
 (defun help-mode ()
@@ -315,6 +316,7 @@ describes the minor mode."
   (interactive)
   (with-output-to-temp-buffer "*Help*"
     (let ((minor-modes minor-mode-alist)
+	  (first t)
 	  (locals (buffer-local-variables)))
       (while minor-modes
 	(let* ((minor-mode (car (car minor-modes)))
@@ -334,13 +336,17 @@ describes the minor mode."
 				      0 (match-beginning 0)))))
 		(while (and indicator (symbolp indicator))
 		  (setq indicator (symbol-value indicator)))
+		(if first
+		    (princ "The minor modes are described first,
+followed by the major mode, which is described on the last page.\n\f\n"))
+		(setq first nil)
 		(princ (format "%s minor mode (%s):\n"
 			       pretty-minor-mode
 			       (if indicator
 				   (format "indicator%s" indicator)
 				 "no indicator")))
 		(princ (documentation minor-mode))
-		(princ "\n\n"))))
+		(princ "\n\f\n"))))
 	(setq minor-modes (cdr minor-modes))))
     (princ mode-name)
     (princ " mode:\n")

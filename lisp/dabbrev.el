@@ -338,7 +338,8 @@ if there is a suitable one already."
 	(setq dabbrev--last-abbreviation abbrev)
 	;; Find all expansion
 	(let ((completion-list
-	       (dabbrev--find-all-expansions abbrev ignore-case-p)))
+	       (dabbrev--find-all-expansions abbrev ignore-case-p))
+	      (completion-ignore-case ignore-case-p))
 	  ;; Make an obarray with all expansions
 	  (setq my-obarray (make-vector (length completion-list) 0))
 	  (or (> (length my-obarray) 0)
@@ -437,7 +438,14 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 		 (markerp dabbrev--last-abbrev-location)
 		 (marker-position dabbrev--last-abbrev-location)
 		 (= (point) (1+ dabbrev--last-abbrev-location)))
-	    (progn
+	    (let* ((prev-expansion
+		    (buffer-substring-no-properties
+		     (- dabbrev--last-abbrev-location (length dabbrev--last-expansion))
+		     dabbrev--last-abbrev-location))
+		   ;; If the previous expansion was upcased.
+		   ;; upcase this one too.
+		   (upcase-it
+		     (equal prev-expansion (upcase prev-expansion))))
 	      ;; The "abbrev" to expand is just the space.
 	      (setq abbrev " ")
 	      (save-excursion
@@ -458,6 +466,8 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 		(setq expansion
 		      (buffer-substring dabbrev--last-expansion-location
 					(point)))
+		(if upcase-it
+		    (setq expansion (upcase expansion)))
 
 		;; Record the end of this expansion, in case we repeat this.
 		(setq dabbrev--last-expansion-location (point)))
@@ -747,6 +757,19 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
     (and nil use-case-replace
 	 (setq old (concat abbrev (or old "")))
 	 (setq expansion (concat abbrev expansion)))
+    ;; If the given abbrev is mixed case and its case pattern
+    ;; matches the start of the expansion,
+    ;; copy the expansion's case
+    ;; instead of downcasing all the rest.
+    (if (and (string= abbrev
+		      (substring expansion 0 (length abbrev)))
+	     (not (string= abbrev (downcase abbrev)))
+	     (not (string= abbrev (upcase abbrev))))
+	(setq use-case-replace nil))
+    (if (equal abbrev " ")
+	(setq use-case-replace nil))
+    (if use-case-replace
+	(setq expansion (downcase expansion)))
     (if old
 	(save-excursion
 	  (search-backward old))
@@ -828,7 +851,7 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 	      (setq dabbrev--last-table
 		    (cons found-string dabbrev--last-table))
 	      (if (and ignore-case (eval dabbrev-case-replace))
-		  (downcase result)
+		  result
 		result)))))))
 
 (provide 'dabbrev)

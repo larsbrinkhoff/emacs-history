@@ -1,3 +1,27 @@
+Wed Jul 31 13:52:46 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.32 released.
+
+Thu Jun 27 18:23:13 1996  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
+
+	* Makefile.in: Add rules for the Message manual.
+
+Wed Jun 26 14:36:26 1996  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
+
+	* gnus.texi: New version.
+
+	* message.texi: New manual.
+
+Thu Jun 20 17:17:14 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Makefile.in (All info targets): cd $(srcdir) to do the work.
+
+Wed Jun 19 17:27:01 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Makefile.in (All info targets): Specify $(srcdir) in input files.
+	Specify -I option.
+	(All dvi targets): Set the TEXINPUTS variable.
+	
 Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
 
 	* Version 19.31 released.

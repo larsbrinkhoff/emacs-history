@@ -145,47 +145,50 @@ The administrators of louie.udel.edu maintains copies of GNU Emacs.
 The files are available via anonymous ftp under directory ~ftp/gnu.
 
 Emacs and other GNU programs may be available via anonymous ftp from
-these US sites: ftp.kpc.com:/pub/mirror/gnu (Silicon Valley, CA)
-ftp.hawaii.edu:/mirrors/gnu, f.ms.uky.edu:/pub3/gnu,
-ftp.digex.net:/pub/gnu (Internet address 164.109.10.23, nightly full
-mirror, ran by mcguire@digex.net), wuarchive.wustl.edu:/systems/gnu,
-uiarchive.cso.uiuc.edu:/pub/gnu (Internet address 128.174.5.14,
-nightly full mirror, ran by ftpadmin@uiuc.edu),
-ftp.cs.columbia.edu:/archives/gnu/prep, jaguar.utah.edu:/gnustuff,
-gatekeeper.dec.com:/pub/GNU, labrea.stanford.edu,
-archive.cis.ohio-state.edu, and ftp.uu.net:/archive/systems/gnu.
+these US sites: ftp.kpc.com/pub/mirror/gnu (Silicon Valley, CA)
+ftp.hawaii.edu/mirrors/gnu, f.ms.uky.edu/pub3/gnu,
+ftp.digex.net/pub/gnu (Internet address 164.109.10.23, nightly full
+mirror, ran by mcguire@digex.net), wuarchive.wustl.edu/systems/gnu,
+uiarchive.cso.uiuc.edu/pub/gnu (Internet address 128.174.5.14, nightly
+full mirror, ran by ftpadmin@uiuc.edu),
+ftp.cs.columbia.edu/archives/gnu/prep, jaguar.utah.edu/gnustuff,
+gatekeeper.dec.com/pub/GNU, labrea.stanford.edu,
+archive.cis.ohio-state.edu, and ftp.uu.net/archive/systems/gnu.
 
-And these foreign sites: ftp.cs.ubc.ca:/mirror2/gnu (Western Canada,
+And these foreign sites: ftp.cs.ubc.ca/mirror2/gnu (Western Canada,
 daily full mirror, ran by ftp-admin@cs.ubc.ca),
-ftp.inf.utfsm.cl:/pub/gnu (Chile 146.83.198.3 nightly full mirror, ran
-by ftp@inf.utfsm.cl), ftp.unicamp.br:/pub/gnu (Brazil manual mirror,
-ran by oliva@dcc.unicamp.br), archie.au:/gnu (Australia (archie.oz or
-archie.oz.au for ACSnet)), ftp.technion.ac.il:/pub/unsupported/gnu
-(Israel, daily full mirror, ran by ftp-admin), ftp.sun.ac.za:/pub/gnu
-(South Africa), ftp.etsimo.uniovi.es:/pub/gnu (Spain),
-ftp.mcc.ac.uk:/pub/gnu (130.88.203.12 daily full mirror, ran by
-root@ftp.mcc.ac.uk), unix.hensa.ac.uk:/mirrors/uunet/systems/gnu,
-ftp.warwick.ac.uk (137.205.192.14 daily full mirror, ran by
-unixhelp@warwick.ac.uk), ftp.informatik.tu-muenchen.de,
-ftp.informatik.rwth-aachen.de, or germany.eu.net (mirror ran by
-archive-admin@germany.eu.net) (Germany), isy.liu.se (Sweden),
-ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
-ftp.sunet.se:/pub/gnu (Sweden 130.238.127.3 daily mirror, ran by
-archive@ftp.sunet.se (also mirrors the Mailing List Archives)
-ftp.nl.net (Netherlands), ftp.win.tue.nl:/pub/gnu (Netherlands
-131.155.70.100 daily mirror, ran by ftp@win.tue.nl),
-ftp.funet.fi:/pub/gnu (Finland 128.214.6.100, ran by gnu-adm),
-ftp.denet.dk (Denmark), ugle.unit.no (Norway 129.241.1.97),
-ftp.eunet.ch or nic.switch.ch:/mirror/gnu (Switzerland),
-irisa.irisa.fr:/pub/gnu or ftp.univ-lyon1.fr:pub/gnu (ran by
+ftp.inf.utfsm.cl/pub/gnu (Chile 146.83.198.3 nightly full mirror, ran
+by ftp@inf.utfsm.cl), ftp.unicamp.br/pub/gnu (Brazil manual mirror,
+ran by oliva@dcc.unicamp.br), archie.au/gnu (Australia ran by
+gnu@archie.au (archie.oz or archie.oz.au for ACSnet)),
+ftp.technion.ac.il/pub/unsupported/gnu (Israel, daily full mirror, ran
+by ftp-admin), ftp.sun.ac.za/pub/gnu (South Africa),
+ftp.etsimo.uniovi.es/pub/gnu (Spain), ftp.mcc.ac.uk/pub/gnu
+(130.88.203.12 daily full mirror, ran by root@ftp.mcc.ac.uk),
+unix.hensa.ac.uk/mirrors/uunet/systems/gnu, ftp.warwick.ac.uk
+(137.205.192.14 daily full mirror, ran by unixhelp@warwick.ac.uk),
+ftp.informatik.tu-muenchen.de, ftp.informatik.rwth-aachen.de (Germany,
+ran by sunsite@sunsite.informatik.rwth-aachen.de), germany.eu.net
+(Germany, ran by archive-admin@germany.eu.net), isy.liu.se (Sweden,
+ran by ftpadm@isy.liu.se), ftp.stacken.kth.se or
+ftp.luth.se/pub/unix/gnu (Sweden), ftp.sunet.se/pub/gnu (Sweden
+130.238.127.3 daily mirror, ran by archive@ftp.sunet.se (also mirrors
+the Mailing List Archives) ftp.nl.net (Netherlands),
+ftp.win.tue.nl/pub/gnu (Netherlands 131.155.70.100 daily mirror, ran
+by ftp@win.tue.nl), ftp.funet.fi/pub/gnu (Finland 128.214.6.100, ran
+by gnu-adm), ftp.denet.dk (Denmark), ugle.unit.no (Norway
+129.241.1.97), ftp.eunet.ch or nic.switch.ch/mirror/gnu (Switzerland),
+irisa.irisa.fr/pub/gnu or ftp.univ-lyon1.fr:pub/gnu (ran by
 ftpmaint@ftp.univ-lyon1.fr) (France), ftp.ieunet.ie:pub/gnu (Ireland
 192.111.39.1 weekly mirror, ran by archive@ieunet.ie), archive.eu.net
-(Europe 192.16.202.1), cair-archive.kaist.ac.kr:/pub/gnu (Korea
+(Europe 192.16.202.1), cair-archive.kaist.ac.kr/pub/gnu (Korea
 143.248.11.171, ran by ftpkeeper@cair-archive.kaist.ac.kr),
-ftp.nectec.or.th:/pub/mirrors/gnu (Thailand 192.150.251.32 daily
+ftp.nectec.or.th/pub/mirrors/gnu (Thailand 192.150.251.32 daily
 mirror, ran by ftp@nwg.nectec.or.th),
-utsun.s.u-tokyo.ac.jp:/ftpsync/prep or ftp.cs.titech.ac.jp (Japan,
-nemacs, the japanese port of GNU Emacs, is under ~ftp/JAPAN).
+tron.um.u-tokyo.ac.jp/pub/GNU/prep (Japan - ran by
+ftp-admin@tron.um.u-tokyo.ac.jp) or ftp.cs.titech.ac.jp (Japan, ran by
+ftp-admin@cs.titech.ac.jp - nemacs, the japanese port of GNU Emacs, is
+under ~ftp/JAPAN).
 
 * Getting GNU software in Great Britain
 

@@ -523,8 +523,7 @@ Entry to this mode runs the hooks on term-mode-hook"
       '("Character mode" . term-char-mode))
     (define-key newmap [terminal-line-mode]
       '("Line mode" . term-line-mode))
-    (define-key newmap [menu-bar terminal] 
-      (setq term-terminal-menu (cons "Terminal" newmap)))
+    (setq term-terminal-menu (cons "Terminal" newmap))
 
     ;; completion:  (line mode only)
     (defvar term-completion-menu (make-sparse-keymap "Complete"))
@@ -884,7 +883,8 @@ buffer. The hook term-exec-hook is run after each exec."
 	   (format "EMACS=%s (term:%s)" emacs-version term-protocol-version)
 	   (format "LINES=%d" term-height)
 	   (format "COLUMNS=%d" term-width))
-	  process-environment)))
+	  process-environment))
+	(process-connection-type t))
     (apply 'start-process name buffer
 	   "/bin/sh" "-c"
 	   (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\

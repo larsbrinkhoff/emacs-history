@@ -351,7 +351,8 @@ Honeywell XPS100 (xps100-honeywell-sysv)
 Hewlett-Packard 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
 
   Version 19 works under BSD.  The 19.26 pretest was reported
-  to work on HPUX 9.
+  to work on HPUX 9.  19.31 works on HPUX 10.01, but there are
+  some problems on 10.10 which have not been resolved.
 
   These machines are 68000-series CPUs running HP/UX
   (a derivative of sysV with some BSD features) or BSD 4.3 ported by Utah.
@@ -429,9 +430,14 @@ HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux
   know.)  If you are on the Internet, you should be able to obtain
   this patch by using telnet to access the machine
   support.mayfield.hp.com and logging in as "hpslreg" and following
-  the instructions there.  Do not ask FSF for further support on
-  this.  If you have any trouble obtaining the patch, contact HP
-  Software Support.
+  the instructions there.  Or you may be able to use this
+  web site:
+
+    HP Patch Server: http://support.mayfield.hp.com/patches/html/patches.html
+    HP Support Line: http://support.mayfield.hp.com
+
+  Please do not ask FSF for further support on this.  If you have any
+  trouble obtaining the patch, contact HP Software Support.
 
   If your buffer fills up with nulls (^@) at some point, it could well
   be that problem.  That problem does not happen when people use GCC
@@ -484,7 +490,8 @@ IBM RS/6000 (rs6000-ibm-aix*)
   the 1.03.00.14 level to allow optimized compiles.
 
   There are reports that IBM compiler versions earlier than 1.03.00.02
-  fail even without -O.
+  fail even without -O.  However, another report said that compiler
+  version 1.02.01.00 did work, on AIX 3.2.4, with Emacs 19.31.
 
   As of 19.11, if you strip the Emacs executable, it ceases to work.
 

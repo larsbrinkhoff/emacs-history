@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+@c Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Acknowledgments, Screen, Concept Index, Top
 @chapter Acknowledgments
@@ -12,8 +12,9 @@ portions.
 @itemize @bullet
 @item
 Per Abrahamsen wrote @file{double.el}, for typing accented characters
-not normally available from the keyboard, and @file{cpp.el}, which hides
-or highlights parts of C programs according to preprocessor conditionals.
+not normally available from the keyboard, @file{xt-mouse.el}, which
+handles mouse commands through Xterm, and @file{cpp.el}, which hides or
+highlights parts of C programs according to preprocessor conditionals.
 
 @item
 Jay K. Adams wrote @file{jka-compr.el}, providing automatic
@@ -140,6 +141,9 @@ Kevin Gallagher rewrote and enhanced the EDT emulation, and wrote
 flow control.
 
 @item
+Kevin Gallo added multiple-frame support for Windows NT.
+
+@item
 Howard Gayle wrote:
 @itemize @bullet
 @item
@@ -228,9 +232,10 @@ Anders Holst wrote @file{hippie-exp.el}, a versatile completion and
 expansion package.
 
 @item
-Lars Ingebrigtsen wrote @file{gnus-uu.el}, an extension to the GNUS
-newsreader to extract, view, and save articles using various encoding
-and packaging formats.
+Lars Ingebrigtsen did a major redesign of the GNUS newsreader.
+
+@item
+Andrew Innes contributed extensively to the Windows NT support.
 
 @item
 Kyle Jones wrote @file{life.el}, a package to play Conway's ``life'' game,
@@ -331,8 +336,14 @@ Brian Marick and Daniel LaLiberte wrote @file{hideif.el}, support for
 hiding selected code within C @code{#ifdef} clauses.
 
 @item
-Simon Marshall wrote @file{fast-lock.el}, which caches the face
-data computed by Font-Lock mode.
+Simon Marshall wrote:
+@itemize @bullet
+@item
+@file{fast-lock.el}, which caches the face data computed by Font Lock mode, and
+@item
+@file{lazy-lock.el}, which makes Font Lock mode fontification become
+demand-driven and/or defer-driven.
+@end itemize
 
 @item
 Bengt Martensson, Mark Shapiro, Mike Newton, Aaron Larson, and Stefan
@@ -453,10 +464,6 @@ runs the C preprocessor on a region of a file and displays the results.
 Michael D. Prange and Steven A. Wood wrote @file{fortran.el}, a mode for
 editing FORTRAN code.
 @c We're not distributing his tex-mode.el anymore; we're using Ed Reingold's.
-
-@item
-Mukesh Prasad wrote @file{vmsproc.el}, support for asynchronous
-processes under VMS.
 
 @item
 Ashwin Ram wrote @file{refer.el}, commands to look up references in
@@ -675,6 +682,8 @@ and motion commands, and
 @file{dos-fns.el}, functions for use under MS-DOS.
 @end itemize
 
+He also helped port Emacs to MS-DOS.
+
 @item
 Joseph Brian Wells wrote:
 @itemize @bullet
@@ -705,6 +714,9 @@ merging two versions of a file.
 @item
 Tom Wurgler wrote @file{emacs-lock.el}, which makes it harder
 to exit with valuable buffers unsaved.
+
+@item
+Eli Zaretskii made many standard Emacs features work on MS-DOS.
 
 @item
 Jamie Zawinski wrote:

@@ -427,12 +427,8 @@ a separate comment; the variable @code{comment-multi-line} controls the
 choice (@pxref{Comments}).
 
   Adaptive filling (see the following section) works for Auto Filling as
-well as for explicit fill commands.  It will take a non-whitespace fill
-prefix automatically from the second line of a paragraph.  In a mode
-where an indented line does not start a paragraph, it will take a
-whitespace fill prefix automatically from the first or second line.
-Non-whitespace fill prefixes can come automatically only from the second
-line, never from the first.
+well as for explicit fill commands.  It takes a fill prefix
+automatically from the second or first line of a paragraph.
 
   Auto Fill mode does not refill entire paragraphs; it can break lines but
 cannot merge lines.  So editing in the middle of a paragraph can result in
@@ -499,12 +495,24 @@ They take the fill prefix from the paragraph's second line, unless the
 paragraph has just one line.  You can turn off this feature by setting
 @code{adaptive-fill-mode} to @code{nil}.
 
+  Some major modes, including Text mode, treat whitespace at the
+beginning of a line as a signal that this line starts a new paragraph.
+It would be a mistake to copy text which implies the start of a
+paragraph onto each line of the paragraph when filling it.  Therefore,
+adaptive filling does not accept a fill prefix from a line which is a
+paragraph-starter.  In particular, adaptive filling in Text mode does
+not accept a fill prefix consisting of just whitespace.
+
+  However, other modes including Indented Text mode (@pxref{Text Mode})
+do not consider whitespace as a signal to start a new paragraph.  In
+these modes, adaptive filling does accept a fill prefix consisting of
+just whitespace, if the first or second line of a paragraph begins with
+whitespace.
+
 @vindex adaptive-fill-regexp
   The variable @code{adaptive-fill-regexp} determines what kinds of line
 beginnings can serve as a fill prefix: any characters at the start of
-the line which match this regular expression are used.  However,
-whitespace can only be an automatic fill prefix in major modes where an
-indented line does not start a paragraph.
+the line which match this regular expression are used.
 
 @vindex adaptive-fill-function
   You can specify more complex ways of choosing a fill prefix
@@ -529,9 +537,9 @@ within the current fill column.  With an argument @var{n}, it centers
 local to the current buffer; until that time, the default value is in
 effect.  The default is initially 70.  @xref{Locals}.  The easiest way
 to set @code{fill-column} is to use the command @kbd{C-x f}
-(@code{set-fill-column}).  With no argument, it sets @code{fill-column}
-to the current horizontal position of point.  With a numeric argument,
-it uses that as the new fill column.
+(@code{set-fill-column}).  With a numeric argument, it uses that as the
+new fill column.  With just @kbd{C-u} as argument, it sets
+@code{fill-column} to the current horizontal position of point.
 
   Emacs commands normally consider a period followed by two spaces or by
 a newline as the end of a sentence; a period followed by just one space

@@ -39,6 +39,7 @@ Boston, MA 02111-1307, USA.  */
 
 #if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
 extern void set_frame_menubar ();
+extern int pending_menu_activation;
 #endif
 
 extern int interrupt_input;
@@ -777,6 +778,12 @@ prepare_menu_bars ()
     }
   else
     update_menu_bar (selected_frame, 1);
+
+  /* Motif needs this.  See comment in xmenu.c.
+     Turn it off when pending_menu_activation is not defined.  */
+#ifdef USE_X_TOOLKIT
+  pending_menu_activation = 0;
+#endif
 }
 
 /* Do a frame update, taking possible shortcuts into account.
@@ -838,7 +845,7 @@ redisplay_internal (preserve_echo_area)
 #endif
 
 #ifdef MULTI_FRAME
-  if (FRAME_TERMCAP_P (selected_frame)
+  if (! FRAME_WINDOW_P (selected_frame)
       && previous_terminal_frame != selected_frame)
     {
       /* Since frames on an ASCII terminal share the same display area,
@@ -881,9 +888,8 @@ redisplay_internal (preserve_echo_area)
   if (windows_or_buffers_changed)
     update_mode_lines++;
 
-  /* Detect case that we need to write a star in the mode line.  */
-  if (XFASTINT (w->last_modified) < MODIFF
-      && XFASTINT (w->last_modified) <= SAVE_MODIFF)
+  /* Detect case that we need to write or remove a star in the mode line.  */
+  if ((SAVE_MODIFF < MODIFF) != !NILP (w->last_had_star))
     {
       w->update_mode_line = Qt;
       if (buffer_shared > 1)
@@ -1073,7 +1079,7 @@ redisplay_internal (preserve_echo_area)
       FOR_EACH_FRAME (tail, frame)
 	{
 	  FRAME_PTR f = XFRAME (frame);
-	  if (! FRAME_TERMCAP_P (f) || f == selected_frame)
+	  if (FRAME_WINDOW_P (f) || f == selected_frame)
 	    {
 
 	      /* Mark all the scroll bars to be removed; we'll redeem the ones
@@ -1122,7 +1128,7 @@ update:
 
 	  f = XFRAME (XCONS (tail)->car);
 
-	  if ((! FRAME_TERMCAP_P (f) || f == selected_frame)
+	  if ((FRAME_WINDOW_P (f) || f == selected_frame)
 	      && FRAME_VISIBLE_P (f))
 	    {
 	      pause |= update_frame (f, 0, 0);
@@ -1155,8 +1161,7 @@ update:
 	mini_window = FRAME_MINIBUF_WINDOW (selected_frame);
 	mini_frame = XFRAME (WINDOW_FRAME (XWINDOW (mini_window)));
 	
-	if (mini_frame != selected_frame
-	    && ! FRAME_TERMCAP_P (mini_frame))
+	if (mini_frame != selected_frame && FRAME_WINDOW_P (mini_frame))
 	  pause |= update_frame (mini_frame, 0, 0);
       }
     }
@@ -1202,6 +1207,9 @@ update:
 	  b->clip_changed = 0;
 	  w->update_mode_line = Qnil;
 	  XSETFASTINT (w->last_modified, BUF_MODIFF (b));
+	  w->last_had_star
+	    = (BUF_MODIFF (XBUFFER (w->buffer)) > BUF_SAVE_MODIFF (XBUFFER (w->buffer))
+	       ? Qt : Qnil);
 	  w->window_end_valid = w->buffer;
 	  last_arrow_position = Voverlay_arrow_position;
 	  last_arrow_string = Voverlay_arrow_string;
@@ -1270,6 +1278,9 @@ mark_window_display_accurate (window, flag)
 	{
 	  XSETFASTINT (w->last_modified,
 		       !flag ? 0 : BUF_MODIFF (XBUFFER (w->buffer)));
+	  w->last_had_star
+	    = (BUF_MODIFF (XBUFFER (w->buffer)) > BUF_SAVE_MODIFF (XBUFFER (w->buffer))
+	       ? Qt : Qnil);
 
 	  /* Record if we are showing a region, so can make sure to
 	     update it fully at next redisplay.  */
@@ -1342,9 +1353,9 @@ update_menu_bar (f, save_match_data)
 	 windows_or_buffers_changed anyway.  */
       if (windows_or_buffers_changed
 	  || !NILP (w->update_mode_line)
-	  || (XFASTINT (w->last_modified) < MODIFF
-	      && (XFASTINT (w->last_modified)
-		  <= BUF_SAVE_MODIFF (XBUFFER (w->buffer))))
+	  || ((BUF_SAVE_MODIFF (XBUFFER (w->buffer))
+	       < BUF_MODIFF (XBUFFER (w->buffer)))
+	      != !NILP (w->last_had_star))
 	  || ((!NILP (Vtransient_mark_mode)
 	       && !NILP (XBUFFER (w->buffer)->mark_active))
 	      != !NILP (w->region_showing)))
@@ -1369,12 +1380,19 @@ update_menu_bar (f, save_match_data)
 	    call0 (Qrecompute_lucid_menubar);
 	  safe_run_hooks (Qmenu_bar_update_hook);
 	  FRAME_MENU_BAR_ITEMS (f) = menu_bar_items (FRAME_MENU_BAR_ITEMS (f));
-	  /* Make sure to redisplay the menu bar in case we change it.  */
-	  w->update_mode_line = Qt;
+	  /* Redisplay the menu bar in case we changed it.  */
 #if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
 	  if (FRAME_WINDOW_P (f))
 	    set_frame_menubar (f, 0, 0);
-#endif /* USE_X_TOOLKIT || HAVE_NTGUI */
+	  else
+	    /* On a terminal screen, the menu bar is an ordinary screen
+	     line, and this makes it get updated.  */
+	    w->update_mode_line = Qt;
+#else /* ! (USE_X_TOOLKIT || HAVE_NTGUI) */
+	  /* In the non-toolkit version, the menu bar is an ordinary screen
+	     line, and this makes it get updated.  */
+	  w->update_mode_line = Qt;
+#endif /* ! (USE_X_TOOLKIT || HAVE_NTGUI) */
 
 	  unbind_to (count, Qnil);
 	  set_buffer_internal_1 (prev);
@@ -2814,7 +2832,8 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	  /* Did we hit a face change?  Figure out what face we should
 	     use now.  We also hit this the first time through the
 	     loop, to see what face we should start with.  */
-	  if (pos >= next_face_change && (FRAME_WINDOW_P (f)))
+	  if (pos >= next_face_change
+	      && (FRAME_WINDOW_P (f) || FRAME_MSDOS_P (f)))
 	    current_face = compute_char_face (f, w, pos,
 					      region_beg, region_end,
 					      &next_face_change, pos + 50, 0);
@@ -3726,7 +3745,7 @@ decode_mode_spec (w, c, spec_width, maxwidth)
 #ifdef MULTI_FRAME
       if (!NILP (f->title))
 	return (char *) XSTRING (f->title)->data;
-      if (f->explicit_name || FRAME_TERMCAP_P (f))
+      if (f->explicit_name || ! FRAME_WINDOW_P (f))
 	return (char *) XSTRING (f->name)->data;
 #endif
       return "Emacs";

@@ -540,11 +540,11 @@ match is recorded.
 
 @item \`
 matches the empty string, provided it is at the beginning
-of the buffer.
+of the buffer or string being matched against.
 
 @item \'
 matches the empty string, provided it is at the end of
-the buffer.
+the buffer or string being matched against.
 
 @item \=
 matches the empty string, provided it is at point.

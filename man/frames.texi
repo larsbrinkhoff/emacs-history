@@ -38,7 +38,10 @@ frame.
 * Menu Bars::	       Enabling and disabling the menu bar.
 * Faces::	       How to change the display style using faces.
 * Modifying Faces::    How to change what a particular face looks like.
+* Font Lock::          Minor mode for syntactic highlighting using faces.
+* Support Modes::      Font Lock support modes make Font Lock faster.
 * Misc X::	       Iconifying and deleting frames.	Region highlighting.
+* Non-Window Terminals::  Multiple frames on terminals that only show one.
 @end menu
 
 @node Mouse Commands
@@ -112,10 +115,16 @@ If you use @kbd{Mouse-3} a second time consecutively, at the same place,
 that kills the region already selected.
 
 @item Double-Mouse-1
-This key sets the region around the word which you click on.
-If you click on a character with ``symbol'' syntax (such as
-underscore, in C mode), it sets the region around the symbol
-surrounding that character.
+This key sets the region around the word which you click on.  If you
+click on a character with ``symbol'' syntax (such as underscore, in C
+mode), it sets the region around the symbol surrounding that character.
+
+If you click on a character with open-parenthesis or close-parenthesis
+syntax, it sets the region around the parenthetical grouping (sexp)
+which that character starts or ends.  If you click on a character with
+string-delimiter syntax (such as a singlequote or doublequote in C), it
+sets the region around the string constant (using heuristics to figure
+out whether that character is the beginning or the end of it).
 
 @item Double-Drag-Mouse-1
 This key selects a region made up of the words that you drag across.
@@ -655,101 +664,14 @@ style of this face (@pxref{Modifying Faces}).  @xref{Transient Mark},
 for more information about Transient Mark mode and activation and
 deactivation of the mark.
 
-@cindex Font-Lock mode
-  One easy way to use faces is to turn on Font-Lock mode.  This minor
-mode, which is always local to a particular buffer, arranges to choose
-faces according to the syntax of the text you are editing.  It can
-recognize comments and strings in most languages; in several languages,
-it can also recognize and properly highlight various other important
-constructs---for example, names of functions being defined.
-
-@kindex C-M-g
-@findex font-lock-fontify-block
-  In Font-Lock mode, when you edit the text, the highlighting updates
-automatically in the line that you changed.  Most changes don't affect
-the highlighting of subsequent lines, but occasionally they do.  To
-rehighlight a range of lines, use the command @kbd{C-M-g}
-(@code{font-lock-fontify-block}).
-
-@vindex font-lock-mark-block-function
-  In certain major modes, @kbd{C-M-g} refontifies the entire current
-function.  (The variable @code{font-lock-mark-block-function} controls
-how to find the current function.)  In other major modes, @kbd{C-M-g}
-refontifies 16 lines above and below point.
-
-  With a prefix argument @var{n}, @kbd{C-M-g} refontifies @var{n} lines
-above and below point, regardless of the mode.
-
-@findex font-lock-mode
-@findex turn-on-font-lock
-  Font-Lock mode is a minor mode.  The command @kbd{M-x font-lock-mode}
-turns the mode on or off.  The function @code{turn-on-font-lock}
-unconditionally enables Font-Lock mode.  This is useful in mode-hook
-functions.  For example, to enable Font-Lock mode whenever you edit a C
-file, you can do this:
-
-@example
-(add-hook 'c-mode-hook 'turn-on-font-lock)
-@end example
-
-@findex global-font-lock-mode
-  To turn on Font-Lock mode automatically in all modes which support it,
-use the function @code{global-font-lock-mode}, like this:
-
-@example
-(global-font-lock-mode t)
-@end example
-
-@vindex font-lock-display-type
-  To get the full benefit of Font-Lock mode, you need to choose a
-default font which has bold, italic, and bold-italic variants; or else
-you need to have a color or grayscale screen.  The variable
-@code{font-lock-display-type} specifies whether Font-Lock mode should
-use font styles, colors, or shades of gray to distinguish the various
-kinds of text.  Emacs chooses the default value according to the
-characteristics of your display.
-
-@vindex font-lock-maximum-decoration
-  The variable @code{font-lock-maximum-decoration} specifies the
-preferred level of fontification for modes that provide multiple levels.
-The normal default is 1; larger numbers request more fontification, and
-some modes support levels as high as 3.  These variables can also
-specify different numbers for particular major modes; for example, to
-use level 3 for C/C++ modes, and the default level otherwise, use this:
-
-@example
-(setq font-lock-maximum-decoration
-      '((c-mode . 3) (c++-mode . 3)))
-@end example
-
-@vindex font-lock-maximum-size
-  Fontification can be too slow for large buffers, so you can suppress
-it.  The variable `font-lock-maximum-size' specifies a buffer size,
-beyond which buffer fontification is suppressed.
-
-@cindex Fast Lock mode
-  To make Font Lock mode practical for large buffers, you can use Fast
-Lock mode to avoid repetitive buffer fontification.  Fast Lock mode
-saves the font information for a file in a separate cache file; each
-time you visit the file, it rereads the font information from the cache
-file instead of refontifying the text from scratch.
-
-@findex fast-lock-mode
-@findex turn-on-fast-lock
-  The command @kbd{M-x fast-lock-mode} turns Fast Lock mode on or off,
-according to the argument (with no argument, it toggles).  The function
-@code{turn-on-fast-lock} unconditionally enables Fast Lock mode.  Here
-is how you can arrange to enable Fast Lock mode whenever you use Font
-Lock mode:
-
-@example
-(add-hook 'font-lock-mode-hook 'turn-on-fast-lock)
-@end example
-
-@vindex fast-lock-minimum-size
-  It is not worth while writing a cache file for small buffers.
-Therefore, the variable @code{fast-lock-minimum-size} specifies a
-minimum buffer size for caching font information.
+@cindex Font Lock mode
+  One easy way to use faces is to turn on Font Lock mode.  This minor
+mode, which is always local to a particular buffer, arranges to
+choose faces according to the syntax of the text you are editing.  It
+can recognize comments and strings in most languages; in several
+languages, it can also recognize and properly highlight various other
+important constructs.  @xref{Font Lock}, for more information about
+Font Lock mode and syntactic highlighting.
 
   You can print out the buffer with the highlighting that appears
 on your screen using the command @code{ps-print-buffer-with-faces}.
@@ -838,6 +760,238 @@ attribute.  Type @samp{none} if you want to clear out the attribute.
   You can also use X resources to specify attributes of particular
 faces.  @xref{Resources X}.
 
+@node Font Lock
+@section Font Lock mode
+@cindex Font Lock mode
+
+  Font Lock mode is a minor mode, always local to a particular
+buffer, which highlights (or ``fontifies'') using various faces
+according to the syntax of the text you are editing.  It can
+recognize comments and strings in most languages; in several
+languages, it can also recognize and properly highlight various other
+important constructs---for example, names of functions being defined
+or reserved keywords.
+
+@findex font-lock-mode
+@findex turn-on-font-lock
+  The command @kbd{M-x font-lock-mode} turns the mode on or off.  The
+function @code{turn-on-font-lock} unconditionally enables Font Lock
+mode.  This is useful in mode-hook functions.  For example, to enable
+Font Lock mode whenever you edit a C file, you can do this:
+
+@example
+(add-hook 'c-mode-hook 'turn-on-font-lock)
+@end example
+
+@findex global-font-lock-mode
+  To turn on Font Lock mode automatically in all modes which support it,
+use the function @code{global-font-lock-mode}, like this:
+
+@example
+(global-font-lock-mode t)
+@end example
+
+@kindex C-M-g
+@findex font-lock-fontify-block
+  In Font Lock mode, when you edit the text, the highlighting updates
+automatically in the line that you changed.  Most changes don't affect
+the highlighting of subsequent lines, but occasionally they do.  To
+rehighlight a range of lines, use the command @kbd{C-M-g}
+(@code{font-lock-fontify-block}).
+
+@vindex font-lock-mark-block-function
+  In certain major modes, @kbd{C-M-g} refontifies the entire current
+function.  (The variable @code{font-lock-mark-block-function} controls
+how to find the current function.)  In other major modes, @kbd{C-M-g}
+refontifies 16 lines above and below point.
+
+  With a prefix argument @var{n}, @kbd{C-M-g} refontifies @var{n} lines
+above and below point, regardless of the mode.
+
+@vindex font-lock-display-type
+  To get the full benefit of Font Lock mode, you need to choose a
+default font which has bold, italic, and bold-italic variants; or else
+you need to have a color or grayscale screen.  The variable
+@code{font-lock-display-type} specifies whether Font Lock mode should
+use font styles, colors, or shades of gray to distinguish the various
+kinds of text.  Emacs chooses the default value according to the
+characteristics of your display.
+
+@vindex font-lock-maximum-decoration
+  The variable @code{font-lock-maximum-decoration} specifies the
+preferred level of fontification for modes that provide multiple levels.
+The normal default is 1; larger numbers request more fontification, and
+some modes support levels as high as 3.  These variables can also
+specify different numbers for particular major modes; for example, to
+use level 3 for C/C++ modes, and the default level otherwise, use this:
+
+@example
+(setq font-lock-maximum-decoration
+      '((c-mode . 3) (c++-mode . 3)))
+@end example
+
+@vindex font-lock-maximum-size
+  Fontification can be too slow for large buffers, so you can suppress
+it.  The variable @code{font-lock-maximum-size} specifies a buffer size,
+beyond which buffer fontification is suppressed.
+
+@node Support Modes
+@section Font Lock Support Modes
+
+  Font Lock support modes make Font Lock mode faster for large buffers.
+There are two support modes: Fast Lock mode and Lazy Lock mode.  They
+use two different methods of speeding up Font Lock mode.
+
+@menu
+* Fast Lock Mode::     Saving font information in files.
+* Lazy Lock Mode::     Fontifying only text that is actually displayed.
+* Fast or Lazy::       Which support mode is best for you?
+@end menu
+
+@node Fast Lock Mode
+@subsection Fast Lock Mode
+
+@cindex Fast Lock mode
+  To make Font Lock mode faster for buffers visiting large files, you
+can use Fast Lock mode.  Fast Lock mode saves the font information for
+each file in a separate cache file; each time you visit the file, it
+rereads the font information from the cache file instead of refontifying
+the text from scratch.
+
+@findex fast-lock-mode
+  The command @kbd{M-x fast-lock-mode} turns Fast Lock mode on or off,
+according to the argument (with no argument, it toggles).  You can also
+arrange to enable Fast Lock mode whenever you use Font Lock mode, like
+this:
+
+@example
+(setq font-lock-support-mode 'fast-lock-mode)
+@end example
+
+@vindex fast-lock-minimum-size
+  It is not worth writing a cache file for small buffers.  Therefore,
+the variable @code{fast-lock-minimum-size} specifies a minimum file size
+for caching font information.
+
+@vindex fast-lock-cache-directories
+  The variable @code{fast-lock-cache-directories} specifies where to put
+the cache files.  Its value is a list of directories to try; @code{"."}
+means the same directory as the file being edited.  The default value is
+@code{("." "~/.emacs-flc")}, which means to use the same directory if
+possible, and otherwise the directory @file{~/.emacs-flc}.
+
+@vindex fast-lock-save-others
+  The variable @code{fast-lock-save-others} specifies whether Fast Lock
+mode should save cache files for files that you do not own.  A
+non-@code{nil} value means yes (and that is the default).
+
+@node Lazy Lock Mode
+@subsection Lazy Lock Mode
+@cindex Lazy Lock mode
+
+  To make Font Lock mode faster for large buffers, you can use Lazy Lock
+mode to reduce the amount of text that is fontified.  In Lazy Lock mode,
+buffer fontification is demand-driven; it happens to portions of the
+buffer that are about to be displayed.  And fontification of your
+changes is deferred; it happens only when Emacs has been idle for a
+certain short period of time.
+
+@findex lazy-lock-mode
+  The command @kbd{M-x lazy-lock-mode} turns Lazy Lock mode on or off,
+according to the argument (with no argument, it toggles).  You can also
+arrange to enable Lazy Lock mode whenever you use Font Lock mode, like
+this:
+
+@example
+(setq font-lock-support-mode 'lazy-lock-mode)
+@end example
+
+@vindex lazy-lock-minimum-size
+  It is not worth avoiding buffer fontification for small buffers.
+Therefore, the variable @code{lazy-lock-minimum-size} specifies a
+minimum buffer size for demand-driven buffer fontification.  Buffers
+smaller than that are fontified all at once, as in plain Font Lock mode.
+
+@vindex lazy-lock-defer-time
+  When you alter the buffer, Lazy Lock mode defers fontification of the
+text you changed.  The variable @code{lazy-lock-defer-time} specifies
+how many seconds Emacs must be idle before it starts fontifying your
+changes.  If the value is @code{nil}, then changes are fontified
+immediately, as in plain Font Lock mode.
+
+@vindex lazy-lock-defer-driven
+  Lazy Lock mode normally fontifies newly visible portions of the buffer
+before they are first displayed.  However, if the value of
+@code{lazy-lock-defer-driven} is non-@code{nil}, newly visible text is
+fontified only when Emacs is idle for @code{lazy-lock-defer-time}
+seconds.
+
+@cindex stealth fontification
+  When Emacs is idle for a long time, Lazy Lock fontifies additional
+portions of the buffer, not yet displayed, in case you will display them
+later.  This is called @dfn{stealth fontification}.
+
+@vindex lazy-lock-stealth-time
+@vindex lazy-lock-stealth-lines
+@vindex lazy-lock-stealth-verbose
+  The variable @code{lazy-lock-stealth-time} specifies how many seconds
+Emacs has to be idle before stealth fontification starts.  A value of
+@code{nil} means no stealth fontification.  The variables
+@code{lazy-lock-stealth-lines} and @code{lazy-lock-stealth-verbose}
+specify the granularity and verbosity of stealth fontification.
+
+@node Fast or Lazy
+@subsection Fast Lock or Lazy Lock?
+
+  Here is a simple guide to help you choose one of the Font Lock support
+modes.
+
+@itemize @bullet
+@item
+Fast Lock mode only intervenes during file visiting and buffer
+killing (and related events); therefore buffer editing and window
+scrolling are no faster or slower than plain Font Lock mode.
+
+@item
+Fast Lock mode is slower at reading a cache file than Lazy Lock
+mode is at fontifying a window; therefore Fast Lock mode is slower at
+visiting a file than Lazy Lock mode.
+
+@item
+Lazy Lock mode intervenes during window scrolling to fontify text that
+scrolls onto the screen; therefore, scrolling is slower than in plain
+Font Lock mode.
+
+@item
+Lazy Lock mode doesn't fontify during buffer editing (it defers
+fontification of changes); therefore, editing is faster than in plain
+Font Lock mode.
+
+@item
+Fast Lock mode can be fooled by a file that is kept under version
+control software; therefore buffer fontification may occur even when
+a cache file exists for the file.
+
+@item
+Fast Lock mode only works with a buffer visiting a file; Lazy Lock
+mode works with any buffer.
+
+@item
+Fast Lock mode generates cache files; Lazy Lock mode does not.
+@end itemize
+
+@vindex font-lock-support-mode
+  The variable @code{font-lock-support-mode} specifies which of these
+support modes to use; for example, to specify that Fast Lock mode is
+used for C/C++ modes, and Lazy Lock mode otherwise, set the variable
+like this:
+
+@example
+(setq font-lock-support-mode
+      '((c-mode . fast-lock-mode) (c++-mode . fast-lock-mode)
+        (t . lazy-lock-mode)))
+@end example
+
 @node Misc X
 @section Miscellaneous X Window Features
 
@@ -860,9 +1014,36 @@ If you type this command on an Emacs frame's icon, it deiconifies the frame.
 To delete the selected frame, type @kbd{C-x 5 0} (@code{delete-frame}).
 This is not allowed if there is only one frame.
 
+@item C-x 5 o
+@kindex C-x 5 o
+@findex other-frame
+Select another frame, raise it, and warp the mouse to it so that it
+stays selected.  If you repeat this command, it cycles through all the
+frames on your terminal.
+
 @item M-x transient-mark-mode
 Under X Windows, when Transient Mark mode is enabled, Emacs highlights
 the region when the mark is active.  This feature is the main motive for
 using Transient Mark mode.  To toggle the state of this mode, use the
 command @kbd{M-x transient-mark-mode}.  @xref{Mark}.
 @end table
+
+@node Non-Window Terminals
+@section Non-Window Terminals
+@cindex non-window terminals
+@cindex single-frame terminals
+
+  If your terminal does not have a window system that Emacs supports,
+then it can display only one Emacs frame at a time.  However, you can
+still create multiple Emacs frames, and switch between them.  Switching
+frames on these terminals is much like switching between different
+window configurations.
+
+  Use @kbd{C-x 5 2} to create a new frame and switch to it; use @kbd{C-x
+5 o} to cycle through the existing frames; use @kbd{C-x 5 0} to delete
+the current frame.
+
+  Each frame has a number to distinguish it.  The selected frame's
+number appears in the mode line after @samp{Emacs}, except when frame 1
+is selected.
+

@@ -63,6 +63,10 @@
 ;; for executing its command line argument (from simple.el).
 (setq shell-command-switch "/c")
 
+;; For appending suffixes to directories and files in shell completions.
+(add-hook 'shell-mode-hook 
+	  '(lambda () (setq comint-completion-addsuffix '("\\" . " "))))
+
 ;; Use ";" instead of ":" as a path separator (from files.el).
 (setq path-separator ";")
 
@@ -88,8 +92,6 @@
 					; Unix stuff
     ("\\.tp[ulpw]$" . t)
 					; Borland Pascal stuff
-    ("[:/]tags$" . t)
-					; Emacs TAGS file
     )
   "*Alist for distinguishing text files from binary files.
 Each element has the form (REGEXP . TYPE), where REGEXP is matched
@@ -146,10 +148,9 @@ against the file name, and TYPE is nil for text, t for binary.")
 
 ;; Really should provide this capability at the drive letter granularity.
 (defun using-unix-filesystems (flag)
-  "Read and write all files assuming that they are on a drive attached 
-to a remote Unix file system.  No CR/LF translation is done on any files
-in this case.  This behavior is activated when FLAG is t and deactived
-when FLAG is any other value."
+  "Read and write files without CR/LF translation, if FLAG is non-nil.
+This is in effect assuming the files are on a remote Unix file system.
+If FLAG is nil, resume using CR/LF translation as usual."
   (if flag
       (progn
 	(add-hook 'write-file-hooks 'save-to-unix-hook)
@@ -158,7 +159,7 @@ when FLAG is any other value."
       (remove-hook 'write-file-hooks 'save-to-unix-hook)
       (remove-hook 'after-save-hook 'revert-from-unix-hook))))
 
-;;; Avoid creating auto-save file names containing illegal characters
+;;; Avoid creating auto-save file names containing invalid characters
 ;;; (primarily "*", eg. for the *mail* buffer).
 (fset 'original-make-auto-save-file-name
       (symbol-function 'make-auto-save-file-name))
@@ -177,8 +178,14 @@ See also `auto-save-file-name-p'."
     name))
 
 ;;; Fix interface to (X-specific) mouse.el
-(defalias 'x-set-selection 'ignore)
-(fset 'x-get-selection '(lambda (&rest rest) ""))
+(defun x-set-selection (type data)
+  (or type (setq type 'PRIMARY))
+  (put 'x-selections type data))
+
+(defun x-get-selection (&optional type data-type)
+  (or type (setq type 'PRIMARY))
+  (get 'x-selections type))
+
 (fmakunbound 'font-menu-add-default)
 (global-unset-key [C-down-mouse-1])
 (global-unset-key [C-down-mouse-2])

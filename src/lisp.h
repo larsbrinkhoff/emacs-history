@@ -1647,7 +1647,7 @@ extern Lisp_Object Fread_no_blanks_input ();
 
 extern Lisp_Object Qminus, Qplus, Vcurrent_prefix_arg;
 extern Lisp_Object Vcommand_history;
-extern Lisp_Object Qcall_interactively;
+extern Lisp_Object Qcall_interactively, Qmouse_leave_buffer_hook;
 extern Lisp_Object Fcall_interactively ();
 extern Lisp_Object Fprefix_numeric_value ();
 
@@ -1770,7 +1770,7 @@ extern Lisp_Object truncate_undo_list ();
 
 /* defined in textprop.c */
 extern Lisp_Object Qmodification_hooks;
-extern Lisp_Object Qrear_nonsticky;
+extern Lisp_Object Qrear_nonsticky, Qfont;
 extern Lisp_Object Qinsert_in_front_hooks, Qinsert_behind_hooks;
 extern Lisp_Object Fnext_property_change ();
 extern Lisp_Object Fnext_single_property_change ();

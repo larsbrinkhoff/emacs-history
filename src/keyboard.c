@@ -2096,11 +2096,12 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 	return c;
 
       if (STRINGP (Vkeyboard_translate_table)
-	  && XSTRING (Vkeyboard_translate_table)->size > XFASTINT (c))
+	  && XSTRING (Vkeyboard_translate_table)->size > (unsigned) XFASTINT (c))
 	XSETINT (c, XSTRING (Vkeyboard_translate_table)->data[XFASTINT (c)]);
       else if ((VECTORP (Vkeyboard_translate_table)
-		&& XVECTOR (Vkeyboard_translate_table)->size > XFASTINT (c))
-	       || CHAR_TABLE_P (Vkeyboard_translate_table))
+		&& XVECTOR (Vkeyboard_translate_table)->size > (unsigned) XFASTINT (c))
+	       || (CHAR_TABLE_P (Vkeyboard_translate_table)
+		   && CHAR_TABLE_ORDINARY_SLOTS > (unsigned) XFASTINT (c)))
 	{
 	  Lisp_Object d;
 	  d = Faref (Vkeyboard_translate_table, c);
@@ -2696,7 +2697,8 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
 	{
 	  kbd_fetch_ptr = event + 1;
 	  input_pending = readable_events (0);
-	  x_activate_menubar (XFRAME (event->frame_or_window));
+	  if (FRAME_LIVE_P (XFRAME (event->frame_or_window)))
+	    x_activate_menubar (XFRAME (event->frame_or_window));
 	}
 #endif
       /* Just discard these, by returning nil.
@@ -4483,7 +4485,7 @@ modify_event_symbol (symbol_num, modifiers, symbol_kind, name_alist,
 	}
 
       if (CONSP (*symbol_table))
-	*symbol_table = Fcons (value, *symbol_table);
+        *symbol_table = Fcons (Fcons (symbol_int, value), *symbol_table);
       else
 	XVECTOR (*symbol_table)->contents[symbol_num] = value;
 
@@ -5220,6 +5222,10 @@ menu_bar_item (key, item_string, def)
   Lisp_Object tem;
   Lisp_Object enabled;
   int i;
+
+  /* Skip menu-bar equiv keys data.  */
+  if (CONSP (def) && CONSP (XCONS (def)->car))
+    def = XCONS (def)->cdr;
 
   if (EQ (def, Qundefined))
     {

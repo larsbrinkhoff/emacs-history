@@ -57,7 +57,7 @@ on the screen.
 * Tags::              Go direct to any function in your program in one
                         command.  Tags remembers which file it is in.
 * Emerge::	      A convenient way of merging two versions of a program.
-* C Mode::	      Special commands of C mode (and C++ mode).
+* C Mode::	      Special commands of C, C++, Objective-C and Java modes.
 * Fortran::	      Fortran mode and its special features.
 * Asm Mode::	      Asm mode and its special features.
 @end menu
@@ -68,14 +68,17 @@ on the screen.
 @cindex Lisp mode
 @cindex Scheme mode
 @cindex C++ mode
+@cindex Objective-C mode
+@cindex Java mode
 @cindex Perl mode
 @cindex Icon mode
 @cindex Awk mode
 @cindex Makefile mode
 @cindex Tcl mode
   Emacs also has major modes for the programming languages Lisp, Scheme
-(a variant of Lisp), Awk, C, C++, Fortran, Icon, Pascal, Perl and Tcl.
-There is also a major mode for makefiles, called Makefile mode.
+(a variant of Lisp), Awk, C, C++, Objective-C, Java, Fortran, Icon,
+Pascal, Perl and Tcl.  There is also a major mode for makefiles, called
+Makefile mode.
 
   Ideally, a major mode should be implemented for each programming
 language that you might want to edit with Emacs; but often the mode for
@@ -662,8 +665,8 @@ statements.
 global variable @code{c-syntactic-context} contains a list that
 describes the results.  Each element in this list is a cons cell
 containing a syntactic symbol and (optionally) its corresponding buffer
-position.  There may be more than one element; syntactic symbols have
-corresponding buffer positions.
+position.  There may be more than one element in a component list, and
+syntactic symbols need not always have corresponding buffer positions.
 
 @node Indentation Calculation
 @subsubsection  Step 2---Indentation Calculation
@@ -738,7 +741,7 @@ list.  Remember that the list for this line is:
 @code{substatement-open} symbol in @code{c-offsets-alist}.  We assume
 the offset for this symbol is 2.  At this point the running total is 2
 (0 + 2 = 2).  It then goes to buffer position 43, which is the @samp{i}
-in @code{if} on line 3.  This character is in the fourth column on that
+in @code{if} on line 3.  This character is in the second column on that
 line, so adding this to the running total yields a total indentation of
 4 spaces.@refill
 
@@ -1028,8 +1031,8 @@ style is @code{gnu}.
 @findex c-set-style
   To choose the style you want, use the command @kbd{M-x c-set-style}.
 Specify a style name as an argument (case is not significant in C style
-names).  The chosen style affects all buffers including those you will
-create later.
+names).  The chosen style only affects newly visited buffers, not those
+you are already editing.
 
 @findex c-add-style
   To define a new C indentation style, call the function
@@ -1487,7 +1490,6 @@ recorded is called a @dfn{tag}.
 * Select Tags Table::	How to visit a tags table.
 * Find Tag::		Commands to find the definition of a specific tag. 
 * Tags Search::		Using a tags table for searching and replacing.
-* Tags Stepping::	Visiting files in a tags table, one by one.
 * List Tags::		Listing and finding tags defined in a file.
 @end menu
 
@@ -1918,23 +1920,6 @@ Emacs and have Emacs show you the matching lines one by one.  This works
 much like running a compilation; finding the source locations of the
 @code{grep} matches works like finding the compilation errors.
 @xref{Compilation}.
-
-@node Tags Stepping
-@subsection Stepping Through a Tags Table
-@findex next-file
-
-  If you wish to process all the files in the selected tags table, but
-not in the specific ways that @kbd{M-x tags-search} and @kbd{M-x
-tags-query-replace} do, you can use @kbd{M-x next-file} to visit the
-files one by one.
-
-@table @kbd
-@item C-u M-x next-file
-Visit the first file in the tags table, and prepare to advance
-sequentially by files.
-@item M-x next-file
-Visit the next file in the selected tags table.
-@end table
         
 @node List Tags
 @subsection Tags Table Inquiries
@@ -2356,8 +2341,8 @@ commands.
 @node C Mode
 @section C Mode
 
-  This section describes special features available in C mode, C++ mode
-and Objective C mode.
+  This section describes special features available in C, C++,
+Objective-C and Java modes.
 
 @menu
 * Motion in C::
@@ -2432,7 +2417,9 @@ past that place).
 @findex c-backward-into-nomenclature
 Move point backward to beginning of a C++ nomenclature section or word.
 With prefix argument @var{n}, move @var{n} times.  If @var{n} is
-negative, move forward.
+negative, move forward.  C++ nomenclature means a symbol name in the
+style of NamingSymbolsWithMixedCaseAndNoUnderlines; each capital letter
+begins a section or word.
 
 @item M-x c-forward-into-nomenclature
 @findex c-forward-into-nomenclature
@@ -2447,7 +2434,8 @@ With prefix argument @var{n}, move @var{n} times.
 ``electric''---in addition to inserting themselves, they also reindent
 the current line and may insert newlines.  This feature is controlled by
 the variable @code{c-auto-newline}.  The ``electric'' characters are
-@kbd{@{}, @kbd{@}}, @kbd{:}, @kbd{#}, @kbd{;}, @kbd{,}, @kbd{/} and
+@kbd{@{}, @kbd{@}}, @kbd{:}, @kbd{#}, @kbd{;}, @kbd{,}, @kbd{<},
+@kbd{>}, @kbd{/} and
 @kbd{*}.
 
   Electric characters insert newlines only when the @dfn{auto-newline}

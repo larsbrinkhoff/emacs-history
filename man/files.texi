@@ -1136,6 +1136,16 @@ Headers}.
 then discover a trivial error in it; you can cancel the erroneous
 check-in, fix the error, and check the file in again.
 
+  When @kbd{C-x v c} does not revert the buffer, it unexpands all
+version control headers in the buffer instead (@pxref{Version Headers}).
+This is because the buffer no longer corresponds to any existing
+version.  If you check it in again, the checkin process will expand the
+headers properly for the new version number.
+
+  However, it is impossible to unexpand the RCS @samp{$Log$} header
+automatically.  If you use that header feature, you have to unexpand it
+by hand---by deleting the entry for the version that you just canceled.
+
   Be careful when invoking @kbd{C-x v c}, as it is easy to throw away a
 lot of work with it.  To help you be careful, this command always
 requires confirmation with @kbd{yes}.  Note also that this command is

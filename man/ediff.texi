@@ -37,16 +37,16 @@ paragraph not being relevant to the printed manual).
 @titlepage
 @title Ediff User's Manual
 @sp 4
-@subtitle Ediff version 2.50
+@subtitle Ediff version 2.59
 @sp 1
-@subtitle November 1995
+@subtitle March 1996
 @sp 5
 @author Michael Kifer
 @page
 
 @vskip 0pt plus 1filll
 @noindent
-Copyright @copyright{} 1995 Free Software Foundation, Inc.
+Copyright @copyright{} 1995, 1996 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -100,8 +100,11 @@ patches selectively (i.e., you can copy a difference region from
 @file{file_orig} to @file{file}, thereby undoing any particular patch that
 you don't like).
 
-Unfortunately, Ediff still doesn't understand multi-file patches---this
-requires further work (volunteers needed!).
+Ediff even understands multi-file patches and can apply them interactively!
+(Ediff can recognize multi-file patches only if they are in the context or
+GNU unified format. All other patches are treated as 1-file patches. Ediff
+is [hopefully] using the same algorithm as patch to determine which
+files need to be patched.)
 
 Ediff is aware of version control, which lets you compare
 files with their older versions. Ediff also works with remote and
@@ -197,12 +200,12 @@ Compare regions line-by-line.
 @itemx epatch
 @findex ediff-patch-file
 @findex epatch
- Patch file, then compare. At present, Ediff doesn't understand multi-file
- patches.
+ Patch a file, then compare.
+
 @item ediff-patch-buffer
 @itemx epatch-buffer
 @findex ediff-patch-buffer
-Patch buffer, then compare.
+Patch auffer, then compare.
 
 @item ediff-merge-files
 @itemx ediff-merge
@@ -341,9 +344,29 @@ Likewise, 4 followed by @kbd{ra}
 restores the 4th difference region in buffer A (if it was previously
 saved as a result of copying from, say, buffer B to A).
 
+Some commands take negative prefix arguments as well.
+For instance, typing @kbd{-} and then @kbd{j} will take Ediff to the last
+difference. Typing @kbd{-2} then @kbd{j} takes Ediff to to the penultimate
+difference region, etc.
+
 Without the prefix argument, all commands operate on the current
 selected difference region.  You can select any difference region
 as the current one using other Ediff commands.
+
+For some commands, the value of the prefix argument is immaterial. However,
+if supplied, the prefix argument modifies the command.  For instance,
+normally the commands @kbd{ga}/@kbd{gb}/@kbd{gc}
+(@code{ediff-jump-to-difference-at-point}) causes Ediff to jump to the
+difference region that is closest to the point in a specified buffer (the
+buffer, A, B, or C, is specified by the last character of the command,
+i.e., for @code{gb}, the specified buffer is B).
+However, with a prefix argument, Ediff would position all these
+buffers around the area indicated by the current point in the specified
+buffer: if the point is inside a difference region, then the buffers will
+be positioned at this difference region. If the point is not in any
+difference region, then it is in an area where all buffers agree with each
+other. In this case, all buffers will be positioned so that they would
+display this area.
 
 The total number of differences and the current difference number are
 always displayed in the mode line of the control window. 
@@ -564,10 +587,9 @@ as special file handlers (ange-ftp and some compression and encryption
 packages all use this method).
 
 Regular files are treated by the @code{patch} utility in the usual manner,
-i.e., the 
-original is renamed into @file{source-name_orig} and the result of the patch
-is placed into the file source-name. (Ediff uses @file{_orig} instead of
-the usual @file{.orig} to placate systems like VMS.)
+i.e., the original is renamed into @file{source-name.orig} and the result
+of the patch is placed into the file source-name. (Ediff @file{_orig}
+on systems like VMS, DOS, etc.)
 
 @node Customization, Credits, Remote and Compressed Files, Top
 @chapter Customization
@@ -784,8 +806,8 @@ X-windows, you can use this name to set up preferences in your
 @file{~/.Xdefaults}, @file{~/.xrdb}, or whatever X resource file is in
 use. Usually this is preferable to changing
 @code{ediff-control-frame-parameters} directly.  For instance, you can
-specify in @file{~/.Xdefaults} where the control frame is to be sitting on
-the screen using the resource @samp{Ediff*geometry}.
+specify in @file{~/.Xdefaults} the color of the control frame
+using the resource @samp{Ediff*background}.
 
 In general, any X resource pertaining the control frame can be reached
 via the prefix @code{Ediff*}.
@@ -921,7 +943,7 @@ Note that selective browsing affects only @code{ediff-next-difference}
 and @code{ediff-previous-difference}, i.e., the commands
 @kbd{n}/@key{SPC} and @kbd{p}/@key{DEL}.  @kbd{#f} and @kbd{#h} do not
 change the position of the point in the buffers.  And you can still jump
-directly (using @kbd{j} or @kbd{ga}/@kbd{gb}/@kbd{gc}) to any numbered
+directly (using @kbd{j})  to any numbered
 difference.
 
 Users can supply their own functions to specify how Ediff should do
@@ -1218,7 +1240,7 @@ fine difference regions):
 @vindex ediff-patch-program
 @vindex ediff-diff-program
 @vindex ediff-diff3-program
-These three variables specify the programs to run to produce differences
+These variables specify the programs to use to produce differences
 and do patching.
 
 @item ediff-patch-options
@@ -1227,8 +1249,7 @@ and do patching.
 @vindex ediff-patch-options
 @vindex ediff-diff-options
 @vindex ediff-diff3-options
-These three variables
-specify which options to pass to the above utilities.
+These variables specify the options to pass to the above utilities.
 
 In @code{ediff-diff-options}, it may be useful to specify options
 such as @samp{-w} that ignore certain kinds of changes.  However,
@@ -1258,6 +1279,10 @@ just to produce the list of differences. Fortunately,
 @code{ediff-custom-diff-program} and @code{ediff-custom-diff-options}
 eliminate this nuisance by keeping a copy of a difference list in the
 desired format in a buffer that can be displayed via the command @kbd{D}.
+
+@item ediff-patch-default-directory
+@vindex ediff-patch-default-directory
+Specifies the default directory to look for patches.
 
 @end table
 
@@ -1679,7 +1704,9 @@ Kevin Broadey (KevinB@@bartley.demon.co.uk),
 Harald Boegeholz (hwb@@machnix.mathematik.uni-stuttgart.de),
 Bradley A. Bosch (brad@@lachman.com),
 Michael D. Carney  (carney@@ltx-tr.com),
-Jin S. Choi (jin@@atype.com), Eric Eide (eeide@@asylum.cs.utah.edu),
+Jin S. Choi (jin@@atype.com),
+Albert Dvornik (bert@@mit.edu),
+Eric Eide (eeide@@asylum.cs.utah.edu),
 Kevin Esler (esler@@ch.hp.com), Robert Estes (estes@@ece.ucdavis.edu), 
 Xavier Fornari (xavier@@europe.cma.fr),
 Eric Freudenthal (freudent@@jan.ultra.nyu.edu),

@@ -5,26 +5,24 @@ Subject: So you want to use the new Gnus
 Message-ID: <lars-doc1@eyesore.no>
 
 Actually, since you are reading this, chances are you are already
-using the new Gnus. Congratulations.
+using the new Gnus.  Congratulations.
 
 This entire newsgroup you are reading is, in fact, no real newsgroup
-at all, in the traditional sense. It is an example of one of the
+at all, in the traditional sense.  It is an example of one of the
 "foreign" select methods that Gnus may use.
 
 The text you are now reading is stored in the "etc" directory with the
-rest of the Emacs sources. You are using the "nndir" backend for
-accessing it. Scary, isn't it?
+rest of the Emacs sources.  You are using the "nndoc" backend for
+accessing it.  Scary, isn't it?
 
-This isn't the real documentation. `M-x info', `m gnus <RET>' to read
-that. This "newsgroup" is intended as a kinder, gentler way of getting
+This isn't the real documentation.  `M-x info', `m gnus <RET>' to read
+that.  This "newsgroup" is intended as a kinder, gentler way of getting
 people started.
 
-Gnus is a rewrite of GNUS 4.1, written by Masanobu Umeda. The rewrite
+Gnus is a rewrite of GNUS 4.1, written by Masanobu Umeda.  The rewrite
 was done by moi, yours truly, your humble servant, Lars Magne
-Ingebrigtsen. If you have a WWW browser, you can investigate to your
+Ingebrigtsen.  If you have a WWW browser, you can investigate to your
 heart's delight at <URL:http://www.ifi.uio.no/~larsi/larsi.html>.
-
-Much code (especially the score code) was written by Per Abrahamsen. 
 
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
@@ -44,8 +42,9 @@ Much code (especially the score code) was written by Per Abrahamsen.
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 From lars Thu Feb 23 23:20:38 1995
 From: larsi@ifi.uio.no (ding)
@@ -54,7 +53,7 @@ Subject: Starting up
 Message-ID: <lars-doc2@eyesore.no>
 
 If you are having problems with Gnus not finding your server, you have
-to set `gnus-select-method'. A "method" is a way of specifying *how*
+to set `gnus-select-method'.  A "method" is a way of specifying *how*
 the news is to be found, and from *where*.
 
 Say you want to read news from you local, friendly nntp server
@@ -83,7 +82,7 @@ Subject: Where are all the groups, then?
 Message-ID: <lars-doc3@eyesore.no>
 
 If this is the first time you have used a newsreader, you won't have a
-.newsrc file. This means that Gnus will think that all the newsgroups
+.newsrc file.  This means that Gnus will think that all the newsgroups
 on the server are "new", and kill them all.
 
 If you have a .newsrc file, the new groups will be processed with the
@@ -93,19 +92,19 @@ function in the `gnus-subscribe-newsgroup-method' variable, which is
 This means that all the groups have been made into "zombies" - not
 quite dead, but not exactly alive, either.
 
-Jump back to the *Group* buffer, and type `C-c C-z' to list all the
-zombie groups. Look though the list, and subscribe to the groups you
-want to read by pressing `u' on the one you think look interesting. 
+Jump back to the *Group* buffer, and type `A z' to list all the zombie
+groups.  Look though the list, and subscribe to the groups you want to
+read by pressing `u' on the one you think look interesting.
 
-If all the groups have been killed, type `C-c C-k' to list all the
-killed groups. Subscribe to them the same way.
+If all the groups have been killed, type `A k' to list all the killed
+groups.  Subscribe to them the same way.
 
-When you are satisfied, press `M-z' to kill all the zombie groups. 
+When you are satisfied, press `S z' to kill all the zombie groups.
 
 Now you should have a nice list of all groups you are interested in.
 
-(If you later want to subscribe to more groups, press `C-c C-k' to
-list all the kill groups, and repeat. You can also type `U' and be
+(If you later want to subscribe to more groups, press `A k' to
+list all the kill groups, and repeat.  You can also type `U' and be
 prompted for groups to subscribe to.)
 
 
@@ -117,15 +116,15 @@ Message-ID: <lars-doc4@eyesore.no>
 
 Yes, Virginia, you can read mail with Gnus.
 
-First you have to decide which mail backend you want to use. You have
+First you have to decide which mail backend you want to use.  You have
 nnml, which is a one-file-one-mail backend, which is quite nice, but
 apt to make your systems administrator go crazy and come after you
 with a shotgun.
 
-nnmbox uses a Unix mail box to store mail. Nice, but slow.
+nnmbox uses a Unix mail box to store mail.  Nice, but slow.
 
-nnmh uses mh-e folders, which is also a one-file-one-mail thingy, but
-slower than nnml. (It doesn't support NOV files.)
+nnmh uses mh-e folders, which is also a one-file-one-mail thingie, but
+slower than nnml.  (It doesn't support NOV files.)
 
 So if you want to go with nnmbox, you can simply say:
 
@@ -155,16 +154,16 @@ Message-ID: <lars-doc5@eyesore.no>
 
 These are groups that do not come from `gnus-select-method'. 
 
-Say you want to read "alt.furniture.couches" from "news.funet.fi". You
+Say you want to read "alt.furniture.couches" from "news.funet.fi".  You
 can then either type `B news.funet.fi <RET>' to browse that server and
 subscribe to that group, or you can type 
-`M-a alt.furniture.couches<RET>nntp<RET>news.funet.fi<RET>', if you
+`G m alt.furniture.couches<RET>nntp<RET>news.funet.fi<RET>', if you
 like to type a lot.
 
 If you want to read a directory as a newsgroup, you can create an
-nndir group, much the same way. There's a shorthand for that,
-though. If, for instance, you want to read the (ding) list archives,
-you could type `D /ftp <RET>'.
+nndir group, much the same way.  There's a shorthand for that,
+though.  If, for instance, you want to read the (ding) list archives,
+you could type `G d /ftp <RET>'.
 
 There's lots more to know about foreign groups, but you have to read
 the info pages to find out more.
@@ -176,14 +175,14 @@ Date: Fri Feb 24 13:40:45 1995
 Subject: Low level changes in GNUS, or, Wrong type argument: stringp, nil
 Message-ID: <lars-doc6@eyesore.no>
 
-Gnus really isn't GNUS, even though it looks like it. If you scrape
+Gnus really isn't GNUS, even though it looks like it.  If you scrape
 the surface, you'll find that most things have changed.
 
-This means that old code that relies on GNUS internals will fail. 
+This means that old code that relies on GNUS internals will fail.  
 
 In particular, `gnus-newsrc-hashtb', `gnus-newsrc-assoc',
 `gnus-killed-list', the `nntp-header-' macros and the display formats
-have all changed. If you have some code lying around that depend on
+have all changed.  If you have some code lying around that depend on
 these, or change these, you'll have to re-write your code.
 
 Old hilit19 code does not work at all.  In fact, you should probably
@@ -191,39 +190,13 @@ remove all hihit code from all the Gnus hooks
 (`gnus-group-prepare-hook', `gnus-summary-prepare-hook' and
 `gnus-summary-article-hook').  (Well, at the very least the first
 two.)  Gnus provides various integrated functions for highlighting,
-which are both faster and more accurate.
+which are both faster and more accurated.
 
 There is absolutely no chance, whatsoever, of getting Gnus to work
-with Emacs 18.
+with Emacs 18.  It won't even work on Emacsen older than Emacs
+19.30/XEmacs 19.13.  Upgrade your Emacs or die.
 
 	
-From lars Thu Feb 23 23:20:38 1995
-From: larsi@ifi.uio.no (ding)
-Date: Fri Feb 24 13:40:45 1995
-Subject: Bugs & stuff
-Message-ID: <lars-doc7@eyesore.no>
-
-If you want to report a bug, please type `M-x gnus-bug'. This will
-give me a precise overview of your Gnus and Emacs version numbers,
-along with a look at all Gnus variables you have changed.
-
-Du not expect a reply back, but your bug should be fixed in the next
-version. If the bug persists, please re-submit your bug report.
-
-When a bug occurs, I need a recipe for how to trigger the bug. You
-have to tell me exactly what you do to uncover the bug, and you should
-(setq debug-on-error t) and send me the backtrace along with the bug
-report. 
-
-If I am not able to reproduce the bug, I won't be able to fix it.
-
-I would, of course, prefer that you locate the bug, fix it, and mail
-me the patches, but one can't have everything.
-
-If you have any questions on usage, the "ding@ifi.uio.no" mailing list
-is where to post the questions.
-
-
 From lars Thu Feb 23 23:20:38 1995
 From: larsi@ifi.uio.no (ding)
 Date: Fri Feb 24 13:40:45 1995
@@ -235,7 +208,7 @@ Reading the active file from the nntp server is a drag.
 Just press `M-g' on the mail groups, and they will be re-scanned.
 
 You can also re-scan all the mail groups by putting them on level 1
-(`1 S'), and saying `1 g' to re-scan all level 1 groups.
+(`S l 1'), and saying `1 g' to re-scan all level 1 groups.
 
 
 From lars Thu Feb 23 23:20:38 1995
@@ -244,7 +217,7 @@ Date: Fri Feb 24 13:40:45 1995
 Subject: How do I set up virtual newsgroups?
 Message-ID: <lars-doc9@eyesore.no>
 
-Virtual newsgroups are collections of other newsgroups. Why people
+Virtual newsgroups are collections of other newsgroups.  Why people
 want this is beyond me, but here goes:
 
 Create the group by saying
@@ -253,27 +226,27 @@ Create the group by saying
 
 This will create the group "nnvirtual:my.virtual.newsgroup", which
 will collect all articles from all the groups in the "rec.aquaria"
-hierarchy. 
+hierarchy.  
 
 If you want to edit the regular expression, just type `M-e' on the
 group line.
 
 Note that all the groups that are part of the virtual group have to be
-alive. This means that the cannot, absolutely not, be zombie or
-killed. They can be unsubscribed; that's no problem.
+alive.  This means that the cannot, absolutely not, be zombie or
+killed.  They can be unsubscribed; that's no problem.
 
 You can combine groups from different servers in the same virtual
-newsgroup, something that may actually be useful. Say you have the
+newsgroup, something that may actually be useful.  Say you have the
 group "comp.headers" on the server "news.server.no" and the same group
-on "news.server.edu". If people have posted articles with Distribution
+on "news.server.edu".  If people have posted articles with Distribution
 headers that stop propagation of their articles, combining these two
 newsgroups into one virtual newsgroup should give you a better view of
 what's going on.
 
 One caveat, though: The virtual group article numbers from the first
 source group (group A) will always be lower than the article numbers
-from the second (group B). This means that Gnus will believe that
-articles from group A are older than articles from group B. Threading
+from the second (group B).  This means that Gnus will believe that
+articles from group A are older than articles from group B.  Threading
 will lessen these problems, but it might be a good idea to sort the
 threads over the date of the articles to get a correct feel for the
 flow of the groups:
@@ -295,62 +268,27 @@ the lines of:
 From lars Thu Feb 23 23:20:38 1995
 From: larsi@ifi.uio.no (ding)
 Date: Fri Feb 24 13:40:45 1995
-Subject: I want to kiboze everything in sight!
-Message-ID: <lars-doc10@eyesore.no>
+Subject: Bugs & stuff
+Message-ID: <lars-doc7@eyesore.no>
 
-The nnkiboze backend collects articles that you are interested in from
-groups you are interested in. Below is a description for how you can
-gather all posts from me, and all posts about Gnus in the gnu.emacs
-hierarchy in one handy, easy to read group.
+If you want to report a bug, please type `M-x gnus-bug'.  This will
+give me a precice overview of your Gnus and Emacs version numbers,
+along with a look at all Gnus variables you have changed.
 
-Gnus will let you eat up all available machine resources, grinding
-everything to a halt. Including your nntp server. Who says Gnus isn't
-friendly? 
+Du not expect a reply back, but your bug should be fixed in the next
+version.  If the bug persists, please re-submit your bug report.
 
-You want to do this, of course.
+When a bug occurs, I need a recipe for how to trigger the bug.  You
+have to tell me exactly what you do to uncover the bug, and you should
+(setq debug-on-error t) and send me the backtrace along with the bug
+report.  
 
-Create an nnkiboze group the normal way:
+If I am not able to reproduce the bug, I won't be able to fix it.
 
-`M-a my.group<RET>nnkiboze<RET>^gnu.emacs.*<RET>'
+I would, of course, prefer that you locate the bug, fix it, and mail
+me the patches, but one can't have everything.
 
-You now have a shiny new group that you can't enter.  How...
-practical.
-
-But just wait, it gets worse.
-
-You now have to create a score file. 
-
-`C-x C-f ~/News/nnkiboze:my.group.SCORE<RET>'
-
-Put something like the following in this file:
-
-(setq gnus-score-alist
-      '(("from"
-	 ("Ingebrigtsen" nil 1000)
-	 ("lmi" nil 5000))
-	("subject"
-	 ("Gnus" nil 10000))
-	(touched)))
-
-Save the file, and go to a shell window.
-
-Type:
-
-$ emacs -batch -l ~/.emacs -l nnkiboze -f nnkiboze-generate-groups
-
-Wait a few hours, and all articles from me, or articles about Gnus,
-will appear, as if by magic, in the nnkiboze group. You really want
-that, of course.
-
-Gnus actually grabs the headers of all the groups that supply the
-nnkiboze group with articles, so this isn't very kind. Pleasy only do
-it at night (`at' is a fine command), and please, *please*, limit the
-number of groups that supply articles to the group. If you specify ""
-as the address of this group, nnkiboze will ask for headers from *all*
-groups, and this is megs and megs and megs of data. 
-
-Use it, don't abuse it. Be nice.
-
-
+If you have any questions on usage, the "ding@ifi.uio.no" mailing list
+is where to post the questions.
 
 

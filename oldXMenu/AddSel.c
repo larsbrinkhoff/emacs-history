@@ -62,8 +62,17 @@ XMenuAddSelection(display, menu, p_num, data, label, active)
     /*
      * Fill the XMSelect structure.
      */
-    select->type = SELECTION;
-    select->active = active;
+    if (!strcmp (label, "--") || !strcmp (label, "---"))
+      {
+	select->type = SEPARATOR;
+	select->active = 0;
+      }
+    else
+      {
+	select->type = SELECTION;
+	select->active = active;
+      }
+
     select->serial = -1;
     select->label = label;
     select->label_width = label_width;

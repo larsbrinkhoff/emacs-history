@@ -23,7 +23,7 @@
 ;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-;; $Id: rlogin.el,v 1.32 1996/05/08 00:52:30 friedman Exp $
+;; $Id: rlogin.el,v 1.35 1996/06/23 04:31:17 friedman Exp $
 
 ;;; Commentary:
 
@@ -109,7 +109,10 @@ this variable is set from that.")
 
 ;;;###autoload
 (defun rlogin (input-args &optional buffer)
-  "Open a network login connection to HOST via the `rlogin' program.
+  "Open a network login connection via `rlogin' with args INPUT-ARGS.
+INPUT-ARGS should start with a host name; it may also contain
+other arguments for `rlogin'.
+
 Input is sent line-at-a-time to the remote connection.
 
 Communication with the remote host is recorded in a buffer `*rlogin-HOST*'
@@ -117,8 +120,8 @@ Communication with the remote host is recorded in a buffer `*rlogin-HOST*'
 If a prefix argument is given and the buffer `*rlogin-HOST*' already exists,
 a new buffer with a different connection will be made.
 
-When called from a program, if the optional second argument is a string or
-buffer, it names the buffer to use.
+When called from a program, if the optional second argument BUFFER is
+a string or buffer, it specifies the buffer to use.
 
 The variable `rlogin-program' contains the name of the actual program to
 run.  It can be a relative or absolute path.
@@ -184,6 +187,11 @@ variable."
       ;; comint-output-filter-functions is just like a hook, except that the
       ;; functions in that list are passed arguments.  add-hook serves well
       ;; enough for modifying it.
+      ;; comint-output-filter-functions should already have a
+      ;; permanent-local property, at least in emacs 19.27 or later.
+      (if (fboundp 'make-local-hook)
+          (make-local-hook 'comint-output-filter-functions)
+        (make-local-variable 'comint-output-filter-functions))
       (add-hook 'comint-output-filter-functions 'rlogin-carriage-filter)
 
       (rlogin-mode)
@@ -193,17 +201,18 @@ variable."
       (make-local-variable 'rlogin-remote-user)
       (setq rlogin-remote-user user)
 
-      (cond
-       ((eq rlogin-directory-tracking-mode t)
-        ;; Do this here, rather than calling the tracking mode function, to
-        ;; avoid a gratuitous resync check; the default should be the
-        ;; user's home directory, be it local or remote.
-        (setq comint-file-name-prefix
-              (concat "/" rlogin-remote-user "@" rlogin-host ":"))
-        (cd-absolute comint-file-name-prefix))
-       ((null rlogin-directory-tracking-mode))
-       (t
-        (cd-absolute (concat comint-file-name-prefix "~/"))))))))
+      (condition-case ()
+          (cond ((eq rlogin-directory-tracking-mode t)
+                 ;; Do this here, rather than calling the tracking mode
+                 ;; function, to avoid a gratuitous resync check; the default
+                 ;; should be the user's home directory, be it local or remote.
+                 (setq comint-file-name-prefix
+                       (concat "/" rlogin-remote-user "@" rlogin-host ":"))
+                 (cd-absolute comint-file-name-prefix))
+                ((null rlogin-directory-tracking-mode))
+                (t
+                 (cd-absolute (concat comint-file-name-prefix "~/"))))
+        (error nil))))))
 
 (defun rlogin-mode ()
   "Set major-mode for rlogin sessions.

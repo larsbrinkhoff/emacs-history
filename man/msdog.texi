@@ -27,7 +27,8 @@ text files and binary files does still apply.
 * Text and Binary::
 * Printing and MS-DOS::
 * Subprocesses on MS-DOS::
-* Windows 95 Subprocesses::
+* Windows Subprocesses::
+* System Menu on Windows::
 @end menu
 
 @node Keyboard and Mouse on MS-DOS
@@ -93,10 +94,12 @@ colors.  Use the @code{list-colors-display} and
 @code{list-faces-display} commands (@pxref{Modifying Faces}) to see
 what colors and faces are available and what they look like.
 
-  Multiple frames (@pxref{Frames}) are not supported on MS-DOS.  You
-have only a single frame which occupies the entire screen.  When you run
-Emacs under MS-Windows 3.x, the single frame can take less than the full
-screen, but you still cannot have more than a single frame.
+@cindex frames on MS-DOS
+  Multiple frames (@pxref{Frames}) are supported on MS-DOS, but they all
+overlap, so you only see a single frame at any given moment.  That
+single visible frame occupies the entire screen.  When you run Emacs
+under MS-Windows 3.x, the visible frame can take less than the full 
+screen, but you still cannot see more than a single frame.
 
 @cindex frame size under MS-DOS
 @findex mode4350
@@ -105,19 +108,19 @@ screen, but you still cannot have more than a single frame.
 lines, depending on your hardware; the @code{mode25} command switches
 to the default 80x25 screen size.
 
-  By default, Emacs only knows how to set screen sizes of 80 columns
-by 25 or 43/50 rows.  However, if your video adapter has special video
+  By default, Emacs only knows how to set screen sizes of 80 columns by
+25 or 43/50 rows.  However, if your video adapter has special video
 modes that will switch the display to other sizes, you can have Emacs
-support those too.  When you ask Emacs to switch the (single) frame to
-@var{n} rows by @var{m} cols dimensions, it checks if there is a
-variable called @code{screen-dimensions-@var{n}x@var{m}}, and if so,
-uses its value (which must be an integer) as the video mode to switch
-to.  (Emacs switches to that video mode by calling the BIOS @code{Set
-Video Mode} function with the value of
-@code{screen-dimensions-@var{n}x@var{m}} in the @code{AL} register.)
-For example, suppose your adapter will switch to 66x80 dimensions when
-put into video mode 85.  Then you can make Emacs support this screen
-size by putting the following into your @file{_emacs} file:
+support those too.  When you ask Emacs to switch the frame to @var{n}
+rows by @var{m} cols dimensions, it checks if there is a variable called
+@code{screen-dimensions-@var{n}x@var{m}}, and if so, uses its value
+(which must be an integer) as the video mode to switch to.  (Emacs
+switches to that video mode by calling the BIOS @code{Set Video Mode}
+function with the value of @code{screen-dimensions-@var{n}x@var{m}} in
+the @code{AL} register.)  For example, suppose your adapter will switch
+to 66x80 dimensions when put into video mode 85.  Then you can make
+Emacs support this screen size by putting the following into your
+@file{_emacs} file:
 
 @example
 (setq screen-dimensions-66x80 85)
@@ -138,6 +141,9 @@ VGA supports 44x80 dimensions and you define a variable
 44x80 size in this case, you can do it by setting the variable named
 @code{screen-dimensions-36x80} with the same video mode value as
 @code{screen-dimensions-44x80}.
+
+  Changing frame dimensions on MS-DOS has the effect of changing all the
+other frames to the new dimensions.
 
 @node File Names on MS-DOS
 @section File Names on MS-DOS
@@ -360,41 +366,63 @@ the @code{dired-listing-switches} variable.  The options that work are
 @samp{-A}, @samp{-a}, @samp{-c}, @samp{-i}, @samp{-r}, @samp{-S},
 @samp{-s}, @samp{-t}, and @samp{-u}.
 
-@node Windows 95 Subprocesses
-@section Windows 95 Subprocesses
+@node Windows Subprocesses
+@section Subprocesses on Windows 95 and Windows NT
 
-Subprocesses, both synchronous and asynchronous, work fine on Windows 95
-as long as you run only 32-bit Windows applications in them.  However,
-when you run a DOS application in a subprocess, it doesn't completely
-work; and if you run two DOS applications at the same time in two
-subprocesses, the operating system can get badly confused.
+Subprocesses, both synchronous and asynchronous, work fine on both
+Windows 95 and Windows NT as long as you run only 32-bit Windows
+applications.  However, when you run a DOS application in a subprocess,
+you may encounter problems or be unable to run the application at all;
+and if you run two DOS applications at the same time in two
+subprocesses, you may have to reboot your system.
 
-Since the command interpreter shells run as DOS applications, these
-problems are significant.  But there's nothing we can do about them;
-only Microsoft can fix them.  Windows 95 simply cannot cope when one
-Windows process tries to run two separate DOS subprocesses.
+Since the standard command interpreter (and most command line utilities)
+on Windows 95 are DOS applications, these problems are significant when
+using that system.  But there's nothing we can do about them; only
+Microsoft can fix them.
 
-If you run just one DOS application subprocess, then the application is
-likely to busy-wait when idle, which means that your machine will be
-100% busy as long as the application is running.  However, aside from
-the heavy load, the subprocess will work as expected---provided you
-terminate it before you start any other DOS application as a subprocess.
+If you run just one DOS application subprocess, the subprocess should
+work as expected as long as it is ``well-behaved'' and does not perform
+direct screen access or other unusual actions.  If you have a CPU
+monitor application, your machine will appear to be 100% busy even when
+the DOS application is idle, but this is only an artefact of the way CPU
+monitors measure processor load.
 
-Emacs is unable to terminate or interrupt a DOS subprocess.  The only
-way you can terminate such a subprocess is by giving it a command that
-tells its program to exit.
+You must terminate the DOS application before you start any other DOS
+application in a different subprocess.  Emacs is unable to interrupt or
+terminate a DOS subprocess.  The only way you can terminate such a
+subprocess is by giving it a command that tells its program to exit.
 
-If you run two DOS applications at the same time in two separate
-subprocesses, even if one of them is asynchronous, you will probably
-find that one of the subprocesses is hung.  If the second subprocess is
-asynchronous, then Emacs itself will be hung.  Meanwhile, your machine
-will be 100% busy.
+If you attempt to run two DOS applications at the same time in separate
+subprocesses, the second one that is started will be suspended until the
+first one finishes, even if either or both of them are asynchronous.
 
-If you can go to the first subprocess (possible if Emacs is not hung),
-and tell it to exit, that should clear up the problem.  Otherwise you
-will have to reboot.
+If you can go to the first subprocess, and tell it to exit, the second
+subprocess should continue normally.  However, if the second subprocess
+is synchronous, Emacs itself will be hung until the first subprocess
+finishes.  If it will not finish without user input, then you have no
+choice but to reboot if you are running on Windows 95.  If you are
+running on Windows NT, you can use a process viewer application to kill
+the appropriate instance of ntvdm instead (this will terminate both DOS
+subprocesses).
 
-If you have to reboot in this situation, do not use the @code{Shutdown}
-command on the @code{Start} menu; that usually hangs the system.
-Instead, type @kbd{CTL-ALT-@key{DEL}} and then choose @code{Shutdown}.
-That usually works, although it may take a few minutes to do its job.
+If you have to reboot Windows 95 in this situation, do not use the
+@code{Shutdown} command on the @code{Start} menu; that usually hangs the
+system.  Instead, type @kbd{CTL-ALT-@key{DEL}} and then choose
+@code{Shutdown}.  That usually works, although it may take a few minutes
+to do its job.
+
+@node System Menu on Windows
+@section Using the System Menu on Windows
+
+Emacs normally turns off the Windows feature that tapping the @key{ALT}
+key invokes the Windows menu.  The reason is that the @key{ALT} also
+serves as @key{META} in Emacs.  When using Emacs, users often press the
+@key{META} key temporarily and then change their minds; if this has the
+effect of bringing up the Windows menu, it alters the meaning of
+subsequent commands.  Many users find this frustrating. 
+
+@vindex win32-pass-alt-to-system
+You can reenable Windows's default handling of tapping the @key{ALT} key
+by setting @code{win32-pass-alt-to-system} to a non-@code{nil} value.
+

@@ -25,10 +25,6 @@
 
 ;;; Commentary:
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
-
 ;; Thanks to Jim Blandy for mentioning ring.el.  It saved a lot of
 ;; time.
 ;;
@@ -117,7 +113,7 @@ the message."
         (and
          name-start
          name-end
-         (downcase (buffer-substring name-start name-end)))))))
+         (downcase (buffer-substring-no-properties name-start name-end)))))))
 
 (defsubst mail-hist-forward-header (count)
   "Move forward COUNT headers (backward if COUNT is negative).

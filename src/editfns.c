@@ -693,7 +693,7 @@ ZONE is an integer indicating the number of seconds east of Greenwich.\n\
   XSETFASTINT (list_args[2], decoded_time->tm_hour);
   XSETFASTINT (list_args[3], decoded_time->tm_mday);
   XSETFASTINT (list_args[4], decoded_time->tm_mon + 1);
-  XSETFASTINT (list_args[5], decoded_time->tm_year + 1900);
+  XSETINT (list_args[5], decoded_time->tm_year + 1900);
   XSETFASTINT (list_args[6], decoded_time->tm_wday);
   list_args[7] = (decoded_time->tm_isdst)? Qt : Qnil;
 
@@ -765,6 +765,10 @@ If you want them to stand for years in this century, you must do that yourself."
 	  sprintf (tzbuf, "XXX%s%d:%02d:%02d", "-" + (XINT (zone) < 0),
 		   abszone / (60*60), (abszone/60) % 60, abszone % 60);
 	  tzstring = tzbuf;
+#ifdef _NEXT_SOURCE
+	  /* On NEXTSTEP, timezone environment var is ignored.  */
+	  tm.tm_gmtoff = -abszone;
+#endif
 	}
       else
 	error ("Invalid time zone specification");
@@ -828,14 +832,17 @@ difftm (a, b)
 {
   int ay = a->tm_year + (TM_YEAR_ORIGIN - 1);
   int by = b->tm_year + (TM_YEAR_ORIGIN - 1);
+  /* Divide years by 100, rounding towards minus infinity.  */
+  int ac = ay / 100 - (ay % 100 < 0);
+  int bc = by / 100 - (by % 100 < 0);
   /* Some compilers can't handle this as a single return statement.  */
   long days = (
 	      /* difference in day of year */
 	      a->tm_yday - b->tm_yday
 	      /* + intervening leap days */
 	      +  ((ay >> 2) - (by >> 2))
-	      -  (ay/100 - by/100)
-	      +  ((ay/100 >> 2) - (by/100 >> 2))
+	      -  (ac - bc)
+	      +  ((ac >> 2) - (bc >> 2))
 	      /* + difference in years * 365 */
 	      +  (long)(ay-by) * 365
 	      );
@@ -939,11 +946,14 @@ set_time_zone_rule (tzstring)
   int envptrs;
   char **from, **to, **newenv;
 
+  /* Make the ENVIRON vector longer with room for TZSTRING.  */
   for (from = environ; *from; from++)
     continue;
   envptrs = from - environ + 2;
   newenv = to = (char **) xmalloc (envptrs * sizeof (char *)
 				   + (tzstring ? strlen (tzstring) + 4 : 0));
+
+  /* Add TZSTRING to the end of environ, as a value for TZ.  */
   if (tzstring)
     {
       char *t = (char *) (to + envptrs);
@@ -952,6 +962,9 @@ set_time_zone_rule (tzstring)
       *to++ = t;
     }
 
+  /* Copy the old environ vector elements into NEWENV,
+     but don't copy the TZ variable.
+     So we have only one definition of TZ, which came from TZSTRING.  */
   for (from = environ; *from; from++)
     if (strncmp (*from, "TZ=", 3) != 0)
       *to++ = *from;
@@ -959,7 +972,49 @@ set_time_zone_rule (tzstring)
 
   environ = newenv;
 
+  /* If we do have a TZSTRING, NEWENV points to the vector slot where
+     the TZ variable is stored.  If we do not have a TZSTRING,
+     TO points to the vector slot which has the terminating null.  */
+
 #ifdef LOCALTIME_CACHE
+  {
+    /* In SunOS 4.1.3_U1 and 4.1.4, if TZ has a value like
+       "US/Pacific" that loads a tz file, then changes to a value like
+       "XXX0" that does not load a tz file, and then changes back to
+       its original value, the last change is (incorrectly) ignored.
+       Also, if TZ changes twice in succession to values that do
+       not load a tz file, tzset can dump core (see Sun bug#1225179).
+       The following code works around these bugs.  */
+
+    /* These two values are known to load tz files in buggy implementations.
+       Their values shouldn't matter in non-buggy implementations.  */
+    char *tz1 = "TZ=GMT0";
+    char *tz2 = "TZ=GMT1";
+
+    if (tzstring)
+      {
+	/* Temporarily set TZ to a value that loads a tz file
+	   and that differs from tzstring.  */
+	char *tz = *newenv;
+	*newenv = strcmp (tzstring, tz1 + 3) == 0 ? tz2 : tz1;
+	tzset ();
+	*newenv = tz;
+      }
+    else
+      {
+	/* The implied tzstring is unknown, so temporarily set TZ to
+	   two different values that each load a tz file.  */
+	*to = tz1;
+	to[1] = 0;
+	tzset ();
+	*to = tz2;
+	tzset ();
+	*to = 0;
+      }
+
+    /* Now TZ has the desired value, and tzset can be invoked safely.  */
+  }
+
   tzset ();
 #endif
 }

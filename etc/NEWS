@@ -1,9 +1,274 @@
-GNU Emacs NEWS -- history of user-visible changes.  15 May 1996
+GNU Emacs NEWS -- history of user-visible changes.  1 Aug 1996
 Copyright (C) 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
+
+* Editing Changes in Emacs 19.32
+
+** C-x f with no argument now signals an error.
+To set the fill column at the current column, use C-u C-x f.
+
+** Expanding dynamic abbrevs with M-/ is now smarter about case
+conversion.  If you type the abbreviation with mixed case, and it
+matches the beginning of the expansion including case, then the
+expansion is copied verbatim.  Using SPC M-/ to copy an additional
+word always copies it verbatim except when the previous copied word is
+all caps.
+
+** On a non-windowing terminal, which can display only one Emacs frame
+at a time, creating a new frame with C-x 5 2 also selects that frame.
+
+When using a display that can show multiple frames at once, C-x 5 2
+does make the frame visible, but does not select it.  This is the same
+as in previous Emacs versions.
+
+** You can use C-x 5 2 to create multiple frames on MSDOS, just as on a
+non-X terminal on Unix.  Of course, only one frame is visible at any
+time, since your terminal doesn't have the ability to display multiple
+frames.
+
+** On Windows, set win32-pass-alt-to-system to a non-nil value
+if you would like tapping the Alt key to invoke the Windows menu.
+This feature is not enabled by default; since the Alt key is also the
+Meta key, it is too easy and painful to activate this feature by
+accident.
+
+** The command apply-macro-to-region-lines repeats the last defined
+keyboard macro once for each complete line within the current region.
+It does this line by line, by moving point to the beginning of that
+line and then executing the macro.
+
+This command is not new, but was never documented before.
+
+** You can now use Mouse-1 to place the region around a string constant
+(something surrounded by doublequote characters or other delimiter
+characters of like syntax) by double-clicking on one of delimiting
+characters.
+
+** Font Lock mode
+
+*** Font Lock support modes
+
+Font Lock can be configured to use Fast Lock mode and Lazy Lock mode (see
+below) in a flexible way.  Rather than adding the appropriate function to the
+hook font-lock-mode-hook, you can use the new variable font-lock-support-mode
+to control which modes have Fast Lock mode or Lazy Lock mode turned on when
+Font Lock mode is enabled.
+
+For example, to use Fast Lock mode when Font Lock mode is turned on, put:
+
+ (setq font-lock-support-mode 'fast-lock-mode)
+
+in your ~/.emacs.
+
+*** lazy-lock
+
+The lazy-lock package speeds up Font Lock mode by making fontification occur
+only when necessary, such as when a previously unfontified part of the buffer
+becomes visible in a window.  When you create a buffer with Font Lock mode and
+Lazy Lock mode turned on, the buffer is not fontified.  When certain events
+occur (such as scrolling), Lazy Lock makes sure that the visible parts of the
+buffer are fontified.  Lazy Lock also defers on-the-fly fontification until
+Emacs has been idle for a given amount of time.
+
+To use this package, put in your ~/.emacs:
+
+ (setq font-lock-support-mode 'lazy-lock-mode)
+
+To control the package behaviour, see the documentation for `lazy-lock-mode'.
+
+** Changes in BibTeX mode.
+
+*** For all entries allow spaces and tabs between opening brace or
+paren and key.
+
+*** Non-escaped double-quoted characters (as in `Sch"of') are now
+supported.
+
+** Gnus changes.
+
+Gnus, the Emacs newsreader, has undergone further rewriting.  Many new
+commands and variables have been added.  There should be no
+significant incompatibilities between this Gnus version and the
+previously released version, except in the message composition area.
+
+Below is a list of the more user-visible changes.  Coding changes
+between Gnus 5.1 and 5.2 are more extensive.
+
+*** A new message composition mode is used.  All old customization 
+variables for mail-mode, rnews-reply-mode and gnus-msg are now
+obsolete.
+
+*** Gnus is now able to generate "sparse" threads -- threads where
+missing articles are represented by empty nodes.
+
+    (setq gnus-build-sparse-threads 'some)
+
+*** Outgoing articles are stored on a special archive server.
+
+    To disable this:  (setq gnus-message-archive-group nil)
+
+*** Partial thread regeneration now happens when articles are
+referred. 
+
+*** Gnus can make use of GroupLens predictions:
+
+    (setq gnus-use-grouplens t)
+
+*** A trn-line tree buffer can be displayed.
+
+    (setq gnus-use-trees t)
+
+*** An nn-like pick-and-read minor mode is available for the summary
+buffers. 
+
+    (add-hook 'gnus-summary-mode-hook 'gnus-pick-mode)
+
+*** In binary groups you can use a special binary minor mode:
+
+    `M-x gnus-binary-mode'
+
+*** Groups can be grouped in a folding topic hierarchy.
+
+    (add-hook 'gnus-group-mode-hook 'gnus-topic-mode)
+
+*** Gnus can re-send and bounce mail.
+
+    Use the `S D r' and `S D b'.
+
+*** Groups can now have a score, and bubbling based on entry frequency
+is possible.
+
+    (add-hook 'gnus-summary-exit-hook 'gnus-summary-bubble-group)
+
+*** Groups can be process-marked, and commands can be performed on
+groups of groups.
+
+*** Caching is possible in virtual groups.
+
+*** nndoc now understands all kinds of digests, mail boxes, rnews news
+batches, ClariNet briefs collections, and just about everything else. 
+
+*** Gnus has a new backend (nnsoup) to create/read SOUP packets.
+
+*** The Gnus cache is much faster.
+
+*** Groups can be sorted according to many criteria.
+
+    For instance: (setq gnus-group-sort-function 'gnus-group-sort-by-rank)
+
+*** New group parameters have been introduced to set list-address and
+expiry times.
+
+*** All formatting specs allow specifying faces to be used.
+
+*** There are several more commands for setting/removing/acting on
+process marked articles on the `M P' submap.
+
+*** The summary buffer can be limited to show parts of the available
+articles based on a wide range of criteria.  These commands have been
+bound to keys on the `/' submap.
+
+*** Articles can be made persistent -- as an alternative to saving
+articles with the `*' command.
+
+*** All functions for hiding article elements are now toggles.
+
+*** Article headers can be buttonized.
+
+    (add-hook 'gnus-article-display-hook 'gnus-article-add-buttons-to-head)
+
+*** All mail backends support fetching articles by Message-ID.
+
+*** Duplicate mail can now be treated properly.  See the 
+`nnmail-treat-duplicates' variable.
+
+*** All summary mode commands are available directly from the article
+buffer. 
+
+*** Frames can be part of `gnus-buffer-configuration'.
+
+*** Mail can be re-scanned by a daemonic process.
+
+*** Gnus can make use of NoCeM files to filter spam.
+
+    (setq gnus-use-nocem t)
+
+*** Groups can be made permanently visible. 
+
+    (setq gnus-permanently-visible-groups "^nnml:")
+
+*** Many new hooks have been introduced to make customizing easier. 
+
+*** Gnus respects the Mail-Copies-To header.
+
+*** Threads can be gathered by looking at the References header. 
+
+    (setq gnus-summary-thread-gathering-function 
+          'gnus-gather-threads-by-references)
+
+*** Read articles can be stored in a special backlog buffer to avoid
+refetching.  
+
+    (setq gnus-keep-backlog 50)
+
+*** A clean copy of the current article is always stored in a separate
+buffer to allow easier treatment.
+
+*** Gnus can suggest where to save articles.  See `gnus-split-methods'.
+
+*** Gnus doesn't have to do as much prompting when saving.
+
+    (setq gnus-prompt-before-saving t)
+
+*** gnus-uu can view decoded files asynchronously while fetching
+articles. 
+
+    (setq gnus-uu-grabbed-file-functions 'gnus-uu-grab-view)
+
+*** Filling in the article buffer now works properly on cited text. 
+
+*** Hiding cited text adds buttons to toggle hiding, and how much
+cited text to hide is now customizable.
+
+    (setq gnus-cited-lines-visible 2)
+
+*** Boring headers can be hidden.
+
+    (add-hook 'gnus-article-display-hook 'gnus-article-hide-boring-headers)
+
+*** Default scoring values can now be set from the menu bar.
+
+*** Further syntax checking of outgoing articles have been added.
+
+The Gnus manual has been expanded.  It explains all these new features
+in greater detail.
+
+* Lisp Changes in Emacs 19.32
+
+** The function set-visited-file-name now accepts an optional
+second argument NO-QUERY.  If it is non-nil, then the user is not
+asked for confirmation in the case where the specified file already
+exists.
+
+** The variable print-length applies to printing vectors and bitvectors,
+as well as lists.
+
+** The new function keymap-parent returns the parent keymap
+of a given keymap.
+
+** The new function set-keymap-parent specifies a new parent for a
+given keymap.  The arguments are KEYMAP and PARENT.  PARENT must be a
+keymap or nil.
+
+** Sometimes menu keymaps use a command name, a symbol, which is really
+an automatically generated alias for some other command, the "real"
+name.  In such a case, you should give that alias symbol a non-nil
+menu-alias property.  That property tells the menu system to look for
+equivalent keys for the real name instead of equivalent keys for the
+alias.
 
 * Editing Changes in Emacs 19.31
 
@@ -169,7 +434,7 @@ documentation of variables `mail-directory-process' and
 ** A greatly extended sgml-mode offers new features such as (to be configured)
 skeletons with completing read for tags and attributes, typing named
 characters including optionally all 8bit characters, making tags invisible
-with optional alternate display text, skipping and deleting tag(pair)s
+with optional alternate display text, skipping and deleting tag(pair)s.
 
 Note: since Emacs' syntax feature cannot limit the special meaning of ', " and
 - to inside <>, for some texts the result, especially of font locking, may be
@@ -180,7 +445,7 @@ less HTML3ish.  It also offers optional quick keys like C-c 1 for
 headline or C-c u for unordered list (see `html-quick-keys').  Edit /
 Text Properties / Face or M-g combinations create tags as applicable.
 Outline minor mode is supported and level 1 font-locking tries to
-fontify tag contents (which only works when they fit on one line due
+fontify tag contents (which only works when they fit on one line, due
 to a limitation in font-lock).
 
 External viewing via browse-url can occur automatically upon saving.
@@ -264,7 +529,7 @@ command M-x follow-delete-other-windows-and-split.
 ** hide-show changes.
 
 The hooks hs-hide-hooks and hs-show-hooks have been renamed
-to hs-hide-hook and hs-show-hook. to follow the convention for
+to hs-hide-hook and hs-show-hook, to follow the convention for
 normal hooks.
 
 ** Simula mode now has a menu containing the most important commands.
@@ -370,13 +635,21 @@ call looks like this:
   (run-with-idle-timer SECS REPEAT FUNCTION ARGS...)
 
 SECS says how many seconds of idleness should elapse before the timer
-happens.  It may be an integer or a floating point number.  When the
+runs.  It may be an integer or a floating point number.  When the
 timer becomes ripe, the action is to call FUNCTION with arguments
 ARGS.
 
+Emacs becomes idle whenever it finishes executing a keyboard or mouse
+command.  It remains idle until it receives another keyboard or mouse
+command.
+
 REPEAT, if non-nil, means this timer should be activated again each
-time Emacs becomes idle.  If REPEAT is nil, the timer runs just once,
-the first time Emacs is idle for SECS seconds.
+time Emacs becomes idle and remains idle for SECS seconds The timer
+does not repeat if Emacs *remains* idle; it runs at most once after
+each time Emacs becomes idle.
+
+If REPEAT is nil, the timer runs just once, the first time Emacs is
+idle for SECS seconds.
 
 *** post-command-idle-hook is now obsolete; you shouldn't use it at
 all, because it interferes with the idle timer mechanism.  If your
@@ -6181,7 +6454,7 @@ the tar file.
 ----------------------------------------------------------------------
 Copyright information:
 
-Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+Copyright (C) 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the
@@ -6194,6 +6467,7 @@ Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
    carry prominent notices stating who last changed them.
 
 Local variables:
-mode: text
+mode: outline
+paragraph-separate: "[ 	]*$"
 end:
 

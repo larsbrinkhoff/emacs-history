@@ -933,7 +933,16 @@ _XMRefreshSelection(display, menu, select)
     register int height = select->window_h;
     register int bdr_width = menu->s_bdr_width;
     
-    if (select->activated) {
+    if (select->type == SEPARATOR) {
+        XDrawLine(display,
+                  select->parent_p->window,
+                  menu->normal_select_GC,
+                  select->window_x,
+                  select->window_y + height / 2,
+                  select->window_x + width,
+                  select->window_y + height / 2);
+    }
+    else if (select->activated) {
 	if (menu->menu_mode == INVERT) {
 	    XFillRectangle(display, 
 			   select->parent_p->window,

@@ -436,10 +436,14 @@ separator line---that is, to the beginning of the message body text.
 the end of the message to say more about who you are.  The text comes
 from the file @file{.signature} in your home directory.  To insert
 your signature automatically, set the variable @code{mail-signature}
-non-@code{nil}; then starting a mail message automatically inserts the
+to @code{t}; then starting a mail message automatically inserts the
 contents of your @file{.signature} file.  If you want to omit your
 signature from a particular message, delete it from the buffer before
 you send the message.
+
+  You can also set @code{mail-signature} to a string; then that string
+is inserted automatically as your signature when you start editing a
+message to send.
 
 @kindex C-c C-y @r{(Mail mode)}
 @findex mail-yank-original
@@ -466,7 +470,9 @@ inserted lines, regardless of the value of @code{mail-yank-prefix}.
   After using @kbd{C-c C-y}, you can use the command @kbd{C-c C-q}
 (@code{mail-fill-yanked-message}) to fill the paragraphs of the yanked
 old message or messages.  One use of @kbd{C-c C-q} fills all such
-paragraphs, each one individually.  @xref{Filling}.
+paragraphs, each one individually.  To fill a single paragraph of the
+quoted message, use @kbd{M-q}, after first setting the fill prefix
+appropriately to handle the indentation.  @xref{Filling}.
 
 @findex ispell-message
   You can do spelling correction on the message text you have written

@@ -1008,7 +1008,9 @@ static const char *re_error_msgid[] =
    This is a variable only so users of regex can assign to it; we never
    change it ourselves.  */
 #if defined (MATCH_MAY_ALLOCATE)
-int re_max_failures = 20000;
+/* 4400 was enough to cause a crash on Alpha OSF/1,
+   whose default stack limit is 2mb.  */
+int re_max_failures = 4000;
 #else
 int re_max_failures = 2000;
 #endif
@@ -5186,6 +5188,12 @@ re_compile_pattern (pattern, length, bufp)
 static struct re_pattern_buffer re_comp_buf;
 
 char *
+#ifdef _LIBC
+/* Make these definitions weak in libc, so POSIX programs can redefine
+   these names if they don't use our functions, and still use
+   regcomp/regexec below without link errors.  */
+weak_function
+#endif
 re_comp (s)
     const char *s;
 {
@@ -5227,6 +5235,9 @@ re_comp (s)
 
 
 int
+#ifdef _LIBC
+weak_function
+#endif
 re_exec (s)
     const char *s;
 {
@@ -5234,15 +5245,6 @@ re_exec (s)
   return
     0 <= re_search (&re_comp_buf, s, len, 0, len, (struct re_registers *) 0);
 }
-
-#ifdef _LIBC
-/* Make these definitions weak in libc, so POSIX programs can redefine
-   these names if they don't use our functions, and still use
-   regcomp/regexec below without link errors.  */
-weak_symbol (re_comp)
-weak_symbol (re_exec)
-#endif
-
 #endif /* _REGEX_RE_COMP */
 
 /* POSIX.2 functions.  Don't define these for Emacs.  */

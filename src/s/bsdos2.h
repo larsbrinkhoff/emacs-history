@@ -1,4 +1,4 @@
-/* s/ file for BSDI BSD/OS 2.x system.  */
+/* s/ file for BSDI BSD/OS 2.0 system.  */
 
 #include "bsd386.h"
 

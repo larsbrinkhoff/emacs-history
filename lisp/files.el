@@ -123,6 +123,9 @@ If the buffer is visiting a new file, the value is nil.")
 (make-variable-buffer-local 'buffer-file-number)
 (put 'buffer-file-number 'permanent-local t)
 
+(defvar buffer-file-numbers-unique (not (memq system-type '(windows-nt)))
+  "Non-nil means that buffer-file-number uniquely identifies files.")
+
 (defconst file-precious-flag nil
   "*Non-nil means protect against I/O errors while saving files.
 Some modes set this non-nil in particular buffers.
@@ -583,12 +586,12 @@ If the current buffer now contains an empty file that you just visited
     (if (get-buffer " **lose**")
 	(kill-buffer " **lose**"))
     (rename-buffer " **lose**")
-    (setq buffer-file-name nil)
-    (setq buffer-file-number nil)
-    (setq buffer-file-truename nil)
     (unwind-protect
 	(progn
 	  (unlock-buffer)
+	  (setq buffer-file-name nil)
+	  (setq buffer-file-number nil)
+	  (setq buffer-file-truename nil)
 	  (find-file filename))
       (cond ((eq obuf (current-buffer))
 	     (setq buffer-file-name ofile)
@@ -624,7 +627,8 @@ Choose the buffer's name using `generate-new-buffer-name'."
 This also substitutes \"~\" for the user's home directory.
 Type \\[describe-variable] directory-abbrev-alist RET for more information."
   ;; Get rid of the prefixes added by the automounter.
-  (if (and (string-match automount-dir-prefix filename)
+  (if (and automount-dir-prefix
+	   (string-match automount-dir-prefix filename)
 	   (file-exists-p (file-name-directory
 			   (substring filename (1- (match-end 0))))))
       (setq filename (substring filename (1- (match-end 0)))))
@@ -691,7 +695,8 @@ If there is no such live buffer, return nil."
 	  found)
 	(let ((number (nthcdr 10 (file-attributes truename)))
 	      (list (buffer-list)) found)
-	  (and number
+	  (and buffer-file-numbers-unique
+	       number
 	       (while (and (not found) list)
 		 (save-excursion
 		   (set-buffer (car list))
@@ -935,6 +940,7 @@ run `normal-mode' explicitly."
     ("\\.ad[abs]\\'" . ada-mode)
     ("\\.icn\\'" . icon-mode)
     ("\\.pl\\'" . perl-mode)
+    ("\\.pm\\'" . perl-mode)
     ("\\.cc\\'" . c++-mode)
     ("\\.hh\\'" . c++-mode)
     ("\\.C\\'" . c++-mode)
@@ -985,6 +991,7 @@ run `normal-mode' explicitly."
     ("\\.prolog\\'" . prolog-mode)
     ("\\.tar\\'" . tar-mode)
     ("\\.\\(arc\\|zip\\|lzh\\|zoo\\)\\'" . archive-mode)
+    ("\\.\\(ARC\\|ZIP\\|LZH\\|ZOO\\)\\'" . archive-mode)
     ;; Mailer puts message to be edited in
     ;; /tmp/Re.... or Message
     ("\\`/tmp/Re" . text-mode)
@@ -1144,7 +1151,7 @@ If `enable-local-variables' is nil, this function does not check for a
     ;; If we found modes to use, invoke them now,
     ;; outside the save-excursion.
     (if modes
-	(progn (mapcar 'funcall modes)
+	(progn (mapcar 'funcall (nreverse modes))
 	       (setq done t)))
     ;; If we didn't find a mode from a -*- line, try using the file name.
     (if (and (not done) buffer-file-name)
@@ -1246,9 +1253,10 @@ If `enable-local-variables' is nil, this function does not check for a
 				(switch-to-buffer-other-frame (current-buffer))))))
 			  (y-or-n-p (format "Set local variables as specified in -*- line of %s? "
 					    (file-name-nondirectory buffer-file-name)))))))
-	  (while result
-	    (hack-one-local-variable (car (car result)) (cdr (car result)))
-	    (setq result (cdr result)))))))
+	  (let ((enable-local-eval enable-local-eval))
+	    (while result
+	      (hack-one-local-variable (car (car result)) (cdr (car result)))
+	      (setq result (cdr result))))))))
 
 (defvar hack-local-variables-hook nil
   "Normal hook run after processing a file's local variables specs.
@@ -1347,6 +1355,8 @@ in order to initialize other data structure based on them.")
 (put 'load-path 'risky-local-variable t)
 (put 'exec-directory 'risky-local-variable t)
 (put 'process-environment 'risky-local-variable t)
+(put 'dabbrev-case-fold-search 'risky-local-variable t)
+(put 'dabbrev-case-replace 'risky-local-variable t)
 ;; Don't wait for outline.el to be loaded, for the sake of outline-minor-mode.
 (put 'outline-level 'risky-local-variable t)
 (put 'rmail-output-file-alist 'risky-local-variable t)
@@ -1407,12 +1417,15 @@ in order to initialize other data structure based on them.")
 	   (set var val))))
 
 
-(defun set-visited-file-name (filename)
+(defun set-visited-file-name (filename &optional no-query)
   "Change name of file visited in current buffer to FILENAME.
 The next time the buffer is saved it will go in the newly specified file.
 nil or empty string as argument means make buffer not be visiting any file.
 Remember to delete the initial contents of the minibuffer
-if you wish to pass an empty string as the argument."
+if you wish to pass an empty string as the argument.
+
+The optional second argument NO-QUERY, if non-nil, inhibits asking for
+confirmation in the case where the file FILENAME already exists."
   (interactive "FSet visited file name: ")
   (if (buffer-base-buffer)
       (error "An indirect buffer cannot visit a file"))
@@ -1429,6 +1442,7 @@ if you wish to pass an empty string as the argument."
 	      (setq filename truename))))
     (let ((buffer (and filename (find-buffer-visiting filename))))
       (and buffer (not (eq buffer (current-buffer)))
+	   (not no-query)
 	   (not (y-or-n-p (message "A buffer is visiting %s; proceed? "
 				   filename)))
 	   (error "Aborted")))
@@ -2649,7 +2663,7 @@ If WILDCARD, it also runs the shell specified by `shell-file-name'."
 			     (setq list (cons (substring switches 0 (match-beginning 0))
 					      list)
 				   switches (substring switches (match-end 0))))
-			   (setq list (cons switches list)))))
+			   (setq list (nreverse (cons switches list))))))
 		   (append list
 			   (list
 			    (if full-directory-p

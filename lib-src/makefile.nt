@@ -15,8 +15,9 @@
 #  GNU General Public License for more details.
 #  
 #  You should have received a copy of the GNU General Public License
-#  along with GNU Emacs; see the file COPYING.  If not, write to
-#  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+#  along with GNU Emacs; see the file COPYING.  If not, write to the
+#  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+#  Boston, MA 02111-1307, USA.
 #
 
 # 
@@ -30,7 +31,6 @@ LINK_FLAGS	= $(ARCH_LDFLAGS) -debug:PARTIAL -machine:$(ARCH) -subsystem:console 
 
 ALL	        = $(BLD)\make-docfile.exe \
 		$(BLD)\hexl.exe		\
-		$(BLD)\wakeup.exe	\
 		$(BLD)\ctags.exe	\
 		$(BLD)\etags.exe	\
 		$(BLD)\movemail.exe	\
@@ -55,15 +55,12 @@ LIBS	      = $(BASE_LIBS)
 $(BLD)\make-docfile.exe: 	$(BLD)\make-docfile.obj $(BLD)\ntlib.obj
 		$(LINK) -out:$@ $(LINK_FLAGS) $(BLD)\make-docfile.obj $(BLD)\ntlib.obj $(LIBS)
 $(BLD)\hexl.exe:		$(BLD)\hexl.obj
-$(BLD)\wakeup.exe: 		$(BLD)\wakeup.obj $(BLD)\ntlib.obj
-		$(LINK) -out:$@ $(LINK_FLAGS) $(BLD)\wakeup.obj $(BLD)\ntlib.obj $(LIBS)
 $(BLD)\movemail.exe: 		$(BLD)\movemail.obj $(BLD)\pop.obj $(BLD)\ntlib.obj
 		$(LINK) -out:$@ $(LINK_FLAGS) -debug:FULL $(BLD)\movemail.obj $(BLD)\pop.obj $(BLD)\ntlib.obj $(LIBS) wsock32.lib
 $(BLD)\fakemail.exe: 		$(BLD)\fakemail.obj $(BLD)\ntlib.obj
 		$(LINK) -out:$@ $(LINK_FLAGS) -debug:full $(BLD)\fakemail.obj $(BLD)\ntlib.obj $(LIBS)
 
 make-docfile:	$(BLD) $(BLD)\make-docfile.exe
-wakeup:		$(BLD) $(BLD)\wakeup.exe
 etags:		$(BLD) $(BLD)\etags.exe
 hexl:		$(BLD) $(BLD)\hexl.exe
 movemail:	$(BLD) $(BLD)\movemail.exe
@@ -85,7 +82,7 @@ $(BLD)\regex.obj: ../src/regex.c ../src/regex.h ../src/config.h
 		$(CC)  $(CFLAGS) -DCONFIG_BROKETS -DINHIBIT_STRING_HEADER \
 		../src/regex.c -Fo$@
 
-ETAGS_CFLAGS  = -DETAGS_REGEXPS
+ETAGS_CFLAGS  = -DETAGS_REGEXPS -DHAVE_GETCWD
 $(BLD)\etags.obj: etags.c
 		$(CC) $(CFLAGS) $(ETAGS_CFLAGS) -Fo$@ etags.c
 
@@ -196,7 +193,6 @@ install:	$(INSTALL_FILES)
 		$(CP) $(BLD)\etags.exe $(INSTALL_DIR)\bin
 		$(CP) $(BLD)\ctags.exe $(INSTALL_DIR)\bin
 		$(CP) $(BLD)\hexl.exe $(INSTALL_DIR)\bin
-		$(CP) $(BLD)\wakeup.exe $(INSTALL_DIR)\bin
 		$(CP) $(BLD)\movemail.exe $(INSTALL_DIR)\bin
 		$(CP) $(BLD)\fakemail.exe $(INSTALL_DIR)\bin
 		- mkdir $(INSTALL_DIR)\etc
@@ -207,7 +203,7 @@ install:	$(INSTALL_FILES)
 # 
 clean:;		- $(DEL) *~ *.pdb DOC*
 		- $(DEL_TREE) deleted
-		- $(DEL_TREE) obj
+		- $(DEL_TREE) $(OBJDIR)
 
 #
 # Headers we would preprocess if we could.
@@ -354,12 +350,6 @@ $(BLD)\timer.obj : \
 	$(EMACS_ROOT)\src\s\windowsnt.h \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\lib-src\..\src\config.h
-
-$(BLD)\wakeup.obj : \
-	$(SRC)\wakeup.c \
-	$(EMACS_ROOT)\src\s\windowsnt.h \
-	$(EMACS_ROOT)\src\m\intel386.h \
-	$(EMACS_ROOT)\src\config.h
 
 $(BLD)\yow.obj : \
 	$(SRC)\yow.c \

@@ -367,9 +367,18 @@ it has a definition as an ordinary abbrev.
 
 @vindex dabbrev-case-fold-search
   Normally, dynamic abbrev expansion ignores case when searching for
-expansions.  That is, the expansion need not agree in case with the
-word you are expanding.  If you set @code{dabbrev-case-fold-search}
-to @code{nil}, then the word and the expansion must match in case.
+expansions.  That is, the expansion need not agree in case with the word
+you are expanding.  If you set @code{dabbrev-case-fold-search} to
+@code{nil}, then the word and the expansion must match in case.
+
+  The value of @code{dabbrev-case-fold-search} may be any expression.
+Dynamic abbrev expansion evaluates that expression, and ignores case
+while searching if its value is not @code{nil}.  The default value of
+@code{dabbrev-case-fold-search} is @code{case-fold-search}, so normally
+the value of @code{case-fold-search} controls the decision.  The reason
+why dynamic abbrev expansion normally ignores case when searching for
+expansions is that normally the value of @code{case-fold-search} is
+@code{t}.
 
 @vindex dabbrev-case-replace
   Normally, dynamic abbrev expansion preserves the case pattern @emph{of

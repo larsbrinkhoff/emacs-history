@@ -365,6 +365,17 @@ ScreenVisualBell (void)
 
 #ifndef HAVE_X_WINDOWS
 
+/* Enable bright background colors.  */
+static void
+bright_bg (void)
+{
+  union REGS regs;
+
+  regs.h.bl = 0;
+  regs.x.ax = 0x1003;
+  int86 (0x10, &regs, &regs);
+}
+
 /* Set the screen dimensions so that it can show no less than
    ROWS x COLS frame.  */
 
@@ -400,9 +411,6 @@ dos_set_window_size (rows, cols)
       && (video_mode_value = XINT (video_mode)) > 0)
     {
       regs.x.ax = video_mode_value;
-      int86 (0x10, &regs, &regs);
-      regs.h.bl = 0;
-      regs.x.ax = 0x1003;
       int86 (0x10, &regs, &regs);
 
       if (have_mouse)
@@ -494,6 +502,9 @@ dos_set_window_size (rows, cols)
   /* Tell the caller what dimensions have been REALLY set.  */
   *rows = ScreenRows ();
   *cols = ScreenCols ();
+
+  /* Enable bright background colors.  */
+  bright_bg ();
 }
 
 /* If we write a character in the position where the mouse is,
@@ -666,7 +677,10 @@ IT_update_end ()
 {
 }
 
-/* This was more or less copied from xterm.c */
+/* This was more or less copied from xterm.c
+
+   Nowadays, the corresponding function under X is `x_set_menu_bar_lines_1'
+   on xfns.c  */
 
 static void
 IT_set_menu_bar_lines (window, n)
@@ -689,6 +703,32 @@ IT_set_menu_bar_lines (window, n)
       w = XWINDOW (window);
       IT_set_menu_bar_lines (window, n);
     }
+}
+
+/* This was copied from xfns.c  */
+
+void
+x_set_menu_bar_lines (f, value, oldval)
+     struct frame *f;
+     Lisp_Object value, oldval;
+{
+  int nlines;
+  int olines = FRAME_MENU_BAR_LINES (f);
+
+  /* Right now, menu bars don't work properly in minibuf-only frames;
+     most of the commands try to apply themselves to the minibuffer
+     frame itslef, and get an error because you can't switch buffers
+     in or split the minibuffer window.  */
+  if (FRAME_MINIBUF_ONLY_P (f))
+    return;
+
+  if (INTEGERP (value))
+    nlines = XINT (value);
+  else
+    nlines = 0;
+
+  FRAME_MENU_BAR_LINES (f) = nlines;
+  IT_set_menu_bar_lines (f->root_window, nlines - olines);
 }
 
 /* IT_set_terminal_modes is called when emacs is started,
@@ -726,6 +766,8 @@ IT_set_terminal_modes (void)
   if (termscript)
     fprintf (termscript, "<SCREEN SAVED (dimensions=%dx%d)>\n",
              screen_size_X, screen_size_Y);
+
+  bright_bg ();
 }
 
 /* IT_reset_terminal_modes is called when emacs is
@@ -800,14 +842,13 @@ IT_set_terminal_window (void)
 }
 
 void
-IT_set_frame_parameters (frame, alist)
-     FRAME_PTR frame;
+IT_set_frame_parameters (f, alist)
+     FRAME_PTR f;
      Lisp_Object alist;
 {
   Lisp_Object tail;
   int redraw;
   extern unsigned long load_color ();
-  FRAME_PTR f = (FRAME_PTR) &the_only_frame;
 
   redraw = 0;
   for (tail = alist; CONSP (tail); tail = Fcdr (tail))
@@ -826,6 +867,8 @@ IT_set_frame_parameters (frame, alist)
 	    {
 	      FRAME_FOREGROUND_PIXEL (f) = new_color;
 	      redraw = 1;
+	      if (termscript)
+		fprintf (termscript, "<FGCOLOR %d>\n", new_color);
 	    }
 	}
       else if (EQ (prop, intern ("background-color")))
@@ -833,28 +876,21 @@ IT_set_frame_parameters (frame, alist)
 	  unsigned long new_color = load_color (f, val);
 	  if (new_color != ~0)
 	    {
-	      FRAME_BACKGROUND_PIXEL (f) = new_color & ~8;
+	      FRAME_BACKGROUND_PIXEL (f) = new_color;
 	      redraw = 1;
+	      if (termscript)
+		fprintf (termscript, "<BGCOLOR %d>\n", new_color);
 	    }
 	}
       else if (EQ (prop, intern ("menu-bar-lines")))
-	{
-	  int new;
-	  int old = FRAME_MENU_BAR_LINES (the_only_frame);
-
-	  if (INTEGERP (val))
-	    new = XINT (val);
-	  else
-	    new = 0;
-	  FRAME_MENU_BAR_LINES (f) = new;
-	  IT_set_menu_bar_lines (the_only_frame.root_window, new - old);
-	}
+	x_set_menu_bar_lines (f, val, 0);
     }
 
   if (redraw)
     {
       recompute_basic_faces (f);
-      Fredraw_frame (Fselected_frame ());
+      if (f == selected_frame)
+	redraw_frame (f);
     }
 }
 
@@ -883,7 +919,7 @@ internal_terminal_init ()
 #ifndef HAVE_X_WINDOWS
   if (!internal_terminal || inhibit_window_system)
     {
-      the_only_frame.output_method = output_termcap;
+      selected_frame->output_method = output_termcap;
       return;
     }
 
@@ -893,23 +929,28 @@ internal_terminal_init ()
   bzero (&the_only_x_display, sizeof the_only_x_display);
   the_only_x_display.background_pixel = 7; /* White */
   the_only_x_display.foreground_pixel = 0; /* Black */
+  bright_bg ();
   colors = getenv ("EMACSCOLORS");
   if (colors && strlen (colors) >= 2)
     {
-      /* Foreground colrs use 4 bits, background only 3.  */
-      if (isxdigit (colors[0]) && !isdigit (colors[0]))
-        colors[0] += 10 - (isupper (colors[0]) ? 'A' : 'a');
+      /* The colors use 4 bits each (we enable bright background).  */
+      if (isdigit (colors[0]))
+        colors[0] -= '0';
+      else if (isxdigit (colors[0]))
+        colors[0] -= (isupper (colors[0]) ? 'A' : 'a') - 10;
       if (colors[0] >= 0 && colors[0] < 16)
         the_only_x_display.foreground_pixel = colors[0];
-      if (colors[1] >= 0 && colors[1] < 8)
+      if (isdigit (colors[1]))
+        colors[1] -= '0';
+      else if (isxdigit (colors[1]))
+        colors[1] -= (isupper (colors[1]) ? 'A' : 'a') - 10;
+      if (colors[1] >= 0 && colors[1] < 16)
         the_only_x_display.background_pixel = colors[1];
     }
   the_only_x_display.line_height = 1;
-  the_only_frame.output_data.x = &the_only_x_display;
-  the_only_frame.output_method = output_msdos_raw;
   the_only_x_display.font = (XFontStruct *)1;   /* must *not* be zero */
 
-  init_frame_faces ((FRAME_PTR) &the_only_frame);
+  init_frame_faces (selected_frame);
 
   ring_bell_hook = IT_ring_bell;
   write_glyphs_hook = IT_write_glyphs;
@@ -943,6 +984,19 @@ dos_get_saved_screen (screen, rows, cols)
   return 0;
 #endif  
 }
+
+#ifndef HAVE_X_WINDOWS
+
+/* We are not X, but we can emulate it well enough for our needs... */
+void
+check_x (void)
+{
+  if (! FRAME_MSDOS_P (selected_frame))
+    error ("Not running under a windows system");
+}
+
+#endif
+
 
 /* ----------------------- Keyboard control ----------------------
  *
@@ -1800,7 +1854,17 @@ IT_menu_display (XMenu *menu, int y, int x, int *faces)
       p = text;
       *p++ = FAST_MAKE_GLYPH (' ', face);
       for (j = 0, q = menu->text[i]; *q; j++)
-	*p++ = FAST_MAKE_GLYPH (*q++, face);
+	{
+	  if (*q > 26)
+	    *p++ = FAST_MAKE_GLYPH (*q++, face);
+	  else	/* make '^x' */
+	    {
+	      *p++ = FAST_MAKE_GLYPH ('^', face);
+	      j++;
+	      *p++ = FAST_MAKE_GLYPH (*q++ + 64, face);
+	    }
+	}
+	    
       for (; j < width; j++)
 	*p++ = FAST_MAKE_GLYPH (' ', face);
       *p++ = FAST_MAKE_GLYPH (menu->submenu[i] ? 16 : ' ', face);
@@ -1837,6 +1901,7 @@ int
 XMenuAddPane (Display *foo, XMenu *menu, char *txt, int enable)
 {
   int len;
+  char *p;
 
   if (!enable)
     abort ();
@@ -1846,8 +1911,16 @@ XMenuAddPane (Display *foo, XMenu *menu, char *txt, int enable)
   menu->text[menu->count] = txt;
   menu->panenumber[menu->count] = ++menu->panecount;
   menu->count++;
-  if ((len = strlen (txt)) > menu->width)
+
+  /* Adjust length for possible control characters (which will
+     be written as ^x).  */
+  for (len = strlen (txt), p = txt; *p; p++)
+    if (*p < 27)
+      len++;
+
+  if (len > menu->width)
     menu->width = len;
+
   return menu->panecount;
 }
 
@@ -1858,6 +1931,7 @@ XMenuAddSelection (Display *bar, XMenu *menu, int pane,
 		   int foo, char *txt, int enable)
 {
   int len;
+  char *p;
 
   if (pane)
     if (!(menu = IT_menu_search_pane (menu, pane)))
@@ -1867,8 +1941,16 @@ XMenuAddSelection (Display *bar, XMenu *menu, int pane,
   menu->text[menu->count] = txt;
   menu->panenumber[menu->count] = enable;
   menu->count++;
-  if ((len = strlen (txt)) > menu->width)
+
+  /* Adjust length for possible control characters (which will
+     be written as ^x).  */
+  for (len = strlen (txt), p = txt; *p; p++)
+    if (*p < 27)
+      len++;
+
+  if (len > menu->width)
     menu->width = len;
+
   return XM_SUCCESS;
 }
 
@@ -1906,6 +1988,7 @@ XMenuActivate (Display *foo, XMenu *menu, int *pane, int *selidx,
   int faces[4], selectface;
   int leave, result, onepane;
   int title_faces[4];		/* face to display the menu title */
+  int buffers_num_deleted = 0;
 
   /* Just in case we got here without a mouse present...  */
   if (have_mouse <= 0)
@@ -1914,21 +1997,21 @@ XMenuActivate (Display *foo, XMenu *menu, int *pane, int *selidx,
   state = alloca (menu->panecount * sizeof (struct IT_menu_state));
   screensize = screen_size * 2;
   faces[0]
-    = compute_glyph_face (&the_only_frame,
+    = compute_glyph_face (selected_frame,
 			  face_name_id_number
-			  (&the_only_frame,
+			  (selected_frame,
 			   intern ("msdos-menu-passive-face")),
 			  0);
   faces[1]
-    = compute_glyph_face (&the_only_frame,
+    = compute_glyph_face (selected_frame,
 			  face_name_id_number
-			  (&the_only_frame,
+			  (selected_frame,
 			   intern ("msdos-menu-active-face")),
 			  0);
   selectface
-    = face_name_id_number (&the_only_frame, intern ("msdos-menu-select-face"));
-  faces[2] = compute_glyph_face (&the_only_frame, selectface, faces[0]);
-  faces[3] = compute_glyph_face (&the_only_frame, selectface, faces[1]);
+    = face_name_id_number (selected_frame, intern ("msdos-menu-select-face"));
+  faces[2] = compute_glyph_face (selected_frame, selectface, faces[0]);
+  faces[3] = compute_glyph_face (selected_frame, selectface, faces[1]);
 
   /* Make sure the menu title is always displayed with
      `msdos-menu-active-face', no matter where the mouse pointer is.  */
@@ -1936,11 +2019,25 @@ XMenuActivate (Display *foo, XMenu *menu, int *pane, int *selidx,
     title_faces[i] = faces[3];
 
   statecount = 1;
+
+  /* Don't let the title for the "Buffers" popup menu include a
+     digit (which is ugly).
+     
+     This is a terrible kludge, but I think the "Buffers" case is
+     the only one where the title includes a number, so it doesn't
+     seem to be necessary to make this more general.  */
+  if (strncmp (menu->text[0], "Buffers 1", 9) == 0)
+    {
+      menu->text[0][7] = '\0';
+      buffers_num_deleted = 1;
+    }
   state[0].menu = menu;
   mouse_off ();
   ScreenRetrieve (state[0].screen_behind = xmalloc (screensize));
 
   IT_menu_display (menu, y0 - 1, x0 - 1, title_faces); /* display menu title */
+  if (buffers_num_deleted)
+    menu->text[0][7] = ' ';
   if ((onepane = menu->count == 1 && menu->submenu[0]))
     {
       menu->width = menu->submenu[0]->width;
@@ -2061,12 +2158,16 @@ x_pixel_height (struct frame *f)
 
 /* ----------------------- DOS / UNIX conversion --------------------- */
 
+void msdos_downcase_filename (unsigned char *);
+
 /* Destructively turn backslashes into slashes.  */
 
 void
 dostounix_filename (p)
      register char *p;
 {
+  msdos_downcase_filename (p);
+
   while (*p)
     {
       if (*p == '\\')
@@ -2081,6 +2182,12 @@ void
 unixtodos_filename (p)
      register char *p;
 {
+  if (p[1] == ':' && *p >= 'A' && *p <= 'Z')
+    {
+      *p += 'a' - 'A';
+      p += 2;
+    }
+
   while (*p)
     {
       if (*p == '/')
@@ -2090,7 +2197,6 @@ unixtodos_filename (p)
 }
 
 /* Get the default directory for a given drive.  0=def, 1=A, 2=B, ...  */
-void msdos_downcase_filename (unsigned char *);
 
 int
 getdefdir (drive, dst)
@@ -2236,6 +2342,17 @@ void
 msdos_downcase_filename (p)
      register unsigned char *p;
 {
+  /* Always lower-case drive letters a-z, even if the filesystem
+     preserves case in filenames.
+     This is so MSDOS filenames could be compared by string comparison
+     functions that are case-sensitive.  Even case-preserving filesystems
+     do not distinguish case in drive letters.  */
+  if (p[1] == ':' && *p >= 'A' && *p <= 'Z')
+    {
+      *p += 'a' - 'A';
+      p += 2;
+    }
+
   /* Under LFN we expect to get pathnames in their true case.  */
   if (NILP (Fmsdos_long_file_names ()))
     for ( ; *p; p++)
@@ -2296,7 +2413,7 @@ init_environment (argc, argv, skip_args)
      "c:/emacs/bin/emacs.exe" our root will be "c:/emacs".  */
   root = alloca (MAXPATHLEN + 20);
   _fixpath (argv[0], root);
-  strlwr (root);
+  msdos_downcase_filename (root);
   len = strlen (root);
   while (len > 0 && root[len] != '/' && root[len] != ':')
     len--;
@@ -2330,7 +2447,6 @@ init_environment (argc, argv, skip_args)
   if (!s) s = "c:/command.com";
   t = alloca (strlen (s) + 1);
   strcpy (t, s);
-  strlwr (t);
   dostounix_filename (t);
   setenv ("SHELL", t, 0);
 
@@ -2341,7 +2457,6 @@ init_environment (argc, argv, skip_args)
   /* Current directory is always considered part of MsDos's path but it is
      not normally mentioned.  Now it is.  */
   strcat (strcpy (t, ".;"), s);
-  strlwr (t);
   dostounix_filename (t); /* Not a single file name, but this should work.  */
   setenv ("PATH", t, 1);
 

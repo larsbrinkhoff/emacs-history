@@ -2,6 +2,9 @@
 
 #define IRIX5
 
+/* We want BSD style signals. */
+#define _BSD_SIGNALS
+
 #define SETPGRP_RELEASES_CTTY
 
 #ifdef LIBS_SYSTEM
@@ -112,4 +115,10 @@ char *_getpty();
 /* use K&R C */
 #ifndef __GNUC__
 #define C_SWITCH_SYSTEM -cckr
+#endif
+
+/* -g does not work on Irix, and since gcc warns if you use it,
+   turn off the warning.  */
+#ifdef __GNUC__
+#define C_DEBUG_SWITCH
 #endif

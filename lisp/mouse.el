@@ -47,43 +47,42 @@
   ;; Switch to the window clicked on, because otherwise
   ;; the mode's commands may not make sense.
   (interactive "@e")
-  (let ((newmap (make-sparse-keymap))
-	(unread-command-events (list event)))
-    ;; Make a keymap in which our last command leads to a menu
-    (define-key newmap (vector (car event))
-      (nconc (make-sparse-keymap "Menu")
-	     (mouse-major-mode-menu-1
-	      (and (current-local-map)
-		   (lookup-key (current-local-map) [menu-bar])))))
-    (mouse-major-mode-menu-compute-equiv-keys newmap)
-    ;; Make NEWMAP override the usual definition
-    ;; of the mouse button that got us here.
-    ;; Then read the user's menu choice.
-    (let* ((minor-mode-map-alist
-	    (cons (cons t newmap) minor-mode-map-alist))
-	   ;; read-key-sequence quits if the user aborts the menu.
-	   ;; If that happens, do nothing silently.
-	   (keyseq (condition-case nil
-		       (read-key-sequence "")
-		     (quit nil)))
-	   (command (if keyseq (lookup-key newmap keyseq))))
-      (if command
-	  (command-execute command)))))
+  (let (;; This is where mouse-major-mode-menu-prefix
+	;; returns the prefix we should use (after menu-bar).
+	;; It is either nil or (SOME-SYMBOL).
+	(mouse-major-mode-menu-prefix nil)
+	;; Make a keymap in which our last command leads to a menu
+	(newmap (make-sparse-keymap (concat mode-name " Mode")))
+	result)
+    ;; Make our menu inherit from the desired keymap
+    ;; which we want to display as the menu now.
+    (set-keymap-parent newmap
+		       (mouse-major-mode-menu-1
+			(and (current-local-map)
+			     (lookup-key (current-local-map) [menu-bar]))))
+    (setq result (x-popup-menu t (list newmap)))
+    (if result
+	(let ((command (key-binding
+			(apply 'vector (append '(menu-bar)
+					       mouse-major-mode-menu-prefix
+					       result)))))
+	  (if command
+	      (command-execute command))))))
 
 ;; Compute and cache the equivalent keys in MENU and all its submenus.
-(defun mouse-major-mode-menu-compute-equiv-keys (menu)
-  (and (eq (car menu) 'keymap)
-       (x-popup-menu nil menu))
-  (while menu
-    (and (consp (car menu))
-	 (consp (cdr (car menu)))
-	 (let ((tail (cdr (car menu))))
-	   (while (and (consp tail)
-		       (not (eq (car tail) 'keymap)))
-	     (setq tail (cdr tail)))
-	   (if (consp tail)
-	       (mouse-major-mode-menu-compute-equiv-keys tail))))
-    (setq menu (cdr menu))))
+;;;(defun mouse-major-mode-menu-compute-equiv-keys (menu)
+;;;  (and (eq (car menu) 'keymap)
+;;;       (x-popup-menu nil menu))
+;;;  (while menu
+;;;    (and (consp (car menu))
+;;;	 (consp (cdr (car menu)))
+;;;	 (let ((tail (cdr (car menu))))
+;;;	   (while (and (consp tail)
+;;;		       (not (eq (car tail) 'keymap)))
+;;;	     (setq tail (cdr tail)))
+;;;	   (if (consp tail)
+;;;	       (mouse-major-mode-menu-compute-equiv-keys tail))))
+;;;    (setq menu (cdr menu))))
 
 ;; Given a mode's menu bar keymap,
 ;; if it defines exactly one menu bar menu,
@@ -97,10 +96,12 @@
 	  (if (consp (car tail))
 	      (if submap
 		  (setq submap t)
-		(setq submap (cdr (car tail)))))
+		(setq submap (car tail))))
 	  (setq tail (cdr tail)))
-	(if (eq submap t) menubar
-	  submap))))
+	(if (eq submap t)
+	    menubar
+	  (setq mouse-major-mode-menu-prefix (list (car submap)))
+	  (cdr (cdr submap))))))
 
 ;; Commands that operate on windows.
 
@@ -516,7 +517,7 @@ remains active.  Otherwise, it remains until the next input event."
     ;; end-of-range is used only in the single-click case.
     ;; It is the place where the drag has reached so far
     ;; (but not outside the window where the drag started).
-    (let (event end end-point (end-of-range (point)))
+    (let (event end end-point last-end-point (end-of-range (point)))
       (track-mouse
 	(while (progn
 		 (setq event (read-event))
@@ -526,6 +527,8 @@ remains active.  Otherwise, it remains until the next input event."
 	      nil
 	    (setq end (event-end event)
 		  end-point (posn-point end))
+	    (if end-point
+		(setq last-end-point end-point))
 
 	    (cond
 	     ;; Are we moving within the original window?
@@ -574,16 +577,25 @@ remains active.  Otherwise, it remains until the next input event."
 			(cons event unread-command-events)))
 	      (if (not (= (overlay-start mouse-drag-overlay)
 			  (overlay-end mouse-drag-overlay)))
-		  (let (last-command this-command)
-		    (push-mark (overlay-start mouse-drag-overlay) t t)
-		    (goto-char (overlay-end mouse-drag-overlay))
+		  (let* ((stop-point (or (posn-point (event-end event)) last-end-point))
+			 ;; The end that comes from where we ended the drag.
+			 ;; Point goes here.
+			 (region-termination
+			  (if (and stop-point (< stop-point start-point))
+			      (overlay-start mouse-drag-overlay)
+			    (overlay-end mouse-drag-overlay)))
+			 ;; The end that comes from where we started the drag.
+			 ;; Mark goes there.
+			 (region-commencement
+			  (- (+ (overlay-end mouse-drag-overlay)
+				(overlay-start mouse-drag-overlay))
+			     region-termination))
+			 last-command this-command)
+		    (push-mark region-commencement t t)
+		    (goto-char region-termination)
 		    (copy-region-as-kill (point) (mark t))
-		    (let ((inhibit-quit t))
-		      (setq unread-command-events
-			    (cons (read-event) unread-command-events))
-		      (setq quit-flag nil))
-		    (mouse-set-region-1)
-		    (delete-overlay mouse-drag-overlay))
+		    (mouse-show-mark)
+		    (mouse-set-region-1))
 		(goto-char (overlay-end mouse-drag-overlay))
 		(setq this-command 'mouse-set-point)
 		(delete-overlay mouse-drag-overlay))))
@@ -642,6 +654,31 @@ If DIR is positive skip forward; if negative, skip backward."
 		 (backward-sexp 1)
 		 (point))
 	       (1+ start)))
+	((and (= mode 1)
+              (= start end)
+	      (char-after start)
+              (= (char-syntax (char-after start)) ?\"))
+	 (let ((open (or (eq start (point-min))
+			 (save-excursion
+			   (goto-char (- start 1))
+			   (looking-at "\\s(\\|\\s \\|\\s>")))))
+	   (if open
+	       (list start
+		     (save-excursion
+		       (condition-case nil
+			   (progn 
+			     (goto-char start)
+			     (forward-sexp 1)
+			     (point))
+			 (error end))))
+	     (list (1+ start)
+		   (save-excursion
+		     (condition-case nil
+			 (progn
+			   (goto-char (1+ start))
+			   (backward-sexp 1)
+			   (point))
+		       (error end)))))))
         ((= mode 1)
 	 (list (save-excursion
 		 (goto-char start)
@@ -670,12 +707,45 @@ If DIR is positive skip forward; if negative, skip backward."
     (if (numberp (posn-point posn))
 	(push-mark (posn-point posn) t t))))
 
+(defun mouse-undouble-last-event (events)
+  (let* ((index (1- (length events)))
+	 (last (nthcdr index events))
+	 (event (car last))
+	 (basic (event-basic-type event))
+	 (modifiers (delq 'double (delq 'triple (copy-sequence (event-modifiers event)))))
+	 (new
+	  (if (consp event)
+	      (cons (event-convert-list (nreverse (cons basic modifiers)))
+		    (cdr event))
+	    event)))
+    (setcar last new)
+    (if (key-binding (apply 'vector events))
+	t
+      (setcar last event)
+      nil)))
+
 ;; Momentarily show where the mark is, if highlighting doesn't show it. 
 (defun mouse-show-mark ()
-  (or transient-mark-mode
+  (if transient-mark-mode
+      (if window-system
+	  (delete-overlay mouse-drag-overlay))
+    (if window-system
+	(let ((inhibit-quit t)
+	      (echo-keystrokes 0)
+	      event events)
+	  (move-overlay mouse-drag-overlay (point) (mark t))
+	  (while (progn (setq event (read-event))
+			(setq events (append events (list event)))
+			(and (memq 'down (event-modifiers event))
+			     (not (key-binding (apply 'vector events)))
+			     (not (mouse-undouble-last-event events)))))
+	  (setq unread-command-events
+		(nconc events unread-command-events))
+	  (setq quit-flag nil)
+	  (delete-overlay mouse-drag-overlay))
       (save-excursion
-	(goto-char (mark t))
-	(sit-for 1))))
+       (goto-char (mark t))
+       (sit-for 1)))))
 
 (defun mouse-set-mark (click)
   "Set mark at the position clicked on with the mouse.
@@ -833,6 +903,8 @@ If you do this twice in the same position, the selection is killed."
 	      (mouse-save-then-kill-delete-region (point) (mark))
 	      ;; After we kill, another click counts as "the first time".
 	      (setq mouse-save-then-kill-posn nil))
+	  ;; This is not a repetition.
+	  ;; We are adjusting an old selection or creating a new one.
 	  (if (or (and (eq last-command 'mouse-save-then-kill)
 		       mouse-save-then-kill-posn)
 		  (and mark-active transient-mark-mode)
@@ -859,7 +931,9 @@ If you do this twice in the same position, the selection is killed."
 	    (if before-scroll
 		(goto-char before-scroll))
 	    (exchange-point-and-mark)
-	    (kill-new (buffer-substring (point) (mark t))))
+	    (kill-new (buffer-substring (point) (mark t)))
+	    (if window-system
+		(mouse-show-mark)))
 	  (mouse-set-region-1)
 	  (setq mouse-save-then-kill-posn
 		(list (car kill-ring) (point) click-posn)))))))
@@ -1184,8 +1258,7 @@ and selects that window."
 	    (setq tail (buffer-list))
 	    (while tail
 	      (let ((elt (car tail)))
-		(if (not (string-match "^ "
-				       (buffer-name elt)))
+		(if (/= (aref (buffer-name elt) 0) ?\ )
 		    (setq head
 			  (cons
 			   (cons

@@ -1436,7 +1436,7 @@ create_process (process, new_argv, current_dir)
 	  }
 #endif /* TIOCNOTTY */
 
-#if !defined (RTU) && !defined (UNIPLUS)
+#if !defined (RTU) && !defined (UNIPLUS) && !defined (DONT_REOPEN_PTY)
 /*** There is a suggestion that this ought to be a
      conditional on TIOCSPGRP.  */
 	/* Now close the pty (if we had it open) and reopen it.
@@ -1465,7 +1465,8 @@ create_process (process, new_argv, current_dir)
 	    ioctl (xforkout, TIOCSPGRP, &pgrp);
 #endif
 	  }
-#endif /* not UNIPLUS and not RTU */
+#endif /* not UNIPLUS and not RTU and not DONT_REOPEN_PTY */
+
 #ifdef SETUP_SLAVE_PTY
 	if (pty_flag)
 	  {
@@ -1633,6 +1634,11 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
   struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
   int retry = 0;
   int count = specpdl_ptr - specpdl;
+
+#ifdef WINDOWSNT
+  /* Ensure socket support is loaded if available. */
+  init_winsock (TRUE);
+#endif
 
   GCPRO4 (name, buffer, host, service);
   CHECK_STRING (name, 0);
@@ -2031,6 +2037,14 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       EMACS_SET_SECS_USECS (timeout, time_limit, microsecs);
       EMACS_ADD_TIME (end_time, end_time, timeout);
     }
+#ifdef hpux
+  /* AlainF 5-Jul-1996
+     HP-UX 10.10 seem to have problems with signals coming in
+     Causes "poll: interrupted system call" messages when Emacs is run
+     in an X window
+     Turn off periodic alarms (in case they are in use) */
+  stop_polling ();
+#endif
 
   while (1)
     {
@@ -2324,7 +2338,9 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 #ifdef EWOULDBLOCK
 	      else if (nread == -1 && errno == EWOULDBLOCK)
 		;
-#else
+#endif
+	      /* ISC 4.1 defines both EWOULDBLOCK and O_NONBLOCK,
+		 and Emacs uses O_NONBLOCK, so what we get is EAGAIN.  */
 #ifdef O_NONBLOCK
 	      else if (nread == -1 && errno == EAGAIN)
 		;
@@ -2340,7 +2356,6 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 		;
 #endif				/* O_NDELAY */
 #endif				/* O_NONBLOCK */
-#endif				/* EWOULDBLOCK */
 #ifdef HAVE_PTYS
 	      /* On some OSs with ptys, when the process on one end of
 		 a pty exits, the other end gets an error reading with
@@ -2384,7 +2399,15 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       clear_input_pending ();
       QUIT;
     }
-
+#ifdef hpux
+  /* AlainF 5-Jul-1996
+     HP-UX 10.10 seems to have problems with signals coming in
+     Causes "poll: interrupted system call" messages when Emacs is run
+     in an X window
+     Turn periodic alarms back on */
+  start_polling();
+#endif
+   
   return got_some_input;
 }
 

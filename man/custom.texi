@@ -623,6 +623,8 @@ recently defined keyboard macro.
 Insert in the buffer a keyboard macro's definition, as Lisp code.
 @item C-x C-k
 Edit a previously defined keyboard macro (@code{edit-kbd-macro}).
+@item M-x apply-macro-to-region-lines
+Run the last keyboard macro on each complete line in the region.
 @end table
 
   Keyboard macros differ from ordinary Emacs commands in that they are
@@ -715,6 +717,12 @@ some other key sequence.  This formats the macro definition in a buffer
 and enters a specialized major mode for editing it.  Type @kbd{C-h m}
 once in that buffer to display details of how to edit the macro.  When
 you are finished editing, type @kbd{C-c C-c}.
+
+@findex apply-macro-to-region-lines
+  The command @kbd{M-x apply-macro-to-region-lines} repeats the last
+defined keyboard macro on each complete line within the current region.
+It does this line by line, by moving point to the beginning of the line
+and then executing the macro.
 
 @node Save Kbd Macro
 @subsection Naming and Saving Keyboard Macros

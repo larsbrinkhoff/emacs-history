@@ -2,8 +2,8 @@
 
 @ifinfo
 @c The edition number appears in several places in this file
-This corresponds to the eleventh edition of the @cite{GNU Emacs Manual},
-for Emacs version 19.31.
+This corresponds to the twelfth edition of the @cite{GNU Emacs Manual},
+for Emacs version 19.32.
 @c Please REMEMBER to update edition number in *three* places in this file.
 
 Published by the Free Software Foundation
@@ -63,16 +63,16 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Eleventh Edition, Updated for Emacs Version 19.31
+@center Twelfth Edition, Updated for Emacs Version 19.32
 @sp 5
 @center Richard Stallman
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 1985, 1986, 1987, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 @sp 2
-Eleventh Edition @*
-Updated for Emacs Version 19.31, @*
-November 1995
+Twelfth Edition @*
+Updated for Emacs Version 19.32, @*
+June 1996
 
 ISBN 1-882114-83-3
 @sp 1
@@ -110,7 +110,7 @@ Cover art by Etienne Suvasa.
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.31.
+corresponds to GNU Emacs version 19.32.
 
 @end ifinfo
 
@@ -203,7 +203,7 @@ Advanced Features
 * Rmail::	      Reading mail in Emacs.
 * Dired::	      You can ``edit'' a directory to manage files in it.
 * Calendar/Diary::    The calendar and diary facilities.
-* GNUS::	      How to read netnews with Emacs.
+* Gnus::	      How to read netnews with Emacs.
 * Shell::	      Executing shell commands from Emacs.
 * Emacs Server::      Using Emacs as an editing server for @code{mail}, etc.
 * Hardcopy::	      Printing buffers or regions.
@@ -413,7 +413,16 @@ Frames and X Windows
 * Menu Bars::	       Enabling and disabling the menu bar.
 * Faces::	       How to change the display style using faces.
 * Modifying Faces::    How to change what a particular face looks like.
+* Font Lock::          Minor mode for syntactic highlighting using faces.
+* Support Modes::      Font Lock support modes make Font Lock faster.
 * Misc X::	       Iconifying and deleting frames.	Region highlighting.
+* Non-Window Terminals::  Multiple frames on terminals that only show one.
+
+Font Lock Support Modes
+
+* Fast Lock Mode::     Saving font information in files.
+* Lazy Lock Mode::     Fontifying only text that is actually displayed.
+* Fast or Lazy::       Which support mode is best for you?
 
 Major Modes
 
@@ -463,7 +472,7 @@ Editing Programs
 * Tags::	      Go direct to any function in your program in one
 			command.  Tags remembers which file it is in.
 * Emerge::	      A convenient way of merging two versions of a program.
-* C Mode::	      Special commands of C mode (and C++ mode).
+* C Mode::	      Special commands of C, C++, Objective-C and Java modes.
 * Fortran::	      Fortran mode and its special features.
 * Asm Mode::	      Asm mode and its special features.
 
@@ -481,7 +490,6 @@ Tags Tables
 * Select Tags Table::	How to visit a tags table.
 * Find Tag::		Commands to find the definition of a specific tag. 
 * Tags Search::		Using a tags table for searching and replacing.
-* Tags Stepping::	Visiting files in a tags table, one by one.
 * List Tags::		Listing and finding tags defined in a file.
 
 Merging Files with Emerge
@@ -620,11 +628,11 @@ The Diary
 * Adding to Diary::	   Commands to create diary entries.
 * Special Diary Entries::  Anniversaries, blocks of dates, cyclic entries, etc.
 
-@sc{GNUS}
+@sc{Gnus}
 
-* Buffers of GNUS::	   The Newsgroups, Summary and Article buffers.
-* GNUS Startup::	   What you should know about starting GNUS.
-* Summary of GNUS::	   A short description of the basic GNUS commands.
+* Buffers of Gnus::	   The group, summary and article buffers.
+* Gnus Startup::	   What you should know about starting Gnus.
+* Summary of Gnus::	   A short description of the basic Gnus commands.
 
 Running Shell Commands from Emacs
 
@@ -744,7 +752,8 @@ MS-DOS and Windows NT/95
 * Text and Binary::
 * Printing and MS-DOS::
 * Subprocesses on MS-DOS::
-* Windows 95 Subprocesses::
+* Windows Subprocesses::
+* System Menu on Windows::
 @end menu
 
 @iftex
@@ -873,31 +882,31 @@ Broman, David M. Brown, Hans Chalupsky, Bob Chassell, James Clark, Mike
 Clarkson, Doug Cutting, Michael DeCorte, Gary Delp, Matthieu Devin,
 Scott Draves, Viktor Dukhovni, Rolf Ebert, Torbj@"orn Einarsson, Hans
 Henrik Eriksen, Michael Ernst, Ata Etemadi, Fred Fish, Karl Fogel, Noah
-Friedman, Keith Gabryelski, Kevin Gallagher, Howard Gayle, Stephen
-Gildea, David Gillespie, Boris Goldowsky, Michael Gschwind, Henry
-Guillaume, Doug Gwyn, Chris Hanson, K. Shane Hartman, Markus Heritsch,
-Karl Heuer, Manabu Higashida, Anders Holst, Lars Ingebrigtsen, Michael
-K. Johnson, Kyle Jones, Brewster Kahle, David Kaufman, Henry Kautz,
-Howard Kaye, Michael Kifer, Richard King, Larry K. Kolodney, Robert
-Krawitz, Sebastian Kremer, Geoff Kuenning, David K@aa gedal, Daniel
-LaLiberte, Aaron Larson, James R. Larus, Lars Lindberg, Neil M. Mager,
-Ken Manheimer, Bill Mann, Brian Marick, Simon Marshall, Bengt
-Martensson, Charlie Martin, Thomas May, Roland McGrath, David Megginson,
-Richard Mlynarik, Keith Moore, Thomas Neumann, Mike Newton, Jurgen
-Nickelsen, Jeff Norden, Jeff Peck, Damon Anton Permezel, Tom Perrine,
-Daniel Pfeiffer, Fred Pierresteguy, Christian Plaunt, Francesco
-A. Potorti, Michael D. Prange, Mukesh Prasad, Ashwin Ram, Eric
-S. Raymond, Paul Reilly, Edward M. Reingold, Rob Riepel, Roland
+Friedman, Keith Gabryelski, Kevin Gallagher, Kevin Gallo, Howard Gayle,
+Stephen Gildea, David Gillespie, Boris Goldowsky, Michael Gschwind,
+Henry Guillaume, Doug Gwyn, Chris Hanson, K. Shane Hartman, Markus
+Heritsch, Karl Heuer, Manabu Higashida, Anders Holst, Lars Ingebrigtsen,
+Andrew Innes, Michael K. Johnson, Kyle Jones, Brewster Kahle, David
+Kaufman, Henry Kautz, Howard Kaye, Michael Kifer, Richard King, Larry
+K. Kolodney, Robert Krawitz, Sebastian Kremer, Geoff Kuenning, David
+K@aa gedal, Daniel LaLiberte, Aaron Larson, James R. Larus, Lars
+Lindberg, Neil M. Mager, Ken Manheimer, Bill Mann, Brian Marick, Simon
+Marshall, Bengt Martensson, Charlie Martin, Thomas May, Roland McGrath,
+David Megginson, Richard Mlynarik, Keith Moore, Erik Naggum, Thomas
+Neumann, Mike Newton, Jurgen Nickelsen, Jeff Norden, Jeff Peck, Damon
+Anton Permezel, Tom Perrine, Daniel Pfeiffer, Fred Pierresteguy,
+Christian Plaunt, Francesco A. Potorti, Michael D. Prange, Ashwin Ram,
+Eric S. Raymond, Paul Reilly, Edward M. Reingold, Rob Riepel, Roland
 B. Roberts, John Robinson, William Rosenblatt, Guillermo J. Rozas,
 Wolfgang Rupprecht, James B. Salem, Masahiko Sato, William Schelter,
 Gregor Schmid, Michael Schmidt, Ronald S. Schnell, Philippe Schnoebelen,
-Randal Schwartz, Mark Shapiro, Olin Shivers, Espen Skoglund, Rick
-Sladkey, Lynn Slater, Chris Smith, David Smith, William Sommerfeld, Ake
-Stenhoff, Jonathan Stigelman, Steve Strassman, Spencer Thomas, Jim
-Thompson, Masanobu Umeda, Geoffrey Voelker, Johan Vromans, Barry Warsaw,
-Morten Welinder, Joseph Brian Wells, Ed Wilkinson, Mike Williams, Steven
-A. Wood, Dale R. Worley, Felix S. T. Wu, Tom Wurgler, Jamie Zawinski,
-and Neal Ziring. 
+Stephen Schoef, Randal Schwartz, Mark Shapiro, Olin Shivers, Espen
+Skoglund, Rick Sladkey, Lynn Slater, Chris Smith, David Smith, William
+Sommerfeld, Ake Stenhoff, Jonathan Stigelman, Steve Strassman, Spencer
+Thomas, Jim Thompson, Masanobu Umeda, Geoffrey Voelker, Johan Vromans,
+Barry Warsaw, Morten Welinder, Joseph Brian Wells, Ed Wilkinson, Mike
+Williams, Steven A. Wood, Dale R. Worley, Felix S. T. Wu, Tom Wurgler,
+Eli Zaretskii, Jamie Zawinski, and Neal Ziring.
 @end iftex
 
 @node Copying, Intro, Distrib, Top

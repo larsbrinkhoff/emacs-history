@@ -964,11 +964,11 @@ and leave point on the line before the `@end menu' line."
                                           ; last `* ' entry
                       (goto-char end-of-menu)
                       ;; handle multi-line description
-                      (if (not (re-search-backward "^\* " nil t))
+                      (if (not (re-search-backward "^\\* " nil t))
                           (error "No entries in menu."))
                       (point))))
     (while (< (point) last-entry)
-      (if (re-search-forward  "^\* " end-of-menu t)
+      (if (re-search-forward  "^\\* " end-of-menu t)
           (progn
             (setq this-menu-list
                   (cons
@@ -976,7 +976,7 @@ and leave point on the line before the `@end menu' line."
                     (point)
                     ;; copy multi-line descriptions
                     (save-excursion
-                      (re-search-forward "\\(^\* \\|^@e\\)" nil t)
+                      (re-search-forward "\\(^\\* \\|^@e\\)" nil t)
                       (- (point) 3)))
                    this-menu-list)))))
     this-menu-list))
@@ -1362,7 +1362,7 @@ Return type of pointer (either 'normal or 'no-pointer).
 The first and second arguments bound the search for a pointer to the
 beginning and end, respectively, of the enclosing higher level
 section.  The third argument is a string specifying the general kind
-of section such as \"chapter\ or \"section\".  When looking for the
+of section such as \"chapter\" or \"section\".  When looking for the
 `Next' pointer, the section found will be at the same hierarchical
 level in the Texinfo file; when looking for the `Previous' pointer,
 the section found will be at the same or higher hierarchical level in
@@ -1559,7 +1559,7 @@ it is in a different section.
 Return type of pointer (either 'normal or 'no-pointer).
 
 The first argument is a string specifying the general kind of section
-such as \"chapter\ or \"section\".  The section found will be at the
+such as \"chapter\" or \"section\".  The section found will be at the
 same hierarchical level in the Texinfo file, or, in the case of the up
 pointer, some level higher.  The second argument (one of 'next,
 'previous, or 'up) specifies whether to find the `Next', `Previous',

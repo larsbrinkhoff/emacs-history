@@ -1,5 +1,5 @@
 /* X Communication module for terminals which understand the X protocol.
-   Copyright (C) 1986, 1988, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1988, 1993, 1994, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -88,6 +88,8 @@ Boston, MA 02111-1307, USA.  */
 
 Lisp_Object Qdebug_on_next_call;
 
+Lisp_Object Qmenu_alias;
+
 extern Lisp_Object Qmenu_enable;
 extern Lisp_Object Qmenu_bar;
 extern Lisp_Object Qmouse_click, Qevent_kind;
@@ -169,6 +171,15 @@ static int menu_items_submenu_depth;
 static int popup_activated_flag;
 
 static int next_menubar_widget_id;
+
+/* This is set nonzero after the user activates the menu bar, and set
+   to zero again after the menu bars are redisplayed by prepare_menu_bar.
+   While it is nonzero, all calls to set_frame_menubar go deep.
+
+   I don't understand why this is needed, but it does seem to be
+   needed on Motif, according to Marcus Daniels <marcus@sysc.pdx.edu>.  */
+
+int pending_menu_activation;
 
 #ifdef USE_X_TOOLKIT
 
@@ -396,7 +407,8 @@ menu_item_equiv_key (item_string, item1, descrip_ptr)
       /* If the command is an alias for another
 	 (such as easymenu.el and lmenu.el set it up),
 	 see if the original command name has equivalent keys.  */
-      if (SYMBOLP (def) && SYMBOLP (XSYMBOL (def)->function))
+      if (SYMBOLP (def) && SYMBOLP (XSYMBOL (def)->function)
+	  && ! NILP (Fget (def, Qmenu_alias)))
 	savedkey = Fwhere_is_internal (XSYMBOL (def)->function,
 				       Qnil, Qt, Qnil);
       else
@@ -1002,6 +1014,8 @@ on the left of the dialog box and all following items on the right.\n\
     }
   else if (WINDOWP (position) || FRAMEP (position))
     window = position;
+  else
+    window = Qnil;
 
   /* Decode where to put the menu.  */
 
@@ -1093,10 +1107,15 @@ popup_get_selection (initial_event, dpyinfo, id)
       /* Handle expose events for editor frames right away.  */
       if (event.type == Expose)
 	process_expose_from_menu (event);
-      /* Make sure we don't consider buttons grabbed after menu goes.  */
+      /* Make sure we don't consider buttons grabbed after menu goes.
+	 And make sure to deactivate for any ButtonRelease,
+	 even if XtDispatchEvent doesn't do that.  */
       else if (event.type == ButtonRelease
 	       && dpyinfo->display == event.xbutton.display)
-	dpyinfo->grabbed &= ~(1 << event.xbutton.button);
+        {
+          dpyinfo->grabbed &= ~(1 << event.xbutton.button);
+          popup_activated_flag = 0;
+        }
       /* If the user presses a key, deactivate the menu.
 	 The user is likely to do that if we get wedged.  */
       else if (event.type == KeyPress
@@ -1115,11 +1134,13 @@ popup_get_selection (initial_event, dpyinfo, id)
 	}
 
       /* Queue all events not for this popup,
-	 except for Expose, which we've already handled.
+	 except for Expose, which we've already handled, and ButtonRelease.
 	 Note that the X window is associated with the frame if this
 	 is a menu bar popup, but not if it's a dialog box.  So we use
 	 x_non_menubar_window_to_frame, not x_any_window_to_frame.  */
       if (event.type != Expose
+          && !(event.type == ButtonRelease
+               && dpyinfo->display == event.xbutton.display)
 	  && (event.xany.display != dpyinfo->display
 	      || x_non_menubar_window_to_frame (dpyinfo, event.xany.window)))
 	{
@@ -1157,7 +1178,7 @@ popup_get_selection (initial_event, dpyinfo, id)
    menu_bar_activate_event out of the Emacs event queue.
 
    To activate the menu bar, we use the X button-press event
-   that was saved in saved_button_event.
+   that was saved in saved_menu_event.
    That makes the toolkit do its thing.
 
    But first we recompute the menu bar contents (the whole tree).
@@ -1169,17 +1190,20 @@ popup_get_selection (initial_event, dpyinfo, id)
 x_activate_menubar (f)
      FRAME_PTR f;
 {
-  if (f->output_data.x->saved_button_event->type != ButtonPress)
+  if (!f->output_data.x->saved_menu_event->type)
     return;
 
   set_frame_menubar (f, 0, 1);
-
   BLOCK_INPUT;
-  XtDispatchEvent ((XEvent *) f->output_data.x->saved_button_event);
+  XtDispatchEvent ((XEvent *) f->output_data.x->saved_menu_event);
   UNBLOCK_INPUT;
-
+#ifdef USE_MOTIF
+  if (f->output_data.x->saved_menu_event->type == ButtonRelease)
+    pending_menu_activation = 1;
+#endif
+  
   /* Ignore this if we get it a second time.  */
-  f->output_data.x->saved_button_event->type = 0;
+  f->output_data.x->saved_menu_event->type = 0;
 }
 
 /* Detect if a dialog or menu has been posted.  */
@@ -1377,8 +1401,12 @@ single_submenu (item_key, item_name, maps)
      But don't make a pane that is empty--ignore that map instead.  */
   for (i = 0; i < len; i++)
     {
-      if (SYMBOLP (mapvec[i]))
+      if (SYMBOLP (mapvec[i])
+	  || (CONSP (mapvec[i])
+	      && NILP (Fkeymapp (mapvec[i]))))
 	{
+	  /* Here we have a command at top level in the menu bar
+	     as opposed to a submenu.  */
 	  top_level_items = 1;
 	  push_menu_pane (Qnil, Qnil);
 	  push_menu_item (item_name, Qt, item_key, mapvec[i], Qnil);
@@ -1588,6 +1616,15 @@ set_frame_menubar (f, first_time, deep_p)
 
   if (! menubar_widget)
     deep_p = 1;
+  else if (pending_menu_activation && !deep_p)
+    deep_p = 1;
+  /* Make the first call for any given frame always go deep.  */
+  else if (!f->output_data.x->saved_menu_event && !deep_p)
+    {
+      deep_p = 1;
+      f->output_data.x->saved_menu_event = (XEvent*)xmalloc (sizeof (XEvent));
+      f->output_data.x->saved_menu_event->type = 0;
+    }
 
   wv = xmalloc_widget_value ();
   wv->name = "menubar";
@@ -1718,6 +1755,11 @@ set_frame_menubar (f, first_time, deep_p)
 	  wv->name = (char *) XSTRING (string)->data;
 	  wv->value = 0;
 	  wv->enabled = 1;
+	  /* This prevents lwlib from assuming this
+	     menu item is really supposed to be empty.  */
+	  /* The EMACS_INT cast avoids a warning.
+	     This value just has to be different from small integers.  */
+	  wv->call_data = (void *) (EMACS_INT) (-1);
 
 	  if (prev_wv) 
 	    prev_wv->next = wv;
@@ -2644,6 +2686,9 @@ syms_of_xmenu ()
 {
   staticpro (&menu_items);
   menu_items = Qnil;
+
+  Qmenu_alias = intern ("menu-alias");
+  staticpro (&Qmenu_alias);
 
   Qdebug_on_next_call = intern ("debug-on-next-call");
   staticpro (&Qdebug_on_next_call);

@@ -221,25 +221,34 @@ Called with region narrowed to the message, including headers.")
     (concat
      "From "
 
-     ;; Username, perhaps with a quoted section that can contain spaces.
-     "\\("
-     "[^ \n]*"
-     "\\(\\|\".*\"[^ \n]*\\)"
-     "\\|<[^<>\n]+>"
-     "\\)  ?"
+     ;; Many things can happen to an RFC 822 mailbox before it is put into
+     ;; a `From' line.  The leading phrase can be stripped, e.g.
+     ;; `Joe <@w.x:joe@y.z>' -> `<@w.x:joe@y.z>'.  The <> can be stripped, e.g.
+     ;; `<@x.y:joe@y.z>' -> `@x.y:joe@y.z'.  Everything starting with a CRLF
+     ;; can be removed, e.g.
+     ;;		From: joe@y.z (Joe	K
+     ;;			User)
+     ;; can yield `From joe@y.z (Joe 	K Fri Mar 22 08:11:15 1996', and
+     ;;		From: Joe User
+     ;;			<joe@y.z>
+     ;; can yield `From Joe User Fri Mar 22 08:11:15 1996'.
+     ;; We want to match the results of any of these manglings.
+     ;; The following regexp rejects names whose first characters are
+     ;; obviously bogus, but after that anything goes.
+     "\\([^\0-\r \^?].*\\)? "
 
      ;; The time the message was sent.
-     "\\([^ \n]*\\) *"			; day of the week
-     "\\([^ \n]*\\) *"			; month
-     "\\([0-9]*\\) *"			; day of month
-     "\\([0-9:]*\\) *"			; time of day
+     "\\([^\0-\r \^?]+\\) +"				; day of the week
+     "\\([^\0-\r \^?]+\\) +"				; month
+     "\\([0-3]?[0-9]\\) +"				; day of month
+     "\\([0-2][0-9]:[0-5][0-9]\\(:[0-6][0-9]\\)?\\) *"	; time of day
 
      ;; Perhaps a time zone, specified by an abbreviation, or by a
      ;; numeric offset.
      time-zone-regexp
 
      ;; The year.
-     " [0-9][0-9]\\([0-9]*\\) *"
+     " \\([0-9][0-9]+\\) *"
 
      ;; On some systems the time zone can appear after the year, too.
      time-zone-regexp
@@ -656,6 +665,7 @@ Instead, these commands are available:
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults
    '(rmail-font-lock-keywords t nil nil nil
+     (font-lock-maximum-size . nil)
      (font-lock-fontify-buffer-function . rmail-fontify-buffer-function)
      (font-lock-unfontify-buffer-function . rmail-unfontify-buffer-function)
      (font-lock-inhibit-thing-lock . (lazy-lock-mode fast-lock-mode))))
@@ -881,6 +891,7 @@ It returns t if it got any new messages."
   (interactive
    (list (if current-prefix-arg
 	     (read-file-name "Get new mail from file: "))))
+  (run-hooks 'rmail-before-get-new-mail-hook)
   ;; If the disk file has been changed from under us,
   ;; revert to it before we get new mail.
   (or (verify-visited-file-modtime (current-buffer))
@@ -899,7 +910,8 @@ It returns t if it got any new messages."
 	    (make-backup-files (and make-backup-files (buffer-modified-p)))
 	    (buffer-read-only nil)
 	    ;; Don't make undo records for what we do in getting mail.
-	    (buffer-undo-list t))
+	    (buffer-undo-list t)
+	    success)
 	(goto-char (point-max))
 	(skip-chars-backward " \t\n")	    ; just in case of brain damage
 	(delete-region (point) (point-max)) ; caused by require-final-newline
@@ -914,8 +926,22 @@ It returns t if it got any new messages."
 	      (setq delete-files (rmail-insert-inbox-text rmail-inbox-list t)))
 	    ;; Scan the new text and convert each message to babyl format.
 	    (goto-char (point-min))
-	    (save-excursion
-	      (setq new-messages (rmail-convert-to-babyl-format)))
+	    (unwind-protect
+		(save-excursion
+		  (setq new-messages (rmail-convert-to-babyl-format)
+			success t))
+	      ;; If we could not convert the file's inboxes,
+	      ;; rename the files we tried to read
+	      ;; so we won't over and over again.
+	      (if (and (not file-name) (not success))
+		  (let ((files delete-files)
+			(count 0))
+		    (while files
+		      (while (file-exists-p (format "RMAILOSE.%d" count))
+			(setq count (1+ count)))
+		      (rename-file (car files)
+				   (format "RMAILOSE.%d" count))
+		      (setq files (cdr files))))))
 	    (or (zerop new-messages)
 		(let (success)
 		  (widen)
@@ -1257,7 +1283,7 @@ Optional DEFAULT is password to start with."
 		  (if has-date
 		      ""
 		    (concat
-		     "Date: \\3, \\5 \\4 \\9 \\6 "
+		     "Date: \\2, \\4 \\3 \\9 \\5 "
 		    
 		     ;; The timezone could be matched by group 7 or group 10.
 		     ;; If neither of them matched, assume EST, since only
@@ -1888,15 +1914,15 @@ Interactively, empty argument means use same regexp used last time."
 With prefix argument N, do this N times.
 If N is negative, go backwards instead."
   (interactive "p")
-  (let* ((subject (mail-fetch-field "Subject"))
-	 (search-regexp (concat "^Subject: *\\(Re: *\\)?"
-				(regexp-quote subject)
-				"\n"))
-	 (forward (> n 0))
-	 (i rmail-current-message)
-	 found)
+  (let ((subject (mail-fetch-field "Subject"))
+	(forward (> n 0))
+	(i rmail-current-message)
+	search-regexp found)
     (if (string-match "Re:[ \t]*" subject)
 	(setq subject (substring subject (match-end 0))))
+    (setq search-regexp (concat "^Subject: *\\(Re: *\\)?"
+				(regexp-quote subject)
+				"\n"))
     (save-excursion
       (save-restriction
 	(widen)
@@ -2119,6 +2145,9 @@ original message into it."
   "Continue composing outgoing message previously being composed."
   (interactive)
   (rmail-start-mail t))
+
+(put 'rmail-send-actions-rmail-buffer 'permanent-local t)
+(put 'rmail-send-actions-rmail-msg-number 'permanent-local t)
 
 (defun rmail-reply (just-sender)
   "Reply to the current message.
@@ -2439,9 +2468,10 @@ specifying headers which should not be copied into the new message."
 	    (let ((codestring
 		   (buffer-substring (progn (beginning-of-line) (point))
 				     (progn (end-of-line) (point)))))
-	      (re-search-forward mail-unsent-separator)
-	      (search-forward codestring)
-	      (or (search-forward "\n\n" nil t)
+	      (or (re-search-forward mail-unsent-separator nil t)
+		  (error "Cannot find beginning of header in failed message"))
+	      (or (and (search-forward codestring nil t)
+		       (search-forward "\n\n" nil t))
 		  (error "Cannot find end of Mime data in failed message"))
 	      (setq bounce-start (point))
 	      (save-excursion
@@ -2716,7 +2746,7 @@ but if WHOLE-MESSAGE is non-nil (prefix arg given),
 SUBJECT is a string of regexps separated by commas."
   t)
 
-(autoload 'rmail-summary-by-sender "rmailsum"
+(autoload 'rmail-summary-by-senders "rmailsum"
   "Display a summary of all messages with the given SENDERS.
 SENDERS is a string of names separated by commas."
   t)

@@ -1,6 +1,116 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Problems running Perl under Emacs on Windows NT/95.
+
+`perl -de 0' just hangs when executed in an Emacs subshell.
+The fault lies with Perl (indirectly with Windows NT/95).
+
+The problem is that the Perl debugger explicitly opens a connection to
+"CON", which is the DOS/NT equivalent of "/dev/tty", for interacting
+with the user.
+
+On Unix, this is okay, because Emacs (or the shell?) creates a
+pseudo-tty so that /dev/tty is really the pipe Emacs is using to
+communicate with the subprocess.
+
+On NT, this fails because CON always refers to the handle for the
+relevant console (approximately equivalent to a tty), and cannot be
+redirected to refer to the pipe Emacs assigned to the subprocess as
+stdin.
+
+A workaround is to modify perldb.pl to use STDIN/STDOUT instead of CON.
+
+For Perl 4:
+
+    *** PERL/LIB/PERLDB.PL.orig	Wed May 26 08:24:18 1993
+    --- PERL/LIB/PERLDB.PL	Mon Jul 01 15:28:16 1996
+    ***************
+    *** 68,74 ****
+	  $rcfile=".perldb";
+      }
+      else {
+    !     $console = "con";
+	  $rcfile="perldb.ini";
+      }
+
+    --- 68,74 ----
+	  $rcfile=".perldb";
+      }
+      else {
+    !     $console = "";
+	  $rcfile="perldb.ini";
+      }
+
+
+    For Perl 5:
+    *** perl/5.001/lib/perl5db.pl.orig	Sun Jun 04 21:13:40 1995
+    --- perl/5.001/lib/perl5db.pl	Mon Jul 01 17:00:08 1996
+    ***************
+    *** 22,28 ****
+	  $rcfile=".perldb";
+      }
+      elsif (-e "con") {
+    !     $console = "con";
+	  $rcfile="perldb.ini";
+      }
+      else {
+    --- 22,28 ----
+	  $rcfile=".perldb";
+      }
+      elsif (-e "con") {
+    !     $console = "";
+	  $rcfile="perldb.ini";
+      }
+      else {
+
+* Problems running DOS programs on Windows NT versions earlier than 3.51.
+
+Some DOS programs, such as pkzip/pkunzip will not work at all, while
+others will only work if their stdin is redirected from a file or NUL.
+
+When a DOS program does not work, a new process is actually created, but
+hangs.  It cannot be interrupted from Emacs, and might need to be killed
+by an external program if Emacs is hung waiting for the process to
+finish.  If Emacs is not waiting for it, you should be able to kill the
+instance of ntvdm that is running the hung process from Emacs, if you
+can find out the process id.
+
+It is safe to run most DOS programs using call-process (eg. M-! and
+M-|) since stdin is then redirected from a file, but not with
+start-process since that redirects stdin to a pipe.  Also, running DOS
+programs in a shell buffer prompt without redirecting stdin does not
+work.
+
+* Problems on MS-DOG if DJGPP v2.0 is used to compile Emacs:
+
+There are two DJGPP library bugs which cause problems:
+
+  * Running `shell-command' (or `compile', or `grep') you get
+    `Searching for program: permission denied (EACCES), c:/command.com';
+  * After you shell to DOS, Ctrl-Break kills Emacs.
+
+To work around these bugs, you can use two files in the msdos
+subdirectory: `is-exec.c' and `sigaction.c'.  Compile them and link
+them into the Emacs executable `temacs'; then they will replace the
+incorrect library functions.
+
+* When compiling with DJGPP on Windows 95, Make fails for some targets
+like make-docfile.
+
+This can happen if long file name support (the setting of environment
+variable LFN) when Emacs distribution was unpacked and during
+compilation are not the same.  See the MSDOG section of INSTALL for
+the explanation of how to avoid this problem.
+
+* Emacs compiled for MSDOS cannot find some Lisp files, or other
+run-time support files, when long filename support is enabled.
+
+This can happen if the Emacs distribution was unzipped without LFN
+support, thus causing long filenames to be truncated to the 8+3 DOS
+namespace.  You should unzip the files again with a utility that
+supports long filenames (such as djtar from DJGPP).
+
 * On Windows 95, Alt-f6 does not get through to Emacs.
 
 This character seems to be trapped by the kernel in Windows 95.
@@ -57,9 +167,19 @@ Common Desktop Environment's linking needs.  You can fix the problem
 by removing this patch and installing patch 102049-02 instead.
 However, that linker version won't work with CDE.
 
-On Solaris 2.5, the linker has this bug and there is no patch you
-could remove to get rid of the bug.  However, the GNU linker does
-work.
+Solaris 2.5 comes with a linker that has this bug.  It is reported that if
+you install all the latest patches (as of June 1996), the bug is fixed.
+We suspect the crucial patch is one of these, but we don't know
+for certain.
+
+        103093-03: [README] SunOS 5.5: kernel patch (2140557 bytes) 
+        102832-01: [README] OpenWindows 3.5: Xview Jumbo Patch (4181613 bytes) 
+
+If you can determine which patch does fix the bug, please tell
+bug-gnu-emacs@prep.ai.mit.edu.
+
+Meanwhile, the GNU linker links Emacs properly on both Solaris 2.4 and
+Solaris 2.5.
 
 * Emacs dumps core if lisp-complete-symbol is called, on Solaris.
 

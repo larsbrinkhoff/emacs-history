@@ -1,5 +1,5 @@
 /* Functions for the Win32 window system.
-   Copyright (C) 1989, 1992, 1993, 1994, 1995 Free Software Foundation.
+   Copyright (C) 1989, 92, 93, 94, 95, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -48,6 +48,10 @@ Lisp_Object Vwin32_color_map;
 
 /* Non nil if alt key presses are passed on to Windows.  */
 Lisp_Object Vwin32_pass_alt_to_system;
+
+/* Non nil if alt key is translated to meta_modifier, nil if it is translated
+   to alt_modifier.  */
+Lisp_Object Vwin32_alt_is_meta;
 
 /* Non nil if left window, right window, and application key events
    are passed on to Windows.  */
@@ -130,7 +134,6 @@ Lisp_Object Qborder_width;
 Lisp_Object Qbox;
 Lisp_Object Qcursor_color;
 Lisp_Object Qcursor_type;
-Lisp_Object Qfont;
 Lisp_Object Qforeground_color;
 Lisp_Object Qgeometry;
 Lisp_Object Qicon_left;
@@ -2650,7 +2653,8 @@ win32_get_modifiers ()
 {
   return (((GetKeyState (VK_SHIFT)&0x8000)   ? shift_modifier  : 0) |
 	  ((GetKeyState (VK_CONTROL)&0x8000) ? ctrl_modifier   : 0) |
-	  ((GetKeyState (VK_MENU)&0x8000)    ? meta_modifier   : 0));
+          ((GetKeyState (VK_MENU)&0x8000)    ? 
+	   ((NILP (Vwin32_alt_is_meta)) ? alt_modifier : meta_modifier) : 0));
 }
 
 void 
@@ -2755,9 +2759,45 @@ record_keyup (unsigned int wparam, unsigned int lparam)
 static void
 reset_modifiers ()
 {
+  SHORT ctrl, alt;
+
   if (!modifiers_recorded)
     return;
-  bzero (modifiers, sizeof (modifiers));
+
+  ctrl = GetAsyncKeyState (VK_CONTROL);
+  alt = GetAsyncKeyState (VK_MENU);
+
+  if (ctrl == 0 || alt == 0)
+    /* Emacs doesn't have keyboard focus.  Do nothing.  */
+    return;
+
+  if (!(ctrl & 0x08000))
+    /* Clear any recorded control modifier state.  */
+    modifiers[EMACS_RCONTROL] = modifiers[EMACS_LCONTROL] = 0;
+
+  if (!(alt & 0x08000))
+    /* Clear any recorded alt modifier state.  */
+    modifiers[EMACS_RMENU] = modifiers[EMACS_LMENU] = 0;
+
+  /* Otherwise, leave the modifier state as it was when Emacs lost
+     keyboard focus.  */
+}
+
+/* Synchronize modifier state with what is reported with the current
+   keystroke.  Even if we cannot distinguish between left and right
+   modifier keys, we know that, if no modifiers are set, then neither
+   the left or right modifier should be set.  */
+static void
+sync_modifiers ()
+{
+  if (!modifiers_recorded)
+    return;
+
+  if (!(GetKeyState (VK_CONTROL) & 0x8000)) 
+    modifiers[EMACS_RCONTROL] = modifiers[EMACS_LCONTROL] = 0;
+
+  if (!(GetKeyState (VK_MENU) & 0x8000)) 
+    modifiers[EMACS_RMENU] = modifiers[EMACS_LMENU] = 0;
 }
 
 static int
@@ -2891,20 +2931,41 @@ win32_wnd_proc (hwnd, msg, wParam, lParam)
   Win32Msg wmsg;
   int windows_translate;
 
+  /* Note that it is okay to call x_window_to_frame, even though we are
+     not running in the main lisp thread, because frame deletion
+     requires the lisp thread to synchronize with this thread.  Thus, if
+     a frame struct is returned, it can be used without concern that the
+     lisp thread might make it disappear while we are using it.
+
+     NB. Walking the frame list in this thread is safe (as long as
+     writes of Lisp_Object slots are atomic, which they are on Windows).
+     Although delete-frame can destructively modify the frame list while
+     we are walking it, a garbage collection cannot occur until after
+     delete-frame has synchronized with this thread.
+
+     It is also safe to use functions that make GDI calls, such as
+     win32_clear_rect, because these functions must obtain a DC handle
+     from the frame struct using get_frame_dc which is thread-aware.  */
+
   switch (msg) 
     {
     case WM_ERASEBKGND:
-      enter_crit ();
-      GetUpdateRect (hwnd, &wmsg.rect, FALSE);
-      leave_crit ();
-      my_post_msg (&wmsg, hwnd, msg, wParam, lParam);
+      f = x_window_to_frame (dpyinfo, hwnd);
+      if (f)
+	{
+	  GetUpdateRect (hwnd, &wmsg.rect, FALSE);
+	  win32_clear_rect (f, NULL, &wmsg.rect);
+	}
       return 1;
     case WM_PALETTECHANGED:
       /* ignore our own changes */
       if ((HWND)wParam != hwnd)
         {
-	  /* simply notify main thread it may need to update frames */
-	  my_post_msg (&wmsg, hwnd, msg, wParam, lParam);
+	  f = x_window_to_frame (dpyinfo, hwnd);
+	  if (f)
+	    /* get_frame_dc will realize our palette and force all
+	       frames to be redrawn if needed. */
+	    release_frame_dc (f, get_frame_dc (f));
 	}
       return 0;
     case WM_PAINT:
@@ -2929,6 +2990,9 @@ win32_wnd_proc (hwnd, msg, wParam, lParam)
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
+      /* Synchronize modifiers with current keystroke.  */
+      sync_modifiers ();
+
       record_keydown (wParam, lParam);
 
       wParam = map_keypad_keys (wParam, lParam);
@@ -2950,6 +3014,8 @@ win32_wnd_proc (hwnd, msg, wParam, lParam)
       case VK_CONTROL: 
       case VK_CAPITAL: 
       case VK_SHIFT:
+      case VK_NUMLOCK:
+      case VK_SCROLL: 
 	windows_translate = 1;
 	break;
       default:
@@ -3185,9 +3251,9 @@ win32_wnd_proc (hwnd, msg, wParam, lParam)
       reset_modifiers ();
       goto dflt;
 
-    case WM_KILLFOCUS:
     case WM_SETFOCUS:
       reset_modifiers ();
+    case WM_KILLFOCUS:
     case WM_MOVE:
     case WM_SIZE:
     case WM_SYSCOMMAND:
@@ -3947,7 +4013,7 @@ x_to_win32_font (lpxstr, lplogfont)
   
   memset (lplogfont, 0, sizeof (*lplogfont));
 
-#if 0
+#if 1
   lplogfont->lfOutPrecision = OUT_DEFAULT_PRECIS;
   lplogfont->lfClipPrecision = CLIP_DEFAULT_PRECIS;
   lplogfont->lfQuality = DEFAULT_QUALITY;
@@ -4891,8 +4957,6 @@ syms_of_win32fns ()
   staticpro (&Qcursor_color);
   Qcursor_type = intern ("cursor-type");
   staticpro (&Qcursor_type);
-  Qfont = intern ("font");
-  staticpro (&Qfont);
   Qforeground_color = intern ("foreground-color");
   staticpro (&Qforeground_color);
   Qgeometry = intern ("geometry");
@@ -4955,6 +5019,11 @@ syms_of_win32fns ()
 When non-nil, for example, alt pressed and released and then space will\n\
 open the System menu.  When nil, Emacs silently swallows alt key events.");
   Vwin32_pass_alt_to_system = Qnil;
+
+  DEFVAR_LISP ("win32-alt-is-meta", &Vwin32_alt_is_meta,
+	       "Non-nil if the alt key is to be considered the same as the meta key.\n\
+When nil, Emacs will translate the alt key to the Alt modifier, and not Meta.");
+  Vwin32_alt_is_meta = Qt;
 
   DEFVAR_LISP ("win32-pass-optional-keys-to-system", 
 	       &Vwin32_pass_optional_keys_to_system,

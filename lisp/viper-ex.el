@@ -102,12 +102,44 @@
 ;; Pattern for global command.
 (defvar ex-g-pat nil)
 
-;; `sh' doesn't seem to expand wildcards, like `*'
-(defconst ex-find-file-shell "csh"
-  "Shell in which to interpret wildcards. Must be csh, tcsh, or similar.
-Bourne shell doesn't seem to work here.")
-(defvar ex-find-file-shell-options "-f"
-  "*Options to pass to `ex-find-file-shell'.")
+
+(defvar ex-unix-type-shell
+  (let ((case-fold-search t))
+    (and (stringp shell-file-name)
+	 (string-match
+	  (concat
+	   "\\("
+	   "csh$\\|csh.exe$"
+	   "\\|"
+	   "ksh$\\|ksh.exe$"
+	   "\\|"
+	   "^sh$\\|sh.exe$"
+	   "\\|"
+	   "[^a-z]sh$\\|[^a-z]sh.exe$"
+	   "\\|"
+	   "bash$\\|bash.exe$"
+	   "\\)")
+	  shell-file-name)))
+  "Is the user using a unix-type shell?")
+
+(defvar ex-unix-type-shell-options
+  (let ((case-fold-search t))
+    (if ex-unix-type-shell
+	(cond ((string-match "\\(csh$\\|csh.exe$\\)" shell-file-name)
+	       "-f") ; csh: do it fast
+	      ((string-match "\\(bash$\\|bash.exe$\\)" shell-file-name)
+	       "-noprofile") ; bash: ignore .profile
+	      )))
+  "Options to pass to the Unix-style shell. 
+Don't put `-c' here, as it is added automatically.")
+
+(defvar ex-nontrivial-find-file-function
+  (cond (ex-unix-type-shell 'vip-ex-nontrivial-find-file-unix)
+	((eq system-type 'emx) 'vip-ex-nontrivial-find-file-ms) ; OS/2
+	(vip-ms-style-os-p 'vip-ex-nontrivial-find-file-ms) ; a Microsoft OS
+	(vip-vms-os-p 'vip-ex-nontrivial-find-file-unix) ; VMS
+	(t  'vip-ex-nontrivial-find-file-unix) ; presumably UNIX
+	))
 
 ;; Remembers the previous Ex tag.
 (defvar ex-tag nil)
@@ -882,8 +914,10 @@ reversed.")
     (setq cont (setq vip-keep-reading-filename t))
     (while cont
       (setq vip-keep-reading-filename nil
-	    val (read-file-name (concat prompt str) nil default-directory)
-	    str  (concat str (if (equal val "") "" " ")
+	    val (read-file-name (concat prompt str) nil default-directory))
+      (if (string-match " " val)
+	  (setq val (concat "\\\"" val "\\\"")))
+      (setq str  (concat str (if (equal val "") "" " ")
 			 val (if (equal val "") "" " ")))
 			 
       ;; Only edit, next, and Next commands accept multiple files.
@@ -1147,42 +1181,15 @@ reversed.")
 	(beginning-of-line)))
   (ex-fixup-history vip-last-ex-prompt ex-file))
 
-;; splits the string FILESPEC into substrings separated by newlines `\012'
-;; each line assumed to be a file name. find-file's each file thus obtained.
+;; Splits the string FILESPEC into substrings separated by newlines.
+;; Each line is assumed to be a file name. find-file's each file thus obtained.
 (defun ex-find-file (filespec)
-  (let (f filebuf tmp-buf status)
-    (if (string-match "[^a-zA-Z0-9_.-/]" filespec)
-	(progn
-	  (save-excursion 
-	    (set-buffer (setq tmp-buf (get-buffer-create vip-ex-tmp-buf-name)))
-	    (erase-buffer)
-	    (setq status
-		  (call-process ex-find-file-shell nil t nil
-				ex-find-file-shell-options 
-				"-c"
-				(format "echo %s | tr ' ' '\\012'" filespec)))
-	    (goto-char (point-min))
-	    ;; Issue an error, if no match.
-	    (if (> status 0)
-		(save-excursion
-		  (skip-chars-forward " \t\n\j")
-		  (if (looking-at "echo:")
-		      (vip-forward-word 1))
-		  (error "%S%s"
-			 filespec
-			 (buffer-substring (point) (vip-line-pos 'end)))
-		  ))
-	    (reverse-region (point-min) (point-max))
-	    (goto-char (point-min))
-	    (while (not (eobp))
-	      (setq f (buffer-substring (point) (vip-line-pos 'end)))
-	      (setq filebuf (find-file f))
-	      (set-buffer tmp-buf) ; otherwise it'll be in f.
-	      (forward-to-indentation 1))
-	    ))
-      (setq filebuf (find-file-noselect (setq f filespec))))
-    (switch-to-buffer filebuf)
+  (let ((nonstandard-filename-chars "[^a-zA-Z0-9_.-/,\\]"))
+    (if (string-match nonstandard-filename-chars  filespec)
+	(funcall ex-nontrivial-find-file-function filespec)
+      (find-file filespec))
     ))
+
 
 ;; Ex global command
 (defun ex-global (variant)

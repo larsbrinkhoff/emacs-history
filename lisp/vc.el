@@ -420,7 +420,8 @@ to an optional list of FLAGS."
 	   (cons (concat "PATH=" (getenv "PATH")
 			 path-separator
 			 (mapconcat 'identity vc-path path-separator))
-		 process-environment)))
+		 process-environment))
+	  (win32-quote-process-args t))
       (setq status (apply 'call-process command nil t nil squeezed)))
     (goto-char (point-max))
     (set-buffer-modified-p nil)
@@ -1618,8 +1619,8 @@ A prefix argument means do not revert the buffer afterwards."
     (pop-to-buffer vc-parent-buffer))
   (cond 
    ((not (vc-registered (buffer-file-name)))
-    (vc-registration-error (buffer-file-name))
-    (eq (vc-backend (buffer-file-name)) 'CVS)
+    (vc-registration-error (buffer-file-name)))
+   ((eq (vc-backend (buffer-file-name)) 'CVS)
     (error "Unchecking files under CVS is dangerous and not supported in VC"))
    ((vc-locking-user (buffer-file-name))
     (error "This version is locked; use vc-revert-buffer to discard changes"))

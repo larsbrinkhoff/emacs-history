@@ -1,0 +1,402 @@
+abbrev.el --- abbrev mode commands for Emacs
+abbrevlist.el --- list one abbrev table alphabetically ordered.
+ada-mode.el --- An Emacs major-mode for editing Ada source.
+add-log.el --- change log maintenance commands for Emacs
+advice.el --- an overloading mechanism for Emacs Lisp functions
+allout.el --- Extensive outline mode for use alone and with other modes.
+ange-ftp.el --- transparent FTP support for GNU Emacs
+appt.el --- appointment notification functions.
+apropos.el --- apropos commands for users and programmers.
+arc-mode.el --- simple editing of archives
+array.el --- array editing commands for Gnu Emacs
+asm-mode.el --- mode for editing assembler code
+assoc.el --- insert/delete/sort functions on association lists
+auto-show.el --- perform automatic horizontal scrolling as point moves
+autoinsert.el --- automatic mode-dependent insertion of text into new files
+autoload.el --- maintain autoloads in loaddefs.el.
+avoid.el --- make mouse pointer stay out of the way of editing
+awk-mode.el --- AWK code editing commands for Emacs
+backquote.el --- implement the ` Lisp construct
+bib-mode.el --- bib-mode, major mode for editing bib files.
+bibtex.el --- BibTeX mode for GNU Emacs
+blackbox.el --- blackbox game in Emacs Lisp
+blessmail.el --- Decide whether movemail needs special privileges.
+bookmark.el --- set bookmarks, maybe annotate them, jump to them later.
+browse-url.el --- ask a WWW browser to load a URL
+buff-menu.el --- buffer menu main function and support functions.
+byte-opt.el --- the optimization passes of the emacs-lisp byte compiler.
+byte-run.el --- byte-compiler support for inlining
+bytecomp.el --- compilation of Lisp code into byte code.
+c-mode.el --- C code editing commands for Emacs
+cal-china.el --- calendar functions for the Chinese calendar.
+cal-coptic.el --- calendar functions for the Coptic/Ethiopic calendars.
+cal-dst.el --- calendar functions for daylight savings rules.
+cal-french.el --- calendar functions for the French Revolutionary calendar.
+cal-hebrew.el --- calendar functions for the Hebrew calendar.
+cal-islam.el --- calendar functions for the Islamic calendar.
+cal-iso.el --- calendar functions for the ISO calendar.
+cal-julian.el --- calendar functions for the Julian calendar.
+cal-mayan.el --- calendar functions for the Mayan calendars.
+cal-menu.el --- calendar functions for menu bar and popup menu support
+cal-move.el --- calendar functions for movement in the calendar
+cal-persia.el --- calendar functions for the Persian calendar.
+cal-tex.el --- calendar functions for printing calendars with LaTeX.
+cal-x.el --- calendar windows in dedicated frames in X
+calendar.el --- Calendar functions.
+case-table.el --- code to extend the character set and support case tables.
+cc-compat.el --- cc-mode compatibility with c-mode.el confusion
+cc-mode.el --- major mode for editing C, C++, and Objective-C code
+cdl.el --- Common Data Language (CDL) utility functions for Gnu Emacs
+chistory.el --- list command history
+cl-compat.el --- Common Lisp extensions for GNU Emacs Lisp (compatibility)
+cl-extra.el --- Common Lisp extensions for GNU Emacs Lisp (part two)
+cl-indent.el --- enhanced lisp-indent mode
+cl-macs.el --- Common Lisp extensions for GNU Emacs Lisp (part four)
+cl-seq.el --- Common Lisp extensions for GNU Emacs Lisp (part three)
+cl-specs.el --- Edebug specs for cl.el
+cl.el --- Common Lisp extensions for GNU Emacs Lisp
+cmacexp.el --- expand C macros in a region
+cmuscheme.el --- Scheme process in a buffer. Adapted from tea.el.
+comint.el --- general command interpreter in a window stuff
+compare-w.el --- compare text between windows for Emacs.
+compile.el --- run compiler as inferior of Emacs, parse error messages.
+complete.el --- partial completion mechanism plus other goodies
+completion.el --- dynamic word-completion code
+cookie1.el --- retrieve random phrases from fortune cookie files
+copyright.el --- update the copyright notice in current buffer
+cplus-md.el --- C++ code editing commands for Emacs
+cpp.el --- Highlight or hide text according to cpp conditionals.
+cust-print.el --- handles print-level and print-circle.
+custom.el --- User friendly customization support.
+dabbrev.el --- dynamic abbreviation package
+debug.el --- debuggers and related commands for Emacs
+decipher.el --- Cryptanalyze monoalphabetic substitution ciphers
+;;I turned this off because I don't want it
+delsel.el --- delete selection if you insert
+derived.el --- allow inheritance of major modes.
+desktop.el --- save partial status of Emacs when killed
+diary-lib.el --- diary functions.
+diff.el --- Run `diff' in compilation-mode.
+dired-aux.el --- less commonly used parts of dired  -*-byte-compile-dynamic: t;-*-
+dired-x.el --- Sebastian Kremer's Extra DIRED hacked up for GNU Emacs19
+dired.el --- directory-browsing commands
+disass.el --- disassembler for compiled Emacs Lisp code
+disp-table.el --- functions for dealing with char tables.
+dissociate.el --- scramble text amusingly for Emacs.
+docref.el --- Simple cross references for Elisp documentation strings
+doctor.el --- psychological help for frustrated users.
+dos-fns.el --- MS-Dos specific functions.
+double.el --- Support for keyboard remapping with double clicking
+dunnet.el --- Text adventure for Emacs
+easymenu.el --- support the easymenu interface for defining a menu.
+ebuff-menu.el --- electric-buffer-list mode
+echistory.el --- Electric Command History Mode
+edebug.el --- a source-level debugger for Emacs Lisp
+ediff-diff.el --- diff-related utilities
+ediff-hook.el --- setup for Ediff's menus and autoloads
+ediff-init.el --- Macros, variables, and defsubsts used by Ediff
+ediff-merg.el --- merging utilities
+ediff-mult.el --- support for multi-file/multi-buffer processing in Ediff
+ediff-ptch.el --- Ediff's  patch support
+ediff-util.el --- the core commands and utilities of ediff
+ediff-vers.el --- version control interface to Ediff
+ediff-wind.el --- window manipulation utilities
+ediff.el --- a comprehensive visual interface to diff & patch
+edmacro.el --- keyboard macro editor
+edt-lk201.el --- Enhanced EDT Keypad Mode Emulation for LK-201 Keyboards
+edt-mapper.el --- Create an EDT LK-201 Map File for X-Windows Emacs
+edt-pc.el --- Enhanced EDT Keypad Mode Emulation for PC 101 Keyboards
+edt-vt100.el --- Enhanced EDT Keypad Mode Emulation for VT Series Terminals
+edt.el --- Enhanced EDT Keypad Mode Emulation for GNU Emacs 19
+ehelp.el --- bindings for electric-help mode
+electric.el --- window maker and Command loop for `electric' modes.
+elp.el --- Emacs Lisp Profiler
+emacs-lock.el --- prevents you from exiting emacs if a buffer is locked
+emacsbug.el --- command to report Emacs bugs to appropriate mailing list.
+emerge.el --- merge diffs under Emacs control
+enriched.el --- read and save files in text/enriched format
+env.el --- functions to manipulate environment variables.
+etags.el --- etags facility for Emacs
+eval-reg.el --- Redefine eval-region, and subrs that use it, in Lisp
+executable.el --- base functionality for executable interpreter scripts
+f90.el --- Fortran-90 mode (free format)
+facemenu.el --- create a face menu for interactively adding fonts to text
+faces.el --- Lisp interface to the c "face" structure
+fast-lock.el --- Automagic text properties caching for fast Font Lock mode.
+ffap.el --- find file or url at point
+files.el --- file input and output commands for Emacs
+fill.el --- fill commands for Emacs
+find-dired.el --- run a `find' command and dired the output
+find-file.el --- find a file corresponding to this one given a pattern
+find-gc.el --- detect functions that call the garbage collector
+finder-inf.el --- keyword-to-package mapping
+finder.el --- topic & keyword-based code finder
+float-sup.el --- detect absence of floating-point support in Emacs runtime
+float.el --- floating point arithmetic package.
+flow-ctrl.el --- help for lusers on cu(1) or ttys with wired-in ^S/^Q flow control
+foldout.el --- Folding extensions for outline-mode and outline-minor-mode.
+follow.el --- Minor mode, Synchronize windows showing the same buffer.
+font-lock.el --- Electric font lock mode
+format.el --- read and save files in multiple formats
+forms-d2.el --- demo forms-mode
+forms-pass.el --- passwd file demo for forms-mode
+forms.el --- Forms mode: edit a file as a form to fill in
+fortran.el --- Fortran mode for GNU Emacs
+frame.el --- multi-frame management independent of window systems.
+gnus-cache.el --- cache interface for Gnus
+gnus-cite.el --- parse citations in articles for Gnus
+gnus-cus.el --- User friendly customization of Gnus
+gnus-demon.el --- daemonic Gnus behaviour
+gnus-edit.el --- Gnus SCORE file editing
+gnus-ems.el --- functions for making Gnus work under different Emacsen
+gnus-gl.el --- an interface to GroupLens for Gnus
+gnus-kill.el --- kill commands for Gnus
+gnus-mh.el --- mh-e interface for Gnus
+gnus-msg.el --- mail and post interface for Gnus
+gnus-nocem.el --- NoCeM pseudo-cancellation treatment
+gnus-salt.el --- alternate summary mode interfaces for Gnus
+gnus-score.el --- scoring code for Gnus
+gnus-setup.el --- Initialization & Setup for Gnus 5
+gnus-soup.el --- SOUP packet writing support for Gnus
+gnus-srvr.el --- virtual server support for Gnus
+gnus-topic.el --- a folding minor mode for Gnus group buffers
+gnus-uu.el --- extract (uu)encoded files in Gnus
+gnus-vis.el --- display-oriented parts of Gnus
+gnus-vm.el --- vm interface for Gnus
+gnus.el --- a newsreader for GNU Emacs
+gomoku.el --- Gomoku game between you and Emacs
+goto-addr.el --- click to browse URL or to send to e-mail address
+gud.el --- Grand Unified Debugger mode for gdb, sdb, dbx, or xdb under Emacs
+gulp.el --- Ask for updates for Lisp packages
+hanoi.el --- towers of hanoi in GNUmacs
+help-macro.el --- Makes command line help such as help-for-help
+help.el --- help commands for Emacs
+helper.el --- utility help package supporting help in electric modes
+hexl.el --- edit a file in a hex dump format using the hexl filter.
+hide-ifdef-mode.el --- hides selected code within ifdef.
+hideshow.el --- minor mode cmds to selectively display blocks of code
+hilit19.el --- customizable highlighting for Emacs19
+hippie-exp.el --- expand text trying various ways to find its expansion.
+holidays.el --- holiday functions for the calendar package
+icomplete.el --- minibuffer completion incremental feedback
+icon.el --- mode for editing Icon code
+ielm.el --- interaction mode for Emacs Lisp
+imenu.el --- Framework for mode-specific buffer indexes.
+indent.el --- indentation commands for Emacs
+inf-lisp.el --- an inferior-lisp mode
+info.el --- info package for Emacs.
+informat.el --- info support functions package for Emacs
+isearch.el --- incremental search minor mode.
+iso-acc.el --- minor mode providing electric accent keys
+iso-ascii.el --- set up char tables for ISO 8859/1 on ASCII terminals.
+iso-cvt.el --- translate to ISO 8859-1 from/to net/TeX conventions
+iso-insert.el --- insert functions for ISO 8859/1.
+iso-swed.el --- set up char tables for ISO 8859/1 for Swedish/Finnish ttys
+iso-syntax.el --- set up case-conversion and syntax tables for ISO 8859/1
+iso-transl.el --- keyboard input definitions for ISO 8859/1.
+iso02-syn.el --- set up case-conversion and syntax tables for ISO 8859-2
+ispell.el --- spell checking using Ispell
+ispell4.el --- this is the GNU EMACS interface to GNU ISPELL version 4.
+jka-compr.el --- reading/writing/loading compressed files
+kermit.el --- additions to shell mode for use with kermit, etc.
+lazy-lock.el --- Lazy demand-driven fontification for fast Font Lock mode.
+ledit.el --- Emacs side of ledit interface
+levents.el --- emulate the Lucid event data type and associated functions.
+life.el --- John Horton Conway's `Life' game for GNU Emacs
+lisp-mnt.el --- minor mode for Emacs Lisp maintainers
+lisp-mode.el --- Lisp mode, and its idiosyncratic commands.
+lisp.el --- Lisp editing commands for Emacs
+lmenu.el --- emulate Lucid's menubar support
+loaddefs.el --- define standard autoloads and keys of other files
+loadhist.el --- lisp functions for working with feature groups
+loadup.el --- load up standardly loaded Lisp files for Emacs.
+lpr.el --- print Emacs buffer on line printer.
+ls-lisp.el --- emulate insert-directory completely in Emacs Lisp
+lselect.el --- Lucid interface to X Selections
+lucid.el --- Emulate some Lucid Emacs functions.
+lunar.el --- calendar functions for phases of the moon.
+macros.el --- non-primitive commands for keyboard macros.
+mail-extr.el --- extract full name and address from RFC 822 mail header.
+mail-hist.el --- Headers and message body history for outgoing mail.
+mail-utils.el --- utility functions used both by rmail and rnews
+mailabbrev.el --- abbrev-expansion of mail aliases.
+mailalias.el --- expand and complete mailing address aliases
+mailheader.el --- Mail header parsing, merging, formatting
+mailpost.el --- RMAIL coupler to /usr/uci/post mailer
+make-mode.el --- makefile editing commands for Emacs
+makeinfo.el --- run makeinfo conveniently
+makesum.el --- generate key binding summary for Emacs
+man.el --- browse UNIX manual pages
+map-ynp.el --- General-purpose boolean question-asker.
+meese.el --- protect the impressionable young minds of America
+menu-bar.el --- define a default menu bar.
+message.el --- composing mail and news messages
+metamail.el --- Metamail interface for GNU Emacs
+mh-comp --- mh-e functions for composing messages
+mh-e.el --- GNU Emacs interface to the MH mail system
+mh-funcs --- mh-e functions not everyone will use right away
+mh-mime --- mh-e support for composing MIME messages
+mh-pick --- make a search pattern and search for a message in mh-e
+mh-seq --- mh-e sequences support
+mh-utils.el --- mh-e code needed for both sending and reading
+misc.el --- basic editing commands for Emacs
+mlconvert.el --- convert buffer of Mocklisp code to real lisp.
+mldrag.el --- mode line and vertical line dragging to resize windows
+mlsupport.el --- run-time support for mocklisp code.
+modula2.el --- Modula-2 editing support package
+morse.el --- Convert text to morse code and back.
+mouse-sel.el --- Multi-click selection support for Emacs 19
+mouse.el --- window system-independent mouse support
+mpuz.el --- multiplication puzzle for GNU Emacs
+msb.el --- Customizable buffer-selection with multiple menus.
+nnbabyl.el --- rmail mbox access for Gnus
+nndb.el --- nndb access for Gnus
+nndir.el --- single directory newsgroup access for Gnus
+nndoc.el --- single file access for Gnus
+nneething.el --- random file access for Gnus
+nnfolder.el --- mail folder access for Gnus
+nnheader.el --- header access macros for Gnus and its backends
+nnkiboze.el --- select virtual news access for Gnus
+nnmail.el --- mail support functions for the Gnus mail backends
+nnmbox.el --- mail mbox access for Gnus
+nnmh.el --- mhspool access for Gnus
+nnml.el --- mail spool access for Gnus
+nnoo.el --- OO Gnus Backends
+nnsoup.el --- SOUP access for Gnus
+nnspool.el --- spool access for GNU Emacs
+nntp.el --- nntp access for Gnus
+nnvirtual.el --- virtual newsgroups access for Gnus
+outline.el --- outline mode commands for Emacs
+novice.el --- handling of disabled commands ("novice mode") for Emacs.
+nroff-mode.el --- GNU Emacs major mode for editing nroff source
+options.el --- edit Options command for Emacs.
+outline.el --- outline mode commands for Emacs
+page-ext.el --- extended page handling commands
+page.el --- page motion commands for emacs.
+paragraphs.el --- paragraph and sentence parsing.
+paren.el --- highlight matching paren.
+pascal.el --- major mode for editing pascal source in Emacs
+paths.el --- define pathnames for use by various Emacs commands.
+pc-mode.el --- emulate certain key bindings used on PCs.
+pc-select.el --- emulate mark, cut, copy and paste from motif
+perl-mode.el --- Perl code editing commands for GNU Emacs
+picture.el --- "Picture mode" -- editing using quarter-plane screen model.
+pp.el --- pretty printer for Emacs Lisp
+profile.el --- generate run time measurements of Emacs Lisp functions
+prolog.el --- major mode for editing and running Prolog under Emacs
+ps-print.el --- Jim's Pretty-Good PostScript Generator for Emacs 19.
+rcompile.el --- run a compilation on a remote machine
+rect.el --- rectangle functions for GNU Emacs.
+refbib.el --- convert refer-style references to ones usable by Latex bib
+refer.el --- look up references in bibliography files.
+regi.el --- REGular expression Interpreting engine
+register.el --- register commands for Emacs.
+replace.el --- replace commands for Emacs.
+reporter.el --- customizable bug reporting of lisp programs
+reposition.el --- center a Lisp function or comment on the screen
+resume.el --- process command line args from within a suspended Emacs job
+rfc822.el --- hairy rfc822 parser for mail and news and suchlike
+ring.el --- handle rings of items
+rlogin.el --- remote login interface
+rmail.el --- main code of "RMAIL" mail reader for Emacs.
+rmailedit.el --- "RMAIL edit mode"  Edit the current message.
+rmailkwd.el --- part of the "RMAIL" mail reader for Emacs.
+rmailmsc.el --- miscellaneous support functions for the RMAIL mail reader
+rmailout.el --- "RMAIL" mail reader for Emacs: output message to a file.
+rmailsort.el --- Rmail: sort messages.
+rmailsum.el --- make summary buffers for the mail reader
+rnews.el --- USENET news reader for gnu emacs
+rnewspost.el --- USENET news poster/mailer for GNU Emacs
+rot13.el --- display a buffer in rot13.
+rsz-mini.el --- dynamically resize minibuffer to display entire contents
+s-region.el --- set region using shift key.
+saveplace.el --- automatically save place in files.
+scheme.el --- Scheme mode, and its idiosyncratic commands.
+score-mode.el --- mode for editing Gnus score files
+scribe.el --- scribe mode, and its idiosyncratic commands.
+scroll-bar.el --- window system-independent scroll bar support.
+select.el --- lisp portion of standard selection support.
+sendmail.el --- mail sending commands for Emacs.
+server.el --- Lisp code for GNU Emacs running as server process.
+sgml-mode.el --- SGML- and HTML-editing modes
+sh-script.el --- shell-script editing commands for Emacs
+shadow.el --- Locate Emacs Lisp file shadowings.
+shadowfile.el --- automatic file copying for Emacs 19
+shell.el --- specialized comint.el for running the shell.
+simple.el --- basic editing commands for Emacs
+simula.el --- SIMULA 87 code editing commands for Emacs
+skeleton.el --- Lisp language extension for writing statement skeletons
+;; Simple SMTP protocol (RFC 821) for sending mail
+solar.el --- calendar functions for solar events.
+solitaire.el --- game of solitaire in Emacs Lisp
+sort.el --- commands to sort text in an Emacs buffer.
+soundex.el --- implement Soundex algorithm
+spell.el --- spelling correction interface for Emacs.
+spook.el --- spook phrase utility for overloading the NSA line eater
+startup.el --- process Emacs shell arguments
+studly.el --- StudlyCaps (tm)(r)(c)(xxx)
+subr.el --- basic lisp subroutines for Emacs
+sun-curs.el --- cursor definitions for Sun windows
+sun-fns.el --- subroutines of Mouse handling for Sun windows
+supercite.el --- minor mode for citing mail and news replies
+swedish.el --- miscellaneous functions for dealing with Swedish.
+tabify.el --- tab conversion commands for Emacs
+talk.el --- Allow several users to talk to each other through Emacs.
+tar-mode.el --- simple editing of tar files from GNU emacs
+tcl-mode.el --- a major-mode for editing tcl/tk scripts
+tcp.el --- TCP/IP stream emulation for GNU Emacs
+telnet.el --- run a telnet session from within an Emacs buffer
+tempo.el --- Flexible template insertion
+term-nasty.el --- Damned Things from terminfo.el
+term.el --- general command interpreter in a window stuff
+terminal.el --- terminal emulator for GNU Emacs.
+tex-mode.el --- TeX, LaTeX, and SliTeX mode commands.
+texinfmt.el --- format Texinfo files into Info files.
+texinfo.el --- major mode for editing Texinfo files
+texnfo-upd.el --- utilities for updating nodes and menus in Texinfo files
+text-mode.el --- text mode, and its idiosyncratic commands.
+thingatpt.el --- Get the `thing' at point
+time-stamp.el --- Maintain last change time stamps in files edited by Emacs
+time.el --- display time and load in mode line of Emacs.
+timer.el --- run a function with args at some time in future.
+timezone.el --- time zone package for GNU Emacs
+tmm.el --- text mode access to menu-bar
+tpu-edt.el --- Emacs emulating TPU emulating EDT
+tpu-extras.el --- Scroll margins and free cursor mode for TPU-edt
+tpu-mapper.el --- Create a TPU-edt X-windows keymap file
+tq.el --- utility to maintain a transaction queue
+trace.el --- tracing facility for Emacs Lisp functions
+two-column.el --- minor mode for editing of two-column text
+type-break.el --- encourage rests from typing at appropriate intervals
+uncompress.el --- auto-decompression hook for visiting .Z files
+underline.el --- insert/remove underlining (done by overstriking) in Emacs.
+undigest.el --- digest-cracking support for the RMAIL mail reader
+uniquify.el --- unique buffer names dependent on file name
+unrmail.el --- convert Rmail files to mailbox files.
+unused.el --- editing commands in GNU Emacs that turned out not to be used.
+userlock.el --- handle file access contention between multiple users
+vc-hooks.el --- resident support for version-control
+vc.el --- drive a version-control system from within Emacs
+version.el --- record version number of Emacs.
+vi.el --- major mode for emulating "vi" editor under GNU Emacs.
+view.el --- peruse file or buffer without editing.
+vip.el --- a VI Package for GNU Emacs
+viper-ex.el --- functions implementing the Ex commands for Viper
+viper-keym.el --- Viper keymaps
+viper-macs.el --- functions implementing keyboard macros for Viper
+viper-mous.el --- mouse support for Viper
+viper-util.el --- Utilities used by viper.el
+viper.el --- A full-featured Vi emulator for GNU Emacs 19 and XEmacs 19,
+vms-patch.el --- override parts of files.el for VMS.
+vms-pmail.el --- use Emacs as the editor within VMS mail.
+vmsproc.el --- run asynchronous VMS subprocesses under Emacs
+vt-control.el --- Common VTxxx control functions
+vt100-led.el --- functions for LED control on VT-100 terminals & clones.
+window.el --- GNU Emacs window commands aside from those written in C.
+winnt.el --- Lisp routines for Windows NT.
+ws-mode.el --- WordStar emulation mode for GNU Emacs
+x-apollo.el --- Apollo support functions
+x-menu.el --- menu support for X 
+xscheme.el --- run Scheme under Emacs
+xt-mouse.el --- Support the mouse when emacs run in an xterm.
+yow.el --- quote random zippyisms

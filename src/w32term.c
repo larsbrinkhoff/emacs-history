@@ -14,8 +14,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+along with GNU Emacs; see the file COPYING.  If not, write to the
+Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Added by Kevin Gallo */
 
@@ -2394,13 +2395,6 @@ w32_read_socket (sd, bufp, numchars, waitp, expected)
     {
       switch (msg.msg.message)
 	{
-	case WM_ERASEBKGND:
-	  f = x_window_to_frame (dpyinfo, msg.msg.hwnd);
-	  if (f)
-	    {
-	      win32_clear_rect (f, NULL, &msg.rect);
-	    }
-	  break;
 	case WM_PAINT:
 	  {
 	    f = x_window_to_frame (dpyinfo, msg.msg.hwnd);
@@ -2415,22 +2409,16 @@ w32_read_socket (sd, bufp, numchars, waitp, expected)
 		  }
 		else
 		  {
+		    /* Erase background again for safety.  */
+		    win32_clear_rect (f, NULL, &msg.rect);
 		    dumprectangle (f,
 				   msg.rect.left,
 				   msg.rect.top,
 				   msg.rect.right-msg.rect.left+1,
 				   msg.rect.bottom-msg.rect.top+1);
-		      
 		  }
 	      }
 	  }
-	  
-	  break;
-	case WM_PALETTECHANGED:
-	  f = x_window_to_frame (dpyinfo, msg.msg.hwnd);
-	  if (f)
-	    /* Realize palette - will force update if needed. */
-	    release_frame_dc (f, get_frame_dc (f));
 	  break;
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
@@ -2480,8 +2468,12 @@ w32_read_socket (sd, bufp, numchars, waitp, expected)
 		      add = 1;
 		    }
 
-		  /* Throw dead keys away.  */
-		  if (is_dead_key (msg.msg.wParam))
+		  /* Throw dead keys away.  However, be sure not to
+		     throw away the dead key if it was produced using
+		     AltGr and there is a valid AltGr scan code for
+		     this key.  */
+		  if (is_dead_key (msg.msg.wParam) 
+		      && !((VkKeyScan ((char) bufp->code) & 0xff00) == 0x600))
 		    break;
 
 		  bufp += add;
@@ -3308,6 +3300,21 @@ x_set_window_size (f, change_gravity, cols, rows)
 /* Mouse warping.  */
 
 void
+x_set_mouse_pixel_position (f, pix_x, pix_y)
+     struct frame *f;
+     int pix_x, pix_y;
+{
+  BLOCK_INPUT;
+
+  pix_x += f->output_data.win32->left_pos;
+  pix_y += f->output_data.win32->top_pos;
+
+  SetCursorPos (pix_x, pix_y);
+
+  UNBLOCK_INPUT;
+}
+
+void
 x_set_mouse_position (f, x, y)
      struct frame *f;
      int x, y;
@@ -3323,25 +3330,7 @@ x_set_mouse_position (f, x, y)
   if (pix_y < 0) pix_y = 0;
   if (pix_y > PIXEL_HEIGHT (f)) pix_y = PIXEL_HEIGHT (f);
 
-  BLOCK_INPUT;
-
-  SetCursorPos (pix_x, pix_y);
-
-  UNBLOCK_INPUT;
-}
-
-/* Move the mouse to position pixel PIX_X, PIX_Y relative to frame F.  */
-
-void
-x_set_mouse_pixel_position (f, pix_x, pix_y)
-     struct frame *f;
-     int pix_x, pix_y;
-{
-  BLOCK_INPUT;
-
-  SetCursorPos (pix_x, pix_y);
-
-  UNBLOCK_INPUT;
+  x_set_mouse_pixel_position (f, pix_x, pix_y);
 }
 
 /* focus shifting, raising and lowering.  */

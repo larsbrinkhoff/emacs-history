@@ -39,6 +39,14 @@ In Auto Fill mode, if no numeric arg, break the preceding line if it's long."
   ;; the end of the previous line.
   (let ((flag (and (not (bobp)) 
 		   (bolp)
+		   ;; Make sure the newline before point isn't intangible.
+		   (not (get-char-property (1- (point)) 'intangible))
+		   ;; Make sure the newline before point isn't read-only.
+		   (not (get-char-property (1- (point)) 'read-only))
+		   ;; Make sure the newline before point isn't invisible.
+		   (not (get-char-property (1- (point)) 'invisible))
+		   ;; Make sure the newline before point has the same
+		   ;; properties as the char before it (if any).
 		   (< (or (previous-property-change (point)) -2) 
 		      (- (point) 2))))
 	(was-page-start (and (bolp)
@@ -926,7 +934,10 @@ In either case, the output is inserted after point (leaving mark after it)."
 			    (buffer-substring (point)
 					      (progn (end-of-line) (point))))))
 		(t 
-		 (set-window-start (display-buffer buffer) 1))))))))
+		 (save-excursion
+		   (set-buffer buffer)
+		   (goto-char (point-min)))
+		 (display-buffer buffer))))))))
 
 (defconst universal-argument-map
   (let ((map (make-sparse-keymap)))
@@ -1557,7 +1568,7 @@ In Transient Mark mode, this does not activate the mark."
 	  (move-marker (car (nthcdr global-mark-ring-max global-mark-ring))
 		       nil)
 	  (setcdr (nthcdr (1- global-mark-ring-max) global-mark-ring) nil))))
-  (or nomsg executing-macro (> (minibuffer-depth) 0)
+  (or nomsg executing-kbd-macro (> (minibuffer-depth) 0)
       (message "Mark set"))
   (if (or activate (not transient-mark-mode))
       (set-mark (mark t)))
@@ -2449,10 +2460,16 @@ automatically breaks the line at a previous space."
   (auto-fill-mode 1))
 
 (defun set-fill-column (arg)
-  "Set `fill-column' to current column, or to argument if given.
-The variable `fill-column' has a separate value for each buffer."
+  "Set `fill-column' to specified argument.
+Just \\[universal-argument] as argument means to use the current column."
   (interactive "P")
-  (setq fill-column (if (integerp arg) arg (current-column)))
+  (cond ((integerp arg)
+	 (setq fill-column arg))
+	((consp arg)
+	 (setq fill-column (current-column)))
+	;; Disallow missing argument; it's probably a typo for C-x C-f.
+	(t
+	 (error "set-fill-column requires an explicit argument")))
   (message "fill-column set to %d" fill-column))
 
 (defconst comment-multi-line nil
@@ -2921,6 +2938,9 @@ With prefix argument N, move N items (negative N means move backward)."
 ;; Switch to BUFFER and insert the completion choice CHOICE.
 ;; BASE-SIZE, if non-nil, says how many characters of BUFFER's text
 ;; to keep.  If it is nil, use choose-completion-delete-max-match instead.
+
+;; If BUFFER is the minibuffer, exit the minibuffer
+;; unless it is reading a file name and CHOICE is a directory.
 (defun choose-completion-string (choice &optional buffer base-size)
   (let ((buffer (or buffer completion-reference-buffer)))
     ;; If BUFFER is a minibuffer, barf unless it's the currently
@@ -2944,7 +2964,12 @@ With prefix argument N, move N items (negative N means move backward)."
       ;; If completing for the minibuffer, exit it with this choice.
       (and (equal buffer (window-buffer (minibuffer-window)))
 	   minibuffer-completion-table
-	   (exit-minibuffer)))))
+	   ;; If this is reading a file name, and the file name chosen
+	   ;; is a directory, don't exit the minibuffer.
+	   (if (and (eq minibuffer-completion-table 'read-file-name-internal)
+		    (file-directory-p (buffer-string)))
+	       (select-window (active-minibuffer-window))
+	     (exit-minibuffer))))))
 
 (defun completion-list-mode ()
   "Major mode for buffers showing lists of possible completions.

@@ -71,13 +71,10 @@ Boston, MA 02111-1307, USA.  */
 #endif
 #endif
 
-#ifdef XlibSpecificationRelease
-#if XlibSpecificationRelease >= 5
-#define HAVE_X11R5
+#ifdef HAVE_X11R5
 /* In case someone has X11R5 on AIX 3.1,
    make sure HAVE_X11R4 is defined as well as HAVE_X11R5.  */
 #define HAVE_X11R4
-#endif
 #endif
 
 #ifdef HAVE_X11R5
@@ -456,8 +453,8 @@ struct x_output
   struct x_display_info *display_info;
 
   /* This is a button event that wants to activate the menubar.
-     We save it here until the  command loop gets to think about it.  */
-  XButtonEvent *saved_button_event;
+     We save it here until the command loop gets to think about it.  */
+  XEvent *saved_menu_event;
 
   /* This is the widget id used for this frame's menubar in lwlib.  */
 #ifdef USE_X_TOOLKIT
