@@ -492,12 +492,6 @@ and use that file as the inbox."
 	  (setq has-from (search-forward "\nFrom:" nil t))
 	  (goto-char start)
 	  (setq has-date (and (search-forward "\nDate:" nil t) (point)))
-	  (cond ((and (not has-from) has-date)
-		 ;; kill "date:" line if "from:" line missing
-		 (goto-char has-date)
-		 (beginning-of-line)
-		 (delete-region (point)
-				(progn (forward-line 1) (point)))))
 	  (goto-char start)
 	  (setq case-fold-search nil)
 	  (if (re-search-forward

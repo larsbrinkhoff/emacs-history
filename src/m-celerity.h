@@ -44,7 +44,6 @@ and this notice must be preserved on all copies.  */
 
 /* celerity preprocessor defines "accel", however the following is clearer */
 #define celerity
-#define BSTRINGS
 
 /* #define NO_UNION_TYPE would be preferable,
    but it does not work, and the reason is not yet known.  */

@@ -1,3 +1,17 @@
+Sat Apr 12 19:29:26 1986  Richard M. Stallman  (rms at prep)
+
+	* replace.el (perform-replace):
+	Save and restore the match-data around call to read-char.
+	Mysterious bug of replacing the wrong characters
+	was due to display-time-filter running inside read-char.
+	Also make the C-w option set `replaced' to t, not `done'.
+
+Fri Apr 11 13:56:16 1986  Richard M. Stallman  (rms at prep)
+
+	* rmail.el (rmail-nuke-pinhead-header):
+	Deleted code to delete old Date: line, since new one is made
+	only if had no old one.
+
 Thu Apr 10 05:58:53 1986  Richard M. Stallman  (rms at prep)
 
 	* rnews.el (news-set-current-certifiable):

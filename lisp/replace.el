@@ -137,7 +137,11 @@ C-w to delete match and recursive edit,
 	  (let (done replaced)
 	    (while (not done)
 	      (message "Query replacing %s with %s: " from-string to-string)
-	      (setq char (read-char))
+	      ;; Preserve the match data.  Process filters and sentinels
+	      ;; could run inside read-char..
+	      (let ((data (match-data)))
+		(setq char (read-char))
+		(store-match-data data))
 	      (cond ((not (memq char '(?\e ?\ ?\, ?\. ?! ?\177 ?\C-r ?\C-w ?^)))
 		     (setq keep-going nil)
 		     (setq unread-command-char char)
@@ -175,7 +179,7 @@ C-w to delete match and recursive edit,
 		     (store-match-data
 		       (prog1 (match-data)
 			 (save-excursion (recursive-edit))))
-		     (setq done t))))))
+		     (setq replaced t))))))
 	(setq lastrepl (point))))
     (pop-mark)
     (message "Done")
