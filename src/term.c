@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <stdio.h>
@@ -63,15 +62,14 @@ int no_redraw_on_reenter;
 /* DCICcost[n] is cost of inserting N characters.
    DCICcost[-n] is cost of deleting N characters. */
 
-#define DCICcost (&DC_ICcost[MScreenWidth])
-int DC_ICcost[1 + 2 * MScreenWidth];
-
+#define DCICcost (&DC_ICcost[screen_width])
+int *DC_ICcost;
 
 /* Hook functions that you can set to snap out the functions in this file.
    These are all extern'd in termhooks.h  */
 
-int (*topos_hook) ();
-int (*raw_topos_hook) ();
+int (*move_cursor_hook) ();
+int (*raw_move_cursor_hook) ();
 
 int (*clear_to_end_hook) ();
 int (*clear_screen_hook) ();
@@ -83,7 +81,7 @@ int (*change_line_highlight_hook) ();
 int (*reassert_line_highlight_hook) ();
 
 int (*insert_chars_hook) ();
-int (*write_chars_hook) ();
+int (*output_chars_hook) ();
 int (*delete_chars_hook) ();
 
 int (*ring_bell_hook) ();
@@ -96,6 +94,7 @@ int (*set_terminal_window_hook) ();
 
 int (*read_socket_hook) ();
 int (*fix_screen_hook) ();
+int (*calculate_costs_hook) ();
 
 /* Strings, numbers and flags taken from the termcap entry.  */
 
@@ -161,7 +160,8 @@ static int se_is_so;	/* 1 if same string both enters and leaves standout mode */
 /* Number of chars of space used for standout marker at beginning of line,
    or'd with 0100.  Zero if no standout marker at all.  */
 /* used iff TN_standout_width >= 0. */
-char chars_wasted[MScreenLength];
+char *chars_wasted;
+static char *copybuf;
 
 /* nonzero means supposed to write text in standout mode.  */
 int standout_requested;
@@ -399,7 +399,7 @@ change_line_highlight (new_highlight, vpos, first_unused_hpos)
       return;
     }
 
-  topos (vpos, 0);
+  move_cursor (vpos, 0);
 
   if (TN_standout_width < 0)
     background_highlight ();
@@ -424,12 +424,12 @@ change_line_highlight (new_highlight, vpos, first_unused_hpos)
 
 /* Move to absolute position, specified origin 0 */
 
-topos (row, col)
+move_cursor (row, col)
 {
   col += chars_wasted[row] & 077;
-  if (topos_hook)
+  if (move_cursor_hook)
     {
-      (*topos_hook) (row, col);
+      (*move_cursor_hook) (row, col);
       return;
     }
   if (curY == row && curX == col)
@@ -443,11 +443,11 @@ topos (row, col)
 
 /* Similar but don't take any account of the wasted characters.  */
 
-raw_topos (row, col)
+raw_move_cursor (row, col)
 {
-  if (raw_topos_hook)
+  if (raw_move_cursor_hook)
     {
-      (*raw_topos_hook) (row, col);
+      (*raw_move_cursor_hook) (row, col);
       return;
     }
   if (curY == row && curX == col)
@@ -481,7 +481,7 @@ clear_to_end ()
     {
       for (i = curY; i < screen_height; i++)
 	{
-	  topos (i, 0);
+	  move_cursor (i, 0);
 	  clear_end_of_line_raw (screen_width);
 	}
     }
@@ -505,7 +505,7 @@ clear_screen ()
     }
   else
     {
-      topos (0, 0);
+      move_cursor (0, 0);
       clear_to_end ();
     }
 }
@@ -521,7 +521,7 @@ clear_end_of_line (first_unused_hpos)
      int first_unused_hpos;
 {
   if (TN_standout_width == 0 && curX == 0 && chars_wasted[curY] != 0)
-    write_chars (" ", 1);
+    output_chars (" ", 1);
   clear_end_of_line_raw (first_unused_hpos);
 }
 
@@ -564,8 +564,8 @@ clear_end_of_line_raw (first_unused_hpos)
     }
 }
 
-write_chars (start, len)
-     register char *start;
+output_chars (string, len)
+     register char *string;
      int len;
 {
   register char *p;
@@ -574,9 +574,9 @@ write_chars (start, len)
   register int c;
   char *first_check;
 
-  if (write_chars_hook)
+  if (output_chars_hook)
     {
-      (*write_chars_hook) (start, len);
+      (*output_chars_hook) (string, len);
       return;
     }
   highlight_if_desired ();
@@ -591,35 +591,38 @@ write_chars (start, len)
 
   cmplus (len);
 
-  first_check = start;
+  first_check = string;
 
   if (RPov > len && !TF_underscore && !TF_hazeltine)
     {
-      fwrite (start, 1, len, stdout);
+      fwrite (string, 1, len, stdout);
       if (ferror (stdout))
 	clearerr (stdout);
       if (termscript)
-	fwrite (start, 1, len, termscript);
+	fwrite (string, 1, len, termscript);
     }
   else
     while (--len >= 0)
       {
-	if (RPov + 1 < len && start >= first_check && *start == start[1])
+	c = *string;
+	if (RPov + 1 < len && string >= first_check)
 	  {
-	    p = start + 2;
+	    int repeat_count;
+
+	    p = string + 1;
 
 	    /* Now, len is number of chars left starting at p */
-	    while (*p++ == *start);
-	    --p;
-	    /* n is number of identical chars in this run */
-	    n = p - start;
-	    if (n > RPov)
+	    while (*p++ == c);
+	    p--;
+
+	    repeat_count = p - string;
+	    if (repeat_count > RPov)
 	      {
-		buf = tparam (TS_repeat, 0, 0, *start, n);
-		tputs (buf, n, cmputc);
+		buf = tparam (TS_repeat, 0, 0, *string, repeat_count);
+		tputs (buf, repeat_count, cmputc);
 		free (buf);
-		start = p;
-		len -= n - 1;
+		string = p;
+		len -= repeat_count - 1;
 		continue;
 	      }
 	    else
@@ -627,7 +630,6 @@ write_chars (start, len)
 		 don't even consider the last N-1, the last N-2,...  */
 	      first_check = p;
 	  }
-	c = *start++;
 	if (c == '_' && TF_underscore)
 	  {
 	    if (termscript)
@@ -640,6 +642,7 @@ write_chars (start, len)
 	if (termscript)
 	  fputc (c, termscript);
 	putchar (c);
+	string++;
       }
 }
 
@@ -665,7 +668,7 @@ insert_chars (start, len)
       OUTPUT1 (buf);
       free (buf);
       if (start)
-	write_chars (start, len);
+	output_chars (start, len);
       return;
     }
 
@@ -744,7 +747,6 @@ ins_del_lines (vpos, n)
 
   register int i = n > 0 ? n : -n;
   register char *buf;
-  char copybuf[MScreenWidth];
 
   if (ins_del_lines_hook)
     {
@@ -766,7 +768,7 @@ ins_del_lines (vpos, n)
 
   if (multi)
     {
-      raw_topos (vpos, 0);
+      raw_move_cursor (vpos, 0);
       background_highlight ();
       buf = tparam (multi, 0, 0, i);
       OUTPUT (buf);
@@ -774,7 +776,7 @@ ins_del_lines (vpos, n)
     }
   else if (single)
     {
-      raw_topos (vpos, 0);
+      raw_move_cursor (vpos, 0);
       background_highlight ();
       while (--i >= 0)
 	OUTPUT (single);
@@ -785,9 +787,9 @@ ins_del_lines (vpos, n)
     {
       set_scroll_region (vpos, specified_window);
       if (n < 0)
-	raw_topos (specified_window - 1, 0);
+	raw_move_cursor (specified_window - 1, 0);
       else
-	raw_topos (vpos, 0);
+	raw_move_cursor (vpos, 0);
       background_highlight ();
       while (--i >= 0)
 	OUTPUTL (scroll, specified_window - vpos);
@@ -796,21 +798,25 @@ ins_del_lines (vpos, n)
 
   if (TN_standout_width >= 0)
     {
+      register lower_limit
+	= scroll_region_ok ? specified_window : screen_height;
       if (n < 0)
 	{
-	  bcopy (&chars_wasted[curY - n], &chars_wasted[curY], screen_height - curY + n);
-	  bzero (&chars_wasted[screen_height + n], - n);
+	  bcopy (&chars_wasted[vpos - n], &chars_wasted[vpos],
+		 lower_limit - vpos + n);
+	  bzero (&chars_wasted[lower_limit + n], - n);
 	}
       else
 	{
-	  bcopy (&chars_wasted[curY], &copybuf[curY], screen_height - curY - n);
-	  bcopy (&copybuf[curY], &chars_wasted[curY + n], screen_height - curY - n);
-	  bzero (&chars_wasted[curY], n);
+	  bcopy (&chars_wasted[vpos], &copybuf[vpos], lower_limit - vpos - n);
+	  bcopy (&copybuf[vpos], &chars_wasted[vpos + n],
+		 lower_limit - vpos - n);
+	  bzero (&chars_wasted[vpos], n);
 	}
     }
   if (!scroll_region_ok && memory_below_screen && n < 0)
     {
-      topos (screen_height + n, 0);
+      move_cursor (screen_height + n, 0);
       clear_to_end ();
     }
 }
@@ -918,9 +924,25 @@ calculate_costs ()
   register char *s
     = TS_set_scroll_region ? TS_set_scroll_region : TS_set_scroll_region_1;
 
-  if (dont_calculate_costs)
-    return;
+  if (chars_wasted != 0)
+    chars_wasted = (char *) xrealloc (chars_wasted, screen_height);
+  else
+    chars_wasted = (char *) xmalloc (screen_height);
+  bzero (chars_wasted, screen_height);
 
+  if (copybuf != 0)
+    copybuf = (char *) xrealloc (copybuf, screen_height);
+  else
+    copybuf = (char *) xmalloc (screen_height);
+
+  if (DC_ICcost != 0)
+    DC_ICcost = (int *) xrealloc (DC_ICcost,
+				  (2 * screen_width + 1) * sizeof (int));
+  else
+    DC_ICcost = (int *) xmalloc ((2 * screen_width + 1) * sizeof (int));
+
+  /* Always call CalcIDCosts because it allocates some vectors.
+     That function handles dont_calculate_costs.  */
   if (s && (!TS_ins_line && !TS_del_line))
     CalcIDCosts (TS_rev_scroll, TS_ins_multi_lines,
 		 TS_fwd_scroll, TS_del_multi_lines,
@@ -930,13 +952,19 @@ calculate_costs ()
 		 TS_del_line, TS_del_multi_lines,
 		 0, 0);
 
+  if (dont_calculate_costs)
+    {
+      bzero (DC_ICcost, 2 * screen_width * sizeof (int));
+      return;
+    }
+
   calculate_ins_del_char_costs ();
 
   /* Don't use TS_repeat if its padding is worse than sending the chars */
   if (TS_repeat && per_line_cost (TS_repeat) * baud_rate < 9000)
     RPov = string_cost (TS_repeat);
   else
-    RPov = MScreenWidth;
+    RPov = screen_width * 2;
 
   cmcostinit ();		/* set up cursor motion costs */
 }
@@ -944,9 +972,9 @@ calculate_costs ()
 term_init (terminal_type)
      char *terminal_type;
 {
-  char *combuf;
-  char *fill;
-  char tbuf[2044];
+  char *area;
+  char **address = &area;
+  char buffer[2044];
   register char *p;
   int status;
 
@@ -955,52 +983,51 @@ term_init (terminal_type)
   Wcm_clear ();
   dont_calculate_costs = 0;
 
-  status = tgetent (tbuf, terminal_type);
+  status = tgetent (buffer, terminal_type);
   if (status < 0)
     fatal ("Cannot open termcap database file.\n");
   if (status == 0)
     fatal ("Terminal type %s is not defined.\n", terminal_type);
 
 #ifdef TERMINFO
-  combuf = (char *) malloc (2044);
+  area = (char *) malloc (2044);
 #else
-  combuf = (char *) malloc (strlen (tbuf));
+  area = (char *) malloc (strlen (buffer));
 #endif /* not TERMINFO */
-  if (combuf == 0)
+  if (area == 0)
     abort ();
-  fill = combuf;
 
-  TS_ins_line = tgetstr ("al", &fill);
-  TS_ins_multi_lines = tgetstr ("AL", &fill);
-  TS_bell = tgetstr ("bl", &fill);
-  TS_clr_to_bottom = tgetstr ("cd", &fill);
-  TS_clr_line = tgetstr ("ce", &fill);
-  TS_clr_screen = tgetstr ("cl", &fill);
-  ColPosition = tgetstr ("ch", &fill);
-  AbsPosition = tgetstr ("cm", &fill);
-  CR = tgetstr ("cr", &fill);
-  TS_set_scroll_region = tgetstr ("cs", &fill);
-  TS_set_scroll_region_1 = tgetstr ("cS", &fill);
-  RowPosition = tgetstr ("cv", &fill);
-  TS_del_char = tgetstr ("dc", &fill);
-  TS_del_multi_chars = tgetstr ("DC", &fill);
-  TS_del_line = tgetstr ("dl", &fill);
-  TS_del_multi_lines = tgetstr ("DL", &fill);
-  TS_delete_mode = tgetstr ("dm", &fill);
-  TS_end_delete_mode = tgetstr ("ed", &fill);
-  TS_end_insert_mode = tgetstr ("ei", &fill);
-  Home = tgetstr ("ho", &fill);
-  TS_ins_char = tgetstr ("ic", &fill);
-  TS_ins_multi_chars = tgetstr ("IC", &fill);
-  TS_insert_mode = tgetstr ("im", &fill);
-  TS_pad_inserted_char = tgetstr ("ip", &fill);
-  TS_end_keypad_mode = tgetstr ("ke", &fill);
-  TS_keypad_mode = tgetstr ("ks", &fill);
-  LastLine = tgetstr ("ll", &fill);
-  Right = tgetstr ("nd", &fill);
-  Down = tgetstr ("do", &fill);
+  TS_ins_line = tgetstr ("al", address);
+  TS_ins_multi_lines = tgetstr ("AL", address);
+  TS_bell = tgetstr ("bl", address);
+  TS_clr_to_bottom = tgetstr ("cd", address);
+  TS_clr_line = tgetstr ("ce", address);
+  TS_clr_screen = tgetstr ("cl", address);
+  ColPosition = tgetstr ("ch", address);
+  AbsPosition = tgetstr ("cm", address);
+  CR = tgetstr ("cr", address);
+  TS_set_scroll_region = tgetstr ("cs", address);
+  TS_set_scroll_region_1 = tgetstr ("cS", address);
+  RowPosition = tgetstr ("cv", address);
+  TS_del_char = tgetstr ("dc", address);
+  TS_del_multi_chars = tgetstr ("DC", address);
+  TS_del_line = tgetstr ("dl", address);
+  TS_del_multi_lines = tgetstr ("DL", address);
+  TS_delete_mode = tgetstr ("dm", address);
+  TS_end_delete_mode = tgetstr ("ed", address);
+  TS_end_insert_mode = tgetstr ("ei", address);
+  Home = tgetstr ("ho", address);
+  TS_ins_char = tgetstr ("ic", address);
+  TS_ins_multi_chars = tgetstr ("IC", address);
+  TS_insert_mode = tgetstr ("im", address);
+  TS_pad_inserted_char = tgetstr ("ip", address);
+  TS_end_keypad_mode = tgetstr ("ke", address);
+  TS_keypad_mode = tgetstr ("ks", address);
+  LastLine = tgetstr ("ll", address);
+  Right = tgetstr ("nd", address);
+  Down = tgetstr ("do", address);
   if (!Down)
-    Down = tgetstr ("nl", &fill); /* Obsolete name for "do" */
+    Down = tgetstr ("nl", address); /* Obsolete name for "do" */
 #ifdef VMS
   /* VMS puts a carriage return before each linefeed,
      so it is not safe to use linefeeds.  */
@@ -1010,29 +1037,29 @@ term_init (terminal_type)
   if (tgetflag ("bs"))
     Left = "\b";		  /* can't possibly be longer! */
   else				  /* (Actually, "bs" is obsolete...) */
-    Left = tgetstr ("le", &fill);
+    Left = tgetstr ("le", address);
   if (!Left)
-    Left = tgetstr ("bc", &fill); /* Obsolete name for "le" */
-  TS_pad_char = tgetstr ("pc", &fill);
-  TS_repeat = tgetstr ("rp", &fill);
-  TS_end_standout_mode = tgetstr ("se", &fill);
-  TS_fwd_scroll = tgetstr ("sf", &fill);
-  TS_standout_mode = tgetstr ("so", &fill);
-  TS_rev_scroll = tgetstr ("sr", &fill);
-  Wcm.cm_tab = tgetstr ("ta", &fill);
-  TS_end_termcap_modes = tgetstr ("te", &fill);
-  TS_termcap_modes = tgetstr ("ti", &fill);
-  Up = tgetstr ("up", &fill);
-  TS_visible_bell = tgetstr ("vb", &fill);
-  TS_end_visual_mode = tgetstr ("ve", &fill);
-  TS_visual_mode = tgetstr ("vs", &fill);
-  TS_set_window = tgetstr ("wi", &fill);
+    Left = tgetstr ("bc", address); /* Obsolete name for "le" */
+  TS_pad_char = tgetstr ("pc", address);
+  TS_repeat = tgetstr ("rp", address);
+  TS_end_standout_mode = tgetstr ("se", address);
+  TS_fwd_scroll = tgetstr ("sf", address);
+  TS_standout_mode = tgetstr ("so", address);
+  TS_rev_scroll = tgetstr ("sr", address);
+  Wcm.cm_tab = tgetstr ("ta", address);
+  TS_end_termcap_modes = tgetstr ("te", address);
+  TS_termcap_modes = tgetstr ("ti", address);
+  Up = tgetstr ("up", address);
+  TS_visible_bell = tgetstr ("vb", address);
+  TS_end_visual_mode = tgetstr ("ve", address);
+  TS_visual_mode = tgetstr ("vs", address);
+  TS_set_window = tgetstr ("wi", address);
 
   AutoWrap = tgetflag ("am");
   memory_below_screen = tgetflag ("db");
   TF_hazeltine = tgetflag ("hz");
   must_write_spaces = tgetflag ("in");
-  MetaFlag = tgetflag ("km") || tgetflag ("MT");
+  meta_key = tgetflag ("km") || tgetflag ("MT");
   TF_insmode_motion = tgetflag ("mi");
   TF_standout_motion = tgetflag ("ms");
   TF_underscore = tgetflag ("ul");
@@ -1080,8 +1107,8 @@ term_init (terminal_type)
   if (TS_standout_mode == 0)
     {
       TN_standout_width = tgetnum ("ug");
-      TS_end_standout_mode = tgetstr ("ue", &fill);
-      TS_standout_mode = tgetstr ("us", &fill);
+      TS_end_standout_mode = tgetstr ("ue", address);
+      TS_standout_mode = tgetstr ("us", address);
     }
 
   if (TF_teleray)
@@ -1132,23 +1159,20 @@ term_init (terminal_type)
       must_write_spaces = 1;
       /* :ti string typically fails to have \E^G! in it */
       /* This limits scope of insert-char to one line.  */
-      strcpy (fill, TS_termcap_modes);
-      strcat (fill, "\033\007!");
-      TS_termcap_modes = fill;
-      fill += strlen (fill) + 1;
-      p = combuf;
+      strcpy (area, TS_termcap_modes);
+      strcat (area, "\033\007!");
+      TS_termcap_modes = area;
+      area += strlen (area) + 1;
+      p = AbsPosition;
       /* Change all %+ parameters to %C, to handle
 	 values above 96 correctly for the C100.  */
-      while (p != fill)
+      while (*p)
 	{
 	  if (p[0] == '%' && p[1] == '+')
 	    p[1] = 'C';
 	  p++;
 	}
     }
-
-  screen_height = min (screen_height, MScreenLength);
-  screen_width = min (screen_width, MScreenWidth);
 
   ScreenRows = screen_height;
   ScreenCols = screen_width;
@@ -1203,12 +1227,11 @@ It may be necessary to do `unsetenv TERMCAP' as well.\n",
   if (read_socket_hook)		/* Baudrate is somewhat */
 				/* meaningless in this case */
     baud_rate = 9600;
-
-  calculate_costs ();
 }
 
 /* VARARGS 1 */
 fatal (str, arg1, arg2)
+     char *str;
 {
   fprintf (stderr, "emacs: ");
   fprintf (stderr, str, arg1, arg2);

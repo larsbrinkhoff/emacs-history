@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 (fset 'delete-non-matching-lines 'keep-lines)
@@ -102,12 +101,14 @@ in the buffer that the occurrences were found in.
 	(setq occur-buffer nil
 	      occur-pos-list nil)
 	(error "Buffer in which occurences were found is deleted.")))
-  (let* ((occur-number (/ (1- (count-lines (point-min) (point)))
-			  (cond ((< occur-nlines 0)
-				 (- 2 occur-nlines))
-				((> occur-nlines 0)
-				 (+ 2 (* 2 occur-nlines)))
-				(t 1))))
+  (let* ((occur-number (save-excursion
+			(beginning-of-line)
+			(/ (1- (count-lines (point-min) (point)))
+			   (cond ((< occur-nlines 0)
+				  (- 2 occur-nlines))
+				 ((> occur-nlines 0)
+				  (+ 2 (* 2 occur-nlines)))
+				 (t 1)))))
 	 (pos (nth occur-number occur-pos-list)))
     (pop-to-buffer occur-buffer)
     (goto-char (marker-position pos))))
@@ -151,7 +152,9 @@ It serves as a menu to find any of the occurrences in this buffer.
       (if (eq buffer standard-output)
 	  (goto-char (point-max)))
       (save-excursion
-	(while (re-search-forward regexp nil t)
+	;; Find next match, but give up if prev match was at end of buffer.
+	(while (and (not (= prevpos (point-max)))
+		    (re-search-forward regexp nil t))
 	  (beginning-of-line 1)
 	  (save-excursion
 	    (setq linenum (+ linenum (count-lines prevpos (point))))

@@ -3,28 +3,28 @@
 
 This file is part of GNU Emacs.
 
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
 GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-extern int visible_bell;	/* If true and the terminal will support it
-				   then the screen will flash instead of
-				   feeping when an error occurs */
+/* Nonzero means flash the screen instead of ringing the bell.  */
 
-extern int inverse_video;	/* If true and the terminal will support it
-				   then we will use inverse video */
+extern int visible_bell;
+
+/* Nonzero means invert white and black for the entire screen.  */
+
+extern int inverse_video;
 
 /* Nonzero means use ^S/^Q as cretinous flow control.  */
 
@@ -38,7 +38,9 @@ extern int interrupt_input;
 
 extern int interrupts_deferred;
 
-extern int MetaFlag;		/* Terminal has meta key */
+/* Nonzero if terminal has a meta key.  */
+
+extern int meta_key;
 
 /* Nonzero means truncate lines in all windows less wide than the screen */
 

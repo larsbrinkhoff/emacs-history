@@ -1,10 +1,14 @@
-.TH EMACS 1 "1987 September 1"
+.TH EMACS 1 "1990 November 13"
 .UC 4
 .SH NAME
 emacs \- GNU project Emacs
 .SH SYNOPSIS
 .B emacs
-[file ...]
+[
+.I command-line switches
+] [
+.I file ...
+]
 .br
 .SH DESCRIPTION
 .I GNU Emacs
@@ -60,32 +64,25 @@ using the self-documentation features.
 .PP
 The following options are of general interest:
 .TP 8
-.B file
+.I file
 Edit
 .I file.
 .TP
-.B \+number
+.BI \+ number
 Go to the line specified by
 .I number
 (do not insert a space between the "+" sign and
 the number).
 .TP
-.B \-d displayname
-Create the 
-.I Emacs
-window on the display specified by 
-.I displayname.
-This must be the first argument listed in the command line.
-.TP
 .B \-q
 Do not load an init file.
 .TP
-.B \-u user
+.BI \-u " user"
 Load
 .I user's
 init file.
 .TP
-.B \-t file
+.BI \-t " file"
 Use specified
 .I file
 as the terminal instead of using stdin/stdout.
@@ -94,11 +91,11 @@ This must be the first argument specified in the command line.
 The following options are lisp-oriented
 (these options are processed in the order encountered):
 .TP 8
-.B \-f function
+.BI \-f " function"
 Execute the lisp function
 .I function.
 .TP
-.B \-l file
+.BI \-l " file"
 Load the lisp code in the file
 .I file.
 .PP
@@ -106,7 +103,7 @@ The following options are useful when running
 .I Emacs
 as a batch editor:
 .TP 8
-.B \-batch commandfile
+.BI \-batch " commandfile"
 Edit in batch mode using the commands found in
 .I commandfile.
 The editor will send messages to stdout.
@@ -116,45 +113,43 @@ This option must be the first in the argument list.
 Exit 
 .I Emacs 
 while in batch mode.
+.\" START DELETING HERE IF YOU'RE NOT USING X
 .PP
-.I
 .SM Using Emacs with X
 .PP
 .I Emacs
 has been tailored to work well with the X window system.
-To enable this feature, you must define the macro
-.B HAVE_X_WINDOWS
-in the file
-.I src/config.h
-before compiling
-.I Emacs.
 If you run
 .I Emacs
 from under X windows, it will create its own X window to
 display in.  You will probably want to start the editor
 as a background process
 so that you can continue using your original window.
-To use the optional X Menu features, define also the
-macro
-.B HAVE_X_MENU.
-This macro is separate from
-.B HAVE_X_WINDOWS
-because the Menu facility of X does not work on all
-the systems that support X.
+.PP
 .I Emacs
 can be started with the following X switches:
+.TP 8
+.BI \-rn " name"
+Specifies the program name which should be used when looking up
+defaults in the user's X resources.  This must be the first option
+specified in the command line.
+.TP 8
+.BI \-wn " name"
+Specifies the name which should be assigned to the
+.I Emacs
+window.
 .TP 8
 .B \-r
 Display the
 .I Emacs
-window in inverse video.
+window in reverse video.
 .TP
 .B \-i
 Use the "kitchen sink" bitmap icon when iconifying the
 .I Emacs
 window.
 .TP
-.B \-font font
+.BI \-font " font, " \-fn " font"
 Set the
 .I Emacs
 window's font to that specified by
@@ -162,122 +157,89 @@ window's font to that specified by
 You will find the various
 .I X
 fonts in the
-.I \/usr\/new\/lib\/X\/font
+.I /usr/lib/X11/fonts
 directory.
 Note that
 .I Emacs
 will only accept fixed width fonts.
-These include the
-.I 6x10.onx, 6x13.onx, 6x13p.onx, 8x13.onx,
-and
-.I 9x15.onx
-fonts.
-The other fixed width fonts are specified by the
-.I fx
-character sequence that comes before the
-.I .onx
-extension.
+Under the X11 Release 4 font-naming conventions, any font with the
+value "m" or "c" in the eleventh field of the font name is a fixed
+width font.  Furthermore, fonts whose name are of the form
+.IR width x height
+are generally fixed width, as is the font
+.IR fixed .
+See
+.IR xlsfonts (1)
+for more information.
 
-When you specify a font,
-do not include the
-.I .onx
-extension.
-Be sure to put a space between the
-.I \-font
-switch and the font specification argument.
+When you specify a font, be sure to put a space between the
+switch and the font name.
 .TP
-.B \-b pixels
+.BI \-b " pixels"
 Set the
 .I Emacs
 window's border width to the number of pixels specified by
 .I pixels.
+Defaults to one pixel on each side of the window.
 .TP
-.B \-ib pixels
+.BI \-ib " pixels"
 Set the window's internal border width to the number of pixels specified
 by 
 .I pixels.
 Defaults to one pixel of padding on each side of the window.
 .PP
 .TP 8
-.B \-w =[WIDTH][xHEIGHT][{+-}XOFF[{+-}YOFF]]
+.BI \-w " geometry, " \-geometry " geometry"
 Set the
 .I Emacs
-window's width, height, and position on the screen.
-The []'s denote optional arguments, the {}'s surround alternatives.
-WIDTH and HEIGHT are in number of characters, XOFF and YOFF are in
-pixels.  WIDTH defaults to 80, HEIGHT to 24, XOFF and YOFF to 1.  If you don't
-give XOFF and/or YOFF, then you must use the mouse to create the window.
-If you give XOFF and/or YOFF, then a WIDTHxHEIGHT window will
-automatically be creating without intervention.  XOFF and YOFF specify deltas
-from a corner of the screen to the corresponding corner of the window, as
-follows:
-.br
-	
-.br
-\+XOFF+YOFF     upper left to upper left
-.br
-\-XOFF+YOFF     upper right to upper right
-.br
-\+XOFF-YOFF     lower left to lower left
-.br
-\-XOFF-YOFF     lower right to lower right
+window's width, height, and position as specified.  The geometry
+specification is in the standard X format; see
+.IR X (1)
+for more information.
+The width and height are specified in characters; the default is 80 by
+24.
 .PP
 .TP 8
-.B \-fg color
+.BI \-fg " color"
 On color displays, sets the color of the text.
+
+See the file
+.I /usr/lib/X11/rgb.txt
+for a list of valid
+color names.
 .TP
-.B \-bg color
+.BI \-bg " color"
 On color displays,
 sets the color of the window's background.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B \-bd color
+.BI \-bd " color"
 On color displays,
-sets the color of the window's border.See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
+sets the color of the window's border.
 .TP
-.B \-cr color
+.BI \-cr " color"
 On color displays,
 sets the color of the window's text cursor.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B \-ms color
+.BI \-ms " color"
 On color displays,
 sets the color of the window's mouse cursor.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B \-d displayname
+.BI \-d " displayname, " \-display " displayname"
 Create the
 .I Emacs
 window on the display specified by
-.I displayname.
+.IR displayname .
 Must be the first option specified in the command line.
-.B \-nw 
+.TP
+.B \-nw
 Tells
 .I Emacs
 not to use its special interface to X.  If you use this
 switch when invoking
 .I Emacs
 from an
-.I xterm
-window, display is done in the
-.I xterm
-window.
+.IR xterm (1)
+window, display is done in that window.
 This must be the first option specified in the command line.
 .PP
 You can set
@@ -285,8 +247,9 @@ You can set
 default values for your
 .I Emacs
 windows in your
-.I \.Xdefaults
-file.
+.I \.Xresources
+file (see
+.IR xrdb (1)).
 Use the following format:
 .IP
 emacs.keyword:value
@@ -298,70 +261,63 @@ specifies the default value of
 .I Emacs
 lets you set default values for the following keywords:
 .TP 8
-.B BodyFont
+.B font (\fPclass\fB Font)
 Sets the window's text font.
 .TP
-.B ReverseVideo
+.B reverseVideo (\fPclass\fB ReverseVideo)
 If
-.I ReverseVideo's
+.I reverseVideo's
 value is set to
 .I on,
-the window will be displayed in inverse video.
+the window will be displayed in reverse video.
 .TP
-.B BitMapIcon
+.B bitmapIcon (\fPclass\fB BitmapIcon)
 If
-.I BitMapIcon's
+.I bitmapIcon's
 value is set to
 .I on,
 the window will iconify into the "kitchen sink."
 .TP
-.B BorderWidth
+.B borderWidth (\fPclass\fB BorderWidth)
 Sets the window's border width in pixels.
 .TP
-.B Foreground
+.B internalBorder (\fPclass\fB BorderWidth)
+Sets the window's internal border width in pixels.
+.TP
+.B foreground (\fPclass\fB Foreground)
 For color displays,
 sets the window's text color.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B Background
+.B background (\fPclass\fB Background)
 For color displays,
 sets the window's background color.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B Border
+.B borderColor (\fPclass\fB BorderColor)
 For color displays,
 sets the color of the window's border.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B Cursor
+.B cursorColor (\fPclass\fB Foreground)
 For color displays,
 sets the color of the window's text cursor.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
 .TP
-.B Mouse
+.B pointerColor (\fPclass\fB Foreground)
 For color displays,
 sets the color of the window's mouse cursor.
-See the file
-.I \/usr\/lib\/rgb.txt
-for a list of valid
-.I color
-names.
+.TP
+.B geometry (\fPclass\fB Geometry)
+Sets the geometry of the
+.I Emacs
+window (as described above).
+.TP
+.B title (\fPclass\fB Title)
+Sets the title of the
+.I Emacs
+window.
+.TP
+.B iconName (\fPclass\fB Title)
+Sets the icon name for the
+.I Emacs
+window icon.
 .PP
 If you try to set color values while using a black and white display,
 the window's characteristics will default as follows:
@@ -369,40 +325,57 @@ the foreground color will be set to black,
 the background color will be set to white,
 the border color will be set to grey,
 and the text and mouse cursors will be set to black.
-.SH
-.I
+.PP
 .SM Using the Mouse 
 .PP
-The following lists the key bindings for the mouse cursor when used in
-an 
+The following lists the mouse button bindings for the
 .I Emacs
-window.
+window under X11.
 
-.na
-.nf
-
-MOUSE BUTTON             FUNCTION
-left                     set mark
-middle                   set cursor
-right                    select (Emacs) window
-SHIFT-middle             put text into X cut buffer (cut text)
-SHIFT-right              paste text
-CTRL-middle              cut text and kill it
-CTRL-right               select this window, then split it into 
-                         two windows
-CTRL-SHIFT-left          X buffer menu--hold the buttons and keys
-                         down, wait for menu to appear, select 
-                         buffer, and release.  Move mouse out of
-                         menu and release to cancel.
-CTRL-SHIFT-middle        X help menu--pop up index card menu for
-                         Emacs help.  
-CTRL-SHIFT-right         Select window with mouse, and delete all
-                         other windows.  Same as typing 
-                         CTRL-x 1.
-.fi
-.ad
-.SH
-.I
+.in +\w'CTRL-SHIFT-middle'u+4n
+.ta \w'CTRL-SHIFT-middle'u+4n
+.ti -\w'CTRL-SHIFT-middle'u+4n
+MOUSE BUTTON	FUNCTION
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+left	Set point.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+middle	Paste text.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+right	Cut text into X cut buffer.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+SHIFT-middle	Cut text into X cut buffer.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+SHIFT-right	Paste text.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-middle	Cut text into X cut buffer and kill it.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-right	Select this window, then split it into 
+two windows.  Same as typing CTRL-x 2.
+.\" START DELETING HERE IF YOU'RE NOT USING X MENUS
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-SHIFT-left	X buffer menu--hold the buttons and keys
+down, wait for menu to appear, select 
+buffer, and release.  Move mouse out of
+menu and release to cancel.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-SHIFT-middle	X help menu--pop up index card menu for
+Emacs help.
+.\" STOP DELETING HERE IF YOU'RE NOT USING X MENUS
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-SHIFT-right	Select window with mouse, and delete all
+other windows.  Same as typing CTRL-x 1.
+.\" STOP DELETING HERE IF YOU'RE NOT USING X
+.PP
 .SH MANUALS
 You can order printed copies of the GNU Emacs Manual for $15.00/copy
 postpaid from the Free Software Foundation, which develops GNU software
@@ -465,6 +438,10 @@ names for macros.
 short names in C code, needed for building Emacs on certain versions
 of Unix where the C compiler cannot handle long names for functions
 or variables.
+
+.\" START DELETING HERE IF YOU'RE NOT USING X
+/usr/lib/X11/rgb.txt - list of valid X color names.
+.\" STOP DELETING HERE IF YOU'RE NOT USING X
 .PP
 .SH BUGS
 There is a mailing list, bug-gnu-emacs@prep.ai.mit.edu on the internet
@@ -522,9 +499,10 @@ you contribute your extensions to the GNU library.  Eventually GNU
 (Gnu's Not Unix) will be a complete replacement for Berkeley
 Unix.
 Everyone will be able to use the GNU system for free.
+.SH SEE ALSO
+X(1), xlsfonts(1), xterm(1), xrdb(1)
 .SH AUTHORS
 .PP
 .I Emacs
 was written by Richard Stallman and the Free Software Foundation.
 Joachim Martillo and Robert Krawitz added the X features.
-

@@ -1,48 +1,115 @@
 /* Header file for the buffer manipulation primitives.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
 GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-#ifdef lint
-#include "undo.h"
-#endif /* lint */
+#define SET_PT  PT =
 
+/* Just for laughs, use the same names as in ITS TECO, around 1973.  */
 
-#define SetPoint  point =
+/* Character position of beginning of buffer.  */ 
+#define BEG (1)
+/* Character position of beginning of accessible range of buffer.  */ 
+#define BEGV (current_buffer->text.begv)
+/* Character position of point in buffer.  */ 
+#define PT (current_buffer->text.pt)
+/* Character position of gap in buffer.  */ 
+#define GPT (current_buffer->text.gpt)
+/* Character position of end of accessible range of buffer.  */ 
+#define ZV (current_buffer->text.zv)
+/* Character position of end of buffer.  */ 
+#define Z (current_buffer->text.z)
+/* Modification count.  */
+#define MODIFF (current_buffer->text.modiff)
 
-#define PointRight  point +=
-#define  PointLeft  point -=
+/* Address of beginning of buffer.  */ 
+#define BEG_ADDR (current_buffer->text.beg)
+/* Address of beginning of accessible range of buffer.  */ 
+#define BEGV_ADDR (&FETCH_CHAR (current_buffer->text.begv))
+/* Address of point in buffer.  */ 
+#define PT_ADDR (&FETCH_CHAR (current_buffer->text.pt))
+/* Address of beginning of gap in buffer.  */ 
+#define GPT_ADDR (current_buffer->text.beg + current_buffer->text.gpt - 1)
+/* Address of end of gap in buffer.  */
+#define GAP_END_ADDR (current_buffer->text.beg + current_buffer->text.gpt + current_buffer->text.gap_size - 1)
+/* Address of end of accessible range of buffer.  */ 
+#define ZV_ADDR (&FETCH_CHAR (current_buffer->text.zv))
+
+/* Size of gap.  */
+#define GAP_SIZE (current_buffer->text.gap_size)
+
+/* Now similar macros for a specified buffer.
+   Note that many of these evaluate the buffer argument more than once.  */
+
+/* Character position of beginning of buffer.  */ 
+#define BUF_BEG(buf) (1)
+/* Character position of beginning of accessible range of buffer.  */ 
+#define BUF_BEGV(buf) ((buf)->text.begv)
+/* Character position of point in buffer.  */ 
+#define BUF_PT(buf) ((buf)->text.pt)
+/* Character position of gap in buffer.  */ 
+#define BUF_GPT(buf) ((buf)->text.gpt)
+/* Character position of end of accessible range of buffer.  */ 
+#define BUF_ZV(buf) ((buf)->text.zv)
+/* Character position of end of buffer.  */ 
+#define BUF_Z(buf) ((buf)->text.z)
+/* Modification count.  */
+#define BUF_MODIFF(buf) ((buf)->text.modiff)
+
+/* Address of beginning of buffer.  */
+#define BUF_BEG_ADDR(buf) ((buf)->text.beg)
+
+/* Macro for setting the value of BUF_ZV (BUF) to VALUE,
+   by varying the end of the accessible region.  */
+#define SET_BUF_ZV(buf, value) ((buf)->text.zv = (value))
+#define SET_BUF_PT(buf, value) ((buf)->text.pt = (value))
+
+/* Size of gap.  */
+#define BUF_GAP_SIZE(buf) ((buf)->text.gap_size)
+
+/* Return the address of character at position POS in buffer BUF. 
+   Note that both arguments can be computed more than once.  */
+#define BUF_CHAR_ADDRESS(buf, pos) \
+((buf)->text.beg + (pos) - 1		\
+ + ((pos) >= (buf)->text.gpt ? (buf)->text.gap_size : 0))
+
+/* Convert the address of a char in the buffer into a character position.  */
+#define PTR_CHAR_POS(ptr) \
+((ptr) - (current_buffer)->text.beg		\
+ - (ptr - (current_buffer)->text.beg < (unsigned) GPT ? 0 : GAP_SIZE))
 
 struct buffer_text
   {
-    unsigned char *p1;		/* Address of first data char, minus 1 */
-    unsigned char *p2;		/* p1 plus gap size */
-    int size1;			/* # characters before gap */
-    int size2;			/* # characters after gap */
-    int gap;			/* gap size in chars */
-    int modified;		/* tick at which contents last modified */
-    int head_clip;		/* # of first char that's visible (origin 1) */
-    int tail_clip;		/* # chars not visible at end of buffer */
-    int pointloc;		/* # of char point is at (origin 1) */
+    /* Actual address of buffer contents.  */
+    unsigned char *beg;
+    /* Values of BEGV ... Z in this buffer.  */
+    int begv;
+    int pt;
+    int gpt;
+    int zv;
+    int z;
+    /* Value of GAP_SIZE in this buffer.  */
+    int gap_size;
+    /* This counts buffer-modification events for this buffer.
+       It is incremented for each such event, and never otherwise changed.  */
+    int modiff;
   };
 
-/* structure that defines a buffer */
 struct buffer
   {
     /* Everything before the `name' slot must be of a non-Lisp_Object type,
@@ -50,30 +117,27 @@ struct buffer
        This is known about by both mark_buffer (alloc.c) and
        Flist_buffer_local_variables (buffer.c)
      */
-
-    /* This describes the buffer's text */
+    /* This structure holds the coordinates of the buffer contents.  */
     struct buffer_text text;
-    /* Next buffer, in chain of all buffers that exist.  */
+    /* Next buffer, in chain of all buffers including killed buffers.
+       This chain is used only for garbage collection, in order to
+       collect killed buffers properly.  */
     struct buffer *next;
-    /* Flags saying which DefBufferLispVar variables
+    /* Flags saying which DEFVAR_PER_BUFFER variables
        are local to this buffer.  */
     int local_var_flags;
-    /* Value of text.modified when buffer last saved */
+    /* Value of text.modified as of when visited file was read or written.  */
     int save_modified;
+    /* the value of text.modified at the last auto-save. */
+    int auto_save_modified;
     /* Set to the modtime of the visited file when read or written.
        -1 means visited file was nonexistent.
        0 means visited file modtime unknown; in no case complain
        about any mismatch on next save attempt.  */
     int modtime;
-    /* the value of text.modified at the last auto-save. */
-    int auto_save_modified;
     /* Position in buffer at which display started
        the last time this buffer was displayed */
     int last_window_start;
-    /* Undo records for changes in this buffer. */
-    struct UndoData *undodata;
-    /* the syntax table in use */
-    struct Lisp_Vector *syntax_table_v;
 
     /* This is a special exception -- as this slot should not be
        marked by gc_sweep, and as it is not lisp-accessible as
@@ -92,15 +156,15 @@ struct buffer
 
     /* the name of this buffer */
     Lisp_Object name;
-    /* Nuked: buffer number, assigned when buffer made Lisp_Object number;*/
     /* the name of the file associated with this buffer */
     Lisp_Object filename;
     /* Dir for expanding relative pathnames */
     Lisp_Object directory;
-    /* true iff this buffer has been been backed
+    /* True iff this buffer has been been backed
        up (if you write to its associated file
        and it hasn't been backed up, then a
        backup will be made) */
+    /* This isn't really used by the C code, so could be deleted.  */
     Lisp_Object backed_up;
     /* Length of file when last read or saved. */
     Lisp_Object save_length;
@@ -120,13 +184,15 @@ struct buffer
     Lisp_Object major_mode;
     /* Pretty name of major mode (eg "Lisp") */
     Lisp_Object mode_name;
-    /* Format string for mode line */
+    /* Format description for mode line */
     Lisp_Object mode_line_format;
 
     /* Keys that are bound local to this buffer */
     Lisp_Object keymap;
     /* This buffer's local abbrev table */
     Lisp_Object abbrev_table;
+    /* This buffer's syntax table.  */
+    Lisp_Object syntax_table;
 
     /* Values of several buffer-local variables */
     /* tab-width is buffer-local so that redisplay can find it
@@ -147,20 +213,16 @@ struct buffer
     Lisp_Object selective_display;
     /* Non-nil means show ... at end of line followed by invisible lines.  */
     Lisp_Object selective_display_ellipses;
-    /* Alist of (FUNCTION . STRING) for each minor mode enabled in buffer. */
-    Lisp_Object minor_modes;
     /* t if "self-insertion" should overwrite */
     Lisp_Object overwrite_mode;
     /* non-nil means abbrev mode is on.  Expand abbrevs automatically. */
     Lisp_Object abbrev_mode;
+    /* Changes in the buffer are recorded here for undo.
+       t means don't record anything.  */
+    Lisp_Object undo_list;
 };
 
-extern struct buffer *bf_cur;		/* points to the current buffer */
-
-/* This structure contains data describing the text of the current buffer.
- Switching buffers swaps their text data in and out of here */
-
-extern struct buffer_text bf_text;
+extern struct buffer *current_buffer;		/* points to the current buffer */
 
 /* This structure holds the default values of the buffer-local variables
    defined with DefBufferLispVar, that have special slots in each buffer.
@@ -194,30 +256,15 @@ extern struct buffer buffer_local_symbols;
 
 /* Some aliases for info about the current buffer.  */
 
-#define bf_p1 bf_text.p1
-#define bf_p2 bf_text.p2
-#define bf_s1 bf_text.size1
-#define bf_s2 bf_text.size2
-#define bf_gap bf_text.gap
-#define bf_modified bf_text.modified
-#define bf_head_clip bf_text.head_clip
-#define bf_tail_clip bf_text.tail_clip
-#define point bf_text.pointloc
-
-/* Lowest legal value of point for current buffer */
-#define FirstCharacter bf_text.head_clip
-
-/* Number of last visible character in current buffer */
-/* The highest legal value for point is one greater than this */
-#define NumCharacters (bf_text.size1+bf_text.size2-bf_text.tail_clip)
+#define point current_buffer->text.pt
 
 /* Return character at position n.  No range checking */
-#define CharAt(n) *(((n)>bf_s1 ? bf_p2 : bf_p1) + (n))
+#define FETCH_CHAR(n) *(((n)>= GPT ? GAP_SIZE : 0) + (n) + BEG_ADDR - 1)
   
 /* BufferSafeCeiling (resp. BufferSafeFloor), when applied to n, return */
-/* the max (resp. min) p such that &CharAt (p) - &CharAt (n) == p - n   */
-#define BufferSafeCeiling(n) (bf_s1 + (((n) <= bf_s1) ? 0 : bf_s2))
+/* the max (resp. min) p such that &FETCH_CHAR (p) - &FETCH_CHAR (n) == p - n   */
+#define BufferSafeCeiling(n) (((n) < GPT && GPT < ZV ? GPT : ZV) - 1)
 
-#define BufferSafeFloor(n) (((n) <= bf_s1) ? 1 : bf_s1 + 1)
+#define BufferSafeFloor(n) (BEGV <= GPT && GPT <= (n) ? GPT : BEGV)
 
 extern void reset_buffer ();

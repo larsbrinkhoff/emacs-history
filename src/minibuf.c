@@ -1,22 +1,21 @@
 /* Minibuffer input and completion.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -46,27 +45,28 @@ struct minibuf_save_data
 int minibuf_save_vector_size;
 struct minibuf_save_data *minibuf_save_vector;
 
-int auto_help;		/* Nonzero means display completion help for invalid input */
+/* Depth in minibuffer invocations.  */
+int minibuf_level;
 
-/* Fread_minibuffer leaves the input, as a string, here */
+/* Nonzero means display completion help for invalid input.  */
+int completion_auto_help;
+
+/* Fread_minibuffer leaves the input, as a string, here.  */
 Lisp_Object last_minibuf_string;
 
 /* Nonzero means let functions called when within a minibuffer 
-   invoke recursive minibuffers (to read arguments, or whatever) */
+   invoke recursive minibuffers (to read arguments, or whatever).  */
 int enable_recursive_minibuffers;
 
 /* help-form is bound to this while in the minibuffer.  */
-
 Lisp_Object Vminibuffer_help_form;
 
 /* Nonzero means completion ignores case.  */
-
 int completion_ignore_case;
 
 Lisp_Object Quser_variable_p;
 
 /* Width in columns of current minibuffer prompt.  */
-
 extern int minibuf_prompt_width;
 
 /* Actual minibuffer invocation. */
@@ -76,9 +76,9 @@ Lisp_Object get_minibuffer ();
 Lisp_Object read_minibuf ();
 
 Lisp_Object
-read_minibuf (map, prefix, prompt, expflag)
+read_minibuf (map, initial, prompt, expflag)
      Lisp_Object map;
-     Lisp_Object prefix;
+     Lisp_Object initial;
      Lisp_Object prompt;
      int expflag;
 {
@@ -97,61 +97,59 @@ read_minibuf (map, prefix, prompt, expflag)
       (EQ (selected_window, minibuf_window)))
     error ("Command attempted to use minibuffer while in minibuffer");
 
-  if (MinibufDepth == minibuf_save_vector_size)
+  if (minibuf_level == minibuf_save_vector_size)
     minibuf_save_vector =
      (struct minibuf_save_data *) xrealloc (minibuf_save_vector,
 		      (minibuf_save_vector_size *= 2) * sizeof (struct minibuf_save_data)); 
-  minibuf_save_vector[MinibufDepth].prompt = minibuf_prompt;
-  minibuf_save_vector[MinibufDepth].prompt_width = minibuf_prompt_width;
+  minibuf_save_vector[minibuf_level].prompt = minibuf_prompt;
+  minibuf_save_vector[minibuf_level].prompt_width = minibuf_prompt_width;
   minibuf_prompt_width = 0;
   /* >> Why is this done this way rather than binding these variables? */
-  minibuf_save_vector[MinibufDepth].help_form = Vhelp_form;
-  minibuf_save_vector[MinibufDepth].current_prefix_arg = Vcurrent_prefix_arg;
-  GCPRO2 (minibuf_save_vector[MinibufDepth].help_form,
-	  minibuf_save_vector[MinibufDepth].current_prefix_arg);
+  minibuf_save_vector[minibuf_level].help_form = Vhelp_form;
+  minibuf_save_vector[minibuf_level].current_prefix_arg = Vcurrent_prefix_arg;
+  GCPRO2 (minibuf_save_vector[minibuf_level].help_form,
+	  minibuf_save_vector[minibuf_level].current_prefix_arg);
 
 
   record_unwind_protect (Fset_window_configuration,
 			 Fcurrent_window_configuration ());
 
-  val = bf_cur->directory;
-  Fset_buffer (get_minibuffer (MinibufDepth));
-  bf_cur->directory = val;
+  val = current_buffer->directory;
+  Fset_buffer (get_minibuffer (minibuf_level));
+  current_buffer->directory = val;
 
   Fset_window_buffer (minibuf_window, Fcurrent_buffer ());
   Fselect_window (minibuf_window);
   XFASTINT (XWINDOW (minibuf_window)->hscroll) = 0;
 
   Ferase_buffer ();
-  MinibufDepth++;
+  minibuf_level++;
   record_unwind_protect (read_minibuf_unwind, Qnil);
   Vminibuf_scroll_window = Qnil;
 
-  if (!NULL (prefix))
-    Finsert (1, &prefix);
+  if (!NULL (initial))
+    Finsert (1, &initial);
 
   minibuf_prompt = (char *) alloca (XSTRING (prompt)->size + 1);
   bcopy (XSTRING (prompt)->data, minibuf_prompt, XSTRING (prompt)->size + 1);
-  minibuf_message = 0;
+  echo_area_contents = 0;
 
   Vhelp_form = Vminibuffer_help_form;
-  bf_cur->keymap = map;
-  Frecursive_edit ();
+  current_buffer->keymap = map;
+  recursive_edit_1 ();
 
   /* If cursor is on the minibuffer line,
      show the user we have exited by putting it in column 0.  */
-  if (cursY >= XFASTINT (XWINDOW (minibuf_window)->top)
+  if (cursor_vpos >= XFASTINT (XWINDOW (minibuf_window)->top)
       && !noninteractive)
     {
-      cursX = 0;
+      cursor_hpos = 0;
       update_screen (1, 1);
     }
 
   /* Make minibuffer contents into a string */
-  val = make_string (bf_p1 + 1, bf_s1 + bf_s2);
-  bcopy (bf_p2 + bf_s1 + 1,
-	 XSTRING (val)->data + bf_s1,
-	 bf_s2);
+  val = make_string (BEG_ADDR, Z - BEG);
+  bcopy (GAP_END_ADDR, XSTRING (val)->data + GPT - BEG, Z - GPT);
   unbind_to (count);
   UNGCPRO;
 
@@ -209,16 +207,16 @@ read_minibuf_unwind ()
 
   /* If this was a recursive minibuffer,
      tie the minibuffer window back to the outer level minibuffer buffer */
-  MinibufDepth--;
+  minibuf_level--;
   /* Make sure minibuffer window is erased, not ignored */
   windows_or_buffers_changed++;
   XFASTINT (XWINDOW (minibuf_window)->last_modified) = 0;
 
   /* Restore prompt from outer minibuffer */
-  minibuf_prompt = minibuf_save_vector[MinibufDepth].prompt;
-  minibuf_prompt_width = minibuf_save_vector[MinibufDepth].prompt_width;
-  Vhelp_form = minibuf_save_vector[MinibufDepth].help_form;
-  Vcurrent_prefix_arg = minibuf_save_vector[MinibufDepth].current_prefix_arg;
+  minibuf_prompt = minibuf_save_vector[minibuf_level].prompt;
+  minibuf_prompt_width = minibuf_save_vector[minibuf_level].prompt_width;
+  Vhelp_form = minibuf_save_vector[minibuf_level].help_form;
+  Vcurrent_prefix_arg = minibuf_save_vector[minibuf_level].current_prefix_arg;
 }
 
 DEFUN ("read-from-minibuffer", Fread_from_minibuffer, Sread_from_minibuffer, 1, 4, 0,
@@ -372,7 +370,7 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
   Lisp_Object bestmatch, tail, elt, eltstring;
   int bestmatchsize;
   int compare, matchsize;
-  int list = CONSP (alist);
+  int list = CONSP (alist) || NULL (alist);
   int index, obsize;
   int matchcount = 0;
   Lisp_Object bucket, zero, end, tem;
@@ -520,10 +518,10 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
 {
   Lisp_Object tail, elt, eltstring;
   Lisp_Object allmatches;
-  int list = CONSP (alist);
+  int list = CONSP (alist) || NULL (alist);
   int index, obsize;
   Lisp_Object bucket, tem;
-  struct gcpro gcpro1, gcpro2, gcpro3;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
   CHECK_STRING (string, 0);
   if (!list && XTYPE (alist) != Lisp_Vector)
@@ -532,9 +530,9 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
     }
   allmatches = Qnil;
 
-  if (list)
-    tail = alist;
-  else
+  /* If ALIST is not a list, set TAIL just for gc pro.  */
+  tail = alist;
+  if (! list)
     {
       index = 0;
       obsize = XVECTOR (alist)->size;
@@ -594,7 +592,7 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
 		tem = Fcommandp (elt);
 	      else
 		{
-		  GCPRO3 (tail, eltstring, allmatches);
+		  GCPRO4 (tail, eltstring, allmatches, string);
 		  tem = call1 (pred, elt);
 		  UNGCPRO;
 		}
@@ -640,19 +638,19 @@ Case is ignored if ambient value of  completion-ignore-case  is non-nil.")
   return val;
 }
 
-temp_minibuf_message (m)
+temp_echo_area_contents (m)
      char *m;
 {
-  int osize = NumCharacters + 1;
+  int osize = ZV;
   Lisp_Object oinhibit;
   oinhibit = Vinhibit_quit;
 
-  SetPoint (osize);
+  SET_PT (osize);
   InsStr (m);
-  SetPoint (osize);
+  SET_PT (osize);
   Vinhibit_quit = Qt;
   Fsit_for (make_number (2), Qnil);
-  del_range (point, NumCharacters + 1);
+  del_range (point, ZV);
   if (!NULL (Vquit_flag))
     {
       Vquit_flag = Qnil;
@@ -681,8 +679,8 @@ do_completion ()
 				Vminibuffer_completion_predicate);
   if (NULL (completion))
     {
-      Ding ();
-      temp_minibuf_message (" [No match]");
+      bell ();
+      temp_echo_area_contents (" [No match]");
       return 0;
     }
 
@@ -698,7 +696,8 @@ do_completion ()
     }
 
   /* It did find a match.  Do we match some possibility exactly now? */
-  if (CONSP (Vminibuffer_completion_table))
+  if (CONSP (Vminibuffer_completion_table)
+      || NULL (Vminibuffer_completion_table))
     tem = Fassoc (Fbuffer_string (), Vminibuffer_completion_table);
   else if (XTYPE (Vminibuffer_completion_table) == Lisp_Vector)
     {
@@ -726,10 +725,10 @@ do_completion ()
     { /* not an exact match */
       if (completedp)
 	return 5;
-      else if (auto_help)
+      else if (completion_auto_help)
 	Fminibuffer_completion_help ();
       else
-	temp_minibuf_message (" [Next char not unique]");
+	temp_echo_area_contents (" [Next char not unique]");
       return 6;
     }
   else
@@ -748,11 +747,11 @@ DEFUN ("minibuffer-complete", Fminibuffer_complete, Sminibuffer_complete, 0, 0, 
       return Qnil;
 
     case 1:
-      temp_minibuf_message(" [Sole completion]");
+      temp_echo_area_contents(" [Sole completion]");
       break;
 
     case 3:
-      temp_minibuf_message(" [Complete, but not unique]");
+      temp_echo_area_contents(" [Complete, but not unique]");
       break;
     }
   return Qt;
@@ -769,7 +768,7 @@ a repetition of this command will exit.")
   register int i;
 
   /* Allow user to specify null string */
-  if (NumCharacters == 0)
+  if (BEGV == ZV)
     goto exit;
 
   i = do_completion ();
@@ -782,7 +781,7 @@ a repetition of this command will exit.")
     case 4:
       if (!NULL (Vminibuffer_completion_confirm))
 	{
-	  temp_minibuf_message(" [Confirm]");
+	  temp_echo_area_contents(" [Confirm]");
 	  return Qnil;
 	}
       else
@@ -813,8 +812,8 @@ DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word, Sminibuffer_comple
 				Vminibuffer_completion_predicate);
   if (NULL (completion))
     {
-      Ding ();
-      temp_minibuf_message (" [No match]");
+      bell ();
+      temp_echo_area_contents (" [No match]");
       return Qnil;
     }
   if (EQ (completion, Qt))
@@ -823,17 +822,17 @@ DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word, Sminibuffer_comple
 #if 0 /* How the below code used to look, for reference */
   tem = Fbuffer_string ();
   b = XSTRING (tem)->data;
-  i = NumCharacters - XSTRING (completion)->size;
+  i = ZV - 1 - XSTRING (completion)->size;
   p = XSTRING (completion)->data;
   if (i > 0 ||
-      0 <= scmp (b, p, NumCharacters))
+      0 <= scmp (b, p, ZV - 1))
     {
       i = 1;
       /* Set buffer to longest match of buffer tail and completion head. */
-      while (0 <= scmp (b + i, p, NumCharacters - i))
+      while (0 <= scmp (b + i, p, ZV - 1 - i))
 	i++;
       del_range (1, i + 1);
-      SetPoint (NumCharacters + 1);
+      SET_PT (ZV);
     }
 #else /* Rewritten code */
   {
@@ -843,7 +842,7 @@ DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word, Sminibuffer_comple
     tem = Fbuffer_string ();
     buffer_string = XSTRING (tem)->data;
     completion_string = XSTRING (completion)->data;
-    buffer_length = XSTRING (tem)->size; /* ie NumCharacters */
+    buffer_length = XSTRING (tem)->size; /* ie ZV - BEGV */
     completion_length = XSTRING (completion)->size;
     i = buffer_length - completion_length;
     /* Mly: I don't understand what this is supposed to do AT ALL */
@@ -857,11 +856,11 @@ DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word, Sminibuffer_comple
 	while (0 <= scmp (buffer_string++, completion_string, buffer_length--))
 	  i++;
 	del_range (1, i + 1);
-	SetPoint (NumCharacters + 1);
+	SET_PT (ZV);
       }
   }
 #endif /* Rewritten code */
-  i = NumCharacters;
+  i = ZV - BEGV;
 
   /* If completion finds next char not unique,
      consider adding a space or a hyphen */
@@ -893,9 +892,9 @@ DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word, Sminibuffer_comple
 
   /* If got no characters, print help for user.  */
 
-  if (i == NumCharacters)
+  if (i == ZV - BEGV)
     {
-      if (auto_help)
+      if (completion_auto_help)
 	Fminibuffer_completion_help ();
       return Qnil;
     }
@@ -903,7 +902,7 @@ DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word, Sminibuffer_comple
   /* Otherwise insert in minibuffer the chars we got */
 
   Ferase_buffer ();
-  InsCStr (completion_string, i);
+  insert (completion_string, i);
   return Qt;
 }
 
@@ -917,8 +916,11 @@ or may be a list of two strings to be printed as if concatenated.")
 {
   register Lisp_Object tail, elt;
   register int i;
-  struct buffer *old = bf_cur;
-  SetBfp (XBUFFER (Vstandard_output));
+  struct buffer *old = current_buffer;
+  /* No GCPRO needed, since (when it matters) every variable
+     points to a non-string that is pointed to by COMPLETIONS.  */
+
+  set_buffer_internal (XBUFFER (Vstandard_output));
 
   if (NULL (completions))
     InsStr ("There are no possible completions of what you have typed.");
@@ -945,7 +947,7 @@ or may be a list of two strings to be printed as if concatenated.")
 	    Fprinc (elt, Qnil);
 	}
     }
-  SetBfp (old);
+  set_buffer_internal (old);
   return Qnil;
 }
 
@@ -958,10 +960,12 @@ DEFUN ("minibuffer-completion-help", Fminibuffer_completion_help, Sminibuffer_co
   message ("Making completion list...");
   completions = Fall_completions (Fbuffer_string (), Vminibuffer_completion_table,
 				  Vminibuffer_completion_predicate);
-  minibuf_message = 0;
+  echo_area_contents = 0;
   if (NULL (completions))
-    { Ding ();
-      temp_minibuf_message (" [No completions]"); }
+    {
+      bell ();
+      temp_echo_area_contents (" [No completions]");
+    }
   else
     internal_with_output_to_temp_buffer (" *Completions*",
 					 Fdisplay_completion_list,
@@ -973,7 +977,7 @@ DEFUN ("self-insert-and-exit", Fself_insert_and_exit, Sself_insert_and_exit, 0, 
   "Terminate minibuffer input.")
   ()
 {
-  SelfInsert (last_command_char, 0);
+  self_insert_internal (last_command_char, 0);
   Fthrow (Qexit, Qnil);
 }
 
@@ -988,7 +992,7 @@ DEFUN ("minibuffer-depth", Fminibuffer_depth, Sminibuffer_depth, 0, 0, 0,
   "Return current depth of activations of minibuffer, a nonnegative integer.")
   ()
 {
-  return make_number (MinibufDepth);
+  return make_number (minibuf_level);
 }
 
 
@@ -1000,7 +1004,7 @@ init_minibuf_once ()
 
 syms_of_minibuf ()
 {
-  MinibufDepth = 0;
+  minibuf_level = 0;
   minibuf_prompt = 0;
   minibuf_save_vector_size = 5;
   minibuf_save_vector = (struct minibuf_save_data *) malloc (5 * sizeof (struct minibuf_save_data));
@@ -1022,9 +1026,9 @@ syms_of_minibuf ()
 
 
 
-  DEFVAR_BOOL ("completion-auto-help", &auto_help,
+  DEFVAR_BOOL ("completion-auto-help", &completion_auto_help,
     "*Non-nil means automatically provide help for invalid completion input.");
-  auto_help = 1;
+  completion_auto_help = 1;
 
   DEFVAR_BOOL ("completion-ignore-case", &completion_ignore_case,
     "Non-nil means don't consider case significant in completion.");

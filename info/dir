@@ -18,8 +18,6 @@ File: dir	Node: Top	This is the top of the INFO tree
 
 * VIP: (vip).   A VI-emulation for Emacs.
 
-* GDB: (gdb).   The source-level C debugger.
-
 * Texinfo: (texinfo).
 		With one source file, make either a printed manual
 		(through TeX) or an Info file (through texinfo).
@@ -29,4 +27,6 @@ File: dir	Node: Top	This is the top of the INFO tree
 		The termcap library, which enables application programs
 		to handle all types of character-display terminals.
 
-		
+* Regex: (regex).
+		The GNU regular expression library.
+

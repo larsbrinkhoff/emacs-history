@@ -1,48 +1,43 @@
 /* Calculate what ins/del line to do, and do it, for Emacs redisplay.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
 GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+#include <stdio.h>
 #include "config.h"
 #include "termchar.h"
+#include "termhooks.h"
 #include "dispextern.h"
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-/* All costs measured in characters.  Therefore, no cost
-   can exceed MScreenLength * MScreenWidth (or so).
-   That is about 10000, which fits in a short.  */
-
-#define INFINITY 15000
-
 struct matrix_elt
   {
     /* Cost of outputting through this line
        if no insert/delete is done just above it.  */
-    short writecost;
+    int writecost;
     /* Cost of outputting through this line
        if an insert is done just above it.  */
-    short insertcost;
+    int insertcost;
     /* Cost of outputting through this line
        if a delete is done just above it.  */
-    short deletecost;
+    int deletecost;
     /* Number of inserts so far in this run of inserts,
        for the cost in insertcost.  */
     char insertcount;
@@ -51,11 +46,14 @@ struct matrix_elt
     char deletecount;
   };
 
+/* This exceeds the sum of any reasonable number of INFINITY's.  */
+#define SUPER_INFINITY (1000 * INFINITY)
+
 /* See CalcIDCosts for on the arrays below */
-int ILcost[MScreenLength];/* ov(n) + 1*mf(n) */
-int DLcost[MScreenLength];/* ov(n) + 1*mf(n) */
-int ILncost[MScreenLength];/* mf(n) */
-int DLncost[MScreenLength];/* mf(n) */
+int *ILcost;
+int *DLcost;
+int *ILncost;
+int *DLncost;
 
 scrolling_1 (window_size, unchanged_at_top, unchanged_at_bottom,
 	     draw_cost, old_hash, new_hash, free_at_end)
@@ -108,15 +106,17 @@ calculate_scrolling (matrix, window_size, lines_below,
   register int cost, cost1;
 
   int lines_moved = window_size + (scroll_region_ok ? 0 : lines_below);
-  int *first_insert_cost = &ILcost[screen_height - lines_moved];
-  int *first_delete_cost = &DLcost[screen_height - lines_moved];
-  int *next_insert_cost = &ILncost[screen_height - lines_moved];
-  int *next_delete_cost = &DLncost[screen_height - lines_moved];
+  /* We subtract 1 to compensate for the fact that i and j have values
+     starting with 1.  */
+  int *first_insert_cost = &ILcost[screen_height - lines_moved - 1];
+  int *first_delete_cost = &DLcost[screen_height - lines_moved - 1];
+  int *next_insert_cost = &ILncost[screen_height - lines_moved - 1];
+  int *next_delete_cost = &DLncost[screen_height - lines_moved - 1];
 
   /* initialize the top left corner of the matrix */
   matrix->writecost = 0;
-  matrix->insertcost = INFINITY;
-  matrix->deletecost = INFINITY;
+  matrix->insertcost = SUPER_INFINITY;
+  matrix->deletecost = SUPER_INFINITY;
   matrix->insertcount = 0;
   matrix->deletecount = 0;
 
@@ -127,8 +127,8 @@ calculate_scrolling (matrix, window_size, lines_below,
       p = matrix + i * (window_size + 1);
       cost += draw_cost[i] + next_insert_cost[i];
       p->insertcost = cost;
-      p->writecost = INFINITY;
-      p->deletecost = INFINITY;
+      p->writecost = SUPER_INFINITY;
+      p->deletecost = SUPER_INFINITY;
       p->insertcount = i;
       p->deletecount = 0;
     }
@@ -139,8 +139,8 @@ calculate_scrolling (matrix, window_size, lines_below,
     {
       cost += next_delete_cost[j];
       matrix[j].deletecost = cost;
-      matrix[j].writecost = INFINITY;
-      matrix[j].insertcost = INFINITY;
+      matrix[j].writecost = SUPER_INFINITY;
+      matrix[j].insertcost = SUPER_INFINITY;
       matrix[j].deletecount = j;
       matrix[j].insertcount = 0;
     }
@@ -221,7 +221,7 @@ calculate_scrolling (matrix, window_size, lines_below,
 
 /* Perform insert-lines and delete-lines operations
  according to the costs in the matrix.
- Updates the contents of PhysScreen to record what was done. */
+ Updates the contents of current_screen to record what was done. */
 
 do_scrolling (matrix, window_size, unchanged_at_top)
      struct matrix_elt *matrix;
@@ -230,16 +230,25 @@ do_scrolling (matrix, window_size, unchanged_at_top)
 {
   register struct matrix_elt *p;
   register int i, j;
-  struct { int count, pos; } queue[MScreenLength];
+  struct queue { int count, pos; } *queue;
   int offset = unchanged_at_top;
   int qi = 0;
   int window = 0;
   register int tem;
-  extern struct display_line *PhysScreen[MScreenLength + 1];
-  extern struct display_line *OPhysScreen[MScreenLength + 1];
+  int next;
+
+  queue = (struct queue *) alloca (screen_height * sizeof (struct queue));
+
+  bcopy (current_screen->contents, temp_screen->contents,
+	 current_screen->height * sizeof (char *));
+  bcopy (current_screen->used, temp_screen->used,
+	 current_screen->height * sizeof (int));
+  bcopy (current_screen->highlight, temp_screen->highlight,
+	 current_screen->height);
+  bzero (temp_screen->enable, temp_screen->height);
 
 /* First do all deletions of lines; queue up insertions.
-  Also move lines to correct slots in PhysScreen */
+   Also move lines to correct slots in current_screen.  */
 
   i = j = window_size;
 
@@ -270,7 +279,14 @@ do_scrolling (matrix, window_size, unchanged_at_top)
 	{
 	  /* Best thing done here is no insert or delete */
 	  /* Old line at vpos j-1 ends up at vpos i-1 */
-	  PhysScreen[i + offset] = OPhysScreen[j + offset];
+	  current_screen->contents[i + offset - 1]
+	    = temp_screen->contents[j + offset - 1];
+	  current_screen->used[i + offset - 1]
+	    = temp_screen->used[j + offset - 1];
+	  current_screen->highlight[i + offset - 1]
+	    = temp_screen->highlight[j + offset - 1];
+
+	  temp_screen->enable[j + offset - 1] = 1;
 	  i--;
 	  j--;
 	}
@@ -284,20 +300,29 @@ do_scrolling (matrix, window_size, unchanged_at_top)
 
   /* Now do all insertions */
 
+  next = unchanged_at_top;
   for (i = qi - 1; i >= 0; i--)
     {
       ins_del_lines (queue[i].pos, queue[i].count);
-      /* mark the inserted lines as clear */
+      /* Mark the inserted lines as clear,
+	 and put into them the line-contents strings
+	 that were discarded during the deletions.
+	 Those are the ones for which temp_screen->enable was not set.  */
       tem = queue[i].pos;
-      for (j = tem + queue[i].count; j > tem; j--)
-	PhysScreen[j] = 0;
+      for (j = tem + queue[i].count - 1; j >= tem; j--)
+	{
+	  current_screen->enable[j] = 0;
+	  while (temp_screen->enable[next]) next++;
+	  current_screen->contents[j] = temp_screen->contents[next++];
+	}
     }
 
   if (window)
     set_terminal_window (0);
 }
 
-/* Return number of lines in common between PhysScreen and DesiredScreen,
+/* Return number of lines in common between current screen contents
+   and the text to be displayed,
    considering only vpos range START to END (not including END).
    Ignores short lines (length < 20) on the assumption that
    avoiding redrawing such a line will have little weight.  */
@@ -370,8 +395,8 @@ scroll_cost (from, to, amount)
   from += ok_below;
   to += ok_below;
 
-  return ILcost[from] + (amount - 1) * ILncost[from]
-    + DLcost[to] + (amount - 1) * DLncost[to];
+  return (ILcost[from] + (amount - 1) * ILncost[from]
+	  + DLcost[to] + (amount - 1) * DLncost[to]);
 }
 
 /* Calculate the insert and delete line costs.
@@ -413,6 +438,21 @@ CalcIDCosts (ins_line_string, multi_ins_string,
      is not worth it if reprinting takes less than 1/4 second.  */
   int extra = baud_rate / (10 * 4 * screen_height);
 
+  if (ILcost != 0)
+    {
+      ILcost = (int *) xrealloc (ILcost, screen_height * sizeof (int));
+      DLcost = (int *) xrealloc (DLcost, screen_height * sizeof (int));
+      ILncost = (int *) xrealloc (ILncost, screen_height * sizeof (int));
+      DLncost = (int *) xrealloc (DLncost, screen_height * sizeof (int));
+    }
+  else
+    {
+      ILcost = (int *) xmalloc (screen_height * sizeof (int));
+      DLcost = (int *) xmalloc (screen_height * sizeof (int));
+      ILncost = (int *) xmalloc (screen_height * sizeof (int));
+      DLncost = (int *) xmalloc (screen_height * sizeof (int));
+    }
+
   CalcIDCosts1 (ins_line_string, multi_ins_string,
 		setup_string, cleanup_string,
 		ILcost, ILncost, extra);
@@ -429,7 +469,11 @@ CalcIDCosts1 (one_line_string, multi_string,
      int *costvec, *ncostvec;
      int extra;
 {
-  if (multi_string)
+  if (calculate_costs_hook)
+    (*calculate_costs_hook) (extra, costvec, ncostvec);
+  else if (dont_calculate_costs)
+    CalcLID (0, 0, 0, 0, costvec, ncostvec);
+  else if (multi_string)
     CalcLID (string_cost (multi_string),
 	     per_line_cost (multi_string),
 	     extra, 0, costvec, ncostvec);
@@ -453,7 +497,7 @@ CalcLID (ov1, pf1, ovn, pfn, ov, mf)
   register int insert_overhead = ov1 * 10 + screen_height * pf1;
   register int next_insert_cost = ovn * 10 + screen_height * pfn;
 
-  for (i = screen_height - 1; i > 0; i--)
+  for (i = 0; i < screen_height; i++)
     {
       *mf++ = next_insert_cost / 10;
       next_insert_cost -= pfn;

@@ -1,22 +1,21 @@
 /* Interfaces to system-dependent kernel and library entries.
-   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
@@ -104,6 +103,13 @@ extern char *sys_errlist[];
 #include <sys/ioctl.h>
 #endif 
 
+#ifdef AIX
+/* Get files for keyboard remapping */
+#define HFNKEYS 2
+#include <sys/hft.h>
+#include <sys/devinfo.h>
+#endif
+
 /* Get rid of LLITOUT in 4.1, since it is said to stimulate kernel bugs.  */
 #ifdef BSD4_1
 #undef LLITOUT
@@ -111,6 +117,20 @@ extern char *sys_errlist[];
 #endif /* 4.1 */
 
 #ifdef HAVE_TERMIO
+#ifdef IBMR2AIX
+#include <termio.h>
+#include <termios.h>
+#ifdef TIOCGETP
+#undef TIOCGETP
+#endif
+#define TIOCGETP TCGETS
+#undef TIOCSETN
+#define TIOCSETN TCSETSW
+#undef TIOCSETP
+#define TIOCSETP TCSETSF
+#undef TCSETAW
+#define TCSETAW TCSETS
+#else
 #include <termio.h>
 #undef TIOCGETP
 #define TIOCGETP TCGETA
@@ -118,7 +138,14 @@ extern char *sys_errlist[];
 #define TIOCSETN TCSETAW
 #undef TIOCSETP
 #define TIOCSETP TCSETAF
+#endif
+
+#ifndef IBMR2AIX
 #define TERMINAL struct termio
+#else
+#define TERMINAL struct termios
+#endif
+
 #define OSPEED(str) (str.c_cflag & CBAUD)
 #define SETOSPEED(str,new) (str.c_cflag = (str.c_cflag & ~CBAUD) | (new))
 #define TABS_OK(str) ((str.c_oflag & TABDLY) != TAB3)
@@ -126,6 +153,10 @@ extern char *sys_errlist[];
 
 #ifdef XENIX
 #undef TIOCGETC  /* Avoid confusing some conditionals that test this.  */
+#endif
+
+#ifdef BROKEN_TIOCGETC
+#undef TIOCGETC
 #endif
 
 #ifndef HAVE_TERMIO
@@ -147,13 +178,21 @@ extern char *sys_errlist[];
 #ifdef TIOCGWINSZ
 #ifndef IRIS_4D
 #ifndef mips
+#ifndef aix386
+#ifndef NO_SIOCTL_H
 /* Some USG systems with TIOCGWINSZ need this file; some don't have it.
    We don't know how to distinguish them.
    If this #include gets an error, just delete it.  */
 #include <sys/sioctl.h>
 #endif
+#ifdef NEED_PTEM_H
+#include <sys/stream.h>
+#include <sys/ptem.h>
 #endif
-#endif
+#endif /* not aix386 */
+#endif /* not mips */
+#endif /* not IRIS_4D */
+#endif /* TIOCGWINSZ */
 #ifdef HAVE_TIMEVAL
 #ifdef HPUX
 #include <time.h>
@@ -170,6 +209,26 @@ extern char *sys_errlist[];
 #ifdef NEED_BSDTTY
 #include <sys/bsdtty.h>
 #endif 
+
+#if defined (HPUX) && defined (HAVE_PTYS)
+#include <sys/ptyio.h>
+#endif
+  
+#ifdef AIX
+#include <sys/pty.h>
+#include <unistd.h>
+#endif /* AIX */
+
+#ifdef SYSV_PTYS
+#include <sys/tty.h>
+#include <sys/pty.h>
+#endif
+
+#ifdef BROKEN_FIONREAD
+#undef FIONREAD
+#endif
+
+extern int quit_char;
 
 #include "termhooks.h"
 #include "termchar.h"
@@ -299,9 +358,11 @@ init_baud_rate ()
 #endif /* not VMS */
       ospeed = OSPEED (sg);
     }
-  baud_rate = ospeed == 0 ? 1200
-    : ospeed < sizeof baud_convert / sizeof baud_convert[0]
-      ? baud_convert[ospeed] : 9600;
+  
+  baud_rate = (ospeed < sizeof baud_convert / sizeof baud_convert[0]
+	       ? baud_convert[ospeed] : 9600);
+  if (baud_rate == 0)
+    baud_rate = 1200;
 }
 
 /*ARGSUSED*/
@@ -451,10 +512,13 @@ child_setup_tty (out)
 #ifdef HPUX
   s.c_cflag = (s.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
 #endif HPUX
-#ifdef IBMRTAIX
+
+#ifdef AIX
 /* AIX enhanced edit loses NULs, so disable it */
+#ifndef IBMR2AIX
   s.c_line = 0;
   s.c_iflag &= ~ASCEDIT;
+#endif
   /* Also, PTY overloads NUL and BREAK.
      don't ignore break, but don't signal either, so it looks like NUL.  */
   s.c_iflag &= ~IGNBRK;
@@ -465,7 +529,7 @@ child_setup_tty (out)
   s.c_cc[VEOL] = 0377;
   s.c_lflag &= ~ISIG;
   s.c_cflag = (s.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
-#endif /* IBMRTAIX */
+#endif /* AIX */
 
 #else /* not HAVE_TERMIO */
   s.sg_flags &= ~(ECHO | CRMOD | ANYP | ALLDELAY | RAW | LCASE | CBREAK | TANDEM);
@@ -491,12 +555,23 @@ child_setup_tty (out)
 setpgrp_of_tty (pid)
      int pid;
 {
+#ifdef IBMR2AIX
+  tcsetpgrp ( 0, pid);
+#else
 #ifdef TIOCSPGRP
   ioctl (0, TIOCSPGRP, &pid);
 #else
   /* Just ignore this for now and hope for the best */
 #endif
+#endif
 }
+
+/* Record a signal code and the handler for it.  */
+struct save_signal
+{
+  int code;
+  int (*handler) ();
+};
 
 /* Suspend the Emacs process; give terminal to its superior.  */
 
@@ -533,12 +608,17 @@ sys_suspend ()
    instead fork a subshell and let it talk directly to the terminal
    while we wait.  */
   int pid = fork ();
-  int (*interrupt) ();
-  int (*quit) ();
-  int (*term) ();
+  struct save_signal saved_handlers[5];
+
+  saved_handlers[0].code = SIGINT;
+  saved_handlers[1].code = SIGQUIT;
+  saved_handlers[2].code = SIGTERM;
 #ifdef SIGIO
-  int (*sigio) ();
-#endif SIGIO
+  saved_handlers[3].code = SIGIO;
+  saved_handlers[4].code = 0;
+#else
+  saved_handlers[3].code = 0;
+#endif
 
   if (pid == -1)
     error ("Can't spawn subshell");
@@ -555,7 +635,7 @@ sys_suspend ()
 	unsigned char *str;
 	int len;
 
-	/* mentioning bf_cur->buffer would mean including buffer.h,
+	/* mentioning current_buffer->buffer would mean including buffer.h,
 	   which somehow wedges the hp compiler.  So instead... */
 
 	dir = intern ("default-directory");
@@ -581,22 +661,33 @@ sys_suspend ()
       write (1, "Can't execute subshell", 22);
       _exit (1);
     }
-  interrupt = (int (*)()) signal (SIGINT, SIG_IGN);
-  quit = (int (*)()) signal (SIGQUIT, SIG_IGN);
-  term = (int (*)()) signal (SIGTERM, SIG_IGN);
-#ifdef SIGIO
-  sigio = (int (*)()) signal (SIGIO, SIG_IGN);
-#endif /* SIGIO */
+  save_signal_handlers (&saved_handlers);
   wait_for_termination (pid);
-  signal (SIGINT, interrupt);
-  signal (SIGQUIT, quit);
-  signal (SIGTERM, term);
-#ifdef SIGIO
-  signal (SIGIO, sigio);
-#endif /* SIGIO */
+  restore_signal_handlers (&saved_handlers);
 #endif /* no USG_JOBCTRL */
 #endif /* no SIGTSTP */
 #endif /* not VMS */
+}
+
+save_signal_handlers (saved_handlers)
+     struct save_signal *saved_handlers;
+{
+  while (saved_handlers->code)
+    {
+      saved_handlers->handler
+	= (int (*) ()) signal (saved_handlers->code, SIG_IGN);
+      saved_handlers++;
+    }
+}
+
+restore_signal_handlers (saved_handlers)
+     struct save_signal *saved_handlers;
+{
+  while (saved_handlers->code)
+    {
+      signal (saved_handlers->code, saved_handlers->handler);
+      saved_handlers++;
+    }
 }
 
 #ifdef F_SETFL
@@ -711,7 +802,7 @@ static struct ltchars new_ltchars = {-1,-1,-1,-1,-1,-1};
 
 init_sys_modes ()
 {
-  TERMINAL sg;
+  TERMINAL tty;
 #ifdef TIOCGETC
   struct tchars tchars;
 #endif
@@ -734,8 +825,10 @@ init_sys_modes ()
     LIB$GET_EF (&timer_ef);
   SYS$CLREF (timer_ef);
   if (!process_ef)
-    LIB$GET_EF (&process_ef);
-  SYS$CLREF (process_ef);
+    {
+      LIB$GET_EF (&process_ef);
+      SYS$CLREF (process_ef);
+    }
   if (input_ef / 32 != process_ef / 32)
     croak ("Input and process event flags in different clusters.");
   if (input_ef / 32 != timer_ef / 32)
@@ -754,73 +847,92 @@ init_sys_modes ()
 #endif /* not VMS */
   if (!read_socket_hook)
     {
-      sg = old_gtty;
+      tty = old_gtty;
 
 #ifdef HAVE_TERMIO
-      sg.c_iflag |= (IGNBRK);	/* Ignore break condition */
-      sg.c_iflag &= ~ICRNL;	/* Disable map of CR to NL on input */
+      tty.c_iflag |= (IGNBRK);	/* Ignore break condition */
+      tty.c_iflag &= ~ICRNL;	/* Disable map of CR to NL on input */
 #ifdef ISTRIP
-      sg.c_iflag &= ~ISTRIP;	/* don't strip 8th bit on input */
+      tty.c_iflag &= ~ISTRIP;	/* don't strip 8th bit on input */
 #endif
-      sg.c_lflag &= ~ECHO;	/* Disable echo */
-      sg.c_lflag &= ~ICANON;	/* Disable erase/kill processing */
-      sg.c_lflag |= ISIG;	/* Enable signals */
+      tty.c_lflag &= ~ECHO;	/* Disable echo */
+      tty.c_lflag &= ~ICANON;	/* Disable erase/kill processing */
+      tty.c_lflag |= ISIG;	/* Enable signals */
       if (flow_control)
 	{
-	  sg.c_iflag |= IXON;	/* Enable start/stop output control */
+	  tty.c_iflag |= IXON;	/* Enable start/stop output control */
 #ifdef IXANY
-	  sg.c_iflag &= ~IXANY;
+	  tty.c_iflag &= ~IXANY;
 #endif /* IXANY */
 	}
       else
-	sg.c_iflag &= ~IXON;	/* Disable start/stop output control */
-      sg.c_oflag &= ~ONLCR;	/* Disable map of NL to CR-NL on output */
-      sg.c_oflag &= ~TAB3;	/* Disable tab expansion */
+	tty.c_iflag &= ~IXON;	/* Disable start/stop output control */
+      tty.c_oflag &= ~ONLCR;	/* Disable map of NL to CR-NL on output */
+      tty.c_oflag &= ~TAB3;	/* Disable tab expansion */
 #ifdef CS8
-      sg.c_cflag |= CS8;	/* allow 8th bit on input */
-      sg.c_cflag &= ~PARENB;	/* Don't check parity */
+      tty.c_cflag |= CS8;	/* allow 8th bit on input */
+      tty.c_cflag &= ~PARENB;	/* Don't check parity */
 #endif
-      sg.c_cc[VINTR] = '\007';	/* ^G gives SIGINT */
-      /* Set up C-g for both SIGQUIT and SIGINT.
+      tty.c_cc[VINTR] = quit_char;	/* ^G gives SIGINT */
+      /* Set up C-g (usually) for both SIGQUIT and SIGINT.
 	 We don't know which we will get, but we handle both alike
 	 so which one it really gives us does not matter.  */
-      sg.c_cc[VQUIT] = '\007';
-      sg.c_cc[VMIN] = 1;	/* Input should wait for at least 1 char */
-      sg.c_cc[VTIME] = 0;	/* no matter how long that takes.  */
+      tty.c_cc[VQUIT] = quit_char;
+      tty.c_cc[VMIN] = 1;	/* Input should wait for at least 1 char */
+      tty.c_cc[VTIME] = 0;	/* no matter how long that takes.  */
 #ifdef VSWTCH
-      sg.c_cc[VSWTCH] = CDEL;	/* Turn off shell layering use of C-z */
+      tty.c_cc[VSWTCH] = CDEL;	/* Turn off shell layering use of C-z */
 #endif /* VSWTCH */
-#ifdef IBMRTAIX
+#ifdef mips  /* The following code looks like the right thing in general,
+		but it is said to cause a crash on USG V.4.
+		Let's play safe by turning it on only for the MIPS.  */
+#ifdef VSUSP
+      tty.c_cc[VSUSP] = CDEL;	/* Turn off mips handling of C-z.  */
+#endif /* VSUSP */
+#ifdef V_DSUSP
+      tty.c_cc[V_DSUSP] = CDEL;	/* Turn off mips handling of C-y.  */
+#endif /* V_DSUSP */
+#endif /* mips */
+
+#ifdef AIX
+#ifndef IBMR2AIX
       /* AIX enhanced edit loses NULs, so disable it */
-      sg.c_line = 0;
-      sg.c_iflag &= ~ASCEDIT;
+      tty.c_line = 0;
+      tty.c_iflag &= ~ASCEDIT;
+#else
+      tty.c_cc[VSTRT] = 255;
+      tty.c_cc[VSTOP] = 255;
+      tty.c_cc[VSUSP] = 255;
+      tty.c_cc[VDSUSP] = 255;
+#endif /* IBMR2AIX */
       /* Also, PTY overloads NUL and BREAK.
 	 don't ignore break, but don't signal either, so it looks like NUL.
 	 This really serves a purpose only if running in an XTERM window
 	 or via TELNET or the like, but does no harm elsewhere.  */
-      sg.c_iflag &= ~IGNBRK;
-      sg.c_iflag &= ~BRKINT;
-#endif
+      tty.c_iflag &= ~IGNBRK;
+      tty.c_iflag &= ~BRKINT;
+#endif /* AIX */
+
 #else /* if not HAVE_TERMIO */
 #ifdef VMS
-      sg.tt_char |= TT$M_NOECHO | TT$M_EIGHTBIT;
+      tty.tt_char |= TT$M_NOECHO | TT$M_EIGHTBIT;
       if (flow_control)
-	sg.tt_char |= TT$M_TTSYNC;
+	tty.tt_char |= TT$M_TTSYNC;
       else
-	sg.tt_char &= ~TT$M_TTSYNC;
-      sg.tt2_char |= TT2$M_PASTHRU | TT2$M_XON;
+	tty.tt_char &= ~TT$M_TTSYNC;
+      tty.tt2_char |= TT2$M_PASTHRU | TT2$M_XON;
 #else /* not VMS (BSD, that is) */
-      sg.sg_flags &= ~(ECHO | CRMOD | XTABS);
-      sg.sg_flags |= ANYP;
-      sg.sg_flags |= interrupt_input ? RAW : CBREAK;
+      tty.sg_flags &= ~(ECHO | CRMOD | XTABS);
+      tty.sg_flags |= ANYP;
+      tty.sg_flags |= interrupt_input ? RAW : CBREAK;
 #endif /* not VMS (BSD, that is) */
 #endif /* not HAVE_TERMIO */
 
 #ifdef VMS
       SYS$QIOW (0, input_chan, IO$_SETMODE, &input_iosb, 0, 0,
-		&sg.class, 12, 0, 0, 0, 0);
+		&tty.class, 12, 0, 0, 0, 0);
 #else
-      ioctl (0, TIOCSETN, &sg);
+      ioctl (0, TIOCSETN, &tty);
 #endif /* not VMS */
 
       /* This code added to insure that, if flow-control is not to be used,
@@ -834,6 +946,16 @@ init_sys_modes ()
 
 #ifdef AIX
       hft_init ();
+#ifdef IBMR2AIX
+  {
+    /* IBM's HFT device usually thinks a ^J should be LF/CR.  We need it
+       to be only LF.  This is the way that is done. */
+    struct termio tty;
+
+    if (ioctl (1, HFTGETID, &tty) != -1)
+      write (1, "\033[20l", 5);
+  }
+#endif
 #endif
 
 #ifdef F_SETFL
@@ -862,7 +984,7 @@ init_sys_modes ()
 
       /* Note: if not using CBREAK mode, it makes no difference how we set this */
       tchars = new_tchars;
-      tchars.t_intrc = 07;
+      tchars.t_intrc = quit_char;
       if (flow_control)
 	{
 	  tchars.t_startc = '\021';
@@ -926,16 +1048,16 @@ init_sys_modes ()
    
 tabs_safe_p ()
 {
-  TERMINAL sg;
+  TERMINAL tty;
   if (noninteractive)
     return 1;
 #ifdef VMS
-  SYS$QIOW (0, input_chan, IO$_SENSEMODE, &sg, 0, 0,
-	    &sg.class, 12, 0, 0, 0, 0);
+  SYS$QIOW (0, input_chan, IO$_SENSEMODE, &tty, 0, 0,
+	    &tty.class, 12, 0, 0, 0, 0);
 #else
-  ioctl (0, TIOCGETP, &sg);
+  ioctl (0, TIOCGETP, &tty);
 #endif /* not VMS */
-  return (TABS_OK(sg));
+  return (TABS_OK(tty));
 }
 
 /* Get terminal size from system.
@@ -963,18 +1085,15 @@ get_screen_size (widthp, heightp)
   *heightp = 0;
   if (ioctl (0, TIOCGWINSZ, &size) < 0)
     return;
-  if ((unsigned) size.ws_col > MScreenWidth
-      || (unsigned) size.ws_row > MScreenLength)
-    return;
   *widthp = size.ws_col;
   *heightp = size.ws_row;
 #else /* not TIOCGWNSIZ */
 #ifdef VMS
-  TERMINAL sg;
-  SYS$QIOW (0, input_chan, IO$_SENSEMODE, &sg, 0, 0,
-	    &sg.class, 12, 0, 0, 0, 0);
-  *widthp = sg.scr_wid;
-  *heightp = sg.scr_len;
+  TERMINAL tty;
+  SYS$QIOW (0, input_chan, IO$_SENSEMODE, &tty, 0, 0,
+	    &tty.class, 12, 0, 0, 0, 0);
+  *widthp = tty.scr_wid;
+  *heightp = tty.scr_len;
 #else /* system doesn't know size */
   *widthp = 0;
   *heightp = 0;
@@ -993,12 +1112,23 @@ reset_sys_modes ()
     return;
   if (read_socket_hook)
     return;
-  topos (screen_height - 1, 0);
+  move_cursor (screen_height - 1, 0);
   clear_end_of_line (screen_width);
   /* clear_end_of_line may move the cursor */
-  topos (screen_height - 1, 0);
+  move_cursor (screen_height - 1, 0);
   /* Output raw CR so kernel can track the cursor hpos.  */
   cmputc ('\r');
+#ifdef IBMR2AIX
+  {
+    /* HFT devices normally use ^J as a LF/CR.  We forced it to 
+       do the LF only.  Now, we need to reset it. */
+    struct termio tty;
+
+    if (ioctl (1, HFTGETID, &tty) != -1)
+      write (1, "\033[20h", 5);
+  }
+#endif
+
   reset_terminal_modes ();
   fflush (stdout);
 #ifdef BSD
@@ -1041,6 +1171,55 @@ reset_sys_modes ()
   hft_reset ();
 #endif
 }
+
+#ifdef HAVE_PTYS
+
+/* Set up the proper status flags for use of a pty.  */
+
+setup_pty (fd)
+     int fd;
+{
+  /* I'm told that TOICREMOTE does not mean control chars
+     "can't be sent" but rather that they don't have
+     input-editing or signaling effects.
+     That should be good, because we have other ways
+     to do those things in Emacs.
+     However, telnet mode seems not to work on 4.2.
+     So TIOCREMOTE is turned off now. */
+
+  /* Under hp-ux, if TIOCREMOTE is turned on, some calls
+     will hang.  In particular, the "timeout" feature (which
+     causes a read to return if there is no data available)
+     does this.  Also it is known that telnet mode will hang
+     in such a way that Emacs must be stopped (perhaps this
+     is the same problem).
+     
+     If TIOCREMOTE is turned off, then there is a bug in
+     hp-ux which sometimes loses data.  Apparently the
+     code which blocks the master process when the internal
+     buffer fills up does not work.  Other than this,
+     though, everything else seems to work fine.
+     
+     Since the latter lossage is more benign, we may as well
+     lose that way.  -- cph */
+#ifdef FIONBIO
+#ifdef SYSV_PTYS
+  {
+    int on = 1;
+    ioctl (fd, FIONBIO, &on);
+  }
+#endif
+#endif
+#ifdef IBMRTAIX
+  /* On AIX, the parent gets SIGHUP when a pty attached child dies.  So, we */
+  /* ignore SIGHUP once we've started a child on a pty.  Note that this may */
+  /* cause EMACS not to die when it should, i.e., when its own controlling  */
+  /* tty goes away.  I've complained to the AIX developers, and they may    */
+  /* change this behavior, but I'm not going to hold my breath.             */
+  signal (SIGHUP, SIG_IGN);
+#endif
+}
+#endif /* HAVE_PTYS */
 
 #ifdef VMS
 
@@ -1142,20 +1321,23 @@ wait_for_kbd_input ()
   if (!detect_input_pending ())
     {
       /* No timing error: wait for flag to be set.  */
+      set_waiting_for_input (0);
       SYS$WFLOR (input_ef, input_eflist);
+      clear_waiting_for_input (0);
       if (!detect_input_pending ())
 	/* Check for subprocess input availability */
 	{
 	  int dsp = have_process_input || process_exited;
 
+	  sys$clref (process_ef);
 	  if (have_process_input)
 	    process_command_input ();
 	  if (process_exited)
 	    process_exit ();
 	  if (dsp)
 	    {
-	      RedoModes++;
-	      DoDsp (1);
+	      update_mode_lines++;
+	      redisplay_preserve_echo_area ();
 	    }
 	}
     }
@@ -1445,19 +1627,21 @@ select_alarm ()
     longjmp (read_alarm_throw, 1);
 }
 
-/* Only rfds are checked and timeout must point somewhere */
+/* Only rfds are checked.  */
 int
 select (nfds, rfds, wfds, efds, timeout)
      int nfds;
      int *rfds, *wfds, *efds, *timeout;
 {
   int ravail = 0, orfds = 0, old_alarm;
+  int timeoutval = timeout ? *timeout : 100000;
+  int *local_timeout = &timeoutval;
   extern int kbd_count;
   extern int proc_buffered_char[];
 #ifndef subprocesses
-  int child_changed = 0;
+  int process_tick = 0, update_tick = 0;
 #else
-  extern int child_changed;
+  extern int process_tick, update_tick;
 #endif
   int (*old_trap) ();
   char buf;
@@ -1474,7 +1658,8 @@ select (nfds, rfds, wfds, efds, timeout)
 
   /* If we are looking only for the terminal, with no timeout,
      just read it and wait -- that's more efficient.  */
-  if (orfds == 1 && *timeout == 100000 && !child_changed)
+  if (orfds == 1 && (!timeout || *timeout == 100000)
+      && process_tick == update_tick)
     {
       if (!kbd_count)
 	read_input_waiting ();
@@ -1525,14 +1710,15 @@ select (nfds, rfds, wfds, efds, timeout)
 		}
 	    }
 	}
-      if (*timeout == 0 || ravail != 0 || child_changed)
+      if (*local_timeout == 0 || ravail != 0 || process_tick != update_tick)
 	break;
       old_alarm = alarm (0);
       old_trap = (int (*)()) signal (SIGALRM, select_alarm);
       select_alarmed = 0;
       alarm (SELECT_PAUSE);
       /* Wait for a SIGALRM (or maybe a SIGTINT) */
-      while (select_alarmed == 0 && *timeout != 0 && child_changed == 0)
+      while (select_alarmed == 0 && *local_timeout != 0
+	     && process_tick == update_tick)
 	{
 	  /* If we are interested in terminal input,
 	     wait by reading the terminal.
@@ -1546,7 +1732,7 @@ select (nfds, rfds, wfds, efds, timeout)
 	  else
 	    pause();
 	}
-      (*timeout) -= SELECT_PAUSE;
+      (*local_timeout) -= SELECT_PAUSE;
       /* Reset the old alarm if there was one */
       alarm (0);
       signal (SIGALRM, old_trap);
@@ -1559,7 +1745,7 @@ select (nfds, rfds, wfds, efds, timeout)
 	  else
 	    alarm (old_alarm);
 	}
-      if (*timeout == 0)  /* Stop on timer being cleared */
+      if (*local_timeout == 0)  /* Stop on timer being cleared */
 	break;
     }
   return ravail;
@@ -1779,7 +1965,14 @@ srandom (arg)
 }
 #endif BSD4_1
 
+#ifdef HPUX
+#ifdef X11
+#define HAVE_RANDOM
+#endif
+#endif
+
 #ifdef USG
+#ifndef HAVE_RANDOM
 /*
  *	The BSD random(3) returns numbers in the range of
  *	0 to 2e31 - 1.  The USG rand(3C) returns numbers in the
@@ -1800,6 +1993,7 @@ srandom (arg)
   srand (arg);
 }
 
+#endif /* HAVE_RANDOM */
 #endif /* USG */
 
 
@@ -1919,7 +2113,8 @@ sys_open (path, oflag, mode)
 {
   register int rtnval;
   
-  while ((rtnval = open (path, oflag, mode)) == -1 && errno == EINTR);
+  while ((rtnval = open (path, oflag, mode)) == -1
+	 && (errno == EINTR));
   return (rtnval);
 }
 
@@ -1932,7 +2127,8 @@ sys_close (fd)
 {
   register int rtnval;
 
-  while ((rtnval = close(fd)) == -1 && errno == EINTR);
+  while ((rtnval = close(fd)) == -1
+	 && (errno == EINTR));
   return rtnval;
 }
 
@@ -1948,7 +2144,8 @@ sys_read (fildes, buf, nbyte)
 {
   register int rtnval;
   
-  while ((rtnval = read (fildes, buf, nbyte)) == -1 && errno == EINTR);
+  while ((rtnval = read (fildes, buf, nbyte)) == -1
+	 && (errno == EINTR));
   return (rtnval);
 }
 
@@ -1960,7 +2157,8 @@ sys_write (fildes, buf, nbyte)
 {
   register int rtnval;
 
-  while ((rtnval = write (fildes, buf, nbyte)) == -1 && errno == EINTR);
+  while ((rtnval = write (fildes, buf, nbyte)) == -1
+	 && (errno == EINTR));
   return (rtnval);
 }
 
@@ -1984,7 +2182,7 @@ sys_write (fildes, buf, nbyte)
 
 char *sys_siglist[NSIG + 1] =
 {
-#ifdef IBMRTAIX
+#ifdef AIX
 /* AIX has changed the signals a bit */
   "bogus signal",			/* 0 */
   "hangup",				/* 1  SIGHUP */
@@ -2018,7 +2216,7 @@ char *sys_siglist[NSIG + 1] =
   "HFT retract",			/* 29 SIGRETRACT */
   "HFT sound done",			/* 30 SIGSOUND */
   "HFT input ready",			/* 31 SIGMSG */
-#else /* not IBMRTAIX */
+#else /* not AIX */
   "bogus signal",			/* 0 */
   "hangup",				/* 1  SIGHUP */
   "interrupt",				/* 2  SIGINT */
@@ -2039,7 +2237,7 @@ char *sys_siglist[NSIG + 1] =
   "user defined signal 2",		/* 17 SIGUSR2 */
   "death of a child",			/* 18 SIGCLD */
   "power-fail restart",			/* 19 SIGPWR */
-#endif /* not IBMRTAIX */
+#endif /* not AIX */
   0
   };
 
@@ -2074,6 +2272,8 @@ getwd (pathname)
 
 #endif HAVE_GETWD
 
+#ifndef HAVE_RENAME
+
 /*
  *	Emulate rename using unlink/link.  Note that this is
  *	only partially correct.  Also, doesn't enforce restriction
@@ -2093,6 +2293,7 @@ rename (from, to)
     }
   return (-1);
 }
+#endif /* not HAVE_RENAME */
 
 /* VARARGS */
 setpriority ()
@@ -2145,6 +2346,7 @@ utimes (name, tvp)
 #endif /* IRIS_UTIME */
 
 
+#if 0
 #ifdef HPUX
 
 /* HPUX curses library references perror, but as far as we know
@@ -2155,6 +2357,7 @@ perror ()
 }
 
 #endif /* HPUX */
+#endif /* 0 */
 
 #ifndef HAVE_DUP2
 
@@ -3521,14 +3724,20 @@ srandom (seed)
 
 #ifdef AIX
 
-/* Get files for keyboard remapping */
-#define HFNKEYS 2
-#include <sys/hft.h>
-#include <sys/devinfo.h>
-
 /* Called from init_sys_modes.  */
 hft_init ()
 {
+  /* If we're not on an HFT we shouldn't do any of this.  We determine
+     if we are on an HFT by trying to get an HFT error code.  If this
+     call fails, we're not on an HFT. */ 
+#ifdef IBMR2AIX
+  if (ioctl (0, HFQERROR, 0) < 0)
+    return;
+#else /* not IBMR2AIX */
+  if (ioctl (0, HFQEIO, 0) < 0)
+    return;
+#endif /* not IBMR2AIX */
+
   /* On AIX the default hft keyboard mapping uses backspace rather than delete
      as the rubout key's ASCII code.  Here this is changed.  The bug is that
      there's no way to determine the old mapping, so in reset_sys_modes
@@ -3544,19 +3753,25 @@ hft_init ()
     keymap.hf_nkeys = 2;
     keymap.hfkey[0].hf_kpos = 15;
     keymap.hfkey[0].hf_kstate = HFMAPCHAR | HFSHFNONE;
+#ifdef IBMR2AIX
+    keymap.hfkey[0].hf_keyidh = '<';
+#else /* not IBMR2AIX */
     keymap.hfkey[0].hf_page = '<';
+#endif /* not IBMR2AIX */
     keymap.hfkey[0].hf_char = 127;
     keymap.hfkey[1].hf_kpos = 15;
     keymap.hfkey[1].hf_kstate = HFMAPCHAR | HFSHFSHFT;
+#ifdef IBMR2AIX
+    keymap.hfkey[1].hf_keyidh = '<';
+#else /* not IBMR2AIX */
     keymap.hfkey[1].hf_page = '<';
+#endif /* not IBMR2AIX */
     keymap.hfkey[1].hf_char = 127;
     hftctl (0, HFSKBD, &buf);
   }
   /* The HFT system on AIX doesn't optimize for scrolling, so it's really ugly
-     at times.  Here we determine if we are on an HFT by trying to get an
-     HFT error code.  If this call works, we must be on an HFT. */
-  if (ioctl (0, HFQEIO, 0) != -1)
-    line_ins_del_ok = char_ins_del_ok = 0;
+     at times. */
+  line_ins_del_ok = char_ins_del_ok = 0;
 }
 
 /* Reset the rubout key to backspace. */
@@ -3566,16 +3781,32 @@ hft_reset ()
   struct hfbuf buf;
   struct hfkeymap keymap;
 
+#ifdef IBMR2AIX
+  if (ioctl (0, HFQERROR, 0) < 0)
+    return;
+#else /* not IBMR2AIX */
+  if (ioctl (0, HFQEIO, 0) < 0)
+    return;
+#endif /* not IBMR2AIX */
+
   buf.hf_bufp = (char *)&keymap;
   buf.hf_buflen = sizeof(keymap);
   keymap.hf_nkeys = 2;
   keymap.hfkey[0].hf_kpos = 15;
   keymap.hfkey[0].hf_kstate = HFMAPCHAR | HFSHFNONE;
+#ifdef IBMR2AIX
+  keymap.hfkey[0].hf_keyidh = '<';
+#else /* not IBMR2AIX */
   keymap.hfkey[0].hf_page = '<';
+#endif /* not IBMR2AIX */
   keymap.hfkey[0].hf_char = 8;
   keymap.hfkey[1].hf_kpos = 15;
   keymap.hfkey[1].hf_kstate = HFMAPCHAR | HFSHFSHFT;
+#ifdef IBMR2AIX
+  keymap.hfkey[1].hf_keyidh = '<';
+#else /* not IBMR2AIX */
   keymap.hfkey[1].hf_page = '<';
+#endif /* not IBMR2AIX */
   keymap.hfkey[1].hf_char = 8;
   hftctl (0, HFSKBD, &buf);
 }

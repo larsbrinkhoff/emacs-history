@@ -1,27 +1,26 @@
 ;;; Fortran mode for GNU Emacs  (beta test version 1.21, Oct. 1, 1985)
 ;;; Copyright (c) 1986 Free Software Foundation, Inc.
-;;; Written by Michael D. Prange (mit-eddie!mit-erl!prange).
+;;; Written by Michael D. Prange (prange@erl.mit.edu)
 
-;;; This file is not part of the GNU Emacs distribution (yet).
+;; This file is part of GNU Emacs.
 
-;; This file is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; this file, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;;; Author acknowledges help from Stephen Gildea <mit-erl!gildea>
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;;; Bugs to mit-erl!bug-fortran-mode.
+;;; Author acknowledges help from Stephen Gildea <gildea@erl.mit.edu>
+
+;;; Bugs to bug-fortran-mode@erl.mit.edu.
 
 (defvar fortran-do-indent 3
   "*Extra indentation applied to `do' blocks.")
@@ -236,7 +235,7 @@ with no args, if that value is non-nil.
   (interactive)
   (kill-all-local-variables)
   (if fortran-startup-message
-      (message "Emacs Fortran mode version %s.  Bugs to mit-erl!bug-fortran-mode" fortran-mode-version))
+      (message "Emacs Fortran mode version %s.  Bugs to bug-fortran-mode@erl.mit.edu" fortran-mode-version))
   (setq fortran-startup-message nil)
   (setq local-abbrev-table fortran-mode-abbrev-table)
   (set-syntax-table fortran-mode-syntax-table)

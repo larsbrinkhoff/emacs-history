@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* Define the fundamental Lisp data structures */
@@ -282,6 +281,11 @@ Lisp_Object;
 #define XUINT(a) ((a) & VALMASK)
 #endif
 
+#ifdef HAVE_SHM
+/* In this representation, data is found in two widely separated segments.  */
+#define XPNTR(a) \
+  (XUINT (a) | (XUINT (a) > PURESIZE ? DATA_SEG_BITS : PURE_SEG_BITS))
+#else /* not HAVE_SHM */
 #ifdef DATA_SEG_BITS
 /* This case is used for the rt-pc.
    In the diffs I was given, it checked for ptr = 0
@@ -289,9 +293,10 @@ Lisp_Object;
    But I don't think that zero should ever be found
    in a Lisp object whose data type says it points to something.  */
 #define XPNTR(a) (XUINT (a) | DATA_SEG_BITS)
-#else
+#else /* not DATA_SEG_BITS */
 #define XPNTR(a) XUINT (a)
 #endif
+#endif /* not HAVE_SHM */
 
 #ifndef XSETINT
 #define XSETINT(a, b)  ((a) = ((a) & ~VALMASK) |  ((b) & VALMASK))
@@ -469,11 +474,13 @@ struct Lisp_Marker
     struct buffer *buffer;
     Lisp_Object chain;
     int bufpos;
-    int modified;
   };
 
 /* Data type checking */
 
+#ifdef NULL
+#undef NULL
+#endif
 #define NULL(x)  (XFASTINT (x) == XFASTINT (Qnil))
 /* #define LISTP(x) (XTYPE ((x)) == Lisp_Cons)*/
 #define CONSP(x) (XTYPE ((x)) == Lisp_Cons)
@@ -602,17 +609,6 @@ extern void defsubr ();
 #define MANY -2
 #define UNEVALLED -1
 
-#define DEFSIMPLE(lname, fnname, sname, doc, valtype, setcomp, exp) \
-  DEFUN (lname, fnname, sname, 0, 0, 0, 0) () \
-  { \
-    Lisp_Object val; \
-    XSET (val, valtype, exp); \
-    return val; }
-
-#define DEFPRED(lname, fnname, sname, doc, boolexp) \
-  DEFUN (lname, fnname, sname, 0, 0, 0, 0) () \
-  { if (boolexp) return Qt; return Qnil; }
-
 /* Macros we use to define forwarded Lisp variables.
    These are used in the syms_of_FILENAME functions.  */
 
@@ -646,6 +642,8 @@ struct handler
   {
     Lisp_Object handler;
     Lisp_Object var;
+    int poll_suppress_count;	/* No error should exit a piece of code
+				   in which polling is suppressed.  */
     struct catchtag *tag;
     struct handler *next;
   };
@@ -694,6 +692,10 @@ extern int consing_since_gc;
 /* threshold for doing another gc */
 
 extern int gc_cons_threshold;
+
+/* value of consing_since_gc when undos were last truncated.  */
+
+extern int consing_at_last_truncate;
 
 /* Structure for recording stack slots that need marking */
 
@@ -830,7 +832,7 @@ extern Lisp_Object intern (), oblookup ();
 
 /* Defined in eval.c */
 extern Lisp_Object Qautoload, Qexit, Qinteractive, Qcommandp, Qdefun, Qmacro;
-extern Lisp_Object Vinhibit_quit, Vquit_flag;
+extern Lisp_Object Vinhibit_quit, Vquit_flag, Qinhibit_quit;
 extern Lisp_Object Vmocklisp_arguments, Qmocklisp, Qmocklisp_arguments;
 extern Lisp_Object Vautoload_queue;
 extern Lisp_Object Fand (), For (), Fif (), Fprogn (), Fprog1 (), Fprog2 ();
@@ -848,6 +850,7 @@ extern Lisp_Object internal_catch ();
 extern Lisp_Object internal_condition_case ();
 extern void unbind_to ();
 extern void error ();
+extern Lisp_Object un_autoload ();
 
 /* Defined in editfns.c */
 extern Lisp_Object Vprefix_arg, Qminus, Vcurrent_prefix_arg;
@@ -920,6 +923,7 @@ extern Lisp_Object Fdowncase (), Fupcase (), Fcapitalize ();
 extern Lisp_Object Vhelp_form, Vtop_level;
 extern Lisp_Object Fdiscard_input (), Frecursive_edit ();
 extern Lisp_Object Fcommand_execute (), Finput_pending_p ();
+extern int poll_suppress_count;
 
 /* defined in keymap.c */
 

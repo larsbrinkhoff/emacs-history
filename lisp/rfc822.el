@@ -4,20 +4,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 (provide 'rfc822)
 
@@ -240,17 +239,22 @@
 	       ;; an addr-spec, since many broken mailers output
 	       ;; "Hern K. Herklemeyer III
 	       ;;   <yank@megadeath.dod.gods-own-country>"
-	       (or (= n 0)
-		   (= (preceding-char) ?\ )
-		   (insert ?\ ))
-	       (rfc822-snarf-words)
-	       (setq n (1+ n)))
+               (let ((again t))
+                 (while again
+                   (or (= n 0) (bobp) (= (preceding-char) ?\ )
+                       (insert ?\ ))
+                   (rfc822-snarf-words)
+                   (setq n (1+ n))
+                   (setq again (or (rfc822-looking-at ?.)
+                                   (looking-at "[^][\000-\037\177-\377 ()<>@,;:\\.]"))))))
 	      ((= n 0)
 	       (throw 'address nil))
 	      ((= n 1) ; allow "foo" (losing unix seems to do this)
 	       (throw 'address
 		 (buffer-substring address-start (point))))
-	      ((or (eobp) (looking-at ","))
+              ((> n 1)
+               (rfc822-bad-address "Missing comma between addresses or badly-formatted address"))
+	      ((or (eobp) (= (following-char) ?,))
 	       (rfc822-bad-address "Missing comma or route-spec"))
 	      (t
 	       (rfc822-bad-address "Strange character or missing comma")))))))
@@ -285,7 +289,7 @@
 		    (catch 'address ; this is for rfc822-bad-address
 		      (cond ((rfc822-looking-at ?\,)
 			     nil)
-			    ((looking-at "[][\000-\037\177-\377@;:\\.]")
+			    ((looking-at "[][\000-\037\177-\377@;:\\.>)]")
 			     (forward-char)
 			     (rfc822-bad-address
 			       (format "Strange character \\%c found"
@@ -299,4 +303,3 @@
 		     (setq list (nconc (nreverse tem) list)))))
 	    (nreverse list)))
       (and buf (kill-buffer buf))))))
-

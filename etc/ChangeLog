@@ -1,3 +1,73 @@
+Mon Dec 31 17:52:55 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* refcard.tex: Change am fonts to cm.
+
+Thu Nov 29 17:34:14 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* movemail.c (mbx_delimit_begin): Put space before `unseen'.
+
+Sun Nov 18 17:09:07 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* server.c, emacsclient.c [BSD]: Put socket in /tmp.
+
+Tue Nov 13 00:01:54 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* movemail.c (error): Handle 3 args.
+	(main): Don't check input access if using pop.
+
+Tue Oct 30 12:38:39 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* emacs.1: Give the mouse bindings for X11 instead of X10.
+
+Tue Oct 16 14:04:05 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* etags.c (find_entries): Check for numbers after Scheme suffix.
+
+Sun Oct 14 18:46:21 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* termcap.dat (vt200-80): Fix ke and ks to frob flag 1.
+
+Tue Oct  9 15:22:16 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Makefile (nemacstool, xvetool): New targets.
+
+Wed Sep 26 18:42:18 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* emacsclient.c (errno): Declare it explicitly.
+
+Tue Aug 14 21:34:50 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c [USG]: Pass msgsnd only 4 args.
+
+Tue Aug  7 13:17:58 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (clean): New target.
+
+Sun Jul  8 18:18:00 1990  Richard Stallman  (rms at geech)
+
+	* emacsclient.c [BSD]: Include errno.h.
+	Declare sys_nerr and sys_errlist.
+
+Wed Jul  4 15:40:33 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* wakeup.c: New file.
+	* Makefile (wakeup): New rule.
+
+Wed May 30 15:40:59 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c: Print program name in error messages.
+	Handle failure of getwd.
+	Handle +LINE arguments in SYSVIPC case.
+	These are most of the changes already in the version 19 file.
+
+Mon May 28 21:54:59 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c (main): Conditional to get load average on Apollo.
+
+Sun Dec 24 23:54:28 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (readline): Separate out init of `pend'.
+
 Thu Jun 15 12:53:43 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* movemail.c [USG]: Define F_OK, etc., if not in header.

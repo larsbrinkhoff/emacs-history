@@ -34,7 +34,7 @@ CLEANDIR= ${COPYDIR} lisp/term
 all:	src/paths.h ${SUBDIR}
 
 src/paths.h: Makefile src/paths.h-dist
-	/bin/sed 's;/usr/local/emacs;${LIBDIR};' < src/paths.h-dist > src/paths.h
+	/bin/sed 's;/usr/local/emacs;${LIBDIR};g' < src/paths.h-dist > src/paths.h
 
 src:	etc
 
@@ -51,8 +51,9 @@ install: all mkdir lockdir
 			 rm -f ${LIBDIR}/$$i/\#*; \
 			 rm -f ${LIBDIR}/$$i/*~); \
 		done \
+	else true; \
 	fi
-	install -c -s -g kmem -m 2755 etc/loadst ${LIBDIR}/etc/loadst
+	install -c -s etc/emacsclient ${BINDIR}/emacsclient
 	install -c -s etc/etags ${BINDIR}/etags
 	install -c -s etc/ctags ${BINDIR}/ctags
 	install -c -s -m 1755 src/xemacs ${BINDIR}/xemacs
@@ -68,8 +69,9 @@ install.sysv: all mkdir lockdir
 			 rm -f ${LIBDIR}/$$i/\#*; \
 			 rm -f ${LIBDIR}/$$i/*~); \
 		done \
+	else true; \
 	fi
-	-cpset etc/loadst ${BINDIR}/loadst 2755 bin sys
+	-cpset etc/emacsclient ${BINDIR}/emacsclient 755 bin bin
 	-cpset etc/etags ${BINDIR}/etags 755 bin bin
 	-cpset etc/ctags ${BINDIR}/ctags 755 bin bin
 	-cpset etc/emacs.1 ${MANDIR}/emacs.1 444 bin bin
@@ -84,14 +86,10 @@ install.xenix: all mkdir lockdir
 			 rm -f ${LIBDIR}/$$i/\#*; \
 			 rm -f ${LIBDIR}/$$i/*~); \
 		done \
+	else true; \
 	fi
-	-mv -f ${LIBDIR}/etc/loadst ${LIBDIR}/etc/loadst.old
-	cp etc/loadst ${LIBDIR}/etc/loadst
-	chown sysinfo ${LIBDIR}/etc/loadst
-	chmod 4755 ${LIBDIR}/etc/loadst
-	-rm -f ${LIBDIR}/etc/loadst.old
-	cp etc/etags etc/ctags ${BINDIR}
-	chmod 755 ${BINDIR}/etags ${BINDIR}/ctags
+	cp etc/etags etc/ctags etc/emacsclient ${BINDIR}
+	chmod 755 ${BINDIR}/etags ${BINDIR}/ctags ${BINDIR}/emacsclient
 	cp etc/emacs.1 ${MANDIR}/emacs.1
 	chmod 444 ${MANDIR}/emacs.1
 	-mv -f ${BINDIR}/emacs ${BINDIR}/emacs.old
@@ -108,6 +106,10 @@ distclean:
 
 clean:
 	cd src; make clean
+	if [ `pwd` != `(cd ${LIBDIR}; pwd)` ] ; then \
+		cd etc; make clean; \
+	else true; \
+	fi
 
 lockdir:
 	-mkdir ${LIBDIR}/lock

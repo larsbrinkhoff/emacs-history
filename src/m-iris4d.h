@@ -1,22 +1,21 @@
-/* m- file for Iris-4D machines.  Use with s-iris3-6.h
+/* m- file for Iris-4D machines.  Use with s-irix3-3.h.
    Copyright (C) 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* The following three symbols give information on
@@ -80,9 +79,7 @@ and this notice must be preserved on all copies.  */
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 
-#define LOAD_AVE_CVT(x) (int) (((double) (x)) * 100.0 / 256.0)
-
-/* s-iris3-6.h uses /vmunix */
+#define LOAD_AVE_CVT(x) (int)(((double)(x)*100)/1024.0)
 
 #undef KERNEL_FILE
 #define KERNEL_FILE "/unix"
@@ -124,33 +121,20 @@ and this notice must be preserved on all copies.  */
 
 #define UNEXEC unexmips.o
 
+#define TEXT_START 0x400000
+
 /*
- * The TEXT_START here is by experiment; the DATA_START is as per the
- * manual (Assembly Language Programmers guide).  These values can be
- * found at run time from &_ftext and &_fdata, though the C file which
- * reads these must be compile with -G 0 (prevent access to those two
- * 'variables' using the $gp register).  However, I am lazy and don't
- * really want to rewrite unexec.c yet again to use this instead of
- * TEXT_START and DATA_START.  The manual indicates that these
- * locations are fixed for ZMAGIC files, so I'll be lazy and do it
- * this way.  It will probably break as of the next release of the
- * IRIS4D, but I've described up above how to find the new values, so
- * I won't feel too guilty.  Note that the value returned through
- * _ftext is the start of text space (in this case it was 0x400140); I
- * presumed that the headers started at 0x400000 and was right.
- *
  * DATA_SEG_BITS forces that bit to be or'd in with any pointers which
  * are trying to access pure strings (as gnu-emacs only allows 24 bits
  * for the value field of a LISP_OBJECT).
  */
 
-
-#define TEXT_START 0x400000
 #define DATA_START 0x10000000
 #define DATA_SEG_BITS	0x10000000
 
 #undef LIBS_MACHINE
-#define LIBS_MACHINE -lPW -lmld
+/* -lsun in case using Yellow Pages for passwords.  */
+#define LIBS_MACHINE -lsun -lmld
 #define LIBS_DEBUG
 
 /* Define this if you have a fairly recent system,

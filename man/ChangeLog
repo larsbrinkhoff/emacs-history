@@ -1,3 +1,7 @@
+Thu Jan 24 12:41:33 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* texinfo.tex: Delete spurious character at beginning.
+
 Tue Aug 16 13:09:12 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
 
 	* emacs.tex:  Corrected two typos.  No other changes before

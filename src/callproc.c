@@ -1,22 +1,21 @@
 /* Synchronous subprocess invocation for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
@@ -102,7 +101,7 @@ if you quit, the process is killed.")
   int count = specpdl_ptr - specpdl;
   register unsigned char **new_argv
     = (unsigned char **) alloca ((max (2, nargs - 2)) * sizeof (char *));
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
 
   CHECK_STRING (args[0], 0);
 
@@ -113,7 +112,7 @@ if you quit, the process is killed.")
     args[1] = build_string ("/dev/null");
 #endif /* not VMS */
   else
-    args[1] = Fexpand_file_name (args[1], bf_cur->directory);
+    args[1] = Fexpand_file_name (args[1], current_buffer->directory);
 
   CHECK_STRING (args[1], 1);
 
@@ -242,9 +241,9 @@ if you quit, the process is killed.")
       {
 	immediate_quit = 0;
 	if (!NULL (buffer))
-	  InsCStr (buf, nread);
-	if (!NULL (display) && INTERACTIVE)
-	  DoDsp (1);
+	  insert (buf, nread);
+	if (!NULL (display) && FROM_KBD)
+	  redisplay_preserve_echo_area ();
 	immediate_quit = 1;
 	QUIT;
       }
@@ -255,7 +254,7 @@ if you quit, the process is killed.")
 
   immediate_quit = 0;
 
-  SetBfp (old);
+  set_buffer_internal (old);
 
   unbind_to (count);
 
@@ -327,14 +326,14 @@ child_setup (in, out, err, new_argv, env)
      the superior's static variables as if the superior had done alloca
      and will be cleaned up in the usual way.  */
 
-  if (XTYPE (bf_cur->directory) == Lisp_String)
+  if (XTYPE (current_buffer->directory) == Lisp_String)
     {
       register unsigned char *temp;
       register int i;
 
-      i = XSTRING (bf_cur->directory)->size;
+      i = XSTRING (current_buffer->directory)->size;
       temp = (unsigned char *) alloca (i + 2);
-      bcopy (XSTRING (bf_cur->directory)->data, temp, i);
+      bcopy (XSTRING (current_buffer->directory)->data, temp, i);
       if (temp[i - 1] != '/') temp[i++] = '/';
       temp[i] = 0;
       chdir (temp);

@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 (provide 'info)
 
@@ -118,6 +117,7 @@ Marker points nowhere if file has no tag table.")
 			(save-excursion
 			  (let ((buf (current-buffer)))
 			    (set-buffer (get-buffer-create " *info tag table*"))
+			    (setq case-fold-search t)
 			    (erase-buffer)
 			    (insert-buffer-substring buf)
 			    (set-marker Info-tag-table-marker
@@ -178,15 +178,16 @@ Marker points nowhere if file has no tag table.")
     (forward-line 2)
     (catch 'foo
       (while (not (looking-at "\^_"))
-	(let ((beg (point))
-	      thisfilepos thisfilename)
-	  (search-forward ": ")
-	  (setq thisfilename  (buffer-substring beg (- (point) 2)))
-	  (setq thisfilepos (read (current-buffer)))
-	  (if (> thisfilepos nodepos)
-	      (throw 'foo t))
-	  (setq lastfilename thisfilename)
-	  (setq lastfilepos thisfilepos))))
+	(if (not (eolp))
+	    (let ((beg (point))
+		  thisfilepos thisfilename)
+	      (search-forward ": ")
+	      (setq thisfilename  (buffer-substring beg (- (point) 2)))
+	      (setq thisfilepos (read (current-buffer)))
+	      (if (> thisfilepos nodepos)
+		  (throw 'foo t))
+	      (setq lastfilename thisfilename)
+	      (setq lastfilepos thisfilepos)))))
     (set-buffer (get-buffer "*info*"))
     (or (equal Info-current-subfile lastfilename)
 	(let ((buffer-read-only nil))
@@ -431,6 +432,7 @@ NAME may be an abbreviation of the reference name."
     (setq str
 	  (if (looking-at ":")
 	      (buffer-substring beg (1- (point)))
+	    (skip-chars-forward " \t\n")
 	    (Info-following-node-name "^.,\t\n")))
     (while (setq i (string-match "\n" str i))
       (aset str i ?\ ))
@@ -493,7 +495,8 @@ NAME may be an abbreviation of the reference name."
     (goto-char (point-min))
     (or (search-forward "\n* menu:" nil t)
 	(error "No menu in this node"))
-    (or (search-forward (concat "\n* " menu-item) nil t)
+    (or (search-forward (concat "\n* " menu-item ":") nil t)
+	(search-forward (concat "\n* " menu-item) nil t)
 	(error "No such item in menu"))
     (beginning-of-line)
     (forward-char 2)

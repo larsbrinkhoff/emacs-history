@@ -6,7 +6,8 @@ It then selects a major mode from the uncompressed file name and contents."
       (set-visited-file-name
        (substring buffer-file-name 0 (match-beginning 0))))
   (message "Uncompressing...")
-  (shell-command-on-region (point-min) (point-max) "uncompress" t)
+  (let ((buffer-read-only nil))
+    (shell-command-on-region (point-min) (point-max) "uncompress" t))
   (message "Uncompressing...done")
   (set-buffer-modified-p nil)
   (normal-mode))

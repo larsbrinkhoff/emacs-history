@@ -1,22 +1,23 @@
 /*
  * 
- *    Copyright (C) 1986 Free Software Foundation, Inc.
- * 
- * This file is part of GNU Emacs.
- * 
- * GNU Emacs is distributed in the hope that it will be useful,
- * but without any warranty.  No author or distributor
- * accepts responsibility to anyone for the consequences of using it
- * or for whether it serves any particular purpose or works at all,
- * unless he says so in writing.
- * 
- * Everyone is granted permission to copy, modify and redistribute
- * GNU Emacs, but only under the conditions described in the
- * document "GNU Emacs copying permission notice".   An exact copy
- * of the document is supposed to have been given to you along with
- * GNU Emacs so that you can know how you may redistribute it all.
- * It should be in a file named COPYING.  Among other things, the
- * copyright notice and this notice must be preserved on all copies.
+ *    Copyright (C) 1986, 1988 Free Software Foundation, Inc.
+
+This file is part of GNU Emacs.
+
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
  * 
  *
  * For Emacs in SunView/Sun-Windows: (supported by Sun Unix v3.2)
@@ -27,11 +28,27 @@
  *
  * Original Idea: Ian Batten
  * Updated 15-Mar-88, Jeff Peck: set IN_EMACSTOOL, TERM, TERMCAP
+ * Updated 10-Sep-88, Jeff Peck: add XVIEW and JLE support
  * 
  */
 
+#ifdef XVIEW
+#include <xview/xview.h>
+#include <xview/panel.h>
+#include <xview/attr.h>
+#include <xview/tty.h>
+#include <xview/ttysw.h>		/* private defines */
+#include <xview/font.h>			/* for testing */
+#else
 #include <suntool/sunview.h>
 #include <suntool/tty.h>
+#include <suntool/ttysw.h>
+#endif XVIEW
+
+#ifdef JLE
+# include <locale.h>
+#endif JLE
+
 #include <stdio.h>
 #include <sys/file.h>
 
@@ -51,12 +68,25 @@ static int   m_prefix_length = 2;       /* mouse_prefix length */
 static char *key_prefix = "\030*";  	/* C-x *   */
 static int   k_prefix_length = 2;       /* key_prefix length */
 
+#ifdef JLE
+static char *emacs_name = "nemacs";	/* default run command */
+static char *title = "NEmacstool - ";	/* initial title */
+#else
 static char *emacs_name = "emacs";	/* default run command */
-static char buffer[BUFFER_SIZE];	/* send to ttysw_input */
 static char *title = "Emacstool - ";	/* initial title */
+#endif JLE
+
+static char buffer[BUFFER_SIZE];	/* send to ttysw_input */
+static char *bold_name = 0;	 	/* for -bold option */
 
 Frame frame;                            /* Base frame for system */
-Tty ttysw;                              /* Where emacs is */
+Tty tty_win;				/* Where emacs is reading */
+#ifdef XVIEW
+Xv_Window tty_view;			/* Where the events are in Xview*/
+#else
+Tty tty_view;				/* Place filler */
+#endif XVIEW
+
 int font_width, font_height;            /* For translating pixels to chars */
 
 int console_fd = 0;		/* for debugging: setenv DEBUGEMACSTOOL */
@@ -69,7 +99,6 @@ static short default_image[258] =
 #include <images/terminal.icon>
 };
 mpr_static(icon_image, 64, 64, 1, default_image);
-
 
 /*
  * Assign a value to a set of keys
@@ -148,7 +177,11 @@ time_delta (now_sec, now_usec, prev_sec, prev_usec)
  */
 static Notify_value
 input_event_filter_function (window, event, arg, type)
+#ifdef XVIEW
+     Xv_Window window;
+#else
      Window window;
+#endif XVIEW
      Event *event;
      Notify_arg arg;
      Notify_event_type type;
@@ -159,7 +192,7 @@ input_event_filter_function (window, event, arg, type)
 
   /* UP L1 is the STOP key */
   if (event_id(event) == WIN_STOP) {
-    ttysw_input(ttysw, "\007\007\007\007\007\007\007", 7);
+    ttysw_input(tty_win, "\007\007\007\007\007\007\007", 7);
     return NOTIFY_IGNORED;
   }
 
@@ -175,7 +208,7 @@ input_event_filter_function (window, event, arg, type)
       return notify_next_event_func (window, event, arg, type);
 */
     time_stamp = event_time (event);
-    ttysw_input (ttysw, mouse_prefix, m_prefix_length);
+    ttysw_input (tty_win, mouse_prefix, m_prefix_length);
     sprintf (buffer, "(%d %d %d %d)\015", 
 	     button_value (event),
 	     event_x (event) / font_width,
@@ -183,7 +216,7 @@ input_event_filter_function (window, event, arg, type)
 	     time_delta (time_stamp.tv_sec, time_stamp.tv_usec,
 			 prev_event_sec, prev_event_usec)
 	     );
-    ttysw_input (ttysw, buffer, strlen(buffer));
+    ttysw_input (tty_win, buffer, strlen(buffer));
     prev_event_sec = time_stamp.tv_sec;
     prev_event_usec = time_stamp.tv_usec;
     return NOTIFY_IGNORED;
@@ -221,15 +254,19 @@ input_event_filter_function (window, event, arg, type)
 	    return NOTIFY_IGNORED;
 	  }
 #endif
-	ttysw_input (ttysw, key_prefix, k_prefix_length);
+	ttysw_input (tty_win, key_prefix, k_prefix_length);
 	sprintf (buffer, "%c%c", d, c);
-	ttysw_input(ttysw, buffer, strlen(buffer));
+	ttysw_input(tty_win, buffer, strlen(buffer));
 
 	return NOTIFY_IGNORED;
       }
   }
   if ((event_is_ascii(event) || event_is_meta(event)) 
       && event_is_up(event)) return NOTIFY_IGNORED;
+  /* Allow arbitary mapping of ASCII keys,
+     mostly, this will allow swapping BS and DEL (the -bs option) */
+  if (event_is_ascii(event))
+    event_set_id(event, event_id(event));
 #ifdef WANT_CAPS_LOCK
 /* shift alpha chars to upper case if toggle is set */
   if ((caps_lock) && event_is_ascii(event)
@@ -246,17 +283,16 @@ main (argc, argv)
 {
   int error_code;	/* Error codes */
   
+#ifdef JLE
+  setlocale(LC_ALL, "");
+#endif JLE
+
   if(getenv("DEBUGEMACSTOOL"))
     console = fdopen (console_fd = open("/dev/console",O_WRONLY), "w");
 
-  			/* do this first, so arglist can override it */
-  frame_icon = icon_create (ICON_LABEL, "Emacstool",
-			    ICON_IMAGE, &icon_image,
-			    0);
-
   putenv("IN_EMACSTOOL=t");	/* notify subprocess that it is in emacstool */
 
-  if (putenv("TERM=sun") != 0)	/* TTYSW will be a TERM=sun window */
+  if (putenv("TERM=sun") != 0)	/* TTY_WIN will be a TERM=sun window */
     {fprintf (stderr, "%s: Could not set TERM=sun, using `%s'\n",
 	     argv[0], (char *)getenv("TERM")) ;};
   /*
@@ -276,65 +312,146 @@ main (argc, argv)
   } ;
   
   /* find command to run as subprocess in window */
-  if (!(argv[0] = (char *)getenv("EMACSTOOL")))	/* Set emacs command name */
+  if (!(argv[0] = (char *)getenv("EMACSTOOL")))	/*  Set emacs command name */
       argv[0] = emacs_name;			
+  /* Emacstool recognizes two special args: -rc <file> and -bs */
+  /* and also -bold <bold-name> */
   for (argc = 1; argv[argc]; argc++)		/* Use last one on line */
-    if(!(strcmp ("-rc", argv[argc])))		/* Override if -rc given */
-      {
-	int i = argc;
-	argv[argc--]=0;		/* kill the -rc argument */
-	if (argv[i+1]) {	/* move to agrv[0] and squeeze the rest */
-	  argv[0]=argv[i+1];
-	  for (; argv[i+2]; (argv[i]=argv[i+2],argv[++i]=0));
-	}
-      }
+    {
+      if(!(strcmp ("-rc", argv[argc])))		/* Override if -rc given */
+	{int i = argc;
+	 argv[argc--]=0;		/* kill the -rc argument */
+	 if (argv[i+1]) {	/* move to argv[0] and squeeze the rest */
+	   argv[0]=argv[i+1];
+	   for (; argv[i+2]; (argv[i]=argv[i+2],argv[++i]=0));
+	 }
+       }
+
+      if (!(strcmp ("-bold", argv[argc]))) 
+	  {int i = argc;
+	   argv[argc--]=0;		/* kill the -bold argument */
+	   if (argv[i+1]) {	/* move to bold_name and squeeze the rest */
+	       bold_name = argv[i+1];
+	       for (; argv[i+2]; (argv[i]=argv[i+2],argv[++i]=0));
+	   }
+       }
+  };
 
   strcpy (buffer, title);
   strncat (buffer, argv[0],		 /* append run command name */
 	   (BUFFER_SIZE - (strlen (buffer)) - (strlen (argv[0]))) - 1);
 
-  			/* Build a frame to run in */
-  frame = window_create ((Window)NULL, FRAME,
-			 FRAME_LABEL, buffer,
-			 FRAME_ICON, frame_icon,
-			 FRAME_ARGC_PTR_ARGV, &argc, argv,
-			 0);
+  error_code = interpose_on_window(argc,argv);
+  if (error_code != 0) {		/* Barf */
+      fprintf (stderr, "notify_interpose_event_func returns %d.\n", error_code);
+      exit (1);
+  }
 
-  /* Create a tty with emacs in it */
-  ttysw = window_create (frame, TTY, 
+#ifdef XVIEW
+  xv_main_loop (frame);                  /* And away we go */
+#else
+  window_main_loop (frame);
+#endif XVIEW
+}
+
+#ifdef XVIEW
+int interpose_on_window(argc,argv)
+    int argc;
+    char **argv;
+{
+
+    /* initialize Xview, and strip window args */
+    xv_init(XV_INIT_ARGC_PTR_ARGV, &argc, argv, 0);
+
+    /* do this first, so arglist can override it */
+    frame_icon = icon_create (ICON_LABEL, "Emacstool",
+			      ICON_IMAGE, &icon_image,
+			      0);
+
+    /* Build a frame to run in */
+    frame = xv_create ((Xv_Window)NULL, FRAME,
+		       FRAME_LABEL, buffer,
+		       FRAME_ICON, frame_icon,
+		       0);
+
+    /* Create a tty with emacs in it */
+    tty_win = xv_create (frame, TTY, WIN_IS_CLIENT_PANE,
 			 TTY_QUIT_ON_CHILD_DEATH, TRUE, 
-			 TTY_BOLDSTYLE, 8, 
+			 TTY_BOLDSTYLE, TTYSW_BOLD_INVERT,
 			 TTY_ARGV, argv, 
 			 0);
 
-  window_set(ttysw,
-	     WIN_CONSUME_PICK_EVENTS, 
-	     WIN_STOP,
-	     WIN_MOUSE_BUTTONS, WIN_UP_EVENTS,
-	     /* LOC_WINENTER, LOC_WINEXIT, LOC_MOVE, */
-	     0,
-
-	     WIN_CONSUME_KBD_EVENTS, 
-	     WIN_STOP,
-	     WIN_ASCII_EVENTS, 
-	     WIN_LEFT_KEYS, WIN_TOP_KEYS, WIN_RIGHT_KEYS,
-	     /* WIN_UP_ASCII_EVENTS, */
-	     0,
-	     
-	     0);
-
-  font_height = (int)window_get (ttysw, WIN_ROW_HEIGHT);
-  font_width  = (int)window_get (ttysw, WIN_COLUMN_WIDTH);
-
-                                         /* Interpose my event function */
-  error_code = (int)  notify_interpose_event_func 
-    (ttysw, input_event_filter_function, NOTIFY_SAFE);
-
-  if (error_code != 0)                       /* Barf */
-    {
-      fprintf (stderr, "notify_interpose_event_func got %d.\n", error_code);
-      exit (1);
+    if (bold_name) {
+	(void)xv_set(tty_win, TTY_BOLDSTYLE_NAME, bold_name, 0);
     }
 
-  window_main_loop (frame);                  /* And away we go */
+    font_height = (int)xv_get (tty_win, WIN_ROW_HEIGHT);
+    font_width  = (int)xv_get (tty_win, WIN_COLUMN_WIDTH);
+    font_width -= 1;		/* Xview font bug */
+    if (console_fd) fprintf(console, "Width = %d\n", font_width);
+
+    tty_view = (Xv_Window) xv_get (tty_win, OPENWIN_NTH_VIEW, 0);
+    xv_set(tty_view,
+	   WIN_CONSUME_EVENTS, 
+	   WIN_MOUSE_BUTTONS, WIN_UP_EVENTS,
+	   ACTION_ADJUST, ACTION_MENU,
+	   WIN_ASCII_EVENTS, 
+	   WIN_LEFT_KEYS, WIN_TOP_KEYS, WIN_RIGHT_KEYS,
+	   0,
+	   0);
+    /* Interpose my event function */
+    return (int) notify_interpose_event_func 
+	(tty_view, input_event_filter_function, NOTIFY_SAFE);
 }
+#else
+int interpose_on_window (argc, argv)
+ int argc;
+ char **argv;
+{
+    /* do this first, so arglist can override it */
+    frame_icon = icon_create (ICON_LABEL, "Emacstool",
+			      ICON_IMAGE, &icon_image,
+			      0);
+
+    /* Build a frame to run in */
+    frame = window_create ((Window)NULL, FRAME,
+			   FRAME_LABEL, buffer,
+			   FRAME_ICON, frame_icon,
+			   FRAME_ARGC_PTR_ARGV, &argc, argv,
+			   0);
+
+    /* Create a tty with emacs in it */
+    tty_win = window_create (frame, TTY, 
+			     TTY_QUIT_ON_CHILD_DEATH, TRUE, 
+			     TTY_BOLDSTYLE, TTYSW_BOLD_INVERT,
+			     TTY_ARGV, argv, 
+			     0);
+
+    if (bold_name) {
+	(void)window_set(tty_win, TTY_BOLDSTYLE_NAME, bold_name, 0);
+    }
+
+    /* ttysw uses pf_default, one must set WIN_FONT explicitly */
+                       window_set (tty_win, WIN_FONT, pf_default(), 0);
+    font_height = (int)window_get (tty_win, WIN_ROW_HEIGHT);
+    font_width  = (int)window_get (tty_win, WIN_COLUMN_WIDTH);
+
+    tty_view = tty_win;
+    window_set(tty_view,
+	       WIN_CONSUME_PICK_EVENTS, 
+	       WIN_STOP,
+	       WIN_MOUSE_BUTTONS, WIN_UP_EVENTS,
+	       /* LOC_WINENTER, LOC_WINEXIT, LOC_MOVE, */
+	       0,
+	       WIN_CONSUME_KBD_EVENTS, 
+	       WIN_STOP,
+	       WIN_ASCII_EVENTS, 
+	       WIN_LEFT_KEYS, WIN_TOP_KEYS, WIN_RIGHT_KEYS,
+	       /* WIN_UP_ASCII_EVENTS, */
+	       0,
+	       0);
+    /* Interpose my event function */
+    return (int) notify_interpose_event_func 
+	(tty_view, input_event_filter_function, NOTIFY_SAFE);
+}
+#endif XVIEW

@@ -14,9 +14,9 @@ GNU Emacs Key Bindings for X Windows
 =
 Key	Button	Function
 _
-Unshifted	left	x-mouse-set-mark
-\^	middle	x-mouse-set-point
-\^	right	x-mouse-select
+Unshifted	left	x-mouse-set-point
+\^	middle	x-paste-text
+\^	right	x-cut-text
 _
 Control	middle	x-cut-and-wipe-text
 \^	right	x-mouse-select-and-split

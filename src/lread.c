@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <stdio.h>
@@ -68,7 +67,7 @@ static int readchar (readcharfun)
      Lisp_Object readcharfun;
 {
   Lisp_Object tem;
-  register struct buffer_text *inbuffer;
+  register struct buffer *inbuffer;
   register int c, mpos;
 
   if (unrch >= 0)
@@ -79,31 +78,23 @@ static int readchar (readcharfun)
     }
   if (XTYPE (readcharfun) == Lisp_Buffer)
     {
-      if (XBUFFER (readcharfun) == bf_cur)
-	inbuffer = &bf_text;
-      else
-	inbuffer = &XBUFFER (readcharfun)->text;
+      inbuffer = XBUFFER (readcharfun);
 
-      if (inbuffer->pointloc >
-	  inbuffer->size1 + inbuffer->size2 - inbuffer->tail_clip)
+      if (BUF_PT (inbuffer) >= BUF_ZV (inbuffer))
 	return -1;
-      c = *(unsigned char *) &(inbuffer->pointloc > inbuffer->size1 ? inbuffer->p2 : inbuffer->p1)[inbuffer->pointloc];
-      inbuffer->pointloc++;
+      c = *(unsigned char *) BUF_CHAR_ADDRESS (inbuffer, BUF_PT (inbuffer));
+      SET_BUF_PT (inbuffer, BUF_PT (inbuffer) + 1);
       return c;
     }
   if (XTYPE (readcharfun) == Lisp_Marker)
     {
-      if (XMARKER (readcharfun)->buffer == bf_cur)
-	inbuffer = &bf_text;
-      else
-	inbuffer = &XMARKER (readcharfun)->buffer->text;
+      inbuffer = XMARKER (readcharfun)->buffer;
       mpos = marker_position (readcharfun);
 
-      if (mpos >
-	  inbuffer->size1 + inbuffer->size2 - inbuffer->tail_clip)
+      if (mpos > BUF_ZV (inbuffer) - 1)
 	return -1;
-      c = *(unsigned char *) &(mpos > inbuffer->size1 ? inbuffer->p2 : inbuffer->p1)[mpos];
-      if (mpos != inbuffer->size1 + 1)
+      c = *(unsigned char *) BUF_CHAR_ADDRESS (inbuffer, mpos);
+      if (mpos != BUF_GPT (inbuffer))
 	XMARKER (readcharfun)->bufpos++;
       else
 	Fset_marker (readcharfun, make_number (mpos + 1),
@@ -147,7 +138,7 @@ It is returned as a number.")
   register Lisp_Object val;
 
 #ifndef standalone
-  XSET (val, Lisp_Int, get_char (0));
+  XSET (val, Lisp_Int, read_command_char (0));
 #else
   XSET (val, Lisp_Int, getchar ());
 #endif
@@ -171,15 +162,15 @@ DEFUN ("load", Fload, Sload, 1, 4, 0,
   "Execute a file of Lisp code named FILE.\n\
 First tries FILE with .elc appended, then tries with .el,\n\
  then tries FILE unmodified.  Searches directories in  load-path.\n\
-If optional second arg MISSING-OK is non-nil,\n\
+If optional second arg NOERROR is non-nil,\n\
  report no error if FILE doesn't exist.\n\
 Print messages at start and end of loading unless\n\
  optional third arg NOMESSAGE is non-nil.\n\
 If optional fourth arg NOSUFFIX is non-nil, don't try adding\n\
  suffixes .elc or .el to the specified name FILE.\n\
 Return t if file exists.")
-  (str, missing_ok, nomessage, nosuffix)
-     Lisp_Object str, missing_ok, nomessage, nosuffix;
+  (str, noerror, nomessage, nosuffix)
+     Lisp_Object str, noerror, nomessage, nosuffix;
 {
   register FILE *stream;
   register int fd = -1;
@@ -199,7 +190,7 @@ Return t if file exists.")
     }
 
   if (fd < 0)
-    if (NULL (missing_ok))
+    if (NULL (noerror))
       while (1)
 	Fsignal (Qfile_error, Fcons (build_string ("Cannot open load file"),
 				     Fcons (str, Qnil)));
@@ -235,6 +226,7 @@ load_unwind (stream)  /* used as unwind-protect function in load */
      Lisp_Object stream;
 {
   fclose (*(FILE **) XSTRING (stream));
+  free (XPNTR (stream));
   if (--load_in_progress < 0) load_in_progress = 0;
   return Qnil;
 }
@@ -297,7 +289,7 @@ openp (path, str, suffix, storeptr, exec_only)
 	/* Of course, this could conceivably lose if luser sets
 	   default-directory to be something non-absolute... */
 	{
-	  filename = Fexpand_file_name (filename, bf_cur->directory);
+	  filename = Fexpand_file_name (filename, current_buffer->directory);
 	  if (!absolute_filename_p (filename))
 	    /* Give up on this path element! */
 	    continue;
@@ -329,7 +321,7 @@ openp (path, str, suffix, storeptr, exec_only)
 	    {
 	      /* Check that we can access or open it.  */
 	      if (exec_only)
-		fd = !access (fn, X_OK);
+		fd = !access (fn, X_OK) ? 1 : -1;
 	      else
 		fd = open (fn, 0, 0);
 
@@ -435,7 +427,7 @@ nil means discard it; anything else is stream for print.")
     tem = printflag;
   specbind (Qstandard_output, tem);
   record_unwind_protect (save_excursion_restore, save_excursion_save ());
-  SetPoint (FirstCharacter);
+  SET_PT (BEGV);
   readevalloop (Fcurrent_buffer (), 0, Feval, !NULL (printflag));
   unbind_to (count);
   return Qnil;
@@ -453,6 +445,7 @@ nil means discard it; anything else is stream for print.")
 {
   int count = specpdl_ptr - specpdl;
   Lisp_Object tem;
+
   if (NULL (printflag))
     tem = Qsymbolp;
   else
@@ -461,8 +454,9 @@ nil means discard it; anything else is stream for print.")
   if (NULL (printflag))
     record_unwind_protect (save_excursion_restore, save_excursion_save ());
   record_unwind_protect (save_restriction_restore, save_restriction_save ());
-  SetPoint (XINT (b));
-  Fnarrow_to_region (make_number (FirstCharacter), e);
+  /* This both uses b and checks its type.  */
+  Fgoto_char (b);
+  Fnarrow_to_region (make_number (BEGV), e);
   readevalloop (Fcurrent_buffer (), 0, Feval, !NULL (printflag));
   unbind_to (count);
   return Qnil;
@@ -819,7 +813,7 @@ read_escape (readcharfun)
   switch (c)
     {
     case 'a':
-      return '\a';
+      return 007;
     case 'b':
       return '\b';
     case 'e':
@@ -1217,7 +1211,7 @@ defvar_per_buffer (namestring, address, doc)
   extern struct buffer buffer_local_symbols;
 
   sym = intern (namestring);
-  offset = (char *)address - (char *)bf_cur;
+  offset = (char *)address - (char *)current_buffer;
 
   XSET (XSYMBOL (sym)->value, Lisp_Buffer_Objfwd,
 	(Lisp_Object *) offset);

@@ -748,7 +748,7 @@ scrolls default amount.  The given COUNT is remembered for future scrollings."
   "Go down count lines, try to keep at the same column."
   (interactive "p")
   (setq this-command 'next-line)	; this is a needed trick
-  (if (= (point) (or (line-move count) (point)))
+  (if (= (point) (or (next-line-internal count) (point)))
       (ding)				; no moving, already at end of buffer
     (setq last-command 'next-line)))
 

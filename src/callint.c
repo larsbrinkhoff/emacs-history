@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -25,7 +24,7 @@ and this notice must be preserved on all copies.  */
 #include "commands.h"
 #include "window.h"
 
-extern struct Lisp_Vector *CurrentGlobalMap;
+Lisp_Object global_map;
 
 extern int num_input_chars;
 
@@ -127,8 +126,8 @@ char *callint_argfuns[]
 static void
 check_mark ()
 {
-  Lisp_Object tem = Fmarker_buffer (bf_cur->mark);
-  if (NULL (tem) || (XBUFFER (tem) != bf_cur))
+  Lisp_Object tem = Fmarker_buffer (current_buffer->mark);
+  if (NULL (tem) || (XBUFFER (tem) != current_buffer))
     error ("The mark is not set now");
 }
 
@@ -224,7 +223,7 @@ retry:
   /* First character '*' means barf if buffer read-only */
   if (*string == '*')
     { string++;
-      if (!NULL (bf_cur->read_only))
+      if (!NULL (current_buffer->read_only))
 	Fbarf_if_buffer_read_only ();
     }
 
@@ -317,7 +316,7 @@ retry:
 
 	case 'D':		/* Directory name. */
 	  args[i] = Fread_file_name (build_string (prompt), Qnil,
-				     bf_cur->directory, Qlambda);
+				     current_buffer->directory, Qlambda);
 	  break;
 
 	case 'f':		/* Existing file name. */
@@ -343,7 +342,7 @@ retry:
 	case 'm':		/* Value of mark.  Does not do I/O.  */
 	  check_mark ();
 	  /* visargs[i] = Qnil; */
-	  XFASTINT (args[i]) = marker_position (bf_cur->mark);
+	  XFASTINT (args[i]) = marker_position (current_buffer->mark);
 	  varies[i] = 2;
 	  break;
 
@@ -373,7 +372,7 @@ retry:
 	case 'r':		/* Region, point and mark as 2 args. */
 	  check_mark ();
 	  /* visargs[i+1] = Qnil; */
-	  foo = marker_position (bf_cur->mark);
+	  foo = marker_position (current_buffer->mark);
 	  /* visargs[i] = Qnil; */
 	  XFASTINT (args[i]) = point < foo ? point : foo;
 	  varies[i] = 3;
@@ -492,6 +491,7 @@ You cannot examine this variable to find the argument for this command\n\
 since it has been set to nil by the time you can look.\n\
 Instead, you should use the variable current-prefix-arg, although\n\
 normally commands can get this prefix argument with (interactive \"P\").");
+  Vprefix_arg = Qnil;
 
   DEFVAR_LISP ("current-prefix-arg", &Vcurrent_prefix_arg,
     "The value of the prefix argument for this editing command.\n\
@@ -499,6 +499,7 @@ It may be a number, or the symbol - for just a minus sign as arg,\n\
 or a list whose car is a number for just one or more C-U's\n\
 or nil if no argument has been specified.\n\
 This is what (interactive \"P\") returns.");
+  Vcurrent_prefix_arg = Qnil;
 
   DEFVAR_LISP ("command-history", &Vcommand_history,
     "List of recent commands that read arguments from terminal.\n\

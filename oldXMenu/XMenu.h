@@ -219,11 +219,11 @@ typedef struct _xmenu {
     GC inact_GC;		/* GC used for inactive selections and */
 				/* panes headers. */
     /* -------------------- Color data -------------------- */
-    int p_bdr_color;		/* Color of pane border pixmap. */
-    int s_bdr_color;		/* Color of selection border pixmap. */
-    int p_frg_color;		/* Color of pane foreground pixmap. */
-    int s_frg_color;		/* Color of selection pixmap. */
-    int bkgnd_color;		/* Color of menu background pixmap. */
+    unsigned long p_bdr_color;	/* Color of pane border pixmap. */
+    unsigned long s_bdr_color;	/* Color of selection border pixmap. */
+    unsigned long p_frg_color;	/* Color of pane foreground pixmap. */
+    unsigned long s_frg_color;	/* Color of selection pixmap. */
+    unsigned long bkgnd_color;	/* Color of menu background pixmap. */
     /* -------------------- Pixmap data -------------------- */
     Pixmap p_bdr_pixmap;	/* Pane border pixmap. */
     Pixmap s_bdr_pixmap;	/* Selection border pixmap. */

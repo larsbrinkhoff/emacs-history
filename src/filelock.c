@@ -2,25 +2,29 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "config.h"
+#ifdef hpux
+/* needed by <pwd.h> */
+#include <stdio.h>
+#undef NULL
+#endif
 #include "lisp.h"
 #include "paths.h"
 #include "buffer.h"
@@ -268,7 +272,7 @@ unlock_all_files ()
     {
       b = XBUFFER (XCONS (XCONS (tail)->car)->cdr);
       if (XTYPE (b->filename) == Lisp_String &&
-	  b->save_modified < b->text.modified)
+	  b->save_modified < BUF_MODIFF (b))
 	unlock_file (b->filename);
     }
 }
@@ -283,10 +287,10 @@ or else nothing is done if current buffer isn't visiting a file.")
      Lisp_Object fn;
 {
   if (NULL (fn))
-    fn = bf_cur->filename;
+    fn = current_buffer->filename;
   else
     CHECK_STRING (fn, 0);
-  if (bf_cur->save_modified < bf_modified
+  if (current_buffer->save_modified < MODIFF
       && !NULL (fn))
     lock_file (fn);
   return Qnil;    
@@ -298,9 +302,9 @@ DEFUN ("unlock-buffer", Funlock_buffer, Sunlock_buffer,
 if it should normally be locked.")
   ()
 {
-  if (bf_cur->save_modified < bf_modified &&
-      XTYPE (bf_cur->filename) == Lisp_String)
-    unlock_file (bf_cur->filename);
+  if (current_buffer->save_modified < MODIFF &&
+      XTYPE (current_buffer->filename) == Lisp_String)
+    unlock_file (current_buffer->filename);
   return Qnil;
 }
 
@@ -310,9 +314,8 @@ if it should normally be locked.")
 unlock_buffer (buffer)
      struct buffer *buffer;
 {
-  bf_cur->text.modified = bf_modified;
-  if (buffer->save_modified < buffer->text.modified &&
-      XTYPE (buffer->filename) == Lisp_String)
+  if (buffer->save_modified < BUF_MODIFF (buffer)
+      && XTYPE (buffer->filename) == Lisp_String)
     unlock_file (buffer->filename);
 }
 

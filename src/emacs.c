@@ -1,22 +1,21 @@
 /* Fully extensible Emacs, running on Unix, intended for GNU.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
@@ -80,6 +79,13 @@ char *alternate_display;
 char **xargv;
 int xargc;
 #endif /* HAVE_X_WINDOWS */
+
+#ifdef USG_SHARED_LIBRARIES
+/* If nonzero, this is the place to put the end of the writable segment
+   at startup.  */
+
+unsigned int bss_end = 0;
+#endif
 
 /* Nonzero means running Emacs without interactive terminal.  */
 
@@ -164,6 +170,14 @@ init_cmdargs (argc, argv, skip_args)
     }
 }
 
+#ifdef VMS
+#ifdef LINK_CRTL_SHARE
+#ifdef SHAREABLE_LIB_BUG
+extern noshare char **environ;
+#endif /* SHAREABLE_LIB_BUG */
+#endif /* LINK_CRTL_SHARE */
+#endif /* VMS */
+
 /* ARGSUSED */
 main (argc, argv, envp)
      int argc;
@@ -174,13 +188,23 @@ main (argc, argv, envp)
   extern int errno;
   extern void malloc_warning ();
 
-#ifdef VMS
-#ifdef LINK_CRTL_SHARE
-#ifdef SHAREABLE_LIB_BUG
-  extern noshare char **environ;
-#endif /* SHAREABLE_LIB_BUG */
-#endif /* LINK_CRTL_SHARE */
+/* Map in shared memory, if we are using that.  */
+#ifdef HAVE_SHM
+  if (argc > 1 && !strcmp (argv[1], "-nl"))
+    {
+      map_in_data (0);
+      /* The shared momory was just restored, which clobbered this.  */
+      skip_args = 1;
+    }
+  else
+    {
+      map_in_data (1);
+      /* The shared momory was just restored, which clobbered this.  */
+      skip_args = 0;
+    }
+#endif
 
+#ifdef VMS
   /* If -map specified, map the data file in */
   if (argc > 2 && ! strcmp (argv[1], "-map"))
     {
@@ -202,6 +226,11 @@ main (argc, argv, envp)
 #endif /* SHAREABLE_LIB_BUG */
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
+
+#ifdef USG_SHARED_LIBRARIES
+  if (bss_end)
+    brk (bss_end);
+#endif
 
   clearerr (stdin);
 
@@ -302,7 +331,7 @@ main (argc, argv, envp)
       signal (SIGXFSZ, fatal_error_signal);
 #endif SIGXFSZ
 
-#ifdef IBMRTAIX
+#ifdef AIX
       signal (SIGDANGER, fatal_error_signal);
       signal (20, fatal_error_signal);
       signal (21, fatal_error_signal);
@@ -316,7 +345,7 @@ main (argc, argv, envp)
       signal (SIGRETRACT, fatal_error_signal);
       signal (SIGSOUND, fatal_error_signal);
       signal (SIGMSG, fatal_error_signal);
-#endif
+#endif /* AIX */
     }
 
   noninteractive1 = noninteractive;
@@ -471,30 +500,15 @@ return ARG as the exit program code.")
 {
   Lisp_Object answer;
   int i;
+  struct gcpro gcpro1;
+
+  GCPRO1 (arg);
 
   if (!NULL (Vkill_emacs_hook))
     call0 (Vkill_emacs_hook);
 
   if (feof (stdin))
     arg = Qt;
-  if (!noninteractive && NULL (arg))
-    {
-      if ((i = ModExist())
-	  && (answer = Fyes_or_no_p (format1 (
-"%d modified buffer%s exist%s, do you really want to exit? ",
-					      i, i == 1 ? "" : "s",
-					      i == 1 ? "s" : "")),
-	      NULL (answer)))
-	return Qnil;
-
-#ifdef subprocesses
-      if (count_active_processes()
-	  && (answer = Fyes_or_no_p (format1 (
-"Subprocesses are executing; kill them and exit? ")),
-	      NULL (answer)))
-	return Qnil;
-#endif /* subprocesses */
-    }
 
 #ifdef subprocesses
   kill_buffer_processes (Qnil);
@@ -512,12 +526,20 @@ return ARG as the exit program code.")
 
   fflush (stdout);
   reset_sys_modes ();
+  UNGCPRO;
+
 /* Is it really necessary to do this deassign
    when we are going to exit anyway?  */
 /* #ifdef VMS
   stop_vms_input ();
  #endif  */
   stuff_buffered_input (arg);
+#ifdef SIGIO
+  /* There is a tendency for a SIGIO signal to arrive within exit,
+     and cause a SIGHUP because the input descriptor is already closed.  */
+  unrequest_sigio ();
+  signal (SIGIO, SIG_IGN);
+#endif
   exit ((XTYPE (arg) == Lisp_Int) ? XINT (arg)
 #ifdef VMS
 	: 1
@@ -532,13 +554,45 @@ return ARG as the exit program code.")
 /* Nothing like this can be implemented on an Apollo.
    What a loss!  */
 
+#ifdef HAVE_SHM
+
+DEFUN ("dump-emacs-data", Fdump_emacs_data, Sdump_emacs_data, 1, 1, 0,
+  "Dump current state of Emacs into data file FILENAME.\n\
+This function exists on systems that use HAVE_SHM.")
+  (intoname)
+     Lisp_Object intoname;
+{
+  extern int my_edata;
+  Lisp_Object tem;
+  extern void malloc_warning ();
+
+  CHECK_STRING (intoname, 0);
+  intoname = Fexpand_file_name (intoname, Qnil);
+
+  tem = Vpurify_flag;
+  Vpurify_flag = Qnil;
+
+  fflush (stdout);
+  /* Tell malloc where start of impure now is */
+  /* Also arrange for warnings when nearly out of space.  */
+#ifndef SYSTEM_MALLOC
+  malloc_init (&my_edata, malloc_warning);
+#endif
+  map_out_data (XSTRING (intoname)->data);
+
+  Vpurify_flag = tem;
+
+  return Qnil;
+}
+
+#else /* not HAVE_SHM */
+
 DEFUN ("dump-emacs", Fdump_emacs, Sdump_emacs, 2, 2, 0,
   "Dump current state of Emacs into executable file FILENAME.\n\
 Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
   (intoname, symname)
      Lisp_Object intoname, symname;
 {
-  register unsigned char *a_name = 0;
   extern int my_edata;
   Lisp_Object tem;
   extern void malloc_warning ();
@@ -549,10 +603,7 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
     {
       CHECK_STRING (symname, 0);
       if (XSTRING (symname)->size)
-	{
-	  symname = Fexpand_file_name (symname, Qnil);
-	  a_name = XSTRING (symname)->data;
-	}
+	symname = Fexpand_file_name (symname, Qnil);
     }
 
   tem = Vpurify_flag;
@@ -567,13 +618,16 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
 #ifndef SYSTEM_MALLOC
   malloc_init (&my_edata, malloc_warning);
 #endif
-  unexec (XSTRING (intoname)->data, a_name, &my_edata, 0, 0);
+  unexec (XSTRING (intoname)->data,
+	  !NULL (symname) ? XSTRING (symname)->data : 0, &my_edata, 0, 0);
 #endif /* not VMS */
 
   Vpurify_flag = tem;
 
   return Qnil;
 }
+
+#endif /* not HAVE_SHM */
 
 #endif /* not CANNOT_DUMP */
 
@@ -613,7 +667,11 @@ decode_env_path (evarname, defalt)
 syms_of_emacs ()
 {
 #ifndef CANNOT_DUMP
+#ifdef HAVE_SHM
+  defsubr (&Sdump_emacs_data);
+#else
   defsubr (&Sdump_emacs);
+#endif
 #endif /* not CANNOT_DUMP */
 
   defsubr (&Skill_emacs);

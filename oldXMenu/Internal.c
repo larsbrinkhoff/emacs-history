@@ -113,6 +113,7 @@ _XMWinQueInit()
  */
 int
 _XMWinQueAddPane(display, menu, p_ptr)
+    register Display *display;
     register XMenu *menu;	/* Menu being manipulated. */
     register XMPane *p_ptr;	/* XMPane being queued. */
 {
@@ -146,6 +147,7 @@ _XMWinQueAddPane(display, menu, p_ptr)
  */
 int
 _XMWinQueAddSelection(display, menu, s_ptr)
+    register Display *display;
     register XMenu *menu;	/* Menu being manipulated. */
     register XMSelect *s_ptr;	/* XMSelection being queued. */
 {

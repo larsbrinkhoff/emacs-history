@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
@@ -483,7 +482,7 @@ do_symval_forwarding (valcontents)
       return *XOBJFWD (valcontents);
 
     case Lisp_Buffer_Objfwd:
-      return *(Lisp_Object *)(XUINT (valcontents) + (char *)bf_cur);
+      return *(Lisp_Object *)(XUINT (valcontents) + (char *)current_buffer);
     }
   return valcontents;
 }
@@ -513,7 +512,7 @@ store_symval_forwarding (sym, valcontents, newval)
       break;
 
     case Lisp_Buffer_Objfwd:
-      *(Lisp_Object *)(XUINT (valcontents) + (char *)bf_cur) = newval;
+      *(Lisp_Object *)(XUINT (valcontents) + (char *)current_buffer) = newval;
       break;
 
     default:
@@ -562,15 +561,15 @@ DEFUN ("symbol-value", Fsymbol_value, Ssymbol_value, 1, 1, 0, "Return SYMBOL's v
  	Note that REALVALUE can be a forwarding pointer. */
 
       tem1 = XCONS (XCONS (valcontents)->cdr)->car;
-      if (NULL (tem1) || bf_cur != XBUFFER (tem1))
+      if (NULL (tem1) || current_buffer != XBUFFER (tem1))
 	{
 	  tem1 = XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car;
           Fsetcdr (tem1, do_symval_forwarding (XCONS (valcontents)->car));
-	  tem1 = assq_no_quit (sym, bf_cur->local_var_alist);
+	  tem1 = assq_no_quit (sym, current_buffer->local_var_alist);
 	  if (NULL (tem1))
 	    tem1 = XCONS (XCONS (valcontents)->cdr)->cdr;
 	  XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car = tem1;
-	  XSET (XCONS (XCONS (valcontents)->cdr)->car, Lisp_Buffer, bf_cur);
+	  XSET (XCONS (XCONS (valcontents)->cdr)->car, Lisp_Buffer, current_buffer);
 	  store_symval_forwarding (sym, XCONS (valcontents)->car, Fcdr (tem1));
 	}
       valcontents = XCONS (valcontents)->car;
@@ -589,7 +588,7 @@ DEFUN ("symbol-value", Fsymbol_value, Ssymbol_value, 1, 1, 0, "Return SYMBOL's v
       return *XOBJFWD (valcontents);
 
     case Lisp_Buffer_Objfwd:
-      return *(Lisp_Object *)(XUINT (valcontents) + (char *)bf_cur);
+      return *(Lisp_Object *)(XUINT (valcontents) + (char *)current_buffer);
 
     case Lisp_Symbol:
       /* For a symbol, check whether it is 'unbound. */
@@ -649,7 +648,7 @@ DEFUN ("set", Fset, Sset, 2, 2, 0,
       register int idx = XUINT (valcontents);
       register int mask = *(int *)(idx + (char *) &buffer_local_flags);
       if (mask > 0)
-	bf_cur->local_var_flags |= mask;
+	current_buffer->local_var_flags |= mask;
     }
 
   if (XTYPE (valcontents) == Lisp_Buffer_Local_Value ||
@@ -670,13 +669,13 @@ DEFUN ("set", Fset, Sset, 2, 2, 0,
 	Note that REALVALUE can be a forwarding pointer. */
 
       current_alist_element = XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car;
-      if (bf_cur != ((XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
+      if (current_buffer != ((XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
 		     ? XBUFFER (XCONS (XCONS (valcontents)->cdr)->car)
 		     : XBUFFER (XCONS (current_alist_element)->car)))
 	{
           Fsetcdr (current_alist_element, do_symval_forwarding (XCONS (valcontents)->car));
 
-	  tem1 = Fassq (sym, bf_cur->local_var_alist);
+	  tem1 = Fassq (sym, current_buffer->local_var_alist);
 	  if (NULL (tem1))
 	    /* This buffer sees the default value still.
 	       If type is Lisp_Some_Buffer_Local_Value, set the default value.
@@ -687,10 +686,10 @@ DEFUN ("set", Fset, Sset, 2, 2, 0,
 	    else
 	      {
 		tem1 = Fcons (sym, Fcdr (current_alist_element));
-		bf_cur->local_var_alist = Fcons (tem1, bf_cur->local_var_alist);
+		current_buffer->local_var_alist = Fcons (tem1, current_buffer->local_var_alist);
 	      }
 	  XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car = tem1;
-	  XSET (XCONS (XCONS (valcontents)->cdr)->car, Lisp_Buffer, bf_cur);
+	  XSET (XCONS (XCONS (valcontents)->cdr)->car, Lisp_Buffer, current_buffer);
 	}
       valcontents = XCONS (valcontents)->car;
     }
@@ -832,12 +831,12 @@ See also `make-variable-buffer-local'.")
       XSETTYPE (XSYMBOL (sym)->value, Lisp_Some_Buffer_Local_Value);
     }
   /* Make sure this buffer has its own value of sym */
-  tem = Fassq (sym, bf_cur->local_var_alist);
+  tem = Fassq (sym, current_buffer->local_var_alist);
   if (NULL (tem))
     {
-      bf_cur->local_var_alist
+      current_buffer->local_var_alist
         = Fcons (Fcons (sym, XCONS (XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->cdr)->cdr),
-		 bf_cur->local_var_alist);
+		 current_buffer->local_var_alist);
 
       /* Make sure symbol does not think it is set up for this buffer;
 	 force it to look once again for this buffer's value */
@@ -846,7 +845,7 @@ See also `make-variable-buffer-local'.")
 	Lisp_Object xs;
     
 	xs = XSYMBOL (sym)->value;
-	if (bf_cur == XBUFFER (XCONS (XCONS (xs)->cdr)->car))
+	if (current_buffer == XBUFFER (XCONS (XCONS (xs)->cdr)->car))
 	  XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car = Qnil; 
       }
     }
@@ -873,9 +872,9 @@ From now on the default value will apply in this buffer.")
 
       if (mask > 0)
 	{
-	  *(Lisp_Object *)(idx + (char *) bf_cur)
+	  *(Lisp_Object *)(idx + (char *) current_buffer)
 	    = *(Lisp_Object *)(idx + (char *) &buffer_defaults);
-	  bf_cur->local_var_flags &= ~mask;
+	  current_buffer->local_var_flags &= ~mask;
 	}
       return sym;
     }
@@ -886,16 +885,16 @@ From now on the default value will apply in this buffer.")
 
   /* Get rid of this buffer's alist element, if any */
 
-  tem = Fassq (sym, bf_cur->local_var_alist);
+  tem = Fassq (sym, current_buffer->local_var_alist);
   if (!NULL (tem))
-    bf_cur->local_var_alist = Fdelq (tem, bf_cur->local_var_alist);
+    current_buffer->local_var_alist = Fdelq (tem, current_buffer->local_var_alist);
 
   /* Make sure symbol does not think it is set up for this buffer;
      force it to look once again for this buffer's value */
   {
     Lisp_Object sv;
     sv = XSYMBOL (sym)->value;
-    if (bf_cur == XBUFFER (XCONS (XCONS (sv)->cdr)->car))
+    if (current_buffer == XBUFFER (XCONS (XCONS (sv)->cdr)->car))
       XCONS (XCONS (sv)->cdr)->car = Qnil;
   }
 
@@ -1069,16 +1068,11 @@ DEFUN ("int-to-string", Fint_to_string, Sint_to_string, 1, 1, 0,
 }
 
 DEFUN ("string-to-int", Fstring_to_int, Sstring_to_int, 1, 1, 0,
-  "Convert STRING to an integer by parsing it as a decimal number.\n\
-Optional second arg FLAG non-nil means also convert \"yes\" to 1, \"no\" to 0.")
+  "Convert STRING to an integer by parsing it as a decimal number.")
   (str, flag)
      register Lisp_Object str, flag;
 {
   CHECK_STRING (str, 0);
-  if (!NULL (flag) && !strcmp (XSTRING (str)->data, "yes"))
-    return make_number (1);
-  if (!NULL (flag) && !strcmp (XSTRING (str)->data, "no"))
-    return make_number (0);
   return make_number (atoi (XSTRING (str)->data));
 }
   
@@ -1563,6 +1557,10 @@ arith_error (signo)
      must reestablish each time */
   signal (signo, arith_error);
 #endif /* USG */
+#ifdef VMS
+  /* VMS systems are like USG.  */
+  signal (signo, arith_error);
+#endif /* VMS */
 #ifdef BSD4_1
   sigrelse (SIGFPE);
 #else /* not BSD4_1 */

@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -51,21 +50,19 @@ DEFUN ("marker-position", Fmarker_position, Smarker_position, 1, 1, 0,
   register Lisp_Object pos;
   register int i;
   register struct buffer *buf;
-  register struct buffer_text *text;
 
   CHECK_MARKER (marker, 0);
   if (XMARKER (marker)->buffer)
     {
       buf = XMARKER (marker)->buffer;
       i = XMARKER (marker)->bufpos;
-      text = (buf == bf_cur) ? &bf_text : &buf->text;
 
-      if (i > text->size1 + text->gap + 1)
-	i -= text->gap;
-      else if (i > text->size1 + 1)
-	i = text->size1 + 1;
+      if (i > BUF_GPT (buf) + BUF_GAP_SIZE (buf))
+	i -= BUF_GAP_SIZE (buf);
+      else if (i > BUF_GPT (buf))
+	i = BUF_GPT (buf);
 
-      if (i < 1 || i > text->size1 + text->size2 + 1)
+      if (i < BUF_BEG (buf) || i > BUF_Z (buf))
 	abort ();
 
       XFASTINT (pos) = i;
@@ -85,7 +82,6 @@ Returns MARKER.")
 {
   register int charno;
   register struct buffer *b;
-  register struct buffer_text *text;
   register struct Lisp_Marker *m;
 
   CHECK_MARKER (marker, 0);
@@ -94,14 +90,14 @@ Returns MARKER.")
   if (NULL (pos) ||
       (XTYPE (pos) == Lisp_Marker && !XMARKER (pos)->buffer))
     {
-      unchain_marker (marker);
-      XMARKER (marker)->buffer = 0;
+      if (XMARKER (marker)->buffer)
+	unchain_marker (marker);
       return marker;
     }
 
   CHECK_NUMBER_COERCE_MARKER (pos, 1);
   if (NULL (buffer))
-    b = bf_cur;
+    b = current_buffer;
   else
     {
       CHECK_BUFFER (buffer, 1);
@@ -109,7 +105,8 @@ Returns MARKER.")
       /* If buffer is dead, set marker to point nowhere.  */
       if (EQ (b->name, Qnil))
 	{
-	  unchain_marker (marker);
+	  if (XMARKER (marker)->buffer)
+	    unchain_marker (marker);
 	  return marker;
 	}
     }
@@ -117,20 +114,76 @@ Returns MARKER.")
   charno = XINT (pos);
   m = XMARKER (marker);
 
-  if (bf_cur == b)
-    text = &bf_text;
-  else
-    text = &b->text;
-
-  if (charno < text->head_clip) charno = text->head_clip;
-  if (charno > text->size1 + text->size2 + 1 - text->tail_clip)
-    charno = text->size1 + text->size2 + 1 - text->tail_clip;
-  if (charno > text->size1 + 1) charno += text->gap;
+  if (charno < BUF_BEG (b))
+    charno = BUF_BEG (b);
+  if (charno > BUF_Z (b))
+    charno = BUF_Z (b);
+  if (charno > BUF_GPT (b)) charno += BUF_GAP_SIZE (b);
   m->bufpos = charno;
 
   if (m->buffer != b)
     {
-      unchain_marker (marker);
+      if (m->buffer != 0)
+	unchain_marker (marker);
+      m->chain = b->markers;
+      b->markers = marker;
+      m->buffer = b;
+    }
+  
+  return marker;
+}
+
+/* This version of Fset_marker won't let the position be outside the visible part.  */
+Lisp_Object 
+set_marker_restricted (marker, pos, buffer)
+     Lisp_Object marker, pos, buffer;
+{
+  register int charno;
+  register struct buffer *b;
+  register struct Lisp_Marker *m;
+
+  CHECK_MARKER (marker, 0);
+  /* If position is nil or a marker that points nowhere,
+     make this marker point nowhere.  */
+  if (NULL (pos) ||
+      (XTYPE (pos) == Lisp_Marker && !XMARKER (pos)->buffer))
+    {
+      if (XMARKER (marker)->buffer)
+	unchain_marker (marker);
+      return marker;
+    }
+
+  CHECK_NUMBER_COERCE_MARKER (pos, 1);
+  if (NULL (buffer))
+    b = current_buffer;
+  else
+    {
+      CHECK_BUFFER (buffer, 1);
+      b = XBUFFER (buffer);
+      /* If buffer is dead, set marker to point nowhere.  */
+      if (EQ (b->name, Qnil))
+	{
+	  if (XMARKER (marker)->buffer)
+	    unchain_marker (marker);
+	  return marker;
+	}
+    }
+
+  charno = XINT (pos);
+  m = XMARKER (marker);
+
+  if (charno < BUF_BEGV (b))
+    charno = BUF_BEGV (b);
+  if (charno > BUF_ZV (b))
+    charno = BUF_ZV (b);
+  if (charno > BUF_GPT (b))
+    charno += BUF_GAP_SIZE (b);
+  m->bufpos = charno;
+
+  if (m->buffer != b)
+    {
+      if (m->buffer != 0)
+	unchain_marker (marker);
       m->chain = b->markers;
       b->markers = marker;
       m->buffer = b;
@@ -151,8 +204,6 @@ unchain_marker (marker)
   register struct buffer *b;
 
   b = XMARKER (marker)->buffer;
-  if (b == 0)
-    return;
 
   if (EQ (b->name, Qnil))
     abort ();
@@ -196,18 +247,16 @@ marker_position (marker)
   register struct Lisp_Marker *m = XMARKER (marker);
   register struct buffer *buf = m->buffer;
   register int i = m->bufpos;
-  register struct buffer_text *text
-    = (buf == bf_cur) ? &bf_text : &buf->text;
 
   if (!buf)
     error ("Marker does not point anywhere");
 
-  if (i > text->size1 + text->gap + 1)
-    i -= text->gap;
-  else if (i > text->size1 + 1)
-    i = text->size1 + 1;
+  if (i > BUF_GPT (buf) + BUF_GAP_SIZE (buf))
+    i -= BUF_GAP_SIZE (buf);
+  else if (i > BUF_GPT (buf))
+    i = BUF_GPT (buf);
 
-  if (i < 1 || i > text->size1 + text->size2 + 1)
+  if (i < BUF_BEG (buf) || i > BUF_Z (buf))
     abort ();
 
   return i;

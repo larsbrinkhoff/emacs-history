@@ -1,22 +1,21 @@
 /* GNU Emacs routines to deal with syntax tables; also word and list parsing.
-   Copyright (C) 1985, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1987, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -26,9 +25,7 @@ and this notice must be preserved on all copies.  */
 #include "buffer.h"
 #include "syntax.h"
 
-Lisp_Object Qsyntax_table_p, Vstandard_syntax_table;
-
-/* There is an alist of syntax tables: names (strings) vs obarrays. */
+Lisp_Object Qsyntax_table_p;
 
 DEFUN ("syntax-table-p", Fsyntax_table_p, Ssyntax_table_p, 1, 1, 0,
   "Return t if ARG is a syntax table.\n\
@@ -58,9 +55,7 @@ DEFUN ("syntax-table", Fsyntax_table, Ssyntax_table, 0, 0, 0,
 This is the one specified by the current buffer.")
   ()
 {
-  Lisp_Object vector;
-  XSET (vector, Lisp_Vector, bf_cur->syntax_table_v);
-  return vector;
+  return current_buffer->syntax_table;
 }
 
 DEFUN ("standard-syntax-table", Fstandard_syntax_table,
@@ -101,7 +96,9 @@ One argument, a syntax table.")
      Lisp_Object table;
 {
   table = check_syntax_table (table);
-  bf_cur->syntax_table_v = XVECTOR (table);
+  current_buffer->syntax_table = table;
+  /* Indicate that this buffer now has a specified syntax table.  */
+  current_buffer->local_var_flags |= buffer_local_flags.syntax_table;
   return table;
 }
 
@@ -194,8 +191,9 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3,
   CHECK_NUMBER (c, 0);
   CHECK_STRING (newentry, 1);
   if (NULL (syntax_table))
-    XSET (syntax_table, Lisp_Vector, bf_cur->syntax_table_v);
-  else syntax_table = check_syntax_table (syntax_table);
+    syntax_table = current_buffer->syntax_table;
+  else
+    syntax_table = check_syntax_table (syntax_table);
 
   p = XSTRING (newentry)->data;
   code = (enum syntaxcode) syntax_spec_code[*p++];
@@ -241,6 +239,8 @@ describe_syntax (value)
   char desc, match, start1, start2, end1, end2;
   char str[2];
 
+  Findent_to (make_number (16), make_number (1));
+
   if (XTYPE (value) != Lisp_Int)
     {
       InsStr ("invalid");
@@ -262,21 +262,21 @@ describe_syntax (value)
   desc = syntax_code_spec[(int) code];
 
   str[0] = desc, str[1] = 0;
-  InsCStr (str, 1);
+  insert (str, 1);
 
   str[0] = match ? match : ' ';
-  InsCStr (str, 1);
+  insert (str, 1);
 
 
   if (start1)
-    InsCStr ("1", 1);
+    insert ("1", 1);
   if (start2)
-    InsCStr ("2", 1);
+    insert ("2", 1);
 
   if (end1)
-    InsCStr ("3", 1);
+    insert ("3", 1);
   if (end2)
-    InsCStr ("4", 1);
+    insert ("4", 1);
 
   InsStr ("\twhich means: ");
 
@@ -322,7 +322,7 @@ describe_syntax (value)
       InsStr (", matches ");
       
       str[0] = match, str[1] = 0;
-      InsCStr (str, 1);
+      insert (str, 1);
     }
 
   if (start1)
@@ -334,16 +334,18 @@ describe_syntax (value)
     InsStr (",\n\t  is the first character of a comment-end sequence");
   if (end2)
     InsStr (",\n\t  is the second character of a comment-end sequence");
+
+  InsStr ("\n");
 }
 
 Lisp_Object
 describe_syntax_1 (vector)
      Lisp_Object vector;
 {
-  struct buffer *old = bf_cur;
-  SetBfp (XBUFFER (Vstandard_output));
+  struct buffer *old = current_buffer;
+  set_buffer_internal (XBUFFER (Vstandard_output));
   describe_vector (vector, Qnil, describe_syntax, 0, Qnil);
-  SetBfp (old);
+  set_buffer_internal (old);
   return Qnil;
 }
 
@@ -352,11 +354,8 @@ DEFUN ("describe-syntax", Fdescribe_syntax, Sdescribe_syntax, 0, 0, "",
 The descriptions are inserted in a buffer, which is selected so you can see it.")
   ()
 {
-  register Lisp_Object vector;
-
-  XSET (vector, Lisp_Vector, bf_cur->syntax_table_v);
   internal_with_output_to_temp_buffer
-     ("*Help*", describe_syntax_1, vector);
+     ("*Help*", describe_syntax_1, current_buffer->syntax_table);
 
   return Qnil;
 }
@@ -368,8 +367,8 @@ The descriptions are inserted in a buffer, which is selected so you can see it."
 scan_words (from, count)
      register int from, count;
 {
-  register int beg = FirstCharacter;
-  register int end = NumCharacters + 1;
+  register int beg = BEGV;
+  register int end = ZV;
 
   immediate_quit = 1;
   QUIT;
@@ -383,14 +382,14 @@ scan_words (from, count)
 	      immediate_quit = 0;
 	      return 0;
 	    }
-	  if (SYNTAX(CharAt (from)) == Sword)
+	  if (SYNTAX(FETCH_CHAR (from)) == Sword)
 	    break;
 	  from++;
 	}
       while (1)
 	{
 	  if (from == end) break;
-	  if (SYNTAX(CharAt (from)) != Sword)
+	  if (SYNTAX(FETCH_CHAR (from)) != Sword)
 	    break;
 	  from++;
 	}
@@ -405,14 +404,14 @@ scan_words (from, count)
 	      immediate_quit = 0;
 	      return 0;
 	    }
-	  if (SYNTAX(CharAt (from - 1)) == Sword)
+	  if (SYNTAX(FETCH_CHAR (from - 1)) == Sword)
 	    break;
 	  from--;
 	}
       while (1)
 	{
 	  if (from == beg) break;
-	  if (SYNTAX(CharAt (from - 1)) != Sword)
+	  if (SYNTAX(FETCH_CHAR (from - 1)) != Sword)
 	    break;
 	  from--;
 	}
@@ -437,10 +436,10 @@ and nil is returned.")
 
   if (!(val = scan_words (point, XINT (count))))
     {
-      SetPoint (XINT (count) > 0 ? NumCharacters + 1 : FirstCharacter);
+      SET_PT (XINT (count) > 0 ? ZV : BEGV);
       return Qnil;
     }
-  SetPoint (val);
+  SET_PT (val);
   return Qt;
 }
 
@@ -467,14 +466,14 @@ scan_lists (from, count, depth, sexpflag)
 
   while (count > 0)
     {
-      stop = NumCharacters + 1;
+      stop = ZV;
       while (from < stop)
 	{
-	  c = CharAt (from);
+	  c = FETCH_CHAR (from);
 	  code = SYNTAX(c);
 	  from++;
 	  if (from < stop && SYNTAX_COMSTART_FIRST (c)
-	      && SYNTAX_COMSTART_SECOND (CharAt (from))
+	      && SYNTAX_COMSTART_SECOND (FETCH_CHAR (from))
 	      && parse_sexp_ignore_comments)
 	    code = Scomment, from++;
 
@@ -496,9 +495,9 @@ scan_lists (from, count, depth, sexpflag)
 	      while (from < stop)
 		{
 #ifdef SWITCH_ENUM_BUG
-		  switch ((int) SYNTAX(CharAt (from)))
+		  switch ((int) SYNTAX(FETCH_CHAR (from)))
 #else
-		  switch (SYNTAX(CharAt (from)))
+		  switch (SYNTAX(FETCH_CHAR (from)))
 #endif
 		    {
 		    case Scharquote:
@@ -508,6 +507,7 @@ scan_lists (from, count, depth, sexpflag)
 		      break;
 		    case Sword:
 		    case Ssymbol:
+		    case Squote:
 		      break;
 		    default:
 		      goto done;
@@ -521,11 +521,11 @@ scan_lists (from, count, depth, sexpflag)
 	      while (1)
 		{
 		  if (from == stop) goto done;
-		  if (SYNTAX (c = CharAt (from)) == Sendcomment)
+		  if (SYNTAX (c = FETCH_CHAR (from)) == Sendcomment)
 		    break;
 		  from++;
 		  if (from < stop && SYNTAX_COMEND_FIRST (c)
-		       && SYNTAX_COMEND_SECOND (CharAt (from)))
+		       && SYNTAX_COMEND_SECOND (FETCH_CHAR (from)))
 		    { from++; break; }
 		}
 	      break;
@@ -533,7 +533,7 @@ scan_lists (from, count, depth, sexpflag)
 	    case Smath:
 	      if (!sexpflag)
 		break;
-	      if (from != stop && c == CharAt (from))
+	      if (from != stop && c == FETCH_CHAR (from))
 		from++;
 	      if (mathexit)
 		{
@@ -554,15 +554,15 @@ scan_lists (from, count, depth, sexpflag)
 	      break;
 
 	    case Sstring:
-	      stringterm = CharAt (from - 1);
+	      stringterm = FETCH_CHAR (from - 1);
 	      while (1)
 		{
 		  if (from >= stop) goto lose;
-		  if (CharAt (from) == stringterm) break;
+		  if (FETCH_CHAR (from) == stringterm) break;
 #ifdef SWITCH_ENUM_BUG
-		  switch ((int) SYNTAX(CharAt (from)))
+		  switch ((int) SYNTAX(FETCH_CHAR (from)))
 #else
-		  switch (SYNTAX(CharAt (from)))
+		  switch (SYNTAX(FETCH_CHAR (from)))
 #endif
 		    {
 		    case Scharquote:
@@ -590,16 +590,16 @@ scan_lists (from, count, depth, sexpflag)
 
   while (count < 0)
     {
-      stop = FirstCharacter;
+      stop = BEGV;
       while (from > stop)
 	{
 	  from--;
 	  if (quoted = char_quoted (from))
 	    from--;
-	  c = CharAt (from);
+	  c = FETCH_CHAR (from);
 	  code = SYNTAX (c);
 	  if (from > stop && SYNTAX_COMEND_SECOND (c)
-	      && SYNTAX_COMEND_FIRST (CharAt (from - 1))
+	      && SYNTAX_COMEND_FIRST (FETCH_CHAR (from - 1))
 	      && !char_quoted (from - 1)
 	      && parse_sexp_ignore_comments)
 	    code = Sendcomment, from--;
@@ -618,8 +618,9 @@ scan_lists (from, count, depth, sexpflag)
 		{
 		  if (quoted = char_quoted (from - 1))
 		    from--;
-		  if (! (quoted || SYNTAX(CharAt (from - 1)) == Sword ||
-			 SYNTAX(CharAt (from - 1)) == Ssymbol))
+		  if (! (quoted || SYNTAX(FETCH_CHAR (from - 1)) == Sword ||
+			 SYNTAX(FETCH_CHAR (from - 1)) == Ssymbol ||
+			 SYNTAX(FETCH_CHAR (from - 1)) == Squote))
             	    goto done2;
 		  from--;
 		}
@@ -628,7 +629,7 @@ scan_lists (from, count, depth, sexpflag)
 	    case Smath:
 	      if (!sexpflag)
 		break;
-	      if (from != stop && c == CharAt (from - 1))
+	      if (from != stop && c == FETCH_CHAR (from - 1))
 		from--;
 	      if (mathexit)
 		{
@@ -653,24 +654,24 @@ scan_lists (from, count, depth, sexpflag)
 	      if (from != stop) from--;
 	      while (1)
 		{
-		  if (SYNTAX (c = CharAt (from)) == Scomment)
+		  if (SYNTAX (c = FETCH_CHAR (from)) == Scomment)
 		    break;
 		  if (from == stop) goto done;
 		  from--;
 		  if (SYNTAX_COMSTART_SECOND (c)
-		      && SYNTAX_COMSTART_FIRST (CharAt (from))
+		      && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from))
 		      && !char_quoted (from))
 		    break;
 		}
 	      break;
 
 	    case Sstring:
-	      stringterm = CharAt (from);
+	      stringterm = FETCH_CHAR (from);
 	      while (1)
 		{
 		  if (from == stop) goto lose;
 		  if (!char_quoted (from - 1)
-		      && stringterm == CharAt (from - 1))
+		      && stringterm == FETCH_CHAR (from - 1))
 		    break;
 		  from--;
 		}
@@ -704,11 +705,11 @@ char_quoted (pos)
      register int pos;
 {
   register enum syntaxcode code;
-  register int beg = FirstCharacter;
+  register int beg = BEGV;
   register int quoted = 0;
 
   while (pos > beg &&
-	 ((code = SYNTAX (CharAt (pos - 1))) == Scharquote
+	 ((code = SYNTAX (FETCH_CHAR (pos - 1))) == Scharquote
 	  || code == Sescape))
     pos--, quoted = !quoted;
   return quoted;
@@ -762,13 +763,13 @@ DEFUN ("backward-prefix-chars", Fbackward_prefix_chars, Sbackward_prefix_chars,
   "Move point backward over any number of chars with syntax \"prefix\".")
   ()
 {
-  int beg = FirstCharacter;
+  int beg = BEGV;
   int pos = point;
 
-  while (pos > beg && !char_quoted (pos - 1) && SYNTAX (CharAt (pos - 1)) == Squote)
+  while (pos > beg && !char_quoted (pos - 1) && SYNTAX (FETCH_CHAR (pos - 1)) == Squote)
     pos--;
 
-  SetPoint (pos);
+  SET_PT (pos);
 
   return Qnil;
 }
@@ -847,6 +848,7 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
   mindepth = depth;
 
   curlevel->prev = -1;
+  curlevel->last = -1;
 
   /* Enter the loop at a place appropriate for initial state. */
 
@@ -860,10 +862,10 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 
   while (from < end)
     {
-      code = SYNTAX(CharAt (from));
+      code = SYNTAX(FETCH_CHAR (from));
       from++;
-      if (from < end && SYNTAX_COMSTART_FIRST (CharAt (from - 1))
-	   && SYNTAX_COMSTART_SECOND (CharAt (from)))
+      if (from < end && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from - 1))
+	   && SYNTAX_COMSTART_SECOND (FETCH_CHAR (from)))
 	code = Scomment, from++;
 #ifdef SWITCH_ENUM_BUG
       switch ((int) code)
@@ -888,9 +890,9 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 	  while (from < end)
 	    {
 #ifdef SWITCH_ENUM_BUG
-	      switch ((int) SYNTAX(CharAt (from)))
+	      switch ((int) SYNTAX(FETCH_CHAR (from)))
 #else
-	      switch (SYNTAX(CharAt (from)))
+	      switch (SYNTAX(FETCH_CHAR (from)))
 #endif
 		{
 		case Scharquote:
@@ -900,6 +902,7 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 		  break;
 		case Sword:
 		case Ssymbol:
+		case Squote:
 		  break;
 		default:
 		  goto symdone;
@@ -916,11 +919,11 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 	  while (1)
 	    {
 	      if (from == end) goto done;
-	      if (SYNTAX (prev = CharAt (from)) == Sendcomment)
+	      if (SYNTAX (prev = FETCH_CHAR (from)) == Sendcomment)
 		break;
 	      from++;
 	      if (from < end && SYNTAX_COMEND_FIRST (prev)
-		   && SYNTAX_COMEND_SECOND (CharAt (from)))
+		   && SYNTAX_COMEND_SECOND (FETCH_CHAR (from)))
 		{ from++; break; }
 	    }
 	  state.incomment = 0;
@@ -951,16 +954,16 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 	case Sstring:
 	  if (stopbefore) goto stop;  /* this arg means stop at sexp start */
 	  curlevel->last = from - 1;
-	  state.instring = CharAt (from - 1);
+	  state.instring = FETCH_CHAR (from - 1);
 	startinstring:
 	  while (1)
 	    {
 	      if (from >= end) goto done;
-	      if (CharAt (from) == state.instring) break;
+	      if (FETCH_CHAR (from) == state.instring) break;
 #ifdef SWITCH_ENUM_BUG
-	      switch ((int) SYNTAX(CharAt (from)))
+	      switch ((int) SYNTAX(FETCH_CHAR (from)))
 #else
-	      switch (SYNTAX(CharAt (from)))
+	      switch (SYNTAX(FETCH_CHAR (from)))
 #endif
 		{
 		case Scharquote:
@@ -1049,7 +1052,7 @@ DEFUN ("parse-partial-sexp", Fparse_partial_sexp, Sparse_partial_sexp, 2, 5, 0,
   state = *scan_sexps_forward (XINT (from), XINT (to),
 			       target, !NULL (stopbefore), oldstate);
 
-  SetPoint (state.location);
+  SET_PT (state.location);
   
   return Fcons (make_number (state.depth),
 	   Fcons (state.prevlevelstart < 0 ? Qnil : make_number (state.prevlevelstart),
@@ -1102,12 +1105,6 @@ syms_of_syntax ()
 {
   Qsyntax_table_p = intern ("syntax-table-p");
   staticpro (&Qsyntax_table_p);
-
-/* Mustn't let user clobber this!
-  DEFVAR_LISP ("standard-syntax-table", &Vstandard_syntax_table,  */
-/*  "The syntax table used by buffers that don't specify another.");
- */
-  staticpro (&Vstandard_syntax_table);
 
   DEFVAR_BOOL ("parse-sexp-ignore-comments", &parse_sexp_ignore_comments,
     "Non-nil means forward-sexp, etc., should treat comments as whitespace.\n\

@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -121,7 +120,7 @@ To undefine an abbrev, define it with EXPANSION = nil")
   oexp = XSYMBOL (sym)->value;
   ohook = XSYMBOL (sym)->function;
   if (!((EQ (oexp, expansion)
-	 || (XTYPE (oexp) == Lisp_String
+	 || (XTYPE (oexp) == Lisp_String && XTYPE (expansion) == Lisp_String
 	     && (tem = Fstring_equal (oexp, expansion), !NULL (tem))))
 	&&
 	(EQ (ohook, hook)
@@ -152,10 +151,10 @@ DEFUN ("define-mode-abbrev", Fdefine_mode_abbrev, Sdefine_mode_abbrev, 2, 2,
   (name, expansion)
      Lisp_Object name, expansion;
 {
-  if (NULL (bf_cur->abbrev_table))
-    error ("No local abbrev table associated with this buffer");
+  if (NULL (current_buffer->abbrev_table))
+    error ("Major mode has no abbrev table");
 
-  Fdefine_abbrev (bf_cur->abbrev_table, Fdowncase (name),
+  Fdefine_abbrev (current_buffer->abbrev_table, Fdowncase (name),
 		  expansion, Qnil, make_number (0));
   return name;
 }
@@ -175,8 +174,8 @@ Default is try buffer's mode-specific abbrev table, then global table.")
   else
     {
       sym = Qnil;
-      if (!NULL (bf_cur->abbrev_table))
-	sym = Fintern_soft (abbrev, bf_cur->abbrev_table);
+      if (!NULL (current_buffer->abbrev_table))
+	sym = Fintern_soft (abbrev, current_buffer->abbrev_table);
       if (NULL (XSYMBOL (sym)->value))
 	sym = Qnil;
       if (NULL (sym))
@@ -214,7 +213,7 @@ Returns t if expansion took place.")
   register Lisp_Object sym;
   Lisp_Object expansion, hook, tem;
 
-  if (XBUFFER (Vabbrev_start_location_buffer) != bf_cur)
+  if (XBUFFER (Vabbrev_start_location_buffer) != current_buffer)
     Vabbrev_start_location = Qnil;
   if (!NULL (Vabbrev_start_location))
     {
@@ -222,7 +221,7 @@ Returns t if expansion took place.")
       CHECK_NUMBER_COERCE_MARKER (tem, 0);
       wordstart = XINT (tem);
       Vabbrev_start_location = Qnil;
-      if (CharAt (wordstart) == '-')
+      if (FETCH_CHAR (wordstart) == '-')
 	del_range (wordstart, wordstart + 1);
     }
   else
@@ -233,7 +232,7 @@ Returns t if expansion took place.")
 
   for (idx = wordstart; idx < point; idx++)
     {
-      register int c = CharAt (idx);
+      register int c = FETCH_CHAR (idx);
       if (UPPERCASEP (c))
 	c = DOWNCASE (c), uccount++;
       else if (! NOCASEP (c))
@@ -241,8 +240,8 @@ Returns t if expansion took place.")
       *p++ = c;
     }
 
-  if (XTYPE (bf_cur->abbrev_table) == Lisp_Vector)
-    sym = oblookup (bf_cur->abbrev_table, buffer, p - buffer);
+  if (XTYPE (current_buffer->abbrev_table) == Lisp_Vector)
+    sym = oblookup (current_buffer->abbrev_table, buffer, p - buffer);
   else
     XFASTINT (sym) = 0;
   if (XTYPE (sym) == Lisp_Int ||
@@ -252,12 +251,12 @@ Returns t if expansion took place.")
       NULL (XSYMBOL (sym)->value))
     return Qnil;
 
-  if (INTERACTIVE && !EQ (minibuf_window, selected_window))
+  if (FROM_KBD && !EQ (minibuf_window, selected_window))
     {
-      SetPoint (wordstart + p - buffer);
+      SET_PT (wordstart + p - buffer);
       Fundo_boundary ();
     }
-  SetPoint (wordstart);
+  SET_PT (wordstart);
   Vlast_abbrev_text
     = Fbuffer_substring (make_number (point),
 			 make_number (point + (p - buffer)));
@@ -272,7 +271,7 @@ Returns t if expansion took place.")
 	     XINT (XSYMBOL (sym)->plist) + 1);	/* Increment use count */
 
   expansion = XSYMBOL (sym)->value;
-  InsCStr (XSTRING (expansion)->data, XSTRING (expansion)->size);
+  insert (XSTRING (expansion)->data, XSTRING (expansion)->size);
 
   if (uccount && !lccount)
     {
@@ -295,9 +294,9 @@ Returns t if expansion took place.")
     {
       /* Abbrev included some caps.  Cap first initial of expansion */
       idx = point;
-      SetPoint (wordstart);
+      SET_PT (wordstart);
       Fcapitalize_word (make_number (1));
-      SetPoint (idx);
+      SET_PT (idx);
     }
 
   hook = XSYMBOL (sym)->function;
@@ -313,10 +312,10 @@ DEFUN ("unexpand-abbrev", Funexpand_abbrev, Sunexpand_abbrev, 0, 0, "",
 {
   int opoint = point;
   int adjust = 0;
-  if (last_abbrev_point < FirstCharacter
-      || last_abbrev_point > NumCharacters)
+  if (last_abbrev_point < BEGV
+      || last_abbrev_point >= ZV)
     return Qnil;
-  SetPoint (last_abbrev_point);
+  SET_PT (last_abbrev_point);
   if (XTYPE (Vlast_abbrev_text) == Lisp_String)
     {
       /* This isn't correct if Vlast_abbrev->function was used
@@ -325,12 +324,12 @@ DEFUN ("unexpand-abbrev", Funexpand_abbrev, Sunexpand_abbrev, 0, 0, "",
       XSET (val, Lisp_String, XSYMBOL (Vlast_abbrev)->value);
       adjust = XSTRING (val)->size;
       del_range (point, point + adjust);
-      InsCStr (XSTRING (Vlast_abbrev_text)->data,
+      insert (XSTRING (Vlast_abbrev_text)->data,
 	       XSTRING (Vlast_abbrev_text)->size);
       adjust -= XSTRING (Vlast_abbrev_text)->size;
       Vlast_abbrev_text = Qnil;
     }
-  SetPoint (last_abbrev_point < opoint ? opoint - adjust : opoint);
+  SET_PT (last_abbrev_point < opoint ? opoint - adjust : opoint);
   return Qnil;
 }
 
@@ -341,16 +340,16 @@ write_abbrev (sym, stream)
   Lisp_Object name;
   if (NULL (XSYMBOL (sym)->value))
     return;
-  InsCStr ("    (", 5);
+  insert ("    (", 5);
   XSET (name, Lisp_String, XSYMBOL (sym)->name);
   Fprin1 (name, stream);
-  InsCStr (" ", 1);
+  insert (" ", 1);
   Fprin1 (XSYMBOL (sym)->value, stream);
-  InsCStr (" ", 1);
+  insert (" ", 1);
   Fprin1 (XSYMBOL (sym)->function, stream);
-  InsCStr (" ", 1);
+  insert (" ", 1);
   Fprin1 (XSYMBOL (sym)->plist, stream);
-  InsCStr (")\n", 2);
+  insert (")\n", 2);
 }
 
 static
@@ -394,7 +393,7 @@ define NAME exactly as it is currently defined.")
   table = Fsymbol_value (name);
   CHECK_VECTOR (table, 0);
 
-  XSET (stream, Lisp_Buffer, bf_cur);
+  XSET (stream, Lisp_Buffer, current_buffer);
 
   if (!NULL (readable))
     {
@@ -471,7 +470,7 @@ for any particular abbrev defined in both.");
   DEFVAR_LISP ("fundamental-mode-abbrev-table", &Vfundamental_mode_abbrev_table,
     "The abbrev table of mode-specific abbrevs for Fundamental Mode.");
   Vfundamental_mode_abbrev_table = Fmake_abbrev_table ();
-  bf_cur->abbrev_table = Vfundamental_mode_abbrev_table;
+  current_buffer->abbrev_table = Vfundamental_mode_abbrev_table;
 
   DEFVAR_LISP ("last-abbrev", &Vlast_abbrev,
     "The abbrev-symbol of the last abbrev expanded.");
@@ -498,7 +497,7 @@ Set to nil each time expand-abbrev is called.");
 Trying to expand an abbrev in any other buffer clears abbrev-start-location.");
   Vabbrev_start_location_buffer = Qnil;
 
-  DEFVAR_PER_BUFFER ("local-abbrev-table", &bf_cur->abbrev_table,
+  DEFVAR_PER_BUFFER ("local-abbrev-table", &current_buffer->abbrev_table,
     "Local (mode-specific) abbrev table of current buffer.");
 
   DEFVAR_BOOL ("abbrevs-changed", &abbrevs_changed,

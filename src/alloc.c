@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -28,11 +27,30 @@ and this notice must be preserved on all copies.  */
 
 #define max(A,B) ((A) > (B) ? (A) : (B))
 
+/* Macro to verify that storage intended for Lisp objects is not
+   out of range to fit in the space for a pointer.
+   ADDRESS is the start of the block, and SIZE
+   is the amount of space within which objects can start.  */
+#define VALIDATE_LISP_STORAGE(address, size)			\
+do								\
+  {								\
+    Lisp_Object val;						\
+    XSET (val, Lisp_Cons, (char *) address + size);		\
+    if ((char *) XCONS (val) != (char *) address + size)	\
+      {								\
+	free (address);						\
+	memory_full ();						\
+      }								\
+  } while (0)
+
 /* Number of bytes of consing done since the last gc */
 int consing_since_gc;
 
 /* Number of bytes of consing since gc before another gc should be done. */
 int gc_cons_threshold;
+
+/* value of consing_since_gc when undos were last truncated.  */
+int consing_at_last_truncate;
 
 /* Nonzero during gc */
 int gc_in_progress;
@@ -47,15 +65,30 @@ extern
 #endif /* VIRT_ADDR_VARIES */
  int malloc_sbrk_unused;
 
+/* Two thresholds controlling how much undo information to keep.  */
+int undo_threshold;
+int undo_high_threshold;
+
 /* Non-nil means defun should do purecopy on the function definition */
 Lisp_Object Vpurify_flag;
 
-int pure[PURESIZE / sizeof (int)] = {0,};   /* Force it into data space! */
+/* Argument we give to Fsignal when memory is full.
+   Preallocated since perhaps we can't allocate it when memory is full.  */
+Lisp_Object memory_exhausted_message;
 
+#ifndef HAVE_SHM
+int pure[PURESIZE / sizeof (int)] = {0,};   /* Force it into data space! */
 #define PUREBEG (char *) pure
+#else
+#define pure PURE_SEG_BITS   /* Use shared memory segment */
+#define PUREBEG (char *)PURE_SEG_BITS
+#endif /* not HAVE_SHM */
 
 /* Index in pure at which next pure object will be allocated. */
 int pureptr;
+
+/* If nonzero, this is a warning delivered by malloc and not yet displayed.  */
+char *pending_malloc_warning;
 
 Lisp_Object
 malloc_warning_1 (str)
@@ -72,16 +105,23 @@ malloc_warning_1 (str)
 malloc_warning (str)
      char *str;
 {
+  pending_malloc_warning = str;
+}
+
+display_malloc_warning ()
+{
   register Lisp_Object val;
 
-  val = build_string (str);
+  val = build_string (pending_malloc_warning);
+  pending_malloc_warning = 0;
   internal_with_output_to_temp_buffer (" *Danger*", malloc_warning_1, val);
 }
 
 /* Called if malloc returns zero */
 memory_full ()
 {
-  error ("Memory exhausted");
+  while (1)
+    Fsignal (Qerror, memory_exhausted_message);
 }
 
 /* like malloc and realloc but check for no memory left */
@@ -90,7 +130,11 @@ long *
 xmalloc (size)
      int size;
 {
-  register long *val = (long *) malloc (size);
+  register long *val;
+  /* Avoid failure if malloc (0) returns 0.  */
+  if (size == 0)
+    size = 1;
+  val = (long *) malloc (size);
   if (!val) memory_full ();
   return val;
 }
@@ -100,7 +144,11 @@ xrealloc (block, size)
      long *block;
      int size;
 {
-  register long *val = (long *) realloc (block, size);
+  register long *val;
+  /* Avoid failure if malloc (0) returns 0.  */
+  if (size == 0)
+    size = 1;
+  val = (long *) realloc (block, size);
   if (!val) memory_full ();
   return val;
 }
@@ -165,9 +213,11 @@ DEFUN ("cons", Fcons, Scons, 2, 2, 0,
 	{
 	  register struct cons_block *new = (struct cons_block *) malloc (sizeof (struct cons_block));
 	  if (!new) memory_full ();
+	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = cons_block;
 	  cons_block = new;
 	  cons_block_index = 0;
+	  XSET (val, Lisp_Cons, &cons_block->conses[CONS_BLOCK_SIZE - 1]);
 	}
       XSET (val, Lisp_Cons, &cons_block->conses[cons_block_index++]);
     }
@@ -234,6 +284,7 @@ DEFUN ("make-vector", Fmake_vector, Smake_vector, 2, 2, 0,
   p = (struct Lisp_Vector *) malloc (sizeof (struct Lisp_Vector) + (sizei - 1) * sizeof (Lisp_Object));
   if (p == 0)
     memory_full ();
+  VALIDATE_LISP_STORAGE (p, 0);
 
   XSET (vector, Lisp_Vector, p);
   consing_since_gc += sizeof (struct Lisp_Vector) + (sizei - 1) * sizeof (Lisp_Object);
@@ -320,6 +371,7 @@ Its value and function definition are void, and its property list is NIL.")
 	{
 	  struct symbol_block *new = (struct symbol_block *) malloc (sizeof (struct symbol_block));
 	  if (!new) memory_full ();
+	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = symbol_block;
 	  symbol_block = new;
 	  symbol_block_index = 0;
@@ -382,6 +434,7 @@ DEFUN ("make-marker", Fmake_marker, Smake_marker, 0, 0, 0,
 	{
 	  struct marker_block *new = (struct marker_block *) malloc (sizeof (struct marker_block));
 	  if (!new) memory_full ();
+	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = marker_block;
 	  marker_block = new;
 	  marker_block_index = 0;
@@ -391,7 +444,6 @@ DEFUN ("make-marker", Fmake_marker, Smake_marker, 0, 0, 0,
   p = XMARKER (val);
   p->buffer = 0;
   p->bufpos = 0;
-  p->modified = 0;
   p->chain = Qnil;
   consing_since_gc += sizeof (struct Lisp_Marker);
   return val;
@@ -528,6 +580,7 @@ make_uninit_string (length)
       register struct string_block *new
 	= (struct string_block *) malloc (sizeof (struct string_block_head) + fullsize);
       if (!new) memory_full ();
+      VALIDATE_LISP_STORAGE (new, 0);
       consing_since_gc += sizeof (struct string_block_head) + fullsize;
       new->pos = fullsize;
       new->next = large_string_blocks;
@@ -541,6 +594,7 @@ make_uninit_string (length)
       register struct string_block *new
 	= (struct string_block *) malloc (sizeof (struct string_block));
       if (!new) memory_full ();
+      VALIDATE_LISP_STORAGE (new, sizeof *new);
       consing_since_gc += sizeof (struct string_block);
       current_string_block->next = new;
       new->prev = current_string_block;
@@ -664,11 +718,14 @@ struct gcpro *gcprolist;
 
 #define NSTATICS 200
 
-char staticvec1[NSTATICS * sizeof (Lisp_Object *)] = {0};
-
 int staticidx = 0;
 
+#ifdef __GNUC__
+Lisp_Object *staticvec[NSTATICS] = {0};
+#else
+char staticvec1[NSTATICS * sizeof (Lisp_Object *)] = {0};
 #define staticvec ((Lisp_Object **) staticvec1)
+#endif
 
 /* Put an entry in staticvec, pointing at the variable whose address is given */
 
@@ -747,7 +804,7 @@ gc-cons-threshold  bytes of Lisp data since previous garbage collection.")
   struct handler *handler;
   register struct backtrace *backlist;
   register Lisp_Object tem;
-  char *omessage = minibuf_message;
+  char *omessage = echo_area_contents;
 
   register int i;
 
@@ -758,6 +815,8 @@ gc-cons-threshold  bytes of Lisp data since previous garbage collection.")
   tem = Fnthcdr (make_number (30), Vcommand_history);
   if (CONSP (tem))
     XCONS (tem)->cdr = Qnil;
+  /* Likewise for undo information.  */
+  truncate_all_undos ();
 
   gc_in_progress = 1;
 
@@ -845,6 +904,7 @@ gc-cons-threshold  bytes of Lisp data since previous garbage collection.")
   gc_in_progress = 0;
 
   consing_since_gc = 0;
+  consing_at_last_truncate = 0;
   if (gc_cons_threshold < 10000)
     gc_cons_threshold = 10000;
 
@@ -1091,10 +1151,6 @@ mark_buffer (buf)
   mark_object (&buffer->name);
   XMARK (buffer->name);
 
-  XSET (tem, Lisp_Vector, buffer->syntax_table_v);
-  if (buffer->syntax_table_v)
-    mark_object (&tem);
-
   for (ptr = &buffer->name + 1;
        (char *)ptr < (char *)buffer + sizeof (struct buffer);
        ptr++)
@@ -1189,7 +1245,8 @@ gc_sweep ()
 	      Lisp_Object tem;
 	      tem1 = &mblk->markers[i];  /* tem1 avoids Sun compiler bug */
 	      XSET (tem, Lisp_Marker, tem1);
-	      unchain_marker (tem);
+	      if (tem1->buffer)
+		unchain_marker (tem);
 	      XFASTINT (mblk->markers[i].chain) = (int) marker_free_list;
 	      marker_free_list = &mblk->markers[i];
 	      num_free++;
@@ -1402,6 +1459,21 @@ compact_strings ()
 	from_sb = to_sb;
     }
 }
+
+truncate_all_undos ()
+{
+  register struct buffer *nextb = all_buffers;
+
+  consing_at_last_truncate = consing_since_gc;
+
+  while (nextb)
+    {
+      nextb->undo_list 
+	= truncate_undo_list (nextb->undo_list, undo_threshold,
+			      undo_high_threshold);
+      nextb = nextb->next;
+    }
+}
 
 /* Initialization */
 
@@ -1432,6 +1504,9 @@ init_alloc ()
 void
 syms_of_alloc ()
 {
+  memory_exhausted_message = Fcons (build_string ("Memory exhausted"), Qnil);
+  staticpro (&memory_exhausted_message);
+
   DEFVAR_INT ("gc-cons-threshold", &gc_cons_threshold,
     "*Number of bytes of consing between garbage collections.");
 
@@ -1448,6 +1523,20 @@ syms_of_alloc ()
 
   DEFVAR_LISP ("purify-flag", &Vpurify_flag,
     "Non-nil means loading Lisp code in order to dump an executable.");
+
+  DEFVAR_INT ("undo-threshold", &undo_threshold,
+    "Keep no more undo information once it exceeds this size.\n\
+This threshold is applied when garbage collection happens.\n\
+The size is counted as the number of bytes occupied,\n\
+which includes both saved text and other data.");
+  undo_threshold = 15000;
+  DEFVAR_INT ("undo-high-threshold", &undo_high_threshold,
+    "Don't keep more than this much size of undo information.\n\
+A command which pushes past this size is itself forgotten.\n\
+This threshold is applied when garbage collection happens.\n\
+The size is counted as the number of bytes occupied,\n\
+which includes both saved text and other data.");
+  undo_high_threshold = 20000;
 
   defsubr (&Scons);
   defsubr (&Slist);

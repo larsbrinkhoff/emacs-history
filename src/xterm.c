@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Written by Yakim Martillo, mods and things by Robert Krawitz  */
 
@@ -99,7 +98,6 @@ Bitmap XXIconMask;
 char *XXcurrentfont;
 char *default_window;
 int informflag;
-extern struct display_line *DesiredScreen[], *PhysScreen[];
 extern int initialized;
 
 extern char *alternate_display;
@@ -215,15 +213,15 @@ XTchange_line_highlight (new_highlight, vpos, first_unused_hpos)
      int new_highlight, vpos, first_unused_hpos;
 {
   HLmode (new_highlight);
-  XTtopos (vpos, 0);
+  XTmove_cursor (vpos, 0);
   x_clear_end_of_line (0);
 }
 
 
 /* Used for starting or restarting (after suspension) the X window.  Puts the
  * cursor in a known place, update does not begin with this routine but only
- * with a call to DoDsp.  The mouse cursor is warped into the window and then
- * the cursor is turned on.
+ * with a call to redisplay.  The mouse cursor is warped into the window and
+ * then the cursor is turned on.
  */
 
 
@@ -251,22 +249,22 @@ XTset_terminal_modes ()
 #endif
 }
 
-/* XTtopos moves the cursor to the correct location and checks whether an update
+/* XTmove_cursor moves the cursor to the correct location and checks whether an update
  * is in progress in order to toggle it on.
  */
 
 static
-XTtopos (row, col)
+XTmove_cursor (row, col)
      register int row, col;
 {
   BLOCK_INPUT_DECLARE ()
 
   BLOCK_INPUT ();
 #ifdef XDEBUG
-  fprintf (stderr, "XTtopos\n");
+  fprintf (stderr, "XTmove_cursor\n");
 #endif
-  cursX = col;
-  cursY = row;
+  cursor_hpos = col;
+  cursor_vpos = row;
   if (InUpdate)
     {
       if (CursorExists)
@@ -274,7 +272,7 @@ XTtopos (row, col)
 	  CursorToggle ();
 	}
       UNBLOCK_INPUT ();
-      return;		/* Generally, XTtopos will be invoked */
+      return;		/* Generally, XTmove_cursor will be invoked */
       /* when InUpdate with !CursorExists */
       /* so that wasteful XFlush is not called */
     }
@@ -307,7 +305,7 @@ cleanup ()
   HLmode (0);
 }
 
-/* Erase current line from column cursX to column END.
+/* Erase current line from column cursor_hpos to column END.
    Leave cursor at END.  */
 
 static
@@ -320,32 +318,32 @@ XTclear_end_of_line (end)
   fprintf (stderr, "XTclear_end_of_line\n");
 
 #endif
-  if (cursY < 0 || cursY >= screen_height)
+  if (cursor_vpos < 0 || cursor_vpos >= screen_height)
     {
       return;
     }
 
   if (end >= screen_width)
     end = screen_width;
-  if (end <= cursX)
+  if (end <= cursor_hpos)
     return;
 
-  numcols = end - cursX;
+  numcols = end - cursor_hpos;
   {
     BLOCK_INPUT_DECLARE ()
 
     BLOCK_INPUT ();
-    if (cursY == VisibleY && VisibleX >= cursX && VisibleX < end)
+    if (cursor_vpos == VisibleY && VisibleX >= cursor_hpos && VisibleX < end)
       {
 	if (CursorExists) CursorToggle ();
       }
     XPixSet (XXwindow,
-	     cursX * fontinfo->width + XXInternalBorder,
-	     cursY * fontinfo->height+XXInternalBorder,
+	     cursor_hpos * fontinfo->width + XXInternalBorder,
+	     cursor_vpos * fontinfo->height+XXInternalBorder,
 	     fontinfo->width * numcols,
 	     fontinfo->height,
 	     back);
-    XTtopos (cursY, end);
+    XTmove_cursor (cursor_vpos, end);
     UNBLOCK_INPUT ();
   }
 }
@@ -363,7 +361,7 @@ x_clear_end_of_line (start)
   fprintf (stderr, "x_clear_end_of_line\n");
 
 #endif
-  if (cursY < 0 || cursY >= screen_height)
+  if (cursor_vpos < 0 || cursor_vpos >= screen_height)
     {
       return;
     }
@@ -378,17 +376,17 @@ x_clear_end_of_line (start)
     BLOCK_INPUT_DECLARE ()
 
     BLOCK_INPUT ();
-    if (cursY == VisibleY && VisibleX >= start)
+    if (cursor_vpos == VisibleY && VisibleX >= start)
       {
 	if (CursorExists) CursorToggle ();
       }
     XPixSet (XXwindow,
 	     start * fontinfo->width + XXInternalBorder,
-	     cursY * fontinfo->height+XXInternalBorder,
+	     cursor_vpos * fontinfo->height+XXInternalBorder,
 	     fontinfo->width * numcols,
 	     fontinfo->height,
 	     back);
-    XTtopos (cursY, start);
+    XTmove_cursor (cursor_vpos, start);
     UNBLOCK_INPUT ();
   }
 }
@@ -411,8 +409,8 @@ XTclear_screen ()
   HLmode (0);
   CursorExists = 0;
 
-  cursX = 0;
-  cursY = 0;
+  cursor_hpos = 0;
+  cursor_vpos = 0;
   SavedX = 0;
   SavedY = 0;
   VisibleX = 0;
@@ -434,8 +432,8 @@ XTclear_screen ()
  */
 
 static
-dumpchars (ActiveScreen, numcols, tempX, tempY, tempHL)
-     register struct display_line **ActiveScreen;
+dumpchars (current_screen, numcols, tempX, tempY, tempHL)
+     register struct matrix *current_screen;
      register int numcols;
      register int tempX, tempY, tempHL;
 {
@@ -452,7 +450,7 @@ dumpchars (ActiveScreen, numcols, tempX, tempY, tempHL)
   XText (XXwindow,
 	 (tempX * fontinfo->width+XXInternalBorder),
 	 (tempY * fontinfo->height+XXInternalBorder),
-	 &ActiveScreen[tempY + 1]->body[tempX],
+	 &current_screen->contents[tempY][tempX],
 	 numcols,
 	 fontinfo->id,
 	 (tempHL ? back : fore),
@@ -476,7 +474,7 @@ writechars (start, end)
 
   BLOCK_INPUT ();
 
-  if ((cursY < 0) || (cursY >= screen_height))
+  if ((cursor_vpos < 0) || (cursor_vpos >= screen_height))
     {
       UNBLOCK_INPUT ();
       return;
@@ -490,14 +488,14 @@ writechars (start, end)
       if (end != start - 1)
 	{
 	  XText (XXwindow,
-		 (cursX * fontinfo->width+XXInternalBorder),
-		 (cursY * fontinfo->height+XXInternalBorder),
+		 (cursor_hpos * fontinfo->width+XXInternalBorder),
+		 (cursor_vpos * fontinfo->height+XXInternalBorder),
 		 start,
 		 end + 1 - start,
 		 fontinfo->id,
 		 (CurHL ? back : fore),
 		 (CurHL ? fore : back));
-	  XTtopos (cursY, cursX + end - start + 1);
+	  XTmove_cursor (cursor_vpos, cursor_hpos + end - start + 1);
 	}
     }
   else
@@ -535,12 +533,12 @@ writechars (start, end)
 
 
 static
-XTwrite_chars (start, len)
+XToutput_chars (start, len)
      register char *start;
      register int len;
 {
 #ifdef XDEBUG
-  fprintf (stderr, "XTwrite_chars\n");
+  fprintf (stderr, "XToutput_chars\n");
 #endif
   writechars (start, start + len - 1);
 }
@@ -561,6 +559,7 @@ XTflash ()
   fprintf (stderr, "XTflash\n");
 #endif
 
+  stop_polling ();
   signal (SIGALRM, flashback);
   getitimer (ITIMER_REAL, &itimer);
   itimer.it_value.tv_usec += 250000;
@@ -597,6 +596,7 @@ flashback ()
   XFlush ();
   flashedback = 1;
   sigsetmask (mask);
+  start_polling ();
 #endif /* have ITIMER_REAL */
 }
 
@@ -617,7 +617,7 @@ XTfeep ()
 
 /* Artificially creating a cursor is hard, the actual position on the
  * screen (either where it is or last was) is tracked with VisibleX,Y.
- * Gnu Emacs code tends to assume a cursor exists in hardward at cursX,Y
+ * Gnu Emacs code tends to assume a cursor exists in hardward at cursor_hpos,Y
  * and that output text will appear there.  During updates, the cursor is
  * supposed to be blinked out and will only reappear after the update
  * finishes.
@@ -625,7 +625,6 @@ XTfeep ()
 
 CursorToggle ()
 {
-  register struct display_line **ActiveScreen;
   if (!WindowMapped)
     {
       CursorExists = 0;
@@ -642,19 +641,16 @@ CursorToggle ()
       /* used, but I could anticipate using */
       /* them in the future. */
     }
-  /*  if (InUpdate && DesiredScreen)
-      ActiveScreen = DesiredScreen;
-      else*/
-  ActiveScreen = PhysScreen;
-  if (ActiveScreen && ActiveScreen[VisibleY + 1] &&
-      (VisibleX < ActiveScreen[VisibleY + 1]->length))
+
+  if (current_screen->enable[VisibleY] &&
+      (VisibleX < current_screen->used[VisibleY]))
     {
       if (CursorExists)
 	{
 	  XText (XXwindow,
 		 VisibleX * fontinfo->width+XXInternalBorder,
 		 VisibleY * fontinfo->height+XXInternalBorder,
-		 &ActiveScreen[VisibleY + 1]->body[VisibleX], 1,
+		 &current_screen->contents[VisibleY][VisibleX], 1,
 		 fontinfo->id,
 		 fore, back);
 	}
@@ -663,7 +659,7 @@ CursorToggle ()
 	  XText (XXwindow,
 		 VisibleX * fontinfo->width+XXInternalBorder,
 		 VisibleY * fontinfo->height+XXInternalBorder,
-		 &ActiveScreen[VisibleY + 1]->body[VisibleX], 1,
+		 &current_screen->contents[VisibleY][VisibleX], 1,
 		 fontinfo->id,
 		 back, curs);
 	}
@@ -741,11 +737,11 @@ XTupdate_begin ()
     {
       CursorToggle ();
     }
-  SavedX = cursX;		/* The initial"hardware" cursor position is */
+  SavedX = cursor_hpos;		/* The initial"hardware" cursor position is */
   /*  saved because that is where gnu emacs */
   /*  expects the cursor to be at the end of*/
   /* the update */
-  SavedY = cursY;
+  SavedY = cursor_vpos;
   dumpqueue ();
   UNBLOCK_INPUT ();
 }
@@ -764,7 +760,7 @@ XTupdate_end ()
     CursorToggle ();
   InUpdate = 0;
   dumpqueue ();
-  XTtopos (SavedY, SavedX);	/* XTtopos invokes cursor toggle */
+  XTmove_cursor (SavedY, SavedX);	/* XTmove_cursor invokes cursor toggle */
   UNBLOCK_INPUT ();
 }
 
@@ -775,7 +771,6 @@ XTupdate_end ()
 dumprectangle (top, left, rows, cols)
      register int top, left, rows, cols;
 {
-  register struct display_line **ActiveScreen;
   register int index;
   int localX, localY, localHL;
   rows += top;
@@ -803,7 +798,6 @@ dumprectangle (top, left, rows, cols)
       ClearCursor ();
     }
 
-  ActiveScreen = PhysScreen;
   /* should perhaps be DesiredScreen */
   /* but PhysScreen is guaranteed to contain*/
   /* date which was good for every line on */
@@ -818,13 +812,13 @@ dumprectangle (top, left, rows, cols)
        ++index, ++localY)
     {
       if ((localY < 0) || (localY >= screen_height)) continue;
-      if (!ActiveScreen[localY + 1]) continue;
-      if ((left + 1) > ActiveScreen[localY + 1]->length) continue;
+      if (!current_screen->enable[localY]) continue;
+      if ((left + 1) > current_screen->used[localY]) continue;
       localX = left;
-      localHL = ActiveScreen[localY + 1]->highlighted;
-      dumpchars (ActiveScreen,
+      localHL = current_screen->highlight[localY];
+      dumpchars (current_screen,
 		 min (cols,
-		      ActiveScreen[localY + 1]->length
+		      current_screen->used[localY]
 			- localX),
 		 localX, localY, localHL);
     }
@@ -857,7 +851,7 @@ XTins_del_lines (vpos, n)
 #ifdef XDEBUG
   fprintf (stderr, "XTins_del_lines\n");
 #endif
-  XTtopos (vpos, 0);
+  XTmove_cursor (vpos, 0);
   if (n >= 0) stufflines (n);
   else scraplines (-n);
 }
@@ -892,7 +886,7 @@ stufflines (n)
   register int length, newtop;
   BLOCK_INPUT_DECLARE ()
 
-  if (cursY >= flexlines)
+  if (cursor_vpos >= flexlines)
     return;
 
   if (!WindowMapped)
@@ -904,9 +898,9 @@ stufflines (n)
   if (CursorExists) CursorToggle ();
   dumpqueue ();
   UNBLOCK_INPUT ();
-  topregion = cursY;
+  topregion = cursor_vpos;
   bottomregion = flexlines - (n + 1);
-  newtop = cursY + n;
+  newtop = cursor_vpos + n;
   length = (bottomregion - topregion) + 1;
   if ((length > 0) && (newtop <= flexlines))
     {
@@ -951,19 +945,19 @@ scraplines (n)
       return;
     }
 
-  if (cursY >= flexlines)
+  if (cursor_vpos >= flexlines)
     return;
   BLOCK_INPUT ();
   if (CursorExists) CursorToggle ();
   dumpqueue ();
-  if ((cursY + n) >= flexlines)
+  if ((cursor_vpos + n) >= flexlines)
     {
-      if (flexlines >= (cursY + 1))
+      if (flexlines >= (cursor_vpos + 1))
 	{
 	  XPixSet (XXwindow,
-		   XXInternalBorder, cursY * fontinfo->height+XXInternalBorder,
+		   XXInternalBorder, cursor_vpos * fontinfo->height+XXInternalBorder,
 		   screen_width * fontinfo->width,
-		   (flexlines - cursY) * fontinfo->height,
+		   (flexlines - cursor_vpos) * fontinfo->height,
 		   back);
 	}
       UNBLOCK_INPUT ();
@@ -972,10 +966,10 @@ scraplines (n)
     {
       XMoveArea (XXwindow,
 		 XXInternalBorder,
-		 (cursY + n) * fontinfo->height+XXInternalBorder,
-		 XXInternalBorder, cursY * fontinfo->height+XXInternalBorder,
+		 (cursor_vpos + n) * fontinfo->height+XXInternalBorder,
+		 XXInternalBorder, cursor_vpos * fontinfo->height+XXInternalBorder,
 		 screen_width * fontinfo->width,
-		 (flexlines - (cursY + n)) * fontinfo->height);
+		 (flexlines - (cursor_vpos + n)) * fontinfo->height);
       if (WindowMapped)
 	bitblt = 1;
       XFlush ();
@@ -1357,7 +1351,7 @@ x_term_init ()
   min_padding_speed = 10000;
   must_write_spaces = 1;
   informflag = 1;
-  MetaFlag = 1;
+  meta_key = 1;
   visible_bell = 1;
 #ifdef SIGIO
   interrupt_input = 1;
@@ -1372,7 +1366,7 @@ x_term_init ()
   ins_del_lines_hook = XTins_del_lines;
   change_line_highlight_hook = XTchange_line_highlight;
   insert_chars_hook = XTinsert_chars;
-  write_chars_hook = XTwrite_chars;
+  output_chars_hook = XToutput_chars;
   delete_chars_hook = XTdelete_chars;
   ring_bell_hook = XTfeep;
   reset_terminal_modes_hook = XTreset_terminal_modes;
@@ -1381,8 +1375,8 @@ x_term_init ()
   update_end_hook = XTupdate_end;
   set_terminal_window_hook = XTset_terminal_window;
   read_socket_hook = XTread_socket;
-  topos_hook = XTtopos;
-  /* raw_topos_hook = XTraw_topos;  */
+  move_cursor_hook = XTmove_cursor;
+  /* raw_move_cursor_hook = XTraw_move_cursor;  */
   reassert_line_highlight_hook = XTreassert_line_highlight;
   scroll_region_ok = 1;        /* we'll scroll partial screens */
   char_ins_del_ok = 0;         /* just as fast to write the line */
@@ -1656,8 +1650,12 @@ x_init_1 (unrequest)
 #endif /* USG */
 #ifdef F_SETOWN
   old_fcntl_owner = fcntl (0, F_GETOWN, 0);
+#ifdef F_SETOWN_SOCK_NEG
+  fcntl (0, F_SETOWN, -getpid ());	/* stdin is a socket here */
+#else
   fcntl (0, F_SETOWN, getpid ());
-#endif
+#endif /* F_SETOWN_SOCK_NEG */
+#endif /* F_SETOWN */
 #ifndef USG
   if (unrequest) unrequest_sigio ();
 #endif
@@ -1847,7 +1845,7 @@ XPopUpWindow ()
 		| ButtonReleased
 		| ExposeRegion | ExposeCopy);
   /*	XWarpMouse (XXwindow, pixelwidth >> 1, pixelheight >> 1);*/
-  XTtopos (0, 0);
+  XTmove_cursor (0, 0);
   if (IconWindow)
     {
       XSetIconWindow (XXwindow,XXIconWindow);

@@ -1,27 +1,31 @@
 ;; File input and output commands for Emacs
-;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1990 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 (defconst delete-auto-save-files t
   "*Non-nil means delete a buffer's auto-save file
 when the buffer is saved for real.")
+
+;(make-variable-buffer-local 'buffer-backed-up)
+;(defvar buffer-backed-up nil
+;  "Non-nil if this buffer's file has been backed up.
+;Backing up is done before the first time the file is saved.")
 
 ;;; Turn off backup files on VMS since it has version numbers.
 (defconst make-backup-files (not (eq system-type 'vax-vms))
@@ -197,7 +201,7 @@ If the current buffer now contains an empty file that you just visited
 \(presumably by mistake), use this command to visit the file you really want."
   (interactive "FFind alternate file: ")
   (and (buffer-modified-p)
-       (not buffer-read-only)
+;;;       (not buffer-read-only)
        (not (yes-or-no-p (format "Buffer %s is modified; kill anyway? "
 				 (buffer-name))))
        (error "Aborted"))
@@ -231,6 +235,9 @@ If a buffer exists visiting FILENAME, return that one,
 but verify that the file has not changed since visited or saved.
 The buffer is not selected, just returned to the caller."
   (setq filename (expand-file-name filename))
+  ;; Get rid of the prefixes added by the automounter.
+  (if (string-match "^/tmp_mnt/" filename)
+      (setq filename (substring filename (1- (match-end 0)))))
   (if (file-directory-p filename)
       (if find-file-run-dired
 	  (dired-noselect filename)
@@ -382,8 +389,13 @@ for current buffer."
 	  (and (search-forward "Local Variables:" nil t)
 	       (or (not inhibit-local-variables)
 		   force
-		   (y-or-n-p (format"Set local variables as specified at end of %s? "
-				    (file-name-nondirectory buffer-file-name))))))
+		   (save-window-excursion
+		     (switch-to-buffer (current-buffer))
+		     (save-excursion
+		       (beginning-of-line)
+		       (set-window-start (selected-window) (point)))
+		     (y-or-n-p (format "Set local variables as specified at end of %s? "
+				       (file-name-nondirectory buffer-file-name)))))))
 	(let ((continue t)
 	      prefix prefixlen suffix beg)
 	  ;; The prefix is what comes before "local variables:" in its line.
@@ -399,7 +411,7 @@ for current buffer."
 				      (progn (beginning-of-line) (point)))))
 	  (if prefix (setq prefixlen (length prefix)
 			   prefix (regexp-quote prefix)))
-	  (if suffix (setq suffix (regexp-quote suffix)))
+	  (if suffix (setq suffix (concat (regexp-quote suffix) "$")))
 	  (while continue
 	    ;; Look at next local variable spec.
 	    (if selective-display (re-search-forward "[\n\C-m]")
@@ -460,6 +472,8 @@ if you wish to pass an empty string as the argument."
   (setq buffer-file-name filename)
   (if filename
       (let ((new-name (file-name-nondirectory buffer-file-name)))
+	(if (string= new-name "")
+	    (error "Empty file name"))
 	(if (eq system-type 'vax-vms)
 	    (setq new-name (downcase new-name)))
 	(setq default-directory (file-name-directory buffer-file-name))
@@ -642,6 +656,7 @@ If `trim-versions-without-asking' is nil, system will query user
   "Delete the auto-save filename for the current buffer (if it has one)
 if variable  delete-auto-save-files  is non-nil."
   (and buffer-auto-save-file-name delete-auto-save-files
+       (not (string= buffer-file-name buffer-auto-save-file-name))
        (progn
 	 (condition-case ()
 	     (delete-file buffer-auto-save-file-name)
@@ -831,7 +846,18 @@ If revert-buffer-function's value is non-nil, it is called to do the work."
 	    ((or noconfirm
 		 (yes-or-no-p (format "Revert buffer from file %s? "
 				      file-name)))
-	     (let ((buffer-read-only nil))
+	     ;; If file was backed up but has changed since,
+	     ;; we shd make another backup.
+	     (and (not auto-save-p)
+		  (not (verify-visited-file-modtime (current-buffer)))
+		  (setq buffer-backed-up nil))
+	     ;; Discard all the undo information.
+	     (or (eq buffer-undo-list t)
+		 (setq buffer-undo-list nil))
+	     (let ((buffer-read-only nil)
+		   ;; Don't record undo info for the revert itself.
+		   ;; Doing so chews up too much storage.
+		   (buffer-undo-list t))
 	       ;; Bind buffer-file-name to nil
 	       ;; so that we don't try to lock the file.
 	       (let ((buffer-file-name nil))
@@ -978,7 +1004,25 @@ Actions controlled by variables list-directory-brief-switches
 With prefix arg, silently save all file-visiting buffers, then kill."
   (interactive "P")
   (save-some-buffers arg t)
-  (kill-emacs))
+  (and (or (not (memq t (mapcar (function
+				  (lambda (buf) (and (buffer-file-name buf)
+						     (buffer-modified-p buf))))
+				(buffer-list))))
+	   (yes-or-no-p "Modified buffers exist; exit anyway? "))
+       (or (not (fboundp 'process-list))
+	   ;; process-list is not defined on VMS.
+	   (let ((processes (process-list))
+		 active)
+	     (while processes
+	       (and (memq (process-status (car processes)) '(run stop))
+		    (let ((val (process-kill-without-query (car processes))))
+		      (process-kill-without-query (car processes) val)
+		      val)
+		    (setq active t))
+	       (setq processes (cdr processes)))
+	     (or (not active)
+		 (yes-or-no-p "Active processes exist; kill them and exit anyway? "))))
+       (kill-emacs)))
 
 (define-key ctl-x-map "\C-f" 'find-file)
 (define-key ctl-x-map "\C-q" 'toggle-read-only)

@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* The following three symbols give information on
@@ -45,7 +44,7 @@ and this notice must be preserved on all copies.  */
 /* Define how to take a char and sign-extend into an int.
    On machines where char is signed, this is a no-op.  */
 
-#define SIGN_EXTEND_CHAR(c) (c)
+#define SIGN_EXTEND_CHAR(c) ((signed char)(c))
 
 /* Now define a symbol for the cpu type, if your compiler
    does not define it automatically:
@@ -95,6 +94,9 @@ so disable it for them.  */
 #undef static
   /* Since NO_REMAP, problem with statics doesn't exist */
 
+#ifdef USG5_3
+#define TEXT_START 0x00000000
+#else
 #define TEXT_START 0x00400000
 #define TEXT_END 0
 #define DATA_START 0x00800000
@@ -105,6 +107,7 @@ so disable it for them.  */
    we always lose the high bits.  We must tell XPNTR to add them back.  */
 
 #define DATA_SEG_BITS 0x00800000
+#endif
 
 #if 0 /* I refuse to promulgate a recommendation that would make
          users unable to debug - RMS.  */
@@ -138,6 +141,45 @@ so disable it for them.  */
 
 /* AIX defines FIONREAD, but it does not work.  */
 #define BROKEN_FIONREAD
+
+/* This page was added in June 1990.  It may be incorrect for some versions
+   of aix, so delete it if it causes trouble.  */
+
+/* AIX has sigsetmask() */
+#undef sigsetmask
+
+/* AIX386 has BSD4.3 PTYs */
+
+#define HAVE_PTYS
+
+/* AIX has IPC. It also has sockets, and either can be used for client/server.
+   I would suggest the client/server code be changed to use HAVE_SOCKETS rather
+   than BSD as the conditional if sockets provide any advantages. */
+
+#define HAVE_SYSVIPC
+
+/* AIX has sockets */
+
+#define HAVE_SOCKETS
+/* #define SKTPAIR */ /* SKTPAIR works, but what is advantage over pipes? */
+
+/* Specify the font for X to use.  */
+
+#define X_DEFAULT_FONT "8x13"
+
+/* AIX has a wait.h.  */
+
+#define HAVE_WAIT_HEADER
+
+/* Data type of load average, as read out of kmem.  */
+
+#define LOAD_AVE_TYPE long	/* For AIX (sysV) */
+
+/* Convert that into an integer that is 100 for a load average of 1.0  */
+
+#define LOAD_AVE_CVT(x) (int) (((double) (x)/65535.0) * 100.0)
+
+/* Here override various assumptions in ymakefile */
 
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.
@@ -149,7 +191,10 @@ so disable it for them.  */
 #ifdef __GNUC__
 #define HAVE_ALLOCA
 #define alloca(n) __builtin_alloca(n)
-#define LIBS_MACHINE /usr/local/lib/gcc-gnulib -lbsd -lrts
+#define LIB_STANDARD /usr/local/lib/gcc-gnulib -lbsd -lrts -lc 
+/* -g fails to work, so it is omitted.  */
+/* tranle says that -fstrength-reduce does not help.  */
+#define C_DEBUG_SWITCH -O
 #else
 #define C_ALLOCA
 #define STACK_DIRECTION -1 /* tell alloca.c which way it grows */
@@ -158,3 +203,17 @@ so disable it for them.  */
 
 #define OBJECTS_MACHINE hftctl.o
 #define LD_SWITCH_MACHINE -T0x00400000 -K -e start
+
+#ifdef USG5_3
+#define XICCC
+#define HAVE_GETWD
+#define HAVE_RENAME
+#undef LD_SWITCH_MACHINE
+#define LD_SWITCH_MACHINE -T0x0 -K -e start
+
+/* Things defined in s-usg5-3.h that need to be overridden.  */
+#undef NOMULTIPLEJOBS
+#undef BROKEN_TIOCGETC
+#undef LIBX10_SYSTEM
+#undef LIBX11_SYSTEM
+#endif

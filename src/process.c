@@ -1,22 +1,21 @@
 /* Asynchronous subprocess control for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
@@ -54,6 +53,10 @@ and this notice must be preserved on all copies.  */
 #include <sys/bsdtty.h>
 #endif
 
+#ifdef HPUX
+#undef TIOCGPGRP
+#endif
+
 #ifdef IRIS
 #include <sys/sysmacros.h>	/* for "minor" */
 #include <sys/time.h>
@@ -63,11 +66,14 @@ and this notice must be preserved on all copies.  */
 
 #else /* not IRIS, not UNIPLUS */
 #ifdef HAVE_TIMEVAL
-#if defined(USG) && !defined(IBMRTAIX)
+/* _h_BSDTYPES is checked because on ISC unix, socket.h includes
+   both time.h and sys/time.h, and the latter file is protected
+   from repeated inclusion.  */
+#if defined(USG) && !defined(AIX) && !defined(_h_BSDTYPES) && !defined(USG_SYS_TIME)
 #include <time.h>
-#else /* IBMRTAIX or not USG */
+#else /* AIX or USG_SYS_TIME, or not USG */
 #include <sys/time.h>
-#endif /* IBMRTAIX or not USG */
+#endif /* AIX or USG_SYS_TIME, or not USG */
 #endif /* HAVE_TIMEVAL */
 
 #endif /* not UNIPLUS */
@@ -76,6 +82,11 @@ and this notice must be preserved on all copies.  */
 #if defined (HPUX) && defined (HAVE_PTYS)
 #include <sys/ptyio.h>
 #endif
+  
+#ifdef AIX
+#include <sys/pty.h>
+#include <unistd.h>
+#endif /* AIX */
 
 #ifdef SYSV_PTYS
 #include <sys/tty.h>
@@ -90,6 +101,8 @@ and this notice must be preserved on all copies.  */
 #include "termhooks.h"
 #include "termopts.h"
 #include "commands.h"
+
+Lisp_Object Qrun, Qstop, Qsignal, Qexit, Qopen, Qclosed;
 
 /* a process object is a network connection when its childp field is neither
    Qt nor Qnil but is instead a string (name of foreign host we
@@ -113,7 +126,7 @@ and this notice must be preserved on all copies.  */
    But on vanilla-ish USG systems there is not.  */
 
 #ifndef WAITTYPE
-#if !defined (BSD) && !defined (UNIPLUS) && !defined (STRIDE) && !(defined (HPUX) && !defined (NOMULTIPLEJOBS))
+#if !defined (BSD) && !defined (UNIPLUS) && !defined (STRIDE) && !(defined (HPUX) && !defined (NOMULTIPLEJOBS)) && !defined (HAVE_WAIT_HEADER)
 #define WAITTYPE int
 #define WIFSTOPPED(w) ((w&0377) == 0177)
 #define WIFSIGNALED(w) ((w&0377) != 0177 && (w&~0377) == 0)
@@ -128,14 +141,34 @@ and this notice must be preserved on all copies.  */
 #else
 #include <sys/wait.h>
 #endif /* not BSD 4.1 */
+
 #define WAITTYPE union wait
 #define WRETCODE(w) w.w_retcode
 #define WCOREDUMP(w) w.w_coredump
+
+#ifdef HPUX
+/* HPUX version 7 has broken definitions of these.  */
+#undef WTERMSIG
+#undef WSTOPSIG
+#undef WIFSTOPPED
+#undef WIFSIGNALED
+#undef WIFEXITED
+#endif
+
 #ifndef WTERMSIG
 #define WTERMSIG(w) w.w_termsig
 #endif
 #ifndef WSTOPSIG
 #define WSTOPSIG(w) w.w_stopsig
+#endif
+#ifndef WIFSTOPPED
+#define WIFSTOPPED(w) (WTERMSIG (w) == 0177)
+#endif
+#ifndef WIFSIGNALED
+#define WIFSIGNALED(w) (WTERMSIG (w) != 0177 && (WSTOPSIG (w)) == 0)
+#endif
+#ifndef WIFEXITED
+#define WIFEXITED(w) (WTERMSIG (w) == 0)
 #endif
 #endif /* BSD or UNIPLUS or STRIDE */
 #endif /* no WAITTYPE */
@@ -195,16 +228,34 @@ Lisp_Object Vprocess_connection_type;
 #endif
 #endif /* SKTPAIR */
 
-int  child_changed;		/* Flag when a child process has ceased
-				   to be */
+/* Number of events of change of status of a process.  */
+int process_tick;
 
-/* Mask of bits indicating the descriptors that we wait for input on */
-
-int input_wait_mask;
+/* Number of events for which the user or sentinel has been notified.  */
+int update_tick;
 
 int delete_exited_processes;
 
+#ifdef FD_SET
+/* We could get this from param.h, but better not to depend on finding that.
+   And better not to risk that it might define other symbols used in this
+   file.  */
+#define MAXDESC 64
+#define SELECT_TYPE fd_set
+#else /* no FD_SET */
 #define MAXDESC 32
+#define SELECT_TYPE int
+
+/* Define the macros to access a single-int bitmap of descriptors.  */
+#define FD_SET(n, p) (*(p) |= (1 << (n)))
+#define FD_CLR(n, p) (*(p) &= ~(1 << (n)))
+#define FD_ISSET(n, p) (*(p) & (1 << (n)))
+#define FD_ZERO(p) (*(p) = 0)
+#endif /* no FD_SET */
+
+/* Mask of bits indicating the descriptors that we wait for input on */
+
+SELECT_TYPE input_wait_mask;
 
 /* Indexed by descriptor, gives the process (if any) for that descriptor */
 Lisp_Object chan_process[MAXDESC];
@@ -223,20 +274,120 @@ Lisp_Object get_process ();
    Always -1 on systems that support FIONREAD.  */
 
 int proc_buffered_char[MAXDESC];
+
+/* These variables hold the filter about to be run, and its args,
+   between read_process_output and run_filter.
+   Also used in exec_sentinel for sentinels.  */
+Lisp_Object this_filter;
+Lisp_Object filter_process, filter_string;
+
+/* Compute the Lisp form of the process status, p->status,
+   from the numeric status that was returned by `wait'.  */
+
+update_status (p)
+     struct Lisp_Process *p;
+{
+  union { int i; WAITTYPE wt; } u;
+  u.i = XFASTINT (p->raw_status_low) + (XFASTINT (p->raw_status_high) << 16);
+  p->status = status_convert (u.wt);
+  p->raw_status_low = Qnil;
+  p->raw_status_high = Qnil;
+}
+
+/* Convert a process status word in Unix format
+   to the list that we use internally.  */
+
+Lisp_Object
+status_convert (w)
+     WAITTYPE w;
+{
+  if (WIFSTOPPED (w))
+    return Fcons (Qstop, Fcons (make_number (WSTOPSIG (w)), Qnil));
+  else if (WIFEXITED (w))
+    return Fcons (Qexit, Fcons (make_number (WRETCODE (w)),
+				WCOREDUMP (w) ? Qt : Qnil));
+  else if (WIFSIGNALED (w))
+    return Fcons (Qsignal, Fcons (make_number (WTERMSIG (w)),
+				  WCOREDUMP (w) ? Qt : Qnil));
+  else
+    return Qrun;
+}
+
+/* Given a status-list, extract the three pieces of information
+   and store them individually through the three pointers.  */
+
+void
+decode_status (l, symbol, code, coredump)
+     Lisp_Object l;
+     Lisp_Object *symbol;
+     int *code;
+     int *coredump;
+{
+  Lisp_Object tem;
+
+  if (XTYPE (l) == Lisp_Symbol)
+    {
+      *symbol = l;
+      *code = 0;
+      *coredump = 0;
+    }
+  else
+    {
+      *symbol = XCONS (l)->car;
+      tem = XCONS (l)->cdr;
+      *code = XFASTINT (XCONS (tem)->car);
+      tem = XFASTINT (XCONS (tem)->cdr);
+      *coredump = !NULL (tem);
+    }
+}
+
+/* Return a string describing a process status list.  */
+
+Lisp_Object 
+status_message (status)
+     Lisp_Object status;
+{
+  Lisp_Object symbol;
+  int code, coredump;
+  Lisp_Object string, string2;
+
+  decode_status (status, &symbol, &code, &coredump);
+
+  if (EQ (symbol, Qsignal) || EQ (symbol, Qstop))
+    {
+      string = build_string (code < NSIG ? sys_siglist[code] : "unknown");
+      string2 = build_string (coredump ? " (core dumped)\n" : "\n");
+      XSTRING (string)->data[0] = DOWNCASE (XSTRING (string)->data[0]);
+      return concat2 (string, string2);
+    }
+  else if (EQ (symbol, Qexit))
+    {
+      if (code == 0)
+	return build_string ("finished\n");
+      string = Fint_to_string (make_number (code));
+      string2 = build_string (coredump ? " (core dumped)\n" : "\n");
+      return concat2 (build_string ("exited abnormally with code "),
+		      concat2 (string, string2));
+    }
+  else
+    return Fcopy_sequence (Fsymbol_name (symbol));
+}
 
 #ifdef HAVE_PTYS
 
-/* Open an available pty, putting descriptor in *ptyv,
-  and return the file name of the pty.  Return 0 if none available.  */
+/* Open an available pty, returning a file descriptor.
+   Return -1 on failure.
+   The file name of the terminal corresponding to the pty
+   is left in the variable pty_name.  */
 
-char ptyname[24];
+char pty_name[24];
 
-char *
-pty (ptyv)
-     int *ptyv;
+int
+allocate_pty ()
 {
   struct stat stb;
   register c, i;
+  int fd;
 
 #ifdef PTY_ITERATION
   PTY_ITERATION
@@ -249,29 +400,33 @@ pty (ptyv)
 	PTY_NAME_SPRINTF
 #else
 #ifdef HPUX
-	sprintf (ptyname, "/dev/ptym/pty%c%x", c, i);
+	sprintf (pty_name, "/dev/ptym/pty%c%x", c, i);
 #else
 #ifdef RTU
-	sprintf (ptyname, "/dev/pty%x", i);
+	sprintf (pty_name, "/dev/pty%x", i);
 #else
-	sprintf (ptyname, "/dev/pty%c%x", c, i);
+	sprintf (pty_name, "/dev/pty%c%x", c, i);
 #endif /* not RTU */
 #endif /* not HPUX */
 #endif /* no PTY_NAME_SPRINTF */
 
 #ifndef IRIS
-	if (stat (ptyname, &stb) < 0)
-	  return 0;
-	*ptyv = open (ptyname, O_RDWR | O_NDELAY, 0);
+	if (stat (pty_name, &stb) < 0)
+	  return -1;
+#ifdef O_NONBLOCK
+	fd = open (pty_name, O_RDWR | O_NONBLOCK, 0);
+#else
+	fd = open (pty_name, O_RDWR | O_NDELAY, 0);
+#endif
 #else /* Unusual IRIS code */
- 	*ptyv = open ("/dev/ptc", O_RDWR | O_NDELAY, 0);
- 	if (*ptyv < 0)
- 	  return 0;
-	if (fstat (*ptyv, &stb) < 0)
-	  return 0;
+ 	fd = open ("/dev/ptc", O_RDWR | O_NDELAY, 0);
+ 	if (fd < 0)
+ 	  return -1;
+	if (fstat (fd, &stb) < 0)
+	  return -1;
 #endif /* IRIS */
 
-	if (*ptyv >= 0)
+	if (fd >= 0)
 	  {
 	    /* check to make certain that both sides are available
 	       this avoids a nasty yet stupid bug in rlogins */
@@ -280,103 +435,36 @@ pty (ptyv)
 #else
 	    /* In version 19, make these special cases use the macro above.  */
 #ifdef HPUX
-            sprintf (ptyname, "/dev/pty/tty%c%x", c, i);
+            sprintf (pty_name, "/dev/pty/tty%c%x", c, i);
 #else
 #ifdef RTU
-            sprintf (ptyname, "/dev/ttyp%x", i);
+            sprintf (pty_name, "/dev/ttyp%x", i);
 #else
 #ifdef IRIS
- 	    sprintf (ptyname, "/dev/ttyq%d", minor (stb.st_rdev));
+ 	    sprintf (pty_name, "/dev/ttyq%d", minor (stb.st_rdev));
 #else
-            sprintf (ptyname, "/dev/tty%c%x", c, i);
+            sprintf (pty_name, "/dev/tty%c%x", c, i);
 #endif /* not IRIS */
 #endif /* not RTU */
 #endif /* not HPUX */
 #endif /* no PTY_TTY_NAME_SPRINTF */
 #ifndef UNIPLUS
-	    if (access (ptyname, 6) != 0)
+	    if (access (pty_name, 6) != 0)
 	      {
-		close (*ptyv);
+		close (fd);
 #ifndef IRIS
 		continue;
 #else
-		return (0);
+		return -1;
 #endif /* IRIS */
 	      }
 #endif /* not UNIPLUS */
-	    /*
-		* If the following statement is included,
-		* then a 0 length record is EOT, but no other
-		* control characters can be sent down the pty
-		* (e.g., ^S/^Q, ^O, etc.).  If it is not
-		* included, then sending ^D down the pty-pipe
-		* makes a pretty good EOF.
-		*/
-	    /* I'm told that TOICREMOTE does not mean control chars
-	       "can't be sent" but rather that they don't have
-	       input-editing or signaling effects.
-	       That should be good, because we have other ways
-	       to do those things in Emacs.
-	       However, telnet mode seems not to work on 4.2.
-	       So TIOCREMOTE is turned off now. */
-
-	    /* Under hp-ux, if TIOCREMOTE is turned on, some calls
-	       will hang.  In particular, the "timeout" feature (which
-	       causes a read to return if there is no data available)
-	       does this.  Also it is known that telnet mode will hang
-	       in such a way that Emacs must be stopped (perhaps this
-	       is the same problem).
-
-	       If TIOCREMOTE is turned off, then there is a bug in
-	       hp-ux which sometimes loses data.  Apparently the
-	       code which blocks the master process when the internal
-	       buffer fills up does not work.  Other than this,
-	       though, everything else seems to work fine.
-
-	       Since the latter lossage is more benign, we may as well
-	       lose that way.  -- cph */
-#ifdef HPUX
-#if 0
-#define DID_REMOTE
-	    ioctl (*ptyv, TIOCREMOTE, 1);
-/* Yes, HPUX has an incompatible interface for this.
-   Also, using it makes telnet.el fail (Emacs hangs sending text to
-   it).  */
-#endif
-#else /* not HPUX */
-#if 0
-#ifdef TIOCREMOTE
-	    {
-	      int on = 1;
-	      ioctl (*ptyv, TIOCREMOTE, &on);
-	    }
-#endif
-#endif
-#endif /* not HPUX */
-/* this is said to be unecessary, and to be harmful in 4.3.  */
-/*	    ioctl (*ptyv, FIONBIO, &on);  */
-#ifdef FIONBIO
-#ifdef SYSV_PTYS
-	    {
-	      int on = 1;
-	      ioctl (*ptyv, FIONBIO, &on);
-	    }
-#endif
-#endif
-#ifdef IBMRTAIX
-   /* On AIX, the parent gets SIGHUP when a pty attached child dies.  So, we */
-   /* ignore SIGHUP once we've started a child on a pty.  Note that this may */
-   /* cause EMACS not to die when it should, i.e., when its own controlling  */
-   /* tty goes away.  I've complained to the AIX developers, and they may    */
-   /* change this behavior, but I'm not going to hold my breath.             */
-	    signal (SIGHUP, SIG_IGN);
-#endif
-	    return ptyname;
+	    setup_pty (fd);
+	    return fd;
 	  }
       }
-  return 0;
+  return -1;
 }
-
 #endif /* HAVE_PTYS */
 
 Lisp_Object
@@ -402,8 +490,11 @@ make_process (name)
   XFASTINT (p->infd) = 0;
   XFASTINT (p->outfd) = 0;
   XFASTINT (p->pid) = 0;
-  XFASTINT (p->flags) = 0;
-  XFASTINT (p->reason) = 0;
+  XFASTINT (p->tick) = 0;
+  XFASTINT (p->update_tick) = 0;
+  p->raw_status_low = Qnil;
+  p->raw_status_high = Qnil;
+  p->status = Qrun;
   p->mark = Fmake_marker ();
 
   /* If name is already in use, modify it until it is unused.  */
@@ -507,14 +598,21 @@ PROCESS may be a process or the name of one, or a buffer name.")
      register Lisp_Object proc;
 {
   proc = get_process (proc);
+  XPROCESS (proc)->raw_status_low = Qnil;
+  XPROCESS (proc)->raw_status_high = Qnil;
   if (NETCONN_P (proc))
-    XFASTINT (XPROCESS (proc)->flags) = EXITED | CHANGED;
+    {
+      XPROCESS (proc)->status = Fcons (Qexit, Fcons (make_number (0), Qnil));
+      XSETINT (XPROCESS (proc)->tick, ++process_tick);
+    }
   else if (XFASTINT (XPROCESS (proc)->infd))
     {
       Fkill_process (proc, Qnil);
-      /* Do this now, since remove_process will make child_sig do nothing.  */
-      XFASTINT (XPROCESS (proc)->flags) = SIGNALED | CHANGED;
-      change_msgs ();
+      /* Do this now, since remove_process will make sigchld_handler do nothing.  */
+      XPROCESS (proc)->status
+	= Fcons (Qsignal, Fcons (make_number (SIGKILL), Qnil));
+      XSETINT (XPROCESS (proc)->tick, ++process_tick);
+      status_notify ();
     }
   remove_process (proc);
   return Qnil;
@@ -539,31 +637,11 @@ nil -- if arg is a process name and no such process exists.")
   if (NULL (proc))
     return proc;
   p = XPROCESS (proc);
-
-  switch (XFASTINT (p->flags) & PROC_STATUS)
-    {
-    case RUNNING:
-      if (NETCONN_P (proc))
-	return intern ("open");
-      else if (!NULL (p->childp))
-	return intern ("run");
-      else if (!NULL (p->command_channel_p))
-	return intern ("command");
-      return intern ("external");
-
-    case EXITED:
-      if (NETCONN_P (proc))
-	return intern ("closed");
-      return intern ("exit");
-
-    case SIGNALED:
-      return intern ("signal");
-
-    case STOPPED:
-      return intern ("stop");
-    }
-
-  /* NOTREACHED */
+  if (!NULL (p->raw_status_low))
+    update_status (p);
+  if (XTYPE (p->status) == Lisp_Cons)
+    return XCONS (p->status)->car;
+  return p->status;
 }
 
 DEFUN ("process-exit-status", Fprocess_exit_status, Sprocess_exit_status,
@@ -574,7 +652,11 @@ If PROCESS has not yet exited or died, return 0.")
      register Lisp_Object proc;
 {
   CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->reason;
+  if (!NULL (XPROCESS (proc)->raw_status_low))
+    update_status (XPROCESS (proc));
+  if (XTYPE (XPROCESS (proc)->status) == Lisp_Cons)
+    return XCONS (XCONS (XPROCESS (proc)->status)->cdr)->car;
+  return make_number (0);
 }
 
 DEFUN ("process-id", Fprocess_id, Sprocess_id, 1, 1, 0,
@@ -697,14 +779,18 @@ See set-process-sentinel for more info on sentinels.")
 }
 
 DEFUN ("process-kill-without-query", Fprocess_kill_without_query,
-  Sprocess_kill_without_query, 1, 1, 0,
-  "Say no query needed if this process is running when Emacs is exited.")
-  (proc)
-     register Lisp_Object proc;
+  Sprocess_kill_without_query, 1, 2, 0,
+  "Say no query needed if PROCESS is running when Emacs is exited.\n\
+Optional second argument if non-nil says to require a query.\n\
+Value is t if a query was formerly required.")
+  (proc, value)
+     register Lisp_Object proc, value;
 {
+  Lisp_Object tem;
   CHECK_PROCESS (proc, 0);
-  XPROCESS (proc)->kill_without_query = Qt;
-  return Qt;
+  tem = XPROCESS (proc)->kill_without_query;
+  XPROCESS (proc)->kill_without_query = Fnull (value);
+  return Fnull (tem);
 }
 
 Lisp_Object
@@ -712,17 +798,17 @@ list_processes_1 ()
 {
   register Lisp_Object tail, tem;
   Lisp_Object proc, minspace, tem1;
-  register struct buffer *old = bf_cur;
+  register struct buffer *old = current_buffer;
   register struct Lisp_Process *p;
   register int state;
   char tembuf[80];
 
   XFASTINT (minspace) = 1;
 
-  SetBfp (XBUFFER (Vstandard_output));
+  set_buffer_internal (XBUFFER (Vstandard_output));
   Fbuffer_flush_undo (Vstandard_output);
 
-  bf_cur->truncate_lines = Qt;
+  current_buffer->truncate_lines = Qt;
 
   write_string ("\
 Proc         Status   Buffer         Command\n\
@@ -730,6 +816,8 @@ Proc         Status   Buffer         Command\n\
 
   for (tail = Vprocess_alist; !NULL (tail); tail = Fcdr (tail))
     {
+      Lisp_Object symbol;
+
       proc = Fcdr (Fcar (tail));
       p = XPROCESS (proc);
       if (NULL (p->childp))
@@ -738,40 +826,37 @@ Proc         Status   Buffer         Command\n\
       Finsert (1, &p->name);
       Findent_to (make_number (13), minspace);
 
-      state = XFASTINT (p->flags) & PROC_STATUS;
-      switch (state)
+      if (!NULL (p->raw_status_low))
+	update_status (p);
+      symbol = p->status;
+      if (XTYPE (p->status) == Lisp_Cons)
+	symbol = XCONS (p->status)->car;
+
+      if (EQ (symbol, Qsignal))
 	{
-	case RUNNING:
-	  if (NETCONN_P (proc))
-	    write_string ("Open", -1);
+	  Lisp_Object tem;
+	  tem = Fcar (Fcdr (p->status));
+	  if (XINT (tem) < NSIG)
+	    write_string (sys_siglist [XINT (tem)], -1);
 	  else
-	    write_string ("Run", -1);
-	  break;
+	    Fprinc (symbol, Qnil);
+	}
+      else
+	Fprinc (symbol, Qnil);
 
-	case STOPPED:
-	  write_string ("Stop", -1);
-	  break;
-
-	case EXITED:
-	  if (NETCONN_P (proc))
-	    write_string ("Closed", -1);
-	  else
-	    write_string ("Exit", -1);
-	  if (XFASTINT (p->reason))
+      if (EQ (symbol, Qexit))
+	{
+	  Lisp_Object tem;
+	  tem = Fcar (Fcdr (p->status));
+	  if (XFASTINT (tem))
 	    {
-	      sprintf (tembuf, " %d", XFASTINT (p->reason));
+	      sprintf (tembuf, " %d", XFASTINT (tem));
 	      write_string (tembuf, -1);
 	    }
-	  remove_process (proc);
-	  break;
-
-	case SIGNALED:
-	  if (XFASTINT (p->reason) < NSIG)
-	    write_string (sys_siglist [XFASTINT (p->reason)], -1);
-	  else
-	    write_string ("Signal", -1);
-	  remove_process (proc);
 	}
+
+      if (EQ (symbol, Qsignal) || EQ (symbol, Qexit))
+	remove_process (proc);
 
       Findent_to (make_number (22), minspace);
       if (NULL (p->buffer))
@@ -805,7 +890,6 @@ Proc         Status   Buffer         Command\n\
        }
     }
 
-  SetBfp (old);
   return Qnil;
 }
 
@@ -846,10 +930,13 @@ Remaining arguments are strings to give program as arguments.")
   register unsigned char **new_argv;
   register int i;
 
+  buffer = args[1];
+  if (!NULL (buffer))
+    buffer = Fget_buffer_create (buffer);
+
   name = args[0];
   CHECK_STRING (name, 0);
 
-  buffer = args[1];
   program = args[2];
 
   CHECK_STRING (program, 2);
@@ -875,8 +962,6 @@ Remaining arguments are strings to give program as arguments.")
       new_argv[0] = XSTRING (tem)->data;
     }
 
-  if (!NULL (buffer))
-    buffer = Fget_buffer_create (buffer);
   proc = make_process (name);
 
   XPROCESS (proc)->childp = Qt;
@@ -901,6 +986,24 @@ create_process_1 (signo)
 #endif /* USG */
 }
 
+#if 0  /* This doesn't work; see the note before sigchld_handler.  */
+#ifdef USG
+#ifdef SIGCHLD
+/* Mimic blocking of signals on system V, which doesn't really have it.  */
+
+/* Nonzero means we got a SIGCHLD when it was supposed to be blocked.  */
+int sigchld_deferred;
+
+create_process_sigchld ()
+{
+  signal (SIGCHLD, create_process_sigchld);
+
+  sigchld_deferred = 1;
+}
+#endif
+#endif
+#endif
+
 create_process (process, new_argv)
      Lisp_Object process;
      char **new_argv;
@@ -910,8 +1013,8 @@ create_process (process, new_argv)
 #ifdef SIGCHLD
   int (*sigchld)();
 #endif
-  register char *ptyname = 0;
   char **env;
+  int pty_flag = 0;
   extern char **environ;
 
 #ifdef MAINTAIN_ENVIRONMENT
@@ -921,22 +1024,24 @@ create_process (process, new_argv)
   env = environ;
 #endif /* MAINTAIN_ENVIRONMENT */
 
+  inchannel = outchannel = -1;
+
 #ifdef HAVE_PTYS
   if (EQ (Vprocess_connection_type, Qt))
-    ptyname = pty (&inchannel);
+    outchannel = inchannel = allocate_pty ();
 
-  outchannel = inchannel;
-  if (ptyname)
+  if (inchannel >= 0)
     {
 #ifndef USG
       /* On USG systems it does not work to open
 	 the pty's tty here and then close and reopen it in the child.  */
-      forkout = forkin = open (ptyname, O_RDWR, 0);
+      forkout = forkin = open (pty_name, O_RDWR, 0);
       if (forkin < 0)
 	report_file_error ("Opening pty", Qnil);
 #else
       forkin = forkout = -1;
 #endif
+      pty_flag = 1;
     }
   else
 #endif /* HAVE_PTYS */
@@ -973,8 +1078,12 @@ create_process (process, new_argv)
   }
 #endif
 
+#ifdef O_NONBLOCK
+  fcntl (inchannel, F_SETFL, O_NONBLOCK);
+#else
 #ifdef O_NDELAY
   fcntl (inchannel, F_SETFL, O_NDELAY);
+#endif
 #endif
 
   /* Record this as an active process, with its channels.
@@ -982,7 +1091,8 @@ create_process (process, new_argv)
   chan_process[inchannel] = process;
   XFASTINT (XPROCESS (process)->infd) = inchannel;
   XFASTINT (XPROCESS (process)->outfd) = outchannel;
-  XFASTINT (XPROCESS (process)->flags) = RUNNING;
+  XPROCESS (process)->pty_flag = (pty_flag ? Qt : Qnil);
+  XPROCESS (process)->status = Qrun;
 
   /* Delay interrupts until we have a chance to store
      the new fork's pid in its process structure */
@@ -992,14 +1102,22 @@ create_process (process, new_argv)
 #else /* not BSD4_1 */
 #ifdef HPUX
   sigsetmask (1 << (SIGCHLD - 1));
-#endif /* HPUX */
+#else /* not HPUX */
 #if defined (BSD) || defined (UNIPLUS)
   sigsetmask (1 << (SIGCHLD - 1));
 #else /* ordinary USG */
-  sigchld = (int (*)()) signal (SIGCHLD, SIG_DFL);
+#if 0
+  sigchld_deferred = 0;
+  sigchld = (int (*)()) signal (SIGCHLD, create_process_sigchld);
+#endif
 #endif /* ordinary USG */
+#endif /* not HPUX */
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
+
+  /* Until we store the proper pid, enable sigchld_handler
+     to recognize an unknown pid as standing for this process.  */
+  XSETINT (XPROCESS (process)->pid, -1);
 
   {
     /* child_setup must clobber environ on systems with true vfork.
@@ -1012,25 +1130,41 @@ create_process (process, new_argv)
 	int xforkin = forkin;
 	int xforkout = forkout;
 
+#if 0 /* This was probably a mistake--it duplicates code later on,
+	 but fails to handle all the cases.  */
+	/* Make SIGCHLD work again in the child.  */
+	sigsetmask (0);
+#endif
+
 	/* Make the pty be the controlling terminal of the process.  */
 #ifdef HAVE_PTYS
 	/* First, disconnect its current controlling terminal.  */
+#ifdef HAVE_SETSID
+	setsid ();
+#else /* not HAVE_SETSID */
 #ifdef USG
 	/* It's very important to call setpgrp() here and no time
 	   afterwards.  Otherwise, we lose our controlling tty which
 	   is set when we open the pty. */
 	setpgrp ();
 #endif /* USG */
+#endif /* not HAVE_SETSID */
 #ifdef TIOCNOTTY
 	/* In 4.3BSD, the TIOCSPGRP bug has been fixed, and now you
 	   can do TIOCSPGRP only to the process's controlling tty.  */
-	if (ptyname)
+	if (pty_flag)
 	  {
 	    /* I wonder: would just ioctl (0, TIOCNOTTY, 0) work here? 
 	       I can't test it since I don't have 4.3.  */
 	    int j = open ("/dev/tty", O_RDWR, 0);
 	    ioctl (j, TIOCNOTTY, 0);
 	    close (j);
+#ifndef USG
+	    /* In order to get a controlling terminal on some versions
+	       of BSD, it is necessary to put the process in pgrp 0
+	       before it opens the terminal.  */
+	    setpgrp (0, 0);
+#endif
 	  }
 #endif /* TIOCNOTTY */
 
@@ -1039,42 +1173,43 @@ create_process (process, new_argv)
      conditional on TIOCSPGRP.  */
 	/* Now close the pty (if we had it open) and reopen it.
 	   This makes the pty the controlling terminal of the subprocess.  */
-	if (ptyname)
+	if (pty_flag)
 	  {
-	    /* I wonder if close (open (ptyname, ...)) would work?  */
+	    /* I wonder if close (open (pty_name, ...)) would work?  */
 	    if (xforkin >= 0)
 	      close (xforkin);
-	    xforkout = xforkin = open (ptyname, O_RDWR, 0);
+	    xforkout = xforkin = open (pty_name, O_RDWR, 0);
 
 	    if (xforkin < 0)
 	      abort ();
 	  }
 #endif /* not UNIPLUS and not RTU */
-#ifdef IBMRTAIX
+#ifdef SETUP_SLAVE_PTY
+	SETUP_SLAVE_PTY;
+#endif /* SETUP_SLAVE_PTY */
+#ifdef AIX
 	/* On AIX, we've disabled SIGHUP above once we start a child on a pty.
 	   Now reenable it in the child, so it will die when we want it to.  */
-	if (ptyname)
+	if (pty_flag)
 	  signal (SIGHUP, SIG_DFL);
 #endif
 #endif /* HAVE_PTYS */
+#ifdef SIGCHLD
+#ifdef BSD4_1
+	sigrelse (SIGCHLD);
+#else /* not BSD4_1 */
+#if defined (BSD) || defined (UNIPLUS) || defined (HPUX)
+	sigsetmask (0);
+#else /* ordinary USG */
+	signal (SIGCHLD, sigchld);
+#endif /* ordinary USG */
+#endif /* not BSD4_1 */
+#endif /* SIGCHLD */
 	child_setup_tty (xforkout);
 	child_setup (xforkin, xforkout, xforkout, new_argv, env);
       }
     environ = save_environ;
   }
-
-  input_wait_mask |= ChannelMask (inchannel);
-
-  /* If the subfork execv fails, and it exits,
-     this close hangs.  I don't know why.
-     So have an interrupt jar it loose.  */
-  signal (SIGALRM, create_process_1);
-  alarm (1);
-  if (forkin >= 0)
-    close (forkin);
-  alarm (0);
-  if (forkin != forkout && forkout >= 0)
-    close (forkout);
 
   if (pid < 0)
     {
@@ -1084,17 +1219,35 @@ create_process (process, new_argv)
 
   XFASTINT (XPROCESS (process)->pid) = pid;
 
+  FD_SET (inchannel, &input_wait_mask);
+
+  /* If the subfork execv fails, and it exits,
+     this close hangs.  I don't know why.
+     So have an interrupt jar it loose.  */
+  stop_polling ();
+  signal (SIGALRM, create_process_1);
+  alarm (1);
+  if (forkin >= 0)
+    close (forkin);
+  alarm (0);
+  start_polling ();
+  if (forkin != forkout && forkout >= 0)
+    close (forkout);
+
 #ifdef SIGCHLD
 #ifdef BSD4_1
   sigrelse (SIGCHLD);
 #else /* not BSD4_1 */
-#ifdef HPUX
-  sigsetmask (0);
-#endif /* HPUX */
-#if defined (BSD) || defined (UNIPLUS)
+#if defined (BSD) || defined (UNIPLUS) || defined (HPUX)
   sigsetmask (0);
 #else /* ordinary USG */
+#if 0
   signal (SIGCHLD, sigchld);
+  /* Now really handle any of these signals
+     that came in during this function.  */
+  if (sigchld_deferred)
+    kill (getpid (), SIGCHLD);
+#endif
 #endif /* ordinary USG */
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
@@ -1134,7 +1287,9 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
   int s, outch, inch;
   char errstring[80];
   int port;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
+  GCPRO4 (name, buffer, host, service);
   CHECK_STRING (name, 0);
   CHECK_STRING (host, 0);
   if (XTYPE(service) == Lisp_Int)
@@ -1178,8 +1333,12 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
 
   chan_process[inch] = proc;
 
+#ifdef O_NONBLOCK
+  fcntl (inch, F_SETFL, O_NONBLOCK);
+#else
 #ifdef O_NDELAY
   fcntl (inch, F_SETFL, O_NDELAY);
+#endif
 #endif
 
   XPROCESS (proc)->childp = host;
@@ -1192,8 +1351,10 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
   XPROCESS (proc)->kill_without_query = Qt;
   XFASTINT (XPROCESS (proc)->infd) = s;
   XFASTINT (XPROCESS (proc)->outfd) = outch;
-  XFASTINT (XPROCESS (proc)->flags) = RUNNING;
-  input_wait_mask |= ChannelMask (inch);
+  XPROCESS (proc)->status = Qrun;
+  FD_SET (inch, &input_wait_mask);
+
+  UNGCPRO;
   return proc;
 }
 #endif	/* HAVE_SOCKETS */
@@ -1218,7 +1379,7 @@ deactivate_process (proc)
       XFASTINT (p->infd) = 0;
       XFASTINT (p->outfd) = 0;
       chan_process[inchannel] = Qnil;
-      input_wait_mask &= ~ChannelMask (inchannel);
+      FD_CLR (inchannel, &input_wait_mask);
     }
 }
 
@@ -1289,8 +1450,8 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
      int time_limit, read_kbd, do_display;
 {
   register int channel, nfds, m;
-  int Available = 0;
-  int Exception;
+  SELECT_TYPE Available;
+  SELECT_TYPE Exception;
   int xerrno;
   Lisp_Object proc;
 #ifdef HAVE_TIMEVAL
@@ -1298,7 +1459,7 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 #else
   long timeout, end_time, temp;
 #endif /* not HAVE_TIMEVAL */
-  int Atemp;
+  SELECT_TYPE Atemp;
   int wait_channel = 0;
   struct Lisp_Process *wait_proc = 0;
   extern kbd_count;
@@ -1325,17 +1486,35 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 #endif /* not HAVE_TIMEVAL */
     }
 
+#if 0  /* Select emulator claims to preserve alarms.
+	  And there are many ways to get out of this function by longjmp.  */
+  /* Turn off periodic alarms (in case they are in use)
+     because the select emulator uses alarms.  */
+  stop_polling ();
+#endif
+
   while (1)
     {
       /* If calling from keyboard input, do not quit
 	 since we want to return C-g as an input character.
 	 Otherwise, do pending quit if requested.  */
       if (read_kbd >= 0)
-	QUIT;
+	{
+#if 0
+	  /* This is the same condition tested by QUIT.
+	     We need to resume polling if we are going to quit.  */
+	  if (!NULL (Vquit_flag) && NULL (Vinhibit_quit))
+	    {
+	      start_polling ();
+	      QUIT;
+	    }
+#endif
+	  QUIT;
+	}
 
       /* If status of something has changed, and no input is available,
 	 notify the user of the change right away */
-      if (child_changed && do_display)
+      if (update_tick != process_tick && do_display)
 	{
 	  Atemp = input_wait_mask;
 #ifdef HAVE_TIMEVAL
@@ -1344,12 +1523,14 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	  timeout = 0;
 #endif /* not HAVE_TIMEVAL */
 	  if (select (MAXDESC, &Atemp, 0, 0, &timeout) <= 0)
-	    change_msgs();
+	    status_notify ();
 	}
 
       /* Don't wait for output from a non-running process.  */
+      if (wait_proc != 0 && !NULL (wait_proc->raw_status_low))
+	update_status (wait_proc);
       if (wait_proc != 0
-	  && (XFASTINT (wait_proc->flags) & PROC_STATUS) != RUNNING)
+	  && ! EQ (wait_proc->status, Qrun))
 	break;
 
       if (fix_screen_hook)
@@ -1399,7 +1580,7 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 #endif /* not HAVE_TIMEVAL */
 	}
 
-      /* Cause C-g and alarm signals to take immediate action,
+      /* Cause quitting and alarm signals to take immediate action,
 	 and cause input available signals to zero out timeout */
       if (read_kbd < 0)
 	set_waiting_for_input (&timeout);
@@ -1408,7 +1589,7 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 
       Available = Exception = input_wait_mask;
       if (!read_kbd)
-	Available &= ~1;
+	FD_CLR (0, &Available);
 
       if (read_kbd && kbd_count)
 	nfds = 0;
@@ -1430,25 +1611,37 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
       /* Make C-g and alarm signals set flags again */
       clear_waiting_for_input ();
 
+      /* If we woke up due to SIGWINCH, actually change size now.  */
+      do_pending_window_change ();
+
       if (time_limit && nfds == 0)	/* timeout elapsed */
 	break;
       if (nfds < 0)
 	{
 	  if (xerrno == EINTR)
-	    Available = 0;
+	    FD_ZERO (&Available);
 #ifdef ALLIANT
 	  /* This happens for no known reason on ALLIANT.
 	     I am guessing that this is the right response. -- RMS.  */
 	  else if (xerrno == EFAULT)
-	    Available = 0;
+	    FD_ZERO (&Available);
 #endif
 	  else if (xerrno == EBADF)
+#ifdef AIX
+	  /* AIX will return EBADF on a call to select involving a ptc if the
+	     associated pts isn't open.  Since this will only happen just as
+	     a child is dying, just ignore the situation -- SIGCHLD will come
+	     along quite quickly, and after cleanup the ptc will no longer be
+	     checked, so this error will stop recurring.  */
+	    FD_ZERO (&Available);     /* Cannot depend on values returned.  */
+#else /* not AIX */
 	    abort ();
+#endif /* not AIX */
 	  else
 	    error("select error: %s", sys_errlist[xerrno]);
 	}
 #ifdef sun
-      else if (nfds > 0 && (Available & 1) && interrupt_input)
+      else if (nfds > 0 && FD_ISSET (0, &Available) && interrupt_input)
 	/* System sometimes fails to deliver SIGIO.  */
 	kill (getpid (), SIGIO);
 #endif
@@ -1463,21 +1656,22 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 #ifdef vipc
       /* Check for connection from other process */
 
-      if (Available & ChannelMask (comm_server))
+      if (FD_ISSET (comm_server, &Available))
 	{
-	  Available &= ~(ChannelMask (comm_server));
+	  FD_CLR (comm_server, &Available);
 	  create_commchan ();
 	}
 #endif vipc
 
       /* Check for data from a process or a command channel */
 
-      for (channel = 3; Available && channel < MAXDESC; channel++)
+      for (channel = 3; channel < MAXDESC; channel++)
 	{
-	  m = ChannelMask (channel);
-	  if (m & Available)
+	  if (FD_ISSET (channel, &Available))
 	    {
-	      Available &= ~m;
+	      int nread;
+
+	      FD_CLR (channel, &Available);
 	      /* If waiting for this channel,
 		 arrange to return as soon as no more input
 		 to be processed.  No more waiting.  */
@@ -1502,7 +1696,7 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 		      if (ioctl (channel, FIONREAD, &bytes_available) < 0)
 			bytes_available = 0;
 		      if (bytes_available)
-			Available |= m;
+			FD_SET (channel, &Available);
 		    }
 		  continue;
 		}
@@ -1511,40 +1705,85 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	      /* Read data from the process, starting with our
 		 buffered-ahead character if we have one.  */
 
-	      if (read_process_output (proc, channel) > 0)
+	      nread = read_process_output (proc, channel);
+	      if (nread > 0)
 		{
+		  /* Since read_process_output can run a filter,
+		     which can call accept-process-output,
+		     don't try to read from any other processes
+		     before doing the select again.  */
+		  FD_ZERO (&Available);
+
 		  if (do_display)
-		    DoDsp (1);
+		    redisplay_preserve_echo_area ();
 		}
+#ifdef EWOULDBLOCK
+	      else if (nread == -1 && errno == EWOULDBLOCK)
+		;
+#else
+#ifdef O_NONBLOCK
+	      else if (nread == -1 && errno == EAGAIN)
+		;
+#else
+#ifdef O_NDELAY
+	      else if (nread == -1 && errno == EAGAIN)
+		;
+	      /* Note that we cannot distinguish between no input
+		 available now and a closed pipe.
+		 With luck, a closed pipe will be accompanied by
+		 subprocess termination and SIGCHLD.  */
+	      else if (nread == 0)
+		;
+#endif /* O_NDELAY */
+#endif /* O_NONBLOCK */
+#endif /* EWOULDBLOCK */
+#ifdef HAVE_PTYS
+	      /* On some OSs with ptys, when the process on one end of
+		 a pty exits, the other end gets an error reading with
+		 errno = EIO instead of getting an EOF (0 bytes read).
+		 Therefore, if we get an error reading and errno =
+		 EIO, just continue, because the child process has
+		 exited and should clean itself up soon (e.g. when we
+		 get a SIGCHLD). */
+	      else if (nread == -1 && errno == EIO)
+		;
+#endif /* HAVE_PTYS */
+/* If we can detect process termination, don't consider the process
+   gone just because its pipe is closed.  */
+#ifdef SIGCHLD
+	      else if (nread == 0)
+		;
+#endif
 	      else
 		{
 		  /* Preserve status of processes already terminated.  */
-		  child_changed++;
+		  XSETINT (XPROCESS (proc)->tick, ++process_tick);
 		  deactivate_process (proc);
-
-/*
- * With ptys: when the parent process of a pty exits we are notified,
- * just as we would be with any of our other children.  After the process
- * exits, select() will indicate that we can read the channel.  When we
- * do this, read() returns 0.  Upon receiving this, we close the channel.
- *
- * For external channels, when the peer closes the connection, select()
- * will indicate that we can read the channel.  When we do this, read()
- * returns -1 with errno = ECONNRESET.  Since we never get notified of
- * this via wait3(), we must explictly mark the process as having exited.
- */
-		  if ((XFASTINT (XPROCESS (proc)->flags) & PROC_STATUS)
-		      == RUNNING)
-		    {
-		      XFASTINT (XPROCESS (proc)->flags) = EXITED | CHANGED;
-		      XFASTINT (XPROCESS (proc)->reason) = 0;
-		    }
+		  if (!NULL (XPROCESS (proc)->raw_status_low))
+		    update_status (XPROCESS (proc));
+		  if (EQ (XPROCESS (proc)->status, Qrun))
+		    XPROCESS (proc)->status
+		      = Fcons (Qexit, Fcons (make_number (256), Qnil));
 		}
 	    }
 	} /* end for */
     } /* end while */
+
+#if 0
+  /* Resume periodic signals to poll for input, if necessary.  */
+  start_polling ();
+#endif
 }
 
+/* Actually call the filter.  This gets the information via variables
+   because internal_condition_case won't pass arguments.  */
+
+Lisp_Object
+run_filter ()
+{
+  return call2 (this_filter, filter_process, filter_string);
+}
+
 /* Read pending output from the process channel,
    starting with our buffered-ahead character if we have one.
    Yield number of characters read.
@@ -1560,7 +1799,7 @@ read_process_output (proc, channel)
   register int nchars;
   char chars[1024];
   register Lisp_Object outstream;
-  register struct buffer *old = bf_cur;
+  register struct buffer *old = current_buffer;
   register struct Lisp_Process *p = XPROCESS (proc);
   register int opoint;
 
@@ -1577,12 +1816,19 @@ read_process_output (proc, channel)
 	nchars = nchars + 1;
     }
 
-  if (nchars <= 0) return 0;
+  if (nchars <= 0) return nchars;
 
   outstream = p->filter;
   if (!NULL (outstream))
     {
-      call2 (outstream, proc, make_string (chars, nchars));
+      int count = specpdl_ptr - specpdl;
+      specbind (Qinhibit_quit, Qt);
+      this_filter = outstream;
+      filter_process = proc;
+      filter_string = make_string (chars, nchars);
+      call2 (this_filter, filter_process, filter_string);
+      /*   internal_condition_case (run_filter, Qerror, Fidentity);  */
+      unbind_to (count);
       return nchars;
     }
 
@@ -1598,21 +1844,21 @@ read_process_output (proc, channel)
 	 at the current end-of-output marker,
 	 thus preserving logical ordering of input and output.  */
       if (XMARKER (p->mark)->buffer)
-	SetPoint (marker_position (p->mark));
+	SET_PT (marker_position (p->mark));
       else
-	SetPoint (NumCharacters + 1);
+	SET_PT (ZV);
       if (point <= opoint)
 	opoint += nchars;
 
-      tem = bf_cur->read_only;
-      bf_cur->read_only = Qnil;
-      InsCStr (chars, nchars);
-      bf_cur->read_only = tem;
+      tem = current_buffer->read_only;
+      current_buffer->read_only = Qnil;
+      insert (chars, nchars);
+      current_buffer->read_only = tem;
       Fset_marker (p->mark, make_number (point), p->buffer);
-      RedoModes++;
+      update_mode_lines++;
 
-      SetPoint (opoint);
-      SetBfp (old);
+      SET_PT (opoint);
+      set_buffer_internal (old);
     }
   return nchars;
 }
@@ -1639,7 +1885,7 @@ send_process_trap ()
   longjmp (send_process_frame, 1);
 }
 
-send_process_1 (proc, buf, len)
+send_process (proc, buf, len)
      Lisp_Object proc;
      char *buf;
      int len;
@@ -1648,9 +1894,10 @@ send_process_1 (proc, buf, len)
   int rv;
   unsigned char *procname = XSTRING (XPROCESS (proc)->name)->data;
 
-  if ((XFASTINT (XPROCESS (proc)->flags) & PROC_STATUS) != RUNNING)
+  if (!NULL (XPROCESS (proc)->raw_status_low))
+    update_status (XPROCESS (proc));
+  if (! EQ (XPROCESS (proc)->status, Qrun))
     error ("Process %s not running", procname);
-
 
   if (!setjmp (send_process_frame))
     while (len > 0)
@@ -1680,31 +1927,13 @@ send_process_1 (proc, buf, len)
       }
   else
     {
-      XFASTINT (XPROCESS (proc)->flags) =  EXITED | CHANGED;
+      XPROCESS (proc)->raw_status_low = Qnil;
+      XPROCESS (proc)->raw_status_high = Qnil;
+      XPROCESS (proc)->status = Fcons (Qexit, Fcons (make_number (256), Qnil));
+      XSETINT (XPROCESS (proc)->tick, ++process_tick);
       deactivate_process (proc);
       error ("SIGPIPE raised on process %s; closed it", procname);
     }
-}
-
-/*** Is it really safe for this to get an error ?  */
-
-send_process (proc, buf, count)
-     Lisp_Object proc;
-     char *buf;
-     int count;
-{
-#ifdef vipc
-  struct { int checkword, type, datalen; } header;
-
-  if (!NULL (XPROCESS (proc)->command_channel_p))
-    {
-      checkword = UNIQUE_FROB;
-      type = VIPC_MESG;
-      datalen = count;
-      send_process_1 (proc, &header, sizeof header);
-    }
-#endif vipc
-  send_process_1 (proc, buf, count);
 }
 
 DEFUN ("process-send-region", Fprocess_send_region, Sprocess_send_region,
@@ -1721,11 +1950,11 @@ Called from program, takes three arguments, PROCESS, START and END.")
   proc = get_process (process);
   validate_region (&start, &end);
 
-  if (XINT (start) < bf_s1 && XINT (end) >= bf_s1)
+  if (XINT (start) < GPT && XINT (end) > GPT)
     move_gap (start);
 
   start1 = XINT (start);
-  send_process (proc, &CharAt (start1), XINT (end) - XINT (start));
+  send_process (proc, &FETCH_CHAR (start1), XINT (end) - XINT (start));
 
   return Qnil;
 }
@@ -1751,7 +1980,7 @@ PROCESS may be a process name.")
    If NOMSG is zero, insert signal-announcements into process's buffers
    right away.  */
 
-sig_process (process, signo, current_group, nomsg)
+process_send_signal (process, signo, current_group, nomsg)
      Lisp_Object process;
      int signo;
      Lisp_Object current_group;
@@ -1770,6 +1999,9 @@ sig_process (process, signo, current_group, nomsg)
   if (!XFASTINT (p->infd))
     error ("Process %s is not active",
 	   XSTRING (p->name)->data);
+
+  if (NULL (p->pty_flag))
+    current_group = Qnil;
 
 #ifdef TIOCGPGRP		/* Not sure about this! (fnf) */
   /* If we are using pgrps, get a pgrp number and make it negative.  */
@@ -1790,8 +2022,12 @@ sig_process (process, signo, current_group, nomsg)
     {
 #ifdef SIGCONT
     case SIGCONT:
-      XFASTINT (p->flags) = RUNNING | CHANGED;
-      child_changed++;
+      p->raw_status_low = Qnil;
+      p->raw_status_high = Qnil;
+      p->status = Qrun;
+      XSETINT (p->tick, ++process_tick);
+      if (!nomsg)
+	status_notify ();
       break;
 #endif
     case SIGINT:
@@ -1801,6 +2037,15 @@ sig_process (process, signo, current_group, nomsg)
       break;
     }
   /* gid may be a pid, or minus a pgrp's number */
+#ifdef TIOCSIGSEND
+  if (!NULL (current_group))
+    ioctl (XFASTINT (p->infd), TIOCSIGSEND, signo);
+  else
+    {
+      gid = - XFASTINT (p->pid);
+      kill (gid, signo);
+    }
+#else /* no TIOCSIGSEND */
 #ifdef BSD
   /* On bsd, [man says] kill does not accept a negative number to kill a pgrp.
      Must do that differently.  */
@@ -1808,12 +2053,7 @@ sig_process (process, signo, current_group, nomsg)
 #else /* Not BSD.  */
   kill (gid, signo);
 #endif /* Not BSD.  */
-
-  /* Put notices in buffers now, since it is safe now.
-     Because of this, we know that a process we have just killed
-     will never need to use its buffer again.  */
-  if (!nomsg)
-    change_msgs ();
+#endif /* no TIOCSIGSEND */
 }
 
 DEFUN ("interrupt-process", Finterrupt_process, Sinterrupt_process, 0, 2, 0,
@@ -1827,7 +2067,7 @@ rather than the shell.")
   (process, current_group)
      Lisp_Object process, current_group;
 {
-  sig_process (process, SIGINT, current_group, 0);
+  process_send_signal (process, SIGINT, current_group, 0);
   return process;
 }
 
@@ -1837,7 +2077,7 @@ See function interrupt-process for more details on usage.")
   (process, current_group)
      Lisp_Object process, current_group;
 {
-  sig_process (process, SIGKILL, current_group, 0);
+  process_send_signal (process, SIGKILL, current_group, 0);
   return process;
 }
 
@@ -1847,7 +2087,7 @@ See function interrupt-process for more details on usage.")
   (process, current_group)
      Lisp_Object process, current_group;
 {
-  sig_process (process, SIGQUIT, current_group, 0);
+  process_send_signal (process, SIGQUIT, current_group, 0);
   return process;
 }
 
@@ -1860,7 +2100,7 @@ See function interrupt-process for more details on usage.")
 #ifndef SIGTSTP
   error ("no SIGTSTP support");
 #else
-  sig_process (process, SIGTSTP, current_group, 0);
+  process_send_signal (process, SIGTSTP, current_group, 0);
 #endif
   return process;
 }
@@ -1872,7 +2112,7 @@ See function interrupt-process for more details on usage.")
      Lisp_Object process, current_group;
 {
 #ifdef SIGCONT
-    sig_process (process, SIGCONT, current_group, 0);
+    process_send_signal (process, SIGCONT, current_group, 0);
 #else
     error ("no SIGCONT support");
 #endif
@@ -1920,33 +2160,15 @@ kill_buffer_processes (buffer)
 	  if (NETCONN_P (proc))
 	    deactivate_process (proc);
 	  else if (XFASTINT (XPROCESS (proc)->infd))
-	    sig_process (proc, SIGHUP, Qnil, 1);
+	    process_send_signal (proc, SIGHUP, Qnil, 1);
 	}
     }
-}
-
-count_active_processes ()
-{
-  register Lisp_Object tail, proc;
-  register int count = 0;
-
-  for (tail = Vprocess_alist; !NULL (tail); tail = Fcdr (tail))
-    {
-      proc = Fcdr (Fcar (tail));
-
-      if ((1 << (XFASTINT (XPROCESS (proc)->flags) & PROC_STATUS)
-	   & ((1 << RUNNING) | (1 << STOPPED)))
-	  && NULL (XPROCESS (proc)->kill_without_query))
-	count++;
-    }
-
-  return count;
 }
 
 /* On receipt of a signal that a child status has changed,
  loop asking about children with changed statuses until
  the system says there are no more.
-   All we do is change the flags components;
+   All we do is change the status;
  we do not run sentinels or print notifications.
  That is saved for the next time keyboard input is done,
  in order to avoid timing errors.  */
@@ -1964,14 +2186,12 @@ count_active_processes ()
  the queue is empty".  Invoking signal() causes the kernel to reexamine
  the SIGCLD queue.   Fred Fish, UniSoft Systems Inc. */
 
-child_sig (signo)
+sigchld_handler (signo)
      int signo;
 {
-  register int pid;
-  WAITTYPE w;
-  Lisp_Object tail, proc;
-  register struct Lisp_Process *p;
   int old_errno = errno;
+  Lisp_Object proc;
+  register struct Lisp_Process *p;
 
 #ifdef BSD4_1
   extern int synch_process_pid;
@@ -1979,177 +2199,204 @@ child_sig (signo)
   sigheld |= sigbit (SIGCHLD);
 #endif
 
-loop: 
+  while (1)
+    {
+      register int pid;
+      WAITTYPE w;
+      Lisp_Object tail;
 
 #ifdef WNOHANG
 #ifndef WUNTRACED
 #define WUNTRACED 0
 #endif /* no WUNTRACED */
-  pid = wait3 (&w, WNOHANG | WUNTRACED, 0);
-  if (pid <= 0)
-    {
-      if (errno == EINTR)
+      /* Keep trying to get a status until we get a definitive result.  */
+      do 
 	{
 	  errno = 0;
-	  goto loop;
+	  pid = wait3 (&w, WNOHANG | WUNTRACED, 0);
 	}
-  /* USG systems forget handlers when they are used;
-     must reestablish each time */
+      while (pid <= 0 && errno == EINTR);
+
+      if (pid <= 0)
+	{
+	  /* A real failure.  We have done all our job, so return.  */
+
+	  /* USG systems forget handlers when they are used;
+	     must reestablish each time */
 #ifdef USG
-      signal (signo, child_sig);   /* WARNING - must come after wait3() */
+	  signal (signo, sigchld_handler);   /* WARNING - must come after wait3() */
 #endif
 #ifdef  BSD4_1
-      sigheld &= ~sigbit (SIGCHLD);
-      sigrelse (SIGCHLD);
+	  sigheld &= ~sigbit (SIGCHLD);
+	  sigrelse (SIGCHLD);
 #endif
-      errno = old_errno;
-      return;
-    }
+	  errno = old_errno;
+	  return;
+	}
 #else
-  pid = wait (&w);
+      pid = wait (&w);
 #endif /* no WNOHANG */
 
 #ifdef BSD4_1
-  if (synch_process_pid == pid)
-    synch_process_pid = 0;         /* Zero it to show process has died. */
+      if (synch_process_pid == pid)
+	synch_process_pid = 0;         /* Zero it to show process has died. */
 #endif
 
-  for (tail = Vprocess_alist; XSYMBOL (tail) != XSYMBOL (Qnil); tail = XCONS (tail)->cdr)
-    {
-      proc = XCONS (XCONS (tail)->car)->cdr;
-      p = XPROCESS (proc);
-      if (EQ (p->childp, Qt) && XFASTINT (p->pid) == pid)
-	break;
-    }
+      /* Find the process that signaled us, and record its status.  */
 
-  if (XSYMBOL (tail) == XSYMBOL (Qnil))
+      p = 0;
+      for (tail = Vprocess_alist; XSYMBOL (tail) != XSYMBOL (Qnil); tail = XCONS (tail)->cdr)
+	{
+	  proc = XCONS (XCONS (tail)->car)->cdr;
+	  p = XPROCESS (proc);
+	  if (EQ (p->childp, Qt) && XFASTINT (p->pid) == pid)
+	    break;
+	  p = 0;
+	}
+
+      /* If we don't recognize the pid number,
+	 look for a process being created.  */
+
+      if (p == 0)
+	for (tail = Vprocess_alist; XSYMBOL (tail) != XSYMBOL (Qnil); tail = XCONS (tail)->cdr)
+	  {
+	    proc = XCONS (XCONS (tail)->car)->cdr;
+	    p = XPROCESS (proc);
+	    if (XINT (p->pid) == -1)
+	      break;
+	    p = 0;
+	  }
+
+      /* Change the status of the process that was found.  */
+
+      if (p != 0)
+	{
+	  union { int i; WAITTYPE wt; } u;
+
+	  XSETINT (p->tick, ++process_tick);
+	  u.wt = w;
+	  XFASTINT (p->raw_status_low) = u.i & 0xffff;
+	  XFASTINT (p->raw_status_high) = u.i >> 16;
+
+	  /* If process has terminated, stop waiting for its output.  */
+	  if (WIFSIGNALED (w) || WIFEXITED (w))
+	    if (p->infd)
+	      FD_CLR (p->infd, &input_wait_mask);
+	}
+
+      /* On some systems, we must return right away.
+	 If any more processes want to signal us, we will
+	 get another signal.
+	 Otherwise (on systems that have WNOHANG), loop around
+	 to use up all the processes that have something to tell us.  */
 #if defined (USG) && ! (defined (HPUX) && defined (WNOHANG))
-    goto ignore;
-#else
-    goto loop;		/* We don't know who this is */
-#endif
-
-  child_changed++;
-  if (WIFSTOPPED (w))
-    {
-      XFASTINT (p->flags) = STOPPED | CHANGED;
-      XFASTINT (p->reason) = WSTOPSIG (w);
-    }
-  else if (WIFEXITED (w))
-    {
-      XFASTINT (p->flags) = EXITED | CHANGED;
-      if (WCOREDUMP (w))
-	XFASTINT (p->flags) |= COREDUMPED;
-      XFASTINT (p->reason) = WRETCODE (w);
-    }
-  else if (WIFSIGNALED (w))
-    {
-      XFASTINT (p->flags) = SIGNALED | CHANGED;
-      if (WCOREDUMP (w))
-	XFASTINT (p->flags) |= COREDUMPED;
-      XFASTINT (p->reason) = WTERMSIG (w);
-    }
-#if !defined (USG) || (defined (HPUX) && defined (WNOHANG))
-  goto loop;
-#else
- ignore:
 #ifdef USG
-  signal (signo, child_sig);
+      signal (signo, sigchld_handler);
 #endif
-  errno = old_errno;
-#endif /* not USG, or HPUX with WNOHANG */
+      errno = old_errno;
+      return;
+#endif /* USG, but not HPUX with WNOHANG */
+    }
 }
 
-/* Find all process marked as "changed"
-  and notify the user in a suitable fashion
-  (either run the sentinel or output a message).
-  This is done while Emacs is waiting for keyboard input */
+/* Report all recent events of a change in process status
+   (either run the sentinel or output a message).
+   This is done while Emacs is waiting for keyboard input.  */
 
-change_msgs()
+status_notify ()
 {
   register Lisp_Object tail, proc, buffer;
-  register struct Lisp_Process *p;
-  char line[50];
-
-  child_changed = 0;
 
   for (tail = Vprocess_alist; !NULL (tail); tail = Fcdr (tail))
     {
+      Lisp_Object symbol, msg;
+      register struct Lisp_Process *p;
+
       proc = Fcdr (Fcar (tail));
       p = XPROCESS (proc);
 
-      if (!(XFASTINT (p->flags) & CHANGED))
-	continue;
-
-      /* If process is still active, read any output that remains.  */
-      if (XFASTINT (p->infd))
-	while (read_process_output (proc, XFASTINT (p->infd)) > 0);
-
-      XFASTINT (p->flags) &= ~CHANGED;
-
-      line[0] = 0;
-      buffer = p->buffer;
-
-      if ((XFASTINT (p->flags) & PROC_STATUS) == SIGNALED
-	  || (XFASTINT (p->flags) & PROC_STATUS) == STOPPED)
+      if (XINT (p->tick) != XINT (p->update_tick))
 	{
-	  sprintf (line, "%s%s\n",
-		   XFASTINT (p->reason) < NSIG
-		     ? sys_siglist[XFASTINT (p->reason)] : "unknown",
-		   XFASTINT (p->flags) & COREDUMPED ? " (core dumped)" : "");
-	  line[0] = DOWNCASE (line[0]);
+	  struct gcpro gcpro1;
 
-	  if ((XFASTINT (p->flags) & PROC_STATUS) == SIGNALED)
-	    if (delete_exited_processes)
-	      remove_process (proc);
-	    else
-	      deactivate_process (proc);
-	}
-      else if ((XFASTINT (p->flags) & PROC_STATUS) == EXITED)
-	{
-	  if (XFASTINT (p->reason))
-	    sprintf (line, "exited abnormally with code %d\n",
-		     XFASTINT (p->reason));
-	  else
-	    sprintf (line, "finished\n");
+	  XSETINT (p->update_tick, XINT (p->tick));
 
-	  if (delete_exited_processes)
-	    remove_process (proc);
-	  else
-	    deactivate_process (proc);
-	}
+	  /* If process is still active, read any output that remains.  */
+	  if (XFASTINT (p->infd))
+	    while (read_process_output (proc, XFASTINT (p->infd)) > 0);
 
-      if (!NULL (p->sentinel))
-	exec_sentinel (proc, build_string (line));
-      else if (line[0] && !NULL (buffer))
-	{
-	  Lisp_Object ro = XBUFFER (buffer)->read_only;
-	  struct buffer *old = bf_cur;
-	  int opoint;
+	  buffer = p->buffer;
 
-	  /* Avoid error if buffer is deleted
-	     (probably that's why the process is dead, too) */
-	  if (NULL (XBUFFER (buffer)->name))
-	    continue;
-	  Fset_buffer (buffer);
-	  opoint = point;
-	  SetPoint (NumCharacters + 1);
-	  if (point == opoint)
-	    opoint = -1;
-	  bf_cur->read_only = Qnil;
-	  InsStr ("\nProcess ");
-	  Finsert (1, &p->name);
-	  InsStr (" ");
-	  InsStr (line);
-	  bf_cur->read_only = ro;
-	  if (opoint > 0)
-	    SetPoint (opoint);
-	  SetBfp (old);
+	  /* Get the text to use for the message.  */
+	  if (!NULL (p->raw_status_low))
+	    update_status (p);
+	  msg = status_message (p->status);
+	  GCPRO1 (msg);
+
+	  /* If process is terminated, deactivate it or delete it.  */
+	  symbol = p->status;
+	  if (XTYPE (p->status) == Lisp_Cons)
+	    symbol = XCONS (p->status)->car;
+
+	  if (EQ (symbol, Qsignal) || EQ (symbol, Qexit)
+	      || EQ (symbol, Qclosed))
+	    {
+	      if (delete_exited_processes)
+		remove_process (proc);
+	      else
+		deactivate_process (proc);
+	    }
+	  UNGCPRO;
+
+	  /* Now output the message suitably.  */
+	  if (!NULL (p->sentinel))
+	    exec_sentinel (proc, msg);
+	  /* Don't bother with a message in the buffer
+	     when a process becomes runnable.  */
+	  else if (!EQ (symbol, Qrun) && !NULL (buffer))
+	    {
+	      Lisp_Object ro = XBUFFER (buffer)->read_only;
+	      Lisp_Object tem;
+	      struct buffer *old = current_buffer;
+	      int opoint;
+
+	      /* Avoid error if buffer is deleted
+		 (probably that's why the process is dead, too) */
+	      if (NULL (XBUFFER (buffer)->name))
+		continue;
+	      Fset_buffer (buffer);
+	      opoint = point;
+	      /* Insert new output into buffer
+		 at the current end-of-output marker,
+		 thus preserving logical ordering of input and output.  */
+	      if (XMARKER (p->mark)->buffer)
+		SET_PT (marker_position (p->mark));
+	      else
+		SET_PT (ZV);
+	      if (point <= opoint)
+		opoint += XSTRING (msg)->size + XSTRING (p->name)->size + 10;
+
+	      tem = current_buffer->read_only;
+	      current_buffer->read_only = Qnil;
+	      GCPRO1 (msg);
+	      InsStr ("\nProcess ");
+	      Finsert (1, &p->name);
+	      InsStr (" ");
+	      Finsert (1, &msg);
+	      current_buffer->read_only = tem;
+	      Fset_marker (p->mark, make_number (point), p->buffer);
+	      UNGCPRO;
+
+	      SET_PT (opoint);
+	      set_buffer_internal (old);
+	    }
 	}
     } /* end for */
 
-  RedoModes++;  /* in case buffers use %s in mode-line-format */
-  DoDsp (1);
+  update_mode_lines++;  /* in case buffers use %s in mode-line-format */
+  redisplay_preserve_echo_area ();
+
+  update_tick = process_tick;
 }
 
 exec_sentinel (proc, reason)
@@ -2157,13 +2404,20 @@ exec_sentinel (proc, reason)
 {
   Lisp_Object sentinel;
   register struct Lisp_Process *p = XPROCESS (proc);
+  int count = specpdl_ptr - specpdl;
 
   sentinel = p->sentinel;
   if (NULL (sentinel))
     return;
 
   p->sentinel = Qnil;
-  call2 (sentinel, proc, reason);
+  specbind (Qinhibit_quit, Qt);
+  this_filter = sentinel;
+  filter_process = proc;
+  filter_string = reason;
+  call2 (this_filter, filter_process, filter_string);
+/*   internal_condition_case (run_filter, Qerror, Fidentity);  */
+  unbind_to (count);
   p->sentinel = sentinel;
 }
 
@@ -2175,10 +2429,11 @@ init_process ()
 #ifndef CANNOT_DUMP
   if (! noninteractive || initialized)
 #endif
-    signal (SIGCHLD, child_sig);
+    signal (SIGCHLD, sigchld_handler);
 #endif
 
-  input_wait_mask = ChannelMask(0);
+  FD_ZERO (&input_wait_mask);
+  FD_SET (0, &input_wait_mask);
   Vprocess_alist = Qnil;
   for (i = 0; i < MAXDESC; i++)
     {
@@ -2191,6 +2446,18 @@ syms_of_process ()
 {
   Qprocessp = intern ("processp");
   staticpro (&Qprocessp);
+  Qrun = intern ("run");
+  staticpro (&Qrun);
+  Qstop = intern ("stop");
+  staticpro (&Qstop);
+  Qsignal = intern ("signal");
+  staticpro (&Qsignal);
+  Qexit = intern ("exit");
+  staticpro (&Qexit);
+  Qopen = intern ("open");
+  staticpro (&Qopen);
+  Qclosed = intern ("closed");
+  staticpro (&Qclosed);
 
   staticpro (&Vprocess_alist);
 

@@ -1,22 +1,21 @@
 /* Functions for the X window system.
-   Copyright (C) 1988 Free Software Foundation.
+   Copyright (C) 1988, 1990 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Written by Yakim Martillo; rearranged by Richard Stallman.  */
 /* Color and other features added by Robert Krawitz*/
@@ -28,6 +27,30 @@ and this notice must be preserved on all copies.  */
 #endif
 #include <signal.h>
 #include "config.h"
+
+/* Get FIONREAD, if it is available.  */
+#ifdef USG
+#include <termio.h>
+#include <fcntl.h>
+#else /* not USG */
+#ifndef VMS
+#include <sys/ioctl.h>
+#endif /* not VMS */
+#endif /* not USG */
+
+/* Allow m- file to inhibit use of interrupt-driven input.  */
+#ifdef BROKEN_FIONREAD
+#undef FIONREAD
+#endif
+
+/* We are unable to use interrupts if FIONREAD is not available,
+   so flush SIGIO so we won't try.  */
+#ifndef FIONREAD
+#ifdef SIGIO
+#undef SIGIO
+#endif
+#endif
+
 #include "lisp.h"
 #include "window.h"
 #include "x11term.h"
@@ -59,6 +82,9 @@ Lisp_Object Vx_mouse_abs_pos;
 Lisp_Object Vx_mouse_item;
 
 extern Lisp_Object MouseMap;
+
+extern Lisp_Object minibuf_window;
+extern int minibuf_prompt_width;
 
 extern XEvent *XXm_queue[XMOUSEBUFSIZE];
 extern int XXm_queue_num;
@@ -215,6 +241,7 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
 
 	XSetBackground (XXdisplay, XXgc_norm, back);
 	XSetForeground (XXdisplay, XXgc_rev, back);
+	XSetForeground (XXdisplay, XXgc_curs, back);
 	XSetWindowBackground(XXdisplay, XXwindow, back);
 	XClearArea (XXdisplay, XXwindow, 0, 0,
 		    screen_width*XXfontw+2*XXInternalBorder,
@@ -385,6 +412,7 @@ DEFUN ("x-get-foreground-color", Fx_get_foreground_color,
 {
 	Lisp_Object string;
 
+	check_xterm ();
 	string = build_string (fore_color);
 	return string;
 }
@@ -396,6 +424,7 @@ DEFUN ("x-get-background-color", Fx_get_background_color,
 {
 	Lisp_Object string;
 
+	check_xterm ();
 	string = build_string (back_color);
 	return string;
 }
@@ -407,6 +436,7 @@ DEFUN ("x-get-border-color", Fx_get_border_color,
 {
 	Lisp_Object string;
 
+	check_xterm ();
 	string = build_string (brdr_color);
 	return string;
 }
@@ -418,6 +448,7 @@ DEFUN ("x-get-cursor-color", Fx_get_cursor_color,
 {
 	Lisp_Object string;
 
+	check_xterm ();
 	string = build_string (curs_color);
 	return string;
 }
@@ -429,6 +460,7 @@ DEFUN ("x-get-mouse-color", Fx_get_mouse_color,
 {
 	Lisp_Object string;
 
+	check_xterm ();
 	string = build_string (mous_color);
 	return string;
 }
@@ -446,10 +478,18 @@ Returns nil if attribute default isn't specified.")
 	CHECK_STRING (arg, 1);
 	default_name = (char *) XSTRING (arg)->data;
 
-	if (XXidentity)
+#ifdef XBACKWARDS
+	/* Some versions of X11R4, at least, have the args backwards.  */
+	if (XXidentity && *XXidentity)
+		value = XGetDefault (XXdisplay, default_name, XXidentity);
+	else
+		value = XGetDefault (XXdisplay, default_name, CLASS);
+#else
+	if (XXidentity && *XXidentity)
 		value = XGetDefault (XXdisplay, XXidentity, default_name);
 	else
 		value = XGetDefault (XXdisplay, CLASS, default_name);
+#endif
  	
 	if (value)
 		return build_string (value);
@@ -492,6 +532,7 @@ relative to window upper left corner.")
      register Lisp_Object coordinate, window;
 {
 	register Lisp_Object xcoord, ycoord;
+	int height;
 	
 	if (!CONSP (coordinate))
 		wrong_type_argument (Qlistp, coordinate);
@@ -507,13 +548,21 @@ relative to window upper left corner.")
 		return Qnil;
 
 	XFASTINT (xcoord) -= XFASTINT (XWINDOW (window)->left);
-	if (XINT (ycoord) == (screen_height - 1))
-		return Qnil;
+
+	height = XINT (XWINDOW (window)->height);
+
+	if (window == minibuf_window)
+	  {
+	    XFASTINT (xcoord) -= minibuf_prompt_width;
+	    if(XINT (xcoord) < 0)
+		XFASTINT (xcoord) = 0;
+	  }
+	else
+	  height --;
 
 	if ((XINT (ycoord) < XINT (XWINDOW (window)->top)) ||
-	    (XINT (ycoord) >= (XINT (XWINDOW (window)->top) +
-			       XINT (XWINDOW (window)->height)) - 1))
-		return Qnil;
+	    (XINT (ycoord) >= XINT (XWINDOW (window)->top) + height))
+	  return Qnil;
 
 	XFASTINT (ycoord) -= XFASTINT (XWINDOW (window)->top);
 	return Fcons (xcoord, Fcons (ycoord, Qnil));
@@ -582,7 +631,7 @@ the appropriate function to act upon this event.")
 		  = get_keyelt (access_keymap (MouseMap, com_letter));
 		if (NULL (mouse_cmd)) {
 			if (event.type != ButtonRelease)
-				Ding ();
+				bell ();
 			Vx_mouse_pos = Qnil;
 		}
 		else
@@ -610,7 +659,10 @@ otherwise, wait for an event.")
 
 	if (NULL (arg))
 		while (!XXm_queue_num)
-			sleep(1);
+		  {
+		    consume_available_input ();
+		    Fsleep_for (make_number (1));
+		  }
 	/*** ??? Surely you don't mean to busy wait??? */
 
 	if (XXm_queue_num) {
@@ -620,6 +672,12 @@ otherwise, wait for an event.")
 		XXm_queue_num--;
 		com_letter = 3-(event.xbutton.button & 3);
 		key_mask = (event.xbutton.state & 15) << 4;
+		/* Report meta in 2 bit, not in 8 bit.  */
+		if (key_mask & 0x80)
+		  {
+		    key_mask |= 0x20;
+		    key_mask &= ~0x80;
+		  }
 		com_letter |= key_mask;
 		if (event.type == ButtonRelease)
 			com_letter |= 0x04;
@@ -634,7 +692,8 @@ otherwise, wait for an event.")
 		Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
 		XSET (tempx, Lisp_Int, event.xbutton.x_root);
 		XSET (tempy, Lisp_Int, event.xbutton.y_root);
-		Vx_mouse_abs_pos = Fcond (tempx, Fcons (tempy, Qnil));
+		Vx_mouse_abs_pos = Fcons (tempx, Fcons (tempy, Qnil));
+		Vx_mouse_item = make_number (com_letter);
 		return Fcons (com_letter, Fcons (Vx_mouse_pos, Qnil));
 	}
 	return Qnil;
@@ -654,6 +713,9 @@ DEFUN ("x-store-cut-buffer", Fx_store_cut_buffer, Sx_store_cut_buffer,
 	BLOCK_INPUT ();
 	XStoreBytes (XXdisplay, XSTRING (string)->data,
 		     XSTRING (string)->size);
+	/* Clear the selection owner, so that other applications
+	   will use the cut buffer rather than a selection.  */
+        XSetSelectionOwner (XXdisplay, XA_PRIMARY, None, CurrentTime);
 	UNBLOCK_INPUT ();
 
 	return Qnil;
@@ -668,6 +730,7 @@ DEFUN ("x-get-cut-buffer", Fx_get_cut_buffer, Sx_get_cut_buffer, 0, 0, 0,
 	BLOCK_INPUT_DECLARE ();
 	register char *d;
 
+	check_xterm ();
 	BLOCK_INPUT ();
 	d = XFetchBytes (XXdisplay, &len);
 	string = make_string (d, len);
@@ -816,6 +879,7 @@ DEFUN ("x-debug", Fx_debug, Sx_debug, 1, 1, 0,
 {
 	int (*handler)();
 
+	check_xterm ();
 	if (!NULL (arg))
 		handler = XExitWithCoreDump;
 	else

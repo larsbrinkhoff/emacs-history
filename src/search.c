@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -116,7 +115,7 @@ DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
 
   CHECK_STRING (string, 0);
   compile_pattern (string, &searchbuf,
-		   !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0);
+		   !NULL (current_buffer->case_fold_search) ? (char *) downcase_table : 0);
 
   immediate_quit = 1;
   QUIT;			/* Do a pending quit right away, to avoid paradoxical behavior */
@@ -124,31 +123,30 @@ DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
   /* Get pointers and sizes of the two strings
      that make up the visible portion of the buffer. */
 
-  p1 = bf_p1 + bf_head_clip;
-  s1 = bf_s1 - (bf_head_clip - 1);
-  p2 = bf_p2 + bf_s1 + 1;
-  s2 = bf_s2 - bf_tail_clip;
+  p1 = BEGV_ADDR;
+  s1 = GPT - BEGV;
+  p2 = GAP_END_ADDR;
+  s2 = ZV - GPT;
   if (s1 < 0)
     {
-      p2 -= s1;
-      s2 += s1;
+      p2 = p1;
+      s2 = ZV - BEGV;
       s1 = 0;
     }
   if (s2 < 0)
     {
-      s1 += s2;
+      s1 = ZV - BEGV;
       s2 = 0;
     }
   
   val = (0 <= re_match_2 (&searchbuf, p1, s1, p2, s2,
-			  point - FirstCharacter, &search_regs,
-			  NumCharacters + 1 - FirstCharacter)
+			  point - BEGV, &search_regs, ZV - BEGV)
 	 ? Qt : Qnil);
   for (i = 0; i < RE_NREGS; i++)
     if (search_regs.start[i] >= 0)
       {
-	search_regs.start[i] += FirstCharacter;
-	search_regs.end[i] += FirstCharacter;
+	search_regs.start[i] += BEGV;
+	search_regs.end[i] += BEGV;
       }
   immediate_quit = 0;
   return val;
@@ -184,7 +182,7 @@ matched by parenthesis constructs in the pattern.")
     }
 
   compile_pattern (regexp, &searchbuf,
-		   !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0);
+		   !NULL (current_buffer->case_fold_search) ? (char *) downcase_table : 0);
   immediate_quit = 1;
   val = re_search (&searchbuf, XSTRING (string)->data, XSTRING (string)->size,
 			       s, XSTRING (string)->size - s, &search_regs);
@@ -197,7 +195,7 @@ scan_buffer (target, pos, cnt, shortage)
      int *shortage, pos;
      register int cnt, target;
 {
-  int lim = ((cnt > 0) ? NumCharacters : FirstCharacter);
+  int lim = ((cnt > 0) ? ZV - 1 : BEGV);
   int direction = ((cnt > 0) ? 1 : -1);
   register int lim0;
   unsigned char *base;
@@ -213,8 +211,8 @@ scan_buffer (target, pos, cnt, shortage)
       {
 	lim0 =  BufferSafeCeiling (pos);
 	lim0 = min (lim, lim0);
-	limit = &CharAt (lim0) + 1;
-	base = (cursor = &CharAt (pos));
+	limit = &FETCH_CHAR (lim0) + 1;
+	base = (cursor = &FETCH_CHAR (pos));
 	while (1)
 	  {
 	    while (*cursor != target && ++cursor != limit)
@@ -242,8 +240,8 @@ scan_buffer (target, pos, cnt, shortage)
 	{			/* we WILL scan under pos */
 	  lim0 =  BufferSafeFloor (pos);
 	  lim0 = max (lim, lim0);
-	  limit = &CharAt (lim0) - 1;
-	  base = (cursor = &CharAt (pos));
+	  limit = &FETCH_CHAR (lim0) - 1;
+	  base = (cursor = &FETCH_CHAR (pos));
 	  cursor++;
 	  while (1)
 	    {
@@ -312,9 +310,15 @@ skip_chars (forwardp, string, lim)
   CHECK_STRING (string, 0);
 
   if (NULL (lim))
-    XSETINT (lim, forwardp ? NumCharacters + 1 : FirstCharacter);
+    XFASTINT (lim) = forwardp ? ZV : BEGV;
   else
     CHECK_NUMBER_COERCE_MARKER (lim, 1);
+
+  /* In any case, don't allow scan outside bounds of buffer.  */
+  if (XFASTINT (lim) > ZV)
+    XFASTINT (lim) = ZV;
+  if (XFASTINT (lim) < BEGV)
+    XFASTINT (lim) = BEGV;
 
   p = XSTRING (string)->data;
   pend = p + XSTRING (string)->size;
@@ -359,13 +363,13 @@ skip_chars (forwardp, string, lim)
   immediate_quit = 1;
   if (forwardp)
     {
-      while (point < XINT (lim) && fastmap[CharAt (point)])
-	PointRight (1);
+      while (point < XINT (lim) && fastmap[FETCH_CHAR (point)])
+	SET_PT (point + 1);
     }
   else
     {
-      while (point > XINT (lim) && fastmap[CharAt (point - 1)])
-	PointLeft (1);
+      while (point > XINT (lim) && fastmap[FETCH_CHAR (point - 1)])
+	SET_PT (point - 1);
     }
   immediate_quit = 0;
 }
@@ -390,38 +394,38 @@ search_command (string, bound, noerror, count, direction, RE)
 
   CHECK_STRING (string, 0);
   if (NULL (bound))
-    lim = n > 0 ? NumCharacters + 1 : FirstCharacter;
+    lim = n > 0 ? ZV : BEGV;
   else
     {
       CHECK_NUMBER_COERCE_MARKER (bound, 1);
       lim = XINT (bound);
       if (n > 0 ? lim < point : lim > point)
 	error ("Invalid search bound (wrong side of point)");
-      if (lim > NumCharacters + 1)
-	lim = NumCharacters + 1;
-      if (lim < FirstCharacter)
-	lim = FirstCharacter;
+      if (lim > ZV)
+	lim = ZV;
+      if (lim < BEGV)
+	lim = BEGV;
     }
 
   np = search_buffer (string, point, lim, n, RE,
-		      !NULL (bf_cur->case_fold_search) ? downcase_table : 0);
+		      !NULL (current_buffer->case_fold_search) ? downcase_table : 0);
   if (np <= 0)
     {
       if (NULL (noerror))
 	return signal_failure (string);
       if (!EQ (noerror, Qt))
 	{
-	  if (lim < FirstCharacter || lim > NumCharacters + 1)
+	  if (lim < BEGV || lim > ZV)
 	    abort ();
-	  SetPoint (lim);
+	  SET_PT (lim);
 	}
       return Qnil;
     }
 
-  if (np < FirstCharacter || np > NumCharacters + 1)
+  if (np < BEGV || np > ZV)
     abort ();
 
-  SetPoint (np);
+  SET_PT (np);
 
   return Qt;
 }
@@ -498,30 +502,30 @@ search_buffer (string, pos, lim, n, RE, trt)
       /* Get pointers and sizes of the two strings
 	 that make up the visible portion of the buffer. */
 
-      p1 = bf_p1 + bf_head_clip;
-      s1 = bf_s1 - (bf_head_clip - 1);
-      p2 = bf_p2 + bf_s1 + 1;
-      s2 = bf_s2 - bf_tail_clip;
+      p1 = BEGV_ADDR;
+      s1 = GPT - BEGV;
+      p2 = GAP_END_ADDR;
+      s2 = ZV - GPT;
       if (s1 < 0)
 	{
-	  p2 -= s1;
-	  s2 += s1;
+	  p2 = p1;
+	  s2 = ZV - BEGV;
 	  s1 = 0;
 	}
       if (s2 < 0)
 	{
-	  s1 += s2;
+	  s1 = ZV - BEGV;
 	  s2 = 0;
 	}
       while (n < 0)
 	{
 	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
-			   pos - FirstCharacter, lim - pos, &search_regs,
+			   pos - BEGV, lim - pos, &search_regs,
 			   /* Don't allow match past current point */
-			   pos - FirstCharacter)
+			   pos - BEGV)
 	      >= 0)
 	    {
-	      j = FirstCharacter;
+	      j = BEGV;
 	      for (i = 0; i < RE_NREGS; i++)
 		if (search_regs.start[i] >= 0)
 		  {
@@ -541,11 +545,11 @@ search_buffer (string, pos, lim, n, RE, trt)
       while (n > 0)
 	{
 	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
-			   pos - FirstCharacter, lim - pos, &search_regs,
-			   lim - FirstCharacter)
+			   pos - BEGV, lim - pos, &search_regs,
+			   lim - BEGV)
 	      >= 0)
 	    {
-	      j = FirstCharacter;
+	      j = BEGV;
 	      for (i = 0; i < RE_NREGS; i++)
 		if (search_regs.start[i] >= 0)
 		  {
@@ -666,8 +670,8 @@ search_buffer (string, pos, lim, n, RE, trt)
 		   : max (lim, max (limit, pos - 20000)));
 	  if ((limit - pos) * direction > 20)
 	    {
-	      p_limit = &CharAt (limit);
-	      p2 = (cursor = &CharAt (pos));
+	      p_limit = &FETCH_CHAR (limit);
+	      p2 = (cursor = &FETCH_CHAR (pos));
 	      /* In this loop, pos + cursor - p2 is the surrogate for pos */
 	      while (1)		/* use one cursor setting as long as i can */
 		{
@@ -756,7 +760,7 @@ search_buffer (string, pos, lim, n, RE, trt)
 		  /* (the reach is at most len + 21, and typically */
 		  /* does not exceed len) */    
 		  while ((limit - pos) * direction >= 0)
-		    pos += BM_tab[CharAt(pos)];
+		    pos += BM_tab[FETCH_CHAR(pos)];
 		  /* now run the same tests to distinguish going off the */
 		  /* end, a match or a phoney match. */
 		  if ((pos - limit) * direction <= len)
@@ -769,8 +773,8 @@ search_buffer (string, pos, lim, n, RE, trt)
 		    {
 		      pos -= direction;
 		      if (pat[i] != (((int) trt)
-				     ? trt[CharAt(pos)]
-				     : CharAt (pos)))
+				     ? trt[FETCH_CHAR(pos)]
+				     : FETCH_CHAR (pos)))
 			break;
 		    }
 		  /* Above loop has moved POS part or all the way
@@ -797,6 +801,7 @@ search_buffer (string, pos, lim, n, RE, trt)
 	  if ((lim - pos) * direction < 0)
 	    return ((0 - n) * direction);
 	}
+      return pos;
     }
 }
 
@@ -966,9 +971,9 @@ Leaves point at end of replacement text.")
 
   case_action = nochange;	/* We tried an initialization */
 				/* but some C compilers blew it */
-  if (search_regs.start[0] < FirstCharacter
+  if (search_regs.start[0] < BEGV
       || search_regs.start[0] > search_regs.end[0]
-      || search_regs.end[0] > NumCharacters + 1)
+      || search_regs.end[0] > ZV)
     args_out_of_range(make_number (search_regs.start[0]),
 		      make_number (search_regs.end[0]));
 
@@ -986,7 +991,7 @@ Leaves point at end of replacement text.")
 
       for (pos = search_regs.start[0]; pos < last; pos++)
 	{
-	  c = CharAt (pos);
+	  c = FETCH_CHAR (pos);
 	  if (LOWERCASEP (c))
 	    {
 	      /* Cannot be all caps if any original char is lower case */
@@ -1020,11 +1025,13 @@ Leaves point at end of replacement text.")
       if (!some_letter) case_action = nochange;
     }
 
-  SetPoint (search_regs.end[0]);
+  SET_PT (search_regs.end[0]);
   if (!NULL (literal))
     Finsert (1, &string);
   else
     {
+      struct gcpro gcpro1;
+      GCPRO1 (string);
       for (pos = 0; pos < XSTRING (string)->size; pos++)
 	{
 	  c = XSTRING (string)->data[pos];
@@ -1032,13 +1039,15 @@ Leaves point at end of replacement text.")
 	    {
 	      c = XSTRING (string)->data[++pos];
 	      if (c == '&')
-		place (search_regs.start[0],
-		       search_regs.end[0]);
+		Finsert_buffer_substring (Fcurrent_buffer (),
+					  make_number (search_regs.start[0]),
+					  make_number (search_regs.end[0]));
 	      else if (c >= '1' && c <= RE_NREGS + '0')
 		{
 		  if (search_regs.start[c - '0'] >= 1)
-		    place (search_regs.start[c - '0'],
-			   search_regs.end[c - '0']);
+		    Finsert_buffer_substring (Fcurrent_buffer (),
+					      make_number (search_regs.start[c - '0']),
+					      make_number (search_regs.end[c - '0']));
 		}
 	      else
 		insert_char (c);
@@ -1046,6 +1055,7 @@ Leaves point at end of replacement text.")
 	  else
 	    insert_char (c);
 	}
+      UNGCPRO;
     }
 
   inslen = point - (search_regs.end[0]);
@@ -1056,21 +1066,6 @@ Leaves point at end of replacement text.")
   else if (case_action == cap_initial)
     upcase_initials_region (make_number (point - inslen), make_number (point));
   return Qnil;
-}
-
-static
-place (l1, l2)
-     int l1, l2;
-{
-  if (l1 < FirstCharacter)
-    l1 = FirstCharacter;
-  if (l1 >= NumCharacters + 1)
-    l1 = NumCharacters + 1;
-  if (l2 < l1) l2 = l1;
-  if (l2 >= NumCharacters + 1)
-    l2 = NumCharacters + 1;
-  move_gap (point);
-  InsCStr (&CharAt (l1), l2 - l1);
 }
 
 static Lisp_Object
@@ -1115,7 +1110,9 @@ Zero means the entire text matched by the whole regexp.")
 DEFUN ("match-data", Fmatch_data, Smatch_data, 0, 0, 0,
   "Return list containing all info on what the last search matched.\n\
 Element 2N is (match-beginning N); element 2N + 1 is (match-end N).\n\
-All the elements are markers or nil (nil if the Nth pair didn't match).")
+All the elements are normally markers, or nil if the Nth pair didn't match.\n\
+0 is also possible, when matching was done with `string-match',\n\
+if a match began at index 0 in the string.")
   ()
 {
   Lisp_Object data[2 * RE_NREGS];
@@ -1127,11 +1124,22 @@ All the elements are markers or nil (nil if the Nth pair didn't match).")
       int start = search_regs.start[i];
       if (start >= 0)
 	{
-	  data[2 * i] = Fmake_marker ();
-	  Fset_marker (data[2 * i], make_number (start), Qnil);
-	  data[2 * i + 1] = Fmake_marker ();
-	  Fset_marker (data[2 * i + 1],
-		       make_number (search_regs.end[i]), Qnil);
+	  if (start == 0)
+	    data[2 * i] = 0;
+	  else
+	    {
+	      data[2 * i] = Fmake_marker ();
+	      Fset_marker (data[2 * i], make_number (start), Qnil);
+	    }
+
+	  if (search_regs.end[i] == 0)
+	    data[2 * i + 1] = 0;
+	  else
+	    {
+	      data[2 * i + 1] = Fmake_marker ();
+	      Fset_marker (data[2 * i + 1],
+			   make_number (search_regs.end[i]), Qnil);
+	    }
 	  len = i;
 	}
       else
@@ -1163,13 +1171,21 @@ LIST should have been created by calling match-data previously.")
 	}
       else
 	{
-	  CHECK_MARKER (marker, 0);
-	  search_regs.start[i] = marker_position (marker);
+	  if (XTYPE (marker) == Lisp_Marker
+	      && XMARKER (marker)->buffer == 0)
+	    XFASTINT (marker) = 0;
+
+	  CHECK_NUMBER_COERCE_MARKER (marker, 0);
+	  search_regs.start[i] = XINT (marker);
 	  list = Fcdr (list);
 
 	  marker = Fcar (list);
-	  CHECK_MARKER (marker, 0);
-	  search_regs.end[i] = marker_position (marker);
+	  if (XTYPE (marker) == Lisp_Marker
+	      && XMARKER (marker)->buffer == 0)
+	    XFASTINT (marker) = 0;
+
+	  CHECK_NUMBER_COERCE_MARKER (marker, 0);
+	  search_regs.end[i] = XINT (marker);
 	}
       list = Fcdr (list);
     }
@@ -1184,37 +1200,30 @@ DEFUN ("regexp-quote", Fregexp_quote, Sregexp_quote, 1, 1, 0,
   (str)
      Lisp_Object str;
 {
-  register unsigned char *p, *cp, *end;
-  register int size;
-  Lisp_Object ostr;
+  register unsigned char *in, *out, *end;
+  register unsigned char *temp;
 
   CHECK_STRING (str, 0);
-  size = XSTRING (str)->size;
 
-  /* Increment `size' for the escapes we will need to insert */
-
-  for (cp = XSTRING (str)->data, end = cp + size; cp != end; cp++)
-    if (*cp == '[' || *cp == ']'
-	|| *cp == '*' || *cp == '.' || *cp == '\\'
-	|| *cp == '?' || *cp == '+'
-	|| *cp == '^' || *cp == '$')
-      size++;
-
-  ostr = Fmake_string (make_number (size), make_number (0));
+  temp = (unsigned char *) alloca (XSTRING (str)->size * 2);
 
   /* Now copy the data into the new string, inserting escapes. */
 
-  p = XSTRING (ostr)->data;
-  for (cp = XSTRING (str)->data; cp != end; cp++)
+  in = XSTRING (str)->data;
+  end = in + XSTRING (str)->size;
+  out = temp; 
+
+  for (; in != end; in++)
     {
-      if (*cp == '[' || *cp == ']'
-	  || *cp == '*' || *cp == '.' || *cp == '\\'
-	  || *cp == '?' || *cp == '+'
-	  || *cp == '^' || *cp == '$')
-	*p++ = '\\';
-      *p++ = *cp;
+      if (*in == '[' || *in == ']'
+	  || *in == '*' || *in == '.' || *in == '\\'
+	  || *in == '?' || *in == '+'
+	  || *in == '^' || *in == '$')
+	*out++ = '\\';
+      *out++ = *in;
     }
-  return ostr;
+
+  return make_string (temp, out - temp);
 }
 
 /* This code should be unzapped when there comes to be multiple */

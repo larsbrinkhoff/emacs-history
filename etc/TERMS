@@ -150,5 +150,80 @@ commands to turn off flow control:
     set port flow control disable
     define port flow control disable
 
-On a PC, with terminal type AT386 or AT386-M, rumor has it that the termcap file 
-that comes with the system has the `xt' capability, but should not have it.
+On System V, in the terminfo database, various terminals may have
+the `xt' flag that should not have it.  `xt' should be present only
+for the Teleray 1061 or equivalent terminal.
+
+In particular, System V for the 386 often has `xt' for terminal type
+AT386 or AT386-M, which is used for the console.  You should delete
+this flag.  Here is how:
+
+You can get a copy of the terminfo "source" for at386 using the
+command: `infocmp at386 >at386.tic'.  Edit the file at386.tic and remove
+the `xt' flag.  Then compile the new entry with: `tic at386.tic'.
+
+It is also reported that these terminal types sometimes have the wrong
+reverse-scroll string.  It should be \E[T, but sometimes is given as \E[S.
+
+Here is what watserv1!maytag!focsys!larry recommends for these terminals:
+
+# This copy of the terminfo description has been fixed.
+# The suggestions came from a number of usenet postings.
+#
+# Intel AT/386 for color card with monochrome display
+#
+AT386-M|at386-m|386AT-M|386at-m|at/386 console,
+	am, bw, eo, xon,
+	cols#80, lines#25,
+	acsc=``a1fxgqh0jYk?lZm@nEooppqDrrsstCu4vAwBx3yyzz{{||}}~~,
+	bel=^G, blink=\E[5m, bold=\E[1m, cbt=\E[Z,
+	clear=\E[2J\E[H,
+	cr=\r, cub=\E[%p1%dD, cub1=\E[D, cud=\E[%p1%dB,
+	cud1=\E[B, cuf=\E[%p1%dC, cuf1=\E[C,
+	cup=\E[%i%p1%02d;%p2%02dH, cuu=\E[%p1%dA, cuu1=\E[A,
+	dch=\E[%p1%dP, dch1=\E[P, dl=\E[%p1%dM, dl1=\E[1M,
+	ech=\E[%p1%dX,ed=\E[J, el=\E[K, el1=\E[1K\E[X, flash=^G, home=\E[H,
+	hpa=\E[%i%p1%dG, ich=\E[%p1%d@, ich1=\E[1@, il=\E[%p1%dL, il1=\E[1L,
+	ind=\E[S, indn=\E[%p1%dS, invis=\E[9m,
+	is2=\E[0;10;38m, kbs=\b, kcbt=^], kclr=\E[2J,
+	kcub1=\E[D, kcud1=\E[B, kcuf1=\E[C, kcuu1=\E[A,
+	kdch1=\E[P, kend=\E[Y, kf1=\EOP, kf10=\EOY, kf11=\EOZ,
+	kf12=\EOA, kf2=\EOQ, kf3=\EOR, kf4=\EOS, kf5=\EOT,
+	kf6=\EOU, kf7=\EOV, kf8=\EOW, kf9=\EOX, khome=\E[H,
+	kich1=\E[@, knp=\E[U, kpp=\E[V, krmir=\E0, rev=\E[7m, ri=\E[T,
+	rin=\E[%p1%dT, rmacs=\E[10m, rmso=\E[m, rmul=\E[m,
+	sgr=\E[10m\E[0%?%p1%p3%|%t;7%;%?%p2%t;4%;%?%p4%t;5%;%?%p6%t;1%;%?%p9%t;12%;%?%p7%t;9%;m,
+	sgr0=\E[0;10m, smacs=\E[12m, smso=\E[7m, smul=\E[4m,
+
+#
+# AT&T 386 color console 
+#
+AT386|at386|386AT|386at|at/386 console,
+	colors#8, ncv#3, pairs#64,
+	is2=\E[0;10;39m,
+	op=\E[0m, 
+	setb=\E[%?%p1%{0}%=%t40m
+                %e%p1%{1}%=%t44m
+                %e%p1%{2}%=%t42m
+                %e%p1%{3}%=%t46m
+                %e%p1%{4}%=%t41m
+                %e%p1%{5}%=%t45m
+                %e%p1%{6}%=%t43m
+                %e%p1%{7}%=%t47m%;,
+	setf=\E[%?%p1%{0}%=%t30m
+                %e%p1%{1}%=%t34m
+                %e%p1%{2}%=%t32m
+                %e%p1%{3}%=%t36m
+                %e%p1%{4}%=%t31m
+                %e%p1%{5}%=%t35m
+                %e%p1%{6}%=%t33m
+                %e%p1%{6}%=%t33m
+                %e%p1%{7}%=%t37m%;,
+	use=at386-m,
+#
+# Color console version that supports underline but maps blue
+# foreground color to cyan.
+#
+AT386-UL|at386-ul|386AT-UL|386at-ul|at/386 console,
+	is2=\E[0;10;38m,
+	use=at386,

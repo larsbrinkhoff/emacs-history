@@ -3,21 +3,25 @@
 
 This file is part of GNU Emacs.
 
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
 GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+
+
+/* Define NOMULTIPLEJOBS on versions of HPUX before 6.5.  */
+
+/* #define NOMULTIPLEJOBS */
 
 /* Define this symbol if you are running a version of HP-UX
    which predates version 6.01 */
@@ -95,10 +99,32 @@ and this notice must be preserved on all copies.  */
    numerically.  */
 
 /* #define VIRT_ADDR_VARIES */
+
+/* For University of Utah 4.3bsd implemetation on HP300s.
+   The #ifndef __GNUC__ definitions are required for the "standard" cc,
+   a very old, brain-dead version of PCC. */
 
-/* Define NOMULTIPLEJOBS on versions of HPUX before 6.5.  */
+#ifdef BSD4_3
+/* Tell crt0.c that this is an ordinary 68020.  */
+#undef hp9000s300
+#define CRT0_DUMMIES		bogus_a6,
 
-/* #define NOMULTIPLEJOBS */
+#define HAVE_ALLOCA
+
+#ifndef __GNUC__
+#define LIBS_DEBUG		/* don't have -lg that works */
+#define C_DEBUG_SWITCH		/* don't support -g */
+#endif
+
+#undef LOAD_AVE_TYPE
+#undef LOAD_AVE_CVT
+#define LOAD_AVE_TYPE long
+#define LOAD_AVE_CVT(x) ((int) (((double) (x)) / 2048.0 * 100.0))
+
+#endif /* BSD4_3 */
+
+#ifndef BSD4_3
+/* The following definitions are for HPUX only.  */
 
 /* The symbol in the kernel where the load average is found
    is named _avenrun on this machine.  */
@@ -173,10 +199,4 @@ and this notice must be preserved on all copies.  */
 #define NEED_BSDTTY
 #endif
 
-#ifndef NOT_C_CODE
-#ifndef NO_SHORTNAMES
-#include <sys/wait.h>
-#define WAITTYPE int
-#endif
-#define WRETCODE(w) (((w) >> 8) & 0377)
-#endif
+#endif /* not BSD4_3 */

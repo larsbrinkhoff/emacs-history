@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 (defvar c-mode-abbrev-table nil
@@ -257,7 +256,6 @@ if that value is non-nil."
     (error nil)))
 
 (defun c-indent-command (&optional whole-exp)
-  (interactive "P")
   "Indent current line as C code, or in some cases insert a tab character.
 If c-tab-always-indent is non-nil (the default), always indent current line.
 Otherwise, indent the current line only if point is at the left margin
@@ -267,6 +265,7 @@ A numeric argument, regardless of its value,
 means indent rigidly all the lines of the expression starting after point
 so that this line becomes properly indented.
 The relative indentation among the lines of the expression are preserved."
+  (interactive "P")
   (if whole-exp
       ;; If arg, always indent this line as C
       ;; and shift remaining lines of expression the same amount.
@@ -499,11 +498,12 @@ the current line is to be regarded as part of a block comment."
 		 (forward-char -2)
 		 (looking-at "\\*/")))
 	  (search-backward "/*" lim 'move)
-	(beginning-of-line)
-	(skip-chars-forward " \t")
-	(setq stop (or (not (looking-at "#")) (<= (point) lim)))
-	(if stop (goto-char opoint)
-	  (beginning-of-line))))))
+	(setq stop (or (<= (point) lim)
+		       (save-excursion
+			 (beginning-of-line)
+			 (skip-chars-forward " \t")
+			 (not (looking-at "#")))))
+	(or stop (beginning-of-line))))))
 
 (defun c-backward-to-start-of-continued-exp (lim)
   (if (= (preceding-char) ?\))
@@ -559,8 +559,8 @@ the current line is to be regarded as part of a block comment."
 	;; plus enough other lines to get to one that
 	;; does not end inside a comment or string.
 	;; Meanwhile, do appropriate indentation on comment lines.
-	(setq innerloop-done nil)
-	(while (and (not innerloop-done)
+	(setq inner-loop-done nil)
+	(while (and (not inner-loop-done)
 		    (not (and (eobp) (setq outer-loop-done t))))
 	  (setq ostate state)
 	  (setq state (parse-partial-sexp (point) (progn (end-of-line) (point))
@@ -573,7 +573,7 @@ the current line is to be regarded as part of a block comment."
 	      (c-indent-line))
 	  (if (or (nth 3 state))
 	      (forward-line 1)
-	    (setq innerloop-done t)))
+	    (setq inner-loop-done t)))
 	(if (<= next-depth 0)
 	    (setq outer-loop-done t))
 	(if outer-loop-done

@@ -1,6 +1,43 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Emacs fails to get default settings from X Windows server.
+
+The X library in X11R4 has a bug; it interchanges the 2nd and 3rd
+arguments to XGetDefaults.  Define the macro XBACKWARDS in config.h to
+tell Emacs to compensate for this.
+
+I don't believe there is any way Emacs can determine for itself
+whether this problem is present on a given system.
+
+* Keyboard input gets confused after a beep when using a DECserver
+  as a concentrator.
+
+This problem seems to be a matter of configuring the DECserver to use
+7 bit characters rather than 8 bit characters.
+
+* M-x shell persistently reports "Process shell exited abnormally with code 1".
+
+This happened on Suns as a result of what is said to be a bug in Sunos
+version 4.0.x.  The only fix was to reboot the machine. 
+
+* Programs running under terminal emulator do not recognize `emacs'
+  terminal type.
+
+The cause of this is a shell startup file that sets the TERMCAP
+environment variable.  The terminal emulator uses that variable to
+provide the information on the special terminal type that Emacs
+emulates.
+
+Rewrite your shell startup file so that it does not change TERMCAP
+in such a case.  You could use the following conditional which sets
+it only if it is undefined.
+
+    if ( ! ${?TERMCAP} ) setenv TERMCAP ~/my-termcap-file
+
+Or you could set TERMCAP only when you set TERM--which should not
+happen in a non-login shell.
+
 * Error compiling sysdep.c, "sioctl.h: no such file or directory".
 
 Among USG systems with TIOCGWINSZ, some require sysdep.c to include
@@ -26,6 +63,28 @@ The easy way to do this is to put
 
 in your site-init.el file.
 
+* Problem with remote X server on Suns.
+
+On a Sun, running Emacs on one machine with the X server on another
+may not work if you have used the unshared system libraries.  This
+is because the unshared libraries fail to use YP for host name lookup.
+As a result, the host name you specify may not be recognized.
+
+* Copying text between Emacs and Xterm windows fails in X11R3 or X11R4.
+
+According to Thomas Narten:
+Most X clients now use selections instead of (well, superceding) cut buffers.
+If there is a selection around, Xterms will use that instead of the cut
+buffer.  Emacs doesn't know about selections, but you can convince Xterm to
+always use the cut buffer instead of selections by adding this to you
+.Xdefaults: 
+
+! emacs only copies to cut buffer 0.  xterm by default 
+! wants to paste from the PRIMARY selection 
+XTerm*VT100.Translations: #override ~Meta <Btn2Up>: insert-selection(CUT_BUFFER0)
+
+(Emacs 19 has been changed to use selections.)
+
 * Watch out for .emacs files and EMACSLOADPATH environment vars
 
 These control the actions of Emacs.
@@ -35,6 +94,21 @@ EMACSLOADPATH overrides which directories the function
 
 If you observe strange problems, check for these and get rid
 of them, then try again.
+
+* Shell mode ignores interrupts on Apollo Domain
+
+You may find that M-x shell prints the following message:
+
+   Warning: no access to tty; thus no job control in this shell...
+
+This can happen if there are not enough ptys on your system.
+Here is how to make more of them.
+
+    % cd /dev
+    % ls pty*
+    # shows how many pty's you have. I had 8, named pty0 to pty7)
+    % /etc/crpty 8
+    # creates eight new pty's
 
 * Fatal signal in the command  temacs -l loadup inc dump
 
@@ -175,7 +249,10 @@ SYSTEM, YOU CAN LOSE MAIL!
 If your system uses the lock file protocol, and fascist restrictions
 prevent ordinary users from writing the lock files in /usr/spool/mail,
 you may need to make `movemail' setgid to a suitable group such as
-`mail'.
+`mail'.  You can use these commands (as root):
+
+	chgrp mail movemail
+	chmod 2755 movemail
 
 * Emacs won't work with X-windows if the value of DISPLAY is HOSTNAME:0.
 
@@ -412,13 +489,6 @@ It is possible that a change in Emacs 18.37 gets around this problem,
 but in case not, here is a description of how to fix the RFS bug that
 causes it.
 
-    Date: Wed, 28 Jan 87 15:18:40 EST
-    From: Bill Sommerfeld <wesommer@athena.mit.edu>
-    Sender: wesommer@athena.mit.edu
-    To: toddb%crl.tek.csnet@relay.cs.net
-    Cc: bug-rfs, bug-gnu-emacs@prep.ai.mit.edu
-    Subject: Bug in RFS server (fsync())
-
     There was a serious pair of bugs in the handling of the fsync() system
     call in the RFS server.
 
@@ -435,10 +505,7 @@ causes it.
     a useful tool for building atomic file transactions.  Implementing it
     as a non-blocking RPC call (when the local call blocks until the sync
     is done) is a bad idea; unfortunately, changing it will break the RFS
-    protocol.  Any suggestions?
-
-					    Bill Sommerfeld
-					    MIT Project Athena
+    protocol.  No fix was supplied for this problem.
 
     (as always, your line numbers may vary)
 

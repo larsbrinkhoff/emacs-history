@@ -5,10 +5,6 @@ This directory holds the latest distribution version of GNU Emacs.
     and programs that Emacs runs,
  `info' holds the Info documentation tree.
  `man' holds the source of the Emacs manual.
- `gdb' holds the new GNU source-level debugger.
-   It runs only on Vaxes and suns now; you are encouraged to port
-   it to other machines.
-   See etc/DEBUG for info on how to debug Emacs.
  `cpp' holds a C preprocessor for use instead of the installed one
    when the installed one fails to distinguish more than 8 characters
    in a symbol name.

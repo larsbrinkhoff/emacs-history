@@ -1,22 +1,21 @@
 /* Lisp object printing and output streams.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -28,6 +27,8 @@ and this notice must be preserved on all copies.  */
 #include "buffer.h"
 #include "window.h"
 #include "process.h"
+#include "dispextern.h"
+#include "termchar.h"
 #endif /* not standalone */
 
 Lisp_Object Vstandard_output, Qstandard_output;
@@ -61,7 +62,7 @@ static int max_print;
  Use PRINTCHAR to output one character,
  or call strout to output a block of characters.
  Also, each one must have the declarations
-   struct buffer *old = bf_cur;
+   struct buffer *old = current_buffer;
    int old_point = -1, start_point;
    Lisp_Object original;
 */ 
@@ -70,13 +71,13 @@ static int max_print;
    original = printcharfun; \
    if (NULL (printcharfun)) printcharfun = Qt; \
    if (XTYPE (printcharfun) == Lisp_Buffer) \
-     { if (XBUFFER (printcharfun) != bf_cur) SetBfp (XBUFFER (printcharfun)); \
+     { if (XBUFFER (printcharfun) != current_buffer) Fset_buffer (printcharfun); \
        printcharfun = Qnil;}\
    if (XTYPE (printcharfun) == Lisp_Marker) \
-     { if (XMARKER (original)->buffer != bf_cur) \
-         SetBfp (XMARKER (original)->buffer); \
+     { if (XMARKER (original)->buffer != current_buffer) \
+         set_buffer_internal (XMARKER (original)->buffer); \
        old_point = point; \
-       SetPoint (marker_position (printcharfun)); \
+       SET_PT (marker_position (printcharfun)); \
        start_point = point; \
        printcharfun = Qnil;}
 
@@ -84,15 +85,13 @@ static int max_print;
    if (XTYPE (original) == Lisp_Marker) \
      Fset_marker (original, make_number (point), Qnil); \
    if (old_point >= 0) \
-     SetPoint ((old_point >= start_point ? point - start_point : 0) + old_point); \
-   if (old != bf_cur) \
-     SetBfp (old)
+     SET_PT ((old_point >= start_point ? point - start_point : 0) + old_point); \
+   if (old != current_buffer) \
+     set_buffer_internal (old)
 
 #define PRINTCHAR(ch) printchar (ch, printcharfun)
 
-/* Buffer for output destined for minibuffer */
-static char printbuf[MScreenWidth + 1];
-/* Index of first unused element of above */
+/* Index of first unused element of message_buf.  */
 static int printbufidx;
 
 static void
@@ -110,7 +109,7 @@ printchar (ch, fun)
   if (EQ (fun, Qnil))
     {
       QUIT;
-      InsCStr (&ch, 1);
+      insert (&ch, 1);
       return;
     }
   if (EQ (fun, Qt))
@@ -121,11 +120,11 @@ printchar (ch, fun)
 	  noninteractive_need_newline = 1;
 	  return;
 	}
-      if (minibuf_message != printbuf)
-	minibuf_message = printbuf, printbufidx = 0;
-      if (printbufidx < sizeof printbuf - 1)
-	printbuf[printbufidx++] = ch;
-      printbuf[printbufidx] = 0;
+      if (echo_area_contents != message_buf)
+	echo_area_contents = message_buf, printbufidx = 0;
+      if (printbufidx < screen_width)
+	message_buf[printbufidx++] = ch;
+      message_buf[printbufidx] = 0;
       return;
     }
 #endif /* not standalone */
@@ -144,7 +143,7 @@ strout (ptr, size, printcharfun)
 
   if (EQ (printcharfun, Qnil))
     {
-      InsCStr (ptr, size >= 0 ? size : strlen (ptr));
+      insert (ptr, size >= 0 ? size : strlen (ptr));
 #ifdef MAX_PRINT_CHARS
       if (max_print)
         print_chars += size >= 0 ? size : strlen(ptr);
@@ -164,13 +163,13 @@ strout (ptr, size, printcharfun)
 	  noninteractive_need_newline = 1;
 	  return;
 	}
-      if (minibuf_message != printbuf)
-	minibuf_message = printbuf, printbufidx = 0;
-      if (i > sizeof printbuf - printbufidx - 1)
-	i = sizeof printbuf - printbufidx - 1;
-      bcopy (ptr, &printbuf[printbufidx], i);
+      if (echo_area_contents != message_buf)
+	echo_area_contents = message_buf, printbufidx = 0;
+      if (i > screen_width - printbufidx)
+	i = screen_width - printbufidx;
+      bcopy (ptr, &message_buf[printbufidx], i);
       printbufidx += i;
-      printbuf[printbufidx] = 0;
+      message_buf[printbufidx] = 0;
       return;
     }
   if (size >= 0)
@@ -187,7 +186,7 @@ STREAM defaults to the value of `standard-output' (which see).")
   (ch, printcharfun)
      Lisp_Object ch, printcharfun;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original;
@@ -205,7 +204,7 @@ write_string (data, size)
      char *data;
      int size;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   Lisp_Object printcharfun;
   int old_point = -1;
   int start_point;
@@ -223,7 +222,7 @@ write_string_1 (data, size, printcharfun)
      int size;
      Lisp_Object printcharfun;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original;
@@ -239,18 +238,18 @@ write_string_1 (data, size, printcharfun)
 temp_output_buffer_setup (bufname)
     char *bufname;
 {
-  register struct buffer *old = bf_cur;
+  register struct buffer *old = current_buffer;
   register Lisp_Object buf;
 
   Fset_buffer (Fget_buffer_create (build_string (bufname)));
 
-  bf_cur->read_only = Qnil;
+  current_buffer->read_only = Qnil;
   Ferase_buffer ();
 
-  XSET (buf, Lisp_Buffer, bf_cur);
+  XSET (buf, Lisp_Buffer, current_buffer);
   specbind (Qstandard_output, buf);
 
-  SetBfp (old);
+  set_buffer_internal (old);
 }
 
 Lisp_Object
@@ -262,6 +261,7 @@ internal_with_output_to_temp_buffer (bufname, function, args)
   int count = specpdl_ptr - specpdl;
   Lisp_Object buf, val;
 
+  record_unwind_protect (Fset_buffer, Fcurrent_buffer ());
   temp_output_buffer_setup (bufname);
   buf = Vstandard_output;
 
@@ -298,7 +298,7 @@ to get the buffer displayed.  It gets one argument, the buffer to display.")
   temp_output_buffer_setup (XSTRING (name)->data);
   buf = Vstandard_output;
 
-  val = Fprogn (args);
+  val = Fprogn (Fcdr (args));
 
   temp_output_buffer_show (buf);
 
@@ -314,7 +314,7 @@ DEFUN ("terpri", Fterpri, Sterpri, 0, 1, 0,
   (printcharfun)
      Lisp_Object printcharfun;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original;
@@ -335,7 +335,7 @@ Output stream is STREAM, or value of `standard-output' (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original;
@@ -362,10 +362,11 @@ that `read' can handle, whenever this is possible.")
   (obj)
      Lisp_Object obj;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original, printcharfun;
+  struct gcpro gcpro1;
 
   printcharfun = Vprin1_to_string_buffer;
   PRINTPREPARE;
@@ -373,10 +374,12 @@ that `read' can handle, whenever this is possible.")
   print (obj, printcharfun, 1);
   /* Make Vprin1_to_string_buffer be the default buffer after PRINTFINSH */
   PRINTFINISH;
-  SetBfp (XBUFFER (Vprin1_to_string_buffer));
+  set_buffer_internal (XBUFFER (Vprin1_to_string_buffer));
   obj = Fbuffer_string ();
+  GCPRO1 (obj);
   Ferase_buffer ();
-  SetBfp (old);
+  set_buffer_internal (old);
+  UNGCPRO;
   return obj;
 }
 
@@ -388,7 +391,7 @@ Output stream is STREAM, or value of standard-output (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original;
@@ -410,10 +413,11 @@ Output stream is STREAM, or value of `standard-output' (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original;
+  struct gcpro gcpro1;
 
 #ifdef MAX_PRINT_CHARS
   print_chars = 0;
@@ -421,6 +425,7 @@ Output stream is STREAM, or value of `standard-output' (which see).")
 #endif /* MAX_PRINT_CHARS */
   if (NULL (printcharfun))
     printcharfun = Vstandard_output;
+  GCPRO1 (obj);
   PRINTPREPARE;
   print_depth = 0;
   PRINTCHAR ('\n');
@@ -431,6 +436,7 @@ Output stream is STREAM, or value of `standard-output' (which see).")
   max_print = 0;
   print_chars = 0;
 #endif /* MAX_PRINT_CHARS */
+  UNGCPRO;
   return obj;
 }
 
@@ -468,7 +474,7 @@ print (obj, printcharfun, escapeflag)
     default:
       /* We're in trouble if this happens!
 	 Probably should just abort () */
-      strout ("#<EMACS BUG: ILLEGAL DATATYPE ", -1, printcharfun);
+      strout ("#<EMACS BUG: INVALID DATATYPE ", -1, printcharfun);
       sprintf (buf, "(#o%3o)", (int) XTYPE (obj));
       strout (buf, -1, printcharfun);
       strout (" Save your buffers immediately and please report this bug>",

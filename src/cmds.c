@@ -1,22 +1,21 @@
 /* Simple built-in editing commands.
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -39,15 +38,15 @@ On reaching end of buffer, stop and signal error.")
   else
     CHECK_NUMBER (n, 0);
 
-  SetPoint (point + XINT (n));
-  if (point < FirstCharacter)
+  SET_PT (point + XINT (n));
+  if (point < BEGV)
     {
-      SetPoint (FirstCharacter);
+      SET_PT (BEGV);
       Fsignal (Qbeginning_of_buffer, Qnil);
     }
-  if (point > NumCharacters + 1)
+  if (point > ZV)
     {
-      SetPoint (NumCharacters + 1);
+      SET_PT (ZV);
       Fsignal (Qend_of_buffer, Qnil);
     }
   return Qnil;
@@ -93,10 +92,10 @@ With positive ARG, a non-empty line at the end counts as one line\n\
   pos = scan_buffer ('\n', pos2, count - negp, &shortage);
   if (shortage > 0
       && (negp
-	  || (NumCharacters >= FirstCharacter
-	      && CharAt (pos - 1) != '\n')))
+	  || (ZV > BEGV
+	      && FETCH_CHAR (pos - 1) != '\n')))
     shortage--;
-  SetPoint (pos);
+  SET_PT (pos);
   return make_number (negp ? - shortage : shortage);
 }
 
@@ -137,9 +136,9 @@ If scan reaches end of buffer, stop there without error.")
     Fforward_line (make_number (XINT (n) - 1));
 
   pos = point;
-  stop = NumCharacters + 1;
-  while (pos < stop && CharAt (pos) != '\n') pos++;
-  SetPoint (pos);
+  stop = ZV;
+  while (pos < stop && FETCH_CHAR (pos) != '\n') pos++;
+  SET_PT (pos);
 
   return Qnil;
 }
@@ -158,14 +157,14 @@ ARG was explicitly specified.")
     {
       if (XINT (n) < 0)
 	{
-	  if (point + XINT (n) < FirstCharacter)
+	  if (point + XINT (n) < BEGV)
 	    Fsignal (Qbeginning_of_buffer, Qnil);
 	  else
 	    del_range (point + XINT (n), point);
 	}
       else
 	{
-	  if (point + XINT (n) > NumCharacters + 1)
+	  if (point + XINT (n) > ZV)
 	    Fsignal (Qend_of_buffer, Qnil);
 	  else
 	    del_range (point, point + XINT (n));
@@ -201,7 +200,7 @@ DEFUN ("self-insert-command", Fself_insert_command, Sself_insert_command, 1, 1, 
   while (XINT (arg) > 0)
     {
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
-      SelfInsert (last_command_char, XFASTINT (arg) != 0);
+      self_insert_internal (last_command_char, XFASTINT (arg) != 0);
     }
   return Qnil;
 }
@@ -218,7 +217,7 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
 
   arg = Fprefix_numeric_value (arg1);
 
-  if (!NULL (bf_cur->read_only))
+  if (!NULL (current_buffer->read_only))
     Fsignal (Qbuffer_read_only, Qnil);
 
   /* Inserting a newline at the end of a line
@@ -226,27 +225,29 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
      than inserting at the ebginning fo a line,
      And the textual result is the same.
      So if at beginning, pretend to be at the end.
-     Must avoid SelfInsert in that case since point is wrong.
-     Luckily SelfInsert's special features all do nothing in that case.  */
+     Must avoid self_insert_internal in that case since point is wrong.
+     Luckily self_insert_internal's special features all do nothing in that case.  */
 
-  flag = point > FirstCharacter && CharAt (point - 1) == '\n';
-  if (flag) PointLeft (1);
+  flag = point > BEGV && FETCH_CHAR (point - 1) == '\n';
+  if (flag)
+    SET_PT (point - 1);
 
   while (XINT (arg) > 0)
     {
       if (flag)
-	InsCStr (&c1, 1);
+	insert (&c1, 1);
       else
-	SelfInsert ('\n', !NULL (arg1));
+	self_insert_internal ('\n', !NULL (arg1));
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
     }
 
-  if (flag) PointRight (1);
+  if (flag)
+    SET_PT (point + 1);
 
   return Qnil;
 }
 
-SelfInsert (c1, noautofill)
+self_insert_internal (c1, noautofill)
      char c1;
      int noautofill;
 {
@@ -256,20 +257,20 @@ SelfInsert (c1, noautofill)
   register enum syntaxcode synt;
   register int c = c1;
 
-  if (!NULL (bf_cur->overwrite_mode)
-      && point <= NumCharacters
-      && c != '\n' && CharAt (point) != '\n'
-      && (CharAt (point) != '\t'
-	  || XINT (bf_cur->tab_width) <= 0
-	  || !((current_column () + 1) % XFASTINT (bf_cur->tab_width))))
+  if (!NULL (current_buffer->overwrite_mode)
+      && point < ZV
+      && c != '\n' && FETCH_CHAR (point) != '\n'
+      && (FETCH_CHAR (point) != '\t'
+	  || XINT (current_buffer->tab_width) <= 0
+	  || !((current_column () + 1) % XFASTINT (current_buffer->tab_width))))
     {
       del_range (point, point + 1);
       hairy = 1;
     }
-  if (!NULL (bf_cur->abbrev_mode)
+  if (!NULL (current_buffer->abbrev_mode)
       && SYNTAX (c) != Sword
-      && NULL (bf_cur->read_only)
-      && point > FirstCharacter && SYNTAX (CharAt (point - 1)) == Sword)
+      && NULL (current_buffer->read_only)
+      && point > BEGV && SYNTAX (FETCH_CHAR (point - 1)) == Sword)
     {
       tem = Fexpand_abbrev ();
       if (!NULL (tem))
@@ -277,21 +278,21 @@ SelfInsert (c1, noautofill)
     }
   if ((c == ' ' || c == '\n')
       && !noautofill
-      && !NULL (bf_cur->auto_fill_hook)
-      && current_column () > XFASTINT (bf_cur->fill_column))
+      && !NULL (current_buffer->auto_fill_hook)
+      && current_column () > XFASTINT (current_buffer->fill_column))
     {
       if (c1 != '\n')
-	InsCStr (&c1, 1);
-      call0 (bf_cur->auto_fill_hook);
+	insert (&c1, 1);
+      call0 (current_buffer->auto_fill_hook);
       if (c1 == '\n')
-	InsCStr (&c1, 1);
+	insert (&c1, 1);
       hairy = 1;
     }
   else
-    InsCStr (&c1, 1);
+    insert (&c1, 1);
   synt = SYNTAX (c);
   if ((synt == Sclose || synt == Smath)
-      && !NULL (Vblink_paren_hook) && INTERACTIVE)
+      && !NULL (Vblink_paren_hook) && FROM_KBD)
     {
       call0 (Vblink_paren_hook);
       hairy = 1;
@@ -330,15 +331,15 @@ keys_of_cmds ()
 {
   int n;
 
-  defkey (GlobalMap, Ctl('M'), "newline");
-  defkey (GlobalMap, Ctl('I'), "self-insert-command");
+  ndefkey (Vglobal_map, Ctl('M'), "newline");
+  ndefkey (Vglobal_map, Ctl('I'), "self-insert-command");
   for (n = 040; n < 0177; n++)
-    defkey (GlobalMap, n, "self-insert-command");
+    ndefkey (Vglobal_map, n, "self-insert-command");
 
-  defkey (GlobalMap, Ctl ('A'), "beginning-of-line");
-  defkey (GlobalMap, Ctl ('B'), "backward-char");
-  defkey (GlobalMap, Ctl ('D'), "delete-char");
-  defkey (GlobalMap, Ctl ('E'), "end-of-line");
-  defkey (GlobalMap, Ctl ('F'), "forward-char");
-  defkey (GlobalMap, 0177, "delete-backward-char");
+  ndefkey (Vglobal_map, Ctl ('A'), "beginning-of-line");
+  ndefkey (Vglobal_map, Ctl ('B'), "backward-char");
+  ndefkey (Vglobal_map, Ctl ('D'), "delete-char");
+  ndefkey (Vglobal_map, Ctl ('E'), "end-of-line");
+  ndefkey (Vglobal_map, Ctl ('F'), "forward-char");
+  ndefkey (Vglobal_map, 0177, "delete-backward-char");
 }

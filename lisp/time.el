@@ -1,23 +1,26 @@
 ;; Display time and load in mode line of Emacs.
-;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1990 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
+
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+
+(defvar display-time-mail-file nil
+  "*File name of mail inbox file, for indicating existence of new mail.
+Default is system-dependent, and is the same as used by Rmail.")
 
 (defvar display-time-process nil)
 
@@ -35,18 +38,18 @@ are displayed as well."
   (let ((live (and display-time-process
 		   (eq (process-status display-time-process) 'run))))
     (if (not live)
-	(save-excursion
+	(progn
 	  (if display-time-process
 	      (delete-process display-time-process))
 	  (or global-mode-string (setq global-mode-string '("")))
 	  (or (memq 'display-time-string global-mode-string)
 	      (setq global-mode-string
 		    (append global-mode-string '(display-time-string))))
-	  (setq display-time-string "time and load")
+	  (setq display-time-string "")
 	  (setq display-time-process
 		(start-process "display-time" nil
-			       "loadst" 
-			       "-n" (int-to-string display-time-interval)))
+			       (concat exec-directory "wakeup")
+			       (int-to-string display-time-interval)))
 	  (process-kill-without-query display-time-process)
 	  (set-process-sentinel display-time-process 'display-time-sentinel)
 	  (set-process-filter display-time-process 'display-time-filter)))))
@@ -60,23 +63,39 @@ are displayed as well."
   (sit-for 0))
 
 (defun display-time-filter (proc string)
-  ;; Desired data can't need more than the last 30 chars,
-  ;; so save time by flushing the rest.
-  ;; This way, if we have many different times all collected at once,
-  ;; we can discard all but the last few very fast.
-  (if (> (length string) 30)
-      (setq string (substring string -30)))
-  ;; Now discard all but the very last one.
-  (while (and (> (length string) 4)
-	      (string-match "[0-9]+:[0-9][0-9].." string 4))
-    (setq string (substring string (match-beginning 0))))
-  (if (string-match "[^0-9][0-9]+:" string)
-      (setq string (substring string 0 (1+ (match-beginning 0)))))
-  ;; Append the date if desired.
-  (if display-time-day-and-date
-      (setq string (concat (substring (current-time-string) 0 11) string)))
-  ;; Install the new time for display.
-  (setq display-time-string string)
+  (let ((time (current-time-string))
+	(load (condition-case ()
+		  (if (zerop (car (load-average))) ""
+		    (format "%03d" (car (load-average))))
+		(error "")))
+	(mail-spool-file (or display-time-mail-file
+			     (getenv "MAIL")
+			     (concat rmail-spool-directory
+				     (or (getenv "LOGNAME")
+					 (getenv "USER")
+					 (user-login-name)))))
+	hour pm)
+    (setq hour (read (substring time 11 13)))
+    (setq pm (>= hour 12))
+    (if (> hour 12)
+	(setq hour (- hour 12))
+      (if (= hour 0)
+	  (setq hour 12)))
+    (setq display-time-string
+	  (concat (format "%d" hour) (substring time 13 16)
+		  (if pm "pm " "am ")
+		  (if (string= load "")
+		      ""
+		    (concat (substring load 0 -2) "." (substring load -2)))
+		  (if (and (file-exists-p mail-spool-file)
+			   ;; file not empty?
+			   (> (nth 7 (file-attributes mail-spool-file)) 0))
+		      " Mail"
+		    "")))
+    ;; Append the date if desired.
+    (if display-time-day-and-date
+	(setq display-time-string
+	      (concat (substring time 0 11) display-time-string))))
   ;; Force redisplay of all buffers' mode lines to be considered.
   (save-excursion (set-buffer (other-buffer)))
   (set-buffer-modified-p (buffer-modified-p))

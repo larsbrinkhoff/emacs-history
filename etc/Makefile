@@ -1,14 +1,17 @@
 CFLAGS= -g
 # For Xenix.  Needed for movemail
 #  LOADLIBES= -lx
-# For Iris 4d.  Needed for loadst.
-#  LOADLIBES = -lmld
+# For Mips.  Needed for who knows what.
+#  LOADLIBES = -lmld /usr/bsd43/usr/lib/libc.a
 
-EXECUTABLES = test-distrib etags ctags loadst make-docfile \
+EXECUTABLES = test-distrib etags ctags wakeup make-docfile \
    digest-doc sorted-doc movemail cvtmail fakemail yow env \
    server emacsclient
 
 all: ${EXECUTABLES}
+
+clean:
+	-rm -f ${EXECUTABLES} core
 
 distclean:
 	-rm -f ${EXECUTABLES} *~ \#* DOC* core
@@ -27,8 +30,8 @@ etags: etags.c
 ctags: etags.c
 	$(CC) -o ctags ${CFLAGS} -DCTAGS etags.c $(LOADLIBES)
 
-loadst: loadst.c ../src/config.h
-	$(CC) -o loadst ${CFLAGS} loadst.c $(LOADLIBES)
+wakeup: wakeup.c
+	$(CC) -o wakeup ${CFLAGS} wakeup.c $(LOADLIBES)
 
 make-docfile: make-docfile.c
 	$(CC) -o make-docfile ${CFLAGS} make-docfile.c $(LOADLIBES)
@@ -71,3 +74,9 @@ emacsclient: emacsclient.c ../src/config.h
 # See ../src/ymakefile.
 emacstool: emacstool.c
 	$(CC) emacstool.c -o emacstool -g -lsuntool -lsunwindow -lpixrect $(LOADLIBES)
+
+nemacstool: emacstool.c
+	$(CC) -o nemacstool -g -DJLE ${CFLAGS} emacstool.c -lsuntool -lmle -lsunwindow -lpixrect $(LOADLIBES)	# For SUN Japanese Language Environment
+
+xvetool: emacstool.c
+	$(CC) -o xvetool -g -DXVIEW ${CFLAGS} emacstool.c -lxview -lX -I$(OPENWINHOME)/include -L$(OPENWINHOME)/lib $(LOADLIBES)

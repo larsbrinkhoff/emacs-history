@@ -1115,7 +1115,7 @@ beginning of buffer, stop and signal error."
   (interactive "P")
   (let ((val (vip-p-val arg)) (com (vip-getCom arg)))
     (if com (move-marker vip-com-point (point)))
-    (line-move val)
+    (next-line-internal val)
     (setq this-command 'next-line)
     (if com (vip-execute-com 'vip-next-line val com))))
 

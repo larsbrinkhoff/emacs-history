@@ -3,26 +3,27 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 extern Lisp_Object Qsyntax_table_p;
 extern Lisp_Object Fsyntax_table_p (), Fsyntax_table (), Fset_syntax_table ();
 
-extern Lisp_Object Vstandard_syntax_table;
+/* The standard syntax table is stored where it will automatically
+   be used in all new buffers.  */
+#define Vstandard_syntax_table buffer_defaults.syntax_table
 
 /* A syntax table is a Lisp vector of length 0400, whose elements are integers.
 
@@ -48,13 +49,13 @@ enum syntaxcode
   };
 
 #define SYNTAX(c) \
-  ((enum syntaxcode) (XINT (bf_cur->syntax_table_v->contents[c]) & 0377))
+  ((enum syntaxcode) (XINT (XVECTOR (current_buffer->syntax_table)->contents[c]) & 0377))
 
 /* The next 8 bits of the number is a character,
  the matching delimiter in the case of Sopen or Sclose. */
 
 #define SYNTAX_MATCH(c) \
-  ((XINT (bf_cur->syntax_table_v->contents[c]) >> 8) & 0377)
+  ((XINT (XVECTOR (current_buffer->syntax_table)->contents[c]) >> 8) & 0377)
 
 /* Then there are four single-bit flags that have the following meanings:
   1. This character is the first of a two-character comment-start sequence.
@@ -65,16 +66,16 @@ enum syntaxcode
   and whose second character has flag 2 will be interpreted as a comment start. */
 
 #define SYNTAX_COMSTART_FIRST(c) \
-  ((XINT (bf_cur->syntax_table_v->contents[c]) >> 16) & 1)
+  ((XINT (XVECTOR (current_buffer->syntax_table)->contents[c]) >> 16) & 1)
 
 #define SYNTAX_COMSTART_SECOND(c) \
-  ((XINT (bf_cur->syntax_table_v->contents[c]) >> 17) & 1)
+  ((XINT (XVECTOR (current_buffer->syntax_table)->contents[c]) >> 17) & 1)
 
 #define SYNTAX_COMEND_FIRST(c) \
-  ((XINT (bf_cur->syntax_table_v->contents[c]) >> 18) & 1)
+  ((XINT (XVECTOR (current_buffer->syntax_table)->contents[c]) >> 18) & 1)
 
 #define SYNTAX_COMEND_SECOND(c) \
-  ((XINT (bf_cur->syntax_table_v->contents[c]) >> 19) & 1)
+  ((XINT (XVECTOR (current_buffer->syntax_table)->contents[c]) >> 19) & 1)
 
 /* This array, indexed by a character, contains the syntax code which that
  character signifies (as a char).  For example,

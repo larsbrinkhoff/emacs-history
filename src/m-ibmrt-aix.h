@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* The following three symbols give information on
@@ -104,14 +103,35 @@ and this notice must be preserved on all copies.  */
 #define C_ALLOCA
 #define STACK_DIRECTION -1 /* tell alloca.c which way it grows */
 
-/* AIX has PTYs, but they work so differently that they would need
-   lots of changes in process.c.  Therefore, they are disabled.  */
 
-/* #define HAVE_PTYS */
+/* AIX has PTYs, so define here, along with defines needed to make them work. */
+/* AIX has one problem related to PTYs though: SIGHUP is seen by the parent   */
+/* along with SIGCHLD when the child dies.  Thus we need to ignore SIGHUP     */
+/* once a process is begun on a PTY.  EMACS may not go away when its tty      */
+/* goes away because of this -- if this is a problem, either comment out the  */
+/* def of HAVE_PTYS below, or set process-connection-type to nil in .emacs.   */
+
+#define HAVE_PTYS
+#define PTY_ITERATION for (i=0; i<256; i++)
+#define PTY_NAME_SPRINTF sprintf (pty_name, "/dev/ptc%d", i);
+#define PTY_TTY_NAME_SPRINTF                                    \
+        /* Check that server side not already open */           \
+        if ((ioctl(fd, PTYSTATUS, 0) & 0xFFFF) != 0) {          \
+            close(fd);                                          \
+            continue;                                           \
+        }                                                       \
+        sprintf (pty_name, "/dev/pts%d", i);
+
+/* TIOCNOTTY isn't needed on AIX, but the rest of the conditionalized code 
+   in process.c does properly begin a new process group if we fake this out.
+   On AIX 2.2 TIOCNOTTY is defined in termio.h, and this will be overriden 
+   by that definition appropriately.  */
+
+#define TIOCNOTTY IOCTYPE
 
 /* AIX has IPC. It also has sockets, and either can be used for client/server.
    I would suggest the client/server code be changed to use HAVE_SOCKETS rather
-   than BSD as the conditional if sockets provide any advantages. */
+   than BSD as the conditional if sockets provide any advantages.  */
 
 #define HAVE_SYSVIPC
 

@@ -1,22 +1,21 @@
 /* Manipulation of keymaps
-   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -34,36 +33,24 @@ and this notice must be preserved on all copies.  */
 Lisp_Object MouseMap;		/* Keymap for mouse commands */
 #endif /* HAVE_X_WINDOWS */
 
-struct Lisp_Vector *CurrentGlobalMap;	/* Current global keymap */
+Lisp_Object global_map;
 
-struct Lisp_Vector *GlobalMap;	/* default global key bindings */
+Lisp_Object Vglobal_map;
 
-struct Lisp_Vector *ESCmap;		/* The keymap used for globally
-					   bound ESC-prefixed default
-					   commands */
+Lisp_Object Vesc_map;
 
-struct Lisp_Vector *CtlXmap;		/* The keymap used for globally
-					   bound C-x-prefixed default
-					   commands */
+Lisp_Object Vctl_x_map;
 
-/* was MinibufLocalMap */
+/* Keymap used for minibuffers with self-inserting space.  */
 Lisp_Object Vminibuffer_local_map;
-				/* The keymap used by the minibuf for local
-				   bindings when spaces are allowed in the
-				   minibuf */
 
-/* was MinibufLocalNSMap */
+/* Keymap used for minibuffers when space does not self insert.  */
 Lisp_Object Vminibuffer_local_ns_map;			
-				/* The keymap used by the minibuf for local
-				   bindings when spaces are not encouraged
-				   in the minibuf */
 
-/* keymap used for minibuffers when doing completion */
-/* was MinibufLocalCompletionMap */
+/* Keymap used for minibuffers when doing completion */
 Lisp_Object Vminibuffer_local_completion_map;
 
-/* keymap used for minibuffers when doing completion and require a match */
-/* was MinibufLocalMustMatchMap */
+/* Keymap used for minibuffers when doing completion and require a match */
 Lisp_Object Vminibuffer_local_must_match_map;
 
 Lisp_Object Qkeymapp, Qkeymap;
@@ -92,17 +79,9 @@ Initially the alist is nil.")
   return Fcons (Qkeymap, Qnil);
 }
 
-/* This is used for installing the standard key bindings at initialization time.
- For example,  defkey (CtlXmap, Ctl('X'), "exchange-point-and-mark");  */
-
-void
-defkey (keymap, key, defname)
-     struct Lisp_Vector *keymap;
-     int key;
-     char *defname;
-{
-  keymap->contents[key] = intern (defname);
-}
+/* Install a standard key binding at initialization time.
+   For example,
+     ndefkey (Vctl_x_map, Ctl ('X'), "exchange-point-and-mark");  */
 
 void
 ndefkey (keymap, key, defname)
@@ -282,8 +261,8 @@ Any key definitions that are subkeymaps are recursively copied.")
 }
 
 DEFUN ("define-key", Fdefine_key, Sdefine_key, 3, 3, 0,
-  "Args KEYMAP, KEYS, DEF.  Define key sequence KEYS, in KEYMAP, as DEF.\n\
-KEYMAP is a keymap.  KEYS is a string meaning a sequence of keystrokes.\n\
+  "Args KEYMAP, KEY, DEF.  Define key sequence KEY, in KEYMAP, as DEF.\n\
+KEYMAP is a keymap.  KEY is a string meaning a sequence of keystrokes.\n\
 DEF is anything that can be a key's definition:\n\
  nil (means key is undefined in this keymap),\n\
  a command (a Lisp function suitable for interactive calling)\n\
@@ -292,13 +271,12 @@ DEF is anything that can be a key's definition:\n\
  a list (KEYMAP . CHAR), meaning use definition of CHAR in map KEYMAP,\n\
  or a symbol.  The symbol's function definition is used as the key's\n\
 definition, and may be any of the above (including another symbol).")
-  (keymap, keys, def)
+  (keymap, key, def)
      register Lisp_Object keymap;
-     Lisp_Object keys;
+     Lisp_Object key;
      Lisp_Object def;
 {
-  register unsigned char *p;
-  register int level;
+  register int idx;
   register int c;
   register Lisp_Object tem;
   register Lisp_Object cmd;
@@ -306,14 +284,14 @@ definition, and may be any of the above (including another symbol).")
 
   keymap = get_keymap (keymap);
 
-  CHECK_STRING (keys, 1);
-  p = XSTRING (keys)->data;
-  level = XSTRING (keys)->size;
-  if (level == 0) return (Qnil);
+  CHECK_STRING (key, 1);
+  if (XSTRING (key)->size == 0)
+    return Qnil;
 
+  idx = 0;
   while (1)
     {
-      c = *p;
+      c = XSTRING (key)->data[idx];
       if (c >= 0200 && !metized)
 	{
 	  c = meta_prefix_char;
@@ -323,11 +301,10 @@ definition, and may be any of the above (including another symbol).")
 	{
 	  c &= 0177;
 	  metized = 0;
-	  level--;
-	  p++;
+	  idx++;
 	}
 
-      if (!level)
+      if (idx == XSTRING (key)->size)
 	return store_in_keymap (keymap, c, def);
 
       cmd = get_keyelt (access_keymap (keymap, c));
@@ -339,28 +316,27 @@ definition, and may be any of the above (including another symbol).")
       tem = Fkeymapp (cmd);
       if (NULL (tem))
 	error ("Key sequence %s uses invalid prefix characters",
-	       XSTRING (keys)->data);
+	       XSTRING (key)->data);
 
       keymap = get_keymap (cmd);
     }
 }
 
-/* Value is number if `keys' is too long; NIL if valid but has no definition. */
+/* Value is number if KEY is too long; nil if valid but has no definition. */
 
 DEFUN ("lookup-key", Flookup_key, Slookup_key, 2, 2, 0,
-  "In keymap KEYMAP, look up key sequence KEYS.  Return the definition.\n\
+  "In keymap KEYMAP, look up key sequence KEY.  Return the definition.\n\
 nil means undefined.  See doc of define-key for kinds of definitions.\n\
-Number as value means KEYS is \"too long\";\n\
+Number as value means KEY is \"too long\";\n\
 that is, characters in it except for the last one\n\
 fail to be a valid sequence of prefix characters in KEYMAP.\n\
-The number is how many characters at the front of KEYS\n\
+The number is how many characters at the front of KEY\n\
 it takes to reach a non-prefix command.")
-  (keymap, keys)
+  (keymap, key)
      register Lisp_Object keymap;
-     Lisp_Object keys;
+     Lisp_Object key;
 {
-  register unsigned char *p;
-  register int level;
+  register int idx;
   register Lisp_Object tem;
   register Lisp_Object cmd;
   register int c;
@@ -368,14 +344,14 @@ it takes to reach a non-prefix command.")
 
   keymap = get_keymap (keymap);
 
-  CHECK_STRING (keys, 1);
-  p = XSTRING (keys)->data;
-  level = XSTRING (keys)->size;
-  if (level == 0) return (Qnil);
+  CHECK_STRING (key, 1);
+  if (XSTRING (key)->size == 0)
+    return Qnil;
 
+  idx = 0;
   while (1)
     {
-      c = *p;
+      c = XSTRING (key)->data[idx];
       if (c >= 0200 && !metized)
 	{
 	  c = meta_prefix_char;
@@ -385,17 +361,16 @@ it takes to reach a non-prefix command.")
 	{
 	  c &= 0177;
 	  metized = 0;
-	  level--;
-	  p++;
+	  idx++;
 	}
 
       cmd = get_keyelt (access_keymap (keymap, c));
-      if (!level)
+      if (idx == XSTRING (key)->size)
 	return cmd;
 
       tem = Fkeymapp (cmd);
       if (NULL (tem))
-	return make_number (XSTRING (keys)->size - level);
+	return make_number (idx);
 
       keymap = get_keymap (cmd);
       QUIT;
@@ -410,13 +385,13 @@ The definition is probably a symbol with a function definition.")
      Lisp_Object keys;
 {
   register Lisp_Object map, value, value1;
-  map = bf_cur->keymap;
+  map = current_buffer->keymap;
   if (!NULL (map))
     {
       value = Flookup_key (map, keys);
       if (NULL (value))
 	{
-	  XSET (map, Lisp_Vector, CurrentGlobalMap);
+	  XSET (map, Lisp_Vector, global_map);
 	  value1 = Flookup_key (map, keys);
 	  if (XTYPE (value1) == Lisp_Int)
 	    return Qnil;
@@ -425,7 +400,7 @@ The definition is probably a symbol with a function definition.")
       else if (XTYPE (value) != Lisp_Int)
 	return value;
     }
-  XSET (map, Lisp_Vector, CurrentGlobalMap);
+  XSET (map, Lisp_Vector, global_map);
   return Flookup_key (map, keys);
 }
 
@@ -437,7 +412,7 @@ The definition is probably a symbol with a function definition.")
      Lisp_Object keys;
 {
   register Lisp_Object map;
-  map = bf_cur->keymap;
+  map = current_buffer->keymap;
   if (NULL (map))
     return Qnil;
   return Flookup_key (map, keys);
@@ -451,7 +426,7 @@ The definition is probably a symbol with a function definition.")
      Lisp_Object keys;
 {
   register Lisp_Object map;
-  XSET (map, Lisp_Vector, CurrentGlobalMap);
+  XSET (map, Lisp_Vector, global_map);
   return Flookup_key (map, keys);
 }
 
@@ -466,7 +441,7 @@ that local definition will continue to shadow any global definition.")
      Lisp_Object keys, function;
 {
   register Lisp_Object map;
-  XSET (map, Lisp_Vector, CurrentGlobalMap);
+  XSET (map, Lisp_Vector, global_map);
   CHECK_STRING (keys, 1);
   Fdefine_key (map, keys, function);
   return Qnil;
@@ -483,11 +458,11 @@ which is shared with other buffers in the same major mode.")
      Lisp_Object keys, function;
 {
   register Lisp_Object map;
-  map = bf_cur->keymap;
+  map = current_buffer->keymap;
   if (NULL (map))
     {
       map = Fmake_sparse_keymap ();
-      bf_cur->keymap = map;
+      current_buffer->keymap = map;
     }
 
   CHECK_STRING (keys, 1);
@@ -512,7 +487,7 @@ KEY is a string representing a sequence of keystrokes.")
   (keys)
      Lisp_Object keys;
 {
-  if (!NULL (bf_cur->keymap))
+  if (!NULL (current_buffer->keymap))
     Flocal_set_key (keys, Qnil);
   return Qnil;
 }
@@ -534,7 +509,7 @@ DEFUN ("use-global-map", Fuse_global_map, Suse_global_map, 1, 1, 0,
 {
   keymap = get_keymap (keymap);
   CHECK_VECTOR (keymap, 0);
-  CurrentGlobalMap = XVECTOR (keymap);
+  global_map = keymap;
   return Qnil;
 }
 
@@ -547,7 +522,7 @@ nil for KEYMAP means no local keymap.")
   if (!NULL (keymap))
     keymap = get_keymap (keymap);
 
-  bf_cur->keymap = keymap;
+  current_buffer->keymap = keymap;
 
   return Qnil;
 }
@@ -556,16 +531,14 @@ DEFUN ("current-local-map", Fcurrent_local_map, Scurrent_local_map, 0, 0, 0,
   "Return current buffer's local keymap, or nil if it has none.")
   ()
 {
-  return bf_cur->keymap;
+  return current_buffer->keymap;
 }
 
 DEFUN ("current-global-map", Fcurrent_global_map, Scurrent_global_map, 0, 0, 0,
   "Return the current global keymap.")
   ()
 {
-  register Lisp_Object tem;
-  XSET (tem, Lisp_Vector, CurrentGlobalMap);
-  return tem;
+  return global_map;
 }
 
 DEFUN ("accessible-keymaps", Faccessible_keymaps, Saccessible_keymaps,
@@ -766,7 +739,7 @@ sequence found, rather than a list of all possible key sequences.")
   register Lisp_Object maps;
   Lisp_Object found;
 
-  XSET (start1, Lisp_Vector, CurrentGlobalMap);
+  XSET (start1, Lisp_Vector, global_map);
 
   if (!NULL (local_keymap))
     maps = nconc2 (Faccessible_keymaps (get_keymap (local_keymap)),
@@ -872,7 +845,7 @@ Argument is a command definition, usually a symbol with a function definition.")
   register Lisp_Object tem;
   CHECK_SYMBOL (definition, 0);
   tem = Fmapconcat (Qkey_description,
-		    Fwhere_is_internal (definition, bf_cur->keymap, Qnil),
+		    Fwhere_is_internal (definition, current_buffer->keymap, Qnil),
 		    build_string (", "));
   if (XSTRING (tem)->size)
     message ("%s is on %s", XSYMBOL (definition)->name->data, XSTRING (tem)->data);
@@ -889,7 +862,7 @@ The list is put in a buffer, which is displayed.")
   ()
 {
   register Lisp_Object thisbuf;
-  XSET (thisbuf, Lisp_Buffer, bf_cur);
+  XSET (thisbuf, Lisp_Buffer, current_buffer);
   internal_with_output_to_temp_buffer ("*Help*", describe_buffer_bindings, thisbuf);
   return Qnil;
 }
@@ -917,7 +890,7 @@ describe_buffer_bindings (descbuf)
   if (heading)
     InsStr (heading);
 
-  XSET (start1, Lisp_Vector, CurrentGlobalMap);
+  XSET (start1, Lisp_Vector, global_map);
   describe_map_tree (start1, 0, XBUFFER (descbuf)->keymap);
 
   Fset_buffer (descbuf);
@@ -963,34 +936,37 @@ describe_command (definition)
 {
   register Lisp_Object tem1;
 
+  Findent_to (make_number (16), make_number (1));
+
   if (XTYPE (definition) == Lisp_Symbol)
     {
       XSET (tem1, Lisp_String, XSYMBOL (definition)->name);
-      InsCStr (XSTRING (tem1)->data, XSTRING (tem1)->size);
+      insert1 (tem1);
+      InsStr ("\n");
     }
   else
     {
       tem1 = Fkeymapp (definition);
       if (!NULL (tem1))
-	InsStr ("Prefix Command");
+	InsStr ("Prefix Command\n");
       else
-	InsStr ("??");
+	InsStr ("??\n");
     }
 }
 
 /* Describe the contents of map MAP, assuming that this map
-   itself is reached by the sequence of prefix keys KEYS (a string).
+   itself is reached by the sequence of prefix keys STRING (a string).
    PARTIAL and SHADOW are the same as in `describe_map_tree' above.  */
 
-describe_map (map, keys, partial, shadow)
-     Lisp_Object map, keys;
+describe_map (map, string, partial, shadow)
+     Lisp_Object map, string;
      int partial;
      Lisp_Object shadow;
 {
   register Lisp_Object keysdesc;
 
-  if (!NULL (keys) && XSTRING (keys)->size > 0)
-    keysdesc = Fkey_description (keys);
+  if (!NULL (string) && XSTRING (string)->size > 0)
+    keysdesc = concat2 (Fkey_description (string), build_string (" "));
   else
     keysdesc = Qnil;
 
@@ -1004,17 +980,17 @@ describe_map (map, keys, partial, shadow)
 
 describe_alist (alist, elt_prefix, elt_describer, partial, shadow)
      register Lisp_Object alist;
-     register Lisp_Object elt_prefix;
+     Lisp_Object elt_prefix;
      int (*elt_describer) ();
      int partial;
      Lisp_Object shadow;
 {
   Lisp_Object this;
-  register Lisp_Object tem1, tem2;
-  int indent;
+  Lisp_Object tem1, tem2;
   Lisp_Object suppress;
   Lisp_Object kludge = Qnil;
   int first = 1;
+  struct gcpro gcpro1, gcpro2;
 
   if (partial)
     suppress = intern ("suppress-keymap");
@@ -1041,35 +1017,26 @@ describe_alist (alist, elt_prefix, elt_describer, partial, shadow)
 	  if (!NULL (tem)) continue;
 	}
 
-      indent = 0;
-
       if (first)
 	{
-	  InsCStr ("\n", 1);
+	  insert ("\n", 1);
 	  first = 0;
 	}
 
+      GCPRO2 (elt_prefix, tem2);
       if (!NULL (elt_prefix))
-	{
-	  InsCStr (XSTRING (elt_prefix)->data, XSTRING (elt_prefix)->size);
-	  InsCStr (" ", 1);
-	  indent += XSTRING (elt_prefix)->size + 1;
-	}
+	insert1 (elt_prefix);
 
-      this = Fsingle_key_description (tem1);
-      InsCStr (XSTRING (this)->data, XSTRING (this)->size);
-      indent += XSTRING (this)->size;
-
-      InsCStr ("                    ", indent<16 ? 16-indent : 1);
+      insert1 (Fsingle_key_description (tem1));
 
       (*elt_describer) (tem2);
-      InsCStr ("\n", 1);
+      UNGCPRO;
     }
 }
 
 describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
      register Lisp_Object vector;
-     register Lisp_Object elt_prefix;
+     Lisp_Object elt_prefix;
      int (*elt_describer) ();
      int partial;
      Lisp_Object shadow;
@@ -1078,10 +1045,14 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
   Lisp_Object dummy;
   Lisp_Object tem1, tem2;
   register int i, size = XVECTOR (vector)->size;
-  int indent;
   Lisp_Object suppress;
-  Lisp_Object kludge = Qnil;
+  Lisp_Object kludge;
   int first = 1;
+  struct gcpro gcpro1, gcpro2;
+
+  tem1 = Qnil;
+  kludge = Qnil;
+  GCPRO2 (elt_prefix, tem1);
 
   if (partial)
     suppress = intern ("suppress-keymap");
@@ -1107,24 +1078,17 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 	  if (!NULL (tem)) continue;
 	}
 
-      indent = 0;
-
       if (first)
 	{
-	  InsCStr ("\n", 1);
+	  insert ("\n", 1);
 	  first = 0;
 	}
 
       if (!NULL (elt_prefix))
-	{
-	  InsCStr (XSTRING (elt_prefix)->data, XSTRING (elt_prefix)->size);
-	  InsCStr (" ", 1);
-	  indent += XSTRING (elt_prefix)->size + 1;
-	}
+	insert1 (elt_prefix);
+
       XFASTINT (dummy) = i;
-      this = Fsingle_key_description (dummy);
-      InsCStr (XSTRING (this)->data, XSTRING (this)->size);
-      indent += XSTRING (this)->size;
+      insert1 (Fsingle_key_description (dummy));
 
       while (i + 1 < size
 	     && (tem2 = get_keyelt (XVECTOR (vector)->contents[i+1]),
@@ -1133,25 +1097,18 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 
       if (i != XINT (dummy))
 	{
-	  InsCStr (" .. ", 4);
-	  indent += 4;
+	  insert (" .. ", 4);
 	  if (!NULL (elt_prefix))
-	    {
-	      InsCStr (XSTRING (elt_prefix)->data, XSTRING (elt_prefix)->size);
-	      InsCStr (" ", 1);
-	      indent += XSTRING (elt_prefix)->size + 1;
-	    }
+	    insert1 (elt_prefix);
+
 	  XFASTINT (dummy) = i;
-	  this = Fsingle_key_description (dummy);
-	  InsCStr (XSTRING (this)->data, XSTRING (this)->size);
-	  indent += XSTRING (this)->size;
+	  insert1 (Fsingle_key_description (dummy));
 	}
 
-      InsCStr ("                    ", indent<16 ? 16-indent : 1);
-
       (*elt_describer) (tem1);
-      InsCStr ("\n", 1);
     }
+
+  UNGCPRO;
 }
 
 /* Apropos */
@@ -1175,23 +1132,26 @@ static Lisp_Object
 apropos1 (list)
      register Lisp_Object list;
 {
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   register Lisp_Object symbol, col, tem;
 
   while (!NULL (list))
     {
+      Lisp_Object min_cols;
+
       QUIT;
 
       symbol = Fcar (list);
       list = Fcdr (list);
 
-      tem = Fwhere_is_internal (symbol, bf_cur->keymap, Qnil);
+      tem = Fwhere_is_internal (symbol, current_buffer->keymap, Qnil);
       tem = Fmapconcat (Qkey_description, tem, build_string (", "));
       XFASTINT (col) = 30;
 
-      SetBfp (XBUFFER (Vstandard_output));
+      set_buffer_internal (XBUFFER (Vstandard_output));
       Fprin1 (symbol, Qnil);
-      Findent_to (col, Qnil);
+      XFASTINT (min_cols) = 1;
+      Findent_to (col, min_cols);
       Fprinc (tem, Qnil);
       Fterpri (Qnil);
       tem = Ffboundp (symbol);
@@ -1202,7 +1162,7 @@ apropos1 (list)
       tem = Fdocumentation_property (symbol, Qvariable_documentation);
       if (XTYPE (tem) == Lisp_String)
 	insert_first_line ("  Variable: ", tem);
-      SetBfp (old);
+      set_buffer_internal (old);
     }
   return Qnil;
 }
@@ -1216,7 +1176,9 @@ insert_first_line (prefix, str)
   register unsigned char *p;
   register unsigned char *p1;
   register unsigned char *p2;
+  struct gcpro gcpro1;
 
+  GCPRO1 (str);
   InsStr (prefix);
 
  retry:
@@ -1230,8 +1192,9 @@ insert_first_line (prefix, str)
 	goto retry;
       }
 
-  InsCStr (p, p1 ? p1 - p : strlen (p));
-  InsCStr ("\n", 1);
+  insert (p, p1 ? p1 - p : strlen (p));
+  insert ("\n", 1);
+  UNGCPRO;
 }
 
 DEFUN ("apropos", Fapropos, Sapropos, 1, 3, "sApropos: ",
@@ -1275,16 +1238,16 @@ syms_of_keymap ()
 #endif /* HAVE_X_WINDOWS */
 
   tem = Fmake_keymap ();
-  GlobalMap = XVECTOR (tem);
+  Vglobal_map = tem;
   Fset (intern ("global-map"), tem);
 
   tem = Fmake_keymap ();
-  ESCmap = XVECTOR (tem);
+  Vesc_map = tem;
   Fset (intern ("esc-map"), tem);
   Ffset (intern ("ESC-prefix"), tem);
 
   tem = Fmake_keymap ();
-  CtlXmap = XVECTOR (tem);
+  Vctl_x_map = tem;
   Fset (intern ("ctl-x-map"), tem);
   Ffset (intern ("Control-X-prefix"), tem);
 
@@ -1306,7 +1269,7 @@ to be allowed in input string.");
 an exact match of one of the completions is required.");
   Vminibuffer_local_must_match_map = Fmake_sparse_keymap ();
 
-  CurrentGlobalMap = GlobalMap;
+  global_map = Vglobal_map;
 
   Qsingle_key_description = intern ("single-key-description");
   staticpro (&Qsingle_key_description);
@@ -1347,6 +1310,6 @@ an exact match of one of the completions is required.");
 
 keys_of_keymap ()
 {
-  defkey (GlobalMap, 033, "ESC-prefix");
-  defkey (GlobalMap, Ctl('X'), "Control-X-prefix");
+  ndefkey (Vglobal_map, 033, "ESC-prefix");
+  ndefkey (Vglobal_map, Ctl ('X'), "Control-X-prefix");
 }

@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 ; DABBREVS - "Dynamic abbreviations" hack, originally written by Don Morrison
@@ -88,14 +87,14 @@ no argument is given, replace the previously-made expansion
 with the next possible expansion not yet tried."
   (interactive "*P")
   (let (abbrev expansion old which loc n pattern
-	(nocase (and case-fold-search case-replace)))
+	(do-case (and case-fold-search case-replace)))
     ;; abbrev -- the abbrev to expand
     ;; expansion -- the expansion found (eventually) or nil until then
     ;; old -- the text currently in the buffer
     ;;    (the abbrev, or the previously-made expansion)
     ;; loc -- place where expansion is found
     ;;    (to start search there for next expansion if requested later)
-    ;; nocase -- non-nil if should consider case significant.
+    ;; do-case -- nil if should consider case significant.
     (save-excursion
       (if (and (null arg)
 	       (eq last-command this-command)
@@ -123,7 +122,7 @@ with the next possible expansion not yet tried."
 	    (if last-dabbrevs-expansion-location
 		(goto-char last-dabbrevs-expansion-location))
 	    (while (and (> n 0)
-			(setq expansion (dabbrevs-search pattern t nocase)))
+			(setq expansion (dabbrevs-search pattern t do-case)))
 	      (setq loc (point-marker))
 	      (setq last-dabbrev-table (cons expansion last-dabbrev-table))
 	      (setq n (1- n)))
@@ -137,7 +136,7 @@ with the next possible expansion not yet tried."
 	    (if last-dabbrevs-expansion-location
 		(goto-char last-dabbrevs-expansion-location))
 	    (while (and (> n 0)
-			(setq expansion (dabbrevs-search pattern nil nocase)))
+			(setq expansion (dabbrevs-search pattern nil do-case)))
 	      (setq loc (point-marker))
 	      (setq last-dabbrev-table (cons expansion last-dabbrev-table))
 	      (setq n (1- n)))
@@ -161,12 +160,16 @@ with the next possible expansion not yet tried."
       ;; provided (1) that kind of thing is enabled in this buffer
       ;; and (2) the replacement itself is all lower case
       ;; except perhaps for the first character.
-      (let ((nocase (and nocase
-			 (string= expansion
-				  (concat (substring expansion 0 1)
-					  (downcase (substring expansion 1)))))))
-	(replace-match (if nocase (downcase expansion) expansion)
-		       (not nocase)
+      (let ((do-case (and do-case
+			  (string= (substring expansion 1)
+				   (downcase (substring expansion 1))))))
+	;; First put back the original abbreviation with its original
+	;; case pattern.
+	(save-excursion
+	  (replace-match abbrev t 'literal))
+	(search-forward abbrev)
+	(replace-match (if do-case (downcase expansion) expansion)
+		       (not do-case)
 		       'literal))
       ;; Save state for re-expand.
       (setq last-dabbrevs-abbreviation abbrev)
@@ -186,7 +189,7 @@ with the next possible expansion not yet tried."
 ;; Value is the expansion, or nil if not found.  After a successful
 ;; search, point is left right after the expansion found.
 
-(defun dabbrevs-search (pattern reverse nocase)
+(defun dabbrevs-search (pattern reverse do-case)
   (let (missing result)
     (save-restriction 	    ; Uses restriction for limited searches.
       (if dabbrevs-limit
@@ -210,7 +213,7 @@ with the next possible expansion not yet tried."
 	      (let* ((test last-dabbrev-table))
 		(while (and test
 			    (not
-			     (if nocase
+			     (if do-case
 				 (string= (downcase (car test)) (downcase result))
 			       (string= (car test) result))))
 		  (setq test (cdr test)))

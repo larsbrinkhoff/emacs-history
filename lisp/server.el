@@ -1,24 +1,23 @@
 ;; Lisp code for GNU Emacs running as server process.
-;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987, 1990 Free Software Foundation, Inc.
 ;; Author William Sommerfeld, wesommer@athena.mit.edu.
 ;; Changes by peck@sun.com and by rms.
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 ;;; This Lisp code is run in Emacs when it is to operate as
@@ -63,6 +62,8 @@
 
 (defvar server-process nil 
   "the current server process")
+
+(defvar server-previous-string "")
 
 (defvar server-clients nil
   "List of current server clients.
@@ -126,9 +127,14 @@ Prefix arg means just kill any existing server communications subprocess."
 ;Format of STRING is "Client: CLIENTID PATH PATH PATH... \n"
 (defun server-process-filter (proc string)
   (server-log string)
-  (if (not (eq 0 (string-match "Client: " string)))
-      nil
+  (setq string (concat server-previous-string string))
+  (if (not (and (eq ?\n (aref string (1- (length string))))
+		(eq 0 (string-match "Client: " string))))
+      ;; If input is not complete, save it for later.
+      (setq server-previous-string string)
+    ;; If it is complete, process it now, and discard what was saved.
     (setq string (substring string (match-end 0)))
+    (setq server-previous-string "")
     (let ((client (list (substring string 0 (string-match " " string))))
 	  (files nil)
 	  (lineno 1))
@@ -225,7 +231,7 @@ bury it, and return a suggested buffer to select next."
 				   (concat buffer-file-name "~"))
 		     (kill-buffer buffer))
 	    (if (and (buffer-modified-p)
-		     (y-or-n-p (concat "Save file" buffer-file-name "? ")))
+		     (y-or-n-p (concat "Save file " buffer-file-name "? ")))
 		(save-buffer buffer)))
 	  (server-buffer-done buffer)))))
 

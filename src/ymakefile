@@ -1,31 +1,30 @@
 /* Makefile for GNU Emacs.
-   Copyright (C) 1985, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 dot = .
 /* on Xenix, replace double-dot below with $(dot)$(dot) */
-lispdir = ../lisp/
-etcdir = ../etc/
-shortnamesdir = ../shortnames/
-cppdir = ../cpp/
-oldXMenudir = ../oldXMenu/
+lispdir = $(dot)$(dot)/lisp/
+etcdir = $(dot)$(dot)/etc/
+shortnamesdir = $(dot)$(dot)/shortnames/
+cppdir = $(dot)$(dot)/cpp/
+oldXMenudir = $(dot)$(dot)/oldXMenu/
 
 #define NO_SHORTNAMES
 #include "config.h"
@@ -118,7 +117,10 @@ STARTFILES = START_FILES
 STARTFLAGS = -T LD_TEXT_START_ADDR -e __start
 #endif
 
-LD=ld
+#ifndef LINKER
+#define LINKER ld
+#endif
+LD=LINKER
 LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE
 
 /* Figure out whether the system cpp can handle long names.
@@ -170,15 +172,19 @@ CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
 #define LIBX11_SYSTEM
 #endif
 
+#ifndef LIB_X11_LIB
+#define LIB_X11_LIB -lX11
+#endif
+
 #ifdef HAVE_X_WINDOWS
 #ifdef HAVE_X11
 #ifdef HAVE_X_MENU
 OLDXMENU = libXMenu11.a
 XOBJ = x11term.o x11fns.o xmenu.o
-LIBX = $(OLDXMENU) -loldX -lX11 LIBX11_MACHINE LIBX11_SYSTEM
+LIBX = $(OLDXMENU) -loldX LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
 #else
 XOBJ = x11term.o x11fns.o
-LIBX = -lX11 LIBX11_MACHINE LIBX11_SYSTEM
+LIBX = LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
 #endif
 #else /* not HAVE_X11 */
 #ifdef HAVE_X_MENU
@@ -190,6 +196,16 @@ LIBX= -lX LIBX10_MACHINE LIBX10_SYSTEM
 #endif /* not HAVE_X_MENU */
 #endif /* not HAVE_X11 */
 #endif /* HAVE_X_WINDOWS */
+
+/* Fix linking if compiled with GCC.  */
+#ifdef __GNUC__
+#ifndef LIB_GCC
+#define LIB_GCC /usr/local/lib/gcc-gnulib
+#endif
+GNULIB_VAR = `if [ -f LIB_GCC ] ; then echo LIB_GCC; else echo; fi`
+#else
+GNULIB_VAR = 
+#endif
 
 #ifdef MAINTAIN_ENVIRONMENT
 environobj = environ.o
@@ -236,6 +252,10 @@ mallocobj = malloc.o
 #else
 mallocobj = alloca.o malloc.o
 #endif
+#else /* SYSTEM_MALLOC */
+#ifndef HAVE_ALLOCA
+mallocobj = alloca.o
+#endif
 #endif
 
 /* define otherobj as list of object files that make-docfile
@@ -258,7 +278,7 @@ lisp=	${lispdir}simple.elc ${lispdir}help.elc \
 SHELL=/bin/sh
 
 /* Construct full set of libraries to be linked.  */
-LIBES = LIBS_SYSTEM LIBS_MACHINE LIBS_TERMCAP $(LIBX) LIBS_DEBUG LIB_STANDARD
+LIBES = LIBS_TERMCAP $(LIBX) LIBS_SYSTEM LIBS_MACHINE LIBS_DEBUG LIB_STANDARD $(GNULIB_VAR)
 
 /* Enable recompilation of certain other files depending on system type.  */
 
@@ -278,12 +298,18 @@ LIBES = LIBS_SYSTEM LIBS_MACHINE LIBS_TERMCAP $(LIBX) LIBS_DEBUG LIB_STANDARD
 all: xemacs OTHER_FILES
 
 xemacs: temacs ${etcdir}DOC ${lisp}
+#ifdef HAVE_SHM
+	./temacs -nl -batch -l inc-vers
+	./temacs -nl -batch -l loadup dump
+	ln temacs xemacs
+#else
 #ifdef CANNOT_DUMP
 	mv temacs xemacs
 #else
 	./temacs -batch -l inc-vers
 	./temacs -batch -l loadup.el dump
 #endif /* not CANNOT_DUMP */
+#endif /* not HAVE_SHM */
 
 ${etcdir}DOC: ${etcdir}make-docfile ${obj} ${lisp}
 	rm -f ${etcdir}DOC
@@ -410,7 +436,7 @@ minibuf.o : minibuf.c syntax.h window.h buffer.h commands.h config.h
 mocklisp.o : mocklisp.c buffer.h config.h
 process.o : process.c process.h buffer.h window.h termhooks.h termopts.h commands.h config.h 
 regex.o : regex.c syntax.h buffer.h config.h regex.h 
-scroll.o : scroll.c termchar.h config.h dispextern.h
+scroll.o : scroll.c termchar.h config.h dispextern.h termhooks.h
 search.o : search.c regex.h commands.h buffer.h syntax.h config.h 
 syntax.o : syntax.c syntax.h buffer.h commands.h config.h 
 sysdep.o : sysdep.c config.h dispextern.h termhooks.h termchar.h termopts.h window.h
@@ -418,7 +444,7 @@ term.o : term.c termchar.h termhooks.h termopts.h config.h cm.h
 termcap.o : termcap.c config.h
 terminfo.o : terminfo.c config.h
 tparam.o : tparam.c config.h
-undo.o : undo.c buffer.h commands.h undo.h config.h 
+undo.o : undo.c buffer.h commands.h config.h 
 UNEXEC : config.h
 window.o : window.c indent.h commands.h window.h buffer.h config.h termchar.h
 xdisp.o : xdisp.c macros.h commands.h indent.h buffer.h dispextern.h termchar.h window.h config.h 
@@ -438,7 +464,7 @@ bytecode.o : bytecode.c buffer.h config.h
 data.o : data.c buffer.h config.h 
 eval.o : eval.c commands.h config.h
 fns.o : fns.c buffer.h commands.h config.h
-print.o : print.c process.h window.h buffer.h config.h 
+print.o : print.c process.h window.h buffer.h dispextern.h termchar.h config.h 
 lread.o : lread.c buffer.h paths.h config.h 
 
 /* System-specific programs to be made.

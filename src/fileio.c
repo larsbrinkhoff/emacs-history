@@ -1,25 +1,29 @@
 /* File IO for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <sys/types.h>
+#ifdef hpux
+/* needed by <pwd.h> */
+#include <stdio.h>
+#undef NULL
+#endif
 #include <sys/stat.h>
 #include <pwd.h>
 #include <ctype.h>
@@ -31,6 +35,8 @@ extern int errno;
 extern char *sys_errlist[];
 extern int sys_nerr;
 #endif
+
+#define err_str(a) ((a) < sys_nerr ? sys_errlist[a] : "unknown error")
 
 #ifdef APOLLO
 #include <sys/time.h>
@@ -63,6 +69,10 @@ extern int sys_nerr;
 #ifdef HPUX
 #include <netio.h>
 #include <errnet.h>
+#endif
+
+#ifndef O_WRONLY
+#define O_WRONLY 1
 #endif
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -399,7 +409,14 @@ returns a file name such as \"[X]Y.DIR.1\".")
 
   if (NULL (directory))
     return Qnil;
+#ifdef VMS
+  /* 20 extra chars is insufficient for VMS, since we might perform a
+     logical name translation. an equivalence string can be up to 255
+     chars long, so grab that much extra space...  - sss */
+  buf = (char *) alloca (XSTRING (directory)->size + 20 + 255);
+#else
   buf = (char *) alloca (XSTRING (directory)->size + 20);
+#endif
   directory_file_name (XSTRING (directory)->data, buf);
   return build_string (buf);
 }
@@ -563,46 +580,58 @@ initial ~ is expanded.  See also the function  substitute-in-file-name.")
 	}
     }
 
-  /* Now determine directory to start with and put it in newdir */
+  /* Now determine directory to start with and put it in NEWDIR.  */
 
   newdir = 0;
 
-  if (nm[0] == '~')		/* prefix ~ */
-    if (nm[1] == '/'
+  if (nm[0] == '~')
+    {
+      if (nm[1] == '/'
 #ifdef VMS
-	|| nm[1] == ':'
+	  || nm[1] == ':'
 #endif /* VMS */
-	|| nm[1] == 0)/* ~/filename */
-      {
-	if (!(newdir = (unsigned char *) egetenv ("HOME")))
-	  newdir = (unsigned char *) "";
-	nm++;
+	  || nm[1] == 0)
+	{
+	  /* Handle ~ on its own.  */
+	  newdir = (unsigned char *) egetenv ("HOME");
+	}
+      else
+	{
+	  /* Handle ~ followed by user name.  */
+	  unsigned char *user = nm + 1;
+	  /* Find end of name.  */
+	  unsigned char *ptr = (unsigned char *) index (user, '/');
+	  int len = ptr ? ptr - user : strlen (user);
 #ifdef VMS
+	  unsigned char *ptr1 = index (user, ':');
+	  if (ptr1 != 0 && ptr1 - user < len)
+	    len = ptr1 - user;
+#endif /* VMS */
+	  /* Copy the user name into temp storage.  */
+	  o = (unsigned char *) alloca (len + 1);
+	  bcopy ((char *) user, o, len);
+	  o[len] = 0;
+
+	  /* Look up the user name.  */
+	  pw = (struct passwd *) getpwnam (o);
+	  if (!pw)
+	    error ("User \"%s\" is not known", o);
+	  newdir = (unsigned char *) pw->pw_dir;
+
+	  /* Discard the user name from NM.  */
+	  nm += len;
+	}
+
+      /* Discard the ~ from NM.  */
+      nm++;
+#ifdef VMS
+      if (*nm != 0)
 	nm++;			/* Don't leave the slash in nm.  */
 #endif /* VMS */
-      }
-    else			/* ~user/filename */
-      {
-	for (p = nm; *p && (*p != '/'
-#ifdef VMS
-			    && *p != ':'
-#endif /* VMS */
-			    ); p++);
-	o = (unsigned char *) alloca (p - nm + 1);
-	bcopy ((char *) nm, o, p - nm);
-	o [p - nm] = 0;
 
-	pw = (struct passwd *) getpwnam (o + 1);
-	if (!pw)
-	  error ("\"%s\" isn't a registered user", o + 1);
-
-#ifdef VMS
-	nm = p + 1;		/* skip the terminator */
-#else
-	nm = p;
-#endif /* VMS */
-	newdir = (unsigned char *) pw -> pw_dir;
-      }
+      if (newdir == 0)
+	newdir = (unsigned char *) "";
+    }
 
   if (nm[0] != '/'
 #ifdef VMS
@@ -611,7 +640,7 @@ initial ~ is expanded.  See also the function  substitute-in-file-name.")
       && !newdir)
     {
       if (NULL (defalt))
-	defalt = bf_cur->directory;
+	defalt = current_buffer->directory;
       CHECK_STRING (defalt, 1);
       newdir = XSTRING (defalt)->data;
     }
@@ -960,13 +989,17 @@ barf_or_query_if_file_exists (absname, querystring, interactive)
   if (access (XSTRING (absname)->data, 4) >= 0)
     {
       if (! interactive)
-	Fsignal (Qfile_already_exists, Fcons (absname, Qnil));
+	Fsignal (Qfile_already_exists,
+		 Fcons (build_string ("File already exists"),
+			Fcons (absname, Qnil)));
       GCPRO1 (absname);
       tem = Fyes_or_no_p (format1 ("File %s already exists; %s anyway? ",
 				   XSTRING (absname)->data, querystring));
       UNGCPRO;
       if (NULL (tem))
-	Fsignal (Qfile_already_exists, Fcons (absname, Qnil));
+	Fsignal (Qfile_already_exists,
+		 Fcons (build_string ("File already exists"),
+			Fcons (absname, Qnil)));
     }
   return;
 }
@@ -986,7 +1019,9 @@ that the old one has.  (This works on only some systems.)")
   int ifd, ofd, n;
   char buf[16 * 1024];
   struct stat st;
+  struct gcpro gcpro1, gcpro2;
 
+  GCPRO2 (filename, newname);
   CHECK_STRING (filename, 0);
   CHECK_STRING (newname, 1);
   filename = Fexpand_file_name (filename, Qnil);
@@ -1014,7 +1049,11 @@ that the old one has.  (This works on only some systems.)")
 
   while ((n = read (ifd, buf, sizeof buf)) > 0)
     if (write (ofd, buf, n) != n)
-      report_file_error ("I/O error", Fcons (newname, Qnil));
+      {
+	close (ifd);
+	close (ofd);
+	report_file_error ("I/O error", Fcons (newname, Qnil));
+      }
 
   if (fstat (ifd, &st) >= 0)
     {
@@ -1048,7 +1087,10 @@ that the old one has.  (This works on only some systems.)")
     }
 
   close (ifd);
-  close (ofd);
+  if (close (ofd) < 0)
+    report_file_error ("I/O error", Fcons (newname, Qnil));
+
+  UNGCPRO;
   return Qnil;
 }
 
@@ -1079,7 +1121,9 @@ This is what happens in interactive use with M-x.")
 #ifdef NO_ARG_ARRAY
   Lisp_Object args[2];
 #endif
+  struct gcpro gcpro1, gcpro2;
 
+  GCPRO2 (filename, newname);
   CHECK_STRING (filename, 0);
   CHECK_STRING (newname, 1);
   filename = Fexpand_file_name (filename, Qnil);
@@ -1111,6 +1155,7 @@ This is what happens in interactive use with M-x.")
 	report_file_error ("Renaming", Flist (2, &filename));
 #endif
     }
+  UNGCPRO;
   return Qnil;
 }
 
@@ -1127,7 +1172,9 @@ This is what happens in interactive use with M-x.")
 #ifdef NO_ARG_ARRAY
   Lisp_Object args[2];
 #endif
+  struct gcpro gcpro1, gcpro2;
 
+  GCPRO2 (filename, newname);
   CHECK_STRING (filename, 0);
   CHECK_STRING (newname, 1);
   filename = Fexpand_file_name (filename, Qnil);
@@ -1148,6 +1195,7 @@ This is what happens in interactive use with M-x.")
 #endif
     }
 
+  UNGCPRO;
   return Qnil;
 }
 
@@ -1165,7 +1213,9 @@ This happens for interactive use with M-x.")
 #ifdef NO_ARG_ARRAY
   Lisp_Object args[2];
 #endif
+  struct gcpro gcpro1, gcpro2;
 
+  GCPRO2 (filename, newname);
   CHECK_STRING (filename, 0);
   CHECK_STRING (newname, 1);
   filename = Fexpand_file_name (filename, Qnil);
@@ -1184,6 +1234,7 @@ This happens for interactive use with M-x.")
       report_file_error ("Making symbolic link", Flist (2, &filename));
 #endif
     }
+  UNGCPRO;
   return Qnil;
 }
 #endif /* S_IFLNK */
@@ -1358,7 +1409,7 @@ if the directory so specified exists and really is a directory.")
   register Lisp_Object abspath;
   struct stat st;
 
-  abspath = expand_and_dir_to_file (filename, bf_cur->directory);
+  abspath = expand_and_dir_to_file (filename, current_buffer->directory);
 
   if (stat (XSTRING (abspath)->data, &st) < 0)
     return Qnil;
@@ -1373,7 +1424,7 @@ DEFUN ("file-modes", Ffile_modes, Sfile_modes, 1, 1, 0,
   Lisp_Object abspath;
   struct stat st;
 
-  abspath = expand_and_dir_to_file (filename, bf_cur->directory);
+  abspath = expand_and_dir_to_file (filename, current_buffer->directory);
 
   if (stat (XSTRING (abspath)->data, &st) < 0)
     return Qnil;
@@ -1388,7 +1439,7 @@ Only the 12 low bits of MODE are used.")
 {
   Lisp_Object abspath;
 
-  abspath = Fexpand_file_name (filename, bf_cur->directory);
+  abspath = Fexpand_file_name (filename, current_buffer->directory);
   CHECK_NUMBER (mode, 1);
 
 #ifndef APOLLO
@@ -1439,14 +1490,14 @@ otherwise, if FILE2 does not exist, the answer is t.")
   CHECK_STRING (file1, 0);
   CHECK_STRING (file2, 0);
 
-  abspath = expand_and_dir_to_file (file1, bf_cur->directory);
+  abspath = expand_and_dir_to_file (file1, current_buffer->directory);
 
   if (stat (XSTRING (abspath)->data, &st) < 0)
     return Qnil;
 
   mtime1 = st.st_mtime;
 
-  abspath = expand_and_dir_to_file (file2, bf_cur->directory);
+  abspath = expand_and_dir_to_file (file2, current_buffer->directory);
 
   if (stat (XSTRING (abspath)->data, &st) < 0)
     return Qt;
@@ -1473,11 +1524,13 @@ before the error is signaled.")
 {
   struct stat st;
   register int fd;
-  register int size = 0;
-  register int i;
+  register int inserted = 0;
+  register int i = 0;
   int count = specpdl_ptr - specpdl;
+  struct gcpro gcpro1;
 
-  if (!NULL (bf_cur->read_only))
+  GCPRO1 (filename);
+  if (!NULL (current_buffer->read_only))
     Fbarf_if_buffer_read_only();
 
   CHECK_STRING (filename, 0);
@@ -1497,7 +1550,6 @@ before the error is signaled.")
       if (NULL (visit))
 	report_file_error ("Opening input file", Fcons (filename, Qnil));
       st.st_mtime = -1;
-      i = 0;
       goto notfound;
     }
 
@@ -1506,26 +1558,43 @@ before the error is signaled.")
   /* Supposedly happens on VMS.  */
   if (st.st_size < 0)
     error ("File size is negative");
+  {
+    register Lisp_Object temp;
+
+    /* Make sure point-max won't overflow after this insertion.  */
+    XSET (temp, Lisp_Int, st.st_size + Z);
+    if (st.st_size + Z != XINT (temp))
+      error ("maximum buffer size exceeded");
+  }
 
   if (NULL (visit))
     prepare_to_modify_buffer ();
 
   move_gap (point);
-  if (bf_gap < st.st_size)
-    make_gap (st.st_size);
+  if (GAP_SIZE < st.st_size)
+    make_gap (st.st_size - GAP_SIZE);
     
-  size = 0;
-  while ((i = read (fd, bf_p1 + bf_s1 + 1, st.st_size - size)) > 0)
+  while (1)
     {
-      bf_s1 += i;
-      bf_gap -= i;
-      bf_p2 -= i;
-      size += i;
+      int try = min (st.st_size - inserted, 64 << 10);
+      int this = read (fd, &FETCH_CHAR (point + inserted - 1) + 1, try);
+
+      if (this <= 0)
+	{
+	  i = this;
+	  break;
+	}
+
+      GPT += this;
+      GAP_SIZE -= this;
+      ZV += this;
+      Z += this;
+      inserted += this;
     }
 
-  if (size > 0)
-    bf_modified++;
-  record_insert (point, size);
+  if (inserted > 0)
+    MODIFF++;
+  record_insert (point, inserted);
 
   close (fd);
 
@@ -1533,32 +1602,34 @@ before the error is signaled.")
   specpdl_ptr = specpdl + count;
 
   if (i < 0)
-    error ("IO error reading %s", XSTRING (filename)->data);
+    error ("IO error reading %s: %s",
+	   XSTRING (filename)->data, err_str (errno));
 
  notfound:
 
   if (!NULL (visit))
     {
-      DoneIsDone ();
+      current_buffer->undo_list = Qnil;
 #ifdef APOLLO
       stat (XSTRING (filename)->data, &st);
 #endif
-      bf_cur->modtime = st.st_mtime;
-      bf_cur->save_modified = bf_modified;
-      bf_cur->auto_save_modified = bf_modified;
-      XFASTINT (bf_cur->save_length) = NumCharacters;
+      current_buffer->modtime = st.st_mtime;
+      current_buffer->save_modified = MODIFF;
+      current_buffer->auto_save_modified = MODIFF;
+      XFASTINT (current_buffer->save_length) = Z - BEG;
 #ifdef CLASH_DETECTION
-      if (!NULL (bf_cur->filename))
-	unlock_file (bf_cur->filename);
+      if (!NULL (current_buffer->filename))
+	unlock_file (current_buffer->filename);
       unlock_file (filename);
 #endif /* CLASH_DETECTION */
-      bf_cur->filename = filename;
+      current_buffer->filename = filename;
       /* If visiting nonexistent file, return nil.  */
       if (st.st_mtime == -1)
 	report_file_error ("Opening input file", Fcons (filename, Qnil));
     }
 
-  return Fcons (filename, Fcons (make_number (size), Qnil));
+  UNGCPRO;
+  return Fcons (filename, Fcons (make_number (inserted), Qnil));
 }
 
 DEFUN ("write-region", Fwrite_region, Swrite_region, 3, 5,
@@ -1576,8 +1647,9 @@ If VISIT is neither t nor nil, it means do not print\n\
   (start, end, filename, append, visit)
      Lisp_Object start, end, filename, append, visit;
 {
-  register int fd;
+  register int desc;
   int failure;
+  int save_errno;
   unsigned char *fn;
   struct stat st;
   int tem;
@@ -1589,8 +1661,8 @@ If VISIT is neither t nor nil, it means do not print\n\
   /* Special kludge to simplify auto-saving */
   if (NULL (start))
     {
-      XFASTINT (start) = 1;
-      XFASTINT (end) = 1 + bf_s1 + bf_s2;
+      XFASTINT (start) = BEG;
+      XFASTINT (end) = Z;
     }
   else
     validate_region (&start, &end);
@@ -1603,20 +1675,20 @@ If VISIT is neither t nor nil, it means do not print\n\
     lock_file (filename);
 #endif /* CLASH_DETECTION */
 
-  fd = -1;
+  desc = -1;
   if (!NULL (append))
-    fd = open (fn, 1);
+    desc = open (fn, O_WRONLY);
 
-  if (fd < 0)
+  if (desc < 0)
 #ifdef VMS
     if (auto_saving)	/* Overwrite any previous version of autosave file */
       {
 	vms_truncate (fn);	/* if fn exists, truncate to zero length */
-	fd = open (fn, O_RDWR);
-	if (fd < 0)
-	  fd = creat_copy_attrs (XTYPE (bf_cur->filename) == Lisp_String
-				 ? XSTRING (bf_cur->filename)->data : 0,
-				 fn);
+	desc = open (fn, O_RDWR);
+	if (desc < 0)
+	  desc = creat_copy_attrs (XTYPE (current_buffer->filename) == Lisp_String
+				   ? XSTRING (current_buffer->filename)->data : 0,
+				   fn);
       }
     else		/* Write to temporary name and rename if no errors */
       {
@@ -1629,43 +1701,45 @@ If VISIT is neither t nor nil, it means do not print\n\
 						  build_string ("$$SAVE$$")));
 	    fname = XSTRING (filename)->data;
 	    fn = XSTRING (temp_name)->data;
-	    fd = creat_copy_attrs (fname, fn);
-	    if (fd < 0)
+	    desc = creat_copy_attrs (fname, fn);
+	    if (desc < 0)
 	      {
 		/* If we can't open the temporary file, try creating a new
 		   version of the original file.  VMS "creat" creates a
 		   new version rather than truncating an existing file. */
 		fn = fname;
 		fname = 0;
-		fd = creat (fn, 0666);
-		if (fd < 0)
+		desc = creat (fn, 0666);
+		if (desc < 0)
 		  {
 		    /* We can't make a new version;
 		       try to truncate and rewrite existing version if any.  */
 		    vms_truncate (fn);
-		    fd = open (fn, O_RDWR);
+		    desc = open (fn, O_RDWR);
 		  }
 	      }
 	  }
 	else
-	  fd = creat (fn, 0666);
+	  desc = creat (fn, 0666);
       }
 #else /* not VMS */
-  fd = creat (fn, 0666);
+  desc = creat (fn, 0666);
 #endif /* not VMS */
 
-  if (fd < 0)
+  if (desc < 0)
     {
 #ifdef CLASH_DETECTION
+      save_errno = errno;
       if (!auto_saving) unlock_file (filename);
+      errno = save_errno;
 #endif /* CLASH_DETECTION */
       report_file_error ("Opening output file", Fcons (filename, Qnil));
     }
 
-  record_unwind_protect (close_file_unwind, make_number (fd));
+  record_unwind_protect (close_file_unwind, make_number (desc));
 
   if (!NULL (append))
-    if (lseek (fd, 0, 2) < 0)
+    if (lseek (desc, 0, 2) < 0)
       {
 #ifdef CLASH_DETECTION
 	if (!auto_saving) unlock_file (filename);
@@ -1689,26 +1763,28 @@ If VISIT is neither t nor nil, it means do not print\n\
  *
  * Yech!
  */
-  if (bf_s1 > 0 && CharAt (bf_s1) != '\n')
-    move_gap (find_next_newline (bf_s1, 1));
+  if (GPT > BEG && GPT_ADDR[-1] != '\n')
+    move_gap (find_next_newline (GPT, 1));
 #endif
 
   failure = 0;
   if (XINT (start) != XINT (end))
     {
-      if (XINT (start) - 1 < bf_s1)
+      if (XINT (start) < GPT)
 	{
 	  register int end1 = XINT (end);
 	  tem = XINT (start);
-	  failure = 0 > e_write (fd, &CharAt (tem),
-				 min (bf_s1 + 1, end1) - tem);
+	  failure = 0 > e_write (desc, &FETCH_CHAR (tem),
+				 min (GPT, end1) - tem);
+	  save_errno = errno;
 	}
 
-      if (XINT (end) - 1 > bf_s1 && !failure)
+      if (XINT (end) > GPT && !failure)
 	{
 	  tem = XINT (start);
-	  tem = max (tem, bf_s1 + 1);
-	  failure = 0 > e_write (fd, &CharAt (tem), XINT (end) - tem);
+	  tem = max (tem, GPT);
+	  failure = 0 > e_write (desc, &FETCH_CHAR (tem), XINT (end) - tem);
+	  save_errno = errno;
 	}
     }
 
@@ -1719,8 +1795,8 @@ If VISIT is neither t nor nil, it means do not print\n\
 		   on alliant, for no visible reason.  */
   /* Note fsync appears to change the modtime on BSD4.2 (both vax and sun).
      Disk full in NFS may be reported here.  */
-  if (fsync (fd) < 0)
-    failure = 1;
+  if (fsync (desc) < 0)
+    failure = 1, save_errno = errno;
 #endif
 #endif
 #endif
@@ -1737,21 +1813,21 @@ If VISIT is neither t nor nil, it means do not print\n\
 #ifndef APOLLO
   /* Recall that #if defined does not work on VMS.  */
 #define FOO
-  fstat (fd, &st);
+  fstat (desc, &st);
 #endif
 #endif
 #endif /* 0 */
 
   /* NFS can report a write failure now.  */
-  if (close (fd) < 0)
-    failure = 1;
+  if (close (desc) < 0)
+    failure = 1, save_errno = errno;
 
 #ifdef VMS
   /* If we wrote to a temporary name and had no errors, rename to real name. */
   if (fname)
     {
       if (!failure)
-	failure = (rename (fn, fname) != 0);
+	failure = (rename (fn, fname) != 0), save_errno = errno;
       fn = fname;
     }
 #endif /* VMS */
@@ -1771,16 +1847,16 @@ If VISIT is neither t nor nil, it means do not print\n\
      to avoid a "file has changed on disk" warning on
      next attempt to save.  */
   if (EQ (visit, Qt))
-    bf_cur->modtime = st.st_mtime;
+    current_buffer->modtime = st.st_mtime;
 
   if (failure)
-    error ("IO error writing %s", fn);
+    error ("IO error writing %s: %s", fn, err_str (save_errno));
 
   if (EQ (visit, Qt))
     {
-      bf_cur->save_modified = bf_modified;
-      XFASTINT (bf_cur->save_length) = NumCharacters;
-      bf_cur->filename = filename;
+      current_buffer->save_modified = MODIFF;
+      XFASTINT (current_buffer->save_length) = Z - BEG;
+      current_buffer->filename = filename;
     }
   else if (!NULL (visit))
     return Qnil;
@@ -1792,16 +1868,16 @@ If VISIT is neither t nor nil, it means do not print\n\
 }
 
 int
-e_write (fd, addr, len)
-     int fd;
+e_write (desc, addr, len)
+     int desc;
      register char *addr;
      register int len;
 {
   char buf[16 * 1024];
   register char *p, *end;
 
-  if (!EQ (bf_cur->selective_display, Qt))
-    return write (fd, addr, len) - len;
+  if (!EQ (current_buffer->selective_display, Qt))
+    return write (desc, addr, len) - len;
   else
     {
       p = buf;
@@ -1810,7 +1886,7 @@ e_write (fd, addr, len)
 	{
 	  if (p == end)
 	    {
-	      if (write (fd, buf, sizeof buf) != sizeof buf)
+	      if (write (desc, buf, sizeof buf) != sizeof buf)
 		return -1;
 	      p = buf;
 	    }
@@ -1819,7 +1895,7 @@ e_write (fd, addr, len)
 	    p[-1] = '\n';
 	}
       if (p != buf)
-	if (write (fd, buf, p - buf) != p - buf)
+	if (write (desc, buf, p - buf) != p - buf)
 	  return -1;
     }
   return 0;
@@ -1865,16 +1941,16 @@ DEFUN ("clear-visited-file-modtime", Fclear_visited_file_modtime,
 Next attempt to save will certainly not complain of a discrepancy.")
   ()
 {
-  bf_cur->modtime = 0;
+  current_buffer->modtime = 0;
   return Qnil;
 }
 
 Lisp_Object
 auto_save_error ()
 {
-  unsigned char *name = XSTRING (bf_cur->name)->data;
+  unsigned char *name = XSTRING (current_buffer->name)->data;
 
-  ring_bell ();
+  bell ();
   message ("Autosaving...error for %s", name);
   Fsleep_for (make_number (1));
   message ("Autosaving...error!for %s", name);
@@ -1889,7 +1965,7 @@ auto_save_1 ()
 {
   return
     Fwrite_region (Qnil, Qnil,
-		   bf_cur->auto_save_file_name,
+		   current_buffer->auto_save_file_name,
 		   Qnil, Qlambda);
 }
 
@@ -1904,17 +1980,17 @@ Non-nil argument means do not print any message if successful.")
   (nomsg)
      Lisp_Object nomsg;
 {
-  struct buffer *old = bf_cur, *b;
+  struct buffer *old = current_buffer, *b;
   Lisp_Object tail, buf;
   int auto_saved = 0;
-  char *omessage = minibuf_message;
-  extern MinibufDepth;
+  int tried = 0;
+  char *omessage = echo_area_contents;
+  /* No GCPRO needed, because (when it matters) all Lisp_Object variables
+     point to non-strings reached from Vbuffer_alist.  */
 
   auto_saving = 1;
-  if (MinibufDepth)
+  if (minibuf_level)
     nomsg = Qt;
-
-  bf_cur->text = bf_text;
 
   for (tail = Vbuffer_alist; XGCTYPE (tail) == Lisp_Cons;
        tail = XCONS (tail)->cdr)
@@ -1925,11 +2001,14 @@ Non-nil argument means do not print any message if successful.")
 	 and file changed since last auto save
 	 and file changed since last real save.  */
       if (XTYPE (b->auto_save_file_name) == Lisp_String
-	  && b->save_modified < b->text.modified
-	  && b->auto_save_modified < b->text.modified)
+	  && b->save_modified < BUF_MODIFF (b)
+	  && b->auto_save_modified < BUF_MODIFF (b))
 	{
+	  /* If we at least consider a buffer for auto-saving,
+	     don't try again for a suitable time.  */
+	  tried++;
 	  if ((XFASTINT (b->save_length) * 10
-	       > (b->text.size1 + b->text.size2) * 13)
+	       > (BUF_Z (b) - BUF_BEG (b)) * 13)
 	      /* A short file is likely to change a large fraction;
 		 spare the user annoying messages.  */
 	      && XFASTINT (b->save_length) > 5000
@@ -1942,16 +2021,19 @@ Non-nil argument means do not print any message if successful.")
 	      Fsleep_for (make_number (1));
 	      continue;
 	    }
-	  SetBfp (b);
+	  set_buffer_internal (b);
 	  if (!auto_saved && NULL (nomsg))
 	    message1 ("Auto-saving...");
 	  internal_condition_case (auto_save_1, Qt, auto_save_error);
 	  auto_saved++;
-	  b->auto_save_modified = b->text.modified;
-	  XFASTINT (bf_cur->save_length) = NumCharacters;
-	  SetBfp (old);
+	  b->auto_save_modified = BUF_MODIFF (b);
+	  XFASTINT (current_buffer->save_length) = Z - BEG;
+	  set_buffer_internal (old);
 	}
     }
+
+  if (tried)
+    record_auto_save ();
 
   if (auto_saved && NULL (nomsg))
     message1 (omessage ? omessage : "Auto-saving...done");
@@ -1966,8 +2048,8 @@ DEFUN ("set-buffer-auto-saved", Fset_buffer_auto_saved,
 No auto-save file will be written until the buffer changes again.")
   ()
 {
-  bf_cur->auto_save_modified = bf_modified;
-  XFASTINT (bf_cur->save_length) = NumCharacters;
+  current_buffer->auto_save_modified = MODIFF;
+  XFASTINT (current_buffer->save_length) = Z - BEG;
   return Qnil;
 }
 
@@ -1976,7 +2058,7 @@ DEFUN ("recent-auto-save-p", Frecent_auto_save_p, Srecent_auto_save_p,
   "Return t if buffer has been auto-saved since last read in or saved.")
   ()
 {
-  return (bf_cur->save_modified < bf_cur->auto_save_modified) ? Qt : Qnil;
+  return (current_buffer->save_modified < current_buffer->auto_save_modified) ? Qt : Qnil;
 }
 
 /* Reading and completing file names */
@@ -2076,9 +2158,9 @@ DIR defaults to current buffer's directory default.")
   int count;
 
   if (NULL (dir))
-    dir = bf_cur->directory;
+    dir = current_buffer->directory;
   if (NULL (defalt))
-    defalt = bf_cur->filename;
+    defalt = current_buffer->filename;
 
   /* If dir starts with user's homedir, change that to ~. */
   homedir = (char *) egetenv ("HOME");

@@ -1,23 +1,22 @@
 /* Window creation, deletion and examination for GNU Emacs.
    Does not include redisplay.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -136,7 +135,7 @@ POS defaults to point; WINDOW, to the selected window.")
   register int top;
   register int height;
   register int posint;
-  register struct buffer_text *text;
+  register struct buffer *buf;
   struct position posval;
 
   if (NULL (pos))
@@ -159,20 +158,19 @@ POS defaults to point; WINDOW, to the selected window.")
 
   height = XFASTINT (w->height) - !EQ (window, minibuf_window);
 
-  bf_cur->text = bf_text;
-  text = &XBUFFER (w->buffer)->text;
-  if (XFASTINT (w->last_modified) >= text->modified)
+  buf = XBUFFER (w->buffer);
+  if (XFASTINT (w->last_modified) >= BUF_MODIFF (buf))
     {
       /* If screen is up to date,
 	 use the info recorded about how much text fit on it. */
-      if (posint < text->size1 + text->size2 + 1 - XFASTINT (w->window_end_pos)
+      if (posint < BUF_Z (buf) - XFASTINT (w->window_end_pos)
 	  || (XFASTINT (w->window_end_vpos) < height))
 	return Qt;
       return Qnil;
     }
   else
     {
-      if (posint > text->size1 + text->size2 + 1)
+      if (posint > BUF_Z (buf))
 	return Qnil;
       /* If that info is not correct, calculate afresh */
       posval = *compute_motion (top, 0, 0,
@@ -286,7 +284,7 @@ But that is hard to define.")
   register struct window *w = decode_window (window);
 
   if (w == XWINDOW (selected_window)
-      && bf_cur == XBUFFER (w->buffer))
+      && current_buffer == XBUFFER (w->buffer))
     return Fpoint ();
   return Fmarker_position (w->pointm);
 }
@@ -310,7 +308,7 @@ DEFUN ("set-window-point", Fset_window_point, Sset_window_point, 2, 2, 0,
   if (w == XWINDOW (selected_window))
     Fgoto_char (pos);
   else
-    Fset_marker (w->pointm, pos, w->buffer);
+    set_marker_restricted (w->pointm, pos, w->buffer);
   return pos;
 }
 
@@ -324,12 +322,12 @@ from overriding motion of point in order to display at this exact start.")
   register struct window *w = decode_window (window);
 
   CHECK_NUMBER_COERCE_MARKER (pos, 1);
-  Fset_marker (w->start, pos, w->buffer);
+  set_marker_restricted (w->start, pos, w->buffer);
   /* this is not right, but much easier than doing what is right.  */
   w->start_at_line_beg = Qnil;
   if (NULL (noforce))
     w->force_start = Qt;
-  w->redo_mode_line = Qt;
+  w->update_mode_line = Qt;
   XFASTINT (w->last_modified) = 0;
   return pos;
 }
@@ -481,7 +479,7 @@ not to count the minibuffer even if it is active.")
 	}
     }
   while (EQ (window, minibuf_window) && !EQ (mini, Qt)
-	 && (!NULL (mini) || !MinibufDepth));
+	 && (!NULL (mini) || minibuf_level == 0));
   return window;
 }
 
@@ -517,7 +515,7 @@ DEFUN ("previous-window", Fprevious_window, Sprevious_window, 0, 1, 0,
 	    window = tem;
 	}
     }
-  while (EQ (window, minibuf_window) && !MinibufDepth);
+  while (EQ (window, minibuf_window) && minibuf_level == 0);
   return window;
 }
 
@@ -616,7 +614,6 @@ window_loop (type, obj)
 		if (NULL (tem))
 		  tem = Fget_buffer_create (build_string ("*scratch*"));
 		Fset_window_buffer (w, tem);
-		Fset_buffer (p->buffer);
 	      }
 	    break;
 	  }
@@ -717,8 +714,9 @@ set_window_height (window, height, nodelete)
   if (window_min_height < 2)
     window_min_height = 2;
 
-  if (!nodelete &&
-      height < (EQ(window, minibuf_window) ? 1 : window_min_height))
+  if (!nodelete
+      && ! NULL (w->parent)
+      && height < (EQ(window, minibuf_window) ? 1 : window_min_height))
     {
       Fdelete_window (window);
       return;
@@ -778,7 +776,9 @@ set_window_width (window, width, nodelete)
   int left, pos, lastright, opos, lastoright;
   Lisp_Object child;
 
-  if (!nodelete && width < window_min_width)
+  if (!nodelete
+      && ! NULL (w->parent)
+      && width < window_min_width)
     {
       Fdelete_window (window);
       return;
@@ -848,11 +848,11 @@ BUFFER can be a buffer or buffer name.")
 
   w->buffer = buffer;
   Fset_marker (w->pointm,
-	       make_number (XBUFFER (buffer) == bf_cur
-			    ? point : XBUFFER (buffer)->text.pointloc),
+	       make_number (BUF_PT (XBUFFER (buffer))),
 	       buffer);
-  Fset_marker (w->start, make_number (XBUFFER (buffer)->last_window_start),
-	       buffer);
+  set_marker_restricted (w->start,
+			 make_number (XBUFFER (buffer)->last_window_start),
+			 buffer);
   w->start_at_line_beg = Qnil;
   XFASTINT (w->last_modified) = 0;
   windows_or_buffers_changed++;
@@ -874,20 +874,17 @@ unshow_buffer (w)
   if (XBUFFER (buf) != XMARKER (w->pointm)->buffer)
     abort ();
 
-  if (w != XWINDOW (selected_window)
-      && EQ (buf, XWINDOW (selected_window)->buffer))
-    return;
+  if (w == XWINDOW (selected_window)
+      || ! EQ (buf, XWINDOW (selected_window)->buffer))
+    /* Do this except when the selected window's buffer
+       is being removed from some other window.  */
+    XBUFFER (buf)->last_window_start = marker_position (w->start);
 
-  if (XBUFFER (buf) == bf_cur)
-    {
-      if (w != XWINDOW (selected_window))
-	point = marker_position (w->pointm);
-    }
-  else
-    XBUFFER (buf)->text.pointloc = 
-      marker_position (w->pointm);
-  XBUFFER (buf)->last_window_start = 
-    marker_position (w->start);
+  /* Point in the selected window's buffer
+     is actually stored in that buffer, and the window's pointm isn't used.
+     So don't clobber point in that buffer.  */
+  if (! EQ (buf, XWINDOW (selected_window)->buffer))
+    BUF_PT (XBUFFER (buf)) = marker_position (w->pointm);
 }
 
 DEFUN ("select-window", Fselect_window, Sselect_window, 1, 1, 0,
@@ -911,24 +908,24 @@ before each command.")
   if (EQ (window, selected_window))
     return window;
 
-  if (bf_cur == XBUFFER (ow->buffer))
-    Fset_marker (ow->pointm, make_number (point), ow->buffer);
+  Fset_marker (ow->pointm, make_number (BUF_PT (XBUFFER (ow->buffer))),
+	       ow->buffer);
 
   selected_window = window;
 
   record_buffer (w->buffer);
   Fset_buffer (w->buffer);
-  if (bf_cur == XBUFFER (ow->buffer))
-    {
-      /* If the new and old windows show the same buffer,
-	 Fset_buffer did nothing.  So we must switch to
-	 the new buffer's value of point.  */
-      SetPoint (marker_position (w->pointm));
-      if (point < FirstCharacter)
-	point = FirstCharacter;
-      if (point > NumCharacters + 1)
-	point = NumCharacters + 1;
-    }
+
+  /* Go to the point recorded in the window.
+     This is important when the buffer is in more
+     than one window.  It also matters when
+     redisplay_window has altered point after scrolling,
+     because it makes the change only in the window.  */
+  SET_PT (marker_position (w->pointm));
+  if (point < BEGV)
+    point = BEGV;
+  if (point > ZV)
+    point = ZV;
 
   windows_or_buffers_changed++;
 
@@ -991,17 +988,17 @@ Returns the window displaying BUFFER.")
 temp_output_buffer_show (buf)
      register Lisp_Object buf;
 {
-  register struct buffer *old = bf_cur;
+  register struct buffer *old = current_buffer;
   register Lisp_Object window;
   register struct window *w;
 
   Fset_buffer (buf);
-  XBUFFER (buf)->save_modified = bf_modified;
-  SetPoint (1);
-  bf_head_clip = 1;
-  bf_tail_clip = 0;
+  XBUFFER (buf)->save_modified = MODIFF;
+  BEGV = BEG;
+  ZV = Z;
+  SET_PT (BEG);
   clip_changed = 1;
-  SetBfp (old);
+  set_buffer_internal (old);
 
   if (!EQ (Vtemp_buffer_show_hook, Qnil))
     call1 (Vtemp_buffer_show_hook, buf);
@@ -1011,8 +1008,8 @@ temp_output_buffer_show (buf)
       Vminibuf_scroll_window = window;
       w = XWINDOW (window);
       XFASTINT (w->hscroll) = 0;
-      Fset_marker (w->start, make_number (1), buf);
-      Fset_marker (w->pointm, make_number (1), buf);
+      set_marker_restricted (w->start, make_number (1), buf);
+      set_marker_restricted (w->pointm, make_number (1), buf);
     }
 }
 
@@ -1068,7 +1065,10 @@ and put SIZE columns in the first of the pair.")
   if (NULL (chsize))
     {
       if (!NULL (horflag))
-	size = XFASTINT (o->width) >> 1;
+	/* Add 1 so we round up rather than down.
+	   This puts an excess column into the left-hand window,
+	   which is the one that certainly contains a border line.  */
+	size = (1 + XFASTINT (o->width)) >> 1;
       else
 	size = XFASTINT (o->height) >> 1;
     }
@@ -1335,30 +1335,30 @@ window_scroll (window, n)
       w->force_start = Qt;
     }
 
-  SetPoint (marker_position (w->start));
-  lose = n < 0 && point == FirstCharacter;
+  SET_PT (marker_position (w->start));
+  lose = n < 0 && point == BEGV;
   Fvertical_motion (make_number (n));
   pos = point;
   bolp = Fbolp ();
-  SetPoint (opoint);
+  SET_PT (opoint);
 
   if (lose)
     Fsignal (Qbeginning_of_buffer, Qnil);
 
-  if (pos < NumCharacters + 1)
+  if (pos < ZV)
     {
-      Fset_marker (w->start, make_number (pos), w->buffer);
+      set_marker_restricted (w->start, make_number (pos), w->buffer);
       w->start_at_line_beg = bolp;
-      w->redo_mode_line = Qt;
+      w->update_mode_line = Qt;
       XFASTINT (w->last_modified) = 0;
       if (pos > opoint)
-	SetPoint (pos);
+	SET_PT (pos);
       if (n < 0)
 	{
-	  SetPoint (pos);
+	  SET_PT (pos);
 	  tem = Fvertical_motion (make_number (ht));
 	  if (point > opoint || XFASTINT (tem) < ht)
-	    SetPoint (opoint);
+	    SET_PT (opoint);
 	  else
 	    Fvertical_motion (make_number (-1));
 	}
@@ -1447,7 +1447,7 @@ When calling from a program, supply a number as argument or nil.")
      register Lisp_Object n;
 {
   register Lisp_Object window;
-  struct buffer *old = bf_cur;
+  struct buffer *old = current_buffer;
   register int ht;
   register int opoint = point;
   register struct window *w;
@@ -1465,7 +1465,7 @@ When calling from a program, supply a number as argument or nil.")
 
   w = XWINDOW (window);
   Fset_buffer (w->buffer);
-  SetPoint (marker_position (w->pointm));
+  SET_PT (marker_position (w->pointm));
 
   if (NULL (n))
     window_scroll (window, ht - next_screen_context_lines);
@@ -1480,8 +1480,8 @@ When calling from a program, supply a number as argument or nil.")
     }
 
   Fset_marker (w->pointm, make_number (point), Qnil);
-  SetBfp (old);
-  SetPoint (opoint);
+  set_buffer_internal (old);
+  SET_PT (opoint);
   return Qnil;
 }
 
@@ -1524,7 +1524,7 @@ redraws with point in the center.")
   Fset_marker (w->start, make_number (point), w->buffer);
   w->start_at_line_beg = Fbolp ();
 
-  SetPoint (opoint);
+  SET_PT (opoint);
   w->force_start = Qt;
 
   return Qnil;
@@ -1555,7 +1555,7 @@ negative means relative to bottom of window.")
     }
 
   start = marker_position (w->start);
-  if (start < FirstCharacter || start > NumCharacters + 1)
+  if (start < BEGV || start > ZV)
     {
       Fvertical_motion (make_number (- height / 2));
       Fset_marker (w->start, make_number (point), w->buffer);
@@ -1563,7 +1563,7 @@ negative means relative to bottom of window.")
       w->force_start = Qt;
     }
   else
-    SetPoint (start);
+    SET_PT (start);
 
   return Fvertical_motion (arg);
 }
@@ -1695,13 +1695,15 @@ function for more information.")
 	    {
 	      w->buffer = p->buffer;
 	      w->start_at_line_beg = p->start_at_line_beg;
-	      Fset_marker (w->start, Fmarker_position (p->start), w->buffer);
-	      Fset_marker (w->pointm, Fmarker_position (p->pointm), w->buffer);
+	      set_marker_restricted (w->start,
+				     Fmarker_position (p->start), w->buffer);
+	      set_marker_restricted (w->pointm,
+				     Fmarker_position (p->pointm), w->buffer);
 	      Fset_marker (XBUFFER (w->buffer)->mark,
 			   Fmarker_position (p->mark), w->buffer);
 
 	      if (!EQ (p->buffer, new_current_buffer) &&
-		  XBUFFER (p->buffer) == bf_cur)
+		  XBUFFER (p->buffer) == current_buffer)
 		Fgoto_char (w->pointm);
 	    }
 	  else if (NULL (XBUFFER (w->buffer)->name))
@@ -1709,9 +1711,10 @@ function for more information.")
 	    {
 	      w->buffer = Fcdr (Fcar (Vbuffer_alist));
 	      /* Set window markers at start of buffer.
-		 Rely on Fset_marker to put them within the restriction.  */
-	      Fset_marker (w->start, make_number (0), w->buffer);
-	      Fset_marker (w->pointm, make_number (0), w->buffer);
+		 Rely on set_marker_restricted to put them
+		 within the restriction.  */
+	      set_marker_restricted (w->start, make_number (0), w->buffer);
+	      set_marker_restricted (w->pointm, make_number (0), w->buffer);
 	      w->start_at_line_beg = Qt;
 	    }
 	  else
@@ -1719,15 +1722,13 @@ function for more information.")
 	    /* Else if window's old buffer is dead too, get a live one.  */
 	    {
 	      /* Set window markers at start of buffer.
-		 Rely on Fset_marker to put them within the restriction.  */
+		 Rely on set_marker_restricted to put them within the restriction.  */
 	      if (XMARKER (w->start)->buffer == 0)
-		Fset_marker (w->start, make_number (0), w->buffer);
+		set_marker_restricted (w->start, make_number (0), w->buffer);
 	      if (XMARKER (w->pointm)->buffer == 0)
-		Fset_marker (w->pointm,
-			     make_number (XBUFFER (w->buffer) == bf_cur
-					  ? point
-					  : XBUFFER (w->buffer)->text.pointloc),
-			     w->buffer);
+		set_marker_restricted (w->pointm,
+				       make_number (BUF_PT (XBUFFER (w->buffer))),
+				       w->buffer);
 	      w->start_at_line_beg = Qt;
 	    }
 	}
@@ -1782,7 +1783,7 @@ its value is -not- saved.")
   XFASTINT (data->screen_width) = screen_width;
   XFASTINT (data->screen_height) = screen_height;
   data->current_window = selected_window;
-  XSET (data->current_buffer, Lisp_Buffer, bf_cur);
+  XSET (data->current_buffer, Lisp_Buffer, current_buffer);
   data->minibuf_scroll_window = Vminibuf_scroll_window;
   tem = Fmake_vector (make_number (n_windows), Qnil);
   data->saved_windows = tem;
@@ -1791,16 +1792,17 @@ its value is -not- saved.")
       = Fmake_vector (make_number (SAVED_WINDOW_VECTOR_SIZE), Qnil);
   save_window_save (XWINDOW (minibuf_window)->prev,
 		    XVECTOR (tem),
-		    0);
+		    0, n_windows);
   XSET (tem, Lisp_Window_Configuration, data);
   return (tem);
 }
 
 static int
-save_window_save (window, vector, i)
+save_window_save (window, vector, i, maxwindow)
      Lisp_Object window;
      struct Lisp_Vector *vector;
      int i;
+     int maxwindow;
 {
   register struct saved_window *p;
   register struct window *w;
@@ -1808,10 +1810,22 @@ save_window_save (window, vector, i)
 
   for (;!NULL (window); window = w->next)
     {
+      /* If you get a crash here, you may be seeing a very weird bug.
+	 When it happened to me, it seems that count_windows returned
+	 a value that was too small--only two, when there were two
+	 visible windows, a parent, and the minibuffer (inactive).
+	 If this starts happening for you, please run under a debugger
+	 with a breakpoint at the abort, so that you can at least try calling
+	 count_windows again to see if it will lose again.
+	 If it does, you can find the bug.  */
+      if (i == maxwindow)
+	abort ();
+
       p = SAVED_WINDOW_N (vector, i);
       w = XWINDOW (window);
 
       XFASTINT (w->temslot) = i++;
+
       p->window = window;
       p->buffer = w->buffer;
       p->left = w->left;
@@ -1822,7 +1836,7 @@ save_window_save (window, vector, i)
       if (!NULL (w->buffer))
 	{
 	  if (EQ (window, selected_window)
-	      && XBUFFER (w->buffer) == bf_cur)
+	      && XBUFFER (w->buffer) == current_buffer)
 	    p->pointm = Fpoint_marker ();
 	  else
 	    p->pointm = Fcopy_marker (w->pointm);
@@ -1852,9 +1866,9 @@ save_window_save (window, vector, i)
 	p->prev = XWINDOW (w->prev)->temslot;
 
       if (!NULL (w->vchild))
-	i = save_window_save (w->vchild, vector, i);
+	i = save_window_save (w->vchild, vector, i, maxwindow);
       if (!NULL (w->hchild))
-	i = save_window_save (w->hchild, vector, i);
+	i = save_window_save (w->hchild, vector, i, maxwindow);
     }
 
   return i;
@@ -1989,18 +2003,18 @@ If there is only one window, it is split regardless of this value.");
 
 keys_of_window ()
 {
-  defkey (CtlXmap, '1', "delete-other-windows");
-  defkey (CtlXmap, '2', "split-window");
-  defkey (CtlXmap, '0', "delete-window");
-  defkey (CtlXmap, 'o', "other-window");
-  defkey (CtlXmap, '^', "enlarge-window");
-  defkey (CtlXmap, '<', "scroll-left");
-  defkey (CtlXmap, '>', "scroll-right");
+  ndefkey (Vctl_x_map, '1', "delete-other-windows");
+  ndefkey (Vctl_x_map, '2', "split-window");
+  ndefkey (Vctl_x_map, '0', "delete-window");
+  ndefkey (Vctl_x_map, 'o', "other-window");
+  ndefkey (Vctl_x_map, '^', "enlarge-window");
+  ndefkey (Vctl_x_map, '<', "scroll-left");
+  ndefkey (Vctl_x_map, '>', "scroll-right");
 
-  defkey (GlobalMap, Ctl ('V'), "scroll-up");
-  defkey (ESCmap, Ctl ('V'), "scroll-other-window");
-  defkey (ESCmap, 'v', "scroll-down");
+  ndefkey (Vglobal_map, Ctl ('V'), "scroll-up");
+  ndefkey (Vesc_map, Ctl ('V'), "scroll-other-window");
+  ndefkey (Vesc_map, 'v', "scroll-down");
 
-  defkey (GlobalMap, Ctl('L'), "recenter");
-  defkey (ESCmap, 'r', "move-to-window-line");
+  ndefkey (Vglobal_map, Ctl('L'), "recenter");
+  ndefkey (Vesc_map, 'r', "move-to-window-line");
 }

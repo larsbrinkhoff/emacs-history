@@ -1,22 +1,21 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 ;; Souped up by shane@mit-ajax based on ideas of rlk@athena.mit.edu
@@ -104,17 +103,23 @@ but does not copy any new mail into the file."
   (or rmail-last-rmail-file
       (setq rmail-last-rmail-file (expand-file-name "~/XMAIL")))
   (let* ((file-name (expand-file-name (or file-name-arg rmail-file-name)))
-	 (existed (get-file-buffer file-name)))
+	 (existed (get-file-buffer file-name))
+	 ;; Don't be confused by apparent local-variables spec
+	 ;; in the last message in the RMAIL file.
+	 (inhibit-local-variables t))
     ;; Like find-file, but in the case where a buffer existed
     ;; and the file was reverted, recompute the message-data.
     (if (and existed (not (verify-visited-file-modtime existed)))
 	(progn
 	  (find-file file-name)
-	  (if (verify-visited-file-modtime existed)
+	  (if (and (verify-visited-file-modtime existed)
+		   (eq major-mode 'rmail-mode))
 	      (progn (rmail-forget-messages)
 		     (rmail-set-message-counters))))
       (find-file file-name))
-    (if existed
+    (if (eq major-mode 'rmail-edit-mode)
+	(error "exit rmail-edit-mode before getting new mail"))
+    (if (and existed (eq major-mode 'rmail-mode))
 	nil
       (rmail-mode)
       ;; Provide default set of inboxes for primary mail file ~/RMAIL.
@@ -328,7 +333,7 @@ w	Edit the current message.  C-c C-c to return to Rmail."
     (save-restriction
       (widen)
       (goto-char 1)
-      (cond ((looking-at "Babyl options:")
+      (cond ((looking-at "BABYL OPTIONS:")
 	     (search-forward "\^_" nil 'move)
 	     (narrow-to-region 1 (point))
 	     (goto-char 1)
@@ -388,6 +393,9 @@ and use that file as the inbox."
 	    (rmail-forget-messages))))
   (rmail-maybe-set-message-counters)
   (widen)
+  ;; Get rid of all undo records for this buffer.
+  (or (eq buffer-undo-list t)
+      (setq buffer-undo-list nil))
   (unwind-protect
       (let ((opoint (point))
 	    (new-messages 0)
@@ -395,7 +403,9 @@ and use that file as the inbox."
 	    ;; If buffer has not changed yet, and has not been saved yet,
 	    ;; don't replace the old backup file now.
 	    (make-backup-files (and make-backup-files (buffer-modified-p)))
-	    (buffer-read-only nil))
+	    (buffer-read-only nil)
+	    ;; Don't make undo records for what we do in getting mail.
+	    (buffer-undo-list t))
 	(goto-char (point-max))
 	(skip-chars-backward " \t\n")	; just in case of brain damage
 	(delete-region (point) (point-max))	; caused by require-final-newline
@@ -436,7 +446,7 @@ and use that file as the inbox."
     (rmail-show-message)))
 
 (defun rmail-insert-inbox-text (files renamep)
-  (let (file tofile delete-files movemail)
+  (let (file tofile delete-files movemail popmail)
     (while files
       (setq file (expand-file-name (substitute-in-file-name (car files)))
 	    ;;>> un*x specific <<
@@ -444,12 +454,19 @@ and use that file as the inbox."
       ;; If getting from mail spool directory,
       ;; use movemail to move rather than renaming.
       (setq movemail (equal (file-name-directory file) rmail-spool-directory))
+      (setq popmail (string-match "^po:" (file-name-nondirectory file)))
+      (if popmail (setq file (file-name-nondirectory file)
+			renamep t))
       (if movemail
 	  (progn
 	    (setq tofile (expand-file-name
 			   ".newmail"
+			   ;; Use the directory of this rmail file
+			   ;; because it's a nuisance to use the homedir
+			   ;; if that is on a full disk and this rmail
+			   ;; file isn't.
 			   (file-name-directory
-			     (expand-file-name rmail-file-name))))
+			     (expand-file-name buffer-file-name))))
 	    ;; On some systems, /usr/spool/mail/foo is a directory
 	    ;; and the actual inbox is /usr/spool/mail/foo/foo.
 	    (if (file-directory-p file)
@@ -457,15 +474,18 @@ and use that file as the inbox."
 						 (getenv "USER")
 						 (user-login-name))
 					     file)))))
-      (if (or (file-exists-p tofile) (file-exists-p file))
-	  (message "Getting mail from %s..." file))
+      (if popmail
+	  (message "Getting mail from post office ...")
+	(if (or (file-exists-p tofile) (file-exists-p file))
+	    (message "Getting mail from %s..." file)))
       ;; Set TOFILE if have not already done so, and
       ;; rename or copy the file FILE to TOFILE if and as appropriate.
       (cond ((not renamep)
 	     (setq tofile file))
-	    ((or (file-exists-p tofile) (not (file-exists-p file)))
+	    ((or (file-exists-p tofile) (and (not popmail)
+					     (not (file-exists-p file))))
 	     nil)
-	    ((not movemail)
+	    ((and (not movemail) (not popmail))
 	     (rename-file file tofile nil))
 	    (t
 	     (let ((errors nil))
@@ -488,12 +508,12 @@ and use that file as the inbox."
 		       (goto-char (point-min))
 		       (if (looking-at "movemail: ")
 			   (delete-region (point-min) (match-end 0)))
-		       (signal 'file-error
-			       (list "movemail"
-				     (buffer-substring (point-min)
-						       (point-max))
-				     ;file tofile
-				     ))))
+		       (beep t)
+		       (message (concat "movemail: "
+					(buffer-substring (point-min)
+							  (point-max))))
+		       (sit-for 3)
+		       nil))
 		 (if errors (kill-buffer errors))))))
       ;; At this point, TOFILE contains the name to read:
       ;; Either the alternate name (if we renamed)
@@ -516,7 +536,7 @@ and use that file as the inbox."
     (goto-char (point-min))
     (save-restriction
       (while (not (eobp))
-	(cond ((looking-at "Babyl Options:");Babyl header
+	(cond ((looking-at "BABYL OPTIONS:");Babyl header
 	       (search-forward "\n\^_")
 	       (delete-region (point-min) (point)))
 	      ;; Babyl format message
@@ -527,7 +547,14 @@ and use that file as the inbox."
 		     (sit-for 1)
 		     (goto-char (point-max))))
 	       (setq count (1+ count))
-	       (skip-chars-forward " \t\n")
+	       ;; Make sure there is no extra white space after the ^_
+	       ;; at the end of the message.
+	       ;; Narrowing will make sure that whatever follows the junk
+	       ;; will be treated properly.
+	       (delete-region (point)
+			      (save-excursion
+				(skip-chars-forward " \t\n")
+				(point)))
 	       (narrow-to-region (point) (point-max)))
 	      ;;*** MMDF format
 	      ((let ((case-fold-search t))
@@ -554,9 +581,9 @@ and use that file as the inbox."
 		    (concat "^[\^_]?\\("
 			    "From [^ \n]*\\(\\|\".*\"[^ \n]*\\)  ?[^ \n]* [^ \n]* *"
 			    "[0-9]* [0-9:]*\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) " ; EDT, -0500
-			    "19[0-9]* *$\\|"
+			    "19[0-9]* *\\(remote from .*\\)?$\\|"
 			    mmdf-delim1 "\\|"
-			    "^Babyl Options:\\|"
+			    "^BABYL OPTIONS:\\|"
 			    "\^L\n[01],\\)") nil t)
 		   (goto-char (match-beginning 1))
 		 (goto-char (point-max)))
@@ -597,7 +624,7 @@ and use that file as the inbox."
 	  (goto-char start))
 	(let ((case-fold-search nil))
 	  (if (re-search-forward
-	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\n" nil t)
+	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\\(remote from [^\n]*\\)?\n" nil t)
 	      (replace-match
 		(concat
 		  ;; Keep and reformat the date if we don't
@@ -1003,6 +1030,7 @@ and reverse search is specified by a negative numeric arg."
   (message "%sRmail search for %s..."
 	   (if reversep "Reverse " "")
 	   regexp)
+  (rmail-maybe-set-message-counters)
   (let ((omin (point-min))
 	(omax (point-max))
 	(opoint (point))
@@ -1085,6 +1113,9 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
   "Actually erase all deleted messages in the file."
   (interactive)
   (message "Expunging deleted messages...")
+  ;; Discard any prior undo information.
+  (or (eq buffer-undo-list t)
+      (setq buffer-undo-list nil))
   (rmail-maybe-set-message-counters)
   (let* ((omax (- (buffer-size) (point-max)))
 	 (omin (- (buffer-size) (point-min)))
@@ -1093,6 +1124,8 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
 		     0 (- (point) (point-min))))
 	 (messages-head (cons (aref rmail-message-vector 0) nil))
 	 (messages-tail messages-head)
+	 ;; Don't make any undo records for the expunging itself.
+	 (buffer-undo-list t)
 	 (win))
     (unwind-protect
 	(save-excursion

@@ -1,3 +1,416 @@
+Fri Jan 25 16:41:18 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Version 18.57 released.
+
+Fri Jan 18 02:06:18 1991  Jim Blandy  (jimb at wookumz.ai.mit.edu)
+
+	* version.el (emacs-version): Change version number to 18.56.0.
+
+Wed Jan 16 18:57:23 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Version 18.56 released.
+
+Tue Jan 15 23:25:27 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* startup.el (command-line-1): Update copyright year.
+
+Wed Jan  9 18:35:06 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* doctex.el (LaTeXify-DOC): Upgrade permission notice that is output.
+
+	* Most files: Upgrade permission notice.
+
+Tue Jan  8 15:02:30 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-insert-inbox-text): Put .newmail in dir with
+	rmail file.
+
+Fri Jan  4 00:41:56 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (find-file-noselect): Get rid of automounter prefixes.
+
+Mon Dec 31 23:49:38 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (revert-buffer): Clear buffer-backed-up if file has changed.
+
+Sun Dec 30 23:10:59 1990  Jim Blandy  (jimb at pogo.ai.mit.edu)
+
+	* startup.el (command-line-1): Avoid binding load-path for -l
+	switch.
+
+Sun Dec 23 17:07:13 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format, rmail-nuke-pinhead-header):
+	Accept `remote from ...' at end of UNIX From line.
+
+Sat Dec 22 13:15:09 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* bytecomp.el (byte-compile-form): Handle call to explicit lambda.
+
+	* time.el (display-time): Specify precise directory for wakeup.
+	(display-time-filter): Don't display 0 as load.
+
+Fri Dec 21 11:32:28 1990  Chris Hanson  (cph at kleph)
+
+	* info.el (Info-extract-menu-node-name): Permit \n between colon
+	and start of node name.
+
+Thu Dec 20 21:07:26 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sort.el (sort-numeric-fields): Fix syntax of chars to be skipped.
+
+Tue Dec 18 20:25:28 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (hack-local-variables): Match suffix only at eol.
+
+Sun Dec 16 22:49:45 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-parse-file-inboxes): Look for BABYL OPTIONS in u.c.
+	(rmail-convert-to-babyl-format): Likewise.
+	And don't skip white space after ^_ that ends a babyl format message.
+
+Wed Dec 12 00:11:37 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-insert-inbox-text): Extra tests for POP.
+
+	* files.el (hack-local-variables): Display local vars at screen top.
+
+Mon Dec 10 12:24:56 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sendmail.el: Doc fix.
+
+Tue Dec  4 21:01:26 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* server.el (server-process-filter): Don't be confused
+	if input from process is split into multiple chunks.
+
+	* time.el (display-time-filter): Let user specify mail file name.
+
+Thu Nov 29 20:43:40 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (hack-local-variables): Show buffer when asking question.
+
+	* rmail.el (rmail-insert-inbox-text): Don't give up if movemail fails.
+
+	* cl.el (safe-idiv): Avoid overflow computing s.
+
+Wed Nov 28 17:01:40 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* info.el (Info-extract-menu-item): Try exact match first.
+
+	* rmail.el (rmail-insert-inbox-text): Handle file names for pop.
+
+Mon Nov 26 17:02:13 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* bg-mouse.el (bg-insert-moused-sexp): If before ')', just skip that.
+
+Mon Nov 19 16:24:35 1990  Richard Mlynarik  (mly at august-east)
+
+        * rfc822.el (rfc822-addresses):  Blow out, don't loop, on ")
+        (rfc822-addresses-1) Error if address "phrase" not followed by
+	route-spec
+
+Tue Nov 13 22:29:01 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* fortran.el: Use domain format instead of uucp format for bug
+	list address.
+
+Mon Nov 12 17:03:44 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* lisp.el (lisp-complete-symbol): Use emacs-lisp-mode-syntax-table.
+
+Sun Nov 11 17:28:00 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* simple.el (kill-region): Share storage with undo list.
+
+Fri Nov  2 19:19:05 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (set-visited-file-name): Reject empty string as name.
+
+Thu Nov  1 20:30:50 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* lisp-mode.el (lisp-interaction-mode): Use Emacs Lisp syntax.
+
+Tue Oct 30 15:20:05 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (delete-auto-save-file-if-necessary):
+	Don't delete if auto-saving in visited file.
+
+Sun Oct 28 16:14:19 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* dabbrev.el (dabbrevs-search): Rename arg nocase to do-case.
+	(dabbrev-expand): Likewise.  Also correct usage in replace-match.
+	Also reinsert original abbrev before copying case pattern.
+
+Thu Oct 25 22:08:34 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x-win.el (command-switch-alist): Ignore -xrm.
+
+Tue Oct 16 13:32:21 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (revert-buffer): Discard all undo records.
+	* rmail.el (rmail-expunge, rmail-get-new-mail): Likewise.
+
+Wed Oct 10 18:00:11 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmailsum.el (rmail-summary-scroll-msg-up): Make msg visible.
+	(rmail-summary-scroll-msg-down): Likewise.
+
+Tue Oct  9 14:32:00 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* dired.el (dired-compress, dired-uncompress): Put output from
+	subprocess in a buffer to display it.
+
+	* lisp.el (lisp-complete-symbol): Last change clobbered beg.
+
+	* lisp-mode.el (indent-sexp): Make sure outer loop ends at eob.
+
+Mon Oct  8 19:03:01 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): process-list is undef on VMS.
+
+Sun Sep 30 15:12:58 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* compile.el (compile1): Make compilation-error-regexp local
+	only after switching modes.
+
+	* bytecomp.el (byte-compile-lambda): Handle string constant as value.
+
+Fri Sep 28 17:52:57 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* mh-e.el: New version from Larus.
+
+Thu Sep 27 21:41:33 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* time.el (display-time-filter): Don't lose if load-average fails.
+
+Wed Sep 26 16:03:59 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* replace.el (occur-mode-goto-occurrence): Fix typo.
+
+Tue Sep 25 21:45:54 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* lisp.el (lisp-complete-symbol): Switch to lisp syntax temporarily.
+	Put output in ` *Completions*' buffer.
+
+Fri Sep 21 16:04:59 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* isearch.el (nonincremental-search): Bind cursor-in-echo-area
+	only as long as necessary.
+
+Thu Sep 20 14:06:22 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* uncompress.el (uncompress-while-visiting): Make buffer writable.
+
+Tue Sep 18 08:53:22 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* doctor.el (doctor-member, doctor-cadr, doctor-caddr): Renamed.
+	(doctor-cddr): Renamed.
+
+Thu Sep 13 22:23:01 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x-mouse.el (x-mouse-set-point): Compensate for hscroll.
+
+Tue Sep 11 18:14:21 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* loadup.el: Handle dump-emacs-data if defined.
+
+Sat Sep  8 15:30:30 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* ftp.el (ftp-sentinel): Bind buffer-read-only only very locally.
+	(ftp-command): Ignore output lines with no status code.
+
+Fri Sep  7 13:25:37 1990  Chris Hanson  (cph at kleph)
+
+	* scheme.el: Don't treat #| ... |# as comment syntax.  Emacs
+	doesn't handle it correctly, and when `indent-sexp' sees #| it
+	inserts a semicolon in the comment column.
+
+Thu Sep  6 17:04:03 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* simple.el (kill-comment): Eliminate recursive-edit.
+
+Tue Sep  4 18:15:10 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* ftp.el (ftp-write-file): Accept status 125 as normal.
+
+Wed Aug 29 18:19:46 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmail.el (rmail-search): Call rmail-maybe-set-message-counters.
+
+Tue Aug 28 13:12:40 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* isearch.el (isearch): Do regexp-quote for what ^W and ^Y get.
+
+Thu Aug 16 13:31:56 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* vi.el (vi-next-line): Use next-line-internal.
+	* vip.el (vip-next-line): Likewise.
+
+	* telnet.el (telnet-mode-map): Take out copy-last-shell-input.
+
+	* time.el (display-time-filter): Check that file is non-empty.
+
+Wed Aug 15 18:31:16 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x-win.el (x-new-display): Define only for X10.
+
+Thu Aug  9 17:36:45 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* replace.el (occur-mode-goto-occurrence): Calculate from
+	beginning of line in *occur* buffer.
+
+Tue Jul 31 23:21:10 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (find-alternate-file): Nothing special for read-only buf.
+
+Sun Jul 29 14:18:37 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* time.el (display-time-filter): Compute inbox name from user.
+
+Thu Jul 26 20:44:37 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* help.el (view-lossage): Use insert, not `newline'.
+
+	* info.el (Info-find-node): Set case-fold-search for tag tbl buffer.
+
+Wed Jul 18 16:23:10 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Improve confirmation msg.
+
+Sun Jul 15 22:34:33 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* register.el (view-register): Don't ignore first line of rect.
+
+Wed Jul  4 15:35:44 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* time.el (display-time-filter): Create the string here.
+	The output sent by the subprocess no longer matters.
+	(display-time): Run "wakeup", not "loadst".
+
+Sat Jun 30 13:07:32 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dbx.el: Use C-x SPC for setting break point.
+
+Wed Jun 27 14:33:55 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* paragraphs.el (start-of-paragraph-text): Avoid infinite loop.
+
+Fri Jun 22 13:30:24 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail): Ignore local variable specs in rmail file.
+
+Wed Jun 20 11:43:17 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* float.el: Provide 'float.
+
+Tue Jun 19 21:06:48 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* page.el (what-page): Reckon from beginning of line.
+
+Tue May 29 13:01:25 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* scheme.el (run-scheme): Autoload deleted.  Done in loaddefs.
+
+Sat May 26 17:44:57 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* compile.el (next-error): Use set-buffer, not switch-to-buffer,
+	before parsing.
+
+Fri May 25 14:14:51 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Fix bugs in  testing
+	for modified buffers.
+
+	* subr.el (undo-start, undo-more): New functions.
+
+Mon May 21 14:53:38 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* time.el (display-time): Local cleanup.
+
+	* simple.el (kill-comment): Local cleanup.
+
+	* buff-menu.el (Buffer-menu-buffer): Simplified.
+	Set Buffer-menu-buffer-column initially.
+
+	* rmail.el (rmail): Don't assume mode of existing buffer is rmail.
+	If not, switch to rmail-mode, unless it is rmail-edit-mode.
+
+Fri May 18 17:59:41 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lisp-mode.el (indent-sexp): Typo in name inner-loop-done.
+	* c-mode.el (indent-c-exp): Likewise.
+
+Sat May 12 16:53:35 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* info.el (Info-read-subfile): Ignore blank lines in split file list.
+
+Tue May  1 14:49:46 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* replace.el (occur): Avoid infinite loop at end of buffer.
+
+Mon Apr 30 20:54:47 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* float.el (float-to-string):
+	Adjust POWER when rounding makes new digit. 
+
+Sat Apr 28 17:51:24 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Query here about modified
+	buffers and active processes.
+
+Wed Apr 25 17:12:08 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* simple.el (next-line-internal): Handle track-eol more cleanly.
+
+Thu Apr 12 21:48:01 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* startup.el (normal-top-level): Don't check envvar PWD on vms.
+
+Thu Apr  5 16:41:44 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmailout.el (rmail-output-to-rmail-file): Set message counters
+	before inserting in a file being visited.
+
+	* startup.el (command-line-1): Always erase *scratch*, not current buf.
+
+Tue Apr  3 04:53:01 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fill.el (fill-individual-paragraphs): Anchor regexp for MAILP=t.
+
+Sun Mar 18 23:03:33 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* c-mode.el: Doc fix.
+
+Fri Mar  9 18:24:21 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rnewspost.el (news-mail-reply, news-reply, news-post-news):
+	Include newline before the blank line, when narrowing.
+
+Thu Feb  1 02:21:56 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* texinfmt.el (batch-texinfo-format): Paren error on (setq error 1).
+
+Thu Jan  4 21:09:29 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* doctor.el: Delete spurious symbol at top level.
+
+Sat Dec 16 08:59:00 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* c-mode.el (c-backward-to-noncomment): Stop better at beg of bfr.
+
+Wed Nov  8 15:56:52 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* debug.el (debug): No need to check match-data for invalid markers.
+
+Mon Nov  6 01:20:59 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.el (server-done): Add space to error message.
+
+Sat Oct 14 01:56:27 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paragraphs.el (forward-paragraph): Don't hang at eob.
+
 Tue Aug 15 21:41:10 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
 
 	* Version 18.55 released.

@@ -3,27 +3,26 @@
 
 ;; This file is part of GNU Emacs.
 
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
+
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-(defun cadr (x) (car (cdr x)))
-(defun caddr (x) (car (cdr (cdr x))))
-(defun cddr (x) (cdr (cdr x)))
+(defun doctor-cadr (x) (car (cdr x)))
+(defun doctor-caddr (x) (car (cdr (cdr x))))
+(defun doctor-cddr (x) (cdr (cdr x)))
 
-(defun member (x y)
+(defun doctor-member (x y)
   "Like memq, but uses  equal  for comparison"
   (while (and y (not (equal x (car y))))
     (setq y (cdr y)))
@@ -84,8 +83,8 @@ reads the sentence before point, and prints the Doctor's answer."
   (make-local-variable 'typos)
   (setq typos
 	(mapcar (function (lambda (x)
-			    (put (car x) 'doctor-correction  (cadr x))
-			    (put (cadr x) 'doctor-expansion (caddr x))
+			    (put (car x) 'doctor-correction  (doctor-cadr x))
+			    (put (doctor-cadr x) 'doctor-expansion (doctor-caddr x))
 			    (car x)))
 		'((theyll they\'ll (they will))
 		  (theyre they\'re (they are))
@@ -756,7 +755,7 @@ reads the sentence before point, and prints the Doctor's answer."
 (doctor-put-meaning screw 'sexverb)
 (doctor-put-meaning screwing 'sexverb)
 (doctor-put-meaning fucking 'sexverb)
-(doctor-put-meaning rape 'sexverb)4
+(doctor-put-meaning rape 'sexverb)
 (doctor-put-meaning raped 'sexverb)
 (doctor-put-meaning kiss 'sexverb)
 (doctor-put-meaning kissing 'sexverb)
@@ -880,20 +879,20 @@ Otherwise call the Doctor to parse preceding sentence"
   (cond
    ((equal sent '(foo))
     (doctor-type '(bar! ($ please)($ continue))))
-   ((member sent howareyoulst)
+   ((doctor-member sent howareyoulst)
     (doctor-type '(i\'m ok \.  ($ describe) yourself \.)))
-   ((or (member sent '((good bye) (see you later) (i quit) (so long)
-		       (go away) (get lost)))
+   ((or (doctor-member sent '((good bye) (see you later) (i quit) (so long)
+			      (go away) (get lost)))
 	(memq (car sent)
 	      '(bye halt break quit done exit goodbye 
 		    bye\, stop pause goodbye\, stop pause)))
     (doctor-type ($ bye)))
    ((and (eq (car sent) 'you)
-	 (memq (cadr sent) abusewords))
-    (setq found (cadr sent))
+	 (memq (doctor-cadr sent) abusewords))
+    (setq found (doctor-cadr sent))
     (doctor-type ($ abuselst)))
    ((eq (car sent) 'whatmeans)
-    (doctor-def (cadr sent)))
+    (doctor-def (doctor-cadr sent)))
    ((equal sent '(parse))
     (doctor-type (list  'subj '= subj ",  "
 			'verb '= verb "\n"
@@ -907,7 +906,7 @@ Otherwise call the Doctor to parse preceding sentence"
 			"..."
 			'(// bak))))
    ;;   ((eq (car sent) 'forget)
-   ;;    (set (cadr sent) nil)
+   ;;    (set (doctor-cadr sent) nil)
    ;;    (doctor-type '(($ isee)($ please)
    ;;     ($ continue)\.)))
    (t
@@ -926,7 +925,7 @@ Otherwise call the Doctor to parse preceding sentence"
 	   (if (memq 'am sent)
 	       (setq sent (doctor-replace sent '((me . (i))))))
 	   (setq sent (doctor-fixup sent))
-	   (if (and (eq (car sent) 'do) (eq (cadr sent) 'not))
+	   (if (and (eq (car sent) 'do) (eq (doctor-cadr sent) 'not))
 	       (cond ((zerop (random-range 3))
 		      (doctor-type '(are you ($ afraidof) that \?)))
 		     ((zerop (random-range 2))
@@ -935,7 +934,7 @@ Otherwise call the Doctor to parse preceding sentence"
 		      (doctor-rthing))
 		     (t
 		      (doctor-type '(($ whysay) that i shouldn\'t
-				     (cddr sent)
+				     (doctor-cddr sent)
 				     \?))))
 	     (doctor-go (doctor-wherego sent))))))))
 
@@ -1135,13 +1134,13 @@ subject noun, and return the portion of the sentence following it"
 (defun doctor-setprep (sent key)
   (let ((val)
 	(foo (memq key sent)))
-    (cond ((doctor-prepp (cadr foo))
-	   (setq val (doctor-getnoun (cddr foo)))
+    (cond ((doctor-prepp (doctor-cadr foo))
+	   (setq val (doctor-getnoun (doctor-cddr foo)))
 	   (cond (val val)
 		 (t 'something)))
-	  ((doctor-articlep (cadr foo))
-	   (setq val (doctor-getnoun (cddr foo)))
-	   (cond (val (doctor-build (doctor-build (cadr foo) " ") val))
+	  ((doctor-articlep (doctor-cadr foo))
+	   (setq val (doctor-getnoun (doctor-cddr foo)))
+	   (cond (val (doctor-build (doctor-build (doctor-cadr foo) " ") val))
 		 (t 'something)))
 	  (t 'something))))
 
@@ -1270,33 +1269,33 @@ subject noun, and return the portion of the sentence following it"
   (let ((foo sent))
     (while foo
       (if (and (eq (car foo) 'me)
-	       (doctor-verbp (cadr foo)))
+	       (doctor-verbp (doctor-cadr foo)))
 	  (rplaca foo 'i)
 	(cond ((eq (car foo) 'you)
-	       (cond ((memq (cadr foo) '(am be been is))
+	       (cond ((memq (doctor-cadr foo) '(am be been is))
 		      (rplaca (cdr foo) 'are))
-		     ((memq (cadr foo) '(has))
+		     ((memq (doctor-cadr foo) '(has))
 		      (rplaca (cdr foo) 'have))
-		     ((memq (cadr foo) '(was))
+		     ((memq (doctor-cadr foo) '(was))
 		      (rplaca (cdr foo) 'were))))
 	      ((equal (car foo) 'i)
-	       (cond ((memq (cadr foo) '(are is be been))
+	       (cond ((memq (doctor-cadr foo) '(are is be been))
 		      (rplaca (cdr foo) 'am))
-		     ((memq (cadr foo) '(were))
+		     ((memq (doctor-cadr foo) '(were))
 		      (rplaca (cdr foo) 'was))
-		     ((memq (cadr foo) '(has))
+		     ((memq (doctor-cadr foo) '(has))
 		      (rplaca (cdr foo) 'have))))
 	      ((and (doctor-verbp (car foo))
-		    (eq (cadr foo) 'i)
-		    (not (doctor-verbp (car (cddr foo)))))
+		    (eq (doctor-cadr foo) 'i)
+		    (not (doctor-verbp (car (doctor-cddr foo)))))
 	       (rplaca (cdr foo) 'me))
 	      ((and (eq (car foo) 'a)
 		    (doctor-vowelp (string-to-char
-				    (doctor-make-string (cadr foo)))))
+				    (doctor-make-string (doctor-cadr foo)))))
 	       (rplaca foo 'an))
 	      ((and (eq (car foo) 'an)
 		    (not (doctor-vowelp (string-to-char
-					 (doctor-make-string (cadr foo))))))
+					 (doctor-make-string (doctor-cadr foo))))))
 	       (rplaca foo 'a)))
 	(setq foo (cdr foo))))
     sent))
@@ -1489,12 +1488,12 @@ global variable owner to possibly correct result"
   (let ((foo (memq found sent)))
     (cond ((< (length foo) 2)
 	   (doctor-go (doctor-build (doctor-meaning found) 1)))
-	  ((memq (cadr foo) '(a an))
+	  ((memq (doctor-cadr foo) '(a an))
 	   (rplacd foo (append '(to have) (cdr foo)))
 	   (doctor-svo sent found 1 nil)
 	   (doctor-remember (list subj 'would 'like obj))
 	   (doctor-type ($ whywant)))
-	  ((not (eq (cadr foo) 'to))
+	  ((not (eq (doctor-cadr foo) 'to))
 	   (doctor-go (doctor-build (doctor-meaning found) 1)))
 	  (t
 	   (doctor-svo sent found 1 nil)

@@ -4,20 +4,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 ;; you can turn this off by doing
@@ -170,7 +169,7 @@ USER and PASSWORD are defaulted from the values used when
       (message "Opening file %s:%s..." host file)
       (if (ftp-command process
 		       (format "send \"%s\" \"%s\"\nquit\n" tmp file)
-		       "150.*\n"
+		       "\\(150\\|125\\).*\n"
 		       "200.*\n")
 	  (progn (forward-line 1)
 		 (let ((buffer-read-only nil))
@@ -224,7 +223,8 @@ USER and PASSWORD are defaulted from the values used when
 
 (defun ftp-command (process command win ignore)
   (process-send-string process command)
-  (let ((p 1))
+  (let ((p 1)
+	(case-fold-search t))
     (while (numberp p)
       (cond ;((not (bolp)))
 	    ((looking-at win)
@@ -233,6 +233,7 @@ USER and PASSWORD are defaulted from the values used when
 	    ((looking-at "^ftp> \\|^\n")
 	     (goto-char (match-end 0)))
 	    ((looking-at ignore)
+	     ;; Ignore status messages whose codes indicate no problem.
 	     (forward-line 1))
 	    ((not (search-forward "\n" nil t))
 	     ;; the way asynchronous process-output fucks with (point)
@@ -242,6 +243,9 @@ USER and PASSWORD are defaulted from the values used when
 		 (accept-process-output process)
 	       (error nil))
 	     (goto-char p))
+	    ((looking-at "^[a-z]")
+	     ;; Ignore any lines that don't have error codes.
+	     (forward-line 1))
 	    (t
 	     (setq p nil))))
     p))
@@ -265,8 +269,7 @@ USER and PASSWORD are defaulted from the values used when
 	 (save-excursion
 	   (set-buffer (process-buffer process))
 	   (let (msg
-		 (r (if input "[0-9]+ bytes received in [0-9]+\\.[0-9]+ seconds.*$" "[0-9]+ bytes sent in [0-9]+\\.[0-9]+ seconds.*$"))
-		 (buffer-read-only nil))
+		 (r (if input "[0-9]+ bytes received in [0-9]+\\.[0-9]+ seconds.*$" "[0-9]+ bytes sent in [0-9]+\\.[0-9]+ seconds.*$")))
 	     (goto-char (point-max))
 	     (search-backward "226 ")
 	     (if (looking-at r)
@@ -280,7 +283,8 @@ USER and PASSWORD are defaulted from the values used when
 						    (match-beginning 0)
 						    (match-end 0)))
 				     "")))
-	       (delete-region p (point-max))
+	       (let ((buffer-read-only nil))
+		 (delete-region p (point-max)))
 	       (save-excursion
 		 (set-buffer (get-buffer-create "*ftp log*"))
 		 (let ((buffer-read-only nil))

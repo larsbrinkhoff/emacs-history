@@ -1,4 +1,5 @@
-How to get GNU Software by Internet FTP or by UUCP.  Last updated 4 June 1988
+		-*- text -*-
+How to get GNU Software by Internet FTP or by UUCP.  Last updated 1 Jan 91.
 
 * No Warranties
 
@@ -13,7 +14,7 @@ he says so in writing.
 If you find this file in the Emacs distribution, there is a chance
 it is out of date.  If you plan to FTP files from prep.ai.mit.edu,
 you might as well start by FTPing the current version of this file,
-which is `/u2/emacs/etc/FTP'.
+which is `/pub/gnu/etc/FTP'.
 
 * FTPing GNU Software
 
@@ -21,66 +22,63 @@ which is `/u2/emacs/etc/FTP'.
 
 If you are on the Internet (see also "** Alternative Internet FTP
 Sources" below), you can at present copy the latest distribution
-version of GNU Emacs from the file /u2/emacs/edist.tar on host
-prep.ai.mit.edu (or the file /u2/emacs/edist.tar.Z which has been run
-through compress after tar).  These files are about 7 and 3 megabytes
-long, respectively.  After you unpack the distribution, be sure to
-look at the files README and INSTALL.
+version of GNU Emacs from the file /pub/gnu/emacs-M.N.tar on host
+prep.ai.mit.edu (or the file /pub/gnu/emacs-M.N.tar.Z which has been
+run through compress after tar).  M and N standard for version
+numbers; look at a listing of the directory through ftp to see what
+version is available.  These files are about 11 and 4 megabytes long,
+respectively.  After you unpack the distribution, be sure to look at
+the files README and INSTALL.
 
-Because of difficulties in transferring large files, often a split
+Because of difficulties in transferring large files, sometimes a split
 version of the tar file is created.  This is a directory named
-/u2/emacs/edist.tar-M.N-split or perhaps
-/u2/emacs/edist.tar-M.N.Z-split, containing files of 100000
-characters each.  There is generally no trouble in ftping files of
-this size.  They can be combined with cat to make a tar file or
-compressed tar file.
+/pub/gnu/emacs-M.N.tar-split or perhaps
+/pub/gnu/emacs-M.N.tar.Z-split, containing files of 100000 characters
+each.  There is generally no trouble in ftping files of this size.
+They can be combined with cat to make a tar file or compressed tar
+file.
+
+ALWAYS USE BINARY/IMAGE MODE TO TRANSFER THESE FILES!
+Text mode does not work for tar files or compressed files.
 
 Some ftp'ers have found it necessary for successful file transfer:
-   - to set the binary/image mode
-   - to use another of prep.ai.mit.edu internet addresses than the
-default for your machine.  They are (as of 22 Oct 86):
-  128.52.14.14
-  128.52.22.14
-  128.52.32.14
+   - to explicitly use prep.ai.mit.edu internet address:
+18.71.0.38		(as of 11 April 89)
 
 Files of differences from previous widely distributed GNU Emacs
 versions to the present version are also available on prep.ai.mit.edu
-under names of the form diff-OO.OO-NN.NN in directory /u2/emacs .
+under names of the form emacs.diff-OO.OO-NN.NN in directory /pub/gnu.
 These are made with diff -rc2.  Sometimes there are compressed
 versions of these difference files as well; their names have .Z
 appended.
 
 The Emacs manual in source form is included in the distribution.
 The dvi file produced by TeX is not included, but a copy may be
-available for ftp under the name /u2/emacs/emacs.dvi.
+available for ftp under the name /pub/gnu/emacs.dvi.
 
-** Copying Only Recently Changed Files
+The Emacs Lisp Reference Manual is in a separate file:
+/pub/gnu/lispref.tar.Z.
 
-A special version of rcp exists which allows you, on an Internet host,
-to copy all GNU Emacs files whose last-mod-dates don't match your
-files.  See the file /u2/emacs/etc/RCP on prep.ai.mit.edu for
-information on using it.
+** VMS versions of GNU Emacs and How To FTP It.
+You can anonymously ftp a VMS version of GNU emacs from:
+	- ddvax.llnl.gov.
+	- VMSA.OAC.UCI.EDU or VMSD.OAC.UCI.EDU.
+	- RIGEL.EFD.LTH.SE [130.235.48.3].
+	- ctrsci.cc.utah.edu.  The 00readme.txt file gives details.
+	- cc.utah.edu [128.110.8.24].  User anonymous, pass guest.  It
+has already been compiled and linked so it is ready to run.  You will
+need to ftp the reblock.for program to reblock the saveset so that the
+backup utility can restore that saveset.  Do a backup/list on the
+ftp'd saveset and catch the header info that backup puts out.  It
+contains the correct block size to reblock the file to.  Remember to
+ftp it in binary mode.
 
-** Scheme and How To FTP It
+** A VMS version of G++ and How To FTP It.
 
-The latest distribution version of C Scheme is in the directory
-/u2/scheme/dist.  To obtain a "tarred" copy of this directory, telnet
-to prep.ai.mit.edu and log in as scheme (password: scheme).  A file called
-dist.tar will be created (if there isn't one already), and you will be
-given a choice of the file transfer program to run (of all the ones
-supported by PREP).  It should be self-explanatory (ha, ha! [try ? for
-help]).
+mango.miami.edu has a VMS version of the G++ compiler.  Contact
+angel@flipper.miami.edu (angel li) for details.
 
-Read the files INSTALL and README in the top level C Scheme directory.
-
-** GDB and How To FTP It.
-
-GDB, the GNU source-level C debugger, is part of the Emacs distribution.
-It can be found separately in the directory /u2/emacs/dist/gdb as
-65 separate files.  If there is a demand, separate tar files of
-GDB can be made available.
-
-** The VMS version of GCC and How To FTP It.
+** A VMS version of GCC and How To FTP It.
 
 Jonathan Corbet has made the "bootstrap files" for the GNU C compiler
 available for pseudo-anonymous FTP on rdss.ucar.edu.  The full gcc
@@ -113,73 +111,166 @@ Usenet:		...!ncar!rdss!corbet
 ** Other GNU Software and How To FTP It.
 
 This software is available on prep.ai.mit.edu under directory
-/u2/emacs.  Files containing diff from previous versions are often
+/pub/gnu.  Files containing diff from previous versions are often
 available.  Compressed versions of the tar or diff files are often
 available (indicated by a .Z suffix).  Much of this software is in
 beta test (probably still buggy), and is being made available for use
 by hackers who like to test software.  M.N indicates a version number.
+diff files to convert between versions (like those used for GNU
+Emacs), exist for some of these programs.  Some programs have misc
+suport files as well.  Have a look on prep.ai.mit.edu to see which
+ones.
 
-Bison			bison.tar
-GNU Assembler (gas)	gas-dist.tar	BETA TEST
-GNU C Compiler (gcc)	gcc.tar-M.N	Late BETA TEST
-GNU C++ Compiler (g++)	g++.tar-M.N	BETA TEST
-GNU C++ Library		dist-libg++.tar.Z	BETA TEST
-GNU C++ Debugger (gdb+)	gdb+.tar-M.N.Z	BETA TEST
-GNU AWK (gawk)		awk.tar		BETA TEST
-GNU Make		make.tar-M.N.Z	BETA TEST
-GNU ld, gprof, size, nm and strip
-			binutils.tar	BETA TEST
-GNU Chess		gnuchess.tar.Z
-GNU Buttons and Designs	button.M.N.ps
+GNU Assembler (gas)		gas-M.N.tar.Z		Released
+GNU Bash			bash-M.N.tar.Z		BETA TEST
+GNU Bison			bison-M.N.tar.Z		Released
+GNU C Compiler (gcc)		gcc.tar-M.N.Z		Late BETA TEST
+GNU C++ Compiler (g++)		g++.tar-M.N.Z		BETA TEST
+GNU C++ Library			libg++-M.N.tar.Z	BETA TEST
+GNU cpio			cpio-M.N.tar.Z		BETA TEST
+GNU Emacs Lisp Reference Manual	lispref.tar.Z		Released
+GNU AWK (gawk)			gawk-M.N.tar.Z		Released
+GNU debugger (gdb)      	gdb-M.N.tar.Z   	Released
+GNU Make			make-M.N.tar.Z		Released
+GNU ld, ar, gprof, size, nm and strip
+				binutils.tar.Z		Released
+GNU cat chmod cmp cp cut dd dir du head install ln ls
+    mkdir mkfifo mv paste rm rmdir tac tail touch vdir
+				fileutils-M.N.tar.Z	BETA TEST
+GNU Diff			diff-M.N.tar.Z		Released
+GNU e?grep			grep-M.N.tar.Z		Released
+GNU fgrep			fgrep-M.N.tar.Z		BETA TEST
+GNU find			find-M.N.tar.Z		BETA TEST
+GNU finger			finger-M.N.tar.Z	BETA TEST
+GNU Ghostscript			ghostscript-M.N.tar.Z
+			& font ghostscript*tar.Z files	BETA TEST
+GNU gdbm			gdbm-M.N.tar.Z		BETA TEST
+GNU Go				gnugo-M.N.tar.Z		BETA TEST
+GNU groff			groff-M.N.tar.Z		BETA TEST
+GNU indent			indent-M.N.tar.Z	BETA TEST
+GNU malloc			malloc.tar.Z		BETA TEST
+GNU tar (to unpacl .tar files)	tar-M.N.tar.Z
+			and	tar-M-N.shar		BETA TEST
+GNU m4				m4.tar.Z		BETA TEST
+GNU sed				sed-M.N.tar.Z		BETA TEST
+GNU Smalltalk			smalltalk-M.N.tar.Z	BETA TEST
+GNU Chess			gnuchess-M.N.tar.Z	Released
+GNU Buttons & Designs		button.M.N.ps		Released
+
+and these packages which are not FSF software but work with
+them and are part of GNU:
+
+Concurrent Version System	cvs-M.N.tar.Z
+compress (to undo .Z files)	compress.shar and compress.tar
+dirent				dirent.tar.Z
+  (directory reader for sysV 3.2)
+elvis (a vi clone)		elvis.M.N.O.tar.Z
+Flex (a faster lex)		flex-M.N.tar.Z
+gnuplot				gnuplot-M.N.tar.Z
+The jargon file			jargon.text.Z
+  (definitions of terms used by hackers)
+NIH C++ Class Library		nihcl-M.N.tar.Z
+Perl				perl-M.N.tar.Z
+Revision Control System		rcs.tar.Z
+Texi2roff			texi2roff.shar.Z
+
+** TeX and How to FTP It
+
+We don't distribute TeX now, but it is free software. 
+
+You can get TeX sources via anonymous FTP from labrea.stanford.edu in
+pub/tex.  The directory pub/tex/unix3.0 probably contains what you
+want, but see pub/tex/README to be sure.  The most recent incarnation
+of the LaTeX macros are in labrea:pub/tex/latex.  If you'd like to
+support TUG and/or don't have access to the Internet, then write to
+elisabet@max.acs.washington.edu about getting their tape distribution.
+
+** Scheme and How to FTP It
+
+The latest distribution version of C Scheme is on the machine
+zurich.ai.mit.edu.  To obtain a "tarred" copy of this directory,
+telnet to zurich.ai.mit.edu and log in as scheme (password: scheme).
+A file called dist.tar will be created (if there isn't one already),
+and you will be given a choice of the file transfer program to run (of
+all the ones supported by zurich).  It should be self-explanatory (ha,
+ha!  [try ? for help]).
+
+Read the files INSTALL and README in the top level C Scheme directory.
 
 ** Alternative Internet FTP Sources
 
-The administrators of simtel20.arpa maintains copies of GNU
+The administrators of wsmr-simtel20.army.mil maintains copies of GNU
 distributed software for MILNET/DDN hosts.  It is available via
 anonymous ftp from PD:<UNIX-C.GNU> in the original tar or tar.Z
 format.
 
 The administrators of louie.udel.edu maintains copies of GNU Emacs and
 the compress program.  The files are available via anonymous ftp under
-directory ~ftp/gnu.  louie's addresses are (as of 21 Feb 1987):
-
-10.0.0.96	louie udel-louie eecis3 udel-relay udel
-192.5.39.3      louie.udel.edu udel-louie.arpa udel-louie louie udel-relay udel udel.edu
+directory ~ftp/gnu.
 
 Emacs and other GNU programs may be available on nic.nyser.net, in
 /usb/gnu/emacs-dist.tar{,.Z}.  Anonymous ftp starts you in directory
 /usb.
 
-Emacs and other GNU programs may be available on uunet.uu.net,
-spam.istc.sri.com, scam.berkeley.edu and bu-it.bu.edu via anonymous ftp.
+Emacs and other GNU programs may be available on gatekeeper.dec.com,
+labrea.stanford.edu, itstd.sri.com, scam.berkeley.edu,
+wuarchive.wustl.edu, and uunet.uu.net via anonymous ftp.
 
-* Getting GNU software in England
+* Getting GNU software in Great Britain
 
 jpo@cs.nott.ac.uk is willing to distribute those GNU sources he has
 available.  The smaller items are available from the info-server (send
 to info-server@cs.nott.ac.uk) the larger items by negotiation.  Due to
 communication costs this service is only available within the UK.
 
-BattenIG@computer-science.birmingham.ac.uk is also willing to
-distribute those GNU sources he has available.  He can also write
-tapes in qic-21, qic-24 and VMS TK50s formats.
+BattenIG@computer-science.birmingham.ac.uk (aka
+I.G.Batten@fulcrum.bt.co.uk) is also willing to distribute those GNU
+sources he has available.  He can also write tapes in qic-21 and
+qic-24 formats.
+
+lmjm@doc.ic.ac.uk is willing to distribute those GNU sources he has
+available along with comp.sources.unix, comp.sources.x, X windows et
+al.  All items are available using uucp, NIFTP over JANET or, via a
+suitable gateway, from PSS sites as well.  Due to communication costs
+this service is only available within the UK.  Mail to
+info-server@doc.ic.ac.uk for details.  He can also write sun cartridge
+or exabyte tapes.
+
+* Getting GNU software in Sweden
+
+Site sunic.sunet.se has many of the GNU programs available for anonymous ftp.
+
+* Getting GNU software in Finland
+
+Site funic.funet.fi (Internet address 128.214.6.100) has many of the
+GNU programs available for anonymous ftp.
+
+* Getting GNU software in Denmark
+
+Site freja.diku.dk (Internet address 129.142.96.1) has many of the GNU
+programs, TeX, and the X window system available for anonymous ftp.
+
+* Getting GNU software in Japan
+
+Site ftp.cs.titech.ac.jp has some of the GNU programs available for
+anonymous ftp.  nemacs (the japanese port of GNU Emacs) is under
+~ftp/JAPAN.
 
 * Getting GNU software via UUCP
 
-OSU is distributing via UUCP: GNU Emacs, GNU Bison, GNU Debugger
-(gdb), GNU C Compiler (gcc) (& G++ & GDB+), MIT C Scheme, GNU Chess,
-GNU Assembler (gas), GNU Awk (gawk), Compress, News, RN, NNTP, Patch,
-some Appletalk stuff, and some of the Internet Requests For Comment
-(RFC).  See their periodic postings on the Usenet newsgroup
-comp.sources.d for informational updates.  Current details from Karl
-Kleinpaste <karl@tut.cis.ohio-state.edu> or <karl@ohio-state.arpa> or
-<...!osu-cis!karl>; or Bob Sutterfield <bob@the-same-places>.
+OSU is distributing via UUCP: most GNU software, MIT C Scheme,
+Compress, News, RN, NNTP, Patch, some Appletalk stuff, some of the
+Internet Requests For Comment (RFC) et al..  See their periodic
+postings on the Usenet newsgroup comp.sources.d for informational
+updates.  Current details from Karl Kleinpaste
+<karl@tut.cis.ohio-state.edu> or <...!osu-cis!karl>.
 
 Information on how to uucp some GNU programs is available via
-electronic mail from: arnold@skeeve.UUCP, ihnp4!hutch!barber,
-hqda-ai!merlin, hao!scicom!qetzal!upba!ugn!nepa!denny, acornrc!bob,
-gatech!uflorida!codas!killer!wisner, mit-eddie!bloom-beacon!ht!spt!gz,
-bigtex!james and postmaster@uunet.uu.net.
+electronic mail from: uunet!hutch!barber, hqda-ai!merlin,
+sun!nosun!illian!darylm, acornrc!bob,
+hao!scicom!qetzal!upba!ugn!nepa!denny, bigtex!james (aka
+james@bigtex.cactus.org), ncar!noao!asuvax!hrc!dan, oli-stl!root, and
+postmaster@uunet.uu.net.
 
 * If You Like The Software
 

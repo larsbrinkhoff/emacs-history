@@ -1,22 +1,21 @@
 /* Evaluator for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -25,7 +24,7 @@ and this notice must be preserved on all copies.  */
 #ifndef standalone
 #include "commands.h"
 #else
-#define INTERACTIVE 1
+#define FROM_KBD 1
 #endif
 
 #include <setjmp.h>
@@ -57,12 +56,13 @@ struct catchtag
     struct backtrace *backlist;
     int lisp_eval_depth;
     int pdlcount;
+    int poll_suppress_count;
   };
 
 struct catchtag *catchlist;
 
 Lisp_Object Qautoload, Qmacro, Qexit, Qinteractive, Qcommandp, Qdefun;
-Lisp_Object Vquit_flag, Vinhibit_quit;
+Lisp_Object Vquit_flag, Vinhibit_quit, Qinhibit_quit;
 Lisp_Object Qmocklisp_arguments, Vmocklisp_arguments, Qmocklisp;
 Lisp_Object Qand_rest, Qand_optional;
 
@@ -438,7 +438,7 @@ and input is currently coming from the keyboard (not in keyboard macro).")
   register struct backtrace *btp;
   register Lisp_Object fun;
 
-  if (!INTERACTIVE)
+  if (!FROM_KBD)
     return Qnil;
   /* Skip the frame of interactive-p itself (if interpreted)
      or the frame of byte-code (if called from compiled function).  */
@@ -805,6 +805,7 @@ internal_catch (tag, func, arg)
   c.val = Qnil;
   c.backlist = backtrace_list;
   c.lisp_eval_depth = lisp_eval_depth;
+  c.poll_suppress_count = poll_suppress_count;
   c.pdlcount = specpdl_ptr - specpdl;
   c.gcpro = gcprolist;
   catchlist = &c;
@@ -865,6 +866,11 @@ Both TAG and VALUE are evalled.")
 	  {
 	    if (EQ (c->tag, tag))
 	      {
+		/* Restore the polling-suppression count.  */
+		if (c->poll_suppress_count > poll_suppress_count)
+		  abort ();
+		while (c->poll_suppress_count < poll_suppress_count)
+		  start_polling ();
 		c->val = val;
 		unbind_catch (c);
 		_longjmp (c->jmp, 1);
@@ -932,6 +938,7 @@ See SIGNAL for more info.")
   c.val = Qnil;
   c.backlist = backtrace_list;
   c.lisp_eval_depth = lisp_eval_depth;
+  c.poll_suppress_count = poll_suppress_count;
   c.pdlcount = specpdl_ptr - specpdl;
   c.gcpro = gcprolist;
   if (_setjmp (c.jmp))
@@ -956,6 +963,7 @@ See SIGNAL for more info.")
     }
   
   h.next = handlerlist;
+  h.poll_suppress_count = poll_suppress_count;
   h.tag = &c;
   handlerlist = &h;
 
@@ -979,6 +987,7 @@ internal_condition_case (bfun, handlers, hfun)
   c.val = Qnil;
   c.backlist = backtrace_list;
   c.lisp_eval_depth = lisp_eval_depth;
+  c.poll_suppress_count = poll_suppress_count;
   c.pdlcount = specpdl_ptr - specpdl;
   c.gcpro = gcprolist;
   if (_setjmp (c.jmp))
@@ -989,6 +998,7 @@ internal_condition_case (bfun, handlers, hfun)
   catchlist = &c;
   h.handler = handlers;
   h.var = Qnil;
+  h.poll_suppress_count = poll_suppress_count;
   h.next = handlerlist;
   h.tag = &c;
   handlerlist = &h;
@@ -1041,6 +1051,11 @@ See  condition-case.")
       if (!NULL (clause))
 	{
 	  struct handler *h = handlerlist;
+	  /* Restore the polling-suppression count.  */
+	  if (h->poll_suppress_count > poll_suppress_count)
+	    abort ();
+	  while (h->poll_suppress_count < poll_suppress_count)
+	    start_polling ();
 	  handlerlist = allhandlers;
 	  unbind_catch (h->tag);
 	  h->tag->val = Fcons (clause, Fcons (sig, data));
@@ -1163,7 +1178,7 @@ DEFUN ("autoload", Fautoload, Sautoload, 2, 5, 0,
   "Define FUNCTION to autoload from FILE.\n\
 FUNCTION is a symbol; FILE is a file name string to pass to  load.\n\
 Third arg DOCSTRING is documentation for the function.\n\
-Fourth arg INTERACTIVE if non-nil says function can be called interactively.\n\
+Fourth arg FROM_KBD if non-nil says function can be called interactively.\n\
 Fifth arg MACRO if non-nil says the function is really a macro.\n\
 Third through fifth args give info about the real definition.\n\
 They default to nil.\n\
@@ -1972,8 +1987,12 @@ Output stream used is value of standard-output.")
 {
   register struct backtrace *backlist = backtrace_list;
   register int i;
-  register Lisp_Object tail;
+  Lisp_Object tail;
   Lisp_Object tem;
+  struct gcpro gcpro1;
+
+  tail = Qnil;
+  GCPRO1 (tail);
 
   while (backlist)
     {
@@ -2010,6 +2029,8 @@ Output stream used is value of standard-output.")
       write_string (")\n", -1);
       backlist = backlist->next;
     }
+
+  UNGCPRO;
   return Qnil;
 }
 
@@ -2026,6 +2047,8 @@ syms_of_eval ()
 Typing C-G sets  quit-flag  non-nil, regardless of  inhibit-quit.");
   Vquit_flag = Qnil;
 
+  Qinhibit_quit = intern ("inhibit-quit");
+  staticpro (&Qinhibit_quit);
   DEFVAR_LISP ("inhibit-quit", &Vinhibit_quit,
     "Non-nil inhibits C-g quitting from happening immediately.\n\
 Note that  quit-flag  will still be set by typing C-g,\n\

@@ -3,26 +3,26 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 Author: Jeff Peck, Sun Microsystems, Inc. <peck@sun.com>
 Original ideas by David Kastan and Eric Negaard, SRI International
 Major help from: Steve Greenbaum, Reasoning Systems, Inc.
  		    <froud@kestrel.arpa>
 who first discovered the Menu_Base_Kludge.
- */
+*/
 
 /*
  *	Emacs Lisp-Callable functions for sunwindows
@@ -153,7 +153,7 @@ Redisplay does not happen if input is available before it starts.")
   Timeout.tv_usec = (XINT(n) - (Timeout.tv_sec * 1000)) * 1000;
 
   if (detect_input_pending()) return(Qnil);
-  DoDsp(1);
+  redisplay ();
   /*
    *	Check for queued keyboard input/mouse hits again
    *	(A bit screen update can take some time!)
@@ -186,7 +186,7 @@ DEFUN ("update-display", Fupdate_display, Supdate_display, 0, 0, 0,
        "Perform redisplay.")
      ()
 {
-  DoDsp(1);
+  redisplay_preserve_echo_area ();
   return(Qt);
 }
 

@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Written by Mukesh Prasad.  */
 
@@ -275,8 +274,8 @@ DEFUN ("default-subprocess-input-handler",
      Lisp_Object name, input;
 {
   /* Just insert in current buffer */
-  InsCstr (XSTRING (input)->data, XSTRING (input)->size);
-  InsCstr ("\n", 1);
+  insert (XSTRING (input)->data, XSTRING (input)->size);
+  insert ("\n", 1);
 }
 
 DEFUN ("spawn-subprocess", Fspawn_subprocess, Sspawn_subprocess, 1, 3, 0,
@@ -287,7 +286,7 @@ DEFUN ("spawn-subprocess", Fspawn_subprocess, Sspawn_subprocess, 1, 3, 0,
   int status;
   char output_mbx_name[20];
   struct dsc$descriptor_s output_mbx_dsc;
-  struct process_list * ptr, * p;
+  struct process_list *ptr, *p, *prev;
 
   CHECK_NUMBER (name, 0);
   if (! input_mbx_chan)
@@ -297,18 +296,33 @@ DEFUN ("spawn-subprocess", Fspawn_subprocess, Sspawn_subprocess, 1, 3, 0,
       start_mbx_input ();
     }
   ptr = 0;
-  for (p = process_list; p; p = p->next)
-    if (p->name == XFASTINT (name)) 
-      {
-	ptr = p;
-	if (p->process_active)
-	  return Qt;
-	else
-	  sys$dassgn (p->mbx_chan);
-	break;
-      }
+  prev = 0;
+  while (ptr)
+    {
+      struct process_list *next = ptr->next;
+      if (ptr->name == XFASTINT (name)) 
+	{
+	  if (ptr->process_active)
+	    return Qt;
+
+	  /* Delete this process and run its exit handler.  */
+	  if (prev)
+	    prev->next = next;
+	  else
+	    process_list = next;
+	  if (! NULL (ptr->exit_handler))
+	    Feval (Fcons (ptr->exit_handler, Fcons (make_number (ptr->name),
+						    Qnil)));
+	  sys$dassgn (ptr->mbx_chan);
+	  break;
+	}
+      else
+	prev = ptr;
+      ptr = next;
+    }
   if (! ptr)
     ptr = xmalloc (sizeof (struct process_list));
+
   if (! create_mbx (&output_mbx_dsc, output_mbx_name, &ptr->mbx_chan, 2))
     {
       free (ptr);
@@ -433,6 +447,7 @@ process_command_input ()
       }
   have_process_input = 0;
   start_mbx_input ();
+  clear_waiting_for_input ();    /* Otherwise Ctl-g will cause crash. JCB */
   if (! NULL (expr))
     Feval (expr);
 }
@@ -450,9 +465,9 @@ process_exit ()
   ptr = process_list;
   while (ptr)
     {
+      next = ptr->next;
       if (! ptr->process_active)
 	{
-	  next = ptr->next;
 	  if (prev)
 	    prev->next = next;
 	  else
@@ -463,7 +478,8 @@ process_exit ()
 	  sys$dassgn (ptr->mbx_chan);
 	  free (ptr);
 	}
-      prev = ptr;
+      else
+	prev = ptr;
       ptr = next;
     }
 }

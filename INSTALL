@@ -105,8 +105,8 @@ The steps below are done by the shell script `build-install'
 or by running `make' in the main directory of the Emacs distribution.
 
 1) Cd to $BUILD/etc and run `make'.
- This creates files named `ctags' and `etags' and `loadst'
- and `make-docfile' and `digest-doc' and `test-distrib'.
+ This creates files named `ctags' and `etags' and `wakeup'
+ and `make-docfile' and `digest-doc' and `test-distrib'.  And others.
 
 2) Cd to $BUILD/src and Run `make'
  This refers to files in the $BUILD/lisp and $BUILD/etc subdirectories

@@ -1117,7 +1117,7 @@ of the copying permissions that will appear in the printed manual.
 					and printed permissions.
 @end menu
 
-@node     Titlepage, Center , Setchapternewpage, Titlepage & Copyright Page
+@node     Titlepage, Center , Titlepage & Copyright Page, Titlepage & Copyright Page
 @comment  node-name,  next,  previous,  up
 @subsection @@titlepage
 @cindex Titlepage
@@ -1155,7 +1155,7 @@ For example:
 @noindent
 In the sample, the spacing was chosen to fit an 8 1/2 by 11 inch manual.
 
-@node Center, Titlepage, Copyright & Printed Permissions, Titlepage & Copyright Page
+@node Center, Copyright & Printed Permissions, Titlepage, Titlepage & Copyright Page
 @comment  node-name,  next,  previous,  up
 @subsection @@center
 @cindex Centering a line
@@ -1166,7 +1166,7 @@ containing @var{text}, centered between the margins.@refill
 
 
 
-@node     Copyright & Printed Permissions, Center, , Titlepage & Copyright Page
+@node     Copyright & Printed Permissions,, Center, Titlepage & Copyright Page
 @comment  node-name,  next,  previous,  up
 @subsection The Copyright Page and Printed Permissions
 @cindex Copyright
@@ -1879,7 +1879,7 @@ by @code{@@unnumberedsec} or @code{@@appendixsec}.  (@xref{Subsection}.)@refill
 
 @node  Subsubsection, Node, Subsection, Structuring
 @comment  node-name,  next,  previous,  up
-@section @@subsubsection, @@unnumberedsubsubsec, @@appendixsubsubsec
+@section @@subsubsection And Other Subsection Commands
 @findex unnumberedsubsubsec
 @findex appendixsubsubsec
 @findex subsubsection
@@ -4348,20 +4348,14 @@ contents correct as well.
 
 @noindent
 Instead, @code{texinfo-format-region} ran without reporting the error, but
-it produced output that looked like this:
+it produced output with very long lines, containing some of the original
+@code{@@cindex} commands mixed in.  (It is not practical to display these
+over long lines here.
 
-@example
-     name of the texinfo file as an extension.  The `??' are `wildcards'
-     that cause the shell to substitute all the raw index files.  (*Note for more information about sorting indices.) @@refill @@cindex Sorting indices @@cindex Indices: sorting indices), rerun the TeX command on the texinfo file.  This
-     regenerates a formatted DVI file with the index entries in the correct
-     order.  This second run also makes all the cross references and table of
-     contents correct as well.
-@end example
-
-@noindent
-However, when @code{texinfo-format-region} was run on part of the list that
-is shown, it did give an error message, @samp{Search failed: "[@{,@}"}.  (This
-error message is explained in the section on using the Emacs Lisp Debugger, @pxref{Using the Emacs Lisp Debugger})
+However, when @code{texinfo-format-region} was run on part of the list
+that is shown, it did give an error message, @samp{Search failed:
+"[@{,@}"}.  (This error message is explained in the section on using the
+Emacs Lisp Debugger, @pxref{Using the Emacs Lisp Debugger})
 
 Sometimes @code{texinfo-format-region} will stop long after the original
 error;  this is because it does not discover the problem until then.  In this

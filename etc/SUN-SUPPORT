@@ -1,3 +1,12 @@
+NOTE: the Free Software Foundation agreed to put this file, and the
+programs it describes, into the Emacs distribution ONLY on the
+condition that we would not lift a finger to maintain them!  We are
+willing to *pass along* support for Sun windows, but we are not
+willing to let it distract us from what we are trying to do.  If you
+have complaints or suggestions about Sun windows support, send them to
+peck@sun.com, who is the maintainer.
+
+
 The interface between GNU Emacs and Sun windows consists of the program
 etc/emacstool, the Lisp programs lisp/sun-*.el and lisp/term/sun.el,
 and the C source file src/sunfns.c.  It is documented with a man page,

@@ -1,102 +1,19 @@
 /* dynamic memory allocation for GNU.
    Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
-		       NO WARRANTY
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 1, or (at your option)
+    any later version.
 
-  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
-NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
-WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
-RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
-WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
-AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
-DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
-CORRECTION.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
- IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
-STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
-WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
-OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
-USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
-DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
-A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
-PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
-
-		GENERAL PUBLIC LICENSE TO COPY
-
-  1. You may copy and distribute verbatim copies of this source file
-as you receive it, in any medium, provided that you conspicuously and
-appropriately publish on each copy a valid copyright notice "Copyright
-(C) 1985 Free Software Foundation, Inc."; and include following the
-copyright notice a verbatim copy of the above disclaimer of warranty
-and of this License.  You may charge a distribution fee for the
-physical act of transferring a copy.
-
-  2. You may modify your copy or copies of this source file or
-any portion of it, and copy and distribute such modifications under
-the terms of Paragraph 1 above, provided that you also do the following:
-
-    a) cause the modified files to carry prominent notices stating
-    that you changed the files and the date of any change; and
-
-    b) cause the whole of any work that you distribute or publish,
-    that in whole or in part contains or is a derivative of this
-    program or any part thereof, to be licensed at no charge to all
-    third parties on terms identical to those contained in this
-    License Agreement (except that you may choose to grant more extensive
-    warranty protection to some or all third parties, at your option).
-
-    c) You may charge a distribution fee for the physical act of
-    transferring a copy, and you may at your option offer warranty
-    protection in exchange for a fee.
-
-Mere aggregation of another unrelated program with this program (or its
-derivative) on a volume of a storage or distribution medium does not bring
-the other program under the scope of these terms.
-
-  3. You may copy and distribute this program (or a portion or derivative
-of it, under Paragraph 2) in object code or executable form under the terms
-of Paragraphs 1 and 2 above provided that you also do one of the following:
-
-    a) accompany it with the complete corresponding machine-readable
-    source code, which must be distributed under the terms of
-    Paragraphs 1 and 2 above; or,
-
-    b) accompany it with a written offer, valid for at least three
-    years, to give any third party free (except for a nominal
-    shipping charge) a complete machine-readable copy of the
-    corresponding source code, to be distributed under the terms of
-    Paragraphs 1 and 2 above; or,
-
-    c) accompany it with the information you received as to where the
-    corresponding source code may be obtained.  (This alternative is
-    allowed only for noncommercial distribution and only if you
-    received the program in object code or executable form alone.)
-
-For an executable file, complete source code means all the source code for
-all modules it contains; but, as a special exception, it need not include
-source code for modules which are standard libraries that accompany the
-operating system on which the executable file runs.
-
-  4. You may not copy, sublicense, distribute or transfer this program
-except as expressly provided under this License Agreement.  Any attempt
-otherwise to copy, sublicense, distribute or transfer this program is void and
-your rights to use the program under this License agreement shall be
-automatically terminated.  However, parties who have received computer
-software programs from you with this License Agreement will not have
-their licenses terminated so long as such parties remain in full compliance.
-
-  5. If you wish to incorporate parts of this program into other free
-programs whose distribution conditions are different, write to the Free
-Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet
-worked out a simple rule that can be stated here, but we will often permit
-this.  We will be guided by the two goals of preserving the free status of
-all derivatives of our free software and of promoting the sharing and reuse of
-software.
-
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -144,6 +61,7 @@ what you give them.   Help stamp out software-hoarding!  */
 #ifdef emacs
 /* config.h specifies which kind of system this is.  */
 #include "config.h"
+#include <signal.h>
 #else
 
 /* Determine which kind of system this is.  */
@@ -165,14 +83,18 @@ what you give them.   Help stamp out software-hoarding!  */
 /* Define getpagesize () if the system does not.  */
 #include "getpagesize.h"
 
-#ifndef BSD4_2
-#ifndef USG
+#ifdef BSD
+#ifdef BSD4_1
 #include <sys/vlimit.h>		/* warn the user when near the end */
-#endif /* not USG */
-#else /* if BSD4_2 */
+#else /* if 4.2 or newer */
 #include <sys/time.h>
 #include <sys/resource.h>
-#endif /* BSD4_2 */
+#endif /* if 4.2 or newer */
+#endif
+
+#ifdef VMS
+#include "vlimit.h"
+#endif
 
 extern char *start_of_data ();
 
@@ -249,7 +171,7 @@ struct mhead {
 #define ASSERT(p) if (!(p)) botch("p"); else
 #define EXTRA  4		/* 4 bytes extra for MAGIC1s */
 #else
-#define ASSERT(p)
+#define ASSERT(p) if (!(p)) abort (); else
 #define EXTRA  0
 #endif /* rcheck */
 
@@ -304,7 +226,9 @@ int
 malloc_usable_size (mem)
      char *mem;
 {
-  int blocksize = 8 << (((struct mhead *) mem) - 1) -> mh_index;
+  struct mhead *p
+    = (struct mhead *) (mem - ((sizeof (struct mhead) + 7) & ~7));
+  int blocksize = 8 << p->mh_index;
 
   return blocksize - sizeof (struct mhead) - EXTRA;
 }
@@ -321,8 +245,22 @@ morecore (nu)			/* ask system for more memory */
 
 #ifdef BSD
 #ifndef BSD4_1
-  /* ?? There was a suggestion not to block SIGILL, somehow for GDB's sake.  */
-  oldmask = sigsetmask (-1);
+  int newmask = -1;
+  /* Blocking these signals interferes with debugging, at least on BSD on
+     the HP 9000/300.  */
+#ifdef SIGTRAP
+  newmask &= ~(1 << SIGTRAP);
+#endif
+#ifdef SIGILL
+  newmask &= ~(1 << SIGILL);
+#endif
+#ifdef SIGTSTP
+  newmask &= ~(1 << SIGTSTP);
+#endif
+#ifdef SIGSTOP
+  newmask &= ~(1 << SIGSTOP);
+#endif
+  oldmask = sigsetmask (newmask);
 #endif
 #endif
 
@@ -652,6 +590,21 @@ realloc (mem, n)
   }
 }
 
+/* This is in case something linked with Emacs calls calloc.  */
+
+char *
+calloc (num, size)
+     unsigned num, size;
+{
+  register char *mem;
+
+  num *= size;
+  mem = malloc (num);
+  if (mem != 0)
+    bzero (mem, num);
+  return mem;
+}
+
 #ifndef VMS
 
 char *
@@ -672,7 +625,7 @@ memalign (alignment, size)
 
   /* Store a suitable indication of how to free the block,
      so that free can find the true beginning of it.  */
-  p = (struct mhead *) aligned - 1;
+  p = (struct mhead *) (aligned - ((7 + sizeof (struct mhead)) & ~7));
   p -> mh_size = aligned - ptr;
   p -> mh_alloc = ISMEMALIGN;
   return aligned;
@@ -787,14 +740,14 @@ get_lim_data ()
 }
 
 #else /* not USG */
-#ifndef BSD4_2
+#if defined (BSD4_1) || defined (VMS)
 
 get_lim_data ()
 {
   lim_data = vlimit (LIM_DATA, -1);
 }
 
-#else /* BSD4_2 */
+#else /* not BSD4_1 and not VMS */
 
 get_lim_data ()
 {
@@ -808,7 +761,7 @@ get_lim_data ()
 #endif
 }
 
-#endif /* BSD4_2 */
+#endif /* not BSD4_1 and not VMS */
 #endif /* not USG */
 
 #ifdef VMS

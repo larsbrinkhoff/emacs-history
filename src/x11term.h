@@ -16,8 +16,8 @@
 #define BLOCK_INPUT() BLOCK_INPUT_mask = sigblock (sigmask (SIGIO))
 #define UNBLOCK_INPUT() sigsetmask (BLOCK_INPUT_mask)
 #else /* not SIGIO */
-#define BLOCK_INPUT()
-#define UNBLOCK_INPUT()
+#define BLOCK_INPUT() stop_polling ()
+#define UNBLOCK_INPUT() start_polling ()
 #endif /* SIGIO */
 
-#define CLASS  "emacs"	/* class id for GNU Emacs, used in .Xdefaults, etc. */
+#define CLASS  "Emacs"	/* class id for GNU Emacs, used in .Xdefaults, etc. */

@@ -77,6 +77,7 @@ by the Foundation.
 * Capabilities::Definitions of the individual terminal capabilities:
                  how to write them in descriptions, and how to use
                  their values to do display updating.
+* Summary::	Brief table of capability names and their meanings.
 * Var Index::   Index of C functions and variables.
 * Cap Index::   Index of termcap capabilities.
 * Index::       Concept index.
@@ -122,7 +123,7 @@ Free Software Foundation
 Cambridge, MA 02139
 @end display
 
-@node Library, Data Base, Top, Top
+@node Library, Data Base, Introduction, Top
 @chapter The Termcap Library
 
 The termcap library is the application programmer's interface to the

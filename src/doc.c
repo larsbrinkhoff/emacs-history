@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -294,27 +293,28 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
   int changed = 0;
   register unsigned char *strp;
   register unsigned char *bufp;
-  register unsigned char *send;
+  int idx;
   int bsize;
   unsigned char *new;
   register Lisp_Object tem;
   Lisp_Object keymap;
   unsigned char *start;
   int length;
+  struct gcpro gcpro1; 
 
   if (NULL (str))
     return Qnil;
 
   CHECK_STRING (str, 0);
-  strp = (unsigned char *) XSTRING (str)->data;
-  send = strp + XSTRING (str)->size;
+  GCPRO1 (str);
 
-  keymap = bf_cur->keymap;
+  keymap = current_buffer->keymap;
 
   bsize = XSTRING (str)->size;
   bufp = buf = (unsigned char *) xmalloc (bsize);
 
-  while (strp < send)
+  strp = (unsigned char *) XSTRING (str)->data;
+  while (strp - (unsigned char *) XSTRING (str)->data < XSTRING (str)->size)
     {
       if (strp[0] == '\\' && strp[1] == '=')
 	{
@@ -330,11 +330,14 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  strp += 2;		/* skip \[ */
 	  start = strp;
 
-	  while (strp < send && *strp != ']')
+	  while (strp - (unsigned char *) XSTRING (str)->data < XSTRING (str)->size
+		 && *strp != ']')
 	    strp++;
 	  length = strp - start;
 	  strp++;		/* skip ] */
 
+	  /* Save STRP in IDX.  */
+	  idx = strp - (unsigned char *) XSTRING (str)->data;
 	  tem = Fintern (make_string (start, length), Qnil);
 	  tem = Fwhere_is_internal (tem, keymap, Qt);
 
@@ -364,13 +367,17 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  strp += 2;		/* skip \{ or \< */
 	  start = strp;
 
-	  while (strp < send && *strp != '}' && *strp != '>')
+	  while (strp - (unsigned char *) XSTRING (str)->data < XSTRING (str)->size
+		 && *strp != '}' && *strp != '>')
 	    strp++;
 	  length = strp - start;
 	  strp++;			/* skip } or > */
 
-	  oldbuf = bf_cur;
-	  SetBfp (XBUFFER (Vprin1_to_string_buffer));
+	  /* Save STRP in IDX.  */
+	  idx = strp - (unsigned char *) XSTRING (str)->data;
+
+	  oldbuf = current_buffer;
+	  set_buffer_internal (XBUFFER (Vprin1_to_string_buffer));
 	  name = Fintern (make_string (start, length), Qnil);
 	  if ((tem = (Fboundp (name)), NULL (tem)) ||
 	      (tem = (Fsymbol_value (name)), NULL (tem)) ||
@@ -378,7 +385,7 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	    {
 	      name = Fsymbol_name (name);
 	      InsStr ("\nUses keymap \"");
-	      InsCStr (XSTRING (name)->data, XSTRING (name)->size);
+	      insert (XSTRING (name)->data, XSTRING (name)->size);
 	      InsStr ("\", which is not currently defined.\n");
 	      if (start[-1] == '<') keymap = Qnil;
 	    }
@@ -388,7 +395,7 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	    describe_map_tree (tem, 1, Qnil);
 	  tem = Fbuffer_string ();
 	  Ferase_buffer ();
-	  SetBfp (oldbuf);
+	  set_buffer_internal (oldbuf);
 
 	subst_string:
 	  start = XSTRING (tem)->data;
@@ -399,15 +406,18 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  buf = new;
 	  bcopy (start, bufp, length);
 	  bufp += length;
+	  /* Check STR again in case gc relocated it.  */
+	  strp = (unsigned char *) XSTRING (str)->data + idx;
 	}
       else			/* just copy other chars */
 	*bufp++ = *strp++;
-    }
+     }
 
   if (changed)			/* don't bother if nothing substituted */
     tem = make_string (buf, bufp - buf);
   else
     tem = str;
+  UNGCPRO;
   free (buf);
   return tem;
 }

@@ -12,3 +12,15 @@
    and is counted in hdr.a_text.  */
 
 #define A_TEXT_OFFSET(HDR) sizeof (HDR)
+
+/* In case we are using floating point, work together with crt0.c.  */
+
+#ifndef __GNUC__
+#define C_SWITCH_MACHINE -fsoft
+#endif
+
+/* This line is needed if you are linking with X windows
+   and the library xlib was compiled to use the 68881.
+   For maximum cleanliness, don't edit this file;
+   instead, insert this line in config.h.  */
+/* #define START_FILES crt0.o /usr/lib/Mcrt1.o  */

@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* NOTE: this file works for DYNIX release 2.0 
@@ -139,6 +138,29 @@ and this notice must be preserved on all copies.  */
 /* Cause compilations to be done in parallel in ymakefile.  */
 #define MAKE_PARALLEL &
 
+/* Say that mailer interlocking uses flock.  */
+#define MAIL_USE_FLOCK
+
+/* On many 4.2-based systems, there's a rather tricky bug
+ * with the interpretation of the pid/pgrp value given to
+ * the F_SETOWN fcntl() call.  It works as documented EXCEPT
+ * when applied to filedescriptors for sockets, in which case
+ * the sign must be reversed.  If your emacs subprocesses get
+ * SIGIO's when they shouldn't, while running on a socket
+ * (e.g. under X windows), you should probably define this.
+ */
+
+#define F_SETOWN_SOCK_NEG
+
+/* Some really obscure 4.2-based systems (like Sequent DYNIX)
+ * do not support asynchronous I/O (using SIGIO) on sockets,
+ * even though it works fine on tty's.  If you have one of
+ * these systems, define the following, and then use it in
+ * config.h (or elsewhere) to decide when (not) to use SIGIO.
+ */
+
+#define NO_SOCK_SIGIO
+
 /* Define how to search all pty names.
    This is for Dynix 3.0; delete next 5 definitions for older systems.  */
 
@@ -149,6 +171,6 @@ and this notice must be preserved on all copies.  */
   for (ma = 0; ma < sizeof(PTY_MAJOR) - 1; ma++)	\
     for (mi = 0; mi < sizeof(PTY_MINOR) - 1; mi++)
 #define PTY_NAME_SPRINTF \
-  sprintf (ptyname, "/dev/pty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
+  sprintf (pty_name, "/dev/pty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
 #define PTY_TTY_NAME_SPRINTF \
-  sprintf (ptyname, "/dev/tty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
+  sprintf (pty_name, "/dev/tty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);

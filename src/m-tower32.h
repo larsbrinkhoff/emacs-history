@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* The following three symbols give information on
@@ -109,9 +108,19 @@ and this notice must be preserved on all copies.  */
 
 #define LIB_STANDARD -lPW -lcieee
 
-/* crt0.c should use the vax-bsd style of entry, with no dummy args.  */
+/* crt0.c should use the vax-bsd style of entry.  Beware that if you have
+   OS release 2.00.00 or later, *and* change src/ymakefile so that CFLAGS
+   includes C_OPTIMIZE_SWITCH rather than C_DEBUG_SWITCH, you need to
+   uncomment CRT0_DUMMIES and C_OPTIMIZE_SWITCH below.  */
+
+/* With the optimizer OFF */
 
 #define CRT0_DUMMIES zero, bogus_fp,
+
+/* With the optimizer ON */
+
+/* #define CRT0_DUMMIES */
+/* #define C_OPTIMIZE_SWITCH -O2 */
 
 /* emacs's magic number isn't temacs's;
    temacs is writeable text (the default!).  */

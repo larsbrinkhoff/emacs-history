@@ -16,10 +16,12 @@ Before you can run Emacs or compile or build any part of Emacs,
 you must run `emacs.com'.  It sets up logical names that are used
 by everything else.
 
-Before compiling anything on VMS, you must copy `config.h-dist' to `config.h'
-and make sure it is set up for VMS (using files `m-vax.h' and `s-vms.h'.
-Also copy `vmspaths.h' to `paths.h'.  `paths.h-dist' is for Unix only.
-(On VMS versions before 4.4, the file names have `_' in place of `-'.)
+Before compiling anything on VMS, you must copy `config.h-dist' to
+`config.h' and make sure it is set up for VMS, using files `m-vax.h'
+and `s-vms4-4.h'.  Also copy `vmspaths.h' to `paths.h'.
+`paths.h-dist' is for Unix only.  (On VMS versions before 4.4, the
+file names have `_' in place of `-', and you should use `s-vms.h'
+rather than `s-vms4-4.h'.)
 
 Execute `compile.com' to recompile all files that need recompilation.
  Alternatively, execute `precomp.com' to define a command `ccom' that
@@ -28,7 +30,8 @@ Execute `compile.com' to recompile all files that need recompilation.
 
  If you compile with optimization, note that in compiler version
  3.0 there is a bug affecting inline functions.  So you must specify
- /OPTIMIZE=NOINLINE when compiling `dispnew.c'.
+ /OPTIMIZE=NOINLINE when compiling `dispnew.c'.  If you still have problems,
+ try using /NOOPT.
 
 Compilation will give you lots of warnings about symbols longer than 30
  characters.  You must just ignore them.  Alternatively, you can

@@ -1,22 +1,21 @@
 /* Newly written part of redisplay code.
-   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
@@ -37,6 +36,7 @@ and this notice must be preserved on all copies.  */
 #ifdef TCOUTQ
 #undef TIOCOUTQ
 #define TIOCOUTQ TCOUTQ
+#include <fcntl.h>
 #endif /* TCOUTQ defined */
 #else
 #ifndef VMS
@@ -47,7 +47,14 @@ and this notice must be preserved on all copies.  */
 /* Allow m- file to inhibit use of FIONREAD.  */
 #ifdef BROKEN_FIONREAD
 #undef FIONREAD
+#endif
+
+/* We are unable to use interrupts if FIONREAD is not available,
+   so flush SIGIO so we won't try. */
+#ifndef FIONREAD
+#ifdef SIGIO
 #undef SIGIO
+#endif
 #endif
 
 #undef NULL
@@ -68,39 +75,49 @@ and this notice must be preserved on all copies.  */
 /* Get number of chars of output now in the buffer of a stdio stream.
    This ought to be built in in stdio, but it isn't.
    Some s- files override this because their stdio internals differ.  */
+#ifdef __GNU_LIBRARY__
+#define	PENDING_OUTPUT_COUNT(FILE) ((FILE)->__bp - (FILE)->__buf)
+#else
 #define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_ptr - (FILE)->_base)
 #endif
+#endif /* No PENDING_OUTPUT_COUNT */
 
 /* Nonzero means do not assume anything about current
- contents of actual terminal screen */
+   contents of actual terminal screen */
 
 int screen_garbaged;
 
 /* Desired terminal cursor position (to show position of point),
- origin zero */
+   origin zero */
 
-int cursX, cursY;
+int cursor_hpos, cursor_vpos;
 
-/* Nonzero means last display completed and cursor is really at cursX, cursY.
- Zero means it was preempted. */
+/* Nonzero means last display completed and cursor is really at
+   cursor_hpos, cursor_vpos.  Zero means it was preempted. */
 
 int display_completed;
 
-int visible_bell;	/* If true and the terminal will support it
-			   then the screen will flash instead of
-			   feeping when an error occurs */
-int inverse_video;	/* If true and the terminal will support it
-			   then we will use inverse video */
+/* Lisp variable visible-bell; enables use of screen-flash
+   instead of audible bell.  */
 
-int baud_rate;		/* Terminal speed, so we can calculate
-			   the number of characters required to
-			   make the cursor sit still for n secs. */
+int visible_bell;
 
-Lisp_Object Vwindow_system;	/* nil or a symbol naming the window system
-				   under which emacs is running
-				   ('x is the only current possibility) */
+/* Invert the color of the whole screen, at a low level.  */
+
+int inverse_video;
+
+/* Line speed of the terminal.  */
+
+int baud_rate;
+
+/* nil or a symbol naming the window system
+   under which emacs is running
+   ('x is the only current possibility).  */
+
+Lisp_Object Vwindow_system;
 
 /* Version number of window system, or nil if no window system.  */
+
 Lisp_Object Vwindow_system_version;
 
 /* Nonzero means reading single-character input with prompt
@@ -108,228 +125,233 @@ Lisp_Object Vwindow_system_version;
 
 int cursor_in_echo_area;
 
-/* the current (physical) screen */
-struct display_line *PhysScreen[MScreenLength + 1];
+/* Description of actual screen contents.  */
+ 
+struct matrix *current_screen;
 
-/* temporary Copy of PhysScreen made in update_screen */
-struct display_line *OPhysScreen[MScreenLength + 1];
+/* Description of desired screen contents.  */
 
-/* the desired (virtual) screen */
-struct display_line *DesiredScreen[MScreenLength + 1];
+struct matrix *new_screen;
 
-/* Record here all the display line objects, for debugging.  */
-static struct display_line *all_lines[2 * MScreenLength];
+/* Buffer sometimes used to hold partial screen contents.  */
 
-FILE *termscript;	/* Stdio stream being used for copy of all kbdinput.  */
+struct matrix *temp_screen;
 
-struct cm Wcm;		/* Structure for info on cursor positioning */
+/* Stdio stream being used for copy of all terminal output.  */
 
-extern short ospeed;	/* Output speed (from sg_ospeed) */
+FILE *termscript;
+
+/* Structure for info on cursor positioning */
+
+struct cm Wcm;
 
 int in_display;		/* 1 if in redisplay: can't handle SIGWINCH now.  */
 
 int delayed_size_change;  /* 1 means SIGWINCH happened when not safe.  */
 int delayed_screen_height;  /* Remembered new screen height.  */
 int delayed_screen_width;   /* Remembered new screen width.  */
+
+/* This buffer records the history of display preemption.  */
+
+struct preempt
+{
+  /* Number of keyboard characters read so far at preempt.  */
+  int keyboard_char_count;
+  /* Vertical position at which preemption occurred.  */
+  int vpos;
+};
+
+#define N_PREEMPTIONS 50
+
+/* Circular buffer recording recent display preemptions.  */
+struct preempt preemptions[N_PREEMPTIONS];
+
+/* Index of next element in preemptions.  */
+int preemption_index;
+
+/* Set these variables in the debugger to force a display preemption.  */
+int debug_preemption_vpos = -1;
+int debug_preemption_char_count = -1;
+
+extern int num_input_chars;
 
-/* Use these to chain together free lines */
+/* Free and reallocate current_screen and new_screen.  */
 
-#define LINE_NEXT(l) (*(struct display_line **) l)
-#define SET_LINE_NEXT(l, next) (*((struct display_line **) l) = next)
+struct matrix *make_screen_structure ();
 
-/* Chain of free display_line structures, chained thru LINE_NEXT.  */
-
-struct display_line *free_display_lines;
-
-/* Number of lines now free.  */
-
-int free_line_count;
-
-/* Allocate as many display_line structures
-   as we are ever supposed to need.
-   Called at startup, and also if screen size is changed.  */
-
-make_display_lines ()
+remake_screen_structures ()
 {
-  register int i;
-  register struct display_line *p, *p1;
+  if (current_screen)
+    free_screen_structure (current_screen);
+  if (new_screen)
+    free_screen_structure (new_screen);
+  if (temp_screen)
+    free_screen_structure (temp_screen);
 
-  /* First, free any that are already allocated */
+  current_screen = make_screen_structure (0);
+  new_screen = make_screen_structure (0);
+  temp_screen = make_screen_structure (1);
 
-  for (p = free_display_lines; p;)
+  if (message_buf)
+    message_buf = (char *) xrealloc (message_buf, screen_width + 1);
+  else
+    message_buf = (char *) xmalloc (screen_width + 1);
+}
+
+struct matrix *
+make_screen_structure (empty)
+     int empty;
+{
+  int i;
+  struct matrix *new = (struct matrix *) xmalloc (sizeof (struct matrix));
+
+  new->height = screen_height;
+  new->width = screen_width;
+  new->highlight = (char *) xmalloc (screen_height);
+  new->enable = (char *) xmalloc (screen_height);
+  new->contents = (unsigned char **) xmalloc (screen_height * sizeof (char *));
+  new->used = (int *) xmalloc (screen_height * sizeof (int));
+  if (empty)
     {
-      p1 = p;
-      p = LINE_NEXT (p);
-      free (p1);
+      /* Make the buffer used by decode_mode_spec.  */
+      new->total_contents = (unsigned char *) xmalloc (screen_width + 2);
+      bzero (new->contents, screen_height * sizeof (char *));
     }
-  free_display_lines = 0;
-  free_line_count = 0;
-
-  for (i = 0; i <= MScreenLength; i++)
-    if (PhysScreen[i])
-      {
-	free (PhysScreen[i]);
-	PhysScreen[i] = 0;
-      }
-
-  screen_garbaged = 1;
-
-  /* Now allocate as many as we can possibly validly need */
-
-  for (i = - screen_height; i < screen_height; i++)
+  else
     {
-      p = (struct display_line *) malloc (sizeof (struct display_line) + screen_width - MScreenWidth);
-      if (!p) abort ();
-      SET_LINE_NEXT (p, free_display_lines);
-      free_display_lines = p;
-      all_lines[i + screen_height] = p;
+      /* Add 2 to leave extra bytes at beginning and end of each line.  */ 
+      new->total_contents = (unsigned char *) xmalloc (screen_height * (screen_width + 2));
+      bzero (new->total_contents, screen_height * (screen_width + 2));
+      for (i = 0; i < screen_height; i++)
+	new->contents[i] = new->total_contents + i * (screen_width + 2) + 1;
     }
-  free_line_count = 2 * screen_height;
+  bzero (new->enable, screen_height);
+  return new;
 }
 
-/* Get one of the previously malloc'd display_line structures
-   from the free pool.  */
-
-struct display_line *
-new_display_line ()
+free_screen_structure (matrix)
+     struct matrix *matrix;
 {
-  register struct display_line *p = free_display_lines;
-  /* If we ever use up all the display lines that have been
-     allocated, it indicates a bug, since we are supposed
-     to need at most two for each line on the screen.  */
-  if (!p)
-    abort ();
-  free_display_lines = LINE_NEXT (p);
-
-  bzero (p, p->body - (char *) p);
-  SET_LINE_NEXT (p, (struct display_line *)1);	/* Mark as in use.  */
-  free_line_count--;
-  return p;
-}
-
-/* Put a display_line back in the free pool.  */
-
-return_display_line (p)
-     struct display_line *p;
-{
-  if (!p)
-    return;
-  if ((int) LINE_NEXT (p) != 1)
-    abort ();			/* Already free.  */
-  SET_LINE_NEXT (p, free_display_lines);
-  free_display_lines = p;
-  free_line_count++;
-}
-
-clear_screen_records ()
-{
-  register int i;
-  for (i = 1; i <= screen_height; i++)
-    if (PhysScreen[i])
-      return_display_line (PhysScreen[i]);
-  bzero (PhysScreen, (screen_height + 1) * sizeof PhysScreen[0]);
+  if (matrix->total_contents)
+    free (matrix->total_contents);
+  free (matrix->contents);
+  free (matrix->highlight);
+  free (matrix->enable);
+  free (matrix->used);
+  free (matrix);
 }
 
-/* Return the hash code of display_line p.  */
-line_hash_code (p)
-     register struct display_line *p;
+/* Return the hash code of contents of line VPOS of screen-matrix M.  */
+
+int
+line_hash_code (m, vpos)
+     struct matrix *m;
+     int vpos;
 {
-  register char *body, *end;
+  register unsigned char *body;
   register int h = 0;
-  if (!p)
-    return 0;
   /* Give all lighlighted lines the same hash code
      so as to encourage scrolling to leave them in place.  */
-  if (p->highlighted)
+  if (m->highlight[vpos])
     return -1;
 
-  body = p->body;
-  end = body + p->length;
-  *end = 0;
-  if (!must_write_spaces)
+  body = m->contents[vpos];
+
+  if (must_write_spaces)
     {
-      while (*body++ == ' ');
-      body--;
-      if (body == end)
-	return 1;
-      while (end[-1] == ' ') end--;
+      while (1)
+	{
+	  int c = *body++;
+	  if (c == 0)
+	    break;
+	  h = (((h << 4) + (h >> 24)) & 0x0fffffff) + c - ' ';
+	}
     }
-  while (body != end)
-    h = (h << 5) + h + *body++;
+  else
+    {
+      while (1)
+	{
+	  int c = *body++;
+	  if (c == 0)
+	    break;
+	  h = (((h << 4) + (h >> 24)) & 0x0fffffff) + c;
+	}
+    }
   if (h)
     return h;
   return 1;
 }
 
-/* Return number of characters in display_line p,
+/* Return number of characters in line in M at vpos VPOS,
    except don't count leading and trailing spaces
    unless the terminal requires those to be explicitly output.  */
 
-line_draw_cost (p)
-     struct display_line *p;
+int
+line_draw_cost (m, vpos)
+     struct matrix *m;
+     int vpos;
 {
-  register char *body;
+  register unsigned char *body;
   register int i;
 
-  if (!p)
-    return 0;
-
   if (must_write_spaces)
-    return p->length;
+    return m->used[vpos];
 
-  body = p->body - 1;
-  for (i = p->length; i > 0 && body[i - 1] == ' '; i--);
+  body = m->contents[vpos];
+  for (i = m->used[vpos]; i > 0 && body[i - 2] == ' '; i--);
 
-  i -= count_blanks (p->body);
+  i -= count_blanks (body);
   return max (i, 0);
 }
 
 /* The functions on this page are the interface from xdisp.c to redisplay.
- They take cursor position arguments in origin 0.
 
  The only other interface into redisplay is through setting
- cursX and cursY (in xdisp.c) and setting screen_garbaged. */
+ cursor_hpos and cursor_vpos (in xdisp.c) and setting screen_garbaged. */
 
 /* cancel_line eliminates any request to display a line at position `vpos' */
 
 cancel_line (vpos)
      int vpos;
 {
-  return_display_line (DesiredScreen[vpos + 1]);
-  DesiredScreen[vpos + 1] = 0;
+  new_screen->enable[vpos] = 0;
 }
 
-/* Get a display_line for displaying on line `vpos'
- and set it up for outputting starting at `hpos' within it.  */
+clear_screen_records ()
+{
+  int i;
 
-struct display_line *
+  bzero (current_screen->enable, screen_height);
+}
+
+/* Get ready to display on line `vpos'
+   and set it up for outputting starting at `hpos' within it.
+   Return the text string where that line is stored.  */
+
+unsigned char *
 get_display_line (vpos, hpos)
      int vpos;
      register int hpos;
 {
-  register struct display_line *line;
-  register char *p;
-
-  if (vpos < 0) abort ();
-
-  line = DesiredScreen[vpos + 1];
-  if (line && line->length > hpos)
+  if (new_screen->enable[vpos] && new_screen->used[vpos] > hpos)
     abort ();
-  if (!line)
-    line = new_display_line ();
-
-  if (hpos > line->length)
+  if (! new_screen->enable[vpos])
     {
-      p = line->body + line->length;
-      hpos -= line->length;
-      line->length += hpos;
-      while (--hpos >= 0)
+      new_screen->used[vpos] = 0;
+      new_screen->highlight[vpos] = 0;
+      new_screen->enable[vpos] = 1;
+    }
+
+  if (hpos > new_screen->used[vpos])
+    {
+      unsigned char *p = new_screen->contents[vpos] + new_screen->used[vpos];
+      unsigned char *end = new_screen->contents[vpos] + hpos;
+      new_screen->used[vpos] = hpos;
+      while (p != end)
 	*p++ = ' ';
     }
 
-  DesiredScreen[vpos + 1] = line;
-
-  return line;
+  return new_screen->contents[vpos];
 }
 
 /* Scroll lines from vpos `from' up to but not including vpos `end'
@@ -355,12 +377,29 @@ scroll_screen_lines (from, end, amount)
       ins_del_lines (from, amount);
       set_terminal_window (0);
 
-      for (i = end + amount; i >= end + 1; i--)
-	return_display_line (PhysScreen[i]);
-      for (i = end; i >= from + 1; i--)
-	PhysScreen[i + amount] = PhysScreen[i];
-      for (i = from + amount; i >= from + 1; i--)
-	PhysScreen[i] = 0;
+      rotate_vector (current_screen->contents + from,
+		     sizeof (char *) * (end + amount - from),
+		     amount * sizeof (char *));
+      safe_bcopy (current_screen->used + from,
+		  current_screen->used + from + amount,
+		  (end - from) * sizeof current_screen->used[0]);
+      safe_bcopy (current_screen->highlight + from,
+		  current_screen->highlight + from + amount,
+		  (end - from) * sizeof current_screen->highlight[0]);
+      safe_bcopy (current_screen->enable + from,
+		  current_screen->enable + from + amount,
+		  (end - from) * sizeof current_screen->enable[0]);
+      /* Mark the lines made empty by scrolling as enabled, empty and
+	 normal video.  */
+      bzero (current_screen->used + from,
+	     amount * sizeof current_screen->used[0]);
+      bzero (current_screen->highlight + from,
+	     amount * sizeof current_screen->highlight[0]);
+      for (i = from; i < from + amount; i++)
+	{
+	  current_screen->contents[i][0] = '\0';
+	  current_screen->enable[i] = 1;
+	}
     }
   if (amount < 0)
     {
@@ -370,89 +409,120 @@ scroll_screen_lines (from, end, amount)
 	ins_del_lines (end + amount, -amount);
       set_terminal_window (0);
 
-      for (i = from + amount + 1; i <= from; i++)
-	return_display_line (PhysScreen[i]);
-      for (i = from + 1; i <= end ; i++)
-	PhysScreen[i + amount] = PhysScreen[i];
-      for (i = end + amount + 1; i <= end; i++)
-	PhysScreen[i] = 0;
+      rotate_vector (current_screen->contents + from + amount,
+		     sizeof (char *) * (end - from - amount),
+		     (end - from) * sizeof (char *));
+      safe_bcopy (current_screen->used + from,
+		  current_screen->used + from + amount,
+		  (end - from) * sizeof current_screen->used[0]);
+      safe_bcopy (current_screen->highlight + from,
+		  current_screen->highlight + from + amount,
+		  (end - from) * sizeof current_screen->highlight[0]);
+      safe_bcopy (current_screen->enable + from,
+		  current_screen->enable + from + amount,
+		  (end - from) * sizeof current_screen->enable[0]);
+      /* Mark the lines made empty by scrolling as enabled, empty and
+	 normal video.  */
+      bzero (current_screen->used + end + amount,
+	     - amount * sizeof current_screen->used[0]);
+      bzero (current_screen->highlight + end + amount,
+	     - amount * sizeof current_screen->highlight[0]);
+      for (i = end + amount; i < end; i++)
+	{
+	  current_screen->contents[i][0] = '\0';
+	  current_screen->enable[i] = 1;
+	}
     }
   return 1;
+}
+
+/* Rotate a vector of SIZE bytes, by DISTANCE bytes.
+   DISTANCE may be negative.  */
+
+rotate_vector (vector, size, distance)
+     char *vector;
+     int size;
+     int distance;
+{
+  char *temp = (char *) alloca (size);
+
+  if (distance < 0)
+    distance += size;
+
+  bcopy (vector, temp + distance, size - distance);
+  bcopy (vector + size - distance, temp, distance);
+  bcopy (temp, vector, size);
+}
+
+/* Like bcopy except never gets confused by overlap.  */
+
+safe_bcopy (from, to, size)
+     char *from, *to;
+     int size;
+{
+  register char *endf;
+  register char *endt;
+
+  if (size == 0)
+    return;
+  if (from > to)
+    {
+      /* If destination is lower in memory, we can go from the beginning.  */
+      endf = from + size;
+      while (from != endf)
+	*to++ = *from++;
+      return;
+    }
+
+  /* If destination is higher in memory, we can go backwards from the end.  */
+  endf = from + size;
+  endt = to + size;
+
+  do
+    *--endt = *--endf;
+  while (endf != from);
 }
 
 /* After updating a window w that isn't the full screen wide,
  copy all the columns that w does not occupy
- into the DesiredScreen lines from the PhysScreen lines
+ from current_screen to new_screen,
  so that update_screen will not change those columns.  */
 
 preserve_other_columns (w)
      struct window *w;
 {
   register int vpos;
-  register struct display_line *l1, *l2;
   int start = XFASTINT (w->left);
   int end = XFASTINT (w->left) + XFASTINT (w->width);
   int bot = XFASTINT (w->top) + XFASTINT (w->height);
 
   for (vpos = XFASTINT (w->top); vpos < bot; vpos++)
     {
-      if ((l1 = DesiredScreen[vpos + 1])
-	  && (l2 = PhysScreen[vpos + 1]))
+      if (current_screen->enable[vpos] && new_screen->enable[vpos])
 	{
 	  if (start > 0)
 	    {
-	      bcopy (l2->body, l1->body, start);
-	      if (l1->length < start && l1->length < l2->length)
-		l1->length = min (start, l2->length);
+	      int len;
+
+	      bcopy (current_screen->contents[vpos],
+		     new_screen->contents[vpos], start);
+	      len = min (start, current_screen->used[vpos]);
+	      if (new_screen->used[vpos] < len)
+		new_screen->used[vpos] = len;
 	    }
-	  if (l2->length > end && l1->length < l2->length)
+	  if (current_screen->used[vpos] > end
+	      && new_screen->used[vpos] < current_screen->used[vpos])
 	    {
-	      while (l1->length < end)
-		l1->body[l1->length++] = ' ';
-	      bcopy (l2->body + end, l1->body + end, l2->length - end);
-	      l1->length = l2->length;
+	      while (new_screen->used[vpos] < end)
+		new_screen->contents[vpos][new_screen->used[vpos]++] = ' ';
+	      bcopy (current_screen->contents[vpos] + end,
+		     new_screen->contents[vpos] + end,
+		     current_screen->used[vpos] - end);
+	      new_screen->used[vpos] = current_screen->used[vpos];
 	    }
 	}
     }
 }
-
-#ifdef NOTDEF
-
-/* If window w does not need to be updated and isn't the full screen wide,
- copy all the columns that w does occupy
- into the DesiredScreen lines from the PhysScreen lines
- so that update_screen will not change those columns.
-
- Have not been able to figure out how to use this correctly.  */
-
-preserve_my_columns (w)
-     struct window *w;
-{
-  register int vpos, fin;
-  register struct display_line *l1, *l2;
-  int start = XFASTINT (w->left);
-  int end = XFASTINT (w->left) + XFASTINT (w->width);
-  int bot = XFASTINT (w->top) + XFASTINT (w->height);
-
-  for (vpos = XFASTINT (w->top); vpos < bot; vpos++)
-    {
-      if ((l1 = DesiredScreen[vpos + 1])
-	  && (l2 = PhysScreen[vpos + 1]))
-	{
-	  if (l2->length > start && l1->length < l2->length)
-	    {
-	      fin = l2->length;
-	      if (fin > end) fin = end;
-	      while (l1->length < start)
-		l1->body[l1->length++] = ' ';
-	      bcopy (l2->body + start, l1->body + start, fin - start);
-	      l1->length = fin;
-	    }
-	}
-    }
-}
-
-#endif /* NOTDEF */
 
 /* On discovering that the redisplay for a window was no good,
  cancel the columns of that window,
@@ -463,16 +533,12 @@ cancel_my_columns (w)
      struct window *w;
 {
   register int vpos;
-  register struct display_line *l;
   register int start = XFASTINT (w->left);
   register int bot = XFASTINT (w->top) + XFASTINT (w->height);
 
   for (vpos = XFASTINT (w->top); vpos < bot; vpos++)
-    {
-      if ((l = DesiredScreen[vpos + 1])
-	  && l->length >= start)
-	l->length = start;
-    }
+    if (new_screen->enable[vpos] && new_screen->used[vpos] >= start)
+      new_screen->used[vpos] = start;
 }
 
 /* These functions try to perform directly and immediately on the screen
@@ -487,7 +553,6 @@ int
 direct_output_for_insert (c)
      int c;
 {
-  register struct display_line *p = PhysScreen[cursY + 1];
 #ifndef COMPILER_REGISTER_BUG
   register
 #endif COMPILER_REGISTER_BUG
@@ -495,7 +560,11 @@ direct_output_for_insert (c)
 #ifndef COMPILER_REGISTER_BUG
   register
 #endif COMPILER_REGISTER_BUG
-    int hpos = cursX;
+    int hpos = cursor_hpos;
+#ifndef COMPILER_REGISTER_BUG
+  register
+#endif COMPILER_REGISTER_BUG
+    int vpos = cursor_vpos;
 
   /* Give up if about to continue line */
   if (hpos - XFASTINT (w->left) + 1 + 1 >= XFASTINT (w->width)
@@ -504,29 +573,32 @@ direct_output_for_insert (c)
       || XINT (w->hscroll) && hpos == XFASTINT (w->left)
     
   /* Give up if cursor outside window (in minibuf, probably) */
-      || cursY < XFASTINT (w->top)
-      || cursY >= XFASTINT (w->top) + XFASTINT (w->height)
+      || cursor_vpos < XFASTINT (w->top)
+      || cursor_vpos >= XFASTINT (w->top) + XFASTINT (w->height)
 
-  /* Give up if cursor not really at cursX, cursY */
+  /* Give up if cursor not really at cursor_hpos, cursor_vpos */
       || !display_completed
 
   /* Give up if w is minibuffer and a message is being displayed there */
-      || EQ (selected_window, minibuf_window) && minibuf_message)
+      || EQ (selected_window, minibuf_window) && echo_area_contents)
     return 0;
 
-  p->body[hpos] = c;
-  unchanged_modified = bf_modified;
-  beg_unchanged = bf_s1;
+  current_screen->contents[vpos][hpos] = c;
+  unchanged_modified = MODIFF;
+  beg_unchanged = GPT - BEG;
   XFASTINT (w->last_point) = point;
-  XFASTINT (w->last_point_x) = cursX;
-  XFASTINT (w->last_modified) = bf_modified;
+  XFASTINT (w->last_point_x) = cursor_hpos;
+  XFASTINT (w->last_modified) = MODIFF;
 
-  reassert_line_highlight (0, cursY);
-  write_chars (p->body + hpos, 1);
+  reassert_line_highlight (0, cursor_vpos);
+  output_chars (&current_screen->contents[vpos][hpos], 1);
   fflush (stdout);
-  ++cursX;
-  p->length = max (p->length, cursX);
-  p->body[p->length] = 0;
+  ++cursor_hpos;
+  if (hpos == current_screen->used[vpos])
+    {
+      current_screen->used[vpos] = hpos + 1;
+      current_screen->contents[vpos][hpos + 1] = 0;
+    }
   return 1;
 }
 
@@ -537,169 +609,136 @@ direct_output_forward_char (n)
   register struct window *w = XWINDOW (selected_window);
 
   /* Avoid losing if cursor is in invisible text off left margin */
-  if (XINT (w->hscroll) && cursX == XFASTINT (w->left))
+  if (XINT (w->hscroll) && cursor_hpos == XFASTINT (w->left))
     return 0;
 
-  cursX += n;
-  XFASTINT (w->last_point_x) = cursX;
+  cursor_hpos += n;
+  XFASTINT (w->last_point_x) = cursor_hpos;
   XFASTINT (w->last_point) = point;
-  topos (cursY, cursX);
+  move_cursor (cursor_vpos, cursor_hpos);
   fflush (stdout);
   return 1;
 }
 
-/* Update the actual terminal screen based on the data in DesiredScreen.
+/* Update the actual terminal screen based on the data in new_screen.
    Value is nonzero if redisplay stopped due to pending input.
    FORCE nonzero means do not stop for pending input.  */
-
-/* At the time this function is called,
-   no line is common to PhysScreen and DesiredScreen.
-   That is true again when this function returns. */
 
 update_screen (force, inhibit_hairy_id)
      int force;
      int inhibit_hairy_id;
 {
-    register struct display_line **p;
-    register struct display_line *l, *lnew;
-    register int i;
-    int pause;
-    int preempt_count;
-    extern input_pending;
+  register struct display_line **p;
+  register struct display_line *l, *lnew;
+  register int i;
+  int pause;
+  int preempt_count = baud_rate / 2400 + 1;
+  extern input_pending;
 
-    if (screen_height == 0) abort (); /* Some bug zeros some core */
+  if (screen_height == 0) abort (); /* Some bug zeros some core */
 
-    bcopy (PhysScreen, OPhysScreen, sizeof PhysScreen);
-
-    detect_input_pending ();
-    if (input_pending && !force)
-      {
-	pause = 1;
-	goto do_pause;
-      }
-
-    update_begin ();
-
-    if (!line_ins_del_ok)
-      inhibit_hairy_id = 1;
-
-    /* Don't compute for i/d line if just want cursor motion. */
-    for (p = &DesiredScreen[screen_height]; p != DesiredScreen && *p == 0; p--);
-
-    /* Try doing i/d line, if not yet inhibited.  */
-    if (!inhibit_hairy_id && p != DesiredScreen)
-      force |= scrolling ();
-
-    /* Update the individual lines as needed.  Do bottom line first.  */
-
-    l = DesiredScreen[screen_height];
-    if (l && l != PhysScreen[screen_height])
-      update_line (PhysScreen[screen_height], l, screen_height - 1);
-    preempt_count = baud_rate / 2400;
-    for (i = 1; i < screen_height && (force || !input_pending); i++)
-      {
-	l = PhysScreen[i];
-	lnew = DesiredScreen[i];
-	if (lnew && lnew != l)
-	  {
-	    /* Flush out every so many lines.
-	       Also flush out if likely to have more than 1k buffered
-	       otherwise.   I'm told that telnet connections get really
-	       screwed by more than 1k output at once.  */
-	    int outq = PENDING_OUTPUT_COUNT (stdout);
-	    if (outq > ((--preempt_count < 0) ? 20 : 900))
-	      {
-		fflush (stdout);
-		if (baud_rate < 2400)
-		  {
-#ifdef TIOCOUTQ
-		    if (ioctl (0, TIOCOUTQ, &outq) < 0)
-		      /* Probably not a tty.  Ignore the error and reset
-		       * the outq count. */
-		      outq = PENDING_OUTPUT_COUNT (stdout);
-#endif
-		    outq *= 10;
-		    outq /= baud_rate;	/* outq is now in seconds */
-		    if (outq)
-		      sleep (outq);
-		  }
-		detect_input_pending ();
-
-		preempt_count = baud_rate / 2400;
-	      }
-	    /* Now update this line.  */
-	    update_line (l, lnew, i - 1);
-	  }
-      }
-    pause = (i < screen_height) ? i : 0;
-
-    /* Now just clean up termcap drivers and set cursor, etc.  */
-    if (!pause)
-      {
-	if (cursor_in_echo_area < 0)
-	  topos (screen_height - 1, 0);
-	else if (cursor_in_echo_area)
-	  topos (screen_height - 1,
-		 (PhysScreen[screen_height] == 0 ? 0
-		  : min (screen_width - 1,
-			 PhysScreen[screen_height]->length)));
-	else
-	  topos (cursY, max (min (cursX, screen_width - 1), 0));
-      }
-
-    update_end ();
-
-    if (termscript)
-      fflush (termscript);
-    fflush (stdout);
-
-    /* Here if output is preempted because input is detected.  */
-  do_pause:
-
-    if (screen_height == 0) abort (); /* Some bug zeros some core */
-    display_completed = !pause;
-    /* Free any lines still in desired screen but not in phys screen */
-    /* Free any lines that used to be in phys screen but are no longer */
-    for (p = &PhysScreen[screen_height]; p != PhysScreen; p--)
-      if (p[0]) p[0]->physical = 1;
-    for (p = &DesiredScreen[screen_height]; p != DesiredScreen; p--)
-      {
-	if (l = *p)
-	  {
-	    if (!l->physical)
-	      {
-		return_display_line (l);
-		/* Prevent line in both DesiredScreen and OPhysScreen
-		   from being freed twice.  */
-		l->physical = 1;
-	      }
-	  }
-      }
-    for (p = &OPhysScreen[screen_height]; p != OPhysScreen; p--)
-      {
-	if (l = *p)
-	  {
-	    if (!l->physical)
-	      return_display_line (l);
-	  }
-      }
-    i = 0;
-    for (p = &PhysScreen[screen_height]; p != PhysScreen; p--)
-      if (p[0])
-	{
-	  i++;
-	  p[0]->physical = 0;
-	}
-
+  detect_input_pending ();
+  if (!force
+      && ((num_input_chars == debug_preemption_char_count
+	   && debug_preemption_vpos == screen_height - 1)
+	  || input_pending))
     {
-      extern int debug_end_pos;
-      if (debug_end_pos && i + free_line_count != 2 * screen_height)
-	abort ();
+      pause = screen_height;
+      goto do_pause;
     }
 
-    bzero (OPhysScreen, (screen_height + 1) * sizeof OPhysScreen[0]);
-    bzero (DesiredScreen, (screen_height + 1) * sizeof DesiredScreen[0]);
-    return pause;
+  update_begin ();
+
+  if (!line_ins_del_ok)
+    inhibit_hairy_id = 1;
+
+  /* Don't compute for i/d line if just want cursor motion. */
+  for (i = 0; i < screen_height; i++)
+    if (new_screen->enable)
+      break;
+
+  /* Try doing i/d line, if not yet inhibited.  */
+  if (!inhibit_hairy_id && i < screen_height)
+    force |= scrolling ();
+
+  /* Update the individual lines as needed.  Do bottom line first.  */
+
+  if (new_screen->enable[screen_height - 1])
+    update_line (screen_height - 1);
+  for (i = 0; i < screen_height - 1 && (force || !input_pending); i++)
+    {
+      if (!force && num_input_chars == debug_preemption_char_count
+	  && debug_preemption_vpos == i)
+	break;
+      if (new_screen->enable[i])
+	{
+	  /* Flush out every so many lines.
+	     Also flush out if likely to have more than 1k buffered
+	     otherwise.   I'm told that telnet connections get really
+	     screwed by more than 1k output at once.  */
+	  int outq = PENDING_OUTPUT_COUNT (stdout);
+	  if (outq > 900
+	      || (outq > 20 && ((i - 1) % preempt_count == 0)))
+	    {
+	      fflush (stdout);
+	      if (preempt_count == 1)
+		{
+#ifdef TIOCOUTQ
+		  if (ioctl (0, TIOCOUTQ, &outq) < 0)
+		    /* Probably not a tty.  Ignore the error and reset
+		     * the outq count. */
+		    outq = PENDING_OUTPUT_COUNT (stdout);
+#endif
+		  outq *= 10;
+		  sleep (outq / baud_rate);
+		}
+	    }
+	  if ((i - 1) % preempt_count == 0)
+	    detect_input_pending ();
+	  /* Now update this line.  */
+	  update_line (i);
+	}
+    }
+  pause = (i < screen_height - 1) ? i + 1 : 0;
+
+  /* Now just clean up termcap drivers and set cursor, etc.  */
+  if (!pause)
+    {
+      if (cursor_in_echo_area < 0)
+	move_cursor (screen_height - 1, 0);
+      else if (cursor_in_echo_area > 0
+	       && !current_screen->enable[screen_height - 1])
+	move_cursor (screen_height - 1, 0);
+      else if (cursor_in_echo_area)
+	move_cursor (screen_height - 1,
+		     min (screen_width - 1,
+			  current_screen->used[screen_height - 1]));
+      else
+	move_cursor (cursor_vpos, max (min (cursor_hpos, screen_width - 1), 0));
+    }
+
+  update_end ();
+
+  if (termscript)
+    fflush (termscript);
+  fflush (stdout);
+
+  /* Here if output is preempted because input is detected.  */
+ do_pause:
+
+  if (screen_height == 0) abort (); /* Some bug zeros some core */
+  display_completed = !pause;
+  if (pause)
+    {
+      preemptions[preemption_index].vpos = pause - 1;
+      preemptions[preemption_index].keyboard_char_count = num_input_chars;
+      preemption_index++;
+      if (preemption_index == N_PREEMPTIONS)
+	preemption_index = 0;
+    }
+
+  bzero (new_screen->enable, screen_height);
+  return pause;
 }
 
 /* Called when about to quit, to check for doing so
@@ -708,9 +747,11 @@ update_screen (force, inhibit_hairy_id)
 void
 quit_error_check ()
 {
-  if (DesiredScreen[1] != 0)
+  if (new_screen == 0)
+    return;
+  if (new_screen->enable[0])
     abort ();
-  if (DesiredScreen[screen_height] != 0)
+  if (new_screen->enable[screen_height - 1])
     abort ();
 }
 
@@ -737,13 +778,14 @@ scrolling ()
   unchanged_at_bottom = screen_height;
   for (i = 0; i < screen_height; i++)
     {
-      old_hash[i] = line_hash_code (PhysScreen[i + 1]);
-      if (!DesiredScreen[i + 1])
-	DesiredScreen[i + 1] = PhysScreen[i + 1];
-      if (PhysScreen[i + 1] == DesiredScreen[i + 1])
+      /* Give up on this scrolling if some old lines are not enabled.  */
+      if (!current_screen->enable[i])
+	return 0;
+      old_hash[i] = line_hash_code (current_screen, i);
+      if (!new_screen->enable[i])
 	new_hash[i] = old_hash[i];
       else
-	new_hash[i] = line_hash_code (DesiredScreen[i + 1]);
+	new_hash[i] = line_hash_code (new_screen, i);
       if (old_hash[i] != new_hash[i])
 	{
 	  changed_lines++;
@@ -751,7 +793,12 @@ scrolling ()
 	}
       else if (i == unchanged_at_top)
 	unchanged_at_top++;
-      draw_cost[i] = line_draw_cost (DesiredScreen[i + 1]);
+      /* If line is not changing, its redraw cost is infinite,
+	 since we can't redraw it.  */
+      if (!new_screen->enable[i])
+	draw_cost[i] = INFINITY;
+      else
+	draw_cost[i] = line_draw_cost (new_screen, i);
     }
 
   /* If changed lines are few, don't allow preemption, don't scroll.  */
@@ -766,7 +813,7 @@ scrolling ()
     free_at_end_vpos = -1;
 
   /* If large window, fast terminal and few lines in common between
-     PhysScreen and DesiredScreen, don't bother with i/d calc.  */
+     current_screen and new_screen, don't bother with i/d calc.  */
   if (window_size >= 18 && baud_rate > 2400
       && (window_size >=
 	  10 * scrolling_max_lines_saved (unchanged_at_top,
@@ -783,40 +830,39 @@ scrolling ()
   return 0;
 }
 
-update_line (old, new, vpos)
-     struct display_line *old, *new;
+update_line (vpos)
      int vpos;
 {
-  register char *obody, *nbody, *op1, *op2, *np1;
+  register unsigned char *obody, *nbody, *op1, *op2, *np1;
   int tem;
-  int osp, nsp, m1, m2, olen, nlen;
+  int osp, nsp, begmatch, endmatch, olen, nlen;
   int save;
+  unsigned char *temp;
 
-  if (old == new)
-    return;
-
-  /* Mark physical screen as containing the line `new' */
-  PhysScreen[vpos + 1] = new;
-
-  if ((new && new->highlighted) != (old && old->highlighted))
+  /* Check for highlighting change.  */
+  if (new_screen->highlight[vpos]
+      != (current_screen->enable[vpos] && current_screen->highlight[vpos]))
     {
-      change_line_highlight (new && new->highlighted, vpos, old ? old->length : 0);
-      old = 0;
+      change_line_highlight (new_screen->highlight[vpos], vpos,
+			     (current_screen->enable[vpos]
+			      ? current_screen->used[vpos] : 0));
+      current_screen->enable[vpos] = 0;
     }
   else
-    reassert_line_highlight (new && new->highlighted, vpos);
+    reassert_line_highlight (new_screen->highlight[vpos], vpos);
 
-  if (!old)
+  /* ??? */
+  if (! current_screen->enable[vpos])
     {
       olen = 0;
     }
   else
     {
-      obody = old -> body;
-      olen = old->length;
-      if (! old->highlighted)
+      obody = current_screen->contents[vpos];
+      olen = current_screen->used[vpos];
+      if (! current_screen->highlight[vpos])
 	{
-	  /* Note obody[-1] is old->physical, which is always 0 or 1.  */
+	  /* Note obody[-1] is always 0.  */
 	  if (!must_write_spaces)
 	    while (obody[olen - 1] == ' ')
 	      olen--;
@@ -831,20 +877,24 @@ update_line (old, new, vpos)
 	}
     }
 
-  if (!new)
+  /* One way or another, this will enable the line being updated.  */
+  current_screen->enable[vpos] = 1;
+  current_screen->used[vpos] = new_screen->used[vpos];
+  current_screen->highlight[vpos] = new_screen->highlight[vpos];
+
+  if (!new_screen->enable[vpos])
     {
       nlen = 0;
       goto just_erase;
     }
 
-  nbody = new -> body;
-  nlen = new->length;
+  nbody = new_screen->contents[vpos];
+  nlen = new_screen->used[vpos];
 
   /* Pretend trailing spaces are not there at all,
      unless for one reason or another we must write all spaces.  */
-  /* We know that the previous character is the `physical' field
-     and it is zero or one.  */
-  if (! new->highlighted)
+  /* We know that the previous character byte contains 0.  */
+  if (! new_screen->highlight[vpos])
     {
       if (!must_write_spaces)
 	while (nbody[nlen - 1] == ' ')
@@ -869,12 +919,12 @@ update_line (old, new, vpos)
 	  if (i >= olen || nbody[i] != obody[i])
 	    {
 	      /* We found a non-matching char.  */
-	      topos (vpos, i);
+	      move_cursor (vpos, i);
 	      for (j = 1; (i + j < nlen &&
 			   (i + j >= olen || nbody[i+j] != obody[i+j]));
 		   j++);
 	      /* Output this run of non-matching chars.  */ 
-	      write_chars (nbody + i, j);
+	      output_chars (nbody + i, j);
 	      i += j - 1;
 	      /* Now find the next non-match.  */
 	    }
@@ -882,21 +932,31 @@ update_line (old, new, vpos)
       /* Clear the rest of the line, or the non-clear part of it.  */
       if (olen > nlen)
 	{
-	  topos (vpos, nlen);
+	  move_cursor (vpos, nlen);
 	  clear_end_of_line (olen);
 	}
+
+      /* Exchange contents between current_screen and new_screen.  */
+      temp = new_screen->contents[vpos];
+      new_screen->contents[vpos] = current_screen->contents[vpos];
+      current_screen->contents[vpos] = temp;
       return;
     }
 
   if (!olen)
     {
-      nsp = (must_write_spaces || new->highlighted)
+      nsp = (must_write_spaces || new_screen->highlight[vpos])
 	      ? 0 : count_blanks (nbody);
       if (nlen > nsp)
 	{
-	  topos (vpos, nsp);
-	  write_chars (nbody + nsp, nlen - nsp);
+	  move_cursor (vpos, nsp);
+	  output_chars (nbody + nsp, nlen - nsp);
 	}
+
+      /* Exchange contents between current_screen and new_screen.  */
+      temp = new_screen->contents[vpos];
+      new_screen->contents[vpos] = current_screen->contents[vpos];
+      current_screen->contents[vpos] = temp;
       return;
     }
 
@@ -906,39 +966,39 @@ update_line (old, new, vpos)
 
   /* Compute number of leading blanks in old and new contents.  */
   osp = count_blanks (obody);
-  if (!new->highlighted)
+  if (!new_screen->highlight[vpos])
     nsp = count_blanks (nbody);
   else
     nsp = 0;
 
   /* Compute number of matching chars starting with first nonblank.  */
-  m1 = count_match (obody + osp, nbody + nsp);
+  begmatch = count_match (obody + osp, nbody + nsp);
 
   /* Spaces in new match implicit space past the end of old.  */
   /* A bug causing this to be a no-op was fixed in 18.29.  */
-  if (!must_write_spaces && osp + m1 == olen)
+  if (!must_write_spaces && osp + begmatch == olen)
     {
       np1 = nbody + nsp;
-      while (np1[m1] == ' ')
-	m1++;
+      while (np1[begmatch] == ' ')
+	begmatch++;
     }
 
   /* Avoid doing insert/delete char
      just cause number of leading spaces differs
      when the following text does not match. */
-  if (m1 == 0 && osp != nsp)
+  if (begmatch == 0 && osp != nsp)
     osp = nsp = min (osp, nsp);
 
   /* Find matching characters at end of line */
   op1 = obody + olen;
   np1 = nbody + nlen;
-  op2 = op1 + m1 - min (olen - osp, nlen - nsp);
+  op2 = op1 + begmatch - min (olen - osp, nlen - nsp);
   while (op1 > op2 && op1[-1] == np1[-1])
     {
       op1--;
       np1--;
     }
-  m2 = obody + olen - op1;
+  endmatch = obody + olen - op1;
 
   /* Put correct value back in nbody[nlen].
      This is important because direct_output_for_insert
@@ -946,21 +1006,22 @@ update_line (old, new, vpos)
   nbody[nlen] = save;
 
   /* tem gets the distance to insert or delete.
-     m2 is how many characters we save by doing so.
+     endmatch is how many characters we save by doing so.
      Is it worth it?  */
 
   tem = (nlen - nsp) - (olen - osp);
-  if (m2 && tem && m2 <= DCICcost[tem])
-    m2 = 0;
+  if (endmatch && tem && endmatch <= DCICcost[tem])
+    endmatch = 0;
 
   /* nsp - osp is the distance to insert or delete.
-     m1 + m2 is how much we save by doing so.
+     begmatch + endmatch is how much we save by doing so.
      Is it worth it?  */
 
-  if (m1 + m2 && nsp != osp && m1 + m2 <= DCICcost[nsp - osp])
+  if (begmatch + endmatch > 0 && nsp != osp
+      && begmatch + endmatch <= DCICcost[nsp - osp])
     {
-      m1 = 0;
-      m2 = 0;
+      begmatch = 0;
+      endmatch = 0;
       osp = nsp = min (osp, nsp);
     }
 
@@ -968,7 +1029,7 @@ update_line (old, new, vpos)
 
   if (osp > nsp)
     {
-      topos (vpos, nsp);
+      move_cursor (vpos, nsp);
       delete_chars (osp - nsp);
     }
   else if (nsp > osp)
@@ -976,22 +1037,22 @@ update_line (old, new, vpos)
       /* If going to delete chars later in line
 	 and insert earlier in the line,
 	 must delete first to avoid losing data in the insert */
-      if (m2 && nlen < olen + nsp - osp)
+      if (endmatch && nlen < olen + nsp - osp)
 	{
-	  topos (vpos, nlen - m2 + osp - nsp);
+	  move_cursor (vpos, nlen - endmatch + osp - nsp);
 	  delete_chars (olen + nsp - osp - nlen);
 	  olen = nlen - (nsp - osp);
 	}
-      topos (vpos, osp);
+      move_cursor (vpos, osp);
       insert_chars ((char *)0, nsp - osp);
     }
   olen += nsp - osp;
 
-  tem = nsp + m1 + m2;
+  tem = nsp + begmatch + endmatch;
   if (nlen != tem || olen != tem)
     {
-      topos (vpos, nsp + m1);
-      if (!m2 || nlen == olen)
+      move_cursor (vpos, nsp + begmatch);
+      if (!endmatch || nlen == olen)
 	{
 	  /* If new text being written reaches right margin,
 	     there is no need to do clear-to-eol at the end.
@@ -999,7 +1060,7 @@ update_line (old, new, vpos)
 	     going to be "at the margin" after the text is done) */
 	  if (nlen == screen_width)
 	    olen = 0;
-	  write_chars (nbody + nsp + m1, nlen - tem);
+	  output_chars (nbody + nsp + begmatch, nlen - tem);
 #ifdef obsolete
 /* the following code loses disastrously if tem == nlen.
    Rather than trying to fix that case, I am trying the simpler
@@ -1010,25 +1071,25 @@ update_line (old, new, vpos)
 	     So pause with one character to go and clear the line then.  */
 	  if (nlen == screen_width && fast_clear_end_of_line && olen > nlen)
 	    {
-	      /* m2 must be zero, and tem must equal nsp + m1 */
-	      write_chars (nbody + tem, nlen - tem - 1);
+	      /* endmatch must be zero, and tem must equal nsp + begmatch */
+	      output_chars (nbody + tem, nlen - tem - 1);
 	      clear_end_of_line (olen);
 	      olen = 0;		/* Don't let it be cleared again later */
-	      write_chars (nbody + nlen - 1, 1);
+	      output_chars (nbody + nlen - 1, 1);
 	    }
 	  else
-	    write_chars (nbody + nsp + m1, nlen - tem);
+	    output_chars (nbody + nsp + begmatch, nlen - tem);
 #endif
 	}
       else if (nlen > olen)
 	{
-	  write_chars (nbody + nsp + m1, olen - tem);
-	  insert_chars (nbody + nsp + m1 + olen - tem, nlen - olen);
+	  output_chars (nbody + nsp + begmatch, olen - tem);
+	  insert_chars (nbody + nsp + begmatch + olen - tem, nlen - olen);
 	  olen = nlen;
 	}
       else if (olen > nlen)
 	{
-	  write_chars (nbody + nsp + m1, nlen - tem);
+	  output_chars (nbody + nsp + begmatch, nlen - tem);
 	  delete_chars (olen - nlen);
 	  olen = nlen;
 	}
@@ -1038,9 +1099,14 @@ update_line (old, new, vpos)
   /* If any unerased characters remain after the new line, erase them.  */
   if (olen > nlen)
     {
-      topos (vpos, nlen);
+      move_cursor (vpos, nlen);
       clear_end_of_line (olen);
     }
+  
+  /* Exchange contents between current_screen and new_screen.  */
+  temp = new_screen->contents[vpos];
+  new_screen->contents[vpos] = current_screen->contents[vpos];
+  current_screen->contents[vpos] = temp;
 }
 
 count_blanks (str)
@@ -1126,34 +1192,28 @@ window_change_signal ()
   int old_errno = errno;
 
   get_screen_size (&width, &height);
+  /* Record the new size, but don't reallocate the data structures now.
+     Let that be done later outside of the signal handler.  */
+  in_display++;
   change_screen_size (height, width, 0);
+  in_display--;
   signal (SIGWINCH, window_change_signal);
 
   errno = old_errno;
 }
 #endif /* SIGWINCH */
 
-/* Prevent screen size from being changed by signals.  */
-hold_window_change ()
-{
-  in_display = 1;
-}
+/* Do any change in screen size that was requested by a signal.  */
 
-/* Reenable signals to change the screen size
-   and handle any signals that have happened already.  */
-
-unhold_window_change ()
+do_pending_window_change ()
 {
-  in_display = 0;
   /* If change_screen_size should have run before, run it now.  */
   while (delayed_size_change)
     {
       int newwidth = delayed_screen_width;
       int newheight = delayed_screen_height;
       delayed_size_change = 0;
-      in_display = 1;
       change_screen_size_1 (newheight, newwidth, 0);
-      in_display = 0;
     }
 }
 
@@ -1186,8 +1246,6 @@ change_screen_size_1 (newlength, newwidth, pretend)
     return;
   if (newlength && newlength != screen_height)
     {
-      if (newlength > MScreenLength)
-	newlength = MScreenLength;
       set_window_height (XWINDOW (minibuf_window)->prev, newlength - 1, 0);
       XFASTINT (XWINDOW (minibuf_window)->top) = newlength - 1;
       set_window_height (minibuf_window, 1, 0);
@@ -1198,23 +1256,27 @@ change_screen_size_1 (newlength, newwidth, pretend)
     }
   if (newwidth && newwidth != screen_width)
     {
-      if (newwidth > MScreenWidth)
-	newwidth = MScreenWidth;
       set_window_width (XWINDOW (minibuf_window)->prev, newwidth, 0);
       set_window_width (minibuf_window, newwidth, 0);
       screen_width = newwidth;
       if (pretend <= 0)
 	ScreenCols = newwidth;
     }
-  make_display_lines ();
+  remake_screen_structures ();
+  screen_garbaged = 1;
   calculate_costs ();
   if (pretend >= 0)
-    DoDsp (1);
+    redisplay_preserve_echo_area ();
 }
 
-DEFSIMPLE ("baud-rate", Fbaud_rate, Sbaud_rate,
-	   "Return the output baud rate of the terminal.",
-	   Lisp_Int, XSETINT, baud_rate)
+DEFUN ("baud-rate", Fbaud_rate, Sbaud_rate, 0, 0, 0,
+  "Return the output baud rate of the terminal.")
+  ()
+{
+  Lisp_Object temp;
+  XSET (temp, Lisp_Int, baud_rate);
+  return temp;
+}
 
 DEFUN ("send-string-to-terminal", Fsend_string_to_terminal,
   Ssend_string_to_terminal, 1, 1, 0,
@@ -1243,19 +1305,19 @@ is given.")
 {
   if (!NULL (arg))
     {
-      ring_bell ();
+      bell ();
       fflush (stdout);
     }
   else
-    Ding ();
+    bell ();
   return Qnil;
 }
 
-Ding ()
+bell ()
 {
   if (noninteractive)
     putchar (07);
-  else if (!INTERACTIVE)  /* Stop executing a keyboard macro. */
+  else if (!FROM_KBD)  /* Stop executing a keyboard macro. */
     error ("Keyboard macro terminated by a command ringing the bell");
   else
     ring_bell ();
@@ -1347,7 +1409,7 @@ Value is t if waited the full time with no input arriving.")
     return Qnil;
 
   if (EQ (nodisp, Qnil))
-    DoDsp (1);			/* Make the screen correct */
+    redisplay_preserve_echo_area ();
   if (XINT (n) > 0)
     {
 #ifdef subprocesses
@@ -1394,7 +1456,7 @@ init_display ()
 #endif
 
   Vwindow_system = Qnil;
-  MetaFlag = 0;
+  meta_key = 0;
   inverse_video = 0;
   cursor_in_echo_area = 0;
   terminal_type = (char *) 0;
@@ -1403,7 +1465,7 @@ init_display ()
     {
 #ifdef HAVE_X_WINDOWS
       extern char *alternate_display;
-      char *disp = egetenv ("DISPLAY");
+      char *disp = (char *) egetenv ("DISPLAY");
 
       /* Note KSH likes to provide an empty string as an envvar value.  */
       if (alternate_display || (disp && *disp))
@@ -1441,10 +1503,8 @@ For types not defined in VMS, use  define emacs_term \"TYPE\".\n\
   term_init (terminal_type);
 
  term_init_done:
-  make_display_lines ();
-
-  cursX = 0;		/* X and Y coordinates of the cursor */
-  cursY = 0;		/* between updates. */
+  remake_screen_structures ();
+  calculate_costs ();
 
 #ifdef SIGWINCH
 #ifndef CANNOT_DUMP
@@ -1480,7 +1540,6 @@ It is up to you to set this variable to inform Emacs.");
 \(such as `x'), or nil if emacs is running on an ordinary terminal.");
   DEFVAR_LISP ("window-system-version", &Vwindow_system_version,
     "Version number of the window system Emacs is running under.");
-  Vwindow_system_version = Qnil;
   DEFVAR_BOOL ("cursor-in-echo-area", &cursor_in_echo_area,
     "Non-nil means put cursor in minibuffer after any message displayed there.");
 
@@ -1488,5 +1547,8 @@ It is up to you to set this variable to inform Emacs.");
 #ifdef CANNOT_DUMP
   if (noninteractive)
 #endif
-    Vwindow_system = Qnil;
+    {
+      Vwindow_system_version = Qnil;
+      Vwindow_system = Qnil;
+    }
 }

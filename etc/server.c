@@ -3,19 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* The GNU Emacs edit server process is run as a subprocess of Emacs
@@ -84,6 +84,14 @@ main ()
       exit (1);
     }
   server.sun_family = AF_UNIX;
+#ifndef SERVER_HOME_DIR
+  sprintf (server.sun_path, "/tmp/esrv%d", geteuid ());
+  if (unlink (server.sun_path) == -1 && errno != ENOENT)
+    {
+      perror ("unlink");
+      exit (1);
+    }
+#else  
   if ((homedir = getenv ("HOME")) == NULL)
     {
       fprintf (stderr,"No home directory\n");
@@ -91,6 +99,7 @@ main ()
     }
   strcpy (server.sun_path, homedir);
   strcat (server.sun_path, "/.emacs_server");
+#endif
   if (bind (s, &server, strlen (server.sun_path) + 2) < 0)
     {
       perror ("bind");

@@ -3,20 +3,19 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -402,8 +401,6 @@ If FROM or TO is negative, it counts from the end.")
      Lisp_Object string;
      register Lisp_Object from, to;
 {
-  register Lisp_Object val, len;
-
   CHECK_STRING (string, 0);
   CHECK_NUMBER (from, 1);
   if (NULL (to))
@@ -419,12 +416,8 @@ If FROM or TO is negative, it counts from the end.")
         && XINT (to) <= XSTRING (string)->size))
     args_out_of_range_3 (string, from, to);
 
-  XFASTINT (len) = XINT (to) - XINT (from);
-  val = Fmake_string (len, len);
-
-  bcopy (XSTRING (string)->data + XINT (from), XSTRING (val)->data, XINT (len));
-
-  return val;
+  return make_string (XSTRING (string)->data + XINT (from),
+		      XINT (to) - XINT (from));
 }
 
 DEFUN ("nthcdr", Fnthcdr, Snthcdr, 2, 2, 0,
@@ -436,7 +429,7 @@ DEFUN ("nthcdr", Fnthcdr, Snthcdr, 2, 2, 0,
   register int i, num;
   CHECK_NUMBER (n, 0);
   num = XINT (n);
-  for (i = 0; i < num; i++)
+  for (i = 0; i < num && !NULL (list); i++)
     {
       QUIT;
       list = Fcdr (list);
@@ -988,6 +981,7 @@ Thus, \" \" as SEP results in spaces between the values return by FN.")
   register Lisp_Object *args;
   register int i;
   int j;
+  struct gcpro gcpro1;
 
   len = Flength (seq);
   leni = XINT (len);
@@ -996,7 +990,9 @@ Thus, \" \" as SEP results in spaces between the values return by FN.")
 
   args = (Lisp_Object *) alloca (nargs * sizeof (Lisp_Object));
 
+  GCPRO1 (sep);
   mapcar1 (leni, args, fn, seq);
+  UNGCPRO;
 
   /* Broken Xenix/386 compiler can't use a register variable here */
   for (j = leni - 1; j > 0; j--)
@@ -1050,7 +1046,7 @@ Also accepts Space to mean yes, or Delete to mean no.")
     {
       message ("%s(y or n) ", XSTRING (xprompt)->data);
       cursor_in_echo_area = 1;
-      ans = get_char (0);
+      ans = read_command_char (0);
       cursor_in_echo_area = -1;
       message ("%s(y or n) %c", XSTRING (xprompt)->data, ans);
       cursor_in_echo_area = ocech;
@@ -1093,16 +1089,21 @@ The user must confirm the answer with a newline, and can rub it out if not confi
   args[1] = build_string ("(yes or no) ");
   prompt = Fconcat (2, args);
 
+  GCPRO1 (prompt);
   while (1)
     {
-      GCPRO1 (prompt);
       ans = Fdowncase (read_minibuf (Vminibuffer_local_map,
 				     Qnil, prompt, 0));
-      UNGCPRO;
       if (XSTRING (ans)->size == 3 && !strcmp (XSTRING (ans)->data, "yes"))
-	return Qt;
+	{
+	  UNGCPRO;
+	  return Qt;
+	}
       if (XSTRING (ans)->size == 2 && !strcmp (XSTRING (ans)->data, "no"))
-	return Qnil;
+	{
+	  UNGCPRO;
+	  return Qnil;
+	}
 
       Fding (Qnil);
       Fdiscard_input ();
@@ -1208,7 +1209,16 @@ and then turned into integers).")
 #endif /* not convex */
 #endif /* NLIST_STRUCT */
 
+#ifdef IRIS_4D
+	{
+#include <sys/types.h>
+#include <sys/sysmp.h>
+	    nl[0].n_value = sysmp(MP_KERNADDR, MPKA_AVENRUN);
+	    nl[0].n_value &= 0x7fffffff;
+	}
+#else
       nlist (KERNEL_FILE, nl);
+#endif /* IRIS */
 
 #ifdef FIXUP_KERNEL_SYMBOL_ADDR
       if ((nl[0].n_type & N_TYPE) != N_ABS)
@@ -1301,12 +1311,23 @@ load FILENAME.  FILENAME is optional and defaults to FEATURE.")
   tem = Fmemq (feature, Vfeatures);
   if (NULL (tem))
     {
+      int count = specpdl_ptr - specpdl;
+
+      /* Value saved here is to be restored into Vautoload_queue */
+      record_unwind_protect (un_autoload, Vautoload_queue);
+      Vautoload_queue = Qt;
+
       Fload (NULL (file_name) ? Fsymbol_name (feature) : file_name,
 	     Qnil, Qt, Qnil);
+
       tem = Fmemq (feature, Vfeatures);
       if (NULL (tem))
 	error ("Required feature %s was not provided",
 	       XSYMBOL (feature)->name->data );
+
+      /* Once loading finishes, don't undo it.  */
+      Vautoload_queue = Qt;
+      unbind_to (count);
     }
   return feature;
 }

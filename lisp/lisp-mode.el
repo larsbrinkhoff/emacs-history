@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 (defvar lisp-mode-syntax-table nil "")
@@ -175,9 +174,10 @@ if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
   (use-local-map lisp-interaction-mode-map)
+  (set-syntax-table emacs-lisp-mode-syntax-table)
   (setq major-mode 'lisp-interaction-mode)
   (setq mode-name "Lisp Interaction")
-  (lisp-mode-variables t)
+  (lisp-mode-variables nil)
   (run-hooks 'lisp-interaction-mode-hook))
 
 (defun eval-print-last-sexp (arg)
@@ -485,12 +485,12 @@ of the start of the containing expression."
       (setq outer-loop-done nil)
       (while (not outer-loop-done)
 	(setq last-depth next-depth
-	      innerloop-done nil)
+	      inner-loop-done nil)
 	;; Parse this line so we can learn the state
 	;; to indent the next line.
 	;; This inner loop goes through only once
 	;; unless a line ends inside a string.
-	(while (and (not innerloop-done)
+	(while (and (not inner-loop-done)
 		    (not (setq outer-loop-done (eobp))))
 	  (setq state (parse-partial-sexp (point) (progn (end-of-line) (point))
 					  nil nil state))
@@ -512,8 +512,8 @@ of the start of the containing expression."
 	      (progn
 		(forward-line 1)
 		(setcar (nthcdr 5 state) nil))
-	    (setq innerloop-done t)))
-	(if (setq outer-loop-done (<= next-depth 0))
+	    (setq inner-loop-done t)))
+	(if (or outer-loop-done (setq outer-loop-done (<= next-depth 0)))
 	    nil
 	  (while (> last-depth next-depth)
 	    (setq indent-stack (cdr indent-stack)

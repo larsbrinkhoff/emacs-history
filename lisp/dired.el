@@ -7,20 +7,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 ;In loaddefs.el
@@ -479,26 +478,58 @@ start with #."
   "Compress this file."
   (interactive)
   (let* ((buffer-read-only nil)
+	 (error-buffer (get-buffer-create " *Dired compress output*"))
 	 (from-file (dired-get-filename))
 	 (to-file (concat from-file ".Z")))
     (if (string-match "\\.Z$" from-file)
 	(error "%s is already compressed!" from-file))
     (message "Compressing %s..." from-file)
-    (call-process "compress" nil nil nil "-f" from-file)
-    (message "Compressing %s... done" from-file)
+    (unwind-protect
+	(progn
+	  (save-excursion
+	    (set-buffer error-buffer)
+	    (erase-buffer))
+	  ;; Must have default-directory of dired buffer in call-process
+	  (call-process "compress" nil error-buffer nil "-f" from-file)
+	  (if (save-excursion
+		(set-buffer error-buffer)
+		(= 0 (buffer-size)))
+	      (progn
+		(message "Compressing %s... done" from-file)
+		(kill-buffer error-buffer))
+	    (display-buffer error-buffer)
+	    (setq error-buffer nil)
+	    (error "Compress error on %s." from-file)))
+      (if error-buffer (kill-buffer error-buffer)))
     (dired-redisplay to-file)))
 
 (defun dired-uncompress ()
   "Uncompress this file."
   (interactive)
   (let* ((buffer-read-only nil)
+	 (error-buffer (get-buffer-create " *Dired compress output*"))
 	 (from-file (dired-get-filename))
 	 (to-file (substring from-file 0 -2)))
     (if (string-match "\\.Z$" from-file) nil
 	(error "%s is not compressed!" from-file))
     (message "Uncompressing %s..." from-file)
-    (call-process "uncompress" nil nil nil from-file)
-    (message "Uncompressing %s... done" from-file)
+    (unwind-protect
+	(progn
+	  (save-excursion
+	    (set-buffer error-buffer)
+	    (erase-buffer))
+	  ;; Must have default-directory of dired buffer in call-process
+	  (call-process "uncompress" nil error-buffer nil "-f" from-file)
+	  (if (save-excursion
+		(set-buffer error-buffer)
+		(= 0 (buffer-size)))
+	      (progn
+		(message "Uncompressing %s... done" from-file)
+		(kill-buffer error-buffer))
+	    (display-buffer error-buffer)
+	    (setq error-buffer nil)
+	    (error "Uncompress error on %s." from-file)))
+      (if error-buffer (kill-buffer error-buffer)))
     (dired-redisplay to-file)))
 
 (defun dired-byte-recompile ()

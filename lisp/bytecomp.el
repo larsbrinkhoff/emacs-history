@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 (provide 'byte-compile)
 
@@ -309,7 +308,7 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	 (int (assq 'interactive (cdr bodyptr)))
 	 newbody)
     ;; Skip doc string.
-    (if (stringp (car (cdr bodyptr)))
+    (if (and (cdr (cdr bodyptr)) (stringp (car (cdr bodyptr))))
 	(setq bodyptr (cdr bodyptr)))
     (setq newbody (list (byte-compile-top-level
 			  (cons 'progn (cdr bodyptr)))))
@@ -445,6 +444,17 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	 (byte-compile-variable-ref 'byte-varref form))
 	((not (consp form))
 	 (byte-compile-constant form))
+	((not (symbolp (car form)))
+	 (if (eq (car-safe (car form)) 'lambda)
+	     (let ((vars (nth 1 (car form)))
+		   (vals (cdr form))
+		   result)
+	       (while vars
+		 (setq result (cons (list (car vars) (car vals)) result))
+		 (setq vars (cdr vars) vals (cdr vals)))
+	       (byte-compile-form
+		(cons 'let (cons (nreverse result) (cdr (cdr (car form)))))))
+	   (byte-compile-normal-call form)))
 	(t
 	 (let ((handler (get (car form) 'byte-compile)))
 	   (if handler

@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 (defun open-line (arg)
@@ -541,8 +540,20 @@ If the previous command was also a kill command,
 the text killed this time appends to the text killed last time
 to make one entry in the kill ring."
   (interactive "*r")
-  (copy-region-as-kill beg end)
-  (delete-region beg end))
+  (if (and (not (eq buffer-undo-list t))
+	   (not (eq last-command 'kill-region)))
+      ;; Don't let the undo list be truncated before we can even access it.
+      (let ((undo-high-threshold (+ (- (max beg end) (min beg end)) 100)))
+	(delete-region beg end)
+	;; Take the same string recorded for undo
+	;; and put it in the kill-ring.
+	(setq kill-ring (cons (car (car buffer-undo-list)) kill-ring))
+	(if (> (length kill-ring) kill-ring-max)
+	    (setcdr (nthcdr (1- kill-ring-max) kill-ring) nil))
+	(setq this-command 'kill-region)
+	(setq kill-ring-yank-pointer kill-ring))
+    (copy-region-as-kill beg end)
+    (delete-region beg end)))
 
 (fset 'kill-ring-save 'copy-region-as-kill)
 
@@ -785,8 +796,8 @@ and more reliable (no dependence on goal column, etc.)."
 		(not (eq (preceding-char) ?\n)))
 	    (insert ?\n)
 	  (goto-char opoint)
-	  (line-move arg)))
-    (line-move arg))
+	  (next-line-internal arg)))
+    (next-line-internal arg))
   nil)
 
 (defun previous-line (arg)
@@ -803,7 +814,7 @@ If you are thinking of using this in a Lisp program, consider using
 `forward-line' with negative argument instead..  It is usually easier
 to use and more reliable (no dependence on goal column, etc.)."
   (interactive "p")
-  (line-move (- arg))
+  (next-line-internal (- arg))
   nil)
 
 (defconst track-eol nil
@@ -817,12 +828,12 @@ This means moving to the end of each line moved onto.")
   "Current goal column for vertical motion.
 It is the column where point was at the start of current run of vertical motion commands.")
 
-(defun line-move (arg)
+(defun next-line-internal (arg)
   (if (not (or (eq last-command 'next-line)
 	       (eq last-command 'previous-line)))
       (setq temporary-goal-column
 	    (if (and track-eol (eolp))
-		9999
+		t
 	      (current-column))))
   (if (not (integerp selective-display))
       (forward-line arg)
@@ -836,7 +847,9 @@ It is the column where point was at the start of current run of vertical motion 
       (vertical-motion -1)
       (beginning-of-line)
       (setq arg (1+ arg))))
-  (move-to-column (or goal-column temporary-goal-column))
+  (if (eq (or goal-column temporary-goal-column) t)
+      (end-of-line)
+    (move-to-column (or goal-column temporary-goal-column)))
   nil)
 
 
@@ -1043,16 +1056,14 @@ With argument, kill comments on that many lines starting with this one."
   (interactive "P")
   (barf-if-buffer-read-only)
   (let ((count (prefix-numeric-value arg)))
+    (beginning-of-line)
     (while (> count 0)
-      (save-excursion
-	(end-of-line)
-	(let ((eolpos (point)))
-	  (beginning-of-line)
-	  (if (re-search-forward comment-start-skip eolpos t)
-	      (progn
-		(goto-char (match-beginning 0))
-		(skip-chars-backward " \t")
-		(kill-region (point) eolpos)))))
+      (let ((eolpos (save-excursion (end-of-line) (point))))
+	(if (re-search-forward comment-start-skip eolpos t)
+	    (progn
+	      (goto-char (match-beginning 0))
+	      (skip-chars-backward " \t")
+	      (kill-region (point) eolpos))))
       (if arg
 	  (forward-line 1))
       (setq count (1- count)))))

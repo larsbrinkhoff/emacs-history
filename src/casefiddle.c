@@ -1,22 +1,21 @@
 /* GNU Emacs case conversion functions.
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1990 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include "config.h"
@@ -112,13 +111,13 @@ casify_region (flag, b, e)
 
   for (i = XFASTINT (b); i < XFASTINT (e); i++)
     {
-      c = CharAt (i);
+      c = FETCH_CHAR (i);
       if (inword && flag != CASE_CAPITALIZE_UP)
 	c = DOWNCASE (c);
       else if (!UPPERCASEP (c)
 	       && (!inword || flag != CASE_CAPITALIZE_UP))
 	c = UPCASE1 (c);
-      CharAt (i) = c;
+      FETCH_CHAR (i) = c;
       if ((int) flag >= (int) CASE_CAPITALIZE)
 	inword = SYNTAX (c) == Sword;
     }
@@ -174,21 +173,21 @@ upcase_initials_region (b, e)
   return Qnil;
 }
 
-void
-operate_on_word (flag, arg)
-     int flag;
+Lisp_Object
+operate_on_word (arg)
      Lisp_Object arg;
 {
-  Lisp_Object beg, end;
+  Lisp_Object end, val;
   int farend;
+
   CHECK_NUMBER (arg, 0);
   farend = scan_words (point, XINT (arg));
   if (!farend)
-    farend = XINT (arg) > 0 ? NumCharacters + 1 : FirstCharacter;
-  XFASTINT (beg) = point < farend ? point : farend;
-  XFASTINT (end) = point > farend ? point : farend;
-  casify_region (flag, beg, end);
-  SetPoint (XFASTINT (end));
+    farend = XINT (arg) > 0 ? ZV : BEGV;
+  end = point > farend ? point : farend;
+  SET_PT (end);
+  XFASTINT (val) = farend;
+  return val;
 }
 
 DEFUN ("upcase-word", Fupcase_word, Supcase_word, 1, 1, "p",
@@ -197,7 +196,9 @@ With negative argument, convert previous words but do not move.")
   (arg)
      Lisp_Object arg;
 {
-  operate_on_word (CASE_UP, arg);
+  Lisp_Object opoint;
+  XFASTINT (opoint) = point;
+  casify_region (CASE_UP, opoint, operate_on_word (arg));
   return Qnil;
 }
 
@@ -207,7 +208,9 @@ With negative argument, convert previous words but do not move.")
   (arg)
      Lisp_Object arg;
 {
-  operate_on_word (CASE_DOWN, arg);
+  Lisp_Object opoint;
+  XFASTINT (opoint) = point;
+  casify_region (CASE_DOWN, opoint, operate_on_word (arg));
   return Qnil;
 }
 
@@ -219,7 +222,9 @@ With negative argument, capitalize previous words but do not move.")
   (arg)
      Lisp_Object arg;
 {
-  operate_on_word (CASE_CAPITALIZE, arg);
+  Lisp_Object opoint;
+  XFASTINT (opoint) = point;
+  casify_region (CASE_CAPITALIZE, opoint, operate_on_word (arg));
   return Qnil;
 }
 
@@ -238,9 +243,9 @@ syms_of_casefiddle ()
 
 keys_of_casefiddle ()
 {
-  defkey (CtlXmap, Ctl('U'), "upcase-region");
-  defkey (CtlXmap, Ctl('L'), "downcase-region");
-  defkey (ESCmap, 'u', "upcase-word");
-  defkey (ESCmap, 'l', "downcase-word");
-  defkey (ESCmap, 'c', "capitalize-word");
+  ndefkey (Vctl_x_map, Ctl('U'), "upcase-region");
+  ndefkey (Vctl_x_map, Ctl('L'), "downcase-region");
+  ndefkey (Vesc_map, 'u', "upcase-word");
+  ndefkey (Vesc_map, 'l', "downcase-word");
+  ndefkey (Vesc_map, 'c', "capitalize-word");
 }

@@ -3,20 +3,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 1, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;; moved posting and mail code from rnews.el
 ;;	tower@prep.ai.mit.edu Wed Oct 29 1986
@@ -252,7 +251,7 @@ original message into it."
     (save-restriction
       (narrow-to-region (point-min) (progn (goto-line (point-min))
 					   (search-forward "\n\n")
-					   (- (point) 2)))
+					   (- (point) 1)))
       (setq from (mail-fetch-field "from")
 	    subject (mail-fetch-field "subject")
 	    reply-to (mail-fetch-field "reply-to")
@@ -289,7 +288,7 @@ original message into it."
 					;@@	but rnews.el lacks support
 		 (narrow-to-region (point-min) (progn (goto-char (point-min))
 						      (search-forward "\n\n")
-						      (- (point) 2)))))
+						      (- (point) 1)))))
 	  (setq from (mail-fetch-field "from")
 		news-reply-yank-from from
 		;; @@ not handling old Title: field
@@ -365,7 +364,7 @@ Type \\[describe-mode] once editing the article to get a list of commands."
 					;@@	but rnews.el lacks support
 		 (narrow-to-region (point-min) (progn (goto-char (point-min))
 						      (search-forward "\n\n")
-						      (- (point) 2)))))
+						      (- (point) 1)))))
 	  (setq news-reply-yank-from (mail-fetch-field "from")
 		;; @@ not handling old Article-I.D.: field
 		news-reply-yank-message-id (mail-fetch-field "message-id")))

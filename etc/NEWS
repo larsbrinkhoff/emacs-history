@@ -1,6 +1,26 @@
-GNU Emacs NEWS -- history of user-visible changes.  17-Aug-1988
-Copyright (C) 1988 Free Software Foundation, Inc.
+GNU Emacs NEWS -- history of user-visible changes.  11 Nov 1990
+Copyright (C) 1988, 1990 Free Software Foundation, Inc.
 See the end for copying conditions.
+
+Changes in version 18.56.
+
+* C-g should now work to interrupt a running program
+on all kinds of systems even when using X windows.
+
+* Quitting is inhibited while a filter or sentinel is running.
+Those functions can run asynchronously while Emacs is waiting
+for keyboard input, and if they allow quitting, they
+make the behavior of C-g unpredictable.
+
+* Storing text into the X windows cut buffer
+now clears out any selection.
+
+* The undo facility is completely rewritten, and now
+uses Lisp data structures.  It can record much more
+information.  You can use the variables undo-threshold
+and undo-high-threshold to control how much.
+
+* There is no longer a maximum screen height or width. 
 
 Changes in version 18.52.
 
@@ -1590,7 +1610,7 @@ For older news, see the file ONEWS.
 ----------------------------------------------------------------------
 Copyright information:
 
-Copyright (C) 1988 Free Software Foundation, Inc.
+Copyright (C) 1988, 1990 Free Software Foundation, Inc.
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the

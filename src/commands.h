@@ -3,46 +3,34 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #define Ctl(c) ((c)&037)
 
 /* Define the names of keymaps, just so people can refer to them in calls to defkey */
 
-extern struct Lisp_Vector *GlobalMap;
-				/* default global key bindings */
+extern Lisp_Object Vglobal_map;
 
-extern struct Lisp_Vector *ESCmap;
-				/* The keymap used for globally bound
-				   ESC-prefixed default commands */
+extern Lisp_Object Vesc_map;
 
-extern struct Lisp_Vector *CtlXmap;
-				/* The keymap used for globally bound
-				   C-x-prefixed default commands */
+extern Lisp_Object Vctl_x_map;
 
 extern Lisp_Object Vminibuffer_local_map;
-				/* The keymap used by the minibuf for
-				   local bindings when spaces are allowed
-				   in the minibuf */
 
 extern Lisp_Object Vminibuffer_local_ns_map;
-				/* The keymap used by the minibuf for
-				   local bindings when spaces are not
-				   encouraged in the minibuf */
 
 /* keymap used for minibuffers when doing completion */
 extern Lisp_Object Vminibuffer_local_completion_map;
@@ -50,24 +38,26 @@ extern Lisp_Object Vminibuffer_local_completion_map;
 /* keymap used for minibuffers when doing completion and require a match */
 extern Lisp_Object Vminibuffer_local_must_match_map;
 
-extern int last_command_char;	    /* The last key struck as a command */
+/* Last character of last key sequence.  */
+extern int last_command_char;
 
-extern int unread_command_char;	/* Command character to be re-read, or -1 */
+/* Command character to be re-read, or -1 */
+extern int unread_command_char;
 
 /* Previous command symbol found here for comparison */
 extern Lisp_Object last_command;
 
-extern int immediate_quit;	    /* Nonzero means ^G can quit instantly */
+/* Nonzero means ^G can quit instantly */
+extern int immediate_quit;
 
 extern Lisp_Object Vexecuting_macro;
 
 /* Nonzero if input is coming from the keyboard */
-
-#define INTERACTIVE (NULL (Vexecuting_macro) && !noninteractive)
+#define FROM_KBD (NULL (Vexecuting_macro) && !noninteractive)
 
 /* Set this nonzero to force reconsideration of mode line. */
 
-extern int RedoModes;
+extern int update_mode_lines;
 
 /* Nonzero means reading single-character input with prompt
    so put cursor on minibuffer after the prompt.  */
