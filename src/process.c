@@ -18,6 +18,8 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 
 #include "config.h"
@@ -33,7 +35,6 @@ static dummy () {}
 #include <stdio.h>
 #include <errno.h>
 #include <setjmp.h>
-#include <sys/types.h>		/* some typedefs are used in sys/file.h */
 #include <sys/file.h>
 #include <sys/stat.h>
 
@@ -145,8 +146,10 @@ extern Lisp_Object Qexit;
 #define WIFEXITED(w) ((w&0377) == 0)
 #define WRETCODE(w) (w >> 8)
 #define WSTOPSIG(w) (w >> 8)
-#define WCOREDUMP(w) ((w&0200) != 0)
 #define WTERMSIG(w) (w & 0377)
+#ifndef WCOREDUMP
+#define WCOREDUMP(w) ((w&0200) != 0)
+#endif
 #else
 #ifdef BSD4_1
 #include <wait.h>
@@ -405,6 +408,13 @@ allocate_pty ()
   register c, i;
   int fd;
 
+  /* Some systems name their pseudoterminals so that there are gaps in
+     the usual sequence - for example, on HP9000/S700 systems, there
+     are no pseudoterminals with names ending in 'f'.  So we wait for
+     three failures in a row before deciding that we've reached the
+     end of the ptys.  */
+  int failed_count = 0;
+
 #ifdef PTY_ITERATION
   PTY_ITERATION
 #else
@@ -431,7 +441,13 @@ allocate_pty ()
 #else /* no PTY_OPEN */
 #ifndef IRIS
 	if (stat (pty_name, &stb) < 0)
-	  return -1;
+	  {
+	    failed_count++;
+	    if (failed_count >= 3)
+	      return -1;
+	  }
+	else
+	  failed_count = 0;
 #ifdef O_NONBLOCK
 	fd = open (pty_name, O_RDWR | O_NONBLOCK, 0);
 #else
@@ -1119,7 +1135,7 @@ create_process (process, new_argv)
 
 /* Stride people say it's a mystery why this is needed
    as well as the O_NDELAY, but that it fails without this.  */
-#ifdef STRIDE
+#if defined (STRIDE) || (defined (pfa) && defined (HAVE_PTYS))
   {
     int one = 1;
     ioctl (inchannel, FIONBIO, &one);
@@ -1209,6 +1225,11 @@ create_process (process, new_argv)
 	/* First, disconnect its current controlling terminal.  */
 #ifdef HAVE_SETSID
 	setsid ();
+#ifdef TIOCSCTTY
+	/* Make the pty's terminal the controlling terminal.  */
+	if (pty_flag && (ioctl (xforkin, TIOCSCTTY, 0) < 0))
+	  abort ();
+#endif
 #else /* not HAVE_SETSID */
 #ifdef USG
 	/* It's very important to call setpgrp() here and no time
@@ -1253,7 +1274,10 @@ create_process (process, new_argv)
 	  }
 #endif /* not UNIPLUS and not RTU */
 #ifdef SETUP_SLAVE_PTY
-	SETUP_SLAVE_PTY;
+	if (pty_flag)
+	  {
+	    SETUP_SLAVE_PTY;
+	  }
 #endif /* SETUP_SLAVE_PTY */
 #ifdef AIX
 	/* On AIX, we've disabled SIGHUP above once we start a child on a pty.
@@ -1275,7 +1299,8 @@ create_process (process, new_argv)
 #endif /* ordinary USG */
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
-	child_setup_tty (xforkout);
+	if (pty_flag)
+	  child_setup_tty (xforkout);
 	child_setup (xforkin, xforkout, xforkout, new_argv, env);
       }
     environ = save_environ;
@@ -1372,7 +1397,7 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
   GCPRO4 (name, buffer, host, service);
   CHECK_STRING (name, 0);
   CHECK_STRING (host, 0);
-  if (XTYPE(service) == Lisp_Int)
+  if (XTYPE (service) == Lisp_Int)
     port = htons ((unsigned short) XINT (service));
   else
     {
@@ -1383,16 +1408,21 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
       port = svc_info->s_port;
     }
 
-  host_info = gethostbyname (XSTRING (host)->data);
-  if (host_info == 0)
-    error ("Unknown host \"%s\"", XSTRING(host)->data);
-
   bzero (&address, sizeof address);
-  bcopy (host_info->h_addr, (char *) &address.sin_addr, host_info->h_length);
-  address.sin_family = host_info->h_addrtype;
+  address.sin_addr.s_addr = inet_addr (XSTRING (host)->data);
+  if (address.sin_addr.s_addr != -1)
+    address.sin_family = AF_INET;
+  else
+    {
+      host_info = gethostbyname (XSTRING (host)->data);
+      if (host_info == 0)
+	error ("Unknown host \"%s\"", XSTRING (host)->data);
+      bcopy (host_info->h_addr, (char *) &address.sin_addr, host_info->h_length);
+      address.sin_family = host_info->h_addrtype;
+    }
   address.sin_port = port;
 
-  s = socket (host_info->h_addrtype, SOCK_STREAM, 0);
+  s = socket (address.sin_family, SOCK_STREAM, 0);
   if (s < 0) 
     report_file_error ("error creating socket", Fcons (name, Qnil));
 
@@ -1747,10 +1777,12 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	  else
 	    error("select error: %s", sys_errlist[xerrno]);
 	}
+#ifdef SIGIO
 #if defined (sun) || defined (APOLLO)
       else if (nfds > 0 && FD_ISSET (0, &Available) && interrupt_input)
 	/* System sometimes fails to deliver SIGIO.  */
 	kill (getpid (), SIGIO);
+#endif
 #endif
 
       /* Check for keyboard input */
@@ -1886,10 +1918,15 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	} /* end for */
     } /* end while */
 
-#if 0
-  /* Resume periodic signals to poll for input, if necessary.  */
-  start_polling ();
-#endif
+  /* If calling from keyboard input, do not quit
+     since we want to return C-g as an input character.
+     Otherwise, do pending quit if requested.  */
+  if (read_kbd >= 0)
+    {
+      /* Prevent input_pending from remaining set if we quit.  */
+      clear_input_pending ();
+      QUIT;
+    }
 }
 
 /* Actually call the filter.  This gets the information via variables
@@ -2132,6 +2169,7 @@ process_send_signal (process, signo, current_group, nomsg)
     {
       /* If possible, send signals to the entire pgrp
 	 by sending an input character to it.  */
+#ifndef SIGNALS_VIA_CHARACTERS
 #if defined (TIOCGLTC) && defined (TIOCGETC)
       struct tchars c;
       struct ltchars lc;
@@ -2146,17 +2184,19 @@ process_send_signal (process, signo, current_group, nomsg)
 	  ioctl (XFASTINT (p->infd), TIOCGETC, &c);
 	  send_process (proc, &c.t_quitc, 1);
 	  return Qnil;
+#ifdef SIGTSTP
 	case SIGTSTP:
 	  ioctl (XFASTINT (p->infd), TIOCGLTC, &lc);
 	  send_process (proc, &lc.t_suspc, 1);
 	  return Qnil;
+#endif
 	}
 #endif /* have TIOCGLTC and have TIOCGETC */
+#endif /* not SIGNALS_VIA_CHARACTERS */
       /* It is possible that the following code would work
 	 on other kinds of USG systems, not just on the IRIS.
 	 This should be tried in Emacs 19.  */
-#if defined (IRIS) && defined (HAVE_SETSID) /* Check for Irix, not older
-					       systems.  */
+#ifdef SIGNALS_VIA_CHARACTERS
       struct termio t;
       switch (signo)
 	{
@@ -2168,15 +2208,24 @@ process_send_signal (process, signo, current_group, nomsg)
 	  ioctl (XFASTINT (p->infd), TCGETA, &t);
 	  send_process (proc, &t.c_cc[VQUIT], 1);
 	  return Qnil;
+#ifdef SIGTSTP
 	case SIGTSTP:
 	  ioctl (XFASTINT (p->infd), TCGETA, &t);
 	  send_process (proc, &t.c_cc[VSWTCH], 1);
 	  return Qnil;
+#endif
 	}
-#endif /* IRIS and HAVE_SETSID */
+#endif /* SIGNALS_VIA_CHARACTERS */
 
       /* Get the pgrp using the tty itself, if we have that.
 	 Otherwise, use the pty to get the pgrp.  */
+#if defined (pfa)
+      /* TICGPGRP symbol defined in sys/ioctl.h at E50.
+	 But, TIOCGPGRP does not work on E50.
+	 This way, we will use -1, since the ioctl won't change it.
+	 (saka@pfu.fujitsu.co.JP.)  */
+      gid = -1;
+#endif
       if (!NULL (p->subtty))
 	ioctl (XFASTINT (p->subtty), TIOCGPGRP, &gid);
       else

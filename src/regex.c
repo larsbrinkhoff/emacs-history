@@ -410,11 +410,21 @@ re_compile_pattern (pattern, size, bufp)
 		{
 		  PATFETCH (c1);
 		  PATFETCH (c1);
-		  while (c <= c1)
-		    b[c / BYTEWIDTH] |= 1 << (c % BYTEWIDTH), c++;
+		  if (translate)
+		    while (c <= c1)
+		      {
+			register unsigned char mapped_c = translate[c];
+			b[mapped_c / BYTEWIDTH] |= 1 << (mapped_c % BYTEWIDTH);
+			c++;
+		      }
+		  else
+		    while (c <= c1)
+		      b[c / BYTEWIDTH] |= 1 << (c % BYTEWIDTH), c++;
 		}
 	      else
 		{
+		  if (translate)
+		    c = translate[c];
 		  b[c / BYTEWIDTH] |= 1 << (c % BYTEWIDTH);
 		}
 	    }
@@ -1193,7 +1203,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	    /* Don't allow matching a register that hasn't been used.
 	       This isn't fully reliable in the current version,
 	       but it is better than crashing.  */
-	    if ((int) regend[regno] <= -1)
+	    if ((int) regend[regno] == -1)
 	      goto fail;
 
 	    d2 = regstart[regno];

@@ -18,6 +18,8 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 #include <setjmp.h>
 
@@ -52,7 +54,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif /* `open' is a macro */
 
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 
@@ -174,8 +175,25 @@ extern char *sys_errlist[];
 #define TIOCSETP TCSETAF
 #endif /* not IBMR2AIX */
 
+/* Try to establish the correct character to disable terminal functions
+   in a system-independent manner.  Note that USG (at least) define
+   _POSIX_VDISABLE as 0!  */
+#ifdef _POSIX_VDISABLE
+#define CDISABLE _POSIX_VDISABLE
+#else /* not _POSIX_VDISABLE */
+#ifdef CDEL
+#define CDISABLE CDEL
+#else /* not CDEL */
+#define CDISABLE 255
+#endif /* not CDEL */
+#endif /* not _POSIX_VDISABLE */
+
+#ifndef OSPEED
 #define OSPEED(str) (str.c_cflag & CBAUD)
+#endif
+#ifndef SETOSPEED
 #define SETOSPEED(str,new) (str.c_cflag = (str.c_cflag & ~CBAUD) | (new))
+#endif
 #define TABS_OK(str) ((str.c_oflag & TABDLY) != TAB3)
 #endif /* HAVE_TERMIO */
 
@@ -197,10 +215,19 @@ extern char *sys_errlist[];
 
 #ifndef HAVE_TERMIO
 #ifndef VMS
+#if defined(DGUX) && defined(_BSD_TTY_FLAVOR)
+#undef _BSD_TTY_FLAVOR
+    /* DGUX 4.3 has it's own definition in sgtty.h, and it's different
+       than the one in s-dgux.h */
+#endif
 #include <sgtty.h>
 #define TERMINAL struct sgttyb
+#ifndef OSPEED
 #define OSPEED(str) str.sg_ospeed
+#endif
+#ifndef SETOSPEED
 #define SETOSPEED(str,new) (str.sg_ospeed = (new))
+#endif
 #define TABS_OK(str) ((str.sg_flags & XTABS) != XTABS)
 #undef TCSETAW
 #define TCSETAW TIOCSETN
@@ -260,6 +287,14 @@ extern char *sys_errlist[];
 #ifdef SYSV_PTYS
 #include <sys/tty.h>
 #include <sys/pty.h>
+#endif
+
+#include "filetypes.h"
+
+/* FASYNC defined in this file. But, FASYNC don't working.
+   so no problem, because unrequest_sigio only need. */
+#if defined (pfa)
+#include <sys/file.h>
 #endif
 
 #ifdef BROKEN_FIONREAD
@@ -942,6 +977,9 @@ init_sys_modes ()
 #endif
       tty.c_lflag &= ~ECHO;	/* Disable echo */
       tty.c_lflag &= ~ICANON;	/* Disable erase/kill processing */
+#ifdef IEXTEN
+      tty.c_iflag &= ~IEXTEN;	/* Disable other editing characters.  */
+#endif
       tty.c_lflag |= ISIG;	/* Enable signals */
       if (flow_control)
 	{
@@ -966,18 +1004,18 @@ init_sys_modes ()
       tty.c_cc[VMIN] = 1;	/* Input should wait for at least 1 char */
       tty.c_cc[VTIME] = 0;	/* no matter how long that takes.  */
 #ifdef VSWTCH
-      tty.c_cc[VSWTCH] = CDEL;	/* Turn off shell layering use of C-z */
+      tty.c_cc[VSWTCH] = CDISABLE;	/* Turn off shell layering use of C-z */
 #endif /* VSWTCH */
 #if defined (mips) || defined (HAVE_TCATTR)
-      /* The following code looks like the right thing in general,
-		but it is said to cause a crash on USG V.4.
-		Let's play safe by turning it on only for the MIPS.  */
 #ifdef VSUSP
-      tty.c_cc[VSUSP] = CDEL;	/* Turn off mips handling of C-z.  */
+      tty.c_cc[VSUSP] = CDISABLE;	/* Turn off mips handling of C-z.  */
 #endif /* VSUSP */
 #ifdef V_DSUSP
-      tty.c_cc[V_DSUSP] = CDEL;	/* Turn off mips handling of C-y.  */
+      tty.c_cc[V_DSUSP] = CDISABLE;	/* Turn off mips handling of C-y.  */
 #endif /* V_DSUSP */
+#ifdef VDSUSP /* Some systems use VDSUSP instead of VD_SUSP.  */
+      tty.c_cc[VDSUSP] = CDISABLE;
+#endif /* VDSUSP */
 #endif /* mips or HAVE_TCATTR */
 
 #ifdef AIX
@@ -1661,24 +1699,28 @@ end_of_data ()
 #include <whoami.h>
 #endif
 
+/* Can't have this within the function since `static' is #defined to 
+ * nothing for some USG systems.
+ */
 #ifdef USG
-/* Can't have this within the function since `static' is #defined to nothing */
+#ifdef HAVE_GETHOSTNAME
+static char get_system_name_name[256];
+#else /* not HAVE_GETHOSTNAME */
 static struct utsname get_system_name_name;
-#endif
+#endif /* not HAVE_GETHOSTNAME */
+#endif /* USG */
 
 char *
 get_system_name ()
 {
 #ifdef USG
-#ifdef IRIX
-  /* Implementation of uname is broken on Irix as of version 3.3.  */
-  static char hostname[256];
-  gethostname (hostname, sizeof (hostname));
-  return hostname;
-#else
+#ifdef HAVE_GETHOSTNAME
+  gethostname (get_system_name_name, sizeof (get_system_name_name));
+  return get_system_name_name;
+#else /* not HAVE_GETHOSTNAME */
   uname (&get_system_name_name);
   return (get_system_name_name.nodename);
-#endif
+#endif /* not HAVE_GETHOSTNAME */
 #else /* Not USG */
 #ifdef BSD4_1
   return sysname;
@@ -2021,7 +2063,7 @@ sys_signal (int signal_number, signal_handler_t action)
   sigemptyset (&new_action.sa_mask);
   new_action.sa_handler = action;
   new_action.sa_flags = NULL;
-  new_action (signal_number, &new_action, &old_action);
+  sigaction (signal_number, &new_action, &old_action);
   return (old_action.sa_handler);
 #endif /* DGUX */
 }
@@ -2463,8 +2505,13 @@ getwd (pathname)
  */
 
 rename (from, to)
+#ifdef __STDC__ /* Avoid error if system has proper ANSI prototype.  */
+     const char *from;
+     const char *to;
+#else
      char *from;
      char *to;
+#endif
 {
   if (access (from, 0) == 0)
     {
@@ -2850,7 +2897,7 @@ readdirver (dirp)
 
 /* Functions for VMS */
 #ifdef VMS
-#include "pwd.h"
+#include "vms-pwd.h"
 #include <acldef.h>
 #include <chpdef.h>
 #include <jpidef.h>

@@ -47,6 +47,7 @@
 	(insert "  ")
 	(forward-line 1))
       (goto-char (point-min)))
+    (set-buffer-modified-p nil)
     (message "Reading directory %s...done" dirname)))
 
 (defun dired-find-buffer (dirname)
@@ -563,7 +564,7 @@ start with #."
   (interactive "sChange to Owner: ")
   (let ((buffer-read-only nil)
 	(file (dired-get-filename)))
-    (call-process (if (memq system-type '(hpux usg-unix-v))
+    (call-process (if (memq system-type '(hpux usg-unix-v silicon-graphics-unix))
 		      "/bin/chown" "/etc/chown")
 		  nil nil nil owner file)
     (dired-redisplay file)))
@@ -614,9 +615,10 @@ start with #."
 		(condition-case ()
 		    (let ((fn (concat default-directory (car (car l)))))
 		      (if (file-directory-p fn)
-			  (progn
-			    (call-process "rmdir" nil nil nil fn)
-			    (if (file-exists-p fn) (delete-file fn)))
+			  ;; This used to call delete-file if rmdir
+			  ;; did not delete the file,
+			  ;; but that made it too easy for root to spaz.
+			  (call-process "rmdir" nil nil nil fn)
 			(delete-file fn))
 		      (delete-region (point)
 				     (progn (forward-line 1) (point))))

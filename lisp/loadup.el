@@ -18,6 +18,8 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Disable undo in the *scratch* buffer so it doesn't get dumped.
+(buffer-flush-undo (get-buffer "*scratch*"))
 
 (load "subr")
 (garbage-collect)
@@ -98,6 +100,10 @@
 ;See also "site-load" above.
 (load "site-init" t)
 (garbage-collect)
+
+;;; Re-enable undo in the *scratch* buffer, so the dumped Emacs will
+;;; start up that way.
+(buffer-enable-undo (get-buffer "*scratch*"))
 
 (if (or (equal (nth 3 command-line-args) "dump")
 	(equal (nth 4 command-line-args) "dump"))

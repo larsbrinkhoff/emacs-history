@@ -61,10 +61,15 @@ what you give them.   Help stamp out software-hoarding!  */
 #ifdef emacs
 /* config.h specifies which kind of system this is.  */
 #include "config.h"
+
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 #else
 
 /* Determine which kind of system this is.  */
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 #ifndef SIGTSTP
 #ifndef VMS

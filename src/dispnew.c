@@ -18,6 +18,8 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 
 #include "config.h"
@@ -199,7 +201,15 @@ remake_screen_structures ()
   temp_screen = make_screen_structure (1);
 
   if (message_buf)
-    message_buf = (char *) xrealloc (message_buf, screen_width + 1);
+    {
+      /* The echo_area_contents, used by error and message, may be pointing at
+	 the string we are replacing.  If so, update it.  */
+      int repair_echo_area_contents = echo_area_contents == message_buf;
+
+      message_buf = (char *) xrealloc (message_buf, screen_width + 1);
+
+      if (repair_echo_area_contents) echo_area_contents = message_buf;
+    } 
   else
     message_buf = (char *) xmalloc (screen_width + 1);
 
@@ -591,7 +601,7 @@ direct_output_for_insert (c)
   if (hpos - XFASTINT (w->left) + 1 + 1 >= XFASTINT (w->width)
 
   /* Avoid losing if cursor is in invisible text off left margin */
-      || XINT (w->hscroll) && hpos == XFASTINT (w->left)
+      || (XINT (w->hscroll) && hpos == XFASTINT (w->left))
     
   /* Give up if cursor outside window (in minibuf, probably) */
       || cursor_vpos < XFASTINT (w->top)
@@ -601,7 +611,7 @@ direct_output_for_insert (c)
       || !display_completed
 
   /* Give up if w is minibuffer and a message is being displayed there */
-      || EQ (selected_window, minibuf_window) && echo_area_contents)
+      || (EQ (selected_window, minibuf_window) && echo_area_contents))
     return 0;
 
   current_screen->contents[vpos][hpos] = c;
@@ -631,6 +641,14 @@ direct_output_forward_char (n)
 
   /* Avoid losing if cursor is in invisible text off left margin */
   if (XINT (w->hscroll) && cursor_hpos == XFASTINT (w->left))
+    return 0;
+  /* Don't lose if we are in the truncated text at the end.  */
+  if (cursor_hpos >= XFASTINT (w->left) + XFASTINT (w->width) - 1)
+    return 0;
+  /* Don't move past the window edges.  */
+  if (cursor_hpos + n >= XFASTINT (w->left) + XFASTINT (w->width) - 1)
+    return 0;
+  if (cursor_hpos + n <= XFASTINT (w->left))
     return 0;
 
   cursor_hpos += n;
@@ -1279,6 +1297,10 @@ do_pending_window_change ()
 change_screen_size (newlength, newwidth, pretend, delayed, force)
      register int newlength, newwidth, pretend, delayed, force;
 {
+  /* Don't queue a size change if we won't really do anything.  */
+  if ((newlength == 0 || newlength == screen_height)
+      && (newwidth == 0 || newwidth == screen_width))
+    return;
   /* If we can't deal with the change now, queue it for later.  */
   if (delayed)
     {
@@ -1362,7 +1384,10 @@ is given.")
 {
   if (!NULL (arg))
     {
-      bell ();
+      if (noninteractive)
+	putchar (07);
+      else
+	ring_bell ();
       fflush (stdout);
     }
   else
@@ -1508,26 +1533,26 @@ Value is t if waited the full time with no input arriving.")
       gobble_input ();
 #endif				/* SIGIO */
       wait_reading_process_input (XINT (n), 1, 1);
-#else				/* no subprocesses */
+#else /* not subprocesses */
       immediate_quit = 1;
       QUIT;
 
       waitchannels = 1;
 #ifdef VMS
       input_wait_timeout (XINT (n));
-#else				/* not VMS */
+#else /* not VMS */
 #ifndef HAVE_TIMEVAL
       timeout_sec = XINT (n);
       select (1, &waitchannels, 0, 0, &timeout_sec);
-#else				/* HAVE_TIMEVAL */
+#else /* HAVE_TIMEVAL */
       timeout.tv_sec = XINT (n);  
       timeout.tv_usec = 0;
       select (1, &waitchannels, 0, 0, &timeout);
-#endif				/* HAVE_TIMEVAL */
-#endif				/* not VMS */
+#endif /* HAVE_TIMEVAL */
+#endif /* not VMS */
 
       immediate_quit = 0;
-#endif				/* no subprocesses */
+#endif /* not subprocesses */
     }
   return detect_input_pending () ? Qnil : Qt;
 }

@@ -116,19 +116,22 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define subprocesses
 
 /* If your system uses COFF (Common Object File Format) then define the
-   preprocessor symbol "COFF". */
+   preprocessor symbol "COFF".
 
+   DGUX can use either COFF or ELF.  To use ELF format, define ELF.  */
+
+#ifndef ELF
 #define COFF
+#endif
 
-#if 0 /* People will probably find this apparently unreliable
-	 till the NFS dumping bug is fixed.  */
+#ifndef COFF /* People will probably find this apparently unreliable
+		till the NFS dumping bug is fixed.  */
 
 /* It is possible to undump to ELF with DG/UX 5.4, but for revisions below
    5.4.1 the undump MUST be done on a local file system, or the kernel will
    panic.  ELF executables have the advantage of using shared libraries,
    while COFF executables will still work on 4.2x systems. */
 
-#undef COFF
 #define UNEXEC unexelf.o
 
 /* This makes sure that all segments in the executable are undumped,
@@ -222,7 +225,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  */
 
 #ifndef HAVE_TERMIO
+#ifndef _BSD_TTY_FLAVOR		/* Already defined, in dgux 4.30.  */
 #define _BSD_TTY_FLAVOR
+#endif
 #endif
 
 /*
@@ -275,6 +280,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #else /* not COFF */
 
-#define C_COMPILER gcc -traditional
+#define C_COMPILER \
+  TARGET_BINARY_INTERFACE=m88kdguxelf gcc -traditional
+ 
+#define LINKER \
+  TARGET_BINARY_INTERFACE=m88kdguxelf ld
+
+#define MAKE_COMMAND \
+  TARGET_BINARY_INTERFACE=m88kdguxelf make
 
 #endif /* COFF */

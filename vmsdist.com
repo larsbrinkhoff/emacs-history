@@ -34,7 +34,7 @@ $ set def [.src]
 $ copy vmspaths.h paths.h
 $ copy config.h-dist config.h
 $ edit/edt/nocommand config.h
-s/s-bsd4-2.h/s-vms4-4.h/w
+s/s-bsd4-2.h/s-vms5-5.h/w
 exit
 $
 $ ! Compile, link and dump Emacs.
@@ -49,7 +49,8 @@ $ ! Move the executable and image to the appropriate place.
 $
 $ rename temacs.exe [-]emacs.exe
 $ rename temacs.dump [-]emacs.dump
-$ copy sys$library:vaxcrtl.olb vaxcrtl.olb
+$ ! No longer necessary since VMS systems come with this file.
+$ ! copy sys$library:vaxcrtl.olb vaxcrtl.olb
 $
 $ ! Recompile a few files for vms version 4.2.
 $ ! Call these object files for 4.2 `.jbo'.

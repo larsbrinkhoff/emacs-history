@@ -1,4 +1,4 @@
-;; Record version number of Emacs.
+;; Display a calendar inside GNU Emacs.
 ;; Copyright (C) 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
@@ -123,7 +123,9 @@ replaced by asterisks to highlight it in the window."
   ;; Make the window just tall enough for its contents.
   (let ((h (1- (window-height)))
         (l (count-lines (point-min) (point-max))))
-    (or (one-window-p t)
+    (or (= (+ (window-height (selected-window))
+	      (window-height (minibuffer-window)))
+	   (screen-height))
         (<= h l)
         (shrink-window (- h l))))
   (if month-offset
@@ -178,7 +180,7 @@ indented INDENT spaces.  The position in the buffer of the optional
 parameter DAY is returned.  The indentation is done from the first
 character on the line and does not disturb the first INDENT characters on
 the line."
-  (let* ((first-day-of-month (day-of-week month 1 year) 7)
+  (let* ((first-day-of-month (day-of-week month 1 year))
          (first-saturday (- 7 first-day-of-month))
          (last-of-month
            (if (and (leap-year-p year) (= month 2))

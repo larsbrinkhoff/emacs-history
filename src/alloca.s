@@ -53,7 +53,13 @@ lose!!
 #endif /* hp9000s300 */
 
 
-#ifdef hp9000s300
+#if defined (hp9000s300) || defined (mot_delta)
+#ifdef mot_delta
+	file "alloca.s"
+; This syntax is what pot@fly.cnuce.cnr.it says we should use.
+	global	alloca
+alloca:
+#endif
 #ifdef OLD_HP_ASSEMBLER
 	data
 	text

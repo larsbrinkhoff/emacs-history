@@ -1,3 +1,37 @@
+Wed Oct 21 18:21:39 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile: Emacstool and other Sun-only targets replaced.
+	* emacstool.c: New file.
+
+Sat Aug 22 03:09:48 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* emacsclient.c (main): Set IPC_CREAT in msgget call.
+
+Thu Aug 20 01:09:32 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (TEX_funcs): Keep just 1 of two redundant nested loops.
+	(TEX_decode_env): Make `tab' one element longer.
+
+Sat May  9 16:24:08 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (getit): Allow _ and $ in fortran symbol.
+
+Thu May  7 16:11:26 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* movemail.c [POP]: Get user name via getpwuid.
+
+Sat Mar 28 15:59:12 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* movemail.c: Allocate tempname dynamically.
+
+Sun Mar 22 23:21:21 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* server.c: Include sys/types.h before signal.h.
+
+Thu Mar 12 16:45:36 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* termcap.dat: Added vt101*, vt102*, vt131* and vt300.
+
 Sat Jan 25 16:20:41 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* env.c: Include errno.h.

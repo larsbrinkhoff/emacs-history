@@ -19,6 +19,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /*** For version 19, can simplify this by making interrupt_input 1 on VMS.  */
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 /* Allow config.h to undefine symbols found here.  */
 #include <signal.h>
 
@@ -1737,14 +1739,15 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
   function = Fcompleting_read (build_string (buf), Vobarray, Qcommandp, Qt, Qnil);
 
   saved_keys = concat2 (saved_keys, function);
-  if (this_command_keys_size < XSTRING (function)->size)
+  if (this_command_keys_size < XSTRING (saved_keys)->size)
     {
-      this_command_keys_size += XSTRING (function)->size;
+      /* This makes the buffer bigger than necessary, but that's okay.  */
+      this_command_keys_size += XSTRING (saved_keys)->size;
       this_command_keys = (unsigned char *) xrealloc (this_command_keys,
 						      this_command_keys_size);
     }
-  bcopy (XSTRING (function)->data, this_command_keys,
-	 XSTRING (function)->size + 1);
+  bcopy (XSTRING (saved_keys)->data, this_command_keys,
+	 XSTRING (saved_keys)->size + 1);
   this_command_key_count = XSTRING (saved_keys)->size;
 
   UNGCPRO;
@@ -1762,6 +1765,14 @@ detect_input_pending ()
     get_input_pending (&input_pending);
 
   return input_pending;
+}
+
+/* This is called in some cases before a possible quit.
+   It cases the next call to detect_input_pending to recompute input_pending.
+   So calling this function unnecessarily can't do any harm.  */
+clear_input_pending ()
+{
+  input_pending = 0;
 }
 
 DEFUN ("input-pending-p", Finput_pending_p, Sinput_pending_p, 0, 0, 0,
@@ -1835,6 +1846,7 @@ Also flush any kbd macro definition in progress.")
   update_mode_lines++;
 
   unread_command_char = -1;
+  Vquit_flag = Qnil;
   discard_tty_input ();
 
   kbd_count = 0;

@@ -14,7 +14,9 @@ BIN=/usr/local/bin
 
 # The double quotes prevent an error from sh on Suns 
 # when the directory does not exist yet.
-if [ `pwd` != "`(cd $EMACS; pwd)`" ]
+# We use sh -c pwd instead of just pwd because on some systems (Suns?)
+# plan pwd tends to give back the specified name sometimes.
+if [ `sh -c pwd` != "`(cd $EMACS; sh -c pwd)`" ]
 then
   mv `pwd` $EMACS
   if [ $? != '0' ]

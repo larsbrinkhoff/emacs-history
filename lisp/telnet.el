@@ -158,6 +158,7 @@ Normally input is edited in Emacs and sent a line at a time."
   (let ((name (concat arg "-telnet" )))
     (switch-to-buffer (make-shell name "telnet"))
     (set-process-filter (get-process name) 'telnet-initial-filter)
+    (accept-process-output (get-process name))
     (erase-buffer)
     (send-string  name (concat "open " arg "\n"))
     (telnet-mode)
@@ -165,10 +166,10 @@ Normally input is edited in Emacs and sent a line at a time."
 
 (defun read-password ()
   (let ((answ "") tem)
-    (while (not (or (= (setq tem (read-char)) ?\^m)
-		    (= tem ?\n)))
-      (setq answ (concat answ (char-to-string tem)))
-      (setq quit-flag nil))
+    (while (prog1 (not (memq (setq tem (read-char))
+			     '(?\C-m ?\n ?\C-g)))
+	     (setq quit-flag nil))
+      (setq answ (concat answ (char-to-string tem))))
     answ))
 
 (defun telnet-mode ()

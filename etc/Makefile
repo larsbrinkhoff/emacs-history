@@ -73,10 +73,15 @@ emacsclient: emacsclient.c ../src/config.h
 # This one is NOT included in EXECUTABLES.
 # See ../src/ymakefile.
 emacstool: emacstool.c
-	$(CC) emacstool.c -o emacstool -g -lsuntool -lsunwindow -lpixrect $(LOADLIBES)
+	$(CC) -o emacstool ${CFLAGS} emacstool.c -lsuntool -lsunwindow -lpixrect $(LOADLIBES)
 
 nemacstool: emacstool.c
-	$(CC) -o nemacstool -g -DJLE ${CFLAGS} emacstool.c -lsuntool -lmle -lsunwindow -lpixrect $(LOADLIBES)	# For SUN Japanese Language Environment
+	$(CC) -o nemacstool ${CFLAGS} -DJLE emacstool.c -lsuntool -lmle -lsunwindow -lpixrect $(LOADLIBES)	# For SUN Japanese Language Environment
 
 xvetool: emacstool.c
-	$(CC) -o xvetool -g -DXVIEW ${CFLAGS} emacstool.c -lxview -lX -I$(OPENWINHOME)/include -L$(OPENWINHOME)/lib $(LOADLIBES)
+	$(CC) -o xvetool ${CFLAGS} -DXVIEW         emacstool.c -lxview -lolgx -lX -I$(OPENWINHOME)/include -L$(OPENWINHOME)/lib $(LOADLIBES)
+
+xveterm: emacstool.c
+	$(CC) -o xveterm ${CFLAGS} -DXVIEW -DTTERM emacstool.c -lxview -lolgx -lX -I$(OPENWINHOME)/include -L$(OPENWINHOME)/lib $(LOADLIBES)
+
+

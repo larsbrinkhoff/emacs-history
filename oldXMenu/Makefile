@@ -42,7 +42,8 @@ SRCS =  Activate.c \
 	SetAEQ.c \
 	SetFrz.c \
 	SetPane.c \
-	SetSel.c
+	SetSel.c \
+      XDelAssoc.c XLookAssoc.c XCrAssoc.c XDestAssoc.c XMakeAssoc.c
 
 OBJS =  Activate.o \
 	AddPane.o \
@@ -66,7 +67,8 @@ OBJS =  Activate.o \
 	SetAEQ.o \
 	SetFrz.o \
 	SetPane.o \
-	SetSel.o
+	SetSel.o \
+      XDelAssoc.o XLookAssoc.o XCrAssoc.o XDestAssoc.o XMakeAssoc.o
 
 .c.o:
 	$(RM) $@

@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+#include "config.h"
 
 #include <sys/types.h>
 #ifdef hpux
@@ -27,7 +28,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/stat.h>
 
 #ifdef VMS
-#include "pwd.h"
+#include "vms-pwd.h"
 #else
 #include <pwd.h>
 #endif
@@ -39,8 +40,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <perror.h>
 #include <stddef.h>
 #include <string.h>
-#else
-#include <sys/dir.h>
 #endif
 #include <errno.h>
 
@@ -55,14 +54,6 @@ extern int sys_nerr;
 #ifdef APOLLO
 #include <sys/time.h>
 #endif
-
-#ifdef NULL
-#undef NULL
-#endif
-#include "config.h"
-#include "lisp.h"
-#include "buffer.h"
-#include "window.h"
 
 #ifdef VMS
 #include <file.h>
@@ -86,6 +77,15 @@ extern unsigned char vms_file_written[];	/* set in rename_sans_version */
 #include <errnet.h>
 #endif
 #endif
+
+#ifdef NULL
+#undef NULL
+#endif
+#include "lisp.h"
+#include "buffer.h"
+#include "window.h"
+
+#include "filetypes.h"
 
 #ifndef O_WRONLY
 #define O_WRONLY 1
@@ -387,9 +387,11 @@ directory_file_name (src, dst)
 		  && (ptr[rlen] == ']' || ptr[rlen] == '>')
 		  && ptr[rlen - 1] == '.')
 		{
-		  ptr[rlen - 1] = ']';
-		  ptr[rlen] = '\0';
-		  return directory_file_name (ptr, dst);
+		  char * buf = (char *) alloca (strlen (ptr) + 1);
+		  strcpy (buf, ptr);
+		  buf[rlen - 1] = ']';
+		  buf[rlen] = '\0';
+		  return directory_file_name (buf, dst);
 		}
 	      else
 		dst[slen - 1] = ':';
@@ -408,7 +410,7 @@ directory_file_name (src, dst)
   /* Process as Unix format: just remove any final slash.
      But leave "/" unchanged; do not change it to "".  */
   strcpy (dst, src);
-  if (dst[slen] == '/' && slen > 0)
+  if (slen > 0 && dst[slen] == '/')
     dst[slen] = 0;
   return 1;
 }

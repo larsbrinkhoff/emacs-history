@@ -92,6 +92,7 @@ Return not at end copies rest of line to end and sends it.
 (defun run-dbx (path)
   "Run an inferior Dbx process, input and output via buffer *dbx*."
   (interactive "fProgram to debug: ")
+  (setq path (expand-file-name path))
   (let ((file (file-name-nondirectory path)))
     (switch-to-buffer (concat "*dbx-" file "*"))
     (setq default-directory (file-name-directory path))

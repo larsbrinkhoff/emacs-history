@@ -1,5 +1,5 @@
 ;; Mouse handling for Sun windows
-;; Copyright (C) 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1987, 1991 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,6 +19,9 @@
 
 ;;; Jeff Peck, Sun Microsystems, Jan 1987.
 ;;; Original idea by Stan Jefferson
+;;
+;;	Mar 90 		get/set selections
+;;	Mar 91  	add mouse-help, print bindings dynamically
 
 (provide 'sun-mouse)
 
@@ -178,7 +181,10 @@ Just like the Common Lisp function of the same name."
 	   (progn
 	     (select-window (, window))
 	     (,@ forms))
-	 (select-window OriginallySelectedWindow)))))
+	 ;; don't go back to window if it has been destroyed...
+	 ;; window-point seems to work as an indication of existence
+	 (if (window-point OriginallySelectedWindow)
+	     (select-window OriginallySelectedWindow))))))
 (put 'eval-in-window 'lisp-indent-hook 1)
 
 ;;;
@@ -224,6 +230,7 @@ Handles wrapped and horizontally scrolled lines correctly."
      ))
 
 
+(setq *mouse-help* nil)			; flag to display, rather than execute
 (defun sun-mouse-handler (&optional hit)
   "Evaluates the function or list associated with a mouse hit.
 Expecting to read a hit, which is a list: (button x y delta).  
@@ -249,10 +256,15 @@ Returns nil."
 			   (mouse-code-to-mouse-list mouse-code)))))
 	      ((symbolp form)
 	       (setq this-command form)
-	       (funcall form *mouse-window* *mouse-x* *mouse-y*))
+	       (if *mouse-help*
+		   (progn (prin1 (list form *mouse-window* *mouse-x* *mouse-y*))
+			  (exit-recursive-edit))
+		   (funcall form *mouse-window* *mouse-x* *mouse-y*)))
 	      ((listp form)
 	       (setq this-command (car form))
-	       (eval form))
+	       (if *mouse-help*
+		   (progn (prin1 form) (exit-recursive-edit))
+		   (eval form)))
 	      (t
 	       (error "Mouse action must be symbol or list, but was: %s"
 		      form))))))
@@ -262,6 +274,11 @@ Returns nil."
       (setq this-command last-command))
   ;; (message (prin1-to-string this-command))	; to see what your buttons did
   nil)
+
+(defun mouse-help ()
+  (interactive)
+  (let ((*mouse-help* t))
+    (recursive-edit)))
 
 (defun sm::combined-hits ()
   "Read and return next mouse-hit, include possible double click"
@@ -634,20 +651,115 @@ CODE values: 13 = Tool-Position, 14 = Size-in-Pixels, 18 = Size-in-Chars."
 ;;;  Function interface to selection/region
 ;;;  primative functions are defined in sunfns.c
 ;;;
-(defun sun-yank-selection ()
-  "Set mark and yank the contents of the current sunwindows selection
-into the current buffer at point."
+(defun sunview-yank-stuff ()
+  "Set mark and yank the contents of the current TTYSW `STUFF' selection
+into the current buffer at point.  The STUFF selection contains the currently
+or previously highlighted text from a TTYSW."
   (interactive "*")
   (set-mark-command nil)
   (insert-string (sun-get-selection)))
 
-(defun sun-select-region (beg end)
-  "Set the sunwindows selection to the region in the current buffer."
+;;;
+(defun display-host ()
+  "Extract <host> from DISPLAY environment variable, or return nil if not specified."
+  (let ((display (getenv "DISPLAY")))
+    (if display
+	(let ((colon_at (string-match ":" display)))
+	  (if colon_at
+	      (if (not (zerop colon_at))
+		  (substring display 0 colon_at)
+		))))))
+
+;;; get_selection has been extended to work in X
+;;; we extend to work on remote X display...
+(defun sunview-yank-clipboard ()
+  "Set mark and yank the contents of the SunView Clipboard into the
+current buffer at point."
+  (interactive "*")
+  (set-mark-command nil)
+  (let ((host (display-host)))
+    (if host
+	(call-process "rsh" nil t t (display-host) "get_selection" "3")
+      (call-process "get_selection" nil t t "3")))
+  )
+
+(defun sunview-yank-current-selection ()
+  "Set mark and yank the contents of the current SunView selection
+into current buffer at point. The current selection is the currently
+highlighted text in either a textsw or a ttysw."
+  (interactive "*")
+  (set-mark-command nil)
+  (let ((host (display-host)))
+    (if host
+	(call-process "rsh" nil t t (display-host) "get_selection")
+      (call-process "get_selection" nil t t))))
+
+(defun sunview-yank-any-selection (arg)
+  "Yank one of the sunview selections:
+with no arg, the current selection; with minus-only prefix, the clipboard;
+with any other arg, the ttysw STUFF."
+  (interactive "*P")
+  (cond ((null arg) (sunview-yank-current-selection))
+	((eq arg '-) (sunview-yank-clipboard))
+	(t (sunview-yank-stuff))))
+
+;;; define the selection file used by this emacs
+;;; if not local machine, then automounter must find /net/<host>/tmp
+(defvar owselectionfilex nil "Cache path to ttysw selection file (a kludge!).")
+;;; determine value at runtime, not when this file loaded into temacs
+(defun owselectionfile ()
+  (or owselectionfilex 
+      (let* ((host (display-host))
+	     (filex 
+	      (if host
+		  (concat "/net/" host "/tmp/ttyselection")
+		"/tmp/ttyselection")))
+	(if (file-exists-p filex)
+	    (setq owselectionfilex filex)
+	  (progn
+	    (message "no TTYSW selection file")
+	    nil)
+	  ))))
+
+(defun xv-yank-selection ()
+  "Set mark and yank the contents of the current Xview selection
+into the current buffer at point.  The STUFF selection contains the currently
+or previously highlighted text from a TTYSW."
+  (interactive "*")
+  (if (owselectionfile)
+      (progn
+       (insert-file (owselectionfile))
+       (exchange-point-and-mark)))
+  )
+
+(defun xv-select-region (beg end)
+  "Set the TTYSW selection to the region in the current buffer."
   (interactive "r")
-  (sun-set-selection (buffer-substring beg end)))
+  (if (owselectionfile)
+      (write-region beg end (owselectionfile) nil 'noprint))
+  )
+
+(defun sun-yank-selection ()
+  "Set mark and yank the contents of the current TTYSW `STUFF' or Xview selection
+into the current buffer at point."
+  (interactive "*")
+  (if (getenv "DISPLAY")
+      (xv-yank-selection)
+      (sunview-yank-stuff))
+  )
+
+(defun sun-select-region (beg end)
+  "Set the TTYSW 'STUFF' or Xview selection to the region in the current buffer."
+  (interactive "r")
+  (if (getenv "DISPLAY")
+      (xv-select-region beg end)
+      (sun-set-selection (buffer-substring beg end)))
+  )
+
+
 
 ;;;
-;;; Support for emacstool
+;;; support for emacstool
 ;;; This closes the window instead of stopping emacs.
 ;;;
 (defun suspend-emacstool (&optional stuffstring)

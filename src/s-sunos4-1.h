@@ -21,7 +21,11 @@
    version of X windows.  But it should do no harm if you don't have that.  */
 #if 1  /* The -I and -L options should be harmless otherwise.  */
 #undef LD_SWITCH_SYSTEM
+#if __GNUC__ > 1
+#define LD_SWITCH_SYSTEM -e __start -static -L/usr/openwin/lib
+#else
 #define LD_SWITCH_SYSTEM -e __start -Bstatic -L/usr/openwin/lib
+#endif
 
 #define C_SWITCH_SYSTEM -I/usr/openwin/include
 #endif 

@@ -208,3 +208,111 @@ re-start it.  Make sure that /usr/bin occurs before the directory
 in which you installed the standard (non-toolmerged) version.
 
 
+Subject: Moving selections between OW and Emacstool/xvetool
+Date: Wed, 26 Jun 91 18:58:24 PDT
+From: Jeff Peck <peck>
+
+The short answer is that we can Cut and Paste between Emacstool
+and TTYSW (shelltool) and we can Paste between Emacstool and TEXTSW(cmdtool)
+and somewhat more slowly move from TEXTSW to Emacstool.
+
+**** This interaction with the TTYSW selection is a HACK! ****
+
+At end of this message is the code that should be in your sun-mouse.el or .emacs
+
+Here's the restrictions on using it:
+
+1. from Shelltool to Emacstool:
+   select text in shelltool and hit COPY.
+   move to Emacstool, hit PASTE.		(simple, eh?)
+
+For any other movement, you must remember this:
+   "The window system must believe that a shelltool has the current selection."
+   If you do that, then this will all work painlessly.
+   [that will also explain why you can not make a selection in a cmdtool
+    and then directly PASTE it into Emacstool]
+
+2. from Emacstool to Shelltool
+    ensure that a shelltool has the selection: (select something and hit COPY)
+    in emacstool select a region and hit COPY
+    in shelltool hit PASTE.			(not too bad, yet)
+
+3. from Emacstool to Cmdtool
+    ensure that a shelltool has the selection:
+	(in a *shelltool* select something and hit COPY)
+    in emacstool select a region and hit COPY
+    in shelltool hit PASTE.			(ok, its getting crufty)
+
+4. from Cmdtool to Emacstool
+    select in Cmdtool, hit COPY
+    in a shelltool, % cat > /dev/null   
+	then hit PASTE
+    Select the text again, from the shelltool this time. hit COPY
+    in emacstool, hit PASTE
+
+4a. from Cmdtool (or shelltool) to Emacstool
+    the function "sunview-yank-any-selection" should be bound to Meta-PASTE
+    If so, then just:
+	select in Cmdtool
+	in emacstool, hit Meta-PASTE
+
+    This uses the function "sunview-yank-current-selection"
+	which relies one the (supported) utility "get_selection"
+	As such, it is *not* a hack, but it *IS* SLOW (or slower) 
+
+
+If you know that a shelltool *still* has the selection 
+(note: nothing you do with Emacstool or the PASTE key will affect that) 
+then the "ensure..." line is a NO-OP.
+
+Note that using COPY in emacstool will change the *value* of the selection
+behind the window systems back:
+    the holder of the selection doesn't know of this,
+    the window system doesn't know of this, 
+    and the highlighted text *WILL NOT CHANGE*
+
+Turns out the selection value is written into a /tmp/ttyselection file
+and emacs just rewrites that file, clever, eh?
+
+
+Your version of sun-mouse.el should include these functions
+ (or put them into your .emacs)
+
+
+;;; define the selection file used by this emacs
+;;; if not local machine, then automounter must find /net/<host>/tmp
+(defconst owselectionfile
+  (let ((display (getenv "DISPLAY")))
+    (if (null display)
+	nil ; no DISPLAY variable -- return nil
+      (let ((colon_at (string-match ":" display)))
+	(if (null colon_at)
+	    nil ; no colon in environment variable -- return nil
+	  (if (zerop colon_at)
+	      "/tmp/ttyselection" ; colon is first character
+	    (concat "/net/" (substring display 0 colon_at) "/tmp/ttyselection")
+	    )))))
+  )
+
+(defun xv-yank-selection ()
+  "Set mark and yank the contents of the current Xview selection
+into the current buffer at point.  The STUFF selection contains the currently
+or previously highlighted text from a TTYSW."
+  (interactive "*")
+  (insert-file owselectionfile)
+  (exchange-point-and-mark)
+  )
+
+(defun xv-select-region (beg end)
+  "Set the TTYSW selection to the region in the current buffer."
+  (interactive "r")
+  (write-region beg end owselectionfile nil 'noprint)
+  )
+
+You can then bind these to Copy and Paste in your .emacs
+
+(setq suntool-map-hooks '(			; not your usual hook list
+  (define-key suntool-map "fl" 'xv-select-region)	; L6 Copy 
+  (define-key suntool-map "hl" 'xv-yank-selection)	; L8 Paste
+  )
+)

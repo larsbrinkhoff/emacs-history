@@ -77,6 +77,12 @@ extern char *message_buf;
 /* Nonzero means message_buf is being used by print.  */
 extern int message_buf_print;
 
+/* Message to display instead of minibuffer contents
+   This is what the functions error and message make,
+   and command echoing uses it as well.
+   It overrides the minibuf_prompt as well as the buffer.  */
+extern char *echo_area_contents;
+
 /* All costs measured in characters.
    So no cost can exceed the area of a screen, measured in characters.
    This should not be more than million.

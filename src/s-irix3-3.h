@@ -166,6 +166,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* getwd is defined.  */
 #define HAVE_GETWD
 
+/* Implementation of uname is broken on Irix as of version 3.3 */
+#define HAVE_GETHOSTNAME
+
 #define HAVE_SYSVIPC
 
 /* Define C_ALLOCA if this machine does not support a true alloca
@@ -177,3 +180,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define C_ALLOCA
 /* #define HAVE_ALLOCA */
+
+/* Send a signal to a subprocess by "typing" a signal character.  */
+
+#define SIGNALS_VIA_CHARACTERS

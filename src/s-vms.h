@@ -1,4 +1,5 @@
-/* s-header for VMS
+/* s-header for VMS.  Do not use this directly!
+   Use s-vms4-4.h (or s-vms4-0.h or s-vms4-2.h).
    Copyright (C) 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.

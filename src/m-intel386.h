@@ -89,6 +89,16 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define FSCALE 256.0
 #endif
 
+#ifdef J386BSD 
+/* Data type of load average, as read out of kmem.  */
+
+#define LOAD_AVE_TYPE unsigned long
+
+/* Convert that into an integer that is 100 for a load average of 1.0.  */
+#define LOAD_AVE_CVT(x) ((int) (((double) (x)) * 100.0 / FSCALE))
+
+#endif /* J386BSD */
+
 /* Define CANNOT_DUMP on machines where unexec does not work.
    Then the function dump-emacs will not be defined
    and temacs will do (load "loadup") automatically unless told otherwise.  */
@@ -132,6 +142,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #else /* not XENIX */
 
 #ifdef USG
+#ifdef USG5_4
+#define C_ALLOCA
+#endif /* USG5_4 */
 #ifndef LIB_STANDARD
 #if defined (__GNUC__) || defined (C_ALLOCA)
 #define	LIB_STANDARD -lc

@@ -21,7 +21,8 @@
 ;(defconst lpr-switches nil
 ;  "*List of strings to pass as extra switch args to lpr when it is invoked.")
 
-(defvar lpr-command (if (eq system-type 'usg-unix-v)
+(defvar lpr-command (if (memq system-type
+			      '(usg-unix-v hpux silicon-graphics-unix))
 			"lp" "lpr")
   "Shell command for printing a file")
 

@@ -1123,10 +1123,7 @@ init_buffer_once ()
   /* super-magic invisible buffer */
   Vbuffer_alist = Qnil;
 
-  tem = Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
-  /* Want no undo records for *scratch*
-     until after Emacs is dumped */
-  Fbuffer_flush_undo (tem);
+  Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
 }
 
 init_buffer ()

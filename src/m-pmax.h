@@ -29,3 +29,8 @@
    but it doesn't work right;
    and it causes hanging in read_process_output.  */
 #define BROKEN_O_NONBLOCK
+
+#ifdef OSF1
+#undef C_ALLOCA
+#define HAVE_ALLOCA
+#endif

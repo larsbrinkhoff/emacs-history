@@ -18,11 +18,12 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 
 #include "config.h"
 
-#include <sys/types.h>
 #define PRIO_PROCESS 0
 #include <sys/file.h>
 #ifdef USG5
@@ -103,8 +104,8 @@ Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Fourth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining arguments are strings passed as command arguments to PROGRAM.\n\
-Otherwise waits for PROGRAM to terminate\n\
-and returns a numeric exit status or a signal name as a string.\n\
+Returns nil if BUFFER is 0; otherwise waits for PROGRAM to terminate\n\
+and returns a numeric exit status or a signal description string.\n\
 If you quit, the process is killed with SIGKILL.")
   (nargs, args)
      int nargs;
@@ -146,7 +147,7 @@ If you quit, the process is killed with SIGKILL.")
       }
   }
 
-  display = nargs >= 3 ? args[3] : Qnil;
+  display = nargs > 3 ? args[3] : Qnil;
 
   {
     register int i;
@@ -290,14 +291,15 @@ Delete the text if DELETE is non-nil.\n\
 Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Sixth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
-Remaining args are passed to PROGRAM at startup as command args.\n\
-This function normally waits for the process to terminate;\n\
-if you quit, the process is killed.")
+Remaining arguments are strings passed as command arguments to PROGRAM.\n\
+Returns nil if BUFFER is 0; otherwise waits for PROGRAM to terminate\n\
+and returns a numeric exit status or a signal description string.\n\
+If you quit, the process is killed with SIGKILL.")
   (nargs, args)
      int nargs;
      register Lisp_Object *args;
 {
-  register Lisp_Object filename_string, start, end;
+  register Lisp_Object filename_string, start, end, status;
   char tempfile[20];
 
   strcpy (tempfile, "/tmp/emacsXXXXXX");
@@ -312,9 +314,9 @@ if you quit, the process is killed.")
     Fdelete_region (start, end);
 
   args[3] = filename_string;
-  Fcall_process (nargs - 2, args + 2);
+  status = Fcall_process (nargs - 2, args + 2);
   unlink (tempfile);
-  return Qnil;
+  return status;
 }
 
 /* This is the last thing run in a newly forked inferior

@@ -210,10 +210,12 @@ static int InUpdate;		/* many of functions here may be invoked
 Display *XXdisplay;
 int XXscreen;
 Window XXwindow;
-GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp;
+GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp,XXgc_curs_rev;
 XGCValues XXgcv;
 Cursor EmacsCursor;
 Pixmap SinkPixmap, SinkMaskPixmap;
+
+static XrmDatabase db, db2;
 
 char *fore_color;	/* Variables to store color names */
 char *back_color;
@@ -777,7 +779,7 @@ CursorToggle ()
 				    VisibleY*XXfonth+XXInternalBorder+XXbase,
 				    (char *) &active_screen->contents[VisibleY][VisibleX],
 				    1);
-			XDrawRectangle (XXdisplay, XXwindow, XXgc_norm,
+			XDrawRectangle (XXdisplay, XXwindow, XXgc_curs_rev,
 					VisibleX*XXfontw+XXInternalBorder,
 					VisibleY*XXfonth+XXInternalBorder,
 					XXfontw - 1, XXfonth - 1);
@@ -795,7 +797,7 @@ CursorToggle ()
 				    VisibleY*XXfonth+XXInternalBorder,
 				    XXfontw, XXfonth, 0);
 		else if (CursorOutline)
-			XDrawRectangle (XXdisplay, XXwindow, XXgc_norm,
+			XDrawRectangle (XXdisplay, XXwindow, XXgc_curs_rev,
  					VisibleX*XXfontw+XXInternalBorder,
 					VisibleY*XXfonth+XXInternalBorder,
 					XXfontw - 1, XXfonth - 1);
@@ -1215,6 +1217,8 @@ char *stringFuncVal(keycode)
 		return("231");
 	case XK_F9:
 		return("232");
+	case XK_F10:
+		return("233");
 
 	default:
 		return("-1");
@@ -1581,7 +1585,6 @@ XT_GetDefaults (class)
   register struct _xdeftab *entry;
   char *iname, *cname;
 
-  XrmDatabase db = NULL, db2 = NULL;
   char *disp = 0, *scrn = 0;
 
   int len = strlen (CLASS);
@@ -1622,7 +1625,7 @@ XT_GetDefaults (class)
       strcpy (iname, class);
       strcat (iname, ".");
       strcat (iname, entry->iname);
-      strcpy (cname, class);
+      strcpy (cname, CLASS);
       strcat (cname, ".");
       strcat (cname, entry->cname);
 
@@ -1994,7 +1997,7 @@ x_term_init ()
 	      XAllocColor (XXdisplay, XXColorMap, &cdef))
 	    fore = cdef.pixel;
 	  else {
-	    fore_color = "black";
+	    fore_color = black_color;
 	    fore = BlackPixel (XXdisplay, XXscreen);
 	  }
 
@@ -2003,7 +2006,7 @@ x_term_init ()
 	      XAllocColor (XXdisplay, XXColorMap, &cdef))
 	    back = cdef.pixel;
 	  else {
-	    back_color = "white";
+	    back_color = white_color;
 	    back = WhitePixel (XXdisplay, XXscreen);
 	  }
 
@@ -2012,7 +2015,7 @@ x_term_init ()
 	      XAllocColor (XXdisplay, XXColorMap, &cdef))
 	    curs = cdef.pixel;
 	  else {
-	    curs_color = "black";
+	    curs_color = black_color;
 	    curs = BlackPixel (XXdisplay, XXscreen);
 	  }
 
@@ -2020,21 +2023,22 @@ x_term_init ()
 	      XParseColor (XXdisplay, XXColorMap, mous_color, &cdef) &&
 	      XAllocColor (XXdisplay, XXColorMap, &cdef))
 	    ;
-	  else mous_color = "black";
+	  else mous_color = black_color;
 
 	  if (brdr_color &&
 	      XParseColor (XXdisplay, XXColorMap, brdr_color, &cdef) &&
 	      XAllocColor (XXdisplay, XXColorMap, &cdef))
 	    brdr = cdef.pixel;
 	  else {
-	    brdr_color = "black";
+	    brdr_color = black_color;
 	    brdr = BlackPixel (XXdisplay, XXscreen);
 	  }
 	}
 	else {
-		fore_color  = curs_color = mous_color = brdr_color = "black";
+		fore_color  = curs_color = mous_color = brdr_color
+		  = black_color;
 		fore = curs = brdr = BlackPixel (XXdisplay, XXscreen);
-		back_color = "white";
+		back_color = white_color;
 		back = WhitePixel (XXdisplay, XXscreen);
 	}
 
@@ -2050,18 +2054,14 @@ x_term_init ()
 		tempname = fore_color;
 		fore_color = back_color;
 		back_color = tempname;
-		if (curs == WhitePixel (XXdisplay, XXscreen)) {
-			curs = BlackPixel (XXdisplay, XXscreen);
-			curs_color = "black";
-		}
-		else if (curs == BlackPixel (XXdisplay, XXscreen)) {
-			curs = WhitePixel (XXdisplay, XXscreen);
-			curs_color = "white";
-		}
-		if (!strcmp (mous_color, "white"))
-			mous_color = "black";
-		else if (!strcmp (mous_color, "black"))
-			mous_color = "white";
+		if (!strcmp (mous_color, back_color))
+		  mous_color = fore_color;
+		else if (!strcmp (mous_color, fore_color))
+		  mous_color = back_color;
+		if (!strcmp (curs_color, back_color))
+		  curs_color = fore_color, curs = fore;
+		else if (!strcmp (curs_color, fore_color))
+		  curs_color = back_color, curs = back;
 	}
 
 
@@ -2193,6 +2193,7 @@ XNewFont (newname)
 	XSetFont (XXdisplay, XXgc_norm, XXfid);
 	XSetFont (XXdisplay, XXgc_rev, XXfid);
 	XSetFont (XXdisplay, XXgc_curs, XXfid);
+	XSetFont (XXdisplay, XXgc_curs_rev, XXfid);
 
 	XFreeFont (XXdisplay, fontinfo);
 	fontinfo = temp;
@@ -2225,7 +2226,7 @@ XFlipColor ()
 	tempcolor = fore;
 	fore = back;
 	back = tempcolor;
-	tempname = fore_color ;
+	tempname = fore_color;
 	fore_color = back_color;
 	back_color = tempname;
 	XClearArea (XXdisplay, XXwindow, 0, 0,
@@ -2236,24 +2237,21 @@ XFlipColor ()
 	XXgc_norm = XXgc_rev;
 	XXgc_rev = XXgc_temp;
 
-	if (!strcmp (mous_color, "white"))
-	  mous_color = "black";
-	else if (!strcmp (mous_color, "black"))
-	  mous_color = "white";
+	if (!strcmp (mous_color, back_color))
+	  mous_color = fore_color;
+	else if (!strcmp (mous_color, fore_color))
+	  mous_color = back_color;
 
 	x_set_cursor_colors ();
 
 	XRedrawDisplay ();
-	if (curs == WhitePixel (XXdisplay, XXscreen)) {
-		curs = BlackPixel (XXdisplay, XXscreen);
-		curs_color = "black";
-	}
-	else
-		if (curs == BlackPixel (XXdisplay, XXscreen)) {
-			curs = WhitePixel (XXdisplay, XXscreen);
-			curs_color = "white";
-		}
-	XSetState (XXdisplay, XXgc_curs, back, curs, GXinvert, AllPlanes);
+	if (!strcmp (curs_color, back_color))
+	  curs_color = fore_color, curs = fore;
+	else if (!strcmp (curs_color, fore_color))
+	  curs_color = back_color, curs = back;
+
+	XSetState (XXdisplay, XXgc_curs, back, curs, GXcopy, AllPlanes);
+	XSetState (XXdisplay, XXgc_curs_rev, curs, back, GXcopy, AllPlanes);
 
 	CursorToggle ();
 	XFlush (XXdisplay);
@@ -2590,96 +2588,120 @@ XSetWindowSize(rows, cols)
 static int
 XInitWindow ()
 {
-    extern int xargc;
-    extern char **xargv;
-    int x, y, width, height, pr;
-    char  *dp;
-    Window  desktop;
-    XColor forec, backc;
+  extern int xargc;
+  extern char **xargv;
+  int x, y, width, height, pr;
+  char  *dp;
+  Window  desktop;
+  XColor forec, backc;
 
 
-    if ( (fontinfo = XT_CalcForFont(XXcurrentfont))
-	== (XFontStruct *) NULL)
-      fatal ("X server unable to find requested font `%s'.\n",
+ retry:
+  fontinfo = XT_CalcForFont(XXcurrentfont);
+  if (fontinfo == (XFontStruct *) NULL)
+    {
+      if (strcmp (XXcurrentfont, "fixed"))
+	{
+	  free (XXcurrentfont);
+	  XXcurrentfont = (char *) xmalloc (6);
+	  strcpy (XXcurrentfont, "fixed");
+	  goto retry;
+	}
+      fatal ("X server unable to find requested font `%s'\n",
 	     (XXcurrentfont == NULL) ? "(null)" :  XXcurrentfont);
-
-    pr = XGeometry (XXdisplay, 0, desiredwindow, default_window,
-		    XXborder, XXfontw, XXfonth,
-		    XXInternalBorder*2, XXInternalBorder*2,
-		    &x, &y, &width, &height);
-
-    /*  Which desktop do we start up on?
-     */
-    if ( (dp = getenv("WM_DESKTOP")) != (char *) NULL )
-    {
-	desktop = atoi(dp);
-    }
-    else
-    {
-	desktop = RootWindow(XXdisplay, DefaultScreen(XXdisplay));
     }
 
-    XXwindow = XCreateSimpleWindow(XXdisplay, desktop,
-				   x, y,
-				   width*XXfontw + 2*XXInternalBorder,
-				   height*XXfonth + 2*XXInternalBorder,
-				   XXborder, brdr, back);
-    if (!XXwindow)
+  pr = XGeometry (XXdisplay, 0, desiredwindow, default_window,
+		  XXborder, XXfontw, XXfonth,
+		  XXInternalBorder*2, XXInternalBorder*2,
+		  &x, &y, &width, &height);
+
+  /*  Which desktop do we start up on?
+   */
+  if ( (dp = getenv("WM_DESKTOP")) != (char *) NULL )
     {
-	fprintf (stderr, "Could not create X window!\n");
-	fflush (stderr);
-	exit (-97);
+      desktop = atoi(dp);
+    }
+  else
+    {
+      desktop = RootWindow(XXdisplay, DefaultScreen(XXdisplay));
     }
 
-    XXgcv.font = XXfid;
-    XXgcv.foreground = fore;
-    XXgcv.background = back;
-    XXgc_norm = XCreateGC(XXdisplay, XXwindow,
-			  GCFont|GCForeground|GCBackground,
-			  &XXgcv);
-    XXgcv.foreground = back;
-    XXgcv.background = fore;
-    XXgc_rev = XCreateGC(XXdisplay, XXwindow,
-			 GCFont|GCForeground|GCBackground,
-			 &XXgcv);
-    XXgcv.foreground = back;
-    XXgcv.background = curs;
-    XXgc_curs = XCreateGC(XXdisplay, XXwindow,
-			  GCFont|GCForeground|GCBackground,
-			  &XXgcv);
+  XXwindow = XCreateSimpleWindow(XXdisplay, desktop,
+				 x, y,
+				 width*XXfontw + 2*XXInternalBorder,
+				 height*XXfonth + 2*XXInternalBorder,
+				 XXborder, brdr, back);
+  if (!XXwindow)
+    {
+      fprintf (stderr, "Could not create X window!\n");
+      fflush (stderr);
+      exit (-97);
+    }
 
-    EmacsCursor = XCreateFontCursor(XXdisplay, XC_left_ptr);
+  XXgcv.font = XXfid;
+  XXgcv.foreground = fore;
+  XXgcv.background = back;
+  XXgc_norm = XCreateGC(XXdisplay, XXwindow,
+			GCFont|GCForeground|GCBackground,
+			&XXgcv);
+  XXgcv.foreground = back;
+  XXgcv.background = fore;
+  XXgc_rev = XCreateGC(XXdisplay, XXwindow,
+		       GCFont|GCForeground|GCBackground,
+		       &XXgcv);
+  XXgcv.foreground = back;
+  XXgcv.background = curs;
+  XXgc_curs = XCreateGC(XXdisplay, XXwindow,
+			GCFont|GCForeground|GCBackground,
+			&XXgcv);
+  XXgcv.foreground = curs;
+  XXgcv.background = back;
+  XXgc_curs_rev = XCreateGC(XXdisplay, XXwindow,
+			    GCFont|GCForeground|GCBackground,
+			    &XXgcv);
 
-    x_set_cursor_colors ();
+  EmacsCursor = XCreateFontCursor(XXdisplay, XC_left_ptr);
 
-    XDefineCursor (XXdisplay, XXwindow, EmacsCursor);
+  x_set_cursor_colors ();
 
-    CursorExists = 0;
-    CursorOutline = 1;
-    VisibleX = 0;
-    VisibleY = 0;
+  XDefineCursor (XXdisplay, XXwindow, EmacsCursor);
+
+  CursorExists = 0;
+  CursorOutline = 1;
+  VisibleX = 0;
+  VisibleY = 0;
 
 
-    XT_Set_Class_Hints(XXwindow);
-    XT_Set_Command_Line(XXwindow);
-    XT_Set_Host(XXwindow);
-    XT_Set_Title(XXwindow);
-    XT_Set_Icon_Title(XXwindow);
-    XT_Set_Size_Hints(XXwindow, x, y, width, height, False, pr);
-    XT_Set_Zoom_Sizes(XXwindow);
-    XT_Set_WM_Hints(XXwindow);
+  XT_Set_Class_Hints(XXwindow);
+  XT_Set_Command_Line(XXwindow);
+  XT_Set_Host(XXwindow);
+  XT_Set_Title(XXwindow);
+  XT_Set_Icon_Title(XXwindow);
+  XT_Set_Size_Hints(XXwindow, x, y, width, height, False, pr);
+  XT_Set_Zoom_Sizes(XXwindow);
+  XT_Set_WM_Hints(XXwindow);
 
-    XSelectInput(XXdisplay, XXwindow, KeyPressMask |
-		 ExposureMask | ButtonPressMask | ButtonReleaseMask |
-		 EnterWindowMask | LeaveWindowMask | FocusChangeMask |
-		 StructureNotifyMask);
+  XSelectInput(XXdisplay, XXwindow, KeyPressMask |
+	       ExposureMask | ButtonPressMask | ButtonReleaseMask |
+	       EnterWindowMask | LeaveWindowMask | FocusChangeMask |
+	       StructureNotifyMask);
 
-    XMapWindow (XXdisplay, XXwindow);
-    XFlush (XXdisplay);
+  XMapWindow (XXdisplay, XXwindow);
+  XFlush (XXdisplay);
 
 #ifdef AIX          
 #include "xkeys-aix.h"
-#endif /* AIX */
+#endif				/* AIX */
+
+  /* Free XrmGetStringDatabase */
+
+#ifndef NO_X_DESTROY_DATABASE
+  XrmDestroyDatabase (db);
+#if (XlibSpecificationRelease >= 5)
+  XrmDestroyDatabase (db2);
+#endif
+#endif
 }
 
 #endif /* HAVE_X_WINDOWS */

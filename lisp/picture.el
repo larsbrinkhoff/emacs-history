@@ -362,13 +362,24 @@ text."
 
 (defun picture-snarf-rectangle (start end &optional killp)
   (let ((column (current-column))
-	(indent-tabs-mode nil))
+	(indent-tabs-mode nil)
+	markpos oldmark)
     (prog1 (save-excursion
+	     (save-excursion
+	       (goto-char (setq oldmark (mark)))
+	       (setq markpos (current-column)))
              (if killp
                  (delete-extract-rectangle start end)
                (prog1 (extract-rectangle start end)
-                      (clear-rectangle start end))))
-	   (move-to-column-force column))))
+		 (clear-rectangle start end t))))
+      (move-to-column-force column)
+      ;; Make the mark point at the same column
+      ;; as it did before.
+      (set-marker (mark-marker) 
+		  (save-excursion
+		    (goto-char oldmark)
+		    (move-to-column-force markpos)
+		    (point))))))
 
 (defun picture-yank-rectangle (&optional insertp)
   "Overlay rectangle saved by \\[picture-clear-rectangle]
@@ -531,7 +542,7 @@ they are not defaultly assigned to keys."
     (make-local-variable 'picture-vertical-step)
     (make-local-variable 'picture-horizontal-step)
     (picture-set-motion 0 1)
-    (run-hooks 'edit-picture-hook)
+    (run-hooks 'edit-picture-hook 'picture-mode-hook)
     (message
      (substitute-command-keys
       "Type \\[picture-mode-exit] in this buffer to return it to %s mode.")

@@ -181,6 +181,10 @@ pointer looks like an int) but not on all machines.
 #include <sys/stat.h>
 #include <errno.h>
 
+static int make_hdr ();
+static mark_x ();
+static int copy_text_and_data (), copy_sym ();
+
 extern char *start_of_text ();		/* Start of text */
 extern char *start_of_data ();		/* Start of initialized data */
 
@@ -290,10 +294,10 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
   if (make_hdr (new,a_out,data_start,bss_start,entry_address,a_name,new_name) < 0
       || copy_text_and_data (new) < 0
       || copy_sym (new, a_out, a_name, new_name) < 0
-#ifdef COFF; 
+#ifdef COFF
       || adjust_lnnoptrs (new, a_out, new_name) < 0
 #endif
-#ifdef XCOFF; 
+#ifdef XCOFF
       || unrelocate_symbols (new, a_out, a_name, new_name) < 0
 #endif
       )
@@ -768,8 +772,8 @@ unrelocate_symbols (new, a_out, a_name, new_name)
   register LDREL *ldrel;
   LDHDR ldhdr;
   LDREL ldrel_buf [20];
-  ulong t_start = &_text;
-  ulong d_start = &_data;
+  ulong t_start = (ulong) &_text;
+  ulong d_start = (ulong) &_data;
   int * p;
   int dirty;
 

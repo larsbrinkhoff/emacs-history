@@ -897,8 +897,9 @@ unshow_buffer (w)
 
 DEFUN ("select-window", Fselect_window, Sselect_window, 1, 1, 0,
   "Select WINDOW.  Most editing will apply to WINDOW's buffer.\n\
-The main editor command loop selects the buffer of the selected window\n\
-before each command.")
+That buffer is made current right away.\n\n\
+The main editor command loop, before each command,\n\
+selects the buffer of the selected window.")
   (window)
      register Lisp_Object window;
 {
@@ -1394,9 +1395,12 @@ scroll_command (n, direction)
      register Lisp_Object n;
      int direction;
 {
-  register int defalt
-    = direction * (window_height (selected_window) - 1
-		   - next_screen_context_lines);
+  register int defalt = (window_height (selected_window) - 1
+			 - next_screen_context_lines);
+
+  if (defalt < 1)
+    defalt = 1;
+  defalt *= direction;
 
   if (NULL (n))
     window_scroll (selected_window, defalt, 0);

@@ -22,6 +22,7 @@ what you give them.   Help stamp out software-hoarding!  */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "filetypes.h"
 
 /* filemodestring - set file attribute data 
 

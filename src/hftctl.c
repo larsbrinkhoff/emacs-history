@@ -52,6 +52,7 @@
 #include <termios.h>
 #include <termio.h>
 #include <sys/hft.h>
+#include <sys/uio.h>
 #include <sys/tty.h>
 /* #include <sys/pty.h> */
 #define REMOTE 0x01
@@ -76,8 +77,8 @@ typedef int    (*FUNC)();     /* pointer to a function        */
 
 /*************** EXTERNAL / GLOBAL DATA AREA ********************/
 
-       int              hfqry();
-       int              hfskbd();
+static int              hfqry();
+static int              hfskbd();
        char            *malloc();
 
 extern int              errno;
@@ -232,7 +233,7 @@ GT_ACK (fd, req, buf)
     }
 
   alarm(3);			/* time out in 3 secs          */
-  sav_alrm = (FUNC) signal (SIGALRM, hft_alrm); /* prepare to catch time out */
+  sav_alrm = (FUNC) signal (SIGALRM, (void(*)())hft_alrm); /* prepare to catch time out */
 
   p.ack = &ack;
   while (! is_ack_vtd)		/* do until valid ACK VTD      */
@@ -260,7 +261,7 @@ GT_ACK (fd, req, buf)
     }				/***** TRY AGAIN               */
 
   alarm(0);			/* ACK VTD received, reset alrm*/
-  signal (SIGALRM, sav_alrm);	/* reset signal                */
+  signal (SIGALRM, (void(*)())sav_alrm); /* reset signal                */
 
   if (i = ack.hf_arg_len)	/* any data following ?        */
     {				/* yes,                        */
@@ -278,7 +279,7 @@ static int
 hft_alrm (sig)                    /* Function hft_alrm - handle  */
         int sig;		/* alarm signal               */
 {
-  signal (SIGALRM, sav_alrm);	/* reset to previous          */
+  signal (SIGALRM, (void(*)())sav_alrm); /* reset to previous          */
 
   if (is_ack_vtd)		/* has ack vtd arrived ?      */
     return(0);			/* yes, then continue         */

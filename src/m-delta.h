@@ -1,5 +1,5 @@
 /* m- file for the Motorola delta running System V.3.
-   tested on sys1147 (mvme147 - based system).
+   tested on sysV68 (mvme147 - based system).  Use with s-usg5-3.h.
    Copyright (C) 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+#define mot_delta
 
 /* The following three symbols give information on
  the size of various data types.  */
@@ -53,9 +54,17 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    vax, m68000, ns16000, pyramid, orion, tahoe and APOLLO
    are the ones defined so far.  */
 #define m68000
+#define mot_delta
+
+/* Don't try to dump part of data space as pure.  */
+
 #define NO_REMAP
 
+/* We have system V ipc.  */
+
 #define HAVE_SYSVIPC
+
+/* We have ptys.  */
 
 #define HAVE_PTYS
 #define SYSV_PTYS
@@ -96,6 +105,20 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* #define VIRT_ADDR_VARIES */
 
+#define USG_SYS_TIME
+#define SYSV_SYSTEM_DIR
+#define BSTRING
+#define CLASH_DETECTION		/* starting from emacs 18.59 */
+
+#undef KERNEL_FILE
+#define KERNEL_FILE "/sysV68"
+#undef LOAD_AVE_TYPE
+#define HAVE_DUP2
+
+/* -lbsd gets sigblock and sigsetmask. */
+#define LIBS_SYSTEM -lbsd
+#undef sigsetmask
+
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.
    Define HAVE_ALLOCA to say that the system provides a properly
@@ -103,47 +126,39 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Define neither one if an assembler-language alloca
    in the file alloca.s should be used.  */
 
-/*#define C_ALLOCA */
-/*#define HAVE_ALLOCA */
-
 #ifdef __GNUC__
 /* easy. use builtin one. also be sure that no other ones are tried out. */
 # define alloca __builtin_alloca
 # define HAVE_ALLOCA
 # undef C_ALLOCA
-#else /* not __GNUC__, use `c' one. */
-#define C_ALLOCA
+#else /* not __GNUC__, use the one in alloca.s. */
+/* the alloca in -lPW is broken, at least until R3V6
+ -riku@field.fi
+ -pot@cnuce.cnr.IT */
 #undef HAVE_ALLOCA
-#define STACK_DIRECTION (-1)	 /* C_ALLOCA needs to know about stack. */
+#undef C_ALLOCA
 #endif /* __GNUC__ */
-
-/* The standard C library is -lcieee, not -lc.
-   Also use the PW library, which contains alloca.
-   DO NOT USE -lPW. That version of alloca is broken, at last until version
-   SVR3V6. -riku@field.fi */
-
-#define LIB_STANDARD -lc
 
 #define LIBS_TERMCAP -lcurses
 
-/* SELECT and SOCKETS under testing. -no avail -riku */
-/**#define HAVE_SELECT */
-/**#define HAVE_SOCKETS */
+#define HAVE_TIMEVAL
+#define HAVE_GETTIMEOFDAY
 
-#ifdef HAVE_X_WINDOWS
-#lossage
-/* Some bug exists when X is used, and prevents dumping.  */
+#define HAVE_SELECT
+#define HAVE_SOCKETS		/***** only if NSE has been installed *****/
 
-/* X library implements these. */
-# define BSTRING
-# define HAVE_RANDOM
-# define HAVE_RENAME
-/* X library is in 'nonstandard' location. */
-# define LD_SWITCH_MACHINE -L/usr/lib/X11/
-#else
-/* No sufficient justification for this.  */
-/* # define C_DEBUG_SWITCH */
-#endif /* HAVE_X_WINDOWS */
+#define USE_UTIME
 
-/* enable batdevice-dependent code to compile. */
-#define BAT68K
+/* Required only for use with Green Hills compiler:
+	-ga because alloca relies on stack frames. This option forces
+	    the Green Hills compiler to create stack frames even for
+	    functions with few local variables. */
+
+/* #define C_SWITCH_MACHINE -ga */
+
+/* People used to say this was necessary.  Maybe it no longer is,
+   because the system may not define FIONREAD.  But this can't hurt.  */
+#define BROKEN_FIONREAD
+
+/* Send signals to subprocesses by typing interrupt characters at them.  */
+#define SIGNALS_VIA_CHARACTERS

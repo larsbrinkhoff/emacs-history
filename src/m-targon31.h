@@ -100,15 +100,20 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* #define C_ALLOCA */
 /* #define HAVE_ALLOCA */
-
-/* Define NO_REMAP if memory segmentation makes it not work well
-   to change the boundary between the text section and data section
-   when Emacs is dumped.  If you define this, the preloaded Lisp
-   code will not be sharable; but that's better than failing completely.  */
-
-#define NO_REMAP
-/* There is a report that NO_REMAP can be removed 
-   if you define #define SEGMENT_MASK 0xffff
-   */
+#ifdef __GNUC__
+#define SYSTEM_MALLOC
+#define HAVE_ALLOCA
+#define alloca(a) __builtin_alloca(a)
+#endif
 
 #define SWITCH_ENUM_BUG 1
+
+/* #define NO_REMAP */
+/* NO_REMAP was an alternative to defining SEGMENT_MASK.  */
+#define SEGMENT_MASK      0xffff
+
+/* Some additional system facilities.  */
+#define HAVE_SYSVIPC
+#define HAVE_PTYS
+#define HAVE_SOCKETS
+#define BSTRING

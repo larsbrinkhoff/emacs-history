@@ -1,5 +1,5 @@
 ;; Basic editing commands for Emacs
-;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1992 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -134,7 +134,7 @@ In some text modes, where TAB inserts a tab, this indents to the
 specified left-margin column."
   (interactive "*")
   (delete-region (point) (progn (skip-chars-backward " \t") (point)))
-  (insert ?\n)
+  (newline)
   (indent-according-to-mode))
 
 (defun reindent-then-newline-and-indent ()
@@ -148,7 +148,7 @@ specified left-margin column."
   (save-excursion
     (delete-region (point) (progn (skip-chars-backward " \t") (point)))
     (indent-according-to-mode))
-  (insert ?\n)
+  (newline)
   (indent-according-to-mode))
 
 (defun kill-forward-chars (arg)
@@ -371,7 +371,8 @@ Repeat this command to undo more changes.
 A numeric argument serves as a repeat count."
   (interactive "*p")
   (let ((modified (buffer-modified-p)))
-    (message "Undo!")
+    (or (eq (selected-window) (minibuffer-window))
+	(message "Undo!"))
     (or (eq last-command 'undo)
 	(progn (undo-start)
 	       (undo-more 1)))

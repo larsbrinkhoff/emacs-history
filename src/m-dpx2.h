@@ -227,8 +227,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  * a good idea on multi-user systems :-)
  */
 #define CLASH_DETECTION		/* probably a good idea */
-
-#define fchmod(f, m)  while (0)	/* should optimize to nothing */
+#define NO_FCHMOD  /* Use chmod instead.  */
 
 
 #ifdef SIGTSTP

@@ -1,5 +1,5 @@
 /* Call a Lisp function interactively.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -168,10 +168,14 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
   /* Save this now, since use ofminibuffer will clobber it. */
   prefix_arg = Vcurrent_prefix_arg;
 
-retry:
+ retry:
 
-  fun = function;
-  while (XTYPE (fun) == Lisp_Symbol && !EQ (fun, Qunbound)) fun = XSYMBOL (fun)->function;
+  for (fun = function;
+       XTYPE (fun) == Lisp_Symbol && !EQ (fun, Qunbound);
+       fun = XSYMBOL (fun)->function)
+    {
+      QUIT;
+    }
 
   if (XTYPE (fun) == Lisp_Subr)
     {
@@ -201,7 +205,12 @@ retry:
 	goto lose;
       specs = Fcar (Fcdr (specs));
       if (XTYPE (specs) == Lisp_String)
-	string = XSTRING (specs)->data;
+	{
+	  /* Make a copy of string so that if a GC relocates specs,
+	     `string' will still be valid.  */
+	  string = (unsigned char *) alloca (XSTRING (specs)->size + 1);
+	  bcopy (XSTRING (specs)->data, string, XSTRING (specs)->size + 1);
+	}
       else
 	{
 	  i = num_input_chars;
@@ -222,7 +231,8 @@ retry:
 
   /* First character '*' means barf if buffer read-only */
   if (*string == '*')
-    { string++;
+    {
+      string++;
       if (!NULL (current_buffer->read_only))
 	Fbarf_if_buffer_read_only ();
     }

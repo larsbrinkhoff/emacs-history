@@ -35,6 +35,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/inode.h>
 #endif /* lint */
 
+#include "filetypes.h"
+
 #ifndef X_OK
 #define X_OK 01
 #endif

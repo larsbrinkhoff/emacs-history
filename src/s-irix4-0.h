@@ -11,19 +11,30 @@
 /* use K&R C */
 #define C_SWITCH_MACHINE -cckr
 
-#ifdef 0 /* This has been suggested, but does not currently work..  */
+/* SGI has all the fancy wait stuff, but we can't include sys/wait.h
+   because it defines BIG_ENDIAN and LITTLE_ENDIAN (ugh!.)  Instead
+   we'll just define WNOHANG right here.
+   (An implicit decl is good enough for wait3.)  */
+
+#define WNOHANG		0x1
+
 /* No need to use sprintf to get the tty name--we get that from _getpty.  */
 #define PTY_TTY_NAME_SPRINTF
 /* No need to get the pty name at all.  */
 #define PTY_NAME_SPRINTF
+#ifdef emacs
+char *_get_pty();
+#endif
 /* We need only try once to open a pty.  */
 #define PTY_ITERATION
 /* Here is how to do it.  */
-/* ??? People say it is necessary to prevent SIGCHLD signals within _getpty.
-   The right way is probably to block them.  Someone should try it.  */
+/* It is necessary to prevent SIGCHLD signals within _getpty.
+   So we block them. */
 #define PTY_OPEN						\
 {								\
+  int mask = sigblock (sigmask (SIGCHLD));			\
   char *name = _getpty (&fd, O_RDWR | O_NDELAY, 0600, 0);	\
+  sigsetmask(mask);						\
   if (name == 0)						\
     return -1;							\
   if (fd < 0)							\
@@ -32,4 +43,3 @@
     return -1;							\
   strcpy (pty_name, name);					\
 }
-#endif /* 0 */

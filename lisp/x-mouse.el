@@ -142,18 +142,22 @@ This will normally be set on a per-buffer basis.")
 	(let ((prompt-width (if (eq (selected-window) (minibuffer-window))
 				minibuffer-prompt-width 0)))
 	  (move-to-window-line rel-y)
-	  (setq margin-column
-		(if (or truncate-lines (> (window-hscroll) 0))
-		    (current-column)
-		  ;; If we are using line continuation,
-		  ;; compensate if first character on a continuation line
-		  ;; does not start precisely at the margin.
-		  (- (current-column)
-		     (% (current-column) (1- (window-width))))))
-	  (move-to-column (+ rel-x (1- (max 1 (window-hscroll)))
-			     (if (= (point) 1)
-				 (- prompt-width) 0)
-			     margin-column))))))
+	  (if (eobp)
+	      ;; If text ends before the desired line,
+	      ;; always position at end of that line.
+	      nil
+	    (setq margin-column
+		  (if (or truncate-lines (> (window-hscroll) 0))
+		      (current-column)
+		    ;; If we are using line continuation,
+		    ;; compensate if first character on a continuation line
+		    ;; does not start precisely at the margin.
+		    (- (current-column)
+		       (% (current-column) (1- (window-width))))))
+	    (move-to-column (+ rel-x (1- (max 1 (window-hscroll)))
+			       (if (= (point) 1)
+				   (- prompt-width) 0)
+			       margin-column)))))))
 
 (defun x-mouse-set-mark (arg)
   "Select Emacs window mouse is on, and set mark at mouse position.

@@ -258,6 +258,18 @@ display_echo_area_contents ()
       /* If desired cursor location is on this line, put it at end of text */
       if (cursor_vpos == vpos)
 	cursor_hpos = new_screen->used[vpos];
+
+      /* Fill the rest of the minibuffer window with blank lines.  */
+      {
+	int i;
+
+	for (i = vpos + 1; i < vpos + XWINDOW (minibuf_window)->height; i++)
+	  {
+	    get_display_line (i, 0);
+	    display_string (XWINDOW (minibuf_window), vpos,
+			    "", 0, 0, 0, screen_width);
+	  }
+      }
     }
   else if (!EQ (minibuf_window, selected_window))
     windows_or_buffers_changed++;
@@ -649,6 +661,10 @@ redisplay_window (window, just_this_one)
       w->update_mode_line = Qt;
       w->force_start = Qnil;
       XFASTINT (w->last_modified) = 0;
+
+      /* Constrain the starting position to be within the visible range.  */
+      startp = clip_to_bounds (BEGV, startp, ZV);
+
       try_window (window, startp);
       if (point_vpos < 0)
 	{
@@ -835,7 +851,9 @@ try_window (window, pos)
   while (--height >= 0)
     {
       val = *display_text_line (w, pos, vpos, val.hpos, tab_offset);
-      tab_offset += XFASTINT (w->width) - 1;
+      tab_offset += (XFASTINT (w->width) - 1
+		     - (XFASTINT (w->width) + XFASTINT (w->left)
+			!= screen_width));
       if (val.vpos) tab_offset = 0;
       vpos++;
       if (pos != val.bufpos)
@@ -1117,11 +1135,15 @@ try_window_id (window)
   last_text_vpos = vpos;
   tab_offset = pos_tab_offset (w, pos);
   if (val.hpos + hscroll - (hscroll > 0) < 0)
-    tab_offset += XFASTINT (w->width) - 1;
+    tab_offset += (XFASTINT (w->width) - 1
+		   - (XFASTINT (w->width) + XFASTINT (w->left)
+		      != screen_width));
   while (vpos < stop_vpos)
     {
       val = *display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
-      tab_offset += XFASTINT (w->width) - 1;
+      tab_offset += (XFASTINT (w->width) - 1
+		     - (XFASTINT (w->width) + XFASTINT (w->left)
+			!= screen_width));
       if (val.vpos) tab_offset = 0;
       if (pos != val.bufpos)
 	last_text_vpos
@@ -1162,12 +1184,16 @@ try_window_id (window)
       blank_end_of_window = 1;
       tab_offset = pos_tab_offset (w, pos);
       if (val.hpos < 0)
-	tab_offset += XFASTINT (w->width) - 1;
+	tab_offset += (XFASTINT (w->width) - 1
+		       - (XFASTINT (w->width) + XFASTINT (w->left)
+			  != screen_width));
 
       while (vpos < height)
 	{
 	  val = *display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
-	  tab_offset += XFASTINT (w->width) - 1;
+	  tab_offset += (XFASTINT (w->width) - 1
+			 - (XFASTINT (w->width) + XFASTINT (w->left)
+			    != screen_width));
 	  if (val.vpos) tab_offset = 0;
 	  pos = val.bufpos;
 	}
@@ -1262,7 +1288,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
   register unsigned char *p;
   unsigned char *endp;
   register unsigned char *startp;
-  register unsigned char *p1prev;
+  register unsigned char *p1prev = 0;
   int tab_width = XINT (current_buffer->tab_width);
   int ctl_arrow = !NULL (current_buffer->ctl_arrow);
   int width = XFASTINT (w->width) - 1
@@ -1421,10 +1447,14 @@ display_text_line (w, start, vpos, hpos, taboffset)
   /* by backing up over it */
   if (p1 > endp)
     {
-      /* Start the next line with that same character */
-      pos--;
-      /* but at a negative hpos, to skip the columns output on this line.  */
-      val.hpos += p1prev - endp;
+      if (p1prev)
+	{
+	  /* Start the next line with that same character */
+	  pos--;
+	  /* but at negative hpos, to skip the columns output on this line.  */
+	  val.hpos += p1prev - endp;
+	}
+
       /* Keep in this line everything up to the continuation column.  */
       p1 = endp;
     }
@@ -1525,8 +1555,12 @@ display_text_line (w, start, vpos, hpos, taboffset)
     {
       unsigned char *p = XSTRING (Voverlay_arrow_string)->data;
       int len = XSTRING (Voverlay_arrow_string)->size;
-      if (len > XFASTINT (w->width) - 1)
-	len = XFASTINT (w->width) - 1;
+      int minlen = (XFASTINT (w->width) - 1
+		    - (XFASTINT (w->width) + XFASTINT (w->left)
+		       != screen_width));
+
+      if (len > minlen)
+	len = minlen;
       bcopy (p, startp, len);
       if (new_screen->used[vpos] < len + startp - new_screen->contents[vpos])
 	new_screen->used[vpos] = len + startp - new_screen->contents[vpos];

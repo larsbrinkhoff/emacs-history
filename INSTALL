@@ -40,13 +40,14 @@ PREPARATION
 
 3) Declare the place in the file system where Emacs will
  be once installed.  This is done in the file `src/paths.h'.
+ But you don't have to change it yourself.  `build-install' and `make'
+ edit `src/paths.h' automatically.
 
  If you are using the shell-script `build-install'
  edit the assignment that sets the variable `EMACS'.
  If you are using `make' in the main Emacs directory to do
  the installation, edit the definition of `LIBDIR' in `Makefile'
- in that directory.  `build-install' and `make' edit `src/paths.h'
- automatically.
+ in that directory.
 
  If you are doing the building by hand (not using `build-install' or
  `make') then you yourself must copy $BUILD/src/paths.h-dist to
@@ -103,10 +104,19 @@ PREPARATION
  is to change C_DEBUG_SWITCH to include both -O and -g.  GCC is probably
  more reliable with -O than without, as it is tested more with -O.
 
-7) If you wish to compile with GCC, you should use -traditional.
- This is needed for certain include files.  For more info, refer
- the INSTALL file of GCC.  Use `make CC="gcc -traditional"'
- to compile Emacs with GCC.
+ The way to specify use of GCC is to set the environment variable CC
+ to `gcc' before you do `make install'
+
+7) If you wish to compile with GCC, you may need to use -traditional
+ or run fixincludes.  This is needed if your system's header files
+ are incompatible with ANSI C.  If your system header files are designed
+ for ANSI C, then GCC should handle them properly.  For more info, refer
+ the INSTALL file of GCC.
+
+ If your system header files are non-ANSI and you don't use -traditional
+ or fixincludes to compensate, the usual effect is that the ioctl
+ system call does not work.  The result is an Emacs that almost completely
+ fails to work.  
 
 8) Refer to the file $BUILD/etc/TERMS for information on
  fields you may wish to add to various termcap entries.

@@ -17,3 +17,6 @@
 #endif /* SIGIO */
 
 #define CLASS  "Emacs"	/* class id for GNU Emacs, used in .Xdefaults, etc. */
+
+extern char *black_color;
+extern char *white_color;

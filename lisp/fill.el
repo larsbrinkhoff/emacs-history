@@ -1,5 +1,5 @@
 ;; Fill commands for Emacs
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -17,6 +17,12 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+(defconst fill-individual-varying-indent nil
+  "*Controls criterion for a new paragraph in `fill-individual-paragraphs'.
+Non-nil means changing indent doesn't end a paragraph.
+That mode can handle paragraphs with extra indentation on the first line,
+but it requires separator lines between paragraphs.
+Nil means that any change in indentation starts a new paragraph.")
 
 (defun set-fill-prefix ()
   "Set the fill-prefix to the current line up to point.
@@ -84,18 +90,31 @@ From program, pass args FROM, TO and JUSTIFY-FLAG."
     (delete-horizontal-space)
     (insert "  ")
     (goto-char (point-min))
-    (let ((prefixcol 0))
+    (let ((prefixcol 0) linebeg)
       (while (not (eobp))
+	(setq linebeg (point))
 	(move-to-column (1+ fill-column))
 	(if (eobp)
 	    nil
 	  ;; Move back to start of word.
-	  (skip-chars-backward "^ \n")
+	  (skip-chars-backward "^ \n" linebeg)
 	  (if (if (zerop prefixcol) (bolp) (>= prefixcol (current-column)))
-	      ;; Move back over whitespace before the word.
-	      (skip-chars-forward "^ \n")
+	      ;; Keep at least one word even if fill prefix exceeds margin.
+	      ;; This handles all but the first line of the paragraph.
+	      (progn
+		(skip-chars-forward " ")
+		(skip-chars-forward "^ \n"))
 	    ;; Normally, move back over the single space between the words.
 	    (forward-char -1)))
+	(if (and fill-prefix (zerop prefixcol)
+		 (< (- (point) (point-min)) (length fill-prefix))
+		 (string= (buffer-substring (point-min) (point))
+			  (substring fill-prefix 0 (- (point) (point-min)))))
+	    ;; Keep at least one word even if fill prefix exceeds margin.
+	    ;; This handles the first line of the paragraph.
+	    (progn
+	      (skip-chars-forward " ")
+	      (skip-chars-forward "^ \n")))
 	;; Replace all whitespace here with one newline.
 	;; Insert before deleting, so we don't forget which side of
 	;; the whitespace point or markers used to be on.
@@ -206,7 +225,13 @@ means justify as well."
 
 (defun fill-individual-paragraphs (min max &optional justifyp mailp)
   "Fill each paragraph in region according to its individual fill prefix.
+
+If `fill-individual-varying-indent' is non-nil,
+then a mere change in indentation does not end a paragraph.  In this mode,
+the indentation for a paragraph is the minimum indentation of any line in it.
+
 Calling from a program, pass range to fill as first two arguments.
+
 Optional third and fourth arguments JUSTIFY-FLAG and MAIL-FLAG:
 JUSTIFY-FLAG to justify paragraphs (prefix arg),
 MAIL-FLAG for a mail message, i. e. don't fill header lines."
@@ -239,11 +264,22 @@ MAIL-FLAG for a mail message, i. e. don't fill header lines."
 		   (forward-line 1)
 		   ;; Now stop the loop if end of paragraph.
 		   (and (not (eobp))
-			(not (looking-at paragraph-separate))
-			(save-excursion
-			  (not (and (looking-at fill-prefix-regexp)
-				    (progn (forward-char (length fill-prefix))
-					   (looking-at paragraph-separate))))))))
+			(if fill-individual-varying-indent
+			    ;; If this line is a separator line, with or
+			    ;; without prefix, end the paragraph.
+			    (and 
+			     (not (looking-at paragraph-separate))
+			     (save-excursion
+			       (not (and (looking-at fill-prefix-regexp)
+					 (progn (forward-char (length fill-prefix))
+						(looking-at paragraph-separate))))))
+			  ;; If this line has more or less indent
+			  ;; than the fill prefix wants, end the paragraph.
+			  (and (looking-at fill-prefix-regexp)
+			       (save-excursion
+				 (not (progn (forward-char (length fill-prefix))
+					     (or (looking-at paragraph-separate)
+						 (looking-at paragraph-start))))))))))
 	  ;; Fill this paragraph, but don't add a newline at the end.
 	  (let ((had-newline (bolp)))
 	    (fill-region-as-paragraph start (point) justifyp)

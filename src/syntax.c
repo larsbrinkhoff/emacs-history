@@ -106,7 +106,7 @@ One argument, a syntax table.")
  into the code it signifies.
  This is used by modify-syntax-entry, and other things. */
 
-char syntax_spec_code[0400] =
+unsigned char syntax_spec_code[0400] =
   { 0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,
     0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,
     0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,
@@ -156,12 +156,13 @@ DEFUN ("modify-syntax-entry", foo, bar, 0, 0, 0,
 The syntax is changed only for table TABLE, which defaults to\n\
  the current buffer's syntax table.\n\
 The first character of S should be one of the following:\n\
-  Space    whitespace syntax.    w   word constituent.\n\
-  _        symbol constituent.   .   punctuation.\n\
-  (        open-parenthesis.     )   close-parenthesis.\n\
-  \"        string quote.         \\   character-quote.\n\
-  $        paired delimiter.     '   expression prefix operator.\n\
-  <	   comment starter.	 >   comment ender.\n\
+  Space or -   whitespace syntax.    w   word constituent.\n\
+  _            symbol constituent.   .   punctuation.\n\
+  (            open-parenthesis.     )   close-parenthesis.\n\
+  \"            string quote.         \\   escape character.\n\
+  $            paired delimiter.     '   expression prefix operator.\n\
+  <            comment starter.      >   comment ender.\n\
+  /	       character quote.\n\
 Only single-character comment start and end sequences are represented thus.\n\
 Two-character sequences are represented as described below.\n\
 The second character of S is the matching parenthesis,\n\

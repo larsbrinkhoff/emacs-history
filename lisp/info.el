@@ -136,12 +136,13 @@ Marker points nowhere if file has no tag table.")
 	  ;; First get advice from tag table if file has one.
 	  ;; Also, if this is an indirect info file,
 	  ;; read the proper subfile into this buffer.
-	  (let ((guesspos (point-min)))
+	  (let ((guesspos (point-min))
+		(regexp (concat "Node: *" (regexp-quote nodename) " *[,\t\n\177]")))
 	    (if (marker-position Info-tag-table-marker)
 		(save-excursion
 		  (set-buffer (marker-buffer Info-tag-table-marker))
 		  (goto-char Info-tag-table-marker)
-		  (if (search-forward (concat "Node: " nodename "\177") nil t)
+		  (if (re-search-forward regexp nil t)
 		      (progn
 			(setq guesspos (read (current-buffer)))
 			;; If this is an indirect file,
@@ -151,10 +152,9 @@ Marker points nowhere if file has no tag table.")
 			    (setq guesspos
 				  (Info-read-subfile guesspos))))
 		    (error "No such node: \"%s\"" nodename))))
-	    (goto-char (max (point-min) (- guesspos 1000))))
-	  ;; Now search from our advised position (or from beg of buffer)
-	  ;; to find the actual node.
-	  (let ((regexp (concat "Node: *" (regexp-quote nodename) " *[,\t\n]")))
+	    (goto-char (max (point-min) (- guesspos 1000)))
+	    ;; Now search from our advised position (or from beg of buffer)
+	    ;; to find the actual node.
 	    (catch 'foo
 	      (while (search-forward "\n\^_" nil t)
 		(forward-line 1)
@@ -612,6 +612,7 @@ NAME may be an abbreviation of the reference name."
   (define-key Info-mode-map "u" 'Info-up)
   (define-key Info-mode-map "\177" 'scroll-down))
 
+(put 'Info-mode 'mode-class 'special)
 (defun Info-mode ()
   "Info mode provides commands for browsing through the Info documentation tree.
 Documentation in Info is divided into \"nodes\", each of which

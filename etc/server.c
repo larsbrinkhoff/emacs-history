@@ -24,6 +24,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    and passes their commands (consisting of keyboard characters)
    up to the Emacs which then executes them.  */
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 /* This must precede config.h on certain machines.  */
 #include <sys/signal.h>
 

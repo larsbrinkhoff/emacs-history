@@ -1132,9 +1132,10 @@ getit()
 
   while (isspace(*dbp))
     dbp++;
-  if (*dbp == 0 || !isalpha(*dbp))
+  if (*dbp == 0 || (!isalpha (*dbp)) && (*dbp != '_') && (*dbp != '$'))
     return;
-  for (cp = dbp+1; *cp && (isalpha(*cp) || isdigit(*cp)); cp++)
+  for (cp = dbp + 1; *cp && (isalpha (*cp) || isdigit (*cp)
+			     || (*cp == '_') || (*cp == '$')); cp++)
     continue;
   c = cp[0];
   cp[0] = 0;
@@ -1307,34 +1308,25 @@ TEX_funcs (fi)
     TEX_toktab = TEX_decode_env ("TEXTAGS", TEX_defenv);
 
   while (!feof (fi))
-    {
+    {	/* Scan each line in file */
       lineno++;
       linecharno = charno;
       charno += readline (&lb, fi) + 1;
       dbp = lb.buffer;
       lasthit = dbp;
+      while (dbp = index (dbp, TEX_esc)) /* Look at each escape in line */
+	{
+	  register int i;
 
-      while (!feof (fi))
-	{	/* Scan each line in file */
-	  lineno++;
-	  linecharno = charno;
-	  charno += readline (&lb, fi) + 1;
-	  dbp = lb.buffer;
+	  if (! *(++dbp))
+	    break;
+	  linecharno += dbp - lasthit;
 	  lasthit = dbp;
-	  while (dbp = index (dbp, TEX_esc)) /* Look at each escape in line */
+	  i = TEX_Token (lasthit);
+	  if (0 <= i)
 	    {
-	      register int i;
-
-	      if (! *(++dbp))
-		break;
-	      linecharno += dbp - lasthit;
-	      lasthit = dbp;
-	      i = TEX_Token (lasthit);
-	      if (0 <= i)
-		{
-		  TEX_getit (lasthit, TEX_toktab[i].len);
-		  break;		/* We only save a line once */
-		}
+	      TEX_getit (lasthit, TEX_toktab[i].len);
+	      break;		/* We only save a line once */
 	    }
 	}
     }
@@ -1404,7 +1396,8 @@ TEX_decode_env (evarname, defenv)
   for (size = 1, p=env; p;)
     if ((p = index (p, ':')) && *(++p))
       size++;
-  tab = (struct TEX_tabent *) xmalloc (size * sizeof (struct TEX_tabent));
+  tab = (struct TEX_tabent *) xmalloc ((size + 1)
+				       * sizeof (struct TEX_tabent));
 
   /* Unpack environment string into token table. Be careful about */
   /* zero-length strings (leading ':', "::" and trailing ':') */

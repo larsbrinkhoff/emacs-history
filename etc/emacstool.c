@@ -1,6 +1,4 @@
-/*
- * 
- *    Copyright (C) 1986, 1988 Free Software Foundation, Inc.
+/* Copyright (C) 1986, 1988, 1990, 1991 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -16,20 +14,28 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
- * 
- *
- * For Emacs in SunView/Sun-Windows: (supported by Sun Unix v3.2)
+/* For Emacs in SunView/Sun-Windows: (supported by Sun Unix v3.2 or greater)
  * Insert a notifier filter-function to convert all useful input 
  * to "key" sequences that emacs can understand.  See: Emacstool(1).
  *
- * Author: Jeff Peck, Sun Microsystems, Inc. <peck@sun.com>
+ * Author: Jeff Peck, Sun Microsystems, Inc. <peck@eng.sun.com>
  *
  * Original Idea: Ian Batten
  * Updated 15-Mar-88, Jeff Peck: set IN_EMACSTOOL, TERM, TERMCAP
  * Updated 10-Sep-88, Jeff Peck: add XVIEW and JLE support
- * 
+ * Updated  8-Oct-90, Jeff Peck: add Meta-bit for Xview
+ * Updated  6-Mar-91, Jeff Peck: Hack to detect -Wt invocation
+ *	[note, TTYSW limitation means you must Click-To-Type in Openwin]
+ *	[fixed in OW3 or use local/tty.o]
+ *	for better results, this should move to using TERMSW.
+ * Updated 30-Mar-91, Jeff Peck, et al: Enable using TERMSW (-DTTERM)
+ *	TERMSW understands point-to-type, even in OW2.
+ * Updated  5-Jun-91, Jeff Peck: Meta-key support fixed for OWv3
+ *				 Better event diagnostics for DEBUGEMACSTOOL
+ *
+ * 	[note: xvetool should be started with the "-nw" flag for emacs!]
  */
 
 #ifdef XVIEW
@@ -38,21 +44,22 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <xview/attr.h>
 #include <xview/tty.h>
 #include <xview/ttysw.h>		/* private defines */
+#include <xview/termsw.h>		/* -DTTERM */
 #include <xview/font.h>			/* for testing */
 #else
 #include <suntool/sunview.h>
 #include <suntool/tty.h>
 #include <suntool/ttysw.h>
-#endif XVIEW
+#endif /* XVIEW */
 
 #ifdef JLE
 # include <locale.h>
-#endif JLE
+#endif /* JLE */
 
 #include <stdio.h>
 #include <sys/file.h>
 
-#define BUFFER_SIZE 128               /* Size of all the buffers */
+#define BUFFER_SIZE 128               	/* Size of all the buffers */
 
 /* define WANT_CAPS_LOCK to make f-key T1 (aka F1) behave as CapsLock */
 #define WANT_CAPS_LOCK
@@ -74,20 +81,29 @@ static char *title = "NEmacstool - ";	/* initial title */
 #else
 static char *emacs_name = "emacs";	/* default run command */
 static char *title = "Emacstool - ";	/* initial title */
-#endif JLE
+#endif /* JLE */
 
 static char buffer[BUFFER_SIZE];	/* send to ttysw_input */
 static char *bold_name = 0;	 	/* for -bold option */
 
 Frame frame;                            /* Base frame for system */
+
+#ifndef TTERM
+#define SWTYPE TTY
 Tty tty_win;				/* Where emacs is reading */
+#else
+#define SWTYPE TERMSW
+Termsw tty_win;				/* Termsw does follow-mouse */
+#endif /* TTERM */
+
 #ifdef XVIEW
 Xv_Window tty_view;			/* Where the events are in Xview*/
 #else
-Tty tty_view;				/* Place filler */
-#endif XVIEW
+Tty tty_view;				/* SunView place filler */
+#endif /* XVIEW */
 
 int font_width, font_height;            /* For translating pixels to chars */
+int left_margin = 0;		/* default window -- frame offset */
 
 int console_fd = 0;		/* for debugging: setenv DEBUGEMACSTOOL */
 FILE *console;			/* for debugging: setenv DEBUGEMACSTOOL */
@@ -179,101 +195,121 @@ static Notify_value
 input_event_filter_function (window, event, arg, type)
 #ifdef XVIEW
      Xv_Window window;
-#else
+#else /* not XVIEW */
      Window window;
-#endif XVIEW
+#endif /* XVIEW */
      Event *event;
      Notify_arg arg;
      Notify_event_type type;
 {
   struct timeval time_stamp;
 
-  if (console_fd) fprintf(console, "Event: %d\n", event_id(event));
-
+  /* if DEBUGEMACSTOOL is set, printout event information */
+  if (console_fd) {
+      fprintf(console, "Event: %s%s%c %d %d\n",
+	      (event_ctrl_is_down(event) ? "C-" : "  "),
+	      (event_meta_is_down(event) ? "M-" : "  "),
+	      (((event_is_button    (event)) ? 'M' :
+		((event_is_key_left  (event)) ? 'L' : 
+		 ((event_is_key_right (event)) ? 'R' : 
+		  ((event_is_key_top   (event)) ? 'T' :
+		   (((ASCII_FIRST <= event_id(event))
+		     && (event_id(event) <= ASCII_LAST)) ? 
+		    (((127 & event_id(event)) < 32) ?
+		     ((127 & event_id(event)) + 64) :
+		     ((127 & event_id(event)))) : '?')))))),
+	      event_id(event),
+	      event_action(event));
+  }
   /* UP L1 is the STOP key */
   if (event_id(event) == WIN_STOP) {
-    ttysw_input(tty_win, "\007\007\007\007\007\007\007", 7);
-    return NOTIFY_IGNORED;
+      ttysw_input(tty_win, "\007\007\007\007\007\007\007", 7);
+      return NOTIFY_IGNORED;
   }
 
   /* UP L5 & L7 is Expose & Open, let them pass to sunview */
-  if (event_id(event) == KEY_LEFT(5) || event_id(event) == KEY_LEFT(7))
-    if(event_is_up (event)) 
-      return notify_next_event_func (window, event, arg, type);
-    else return NOTIFY_IGNORED;
+  if (event_id(event) == KEY_LEFT(5) || event_id(event) == KEY_LEFT(7)) 
+      if (event_is_up (event)) 
+	  return notify_next_event_func (window, event, arg, type);
+      else 
+	  return NOTIFY_IGNORED;
 
-  if (event_is_button (event)) { 	      /* do Mouse Button events */
-/* Commented out so that we send mouse up events too.
-   if (event_is_up (event)) 
-      return notify_next_event_func (window, event, arg, type);
-*/
-    time_stamp = event_time (event);
-    ttysw_input (tty_win, mouse_prefix, m_prefix_length);
-    sprintf (buffer, "(%d %d %d %d)\015", 
-	     button_value (event),
-	     event_x (event) / font_width,
-	     event_y (event) / font_height,
-	     time_delta (time_stamp.tv_sec, time_stamp.tv_usec,
-			 prev_event_sec, prev_event_usec)
-	     );
-    ttysw_input (tty_win, buffer, strlen(buffer));
-    prev_event_sec = time_stamp.tv_sec;
-    prev_event_usec = time_stamp.tv_usec;
-    return NOTIFY_IGNORED;
-  }
-  
-  { /* Do the function key events */
-    int d;
-    char c = (char) 0;
-    if ((event_is_key_left  (event)) ?
-	((d = event_id(event) - KEY_LEFT(1)   + 'a'), c='l') : 
-	((event_is_key_right (event)) ?
-	 ((d = event_id(event) - KEY_RIGHT(1) + 'a'), c='r') : 
-	 ((event_is_key_top   (event)) ?
-	  ((d = event_id(event) - KEY_TOP(1)  + 'a'), c='t') : 0)))
-      {
-	if (event_is_up(event)) return NOTIFY_IGNORED;
-	if (event_shift_is_down (event)) c = c -  32;
-	/* this will give a non-{lrt} for unshifted keys */
-	if (event_ctrl_is_down  (event)) c = c -  64;
-	if (event_meta_is_down  (event)) c = c + 128;
-#ifdef WANT_CAPS_LOCK
-/* set a toggle and relabel window so T1 can act like caps-lock */
-	if (event_id(event) == KEY_TOP(1)) 
-	  {
-	    /* make a frame label with and without CAPS */
-	    strcpy (buffer, Caps); 
-	    title = &buffer[CAPS_LEN];
-	    strncpy (title, (char *)window_get (frame, FRAME_LABEL),
-		     BUFFER_SIZE - CAPS_LEN);
-	    buffer[BUFFER_SIZE] = (char) 0;	
-	    if (strncmp (title, Caps, CAPS_LEN) == 0)
-	      title += CAPS_LEN; 		 /* already Caps */
-	    caps_lock =  (caps_lock ? 0 : CAPS_LEN);
-	    window_set(frame, FRAME_LABEL, (title -= caps_lock), 0);
-	    return NOTIFY_IGNORED;
-	  }
-#endif
-	ttysw_input (tty_win, key_prefix, k_prefix_length);
-	sprintf (buffer, "%c%c", d, c);
-	ttysw_input(tty_win, buffer, strlen(buffer));
 
-	return NOTIFY_IGNORED;
+  { /* Do the mouse == button events */
+      if (event_is_button (event)) { /* do Mouse Button events */
+	  time_stamp = event_time (event);
+	  ttysw_input (tty_win, mouse_prefix, m_prefix_length);
+	  sprintf (buffer, "(%d %d %d %d)\015", 
+		   button_value (event),
+		   (event_x (event) - left_margin) / font_width,
+		   event_y (event) / font_height,
+		   time_delta (time_stamp.tv_sec, time_stamp.tv_usec,
+			       prev_event_sec, prev_event_usec)
+		   );
+	  ttysw_input (tty_win, buffer, strlen(buffer));
+	  prev_event_sec = time_stamp.tv_sec;
+	  prev_event_usec = time_stamp.tv_usec;
+	  return NOTIFY_IGNORED; 
       }
   }
-  if ((event_is_ascii(event) || event_is_meta(event)) 
-      && event_is_up(event)) return NOTIFY_IGNORED;
-  /* Allow arbitary mapping of ASCII keys,
-     mostly, this will allow swapping BS and DEL (the -bs option) */
-  if (event_is_ascii(event))
-    event_set_id(event, event_id(event));
+  { /* Do the function key events */
+      int d;
+      char c = (char) 0;
+      if ((event_is_key_left  (event)) ?
+	  ((d = event_id(event) - KEY_LEFT(1)   + 'a'), c='l') : 
+	  ((event_is_key_right (event)) ?
+	   ((d = event_id(event) - KEY_RIGHT(1) + 'a'), c='r') : 
+	   ((event_is_key_top   (event)) ?
+	    ((d = event_id(event) - KEY_TOP(1)  + 'a'), c='t') : 0))) {
+	  if (event_is_up(event)) return NOTIFY_IGNORED;
+	  if (event_shift_is_down (event)) c = c -  32;
+	  /* this will give a non-{lrt} for unshifted keys */
+	  if (event_ctrl_is_down  (event)) c = c -  64;
+	  if (event_meta_is_down  (event)) c = c + 128;
 #ifdef WANT_CAPS_LOCK
-/* shift alpha chars to upper case if toggle is set */
-  if ((caps_lock) && event_is_ascii(event)
-      && (event_id(event) >= 'a') && (event_id(event) <= 'z'))
-    event_set_id(event, (event_id(event) - 32));
-/* crufty, but it works for now. is there an UPCASE(event)? */
-#endif
+	  /* set a toggle and relabel window so T1 can act like caps-lock */
+	  if (event_id(event) == KEY_TOP(1)) {
+	      /* make a frame label with and without CAPS */
+	      strcpy (buffer, Caps); 
+	      title = &buffer[CAPS_LEN];
+	      strncpy (title, (char *)window_get (frame, FRAME_LABEL),
+		       BUFFER_SIZE - CAPS_LEN);
+	      buffer[BUFFER_SIZE] = (char) 0;	
+	      if (strncmp (title, Caps, CAPS_LEN) == 0)
+		  title += CAPS_LEN; /* already Caps */
+	      caps_lock =  (caps_lock ? 0 : CAPS_LEN);
+	      window_set(frame, FRAME_LABEL, (title -= caps_lock), 0);
+	      return NOTIFY_IGNORED;
+	  }
+#endif /* WANT_CAPS_LOCK */
+	  ttysw_input (tty_win, key_prefix, k_prefix_length);
+	  sprintf (buffer, "%c%c", d, c);
+	  ttysw_input(tty_win, buffer, strlen(buffer));
+
+	  return NOTIFY_IGNORED;
+      }
+  }
+
+  /* handle ascii keyboard events
+   * extract "event_is_ascii(event)" from the event_id, not the event_action
+   */
+  if ((ASCII_FIRST <= event_id(event)) && (event_id(event) <= ASCII_LAST)) {
+      /* ignore key-up events (button events have already been handled) */
+      if (event_is_up(event)) return NOTIFY_IGNORED;
+#ifdef WANT_CAPS_LOCK
+      /* shift alpha chars to upper case if toggle is set */
+      if ((caps_lock) && (event_id(event) >= 'a') && (event_id(event) <= 'z'))
+	  event_set_id(event, (event_id(event) - 32));
+#endif /* WANT_CAPS_LOCK */
+      
+#ifndef NO_META_BIT
+      /* under Openwindows/X, the meta bit is not set in the key event,
+       * emacs expects this so we add it in here:
+       */
+      if (event_meta_is_down(event))
+	  event_set_id(event, 128 | event_id(event));
+#endif /* NO_META_BIT */
+  }
   return notify_next_event_func (window, event, arg, type);
 }
 
@@ -285,7 +321,7 @@ main (argc, argv)
   
 #ifdef JLE
   setlocale(LC_ALL, "");
-#endif JLE
+#endif /* JLE */
 
   if(getenv("DEBUGEMACSTOOL"))
     console = fdopen (console_fd = open("/dev/console",O_WRONLY), "w");
@@ -314,8 +350,7 @@ main (argc, argv)
   /* find command to run as subprocess in window */
   if (!(argv[0] = (char *)getenv("EMACSTOOL")))	/*  Set emacs command name */
       argv[0] = emacs_name;			
-  /* Emacstool recognizes two special args: -rc <file> and -bs */
-  /* and also -bold <bold-name> */
+  /* Emacstool recognizes two special args: -rc <file> and -bold <bold-name> */
   for (argc = 1; argv[argc]; argc++)		/* Use last one on line */
     {
       if(!(strcmp ("-rc", argv[argc])))		/* Override if -rc given */
@@ -351,7 +386,7 @@ main (argc, argv)
   xv_main_loop (frame);                  /* And away we go */
 #else
   window_main_loop (frame);
-#endif XVIEW
+#endif /* XVIEW */
 }
 
 #ifdef XVIEW
@@ -359,7 +394,21 @@ int interpose_on_window(argc,argv)
     int argc;
     char **argv;
 {
-
+#ifndef TTERM
+#ifdef FONT_WIDTH_ADJUST
+    int i, font_width_adjust = 1; /* hackery, and hueristics */
+    /* If -Wt is not supplied, OWv2 font defaults as lucidasans-12 (width=8)
+     * rather than the lucidasanstypewriter (width=7) actually used by ttysw.
+     * This hack attempts to workaround it.
+     */
+    for (i = 1; argv[i]; i++) {
+	if (!(strcmp ("-Wt", argv[i])) || !(strcmp ("-font", argv[i])))
+	    {font_width_adjust = 0;
+	     if (console_fd) fprintf(console, "-Wt = %d\n", font_width_adjust);
+	     break;}
+    }
+#endif /* FONT_WIDTH_ADJUST */
+#endif /* not TTERM */
     /* initialize Xview, and strip window args */
     xv_init(XV_INIT_ARGC_PTR_ARGV, &argc, argv, 0);
 
@@ -375,7 +424,7 @@ int interpose_on_window(argc,argv)
 		       0);
 
     /* Create a tty with emacs in it */
-    tty_win = xv_create (frame, TTY, WIN_IS_CLIENT_PANE,
+    tty_win = xv_create (frame, SWTYPE, WIN_IS_CLIENT_PANE,
 			 TTY_QUIT_ON_CHILD_DEATH, TRUE, 
 			 TTY_BOLDSTYLE, TTYSW_BOLD_INVERT,
 			 TTY_ARGV, argv, 
@@ -385,10 +434,24 @@ int interpose_on_window(argc,argv)
 	(void)xv_set(tty_win, TTY_BOLDSTYLE_NAME, bold_name, 0);
     }
 
-    font_height = (int)xv_get (tty_win, WIN_ROW_HEIGHT);
-    font_width  = (int)xv_get (tty_win, WIN_COLUMN_WIDTH);
-    font_width -= 1;		/* Xview font bug */
+    {
+	Xv_font font;		/* declare temp font variable */
+	font = (Xv_font)xv_get (tty_win, XV_FONT);
+	font_height = (int)xv_get (font, FONT_DEFAULT_CHAR_HEIGHT);
+	font_width  = (int)xv_get (font, FONT_DEFAULT_CHAR_WIDTH);
+    }
     if (console_fd) fprintf(console, "Width = %d\n", font_width);
+
+#ifndef TTERM
+#ifdef FONT_WIDTH_ADJUST
+    font_width -= font_width_adjust; /* A guess! font cache bug in ttysw*/
+#endif /* FONT_WIDTH_ADJUST */
+#else
+    /* make the termsw act as a tty */
+    xv_set(tty_win, TERMSW_MODE, TTYSW_MODE_TYPE, 0);
+    /* termsw has variable offset depending on scrollbar size/location */
+    left_margin = (int)xv_get (tty_win, TEXTSW_LEFT_MARGIN);
+#endif /* TTERM */
 
     tty_view = (Xv_Window) xv_get (tty_win, OPENWIN_NTH_VIEW, 0);
     xv_set(tty_view,
@@ -403,7 +466,7 @@ int interpose_on_window(argc,argv)
     return (int) notify_interpose_event_func 
 	(tty_view, input_event_filter_function, NOTIFY_SAFE);
 }
-#else
+#else /* not XVIEW */
 int interpose_on_window (argc, argv)
  int argc;
  char **argv;
@@ -454,4 +517,4 @@ int interpose_on_window (argc, argv)
     return (int) notify_interpose_event_func 
 	(tty_view, input_event_filter_function, NOTIFY_SAFE);
 }
-#endif XVIEW
+#endif /* XVIEW */

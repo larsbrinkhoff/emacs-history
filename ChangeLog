@@ -1,3 +1,28 @@
+Fri Oct 30 19:36:38 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 18.59 released.
+
+Wed Oct 28 19:30:14 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* vmsdist.com: Don't copy vaxcrtl.olb into distribution.
+	Assume VMS version 5.5 or newer.
+
+Sat Oct  3 01:32:44 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* build-install: Use sh -c pwd, not just pwd.
+
+Fri Oct  2 19:14:07 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (install.xenix): Delete spurious space.
+
+Tue Aug 25 18:04:27 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (src/paths.h): Use just `sed', not `/bin/sed'.
+
+Sun Jun  7 14:21:01 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (install): Get rid of -s from install commands.
+
 Thu Feb 13 14:53:26 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Makefile (install): Use INSTALL to install programs.

@@ -169,10 +169,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* The standard definitions of these macros would work ok,
    but these are faster because the constants are short.  */
 
-#define XUINT(a) (((unsigned)(a) << INTBITS-VALBITS) >> INTBITS-VALBITS)
+#define XUINT(a) (((unsigned)(a) << (INTBITS-VALBITS)) >> INTBITS-VALBITS)
 
 #define XSET(var, type, ptr) \
-   ((var) = ((int)(type) << VALBITS) + (((unsigned) (ptr) << INTBITS-VALBITS) >> INTBITS-VALBITS))
+   ((var) = ((int)(type) << VALBITS) + (((unsigned) (ptr) << (INTBITS-VALBITS)) >> (INTBITS-VALBITS)))
 
 #define XSETINT(a, b)  XSET(a, XTYPE(a), b)
 #define XSETUINT(a, b) XSET(a, XTYPE(a), b)
@@ -180,7 +180,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define XMARKBIT(a) ((a) < 0)
 #define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
-#define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
+#define XUNMARK(a) ((a) = (((unsigned)(a) << (INTBITS-GCTYPEBITS-VALBITS)) >> (INTBITS-GCTYPEBITS-VALBITS)))
 
 #if 0 /* This was a mistake.  It is needed only on irix 4.0,
 	 but s-irix4-0.h already does it.  */

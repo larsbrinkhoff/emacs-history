@@ -37,16 +37,19 @@
   "Program to post news.")
 
 (defvar mh-progs
-  (cond ((file-exists-p "/usr/new/mh") "/usr/new/mh/")
-	((file-exists-p "/usr/local/bin/mh") "/usr/local/bin/mh/")
-	(t "/usr/local/mh/"))
-  "Directory containing MH commands")
+  (cond ((file-directory-p "/usr/bin/mh/") "/usr/bin/mh/") ;Ultrix 4.2
+	((file-directory-p "/usr/new/mh/") "/usr/new/mh/") ;Ultrix <4.2
+        ((file-directory-p "/usr/local/bin/mh/") "/usr/local/bin/mh/")
+        ((file-directory-p "/usr/local/mh/") "/usr/local/mh/")
+        (t "/usr/local/bin/"))
+  "Directory containing MH commands.")
 
 (defvar mh-lib
-  (cond ((file-exists-p "/usr/new/lib/mh") "/usr/new/lib/mh/")
-	((file-exists-p "/usr/local/lib/mh") "/usr/local/lib/mh/")
-	(t "/usr/local/bin/mh/"))
-  "Directory of MH library")
+  (cond ((file-directory-p "/usr/lib/mh/") "/usr/lib/mh/") ;Ultrix 4.2
+	((file-directory-p "/usr/new/lib/mh/") "/usr/new/lib/mh/") ;Ultrix <4.2
+        ((file-directory-p "/usr/local/lib/mh/") "/usr/local/lib/mh/")
+        (t "/usr/local/bin/mh/"))
+  "Directory of MH library.")
 
 (defconst rmail-file-name "~/RMAIL"
   "Name of user's primary mail file.")

@@ -114,7 +114,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define CLASH_DETECTION			/* we want to know about clashes */
 #undef ADDR_CORRECT			/* don't need this bug fix */
 #define fchmod				/* we don't have fchmod() */
-#define SECTION_ALIGNMENT (2048-1)	/* 2k boundaries required in unexec */
+#define SECTION_ALIGNMENT (256*1024-1)	/* TP-IX 1.3 needs 256k align.
+					   In older versions, 2k was enuf.  */
 #define SEGMENT_MASK (128*1024-1)	/* 128k offsets required in unexec */
 #define C_DEBUG_SWITCH -O		/* build with -O (TPIX has GCC 1.34) */
 
@@ -126,3 +127,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_PTYS			/* we do have PTYs if we have TCP */
 #define HAVE_SOCKETS			/* we do have sockets if we have TCP */
 #define LIBS_SYSTEM -lsocket		/* get TCP networking functions */
+
+#define HAVE_RANDOM
+
+/* Needed for getpagesize.h.  */
+#define NBPC 4096

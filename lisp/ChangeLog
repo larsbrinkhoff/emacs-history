@@ -1,3 +1,217 @@
+Fri Oct 30 19:36:38 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 18.59 released.
+
+Wed Oct 21 00:36:11 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sun-fns.el, sun-mouse.el, term/sun.el: New versions from Peck.
+
+	* dired.el (dired-chown): Treat silicon-graphics-unix like usg-unix-v.
+
+	* lpr.el (lpr-command):
+	Treat hpux and silicon-graphics-unix like usg-unix-v.
+
+Thu Oct 15 03:18:59 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* telnet.el (telnet): Wait for telnet output before sending `open'.
+
+Sun Oct 11 18:21:46 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* picture.el (edit-picture): Run picture-mode-hook.
+
+	* files.el (hack-local-variables): Undo March 5 change.
+
+Fri Oct  9 01:26:40 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (hack-local-variables): Don't allow `force' as local var.
+
+Thu Oct  8 02:48:50 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (hack-local-variables):
+	Ignore attempt to set inhibit-local-eval as local variable.
+
+Wed Oct  7 03:33:05 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (file-name-sans-versions): Recognize empty VMS version.
+
+Wed Sep 23 00:22:55 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* c-mode.el (calculate-c-indent): When testing for function start line,
+	match the first open paren; insist no = or doublequote before it.
+
+Sat Sep 19 01:58:01 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-insert-inbox-text): Make the inbox file empty here
+	if we rename it with rename-file here.
+	(rmail-get-new-mail): Always try deleting the files in delete-files.
+
+Fri Sep 18 02:58:14 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-get-new-mail): Truncate inbox file if we
+	fail to delete it, or if it's not in the ordinary mail spool dir.
+
+Sat Sep 12 04:39:41 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (backup-buffer): Delete %backup% before copying to it.
+
+Fri Sep  4 03:33:08 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* shell.el (make-shell): Don't call shell-mode if already in that mode.
+
+Sat Aug 29 04:25:31 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* picture.el (picture-snarf-rectangle): Delete extra closeparen.
+
+	* c-mode.el (calculate-c-indent): If taking indent from prev stmt
+	and it starts with an {, subtract c-brace-offset.
+
+Wed Aug 19 23:26:47 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* info.el (Info-mode): Add mode-class property.
+
+Fri Aug 14 03:50:30 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* compile.el (compile1): Don't mess with comp-proc if it's nil.
+
+	* info.el (Info-find-node): Be more abt format of tags table.
+
+Thu Jul 23 14:26:14 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* paths.el (mh-lib, mh-prog): Add more alternatives.
+
+Sat Jul  4 12:20:43 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (save-buffers-kill-emacs): Consider open net connections
+	as possibly requiring a query.
+
+Thu Jul  2 16:13:10 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* tags.el (visit-tags-table-buffer): Update file name after find-file.
+
+Fri Jun 12 20:12:12 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* cal.el (generate-month): Removed extranous '7' from let* binding
+	of `first-day-of-month'.
+
+Thu Jun 11 18:30:36 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+        * cal.el (calendar): Do not assume that if `one-window-p' returns
+        non-nil, then we can shrink the current window vertically.  This is
+        not true if the screen is split only into side-by-side windows;
+        shrinking the window in this case enlarges the minibuffer.
+        Instead, add up the height of the current window and the
+        minibuffer window and compare this with the height of the whole
+        screen, to see if the current window is full-height.  If it is,
+        don't try to shrink the current window.
+
+Sat May 30 03:38:17 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* dbx.el (run-dbx): Apply expand-file-name to PATH.  Among other
+	things, this makes sure that the default-directory gets set to
+	something non-nil when we set it to (file-name-directory PATH).
+
+Tue May 19 23:23:53 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* subr.el (one-window-p): If arg is t, completely avoid minibuffer.
+
+Thu May 14 23:08:09 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fill.el (fill-region-as-paragraph):
+	Handle fill-prefix wider than fill-column.
+
+Wed May 13 15:42:52 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* loadup.el: Disable undo in *scratch* while we're loading the
+	files to dump, and re-enable it before we dump.  We used to
+	disable it in init_buffer_once in ../src/buffer.c, but didn't
+	re-enable it anywhere; this was obscured by the fact that GC would
+	re-enable undo in all buffers.
+
+Tue May  5 23:15:57 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ftp.el (ftp-command): Correctly ignore lines without status codes.
+	(ftp-write-file-hook): Clear modified flag in the proper buffer.
+
+	* fill.el (fill-individual-paragraphs): Choice of two modes,
+	controlled by fill-individual-varying-indent.
+
+Sun May  3 23:26:39 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dired.el (dired-readin): At end, clear modified flag.
+
+Sat Apr 18 17:38:03 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* startup.el (normal-top-level): Don't change default-directory to
+	(getenv "PWD") unless they actually refer to the same directory.
+
+Fri Apr 17 11:16:33 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-unix-mail-delimiter): Doc str changed to comment.
+
+Wed Apr 15 02:08:03 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* simple.el (reindent-then-newline-and-indent,
+	newline-and-indent): Call the newline function instead of saying
+	(insert ?\n), so that auto fill mode will break lines correctly.
+
+	* rmail.el (rmail-unix-mail-delimiter): New variable.
+	(rmail-convert-to-babyl-format): Use it to recognize the start of
+	an mbox message.
+	(rmail-nuke-pinhead-header): Same.
+
+Wed Mar 25 17:47:25 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): Use regexp to find time zone.
+
+Tue Mar 24 00:01:37 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* picture.el (picture-snarf-rectangle): Effectively preserve
+	column of mark.
+
+Fri Mar 20 15:13:12 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (find-backup-file-name): Fix the overflow test.
+
+Sun Mar 15 23:04:19 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (undo): Suppress message in minibuffer.
+
+Sat Mar 14 00:39:09 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): Insert the time zone before the year.
+
+	* x-mouse-el (x-mouse-set-point): Special case if mouse is past eob.
+
+Fri Mar 13 17:40:09 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-position-on-field): Insert new field differently.
+
+Wed Mar 11 18:29:09 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (set-visited-file-name): Add comments.
+
+	* sendmail.el (mail-position-on-field):
+	Do find separator even if it's the first line.
+
+Thu Mar  5 17:30:24 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (find-backup-file-name): Use make-backup-file-name.
+
+	* sendmail.el: Doc fix.
+
+	* rect.el (clear-rectangle): New arg, preserve-position.
+	(clear-rectangle-line): Do the real work.
+	* picture.el (picture-snarf-rectangle): Pass t for preserve-position.
+
+	* dired.el (dired-do-deletions): Don't try delete-file on a dir.
+
+	* rmail.el (rmail-forward): Look for >From if no From.
+
+Wed Mar  4 02:57:57 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* telnet.el (read-password): Allow C-g to terminate password
+	entry.
+
 Mon Feb  3 16:44:51 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* add-log.el (add-change-log-entry): Don't get confused by
@@ -4852,11 +5066,3 @@ Thu May 15 18:35:25 1986  Richard M. Stallman  (rms at prep)
 
 	* files.el (save-buffer): Switch meanings of one-C-u and two-C-u
 	in the code, so they match the documentation.
-
-Local Variables:
-mode: indented-text
-eval: (auto-fill-mode 1)
-left-margin: 8
-fill-column: 74
-version-control: never
-End:

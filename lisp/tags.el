@@ -50,6 +50,7 @@ This is a file whose name is in the variable tags-file-name."
 		  (progn
 		    (setq tag-table-files nil)
 		    (find-file-noselect tags-file-name))))
+  (setq tags-file-name buffer-file-name)
   (or (verify-visited-file-modtime (get-file-buffer tags-file-name))
       (cond ((yes-or-no-p "Tags file has changed, read new contents? ")
 	     (revert-buffer t t)

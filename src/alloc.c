@@ -1111,6 +1111,27 @@ mark_object (objptr)
 	register struct Lisp_Cons *ptr = XCONS (obj);
 	if (XMARKBIT (ptr->car)) break;
 	XMARK (ptr->car);
+	/* If the cdr is nil, avoid recursion for the car.  */
+	if (EQ (ptr->cdr, Qnil))
+	  {
+	    objptr = &ptr->car;
+	    obj = ptr->car;
+	    XUNMARK (obj);
+	    goto loop;
+	  }
+	/* If the cdr is (INTEGER . nil), mark the cdr first,
+	   to avoid recursion for the car.  This case occurs
+	   in every compiled function.  */
+	if (XTYPE (ptr->cdr) == Lisp_Cons
+	    && XGCTYPE (XCONS (ptr->cdr)->car) == Lisp_Int
+	    && EQ (XCONS (ptr->cdr)->cdr, Qnil))
+	  {
+	    mark_object (&ptr->cdr);
+	    objptr = &ptr->car;
+	    obj = ptr->car;
+	    XUNMARK (obj);
+	    goto loop;
+	  }
 	mark_object (&ptr->car);
 	objptr = &ptr->cdr;
 	obj = ptr->cdr;
@@ -1472,9 +1493,14 @@ truncate_all_undos ()
 
   while (nextb)
     {
-      nextb->undo_list 
-	= truncate_undo_list (nextb->undo_list, undo_threshold,
-			      undo_high_threshold);
+      /* If a buffer's undo list is Qt, that means that undo is
+	 turned off in that buffer.  Calling truncate_undo_list on
+	 Qt tends to return NULL, which effectively turns undo back on.
+	 So don't call truncate_undo_list if undo_list is Qt.  */
+      if (! EQ (nextb->undo_list, Qt))
+	nextb->undo_list 
+	  = truncate_undo_list (nextb->undo_list, undo_threshold,
+				undo_high_threshold);
       nextb = nextb->next;
     }
 }

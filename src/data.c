@@ -18,6 +18,8 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 
 #include "config.h"
@@ -1161,7 +1163,15 @@ arith_driver
 	case Amult: accum *= next; break;
 	case Adiv:
 	  if (!argnum) accum = next;
-	  else accum /= next;
+	  else
+	    {
+	      /* Some systems fail to trap this right.  */
+	      if (!XINT (next))
+		while (1)
+		  Fsignal (Qarith_error, Qnil);
+
+	      accum /= next;
+	    }
 	  break;
 	case Alogand: accum &= next; break;
 	case Alogior: accum |= next; break;
@@ -1222,6 +1232,11 @@ DEFUN ("%", Frem, Srem, 2, 2, 0,
 
   CHECK_NUMBER (num1, 0);
   CHECK_NUMBER (num2, 1);
+
+  /* Some systems fail to trap this right.  */
+  if (!XINT (num2))
+    while (1)
+      Fsignal (Qarith_error, Qnil);
 
   XSET (val, Lisp_Int, XINT (num1) % XINT (num2));
   return val;
@@ -1599,7 +1614,8 @@ arith_error (signo)
   sigsetmask (SIGEMPTYMASK);
 #endif /* not BSD4_1 */
 
-  Fsignal (Qarith_error, Qnil);
+  while (1)
+    Fsignal (Qarith_error, Qnil);
 }
 
 init_data ()

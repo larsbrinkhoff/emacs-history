@@ -181,7 +181,7 @@ If yours does, you will probably want to change it."
 	(setq name (process-name proc)))
       (goto-char (point-max))
       (set-marker (process-mark proc) (point))
-      (shell-mode))
+      (or (eq major-mode 'shell-mode) (shell-mode)))
     buffer))
 
 (defvar shell-set-directory-error-hook 'ignore

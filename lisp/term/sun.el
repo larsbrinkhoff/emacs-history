@@ -18,6 +18,7 @@
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;  Jeff Peck, Sun Microsystems Inc  <peck@sun.com>
+;;	Mar, 91		better integration with X windows
 
 (defun ignore-key ()
   "interactive version of ignore"
@@ -29,15 +30,24 @@
   (interactive)
   (error "unbound-key"))
 
+(defun on-window-line-p (n)
+  (save-excursion
+    (beginning-of-line 1)
+    (let ((p (point)))
+      (move-to-window-line n)
+      (equal (point) p))))
+
 (defun scroll-down-in-place (n)
   (interactive "p")
-  (previous-line n)
-  (scroll-down n))
+  (if (on-window-line-p 0)
+      (progn (scroll-down n) (previous-line n))
+      (previous-line n) (scroll-down n)))
 
 (defun scroll-up-in-place (n)
   (interactive "p")
-  (next-line n)
-  (scroll-up n))
+  (if (on-window-line-p -1)
+      (progn (scroll-up n) (next-line n))
+      (next-line n) (scroll-up n)))
 
 (defun kill-region-and-unmark (beg end)
   "Like kill-region, but pops the mark [which equals point, anyway.]"
@@ -46,13 +56,6 @@
   (setq this-command 'kill-region-and-unmark)
   (set-mark-command t))
 
-(defun prev-complex-command ()
-  "Select Previous-complex-command"
-  (interactive)
-  (if (zerop (minibuffer-depth))
-      (repeat-complex-command 1)
-    (previous-complex-command 1)))
-
 (defun rerun-prev-command ()
   "Repeat Previous-complex-command."
   (interactive)
@@ -60,7 +63,8 @@
 
 (defvar grep-arg nil "Default arg for RE-search")
 
-(defun prev-search-command-arg ()
+;; not sure this all works... or works at all...
+(defun search-command-arg ()
   ;; if previous minibuf command specified a search string, return it.
   ;; this way, a call to M-x re-search-forward can pass its arg.
   (let* ((command (car command-history))
@@ -74,7 +78,7 @@
   "helper function used by research-{backward,forward}"
   (if (memq last-command '(research-forward research-backward)) grep-arg
     (let ((this-command this-command)	; save this binding from read-string
-	  (default (or (prev-search-command-arg)
+	  (default (or (search-command-arg)
 		       search-last-regexp
 		       grep-arg)))
       (read-string (or prompt "Regexp arg: ") default))))
@@ -90,6 +94,28 @@
   (interactive)				;
   (if (re-search-backward (grep-arg "Regexp search backward: "))
       (setq search-last-regexp grep-arg)))
+
+(defun help-for-dummies ()
+  (interactive)
+  (let ((char ?\C-h))
+    (if (or (= char ?\C-h) (= char ??))
+	(save-window-excursion
+	  (switch-to-buffer "*Help*")
+	  (erase-buffer)
+	  (insert (documentation 'help-for-help))
+	  (goto-char (point-min))
+	  (while (memq char '(?\C-h ?? ?\C-v ?\ ?\177 ?\M-v))
+	    (if (memq char '(?\C-v ?\ ))
+		(scroll-up))
+	    (if (memq char '(?\177 ?\M-v))
+		(scroll-down))
+	    (message "A B C F I K L M N S T V W C-c C-d C-n C-w%s: "
+		     (if (pos-visible-in-window-p (point-max))
+			 "" " or Space to scroll"))
+	    (let ((cursor-in-echo-area t))
+	      (setq char (read-char))))))
+    (let ((defn (cdr (assq (downcase char) (cdr help-map)))))
+      (if defn (call-interactively defn) (ding)))))
 
 ;;;
 ;;; handle sun's extra function keys
@@ -99,13 +125,22 @@
 ;;; so we ignore them on the way down
 ;;;
 
+;;; Since .emacs gets loaded before this file, a hook is supplied
+;;; for you to put your own bindings in. Example:
+;(setq sun-esc-bracket t)
+;(setq sun-raw-map-hooks '(			; not your usual hook list
+;  (define-key sun-raw-map "211z" 'goto-line) 	; R4
+;  (define-key sun-raw-map "212z" 'other-window)	; R5
+;  (define-key sun-raw-map "213z" 'scroll-other-window)	; R6
+;  ))
+
 (defvar sun-esc-bracket nil
   "*If non-nil, rebind ESC [ as prefix for Sun function keys.")
 
 (defvar sun-raw-map (make-sparse-keymap) "*Keymap for ESC-[ encoded keyboard")
 
-(define-key sun-raw-map "208z" 'unbound-key)		; R3
-(define-key sun-raw-map "209z" 'unbound-key)		; R3
+(define-key sun-raw-map "208z" 'unbound-key)		; R1
+(define-key sun-raw-map "209z" 'unbound-key)		; R2
 (define-key sun-raw-map "210z" 'backward-page)		; R3
 (define-key sun-raw-map "213z" 'forward-page)		; R6
 (define-key sun-raw-map "214z" 'beginning-of-buffer)	; R7
@@ -126,6 +161,7 @@
 (define-key sun-raw-map "199z" 'sun-yank-selection)	; Get	L7
 (define-key sun-raw-map "200z" 'exchange-point-and-mark); Find	L8
 (define-key sun-raw-map "201z" 'kill-region-and-unmark)	; Delete	L9
+(define-key sun-raw-map "207z" 'help-for-help)		; Help Key on Type-4 KBD
 (define-key sun-raw-map "225z" 'toggle-selective-display); T2
 (define-key sun-raw-map "226z" 'scroll-down-in-place)	; T3
 (define-key sun-raw-map "227z" 'scroll-up-in-place)	; T4
@@ -147,14 +183,10 @@
 ;;; for you to put your own bindings in.
 
 (defvar sun-raw-map-hooks nil
-  "List of forms to evaluate after setting sun-raw-map.")
+  "List of forms to evaluate after setting sun-raw-map.
+This list is processed by: (mapcar 'eval sun-raw-map-hooks)")
 
-(let ((hooks sun-raw-map-hooks))
-  (while hooks
-    (eval (car hooks))
-    (setq hooks (cdr hooks))
-    ))
-
+(mapcar 'eval sun-raw-map-hooks)
 
 ;;; This section adds defintions for the emacstool users
 ;;; emacstool event filter converts function keys to C-x*{c}{lrt}
@@ -196,15 +228,17 @@
 (define-key suntool-map "oR" 'forward-page)		; R15
 (define-key suntool-map "or" 'scroll-up)		; r15
 (define-key suntool-map "b\M-L" 'rerun-prev-command)	; M-AGAIN
-(define-key suntool-map "b\M-l" 'prev-complex-command)	; M-Again
+(define-key suntool-map "b\M-l" 'repeat-complex-command); M-Again
+(define-key repeat-complex-command-map "\C-x*b\M-l" 'previous-complex-command)
 (define-key suntool-map "bl" 'redraw-display)		; Again	L1
 (define-key suntool-map "cl" 'list-buffers)		; Props	L2
 (define-key suntool-map "dl" 'undo)			; Undo	L3
 (define-key suntool-map "el" 'ignore-key)		; Expose-Top	L4
-(define-key suntool-map "fl" 'sun-select-region)	; Put	L5
-(define-key suntool-map "f," 'copy-region-as-kill)	; C-Put	L5
+(define-key suntool-map "fl" 'sun-select-region)	; Put		L5
+(define-key suntool-map "f," 'copy-region-as-kill)	; C-Put		L5
 (define-key suntool-map "gl" 'ignore-key)		; Open-Open	L6
-(define-key suntool-map "hl" 'sun-yank-selection)	; Get	L7
+(define-key suntool-map "hl" 'sun-yank-selection)	; Get		L7
+(define-key suntool-map "h\M-l" 'sunview-yank-any-selection) ; M-Get	L7
 (define-key suntool-map "h," 'yank)			; C-Get
 ;; interactive regexp search				; Find	L8
 (define-key suntool-map "iL" 're-isearch-forward)	; FIND (shift-Find)
@@ -222,6 +256,12 @@
 (define-key suntool-map "j\M-l" 'exchange-point-and-mark); M-Delete
 (define-key suntool-map "j," 
   '(lambda () (interactive) (pop-mark 1)))		; C-Delete
+(define-key suntool-map "pl" 'describe-mode) 		; Help
+(define-key suntool-map "p\M-l" 'command-apropos) 	; M-Help
+(define-key suntool-map "pL" 'describe-bindings) 	; HELP
+;; Oops, Help is preempted by Xview, may need to modify xvetool
+(define-key suntool-map "p," 'help-for-help) 		; C-Help
+(define-key suntool-map "p," 'help-for-dummies) 		; C-Help
 
 (define-key suntool-map "bt" 'toggle-selective-display) 	; t2
 (define-key suntool-map "cT" '(lambda(n) (interactive "p") (scroll-down n)))
@@ -246,13 +286,10 @@
 ;  ))
 
 (defvar suntool-map-hooks nil
-  "List of forms to evaluate after setting suntool-map.")
+  "List of forms to evaluate after setting suntool-map.
+This variable is processed by: (mapcar 'eval suntool-map-hooks)")
 
-(let ((hooks suntool-map-hooks))
-  (while hooks
-    (eval (car hooks))
-    (setq hooks (cdr hooks))
-    ))
+(mapcar 'eval suntool-map-hooks)
 
 ;;;
 ;;; If running under emacstool, arrange to call suspend-emacstool
@@ -265,29 +302,32 @@
 (autoload 'sun-mouse-handler "sun-mouse" 
 	  "Sun Emacstool handler for mouse blips (not loaded)." t)
 
-(defun emacstool-init ()
-  "Set up Emacstool window, if you know you are in an emacstool."
-  ;; Make sure sun-mouse and sun-fns are loaded.
-  (require 'sun-fns)
-  (define-key ctl-x-map "\C-@" 'sun-mouse-handler)
-
-  (if (< (sun-window-init) 0)
-      (message "Not a Sun Window")
-    (progn
-      (substitute-key-definition 'suspend-emacs 'suspend-emacstool global-map)
-      (substitute-key-definition 'suspend-emacs 'suspend-emacstool esc-map)
-      (substitute-key-definition 'suspend-emacs 'suspend-emacstool ctl-x-map))
-      (send-string-to-terminal
-       (concat "\033]lEmacstool - GNU Emacs " emacs-version "\033\\"))
-    ))
-
 (defun sun-mouse-once ()
   "Converts to emacstool and sun-mouse-handler on first mouse hit."
   (interactive)
   (emacstool-init)
   (sun-mouse-handler)			; Now, execute this mouse blip.
   )
-(define-key ctl-x-map "\C-@" 'sun-mouse-once)
+(if (not window-system)			; don't do this for X!
+    (define-key ctl-x-map "\C-@" 'sun-mouse-once))
+
+(defun emacstool-init ()
+  "Set up Emacstool window, if you know you are in an emacstool."
+  ;; Make sure sun-mouse and sun-fns are loaded.
+  (require 'sun-fns)
+  (define-key ctl-x-map "\C-@" 'sun-mouse-handler)
+
+  (if (fboundp 'sun-window-init) ()
+      (error "SunWindows support not compiled in: #define HAVE_SUN_WINDOWS in config.h"))
+  (if (and (not (getenv "DISPLAY")) (< (sun-window-init) 0))
+      (message "Not a SunView Window"))
+  (progn
+      (substitute-key-definition 'suspend-emacs 'suspend-emacstool global-map)
+      (substitute-key-definition 'suspend-emacs 'suspend-emacstool esc-map)
+      (substitute-key-definition 'suspend-emacs 'suspend-emacstool ctl-x-map)
+      (send-string-to-terminal
+       (concat "\033]lEmacstool - GNU Emacs " emacs-version "\033\\")))
+  )
 
 ;;; If Emacstool is being nice, and informs us of its presence:
 (if (getenv "IN_EMACSTOOL") (emacstool-init))

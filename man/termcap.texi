@@ -35,9 +35,9 @@ by the Foundation.
 @sp 1
 @center The Termcap Library and Data Base
 @sp 4
-@center First Edition
+@center Second Edition
 @sp 1
-@center April 1988
+@center August 1992
 @sp 5
 @center Richard M. Stallman
 @sp 1
@@ -1301,9 +1301,14 @@ nowadays), and many bit-map displays.
 
 @item eo
 @kindex eo
-Flag whose presence means that outputting a space can erase an
-overstrike.  If this is not present and overstriking is supported,
-output of a space has no effect except to move the cursor.
+Flag whose presence means that outputting a space erases a character
+position even if the terminal supports overstriking.  If this flag is
+not present and overstriking is supported, output of a space has no
+effect except to move the cursor.
+
+(On terminals that do not support overstriking, you can always assume
+that outputting a space at a position erases whatever character was
+previously displayed there.)
 
 @item gn
 @kindex gn

@@ -27,7 +27,8 @@
 #undef LD_SWITCH_MACHINE
 
 #ifdef __GNUC__
-#define LD_SWITCH_MACHINE -D 800000
+#undef LINKER
+#define LD_SWITCH_MACHINE -g -Xlinker -D -Xlinker 800000
 #else
 #define LD_SWITCH_MACHINE -systype bsd43 -g3 -D 800000
 #endif

@@ -1,6 +1,32 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* If you have trouble building Emacs in Solaris, it is likely to be
+that you've put /usr/ucb ahead of /usr/ccs/bin in PATH.  Try changing
+that for building Emacs.  (The problem may really come from
+/usr/ucb/ld.)
+
+* M-x manual command does not work on Solaris when you specify a
+manual section number.  You can make it work by setting manual-program
+to "/usr/ucb/man".
+
+* On some variants of SVR4, Emacs does not work at all with X.
+
+Try defining BROKEN_FIONREAD in your config.h file.  If this solves
+the problem, please send a bug report to tell us this is needed; be
+sure to say exactly what type of machine and system you are using.
+
+* On some MIPS systems, division by zero crashes Emacs.
+
+Some operating systems on MIPS machines give SIGTRAP for division by
+zero instead of the usual signals.  The only real solution is to fix
+the system to give a proper signal.
+
+In the meantime, you can change init_data in data.c if you wish.
+Change it to handle SIGTRAP as well as SIGFPE.  But this will have a
+great disadvantage: you will not be able to run Emacs under a
+debugger.  I think crashing on division by zero is a lesser problem.
+
 * Linking says that the functions insque and remque are undefined.
 
 Change oldXMenu/Makefile by adding insque.o to the variable OBJS.
@@ -73,20 +99,8 @@ Use the shell command `xset bc' to make the old X Menu package work.
 * `emacs -geometry 80x20' finds a file named `80x20'.
 
 One cause of such problems is having (setq term-file-prefix nil) in
-your .emacs file.
-
-* Emacs starts in a directory other than the one that is current in the shell.
-
-If the PWD environment variable exists, Emacs uses this variable as
-the initial working directory.
-
-Some shells automatically update this variable, while other shells fail
-to do so.  If you use two such shells in combination, the variable can
-end up wrong.  This confuses Emacs.
-
-The solution is to put something in the start-up file for the shell
-that does not update PWD, to get rid of that environment variable.
-For example, in csh, use `unsetenv PWD'.
+your .emacs file.  Another cause is a bad value of EMACSLOADPATH in
+the environment.
 
 * Emacs gets error message from linker on Sun.
 
@@ -577,6 +591,15 @@ take the number of positions to insert or delete as an argument.
 
 A `cs' string to set the scrolling region will reduce the amount
 of motion you see on the screen when part of the screen is scrolled.
+
+* Your Delete key sends a Backspace to the terminal, using an AIXterm.
+
+The solution is to include in your .Xdefaults the lines:
+
+   *aixterm.Translations: #override <Key>BackSpace: string(0x7f)
+   aixterm*ttyModes: erase ^?
+
+This makes your Backspace key send DEL (ASCII 127).
 
 * You type Control-H (Backspace) expecting to delete characters.
 

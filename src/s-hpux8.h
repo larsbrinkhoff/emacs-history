@@ -17,3 +17,5 @@
 
 /* Specify compiler options for compiling oldXMenu.  */
 #define OLDXMENU_OPTIONS CFLAGS=-I/usr/include/X11R4
+
+#undef NO_X_DESTROY_DATABASE

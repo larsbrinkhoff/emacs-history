@@ -180,7 +180,7 @@ but insted winds up to the right of the rectangle."
 			  (point)))
     (indent-to column)))
 
-(defun clear-rectangle (start end)
+(defun clear-rectangle (start end &optional preserve-position)
   "Blank out rectangle with corners at point and mark.
 The text previously in the region is overwritten by the blanks."
   (interactive "r")
@@ -191,7 +191,8 @@ The text previously in the region is overwritten by the blanks."
   (let ((column (+ (current-column) endextra)))
     (delete-region (point)
                    (progn (goto-char startpos)
-			  (skip-chars-backward " \t")
+			  (or preserve-position
+			      (skip-chars-backward " \t"))
 			  (point)))
     (indent-to column)))
 

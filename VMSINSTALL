@@ -78,9 +78,9 @@ link and build Emacs as described in DEV:[LIB.EMACS.SRC]VMSBUILD.
 	$ rename temacs.exe [-]emacs.exe
 	$ rename temacs.dump [-]emacs.dump
 
-To be clean, you should also edit the file [.SRC]CONFIG.H
-to #include the file S_VMS4_2.H instead of S-VMS-4-4.H.  Then the
-proper conditionals will be activated if you ever recompile.
+To be clean, you should also edit the file [.SRC]CONFIG.H to #include
+the file S_VMS4_2.H.  Then the proper conditionals will be activated
+if you ever recompile.
 
 * Moving a Unix distribution to VMS.
 
@@ -99,9 +99,10 @@ file PATHS.H in that directory.
 2) Delete any file [.SRC]CONFIG.H and replace it with a copy of
 CONFIG.H-DIST.  Then edit this file so it specifies `m-vax.h' as the
 second include file and for the first include file one of
-`s-vms4-0.h', `s-vms4-2.h' or `s-vms4-4.h'.  (Use the highest version
-not greater than the VMS version you are running.  For VMS versions
-prior to 4.4, the `-' characters must be replaced with `_'.)
+`s-vms4-0.h', `s-vms4-2.h', `s-vms4-4.h' or `s-vms5-5.h'.  (Use the
+highest version not greater than the VMS version you are running.  For
+VMS versions prior to 4.4, the `-' characters must be replaced with
+`_'.)
 
 You can now compile, link, build and install Emacs as described in
 [.SRC]VMSBUILD..

@@ -193,7 +193,9 @@ so disable it for them.  */
 #ifdef __GNUC__
 #define HAVE_ALLOCA
 #define alloca(n) __builtin_alloca(n)
+#if __GNUC__ < 2
 #define LIB_STANDARD /usr/local/lib/gcc-gnulib -lc 
+#endif
 /* -g fails to work, so it is omitted.  */
 /* tranle says that -fstrength-reduce does not help.  */
 #define C_DEBUG_SWITCH -O
@@ -218,4 +220,16 @@ so disable it for them.  */
 #undef BROKEN_TIOCGETC
 #undef LIBX10_SYSTEM
 #undef LIBX11_SYSTEM
+#endif
+
+/* Shared libraries are supported in a patch release of ps/2 1.2.1.
+   If the system has them, the user can turn them on, and this code
+   will make them work.  */
+#ifdef USG_SHARED_LIBRARIES
+#define ORDINARY_LINK
+#undef LIB_STANDARD
+#undef LD_SWITCH_MACHINE
+#if __GNUC__ > 1
+#define LD_SWITCH_MACHINE -shlib
+#endif
 #endif

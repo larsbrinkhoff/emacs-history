@@ -1,5 +1,5 @@
 /* Functions for the X window system.
-   Copyright (C) 1988, 1990 Free Software Foundation.
+   Copyright (C) 1988, 1990, 1992 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -52,6 +52,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "dispextern.h"
 #include "termchar.h"
 
+#ifdef HAVE_SOCKETS
+#include <sys/socket.h>		/* Must be done before gettime.h.  */
+#endif
+/* Include time.h or sys/time.h or both.  */
+#include "gettime.h"
+#include <setjmp.h>
+
 /* Prepare for lisp.h definition of NULL.
    Sometimes x11term.h includes stddef.h.  */
 #ifdef NULL
@@ -60,13 +67,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include "lisp.h"
 #include "window.h"
-
-#ifdef HAVE_SOCKETS
-#include <sys/socket.h>		/* Must be done before gettime.h.  */
-#endif
-/* Include time.h or sys/time.h or both.  */
-#include "gettime.h"
-#include <setjmp.h>
 
 #ifdef HAVE_X_WINDOWS
 
@@ -84,6 +84,11 @@ Lisp_Object Vx_mouse_pos;
 Lisp_Object Vx_mouse_abs_pos;
 
 Lisp_Object Vx_mouse_item;
+
+/* These are standard "white" and "black" strings, used in the
+   *_color variables when the color was not specially allocated for them.  */
+char *white_color = "white";
+char *black_color = "black";
 
 extern Lisp_Object MouseMap;
 
@@ -112,7 +117,7 @@ extern char *progname;
 
 extern XFontStruct *fontinfo;
 extern Font XXfid;
-extern GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp;
+extern GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp,XXgc_curs_rev;
 extern XGCValues XXgcv;
 extern int XXfontw,XXfonth,XXbase,XXisColor;
 extern Colormap XXColorMap;
@@ -180,8 +185,10 @@ DEFUN ("x-set-foreground-color", Fx_set_foreground_color,
 	XColor cdef;
 	BLOCK_INPUT_DECLARE ();
 	char *save_color;
+	unsigned long save;
 
 	save_color = fore_color;
+	save = fore;
 	check_xterm ();
 	CHECK_STRING (arg,1);
 	fore_color = (char *) xmalloc (XSTRING (arg)->size + 1);
@@ -192,15 +199,22 @@ DEFUN ("x-set-foreground-color", Fx_set_foreground_color,
 	if (fore_color && XXisColor &&
 	    XParseColor (XXdisplay, XXColorMap, fore_color, &cdef) &&
 	    XAllocColor(XXdisplay, XXColorMap, &cdef))
-		fore = cdef.pixel;
+	  fore = cdef.pixel;
+	else if (fore_color && !strcmp (fore_color, "white"))
+	  fore = WhitePixel (XXdisplay, XXscreen), fore_color = white_color;
+	else if (fore_color && !strcmp (fore_color, "black"))
+	  fore = BlackPixel (XXdisplay, XXscreen), fore_color = black_color;
 	else
-		if (fore_color && !strcmp (fore_color, "black"))
-			fore = BlackPixel (XXdisplay, XXscreen);
-		else
-			if (fore_color && !strcmp (fore_color, "white"))
-				fore = WhitePixel (XXdisplay, XXscreen);
-			else
-				fore_color = save_color;
+	  fore_color = save_color;
+
+	/* Now free the old background color
+	   if it was specially allocated and we are not still using it.  */
+	if (save_color != white_color && save_color != black_color
+	    && save_color != fore_color)
+	  {
+	    XFreeColors (XXdisplay, XXColorMap, &save, 1, 0);
+	    free (save_color);
+	  }
 
 	XSetForeground(XXdisplay, XXgc_norm, fore);
 	XSetBackground(XXdisplay, XXgc_rev, fore);
@@ -221,10 +235,12 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
 	XColor cdef;
 	BLOCK_INPUT_DECLARE ();
 	char *save_color;
+	unsigned long save;
 
 	check_xterm ();
 	CHECK_STRING (arg,1);
 	save_color = back_color;
+	save = back;
 	back_color = (char *) xmalloc (XSTRING (arg)->size + 1);
 	bcopy (XSTRING (arg)->data, back_color, XSTRING (arg)->size + 1);
 
@@ -233,19 +249,27 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
 	if (back_color && XXisColor &&
 	    XParseColor (XXdisplay, XXColorMap, back_color, &cdef) &&
 	    XAllocColor(XXdisplay, XXColorMap, &cdef))
-		back = cdef.pixel;
+	  back = cdef.pixel;
+	else if (back_color && !strcmp (back_color, "white"))
+	  back = WhitePixel (XXdisplay, XXscreen), back_color = white_color;
+	else if (back_color && !strcmp (back_color, "black"))
+	  back = BlackPixel (XXdisplay, XXscreen), back_color = black_color;
 	else
-		if (back_color && !strcmp (back_color, "white"))
-			back = WhitePixel (XXdisplay, XXscreen);
-		else
-			if (back_color && !strcmp (back_color, "black"))
-				back = BlackPixel (XXdisplay, XXscreen);
-			else
-				back_color = save_color;
+	  back_color = save_color;
+
+	/* Now free the old background color
+	   if it was specially allocated and we are not still using it.  */
+	if (save_color != white_color && save_color != black_color
+	    && save_color != back_color)
+	  {
+	    XFreeColors (XXdisplay, XXColorMap, &save, 1, 0);
+	    free (save_color);
+	  }
 
 	XSetBackground (XXdisplay, XXgc_norm, back);
 	XSetForeground (XXdisplay, XXgc_rev, back);
 	XSetForeground (XXdisplay, XXgc_curs, back);
+	XSetBackground (XXdisplay, XXgc_curs_rev, back);
 	XSetWindowBackground(XXdisplay, XXwindow, back);
 	XClearArea (XXdisplay, XXwindow, 0, 0,
 		    screen_width*XXfontw+2*XXInternalBorder,
@@ -266,10 +290,14 @@ DEFUN ("x-set-border-color", Fx_set_border_color, Sx_set_border_color, 1, 1,
 {
 	XColor cdef;
 	BLOCK_INPUT_DECLARE ();
+	unsigned long save;
+	char *save_color;
 
 	check_xterm ();
 	CHECK_STRING (arg,1);
 	brdr_color= (char *) xmalloc (XSTRING (arg)->size + 1);
+	save = brdr;
+	save_color = brdr_color;
 	bcopy (XSTRING (arg)->data, brdr_color, XSTRING (arg)->size + 1);
 
 	BLOCK_INPUT ();
@@ -277,17 +305,34 @@ DEFUN ("x-set-border-color", Fx_set_border_color, Sx_set_border_color, 1, 1,
 	if (brdr_color && XXisColor &&
 	    XParseColor (XXdisplay, XXColorMap, brdr_color, &cdef) &&
 	    XAllocColor(XXdisplay, XXColorMap, &cdef))
-		brdr = cdef.pixel;
+	  brdr = cdef.pixel;
 	else
-		if (brdr_color && !strcmp (brdr_color, "black"))
-			brdr = BlackPixel (XXdisplay, XXscreen);
-		else
-			if (brdr_color && !strcmp (brdr_color, "white"))
-				brdr = WhitePixel (XXdisplay, XXscreen);
-			else {
-				brdr_color = "black";
-				brdr = BlackPixel (XXdisplay, XXscreen);
-			}
+	  {
+	    if (brdr_color && !strcmp (brdr_color, "black"))
+	      {
+		brdr = BlackPixel (XXdisplay, XXscreen);
+		brdr_color = black_color;
+	      }
+	    else
+	      if (brdr_color && !strcmp (brdr_color, "white"))
+		{
+		  brdr = WhitePixel (XXdisplay, XXscreen);
+		  brdr_color = white_color;
+		}
+	      else {
+		brdr_color = black_color;
+		brdr = BlackPixel (XXdisplay, XXscreen);
+	      }
+	  }
+
+	/* Now free the old background color
+	   if it was specially allocated and we are not still using it.  */
+	if (save_color != white_color && save_color != black_color
+	    && save_color != brdr_color)
+	  {
+	    XFreeColors (XXdisplay, XXColorMap, &save, 1, 0);
+	    free (save_color);
+	  }
 
 	if (XXborder) {
 		XSetWindowBorder(XXdisplay, XXwindow, brdr);
@@ -308,10 +353,12 @@ DEFUN ("x-set-cursor-color", Fx_set_cursor_color, Sx_set_cursor_color, 1, 1,
 	XColor cdef;
 	BLOCK_INPUT_DECLARE ();
 	char *save_color;
+	unsigned long save;
 
 	check_xterm ();
 	CHECK_STRING (arg,1);
 	save_color = curs_color;
+	save = curs;
 	curs_color = (char *) xmalloc (XSTRING (arg)->size + 1);
 	bcopy (XSTRING (arg)->data, curs_color, XSTRING (arg)->size + 1);
 
@@ -320,18 +367,26 @@ DEFUN ("x-set-cursor-color", Fx_set_cursor_color, Sx_set_cursor_color, 1, 1,
 	if (curs_color && XXisColor &&
 	    XParseColor (XXdisplay, XXColorMap, curs_color, &cdef) &&
 	    XAllocColor(XXdisplay, XXColorMap, &cdef))
-		curs = cdef.pixel;
+	  curs = cdef.pixel;
+	else if (curs_color && !strcmp (curs_color, "white"))
+	  curs = WhitePixel (XXdisplay, XXscreen), curs_color = white_color;
+	else if (curs_color && !strcmp (curs_color, "black"))
+	  curs = BlackPixel (XXdisplay, XXscreen), curs_color = black_color;
 	else
-		if (curs_color && !strcmp (curs_color, "black"))
-			curs = BlackPixel (XXdisplay, XXscreen);
-		else
-			if (curs_color && !strcmp (curs_color, "white"))
-				curs = WhitePixel (XXdisplay, XXscreen);
-			else
-				curs_color = save_color;
+	  curs_color = save_color;
+
+	/* Now free the old background color
+	   if it was specially allocated and we are not still using it.  */
+	if (save_color != white_color && save_color != black_color
+	    && save_color != curs_color)
+	  {
+	    XFreeColors (XXdisplay, XXColorMap, &save, 1, 0);
+	    free (save_color);
+	  }
 
 	XSetBackground(XXdisplay, XXgc_curs, curs);
-	
+	XSetForeground(XXdisplay, XXgc_curs_rev, curs);
+
 	CursorToggle ();
 	CursorToggle ();
 
@@ -358,6 +413,9 @@ DEFUN ("x-set-mouse-color", Fx_set_mouse_color, Sx_set_mouse_color, 1, 1,
 
   if (! x_set_cursor_colors ())
     mous_color = save_color;
+  else if (save_color != white_color && save_color != black_color
+	   && save_color != mous_color)
+    free (save_color);
 
   XFlush (XXdisplay);
 	
@@ -382,9 +440,9 @@ x_set_cursor_colors ()
   if (!XXisColor && !strcmp (mous_color, back_color))
     {
       if (strcmp (back_color, "white"))
-	useback = "white";
+	useback = white_color;
       else
-	useback = "black";
+	useback = black_color;
     }
 
   if (XXisColor && mous_color

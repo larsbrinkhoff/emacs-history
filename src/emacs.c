@@ -18,6 +18,8 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This must precede sys/signal.h on certain machines.  */
+#include <sys/types.h>
 #include <signal.h>
 #include <errno.h>
 
@@ -54,15 +56,16 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/file.h>
 
 #ifdef VMS
 #include <ssdef.h>
 #endif
 
+#if 0 /* fcntl.h was included above.  */
 #ifdef USG5
 #include <fcntl.h>
+#endif
 #endif
 
 #ifdef BSD
@@ -210,6 +213,25 @@ extern noshare char **environ;
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
 
+/* We don't include crtbegin.o and crtend.o in the link,
+   so these functions and variables might be missed.
+   Provide dummy definitions to avoid error.
+   (We don't have any real constructors or destructors.)  */
+#ifdef __GNUC__
+#ifndef ORDINARY_LINK
+__do_clobal_ctors ()
+{}
+__do_clobal_ctors_aux ()
+{}
+__do_global_dtors ()
+{}
+char * __CTOR_LIST__[2] = { (char *) (-1), 0 };
+char * __DTOR_LIST__[2] = { (char *) (-1), 0 };
+__main ()
+{}
+#endif /* not ORDINARY_LINK */
+#endif /* __GNUC__ */
+
 /* ARGSUSED */
 main (argc, argv, envp)
      int argc;
@@ -263,6 +285,15 @@ main (argc, argv, envp)
   if (bss_end)
     brk (bss_end);
 #endif
+
+#ifdef NeXT
+  extern int malloc_cookie;
+
+  /* This helps out unexnext.c.  */
+  if (initialized)
+    if (malloc_jumpstart (malloc_cookie) != 0)
+      printf ("malloc jumpstart failed!\n");
+#endif /* NeXT */
 
   clearerr (stdin);
 

@@ -30,7 +30,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Define BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define BIG_ENDIAN 4321
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -113,7 +113,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Here override various assumptions in ymakefile */
 
 #define OBJECTS_MACHINE hftctl.o
-#define C_SWITCH_MACHINE -D_BSD
+/* C_SWITCH_MACHINE used to have -D_BSD, but chip@tct.com says no need.  */
+#define C_SWITCH_MACHINE
 #define LIBS_MACHINE -lrts
 #define START_FILES
 #define HAVE_DUP2
@@ -130,4 +131,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* The header files seem to be from X11R4, but the library is not.
    So don don't use the r4 library features.  */
+
+#ifndef SPECIFY_X11R4
 #define SPECIFY_X11R4 0
+#endif
+
+#ifdef __STDC__
+#ifndef DONT_DEFINE_SIGNAL
+/* Cast the function argument to avoid warnings.  */
+#define signal(sig, func) (signal (sig, (void (*) (int)) (func)))
+#endif
+#endif
+
+#if 0 /* s-aix3-1.h seems to do this.  */
+/* Special way to find a pty.  */
+#define PTY_ITERATION        for (i = 0; i < 4; ++i)
+#define PTY_NAME_SPRINTF     strcpy (pty_name, "/dev/ptc");
+#define PTY_TTY_NAME_SPRINTF strcpy (pty_name, ttyname (fd));
+#endif

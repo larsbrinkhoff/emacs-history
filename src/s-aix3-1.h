@@ -229,5 +229,5 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define SYSTEM_MALLOC
 
-
-
+/* Use the gethostname system call.  */
+#define HAVE_GETHOSTNAME

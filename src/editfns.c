@@ -26,7 +26,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #ifdef VMS
-#include "pwd.h"
+#include "vms-pwd.h"
 #else
 #include <pwd.h>
 #endif

@@ -276,14 +276,18 @@ the user from the mailer."
       (set-buffer tembuf)
       (erase-buffer)
       (call-process "date" nil t nil)
-      (end-of-line)
-      (forward-word -1)
-      (delete-region (1- (point)) (point-max))
-      (forward-word -1)
-      (setq timezone (buffer-substring (point) (point-max)))
+      (goto-char (point-min))
+      (re-search-forward 
+        "[0-9] \\([A-Za-z][A-Za-z ]*[A-Za-z]\\)[0-9 ]*$")
+      (setq timezone (buffer-substring (match-beginning 1) (match-end 1)))
       (erase-buffer)
       (insert "\nFrom " (user-login-name) " "
-	      (current-time-string) " " timezone "\n")
+	      (current-time-string) "\n")
+      ;; Insert the time zone before the year.
+      (forward-char -1)
+      (forward-word -1)
+      (insert timezone " ")
+      (goto-char (point-max))
       (insert-buffer-substring rmailbuf)
       ;; Make sure messages are separated.
       (goto-char (point-max))
@@ -343,7 +347,8 @@ the user from the mailer."
   (let (end
 	(case-fold-search t))
     (goto-char (point-min))
-    (search-forward (concat "\n" mail-header-separator "\n"))
+    (re-search-forward
+     (concat "^" (regexp-quote mail-header-separator) "\n"))
     (setq end (match-beginning 0))
     (goto-char (point-min))
     (if (re-search-forward (concat "^" (regexp-quote field) ":") end t)
@@ -354,8 +359,8 @@ the user from the mailer."
 	  t)
       (or soft
 	  (progn (goto-char end)
-		 (skip-chars-backward "\n")
-		 (insert "\n" field ": ")))
+		 (insert field ": \n")
+		 (skip-chars-backward "\n")))
       nil)))
 
 (defun mail-signature ()
@@ -432,8 +437,9 @@ a Reply-to: field with that address is inserted.
 If mail-archive-file-name is non-nil, an FCC field with that file name
 is inserted.
 
-If mail-setup-hook is bound, its value is called with no arguments
+If mail-setup-hook is bound, its value is run by means of run-hooks
 after the message is initialized.  It can add more default fields.
+See the documentation of run-hooks.
 
 When calling from a program, the second through fifth arguments
  TO, SUBJECT, IN-REPLY-TO and CC specify if non-nil

@@ -100,7 +100,7 @@ main (argc, argv)
   long now;
   int tem;
   char *lockname, *p;
-  char tempname[40];
+  char *tempname;
   int desc;
 #endif /* not MAIL_USE_FLOCK */
 
@@ -178,6 +178,7 @@ main (argc, argv)
      to bug-gnu-emacs@prep.ai.mit.edu so we can fix it.  */
 
   lockname = concat (inname, ".lock", "");
+  tempname = (char *) xmalloc (strlen (inname) + 20);
   strcpy (tempname, inname);
   p = tempname + strlen (tempname);
   while (p != tempname && p[-1] != '/')
@@ -382,6 +383,7 @@ xmalloc (size)
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <pwd.h>
 
 #ifdef USG
 #include <fcntl.h>
@@ -417,6 +419,9 @@ popmail (user, outfile)
   register int i;
   int mbfi;
   FILE *mbf;
+  struct passwd *pw = (struct passwd *) getpwuid (getuid ());
+  if (pw == NULL)
+    fatal ("cannot determine user name");
 
   host = getenv ("MAILHOST");
   if (host == NULL)
@@ -435,7 +440,7 @@ popmail (user, outfile)
     }
 
   if (pop_command ("USER %s", user) == NOTOK
-      || pop_command ("RPOP %s", user) == NOTOK)
+      || pop_command ("RPOP %s", pw->pw_name) == NOTOK)
     {
       pop_command ("QUIT");
       fatal (Errmsg);

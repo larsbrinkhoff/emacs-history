@@ -457,6 +457,9 @@ for current buffer."
 		(cond ((eq var 'mode)
 		       (funcall (intern (concat (downcase (symbol-name val))
 						"-mode"))))
+		      ((eq var 'force) nil)
+		      ((eq var 'ignore-local-eval)
+		       nil)
 		      ((eq var 'eval)
 		       (if (or (and ignore-local-eval (not force))
 			       (string= (user-login-name) "root"))
@@ -496,7 +499,10 @@ if you wish to pass an empty string as the argument."
     (setq buffer-file-name nil))
   (setq buffer-backed-up nil)
   (clear-visited-file-modtime)
+  ;; So that C-x C-w after ftp-find-file
+  ;; writes an ordinary local file in the ordinary way.
   (kill-local-variable 'write-file-hooks)
+  ;; So that revert works normally after theat C-x C-w.
   (kill-local-variable 'revert-buffer-function)
   ;; Rename the auto-save file to go with the new visited name.
   ;; If auto-save was not already on, turn it on if appropriate.
@@ -556,6 +562,9 @@ of the new file to agree with the old modes."
 	     (setq backupname (expand-file-name "~/%backup%~"))
 	     (message "Cannot write backup file; backing up in ~/%%backup%%~")
 	     (sleep-for 1)
+	     (condition-case ()
+		 (delete-file backupname)
+	       (file-error nil))
 	     (copy-file buffer-file-name backupname t t)))
 	  (setq buffer-backed-up t)
 	  (if (and targets
@@ -576,9 +585,9 @@ This is a separate procedure so your site-init or startup file can
 redefine it."
   (substring name 0
 	     (if (eq system-type 'vax-vms)
-		 (or (string-match ";[0-9]+\\'" name)
+		 (or (string-match ";[0-9]*\\'" name)
 		     (and (string-match "\\." name (string-match "[]>]" name))
-			  (string-match "\\.[0-9]+\\'" name (match-end 0))))
+			  (string-match "\\.[0-9]*\\'" name (match-end 0))))
 	       (string-match "\\(\\.~[0-9]+\\)?~\\'" name))))
 
 (defun make-backup-file-name (file)
@@ -612,14 +621,19 @@ Value is a list whose car is the name for the backup file
 	    (or version-control
 		(> high-water-mark 0)))
 	   (number-to-delete (- (length versions)
+				;; -1 compensates for the backup
+				;; we are about to make.
 				kept-old-versions kept-new-versions -1)))
       (if (not deserve-versions-p)
 	  (list (make-backup-file-name fn))
 	(cons (concat fn ".~" (int-to-string (1+ high-water-mark)) "~")
 	      (if (and (> number-to-delete 0)
-		       (> (+ kept-new-versions kept-old-versions -1) 0))
+		       ;; Delete nothing if there is overflow
+		       ;; in the number of versions to keep.
+		       (>= (+ kept-new-versions kept-old-versions -1) 0))
 		  (mapcar (function (lambda (n)
-				      (concat fn ".~" (int-to-string n) "~")))
+				      (concat fn ".~"
+					      (int-to-string n) "~")))
 			  (let ((v (nthcdr kept-old-versions versions)))
 			    (rplacd (nthcdr (1- number-to-delete) v) ())
 			    v))))))))
@@ -1035,7 +1049,7 @@ With prefix arg, silently save all file-visiting buffers, then kill."
 	   (let ((processes (process-list))
 		 active)
 	     (while processes
-	       (and (memq (process-status (car processes)) '(run stop))
+	       (and (memq (process-status (car processes)) '(run stop open))
 		    (let ((val (process-kill-without-query (car processes))))
 		      (process-kill-without-query (car processes) val)
 		      val)

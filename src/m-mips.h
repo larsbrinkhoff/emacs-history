@@ -98,8 +98,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Define neither one if an assembler-language alloca
    in the file alloca.s should be used.  */
 
+#ifdef __GNUC__
+#define HAVE_ALLOCA
+#else
 #define C_ALLOCA
-/* #define HAVE_ALLOCA */
+#endif
 
 /* Define NO_REMAP if memory segmentation makes it not work well
    to change the boundary between the text section and data section
@@ -129,8 +132,25 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define LIBS_DEBUG
 
 #define LINKER /bsd43/bin/ld
+  
+#else /* not BSD */
+#ifdef NEWSOS5
 
+#define LIBS_MACHINE -lmld
+#define START_FILES pre-crt0.o /usr/ccs/lib/crt1.o
+#define LIB_STANDARD -lsocket -lnsl -lc /usr/ccs/lib/crtn.o /usr/ccs/lib/values-Xt.o
+
+#ifdef __GNUC__
+#define C_DEBUG_SWITCH -g
+#define C_OPTIMIZE_SWITCH -g -O
+#define LD_SWITCH_MACHINE -g -Xlinker -D -Xlinker 800000
 #else
+#define C_DEBUG_SWITCH -g3
+#define C_OPTIMIZE_SWITCH -g3
+#define LD_SWITCH_MACHINE -g3 -D 800000
+#endif
+
+#else /* not NEWSOS5 */
 
 #define LIBS_MACHINE -lmld
 #define LD_SWITCH_MACHINE -D 800000 -g3
@@ -145,22 +165,29 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_VFORK		/* Graciously provided by libX.a */
 #endif
 
-#endif
+#endif /* not NEWSOS5 */
+#endif /* not BSD */
 
 /* The standard definitions of these macros would work ok,
    but these are faster because the constants are short.  */
 
-#define XUINT(a) (((unsigned)(a) << INTBITS-VALBITS) >> INTBITS-VALBITS)
+#define XUINT(a) (((unsigned)(a) << (INTBITS-VALBITS)) >> (INTBITS-VALBITS))
 
-#define XSET(var, type, ptr) \
-   ((var) = ((int)(type) << VALBITS) + (((unsigned) (ptr) << INTBITS-VALBITS) >> INTBITS-VALBITS))
+#define XSET(var, type, ptr)						\
+  ((var) =								\
+   ((int)(type) << VALBITS)						\
+   + (((unsigned) (ptr) << (INTBITS-VALBITS)) >> (INTBITS-VALBITS)))
 
 #define XSETINT(a, b)  XSET(a, XTYPE(a), b)
 #define XSETUINT(a, b) XSET(a, XTYPE(a), b)
 #define XSETPNTR(a, b) XSET(a, XTYPE(a), b)
 
-#define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
+#define XUNMARK(a)							\
+  ((a) =								\
+   (((unsigned)(a) << (INTBITS-GCTYPEBITS-VALBITS))			\
+    >> (INTBITS-GCTYPEBITS-VALBITS)))
 
+#ifndef NEWSOS5
 #ifdef USG
 
 /* Cancel certain parts of standard sysV support.  */
@@ -198,7 +225,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* ??? */
 #define IRIS
 
-#endif
+#endif /* USG */
 
 #ifdef BSD
 #define COFF
@@ -206,6 +233,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef MAIL_USE_FLOCK  /* Someone should check this.  */
 #undef HAVE_UNION_WAIT
 #endif /* BSD */
+
+#endif /* not NEWSOS5 */
 
 /* Load average requires special crocks.  Version 19 has them.
    For now, this avoids a bug.  */

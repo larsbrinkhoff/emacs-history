@@ -373,7 +373,7 @@ Returns nil if line starts inside a string, t if in a comment."
 		      (save-excursion
 			(re-search-backward "^[^ \^L\t\n#]" nil 'move)
 			(if (and (looking-at "\\sw\\|\\s_")
-				 (looking-at ".*(")
+				 (looking-at "[^\"\n=(]*(")
 				 (progn
 				   (goto-char (1- (match-end 0)))
 				   (forward-sexp 1)
@@ -443,9 +443,11 @@ Returns nil if line starts inside a string, t if in a comment."
 		     ;; The first following code counts
 		     ;; if it is before the line we want to indent.
 		     (and (< (point) indent-point)
-			  (if (> colon-line-end (point))
-			      (- (current-indentation) c-label-offset)
-			    (current-column)))))
+			  (- 
+			   (if (> colon-line-end (point))
+			       (- (current-indentation) c-label-offset)
+			     (current-column))
+			   (if (= (following-char) ?\{) c-brace-offset 0)))))
 		 ;; If no previous statement,
 		 ;; indent it relative to line brace is on.
 		 ;; For open brace in column zero, don't let statement

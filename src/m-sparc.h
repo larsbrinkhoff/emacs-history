@@ -95,8 +95,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* These programs require Sun UNIX 4.2 Release 3.2 or greater */
 
 #ifdef HAVE_SUN_WINDOWS
+#ifndef NO_SUNVIEW
 #define OTHER_FILES  ${etcdir}emacstool
 #define LIBS_MACHINE -lsuntool -lsunwindow -lpixrect
+#else
+#define OTHER_FILES  ${etcdir}xvetool
+#endif
 #define OBJECTS_MACHINE sunfns.o
 #define SYMS_MACHINE syms_of_sunfns ()
 #define PURESIZE 130000

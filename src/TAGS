@@ -46,10 +46,13 @@ emacssignal.h,311
 #define sys_sigdel(56,1571
 int (*sys_signal 25,889
 
-getpagesize.h,84
-#define getpagesize(16,180
-#define getpagesize(19,234
-#define getpagesize(24,345
+filetypes.h,0
+
+getpagesize.h,112
+#define getpagesize(17,192
+#define getpagesize(20,280
+#define getpagesize(23,357
+#define getpagesize(28,468
 
 gettime.h,0
 
@@ -58,100 +61,100 @@ indent.h,0
 ioctl.h,0
 
 lisp.h,2660
-#define CHECK_BUFFER(504,14995
-#define CHECK_CONS(495,14674
-#define CHECK_IMPURE(527,15867
-#define CHECK_IMPURE(537,16248
-#define CHECK_IMPURE(544,16477
-#define CHECK_LIST(489,14447
-#define CHECK_MARKER(516,15432
-#define CHECK_NUMBER(513,15325
-#define CHECK_NUMBER_COERCE_MARKER(519,15541
-#define CHECK_PROCESS(510,15213
-#define CHECK_STRING(492,14565
-#define CHECK_SYMBOL(498,14777
-#define CHECK_VECTOR(501,14886
-#define CHECK_WINDOW(507,15104
-#define CONSP(486,14354
-#define DEFUN(600,19084
-#define DEFVARBOOL(616,19606
-#define DEFVARINT(617,19671
-#define DEFVARLISP(615,19541
-#define DEFVARPERBUFFER(618,19734
-#define DEFVAR_BOOL(623,19962
-#define DEFVAR_INT(624,20028
-#define DEFVAR_LISP(621,19818
-#define DEFVAR_LISP_NOPRO(622,19884
-#define DEFVAR_PER_BUFFER(625,20092
-#define DOWNCASE(686,21685
-#define EQ(487,14398
-#define GCPRO1(721,22843
-#define GCPRO2(725,22965
-#define GCPRO3(730,23168
-#define GCPRO4(736,23450
-#define LOWERCASEP(669,21164
-#define NOCASEP(674,21310
-#define NULL(484,14254
-#define UPCASE(678,21439
-#define UPCASE1(682,21565
-#define UPPERCASEP(665,21080
-#define XBUFFER(393,11892
-#define XCONS(392,11843
+#define CHECK_BUFFER(504,14997
+#define CHECK_CONS(495,14676
+#define CHECK_IMPURE(527,15869
+#define CHECK_IMPURE(537,16250
+#define CHECK_IMPURE(544,16479
+#define CHECK_LIST(489,14449
+#define CHECK_MARKER(516,15434
+#define CHECK_NUMBER(513,15327
+#define CHECK_NUMBER_COERCE_MARKER(519,15543
+#define CHECK_PROCESS(510,15215
+#define CHECK_STRING(492,14567
+#define CHECK_SYMBOL(498,14779
+#define CHECK_VECTOR(501,14888
+#define CHECK_WINDOW(507,15106
+#define CONSP(486,14356
+#define DEFUN(600,19086
+#define DEFVARBOOL(616,19608
+#define DEFVARINT(617,19673
+#define DEFVARLISP(615,19543
+#define DEFVARPERBUFFER(618,19736
+#define DEFVAR_BOOL(623,19964
+#define DEFVAR_INT(624,20030
+#define DEFVAR_LISP(621,19820
+#define DEFVAR_LISP_NOPRO(622,19886
+#define DEFVAR_PER_BUFFER(625,20094
+#define DOWNCASE(686,21687
+#define EQ(487,14400
+#define GCPRO1(721,22845
+#define GCPRO2(725,22967
+#define GCPRO3(730,23170
+#define GCPRO4(736,23452
+#define LOWERCASEP(669,21166
+#define NOCASEP(674,21312
+#define NULL(484,14256
+#define UPCASE(678,21441
+#define UPCASE1(682,21567
+#define UPPERCASEP(665,21082
+#define XBUFFER(393,11894
+#define XCONS(392,11845
 #define XFASTINT(269,8286
-#define XFASTINT(359,10769
-#define XFUNCTION(398,12148
-#define XGCTYPE(325,9971
-#define XGCTYPE(383,11626
+#define XFASTINT(359,10771
+#define XFUNCTION(398,12150
+#define XGCTYPE(325,9973
+#define XGCTYPE(383,11628
 #define XINT(274,8440
-#define XINT(363,10903
-#define XINT(365,10945
-#define XINTPTR(401,12299
-#define XMARK(343,10377
-#define XMARK(386,11741
-#define XMARKBIT(335,10235
-#define XMARKBIT(384,11659
-#define XMARKER(399,12200
-#define XOBJFWD(400,12253
-#define XPNTR(286,8790
-#define XPNTR(295,9174
-#define XPNTR(297,9249
-#define XPNTR(369,11037
-#define XPROCESS(403,12385
-#define XSET(314,9540
-#define XSET(374,11207
-#define XSETBUFFER(406,12487
-#define XSETCONS(405,12441
-#define XSETFUNCTION(411,12725
-#define XSETINT(302,9326
-#define XSETINT(370,11066
-#define XSETINTPTR(414,12871
-#define XSETMARKBIT(339,10299
-#define XSETMARKBIT(385,11696
-#define XSETMARKER(412,12775
-#define XSETOBJFWD(413,12823
-#define XSETPNTR(310,9481
-#define XSETPNTR(372,11159
-#define XSETPROCESS(416,12967
-#define XSETSTRING(409,12629
-#define XSETSUBR(408,12583
-#define XSETSYMBOL(410,12677
+#define XINT(363,10905
+#define XINT(365,10947
+#define XINTPTR(401,12301
+#define XMARK(343,10379
+#define XMARK(386,11743
+#define XMARKBIT(335,10237
+#define XMARKBIT(384,11661
+#define XMARKER(399,12202
+#define XOBJFWD(400,12255
+#define XPNTR(286,8792
+#define XPNTR(295,9176
+#define XPNTR(297,9251
+#define XPNTR(369,11039
+#define XPROCESS(403,12387
+#define XSET(314,9542
+#define XSET(374,11209
+#define XSETBUFFER(406,12489
+#define XSETCONS(405,12443
+#define XSETFUNCTION(411,12727
+#define XSETINT(302,9328
+#define XSETINT(370,11068
+#define XSETINTPTR(414,12873
+#define XSETMARKBIT(339,10301
+#define XSETMARKBIT(385,11698
+#define XSETMARKER(412,12777
+#define XSETOBJFWD(413,12825
+#define XSETPNTR(310,9483
+#define XSETPNTR(372,11161
+#define XSETPROCESS(416,12969
+#define XSETSTRING(409,12631
+#define XSETSUBR(408,12585
+#define XSETSYMBOL(410,12679
 #define XSETTYPE(264,8070
-#define XSETTYPE(355,10578
-#define XSETUINT(306,9418
-#define XSETUINT(371,11112
-#define XSETVECTOR(407,12535
-#define XSETWINDOW(415,12919
-#define XSTRING(396,12042
-#define XSUBR(395,11993
-#define XSYMBOL(397,12095
+#define XSETTYPE(355,10580
+#define XSETUINT(306,9420
+#define XSETUINT(371,11114
+#define XSETVECTOR(407,12537
+#define XSETWINDOW(415,12921
+#define XSTRING(396,12044
+#define XSUBR(395,11995
+#define XSYMBOL(397,12097
 #define XTYPE(260,7992
-#define XTYPE(354,10531
-#define XUINT(281,8654
-#define XUINT(368,11008
-#define XUNMARK(347,10435
-#define XUNMARK(387,11776
-#define XVECTOR(394,11940
-#define XWINDOW(402,12337
+#define XTYPE(354,10533
+#define XUINT(281,8656
+#define XUINT(368,11010
+#define XUNMARK(347,10437
+#define XUNMARK(387,11778
+#define XVECTOR(394,11942
+#define XWINDOW(402,12339
 
 m-7300.h,34
 #define SIGN_EXTEND_CHAR(48,1470
@@ -208,7 +211,7 @@ m-cydra5.h,64
 #define SIGN_EXTEND_CHAR(48,1577
 
 m-delta.h,34
-#define SIGN_EXTEND_CHAR(49,1639
+#define SIGN_EXTEND_CHAR(50,1678
 
 m-delta88.h,34
 #define SIGN_EXTEND_CHAR(58,1975
@@ -217,10 +220,9 @@ m-dpx2-200.h,0
 
 m-dpx2-300.h,0
 
-m-dpx2.h,91
+m-dpx2.h,66
 #define LOAD_AVE_CVT(143,4539
 #define SIGN_EXTEND_CHAR(114,3680
-#define fchmod(231,6696
 
 m-dual.h,34
 #define SIGN_EXTEND_CHAR(42,1345
@@ -267,13 +269,14 @@ m-ibmps2-aix.h,90
 #define SIGN_EXTEND_CHAR(47,1555
 #define alloca(195,5713
 
-m-ibmrs6000.h,173
-#define ADDR_CORRECT(97,2995
-#define A_TEXT_OFFSET(91,2824
-#define N_BADMAG(88,2729
-#define N_SYMOFF(90,2792
-#define N_TXTOFF(89,2759
-#define SIGN_EXTEND_CHAR(43,1433
+m-ibmrs6000.h,198
+#define ADDR_CORRECT(97,3000
+#define A_TEXT_OFFSET(91,2829
+#define N_BADMAG(88,2734
+#define N_SYMOFF(90,2797
+#define N_TXTOFF(89,2764
+#define SIGN_EXTEND_CHAR(43,1438
+#define signal(142,4323
 
 m-ibmrt-aix.h,245
 #define ADDR_CORRECT(94,2918
@@ -290,12 +293,13 @@ m-ibmrt.h,64
 #define LOAD_AVE_CVT(75,2362
 #define SIGN_EXTEND_CHAR(48,1561
 
-m-intel386.h,144
+m-intel386.h,174
 #define LOAD_AVE_CVT(75,2343
 #define LOAD_AVE_CVT(88,2748
+#define LOAD_AVE_CVT(98,3027
 #define SIGN_EXTEND_CHAR(47,1549
-#define alloca(156,4614
-#define signal(164,4787
+#define alloca(169,4938
+#define signal(177,5111
 
 m-intel860.h,89
 #define LOAD_AVE_CVT(77,2405
@@ -305,14 +309,14 @@ m-intel860.h,89
 m-iris4d.h,274
 #define LOAD_AVE_CVT(82,2487
 #define SIGN_EXTEND_CHAR(48,1581
-#define XMARKBIT(181,5585
-#define XSET(174,5321
-#define XSETINT(177,5452
-#define XSETMARKBIT(182,5615
-#define XSETPNTR(179,5540
-#define XSETUINT(178,5496
+#define XMARKBIT(181,5591
+#define XSET(174,5323
+#define XSETINT(177,5458
+#define XSETMARKBIT(182,5621
+#define XSETPNTR(179,5546
+#define XSETUINT(178,5502
 #define XUINT(172,5247
-#define XUNMARK(183,5687
+#define XUNMARK(183,5693
 
 m-irist.h,120
 #define LOAD_AVE_CVT(109,3650
@@ -344,12 +348,12 @@ m-mg1.h,64
 m-mips.h,217
 #define LOAD_AVE_CVT(77,2381
 #define SIGN_EXTEND_CHAR(48,1555
-#define XSET(155,4711
-#define XSETINT(158,4842
-#define XSETPNTR(160,4930
-#define XSETUINT(159,4886
-#define XUINT(153,4637
-#define XUNMARK(162,4975
+#define XSET(176,5239
+#define XSETINT(181,5400
+#define XSETPNTR(183,5488
+#define XSETUINT(182,5444
+#define XUINT(174,5161
+#define XUNMARK(185,5533
 
 m-mips4.h,0
 
@@ -359,6 +363,11 @@ m-news-risc.h,24
 m-news.h,64
 #define LOAD_AVE_CVT(63,1733
 #define SIGN_EXTEND_CHAR(47,1393
+
+m-next.h,95
+#define A_TEXT_OFFSET(66,1960
+#define LOAD_AVE_CVT(60,1726
+#define SIGN_EXTEND_CHAR(44,1375
 
 m-ns16000.h,64
 #define LOAD_AVE_CVT(53,1603
@@ -379,6 +388,12 @@ m-orion105.h,89
 #define SIGN_EXTEND_CHAR(44,1488
 #define sigmask(66,2078
 
+m-pfa50.h,109
+#define SIGN_EXTEND_CHAR(38,1326
+#define XGCTYPE(84,2527
+#define XTYPE(83,2465
+#define sigblock(110,3044
+
 m-plexus.h,34
 #define SIGN_EXTEND_CHAR(48,1570
 
@@ -388,6 +403,18 @@ m-pyramid.h,64
 #define LOAD_AVE_CVT(64,1901
 #define SIGN_EXTEND_CHAR(49,1513
 
+m-pyrmips.h,216
+#define LOAD_AVE_CVT(68,1963
+#define SIGN_EXTEND_CHAR(52,1533
+#define XSET(100,3021
+#define XSETINT(103,3152
+#define XSETPNTR(105,3240
+#define XSETUINT(104,3196
+#define XUINT(98,2947
+#define XUNMARK(107,3285
+
+m-seq386.h,0
+
 m-sequent.h,96
 #define A_TEXT_OFFSET(133,4218
 #define LOAD_AVE_CVT(91,2830
@@ -396,7 +423,7 @@ m-sequent.h,96
 m-sgi3000.h,0
 
 m-sparc.h,96
-#define A_TEXT_OFFSET(109,3207
+#define A_TEXT_OFFSET(113,3277
 #define LOAD_AVE_CVT(73,2011
 #define SIGN_EXTEND_CHAR(42,1382
 
@@ -427,9 +454,10 @@ m-tahoe.h,64
 
 m-tandem-s2.h,0
 
-m-targon31.h,64
+m-targon31.h,89
 #define LOAD_AVE_CVT(77,2409
 #define SIGN_EXTEND_CHAR(48,1567
+#define alloca(106,3397
 
 m-tek4300.h,64
 #define LOAD_AVE_CVT(66,1933
@@ -471,9 +499,10 @@ param.h,0
 process.h,29
 #define ChannelMask(76,2938
 
-pwd.h,0
-
 regex.h,0
+
+s-386bsd.h,37
+#define PENDING_OUTPUT_COUNT(31,771
 
 s-386ix.h,0
 
@@ -489,19 +518,21 @@ s-bsd4-2.h,0
 s-bsd4-3.h,0
 
 s-dgux.h,130
-#define	_longjmp(205,6153
-#define _setjmp(204,6115
-#define getpgrp(200,6053
-#define setpgrp(199,6008
-#define signal(257,7363
+#define	_longjmp(208,6237
+#define _setjmp(207,6199
+#define getpgrp(203,6137
+#define setpgrp(202,6092
+#define signal(262,7517
+
+s-dgux4-31.h,0
 
 s-esix.h,0
 
 s-esix5r4.h,0
 
 s-hpux7.h,52
-#define WRETCODE(258,7099
-#define	killpg(251,6959
+#define WRETCODE(259,7124
+#define	killpg(252,6984
 
 s-hpux8.h,0
 
@@ -520,11 +551,29 @@ s-irix4-0.h,0
 
 s-isc2-2.h,0
 
+s-isc3-0.h,0
+
+s-mach2.h,0
+
+s-newsos5.h,0
+
+s-osf1.h,0
+
 s-rtu.h,24
 #define fsync(156,4813
 
 s-sco.h,23
-#define alloca(32,596
+#define alloca(34,655
+
+s-sco3-2-1.h,44
+#define bcopy(16,436
+#define bzero(14,372
+
+s-sco3-2-2.h,0
+
+s-sco3-2-4.h,0
+
+s-sol2.h,0
 
 s-sunos4-0.h,0
 
@@ -559,17 +608,19 @@ s-usg5-3.h,60
 #define sigsetmask(158,4243
 
 s-usg5-4.h,51
-#define WRETCODE(105,2762
-#define wait3(103,2678
+#define WRETCODE(109,2882
+#define wait3(107,2798
 
 s-vms.h,39
-#define PENDING_OUTPUT_COUNT(250,8013
+#define PENDING_OUTPUT_COUNT(251,8090
 
 s-vms4-0.h,0
 
 s-vms4-2.h,0
 
 s-vms4-4.h,0
+
+s-vms5-5.h,0
 
 s-xenix.h,60
 #define ADDR_CORRECT(204,5924
@@ -585,11 +636,11 @@ sinkmask.h,0
 
 syntax.h,208
 #define SYNTAX(51,2020
-#define SYNTAX_COMEND_FIRST(74,3098
-#define SYNTAX_COMEND_SECOND(77,3207
-#define SYNTAX_COMSTART_FIRST(68,2875
-#define SYNTAX_COMSTART_SECOND(71,2986
-#define SYNTAX_MATCH(57,2240
+#define SYNTAX_COMEND_FIRST(74,3170
+#define SYNTAX_COMEND_SECOND(77,3297
+#define SYNTAX_COMSTART_FIRST(68,2911
+#define SYNTAX_COMSTART_SECOND(71,3040
+#define SYNTAX_MATCH(57,2258
 
 termchar.h,0
 
@@ -600,6 +651,8 @@ termopts.h,0
 uaf.h,0
 
 vlimit.h,0
+
+vms-pwd.h,0
 
 vmspaths.h,0
 
@@ -659,12 +712,12 @@ DEFUN ("vector", Fvector,306,8139
 #define VALIDATE_LISP_STORAGE(34,1185
 build_string 559,14984
 clear_marks 933,25417
-compact_strings 1347,35096
+compact_strings 1368,35666
 display_malloc_warning 115,3435
 free_cons 195,5266
-gc_sweep 1167,30991
-init_alloc 1503,39333
-init_alloc_once 1484,38879
+gc_sweep 1188,31561
+init_alloc 1529,40182
+init_alloc_once 1510,39728
 init_cons 185,5011
 init_marker 413,10852
 init_strings 512,13761
@@ -675,7 +728,7 @@ make_string 548,14767
 make_uninit_string 566,15085
 malloc_warning 109,3361
 malloc_warning_1 98,2944
-mark_buffer 1147,30556
+mark_buffer 1168,31126
 mark_object 999,27001
 #define max(28,918
 memory_full 125,3684
@@ -684,14 +737,14 @@ int pure[PURESIZE / sizeof 81,2401
 int pure[PURESIZE / sizeof 83,2483
 char staticvec1[NSTATICS * sizeof 730,19487
 staticpro 737,19688
-syms_of_alloc 1509,39374
-truncate_all_undos 1467,38566
+syms_of_alloc 1535,40223
+truncate_all_undos 1488,39136
 xmalloc 134,3831
 xrealloc 147,4048
 
 alloca.c,47
-alloca 141,3984
-find_stack_direction 85,2541
+alloca 141,3996
+find_stack_direction 85,2553
 
 buffer.c,1598
 DEFUN ("barf-if-buffer-read-only", Fbarf_if_buffer_read_only,742,21565
@@ -718,16 +771,16 @@ DEFUN ("rename-buffer", Frename_buffer,456,13390
 DEFUN ("set-buffer", Fset_buffer,720,20687
 DEFUN ("set-buffer-modified-p", Fset_buffer_modified_p,427,12642
 DEFUN ("switch-to-buffer", Fswitch_to_buffer,660,18784
-init_buffer 1132,34476
+init_buffer 1129,34366
 init_buffer_once 1044,31085
-keys_of_buffer 1357,43812
+keys_of_buffer 1354,43702
 list_buffers_1 932,27451
 nsberror 98,3409
 record_buffer 635,18208
 reset_buffer 233,6942
 reset_buffer_local_variables(249,7323
 set_buffer_internal 790,22915
-syms_of_buffer 1150,34949
+syms_of_buffer 1147,34839
 validate_region 911,26981
 
 bytecode.c,118
@@ -737,22 +790,22 @@ DEFUN ("byte-code", Fbyte_code,146,3573
 syms_of_bytecode 727,14021
 
 callint.c,259
-DEFUN ("call-interactively", Fcall_interactively,135,4542
-DEFUN ("interactive", Finteractive,87,3464
-DEFUN ("prefix-numeric-value", Fprefix_numeric_value,450,13313
-check_mark 127,4369
-quotify_arg 98,3726
-quotify_args 110,4017
-syms_of_callint 476,13874
+DEFUN ("call-interactively", Fcall_interactively,135,4548
+DEFUN ("interactive", Finteractive,87,3470
+DEFUN ("prefix-numeric-value", Fprefix_numeric_value,460,13569
+check_mark 127,4375
+quotify_arg 98,3732
+quotify_args 110,4023
+syms_of_callint 486,14130
 
-callproc.c,233
-DEFUN ("call-process", Fcall_process,99,2416
-DEFUN ("call-process-region", Fcall_process_region,286,6778
-call_process_cleanup 77,2029
-child_setup 332,8363
-init_callproc 427,10902
-#define max(45,1139
-syms_of_callproc 463,11981
+callproc.c,234
+DEFUN ("call-process", Fcall_process,100,2475
+DEFUN ("call-process-region", Fcall_process_region,287,6866
+call_process_cleanup 78,2088
+child_setup 334,8569
+init_callproc 429,11108
+#define max(46,1198
+syms_of_callproc 465,12187
 
 casefiddle.c,583
 DEFUN ("capitalize", Fcapitalize,88,2249
@@ -812,144 +865,144 @@ start1 313,8130
 start1 481,12333
 
 data.c,2874
-DEFUN ("1+", Fadd1,1313,35953
-DEFUN ("aref", Faref,938,26929
-Farray_length 989,28396
-DEFUN ("arrayp", Farrayp,217,5115
-DEFUN ("aset", Faset,963,27651
-DEFUN ("ash", Fash,1275,34932
-DEFUN ("atom", Fatom,145,3624
-DEFUN ("boundp", Fboundp,367,8583
-DEFUN ("bufferp", Fbufferp,237,5609
-DEFUN ("car", Fcar,285,6745
-DEFUN ("car-safe", Fcar_safe,301,7076
-DEFUN ("cdr", Fcdr,312,7324
-DEFUN ("cdr-safe", Fcdr_safe,328,7655
-DEFUN ("char-or-string-p", Fchar_or_string_p,274,6438
-DEFUN ("consp", Fconsp,136,3455
-DEFUN ("default-value", Fdefault_value,606,15184
-DEFUN ("eq", Feq,117,3128
-DEFUN ("=", Feqlsign,1001,28697
-DEFUN ("fboundp", Ffboundp,377,8842
-DEFUN ("fmakunbound", Ffmakunbound,396,9330
-DEFUN ("fset", Ffset,435,10327
-DEFUN (">=", Fgeq,1053,29912
-DEFUN (">", Fgtr,1027,29289
-DEFUN ("int-to-string", Fint_to_string,1090,30725
-DEFUN ("integer-or-marker-p", Finteger_or_marker_p,255,5982
-DEFUN ("integerp", Fintegerp,172,4217
-DEFUN ("kill-local-variable", Fkill_local_variable,887,25449
-DEFUN ("<=", Fleq,1040,29595
-DEFUN ("listp", Flistp,154,3814
-DEFUN ("logand", Flogand,1248,34294
-DEFUN ("logior", Flogior,1257,34504
-DEFUN ("lognot", Flognot,1333,36352
-DEFUN ("logxor", Flogxor,1266,34713
-DEFUN ("lsh", Flsh,1294,35424
-DEFUN ("<", Flss,1014,28986
-DEFUN ("make-local-variable", Fmake_local_variable,836,23654
-DEFUN ("make-variable-buffer-local", Fmake_variable_buffer_local,799,22221
-DEFUN ("makunbound", Fmakunbound,387,9124
-DEFUN ("markerp", Fmarkerp,246,5791
-DEFUN ("max", Fmax,1230,33877
-DEFUN ("min", Fmin,1239,34085
-DEFUN ("-", Fminus,1187,32918
-DEFUN ("natnump", Fnatnump,181,4391
-DEFUN ("/=", Fneq,1066,30232
-DEFUN ("nlistp", Fnlistp,163,4012
-DEFUN ("null", Fnull,127,3311
-DEFUN ("+", Fplus,1178,32734
-DEFUN ("/", Fquo,1207,33395
-DEFUN ("%", Frem,1216,33593
-DEFUN ("sequencep", Fsequencep,226,5335
-DEFUN ("set", Fset,631,15959
-DEFUN ("set-default", Fset_default,724,19702
-DEFUN ("setcar", Fsetcar,339,7903
-DEFUN ("setcdr", Fsetcdr,352,8220
-DEFUN ("setplist", Fsetplist,448,10738
-DEFUN ("setq-default", Fsetq_default,783,21786
-DEFUN ("string-to-int", Fstring_to_int,1102,31025
-DEFUN ("stringp", Fstringp,208,4941
-DEFUN ("1-", Fsub1,1323,36152
-DEFUN ("subrp", Fsubrp,265,6261
-DEFUN ("symbol-function", Fsymbol_function,405,9556
-DEFUN ("symbol-name", Fsymbol_name,424,10070
-DEFUN ("symbol-plist", Fsymbol_plist,416,9874
-DEFUN ("symbol-value", Fsymbol_value,533,12750
-DEFUN ("symbolp", Fsymbolp,190,4593
-DEFUN ("*", Ftimes,1198,33203
-DEFUN ("vectorp", Fvectorp,199,4767
-DEFUN ("zerop", Fzerop,1079,30540
-args_out_of_range 74,2335
-args_out_of_range_3 82,2473
-arith_error 1584,43705
-do_symval_forwarding 464,11143
-init_data 1605,44131
-make_number 90,2640
-pure_write_error 68,2257
-sign_extend_lisp_int 106,2937
-store_symval_forwarding 493,11741
-syms_of_data 1344,36562
-wrong_type_argument 47,1667
+DEFUN ("1+", Fadd1,1328,36298
+DEFUN ("aref", Faref,940,27011
+Farray_length 991,28478
+DEFUN ("arrayp", Farrayp,219,5197
+DEFUN ("aset", Faset,965,27733
+DEFUN ("ash", Fash,1290,35277
+DEFUN ("atom", Fatom,147,3706
+DEFUN ("boundp", Fboundp,369,8665
+DEFUN ("bufferp", Fbufferp,239,5691
+DEFUN ("car", Fcar,287,6827
+DEFUN ("car-safe", Fcar_safe,303,7158
+DEFUN ("cdr", Fcdr,314,7406
+DEFUN ("cdr-safe", Fcdr_safe,330,7737
+DEFUN ("char-or-string-p", Fchar_or_string_p,276,6520
+DEFUN ("consp", Fconsp,138,3537
+DEFUN ("default-value", Fdefault_value,608,15266
+DEFUN ("eq", Feq,119,3210
+DEFUN ("=", Feqlsign,1003,28779
+DEFUN ("fboundp", Ffboundp,379,8924
+DEFUN ("fmakunbound", Ffmakunbound,398,9412
+DEFUN ("fset", Ffset,437,10409
+DEFUN (">=", Fgeq,1055,29994
+DEFUN (">", Fgtr,1029,29371
+DEFUN ("int-to-string", Fint_to_string,1092,30807
+DEFUN ("integer-or-marker-p", Finteger_or_marker_p,257,6064
+DEFUN ("integerp", Fintegerp,174,4299
+DEFUN ("kill-local-variable", Fkill_local_variable,889,25531
+DEFUN ("<=", Fleq,1042,29677
+DEFUN ("listp", Flistp,156,3896
+DEFUN ("logand", Flogand,1263,34639
+DEFUN ("logior", Flogior,1272,34849
+DEFUN ("lognot", Flognot,1348,36697
+DEFUN ("logxor", Flogxor,1281,35058
+DEFUN ("lsh", Flsh,1309,35769
+DEFUN ("<", Flss,1016,29068
+DEFUN ("make-local-variable", Fmake_local_variable,838,23736
+DEFUN ("make-variable-buffer-local", Fmake_variable_buffer_local,801,22303
+DEFUN ("makunbound", Fmakunbound,389,9206
+DEFUN ("markerp", Fmarkerp,248,5873
+DEFUN ("max", Fmax,1245,34222
+DEFUN ("min", Fmin,1254,34430
+DEFUN ("-", Fminus,1197,33145
+DEFUN ("natnump", Fnatnump,183,4473
+DEFUN ("/=", Fneq,1068,30314
+DEFUN ("nlistp", Fnlistp,165,4094
+DEFUN ("null", Fnull,129,3393
+DEFUN ("+", Fplus,1188,32961
+DEFUN ("/", Fquo,1217,33622
+DEFUN ("%", Frem,1226,33820
+DEFUN ("sequencep", Fsequencep,228,5417
+DEFUN ("set", Fset,633,16041
+DEFUN ("set-default", Fset_default,726,19784
+DEFUN ("setcar", Fsetcar,341,7985
+DEFUN ("setcdr", Fsetcdr,354,8302
+DEFUN ("setplist", Fsetplist,450,10820
+DEFUN ("setq-default", Fsetq_default,785,21868
+DEFUN ("string-to-int", Fstring_to_int,1104,31107
+DEFUN ("stringp", Fstringp,210,5023
+DEFUN ("1-", Fsub1,1338,36497
+DEFUN ("subrp", Fsubrp,267,6343
+DEFUN ("symbol-function", Fsymbol_function,407,9638
+DEFUN ("symbol-name", Fsymbol_name,426,10152
+DEFUN ("symbol-plist", Fsymbol_plist,418,9956
+DEFUN ("symbol-value", Fsymbol_value,535,12832
+DEFUN ("symbolp", Fsymbolp,192,4675
+DEFUN ("*", Ftimes,1208,33430
+DEFUN ("vectorp", Fvectorp,201,4849
+DEFUN ("zerop", Fzerop,1081,30622
+args_out_of_range 76,2417
+args_out_of_range_3 84,2555
+arith_error 1599,44050
+do_symval_forwarding 466,11225
+init_data 1621,44490
+make_number 92,2722
+pure_write_error 70,2339
+sign_extend_lisp_int 108,3019
+store_symval_forwarding 495,11823
+syms_of_data 1359,36907
+wrong_type_argument 49,1749
 
 dired.c,491
-DEFUN ("directory-files", Fdirectory_files,72,1698
-DEFUN ("file-attributes", Ffile_attributes,415,11439
-DEFUN ("file-name-all-completions", Ffile_name_all_completions,159,4284
-DEFUN ("file-name-all-versions", Ffile_name_all_versions,170,4581
-DEFUN ("file-name-completion", Ffile_name_completion,139,3455
+DEFUN ("directory-files", Fdirectory_files,73,1721
+DEFUN ("file-attributes", Ffile_attributes,416,11462
+DEFUN ("file-name-all-completions", Ffile_name_all_completions,160,4307
+DEFUN ("file-name-all-versions", Ffile_name_all_versions,171,4604
+DEFUN ("file-name-completion", Ffile_name_completion,140,3478
 #define NAMLEN(31,962
 #define NAMLEN(42,1184
-file_name_completion 182,4884
-file_name_completion_stat 376,10491
-make_time 408,11313
-#define min(57,1376
-syms_of_dired 486,13850
+file_name_completion 183,4907
+file_name_completion_stat 377,10514
+make_time 409,11336
+#define min(58,1399
+syms_of_dired 487,13873
 
 dispnew.c,1440
-DEFUN ("baud-rate", Fbaud_rate,1329,37030
-DEFUN ("ding", Fding,1356,37722
-DEFUN ("open-termscript", Fopen_termscript,1176,32315
-DEFUN ("screen-height", Fscreen_height,1220,33747
-DEFUN ("screen-width", Fscreen_width,1227,33921
-DEFUN ("send-string-to-terminal", Fsend_string_to_terminal,1338,37215
-DEFUN ("set-screen-height", Fset_screen_height,1196,32889
-DEFUN ("set-screen-width", Fset_screen_width,1208,33319
-DEFUN ("sit-for", Fsit_for,1479,40602
-DEFUN ("sleep-for", Fsleep_for,1384,38243
-#define	PENDING_OUTPUT_COUNT(80,1984
-#define PENDING_OUTPUT_COUNT(82,2061
-bell 1373,38013
-cancel_line 335,8389
-cancel_my_columns 553,14521
-change_screen_size 1279,35528
-change_screen_size_1 1296,35984
-clear_screen_records 341,8460
-count_blanks 1159,32041
-count_match 1167,32154
-direct_output_for_insert 574,15298
-direct_output_forward_char 627,16851
-do_pending_window_change 1253,34580
-free_screen_structure 253,6639
-get_display_line 353,8723
-init_display 1542,42255
-line_draw_cost 311,7788
-line_hash_code 268,6967
-make_screen_structure 214,5419
-#define max(72,1651
-#define min(73,1693
-preserve_other_columns 512,13290
-quit_error_check 773,20814
-remake_screen_structures 186,4678
-rotate_vector 463,12202
-safe_bcopy 480,12574
-scroll_screen_lines 383,9523
-scrolling 785,21032
-syms_of_display 1609,43859
-timeval_subtract 1451,39767
-update_line 858,23377
-update_screen 648,17468
-window_change_signal 1235,34109
+DEFUN ("baud-rate", Fbaud_rate,1351,37928
+DEFUN ("ding", Fding,1378,38620
+DEFUN ("open-termscript", Fopen_termscript,1194,33027
+DEFUN ("screen-height", Fscreen_height,1238,34459
+DEFUN ("screen-width", Fscreen_width,1245,34633
+DEFUN ("send-string-to-terminal", Fsend_string_to_terminal,1360,38113
+DEFUN ("set-screen-height", Fset_screen_height,1214,33601
+DEFUN ("set-screen-width", Fset_screen_width,1226,34031
+DEFUN ("sit-for", Fsit_for,1504,41552
+DEFUN ("sleep-for", Fsleep_for,1409,39193
+#define	PENDING_OUTPUT_COUNT(82,2066
+#define PENDING_OUTPUT_COUNT(84,2143
+bell 1398,38963
+cancel_line 345,8765
+cancel_my_columns 563,14897
+change_screen_size 1297,36240
+change_screen_size_1 1318,36882
+clear_screen_records 351,8836
+count_blanks 1177,32753
+count_match 1185,32866
+direct_output_for_insert 584,15674
+direct_output_forward_char 637,17231
+do_pending_window_change 1271,35292
+free_screen_structure 263,7015
+get_display_line 363,9099
+init_display 1567,43189
+line_draw_cost 321,8164
+line_hash_code 278,7343
+make_screen_structure 224,5795
+#define max(74,1733
+#define min(75,1775
+preserve_other_columns 522,13666
+quit_error_check 791,21526
+remake_screen_structures 188,4760
+rotate_vector 473,12578
+safe_bcopy 490,12950
+scroll_screen_lines 393,9899
+scrolling 803,21744
+syms_of_display 1634,44793
+timeval_subtract 1476,40717
+update_line 876,24089
+update_screen 666,18180
+window_change_signal 1253,34821
 
 doc.c,293
 DEFUN ("documentation", Fdocumentation,103,2474
@@ -963,75 +1016,79 @@ doprnt.c,15
 doprnt 26,966
 
 editfns.c,2442
-DEFUN ("bobp", Fbobp,408,10981
-DEFUN ("bolp", Fbolp,428,11435
-DEFUN ("buffer-string", Fbuffer_string,643,16393
-DEFUN ("buffer-substring", Fbuffer_substring,626,15950
-DEFUN ("buffer-size", Fbufsize,338,9213
-DEFUN ("char-after", Fchar_after,447,11863
-DEFUN ("char-equal", Fchar_equal,1018,26668
-DEFUN ("char-to-string", Fchar_to_string,122,3571
-DEFUN ("current-time-string", Fcurrent_time_string,511,13382
-DEFUN ("delete-region", Fdelete_region,752,19082
-DEFUN ("eobp", Feobp,418,11215
-DEFUN ("eolp", Feolp,437,11622
-DEFUN ("following-char", Ffollchar,384,10475
-DEFUN ("format", Fformat,901,23502
-DEFUN ("getenv", Fgetenv,1035,27218
-DEFUN ("goto-char", Fgoto_char,190,4919
-DEFUN ("insert", Finsert,527,13728
-DEFUN ("insert-before-markers", Finsert_before_markers,559,14386
-DEFUN ("insert-buffer-substring", Finsert_buffer_substring,652,16624
-DEFUN ("insert-char", Finsert_char,593,15231
-DEFUN ("mark", Fmark,231,5929
-DEFUN ("mark-marker", Fmark_marker,241,6253
-DEFUN ("message", Fmessage,882,22864
-DEFUN ("narrow-to-region", Fnarrow_to_region,776,19753
-DEFUN ("point", Fpoint,161,4393
-DEFUN ("point-marker", Fpoint_marker,171,4596
-DEFUN ("point-max", Fpoint_max,365,9918
-DEFUN ("point-max-marker", Fpoint_max_marker,376,10218
-DEFUN ("point-min", Fpoint_min,347,9398
-DEFUN ("point-min-marker", Fpoint_min_marker,357,9654
-DEFUN ("preceding-char", Fprevchar,396,10725
-DEFUN ("region-beginning", Fregion_beginning,216,5578
-DEFUN ("region-end", Fregion_end,223,5751
-DEFUN ("save-excursion", Fsave_excursion,321,8704
-DEFUN ("save-restriction", Fsave_restriction,859,21987
-DEFUN ("set-mark", Fset_mark,251,6561
-DEFUN ("string-to-char", Fstring_to_char,134,3811
-DEFUN ("subst-char-in-region", Fsubst_char_in_region,711,18058
-DEFUN ("system-name", Fsystem_name,504,13221
-DEFUN ("user-full-name", Fuser_full_name,497,13055
-DEFUN ("user-login-name", Fuser_login_name,466,12288
-DEFUN ("user-real-login-name", Fuser_real_login_name,474,12509
-DEFUN ("user-real-uid", Fuser_real_uid,490,12896
-DEFUN ("user-uid", Fuser_uid,483,12746
-DEFUN ("widen", Fwiden,764,19421
-buildmark 152,4241
-clip_to_bounds 179,4749
-format1 996,26240
-format1 999,26333
-init_editfns 49,1424
-insert1 521,13666
-#define max(39,1060
-#define min(38,1018
-region_limit 204,5302
-save_excursion_restore 295,7924
-save_excursion_save 286,7692
-save_restriction_restore 828,21281
-save_restriction_save 815,20895
-syms_of_editfns 1052,27645
+DEFUN ("bobp", Fbobp,408,10985
+DEFUN ("bolp", Fbolp,428,11439
+DEFUN ("buffer-string", Fbuffer_string,643,16397
+DEFUN ("buffer-substring", Fbuffer_substring,626,15954
+DEFUN ("buffer-size", Fbufsize,338,9217
+DEFUN ("char-after", Fchar_after,447,11867
+DEFUN ("char-equal", Fchar_equal,1018,26672
+DEFUN ("char-to-string", Fchar_to_string,122,3575
+DEFUN ("current-time-string", Fcurrent_time_string,511,13386
+DEFUN ("delete-region", Fdelete_region,752,19086
+DEFUN ("eobp", Feobp,418,11219
+DEFUN ("eolp", Feolp,437,11626
+DEFUN ("following-char", Ffollchar,384,10479
+DEFUN ("format", Fformat,901,23506
+DEFUN ("getenv", Fgetenv,1035,27222
+DEFUN ("goto-char", Fgoto_char,190,4923
+DEFUN ("insert", Finsert,527,13732
+DEFUN ("insert-before-markers", Finsert_before_markers,559,14390
+DEFUN ("insert-buffer-substring", Finsert_buffer_substring,652,16628
+DEFUN ("insert-char", Finsert_char,593,15235
+DEFUN ("mark", Fmark,231,5933
+DEFUN ("mark-marker", Fmark_marker,241,6257
+DEFUN ("message", Fmessage,882,22868
+DEFUN ("narrow-to-region", Fnarrow_to_region,776,19757
+DEFUN ("point", Fpoint,161,4397
+DEFUN ("point-marker", Fpoint_marker,171,4600
+DEFUN ("point-max", Fpoint_max,365,9922
+DEFUN ("point-max-marker", Fpoint_max_marker,376,10222
+DEFUN ("point-min", Fpoint_min,347,9402
+DEFUN ("point-min-marker", Fpoint_min_marker,357,9658
+DEFUN ("preceding-char", Fprevchar,396,10729
+DEFUN ("region-beginning", Fregion_beginning,216,5582
+DEFUN ("region-end", Fregion_end,223,5755
+DEFUN ("save-excursion", Fsave_excursion,321,8708
+DEFUN ("save-restriction", Fsave_restriction,859,21991
+DEFUN ("set-mark", Fset_mark,251,6565
+DEFUN ("string-to-char", Fstring_to_char,134,3815
+DEFUN ("subst-char-in-region", Fsubst_char_in_region,711,18062
+DEFUN ("system-name", Fsystem_name,504,13225
+DEFUN ("user-full-name", Fuser_full_name,497,13059
+DEFUN ("user-login-name", Fuser_login_name,466,12292
+DEFUN ("user-real-login-name", Fuser_real_login_name,474,12513
+DEFUN ("user-real-uid", Fuser_real_uid,490,12900
+DEFUN ("user-uid", Fuser_uid,483,12750
+DEFUN ("widen", Fwiden,764,19425
+buildmark 152,4245
+clip_to_bounds 179,4753
+format1 996,26244
+format1 999,26337
+init_editfns 49,1428
+insert1 521,13670
+#define max(39,1064
+#define min(38,1022
+region_limit 204,5306
+save_excursion_restore 295,7928
+save_excursion_save 286,7696
+save_restriction_restore 828,21285
+save_restriction_save 815,20899
+syms_of_editfns 1052,27649
 
-emacs.c,261
-DEFUN ("dump-emacs", Fdump_emacs,642,15552
-DEFUN ("dump-emacs-data", Fdump_emacs_data,611,14813
-DEFUN ("kill-emacs", Fkill_emacs,546,13507
-decode_env_path 693,16731
-fatal_error_signal 134,3226
-init_cmdargs 183,4253
-main 214,4840
-syms_of_emacs 722,17263
+emacs.c,366
+DEFUN ("dump-emacs", Fdump_emacs,673,16359
+DEFUN ("dump-emacs-data", Fdump_emacs_data,642,15620
+DEFUN ("kill-emacs", Fkill_emacs,577,14314
+__do_clobal_ctors 222,5186
+__do_clobal_ctors_aux 224,5210
+__do_global_dtors 226,5238
+__main 230,5358
+decode_env_path 724,17538
+fatal_error_signal 137,3333
+init_cmdargs 186,4360
+main 236,5440
+syms_of_emacs 753,18070
 
 environ.c,331
 DEFUN ("getenv", Fgetenv,258,6379
@@ -1107,75 +1164,78 @@ unbind_catch 836,21825
 unbind_to 1966,50911
 
 fileio.c,2234
-DEFUN ("add-name-to-file", Fadd_name_to_file,1198,29857
-DEFUN ("clear-visited-file-modtime", Fclear_visited_file_modtime,2006,52165
-DEFUN ("copy-file", Fcopy_file,1043,25073
-DEFUN ("define-logical-name", Fdefine_logical_name,1297,33224
-DEFUN ("delete-file", Fdelete_file,1133,27765
-DEFUN ("directory-file-name", Fdirectory_file_name,416,10091
-DEFUN ("do-auto-save", Fdo_auto_save,2040,52952
-DEFUN ("expand-file-name", Fexpand_file_name,455,11333
-DEFUN ("file-directory-p", Ffile_directory_p,1460,37521
-DEFUN ("file-exists-p", Ffile_exists_p,1367,35007
-DEFUN ("file-modes", Ffile_modes,1477,38088
-DEFUN ("file-name-absolute-p", Ffile_name_absolute_p,1344,34405
-DEFUN ("file-name-as-directory", Ffile_name_as_directory,258,5852
-DEFUN ("file-name-directory", Ffile_name_directory,131,2915
-DEFUN ("file-name-nondirectory", Ffile_name_nondirectory,160,3653
-DEFUN ("file-newer-than-file-p", Ffile_newer_than_file_p,1537,39831
-DEFUN ("file-readable-p", Ffile_readable_p,1385,35523
-DEFUN ("file-symlink-p", Ffile_symlink_p,1398,35912
-DEFUN ("file-writable-p", Ffile_writable_p,1440,36901
-DEFUN ("insert-file-contents", Finsert_file_contents,1572,40661
-DEFUN ("make-symbolic-link", Fmake_symbolic_link,1239,31248
-DEFUN ("make-temp-name", Fmake_temp_name,444,11036
-DEFUN ("read-file-name", Fread_file_name,2213,58110
-DEFUN ("read-file-name-internal", Fread_file_name_internal,2135,56075
-DEFUN ("recent-auto-save-p", Frecent_auto_save_p,2124,55701
-DEFUN ("rename-file", Frename_file,1146,28228
-DEFUN ("set-buffer-auto-saved", Fset_buffer_auto_saved,2113,55355
-DEFUN ("set-file-modes", Fset_file_modes,1492,38459
-DEFUN ("substitute-in-file-name", Fsubstitute_in_file_name,798,19366
-DEFUN ("sysnetunam", Fsysnetunam,1325,33985
-DEFUN ("verify-visited-file-modtime", Fverify_visited_file_modtime,1972,51112
-DEFUN ("write-region", Fwrite_region,1704,44175
-auto_save_1 2032,52829
-auto_save_error 2017,52467
-barf_or_query_if_file_exists 1017,24377
-close_file_unwind 1566,40587
-directory_file_name 287,6806
-e_write 1939,50521
-#define err_str(53,1227
-expand_and_dir_to_file 991,23645
-file_name_as_directory 186,4271
-#define max(95,1881
-#define min(94,1839
-report_file_error 110,2323
-syms_of_fileio 2273,59929
+DEFUN ("add-name-to-file", Fadd_name_to_file,1200,29934
+DEFUN ("clear-visited-file-modtime", Fclear_visited_file_modtime,2008,52242
+DEFUN ("copy-file", Fcopy_file,1045,25150
+DEFUN ("define-logical-name", Fdefine_logical_name,1299,33301
+DEFUN ("delete-file", Fdelete_file,1135,27842
+DEFUN ("directory-file-name", Fdirectory_file_name,418,10168
+DEFUN ("do-auto-save", Fdo_auto_save,2042,53029
+DEFUN ("expand-file-name", Fexpand_file_name,457,11410
+DEFUN ("file-directory-p", Ffile_directory_p,1462,37598
+DEFUN ("file-exists-p", Ffile_exists_p,1369,35084
+DEFUN ("file-modes", Ffile_modes,1479,38165
+DEFUN ("file-name-absolute-p", Ffile_name_absolute_p,1346,34482
+DEFUN ("file-name-as-directory", Ffile_name_as_directory,258,5853
+DEFUN ("file-name-directory", Ffile_name_directory,131,2916
+DEFUN ("file-name-nondirectory", Ffile_name_nondirectory,160,3654
+DEFUN ("file-newer-than-file-p", Ffile_newer_than_file_p,1539,39908
+DEFUN ("file-readable-p", Ffile_readable_p,1387,35600
+DEFUN ("file-symlink-p", Ffile_symlink_p,1400,35989
+DEFUN ("file-writable-p", Ffile_writable_p,1442,36978
+DEFUN ("insert-file-contents", Finsert_file_contents,1574,40738
+DEFUN ("make-symbolic-link", Fmake_symbolic_link,1241,31325
+DEFUN ("make-temp-name", Fmake_temp_name,446,11113
+DEFUN ("read-file-name", Fread_file_name,2215,58187
+DEFUN ("read-file-name-internal", Fread_file_name_internal,2137,56152
+DEFUN ("recent-auto-save-p", Frecent_auto_save_p,2126,55778
+DEFUN ("rename-file", Frename_file,1148,28305
+DEFUN ("set-buffer-auto-saved", Fset_buffer_auto_saved,2115,55432
+DEFUN ("set-file-modes", Fset_file_modes,1494,38536
+DEFUN ("substitute-in-file-name", Fsubstitute_in_file_name,800,19443
+DEFUN ("sysnetunam", Fsysnetunam,1327,34062
+DEFUN ("verify-visited-file-modtime", Fverify_visited_file_modtime,1974,51189
+DEFUN ("write-region", Fwrite_region,1706,44252
+auto_save_1 2034,52906
+auto_save_error 2019,52544
+barf_or_query_if_file_exists 1019,24454
+close_file_unwind 1568,40664
+directory_file_name 287,6807
+e_write 1941,50598
+#define err_str(52,1224
+expand_and_dir_to_file 993,23722
+file_name_as_directory 186,4272
+#define max(95,1882
+#define min(94,1840
+report_file_error 110,2324
+syms_of_fileio 2275,60006
 
-filelock.c,477
-DEFUN ("file-locked-p", Ffile_locked_p,334,8000
-DEFUN ("lock-buffer", Flock_buffer,293,6978
-DEFUN ("unlock-buffer", Funlock_buffer,311,7429
-current_lock_owner 207,5331
-current_lock_owner_1 222,5673
-static dummy 48,1183
-fill_in_lock_file_name 134,3756
-lock_file 96,2651
-lock_file_1 159,4264
-lock_file_owner_name 61,1414
-lock_if_free 183,4764
-lock_superlock 255,6254
-syms_of_filelock 358,8632
-unlock_all_files 277,6623
-unlock_buffer 326,7808
-unlock_file 239,5935
+filelock.c,600
+# define CREATE_LOCK_FILE_NAME(104,2953
+# define CREATE_LOCK_FILE_NAME(110,3115
+DEFUN ("file-locked-p", Ffile_locked_p,398,9605
+DEFUN ("lock-buffer", Flock_buffer,357,8583
+DEFUN ("unlock-buffer", Funlock_buffer,375,9034
+current_lock_owner 268,6945
+current_lock_owner_1 283,7287
+static dummy 50,1211
+fill_in_lock_file_name 156,4325
+fill_in_lock_short_file_name 176,4640
+lock_file 119,3295
+lock_file_1 216,5820
+lock_file_owner_name 63,1442
+lock_if_free 244,6378
+lock_superlock 315,7793
+syms_of_filelock 421,10162
+unlock_all_files 341,8228
+unlock_buffer 390,9413
+unlock_file 300,7549
 
 filemode.c,73
-filemodestring 77,2532
-ftypelet(101,3230
-rwx 154,4029
-setst 167,4345
+filemodestring 78,2555
+ftypelet(102,3253
+rwx 155,4052
+setst 168,4368
 
 fns.c,1454
 DEFUN ("append", Fappend,205,5060
@@ -1187,12 +1247,12 @@ DEFUN ("copy-sequence", Fcopy_sequence,238,6110
 DEFUN ("delq", Fdelq,569,14596
 DEFUN ("elt", Felt,453,11582
 DEFUN ("equal", Fequal,779,19324
-DEFUN ("featurep", Ffeaturep,1297,31795
+DEFUN ("featurep", Ffeaturep,1302,32124
 DEFUN ("fillarray", Ffillarray,833,20779
 DEFUN ("get", Fget,734,18159
 DEFUN ("identity", Fidentity,75,1886
 DEFUN ("length", Flength,104,2629
-DEFUN ("load-average", Fload_average,1138,27962
+DEFUN ("load-average", Fload_average,1143,28250
 DEFUN ("mapcar", Fmapcar,1011,24814
 DEFUN ("mapconcat", Fmapconcat,975,23922
 DEFUN ("memq", Fmemq,471,12004
@@ -1200,11 +1260,11 @@ DEFUN ("nconc", Fnconc,879,21817
 DEFUN ("nreverse", Fnreverse,601,15328
 DEFUN ("nth", Fnth,444,11364
 DEFUN ("nthcdr", Fnthcdr,427,11026
-DEFUN ("provide", Fprovide,1312,32316
+DEFUN ("provide", Fprovide,1317,32645
 DEFUN ("put", Fput,752,18631
 DEFUN ("random", Frandom,83,2021
 DEFUN ("rassq", Frassq,549,14051
-DEFUN ("require", Frequire,1327,32747
+DEFUN ("require", Frequire,1332,33076
 DEFUN ("reverse", Freverse,622,15764
 DEFUN ("sort", Fsort,643,16345
 DEFUN ("string-equal", Fstring_equal,138,3266
@@ -1212,42 +1272,42 @@ DEFUN ("string-lessp", Fstring_lessp,157,3896
 DEFUN ("substring", Fsubstring,400,10147
 DEFUN ("vconcat", Fvconcat,227,5765
 DEFUN ("y-or-n-p", Fy_or_n_p,1032,25344
-DEFUN ("yes-or-no-p", Fyes_or_no_p,1080,26582
+DEFUN ("yes-or-no-p", Fyes_or_no_p,1082,26721
 assq_no_quit 513,13140
 concat 250,6505
 concat2 192,4821
 mapcar1 926,22827
 merge 675,17144
 nconc2 866,21611
-syms_of_fns 1359,33690
+syms_of_fns 1364,34019
 
 hftctl.c,176
-#define BYTE4(98,4041
-GT_ACK 213,7445
-#define HFTYPE(96,3985
-#define RD_BUF(101,4141
-WR_REQ 301,10653
-hfqry 201,7149
-hfskbd 190,6868
-hft_alrm 278,9633
-hftctl 121,4712
+#define BYTE4(99,4062
+GT_ACK 214,7466
+#define HFTYPE(97,4006
+#define RD_BUF(102,4162
+WR_REQ 302,10707
+hfqry 202,7170
+hfskbd 191,6889
+hft_alrm 279,9676
+hftctl 122,4733
 
 indent.c,501
 DEFUN ("current-column", Fcurrent_column,50,1592
 DEFUN ("current-indentation", Fcurrent_indentation,235,6018
 DEFUN ("indent-to", Findent_to,187,4824
 DEFUN ("move-to-column", Fmove_to_column,284,7056
-DEFUN ("vertical-motion", Fvertical_motion,585,15015
+DEFUN ("vertical-motion", Fvertical_motion,591,15252
 ToCol 152,4157
 compute_motion 346,8676
 current_column 74,2396
 invalidate_current_column 68,2327
 #define max(36,1110
 #define min(35,1068
-pos_tab_offset 477,12114
+pos_tab_offset 480,12270
 position_indentation 248,6358
-syms_of_indent 611,15873
-vmotion 499,12599
+syms_of_indent 617,16110
+vmotion 505,12836
 
 insdel.c,339
 InsStr 244,5626
@@ -1265,71 +1325,72 @@ modify_region 404,9285
 move_gap 29,960
 prepare_to_modify_buffer 416,9575
 
-keyboard.c,2203
-DEFUN ("abort-recursive-edit", Fabort_recursive_edit,570,13834
-DEFUN ("command-execute", Fcommand_execute,1645,40299
-DEFUN ("discard-input", Fdiscard_input,1829,45317
-DEFUN ("execute-extended-command", Fexecute_extended_command,1708,41954
-DEFUN ("exit-recursive-edit", Fexit_recursive_edit,561,13558
-DEFUN ("input-pending-p", Finput_pending_p,1767,43600
-DEFUN ("open-dribble-file", Fopen_dribble_file,1811,44875
-DEFUN ("read-key-sequence", Fread_key_sequence,1621,39553
-DEFUN ("recent-keys", Frecent_keys,1777,43916
-DEFUN ("recursion-depth", Frecursion_depth,1802,44653
-DEFUN ("recursive-edit", Frecursive_edit,361,9021
-DEFUN ("set-input-mode", Fset_input_mode,2082,52458
-DEFUN ("suspend-emacs", Fsuspend_emacs,1846,45658
-DEFUN ("this-command-keys", Fthis_command_keys,1795,44436
-DEFUN ("top-level", Ftop_level,554,13425
-cancel_echoing 347,8759
-clear_waiting_for_input 1960,48993
-cmd_error 417,10191
-command_loop 502,12161
-command_loop_1 585,14261
-command_loop_2 526,12839
-consume_available_input 1234,30266
-detect_input_pending 1759,43484
-echo 325,8366
-echo_char 277,7446
-echo_dash 309,8036
-echo_prompt 262,7172
-fast_read_one_key 1432,35025
-force_input_read 1170,28245
-get_input_pending 1182,28507
-gobble_input 1339,32935
-init_keyboard 2116,53578
-input_available_signal 1355,33153
-input_poll_signal 846,20875
-interrupt_signal 1980,49673
-kbd_buffer_read_command_char 1107,26797
-kbd_buffer_store_char 1077,26324
-keys_of_keyboard 2269,58551
-#define	max(253,6933
-#define	min(252,6898
-print_help 1062,25953
-quit_throw_to_read_command_char 2067,52140
-read_avail_input 1254,30811
-read_command_char 899,21865
-read_key_sequence 1495,36514
-record_auto_save 354,8903
-recursive_edit_1 386,9682
-recursive_edit_unwind 406,10005
-request_echo 800,20021
-set_waiting_for_input 1936,48422
-#define sigblockx(208,5706
-#define sigblockx(216,5943
-#define sigfree(206,5613
-#define sigholdx(207,5657
-#define sigpausex(210,5803
-#define sigpausex(218,6020
-#define sigunblockx(209,5754
-#define sigunblockx(217,5980
-start_polling 861,21173
-stop_polling 879,21450
-stuff_buffered_input 1907,47791
-syms_of_keyboard 2166,54726
-top_level_1 542,13077
-top_level_2 536,13016
+keyboard.c,2235
+DEFUN ("abort-recursive-edit", Fabort_recursive_edit,572,13916
+DEFUN ("command-execute", Fcommand_execute,1647,40381
+DEFUN ("discard-input", Fdiscard_input,1840,45730
+DEFUN ("execute-extended-command", Fexecute_extended_command,1710,42036
+DEFUN ("exit-recursive-edit", Fexit_recursive_edit,563,13640
+DEFUN ("input-pending-p", Finput_pending_p,1778,44013
+DEFUN ("open-dribble-file", Fopen_dribble_file,1822,45288
+DEFUN ("read-key-sequence", Fread_key_sequence,1623,39635
+DEFUN ("recent-keys", Frecent_keys,1788,44329
+DEFUN ("recursion-depth", Frecursion_depth,1813,45066
+DEFUN ("recursive-edit", Frecursive_edit,363,9103
+DEFUN ("set-input-mode", Fset_input_mode,2094,52892
+DEFUN ("suspend-emacs", Fsuspend_emacs,1858,46092
+DEFUN ("this-command-keys", Fthis_command_keys,1806,44849
+DEFUN ("top-level", Ftop_level,556,13507
+cancel_echoing 349,8841
+clear_input_pending 1773,43964
+clear_waiting_for_input 1972,49427
+cmd_error 419,10273
+command_loop 504,12243
+command_loop_1 587,14343
+command_loop_2 528,12921
+consume_available_input 1236,30348
+detect_input_pending 1762,43649
+echo 327,8448
+echo_char 279,7528
+echo_dash 311,8118
+echo_prompt 264,7254
+fast_read_one_key 1434,35107
+force_input_read 1172,28327
+get_input_pending 1184,28589
+gobble_input 1341,33017
+init_keyboard 2128,54012
+input_available_signal 1357,33235
+input_poll_signal 848,20957
+interrupt_signal 1992,50107
+kbd_buffer_read_command_char 1109,26879
+kbd_buffer_store_char 1079,26406
+keys_of_keyboard 2281,58985
+#define	max(255,7015
+#define	min(254,6980
+print_help 1064,26035
+quit_throw_to_read_command_char 2079,52574
+read_avail_input 1256,30893
+read_command_char 901,21947
+read_key_sequence 1497,36596
+record_auto_save 356,8985
+recursive_edit_1 388,9764
+recursive_edit_unwind 408,10087
+request_echo 802,20103
+set_waiting_for_input 1948,48856
+#define sigblockx(210,5788
+#define sigblockx(218,6025
+#define sigfree(208,5695
+#define sigholdx(209,5739
+#define sigpausex(212,5885
+#define sigpausex(220,6102
+#define sigunblockx(211,5836
+#define sigunblockx(219,6062
+start_polling 863,21255
+stop_polling 881,21532
+stuff_buffered_input 1919,48225
+syms_of_keyboard 2178,55160
+top_level_1 544,13159
+top_level_2 538,13098
 
 keymap.c,1915
 DEFUN ("accessible-keymaps", Faccessible_keymaps,553,14523
@@ -1384,44 +1445,44 @@ lastfile.c,22
 static dummy 40,1506
 
 lread.c,1085
-DEFUN ("eval-current-buffer", Feval_current_buffer,416,10447
-DEFUN ("eval-region", Feval_region,437,11116
-DEFUN ("get-file-char", Fget_file_char,150,3769
-DEFUN ("intern", Fintern,931,22477
-DEFUN ("intern-soft", Fintern_soft,962,23259
-DEFUN ("load", Fload,162,4023
-DEFUN ("mapatoms", Fmapatoms,1066,25737
-DEFUN ("read", Fread,468,12134
-DEFUN ("read-char", Fread_char,134,3450
-DEFUN ("read-from-string", Fread_from_string,500,13176
-#define UNREAD(127,3285
-absolute_filename_p 237,6204
-check_obarray 897,21640
-defalias 1134,27447
-defsubr 1124,27239
-defvar_bool 1165,28274
-defvar_int 1151,27963
-defvar_lisp 1178,28570
-defvar_lisp_nopro 1194,29010
-defvar_per_buffer 1210,29422
-hash_string 1019,24797
-init_obarray 1084,26136
-init_read 1233,30042
-intern 914,22046
-load_unwind 226,5961
-map_obarray 1038,25148
-mapatoms_1 1060,25648
-oblookup 983,23823
-openp 262,6975
-read0 543,14382
-read1 563,14746
-read_escape 816,20317
-read_list 755,18800
-read_vector 723,18004
-static int readchar 66,1771
-readevalloop 358,9357
-syms_of_read 1280,31329
-unreadpure 351,9240
+DEFUN ("eval-current-buffer", Feval_current_buffer,418,10471
+DEFUN ("eval-region", Feval_region,439,11140
+DEFUN ("get-file-char", Fget_file_char,152,3793
+DEFUN ("intern", Fintern,933,22501
+DEFUN ("intern-soft", Fintern_soft,964,23283
+DEFUN ("load", Fload,164,4047
+DEFUN ("mapatoms", Fmapatoms,1068,25761
+DEFUN ("read", Fread,470,12158
+DEFUN ("read-char", Fread_char,136,3474
+DEFUN ("read-from-string", Fread_from_string,502,13200
+#define UNREAD(129,3309
+absolute_filename_p 239,6228
+check_obarray 899,21664
+defalias 1136,27471
+defsubr 1126,27263
+defvar_bool 1167,28298
+defvar_int 1153,27987
+defvar_lisp 1180,28594
+defvar_lisp_nopro 1196,29034
+defvar_per_buffer 1212,29446
+hash_string 1021,24821
+init_obarray 1086,26160
+init_read 1235,30066
+intern 916,22070
+load_unwind 228,5985
+map_obarray 1040,25172
+mapatoms_1 1062,25672
+oblookup 985,23847
+openp 264,6999
+read0 545,14406
+read1 565,14770
+read_escape 818,20341
+read_list 757,18824
+read_vector 725,18028
+static int readchar 68,1795
+readevalloop 360,9381
+syms_of_read 1282,31353
+unreadpure 353,9264
 
 macros.c,380
 DEFUN ("call-last-kbd-macro", Fcall_last_kbd_macro,137,3802
@@ -1436,29 +1497,29 @@ store_kbd_macro_char 113,3205
 syms_of_macros 215,5718
 
 malloc.c,523
-#define ASSERT(171,5708
-#define ASSERT(174,5809
-#define CHAIN(159,5254
-calloc 602,15885
-cfree 616,16111
-free 483,13157
-get_lim_data 743,18538
-get_lim_data 759,18788
-get_lim_data 766,18881
-getpool 369,10105
-malloc 408,10975
-malloc_init 213,6705
-malloc_mem_free 714,17961
-malloc_mem_used 695,17704
-malloc_stats 670,17341
-malloc_usable_size 228,6989
-memalign 625,16185
-morecore 239,7222
-realloc 540,14326
-#define start_of_data(103,3310
-#define start_of_data(108,3370
-sys_sbrk 822,20824
-valloc 652,17052
+#define ASSERT(176,5873
+#define ASSERT(179,5974
+#define CHAIN(164,5419
+calloc 607,16050
+cfree 621,16276
+free 488,13322
+get_lim_data 748,18703
+get_lim_data 764,18953
+get_lim_data 771,19046
+getpool 374,10270
+malloc 413,11140
+malloc_init 218,6870
+malloc_mem_free 719,18126
+malloc_mem_used 700,17869
+malloc_stats 675,17506
+malloc_usable_size 233,7154
+memalign 630,16350
+morecore 244,7387
+realloc 545,14491
+#define start_of_data(108,3475
+#define start_of_data(113,3535
+sys_sbrk 827,20989
+valloc 657,17217
 
 marker.c,294
 DEFUN ("copy-marker", Fcopy_marker,265,6431
@@ -1535,109 +1596,109 @@ temp_output_buffer_setup 246,6011
 write_string 211,5407
 write_string_1 228,5707
 
-process.c,3022
-#define FD_CLR(267,6488
-#define FD_ISSET(268,6531
-#define FD_SET(266,6446
-#define FD_ZERO(269,6574
-DEFUN ("accept-process-output", Faccept_process_output,1509,39953
-DEFUN ("continue-process", Fcontinue_process,2291,62046
-DEFUN ("delete-process", Fdelete_process,614,15033
-DEFUN ("get-buffer-process", Fget_buffer_process,567,13904
-DEFUN ("get-process", Fget_process,556,13612
-DEFUN ("interrupt-process", Finterrupt_process,2242,60364
-DEFUN ("kill-process", Fkill_process,2257,60971
-DEFUN ("list-processes", Flist_processes,935,24073
-DEFUN ("open-network-stream", Fopen_network_stream,1342,35239
-DEFUN ("process-buffer", Fprocess_buffer,739,19089
-DEFUN ("process-command", Fprocess_command,714,18325
-DEFUN ("process-exit-status", Fprocess_exit_status,676,17092
-DEFUN ("process-filter", Fprocess_filter,776,20179
-DEFUN ("process-id", Fprocess_id,692,17679
-DEFUN ("process-kill-without-query", Fprocess_kill_without_query,811,21208
-DEFUN ("process-list", Fprocess_list,946,24401
-DEFUN ("process-mark", Fprocess_mark,751,19399
-DEFUN ("process-name", Fprocess_name,703,17997
-DEFUN ("process-send-eof", Fprocess_send_eof,2305,62459
-DEFUN ("process-send-region", Fprocess_send_region,2059,55418
-DEFUN ("process-send-string", Fprocess_send_string,2082,56017
-DEFUN ("process-sentinel", Fprocess_sentinel,800,20917
-DEFUN ("process-status", Fprocess_status,641,15941
-DEFUN ("processp", Fprocessp,548,13439
-DEFUN ("quit-process", Fquit_process,2267,61304
-DEFUN ("set-process-buffer", Fset_process_buffer,726,18743
-DEFUN ("set-process-filter", Fset_process_filter,761,19636
-DEFUN ("set-process-sentinel", Fset_process_sentinel,787,20475
-DEFUN ("start-process", Fstart_process,953,24552
-DEFUN ("stop-process", Fstop_process,2277,61652
-DEFUN ("waiting-for-user-input-p", Fwaiting_for_user_input_p,1981,53467
-#define NETCONN_P(122,2834
-#define NETCONN_P(124,2909
-#define WCOREDUMP(148,3715
-#define WCOREDUMP(159,3935
-#define WIFEXITED(145,3620
-#define WIFEXITED(183,4428
-#define WIFSIGNALED(144,3560
-#define WIFSIGNALED(180,4334
-#define WIFSTOPPED(143,3519
-#define WIFSTOPPED(177,4262
-#define WRETCODE(146,3657
-#define WRETCODE(158,3903
-#define WSTOPSIG(147,3686
-#define WSTOPSIG(174,4204
-#define WTERMSIG(149,3752
-#define WTERMSIG(171,4148
-allocate_pty 402,10145
-close_process_descs 1487,39501
-create_process 1046,27103
-create_process_1 1018,26514
-create_process_sigchld 1036,26982
-deactivate_process 1459,38765
-decode_status 336,8520
-static dummy 27,923
-exec_sentinel 2604,70804
-get_process 591,14558
-init_process 2626,71345
-kill_buffer_processes 2338,63356
-list_processes_1 827,21736
-make_process 491,11976
-process_send_signal 2103,56724
-read_process_output 1910,51584
-remove_process 536,13179
-run_filter 1897,51193
-send_process 2003,53989
-send_process_trap 1994,53850
-sigchld_handler 2379,64869
-status_convert 317,7988
-status_message 363,9035
-status_notify 2504,67980
-syms_of_process 2647,71708
-update_status 303,7625
-wait_reading_process_input 1550,41449
+process.c,3023
+#define FD_CLR(270,6528
+#define FD_ISSET(271,6571
+#define FD_SET(269,6486
+#define FD_ZERO(272,6614
+DEFUN ("accept-process-output", Faccept_process_output,1541,40832
+DEFUN ("continue-process", Fcontinue_process,2342,63420
+DEFUN ("delete-process", Fdelete_process,630,15492
+DEFUN ("get-buffer-process", Fget_buffer_process,583,14363
+DEFUN ("get-process", Fget_process,572,14071
+DEFUN ("interrupt-process", Finterrupt_process,2293,61738
+DEFUN ("kill-process", Fkill_process,2308,62345
+DEFUN ("list-processes", Flist_processes,951,24532
+DEFUN ("open-network-stream", Fopen_network_stream,1369,35955
+DEFUN ("process-buffer", Fprocess_buffer,755,19548
+DEFUN ("process-command", Fprocess_command,730,18784
+DEFUN ("process-exit-status", Fprocess_exit_status,692,17551
+DEFUN ("process-filter", Fprocess_filter,792,20638
+DEFUN ("process-id", Fprocess_id,708,18138
+DEFUN ("process-kill-without-query", Fprocess_kill_without_query,827,21667
+DEFUN ("process-list", Fprocess_list,962,24860
+DEFUN ("process-mark", Fprocess_mark,767,19858
+DEFUN ("process-name", Fprocess_name,719,18456
+DEFUN ("process-send-eof", Fprocess_send_eof,2356,63833
+DEFUN ("process-send-region", Fprocess_send_region,2098,56514
+DEFUN ("process-send-string", Fprocess_send_string,2121,57113
+DEFUN ("process-sentinel", Fprocess_sentinel,816,21376
+DEFUN ("process-status", Fprocess_status,657,16400
+DEFUN ("processp", Fprocessp,564,13898
+DEFUN ("quit-process", Fquit_process,2318,62678
+DEFUN ("set-process-buffer", Fset_process_buffer,742,19202
+DEFUN ("set-process-filter", Fset_process_filter,777,20095
+DEFUN ("set-process-sentinel", Fset_process_sentinel,803,20934
+DEFUN ("start-process", Fstart_process,969,25011
+DEFUN ("stop-process", Fstop_process,2328,63026
+DEFUN ("waiting-for-user-input-p", Fwaiting_for_user_input_p,2020,54563
+#define NETCONN_P(123,2849
+#define NETCONN_P(125,2924
+#define WCOREDUMP(151,3779
+#define WCOREDUMP(162,3975
+#define WIFEXITED(146,3635
+#define WIFEXITED(186,4468
+#define WIFSIGNALED(145,3575
+#define WIFSIGNALED(183,4374
+#define WIFSTOPPED(144,3534
+#define WIFSTOPPED(180,4302
+#define WRETCODE(147,3672
+#define WRETCODE(161,3943
+#define WSTOPSIG(148,3701
+#define WSTOPSIG(177,4244
+#define WTERMSIG(149,3730
+#define WTERMSIG(174,4188
+allocate_pty 405,10185
+close_process_descs 1519,40380
+create_process 1062,27562
+create_process_1 1034,26973
+create_process_sigchld 1052,27441
+deactivate_process 1491,39644
+decode_status 339,8560
+static dummy 29,1005
+exec_sentinel 2655,72178
+get_process 607,15017
+init_process 2677,72719
+kill_buffer_processes 2389,64730
+list_processes_1 843,22195
+make_process 507,12435
+process_send_signal 2142,57820
+read_process_output 1949,52680
+remove_process 552,13638
+run_filter 1936,52289
+send_process 2042,55085
+send_process_trap 2033,54946
+sigchld_handler 2430,66243
+status_convert 320,8028
+status_message 366,9075
+status_notify 2555,69354
+syms_of_process 2698,73082
+update_status 306,7665
+wait_reading_process_input 1582,42328
 
-regex.c,530
+regex.c,531
 #define PATFETCH(140,3614
 #define PATFETCH_RAW(145,3747
 #define PATPUSH(138,3572
 #define SIGN_EXTEND_CHAR(100,2436
 #define SYNTAX(49,1571
-bcmp_translate 1527,39660
-error 1708,44330
+bcmp_translate 1537,39895
+error 1718,44565
 init_syntax_once 60,1708
-insert_jump 669,15939
-main 1620,42413
-print_buf 1669,43418
-printchar 1694,44105
-re_comp 1548,40070
-re_compile_fastmap 690,16601
+insert_jump 679,16174
+main 1630,42648
+print_buf 1679,43653
+printchar 1704,44340
+re_comp 1558,40305
+re_compile_fastmap 700,16836
 re_compile_pattern 172,4457
-re_exec 1570,40532
-re_match 994,24094
-re_match_2 1026,25188
-re_search 871,20738
-re_search_2 893,21541
+re_exec 1580,40767
+re_match 1004,24329
+re_match_2 1036,25423
+re_search 881,20973
+re_search_2 903,21776
 re_set_syntax 113,2793
-store_jump 652,15491
+store_jump 662,15726
 
 scroll.c,239
 CalcIDCosts 429,13526
@@ -1681,193 +1742,193 @@ skip_chars 305,8084
 syms_of_search 1269,37303
 wordify 824,23345
 
-sunfns.c,662
-#define CHECK_GFX(60,1900
-#define CtoSX(53,1701
-#define CtoSY(54,1743
-DEFUN ("sit-for-millisecs", Fsit_for_millisecs,140,4619
-	Fsleep_for_millisecs,171,5560
-	Fsun_change_cursor_icon,198,6040
-DEFUN ("sun-get-selection", Fsun_get_selection,330,9206
-       Fsun_menu_internal,412,11289
-DEFUN ("sun-set-selection", Fsun_set_selection,308,8616
-DEFUN ("sun-window-init", Fsun_window_init,99,3373
-DEFUN ("update-display", Fupdate_display,185,5810
-#define StoCX(57,1815
-#define StoCY(58,1857
-make_menu_label 391,10796
-sel_clear 263,7684
-sel_read 270,7769
-sel_write 254,7518
-sun_item_create 342,9494
-sun_menu_create 371,10304
-syms_of_sunfns(485,13423
+sunfns.c,644
+#define CHECK_GFX(72,2332
+#define CtoSX(64,2109
+#define CtoSY(65,2151
+       Fsit_for_millisecs,163,5489
+	Fsleep_for_millisecs,195,6416
+	Fsun_change_cursor_icon,222,6915
+DEFUN ("sun-get-selection", Fsun_get_selection,354,10081
+       Fsun_menu_internal,436,12164
+DEFUN ("sun-set-selection", Fsun_set_selection,332,9491
+DEFUN ("sun-window-init", Fsun_window_init,113,3897
+DEFUN ("update-display", Fupdate_display,209,6666
+#define StoCX(68,2223
+#define StoCY(69,2265
+make_menu_label 415,11671
+sel_clear 287,8559
+sel_read 294,8644
+sel_write 278,8393
+sun_item_create 366,10369
+sun_menu_create 395,11179
+syms_of_sunfns(509,14367
 
 syntax.c,927
-DEFUN ("backward-prefix-chars", Fbackward_prefix_chars,761,19094
-DEFUN ("char-syntax", Fchar_syntax,138,4378
+DEFUN ("backward-prefix-chars", Fbackward_prefix_chars,762,19167
+DEFUN ("char-syntax", Fchar_syntax,138,4387
 DEFUN ("copy-syntax-table", Fcopy_syntax_table,70,1898
-DEFUN ("describe-syntax", Fdescribe_syntax,352,10006
-DEFUN ("forward-word", Fforward_word,426,11409
-DEFUN ("modify-syntax-entry", Fmodify_syntax_entry,178,6181
-DEFUN ("parse-partial-sexp", Fparse_partial_sexp,1035,26497
-DEFUN ("scan-lists", Fscan_lists,718,17527
-DEFUN ("scan-sexps", Fscan_sexps,742,18429
+DEFUN ("describe-syntax", Fdescribe_syntax,353,10079
+DEFUN ("forward-word", Fforward_word,427,11482
+DEFUN ("modify-syntax-entry", Fmodify_syntax_entry,179,6254
+DEFUN ("parse-partial-sexp", Fparse_partial_sexp,1036,26570
+DEFUN ("scan-lists", Fscan_lists,719,17600
+DEFUN ("scan-sexps", Fscan_sexps,743,18502
 DEFUN ("set-syntax-table", Fset_syntax_table,92,2560
 DEFUN ("standard-syntax-table", Fstandard_syntax_table,61,1683
 DEFUN ("syntax-table", Fsyntax_table,53,1482
 DEFUN ("syntax-table-p", Fsyntax_table_p,30,986
-char_quoted 704,17245
+char_quoted 705,17318
 check_syntax_table 42,1275
-describe_syntax 235,7524
-describe_syntax_1 342,9754
-init_syntax_once 1066,27528
-scan_lists 449,11923
-scan_sexps_forward 796,20263
-scan_words 367,10561
-syms_of_syntax 1104,28868
+describe_syntax 236,7597
+describe_syntax_1 343,9827
+init_syntax_once 1067,27601
+scan_lists 450,11996
+scan_sexps_forward 797,20336
+scan_words 368,10634
+syms_of_syntax 1105,28941
 
-sysdep.c,3358
-#define DESCRIPTOR(2886,68136
-#define ITEMSETUP(2899,68418
-#define OSPEED(177,3843
-#define OSPEED(202,4441
-#define OSPEED(344,7102
-#define SETOSPEED(178,3885
-#define SETOSPEED(203,4475
-#define TABS_OK(179,3959
-#define TABS_OK(204,4526
-#define TABS_OK(345,7138
-bcmp 2117,49011
-bcopy 2094,48606
-bzero 2071,48066
-child_setup_tty 556,11932
-closedir 2699,63079
-closedir 2739,63966
-cnv_uaf_pw 3772,89125
-creat_copy_attrs 3380,79052
-croak 2607,59931
-croak 4130,97738
-define_logical_name 3904,92301
-delete_logical_name 3918,92723
-discard_tty_input 348,7213
-dup2 2552,58929
-end_kbd_input 1449,34522
-end_of_data 1645,39290
-end_of_text 1629,39020
-execvp 3938,93058
-flush_pending_output 535,11352
-get_screen_size 1159,27238
-get_system_name 1670,39739
-get_uaf_name 3641,86138
-get_uaf_uic 3705,87589
-getppid 3265,76591
-getpwnam 3807,90302
-getpwuid 3849,91118
-gettimeofday 2589,59615
-getwd 2439,56907
-getwd 3249,76366
-hft_init 4164,98153
-hft_reset 4217,99824
-init_baud_rate 397,8168
-init_sigio 783,17739
-init_sigio 1521,36376
-init_sigio 1924,45441
-init_signals 2003,46611
-init_sys_modes 888,19547
-init_vms_input 1326,31767
-input_wait_timeout 1475,35079
-insque(4153,98046
-kbd_input_ast 1365,32539
-link 4063,96495
-#define min(28,924
-opendir 2713,63394
-perror 2537,58666
-queue_kbd_input 1350,32204
-long random 2138,49487
-random 2166,49887
-random 4139,97868
-read_input_waiting 1871,44583
-readdir 2760,64333
-readdirver 2819,66233
-rename 2465,57559
-rename 3944,93125
-rename_sans_version 4001,94730
-request_sigio 798,17959
-request_sigio 820,18347
-request_sigio 837,18571
-request_sigio 1531,36457
-request_sigio 1940,45665
-reset_sigio 791,17852
-reset_sigio 1526,36415
-reset_sigio 1932,45552
-reset_sys_modes 1196,28116
-restore_signal_handlers 769,17484
-save_signal_handlers 758,17247
-select 1739,41291
-select_alarm 1725,41036
-set_exclusive_use 422,8642
-setpgrp 3935,93043
-setpgrp_of_tty 641,14629
-setpriority 1900,45111
-setpriority 2481,57804
-setpriority 3932,93024
-setup_pty 1275,29927
-sigbit 1988,46309
-sigfree 1979,46159
-sigholdx 1959,45905
-sigisheld 1966,45995
-sigunhold 1972,46066
-srandom 2143,49527
-srandom 2172,49985
-srandom 4145,97966
-start_of_data 1609,38583
-start_of_text 1566,37074
-stop_vms_input 1340,32009
-stuff_char 384,7904
-sys_abort 2228,51335
-sys_access 2911,68844
-sys_access 3024,71890
-sys_access_reinit 3018,71849
-sys_close 2307,53131
-sys_creat 3458,81265
-sys_fwrite 3574,84277
-sys_getenv 2191,50366
-sys_getuid 3282,76873
-sys_open 1914,45275
-sys_open 2292,52877
-sys_read 2322,53329
-sys_read 3288,76936
-sys_sigblock 2043,47602
-sys_signal 2014,46784
-sys_sigpause 2030,47227
-sys_sigsetmask 2059,47882
-sys_sigunblock 2051,47740
-sys_sleep 1507,36040
-sys_suspend 664,15012
-sys_translate_unix 3169,75205
-sys_translate_vms 3115,74366
-sys_write 2335,53547
-sys_write 3298,77109
-sys_write 3327,77782
-tabs_safe_p 1141,26822
-#define tcgetattr(183,4103
-ulimit 3929,93010
-unrequest_sigio 808,18115
-unrequest_sigio 827,18438
-unrequest_sigio 842,18621
-unrequest_sigio 1536,36506
-unrequest_sigio 1947,45737
-utimes 2503,58080
-utimes 2519,58315
-#define va_count(3454,81193
-vfork 2492,57917
-vlimit 3869,91559
-vms_truncate 3594,84929
-vmserrstr 2862,67630
-wait_for_kbd_input 1404,33270
-wait_for_termination 450,9216
-wait_without_blocking 433,8809
+sysdep.c,3361
+#define DESCRIPTOR(2933,69402
+#define ITEMSETUP(2946,69684
+#define OSPEED(192,4306
+#define OSPEED(226,5133
+#define OSPEED(379,8013
+#define SETOSPEED(195,4373
+#define SETOSPEED(229,5192
+#define TABS_OK(197,4454
+#define TABS_OK(231,5250
+#define TABS_OK(380,8049
+bcmp 2159,50144
+bcopy 2136,49739
+bzero 2113,49199
+child_setup_tty 591,12843
+closedir 2746,64341
+closedir 2786,65228
+cnv_uaf_pw 3819,90391
+creat_copy_attrs 3427,80318
+croak 2654,61193
+croak 4177,99004
+define_logical_name 3951,93567
+delete_logical_name 3965,93989
+discard_tty_input 383,8124
+dup2 2599,60191
+end_kbd_input 1487,35486
+end_of_data 1683,40254
+end_of_text 1667,39984
+execvp 3985,94324
+flush_pending_output 570,12263
+get_screen_size 1197,28202
+get_system_name 1714,40870
+get_uaf_name 3688,87404
+get_uaf_uic 3752,88855
+getppid 3312,77857
+getpwnam 3854,91568
+getpwuid 3896,92384
+gettimeofday 2636,60877
+getwd 2481,58040
+getwd 3296,77632
+hft_init 4211,99419
+hft_reset 4264,101090
+init_baud_rate 432,9079
+init_sigio 818,18650
+init_sigio 1559,37340
+init_sigio 1966,46575
+init_signals 2045,47745
+init_sys_modes 923,20458
+init_vms_input 1364,32731
+input_wait_timeout 1513,36043
+insque(4200,99312
+kbd_input_ast 1403,33503
+link 4110,97761
+#define min(30,1006
+opendir 2760,64656
+perror 2584,59928
+queue_kbd_input 1388,33168
+long random 2180,50620
+random 2208,51020
+random 4186,99134
+read_input_waiting 1913,45717
+readdir 2807,65595
+readdirver 2866,67495
+rename 2507,58692
+rename 3991,94391
+rename_sans_version 4048,95996
+request_sigio 833,18870
+request_sigio 855,19258
+request_sigio 872,19482
+request_sigio 1569,37421
+request_sigio 1982,46799
+reset_sigio 826,18763
+reset_sigio 1564,37379
+reset_sigio 1974,46686
+reset_sys_modes 1234,29080
+restore_signal_handlers 804,18395
+save_signal_handlers 793,18158
+select 1781,42425
+select_alarm 1767,42170
+set_exclusive_use 457,9553
+setpgrp 3982,94309
+setpgrp_of_tty 676,15540
+setpriority 1942,46245
+setpriority 2528,59066
+setpriority 3979,94290
+setup_pty 1313,30891
+sigbit 2030,47443
+sigfree 2021,47293
+sigholdx 2001,47039
+sigisheld 2008,47129
+sigunhold 2014,47200
+srandom 2185,50660
+srandom 2214,51118
+srandom 4192,99232
+start_of_data 1647,39547
+start_of_text 1604,38038
+stop_vms_input 1378,32973
+stuff_char 419,8815
+sys_abort 2270,52468
+sys_access 2958,70110
+sys_access 3071,73156
+sys_access_reinit 3065,73115
+sys_close 2349,54264
+sys_creat 3505,82531
+sys_fwrite 3621,85543
+sys_getenv 2233,51499
+sys_getuid 3329,78139
+sys_open 1956,46409
+sys_open 2334,54010
+sys_read 2364,54462
+sys_read 3335,78202
+sys_sigblock 2085,48735
+sys_signal 2056,47918
+sys_sigpause 2072,48360
+sys_sigsetmask 2101,49015
+sys_sigunblock 2093,48873
+sys_sleep 1545,37004
+sys_suspend 699,15923
+sys_translate_unix 3216,76471
+sys_translate_vms 3162,75632
+sys_write 2377,54680
+sys_write 3345,78375
+sys_write 3374,79048
+tabs_safe_p 1179,27786
+#define tcgetattr(201,4598
+ulimit 3976,94276
+unrequest_sigio 843,19026
+unrequest_sigio 862,19349
+unrequest_sigio 877,19532
+unrequest_sigio 1574,37470
+unrequest_sigio 1989,46871
+utimes 2550,59342
+utimes 2566,59577
+#define va_count(3501,82459
+vfork 2539,59179
+vlimit 3916,92825
+vms_truncate 3641,86195
+vmserrstr 2909,68896
+wait_for_kbd_input 1442,34234
+wait_for_termination 485,10127
+wait_without_blocking 468,9720
 
 term.c,1066
 #define OUTPUT(32,1047
@@ -1950,22 +2011,22 @@ syms_of_undo 283,7926
 truncate_undo_list 141,4366
 
 unexaix.c,390
-#define ADDR_CORRECT(236,8027
-#define ERROR0(252,8252
-#define ERROR1(253,8315
-#define ERROR2(254,8380
+#define ADDR_CORRECT(240,8117
+#define ERROR0(256,8342
+#define ERROR1(257,8405
+#define ERROR2(258,8470
 #define PERROR(161,6104
 #define PERROR(164,6174
-adjust_lnnoptrs 712,19767
-copy_sym 632,17607
-copy_text_and_data 569,16071
-make_hdr 320,9834
-mark_x 670,18360
-report_error 242,8105
-report_error_1 257,8455
-unexec 276,8765
-unrelocate_symbols 762,20802
-write_segment 588,16437
+adjust_lnnoptrs 716,19853
+copy_sym 636,17693
+copy_text_and_data 573,16157
+make_hdr 324,9920
+mark_x 674,18446
+report_error 246,8195
+report_error_1 261,8545
+unexec 280,8855
+unrelocate_symbols 766,20888
+write_segment 592,16523
 
 unexconvex.c,305
 #define ERROR0(212,7619
@@ -1983,24 +2044,24 @@ unexec 231,8036
 write_segment(486,14531
 
 unexec.c,442
-#define ADDR_CORRECT(271,9077
-#define ERROR0(287,9302
-#define ERROR1(288,9365
-#define ERROR2(289,9430
-#define	N_BADMAG(249,8419
-#define N_SYMOFF(234,8062
-#define N_TXTOFF(233,8027
+#define ADDR_CORRECT(271,9076
+#define ERROR0(287,9301
+#define ERROR1(288,9364
+#define ERROR2(289,9429
+#define	N_BADMAG(249,8418
+#define N_SYMOFF(232,8038
+#define N_TXTOFF(231,8003
 #define PERROR(159,6122
 #define PERROR(162,6192
-adjust_lnnoptrs 929,26103
-copy_sym 845,23900
-copy_text_and_data 685,19325
-make_hdr 353,10811
-mark_x 887,24696
-report_error 277,9155
-report_error_1 292,9505
-unexec 311,9815
-write_segment 803,22736
+adjust_lnnoptrs 929,26108
+copy_sym 844,23894
+copy_text_and_data 684,19319
+make_hdr 352,10805
+mark_x 886,24689
+report_error 277,9154
+report_error_1 292,9504
+unexec 311,9814
+write_segment 802,22730
 
 unexelf.c,195
 #define NEW_PROGRAM_H(345,13212
@@ -2038,12 +2099,24 @@ update_file_ptrs(132,4339
 write_header(211,6712
 
 unexmips.c,123
-#define READ(47,1670
-#define SEEK(56,1995
-#define WRITE(52,1840
-fatal_unexec 297,8945
-mark_x 283,8635
-unexec 89,2865
+#define READ(48,1694
+#define SEEK(57,2023
+#define WRITE(53,1866
+fatal_unexec 303,9282
+mark_x 289,8972
+unexec 90,2895
+
+unexnext.c,204
+fatal_unexec(94,2486
+filldatagap(153,3926
+get_data_region(174,4333
+grow(61,1797
+my_free(232,5415
+my_malloc(219,5222
+read_macho(106,2669
+save_command(79,2144
+unexec(390,8538
+unexec_doit(241,5525
 
 unexshm.c,44
 map_in_data 69,2373
@@ -2103,40 +2176,40 @@ mapout_data 143,4312
 write_data 210,6017
 
 window.c,2739
-#define CURBEG(1203,31833
-#define CURSIZE(1206,31906
-	Fcurrent_window_configuration,1792,48760
+#define CURBEG(1204,31880
+#define CURSIZE(1207,31953
+	Fcurrent_window_configuration,1796,48848
 DEFUN ("delete-other-windows", Fdelete_other_windows,662,17588
 DEFUN ("delete-window", Fdelete_window,340,9849
 DEFUN ("delete-windows-on", Fdelete_windows_on,672,17834
-DEFUN ("display-buffer", Fdisplay_buffer,943,25101
-DEFUN ("enlarge-window", Fenlarge_window,1161,30780
+DEFUN ("display-buffer", Fdisplay_buffer,944,25148
+DEFUN ("enlarge-window", Fenlarge_window,1162,30827
 DEFUN ("get-buffer-window", Fget_buffer_window,651,17278
 DEFUN ("get-largest-window", Fget_largest_window,644,17116
 DEFUN ("get-lru-window", Fget_lru_window,631,16738
 DEFUN ("minibuffer-window", Fminibuffer_window,124,3497
-DEFUN ("move-to-window-line", Fmove_to_window_line,1559,41576
+DEFUN ("move-to-window-line", Fmove_to_window_line,1563,41664
 DEFUN ("next-window", Fnext_window,453,12643
 DEFUN ("other-window", Fother_window,527,14707
 DEFUN ("pos-visible-in-window-p", Fpos_visible_in_window_p,131,3654
 DEFUN ("previous-window", Fprevious_window,491,13726
-DEFUN ("recenter", Frecenter,1514,40423
+DEFUN ("recenter", Frecenter,1518,40511
 DEFUN ("replace-buffer-in-windows", Freplace_buffer_in_windows,687,18173
-DEFUN ("save-window-excursion", Fsave_window_excursion,1909,52308
-DEFUN ("scroll-down", Fscroll_down,1422,37703
-DEFUN ("scroll-left", Fscroll_left,1432,37990
-DEFUN ("scroll-other-window", Fscroll_other_window,1464,38940
-DEFUN ("scroll-right", Fscroll_right,1448,38463
-DEFUN ("scroll-up", Fscroll_up,1412,37425
+DEFUN ("save-window-excursion", Fsave_window_excursion,1913,52396
+DEFUN ("scroll-down", Fscroll_down,1426,37791
+DEFUN ("scroll-left", Fscroll_left,1436,38078
+DEFUN ("scroll-other-window", Fscroll_other_window,1468,39028
+DEFUN ("scroll-right", Fscroll_right,1452,38551
+DEFUN ("scroll-up", Fscroll_up,1416,37513
 DEFUN ("select-window", Fselect_window,898,23900
 DEFUN ("selected-window", Fselected_window,117,3313
 DEFUN ("set-window-buffer", Fset_window_buffer,835,22066
-       Fset_window_configuration,1629,43629
+       Fset_window_configuration,1633,43717
 DEFUN ("set-window-hscroll", Fset_window_hscroll,239,6499
 DEFUN ("set-window-point", Fset_window_point,305,8700
 DEFUN ("set-window-start", Fset_window_start,320,9126
-DEFUN ("shrink-window", Fshrink_window,1172,31110
-DEFUN ("split-window", Fsplit_window,1054,28050
+DEFUN ("shrink-window", Fshrink_window,1173,31157
+DEFUN ("split-window", Fsplit_window,1055,28097
 DEFUN ("window-buffer", Fwindow_buffer,202,5471
 DEFUN ("window-edges", Fwindow_edges,258,7083
 DEFUN ("window-height", Fwindow_height,210,5668
@@ -2145,149 +2218,149 @@ DEFUN ("window-point", Fwindow_point,276,7731
 DEFUN ("window-start", Fwindow_start,297,8472
 DEFUN ("window-width", Fwindow_width,218,5884
 DEFUN ("windowp", Fwindowp,83,2383
-#define MINSIZE(1199,31711
-#define SAVED_WINDOW_N(1625,43500
-change_window_height 1213,32111
-count_windows 1778,48363
+#define MINSIZE(1200,31758
+#define SAVED_WINDOW_N(1629,43588
+change_window_height 1214,32158
+count_windows 1782,48451
 decode_window 192,5294
-init_window_once 1928,52890
-keys_of_window 2043,56703
-make_dummy_parent 1025,27476
+init_window_once 1932,52978
+keys_of_window 2047,56791
+make_dummy_parent 1026,27523
 make_window 92,2568
 replace_window 420,11822
-save_window_save 1827,50115
-scroll_command 1393,36967
+save_window_save 1831,50203
+scroll_command 1394,37014
 set_window_height 708,18786
 set_window_width 773,20496
-syms_of_window 1959,53871
-temp_output_buffer_show 996,26770
+syms_of_window 1963,53959
+temp_output_buffer_show 997,26817
 unshow_buffer 873,23104
-window_height 1184,31445
+window_height 1185,31492
 window_loop 554,15161
-window_scroll 1327,35540
-window_width 1192,31581
+window_scroll 1328,35587
+window_width 1193,31628
 
-x11fns.c,1712
-DEFUN ("coordinates-in-window-p", Fcoordinates_in_window_p,530,12546
-DEFUN ("x-color-p", Fx_color_p,400,9648
-DEFUN ("x-debug", Fx_debug,875,21785
-DEFUN ("x-flip-color", Fx_flip_color,165,3904
-DEFUN ("x-get-background-color", Fx_get_background_color,424,10099
-DEFUN ("x-get-border-color", Fx_get_border_color,436,10360
-DEFUN ("x-get-cursor-color", Fx_get_cursor_color,448,10605
-DEFUN ("x-get-cut-buffer", Fx_get_cut_buffer,724,17939
-DEFUN ("x-get-default", Fx_get_default,472,11098
-DEFUN ("x-get-foreground-color", Fx_get_foreground_color,412,9838
-DEFUN ("x-get-mouse-color", Fx_get_mouse_color,460,10850
-DEFUN ("x-get-mouse-event", Fx_get_mouse_event,643,15673
-DEFUN ("x-mouse-events", Fx_mouse_events,569,13711
-DEFUN ("x-proc-mouse-event", Fx_proc_mouse_event,582,13953
-DEFUN ("x-rebind-key", Fx_rebind_key,790,19407
-DEFUN ("x-rebind-keys", Fx_rebind_keys,833,20762
-DEFUN ("x-set-background-color", Fx_set_background_color,215,5119
-DEFUN ("x-set-bell", Fx_set_bell,147,3526
-DEFUN ("x-set-border-color", Fx_set_border_color,261,6396
-DEFUN ("x-set-border-width", Fx_set_border_width,742,18318
-DEFUN ("x-set-cursor-color", Fx_set_cursor_color,302,7377
-DEFUN ("x-set-font", Fx_set_font,503,11942
-DEFUN ("x-set-foreground-color", Fx_set_foreground_color,174,4071
-DEFUN ("x-set-internal-border-width", Fx_set_internal_border_width,766,18808
-DEFUN ("x-set-mouse-color", Fx_set_mouse_color,342,8357
-DEFUN ("x-store-cut-buffer", Fx_store_cut_buffer,702,17316
-XCleanUp 900,22213
-XExitWithCoreDump 869,21734
-XRedrawDisplay 895,22169
-#define abs(73,1870
-check_xterm 141,3432
-#define max(76,1988
-#define min(75,1947
-#define sgn(74,1909
-syms_of_xfns 909,22332
-x_set_cursor_colors 371,9009
+x11fns.c,1716
+DEFUN ("coordinates-in-window-p", Fcoordinates_in_window_p,588,14584
+DEFUN ("x-color-p", Fx_color_p,458,11686
+DEFUN ("x-debug", Fx_debug,933,23823
+DEFUN ("x-flip-color", Fx_flip_color,170,4124
+DEFUN ("x-get-background-color", Fx_get_background_color,482,12137
+DEFUN ("x-get-border-color", Fx_get_border_color,494,12398
+DEFUN ("x-get-cursor-color", Fx_get_cursor_color,506,12643
+DEFUN ("x-get-cut-buffer", Fx_get_cut_buffer,782,19977
+DEFUN ("x-get-default", Fx_get_default,530,13136
+DEFUN ("x-get-foreground-color", Fx_get_foreground_color,470,11876
+DEFUN ("x-get-mouse-color", Fx_get_mouse_color,518,12888
+DEFUN ("x-get-mouse-event", Fx_get_mouse_event,701,17711
+DEFUN ("x-mouse-events", Fx_mouse_events,627,15749
+DEFUN ("x-proc-mouse-event", Fx_proc_mouse_event,640,15991
+DEFUN ("x-rebind-key", Fx_rebind_key,848,21445
+DEFUN ("x-rebind-keys", Fx_rebind_keys,891,22800
+DEFUN ("x-set-background-color", Fx_set_background_color,229,5708
+DEFUN ("x-set-bell", Fx_set_bell,152,3746
+DEFUN ("x-set-border-color", Fx_set_border_color,285,7404
+DEFUN ("x-set-border-width", Fx_set_border_width,800,20356
+DEFUN ("x-set-cursor-color", Fx_set_cursor_color,347,8868
+DEFUN ("x-set-font", Fx_set_font,561,13980
+DEFUN ("x-set-foreground-color", Fx_set_foreground_color,179,4291
+DEFUN ("x-set-internal-border-width", Fx_set_internal_border_width,824,20846
+DEFUN ("x-set-mouse-color", Fx_set_mouse_color,397,10265
+DEFUN ("x-store-cut-buffer", Fx_store_cut_buffer,760,19354
+XCleanUp 958,24251
+XExitWithCoreDump 927,23772
+XRedrawDisplay 953,24207
+#define abs(73,1876
+check_xterm 146,3652
+#define max(76,1994
+#define min(75,1953
+#define sgn(74,1915
+syms_of_xfns 967,24370
+x_set_cursor_colors 429,11039
 
 x11term.c,1549
-ClearCursor 824,21232
-CursorToggle 737,18529
-HLmode 280,7796
-XExitGracefully 1532,36043
-XFlipColor 2210,51267
-XIgnoreError 1538,36092
-XInitWindow 2591,59960
-XNewFont 2175,50716
-XSetFeep 2142,50037
-XSetFlash 2137,49992
-XSetWindowSize(2581,59762
-XT_CalcForFont(2153,50290
-XT_GetDefaults 1578,36778
-XT_Set_Class_Hints(2275,52647
-XT_Set_Command_Line(2295,53017
-XT_Set_Host(2308,53215
-XT_Set_Icon_Title(2366,54276
-XT_Set_Size_Hints(2399,54880
-XT_Set_Title(2326,53637
-XT_Set_WM_Hints(2544,58928
-XT_Set_Zoom_Sizes(2534,58768
-XTcalculate_costs 1006,25041
-XTchange_line_highlight 301,8234
-XTclear_end_of_line 388,10040
-XTclear_screen 478,12141
-XTdelete_chars 1028,25443
-XTfeep 717,17969
-XTflash 653,16398
-XTins_del_lines 987,24678
-XTinsert_chars 1016,25275
-XTmove_cursor 337,9022
-XToutput_chars 642,16207
-XTread_socket 1123,27649
-XTreassert_line_highlight 292,8036
-XTreset_terminal_modes 469,12021
-XTset_terminal_modes 315,8620
-XTset_terminal_window 974,24472
-XTupdate_begin 853,21758
-XTupdate_end 880,22240
-cleanup 379,9905
-dumpchars 507,12656
-dumprectangle 903,22651
-internal_socket_read(1293,30175
+ClearCursor 826,21283
+CursorToggle 739,18572
+HLmode 282,7839
+XExitGracefully 1536,36125
+XFlipColor 2211,51321
+XIgnoreError 1542,36174
+XInitWindow 2589,60011
+XNewFont 2175,50725
+XSetFeep 2142,50046
+XSetFlash 2137,50001
+XSetWindowSize(2579,59813
+XT_CalcForFont(2153,50299
+XT_GetDefaults 1582,36860
+XT_Set_Class_Hints(2273,52698
+XT_Set_Command_Line(2293,53068
+XT_Set_Host(2306,53266
+XT_Set_Icon_Title(2364,54327
+XT_Set_Size_Hints(2397,54931
+XT_Set_Title(2324,53688
+XT_Set_WM_Hints(2542,58979
+XT_Set_Zoom_Sizes(2532,58819
+XTcalculate_costs 1008,25092
+XTchange_line_highlight 303,8277
+XTclear_end_of_line 390,10083
+XTclear_screen 480,12184
+XTdelete_chars 1030,25494
+XTfeep 719,18012
+XTflash 655,16441
+XTins_del_lines 989,24729
+XTinsert_chars 1018,25326
+XTmove_cursor 339,9065
+XToutput_chars 644,16250
+XTread_socket 1125,27700
+XTreassert_line_highlight 294,8079
+XTreset_terminal_modes 471,12064
+XTset_terminal_modes 317,8663
+XTset_terminal_window 976,24523
+XTupdate_begin 855,21809
+XTupdate_end 882,22291
+cleanup 381,9948
+dumpchars 509,12699
+dumprectangle 905,22702
+internal_socket_read(1297,30257
 #define max(137,3727
 #define min(136,3688
-scraplines 1080,26578
+scraplines 1082,26629
 #define sigblockx(142,3835
 #define sigunblockx(141,3786
-char *stringFuncVal(1141,27980
-char *stringFuncVal(1225,29190
-stufflines 1040,25674
-updateline 539,13758
-writechars 581,14788
-x_clear_end_of_line 430,11108
-x_error_handler 1684,39613
-x_init_1 2100,48954
-x_io_error_handler 1694,39853
-x_term_init 1705,40052
-xfixscreen 1545,36155
+char *stringFuncVal(1143,28031
+char *stringFuncVal(1229,29272
+stufflines 1042,25725
+updateline 541,13801
+writechars 583,14831
+x_clear_end_of_line 432,11151
+x_error_handler 1687,39658
+x_init_1 2100,48963
+x_io_error_handler 1697,39898
+x_term_init 1708,40097
+xfixscreen 1549,36237
 
 xdisp.c,602
 DEFUN ("redraw-display", Fredraw_display,153,4862
-decode_mode_spec 1778,51729
+decode_mode_spec 1812,52629
 display_echo_area_contents 240,7038
-display_mode_element 1590,46532
-display_mode_line 1542,44784
-display_string 1928,55301
-display_text_line 1250,37515
-init_xdisp 2071,59143
-mark_window_display_accurate 520,15260
+display_mode_element 1624,47432
+display_mode_line 1576,45684
+display_string 1962,56201
+display_text_line 1276,38311
+init_xdisp 2105,60043
+mark_window_display_accurate 532,15554
 #define max(42,1276
 message 181,5818
 message1 217,6606
 #define min(41,1234
-redisplay 286,8488
-redisplay_all_windows 563,16274
-redisplay_preserve_echo_area 508,15021
-redisplay_window 577,16529
-redisplay_windows 570,16380
-syms_of_xdisp 2026,57414
-try_window 818,23474
-try_window_id 871,25326
+redisplay 298,8782
+redisplay_all_windows 575,16568
+redisplay_preserve_echo_area 520,15315
+redisplay_window 589,16823
+redisplay_windows 582,16674
+syms_of_xdisp 2060,58314
+try_window 834,23897
+try_window_id 889,25822
 
 xfns.c,2220
 DEFUN ("coordinates-in-window-p", Fcoordinates_in_window_p,574,14138
@@ -2798,9 +2871,9 @@ xfixscreen 1276,29294
 (define-abbrev-table 'c-mode-abbrev-table 23,903
 (defconst c-argdecl-indent 69,2759
 (defconst c-auto-newline 79,3218
-(defun c-backward-to-noncomment 491,18191
-(defun c-backward-to-start-of-continued-exp 508,18665
-(defun c-backward-to-start-of-if 516,18875
+(defun c-backward-to-noncomment 493,18265
+(defun c-backward-to-start-of-continued-exp 510,18739
+(defun c-backward-to-start-of-if 518,18949
 (defconst c-brace-imaginary-offset 65,2537
 (defconst c-brace-offset 67,2654
 (defun c-comment-indent 165,6650
@@ -2817,23 +2890,23 @@ xfixscreen 1276,29294
 (defvar c-mode-syntax-table 44,1661
 (defconst c-tab-always-indent 83,3368
 (defun calculate-c-indent 338,12127
-(defun calculate-c-indent-within-comment 473,17619
+(defun calculate-c-indent-within-comment 475,17693
 (defun electric-c-brace 173,6930
 (defun electric-c-semi 201,7685
 (defun electric-c-terminator 208,7898
-(defun indent-c-exp 541,19579
-(defun mark-c-function 532,19372
+(defun indent-c-exp 543,19653
+(defun mark-c-function 534,19446
 
 ../lisp/cal.el,272
-(defun calendar 52,2471
-(defvar calendar-hook 39,1799
-(defun day-number 140,6085
-(defun day-of-week 156,6694
-(defun generate-month 174,7244
-(defun insert-indented 211,9052
-(defun leap-year-p 133,5899
-(defvar offset-calendar-hook 46,2197
-(defun star-date 231,9677
+(defun calendar 52,2476
+(defvar calendar-hook 39,1804
+(defun day-number 142,6178
+(defun day-of-week 158,6787
+(defun generate-month 176,7337
+(defun insert-indented 213,9143
+(defun leap-year-p 135,5992
+(defvar offset-calendar-hook 46,2202
+(defun star-date 233,9768
 
 ../lisp/chistory.el,428
 (defun Command-history-setup 111,4360
@@ -3087,19 +3160,19 @@ xfixscreen 1276,29294
 (defvar compilation-error-list 27,1061
 (defvar compilation-error-message 40,1624
 (defvar compilation-error-regexp45,1838
-(defun compilation-forget-errors 205,7830
-(defun compilation-grab-filename 303,11539
-(defun compilation-parse-errors 215,8212
+(defun compilation-forget-errors 206,7871
+(defun compilation-grab-filename 304,11580
+(defun compilation-parse-errors 216,8253
 (defvar compilation-parsing-end 37,1523
 (defvar compilation-process 22,871
-(defun compilation-sentinel 117,4653
+(defun compilation-sentinel 118,4694
 (defun compile 49,2025
 (defun compile1 67,2851
-(define-key ctl-x-map 317,11974
+(define-key ctl-x-map 318,12015
 (defun grep 59,2514
-(defun kill-compilation 151,5820
-(defun kill-grep 157,5992
-(defun next-error 163,6154
+(defun kill-compilation 152,5861
+(defun kill-grep 158,6033
+(defun next-error 164,6195
 
 ../lisp/dabbrev.el,396
 (defun dabbrev-expand 75,2920
@@ -3115,12 +3188,12 @@ xfixscreen 1276,29294
 
 ../lisp/dbx.el,303
 (defvar dbx-break-point29,994
-(defun dbx-filter 117,4510
+(defun dbx-filter 118,4548
 (defvar dbx-process 26,927
-(defun dbx-stop-at 156,5879
+(defun dbx-stop-at 157,5917
 (defvar dbx-trace-flag 23,876
-(defun dbx-trace-mode 103,4022
-(defun dbx-where 133,4994
+(defun dbx-trace-mode 104,4060
+(defun dbx-where 134,5032
 (defun inferior-dbx-mode 41,1431
 (defvar inferior-dbx-mode-map 33,1138
 (defun run-dbx 92,3540
@@ -3142,45 +3215,45 @@ xfixscreen 1276,29294
 (defun debugger-step-through 99,3280
 
 ../lisp/dired.el,1421
-(defun dired 66,2251
-(defun dired-add-entry 455,16471
-(defun dired-backup-unflag 234,8701
-(defun dired-byte-recompile 535,19273
-(defun dired-chgrp 553,19819
-(defun dired-chmod 545,19582
-(defun dired-chown 561,20060
-(defun dired-clean-directory 342,12242
-(defun dired-collect-file-versions 374,13702
-(defun dired-compress 477,17340
-(defun dired-copy-file 447,16201
-(defun dired-do-deletions 578,20630
-(defun dired-find-buffer 52,1887
-(defun dired-find-file 251,9142
-(defun dired-find-file-other-window 263,9524
-(defun dired-flag-auto-save-files 323,11673
-(defun dired-flag-backup-and-auto-save-files 424,15376
-(defun dired-flag-backup-files 404,14816
-(defun dired-flag-file-deleted 208,7943
-(defun dired-flag-this-line-for-DEATH 399,14718
-(defun dired-get-filename 268,9691
-(defun dired-map-dired-file-lines 307,11131
-(defun dired-mode 146,5625
-(defvar dired-mode-map 108,3858
-(defun dired-move-to-filename 293,10666
-(defun dired-next-line 239,8842
-(defun dired-noselect 83,3002
-(defun dired-other-window 77,2713
-(defun dired-previous-line 245,8989
+(defun dired 67,2283
+(defun dired-add-entry 456,16503
+(defun dired-backup-unflag 235,8733
+(defun dired-byte-recompile 536,19305
+(defun dired-chgrp 554,19851
+(defun dired-chmod 546,19614
+(defun dired-chown 562,20092
+(defun dired-clean-directory 343,12274
+(defun dired-collect-file-versions 375,13734
+(defun dired-compress 478,17372
+(defun dired-copy-file 448,16233
+(defun dired-do-deletions 579,20684
+(defun dired-find-buffer 53,1919
+(defun dired-find-file 252,9174
+(defun dired-find-file-other-window 264,9556
+(defun dired-flag-auto-save-files 324,11705
+(defun dired-flag-backup-and-auto-save-files 425,15408
+(defun dired-flag-backup-files 405,14848
+(defun dired-flag-file-deleted 209,7975
+(defun dired-flag-this-line-for-DEATH 400,14750
+(defun dired-get-filename 269,9723
+(defun dired-map-dired-file-lines 308,11163
+(defun dired-mode 147,5657
+(defvar dired-mode-map 109,3890
+(defun dired-move-to-filename 294,10698
+(defun dired-next-line 240,8874
+(defun dired-noselect 84,3034
+(defun dired-other-window 78,2745
+(defun dired-previous-line 246,9021
 (defun dired-readin 30,1157
-(defun dired-redisplay 571,20369
-(defun dired-rename-file 432,15637
-(defun dired-repeat-over-lines 189,7425
-(defun dired-revert 97,3515
-(defun dired-summary 218,8216
-(defun dired-trample-file-versions 388,14251
-(defun dired-uncompress 506,18299
-(defun dired-unflag 224,8437
-(defun dired-view-file 256,9283
+(defun dired-redisplay 572,20423
+(defun dired-rename-file 433,15669
+(defun dired-repeat-over-lines 190,7457
+(defun dired-revert 98,3547
+(defun dired-summary 219,8248
+(defun dired-trample-file-versions 389,14283
+(defun dired-uncompress 507,18331
+(defun dired-unflag 225,8469
+(defun dired-view-file 257,9315
 
 ../lisp/disass.el,331
 (defconst byte-code-vector251,8414
@@ -3436,48 +3509,48 @@ xfixscreen 1276,29294
 (defvar bug-gnu-emacs 27,1114
 (defun report-emacs-bug 30,1235
 
-../lisp/files.el,3043
+../lisp/files.el,3044
 (defun after-find-file 288,11077
-(defun append-to-file 829,31845
+(defun append-to-file 843,32331
 (defconst auto-save-default 101,4188
-(defun auto-save-file-name-p 977,37563
-(defun auto-save-mode 935,35955
+(defun auto-save-file-name-p 991,38049
+(defun auto-save-mode 949,36441
 (defconst auto-save-visited-file-name 104,4289
 (defconst automount-dir-prefix 239,9208
-(defun backup-buffer 518,19766
+(defun backup-buffer 524,20000
 (defconst backup-by-copying 49,2061
 (defconst backup-by-copying-when-linked 53,2206
 (defconst backup-by-copying-when-mismatch 58,2467
-(defun backup-extract-version 627,24190
-(defun backup-file-name-p 589,22554
-(defun basic-save-buffer 681,26619
+(defun backup-extract-version 641,24676
+(defun backup-file-name-p 598,22867
+(defun basic-save-buffer 695,27105
 (defconst buffer-offer-save 66,2907
 (defun cd 155,6329
 (defun create-file-buffer 230,8811
-(defvar ctl-x-4-map 1060,40831
-(define-key ctl-x-4-map 1064,40980
-(define-key ctl-x-4-map 1065,41033
-(define-key ctl-x-4-map 1066,41089
-(define-key ctl-x-map 1048,40328
-(define-key ctl-x-map 1049,40369
-(define-key ctl-x-map 1050,40417
-(define-key ctl-x-map 1051,40468
-(define-key ctl-x-map 1052,40519
-(define-key ctl-x-map 1053,40562
-(define-key ctl-x-map 1054,40608
-(define-key ctl-x-map 1055,40650
-(define-key ctl-x-map 1057,40729
-(define-key ctl-x-map 1058,40775
-(define-key ctl-x-map 1063,40937
-(defun delete-auto-save-file-if-necessary 670,26194
+(defvar ctl-x-4-map 1074,41322
+(define-key ctl-x-4-map 1078,41471
+(define-key ctl-x-4-map 1079,41524
+(define-key ctl-x-4-map 1080,41580
+(define-key ctl-x-map 1062,40819
+(define-key ctl-x-map 1063,40860
+(define-key ctl-x-map 1064,40908
+(define-key ctl-x-map 1065,40959
+(define-key ctl-x-map 1066,41010
+(define-key ctl-x-map 1067,41053
+(define-key ctl-x-map 1068,41099
+(define-key ctl-x-map 1069,41141
+(define-key ctl-x-map 1071,41220
+(define-key ctl-x-map 1072,41266
+(define-key ctl-x-map 1077,41428
+(defun delete-auto-save-file-if-necessary 684,26680
 (defconst delete-auto-save-files 21,840
 (defvar dired-kept-versions 82,3507
-(define-key esc-map 1056,40690
-(defun file-name-sans-versions 573,21928
-(defun file-nlinks 633,24375
+(define-key esc-map 1070,41181
+(defun file-name-sans-versions 582,22241
+(defun file-nlinks 647,24861
 (defconst file-precious-flag 72,3133
 (defun find-alternate-file 204,7934
-(defun find-backup-file-name 597,22942
+(defun find-backup-file-name 606,23255
 (defun find-file 183,7199
 (defvar find-file-hooks 122,4991
 (defun find-file-noselect 242,9318
@@ -3488,46 +3561,47 @@ xfixscreen 1276,29294
 (defun hack-local-variables 393,15025
 (defconst ignore-local-eval 138,5706
 (defconst inhibit-local-variables 132,5395
-(defun insert-file 822,31592
+(defun insert-file 836,32078
 (defvar kept-new-versions 92,3829
 (defvar kept-old-versions 89,3724
-(defun kill-some-buffers 918,35474
-(defun list-directory 988,38021
-(defconst list-directory-brief-switches 983,37787
-(defconst list-directory-verbose-switches 985,37902
+(defun kill-some-buffers 932,35960
+(defun list-directory 1002,38507
+(defconst list-directory-brief-switches 997,38273
+(defconst list-directory-verbose-switches 999,38388
 (defun load-file 166,6693
 (defun load-library 171,6830
-(defun make-auto-save-file-name 964,37094
-(defun make-backup-file-name 584,22372
+(defun make-auto-save-file-name 978,37580
+(defun make-backup-file-name 593,22685
 (defconst make-backup-files 31,1223
 (defun normal-mode 325,12391
-(defun not-modified 809,31183
+(defun not-modified 823,31669
 (defun pwd 150,6208
-(defun recover-file 893,34395
-(defun rename-auto-save-file 952,36587
+(defun recover-file 907,34881
+(defun rename-auto-save-file 966,37073
 (defconst require-final-newline 96,3972
-(defun revert-buffer 840,32282
-(defvar revert-buffer-function 837,32176
+(defun revert-buffer 854,32768
+(defvar revert-buffer-function 851,32662
 (defconst save-abbrevs 108,4464
-(defun save-buffer 637,24496
-(defun save-buffers-kill-emacs 1023,39358
-(defun save-some-buffers 772,29987
+(defun save-buffer 651,24982
+(defun save-buffers-kill-emacs 1037,39844
+(defun save-some-buffers 786,30473
 (defun set-auto-mode 346,13285
-(defun set-visited-file-name 468,17890
+(defun set-visited-file-name 471,17971
 (defun switch-to-buffer-other-window 177,6995
-(defun toggle-read-only 815,31358
+(defun toggle-read-only 829,31844
 (defvar trim-versions-without-asking 85,3597
 (defvar version-control 76,3285
-(defun write-file 509,19467
+(defun write-file 515,19701
 (defvar write-file-hooks 127,5190
 
-../lisp/fill.el,215
-(defun fill-individual-paragraphs 207,7097
-(defun fill-paragraph 118,4262
-(defun fill-region 129,4557
-(defun fill-region-as-paragraph 35,1291
-(defun justify-current-line 146,5080
-(defun set-fill-prefix 21,811
+../lisp/fill.el,265
+(defun fill-individual-paragraphs 226,8031
+(defconst fill-individual-varying-indent 20,816
+(defun fill-paragraph 137,5196
+(defun fill-region 148,5491
+(defun fill-region-as-paragraph 41,1666
+(defun justify-current-line 165,6014
+(defun set-fill-prefix 27,1186
 
 ../lisp/flame.el,1236
 (define-element "adjective")232,8560
@@ -3662,8 +3736,8 @@ xfixscreen 1276,29294
 (defun mark-fortran-subprogram 422,18194
 
 ../lisp/ftp.el,683
-(defun ftp-asynchronous-input-sentinel 254,9376
-(defun ftp-asynchronous-output-sentinel 258,9551
+(defun ftp-asynchronous-input-sentinel 254,9378
+(defun ftp-asynchronous-output-sentinel 258,9553
 (defun ftp-command 224,8532
 (defun ftp-find-file 73,2534
 (defun ftp-find-file-or-directory 99,3888
@@ -3671,14 +3745,14 @@ xfixscreen 1276,29294
 (defun ftp-login 210,8064
 (defvar ftp-password-alist 24,945
 (defun ftp-read-file-name 65,2252
-(defun ftp-revert-buffer 357,12943
-(defun ftp-sentinel 263,9733
+(defun ftp-revert-buffer 360,13031
+(defun ftp-sentinel 263,9735
 (defun ftp-setup-buffer 188,7339
-(defun ftp-setup-write-file-hooks 330,11994
-(defun ftp-synchronous-input-sentinel 256,9463
-(defun ftp-synchronous-output-sentinel 260,9641
+(defun ftp-setup-write-file-hooks 330,11996
+(defun ftp-synchronous-input-sentinel 256,9465
+(defun ftp-synchronous-output-sentinel 260,9643
 (defun ftp-write-file 140,5407
-(defun ftp-write-file-hook 343,12472
+(defun ftp-write-file-hook 343,12474
 (defun read-ftp-user-password 26,994
 
 ../lisp/gdb.el,960
@@ -3917,49 +3991,49 @@ xfixscreen 1276,29294
 (defun tab-to-tab-stop 209,6757
 
 ../lisp/info.el,1509
-(defun Info-cease-edit 691,23461
+(defun Info-cease-edit 692,23474
 (defvar Info-current-file 36,1344
 (defvar Info-current-node 43,1578
 (defvar Info-current-subfile 39,1427
 (defvar Info-directory 33,1263
-(defun Info-directory 387,13227
-(defun Info-edit 675,22896
-(defvar Info-edit-map 661,22485
-(defun Info-edit-mode 668,22698
+(defun Info-directory 387,13202
+(defun Info-edit 676,22909
+(defvar Info-edit-map 662,22498
+(defun Info-edit-mode 669,22711
 (defvar Info-enable-active-nodes 29,1105
 (defvar Info-enable-edit 26,995
-(defun Info-exit 545,18333
-(defun Info-extract-menu-counting 511,17340
-(defun Info-extract-menu-item 499,16950
-(defun Info-extract-menu-node-name 432,14846
-(defun Info-extract-pointer 336,11654
-(defun Info-fifth-menu-item 540,18191
+(defun Info-exit 545,18308
+(defun Info-extract-menu-counting 511,17315
+(defun Info-extract-menu-item 499,16925
+(defun Info-extract-menu-node-name 432,14821
+(defun Info-extract-pointer 336,11629
+(defun Info-fifth-menu-item 540,18166
 (defun Info-find-node 60,2188
-(defun Info-first-menu-item 520,17619
-(defun Info-follow-reference 392,13337
-(defun Info-following-node-name 346,11970
-(defun Info-fourth-menu-item 535,18047
-(defun Info-goto-node 251,8685
-(defun Info-help 556,18606
+(defun Info-first-menu-item 520,17594
+(defun Info-follow-reference 392,13312
+(defun Info-following-node-name 346,11945
+(defun Info-fourth-menu-item 535,18022
+(defun Info-goto-node 251,8660
+(defun Info-help 556,18581
 (defvar Info-history 22,865
-(defun Info-last 373,12739
-(defvar Info-last-search 268,9470
-(defun Info-menu 452,15406
-(defun Info-menu-item-sequence 447,15292
-(defun Info-mode 615,20770
-(defvar Info-mode-map 581,19312
-(defun Info-next 358,12342
-(defun Info-prev 363,12467
-(defun Info-read-subfile 176,6496
-(defun Info-search 271,9554
-(defun Info-second-menu-item 525,17761
-(defun Info-select-node 210,7559
-(defun Info-set-mode-line 238,8354
-(defun Info-summary 564,18772
+(defun Info-last 373,12714
+(defvar Info-last-search 268,9445
+(defun Info-menu 452,15381
+(defun Info-menu-item-sequence 447,15267
+(defun Info-mode 616,20783
+(defvar Info-mode-map 581,19287
+(defun Info-next 358,12317
+(defun Info-prev 363,12442
+(defun Info-read-subfile 176,6471
+(defun Info-search 271,9529
+(defun Info-second-menu-item 525,17736
+(defun Info-select-node 210,7534
+(defun Info-set-mode-line 238,8329
+(defun Info-summary 564,18747
 (defvar Info-tag-table-marker 46,1664
-(defun Info-third-menu-item 530,17905
-(defun Info-undefined 551,18515
-(defun Info-up 368,12614
+(defun Info-third-menu-item 530,17880
+(defun Info-undefined 551,18490
+(defun Info-up 368,12589
 (defun info 50,1825
 
 ../lisp/informat.el,206
@@ -4198,12 +4272,12 @@ xfixscreen 1276,29294
 ../lisp/loadup.el,0
 
 ../lisp/lpr.el,171
-(defun lpr-buffer 28,1039
+(defun lpr-buffer 29,1079
 (defvar lpr-command 24,931
-(defun lpr-region 40,1492
-(defun print-buffer 34,1257
-(defun print-region 46,1709
-(defun print-region-1 52,1943
+(defun lpr-region 41,1532
+(defun print-buffer 35,1297
+(defun print-region 47,1749
+(defun print-region-1 53,1983
 
 ../lisp/macros.el,100
 (defun insert-kbd-macro 36,1460
@@ -4839,26 +4913,26 @@ xfixscreen 1276,29294
 
 ../lisp/paths.el,448
 (defvar Info-directory 27,1073
-(defconst abbrev-file-name 116,4909
-(defconst manual-formatted-dir-prefix81,3188
-(defconst manual-formatted-dirlist87,3453
-(defconst manual-program 73,2769
-(defvar mh-lib45,1751
+(defconst abbrev-file-name 119,5173
+(defconst manual-formatted-dir-prefix84,3452
+(defconst manual-formatted-dirlist90,3717
+(defconst manual-program 76,3033
+(defvar mh-lib47,1915
 (defvar mh-progs39,1557
 (defvar news-inews-program31,1243
 (defvar news-path 29,1143
-(defconst rmail-file-name 51,1946
-(defconst rmail-spool-directory54,2022
-(defconst sendmail-program62,2295
-(defconst term-file-prefix 68,2484
+(defconst rmail-file-name 54,2210
+(defconst rmail-spool-directory57,2286
+(defconst sendmail-program65,2559
+(defconst term-file-prefix 71,2748
 
 ../lisp/picture.el,1643
-(defun edit-picture 458,17500
-(defvar edit-picture-hook 454,17348
+(defun edit-picture 469,17814
+(defvar edit-picture-hook 465,17662
 (defun move-to-column-force 24,898
 (defun picture-backward-clear-column 187,6379
 (defun picture-backward-column 57,2001
-(defun picture-clean 558,22308
+(defun picture-clean 569,22641
 (defun picture-clear-column 176,6030
 (defun picture-clear-line 192,6540
 (defun picture-clear-rectangle 346,12105
@@ -4867,10 +4941,10 @@ xfixscreen 1276,29294
 (defun picture-end-of-line 42,1418
 (defun picture-forward-column 51,1799
 (defconst picture-horizontal-step 74,2545
-(defun picture-insert-rectangle 396,14481
+(defun picture-insert-rectangle 407,14795
 (defconst picture-killed-rectangle 342,11925
-(defun picture-mode-exit 542,21611
-(defconst picture-mode-map 414,15058
+(defun picture-mode-exit 553,21944
+(defconst picture-mode-map 425,15372
 (defun picture-motion 142,4701
 (defun picture-motion-reverse 151,5125
 (defun picture-move 137,4502
@@ -4894,8 +4968,8 @@ xfixscreen 1276,29294
 (defvar picture-tab-chars 241,7979
 (defun picture-tab-search 297,10439
 (defconst picture-vertical-step 71,2441
-(defun picture-yank-rectangle 373,13324
-(defun picture-yank-rectangle-from-register 384,13863
+(defun picture-yank-rectangle 384,13638
+(defun picture-yank-rectangle-from-register 395,14177
 
 ../lisp/prolog.el,766
 (define-abbrev-table 'prolog-mode-abbrev-table 53,1951
@@ -4921,7 +4995,7 @@ xfixscreen 1276,29294
 
 ../lisp/rect.el,644
 (defun clear-rectangle 183,6648
-(defun clear-rectangle-line 189,6884
+(defun clear-rectangle-line 189,6912
 (defun delete-extract-rectangle 113,4132
 (defun delete-extract-rectangle-line 72,2676
 (defun delete-rectangle 105,3795
@@ -4934,7 +5008,7 @@ xfixscreen 1276,29294
 (defun open-rectangle 165,5950
 (defun open-rectangle-line 172,6262
 (defun operate-on-rectangle 21,816
-(defun rectangle-coerce-tab 198,7166
+(defun rectangle-coerce-tab 199,7226
 (defun spaces-string 97,3585
 (defconst spaces-strings94,3490
 (defun yank-rectangle 138,5103
@@ -4979,72 +5053,73 @@ xfixscreen 1276,29294
 (defun rfc822-snarf-word 95,2821
 (defun rfc822-snarf-words 107,3189
 
-../lisp/rmail.el,2508
-(defvar mmdf-delim1 55,2124
-(defvar mmdf-delim2 57,2215
-(defun rmail 89,3084
-(defun rmail-beginning-of-message 925,33906
-(defun rmail-clear-headers 692,25773
-(defun rmail-continue 1213,43514
-(defun rmail-convert-file 144,5179
-(defun rmail-convert-to-babyl-format 535,20365
-(defun rmail-count-new-messages 853,31251
-(defvar rmail-current-message 68,2533
-(defun rmail-delete-backward 1128,40557
-(defun rmail-delete-forward 1120,40213
-(defun rmail-delete-message 1102,39668
-(defvar rmail-deleted-vector 71,2636
-(defun rmail-display-labels 737,27305
-(defun rmail-expunge 1134,40775
-(defun rmail-expunge-and-save 346,13556
-(defun rmail-forget-messages 834,30749
-(defun rmail-forward 1320,47194
-(defun rmail-get-new-mail 374,14258
-(defun rmail-input 363,14000
-(defun rmail-insert-inbox-text 448,17189
-(defun rmail-insert-rmail-file-header 174,6247
-(defvar rmail-last-file 84,2993
-(defvar rmail-last-label 81,2866
-(defun rmail-last-message 1013,36781
-(defvar rmail-last-multi-labels 83,2956
-(defvar rmail-last-rmail-file 85,3022
-(defun rmail-mail 1206,43289
-(defun rmail-make-in-reply-to-field 1281,45905
-(defun rmail-maybe-set-message-counters 846,31061
-(defun rmail-message-deleted-p 1096,39495
-(defvar rmail-message-filter 60,2305
-(defun rmail-message-labels-p 805,29728
-(defvar rmail-message-vector 70,2602
-(defun rmail-mode 228,8769
-(defun rmail-mode-1 277,11093
-(defvar rmail-mode-map 64,2454
-(defun rmail-msgbeg 815,30019
-(defun rmail-msgend 812,29938
-(defun rmail-next-message 968,35215
-(defun rmail-next-undeleted-message 983,35703
-(defun rmail-nuke-pinhead-header 628,23669
-(defun rmail-parse-file-inboxes 331,13129
-(defun rmail-previous-message 976,35486
-(defun rmail-previous-undeleted-message 1006,36545
-(defun rmail-quit 352,13674
-(defun rmail-reformat-message 668,24973
-(defun rmail-reply 1218,43648
-(defun rmail-revert 316,12579
-(defun rmail-search 1032,37307
-(defvar rmail-search-last-regexp 1031,37269
-(defun rmail-set-attribute 781,28874
-(defun rmail-set-message-counters 880,32328
-(defun rmail-set-message-counters-counter 911,33431
-(defun rmail-set-message-deleted-p 1099,39571
-(defun rmail-show-message 930,34060
-(defvar rmail-summary-buffer 75,2719
-(defvar rmail-summary-vector 76,2753
-(defun rmail-toggle-header 706,26205
-(defvar rmail-total-messages 69,2568
-(defun rmail-undelete-previous-message 1107,39793
-(defun rmail-variables 291,11572
-(defun rmail-what-message 1019,36940
-(defun rmail-widen-to-current-msgbeg 818,30095
+../lisp/rmail.el,2550
+(defvar mmdf-delim1 55,2130
+(defvar mmdf-delim2 57,2221
+(defun rmail 94,3474
+(defun rmail-beginning-of-message 939,34383
+(defun rmail-clear-headers 706,26250
+(defun rmail-continue 1227,43991
+(defun rmail-convert-file 149,5569
+(defun rmail-convert-to-babyl-format 551,21166
+(defun rmail-count-new-messages 867,31728
+(defvar rmail-current-message 68,2539
+(defun rmail-delete-backward 1142,41034
+(defun rmail-delete-forward 1134,40690
+(defun rmail-delete-message 1116,40145
+(defvar rmail-deleted-vector 71,2642
+(defun rmail-display-labels 751,27782
+(defun rmail-expunge 1148,41252
+(defun rmail-expunge-and-save 351,13946
+(defun rmail-forget-messages 848,31226
+(defun rmail-forward 1334,47671
+(defun rmail-get-new-mail 379,14648
+(defun rmail-input 368,14390
+(defun rmail-insert-inbox-text 458,17757
+(defun rmail-insert-rmail-file-header 179,6637
+(defvar rmail-last-file 84,2999
+(defvar rmail-last-label 81,2872
+(defun rmail-last-message 1027,37258
+(defvar rmail-last-multi-labels 83,2962
+(defvar rmail-last-rmail-file 85,3028
+(defun rmail-mail 1220,43766
+(defun rmail-make-in-reply-to-field 1295,46382
+(defun rmail-maybe-set-message-counters 860,31538
+(defun rmail-message-deleted-p 1110,39972
+(defvar rmail-message-filter 60,2311
+(defun rmail-message-labels-p 819,30205
+(defvar rmail-message-vector 70,2608
+(defun rmail-mode 233,9159
+(defun rmail-mode-1 282,11483
+(defvar rmail-mode-map 64,2460
+(defun rmail-msgbeg 829,30496
+(defun rmail-msgend 826,30415
+(defun rmail-next-message 982,35692
+(defun rmail-next-undeleted-message 997,36180
+(defun rmail-nuke-pinhead-header 643,24311
+(defun rmail-parse-file-inboxes 336,13519
+(defun rmail-previous-message 990,35963
+(defun rmail-previous-undeleted-message 1020,37022
+(defun rmail-quit 357,14064
+(defun rmail-reformat-message 682,25450
+(defun rmail-reply 1232,44125
+(defun rmail-revert 321,12969
+(defun rmail-search 1046,37784
+(defvar rmail-search-last-regexp 1045,37746
+(defun rmail-set-attribute 795,29351
+(defun rmail-set-message-counters 894,32805
+(defun rmail-set-message-counters-counter 925,33908
+(defun rmail-set-message-deleted-p 1113,40048
+(defun rmail-show-message 944,34537
+(defvar rmail-summary-buffer 75,2725
+(defvar rmail-summary-vector 76,2759
+(defun rmail-toggle-header 720,26682
+(defvar rmail-total-messages 69,2574
+(defun rmail-undelete-previous-message 1121,40270
+(defvar rmail-unix-mail-delimiter89,3198
+(defun rmail-variables 296,11962
+(defun rmail-what-message 1033,37417
+(defun rmail-widen-to-current-msgbeg 832,30572
 
 ../lisp/rmailedit.el,172
 (defun rmail-abort-edit 99,3639
@@ -5264,26 +5339,26 @@ xfixscreen 1276,29294
 (defun scribe-underline-word 185,6710
 
 ../lisp/sendmail.el,682
-(defun mail 415,14204
+(defun mail 420,14376
 (defvar mail-abbrevs-loaded 53,2259
 (defvar mail-aliases 46,2043
-(defun mail-bcc 334,11703
-(defun mail-cc 326,11479
+(defun mail-bcc 338,11856
+(defun mail-cc 330,11632
 (defvar mail-default-reply-to 50,2152
 (defun mail-do-fcc 259,9369
-(defun mail-fill-yanked-message 368,12674
+(defun mail-fill-yanked-message 373,12846
 (defun mail-mode 104,3816
 (defvar mail-mode-map 54,2292
-(defun mail-other-window 456,15788
-(defun mail-position-on-field 342,11932
+(defun mail-other-window 462,15997
+(defun mail-position-on-field 346,12085
 (defun mail-send 163,6235
 (defun mail-send-and-exit 149,5763
 (defun mail-setup 65,2604
-(defun mail-signature 361,12471
-(defun mail-subject 320,11343
-(defun mail-to 314,11222
-(defun mail-yank-clear-headers 398,13674
-(defun mail-yank-original 379,13038
+(defun mail-signature 366,12643
+(defun mail-subject 324,11496
+(defun mail-to 318,11375
+(defun mail-yank-clear-headers 403,13846
+(defun mail-yank-original 384,13210
 (defun sendmail-send-it 176,6650
 
 ../lisp/server.el,499
@@ -5304,25 +5379,25 @@ xfixscreen 1276,29294
 (defun server-visit-files 163,6653
 
 ../lisp/shell.el,1161
-(defun copy-last-shell-input 308,11081
+(defun copy-last-shell-input 308,11114
 (defvar explicit-csh-args102,3807
 (defvar explicit-shell-file-name 42,1442
-(defvar inferior-lisp-load-command 350,12304
-(defun inferior-lisp-mode 363,12934
-(defvar inferior-lisp-mode-map 340,11957
-(defvar inferior-lisp-program 347,12200
-(defvar inferior-lisp-prompt 359,12793
-(defun interrupt-shell-subjob 314,11282
-(defun kill-output-from-shell 292,10607
-(defun kill-shell-input 334,11755
-(defun kill-shell-subjob 319,11404
+(defvar inferior-lisp-load-command 350,12337
+(defun inferior-lisp-mode 363,12967
+(defvar inferior-lisp-mode-map 340,11990
+(defvar inferior-lisp-program 347,12233
+(defvar inferior-lisp-prompt 359,12826
+(defun interrupt-shell-subjob 314,11315
+(defun kill-output-from-shell 292,10640
+(defun kill-shell-input 334,11788
+(defun kill-shell-subjob 319,11437
 (defvar last-input-end 25,940
 (defvar last-input-start 23,842
-(defun lisp-send-defun 411,14785
-(defun lisp-send-defun-and-go 446,16057
+(defun lisp-send-defun 411,14818
+(defun lisp-send-defun-and-go 446,16090
 (defun make-shell 146,5592
-(defun quit-shell-subjob 324,11526
-(defun run-lisp 405,14592
+(defun quit-shell-subjob 324,11559
+(defun run-lisp 405,14625
 (defun shell 111,4120
 (defvar shell-cd-regexp 39,1354
 (defvar shell-directory-stack 30,1064
@@ -5330,173 +5405,173 @@ xfixscreen 1276,29294
 (defvar shell-mode-map 28,1035
 (defvar shell-popd-regexp 33,1163
 (defvar shell-pushd-regexp 36,1257
-(defun shell-send-eof 287,10480
-(defun shell-send-input 192,7169
-(defun shell-set-directory 238,8988
-(defvar shell-set-directory-error-hook 187,6960
-(defun show-output-from-shell 301,10858
-(defun stop-shell-subjob 329,11648
+(defun shell-send-eof 287,10513
+(defun shell-send-input 192,7202
+(defun shell-set-directory 238,9021
+(defvar shell-set-directory-error-hook 187,6993
+(defun show-output-from-shell 301,10891
+(defun stop-shell-subjob 329,11681
 
 ../lisp/simple.el,5523
-(defun append-next-kill 594,21058
-(defun append-to-buffer 669,23582
-(defun auto-fill-mode 1209,42336
-(defun back-to-indentation 123,3850
+(defun append-next-kill 595,21107
+(defun append-to-buffer 670,23631
+(defun auto-fill-mode 1210,42385
+(defun back-to-indentation 123,3856
 (defun backward-delete-char-untabify 164,5340
-(defun backward-kill-word 1115,39201
-(defun backward-to-indentation 505,17890
-(defun backward-word 1094,38595
+(defun backward-kill-word 1116,39250
+(defun backward-to-indentation 506,17939
+(defun backward-word 1095,38644
 (defun beginning-of-buffer 192,6410
-(defun blink-matching-open 1268,44479
-(defconst blink-matching-paren 1261,44222
-(defconst blink-matching-paren-distance 1264,44331
-(defconst comment-column 992,34876
-(defconst comment-end 1005,35428
-(defconst comment-indent-hook1009,35568
-(defconst comment-multi-line 1152,40444
-(defconst comment-start 997,35073
-(defconst comment-start-skip 1000,35186
-(defun copy-region-as-kill 583,20609
-(defun copy-to-buffer 696,24620
+(defun blink-matching-open 1269,44528
+(defconst blink-matching-paren 1262,44271
+(defconst blink-matching-paren-distance 1265,44380
+(defconst comment-column 993,34925
+(defconst comment-end 1006,35477
+(defconst comment-indent-hook1010,35617
+(defconst comment-multi-line 1153,40493
+(defconst comment-start 998,35122
+(defconst comment-start-skip 1001,35235
+(defun copy-region-as-kill 584,20658
+(defun copy-to-buffer 697,24669
 (defun count-lines 247,8176
 (defun count-lines-region 232,7776
-(define-key ctl-x-map 1358,47156
-(define-key ctl-x-map 1359,47201
-(define-key ctl-x-map 1369,47597
-(define-key ctl-x-map 1373,47771
-(define-key ctl-x-map 1375,47863
-(define-key ctl-x-map 1376,47915
-(define-key ctl-x-map 1395,48549
-(define-key ctl-x-map 1398,48644
-(define-key ctl-x-map 1402,48788
-(define-key ctl-x-map 1407,48971
-(define-key ctl-x-map 1412,49167
-(define-key ctl-x-map 1413,49214
-(define-key ctl-x-map 1414,49258
-(define-key ctl-x-map 1424,49595
-(defun delete-blank-lines 91,2879
-(defun delete-horizontal-space 76,2399
-(defun delete-indentation 53,1727
-(defun digit-argument 487,17263
-(defun do-auto-fill 1126,39603
+(define-key ctl-x-map 1359,47205
+(define-key ctl-x-map 1360,47250
+(define-key ctl-x-map 1370,47646
+(define-key ctl-x-map 1374,47820
+(define-key ctl-x-map 1376,47912
+(define-key ctl-x-map 1377,47964
+(define-key ctl-x-map 1396,48598
+(define-key ctl-x-map 1399,48693
+(define-key ctl-x-map 1403,48837
+(define-key ctl-x-map 1408,49020
+(define-key ctl-x-map 1413,49216
+(define-key ctl-x-map 1414,49263
+(define-key ctl-x-map 1415,49307
+(define-key ctl-x-map 1425,49644
+(defun delete-blank-lines 91,2885
+(defun delete-horizontal-space 76,2405
+(defun delete-indentation 53,1733
+(defun digit-argument 488,17312
+(defun do-auto-fill 1127,39652
 (defun edit-and-eval-command 300,10190
 (defun end-of-buffer 208,7005
-(define-key esc-map 1364,47369
-(define-key esc-map 1366,47455
-(define-key esc-map 1367,47500
-(define-key esc-map 1368,47551
-(define-key esc-map 1370,47647
-(define-key esc-map 1371,47688
-(define-key esc-map 1372,47726
-(define-key esc-map 1374,47820
-(define-key esc-map 1378,47996
-(define-key esc-map 1379,48036
-(define-key esc-map 1386,48253
-(define-key esc-map 1390,48384
-(define-key esc-map 1391,48430
-(define-key esc-map 1393,48513
-(define-key esc-map 1405,48884
-(define-key esc-map 1406,48926
-(define-key esc-map 1409,49019
-(define-key esc-map 1410,49064
-(define-key esc-map 1411,49114
-(define-key esc-map 1416,49309
-(define-key esc-map 1417,49345
-(define-key esc-map 1418,49384
-(define-key esc-map 1419,49424
-(define-key esc-map 1420,49460
-(define-key esc-map 1422,49509
-(define-key esc-map 1423,49555
-(define-key esc-map 1425,49641
+(define-key esc-map 1365,47418
+(define-key esc-map 1367,47504
+(define-key esc-map 1368,47549
+(define-key esc-map 1369,47600
+(define-key esc-map 1371,47696
+(define-key esc-map 1372,47737
+(define-key esc-map 1373,47775
+(define-key esc-map 1375,47869
+(define-key esc-map 1379,48045
+(define-key esc-map 1380,48085
+(define-key esc-map 1387,48302
+(define-key esc-map 1391,48433
+(define-key esc-map 1392,48479
+(define-key esc-map 1394,48562
+(define-key esc-map 1406,48933
+(define-key esc-map 1407,48975
+(define-key esc-map 1410,49068
+(define-key esc-map 1411,49113
+(define-key esc-map 1412,49163
+(define-key esc-map 1417,49358
+(define-key esc-map 1418,49394
+(define-key esc-map 1419,49433
+(define-key esc-map 1420,49473
+(define-key esc-map 1421,49509
+(define-key esc-map 1423,49558
+(define-key esc-map 1424,49604
+(define-key esc-map 1426,49690
 (defun eval-expression 293,9934
-(defun exchange-point-and-mark 788,28092
-(defconst fill-prefix 1121,39386
-(defun fixup-whitespace 64,2058
-(defun forward-to-indentation 499,17713
+(defun exchange-point-and-mark 789,28141
+(defconst fill-prefix 1122,39435
+(defun fixup-whitespace 64,2064
+(defun forward-to-indentation 500,17762
 (defun fundamental-mode 283,9570
-(define-key global-map 1328,46213
-(define-key global-map 1361,47236
-(define-key global-map 1362,47287
-(define-key global-map 1363,47327
-(define-key global-map 1365,47409
-(define-key global-map 1377,47959
-(define-key global-map 1381,48087
-(define-key global-map 1388,48298
-(define-key global-map 1389,48340
-(define-key global-map 1392,48476
-(define-key global-map 1397,48595
-(define-key global-map 1400,48700
-(define-key global-map 1401,48742
-(define-key global-map 1404,48836
-(define-key global-map 1430,49869
-(defvar goal-column 847,30239
+(define-key global-map 1329,46262
+(define-key global-map 1362,47285
+(define-key global-map 1363,47336
+(define-key global-map 1364,47376
+(define-key global-map 1366,47458
+(define-key global-map 1378,48008
+(define-key global-map 1382,48136
+(define-key global-map 1389,48347
+(define-key global-map 1390,48389
+(define-key global-map 1393,48525
+(define-key global-map 1398,48644
+(define-key global-map 1401,48749
+(define-key global-map 1402,48791
+(define-key global-map 1405,48885
+(define-key global-map 1431,49918
+(defvar goal-column 848,30288
 (defun goto-line 355,12447
-(defun indent-for-comment 1014,35729
-(defun indent-new-comment-line 1156,40603
-(defun insert-buffer 653,23090
-(defun just-one-space 82,2599
-(defun keyboard-quit 1323,46119
-(defun kill-append 541,18921
+(defun indent-for-comment 1015,35778
+(defun indent-new-comment-line 1157,40652
+(defun insert-buffer 654,23139
+(defun just-one-space 82,2605
+(defun keyboard-quit 1324,46168
+(defun kill-append 542,18970
 (defun kill-backward-chars 159,5192
-(defun kill-comment 1076,38005
+(defun kill-comment 1077,38054
 (defun kill-forward-chars 154,5045
-(defun kill-line 511,18073
-(defun kill-region 547,19076
-(defvar kill-ring 532,18657
-(defconst kill-ring-max 535,18716
-(defvar kill-ring-yank-pointer 538,18818
-(defun kill-word 1109,38990
-(defun mark 711,25177
-(defvar mark-ring 736,26194
-(defconst mark-ring-max 741,26335
+(defun kill-line 512,18122
+(defun kill-region 548,19125
+(defvar kill-ring 533,18706
+(defconst kill-ring-max 536,18765
+(defvar kill-ring-yank-pointer 539,18867
+(defun kill-word 1110,39039
+(defun mark 712,25226
+(defvar mark-ring 737,26243
+(defconst mark-ring-max 742,26384
 (defun mark-whole-buffer 225,7602
-(defun mark-word 1101,38831
-(defconst mode-specific-map 1428,49751
-(defun negative-argument 493,17491
-(defun newline-and-indent 129,4018
+(defun mark-word 1102,38880
+(defconst mode-specific-map 1429,49800
+(defun negative-argument 494,17540
+(defun newline-and-indent 129,4024
 (defun next-complex-command 335,11697
-(defun next-line 798,28357
-(defun next-line-internal 854,30525
-(defun open-line 21,826
-(defun overwrite-mode 1250,43784
-(defun pop-mark 776,27674
-(defun prefix-arg-internal 454,16197
-(defun prepend-to-buffer 682,24091
+(defun next-line 799,28406
+(defun next-line-internal 855,30574
+(defun open-line 21,832
+(defun overwrite-mode 1251,43833
+(defun pop-mark 777,27723
+(defun prefix-arg-internal 455,16246
+(defun prepend-to-buffer 683,24140
 (defun previous-complex-command 350,12283
-(defun previous-line 826,29363
-(defun push-mark 759,26958
-(defun quoted-insert 43,1410
-(defun reindent-then-newline-and-indent 140,4453
+(defun previous-line 827,29412
+(defun push-mark 760,27007
+(defun quoted-insert 43,1416
+(defun reindent-then-newline-and-indent 140,4456
 (defun repeat-complex-command 310,10693
 (defvar repeat-complex-command-map 307,10483
 (define-key repeat-complex-command-map 308,10553
 (define-key repeat-complex-command-map 309,10625
-(defun rotate-yank-pointer 601,21270
-(defun set-comment-column 1053,37161
-(defun set-fill-column 1228,42915
-(defun set-goal-column 879,31225
-(defun set-mark 717,25415
-(defun set-mark-command 744,26440
-(defun set-selective-display 1235,43190
-(defun set-variable 1330,46261
-(defun shell-command 383,13288
-(defun shell-command-on-region 396,13801
-(defun split-line 33,1162
-(defvar temporary-goal-column 850,30356
-(defconst track-eol 843,30064
-(defun transpose-chars 896,31877
-(defun transpose-lines 921,32917
-(defun transpose-sexps 914,32695
-(defun transpose-subr 939,33465
-(defun transpose-subr-1 979,34439
-(defun transpose-words 905,32313
-(defun turn-on-auto-fill 1224,42820
+(defun rotate-yank-pointer 602,21319
+(defun set-comment-column 1054,37210
+(defun set-fill-column 1229,42964
+(defun set-goal-column 880,31274
+(defun set-mark 718,25464
+(defun set-mark-command 745,26489
+(defun set-selective-display 1236,43239
+(defun set-variable 1331,46310
+(defun shell-command 384,13337
+(defun shell-command-on-region 397,13850
+(defun split-line 33,1168
+(defvar temporary-goal-column 851,30405
+(defconst track-eol 844,30113
+(defun transpose-chars 897,31926
+(defun transpose-lines 922,32966
+(defun transpose-sexps 915,32744
+(defun transpose-subr 940,33514
+(defun transpose-subr-1 980,34488
+(defun transpose-words 906,32362
+(defun turn-on-auto-fill 1225,42869
 (defun undo 368,12837
-(defun universal-argument 436,15469
+(defun universal-argument 437,15518
 (defun what-cursor-position 255,8422
 (defun what-line 237,7935
-(defun yank 636,22525
-(defun yank-pop 612,21601
+(defun yank 637,22574
+(defun yank-pop 613,21650
 (defun zap-to-char 183,6001
 
 ../lisp/simula.el,1705
@@ -5581,8 +5656,8 @@ xfixscreen 1276,29294
 (defun spook1 64,2223
 
 ../lisp/startup.el,363
-(defun command-line 92,3372
-(defun command-line-1 149,5279
+(defun command-line 94,3485
+(defun command-line-1 151,5392
 (defvar command-line-processed 51,1881
 (defconst command-switch-alist 61,2249
 (defconst inhibit-default-init 58,2159
@@ -5598,20 +5673,20 @@ xfixscreen 1276,29294
 (defun studlify-word 36,907
 
 ../lisp/subr.el,419
-(defvar ctl-x-map 165,5428
-(defun error 51,1950
-(defvar esc-map 169,5565
-(defvar global-map 160,5252
-(defun momentary-string-display 194,6546
-(defvar mouse-map 173,5707
+(defvar ctl-x-map 168,5566
+(defun error 54,2088
+(defvar esc-map 172,5703
+(defvar global-map 163,5390
+(defun momentary-string-display 197,6684
+(defvar mouse-map 176,5845
 (defun one-window-p 21,826
-(defun read-quoted-char 28,1073
-(defun run-hooks 176,5788
-(defun substitute-key-definition 111,3775
-(defun suppress-keymap 64,2286
-(defun undefined 56,2113
-(defun undo-more 232,7981
-(defun undo-start 225,7716
+(defun read-quoted-char 31,1211
+(defun run-hooks 179,5926
+(defun substitute-key-definition 114,3913
+(defun suppress-keymap 67,2424
+(defun undefined 59,2251
+(defun undo-more 235,8119
+(defun undo-start 228,7854
 
 ../lisp/sun-cursors.el,859
 (defmacro defcursor 30,1059
@@ -5640,65 +5715,79 @@ xfixscreen 1276,29294
 (defcursor sc:right-arrow 43,1467
 (defun sc:set-cursor 63,2089
 
-../lisp/sun-fns.el,2189
-(defvar *mouse-drag-window* 102,3529
-(defvar *mouse-drag-x* 103,3562
-(defvar *mouse-drag-y* 104,3589
-(defun Buffer-at-mouse 436,14723
-(defconst cursor-pause-milliseconds 51,2101
-(defmenu delete-window-menu361,12414
-(defmenu emacs-menu380,12982
-(defun emacs-menu-eval 392,13358
-(defmenu emacs-quit-menu376,12888
-(defun enable-mouse-in-buffer-list 468,15490
-(defmenu expand-menu357,12277
-(defun indicate-region 54,2218
-(defun mini-move-point 423,14289
-(defun mini-set-mark-and-stuff 427,14403
-(defmenu minibuffer-menu 412,13944
-(defun minibuffer-menu-eval 419,14162
-(defun mouse-bottom-to-line 341,11748
-(defun mouse-buffer-bury 443,14910
-(defun mouse-buffer-delete 454,15170
-(defun mouse-buffer-execute 461,15329
-(defun mouse-buffer-select 448,15019
-(defun mouse-call-kbd-macro 140,4720
-(defun mouse-copy-thing 213,7209
-(defun mouse-delete-other-windows 280,9653
-(defun mouse-delete-window 284,9786
-(defun mouse-drag-move-point 106,3617
-(defun mouse-drag-set-mark-stuff 113,3817
-(defun mouse-exch-pt-and-mark 134,4590
-(defun mouse-expand-horizontally 396,13487
-(defun mouse-expand-vertically 402,13653
-(defmenu mouse-help-menu365,12539
-(defun mouse-kill-thing 180,6135
-(defun mouse-kill-thing-there 186,6314
-(defun mouse-line-to-bottom 337,11583
-(defun mouse-line-to-middle 345,11911
-(defun mouse-line-to-top 329,11314
-(defun mouse-mark-thing 146,4872
-(defun mouse-middle-to-line 349,12079
-(defun mouse-move-point 68,2577
-(defun mouse-move-thing 221,7513
-(defun mouse-save-thing 195,6615
-(defun mouse-save-thing-there 203,6907
-(defun mouse-save/delete/yank 245,8336
-(defun mouse-scroll-down 305,10484
-(defun mouse-scroll-proportional 309,10601
-(defun mouse-scroll-up 301,10349
-(defun mouse-select-or-drag-move-point 125,4328
-(defun mouse-select-previous-buffer 405,13740
-(defun mouse-select-window 276,9545
-(defun mouse-set-mark 77,2851
-(defun mouse-set-mark-and-select 87,3110
-(defun mouse-set-mark-and-stuff 93,3270
-(defun mouse-split-horizontally 268,9228
-(defun mouse-split-vertically 272,9388
-(defun mouse-top-to-line 333,11450
-(defun mouse-undo 288,9889
-(defun mouse-yank-at-mouse 240,8166
-(defun mouse-yank-at-point 229,7806
+../lisp/sun-fns.el,2722
+(defvar *modeline-hit* 462,15450
+(defvar *mouse-drag-window* 111,3737
+(defvar *mouse-drag-x* 112,3770
+(defvar *mouse-drag-y* 113,3797
+(defun Buffer-at-mouse 520,17703
+(defvar buffer-menu-mode-hook 602,20432
+(defvar buffer-modeline-menu 565,18831
+(defun buffer-modeline-menu-cmd 558,18571
+(defconst cursor-pause-milliseconds 60,2309
+(defmenu delete-window-menu370,12622
+(defmenu emacs-menu389,13190
+(defun emacs-menu-eval 401,13566
+(defmenu emacs-quit-menu385,13096
+(defun enable-mouse-in-buffer-list 583,19548
+(defmenu expand-menu366,12485
+(defun fill-some-paragraphs 624,21282
+(defun indicate-region 63,2426
+(defun mini-move-point 451,15054
+(defun mini-set-mark-and-stuff 454,15152
+(defun minibuf-prompt-length 434,14594
+(defmenu minibuffer-menu 421,14152
+(defun minibuffer-menu-eval 428,14370
+(defun modeline-hit 464,15513
+(defun modeline-menu-command 497,16714
+(defun modeline-menu-string 508,17183
+(defun mouse-bottom-to-line 350,11956
+(defun mouse-buffer-bury 525,17819
+(defun mouse-buffer-delete 537,18096
+(defun mouse-buffer-execute 551,18410
+(defun mouse-buffer-mark 544,18255
+(defun mouse-buffer-select 531,17945
+(defun mouse-call-kbd-macro 149,4928
+(defun mouse-copy-thing 222,7417
+(defun mouse-delete-other-windows 289,9861
+(defun mouse-delete-window 293,9994
+(defun mouse-drag-modeline 467,15602
+(defun mouse-drag-move-point 115,3825
+(defun mouse-drag-set-mark-stuff 122,4025
+(defun mouse-exch-pt-and-mark 143,4798
+(defun mouse-expand-horizontally 405,13695
+(defun mouse-expand-vertically 411,13861
+(defun mouse-fill-paragraph 615,21031
+(defun mouse-fill-paragraphs 649,22218
+(defmenu mouse-help-menu374,12747
+(defun mouse-kill-thing 189,6343
+(defun mouse-kill-thing-there 195,6522
+(defun mouse-line-to-bottom 346,11791
+(defun mouse-line-to-middle 354,12119
+(defun mouse-line-to-top 338,11522
+(defun mouse-mark-thing 155,5080
+(defun mouse-middle-to-line 358,12287
+(defun mouse-move-point 77,2785
+(defun mouse-move-thing 230,7721
+(defun mouse-save-thing 204,6823
+(defun mouse-save-thing-there 212,7115
+(defun mouse-save/delete/yank 254,8544
+(defun mouse-scroll-down 314,10692
+(defun mouse-scroll-proportional 318,10809
+(defun mouse-scroll-up 310,10557
+(defun mouse-select-or-drag-move-point 134,4536
+(defun mouse-select-previous-buffer 414,13948
+(defun mouse-select-window 285,9753
+(defun mouse-set-mark 86,3059
+(defun mouse-set-mark-and-select 96,3318
+(defun mouse-set-mark-and-stuff 102,3478
+(defun mouse-split-horizontally 277,9436
+(defun mouse-split-vertically 281,9596
+(defun mouse-top-to-line 342,11658
+(defun mouse-undo 297,10097
+(defun mouse-yank-at-mouse 249,8374
+(defun mouse-yank-at-point 238,8014
+(defun nth-menu-elt 489,16537
 
 ../lisp/sun-keys.el,235
 (defun sun-function-keys-bind-key 46,1601
@@ -5707,79 +5796,89 @@ xfixscreen 1276,29294
 (defun sun-function-keys-dispatch 31,1080
 (defun sun-function-keys-write-bindings 61,2155
 
-../lisp/sun-mouse.el,2507
-(defun copy-mousemap 55,1782
-(defvar current-global-mousemap 670,24373
-(defun define-mouse 59,1871
-(defmacro defmenu 574,20368
-(defun describe-mouse-bindings 525,18540
-(defun describe-mouse-briefly 539,19030
-(defmacro eval-in-buffer 160,5567
-(defmacro eval-in-window 174,5999
-(defmacro eval-in-windows 189,6450
-(defvar extra-click-wait 38,1240
-(defun global-set-mouse 76,2725
-(defun local-set-mouse 84,3134
-(defun logtest 113,4132
-(defun make-mousemap 51,1705
-(defun menu-create 568,20203
-(defun minibuffer-window-p 220,7501
-(defun mouse-code-function-pairs-of-region 461,16447
-(defun mouse-code-to-mouse-list 408,14662
-(defun mouse-event-code 391,14101
-(defun mouse-help-menu 547,19383
-(defun mouse-help-region 553,19671
-(defun mouse-hit-read 280,9880
-(defun mouse-list-to-mouse-code 401,14468
-(defun mouse-lookup 426,15172
-(defun mouse-mask-lookup 435,15510
-(defvar mouse-prefix1 301,10767
-(defvar mouse-prefix2 304,10875
-(defun mouse-region-to-code 397,14336
-(defun mouse-second-hit 308,10985
-(defun mouse-union 445,15858
-(defun mouse-union-first-prefered 456,16231
-(defun mousemap-get 423,15099
-(defun mousemap-set 416,14883
-(defun move-to-loc 203,6985
-(defun one-line-doc-string 476,16974
-(defun print-mouse-bindings 501,17643
-(defun print-mouse-format 487,17372
-(defvar scrollbar-width 42,1387
-(defconst sm::ButtonBits 123,4315
-(defconst sm::DoubleBits 125,4432
-(defconst sm::ShiftmaskBits 124,4361
-(defconst sm::UpBits 126,4471
-(defun sm::combined-hits 266,9325
-(defun sm::event-bindings 505,17785
-(defun sm::font-size 612,22268
-(defmacro sm::hit-button 132,4628
-(defmacro sm::hit-code 129,4537
-(defmacro sm::hit-delta 148,5247
-(defmacro sm::hit-double 138,4875
-(defmacro sm::hit-shiftmask 135,4746
-(defmacro sm::hit-up 141,5009
-(defmacro sm::hit-up-p 150,5297
-(defmacro sm::hit-x 144,5102
-(defmacro sm::hit-y 146,5170
-(defconst sm::keyword-alist 385,13883
-(defmacro sm::loc-w 156,5431
-(defmacro sm::loc-x 157,5476
-(defmacro sm::loc-y 158,5521
-(defun sm::menu-kludge 623,22702
-(defvar sm::menu-kludge-x 618,22525
-(defvar sm::menu-kludge-y 620,22613
-(defun sm::window-region 357,12927
-(defun sm::window-xy 329,12025
-(defun sun-get-frame-data 595,21414
-(defun sun-menu-evaluate 580,20589
-(defun sun-mouse-handler 227,7663
-(defun sun-select-region 644,23454
-(defun sun-yank-selection 637,23235
-(defun suspend-emacstool 653,23718
-(defun use-global-mousemap 94,3598
-(defun use-local-mousemap 98,3725
-(defun window-line-end 377,13607
+../lisp/sun-mouse.el,2881
+(defun copy-mousemap 58,1877
+(defvar current-global-mousemap 782,28049
+(defun define-mouse 62,1966
+(defmacro defmenu 591,20974
+(defun describe-mouse-bindings 542,19146
+(defun describe-mouse-briefly 556,19636
+(defun display-host 663,24156
+(defmacro eval-in-buffer 163,5662
+(defmacro eval-in-window 177,6094
+(defmacro eval-in-windows 195,6715
+(defvar extra-click-wait 41,1335
+(defun global-set-mouse 79,2820
+(defun local-set-mouse 87,3229
+(defun logtest 116,4227
+(defun make-mousemap 54,1800
+(defun menu-create 585,20809
+(defun minibuffer-window-p 226,7766
+(defun mouse-code-function-pairs-of-region 478,17053
+(defun mouse-code-to-mouse-list 425,15268
+(defun mouse-event-code 408,14707
+(defun mouse-help 278,9844
+(defun mouse-help-menu 564,19989
+(defun mouse-help-region 570,20277
+(defun mouse-hit-read 297,10486
+(defun mouse-list-to-mouse-code 418,15074
+(defun mouse-lookup 443,15778
+(defun mouse-mask-lookup 452,16116
+(defvar mouse-prefix1 318,11373
+(defvar mouse-prefix2 321,11481
+(defun mouse-region-to-code 414,14942
+(defun mouse-second-hit 325,11591
+(defun mouse-union 462,16464
+(defun mouse-union-first-prefered 473,16837
+(defun mousemap-get 440,15705
+(defun mousemap-set 433,15489
+(defun move-to-loc 209,7250
+(defun one-line-doc-string 493,17580
+(defun owselectionfile 710,25920
+(defvar owselectionfilex 708,25770
+(defun print-mouse-bindings 518,18249
+(defun print-mouse-format 504,17978
+(defvar scrollbar-width 45,1482
+(defconst sm::ButtonBits 126,4410
+(defconst sm::DoubleBits 128,4527
+(defconst sm::ShiftmaskBits 127,4456
+(defconst sm::UpBits 129,4566
+(defun sm::combined-hits 283,9931
+(defun sm::event-bindings 522,18391
+(defun sm::font-size 629,22874
+(defmacro sm::hit-button 135,4723
+(defmacro sm::hit-code 132,4632
+(defmacro sm::hit-delta 151,5342
+(defmacro sm::hit-double 141,4970
+(defmacro sm::hit-shiftmask 138,4841
+(defmacro sm::hit-up 144,5104
+(defmacro sm::hit-up-p 153,5392
+(defmacro sm::hit-x 147,5197
+(defmacro sm::hit-y 149,5265
+(defconst sm::keyword-alist 402,14489
+(defmacro sm::loc-w 159,5526
+(defmacro sm::loc-x 160,5571
+(defmacro sm::loc-y 161,5616
+(defun sm::menu-kludge 640,23308
+(defvar sm::menu-kludge-x 635,23131
+(defvar sm::menu-kludge-y 637,23219
+(defun sm::window-region 374,13533
+(defun sm::window-xy 346,12631
+(defun sun-get-frame-data 612,22020
+(defun sun-menu-evaluate 597,21195
+(defun sun-mouse-handler 234,7993
+(defun sun-select-region 751,27050
+(defun sun-yank-selection 742,26800
+(defun sunview-yank-any-selection 697,25316
+(defun sunview-yank-clipboard 675,24554
+(defun sunview-yank-current-selection 686,24891
+(defun sunview-yank-stuff 654,23841
+(defun suspend-emacstool 765,27394
+(defun use-global-mousemap 97,3693
+(defun use-local-mousemap 101,3820
+(defun window-line-end 394,14213
+(defun xv-select-region 735,26591
+(defun xv-yank-selection 724,26238
 
 ../lisp/sup-mouse.el,471
 (defconst mouse-2center 42,1593
@@ -5802,28 +5901,28 @@ xfixscreen 1276,29294
 (defun untabify 21,815
 
 ../lisp/tags.el,570
-(defun file-of-tag 60,2242
-(defun find-tag 131,4213
-(defun find-tag-default 108,3656
-(defun find-tag-other-window 189,6144
-(defun find-tag-tag 121,3988
+(defun file-of-tag 61,2283
+(defun find-tag 132,4254
+(defun find-tag-default 109,3697
+(defun find-tag-other-window 190,6185
+(defun find-tag-tag 122,4029
 (defvar last-tag 27,994
-(defun list-tags 266,9073
-(defun next-file 208,6885
-(defvar next-file-list 205,6812
+(defun list-tags 267,9114
+(defun next-file 209,6926
+(defvar next-file-list 206,6853
 (defvar tag-table-files 23,835
-(defun tag-table-files 81,2888
-(defun tags-apropos 287,9696
-(defun tags-loop-continue 224,7474
-(defvar tags-loop-form 220,7319
-(defun tags-query-replace 251,8419
-(defun tags-search 237,7920
+(defun tag-table-files 82,2929
+(defun tags-apropos 288,9737
+(defun tags-loop-continue 225,7515
+(defvar tags-loop-form 221,7360
+(defun tags-query-replace 252,8460
+(defun tags-search 238,7961
 (defun visit-tags-table 30,1053
 (defun visit-tags-table-buffer 44,1586
 
 ../lisp/telnet.el,636
 (defun delete-char-or-send-eof 115,4154
-(defun read-password 166,6149
+(defun read-password 167,6196
 (defun send-process-next-char 43,1455
 (defun telnet 152,5592
 (defun telnet-c-z 39,1392
@@ -5833,7 +5932,7 @@ xfixscreen 1276,29294
 (defun telnet-initial-filter 79,2870
 (defvar telnet-interrupt-string 29,1075
 (defun telnet-interrupt-subjob 34,1227
-(defun telnet-mode 174,6361
+(defun telnet-mode 175,6418
 (defvar telnet-mode-map 27,995
 (defvar telnet-new-line 26,965
 (defvar telnet-prompt-pattern 28,1024
@@ -6111,10 +6210,10 @@ xfixscreen 1276,29294
 (defun ask-user-about-supersession-threat 76,2806
 
 ../lisp/version.el,136
-(defconst emacs-build-system 29,1097
-(defconst emacs-build-time 26,1006
+(defconst emacs-build-system 29,1095
+(defconst emacs-build-time 26,1004
 (defconst emacs-version 23,924
-(defun emacs-version 31,1142
+(defun emacs-version 31,1140
 
 ../lisp/vi.el,4775
 (defun vi-abort-ins 709,29395
@@ -6659,41 +6758,41 @@ xfixscreen 1276,29294
 (defun x-menu-mode 26,904
 (defun x-menu-pick-entry 136,4703
 
-../lisp/x-mouse.el,3353
+../lisp/x-mouse.el,3355
 (define-key global-map 107,4054
 (define-key global-map 108,4110
-(define-key mouse-map 251,8833
-(define-key mouse-map 252,8890
-(define-key mouse-map 253,8948
-(define-key mouse-map 254,9004
-(define-key mouse-map 255,9063
-(define-key mouse-map 256,9123
-(define-key mouse-map 257,9181
-(define-key mouse-map 258,9240
-(define-key mouse-map 259,9300
-(define-key mouse-map 260,9358
-(define-key mouse-map 261,9417
-(define-key mouse-map 262,9477
-(define-key mouse-map 263,9535
-(define-key mouse-map 264,9596
-(define-key mouse-map 265,9658
-(define-key mouse-map 266,9718
-(define-key mouse-map 267,9779
-(define-key mouse-map 268,9841
-(define-key mouse-map 269,9901
-(define-key mouse-map 270,9962
-(define-key mouse-map 271,10024
-(define-key mouse-map 272,10084
-(define-key mouse-map 273,10147
-(define-key mouse-map 274,10211
-(define-key mouse-map 276,10274
-(define-key mouse-map 277,10330
-(define-key mouse-map 278,10381
-(define-key mouse-map 279,10448
-(define-key mouse-map 280,10501
-(define-key mouse-map 281,10555
-(define-key mouse-map 282,10617
-(defun x-buffer-menu 196,6960
+(define-key mouse-map 255,8978
+(define-key mouse-map 256,9035
+(define-key mouse-map 257,9093
+(define-key mouse-map 258,9149
+(define-key mouse-map 259,9208
+(define-key mouse-map 260,9268
+(define-key mouse-map 261,9326
+(define-key mouse-map 262,9385
+(define-key mouse-map 263,9445
+(define-key mouse-map 264,9503
+(define-key mouse-map 265,9562
+(define-key mouse-map 266,9622
+(define-key mouse-map 267,9680
+(define-key mouse-map 268,9741
+(define-key mouse-map 269,9803
+(define-key mouse-map 270,9863
+(define-key mouse-map 271,9924
+(define-key mouse-map 272,9986
+(define-key mouse-map 273,10046
+(define-key mouse-map 274,10107
+(define-key mouse-map 275,10169
+(define-key mouse-map 276,10229
+(define-key mouse-map 277,10292
+(define-key mouse-map 278,10356
+(define-key mouse-map 280,10419
+(define-key mouse-map 281,10475
+(define-key mouse-map 282,10526
+(define-key mouse-map 283,10593
+(define-key mouse-map 284,10646
+(define-key mouse-map 285,10700
+(define-key mouse-map 286,10762
+(defun x-buffer-menu 200,7105
 (defconst x-button-c-left 49,1818
 (defconst x-button-c-left-up 53,1969
 (defconst x-button-c-m-left 73,2743
@@ -6742,17 +6841,17 @@ xfixscreen 1276,29294
 (defconst x-button-s-middle-up 36,1319
 (defconst x-button-s-right 31,1123
 (defconst x-button-s-right-up 35,1268
-(defun x-cut-and-wipe-text 189,6773
-(defun x-cut-text 169,6087
+(defun x-cut-and-wipe-text 193,6918
+(defun x-cut-text 173,6232
 (defun x-flush-mouse-queue 95,3599
-(defun x-help 219,7579
-(defun x-mouse-ignore 193,6907
+(defun x-help 223,7724
+(defun x-mouse-ignore 197,7052
 (defun x-mouse-keep-one-window 125,4547
 (defun x-mouse-select 110,4167
 (defun x-mouse-select-and-split 130,4715
-(defun x-mouse-set-mark 158,5756
+(defun x-mouse-set-mark 162,5901
 (defun x-mouse-set-point 135,4890
-(defun x-paste-text 184,6610
+(defun x-paste-text 188,6755
 (defvar x-process-mouse-hook 87,3285
 
 ../lisp/xscheme.el,4273

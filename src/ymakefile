@@ -57,8 +57,14 @@ CC = C_COMPILER
 #endif
 
 /* Some machines don't find the standard C libraries in the usual place.  */
+#ifndef ORDINARY_LINK
 #ifndef LIB_STANDARD
 #define LIB_STANDARD -lc
+#endif
+#else
+#ifndef LIB_STANDARD
+#define LIB_STANDARD
+#endif
 #endif
 
 /* Unless inhibited or changed, use -lg to link for debugging.  */
@@ -78,7 +84,7 @@ CC = C_COMPILER
 
 /* Some s- files define this to request special switches in ld.  */
 #ifndef LD_SWITCH_SYSTEM
-#if defined (BSD) && !defined (COFF)
+#if defined (BSD) && !defined (COFF) && !defined (__GNUC__)
 #define LD_SWITCH_SYSTEM -X
 #else
 #define LD_SWITCH_SYSTEM
@@ -99,6 +105,15 @@ CC = C_COMPILER
 #define C_SWITCH_SYSTEM
 #endif
 
+#ifndef C_SWITCH_X_MACHINE
+#define C_SWITCH_X_MACHINE
+#endif
+
+#ifndef C_SWITCH_X_SYSTEM
+#define C_SWITCH_X_SYSTEM
+#endif
+
+#ifndef ORDINARY_LINK
 #ifndef START_FILES
 #ifdef NO_REMAP
 #define START_FILES pre-crt0.o /lib/crt0.o
@@ -107,6 +122,9 @@ CC = C_COMPILER
 #endif
 #endif /* have START_FILES */
 STARTFILES = START_FILES
+#else  /* ORDINARY_LINK */
+STARTFILES = pre-crt0.o
+#endif /* ORDINARY_LINK */
 
 /* This macro says how to compile for debugging.
    If you want to optimize, DON'T change this macro.
@@ -135,9 +153,21 @@ STARTFLAGS = -T LD_TEXT_START_ADDR -e __start
 #endif
 
 #ifndef LINKER
+#ifdef ORDINARY_LINK
+LD = $(CC)
+#else /* not ORDINARY_LINK */
+#if __GNUC__ > 1
+/* Search the proper places so that we can find -lgcc.  */
+#define LINKER gcc -nostdlib
+#else
 #define LINKER ld
+#endif 
+#endif /* not ORDINARY_LINK */
+#endif /* no LINKER */
+
+#ifdef LINKER
+LD = LINKER
 #endif
-LD=LINKER
 LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE
 
 /* Figure out whether the system cpp can handle long names.
@@ -161,7 +191,7 @@ LOCALCPP= localcpp
 SHORT= shortnames
 #endif /* SHORTNAMES */
 
-CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
+CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM C_SWITCH_X_MACHINE C_SWITCH_X_SYSTEM
 /* DO NOT use -R.  There is a special hack described in lastfile.c
    which is used instead.  Some initialized data areas are modified
    at initial startup, then labeled as part of the text area when
@@ -198,7 +228,7 @@ CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
 #ifdef HAVE_X_MENU
 OLDXMENU = libXMenu11.a
 XOBJ = x11term.o x11fns.o xmenu.o
-LIBX = $(OLDXMENU) -loldX LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
+LIBX = $(OLDXMENU) LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
 #else
 XOBJ = x11term.o x11fns.o
 LIBX = LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
@@ -439,8 +469,8 @@ cm.o : cm.c cm.h termhooks.h config.h
 cmds.o : cmds.c syntax.h buffer.h commands.h config.h 
 crt0.o : crt0.c config.h
 	$(CC) -c $(CFLAGS) C_SWITCH_ASM crt0.c
-dired.o : dired.c commands.h buffer.h config.h 
-dispnew.o : dispnew.c commands.h window.h buffer.h dispextern.h termchar.h termopts.h cm.h config.h
+dired.o : dired.c commands.h buffer.h config.h regex.h
+dispnew.o : dispnew.c commands.h window.h buffer.h dispextern.h termchar.h termopts.h cm.h config.h lisp.h
 doc.o : doc.c buffer.h config.h paths.h
 doprnt.o : doprnt.c
 editfns.o : editfns.c window.h buffer.h config.h 
@@ -472,7 +502,7 @@ termcap.o : termcap.c config.h
 terminfo.o : terminfo.c config.h
 tparam.o : tparam.c config.h
 undo.o : undo.c buffer.h commands.h config.h 
-UNEXEC : config.h
+UNEXEC : config.h getpagesize.h
 window.o : window.c indent.h commands.h window.h buffer.h config.h termchar.h
 xdisp.o : xdisp.c macros.h commands.h indent.h buffer.h dispextern.h termchar.h window.h config.h 
 xfns.o : xfns.c xterm.h window.h config.h
@@ -482,7 +512,8 @@ xterm.o : xterm.c xterm.h termhooks.h termopts.h termchar.h \
 
 x11fns.o : x11fns.c window.h x11term.h dispextern.h termchar.h config.h
 x11term.o : x11term.c x11term.h termhooks.h termopts.h termchar.h \
- dispextern.h config.h sink.h sinkmask.h
+ dispextern.h config.h sink11.h sink11mask.h lisp.h gettime.h emacssignal.h \
+ xkeys-aix.h
 
 /* The files of Lisp proper */
 

@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1988, 1990, 1992 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -83,6 +83,11 @@ Called with region narrowed to unformatted header.")
 (defvar rmail-last-multi-labels nil)
 (defvar rmail-last-file nil)
 (defvar rmail-last-rmail-file nil)
+
+;; Regexp matching the delimiter of messages in UNIX mail format
+;; (UNIX From lines).  This is often used with ^ added on the front.
+(defvar rmail-unix-mail-delimiter
+  "From \\([^ \n]*\\(\\|\".*\"[^ \n]*\\)\\)  ?\\([^ \n]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( ?[A-Z]?[A-Z][A-Z]T\\( DST\\)?\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\\(remote from [^\n]*\\)?\n")
 
 ;;;; *** Rmail Mode ***
 
@@ -433,7 +438,12 @@ and use that file as the inbox."
 	    ;; Delete the old files, now that babyl file is saved.
 	    (while delete-files
 	      (condition-case ()
-		  (delete-file (car delete-files))
+		  ;; First, try deleting.
+		  (condition-case ()
+		      (delete-file (car delete-files))
+		    (file-error
+		     ;; If we can't delete it, truncate it.
+		     (write-region (point) (point) (car delete-files))))
 		(file-error nil))
 	      (setq delete-files (cdr delete-files)))))
 	(if (= new-messages 0)
@@ -486,7 +496,13 @@ and use that file as the inbox."
 					     (not (file-exists-p file))))
 	     nil)
 	    ((and (not movemail) (not popmail))
-	     (rename-file file tofile nil))
+	     (rename-file file tofile nil)
+	     ;; Make the real inbox file empty.
+	     ;; Leaving it deleted could cause lossage
+	     ;; because mailers often won't create the file.
+	     (condition-case ()
+		 (write-region (point) (point) file)
+	       (file-error nil)))
 	    (t
 	     (let ((errors nil))
 	       (unwind-protect
@@ -601,9 +617,8 @@ and use that file as the inbox."
 			 
 	       (if (re-search-forward
 		    (concat "^[\^_]?\\("
-			    "From [^ \n]*\\(\\|\".*\"[^ \n]*\\)  ?[^ \n]* [^ \n]* *"
-			    "[0-9]* [0-9:]*\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) " ; EDT, -0500
-			    "19[0-9]* *\\(remote from .*\\)?$\\|"
+			    rmail-unix-mail-delimiter
+			    "\\|"
 			    mmdf-delim1 "\\|"
 			    "^BABYL OPTIONS:\\|"
 			    "\^L\n[01],\\)") nil t)
@@ -645,8 +660,7 @@ and use that file as the inbox."
 	  (setq has-date (and (search-forward "\nDate:" nil t) (point)))
 	  (goto-char start))
 	(let ((case-fold-search nil))
-	  (if (re-search-forward
-	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\\(remote from [^\n]*\\)?\n" nil t)
+	  (if (re-search-forward (concat "^" rmail-unix-mail-delimiter) nil t)
 	      (replace-match
 		(concat
 		  ;; Keep and reformat the date if we don't
@@ -655,8 +669,8 @@ and use that file as the inbox."
 		      ""
 		    ;; If no time zone specified, assume est.
 		    (if (= (match-beginning 7) (match-end 7))
-			"Date: \\3, \\5 \\4 \\8 \\6 EST\n"
-			"Date: \\3, \\5 \\4 \\8 \\6\\7\n"))
+			"Date: \\3, \\5 \\4 \\9 \\6 EST\n"
+			"Date: \\3, \\5 \\4 \\9 \\6\\7\n"))
 		  ;; Keep and reformat the sender if we don't
 		  ;; have a From: field.
 		  (if has-from
@@ -1324,8 +1338,13 @@ original message into it."
   (rmail-set-attribute "forwarded" t)
   (let ((forward-buffer (current-buffer))
 	(subject (concat "["
-			 (mail-strip-quoted-names (mail-fetch-field "From"))
-			 ": " (or (mail-fetch-field "Subject") "") "]")))
+			 (let ((from (or (mail-fetch-field "From")
+					 (mail-fetch-field ">From"))))
+			   (if from
+			       (concat (mail-strip-quoted-names from) ": ")
+			     ""))
+			 (or (mail-fetch-field "Subject") "")
+			 "]")))
     ;; If only one window, use it for the mail buffer.
     ;; Otherwise, use another window for the mail buffer
     ;; so that the Rmail buffer remains visible

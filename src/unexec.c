@@ -183,7 +183,7 @@ extern char *start_of_text ();		/* Start of text */
 extern char *start_of_data ();		/* Start of initialized data */
 
 static int make_hdr (), copy_text_and_data (), copy_sym ();
-static void mark_x ();
+static int mark_x ();
 
 #ifdef COFF
 #ifndef USG
@@ -212,8 +212,6 @@ static long data_scnptr;
 
 #else /* not COFF */
 
-extern char *sbrk ();
-
 #define SYMS_START ((long) N_SYMOFF (ohdr))
 
 /* Some machines override the structure name for an a.out header.  */
@@ -235,6 +233,8 @@ static MAGIC NEWMAGIC = {MY_ID, DEMAND_MAGIC};
 static EXEC_HDR_TYPE hdr, ohdr;
 
 #else /* not HPUX */
+
+extern char *sbrk ();
 
 #if defined (USG) && !defined (IBMRTAIX) && !defined (IRIS)
 static struct bhdr hdr, ohdr;
@@ -339,8 +339,7 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
   close (new);
   if (a_out >= 0)
     close (a_out);
-  mark_x (new_name);
-  return 0;
+  return mark_x (new_name);
 }
 
 /* ****************************************************************
@@ -883,7 +882,7 @@ copy_sym (new, a_out, a_name, new_name)
  *
  * After succesfully building the new a.out, mark it executable
  */
-static void
+static int
 mark_x (name)
      char *name;
 {
@@ -900,6 +899,7 @@ mark_x (name)
   sbuf.st_mode |= 0111 & ~um;
   if (chmod (name, sbuf.st_mode) == -1)
     PERROR (name);
+  return 0;
 }
 
 /*
@@ -933,7 +933,7 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
 {
   register int nsyms;
   register int new;
-#ifdef amdahl_uts
+#if defined (amdahl_uts) || defined (pfa)
   SYMENT symentry;
   AUXENT auxentry;
 #else

@@ -5,4 +5,8 @@
 #define O_NDELAY        FNDELAY /* Non-blocking I/O (4.2 style) */
 #endif
 
+#if __GNUC__ > 1
+#define LD_SWITCH_SYSTEM -e __start -static
+#else
 #define LD_SWITCH_SYSTEM -e __start -Bstatic
+#endif

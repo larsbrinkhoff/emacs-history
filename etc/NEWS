@@ -4,7 +4,7 @@ See the end for copying conditions.
 
 Changes in version 18.58.
 
-* RMAIL reply now properly parses nested comments in addesses.
+* RMAIL reply now properly parses nested comments in addresses.
 
 * The "visual bell" feature when used with X windows
 now flashes only 1/4 of the window's total area.  This is because

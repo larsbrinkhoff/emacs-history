@@ -222,6 +222,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define HAVE_DUP2
 #define HAVE_GETTIMEOFDAY
+#define HAVE_GETHOSTNAME
 #define HAVE_VFORK
 #define HAVE_RENAME
 
@@ -262,3 +263,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Get rid of this for HP/UX versions before version 8.  */
 #define LD_SWITCH_SYSTEM -a archive
 #endif
+
+/* This affects XInitWindow in x11term.c.  */
+#define NO_X_DESTROY_DATABASE

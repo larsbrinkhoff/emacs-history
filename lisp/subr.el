@@ -18,12 +18,15 @@
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-(defun one-window-p (&optional arg)
+(defun one-window-p (&optional nomini)
   "Returns non-nil if there is only one window.
 Optional arg NOMINI non-nil means don't count the minibuffer
 even if it is active."
-  (eq (selected-window)
-      (next-window (selected-window) (if arg 'arg))))
+  (let ((base-window (selected-window)))
+    (if (and nomini (eq base-window (minibuffer-window)))
+	(setq base-window (next-window base-window)))
+    (eq base-window
+	(next-window base-window (if nomini 'arg)))))
 
 (defun read-quoted-char (&optional prompt)
   "Like `read-char', except that if the first character read is an octal

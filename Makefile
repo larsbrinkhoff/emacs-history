@@ -41,7 +41,7 @@ CLEANDIR= ${COPYDIR} lisp/term oldXMenu
 all:	src/paths.h ${SUBDIR}
 
 src/paths.h: Makefile src/paths.h-dist
-	/bin/sed 's;/usr/local/emacs;${LIBDIR};g' < src/paths.h-dist > src/paths.h
+	sed 's;/usr/local/emacs;${LIBDIR};g' < src/paths.h-dist > src/paths.h
 
 src:	etc
 
@@ -63,10 +63,10 @@ install: all mkdir lockdir
 		done \
 	else true; \
 	fi
-	$(INSTALL) -c -s etc/emacsclient ${BINDIR}/emacsclient
-	$(INSTALL) -c -s etc/etags ${BINDIR}/etags
-	$(INSTALL) -c -s etc/ctags ${BINDIR}/ctags
-	$(INSTALL) -c -s -m 1755 src/xemacs ${BINDIR}/xemacs
+	$(INSTALL) -c etc/emacsclient ${BINDIR}/emacsclient
+	$(INSTALL) -c etc/etags ${BINDIR}/etags
+	$(INSTALL) -c etc/ctags ${BINDIR}/ctags
+	$(INSTALL) -c -m 1755 src/xemacs ${BINDIR}/xemacs
 	$(INSTALL) -c -m 444 etc/emacs.1 ${MANDIR}/emacs.1
 	-rm -f ${BINDIR}/emacs
 	mv ${BINDIR}/xemacs ${BINDIR}/emacs
@@ -87,7 +87,7 @@ install.sysv: all mkdir lockdir
 	-cpset etc/emacs.1 ${MANDIR}/emacs.1 444 bin bin
 	-/bin/rm -f ${BINDIR}/emacs
 	-cpset src/xemacs ${BINDIR}/emacs 1755 bin bin
- 
+
 install.xenix: all mkdir lockdir
 	if [ `pwd` != `(cd ${LIBDIR}; pwd)` ] ; then \
 		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpf - ) ;\

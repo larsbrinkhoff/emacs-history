@@ -80,7 +80,9 @@ definitions made by the terminal-specific file.")
     (setq command-line-processed t)
     ;; In presence of symlinks, switch to cleaner form of default directory.
     (if (and (not (eq system-type 'vax-vms))
-	     (getenv "PWD"))
+	     (getenv "PWD")
+	     (equal (nthcdr 10 (file-attributes default-directory))
+		    (nthcdr 10 (file-attributes (getenv "PWD")))))
 	(setq default-directory (file-name-as-directory (getenv "PWD"))))
     (unwind-protect
 	(command-line)
