@@ -3632,7 +3632,7 @@ and a negative argument disables it." t nil)
 
 ;;;***
 
-;;;### (autoloads (ispell-message ispell-complete-word-interior-frag ispell-complete-word ispell-continue ispell-buffer ispell-region ispell-change-dictionary ispell-kill-ispell ispell-help ispell-word) "ispell" "ispell.el" (11874 60400))
+;;;### (autoloads (ispell-message ispell-complete-word-interior-frag ispell-complete-word ispell-continue ispell-buffer ispell-region ispell-change-dictionary ispell-kill-ispell ispell-help ispell-word) "ispell" "ispell.el" (11890 39032))
 ;;; Generated autoloads from ispell.el
 
 (defvar ispell-dictionary-alist-1 (quote ((nil "[A-Za-z]" "[^A-Za-z]" "[']" nil ("-B") nil) ("english" "[A-Za-z]" "[^A-Za-z]" "[']" nil ("-B") nil) ("deutsch" "[a-zA-Z\"]" "[^a-zA-Z\"]" "[---']" t ("-C") nil) ("deutsch8" "[a-zA-ZÄÖÜäößü]" "[^a-zA-ZÄÖÜäößü]" "[---']" t ("-C" "-d" "deutsch") "~latin1") ("nederlands8" "[A-Za-zÀ-ÅÇÈ-ÏÒ-ÖÙ-Üà-åçè-ïñò-öù-ü]" "[^A-Za-zÀ-ÅÇÈ-ÏÒ-ÖÙ-Üà-åçè-ïñò-öù-ü]" "[---']" t ("-C") nil))))
@@ -3689,7 +3689,9 @@ language.aff file (e.g., english.aff).")
 
 (if ispell-menu-map-needed (progn (define-key ispell-menu-map [ispell-change-dictionary] (quote ("Change Dictionary" . ispell-change-dictionary))) (define-key ispell-menu-map [ispell-kill-ispell] (quote ("Kill Process" . ispell-kill-ispell))) (define-key ispell-menu-map [ispell-pdict-save] (quote ("Save Dictionary" lambda nil (interactive) (ispell-pdict-save t)))) (define-key ispell-menu-map [ispell-complete-word] (quote ("Complete Word" . ispell-complete-word))) (define-key ispell-menu-map [ispell-complete-word-interior-frag] (quote ("Complete Word Frag" . ispell-complete-word-interior-frag)))))
 
-(if ispell-menu-map-needed (progn (define-key ispell-menu-map [ispell-continue] (quote ("Continue Check" . ispell-continue))) (define-key ispell-menu-map [ispell-region] (quote ("Check Region" . ispell-region))) (define-key ispell-menu-map [ispell-word] (quote ("Check Word" . ispell-word))) (define-key ispell-menu-map [ispell-buffer] (quote ("Check Buffer" . ispell-buffer))) (define-key ispell-menu-map [ispell-message] (quote ("Check Message" . ispell-message))) (define-key ispell-menu-map [ispell-help] (quote ("Help" lambda nil (interactive) (describe-function (quote ispell-help))))) (put (quote ispell-region) (quote menu-enable) (quote mark-active))))
+(if ispell-menu-map-needed (progn (define-key ispell-menu-map [ispell-continue] (quote ("Continue Check" . ispell-continue))) (define-key ispell-menu-map [ispell-region] (quote ("Check Region" . ispell-region))) (define-key ispell-menu-map [ispell-word] (quote ("Check Word" . ispell-word))) (define-key ispell-menu-map [ispell-buffer] (quote ("Check Buffer" . ispell-buffer)))))
+
+(if ispell-menu-map-needed (progn (define-key ispell-menu-map [ispell-message] (quote ("Check Message" . ispell-message))) (define-key ispell-menu-map [ispell-help] (quote ("Help" lambda nil (interactive) (describe-function (quote ispell-help))))) (put (quote ispell-region) (quote menu-enable) (quote mark-active))))
 
 (fset (quote ispell-menu-map) (symbol-value (quote ispell-menu-map)))
 (define-key global-map "\M-$" 'ispell-word)
@@ -4824,7 +4826,7 @@ Toggle the use of rot 13 encoding for the current window." t nil)
 
 ;;;***
 
-;;;### (autoloads (resize-minibuffer-mode) "rsz-mini" "rsz-mini.el" (11716 34108))
+;;;### (autoloads (resize-minibuffer-mode) "rsz-mini" "rsz-mini.el" (11812 8733))
 ;;; Generated autoloads from rsz-mini.el
 
 (defvar resize-minibuffer-mode nil "\
@@ -4836,21 +4838,25 @@ If less than 1 or not a number, the limit is the height of the frame in
 which the active minibuffer window resides.")
 
 (defvar resize-minibuffer-window-exactly t "\
-*If non-`nil', make minibuffer exactly the size needed to display all its contents.
-Otherwise, the minibuffer window can temporarily increase in size but
-never get smaller while it is active.")
+*Allow making minibuffer exactly the size to display all its contents.
+If `nil', the minibuffer window can temporarily increase in size but
+never get smaller while it is active.  Any other value allows exact
+resizing.")
 
 (defvar resize-minibuffer-frame nil "\
-*If non-`nil' and the active minibuffer is the sole window in its frame, allow changing the frame height.")
+*Allow changing the frame height of minibuffer frames.
+If non-`nil' and the active minibuffer is the sole window in its frame,
+allow changing the frame height.")
 
 (defvar resize-minibuffer-frame-max-height nil "\
 *Maximum size the minibuffer frame is allowed to become.
 If less than 1 or not a number, there is no limit.")
 
-(defvar resize-minibuffer-frame-exactly nil "\
-*If non-`nil', make minibuffer frame exactly the size needed to display all its contents.
-Otherwise, the minibuffer frame can temporarily increase in size but
-never get smaller while it is active.")
+(defvar resize-minibuffer-frame-exactly t "\
+*Allow making minibuffer frame exactly the size to display all its contents.
+If `nil', the minibuffer frame can temporarily increase in size but
+never get smaller while it is active.  Any other value allows exact
+resizing.")
 
 (autoload (quote resize-minibuffer-mode) "rsz-mini" "\
 Enable or disable resize-minibuffer mode.
@@ -4870,7 +4876,7 @@ The variable `resize-minibuffer-window-exactly' determines whether the
 minibuffer window should ever be shrunk to make it no larger than needed to
 display its contents.
 
-When using a window system, it is possible for a minibuffer to tbe the sole
+When using a window system, it is possible for a minibuffer to be the sole
 window in a frame.  Since that window is already its maximum size, the only
 way to make more text visible at once is to increase the size of the frame.
 The variable `resize-minibuffer-frame' controls whether this should be

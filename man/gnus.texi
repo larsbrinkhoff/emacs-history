@@ -1667,6 +1667,12 @@ reached.  The command @kbd{C} (@code{gnus-summary-cancel-article}) is
 intended to do this.  First select the offending article as current,
 then type @kbd{C}.
 
+@vindex user-mail-address
+  The variable @code{user-mail-address} specifies what GNUS should use
+as your mailing address.  Its value is a string.  If Emacs doesn't get
+this right on its own, you can specify the address to use by setting
+this variable.
+
 @node Forward and Reply
 @section Forwarding Messages and Replying To Them
 @cindex reply to article

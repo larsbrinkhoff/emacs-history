@@ -1,9 +1,24 @@
-GNU Emacs NEWS -- history of user-visible changes.  7 Sep 1994
+GNU Emacs NEWS -- history of user-visible changes.  10 Sep 1994
 Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
+
+* Changes in Emacs 19.27
+
+There are no changes; however, here is one bug fix made in 19.26
+that users think should be documented here.
+
+** SPC and DEL in Info now handle menus consistently.
+
+SPC and DEL scroll through an entire subtree an Info manual.  Once you
+scroll through a node far enough to reach a menu, SPC begins moving
+into the subnodes of the menu, starting with the first one.  When you
+reach the end of a subnode, SPC moves into the next subnode, and so
+on.
+
+DEL more or less scrolls through the same text in reverse order.
 
 * User Editing Changes in Emacs 19.26
 

@@ -1041,11 +1041,12 @@ one of its parent directories.  A single @file{ChangeLog} file can
 record changes for all the files in its directory and all its
 subdirectories.
 
-  A change log entry starts with a header line that contains your name
-and the current date.  Aside from these header lines, every line in the
-change log starts with a space or a tab.  The bulk of the entry consists
-of @dfn{items}, each of which starts with a line starting with
-whitespace and a star.  Here are two entries, each with two items:
+  A change log entry starts with a header line that contains your name,
+your email address (taken from the variable @code{user-mail-address}),
+and the current date and time.  Aside from these header lines, every
+line in the change log starts with a space or a tab.  The bulk of the
+entry consists of @dfn{items}, each of which starts with a line starting
+with whitespace and a star.  Here are two entries, each with two items:
 
 @iftex
 @medbreak

@@ -1,3 +1,28 @@
+Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.27 released.
+
+Sun Sep 11 01:41:49 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* ispell.el: Further split the Ispell menu autoloads.
+
+Sat Sep 10 16:37:11 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* rmailsum.el (rmail-summary-goto-msg): Preserve the current buffer.
+
+Fri Sep  9 17:35:23 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* window.el (shrink-window-if-larger-than-buffer): Doc fix.
+
+Thu Sep  8 19:28:02 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* vc.el (vc-do-command): Temporarily add vc-path to the end of PATH.
+
+Thu Sep  8 13:41:12 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* bibtex.el (put-string-on-kill-ring): Delete this function.
+	(bibtex-current-entry-label): Call kill-new instead.
+
 Wed Sep  7 03:54:08 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.26 released.

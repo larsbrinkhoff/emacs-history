@@ -1,6 +1,18 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* You can't select from submenus (in the X toolkit version).
+
+On certain systems, mouse-tracking and selection in top-level menus
+works properly with the X toolkit, but neither of them works when you
+bring up a submenu (such as Bookmarks or Compare or Apply Patch, in
+the Files menu).
+
+This works on most systems.  There is speculation that the failure is
+due to bugs in old versions of X toolkit libraries, but no one really
+knows.  If someone debugs this and finds the precise cause, perhaps a
+workaround can be found.
+
 * On HPUX 9.05 and 9.06, C-c and C-z are not turned off in the terminal driver.
 
 This seems to be due to a bug in HPUX.  A workaround is to start Emacs

@@ -1575,6 +1575,17 @@ with @code{setq} affects only the current buffer's local value, which
 is not what you probably want to do in an init file.
 
 @item
+@vindex user-mail-address
+Specify your own email address, if Emacs can't figure it out correctly.
+
+@example
+(setq user-mail-address "coon@yoyodyne.com")
+@end example
+
+Various Emacs packages that need to use your own email address
+use the value of @code{user-mail-address}.
+
+@item
 Make Text mode the default mode for new buffers.
 
 @example

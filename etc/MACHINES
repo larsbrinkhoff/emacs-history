@@ -498,7 +498,7 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 
   In the above configurations, * means that the manufacturer's name
   you specify does not matter, and you can use any name you like
-  (but it should not contain any dashes).
+  (but it should not contain any dashes or stars).
 
   When using the ISC configurations, be sure to specify the isc
 	version number - for example, if you're running ISC 3.0, use
@@ -510,7 +510,8 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
   Use i386-*-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.26.
 
   On GNU/Linux systems, Emacs 19.23 was said to work properly with libc
-  version 4.5.21, but not with 4.5.19.
+  version 4.5.21, but not with 4.5.19.  If your system uses QMAGIC
+  for the executable format, you must edit config.h to define LINUX_QMAGIC.
 
   On GNU/Linux, configure may fail to put these definitions in config.h:
 
@@ -597,9 +598,6 @@ Iris 4D (mips-sgi-irix[45].*)
   the "compiler_dev.hdr.internal" subsystem in order to compile Emacs.
   19.22 was known to work on all Silicon Graphics machines running
   IRIX 4.0.5 or IRIX 5.1.
-
-  Compiling with GCC on IRIX 5 is said to fail, perhaps because GCC
-  produces something src/unexelfsgi.c doesn't understand.
 
   Compiling with -O using IRIX compilers prior to 3.10.1 may not work.
   Don't use -O or use GCC instead.

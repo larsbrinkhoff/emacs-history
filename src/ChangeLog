@@ -1,6 +1,23 @@
+Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.27 released.
+
+Sat Sep 10 01:10:04 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keymap.c (syms_of_keymap): Doc fix.
+
+	* keyboard.c (gobble_input): Block SIGALRM if we are using it.
+
+	* gmalloc.c: Bug fix affecting __ptrdiff_t in non-ANSI case.
+
 Wed Sep  7 03:54:08 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.26 released.
+
+Thu Sep  8 15:13:32 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keyboard.c (record_asynch_buffer_change): Don't test
+	Fwaiting_for_user_input_p if no subprocesses.
 
 Mon Sep  5 21:33:48 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
