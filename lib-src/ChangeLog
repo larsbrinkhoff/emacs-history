@@ -1,3 +1,19 @@
+Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.25 released.
+
+Sat May 28 00:54:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (distclean): Delete Makefile, Makefile.in, blessmail.
+
+Fri May 27 03:16:56 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (blessmail): Don't depend on ../src/emacs.
+
+Mon May 23 00:38:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.24 released.
+
 Thu May 19 17:04:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* make-docfile.c (write_c_args): Put `default' in upper case.

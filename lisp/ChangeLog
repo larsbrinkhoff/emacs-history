@@ -1,3 +1,135 @@
+Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.25 released.
+
+	* comint.el (comint-read-input-ring): Make regexp stricter.
+
+	* info.el (Info-directory-list): Doc fix.
+
+	* paths.el (Info-default-directory-list): Don't attach ../info.
+	So now configure-info-directory comes last.
+	Put /usr/local/info second.
+
+	* bibtex.el (bibtex-clean-entry): Back over close delimiter carefully.
+
+	* ange-ftp.el (ange-ftp-insert-directory): Expand file name to
+	check whether it is really an ftp file name.
+
+	* compile.el (compilation-error-regexp-alist): Stricter Lucid regexp.
+
+	* simple.el (completion-list-mode-map): Unbind down-mouse-2.
+
+Mon May 30 03:32:01 1994  Simon Marshall  (Simon.Marshall@mail.esrin.esa.it)
+
+	* font-lock.el (shell-font-lock-keywords): Removed regexp for commands.
+	(rmail-summary-font-lock-keywords): New variable.
+	(font-lock-set-defaults): Use it.
+
+Sun May 29 16:05:39 1994  Paul Eggert  (eggert@twinsun.com)
+
+	* cal-dst.el (calendar-current-time-zone): Fix typo that
+	transposed DST-STARTS-TIME and DST-ENDS-TIME.
+
+	* cal-dst.el (calendar-daylight-savings-ends): Fix typo in put.
+
+Sat May 28 00:11:04 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gud.el: Use ctl-x-map to bind C-x SPC.
+
+	* lmenu.el (make-lucid-menu-keymap): Allow any form as the enabler.
+
+	* info.el (Info-directory-list): Doc fix.
+
+	* server.el (server-visit-files): Bind last-nonmenu-event.
+
+	* mailalias.el (build-mail-aliases): Handle source directives.
+	Handle MAILRC envvar.
+
+	* flow-ctrl.el (enable-flow-control): Fix bugs turning off flow ctrl.
+
+	* files.el (insert-directory): Use expanded file name to find handler.
+
+	* dired.el (dired-get-filename): Get rid of text props from name.
+
+	* simple.el (deactivate-mark): Do nothing unless transient-mark-mode.
+
+	* ispell.el (ispell-command-loop): Fix `q' question.
+
+	* derived.el (derived-mode-init-mode-variables): Add autoload cookie.
+
+	* calendar.el (calendar-cursor-to-date): Rename starred-day
+	to calendar-starred-day.
+
+	* cal-menu.el (calendar-mode-map): Define mouse-2 as ignore.
+
+	* frame.el (make-frame): Doc fix.
+
+	* hexl.el (hexl-mode-map): Call define-key properly for help-char.
+
+Fri May 27 21:55:28 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ediff.el (ediff-patch-buffer): Fix autoload cookie.
+
+	* tcl-mode.el (tcl-mode): Copy syntax table before changing it.
+
+Thu May 26 19:17:44 1994  Michael D. Ernst  (mernst@research.microsoft.com)
+
+	* dired-x.el (dired-jump): Autoload.
+
+	* compare-w.el (compare-windows): Make leading whitespace equivalent
+	to no leading whitespace, according to IGNORE-WHITESPACE argument.
+
+Thu May 26 18:25:17 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gnus.el (gnus-summary-catchup): Check gnus-interactive-catchup.
+	(gnus-summary-catchup-and-exit): Likewise.
+
+	* simple.el (completion-setup-function): Fix up the regexp.
+
+	* menu-bar.el (menu-bar-mode): Fix previous change.
+
+	* rmail.el (rmail-show-message):
+	If transient-mark-mode, deactivate the mark.
+
+	* edebug.el (edebug-emacs-19-specific): Call x-popup-menu
+	to fill in cache of key equivalents.
+
+Thu May 26 17:51:38 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* subr.el (posn-col-row): Test for consp, not symbolp.
+	Doc fix.
+
+Thu May 26 00:20:11 1994  Stephen A. Wood  (saw@cebaf.gov)
+
+        * fortran.el: (fortran-link-matching-do): Ignore DO statements
+        with line numbers.
+
+Thu May 26 13:37:28 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* ws-mode.el (ws-search): Fix malformed character constants.
+
+Wed May 25 04:02:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (kill-emacs-query-functions): Doc fix.
+
+	* simple.el (choose-completion-string): Clear mouse-face property.
+
+	* files.el: Add more risky-local-variable properties.
+
+	* fill.el (fill-region-as-paragraph): if left-margin is nonzero,
+	do adaptive-fill processing even for one-line paragraphs.
+
+	* c-mode.el (c-fill-paragraph): Don't include part of comment
+        terminator in the fill-prefix.
+
+	* server.el (server-kill-emacs-query-function): Ignore killed buffers.
+
+Tue May 24 16:39:01 1994 Kenneth Manheimer (ken.manheimer@nist.gov)
+
+	* allout.el (outline-chart-subtree): include outline-next-
+	heading in loop conditions to detect end-of-buffer (and avoid
+	infinite loop).
+
 Mon May 23 03:32:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.24 released.

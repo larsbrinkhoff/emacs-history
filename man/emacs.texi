@@ -3,7 +3,7 @@
 @ifinfo
 @c The edition number appears in several places in this file
 This corresponds to the ninth edition of the @cite{GNU Emacs Manual},
-for Emacs Version 19; but it has been updated for Emacs 19.24.
+for Emacs Version 19; but it has been updated for Emacs 19.25.
 @c Please REMEMBER to update edition number in *three* places in this file.
 
 Published by the Free Software Foundation
@@ -63,7 +63,7 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Ninth Edition, Updated for Emacs version 19.24
+@center Ninth Edition, Updated for Emacs version 19.25
 @sp 1
 @center for Unix Users
 @sp 5
@@ -73,7 +73,7 @@ original English.
 Copyright @copyright{} 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @sp 2
 Ninth Edition @*
-Updated for Emacs Version 19.24, @*
+Updated for Emacs Version 19.25, @*
 May 1994
 
 ISBN 1-882114-03-5
@@ -112,7 +112,7 @@ Cover art by Etienne Suvasa.
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.24.
+corresponds to GNU Emacs version 19.25.
 
 @end ifinfo
 

@@ -794,6 +794,13 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   Use `m68k' for the 68000-based Sun boxes, `sparc' for Sparcstations,
   and `i386' for Sun Roadrunners.  i386 calls for Sunos4.0.
 
+  If you compile with Sun's ANSI compiler acc, you need additional options
+  when linking temacs, such as
+     /usr/lang/SC2.0.1/values-Xt.o -L/usr/lang/SC2.0.1/cg87 -L/usr/lang/SC2.0.1
+  (those should be added just before the libraries) and you need to
+  add -lansi just before -lc.  The precise file names depend on the
+  compiler version, so we cannot easily arrange to supply them.
+
   Some people report crashes on SunOS 4.1.3 if SYSTEM_MALLOC is defined.
   Others have reported that Emacs works if SYSTEM_MALLOC is defined, and not
   if it is undefined.  So far we do not know why results vary in this way.

@@ -1,3 +1,35 @@
+Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.25 released.
+
+	* make-dist (shortversion): Don't assume another period follows.
+
+Fri May 27 01:45:34 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install-arch-indep): Use /bin/pwd uniformly, not pwd.
+	(uninstall): Use /bin/pwd.
+
+	* Makefile.in (blessmail): Depend on src.
+	(all): Don't depend on blessmail.
+
+	* Makefile.in (src/paths.h): Don't force recomputation.
+	(paths-force): New target; force recomputation of paths.h.
+	(all): Depend on paths-force.
+	(src, lib-src): Depend on src/paths.h.
+
+	* configure.in (*-sun-sunos4*): Set GCC_TEST_OPTIONS,
+	NON_GCC_TEST_OPTIONS.
+
+Thu May 26 05:04:55 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Don't insist on subversions for irix.
+
+Tue May 24 00:03:58 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (hppa*-hp-hpux9shr): Move alternative up.
+
+	* configure.in (i[34]86-next-*): New alternative.
+
 Mon May 23 03:07:50 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.24 released.
@@ -17,7 +49,7 @@ Fri May 20 18:03:56 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* configure.in (GCC_TEST_OPTIONS, NON_GCC_TEST_OPTIONS): New vars.
 	Use them to set up CC.
-	(m68k-sun-sunos4.1.3): Set them.
+	(*-sun-sunos4.1.3): Set them.
 
 Thu May 19 11:54:43 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 

@@ -53,6 +53,10 @@ ERROR!  At least one of USE_LUCID, USE_MOTIF or USE_OLIT must be defined.
 ERROR! no more than one of USE_MOTIF and USE_OLIT may be defined.
 #endif
 
+#ifndef max
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#endif
+
 /* List of all widgets managed by the library. */
 static widget_info*
 all_widget_info = NULL;
@@ -395,14 +399,6 @@ safe_strcmp (s1, s2)
 {
   if (!!s1 ^ !!s2) return True;
   return (s1 && s2) ? strcmp (s1, s2) : s1 ? False : !!s2;
-}
-
-static int
-max (i1, i2)
-     int i1;
-     int i2;
-{
-  return i1 > i2 ? i1 : i2;
 }
 
 

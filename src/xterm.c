@@ -292,7 +292,8 @@ static int mouse_face_face_id;
    gc was in progress.  */
 static int mouse_face_deferred_gc;
 
-/* FRAME and X, Y position of mouse when last checked for highlighting.  */
+/* FRAME and X, Y position of mouse when last checked for
+   highlighting.  X and Y can be negative or out of range for the frame.  */
 static FRAME_PTR mouse_face_mouse_frame;
 static int mouse_face_mouse_x, mouse_face_mouse_y;
 
@@ -1918,22 +1919,6 @@ x_emacs_to_x_modifiers (state)
 	  | ((state & ctrl_modifier)		? ControlMask      : 0)
 	  | ((state & meta_modifier)		? x_meta_mod_mask  : 0));
 }
-
-/* Return true iff KEYSYM is a vendor-specific keysym that we should
-   return as a function key.  If you add a keysym to this, you should
-   make sure that the tables make_lispy_event uses contain a suitable
-   name for it.  */
-static int
-x_is_vendor_fkey (sym)
-     KeySym sym;
-{
-  return 0
-#ifdef DXK_Remove
-    || (sym == DXK_Remove)
-#endif
-      ;
-}
-
 
 /* Mouse clicks and mouse movement.  Rah.  */
 #ifdef HAVE_X11
@@ -2085,11 +2070,29 @@ note_mouse_movement (frame, event)
 {
   last_mouse_movement_time = event->time;
 
+  if (event->window != FRAME_X_WINDOW (frame))
+    {
+      mouse_moved = 1;
+      last_mouse_scroll_bar = Qnil;
+
+      note_mouse_highlight (frame, -1, -1);
+
+      /* Ask for another mouse motion event.  */
+      {
+	int dummy;
+
+	XQueryPointer (event->display, FRAME_X_WINDOW (frame),
+		       (Window *) &dummy, (Window *) &dummy,
+		       &dummy, &dummy, &dummy, &dummy,
+		       (unsigned int *) &dummy);
+      }
+    }
+
   /* Has the mouse moved off the glyph it was on at the last sighting?  */
-  if (event->x < last_mouse_glyph.x
-      || event->x >= last_mouse_glyph.x + last_mouse_glyph.width
-      || event->y < last_mouse_glyph.y
-      || event->y >= last_mouse_glyph.y + last_mouse_glyph.height)
+  else if (event->x < last_mouse_glyph.x
+	   || event->x >= last_mouse_glyph.x + last_mouse_glyph.width
+	   || event->y < last_mouse_glyph.y
+	   || event->y >= last_mouse_glyph.y + last_mouse_glyph.height)
     {
       mouse_moved = 1;
       last_mouse_scroll_bar = Qnil;
@@ -2100,7 +2103,7 @@ note_mouse_movement (frame, event)
       {
 	int dummy;
 
-	XQueryPointer (event->display, event->window,
+	XQueryPointer (event->display, FRAME_X_WINDOW (frame),
 		       (Window *) &dummy, (Window *) &dummy,
 		       &dummy, &dummy, &dummy, &dummy,
 		       (unsigned int *) &dummy);
@@ -2113,7 +2116,7 @@ note_mouse_movement (frame, event)
 	 *still* on the same glyph.  */
       int dummy;
       
-      XQueryPointer (event->display, event->window,
+      XQueryPointer (event->display, FRAME_X_WINDOW (frame),
 		     (Window *) &dummy, (Window *) &dummy,
 		     &dummy, &dummy, &dummy, &dummy,
 		     (unsigned int *) &dummy);
@@ -2125,7 +2128,8 @@ static int disable_mouse_highlight;
 
 /* Take proper action when the mouse has moved to position X, Y on frame F
    as regards highlighting characters that have mouse-face properties.
-   Also dehighlighting chars where the mouse was before.  */
+   Also dehighlighting chars where the mouse was before.
+   X and Y can be negative or out of range.  */
 
 static void
 note_mouse_highlight (f, x, y)
@@ -2166,7 +2170,8 @@ note_mouse_highlight (f, x, y)
 
   /* Are we in a window whose display is up to date?
      And verify the buffer's text has not changed.  */
-  if (WINDOWP (window) && portion == 0
+  if (WINDOWP (window) && portion == 0 && row >= 0 && column >= 0
+      && row < FRAME_HEIGHT (f) && column < FRAME_WIDTH (f)
       && EQ (w->window_end_valid, w->buffer)
       && w->last_modified == BUF_MODIFF (XBUFFER (w->buffer)))
     {
@@ -3734,11 +3739,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		XLookupString (&event.xkey, copy_buffer, 80, &keysym,
 			       &compose_status);
 
-	      /* Strip off the vendor-specific keysym bit, and take a shot
-		 at recognizing the codes.  HP servers have extra keysyms
-		 that fit into the MiscFunctionKey category.  */
 	      orig_keysym = keysym;
-	      keysym &= ~(1<<28);
 
 	      if (numchars > 1)
 		{
@@ -3795,7 +3796,8 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 #endif
 		       || IsKeypadKey (keysym) /* 0xff80 <= x < 0xffbe */
 		       || IsFunctionKey (keysym) /* 0xffbe <= x < 0xffe1 */
-		       || x_is_vendor_fkey (orig_keysym))
+		       /* Any "vendor-specific" key is ok.  */
+		       || (orig_keysym & (1 << 28)))
 		      && ! (IsModifierKey (orig_keysym)
 #ifndef HAVE_X11R5
 #ifdef XK_Mode_switch
@@ -4154,6 +4156,13 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		x_real_positions (f, &x, &y);
 		f->display.x->left_pos = x;
 		f->display.x->top_pos = y;
+		if (y != event.xconfigure.y)
+		  {
+		    /* Since the WM decorations come below top_pos now,
+		       we must put them below top_pos in the future.  */
+		    f->display.x->win_gravity = NorthWestGravity;
+		    x_wm_set_size_hint (f, 0, 0);
+		  }
 	      }
 	    }
 #endif /* not USE_X_TOOLKIT */
@@ -5474,7 +5483,8 @@ XTframe_raise_lower (f, raise)
 }
 
 
-/* Change from withdrawn state to mapped state. */
+/* Change from withdrawn state to mapped state,
+   or deiconify. */
 
 x_make_frame_visible (f)
      struct frame *f;
@@ -5487,7 +5497,8 @@ x_make_frame_visible (f)
     {
 #ifdef HAVE_X11
 #ifndef USE_X_TOOLKIT
-      x_set_offset (f, f->display.x->left_pos, f->display.x->top_pos, 0);
+      if (! FRAME_ICONIFIED_P (f))
+	x_set_offset (f, f->display.x->left_pos, f->display.x->top_pos, 0);
 #endif
 
       if (! EQ (Vx_no_window_manager, Qt))
@@ -5659,6 +5670,11 @@ x_iconify_frame (f)
   BLOCK_INPUT;
 
 #ifdef HAVE_X11
+  /* Make sure the X server knows where the window should be positioned,
+     in case the user deiconifies with the window manager.  */
+  if (! FRAME_VISIBLE_P (f) && !FRAME_ICONIFIED_P (f))
+    x_set_offset (f, f->display.x->left_pos, f->display.x->top_pos, 0);
+
   /* Since we don't know which revision of X we're running, we'll use both
      the X11R3 and X11R4 techniques.  I don't know if this is a good idea.  */
 

@@ -1,6 +1,27 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Link failure when using acc on a Sun.
+
+To use acc, you need additional options just before the libraries, such as
+
+   /usr/lang/SC2.0.1/values-Xt.o -L/usr/lang/SC2.0.1/cg87 -L/usr/lang/SC2.0.1
+
+and you need to add -lansi just before -lc.
+
+The precise file names depend on the compiler version, so we
+cannot easily arrange to supply them.
+
+* Link failure on IBM AIX 1.3 ptf 0013.
+
+There is a real duplicate definition of the function `_slibc_free' in
+the library /lib/libc_s.a (just do nm on it to verify).  The
+workaround/fix is:
+
+    cd /lib
+    ar xv libc_s.a NLtmtime.o
+    ar dv libc_s.a NLtmtime.o
+
 * Undefined symbols _dlopen, _dlsym and/or _dlclose on a Sun.
 
 If you see undefined symbols _dlopen, _dlsym, or _dlclose when linking

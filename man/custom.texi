@@ -548,6 +548,8 @@ Give a command name (for the duration of the session) to the most
 recently defined keyboard macro.
 @item M-x insert-kbd-macro
 Insert in the buffer a keyboard macro's definition, as Lisp code.
+@item C-x C-k
+Edit a previously defined keyboard macro (@code{edit-kbd-macro}).
 @end table
 
   Keyboard macros differ from ordinary Emacs commands in that they are
@@ -629,6 +631,16 @@ exits a recursive edit that started within the macro, it works as you'd
 expect.  But if it exits a recursive edit that started before you
 invoked the keyboard macro, it also necessarily exits the keyboard macro
 as part of the process.
+
+@findex edit-kbd-macro
+@kindex C-x C-k
+  You can edit a keyboard macro already defined by typing @kbd{C-x C-k}
+(@code{edit-kbd-macro}).  Follow that with the keyboard input that you
+would use to invoke the macro---@kbd{C-x e} or @kbd{M-x @var{name}} or
+some other key sequence.  This formats the macro definition in a buffer
+and enters a specialized major mode for editing it.  Type @kbd{C-h m}
+once in that buffer to display details of how to edit the macro.  When
+you are finished editing, type @kbd{C-c C-c}.
 
 @node Save Kbd Macro
 @subsection Naming and Saving Keyboard Macros

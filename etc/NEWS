@@ -5,6 +5,11 @@ See the end for copying conditions.
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
 
+Changes in Emacs 19.25
+
+The variable x-cross-pointer-shape (which didn't really exist) has
+been renamed to x-sensitive-text-pointer-shape, and now does exist.
+
 Changes in Emacs 19.24
 
 Here is a list of new Lisp packages introduced since 19.22.
@@ -17,13 +22,13 @@ ediff.el		Snazzy diff interface.
 foldout.el		A kind of outline mode designed for editing programs.
 gnus-uu.el		UUdecode in GNUS buffers.
 ielm.el			Interactively evaluate Lisp.
+			 This is a replacement for Lisp Interaction Mode.
 iso-cvt.el		Conversion of beyond-ASCII characters between
 			 various different representations.
 jka-compr.el		Automatic compression/decompression.
 mldrag.el		Drag modeline to change heights of windows.
 mail-hist.el		Provides history for headers of outgoing mail.
 rsz-mini.el		Automatically resizing minibuffers.
-			 This is a replacement for Lisp Interaction Mode.
 s-region.el		Set region by holding shift.
 skeleton.el		Templates for statement insertion.
 soundex.el		Classifying words by how they sound.

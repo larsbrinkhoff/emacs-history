@@ -1305,8 +1305,10 @@ a mistake; see the documentation of `set-mark'."
   "Deactivate the mark by setting `mark-active' to nil.
 \(That makes a difference only in Transient Mark mode.)
 Also runs the hook `deactivate-mark-hook'."
-  (setq mark-active nil)
-  (run-hooks 'deactivate-mark-hook))
+  (if transient-mark-mode
+      (progn
+	(setq mark-active nil)
+	(run-hooks 'deactivate-mark-hook))))
 
 (defun set-mark (pos)
   "Set this buffer's mark to POS.  Don't use this function!
@@ -2423,6 +2425,7 @@ it were the arg to `interactive' (which see) to interactively read the value."
 (or completion-list-mode-map
     (let ((map (make-sparse-keymap)))
       (define-key map [mouse-2] 'mouse-choose-completion)
+      (define-key map [down-mouse-2] nil)
       (define-key map "\C-m" 'choose-completion)
       (define-key map [return] 'choose-completion)
       (setq completion-list-mode-map map)))
@@ -2482,6 +2485,8 @@ it were the arg to `interactive' (which see) to interactively read the value."
       (set-buffer buffer)
       (choose-completion-delete-max-match choice)
       (insert choice)
+      (remove-text-properties (- (point) (length choice)) (point)
+			      '(mouse-face nil))
       ;; Update point in the window that BUFFER is showing in.
       (let ((window (get-buffer-window buffer t)))
 	(set-window-point window (point)))
@@ -2518,7 +2523,7 @@ Use \\<completion-list-mode-map>\\[mouse-choose-completion] to select one\
 select the completion near point.\n\n"))
       (forward-line 1)
       (if window-system
-	  (while (re-search-forward "[^ \t\n]+\\( [^\t\n]+\\)*" nil t)
+	  (while (re-search-forward "[^ \t\n]+\\( [^ \t\n]+\\)*" nil t)
 	    (put-text-property (match-beginning 0) (point)
 			       'mouse-face 'highlight))))))
 

@@ -1105,11 +1105,15 @@ If `enable-local-variables' is nil, this function does not check for a
   "Variables to be ignored in a file's local variable spec.")
 
 ;; Get confirmation before setting these variables as locals in a file.
+(put 'enable-local-eval 'risky-local-variable t)
 (put 'eval 'risky-local-variable t)
 (put 'file-name-handler-alist 'risky-local-variable t)
 (put 'minor-mode-map-alist 'risky-local-variable t)
 (put 'after-load-alist 'risky-local-variable t)
-	    
+(put 'buffer-file-name 'risky-local-variable t)
+(put 'buffer-auto-save-file-name 'risky-local-variable t)
+(put 'buffer-file-truename 'risky-local-variable t)
+
 (defun hack-one-local-variable-quotep (exp)
   (and (consp exp) (eq (car exp) 'quote) (consp (cdr exp))))
 
@@ -2020,7 +2024,9 @@ switches do not contain `d', so that a full listing is expected.
 This works by running a directory listing program
 whose name is in the variable `insert-directory-program'.
 If WILDCARD, it also runs the shell specified by `shell-file-name'."
-  (let ((handler (find-file-name-handler file 'insert-directory)))
+  ;; We need the directory in order to find the right handler.
+  (let ((handler (find-file-name-handler (expand-file-name file)
+					 'insert-directory)))
     (if handler
 	(funcall handler 'insert-directory file switches
 		 wildcard full-directory-p)
@@ -2057,7 +2063,8 @@ If WILDCARD, it also runs the shell specified by `shell-file-name'."
 			  file)))))))
 
 (defvar kill-emacs-query-functions nil
-  "Functions to call with no arguments to query about killing Emacs.")
+  "Functions to call with no arguments to query about killing Emacs.
+If any of these functions returns nil, killing Emacs is cancelled.")
 
 (defun save-buffers-kill-emacs (&optional arg)
   "Offer to save each buffer, then kill this Emacs process.

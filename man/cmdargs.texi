@@ -320,10 +320,10 @@ Used to initialize the @code{version-control} variable, which see.
 @appendixsubsec MS-DOS Variables
 
 Some of the variables that Emacs uses make little or no sense in an
-single-user setting as provided by MsDos machines.  Nevertheless parts
-of Emacs need those variables so many of them have defaults for MsDos.
+single-user setting as provided by MS-DOS machines.  Nevertheless parts
+of Emacs need those variables so many of them have defaults for MS-DOS.
 
-The standard command interpreter (``shell'') for MsDos disregards case
+The standard command interpreter (``shell'') for MS-DOS disregards case
 of environment variables and only lets you set and delete variables with
 upper case names.  For this reason it is possible that some existing
 programs may disregard case of environment variables.  On the other
@@ -331,14 +331,14 @@ hand, programs that execute other programs may choose to provide mixed
 or lower case variables though this is seldom seen.  One exception from
 this rule is the use of variables @code{_argc}, @code{_argv0},
 @code{_argv1}, @dots{} to work around the 127 character limit on the
-command line imposed by MsDos.  Emacs, when built with the Gnu C
+command line imposed by MS-DOS.  Emacs, when built with the Gnu C
 compiler, understands this method and uses it when running other GCC
 compiled programs.
 
 
 @table @code
 @item COMSPEC
-The name of the MsDos command interpreter in use.  This is used to make
+The name of the MS-DOS command interpreter in use.  This is used to make
 a default value for the @code{SHELL} environment variable.
 @item EMACSPATH
 Defaults to @file{~/bin} expanded.
@@ -360,11 +360,11 @@ The variable defaults to @file{internal}, a very fast terminal emulation
 built into Emacs.  When the internal terminal is used no termcap file is
 needed.
 @item TZ
-This variable defaults to an estimate derived from the MsDos country
+This variable defaults to an estimate derived from the MS-DOS country
 code.  See the file @file{msdos.c} for details.
 @item USER
-The variable defaults to @file{root} because all MsDos users have root
-priviledges on their system.
+The variable defaults to @file{root} because all MS-DOS users have root
+privileges on their system.
 @end table
 
 @ignore
@@ -733,7 +733,7 @@ Use @var{name} as the name for looking up resource values.
 @end table
 
   If you specify the option @samp{-name @var{name}}, Emacs uses
-@var{name} instead of @samp{Emacs} to look up all of its option values
+@var{name} instead of @samp{emacs} to look up all of its option values
 in the X resource file.  This option also specifies the title for the
 initial frame.  The option @samp{-rn @var{name}} specifies just the name
 for use in resources and not the frame title.  If you want to specify

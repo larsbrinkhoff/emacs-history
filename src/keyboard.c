@@ -53,6 +53,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "systty.h"
 #include "systime.h"
 
+/* This is to get the definitions of the XK_ symbols.  */
+#ifdef HAVE_X_WINDOWS
+#include "xterm.h"
+#endif
+
 extern int errno;
 
 /* Variables for blockinput.h: */
@@ -1157,12 +1162,15 @@ command_loop_1 ()
 			  Lisp_Object obj;
 
 			  obj = DISP_CHAR_VECTOR (dp, lose);
-			  if (XTYPE (obj) == Lisp_Vector
-			      && XVECTOR (obj)->size == 1
-			      && (XTYPE (obj = XVECTOR (obj)->contents[0])
-				  == Lisp_Int))
-			    no_redisplay =
-			      direct_output_for_insert (XINT (obj));
+			  if (NILP (obj)
+			      || (XTYPE (obj) == Lisp_Vector
+				  && XVECTOR (obj)->size == 1
+				  && (XTYPE (obj = XVECTOR (obj)->contents[0])
+				      == Lisp_Int)
+				  /* Insist face not specified in glyph.  */
+				  && (XINT (obj) & ((-1) << 8)) == 0))
+			    no_redisplay
+			      = direct_output_for_insert (XINT (obj));
 			}
 		      else
 			{

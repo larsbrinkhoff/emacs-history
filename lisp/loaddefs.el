@@ -325,6 +325,21 @@ for \\[find-tag] (which see)."
 ;; (define-key global-map [kp-9]		'function-key-error)
 ;; (define-key global-map [kp-equal]	'function-key-error)
 
+;; X11R6 distinguishes these keys from the non-kp keys.
+;; Make them behave like the non-kp keys unless otherwise bound.
+(define-key function-key-map [kp-home] [home])
+(define-key function-key-map [kp-left] [left])
+(define-key function-key-map [kp-up] [up])
+(define-key function-key-map [kp-right] [right])
+(define-key function-key-map [kp-down] [down])
+(define-key function-key-map [kp-prior] [prior])
+(define-key function-key-map [kp-next] [next])
+(define-key function-key-map [M-kp-next] [M-next])
+(define-key function-key-map [kp-end] [end])
+(define-key function-key-map [kp-begin] [begin])
+(define-key function-key-map [kp-insert] [insert])
+(define-key function-key-map [kp-delete] [delete])
+
 (define-key global-map [mouse-movement] 'ignore)
 
 (define-key global-map "\C-t" 'transpose-chars)
@@ -2077,7 +2092,7 @@ When OFF, typed text is just inserted at point." t nil)
 
 ;;;***
 
-;;;### (autoloads (define-derived-mode) "derived" "derived.el" (11644 51928))
+;;;### (autoloads (derived-mode-init-mode-variables define-derived-mode) "derived" "derived.el" (11750 52493))
 ;;; Generated autoloads from derived.el
 
 (autoload (quote define-derived-mode) "derived" "\
@@ -2111,6 +2126,11 @@ the parent, and then sets the variable `case-fold-search' to nil:
 Note that if the documentation string had been left out, it would have
 been generated automatically, with a reference to the keymap." nil (quote macro))
 
+(autoload (quote derived-mode-init-mode-variables) "derived" "\
+Initialise variables for a new mode. 
+Right now, if they don't already exist, set up a blank keymap, an
+empty syntax table, and an empty abbrev table -- these will be merged
+the first time the mode is used." nil nil)
 
 ;;;***
 
@@ -2424,6 +2444,18 @@ Use \\[dired-hide-subdir] to (un)hide a particular subdirectory." t nil)
 
 ;;;***
 
+;;;### (autoloads (dired-jump) "dired-x" "dired-x.el" (11749 38205))
+;;; Generated autoloads from dired-x.el
+
+(autoload (quote dired-jump) "dired-x" "\
+Jump to dired buffer corresponding to current buffer.
+If in a file, dired the current directory and move to file's line.
+If in dired already, pop up a level and goto old directory's line.
+In case the proper dired file line cannot be found, refresh the dired
+buffer and try again." t nil)
+
+;;;***
+
 ;;;### (autoloads (disassemble) "disass" "disass.el" (11426 2298))
 ;;; Generated autoloads from disass.el
 
@@ -2605,7 +2637,7 @@ point." t nil)
 
 ;;;***
 
-;;;### (autoloads (ediff-files-remote rcs-ediff vc-ediff ediff-buffers ediff-files ediff-patch-file) "ediff" "ediff.el" (11732 37272))
+;;;### (autoloads (ediff-files-remote rcs-ediff vc-ediff ediff-patch-buffer ediff-buffers ediff-files ediff-patch-file) "ediff" "ediff.el" (11750 42354))
 ;;; Generated autoloads from ediff.el
 
 (progn (defvar menu-bar-epatch-menu (make-sparse-keymap "menu-bar-epatch-map")) (fset (quote menu-bar-epatch-menu) (symbol-value (quote menu-bar-epatch-menu))) (defvar menu-bar-ediff-menu (make-sparse-keymap "menu-bar-ediff-map")) (fset (quote menu-bar-ediff-menu) (symbol-value (quote menu-bar-ediff-menu))))
@@ -2622,6 +2654,9 @@ Run Ediff on a pair files, FILE-A and FILE-B." t nil)
 
 (autoload (quote ediff-buffers) "ediff" "\
 Run Ediff on a pair of buffers, BUFFER-A and BUFFER-B." t nil)
+
+(autoload (quote ediff-patch-buffer) "ediff" "\
+Run Ediff by patching BUFFER-NAME." t nil)
 
 (autoload (quote vc-ediff) "ediff" "\
 Run ediff on version REV of the current buffer in another window.

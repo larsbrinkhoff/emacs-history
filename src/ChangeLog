@@ -1,3 +1,130 @@
+Mon May 30 06:16:48 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.25 released.
+
+	* xdisp.c (redisplay): Limit prev change to pause != 0.
+
+	* keyboard.c (command_loop_1): Allow direct output for insert
+	if have display table but it says nothing for this char code.
+	Don't allow it if char code has a glyph with a face code.
+
+	* process.c (create_process): Get a pty for any non-nil
+	Vprocess_connection_type value.
+
+Sat May 28 00:33:16 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/bsd386.h (TABDLY, TAB3): Defined.
+	(SYSV_SYSTEM_DIR): Defined.
+
+	* unexhp9k800.c (roundup): Undef before defining.
+
+	* xdisp.c (redisplay): If have window change at end, redisplay again.
+
+	* lread.c (defvar_bool, defvar_int, defvar_lisp, defvar_lisp_nopro): 
+	Delete third arg DOC.
+
+	* s/hpux8.h (LD_SWITCH_SYSTEM): Delete the -L options.
+	(LD_SWITCH_X_DEFAULT): Put them here instead.
+
+	* Makefile.in.in (LD_SWITCH_X_DEFAULT): Define if not defined.
+	(LIBX): Use LD_SWITCH_X_DEFAULT.
+
+	* xterm.c (x_iconify_frame): Call x_set_offset,
+	if x_make_frame_visible would do so.
+	(x_make_frame_visible): Don't call x_set_offset if frame is iconic.
+	(XTread_socket): For ConfigureNotify, if wm decorations exist,
+	set NorthWestGravity.
+
+	* Makefile.in.in (mostlyclean): Don't mention xmakefile*.
+
+	* emacs.c (main): In batch mode, don't set the pgrp.
+
+Fri May 27 06:32:24 1994  Paul Eggert  (eggert@twinsun.com)
+
+	* callproc.c (child_setup): If PWD is set, set it in the child so that
+	it points at the child's working directory.
+
+Fri May 27 03:59:59 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m/mips4.h (C_DEBUG_SWITCH) [not __GNUC__]: Add -Wf option.
+
+	* s/hpux9.h (C_SWITCH_SYSTEM): Defined.
+
+	* keyboard.c [HAVE_X_WINDOWS]: Include xterm.h.
+
+	* xterm.c (x_is_vendor_fkey): Function deleted.
+	(XTread_socket, case KeyPressed): Don't clear the vendor-specific bit.
+	Pass thru almost any vendor-specific keysym.
+
+	* s/linux.h (HAVE_XRMSETDATABASE): Define if not defined.
+
+Fri May 27 06:52:13 1994  Paul Eggert  (eggert@twinsun.com)
+
+	* editfns.c (difftm): Don't store a long value into an int variable.
+
+Thu May 26 18:29:17 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* fileio.c (Finsert_file_contents): Check for beginning of file.
+
+Thu May 26 18:13:31 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* systime.h: Make previous change limited to HPUX.
+
+Thu May 26 14:46:35 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* systime.h: If _STRUCT_TIMEVAL is defined, also define __TIMEVAL__.
+
+Wed May 25 20:20:53 1994  Morten Welinder  (terra@diku.dk)
+
+	* msdos.c (output_string): New function.
+	(internal_flush): Use output_string for faster screen update.
+	(internal_flush): Clear to end of line by writing a string of
+	spaces.
+
+Wed May 25 00:36:35 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (Vx_sensitive_text_pointer_shape):
+	Renamed from Vx_cross_pointer_shape.
+	(syms_of_xfns): Provide Lisp var x-sensitive-text-pointer-shape.
+
+	* xmenu.c (menu_item_equiv_key): Look for equiv keys both before
+	and after one stage of symbol function indirection.
+
+	* xterm.c (note_mouse_movement): Use frame's window in XQueryPointer.
+	Special case if mouse isn't on that window.
+	(note_mouse_highlight): Handle negative args and too-large args.
+
+	* lread.c (openp): Don't use O_RDONLY.
+
+Tue May 24 22:20:01 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* search.c (Freplace_match): Improve capitalization heuristics.
+
+	* minibuf.c (Fminibuffer_complete_word): GCPRO completion and tem.
+
+	* undo.c (Fprimitive_undo): GCPRO next and list.
+	Check argument type before calling XINT.
+
+Tue May 24 17:14:49 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* buffer.c (verify_overlay_modification): GCPRO tail and overlay.
+	Avoid copying tail twice.
+
+Tue May 24 17:11:38 1994  Andreas Schwab  (schwab@informatik.uni-dortmund.de)
+
+	* keymap.c (describe_map): Fix the call to Fequal.
+
+Tue May 24 16:50:42 1994  Morten Welinder  (terra@diku.dk)
+
+	* msdos.c (do_visible_bell): Renamed from visible_bell to avoid
+	potential conflict with variable of the same name.  Caller changed.
+	(internal_flush): Code for audio bell inserted.
+	* s/msdos.h (INTERNAL_TERMINAL): Allow audio bell.
+
+	* msdos.c (dos_rawgetc): Doc fix.  Make C-, S-, and M- modifiers
+	independent.  Make modifiers work with mouse.  Improve C-S-<ascii>
+	handling by using look-up tables.  Fix kp-decimal problem.
+
 Mon May 23 00:38:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.24 released.

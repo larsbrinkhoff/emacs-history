@@ -62,7 +62,7 @@
     (while menu-items
       (let* ((item (car menu-items))
 	     (callback (if (vectorp item) (aref item 1)))
-	     command enabler name)
+	     command name)
 	(cond ((stringp item)
 	       (setq command nil)
 	       (setq name (if (string-match "^-+$" item) "" item)))
@@ -72,11 +72,8 @@
 	      ((vectorp item)
 	       (setq command (make-symbol (format "menu-function-%d"
 						  add-menu-item-count)))
-	       (setq enabler (make-symbol (format "menu-function-%d-enabler"
-						  add-menu-item-count)))
 	       (setq add-menu-item-count (1+ add-menu-item-count))
-	       (put command 'menu-enable enabler)
-	       (set enabler (aref item 2))
+	       (put command 'menu-enable (aref item 2))
 	       (setq name (aref item 0))	       
 	       (if (symbolp callback)
 		   (fset command callback)
@@ -308,8 +305,8 @@ menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
 		  (while (and (cdr rest2) (car (cdr rest2)))
 		    (setq rest2 (cdr rest2)))
 		  (setcdr rest2
-		  (nconc (list (setq menu (list (car rest))))
-			 (cdr rest2)))))
+			  (nconc (list (setq menu (list (car rest))))
+				 (cdr rest2)))))
 	    (setq so-far menu)
 	    (setq rest (cdr rest)))))
     (or menu (setq menu menubar))
@@ -421,7 +418,7 @@ MENU-ITEMS is a list of menu item descriptions.
  Each menu item should be a vector of three elements:
    - a string, the name of the menu item;
    - a symbol naming a command, or a form to evaluate;
-   - and t or nil, whether this item is selectable.
+   - and a form whose value determines whether this item is selectable.
 BEFORE, if provided, is the name of a menu before which this menu should
  be added, if this menu is not on its parent already.  If the menu is already
  present, it will not be moved."

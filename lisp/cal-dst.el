@@ -246,8 +246,8 @@ it can't find."
 	       (cons
 		(/ (abs (- t0-utc-diff t1-utc-diff)) 60)
 		(if (< t0-utc-diff t1-utc-diff)
-		    (list t0-name t1-name t1-rules t2-rules t2-time t1-time)
-		    (list t1-name t0-name t2-rules t1-rules t1-time t2-time)
+		    (list t0-name t1-name t1-rules t2-rules t1-time t2-time)
+		    (list t1-name t0-name t2-rules t1-rules t2-time t1-time)
 		    )))))))))))
 
 ;;; The following six defvars relating to daylight savings time should NOT be
@@ -304,7 +304,7 @@ If it starts on the first Sunday in April, you would set it to
 If the locale never uses daylight savings time, set this to nil.")
 
 ;;;###autoload
-(put 'calendar-daylight-savings-starts 'risky-local-variable t)
+(put 'calendar-daylight-savings-ends 'risky-local-variable t)
 (defvar calendar-daylight-savings-ends
   (or (car (nthcdr 5 calendar-current-time-zone-cache))
       (and (not (zerop calendar-daylight-time-offset))

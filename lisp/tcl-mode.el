@@ -148,6 +148,7 @@ The following keys are bound:
     (or tcl-mode-map
 	(tcl-setup-keymap))
     (use-local-map tcl-mode-map)
+    (set-syntax-table (copy-syntax-table))
     (modify-syntax-entry ?# "<")
     (modify-syntax-entry ?\n ">")
     ;; look for a #!.../wish -f line at bob

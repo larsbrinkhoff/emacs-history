@@ -34,14 +34,6 @@
 /* GNU needs its own crt0, and libc defines data_start.  */
 #define ORDINARY_LINK
 
-/* The system malloc is GNU malloc (or will eventually be).
-   It won't work to compile GNU malloc as for Unix (using sbrk).  */
-#define SYSTEM_MALLOC
-
-/* For the time being, GNU malloc does not work on Mach,
-   so we cannot using the relocating allocator.  */
-#undef REL_ALLOC
-
 /* Until mib finishes the terminal driver.  */
 #define BROKEN_SIGIO
 #undef HAVE_PTYS

@@ -1,5 +1,5 @@
-/* MS-DOS specific C utilities.  Coded by Morten Welinder 1993
-   Copyright (C) 1993 Free Software Foundation, Inc.
+/* MS-DOS specific C utilities.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -16,6 +16,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+
+/* Contributed by Morten Welinder */
 
 /* Note: some of the stuff here was taken from end of sysdep.c in demacs. */
 
@@ -258,6 +260,9 @@ dos_rawgetc ()
   int86 (0x16, &regs, &regs);
   ctrl_p = ((regs.h.al & 4) != 0);
   shift_p = ((regs.h.al & 3) != 0);
+  /* Please be very careful here not to break international keyboard support.
+     When Keyb.Com is loaded, the key marked `Alt Gr' is used for accessing
+     characters like { and } if their positions are overlaid.  */
   alt_p = ((extended_kbd ? (regs.h.ah & 2) : (regs.h.al & 8)) != 0);
 
   while (kbhit ())
@@ -274,6 +279,11 @@ dos_rawgetc ()
       /* Determine from the scan code if a keypad key was pressed.  */
       if (c >= '0' && c <= '9' && sc > 0xb)
 	sc = (c == '0') ? 0xb : (c - '0' + 1), c = 0;
+      else if (sc == 0x53 && c != 0xe0)
+	{
+	  code = 0xffae; /* Keypad decimal point/comma.  */
+	  goto nonascii;
+	}
       else if (sc == 0xe0)
 	{
 	  switch (c)
@@ -281,10 +291,6 @@ dos_rawgetc ()
 	    case 10: /* Ctrl Enter */
 	    case 13:
 	      sc = 0x1c;
-	      break;
-	    case '.': /* Decimal point or decimal comma */
-	    case ',':
-	      sc = 0x53;
 	      break;
 	    case '/':
 	      sc = 0x35;
@@ -313,15 +319,26 @@ dos_rawgetc ()
 	  {
 	    if (code >= 0x100)
 	      {
+	      nonascii:
 		event.kind = non_ascii_keystroke;
 		event.code = (code & 0xff) + 0xff00;
 	      }
 	    else
 	      {
-		/* Don't return S- if we don't have to.  */
-		if (code >= 'a' && code <= 'z')
+		/* Don't return S- if we don't have to.  `shifted' is
+		   supposed to be the shifted versions of the characters
+		   in `unshifted'.  Unfortunately, this is only true for
+		   US keyboard layout.  If anyone knows how to do this
+		   right, please tell us.  */
+		static char *unshifted
+		  = "abcdefghijklmnopqrstuvwxyz,./=;[\\]'-`0123456789";
+		static char *shifted
+		  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ<>?+:{|}\"_~)!@#$%^&*(";
+		char *pos;
+
+		if (shift_p && (pos = strchr (unshifted, code)))
 		  {
-		    c = shift_p ? toupper (code) : code;
+		    c = shifted[pos - unshifted];
 		    shift_p = 0;
 		  }
 		else
@@ -330,9 +347,9 @@ dos_rawgetc ()
 		event.code = c;
 	      }
 	    event.modifiers
-	      = (shift_p ? shift_modifier : 0
-		 + (ctrl_p ? ctrl_modifier : 0
-		    + (alt_p ? meta_modifier : 0)));
+	      = (shift_p ? shift_modifier : 0)
+		+ (ctrl_p ? ctrl_modifier : 0)
+		  + (alt_p ? meta_modifier : 0);
 	    /* EMACS == Enter Meta Alt Control Shift */
 	    event.frame_or_window = selected_frame;
 	    gettimeofday (&tv, NULL);
@@ -362,10 +379,10 @@ dos_rawgetc ()
 		event.kind = mouse_click;
 		event.code = but;
 		event.modifiers
-		  = (shift_p ? shift_modifier : 0
-		     + (ctrl_p ? ctrl_modifier : 0
-			+ (alt_p ? meta_modifier : 0
-			   + (press ? down_modifier : up_modifier))));
+		  = (shift_p ? shift_modifier : 0)
+		    + (ctrl_p ? ctrl_modifier : 0)
+		      + (alt_p ? meta_modifier : 0)
+			+ (press ? down_modifier : up_modifier);
 		event.x = x;
 		event.y = y;
 		event.frame_or_window = selected_frame;
@@ -747,7 +764,7 @@ init_environment (argc, argv, skip_args)
 static unsigned char _xorattr;
 
 static void
-visible_bell (xorattr)
+do_visible_bell (xorattr)
      unsigned char xorattr;
 {
   _xorattr = xorattr;
@@ -792,6 +809,35 @@ visible_bell_3:
 	popl  %eax");
 }
 
+/* At screen position (X,Y), output C characters from string S with
+   attribute A.  Do it fast!  */
+
+static void
+output_string (x, y, s, c, a)
+     int x, y, c;
+     unsigned char *s;
+     unsigned char a;
+{
+  char *t = (char *)ScreenPrimary + 2 * (x + ScreenCols () * y);
+  asm volatile
+    ("  movl   %1,%%eax
+        call   dosmemsetup
+        movl   %%eax,%%edi
+        movb   %0,%%ah
+        movl   %2,%%ecx
+        movl   %3,%%esi
+output_string1:
+        movb   (%%esi),%%al
+        movw   %%ax,%%gs:(%%edi)
+        addl   $2,%%edi
+        incl   %%esi
+        decl   %%ecx
+        jne    output_string1"
+     : /* no output */
+     : "m" (a), "g" (t), "g" (c), "g" (s)
+     : "%eax", "%ecx", /* "%gs",*/ "%esi", "%edi");
+}
+
 static int internal_terminal = 0;
 #undef fflush
 
@@ -799,10 +845,11 @@ int
 internal_flush (f)
      FILE *f;
 {
+  static char spaces[] = "                                                                                ";
   static int x;
   static int y;
-  char c, *cp;
-  int count, i;
+  unsigned char *cp, *cp0;
+  int count, i, j;
 
   if (internal_terminal && f == stdout)
     {
@@ -811,7 +858,7 @@ internal_flush (f)
       count = stdout->_ptr - stdout->_base;
       while (count > 0)
 	{
-	  switch (c = *cp++)
+	  switch (*cp++)
 	    {
 	    case 27:
 	      switch (*cp++)
@@ -826,7 +873,7 @@ internal_flush (f)
 		  count -= 3;
 		  break;
 		case 'B':
-		  visible_bell (*cp++);
+		  do_visible_bell (*cp++);
 		  count -= 3;
 		  break;
 		case 'C':
@@ -835,8 +882,17 @@ internal_flush (f)
 		  count -= 2;
 		  break;
 		case 'E':
-		  for (i = ScreenCols () - 1; i >= x; i--)
-		    ScreenPutChar (' ', ScreenAttrib, i, y);
+		  i = ScreenCols () - x;
+		  j = x;
+		  while (i >= sizeof spaces)
+		    {
+		      output_string (j, y, spaces, sizeof spaces,
+				     ScreenAttrib);
+		      j += sizeof spaces;
+		      i -= sizeof spaces;
+		    }
+		  if (i > 0)
+		    output_string (j, y, spaces, i, ScreenAttrib);
 		  count -= 2;
 		  break;
 		case 'R':
@@ -855,6 +911,10 @@ internal_flush (f)
 		  count -= 2;
 		}
 	      break;
+	    case 7:
+	      write (1, "\007", 1);
+	      count--;
+	      break;
 	    case 8:
 	      x--;
 	      count--;
@@ -868,8 +928,12 @@ internal_flush (f)
 	      count--;
 	      break;
 	    default:
-	      ScreenPutChar (c, ScreenAttrib, x++, y);
+	      cp0 = cp - 1;
 	      count--;
+	      while (count > 0 && *cp >= ' ')
+		cp++, count--;
+	      output_string (x, y, cp0, cp - cp0, ScreenAttrib);
+	      x += (cp - cp0);
 	    }
 	}
       fpurge (stdout);
