@@ -22,7 +22,7 @@
 %You are forbidden to forbid anyone else to use, share and improve
 %what you give them.   Help stamp out software-hoarding!
 
-\def\texinfoversion{2.112}
+\def\texinfoversion{2.115}
 \message{Loading texinfo package [Version \texinfoversion]:}
 
 % Print the version number if in a .fmt file.
@@ -1079,10 +1079,17 @@ where each line of input produces a line of output.}
 % and arrange explicitly to hyphenate an a dash.
 %  -- rms.
 {
-\catcode `\-=\active
-\catcode `\_=\active
-\global\def\code{\begingroup \catcode `\-=\active \let-\codedash \let_\codeunder \codex}
+\catcode`\-=\active
+\catcode`\_=\active
+\global\def\code{\begingroup \catcode`\-=\active \let-\codedash \catcode`\_=\active \let_\codeunder \codex}
+% The following is used by \doprintindex to insure that long function names
+% wrap around.  It is necessary for - and _ to be active before the index is
+% read from the file, as \entry parses the arguments long before \code is
+% ever called.  -- mycroft
+\global\def\indexbreaks{\catcode`\-=\active \let-\realdash \catcode`\_=\active \let_\realunder}
 }
+\def\realdash{-}
+\def\realunder{_}
 \def\codedash{-\discretionary{}{}{}}
 \def\codeunder{\normalunderscore\discretionary{}{}{}}
 \def\codex #1{\tclose{#1}\endgroup}
@@ -1858,8 +1865,9 @@ July\or August\or September\or October\or November\or December\fi
   \tex
   \dobreak \chapheadingskip {10000}
   \catcode`\%=\other\catcode`\&=\other\catcode`\#=\other
-  \catcode`\$=\other\catcode`\_=\other
+  \catcode`\$=\other
   \catcode`\~=\other
+  \indexbreaks
   %
   % The following don't help, since the chars were translated
   % when the raw index was written, and their fonts were discarded
@@ -1952,10 +1960,14 @@ July\or August\or September\or October\or November\or December\fi
   %
   % Insert the text of the index entry.  TeX will do line-breaking on it.
   #1%
-  % If there are no page numbers, don't output a line of dots.
-  \def\tempa{#2}
-  \def\tempb{}
-  \ifx\tempa\tempb\ \else
+  % The following is kluged to not output a line of dots in the index if
+  % there are no page numbers.  The next person who breaks this will be
+  % cursed by a Unix daemon.
+  \def\tempa{{\rm }}%
+  \def\tempb{#2}%
+  \edef\tempc{\tempa}%
+  \edef\tempd{\tempb}%
+  \ifx\tempc\tempd\ \else%
     %
     % If we must, put the page number on a line of its own, and fill out
     % this line with blank space.  (The \hfil is overwhelmed with the
@@ -2834,7 +2846,7 @@ July\or August\or September\or October\or November\or December\fi
 
 % Define \obeyedspace to be our active space, whatever it is.  This is
 % for use in \parsearg.
-{\sepspaces %
+{\sepspaces%
 \global\let\obeyedspace= }
 
 % This space is always present above and below environments.
@@ -3501,17 +3513,17 @@ July\or August\or September\or October\or November\or December\fi
 % \setref{foo} defines a cross-reference point named foo.
 
 \def\setref#1{%
-%\dosetq{#1-title}{Ytitle}%
+\dosetq{#1-title}{Ytitle}%
 \dosetq{#1-pg}{Ypagenumber}%
 \dosetq{#1-snt}{Ysectionnumberandtype}}
 
 \def\unnumbsetref#1{%
-%\dosetq{#1-title}{Ytitle}%
+\dosetq{#1-title}{Ytitle}%
 \dosetq{#1-pg}{Ypagenumber}%
 \dosetq{#1-snt}{Ynothing}}
 
 \def\appendixsetref#1{%
-%\dosetq{#1-title}{Ytitle}%
+\dosetq{#1-title}{Ytitle}%
 \dosetq{#1-pg}{Ypagenumber}%
 \dosetq{#1-snt}{Yappendixletterandtype}}
 
@@ -3531,11 +3543,22 @@ July\or August\or September\or October\or November\or December\fi
 \setbox1=\hbox{\printedmanual}%
 \setbox0=\hbox{\printednodename}%
 \ifdim \wd0=0pt%
+% No printed node name was explicitly given.
+\ifx SETxref-automatic-section-title %
+% This line should make the actual chapter or section title appear inside
+% the square brackets.  Use the real section title if we have it.
+\ifdim \wd1>0pt%
+% It is in another manual, so we don't have it.
+\def\printednodename{\ignorespaces #1} \else%
+% We know the real title if we have the xref values.
+\ifhavexrefs \def\printednodename{\refx{#1-title}}%
+% Otherwise just copy the Info node name.
+\else \def\printednodename{\ignorespaces #1} \fi%
+\fi\def\printednodename{#1-title}%
+\else% This line just uses the node name.
 \def\printednodename{\ignorespaces #1}%
-%%% Uncommment the following line to make the actual chapter or section title
-%%% appear inside the square brackets.
-%\def\printednodename{#1-title}%
-\fi%
+\fi% ends \ifx SETxref-automatic-section-title
+\fi% ends \ifdim \wd0
 %
 %
 % If we use \unhbox0 and \unhbox1 to print the node names, TeX does
@@ -3571,7 +3594,7 @@ section ``\printednodename'' in \cite{\printedmanual}%
 
 \def\Ypagenumber{\folio}
 
-\def\Ytitle{\thischapter}
+\def\Ytitle{\thissection}
 
 \def\Ynothing{}
 

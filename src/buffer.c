@@ -28,7 +28,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define MAXPATHLEN 1024
 #endif /* not MAXPATHLEN */
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "intervals.h"
 #include "window.h"
@@ -1012,7 +1012,7 @@ selected window if it is displayed there.")
 
 DEFUN ("erase-buffer", Ferase_buffer, Serase_buffer, 0, 0, "*",
   "Delete the entire contents of the current buffer.\n\
-Any clipping restriction in effect (see `narrow-to-region') is removed,\n\
+Any narrowing restriction in effect (see `narrow-to-region') is removed,\n\
 so the buffer is truly empty after this.")
   ()
 {
@@ -1682,8 +1682,8 @@ DEFUN ("delete-overlay", Fdelete_overlay, Sdelete_overlay, 1, 1, 0,
   b->overlays_after  = Fdelq (overlay, b->overlays_after);
 
   redisplay_region (b,
-		    OVERLAY_POSITION (OVERLAY_START (overlay)),
-		    OVERLAY_POSITION (OVERLAY_END   (overlay)));
+		    marker_position (OVERLAY_START (overlay)),
+		    marker_position (OVERLAY_END   (overlay)));
 
   Fset_marker (OVERLAY_START (overlay), Qnil, Qnil);
   Fset_marker (OVERLAY_END   (overlay), Qnil, Qnil);
@@ -1866,8 +1866,8 @@ DEFUN ("overlay-put", Foverlay_put, Soverlay_put, 3, 3, 0,
   CHECK_OVERLAY (overlay, 0);
 
   redisplay_region (XMARKER (OVERLAY_START (overlay))->buffer,
-		    OVERLAY_POSITION (OVERLAY_START (overlay)),
-		    OVERLAY_POSITION (OVERLAY_END   (overlay)));
+		    marker_position (OVERLAY_START (overlay)),
+		    marker_position (OVERLAY_END   (overlay)));
   
   plist = Fcdr_safe (XCONS (overlay)->cdr);
 

@@ -25,7 +25,6 @@
 ### along with GNU Emacs; see the file COPYING.  If not, write to
 ### the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-
 ### Since Emacs has configuration requirements that autoconf can't
 ### meet, this file is an unholy marriage of custom-baked
 ### configuration code and autoconf macros.
@@ -39,7 +38,6 @@
 ### If configure succeeds, it leaves its status in config.status.
 ### If configure fails after disturbing the status quo,
 ### 	config.status is removed.
-
 
 ### Remove any more than one leading "." element from the path name.
 ### If we don't remove them, then another "./" will be prepended to
@@ -56,6 +54,31 @@
 progname="`echo $0 | sed 's:^\./\./:\./:'`"
 
 
+### Establish some default values.
+run_in_place=
+single_tree=
+prefix='/usr/local'
+exec_prefix='${prefix}'
+bindir='${exec_prefix}/bin'
+datadir='${prefix}/lib'
+statedir='${prefix}/lib'
+libdir='${exec_prefix}/lib'
+mandir='${prefix}/man/man1'
+infodir='${prefix}/info'
+lispdir='${datadir}/emacs/${version}/lisp'
+locallisppath='${datadir}/emacs/site-lisp'
+lisppath='${locallisppath}:${lispdir}'
+etcdir='${datadir}/emacs/${version}/etc'
+lockdir='${statedir}/emacs/lock'
+archlibdir='${libdir}/emacs/${version}/${configuration}'
+
+# We cannot use this variable in the case statement below, because many
+# /bin/sh's have broken semantics for "case".  Unfortunately, you must
+# actually edit the clause itself.
+# path_options="prefix | exec_prefix | bindir | libdir | etcdir | datadir"
+# path_options="$path_options | archlibdir | statedir | mandir | infodir"
+# path_options="$path_options | lispdir | lockdir | lisppath | locallisppath"
+
 #### Usage messages.
 
 short_usage="Usage: ${progname} CONFIGURATION [-OPTION[=VALUE] ...]
@@ -70,8 +93,20 @@ CONFIGURATION specifies the machine and operating system to build for.
 --with-gcc=no		Don't use GCC to compile Emacs.
 --run-in-place		Use libraries and data files directly out of the 
 			source tree.
---srcdir=DIR		Look for source in DIR.
---prefix=DIR		Install files below dir.
+--single-tree=DIR	Has the effect of creating a directory tree at DIR
+			which looks like:
+			  .../DIR/bin/CONFIGNAME (emacs, etags, etc.)
+			  .../DIR/bin/CONFIGNAME/etc (movemail, etc.)
+			  .../DIR/common/lisp  (emacs' lisp files)
+			  .../DIR/common/site-lisp (local lisp files)
+			  .../DIR/common/lib (DOC, TUTORIAL, etc.)
+			  .../DIR/common/lock (lockfiles)
+--srcdir=DIR		Look for the Emacs source files in DIR.
+--prefix=DIR		Install files below DIR. Defaults to \`${prefix}'.
+
+You may also specify any of the \`path' variables found in Makefile.in,
+including --bindir, --libdir, --etcdir, --infodir, and so on.  This allows
+you to override a single default location when configuring.
 
 If successful, ${progname} leaves its status in config.status.  If
 unsuccessful after disturbing the status quo, it removes config.status."
@@ -82,28 +117,26 @@ unsuccessful after disturbing the status quo, it removes config.status."
 ### Record all the arguments, so we can save them in config.status.
 arguments="$@"
 
-### These values are used to comment and uncomment different values
-### for the path variables in the Makefile, to choose the installed
-### configuration or the run-in-place configuration.
-rip_paths='#disabled# '
-inst_paths=''
-
-### Establish some default values.
-prefix='/usr/local'
-exec_prefix='${prefix}'
+### Shell Magic: Quote the quoted arguments in ARGUMENTS.  At a later date,
+### in order to get the arguments back in $@, we have to do an
+###  `eval set x "$quoted_arguments"; shift'.
+quoted_arguments=
+for i in "$@"; do
+   quoted_arguments="$quoted_arguments '$i'"
+done
 
 ### Don't use shift -- that destroys the argument list, which autoconf needs
 ### to produce config.status.  It turns out that "set - ${arguments}" doesn't
 ### work portably.
-index=0
-while [ $index -lt $# ]; do
-  index=`expr $index + 1`
-  arg=`eval echo '$'$index`
+### However, it also turns out that many shells cannot expand ${10} at all.
+### So using an index variable doesn't work either.  It is possible to use
+### some shell magic to make 'set x "$arguments"; shift' work portably.
+while [ $# != 0 ]; do
+  arg="$1"; shift
   case "${arg}" in
 
     ## Anything starting with a hyphen we assume is an option.
     -* )
-
       ## Separate the switch name from the value it's being given.
       case "${arg}" in
         -*=*)
@@ -165,14 +198,13 @@ Set it to either \`yes' or \`no'."
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
 	    ## Get the next argument from the argument list, if there is one.
-            if [ $index = $# ]; then
+            if [ $# = 0 ]; then
 	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
     \`--${optname}=FOO'."
 	       echo "${short_usage}") >&2
 	      exit 1
 	    fi
-            index=`expr $index + 1`
-            val=`eval echo '$'$index`
+	    val="$1"; shift
 	  fi
           srcdir="${val}"
 	;;
@@ -185,14 +217,13 @@ Set it to either \`yes' or \`no'."
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
 	    ## Get the next argument from the argument list, if there is one.
-            if [ $index = $# ]; then
+            if [ $# = 0 ]; then
 	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
-    \`--${optname}=FOO'."
+    \`--${optname}=/usr/local/X11/include'."
 	       echo "${short_usage}") >&2
 	      exit 1
 	    fi
-            index=`expr $index + 1`
-            val=`eval echo '$'$index`
+            val="$1"; shift
 	  fi
 	  x_includes="${val}"
         ;;
@@ -200,57 +231,48 @@ Set it to either \`yes' or \`no'."
 	  ## If the value was omitted, get it from the next argument.
 	  if [ "${valomitted}" = "yes" ]; then
 	    ## Get the next argument from the argument list, if there is one.
-            if [ $index = $# ]; then
+            if [ $# = 0 ]; then
 	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
-    \`--${optname}=FOO'."
+    \`--${optname}=/usr/local/X11/lib'."
 	       echo "${short_usage}") >&2
 	      exit 1
 	    fi
-            index=`expr $index + 1`
-            val=`eval echo '$'$index`
+            val="$1"; shift
 	  fi
 	  x_libraries="${val}"
         ;;
 
 	## Should this use the "development configuration"?
 	"run_in_place" )
-	  rip_paths=''
-	  inst_paths='#disabled# '
+	  single_tree=
+	  run_in_place=1
 	;;
 
-	## Has the user specified an installation prefix?
-	"prefix" )
-	  ## If the value was omitted, get it from the next argument.
-	  if [ "${valomitted}" = "yes" ]; then
-	    ## Get the next argument from the argument list, if there is one.
-            if [ $index = $# ]; then
-	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
-    \`--${optname}=FOO'."
-	       echo "${short_usage}") >&2
-	      exit 1
-	    fi
-            index=`expr $index + 1`
-            val=`eval echo '$'$index`
-	  fi
-	  prefix="${val}"
-        ;;
+        ## Should this use the "single tree" configuration?
+	"single_tree" )
+	   run_in_place=
+	   single_tree=1
+	;;
 
-	## Has the user specified an installation prefix?
-	"exec_prefix" )
-	  ## If the value was omitted, get it from the next argument.
-	  if [ "${valomitted}" = "yes" ]; then
-	    ## Get the next argument from the argument list, if there is one.
-            if [ $index = $# ]; then
-	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
-    \`--${optname}=FOO'."
-	       echo "${short_usage}") >&2
-	      exit 1
-	    fi
-            index=`expr $index + 1`
-            val=`eval echo '$'$index`
-	  fi
-	  exec_prefix="${val}"
-        ;;
+	## Has the user specified one of the path options?
+	prefix | exec_prefix | bindir | libdir | etcdir | datadir | \
+	archlibdir | statedir | mandir | infodir | lispdir | lockdir | \
+	lisppath | locallisppath )
+	   ## If the value was omitted, get it from the next argument.
+	   if [ "${valomitted}" = "yes" ]; then
+	      if [ $# = 0 ]; then
+		 (echo \
+"$progname: You must give a value for the \`--${optname}' option,";
+		  echo \
+"as in \`--${optname}=`eval echo '$'$optname`.'"
+		  echo "$short_usage") >&2
+		 exit 1
+	      fi
+	      val="$1"; shift
+	   fi
+	   eval "${opt}=\"${val}\""
+	   eval "${opt}_specified=1"
+	;;
 
 	## Verbose flag, tested by autoconf macros.
 	"verbose" )
@@ -280,6 +302,9 @@ Set it to either \`yes' or \`no'."
 
   esac
 done
+
+### Get the arguments back.  See the diatribe on Shell Magic above.
+eval set x "$quoted_arguments"; shift
 
 if [ "${configuration}" = "" ]; then
   echo '- You did not tell me what kind of host system you want to configure.
@@ -345,7 +370,7 @@ case "${srcdir}" in
   . )
     ## We may be able to use the $PWD environment variable to make this
     ## absolute.  But sometimes PWD is inaccurate.
-    if [ "${PWD}" != "" ] && [ "`(cd ${PWD} ; pwd)`" = "`pwd`" ] ; then
+    if [ "${PWD}" != "" ] && [ "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`" ] ; then
       srcdir="$PWD"
     else
       srcdir="`(cd ${srcdir}; pwd)`"
@@ -354,14 +379,22 @@ case "${srcdir}" in
   *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
 esac
 
-#### Make sure that the source directory doesn't already have a
-#### configured system in it.
+#### Check if the source directory already has a configured system in it.
 if [ `pwd` != `(cd ${srcdir} && pwd)` ] \
    && [ -f "${srcdir}/src/config.h" ] ; then
-  (echo "${progname}: the directory tree \`${srcdir}' is being used"
+  (echo "${progname}: WARNING: The directory tree \`${srcdir}' is being used"
    echo "   as a build directory right now; it has been configured in its own"
-   echo "   right.  You can't use srcdir in this situation.") >&2
-  exit 1
+   echo "   right.  To configure in another directory as well, you MUST"
+   echo "   use GNU make.  If you do not have GNU make, then you must"
+   echo "   now do \`make distclean' in ${srcdir},"
+   echo "   and then run ${progname} again.") >&2
+  extrasub='/^VPATH[	 ]*=/c\
+vpath %.c $(srcdir)\
+vpath %.h $(srcdir)\
+vpath %.y $(srcdir)\
+vpath %.l $(srcdir)\
+vpath %.s $(srcdir)\
+vpath %.in $(srcdir)'
 fi
 
 ### Make the necessary directories, if they don't exist.
@@ -554,6 +587,9 @@ case "${canonical}" in
   ## HP 9000 series 200 or 300
   m68*-hp-bsd* )
     machine=hp9000s300 opsys=bsd4-3
+  ;;
+  m68*-hp-netbsd* )
+    machine=hp9000s300 opsys=netbsd
   ;;
   ## HP/UX 7, 8 and 9 are supported on these machines.
   m68*-hp-hpux* )
@@ -892,6 +928,7 @@ case "${canonical}" in
       *-sco3.2v4* )		opsys=sco4 ;;
       *-bsd386* )		opsys=bsd386 ;;
       *-386bsd* )	        opsys=386bsd ;;
+      *-netbsd* )	        opsys=netbsd ;;
       ## Otherwise, we'll fall through to the generic opsys code at the bottom.
     esac
   ;;
@@ -1122,7 +1159,7 @@ test -n "$YACC" || YACC="yacc"
 
 
 
-for hdr in sys/timeb.h sys/time.h
+for hdr in sys/timeb.h sys/time.h unistd.h
 do
 trhdr=HAVE_`echo $hdr | tr '[a-z]./' '[A-Z]__'`
 echo checking for ${hdr}
@@ -1432,7 +1469,6 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_FILE_NAMES\${SEDdB}HAVE_LONG_FILE_NAMES\${
 
 
 
-
 #### Choose a window system.
 echo "Checking window system."
 
@@ -1521,6 +1557,11 @@ esac
 [ -n "${x_libraries}" ] && LD_SWITCH_X_SITE="-L${x_libraries}"
 [ -n "${x_includes}" ] && C_SWITCH_X_SITE="-I${x_includes}"
 
+# Avoid forcing the search of /usr/include before fixed include files.
+if [ "$C_SWITCH_X_SITE" = "-I/usr/include" ]; then
+   C_SWITCH_X_SITE=" "
+fi
+
 case "${window_system}" in
   x11 )
     HAVE_X_WINDOWS=yes
@@ -1570,8 +1611,8 @@ echo '
 #ifndef C_SWITCH_SYSTEM
 #define C_SWITCH_SYSTEM
 #endif
-@configure@ libsrc_libs=LIBS_MACHINE LIBS_SYSTEM
-@configure@ c_switch_system=C_SWITCH_SYSTEM
+configure___ libsrc_libs=LIBS_MACHINE LIBS_SYSTEM
+configure___ c_switch_system=C_SWITCH_SYSTEM
 
 #ifndef LIB_X11_LIB
 #define LIB_X11_LIB -lX11
@@ -1584,18 +1625,18 @@ echo '
 #ifndef LIBX11_SYSTEM
 #define LIBX11_SYSTEM
 #endif
-@configure@ LIBX=LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
+configure___ LIBX=LIB_X11_LIB LIBX11_MACHINE LIBX11_SYSTEM
 
 #ifdef UNEXEC
-@configure@ unexec=UNEXEC
+configure___ unexec=UNEXEC
 #else
-@configure@ unexec=unexec.o
+configure___ unexec=unexec.o
 #endif
 
 #ifdef SYSTEM_MALLOC
-@configure@ system_malloc=yes
+configure___ system_malloc=yes
 #else
-@configure@ system_malloc=no
+configure___ system_malloc=no
 #endif
 
 #ifndef C_DEBUG_SWITCH
@@ -1607,17 +1648,17 @@ echo '
 #endif
 
 #ifdef __GNUC__
-@configure@ CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH
+configure___ CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH
 #else
-@configure@ CFLAGS=C_DEBUG_SWITCH
+configure___ CFLAGS=C_DEBUG_SWITCH
 #endif
 ' > ${tempcname}
 # The value of CPP is a quoted variable reference, so we need to do this
 # to get its actual value...
 CPP=`eval "echo $CPP"`
 eval `${CPP} -Isrc ${tempcname} \
-       | grep '@configure@' \
-       | sed -e 's/^@configure@ \([^=]*=\)\(.*\)$/\1"\2"/'`
+       | grep 'configure___' \
+       | sed -e 's/^configure___ \([^=]*=\)\(.*\)$/\1"\2"/'`
 rm ${tempcname}
 
 ### Compute the unexec source name from the object name.
@@ -1691,14 +1732,16 @@ rm -f conftest*
 LIBS="${LIBS_save}"
 if test -n "${have_lib}"; then
    :; LD_SWITCH_X_SITE="$LD_SWITCH_X_SITE -lXbsd"
-    if test -d /usr/X386/include; then
-      HAVE_XFREE386=yes
-      test -z "${C_SWITCH_X_SITE}" && C_SWITCH_X_SITE="-I/usr/X386/include"
-    fi
 else
    :; 
 fi
 
+
+echo checking for XFree86
+if test -d /usr/X386/include; then
+  HAVE_XFREE386=yes
+  test -z "${C_SWITCH_X_SITE}" && C_SWITCH_X_SITE="-I/usr/X386/include"
+fi
 
 if test "${HAVE_X11}" = "yes"; then
   DEFS="$C_SWITCH_X_SITE $DEFS"
@@ -2010,7 +2053,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LIBM\${SEDdB}HAVE_LIBM\${SEDdC}1\${SEDdD}
    LIBS="${LIBS} -lm"
 fi
 
-for func in gettimeofday gethostname dup2 rename closedir mkdir rmdir random bcopy logb frexp ftime
+for func in gettimeofday gethostname dup2 rename closedir mkdir rmdir random bcopy logb frexp ftime res_init
 do
 trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
 echo checking for ${func}
@@ -2139,6 +2182,16 @@ fi
 
 #### Specify what sort of things we'll be editing into Makefile and config.h.
 ### Use configuration here uncanonicalized to avoid exceeding size limits.
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2302,6 +2355,53 @@ SEDDEFS="${SEDDEFS}\${SEDdA}LISP_FLOAT_TYPE\${SEDdB}LISP_FLOAT_TYPE\${SEDdC}1\${
  
 fi
 
+# ====================== Developer's configuration =======================
+
+# The following assignments make sense if you're running Emacs on a single
+# machine, one version at a time, and  you want changes to the lisp and etc
+# directories in the source tree to show up immediately in your working
+# environment.  It saves a great deal of disk space by not duplicating the
+# lisp and etc directories.
+
+if [ "$run_in_place" = "1" ]; then
+   lispdir='${srcdir}/lisp'
+   locallisppath='${srcdir}/site-lisp:${datadir}/emacs/site-lisp'
+   etcdir='${srcdir}/etc'
+   lockdir='${srcdir}/lock'
+   archlibdir='${srcdir}/lib-src'
+   infodir='${srcdir}/info'
+elif [ "$single_tree" = "1" ]; then
+   if [ "$exec_prefix_specified" = "" ]; then
+      exec_prefix='${prefix}'
+   fi
+   if [ "$bindir_specified" = "" ]; then
+      bindir='${exec_prefix}/bin/${configuration}'
+   fi
+   if [ "$datadir_specified" = "" ]; then
+      datadir='${prefix}/common'
+   fi
+   if [ "$statedir_specified" = "" ]; then
+      statedir='${prefix}/common'
+   fi
+   if [ "$libdir_specified" = "" ]; then
+      libdir='${bindir}'
+   fi
+   if [ "$lispdir_specified" = "" ]; then
+      lispdir='${prefix}/common/lisp'
+   fi
+   if [ "$locallisppath_specified" = "" ]; then
+      locallisppath='${prefix}/common/site-lisp'
+   fi
+   if [ "$lockdir_specified" = "" ]; then
+      lockdir='${prefix}/common/lock'
+   fi
+   if [ "$archlibdir_specified" = "" ]; then
+      archlibdir='${libdir}/etc'
+   fi
+   if [ "$etcdir_specified" = "" ]; then
+      etcdir='${prefix}/common/data'
+   fi
+fi
 
 #### Report on what we decided to do.
 echo "
@@ -2363,7 +2463,7 @@ do
   esac
 done
 
-trap 'rm -fr Makefile src/config.h conftest*; exit 1' 1 3 15
+trap 'rm -fr Makefile lib-src/Makefile oldXMenu/Makefile src/Makefile.in src/config.h conftest*; exit 1' 1 3 15
 CC='$CC'
 LN_S='$LN_S'
 CPP='$CPP'
@@ -2375,15 +2475,25 @@ ALLOCA='$ALLOCA'
 configuration='$configuration'
 version='$version'
 srcdir='$srcdir'
+prefix='$prefix'
+exec_prefix='$exec_prefix'
+bindir='$bindir'
+datadir='$datadir'
+statedir='$statedir'
+libdir='$libdir'
+mandir='$mandir'
+infodir='$infodir'
+lispdir='$lispdir'
+locallisppath='$locallisppath'
+lisppath='$lisppath'
+etcdir='$etcdir'
+lockdir='$lockdir'
+archlibdir='$archlibdir'
 c_switch_system='$c_switch_system'
 libsrc_libs='$libsrc_libs'
-rip_paths='$rip_paths'
-inst_paths='$inst_paths'
 LD_SWITCH_X_SITE='$LD_SWITCH_X_SITE'
 C_SWITCH_X_SITE='$C_SWITCH_X_SITE'
 CFLAGS='$CFLAGS'
-prefix='$prefix'
-exec_prefix='$exec_prefix'
 LIBS='$LIBS'
 prefix='$prefix'
 exec_prefix='$exec_prefix'
@@ -2394,7 +2504,7 @@ cat >> config.status <<\EOF
 top_srcdir=$srcdir
 
 # Allow make-time overrides of the generated file list.
-test -n "$gen_files" || gen_files="Makefile"
+test -n "$gen_files" || gen_files="Makefile lib-src/Makefile oldXMenu/Makefile src/Makefile.in"
 
 for file in .. $gen_files; do if [ "x$file" != "x.." ]; then
   srcdir=$top_srcdir
@@ -2420,15 +2530,25 @@ s%@ALLOCA@%$ALLOCA%g
 s%@configuration@%$configuration%g
 s%@version@%$version%g
 s%@srcdir@%$srcdir%g
+s%@prefix@%$prefix%g
+s%@exec_prefix@%$exec_prefix%g
+s%@bindir@%$bindir%g
+s%@datadir@%$datadir%g
+s%@statedir@%$statedir%g
+s%@libdir@%$libdir%g
+s%@mandir@%$mandir%g
+s%@infodir@%$infodir%g
+s%@lispdir@%$lispdir%g
+s%@locallisppath@%$locallisppath%g
+s%@lisppath@%$lisppath%g
+s%@etcdir@%$etcdir%g
+s%@lockdir@%$lockdir%g
+s%@archlibdir@%$archlibdir%g
 s%@c_switch_system@%$c_switch_system%g
 s%@libsrc_libs@%$libsrc_libs%g
-s%@rip_paths@%$rip_paths%g
-s%@inst_paths@%$inst_paths%g
 s%@LD_SWITCH_X_SITE@%$LD_SWITCH_X_SITE%g
 s%@C_SWITCH_X_SITE@%$C_SWITCH_X_SITE%g
 s%@CFLAGS@%$CFLAGS%g
-s%@prefix@%$prefix%g
-s%@exec_prefix@%$exec_prefix%g
 s%@LIBS@%$LIBS%g
 s%@DEFS@%-DHAVE_CONFIG_H%" $top_srcdir/${file}.in >> $file
 fi; done
@@ -2527,4 +2647,45 @@ exit 0
 EOF
 chmod +x config.status
 test -n "$no_create" || ./config.status
+ 
+# Build src/Makefile from ${srcdir}/src/Makefile.in.  This must be done
+# after src/config.h is built, since we rely on that file.  Only do the
+# build if "config.status" is present, since it's non-presence indicates
+# an error occured.
+status=$?
+if [ ! -f ./config.status ]; then
+   exit $status
+fi
+topsrcdir=${srcdir}
+makefile_command='echo "creating src/Makefile";
+  topsrcdir='"${topsrcdir}"';
+( cd ./src;
+  cp Makefile.in junk.c;
+  eval `echo ${CPP} -I. -I${topsrcdir}/src ${CPPFLAGS} junk.c \>junk.cpp`;
+  < junk.cpp							'\
+'    sed -e '\''s/^#.*//'\''					'\
+'	-e '\''s/^[ \f\t][ \f\t]*$//'\''			'\
+'	-e '\''s/^ /	/'\'' 					'\
+'	| sed -n -e '\''/^..*$/p'\''				'\
+'	> Makefile.new;
+    chmod 444 Makefile.new;
+    mv -f Makefile.new Makefile;
+    rm -f junk.c junk.cpp;
+)'
+eval `echo $makefile_command`
+# AC-OUTPUT has created `config.status' already.  We need to add the above
+# commands to re-create `src/Makefile', and we need to insert them before
+# the final "exit 0" which appears at the end of `config.status'.
+<config.status sed -e 's/^exit 0$//' >config.new
+echo $makefile_command >>config.new
+echo exit 0 >>config.new
+mv -f config.new config.status
+chmod +x config.status
+# Don't let the fact that we just rewrote config.status make Makefile think
+# that it is now newer.  We have just rewritten all of the Makefiles as well.
+MFS="Makefile src/Makefile src/Makefile.in lib-src/Makefile oldXMenu/Makefile"
+for file in $MFS; do
+   chmod a+w $file; touch $file; chmod 444 $file
+done
+exit 0
 

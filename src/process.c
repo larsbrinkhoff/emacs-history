@@ -20,7 +20,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <signal.h>
 
-#include "config.h"
+#include <config.h>
 
 /* This file is split into two parts by the following preprocessor
    conditional.  The 'then' clause contains all of the support for
@@ -45,6 +45,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif /* HAVE_SOCKETS */
+
+/* TERM is a poor-man's SLIP, used on Linux.  */
+#ifdef TERM
+#include <client.h>
+#endif
 
 #if defined(BSD) || defined(STRIDE)
 #include <sys/ioctl.h>
@@ -73,6 +78,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "commands.h"
 #include "frame.h"
 
+Lisp_Object Qprocessp;
 Lisp_Object Qrun, Qstop, Qsignal, Qopen, Qclosed;
 /* Qexit is declared and initialized in eval.c.  */
 
@@ -150,7 +156,7 @@ char *sys_siglist[] =
 
 /* t means use pty, nil means use a pipe,
    maybe other values to come.  */
-Lisp_Object Vprocess_connection_type;
+static Lisp_Object Vprocess_connection_type;
 
 #ifdef SKTPAIR
 #ifndef HAVE_SOCKETS
@@ -159,10 +165,10 @@ Lisp_Object Vprocess_connection_type;
 #endif /* SKTPAIR */
 
 /* Number of events of change of status of a process.  */
-int process_tick;
+static int process_tick;
 
 /* Number of events for which the user or sentinel has been notified.  */
-int update_tick;
+static int update_tick;
 
 #ifdef FD_SET
 /* We could get this from param.h, but better not to depend on finding that.
@@ -187,19 +193,19 @@ int update_tick;
 
 /* Mask of bits indicating the descriptors that we wait for input on */
 
-SELECT_TYPE input_wait_mask;
+static SELECT_TYPE input_wait_mask;
 
-int delete_exited_processes;
+/* Descriptor to use for keyboard input.  */
+static int keyboard_descriptor;
+
+/* Nonzero means delete a process right away if it exits.  */
+static int delete_exited_processes;
 
 /* Indexed by descriptor, gives the process (if any) for that descriptor */
-Lisp_Object chan_process[MAXDESC];
+static Lisp_Object chan_process[MAXDESC];
 
 /* Alist of elements (NAME . PROCESS) */
-Lisp_Object Vprocess_alist;
-
-Lisp_Object Qprocessp;
-
-Lisp_Object get_process ();
+static Lisp_Object Vprocess_alist;
 
 /* Buffered-ahead input char from process, indexed by channel.
    -1 means empty (no char is buffered).
@@ -207,7 +213,9 @@ Lisp_Object get_process ();
    output from the process is to read at least one char.
    Always -1 on systems that support FIONREAD.  */
 
-int proc_buffered_char[MAXDESC];
+static int proc_buffered_char[MAXDESC];
+
+static Lisp_Object get_process ();
 
 /* Compute the Lisp form of the process status, p->status, from
    the numeric status that was returned by `wait'.  */
@@ -675,6 +683,7 @@ DEFUN ("process-mark", Fprocess_mark, Sprocess_mark,
 DEFUN ("set-process-filter", Fset_process_filter, Sset_process_filter,
   2, 2, 0,
   "Give PROCESS the filter function FILTER; nil means no filter.\n\
+t means stop accepting output from the process.\n\
 When a process has a filter, each time it does output\n\
 the entire string of output is passed to the filter.\n\
 The filter gets two arguments: the process and the string of output.\n\
@@ -683,6 +692,10 @@ If the process has a filter, its buffer is not used for output.")
      register Lisp_Object proc, filter;
 {
   CHECK_PROCESS (proc, 0);
+  if (EQ (filter, Qt))
+    FD_CLR (XPROCESS (proc)->infd, &input_wait_mask);
+  else if (EQ (XPROCESS (proc)->filter, Qt))
+    FD_SET (XPROCESS (proc)->infd, &input_wait_mask);
   XPROCESS (proc)->filter = filter;
   return filter;
 }
@@ -1388,11 +1401,12 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
       port = svc_info->s_port;
     }
 
+#ifndef TERM
   host_info_ptr = gethostbyname (XSTRING (host)->data);
   if (host_info_ptr == 0)
     /* Attempt to interpret host as numeric inet address */
     {
-      numeric_addr = inet_addr (XSTRING (host)->data);
+      numeric_addr = inet_addr ((char *) XSTRING (host)->data);
       if (numeric_addr == -1)
 	error ("Unknown host \"%s\"", XSTRING (host)->data);
 
@@ -1432,6 +1446,13 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
       report_file_error ("connection failed",
 			 Fcons (host, Fcons (name, Qnil)));
     }
+#else /* TERM */
+  s = connect_server (0);
+  if (s < 0)
+    report_file_error ("error creating socket", Fcons (name, Qnil));
+  send_command (s, C_PORT, 0, "%s:%d", XSTRING (host)->data, ntohs (port));
+  send_command (s, C_DUMB, 1, 0);
+#endif /* TERM */
 
   inch = s;
   outch = dup (s);
@@ -1753,7 +1774,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 	 but that led to lossage handling selection_request events:
 	 within one, we would start to handle another.  */
       if (! XINT (read_kbd))
-	FD_CLR (0, &Available);
+	FD_CLR (keyboard_descriptor, &Available);
 
       /* If frame size has changed or the window is newly mapped,
 	 redisplay now, before we start to wait.  There is a race
@@ -1816,7 +1837,8 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 	    error("select error: %s", sys_errlist[xerrno]);
 	}
 #if defined(sun) && !defined(USG5_4)
-      else if (nfds > 0 && FD_ISSET (0, &Available) && interrupt_input)
+      else if (nfds > 0 && FD_ISSET (keyboard_descriptor, &Available)
+	       && interrupt_input)
 	/* System sometimes fails to deliver SIGIO.
 
 	   David J. Mackenzie says that Emacs doesn't compile under
@@ -1851,7 +1873,8 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 	 In that case, there really is no input and no SIGIO,
 	 but select says there is input.  */
 
-      if (XINT (read_kbd) && interrupt_input && (FD_ISSET (fileno (stdin), &Available)))
+      if (XINT (read_kbd) && interrupt_input
+	  && (FD_ISSET (keyboard_descriptor, &Available)))
 	kill (0, SIGIO);
 #endif
 
@@ -2844,7 +2867,8 @@ status_notify ()
 
 	  /* If process is still active, read any output that remains.  */
 	  if (XFASTINT (p->infd))
-	    while (read_process_output (proc, XFASTINT (p->infd)) > 0);
+	    while (! EQ (p->filter, Qt)
+		   && read_process_output (proc, XFASTINT (p->infd)) > 0);
 
 	  buffer = p->buffer;
 
@@ -2930,13 +2954,27 @@ init_process ()
 #endif
 
   FD_ZERO (&input_wait_mask);
-  FD_SET (0, &input_wait_mask);
+
+  keyboard_descriptor = 0;
+  FD_SET (keyboard_descriptor, &input_wait_mask);
+
   Vprocess_alist = Qnil;
   for (i = 0; i < MAXDESC; i++)
     {
       chan_process[i] = Qnil;
       proc_buffered_char[i] = -1;
     }
+}
+
+/* From now on, assume keyboard input comes from descriptor DESC.  */
+
+void
+change_keyboard_wait_descriptor (desc)
+     int desc;
+{
+  FD_CLR (keyboard_descriptor, &input_wait_mask);
+  keyboard_descriptor = desc;
+  FD_SET (keyboard_descriptor, &input_wait_mask);
 }
 
 syms_of_process ()

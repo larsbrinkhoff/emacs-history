@@ -467,6 +467,7 @@ You can then give commands interactively.
 * Interactive Shell::      Permanent shell taking input via Emacs.
 * Shell Mode::             Special Emacs commands used with permanent shell.
 * History: Shell History.  Repeating previous commands in a shell buffer.
+* Options: Shell Options.  Options for customizing Shell mode.
 @end menu
 
 @node Single Shell
@@ -600,14 +601,16 @@ a regexp string that matches the prompts that your shell uses.
 @item @key{TAB}
 @kindex @key{TAB} @r{(Shell mode)}
 @findex comint-dynamic-complete
-Complete the file name before point in the shell buffer
-(@code{comint-dynamic-complete}).
+Complete the command name or file name before point in the shell buffer
+(@code{comint-dynamic-complete}).  @key{TAB} also completes history
+references; see @ref{History References}.
 
 @item M-?
 @kindex M-? @r{(Shell mode)}
-@findex comint-dynamic-list-completions
+@findex comint-dynamic-list-filename-completions
 Display temporarily a list of the possible completions of the file name
-before point in the shell buffer (@code{comint-dynamic-list-completions}).
+before point in the shell buffer
+(@code{comint-dynamic-list-filename-completions}).
 
 @item C-a
 @kindex C-a @r{(Shell mode)}
@@ -660,9 +663,28 @@ out lots of output that just gets in the way.
 @item C-c C-r
 @kindex C-c C-r @r{(Shell mode)}
 @findex comint-show-output
-Scroll to display the
-beginning of the last batch of output at the top of the window; also
-move the cursor there (@code{comint-show-output}).
+Scroll to display the beginning of the last batch of output at the top
+of the window; also move the cursor there (@code{comint-show-output}).
+
+@item C-c C-e
+@kindex C-c C-e @r{(Shell mode)}
+@findex comint-show-maximum-output
+Scroll to put the end of the buffer at the bottom of the window
+(@code{comint-show-maximum-output}).
+
+@item C-c C-f
+@kindex C-c C-f @r{(Shell mode)}
+@findex shell-forward-command
+@vindex shell-command-regexp
+Move forward across one shell command, but not beyond the current line
+(@code{shell-forward-command}).  The variable @code{shell-command-regexp}
+specifies how to recognize the end of a command.
+
+@item C-c C-b
+@kindex C-c C-b @r{(Shell mode)}
+@findex shell-backward-command
+Move backward across one shell command, but not beyond the current line
+(@code{shell-backward-command}).
 
 @item M-x dirs
 @findex dirs
@@ -684,11 +706,29 @@ is normal practice, but you must use the shell to continue the subjob;
 this command won't do it.}
 @end table
 
+  Shell mode also customizes the paragraph commands so that only shell
+promps start new paragraphs.  Thus, a paragraph consists of an input
+command plus the output that follows it in the buffer.
+
 @node Shell History
 @subsection Shell Command History
 
-  Shell buffers support history commands much like the minibuffer
-history commands.  
+  Shell buffers support three ways of repeating earlier commands.  You
+can use the same keys used in the minibuffer; these work much as they do
+in the minibuffer, inserting text from prior commands while point
+remains always at the end of the buffer.  You can move through the
+buffer to previous inputs in their original place, then resubmit them or
+copy them to the end.  Or you can use a @samp{!}-style history
+reference.
+
+@menu
+* Ring: Shell Ring.             Fetching commands from the history list.
+* Copy: Shell History Copying.  Moving to a command and then copying it.
+* History References::          Expanding @samp{!}-style history references.
+@end menu
+
+@node Shell Ring
+@subsubsection Shell History Ring
 
 @table @kbd
 @findex comint-previous-input
@@ -714,7 +754,7 @@ Search backwards or forwards for old shell commands that match @var{regexp}.
 reuse shell commands from the history, use the editing commands @kbd{M-p},
 @kbd{M-n}, @kbd{M-r} and @kbd{M-s}.  These work just like the minibuffer
 history commands except that they operate on the text at the end of the
-shell buffer, the text that typing @key{RET} will send to the shell.
+shell buffer, where you would normally insert text to send to the shell.
 
   @kbd{M-p} fetches an earlier shell command to the end of the shell buffer.
 Successive use of @kbd{M-p} fetches successively earlier shell commands,
@@ -736,6 +776,132 @@ wish.
 history list, not from the shell buffer itself.  Thus, editing the shell
 buffer, or even killing large parts of it, does not affect the history
 that these commands access.
+
+@node Shell History Copying
+@subsubsection Shell History Copying
+
+@table @kbd
+@kindex C-c C-p
+@findex comint-previous-prompt
+@item C-c C-p
+Move point to the previous prompt (@code{comint-previous-prompt}).
+
+@kindex C-c C-n
+@findex comint-next-prompt
+@item C-c C-n
+Move point to the following prompt (@code{comint-next-prompt}).
+
+@kindex C-c @key{RET}
+@findex comint-copy-old-input
+@item C-c @key{RET}
+Copy the input command which point is in, inserting the copy at the end
+of the buffer (@code{comint-copy-old-input}).  This is useful if you
+move point back to a previous command.  After you copy the command, you
+can submit the copy as input with @key{RET}.  If you wish, you can
+edit the copy before resubmitting it.
+@end table
+
+  Moving to a previous input and then copying it with @kbd{C-c
+@key{RET}} produces the same results---the same buffer contents---that
+you would get by using @kbd{M-p} enough times to fetch that previous
+input from the history list.  However, @kbd{C-c @key{RET}} copies the
+text from the buffer, which can be different from what is in the history
+list (if you edit the input in the buffer after it has been sent).
+
+@node History References
+@subsubsection Shell History References
+@cindex history reference
+
+  Various shells including csh and bash support @dfn{history references}
+that begin with @samp{!} and @samp{^}.  Shell mode now understands this
+syntax.  If you insert a history reference and type @key{TAB}, this
+searches the input history for a matching command, performs substitution
+if necessary, and places the result in the buffer in place of the
+history reference.  For example, you can fetch the most recent
+command beginning with @samp{mv} with @kbd{! m v @key{TAB}}.  You could
+then resubmit this command to the shell by typing @key{RET} as usual.
+
+@node Shell Options
+@subsection Shell Mode Options
+
+@vindex comint-scroll-to-bottom-on-input
+If the variable @code{comint-scroll-to-bottom-on-input} is
+non-@code{nil}, insertion and yank commands scroll the selected window
+the bottom before inserting.
+
+@vindex comint-scroll-show-maximum-output
+If @code{comint-scroll-show-maximum-output} is non-@code{nil} (which is the
+default), then scrolling due to arrival of output tries to place the
+last line of text at the bottom line of the window, so as to show as
+much useful text as possible.  (This mimics the scrolling behavior of
+many terminals.)
+
+@vindex comint-scroll-to-bottom-on-output
+By setting @code{comint-scroll-to-bottom-on-output}, you can opt for
+having point jump to the end of the buffer whenever output arrives---no
+matter where in the buffer point was before.  If the value is
+@code{this}, point jumps in the selected window.  If the value is
+@code{all}, point jumps in each window that shows the comint buffer.  If
+the value is @code{other}, point jumps in all nonselected windows that
+show the current buffer.  The default value is @code{nil}, which means
+point does not jump to the end.
+
+@vindex comint-input-ignoredups
+The variable @code{comint-input-ignoredups} controls whether successive
+identical inputs are stored in the input history.  A non-@code{nil}
+value means to omit an input that is the same as the previous input.
+The default is @code{nil}, which means to store each input even if it is
+equal to the previous input.
+
+@vindex comint-completion-addsuffix
+@vindex comint-completion-recexact
+@vindex comint-completion-autolist
+Three variables customize filename completion
+@code{comint-completion-addsuffix} controls whether completion inserts a
+space or a slash to indicate a fully completed file or directory name
+(non-@code{nil} means do insert a space or slash).
+@code{comint-completion-recexact}, if non-@code{nil}, directs @key{TAB}
+to choose the shortest possible completion if the usual Emacs completion
+algorithm cannot add even a single character.
+@code{comint-completion-autolist}, if non-@code{nil}, says to list all
+the possible completions whenever completion is not exact.
+
+@vindex comint-input-autoexpand
+Shell mode can optionally expand history references in the buffer when
+you send them to the shell.  To request this, set the variable
+@code{comint-input-autoexpand} to @code{input}.
+
+@findex comint-magic-space
+You can make @key{SPC} perform history expansion by binding @key{SPC} to
+the command @code{comint-magic-space}.
+
+@findex comint-dynamic-complete-variable
+The command @code{comint-dynamic-complete-variable} does variable name
+completion using the environment variables as set within Emacs.  The
+variables controlling filename completion apply to variable name
+completion too.  This command is normally available through the menu
+bar.
+
+@vindex shell-command-execonly
+Command completion normally considers only executable files.
+If you set @code{shell-command-execonly} to @code{nil},
+it considers nonexecutable files as well.
+
+@vindex shell-input-ring-file-name
+In a new Shell mode buffer, the input history is initialized from the
+file name specified in the variable @code{shell-input-ring-file-name}.
+By default, this is @code{"~/.history"}.
+
+@cindex shell-pushd-tohome
+@cindex shell-pushd-dextract
+@cindex shell-pushd-dunique
+You can now configure the behavior of @samp{pushd}.  Variables control
+whether @samp{pushd} behaves like @samp{cd} if no argument is given
+(@code{shell-pushd-tohome}), pop rather than rotate with a numeric
+argument (@code{shell-pushd-dextract}), and only add directories to the
+directory stack if they are not already on it
+(@code{shell-pushd-dunique}).  The values you choose should match the
+underlying shell, of course.
 
 @node Narrowing, Hardcopy, Shell, Top
 @section Narrowing

@@ -30,7 +30,7 @@
 #include <sys/types.h>
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 /* The `emacs' switch turns on certain matching commands

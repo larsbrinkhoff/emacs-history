@@ -423,6 +423,11 @@ a single copy of every mail message, set the variable
 @kbd{C-o} commands delete the original message after copying it.
 (You can undelete the original afterward.)
 
+  Copying messages in Unix format copies the header fields that are
+displayed in Rmail at the time.  Thus, if you use the @kbd{t} command to
+view the entire header and then copy the message, the entire header is
+copied.
+
 @vindex rmail-output-file-alist
   The variable @code{rmail-output-file-alist} lets you specify
 intelligent defaults for the output file, based on the contents of the

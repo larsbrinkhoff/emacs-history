@@ -51,10 +51,9 @@ Move point to where you click (@code{mouse-set-point}).
 This is normally the left button.
 
 @item drag-mouse-1
-Move point to where you release the mouse, and set the mark where you
-initially clicked the mouse (@code{mouse-set-region}).  Thus, you can
-specify both ends of the region.  In Transient Mark mode, the region
-highlighting appears and changes as you drag.
+Set the region to the text you select by dragging, and copy it to the
+kill ring (@code{mouse-set-region}). Thus, you can specify both ends of
+the region.
 
 If you move the mouse off the top or bottom of the window while
 dragging, the window scrolls at a steady rate until you move the mouse
@@ -62,32 +61,59 @@ back into the window.  This way, you can mark regions that don't fit
 entirely on the screen.
 
 @item mouse-2
-Yank the last kill text, where you click (@code{mouse-yank-at-click}).
+Yank the last killed text, where you click (@code{mouse-yank-at-click}).
 This is normally the middle button.
 
 @item mouse-3
-Copy text to the kill ring (@code{mouse-save-then-click}).  This is
-normally the right button.  If you click it a second time at the same
-place, that kills the text.
+This command, @code{mouse-save-then-kill}, has several functions
+depending on where you click and the status of the region.
 
-This operation applies to the text between point and the place where
-you click.
+If you have a highlighted region, or if the region was set just before
+by dragging button 1, @code{mouse-save-then-kill} adjusts the nearer
+end of the region by moving it to where you click.  The adjusted
+region's text also replaces the old region's text in the kill ring.
+
+Otherwise, @code{mouse-save-then-kill} sets mark where you click,
+without changing point.  It copies the new region to the kill ring.
+
+If you originally specified the region using a double or triple
+@key{Mouse-1}, so that the region is defined to consist of entire words
+or lines, then adjusting the region also proceeds by entire words or
+lines.
+
+If you use @code{mouse-save-then-kill} twice in a row at the same place,
+that kills the region already selected.
+
+@item double-mouse-1
+This key sets the region around the word which you click on.
+
+@item double-drag-mouse-1
+This key selects a region made up of the words that you drag across.
+
+@item triple-mouse-1
+This key sets the region around the line which you click on.
+
+@item triple-drag-mouse-1
+This key selects a region made up of the lines that you drag across.
 @end table
 
-  Thus, to kill a section of text, you can press @key{Mouse-1} at one
-end, then press @key{Mouse-3} twice at the other end.  To select the
-text for copying without deleting it from the buffer, press
-@key{Mouse-3} just once.  Then you can copy it elsewhere by yanking it.
-@xref{Killing}.
+The simplest way to kill some text is to press @key{Mouse-1} at one end,
+then press @key{Mouse-3} twice at the other end.  @xref{Killing}.  To
+copy the text into the kill ring without deleting it from the buffer,
+press @key{Mouse-3} just once---or just drag across the text with
+@key{Mouse-1}.  Then you can copy it elsewhere by yanking it.
 
-  To yank the killed or copied text somewhere else, move the mouse there
+To yank the killed or copied text somewhere else, move the mouse there
 and press @key{Mouse-2}.  @xref{Yanking}.
+
+The mouse commands for selecting a region are mostly compatible with the
+@code{xterm} program.
 
 @cindex cutting and X
 @cindex pasting and X
 @cindex X cutting and pasting
 @cindex X pasting and cutting
-  To copy text to another X window, kill it or save it in the kill ring.
+To copy text to another X window, kill it or save it in the kill ring.
 Under X, this also sets the @dfn{primary selection}.  Then use the
 ``paste'' or ``yank'' command of the program operating the other window
 to insert the text from the selection.
@@ -150,6 +176,9 @@ at the same place kills the secondary selection just made.
 Kill the secondary selection (@code{mouse-kill-secondary}).
 @end table
 
+Double or triple clicking of @kbd{M-@key{Mouse-1}} operates on words and
+lines, much like @key{Mouse-1}.
+
 @node Creating Frames
 @section Creating Frames
 @cindex creating frames
@@ -158,7 +187,7 @@ Kill the secondary selection (@code{mouse-kill-secondary}).
   The prefix key @kbd{C-x 5} is analogous to @kbd{C-x 4}, with parallel
 subcommands.  The difference is that @kbd{C-x 5} commands create a new
 frame rather than just a new window in the selected frame.  (@xref{Pop
-Up Window}.)  Different @kbd{C-x 4} commands have different ways of
+Up Window}.)  Different @kbd{C-x 5} commands have different ways of
 finding the buffer to select.
 
 @table @kbd
@@ -396,20 +425,30 @@ Swap the foreground and background colors of face @var{face}.
 @node Misc X
 @section Miscellaneous X Window Features
 
+The following commands do user-level mangement of frames under a window
+system:
+
+@table @kbd
+@item C-z
 @kindex C-z
 @findex iconify-or-deiconify-frame
-  To iconify the selected Emacs frame, type @kbd{C-z}.  The normal meaning
-of @kbd{C-z}, to suspend Emacs, is not useful under a window system, so
-it has a different binding in that case (the command
-@code{iconify-or-deiconify-frame}).
+To iconify the selected Emacs frame, type @kbd{C-z}
+(@code{iconify-or-deiconify-frame}).  The normal meaning of @kbd{C-z},
+to suspend Emacs, is not useful under a window system, so it has a
+different binding in that case.
 
-  If you type this command on an Emacs icon, it deiconifies the frame.
+If you type this command on an Emacs icon, it deiconifies the frame.
 
+@item C-x 5 0
 @kindex C-x 5 0
 @findex delete-frame
-  To delete the selected frame, type @kbd{C-x 5 0}. 
+To delete the selected frame, type @kbd{C-x 5 0} (@code{delete-frame}).
+If there is more than one frame in this invocation of Emacs, the current
+frame is deleted.
 
-  Under X Windows, when Transient Mark mode is enabled, Emacs highlights
+@item M-x transient-mark-mode
+Under X Windows, when Transient Mark mode is enabled, Emacs highlights
 the region when the mark is active.  This is the main motive for using
-Transient Mark mode.  To enable this mode, use the command @kbd{M-x
-transient-mark-mode}.  @xref{Mark}.
+Transient Mark mode.  To toggle the state of this mode, use the command
+@kbd{M-x transient-mark-mode}.  @xref{Mark}.
+@end table

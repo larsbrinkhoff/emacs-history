@@ -24,16 +24,21 @@
 #include <errno.h>
 #include "getopt.h"
 
+#if defined (emacs)
+#  include "../src/config.h"
+/* Some s/os.h files redefine these. */
+#  undef read
+#  undef close
+#  undef write
+#  undef open
+#endif
+
 #if defined (STDC_HEADERS)
 #  include <string.h>
 #  include <stdlib.h>
-#  if !defined (bzero)
-#    define bzero(p, n) memset((p), '\0', (n))
-#  endif /* !bzero */
 #else /* !STDC_HEADERS */
 extern int errno;
 char *getenv (), *malloc (), *realloc ();
-void bzero ();
 #endif /* !STDC_HEADERS */
 
 #if defined (HAVE_UNISTD_H)
@@ -1155,10 +1160,10 @@ init_index ()
   lastinitiallength = 0;
   lastprimarylength = 100;
   lastprimary = (char *) xmalloc (lastprimarylength + 1);
-  bzero (lastprimary, lastprimarylength + 1);
+  memset (lastprimary, '\0', lastprimarylength + 1);
   lastsecondarylength = 100;
   lastsecondary = (char *) xmalloc (lastsecondarylength + 1);
-  bzero (lastsecondary, lastsecondarylength + 1);
+  memset (lastsecondary, '\0', lastsecondarylength + 1);
 }
 
 /* Indexify.  Merge entries for the same name,
@@ -1681,26 +1686,4 @@ memory_error (callers_name, bytes_wanted)
   abort ();
 }
 
-#ifndef STDC_HEADERS
-void
-bzero (b, length)
-     register char *b;
-     register int length;
-{
-#ifdef VMS
-  short zero = 0;
-  long max_str = 65535;
-
-  while (length > max_str)
-    {
-      (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
-      length -= max_str;
-      b += max_str;
-    }
-  (void) LIB$MOVC5 (&zero, &zero, &zero, &length, b);
-#else
-  while (length-- > 0)
-    *b++ = 0;
-#endif /* not VMS */
-}
-#endif /* not STDC_HEADERS */
+/* eof */

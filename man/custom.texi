@@ -83,6 +83,11 @@ usual.@refill
 periodically to reduce the amount you will lose in case of a system
 crash.  @xref{Auto Save}.
 
+  ISO Accents mode makes the characters @samp{`}, @samp{'}, @samp{"},
+@samp{^}, @samp{/} and @samp{~} combined with the following letter, to
+produce an accented letter in the ISO Latin-1 character set.  
+@xref{European Display}.
+
   The following minor modes normally apply to all buffers at once.
 Since each is enabled or disabled by the value of a variable, you
 @emph{can} set them differently for particular buffers, by explicitly
@@ -504,11 +509,12 @@ variables list, showing you the local variables list to consider.
 @findex enable-local-eval
   The @code{eval} ``variable'' creates special risks, so there is a
 separate variable @code{enable-local-eval} to control whether Emacs
-processes @code{eval} variables.  The three possibilities for the value
-are @code{t}, @code{nil}, and anything else, just as for
-@code{enable-local-variables}.  The default is @code{maybe}, which is
-neither @code{t} nor @code{nil}, so normally Emacs queries about
-@code{eval} variable settings.
+processes @code{eval} variables, as well variables with names that end
+in @samp{-hook}, @samp{-hooks}, @samp{-function} or @samp{-functions}.
+The three possibilities for the value are @code{t}, @code{nil}, and
+anything else, just as for @code{enable-local-variables}.  The default
+is @code{maybe}, which is neither @code{t} nor @code{nil}, so normally
+Emacs queries about @code{eval} variable settings.
 
   Use the command @code{normal-mode} to reset the local variables and
 major mode of a buffer according to the file name and contents,
@@ -762,7 +768,7 @@ character into a pair of characters starting with @key{ESC}.  When you
 type the character @kbd{M-a} in a key sequence, Emacs replaces it with
 @kbd{@key{ESC} a}.  A meta key comes in as a single input event, but
 becomes two events for purposes of key bindings.  The reason for this is
-historical, and we might change in someday.
+historical, and we might change it someday.
 
 @cindex function key
   Most modern keyboards have function keys as well as character keys.

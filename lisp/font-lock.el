@@ -87,13 +87,17 @@
   "*The keywords to highlight.
 If this is a list, then elements may be of the forms:
 
-  \"string\"			  ; a regexp to highlight in the 
+  \"string\"			  ; A regexp to highlight in the 
 				  ;  `font-lock-keyword-face'.
-  (\"string\" . integer)  	  ; match N of the regexp will be highlighted
-  (\"string\" . face-name)	  ; use the named face
-  (\"string\" integer face-name)    ; both of the above
-  (\"string\" integer face-name t)  ; this allows highlighting to overlap
-				  ;  with already-highlighted regions.
+  (\"string\" . N)  	          ; Highlight subexpression N of the regexp.
+  (\"string\" . face-name)	  ; Use the named face
+  (\"string\" N face-name)        ; Both of the above
+  (\"string\" N face-name t)      ; This allows highlighting to override
+				  ;  already-highlighted regions.
+  (\"string\" N face-name keep)   ; This allows highlighting to occur
+				  ; even if some parts of what STRING matches
+				  ; are already highlighted--but does not alter
+				  ; the existing highlighting of those parts.
 
 These regular expressions should not match text which spans lines.
 While \\[font-lock-fontify-buffer] handles multi-line patterns correctly,
@@ -261,8 +265,8 @@ slow things down!")
 ;;; Fontifying arbitrary patterns
 
 (defsubst font-lock-any-properties-p (start end)
-  (or (get-text-property start 'font-lock)
-      (let ((next (next-single-property-change start 'font-lock)))
+  (or (get-text-property start 'face)
+      (let ((next (next-single-property-change start 'face)))
 	(and next (< next end)))))
 
 (defun font-lock-hack-keywords (start end &optional loudly)
@@ -299,7 +303,18 @@ slow things down!")
 	(or s (error "expression did not match subexpression %d" match))
 	;; don't fontify this keyword if we're already in some other context.
 	(or (if allow-overlap-p nil (font-lock-any-properties-p s e))
-	    (progn
+	    (if (not (memq allow-overlap-p '(t nil)))
+		(save-excursion
+		  (goto-char s)
+		  (save-restriction
+		    (narrow-to-region s e)
+		    (while (not (eobp))
+		      (let ((next (next-single-property-change (point) 'face)))
+			(if (> next (point-max))
+			    (setq next (point-max)))
+			(if (not (get-text-property (point) 'face))
+			    (put-text-property (point) next 'face face))
+			(goto-char next)))))
 	      (put-text-property s e 'face face))))
       (if loudly (message "Fontifying %s... (regexps...%s)"
 			  (buffer-name)
@@ -375,7 +390,7 @@ This can take a while for large buffers."
 	(font-lock-verbose (or font-lock-verbose (interactive-p))))
     (if font-lock-verbose (message "Fontifying %s..." (buffer-name)))
     ;; Turn it on to run hooks and get the right font-lock-keywords.
-    (or was-on (font-lock-mode 1))
+    (or was-on (font-lock-set-defaults))
     (font-lock-unfontify-region (point-min) (point-max))
     (if font-lock-verbose (message "Fontifying %s... (syntactically...)"
 				   (buffer-name)))
@@ -385,7 +400,6 @@ This can take a while for large buffers."
       (if font-lock-verbose (message "Fontifying %s... (regexps...)"
 				     (buffer-name)))
       (font-lock-hack-keywords (point-min) (point-max) font-lock-verbose))
-    (or was-on (font-lock-mode 0)) ; turn it off if it was off.
     (set (make-local-variable 'font-lock-fontified) t)
     (if font-lock-verbose (message "Fontifying %s... done." (buffer-name)))
     ))
@@ -394,7 +408,7 @@ This can take a while for large buffers."
 ;;; Various mode-specific information.
 
 (defun font-lock-set-defaults ()
-  "sets font-lock-keywords to something appropriate for this mode."
+  "Set `font-lock-keywords' to something appropriate for this mode."
   (setq font-lock-keywords
 	(cond ((eq major-mode 'lisp-mode)	lisp-font-lock-keywords)
 	      ((eq major-mode 'emacs-lisp-mode)	lisp-font-lock-keywords)
@@ -477,7 +491,11 @@ This does a lot more highlighting.")
       font-lock-function-name-face)
     ;;
     ;; fontify other preprocessor lines.
-    '("^#[ \t]*\\(if\\|ifn?def\\)[ \t]+\\([^\n]+\\)"
+    '("^#[ \t]*\\(if\\)[ \t]+\\([^\n]+\\)"
+      2 font-lock-function-name-face keep)
+    '("^#[ \t]*\\(endif\\|else\\)[ \t]+\\([^\n]+\\)"
+      2 font-lock-function-name-face keep)
+    '("^#[ \t]*\\(ifn?def\\)[ \t]+\\([^ \t\n]+\\)"
       2 font-lock-function-name-face t)
     ;;
     ;; fontify the filename in #include <...>

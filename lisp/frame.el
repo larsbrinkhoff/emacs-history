@@ -319,7 +319,11 @@ of the following forms:
 The documentation for the function `x-create-frame' describes
 additional frame parameters that Emacs recognizes for X window frames."
   (interactive)
-  (funcall frame-creation-function parameters))
+  (let ((nframe))
+    (run-hooks 'before-make-frame-hook)
+    (setq nframe (funcall frame-creation-function parameters))
+    (run-hooks 'after-make-frame-hook)
+    nframe))
 
 (defun filtered-frame-list (predicate)
   "Return a list of all live frames which satisfy PREDICATE."
@@ -371,7 +375,9 @@ A negative ARG moves in the opposite order."
 	(setq frame (previous-frame frame)))
       (setq arg (1+ arg)))
     (raise-frame frame)
-    (select-frame frame)))
+    (select-frame frame)
+    (set-mouse-position (selected-frame) (1- (frame-width)) 0)
+    (unfocus-frame)))
 
 ;;;; Frame configurations
 
@@ -391,10 +397,13 @@ where
 			 (current-window-configuration frame))))
 		(frame-list))))
 
-(defun set-frame-configuration (configuration)
+(defun set-frame-configuration (configuration &optional nodelete)
   "Restore the frames to the state described by CONFIGURATION.
 Each frame listed in CONFIGURATION has its position, size, window
-configuration, and other parameters set as specified in CONFIGURATION."
+configuration, and other parameters set as specified in CONFIGURATION.
+Ordinarily, this function deletes all existing frames not
+listed in CONFIGURATION.  But if optional second argument NODELETE
+is given and non-nil, the unwanted frames are iconified instead."
   (or (frame-configuration-p configuration)
       (signal 'wrong-type-argument
 	      (list 'frame-configuration-p configuration)))
@@ -416,7 +425,13 @@ configuration, and other parameters set as specified in CONFIGURATION."
 		       (set-window-configuration (nth 2 parameters)))
 		   (setq frames-to-delete (cons frame frames-to-delete))))))
 	    (frame-list))
-    (mapcar 'delete-frame frames-to-delete)))
+    (if nodelete
+	;; Note: making frames invisible here was tried
+	;; but led to some strange behavior--each time the frame
+	;; was made visible again, the window manager asked afresh
+	;; for where to put it.
+	(mapcar 'iconify-frame frames-to-delete)
+      (mapcar 'delete-frame frames-to-delete))))
 
 (defun frame-configuration-p (object)
   "Return non-nil if OBJECT seems to be a frame configuration.

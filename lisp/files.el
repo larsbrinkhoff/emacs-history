@@ -39,6 +39,9 @@ FROM with TO when it appears in a directory name.  This replacement is
 done when setting up the default directory of a newly visited file.
 *Every* FROM string should start with `^'.
 
+Do not use `~' in the TO strings.
+They should be ordinary absolute directory names.
+
 Use this feature when you have directories which you normally refer to
 via absolute symbolic links.  Make TO the name of the link, and FROM
 the name it is linked to.")
@@ -182,8 +185,6 @@ The functions are called in the order given until one of them returns non-nil.")
 The buffer's local variables (if any) will have been processed before the
 functions are called.")
 
-;;; In case someone does make it local.
-(put 'write-file-hooks 'permanent-local t)
 (defvar write-file-hooks nil
   "List of functions to be called before writing out a buffer to a file.
 If one of them returns non-nil, the file is considered already written
@@ -192,12 +193,15 @@ These hooks are considered to pertain to the visited file.
 So this list is cleared if you change the visited file name.
 See also `write-contents-hooks'.
 Don't make this variable buffer-local; instead, use `local-write-file-hooks'.")
+;;; However, in case someone does make it local...
+(put 'write-file-hooks 'permanent-local t)
 
-(put 'local-write-file-hooks 'permanent-local t)
 (defvar local-write-file-hooks nil
   "Just like `write-file-hooks', except intended for per-buffer use.
 The functions in this list are called before the ones in
 `write-file-hooks'.")
+(make-variable-buffer-local 'local-write-file-hooks)
+(put 'local-write-file-hooks 'permanent-local t)
 
 (defvar write-contents-hooks nil
   "List of functions to be called before writing out a buffer to a file.
@@ -326,7 +330,9 @@ accessible."
 The truename of a file name is found by chasing symbolic links
 both at the level of the file and at the level of the directories
 containing it, until no links are left at any level."
-  (if (string= filename "~")
+  (if (or (string= filename "~")
+	  (and (string= (substring filename 0 1) "~")
+	       (string-match "~[^/]*" filename)))
       (progn
 	(setq filename (expand-file-name filename))
 	(if (string= filename "")
@@ -507,7 +513,7 @@ Choose the buffer's name using `generate-new-buffer-name'."
   "Regexp to match the automounter prefix in a directory name.")
 
 (defvar abbreviated-home-dir nil
-  "The the user's homedir abbreviated according to `directory-abbrev-list'.")
+  "The user's homedir abbreviated according to `directory-abbrev-list'.")
 
 (defun abbreviate-file-name (filename)
   "Return a version of FILENAME shortened using `directory-abbrev-alist'.
@@ -832,77 +838,79 @@ section of the file; for that, use `hack-local-variables'.
 If `enable-local-variables' is nil, this function does not check for a
 -*- mode tag."
   ;; Look for -*-MODENAME-*- or -*- ... mode: MODENAME; ... -*-
-  (let (beg end mode)
+  (let (beg end done)
     (save-excursion
       (goto-char (point-min))
       (skip-chars-forward " \t\n")
-      (if (and enable-local-variables
-	       ;; Don't look for -*- if this file name matches any
-	       ;; of the regexps in inhibit-local-variables-regexps.
-	       (let ((temp inhibit-local-variables-regexps))
-		 (while (and temp
-			     (not (string-match (car temp)
-						buffer-file-name)))
-		   (setq temp (cdr temp)))
-		 (not temp))
-	       (search-forward "-*-" (save-excursion
-				       ;; If the file begins with "#!"
-				       ;; (exec interpreter magic), look
-				       ;; for mode frobs in the first two
-				       ;; lines.  You cannot necessarily
-				       ;; put them in the first line of
-				       ;; such a file without screwing up
-				       ;; the interpreter invocation.
-				       (end-of-line (and (looking-at "^#!") 2))
-				       (point)) t)
-	       (progn
-		 (skip-chars-forward " \t")
-		 (setq beg (point))
-		 (search-forward "-*-"
-				 (save-excursion (end-of-line) (point))
-				 t))
-	       (progn
-		 (forward-char -3)
-		 (skip-chars-backward " \t")
-		 (setq end (point))
-		 (goto-char beg)
-		 (if (search-forward ":" end t)
-		     (progn
-		       (goto-char beg)
-		       (if (let ((case-fold-search t))
-			     (search-forward "mode:" end t))
-			   (progn
-			     (skip-chars-forward " \t")
-			     (setq beg (point))
-			     (if (search-forward ";" end t)
-				 (forward-char -1)
-			       (goto-char end))
-			     (skip-chars-backward " \t")
-			     (setq mode (buffer-substring beg (point))))))
-		   (setq mode (buffer-substring beg end)))))
-	  (setq mode (intern (concat (downcase mode) "-mode")))
-	(if buffer-file-name
-	    (let ((alist auto-mode-alist)
-		  (name buffer-file-name))
-	      (let ((case-fold-search (eq system-type 'vax-vms)))
-		;; Remove backup-suffixes from file name.
-		(setq name (file-name-sans-versions name))
-		;; Find first matching alist entry.
-		(while (and (not mode) alist)
-		  (if (string-match (car (car alist)) name)
-		      (setq mode (cdr (car alist))))
-		  (setq alist (cdr alist))))))))
-    (if mode (funcall mode))))
+      (and enable-local-variables
+	   ;; Don't look for -*- if this file name matches any
+	   ;; of the regexps in inhibit-local-variables-regexps.
+	   (let ((temp inhibit-local-variables-regexps))
+	     (while (and temp
+			 (not (string-match (car temp)
+					    buffer-file-name)))
+	       (setq temp (cdr temp)))
+	     (not temp))
+	   (search-forward "-*-" (save-excursion
+				   ;; If the file begins with "#!"
+				   ;; (exec interpreter magic), look
+				   ;; for mode frobs in the first two
+				   ;; lines.  You cannot necessarily
+				   ;; put them in the first line of
+				   ;; such a file without screwing up
+				   ;; the interpreter invocation.
+				   (end-of-line (and (looking-at "^#!") 2))
+				   (point)) t)
+	   (progn
+	     (skip-chars-forward " \t")
+	     (setq beg (point))
+	     (search-forward "-*-"
+			     (save-excursion (end-of-line) (point))
+			     t))
+	   (progn
+	     (forward-char -3)
+	     (skip-chars-backward " \t")
+	     (setq end (point))
+	     (goto-char beg)
+	     (if (save-excursion (search-forward ":" end t))
+		 ;; Find all specifications for the `mode:' variable
+		 ;; and execute hem left to right.
+		 (while (let ((case-fold-search t))
+			  (search-forward "mode:" end t))
+		   (skip-chars-forward " \t")
+		   (setq beg (point))
+		   (if (search-forward ";" end t)
+		       (forward-char -1)
+		     (goto-char end))
+		   (skip-chars-backward " \t")
+		   (funcall (intern (concat (downcase (buffer-substring beg (point))) "-mode"))))
+	       ;; Simple -*-MODE-*- case.
+	       (funcall (intern (concat (downcase (buffer-substring beg end)) "-mode"))))
+	     (setq done t)))
+      ;; If we didn't find a mode from a -*- line, try using the file name.
+      (if (and (not done) buffer-file-name)
+	  (let ((alist auto-mode-alist)
+		(name buffer-file-name)
+		mode)
+	    (let ((case-fold-search (eq system-type 'vax-vms)))
+	      ;; Remove backup-suffixes from file name.
+	      (setq name (file-name-sans-versions name))
+	      ;; Find first matching alist entry.
+	      (while (and (not mode) alist)
+		(if (string-match (car (car alist)) name)
+		    (setq mode (cdr (car alist))))
+		(setq alist (cdr alist))))
+	    (if mode (funcall mode)))))))
 
 (defun hack-local-variables-prop-line ()
   ;; Set local variables specified in the -*- line.
-  ;; Returns t if mode was set.
+  ;; Ignore any specification for `mode:';
+  ;; set-auto-mode should already have handled that.
   (save-excursion
     (goto-char (point-min))
     (skip-chars-forward " \t\n\r")
     (let ((result '())
-	  (end (save-excursion (end-of-line) (point)))
-	  mode-p)
+	  (end (save-excursion (end-of-line) (point))))
       ;; Parse the -*- line into the `result' alist.
       (cond ((not (search-forward "-*-" end t))
 	     ;; doesn't have one.
@@ -934,13 +942,6 @@ If `enable-local-variables' is nil, this function does not check for a
 		 (setq result (cons (cons key val) result))
 		 (skip-chars-forward " \t;")))
 	     (setq result (nreverse result))))
-
-      ;; Mode is magic.
-      (let (mode)
-	(while (setq mode (assq 'mode result))
-	  (setq mode-p t result (delq mode result))
-	  (funcall (intern (concat (downcase (symbol-name (cdr mode)))
-				   "-mode")))))
       
       (if (and result
 	       (or (eq enable-local-variables t)
@@ -952,10 +953,9 @@ If `enable-local-variables' is nil, this function does not check for a
 	  (while result
 	    (let ((key (car (car result)))
 		  (val (cdr (car result))))
-	      ;; 'mode has already been removed from this list.
-	      (hack-one-local-variable key val))
-	    (setq result (cdr result))))
-      mode-p)))
+	      (or (eq key 'mode)
+		  (hack-one-local-variable key val)))
+	    (setq result (cdr result)))))))
 
 (defun hack-local-variables ()
   "Parse and put into effect this buffer's local variables spec."
@@ -974,7 +974,11 @@ If `enable-local-variables' is nil, this function does not check for a
 			    (beginning-of-line)
 			    (set-window-start (selected-window) (point)))
 			  (y-or-n-p (format "Set local variables as specified at end of %s? "
-					    (file-name-nondirectory buffer-file-name))))))))
+ 					    (if buffer-file-name
+ 						(file-name-nondirectory 
+ 						 buffer-file-name)
+ 					      (concat "buffer "
+ 						      (buffer-name))))))))))
 	(let ((continue t)
 	      prefix prefixlen suffix beg
 	      (enable-local-eval enable-local-eval))
@@ -1296,19 +1300,26 @@ Value is a list whose car is the name for the backup file
       (list (make-backup-file-name fn))
     (let* ((base-versions (concat (file-name-nondirectory fn) ".~"))
 	   (bv-length (length base-versions))
-	   (possibilities (file-name-all-completions
-			   base-versions
-			   (file-name-directory fn)))
-	   (versions (sort (mapcar
-			    (function backup-extract-version)
-			    possibilities)
-			   '<))
-	   (high-water-mark (apply 'max 0 versions))
-	   (deserve-versions-p
-	    (or version-control
-		(> high-water-mark 0)))
-	   (number-to-delete (- (length versions)
-				kept-old-versions kept-new-versions -1)))
+	   possibilities
+	   (versions nil)
+	   (high-water-mark 0)
+	   (deserve-versions-p nil)
+	   (number-to-delete 0))
+      (condition-case ()
+	  (setq possibilities (file-name-all-completions
+			       base-versions
+			       (file-name-directory fn))
+		versions (sort (mapcar
+				(function backup-extract-version)
+				possibilities)
+			       '<)
+		high-water-mark (apply 'max 0 versions)
+		deserve-versions-p (or version-control
+				       (> high-water-mark 0))
+		number-to-delete (- (length versions)
+				    kept-old-versions kept-new-versions -1))
+	(file-error
+	 (setq possibilities nil)))
       (if (not deserve-versions-p)
 	  (list (make-backup-file-name fn))
 	(cons (concat fn ".~" (int-to-string (1+ high-water-mark)) "~")

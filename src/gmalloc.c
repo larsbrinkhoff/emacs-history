@@ -898,10 +898,12 @@ Cambridge, MA 02139, USA.
 #include <malloc.h>
 #endif
 
-#if	!defined(_LIBC) && !defined(STDC_HEADERS) && !defined(USG)
+#if  (defined (MEMMOVE_MISSING) || \
+      !defined(_LIBC) && !defined(STDC_HEADERS) && !defined(USG))
 
 /* Snarfed directly from Emacs src/dispnew.c:
    XXX Should use system bcopy if it handles overlap.  */
+#ifndef emacs
 
 /* Like bcopy except never gets confused by overlap.  */
 
@@ -957,6 +959,7 @@ safe_bcopy (from, to, size)
 	}
     }
 }     
+#endif	/* Not emacs.  */
 
 #define memmove(to, from, size) safe_bcopy ((from), (to), (size))
 
@@ -1121,7 +1124,7 @@ calloc (nmemb, size)
 
   return result;
 }
-/* Copyright (C) 1991, 1992 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
 This file is part of the GNU C Library.
 
 The GNU C Library is free software; you can redistribute it and/or modify
@@ -1147,7 +1150,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define	__sbrk	sbrk
 #endif
 
+#ifdef __GNU_LIBRARY__
+/* It is best not to declare this and cast its result on foreign operating
+   systems with potentially hostile include files.  */
 extern __ptr_t __sbrk __P ((int increment));
+#endif
 
 #ifndef NULL
 #define NULL 0
@@ -1160,7 +1167,7 @@ __ptr_t
 __default_morecore (increment)
      ptrdiff_t increment;
 {
-  __ptr_t result = __sbrk ((int) increment);
+  __ptr_t result = (__ptr_t) __sbrk ((int) increment);
   if (result == (__ptr_t) -1)
     return NULL;
   return result;

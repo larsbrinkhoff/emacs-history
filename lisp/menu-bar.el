@@ -23,7 +23,10 @@
 
 ;;; Code:
 
-(define-key global-map [menu-bar] (make-sparse-keymap "menu-bar"))
+;; Don't clobber an existing menu-bar keymap, to preserve any menu-bar key
+;; definitions made in loaddefs.el.
+(or (lookup-key global-map [menu-bar])
+    (define-key global-map [menu-bar] (make-sparse-keymap "menu-bar")))
 (defvar menu-bar-help-menu (make-sparse-keymap "Help"))
 ;; Put Help item last.
 (setq menu-bar-final-items '(help))
@@ -38,6 +41,8 @@
 (define-key menu-bar-file-menu [kill-buffer]
   '("Kill Buffer" . kill-this-buffer))
 (define-key menu-bar-file-menu [delete-frame] '("Delete Frame" . delete-frame))
+(define-key menu-bar-file-menu [bookmark]
+  '("Bookmarks..." . menu-bar-bookmark-map))
 (define-key menu-bar-file-menu [print-buffer] '("Print Buffer" . print-buffer))
 (define-key menu-bar-file-menu [revert-buffer]
   '("Revert Buffer" . revert-buffer))
@@ -48,10 +53,17 @@
 (define-key menu-bar-file-menu [open-file] '("Open File..." . find-file))
 (define-key menu-bar-file-menu [new-frame] '("New Frame" . new-frame))
 
-
 (define-key menu-bar-edit-menu [spell] '("Spell..." . ispell-menu-map))
 (define-key menu-bar-edit-menu [fill] '("Fill" . fill-region))
 (define-key menu-bar-edit-menu [clear] '("Clear" . delete-region))
+(define-key menu-bar-edit-menu [re-search-back]
+  '("Regexp Search Backwards" . re-search-backward))
+(define-key menu-bar-edit-menu [search-back]
+  '("Search Backwards" . search-backward))
+(define-key menu-bar-edit-menu [re-search-fwd]
+  '("Regexp Search" . re-search-forward))
+(define-key menu-bar-edit-menu [search-fwd]
+  '("Search" . search-forward))
 (define-key menu-bar-edit-menu [choose-next-paste]
   '("Choose Next Paste" . mouse-menu-choose-yank))
 (define-key menu-bar-edit-menu [paste] '("Paste" . yank))
@@ -106,7 +118,8 @@
 (put 'revert-buffer 'menu-enable
      '(or revert-buffer-function revert-buffer-insert-file-contents-function
 	  (and (buffer-file-name)
-	       (not (verify-visited-file-modtime (current-buffer))))))
+	       (or (buffer-modified-p)
+		   (not (verify-visited-file-modtime (current-buffer)))))))
 ;; Permit deleting frame if it would leave a visible or iconified frame.
 (put 'delete-frame 'menu-enable
      '(let ((frames (frame-list))

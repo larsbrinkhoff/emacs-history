@@ -24,12 +24,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <ctype.h>
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 
 #ifndef standalone
 #include "buffer.h"
-#include "paths.h"
+#include <paths.h>
 #include "commands.h"
 #include "keyboard.h"
 #include "termhooks.h"

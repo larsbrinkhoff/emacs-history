@@ -1,3 +1,31 @@
+Mon Oct 25 01:27:07 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* forms.texi: Fix forms.texi so that it will format correctly.
+	Added missing `@end iftex', fixed bad reference.
+
+	* info.texi, info-stn.texi: New files implement texinfo version of
+	`info' file.
+
+  	* frames.texi (Creating Frames): Mention `C-x 5' instead of `C-x
+  	4' where appropriate.
+
+Wed Oct 20 10:52:53 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* Makefile: Fix targets for texindex, new info.texi files.
+	* info-stnd.texi: New file implements info for standalone info
+	reader.
+	* info.texi: Updated to include recent changes to "../info/info".
+	New source file for ../info/info; includes info-stnd.texi.
+
+	* texindex.c: Include "../src/config.h" if building in emacs.
+
+	* Makefile: Change all files to FILENAME.texi, force all targets
+	to be FILENAME, not FILENAME.info.  This changes sc.texinfo,
+	vip.texinfo, forms.texinfo, cl.texinfo.
+	Add target to build texindex.c, defining `emacs'.
+
+	* forms.texi: Install new file to match version 2.3 of forms.el.
+
 Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.19 released.

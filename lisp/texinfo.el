@@ -232,6 +232,10 @@ chapter."
   (define-key texinfo-mode-map "\C-c\C-m\C-r" 'makeinfo-region)
   (define-key texinfo-mode-map "\C-c\C-m\C-b" 'makeinfo-buffer)
 
+  ; Bindings for texinfmt.el.
+  (define-key texinfo-mode-map "\C-c\C-e\C-r"    'texinfo-format-region)
+  (define-key texinfo-mode-map "\C-c\C-e\C-b"    'texinfo-format-buffer)
+
   ;; bindings for updating nodes and menus
 
   (define-key texinfo-mode-map "\C-c\C-um"   'texinfo-master-menu)
@@ -377,7 +381,7 @@ value of texinfo-mode-hook."
 ;;; Insert string commands
 
 (defconst texinfo-environment-regexp
-  "^@\\(f?table\\|enumerate\\|itemize\\|ifinfo\\|iftex\\|example\\|quotation\\|lisp\\|smallexample\\|smalllisp\\|display\\|format\\|flushleft\\|flushright\\|ignore\\|group\\|tex\\|end\\)"
+  "^@\\(f?table\\|enumerate\\|itemize\\|ifinfo\\|iftex\\|example\\|quotation\\|lisp\\|smallexample\\|smalllisp\\|display\\|format\\|flushleft\\|flushright\\|ignore\\|group\\|tex\\|cartouche\\|end\\)"
   "Regexp for environment-like TexInfo list commands.
 Subexpression 1 is what goes into the corresponding `@end' statement.")
 
@@ -541,26 +545,30 @@ to jump to the corresponding spot in the Texinfo source file."
       (re-search-forward ":")
       (setq margin
             (cond
-             ((looking-at (concat "@" texinfo-chapter-level-regexp)) 5)
+             ((looking-at
+               (concat "@\\(" texinfo-chapter-level-regexp "\\)")) 5)
              ;; ((looking-at "@chapter ") 5)
              ;; ((looking-at "@unnumbered ") 5)
              ;; ((looking-at "@appendix ") 5)
              ;; ((looking-at "@majorheading ") 5)
              ;; ((looking-at "@chapheading ") 5)
 
-             ((looking-at (concat "@" texinfo-section-level-regexp)) 9)
+             ((looking-at
+               (concat "@\\(" texinfo-section-level-regexp "\\)")) 9)
              ;; ((looking-at "@section ") 9)
              ;; ((looking-at "@unnumberedsec ") 9)
              ;; ((looking-at "@appendixsec ") 9)
              ;; ((looking-at "@heading ") 9)
 
-             ((looking-at (concat "@" texinfo-subsection-level-regexp)) 13)
+             ((looking-at 
+               (concat "@\\(" texinfo-subsection-level-regexp "\\)")) 13)
              ;; ((looking-at "@subsection ") 13)
              ;; ((looking-at "@unnumberedsubsec ") 13)
              ;; ((looking-at "@appendixsubsec ") 13)
              ;; ((looking-at "@subheading ") 13)
 
-             ((looking-at (concat "@" texinfo-subsubsection-level-regexp)) 17)
+             ((looking-at 
+               (concat "@\\(" texinfo-subsection-level-regexp "\\)")) 13)
              ;; ((looking-at "@subsubsection ") 17)
              ;; ((looking-at "@unnumberedsubsubsec ") 17)
              ;; ((looking-at "@appendixsubsubsec ") 17)
@@ -571,7 +579,10 @@ to jump to the corresponding spot in the Texinfo source file."
 
 ;;; The  tex  and  print  function definitions:
 
-(defvar texinfo-tex-command "texi2dvi"
+(defvar texinfo-texi2dvi-command "texi2dvi"
+  "*Command used by `texinfo-tex-buffer' to run TeX and texindex on a buffer.")
+
+(defvar texinfo-tex-command "tex"
   "*Command used by `texinfo-tex-region' to run TeX on a region.")
 
 (defvar texinfo-texindex-command "texindex"
@@ -690,7 +701,7 @@ The value of `texinfo-tex-trailer' is appended to the temporary file after the r
 		       " " (file-name-directory tex-zap-file) "\n"))
 
   (send-string "tex-shell"
-	       (concat texinfo-tex-command " " tex-zap-file "\n"))
+	       (concat texinfo-texi2dvi-command " " tex-zap-file "\n"))
 
   (tex-recenter-output-buffer 0))
 
@@ -724,12 +735,12 @@ This runs the shell command defined by `tex-dvi-print-command'."
     (set-buffer (get-buffer "*tex-shell*"))
     (goto-char (point-max))
     (insert "x")
-    (shell-send-input)))
+    (comint-send-input)))
 
 (defun texinfo-delete-from-print-queue (job-number)
   "Delete job from the line printer spooling queue.
 You are prompted for the job number (use a number shown by a previous
-\\[texinfo-show-tex-print-queue] command)."
+\\[texinfo-show-print-queue] command)."
   (interactive "nPrinter job number for deletion: ")
   (require 'tex-mode)
   (if (tex-shell-running)

@@ -50,6 +50,7 @@ inherit all the commands defined in this map.")
 (if text-mode-map
     ()
   (setq text-mode-map (make-sparse-keymap))
+  (define-key text-mode-map "\e\t" 'ispell-complete-word)
   (define-key text-mode-map "\t" 'tab-to-tab-stop)
   (define-key text-mode-map "\es" 'center-line)
   (define-key text-mode-map "\eS" 'center-paragraph))
@@ -87,7 +88,10 @@ All the commands defined in Text mode are inherited unless overridden.")
     (setq indented-text-mode-map (nconc newmap text-mode-map))))
 
 (defun indented-text-mode ()
-  "Major mode for editing indented text intended for humans to read.
+  "Major mode for editing text with indented paragraphs.
+In this mode, paragraphs are delimited only by blank lines.
+You can thus get the benefit of adaptive filling
+ (see the variable `adaptive-fill-mode').
 \\{indented-text-mode-map}
 Turning on `indented-text-mode' calls the value of the variable
 `text-mode-hook', if that value is non-nil."
@@ -99,6 +103,10 @@ Turning on `indented-text-mode' calls the value of the variable
   (set-syntax-table text-mode-syntax-table)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'indent-relative-maybe)
+  (make-local-variable 'paragraph-start)
+  (setq paragraph-start (concat "^$\\|" page-delimiter))
+  (make-local-variable 'paragraph-separate)
+  (setq paragraph-separate paragraph-start)
   (use-local-map indented-text-mode-map)
   (setq mode-name "Indented Text")
   (setq major-mode 'indented-text-mode)

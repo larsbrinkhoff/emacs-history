@@ -24,16 +24,22 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
  *	Ed Pelegri-Llopart added C typedefs.
  *	Gnu Emacs TAGS format and modifications by RMS?
  *	Sam Kendall added C++.
+ *
+ *	Francesco Potorti` (pot@cnuce.cnr.it) is the current maintainer. 9.8
  */
 
 #ifdef HAVE_CONFIG_H
-#include "../src/config.h"
+#include <../src/config.h>
 #endif
 
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#if !defined (S_ISREG) && defined (S_IFREG)
+# define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
+#endif
 
 #include "getopt.h"
 
@@ -136,7 +142,7 @@ struct nd_st
   char *name;			/* function or type name	*/
   char *file;			/* file name			*/
   logical is_func;		/* use pattern or line no	*/
-  logical rewritten;		/* list name separately		*/
+  logical named;		/* list name separately		*/
   logical been_warned;		/* set if noticed dup		*/
   int lno;			/* line number tag is on	*/
   long cno;			/* character number line starts on */
@@ -157,7 +163,7 @@ char *savenstr ();
 char *savestr ();
 char *xmalloc ();
 char *xrealloc ();
-int L_isdef ();
+int L_isdef (), L_isquote ();
 int PF_funcs ();
 int total_size_of_entries ();
 logical consider_token ();
@@ -324,7 +330,7 @@ typedef struct
   char *p;
   int len;
   LINENO lineno;
-  logical rewritten;
+  logical named;
 } TOKEN;
 
 /* C extensions.
@@ -347,7 +353,7 @@ char *curfile,			/* current input file name		*/
  *white = " \f\t\n",		/* white chars				*/
  *endtk = " \t\n\"'#()[]{}=-+%*/&|^~!<>;,.:?",	/* token ending chars	*/
 				/* token starting chars			*/
- *begtk = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz$",
+ *begtk = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz$~",
 				  /* valid in-token chars		*/
  *intk = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz$0123456789";
 
@@ -430,7 +436,7 @@ print_version ()
 #ifdef ETAGS
   printf ("ETAGS ");
 #endif
-  printf ("for Emacs version 19.0.\n");
+  printf ("for Emacs version 19.\n");
 
   exit (0);
 }
@@ -782,12 +788,7 @@ process_file (file)
 {
   struct stat stat_buf;
 
-  stat (file, &stat_buf);
-  if (!(stat_buf.st_mode & S_IFREG)
-#ifdef S_IFLNK
-      || !(stat_buf.st_mode & S_IFLNK)
-#endif
-      )
+  if (stat (file, &stat_buf) || !S_ISREG (stat_buf.st_mode))
     {
       fprintf (stderr, "Skipping %s: it is not a regular file.\n", file);
       return;
@@ -798,19 +799,10 @@ process_file (file)
       fprintf (stderr, "Skipping inclusion of %s in self.\n", file);
       return;
     }
-  if (emacs_tags_format)
-    {
-      char *cp = etags_rindex (file, '/');
-      if (cp)
-	++cp;
-      else
-	cp = file;
-    }
   find_entries (file);
   if (emacs_tags_format)
     {
-      fprintf (outf, "\f\n%s,%d\n",
-	       file, total_size_of_entries (head));
+      fprintf (outf, "\f\n%s,%d\n", file, total_size_of_entries (head));
       put_entries (head);
       free_tree (head);
       head = NULL;
@@ -991,10 +983,10 @@ string_numeric_p (str)
 /* Record a tag. */
 /* Should take a TOKEN* instead!! */
 void
-pfnote (name, is_func, rewritten, linestart, linelen, lno, cno)
+pfnote (name, is_func, named, linestart, linelen, lno, cno)
      char *name;		/* tag name */
      logical is_func;		/* function or type name? */
-     logical rewritten;		/* tag different from text of definition? */
+     logical named;		/* tag different from text of definition? */
      char *linestart;
      int linelen;
      int lno;
@@ -1029,12 +1021,12 @@ pfnote (name, is_func, rewritten, linestart, linelen, lno, cno)
       fp = etags_rindex (name, '.');
       if (fp && fp[1] != '\0' && fp[2] == '\0')
 	*fp = 0;
-      rewritten = TRUE;
+      named = TRUE;
     }
   np->name = savestr (name);
   np->file = curfile;
   np->is_func = is_func;
-  np->rewritten = rewritten;
+  np->named = named;
   np->lno = lno;
   /* UNCOMMENT THE +1 HERE: */
   np->cno = cno /* + 1 */ ;	/* our char numbers are 0-base; emacs's are 1-base */
@@ -1172,7 +1164,7 @@ put_entries (node)
 
   if (emacs_tags_format)
     {
-      if (node->rewritten)
+      if (node->named)
 	{
 	  fprintf (outf, "%s\177%s\001%d,%d\n",
 		   node->pat, node->name,
@@ -1257,7 +1249,7 @@ total_size_of_entries (node)
       /* Count this entry */
       total += strlen (node->pat) + 1;
       total += number_len ((long) node->lno) + 1 + number_len (node->cno) + 1;
-      if (node->rewritten)
+      if (node->named)
 	total += 1 + strlen (node->name);	/* \001name */
     }
 
@@ -1332,13 +1324,17 @@ C_create_stabs ()
 }
 
  /*
-  *	etags.c 4.2 1993/03/22 12:13:40 pot Exp
   * C functions are recognized using a simple finite automaton.
   * funcdef is its state variable.
   */
 typedef enum
 {
-  fnone, ftagseen, finlist, flistseen
+  fnone,			/* nothing seen */
+  ftagseen,			/* function-like tag seen */
+  fstartlist,			/* just after open parenthesis */
+  finlist,			/* in parameter list */
+  flistseen,			/* after parameter list */
+  fignore,			/* before open brace */
 } FUNCST;
 FUNCST funcdef;
 
@@ -1348,7 +1344,10 @@ FUNCST funcdef;
   */
 typedef enum
 {
-  tnone, ttypedseen, tinbody, tend
+  tnone,			/* nothing seen */
+  ttypedseen,			/* typedef keyword seen */
+  tinbody,			/* inside typedef body */
+  tend,				/* just before typedef tag */
 } TYPEDST;
 TYPEDST typdef;
 
@@ -1365,7 +1364,7 @@ typedef enum
   skeyseen,			/* struct-like keyword seen */
   stagseen,			/* struct-like tag seen */
   scolonseen,			/* colon seen after struct-like tag */
-  sinbody			/* in struct body: recognize member func defs*/
+  sinbody,			/* in struct body: recognize member func defs*/
 } STRUCTST;
 STRUCTST structdef;
 /*
@@ -1383,7 +1382,7 @@ typedef enum
   dnone,			/* nothing seen */
   dsharpseen,			/* '#' seen as first char on line */
   ddefineseen,			/* '#' and 'define' seen */
-  dignorerest			/* ignore rest of line */
+  dignorerest,			/* ignore rest of line */
 } DEFINEST;
 DEFINEST definedef;
 
@@ -1412,6 +1411,15 @@ logical yacc_rules;
 #define othlinepos (lbs[1-curndx].linepos)
 #define newlinepos (lbs[newndx].linepos)
 
+/* Save and restore token state.  This is used when preprocessor defines
+   are handled, to avoid disturbing active function/typedef/struct states.  */
+#define TOKEN_SAVED_P	(savetok.lineno > 0)
+#define SAVE_TOKEN	(savetok = tok, savetok.p = (char *) tokoff,	\
+			 savetok.len = toklen, strcpy(savenameb, nameb))
+#define RESTORE_TOKEN	(tok = savetok, tokoff = (int) tok.p,		\
+			 toklen = tok.len, strcpy(nameb, savenameb),	\
+			 savetok.lineno = 0)
+
 #define CNL_SAVE_DEFINEDEF						\
 do {									\
   SET_FILEPOS (curlinepos, inf, charno);				\
@@ -1425,12 +1433,14 @@ do {									\
 #define CNL								\
 do {									\
   CNL_SAVE_DEFINEDEF;							\
+  if (TOKEN_SAVED_P)							\
+    RESTORE_TOKEN;							\
   definedef = dnone;							\
 } while (FALSE)
 
-#define MAKE_TAG_FROM_NEW_LB(isfun)  pfnote (tokb, isfun, tok.rewritten, \
+#define MAKE_TAG_FROM_NEW_LB(isfun)  pfnote (nameb, isfun, tok.named,	\
   newlb.buffer, tokoff + toklen + 1, tok.lineno, GET_CHARNO (newlinepos))
-#define MAKE_TAG_FROM_OTH_LB(isfun)  pfnote (tokb, isfun, tok.rewritten, \
+#define MAKE_TAG_FROM_OTH_LB(isfun)  pfnote (nameb, isfun, tok.named,	\
   othlb.buffer, tokoff + toklen + 1, tok.lineno, GET_CHARNO (othlinepos))
 
 void
@@ -1441,13 +1451,18 @@ C_entries (c_ext)
   register char *lp;		/* pointer one beyond the character `c' */
   int curndx, newndx;		/* indices for current and new lb */
   TOKEN tok;			/* latest token read for funcdef & structdef */
-  char tokb[BUFSIZ];		/* latest token name for funcdef & structdef */
+  char nameb[BUFSIZ];		/* latest token name for funcdef & structdef */
   register int tokoff;		/* offset in line of start of latest token */
   register int toklen;		/* length of latest token */
   int cblev;			/* current curly brace level */
+  int parlev;			/* current parenthesis level */
   logical incomm, inquote, inchar, quotednl, midtoken;
   logical cplpl;
+  TOKEN savetok;		/* saved token during preprocessor handling */
+  logical saveisfunc;
+  char savenameb[BUFSIZ];	/* ouch! */
 
+  savetok.lineno = 0;
   curndx = newndx = 0;
   lineno = 0;
   charno = 0;
@@ -1458,6 +1473,7 @@ C_entries (c_ext)
   next_token_is_func = yacc_rules = FALSE;
   midtoken = inquote = inchar = incomm = quotednl = FALSE;
   cblev = 0;
+  parlev = 0;
   cplpl = c_ext & C_PLPL;
 
   C_create_stabs ();
@@ -1524,9 +1540,13 @@ C_entries (c_ext)
 	  {
 	  case '"':
 	    inquote = TRUE;
+	    if (funcdef != finlist && funcdef != fignore)
+	      funcdef = fnone;
 	    continue;
 	  case '\'':
 	    inchar = TRUE;
+	    if (funcdef != finlist && funcdef != fignore)
+	      funcdef = fnone;
 	    continue;
 	  case '/':
 	    if (*lp == '*')
@@ -1540,7 +1560,8 @@ C_entries (c_ext)
 		c = 0;
 		break;
 	      }
-	    continue;
+	    else
+	      break;
 	  case '%':
 	    if ((c_ext & YACC) && *lp == '%')
 	      {
@@ -1554,6 +1575,8 @@ C_entries (c_ext)
 		yacc_rules = !yacc_rules;
 		continue;
  	      }
+	    else
+	      break;
 	  case '#':
 	    if (lp == newlb.buffer + 1 && definedef == dnone)
 	      definedef = dsharpseen;
@@ -1565,13 +1588,14 @@ C_entries (c_ext)
       if (((cblev == 0 && structdef != scolonseen)
 	   || (cblev == 1 && cplpl && structdef == sinbody))
 	  && definedef != dignorerest
-	  && funcdef != finlist)
+	  && (funcdef != finlist
+	      || (definedef != dnone && definedef != dignorerest)))
 	{
 	  if (midtoken)
 	    {
 	      if (endtoken (c))
 		{
-		  if (cplpl && c == ':' && *lp == ':' && intoken (*(lp + 1)))
+		  if (cplpl && c == ':' && *lp == ':' && begtoken(*(lp + 1)))
 		    {
 		      /*
 		       * This handles :: in the middle, but not at beginning
@@ -1582,33 +1606,40 @@ C_entries (c_ext)
 		    }
 		  else
 		    {
-		      logical is_func;
+		      logical is_func = FALSE;
 
 		      tok.lineno = lineno;
 		      tok.p = newlb.buffer + tokoff;
 		      tok.len = toklen;
-		      tok.rewritten = FALSE;
+		      tok.named = FALSE;
 		      if (yacc_rules
 			  || consider_token (c, lp, &tok,
 					     c_ext, cblev, &is_func))
 			{
 			  if (structdef == sinbody
-			      && definedef == dnone && is_func)
-			    {	/* function defined in C++ class body */
-			      sprintf (tokb, "%s::%.*s",
+			      && definedef == dnone
+			      && is_func)
+			    /* function defined in C++ class body */
+			    {
+			      tok.named = TRUE;
+			      sprintf (nameb, "%s::%.*s",
 				       ((structtag[0] == '\0')
 					? "_anonymous_" : structtag),
 				       tok.len, tok.p);
-			      tok.rewritten = TRUE;
 			    }
 			  else
 			    {
-			      sprintf (tokb, "%.*s", tok.len, tok.p);
+			      sprintf (nameb, "%.*s", tok.len, tok.p);
 			    }
 
-			  if (funcdef == ftagseen
-			      || structdef == stagseen
+			  if (structdef == stagseen
 			      || typdef == tend)
+			    tok.named = TRUE;
+
+			  if (definedef == dnone
+			      && (funcdef == ftagseen
+				  || structdef == stagseen
+				  || typdef == tend))
 			    {
 			      if (newndx == curndx)
 				curndx = 1 - curndx; /* switch line buffers */
@@ -1627,17 +1658,40 @@ C_entries (c_ext)
 	    } /* if (midtoken) */
 	  else if (begtoken (c))
 	    {
-	      switch (funcdef)
+	      switch (definedef)
 		{
-		case flistseen:
-		  MAKE_TAG_FROM_OTH_LB (TRUE);
-		  /* FALLTHRU */
-		case ftagseen:
-		  funcdef = fnone;
+		case dnone:
+		  switch (funcdef)
+		    {
+		    case fstartlist:
+		      funcdef = finlist;
+		      continue;
+		    case flistseen:
+		      MAKE_TAG_FROM_OTH_LB (TRUE);
+		      funcdef = fignore;
+		      break;
+		    case ftagseen:
+		      funcdef = fnone;
+		      break;
+		    }
+		  if (structdef == stagseen)
+		    structdef = snone;
 		  break;
+		case dsharpseen:
+		  /* Take a quick peek ahead for define directive,
+		     so we can avoid saving the token when not absolutely
+		     necessary. [This is a speed hack.] */
+		  if (c == 'd' && strneq(lp, "efine", 5)
+		      && iswhite(*(lp + 5)))
+		    {
+		      SAVE_TOKEN;
+		      definedef = ddefineseen;
+		      lp += 6;
+		    }
+		  else
+		    definedef = dignorerest;
+		  continue;
 		}
-	      if (structdef == stagseen)
-		structdef = snone;
 	      if (!yacc_rules || lp == newlb.buffer + 1)
 		{
 		  tokoff = lp - 1 - newlb.buffer;
@@ -1650,51 +1704,83 @@ C_entries (c_ext)
 
 
       /* Detect end of line, colon, comma, semicolon and various braces
-	 after having handled the last token on the line.*/
+	 after having handled a token.*/
       switch (c)
 	{
 	case ':':
+	  if (definedef != dnone)
+	    break;
 	  if (structdef == stagseen)
 	    structdef = scolonseen;
-	  else if (yacc_rules && funcdef == ftagseen)
-	    {
-	      MAKE_TAG_FROM_OTH_LB (FALSE);
-	      funcdef == fnone;
-	    }
+	  else
+	    switch (funcdef)
+	      {
+	      case ftagseen:
+		if (yacc_rules)
+		  {
+		    MAKE_TAG_FROM_OTH_LB (FALSE);
+		    funcdef = fignore;
+		  }
+		break;
+	      case fstartlist:
+		funcdef = fnone;
+		break;
+	      }
 	  break;
 	case ';':
+	  if (definedef != dnone)
+	    break;
 	  if (cblev == 0 && typdef == tend)
 	    {
 	      typdef = tnone;
 	      MAKE_TAG_FROM_OTH_LB (FALSE);
 	    }
-	  funcdef = fnone;
+	  if (funcdef != fignore)
+	    funcdef = fnone;
 	  /* FALLTHRU */
 	case ',':
 	  /* FALLTHRU */
 	case '[':
-	  if (funcdef != finlist)
+	  if (definedef != dnone)
+	    break;
+	  if (funcdef != finlist && funcdef != fignore)
 	    funcdef = fnone;
 	  if (structdef == stagseen)
 	    structdef = snone;
 	  break;
 	case '(':
+	  if (definedef != dnone)
+	    break;
 	  switch (funcdef)
 	    {
 	    case ftagseen:
+	      funcdef = fstartlist;
+	      break;
+	    case flistseen:
 	      funcdef = finlist;
 	      break;
-	    case finlist:
-	    case flistseen:
-	      funcdef = fnone;
-	      break;
 	    }
+	  parlev++;
 	  break;
 	case ')':
-	  if (funcdef == finlist)
-	    funcdef = flistseen;
+	  if (definedef != dnone)
+	    break;
+	  if (--parlev == 0)
+	    {
+	      switch (funcdef)
+		{
+		case fstartlist:
+		case finlist:
+		  funcdef = flistseen;
+		  break;
+		}
+	    }
+	  else if (parlev < 0)	/* can happen due to ill-conceived #if's. */
+	    parlev = 0;
 	  break;
 	case '{':
+	  if (definedef != dnone)
+	    break;
 	  if (typdef == ttypedseen)
 	    typdef = tinbody;
 	  switch (structdef)
@@ -1709,18 +1795,30 @@ C_entries (c_ext)
 	      MAKE_TAG_FROM_OTH_LB (FALSE);
 	      break;
 	    }
-	  cblev++;
-	  /* FALLTHRU */
-	case '*':
-	  if (funcdef == flistseen)
+	  switch (funcdef)
 	    {
+	    case flistseen:
 	      MAKE_TAG_FROM_OTH_LB (TRUE);
+	      /* FALLTHRU */
+	    case fignore:
 	      funcdef = fnone;
 	    }
+	  cblev++;
+	  break;
+	case '*':
+	  if (definedef != dnone)
+	    break;
+	  if (funcdef == fstartlist)
+	    funcdef = fnone;	/* avoid tagging `foo' in `foo (*bar()) ()' */
 	  break;
 	case '}':
+	  if (definedef != dnone)
+	    break;
 	  if (!noindentypedefs && lp == newlb.buffer + 1)
-	    cblev = 0;	/* reset curly brace level if first column */
+	    {
+	      cblev = 0;	/* reset curly brace level if first column */
+	      parlev = 0;	/* also reset paren level, just in case... */
+	    }
 	  else if (cblev > 0)
 	    cblev--;
 	  if (cblev == 0)
@@ -1730,6 +1828,27 @@ C_entries (c_ext)
 	      structdef = snone;
 	      (void) strcpy (structtag, "<error 2>");
 	    }
+	  break;
+	case '=':
+	case '#':
+	case '+':
+	case '-':
+	case '~':
+	case '&':
+	case '%':
+	case '/':
+	case '|':
+	case '^':
+	case '!':
+	case '<':
+	case '>':
+	case '.':
+	case '?':
+	  if (definedef != dnone)
+	    break;
+	  /* These surely cannot follow a function tag. */
+	  if (funcdef != finlist && funcdef != fignore)
+	    funcdef = fnone;
 	  break;
 	case '\0':
 	  /* If a macro spans multiple lines don't reset its state. */
@@ -1774,11 +1893,8 @@ consider_token (c, lp, tokp, c_ext, cblev, is_func)
      int cblev;			/* IN: curly brace level */
      logical *is_func;		/* OUT */
 {
-  logical firsttok;		/* TRUE if have seen first token in ()'s */
   Stab_entry *tokse = stab_find (get_C_stab (c_ext), tokp->p, tokp->len);
   enum sym_type toktype = stab_type (tokse);
-
-  *is_func = FALSE;		/* not a function */
 
   /*
    * Advance the definedef state machine.
@@ -1920,7 +2036,8 @@ consider_token (c, lp, tokp, c_ext, cblev, is_func)
   if (next_token_is_func)
     {
       next_token_is_func = FALSE;
-      *is_func = TRUE;
+      funcdef = fnone;
+      *is_func = TRUE;		/* to force search string in ctags */
       return (TRUE);
     }
 
@@ -1931,10 +2048,15 @@ consider_token (c, lp, tokp, c_ext, cblev, is_func)
       funcdef = fnone;		/* should be useless */
       return (FALSE);
     default:
-      funcdef = ftagseen;
-      *is_func = TRUE;
-      return (TRUE);
+      if (funcdef == fnone)
+	{
+	  funcdef = ftagseen;
+	  *is_func = TRUE;
+	  return (TRUE);
+	}
     }
+
+  return (FALSE);
 }
 
 /* Fortran parsing */
@@ -2343,15 +2465,17 @@ L_funcs (fi)
 	  else
 	    {
 	      /* Check for (foo::defmumble name-defined ... */
-	      while (*dbp && *dbp != ':' && !isspace (*dbp)
-		     && *dbp != '(' && *dbp != ')')
+	      do
 		dbp++;
+	      while (*dbp && !isspace (*dbp)
+		     && *dbp != ':' && *dbp != '(' && *dbp != ')');
 	      if (*dbp == ':')
 		{
-		  while (*dbp == ':')
+		  do
 		    dbp++;
+		  while (*dbp == ':');
 
-		  if (L_isdef (dbp))
+		  if (L_isdef (dbp - 1))
 		    {
 		      while (!isspace (*dbp))
 			dbp++;
@@ -2367,11 +2491,23 @@ L_funcs (fi)
 
 int
 L_isdef (dbp)
-     char *dbp;
+     register char *dbp;
 {
-  return ((dbp[1] == 'D' || dbp[1] == 'd') &&
-	  (dbp[2] == 'E' || dbp[2] == 'e') &&
-	  (dbp[3] == 'F' || dbp[3] == 'f'));
+  return ((dbp[1] == 'd' || dbp[1] == 'D')
+	  && (dbp[2] == 'e' || dbp[2] == 'E')
+	  && (dbp[3] == 'f' || dbp[3] == 'F'));
+}
+
+int
+L_isquote (dbp)
+     register char *dbp;
+{
+  return ((*(++dbp) == 'q' || *dbp == 'Q')
+	  && (*(++dbp) == 'u' || *dbp == 'U')
+	  && (*(++dbp) == 'o' || *dbp == 'O')
+	  && (*(++dbp) == 't' || *dbp == 'T')
+	  && (*(++dbp) == 'e' || *dbp == 'E')
+	  && isspace(*(++dbp)));
 }
 
 void
@@ -2381,10 +2517,19 @@ L_getit ()
   char c;
   char nambuf[BUFSIZ];
 
-  if (*dbp == 0)
-    return;
-  for (cp = dbp + 1; *cp && *cp != '(' && *cp != ' '; cp++)
+  if (*dbp == '\'')		/* Skip prefix quote */
+    dbp++;
+  else if (*dbp == '(' && L_isquote (dbp)) /* Skip "(quote " */
+  {
+    dbp += 7;
+    while (isspace(*dbp))
+      dbp++;
+  }
+  for (cp = dbp /*+1*/; *cp && *cp != '(' && *cp != ' ' && *cp != ')'; cp++)
     continue;
+  if (cp == dbp)
+    return;
+  
   c = cp[0];
   cp[0] = 0;
   (void) strcpy (nambuf, dbp);
@@ -2735,7 +2880,7 @@ prolog_getit (s, lineno, linecharno)
   *s = '\0';
   strcpy (nambuf, save_s);
   *s = tmpc;
-  pfnote (nambuf, TRUE, save_s, strlen (nambuf), lineno, linecharno);
+  pfnote (nambuf, TRUE, FALSE, save_s, strlen (nambuf), lineno, linecharno);
 }
 
 /* It is assumed that prolog predicate starts from column 0. */

@@ -235,10 +235,51 @@ enable Emacs to understand them:
 
 @noindent
 @kindex C-x 8
-@cindex @code{iso-insert} library
-Otherwise, you can load the library @code{iso-insert} to turn the
-key @kbd{C-x 8} into a ``compose character'' prefix for insertion
-of the extra ISO Latin-1 printing characters.
+@cindex @code{iso-transl} library
+Otherwise, you can load the library @code{iso-transl} to turn the key
+@kbd{C-x 8} into a ``compose character'' prefix for entry of the extra
+ISO Latin-1 printing characters.  @kbd{C-x 8} is good for insertion (in
+the minibuffer as well as other buffers), for searching, and in any
+other context where a key sequence is allowed.
+
+@cindex ISO Accents mode
+  If you enter non-ASCII ISO Latin-1 characters often, you might find
+ISO Accents mode convenient.  When this minor mode is enabled, the
+characters @samp{`}, @samp{'}, @samp{"}, @samp{^}, @samp{/} and @samp{~}
+modify the following letter by adding the corresponding diacritical mark
+to it, if possible.  To enter one of those six special characters, type
+a space after it.
+
+  Some of those characters have a corresponding ``dead key'' accent
+character in the ISO character set; to enter that character, type the
+corresponding ASCII character twice.  For example, @kbd{''} enters the
+ISO character acute-accent (character code 0264).
+
+  In addition to the accented letters, you can use these special
+sequences in ISO Accents mode to enter certain other ISO Latin-1
+characters:
+
+@table @kbd
+@item ~C
+@samp{C} with cedilla.
+@item ~D
+@samp{D} with stroke.
+@item ~c
+@samp{c} with cedilla.
+@item ~d
+@samp{d} with stroke.
+@item ~<
+Left guillemet.
+@item ~>
+Right guillemet.
+@end table
+
+  This feature is available whenever a key sequence is expected: for
+ordinary insertion, for searching, and for certain command arguments.
+
+@findex iso-accents-mode
+  To enable or disable ISO Accents mode, use the command @kbd{M-x
+iso-accents-mode}.  This command affects only the current buffer.
 
 @node Optional Display
 @section Optional Display Features

@@ -18,7 +18,7 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "syntax.h"
 #include "buffer.h"
@@ -352,8 +352,8 @@ find_next_newline (from, cnt)
 Lisp_Object skip_chars ();
 
 DEFUN ("skip-chars-forward", Fskip_chars_forward, Sskip_chars_forward, 1, 2, 0,
-  "Move point forward, stopping before a char not in CHARS, or at position LIM.\n\
-CHARS is like the inside of a `[...]' in a regular expression\n\
+  "Move point forward, stopping before a char not in STRING, or at pos LIM.\n\
+STRING is like the inside of a `[...]' in a regular expression\n\
 except that `]' is never special and `\\' quotes `^', `-' or `\\'.\n\
 Thus, with arg \"a-zA-Z\", this skips letters stopping before first nonletter.\n\
 With arg \"^a-zA-Z\", skips nonletters stopping before first letter.\n\
@@ -365,7 +365,7 @@ Returns the distance traveled, either zero or positive.")
 }
 
 DEFUN ("skip-chars-backward", Fskip_chars_backward, Sskip_chars_backward, 1, 2, 0,
-  "Move point backward, stopping after a char not in CHARS, or at position LIM.\n\
+  "Move point backward, stopping after a char not in STRING, or at pos LIM.\n\
 See `skip-chars-forward' for details.\n\
 Returns the distance traveled, either zero or negative.")
   (string, lim)
@@ -416,13 +416,14 @@ skip_chars (forwardp, syntaxp, string, lim)
   else
     CHECK_NUMBER_COERCE_MARKER (lim, 1);
 
-#if 0				/* This breaks some things... jla. */
   /* In any case, don't allow scan outside bounds of buffer.  */
-  if (XFASTINT (lim) > ZV)
+  /* jla turned this off, for no known reason.
+     bfox turned the ZV part on, and rms turned the
+     BEGV part back on.  */
+  if (XINT (lim) > ZV)
     XFASTINT (lim) = ZV;
-  if (XFASTINT (lim) < BEGV)
+  if (XINT (lim) < BEGV)
     XFASTINT (lim) = BEGV;
-#endif
 
   p = XSTRING (string)->data;
   pend = p + XSTRING (string)->size;
@@ -1155,8 +1156,8 @@ Otherwise treat `\\' as special:\n\
   `\\\\' means insert one `\\'.\n\
 FIXEDCASE and LITERAL are optional arguments.\n\
 Leaves point at end of replacement text.")
-  (string, fixedcase, literal)
-     Lisp_Object string, fixedcase, literal;
+  (newtext, fixedcase, literal)
+     Lisp_Object newtext, fixedcase, literal;
 {
   enum { nochange, all_caps, cap_initial } case_action;
   register int pos, last;
@@ -1166,7 +1167,7 @@ Leaves point at end of replacement text.")
   register int c, prevc;
   int inslen;
 
-  CHECK_STRING (string, 0);
+  CHECK_STRING (newtext, 0);
 
   case_action = nochange;	/* We tried an initialization */
 				/* but some C compilers blew it */
@@ -1235,20 +1236,20 @@ Leaves point at end of replacement text.")
      position in the replacement.  */
   SET_PT (search_regs.start[0]);
   if (!NILP (literal))
-    Finsert (1, &string);
+    Finsert_and_inherit (1, &newtext);
   else
     {
       struct gcpro gcpro1;
-      GCPRO1 (string);
+      GCPRO1 (newtext);
 
-      for (pos = 0; pos < XSTRING (string)->size; pos++)
+      for (pos = 0; pos < XSTRING (newtext)->size; pos++)
 	{
 	  int offset = point - search_regs.start[0];
 
-	  c = XSTRING (string)->data[pos];
+	  c = XSTRING (newtext)->data[pos];
 	  if (c == '\\')
 	    {
-	      c = XSTRING (string)->data[++pos];
+	      c = XSTRING (newtext)->data[++pos];
 	      if (c == '&')
 		Finsert_buffer_substring
 		  (Fcurrent_buffer (),
@@ -1301,8 +1302,8 @@ match_limit (num, beginningp)
 
 DEFUN ("match-beginning", Fmatch_beginning, Smatch_beginning, 1, 1, 0,
   "Return position of start of text matched by last search.\n\
-ARG, a number, specifies which parenthesized expression in the last regexp.\n\
- Value is nil if ARGth pair didn't match, or there were less than ARG pairs.\n\
+NUM specifies which parenthesized expression in the last regexp.\n\
+ Value is nil if NUMth pair didn't match, or there were less than NUM pairs.\n\
 Zero means the entire text matched by the whole regexp or whole string.")
   (num)
      Lisp_Object num;

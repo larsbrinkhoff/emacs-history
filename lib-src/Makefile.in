@@ -12,44 +12,47 @@
 # inherited from the environment.
 SHELL = /bin/sh
 
-# ==================== Things `configure' might edit ====================
+# ==================== Things `configure' will edit ====================
 
-CC=cc
-CFLAGS=-g
-ALLOCA=
-C_SWITCH_SYSTEM=
-LOADLIBES=
-YACC=yacc
-version=version-not-set
-configname=configuration-name-not-set
+CC=@CC@
+CFLAGS=@CFLAGS@
+ALLOCA=@ALLOCA@
+C_SWITCH_SYSTEM=@c_switch_system@
+LOADLIBES=@libsrc_libs@
+YACC=@YACC@
+version=@version@
+configname=@configuration@
 
 # ==================== Where To Install Things ====================
 
 # The default location for installation.  Everything is placed in
 # subdirectories of this directory.  The default values for many of
 # the variables below are expressed in terms of this one, so you may
-# not need to change them.
-prefix=/usr/local
+# not need to change them.  This is set with the --prefix option to
+# `../configure'.
+prefix=@prefix@
 
-# Like `prefix', but used for architecture-specific files.
-exec_prefix=${prefix}
+# Like `prefix', but used for architecture-specific files.  This is
+# set with the --exec-prefix option to `../configure'.
+exec_prefix=@exec_prefix@
 
 # Where to install Emacs and other binaries that people will want to
-# run directly (like etags).
-bindir=${exec_prefix}/bin
+# run directly (like etags).  This is set with the --bindir option
+# to `../configure'.
+bindir=@bindir@
 
 # Where to install and expect executable files to be run by Emacs
 # rather than directly by users, and other architecture-dependent
-# data.  ${archlibdir} is usually below this.
-libdir=${exec_prefix}/lib
+# data.  ${archlibdir} is usually below this.  This is set with the
+# --libdir option to `../configure'.
+libdir=@libdir@
 
-# Where to find the source code.  This is
-# set by the configure script's `--srcdir' option.
-# However, the value of ${srcdir} in this makefile
-# is not identical to what was specified with --srcdir.
-# The variable here has `/lib-src' added at the end.
-srcdir=@srcdir@/lib-src
-VPATH=@srcdir@/lib-src
+# Where to find the source code.  This is set by the configure
+# script's `--srcdir' option.  However, the value of ${srcdir} in
+# this makefile is not identical to what was specified with --srcdir,
+# since the variable here has `/lib-src' added at the end.
+srcdir=@srcdir@
+VPATH=@srcdir@
 
 # ==================== Emacs-specific directories ====================
 
@@ -59,26 +62,16 @@ VPATH=@srcdir@/lib-src
 # Where to put executables to be run by Emacs rather than the user.
 # This path usually includes the Emacs version and configuration name,
 # so that multiple configurations for multiple versions of Emacs may
-# be installed at once.
-archlibdir=${libdir}/emacs/${version}/${configname}
-
-# ====================== Developer's configuration =======================
-
-# The following assignments make sense if you're running Emacs on a single
-# machine, one version at a time, and  you want changes to the lisp and etc
-# directories in the source tree to show up immediately in your working
-# environment.  It saves a great deal of disk space by not duplicating the
-# lisp and etc directories.
-#
-# archlibdir=${srcdir}/bin
+# be installed at once.  This can be set with the --archlibdir option
+# to `../configure'.
+archlibdir=@archlibdir@
 
 # ==================== Utility Programs for the Build ====================
 
-# Allow the user to specify the install program.
-INSTALL = install
-INSTALLFLAGS = -c
-INSTALL_PROGRAM = ${INSTALL}
-INSTALL_DATA = ${INSTALL}
+# ../configure figures out the correct values for these.
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
 
 # ============================= Targets ==============================
 
@@ -105,9 +98,9 @@ SOURCES = COPYING ChangeLog Makefile.in README aixcc.lex emacs.csh \
 ### HAVE_CONFIG_H #defined before they know they can take advantage of
 ### the information in ../src/config.h.
 ALL_CFLAGS = ${C_SWITCH_SYSTEM} -Demacs -DHAVE_CONFIG_H \
-   -I${srcdir} -I${srcdir}/../src -I. -I../src ${CFLAGS}
+   -I. -I../src -I${srcdir} -I${srcdir}/../src ${CFLAGS}
 CPP_CFLAGS = ${C_SWITCH_SYSTEM} -Demacs -DHAVE_CONFIG_H \
-   -I${srcdir} -I${srcdir}/../src -I. -I../src ${CPPFLAGS} ${CFLAGS}
+   -I. -I../src -I${srcdir} -I${srcdir}/../src ${CPPFLAGS} ${CFLAGS}
 # This is the default compilation command.
 # But we should never rely on it, because some make version
 # failed to find it for getopt.o.  Using an explicit command made it work.
@@ -123,19 +116,19 @@ ${archlibdir}: all
 	@echo "Installing utilities run internally by Emacs."
 	./make-path ${archlibdir}
 	if [ `(cd ${archlibdir} && /bin/pwd)` != `/bin/pwd` ]; then \
-	  for file in ${UTILITIES} ${INSTALLABLES}; do \
-	    cp $${file} ${archlibdir} ; \
-	    chmod 755 ${archlibdir}/$${file} ; \
+	  for file in ${UTILITIES}; do \
+	    $(INSTALL_PROGRAM) $$file ${archlibdir}/$$file ; \
+	    chmod 755 ${archlibdir}/$$file ; \
 	  done ; \
-	  cd ${srcdir}; for file in ${SCRIPTS} ${INSTALLABLE_SCRIPTS}; do \
-	    cp $${file} ${archlibdir} ; \
-	    chmod 755 ${archlibdir}/$${file} ; \
+	  for file in ${SCRIPTS}; do \
+	    $(INSTALL_PROGRAM) ${srcdir}/$$file ${archlibdir}/$$file ; \
+	    chmod 755 ${archlibdir}/$$file ; \
 	  done ; \
 	fi
 	@echo
 	@echo "Changing the owner and group of Emacs's utility programs to \`bin'."
 	@echo "(You may ignore errors here if you don't care about this.)"
-	-for file in ${EXECUTABLES} ; do \
+	-for file in ${UTILITIES} ${SCRIPTS} ; do \
 	  chgrp bin ${archlibdir}/$${file} ; \
 	  chown bin ${archlibdir}/$${file} ; \
 	done
@@ -231,28 +224,28 @@ sorted-doc: ${srcdir}/sorted-doc.c ${ALLOCA}
 	$(CC) ${CPP_CFLAGS} ${srcdir}/sorted-doc.c ${ALLOCA} $(LOADLIBES) -o sorted-doc
 
 b2m: ${srcdir}/b2m.c ../src/config.h
-	$(CC) -I${srcdir}/../src ${CPP_CFLAGS} ${srcdir}/b2m.c $(LOADLIBES) -o b2m 
+	$(CC) ${CPP_CFLAGS} ${srcdir}/b2m.c $(LOADLIBES) -o b2m 
 
 movemail: ${srcdir}/movemail.c ../src/config.h
-	$(CC) -I${srcdir}/../src ${CPP_CFLAGS} ${srcdir}/movemail.c $(LOADLIBES) -o movemail
+	$(CC) ${CPP_CFLAGS} ${srcdir}/movemail.c $(LOADLIBES) -o movemail
 
 cvtmail: ${srcdir}/cvtmail.c
 	$(CC) ${CPP_CFLAGS} ${srcdir}/cvtmail.c $(LOADLIBES) -o cvtmail
 
 fakemail: ${srcdir}/fakemail.c ../src/config.h
-	$(CC) -I${srcdir}/../src ${CPP_CFLAGS} ${srcdir}/fakemail.c $(LOADLIBES) -o fakemail
+	$(CC) ${CPP_CFLAGS} ${srcdir}/fakemail.c $(LOADLIBES) -o fakemail
 
 yow: ${srcdir}/yow.c ../src/paths.h
 	$(CC) ${CPP_CFLAGS} ${srcdir}/yow.c $(LOADLIBES) -o yow
 
 env: ${srcdir}/env.c ../src/config.h
-	$(CC) -DEMACS -I${srcdir}/../src ${CPP_CFLAGS} ${srcdir}/env.c $(LOADLIBES) -o env
+	$(CC) -DEMACS ${CPP_CFLAGS} ${srcdir}/env.c $(LOADLIBES) -o env
 
 emacsserver: ${srcdir}/emacsserver.c ../src/config.h
-	$(CC) -I${srcdir}/../src ${CPP_CFLAGS} ${srcdir}/emacsserver.c $(LOADLIBES) -o emacsserver
+	$(CC) ${CPP_CFLAGS} ${srcdir}/emacsserver.c $(LOADLIBES) -o emacsserver
 
 emacsclient: ${srcdir}/emacsclient.c ../src/config.h
-	$(CC) -I${srcdir}/../src ${CPP_CFLAGS} ${srcdir}/emacsclient.c $(LOADLIBES) -o emacsclient
+	$(CC) ${CPP_CFLAGS} ${srcdir}/emacsclient.c $(LOADLIBES) -o emacsclient
 
 hexl: ${srcdir}/hexl.c
 	$(CC) ${CPP_CFLAGS} ${srcdir}/hexl.c $(LOADLIBES) -o hexl
@@ -260,12 +253,12 @@ hexl: ${srcdir}/hexl.c
 TIMEROBJS=getdate.o timer.o $(ALLOCA)
 getdate.o: ${srcdir}/getdate.y ../src/config.h
 	${YACC} ${YFLAGS} ${srcdir}/getdate.y
-	$(CC) -I${srcdir}/../src $(CPP_CFLAGS) -c y.tab.c
+	$(CC) $(CPP_CFLAGS) -c y.tab.c
 	mv y.tab.o getdate.o
 timer.o: ${srcdir}/timer.c ../src/config.h
-	$(CC) -c -I${srcdir}/../src $(CPP_CFLAGS) ${srcdir}/timer.c
+	$(CC) -c $(CPP_CFLAGS) ${srcdir}/timer.c
 timer: ${TIMEROBJS}
-	$(CC) -I${srcdir}/../src $(ALL_CFLAGS) ${TIMEROBJS} $(LOADLIBES) -o timer
+	$(CC) $(ALL_CFLAGS) ${TIMEROBJS} $(LOADLIBES) -o timer
 
 make-path: ${srcdir}/make-path.c ../src/config.h
 	$(CC) $(CPP_CFLAGS) ${srcdir}/make-path.c -o make-path

@@ -164,16 +164,19 @@ is sensitive to blank lines.")
 (defun vc-find-binary (name)
   "Look for a command anywhere on the subprocess-command search path."
   (or (cdr (assoc name vc-binary-assoc))
-      (let ((full nil))
-	(catch 'found
-	  (mapcar
-	   (function (lambda (s)
-	      (if (and s (file-exists-p (setq full (concat s "/" name))))
-		  (throw 'found nil))))
-	  exec-path))
-	(if full
-	    (setq vc-binary-assoc (cons (cons name full) vc-binary-assoc)))
-	full)))
+      (catch 'found
+	(mapcar
+	 (function 
+	  (lambda (s)
+	    (if s
+		(let ((full (concat s "/" name)))
+		  (if (file-executable-p full)
+		      (progn
+			(setq vc-binary-assoc
+			      (cons (cons name full) vc-binary-assoc))
+			(throw 'found full)))))))
+	 exec-path)
+	nil)))
 
 (defun vc-do-command (okstatus command file &rest flags)
   "Execute a version-control command, notifying user and checking for errors.
@@ -207,12 +210,9 @@ the master name of FILE; this is appended to an optional list of FLAGS."
 	  (exec-path (if vc-path (append exec-path vc-path) exec-path)))
       (setq status (apply 'call-process command nil t nil squeezed)))
     (goto-char (point-max))
-    (previous-line 1)
+    (forward-line -1)
     (if (or (not (integerp status)) (< okstatus status))
 	(progn
-	  (previous-line 1)
-	  (print (cons command squeezed))
-	  (next-line 1)
 	  (pop-to-buffer "*vc*")
 	  (goto-char (point-min))
 	  (shrink-window-if-larger-than-buffer)
@@ -451,7 +451,7 @@ lock steals will raise an error."
 	    (vc-start-entry nil nil nil
 			    "Enter a change comment for the marked files."
 			    'vc-next-action-dired)
-	    (throw 'nogo))))
+	    (throw 'nogo nil))))
     (while vc-parent-buffer
       (pop-to-buffer vc-parent-buffer))
     (if buffer-file-name
@@ -653,8 +653,9 @@ If nil, uses `change-log-default-name'."
     (error "No log operation is pending"))
   ;; Return to "parent" buffer of this checkin and remove checkin window
   (pop-to-buffer vc-parent-buffer)
-  (delete-windows-on (get-buffer "*VC-log*"))
-  (kill-buffer "*VC-log*")
+  (let ((logbuf (get-buffer "*VC-log*")))
+    (delete-windows-on logbuf)
+    (kill-buffer logbuf))
   ;; Now make sure we see the expanded headers
   (if buffer-file-name
 	(vc-resynch-window buffer-file-name vc-keep-workfiles t))
@@ -805,6 +806,26 @@ files in or below it."
     (if (zerop (vc-backend-diff file rel1 rel2))
 	(message "No changes to %s between %s and %s." file rel1 rel2)
       (pop-to-buffer "*vc*"))))
+
+;;;###autoload
+(defun vc-version-other-window (rev)
+  "Visit version REV of the current buffer in another window.
+If the current buffer is named `F', the version is named `F.~REV~'.
+If `F.~REV~' already exists, it is used instead of being re-created."
+  (interactive "sVersion to visit (default is latest version): ")
+  (if vc-dired-mode
+      (set-buffer (find-file-noselect (dired-get-filename))))
+  (while vc-parent-buffer
+      (pop-to-buffer vc-parent-buffer))
+  (if (and buffer-file-name (vc-name buffer-file-name))
+      (let* ((version (if (string-equal rev "")
+			  (vc-latest-version buffer-file-name)
+			rev))
+	     (filename (concat buffer-file-name ".~" version "~")))
+	 (or (file-exists-p filename)
+	     (vc-backend-checkout buffer-file-name nil version filename))
+	 (find-file-other-window filename))
+    (vc-registration-error buffer-file-name)))
 
 ;; Header-insertion code
 
@@ -995,14 +1016,15 @@ on a buffer attached to the file named in the current Dired buffer line."
 
 ;; Named-configuration entry points
 
-(defun vc-quiescent-p ()
-  ;; Is the current directory ready to be snapshot?
-  (catch 'quiet
+(defun vc-locked-example ()
+  ;; Return an example of why the current directory is not ready to be snapshot
+  ;; or nil if no such example exists.
+  (catch 'vc-locked-example
     (vc-file-tree-walk
      (function (lambda (f)
 		 (if (and (vc-registered f) (vc-locking-user f))
-		     (throw 'quiet nil)))))
-    t))
+		     (throw 'vc-locked-example f)))))
+    nil))
 
 ;;;###autoload
 (defun vc-create-snapshot (name)
@@ -1011,13 +1033,14 @@ The snapshot is made from all registered files at or below the current
 directory.  For each file, the version level of its latest
 version becomes part of the named configuration."
   (interactive "sNew snapshot name: ")
-  (if (not (vc-quiescent-p))
-      (error "Can't make a snapshot since some files are locked")
-    (vc-file-tree-walk
-     (function (lambda (f) (and
-		   (vc-name f)
-		   (vc-backend-assign-name f name)))))
-    ))
+  (let ((locked (vc-locked-example)))
+    (if locked
+	(error "File %s is locked" locked)
+      (vc-file-tree-walk
+       (function (lambda (f) (and
+			      (vc-name f)
+			      (vc-backend-assign-name f name)))))
+      )))
 
 ;;;###autoload
 (defun vc-retrieve-snapshot (name)
@@ -1026,13 +1049,15 @@ This function fails if any files are locked at or below the current directory
 Otherwise, all registered files are checked out (unlocked) at their version
 levels in the snapshot."
   (interactive "sSnapshot name to retrieve: ")
-  (if (not (vc-quiescent-p))
-      (error "Can't retrieve snapshot sine some files are locked")
-    (vc-file-tree-walk
-     (function (lambda (f) (and
-		   (vc-name f)
-		   (vc-error-occurred (vc-backend-checkout f nil name))))))
-    ))
+  (let ((locked (vc-locked-example)))
+    (if locked
+	(error "File %s is locked" locked)
+      (vc-file-tree-walk
+       (function (lambda (f) (and
+			      (vc-name f)
+			      (vc-error-occurred
+			       (vc-backend-checkout f nil name))))))
+      )))
 
 ;; Miscellaneous other entry points
 
@@ -1048,7 +1073,12 @@ levels in the snapshot."
       (progn
 	(vc-backend-print-log buffer-file-name)
 	(pop-to-buffer (get-buffer-create "*vc*"))
+	(while (looking-at "=*\n")
+	  (delete-char (- (match-end 0) (match-beginning 0)))
+	  (forward-line -1))
 	(goto-char (point-min))
+	(if (looking-at "[\b\t\n\v\f\r ]+")
+	    (delete-char (- (match-end 0) (match-beginning 0))))
 	(shrink-window-if-larger-than-buffer)
 	)
     (vc-registration-error buffer-file-name)
@@ -1419,21 +1449,41 @@ Return nil if there is no such person."
   (message "Registering %s...done" file)
   )
 
-(defun vc-backend-checkout (file &optional writable rev)
+(defun vc-backend-checkout (file &optional writable rev workfile)
   ;; Retrieve a copy of a saved version into a workfile
-  (message "Checking out %s..." file)
-  (vc-backend-dispatch file
-   (progn
+  (let ((filename (or workfile file)))
+    (message "Checking out %s..." filename)
+    (vc-backend-dispatch file
      (vc-do-command 0 "get" file	;; SCCS
 		    (if writable "-e")
+		    (if workfile  (concat "-G" workfile))
 		    (and rev (concat "-r" (vc-lookup-triple file rev))))
+     (if workfile ;; RCS
+	 ;; RCS doesn't let us check out into arbitrary file names directly.
+	 ;; Use `co -p' and make stdout point to the correct file.
+	 (let ((vc-modes (logior (file-modes (vc-name file))
+				 (if writable 128 0)))
+	       (failed t))
+	   (unwind-protect
+	       (progn
+		   (vc-do-command
+		      0 "/bin/sh" file "-c"
+		      (format "umask %o; exec >\"$1\" || exit; shift; umask %o; exec co \"$@\""
+			      (logand 511 (lognot vc-modes))
+			      (logand 511 (lognot (default-file-modes))))
+		      "" ; dummy argument for shell's $0
+		      filename
+		      (if writable "-l")
+		      (concat "-p" rev))
+		   (setq failed nil))
+	     (and failed (file-exists-p filename) (delete-file filename))))
+       (vc-do-command 0 "co" file
+		      (if writable "-l")
+		      (and rev (concat "-r" rev))))
      )
-   (vc-do-command 0 "co" file	;; RCS
-		  (if writable "-l")
-		  (and rev (concat "-r" rev)))
-   )
-  (vc-file-setprop file 'vc-checkout-time (nth 5 (file-attributes file)))
-  (message "Checking out %s...done" file)
+    (or workfile
+	(vc-file-setprop file 'vc-checkout-time (nth 5 (file-attributes file))))
+    (message "Checking out %s...done" filename))
   )
 
 (defun vc-backend-logentry-check (file)
@@ -1494,7 +1544,7 @@ Return nil if there is no such person."
      (vc-do-command 0 "unget" file "-n" (if rev (concat "-r" rev)))
      (vc-do-command 0 "get" file "-g" (if rev (concat "-r" rev)))
      )
-   (vc-do-command 0 "rcs" "-M" (concat "-u" rev) (concat "-l" rev) file))
+   (vc-do-command 0 "rcs" file "-M" (concat "-u" rev) (concat "-l" rev)))
   (vc-file-setprop file 'vc-locking-user (user-login-name))
   (message "Stealing lock on %s...done" file)
   )  
@@ -1568,6 +1618,7 @@ These bindings are added to the global keymap when you enter this mode:
 \\[vc-revert-buffer]		revert buffer to latest version
 \\[vc-cancel-version]		undo latest checkin
 \\[vc-diff]		show diffs between file versions
+\\[vc-version-other-window]		visit old version in another window
 \\[vc-directory]		show all files locked by any user in or below .
 \\[vc-update-change-log]		add change log entry from recent checkins
 

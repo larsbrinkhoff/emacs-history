@@ -88,17 +88,6 @@ two general mailing lists: <info-cscheme@martigny.ai.mit.edu>and
 A full list of available software are in `/pub/gnu/GNUinfo/ORDERS' and
 `/pub/gnu/GNUinfo/DESCRIPTIONS'.
 
-** Where is the documentation?
-
-If documentation exists, it is inside each program's source code
-distribution.  Instructions on installing a program are often in files
-name "README" and "INSTALL".  Manuals and on-line documentations are
-written in GNU's texinfo format and are found in files ending with
-".texi" or ".texinfo".  Reference cards are usually written in TeX,
-and TeX files end in ".tex".  Unix style man pages only exist, when
-volunteers supply them (the GNU Project finds the texinfo format to
-be superior).  Man page files usually end in a single digit.
-
 * No Warranties
 
 We distribute software in the hope that it will be useful, but without

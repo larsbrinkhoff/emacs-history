@@ -21,8 +21,8 @@ BUILDING AND INSTALLATION:
 a program whose pure code is 900k bytes and whose data area is at
 least 400k and can reach 8Mb or more.  If the swapping space is
 insufficient, you will get an error in the command `temacs -batch -l
-loadup dump', found in `./src/ymakefile', or possibly when running the
-final dumped Emacs.
+loadup dump', found in `./src/Makefile.in.in', or possibly when
+running the final dumped Emacs.
  
 Building Emacs requires about 30 Mb of disk space (including the Emacs
 sources).  Once installed, Emacs occupies about 20 Mb in the file
@@ -387,31 +387,27 @@ files for your system and machine, do so by editing config.h, not by
 changing the s/*.h and m/*.h files.  Occasionally you may need to
 redefine parameters used in `./lib-src/movemail.c'.
 
-3) If you're going to use the make utility to build Emacs, copy
-`./Makefile.in' to `./Makefile', and then edit that to specify the
-appropriate values for the variables in the sections entitled "Things
-`configure' Might Edit" and "Where To Install Things."  Note that you
-may only need to change the variables `prefix' and `exec_prefix',
-since the rest of the variables have reasonable defaults based on
-them.
+3) If you're going to use the make utility to build Emacs, you will
+still need to run `configure' first, giving theappropriate values for
+the variables in the sections entitled "Things `configure' Might Edit"
+and "Where To Install Things."  Note that you may only need to change
+the variables `prefix' and `exec_prefix', since the rest of the
+variables have reasonable defaults based on them.  For each Makefile
+variable of this type, there is a corresponding configure option; for
+example, to change the location of the lock directory, you might use
 
-4) Typing `make src/Makefile lib-src/Makefile' builds the
-makefiles for the subdirectories, editing in the values for the path
-variables you established in step 3.
-
--- or --
+	 ./configure --lockdir=/nfs/emacslock
 
 4) If you're going to use the build-install script to build Emacs,
-copy `./build-install.in' to `./build-install', and edit the similar
+copy `./build-ins.in' to `./build-install', and edit the
 definitions found at the top of the script.
-
 
 The `configure' script is built from `configure.in' by the `autoconf'
 program.  However, since Emacs has configuration requirements that
-autoconf can't meet, `configure.in' uses an unholy marriage of
-custom-baked configuration code and autoconf macros.  New versions of
-autoconf could very well break this arrangement, so it may be wise to
-avoid rebuilding `configure' from `configure.in' when possible.
+autoconf can't meet, `configure.in' uses an marriage of custom-baked
+configuration code and autoconf macros.  New versions of autoconf
+could very well break this arrangement, so it may be wise to avoid
+rebuilding `configure' from `configure.in' when possible.
 
 
 BUILDING GNU EMACS BY HAND
@@ -432,8 +428,8 @@ and `./lib-src' subdirectories using names `../lisp' and
 `../lib-src'.
 
 This creates a file `./src/emacs' which is the runnable Emacs,
-assigning it a new version number by incrementing the version stored
-in `./lisp/version.el'.
+assigning it a new build version number by incrementing the build
+version stored in `./lisp/version.el'.
 
 It also creates a file in `./etc' whose name is `DOC' followed by the
 current Emacs version.  This file contains documentation strings for

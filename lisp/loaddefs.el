@@ -228,6 +228,11 @@ for \\[find-tag] (which see)."
 ;;  (interactive)
 ;;  (error "That function key is not bound to anything."))
 
+;; Apparently some terminals have a labeled help key.
+(define-key function-key-map [help] "\C-h")
+(define-key global-map [menu] 'execute-extended-command)
+(define-key global-map [find] 'search-forward)
+
 ;; natural bindings for terminal keycaps --- defined in X keysym order
 (define-key global-map [home]		'beginning-of-buffer)
 (define-key global-map [left]		'backward-char)
@@ -370,6 +375,7 @@ for \\[find-tag] (which see)."
 (define-key ctl-x-map "ri" 'insert-register)
 (define-key ctl-x-map "rg" 'insert-register)
 (define-key ctl-x-map "rr" 'copy-rectangle-to-register)
+(define-key ctl-x-map "rc" 'clear-rectangle)
 (define-key ctl-x-map "rk" 'kill-rectangle)
 (define-key ctl-x-map "ry" 'yank-rectangle)
 (define-key ctl-x-map "ro" 'open-rectangle)
@@ -984,6 +990,166 @@ a reflection." t nil)
 
 ;;;***
 
+
+;;;### (autoloads (list-bookmarks bookmark-load bookmark-save bookmark-write bookmark-delete bookmark-insert bookmark-rename bookmark-locate bookmark-relocate bookmark-jump bookmark-set) "bookmark" "bookmark.el" (11468 39303))
+;;; Generated autoloads from bookmark.el
+
+(if (symbolp (key-binding "r")) nil (progn (define-key ctl-x-map "rb" (quote bookmark-jump)) (define-key ctl-x-map "rm" (quote bookmark-set)) (define-key ctl-x-map "rl" (quote list-bookmarks))))
+
+(defvar bookmark-map nil "\
+Keymap containing bindings to bookmark functions.
+It is not bound to any key by default: to bind it
+so that you have a bookmark prefix, just use `global-set-key' and bind a
+key of your choice to `bookmark-map'.  All interactive bookmark
+functions have a binding in this keymap.")
+
+(define-prefix-command (quote bookmark-map))
+
+(define-key bookmark-map "x" (quote bookmark-set))
+
+(define-key bookmark-map "m" (quote bookmark-set))
+
+(define-key bookmark-map "j" (quote bookmark-jump))
+
+(define-key bookmark-map "g" (quote bookmark-jump))
+
+(define-key bookmark-map "i" (quote bookmark-insert))
+
+(define-key bookmark-map "e" (quote edit-bookmarks))
+
+(define-key bookmark-map "f" (quote bookmark-locate))
+
+(define-key bookmark-map "r" (quote bookmark-rename))
+
+(define-key bookmark-map "d" (quote bookmark-delete))
+
+(define-key bookmark-map "l" (quote bookmark-load))
+
+(define-key bookmark-map "w" (quote bookmark-write))
+
+(define-key bookmark-map "s" (quote bookmark-save))
+
+(add-hook (quote kill-emacs-hook) (function (lambda nil (and (featurep (quote bookmark)) bookmark-alist (bookmark-time-to-save-p t) (bookmark-save)))))
+
+(autoload (quote bookmark-set) "bookmark" "\
+Set a bookmark named NAME inside a file.  
+With prefix arg, will not overwrite a bookmark that has the same name
+as NAME if such a bookmark already exists, but instead will \"push\"
+the new bookmark onto the bookmark alist.  Thus the most recently set
+bookmark with name NAME would be the one in effect at any given time,
+but the others are still there, should you decide to delete the most
+recent one.
+
+To yank words from the text of the buffer and use them as part of the
+bookmark name, type C-w while setting a bookmark.  Successive C-w's
+yank successive words.
+
+Typing C-v inserts the name of the current file being visited. Typing
+C-u inserts the name of the last bookmark used in the buffer (as an
+aid in using a single bookmark name to track your progress through a
+large file).  If no bookmark was used, then C-u behaves like C-v and
+inserts the name of the file being visited.
+
+Use \\[bookmark-delete] to remove bookmarks (you give it a name,
+and it removes only the first instance of a bookmark with that name from
+the list of bookmarks.)" t nil)
+
+(autoload (quote bookmark-jump) "bookmark" "\
+Jump to bookmark BOOKMARK (a point in some file).  
+You may have a problem using this function if the value of variable
+`bookmark-alist' is nil.  If that happens, you need to load in some
+bookmarks.  See help on function `bookmark-load' for more about
+this.
+
+If the file pointed to by BOOKMARK no longer exists, you will be asked
+if you wish to give the bookmark a new location, and bookmark-jump
+will then jump to the new location, as well as recording it in place
+of the old one in the permanent bookmark record." t nil)
+
+(autoload (quote bookmark-relocate) "bookmark" "\
+Relocate BOOKMARK -- prompts for a filename, and makes an already
+existing bookmark point to that file, instead of the one it used to
+point at.  Useful when a file has been renamed after a bookmark was
+set in it." t nil)
+
+(autoload (quote bookmark-locate) "bookmark" "\
+Insert the name of the file associated with BOOKMARK.
+Optional second arg NO-INSERTION means merely return the filename as a
+string." t nil)
+
+(autoload (quote bookmark-rename) "bookmark" "\
+Change the name of OLD-BOOKMARK to NEWNAME.  
+If called from keyboard, prompts for OLD-BOOKMARK and NEWNAME.
+If called from menubar, OLD-BOOKMARK is selected from a menu, and
+prompts for NEWNAME. 
+If called from Lisp, prompts for NEWNAME if only OLD-BOOKMARK was
+passed as an argument.  If called with two strings, then no prompting
+is done.  You must pass at least OLD-BOOKMARK when calling from Lisp.
+
+While you are entering the new name, consecutive C-w's insert
+consectutive words from the text of the buffer into the new bookmark
+name, and C-v inserts the name of the file." t nil)
+
+(autoload (quote bookmark-insert) "bookmark" "\
+Insert the text of the file pointed to by bookmark BOOKMARK.  
+You may have a problem using this function if the value of variable
+`bookmark-alist' is nil.  If that happens, you need to load in some
+bookmarks.  See help on function `bookmark-load' for more about
+this." t nil)
+
+(autoload (quote bookmark-delete) "bookmark" "\
+Delete the bookmark named NAME from the bookmark list.  
+Removes only the first instance of a bookmark with that name.  If
+there are one or more other bookmarks with the same name, they will
+not be deleted.  Defaults to the \"current\" bookmark (that is, the
+one most recently used in this file, if any)." t nil)
+
+(autoload (quote bookmark-write) "bookmark" "\
+Write bookmarks to a file (for which the user will be prompted
+interactively).  Don't use this in Lisp programs; use bookmark-save
+instead." t nil)
+
+(autoload (quote bookmark-save) "bookmark" "\
+Save currently defined bookmarks.
+Saves by default in the file defined by the variable
+`bookmark-file'.  With a prefix arg, save it in file FILE.
+
+If you are calling this from Lisp, the two arguments are PREFIX-ARG
+and FILE, and if you just want it to write to the default file, then
+pass no arguments.  Or pass in nil and FILE, and it will save in FILE
+instead.  If you pass in one argument, and it is non-nil, then the
+user will be interactively queried for a file to save in.
+
+When you want to load in the bookmarks from a file, use
+`bookmark-load', \\[bookmark-load].  That function will prompt you
+for a file, defaulting to the file defined by variable
+`bookmark-file'." t nil)
+
+(autoload (quote bookmark-load) "bookmark" "\
+Load bookmarks from FILE (which must be in bookmark format).
+Appends loaded bookmarks to the front of the list of bookmarks.  If
+optional second argument REVERT is non-nil, existing bookmarks are
+destroyed.  Optional third arg NO-MSG means don't display any messages
+while loading.
+
+If you load a file that doesn't contain a proper bookmark alist, you
+will corrupt Emacs's bookmark list.  Generally, you should only load
+in files that were created with the bookmark functions in the first
+place.  Your own personal bookmark file, `~/.emacs-bkmrks', is
+maintained automatically by Emacs; you shouldn't need to load it
+explicitly." t nil)
+
+(defalias (quote edit-bookmarks) (quote list-bookmarks))
+
+(autoload (quote list-bookmarks) "bookmark" "\
+Display a list of existing bookmarks.
+The list is displayed in a buffer named `*Bookmark List*'.
+The leftmost column displays a D if the bookmark is flagged for
+deletion, or > if it is flagged for displaying." t nil)
+(autoload 'menu-bar-bookmark-map "bookmark" nil t 'keymap)
+
+;;;***
+
 ;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11367 8231))
 ;;; Generated autoloads from bytecomp.el
 
@@ -2496,7 +2662,7 @@ for \\[find-tag] (which see)." t nil)
 
 ;;;***
 
-;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11364 43321))
+;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11394 10144))
 ;;; Generated autoloads from etags.el
 
 (defvar tags-file-name nil "\
@@ -2620,8 +2786,10 @@ See documentation of variable `tags-file-name'." t nil)
 
 (autoload (quote next-file) "etags" "\
 Select next file among files in current tags table.
-Non-nil first argument (prefix arg, if interactive)
-initializes to the beginning of the list of files in the tags table.
+
+A first argument of t (prefix arg, if interactive) initializes to the
+beginning of the list of files in the tags table.  If the argument is
+neither nil nor t, it is evalled to initialize the list of files.
 
 Non-nil second argument NOVISIT means use a temporary buffer
  to save time and avoid uninteresting warnings.
@@ -2631,7 +2799,8 @@ if the file was newly read in, the value is the filename." t nil)
 
 (autoload (quote tags-loop-continue) "etags" "\
 Continue last \\[tags-search] or \\[tags-query-replace] command.
-Used noninteractively with non-nil argument to begin such a command.
+Used noninteractively with non-nil argument to begin such a command (the
+argument is passed to `next-file', which see).
 Two variables control the processing we do on each file:
 the value of `tags-loop-scan' is a form to be executed on each file
 to see if it is interesting (it returns non-nil if so)
@@ -3216,7 +3385,22 @@ For example, invoke \"emacs -batch -f batch-info-validate $info/ ~/*.info\"" nil
 
 ;;;***
 
-;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11344 51605))
+;;;### (autoloads (iso-accents-mode) "iso-acc" "iso-acc.el" (11467 25993))
+;;; Generated autoloads from iso-acc.el
+
+(autoload (quote iso-accents-mode) "iso-acc" "\
+Toggle a minor mode in which accents modify the following letter.
+This permits easy insertion of accented characters according to ISO-8859-1.
+When Iso-accents mode is enabled, accent character keys
+(', \", ^ and ~) do not self-insert; instead, they modify the following
+letter key so that it inserts an ISO accented letter.
+
+With an argument, a positive argument enables ISO-accents mode, 
+and a negative argument disables it." t nil)
+
+;;;***
+
+;;;### (autoloads (ispell-message ispell-complete-word-interior-frag ispell-complete-word ispell-region ispell-word ispell) "ispell" "ispell.el" (11485 39692))
 ;;; Generated autoloads from ispell.el
 
 (autoload (quote ispell) "ispell" "\
@@ -3249,6 +3433,28 @@ With a prefix argument, resume handling of the previous Ispell command." t nil)
 
 (autoload (quote ispell-region) "ispell" "\
 Check the spelling for all of the words in the region." t nil)
+
+(autoload (quote ispell-complete-word) "ispell" "\
+Complete word using letters at point to word beginning using `look'.
+With optional argument INTERIOR-FRAG, word fragment at point is assumed to be
+an interior word fragment in which case `ispell-have-new-look' should be t.
+See also `ispell-look-dictionary' and `ispell-gnu-look-still-broken-p'." t nil)
+
+(autoload (quote ispell-complete-word-interior-frag) "ispell" "\
+Runs `ispell-complete-word' with a non-nil INTERIOR-FRAG.
+A completion list is built for word fragment at point which is assumed to be
+an interior word fragment.  `ispell-have-new-look' should be t." t nil)
+
+(autoload (quote ispell-message) "ispell" "\
+Check the spelling of a mail message or news post.
+Don't check spelling of message headers or included messages.
+
+To spell-check whenever a message is sent, include this line in .emacs:
+   (setq news-inews-hook (setq mail-send-hook 'ispell-message))
+
+Or you can bind the function to C-c i in gnus or mail with:
+   (setq mail-mode-hook (setq news-reply-mode-hook
+    (function (lambda () (local-set-key \"\\C-ci\" 'ispell-message)))))" t nil)
 
 ;;;***
 
@@ -3564,7 +3770,7 @@ Universal argument ARG, is passed to `Man-getpage-in-background'." t nil)
 
 ;;;***
 
-;;;### (autoloads (map-y-or-n-p) "map-ynp" "map-ynp.el" (11342 16097))
+;;;### (autoloads (map-y-or-n-p) "map-ynp" "map-ynp.el" (11449 65482))
 ;;; Generated autoloads from map-ynp.el
 
 (autoload (quote map-y-or-n-p) "map-ynp" "\
@@ -3600,6 +3806,9 @@ arg (an object from LIST); HELP is a string.  When the user hits KEY,
 FUNCTION is called.  If it returns non-nil, the object is considered
 \"acted upon\", and the next object from LIST is processed.  If it returns
 nil, the prompt is repeated for the same object.
+
+Final optional argument NO-CURSOR-IN-ECHO-AREA non-nil says not to set
+`cursor-in-echo-area' while prompting.
 
 This function uses `query-replace-map' to define the standard responses,
 but not all of the responses which `query-replace' understands
@@ -4835,6 +5044,26 @@ subshell is initiated, the value of tex-shell-hook is called." t nil)
 
 ;;;***
 
+;;;### (autoloads (texinfo-format-region texinfo-format-buffer) "texinfmt" "texinfmt.el" (11462 52384))
+;;; Generated autoloads from texinfmt.el
+
+(autoload (quote texinfo-format-buffer) "texinfmt" "\
+Process the current buffer as texinfo code, into an Info file.
+The Info file output is generated in a buffer visiting the Info file
+names specified in the @setfilename command.
+
+Non-nil argument (prefix, if interactive) means don't make tag table
+and don't split the file if large.  You can use Info-tagify and
+Info-split to do these manually." t nil)
+
+(autoload (quote texinfo-format-region) "texinfmt" "\
+Convert the current region of the Texinfo file to Info format.
+This lets you see what that part of the file will look like in Info.
+The command is bound to \\[texinfo-format-region].  The text that is
+converted to Info is stored in a temporary buffer." t nil)
+
+;;;***
+
 ;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11367 23334))
 ;;; Generated autoloads from texinfo.el
 
@@ -4904,6 +5133,52 @@ be the first node in the file.
 
 Entering Texinfo mode calls the value of text-mode-hook, and then the
 value of texinfo-mode-hook." t nil)
+
+;;;***
+
+;;;### (autoloads (texinfo-sequential-node-update texinfo-every-node-update texinfo-update-node) "texnfo-upd" "texnfo-upd.el" (11488 11824))
+;;; Generated autoloads from texnfo-upd.el
+
+(autoload (quote texinfo-update-node) "texnfo-upd" "\
+Without any prefix argument, update the node in which point is located.
+Non-nil argument (prefix, if interactive) means update the nodes in the
+marked region.
+
+The functions for creating or updating nodes and menus, and their
+keybindings, are:
+
+    texinfo-update-node (&optional region-p)    \\[texinfo-update-node]
+    texinfo-every-node-update ()                \\[texinfo-every-node-update]
+    texinfo-sequential-node-update (&optional region-p)
+
+    texinfo-make-menu (&optional region-p)      \\[texinfo-make-menu]
+    texinfo-all-menus-update ()                 \\[texinfo-all-menus-update]
+    texinfo-master-menu ()
+
+    texinfo-indent-menu-description (column &optional region-p)
+
+The `texinfo-column-for-description' variable specifies the column to
+which menu descriptions are indented. Its default value is 32." t nil)
+
+(autoload (quote texinfo-every-node-update) "texnfo-upd" "\
+Update every node in a Texinfo file." t nil)
+
+(autoload (quote texinfo-sequential-node-update) "texnfo-upd" "\
+Update one node (or many) in a Texinfo file with sequential pointers.
+
+This function causes the `Next' or `Previous' pointer to point to the
+immediately preceding or following node, even if it is at a higher or
+lower hierarchical level in the document.  Continually pressing `n' or
+`p' takes you straight through the file.
+
+Without any prefix argument, update the node in which point is located.
+Non-nil argument (prefix, if interactive) means update the nodes in the
+marked region.
+
+This command makes it awkward to navigate among sections and
+subsections; it should be used only for those documents that are meant
+to be read like a novel rather than a reference, and for which the
+Info `g*' command is inadequate." t nil)
 
 ;;;***
 
@@ -5425,6 +5700,117 @@ Entry to this mode runs the normal hook `view-hook'.
 
 (autoload (quote vip-mode) "vip" "\
 Turn on VIP emulation of VI." t nil)
+
+;;;***
+
+;;;### (autoloads (wordstar-mode) "ws-mode" "ws-mode.el" (11486 24343))
+;;; Generated autoloads from ws-mode.el
+
+(autoload (quote wordstar-mode) "ws-mode" "\
+Major mode with WordStar-like key bindings.
+
+BUGS:
+ - Help menus with WordStar commands (C-j just calls help-for-help)
+   are not implemented
+ - Options for search and replace
+ - Show markers (C-k h) is somewhat strange
+ - Search and replace (C-q a) is only available in forward direction
+
+No key bindings beginning with ESC are installed, they will work
+Emacs-like.
+
+The key bindings are:
+
+  C-a		backward-word
+  C-b		fill-paragraph
+  C-c		scroll-up-line
+  C-d		forward-char
+  C-e		previous-line
+  C-f		forward-word
+  C-g		delete-char
+  C-h		backward-char
+  C-i		indent-for-tab-command
+  C-j		help-for-help
+  C-k		ordstar-C-k-map
+  C-l		ws-repeat-search
+  C-n		open-line
+  C-p		quoted-insert
+  C-r		scroll-down-line
+  C-s		backward-char
+  C-t		kill-word
+  C-u		keyboard-quit
+  C-v		overwrite-mode
+  C-w		scroll-down
+  C-x		next-line
+  C-y		kill-complete-line
+  C-z		scroll-up
+
+  C-k 0		ws-set-marker-0
+  C-k 1		ws-set-marker-1
+  C-k 2		ws-set-marker-2
+  C-k 3		ws-set-marker-3
+  C-k 4		ws-set-marker-4
+  C-k 5		ws-set-marker-5
+  C-k 6		ws-set-marker-6
+  C-k 7		ws-set-marker-7
+  C-k 8		ws-set-marker-8
+  C-k 9		ws-set-marker-9
+  C-k b		ws-begin-block
+  C-k c		ws-copy-block
+  C-k d		save-buffers-kill-emacs
+  C-k f		find-file
+  C-k h		ws-show-markers
+  C-k i		ws-indent-block
+  C-k k		ws-end-block
+  C-k p		ws-print-block
+  C-k q		kill-emacs
+  C-k r		insert-file
+  C-k s		save-some-buffers
+  C-k t		ws-mark-word
+  C-k u		ws-exdent-block
+  C-k C-u	keyboard-quit
+  C-k v		ws-move-block
+  C-k w		ws-write-block
+  C-k x		kill-emacs
+  C-k y		ws-delete-block
+
+  C-o c		center-line
+  C-o b		switch-to-buffer
+  C-o j		justify-current-line
+  C-o k		kill-buffer
+  C-o l		list-buffers
+  C-o m		auto-fill-mode
+  C-o r		set-fill-column
+  C-o C-u	keyboard-quit
+  C-o wd	delete-other-windows
+  C-o wh	split-window-horizontally
+  C-o wo	other-window
+  C-o wv	split-window-vertically
+
+  C-q 0		ws-find-marker-0
+  C-q 1		ws-find-marker-1
+  C-q 2		ws-find-marker-2
+  C-q 3		ws-find-marker-3
+  C-q 4		ws-find-marker-4
+  C-q 5		ws-find-marker-5
+  C-q 6		ws-find-marker-6
+  C-q 7		ws-find-marker-7
+  C-q 8		ws-find-marker-8
+  C-q 9		ws-find-marker-9
+  C-q a		ws-query-replace
+  C-q b		ws-to-block-begin
+  C-q c		end-of-buffer
+  C-q d		end-of-line
+  C-q f		ws-search
+  C-q k		ws-to-block-end
+  C-q l		ws-undo
+  C-q p		ws-last-cursorp
+  C-q r		beginning-of-buffer
+  C-q C-u	keyboard-quit
+  C-q w		ws-last-error
+  C-q y		ws-kill-eol
+  C-q DEL	ws-kill-bol
+" t nil)
 
 ;;;***
 

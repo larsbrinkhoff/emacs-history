@@ -1,4 +1,4 @@
-     GNU Project Electronic Mailing Lists.  Last Updated 9 Jun 93
+     GNU Project Electronic Mailing Lists.  Last Updated 22 Sep 93
 
 	   Please report improvements to: gnu@prep.ai.mit.edu
 
@@ -170,16 +170,23 @@ Anything addressed to the implementors and maintainers of a GNU program
 via a bug-* list, should NOT be sent to the corresponding info-* or
 help-* list.
 
-Please DON'T post your bug reports on the gnu.* newsgroups!  Mail them
-to bug-*@prep instead!  At first sight, it seems to make no difference:
-anything sent to one will be propagated to the other; but if you post on
-the newsgroup, the information about how to reach you is lost in the
-message that goes on the mailing list.  It can be very important to know
-how to reach you if there is anything in the bug report that we don't
-understand.  Bug reports also reach the GNU maintainers quickest when
-they are sent to the bug-* mailing list submittal address.
+Please DON'T post your bug reports on the gnu.*.bug newsgroups!  Mail
+them to bug-*@prep instead!  At first sight, it seems to make no
+difference: anything sent to one will be propagated to the other; but:
+	- if you post on the newsgroup, the information about how to
+reach you is lost in the message that goes on the mailing list.  It
+can be very important to know how to reach you, if there is anything
+in the bug report that we don't understand;
+	- bug reports reach the GNU maintainers quickest when they are
+sent to the bug-* mailing list submittal address;
+	- mail is much more reliable then netnews; and
+	- if the internet mailers can't get your bug report delivered,
+they almost always send you an error message, so you can find another
+way to get the bug report in.  When netnews fails to get your message
+delivered to the maintainers, you'll never know about it and the
+maintainers will never see the bug report.
 
-And please DON'T post your GNU bug reports to comp.* or other non gnu.*
+And please DON'T post your GNU bug reports to comp.* or other gnu.*
 newsgroups, they never make it to the GNU maintainers at all.  Please
 mail them to bug-*@prep instead!
 
@@ -402,7 +409,8 @@ correct or aren't the best way to do the job, and without a test case
 there is no way to debug an alternate fix.
 
 The most convenient form of test case is a piece of cpp output that can
-be passed directly to cc1.  Preferably written in C, not C++.
+be passed directly to cc1.  Preferably written in C, not C++ or
+Objective C.
 
 Subscribers to bug-gcc get all info-gcc messages.
 
@@ -417,7 +425,7 @@ This list is the place for users and installers of the GNU C Compiler to
 ask for help.
 
 If gcc crashes, or if you build gcc following the standard procedure on
-a system which gcc is supposed to work on (see config.gcc) and it does
+a system which gcc is supposed to work on (see config.sub) and it does
 not work at all, or if an command line option does not behave as it is
 documented to behave, this is a bug.  Don't send bug reports to help-gcc
 (gnu.gcc.help); mail them to bug-gcc@prep.ai.mit.edu instead.

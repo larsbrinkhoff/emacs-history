@@ -1,3 +1,1352 @@
+Thu Nov 11 02:16:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.20 released.
+
+	* man.el (Man-section-regexp): Allow section names l, n, L, N.
+
+Wed Nov 10 21:46:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* map-ynp.el (map-y-or-n-p): Handle help-char values other than chars.
+
+	* c-mode.el (c-indent-region): When looking for a sexp that ends
+	past this line, make sure it really starts on this line.
+
+	* replace.el (occur-mode): Run occur-mode-hook.
+
+Wed Nov 10 20:53:06 1993  Robert J. Chassell  (bob@kropotkin.gnu.ai.mit.edu)
+
+        * texinfo.el (texinfo-texi2dvi-command): Separate `texi2dvi'
+	command from `tex' command so `texinfo-format-region' can use
+	straight `tex' command.
+        (texinfo-format-buffer): Use `texinfo-texi2dvi-command'
+        (texinfo-delete-from-print-queue): Revise documentation. 
+	(texinfo-quit-job): Use comint-send-input.
+
+	* texinfmt.el (texinfo-format-region): Change `texinfo-[start
+	end]-of-header' to `tex-[start end]-of-header'.
+
+Wed Nov 10 15:38:24 1993  Brian Fox  (bfox@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-start-mail): Don't do other frame unless we have
+	a window system, irregardless of the state of rmail-mail-new-frame.
+
+	* man.el (Man-filter-list): Include anything starting with
+	alphabetics, and containing "Last change:".
+	(manual-entry): Don't call `Man-downcase' since
+	Man-translate-references has already done the right thing.
+
+	* info.el (Info-extract-menu-item): Quote `*' in the menu-item
+	leadin re-search to prevent us from finding node names which
+	contain the text of another node name within them.
+
+	* files.el (find-backup-file-name): Don't fatal-error on
+	directories that are hard to read; fall back on ~/%backup%.
+
+	* hexl.el (hexl-mode): Use `add-hook' to modify buffer local
+	`write-contents-hooks'.
+	(hexl-mode-exit): Remove our hook when turning off Hexl mode.
+
+	* files.el (file-truename): Treat ~USER like just ~.
+
+	* subr.el (remove-hook): New function, analogous to add-hook.  This
+	is now the recommended way to remove a hook that you have added.
+
+Tue Nov  9 02:11:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* texinfo.el (texinfo-mode-map): Add C-c C-e bindings for texinfmt.el.
+
+	* texnfo-upd.el (texinfo-sequential-node-update): Add autoload.
+	(texinfo-update-node, texinfo-every-node-update): Add autoload.
+
+	* comint.el (comint-postoutput-scroll-to-bottom):
+	Don't alter point in a window if it's after the process-mark.
+	Don't treat minibuffer window specially.
+
+	* menu-bar.el (menu-bar-edit-menu): Add menu items for searching.
+
+	* etags.el (etags-list-tags): Return t if found the file.
+	(list-tags): Clear first-time when we go around the loop.
+	Supply file name in error message.
+	Remove dir names from files when preparing for completion.
+
+Mon Nov  8 18:40:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* shell.el: Doc fixes.
+
+Mon Nov  8 19:05:34 1993  Simon Marshall  (Simon.Marshall@mail.esrin.esa.it)
+
+	* comint.el (comint-preinput-scroll-to-bottom): Added
+	comint-magic-space to list of commands recognised as inserting.
+
+	* comint.el (comint-output-filter): Corrected check for killed
+	buffer.
+
+Mon Nov  8 16:16:32 1993  Robert J. Chassell  (bob@geech.gnu.ai.mit.edu)
+
+        * texinfo.el (texinfo-show-structure): Indent appendices properly.
+
+Mon Nov  8 07:42:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* disp-table.el (describe-current-display-table):
+	Don't get error if no display table now.
+	(describe-display-table): Put all the output in the temp buffer.
+
+	* ws-mode.el (wordstar-mode): Add autoload.
+
+	* pascal.el: New file.
+	* thingatpt.el: New file.
+	* mouse-sel.el: New file.
+
+	* ispell.el (ispell-message): Delete excess (beginning-of-line).
+
+	* frame.el (set-frame-configuration): Iconify frames
+	rather than making them invisible.
+
+	* register.el (jump-to-register): Rename prefix arg to DELETE
+	and invert its sense.
+
+	* comint.el (comint-postoutput-scroll-to-bottom):
+	Walk the windows even if scroll is nil.
+
+Sun Nov  7 03:09:57 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ispell.el (ispell-message): If gnus, but no mail-yank-prefix,
+	use ispell-message-cite-regexp.  Turn off case-fold-search
+	for the searching and matching in this function.
+
+	* ispell.el (ispell-message): Stop if ispell-region returns nil.
+	(ispell-next, ispell-word): Catch ispell-quit, not quit.
+	(ispell-next): Return t if exit normally (no throw to ispell-quit).
+	(ispell-command-loop): For q, throw to ispell-quit.
+	Explicitly handle C-g.
+	(ispell): If we don't call ispell-next, return t.
+
+	* compare-w.el (compare-windows-skip-whitespace): Return t
+	if there is whitespace before point.
+
+	* iso-acc.el (iso-accents-mode): Doc fix.
+
+	* comint.el (comint-postoutput-scroll-to-bottom):
+	Always keep point at end in all buffers if was at end.
+	comint-scroll-to-bottom-on-output controls what to do
+	if point was not already at the end.
+
+	* iso-acc.el: Support ~ and /.  Support 'Y, 'y, "y.
+	Delete the `compose' support.
+	(iso-accents-list): Fix typo in ^A code.  Support ~< and ~>.
+
+	* iso-transl.el: Alter isearch-mode-map so C-x 8 works in search.
+
+	* frame.el (set-frame-configuration): If NODELETE, make the
+	unwanted frames invisible.
+
+Sun Nov  7 11:19:25 1993  Ethan Bradford  (ethanb@ptolemy.astro.washington.edu)
+
+	* ispell.el (ispell-non-empty-string): New function.
+	(ispell-message): Add autoload.
+	Choose a citation regexp automatically.
+	Don't fail if there is no following cited line after filled lines.
+
+Fri Nov  5 23:15:57 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* man.el (Man-frame-parameters): New variable.
+	(Man-notify-when-ready): Handle `newframe' as Man-notify value.
+
+Thu Nov  4 07:01:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ange-ftp.el (ange-ftp-load): Handle extra args after the file name.
+
+Wed Nov  3 15:42:09 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+        * tex-mode.el (tex-alt-print): New function for menu bar.
+        (tex-define-common-keys, tex-mode-map): Move some items from
+	tex-define-common-keys to tex-mode-map.
+	Add more menu-enable properties.
+        (tex-append): Cope with both the original
+        Pascal-based TeX and the newer C-based TeX.
+
+Wed Nov  3 14:59:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* frame.el (other-frame): Subtract 1 from hpos for new mouse position.
+
+	* sendmail.el (sendmail-send-it): Don't insert Sender.
+
+	* tex-mode.el (tex-validate-region, tex-region):
+	Enable menu items if only mark is active.
+
+Tue Nov  2 19:44:53 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-drag-region): Set this-command to mouse-set-point
+	if not setting the mark.
+	(mouse-save-then-kill): Consider mark-active only in transient mark md.
+
+Wed Oct 27 17:32:56 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* tex-mode.el (tex-define-common-keys): Define menu items.
+
+Tue Oct 26 16:45:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* comint.el (comint-mode-map): Merge menu bar item Output into Input.
+	Rename Completion to Complete.
+
+	* font-lock.el (font-lock-fontify-buffer): Don't turn
+	font-lock-mode on and off; just call font-lock-set-defaults.
+
+Tue Oct 26 14:08:10 1993  Lawrence R. Dodd  (dodd@roebling.poly.edu)
+
+	* ispell.el (ispell-look-command): New user variable.
+	(ispell-do-look, ispell-lookup-build-list): Use it as
+	PROGRAM for call-process instead of just "look".
+
+	* ispell.el (ispell-complete-word-interior-frag): New command.
+	(ispell-complete-word): New command.
+	(ispell-menu-map): Add bindings for them.
+	(ispell-gnu-look-still-broken-p, ispell-look-dictionary): New vars.
+
+	* text-mode.el (text-mode-map): Bind ispell-complete-word to M-TAB.
+
+Tue Oct 26 14:07:22 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* simple.el (eval-expression): Fix typo: missing paren.
+	(read-expression-map): Use an indirection to minibuffer-local-map
+	rather than copying it.
+
+Mon Oct 25 23:28:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* bookmark.el (bookmark-load, bookmark-write-file):
+	Bind enable-local-variables instead of enable-local-eval.
+
+Mon Oct 25 20:09:53 1993  Karl Fogel  (kfogel@mole.gnu.ai.mit.edu)
+
+        * bookmark.el (bookmark-load, bookmark-write-file): Made
+	enable-local-eval be nil when loading a bookmark file, since
+	bookmark context strings can contain eval forms from the files in
+	which the bookmarks are set, and we don't want them evalled when
+	.emacs-bkmrks is found!
+
+	Got rid of ###autoload to put a bookmark menu on the menu-bar.
+	Now it will appear on the File menu -- that change is made in
+        menu-bar.el.  See below:
+	
+        * menu-bar.el: Added a define-key for menu-bar-bookmark-map, so
+        that bookmarks will appear on the File menu of the menu-bar, right
+        after the Print Buffer item.
+
+Mon Oct 25 15:48:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* comint.el (comint-scroll-to-bottom-on-input): Default to nil.
+	(comint-mode): Use pre-command-hook, not before-change-function.
+	(comint-preinput-scroll-to-bottom): Take no arguments.
+	(comint-output-filter-functions):
+	Renamed from comint-output-filter-hook.
+	(comint-output-filter): Pass STRING as arg to output hook functions.
+	(comint-preinput-scroll-to-bottom): Take an arg.
+	Move point to new process mark if it was at the old one.
+	Scroll so only if point is at or after the process mark.
+	When scrolling, put end of text on bottom line, regardless of point.
+
+Mon Oct 25 02:07:36 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+ 	* ispell.el (ispell): If the buffer to spell has no associated
+	file, or, the associated file has a special handler, use a
+	temporary file with the buffer contents to pass to the local
+	ispell process.
+
+	* dired.el (provide): Provide "dired" before running user hooks.
+
+	* ange-ftp.el (ange-ftp-dired-uncache): Fix parens so that `(setq
+	...' is a result of the if statement, and not a top level
+	expression.
+
+	* simple.el (eval-expression, edit-and-eval-command): Let
+	minibuffer-history-sexp-flag be 't during the call to
+	read-from-minibuffer.
+
+Sun Oct 24 19:18:52 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* iso-acc.el: Define "dead keys" in key-translation-map,
+	not in global-map.
+	(iso-accents-compose): New subroutine to do the composition.
+	Method of doing so is new.
+	(iso-accents-accent-key): Use iso-accents-compose.
+	(iso-accents-compose-key): New function.
+
+Sat Oct 23 17:25:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* isearch.el (isearch-yank): Handle `kill' as chunk type.
+	(isearch-yank-kill): New command, on M-y and mouse-2.
+
+	* frame.el (make-frame): Use before-make-frame-hook and
+	after-make-frame-hook.
+
+	* comint.el (comint-scroll-to-bottom-on-output)
+	(comint-scroll-to-bottom-on-input): Default to nil if baud-rate<=9600.
+
+Fri Oct 22 13:10:53 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* comint.el (comint-filename-prefix): Deleted.
+	* rlogin.el (rlogin, rlogin-mode): Use comint-file-name-prefix,
+	not comint-filename-prefix.
+
+Thu Oct 21 22:22:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* shell.el (shell-after-partial-filename): Renamed from
+	shell-after-partial-pathname.
+	* comint.el (comint-after-partial-file-name-command):
+	Renamed from comint-after-partial-pathname-command.
+	(comint-match-partial-file-name, comint-after-partial-file-name):
+	Renamed from comint-match-partial-pathname, etc.
+
+Thu Oct 21 23:10:27 1993  Simon Marshall  (Simon.Marshall@mail.esrin.esa.it)
+
+	* shell.el (shell-after-partial-pathname): New subroutine.
+
+	* shell.el: Renamed shell-command-execonly to
+	shell-completion-execonly for consistency.
+
+	* shell.el (shell-read-input-ring, shell-input-ring-file-name):
+	Moved to, and renamed in, comint.el.
+
+	* shell.el (shell-dynamic-complete-command):  Make sure local
+	completion-ignore-case is nil.
+
+	* shell.el (shell-mode): Set buffer-local variable paragraph-start
+	to comint-prompt-regexp so paragraph motion/mark commands work on
+	output groups.
+	Set comint-after-partial-pathname to it.
+	(shell-read-input-ring): Use find-file-noselect.
+
+	* shell.el (shell-match-cmd-w/optional-arg): Removed.
+
+	* comint.el (comint-last-output-start): New variable to record
+	where most recent process output started from.
+	(comint-mode): Initialise it.
+	(comint-output-filter): Set it.
+
+	* comint.el (comint-previous-matching-input-string): Moved to
+	comint-previous-matching-input-position.
+	(comint-previous-matching-input-string): Use it.
+	(comint-search-arg, comint-search-start,
+	comint-previous-input-string): New subroutines.
+	(comint-previous-input, comint-next-input,
+	comint-previous-matching-input, comint-next-matching-input,
+	comint-previous-matching-input-from-input,
+	comint-next-matching-input-from-input): Use them.
+
+	* comint.el (comint-mode-map): Added signal menu-bar.  Moved
+	comint-backward/forward-matching-input to output menu-bar, since
+	they move within the buffer rather than do input.
+
+	* comint.el (comint-send-input, comint-after-pmark-p,
+	comint-kill-input, comint-proc-query): Removed serialisation of
+	obtaining the process mark's marker-position.
+
+	* comint.el, shell.el: Commented out comint/shell-load-hooks.
+
+	* comint.el (comint-dynamic-simple-complete): New subroutine.
+
+	* comint.el (comint-dynamic-complete-filename-command): New variable.
+	(comint-after-partial-pathname-command): New variable.
+	(comint-after-partial-pathname): New subroutine.
+	(comint-dynamic-complete): Use them.
+	(comint-mode): Make them local.
+
+	* comint.el, shell.el: Renamed comint-dynamic-complete-command to
+	comint-dynamic-complete-command-command for consistency.
+	Renamed comint-file-name-addsuffix/autolist/recexact to
+	comint-completion-addsuffix/autolist/recexact for consistency.
+
+	* comint.el (comint-replace-by-expanded-history): Check if input
+	ring size is not big enough for relative reference.
+
+	* comint.el (comint-read-input-ring, comint-input-ring-file-name):
+	From shell.el.
+	(shell-write-input-ring): New subroutine.
+
+	* comint.el (comint-file-name-prefix): New variable.
+	(comint-directory): New inline subroutine.
+	(comint-dynamic-complete-filename, comint-dynamic-complete-variable,
+	comint-dynamic-list-filename-completions): Use it.
+
+	* comint.el (comint-dynamic-complete-filename,
+	comint-dynamic-complete-variable,
+	comint-dynamic-list-filename-completions): Make sure local
+	completion-ignore-case is nil.
+
+	* comint.el (comint-next-prompt, comint-previous-prompt): Use
+	paragraph-start and paragraph motion commands rather than
+	re-search-forward and re-search-backward commands.
+
+	* comint.el (comint-dynamic-list-input-ring,
+	comint-previous-matching-input-string): Use ring-empty-p rather
+	than zerop and ring-length.
+
+	* comint.el (comint-input-ignoredups): New variable.
+	(comint-send-input, shell-read-input-ring): Use it.
+	(comint-mode): Make comint-input-ignoredups local.  Doc fix.
+
+	* comint.el (comint-scroll-to-bottom-on-input): New variable.
+	(comint-scroll-to-bottom-on-output): New variable.
+	(comint-scroll-show-maximum-output): New variable.
+	(comint-output-filter-hook): New variable, defaults to
+	comint-postoutput-scroll-to-bottom.
+
+	* comint.el (comint-output-filter): Renamed from comint-filter
+	for consistency.  Now calls comint-output-filter-hook.
+
+	* comint.el (comint-preinput-scroll-to-bottom): New subroutine.
+	(comint-postoutput-scroll-to-bottom): New subroutine.
+	(comint-show-maximum-output): New command.
+	(comint-copy-old-input): New command.
+
+	* comint.el (comint-send-input): Run comint-output-filter-hook if
+	necessary as a kludge to prevent messy redisplays.
+
+	* comint.el (comint-mode-map): Added comint-show-maximum-output to
+	C-c C-e and menu-bar output, and comint-copy-old-input to C-c C-i
+	and menu-bar input.
+
+	* comint.el (comint-mode): Make local variables
+	comint-scroll-to-bottom-on-input, before-change-function,
+	comint-scroll-to-bottom-on-output, comint-scroll-show-maximum-output,
+	and comint-output-filter-hook.
+
+Thu Oct 21 13:51:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (blink-matching-open): Treat / syntax like \ syntax.
+
+	* texinfmt.el (texinfo-format-begin-end): Bind cmd locally.
+	(texinfo-defun-type): Renamed from command-type in various fns.
+	(texinfo-command-start, texinfo-command-end, texinfo-command-name)
+	(texinfo-defun-type, texinfo-last-node-pos, texinfo-stack)
+	(texinfo-short-index-cmds-alist)
+	(texinfo-short-index-format-cmds-alist, texinfo-format-filename)
+	(texinfo-footnote-number, texinfo-start-of-header)
+	(texinfo-end-of-header, texinfo-raisesections-alist)
+	(texinfo-lowersections-alist): Add defvars.
+
+Wed Oct 20 14:06:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* cdl.el: New file.
+
+Wed Oct 20 08:00:51 1993  Brian Fox  (bfox@gnu.ai.mit.edu)
+
+	* forms.el (forms--set-minor-mode): Rewrite so that describe-mode
+	can parse the value of minor-mode-alist correctly.  The string
+	" View" is now dependent on the value of forms-read-only.
+
+Wed Oct 20 08:00:51 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el: Documentation: `forms-forms-scroll' and `forms-forms-jump'
+	now default to nil.
+	`forms-new-record-filter' and `forms-modified-record-filter'
+	cannot be redefined as functions.
+	Commands and keymaps are changed.
+	Add function key defs.
+	(forms-version): Docstring includes full RCS id.
+	(forms-forms-scroll): Defaults to nil.
+	(forms-forms-jump): Defaults to nil.
+	(forms-mode-edit-map, forms-mode-ro-map): Additional keymaps
+	for edit mode and read-only mode.
+	(forms--new-record-filter, forms--modified-record-filter): Deleted.
+	(forms-mode): Docstring now includes the key bindings, since
+	both edit mode and read-only mode must be supported.
+	Changed `forms-new-record-filter' and `forms-modified-record-filter'
+	semantics: the variable must point to a function and may
+	not be defined as a function anymore.
+	Use three keymaps: `forms-mode-map' (C-c commands),
+	`forms-mode-edit-map' (normal mode) and `forms-mode-ro-map'
+	(read-only mode). The maps are not buffer local.
+	Changed the text of error messages to be more descriptive, and
+	consistent with the documentation.
+	Moved setting up write-file-hooks and revert-buffer-function
+	to function `forms--change-commands'.
+	(forms--process-format-list): Changed error messages to be
+	more descriptive.
+	(forms--set-keymaps): Setup the three keymaps.
+	(forms--mode-commands): Use new command key bindings.
+	(forms--mode-commands1): New helper function for
+	`forms--mode-commands'.
+	(forms--change-commands): Handle setup of
+	local-write-file-hooks and revert-buffer-function.
+	(forms--help): Show new command bindings.
+	(forms--show-record): Replaced `forms--modified-record-filter' by
+	`forms-modified-record-filter'.
+	(forms-jump-record): Changed error message.
+	(forms-toggle-read-only): New function, replaces
+	`forms-view-mode' and `forms-edit-mode'.
+	(forms-view-mode, forms-edit-mode): Deleted.
+	(forms-insert-record): Replaced `forms--new-record-filter' by
+	`forms-new-record-filter'. 
+	(forms-insert-record, forms-delete-record): Disallow in read-only
+	mode.
+	(forms-prev-field): New function.
+
+Tue Oct 19 09:50:13 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+	* calendar.el (calendar-week-start-day): New var (autoloaded) to
+	allow the calendar week to start on any day, not just Sunday.
+	(calendar-mod): New support function.
+	(calendar-cursor-to-visible-date, generate-calendar-month,
+	calendar-beginning-of-week, calendar-end-of-week): Rewritten to
+	use new var calendar-week-start-day.
+
+	* holidays.el (holiday-easter-etc): Fix Ascension Day string. 
+
+	* diary.el (list-sexp-diary-entries): Fix doc string.
+
+	* solar.el (solar-n-hemi-seasons, solar-s-hemi-seasons): New vars.
+	(solar-equinoxes-solstices): Use them to fix names for
+	southern hemisphere.
+
+	* calendar.el (calendar-day-name-array, calendar-month-name-array,
+	calendar-islamic-month-name-array,
+	calendar-hebrew-month-name-array-common-year,
+	calendar-hebrew-month-name-array-leap-year):  Change to defvar.
+
+	* diary.el (hebrew-calendar-parashiot-names):  Change to defvar.
+
+Mon Oct 18 03:54:58 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* etags.el (list-tags): Fix completing-read call interactive spec;
+	TABLE and PREDICATE args were reversed, and more processing was
+	needed on tags-table-files.
+
+Mon Oct 18 02:41:47 1993  Noah Friedman  (friedman@gnu.ai.mit.edu)
+
+        * rlogin.el (rlogin-initially-track-cwd): New variable.
+        (rlogin): Use it to determine whether enable directory tracking
+        via ange-ftp.
+        (rlogin-mode): Make `comint-filename-prefix' local here.
+
+        * rlogin.el (rlogin): Arguments to function are now a string with
+        multiple words (hostname first) and an optional prefix.
+        (rlogin-with-args): Function deleted.
+
+        * rlogin.el (rlogin): Set process filter after calling
+        `rlogin-mode' since the latter called `comint-mode', which sets
+        its own initial process filter.
+Mon Oct 18 20:28:36 1993  Barry A. Warsaw, ITB  (warsaw@anthem)
+
+	* reporter.el:
+	(reporter-submit-bug-report, reporter-mailer): reporter-mailer
+	variable can now take a list of mailers, trying each one until an
+	commandp one is found.
+
+	* reporter.el: Fixed elisp archive address.
+	Handle dumping of buffer local variables via reporter-eval-buffer.
+
+Thu Oct 14 18:28:24 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-backend-checkout): Do not set umask to value that does
+	not allow user-write permission while `co' is running; this breaks
+	versions of `co' that need to write temporary files.
+
+Wed Oct 13 20:11:51 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* rmailout.el (rmail-output-file-alist): Doc fix.
+
+Wed Oct 13 02:20:53 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* supercite.el, regi.el: New files.
+	* sc-elec.el: Files deleted.
+	* sc.el: Just load supercite.
+
+Tue Oct 12 16:57:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (abbreviated-home-dir): Doc fix.
+
+Mon Oct 11 20:53:34 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* map-ynp.el (map-y-or-n-p): Take new optional arg to not set
+	cursor-in-echo-area.
+
+Sun Oct 10 18:13:18 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-retry-setup-hook): New hook variable.
+	(rmail-retry-failure): Use that variable.
+
+	* pp.el: New file.
+
+Sat Oct  9 17:43:44 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ispell.el (ispell-message-cite-regexp): Add definition.
+
+Sat Oct  9 03:12:59 1993  Karl Fogel  (kfogel@occs.cs.oberlin.edu)
+
+	* bookmark.el (bookmark-write): Add numbered backups for bookmark file.
+	(bookmark-version-control): New variable.
+
+	* bookmark.el (bookmark-jump): bookmark-jump now gives a
+	default value if no bookmark is entered manually.
+	(bookmark-set): Default to bookmark-current-bookmark or
+        buffer-name the way bookmark-jump does.
+
+	* bookmark.el (ctl-x-map): Check if C-x r is a prefix
+	before using it as one.
+
+	* bookmark.el: Include string "Bookmarks" in defining
+	[menu-bar bookmark] in global-map in the menu-bar code.
+
+	* bookmark.el (menu-bar-bookmark-map): Supply t as 4th arg of autoload.
+
+	* bookmark.el (bookmark-jump-noselect): New subroutine taken from 
+	bookmark-jump.  Support compressed files.
+	(bookmark-jump): Call bookmark-jump-noselect.
+	Offer to relocate if necessary, but change default dir to that of 
+        the old	bookmark in read-file-name.
+
+	* bookmark.el: (bookmark-set, bookmark-rename, bookmark-delete,
+	bookmark-write-file, bookmark-load, Bookmark-menu-show-filenames,
+	Bookmark-menu-hide-filenames, Bookmark-menu-bookmark,
+	Bookmark-menu-save, Bookmark-menu-load): Fixed the save-excursion
+	bugs by wrapping things in save-window-excursion as well.
+
+	(bookmark-make-menu-bar-alist): Added sorting. 
+
+	(bookmark-map): Added new keybindings.
+	(bookmark-try-default-file): Set bookmarks-already-loaded to t
+	after the load.
+
+	* bookmark.el (list-bookmarks): Added bookmark menu stuff.
+	(Bookmark-menu-*): New functions.
+
+Sat Oct  9 15:59:31 1993  David J. MacKenzie  (djm@kropotkin.gnu.ai.mit.edu)
+
+	* isearch.el, reporter.el: Change comments saying they're not yet
+	part of GNU Emacs.
+
+Fri Oct  8 22:01:33 1993  Jonathan I. Kamens  (jik@security.ov.com)
+
+	* timezone.el (timezone-parse-date): Handle new style 22-AUG-1993.
+
+	* rmail.el (rmail): Really don't get new mail if file name was given.
+	(rmail-reformat-message): Move past Mail-from as well as Summary-line.
+	(rmail-toggle-header): Likewise.
+	(rmail-next-undeleted-message): Return t unless hit end of buffer.
+	(rmail-delete-forward): Likewise.
+	(mail-unsent-separator): Add `Original message follows'.
+	(rmail-resend): Handle mail-self-blind.
+
+	* files.el (hack-local-variables): If buffer has no file,
+	display its buffer name.
+
+	* rmailout.el (rmail-output): If message was shown with full headers,
+	copy the full headers (or each message copied) into the file.
+	New local var original-headers-p, header-beginning, mail-from.
+	Bind locals outside the while loop.  Kill tembuf only after loop.
+	If message has a saved mail-from field, use that.
+	Detect reaching end of rmail buffer; display # messages copied.
+
+Wed Oct  6 23:02:55 1993  Morten Welinder  (terra@diku.dk)
+
+	* desktop.el: Internal clean-up.  Save information about current
+	tags files, don't save the tags buffers (to save reload time).
+	Don't save desktop-globals-to-save (desktop files must be erased
+	for this to take effect, sorry.)  Save "mark-activity" and
+	allow multi-dir direds.
+
+Mon Oct  4 21:56:46 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* telnet.el (rsh): Add `host' to args passed to make-comint.
+
+Mon Oct  4 20:22:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format): Protect against
+	nonsensical content-length values.
+
+Mon Oct  4 20:51:01 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* vc.el	(vc-next-action): Fix (throw ... ) invocation to work with 19;
+	allows vc-next-action on all marked files in a dired buffer to work.
+	
+	(vc-finish-logentry) There isn't necessarily a *VC-log-entry* buffer
+	to remove if this function was called from within a dired buffer.  Fix
+	its handling of this case.
+
+Sat Oct  2 15:53:27 1993  Brian J. Fox  (bfox@ai.mit.edu)
+
+	* simple.el (edit-and-eval-command): Let `read-from-minibuffer'
+	manipulate the history list, don't manipulate it directly.
+	(repeat-complex-command): Same thing.
+
+Fri Oct  1 18:40:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mailabbrev.el (build-mail-abbrevs): Pass just 1 arg to
+	substitute-in-file-name.
+
+Mon Sep 27 04:36:31 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-find-binary): Fix bug; it always claimed success.
+
+Sun Sep 26 16:00:42 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el: Version 2.3.
+	Documentation: `forms-forms-scroll' and `forms-forms-jump'
+	now default to nil.
+	`forms-new-record-filter' and `forms-modified-record-filter'
+	cannot be redefined as functions.
+	Commands and keymaps are changed.
+	Add function key defs.
+	(forms-version): Docstring includes full RCS id.
+	(forms-forms-scroll): Defaults to nil.
+	(forms-forms-jump): Defaults to nil.
+	(forms-mode-edit-map, forms-mode-ro-map): Additional keymaps
+	for edit mode and read-only mode.
+	(forms--new-record-filter, forms--modified-record-filter): Deleted.
+	(forms-mode): Docstring now includes the key bindings, since
+	both edit mode and read-only mode must be supported.
+	Changed `forms-new-record-filter' and `forms-modified-record-filter'
+	semantics: the variable must point to a function and may
+	not be defined as a function anymore.
+	Use three keymaps: `forms-mode-map' (C-c commands),
+	`forms-mode-edit-map' (normal mode) and `forms-mode-ro-map'
+	(read-only mode). The maps are not buffer local.
+	Changed the text of error messages to be more descriptive, and
+	consistent with the documentation.
+	Moved setting up write-file-hooks and revert-buffer-function
+	to function `forms--change-commands'.
+	(forms--process-format-list): Changed error messages to be
+	more descriptive.
+	(forms--set-keymaps): Setup the three keymaps.
+	(forms--mode-commands): Use new command key bindings.
+	(forms--mode-commands1): New helper function for
+	`forms--mode-commands'.
+	(forms--change-commands): Handle setup of
+	local-write-file-hooks and revert-buffer-function.
+	(forms--help): Show new command bindings.
+	(forms--show-record): Replaced `forms--modified-record-filter' by
+	`forms-modified-record-filter'.
+	(forms-jump-record): Changed error message.
+	(forms-toggle-read-only): New function, replaces
+	`forms-view-mode' and `forms-edit-mode'.
+	(forms-view-mode, forms-edit-mode): Deleted.
+	(forms-insert-record): Replaced `forms--new-record-filter' by
+	`forms-new-record-filter'. 
+	(forms-insert-record, forms-delete-record): Disallow in read-only
+	mode.
+	(forms-prev-field): New function.
+	
+Sun Sep 26 21:36:07 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* disass.el (disassemble-internal): Allow a call to byte-code
+	as argument.
+
+Fri Sep 24 00:08:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ispell.el (ispell-message): Handle cited messages.
+
+	* frame.el (other-frame): Warp the mouse so that the other
+	frame actually stays selected.
+
+Wed Sep 22 12:37:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-delete-max-match): New function.
+	(mouse-choose-completion): Use that.  Now supports buffers
+	other than minibuffer.
+
+	* comint.el (comint-version): Deleted--no need for separate version.
+	(comint-input-ring-index): Make this a permanent local.
+	(comint-mode): Don't alter comint-input-ring-index or comint-input-ring
+	if already set meaningfully.
+
+Tue Sep 21 16:23:23 1993  Simon Marshall  (Simon.Marshall@mail.esrin.esa.it)
+
+	* comint.el (comint-mode-map): Added keys M-R/S for
+	comint-previous/next-matching-input-from-input and to completion
+	menu-bar.  Added comint-forward/backward-matching-input and
+	comint-previous/next-matching-input to completion menu-bar.
+
+	* comint.el (comint-mode): Doc fix for functionality.
+
+	* comint.el (comint-exec-1): Uses setenv.
+	(comint-update-env): Removed.
+
+	* comint.el (comint-input-ring-size): Incremented to 32, as with
+	command history.
+	(comint-dynamic-list-input-ring): Check for zero
+	length ring.  Use ring length, not ring size, when generating
+	list.  Use buffer " *Input History*".
+	(comint-previous-matching-input-string): Check for zero-length ring.
+	Check last item in case at end of cycle and it's a match.
+	(comint-searching-input-ring): New subroutine.
+
+	* comint.el (comint-regexp-arg): New subroutine.
+
+	* comint.el (comint-previous-matching-input-from-input): New command.
+	(comint-next-matching-input-from-input): New command.
+
+	* comint.el (comint-replace-by-expanded-history): Fix for matching
+	inside quotes.  Fix to allow argument subrange specifiers.  Fix to
+	identify and reject absolute input number references.
+
+	* comint.el (comint-within-quotes): New subroutine.
+	(comint-how-many-region): New subroutine.
+	(comint-args): New subroutine.
+	(comint-delim-arg): New subroutine.
+	(comint-arguments): New subroutine.
+	(comint-delimiter-argument-list): New variable.
+
+	* comint.el (comint-send-input): Inserts input arguments into ring
+	separated by single spaces.
+
+	* comint.el (comint-filter): Checks the buffer's process to make
+	sure it's still there.  Otherwise, set-buffer will fail.
+
+	* comint.el (comint-backward-matching-input): New command.
+	(comint-forward-matching-input): New command.
+	
+	* comint.el (comint-next-prompt, comint-previous-prompt):
+	Error if reach beg/end of buffer.
+
+	* comint.el (comint-dynamic-complete): Fix for absolute input
+	number references.
+	(comint-dynamic-complete-filename): Changed listings
+	function to comint-dynamic-list-filename-completions.  Uses
+	file-directory-p rather than string-match to test for directories.
+	(comint-dynamic-list-completions): Changed to list the
+	list of completions supplied as the function argument.  Use buffer
+	" *Completions*".
+
+	* comint.el (comint-match-partial-pathname): New subroutine.
+	(comint-dynamic-complete-variable): New command.
+	(comint-dynamic-list-filename-completions): New function.
+
+	* shell.el (shell-delimiter-argument-list): New variable.
+	(shell-input-ring-file-name): New variable.
+
+	* shell.el (shell-mode-map): Changed file name completions listing
+	binding to new name comint-dynamic-list-filename-completions.
+
+	* shell.el (shell-mode): Call new function shell-read-input-ring
+	and shell-dirstack on start up.  Doc fix for new functionality.
+
+	* shell.el (shell-mode): Set shell-input-ring-file-name depending
+	on the command that was invoked for the inferior shell.  Set
+	comint-delimiter-argument-list to shell-delimiter-argument-list.
+
+	* shell.el (shell-read-input-ring): New function.
+
+	* shell.el (shell-directory-tracker): Use comint-arguments.
+
+	* shell.el (shell-front-match): Removed.
+	(shell-match-cmd-w/optional-arg): Removed.
+
+	* shell.el (shell-process-popd): Fixed bug when numeric argument
+	equal to length of stack including current directory.
+	(shell-process-pushd): Fixed missing ()s in cond.
+
+	* shell.el (shell-dynamic-complete-command): Uses exec-path minus
+	trailing emacs library path.  Uses "." for nil elements in
+	exec-path.  Uses string-match rather than funcall to test
+	candidate extensions.  Uses member on completions list rather than
+	file-exists-p to test for existence.  Uses file-directory-p rather
+	than funcall to test for directory.  Uses directories only if in
+	current directory.  Uses comint-dynamic-list-completions.
+
+Tue Sep 21 07:42:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* loaddefs.el (global-map): Add bindings for menu and find keys.
+	(function-key-map): Add translation for labeled help key.
+
+	* mouse.el (mouse-drag-region): Put the text on the kill ring.
+	Don't set mark if region is empty.
+	(mouse-yank-at-click): Set this-command.
+	(mouse-start-end): Fix double-click-on-closeparen case.
+	(mouse-save-then-kill): When used repeatedly at different places,
+	alter the nearer end of the region.  This applies regardless of how
+	the previous selection was made.
+	(mouse-drag-secondary, mouse-secondary-save-then-kill):
+	Rewrite for xterm-style dragging and extending.
+
+	* comint.el (comint-previous-input):
+	Don't use replace-match; just insert before deleting.
+	(comint-magic-space): Use self-insert command.
+	(comint-history-file-name): New variable.
+
+Tue Sep 21 03:18:47 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* edebug.el (edebug-enter): Don't call the current function being
+	debugged in pre-command-hook or post-command-hook.
+
+Mon Sep 20 23:43:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* edmacro.el: Total rewrite by Gillespie.
+
+Mon Sep 20 17:38:06 1993  Simon Marshall  (Simon.Marshall@mail.esrin.esa.it)
+
+	* shell.el (shell-command-regexp, shell-command-execonly)
+	(shell-pushd-tohome, shell-pushd-dextract)
+	(shell-pushd-dunique): New variables.
+
+	* shell.el (shell-mode-map): Bound shell-forward/backward-command
+	to C-c C-f and C-c C-b.
+
+	* shell.el (shell-mode): Set comint variables for which
+	shells have different values:
+	comint-get-current-command, comint-dynamic-complete-command.
+
+	* shell.el (shell-directory-tracker): Parse through
+	command sequences for directory commands.
+	(shell-process-popd): Signal error if can't
+	process argument/stack.  Fixed bug when no argument and no stack.
+	(shell-process-cd): Signal error if can't process argument.
+	(shell-process-pushd): Signal error if can't
+	process argument/stack.  Handle shell-pushd-tohome,
+	shell-pushd-dextract, and shell-pushd-dunique.
+
+	* shell.el (shell-forward-command, shell-backward-command)
+	(shell-dynamic-complete-command): New commands.
+
+Mon Sep 20 14:57:52 1993  Simon Marshall  (Simon.Marshall@mail.esrin.esa.it)
+
+	* comint.el (comint-mode): Initialize comint-input-ring before
+	running comint-mode-hook.
+
+	* comint.el (comint-input-autoexpand): New variable.
+	(comint-dynamic-complete-command): New variable.
+	(comint-get-current-command): New variable.
+
+	* comint.el (comint-read-input-ring): New function.
+
+	* comint.el (comint-send-input): Handle history expansion.
+	(comint-input-sentinel): Doc fix.
+
+	* comint.el (comint-mode-map): Added key binding for C-c C-h.
+	Added menu bars for completion, input and output.
+
+	* comint.el (comint-dynamic-list-input-ring): New function.
+
+	* comint.el (comint-previous-input-string): New subroutine.
+	(comint-previous-input): Use it.
+	(comint-previous-matching-input-string): New subroutine.
+	(comint-previous-matching-input): Use it.
+
+	* comint.el (comint-replace-by-expanded-history): New command.
+	(comint-magic-space): New command.
+	(comint-replace-by-expanded-filename): Now replaces
+	expanded match for a filename, and then calls filename completion
+	comint-dynamic-complete-filename to do file name completion.
+
+	* comint.el (comint-kill-output): Don't kill prompt.
+	(comint-show-output): Don't move point if it's
+	visible where it is, and if point is moved, put it after prompt.
+
+	* comint.el (comint-dynamic-complete): Totally new definition.
+	(comint-dynamic-complete-filename): New name for old
+	function comint-dynamic-complete, completes files and lists
+	candidates, souped up for configurability.
+	(comint-dynamic-complete-variable): New command.
+	(comint-file-name-autolist): New variable.
+	(comint-file-name-addsuffix): New variable,
+	(comint-file-name-recexact): New variable.
+
+Mon Sep 20 11:39:04 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-save-then-kill): If follows a multi-click selection,
+	extend the selection.
+	(mouse-save-then-kill-delete-region): New subroutine.
+	(mouse-selection-click-count): New variable.
+	(mouse-drag-region): Set it.
+
+	* ispell.el (ispell-message): New command, with menu bar item.
+
+Sat Sep 19 22:05:38 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* menu-bar.el (revert-buffer):
+	Enable menu item when the buffer is modified.
+
+Fri Sep 17 10:31:48 1993  Brian Fox  (bfox@inferno)
+
+	* simple.el (kill-region): Use `equal' instead of `eq' to compare
+	markers `beg' and `end'.  They might be two different markers that
+	point to the same place.
+
+	* rmail.el (rmail-forward): Insert the forwarded message
+	on the line which follows mail-header-separator, not at the end of
+	the buffer.
+
+	* diary.el (diary-syntax-table): Make sure that we use a copy of
+	standard-syntax-table, and not the table itself.
+
+	* compile.el (compile-reinitialize-errors): Use ">=" to compare
+	`find-at-least' to the `length' of compilation-error-list.
+
+	* simula.el (simula-mode-syntax-table): Make sure that we use a
+	copy of standard-syntax-table, and not the table itself.
+
+	* compile.el (compile-internal): Back out jimb change of making
+	buffer read-only.  It is non-ergonomic.
+
+	* vc.el (vc-print-log): Delete extraneous lines of RCS output if
+	present.
+
+	* dired.el (dired-mode): Don't change the value of
+	case-fold-search.
+
+Wed Sep 15 12:56:44 1993  Brian Fox  (bfox@inferno)
+
+	* files.el (local-write-file-hooks): Make this variable
+	buffer-local.
+
+	* dired.el (dired-build-subdir-alist): Call `expand-file-name' to
+	clean up the subdirectory title (removing extra "./").
+
+Tue Aug 31 21:16:29 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-do-command): Remove debugging output.  Use (forward-line
+	-1) instead of (previous-line 1).
+
+Tue Sep 14 00:58:34 1993  Brian Fox  (bfox@inferno)
+
+	* rmail.el (rmail-convert-file): If the file is empty, don't
+	convert it after inserting the BABYL header.
+
+	* cal-dst.el (calendar-absolute-from-time): Fix typo by
+	interchanging (floor) and  (%).
+
+	* byte-opt.el (side-effect-free-fns): Add "-" and "1-" to the
+	list.
+
+	* subr.el (suppress-keymap): Use substitute-key-definition instead
+	of manually checking each key (we were using 127 instead of 255
+	anyway).
+
+	* loaddefs.el (ctl-x-map): `C-x r c' now runs `clear-rectangle'.
+
+	* texinfmt.el (texinfo-format-region texinfo-format-buffer): Add
+	###autoload cookies.
+	(batch-texinfo-format): Use `buffer-disable-undo' instead of
+	obsolete function `buffer-flush-undo'.
+
+	* solar.el (s-hemi-seasons n-hemi-seasons): New constants are
+	hemisphere dependent list of season names.  The names are
+	"international"; i.e., `vernal' and `autumnal' are used
+	consistently.
+	(solar-equinoxes-solstices): Use new constants, allowing southern
+	hemisphere reports to be meaningful.
+	(sunrise-sunset): Use `frame-width' instead of `screen-width'.
+
+	* calendar.el (calendar-mode): Fix typos in documentation string.
+
+	* outline.el (outline-minor-mode): Force update of modeline when
+	outline-minor-mode is toggled.
+
+Thu Aug 26 23:07:00 1993  Jim Blandy  (blandy@comano.cscs.ch)
+
+	* add-log.el (add-log-full-name, add-log-mailing-address): New
+	variables.
+	(add-change-log-entry): Don't ask for the login name and site name
+	separately; instead, prompt for a mailing address; that's more
+	useful.  Set add-log-full-name and add-log-mailing-address, so
+	that the values specified persist after being specified once.
+	Create a new change log entry if the mailing address doesn't
+	match; don't just compare the date, full name, and login name.
+
+Wed Sep  1 10:31:28 1993  Brian Fox  (bfox@inferno)
+
+	* tex-mode.el (slitex-mode): Add ###autoload magic cookie.
+
+Fri Aug 27 00:40:59 1993  Brian Fox  (bfox@sonderbar)
+
+	* diff.el (diff): Doc fix.
+
+Tue Aug 17 23:50:18 1993  Brian Fox  (bfox@inferno)
+
+	* version.el: Changed comment to refer to actual filename
+	"inc-vers.el" instead of "inc-version.el".
+
+Fri Sep 17 17:24:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-set-region): Put region in kill ring.
+	(mouse-drag-region): Handle double and triple clicks
+	when displaying region and when setting it.
+	(mouse-skip-word, mouse-start-end): New functions.
+
+Fri Sep 17 14:42:39 1993  Stig@netcom.com (Jonathan Stigelman)
+
+        * hilit19.el:
+        - (hilit-rehighlight-region): added (save-restriction (widen))
+          to avoid hangups in dired.
+        - Also slight improvements to fortran patterns and
+          hilit-default-face-table doc string
+        - added optional case-fold argument to hilit-set-mode-patterns
+        - added hilit-rehighlight-buffer-quietly to dired-after-readin-hook
+        - fixed bug in hilit-string-find that mishandled some strings: "\\"
+        - work-around for bug in next-overlay-change
+        - the pattern matcher now starts it's searches from the end of the 
+	  most recently highlighted region (which is not necessarily the end
+	  of the most recently matched regex).
+        - code moved from hilit-highlight-region to hilit-set-mode-patterns.
+          This will affect you if you pass your patterns directly to
+          hilit-highlight-region....use a pseudo-mode instead.
+        - twiddled C/C++, latex, texinfo, fortran, nroff patterns.
+        - added calendar-mode, icon-mode and pascal-mode patterns
+        - diverged lisp-mode and emacs-lisp-mode...also added lisp keywords.
+
+Fri Sep 17 14:52:33 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* yow.el (read-zippyism): New function.
+
+	* cookie1.el (read-cookie): New function.
+
+Fri Sep 17 13:51:33 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (directory-abbrev-alist): Doc fix.
+
+Thu Sep 16 10:52:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gud.el (perldb): New function, plus subroutines.
+
+	* text-mode.el (indented-text-mode): Make only blank lines
+	separate or start paragraphs.  Doc fix.
+
+	* font-lock.el (font-lock-fontify-region): Don't add `font-lock' props.
+	(font-lock-unfontify-region): Don't remove `font-lock' props.
+	(font-lock-hack-keywords): Don't add `font-lock' props.
+	Handle values other than t and nil for allow-overlap-p specially.
+	(c-font-lock-keywords-1): Don't override how comments in #if... appear.
+	Highlight text after #else or #endif.
+
+Wed Sep 15 19:22:28 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-version-other-window): New function.
+	(vc-backend-checkout): Add optional arg workfile, which specifies
+	where to put the working file.
+	* vc-hooks.el (vc-prefix-map): Bind C-x v ~ to
+	vc-version-other-window.
+
+Wed Sep 15 17:45:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-forward): Insert the text right after the
+	header separator.
+
+	* iso-acc.el: Set up keymap at load time.
+	(iso-accents-mode): Not here.  Just setq iso-accents-minor-mode.
+	(iso-accents-minor-mode): Make it local in all buffers.
+
+Tue Sep 14 12:51:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* iso-acc.el: New file.
+	Rename `iso-accents' to `iso-accents-mode' and change comments
+	accordingly.  Fix doc strings.
+	(iso-accents-minor-mode): Now a user option.
+	(iso-accents-mode): Positive arg means enable.
+	No arg means toggle.
+
+Mon Sep 13 19:49:45 1993  Per Cederqvist  (ceder@signum.se)
+
+	* forms.el: Change typos in comments.
+	(forms-delete-record, forms--update): Use `delete-region' instead of
+	`kill-line' to avoid messing around with the kill ring.
+
+Mon Sep 13 23:35:33 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el: Release 2.1 for Emacs 19.19.
+	(forms--process-format-list): No need to prepend a text item
+	anymore. 
+	(forms--ro-modification-start): Renamed to `forms--iif-start.
+	(forms--ro-properties): Renamed to `forms--iif-properties'.
+	(forms--romh): Renamed to `forms--iif-hook'.  Rewritten to use
+	`insert-in-front-hooks' instead of `modification-hooks'. 
+	(forms--romh-post-command-hook): Renamed to
+	`forms--iif-post-command-hook'.  Rewritten to use
+	`insert-in-front-hooks' instead of `modification-hooks'.
+	(forms--make-format, forms--make-format-elt-using-text-properties):
+	Use `insert-in-front-hooks' instead of `modification-hooks'.
+	Remove `forms--electric' code.  Use `front-sticky' and
+	`rear-nonsticky' text properties to control the insertion of text
+	between read-only fields.
+	(forms--show-record): Remove `forms--electric' code.
+
+Sun Sep 12 07:24:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sc.el (sc-glom-headers): Bind mark-active around calling region-...
+	(sc-cite-original): Likewise.
+
+Sat Sep 11 06:39:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* font-lock.el (font-lock-fontify-region): Put on `font-lock'
+	property as well as `face' property.
+	(font-lock-hack-keywords): Likewise.
+
+	* rmail.el (rmail-convert-file): Narrow to exclude the Babyl header.
+
+Fri Sep 10 01:05:45 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Use "/var/mail/" if
+	system-type is netbsd.
+
+Thu Sep  9 00:31:27 1993  Noah Friedman  (friedman@nutrimat.gnu.ai.mit.edu)
+
+        * rlogin.el: require 'shell.
+
+Wed Sep  8 12:06:37 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-backend-steal): Fix typo when invoking the 'rcs'
+	command to steal the lock.
+
+Wed Sep  8 02:22:59 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* shell.el (shell-dirstack-message): Recognize ~ by matching the
+	expansion of "~" with comint-filename-prefix prepended.  Strip
+	comint-filename-prefix from elts.
+
+	* comint.el (comint-filename-prefix): New variable.
+	(comint-replace-by-expanded-filename, comint-dynamic-complete,
+	comint-dynamic-list-completions): Prepend it to absolute file
+	names before completing.
+	* shell.el (shell-cd): New function, like `cd' but prepend
+	comint-filename-prefix.
+	(shell-resync-dirs, shell-process-cd, shell-process-pushd,
+	shell-process-popd): Use shell-cd in place of cd.
+	* rlogin.el (rlogin): After rlogin-mode, set
+	comint-filename-prefix locally to indicate the host, and cd to
+	/HOST:~/.
+	(rlogin-mode-map): Start with (cons 'keymap shell-mode-map),
+	rather than with a full copy of comint-mode-map.
+
+	* ange-ftp.el (ange-ftp-file-executable-p): New function, handles
+	file-executable-p.
+
+Tue Sep  7 13:06:55 1993  Ron Schnell  (ronnie@media.mit.edu)
+
+	* dunnet.el (dun-save-game): Use correct name of endgame question.
+
+Tue Sep  7 04:35:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (hack-local-variables-prop-line): Ignore any specification
+	for `mode:', since set-auto-mode has already handled it.
+	(set-auto-mode): Clean up.  Handle more than one `mode:' spec in -*-.
+
+	* rmail.el (rmail-convert-file): Exclude the Babyl header
+	when calling rmail-convert-to-babyl-format.
+
+	* startup.el (command-line): Setq inhibit-startup-message to nil.
+
+Mon Sep  6 18:48:08 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* register.el (jump-to-register): Take new optional arg NODELETE
+	(prefix arg); pass through to set-frame-configuration.
+	* frame.el (set-frame-configuration): Take new optional arg
+	NODELETE; if non-nil, don't delete any frames.
+
+	* register.el (window-configuration-to-register): Fix
+	prompt string in interactive spec.
+	(frame-configuration-to-register): Likewise.
+
+	* menu-bar.el: Don't clobber existing binding for menu-bar in
+	global-map.
+
+Mon Sep  6 22:37:51 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* cal-dst.el (calendar-time-zone-daylight-rules): Remove
+	special case for Israel.  Israel has changed its daylight
+	savings time rules.  We don't know what the current rules are,
+	but the special case was definitely incorrect.
+
+Mon Sep  6 18:15:29 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* etags.el (tag-exact-match-p): Return true if TAG is the explicit
+	tag name.
+
+Mon Sep  6 08:48:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simula.el: Doc fixes.
+	(simula-mode-syntax-table): Copy the syntax table.
+
+Mon Aug 30 12:17:43 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* etags.el (next-file): If arg is neither t nor nil, then eval it
+	to return initial list of files.
+	(tags-loop-continue): Doc fix.
+	(tags-search, tags-query-replace): Take optional final arg and pass to
+	tags-loop-continue (through to next-file) instead of t if non-nil.
+
+Sun Aug 29 10:29:22 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* solar.el (solar-degrees-to-quadrant): Use `floor' not `truncate'.
+	(solar-sunrise, solar-sunset, solar-longitude-of-sun):
+	Undo Aug 19 patch; not needed with new `mod'.
+
+Sun Aug 29 08:21:25 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+	* solar.el (solar-equinoxes-solstices): Invert seasons in southern
+	hemisphere.  Use "Autumnal" not "Fall".
+
+Sat Aug 28 02:41:19 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* cal-dst.el (calendar-time-zone-daylight-rules): Scan through the
+	next few years until at most one rule remains; if none remain, then
+	just use the first candidate rule; it's wrong in general, but it's
+	right for at least one year.  This is a better heuristic in case the
+	underlying time zone implementation has bugs (which is all too
+	common).  If possible, don't convert back and forth between gregorian
+	and absolute; this speeds things up noticeably.  This uses the new
+	calendar-nth-named-absday function.
+	
+	(calendar-current-time-zone): Some locales start DST at a different
+	time of day than they end; allow for this by yielding both times.  The
+	performance speedups in calendar.el are great enough that we now no
+	longer need the "Checking time zone data..." message.  If
+	current-time-zone yields nil, don't bother with
+	calendar-next-time-zone-transition.  Use clearer names for local vars.
+	
+	(calendar-time-zone, calendar-daylight-time-offset,
+	calendar-{standard,daylight}-time-zone-name,
+	calendar-daylight-savings-{starts,ends}): Default to US Eastern rules
+	for information that is not available.
+	
+	(calendar-daylight-savings-{starts,ends}-time): New vars, replacing
+	calendar-daylight-savings-switchover-time, to support locales that
+	start DST at a different time of day than they end.
+
+	(calendar-absolute-from-time): Fix typo by interchanging floor and mod.
+
+	* calendar.el (solar-holidays): Use new
+	calendar-daylight-savings-{starts,ends}-time vars instead of old
+	calendar-daylight-savings-switchover-time var.
+	
+	(calendar-last-day-of-month): Tune by testing month before year.
+	(calendar-absolute-from-gregorian): Tune by computing (1- year) once.
+	
+	(calendar-nth-named-absday): New function, used to improve performance
+	in calendar-time-zone-daylight-rules.
+	(calendar-nth-named-day): Use it.
+
+	* solar.el (solar-time-string):
+	Use new calendar-daylight-savings-{starts,ends}-time
+	vars instead of old calendar-daylight-savings-switchover-time var.
+
+Thu Aug 26 20:56:51 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-locked-example): Renamed from vc-quiescent-p.  Now
+	yields example of why current directory is not quiescent.  All
+	callers changed to use this.
+
+	* vc-hooks.el (vc-find-file-hook, vc-file-not-found-hook): Use
+	add-hook to install these hooks.
+
+Thu Aug 19 14:21:25 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+        * solar.el (solar-sunrise, solar-sunset, solar-longitude-of-sun):
+        Make both arguments to solar-mod float.
+
+        (sunrise-sunset): Change screen-width to frame-width.
+
+        * calendar.el (calendar-absolute-from-iso,
+        american-calendar-display-form, european-calendar-display-form):
+        Fix typos in doc strings doc strings.
+
+        (calendar-mode-map): Use "[prior]" and "[next]" in key bindings.
+
+Wed Aug 18 12:48:40 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* texinfo.el (texinfo-environment-regexp): Match cartouche.
+
+	* upd-copyr.el (update-copyright): Handle two-digit years with
+	apostrophes.
+
 Sat Aug 14 03:54:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.19 released.

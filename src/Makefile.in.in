@@ -17,10 +17,20 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-srcdir=@srcdir@/src
-VPATH=@srcdir@/src
-dot = .
+/* BSD doesn't have it as a default. */
+MAKE = make
+
+/* Here are the things that we expect ../configure to edit. */
+srcdir=@srcdir@
+VPATH=@srcdir@
+CC=@CC@
+CPP=@CPP@
+CFLAGS=@CFLAGS@
+C_SWITCH_SYSTEM=
+LN_S=@LN_S@
+
 /* On Xenix and the IBM RS6000, double-dot gets screwed up.  */
+dot = .
 lispdir = ${srcdir}/$(dot)$(dot)/lisp/
 libsrc = $(dot)$(dot)/lib-src/
 etc = $(dot)$(dot)/etc/
@@ -50,7 +60,7 @@ SHELL=/bin/sh
    don't let it interfere with this file.  */
 #undef register
 
-/* On some systems we may not to use the system make command. */
+/* On some systems we may not be able to use the system make command. */
 #ifdef MAKE_COMMAND
 MAKE = MAKE_COMMAND
 #else
@@ -218,7 +228,7 @@ SHORT= shortnames
 CFLAGS=-g
 /* C_SWITCH_X_SITE must come before C_SWITCH_X_MACHINE and C_SWITCH_X_SYSTEM
    since it may have -I options that should override those two.  */
-ALL_CFLAGS=-Demacs -DHAVE_CONFIG_H $(MYCPPFLAG) -I${srcdir} -I. C_SWITCH_MACHINE C_SWITCH_SYSTEM C_SWITCH_SITE C_SWITCH_X_SITE C_SWITCH_X_MACHINE C_SWITCH_X_SYSTEM ${CFLAGS}
+ALL_CFLAGS=-Demacs -DHAVE_CONFIG_H $(MYCPPFLAG) -I. -I${srcdir} C_SWITCH_MACHINE C_SWITCH_SYSTEM C_SWITCH_SITE C_SWITCH_X_SITE C_SWITCH_X_MACHINE C_SWITCH_X_SYSTEM ${CFLAGS}
 .c.o:
 	$(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) $<
 
@@ -487,9 +497,10 @@ lisp= \
 
 /* Construct full set of libraries to be linked.
    Note that SunOS needs -lm to come before -lc; otherwise, you get
-   duplicated symbols.  */
+   duplicated symbols.  If the standard libraries were compiled
+   with GCC, we might need gnulib again after them.  */
 LIBES = $(LIBX) LIBS_SYSTEM LIBS_MACHINE LIBS_TERMCAP \
-   LIBS_DEBUG $(GNULIB_VAR) LIB_MATH LIB_STANDARD
+   LIBS_DEBUG $(GNULIB_VAR) LIB_MATH LIB_STANDARD $(GNULIB_VAR)
 
 /* Enable recompilation of certain other files depending on system type.  */
 
@@ -730,22 +741,20 @@ xrdb.o : xrdb.c $(config_h)
 
 /* The files of Lisp proper */
 
-alloc.o : alloc.c frame.h window.h buffer.h  puresize.h syssignal.h \
- blockinput.h $(config_h) INTERVAL_SRC
-	$(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) $<
-
-bytecode.o : bytecode.c buffer.h $(config_h) 
+alloc.o : alloc.c frame.h window.h buffer.h  puresize.h syssignal.h
+alloc.o : blockinput.h $(config_h) INTERVAL_SRC
+bytecode.o : bytecode.c buffer.h $(config_h)
 data.o : data.c buffer.h puresize.h syssignal.h $(config_h)
 eval.o : eval.c commands.h keyboard.h blockinput.h $(config_h)
 floatfns.o : floatfns.c $(config_h)
 fns.o : fns.c commands.h $(config_h) frame.h buffer.h keyboard.h INTERVAL_SRC
-print.o : print.c process.h frame.h window.h buffer.h $(config_h) 
+print.o : print.c process.h frame.h window.h buffer.h $(config_h)
 lread.o : lread.c commands.h keyboard.h buffer.h paths.h $(config_h) \
  termhooks.h
 
 /* Text properties support */
 textprop.o : textprop.c buffer.h intervals.h $(config_h)
-intervals.o : intervals.c buffer.h intervals.h $(config_h)
+intervals.o : intervals.c buffer.h intervals.h puresize.h $(config_h)
 
 /* System-specific programs to be made.
    OTHER_FILES, OBJECTS_SYSTEM and OBJECTS_MACHINE
@@ -755,3 +764,34 @@ sunfns.o  : sunfns.c buffer.h $(config_h)
 
 ${libsrc}emacstool: ${libsrc}emacstool.c
 	cd ${libsrc}; ${MAKE} ${MFLAGS} emacstool
+mostlyclean:
+	rm -f temacs prefix-args xmakefile* core \#* *.o libXMenu11.a
+	rm -f ../etc/DOC
+clean: mostlyclean
+	rm -f emacs-* emacs
+/**/# This is used in making a distribution.
+/**/# Do not use it on development directories!
+distclean: clean
+	rm -f paths.h config.h ../etc/DOC-*
+realclean: distclean
+	rm -f TAGS
+versionclean:
+	-rm -f emacs emacs-* ../etc/DOC*
+extraclean: distclean
+	-rm -f *~ \#* m/*~ s/*~
+
+/* The rule for the [sm] files has to be written a little funny to
+   avoid looking like a C comment to CPP. */
+SOURCES = *.[ch] [sm]/?* COPYING ymakefile \
+	config.h.in README COPYING ChangeLog vms.pp-trans
+unlock:
+	chmod u+w $(SOURCES)
+
+relock:
+	chmod -w $(SOURCES)
+	chmod +w paths.h
+tagsfiles = [a-z]*.h [a-z]*.c ../lisp/[a-z]*.el ../lisp/term/[a-z]*.el
+TAGS: $(tagsfiles)
+	etags $(tagsfiles)
+tags: TAGS
+.PHONY: tags

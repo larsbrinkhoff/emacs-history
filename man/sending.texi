@@ -255,8 +255,8 @@ them in.  To enable this feature, execute the following:
 This can go in your @file{.emacs} file.  @xref{Hooks}.  If you use this
 feature, you must use @code{define-mail-abbrev} instead of
 @code{define-mail-alias}; the latter does not work with this package.
-The mail abbreviation packages also uses the variable @code{mail-abbrevs}
-instead of @code{mail-aliases}.
+Also, the mail abbreviation package uses the variable
+@code{mail-abbrevs} instead of @code{mail-aliases}.
 
   Note that abbrevs expand only if you insert a word-separator character
 afterward.  However, any mail aliases that you didn't expand in the mail

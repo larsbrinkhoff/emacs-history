@@ -24,7 +24,7 @@
 
 ;;; Emacs lisp functions to convert Texinfo files to Info files.
 
-(defvar texinfmt-version "2.30 of 18 May 1993")
+(defvar texinfmt-version "2.31 of 10 November 1993")
 
 ;;; Variable definitions
 
@@ -43,6 +43,20 @@
 (defvar texinfo-node-names)
 (defvar texinfo-enclosure-list)
 
+(defvar texinfo-command-start)
+(defvar texinfo-command-end)
+(defvar texinfo-command-name)
+(defvar texinfo-defun-type)
+(defvar texinfo-last-node-pos)
+(defvar texinfo-stack)
+(defvar texinfo-short-index-cmds-alist)
+(defvar texinfo-short-index-format-cmds-alist)
+(defvar texinfo-format-filename)
+(defvar texinfo-footnote-number)
+(defvar texinfo-start-of-header)
+(defvar texinfo-end-of-header)
+(defvar texinfo-raisesections-alist)
+(defvar texinfo-lowersections-alist)
 
 ;;; Syntax table
 
@@ -64,6 +78,7 @@
 
 ;;; Top level buffer and region formatting functions
 
+;;;###autoload
 (defun texinfo-format-buffer (&optional notagify)
   "Process the current buffer as texinfo code, into an Info file.
 The Info file output is generated in a buffer visiting the Info file
@@ -92,6 +107,7 @@ Info-split to do these manually."
 (defvar texinfo-region-buffer-name "*Info Region*"
   "*Name of the temporary buffer used by \\[texinfo-format-region].")
 
+;;;###autoload
 (defun texinfo-format-region (region-beginning region-end)
   "Convert the current region of the Texinfo file to Info format.
 This lets you see what that part of the file will look like in Info.
@@ -134,12 +150,12 @@ converted to Info is stored in a temporary buffer."
                  ;; Either copy header text.
                  (and 
                   (prog1 
-                      (search-forward texinfo-start-of-header search-end t)
+                      (search-forward tex-start-of-header search-end t)
                     (forward-line 1)
                     ;; Mark beginning of header.
                     (setq header-beginning (point)))
                   (prog1 
-                      (search-forward texinfo-end-of-header nil t)
+                      (search-forward tex-end-of-header nil t)
                     (beginning-of-line)
                     ;; Mark end of header
                     (setq header-end (point))))
@@ -676,9 +692,9 @@ lower types.")
 
 (defun texinfo-format-begin-end (prop)
   (setq texinfo-command-name (intern (texinfo-parse-line-arg)))
-  (setq cmd (get texinfo-command-name prop))
-  (if cmd (funcall cmd)
-    (texinfo-unsupported)))
+  (let ((cmd (get texinfo-command-name prop)))
+    (if cmd (funcall cmd)
+      (texinfo-unsupported))))
 
 ;;; Parsing functions
 
@@ -2188,7 +2204,7 @@ Default is to leave paragraph indentation as is."
 
 (defun texinfo-format-defun-1 (first-p)
   (let ((parse-args (texinfo-format-parse-defun-args))
-        (command-type (get texinfo-command-name 'texinfo-defun-type)))
+        (texinfo-defun-type (get texinfo-command-name 'texinfo-defun-type)))
     (texinfo-discard-command)
     ;; Delete extra newline inserted after previous header line.
     (if (not first-p)
@@ -2224,7 +2240,7 @@ Default is to leave paragraph indentation as is."
     (while args
       (insert " "
               (if (or (= ?& (aref (car args) 0))
-                      (eq (eval (car command-type)) 'deftp-type))
+                      (eq (eval (car texinfo-defun-type)) 'deftp-type))
                   (car args)
                 (upcase (car args))))
       (setq args (cdr args)))))
@@ -2255,8 +2271,8 @@ Default is to leave paragraph indentation as is."
   ;; @defun name args           In Info, `Function: Name ARGS'
   ;; @defmac name args          In Info, `Macro: Name ARGS'
   ;; @defvar name               In Info, `Variable: Name'
-  ;; Use cdr of command-type to determine category:
-  (let ((category (car (cdr command-type)))
+  ;; Use cdr of texinfo-defun-type to determine category:
+  (let ((category (car (cdr texinfo-defun-type)))
         (name (car parsed-args))
         (args (cdr parsed-args)))
     (insert " -- " category ": " name)
@@ -2302,8 +2318,8 @@ Default is to leave paragraph indentation as is."
   ;; @deftypevar data-type name 
   ;;     In Info, `Variable:  data-type name'
   ;; Note: args in lower case, unless modified in command line.
-  ;; Use cdr of command-type to determine category:
-  (let ((category (car (cdr command-type)))
+  ;; Use cdr of texinfo-defun-type to determine category:
+  (let ((category (car (cdr texinfo-defun-type)))
         (data-type (car parsed-args))
         (name (car (cdr  parsed-args)))
         (args (cdr (cdr parsed-args))))
@@ -2354,8 +2370,8 @@ Default is to leave paragraph indentation as is."
   ;; @defmethod class name args... 
   ;;     In Info, `Method on class: name ARGS'
   ;; Note: args in upper case; use of `on'
-  ;; Use cdr of command-type to determine category:
-  (let ((category (car (cdr command-type)))
+  ;; Use cdr of texinfo-defun-type to determine category:
+  (let ((category (car (cdr texinfo-defun-type)))
         (class (car parsed-args))
         (name (car (cdr  parsed-args)))
         (args (cdr  (cdr parsed-args))))
@@ -2372,8 +2388,8 @@ Default is to leave paragraph indentation as is."
   ;; @defivar class name
   ;;     In Info, `Instance variable of class: name'
   ;; Note: args in upper case; use of `of'
-  ;; Use cdr of command-type to determine category:
-  (let ((category (car (cdr command-type)))
+  ;; Use cdr of texinfo-defun-type to determine category:
+  (let ((category (car (cdr texinfo-defun-type)))
         (class (car parsed-args))
         (name (car (cdr  parsed-args)))
         (args (cdr  (cdr parsed-args))))
@@ -2979,7 +2995,7 @@ For example, invoke
             (progn
               (if buffer-file-name (kill-buffer (current-buffer)))
               (find-file file)
-              (buffer-flush-undo (current-buffer))
+              (buffer-disable-undo (current-buffer))
               (set-buffer-modified-p nil)
               (texinfo-mode)
               (message "texinfo formatting %s..." file)

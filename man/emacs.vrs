@@ -27,11 +27,12 @@
 \entry {\code {c-indent-level}}{171}
 \entry {\code {c-label-offset}}{172}
 \entry {\code {c-mode-hook}}{164}
-\entry {\code {c-mode-map}}{301}
+\entry {\code {c-mode-map}}{304}
 \entry {\code {c-tab-always-indent}}{170}
 \entry {\code {calendar-daylight-savings-ends}}{270}
+\entry {\code {calendar-daylight-savings-ends-time}}{270}
 \entry {\code {calendar-daylight-savings-starts}}{270}
-\entry {\code {calendar-daylight-savings-switchover-time}}{270}
+\entry {\code {calendar-daylight-savings-starts-time}}{270}
 \entry {\code {calendar-daylight-time-offset}}{270}
 \entry {\code {calendar-daylight-time-zone-name}}{258}
 \entry {\code {calendar-latitude}}{258}
@@ -39,10 +40,19 @@
 \entry {\code {calendar-longitude}}{258}
 \entry {\code {calendar-standard-time-zone-name}}{258}
 \entry {\code {calendar-time-zone}}{258}
+\entry {\code {calendar-week-start-day}}{254}
 \entry {\code {case-fold-search}}{84}
 \entry {\code {case-replace}}{85}
+\entry {\code {comint-completion-addsuffix}}{281}
+\entry {\code {comint-completion-autolist}}{281}
+\entry {\code {comint-completion-recexact}}{281}
+\entry {\code {comint-input-autoexpand}}{281}
+\entry {\code {comint-input-ignoredups}}{281}
+\entry {\code {comint-scroll-show-maximum-output}}{281}
+\entry {\code {comint-scroll-to-bottom-on-input}}{281}
+\entry {\code {comint-scroll-to-bottom-on-output}}{281}
 \entry {\code {command-history}}{41}
-\entry {\code {command-line-args}}{330}
+\entry {\code {command-line-args}}{332}
 \entry {\code {comment-column}}{175}
 \entry {\code {comment-end}}{176}
 \entry {\code {comment-indent-function}}{176}
@@ -55,9 +65,9 @@
 \entry {\code {compile-command}}{199}
 \entry {\code {completion-auto-help}}{39}
 \entry {\code {completion-ignored-extensions}}{39}
-\entry {\code {ctl-arrow}}{73}
-\entry {\code {ctl-x-4-map}}{301}
-\entry {\code {ctl-x-map}}{301}
+\entry {\code {ctl-arrow}}{74}
+\entry {\code {ctl-x-4-map}}{303}
+\entry {\code {ctl-x-map}}{303}
 \initial {D}
 \entry {\code {dbx-mode-hook}}{203}
 \entry {\code {default-directory}}{93}
@@ -65,19 +75,19 @@
 \entry {\code {delete-auto-save-files}}{104}
 \entry {\code {diary-display-hook}}{269}
 \entry {\code {diary-file}}{264}
-\entry {\code {diff-switches}}{115}
+\entry {\code {diff-switches}}{116}
 \entry {\code {dired-chown-program}}{246}
 \entry {\code {dired-copy-preserve-time}}{245}
 \entry {\code {dired-kept-versions}}{243}
 \entry {\code {dired-listing-switches}}{241}
-\entry {\code {double-click-time}}{307}
+\entry {\code {double-click-time}}{309}
 \initial {E}
 \entry {\code {echo-keystrokes}}{73}
 \entry {\code {emacs-lisp-mode-hook}}{164}
 \entry {\code {emerge-combine-versions-template}}{189}
 \entry {\code {emerge-startup-hook}}{190}
 \entry {\code {enable-recursive-minibuffers}}{37}
-\entry {\code {esc-map}}{301}
+\entry {\code {esc-map}}{303}
 \entry {\code {european-calendar-style}}{266}
 \entry {\code {explicit-shell-file-name}}{277}
 \initial {F}
@@ -109,14 +119,14 @@
 \entry {\code {gdb-mode-hook}}{203}
 \entry {\code {gud-xdb-directories}}{201}
 \initial {H}
-\entry {\code {help-map}}{301}
+\entry {\code {help-map}}{303}
 \initial {I}
 \entry {\code {indent-tabs-mode}}{141}
 \entry {\code {indent-tabs-mode \r {(Fortran mode)}}}{193}
 \entry {\code {inferior-lisp-program}}{208}
 \entry {\code {initial-major-mode}}{23}
 \entry {\code {insert-default-directory}}{93}
-\entry {\code {inverse-video}}{72}
+\entry {\code {inverse-video}}{73}
 \entry {\code {isearch-mode-map}}{77}
 \initial {K}
 \entry {\code {kept-new-versions}}{100}
@@ -134,12 +144,12 @@
 \entry {\code {lisp-indent-offset}}{169}
 \entry {\code {lisp-interaction-mode-hook}}{164}
 \entry {\code {lisp-mode-hook}}{164}
-\entry {\code {lisp-mode-map}}{301}
-\entry {\code {list-directory-brief-switches}}{115}
-\entry {\code {list-directory-verbose-switches}}{115}
+\entry {\code {lisp-mode-map}}{304}
+\entry {\code {list-directory-brief-switches}}{116}
+\entry {\code {list-directory-verbose-switches}}{116}
 \entry {\code {load-path}}{205}
 \entry {\code {local-write-file-hooks}}{98}
-\entry {\code {lpr-switches}}{281}
+\entry {\code {lpr-switches}}{283}
 \initial {M}
 \entry {\code {mail-abbrevs}}{224}
 \entry {\code {mail-aliases}}{224}
@@ -154,12 +164,12 @@
 \entry {\code {make-backup-files}}{99}
 \entry {\code {mark-ring}}{55}
 \entry {\code {mark-ring-max}}{55}
-\entry {\code {minibuffer-local-completion-map}}{302}
-\entry {\code {minibuffer-local-map}}{302}
-\entry {\code {minibuffer-local-must-match-map}}{302}
-\entry {\code {minibuffer-local-ns-map}}{302}
-\entry {\code {mode-line-inverse-video}}{72}
-\entry {\code {mode-specific-map}}{301}
+\entry {\code {minibuffer-local-completion-map}}{304}
+\entry {\code {minibuffer-local-map}}{304}
+\entry {\code {minibuffer-local-must-match-map}}{304}
+\entry {\code {minibuffer-local-ns-map}}{304}
+\entry {\code {mode-line-inverse-video}}{73}
+\entry {\code {mode-specific-map}}{303}
 \entry {\code {muddle-mode-hook}}{164}
 \initial {N}
 \entry {\code {next-line-add-newlines}}{27}
@@ -167,7 +177,7 @@
 \entry {\code {no-redraw-on-reenter}}{73}
 \entry {\code {nroff-mode-hook}}{161}
 \initial {O}
-\entry {\code {outline-mode-hook}}{152}
+\entry {\code {outline-mode-hook}}{153}
 \entry {\code {outline-regexp}}{153}
 \initial {P}
 \entry {\code {page-delimiter}}{147}
@@ -185,7 +195,7 @@
 \entry {\code {rmail-ignored-headers}}{239}
 \entry {\code {rmail-mail-new-frame}}{236}
 \entry {\code {rmail-output-file-alist}}{233}
-\entry {\code {rmail-redisplay-summary}}{238}
+\entry {\code {rmail-redisplay-summary}}{239}
 \initial {S}
 \entry {\code {save-abbrevs}}{215}
 \entry {\code {scheme-mode-hook}}{164}
@@ -193,12 +203,15 @@
 \entry {\code {sdb-mode-hook}}{203}
 \entry {\code {search-slow-speed}}{77}
 \entry {\code {search-slow-window-lines}}{77}
-\entry {\code {selective-display-ellipses}}{73}
+\entry {\code {selective-display-ellipses}}{74}
 \entry {\code {sentence-end}}{145}
-\entry {\code {server-temp-file-regexp}}{284}
-\entry {\code {server-window}}{284}
+\entry {\code {server-temp-file-regexp}}{286}
+\entry {\code {server-window}}{286}
 \entry {\code {shell-cd-regexp}}{277}
+\entry {\code {shell-command-execonly}}{282}
+\entry {\code {shell-command-regexp}}{279}
 \entry {\code {shell-file-name}}{276}
+\entry {\code {shell-input-ring-file-name}}{282}
 \entry {\code {shell-popd-regexp}}{277}
 \entry {\code {shell-prompt-pattern}}{278}
 \entry {\code {shell-pushd-regexp}}{277}
@@ -209,10 +222,10 @@
 \entry {\code {split-window-keep-point}}{126}
 \initial {T}
 \entry {\code {tab-stop-list}}{141}
-\entry {\code {tab-width}}{73}
+\entry {\code {tab-width}}{74}
 \entry {\code {tags-file-name}}{180}
-\entry {\code {term-file-prefix}}{312}
-\entry {\code {term-setup-hook}}{313}
+\entry {\code {term-file-prefix}}{315}
+\entry {\code {term-setup-hook}}{315}
 \entry {\code {tex-bibtex-command}}{160}
 \entry {\code {tex-default-mode}}{156}
 \entry {\code {tex-directory}}{159}
@@ -232,15 +245,16 @@
 \entry {\code {undo-strong-limit}}{33}
 \initial {V}
 \entry {\code {vc-command-messages}}{108}
-\entry {\code {vc-comment-alist}}{114}
+\entry {\code {vc-comment-alist}}{115}
+\entry {\code {vc-default-back-end}}{108}
 \entry {\code {vc-header-alist}}{114}
 \entry {\code {vc-initial-comment}}{108}
 \entry {\code {vc-keep-workfiles}}{107}
 \entry {\code {vc-log-mode-hook}}{109}
 \entry {\code {vc-make-backup-files}}{107}
-\entry {\code {vc-mistrust-permissions}}{108}
+\entry {\code {vc-mistrust-permissions}}{109}
 \entry {\code {vc-path}}{109}
-\entry {\code {vc-static-header-alist}}{114}
+\entry {\code {vc-static-header-alist}}{115}
 \entry {\code {vc-suppress-confirm}}{108}
 \entry {\code {version-control}}{100}
 \entry {\code {visible-bell}}{73}

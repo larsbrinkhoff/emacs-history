@@ -51,7 +51,7 @@
     Emacs includes an on-line, easy to follow tutorial and a built-in help
     system that describes all of Emacs's features.
 
-    This is the 8th Edition of the {\cite GNU Emacs Manual}.  It is written
+    This is the 9th Edition of the {\cite GNU Emacs Manual}.  It is written
     by Richard M.{} Stallman, who wrote the original Emacs.  This edition
     describes the new features and improvements in version 19, but can also
     be used with the older version 18.
@@ -62,7 +62,7 @@
     \rightskip=0pt
 
     \parfillskip=0pt\hfil%
-    ISBN-1-882114-02-7
+    ISBN 1-882114-03-5
 
     \vskip.5in
   }%

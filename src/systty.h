@@ -114,11 +114,18 @@ static struct sensemode {
 #ifdef AIX
 #include <sys/pty.h>
 #include <unistd.h>
+#define UNISTD_H_INCLUDED
 #endif /* AIX */
 
 #ifdef IRIX4
 /* Get _getpty prototype */
 #include <unistd.h>
+#define UNISTD_H_INCLUDED
+#endif
+
+#if defined (POSIX) && !defined (UNISTD_H_INCLUDED) && defined (HAVE_UNISTD_H)
+#include <unistd.h>
+#define UNISTD_H_INCLUDED
 #endif
 
 #ifdef SYSV_PTYS
@@ -264,6 +271,19 @@ static struct sensemode {
 
 #endif
 
+/* EMACS_GETPGRP (arg) returns the process group of the terminal.  */
+
+#if defined (USG) && !defined (GETPGRP_NEEDS_ARG)
+#  if !defined (GETPGRP_NO_ARG)
+#    define GETPGRP_NO_ARG
+#  endif
+#endif
+
+#if defined (GETPGRP_NO_ARG)
+#  define EMACS_GETPGRP(x) getpgrp()
+#else
+#  define EMACS_GETPGRP(x) getpgrp(x)
+#endif /* !GETPGRP_NO_ARG */
 
 /* Manipulate a TTY's input/output processing parameters.  */
 

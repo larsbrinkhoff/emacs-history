@@ -378,10 +378,10 @@ actually available, type @kbd{C-h f previous-matching-history-element}.
 there are separate history lists for different kinds of input.  For
 example, there is a list for file names, used by all the commands that
 read file names.  There is a list for arguments of commands like
-@code{query-replace}.  There are also very specific history lists, such
-as the one that @code{compile} uses for compilation commands.  Finally,
-there is one ``miscellaneous'' history list that most minibuffer
-arguments use.
+@code{query-replace}.  There are also very specific history lists,
+including one for command names read by @key{M-x} and one for
+compilation commands read by @code{compile}.  Finally, there is one
+``miscellaneous'' history list that most minibuffer arguments use.
 
 @node Repetition
 @section Repeating Minibuffer Commands

@@ -1,10 +1,408 @@
-GNU Emacs NEWS -- history of user-visible changes.  7 Jul 1993
+GNU Emacs NEWS -- history of user-visible changes.  9 Oct 1993
 Copyright (C) 1993 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
+
+User editing changes in version 19.20.
+(See following page for Lisp programming changes.)
+
+Note that some of these changes were made subsequent to the Emacs 19.20
+editions of the Emacs manual and Emacs Lisp manual; therefore, if you
+have those editions, do read this page.
+
+* Dragging with mouse button 1 now puts the selected region
+in the kill ring so you can paste it into other X applications.
+
+* Double and triple clicks with button 1 now behave as in xterm,
+selecting the word or line surrounding where you click.  If you drag
+after the last click, you can select a range of words or lines.
+
+* You can use button 3 to extend a mouse-selected region, as in xterm.
+This works for regions selected either by dragging Mouse-1 or by
+multiple-clicking Mouse-1.  Clicking Mouse-3 moves the end of the
+region that is (initially) nearer to where you click.
+
+If the selection was first made by multiple-clicking Mouse-1, and thus
+consists of entire words or lines, Mouse-3 preserves that state.
+
+As before, clicking Mouse-3 again in the same place kills the region
+thus selected.
+
+* The secondary selection commands, M-Mouse-1 and M-Mouse-3, have been
+likewise modified.
+
+* You can now search for strings and regexps using the Edit menu bar menu.
+
+* You can now access bookmarks using the Bookmark submenu in the File
+menu in the menu bar.
+
+* ISO Accents mode, a buffer-local minor mode, provides a convenient
+way to type certain non-ASCII characters.  It makes the characters `,
+', ", ^, ~ and / serve as modifiers for the following letter.  ` and '
+add accents, " adds an umlaut or diaresis, ^ adds a circumflex, ~
+adds a tilde, and / adds a slash to the following letter.
+
+If the following character is not a letter, or cannot be modified as
+requested, then both characters stand for themselves.  If you
+duplicate the modifier accent character, that enters the corresponding
+ISO non-spacing accent character (thus, '' enters the ISO acute-accent
+character).  To enter a modifier character itself, type it followed by
+a space.
+
+This feature can be used whenever a key sequence is expected: for
+ordinary insertion, for searching, and for certain command arguments.
+
+A few special combinations:
+
+~c => c with cedilla
+~d => d with stroke
+~< => left guillemet
+~> => right guillemet
+
+* iso-transl.el is a new library that replaces iso-insert.el.
+It defines C-x 8 as an insertion prefix for the ISO characters
+between 128 and 255, much like iso-insert, except that iso-transl
+works even in searches and help commands--wherever a key sequence
+is expected.
+
+To define case-conversion for these characters for ISO 8859/1,
+load the library iso-syntax.  (This is not new.)
+
+* M-TAB in Text mode now runs the command ispell-complete-word
+which performs completion using the spelling dictionary.
+
+The spelling correction submenu now includes this command 
+and another command which completes a word fragment (that is,
+it doesn't assume that the text to be completed starts at the
+beginning of a word.
+
+* In incremental search, you can use M-y to yank the most recent kill
+into the search string.
+
+* The new function ispell-message checks the spelling of a message
+you are about to send or post.  It ignores text cited from other
+messages.
+
+To automatically check all your outgoing messages, include the
+following line in your .emacs file:
+  (setq news-inews-hook (setq mail-send-hook 'ispell-message))
+
+* There is now a separate minibuffer history list for the names of
+extended commands.  This history list is used by M-x when reading
+the command name.  The motivation for this is to prevent command
+names from appearing in the history used for other minibuffer
+arguments.
+
+Note that the history list for entire commands that use the minibuffer
+is a separate feature.  That history list records a command with all
+its arguments, and you must use C-x ESC ESC to access it.
+
+* You can use the new command C-x v ~ VERSION RET to examine a
+specified version of a file that is maintained with version control.
+
+* In Indented Text mode, only blank lines now separate paragraphs.
+Indented lines continue the paragraph that is in progress.  This makes
+the user option variable adaptive-fill-mode have its intended effect.
+
+* Local variable specifications in files for variables whose names end
+in `-hook' and `-function' are now controlled by the variable
+`enable-local-eval', just like the `eval' variable.
+
+* C-x r j (jump-to-register) when restoring a frame configuration now
+makes all unwanted frames (existing frames not mentioned in the
+configuration) invisible.
+
+If you want to delete these unwanted frames, use a prefix argument for
+C-x r j.
+
+* You can customize the calendar to display weeks beginning on
+Monday: set the variable `calendar-week-start-day' to 1.
+
+* Rmail changes.
+
+If you save messages to a file in Unix format while viewing a message
+with its whole header, this now copies to the file the entire header
+of each message copied.
+
+* Comint mode changes.
+
+C-c C-e shows as much output as possible in the window.
+C-c RET copies an old input (the one at point)
+and places the copy after the latest prompt.
+C-c C-p and C-c C-n move through the buffer, stopping at places
+where the subshell prompted for input.
+C-c C-h lists the input history in a `*Help*' buffer.
+
+There are new menu bar items for completion/input/output/signal commands.
+
+Input behaviour is configurable.  Variables control whether some windows
+showing the buffer scroll to the bottom before insertion.  These are
+`comint-scroll-to-bottom-on-input' and `before-change-function'.  By default,
+insertion causes the selected window to scroll to the bottom before insertion
+occurs.
+
+Subprocess output now keeps point at the end of the buffer in each
+window individually if point was already at the end of the buffer in
+that window.
+
+If `comint-scroll-show-maximum-output' is non-nil (which is the
+default), then scrolling due to arrival of output tries to place the
+last line of text at the bottom line of the window, so as to show as
+much useful text as possible.  (This mimics the scrolling behavior of
+many terminals.)
+
+By setting `comint-scroll-to-bottom-on-output', you can opt for having
+point jump to the end of the buffer whenever output arrives--no matter
+where in the buffer point was before.  If the value is `this', point
+jumps in the selected window.  If the value is `all', point jumps in
+each window that shows the comint buffer.  If the value is `other',
+point jumps in all nonselected windows that show the current buffer.
+The default value is nil, which means point does not jump to the end.
+
+Input history insertion is configurable.  A variable controls whether only the
+first instance of successive identical inputs is stored in the input history.
+This is `comint-input-ignoredups'.
+
+Completion (bound to TAB) is now more general.  Depending on context,
+completion now operates on the input history, on command names, or (as
+before) on filenames.
+
+Filename completion is configurable.  Variables control whether
+file/directory suffix characters are added (`comint-completion-addsuffix'),
+whether shortest completion is acceptable when no further unambiguous
+completion is possible (`comint-completion-recexact'), and the timing of
+completion candidate listing (`comint-completion-autolist').
+
+Comint mode now provides history expansion.  Insert input using `!'
+and `^', in the same syntax that typical shells use; then type TAB.
+This searches the comint input history for a matching element,
+performs substitution if necessary, and places the result in the
+comint buffer in place of the original input.
+
+History references in the input may be expanded before insertion into
+the input ring, or on input to the interpreter (and therefore
+visibly).  The variable `comint-input-autoexpand' specifies which.
+
+You can make the SPC key perform history expansion by binding
+SPC to the command `comint-magic-space'.
+
+The command `comint-dynamic-complete-variable' does variable name
+completion using the environment variables as set within Emacs.  The
+variables controlling filename completion apply to variable name
+completion too.  This command is normally available through the menu
+bar.
+
+* Shell mode
+
+Paragraph motion and marking commands (default bindings M-{, M-}, M-h) operate
+on output groups (i.e., shell prompt plus associated shell output).
+
+TAB now completes commands, as well as file names and expand history.
+Commands are searched for along the path that Emacs has on startup.
+
+C-c C-f now moves forward a command (`shell-forward-command') and
+C-c C-b now moves backward a command (`shell-backward-command').
+
+Command completion is configurable.  The variables controlling
+filename completion in comint mode apply, together with a variable
+controlling whether to restrict possible completions to only files
+that are executable (`shell-command-execonly').
+
+The input history is initialised from the file name given in the
+variable `shell-input-ring-file-name'--normally `.history' in your
+home directory.
+
+Directory tracking is more robust.  It can cope with command sequences
+and forked commands, and can detect the failure of directory changing
+commands in most circumstances.  It's still not infallible, of course.
+
+You can now configure the behaviour of `pushd'.  Variables control
+whether `pushd' behaves like `cd' if no argument is given
+(`shell-pushd-tohome'), pop rather than rotate with a numeric argument
+(`shell-pushd-dextract'), and only add directories to the directory
+stack if they are not already on it (`shell-pushd-dunique').  The
+configuration you choose should match the underlying shell, of course.
+
+Emacs Lisp programming changes in Emacs 19.20.
+
+* A new function `remove-hook' is now used to remove a hook that you might
+have added with `add-hook'.
+
+* There is now a Lisp pretty-printer in the library `pp'.
+
+* The partial Common Lisp support has been entirely reimplemented.
+
+* When you insert text using `insert', `insert-before-markers' or
+`insert-buffer-substring', text properties are no longer inherited
+from the surrounding text.
+
+When you want to inherit text properties, use the new functions
+`insert-and-inherit' or `insert-before-markers-and-inherit'.
+
+The self-inserting character command does do inheritance.
+
+* Frame creation hooks.
+
+The function make-frame now runs the normal hooks
+before-make-frame-hook and after-make-frame-hook.
+
+* You can now use function-key-map to make a key an alias for other
+key sequences that can vary depending on circumstances.  To do this,
+give the key a definition in function-key-map which is a function
+rather than a specific expansion key sequence.
+
+If the function reads input itself, it can have the effect of altering
+the event that follows.  For example, here's how to define C-c h to
+turn the character that follows into a hyper character:
+
+(define-key function-key-map "\C-ch" 'hyperify)
+
+(defun hyperify (prompt)
+  (let ((e (if prompt (message "%s%s" prompt (single-key-description 
+	   (read-event)))
+    (vector (if (numberp e)
+		(logior (lsh 1 20) e)
+	      (if (memq 'hyper (event-modifiers e))
+		  e
+		(add-event-modifier "H-" e))))))
+
+(defun add-event-modifier (string e)
+  (let ((symbol (if (symbolp e) e (car e))))
+    (setq symbol (intern (concat string (symbol-name symbol))))
+    (if (symbolp e)
+	symbol
+      (cons symbol (cdr e)))))
+
+The character translation function gets one argument, which is the
+prompt that was specified in read-key-sequence--or nil if the key
+sequence is being read by the editor command loop.  In most cases
+you can just ignore the prompt value.
+
+* Changes for reading and writing text properties.
+
+New low-level Lisp features make it possible to write Lisp programs to
+save text properties in files, and read text properties from files.
+You can program any file format you like.
+
+The variable `write-region-annotation-functions' should contain a list
+of functions to be run by `write-region' to encode text properties in
+some fashion as annotations to the text that is written.
+
+Each function in the list is called with two arguments: the start and
+end of the region to be written.  These functions should not alter the
+contents of the buffer.  Instead, they should return lists indicating
+annotations to write in the file in addition to the text in the
+buffer.
+
+Each function should return a list of elements of the form (POSITION
+. STRING), where POSITION is an integer specifying the relative
+position in the text to be written, and STRING is the annotation to
+add there.
+
+Each list returned by one of these functions must be already sorted in
+increasing order by POSITION.  If there is more than one function,
+`write-region' merges the lists destructively into one sorted list.
+
+When `write-region' actually writes the text from the buffer to the
+file, it intermixes the specified annotations at the corresponding
+positions.  All this takes place without modifying the buffer.
+
+The variable `after-insert-file-functions' should contain a list of
+functions to be run each time a file's contents have been inserted into
+a buffer.  Each function receives one argument, the length of the
+inserted text; point indicates the start of that text.  The function
+should make whatever changes it wants to make, then return the updated
+length of the inserted text, as it stands after those changes.  The
+value returned by one function is used as the argument to the next.
+These functions should always return with point at the beginning of
+the inserted text.
+
+The intended use of `after-insert-file-functions' is for converting
+some sort of textual annotations into actual text properties.  But many
+other uses may be possible.
+
+We now invite users to begin implementing Lisp programs to store and
+retrieve text properties in files, using these new primitive features,
+and thus to experiment with various data formats and find good ones.
+
+We suggest not trying to handle arbitrary Lisp objects as property
+names or property values--because a program that general is probably
+difficult to write, and slow.  Instead, choose a set of possible data
+types that are reasonably flexible, and not too hard to encode.
+
+* Comint completion.
+
+Currently comint-dynamic-complete-command (and associated variable
+comint-after-partial-pathname-command) are set by default to complete a
+filename.  Other comint-mode users should have their own functions to achieve
+this.  For example, gud-mode could complete debugger commands.  A completion
+function is provided solely for this reason (comint-dynamic-simple-complete).
+
+Other comint-mode users should bind comint-dynamic-complete (shell-mode does
+already).
+
+* Comint history reference expansion
+
+Currently comint-input-autoexpand is 'history, which means only expand
+history on insertion to comint-input-ring.  For non-shell modes, this is
+a strange default, since non-shells will not understand history references.
+Perhaps it would be better for the variable to be 'input, which means expand
+on RET.
+
+The value 'history might possibly be wrong even for shells, since the
+expansion will be done both by comint and the underlying shell (except sh, of
+course).  It would be better for expansion to be done by one or the other,
+not both since they may (ahem) disagree.  Since it is silly to put a literal
+history reference into comint-input-ring, perhaps it would be better for the
+variable to be 'input too.
+
+The reason the variable is not 'input by default is that I was attempting to
+adhere to The Principle of Least Astonishment.  I didn't want to shock users
+by having their input change in front of their eyes.
+
+* Argument delimiters and Comint mode.
+
+Currently comint-delimiter-argument-list is '(), which means no strings are
+to be treated as delimiters and arguments.  In shell-mode, this variable is
+set to shell-delimiter-argument-list, '("|" "&" "<" ">" "(" ")" ";").  Other
+comint-mode users should set this variable too.  For example, a lisp-type
+mode might want to set this to '("." "(" ")") or some such.
+
+* Comint output hook.
+
+There is now a hook, comint-output-filter-hook, that is run-hooks'ed by the
+output filter, comint-output-filter.  This is useful for scrolling (see
+below), but also things like processing output for specific text, output
+hilighting, etc.
+
+So that such output processing may be done efficiently, there is a new
+variable, comint-last-output-start, that records the position of the start of
+the lastest output inserted into the buffer (effectively the previous value
+of process-mark).  Output processing functions should process the text
+between comint-last-output-start (or perhaps the beginning of the line that
+the position lies on) and process-mark.
+
+* Comint scrolling.
+
+There is now automatic scrolling of process windows.
+
+Currently comint-scroll-show-maximum-output is t, which means when scrolling
+output put process-mark at the bottom of the window.  There is a good case
+for it to be t, since the user is likely to want to see as much output as
+possible.  But, then again, there is a comint-show-maximum-output command.
+
+* Comint history retrieval.
+
+The input following point is not deleted when moving around the input history
+(with M-p etc.).  Emacs maintainers may not like this.  However, I feel this
+is a useful feature.  The simple remedy is to put end-of-line in before
+delete-region in comint-previous-matching-input.
+
+The input history retrieval commands still wrap-around the input ring, unlike
+Emacs command history.
 
 Changes in version 19.19.
 
@@ -1428,10 +1826,10 @@ it by setting `vc-default-back-end' to the symbol `RCS' or the symbol
 You can tell when a file you visit is maintained with version control
 because either `RCS' or `SCCS' appears in the mode line.
 
-** A new Calendar mode has been added, based on the work of Nachum
-Dershowitz and Edward M. Reingold.  The mode can display the Gregorian
-calendar and a variety of other calendars at any date, and interacts
-with a diary facility similar to the UNIX `calendar' utility.
+** A new Calendar mode has been added, the work of Edward M. Reingold.
+The mode can display the Gregorian calendar and a variety of other
+calendars at any date, and interacts with a diary facility similar to
+the UNIX `calendar' utility.
 
 ** There is a new major mode for editing binary files: Hexl mode.
 To use it, use M-x hexl-find-file instead of C-x C-f to visit the file.
@@ -1587,7 +1985,7 @@ own buffer.
 
 Here are three ways to enter two-column mode:
 
-C-x 6 2 makes the current buffer into the left-hand buffer.  It the
+C-x 6 2 makes the current buffer into the left-hand buffer.  In the
 right-hand window it puts a buffer whose name is based on the current
 buffer's name.
 
@@ -1612,7 +2010,7 @@ You can scroll both buffers together using C-x 6 SPC (scroll up), C-x
 6 DEL (scroll down), and C-x 6 RET (scroll up one line).  C-x 6 C-l
 recenters both buffers together.
 
-If you want to make a lines which will span both columns, put it in
+If you want to make a line which will span both columns, put it in
 the left-hand buffer, with an empty line in the corresponding place in
 the right-hand buffer.
 
@@ -1730,7 +2128,7 @@ usually C-h, at that time for help.
 use the character NEW.  You can use almost any character as a mark
 character by means of this command, to distinguish various classes of
 files.  If OLD is ` ', then the command operates on all unmarked
-files; if NEW is ` ', then the command unmarks the files in acts on.
+files; if NEW is ` ', then the command unmarks the files it acts on.
 
 ** Operating on Multiple Files
 

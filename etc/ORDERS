@@ -130,7 +130,6 @@ The tape includes source code for:
 GNU Utilities Tape
 
 The tape includes source code for:
-* acm (multiplayer aerial combat simulation for the X window system)
 * autoconf (produces shell scripts to automatically configure software builds)
 * Bash (GNU's Bourne Again SHell)
 * GNU bc, dc & cpio
@@ -143,9 +142,10 @@ The tape includes source code for:
 * Gnats (a bug-tracking system)
 * GNU find & finger
 * GNU fontutils (create and support fonts for use with Ghostscript or TeX)
+* acm (multiplayer aerial combat simulation for the X window system)
 * ms (MandelSpawn, a parallel Mandelbrot program for the X window system)
-* GNU Chess (a chess playing program with an interface to X)
-* GNU Shogi (plays Shogi, a japanese game similar to chess, with a X interface)
+* GNU Chess (a chess playing program with interfaces to both X & ttys)
+* GNU Shogi (plays a japanese game like chess; has both tty & X interfaces)
 * Nethack (a rogue-like game)
 * GNU GO (the GNU implementation of the game of GO)
 * GNU hello (produces a familiar, friendly greeting)

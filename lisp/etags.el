@@ -386,8 +386,8 @@ Returns t if it visits a tags table, or nil if there are no more in the list."
 		  (car (or 
 			;; First check only tables already in buffers.
 			(save-excursion (tags-table-including buffer-file-name
-								 tags-table-list
-								 t))
+							      tags-table-list
+							      t))
 			;; Since that didn't find any, now do the
 			;; expensive version: reading new files.
 			(save-excursion (tags-table-including buffer-file-name
@@ -992,7 +992,8 @@ See documentation of variable `tags-file-name'."
 			       (progn (skip-chars-forward "^\177")
 				      (point))))
       (terpri)
-      (forward-line 1))))
+      (forward-line 1))
+    t))
 
 (defun etags-tags-apropos (string)
   (goto-char 1)
@@ -1070,10 +1071,14 @@ See documentation of variable `tags-file-name'."
 ;; t if point is at a tag line that matches TAG "exactly".
 ;; point should be just after a string that matches TAG.
 (defun tag-exact-match-p (tag)
-  (and (looking-at "\\Sw.*\177") (looking-at "\\S_.*\177") ;not a symbol char
-       (save-excursion
-	 (backward-char (1+ (length tag)))
-	 (and (looking-at "\\Sw") (looking-at "\\S_")))))
+  ;; The match is really exact if there is an explicit tag name.
+  (or (looking-at (concat "[^\177]*\177" (regexp-quote tag) "\001"))
+      ;; We also call it "exact" if it is surrounded by symbol boundaries.
+      ;; This is needed because etags does not always generate explicit names.
+      (and (looking-at "\\Sw.*\177") (looking-at "\\S_.*\177")
+	   (save-excursion
+	     (backward-char (1+ (length tag)))
+	     (and (looking-at "\\Sw") (looking-at "\\S_"))))))
 
 ;; t if point is at a tag line that matches TAG as a word.
 ;; point should be just after a string that matches TAG.
@@ -1097,8 +1102,10 @@ See documentation of variable `tags-file-name'."
 ;;;###autoload
 (defun next-file (&optional initialize novisit)
   "Select next file among files in current tags table.
-Non-nil first argument (prefix arg, if interactive)
-initializes to the beginning of the list of files in the tags table.
+
+A first argument of t (prefix arg, if interactive) initializes to the
+beginning of the list of files in the tags table.  If the argument is
+neither nil nor t, it is evalled to initialize the list of files.
 
 Non-nil second argument NOVISIT means use a temporary buffer
  to save time and avoid uninteresting warnings.
@@ -1106,11 +1113,18 @@ Non-nil second argument NOVISIT means use a temporary buffer
 Value is nil if the file was already visited;
 if the file was newly read in, the value is the filename."
   (interactive "P")
-  (and initialize
-       (save-excursion
-	 ;; Visit the tags table buffer to get its list of files.
-	 (visit-tags-table-buffer)
-	 (setq next-file-list (tags-table-files))))
+  (cond ((not initialize)
+	 ;; Not the first run.
+	 )
+	((eq initialize t)
+	 ;; Initialize the list from the tags table.
+	 (save-excursion
+	   ;; Visit the tags table buffer to get its list of files.
+	   (visit-tags-table-buffer)
+	   (setq next-file-list (tags-table-files))))
+	(t
+	 ;; Initialize the list by evalling the argument.
+	 (setq next-file-list (eval initialize))))
   (or next-file-list
       (save-excursion
 	;; Get the files from the next tags table.
@@ -1148,7 +1162,8 @@ If it returns non-nil, this file needs processing by evalling
 ;;;###autoload
 (defun tags-loop-continue (&optional first-time)
   "Continue last \\[tags-search] or \\[tags-query-replace] command.
-Used noninteractively with non-nil argument to begin such a command.
+Used noninteractively with non-nil argument to begin such a command (the
+argument is passed to `next-file', which see).
 Two variables control the processing we do on each file:
 the value of `tags-loop-scan' is a form to be executed on each file
 to see if it is interesting (it returns non-nil if so)
@@ -1194,7 +1209,7 @@ If the latter returns non-nil, we exit; otherwise we scan the next file."
 ;;;###autoload (define-key esc-map "," 'tags-loop-continue)
 
 ;;;###autoload
-(defun tags-search (regexp)
+(defun tags-search (regexp &optional file-list-form)
   "Search through all files listed in tags table for match for REGEXP.
 Stops when a match is found.
 To continue searching for next match, use command \\[tags-loop-continue].
@@ -1209,10 +1224,10 @@ See documentation of variable `tags-file-name'."
     (setq tags-loop-scan
 	  (list 're-search-forward regexp nil t)
 	  tags-loop-operate nil)
-    (tags-loop-continue t)))
+    (tags-loop-continue (or file-list-form t))))
 
 ;;;###autoload
-(defun tags-query-replace (from to &optional delimited)
+(defun tags-query-replace (from to &optional delimited file-list-form)
   "Query-replace-regexp FROM with TO through all files listed in tags table.
 Third arg DELIMITED (prefix arg) means replace only word-delimited matches.
 If you exit (\\[keyboard-quit] or ESC), you can resume the query-replace
@@ -1228,15 +1243,19 @@ See documentation of variable `tags-file-name'."
 				   ;; will see it.
 				   '(goto-char (match-beginning 0))))
 	tags-loop-operate (list 'perform-replace from to t t delimited))
-  (tags-loop-continue t))
+  (tags-loop-continue (or file-list-form t)))
 
 ;;;###autoload
 (defun list-tags (file)
   "Display list of tags in file FILE.
-FILE should not contain a directory specification
-unless it has one in the tags table."
-  (interactive (list (completing-read "List tags in file: " nil
-				      'tags-table-files t nil)))
+FILE should not contain a directory specification."
+  (interactive (list (completing-read "List tags in file: "
+				      (save-excursion
+					(visit-tags-table-buffer)
+					(mapcar 'list
+						(mapcar 'file-name-nondirectory
+							(tags-table-files))))
+				      nil t nil)))
   (with-output-to-temp-buffer "*Tags List*"
     (princ "Tags in file ")
     (princ file)
@@ -1245,10 +1264,11 @@ unless it has one in the tags table."
       (let ((first-time t)
 	    (gotany nil))
 	(while (visit-tags-table-buffer (not first-time))
+	  (setq first-time nil)
 	  (if (funcall list-tags-function file)
 	      (setq gotany t)))
 	(or gotany
-	    (error "File %s not in current tags tables"))))))
+	    (error "File %s not in current tags tables" file))))))
 
 ;;;###autoload
 (defun tags-apropos (regexp)

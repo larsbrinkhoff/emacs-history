@@ -14,7 +14,11 @@
 /* SUPPRESS 288 on yyerrlab *//* Label unused */
 
 #ifdef HAVE_CONFIG_H
+#if defined (emacs) || defined (CONFIG_BROKETS)
+#include <config.h>
+#else
 #include "config.h"
+#endif
 #endif
 
 /* Since the code of getdate.y is not included in the Emacs executable
@@ -27,6 +31,25 @@
 #undef static
 #endif
 
+/* The following block of alloca-related preprocessor directives is here
+   solely to allow compilation by non GNU-C compilers of the C parser
+   produced from this file by old versions of bison.  Newer versions of
+   bison include a block similar to this one in bison.simple.  */
+   
+#ifdef __GNUC__
+#define alloca __builtin_alloca
+#else
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#else
+#ifdef _AIX
+ #pragma alloca
+#else
+void *alloca ();
+#endif
+#endif
+#endif
+
 #ifdef __GNUC__
 #undef alloca
 #define alloca __builtin_alloca
@@ -37,7 +60,7 @@
 #ifdef _AIX /* for Bison */
  #pragma alloca
 #else
-char *alloca ();
+void *alloca ();
 #endif
 #endif
 #endif
@@ -74,7 +97,7 @@ char *alloca ();
 #undef timezone /* needed for sgi */
 #endif
 
-#if defined(HAVE_SYS_TIMEB_H) || (!defined(USG) && defined(HAVE_FTIME))
+#if defined(HAVE_SYS_TIMEB_H)
 #include <sys/timeb.h>
 #else
 /*
@@ -604,6 +627,8 @@ ToSeconds(Hours, Minutes, Seconds, Meridian)
 	if (Hours < 1 || Hours > 12)
 	    return -1;
 	return ((Hours + 12) * 60L + Minutes) * 60L + Seconds;
+    default:
+	abort ();
     }
     /* NOTREACHED */
 }

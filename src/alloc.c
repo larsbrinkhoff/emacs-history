@@ -19,7 +19,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <signal.h>
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "intervals.h"
 #include "puresize.h"
@@ -1011,6 +1011,12 @@ make_pure_string (data, length)
   XSTRING (new)->size = length;
   bcopy (data, XSTRING (new)->data, length);
   XSTRING (new)->data[length] = 0;
+
+  /* We must give strings in pure storage some kind of interval.  So we
+     give them a null one.  */
+#if defined (USE_TEXT_PROPERTIES)
+  XSTRING (new)->intervals = NULL_INTERVAL;
+#endif
   pureptr += (size + sizeof (int) - 1)
 	     / sizeof (int) * sizeof (int);
   return new;

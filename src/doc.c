@@ -18,7 +18,7 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-#include "config.h"
+#include <config.h>
 
 #include <sys/types.h>
 #include <sys/file.h>	/* Must be after sys/types.h for USG and BSD4_1*/
@@ -480,7 +480,7 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	    {
 	      name = Fsymbol_name (name);
 	      insert_string ("\nUses keymap \"");
-	      insert_from_string (name, 0, XSTRING (name)->size);
+	      insert_from_string (name, 0, XSTRING (name)->size, 1);
 	      insert_string ("\", which is not currently defined.\n");
 	      if (start[-1] == '<') keymap = Qnil;
 	    }

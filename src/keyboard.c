@@ -20,7 +20,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Allow config.h to undefine symbols found here.  */
 #include <signal.h>
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #undef NULL
 #include "termchar.h"
@@ -402,6 +402,7 @@ extern Lisp_Object Qmenu_enable;
 
 Lisp_Object recursive_edit_unwind (), command_loop ();
 Lisp_Object Fthis_command_keys ();
+Lisp_Object Qextended_command_history;
 
 /* Address (if not 0) of EMACS_TIME to zero out if a SIGIO interrupt
    happens.  */
@@ -993,7 +994,7 @@ command_loop_1 ()
 #endif /* 0 */
 
       /* Read next key sequence; i gets its length.  */
-      i = read_key_sequence (keybuf, (sizeof keybuf / sizeof (keybuf[0])), 0);
+      i = read_key_sequence (keybuf, (sizeof keybuf / sizeof (keybuf[0])), Qnil);
 
       ++num_input_keys;
 
@@ -3714,7 +3715,7 @@ static int
 read_key_sequence (keybuf, bufsize, prompt)
      Lisp_Object *keybuf;
      int bufsize;
-     char *prompt;
+     Lisp_Object prompt;
 {
   int count = specpdl_ptr - specpdl;
 
@@ -3778,7 +3779,10 @@ read_key_sequence (keybuf, bufsize, prompt)
      we put it off for later.  While we're reading, we keep the event here.  */
   Lisp_Object delayed_switch_frame;
 
+  /* See the comment below... */
+#if defined (GOBBLE_FIRST_EVENT)
   Lisp_Object first_event;
+#endif
 
   int junk;
 
@@ -3798,8 +3802,8 @@ read_key_sequence (keybuf, bufsize, prompt)
 
   if (INTERACTIVE)
     {
-      if (prompt)
-	echo_prompt (prompt);
+      if (!NILP (prompt))
+	echo_prompt (XSTRING (prompt)->data);
       else if (cursor_in_echo_area)
 	/* This doesn't put in a dash if the echo buffer is empty, so
 	   you don't always see a dash hanging out in the minibuffer.  */
@@ -3812,14 +3816,16 @@ read_key_sequence (keybuf, bufsize, prompt)
     echo_start = echo_length ();
   keys_start = this_command_key_count;
 
-#if 0 /* This doesn't quite work, because some of the things
-	 that read_char does cannot safely be bypassed.
-	 It seems too risky to try to make this work right.  */ 
+#if defined (GOBBLE_FIRST_EVENT)
+  /* This doesn't quite work, because some of the things that read_char
+     does cannot safely be bypassed.  It seems too risky to try to make
+     this work right.  */ 
+
   /* Read the first char of the sequence specially, before setting
      up any keymaps, in case a filter runs and switches buffers on us.  */
-  first_event = read_char (!prompt, 0, submaps, last_nonmenu_event,
+  first_event = read_char (NILP (prompt), 0, submaps, last_nonmenu_event,
 			   &junk);
-#endif
+#endif /* GOBBLE_FIRST_EVENT */
 
   /* We jump here when the key sequence has been thoroughly changed, and
      we need to rescan it starting from the beginning.  When we jump here,
@@ -3929,7 +3935,7 @@ read_key_sequence (keybuf, bufsize, prompt)
 	{
 	  struct buffer *buf = current_buffer;
 
-	  key = read_char (!prompt, nmaps, submaps, last_nonmenu_event,
+	  key = read_char (NILP (prompt), nmaps, submaps, last_nonmenu_event,
 			   &used_mouse_menu);
 
 	  /* read_char returns t when it shows a menu and the user rejects it.
@@ -4235,6 +4241,27 @@ read_key_sequence (keybuf, bufsize, prompt)
 	      fkey_next
 		= get_keyelt (access_keymap (fkey_next, key, 1, 0));
 
+	      /* If the function key map gives a function, not an
+		 array, then call the function with no args and use
+		 its value instead.  */
+	      if (SYMBOLP (fkey_next) && ! NILP (Ffboundp (fkey_next))
+		  && fkey_end == t)
+		{
+		  struct gcpro gcpro1, gcpro2, gcpro3;
+		  Lisp_Object tem;
+		  tem = fkey_next;
+
+		  GCPRO3 (fkey_map, keytran_map, delayed_switch_frame);
+		  fkey_next = call1 (fkey_next, prompt);
+		  UNGCPRO;
+		  /* If the function returned something invalid,
+		     barf--don't ignore it.
+		     (To ignore it safely, we would need to gcpro a bunch of 
+		     other variables.)  */
+		  if (! (VECTORP (fkey_next) || STRINGP (fkey_next)))
+		    error ("Function in function-key-map returns invalid key sequence");
+		}
+
 	      /* If keybuf[fkey_start..fkey_end] is bound in the
 		 function key map and it's a suffix of the current
 		 sequence (i.e. fkey_end == t), replace it with
@@ -4257,8 +4284,8 @@ read_key_sequence (keybuf, bufsize, prompt)
 		      int i;
 
 		      for (i = 0; i < len; i++)
-			XFASTINT (keybuf[fkey_start + i]) =
-			  XSTRING (fkey_next)->data[i];
+			XFASTINT (keybuf[fkey_start + i])
+			  = XSTRING (fkey_next)->data[i];
 		    }
 		  
 		  mock_input = t;
@@ -4307,8 +4334,29 @@ read_key_sequence (keybuf, bufsize, prompt)
 	    keytran_next
 	      = get_keyelt (access_keymap (keytran_next, key, 1, 0));
 
+	    /* If the key translation map gives a function, not an
+	       array, then call the function with no args and use
+	       its value instead.  */
+	    if (SYMBOLP (keytran_next) && ! NILP (Ffboundp (keytran_next))
+		&& keytran_end == t)
+	      {
+		struct gcpro gcpro1, gcpro2, gcpro3;
+		Lisp_Object tem;
+		tem = keytran_next;
+
+		GCPRO3 (keytran_map, keytran_map, delayed_switch_frame);
+		keytran_next = call1 (keytran_next, prompt);
+		UNGCPRO;
+		/* If the function returned something invalid,
+		   barf--don't ignore it.
+		   (To ignore it safely, we would need to gcpro a bunch of 
+		   other variables.)  */
+		if (! (VECTORP (keytran_next) || STRINGP (keytran_next)))
+		  error ("Function in function-key-map returns invalid key sequence");
+	      }
+
 	    /* If keybuf[keytran_start..keytran_end] is bound in the
-	       function key map and it's a suffix of the current
+	       key translation map and it's a suffix of the current
 	       sequence (i.e. keytran_end == t), replace it with
 	       the binding and restart with keytran_start at the end. */
 	    if ((VECTORP (keytran_next) || STRINGP (keytran_next))
@@ -4437,8 +4485,7 @@ DEFUN ("read-key-sequence", Fread_key_sequence, Sread_key_sequence, 1, 2, 0,
   if (NILP (continue_echo))
     this_command_key_count = 0;
 
-  i = read_key_sequence (keybuf, (sizeof keybuf/sizeof (keybuf[0])),
-			 NILP (prompt) ? 0 : XSTRING (prompt)->data);
+  i = read_key_sequence (keybuf, (sizeof keybuf/sizeof (keybuf[0])), prompt);
 
   if (i == -1)
     {
@@ -4548,11 +4595,11 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
 
   /* Prompt with buf, and then read a string, completing from and
      restricting to the set of all defined commands.  Don't provide
-     any initial input.  The last Qnil says not to perform a 
-     peculiar hack on the initial input.  */
+     any initial input.  Save the command read on the extended-command
+     history list. */
   function = Fcompleting_read (build_string (buf),
 			       Vobarray, Qcommandp,
-			       Qt, Qnil, Qnil);
+			       Qt, Qnil, Qextended_command_history);
 
   /* Set this_command_keys to the concatenation of saved_keys and
      function, followed by a RET.  */
@@ -5213,6 +5260,10 @@ syms_of_keyboard ()
 
   this_command_keys = Fmake_vector (make_number (40), Qnil);
   staticpro (&this_command_keys);
+
+  Qextended_command_history = intern ("extended-command-history");
+  Fset (Qextended_command_history, Qnil);
+  staticpro (&Qextended_command_history);
 
   kbd_buffer_frame_or_window
     = Fmake_vector (make_number (KBD_BUFFER_SIZE), Qnil);

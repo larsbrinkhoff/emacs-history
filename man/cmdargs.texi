@@ -165,8 +165,8 @@ a suspension.  To prepare for this, put the following code in your
   As further preparation, you must execute the shell script
 @file{emacs.csh} (if you use CSH as your shell) or @file{emacs.bash} (if
 you use BASH as your shell).  These scripts define an alias named
-@code{edit}, which will resume Emacs give it new command line arguments
-such as files to visit.
+@code{edit}, which will resume Emacs giving it new command line
+arguments such as files to visit.
 
   Only ordinary arguments work properly when you resume Emacs.  Initial
 arguments are not recognized.  It's too late to execute them anyway.
@@ -368,9 +368,9 @@ The @var{width} and @var{height} are measured in characters, so a large font
 creates a larger frame than a small font.  The @var{xoffset} and
 @var{yoffset} are measured in pixels.
 
-  Since the the mode line and the echo area occupy the last 2 lines of
-the frame, the height of the initial text window is 2 less than the
-height specified in your geometry.
+  Since the mode line and the echo area occupy the last 2 lines of the
+frame, the height of the initial text window is 2 less than the height
+specified in your geometry.
 
   You do not have to specify all of the fields in the geometry
 specification.  The default width for Emacs is 80 characters and the

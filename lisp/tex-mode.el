@@ -192,6 +192,18 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
   (define-key keymap "\C-c\C-q" 'tex-show-print-queue)
   (define-key keymap "\C-c\C-p" 'tex-print)
   (define-key keymap "\C-c\C-v" 'tex-view)
+
+  (define-key keymap [menu-bar tex] (cons "TeX" (make-sparse-keymap "TeX")))
+
+  (define-key keymap [menu-bar tex tex-kill-job] '("Tex Kill" . tex-kill-job))
+  (define-key keymap [menu-bar tex tex-recenter-output-buffer]
+    '("Tex Recenter" . tex-recenter-output-buffer))
+  (define-key keymap [menu-bar tex tex-show-print-queue]
+    '("Show Print Queue" . tex-show-print-queue))
+  (define-key keymap [menu-bar tex tex-alt-print]
+    '("Tex Print (alt printer)" . tex-alt-print))
+  (define-key keymap [menu-bar tex tex-print] '("Tex Print" . tex-print))
+  (define-key keymap [menu-bar tex tex-view] '("Tex View" . tex-view))
   )
 
 (defvar tex-mode-map nil "Keymap for TeX mode.")
@@ -209,7 +221,25 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
   (define-key tex-mode-map "\C-c\C-f" 'tex-file)
   (define-key tex-mode-map "\C-c\C-i" 'tex-bibtex-file)
   (define-key tex-mode-map "\C-c\C-o" 'tex-latex-block)
-  (define-key tex-mode-map "\C-c\C-e" 'tex-close-latex-block))
+  (define-key tex-mode-map "\C-c\C-e" 'tex-close-latex-block)
+  (define-key tex-mode-map [menu-bar tex tex-validate-region]
+    '("Validate Region" . tex-validate-region))
+  (define-key tex-mode-map [menu-bar tex validate-tex-buffer]
+    '("Validate Buffer" . validate-tex-buffer))
+  (define-key tex-mode-map [menu-bar tex tex-region]
+    '("Tex Region" . tex-region))
+  (define-key tex-mode-map [menu-bar tex tex-buffer]
+    '("Tex Buffer" . tex-buffer))
+  (define-key tex-mode-map [menu-bar tex tex-file] '("Tex File" . tex-file)))
+
+(put 'tex-region 'menu-enable 'mark-active)
+(put 'tex-validate-region 'menu-enable 'mark-active)
+(put 'tex-print 'menu-enable '(stringp tex-print-file))
+(put 'tex-alt-print 'menu-enable '(stringp tex-print-file))
+(put 'tex-view 'menu-enable '(stringp tex-print-file))
+(put 'tex-recenter-output-buffer 'menu-enable '(get-buffer "*tex-shell*"))
+(put 'tex-kill-job 'menu-enable '(tex-shell-running))
+
 
 (defvar tex-shell-map nil
   "Keymap for the tex-shell.  A comint-mode-map with a few additions.")
@@ -354,6 +384,7 @@ subshell is initiated, the value of tex-shell-hook is called."
   (setq tex-trailer "\\end{document}\n")
   (run-hooks 'text-mode-hook 'tex-mode-hook 'latex-mode-hook))
 
+;;;###autoload
 (defun slitex-mode ()
   "Major mode for editing files of input for SliTeX.
 Makes $ and } display the characters they match.
@@ -955,6 +986,12 @@ is provided, use the alternative command, `tex-alt-dvi-print-command'."
         (if alt tex-alt-dvi-print-command tex-dvi-print-command)
         print-file-name-dvi t))))
 
+(defun tex-alt-print ()
+  "Print the .dvi file made by \\[tex-region], \\[tex-buffer] or \\[tex-file].
+Runs the shell command defined by tex-alt-dvi-print-command."
+  (interactive)
+  (tex-print t))
+
 (defun tex-view ()
   "Preview the last `.dvi' file made by running TeX under Emacs.
 This means, made using \\[tex-region], \\[tex-buffer] or \\[tex-file].
@@ -965,15 +1002,26 @@ The variable `tex-dvi-view-command' specifies the shell command for preview."
 
 (defun tex-append (file-name suffix)
   "Append to FILENAME the suffix SUFFIX, using same algorithm TeX uses.
-Scans for the first (not last) period.
+Pascal-based TeX scans for the first period, C TeX uses the last.
 No period is retained immediately before SUFFIX,
 so normally SUFFIX starts with one."
   (if (stringp file-name)
-      (let ((file (file-name-nondirectory file-name)))
-	(concat (file-name-directory file-name)
-		(substring file 0
-			   (string-match "\\." file))
-		suffix))
+      (let ((file (file-name-nondirectory file-name))
+	    trial-name)
+	;; try spliting on first period
+	(setq trial-name
+	      (concat (file-name-directory file-name)
+		      (substring file 0
+				 (string-match "\\." file))
+		      suffix))
+	(if (or (file-exists-p trial-name)
+		(file-exists-p (concat trial-name ".aux"))) ;for BibTeX files
+	    trial-name
+	  ;; not found, so split on last period
+	  (concat (file-name-directory file-name)
+		  (substring file 0
+			     (string-match "\\.[^.]*$" file))
+		  suffix)))
     " "))
 
 (defun tex-show-print-queue ()

@@ -18,7 +18,7 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include "lisp.h"
 #include "commands.h"
@@ -295,7 +295,7 @@ Returns t if expansion took place.")
 	     XINT (XSYMBOL (sym)->plist) + 1);	/* Increment use count */
 
   expansion = XSYMBOL (sym)->value;
-  insert_from_string (expansion, 0, XSTRING (expansion)->size);
+  insert_from_string (expansion, 0, XSTRING (expansion)->size, 1);
   SET_PT (point + whitecnt);
 
   if (uccount && !lccount)
@@ -359,8 +359,9 @@ is not undone.")
 	error ("value of abbrev-symbol must be a string");
       adjust = XSTRING (val)->size;
       del_range (point, point + adjust);
+      /* Don't inherit properties here; just copy from old contents.  */
       insert_from_string (Vlast_abbrev_text, 0,
-			  XSTRING (Vlast_abbrev_text)->size);
+			  XSTRING (Vlast_abbrev_text)->size, 0);
       adjust -= XSTRING (Vlast_abbrev_text)->size;
       Vlast_abbrev_text = Qnil;
     }

@@ -99,13 +99,13 @@ rm -f /tmp/el /tmp/elc
 
 ### Make sure configure is newer than configure.in.
 if [ "x`ls -t configure configure.in | head -1`" != "xconfigure" ]; then
-  echo "`./configure.in' seems to be newer than `./configure.'" >&2
+  echo "\`./configure.in' seems to be newer than \`./configure.'" >&2
   echo "Attempting to run autoconf." >&2
   autoconf
 fi
 
 ### Update getdate.c.
-(cd lib-src; make -f Makefile.in getdate.c)
+(cd lib-src; make -f Makefile.in getdate.c YACC="bison -y")
 
 echo "Creating staging directory: \`${tempparent}'"
 mkdir ${tempparent}
@@ -127,8 +127,8 @@ mkdir ${tempdir}
 ### README while the rest of the tar file is still unpacking.  Whoopee.
 echo "Making links to top-level files." 
 ln GETTING.GNU.SOFTWARE INSTALL PROBLEMS README move-if-change ${tempdir}
-ln ChangeLog Makefile.in build-install.in configure configure.in ${tempdir}
-ln make-dist ${tempdir}
+ln ChangeLog Makefile.in build-ins.in configure configure.in ${tempdir}
+ln make-dist vpath.sed ${tempdir}
 ### Copy config.guess and config.sub; they're cross-filesystem symlinks.
 cp config.sub ${tempdir}
 cp config.guess ${tempdir}
@@ -194,7 +194,7 @@ echo "Making links to \`lisp/term'."
 
 echo "Making links to \`src'."
 ### Don't distribute =*.[ch] files, or the configured versions of
-### config.h.in, paths.h.in, or Makefile.in, or TAGS.
+### config.h.in, paths.h.in, or Makefile.in.in, or TAGS.
 (cd src
  echo "  (If we can't link gmalloc.c, that's okay.)"
  ln [a-zA-Z]*.c ../${tempdir}/src
@@ -202,15 +202,12 @@ echo "Making links to \`src'."
  test -f ../${tempdir}/src/gmalloc.c || cp gmalloc.c ../${tempdir}/src
  ln [a-zA-Z]*.h ../${tempdir}/src
  ln [a-zA-Z]*.s ../${tempdir}/src
- ln README Makefile.in ymakefile ChangeLog OChangeLog config.h.in paths.h.in \
+ ln README Makefile.in.in ChangeLog OChangeLog config.h.in paths.h.in \
     ../${tempdir}/src
  ln .gdbinit .dbxinit ../${tempdir}/src
  ln *.opt vms-pp.trans ../${tempdir}/src
  cd ../${tempdir}/src
  rm -f config.h paths.h Makefile
- if [ -z "${newer}" ]; then
-   etags *.h *.c ../lisp/*.el
- fi
  rm -f =* TAGS)
 
 echo "Making links to \`src/bitmaps'."
@@ -264,7 +261,7 @@ echo "Making links to \`info'."
 
 echo "Making links to \`man'."
 (cd man
- ln *.texinfo *.texi *.aux *.cps *.fns *.kys *.vrs ../${tempdir}/man
+ ln *.texi *.aux *.cps *.fns *.kys *.vrs ../${tempdir}/man
  test -f README && ln README ../${tempdir}/man
  test -f Makefile && ln Makefile ../${tempdir}/man
  ln ChangeLog split-man ../${tempdir}/man

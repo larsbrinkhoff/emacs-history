@@ -19,7 +19,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <stdio.h>
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "frame.h"
 
@@ -339,7 +339,7 @@ function is called.")
 
 DEFUN ("handle-switch-frame", Fhandle_switch_frame, Shandle_switch_frame, 1, 2, "e",
   "Handle a switch-frame event EVENT.\n\
-Switch-frame events is usually bound to this function.\n\
+Switch-frame events are usually bound to this function.\n\
 A switch-frame event tells Emacs that the window manager has requested\n\
 that the user's events be directed to the frame mentioned in the event.\n\
 This function selects the selected window of the frame of EVENT.\n\
@@ -972,7 +972,10 @@ doesn't support multiple overlapping frames, this function does nothing.")
      Lisp_Object frame;
 {
   CHECK_LIVE_FRAME (frame, 0);
-  
+
+  /* Do like the documentation says. */
+  Fmake_frame_visible (frame);
+
   if (frame_raise_lower_hook)
     (*frame_raise_lower_hook) (XFRAME (frame), 1);
 

@@ -369,7 +369,7 @@ Other major modes are defined by comparison with this one."
   (interactive)
   (kill-all-local-variables))
 
-(defvar read-expression-map (copy-keymap minibuffer-local-map)
+(defvar read-expression-map (cons 'keymap minibuffer-local-map)
   "Minibuffer keymap used for reading Lisp expressions.")
 (define-key read-expression-map "\M-\t" 'lisp-complete-symbol)
 
@@ -382,9 +382,11 @@ Other major modes are defined by comparison with this one."
 (defun eval-expression (expression)
   "Evaluate EXPRESSION and print value in minibuffer.
 Value is also consed on to front of the variable `values'."
-  (interactive (list (read-from-minibuffer "Eval: "
-					   nil read-expression-map t
-					   'read-expression-history)))
+  (interactive
+   (let* ((minibuffer-history-sexp-flag t))
+     (list (read-from-minibuffer "Eval: "
+				 nil read-expression-map t
+				 'read-expression-history))))
   (setq values (cons (eval expression) values))
   (prin1 (car values) t))
 
@@ -392,12 +394,11 @@ Value is also consed on to front of the variable `values'."
   "Prompting with PROMPT, let user edit COMMAND and eval result.
 COMMAND is a Lisp expression.  Let user edit that expression in
 the minibuffer, then read and evaluate the result."
-  (let ((command (read-from-minibuffer prompt
-				       (prin1-to-string command)
-				       read-expression-map t)))
-    ;; Add edited command to command history, unless redundant.
-    (or (equal command (car command-history))
-	(setq command-history (cons command command-history)))
+  (let* ((minibuffer-history-sexp-flag t)
+	 (command (read-from-minibuffer prompt
+					(prin1-to-string command)
+					read-expression-map t
+					'(command-history . 1))))
     (eval command)))
 
 (defun repeat-complex-command (arg)
@@ -416,20 +417,23 @@ to get different commands to edit and resubmit."
 	newcmd)
     (if elt
 	(progn
-	  (setq newcmd (read-from-minibuffer "Redo: "
-					     (prin1-to-string elt)
-					     read-expression-map
-					     t
-					     (cons 'command-history
-						   arg)))
-	  ;; If command was added to command-history as a string,
-	  ;; get rid of that.  We want only evallable expressions there.
-	  (if (stringp (car command-history))
-	      (setq command-history (cdr command-history)))
-	  ;; If command to be redone does not match front of history,
-	  ;; add it to the history.
-	  (or (equal newcmd (car command-history))
-	      (setq command-history (cons newcmd command-history)))
+	  (setq newcmd
+		(read-from-minibuffer
+		 "Redo: " (prin1-to-string elt) read-expression-map t
+		 (cons 'command-history arg)))
+
+;;;  read-from-minibuffer handles the adding of what is read to the history
+;;;  variable.
+;;;
+;;;	  ;; If command was added to command-history as a string,
+;;;	  ;; get rid of that.  We want only evallable expressions there.
+;;;	  (if (stringp (car command-history))
+;;;	      (setq command-history (cdr command-history)))
+;;;
+;;;	  ;; If command to be redone does not match front of history,
+;;;	  ;; add it to the history.
+;;;	  (or (equal newcmd (car command-history))
+;;;	      (setq command-history (cons newcmd command-history)))
 	  (eval newcmd))
       (ding))))
 
@@ -1041,7 +1045,7 @@ to make one entry in the kill ring."
    ;; ring to share the same string object.  This code does that.
    ((not (or (eq buffer-undo-list t)
 	     (eq last-command 'kill-region)
-	     (eq beg end)))
+	     (equal beg end)))
     ;; Don't let the undo list be truncated before we can even access it.
     (let ((undo-strong-limit (+ (- (max beg end) (min beg end)) 100))
 	  (old-list buffer-undo-list)
@@ -2109,7 +2113,7 @@ in the mode line."
   "Move cursor momentarily to the beginning of the sexp before point."
   (interactive)
   (and (> (point) (1+ (point-min)))
-       (/= (char-syntax (char-after (- (point) 2))) ?\\ )
+       (not (memq (char-syntax (char-after (- (point) 2))) '(?/ ?\\ )))
        blink-matching-paren
        (let* ((oldpos (point))
 	      (blinkpos)

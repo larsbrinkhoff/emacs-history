@@ -26,7 +26,7 @@ and this notice must be preserved on all copies.  */
    on all 68000 systems.  */
 
 #define NOT_C_CODE
-#include "config.h"
+#include <config.h>
 
 #ifndef HAVE_ALLOCA  /* define this to use system's alloca */
 

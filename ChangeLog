@@ -1,3 +1,128 @@
+Thu Nov 11 09:52:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.20 released.
+
+	* build-ins.in: Renamed from build-install.in.
+
+Wed Nov 10 16:02:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Don't try to link *.texinfo--there are none now.
+	When running make in lib-src, specify YACC var value.
+
+Sun Oct  3 15:55:17 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in (extrasub): Add vpath patterns for %.[yls].
+
+	* configure.in: Don't do seddery on config.status after AC_OUTPUT.
+	Instead just include the commands to make src/Makefile as the
+	second arg to AC_OUTPUT.
+
+	* configure.in: Use : instead of dnl for comment inside
+	$makefile_command.
+
+	* configure.in: No longer use vpath_sed.  Instead, when we notice
+	srcdir already configured, set extrasub to hack vpath in the
+	makefiles.
+
+	* configure.in: In cmds to make src/Makefile, chmod Makefile.new
+	before moving it.
+	* Makefile.in (VPATH): Define to @srcdir@.
+
+Tue Sep 28 03:25:46 1993  Brian Fox  (bfox@cubit)
+
+	* configure.in: Don't copy ${srcdir}/src/Makefile.in; that file
+	doesn't exist.  Just copy src/Makefile.in instead.  Touch
+	all of the Makefiles after editing config.status.
+
+	* INSTALL: Update documentation to match new configuration
+	mechanism.
+
+Mon Sep 27 08:51:38 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* configure.in: Allow any of the path or directory Makefile
+	variables to be set with flags to configure.  Create all Makefiles
+	at configure time.  Edit special commands into config.status after
+	src/Makefile.in is built from src/Makefile.
+
+	* Makefile.in (src/Makefile, lib-src/Makefile, oldXMenu/Makefile):
+	  If these files are out of date, simply have config.status
+	  rebuild them; don't rebuild them explicitly.
+
+Sat Sep 25 12:00:38 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* build-install.in: Change src/xemacs to src/emacs.  We no longer
+	create src/xemacs, so the file wouldn't be found.
+
+	* make-dist: Remove `src/ymakefile', add `src/Makefile.in.in'.
+
+Fri Sep 24 03:07:35 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* configure.in: Avoid forcing the search of /usr/include before
+	fixed include files by resetting C_SWITCH_X_SITE if it is
+	"-I/usr/include".
+
+Mon Sep 20 09:47:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (@rip_paths@locallisppath):
+	Delete ${datadir}/emacs/site-lisp.
+
+Sun Sep 15 19:54:04 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in:
+	Use AC_QUOTE_SQUOTE twice to properly quote vpath_sed value.
+	Remove ${extra_output} from AC_OUTPUT call.
+
+Fri Sep 17 13:22:22 1993  Brian Fox  (bfox@inferno)
+
+	* make-dist: Quote backquotes found in strings to be echoed.
+
+	* configure.in: Use "sh -c pwd" when we want to avoid having the
+	shell fix up the value of $PWD.
+
+Mon Sep 13 21:06:16 1993  Brian Fox  (bfox@inferno)
+
+	* Makefile.in (do-install): Don't abort if ln or chmod at the end
+	of the installation fail.  Suggested by Karl Berry.
+
+Mon Aug 30 07:41:04 1993  Brian Fox  (bfox@inferno)
+
+	* Makefile.in (*clean): Use "$(MAKE) $(MAKEFLAGS)" wherever "make"
+	was used.  Set MAKEFLAGS from MFLAGS.
+
+Thu Sep 16 16:08:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Test for res_init in libc.
+
+Mon Sep 13 11:56:01 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: In the file ${tempcname}, use configure___
+	instead of @configure@.
+
+Sun Sep 12 10:51:49 1993  Roland McGrath  (roland@sugar-bombs.gnu.ai.mit.edu)
+
+	* make-dist: Dist vpath.sed
+
+	* Makefile.in (lib-src/Makefile, src/Makefile, oldXMenu/Makefile):
+	Depend on vpath.sed.
+	Replace sed comand for VPATH with @vpath_sed@.
+
+	* configure.in: Substitute variable `vpath_sed'.
+	If not in $srcdir and $srcdir is configured,
+	issue warning that GNU make is required,
+	and set vpath_sed to use vpath.sed script.
+
+Fri Sep 10 01:18:13 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in: Remove check for $srcdir being configured.  This
+	pretty much works now.  
+	Grok {m68*-hp,i[34]86-*}-netbsd* and set opsys=netbsd.
+	Check for XFree86 (/usr/X386/include) independent of whether
+	-lXbsd exists.
+
+	* Makefile.in (info, dvi, clean, mostlyclean, distclean,
+	realclean, unlock, relock): Use `$(MAKE)' in place of plain
+	`make'.
+
 Sat Aug 14 01:31:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.19 released.

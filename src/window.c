@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "buffer.h"
 #include "frame.h"
@@ -1346,7 +1346,7 @@ value is reasonable when this function is called.")
 }
 
 DEFUN ("delete-windows-on", Fdelete_windows_on, Sdelete_windows_on,
-  1, 1, "bDelete windows on (buffer): ",
+  1, 2, "bDelete windows on (buffer): ",
   "Delete all windows showing BUFFER.\n\
 Optional second argument FRAME controls which frames are affected.\n\
 If nil or omitted, delete all windows showing BUFFER in any frame.\n\

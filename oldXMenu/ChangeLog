@@ -1,3 +1,22 @@
+Thu Nov 11 10:30:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.20 released.
+
+Mon Oct 25 02:25:19 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* Makefile.in (ALL_CFLAGS): Add C_SWITCH_X_SYSTEM.
+
+Mon Sep 27 08:43:43 1993  Brian Fox  (bfox@valhalla)
+
+	* Makefile.in (CPP, LN_S, C_SWITCH_X_SITE, CC, CFLAGS): Allow
+	`configure' to supply the values for these variables.
+
+Sun Sep 26 10:07:11 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* Makefile.in (VPATH, srcdir): Now that `configure' creates the
+	Makefiles, do not append the current directory to the value of
+	`srcdir' or `VPATH'.
+
 Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.19 released.

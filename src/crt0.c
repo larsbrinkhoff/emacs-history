@@ -47,7 +47,7 @@ And always:
 */
 
 #ifdef emacs
-#include "config.h"
+#include <config.h>
 #endif
 
 /*		********  WARNING ********

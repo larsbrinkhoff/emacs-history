@@ -81,7 +81,7 @@ exit the search and then move to the beginning of the line.  @key{RET}
 is necessary only if the next command you want to type is a printing
 character, @key{DEL}, @key{RET}, or another control character that is
 special within searches (@kbd{C-q}, @kbd{C-w}, @kbd{C-r}, @kbd{C-s},
-@kbd{C-y}, @kbd{M-r}, or @kbd{M-s}).
+@kbd{C-y}, @kbd{M-y}, @kbd{M-r}, or @kbd{M-s}).
 
   Sometimes you search for @samp{FOO} and find it, but not the one you
 expected to find.  There was a second @samp{FOO} that you forgot about,
@@ -165,6 +165,9 @@ to @kbd{C-w} but copies all the rest of the current line into the search
 string.  Both @kbd{C-y} and @kbd{C-w} convert the text they copy to
 lower case if the search is current not case-sensitive; this is so the
 search remains case-insensitive.
+
+  The character @kbd{M-y} copies the most recent killed text into the
+search string.
 
 @vindex isearch-mode-map
   To customize the special characters that incremental search understands,

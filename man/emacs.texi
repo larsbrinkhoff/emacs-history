@@ -3,7 +3,7 @@
 @ifinfo
 @c The edition number appears in several places in this file
 @c and also in the file intro.texi.
-This corresponds to the eighth edition of the @cite{GNU Emacs Manual},
+This corresponds to the ninth edition of the @cite{GNU Emacs Manual},
 for Emacs Version 19.
 @c Please REMEMBER to update edition number in *four* places in this file
 @c                 and also in *one* place in ==> intro.texi <==
@@ -27,7 +27,7 @@ notice identical to this one except for the removal of this paragraph
 @end ignore
 Permission is granted to copy and distribute modified versions of this
 manual under the conditions for verbatim copying, provided also that the
-sections entitled ``The GNU Manifesto'', ``Distribution'' and ``GNU Emacs
+sections entitled ``The GNU Manifesto'', ``Distribution'' and ``GNU
 General Public License'' are included exactly as in the original, and
 provided that the entire resulting derived work is distributed under the
 terms of a permission notice identical to this one.
@@ -35,9 +35,9 @@ terms of a permission notice identical to this one.
 Permission is granted to copy and distribute translations of this manual
 into another language, under the above conditions for modified versions,
 except that the sections entitled ``The GNU Manifesto'',
-``Distribution'' and ``GNU Emacs General Public License'' may be
-included in a translation approved by the Free Software Foundation
-instead of in the original English.
+``Distribution'' and ``GNU General Public License'' may be included in a
+translation approved by the Free Software Foundation instead of in the
+original English.
 @end ifinfo
 @c
 @c comment out this line if you do NOT want to have indication that
@@ -64,11 +64,11 @@ instead of in the original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Ninth Edition, Emacs version 19.19
+@center Ninth Edition, Emacs version 19.20
 @sp 1
 @center for Unix Users
 @sp 1
-@center August 1993
+@center November 1993
 @sp 5
 @center Richard Stallman
 @page
@@ -76,10 +76,10 @@ instead of in the original English.
 Copyright @copyright{} 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
 @sp 2
 Ninth Edition @*
-For Emacs Version 19,@*
-Printed August, 1993.@*
+For Emacs Version 19.19, @*
+Printed August, 1993. @*
 
-ISBN 1-882114-02-7 
+ISBN 1-882114-03-5
 @sp 1
 Published by the Free Software Foundation @*
 675 Massachusetts Avenue @*
@@ -91,7 +91,7 @@ are preserved on all copies.
 
 Permission is granted to copy and distribute modified versions of this
 manual under the conditions for verbatim copying, provided also that the
-sections entitled ``The GNU Manifesto'', ``Distribution'' and ``GNU Emacs
+sections entitled ``The GNU Manifesto'', ``Distribution'' and ``GNU
 General Public License'' are included exactly as in the original, and
 provided that the entire resulting derived work is distributed under the
 terms of a permission notice identical to this one.
@@ -99,9 +99,13 @@ terms of a permission notice identical to this one.
 Permission is granted to copy and distribute translations of this manual
 into another language, under the above conditions for modified versions,
 except that the sections entitled ``The GNU Manifesto'',
-``Distribution'' and ``GNU Emacs General Public License'' may be
-included in a translation approved by the Free Software Foundation
-instead of in the original English.
+``Distribution'' and ``GNU General Public License'' may be included in a
+translation approved by the Free Software Foundation instead of in the
+original English.
+
+@sp 2
+Cover art by Etienne Suvasa.
+
 @end titlepage
 @page
 @ifinfo
@@ -113,7 +117,7 @@ The Emacs Editor
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.19.
+corresponds to GNU Emacs version 19.20.
 
 @end ifinfo
 @menu
@@ -357,7 +361,7 @@ Version Control
 * Log Entries::                 Logging your changes.
 * Change Logs and VC::          Generating a change log file from log
                                   entries. 
-* Comparing Versions::          How to compare two versions of a file.
+* Old Versions::                Examining and comparing old versions.
 * VC Status::                   Commands to view the VC status of files and
                                   look at log entries.
 * Renaming and VC::             A command to rename both the source and
@@ -671,6 +675,7 @@ Running Shell Commands from Emacs
 * Interactive Shell::      Permanent shell taking input via Emacs.
 * Shell Mode::             Special Emacs commands used with permanent shell.
 * History: Shell History.  Repeating previous commands in a shell buffer.
+* Options: Shell Options.  Options for customizing Shell mode.
 
 Customization
 
@@ -833,7 +838,7 @@ distribution, but these restrictions are designed to permit everything
 that a good cooperating citizen would want to do.  What is not allowed
 is to try to prevent others from further sharing any version of GNU
 Emacs that they might get from you.  The precise conditions are found in
-the GNU Emacs General Public License that comes with Emacs and also
+the GNU General Public License that comes with Emacs and also
 appears following this section.
 
 The easiest way to get a copy of GNU Emacs is from someone else who has

@@ -443,7 +443,7 @@ extra spaces, use @kbd{M-q} with no argument.  (Likewise for
 
 @vindex adaptive-fill-mode
 @findex fill-region-as-paragraph
-  When @var{adaptive-fill-mode} is non-@code{nil} (which is normally
+  When @code{adaptive-fill-mode} is non-@code{nil} (which is normally
 the case), if you use @code{fill-region-as-paragraph} on an indented
 paragraph and you don't have a fill prefix, it uses the indentation of
 the second line of the paragraph as the fill prefix.  The effect of
@@ -639,12 +639,20 @@ are.
 @cindex mode, Indented Text
 @findex indented-text-mode
 @kindex TAB @r{(Indented Text mode)}
-  A similar variant mode is Indented Text mode, intended for editing text
-in which most lines are indented.  This mode defines @key{TAB} to run
-@code{indent-relative} (@pxref{Indentation}), and makes Auto Fill indent
-the lines it creates.  The result is that normally a line made by Auto
-Filling, or by @key{LFD}, is indented just like the previous line.  Use
-@kbd{M-x indented-text-mode} to select this mode.
+  A similar variant mode is Indented Text mode, intended for editing
+text in which most lines are indented.  This mode defines @key{TAB} to
+run @code{indent-relative} (@pxref{Indentation}), and makes Auto Fill
+indent the lines it creates.  The result is that normally a line made by
+Auto Filling, or by @key{LFD}, is indented just like the previous line.
+In Indented Text mode, only blank lines separate paragraphs---indented
+lines continue the current paragraph.  Use @kbd{M-x indented-text-mode}
+to select this mode.
+
+@kindex M-TAB @r{(Text mode)}
+  Text mode, and all the modes based on it, define @kbd{M-@key{TAB}} as
+the command @code{ispell-complete-word}, which performs completion of
+the partial word in the buffer before point, using the spelling
+dictionary as the space of possible words.  @xref{Spelling}.
 
 @vindex text-mode-hook
   Entering Text mode or Indented Text mode runs the hook
@@ -655,18 +663,17 @@ this hook, followed by hooks of their own; this includes Nroff mode,
 which of these modes is actually being entered.  @xref{Hooks}.
 
 @menu
-  Two modes similar to Text mode are of use for editing text that is to
-be passed through a text formatter before achieving the form in which
-humans are to read it.
+  Emacs provides two other modes for editing text that is to be passed
+through a text formatter to produce fancy formatted printed output.
 
 * Nroff Mode::  The major mode for editing input to the formatter nroff.
 * TeX Mode::    The major modes for editing input to the formatter TeX.
 
-  Another similar mode is used for editing outlines.  It allows you
-to view the text at various levels of detail.  You can view either
-the outline headings alone or both headings and text; you can also
-hide some of the headings at lower levels from view to make the high
-level structure more visible.
+  Another mode is used for editing outlines.  It allows you to view the
+text at various levels of detail.  You can view either the outline
+headings alone or both headings and text; you can also hide some of the
+headings at lower levels from view to make the high level structure more
+visible.
 
 * Outline Mode::The major mode for editing outlines.
 @end menu

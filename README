@@ -1,4 +1,4 @@
-This directory tree holds version 19.19 of GNU Emacs, the extensible,
+This directory tree holds version 19.0 of GNU Emacs, the extensible,
 customizable, self-documenting real-time display editor.
 
 Please note that version 19 of Emacs is still in beta-test.  Although
@@ -46,8 +46,8 @@ marriage of custom-baked configuration code and autoconf macros; it
 may be wise to avoid rebuilding `configure' from `configure.in' when
 possible.
 
-The files `Makefile.in' and `build-install.in' are templates used by
-`configure' to create `Makefile' and `build-install'.
+The file `Makefile.in' is a template used by `configure' to create
+`Makefile'.
 
 The file `make-dist' is a shell script to build a distribution tar
 file from the current Emacs tree, containing only those files

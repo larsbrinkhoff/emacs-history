@@ -161,6 +161,8 @@ Check and correct spelling of each word in the buffer.
 Check and correct spelling of each word in the region.
 @item M-x ispell-string @key{RET} @var{word} @key{RET}
 Check spelling of @var{word}.
+@item M-x ispell-complete-word
+Complete the word before point based on the spelling dictionary.
 @item M-x reload-ispell
 Make the Ispell subprocess reread your private dictionary.
 @item M-x kill-ispell
@@ -214,6 +216,14 @@ replace with by typing a digit.
 Quit interactive spell checking.  You can restart it again afterward
 with @kbd{C-u M-$}.
 @end table
+
+@findex ispell-complete-word
+  The command @code{ispell-complete-word}, which is bound to the key
+@kbd{M-@key{TAB}} in Text mode and related modes, performs completion
+based on spelling correction.  Insert the beginning of a word, and then
+type @kbd{M-@key{TAB}}; the command inserts as many more letters as can
+be uniquely determined from the letters in the buffer, based on your
+currently loaded dictionaries.  @xref{Text Mode}.
 
 @findex reload-ispell
   The first time you use any of the spell checking commands, it starts

@@ -45,7 +45,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <signal.h>
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "syssignal.h"
 
@@ -53,12 +53,22 @@ Lisp_Object Qarith_error;
 
 #ifdef LISP_FLOAT_TYPE
 
+/* Work around a problem that happens because math.h on hpux 7
+   defines two static variables--which, in Emacs, are not really static,
+   because `static' is defined as nothing.  The problem is that they are
+   defined both here and in lread.c.
+   These macros prevent the name conflict.  */
+#if defined (HPUX) && !defined (HPUX8)
+#define _MAXLDBL floatfns_maxldbl
+#define _NMAXLDBL floatfns_nmaxldbl
+#endif
+
 #include <math.h>
 
-#ifndef hpux
-/* These declarations are omitted on some systems, like Ultrix.  */
+/* This declaration is omitted on some systems, like Ultrix.  */
+#if !defined (hpux) && defined (HAVE_LOGB)
 extern double logb ();
-#endif
+#endif /* !hpux && HAVE_LOGB */
 
 #if defined(DOMAIN) && defined(SING) && defined(OVERFLOW)
     /* If those are defined, then this is probably a `matherr' machine. */

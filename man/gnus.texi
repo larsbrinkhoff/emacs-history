@@ -1797,7 +1797,7 @@ information.
 @findex gnus-summary-edit-global-kill
 @cindex edit global KILL file
 Edit a global KILL file applied to all newsgroups
-(@code{gnus-summary-edit-local-kill}).  @xref{KILL File}, for more
+(@code{gnus-summary-edit-global-kill}).  @xref{KILL File}, for more
 information.
 @ignore
 
@@ -2064,7 +2064,7 @@ Edit a local KILL file applied to the current newsgroup
 @findex gnus-summary-edit-global-kill
 @cindex edit global KILL file
 Edit a global KILL file applied to all newsgroups
-(@code{gnus-summary-edit-local-kill}).  
+(@code{gnus-summary-edit-global-kill}).  
 @end table
 
 @noindent

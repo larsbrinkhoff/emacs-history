@@ -157,6 +157,12 @@ Move point to end of year (@code{calendar-end-of-year}).
 repeat count indicating how many weeks, months, or years to move
 backward or forward.
 
+@vindex calendar-week-start-day
+@cindex weeks, which day they start on
+@cindex calendar, first day of week
+  By default, weeks begin on Sunday.  To make them begin on Monday
+instead, set the variable @code{calendar-week-start-day} to 1.
+
 @node Specified Dates
 @subsection Particular Dates
 
@@ -359,8 +365,8 @@ available, the calendar also knows about solstices and equinoxes.
 practice}, not historical fact.  Historically, for instance, the start
 of daylight savings time and even its existence have varied from year to
 year, but present American law mandates that daylight savings time
-begins on the first Sunday in April.  Emacs always uses this definition,
-even though it is wrong for some prior years.
+begins on the first Sunday in April.  In an American locale, Emacs
+always uses this definition, even though it is wrong for some prior years.
 
 @node Sunrise/Sunset
 @section Times of Sunrise and Sunset
@@ -431,9 +437,8 @@ and @code{calendar-daylight-time-zone-name} are the abbreviations used
 in your time zone.
 
   Emacs displays the times of sunrise and sunset @emph{corrected for
-daylight savings time}.  The default rule for the starting and stopping
-dates of daylight savings time is the American rule.  @xref{Daylight
-Savings}, for how to specify a different rule.
+daylight savings time}.  @xref{Daylight Savings}, for how daylight
+savings time is determined.
 
   You can display the times of sunrise and sunset for any location and
 any date with @kbd{C-u C-u M-x sunrise-sunset}.  This asks you for a
@@ -1191,18 +1196,14 @@ know which rules to use.
 
   Some operating systems keep track of the rules that apply to the place
 where you are; on these systems, Emacs gets the information it needs
-from the system automatically.  If the system does not know the rules,
+from the system automatically.  If some or all of this information is
+missing, Emacs fills in the gaps with the rules currently used in
+Cambridge, Massachusetts.  If the resulting rules are not what you want,
 you can tell Emacs the rules to use by setting certain variables.
 
 @vindex calendar-daylight-savings-starts
 @vindex calendar-daylight-savings-ends
-  If the system's data indicate that your area currently uses daylight
-savings time, the default starting and stopping dates for daylight
-savings time are the present-day American rules of the first Sunday in
-April until the last Sunday in October.  If this isn't right, you can
-specify whatever rules you want by setting
-@code{calendar-daylight-savings-starts} and
-@code{calendar-daylight-savings-ends}.  Their values should be Lisp
+  These values should be Lisp
 expressions that refer to the variable @code{year}, and evaluate to the
 Gregorian date on which daylight savings time starts or (respectively)
 ends, in the form of a list @code{(@var{month} @var{day} @var{year})}.
@@ -1213,15 +1214,17 @@ savings time.
 daylight savings time for the holiday list and for correcting times of
 day in the solar and lunar calculations.
 
-  The default value of @code{calendar-daylight-savings-starts} is this,
+  The values for Cambridge, Massachusetts are as follows:
 
 @example
 (calendar-nth-named-day 1 0 4 year)
+(calendar-nth-named-day -1 0 10 year)
 @end example
 
 @noindent
-which computes the first 0th day (Sunday) of the fourth month (April) in
-the year specified by @code{year}.  If daylight savings time were
+i.e. the first 0th day (Sunday) of the fourth month (April) in
+the year specified by @code{year}, and the last Sunday of the tenth month
+(October) of that year.  If daylight savings time were
 changed to start on October 1, you would set
 @code{calendar-daylight-savings-starts} to this:
 
@@ -1234,14 +1237,11 @@ all times in standard time, set @code{calendar-daylight-savings-starts}
 and @code{calendar-daylight-savings-ends} to @code{nil}.
 
 @vindex calendar-daylight-time-offset
-  In some areas, the difference between daylight savings time and
-standard time is not one hour.  If this is so in your location, set the
-variable @code{calendar-daylight-time-offset} to the difference,
-measured in minutes.
+  This variable specifies the difference between daylight savings time and
+standard time, measured in minutes.  The value for Cambridge is 60.
 
-@vindex calendar-daylight-savings-switchover-time
-  If the transition to or from daylight savings time does not take place
-at 2AM, you can specify when it takes place by setting the variable
-@code{calendar-daylight-savings-switchover-time}.  Its value is the
-number of minutes after midnight of the time when the transition should
-occur.
+@vindex calendar-daylight-savings-starts-time
+@vindex calendar-daylight-savings-ends-time
+  These variables specify is the number of minutes after midnight local time
+when the transition to and from daylight savings time should occur.  For
+Cambridge, both variables' values are 120.

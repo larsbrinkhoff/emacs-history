@@ -1,3 +1,398 @@
+Wed Nov 10 21:32:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.20 released.
+
+	* callproc.c (Fcall_process): Clear synch_process_death and
+	synch_process_retcode before the vfork.
+
+	* xterm.c (XTmouse_position): Undo roland's change.
+	Fix bug in bfox change.
+
+Wed Nov 10 17:58:16 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* unexec.c [! HPUX]: Don't declare sbrk at all, so as not to
+	conflict with system headers.
+
+	* xterm.c (XTmouse_position): First arg is FRAME_PTR, not
+	FRAME_PTR *.
+
+Wed Nov 10 15:12:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/convexos.h: New file.
+
+Wed Nov 10 15:12:22 1993  Brian Fox  (bfox@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (intervals.o): Depend on puresize.h.
+
+	* intervals.c (create_root_interval): Check to see if PARENT is in
+	pure memory.  If so, we cannot write it.
+	(includes): Add "puresize.h" so we get the definition of CHECK_IMPURE.
+
+	* xterm.c (XTmouse_position): If the passed in frame is not an
+	Xwindow frame, don't do anything.
+
+	* frame.c (Fraise_frame): Do like the documentation says, and make
+	the frame visible first.
+
+	* systty.h (EMACS_GETPGRP): New macro hides argument passing to
+	system getpgrp.  Reinstate some semblance of control over this
+	macros behaviour by paying attention to GETPGRP_NO_ARG.
+	* sysdep.c (sys_suspend): Use EMACS_GETPGRP macro.
+	* emacs.c (main): Use EMACS_GETPGRP macro.
+	(shut_down_emacs): Use EMACS_GETPGRP macro.
+
+	* alloc.c (make_pure_string): If we USE_TEXT_PROPERTIES, set the
+	interval of the pure string to NULL_INTERVAL.
+
+	* syswait.h: Treat convex like hpux.
+
+	* search.c (Fskip_chars_backward, Fskip_chars_forward): Doc fix.
+
+Wed Nov 10 01:09:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* syntax.c (Fforward_comment): On backward scan, exit inner loop
+	after we reach beginning of a comment.
+	Check the SYNTAX_COMMENT_STYLE of a one-character comment ender.
+	(scan_lists): Check the SYNTAX_COMMENT_STYLE
+	of a one-character comment ender.
+
+	* sysdep.c (read_input_waiting): Don't mess with meta bit
+	if read_socket_hook is nonzero.
+
+	* sysdep.c (LPASS8, LNOFLSH): Move definitions earlier.
+	(child_setup_tty): Turn on LPASS8.
+
+	* search.c (skip_chars): Finish reenabling checks for buffer bounds.
+	Use XINT, not XFASTINT, when testing.
+
+	* fileio.c (Fwrite_region): Fix minor bugs in POS arg to awrite.
+
+	* xterm.c (syms_of_xterm): Initialize last_mouse_scroll_bar.
+
+Tue Nov  9 16:33:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* buffer.c, editfns.c: Doc fix.
+
+Sat Nov  6 00:13:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c (child_setup_tty): Make the pty handle 8-bit characters.
+
+Thu Nov  4 17:09:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/linux.h [TERM]: Alternate definitions of LIBS_MACHINE
+	and C_SWITCH_MACHINE.
+
+	* process.c [TERM]: Include client.h.
+	(Fopen_network_stream): Handle TERM.
+
+Wed Nov  3 15:31:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (x_new_font): xmalloc arg was 1 too small.
+
+Mon Nov  1 23:59:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/sunos4-1-3.h (HAVE_TERMIOS): Defined.
+
+Mon Oct 25 00:41:31 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* process.c (Fopen_network_stream): Cast arg to inet_addr to (char *).
+
+	* search.c (Freplace_match): Fix argument names to match doc string.
+	(Fmatch_beginning): Fix doc string to match argument name.
+
+	* floatfns.c: Declare `logb' only if HAVE_LOGB is defined.
+
+	* fileio.c (Fcopy_file): Don't allow the copying of anything other
+	than regular files or symlink files.
+
+Sun Oct 24 17:25:52 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_key_sequence): Arg prompt is now a Lisp object.
+	Pass it to functions found in function-key-map and key-translation-map.
+	(Fread_key_sequence, command_loop_1): Calls changed.
+
+Fri Oct 22 07:22:12 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* config.h.in: Add #undef HAVE_UNISTD_H so configure can edit it
+	correctly.
+
+Thu Oct 21 21:15:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (status_notify): Don't read from process if filter is t.
+	(Fset_process_filter): Set or clear bit in input_wait_mask when nec.
+
+Tue Oct 19 22:46:54 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* data.c [hpux 7] (_MAXLDBL, _NMAXLDBL): New macro definitions.
+
+Tue Oct 12 18:14:58 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_key_sequence): Allow function in key-translation-map
+	just as in function-key-map.
+
+Mon Oct 11 00:13:12 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* buffer.c (Fdelete_overlay, Foverlay_put): Use marker_position,
+	not OVERLAY_POSITION, to get args for redisplay_region.
+
+	* fileio.c (Fcar_less_than_car): Fix typo in previous change.
+
+Sat Oct  9 16:43:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* floatfns.c [hpux 7] (_MAXLDBL, _NMAXLDBL): New macro definitions.
+
+	* fileio.c (Vafter_insert_file_functions): New variable.
+	(Vwrite_region_annotate_functions): New variable.
+	(Qcar_less_than_car): New variable.
+	(Fcar_less_than_car): New function.
+	(syms_of_fileio): Make Lisp variables and function available.
+	staticpro Qcar_less_than_car.
+	(a_write, build_annotations): New functions.
+	(Fwrite_region): Call them.
+	(Finsert_file_contents): Run the Vafter_insert_file_functions.
+
+Fri Oct  8 11:05:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/sco4.h (SYSTEM_TYPE): Put into #if 0.
+	(BSTRING): Define only if HAVE_BCOPY.
+
+Fri Oct  8 03:36:20 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* search.c (skip_chars): Re-instate the check against the end of
+	the buffer, ignoring cryptic comment.
+
+Thu Oct  7 21:29:38 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_key_sequence): Allow function-key-map to have a
+	function as the binding; call the function and use its value.
+
+Mon Oct  4 03:48:51 1993  Brian J. Fox  (bfox@ai.mit.edu)
+
+	* minibuf.c (Fminibuffer_complete_word): GCPRO1 `completion'
+	during calls to Ftry_completion.
+
+	* keyboard.c (read_key_sequence): Don't declare first_event; it is
+	no longer used.  Change "#if 0" for first_event reading to
+	 "#if defined (GOBBLE_FIRST_EVENT)".
+
+Sun Oct  3 12:21:23 1993  Brian J. Fox  (bfox@ai.mit.edu)
+
+	* lisp.h: Doc fix.
+
+	* minibuf.c (read_minibuf): Rewrite change of Sep 14.  Save the
+	return value on the history list provided in the form that the
+	value is returned, iff the value is not equal to the front of the
+	history list.
+
+Sun Oct  3 19:03:19 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Makefile.in: File removed.  It is now generated by ../configure.
+
+	* Makefile.in.in (LIBES): Add $(GNULIB_VAR) again at end.  This
+	change to ymakefile was mysteriously lost.  Were any others lost
+	too?
+
+Sat Oct  2 15:07:50 1993  Brian J. Fox  (bfox@ai.mit.edu)
+
+	* minibuf.c (Fread_no_blanks_input): Change DEFUN to allow 2nd arg
+	to be optional.  The code was already written correctly.
+
+Thu Sep 30 01:22:06 1993  Brian J. Fox  (bfox@ai.mit.edu)
+
+	* systty.h: If POSIX and HAVE_UNISTD_H are defined, and unistd.h
+	hasn't already been included, include it.
+
+	* s/linux.h (POSIX_SIGNALS): Comment fix.
+
+Thu Sep 30 19:37:15 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
+
+	* Makefile.in.in (ALL_CFLAGS): Make sure that `.' is searched
+	before `${srcdir}' when looking for include files.
+
+Tue Sep 28 05:56:12 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* termhooks.h (enum event_kind): Doc fix.
+
+Mon Sep 27 08:59:44 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* ymakefile: Merged into Makefile.in.in.
+
+	* Makefile.in.in: New file.  Now ../configure creates Makefile.in
+	from Makefile.in.in, and creates Makefile from Makefile.in.
+	ymakefile no longer exists, and xmakefile is never created.
+
+Fri Sep 24 18:22:32 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* textprop.c (validate_plist): Add declaration for `list'
+	argument.
+
+	* frame.c (Fhandle_switch_frame): Doc fix.
+
+Sat Sep 25 18:46:34 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* puresize.h: [MULTI_FRAME]: Increase PURESIZE to 220000.
+
+Thu Sep 16 16:09:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/sunos4-1.h (LIBS_SYSTEM): Use -lresolv if it seems appropriate.
+
+	* config.h.in: Add #undef HAVE_RES_INIT.
+
+Tue Sep 14 15:06:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m/mips4.h (LIB_STANDARD): Add a second -lc after crtn.o.
+
+Mon Sep 13 00:07:33 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* pwd.h: File deleted.
+
+	* intervals.c (graft_intervals_into_buffer): New arg INHERIT.
+
+	* editfns.c (Finsert_buffer_substring): Pass extra arg to
+	graft_intervals_into_buffer.
+	* insdel.c (insert_from_string): Likewise.  New arg INHERIT.
+	(insert_from_string_before_markers): New arg INHERIT.
+
+	* search.c (Freplace_match): Call Finsert_and_inherit.
+
+	* editfns.c (Finsert_and_inherit): New function.
+	(Finsert_and_inherit_before_markers): New function.
+	(Finsert, Finsert_before_markers): Pass new arg to insert_from_string*.
+	* minibuf.c (Fminibuffer_complete_word):
+	Pass new arg to insert_from_string*.
+	* doc.c (Fsubstitute_command_keys): Pass new arg.
+	* abbrev.c (Funexpand_abbrev, Fexpand_abbrev): Pass new arg.
+
+	* s/aix3-2.h (AIX3_2): Defined.
+	* m/ibmrs6000.h (LIBS_MACHINE): Include -lrts, -liconv only if AIX3_2.
+
+	* xterm.h (HAVE_X11R4): If AIX, do not define HAVE_X11R4.
+
+Sun Sep 12 08:36:02 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c (bzero, bcopy, bcmp): Don't define as functions
+	if they are defined as macros.
+
+Sat Sep 11 21:28:18 1993  Roland McGrath  (roland@baalperazim.gnu.ai.mit.edu)
+
+	* lread.c, callproc.c, filelock.c: Include <paths.h>, not "paths.h".
+
+Sat Sep 11 17:34:38 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/linux.h (LIBS_MACHINE): Make definition empty.
+
+Fri Sep 10 01:03:00 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Support configuring in a different directory when ${srcdir} has
+	already been configured.
+	* frame.c, xfns.c, xdisp.c, casetab.c, cm.c, casefiddle.c, xterm.c,
+	xrdb.c, eval.c, doc.c, lread.c, callint.c, cmds.c, term.c, fns.c,
+	data.c, alloc.c, unexconvex.c, fileio.c, indent.c, bytecode.c,
+	sunfns.c, xmenu.c, buffer.c, textprop.c, marker.c, print.c,
+	emacs.c, dispnew.c, syntax.c, undo.c, mocklisp.c, scroll.c,
+	search.c, ralloc.c, unexaix.c, unexec.c, unexenix.c, unexmips.c,
+	unexsunos4.c, vmsfns.c, vmsmap.c, dired.c, xselect.c, floatfns.c,
+	filelock.c, sysdep.c, abbrev.c, minibuf.c, xfaces.c, callproc.c,
+	insdel.c, intervals.c, process.c, vm-limit.c, window.c,
+	vmsgmalloc.c, keymap.c, editfns.c, keyboard.c, macros.c, vmstime.c:
+	Include <config.h> instead of "config.h".
+	* ymakefile (ALL_CFLAGS): Put -I. before -I${srcdir}.
+	* Makefile.in (xmakefile): Use -I. in cpp run.
+
+	* Makefile.in (clean): Use rm -f.
+
+	* s/netbsd.h: New file.
+	* ymakefile (LIBES): Add $(GNULIB_VAR) again at end.
+
+Wed Sep  8 12:16:25 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c (stuff_char): Use input_fd.
+	(narrow_foreground_group, widen_foreground_group, init_sys_modes)
+	(init_baud_rate, init_sigio, request_sigio, unrequest_sigio): Likewise.
+	(change_input_fd): New function.
+
+	* process.c (keyboard_descriptor): New variable.
+	(wait_reading_process_input, init_keyboard): Use it.
+	Also call change_input_fd.
+	(change_keyboard_wait_descriptor): New function.
+	* xterm.c (x_term_init): Call change_keyboard_wait_descriptor,
+	instead of dup2.  Use the existing X desc number in fcntl calls.
+	* xterm.c (XTread_socket): Don't forget to clear out `mask'.
+
+Wed Sep  8 17:25:40 MET 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* filelock.c (fill_in_lock_short_file_name): Fix the crc
+	generation algorithm.
+
+Thu Aug 19 16:19:30 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* textprop.c (F{next,previous}_single_property_change): Doc fix.
+
+Wed Sep 15 13:09:20 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* data.c: Add declaration for atof if not predefined.
+
+	* xfns.c (XScreenNumberOfScreen): Move assignments out of
+	declarations for (dpy, dpyscr).
+
+	* sysdep.c (sys_write): Keep trying to write out the data until
+	all of the data is written, or until we receive an error which is
+	not an interrupted write.
+
+Tue Sep 14 01:53:37 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* keyboard.c (Qextended_command_history): New variable prevents
+	sharing of M-x command history with other commands that read
+	values in the minibuffer.
+
+	* doprnt.c (doprnt): Use a fixed buffer to store the format
+	specification, but only if we are sure it will fit.  Otherwise,
+	use alloca () to get enough space.  Don't allow negative size
+	specifications to core dump; instead, treat them as positive
+	("%-20d" == "%20d").
+
+	* minibuf.c (read_minibuf): Don't add history item if it is
+	string-equal to the most recent history item.
+
+Fri Jul  9 17:19:35 1993  Karl Berry  (karl@cs.umb.edu)
+
+	* dired.c (file_name_completion): Install case-preserving 
+	changes from Emacs 18 for completion_ignore_case.
+	(completion_ignore_case): Declare.
+
+Wed Sep  1 09:47:36 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* window.c (Fdelete_windows_on): Fix DEFUN to allow optional
+	second argument to appear.
+
+Mon Aug 30 08:03:49 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* ymakefile (alloc.o): Remove explicit compilation rule, since it
+	is identical to the default rule, and `$<' doesn't work in
+	explicit rules in all "make"s.
+
+Fri Aug 27 00:43:06 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* gmalloc.c (safe_bcopy): Compile if MEMMOVE_MISSING is defined,
+	but only if we aren't compiling for emacs.
+
+	* sysdep.c (read_input_waiting): If the user specifies
+	`meta-flag', then notice characters with high-bit set.
+
+	* Added fixes from Karl Berry for ISC-2.2.
+	    * s/isc2-2.h (MEMMOVE_MISSING): Define.
+	    (SIGNALS_VIA_CHARACTERS): Define.
+	    (LIB_STANDARD): Do not include -lcposix.
+	    (C_SWITCH_SYSTEM) [__GNUC__]: Do not use -traditional.
+
+Tue Aug 17 12:20:43 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* alloca.c: Invert sense of conditional for entire file (GNUC >=
+	2).  Added `#else'.
+
+	* xterm.c (x_wn_set_size_hint): Make recent window gravity
+	addition depend on "PWinGravity" being `#defined'.
+
 Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.19 released.

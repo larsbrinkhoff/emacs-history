@@ -21,7 +21,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <signal.h>
 #include <setjmp.h>
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "blockinput.h"
 #undef NULL
@@ -155,6 +155,15 @@ extern int quit_char;
 #include "syssignal.h"
 #include "systime.h"
 
+/* LPASS8 is new in 4.3, and makes cbreak mode provide all 8 bits.  */
+#ifndef LPASS8
+#define LPASS8 0
+#endif
+
+#ifdef BSD4_1
+#define LNOFLSH 0100000
+#endif
+
 static int baud_convert[] =
 #ifdef BAUD_CONVERT
   BAUD_CONVERT;
@@ -168,10 +177,21 @@ static int baud_convert[] =
 extern short ospeed;
 
 /* The file descriptor for Emacs's input terminal.
-   Under Unix, this is always left zero;
+   Under Unix, this is normaly zero except when using X;
    under VMS, we place the input channel number here.
    This allows us to write more code that works for both VMS and Unix.  */
 static int input_fd;
+
+/* Specify a different file descriptor for further input operations.  */
+
+void
+change_input_fd (fd)
+     int fd;
+{
+  input_fd = fd;
+}
+
+/* Discard pending input on descriptor input_fd.  */
 
 discard_tty_input ()
 {
@@ -194,7 +214,7 @@ discard_tty_input ()
 #ifdef APOLLO
   {
     int zero = 0;
-    ioctl (0, TIOCFLUSH, &zero);
+    ioctl (input_fd, TIOCFLUSH, &zero);
   }
 #else /* not Apollo */
   EMACS_GET_TTY (input_fd, &buf);
@@ -205,19 +225,22 @@ discard_tty_input ()
 
 #ifdef SIGTSTP
 
+/* Arrange for character C to be read as the next input from
+   the terminal.  */
+
 stuff_char (c)
      char c;
 {
 /* Should perhaps error if in batch mode */
 #ifdef TIOCSTI
-  ioctl (0, TIOCSTI, &c);
+  ioctl (input_fd, TIOCSTI, &c);
 #else /* no TIOCSTI */
   error ("Cannot stuff terminal input characters in this version of Unix.");
 #endif /* no TIOCSTI */
 }
 
 #endif /* SIGTSTP */
-
+
 init_baud_rate ()
 {
   if (noninteractive)
@@ -235,7 +258,7 @@ init_baud_rate ()
       struct termios sg;
 
       sg.c_cflag = (sg.c_cflag & ~CBAUD) | B9600;
-      tcgetattr (0, &sg);
+      tcgetattr (input_fd, &sg);
       ospeed = cfgetospeed (&sg);
 #else /* neither VMS nor TERMIOS */
 #ifdef HAVE_TERMIO
@@ -243,7 +266,7 @@ init_baud_rate ()
 
       sg.c_cflag = (sg.c_cflag & ~CBAUD) | B9600;
 #ifdef HAVE_TCATTR
-      tcgetattr (0, &sg);
+      tcgetattr (input_fd, &sg);
 #else
       ioctl (input_fd, TCGETA, &sg);
 #endif
@@ -252,7 +275,7 @@ init_baud_rate ()
       struct sgttyb sg;
       
       sg.sg_ospeed = B9600;
-      if (ioctl (0, TIOCGETP, &sg) < 0)
+      if (ioctl (input_fd, TIOCGETP, &sg) < 0)
 	abort ();
       ospeed = sg.sg_ospeed;
 #endif /* not HAVE_TERMIO */
@@ -275,7 +298,7 @@ set_exclusive_use (fd)
 #endif
   /* Ok to do nothing if this feature does not exist */
 }
-
+
 #ifndef subprocesses
 
 wait_without_blocking ()
@@ -408,7 +431,7 @@ flush_pending_output (channel)
 #endif
 #endif
 }
-
+
 #ifndef VMS
 /*  Set up the terminal at the other end of a pseudo-terminal that
     we will be controlling an inferior through.
@@ -433,6 +456,7 @@ child_setup_tty (out)
 				   input */
   s.main.c_oflag &= ~OLCUC;	/* Disable map of lower case to upper on
 				   output */
+  s.main.c_cflag = (s.main.c_cflag & ~CSIZE) | CS8; /* Don't strip 8th bit */
 #if 0
   /* Said to be unnecessary:  */
   s.main.c_cc[VMIN] = 1;	/* minimum number of characters to accept  */
@@ -481,8 +505,10 @@ child_setup_tty (out)
 
   s.main.sg_flags &= ~(ECHO | CRMOD | ANYP | ALLDELAY | RAW | LCASE
 		       | CBREAK | TANDEM);
+  s.main.sg_flags |= LPASS8;
   s.main.sg_erase = 0377;
   s.main.sg_kill = 0377;
+  s.lmode = LLITOUT | s.lmode;        /* Don't strip 8th bit */
 
 #endif /* not HAVE_TERMIO */
 
@@ -509,7 +535,7 @@ setpgrp_of_tty (pid)
 {
   EMACS_SET_TTY_PGRP (input_fd, &pid);
 }
-
+
 /* Record a signal code and the handler for it.  */
 struct save_signal
 {
@@ -565,11 +591,7 @@ sys_suspend ()
 #ifdef SIGTSTP
 
   {
-#ifdef USG
-    int pgrp = getpgrp ();
-#else
-    int pgrp = getpgrp (0);
-#endif
+    int pgrp = EMACS_GETPGRP (0);
     EMACS_KILLPG (pgrp, SIGTSTP);
   }
 
@@ -686,7 +708,7 @@ int old_fcntl_flags;
 init_sigio ()
 {
 #ifdef FASYNC
-  old_fcntl_flags = fcntl (0, F_GETFL, 0) & ~FASYNC;
+  old_fcntl_flags = fcntl (input_fd, F_GETFL, 0) & ~FASYNC;
 #endif
   request_sigio ();
 }
@@ -703,7 +725,7 @@ request_sigio ()
 #ifdef SIGWINCH
   sigunblock (sigmask (SIGWINCH));
 #endif
-  fcntl (0, F_SETFL, old_fcntl_flags | FASYNC);
+  fcntl (input_fd, F_SETFL, old_fcntl_flags | FASYNC);
 
   interrupts_deferred = 0;
 }
@@ -713,7 +735,7 @@ unrequest_sigio ()
 #ifdef SIGWINCH
   sigblock (sigmask (SIGWINCH));
 #endif
-  fcntl (0, F_SETFL, old_fcntl_flags);
+  fcntl (input_fd, F_SETFL, old_fcntl_flags);
   interrupts_deferred = 1;
 }
 
@@ -723,7 +745,7 @@ unrequest_sigio ()
 request_sigio ()
 {
   int on = 1;
-  ioctl (0, FIOASYNC, &on);
+  ioctl (input_fd, FIOASYNC, &on);
   interrupts_deferred = 0;
 }
 
@@ -731,7 +753,7 @@ unrequest_sigio ()
 {
   int off = 0;
 
-  ioctl (0, FIOASYNC, &off);
+  ioctl (input_fd, FIOASYNC, &off);
   interrupts_deferred = 1;
 }
 
@@ -785,7 +807,7 @@ narrow_foreground_group ()
 
   setpgrp (0, inherited_pgroup);
   if (inherited_pgroup != me)
-    EMACS_SET_TTY_PGRP (0, &me);
+    EMACS_SET_TTY_PGRP (input_fd, &me);
   setpgrp (0, me);
 }
 
@@ -793,7 +815,7 @@ narrow_foreground_group ()
 widen_foreground_group ()
 {
   if (inherited_pgroup != getpid ())
-    EMACS_SET_TTY_PGRP (0, &inherited_pgroup);
+    EMACS_SET_TTY_PGRP (input_fd, &inherited_pgroup);
   setpgrp (0, inherited_pgroup);
 }
 
@@ -1156,15 +1178,6 @@ init_sys_modes ()
 	  tty.tchars.t_stopc = '\023';
 	}
 
-/* LPASS8 is new in 4.3, and makes cbreak mode provide all 8 bits.  */
-#ifndef LPASS8
-#define LPASS8 0
-#endif
-
-#ifdef BSD4_1
-#define LNOFLSH 0100000
-#endif
-
       tty.lmode = LDECCTQ | LLITOUT | LPASS8 | LNOFLSH | old_tty.lmode;
 #ifdef ultrix
       /* Under Ultrix 4.2a, leaving this out doesn't seem to hurt
@@ -1189,11 +1202,11 @@ init_sys_modes ()
 	 we have an unlocked terminal at the start. */
 
 #ifdef TCXONC
-      if (!flow_control) ioctl (0, TCXONC, 1);
+      if (!flow_control) ioctl (input_fd, TCXONC, 1);
 #endif
 #ifndef APOLLO
 #ifdef TIOCSTART
-      if (!flow_control) ioctl (0, TIOCSTART, 0);
+      if (!flow_control) ioctl (input_fd, TIOCSTART, 0);
 #endif
 #endif
 
@@ -1225,8 +1238,8 @@ init_sys_modes ()
 #ifdef F_GETOWN		/* F_SETFL does not imply existence of F_GETOWN */
   if (interrupt_input)
     {
-      old_fcntl_owner = fcntl (0, F_GETOWN, 0);
-      fcntl (0, F_SETOWN, getpid ());
+      old_fcntl_owner = fcntl (input_fd, F_GETOWN, 0);
+      fcntl (input_fd, F_SETOWN, getpid ());
       init_sigio ();
     }
 #endif /* F_GETOWN */
@@ -1377,7 +1390,7 @@ reset_sys_modes ()
   if (interrupt_input)
     {
       reset_sigio ();
-      fcntl (0, F_SETOWN, old_fcntl_owner);
+      fcntl (input_fd, F_SETOWN, old_fcntl_owner);
     }
 #endif /* F_SETOWN */
 #endif /* F_SETOWN_BUG */
@@ -2102,6 +2115,17 @@ read_input_waiting ()
   e.modifiers = 0;
   for (i = 0; i < nread; i++)
     {
+      /* Convert chars > 0177 to meta events if desired.
+	 We do this under the same conditions that read_avail_input does.  */
+      if (read_socket_hook == 0)
+	{
+	  /* If the user says she has a meta key, then believe her. */
+	  if (meta_key == 1 && (buf[i] & 0x80))
+	    e.modifiers = meta_modifier;
+	  if (meta_key != 2)
+	    buf[i] &= ~0x80;
+	}
+
       XSET (e.code, Lisp_Int, buf[i]);
       kbd_buffer_store_event (&e);
       /* Don't look at input that follows a C-g too closely.
@@ -2289,6 +2313,8 @@ sys_sigsetmask (sigset_t new_mask)
 
 #ifndef BSTRING
 
+#ifndef bzero
+
 void
 bzero (b, length)
      register char *b;
@@ -2311,6 +2337,9 @@ bzero (b, length)
 #endif /* not VMS */
 }
 
+#endif /* no bzero */
+
+#ifndef bcopy
 /* Saying `void' requires a declaration, above, where bcopy is used
    and that declaration causes pain for systems where bcopy is a macro.  */
 bcopy (b1, b2, length)
@@ -2334,7 +2363,9 @@ bcopy (b1, b2, length)
     *b2++ = *b1++;
 #endif /* not VMS */
 }
+#endif /* no bcopy */
 
+#ifndef bcmp
 int
 bcmp (b1, b2, length)	/* This could be a macro! */
      register char *b1;
@@ -2354,6 +2385,8 @@ bcmp (b1, b2, length)	/* This could be a macro! */
   return 0;
 #endif /* not VMS */
 }
+#endif /* no bcmp */
+
 #endif /* not BSTRING */
 
 #ifndef HAVE_RANDOM
@@ -2563,11 +2596,27 @@ sys_write (fildes, buf, nbyte)
      char *buf;
      unsigned int nbyte;
 {
-  register int rtnval;
+  register int rtnval, bytes_written;
 
-  while ((rtnval = write (fildes, buf, nbyte)) == -1
-	 && (errno == EINTR));
-  return (rtnval);
+  bytes_written = 0;
+
+  while (nbyte > 0)
+    {
+      rtnval = write (fildes, buf, nbyte);
+
+      if (rtnval == -1)
+	{
+	  if (errno == EINTR)
+	    continue;
+	  else
+	    return (-1);
+	}
+
+      buf += rtnval;
+      nbyte -= rtnval;
+      bytes_written += rtnval;
+    }
+  return (bytes_written);
 }
 
 #endif /* INTERRUPTIBLE_IO */

@@ -83,6 +83,7 @@ and this notice must be preserved on all copies.  */
    configure.in.  */
 #undef HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_TIME_H
+#undef HAVE_UNISTD_H
 #undef STDC_HEADERS
 #undef TIME_WITH_SYS_TIME
 
@@ -121,6 +122,7 @@ and this notice must be preserved on all copies.  */
 #undef HAVE_LOGB
 #undef HAVE_FREXP
 #undef HAVE_FTIME
+#undef HAVE_RES_INIT /* For -lresolv on Suns.  */
 
 #undef HAVE_AIX_SMT_EXP
 

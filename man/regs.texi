@@ -131,7 +131,10 @@ Save the state of all windows in all frames in register @var{r}
 @end table
 
   Use @kbd{C-x r j @var{r}} to restore a window or frame configuration.
-This is the same command used to restore a cursor position.
+This is the same command used to restore a cursor position.  When you
+restore a frame configuration, any existing frames not included in the
+configuration become invisible.  If you wish to delete these frames
+instead, use @kbd{C-u C-x r j @var{r}}.
 
 @node RegFiles
 @section Keeping File Names in Registers

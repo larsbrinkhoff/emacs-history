@@ -63,30 +63,33 @@ Argument is a character, naming the register."
   "Store the window configuration of the selected frame in register REGISTER.
 Use \\[jump-to-register] to restore the configuration.
 Argument is a character, naming the register."
-  (interactive "cPoint to register: \nP")
+  (interactive "cWindow configuration to register: \nP")
   (set-register char (current-window-configuration)))
 
 (defun frame-configuration-to-register (char &optional arg)
   "Store the window configuration of all frames in register REGISTER.
 Use \\[jump-to-register] to restore the configuration.
 Argument is a character, naming the register."
-  (interactive "cPoint to register: \nP")
+  (interactive "cFrame configuration to register: \nP")
   (set-register char (current-frame-configuration)))
 
 (defalias 'register-to-point 'jump-to-register)
-(defun jump-to-register (char)
+(defun jump-to-register (char &optional delete)
   "Move point to location stored in a register.
 If the register contains a file name, find that file.
  \(To put a file name in a register, you must use `set-register'.)
 If the register contains a window configuration (one frame) or a frame
 configuration (all frames), restore that frame or all frames accordingly.
-Argument is a character, naming the register."
-  (interactive "cJump to register: ")
+First argument is a character, naming the register.
+Optional second arg non-nil (interactively, prefix argument) says to
+delete any existing frames that the frame configuration doesn't mention.
+\(Otherwise, these frames are iconified.)"
+  (interactive "cJump to register: \nP")
   (let ((val (get-register char)))
     (cond
      ((and (fboundp 'frame-configuration-p)
 	   (frame-configuration-p val))
-      (set-frame-configuration val))
+      (set-frame-configuration val (not delete)))
      ((window-configuration-p val)
       (set-window-configuration val))
      ((markerp val)

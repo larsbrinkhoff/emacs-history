@@ -1,3 +1,99 @@
+Thu Nov 11 10:08:43 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.20 released.
+
+Mon Nov  8 19:56:20 MET 1993  Tom Hageman (tom@basil.icce.rug.nl)
+
+	* etags.c: (C_entries): Keep track of ()-parenthesis level so that
+	functions returning a pointer to a function, a la `signal', can be
+	parsed.  This also required new state `fstartlist' to `FUNCST'.
+	(SAVE_TOKEN, RESTORE_TOKEN, TOKEN_SAVED_P): 1-deep token save stack.
+	(C_entries, CNL): use it to isolate preprocessor directive processing
+	from the other state engines.
+	(begtk): add '~', for C++ class destructors.
+
+Tue Nov  2 19:46:52 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (consider_token): removed unused variable firsttok.
+	(prolog_getit): call pfnote with the right number of arguments.
+
+Tue Oct 19 02:50:31 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log (printlogline): Don't generate lines containing only
+	white space.
+
+Mon Oct  4 00:31:33 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Makefile.in (${archlibdir}):
+	Install ${SCRIPTS} from ${srcdir}, not cwd.
+
+Sun Oct  3 15:54:26 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Makefile.in: Fixed typos or brainos of whoever thought `@' was
+	the comment character.
+
+Fri Oct  1 10:44:25 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (process_file): dead code removed.
+	(S_ISREG): #define it using S_IFREG if not defined.
+	(process_file): regular files have nothing to do with symlinks.
+
+Tue Sep 28 14:10:32 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* Makefile.in (${archlibdir}): Install ${SCRIPTS} from ${srcdir}, not
+	from current directory.  Only chmod and chgrp files that we
+	installed, which excludes ${INSTALLABLE_SCRIPTS}.  They go in
+	${bindir}.
+	(INSTALLFLAGS): Deleted definition, since it is an unused variable
+	now.
+
+Mon Sep 27 09:02:40 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* Makefile.in (INSTALL, INSTALL_PROGRAM, INSTALL_DATA): Let
+	configure figure out the correct values for these variables.
+
+Tue Sep 14 00:55:44 1993  Brian Fox  (bfox@ai.mit.edu)
+
+	* Makefile.in (archlibdir): Only install execuatables internally
+	used by emacs; don't install bindir binaries here.
+
+Fri Sep 24 01:03:32 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log: Add -h, -n, -r options.
+	By default, look for *,v files as well as RCS/*,v files.
+	Use $TMPDIR (default /tmp) instead of /tmp.
+
+Mon Sep 20 18:06:12 1993  Francesco Potorti`  (pot at fly)
+
+	* etags.c (C_entries): is_func is initialised here instead of in
+	consider_token for the sake of the yacc rules section.
+	(C_entries): Now class, struct, enum, union and typedef produce
+	named tags.
+
+Sat Sep 11 21:37:09 1993  Roland McGrath  (roland@baalperazim.gnu.ai.mit.edu)
+
+	* yow.c: Include <src/paths.h>, instead of "src/paths.h".
+
+Fri Sep 10 00:47:13 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Support configuring in a different directory when ${srcdir} has
+	already been configured.
+	* Makefile.in (ALL_CFLAGS, CPP_CFLAGS): Put -I. -I../src before
+	-I${srcdir} -I${srcdir}/../src.
+	(b2m, movemail, fakemail, env, emacsserver, emacsclient,
+	getdate.o, timer.o, timer): Remove `-I${srcdir}/../src', since it
+	is already in CPP_FLAGS.
+	* etags.c, emacsclient.c, wakeup.c, timer.c, b2m.c, fakemail.c,
+	movemail.c, emacsserver.c: Include <config.h> instead of "config.h".
+
+Wed Aug 25 01:19:33 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log: Change /{/ to /\{/ for Posix ERE compatibility;
+	otherwise, HP awk complains.
+
+	* vcdiff: Append /usr/ccs/bin and /usr/sccs to PATH, since these
+	are common hangouts for SCCS commands.
+
 Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.19 released.

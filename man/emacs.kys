@@ -35,7 +35,7 @@
 \entry {\code {{\tt\less} \r {(Rmail)}}}{229}
 \initial {A}
 \entry {\code {a \r {(Calendar mode)}}}{257}
-\entry {\code {a \r {(Rmail)}}}{233}
+\entry {\code {a \r {(Rmail)}}}{234}
 \initial {B}
 \entry {\code {B \r {(Dired)}}}{246}
 \entry {\code {b \r {(Rmail)}}}{227}
@@ -44,7 +44,7 @@
 \entry {\code {c \r {(Dired)}}}{244}
 \entry {\code {C \r {(Dired)}}}{245}
 \entry {\code {c \r {(Rmail)}}}{236}
-\entry {\code {C-]}}{316}
+\entry {\code {C-]}}{318}
 \entry {\code {C-{\_}}}{33}
 \entry {\code {C-{\tt\char'100}}}{52}
 \entry {\code {C-a}}{26}
@@ -68,6 +68,7 @@
 \entry {\code {C-c C-{\tt\indexbackslash } \r {(Shell mode)}}}{278}
 \entry {\code {C-c C-b \r {(Outline mode)}}}{154}
 \entry {\code {C-c C-b \r {(Picture mode)}}}{219}
+\entry {\code {C-c C-b \r {(Shell mode)}}}{279}
 \entry {\code {C-c C-b \r {(\TeX{} mode)}}}{159}
 \entry {\code {C-c C-c \r {(Edit Abbrevs)}}}{214}
 \entry {\code {C-c C-c \r {(Edit Tab Stops)}}}{141}
@@ -77,27 +78,31 @@
 \entry {\code {C-c C-d \r {(GUD)}}}{203}
 \entry {\code {C-c C-d \r {(Picture mode)}}}{218}
 \entry {\code {C-c C-e \r {(La\TeX{} mode)}}}{158}
+\entry {\code {C-c C-e \r {(Shell mode)}}}{279}
 \entry {\code {C-c C-f \r {(GUD)}}}{203}
 \entry {\code {C-c C-f \r {(Outline mode)}}}{154}
 \entry {\code {C-c C-f \r {(Picture mode)}}}{219}
+\entry {\code {C-c C-f \r {(Shell mode)}}}{279}
 \entry {\code {C-c C-f \r {(\TeX{} mode)}}}{160}
 \entry {\code {C-c C-f C-c \r {(Mail mode)}}}{225}
 \entry {\code {C-c C-f C-s \r {(Mail mode)}}}{225}
 \entry {\code {C-c C-f C-t \r {(Mail mode)}}}{225}
 \entry {\code {C-c C-h \r {(Outline mode)}}}{155}
 \entry {\code {C-c C-i \r {(GUD)}}}{203}
-\entry {\code {C-c C-i \r {(Outline mode)}}}{155}
+\entry {\code {C-c C-i \r {(Outline mode)}}}{156}
 \entry {\code {C-c C-k \r {(Picture mode)}}}{220}
 \entry {\code {C-c C-k \r {(\TeX{} mode)}}}{159}
 \entry {\code {C-c C-l \r {(Calendar mode)}}}{256}
 \entry {\code {C-c C-l \r {(GUD)}}}{202}
 \entry {\code {C-c C-l \r {(\TeX{} mode)}}}{159}
+\entry {\code {C-c C-n}}{280}
 \entry {\code {C-c C-n \r {(C mode)}}}{190}
 \entry {\code {C-c C-n \r {(Fortran mode)}}}{191}
 \entry {\code {C-c C-n \r {(GUD)}}}{202}
 \entry {\code {C-c C-n \r {(Outline mode)}}}{154}
 \entry {\code {C-c C-o \r {(La\TeX{} mode)}}}{158}
 \entry {\code {C-c C-o \r {(Shell mode)}}}{278}
+\entry {\code {C-c C-p}}{280}
 \entry {\code {C-c C-p \r {(C mode)}}}{190}
 \entry {\code {C-c C-p \r {(Fortran mode)}}}{191}
 \entry {\code {C-c C-p \r {(Outline mode)}}}{154}
@@ -105,7 +110,7 @@
 \entry {\code {C-c C-q \r {(Mail mode)}}}{226}
 \entry {\code {C-c C-q \r {(\TeX{} mode)}}}{159}
 \entry {\code {C-c C-r \r {(Fortran mode)}}}{197}
-\entry {\code {C-c C-r \r {(Shell mode)}}}{278}
+\entry {\code {C-c C-r \r {(Shell mode)}}}{279}
 \entry {\code {C-c C-r \r {(\TeX{} mode)}}}{159}
 \entry {\code {C-c C-s \r {(GUD)}}}{202}
 \entry {\code {C-c C-s \r {(Mail mode)}}}{225}
@@ -121,6 +126,7 @@
 \entry {\code {C-c C-y \r {(Mail mode)}}}{225}
 \entry {\code {C-c C-y \r {(Picture mode)}}}{220}
 \entry {\code {C-c C-z \r {(Shell mode)}}}{278}
+\entry {\code {C-c \key {RET}}}{280}
 \entry {\code {C-c TAB \r {(Picture mode)}}}{219}
 \entry {\code {C-c TAB \r {(\TeX{} mode)}}}{160}
 \entry {\code {C-d}}{57}
@@ -146,7 +152,7 @@
 \entry {\code {C-h m}}{50}
 \entry {\code {C-h n}}{50}
 \entry {\code {C-h p}}{48}
-\entry {\code {C-h s}}{309}
+\entry {\code {C-h s}}{311}
 \entry {\code {C-h t}}{25}
 \entry {\code {C-h w}}{47}
 \entry {\code {C-k}}{58}
@@ -157,7 +163,7 @@
 \entry {\code {C-M-a}}{166}
 \entry {\code {C-M-a \r {(Fortran mode)}}}{191}
 \entry {\code {C-M-b}}{165}
-\entry {\code {C-M-c}}{284}
+\entry {\code {C-M-c}}{287}
 \entry {\code {C-M-d}}{165}
 \entry {\code {C-M-d \r {(Dired)}}}{249}
 \entry {\code {C-M-e}}{166}
@@ -183,7 +189,7 @@
 \entry {\code {C-M-r \r {(Rmail)}}}{237}
 \entry {\code {C-M-s}}{79}
 \entry {\code {C-M-t}}{90, 166}
-\entry {\code {C-M-t \r {(Rmail)}}}{237}
+\entry {\code {C-M-t \r {(Rmail)}}}{238}
 \entry {\code {C-M-u}}{165}
 \entry {\code {C-M-u \r {(Dired)}}}{249}
 \entry {\code {C-M-v}}{127}
@@ -212,14 +218,15 @@
 \entry {\code {C-u - C-x ;}}{174}
 \entry {\code {C-u C-{\tt\char'100}}}{54}
 \entry {\code {C-u C-SPC}}{54}
+\entry {\code {C-u C-x v v}}{108}
 \entry {\code {C-u TAB}}{168}
 \entry {\code {C-v}}{69}
 \entry {\code {C-v \r {(Calendar mode)}}}{255}
 \entry {\code {C-w}}{59}
-\entry {\code {C-x #}}{283}
+\entry {\code {C-x #}}{286}
 \entry {\code {C-x $}}{71}
-\entry {\code {C-x (}}{297}
-\entry {\code {C-x )}}{297}
+\entry {\code {C-x (}}{299}
+\entry {\code {C-x )}}{299}
 \entry {\code {C-x .}}{150}
 \entry {\code {C-x ;}}{175}
 \entry {\code {C-x =}}{30}
@@ -249,14 +256,14 @@
 \entry {\code {C-x 5 0}}{135}
 \entry {\code {C-x 5 f}}{96}
 \entry {\code {C-x 5 m}}{221}
-\entry {\code {C-x 6 1}}{282}
-\entry {\code {C-x 6 2}}{281}
-\entry {\code {C-x 6 b}}{282}
-\entry {\code {C-x 6 C-l}}{282}
-\entry {\code {C-x 6 d}}{282}
-\entry {\code {C-x 6 \key {DEL}}}{282}
-\entry {\code {C-x 6 s}}{281}
-\entry {\code {C-x 6 \key {SPC}}}{282}
+\entry {\code {C-x 6 1}}{284}
+\entry {\code {C-x 6 2}}{283}
+\entry {\code {C-x 6 b}}{284}
+\entry {\code {C-x 6 C-l}}{284}
+\entry {\code {C-x 6 d}}{284}
+\entry {\code {C-x 6 \key {DEL}}}{284}
+\entry {\code {C-x 6 s}}{284}
+\entry {\code {C-x 6 \key {SPC}}}{284}
 \entry {\code {C-x 8}}{72}
 \entry {\code {C-x a g}}{212}
 \entry {\code {C-x a i g}}{212}
@@ -284,18 +291,18 @@
 \entry {\code {C-x C-x}}{51}
 \entry {\code {C-x d}}{241}
 \entry {\code {C-x DEL}}{89, 145}
-\entry {\code {C-x e}}{297}
+\entry {\code {C-x e}}{299}
 \entry {\code {C-x ESC ESC}}{41}
 \entry {\code {C-x f}}{149}
 \entry {\code {C-x h}}{54}
 \entry {\code {C-x k}}{122}
 \entry {\code {C-x l}}{147}
 \entry {\code {C-x m}}{221}
-\entry {\code {C-x n n}}{280}
-\entry {\code {C-x n p}}{280}
-\entry {\code {C-x n w}}{280}
+\entry {\code {C-x n n}}{282}
+\entry {\code {C-x n p}}{282}
+\entry {\code {C-x n w}}{282}
 \entry {\code {C-x o}}{126}
-\entry {\code {C-x q}}{299}
+\entry {\code {C-x q}}{301}
 \entry {\code {C-x r f}}{68}
 \entry {\code {C-x r i}}{67}
 \entry {\code {C-x r j}}{67}
@@ -310,26 +317,27 @@
 \entry {\code {C-x TAB}}{140}
 \entry {\code {C-x u}}{33}
 \entry {\code {C-x v =}}{111}
-\entry {\code {C-x v a}}{109}
+\entry {\code {C-x v {\tt\char'176}}}{111}
+\entry {\code {C-x v a}}{110}
 \entry {\code {C-x v c}}{108}
-\entry {\code {C-x v d}}{111}
+\entry {\code {C-x v d}}{112}
 \entry {\code {C-x v h}}{114}
 \entry {\code {C-x v i}}{108}
-\entry {\code {C-x v l}}{111}
-\entry {\code {C-x v r}}{112}
-\entry {\code {C-x v s}}{112}
+\entry {\code {C-x v l}}{112}
+\entry {\code {C-x v r}}{113}
+\entry {\code {C-x v s}}{113}
 \entry {\code {C-x v u}}{107}
 \entry {\code {C-y}}{60}
 \entry {\code {C-z}}{24, 135}
 \initial {D}
-\entry {\code {d \r {(Calendar mode)}}}{263}
+\entry {\code {d \r {(Calendar mode)}}}{264}
 \entry {\code {d \r {(Dired)}}}{242}
 \entry {\code {d \r {(Rmail)}}}{230}
 \entry {\code {DEL}}{25, 57, 89, 137, 164}
 \entry {\code {\key {DEL} \r {(Dired)}}}{242}
 \entry {\code {DEL \r {(GNUS)}}}{273}
 \entry {\code {DEL \r {(Rmail)}}}{228}
-\entry {\code {drag-M-mouse-1}}{130}
+\entry {\code {drag-M-mouse-1}}{131}
 \initial {E}
 \entry {\code {e \r {(Rmail)}}}{239}
 \initial {F}
@@ -350,10 +358,10 @@
 \initial {I}
 \entry {\code {i \r {(Dired)}}}{249}
 \entry {\code {i \r {(Rmail)}}}{231}
-\entry {\code {i a \r {(Calendar mode)}}}{267}
+\entry {\code {i a \r {(Calendar mode)}}}{268}
 \entry {\code {i b \r {(Calendar mode)}}}{268}
 \entry {\code {i c \r {(Calendar mode)}}}{268}
-\entry {\code {i d \r {(Calendar mode)}}}{266}
+\entry {\code {i d \r {(Calendar mode)}}}{267}
 \entry {\code {i m \r {(Calendar mode)}}}{267}
 \entry {\code {i w \r {(Calendar mode)}}}{267}
 \entry {\code {i y \r {(Calendar mode)}}}{267}
@@ -361,7 +369,7 @@
 \entry {\code {j \r {(Rmail)}}}{229}
 \initial {K}
 \entry {\code {k \r {(Dired)}}}{250}
-\entry {\code {k \r {(Rmail)}}}{233}
+\entry {\code {k \r {(Rmail)}}}{234}
 \initial {L}
 \entry {\code {l \r {(Dired)}}}{250}
 \entry {\code {L \r {(Dired)}}}{246}
@@ -432,9 +440,9 @@
 \entry {\code {M-LFD}}{175}
 \entry {\code {M-LFD \r {(Fortran mode)}}}{192}
 \entry {\code {M-m}}{139}
-\entry {\code {M-mouse-1}}{130}
-\entry {\code {M-mouse-2}}{130}
-\entry {\code {M-mouse-3}}{130}
+\entry {\code {M-mouse-1}}{131}
+\entry {\code {M-mouse-2}}{131}
+\entry {\code {M-mouse-3}}{131}
 \entry {\code {M-n \r {(minibuffer history)}}}{40}
 \entry {\code {M-n \r {(Nroff mode)}}}{161}
 \entry {\code {M-n \r {(Rmail)}}}{229}
@@ -447,15 +455,16 @@
 \entry {\code {M-q \r {(C mode)}}}{190}
 \entry {\code {M-r}}{26}
 \entry {\code {M-r \r {(minibuffer history)}}}{40}
-\entry {\code {M-r \r {(Shell mode)}}}{279}
+\entry {\code {M-r \r {(Shell mode)}}}{280}
 \entry {\code {M-s \r {(GNUS Summary mode)}}}{273}
 \entry {\code {M-s \r {(minibuffer history)}}}{40}
 \entry {\code {M-s \r {(Rmail)}}}{229}
-\entry {\code {M-s \r {(Shell mode)}}}{279}
+\entry {\code {M-s \r {(Shell mode)}}}{280}
 \entry {\code {M-s \r {(Text mode)}}}{148}
 \entry {\code {M-SPC}}{58}
 \entry {\code {M-t}}{90, 144}
 \entry {\code {M-TAB}}{177, 219}
+\entry {\code {M-TAB \r {(Text mode)}}}{152}
 \entry {\code {M-u}}{151}
 \entry {\code {M-v}}{69}
 \entry {\code {M-v \r {(Calendar mode)}}}{255}
@@ -484,7 +493,7 @@
 \initial {Q}
 \entry {\code {q \r {(Calendar mode)}}}{256}
 \entry {\code {q \r {(GNUS Group mode)}}}{272}
-\entry {\code {q \r {(Rmail summary)}}}{238}
+\entry {\code {q \r {(Rmail summary)}}}{239}
 \entry {\code {q \r {(Rmail)}}}{227}
 \initial {R}
 \entry {\code {R \r {(Dired)}}}{245}
@@ -519,7 +528,7 @@
 \initial {V}
 \entry {\code {v \r {(Dired)}}}{243}
 \initial {W}
-\entry {\code {w \r {(Rmail summary)}}}{238}
+\entry {\code {w \r {(Rmail summary)}}}{239}
 \initial {X}
 \entry {\code {x \r {(Calendar mode)}}}{257}
 \entry {\code {x \r {(Dired)}}}{242}

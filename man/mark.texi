@@ -141,8 +141,8 @@ region active again by typing @kbd{C-x C-x}.
 
 @item
 Commands like @kbd{M->} that ``leave the mark behind'' do not activate
-the new mark.  it.  You can activate the new region by executing
-@kbd{C-x C-x} (@code{exchange-point-and-mark}).
+the new mark.  You can activate the new region by executing @kbd{C-x
+C-x} (@code{exchange-point-and-mark}).
 
 @item
 Quitting with @kbd{C-g} deactivates the mark.

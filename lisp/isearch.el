@@ -4,10 +4,9 @@
 
 ;; Author: Daniel LaLiberte <liberte@cs.uiuc.edu>
 
-;; |$Date: 1993/08/13 06:32:49 $|$Revision: 1.49 $
+;; |$Date: 1993/10/24 04:05:22 $|$Revision: 1.52 $
 
-;; This file is not yet part of GNU Emacs, but it is based almost
-;; entirely on isearch.el which is part of GNU Emacs.
+;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY.  No author or distributor
@@ -29,31 +28,10 @@
 ;;;====================================================================
 ;; Instructions
 
-;; Searching with isearch-mode.el should work just like isearch.el,
-;; except it is done in a temporary minor mode that terminates when
-;; you finish searching.
-
-;; To use isearch-mode instead of the standard isearch.el, add the
-;; following to your .emacs file.  The standard key bindings to
-;; isearch-forward, etc, will then use isearch-mode instead of
-;; isearch.
-
-;; (defalias 'isearch 'isearch-mode)
-;; (autoload 'isearch-mode "isearch-mode")
-
 ;; For programmed use of isearch-mode, e.g. calling (isearch-forward),
 ;; isearch-mode behaves modally and does not return until the search
 ;; is completed.  It uses a recursive-edit to behave this way.  Note:
 ;; gnus does it wrong: (call-interactively 'isearch-forward).
-
-;; If any package you use invokes isearching non-interactively to get
-;; the modal behavior described above, you must use the redefinitions
-;; of isearch-forward, etc. found in this file instead of those in
-;; loaddefs.el.  The simplest way to ensure this is to just load
-;; isearch-mode explicitly in your .emacs instead of using the above
-;; defalias and autoload.
-
-;; (load "isearch-mode")
 
 ;; The key bindings active within isearch-mode are defined below in
 ;; `isearch-mode-map' which is given bindings close to the default
@@ -255,6 +233,9 @@ Default value, nil, means edit the string instead.")
     
       (define-key map "\C-w" 'isearch-yank-word)
       (define-key map "\C-y" 'isearch-yank-line)
+      (define-key map [mouse-2] 'isearch-yank-kill)
+      ;; This overrides the default binding for t.
+      (define-key map [down-mouse-2] 'nil)
 
       ;; Bind the ASCII-equivalent "function keys" explicitly
       ;; if we bind their equivalents, 
@@ -288,6 +269,7 @@ Default value, nil, means edit the string instead.")
 
       (define-key map "\M-n" 'isearch-ring-advance)
       (define-key map "\M-p" 'isearch-ring-retreat)
+      (define-key map "\M-y" 'isearch-yank-kill)
 
       (define-key map "\M-\t" 'isearch-complete)
 
@@ -876,18 +858,23 @@ If no previous match was done, just beep."
 
 (defun isearch-yank (chunk)
   ;; Helper for isearch-yank-word and isearch-yank-line
-  (let ((string (save-excursion
-		  (and (not isearch-forward) isearch-other-end
-		       (goto-char isearch-other-end))
-		  (buffer-substring
-		   (point)
-		   (save-excursion
-		     (cond
-		      ((eq chunk 'word)
-		       (forward-word 1))
-		      ((eq chunk 'line)
-		       (end-of-line)))
-		     (point))))))
+  ;; CHUNK should be word, line or kill.
+  (let ((string (cond
+                 ((eq chunk 'kill)
+                  (current-kill 0))
+                 (t
+		  (save-excursion
+		    (and (not isearch-forward) isearch-other-end
+			 (goto-char isearch-other-end))
+		    (buffer-substring
+		     (point)
+		     (save-excursion
+		       (cond
+			((eq chunk 'word)
+			 (forward-word 1))
+			((eq chunk 'line)
+			 (end-of-line)))
+		       (point))))))))
     ;; Downcase the string if not supposed to case-fold yanked strings.
     (if (and isearch-case-fold-search
 	     (eq 'not-yanks search-upper-case))
@@ -902,6 +889,10 @@ If no previous match was done, just beep."
 	  isearch-yank-flag t))
   (isearch-search-and-update))
 
+(defun isearch-yank-kill ()
+  "Pull string from kill ring into search string."
+  (interactive)
+  (isearch-yank 'kill))
 
 (defun isearch-yank-word ()
   "Pull next word from buffer into search string."

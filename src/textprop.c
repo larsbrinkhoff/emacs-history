@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "intervals.h"
 #include "buffer.h"
@@ -159,6 +159,7 @@ validate_interval_range (object, begin, end, force)
 
 static Lisp_Object
 validate_plist (list)
+     Lisp_Object list;
 {
   if (NILP (list))
     return Qnil;
@@ -586,6 +587,7 @@ DEFUN ("next-single-property-change", Fnext_single_property_change,
 Scans characters forward from POS till it finds\n\
 a change in the PROP property, then returns the position of the change.\n\
 The optional third argument OBJECT is the string or buffer to scan.\n\
+The property values are compared with `eq'.
 Return nil if the property is constant all the way to the end of OBJECT.\n\
 If the value is non-nil, it is a position greater than POS, never equal.")
   (pos, prop, object)
@@ -649,6 +651,7 @@ DEFUN ("previous-single-property-change", Fprevious_single_property_change,
 Scans characters backward from POS till it finds\n\
 a change in the PROP property, then returns the position of the change.\n\
 The optional third argument OBJECT is the string or buffer to scan.\n\
+The property values are compared with `eq'.
 Return nil if the property is constant all the way to the start of OBJECT.\n\
 If the value is non-nil, it is a position less than POS, never equal.")
      (pos, prop, object)

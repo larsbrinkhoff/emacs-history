@@ -105,6 +105,14 @@ value and might not know how to override it.")
   "*Expression evaluating to name of `calendar-longitude', calendar-latitude'.
 Default value is just the latitude, longitude pair.")
 
+(defvar solar-n-hemi-seasons
+  '("Vernal Equinox" "Summer Solstice" "Autumnal Equinox" "Winter Solstice")
+  "List of season changes for the northern hemisphere.")
+
+(defvar solar-s-hemi-seasons
+  '("Autumnal Equinox" "Winter Solstice" "Vernal Equinox" "Summer Solstice")
+  "List of season changes for the southern hemisphere.")
+
 (defun solar-setup ()
   "Prompt user for latitude, longitude, and time zone."
   (beep)
@@ -145,7 +153,7 @@ Returns nil if nothing was entered."
 
 (defun solar-degrees-to-quadrant (angle)
   "Determines the quadrant of ANGLE."
-  (1+ (truncate (/ (mod angle 360.0) 90.0))))
+  (1+ (floor (mod angle 360) 90)))
 
 (defun solar-arctan (x quad)
   "Arctangent of X in quadrant QUAD."
@@ -274,8 +282,8 @@ is 'standard and daylight savings time (if available) when its value is
 
 Format used is given by `calendar-time-display-form'.  Converted to daylight
 savings time according to `calendar-daylight-savings-starts',
-`calendar-daylight-savings-ends', `calendar-daylight-switchover-time', and
-`calendar-daylight-savings-offset'."
+`calendar-daylight-savings-ends', `calendar-daylight-savings-starts-time',
+`calendar-daylight-savings-ends-time', and `calendar-daylight-savings-offset'."
   (let* ((year (extract-calendar-year date))
 	 (time (round (* 60 time)))
 	 (rounded-abs-date (+ (calendar-absolute-from-gregorian date)
@@ -283,12 +291,12 @@ savings time according to `calendar-daylight-savings-starts',
          (dst-starts (and calendar-daylight-savings-starts
                           (+ (calendar-absolute-from-gregorian
                               (eval calendar-daylight-savings-starts))
-			     (/ calendar-daylight-savings-switchover-time
+			     (/ calendar-daylight-savings-starts-time
 				60.0 24.0))))
          (dst-ends (and calendar-daylight-savings-ends
                         (+ (calendar-absolute-from-gregorian
                             (eval calendar-daylight-savings-ends))
-			   (/ (- calendar-daylight-savings-switchover-time
+			   (/ (- calendar-daylight-savings-ends-time
 				 calendar-daylight-time-offset)
 			      60.0 24.0))))
 	 (dst (and (not (eq style 'standard))
@@ -372,7 +380,7 @@ several minutes."
         app
 	(correction 1000))
     (while (> correction 0.00001)
-      (setq app (mod (solar-apparent-longitude-of-sun date) 360.0))
+      (setq app (mod (solar-apparent-longitude-of-sun date) 360))
       (setq correction (* 58 (solar-sin-degrees (- (* k 90) app))))
       (setq date (list (extract-calendar-month date)
 		       (+ (extract-calendar-day date) correction)
@@ -430,7 +438,7 @@ This function is suitable for execution in a .emacs file."
         (time-string (solar-sunrise-sunset date))
         (msg (format "%s: %s" date-string time-string))
         (one-window (one-window-p t)))
-   (if (<= (length msg) (screen-width))
+   (if (<= (length msg) (frame-width))
        (message msg)
      (with-output-to-temp-buffer "*temp*"
        (princ (concat date-string "\n" time-string)))
@@ -489,6 +497,7 @@ Requires floating point."
 	   (date (solar-equinoxes/solstices k y))
 	   (day (extract-calendar-day date))
 	   (time (* 24 (- day (truncate day))))
+	   (s-hemi (and calendar-latitude (< calendar-latitude 0)))
            ;; Time zone/DST can't move the date out of range,
            ;; so let solar-time-string do the conversion.
 	   (date (list (extract-calendar-month date)
@@ -496,10 +505,8 @@ Requires floating point."
 		       (extract-calendar-year date))))
       (list (list date
 		  (format "%s %s"
-			  (cond ((= k 0)  "Vernal Equinox")
-				((= k 1)  "Summer Solstice")
-				((= k 2)  "Fall Equinox")
-				((= k 3)  "Winter Solstice"))
+			  (nth k (if s-hemi solar-s-hemi-seasons
+                                   solar-n-hemi-seasons))
 			  (solar-time-string time date)))))))
 
 (provide 'solar)

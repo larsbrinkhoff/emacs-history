@@ -8,7 +8,7 @@
 ;;	Hebrew calendar, Islamic calendar, ISO calendar, Julian day number,
 ;;	diary, holidays
 
-(defconst calendar-version "Version 5.1, released June 18, 1993")
+(defconst calendar-version "Version 5.2, released October 20, 1993")
 
 ;; This file is part of GNU Emacs.
 
@@ -99,6 +99,11 @@
 ;; the message BODY containing your mailing address (snail).
 
 ;;; Code:
+
+;;;###autoload
+(defvar calendar-week-start-day 0
+  "*The day of the week on which a week in the calendar begins.
+0 means Sunday (default), 1 means Monday, and so on.")
 
 ;;;###autoload
 (defvar view-diary-entries-initially nil
@@ -409,13 +414,13 @@ a portion of the first word of the diary entry.")
 (defvar european-calendar-display-form
   '((if dayname (concat dayname ", ")) day " " monthname " " year)
   "*Pseudo-pattern governing the way a date appears in the European style.
-See the documentation of calendar-date-display-forms for an explanation.")
+See the documentation of calendar-date-display-form for an explanation.")
 
 ;;;###autoload
 (defvar american-calendar-display-form
   '((if dayname (concat dayname ", ")) monthname " " day ", " year)
   "*Pseudo-pattern governing the way a date appears in the American style.
-See the documentation of calendar-date-display-forms for an explanation.")
+See the documentation of calendar-date-display-form for an explanation.")
 
 (defvar calendar-date-display-form
   (if european-calendar-style
@@ -752,7 +757,7 @@ See the documentation for `calendar-holidays' for details.")
         '(format "Daylight Savings Time Begins %s"
                   (if (fboundp 'atan)
                       (solar-time-string
-                       (/ calendar-daylight-savings-switchover-time
+                       (/ calendar-daylight-savings-starts-time
                           (float 60))
                        date
                        'standard)
@@ -763,7 +768,7 @@ See the documentation for `calendar-holidays' for details.")
      '(format "Daylight Savings Time Ends %s"
               (if (fboundp 'atan)
                   (solar-time-string
-                   (/ (- calendar-daylight-savings-switchover-time
+                   (/ (- calendar-daylight-savings-ends-time
                          calendar-daylight-time-offset)
                       (float 60))
                    date
@@ -978,13 +983,13 @@ Forward if N is positive or backward if N is negative."
 (defmacro calendar-last-day-of-month (month year)
   "The last day in MONTH during YEAR."
   (` (if (and
-            (, (macroexpand (` (calendar-leap-year-p (, year)))))
-            (= (, month) 2))
+            (= (, month) 2)
+            (, (macroexpand (` (calendar-leap-year-p (, year))))))
            29
          (aref [31 28 31 30 31 30 31 31 30 31 30 31] (1- (, month))))))
 ;;(defun calendar-last-day-of-month (month year)
 ;;  "The last day in MONTH during YEAR."
-;;  (if (and (calendar-leap-year-p year) (= month 2))
+;;  (if (and (= month 2) (calendar-leap-year-p year))
 ;;      29
 ;;    (aref [31 28 31 30 31 30 31 31 30 31 30 31] (1- month))))
 
@@ -1024,21 +1029,22 @@ while (calendar-day-number '(12 31 1980)) returns 366."
 (defmacro calendar-absolute-from-gregorian (date)
   "The number of days elapsed between the Gregorian date 12/31/1 BC and DATE.
 The Gregorian date Sunday, December 31, 1 BC is imaginary."
-  (` (let ((year  (, (macroexpand (` (extract-calendar-year (, date)))))))
+  (` (let ((prior-years
+	    (1- (, (macroexpand (` (extract-calendar-year (, date))))))))
        (+ (, (macroexpand (` (calendar-day-number (, date)))));; Days this year
-          (* 365 (1- year));;        + Days in prior years
-          (/ (1- year) 4);;          + Julian leap years
-          (- (/ (1- year) 100));;    - century years
-          (/ (1- year) 400)))));;     + Gregorian leap years
+          (* 365 prior-years);;        + Days in prior years
+          (/ prior-years 4);;          + Julian leap years
+          (- (/ prior-years 100));;    - century years
+          (/ prior-years 400)))));;    + Gregorian leap years
 ;;(defun calendar-absolute-from-gregorian (date)
 ;;  "The number of days elapsed between the Gregorian date 12/31/1 BC and DATE.
 ;;The Gregorian date Sunday, December 31, 1 BC is imaginary."
-;;  (let ((year (extract-calendar-year date)))
+;;  (let ((prior-years (1- (extract-calendar-year date))))
 ;;    (+ (calendar-day-number date);; Days this year
-;;       (* 365 (1- year));;        + Days in prior years
-;;       (/ (1- year) 4);;          + Julian leap years
-;;       (- (/ (1- year) 100));;    - century years
-;;       (/ (1- year) 400))));;     + Gregorian leap years
+;;       (* 365 prior-years);;        + Days in prior years
+;;       (/ prior-years 4);;          + Julian leap years
+;;       (- (/ prior-years 100));;    - century years
+;;       (/ prior-years 400))));;     + Gregorian leap years
 
 ;;;###autoload
 (defun calendar (&optional arg)
@@ -1319,25 +1325,34 @@ The calendar is inserted in the buffer starting at the line on which point
 is currently located, but indented INDENT spaces.  The indentation is done
 from the first character on the line and does not disturb the first INDENT
 characters on the line."
-  (let* ((first-day-of-month (calendar-day-of-week (list month 1 year)))
-         (first-saturday (- 7 first-day-of-month))
-         (last (calendar-last-day-of-month month year))
-         (heading (format "%s %d" (calendar-month-name month) year)))
-    (goto-char (point-min))
-    (calendar-insert-indented
-     heading (+ indent (/ (- 20 (length heading)) 2)) t)
-    (calendar-insert-indented " S  M Tu  W Th  F  S" indent t)
-    (calendar-insert-indented "" indent);; Move to appropriate spot on line
-    ;; Add blank days before the first of the month
-    (calendar-for-loop i from 1 to first-day-of-month do
-        (insert "   "))
-    ;; Put in the days of the month
-    (calendar-for-loop i from 1 to last do
-         (insert (format "%2d " i))
-         (and (= (% i 7) (% first-saturday 7))
-              (/= i last)
-              (calendar-insert-indented "" 0 t)    ;; Force onto following line
-              (calendar-insert-indented "" indent)))));; Go to proper spot
+  (let* ((blank-days;; at start of month
+          (calendar-mod
+           (- (calendar-day-of-week (list month 1 year))
+              calendar-week-start-day)
+           7))
+	 (last (calendar-last-day-of-month month year)))
+   (goto-char (point-min))
+   (calendar-insert-indented
+    (calendar-string-spread
+     (list "" (format "%s %d" (calendar-month-name month) year) "") ?  20)
+    indent t)
+   (calendar-insert-indented "" indent);; Go to proper spot
+   (calendar-for-loop i from 0 to 6 do
+      (insert (substring (aref calendar-day-name-array 
+                               (calendar-mod (+ calendar-week-start-day i) 7))
+                         0 2))
+      (insert " "))
+   (calendar-insert-indented "" 0 t);; Force onto following line
+   (calendar-insert-indented "" indent);; Go to proper spot
+   ;; Add blank days before the first of the month
+   (calendar-for-loop i from 1 to blank-days do (insert "   "))
+   ;; Put in the days of the month
+   (calendar-for-loop i from 1 to last do
+      (insert (format "%2d " i))
+      (and (zerop (calendar-mod (+ i blank-days) 7))
+           (/= i last)
+           (calendar-insert-indented "" 0 t)    ;; Force onto following line
+           (calendar-insert-indented "" indent)))));; Go to proper spot
 
 (defun calendar-insert-indented (string indent &optional newline)
   "Insert STRING at column INDENT.
@@ -1387,9 +1402,9 @@ the inserted text.  Value is always t."
         (setq l (cdr l)))))
   (define-key calendar-mode-map "-"     'negative-argument)
   (define-key calendar-mode-map "\C-x>" 'scroll-calendar-right)
-  (define-key calendar-mode-map "\ev"   'scroll-calendar-right-three-months)
+  (define-key calendar-mode-map [prior] 'scroll-calendar-right-three-months)
   (define-key calendar-mode-map "\C-x<" 'scroll-calendar-left)
-  (define-key calendar-mode-map "\C-v"  'scroll-calendar-left-three-months)
+  (define-key calendar-mode-map [next]  'scroll-calendar-left-three-months)
   (define-key calendar-mode-map "\C-b"  'calendar-backward-day)
   (define-key calendar-mode-map "\C-p"  'calendar-backward-week)
   (define-key calendar-mode-map "\e{"   'calendar-backward-month)
@@ -1493,19 +1508,19 @@ the inserted text.  Value is always t."
 
 The commands for cursor movement are:\\<calendar-mode-map>
 
-       \\[calendar-forward-day]  one day forward           \\[calendar-backward-day]  one day backward
-       \\[calendar-forward-week]  one week forward          \\[calendar-backward-week]  one week backward
+       \\[calendar-forward-day]  one day forward         \\[calendar-backward-day]  one day backward
+       \\[calendar-forward-week]  one week forward        \\[calendar-backward-week]  one week backward
        \\[calendar-forward-month]  one month forward       \\[calendar-backward-month]  one month backward
-       \\[calendar-forward-year]  one year forward        \\[calendar-backward-year]  one year backward
-       \\[calendar-beginning-of-week]  beginning of week         \\[calendar-end-of-week]  end of week
+       \\[calendar-forward-year]  one year forward      \\[calendar-backward-year]  one year backward
+       \\[calendar-beginning-of-week]  beginning of week       \\[calendar-end-of-week]  end of week
        \\[calendar-beginning-of-month]  beginning of month      \\[calendar-end-of-month]  end of month
        \\[calendar-beginning-of-year]  beginning of year       \\[calendar-end-of-year]  end of year
 
        \\[calendar-goto-date]  go to date
 
-       \\[calendar-goto-julian-date]  go to Julian date         \\[calendar-goto-astro-day-number]  go to astronomical (Julian) day number
-       \\[calendar-goto-hebrew-date]  go to Hebrew date         \\[calendar-goto-islamic-date]  go to Islamic date
-       \\[calendar-goto-iso-date]  go to ISO date            \\[calendar-goto-french-date]  go to French Revolutionary date
+       \\[calendar-goto-julian-date]  go to Julian date       \\[calendar-goto-astro-day-number]  go to astronomical (Julian) day number
+       \\[calendar-goto-hebrew-date]  go to Hebrew date       \\[calendar-goto-islamic-date]  go to Islamic date
+       \\[calendar-goto-iso-date]  go to ISO date          \\[calendar-goto-french-date]  go to French Revolutionary date
 
        \\[calendar-goto-mayan-long-count-date]  go to Mayan Long Count date
        \\[calendar-next-haab-date]  go to next occurrence of Mayan Haab date
@@ -1525,9 +1540,9 @@ You can determine the number of days (inclusive) between the point and mark by
 
 The commands for calendar movement are:
 
-       \\[scroll-calendar-right]  scroll one month right   \\[scroll-calendar-left]  scroll one month left
+       \\[scroll-calendar-right]  scroll one month right \\[scroll-calendar-left]  scroll one month left
        \\[scroll-calendar-right-three-months]  scroll 3 months right    \\[scroll-calendar-left-three-months]  scroll 3 months left
-       \\[calendar-current-month]  display current month        \\[calendar-other-month]  display another month
+       \\[calendar-current-month]  display current month      \\[calendar-other-month]  display another month
 
 Whenever it makes sense, the above commands take prefix arguments that
 multiply their affect.  For convenience, the digit keys and the minus sign
@@ -1636,13 +1651,14 @@ To find the times of sunrise and sunset and lunar phases use
        \\[calendar-sunrise-sunset]  show times of sunrise and sunset
        \\[calendar-phases-of-moon]  show times of quarters of the moon
 
-The times given will be at latitude `solar-latitude', longitude
-`solar-longitude' in time zone `solar-time-zone'.  These variables, and the
-variables `solar-location-name', `solar-standard-time-zone-name',
-`solar-daylight-time-zone-name', `solar-daylight-savings-starts',
-`solar-daylight-savings-ends', `calendar-daylight-time-offset',
-and `calendar-daylight-savings-switchover-time' should be set for
-your location.
+The times given will be for location `calendar-location-name' at latitude
+`calendar-latitude', longitude `calendar-longitude'; set these variables for
+your location.  The following variables are also consulted, and you must set
+them if your system does not initialize them properly: `calendar-time-zone',
+`calendar-daylight-time-offset', `calendar-standard-time-zone-name',
+`calendar-daylight-time-zone-name', `calendar-daylight-savings-starts',
+`calendar-daylight-savings-ends', `calendar-daylight-savings-starts-time',
+`calendar-daylight-savings-ends-time'.
 
 To exit from the calendar use
 
@@ -1971,20 +1987,26 @@ Moves forward if ARG is negative."
   (calendar-forward-day (* arg -7)))
 
 (defun calendar-beginning-of-week (arg)
-  "Move the cursor back ARG Sundays."
+  "Move the cursor back ARG calendar-week-start-day's."
   (interactive "p")
   (calendar-cursor-to-nearest-date)
   (let ((day (calendar-day-of-week (calendar-cursor-to-date))))
     (calendar-backward-day
-     (if (= day 0) (* 7 arg) (+ day (* 7 (1- arg)))))))
+     (if (= day calendar-week-start-day)
+         (* 7 arg)
+       (+ (calendar-mod (- day calendar-week-start-day) 7)
+          (* 7 (1- arg)))))))
 
 (defun calendar-end-of-week (arg)
-  "Move the cursor forward ARG Saturdays."
+  "Move the cursor forward ARG calendar-week-start-day+6's."
   (interactive "p")
   (calendar-cursor-to-nearest-date)
   (let ((day (calendar-day-of-week (calendar-cursor-to-date))))
     (calendar-forward-day
-     (if (= day 6) (* 7 arg) (+ (- 6 day) (* 7 (1- arg)))))))
+     (if (= day (calendar-mod (1- calendar-week-start-day) 7))
+         (* 7 arg)
+       (+ (- 6 (calendar-mod (- day calendar-week-start-day) 7))
+          (* 7 (1- arg)))))))
 
 (defun calendar-beginning-of-month (arg)
   "Move the cursor backward ARG month beginnings."
@@ -2106,20 +2128,34 @@ Gregorian date Sunday, December 31, 1 BC."
           (setq month (1+ month)))
         (list month day year)))))
 
+(defun calendar-mod (x y)
+  "Returns X % Y; value is *always* non-negative."
+  (let ((v (mod x y)))
+    (if (> 0 v)
+	(+ v y)
+      v)))
+
 (defun calendar-cursor-to-visible-date (date)
   "Move the cursor to DATE that is on the screen."
-    (let ((month (extract-calendar-month date))
-          (day (extract-calendar-day date))
-          (year (extract-calendar-year date)))
-      (goto-line (+ 3
-                    (/ (+ day -1
-                          (calendar-day-of-week (list month 1 year)))
-                       7)))
-      (move-to-column (+ 6
-                         (* 25
-                            (1+ (calendar-interval
-                                 displayed-month displayed-year month year)))
-                         (* 3 (calendar-day-of-week date))))))
+  (let* ((month (extract-calendar-month date))
+	 (day (extract-calendar-day date))
+	 (year (extract-calendar-year date))
+	 (first-of-month-weekday (calendar-day-of-week (list month 1 year))))
+    (goto-line (+ 3
+		  (/ (+ day  -1
+                        (calendar-mod
+                         (- (calendar-day-of-week (list month 1 year))
+                            calendar-week-start-day)
+                         7))
+                     7)))
+    (move-to-column (+ 6
+		       (* 25
+			  (1+ (calendar-interval
+			       displayed-month displayed-year month year)))
+		       (* 3 (calendar-mod
+                             (- (calendar-day-of-week date)
+                                calendar-week-start-day)
+                             7))))))
 
 (defun calendar-other-month (month year)
   "Display a three-month calendar centered around MONTH and YEAR."
@@ -2394,10 +2430,10 @@ is a string to insert in the minibuffer before reading."
   "Returns a string with the name of the day of the week of DATE."
   (aref calendar-day-name-array (calendar-day-of-week date)))
 
-(defconst calendar-day-name-array
+(defvar calendar-day-name-array
   ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
 
-(defconst calendar-month-name-array
+(defvar calendar-month-name-array
   ["January" "February" "March"     "April"   "May"      "June"
    "July"    "August"   "September" "October" "November" "December"])
 
@@ -2549,6 +2585,27 @@ absolute date d, applying it to d-1 gives the DAYNAME previous to absolute
 date d, and applying it to d+7 gives the DAYNAME following absolute date d."
   (- date (% (- date dayname) 7)))
 
+(defun calendar-nth-named-absday (n dayname month year &optional day)
+  "The absolute date of Nth DAYNAME in MONTH, YEAR before/after optional DAY.
+A DAYNAME of 0 means Sunday, 1 means Monday, and so on.  If N<0,
+return the Nth DAYNAME before MONTH DAY, YEAR (inclusive).
+If N>0, return the Nth DAYNAME after MONTH DAY, YEAR (inclusive).
+
+If DAY is omitted, it defaults to 1 if N>0, and MONTH's last day otherwise."
+  (if (> n 0)
+      (+ (* 7 (1- n))
+	 (calendar-dayname-on-or-before
+	  dayname
+	  (+ 6 (calendar-absolute-from-gregorian
+		(list month (or day 1) year)))))
+    (+ (* 7 (1+ n))
+       (calendar-dayname-on-or-before
+	dayname
+	(calendar-absolute-from-gregorian
+	 (list month
+	       (or day (calendar-last-day-of-month month year))
+	       year))))))
+
 (defun calendar-nth-named-day (n dayname month year &optional day)
   "The date of Nth DAYNAME in MONTH, YEAR before/after optional DAY.
 A DAYNAME of 0 means Sunday, 1 means Monday, and so on.  If N<0,
@@ -2557,19 +2614,7 @@ If N>0, return the Nth DAYNAME after MONTH DAY, YEAR (inclusive).
 
 If DAY is omitted, it defaults to 1 if N>0, and MONTH's last day otherwise."
   (calendar-gregorian-from-absolute
-   (if (> n 0)
-       (+ (* 7 (1- n))
-	  (calendar-dayname-on-or-before
-	   dayname
-	   (+ 6 (calendar-absolute-from-gregorian
-		 (list month (or day 1) year)))))
-     (+ (* 7 (1+ n))
-	(calendar-dayname-on-or-before
-	 dayname
-	 (calendar-absolute-from-gregorian
-	  (list month
-                (or day (calendar-last-day-of-month month year))
-                year)))))))
+   (calendar-nth-named-absday n dayname month year day)))
 
 (defun calendar-print-day-of-year ()
   "Show the day number in the year and the number of days remaining in the
@@ -2590,7 +2635,7 @@ weeks start on Monday and end on Sunday.  The first week of the ISO year is
 the first such week in which at least 4 days are in a year.  The ISO
 commercial DATE has the form (week day year) in which week is in the range
 1..52 and day is in the range 0..6 (1 = Monday, 2 = Tuesday, ..., 0 =
-Sunday).  The The Gregorian date Sunday, December 31, 1 BC is imaginary."
+Sunday).  The Gregorian date Sunday, December 31, 1 BC is imaginary."
   (let* ((week (extract-calendar-month date))
          (day (extract-calendar-day date))
          (year (extract-calendar-year date)))
@@ -2750,7 +2795,7 @@ Gregorian date Sunday, December 31, 1 BC."
                (1- (calendar-absolute-from-islamic (list month 1 year))))))
       (list month day year))))
 
-(defconst calendar-islamic-month-name-array
+(defvar calendar-islamic-month-name-array
   ["Muharram" "Safar" "Rabi I" "Rabi II" "Jumada I" "Jumada II"
    "Rajab" "Sha'ban" "Ramadan" "Shawwal" "Dhu al-Qada" "Dhu al-Hijjah"])
 
@@ -2880,11 +2925,11 @@ Gregorian date Sunday, December 31, 1 BC."
     (hebrew-calendar-elapsed-days year);; Days in prior years.
     -1373429)))                        ;; Days elapsed before absolute date 1.
 
-(defconst calendar-hebrew-month-name-array-common-year
+(defvar calendar-hebrew-month-name-array-common-year
   ["Nisan" "Iyar" "Sivan" "Tammuz" "Av" "Elul" "Tishri"
    "Heshvan" "Kislev" "Teveth" "Shevat" "Adar"])
 
-(defconst calendar-hebrew-month-name-array-leap-year
+(defvar calendar-hebrew-month-name-array-leap-year
   ["Nisan" "Iyar" "Sivan" "Tammuz" "Av" "Elul" "Tishri"
    "Heshvan" "Kislev" "Teveth" "Shevat" "Adar I" "Adar II"])
 

@@ -25,7 +25,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <stdio.h>
 #endif
 #include <signal.h>
-#include "config.h"
+#include <config.h>
 #include "lisp.h"
 #include "xterm.h"
 #include "frame.h"
@@ -995,12 +995,12 @@ x_set_menu_bar_lines (f, value, oldval)
   x_set_menu_bar_lines_1 (f->root_window, nlines - olines);
 }
 
-/* Change the name of frame F to ARG.  If ARG is nil, set F's name to
+/* Change the name of frame F to NAME.  If NAME is nil, set F's name to
        x_id_name.
 
    If EXPLICIT is non-zero, that indicates that lisp code is setting the
-       name; if ARG is a string, set F's name to ARG and set
-       F->explicit_name; if ARG is Qnil, then clear F->explicit_name.
+       name; if NAME is a string, set F's name to NAME and set
+       F->explicit_name; if NAME is Qnil, then clear F->explicit_name.
 
    If EXPLICIT is zero, that indicates that Emacs redisplay code is
        suggesting a new name, which lisp code should override; if
@@ -3502,9 +3502,12 @@ int
 XScreenNumberOfScreen (scr)
     register Screen *scr;
 {
-  register Display *dpy = scr->display;
-  register Screen *dpyscr = dpy->screens;
+  register Display *dpy;
+  register Screen *dpyscr;
   register int i;
+
+  dpy = scr->display;
+  dpyscr = dpy->screens;
 
   for (i = 0; i < dpy->nscreens; i++, dpyscr++)
     if (scr == dpyscr)

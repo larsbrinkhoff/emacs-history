@@ -855,7 +855,7 @@ using.
 * Log Entries::                 Logging your changes.
 * Change Logs and VC::          Generating a change log file from log
                                   entries. 
-* Comparing Versions::          How to compare two versions of a file.
+* Old Versions::                Examining and comparing old versions.
 * VC Status::                   Commands to view the VC status of files and
                                   look at log entries.
 * Renaming and VC::             A command to rename both the source and
@@ -1006,9 +1006,12 @@ for confirmation with @samp{yes}.
 
 @kindex C-x v i
 @findex vc-register
+@vindex vc-default-back-end
   You can register the visited file for version control using
-@w{@kbd{C-x v i}} (@code{vc-register}).  This uses RCS if RCS is
-installed on your system; otherwise, it uses SCCS.  After @kbd{C-x v i},
+@w{@kbd{C-x v i}} (@code{vc-register}).  If the variable
+@code{vc-default-back-end} is non-@code{nil}, it specifies which
+version control system to use; otherwise, this uses RCS if it is
+installed on your system and SCCS if not.  After @kbd{C-x v i},
 the file is unlocked and read-only.  Type @kbd{C-x C-q} if you wish to
 edit it.
 
@@ -1020,6 +1023,14 @@ the initial version number using the minibuffer.
   If @code{vc-initial-comment} is non-@code{nil}, @kbd{C-x v i} reads
 an initial comment (much like a log entry) to describe the purpose of
 this source file.
+
+@kindex C-u C-x v v
+@findex vc-next-action
+  To specify the version number for a subsequent checkin, use the
+command @kbd{C-u C-x v v}.  @kbd{C-x v v} (@code{vc-next-action}) is the
+command that @kbd{C-x C-q} uses to do the ``real work'' when the visited
+file uses version control.  When used for checkin, and given a prefix
+argument, it reads the version number with the minibuffer.
 
 @node Variables for Check-in/out
 @subsection Variables Affecting Check-in and Check-out
@@ -1204,8 +1215,29 @@ Wed Apr  1 08:57:59 1992  Nathaniel Bowditch  (nat@@apn.org)
 comments, you can log the change with an entry beginning with @samp{#}
 to avoid putting such trivia into @file{ChangeLog}.
 
-@node Comparing Versions
-@subsection Comparing Versions
+@node Old Versions
+@subsection Examining And Comparing Old Versions
+
+@table @kbd
+@item C-x v ~ @var{version} @key{RET}
+Examine version @var{version} of the visited file, in a buffer of its
+own (@code{vc-version-other-window}).
+
+@item C-x v =
+Compare the current buffer contents with the latest checked-in version
+of the file.
+
+@item C-u C-x v = @var{file} @key{RET} @var{oldvers} @key{RET} @var{newvers} @key{RET}
+Compare the specified two versions of @var{file}.
+@end table
+
+@findex vc-version-other-window
+@kindex C-x v ~
+  You can examine any version of a file by first visiting it, and then
+using @kbd{C-x v ~ @var{version} @key{RET}}
+(@code{vc-version-other-window}).  This puts the text of version
+@var{version} in a file named @file{@var{filename}.~@var{version}~},
+then visits it in a separate window.
 
 @findex vc-diff
 @kindex C-x v =
@@ -1260,13 +1292,13 @@ parentheses) in place of the owner and group.  All the normal Dired
 commands work in this buffer.  Most interactive VC commands work also,
 and apply to the file name on the current line.
 
-  The @code{vc-next-action} command, when used in the augmented Dired
-buffer, operates on all the marked files (or the file on the current
-line).  If it operates on more than one file, it handles each file
-according to its current state; thus, it may check in one file and check
-in another (which is already checked out).  If it has to check in any
-files, it reads a single log entry, then uses that text for all the
-files being checked in.  This can be convenient for registering or
+  The @kbd{C-x v v} command (@code{vc-next-action}), when used in the
+augmented Dired buffer, operates on all the marked files (or the file on
+the current line).  If it operates on more than one file, it handles
+each file according to its current state; thus, it may check in one file
+and check in another (which is already checked out).  If it has to check
+in any files, it reads a single log entry, then uses that text for all
+the files being checked in.  This can be convenient for registering or
 checking in several files at once, as part of the same change.
 
 @node Renaming and VC
@@ -1328,8 +1360,8 @@ overwriting work in progress.
 the list of file names and which version belongs to the snapshot.  Thus,
 you need not hesitate to create snapshots whenever they are useful.
 
-  You can give a snapshot name as an argument to @kbd{C-x v =}
-(@pxref{Comparing Versions}).  Thus, you can use it to compare a
+  You can give a snapshot name as an argument to @kbd{C-x v =} or
+@kbd{C-x v ~} (@pxref{Old Versions}).  Thus, you can use it to compare a
 snapshot against the current files, or two snapshots against each other,
 or a snapshot against a named version.
 

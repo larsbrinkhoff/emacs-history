@@ -1,11 +1,15 @@
 #### Makefile for the Emacs User's Manual.
 #### Just a few targets required by the coding standards.
 
-info: ../info/emacs ../info/cl.info ../info/forms ../info/vip ../info/gnus ../info/sc
+MAKEINFO = makeinfo
+TEXINDEX_OBJS = texindex.o ../.lib-src/getopt.o ../lib-src/getopt.o
+INFO_TARGETS = ../info/emacs ../info/cl.info ../info/forms ../info/vip \
+	       ../info/gnus ../info/sc ../info/info
+DVI_TARGETS = emacs.dvi cl.dvi forms.dvi vip.dvi gnus.dvi sc.dvi
+INFOSOURCES = info.texi info-stnd.texi
 
-dvi: emacs.dvi cl.dvi forms.dvi gnus.dvi sc.dvi vip.dvi
 .texi.dvi:
-	tex $<
+	texi2dvi $<
 
 EMACSSOURCES= \
 	emacs.texi \
@@ -46,36 +50,55 @@ EMACSSOURCES= \
 	gnu.texi \
 	glossary.texi
 
+info: $(INFO_TARGETS)
+
+dvi: texindex $(DVI_TARGETS)
+
+texindex: ${TEXINDEX_OBJS}
+	$(CC) -o texindex ${TEXINDEX_OBJS}
+
+texindex.o: texindex.c
+	$(CC) -Demacs -I../src -I../lib-src -c texindex.c
+
+../info/info: ${INFOSOURCES}
+	$(MAKEINFO) --no-split info.texi
+
+info.dvi: ${INFOSOURCES}
+
 ../info/emacs: ${EMACSSOURCES}
-	makeinfo emacs.texi
+	$(MAKEINFO) emacs.texi
+
 emacs.dvi: ${EMACSSOURCES}
 
-../info/cl: cl.texinfo
-	makeinfo cl.texinfo
-cl.dvi: cl.texinfo
+../info/cl: cl.texi
+	$(MAKEINFO) cl.texi
+cl.dvi: cl.texi
 
-../info/forms: forms.texinfo
-	makeinfo forms.texinfo
-forms.dvi: forms.texinfo
+../info/forms: forms.texi
+	$(MAKEINFO) forms.texi
+forms.dvi: forms.texi
 
-../info/sc: sc.texinfo
-	makeinfo sc.texinfo
-sc.dvi: forms.texinfo
+../info/sc: sc.texi
+	$(MAKEINFO) sc.texi
+sc.dvi: sc.texi
 
-../info/vip: vip.texinfo
-	makeinfo vip.texinfo
-vip.dvi: vip.texinfo
+../info/vip: vip.texi
+	$(MAKEINFO) vip.texi
+vip.dvi: vip.texi
 
 ../info/gnus: gnus.texi
-	makeinfo gnus.texi
+	$(MAKEINFO) gnus.texi
 gnus.dvi: gnus.texi
 
 mostlyclean:
 	rm -f *.log *.cp *.fn *.ky *.pg *.vr *.o core
+
 clean: mostlyclean
 	rm -f *.dvi
+
 distclean: clean
 	rm -f texindex
+
 realclean: distclean
 	rm -f *.aux *.cps *.fns *.kys *.pgs *.vrs
-	rm -f ../info/emacs* ../info/cl* ../info/forms* ../info/vip*
+	for file in $(INFO_TARGETS); do rm -f $${file}*; done

@@ -529,6 +529,9 @@ Iris 4D (mips-sgi-irix3.3 or mips-sgi-irix4.0)
   with IRIX 3.3 or IRIX 4.0.  Version 19 should support the
   ANSI C compiler version 3.10.
 
+  Compiling Emacs using the system's compiler with -O
+  does not work in Irix 4.0.5; don't use -O (or use GCC).
+
   Most irix3.3 systems do not have an ANSI C compiler, but a few do.
   If you are using the ANSI C compiler, you may need to add
       #define C_SWITCH_MACHINE -cckr
@@ -538,7 +541,6 @@ Iris 4D (mips-sgi-irix3.3 or mips-sgi-irix4.0)
   with a permission of 622.  This causes malfunctions in use of
   subprocesses of Emacs.  Irix versions 4.0 and later with GNU Emacs
   versions 18.59 and later fix this bug.
-
 
 Macintosh
 

@@ -65,11 +65,14 @@ case $os in
 	-dec* | -mips* | -sequent* | -encore* | -pc532* | -sgi* | -sony* | \
 	-att* | -7300* | -3300* | -delta* | -motorola* | -sun[234]* | \
 	-unicom* | -ibm* | -next* | -hp | -isi* | -apollo | -altos* | \
-	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi | \
+	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi* |\
 	-c[123]* | -convex* | -sun | -crds | -omron* | -dg | -ultra | -tti* | \
 	-harris | -dolphin | -highlevel | -gould | -cbm | -ns | -masscomp )
 		os=
 		basic_machine=$1
+		;;
+	-hiux*)
+		os==-hiuxwe2
 		;;
 	-sco4)
 		os=-sco3.2v4
@@ -104,11 +107,12 @@ esac
 
 # Decode aliases for certain CPU-COMPANY combinations.
 case $basic_machine in
-	# Recognize the basic CPU types with without company name.
+	# Recognize the basic CPU types without company name.
 	# Some are omitted here because they have special meanings below.
 	tahoe | i[34]86 | i860 | m68k | m68000 | m88k | ns32k | arm | pyramid \
 		| tron | a29k | 580 | i960 | h8300 | hppa1.0 | hppa1.1 \
-		| alpha | we32k | ns16k | clipper | sparclite | i370 | sh)
+		| alpha | we32k | ns16k | clipper | sparclite | i370 | sh \
+		| powerpc)
 		basic_machine=$basic_machine-unknown
 		;;
 	# Object if more than one company name word.
@@ -116,14 +120,14 @@ case $basic_machine in
 		echo Invalid configuration \`$1\': machine \`$basic_machine\' not recognized 1>&2
 		exit 1
 		;;
-	# Recognize the basic CPU types with with company name.
+	# Recognize the basic CPU types with company name.
 	vax-* | tahoe-* | i[34]86-* | i860-* | m68k-* | m68000-* | m88k-* \
 	      | sparc-* | ns32k-* | fx80-* | arm-* | c[123]* \
 	      | mips-* | pyramid-* | tron-* | a29k-* | romp-* | rs6000-* \
 	      | none-* | 580-* | cray2-* | h8300-* | i960-* | xmp-* | ymp-* \
 	      | hppa1.0-* | hppa1.1-* | alpha-* | we32k-* | cydra-* | ns16k-* \
 	      | pn-* | np1-* | xps100-* | clipper-* | orion-* | sparclite-* \
-	      | sh-*)
+	      | sh-* | powerpc-*)
 		;;
 	# Recognize the various machine names and aliases which stand
 	# for a CPU type and a company and sometimes even an OS.
@@ -158,6 +162,10 @@ case $basic_machine in
 		;;
 	spur)
 		basic_machine=spur-unknown
+		;;
+	paragon)
+		basic_machine=i860-intel
+		os=-osf
 		;;
 	alliant | fx80)
 		basic_machine=fx80-alliant
@@ -311,6 +319,14 @@ case $basic_machine in
 		;;
 	hp9k8[0-9][0-9] | hp8[0-9][0-9])
 		basic_machine=hppa1.0-hp
+		;;
+	h3050r* | hiux*)
+		basic_machine=hppa1.1-hitachi
+		os=-hiuxwe2
+		;;
+	pa-hitachi)
+		basic_machine=hppa1.1-hitachi
+		os=-hiuxwe2
 		;;
 	isi68 | isi)
 		basic_machine=m68k-isi
@@ -518,7 +534,7 @@ case $os in
 	      | -amigados* | -msdos* | -newsos* | -unicos* | -aos* \
 	      | -nindy* | -vxworks* | -ebmon* | -hms* | -mvs* | -clix* \
 	      | -riscos* | -linux* | -uniplus* | -iris* | -rtu* | -xenix* \
-	      | -386bsd* | -lynxos*)
+	      | -hiux* | -386bsd* | -netbsd* | -riscix* | -lynxos*)
 		;;
 	-sunos5*)
 		os=`echo $os | sed -e 's|sunos5|solaris2|'`
@@ -587,6 +603,9 @@ else
 # system, and we'll never get to this point.
 
 case $basic_machine in
+	*-acorn)
+		os=-riscix1.2
+		;;
 	*-dec | vax-*)
 		os=-ultrix4.2
 		;;
@@ -610,6 +629,9 @@ case $basic_machine in
 		;;
 	*-hp)
 		os=-hpux
+		;;
+	*-hitachi)
+		os=-hiux
 		;;
 	i860-* | *-att | *-ncr | *-altos | *-motorola | *-convergent)
 		os=-sysv
@@ -671,6 +693,9 @@ vendor=unknown
 case $basic_machine in
 	*-unknown)
 		case $os in
+			-riscix*)
+				vendor=acorn
+				;;
 			-sunos*)
 				vendor=sun
 				;;
@@ -682,6 +707,9 @@ case $basic_machine in
 				;;
 			-hpux*)
 				vendor=hp
+				;;
+			-hiux*)
+				vendor=hitachi
 				;;
 			-unos*)
 				vendor=crds

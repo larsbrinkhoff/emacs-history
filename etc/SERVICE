@@ -927,30 +927,16 @@ of gcc and it's back-end support.  Resume available on request.
 
 Entered: 12 Feb 92
 
-Watchmaker Computing		<support@watch.com>
-P.O.Box 163, Kendall Square
-Cambridge, MA 02142
-email: support@watch.com
-
-Emacs: We'll do GNUEmacs support, porting, bug fixing, and customizing.
-We also have specific expertise in:
-  packages: GCC, G++, X11, Xt, InterViews, PERL, TeX, Epoch
-  languages: C, C++, Lisp, most others; we learn quickly!
-Extensive experience coding for portability under UNIX.
-Typical rates $35-$150/hour; will telecommute (Internet or phone)
-
-Entered: 1/16/91
-
 Joe Wells <jbw@cs.bu.edu>
-c/o: Boston University Computer Science Department
+care of: Boston University Computer Science Department
 111 Cummington Street, Room 138
 Boston, Massachusetts 02215
-Work: (617)353-3381; Home: (617)352-7508
+Work: (617) 353-3381; Home: (617) 352-7508 (until mid-May 1994)
 Finger "jbw@cs.bu.edu" for up-to-date contact information.
 
 Experience:
-    I have B.A. and M.A. degrees in Computer Science and am
-    all-but-dissertation for a Ph.D. in C.S.  My primary programming
+    I have B.A. and M.A. degrees in Computer Science and have completed
+    all but the dissertation for a Ph.D. in C.S.  My primary programming
     languages are Emacs Lisp, Perl, and Bourne shell.  I have written
     numerous Emacs Lisp packages.  I started the USENET "List of
     Frequently Asked Questions about GNU Emacs with Answers" and
@@ -958,21 +944,25 @@ Experience:
     resume.
 
 Programs supported:
-    GNU Emacs: installation, training, customization, bug fixing,
-	       troubleshooting, extension, development, or answering any
-	       kind of question.
-    Any other GNU program: installation and answering questions.
+    GNU Emacs and Taylor UUCP:
+      Installation, training, customization, bug fixing, troubleshooting,
+      extension, development, porting, or answering any kind of question.
+    Any other GNU program:
+      The same things, but I don't necessarily have huge amounts of
+      experience with the particular program.
 
 Working conditions:
-    I can do part-time (less than 20 hours/week) work for a long term and
-    full-time work for a short term (a month or two).  I can either work
-    in or near Boston or via the Internet.  My schedule is fairly
-    flexible.  I prefer that any Emacs Lisp package I write have the GNU
-    GPL copying conditions.
+    I can do part-time (less than 20 hours per week including travel)
+    work.  I can either work in or near Boston or via the Internet or via
+    telephone.  My schedule is fairly flexible.  Any programs I write will
+    normally have the copying conditions of the GNU General Public
+    License.
 
-Rates: $45/hour, provided I don't have to travel far.
+Rates: $60/hour as an independent contractor.
+       travel and telephone expenses.
+       higher rates if extensive travel is required.
 
-Entered: 18Feb93
+Updated: 21Sep93
 
 Chris Welty		<weltyc@cs.rpi.edu>
 RPI Computer Science Dept
