@@ -49,6 +49,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Factor for weight-balancing interval trees.  */
 Lisp_Object interval_balance_threshold;
+
+Lisp_Object merge_properties_sticky ();
 
 /* Utility functions for intervals.  */
 
@@ -1221,6 +1223,7 @@ make_new_interval (intervals, start, length)
 #endif
 
 /* Insert the intervals of SOURCE into BUFFER at POSITION.
+   LENGTH is the length of the text in SOURCE.
 
    This is used in insdel.c when inserting Lisp_Strings into the
    buffer.  The text corresponding to SOURCE is already in the buffer
@@ -1228,7 +1231,8 @@ make_new_interval (intervals, start, length)
    belonging to the string being inserted; intervals are never
    shared.
 
-   If the inserted text had no intervals associated, this function
+   If the inserted text had no intervals associated, and we don't
+   want to inherit the surrounding text's properties, this function
    simply returns -- offset_intervals should handle placing the
    text in the correct interval, depending on the sticky bits.
 
@@ -1253,9 +1257,9 @@ make_new_interval (intervals, start, length)
    text...  */
 
 void
-graft_intervals_into_buffer (source, position, buffer, inherit)
+graft_intervals_into_buffer (source, position, length, buffer, inherit)
      INTERVAL source;
-     int position;
+     int position, length;
      struct buffer *buffer;
      int inherit;
 {
@@ -1266,7 +1270,17 @@ graft_intervals_into_buffer (source, position, buffer, inherit)
   /* If the new text has no properties, it becomes part of whatever
      interval it was inserted into.  */
   if (NULL_INTERVAL_P (source))
-    return;
+    {
+      Lisp_Object buf;
+      if (!inherit)
+	{
+	  XSET (buf, Lisp_Buffer, buffer);
+	  Fset_text_properties (make_number (position),
+				make_number (position + length),
+				Qnil, buf);
+	}
+      return;
+    }
 
   if (NULL_INTERVAL_P (tree))
     {

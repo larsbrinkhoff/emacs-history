@@ -1191,6 +1191,9 @@ If within a string or comment, move by sentences instead of statements."
 (defun c-indent-region (start end)
   (save-excursion
     (goto-char start)
+    ;; Advance to first nonblank line.
+    (skip-chars-forward " \t\n")
+    (beginning-of-line)
     (let ((endmark (copy-marker end))
 	  (c-tab-always-indent t))
       (while (and (bolp) (not (eolp)))
@@ -1211,11 +1214,13 @@ If within a string or comment, move by sentences instead of statements."
 		(error (setq sexpend nil)
 		       (goto-char nextline)))
 	      (skip-chars-forward " \t\n"))
-	    ;; Make sure the sexp we found really starts on the
-	    ;; current line and extends past it.
-	    (goto-char sexpend)
-	    (backward-sexp 1)
-	    (setq sexpbeg (point)))
+	    (if sexpend
+		(progn
+		  ;; Make sure the sexp we found really starts on the
+		  ;; current line and extends past it.
+		  (goto-char sexpend)
+		  (backward-sexp 1)
+		  (setq sexpbeg (point)))))
 	  ;; If that sexp ends within the region,
 	  ;; indent it all at once, fast.
 	  (if (and sexpend (> sexpend nextline) (<= sexpend endmark)

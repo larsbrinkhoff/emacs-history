@@ -662,16 +662,16 @@ mode, which combines the special characteristics of Lisp mode and Shell
 mode (@pxref{Shell Mode}).@refill
 
 @findex lisp-mode
-  For the source files of programs to run in external Lisps, use Lisp mode.
-This mode can be selected with @kbd{M-x lisp-mode}, and is used automatically
-for files whose names end in @file{.l} or @file{.lisp}, as most Lisp
-systems usually expect.
+  For the source files of programs to run in external Lisps, use Lisp
+mode.  This mode can be selected with @kbd{M-x lisp-mode}, and is used
+automatically for files whose names end in @file{.l}, @file{.lsp}, or
+@file{.lisp}, as most Lisp systems usually expect.
 
 @kindex C-M-x @r{(Lisp mode)}
-@findex lisp-send-defun
+@findex lisp-eval-defun
   When you edit a function in a Lisp program you are running, the easiest
 way to send the changed definition to the inferior Lisp process is the key
-@kbd{C-M-x}.  In Lisp mode, this runs the function @code{lisp-send-defun},
+@kbd{C-M-x}.  In Lisp mode, this runs the function @code{lisp-eval-defun},
 which finds the defun around or following point and sends it as input to
 the Lisp process.  (Emacs can send input to any inferior process regardless
 of what buffer is current.)

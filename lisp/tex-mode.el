@@ -763,7 +763,7 @@ line numbers for the errors."
      (make-comint
       "tex-shell"
       (or tex-shell-file-name (getenv "ESHELL") (getenv "SHELL") "/bin/sh")
-      nil "-v"))
+      nil))
     (let ((proc (get-process "tex-shell")))
       (set-process-sentinel proc 'tex-shell-sentinel)
       (process-kill-without-query proc)
@@ -791,23 +791,36 @@ line numbers for the errors."
       (set-buffer buffer)
       (setq default-directory directory))))
 
+(defvar tex-send-command-modified-tick 0)
+(make-variable-buffer-local 'tex-send-command-modified-tick)
+
 (defun tex-send-command (command &optional file background)
-  "Send COMMAND to tex-shell, substituting optional FILE for *.
+  "Send COMMAND to TeX shell process, substituting optional FILE for *.
 Do this in background if optional BACKGROUND is t.  If COMMAND has no *,
 FILE will be appended, preceded by a blank, to COMMAND.  If FILE is nil, no
 substitution will be made in COMMAND.  COMMAND can be any expression that
 evaluates to a command string."
   (save-excursion
     (let* ((cmd (eval command))
+	   (proc (get-process "tex-shell"))
            (star (string-match "\\*" cmd))
-           (front (substring cmd 0 star))
-           (back (if star (substring cmd (1+ star)) "")))
-      (comint-proc-query (get-process "tex-shell")
-                         (concat
-                          (if file (if star (concat front file back)
-                                     (concat cmd " " file))
-                            cmd)
-                          (if background "&\n" "\n"))))))
+	   (string
+	    (concat
+	     (if file
+		 (if star (concat (substring cmd 0 star)
+				  file (substring cmd (1+ star)))
+		   (concat cmd " " file))
+	       cmd)
+	     (if background "&" ""))))
+      ;; If text is unchanged since previous tex-send-command,
+      ;; we haven't got any output.  So wait for output now.
+      (if (= (buffer-modified-tick) tex-send-command-modified-tick)
+	  (accept-process-output proc))
+      (set-buffer (process-buffer proc))
+      (goto-char (process-mark proc))
+      (insert string)
+      (comint-send-input)
+      (setq tex-send-command-modified-tick (buffer-modified-tick)))))
 
 (defun tex-delete-last-temp-files ()
   "Delete any junk files from last temp file."

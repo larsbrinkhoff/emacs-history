@@ -1,3 +1,28 @@
+Sat Nov 27 04:14:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.22 released.
+
+	* Makefile.in (do-install): Use umask 022 in copying etc and lisp dirs.
+
+Thu Nov 25 16:46:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: When breaking links, use cp -p.
+	Copy install.sh into distribution.
+	* install.sh: New file.
+
+Sun Nov 21 04:01:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (i[34]86-ncr-sysv*): New specific alternative.
+
+Sat Nov 20 01:03:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (version): When --run-in-place, exclude 
+	${datadir}/emacs/site-lisp from locallisppath.
+
+Thu Nov 18 00:56:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Delete jumk.c before writing it.
+
 Tue Nov 16 00:56:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.21 released.

@@ -202,7 +202,7 @@ The default is nil.
 See variable `comint-scroll-show-maximum-output' and function
 `comint-postoutput-scroll-to-bottom'.  This variable is buffer-local.")
 
-(defvar comint-scroll-show-maximum-output t
+(defvar comint-scroll-show-maximum-output nil
   "*Controls how interpreter output causes window to scroll.
 If non-nil, then show the maximum output when the window is scrolled.
 
@@ -983,9 +983,15 @@ Quotes are single and double."
   (if (or (null comint-delimiter-argument-list)
 	  (string-match "[\"\'\`]" arg))
       (list arg)
-    (let ((not-delim (format "[^%s]+" (mapconcat
-				       (function (lambda (d) (regexp-quote d)))
-				       comint-delimiter-argument-list "")))
+    (let ((not-delim (concat
+		      (format "\\([^%s]" (mapconcat
+					(function (lambda (d) (regexp-quote d)))
+					comint-delimiter-argument-list ""))
+		      "\\|"
+		      (mapconcat (function (lambda (d)
+					     (concat "\\\\" (regexp-quote d))))
+				 comint-delimiter-argument-list "\\|")
+		      "\\)+"))
 	  (delim-str (mapconcat (function (lambda (d)
 					    (concat (regexp-quote d) "+")))
 				comint-delimiter-argument-list "\\|"))
@@ -1075,7 +1081,7 @@ Similarly for Soar, Scheme, etc."
 			(comint-replace-by-expanded-history)
 			(buffer-substring pmark (point))))
 	       (history (if (not (eq comint-input-autoexpand 'history))
-			    (comint-arguments input 0 nil)
+			    input
 			  ;; This is messy 'cos ultimately the original
 			  ;; functions used do insertion, rather than return
 			  ;; strings.  We have to expand, then insert back.
@@ -1083,7 +1089,7 @@ Similarly for Soar, Scheme, etc."
 			  (let ((copy (buffer-substring pmark (point))))
 			    (delete-region pmark (point))
 			    (insert input)
-			    (comint-arguments copy 0 nil)))))
+			    copy))))
           (if comint-process-echoes
               (delete-region pmark (point))
 	    (insert ?\n))
@@ -1172,16 +1178,18 @@ This function should be a pre-command hook."
 	     (scroll comint-scroll-to-bottom-on-input))
 	(if (and process (< (point) (process-mark process))
 		 scroll (not (window-minibuffer-p selected)))
-	    (walk-windows
-	     (function (lambda (window)
-	       (if (and (eq (window-buffer window) current)
-			(or (eq scroll t) (eq scroll 'all)
-			    (and (eq scroll 'this) (eq selected window))))
-		   (progn
-		     (select-window window)
-		     (goto-char (point-max))
-		     (select-window selected)))))
-	     'not-minibuf t)))))
+	    (if (eq scroll 'this)
+		(goto-char (point-max))
+	      (walk-windows
+	       (function (lambda (window)
+		 (if (and (eq (window-buffer window) current)
+			  (or (eq scroll t) (eq scroll 'all)
+			      (and (eq scroll 'this) (eq selected window))))
+		     (progn
+		       (select-window window)
+		       (goto-char (point-max))
+		       (select-window selected)))))
+	       'not-minibuf t))))))
 
 (defun comint-postoutput-scroll-to-bottom (string)
   "Go to the end of buffer in all windows showing it.

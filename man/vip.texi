@@ -65,9 +65,7 @@ into another language, under the same conditions as for modified versions.
 
 @ifinfo
 @node Top, Survey,, (DIR)
-
-VIP
-***
+@top VIP
 
 VIP is a Vi emulating package written in Emacs Lisp.  VIP implements most
 Vi commands including Ex commands.  It is therefore hoped that this package

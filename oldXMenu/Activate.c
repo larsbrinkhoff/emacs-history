@@ -354,6 +354,20 @@ XMenuActivate(display, menu, p_num, s_num, x_pos, y_pos, event_mask, data)
 		    _XMRefreshPane(display, menu, cur_p);
 		}
 		if (event_xmp->active) event_xmp->activated = True;
+#if 1
+		/*
+		 * i suspect the we don't get an EXPOSE event when backing
+		 * store is enabled; the menu windows content is probably
+		 * not drawn in when it should be in that case.
+		 * in that case, this is probably an ugly fix!
+		 * i hope someone more familiar with this code would
+		 * take it from here.  -- caveh@eng.sun.com.
+		 */
+		XSetWindowBackground(display,
+				     event_xmp->window, 
+				     menu->bkgnd_color);
+		_XMRefreshPane(display, menu, event_xmp);
+#endif
 		cur_p = event_xmp;
 	    }
 	    break;

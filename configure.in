@@ -704,6 +704,11 @@ case "${canonical}" in
     machine=symmetry opsys=bsd4-3
   ;;
 
+  ## Unspecified sysv on an ncr machine defaults to svr4.
+  i[34]86-ncr-sysv* )
+    machine=intel386 opsys=usg5-4
+  ;;
+
   ## Intel 860
   i860-*-sysvr4* )
     machine=i860 opsys=usg5-4
@@ -1336,7 +1341,7 @@ fi
 
 if [ "$run_in_place" = "1" ]; then
    lispdir='${srcdir}/lisp'
-   locallisppath='${srcdir}/site-lisp:${datadir}/emacs/site-lisp'
+   locallisppath='${srcdir}/site-lisp'
    etcdir='${srcdir}/etc'
    lockdir='${srcdir}/lock'
    archlibdir='${srcdir}/lib-src'
@@ -1414,6 +1419,7 @@ topsrcdir=${srcdir}
 makefile_command='echo "creating src/Makefile";
   topsrcdir='"${topsrcdir}"';
 ( cd ./src;
+  rm -f junk.c;
   sed -e '\''s/^# Generated.*//'\'' -e '\''s%/\*\*/#.*%%'\'' < Makefile.in > junk.c;
   eval `echo ${CPP} -I. -I${topsrcdir}/src ${CPPFLAGS} junk.c \>junk.cpp`;
   < junk.cpp							'\

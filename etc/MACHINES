@@ -193,7 +193,7 @@ Cydra 5 (cydra-cydrome-sysv)
 
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
-  Emacs runs under Ultrix and OSF/1 as of 19.7.
+  19.22 is believed to work on Ultrix 4.2.
   
   If you are not using DECnet, then remove the definition of
   LIBS_MACHINE from `src/m/pmax.h', in order to prevent linking with
@@ -412,8 +412,8 @@ IBM RS/6000 (rs6000-ibm-aix)
 
 IBM RT/PC (romp-ibm-bsd or romp-ibm-aix)
 
-  18.52 worked on both operating systems.
   Use romp-ibm-bsd for the 4.2-like system and romp-ibm-aix for AIX.
+  19.22 is reported to work under bsd.  We don't know about AIX.
 
   On BSD, if you have trouble, try compiling with a different compiler.
 
@@ -523,21 +523,21 @@ Iris 2500 and Iris 2500 Turbo (m68k-sgi-iris3.5 or m68k-sgi-iris3.6)
   and m68k-sgi-iris3.6 for system version 3.6.
   Note that the 3030 is the same as the Iris 2500 Turbo.
 
-Iris 4D (mips-sgi-irix3.3 or mips-sgi-irix4.0)
+Iris 4D (mips-sgi-irix[45].*)
 
-  18.58 is known to work on Silicon Graphics 4D series machines
-  with IRIX 3.3 or IRIX 4.0.  Version 19 should support the
-  ANSI C compiler version 3.10.
+  19.22 is known to work on all Silicon Graphics machines running
+  IRIX 4.0.5 or IRIX 5.1.  Emacs 18.58 works with IRIX 3.3.
 
-  Compiling Emacs using the system's compiler with -O
-  does not work in Irix 4.0.5; don't use -O (or use GCC).
+  Compiling with GCC on IRIX 5 is said to fail, perhaps because GCC
+  produces something src/unexelfsgi.c doesn't understand.
 
-  Most irix3.3 systems do not have an ANSI C compiler, but a few do.
-  If you are using the ANSI C compiler, you may need to add
-      #define C_SWITCH_MACHINE -cckr
-  to config.h.
+  Compiling with -O using IRIX compilers prior to 3.10.1 may not work.
+  Don't use -O or use GCC instead.
 
-  There is a bug in IRIX that can sometimes leave ptys owned by root
+  Most IRIX 3.3 systems do not have an ANSI C compiler, but a few do.
+  Compile Emacs 18 with the -cckr switch on these machines.
+
+  There is a bug in IRIX 3.3 that can sometimes leave ptys owned by root
   with a permission of 622.  This causes malfunctions in use of
   subprocesses of Emacs.  Irix versions 4.0 and later with GNU Emacs
   versions 18.59 and later fix this bug.
@@ -726,7 +726,10 @@ Stride (m68k-stride-sysv)
 Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
 			       sparc-sun-solaris2.*)
 
-  Emacs runs on Sparcs and Sun 3's, as of version 19.7.
+  19.22 is believed to work on Sparcs and Sun 3's.  Some people report
+  that Emacs crashes immediately on startup when used with a non-X
+  terminal, but we think this is due to compiling with GCC and failing
+  to use GCC's "fixed" system header files.
 
   It's important to include the SunOS version number in the
   configuration name.  For example, for SunOS release 4.0 on a Sun 3,
@@ -736,6 +739,13 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
 
   Use `m68k' for the 68000-based Sun boxes, `sparc' for Sparcstations,
   and `i386' for Sun Roadrunners.  i386 calls for Sunos4.0.
+
+  Some people report crashes on SunOS 4.1.3 if SYSTEM_MALLOC is defined.
+  Others have reported that Emacs works if SYSTEM_MALLOC is defined, and not
+  if it is undefined.  So far we do not know why results vary in this way.
+  The sources are set up so that SYSTEM_MALLOC is defined; if that crashes,
+  or if you want the benefit of the relocating memory allocator, you can
+  try enabling the #undef SYSTEM_MALLOC in src/s/sunos4-1-3.h.
 
   On Solaris 2, you need to install patch 100947-02 to fix a system bug.
   Presumably this patch comes from Sun.  You must alter the definition of
@@ -749,6 +759,10 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   slow down their host and disable rlogin and telnet.  This is most
   likely due to a bug in Solaris 2.2's multiprocessor support,
   rather than an Emacs bug.
+
+  On Solaris 2.2 with SUNWspro 2.0.1, src/Makefile gets bad data--
+  spurious spaces.  This is probably the fault of CPP.  No workaround yet
+  except to compile with GCC instead.
 
   On Solaris, if linking gives the error that `bss_end' and `main'
   are undefined, it may mean that the C preprocessor did the wrong
@@ -1050,6 +1064,6 @@ Xenix (xenix)
   to make the Emacs meta key work.
 
 Local variables:
-mode: text
+mode: indented-text
 fill-prefix: "  "
 End:

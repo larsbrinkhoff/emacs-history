@@ -560,7 +560,11 @@ This does not change the name of the visited file (if any).")
 
   CHECK_STRING (name, 0);
   tem = Fget_buffer (name);
-  if (XBUFFER (tem) == current_buffer)
+  /* Don't short-circuit if UNIQUE is t.  That is a useful way to rename
+     the buffer automatically so you can create another with the original name.
+     It makes UNIQUE equivalent to
+     (rename-buffer (generate-new-buffer-name NAME)).  */
+  if (NILP (unique) && XBUFFER (tem) == current_buffer)
     return current_buffer->name;
   if (!NILP (tem))
     {
@@ -1141,9 +1145,9 @@ The R column contains a % for buffers that are read-only.")
 {
   Lisp_Object desired_point;
 
-  desired_point =
-    internal_with_output_to_temp_buffer ("*Buffer List*",
-					 list_buffers_1, files);
+  desired_point
+    = internal_with_output_to_temp_buffer ("*Buffer List*",
+					   list_buffers_1, files);
 
   if (NUMBERP (desired_point))
     {
@@ -1153,6 +1157,7 @@ The R column contains a % for buffers that are read-only.")
       SET_PT (XINT (desired_point));
       return unbind_to (count, Qnil);
     }
+  return Qnil;
 }
 
 DEFUN ("kill-all-local-variables", Fkill_all_local_variables, Skill_all_local_variables,

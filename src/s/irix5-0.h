@@ -1,5 +1,9 @@
 #include "usg5-4.h"
 
+#define IRIX5
+
+#define SETPGRP_RELEASES_CTTY
+
 #ifdef LIBS_SYSTEM
 #undef LIBS_SYSTEM
 #endif
@@ -11,12 +15,15 @@
 #ifdef SYSTEM_TYPE
 #undef SYSTEM_TYPE
 #endif
-#define SYSTEM_TYPE "silicon-graphics-unix"
+#define SYSTEM_TYPE "irix"
 
 #ifdef SETUP_SLAVE_PTY
 #undef SETUP_SLAVE_PTY
 #endif
 
+/* thomas@mathematik.uni-bremen.de says this is needed.  */
+/* Make process_send_signal work by "typing" a signal character on the pty.  */
+#define SIGNALS_VIA_CHARACTERS
 
 /* Define HAVE_ALLOCA to say that the system provides a properly
    working alloca function and it should be used. */

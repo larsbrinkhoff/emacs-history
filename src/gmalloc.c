@@ -1155,7 +1155,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    systems with potentially hostile include files.  */
 extern __ptr_t __sbrk __P ((int increment));
 #else
-#ifdef HPUX8
+#if defined (HPUX8) || defined (HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 #endif

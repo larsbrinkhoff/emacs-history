@@ -1,10 +1,72 @@
-GNU Emacs NEWS -- history of user-visible changes.  9 Oct 1993
+GNU Emacs NEWS -- history of user-visible changes.  27 Nov 1993
 Copyright (C) 1993 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
+
+Changes in 19.22.
+
+* The mouse click M-mouse-2 now inserts the current secondary
+selection (from Emacs or any other X client) where you click.
+It does not move point.
+This command is called mouse-yank-secondary.
+
+mouse-kill-secondary no longer has a key binding by default.
+Clicking M-mouse-3 (mouse-secondary-save-then-kill) twice
+may be a convenient enough way of killing the secondary selection.
+Or perhaps there should be a keyboard binding for killing the
+secondary selection.  Any suggestions?
+
+* New packages:
+
+** `icomplete' provides character-by-character information
+about what you could complete if you type TAB.
+
+** `avoid' moves the mouse away from point so that it doesn't hide
+your typing.
+
+** `shadowfile' helps you update files that are supposed to be stored
+identically in different places (perhaps on different machines).
+
+* C-h p now knows about four additional keywords: data, faces, mouse,
+and matching.
+
+* The key for starting an inferior Lisp process, in Lisp mode,
+is now C-c C-z instead of C-c C-l.
+
+* When the VC commands ask whether to save the buffer, if you say no,
+they signal an error.  This is so that you won't operate on the wrong
+data.
+
+* ISO Accents mode now supports `"s' as a way of typing German sharp s.
+
+* By default, comint buffers (including Shell mode and debuggers)
+no longer try to scroll to keep the cursor on the bottom line.
+This feature was added in 19.21 but did not work smoothly enough.
+
+* Emacs now handles the window manager "delete window" operation.
+
+* Display of buffers with text properties is much faster now.
+
+* The feature previously announced whereby `insert' does not inherit
+text properties from surrounding text was not fully implemented
+before; but now it is.  use `insert-and-inherit' if you wish to
+inherit sticky properties from the surrounding text.
+
+* The functions next-property-change, previous-property-change,
+next-single-property-change, and previous-single-property-change
+now take one additional optional argument LIMIT that is a position at
+which to stop scanning.  If scan ends without finding the property
+change sought, these functions return the specified limit.
+
+The value returned by previous-single-property-change and
+previous-property-change, when they do find a change, is now one
+greater than what it used to be.  It is the position between the two
+characters whose properties differ, which is one greater than the
+position of the first character found (while scanning back) with
+different properties.
 
 User editing changes in version 19.21.
 

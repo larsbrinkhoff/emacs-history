@@ -1,3 +1,15 @@
+Sat Nov 27 04:41:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.22 released.
+
+Fri Nov 26 06:08:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (mostlyclean): Make it distinct from clean.
+
+Wed Nov 24 07:24:06 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (${archlibdir}): Don't do chown or chgrp.
+
 Tue Nov 16 03:23:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.21 released.

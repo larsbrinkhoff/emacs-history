@@ -88,6 +88,8 @@ Lisp_Object Qx;
 
 extern Lisp_Object Vminibuffer_list;
 extern Lisp_Object get_minibuffer ();
+extern Lisp_Object Fhandle_switch_frame ();
+extern Lisp_Object Fredirect_frame_focus ();
 
 DEFUN ("framep", Fframep, Sframep, 1, 1, 0,
   "Return non-nil if OBJECT is a frame.\n\
@@ -837,7 +839,6 @@ WARNING:  If you use this under X, you should do `unfocus-frame' afterwards.")
 DEFUN ("make-frame-visible", Fmake_frame_visible, Smake_frame_visible,
        0, 1, "",
   "Make the frame FRAME visible (assuming it is an X-window).\n\
-Also raises the frame so that nothing obscures it.\n\
 If omitted, FRAME defaults to the currently selected frame.")
   (frame)
      Lisp_Object frame;
@@ -850,7 +851,10 @@ If omitted, FRAME defaults to the currently selected frame.")
   /* I think this should be done with a hook.  */
 #ifdef HAVE_X_WINDOWS
   if (FRAME_X_P (XFRAME (frame)))
-    x_make_frame_visible (XFRAME (frame));
+    {
+      FRAME_SAMPLE_VISIBILITY (XFRAME (frame));
+      x_make_frame_visible (XFRAME (frame));
+    }
 #endif
 
   return frame;

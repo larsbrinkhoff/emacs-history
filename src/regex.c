@@ -243,6 +243,8 @@ char *alloca ();
 
 #define STREQ(s1, s2) ((strcmp (s1, s2) == 0))
 
+#undef MAX
+#undef MIN
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 

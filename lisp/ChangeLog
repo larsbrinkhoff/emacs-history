@@ -1,3 +1,220 @@
+Sat Nov 27 02:51:34 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.22 released.
+
+	* vc.el (vc-buffer-sync): Signal error if user says no.
+
+	* vc-hooks.el (vc-mode-line): Make buffer read-only for root
+	if file is locked.
+
+	* mouse.el (mouse-set-font): Update nonstandard faces that are supposed
+	to use a modification of the frame's font.
+
+Fri Nov 26 15:41:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-variables): Abbreviate truename for comparison.
+
+Thu Nov 25 01:51:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* faces.el (make-face-unitalic, make-face-unbold, make-face-bold)
+	(make-face-bold-italic, make-face-italic): If frame is t,
+	do the special handling only if face-font is a list.
+
+	* etags.el (tags-add-tables): New variable.
+	(visit-tags-table-buffer): Use it.
+	(default-tags-table-function): No longer user var, no longer autoload.
+
+	* ange-ftp.el (ange-ftp-binary-file-name-regexp):
+	Accept .tgz and .taz files.
+
+	* tpu-edt.el (tpu-revision): Variable deleted.
+
+Wed Nov 24 15:08:12 1993  Rob Riepel  (riepel@Snowflake.Stanford.edu)
+
+        * tpu-edt.el (tpu-quoted-insert): New function.
+        (tpu-reset-control-keys): Remove C-f mapping.
+        Insert (in file) fsets for free/bound cursor, scroll
+        margins, key mappings for same.
+
+        * tpu-extras.el: Remove free/bound cursor and scroll
+        margin fsets and key mappings.  Add autoload cookies.
+
+        * tpu-doc.el: Add sample test for tpu-set-scroll-margins.
+
+Wed Nov 24 00:03:32 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* comint.el (comint-send-input): Don't call comint-arguments
+	to set HISTORY, even if comint-input-autoexpand is not `history'.
+	When comint-input-autoexpand is `history', undo part of prev change:
+	do put INPUT back in the buffer in place of expanded hist.
+
+	* tabify.el: Add a provide.
+
+	* vc.el (vc-next-action): Doc fix.
+	(vc-checkout-carefully): New variable.
+	(vc-next-action-on-file): Obey vc-checkout-carefully.
+
+	* vc-hooks.el (vc-make-backup-files): Doc fix.
+	(vc-rcs-status): Use colon, not dash, in the string LOCKS.
+
+	* rmailsort.el (rmail-sort-messages): In summary buf, go to rmail buf.
+
+	* subr.el (walk-windows): If start at minibuf window, do return to it.
+
+	* comint.el (comint-send-input): Don't call comint-arguments while
+	computing the value for history.
+	(comint-delim-arg): Treat quoted delim chars as non-delims.
+
+Tue Nov 23 01:23:38 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (count-lines): In selective-display case,
+	adjust value if end is not at bol.
+
+	* isearch.el (isearch-other-meta-char): Correct the test for a split-up
+	mode line or scroll bar mouse event.
+
+	* icomplete.el: New file.
+
+	* info.el (Info-follow-reference): Correct one-off error in
+	comparing start-point.
+
+	* dired-aux.el (dired-diff): Require diff.
+
+	* telnet.el (telnet-rsh-program): New variable.
+	(rsh): Use it.
+	(telnet-count): Now buffer-local.
+
+	* finder.el (finder-known-keywords): Add data, faces, mouse, matching.
+
+	* edebug.el: Delete periods from error messages.
+	(edebug-functionp): Recognize compiled functions.
+	(edebug-display): Supply missing parens in let.
+
+	* simple.el (repeat-complex-command): Undo Oct 2 change.
+
+	* c-mode.el (c-indent-region): Don't goto-char sexpend if it's nil.
+	As first thing, advance to a nonblank line.
+
+	* view.el (View-scroll-lines-forward):
+	Allow scrolling backward at the end of the buffer.
+
+	* comint.el (comint-preinput-scroll-to-bottom): If SCROLL is `this',
+	don't bother with walk-windows; just hack the selected window.
+
+	* avoid.el: New file.
+	* shadowfile.el: New file.
+
+Mon Nov 22 11:07:43 1993  Morten Welinder  (terra@tyr.diku.dk)
+
+	* add-log.el (add-change-log-entry): put buffer in change-log-mode.
+	(find-change-log): correct calculation of file one directory out.
+
+Mon Nov 22 01:32:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dired.el (dired-goto-file): Don't try matching one line twice.
+
+	* rmailsum.el (rmail-summary-wipe): If rmail buffer is not visible,
+	switch to it in this window.
+	(rmail-summary-mode): Doc fix.
+
+	* dired.el (dired-readin-insert): Expand default-directory and dirname
+	before comparing them.
+	(dired-internal-noselect): Set default-directory to abbreviated name.
+
+	* mouse.el (mouse-save-then-kill-delete-region):
+	Call undo-boundary at the beginning and at the end.
+
+	* gnuspost.el (gnus-inews-do-fcc): If gnus-author-copy-saver
+	is rmail-output, call rmail-output the proper way.
+
+	* man.el (Man-specified-section-option): New variable.
+	(Man-translate-references): Use that variable.
+
+Sun Nov 21 01:11:19 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-start-end): Use MODE mod 3.
+	(mouse-save-then-kill): Test mouse-selection-click-count mod 3.
+	(mouse-drag-secondary, mouse-secondary-save-then-kill): Likewise.
+
+	* inf-lisp.el (inferior-lisp-proc): Clean up error message.
+
+	* iso-acc.el (iso-accents-enable): New variable.
+	(key-translation-map): Enable an accent only if in iso-accents-enable.
+
+	* lisp-mode.el (lisp-eval-defun): Renamed from lisp-send-defun.
+	(lisp-mode-map): Use new name lisp-eval-defun.
+	Move run-lisp to C-x C-z.
+
+	* sendmail.el (mail-yank-original):
+	Delete windows on selected frame only.
+
+	* mouse.el (mouse-kill-secondary): Do the kill in proper buffer.
+	Give error if in the wrong buffer.
+	(mouse-secondary-save-then-kill): Give error if click is not in
+	the buffer already used for secondary selection.
+	Don't switch windows; always temporarily switch buffers.
+
+	* mail-utils.el (mail-fetch-field): Exclude trailing whitespace.
+	Delete duplicate (goto-char (point-min)).
+
+	* faces.el (x-resolve-font-name): Undo previous change.
+
+	* info.el (Info-edit): Use proper map in substitute-command-keys.
+
+Sat Nov 20 00:49:20 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* tex-mode.el (tex-send-command): Wait for output first,
+	if text has not changed since previous tex-send-command.
+	(tex-send-command-modified-tick): New buffer-local variable.
+
+	* texinfo.el (texinfo-tex-region): Use tex-send-command to do commands.
+	(texinfo-tex-buffer, texinfo-texindex, texinfo-tex-print): Likewise.
+	(texinfo-delete-from-print-queue, texinfo-quit-job): Likewise.
+
+	* tex-mode.el (tex-start-shell): Don't use -v option.
+	(tex-send-command): Insert text in the buffer, then use
+	comint-send-input to send it.
+
+	* etags.el (tags-complete-tag): Bind enable-recursive-minibuffers to t.
+
+Fri Nov 19 18:36:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* startup.el (command-line): Set init-file-had-error to t or nil.
+	(command-line-1): Inhibit startup message if init-file-had-error.
+
+Fri Nov 19 17:13:32 1993  Robert J. Chassell  (bob@geech.gnu.ai.mit.edu)
+
+        * texinfmt.el (texinfo-if-set, texinfo-if-clear): Act
+          appropriately when flat neither set nor cleared.
+
+Fri Nov 19 10:57:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gnuspost.el (gnus-inews-do-fcc): Use gnus-output-to-rmail
+	if file is an rmail file.  Pass extra args to rmail-output.
+
+	* simple.el (eval-expression): Don't bind minibuffer-history-sexp-flag.
+	(edit-and-eval-command): Likewise.
+
+	* ange-ftp.el (ange-ftp-parse-dired-listing): Skip extra blank line
+	after the "total" line.
+
+	* hexl.el (hexlify-buffer): Add autoload cookie.
+
+Thu Nov 18 00:24:34 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* iso-acc.el (iso-accents-list): Fix entries for 'y and ~c.
+	(iso-accents-list): Add "s.
+
+Wed Nov 17 08:11:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* comint.el (comint-scroll-show-maximum-output): Make default nil.
+
+	* gnus.el (gnus-summary-save-in-mail): Use rmail-output
+	if the file is not an Rmail file.
+
+	* font-lock.el (font-lock-hack-keywords):
+	Handle next-single-property-change returning nil.
+
 Tue Nov 16 01:14:29 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.21 released.

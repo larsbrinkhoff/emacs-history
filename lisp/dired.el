@@ -398,9 +398,11 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
 	(if switches			; ... but new switches
 	    (dired-sort-other switches))	; this calls dired-revert
       ;; Else a new buffer
-      (setq default-directory (if (file-directory-p dirname)
-				  dirname
-				(file-name-directory dirname)))
+      (setq default-directory
+	    (abbreviate-file-name
+	     (if (file-directory-p dirname)
+		 dirname
+	       (file-name-directory dirname))))
       (or switches (setq switches dired-listing-switches))
       (dired-mode dirname switches)
       ;; default-directory and dired-actual-switches are set now
@@ -489,7 +491,9 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
     (if (consp dir-or-list)
 	(setq dirname (car dir-or-list))
       (setq dirname dir-or-list))
-    (if (and (equal default-directory dirname)
+    ;; Expand before comparing in case one or both have been abbreviated.
+    (if (and (equal (expand-file-name default-directory)
+		    (expand-file-name dirname))
 	     (not (consp dir-or-list)))
 	;; If we are reading a whole single directory...
 	(dired-insert-directory dir-or-list dired-actual-switches nil t)
@@ -1414,7 +1418,10 @@ Returns the new value of the alist."
 		    ;; correct) match could have been elsewhere on the
 		    ;; ;; line (e.g. "-" would match somewhere in the
 		    ;; permission bits).
-		  (setq found (dired-move-to-filename)))))))
+		  (setq found (dired-move-to-filename))
+		;; If this isn't the right line, move forward to avoid
+		;; trying this line again.
+		(forward-line 1))))))
     (and found
 	 ;; return value of point (i.e., FOUND):
 	 (goto-char found))))

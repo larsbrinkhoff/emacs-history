@@ -55,6 +55,9 @@
 ;;
 ;; Function `iso-accents-mode' can be used to enable the iso accents
 ;; minor mode, or disable it.
+
+;; If you want only some of these characters to serve as accents,
+;; set iso-accents-enable to the list of characters that should be special.
 
 ;;; Code:
 
@@ -72,7 +75,7 @@
     ((?' ?i) ?\355)
     ((?' ?o) ?\363)
     ((?' ?u) ?\372)
-    ((?' ?Y) ?\375)
+    ((?' ?y) ?\375)
     ((?' ?') ?\264)
     ((?' ? ) ?')
     ((?` ?A) ?\300)
@@ -108,6 +111,7 @@
     ((?\" ?e) ?\353)
     ((?\" ?i) ?\357)
     ((?\" ?o) ?\366)
+    ((?\" ?s) ?\337)
     ((?\" ?u) ?\374)
     ((?\" ?y) ?\377)
     ((?\" ? ) ?\")
@@ -118,7 +122,7 @@
     ((?\~ ?N) ?\321)
     ((?\~ ?O) ?\325)
     ((?\~ ?a) ?\343)
-    ((?\~ ?c) ?\307)
+    ((?\~ ?c) ?\347)
     ((?\~ ?d) ?\360)
     ((?\~ ?n) ?\361)
     ((?\~ ?o) ?\365)
@@ -180,15 +184,27 @@ See `iso-accents-mode'.")
       (setq unread-command-events (list second-char))
       (vector first-char))))
 
+(defvar iso-accents-enable '(?' ?` ?^ ?\" ?~ ?/)
+  "*List of accent keys that become prefixes in ISO Accents mode.
+The default is (?' ?` ?^ ?\" ?~ ?/), which contains all the supported
+accent keys.  For certain languages, you might want to remove some of
+those characters that are not actually used.")
+
 (or key-translation-map (setq key-translation-map (make-sparse-keymap)))
 ;; For sequences starting with an accent character,
 ;; use a function that tests iso-accents-minor-mode.
-(define-key key-translation-map "'"  'iso-accents-accent-key)
-(define-key key-translation-map "`"  'iso-accents-accent-key)
-(define-key key-translation-map "^"  'iso-accents-accent-key)
-(define-key key-translation-map "\"" 'iso-accents-accent-key)
-(define-key key-translation-map "~" 'iso-accents-accent-key)
-(define-key key-translation-map "/" 'iso-accents-accent-key)
+(if (memq ?' iso-accents-enable)
+    (define-key key-translation-map "'"  'iso-accents-accent-key))
+(if (memq ?` iso-accents-enable)
+    (define-key key-translation-map "`"  'iso-accents-accent-key))
+(if (memq ?^ iso-accents-enable)
+    (define-key key-translation-map "^"  'iso-accents-accent-key))
+(if (memq ?\" iso-accents-enable)
+    (define-key key-translation-map "\"" 'iso-accents-accent-key))
+(if (memq ?~ iso-accents-enable)
+    (define-key key-translation-map "~" 'iso-accents-accent-key))
+(if (memq ?/ iso-accents-enable)
+    (define-key key-translation-map "/" 'iso-accents-accent-key))
 
 ;; It is a matter of taste if you want the minor mode indicated
 ;; in the mode line...
@@ -206,11 +222,18 @@ When Iso-accents mode is enabled, accent character keys
 \(`, ', \", ^, / and ~) do not self-insert; instead, they modify the following
 letter key so that it inserts an ISO accented letter.
 
+The variable `iso-accents-enable' specifies the list of characters to
+enable as accents.  If you don't need all of them, remove the ones you
+don't need from that list.
+
 Special combinations: ~c gives a c with cedilla,
 ~d gives a d with dash.
+\"s gives German sharp s.
+/a gives a with ring.
+/e gives an a-e ligature.
 ~< and ~> give guillemets.
 
-With an argument, a positive argument enables ISO-accents mode, 
+With an argument, a positive argument enables ISO Accents mode, 
 and a negative argument disables it."
 
   (interactive "P")

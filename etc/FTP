@@ -140,18 +140,19 @@ these US sites: ftp.kpc.com:/pub/mirror/gnu (Silicon Valley, CA)
 labrea.stanford.edu, wuarchive.wustl.edu:/mirrors/gnu,
 col.hp.com:/mirrors/gnu, ftp.cs.columbia.edu:/archives/gnu/prep,
 ftp.cs.widener.edu, itstd.sri.com, a.cs.uiuc.edu, uxc.cso.uiuc.edu,
-scam.berkeley.edu, jaguar.utah.edu, gatekeeper.dec.com:/pub/gnu,
-archive.cis.ohio-state.edu, and ftp.uu.net:/archive/systems/gnu).  And
-these foreign sites: ftp.cs.ubc.ca:/mirror2/gnu (Canada, daily full
-mirror, ran by ftp-admin@cs.ubc.ca), archie.au:/gnu (Australia
-(archie.oz or archie.oz.au for ACSnet)),
-ftp.technion.ac.il:/pub/unsupported/gnu (Israel, daily full mirror,
-ran by ftp-admin), ftp.sun.ac.za:/pub/gnu (South Africa),
-ftp.informatik.tu-muenchen.de, ftp.informatik.rwth-aachen.de or
-germany.eu.net (mirror ran by archive-admin@germany.eu.net) (Germany),
-isy.liu.se, ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
+scam.berkeley.edu, jaguar.utah.edu, ftp.hawaii.edu:/mirrors/gnu,
+gatekeeper.dec.com:/pub/gnu, archive.cis.ohio-state.edu, and
+ftp.uu.net:/archive/systems/gnu.  And these foreign sites:
+ftp.cs.ubc.ca:/mirror2/gnu (Canada, daily full mirror, ran by
+ftp-admin@cs.ubc.ca), archie.au:/gnu (Australia (archie.oz or
+archie.oz.au for ACSnet)), ftp.technion.ac.il:/pub/unsupported/gnu
+(Israel, daily full mirror, ran by ftp-admin), ftp.sun.ac.za:/pub/gnu
+(South Africa), ftp.informatik.tu-muenchen.de,
+ftp.informatik.rwth-aachen.de or germany.eu.net (mirror ran by
+archive-admin@germany.eu.net) (Germany), isy.liu.se,
+ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
 hp4nl.nluug.nl (Netherlands), ftp.win.tue.nl (Netherlands, Internet
-Address 131.155.70.100), nic.funet.fi:/pub/gnu (Finland 128.214.6.100,
+Address 131.155.70.100), ftp.funet.fi:/pub/gnu (Finland 128.214.6.100,
 ran by gnu-adm), ftp.denet.dk (Denmark), ugle.unit.no (Norway
 129.241.1.97), ftp.eunet.ch or nic.switch.ch:/mirror/gnu
 (Switzerland), irisa.irisa.fr:/pub/gnu or ftp.univ-lyon1.fr:pub/gnu

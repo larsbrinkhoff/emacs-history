@@ -7,7 +7,7 @@
 ;; Created: a long, long, time ago. adapted from the original c-mode.el
 ;; Version:         2.353
 ;; Last Modified:   1993/06/23 13:58:52
-;; Keywords: C++ C editing major-mode
+;; Keywords: languages
 
 ;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
 

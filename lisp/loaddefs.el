@@ -2887,7 +2887,7 @@ Use \\[set-gnu-bindings] to restore previous global bindings." t nil)
 
 ;;;***
 
-;;;### (autoloads (xdb dbx sdb gdb) "gud" "gud.el" (11365 54337))
+;;;### (autoloads (perldb xdb dbx sdb gdb) "gud" "gud.el" (11436 59090))
 ;;; Generated autoloads from gud.el
 
 (autoload (quote gdb) "gud" "\
@@ -2913,6 +2913,11 @@ and source-file directory for your debugger.
 You can set the variable 'gud-xdb-directories' to a list of program source
 directories if your program contains sources from more than one directory." t nil)
 
+(autoload (quote perldb) "gud" "\
+Run perldb on program FILE in buffer *gud-FILE*.
+The directory containing FILE becomes the initial working directory
+and source-file directory for your debugger." t nil)
+
 ;;;***
 
 ;;;### (autoloads (hanoi) "hanoi" "hanoi.el" (11324 28709))
@@ -2934,7 +2939,7 @@ Provide help for current mode." t nil)
 
 ;;;***
 
-;;;### (autoloads (hexl-find-file hexl-mode) "hexl" "hexl.el" (11319 6522))
+;;;### (autoloads (hexlify-buffer hexl-find-file hexl-mode) "hexl" "hexl.el" (11500 60646))
 ;;; Generated autoloads from hexl.el
 
 (autoload (quote hexl-mode) "hexl" "\
@@ -3012,6 +3017,9 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
 (autoload (quote hexl-find-file) "hexl" "\
 Edit file FILENAME in hexl-mode.
 Switch to a buffer visiting file FILENAME, creating one in none exists." t nil)
+
+(autoload (quote hexlify-buffer) "hexl" "\
+Convert a binary buffer to hexl format" t nil)
 
 ;;;***
 

@@ -22,7 +22,7 @@
 %You are forbidden to forbid anyone else to use, share and improve
 %what you give them.   Help stamp out software-hoarding!
 
-\def\texinfoversion{2.115}
+\def\texinfoversion{2.118}
 \message{Loading texinfo package [Version \texinfoversion]:}
 
 % Print the version number if in a .fmt file.
@@ -460,7 +460,7 @@ where each line of input produces a line of output.}
 
 % @dots{}  output some dots
 
-\def\dots{$\ldots$}
+\def\dots{.$\,$.$\,$.\:}
 
 % @page    forces the start of a new page
 
@@ -1985,7 +1985,7 @@ July\or August\or September\or October\or November\or December\fi
 
 % Like \dotfill except takes at least 1 em.
 \def\indexdotfill{\cleaders
-  \hbox{$\mathsurround=0pt \mkern1.5mu . \mkern1.5mu$}\hskip 1em plus 1fill}
+  \hbox{$\mathsurround=0pt \mkern1.5mu ${\it .}$ \mkern1.5mu$}\hskip 1em plus 1fill}
 
 \def\primary #1{\line{#1\hfil}}
 
@@ -3281,7 +3281,7 @@ July\or August\or September\or October\or November\or December\fi
 % Expand, preventing hyphenation at `-' chars.
 % Note that groups don't affect changes in \hyphenchar.
 \functionparens
-\code{#1}%
+\tclose{#1}% avoid \code because of side effects on active chars
 \interlinepenalty=10000
 \advance\rightskip by 0pt plus 1fil
 \endgraf\penalty 10000\vskip -\parskip\penalty 10000%

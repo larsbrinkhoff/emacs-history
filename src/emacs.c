@@ -452,11 +452,13 @@ main (argc, argv, envp)
       signal (20, fatal_error_signal);
       signal (21, fatal_error_signal);
       signal (22, fatal_error_signal);
-      signal (23, fatal_error_signal);
       signal (24, fatal_error_signal);
+#if 0 /* mvn@library.ucla.edu says these are SIGIO on AIX 3.2.4.  */
+      signal (23, fatal_error_signal);
 #ifdef SIGIO
       signal (SIGAIO, fatal_error_signal);
       signal (SIGPTY, fatal_error_signal);
+#endif
 #endif
 #ifndef _I386
       signal (SIGIOINT, fatal_error_signal);
@@ -497,8 +499,9 @@ main (argc, argv, envp)
 
   init_buffer ();	/* Init default directory of main buffer */
 
-  init_callproc ();	/* Must precede init_cmdargs and init_sys_modes.  */
+  init_callproc_1 ();	/* Must precede init_cmdargs and init_sys_modes.  */
   init_cmdargs (argc, argv, skip_args);	/* Must precede init_lread.  */
+  init_callproc ();	/* Must follow init_cmdargs but not init_sys_modes.  */
   init_lread ();
 
   if (!noninteractive)

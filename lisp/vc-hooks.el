@@ -35,8 +35,8 @@ The first pair corresponding to a given back end is used as a template
 when creating new masters.")
 
 (defvar vc-make-backup-files nil
-  "*If non-nil, backups of registered files are made according to
-the make-backup-files variable.  Otherwise, prevents backups being made.")
+  "*If non-nil, backups of registered files are made as with other files.
+If nil (the default), for files covered by version control don't get backups.")
 
 (defvar vc-rcs-status t
   "*If non-nil, revision and locks on RCS working file displayed in modeline.
@@ -147,6 +147,13 @@ visiting FILE."
 	       (concat " " (or label (symbol-name vc-type))
 		       (if (and vc-rcs-status (eq vc-type 'RCS))
 			   (vc-rcs-status file)))))
+    ;; Even root shouldn't modify a registered file without locking it first.
+    (and vc-type
+	 (not buffer-read-only)
+	 (zerop (user-uid))
+	 (require 'vc)
+	 (not (string-equal (user-login-name) (vc-locking-user file)))
+	 (setq buffer-read-only t))
     ;; force update of mode line
     (set-buffer-modified-p (buffer-modified-p))
     vc-type))
@@ -216,7 +223,7 @@ visiting FILE."
 			(narrow-to-region (match-beginning 1) (match-end 1))
 			(goto-char (point-min))
 			(while (re-search-forward lock-pattern nil t)
-			  (replace-match (if (eobp) "" "-") t t))
+			  (replace-match (if (eobp) "" ":") t t))
 			(buffer-string)))
 		     (status
 		      (if (not (string-equal locks ""))

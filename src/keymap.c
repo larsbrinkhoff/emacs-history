@@ -507,6 +507,8 @@ DEFUN ("define-key", Fdefine_key, Sdefine_key, 3, 3, 0,
   "Args KEYMAP, KEY, DEF.  Define key sequence KEY, in KEYMAP, as DEF.\n\
 KEYMAP is a keymap.  KEY is a string or a vector of symbols and characters\n\
 meaning a sequence of keystrokes and events.\n\
+Non-ASCII characters with codes above 127 (such as ISO Latin-1)\n\
+can be included if you use a vector.\n\
 DEF is anything that can be a key's definition:\n\
  nil (means key is undefined in this keymap),\n\
  a command (a Lisp function suitable for interactive calling)\n\
@@ -808,8 +810,8 @@ The binding is probably a symbol with a function definition.\n\
 \n\
 Normally, `key-binding' ignores bindings for t, which act as default\n\
 bindings, used when nothing else in the keymap applies; this makes it\n\
-useable as a general function for probing keymaps.  However, if the\n\
-third optional argument ACCEPT-DEFAULT is non-nil, `key-binding' will\n\
+usable as a general function for probing keymaps.  However, if the\n\
+optional second argument ACCEPT-DEFAULT is non-nil, `key-binding' does\n\
 recognize the default bindings, just as `read-key-sequence' does.")
   (key, accept_default)
      Lisp_Object key;
@@ -913,6 +915,8 @@ DEFUN ("global-set-key", Fglobal_set_key, Sglobal_set_key, 2, 2,
   "Give KEY a global binding as COMMAND.\n\
 COMMAND is a symbol naming an interactively-callable function.\n\
 KEY is a key sequence (a string or vector of characters or event types).\n\
+Non-ASCII characters with codes above 127 (such as ISO Latin-1)\n\
+can be included if you use a vector.\n\
 Note that if KEY has a local binding in the current buffer\n\
 that local binding will continue to shadow any global binding.")
   (keys, function)
@@ -931,6 +935,8 @@ DEFUN ("local-set-key", Flocal_set_key, Slocal_set_key, 2, 2,
   "Give KEY a local binding as COMMAND.\n\
 COMMAND is a symbol naming an interactively-callable function.\n\
 KEY is a key sequence (a string or vector of characters or event types).\n\
+Non-ASCII characters with codes above 127 (such as ISO Latin-1)\n\
+can be included if you use a vector.\n\
 The binding goes in the current buffer's local map,\n\
 which is shared with other buffers in the same major mode.")
   (keys, function)

@@ -2,7 +2,7 @@
 #### Just a few targets required by the coding standards.
 
 MAKEINFO = makeinfo
-TEXINDEX_OBJS = texindex.o ../.lib-src/getopt.o ../lib-src/getopt.o
+TEXINDEX_OBJS = texindex.o ../lib-src/getopt.o ../lib-src/getopt.o
 INFO_TARGETS = ../info/emacs ../info/cl.info ../info/forms ../info/vip \
 	       ../info/gnus ../info/sc ../info/info
 DVI_TARGETS = emacs.dvi cl.dvi forms.dvi vip.dvi gnus.dvi sc.dvi

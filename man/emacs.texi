@@ -64,7 +64,7 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Ninth Edition, Emacs version 19.21
+@center Ninth Edition, Emacs version 19.22
 @sp 1
 @center for Unix Users
 @sp 1
@@ -110,14 +110,12 @@ Cover art by Etienne Suvasa.
 @page
 @ifinfo
 @node Top, Distrib,, (DIR)
-
-The Emacs Editor
-****************
+@top The Emacs Editor
 
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.21.
+corresponds to GNU Emacs version 19.22.
 
 @end ifinfo
 @menu

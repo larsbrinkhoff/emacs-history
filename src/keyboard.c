@@ -1939,6 +1939,31 @@ kbd_buffer_get_event ()
 	  abort ();
 #endif
 	}
+#ifdef HAVE_X11
+      else if (event->kind == delete_window_event)
+	{
+	  Lisp_Object tail, frame;
+	  struct frame *f;
+	
+	  /* If the user destroys the only frame, Emacs should exit.
+	     Count visible frames and iconified frames.  */
+	  for (tail = Vframe_list; CONSP (tail); tail = XCONS (tail)->cdr)
+	    {
+	      frame = XCONS (tail)->car;
+	      if (XTYPE (frame) != Lisp_Frame || EQ (frame, event->frame_or_window))
+		continue;
+	      f = XFRAME (frame);
+	      if (FRAME_VISIBLE_P (f) || FRAME_ICONIFIED_P (f))
+		break;
+	    }
+
+	  if (! CONSP (tail))
+	    kill (getpid (), SIGHUP);
+
+	  Fdelete_frame (event->frame_or_window, Qt);
+	  kbd_fetch_ptr = event + 1;
+	}
+#endif
       /* Just discard these, by returning nil.
 	 (They shouldn't be found in the buffer,
 	 but on some machines it appears they do show up.)  */
@@ -3068,6 +3093,8 @@ read_avail_input (expected)
 	  if (nread == 0)
 	    kill (SIGHUP, 0);
 #endif
+	  /* This code is wrong, but at least it gets the right results.
+	     Fix it for 19.23.  */
 	  /* Retry the read if it is interrupted.  */
 	  if (nread >= 0
 	      || ! (errno == EAGAIN || errno == EFAULT
@@ -3656,7 +3683,8 @@ follow_key (key, nmaps, current, defs, next)
       if (XINT (key) & shift_modifier)
 	XSETINT (key, XINT (key) & ~shift_modifier);
       else
-	XSETINT (key, DOWNCASE (XINT (key)));
+	XSETINT (key, (DOWNCASE (XINT (key) & 0x3ffff)
+		       | (XINT (key) & ~0x3ffff)));
 
       first_binding = nmaps;
       for (i = nmaps - 1; i >= 0; i--)
@@ -3787,6 +3815,8 @@ read_key_sequence (keybuf, bufsize, prompt)
   Lisp_Object first_event;
 #endif
 
+  struct buffer *starting_buffer;
+
   int junk;
 
   last_nonmenu_event = Qnil;
@@ -3835,6 +3865,8 @@ read_key_sequence (keybuf, bufsize, prompt)
      keybuf[0..mock_input] holds the sequence we should reread.  */
  replay_sequence:
 
+  starting_buffer = current_buffer;
+
   /* Build our list of keymaps.
      If we recognize a function key and replace its escape sequence in
      keybuf with its symbol, or if the sequence starts with a mouse
@@ -3864,9 +3896,7 @@ read_key_sequence (keybuf, bufsize, prompt)
     if (! NILP (submaps[first_binding]))
       break;
 
-  /* We jump here when a function key substitution has forced us to
-     reprocess the current key sequence.  keybuf[0..mock_input] is the
-     sequence we want to reread.  */
+  /* Start from the beginning in keybuf.  */
   t = 0;
 
   /* These are no-ops the first time through, but if we restart, they
@@ -3955,6 +3985,17 @@ read_key_sequence (keybuf, bufsize, prompt)
 	      goto done;
 	    }
 	  
+	  /* If we have a quit that was typed in another frame, and
+	     quit_throw_to_read_char switched buffers,
+	     replay to get the right keymap.  */
+	  if (EQ (key, quit_char) && current_buffer != starting_buffer)
+	    {
+	      keybuf[t++] = key;
+	      mock_input = t;
+	      Vquit_flag = Qnil;
+	      goto replay_sequence;
+	    }
+	    
 	  Vquit_flag = Qnil;
 	}
 
@@ -4990,6 +5031,10 @@ quit_throw_to_read_char ()
   /* May be > 1 if in recursive minibuffer.  */
   if (poll_suppress_count == 0)
     abort ();
+#endif
+#ifdef MULTI_FRAME
+  if (XFRAME (internal_last_event_frame) != selected_frame)
+    Fhandle_switch_frame (make_lispy_switch_frame (internal_last_event_frame));
 #endif
 
   _longjmp (getcjmp, 1);

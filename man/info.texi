@@ -71,7 +71,7 @@ except that this permission notice may be stated in a translation approved
 by the Free Software Foundation.
 @end titlepage
 
-@paragraphindent asis
+@paragraphindent 3
 @ifinfo
 @node Top, Getting Started, (dir), (dir)
 @top Info: An Introduction
@@ -79,7 +79,8 @@ by the Free Software Foundation.
 Info is a program for reading documentation, which you are using now.
 
 To learn how to use Info, type the command @kbd{h}.  It brings you
-to a programmed instruction sequence.
+to a programmed instruction sequence.  If at any time you are ready to
+stop using Info, type @samp{q}.
 
 @c Need to make sure that `Info-help' goes to the right node, 
 @c which is the first node of the first chapter. (It should.) 
@@ -173,48 +174,48 @@ back up, press the key labeled @samp{Delete} or @key{DEL}.
 Here are 40 lines of junk, so you can try Spaces and Deletes and
 see what they do.  At the end are instructions of what you should do
 next.
-
-This is line 17 @*
-This is line 18 @*
-This is line 19 @*
-This is line 20 @*
-This is line 21 @*
-This is line 22 @*
-This is line 23 @*
-This is line 24 @*
-This is line 25 @*
-This is line 26 @*
-This is line 27 @*
-This is line 28 @*
-This is line 29 @*
-This is line 30 @*
-This is line 31 @*
-This is line 32 @*
-This is line 33 @*
-This is line 34 @*
-This is line 35 @*
-This is line 36 @*
-This is line 37 @*
-This is line 38 @*
-This is line 39 @*
-This is line 40 @*
-This is line 41 @*
-This is line 42 @*
-This is line 43 @*
-This is line 44 @*
-This is line 45 @*
-This is line 46 @*
-This is line 47 @*
-This is line 48 @*
-This is line 49 @*
-This is line 50 @*
-This is line 51 @*
-This is line 52 @*
-This is line 53 @*
-This is line 54 @*
-This is line 55 @*
-This is line 56 @*
-
+@format
+This is line 17
+This is line 18
+This is line 19
+This is line 20
+This is line 21
+This is line 22
+This is line 23
+This is line 24
+This is line 25
+This is line 26
+This is line 27
+This is line 28
+This is line 29
+This is line 30
+This is line 31
+This is line 32
+This is line 33
+This is line 34
+This is line 35
+This is line 36
+This is line 37
+This is line 38
+This is line 39
+This is line 40
+This is line 41
+This is line 42
+This is line 43
+This is line 44
+This is line 45
+This is line 46
+This is line 47
+This is line 48
+This is line 49
+This is line 50
+This is line 51
+This is line 52
+This is line 53
+This is line 54
+This is line 55
+This is line 56
+@end format
 If you have managed to get here, go back to the beginning with
 Delete, and come back here again, then you understand Space and
 Delete.  So now type an @kbd{n} ---just one character; don't type
@@ -243,8 +244,10 @@ This node has a @samp{Previous} but no @samp{Up}, as you can see.
 
   Now it is time to move on to the @samp{Next} node, named @samp{Help-P}.
 
+@format
 >> Type @samp{n} to move there.  Type just one character;
    do not type the quotes and do not type a @key{RET} afterward.
+@end format
 
 @samp{>>} in the margin means it is really time to try a command.
 
@@ -257,16 +260,20 @@ is @samp{Help}, which is the one you just came from using the @kbd{n}
 command.  Another @kbd{n} command now would take you to the next
 node, @samp{Help-^L}.
 
+@format
 >> But do not do that yet.  First, try the @kbd{p} command, which takes
    you to the @samp{Previous} node.  When you get there, you can do an
    @kbd{n} again to return here.
+@end format
 
   This all probably seems insultingly simple so far, but @emph{do not} be
 led into skimming.  Things will get more complicated soon.  Also,
 do not try a new command until you are told it is time to.  Otherwise,
 you may make Info skip past an important warning that was coming up.
 
+@format
 >> Now do an @kbd{n} to get to the node @samp{Help-^L} and learn more.
+@end format
 
 @node Help-^L, Help-M, Help-P, Getting Started
 @comment  node-name,  next,  previous,  up
@@ -287,7 +294,9 @@ Space moves forward, to show what was below the bottom of the screen.
 Delete moves backward, to show what was above the top of the screen
 (there is not anything above the top until you have typed some spaces).
 
+@format
 >> Now try typing a Space (afterward, type a Delete to return here).
+@end format
 
   When you type the space, the two lines that were at the bottom of
 the screen appear at the top, followed by more lines.  Delete takes
@@ -303,16 +312,20 @@ the header of the node is visible.
 again by typing @kbd{C-l} (@kbd{Control-L}, that is---hold down ``Control'' and
 type an @key{L} or @kbd{l}).
 
+@format
 >> Type @kbd{C-l} now.
+@end format
 
   To move back to the beginning of the node you are on, you can type
 a lot of Deletes.  You can also type simply @kbd{b} for beginning.
+@format
 >> Try that now.  (We have put in enough verbiage to push this past
 the first screenful, but screens are so big nowadays that perhaps it
 isn't enough.  You may need to shrink your Emacs or Info window.)
 Then come back, with Spaces.
+@end format
 
-  If your screen is very tall, all of this node might fit at once.
+If your screen is very tall, all of this node might fit at once.
 In that case, "b" won't do anything.  Sorry; what can we do?
 
   You have just learned a considerable number of commands.  If you
@@ -320,7 +333,9 @@ want to use one but have trouble remembering which, you should type
 a @key{?} which prints out a brief list of commands.  When you are
 finished looking at the list, make it go away by typing a @key{SPC}.
 
+@format
 >> Type a @key{?} now.  After it finishes, type a @key{SPC}.
+@end format
 
   (If you are using the standalone Info reader, type `l' to return here.)
 
@@ -329,7 +344,9 @@ will be expected to know how to use Space and Delete to move
 around in them without being told.  Since not all terminals have
 the same size screen, it would be impossible to warn you anyway.
 
+@format
 >> Now type @kbd{n} to see the description of the @kbd{m} command.
+@end format
 
 @node Help-M, Help-Adv, Help-^L, Getting Started
 @comment  node-name,  next,  previous,  up
@@ -383,11 +400,13 @@ abbreviation for this:
 This means that the subtopic name and node name are the same; they are
 both @samp{Foo}.
 
+@format
 >> Now use Spaces to find the menu in this node, then come back to
    the front with a @kbd{b} and some Spaces.  As you see, a menu is
    actually visible in its node.  If you cannot find a menu in a node
    by looking at it, then the node does not have a menu and the
    @kbd{m} command is not available.
+@end format
 
   The command to go to one of the subnodes is @kbd{m}---but @emph{do
 not do it yet!}  Before you use @kbd{m}, you must understand the
@@ -443,30 +462,38 @@ This menu gives you three ways of going to one place, Help-FOO.
 * Help-FOO::            And yet another!@*
 
 
+@format
 >>  Now type just an @kbd{m} and see what happens:
+@end format
 
   Now you are ``inside'' an @kbd{m} command.  Commands cannot be used
 now; the next thing you will type must be the name of a subtopic.
 
   You can change your mind about doing the @kbd{m} by typing Control-g.
 
+@format
 >> Try that now;  notice the bottom line clear.
 
 >> Then type another @kbd{m}.
 
 >> Now type @samp{BAR} item name.  Do not type Return yet.
+@end format
 
   While you are typing the item name, you can use the Delete key to
 cancel one character at a time if you make a mistake.
 
+@format
 >> Type one to cancel the @samp{R}.  You could type another @samp{R} to
    replace it.  You do not have to, since @samp{BA} is a valid abbreviation.
 
 >> Now you are ready to go.  Type a @key{RET}.
+@end format
 
   After visiting Help-FOO, you should return here.
 
+@format
 >> Type @kbd{n} to see more commands.
+@end format
 
 @c If a menu appears at the end of this node, remove it.
 @c It is an accident of the menu updating command.
@@ -495,7 +522,9 @@ level but go backwards''
 node---to get back to where you were reading you have to type
 some @key{SPC}s.
 
+@format
 >> Now type @kbd{u} to move back up to @samp{Help-M}.
+@end format
 
 @node Help-Adv, Help-Q, Help-M, Getting Started
 @comment  node-name,  next,  previous,  up
@@ -515,8 +544,10 @@ you back to @samp{Help-M}.  Another @kbd{l} command would undo the
 @kbd{u} and get you back to @samp{Help-FOO}.  Another @kbd{l} would undo
 the @kbd{m} and get you back to @samp{Help-M}.
 
+@format
 >> Try typing three @kbd{l}'s, pausing in between to see what each
     @kbd{l} does.
+@end format
 
 Then follow directions again and you will end up back here.
 
@@ -530,8 +561,10 @@ This node, which is the first one you saw when you entered Info,
 has a menu which leads (directly, or indirectly through other menus),
 to all the nodes that exist.
 
+@format
 >> Try doing a @samp{d}, then do an @kbd{l} to return here (yes,
    @emph{do} return).
+@end format
 
   Sometimes, in Info documentation, you will see a cross reference.
 Cross references look like this: @xref{Help-Cross, Cross}.  That is a
@@ -547,7 +580,9 @@ any reference, you can use @kbd{Control-g} to cancel the command.
   Completion is available in the @samp{f} command; you can complete among
 all the cross reference names in the current node by typing a Tab.
 
+@format
 >> Type @samp{f}, followed by @samp{Cross}, and a @key{RET}.
+@end format
 
   To get a list of all the cross references in the current node, you can
 type @kbd{?} after an @samp{f}.  The @samp{f} continues to await a
@@ -555,10 +590,12 @@ cross reference name even after printing the list, so if you don't
 actually want to follow a reference, you should type a @kbd{Control-g}
 to cancel the @samp{f}.
 
+@format
 >> Type "f?" to get a list of the cross references in this node.  Then
    type a @kbd{Control-g} and see how the @samp{f} gives up.
 
 >> Now type @kbd{n} to see the last node of the course.
+@end format
 
 @c If a menu appears at the end of this node, remove it.
 @c It is an accident of the menu updating command.
@@ -576,7 +613,9 @@ the footnote to have a @samp{Next}, @samp{Previous} or @samp{Up} pointing back t
 where you came from.  In general, the @kbd{l} (el) command is the only
 way to get back there.
 
+@format
 >> Type @kbd{l} to return to the node where the cross reference was.
+@end format
 
 @node Help-Q,  , Help-Adv, Getting Started
 @comment  node-name,  next,  previous,  up
@@ -591,9 +630,11 @@ can find them by looking in the directory node for documentation on
 Info.  Finding them will be a good exercise in using Info in the usual
 manner.
 
+@format
 >> Type @samp{d} to go to the Info directory node; then type
    @samp{mInfo} and Return, to get to the node about Info and
    see what other help is available.
+@end format
 
 @node Advanced Info, Create an Info File, Getting Started, Top
 @comment  node-name,  next,  previous,  up

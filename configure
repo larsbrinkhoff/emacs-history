@@ -696,6 +696,11 @@ case "${canonical}" in
     machine=symmetry opsys=bsd4-3
   ;;
 
+  ## Unspecified sysv on an ncr machine defaults to svr4.
+  i[34]86-ncr-sysv* )
+    machine=intel386 opsys=usg5-4
+  ;;
+
   ## Intel 860
   i860-*-sysvr4* )
     machine=i860 opsys=usg5-4
@@ -972,7 +977,8 @@ machfile="m/${machine}.h"
 opsysfile="s/${opsys}.h"
 
 
-trap 'rm -fr conftest* core; exit 1' 1 3 15
+trap 'rm -fr conftest* confdefs* core; exit 1' 1 3 15
+trap 'rm -f confdefs*' 0
 
 # NLS nuisances.
 # These must not be set unconditionally because not all systems understand
@@ -980,8 +986,10 @@ trap 'rm -fr conftest* core; exit 1' 1 3 15
 if test "${LC_ALL+set}" = 'set' ; then LC_ALL=C; export LC_ALL; fi
 if test "${LANG+set}"   = 'set' ; then LANG=C;   export LANG;   fi
 
-rm -f conftest*
-compile='${CC-cc} $CFLAGS $DEFS conftest.c -o conftest $LIBS >/dev/null 2>&1'
+rm -f conftest* confdefs.h
+# AIX cpp loses on an empty file, so make sure it contains at least a newline.
+echo > confdefs.h
+compile='${CC-cc} $CFLAGS conftest.c -o conftest $LIBS >/dev/null 2>&1'
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
@@ -1014,6 +1022,7 @@ case $srcdir in
   *) srcdir=`cd $srcdir; pwd` ;; # Make relative path absolute.
 esac
 
+
 # Save the original args to write them into config.status later.
 configure_args="$*"
 
@@ -1040,7 +1049,7 @@ case ${with_gcc} in
   IFS="$saveifs"
 fi
 test -z "$CC" && CC="cc"
-test -n "$CC" -a -n "$verbose" && echo "	setting CC to $CC"
+test -n "$CC" && test -n "$verbose" && echo "	setting CC to $CC"
 
 # Find out if we are using GNU C, under whatever name.
 cat > conftest.c <<EOF
@@ -1078,13 +1087,15 @@ if test -z "$CPP"; then
   # make.  It must be expanded now.
   CPP="${CC-cc} -E"
   cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <stdio.h>
 Syntax Error
 EOF
-err=`eval "($CPP \$DEFS conftest.c >/dev/null) 2>&1"`
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
 if test -z "$err"; then
   :
 else
+  rm -rf conftest*
   CPP=/lib/cpp
 fi
 rm -f conftest*
@@ -1127,7 +1138,16 @@ if test "z${INSTALL}" = "z" ; then
   done
   IFS="$saveifs"
 fi
-INSTALL=${INSTALL-cp}
+if test -z "$INSTALL"; then
+  if test -f ${srcdir}/install.sh; then
+    # We want the top-level source directory, not the subdir's srcdir,
+    # so expand srcdir now rather than in the Makefile.
+    INSTALL="${srcdir}/install.sh -c"
+  else
+    echo "warning: ${srcdir}/install.sh not found; using cp"
+    INSTALL=cp
+  fi
+fi
 test -n "$verbose" && echo "	setting INSTALL to $INSTALL"
 INSTALL_PROGRAM=${INSTALL_PROGRAM-'$(INSTALL)'}
 test -n "$verbose" && echo "	setting INSTALL_PROGRAM to $INSTALL_PROGRAM"
@@ -1151,7 +1171,7 @@ if test -z "$YACC"; then
   IFS="$saveifs"
 fi
 
-test -n "$YACC" -a -n "$verbose" && echo "	setting YACC to $YACC"
+test -n "$YACC" && test -n "$verbose" && echo "	setting YACC to $YACC"
 
 test -n "$YACC" && break
 done
@@ -1164,14 +1184,17 @@ do
 trhdr=HAVE_`echo $hdr | tr '[a-z]./' '[A-Z]__'`
 echo checking for ${hdr}
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <${hdr}>
 EOF
-err=`eval "($CPP \$DEFS conftest.c >/dev/null) 2>&1"`
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
 if test -z "$err"; then
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
 echo "	defining ${trhdr}"
+echo "#define" ${trhdr} 1 >> confdefs.h
 DEFS="$DEFS -D${trhdr}=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}${trhdr}\${SEDdB}${trhdr}\${SEDdC}1\${SEDdD}
 \${SEDuA}${trhdr}\${SEDuB}${trhdr}\${SEDuC}1\${SEDuD}
@@ -1179,25 +1202,31 @@ SEDDEFS="${SEDDEFS}\${SEDdA}${trhdr}\${SEDdB}${trhdr}\${SEDdC}1\${SEDdD}
 "
 }
 
+
 fi
 rm -f conftest*
 done
 
 echo checking for ANSI C header files
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <float.h>
 EOF
-err=`eval "($CPP \$DEFS conftest.c >/dev/null) 2>&1"`
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
 if test -z "$err"; then
+  rm -rf conftest*
   # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
-echo '#include <string.h>' > conftest.c
-eval "$CPP \$DEFS conftest.c > conftest.out 2>&1"
+echo '#include "confdefs.h"
+#include <string.h>' > conftest.c
+eval "$CPP conftest.c > conftest.out 2>&1"
 if egrep "memchr" conftest.out >/dev/null 2>&1; then
+  rm -rf conftest*
   # SGI's /bin/cc from Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 #define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
 #define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
@@ -1213,6 +1242,7 @@ if test -s conftest && (./conftest; exit) 2>/dev/null; then
 {
 test -n "$verbose" && \
 echo "	defining STDC_HEADERS"
+echo "#define" STDC_HEADERS 1 >> confdefs.h
 DEFS="$DEFS -DSTDC_HEADERS=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}STDC_HEADERS\${SEDdB}STDC_HEADERS\${SEDdC}1\${SEDdD}
 \${SEDuA}STDC_HEADERS\${SEDuB}STDC_HEADERS\${SEDuC}1\${SEDuD}
@@ -1220,16 +1250,20 @@ SEDDEFS="${SEDDEFS}\${SEDdA}STDC_HEADERS\${SEDdB}STDC_HEADERS\${SEDdC}1\${SEDdD}
 "
 }
 
+
+fi
+rm -fr conftest*
+
 fi
 rm -f conftest*
-fi
-rm -f conftest*
+
 
 fi
 rm -f conftest*
 
 echo checking for whether time.h and sys/time.h may both be included
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
@@ -1237,10 +1271,12 @@ int main() { exit(0); }
 int t() { struct tm *tp; }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
 echo "	defining TIME_WITH_SYS_TIME"
+echo "#define" TIME_WITH_SYS_TIME 1 >> confdefs.h
 DEFS="$DEFS -DTIME_WITH_SYS_TIME=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}TIME_WITH_SYS_TIME\${SEDdB}TIME_WITH_SYS_TIME\${SEDdC}1\${SEDdD}
 \${SEDuA}TIME_WITH_SYS_TIME\${SEDuB}TIME_WITH_SYS_TIME\${SEDuC}1\${SEDuD}
@@ -1248,12 +1284,14 @@ SEDDEFS="${SEDDEFS}\${SEDdA}TIME_WITH_SYS_TIME\${SEDdB}TIME_WITH_SYS_TIME\${SEDd
 "
 }
 
+
 fi
 rm -f conftest*
 
 
 echo checking for return type of signal handlers
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <sys/types.h>
 #include <signal.h>
 #ifdef signal
@@ -1264,10 +1302,12 @@ int main() { exit(0); }
 int t() { int i; }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
-echo "	defining RETSIGTYPE to be void"
+echo "	defining" RETSIGTYPE to be void
+echo "#define" RETSIGTYPE void >> confdefs.h
 DEFS="$DEFS -DRETSIGTYPE=void"
 SEDDEFS="${SEDDEFS}\${SEDdA}RETSIGTYPE\${SEDdB}RETSIGTYPE\${SEDdC}void\${SEDdD}
 \${SEDuA}RETSIGTYPE\${SEDuB}RETSIGTYPE\${SEDuC}void\${SEDuD}
@@ -1275,11 +1315,14 @@ SEDDEFS="${SEDDEFS}\${SEDdA}RETSIGTYPE\${SEDdB}RETSIGTYPE\${SEDdC}void\${SEDdD}
 "
 }
 
+
 else
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
-echo "	defining RETSIGTYPE to be int"
+echo "	defining" RETSIGTYPE to be int
+echo "#define" RETSIGTYPE int >> confdefs.h
 DEFS="$DEFS -DRETSIGTYPE=int"
 SEDDEFS="${SEDDEFS}\${SEDdA}RETSIGTYPE\${SEDdB}RETSIGTYPE\${SEDdC}int\${SEDdD}
 \${SEDuA}RETSIGTYPE\${SEDuB}RETSIGTYPE\${SEDuC}int\${SEDuD}
@@ -1294,18 +1337,21 @@ rm -f conftest*
 
 echo checking for struct tm in time.h
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <sys/types.h>
 #include <time.h>
 int main() { exit(0); }
-int t() { struct tm *tp; }
+int t() { struct tm *tp; tp->tm_sec; }
 EOF
 if eval $compile; then
   :
 else
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
 echo "	defining TM_IN_SYS_TIME"
+echo "#define" TM_IN_SYS_TIME 1 >> confdefs.h
 DEFS="$DEFS -DTM_IN_SYS_TIME=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}TM_IN_SYS_TIME\${SEDdB}TM_IN_SYS_TIME\${SEDdC}1\${SEDdD}
 \${SEDuA}TM_IN_SYS_TIME\${SEDuB}TM_IN_SYS_TIME\${SEDuC}1\${SEDuD}
@@ -1328,15 +1374,18 @@ case "$DEFS" in
 esac
 echo checking for tm_zone in struct tm
 cat > conftest.c <<EOF
+#include "confdefs.h"
 $decl
 int main() { exit(0); }
 int t() { struct tm tm; tm.tm_zone; }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
 echo "	defining HAVE_TM_ZONE"
+echo "#define" HAVE_TM_ZONE 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_TM_ZONE=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_TM_ZONE\${SEDdB}HAVE_TM_ZONE\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_TM_ZONE\${SEDuB}HAVE_TM_ZONE\${SEDuC}1\${SEDuD}
@@ -1344,7 +1393,9 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_TM_ZONE\${SEDdB}HAVE_TM_ZONE\${SEDdC}1\${SEDdD}
 "
 }
 
+
 else
+  rm -rf conftest*
   no_tm_zone=1
 fi
 rm -f conftest*
@@ -1352,6 +1403,7 @@ rm -f conftest*
 if test -n "$no_tm_zone"; then
 echo checking for tzname
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <time.h>
 #ifndef tzname /* For SGI.  */
 extern char *tzname[]; /* RS6000 and others want it this way.  */
@@ -1360,16 +1412,19 @@ int main() { exit(0); }
 int t() { atoi(*tzname); }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
 echo "	defining HAVE_TZNAME"
+echo "#define" HAVE_TZNAME 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_TZNAME=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_TZNAME\${SEDdB}HAVE_TZNAME\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_TZNAME\${SEDuB}HAVE_TZNAME\${SEDuC}1\${SEDuD}
 \${SEDeA}HAVE_TZNAME\${SEDeB}HAVE_TZNAME\${SEDeC}1\${SEDeD}
 "
 }
+
 
 fi
 rm -f conftest*
@@ -1411,9 +1466,13 @@ ccp = (char const *const *) p;
      "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
   struct s { int j; const int *ap[3]; };
   struct s *b; b->j = 5;
+}
+{ /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
+  const int foo = 10;
 }'
-echo checking for working const
+echo checking for lack of working const
 cat > conftest.c <<EOF
+#include "confdefs.h"
 
 int main() { exit(0); }
 int t() { $prog }
@@ -1421,10 +1480,12 @@ EOF
 if eval $compile; then
   :
 else
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
-echo "	defining const to be empty"
+echo "	defining" const to be empty
+echo "#define" const  >> confdefs.h
 DEFS="$DEFS -Dconst="
 SEDDEFS="${SEDDEFS}\${SEDdA}const\${SEDdB}const\${SEDdC}\${SEDdD}
 \${SEDuA}const\${SEDuB}const\${SEDuC}\${SEDuD}
@@ -1437,27 +1498,29 @@ rm -f conftest*
 
 
 echo checking for long file names
-lost=false
+some_dir_failed=false
 # Test for long file names in all the places we know might matter:
 #      .		the current directory, where building will happen
 #      /tmp		where it might want to write temporary files
+#      /var/tmp		likewise
 #      /usr/tmp		likewise
-#      $prefix		where we will be installing things
-#      $exec_prefix	likewise
-for dir in . /tmp /usr/tmp $prefix $exec_prefix ; do
-  test -w $dir || { echo \
-warning: cannot write $dir to see if it supports long file names
-		    continue; }
+#      $prefix/lib	where we will be installing things
+#      $exec_prefix/lib	likewise
+# eval it to expand exec_prefix.
+for dir in `eval echo . /tmp /var/tmp /usr/tmp $prefix/lib $exec_prefix/lib` ; do
+  test -d $dir || continue
+  test -w $dir || continue # It's less confusing to not echo anything here.
   (echo 1 > $dir/conftest9012345) 2>/dev/null
   (echo 2 > $dir/conftest9012346) 2>/dev/null
   val=`cat $dir/conftest9012345 2>/dev/null`
-  test -f $dir/conftest9012345 && test "$val" = 1 || lost=true
+  test -f $dir/conftest9012345 && test "$val" = 1 || some_dir_failed=true
   rm -f $dir/conftest9012345 $dir/conftest9012346 2> /dev/null
 done
-$lost || 
+$some_dir_failed || 
 {
 test -n "$verbose" && \
 echo "	defining HAVE_LONG_FILE_NAMES"
+echo "#define" HAVE_LONG_FILE_NAMES 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LONG_FILE_NAMES=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_FILE_NAMES\${SEDdB}HAVE_LONG_FILE_NAMES\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_LONG_FILE_NAMES\${SEDuB}HAVE_LONG_FILE_NAMES\${SEDuC}1\${SEDuD}
@@ -1521,29 +1584,131 @@ case "${window_system}" in
     if [ -z "${x_includes}" ] && [ -z "${x_libraries}" ]; then
       
       # If we find X, set shell vars x_includes and x_libraries to the paths.
+no_x=true
 echo checking for X include and library files with xmkmf
 rm -fr conftestdir
 if mkdir conftestdir; then
   cd conftestdir
-  cat > Imakefile <<\EOF
+  cat > Imakefile <<'EOF'
 acfindx:
-	@echo "temp_includes=$(INCROOT); temp_libraries=$(USRLIBDIR)"
+	@echo 'im_incroot="$(INCROOT)"; im_usrlibdir="$(USRLIBDIR)"; im_libdir="$(LIBDIR)"'
 EOF
   if (xmkmf) >/dev/null 2>/dev/null && test -f Makefile; then
-    eval `make acfindx`
-    case "$temp_includes" in
+    no_x=
+    # GNU make sometimes prints "make[1]: Entering...", which would confuse us.
+    eval `make acfindx | grep -v make`
+    # Open Windows xmkmf reportedly sets LIBDIR instead of USRLIBDIR.
+    if test ! -f $im_usrlibdir/libX11.a && test -f $im_libdir/libX11.a; then
+      im_usrlibdir=$im_libdir
+    fi
+    case "$im_incroot" in
 	/usr/include) ;;
-	*) x_includes="$temp_includes" ;;
+	*) x_includes="$im_incroot" ;;
     esac
-    case "$temp_libraries" in
+    case "$im_usrlibdir" in
 	/usr/lib | /lib) ;;
-	*) x_libraries="$temp_libraries" ;;
+	*) x_libraries="$im_usrlibdir" ;;
     esac
   fi
   cd ..
   rm -fr conftestdir
 fi
 
+if test -z "$im_usrlibdir"; then
+echo checking for X include and library files directly
+if test ".$x_direct_test_library" = . ; then
+   x_direct_test_library=Xt
+fi
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <X11/Intrinsic.h>
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  rm -rf conftest*
+  no_x=
+
+else
+  rm -rf conftest*
+  for dir in \
+    /usr/local/include \
+    /usr/unsupported/include \
+    /usr/x386/include \
+    /usr/local/x11r5/include \
+    /usr/include/X11R6 \
+    /usr/include/X11R5 \
+    /usr/include/X11R4 \
+    /usr/X11R6/include \
+    /usr/X11R5/include \
+    /usr/X11/include \
+    /usr/openwin/include \
+    /usr/openwin/share/include \
+    /usr/lpp/Xamples/include \
+    /usr/athena/include \
+    ; \
+  do
+    if test -r $dir/X11/Intrinsic.h; then
+      x_includes=$dir; no_x=
+      break
+    fi
+  done
+fi
+rm -f conftest*
+
+# Check for the libraries.  First see if replacing the `include' by
+# `lib' works.
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -l"$x_direct_test_library""
+have_lib=""
+echo checking for -l"$x_direct_test_library"
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; no_x=
+else
+   :; for dir in `echo "$x_includes" | sed s/include/lib/` \
+  /usr/local/lib \
+  /usr/unsupported/lib \
+  /usr/x386/lib \
+  /usr/local/x11r5/lib \
+  /usr/lib/X11 \
+  /usr/lib/X11R6 \
+  /usr/lib/X11R5 \
+  /usr/lib/X11R4 \
+  /usr/X11R6/lib \
+  /usr/X11R5/lib \
+  /usr/X11R4/lib \
+  /usr/X11/lib \
+  /usr/openwin/lib \
+  /usr/lpp/Xamples/lib \
+  /usr/athena/lib \
+  ; \
+do
+  for extension in a so sl; do
+    if test -r $dir/libXt.$extension; then
+      x_libraries=$dir; no_x=
+      break 2
+    fi
+  done
+done
+fi
+
+fi
+if test -n "$verbose"; then
+  test -n "$x_includes" && echo "	found X11 headers in $x_includes"
+  test -n "$x_libraries" && echo "	found X11 libraries in $x_libraries"
+fi
       
     fi
     if [ -n "${x_includes}" ] || [ -n "${x_libraries}" ]; then
@@ -1691,12 +1856,15 @@ LIBS="${LIBS} -ldnet"
 have_lib=""
 echo checking for -ldnet
 cat > conftest.c <<EOF
+#include "confdefs.h"
 
 int main() { exit(0); }
 int t() { main(); }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   have_lib="1"
+
 fi
 rm -f conftest*
 LIBS="${LIBS_save}"
@@ -1705,6 +1873,7 @@ if test -n "${have_lib}"; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_LIBDNET"
+echo "#define" HAVE_LIBDNET 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LIBDNET=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LIBDNET\${SEDdB}HAVE_LIBDNET\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_LIBDNET\${SEDuB}HAVE_LIBDNET\${SEDuC}1\${SEDuD}
@@ -1721,12 +1890,15 @@ LIBS="${LIBS} -lXbsd"
 have_lib=""
 echo checking for -lXbsd
 cat > conftest.c <<EOF
+#include "confdefs.h"
 
 int main() { exit(0); }
 int t() { main(); }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   have_lib="1"
+
 fi
 rm -f conftest*
 LIBS="${LIBS_save}"
@@ -1751,6 +1923,7 @@ do
 trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
 echo checking for ${func}
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 int main() { exit(0); }
 int t() { 
@@ -1766,15 +1939,18 @@ extern char ${func}(); ${func}();
  }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   {
 test -n "$verbose" && \
 echo "	defining ${trfunc}"
+echo "#define" ${trfunc} 1 >> confdefs.h
 DEFS="$DEFS -D${trfunc}=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}${trfunc}\${SEDdB}${trfunc}\${SEDdC}1\${SEDdD}
 \${SEDuA}${trfunc}\${SEDuB}${trfunc}\${SEDuC}1\${SEDuD}
 \${SEDeA}${trfunc}\${SEDeB}${trfunc}\${SEDeC}1\${SEDeD}
 "
 }
+
 
 fi
 rm -f conftest*
@@ -1786,21 +1962,25 @@ fi
 # for constant arguments.  Useless!
 echo checking for working alloca.h
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <alloca.h>
 int main() { exit(0); }
 int t() { char *p = alloca(2 * sizeof(int)); }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   
 {
 test -n "$verbose" && \
 echo "	defining HAVE_ALLOCA_H"
+echo "#define" HAVE_ALLOCA_H 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_ALLOCA_H=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_ALLOCA_H\${SEDdB}HAVE_ALLOCA_H\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_ALLOCA_H\${SEDuB}HAVE_ALLOCA_H\${SEDuC}1\${SEDuD}
 \${SEDeA}HAVE_ALLOCA_H\${SEDeB}HAVE_ALLOCA_H\${SEDeC}1\${SEDeD}
 "
 }
+
 
 fi
 rm -f conftest*
@@ -1821,6 +2001,7 @@ char *alloca ();
 "
 echo checking for alloca
 cat > conftest.c <<EOF
+#include "confdefs.h"
 $decl
 int main() { exit(0); }
 int t() { char *p = (char *) alloca(1); }
@@ -1828,8 +2009,10 @@ EOF
 if eval $compile; then
   :
 else
+  rm -rf conftest*
   alloca_missing=1
 cat > conftest.c <<EOF
+#include "confdefs.h"
 
 #if defined(CRAY) && ! defined(CRAY2)
 winnitude
@@ -1838,10 +2021,12 @@ lossage
 #endif
 
 EOF
-eval "$CPP \$DEFS conftest.c > conftest.out 2>&1"
+eval "$CPP conftest.c > conftest.out 2>&1"
 if egrep "winnitude" conftest.out >/dev/null 2>&1; then
+  rm -rf conftest*
   echo checking for _getb67
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 int main() { exit(0); }
 int t() { 
@@ -1857,9 +2042,11 @@ extern char _getb67(); _getb67();
  }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   {
 test -n "$verbose" && \
-echo "	defining CRAY_STACKSEG_END to be _getb67"
+echo "	defining" CRAY_STACKSEG_END to be _getb67
+echo "#define" CRAY_STACKSEG_END _getb67 >> confdefs.h
 DEFS="$DEFS -DCRAY_STACKSEG_END=_getb67"
 SEDDEFS="${SEDDEFS}\${SEDdA}CRAY_STACKSEG_END\${SEDdB}CRAY_STACKSEG_END\${SEDdC}_getb67\${SEDdD}
 \${SEDuA}CRAY_STACKSEG_END\${SEDuB}CRAY_STACKSEG_END\${SEDuC}_getb67\${SEDuD}
@@ -1867,9 +2054,12 @@ SEDDEFS="${SEDDEFS}\${SEDdA}CRAY_STACKSEG_END\${SEDdB}CRAY_STACKSEG_END\${SEDdC}
 "
 }
 
+
 else
+  rm -rf conftest*
   echo checking for GETB67
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 int main() { exit(0); }
 int t() { 
@@ -1885,9 +2075,11 @@ extern char GETB67(); GETB67();
  }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   {
 test -n "$verbose" && \
-echo "	defining CRAY_STACKSEG_END to be GETB67"
+echo "	defining" CRAY_STACKSEG_END to be GETB67
+echo "#define" CRAY_STACKSEG_END GETB67 >> confdefs.h
 DEFS="$DEFS -DCRAY_STACKSEG_END=GETB67"
 SEDDEFS="${SEDDEFS}\${SEDdA}CRAY_STACKSEG_END\${SEDdB}CRAY_STACKSEG_END\${SEDdC}GETB67\${SEDdD}
 \${SEDuA}CRAY_STACKSEG_END\${SEDuB}CRAY_STACKSEG_END\${SEDuC}GETB67\${SEDuD}
@@ -1895,9 +2087,12 @@ SEDDEFS="${SEDDEFS}\${SEDdA}CRAY_STACKSEG_END\${SEDdB}CRAY_STACKSEG_END\${SEDdC}
 "
 }
 
+
 else
+  rm -rf conftest*
   echo checking for getb67
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 int main() { exit(0); }
 int t() { 
@@ -1913,9 +2108,11 @@ extern char getb67(); getb67();
  }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   {
 test -n "$verbose" && \
-echo "	defining CRAY_STACKSEG_END to be getb67"
+echo "	defining" CRAY_STACKSEG_END to be getb67
+echo "#define" CRAY_STACKSEG_END getb67 >> confdefs.h
 DEFS="$DEFS -DCRAY_STACKSEG_END=getb67"
 SEDDEFS="${SEDDEFS}\${SEDdA}CRAY_STACKSEG_END\${SEDdB}CRAY_STACKSEG_END\${SEDdC}getb67\${SEDdD}
 \${SEDuA}CRAY_STACKSEG_END\${SEDuB}CRAY_STACKSEG_END\${SEDuC}getb67\${SEDuD}
@@ -1923,14 +2120,16 @@ SEDDEFS="${SEDDEFS}\${SEDdA}CRAY_STACKSEG_END\${SEDdB}CRAY_STACKSEG_END\${SEDdC}
 "
 }
 
-fi
-rm -f conftest*
 
 fi
 rm -f conftest*
 
 fi
 rm -f conftest*
+
+fi
+rm -f conftest*
+
 
 fi
 rm -f conftest*
@@ -1945,11 +2144,24 @@ if test -n "$alloca_missing"; then
   # contain a buggy version.  If you still want to use their alloca,
   # use ar to extract alloca.o from them instead of compiling alloca.c.
   ALLOCA=alloca.o
+  
+{
+test -n "$verbose" && \
+echo "	defining C_ALLOCA"
+echo "#define" C_ALLOCA 1 >> confdefs.h
+DEFS="$DEFS -DC_ALLOCA=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}C_ALLOCA\${SEDdB}C_ALLOCA\${SEDdC}1\${SEDdD}
+\${SEDuA}C_ALLOCA\${SEDuB}C_ALLOCA\${SEDuC}1\${SEDuD}
+\${SEDeA}C_ALLOCA\${SEDeB}C_ALLOCA\${SEDeC}1\${SEDeD}
+"
+}
+
 
   echo 'checking stack direction for C alloca'
   echo checking whether cross-compiling
 # If we cannot run a trivial program, we must be cross compiling.
 cat > conftest.c <<EOF
+#include "confdefs.h"
 main(){exit(0);}
 EOF
 eval $compile
@@ -1958,14 +2170,15 @@ if test -s conftest && (./conftest; exit) 2>/dev/null; then
 else
   cross_compiling=1
 fi
-rm -f conftest*
+rm -fr conftest*
 
 if test -n "$cross_compiling"
 then
   
 {
 test -n "$verbose" && \
-echo "	defining STACK_DIRECTION to be 0"
+echo "	defining" STACK_DIRECTION to be 0
+echo "#define" STACK_DIRECTION 0 >> confdefs.h
 DEFS="$DEFS -DSTACK_DIRECTION=0"
 SEDDEFS="${SEDDEFS}\${SEDdA}STACK_DIRECTION\${SEDdB}STACK_DIRECTION\${SEDdC}0\${SEDdD}
 \${SEDuA}STACK_DIRECTION\${SEDuB}STACK_DIRECTION\${SEDuC}0\${SEDuD}
@@ -1975,6 +2188,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}STACK_DIRECTION\${SEDdB}STACK_DIRECTION\${SEDdC}0\${
 
 else
 cat > conftest.c <<EOF
+#include "confdefs.h"
 find_stack_direction ()
 {
   static char *addr = 0;
@@ -1997,7 +2211,8 @@ if test -s conftest && (./conftest; exit) 2>/dev/null; then
   
 {
 test -n "$verbose" && \
-echo "	defining STACK_DIRECTION to be 1"
+echo "	defining" STACK_DIRECTION to be 1
+echo "#define" STACK_DIRECTION 1 >> confdefs.h
 DEFS="$DEFS -DSTACK_DIRECTION=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}STACK_DIRECTION\${SEDdB}STACK_DIRECTION\${SEDdC}1\${SEDdD}
 \${SEDuA}STACK_DIRECTION\${SEDuB}STACK_DIRECTION\${SEDuC}1\${SEDuD}
@@ -2005,11 +2220,13 @@ SEDDEFS="${SEDDEFS}\${SEDdA}STACK_DIRECTION\${SEDdB}STACK_DIRECTION\${SEDdC}1\${
 "
 }
 
+
 else
   
 {
 test -n "$verbose" && \
-echo "	defining STACK_DIRECTION to be -1"
+echo "	defining" STACK_DIRECTION to be -1
+echo "#define" STACK_DIRECTION -1 >> confdefs.h
 DEFS="$DEFS -DSTACK_DIRECTION=-1"
 SEDDEFS="${SEDDEFS}\${SEDdA}STACK_DIRECTION\${SEDdB}STACK_DIRECTION\${SEDdC}-1\${SEDdD}
 \${SEDuA}STACK_DIRECTION\${SEDuB}STACK_DIRECTION\${SEDuC}-1\${SEDuD}
@@ -2019,7 +2236,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}STACK_DIRECTION\${SEDdB}STACK_DIRECTION\${SEDdC}-1\$
 
 fi
 fi
-rm -f conftest*
+rm -fr conftest*
 fi
 
 
@@ -2029,12 +2246,15 @@ LIBS="${LIBS} -lm"
 have_lib=""
 echo checking for -lm
 cat > conftest.c <<EOF
+#include "confdefs.h"
 
 int main() { exit(0); }
 int t() { main(); }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   have_lib="1"
+
 fi
 rm -f conftest*
 LIBS="${LIBS_save}"
@@ -2043,6 +2263,7 @@ if test -n "${have_lib}"; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_LIBM"
+echo "#define" HAVE_LIBM 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LIBM=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LIBM\${SEDdB}HAVE_LIBM\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_LIBM\${SEDuB}HAVE_LIBM\${SEDuC}1\${SEDuD}
@@ -2058,6 +2279,7 @@ do
 trfunc=HAVE_`echo $func | tr '[a-z]' '[A-Z]'`
 echo checking for ${func}
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 int main() { exit(0); }
 int t() { 
@@ -2073,15 +2295,18 @@ extern char ${func}(); ${func}();
  }
 EOF
 if eval $compile; then
+  rm -rf conftest*
   {
 test -n "$verbose" && \
 echo "	defining ${trfunc}"
+echo "#define" ${trfunc} 1 >> confdefs.h
 DEFS="$DEFS -D${trfunc}=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}${trfunc}\${SEDdB}${trfunc}\${SEDdC}1\${SEDdD}
 \${SEDuA}${trfunc}\${SEDuB}${trfunc}\${SEDuC}1\${SEDuD}
 \${SEDeA}${trfunc}\${SEDeB}${trfunc}\${SEDeC}1\${SEDeD}
 "
 }
+
 
 fi
 rm -f conftest*
@@ -2091,6 +2316,7 @@ done
 ok_so_far=true
 echo checking for socket
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <ctype.h>
 int main() { exit(0); }
 int t() { 
@@ -2108,6 +2334,7 @@ EOF
 if eval $compile; then
   :
 else
+  rm -rf conftest*
   ok_so_far=
 fi
 rm -f conftest*
@@ -2115,12 +2342,14 @@ rm -f conftest*
 if test -n "$ok_so_far"; then
   echo checking for netinet/in.h
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <netinet/in.h>
 EOF
-err=`eval "($CPP \$DEFS conftest.c >/dev/null) 2>&1"`
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
 if test -z "$err"; then
   :
 else
+  rm -rf conftest*
   ok_so_far=
 fi
 rm -f conftest*
@@ -2129,12 +2358,14 @@ fi
 if test -n "$ok_so_far"; then
   echo checking for arpa/inet.h
 cat > conftest.c <<EOF
+#include "confdefs.h"
 #include <arpa/inet.h>
 EOF
-err=`eval "($CPP \$DEFS conftest.c >/dev/null) 2>&1"`
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
 if test -z "$err"; then
   :
 else
+  rm -rf conftest*
   ok_so_far=
 fi
 rm -f conftest*
@@ -2145,6 +2376,7 @@ if test -n "$ok_so_far"; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_INET_SOCKETS"
+echo "#define" HAVE_INET_SOCKETS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_INET_SOCKETS=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_INET_SOCKETS\${SEDdB}HAVE_INET_SOCKETS\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_INET_SOCKETS\${SEDuB}HAVE_INET_SOCKETS\${SEDuC}1\${SEDuD}
@@ -2169,6 +2401,7 @@ if [ -f /usr/lpp/X11/bin/smt.exp ]; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_AIX_SMT_EXP"
+echo "#define" HAVE_AIX_SMT_EXP 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_AIX_SMT_EXP=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_AIX_SMT_EXP\${SEDdB}HAVE_AIX_SMT_EXP\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_AIX_SMT_EXP\${SEDuB}HAVE_AIX_SMT_EXP\${SEDuC}1\${SEDuD}
@@ -2209,7 +2442,8 @@ fi
 
 {
 test -n "$verbose" && \
-echo "	defining config_machfile to be "\"${machfile}\"""
+echo "	defining" config_machfile to be "\"${machfile}\""
+echo "#define" config_machfile "\"${machfile}\"" >> confdefs.h
 DEFS="$DEFS -Dconfig_machfile="\"${machfile}\"""
 SEDDEFS="${SEDDEFS}\${SEDdA}config_machfile\${SEDdB}config_machfile\${SEDdC}"\"${machfile}\""\${SEDdD}
 \${SEDuA}config_machfile\${SEDuB}config_machfile\${SEDuC}"\"${machfile}\""\${SEDuD}
@@ -2220,7 +2454,8 @@ SEDDEFS="${SEDDEFS}\${SEDdA}config_machfile\${SEDdB}config_machfile\${SEDdC}"\"$
 
 {
 test -n "$verbose" && \
-echo "	defining config_opsysfile to be "\"${opsysfile}\"""
+echo "	defining" config_opsysfile to be "\"${opsysfile}\""
+echo "#define" config_opsysfile "\"${opsysfile}\"" >> confdefs.h
 DEFS="$DEFS -Dconfig_opsysfile="\"${opsysfile}\"""
 SEDDEFS="${SEDDEFS}\${SEDdA}config_opsysfile\${SEDdB}config_opsysfile\${SEDdC}"\"${opsysfile}\""\${SEDdD}
 \${SEDuA}config_opsysfile\${SEDuB}config_opsysfile\${SEDuC}"\"${opsysfile}\""\${SEDuD}
@@ -2231,7 +2466,8 @@ SEDDEFS="${SEDDEFS}\${SEDdA}config_opsysfile\${SEDdB}config_opsysfile\${SEDdC}"\
 
 {
 test -n "$verbose" && \
-echo "	defining LD_SWITCH_X_SITE to be ${LD_SWITCH_X_SITE}"
+echo "	defining" LD_SWITCH_X_SITE to be ${LD_SWITCH_X_SITE}
+echo "#define" LD_SWITCH_X_SITE ${LD_SWITCH_X_SITE} >> confdefs.h
 DEFS="$DEFS -DLD_SWITCH_X_SITE=${LD_SWITCH_X_SITE}"
 SEDDEFS="${SEDDEFS}\${SEDdA}LD_SWITCH_X_SITE\${SEDdB}LD_SWITCH_X_SITE\${SEDdC}${LD_SWITCH_X_SITE}\${SEDdD}
 \${SEDuA}LD_SWITCH_X_SITE\${SEDuB}LD_SWITCH_X_SITE\${SEDuC}${LD_SWITCH_X_SITE}\${SEDuD}
@@ -2242,7 +2478,8 @@ SEDDEFS="${SEDDEFS}\${SEDdA}LD_SWITCH_X_SITE\${SEDdB}LD_SWITCH_X_SITE\${SEDdC}${
 
 {
 test -n "$verbose" && \
-echo "	defining C_SWITCH_X_SITE to be ${C_SWITCH_X_SITE}"
+echo "	defining" C_SWITCH_X_SITE to be ${C_SWITCH_X_SITE}
+echo "#define" C_SWITCH_X_SITE ${C_SWITCH_X_SITE} >> confdefs.h
 DEFS="$DEFS -DC_SWITCH_X_SITE=${C_SWITCH_X_SITE}"
 SEDDEFS="${SEDDEFS}\${SEDdA}C_SWITCH_X_SITE\${SEDdB}C_SWITCH_X_SITE\${SEDdC}${C_SWITCH_X_SITE}\${SEDdD}
 \${SEDuA}C_SWITCH_X_SITE\${SEDuB}C_SWITCH_X_SITE\${SEDuC}${C_SWITCH_X_SITE}\${SEDuD}
@@ -2253,7 +2490,8 @@ SEDDEFS="${SEDDEFS}\${SEDdA}C_SWITCH_X_SITE\${SEDdB}C_SWITCH_X_SITE\${SEDdC}${C_
 
 {
 test -n "$verbose" && \
-echo "	defining UNEXEC_SRC to be ${UNEXEC_SRC}"
+echo "	defining" UNEXEC_SRC to be ${UNEXEC_SRC}
+echo "#define" UNEXEC_SRC ${UNEXEC_SRC} >> confdefs.h
 DEFS="$DEFS -DUNEXEC_SRC=${UNEXEC_SRC}"
 SEDDEFS="${SEDDEFS}\${SEDdA}UNEXEC_SRC\${SEDdB}UNEXEC_SRC\${SEDdC}${UNEXEC_SRC}\${SEDdD}
 \${SEDuA}UNEXEC_SRC\${SEDuB}UNEXEC_SRC\${SEDuC}${UNEXEC_SRC}\${SEDuD}
@@ -2268,6 +2506,7 @@ if [ "${HAVE_X_WINDOWS}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_X_WINDOWS"
+echo "#define" HAVE_X_WINDOWS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_X_WINDOWS=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_X_WINDOWS\${SEDdB}HAVE_X_WINDOWS\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_X_WINDOWS\${SEDuB}HAVE_X_WINDOWS\${SEDuC}1\${SEDuD}
@@ -2281,6 +2520,7 @@ if [ "${HAVE_X11}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_X11"
+echo "#define" HAVE_X11 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_X11=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_X11\${SEDdB}HAVE_X11\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_X11\${SEDuB}HAVE_X11\${SEDuC}1\${SEDuD}
@@ -2294,6 +2534,7 @@ if [ "${HAVE_XFREE386}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_XFREE386"
+echo "#define" HAVE_XFREE386 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_XFREE386=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_XFREE386\${SEDdB}HAVE_XFREE386\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_XFREE386\${SEDuB}HAVE_XFREE386\${SEDuC}1\${SEDuD}
@@ -2307,6 +2548,7 @@ if [ "${HAVE_X_MENU}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining HAVE_X_MENU"
+echo "#define" HAVE_X_MENU 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_X_MENU=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_X_MENU\${SEDdB}HAVE_X_MENU\${SEDdC}1\${SEDdD}
 \${SEDuA}HAVE_X_MENU\${SEDuB}HAVE_X_MENU\${SEDuC}1\${SEDuD}
@@ -2320,6 +2562,7 @@ if [ "${GNU_MALLOC}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining GNU_MALLOC"
+echo "#define" GNU_MALLOC 1 >> confdefs.h
 DEFS="$DEFS -DGNU_MALLOC=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}GNU_MALLOC\${SEDdB}GNU_MALLOC\${SEDdC}1\${SEDdD}
 \${SEDuA}GNU_MALLOC\${SEDuB}GNU_MALLOC\${SEDuC}1\${SEDuD}
@@ -2333,6 +2576,7 @@ if [ "${REL_ALLOC}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining REL_ALLOC"
+echo "#define" REL_ALLOC 1 >> confdefs.h
 DEFS="$DEFS -DREL_ALLOC=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}REL_ALLOC\${SEDdB}REL_ALLOC\${SEDdC}1\${SEDdD}
 \${SEDuA}REL_ALLOC\${SEDuB}REL_ALLOC\${SEDuC}1\${SEDuD}
@@ -2346,6 +2590,7 @@ if [ "${LISP_FLOAT_TYPE}" = "yes" ] ; then
 {
 test -n "$verbose" && \
 echo "	defining LISP_FLOAT_TYPE"
+echo "#define" LISP_FLOAT_TYPE 1 >> confdefs.h
 DEFS="$DEFS -DLISP_FLOAT_TYPE=1"
 SEDDEFS="${SEDDEFS}\${SEDdA}LISP_FLOAT_TYPE\${SEDdB}LISP_FLOAT_TYPE\${SEDdC}1\${SEDdD}
 \${SEDuA}LISP_FLOAT_TYPE\${SEDuB}LISP_FLOAT_TYPE\${SEDuC}1\${SEDuD}
@@ -2365,7 +2610,7 @@ fi
 
 if [ "$run_in_place" = "1" ]; then
    lispdir='${srcdir}/lisp'
-   locallisppath='${srcdir}/site-lisp:${datadir}/emacs/site-lisp'
+   locallisppath='${srcdir}/site-lisp'
    etcdir='${srcdir}/etc'
    lockdir='${srcdir}/lock'
    archlibdir='${srcdir}/lib-src'
@@ -2426,6 +2671,7 @@ test -n "${prefix}" &&
 test -n "${exec_prefix}" &&
   exec_prefix=`echo "${exec_prefix}" | sed 's,\([^/]\)/*$,\1,'`
 
+# Set default prefixes.
 if test -n "$prefix"; then
   test -z "$exec_prefix" && exec_prefix='${prefix}'
   prsub="s%^prefix\\([ 	]*\\)=\\([ 	]*\\).*$%prefix\\1=\\2$prefix%"
@@ -2434,12 +2680,14 @@ if test -n "$exec_prefix"; then
   prsub="$prsub
 s%^exec_prefix\\([ 	]*\\)=\\([ 	]*\\).*$%exec_prefix\\1=\\2$exec_prefix%"
 fi
+# Quote sed substitution magic chars in DEFS.
 cat >conftest.def <<EOF
 $DEFS
 EOF
 escape_ampersand_and_backslash='s%[&\\]%\\&%g'
 DEFS=`sed "$escape_ampersand_and_backslash" <conftest.def`
 rm -f conftest.def
+# Substitute for predefined variables.
 
 trap 'rm -f config.status; exit 1' 1 3 15
 echo creating config.status
@@ -2457,8 +2705,8 @@ for arg
 do
   case "\$arg" in
     -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
-    echo running /bin/sh $0 $configure_args
-    exec /bin/sh $0 $configure_args ;;
+    echo running \${CONFIG_SHELL-/bin/sh} $0 $configure_args
+    exec \${CONFIG_SHELL-/bin/sh} $0 $configure_args ;;
     *) echo "Usage: config.status --recheck" 2>&1; exit 1 ;;
   esac
 done
@@ -2498,27 +2746,31 @@ LIBS='$LIBS'
 prefix='$prefix'
 exec_prefix='$exec_prefix'
 prsub='$prsub'
+extrasub='$extrasub'
 EOF
 cat >> config.status <<\EOF
 
 top_srcdir=$srcdir
 
-# Allow make-time overrides of the generated file list.
-test -n "$gen_files" || gen_files="Makefile lib-src/Makefile oldXMenu/Makefile src/Makefile.in"
-
-for file in .. $gen_files; do if [ "x$file" != "x.." ]; then
+CONFIG_FILES=${CONFIG_FILES-"Makefile lib-src/Makefile oldXMenu/Makefile src/Makefile.in"}
+for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   srcdir=$top_srcdir
   # Remove last slash and all that follows it.  Not all systems have dirname.
   dir=`echo $file|sed 's%/[^/][^/]*$%%'`
   if test "$dir" != "$file"; then
     test "$top_srcdir" != . && srcdir=$top_srcdir/$dir
-    test ! -d $dir && mkdir $dir
+    test ! -d "$dir" && mkdir "$dir"
   fi
-  echo creating $file
-  rm -f $file
-  echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
+  echo creating "$file"
+  rm -f "$file"
+  comment_str="Generated automatically from `echo $file|sed 's|.*/||'`.in by configure."
+  case "$file" in
+    *.c | *.h | *.C | *.cc | *.m )  echo "/* $comment_str */" > "$file" ;;
+    * )          echo "# $comment_str"     > "$file" ;;
+  esac
   sed -e "
 $prsub
+$extrasub
 s%@CC@%$CC%g
 s%@LN_S@%$LN_S%g
 s%@CPP@%$CPP%g
@@ -2552,29 +2804,34 @@ s%@CFLAGS@%$CFLAGS%g
 s%@LIBS@%$LIBS%g
 s%@DEFS@%-DHAVE_CONFIG_H%" $top_srcdir/${file}.in >> $file
 fi; done
-test -n "$gen_config" || gen_config=src/config.h
-echo creating $gen_config
+
+CONFIG_HEADERS=${CONFIG_HEADERS-"src/config.h"}
+for file in .. ${CONFIG_HEADERS}; do if test "x$file" != x..; then
+echo creating $file
+
 # These sed commands are put into SEDDEFS when defining a macro.
 # They are broken into pieces to make the sed script easier to manage.
 # They are passed to sed as "A NAME B NAME C VALUE D", where NAME
 # is the cpp macro being defined and VALUE is the value it is being given.
 # Each defining turns into a single global substitution command.
+# Hopefully no one uses "!" as a variable value.
+# Other candidates for the sed separators, like , and @, do get used.
 #
 # SEDd sets the value in "#define NAME VALUE" lines.
-SEDdA='s@^\([ 	]*\)#\([ 	]*define[ 	][ 	]*\)'
-SEDdB='\([ 	][ 	]*\)[^ 	]*@\1#\2'
+SEDdA='s!^\([ 	]*\)#\([ 	]*define[ 	][ 	]*\)'
+SEDdB='\([ 	][ 	]*\)[^ 	]*!\1#\2'
 SEDdC='\3'
-SEDdD='@g'
+SEDdD='!g'
 # SEDu turns "#undef NAME" with trailing blanks into "#define NAME VALUE".
-SEDuA='s@^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
-SEDuB='\([ 	]\)@\1#\2define\3'
+SEDuA='s!^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
+SEDuB='\([ 	]\)!\1#\2define\3'
 SEDuC=' '
-SEDuD='\4@g'
+SEDuD='\4!g'
 # SEDe turns "#undef NAME" without trailing blanks into "#define NAME VALUE".
-SEDeA='s@^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
-SEDeB='$@\1#\2define\3'
+SEDeA='s!^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
+SEDeB='$!\1#\2define\3'
 SEDeC=' '
-SEDeD='@g'
+SEDeD='!g'
 rm -f conftest.sed
 EOF
 # Turn off quoting long enough to insert the sed commands.
@@ -2583,14 +2840,15 @@ cat > conftest.sh <<EOF
 $SEDDEFS
 EOF
 
-# Maximum number of lines to put in a single here document.
-maxshlines=9
-
 # Break up $SEDDEFS (now in conftest.sh) because some shells have a limit
 # on the size of here documents.
 
+# Maximum number of lines to put in a single here document.
+maxshlines=9
+
 while :
 do
+  # wc gives bogus results for an empty file on some systems.
   lines=`grep -c . conftest.sh`
   if test -z "$lines" || test "$lines" -eq 0; then break; fi
   rm -f conftest.s1 conftest.s2
@@ -2617,7 +2875,7 @@ CONFEOF
 rm -f conftest.h
 # Break up the sed commands because old seds have small limits.
 maxsedlines=20
-cp $top_srcdir/$gen_config.in conftest.h1
+cp $top_srcdir/$file.in conftest.h1
 while :
 do
   lines=`grep -c . conftest.sed`
@@ -2631,22 +2889,25 @@ do
   mv conftest.s2 conftest.sed
 done
 rm -f conftest.sed conftest.h
-echo "/* $gen_config.  Generated automatically by configure.  */" > conftest.h
+echo "/* $file.  Generated automatically by configure.  */" > conftest.h
 cat conftest.h1 >> conftest.h
 rm -f conftest.h1
-if cmp -s $gen_config conftest.h 2>/dev/null; then
+if cmp -s $file conftest.h 2>/dev/null; then
   # The file exists and we would not be changing it.
+  echo "$file is unchanged"
   rm -f conftest.h
 else
-  rm -f $gen_config
-  mv conftest.h $gen_config
+  rm -f $file
+  mv conftest.h $file
 fi
+fi; done
+
 
 
 exit 0
 EOF
 chmod +x config.status
-test -n "$no_create" || ./config.status
+${CONFIG_SHELL-/bin/sh} config.status
  
 # Build src/Makefile from ${srcdir}/src/Makefile.in.  This must be done
 # after src/config.h is built, since we rely on that file.  Only do the
@@ -2664,6 +2925,7 @@ topsrcdir=${srcdir}
 makefile_command='echo "creating src/Makefile";
   topsrcdir='"${topsrcdir}"';
 ( cd ./src;
+  rm -f junk.c;
   sed -e '\''s/^# Generated.*//'\'' -e '\''s%/\*\*/#.*%%'\'' < Makefile.in > junk.c;
   eval `echo ${CPP} -I. -I${topsrcdir}/src ${CPPFLAGS} junk.c \>junk.cpp`;
   < junk.cpp							'\

@@ -332,7 +332,11 @@ and the greater of them is not at the start of a line."
 		(setq done (+ 40 done)))
 	      (while (re-search-forward "[\n\C-m]" nil t 1)
 		(setq done (+ 1 done)))
-	      done)
+	      (goto-char (point-max))
+	      (if (and (/= start end)
+		       (not (bolp)))
+		  (1+ done)
+		done))
 	  (- (buffer-size) (forward-line (buffer-size))))))))
 
 (defun what-cursor-position ()
@@ -383,10 +387,9 @@ Other major modes are defined by comparison with this one."
   "Evaluate EXPRESSION and print value in minibuffer.
 Value is also consed on to front of the variable `values'."
   (interactive
-   (let* ((minibuffer-history-sexp-flag t))
-     (list (read-from-minibuffer "Eval: "
-				 nil read-expression-map t
-				 'read-expression-history))))
+   (list (read-from-minibuffer "Eval: "
+			       nil read-expression-map t
+			       'read-expression-history)))
   (setq values (cons (eval expression) values))
   (prin1 (car values) t))
 
@@ -394,11 +397,10 @@ Value is also consed on to front of the variable `values'."
   "Prompting with PROMPT, let user edit COMMAND and eval result.
 COMMAND is a Lisp expression.  Let user edit that expression in
 the minibuffer, then read and evaluate the result."
-  (let* ((minibuffer-history-sexp-flag t)
-	 (command (read-from-minibuffer prompt
-					(prin1-to-string command)
-					read-expression-map t
-					'(command-history . 1))))
+  (let ((command (read-from-minibuffer prompt
+				       (prin1-to-string command)
+				       read-expression-map t
+				       '(command-history . 1))))
     (eval command)))
 
 (defun repeat-complex-command (arg)
@@ -422,18 +424,15 @@ to get different commands to edit and resubmit."
 		 "Redo: " (prin1-to-string elt) read-expression-map t
 		 (cons 'command-history arg)))
 
-;;;  read-from-minibuffer handles the adding of what is read to the history
-;;;  variable.
-;;;
-;;;	  ;; If command was added to command-history as a string,
-;;;	  ;; get rid of that.  We want only evallable expressions there.
-;;;	  (if (stringp (car command-history))
-;;;	      (setq command-history (cdr command-history)))
-;;;
-;;;	  ;; If command to be redone does not match front of history,
-;;;	  ;; add it to the history.
-;;;	  (or (equal newcmd (car command-history))
-;;;	      (setq command-history (cons newcmd command-history)))
+	  ;; If command was added to command-history as a string,
+	  ;; get rid of that.  We want only evallable expressions there.
+	  (if (stringp (car command-history))
+	      (setq command-history (cdr command-history)))
+
+	  ;; If command to be redone does not match front of history,
+	  ;; add it to the history.
+	  (or (equal newcmd (car command-history))
+	      (setq command-history (cons newcmd command-history)))
 	  (eval newcmd))
       (ding))))
 

@@ -422,10 +422,10 @@
 \entry {\code {latex-mode}}{156}
 \entry {\code {line-number-mode}}{72}
 \entry {\code {lisp-complete-symbol}}{177}
+\entry {\code {lisp-eval-defun}}{208}
 \entry {\code {lisp-indent-line}}{167}
 \entry {\code {lisp-interaction-mode}}{208}
 \entry {\code {lisp-mode}}{208}
-\entry {\code {lisp-send-defun}}{208}
 \entry {\code {list-abbrevs}}{213}
 \entry {\code {list-buffers}}{120}
 \entry {\code {list-calendar-holidays}}{257}
@@ -569,8 +569,8 @@
 \entry {\code {rename-buffer}}{121}
 \entry {\code {rename-file}}{117}
 \entry {\code {repeat-complex-command}}{41}
-\entry {\code {replace-regexp}}{84}
-\entry {\code {replace-string}}{84}
+\entry {\code {replace-regexp}}{85}
+\entry {\code {replace-string}}{85}
 \entry {\code {reposition-window}}{70}
 \entry {\code {revert-buffer}}{103}
 \entry {\code {revert-buffer \r {(Dired)}}}{250}

@@ -1,3 +1,252 @@
+Sat Nov 27 04:41:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.22 released.
+
+Fri Nov 26 05:38:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (deactivate_process) [SVR4_PTYS]:
+	If subtty is not nil, close it.
+
+	* keyboard.c (kbd_buffer_get_event): For delete-window-event,
+	do count iconified frames.
+
+	* xfns.c (x_window): Call XSetWMProtocols.
+
+	* keyboard.c (kbd_buffer_get_event): If user destroys the last frame,
+	exit before calling Fdelete_frame.
+
+	* s/irix5-0.h (SYSTEM_TYPE): Make it "irix".
+
+	* sysdep.c (closedir): Test BROKEN_CLOSEDIR, not INTERRUPTIBLE_CLOSE.
+
+Thu Nov 25 00:39:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_avail_input): Undo Nov 18 change.
+
+	* lread.c (readevalloop): Get error if buffer being eval'd is killed.
+
+	* s/irix3-3.h (SETPGRP_RELEASES_CTTY): Defined.
+	* s/irix5-0.h (IRIX5, SETPGRP_RELEASES_CTTY): Defined.
+	* process.c (create_process): Do setpgrp for USG regardless of IRIX.
+	(process_send_signal) [IRIX5]: For SIGTSTP, use VSUSP, not VSWTCH.
+	* callproc.c (child_setup): Test SETPGRP_RELEASES_CTTY, not IRIX.
+	(init_callproc): Fix previous change.
+
+	* s/sunos4-1-3.h [!SYSTEM_MALLOC] (MEMMOVE_MISSING): Defined.
+
+	* keyboard.c (quit_throw_to_read_char):
+	Look at internal_last_event_frame only if MULTI_FRAME.
+
+	* m/ibmrt.h (HAVE_FTIME): Deleted (autoconf does it).
+
+	* m/hp9000s800.h (bcopy, bzero, bcmp): If HAVE_BCOPY, don't #define.
+
+	* s/sco4.h (LIBS_SYSTEM): Always define this one way or another.
+	Include -lPW in it.
+
+	* intervals.c (merge_properties_sticky): Declared.
+
+	* regex.c (MAX, MIN): Undef before defining.
+
+	* frame.c (Fhandle_switch_frame, Fredirect_frame_focus): Declared.
+
+	* m/delta.h (HAVE_RANDOM, HAVE_XSCREENNUMBEROFSCREEN, BROKEN_FIONREAD):
+	Add definitions.
+	(LIB_X11_LIB, LIBX11_SYSTEM): Add override definitions.
+	(USG_SHARED_LIBRARIES): Add #undef.
+
+	* sysdep.c (init_baud_rate): Avoid referring to sg uninitialized.
+
+Wed Nov 24 03:01:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* emacs.c (main) [AIX]: Don't handle signals 23, SIGAIO, SIGPTY.
+
+	* indent.c (Fmove_to_column): Increments for control characters
+	were too low by 1.
+
+	* process.c (Fdelete_process): Fix paren error.
+
+	* sysdep.c (closedir): Pass on the value from sys_closedir.
+	Do use this definition, if INTERRUPTIBLE_CLOSE.
+
+Tue Nov 23 00:09:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/sco4.h (LIBX11_SYSTEM): Override the definition.
+
+	* xterm.c (XTread_socket): Really handle Xatom_wm_window_moved events.
+
+	* s/irix5-0.h (SIGNALS_VIA_CHARACTERS): Defined.
+
+	* fileio.c (Finsert_file_contents): Don't call signal_after_change
+	if we did not call prepare_to_modify_buffer.
+
+	* editfns.c (make_buffer_string): Don't copy intervals
+	if we don't really have any properties.
+
+	* lisp.h: Declare Fnext_single_property_change
+	and Fnext_property_change.
+
+	* s/sco4.h (HAVE_GETTIMEOFDAY): Define only if HAVE_SOCKETS.
+	Fix up conditionals changed recently.
+
+	* editfns.c (Finsert_buffer_substring):
+	Pass graft_intervals_into_buffer the current buffer.
+
+	* intervals.c (graft_intervals_into_buffer): New arg LENGTH.
+	If source has no intervals, set dest properties to nil.
+	* editfns.c (Finsert_buffer_substring): Pass new arg.
+	* insdel.c (insert_from_string): Likewise.
+
+	* callproc.c (init_callproc): Maybe add ../lib-src to exec-path
+	and maybe store it in exec-directory.
+	Mabe put ../etc into data-directory.
+	(init_callproc_1): Part of init_callproc is split out.
+	* emacs.c (main): Call init_callproc and init_callproc_1.
+
+Mon Nov 22 10:01:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* editfns.c (Fsubst_char_in_region): Call modify_region only if
+	a change has to be made.  Call signal_after_change just once, at end.
+
+	* lread.c (OBARRAY_SIZE): Increase from 509.
+
+	* xrdb.c (search_magic_path): Fix colon-colon case.
+
+	* textprop.c (Ftext_property_not_all):
+	For trivial yes, return start, not Qt.
+
+	* xselect.c (Fx_disown_selection_internal): When making the fake
+	event for x_handle_selection_clear, use SELECTION_EVENT_... macros.
+
+Sun Nov 21 14:06:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/sunos4-1-3.h (HAVE_TERMIOS, BSD_TERMIOS): Deleted.
+
+	* systty.h (EMACS_GET_TTY_PGRP, EMACS_SET_TTY_PGRP):
+	If HAVE_TERMIOS and BSD_TERMIOS, don't use tc[sg]etpgrp.
+
+	* xfns.c (x_set_frame_parameters): Call check_frame_size
+	before Fset_frame_size and Fset_frame_position.
+
+	* termhooks.h (delete_window_event): New event kind.
+	* xterm.c (XTread_socket): Generate delete_window_event's.
+	* keyboard.c (kbd_buffer_get_event): Handle delete_window_event's.
+
+	* s/sco4.h [HAVE_SOCKETS] (HAVE_XSCREENNUMBEROFSCREEN): Defined.
+
+	* keymap.c: Doc fix.
+
+	* window.c (window_loop, case DELETE_BUFFER_WINDOWS):
+	Select a new buffer only if w is selected window.
+
+	* hftctl.c: Include config.h.  Include sys/signal.h before config.h.
+	(sav_alrm): Use SIGTYPE.
+	(FUNC): Typedef deleted.
+
+	* Makefile.in.in (hftctl.o): New rule.
+
+	* process.c (wait_reading_process_input):
+	Use -1 to mean wait_channel is empty.
+	Start process loop with descriptor 0 if keyboard_descriptor is not 0.
+	(make_process): Initialize descriptors to -1.
+	(Fdelete_process): -1 means empty, in infd.
+	(deactivate_process): Likewise.
+	(process_send_signal): Likewise.
+	(kill_buffer_processes): Likewise.
+	(sigchld_handler): Likewise.
+	(status_notify): Likewise.
+	(close_process_descs): Likewise.
+	(create_process): Likewise.
+	(Fopen_network_stream): Likewise.
+	(send_process): Likewise.
+	(Fprocess_send_eof): Likewise.  Use XINT when closing outfd.
+	(Fset_process_filter): Use XINT to get infd value.
+	(wait_reading_process_input): Likewise.
+
+	* process.c (wait_reading_process_input): When bypassing select,
+	clear Available.
+
+	* sysdep.c (getwd): If getcwd returns 0, we return 0.
+	(getwd for VMS): Likewise.
+
+Sat Nov 20 00:52:53 1993  Paul Reilly  (pmr@legacy.pajato.com)
+
+	*  s/dgux.h (PTY_ITERATION, PTY_NAME_SPRINTF, PTY_TTY_NAME_SPRINTF): 
+	Defined (copied from usg5-4.h).
+	(FIRST_PTY_LETTER): Deleted.
+
+Sat Nov 20 00:16:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* frame.c (Fmake_frame_visible): Doc fix.
+
+	* textprop.c (Ftext_property_not_all): Swap t and nil values in
+	the case where there are no intervals.
+	(Fprevious_single_property_change, Fprevious_property_change)
+	Extra arg LIMIT.  Return value was off by 1.
+	(Fnext_single_property_change, Fnext_property_change): 
+	Extra arg LIMIT.
+	(Fnext_single_property_change): Require at least 2 args.
+	* indent.c (compute_motion):
+	Pass new arg to Fnext_single_property_change.
+	* xfaces.c (compute_char_face): Accept new arg LIMIT.
+	Pass Fnext_single_property_change its new arg LIMIT.
+	* xdisp.c (display_text_line): Pass new arg to compute_char_face
+	and to Fnext_single_property_change.
+	* dispnew.c (direct_output_for_insert):
+	Pass new arg to compute_char_face.
+
+	* keyboard.c (follow_key): When downcasing, downcase just the
+	basic part of the character, and preserve the modifier bits.
+
+Fri Nov 19 22:49:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_key_sequence): If we get a quit, and current buffer
+	has changed, replay it to get proper keymap.
+	(quit_throw_to_read_char): Switch frames to the frame the quit was in.
+
+Fri Nov 19 20:42:06 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* buffer.c (Frename_buffer): When the current buffer is already
+	named NAME, don't short-circuit and just return unless UNIQUE is
+	nil.  This makes passing UNIQUE=t equivalent to (rename-buffer
+	(generate-new-buffer-name NAME)).  This is useful way to rename
+	the buffer automatically so you can create another with the
+	original name.
+
+Fri Nov 19 12:43:47 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (quit_throw_to_read_char): Select the frame
+	which the quit char was typed in.
+
+	* s/linux.h (HAVE_UNISTD_H): No need to define here.
+
+	* buffer.c (Flist_buffers): Always return a value.
+
+	* minibuf.c (read_minibuf): History list always gets strings,
+	not Lisp objects made by read.
+
+Thu Nov 18 01:04:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_avail_input): Don't set nread to -1
+	if we loop around in the loop that calls read.
+
+	* sysdep.c (read_input_waiting): read_socket_hook
+	delivers events, not characters.  Make buf smaller
+	in the case where we actually call read itself.
+
+	* ralloc.c (r_alloc_init): Explicitly use real_morecore
+	to allocate the entire incomplete page.
+
+	* frame.c (Fmake_frame_visible): Use FRAME_SAMPLE_VISIBILITY.
+
+	* s/dgux.h (FIRST_PTY_LETTER): Defined.
+
+Wed Nov 17 06:01:02 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keymap.c (Fkey_binding): Doc fix.
+
+	* cmds.c (keys_of_cmds): Make 0377 self-inserting.
+
 Tue Nov 16 00:34:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.21 released.

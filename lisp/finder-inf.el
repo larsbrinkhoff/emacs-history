@@ -9,6 +9,9 @@
     ("abbrev.el"
         "abbrev mode commands for Emacs"
         (abbrev))
+    ("abbrevlist.el"
+        "list one abbrev table alphabetically ordered."
+        (abbrev))
     ("ada.el"
         "Ada editing support package in GNUlisp.  v1.0"
         (languages))
@@ -17,7 +20,7 @@
         (maint))
     ("advice.el"
         "advice mechanism for Emacs Lisp functions"
-        (advice  function hooks))
+        (extensions  lisp  tools))
     ("allout.el"
         nil
         nil)
@@ -45,6 +48,9 @@
     ("autoload.el"
         "maintain autoloads in loaddefs.el."
         (maint))
+    ("avoid.el"
+        nil
+        (mouse))
     ("awk-mode.el"
         "AWK code editing commands for Emacs"
         (unix  languages))
@@ -93,6 +99,9 @@
     ("case-table.el"
         "code to extend the character set and support case tables."
         (i18n))
+    ("cdl.el"
+        nil
+        (data))
     ("chistory.el"
         "list command history"
         nil)
@@ -143,7 +152,7 @@
         (c))
     ("cplus-md1.el"
         "major mode for editing C++ (and C) code"
-        (c++ c editing major-mode))
+        (languages))
     ("cust-print.el"
         "handles print-level and print-circle."
         (extensions))
@@ -311,7 +320,7 @@
         (help))
     ("hexl.el"
         "edit a file in a hex dump format using the hexl filter."
-        (non-text))
+        (data))
     ("hideif.el"
         "hides selected code within ifdef."
         (c))
@@ -345,6 +354,9 @@
     ("isearch.el"
         "incremental search minor mode."
         nil)
+    ("iso-acc.el"
+        nil
+        (i18n))
     ("iso-ascii.el"
         "set up char tables for ISO 8859/1 on ASCII terminals."
         (i18n))
@@ -356,6 +368,9 @@
         (i18n))
     ("iso-syntax.el"
         "set up case-conversion and syntax tables for ISO 8859/1"
+        (i18n))
+    ("iso-transl.el"
+        "keyboard input definitions for ISO 8859/1."
         (i18n))
     ("ispell.el"
         "this is the GNU EMACS interface to GNU ISPELL version 4."
@@ -449,7 +464,7 @@
         (games))
     ("menu-bar.el"
         "define a default menu bar."
-        (internals))
+        (internal))
     ("metamail.el"
         "Metamail interface for GNU Emacs"
         (mail  news  mime  multimedia))
@@ -477,6 +492,9 @@
     ("modula2.el"
         "Modula-2 editing support package"
         (languages))
+    ("mouse-sel.el"
+        "Multi-click selection support for Emacs 19"
+        (mouse))
     ("mouse.el"
         "window system-independent mouse support."
         (hardware))
@@ -505,7 +523,7 @@
         "outline mode commands for Emacs"
         nil)
     ("page-ext.el"
-        "page handling commands"
+        "extended page handling commands"
         nil)
     ("page.el"
         "page motion commands for emacs."
@@ -516,6 +534,9 @@
     ("paren.el"
         "highlight matching paren."
         (languages  faces))
+    ("pascal.el"
+        nil
+        (languages))
     ("paths.el"
         "define pathnames for use by various Emacs commands."
         (internal))
@@ -524,6 +545,9 @@
         (languages))
     ("picture.el"
         "\"Picture mode\" -- editing using quarter-plane screen model."
+        nil)
+    ("pp.el"
+        nil
         nil)
     ("profile.el"
         "generate run time measurements of Emacs Lisp functions"
@@ -540,6 +564,9 @@
     ("refer.el"
         "look up references in bibliography files."
         (bib))
+    ("regi.el"
+        "REGular expression Interpreting engine"
+        (     extensions  matching))
     ("register.el"
         "register commands for Emacs."
         (internal))
@@ -548,7 +575,7 @@
         nil)
     ("reporter.el"
         "customizable bug reporting of lisp programs"
-        (bug reports lisp))
+        (tools  mail  lisp  extensions))
     ("reposition.el"
         "center a Lisp function or comment on the screen"
         nil)
@@ -597,9 +624,6 @@
     ("saveplace.el"
         "automatically save place in files."
         (bookmarks  placeholders))
-    ("sc-elec.el"
-        nil
-        nil)
     ("sc.el"
         nil
         nil)
@@ -624,6 +648,9 @@
     ("sgml-mode.el"
         "SGML-editing mode"
         (wp))
+    ("shadowfile.el"
+        nil
+        nil)
     ("shell.el"
         "specialized comint.el for running the shell."
         (processes))
@@ -657,6 +684,15 @@
     ("subr.el"
         "basic lisp subroutines for Emacs"
         nil)
+    ("sun-curs.el"
+        "cursor definitions for Sun windows"
+        (hardware))
+    ("sun-fns.el"
+        "subroutines of Mouse handling for Sun windows"
+        (hardware))
+    ("supercite.el"
+        "minor mode for citing mail and news replies"
+        (mail  news))
     ("swedish.el"
         "miscellaneous functions for dealing with Swedish."
         (i18n))
@@ -693,6 +729,9 @@
     ("text-mode.el"
         "text mode, and its idiosyncratic commands."
         nil)
+    ("thingatpt.el"
+        "Get the `thing' at point"
+        (extensions  matching  mouse))
     ("time-stamp.el"
         "Maintain last change time stamps in files edited by Emacs"
         (tools))
@@ -707,22 +746,22 @@
         nil)
     ("tpu-doc.el"
         "Documentation for TPU-edt"
-        (tpu-edt))
+        (emulations))
     ("tpu-edt.el"
         "Emacs emulating TPU emulating EDT"
-        (edt emulations))
+        (emulations))
     ("tpu-extras.el"
         "Scroll margins and free cursor mode for TPU-edt"
-        (tpu-edt))
+        (emulations))
     ("tpu-mapper.el"
         nil
-        (tpu-edt))
+        (emulations))
     ("tq.el"
         "utility to maintain a transaction queue"
         (extensions))
     ("trace.el"
         "tracing facility for Emacs Lisp functions"
-        (tracing  debugging))
+        (tools  lisp))
     ("two-column.el"
         "minor mode for editing of two-column text"
         nil)
@@ -779,7 +818,7 @@
         (vms))
     ("vt-control.el"
         "Common VTxxx control functions"
-        (vt100))
+        (terminals))
     ("vt100-led.el"
         "functions for LED control on VT-100 terminals & clones."
         (hardware))
@@ -794,7 +833,7 @@
         nil)
     ("xscheme.el"
         "run Scheme under Emacs"
-        (languages lisp))
+        (languages  lisp))
     ("yow.el"
         "quote random zippyisms"
         (games))
