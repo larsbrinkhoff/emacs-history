@@ -649,7 +649,7 @@ all of which are called before Emacs is actually killed.")
   stop_vms_input ();
  #endif  */
 
-  shut_down_emacs (0, 0);
+  shut_down_emacs (0, 0, STRINGP (arg) ? arg : Qnil);
 
   exit ((XTYPE (arg) == Lisp_Int) ? XINT (arg)
 #ifdef VMS
@@ -681,9 +681,14 @@ shut_down_emacs (sig, no_x, stuff)
   /* If we are controlling the terminal, reset terminal modes */
 #ifdef EMACS_HAVE_TTY_PGRP
   {
+#ifdef USG
+    int pgrp = getpgrp ();
+#else
+    int pgrp = getpgrp (0);
+#endif
     int tpgrp;
     if (EMACS_GET_TTY_PGRP (0, &tpgrp) != -1
-	&& tpgrp == getpgrp (0))
+	&& tpgrp == pgrp)
       {
 	fflush (stdout);
 	reset_sys_modes ();

@@ -316,10 +316,16 @@ get_user_db (display)
 
 #ifdef XlibSpecificationRelease
 #if XlibSpecificationRelease >= 5
-  /* Get the screen-specific resources too.  */
-  xdefs = XScreenResourceString (DefaultScreenOfDisplay (display));
-  if (xdefs != NULL)
-    XrmMergeDatabases (XrmGetStringDatabase (xdefs), &db);
+  /* Some NCD xterms seem to hang on InternAtom.  Problem has been
+     verified on machines with a VendorRelease value of 2000. */
+  if (strcmp(ServerVendor(display), "Network Computing Devices Inc.") ||
+      VendorRelease(display) > 2000)
+    {
+      /* Get the screen-specific resources too.  */
+      xdefs = XScreenResourceString (DefaultScreenOfDisplay (display));
+      if (xdefs != NULL)
+	XrmMergeDatabases (XrmGetStringDatabase (xdefs), &db);
+    }
 #endif
 #endif
 

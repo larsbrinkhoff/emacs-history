@@ -1,3 +1,11 @@
+Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* version 19.15 released.
+
+Fri Jun 18 21:51:49 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile (distclean): It's rm, not rf.
+
 Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.14 released.

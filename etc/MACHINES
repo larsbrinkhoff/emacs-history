@@ -55,6 +55,8 @@ Amdahl UTS (580-amdahl-sysv)
   even worth trying to use it.  Success was obtained with the
   uts native C compiler on uts version 5.2.5.
 
+Amiga 
+
 Apollo running Domain (m68k-apollo-bsd)
 
   18.52 works, to some extent.

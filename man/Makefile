@@ -67,7 +67,7 @@ mostlyclean:
 clean: mostlyclean
 	rm -f *.dvi
 distclean: clean
-	rf -f texindex
+	rm -f texindex
 realclean: distclean
 	rm -f *.aux *.cps *.fns *.kys *.pgs *.vrs
 	rm -f ../info/emacs* ../info/cl* ../info/forms* ../info/vip*

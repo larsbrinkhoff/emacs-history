@@ -1,3 +1,67 @@
+Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* version 19.15 released.
+
+Sat Jun 19 16:24:58 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* puresize.h (PURESIZE): Up this to 205000 for MULTI_FRAME Emaces,
+	and 190000 for non-MULTI_FRAME Emaces.
+
+	* xfaces.c (recompute_basic_faces): This shouldn't be declared static.
+
+	* xrdb.c (get_user_db): Some NCD xterms seem to hang in
+	XScreenResourceString.  Consult the ServerVendor and VendorRelease
+	variables to see if we're talking to such a server.
+
+	* xterm.c (XTread_socket): Never treat a modifier key as a
+	non_ascii_keystroke.
+
+        * emacs.c (Fkill_emacs): Pass third argument to shut_down_emacs.
+	* lisp.h (shut_down_emacs): Doc fix.
+
+Fri Jun 18 11:05:46 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* frame.c (Fmake_frame_visible): Make this interactively callable;
+	frames can accept input while iconified, so it makes sense to put
+	this on a key.
+
+	* xfaces.c: Add forward declaration for recompute_basic_faces.
+
+	* fileio.c (Fset_visited_file_modtime): We're only passing two
+	arguments to the file name handler; use call2, not call3.
+
+        Changes for Irix 4.0, tested this time:
+	* s/irix4-0.h: Get rid of our fake definitions for setpgrp and
+	getpgrp.
+	* callproc.c (Fcall_process): Go ahead and use the USG calling
+	convention for setpgrp.
+	* ymakefile (pre-crt0.o): Add rule for this.  Perhaps it will help
+	separate-source-directory compilation.
+	* emacs.c (shut_down_emacs): Some USG systems #define
+	EMACS_HAVE_TTY_PGRP; call getpgrp as appropriate for such systems.
+	* sysdep.c (sys_suspend): Call getpgrp as appropriate for USG and
+	non-USG.
+
+	* sysdep.c (rename): Make arguments const.  autoconf #defines
+	const away on systems which don't have it; any system with
+	prototypes will declare the arguments const (the ones to which I
+	have access do); and systems without prototypes won't notice.
+
+	* process.c [IRIX] (create_process): Don't put child in process
+	group zero before opening the tty; Irix is like USG in this
+	regard.
+
+	* s/isc2-2.h, s/linux.h, s/usg5-4.h, m/alliant-2800.h, m/convex.h,
+	m/pfa50.h: Remove #definition of HAVE_CLOSEDIR; autoconf figures
+	this out.
+
+	* xfns.c: Always #include "bitmaps/gray.xbm"; the bitmaps seem to
+	be missing on some systems, and there's no point in having
+	configure check; it should work fine to always use our copy.
+
+	* minibuf.c (Fread_minibuffer): Add missing semicolon after
+	CHECK_STRING macro.
+
 Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.14 released.

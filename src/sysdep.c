@@ -571,7 +571,14 @@ sys_suspend ()
 #else
 #ifdef SIGTSTP
 
-  EMACS_KILLPG (getpgrp (0), SIGTSTP);
+  {
+#ifdef USG
+    int pgrp = getpgrp ();
+#else
+    int pgrp = getpgrp (0);
+#endif
+    EMACS_KILLPG (pgrp, SIGTSTP);
+  }
 
 #else /* No SIGTSTP */
 #ifdef USG_JOBCTRL /* If you don't know what this is don't mess with it */
@@ -2687,8 +2694,8 @@ getwd (pathname)
 #ifndef HAVE_RENAME
 
 rename (from, to)
-     char *from;
-     char *to;
+     const char *from;
+     const char *to;
 {
   if (access (from, 0) == 0)
     {

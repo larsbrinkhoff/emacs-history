@@ -1,3 +1,14 @@
+Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* version 19.15 released.
+
+Fri Jun 18 12:31:02 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in (ALL_CFLAGS): Always #define EMACS_BITMAP_FILES.
+	This should make it work under any circumstances.
+
+	* Makefile.in (mostlyclean): Use rm -f.
+
 Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.14 released.

@@ -1003,7 +1003,10 @@ fi
 
 echo checking how to run the C preprocessor
 if test -z "$CPP"; then
-  CPP='${CC-cc} -E'
+  # This must be in double quotes, not single quotes, because CPP may get
+  # substituted into the Makefile and ``${CC-cc}'' will simply confuse
+  # make.  It must be expanded now.
+  CPP="${CC-cc} -E"
   cat > conftest.c <<EOF
 #include <stdio.h>
 Syntax Error
@@ -1016,6 +1019,7 @@ else
 fi
 rm -f conftest*
 fi
+test ".${verbose}" != "." && echo "	setting CPP to $CPP"
 
 # Make sure to not get the incompatible SysV /etc/install and
 # /usr/sbin/install, which might be in PATH before a BSD-like install,
@@ -1746,45 +1750,6 @@ case ${HAVE_X11} in
   ;;
 esac
 
-### Check for XFree386.  It needs special hacks.
-lib_havexbsd=no
-
-LIBS_save="${LIBS}"
-LIBS="${LIBS} -lXbsd "
-have_lib=""
-echo checking for -lXbsd 
-cat > conftest.c <<EOF
-
-int main() { exit(0); }
-int t() { main(); }
-EOF
-if eval $compile; then
-  have_lib="1"
-fi
-rm -f conftest*
-LIBS="${LIBS_save}"
-if test -n "${have_lib}"; then
-   :; have_libxbsd=yes 
-else
-   :; have_libxbsd=no 
-fi
-
-
-if [ -n "${x_libraries}" ] && [ -f ${x_libraries}/libXbsd.a ]; then
-  have_libxbsd=yes
-fi
-
-case ${window_system} in
-  x11 )
-    if [ -d /usr/X386/include ] && [ "${have_libxbsd}" = "yes" ]; then
-      HAVE_XFREE386=yes
-      if [ "${C_SWITCH_X_SITE}" = "" ]; then
-	C_SWITCH_X_SITE="-I/usr/X386/include"
-      fi
-    fi
-  ;;
-esac
-
 #### Extract some information from the operating system and machine files.
 
 echo "Examining the machine- and system-dependent files to find out"
@@ -1940,6 +1905,16 @@ done
 CFLAGS="$CFLAGS_save"
 LIBS="$LIBS_save"
 
+case "${window_system}:${LIBS}" in
+  x11:*-lXbsd* )
+    if [ -d /usr/X386/include ]; then
+      HAVE_XFREE386=yes
+      if [ "${C_SWITCH_X_SITE}" = "" ]; then
+	C_SWITCH_X_SITE="-I/usr/X386/include"
+      fi
+    fi
+  ;;
+esac
 
 #### Find out which version of Emacs this is.
 version=`grep 'defconst[	 ]*emacs-version' ${srcdir}/lisp/version.el \

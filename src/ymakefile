@@ -653,6 +653,7 @@ casefiddle.o : casefiddle.c syntax.h commands.h buffer.h $(config_h)
 casetab.o : casetab.c buffer.h $(config_h)
 cm.o : cm.c cm.h termhooks.h $(config_h)
 cmds.o : cmds.c syntax.h buffer.h commands.h $(config_h) 
+pre-crt0.o : pre-crt0.c
 crt0.o : crt0.c $(config_h)
 	$(CC) -c $(ALL_CFLAGS) C_SWITCH_ASM ${srcdir}/crt0.c
 dired.o : dired.c commands.h buffer.h $(config_h) regex.h

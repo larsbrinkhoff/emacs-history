@@ -1,4 +1,4 @@
-GNU Emacs NEWS -- history of user-visible changes.  1 Jun 1993
+GNU Emacs NEWS -- history of user-visible changes.  18 Jun 1993
 Copyright (C) 1993 Free Software Foundation, Inc.
 See the end for copying conditions.
 
@@ -6,7 +6,59 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.15.
+
+* `make-frame-visible', which uniconified frames, is now a command,
+and thus may be bound to a key.  This makes sense because frames
+respond to user input while iconified.
+
+* You can now use Meta mouse clicks to set and use the "secondary
+selection".  You can drag M-Mouse-1 across the region you want to
+select.  Or you can press M-Mouse-1 at one end and M-Mouse-3 at the
+other (this also copies the text to the kill ring).  Repeating M-Mouse-3
+again at the same place kills that text.
+
+M-Mouse-2 kills the secondary selection.
+
+Setting the secondary seletion does not move point or the mark.  It is
+possible to make a secondary selection that does not all fit on the
+screen, by using M-Mouse-1 at one end, scrolling, then using M-Mouse-3
+at the other end.
+
+Emacs has only one secondary selection at any time.  Starting to set
+a new one cancels any previous one.  The secondary selection displays
+using a face named `secondary-selection'.
+
+* There's a new way to request use of Supercite (sc.el).  Do this:
+
+    (add-hook 'mail-citation-hook 'sc-cite-original)
+
+Currently this works with Rmail.  In the future, other Emacs based
+mail-readers should be modified to understand this hook also.
+In the mean time, you should keep doing what you have done in the past
+for those other mail readers.
+
+* When a regular expression contains `\(...\)' inside a repetition
+operator such as `*' or `+', and you ask about the range that was matched
+using `match-beginning' and `match-end', the range you get corresponds
+to the *last* repetition *only*.  In Emacs 18, you would get a range
+corresponding to all the repetitions.
+
+If you want to get a range corresponding to all the repetitions,
+put a `\(...\)' grouping *outside* the repetition operator.  This
+is the syntax that corresponds logically to the desired result, and
+it works the same in Emacs 18 and Emacs 19.
+
+(This change actually took place earlier, but we didn't know about it
+and thus didn't document it.)
+
 Changes in version 19.14.
+
+* To modify read-only text, bind the variable `inhibit-read-only'
+to a non-nil value.  If the value is t, then all reasons that might
+make text read-only are inhibited (including `read-only' text properties).
+If the value is a list, then a `read-only' property is inhibited
+if it is `memq' in the list.
 
 * If you call `get-buffer-window' passing t as its second argument, it
 will only search for windows on visible frames.  Previously, passing t

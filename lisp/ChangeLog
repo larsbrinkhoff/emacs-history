@@ -1,3 +1,54 @@
+Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* version 19.15 released.
+
+Sat Jun 19 17:47:40 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* info.el (Info-insert-dir): Remove the call to recursive-edit.
+
+Sat Jun 19 15:05:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* info.el (Info-insert-dir): Record file attributes of files used.
+	Recompute the dir if they change.
+
+	* files.el (insert-file): Report error if file is directory.
+
+Fri Jun 18 21:43:43 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* man.el (Man-switches): New variable.
+	(Man-build-man-command): Use it to build the man command.
+	(Man-mode): Mention it in documentation.
+
+Fri Jun 18 21:13:02 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmailout.el (rmail-output): Check file can be read before trying
+	to read part of it.
+
+	* ange-ftp.el (ange-ftp-insert-file-contents):
+	Handle extra args BEG, END.
+
+Fri Jun 18 19:25:02 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el: Delete local variables list.
+	(forms-forms-scrolls): Deleted.
+	(forms-forms-jumps): Deleted.
+	(forms--change-commands): Use substitute-key-definition.
+	(forms-mode): Call forms--change-commands later on.
+
+Fri Jun 18 13:55:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* compile.el (compilation-error-regexp-alist): Generalize the
+	Apollo/BSD4.3 regexp to handle IBM RS6k too.
+
+	* mouse.el (mouse-secondary-save-then-kill): Don't switch windows.
+	Just set-buffer, and put save-excursion around it.
+	(mouse-set-secondary, mouse-start-secondary): Likewise.
+	(mouse-drag-secondary): Switch windows and move point just temporarily.
+
+Fri Jun 18 13:49:53 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* dired.el (dired-summary): dired-do-rename is on "R", not "r".
+
 Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.14 released.

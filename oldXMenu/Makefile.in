@@ -79,7 +79,7 @@ OBJS =  Activate.o \
       XDelAssoc.o XLookAssoc.o XCrAssoc.o XDestAssoc.o XMakeAssoc.o
 
 ALL_CFLAGS=$(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_X_SITE) \
-  $(C_SWITCH_MACHINE) $(CPPFLAGS) $(CFLAGS)
+  $(C_SWITCH_MACHINE) $(CPPFLAGS) $(CFLAGS) -DEMACS_BITMAP_FILES
 
 .c.o:
 	$(CC) -c ${ALL_CFLAGS} $<
@@ -95,7 +95,7 @@ libXMenu11.a: $(OBJS) $(EXTRA)
 
 FRC.mostlyclean:
 mostlyclean: FRC.mostlyclean
-	rm libXMenu11.a ${OBJS} ${EXTRA}
+	rm -f libXMenu11.a ${OBJS} ${EXTRA}
 clean: mostlyclean
 distclean: clean
 realclean: distclean
