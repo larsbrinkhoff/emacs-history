@@ -1,0 +1,1986 @@
+%% TeX macros to simulate something like Bolio
+\def\BoTeXrevdate{15 July 1985} \def\BoTeXversion{0.26}
+\message{Loading BoTeX package [Version \BoTeXversion\space of \BoTeXrevdate]:}
+\message{}
+%% Revisions:
+%%
+%% Version    Date    Changes
+%%   0.02  31 Oct 84  (RMS) \Bfoo -> \foo, argument parsing, Scribble cruft,
+%%			gobs of features.
+%%   0.03   2 Nov 84  (RpK) Try to get headings to work; use CM fonts,
+%%			centralize outside font definitions.
+%%   0.04   6 Nov 84  (RpK) Tune the fonts, add @b,i,r,t from Scribe.
+%%			Plus:	@l  Lisp font, usually sans-serif)
+%%				@s  Small caps (can't use @c !)
+%%				@ii TeX italics.  (@i is really slanted.)
+%%   0.05  13 Nov 84  (RpK) @titlepage command, @copyrightpage environment
+%%			@setq x section-name, chapter-name
+%%   0.06  14 Nov 84  (RpK) Headings are off by default; turn them on after
+%% 			the front pages.  @end[foo] is smart about error
+%%			message -- top level \Efoo's are no longer needed.
+%%   0.07  20 Nov 84  (RpK) Kill @section page break.
+%%   0.08  21 Nov 84  (RpK) Fix headings (again, sigh)
+%%   0.09  27 Nov 84  (RpK) Make headings a little smaller.  Avoid 
+%%			@thischapter lookahead lossage.
+%%   0.10  29 Nov 84  (RpK) Fix @setx, increment section #'s globally
+%%   0.11  30 Nov 84  (RpK) Kludge for @@ until the fonts are fixed.
+%%   0.12   6 Dec 84  (RpK) @fontvector, @settabs support, @bye shows stats,
+%%			() as delims, itemindent is 8.in, @end description
+%%			@lisp is less fussy (more \hfuzz), @label and
+%%			@pageref, @title, and @nameref for it.
+%%   0.13  10 Dec 84  (RpK) @figure, @fullpage-, @top-.  No toc for them yet.
+%%   0.13a 17 Dec 84  (RpK) Typo in odd-page chapter macro
+%%   0.14  15 Jan 85  (RpK) @synindex bug.  @cindex &c. uses \parsearg
+%%   0.15  23 Jan 85  (RpK) Fix output, adding \onepageout.
+%%   0.16   7 Mar 85  (RpK) Put lmipart on front, add copyrightdate variable
+%%   0.18   4 Apr 85  (RpK) ``open'' chapter style started.  More
+%%                      space before a section heading; \subsecheadingskip
+%%			Fix output (again !); appendix letters in TOC.
+%%   0.19  23 Apr 85  (RpK) Fix headers/footers in indices.  Fix typos.
+%%   0.20   5 Jun 85  (RMS) {} delimited arguments.  ``No Title''
+%%			is the initial title.
+%%   0.21  15 Jun 85  (RMS) Use \aboveenvbreak and \afterenvbreak
+%%			rather than \smallbreak, around environments.
+%%			\aboveenvbreak adds in \parskip to make space
+%%			after and before the same.
+%%			\aboveenvskipamount is amount of additional skip
+%%			beyond \parskip.
+%%			Add in \parskip to break before section heading.
+%%			Make penalty after section heading really work.
+%%			\parskip inside itemize, etc, is same as
+%%			item spacing. 	Define @example, same as @lisp.
+%%			Make xrefs get section # when read, not
+%%			when shippedout.
+%%   0.22 17 Jun 85  (RpK) Snag runaway intersection whitespace
+%%   0.23 19 Jun 85  (RMS) Fix unaligned dots in indexes.
+%%			Fix special characters in indexes.
+%%   0.24 13 Jul 85  (RMS) Define \tableindent, indent of table
+%%			bodies.  \itemindent still used for
+%%			@itemize and @enumerate.
+%%			Use \aboveenvbreak and \afterenvbreak
+%%			in @table, @itemize, @enumerate.
+%%   0.25 14 Jul 85  (RMS) Define @subsubheading.
+%%			Fix bug where aboveenvbreak clobbered
+%%			aboveenvskipamount.
+%%   0.26 15 Jul 85  (RMS) Use \medbreak between chapters in
+%%			@summarycontents.  Double indentation
+%%			for sections, subsecs, subsubsecs
+%%			in full contents.
+%% Todo:
+%% Tabular/Matrix environments, figures
+%% Fix @, \ characters (fonts are generally 'orrible)
+
+\message{Basics,}
+\chardef\other=12
+\parskip=1.5pt
+\advance\topskip by 1.2cm
+% Compensate for losing imagen.
+
+\advance \hoffset 1in
+\advance \voffset 1in
+
+\hyphenation{ap-pen-dix zeta-lisp}
+
+% Copyright notice
+\def\Xcopyrightdate{\number\year}
+\def\LMIcopyright{Copyright \copyright\ \Xcopyrightdate\ Lisp Machine Incorporated.}
+\def\LMIpub{\vbox{%
+\line{\hfil Published by LMI 1000 Massachusetts Avenue.  Cambridge MA 02138 USA}}}
+
+% Margin to add to right of even pages, to left of odd pages.
+\newdimen \bindingoffset  \bindingoffset=0pt
+\newdimen \normaloffset   \normaloffset=\hoffset
+\newdimen\pagewidth \newdimen\pageheight
+\pagewidth=\hsize \pageheight=\vsize
+
+% \onepageout takes a vbox as an argument.  Note that \pagecontents
+% does insertions itself, but you have to call it yourself.
+\chardef\PAGE=255  \output={\onepageout{\pagecontents\PAGE}}
+\def\onepageout#1{\hoffset=\normaloffset
+\ifodd\pageno  \advance\hoffset by \bindingoffset
+\else \advance\hoffset by -\bindingoffset\fi
+\shipout\vbox{{\let\hsize=\pagewidth \makeheadline} \pagebody{#1}%
+ {\let\hsize=\pagewidth \makefootline}}
+\advancepageno \ifnum\outputpenalty>-20000 \else\dosupereject\fi}
+\def\pagebody#1{\vbox to\pageheight{\boxmaxdepth=\maxdepth #1}}
+{\catcode`\@ =11
+\gdef\pagecontents#1{\ifvoid\topins\else\unvbox\topins\fi
+\dimen@=\dp#1 \unvbox#1
+\ifvoid\footins\else\vskip\skip\footins\footnoterule \unvbox\footins\fi
+\ifr@ggedbottom \kern-\dimen@ \vfil \fi}
+}
+
+% Parse an argument, then pass it to #1.
+% The argument can be delimited with [...] or with "..."
+% or it can be a whole line.
+% #1 should be a macro which expects
+% an ordinary undelimited TeX argument.
+
+\def\parsearg #1{\let\next=#1\begingroup\obeylines\futurelet\temp\parseargx}
+
+\def\parseargx{%
+\ifx \obeyedspace\temp \aftergroup\parseargdiscardspace \else%
+\ifx [\temp \aftergroup\parseargbracket\else%
+\ifx (\temp \aftergroup\parseargparen\else%
+\ifx \activedoublequote\temp \aftergroup\parseargdoublequote\else%
+\ifx \mylbrace\temp \aftergroup\parseargbrace\else%
+\aftergroup \parseargline %
+\fi\fi\fi\fi\fi \endgroup}
+
+{\obeyspaces %
+\gdef\parseargdiscardspace {\begingroup\obeylines\futurelet\temp\parseargx}}
+
+\gdef\obeyedspace{\ }
+
+\def\parseargbracket [#1]{\next {#1}} \def\parseargparen (#1){\next {#1}}
+{\catcode `\"=\active
+\gdef\parseargdoublequote "#1"{\next {#1}}}
+
+{\catcode `\[=1 \catcode `\]=2 \catcode `\}=\active
+\catcode `\{=\active
+\gdef\parseargbrace {#1}[\next [#1]]]
+
+\def\parseargline{\begingroup \obeylines \parsearglinex}
+{\obeylines %
+\gdef\parsearglinex #1^^M{\endgroup \next {#1}}}
+
+%% These are used to keep @begin/@end levels from running away
+%% Call \inENV within environments (after a \begingroup)
+\newif\ifENV \ENVfalse \def\inENV{\ifENV\relax\else\ENVtrue\fi}
+\def\ENVcheck{%
+\ifENV\errmessage{Still within an environment.  Type Return to continue.}
+\endgroup\fi} % This is not perfect, but it should reduce lossage
+
+% @begin foo  is the same as @foo, for now.
+\newhelp\EMsimple{Type <Return> to continue}
+
+\outer\def\begin{\parsearg\beginxxx}
+
+\def\beginxxx #1{%
+\expandafter\ifx\csname #1\endcsname\relax
+{\errhelp=\EMsimple \errmessage{Undefined command @begin #1}}\else
+\csname #1\endcsname\fi}
+
+%% @end foo executes the definition of \Efoo.
+%% foo can be delimited by doublequotes or brackets.
+\let\ptexend = \end
+
+\def\end{\parsearg\endxxx}
+
+\def\endxxx #1{%
+\expandafter\ifx\csname E#1\endcsname\relax
+\expandafter\ifx\csname #1\endcsname\relax
+\errmessage{Undefined command @end #1}\else
+\errorE{#1}\fi\fi
+\csname E#1\endcsname}
+\def\errorE#1{
+{\errhelp=\EMsimple \errmessage{@end #1 not within #1 environment}}}
+
+% Simple aliases that make some plain tex constructs available.
+
+\let\nopara=\noindent
+
+\let\ptexnobreak=\nobreak
+\def\nobreak{\par\penalty 10000}
+
+% Single-spacing is done by various environments.
+
+\newskip\singlespaceskip \singlespaceskip = \baselineskip
+\def\singlespace{\baselineskip=\singlespaceskip}
+
+% @@ prints an @ -- for Scribe compatibility.
+% Kludge this until the fonts are right (grr).
+\def\@{{\sf @}}
+
+% @: is a Scribe command to cause end-of-sentence whitespace.
+\def\:{\spacefactor=3000 }
+
+% @* forces a line break.
+\let\ptexstar=\* \def\*{\hfil\break}
+
+% @. is an abbreviation period.
+\let\ptexdot=\. \def\.{.\spacefactor=1000 }
+
+% @# leaves space for a special character.
+\let\ptexnumsign=\# \def\#{\write19{(@##)}\hbox to 0.7em{\hfil}}
+
+% @w prevents a word break
+\def\w{\parsearg\atomx} \def\atomx #1{\hbox{#1}}
+
+% Save the essence of & for tabular environments as @\ for BoTeX
+% Say @settabs 4 @columns, then @<col0@\col1@\col2@\col3@cr
+\let\\=& \let\<=\+
+% @+ raises its argument, @- lowers.
+\let\ptexplus=\+
+\def\+{\parsearg\plusxxx} \def\plusxxx #1{\raise 1ex\hbox{#1}}
+
+\let\ptexminus=\-
+\def\-{\parsearg\minusxxx} \def\minusxxx #1{\lower 1ex\hbox{#1}}
+
+% @titlepage outputs a standard LMI window title page
+% titlecomment, lmipart can be @setx'ed
+\def\Xlmipart{} \def\Xtitlecomment{}
+\def\titlepage{
+{\advance\hsize by 0.064truein % Just enough to hit the window
+\line{\hfil \hbox{
+ \vbox to 3.02truein{
+  \vfil
+  \hrule\kern 2truept\hrule\kern 3.5truept
+  \vbox to 1.4truein{
+   \vfil
+   \hbox to 4truein{\hfil{\chapbf\thistitle}\hfil}
+   \hbox to 4truein{\hfil{\btwelve\Xtitlecomment}\hfil}
+   \vfil
+   \hbox to 4truein{\hfil{\tenrm\Xlmipart}}}
+  \kern 3.5truept\hrule\kern 2truept\hrule}}}
+\par\vfill \LMIpub \supereject
+}} % end \def
+
+% @copyrightpage smushes things toward the bottom
+\def\copyrightpage{\begingroup\inENV
+\def\Ecopyrightpage{\par\kern14pt\hrule%
+\kern14pt\line{\LMIcopyright\hfil}\egroup\endgroup\supereject\HEADINGSon}%
+\vbox to\vsize \bgroup \vfill}
+
+% @group ... @end group  forces ... to be all on one page.
+
+\def\group{\begingroup% \inENV ???
+\def \Egroup{\egroup\endgroup}
+\vbox\bgroup}
+
+% @br   forces paragraph break
+
+\let\br = \par
+
+% @page    forces the start of a new page
+
+\def\page{\par\vfill\supereject}
+
+% @exdent n text....
+% outputs text on separate line in roman font, starting at standard page margin
+% The argument n is ignored.  This is most likely to be right
+% for the ways @exdent actually appears in Bolio files.
+
+\def\exdent{\errmessage{@exdent in filled text}}
+  % @lisp, etc, define \exdent locally from \internalexdent
+
+{\obeyspaces
+\gdef\internalexdent #1 {\parsearg\exdentzzz}}
+
+\def\exdentzzz #1{{\advance \leftskip by -\lispnarrowing
+\advance \hsize by -\leftskip
+\advance \hsize by -\rightskip
+\leftline{{\rm#1}}}}
+
+% @include file    insert text of that file as input.
+
+\def\include{\parsearg\includexxx}
+
+\def\includexxx #1{{\def\thisfile{#1}\input #1
+}}
+
+\def\thisfile{}
+
+% @need space-in-mils
+% forces a page break if there is not space-in-mils remaining.
+
+\newdimen\mil  \mil=0.001in
+
+\def\need{\parsearg\needx}
+
+\def\needx #1{\par %
+\begingroup %
+\dimen0=\pagetotal %
+\advance \dimen0 by #1\mil %
+\ifdim \dimen0>\pagegoal \vfill\eject \fi %
+\endgroup}
+
+% @setpageheight and @setpagewidth
+% These are no longer really necessary
+% since you can now do @hsize = or @vsize =
+
+\def\setpagewidth #1 {\global\hsize #1}
+\def\setpageheight #1 {\global\vsize #1}
+
+% @center line   outputs that line, centered
+
+\def\center{\parsearg\centerxxx}
+
+\def\centerxxx #1{{\advance\hsize by -\leftskip
+\advance\hsize by -\rightskip
+\centerline{#1}}}
+
+% @sp n   outputs n lines of vertical space
+
+\def\sp{\parsearg\spacexxx}
+
+\def\spacexxx #1{\par \vskip #1\baselineskip}
+
+% @comment ...line which is ignored...
+% @c is the same as @comment
+% @ignore ... @end ignore  is another way to write a comment
+
+\def\comment{\parsearg \commentxxx}
+
+\def\commentxxx #1{}
+
+\let\c=\comment
+
+\long\def\ignore #1\end ignore{}
+
+% Document-version conditionals
+\message{conditionals,}
+
+% @setflag foo   sets flag "foo"
+% @clearflag foo   clears flag "foo"
+% @defaultsetflag foo    sets flag if never been explicitly set or cleared
+% @ifset [foo]...@end if  includes body if foo is set
+% @ifclear [foo]...@end if   includes body if foo is not set.
+% A flag is initially clear by default.
+
+% A flag is represented by the value of a control sequence
+% whose name is F followed by the flag name.
+% If its definition is \relax, it has never been explicitly set or cleared.
+% This counts as "clear" for everything except @defaultsetflag.
+% It is the initial state.
+% Flags explicitly set or cleared have these definitions:
+\def\flagtrue{true}
+\def\flagfalse{false}
+
+\def\setflag{\parsearg\setflagxxx}
+\def\setflagxxx #1{\expandafter\let\csname F#1\endcsname=\flagtrue}
+
+\def\clearflag{\parsearg\clearflagxxx}
+\def\clearflagxxx #1{\expandafter\let\csname F#1\endcsname=\flagfalse}
+
+\def\defaultsetflag{\parsearg\defaultsetflagxxx}
+\def\defaultsetflagxxx #1{%
+\expandafter\ifx\csname F#1\endcsname\relax
+\expandafter\let\csname F#1\endcsname=\flagtrue
+\fi}
+
+\def\ifset{\parsearg\ifsetxxx}
+
+\def\ifsetxxx #1{%
+\expandafter\ifx\csname F#1\endcsname\flagtrue \let\next=\relax \else
+\let\next=\iffails \fi \next}
+
+\def\ifnotset{\parsearg\ifnotsetxxx}
+\def\ifclear{\parsearg\ifnotsetxxx}
+
+\def\ifnotsetxxx #1{%
+\expandafter\ifx\csname F#1\endcsname\flagtrue \let\next=\iffails \else
+\let\next=\relax \fi \next}
+
+\def\iffails #1\end if{}
+\def\Eif{}
+
+\message{fonts,}
+% Font-change commands.
+\font\btwelve=ambx10 at 12pt
+%% Try out Computer Modern fonts at a little bigger than \magstephalf
+\font\tenrm=cmr10 scaled 1100
+\font\tentt=amtt10 scaled \magstephalf
+\font\tenbf=cmb10 scaled 1100
+\font\tenit=cmti10 scaled 1100
+\font\tensl=cms10 scaled 1100
+% \font\tensf=cmss10 scaled 1100 
+\font\tensf=amss10 scaled 1100
+\def\li{\sf}
+\font\tensc=amcsc10 scaled \magstephalf
+
+\font\defbf=ambx7 scaled \magstep2
+\let\deftt=\tentt
+\font\twelvesf=cmss12
+
+% Font for title
+\font\titlerm = cmb10 scaled 2800
+
+% Fonts for indices
+\font\indit=cmi9 \font\indrm=cmr9
+\def\indbf{\indrm} \def\indsl{\indit}
+\def\indexfonts{\let\it=\indit \let\sl=\indsl \let\bf=\indbf \let\rm=\indrm}
+
+\font\secrm=cmb10 scaled 1400
+\font\secit=cmti10 scaled 1400
+\font\secsl=cms10 scaled 1400
+\let\secbf=\secrm
+
+\font\chaprm=cmb10 scaled 1800
+\font\chapit=cmti10 scaled 1800
+\let\chapbf=\chaprm
+
+\font\ssecrm=cmb10 scaled 1200
+\font\ssecit=cmti10 scaled 1200
+\font\ssecsl=cms10 scaled 1200
+\let\ssecbf=\ssecrm
+
+\def\textfonts{\let\rm=\tenrm\let\it=\tenit\let\sl=\tensl\let\bf=\tenbf%
+\let\sc=\tensc\let\sf=\tensf}
+\def\chapfonts{\let\rm=\chaprm\let\it=\chapit\let\sl=\chapsl\let\bf=\chapbf}
+\def\secfonts{\let\rm=\secrm\let\it=\secit\let\sl=\secsl\let\bf=\secbf}
+\def\subsecfonts{\let\rm=\ssecrm\let\it=\ssecit\let\sl=\ssecsl\let\bf=\ssecbf}
+% Count depth in font-changes, for error checks
+\newcount\fontdepth \fontdepth=0
+
+\def\fontspec #1{\endgroup
+\if #1$\epsilon$\else \if #1*\fontpop \global\advance\fontdepth by -1 \else
+\global\advance\fontdepth by 1 %
+\begingroup\let\fontpop=\endgroup\fontselect#1\fi\fi}
+
+%% This is zero-based; things actually start out in 0 (=rm by default) now.
+%% Font 9 is always \titlerm for hysterical reasons
+\def\nofont{\errmessage{No such font.  Type Return to continue.}}
+\def\fontvector#1#2#3#4#5#6#7#8#9{
+\def\FMzero{#1} \def\FMone{#2} \def\FMtwo{#3} \def\FMthree{#4} \def\FMfour{#5}
+\def\FMfive{#6} \def\FMsix{#7} \def\FMseven{#8} \def\FMeight{#9}}
+\fontvector \rm \bf \sl \li \chaprm \chaprm \nofont \tt \nofont
+%% Ever hear of AREF ? Actually, \ifcase seems to lose here
+\def\fontselect#1{\if #10\FMzero\else\if #11\FMone\else\if#12\FMtwo\else%
+\if #13\FMthree\else\if #14\FMfour\else\if #15\FMfive\else\if #16\FMsix\else%
+\if #17\FMseven\else\if #18\FMeight\else\if #19\titlerm
+\else\errmessage{Illegal font selector (#1)}\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi}
+
+\def\fontpop{\errmessage{extra ^F*}}
+
+\def\levelcheck{\ifnum \fontdepth > 0 %
+\errmessage{Unmatched font-changes before this point}\fi\ENVcheck}
+
+\catcode`\^^F=\active
+\def\ctlf{\begingroup\catcode`\^^F=\other\fontspec}
+\let^^F=\ctlf
+
+%% Add scribe-like font environments, plus @l for inline lisp (usually sans
+%% serif) and @ii for TeX italic
+\let\ptexb=\b \let\ptexc=\c \let\ptexi=\i \let\ptext=\t
+\let\ptexl=\l \let\ptexL=\L
+\def\I{\parsearg\iF} \let\i=\I \def\iF#1{{\sl #1}}
+\def\R{\parsearg\rF} \let\r=\R \def\rF#1{{\rm #1}}
+\def\B{\parsearg\bF} \let\b=\B \def\bF#1{{\bf #1}}
+\def\L{\parsearg\lF} \let\l=\L \def\lF#1{{\li #1}}
+\def\s{\parsearg\sF}	       \def\sF#1{{\sc #1}}
+\def\T{\parsearg\tF} \let\t=\T \def\tF#1{{\tt #1}}
+\def\II{\parsearg\iiF} \let\ii=\II \def\iiF#1{{\it #1}}
+
+% ^Q quote next character
+\catcode`\^^Q=\active
+
+\def\ctlq{\begingroup
+\catcode `\@=\other 
+\afterassignment\quotechar\let\nextchar= }
+
+\let^^Q=\ctlq
+
+\def\quotechar{%
+\ifx \nextchar\ref $\otimes$\else
+\ifx \nextchar\ctlq $\supset$\else
+\ifx \nextchar\ctlf $\epsilon$\else
+\if \nextchar-$-$\else
+\if \nextchar\space\penalty 10000\ \else
+\if \nextchar,\penalty 10000\ \else
+\nextchar\spacefactor=1000
+\fi\fi\fi\fi\fi\fi
+\endgroup}
+
+\def\tie{\penalty 10000\ }     % Save plain tex definition of ~.
+
+% Define the random MIT characters
+
+\catcode `\^^@=\active \def^^@{$\cdot$}
+\catcode `\=\active \def{$\downarrow$}
+\catcode `\=\active \def{$\alpha$}
+\catcode `\^^C=\active \def^^C{$\beta$}
+\catcode `\^^D=\active \def^^D{$\wedge$}
+\catcode `\^^E=\active \def^^E{$\neg$}
+\catcode `\^^G=\active \def^^G{$\pi$}
+\catcode `\^^H=\active \def^^H{$\lambda$}
+\catcode `\=\active \def{$\uparrow$}
+\catcode `\^^L=\active \def^^L{$\plusminus$}
+\catcode `\=\active \def{$\infty$}
+\catcode `\=\active \def{$\partial$}
+\catcode `\=\active \def{$\subset$}
+\catcode `\=\active \def{$\cap$}
+\catcode `\=\active \def{$\cup$}
+\catcode `\=\active \def{$\forall$}
+\catcode `\=\active \def{$\exists$}
+\catcode `\=\active \def{$\rightleftharpoons$}
+\catcode `\=\active \def{$\leftarrow$}
+\catcode `\=\active \def{$\rightarrow$}
+\catcode `\=\active \def{$\neq$}
+\catcode `\^^[=\active \def^^[{$\diamondsuit$}
+\catcode `\^^\=\active \def^^\{$\leq$}
+\catcode `\^^]=\active \def^^]{$\geq$}
+\catcode `\^^^=\active \def^^^{$\equiv$}
+\catcode `\^^_=\active \def^^_{$\vee$}
+
+% Font for variables
+
+\let\vf=\sl
+
+% Font(s) for functions being defined
+\let\defsf=\twelvesf
+\def\df{\let\tt=\deftt \dffont}
+\def\DEFbf{\global\let\dffont=\defbf}
+\def\DEFsf{\global\let\dffont=\defsf}
+\DEFbf
+
+\message{page headings,}
+
+%%% Set up page headings and footings.
+
+\let\thispage=\folio
+
+\newtoks \evenheadline    % Token sequence for heading line of even pages
+\newtoks \oddheadline     % Token sequence for heading line of odd pages
+\newtoks \evenfootline    % Token sequence for footing line of even pages
+\newtoks \oddfootline     % Token sequence for footing line of odd pages
+
+% Now make Tex use those variables
+\headline={{\textfonts\rm \ifodd\pageno \the\oddheadline \else \the\evenheadline \fi}}
+\footline={{\textfonts\rm \ifodd\pageno \the\oddfootline \else \the\evenfootline \fi}}
+
+% Commands to set those variables.
+% For example, this is what  @headings on  does
+% @evenheading @thistitle|@thispage|@thischapter
+% @oddheading @thischapter|@thispage|@thistitle
+% @evenfooting @thisfile||
+% @oddfooting ||@thisfile
+
+\def\evenheading{\parsearg\evenheadingxxx}
+\def\oddheading{\parsearg\oddheadingxxx}
+\def\everyheading{\parsearg\everyheadingxxx}
+
+\def\evenfooting{\parsearg\evenfootingxxx}
+\def\oddfooting{\parsearg\oddfootingxxx}
+\def\everyfooting{\parsearg\everyfootingxxx}
+
+\def\evenheadingxxx #1{\evenheadingyyy #1\|\|\|\|\finish}
+\def\evenheadingyyy #1\|#2\|#3\|#4\finish{%
+\global\evenheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+
+\def\oddheadingxxx #1{\oddheadingyyy #1\|\|\|\|\finish}
+\def\oddheadingyyy #1\|#2\|#3\|#4\finish{%
+\global\oddheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+
+\def\everyheadingxxx #1{\everyheadingyyy #1\|\|\|\|\finish}
+\def\everyheadingyyy #1\|#2\|#3\|#4\finish{%
+\global\evenheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}
+\global\oddheadline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+
+\def\evenfootingxxx #1{\evenfootingyyy #1\|\|\|\|\finish}
+\def\evenfootingyyy #1\|#2\|#3\|#4\finish{%
+\global\evenfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+
+\def\oddfootingxxx #1{\oddfootingyyy #1\|\|\|\|\finish}
+\def\oddfootingyyy #1\|#2\|#3\|#4\finish{%
+\global\oddfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+
+\def\everyfootingxxx #1{\everyfootingyyy #1\|\|\|\|\finish}
+\def\everyfootingyyy #1\|#2\|#3\|#4\finish{%
+\global\evenfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}
+\global\oddfootline={\rlap{\centerline{#2}}\line{#1\hfil#3}}}
+
+% @headings on   turns them on.
+% @headings off  turns them off.
+% By default, they are off.
+
+\def\headings #1 {\csname HEADINGS#1\endcsname}
+
+\def\HEADINGSoff{
+\global\evenheadline={\hfil} \global\evenfootline={\hfil}
+\global\oddheadline={\hfil} \global\oddfootline={\hfil}}
+\HEADINGSoff
+% When we turn headings on, set the page number to 1,
+% Put current file name in lower left corner,
+% Put chapter name in upper right corner, document title in upper left,
+% and page number in the center.
+\def\HEADINGSon{
+\global\pageno=1
+\global\evenfootline={\thisfile\hfil}
+\global\oddfootline={\thisfile\hfil}
+\global\evenheadline={\rlap{\centerline{\folio}}\line{\thistitle\hfil\thischapter}}
+\global\oddheadline={\rlap{\centerline{\folio}}\line{\thistitle\hfil\thischapter}}
+}
+
+% Subroutines used in generating headings
+\def\today{\ifcase\month\or
+January\or February\or March\or April\or May\or June\or
+July\or August\or September\or October\or November\or December\fi
+\space\number\day, \number\year}
+
+% @settitle line...  specifies the title of the document, for headings
+% It generates no output of its own
+
+\def\thistitle{No Title}
+\def\settitle{\parsearg\settitlezz}
+\def\settitlezz #1{\gdef\thistitle{#1}}
+
+\message{tables,}
+
+% Tables -- @table, @ftable, @item(x), @kitem(x), @xitem(x).
+
+% default indentation of table text
+\newdimen\tableindent \tableindent=.8in
+% default indentation of @itemize and @enumerate text
+\newdimen\itemindent  \itemindent=.8in
+% margin between end of table item and start of table text.
+\newdimen\itemmargin  \itemmargin=.1in
+
+% used internally for \itemindent minus \itemmargin
+\newdimen\itemmax
+
+% Note @table and @ftable define @item, @itemx, etc., with these defs.
+% They also define \itemindex
+% to index the item name in whatever manner is desired (perhaps none).
+
+\def\internalBitem{\smallbreak \parsearg\itemzzz}
+\def\internalBitemx{\par \parsearg\itemzzz}
+
+\def\internalBxitem "#1"{\def\xitemsubtopix{#1} \smallbreak \parsearg\xitemzzz}
+\def\internalBxitemx "#1"{\def\xitemsubtopix{#1} \par \parsearg\xitemzzz}
+
+\def\internalBkitem{\smallbreak \parsearg\kitemzzz}
+\def\internalBkitemx{\par \parsearg\kitemzzz}
+
+\def\kitemzzz #1{\dosubind {kw}{#1}{for {\bf \lastfunction}}\itemzzz {#1}}
+
+\def\xitemzzz #1{\dosubind {kw}{#1}{for {\bf \xitemsubtopic}}\itemzzz {#1}}
+
+\def\itemzzz #1{\begingroup %
+\advance \hsize by -\rightskip %
+\advance \hsize by -\leftskip %
+\setbox0=\hbox{{\itemfont #1}}%
+\itemindex{#1}%
+\parskip=0in %
+\noindent\vadjust{\penalty 800}%
+\ifdim \wd0>\itemmax %
+\hbox to \hsize{\hskip -\tableindent\box0\hss}\ %
+\else %
+\hbox to 0pt{\hskip -\tableindent\box0\hss}%
+\fi %
+\endgroup %
+}
+
+\def\item{\errmessage{@item while not in a table}}
+\def\itemx{\errmessage{@itemx while not in a table}}
+\def\kitem{\errmessage{@kitem while not in a table}}
+\def\kitemx{\errmessage{@kitemx while not in a table}}
+\def\xitem{\errmessage{@xitem while not in a table}}
+\def\xitemx{\errmessage{@xitemx while not in a table}}
+
+%% Contains a kludge to get @end[description] to work
+\def\description{\tablez{\dontindex}{1}{}{}{}{}}
+
+\def\table{\begingroup\inENV\obeylines\obeyspaces\tablex}
+{\obeylines\obeyspaces%
+\gdef\tablex #1^^M{%
+\tabley\dontindex#1        \endtabley}}
+
+\def\ftable{\begingroup\inENV\obeylines\obeyspaces\ftablex}
+{\obeylines\obeyspaces%
+\gdef\ftablex #1^^M{%
+\tabley\fnitemindex#1        \endtabley}}
+
+\def\dontindex #1{}
+\def\fnitemindex #1{\doind {fn}{#1}}%
+
+{\obeyspaces %
+\gdef\tabley#1#2 #3 #4 #5 #6 #7\endtabley{\endgroup%
+\tablez{#1}{#2}{#3}{#4}{#5}{#6}}}
+
+\def\tablez #1#2#3#4#5#6{%
+\aboveenvbreak %
+\begingroup %
+\def\Edescription{\Etable}% Neccessary kludge.
+\let\itemindex=#1%
+\ifnum 0#3>0 \advance \leftskip by #3\mil \fi %
+\ifnum 0#4>0 \tableindent=#4\mil \fi %
+\ifnum 0#5>0 \advance \rightskip by #5\mil \fi %
+\let\itemfont=\bf %
+\edef\itemfont{\fontselect{#2}}
+\itemmax=\tableindent %
+\advance \itemmax by -\itemmargin %
+\advance \leftskip by \tableindent %
+\parindent = 0pt
+\parskip = \smallskipamount
+\ifdim \parskip=0pt \parskip=2pt \fi%
+\def\Etable{\par\endgroup\afterenvbreak}%
+\let\item = \internalBitem %
+\let\itemx = \internalBitemx %
+\let\kitem = \internalBkitem %
+\let\kitemx = \internalBkitemx %
+\let\xitem = \internalBxitem %
+\let\xitemx = \internalBxitemx %
+}
+
+% This is the counter used by @enumerate, which is really @itemize
+
+\newcount \itemno
+
+\def\itemize{\parsearg\itemizezzz}
+
+\def\itemizezzz #1{\itemizey {#1}{\Eitemize}}
+
+\def\itemizey #1#2{%
+\aboveenvbreak %
+\begingroup %
+\itemno = 0 %
+\itemmax=\itemindent %
+\advance \itemmax by -\itemmargin %
+\advance \leftskip by \itemindent %
+\parindent = 0pt
+\parskip = \smallskipamount
+\ifdim \parskip=0pt \parskip=2pt \fi%
+\def#2{\par\endgroup\afterenvbreak}%
+\def\itemcontents{#1}%
+\let\item=\itemizeitem
+}
+
+\let\ptexbullet=\bullet
+\def\bullet{$\ptexbullet$}
+
+\def\enumerate{\itemizey{\the\itemno.}\Eenumerate}
+
+% Definition of @item while inside @itemize.
+
+\def\itemizeitem{%
+\advance\itemno by 1
+\par
+\smallbreak 
+\ifhmode \errmessage{\in hmode at itemizeitem}\fi
+{\parskip=0in \hskip 0pt
+\hbox to 0pt{\hss \itemcontents\hskip \itemmargin}%
+\vadjust{\penalty 300}%
+ }}
+
+\message{figures,} % Floating insertions, basically
+\newcount\figno \figno=0
+\def\basicaption{\parsearg\captionx}
+\def\captionx #1{\global\advance\figno by 1%
+\par{\textfonts\line{\hfil{\bf Figure \the\figno .} #1\hfil}}}
+\def\filcaption{\vfil\basicaption}
+\def\iEfigure{\smallskip\hrule\endinsert}
+\def\fullpagefigure{%
+\pageinsert\inENV\let\caption=\filcaption\let\Efullpagefigure=\iEfigure\hrule\smallskip}
+\def\figure{% This tries to be near where the command was
+\midinsert\inENV\let\caption=\basicaption\let\Efigure=\iEfigure\hrule\smallskip}
+\def\topfigure{% This tries to be near the top of a page
+\topinsert\inENV\let\caption=\basicaption\let\Etopfigure=\iEfigure\hrule\smallskip}
+
+\message{footnotes,}% Footnotes
+
+\newcount \footnoteno
+
+\def\supereject{\par\penalty -20000\footnoteno =0 }
+
+\let\ptexfootnote=\footnote
+
+{\catcode `\@=11
+\gdef\footnote{\global\advance \footnoteno by \@ne
+\edef\thisfootno{$^{\the\footnoteno}$}%
+\let\@sf\empty
+\ifhmode\edef\@sf{\spacefactor\the\spacefactor}\/\fi
+\thisfootno\@sf\parsearg\footnotezzz}
+
+\gdef\footnotezzz #1{\insert\footins{
+\interlinepenalty\interfootnotelinepenalty
+\splittopskip\ht\strutbox % top baseline for broken footnotes
+\splitmaxdepth\dp\strutbox \floatingpenalty\@MM
+\leftskip\z@skip \rightskip\z@skip \spaceskip\z@skip \xspaceskip\z@skip
+\footstrut\hang\textindent{\thisfootno}#1\strut}}
+
+} %end \catcode `\@=11
+
+\message{indexing,}
+% Index generation facilities
+
+% Define \newwrite to be identical to plain tex's \newwrite
+% except not \outer, so it can be used within \newindex.
+{\catcode`\@=11
+\gdef\newwrite{\alloc@7\write\chardef\sixt@@n}}
+
+% \newindex {foo} defines an index named foo.
+% It automatically defines \fooindex such that
+% \fooindex ...rest of line... puts an entry in the index foo.
+% It also defines \fooindfile to be the number of the output channel for
+% the file that	accumulates this index.  The file's extension is foo.
+% The name of an index should be no more than 2 characters long
+% for the sake of vms.
+
+% @defindex foo  is the form you write in a bolio file.
+
+\def\defindex {\parsearg\newindex}
+
+\def\newindex #1{
+\expandafter\newwrite \csname#1indfile\endcsname% Define number for output file
+\openout \csname#1indfile\endcsname \jobname.#1	% Open the file
+\expandafter\xdef\csname#1index\endcsname{%	% Define \xxxindex
+\noexpand\doindex {#1}}
+}
+
+% @synindex foo bar    makes index foo feed into index bar.
+% Do this instead of @defindex foo if you don't want it as a separate index.
+\def\synindex #1 #2 {%
+\expandafter \xdef \csname#1index\endcsname {\noexpand\csname#2index\endcsname}%
+\expandafter \chardef \csname#1indfile\endcsname %
+= \csname#2indfile\endcsname}
+
+% Define \doindex, the driver for all \fooindex macros.
+% Argument #1 is generated by the calling \fooindex macro,
+%  and it is "foo", the name of the index.
+
+% \doindex just uses \parsearg; it calls \doind for the actual work.
+% This is because \doind is more useful to call from other macros.
+
+% There is also \dosubind {index}{topic}{subtopic}
+% which makes an entry in a two-level index such as the operation index.
+
+\def\doindex#1{\edef\indexname{#1}\parsearg\singleindexer}
+\def\singleindexer #1{\doind{\indexname}{#1}}
+
+\def\indexdummies{%
+\def\bf{\realbackslash bf }
+\def\rm{\realbackslash rm }
+\def\sl{\realbackslash sl texindex.}
+}
+
+% To define \realbackslash, we must make \ not be an escape.
+% We must first make another character (@) an escape
+% so we do not become unable to do a definition.
+
+{\catcode`\@=0 \catcode`\\=\other
+@gdef@realbackslash{\}}
+
+\def\doind #1#2{%
+{\indexdummies  % Must do this here, since \bf, etc expand at this stage
+\let\folio=0 \edef\temp{ % Expand all macros now EXCEPT \folio
+\write \csname#1indfile\endcsname{%
+\realbackslash entry {#2}{\folio}{#2}}}%
+\temp}}
+
+\def\dosubind #1#2#3{%
+{\indexdummies  % Must do this here, since \bf, etc expand at this stage
+\let\folio=0 \edef\temp{ %
+\write \csname#1indfile\endcsname{%
+\realbackslash entry {#2 #3}{\folio}{#2}{#3}}}%
+\temp}}
+
+% The index entry written in the file actually looks like
+%  \entry {sortstring}{page}{topic}
+% or
+%  \entry {sortstring}{page}{topic}{subtopic}
+% The texindex program reads in these files and writes files
+% containing these kinds of lines:
+%  \initial {c}
+%     before the first topic whose initial is c
+%  \entry {topic}{pagelist}
+%     for a topic that is used without subtopics
+%  \primary {topic}
+%     for the beginning of a topic that is used with subtopics
+%  \secondary {subtopic}{pagelist}
+%     for each subtopic.
+
+% Define the user-accessible indexing commands 
+% @findex, @vindex, @kindex, @cindex.
+
+\def\findex {\fnindex}
+\def\kindex {\kwindex}
+\def\cindex {\cpindex}
+\def\vindex {\vrindex}
+
+\def\cindexsub {\begingroup\obeylines\cindexsub}
+{\obeylines %
+\gdef\cindexsub "#1" #2^^M{\endgroup %
+\dosubind{cp}{#2}{#1}}}
+
+% Define the macros used in formatting output of the sorted index material.
+
+% This is what you call to cause a particular index to get printed.
+% Write
+% @unnumbered Function Index
+% @printindex fn
+
+\def\printindex{\parsearg\doprintindex}
+
+\def\doprintindex#1{\tex %
+\catcode`\%=\other\catcode`\&=\other\catcode`\#=\other
+\catcode`\@=\other\catcode`\$=\other\catcode`\_=\other
+\catcode`\~=\other
+\indexfonts\rm \tolerance=9500 \advance\baselineskip -1pt
+\begindoublecolumns
+\openin 1 \jobname.#1s
+\ifeof 1 \else \closein 1 \input \jobname.#1s
+\fi
+\enddoublecolumns
+\Etex}
+
+% These macros are used by the sorted index file itself.
+% Change them to control the appearance of the index.
+
+\outer\def\initial #1{\bigbreak\line{\secbf#1\hfill}\kern 2pt\penalty3000}
+
+\outer\def\entry #1#2{
+{\parfillskip=0in \parskip=0in \parindent=0in
+\hangindent=1in \hangafter=1%
+\noindent\hbox{#1}\leaders\Dotsbox\hskip 0pt plus 1filll #2\par
+}}
+
+\def\primary #1{\line{#1\hfil}}
+
+\newskip\secondaryindent \secondaryindent=0.5cm
+
+\def\secondary #1#2{
+{\parfillskip=0in \parskip=0in
+\hangindent =1in \hangafter=1
+\noindent\hskip\secondaryindent\hbox{#1}\leaders\Dotsbox\hskip 0pt plus 1filll#2\par
+}}
+
+%% Define two-column mode, which is used in indexes.
+%% Adapted from the TeXBook, page 416
+\catcode `\@=11
+
+\newbox\partialpage
+
+\def\begindoublecolumns{\begingroup
+  \output={\global\setbox\partialpage=\vbox{\unvbox255\kern -\topskip \kern \baselineskip}}\eject
+  \output={\doublecolumnout} \hsize=3.11in \vsize=19.1in}
+\def\enddoublecolumns{\output={\balancecolumns}\eject
+  \endgroup \pagegoal=\vsize}
+
+\def\doublecolumnout{\splittopskip=\topskip \splitmaxdepth=\maxdepth
+  \dimen@=\pageheight \advance\dimen@ by-\ht\partialpage
+  \setbox0=\vsplit255 to\dimen@ \setbox2=\vsplit255 to\dimen@
+  \onepageout\pagesofar \unvbox255 \penalty\outputpenalty}
+\def\pagesofar{\unvbox\partialpage %
+  \wd0=\hsize \wd2=\hsize \hbox to\pagewidth{\box0\hfil\box2}}
+\def\balancecolumns{\setbox0=\vbox{\unvbox255} \dimen@=\ht0
+  \advance\dimen@ by\topskip \advance\dimen@ by-\baselineskip
+  \divide\dimen@ by2 \splittopskip=\topskip
+  {\vbadness=10000 \loop \global\setbox3=\copy0
+    \global\setbox1=\vsplit3 to\dimen@
+    \ifdim\ht3>\dimen@ \global\advance\dimen@ by1pt \repeat}
+  \setbox0=\vbox to\dimen@{\unvbox1}  \setbox2=\vbox to\dimen@{\unvbox3}
+  \pagesofar}
+
+\catcode `\@=\other
+\message{sectioning,}
+% Define chapters, sections, etc.
+
+\outer\def\chapter{\parsearg\chapx}
+\outer\def\unnumbered{\parsearg\chapxn}
+\outer\def\appendix{\parsearg\chapapx}
+\outer\def\section{\parsearg\secx}
+\outer\def\appendixsection{\parsearg\apsecx}
+\outer\def\unnumberedsec{\parsearg\secxn}
+\outer\def\subsection{\parsearg\subsecx}
+\outer\def\subsubsection{\parsearg\subsubsecx}
+
+\newcount \chapno
+\newcount \secno
+\newcount \subsecno
+\newcount \subsubsecno
+
+% This counter is funny since it counts through charcodes of letters A, B, ...
+\newcount \appendixno  \appendixno = `\@
+\def\appendixletter{\char\the\appendixno}
+
+\newwrite \contentsfile
+\openout \contentsfile = \jobname.toc
+
+% Each @chapter defines this as the name of the chapter.
+% page headings and footings can use it.  @section does likewise
+
+\def\thischapter{} \def\thissection{}
+\def\seccheck#1{\levelcheck \if \pageno<0 %
+\errmessage{@#1 not allowed after generating table of contents}\fi
+%
+}
+
+\def\chapx #1{\seccheck{chapter}%
+\secno=0 \subsecno=0 \subsubsecno=0 \global\advance \chapno by 1 \message{Chapter \the\chapno}%
+\chapmacro {#1}{\the\chapno}%
+\gdef\thissection{#1}\gdef\thischapter{#1}%
+\edef\temp{{\realbackslash chapentry {#1}{\the\chapno}{\noexpand\folio}}}%
+\write \contentsfile \temp  %
+}
+
+\def\chapapx #1{\seccheck{appendix}%
+\secno=0 \subsecno=0 \subsubsecno=0 \global\advance \appendixno by 1 \message{Appendix \appendixletter}%
+\chapmacro {#1}{Appendix \appendixletter}%
+\gdef\thischapter{#1}\gdef\thissection{#1}%
+\edef\temp{{\realbackslash chapentry {#1}{Appendix \appendixletter}{\noexpand\folio}}}%
+\write \contentsfile \temp  %
+}
+
+\def\chapxn #1{\seccheck{unnumbered}%
+\secno=0 \subsecno=0 \subsubsecno=0 \message{(#1)}
+\unnumbchapmacro {#1}%
+\gdef\thischapter{#1}\gdef\thissection{#1}%
+\edef\temp{{\realbackslash unnumbchapentry {#1}{\noexpand\folio}}}%
+\write \contentsfile \temp  %
+}
+
+\def\secx #1{\seccheck{section}%
+\subsecno=0 \subsubsecno=0 \global\advance \secno by 1 %
+\gdef\thissection{#1}\secheading {#1}{\the\chapno}{\the\secno}%
+\edef\temp{{\realbackslash secentry %
+{#1}{\the\chapno}{\the\secno}{\noexpand\folio}}}%
+\write \contentsfile \temp %
+}
+
+\def\apsecx #1{\seccheck{appendixsection}%
+\subsecno=0 \subsubsecno=0 \global\advance \secno by 1 %
+\gdef\thissection{#1}\secheading {#1}{\appendixletter}{\the\secno}%
+\edef\temp{{\realbackslash secentry %
+{#1}{\appendixletter}{\the\secno}{\noexpand\folio}}}%
+\write \contentsfile \temp %
+}
+
+\def\secxn #1{\seccheck{unnumberedsec}%
+\plainsecheading {#1}\gdef\thissection{#1}%
+\edef\temp{{\realbackslash unnumbsecentry %
+{#1}{\noexpand\folio}}}%
+\write \contentsfile \temp %
+}
+
+\def\subsecx #1{\seccheck{subsection}%
+\gdef\thissection{#1}\subsubsecno=0 \global\advance \subsecno by 1 %
+\subsecheading {#1}{\the\chapno}{\the\secno}{\the\subsecno}%
+\edef\temp{{\realbackslash subsecentry %
+{#1}{\the\chapno}{\the\secno}{\the\subsecno}{\noexpand\folio}}}%
+\write \contentsfile \temp %
+}
+
+\def\subsubsecx #1{\seccheck{subsubsection}%
+\gdef\thissection{#1}\global\advance \subsubsecno by 1 %
+\subsubsecheading {#1}{\the\chapno}{\the\secno}{\the\subsecno}{\the\subsubsecno}%
+\edef\temp{{\realbackslash subsubsecentry %
+{#1}{\the\chapno}{\the\secno}{\the\subsecno}{\the\subsubsecno}{\noexpand\folio}}}%\
+\write \contentsfile \temp %
+}
+
+% Define @majorheading, @heading and @subheading
+
+\outer\def\majorheading{\parsearg\majorheadingzzz}
+
+\def\majorheadingzzz #1{%
+{\advance\chapheadingskip by 10pt \chapbreak }%
+{\chapfonts \line{\chaprm #1\hfill}}\bigskip \par\penalty 200}
+
+\outer\def\heading{\parsearg\headingzzz}
+
+\def\headingzzz #1{\chapbreak %
+{\chapfonts \line{\chaprm #1\hfill}}\bigskip \par\penalty 200}
+
+\outer\def\subheading{\parsearg\secheadingi}
+
+\outer\def\subsubheading{\parsearg\subsecheadingi}
+
+% These macros generate a chapter, section, etc. heading only
+% (including whitespace, linebreaking, etc. around it),
+% given all the information in convenient, parsed form.
+
+%%% Args are the skip and penalty (usually negative)
+\def\dobreak#1#2{\par\ifdim\lastskip<#1\removelastskip\penalty#2\vskip#1 \fi}
+
+\def\setchapterstyle #1 {\csname CHAPF#1\endcsname}
+
+%%% Define plain chapter starts, and page on/off switching for it
+% Parameter controlling skip before chapter headings (if needed)
+
+\newskip \chapheadingskip \chapheadingskip = 30pt plus 8pt minus 4pt
+
+\def\chapbreak{\dobreak \chapheadingskip {-100}}
+\def\chappager{\par\vfill\supereject}
+\def\chapoddpage{\chappager \ifodd\pageno \else \hbox to 0pt{} \chappager\fi}
+
+\def\setchapternewpage #1 {\csname CHAPPAG#1\endcsname}
+\def\CHAPPAGoff{\global\let\pchapsepmacro=\chapbreak}
+\def\CHAPPAGon{\global\let\pchapsepmacro=\chappager}
+\def\CHAPPAGodd{\global\let\pchapsepmacro=\chapoddpage}
+\CHAPPAGon
+
+\def\CHAPFplain{
+\global\let\chapmacro=\chfplain
+\global\let\unnumbchapmacro=\unnchfplain}
+
+\def\chfplain #1#2{%
+\pchapsepmacro %
+{\chapfonts \line{\chaprm #2.\enspace #1\hfill}}\bigskip \par\penalty 5000 %
+}
+
+\def\unnchfplain #1{%
+\pchapsepmacro %
+{\chapfonts \line{\chaprm #1\hfill}}\bigskip \par\penalty 10000 %
+}
+\CHAPFplain % The default
+
+\def\unnchfopen #1{%
+\chapoddpage {\chapfonts \line{\chaprm #1\hfill}}\bigskip \par\penalty 10000 %
+}
+
+\def\chfopen #1#2{\chapoddpage {\chapfonts
+\vbox to 3in{\vfil \hbox to\hsize{\hfil #2} \hbox to\hsize{\hfil #1} \vfil}}%
+\par\penalty 5000 %
+}
+
+\def\CHAPFopen{
+\global\let\chapmacro=\chfopen
+\global\let\unnumbchapmacro=\unnchfopen}
+
+% Parameter controlling skip before section headings.
+
+\newskip \subsecheadingskip  \subsecheadingskip = 17pt plus 4pt minus 4pt
+\def\subsecheadingbreak{\dobreak \subsecheadingskip {-30}}
+
+\newskip \secheadingskip  \secheadingskip = 21pt plus 6pt minus 4pt
+\def\secheadingbreak{\dobreak \secheadingskip {-50}}
+
+\def\secheading #1#2#3{\secheadingi {#2.#3\enspace #1}}
+\def\plainsecheading #1{\secheadingi {#1}}
+\def\secheadingi #1{{\advance \secheadingskip by \parskip %
+\secheadingbreak} %
+{\secfonts \line{\secrm #1\hfill}} %
+\ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 1000}
+
+\def\subsecheading #1#2#3#4{{\advance \subsecheadingskip by \parskip %
+\subsecheadingbreak} %
+{\subsecfonts \line{\secrm#2.#3.#4\enspace #1\hfill}}
+\ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 1000}
+
+\def\subsubsecfonts{\subsecfonts} % Maybe this should change
+
+\def\subsubsecheading #1#2#3#4#5{{\advance \subsecheadingskip by \parskip %
+\subsecheadingbreak} %
+{\subsubsecfonts \line{\secrm#2.#3.#4.#5\enspace #1\hfill}}
+\ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 1000}
+
+\message{toc printing,}
+
+\def\Dotsbox{\hbox to 1em{\hss.\hss}} % Used by index macros
+
+\def\finishcontents{%
+\ifnum\pageno>0 %
+\par\vfill\supereject %
+\immediate\closeout \contentsfile%
+\pageno=-1		% Request roman numbered pages
+\fi}
+
+\outer\def\contents{%
+\finishcontents %
+\unnumbchapmacro{Table of Contents}
+\def\thischapter{Table of Contents}
+{\catcode`\\=0
+\catcode`\{=1		% Set up to handle contents files properly
+\catcode`\}=2
+\input \jobname.toc
+}
+\vfill \eject}
+
+\outer\def\summarycontents{%
+\finishcontents %
+\unnumbchapmacro{Summary Table of Contents}
+\def\thischapter{Summary Table of Contents}
+{\catcode`\\=0
+\catcode`\{=1		% Set up to handle contents files properly
+\catcode`\}=2
+\def\smallbreak{}
+\def\secentry ##1##2##3##4{}
+\def\subsecentry ##1##2##3##4##5{}
+\def\subsubsecentry ##1##2##3##4##5##6{}
+\def\unnumbsecentry ##1##2{}
+\let\medbreak=\smallbreak
+\input \jobname.toc
+}
+\vfill \eject}
+
+\outer\def\bye{\par\vfill\supereject\tracingstats=1\ptexend}
+
+% These macros generate individual entries in the table of contents
+% The first argument is the chapter or section name.
+% The last argument is the page number.
+% The arguments in between are the chapter number, section number, ...
+
+\def\chapentry #1#2#3{%
+\medbreak
+\line{#2.\space#1\leaders\hbox to 1em{\hss.\hss}\hfill #3}
+}
+
+\def\unnumbchapentry #1#2{%
+\medbreak
+\line{#1\leaders\Dotsbox\hfill #2}
+}
+
+\def\secentry #1#2#3#4{%
+\line{\enspace\enspace#2.#3\space#1\leaders\Dotsbox\hfill#4}
+}
+
+\def\unnumbsecentry #1#2{%
+\line{\enspace\enspace#1\leaders\Dotsbox\hfill #2}
+}
+
+\def\subsecentry #1#2#3#4#5{%
+\line{\enspace\enspace\enspace\enspace
+#2.#3.#4\space#1\leaders\Dotsbox\hfill #5}
+}
+
+\def\subsubsecentry #1#2#3#4#5#6{%
+\line{\enspace\enspace\enspace\enspace\enspace\enspace
+#2.#3.#4.#5\space#1\leaders\Dotsbox\hfill #6}
+}
+
+\message{environments,}
+
+% @tex ... @end tex    escapes into raw Tex temporarily.
+
+\def\tex{\begingroup
+\catcode `\\=0 \catcode `\{=1 \catcode `\}=2
+\catcode `\$=3 \catcode `\&=4 \catcode `\#=6
+\catcode `\^=7 \catcode `\_=8 \catcode `\~=13 \let~=\tie
+\let\{=\lbrace \let\}=\rbrace
+\let\nobreak=\ptexnobreak
+\let\.=\ptexdot
+\let\#=\ptexnumsign
+\let\*=\ptexstar
+\let\+=\tabalign
+\let\-=\ptexminus
+\let\b=\ptexb \let\c=\ptexc \let\i=\ptexi \let\t=\ptext \let\l=\ptexl
+\let\L=\ptexL
+\catcode `\%=14 \let\Etex=\endgroup}
+
+% Define @lisp ... @endlisp.
+% @lisp does a \begingroup so it can rebind things,
+% including the definition of @endlisp (which normally is erroneous).
+
+% Amount to narrow the margins by for @lisp.
+\newskip\lispnarrowing \lispnarrowing=0.3in
+
+% This is the definition that ^M gets inside @lisp
+{\obeyspaces%
+\gdef\lisppar{ \endgraf}}
+
+% Cause \obeyspaces to make each Space cause a word-separation
+% rather than the default which is that it acts punctuation.
+% This is because space in tt font looks funny.
+{\obeyspaces %
+\gdef\sepspaces{\def {\ }}}
+
+\newskip\aboveenvskipamount \aboveenvskipamount=3pt
+\def\aboveenvbreak{{\advance\aboveenvskipamount by \parskip
+\par \ifdim\lastskip<\aboveenvskipamount
+\removelastskip \penalty-50 \vskip\aboveenvskipamount \fi}}
+
+\def\afterenvbreak{\par \ifdim\lastskip<\aboveenvskipamount
+\removelastskip \penalty-50 \vskip\aboveenvskipamount \fi}
+
+{\catcode`\@=\active%
+% @ must be active when this definition is made,
+% so that the \let@ can be parsed properly.
+\gdef\lisp{\begingroup\inENV %This group ends at the end of the @lisp body
+\aboveenvbreak \hfuzz=12truept % Don't be fussy
+% Make spaces be word-separators rather than space tokens.
+\sepspaces %
+% Single space lines
+\singlespace %
+% The following causes blank lines not to be ignored
+% by adding a space to the end of each line.
+\let\par=\lisppar
+\catcode`\{=\other \catcode`\}=\other
+\def\Elisp{\endgroup\afterenvbreak}
+\parskip=0pt \advance \rightskip by \lispnarrowing 
+\advance \leftskip by \lispnarrowing
+\parindent=0pt
+\let\exdent=\internalexdent
+\obeyspaces \obeylines \tt}}
+
+\let\example=\lisp
+\def\Eexample{\Elisp}
+
+% This is @display; same as @lisp except use roman font.
+
+{\catcode`\@=\active%
+% @ must be active when this definition is made,
+% so that the \let@ can be parsed properly.
+\gdef\display{\begingroup\inENV %This group ends at the end of the @display body
+\aboveenvbreak
+% Make spaces be word-separators rather than space tokens.
+\sepspaces %
+% Single space lines
+\singlespace %
+% The following causes blank lines not to be ignored
+% by adding a space to the end of each line.
+\let\par=\lisppar
+\def\Edisplay{\endgroup\afterenvbreak}
+\parskip=0pt \advance \rightskip by \lispnarrowing 
+\advance \leftskip by \lispnarrowing
+\parindent=0pt
+\let\exdent=\internalexdent
+\obeyspaces \obeylines}}
+
+% This is @format; same as @lisp except use roman font and don't narrow margins
+
+{\catcode`\@=\active%
+% @ must be active when this definition is made,
+% so that the \let@ can be parsed properly.
+\gdef\format{\begingroup\inENV %This group ends at the end of the @format body
+\aboveenvbreak
+% Make spaces be word-separators rather than space tokens.
+\sepspaces %
+\singlespace %
+% The following causes blank lines not to be ignored
+% by adding a space to the end of each line.
+\let\par=\lisppar
+\def\Eformat{\endgroup\afterenvbreak}
+\parskip=0pt \parindent=0pt
+\obeyspaces \obeylines}}
+
+% This is @address; same as @format except put left margin in mid page
+
+{\catcode`\@=\active%
+% @ must be active when this definition is made,
+% so that the \let@ can be parsed properly.
+\gdef\address{\begingroup\inENV %This group ends at the end of the @address body
+\aboveenvbreak
+% Make spaces be word-separators rather than space tokens.
+\sepspaces %
+% The following causes blank lines not to be ignored
+% by adding a space to the end of each line.
+% This also causes @ to work when the directive name
+% is terminated by end of line.
+\let\par=\lisppar
+\def\Eaddress{\endgroup\afterenvbreak}
+\def\Eclosing{\endgroup\afterenvbreak}
+\parskip=0pt \parindent=0pt
+\obeyspaces \obeylines}}
+
+\let\closing=\address
+
+% @flushleft and @flushright
+
+{\catcode`\@=\active%
+% @ must be active when this definition is made,
+% so that the \let@ can be parsed properly.
+\gdef\flushleft{\begingroup\inENV %This group ends at the end of the @format body
+\aboveenvbreak
+% Make spaces be word-separators rather than space tokens.
+\sepspaces %
+% The following causes blank lines not to be ignored
+% by adding a space to the end of each line.
+% This also causes @ to work when the directive name
+% is terminated by end of line.
+\let\par=\lisppar
+\def\Eflushleft{\endgroup\afterenvbreak}
+\parskip=0pt \parindent=0pt
+\obeyspaces \obeylines}}
+
+{\catcode`\@=\active%
+% @ must be active when this definition is made,
+% so that the \let@ can be parsed properly.
+\gdef\flushright{\begingroup\inENV %This group ends at the end of the @format body
+\aboveenvbreak
+% Make spaces be word-separators rather than space tokens.
+\sepspaces %
+% The following causes blank lines not to be ignored
+% by adding a space to the end of each line.
+% This also causes @ to work when the directive name
+% is terminated by end of line.
+\let\par=\lisppar
+\def\Eflushright{\endgroup\afterenvbreak}
+\parskip=0pt \parindent=0pt
+\advance \leftskip by 0pt plus 1fill
+\obeyspaces \obeylines}}
+
+% @quotation - narrow the margins.
+
+\def\quotation{\begingroup\inENV %This group ends at the end of the @quotation body
+\aboveenvbreak
+\singlespace
+\def\Equotation{\par\endgroup\afterenvbreak}
+\advance \rightskip by \lispnarrowing 
+\advance \leftskip by \lispnarrowing}
+
+% @undent - make every paragraph have a hanging indentation
+
+\def\undent{\begingroup %This group ends at the end of the @undent body
+\def\Eundent{\par\endgroup}
+\everypar={\hangindent=\parindent \hskip-\parindent \hangafter=1 }}
+
+% @document - nothing now, later it will read in the aux file, close toc files
+\def\document{} \def\Edocument{}
+
+\message{defuns,}
+% Define formatter for defuns
+% First, allow user to change definition object font (\df) internally
+\def\setdeffont #1 {\csname DEF#1\endcsname}
+
+\newskip\defbodyindent \defbodyindent=36pt
+\newskip\defargsindent \defargsindent=50pt
+\newskip\deftypemargin \deftypemargin=12pt
+\newskip\deflastargmargin \deflastargmargin=18pt
+
+\newcount\parencount
+% define \functionparens, which makes ( and ) and & do special things.
+% \functionparens affects the group it is contained in.
+\def\activeparens{%
+\catcode`\(=\active \catcode`\)=\active \catcode`\&=\active
+\catcode`\[=\active \catcode`\]=\active}
+{\activeparens % Now, smart parens don't turn on until &foo (see \amprm)
+\gdef\functionparens{\boldbrax\let&=\amprm\parencount=0 }
+\gdef\boldbrax{\let(=\opnr\let)=\clnr\let[=\lbrb\let]=\rbrb}
+
+% Definitions of (, ) and & used in args for functions.
+% This is the definition of ( outside of all parentheses.
+\gdef\oprm#1 {{\rm\char`\(}#1 \bf \let(=\opnested %
+\global\advance\parencount by 1 }
+%
+% This is the definition of ( when already inside a level of parens.
+\gdef\opnested{\char`\(\global\advance\parencount by 1 }
+%
+\gdef\clrm{% Print a paren in roman if it is taking us back to depth of 0.
+% also in that case restore the outer-level definition of (.
+\ifnum \parencount=1 {\rm \char `\)}\vf \let(=\oprm \else \char `\) \fi
+\global\advance \parencount by -1 }
+% If we encounter &foo, then turn on ()-hacking afterwards
+\gdef\amprm#1 {{\rm\&#1}\let(=\oprm \let)=\clrm\ }
+%
+\gdef\normalparens{\boldbrax\let&=\ampnr}
+} % End of definition inside \activeparens
+%% These parens (in \boldbrax) actually are a little bolder than the
+%% contained text.  This is especially needed for [ and ]
+\def\opnr{{\sf\char`\(}} \def\clnr{{\sf\char`\)}} \def\ampnr{\&}
+\def\lbrb{{\tt\char`\[}} \def\rbrb{{\tt\char`\]}}
+
+% First, defname, which formats the header line itself.
+% #1 should be the function name.
+% #2 should be the type of definition, such as "Function".
+
+\def\defname #1#2{%
+\leftskip = 0in  %
+\noindent        %
+\setbox0=\hbox{\hskip \deflastargmargin{\rm #2}\hskip \deftypemargin}%
+\dimen0=\hsize \advance \dimen0 by -\wd0 % compute size for first line
+\dimen1=\hsize \advance \dimen1 by -\defargsindent %size for continuations
+\parshape 2 0in \dimen0 \defargsindent \dimen1     %
+% Now output arg 2 ("Function" or some such)
+% ending at \deftypemargin from the right margin,
+% but stuck inside a box of width 0 so it does not interfere with linebreaking
+\rlap{\rightline{{\rm #2}\hskip \deftypemargin}}%
+\tolerance=10000 \hbadness=10000    % Make all lines underfull and no complaints
+{\df #1}\enskip        % Generate function name
+}
+
+% Actually process the body of a definition
+% #1 should be the terminating control sequence, such as \Edefun.
+% #2 should be the "another name" control sequence, such as \defunx.
+% #3 should be the control sequence that actually processes the header,
+%    such as \defunheader.
+
+\def\defparsebody #1#2#3{\begingroup\inENV% Environment for definitionbody
+\medbreak %
+% Define the end token that this defining construct specifies
+% so that it will exit this group.
+\def#1{\endgraf\endgroup\medbreak}%
+\def#2{\begingroup\obeylines\activeparens\spacesplit#3}%
+\parindent=0in \leftskip=\defbodyindent %
+\begingroup\obeylines\activeparens\spacesplit#3}
+
+\def\defmethparsebody #1#2#3#4 {\begingroup\inENV %
+\medbreak %
+% Define the end token that this defining construct specifies
+% so that it will exit this group.
+\def#1{\endgraf\endgroup\medbreak}%
+\def#2##1 {\begingroup\obeylines\activeparens\spacesplit{#3{##1}}}%
+\parindent=0in \leftskip=\defbodyindent %
+\begingroup\obeylines\activeparens\spacesplit{#3{#4}}}
+
+% Split up #2 at the first space token.
+% call #1 with two arguments:
+%  the first is all of #2 before the space token,
+%  the second is all of #2 after that space token.
+% If #2 contains no space token, all of it is passed as the first arg
+% and the second is passed as empty.
+
+{\obeylines
+\gdef\spacesplit#1#2^^M{\endgroup\spacesplitfoo{#1}#2 \relax\spacesplitfoo}%
+\long\gdef\spacesplitfoo#1#2 #3#4\spacesplitfoo{%
+\ifx\relax #3%
+#1{#2}{}\else #1{#2}{#3#4}\fi}}
+
+% So much for the things common to all kinds of definitions.
+
+% Define \defun.
+
+% First, define the processing that is wanted for arguments of \defun
+% Use this to expand the args and terminate the paragraph they make up
+
+\def\defunargs #1{\functionparens \vf #1%
+\ifnum\parencount=0 \else \errmessage{unbalanced parens in @def arguments}\fi%
+\interlinepenalty=10000
+\endgraf\vskip -\parskip \penalty 10000}
+
+% \lastfunction is always defined to the name in the most recennt @defun
+% It is used by @kitem as the subtopic to index the keyword under
+
+\def\lastfunction{}
+
+% Do complete processing of one @defun or @defunx line already parsed.
+
+\def\defunheader #1#2{\doind {fn}{#1} % Make entry in function index
+\gdef\lastfunction{#1}%
+\dosetq {#1-fun}{page}%
+{\defname {#1}{Function}\defunargs {#2}}%
+}
+
+\def\defmacheader #1#2{\doind {fn}{#1} % Make entry in function index
+\gdef\lastfunction{#1}%
+\dosetq {#1-fun}{page}%
+\begingroup\defname {#1}{Macro}%
+\defunargs {#2}\endgroup %
+}
+
+\def\defspecheader #1#2{\doind {fn}{#1} % Make entry in function index
+\gdef\lastfunction{#1}%
+\dosetq {#1-fun}{page}%
+\begingroup\defname {#1}{Special form}%
+\defunargs {#2}\endgroup %
+}
+
+\def\defmessageheader #1#2{\doind {op}{#1} % Make entry in operation index
+\gdef\lastfunction{#1}%
+\dosetq {#1-message}{page}%
+\begingroup\defname {#1}{Operation}%
+\defunargs {#2}\endgroup %
+}
+
+% Now we can define @defun itself.
+
+\def\defun{\defparsebody\Edefun\defunx\defunheader}
+\def\defmac{\defparsebody\Edefmac\defmacx\defmacheader}
+\def\defspec{\defparsebody\Edefspec\defspecx\defspecheader}
+\def\defmessage{\defparsebody\Edefmessage\defmessagex\defmessageheader}
+
+% This definition is run if you use @defunx
+% anywhere other than immediately after a @defun or @defunx.
+
+\def\defunx #1 {\errmessage{@defunx in invalid context}}
+\def\defmacx #1 {\errmessage{@defmacx in invalid context}}
+\def\defspecx #1 {\errmessage{@defspecx in invalid context}}
+\def\defmessagex #1 {\errmessage{@defmessagex in invalid context}}
+
+% @defmethod, @defmetamethod, and so on
+
+% Do complete processing of one @defmethod line already parsed.
+
+\def\defmethodheader #1#2#3{\dosubind {op}{#2}{on {\bf #1}}% Make entry in operation index
+\gdef\lastfunction{#2}%
+\dosetqflushcolon {#1-}#2-method {page}%
+\begingroup\defname {#2}{Operation on {\bf #1}}%
+\defunargs {#3}\endgroup %
+}
+
+\def\defmetamethodheader #1#2#3{\dosubind {op}{#2}{on #1}% Make entry in operation index
+\gdef\lastfunction{#2}%
+\dosetqflushcolon {#1-}#2-method {page}%
+\begingroup\defname {#2}{Operation on #1}%
+\defunargs {#3}\endgroup %
+}
+
+\def\defivarheader #1#2#3{%
+\gdef\lastfunction{#2}%
+\dosubind {iv}{#2}{of {\bf #1}}% Make entry in instance variable index
+\dosetq {#1-#2-ivar}{page}%
+\begingroup\defname {#2}{Instance variable of {\bf #1}}%
+\defvarargs {#3}\endgroup %
+}
+
+\def\defmetaivarheader #1#2#3{%
+\gdef\lastfunction{#2}%
+\dosubind {iv}{#2}{of #1}% Make entry in ivar index
+\dosetq {#1-#2-ivar}{page}%
+\begingroup\defname {#2}{Instance variable of #1}%
+\defvarargs {#3}\endgroup %
+}
+
+\def\definitheader #1#2#3{%
+\gdef\lastfunction{#2}%
+\dosubind {io}{#2}{for {\bf #1}}% Make entry in init option index
+\dosetqflushcolon {#1-}#2-init-option {page}%
+\begingroup\defname {#2}{Init keyword for {\bf #1}}%
+\defvarargs {#3}\endgroup %
+}
+
+\def\defmetainitheader #1#2#3{%
+\gdef\lastfunction{#2}%
+\dosubind {io}{#2}{for #1}% Make entry in init option index
+\dosetqflushcolon {#1-}#2-init-option {page}%
+\begingroup\defname {#2}{Init keyword for #1}%
+\defvarargs {#3}\endgroup %
+}
+
+\def\defmethod{\defmethparsebody\Edefmethod\defmethodx\defmethodheader}
+\def\defmetamethod{%
+\defmethparsebody\Edefmetamethod\defmetamethodx\defmetamethodheader}
+
+\def\defivar{\defmethparsebody\Edefivar\defivarx\defivarheader}
+\def\defmetaivar{%
+\defmethparsebody\Edefmetaivar\defmetaivarx\defmetaivarheader}
+
+\def\definit{\defmethparsebody\Edefinit\definitx\definitheader}
+\def\defmetainit{%
+\defmethparsebody\Edefmetainit\defmetainitx\defmetainitheader}
+
+% These definitions are run if you use @defmethodx, etc.,
+% anywhere other than immediately after a @defmethod, etc.
+
+\def\defmethodx #1 {\errmessage{@defmethodx in invalid context}}
+\def\defmetamethodx #1 {\errmessage{@defmetamethodx in invalid context}}
+
+\def\defivarx #1 {\errmessage{@defivarx in invalid context}}
+\def\defmetaivarx #1 {\errmessage{@defmetaivarx in invalid context}}
+
+\def\definitx #1 {\errmessage{@definitx in invalid context}}
+\def\defmetainitx #1 {\errmessage{@defmetainitx in invalid context}}
+
+% Now @defvar
+
+% First, define the processing that is wanted for arguments of @defvar.
+% This is actually simple: just print them in roman.
+% This must expand the args and terminate the paragraph they make up
+\def\defvarargs #1{\normalparens #1%
+\interlinepenalty=10000
+\endgraf\vskip -\parskip \penalty 10000}
+
+% Do complete processing of one @defvar or @defvarx line already parsed.
+
+\def\defvarheader #1#2{\doind {vr}{#1}% Make entry in var index
+\gdef\lastfunction{#1}%
+\dosetq {#1-var}{page}%
+\begingroup\defname {#1}{Variable}%
+\defvarargs {#2}\endgroup %
+}
+
+\def\defconstheader #1#2{\doind {vr}{#1}% Make entry in var index
+\gdef\lastfunction{#1}%
+\dosetq {#1-var}{page}%
+\begingroup\defname {#1}{Constant}%
+\defvarargs {#2}\endgroup %
+}
+
+\def\defmeterheader #1#2{\doind {mt}{#1}% Make entry in meter index
+\gdef\lastfunction{#1}%
+\dosetq {#1-meter}{page}%
+\begingroup\defname {#1}{Meter}%
+\defvarargs {#2}\endgroup %
+}
+
+\def\defresourceheader #1#2{\doind {rs}{#1}% Make entry in resource index
+\gdef\lastfunction{#1}%
+\dosetq {#1-resource}{page}%
+\begingroup\defname {#1}{Resource}%
+\defvarargs {#2}\endgroup %
+}
+
+% Now we can define @defvar itself.  Also @defconst.
+
+\def\defvar{\defparsebody\Edefvar\defvarx\defvarheader}
+\def\defconst{\defparsebody\Edefconst\defconstx\defconstheader}
+\def\defmeter{\defparsebody\Edefmeter\defmeterx\defmeterheader}
+\def\defresource{\defparsebody\Edefresource\defresourcex\defresourceheader}
+
+% This definition is run if you use @defvarx
+% anywhere other than immediately after a @defvar or @defvarx.
+
+\def\defvarx #1 {\errmessage{@defvarx in invalid context}}
+\def\defconstx #1 {\errmessage{@defconstx in invalid context}}
+\def\defmeterx #1 {\errmessage{@defmeterx in invalid context}}
+\def\defresourcex #1 {\errmessage{@defresourcex in invalid context}}
+
+% Now define @defflavor
+% Args are printed in bold, a slight difference from @defvar.
+
+\def\defflavargs #1{\bf \defvarargs{#1}}
+
+% Do complete processing of one @defflavor (or similar construct) line.
+
+\def\defflavorheader #1#2{\doind {fl}{#1}% Make entry in flavor index
+\gdef\lastfunction{#1}%
+\dosetq {#1-flavor}{page}%
+\begingroup\defname {#1}{Flavor}%
+\defflavargs {#2}\endgroup %
+}
+
+\def\defconditionheader #1#2{\doind {cn}{#1}% Make entry in condition index
+\gdef\lastfunction{#1}%
+\dosetq {#1-condition}{page}%
+\begingroup\defname {#1}{Condition}%
+\defflavargs {#2}\endgroup %
+}
+
+\def\defconditionflavorheader #1#2{%
+\gdef\lastfunction{#1}%
+\doind {cn}{#1}% Make entry in condition index
+\doind {fl}{#1}% Make entry in flavor index
+\dosetq {#1-condition}{page}%
+\dosetq {#1-flavor}{page}%
+\dosetq {#1-condition-flavor}{page}%
+\doind {fl}{#1}% Make entry in flavor index
+\begingroup\defname {#1}{Condition flavor}%
+\defflavargs {#2}\endgroup %
+}
+
+\def\defflavor{\defparsebody\Edefflavor\defflavorx\defflavorheader}
+\def\defcondition{%
+\defparsebody\Edefcondition\defconditionx\defconditionheader}
+\def\defconditionflavor{%
+\defparsebody\Edefconditionflavor\defconditionflavorx\defconditionflavorheader}
+
+% This definition is run if you use @defflavorx, etc
+% anywhere other than immediately after a @defflavor, etc.
+
+\def\defflavorx #1 {\errmessage{@defflavorx in invalid context}}
+\def\defconditionx #1 {\errmessage{@defconditionx in invalid context}}
+\def\defconditionflavorx #1 {\errmessage{@defconditionflavorx in invalid context}}
+
+\message{cross reference,}
+% Define cross-reference macros
+\newwrite \auxfile
+
+% Define @setq.  @setq foo page  defines a string-variable named foo
+%  whose value is "page nnn".
+% Also allowed are
+% @setq foo section-page      defines as "section c.s.ss, page nnn"
+% @setq foo page-number       defines as "nnn"
+% @setq foo chapter-number    defines as "c"
+% @setq foo section-number    defines as "c.s.ss"
+
+% @setx foo text              defines foo as "text", literally.
+
+% Turn on \obeylines before parsing the arguments.
+% \setqx does the actual parsing.
+\def\setq{\begingroup\obeylines \setqx}
+
+\def\setx{\begingroup\obeylines \setxx}
+
+% Define \setqx, which just puts the arguments into a \write
+% preceded by \internalsetq, which will expand at write time and do all the real work,
+
+{ \obeylines %
+\gdef\setqx #1 #2^^M{%
+\let\folio=0\edef\next{\write\auxfile{\internalsetq {#1}{#2}}}%
+\next\endgroup}
+%
+\gdef\setxx #1 #2^^M{%
+\write\auxfile{'xrdef {#1}{#2}}\endgroup}}
+
+%% @label for Scribe.  setq's x-pg, x-title, x-snam, x for
+%% @pageref, @title, @nameref, @ref
+\def\label{\parsearg\labelx} \def\pageref{\parsearg\pagerefx}
+\def\nameref{\parsearg\namerefx}
+\def\labelx#1{\dosetq{#1-pg}{page-number}\dosetq{#1-title}{title}%
+\dosetq{#1-snam}{section-name}\dosetq{#1}{section-number}}
+\def\pagerefx#1{\refx{#1-pg}} \def\namerefx#1{\refx{#1-snam}}
+\def\titlex#1{\refx{#1-title}}
+
+% \dosetq is the interface for calls from other macros
+
+\def\dosetq #1#2{{\let\folio=0%
+\edef\next{\write\auxfile{\internalsetq {#1}{#2}}}%
+\next}}
+
+% dosetqflushcolon {foo-}:bar {value} defines foo-bar to value,
+% thus flushing the colon from the front of :bar.
+% This is how we define the variables for @defmethod, etc.
+
+\def\dosetqflushcolon #1:#2 #3{\write\auxfile{\internalsetq {#1#2}{#3}}}
+
+% \internalsetq {foo}{page} expands into CHARACTERS 'xrdef {foo}{...expansion of \Ypage...}
+% When the aux file is read, ' is the escape character
+
+\def\internalsetq #1#2{'xrdef {#1}{\csname Y#2\endcsname}}
+
+% We want to do \edef\Xfoo{\Ypage}
+% Define \Ypage to generate "page nnn".
+
+\def\Ypage{page \folio}
+\def\Ytitle{\ifnum\secno=0 chapter\else section\fi}
+% Define \Ysection-page to generate "section m.n, page n"
+% Define \Ysection-number-and-type to generate "section m.n"
+% Define \Ysection-number to generate just "m.n"
+
+{\catcode `\-=11
+\gdef\Ysection-page{%
+\ifnum\secno=0 chapter\xreftie\the\chapno, page\xreftie\folio %
+\else \ifnum \subsecno=0 section\xreftie\the\chapno.\the\secno, page\xreftie\folio %
+\else \ifnum \subsubsecno=0 %
+section\xreftie\the\chapno.\the\secno.\the\subsecno, page\xreftie\folio %
+\else %
+section\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno, page\xreftie\folio %
+\fi \fi \fi}
+
+\gdef\Ysection-number-and-type{%
+\ifnum\secno=0 chapter\xreftie\the\chapno %
+\else \ifnum \subsecno=0 section\xreftie\the\chapno.\the\secno %
+\else \ifnum \subsubsecno=0 %
+section\xreftie\the\chapno.\the\secno.\the\subsecno %
+\else %
+section\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
+\fi \fi \fi }
+
+\gdef\xreftie{'tie}
+
+\gdef\Ysection-number{%
+\ifnum\secno=0 \the\chapno %
+\else \ifnum \subsecno=0 \the\chapno.\the\secno %
+\else \ifnum \subsubsecno=0 %
+\the\chapno.\the\secno.\the\subsecno %
+\else %
+\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
+\fi \fi \fi}}
+
+% Define \Ychapter-number, \Ypage-number, \Ychapter-name \Ysection-name
+{\catcode `\-=11
+\gdef\Ychapter-number{\the\chapno}
+\gdef\Ypage-number{\folio}
+\gdef\Ychapter-name{\thischapter}
+\gdef\Ysection-name{\thissection}
+}
+
+% Define @ref, and alternatively the character ^V, to reference a cross-ref.
+\def\ref{\parsearg\refx}
+\def\refx#1{%
+{%
+\setbox0=\hbox{\csname X#1\endcsname}%
+\ifdim\wd0>0in \else  	% If not defined, say something at least.
+\expandafter\gdef\csname X#1\endcsname {$<$undefined$>$}%
+\message {WARNING: Cross-reference "#1" used but not yet defined}%
+\message {}%
+\fi %
+\csname X#1\endcsname %It's defined, so just use it.
+}}
+
+%% Mention a Lisp construct, telling the reader the page number
+%% The first argument is the construct, the second the name of the construct
+%% Sample use: @see[cons][fun] --> cons (see page 23)
+\def\see[#1][#2]{{\li #1} (see \refx{#1-#2})}
+
+\catcode`\^^V=\active
+\let^^V=\ref
+
+% Read the last existing aux file, if any.  No error if none exists.
+
+% This is the macro invoked by entries in the aux file.
+\def\xrdef #1#2{
+{\catcode`\'=\other\expandafter \gdef \csname X#1\endcsname {#2}}}
+
+{
+\catcode `\^^@=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\^^C=\other
+\catcode `\^^D=\other
+\catcode `\^^E=\other
+\catcode `\^^F=\other
+\catcode `\^^G=\other
+\catcode `\^^H=\other
+\catcode `\=\other
+\catcode `\^^L=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\=\other
+\catcode `\^^[=\other
+\catcode `\^^\=\other
+\catcode `\^^]=\other
+\catcode `\^^^=\other
+\catcode `\^^_=\other
+\catcode `\@=\other
+\catcode `\^=\other
+\catcode `\~=\other
+\catcode `\[=\other
+\catcode `\]=\other
+\catcode`\"=\other
+\catcode`\_=\other
+\catcode`\|=\other
+\catcode`\<=\other
+\catcode`\>=\other
+\catcode `\$=\other
+\catcode `\#=\other
+\catcode `\&=\other
+
+% the aux file uses ' as the escape.
+% Turn off \ as an escape so we do not lose on
+% entries which were dumped with control sequences in their names.
+% For example, 'xrdef {$\leq $-fun}{page ...} made by @defun ^^
+% Reference to such entries still does not work the way one would wish,
+% but at least they do not bomb out when the aux file is read in.
+
+\catcode `\{=1 \catcode `\}=2
+\catcode `\%=\other
+\catcode `\'=0
+\catcode `\\=\other
+
+'openin 1 'jobname.aux
+'ifeof 1 'else 'closein 1 'input 'jobname.aux
+'fi
+}
+
+% Open the new aux file.  Tex will close it automatically at exit.
+
+\openout \auxfile=\jobname.aux
+
+% End of control word definitions.
+
+\message{and turning on Bolio.}
+
+% Turn off all special characters except @
+% (and those which the user can use as if they were ordinary)
+% Define certain chars to be always in tt font.
+
+\catcode`\"=\active
+\def\activedoublequote{{\tt \char '042}}
+\let"=\activedoublequote
+\catcode`\~=\active
+\def~{{\tt \char '176}}
+\chardef\hat=`\^
+\catcode`\^=\active
+\def^{{\tt \hat}}
+\catcode`\_=\active
+\def_{{\tt \char '137}}
+\catcode`\|=\active
+\def|{{\tt \char '174}}
+\chardef \less=`\<
+\catcode`\<=\active
+\def<{{\tt \less}}
+\chardef \gtr=`\>
+\catcode`\>=\active
+\def>{{\tt \gtr}}
+
+%%% CHANGE! Used by \activeparens for \defspec's benefit
+\def\nlbrace{\ifmmode \delimiter"4266308 \else {\tensy\char'146}\fi}
+\def\nrbrace{\ifmmode \delimiter"5267309 \else {\tensy\char'147}\fi}
+ \let\{=\nlbrace \let \}=\nrbrace
+
+\def\mylbrace {{\tt \char '173}}
+\def\myrbrace {{\tt \char '175}}
+
+\catcode`\{=\active
+\let{=\mylbrace
+\catcode`\}=\active
+\let}=\myrbrace
+
+%% These look ok in all fonts, so just make them not special.  The @rm below
+%% makes sure that the current font starts out as the newly loaded cmr10
+\catcode`\$=\other \catcode`\%=\other \catcode`\&=\other \catcode`\#=\other
+\catcode`\@=0 \catcode`\\=\other
+
+@textfonts
+@rm

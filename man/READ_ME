@@ -1,0 +1,25 @@
+This directory contains the Tex sources of the Emacs manual,
+plus a macro package (botex) necessary for processing it.
+
+To generate the manual, you need a version of tex which has been
+built to accept control characters as input.  There is a comment
+in tex.web telling you exactly what to do to make this work.
+
+1) Run tex on emacs.tex, producing emacs.cp, emacs.cf, emacs.kw,
+and emacs.vr (unsorted index files), plus emacs.aux (cross ref file).
+
+2) Compile texindex.c, and run it:
+   `texindex emacs.cp emacs.cf emacs.vr emacs.kw'
+This produces sorted index files emacs.cps, emacs.cfs, etc.
+that are used as input in step 3.
+
+3) Run tex on emacs.tex again.
+
+4) Now you have a dvi file that you can print.
+
+The latest versions of all the intermediate files are supplied,
+so if you want to print the manual with no change, you can start with
+step 3.
+
+You may need to change the fonts used in botex.tex, since those names
+seem not to be the ones most places use now.

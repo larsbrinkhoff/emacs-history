@@ -1,0 +1,15 @@
+#!/bin/csh
+#
+#Shell script for installing Emacs, once built.
+
+set EMACS=/usr/local/emacs
+set BIN=/usr/local/bin
+
+(cd etc; make)
+(cd src; make)
+
+mv `pwd` $EMACS
+cp $EMACS/etc/{ctags,etags} $BIN
+mv $EMACS/src/xemacs $BIN/emacs
+rm $EMACS/src/temacs
+chmod 777 $BIN/{ctags,etags,emacs}

@@ -1,0 +1,216 @@
+\initial {!}
+\entry {!}{65}
+\initial {.}
+\entry {.}{65, }
+\initial {C}
+\entry {C-]}{149, 173}
+\entry {C-a}{18}
+\entry {C-b}{18}
+\entry {C-c}{149, 155}
+\entry {C-c '}{146}
+\entry {C-c /}{146}
+\entry {C-c `}{146}
+\entry {C-c Backslash}{146}
+\entry {C-c c}{151}
+\entry {C-c C-b}{146}
+\entry {C-c C-c}{151}
+\entry {C-c C-d}{146}
+\entry {C-c C-f}{146}
+\entry {C-c C-k}{147}
+\entry {C-c C-s}{151}
+\entry {C-c C-y}{148}
+\entry {C-c k}{147}
+\entry {C-c s}{151}
+\entry {C-c t}{151}
+\entry {C-c TAB}{147}
+\entry {C-c w}{151}
+\entry {C-c y}{148, 152}
+\entry {C-d}{41, 155}
+\entry {C-e}{18}
+\entry {C-f}{18}
+\entry {C-g}{25}
+\entry {C-h}{12}
+\entry {C-h a}{34}
+\entry {C-h c}{33}
+\entry {C-h C-c}{35}
+\entry {C-h C-d}{35}
+\entry {C-h f}{34, 123}
+\entry {C-h i}{35}
+\entry {C-h k}{34}
+\entry {C-h l}{35}
+\entry {C-h m}{35}
+\entry {C-h n}{35}
+\entry {C-h s}{171}
+\entry {C-h t}{17, 35}
+\entry {C-h v}{34, 123, 160}
+\entry {C-h w}{35}
+\entry {C-k}{42, 43}
+\entry {C-l}{18, 53, 65}
+\entry {C-M-a}{114}
+\entry {C-M-b}{113}
+\entry {C-M-Backslash}{98, 116}
+\entry {C-M-d}{113}
+\entry {C-M-DEL}{43}
+\entry {C-M-e}{114}
+\entry {C-M-f}{113}
+\entry {C-M-h}{39, 114}
+\entry {C-M-k}{43, 113}
+\entry {C-M-n}{113}
+\entry {C-M-o}{97}
+\entry {C-M-p}{113}
+\entry {C-M-q}{116}
+\entry {C-M-s}{59}
+\entry {C-M-t}{68, 114}
+\entry {C-M-u}{113}
+\entry {C-M-v}{92}
+\entry {C-M-w}{44}
+\entry {C-M-x}{134, 138}
+\entry {C-M-{\sf @}}{38, 114}
+\entry {C-n}{18}
+\entry {C-o}{20}
+\entry {C-p}{18}
+\entry {C-q}{17}
+\entry {C-r}{55, 65}
+\entry {C-s}{55}
+\entry {C-SPC}{38}
+\entry {C-t}{18, 68}
+\entry {C-u}{23, 155}
+\entry {C-u - C-x ;}{121}
+\entry {C-u C-SPC}{39}
+\entry {C-u C-{\sf @}}{39}
+\entry {C-u TAB}{116}
+\entry {C-v}{53}
+\entry {C-w}{43, 65, 155}
+\entry {C-x}{12}
+\entry {C-x (}{165}
+\entry {C-x )}{165}
+\entry {C-x +}{139}
+\entry {C-x -}{140}
+\entry {C-x .}{107}
+\entry {C-x /}{49}
+\entry {C-x 0}{92}
+\entry {C-x 1}{92}
+\entry {C-x 2}{91}
+\entry {C-x 4}{93}
+\entry {C-x 4 .}{127}
+\entry {C-x 4 f}{73}
+\entry {C-x 5}{92}
+\entry {C-x ;}{122}
+\entry {C-x =}{21}
+\entry {C-x [}{105}
+\entry {C-x ]}{105}
+\entry {C-x `}{131}
+\entry {C-x a}{46}
+\entry {C-x b}{85}
+\entry {C-x C-a}{140}
+\entry {C-x C-b}{85}
+\entry {C-x C-c}{16}
+\entry {C-x C-d}{79}
+\entry {C-x C-e}{135}
+\entry {C-x C-f}{72}
+\entry {C-x C-h}{140}
+\entry {C-x C-k}{155}
+\entry {C-x C-l}{109}
+\entry {C-x C-o}{20, 42}
+\entry {C-x C-p}{39, 105}
+\entry {C-x C-q}{86}
+\entry {C-x C-s}{74, 98, 142}
+\entry {C-x C-t}{68}
+\entry {C-x C-u}{109}
+\entry {C-x C-v}{73, 155}
+\entry {C-x C-w}{75}
+\entry {C-x C-x}{38}
+\entry {C-x d}{81}
+\entry {C-x DEL}{43, 67, 103}
+\entry {C-x e}{165}
+\entry {C-x ESC}{29}
+\entry {C-x f}{107}
+\entry {C-x g}{49}
+\entry {C-x h}{39}
+\entry {C-x j}{49}
+\entry {C-x k}{87}
+\entry {C-x l}{105}
+\entry {C-x m}{150}
+\entry {C-x n}{153}
+\entry {C-x o}{92}
+\entry {C-x q}{166}
+\entry {C-x s}{74}
+\entry {C-x TAB}{98}
+\entry {C-x u}{51}
+\entry {C-x w}{153}
+\entry {C-x x}{49}
+\entry {C-x {\fam \ttfam \tentt \char '175}}{92}
+\entry {C-x {\fam \ttfam \tentt \gtr }}{54}
+\entry {C-x {\fam \ttfam \tentt \hat }}{92}
+\entry {C-x {\fam \ttfam \tentt \less }}{54}
+\entry {C-y}{43}
+\entry {C-z}{16, 155}
+\entry {C-{\fam \ttfam \tentt \char '137}}{51}
+\entry {Comma}{65}
+\initial {D}
+\entry {DEL}{17, 41, 65, 67, 95, 111}
+\initial {E}
+\entry {ESC}{12, 65}
+\initial {H}
+\entry {Help}{33}
+\initial {L}
+\entry {LFD}{95, 97, 115}
+\initial {M}
+\entry {M-!}{154}
+\entry {M-$}{69}
+\entry {M-%}{65}
+\entry {M-'}{141, 146}
+\entry {M-(}{123}
+\entry {M-)}{123}
+\entry {M-,}{128}
+\entry {M--}{23, 146}
+\entry {M-- M-c}{69}
+\entry {M-- M-l}{69}
+\entry {M-- M-u}{69}
+\entry {M-.}{127}
+\entry {M-1}{23}
+\entry {M-;}{120}
+\entry {M-=}{22, 146}
+\entry {M-[}{104}
+\entry {M-]}{104}
+\entry {M-`}{146}
+\entry {M-a}{103}
+\entry {M-b}{102}
+\entry {M-Backslash}{42, 98}
+\entry {M-c}{108}
+\entry {M-d}{43, 102}
+\entry {M-DEL}{43, 67, 102}
+\entry {M-e}{103}
+\entry {M-ESC}{134}
+\entry {M-f}{102}
+\entry {M-g}{107}
+\entry {M-h}{39, 104}
+\entry {M-i}{98}
+\entry {M-k}{43, 103}
+\entry {M-l}{108}
+\entry {M-LFD}{121}
+\entry {M-m}{97}
+\entry {M-q}{107}
+\entry {M-r}{54}
+\entry {M-s}{107}
+\entry {M-SPC}{42}
+\entry {M-t}{68, 102}
+\entry {M-TAB}{147}
+\entry {M-u}{108}
+\entry {M-v}{53}
+\entry {M-w}{44}
+\entry {M-x}{31}
+\entry {M-y}{45}
+\entry {M-z}{43}
+\entry {M-{\fam \ttfam \tentt \char '174}}{154}
+\entry {M-{\fam \ttfam \tentt \char '176}}{74}
+\entry {M-{\fam \ttfam \tentt \gtr }}{18}
+\entry {M-{\fam \ttfam \tentt \hat }}{42, 98}
+\entry {M-{\fam \ttfam \tentt \less }}{18}
+\entry {M-{\sf @}}{38, 102}
+\initial {R}
+\entry {RET}{17, 155}
+\initial {S}
+\entry {SPC}{28, 65}
+\initial {T}
+\entry {TAB}{28, 95, 97, 101, 115}

@@ -1,0 +1,82 @@
+
+.TH CAT 1 "22 April 1985"
+.UC 4
+.SH NAME
+emacs \- GNU project Emacs
+.SH SYNOPSIS
+.B gnumacs
+[file ...]
+.br
+.SH DESCRIPTION
+.I GNU Emacs
+is a new version of Emacs written by the author of the original (PDP-10) Emacs,
+Richard Stallman.  Its user functionality appears to encompass
+anything any other Emacs does, and it is easily extensible since it is
+written in a version of Lisp specifically designed to support editing.
+Stallman encourages you to improve and extend Emacs, and urges that
+you contribute your extensions to the GNU library.  Eventually GNU
+(Gnu's Not Unix) will be a complete replacement for Berkeley
+Unix, not requiring any license agreement.
+.PP
+.I GNU Emacs
+has extensive interactive self-documentation.  Control-h (backspace
+or C-h) enters the self-documentation feature.  Help Tutorial (C-h t)
+requests an interactive tutorial.  Help Apropos (C-h A) helps you
+find a command given its functionality, Help Character (C-h c)
+describes a given character's effect, and Help Function (C-h f)
+describes a given Lisp function specified by name.
+.PP
+.I GNU Emacs's
+Undo can undo several steps of modification to your buffers, so it is
+easy to recover from editing mistakes.
+.PP
+.I GNU Emacs's
+many special packages handle mail reading (RMail) and sending (Mail),
+outline editing (Outline), compiling (Compile), running subshells
+within Emacs windows (Shell), and even running a Lisp top-level
+(Lisp-Interaction-Mode).
+.PP
+There is currently no reference manual (promised for May 85), but
+users of other Emacs's
+should have little trouble adapting; users new to Emacs will be able
+to use basic features fairly rapidly by studying the tutorial and
+using the self-documentation mechanisms.
+.PP
+.SH FILES
+/usr/local/emacs/src - C source files and object files
+.br
+/usr/local/emacs/lisp - Lisp source files and compiled files
+that define most editing commands.  Some are preloaded;
+others are autoloaded from this directory when used.
+.br
+/usr/local/emacs/etc - various programs that are used with
+GNU Emacs, and some files of information.
+.br
+/usr/local/emacs/info - files for the Info documentation browser
+(a subsystem of Emacs) to refer to.  Currently not much of Unix
+is documented here.
+.br
+/usr/local/emacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
+this is useful because there is a published manual for Twenex Emacs,
+obtainable for $3.50 per copy from
+.br
+   Publications Department
+.br
+   Artificial Intelligence Lab
+.br
+   545 Tech Square, rm 818
+.br
+   Cambridge, MA 02139
+.br
+/usr/local/emacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
+.PP
+.SH BUGS
+Bugs should be reported to bug-gnu-emacs@mit-prep.  Bugs tend
+actually to be fixed if they can be isolated, so it is in your
+interest to report them in such a way that they can be easily
+reproduced.
+.PP
+Bugs that I know about are: over-long filenames are sometimes
+truncated at the edge of the screen; shell will not work with programs
+running in Raw mode.
+

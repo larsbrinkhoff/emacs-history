@@ -1,0 +1,84 @@
+This file describes what you must or might want to do to termcap entries
+to make terminals work properly and efficiently with Emacs.  Information
+on likely problems with specific types of terminals appears at the end
+of the file.
+
+*** Generalities ***
+
+Emacs supports certain termcap strings that are not described in the
+4.2 manual but appear to be standard in system V.
+
+`AL'    insert several lines.  Takes one parameter, the number of
+        lines to be inserted.  You specify how to send this parameter
+	using a %-construct, just like the cursor positions in the `cm'
+	string.
+
+`DL'    delete several lines.  One parameter.
+
+`IC'    insert several characters.  One parameter.
+
+`DC'    delete several characters.  One parameter.
+
+`rp'    repeat a character.  Takes two parameters, the character
+        to be repeated and the number of times to repeat it.
+	Most likely you will use `%.' for sending the character
+	to be repeated.  Emacs interprets a padding spec with a *
+	as giving the amount of padding per repetition.
+
+`cs'    set scroll region.  Takes two parameters, the vertical
+	positions of the first line to include in the scroll region
+	and the line below the bottom of the scroll region.
+	Both parameters are origin-zero.  The effect of this
+	should be to cause a following insert-line or delete-line
+	not to move lines below the bottom of the scroll region.
+
+	Note that there appears to be confusion as to what the
+	second argument to the `cs' string should be.  The convention
+	used in GNU Emacs, and described in the previous paragraph,
+	was chosen to work properly with the `cs' strings for VT-100
+	and similar terminals, found in /etc/termcap at MIT.
+	Some people appear to have defined `cs' strings that assume
+	that the second argument is the number of the last line in
+	the scroll region.  As it is impossible for Emacs to support
+	both conventions, I have chosen the VT-100 as most important.
+
+Defining these strings is important for getting maximum performance
+from your terminal.
+
+Make sure that the `ti' string sets all modes needed for editing
+in Emacs.  For example, if your terminal has a mode that controls
+wrap at the end of the line, you must decide whether to specify
+the `am' flag in the termcap entry; whichever you decide, the `ti'
+string should contain commands to set the mode that way.
+(Emacs also sends the `vs' string after the `ti' string.
+You can put the mode-setting commands in either one of them.)
+
+*** Specific Terminal Types ***
+
+Watch out for termcap entries for Ann Arbor Ambassadors that
+give too little padding for clear-screen.  7.2 msec per line is right.
+These are the strings whose padding you probably should change:
+    :al=1*\E[L:dl=1*\E[M:cd=7.2*\E[J:cl=7.2*\E[H\E[J:
+The `ti' strings also usually need stuff added to them, such as
+    \E[>33;52;54h\E[>30;37;38;39l
+You might want to add the following to the `te' strings:
+    \E[>52l;\E[>37;h
+The following additional capabilities will improve performance:
+    :AL=1*\E[%dL:DL=1*\E[%dM:IC=4\E[%d@:DC=4\E[%dP:rp=1*%.\E[%db:
+If you find that the Meta key does not work, make sure that
+    :km:
+is present in the termcap entry.
+
+Watch out for termcap entries for VT100's that fail to specify
+the `sf' string, or that omit the padding needed for the `sf' and `sr'
+strings (2msec per line affected).  What you need is
+    :sf=2*^J:sr=2*\EM:cs=\E[%i%d;%dr:
+
+The Concept-100 and Concept-108 have many modes that `ti' strings
+often fail to initialize.  If you have problems on one of these
+terminals, that is probably the place to fix them.  These terminals
+can support an `rp' string.
+
+Watch out on HP terminals for problems with standout disappearing on
+part of the mode line.  These problems are due to the absence of
+:sg#0: which some HP terminals need.

@@ -1,0 +1,640 @@
+
+@unnumbered(Glossary)
+
+@begin(description)
+@item Abbrev
+An abbrev is a text string which expands into a different text string when
+present in the buffer.  For example, you might define a short word as an
+abbrev for a long phrase that you want to insert frequently.  @xref[Abbrevs].
+
+@item Aborting
+Aborting means getting out of a recursive edit (q.v@.)).  The commands
+@kbd{C-]} and @kbd{M-x top-level} are used for this.  @xref[Quitting]. 
+
+@item Auto Fill mode
+Auto Fill mode is a minor mode in which text that you insert is
+automatically broken into lines of fixed width.  @xref[Filling].
+
+@item Balance Parentheses
+Emacs can balance parentheses manually or automatically.
+Manual balancing is done by the commands to move over balanced
+expressions (@pxref[Lists]).  Automatic balancing is done by
+blinking the parenthesis that matches one just inserted
+(@pxref[Matching,,Matching Parens]).
+
+@item Bind
+To bind a key is to change its binding (q.v@.).
+
+@item Binding
+A key gets its meaning in Emacs by having a @dfn{binding} which is a
+command (q.v@.), a Lisp function that is run when the key is typed.
+Customization often involves rebinding a character to a different
+command function.  The bindings of all keys are recorded in the
+keymaps (q.v@.).  @xref[Commands,Binding].
+
+@item Blank Lines
+Blank lines are lines that contain only whitespace.
+Emacs has several commands for operating on the blank lines in
+the buffer.
+
+@item Buffer
+The buffer is the basic editing unit; one buffer corresponds to one piece
+of text being edited.  You can have several buffers, but at any time you
+are editing only one, the `selected' buffer, though several can be visible
+when you are using multiple windows.  @xref[Buffers].
+
+@item Buffer Selection History
+Emacs keeps a buffer selection history which records how recently each
+Emacs buffer has been selected.  This is used for choosing a buffer to
+select.  @xref[Buffers].
+
+@item C-
+@samp{C} in the name of a character is an abbreviation for Control.
+@xref[Characters,C-].
+
+@item C-M-
+@samp{C-M-} in the name of a character is an abbreviation for
+Control-Meta.  @xref[Characters,C-M-].
+
+@item Case Conversion
+Case conversion means changing text from upper case to lower case or
+vice versa.  @xref[Case], for the commands for case conversion.
+
+@item Characters
+Characters form the contents of an Emacs buffer; also, Emacs commands are
+invoked by keys (q.v@.), which are sequences of one or more characters.
+@xref[Characters].
+
+@item Command
+A command is a Lisp function specially defined to be able to serve as an
+key binding in Emacs.  When you type a key (q.v@.), its binding (q.v@.) is
+looked up in the relevant keymaps (q.v@.) to find the command to run.
+@xref[Commands].
+
+@item Command Name
+A command name is the name of a Lisp symbol which is a command
+(@pxref[Commands]).  You can invoke any command by its name using
+@kbd{M-x} (@pxref[M-x]).
+
+@item Comments
+A comment is text in a program which is intended only for humans reading
+the program, and is marked specially so that it will be ignored when the
+program is loaded or compiled.  Emacs offers special commands for creating,
+aligning and killing comments.  @xref[Comments].
+
+@item Compilation
+Compilation is the process of creating an executable program from source code.
+Emacs has commands for compiling files of Emacs Lisp code (@pxref[Lisp
+Libraries]) and programs in C and other languages (@pxref[Compilation]).
+
+@item Completion
+Completion is what Emacs does when it automatically fills out an
+abbreviation for a name into the entire name.  Completion is done
+for minibuffer (q.v@.) arguments, when the set of possible valid inputs is
+known; for example, on extended command names, buffer names, and file
+names.  Completion occurs when @key(TAB), @key(SPC) or @key(RET) is
+typed.  @xref[Completion].
+
+@item Continuation Line
+When a line of text is longer than the width of the screen, it is takes up
+more than one screen line when displayed.  We say that the text line is
+continued, and all screen lines used for it after the first are called
+continuation lines.  @xref[Basic,Continuation,Basic Editing].
+
+@item Control-Character
+ASCII characters with octal codes 0 through 040, and also code 0177, do
+not have graphic images assigned to them.  These are the control
+characters.  Any control character can be typed by holding down the
+@key(CTRL) key and typing some other character; some have special keys on
+the keyboard.  @key(RET), @key(TAB), @key(ESC), @key(LFD) and @key(DEL)
+are all control characters.  @xref[Characters].
+
+@item Current Buffer
+The current buffer in Emacs is the Emacs buffer on which
+most editing commands operate.  You can select any Emacs buffer
+as the current one.  @xref[Buffers].
+
+@item Current Line
+The line point is on (@pxref[Point]).
+
+@item Current Paragraph
+The paragraph that point is in.  If point is between paragraphs, the
+current paragraph is the one that follows point.  @xref[Paragraphs].
+
+@item Current Defun
+The defun (q.v@.) that point is in.  If point is between defuns,
+the current defun is the one that follows point.  @xref[Defuns].
+
+@item Cursor
+The cursor is the rectangle on the screen which indicates the position
+called point (q.v@.) at which insertion and deletion takes place.
+Often people speak of `the cursor' when, strictly speaking, they
+mean `point'.  @xref[Basic,Cursor,Basic Editing].
+
+@item Customization
+Customization is making minor changes in the way Emacs works.  It is often
+done by setting variables (@pxref[Variables]) or by rebinding keys
+(@pxref[Keymaps]).
+
+@item Default Argument
+The default for an argument is the value that will be assumed if you do
+not specify one.  When the minibuffer is used to read an argument, the
+default argument is used if you just type @key(RET).  @xref[Minibuffer].
+
+@item Default File Name
+When a file name arguments is specified, any file name components
+that you do not specify are taken from the corresponding components
+of the default file name.  In Emacs, the default file name is
+normally the name of the file visited in the current buffer.
+
+@item Defun
+A defun is a list at the top level of parenthesis or bracket structure in
+a program.  It is so named because most such lists in Lisp programs are
+calls to the Lisp function @code{defun}.  @xref[Defuns].
+
+@item @key(DEL)
+@key(DEL) is a character used as a command to delete one character of
+text.  @xref[Basic,Rubout,Basic Editing].
+
+@item Deletion
+Deletion means erasing text without saving it.  Emacs deletes text only
+when it is expected not to be worth saving (all whitespace, or only one
+character).  The alternative is killing (q.v@.).  @xref[Killing,Deletion].
+
+@item Deletion of Files
+Deletion of a file means erasing it from the file system.
+@xref[Filadv,,Other File Commands].
+
+@item Directory
+Files in the Unix file system are grouped into file directories.
+@xref[ListDir,,Directories].
+
+@item Dired
+Dired is the Emacs facility that displays the contents of a file
+directory and allows you to ``edit the directory'', performing
+operations on the files in the directory.  @xref[Dired].
+
+@item Disabled Command
+A disabled command is one that you may not run without special
+confirmation.  The usual reason for disabling a command is that it is
+confusing for beginning users.  @xref[Disabling].
+
+@item Dot
+An alternate name for `point' (q.v@.), often used in Emacs command names
+and on-line documentation.  @xref[Point].
+
+@item Echo Area
+The echo area is the bottom line of the screen, used for echoing the
+arguments to commands, for asking questions, and printing brief messages
+(including error messages).  @xref[Echo Area].
+
+@item Echoing
+Echoing is acknowledging the receipt of commands by displaying them
+(in the echo area).  Emacs never echoes single-character keys;
+longer commands echo only if you pause while typing them.
+
+@item Error Messages
+Error messages are single lines of output printed by Emacs when
+the user asks for something impossible to do (such as, killing text
+forward when point is at the end of the buffer).  They appear
+in the echo area, accompanied by a beep.
+
+@item @key(ESC)
+@key(ESC) is a character, used to end incremental searches and as a prefix
+for typing Meta characters on keyboards lacking a @key(META) key.
+
+@item Fill Prefix
+The fill prefix is a string that should be expected at the beginning
+of each line when filling is done.  It is not regarded as part of the
+text to be filled.  @xref[Filling].
+
+@item Filling
+Filling text means moving text from line to line so that all the lines
+are approximately the same length.  @xref[Filling].
+
+@item Global
+Global means `independent of the current environment; in effect
+throughout Emacs'.  It is the opposite of local (q.v@.).  Particular
+examples of the use of `global' appear below.
+
+@item Global Abbrev
+A global definition of an abbrev (q.v@.) is effective in all major modes
+that do not have local (q.v@.) definitions for the same abbrev.
+@xref[Abbrevs].
+
+@item Global Keymap
+The global keymap (q.v@.) contains key bindings that are in effect except
+when overriden by local key bindings in a major mode's local keymap (q.v@.).
+@xref[Keymaps].
+
+@item Global Substitution
+Global substitution means replacing one string by another string through a
+large amount of text.  @xref[Replace].
+
+@item Global Variable
+The global value of a variable (q.v@.) takes effect in all buffers that do
+not have their own local (q.v@.) values for the variable.  @xref[Variables].
+
+@item Graphic Character
+Graphic characters are those assigned pictorial images rather than just
+names.  All the non-Meta (q.v@.) characters except for the Control (q.v@.)
+characters are graphic characters.  These include letters, digits,
+punctuation, and spaces; they do not include @key(RET) or @key(ESC).  In
+Emacs, typing a graphic character inserts that character.
+@xref[Basic,,Basic Editing].
+
+@item Grinding
+Grinding means reformatting a program so that it is indented
+according to its structure.  @xref[Indentation,Grinding].
+
+@item Hardcopy
+Hardcopy means printed output.  Emacs has commands for making
+printed listings of text in Emacs buffers.  @xref[Hardcopy].
+
+@item @key(HELP)
+You can type @key(HELP) at any time to ask what options you have, or to
+ask what any command does.  @key(HELP) is really @kbd{Control-h}.
+@xref[Help].
+
+@item Indentation
+Indentation means blank space at the beginning of a line.  Most
+programming languages have conventions for using indentation to
+illuminate the structure of the program, and Emacs has special
+features to help you set up the correct indentation.
+@xref[Indentation].
+
+@item Insertion
+Insertion means copying text into the buffer, either from the
+keyboard or from some other place in Emacs.
+
+@item Justification
+Justification means adding extra spaces to lines of text to make
+them come exactly to a specified width.
+@xref[Filling,Justification].
+
+@item Keyboard Macros
+Keyboard macros are a way of defining new Emacs commands
+from sequences of existing ones, with no need to write a Lisp
+program.  @xref[Keyboard Macros].
+
+@item Key
+A key is a character or sequence of characters which, when typed by
+the user, fully specifies one action to be performed by Emacs.  For
+example, @kbd{X} and @kbd{Control-f} and @kbd{Control-x m} are keys.
+Keys derive their meanings from being bound (q.v@.) to commands (q.v@.).
+@xref[Keys].
+
+@item Keymap
+The keymap is the data structure that records the bindings (q.v@.)  of
+keys to the commands that they run.  For example, the keymap binds
+the character @kbd{C-n} to the command function @code{next-line}.
+@xref[Keymaps].
+
+@item Kill Ring
+The kill ring is where all text you have killed recently is saved.
+You can reinsert any of the killed text still in the ring; this is called
+yanking (q.v@.).  @xref[Yanking].
+
+@item Killing
+Killing means erasing text and saving it on the kill ring so it can be
+yanked (q.v@.) later.  Most Emacs commands to erase text do killing, as
+opposed to deletion (q.v@.).  @xref[Killing].
+
+@item List
+A list is, approximately, a text string beginning with an open
+parenthesis and ending with the matching close parenthesis.  In C mode
+and other non-Lisp mode groupings surrounded by other kinds of matched
+delimiters appropriate to the language, such as braces, are also
+considered lists.  Emacs has special commands for many operations on
+lists.  @xref[Lists].
+
+@item Local
+Local means `in effect only in a particular context'; the relevant kind of
+context is a particular function execution, a particular buffer, or a
+particular major mode.  It is the opposite of `global' (q.v@.).  Specific
+uses of `local' in Emacs terminology appear below.
+
+@item Local Abbrev
+A local abbrev definition is effective only if a particular major mode is
+selected.  In that major mode, it overrides any global definition for the
+same abbrev.  @xref[Abbrevs].
+
+@item Local Keymap
+A local keymap is used in a particular major mode; the key bindings (q.v@.)
+in the current local keymap override global bindings of the same keys.
+@xref[Keymaps].
+
+@item Local Variable
+A local value of a variable (q.v@.) applies to only one buffer.
+@xref[Variables].
+
+@item M-
+@kbd{M-} in the name of a character is an abbreviation for @key(META),
+one of the modifier keys that can accompany any character.
+@xref[Characters].
+
+@item M-x
+@kbd{M-x} is the key which is used to call an Emacs command by name.
+This is how commands that are not bound to keys are called.  @xref[M-x].
+
+@item Mail
+Mail means messages sent from one user to another through the computer
+system.  Emacs has commands for composing and sending mail, and for reading
+and editing the mail you have received.  @xref[Mail].
+
+@item Major Mode
+The major modes are a mutually exclusive set of options each of which
+configures Emacs for editing a certain sort of text.  Ideally, each
+programming language has its own major mode.  @xref[Major Modes].
+
+@item Mark
+The mark points to a position in the text.  It specifies one end of the
+region (q.v@.), point being the other end.  Many commands operate on
+all the text from point to the mark.  @xref[Mark].
+
+@item Mark Ring
+The mark ring is used to hold several recent previous locations of
+the mark, just in case you want to move back to them.  @xref[Mark Ring].
+
+@item Message
+See `mail'.
+
+@item Meta
+Meta is the name of a modifier bit which a command character may have.  It
+is present in a character if the character is typed with the @key(META) key
+held down.  Such characters are given names that start with @kbd{Meta-}.
+For example, @kbd{Meta-<} is typed by holding down @key(META) and typing
+@kbd{<} (which itself is done by holding down @key(SHIFT) and typing
+@kbd{,}).  @xref[Characters,Meta].
+
+@item Meta Character
+A Meta character is one whose character code includes the Meta bit.
+
+@item Minibuffer
+The minibuffer is the window that appears when necessary inside the echo
+area (q.v@.), used for reading arguments to commands.  @xref[Minibuffer].
+
+@item Minor mode
+A minor mode is an optional feature of Emacs which can be switched on or
+off independently of all other features.  Each minor mode has a command to
+turn it on or off.  @xref[Minor Modes].
+
+@item Mode line
+The mode line is the line at the bottom of each text window (q.v@.), which
+gives status information on the buffer displayed in that window.
+@xref[Mode Line].
+
+@item Modified Buffer
+A buffer (q.v@.) is modified if its text has been changed since the last
+time the buffer was saved (or when it was created, if it has never been
+saved).  @xref[Saving].
+
+@item Moving Text
+Moving text means erasing it from one place and inserting it in another.
+This is done by killing (q.v@.) and then yanking (q.v@.).  @xref[Killing].
+
+@item Named Mark
+A named mark is a register (q.v@.) in its role of recording a location in
+text so that you can move point to that location.  @xref[Registers].
+
+@item Narrowing
+Narrowing means creating a restriction (q.v@.) that limits editing
+in the current buffer to only a part of the text in the buffer.  Text
+outside that part is inaccessible to the user until the boundaries are
+widened again, but it is still there, and saving the file saves it all.
+@xref[Narrowing].
+
+@item Newline
+@key(LFD) characters in the buffer terminate lines of text and are
+called newlines.  @xref[Characters,Newline].
+
+@item Numeric Argument
+A numeric argument is a number, specified before a command, to change the
+effect of the command.  Often the numeric argument serves as a repeat
+count.  @xref[Arguments].
+
+@item Option
+An option is a variable (q.v@.) that exists so that you can customize
+Emacs by giving it a new value.  @xref[Variables].
+
+@item Overwrite Mode
+Overwrite mode is a minor mode.  When it is enabled, ordinary text
+characters replace the existing text after point rather than pushing it to
+the right.  @xref[Minor Modes].
+
+@item Page
+A page is a unit of text, delimited by formfeed characters (ASCII @ctl[L],
+code 014) coming at the beginning of a line.  Some Emacs commands are
+provided for moving over and operating on pages.  @xref[Pages].
+
+@item Paragraphs
+Paragraphs are the medium-size unit of English text.  There are special
+Emacs commands for moving over and operating on paragraphs.
+@xref[Paragraphs].
+
+@item Parsing
+We say that Emacs parses words or expressions in the text being edited.
+Really, all it knows how to do is find the other end of a word or
+expression.  @xref[Syntax].
+
+@item Point
+Point is the place in the buffer at which insertion and deletion occur.
+Point is considered to be between two characters, not at one character.
+The terminal's cursor (q.v@.) indicates the location of point.
+@xref[Basic,Point].
+
+@item Prefix Key
+A prefix key is a key (q.v@.) whose sole function is to introduce a set of
+multi-character keys.  @kbd{Control-x} is an example of prefix key; thus,
+any sequence of @kbd{C-x} followed by one other character is also a
+legitimate key.  @xref[Keys].
+
+@item Prompt
+A prompt is text printed to ask the user for input.  Printing a prompt is
+called @dfn{prompting}.  Emacs prompts always appear in the echo area
+(q.v@.).  One kind of prompting happens when the minibuffer is used to read
+an argument (@pxref[Minibuffer]); the echoing which happens when you pause
+in the middle of typing a multicharacter key is also a kind of
+prompting (@pxref[Echo Area]).
+
+@item Quitting
+Quitting means cancelling a partially typed command or a running command,
+using @kbd{C-g}.  @xref[Quitting].
+
+@item Quoting
+Quoting means depriving a character of its usual special significance.  It
+is usually done with @kbd{Control-q}.  What constitutes special
+significance depends on the context and on convention.  For example, an
+``ordinary'' character as an Emacs command inserts itself; so in this
+context, a special character is any character that does not normally insert
+itself (such as @key(DEL), for example), and quoting it makes it insert
+itself as if it were not special.  Not all contexts allow quoting.
+@xref[Basic,Quoting,Basic Editing].
+
+@item Read-only Buffer
+A read-only buffer is one whose text you are not allowed to change.
+Normally Emacs makes buffers read-only when they contain text which has a
+special significance to Emacs; for example, Dired buffers.  Visiting a file
+that is write protected also makes a read-only buffer.  @xref[Buffers].
+
+@item Recursive Editing Level
+A recursive editing level is a state in which part of the execution of a
+command involves asking the user to edit some text.  This text may or may
+not be the same as the text to which the command was applied.  The mode
+line indicates recursive editing levels with square brackets (@samp{[} and
+@samp{]}).  @xref[Recursive Edit].
+
+@item Redisplay
+Redisplay is the process of correcting the image on the screen to
+correspond to changes that have been made in the text being edited.
+@xref[Screen,Redisplay].
+
+@item Region
+The region is the text between point (q.v@.) and the mark (q.v@.).  Many
+commands operate on the text of the region.  @xref[Mark,Region].
+
+@item Registers
+Registers are named slots in which text or buffer positions or rectangles
+can be saved for later use.  @xref[Registers].
+
+@item Replacement
+See `global substitution'.
+
+@item Restriction
+A restriction in a buffer makes some of the text at the beginning
+or end of the buffer, or both, temporarily invisible and inaccessible.
+Creating a restriction on a buffer is called narrowing, and
+removing one is called widening.  @xref[Narrowing].
+
+@item @key(RET)
+@key(RET) is an Emacs command to insert a newline into the text.
+It is also used to terminate most arguments read in the minibuffer (q.v@.).
+@xref[Characters,Return].
+
+@item Saving
+Saving a buffer means copying its text into the file that was visited
+(q.v@.) in that buffer.  This is the way text in files actually gets
+changed by your Emacs editing.  @xref[Saving].
+
+@item Scrolling
+Scrolling means shifting the text in the Emacs window so as to see a
+different part of the buffer.  @xref[Display,Scrolling].
+
+@item Searching
+Searching means moving point to the next occurrence of a specified string.
+@xref[Search].
+
+@item Selecting
+Selecting a buffer means making it the current (q.v@.) buffer.
+@xref[Buffers,Selecting].
+
+@item Self-documentation
+Self-documentation is the feature of Emacs which can tell you what any
+command does, or give you a list of all commands related to a topic you
+specify.  You ask for self-documentation with the @key(HELP) character.
+@xref[Help].
+
+@item Sentences
+Emacs has commands for moving by or killing by sentences.
+@xref[Sentences].
+
+@item Sexp
+A sexp (short for `s-expression') is the basic syntactic unit of Lisp in
+its textual form: either a list, or Lisp atom.  Many Emacs commands operate
+on sexps.  The term `sexp' is generalized to languages other than Lisp,
+to mean a syntactically recognizable expression.
+@xref[Lists,Sexps].
+
+@item Simultaneous Editing
+Simultaneous editing means two users modifying the same file at once.
+Simultaneous editing if not detected can cause one user to lose his work.
+Emacs detects all cases of simultaneous editing and warns the user to
+investigate them.  @xref[Interlocking,,Simultaneous Editing].
+
+@item String Substitution
+See `global substitution'.
+
+@item Syntax Table
+The syntax table tells Emacs which characters are part of a word, which
+characters balance each other like parentheses, etc.  @xref[Syntax].
+
+@item Tag Table
+A tag table is a file that serves as an index to the function
+definitions in one or more other files.  @xref[Tags].
+
+@item Text
+Two meanings (@pxref[Text]):
+@itemize @bullet
+@item
+Data consisting of a sequence of characters.  The contents of an
+Emacs buffer are always text in this sense.
+@item
+Data consisting of written human language, as opposed to programs, or
+following the stylistic conventions of human language.
+@end itemize
+
+@item Top Level
+Top level is the normal state of Emacs, in which you are editing the text
+of the file you have visited.  You are at top level whenever you are not in
+a recursive editing level (q.v@.) or the minibuffer (q.v@.), and not in the
+middle of a command.  You can get back to top level by aborting (q.v@.) and
+quitting (q.v@.).  @xref[Quitting].
+
+@item Transposition
+Transposing two units of text means putting each one into the place
+formerly occupied by the other.  There are Emacs commands to transpose two
+adjacent characters, words, sexps (q.v@.) or lines (@pxref[Transposition]).
+
+@item Truncation
+Truncating text lines in the display means leaving out any text on a line
+that does not fit within the right margin of the window displaying it.
+See also `continuation line'.  @xref[Basic,Truncation,Basic Editing].
+
+@item Undoing
+Undoing means making your previous editing go in reverse, bringing back the
+text that existed earlier in the editing session.  @xref[Undo].
+
+@item Variable
+A variable is an object in Lisp that can store an arbitrary value.
+Emacs uses some variables for internal purposes, and has others (known as
+`options' (q.v@.)) just so that you can set their values to control the
+behavior of Emacs.  The variables used in Emacs that you are likely to be
+interested in are listed in the Variables Index in this manual.
+@xref[Variables], for information on variables.
+
+@item Visiting
+Visiting a file means loading its contents into a buffer (q.v@.) where they
+can be edited.  @xref[Visiting].
+
+@item Wall Chart
+The wall chart is a very brief Emacs reference sheet giving one line of
+information about each short command.
+@iftex
+A copy of the wall chart appears in this manual.
+@end iftex
+
+@item Whitespace
+Whitespace is any run of consecutive formatting characters (space, tab,
+newline, and backspace).
+
+@item Widening
+Widening is removing any restriction (q.v@.) on the current buffer; it is
+the opposite of narrowing (q.v@.).  @xref[Narrowing].
+
+@item Window
+Emacs divides the screen into one or more windows, each of which can
+display the contents of one buffer (q.v@.) at any time.  @xref[Screen], for
+basic information on how Emacs uses the screen.  @xref[Windows], for
+commands to control the use of windows.
+
+@item Word Abbrev
+Synonymous with `abbrev'.
+
+@item Word Search
+Word search is searching for a sequence of words, considering the
+punctuation between them as insignificant.  @xref[Word Search].
+
+@item Yanking
+Yanking means reinserting text previously killed.  It can be used to undo a
+mistaken kill, or for copying or moving text.  @xref[Yanking].
+@end description
