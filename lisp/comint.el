@@ -611,7 +611,8 @@ Useful within mode or mode hooks.
 The structure of the history file should be one input command per line, and
 most recent command last.
 See also `comint-input-ignoredups' and `comint-write-input-ring'."
-  (cond ((null comint-input-ring-file-name)
+  (cond ((or (null comint-input-ring-file-name)
+	     (equal comint-input-ring-file-name ""))
 	 nil)
 	((not (file-readable-p comint-input-ring-file-name))
 	 (message "Cannot read history file %s" comint-input-ring-file-name))
@@ -650,6 +651,7 @@ Useful within process sentinels.
 
 See also `comint-read-input-ring'."
   (cond ((or (null comint-input-ring-file-name)
+	     (equal comint-input-ring-file-name "")
 	     (null comint-input-ring) (ring-empty-p comint-input-ring))
 	 nil)
 	((not (file-writable-p comint-input-ring-file-name))
@@ -1100,10 +1102,11 @@ Similarly for Soar, Scheme, etc."
 	  (set-marker (process-mark proc) (point))
 	  ;; A kludge to prevent the delay between insert and process output
 	  ;; affecting the display.  A case for a comint-send-input-hook?
-	  (let ((functions comint-output-filter-functions))
-	    (while functions
-	      (funcall (car functions) (concat input "\n"))
-	      (setq functions (cdr functions))))))))
+	  (if (eq (process-filter proc) 'comint-output-filter)
+	      (let ((functions comint-output-filter-functions))
+		(while functions
+		  (funcall (car functions) (concat input "\n"))
+		  (setq functions (cdr functions)))))))))
 
 ;; The purpose of using this filter for comint processes
 ;; is to keep comint-last-input-end from moving forward
@@ -1741,11 +1744,11 @@ directory tracking functions.")
   "Return the filename at point, or signal an error.
 Environment variables are substituted."
   (save-excursion
-    (if (re-search-backward "[^~/A-Za-z0-9_.$#,={}()-]" nil 'move)
+    (if (re-search-backward "[^~/A-Za-z0-9+@:_.$#,={}-]" nil 'move)
 	(forward-char 1))
     ;; Anchor the search forwards.
-    (if (not (looking-at "[~/A-Za-z0-9_.$#,={}()-]")) (error ""))
-    (re-search-forward "[~/A-Za-z0-9_.$#,={}()-]+")
+    (if (not (looking-at "[~/A-Za-z0-9+@:_.$#,={}-]")) (error ""))
+    (re-search-forward "[~/A-Za-z0-9+@:_.$#,={}-]+")
     (substitute-in-file-name
      (buffer-substring (match-beginning 0) (match-end 0)))))
 

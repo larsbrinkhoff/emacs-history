@@ -1,0 +1,4 @@
+@setfilename ../etc/GNU1
+@set justgnu
+@include gnu.texi
+@bye

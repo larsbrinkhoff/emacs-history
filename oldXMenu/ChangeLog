@@ -1,3 +1,12 @@
+Tue Nov 16 06:14:38 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.21 released.
+
+Sat Nov 13 03:50:01 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (libXMenu11.a): Tell make not to worry if ranlib fails.
+	Tell user too, in case make doesn't pay attention.
+
 Thu Nov 11 10:30:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.20 released.

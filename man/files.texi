@@ -1295,11 +1295,12 @@ and apply to the file name on the current line.
   The @kbd{C-x v v} command (@code{vc-next-action}), when used in the
 augmented Dired buffer, operates on all the marked files (or the file on
 the current line).  If it operates on more than one file, it handles
-each file according to its current state; thus, it may check in one file
-and check in another (which is already checked out).  If it has to check
-in any files, it reads a single log entry, then uses that text for all
-the files being checked in.  This can be convenient for registering or
-checking in several files at once, as part of the same change.
+each file according to its current state; thus, it may check out one
+file and check in another (because it is already checked out).  If it
+has to check in any files, it reads a single log entry, then uses that
+text for all the files being checked in.  This can be convenient for
+registering or checking in several files at once, as part of the same
+change.
 
 @node Renaming and VC
 @subsection Renaming VC Work Files and Master Files

@@ -435,16 +435,8 @@ for \\[find-tag] (which see)."
 ;;;(sort-regexp-fields nil "\n*.*\n.*from \\(.*\\)[^]*" "\\1"
 ;;;		    (point-min) (point-max))
 
-;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log prompt-for-change-log-name) "add-log" "add-log.el" (11354 48317))
+;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log prompt-for-change-log-name) "add-log" "add-log.el" (11496 28641))
 ;;; Generated autoloads from add-log.el
-
-(defvar change-log-default-name nil "\
-*Name of a change log file for \\[add-change-log-entry].")
-
-(defvar add-log-current-defun-function nil "\
-*If non-nil, function to guess name of current function from surrounding text.
-\\[add-change-log-entry] calls this function (if nil, `add-log-current-defun'
-instead) with no arguments.  It returns a string or nil if it cannot guess.")
 
 (autoload (quote prompt-for-change-log-name) "add-log" "\
 Prompt for a change log name." nil nil)
@@ -1203,8 +1195,12 @@ For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\"" nil n
 
 ;;;***
 
-;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11367 14240))
+;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11494 46605))
 ;;; Generated autoloads from calendar.el
+
+(defvar calendar-week-start-day 0 "\
+*The day of the week on which a week in the calendar begins.
+0 means Sunday (default), 1 means Monday, and so on.")
 
 (defvar view-diary-entries-initially nil "\
 *If t, the diary entries for the current date will be displayed on entry.
@@ -1452,11 +1448,11 @@ See the documentation of diary-date-forms for an explanation.")
 
 (defvar european-calendar-display-form (quote ((if dayname (concat dayname ", ")) day " " monthname " " year)) "\
 *Pseudo-pattern governing the way a date appears in the European style.
-See the documentation of calendar-date-display-forms for an explanation.")
+See the documentation of calendar-date-display-form for an explanation.")
 
 (defvar american-calendar-display-form (quote ((if dayname (concat dayname ", ")) monthname " " day ", " year)) "\
 *Pseudo-pattern governing the way a date appears in the American style.
-See the documentation of calendar-date-display-forms for an explanation.")
+See the documentation of calendar-date-display-form for an explanation.")
 
 (defvar print-diary-entries-hook (quote lpr-buffer) "\
 *List of functions called after a temporary diary buffer is prepared.
@@ -1589,7 +1585,7 @@ See the documentation for `calendar-holidays' for details.")
 *Islamic holidays.
 See the documentation for `calendar-holidays' for details.")
 
-(defvar solar-holidays (quote ((if (fboundp (quote atan)) (solar-equinoxes-solstices)) (progn (require (quote cal-dst)) (funcall (quote holiday-sexp) calendar-daylight-savings-starts (quote (format "Daylight Savings Time Begins %s" (if (fboundp (quote atan)) (solar-time-string (/ calendar-daylight-savings-switchover-time (float 60)) date (quote standard)) ""))))) (funcall (quote holiday-sexp) calendar-daylight-savings-ends (quote (format "Daylight Savings Time Ends %s" (if (fboundp (quote atan)) (solar-time-string (/ (- calendar-daylight-savings-switchover-time calendar-daylight-time-offset) (float 60)) date (quote daylight)) "")))))) "\
+(defvar solar-holidays (quote ((if (fboundp (quote atan)) (solar-equinoxes-solstices)) (if (progn (require (quote cal-dst)) t) (funcall (quote holiday-sexp) calendar-daylight-savings-starts (quote (format "Daylight Savings Time Begins %s" (if (fboundp (quote atan)) (solar-time-string (/ calendar-daylight-savings-starts-time (float 60)) date (quote standard)) ""))))) (funcall (quote holiday-sexp) calendar-daylight-savings-ends (quote (format "Daylight Savings Time Ends %s" (if (fboundp (quote atan)) (solar-time-string (/ (- calendar-daylight-savings-ends-time calendar-daylight-time-offset) (float 60)) date (quote daylight)) "")))))) "\
 *Sun-related holidays.
 See the documentation for `calendar-holidays' for details.")
 
@@ -2194,7 +2190,7 @@ Use \\[dired-hide-subdir] to (un)hide a particular subdirectory." t nil)
 May contain all other options that don't contradict `-l';
 may contain even `F', `b', `i' and `s'.")
 
-(defvar dired-chown-program (if (memq system-type (quote (hpux dgux usg-unix-v silicon-graphics-unix))) "chown" "/etc/chown") "\
+(defvar dired-chown-program (if (memq system-type (quote (hpux dgux usg-unix-v irix))) "chown" "/etc/chown") "\
 Name of chown command (usually `chown' or `/etc/chown').")
 
 (defvar dired-ls-F-marks-symlinks nil "\
@@ -2484,185 +2480,8 @@ VARIABLE should be a string.  VALUE is optional; if not provided or is
 This function works by modifying `process-environment'." t nil)
 
 ;;;***
-
-(defvar tags-file-name nil "\
-*File name of tags table.
-To switch to a new tags table, setting this variable is sufficient.
-If you set this variable, do not also set `tags-table-list'.
-Use the `etags' program to make a tags table file.")
-(put 'tags-file-name 'variable-interactive "fVisit tags table: ")
-
-(defvar tags-table-list nil "\
-*List of file names of tags tables to search.
-An element that is a directory means the file \"TAGS\" in that directory.
-To switch to a new list of tags tables, setting this variable is sufficient.
-If you set this variable, do not also set `tags-file-name'.
-Use the `etags' program to make a tags table file.")
-
-(defvar find-tag-hook nil "\
-*Hook to be run by \\[find-tag] after finding a tag.  See `run-hooks'.
-The value in the buffer in which \\[find-tag] is done is used,
-not the value in the buffer \\[find-tag] goes to.")
-
-(defvar find-tag-default-function nil "\
-*A function of no arguments used by \\[find-tag] to pick a default tag.
-If nil, and the symbol that is the value of `major-mode'
-has a `find-tag-default-function' property (see `put'), that is used.
-Otherwise, `find-tag-default' is used.")
-
-(defvar default-tags-table-function nil "\
-*If non-nil, a function of no arguments to choose a default tags file
-for a particular buffer.")
-
-(autoload (quote visit-tags-table) "etags" "\
-Tell tags commands to use tags table file FILE.
-FILE should be the name of a file created with the `etags' program.
-A directory name is ok too; it means file TAGS in that directory.
-
-Normally \\[visit-tags-table] sets the global value of `tags-file-name'.
-With a prefix arg, set the buffer-local value instead.
-When you find a tag with \\[find-tag], the buffer it finds the tag
-in is given a local value of this variable which is the name of the tags
-file the tag was in." t nil)
-
-(autoload (quote tags-table-files) "etags" "\
-Return a list of files in the current tags table.
-Assumes the tags table is the current buffer.
-File names returned are absolute." nil nil)
-
-(autoload (quote find-tag-noselect) "etags" "\
-Find tag (in current tags table) whose name contains TAGNAME.
-Returns the buffer containing the tag's definition and moves its point there,
-but does not select the buffer.
-The default for TAGNAME is the expression in the buffer near point.
-
-If second arg NEXT-P is t (interactively, with prefix arg), search for
-another tag that matches the last tagname or regexp used.  When there are
-multiple matches for a tag, more exact matches are found first.  If NEXT-P
-is the atom `-' (interactively, with prefix arg that is a negative number
-or just \\[negative-argument]), pop back to the previous tag gone to.
-
-If third arg REGEXP-P is non-nil, treat TAGNAME as a regexp.
-
-See documentation of variable `tags-file-name'." t nil)
-
-(autoload (quote find-tag) "etags" "\
-Find tag (in current tags table) whose name contains TAGNAME.
-Select the buffer containing the tag's definition, and move point there.
-The default for TAGNAME is the expression in the buffer around or before point.
-
-If second arg NEXT-P is t (interactively, with prefix arg), search for
-another tag that matches the last tagname or regexp used.  When there are
-multiple matches for a tag, more exact matches are found first.  If NEXT-P
-is the atom `-' (interactively, with prefix arg that is a negative number
-or just \\[negative-argument]), pop back to the previous tag gone to.
-
-See documentation of variable `tags-file-name'." t nil)
-(define-key esc-map "." 'find-tag)
-
-(autoload (quote find-tag-other-window) "etags" "\
-Find tag (in current tags table) whose name contains TAGNAME.
-Select the buffer containing the tag's definition in another window, and
-move point there.  The default for TAGNAME is the expression in the buffer
-around or before point.
-
-If second arg NEXT-P is t (interactively, with prefix arg), search for
-another tag that matches the last tagname or regexp used.  When there are
-multiple matches for a tag, more exact matches are found first.  If NEXT-P
-is negative (interactively, with prefix arg that is a negative number or
-just \\[negative-argument]), pop back to the previous tag gone to.
-
-See documentation of variable `tags-file-name'." t nil)
-(define-key ctl-x-4-map "." 'find-tag-other-window)
-
-(autoload (quote find-tag-other-frame) "etags" "\
-Find tag (in current tags table) whose name contains TAGNAME.
-Select the buffer containing the tag's definition in another frame, and
-move point there.  The default for TAGNAME is the expression in the buffer
-around or before point.
-
-If second arg NEXT-P is t (interactively, with prefix arg), search for
-another tag that matches the last tagname or regexp used.  When there are
-multiple matches for a tag, more exact matches are found first.  If NEXT-P
-is negative (interactively, with prefix arg that is a negative number or
-just \\[negative-argument]), pop back to the previous tag gone to.
-
-See documentation of variable `tags-file-name'." t nil)
-(define-key ctl-x-5-map "." 'find-tag-other-frame)
-
-(autoload (quote find-tag-regexp) "etags" "\
-Find tag (in current tags table) whose name matches REGEXP.
-Select the buffer containing the tag's definition and move point there.
-
-If second arg NEXT-P is t (interactively, with prefix arg), search for
-another tag that matches the last tagname or regexp used.  When there are
-multiple matches for a tag, more exact matches are found first.  If NEXT-P
-is negative (interactively, with prefix arg that is a negative number or
-just \\[negative-argument]), pop back to the previous tag gone to.
-
-If third arg OTHER-WINDOW is non-nil, select the buffer in another window.
-
-See documentation of variable `tags-file-name'." t nil)
-
-(autoload (quote next-file) "etags" "\
-Select next file among files in current tags table.
-Non-nil first argument (prefix arg, if interactive)
-initializes to the beginning of the list of files in the tags table.
-
-Non-nil second argument NOVISIT means use a temporary buffer
- to save time and avoid uninteresting warnings.
-
-Value is nil if the file was already visited;
-if the file was newly read in, the value is the filename." t nil)
-
-(autoload (quote tags-loop-continue) "etags" "\
-Continue last \\[tags-search] or \\[tags-query-replace] command.
-Used noninteractively with non-nil argument to begin such a command.
-Two variables control the processing we do on each file:
-the value of `tags-loop-scan' is a form to be executed on each file
-to see if it is interesting (it returns non-nil if so)
-and `tags-loop-operate' is a form to execute to operate on an interesting file
-If the latter returns non-nil, we exit; otherwise we scan the next file." t nil)
-(define-key esc-map "," 'tags-loop-continue)
-
-(autoload (quote tags-search) "etags" "\
-Search through all files listed in tags table for match for REGEXP.
-Stops when a match is found.
-To continue searching for next match, use command \\[tags-loop-continue].
-
-See documentation of variable `tags-file-name'." t nil)
-
-(autoload (quote tags-query-replace) "etags" "\
-Query-replace-regexp FROM with TO through all files listed in tags table.
-Third arg DELIMITED (prefix arg) means replace only word-delimited matches.
-If you exit (\\[keyboard-quit] or ESC), you can resume the query-replace
-with the command \\[tags-loop-continue].
-
-See documentation of variable `tags-file-name'." t nil)
-
-(autoload (quote list-tags) "etags" "\
-Display list of tags in file FILE.
-FILE should not contain a directory specification
-unless it has one in the tags table." t nil)
-
-(autoload (quote tags-apropos) "etags" "\
-Display list of all tags in tags table REGEXP matches." t nil)
-
-(autoload (quote select-tags-table) "etags" "\
-Select a tags table file from a menu of those you have already used.
-The list of tags tables to select from is stored in `tags-table-file-list';
-see the doc of that variable if you want to add names to the list." t nil)
-
-(autoload (quote complete-tag) "etags" "\
-Perform tags completion on the text around point.
-Completes to the set of names listed in the current tags table.  
-The string to complete is chosen in the same way as the default
-for \\[find-tag] (which see)." t nil)
-(define-key esc-map "\t" 'complete-tag)
-
-;;;***
 
-;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11394 10144))
+;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11487 17108))
 ;;; Generated autoloads from etags.el
 
 (defvar tags-file-name nil "\
@@ -2825,8 +2644,7 @@ See documentation of variable `tags-file-name'." t nil)
 
 (autoload (quote list-tags) "etags" "\
 Display list of tags in file FILE.
-FILE should not contain a directory specification
-unless it has one in the tags table." t nil)
+FILE should not contain a directory specification." t nil)
 
 (autoload (quote tags-apropos) "etags" "\
 Display list of all tags in tags table REGEXP matches." t nil)
@@ -3514,7 +3332,7 @@ is nil, raise an error." t nil)
 (defvar lpr-switches nil "\
 *List of strings to pass as extra switch args to lpr when it is invoked.")
 
-(defvar lpr-command (if (memq system-type (quote (usg-unix-v dgux-unix hpux silicon-graphics-unix))) "lp" "lpr") "\
+(defvar lpr-command (if (memq system-type (quote (usg-unix-v dgux-unix hpux irix))) "lp" "lpr") "\
 *Shell command for printing a file")
 
 (autoload (quote lpr-buffer) "lpr" "\
@@ -4363,6 +4181,13 @@ Run Rmail on file FILENAME." t nil)
 
 ;;;***
 
+;;;### (autoloads (rmail-file-p) "rmailout" "rmailout.el" (11496 44723))
+;;; Generated autoloads from rmailout.el
+
+(autoload (quote rmail-file-p) "rmailout" nil nil nil)
+
+;;;***
+
 ;;;### (autoloads (rot13-other-window) "rot13" "rot13.el" (11295 37709))
 ;;; Generated autoloads from rot13.el
 
@@ -4595,7 +4420,7 @@ Otherwise, one argument `-i' is passed to the shell.
 
 ;;;***
 
-;;;### (autoloads (sunrise-sunset) "solar" "solar.el" (11367 8281))
+;;;### (autoloads (solar-equinoxes-solstices sunrise-sunset) "solar" "solar.el" (11494 46887))
 ;;; Generated autoloads from solar.el
 
 (defvar calendar-time-display-form (quote (12-hours ":" minutes am-pm (if time-zone " (") time-zone (if time-zone ")"))) "\
@@ -4640,6 +4465,10 @@ If called with an optional double prefix argument, prompts for longitude,
 latitude, time zone, and date.
 
 This function is suitable for execution in a .emacs file." t nil)
+
+(autoload (quote solar-equinoxes-solstices) "solar" "\
+Date and time of equinoxes and solstices, if visible in the calendar window.
+Requires floating point." nil nil)
 
 ;;;***
 
@@ -5475,7 +5304,7 @@ The buffer in question is current when this function is called." nil nil)
 
 ;;;***
 
-;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11367 8291))
+;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-version-other-window vc-diff vc-register vc-next-action) "vc" "vc.el" (11495 462))
 ;;; Generated autoloads from vc.el
 
 (defvar vc-checkin-hook nil "\
@@ -5514,6 +5343,11 @@ Normally this compares the current file and buffer with the most recent
 checked in version of that file.  This uses no arguments.
 With a prefix argument, it reads the file name to use
 and two version designators specifying which versions to compare." t nil)
+
+(autoload (quote vc-version-other-window) "vc" "\
+Visit version REV of the current buffer in another window.
+If the current buffer is named `F', the version is named `F.~REV~'.
+If `F.~REV~' already exists, it is used instead of being re-created." t nil)
 
 (autoload (quote vc-insert-headers) "vc" "\
 Insert headers in a file for use with your version-control system.

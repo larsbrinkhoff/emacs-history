@@ -827,7 +827,7 @@ Instead, all of the Rmail Mode commands are available, plus:
 (if rmail-summary-edit-map
     nil
   (setq rmail-summary-edit-map
-	(nconc (make-sparse-keymap) (cdr text-mode-map)))
+	(nconc (make-sparse-keymap) text-mode-map))
   (define-key rmail-summary-edit-map "\C-c\C-c" 'rmail-cease-edit)
   (define-key rmail-summary-edit-map "\C-c\C-]" 'rmail-abort-edit))
 
@@ -994,12 +994,14 @@ the body of the original message; otherwise copy the current message."
   (interactive)
   (mail-send-and-exit t))
 
-(defun rmail-summary-forward ()
-  "Forward the current message to another user."
-  (interactive)
+(defun rmail-summary-forward (resend)
+  "Forward the current message to another user.
+With prefix argument, \"resend\" the message instead of forwarding it;
+see the documentation of `rmail-resend'."
+  (interactive "P")
   (save-excursion
     (set-buffer rmail-buffer)
-    (rmail-forward)
+    (rmail-forward resend)
     (use-local-map (copy-keymap (current-local-map)))
     (define-key (current-local-map)
       "\C-c\C-c" 'rmail-summary-send-and-exit)))

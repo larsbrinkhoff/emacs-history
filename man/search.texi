@@ -875,10 +875,10 @@ Synonym for @kbd{M-x occur}.
 Print the number of matches for @var{regexp} after point.
 
 @item M-x flush-lines @key{RET} @var{regexp} @key{RET}
-Delete each line that follows point and does not contain a match for
+Delete each line that follows point and contains a match for
 @var{regexp}.
 
 @item M-x keep-lines @key{RET} @var{regexp} @key{RET}
-Delete each line that follows point and contains a match for
+Delete each line that follows point and does not contain a match for
 @var{regexp}.
 @end table

@@ -1154,6 +1154,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* It is best not to declare this and cast its result on foreign operating
    systems with potentially hostile include files.  */
 extern __ptr_t __sbrk __P ((int increment));
+#else
+#ifdef HPUX8
+#include <unistd.h>
+#endif
 #endif
 
 #ifndef NULL

@@ -225,7 +225,7 @@ SHORT= shortnames
 
    -DHAVE_CONFIG_H is needed for some other files to take advantage of
    the information in `config.h'.  */
-CFLAGS=-g
+
 /* C_SWITCH_X_SITE must come before C_SWITCH_X_MACHINE and C_SWITCH_X_SYSTEM
    since it may have -I options that should override those two.  */
 ALL_CFLAGS=-Demacs -DHAVE_CONFIG_H $(MYCPPFLAG) -I. -I${srcdir} C_SWITCH_MACHINE C_SWITCH_SYSTEM C_SWITCH_SITE C_SWITCH_X_SITE C_SWITCH_X_MACHINE C_SWITCH_X_SYSTEM ${CFLAGS}
@@ -772,13 +772,13 @@ clean: mostlyclean
 /**/# This is used in making a distribution.
 /**/# Do not use it on development directories!
 distclean: clean
-	rm -f paths.h config.h ../etc/DOC-*
+	rm -f paths.h config.h Makefile Makefile.in ../etc/DOC-*
 realclean: distclean
 	rm -f TAGS
 versionclean:
 	-rm -f emacs emacs-* ../etc/DOC*
 extraclean: distclean
-	-rm -f *~ \#* m/*~ s/*~
+	-rm -f *~ \#* m/?*~ s/?*~
 
 /* The rule for the [sm] files has to be written a little funny to
    avoid looking like a C comment to CPP. */

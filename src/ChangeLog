@@ -1,3 +1,82 @@
+Tue Nov 16 00:34:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.21 released.
+
+	* doprnt.c (doprnt): Cast the value alloca returns.
+
+	* gmalloc.c [HPUX8]: Include unistd.h earlier on.
+
+	* s/sunos4shr.h (GNU_MALLOC, REL_ALLOC): Don't define if
+	already defined.
+
+	* s/hpux8.h (LD_SWITCH_SYSTEM) [hp9000s700]: Add -L/lib/pa1.1.
+
+	* Makefile.in.in (extraclean): Prevent wildcard from starting comment.
+	(distclean): Do delete Makefile and Makefile.in.
+
+Sun Nov 14 18:00:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* systty.h [BSD_TERMIOS]: Under NL0, NL1..., ECHO, NOFLSH, TOSTOP,
+	FLUSHO and PENDIN.
+	* s/sunos4-1-3.h (BSD_TERMIOS): Defined.
+
+	* regex.c (re_set_registers): Use `regoff_t *' when casting 0.
+
+	* Makefile.in.in: Delete spurious CFLAGS=-g.
+
+	* s/sco4.h (HAVE_GETTIMEOFDAY): Don't define if already defined.
+
+	* keyboard.c (read_avail_input): Make cbuf 1 char shorter.
+
+Sun Nov 14 00:14:37 1993  Paul Reilly  (pmr@legacy.pajato.com)
+
+	* s/dgux.h (INTERRUPT_INPUT): Undefined.
+	(BROKEN_FIONREAD): Defined to work around a problem in DGUX
+	whereby emacs will stop on a background write when invoked from a
+	job control shell for the first time in a session.
+	(FIRST_PTY_LETTER): Undefined.
+	(PTY_ITERATION, PTY_NAME_SPRINTF, PTY_TTY_NAME_SPRINTF): Defined
+	to use all the available PTYs in a COFF environment.
+	(LINKER): Removed "-nostdlib" from to be compatible with a prior
+	mod removing "/lib/crt0.o" from the LIBS_SYSTEM define.
+	(LIBS_SYSTEM): Delete /lib/crt0.o.
+
+Sun Nov 14 01:29:44 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (XTread_socket): Increase length of copy_buffer to 81.
+
+	* lread.c (read1): If token has a \, don't treat it as a number.
+
+Sat Nov 13 01:18:56 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (IN_ADDR, NUMERIC_ADDR_ERROR): New macros (two versions).
+	(Fopen_network_stream): Use them.
+
+	* doprnt.c: Include config.h.
+
+	* keyboard.c (read_avail_input) [no FIONREAD]: On DGUX, as on USG,
+	read input with O_NDELAY.
+
+	* s/dgux.h (SYSTEM_MALLOC): Turned off.
+	(NO_TERMIO): Defined.
+	(BROKEN_FASYNC): Turned off.
+
+	* buffer.c (Foverlay_put): Don't call redisplay_region
+	if overlay has no buffer.
+
+Fri Nov 12 15:38:15 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (get_process): Add `static' to definition.
+
+	* xterm.c (XTmouse_position): Delete test inserted Nov 10.
+
+	* fileio.c (syms_of_fileio): Fix missing \n\'s.
+
+	* keyboard.c (Fread_key_sequence): Split the doc string with "".
+
+	* textprop.c (Fprevious_single_property_change): Fix missing \n\.
+	(Fnext_single_property_change): Likewise.
+
 Wed Nov 10 21:32:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.20 released.

@@ -48,6 +48,7 @@ EMACSSOURCES= \
 	cmdargs.texi \
 	anti.texi \
 	gnu.texi \
+	gnu1.texi \
 	glossary.texi
 
 info: $(INFO_TARGETS)
@@ -70,7 +71,7 @@ info.dvi: ${INFOSOURCES}
 
 emacs.dvi: ${EMACSSOURCES}
 
-../info/cl: cl.texi
+../info/cl.info: cl.texi
 	$(MAKEINFO) cl.texi
 cl.dvi: cl.texi
 
@@ -90,6 +91,9 @@ vip.dvi: vip.texi
 	$(MAKEINFO) gnus.texi
 gnus.dvi: gnus.texi
 
+../etc/GNU: gnu1.texi gnu.texi
+	makeinfo --no-headers -o ../etc/GNU gnu1.texi
+
 mostlyclean:
 	rm -f *.log *.cp *.fn *.ky *.pg *.vr *.o core
 
@@ -101,4 +105,5 @@ distclean: clean
 
 realclean: distclean
 	rm -f *.aux *.cps *.fns *.kys *.pgs *.vrs
-	for file in $(INFO_TARGETS); do rm -f $${file}*; done
+# Don't delete these, because they are outside the current directory.
+#	for file in $(INFO_TARGETS); do rm -f $${file}*; done

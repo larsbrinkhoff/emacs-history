@@ -251,9 +251,9 @@ to it, if possible.  To enter one of those six special characters, type
 a space after it.
 
   Some of those characters have a corresponding ``dead key'' accent
-character in the ISO character set; to enter that character, type the
+character in the ISO Latin-1 character set; to enter that character, type the
 corresponding ASCII character twice.  For example, @kbd{''} enters the
-ISO character acute-accent (character code 0264).
+Latin-1 character acute-accent (character code 0264).
 
   In addition to the accented letters, you can use these special
 sequences in ISO Accents mode to enter certain other ISO Latin-1

@@ -3027,7 +3027,10 @@ read_avail_input (expected)
     nread = (*read_socket_hook) (0, buf, KBD_BUFFER_SIZE, expected, expected);
   else
     {
-      unsigned char cbuf[KBD_BUFFER_SIZE];
+      /* Using KBD_BUFFER_SIZE - 1 here avoids reading more than
+	 the kbd_buffer can really hold.  That may prevent loss
+	 of characters on some systems when input is stuffed at us.  */
+      unsigned char cbuf[KBD_BUFFER_SIZE - 1];
 
 #ifdef FIONREAD
       /* Find out how much input is available.  */
@@ -3044,7 +3047,7 @@ read_avail_input (expected)
       if (nread > sizeof cbuf)
 	nread = sizeof cbuf;
 #else /* no FIONREAD */
-#ifdef USG
+#if defined(USG) || defined(DGUX)
       /* Read some input if available, but don't wait.  */
       nread = sizeof cbuf;
       fcntl (fileno (stdin), F_SETFL, O_NDELAY);
@@ -4444,7 +4447,7 @@ and `quit-flag' is not set.\n\
 If the key sequence starts with a mouse click, then the sequence is read\n\
 using the keymaps of the buffer of the window clicked in, not the buffer\n\
 of the selected window as normal.\n\
-\n\
+""\n\
 `read-key-sequence' drops unbound button-down events, since you normally\n\
 only care about the click or drag events which follow them.  If a drag\n\
 or multi-click event is unbound, but the corresponding click event would\n\

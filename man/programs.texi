@@ -1041,7 +1041,7 @@ even guess the name of the function or other object that was changed.
 @cindex Change Log mode
 @findex change-log-mode
   The change log file is visited in Change Log mode.  Each bunch of
-grouped item counts as one paragraph, and each entry is considered a
+grouped items counts as one paragraph, and each entry is considered a
 page.  This facilitates editing the entries.  @key{LFD} and
 auto-fill indent each new line like the previous line; this is
 convenient for entering the contents of an entry.

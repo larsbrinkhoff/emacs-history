@@ -1,8 +1,24 @@
 @c This is part of the Emacs manual.
 @c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
+@ifclear justgnu
 @node Manifesto,, Antinews, Top
 @unnumbered The GNU Manifesto
+@end ifclear
+@ifset justgnu
+Copyright (C) 1985 Richard M. Stallman
+
+Permission is granted to anyone to make or distribute verbatim copies
+of this document, in any medium, provided that the
+copyright notice and permission notice are preserved,
+and that the distributor grants the recipient permission
+for further redistribution as permitted by this notice.
+
+Modified versions may not be made.
+
+@node Top
+@top The GNU Manifesto
+@end ifset
 
 @quotation
 The GNU Manifesto which appears below was written by Richard Stallman at

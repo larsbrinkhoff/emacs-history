@@ -20,6 +20,7 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+#include <config.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -68,7 +69,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
   if ((format_end - format + 1) < sizeof (fixed_buffer))
     fmtcpy = fixed_buffer;
   else
-    fmtcpy = alloca (format_end - format + 1);
+    fmtcpy = (char *) alloca (format_end - format + 1);
 
   bufsize--;
 

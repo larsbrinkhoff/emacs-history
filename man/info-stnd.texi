@@ -1209,9 +1209,9 @@ Setting this variable to 1 causes a kind of "smooth scrolling" which
 some people prefer.
 
 @item ISO-Latin
-@cindex ISO Latin characters
+@cindex ISO Latin-1 characters
 @vindex ISO-Latin
-When set to @code{On}, Info accepts and displays ISO Latin characters.
+When set to @code{On}, Info accepts and displays ISO Latin-1 characters.
 By default, Info assumes an ASCII character set.  @code{ISO-Latin} tells
 Info that it is running in an environment where the European standard
 character set is in use, and allows you to input such characters to

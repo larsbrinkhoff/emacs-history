@@ -61,7 +61,9 @@ ALL_CFLAGS=$(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_X_SITE) \
 libXMenu11.a: $(OBJS) $(EXTRA)
 	$(RM) $@
 	$(AR) $@ $(OBJS) $(EXTRA)
-	-$(RANLIB) $@
+	@echo Do not be alarmed if the following ranlib command
+	@echo fails due to the absence of a ranlib program on your system.
+	-$(RANLIB) $@ || true
 #If running ranlib fails, probably there is none.
 #That's ok.  So don't stop the build.
 

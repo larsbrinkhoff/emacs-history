@@ -104,7 +104,7 @@ The value is only computed when needed to avoid an expensive search.")
 (defvar vc-header-alist
   '((SCCS "\%W\%") (RCS "\$Id\$"))
   "*Header keywords to be inserted when `vc-insert-headers' is executed.")
-(defconst vc-static-header-alist
+(defvar vc-static-header-alist
   '(("\\.c$" .
      "\n#ifndef lint\nstatic char vcid[] = \"\%s\";\n#endif /* lint */\n"))
   "*Associate static header string templates with file types.  A \%s in the
@@ -1137,19 +1137,38 @@ A prefix argument means do not revert the buffer afterwards."
   "Rename file OLD to NEW, and rename its master file likewise."
   (interactive "fVC rename file: \nFRename to: ")
   (let ((oldbuf (get-file-buffer old)))
-    (if (buffer-modified-p oldbuf)
+    (if (and oldbuf (buffer-modified-p oldbuf))
 	(error "Please save files before moving them"))
     (if (get-file-buffer new)
 	(error "Already editing new file name"))
+    (if (file-exists-p new)
+	(error "New file already exists"))
     (let ((oldmaster (vc-name old)))
       (if oldmaster
-	(if (vc-locking-user old)
-	    (error "Please check in files before moving them"))
-	(if (or (file-symlink-p oldmaster)
-		;; This had FILE, I changed it to OLD. -- rms.
-		(file-symlink-p (vc-backend-subdirectory-name old)))
-	    (error "This is not a safe thing to do in the presence of symbolic links"))
-	(rename-file oldmaster (vc-name new)))
+	  (progn
+	    (if (vc-locking-user old)
+		(error "Please check in files before moving them"))
+	    (if (or (file-symlink-p oldmaster)
+		    ;; This had FILE, I changed it to OLD. -- rms.
+		    (file-symlink-p (vc-backend-subdirectory-name old)))
+		(error "This is not a safe thing to do in the presence of symbolic links"))
+	    (rename-file
+	     oldmaster
+	     (let ((backend (vc-backend-deduce old))
+		   (newdir (or (file-name-directory new) ""))
+		   (newbase (file-name-nondirectory new)))
+	       (catch 'found
+		 (mapcar
+		  (function
+		   (lambda (s)
+		     (if (eq backend (cdr s))
+			 (let* ((newmaster (format (car s) newdir newbase))
+				(newmasterdir (file-name-directory newmaster)))
+			   (if (or (not newmasterdir)
+				   (file-directory-p newmasterdir))
+			       (throw 'found newmaster))))))
+		  vc-master-templates)
+		 (error "New file lacks a version control directory"))))))
       (if (or (not oldmaster) (file-exists-p old))
 	  (rename-file old new)))
 ; ?? Renaming a file might change its contents due to keyword expansion.

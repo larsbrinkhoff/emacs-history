@@ -1,3 +1,125 @@
+Tue Nov 16 01:14:29 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.21 released.
+
+	* gnus.el (gnus-summary-save-in-mail): Don't use rmail-output.
+	Instead, use either gnus-output-to-rmail or gnus-output-to-file.
+	Expand filename before use.
+	* rmailout.el (rmail-file-p): Add autoload cookie.
+
+	* comint.el (comint-send-input): Run comint-output-filter-functions
+	only if process is using comint-output-filter as its filter.
+
+	* subr.el (remove-hook): Doc fix.
+
+	* rmail.el (rmail-set-attribute): Do nothing if MSGNUM is 0.
+
+	* nntp.el (nntp-encode-text): Insert a CR before the newline.
+
+	* info.el (Info-mode): Doc fix.
+
+	* loaddefs.el: Delete duplicate etags.el autoloads.
+
+	* add-log.el (change-log-default-name, add-log-current-defun-function)
+	(add-log-full-name, add-log-mailing-address): Delete autoload cookies.
+
+Mon Nov 15 21:37:37 1993  Per Bothner  (bothner@cygnus.com)
+
+	* iso-acc.el (iso-accents-list):  Added /A for A-with-ring
+	and /E for AE-ligature, with lowercase versions.  These
+	letters are used (with O-with-slash) in Norwegian and Danish.
+
+Mon Nov 15 00:17:12 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* appt.el (appt-display-interval): New variable.
+	(appt-check): Obey that variable.
+
+	* sun.el (sun-raw-prefix): Make this just a variable,
+	not a function name.
+
+	* startup.el (command-line-1): Display a message in the echo area.
+
+	* comint.el (comint-read-input-ring, comint-write-input-ring):
+	Treat "" like nil in comint-input-ring-file-name.
+
+Mon Nov 15 13:21:51 1993  Robert J. Chassell (bob@grackle.stockbridge.ma.us)
+
+        * page.el Add `provide'.
+        (narrow-to-page): Enable page-delimiter to span lines.
+
+        * page-ext.el: Revise documentation.  Add `provide'.
+        (pages-directory-for-adding-addresses-narrowing-p): 
+        New user option for adding addresses.  Default to narrowing.
+        (pages-directory-for-addresses): Intall user settable options. 
+        (add-new-page): Insert new page in specified location.
+        (original-page-delimiter): Set default value to "^^L".
+
+Mon Nov 15 04:13:48 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* vc.el: vc-static-header-alist shouldn't have been declared const.
+
+Sun Nov 14 00:49:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmailout.el (rmail-output): New argument FROM-GNUS.
+	* gnus.el (gnus-summary-save-in-mail): Pass new args to rmail-output.
+
+	* solar.el (solar-equinoxes-solstices): Add autoload.
+
+	* calendar.el (solar-holidays): Change top-level progn to an if.
+
+	* mouse.el (mouse-save-then-kill-delete-region): Take args BEG and END.
+	Update the undo list properly.
+	(mouse-save-then-kill): Pass those args.
+	When we kill, clear mouse-save-then-kill-posn
+	and mouse-selection-click-count.
+	(mouse-secondary-save-then-kill): Likewise.
+	Delete the overlay after deleting the selection text.
+	(mouse-selection-click-count): Initialize to 0.
+	(mouse-save-then-kill-delete-region): Handle buffers with no undo list.
+	Handle empty regions.  Handle end < beg.
+
+	* rmailsum.el (rmail-summary-forward): Accept prefix arg
+	and pass it to rmail-forward.
+
+Sat Nov 13 01:58:53 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* compare-w.el (compare-windows-skip-whitespace): Swap the two
+	and's within the or.
+
+	* help.el (describe-project): New function, on C-h C-p.
+	(help-for-help): Add C-p.  Refer to help-command, not
+	help-for-help, in the \\[...].
+
+	* paths.el (rmail-spool-directory): Check for irix,
+	not silicon-graphic-unix.
+	* dired.el (dired-chown-program): Likewise.
+	* lpr.el (lpr-command): Likewise.
+
+	* xscheme.el: Add a provide call.
+
+	* dired.el (dired-make-relative): Expand DIR if starts with ~.
+
+Fri Nov 12 23:48:06 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* cal-dst.el (calendar-absolute-from-time): Undo Sep 14 patch.
+	Fix comments instead, since they didn't match the code.
+
+Fri Nov 12 17:16:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* comint.el (comint-match-partial-filename): Consider +@: part of
+	filenames; don't consider parens as part of them.
+
+	* fill.el (fill-individual-paragraphs): Fix skipping headers
+	of yanked message.
+
+	* rmailsum.el (rmail-summary-edit-map): Inherit text-mode-map properly.
+
+Fri Nov 12 03:52:03 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-rename-file): Don't overwrite an existing file.
+	Fix test for unsaved files.
+	Calculate name of new master file properly.
+
 Thu Nov 11 02:16:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.20 released.
@@ -50,6 +172,7 @@ Wed Nov 10 15:38:24 1993  Brian Fox  (bfox@mole.gnu.ai.mit.edu)
 
 	* subr.el (remove-hook): New function, analogous to add-hook.  This
 	is now the recommended way to remove a hook that you have added.
+	* lucid.el (remove-hook): Function deleted.
 
 Tue Nov  9 02:11:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 

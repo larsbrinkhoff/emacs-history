@@ -1,6 +1,19 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* You configure Emacs to use a directory such as /usr/local/sun3.lib/emacs
+and the directory name gets mangled in the process of building Emacs.
+
+This is because building Emacs involves passing a makefile through the
+C preprocessor.  The directory names that you specified go through
+that process, and if they happen to use any predefined macro names,
+those macro names get substituted.  For example, if you are on a Sun
+3, the name `sun3' is a predefined macro.
+
+This is an Emacs bug, and will be fixed; but it was too risky to fix
+for 19.21.  For now, you must use different names for those
+directories (perhaps via symbolic links).
+
 * You "lose characters" after typing Compose Character key.
 
 This is because the Compose Character key is defined as the keysym

@@ -304,6 +304,11 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
   (if noninteractive (kill-emacs t)))
 
 (defun command-line-1 (command-line-args-left)
+  (or noninteractive (input-pending-p)
+      (message (if (eq (key-binding "\C-h\C-p") 'describe-project)
+		   "For information about the GNU Project and its goals, type C-h C-p."
+		 (substitute-command-keys
+		  "For information about the GNU Project and its goals, type \\[describe-project]."))))
   (if (null command-line-args-left)
       (cond ((and (not inhibit-startup-message) (not noninteractive)
 		  ;; Don't clobber a non-scratch buffer if init file

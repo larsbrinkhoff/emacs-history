@@ -1,3 +1,17 @@
+Tue Nov 16 03:23:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.21 released.
+
+	* Makefile.in (install): Don't change mode or group when installing.
+
+	* etags.c (FUNCST, TYPEDST, STRUCTST, DEFINEST): Delete excess commas.
+
+Fri Nov 12 01:24:44 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-docfile.c (read_c_string): For "", concatenate the two strings.
+
+	* movemail.c (main): Fix error message text.
+
 Thu Nov 11 10:08:43 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.20 released.

@@ -1,6 +1,24 @@
+Tue Nov 16 00:56:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.21 released.
+
+	* Makefile.in (mkdir): Ignore error from chmod.
+
+Mon Nov 15 05:11:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Don't put lisp/forms.README in the distribution.
+
+Sat Nov 13 04:37:15 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (creating src/Makefile): Before running cpp,
+	discard all lines that start with `# Generated' or /**/#.
+
 Thu Nov 11 09:52:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.20 released.
+
+	* make-dist: Use build-ins.in, not build-install.in.
+	Don't bother updating TAGS since it's not included.
 
 	* build-ins.in: Renamed from build-install.in.
 

@@ -1,3 +1,20 @@
+Tue Nov 16 06:14:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.21 released.
+
+Mon Nov 15 20:53:59 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* man/Makefile (../info/cl.info): Renamed from ../info/cl.
+
+Mon Nov 15 03:22:33 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (../etc/GNU): New target.
+	(EMACSSOURCES): Add gnu1.texi.
+
+Sun Nov 14 21:33:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (realclean): Don't delete the Info files.
+
 Mon Oct 25 01:27:07 1993  Brian Fox  (bfox@albert.gnu.ai.mit.edu)
 
 	* forms.texi: Fix forms.texi so that it will format correctly.
