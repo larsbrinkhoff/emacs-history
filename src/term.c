@@ -1193,7 +1193,8 @@ It may be necessary to do `unsetenv TERMCAP' as well.\n",
 			 && TS_fwd_scroll
 			 && TS_rev_scroll));
 
-  char_ins_del_ok = ((TS_ins_char || TS_ins_multi_chars)
+  char_ins_del_ok = ((TS_ins_char || TS_insert_mode ||
+		      TS_pad_inserted_char || TS_ins_multi_chars)
 		     && (TS_del_char || TS_del_multi_chars));
 
   fast_clear_end_of_line = TS_clr_line != 0;

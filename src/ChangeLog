@@ -1,3 +1,155 @@
+Wed Apr 26 16:14:12 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.54 released.
+
+	* xdisp.c (Fredraw_display): Don't do set_terminal_modes if
+	reset_terminal_on_clear is 0.
+
+Tue Apr 25 22:02:48 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-news.h: Define m68000 if not defined.
+
+Mon Apr 24 01:26:40 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m/m-mips.h [USG]: Define LIBS_TERMCAP.
+	If HAVE_X11, define HAVE_VFORK.
+	Delete defns of XMARKBIT, XSETMARKBIT.
+	[BSD]: Add alternative linker switches; don't override sys
+	facility options.
+
+	* sysdep.c: Include ioctl.h if mips.
+
+Wed Apr 19 20:26:23 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ymakefile: use HAVE_X11 as alias for X11.
+
+Tue Apr 18 00:17:46 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* process.c: Don't define wstopsig, wtersig if already defined.
+
+	* sysdep.c [VMS] (sys_getenv): Copy the string before returning it.
+
+	* m-alliant.h: Define `vector'.
+
+Thu Apr 13 12:55:14 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* process.c (wait_reading_process_input) [sun]: If SIGIO failed
+	to be sent, send it by hand.
+
+Sat Apr  8 16:36:56 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c [USG]: If TIOCGWINSZ defined, include sioctl.h.
+
+Fri Apr  7 22:22:38 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* malloc.c: Rename BSD42 to BSD4_2, as in Emacs.
+	If `emacs', let config.h decide whether to define that.
+	(morecore): Change malloc_sbrk_used, etc., after error check.
+
+Thu Apr  6 11:55:07 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fns.c (Fload_average): nlist data structure is funny on convex.
+
+	* cm.c (calccost): NTABS was off by 1 sometimes; take account of
+	the starting position modulo 8.
+
+	* fileio.c (Fexpand_file_name): Don't simplify /../ at start of name.
+
+	* xmenu.c (XEmacsMenu) [X11]: Set dispwidth, dispheight where they
+	are set for X10.
+	(Fx_popup_menu): Make the menu a child of the root window.
+	Use XQueryPointer to get position to put menu.
+
+	* m-news.h: m-news800.h renamed.
+	Removed EXPLICIT_SIGN_EXTEND and COMPILER_REGISTER_BUG.
+	Removed SEGMENT_MASK and sigmask.
+	LOAD_AVE_TYPE is now `double'; LOAD_AVE_CVT changed too.
+
+	* x11term.c: Include either sys/time.h or time.h, only once.
+
+	* sysdep.c (sys_suspend): If SIGTSTP but not BSD, do kill with neg arg.
+
+	* process.c (create_process):
+	On all USG systems, not just IRIS and AIX, don't pre-open pty's tty.
+	Move the setpgrp done for USG (no real change).
+	* callproc.c (child_setup): Don't do setpgrp on USG.
+
+	* process.c (pty): An IBMRTAIX conditional.
+	(create_process): Another here.
+
+	* process.c (create_process): Take the usg's setpgrp and the close-and
+	-open of the tty outside the TIOCNOTTY conditional, since TIOCNOTTY
+	is always missing outside BSD.  Now the TIOCNOTTY conditional controls
+	only the TIOCNOTTY.
+
+	* sysdep.c (init_sys_modes, reset_sys_modes): Don't try to hack
+	TIOCGLTC, TIOCGETC, etc. if HAVE_TERMIO.
+
+Mon Apr  3 22:51:00 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-iris4d.h: Put -lbsd in LIB_STANDARD, not LIBS_MACHINE, so it
+	comes after LIBX.
+
+Sat Apr  1 00:51:52 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* process.c (Fopen_network_stream): close desc. if connect fails.
+
+Fri Mar 31 17:49:53 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* minibuf.c (Fall_completions): gcprotect ALLMATCHES and TAIL,
+	not STRING.
+
+	* keyboard.c (read_avail_input): Handle EBADSLT like EAGAIN.
+
+Wed Mar 29 10:49:37 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* term.c (term_init): Either ic or ip or im or IC => can insert chars.
+
+Thu Mar 16 13:40:18 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* malloc.c (malloc): Made sure that the MAGIC1 bytes written at
+	the end of the space were positioned with regard to the new
+	offset. 
+
+	* m-sequent.h: Define HAVE_ALLOCA.
+
+Tue Mar 14 14:52:53 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* fns.c (mapconcat): Used non register variable for one loop to
+	get around problem in xenix compiler.
+
+	* s-hpux.h (killpg): Created to allow access to process group
+	fnctionality on hp systems.
+
+	* sysdep.c (sys_suspend): Changed #ifdef BSD to #ifdef SIGTSTP
+	(more directly related to what we are testing for).
+
+	* x11term.c (writechars): Changed usage of temp_length to
+	end - start + 1.
+
+	* x11term.c: Put an #ifndef USG around second include of
+	sys/time.h to prevent double inclusion on any systems (but to
+	include inclusion on systems that need it).
+
+Mon Mar 13 16:41:36 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* emacs.c (main): Removed putting of emacs into a seperate process
+	group.
+
+Fri Mar 10 17:00:37 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* malloc.c (realloc): Make sure that the start of the mhead is
+	found correctly even when sizeof (struct mhead) doesn't divide 8
+	properley. 
+
+	* malloc.c: Brought up to par with GNU library malloc:
+	Modified a comment insto a slightly different form.
+	(free): Modified for a slightly better error message when -Drcheck
+	and a bad value is free'd.
+	(malloc_mem_used, malloc_mem_free): Added debugging functions
+	(under MSTATS) to show memory used and freed.
+	(morecore): Made sure that signal mask was correct upon return.
+
 Fri Feb 24 06:36:11 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* Version 18.53 released.

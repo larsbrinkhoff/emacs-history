@@ -1,5 +1,5 @@
 This is a list of the status of GNU Emacs on various machines and systems.
-Last updated 23 Feb 1989
+Last updated 25 April 1989
 
 Systems:
   For each type of system, the name of the appropriate s- header file
@@ -333,12 +333,23 @@ Iris 4D (m-iris4d.h; s-iris3-6.h)
 
   Changes for 18.49 are merged in 18.50.  18.52 seems to work.
 
-  Note that the compilation of etc/loadst.c requires the option -lmld.
+  Note that the compilation of etc/loadst.c requires editing etc/Makefile.
+  See the comment in that file.
+
+  Someone says that with the yellow pages you must change two definitions
+  in m-iris4d.h as follows:
+
+    #define LIBS_MACHINE -lsun -lbsd -lPW -lmld
+    #define C_SWITCH_MACHINE -I/usr/include/sun -I/usr/include/bsd
 
 Macintosh
 
   We are boycotting Apple because of Apple's efforts to take away
-  our freedom to write free software compatible with hoarded software.
+  our freedom to write compatible imitations of existing software.
+  If you value your freedom to write such programs, we urge you
+  not to buy from Apple, not to develop software for Apple, and
+  certainly not to accept a job with Apple.
+
   See the file APPLE in this directory for more information.
 
 Masscomp (m-masscomp.h; s-rtu.h)
@@ -388,7 +399,16 @@ Plexus (m-plexus.h; s-usg5-2.h)
 
   Works as of 17.56.
 
+Prime EXL (m-intel386.h, s-usg5-3.h)
+
+  18.54 should work.
+
 Pyramid (m-pyramid.h; s-bsd4-2.h)
+
+  In OSx 4.0, it seems necessary to add the following two lines
+  to m-pyramid.h:
+     #define _longjmp longjmp
+     #define _setjmp setjmp
 
   In Pyramid system 2.5 there has been a compiler bug making
   Emacs crash just after screen-splitting with Qnil containing 0.
@@ -403,12 +423,13 @@ Pyramid (m-pyramid.h; s-bsd4-2.h)
   Some old system versions may require you to define PYRAMID_OLD
   in when alloca.s is preprocessed, in order to define _longjmp and _setjmp.
 
-Sequent Balance (m-sequent.h; s-bsd4-2.h)
+Sequent (m-sequent.h; s-bsd4-2.h)
 
-  Emacs 18.51 should work on system version 3.0.  18.52 is said to work.
-  Delete some lines at the end of m-sequent.h for earlier system versions.
+  For balance and symmetry.  Emacs 18.51 should work on system version
+  3.0.  18.5[23] is said to work.  Delete some lines at the end of
+  m-sequent.h for earlier system versions.
 
-SONY News-800 (m-news800.h; s-bsd4-2.h)
+SONY News (m-news.h; s-bsd4-2.h, or s-bsd4-3.h for system release 3)
 
   18.52 should work.
 
@@ -492,8 +513,9 @@ Vax running Ultrix (m-vax.h; s-bsd4-2.h or s-bsd4-3.h)
 
   Works.  Note that "ultrix" is essentially 4.2 or 4.3, depending on version.
 
-  Ultrix 3.0 has incompatibilities in its X library; to solve them,
-  you need to prevent XvmsAlloc.o in Xlib from being used.  Israel Pinkas says:
+  Ultrix 3.0 has incompatibilities in its X library if you have the
+  Ultrix version of X.  To solve them, you need to prevent XvmsAlloc.o
+  in Xlib from being used.  Israel Pinkas says:
 
     I added the following lines to config.h after the X defines:
 

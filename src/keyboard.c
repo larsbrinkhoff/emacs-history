@@ -1088,7 +1088,11 @@ read_avail_input (nread)
     {
       kbd_count = read (fileno (stdin), kbd_buffer, sizeof kbd_buffer);
     }
+#ifdef EBADSLT
+  if (kbd_count == -1 && (errno == EAGAIN || errno == EBADSLT))
+#else
   if (kbd_count == -1 && errno == EAGAIN)
+#endif
     kbd_count = 0;
   fcntl (fileno (stdin), F_SETFL, 0);
 #else /* not USG */

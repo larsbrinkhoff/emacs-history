@@ -29,6 +29,15 @@ cppdir = ../cpp/
 #define NO_SHORTNAMES
 #include "config.h"
 
+/* Use HAVE_X11 as an alias for X11 in this file
+   to avoid problems with X11 as a subdirectory name
+   in -I and other such options which pass through this file. */
+
+#ifdef X11
+#define HAVE_X11
+#undef X11
+#endif
+
 /* On some machines #define register is done in config;
    don't let it interfere with this file.  */
 #undef register
@@ -161,7 +170,7 @@ CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
 #endif
 
 #ifdef HAVE_X_WINDOWS
-#ifdef X11
+#ifdef HAVE_X11
 #ifdef HAVE_X_MENU
 XOBJ = x11term.o x11fns.o xmenu.o
 LIBX = -lXMenu -loldX -lX11 LIBX11_MACHINE LIBX11_SYSTEM
@@ -169,7 +178,7 @@ LIBX = -lXMenu -loldX -lX11 LIBX11_MACHINE LIBX11_SYSTEM
 XOBJ = x11term.o x11fns.o
 LIBX = -lX11 LIBX11_MACHINE LIBX11_SYSTEM
 #endif
-#else /* not X11 */
+#else /* not HAVE_X11 */
 #ifdef HAVE_X_MENU
 XOBJ= xterm.o xfns.o xmenu.o
 LIBX= -lXMenu -lX LIBX10_MACHINE LIBX10_SYSTEM
@@ -177,7 +186,7 @@ LIBX= -lXMenu -lX LIBX10_MACHINE LIBX10_SYSTEM
 XOBJ= xterm.o xfns.o
 LIBX= -lX LIBX10_MACHINE LIBX10_SYSTEM
 #endif /* not HAVE_X_MENU */
-#endif /* not X11 */
+#endif /* not HAVE_X11 */
 #endif /* HAVE_X_WINDOWS */
 
 #ifdef MAINTAIN_ENVIRONMENT
@@ -387,7 +396,7 @@ malloc.o : malloc.c config.h
 marker.o : marker.c buffer.h config.h 
 minibuf.o : minibuf.c syntax.h window.h buffer.h commands.h config.h 
 mocklisp.o : mocklisp.c buffer.h config.h
-process.o : process.c process.h buffer.h window.h termhooks.h commands.h config.h 
+process.o : process.c process.h buffer.h window.h termhooks.h termopts.h commands.h config.h 
 regex.o : regex.c syntax.h buffer.h config.h regex.h 
 scroll.o : scroll.c termchar.h config.h dispextern.h
 search.o : search.c regex.h commands.h buffer.h syntax.h config.h 

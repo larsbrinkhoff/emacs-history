@@ -127,12 +127,17 @@ be the return value for that line (i. e. if it is selected.")
   Lisp_Object ltitle, selection;
   Lisp_Object XEmacsMenu();
   int i, j;
+#ifdef X11
+  Window root_window, wjunk;
+  int ijunk;
+#endif
   BLOCK_INPUT_DECLARE ();
 
   check_xterm();
 #ifdef X11
-  XMenu_xpos = XXfontw * XINT(Fcar(arg));
-  XMenu_ypos = XXfonth * XINT(Fcar(Fcdr (arg)));
+  root_window = RootWindow (XXdisplay, DefaultScreen(XXdisplay));
+  XQueryPointer (XXdisplay, root_window, &wjunk, &wjunk, &XMenu_xpos,
+		 &XMenu_ypos, &ijunk, &ijunk, &ijunk);
 #else
   XMenu_xpos = fontinfo->width * XINT(Fcar(arg));
   XMenu_ypos = fontinfo->height * XINT(Fcar(Fcdr (arg)));
@@ -157,7 +162,7 @@ be the return value for that line (i. e. if it is selected.")
   BLOCK_INPUT ();
 #ifdef X11
   XSetErrorHandler(XMenuQuit);
-  selection = XEmacsMenu(XXwindow, XMenu_xpos, XMenu_ypos, names, menus,
+  selection = XEmacsMenu(root_window, XMenu_xpos, XMenu_ypos, names, menus,
 			 items, number_of_panes, obj_list ,title, &error_name);
   XSetErrorHandler(handler);
 #else
@@ -198,7 +203,7 @@ struct indices {
 
 Lisp_Object
 XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
-		      pane_cnt, item_list, title, error)
+	   pane_cnt, item_list, title, error)
      Window parent;		
      int startx, starty;	/* upper left corner position BROKEN */
      char **line_list[];   	/* list of strings for items */
@@ -215,7 +220,7 @@ XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
   Lisp_Object entry;
   /* struct indices *datap, *datap_save; */
   char *datap;
-  int ulx, uly, width, height;
+  int ulx = 0, uly = 0, width, height;
   int dispwidth, dispheight;
   
   *error = (char *) 0;		/* Initialize error pointer to null */
@@ -264,8 +269,8 @@ XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
   XMenuRecompute(X11ONLY (XXdisplay) GXMenu);
 #ifdef X11
   XXscreen = DefaultScreen(XXdisplay);
-  width = DisplayWidth(XXdisplay, XXscreen);
-  height = DisplayHeight(XXdisplay, XXscreen);
+  dispwidth = DisplayWidth(XXdisplay, XXscreen);
+  dispheight = DisplayHeight(XXdisplay, XXscreen);
 #else
   dispwidth = DisplayWidth();
   dispheight = DisplayHeight();

@@ -5,9 +5,9 @@ etc/emacstool.1.
 
 To enable use of these files and programs, define the configuration
 switch HAVE_SUN_WINDOWS in src/config.h before compiling Emacs.
-The definition of HAVE_SUN_WINDOWS must precede the #include m-sun2.h
-or #include m-sun3.h.
-If you must change PURESIZE, do so after the #include m-sun2.h
+The definition of HAVE_SUN_WINDOWS must precede the #include m-sun3.h
+or #include m-sun4.h.
+If you must change PURESIZE, do so after the #include m-sun3.h
 
 This software is based on SunView for Sun UNIX 4.2 Release 3.2,
 and will not work "as is" on previous releases, eg 3.0 or 3.1.
@@ -15,14 +15,14 @@ and will not work "as is" on previous releases, eg 3.0 or 3.1.
 Using Emacstool with GNU Emacs:
 
    The GNU Emacs files lisp/term/sun.el, lisp/sun-mouse.el,
-lisp/sun-mouse-fns.el, and src/sunfns.c provide emacs support for the
+lisp/sun-fns.el, and src/sunfns.c provide emacs support for the
 Emacstool and function keys.  If your terminal type is SUN (that is,
 if your environment variable TERM is set to SUN), then Emacs will
 automatically load the file lisp/term/sun.el.  This, in turn, will
 ensure that sun-mouse.el is autoloaded when any mouse events are
-detected.  It is suggested that sun-mouse and sun-mouse-fns be
+detected.  It is suggested that sun-mouse and sun-fns be
 included in your site-init.el file, so that they will always be loaded
-when running on a Sun workstation.  [Increase PURESIZE to 153000].
+when running on a Sun workstation.  [Increase PURESIZE to 154000].
 
    Support for the Sun function keys requires disconnecting the standard
 Emacs command Meta-[.  Therefore, the function keys are supported only
@@ -47,7 +47,7 @@ pullright item is created.
 
    This version also includes support for copying to and from the
 sun-windows "stuff" selection.  The keyboard bindings defined in 
-lisp/sun-mouse-fns.el let you move the current region to the "STUFF"
+lisp/sun-fns.el let you move the current region to the "STUFF"
 selection and vice versa.  Just set point with the left button, set
 mark with the middle button, (the region is automatically copied to
 "STUFF") then switch to a shelltool, and "Stuff" will work.  Going the
@@ -72,7 +72,7 @@ M-x Describe-mouse-bindings, or the quick pop-up menu item "Mouse-Help".
 
 
 GNU Emacs EXAMPLES:
-   See definitions in lisp/sun-mouse-fns.el for examples.
+   See definitions in lisp/sun-fns.el for examples.
 
    You can redefine the cursor that is displayed in the emacs window.
 On initialization, it is set to a right arrow.  See lisp/sun-cursors.el
@@ -110,13 +110,13 @@ structure sensitive to a particular window and where in the window the
 hit occured (text-region, right-margin, mode-line).  Three variables
 are bound (*mouse-window* *mouse-x* *mouse-y*) and the selected function
 is called. 
-    See documentation on "define-mouse" or look at lisp/sun-mouse-fns.el
+    See documentation on "define-mouse" or look at lisp/sun-fns.el
 to see how this is done.
     Defines two functions to pass between region and sun-selection
     Defines functions for interfacing with the Menu.
 During menu evaluation, the variables *menu-window* *menu-x* *menu-y* are bound.
 
-lisp/sun-mouse-fns.el
+lisp/sun-fns.el
     The definition of the default menu and mouse function bindings.
 
 lisp/sun-cursors.el

@@ -192,6 +192,7 @@ tparam1 (string, outstring, len, up, left, argp)
 	    {
 	      new = (char *) malloc (outlen = 40 + len);
 	      outend += 40;
+	      bcopy (outstring, new, op - outstring);
 	    }
 	  else
 	    {
@@ -250,9 +251,9 @@ tparam1 (string, outstring, len, up, left, argp)
 		    {
 		      tem++;
 		      if (argp == oargp)
-			doleft++, outend -= strlen (left);
-		      else
 			doup++, outend -= strlen (up);
+		      else
+			doleft++, outend -= strlen (left);
 		    }
 		}
 	      *op++ = tem | 0200;
@@ -334,10 +335,10 @@ tparam1 (string, outstring, len, up, left, argp)
 	*op++ = c;
     }
   *op = 0;
-  while (doleft-- > 0)
-    strcpy (op, left);
   while (doup-- > 0)
-    strcpy (op, up);
+    strcat (op, up);
+  while (doleft-- > 0)
+    strcat (op, left);
   return outstring;
 }
 

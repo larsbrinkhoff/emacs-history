@@ -527,17 +527,19 @@ and use that file as the inbox."
 	       (skip-chars-forward " \t\n")
 	       (narrow-to-region (point) (point-max)))
 	      ;;*** MMDF format
-	      ((looking-at mmdf-delim1)
-	       (replace-match "\^L\n0, unseen,,\n*** EOOH ***\n")
-	       (setq start (point))
-	       (re-search-forward mmdf-delim2 nil t)
-	       (replace-match "\^_")
+	      ((let ((case-fold-search t))
+		 (looking-at mmdf-delim1))
+	       (let ((case-fold-search t))
+		 (replace-match "\^L\n0, unseen,,\n*** EOOH ***\n")
+		 (setq start (point))
+		 (re-search-forward mmdf-delim2 nil t)
+		 (replace-match "\^_"))
 	       (save-excursion
 		 (save-restriction
 		   (narrow-to-region start (1- (point)))
 		   (goto-char (point-min))
-		   (while (search-forward "\n\^_" nil t); single char "\^_"
-		     (replace-match "\n^_")))); 2 chars: "^" and "_"
+		   (while (search-forward "\n\^_" nil t) ; single char "\^_"
+		     (replace-match "\n^_")))) ; 2 chars: "^" and "_"
 	       (narrow-to-region (point) (point-max))
 	       (setq count (1+ count)))
 	      ;;*** Mail format
@@ -549,7 +551,7 @@ and use that file as the inbox."
 		    (concat "^[\^_]?\\("
 			    "From [^ \n]*\\(\\|\".*\"[^ \n]*\\)  ?[^ \n]* [^ \n]* *"
 			    "[0-9]* [0-9:]* \\([A-Z]?[A-Z][A-Z]T \\|[-+][0-9][0-9][0-9][0-9] \\|\\)" ; EDT, -0500
-			    "19[0-9]*$\\|"
+			    "19[0-9]* *$\\|"
 			    mmdf-delim1 "\\|"
 			    "^Babyl Options:\\|"
 			    "\^L\n[01],\\)") nil t)
@@ -592,7 +594,7 @@ and use that file as the inbox."
 	  (goto-char start))
 	(let ((case-fold-search nil))
 	  (if (re-search-forward
-	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( [A-Z]?[A-Z][A-Z]T\\|[-+][0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\)\n" nil t)
+	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( [A-Z]?[A-Z][A-Z]T\\|[-+][0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\n" nil t)
 	      (replace-match
 		(concat
 		  ;; Keep and reformat the date if we don't

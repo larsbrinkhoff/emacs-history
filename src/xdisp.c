@@ -86,6 +86,9 @@ Lisp_Object last_arrow_position, last_arrow_string;
   it is <=0 then point is centered in the window */
 int scroll_step;
 
+/* Nonzero means send various TERMCAP strings when screen is cleared.  */
+int reset_terminal_on_clear;
+
 /* Nonzero if try_window_id has made blank lines at window bottom
  since the last redisplay that paused */
 static int blank_end_of_window;
@@ -157,7 +160,8 @@ DEFUN ("redraw-display", Fredraw_display, Sredraw_display, 0, 0, "",
   ()
 {
   if (screen_height == 0) abort (); /* Some bug zeros some core */
-  set_terminal_modes ();
+  if (reset_terminal_on_clear)
+    set_terminal_modes ();
   clear_screen ();
   fflush (stdout);
   clear_screen_records ();
@@ -1986,6 +1990,10 @@ See also overlay-arrow-string.");
     "*The number of lines to try scrolling a window by when point moves out.\n\
 If that fails to bring point back on screen, point is centered instead.\n\
 If this is zero, point is always centered after it moves off screen.");
+
+  DEFVAR_BOOL ("reset-terminal-on-clear", &reset_terminal_on_clear,
+    "Non-nil means re-init terminal modes for clear screen as on entry to Emacs.");
+  reset_terminal_on_clear = 1;
 
   DEFVAR_INT ("debug-end-pos", &debug_end_pos, "Don't ask");
 

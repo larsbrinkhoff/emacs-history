@@ -1,6 +1,8 @@
 CFLAGS= -g
 # For Xenix.  Needed for movemail
 #  LOADLIBES= -lx
+# For Iris 4d.  Needed for loadst.
+#  LOADLIBES = -lmld
 
 EXECUTABLES = test-distrib etags ctags loadst make-docfile \
    digest-doc sorted-doc movemail cvtmail fakemail yow env \

@@ -114,7 +114,7 @@ and this notice must be preserved on all copies.  */
    in the file alloca.s should be used.  */
 
 /* #define C_ALLOCA */
-/* #define HAVE_ALLOCA */
+#define HAVE_ALLOCA
 
 /* Name of file the to look in
    for the kernel symbol table (for load average) */

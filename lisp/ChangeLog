@@ -1,3 +1,43 @@
+Wed Apr 26 16:17:02 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.54 released.
+
+	* term/xterm.el: Set reset-terminal-on-clear.
+
+Wed Apr 12 10:45:30 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* picture.el (picture-tab): Dumb errors in prefix-arg case.
+
+Tue Apr 11 01:04:53 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* lpr.el (print-region-1): For tab-conversion case, insert specd range.
+
+Thu Apr  6 12:27:21 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* startup.el (normal-top-level): Use PWD envvar to set default dir.
+	(command-switch-alist): Doc fix.
+
+	* rmail.el (rmail-convert-to-babyl-format):
+	Bind case-fold-search to t for mmdf case.
+
+	* rmail.el (rmail-convert-to-babyl-format, rmail-nuke-pinhead-header):
+	Accept spaces at end of Unix-style From line.
+
+Sun Apr  2 00:24:51 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* paths.el (rmail-spool-directory): Treat silicon-graphics-unix
+	like usg.
+
+Tue Mar 14 17:23:47 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format): reset case-fold-search
+	to true in the mmdf case.
+
+Mon Mar 13 16:57:03 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* tex-mode.el (TeX-common-initialization): Made lines beginning
+	with % separate paragraphs.
+
 Thu Feb 23 06:47:13 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* Version 18.53 released.

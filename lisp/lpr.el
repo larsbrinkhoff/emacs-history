@@ -59,7 +59,7 @@
 	 (let ((oldbuf (current-buffer)))
 	  (set-buffer (get-buffer-create " *spool temp*"))
 	  (widen) (erase-buffer)
-	  (insert-buffer-substring oldbuf)
+	  (insert-buffer-substring oldbuf start end)
 	  (setq tab-width width)
 	  (untabify (point-min) (point-max))
 	  (setq start (point-min) end (point-max))))

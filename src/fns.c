@@ -987,6 +987,7 @@ Thus, \" \" as SEP results in spaces between the values return by FN.")
   int nargs;
   register Lisp_Object *args;
   register int i;
+  int j;
 
   len = Flength (seq);
   leni = XINT (len);
@@ -997,9 +998,10 @@ Thus, \" \" as SEP results in spaces between the values return by FN.")
 
   mapcar1 (leni, args, fn, seq);
 
-  for (i = leni - 1; i >= 0; i--)
-    args[i + i] = args[i];
-      
+  /* Broken Xenix/386 compiler can't use a register variable here */
+  for (j = leni - 1; j > 0; j--)
+    args[j + j] = args[j];
+
   for (i = 1; i < nargs; i += 2)
     args[i] = sep;
 
@@ -1197,8 +1199,13 @@ and then turned into integers).")
       strcpy (nl[0].n_name, LDAV_SYMBOL);
       nl[1].n_zeroes = 0;
 #else /* NLIST_STRUCT */
+#ifdef convex
+      nl[0].n_un.n_name = LDAV_SYMBOL;
+      nl[1].n_un.n_name = 0;
+#else /* not convex */
       nl[0].n_name = LDAV_SYMBOL;
       nl[1].n_name = 0;
+#endif /* not convex */
 #endif /* NLIST_STRUCT */
 
       nlist (KERNEL_FILE, nl);

@@ -200,7 +200,7 @@ x:
      * we will put into tabx (for ntabs) and tab2x (for n2tabs)).
      */
 
-    ntabs = deltax / Wcm.cm_tabwidth;
+    ntabs = (deltax + srcx % Wcm.cm_tabwidth) / Wcm.cm_tabwidth;
     n2tabs = ntabs + 1;
     tabx = (srcx / Wcm.cm_tabwidth + ntabs) * Wcm.cm_tabwidth;
     tab2x = tabx + Wcm.cm_tabwidth;

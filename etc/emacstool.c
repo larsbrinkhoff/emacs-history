@@ -26,6 +26,7 @@
  * Author: Jeff Peck, Sun Microsystems, Inc. <peck@sun.com>
  *
  * Original Idea: Ian Batten
+ * Updated 15-Mar-88, Jeff Peck: set IN_EMACSTOOL, TERM, TERMCAP
  * 
  */
 
@@ -244,14 +245,37 @@ main (argc, argv)
      char **argv;
 {
   int error_code;	/* Error codes */
+  
   if(getenv("DEBUGEMACSTOOL"))
     console = fdopen (console_fd = open("/dev/console",O_WRONLY), "w");
 
   			/* do this first, so arglist can override it */
-  frame_icon = icon_create (ICON_LABEL, "",
+  frame_icon = icon_create (ICON_LABEL, "Emacstool",
 			    ICON_IMAGE, &icon_image,
 			    0);
 
+  putenv("IN_EMACSTOOL=t");	/* notify subprocess that it is in emacstool */
+
+  if (putenv("TERM=sun") != 0)	/* TTYSW will be a TERM=sun window */
+    {fprintf (stderr, "%s: Could not set TERM=sun, using `%s'\n",
+	     argv[0], (char *)getenv("TERM")) ;};
+  /*
+   * If TERMCAP starts with a slash, it is the pathname of the
+   * termcap file, not an entry extracted from it, so KEEP it!
+   * Otherwise, it may not relate to the new TERM, so Nuke-It.
+   * If there is no TERMCAP environment variable, don't make one.
+   */
+  {
+    char *termcap ;	/* Current TERMCAP value */
+    termcap = (char *)getenv("TERMCAP") ;
+    if (termcap && (*termcap != '/'))
+      {
+	if (putenv("TERMCAP=") != 0)
+	  {fprintf (stderr, "%s: Could not clear TERMCAP\n", argv[0]) ;} ;
+      } ;
+  } ;
+  
+  /* find command to run as subprocess in window */
   if (!(argv[0] = (char *)getenv("EMACSTOOL")))	/* Set emacs command name */
       argv[0] = emacs_name;			
   for (argc = 1; argv[argc]; argc++)		/* Use last one on line */

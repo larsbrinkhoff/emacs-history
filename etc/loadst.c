@@ -241,6 +241,7 @@ main (argc, argv)
 	      s.xfer[i] -= s1.xfer[i];
 	      s1.xfer[i] = t;
 	    }
+#ifndef BSD4_3
 	  for (i = 0; i < CPUSTATES; i++)
 	    {
 	      register t = s.time[i];
@@ -252,6 +253,15 @@ main (argc, argv)
 	    etime = 1.;
 	  etime /= 60.;
 	 
+#else
+	  {
+	    static struct timeval tv, tv1;
+	    gettimeofday (&tv, 0);
+	    etime = (tv.tv_sec - tv1.tv_sec)
+		+ (tv.tv_usec - tv1.tv_usec) / 1.0e6;
+	    tv1 = tv;
+	  }
+#endif
 	  {   register max = s.xfer[0];
 	      for (i = 1; i < DK_NDRIVE; i++)
 		if (s.xfer[i] > max)

@@ -138,3 +138,8 @@ unexec_text_start = hdr.a_text_addr;}
 #define Finsert_abbrev_table_description Finsert_abbrev_table_descrip
 #define internal_with_output_to_temp_buffer internal_with_output_to_tem
 #endif
+
+/* "vector" is a typedef in /usr/include/machine/reg.h, so its use as
+   a variable name causes errors when compiling under ANSI C.  */
+
+#define vector xxvector

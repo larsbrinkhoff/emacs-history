@@ -82,39 +82,53 @@ buffer (STUFF) is limited.
 The GNU Emacs files
 lisp/term/sun.el,
 lisp/sun-mouse.el, 
-lisp/sun-mouse-fns.el, 
+lisp/sun-fns.el, 
 and 
 src/sunfns.c
 provide emacs support for the Emacstool and function keys.
-If your terminal type is 
+Emacstool will automatically set the TERM environment variable to be "sun"
+and unset the environment variable TERMCAP.  That is, these variables will
+not be inherited from the shell that starts Emacstool.
+Since the terminal type is
 .I SUN
-(that is, if your environment variable TERM is set to 
+(that is, the environment variable TERM is set to 
 .I SUN), 
-then Emacs will automatically load the file lisp/term/sun.el.
+Emacs will automatically load the file lisp/term/sun.
 This, in turn, will ensure that sun-mouse.el is autoloaded when any mouse
 events are detected.  It is suggested that 
 .I sun-mouse 
 and
-.I sun-mouse-fns
-be included in your site-init.el file, so that they will always be loaded
+.I sun-fns
+be loaded in your site-init.el file, so that they will always be loaded
 when running on a Sun workstation.
+.PP
+In addition, Emacstool sets the environment variable IN_EMACSTOOL = "t".
+Lisp code in your ~/.emacs can use (getenv "IN_EMACSTOOL")
+to determine whether to do Emacstool specific initalization.
+Sun.el uses this to automatically call emacstool-init (getenv "IN_EMACSTOOL")
+is defined.
 .PP
 The file src/sunfns.c defines several useful functions for emacs on
 the Sun.  Among these are procedures to pop-up SunView 
 .I menus, 
-put and get from the 
+put and get from the SunView
 .I STUFF
 buffer, and a procedure for changing the cursor 
 .I icon.
-If you want to define cursor icons, 
-try using the functions in lisp/sun-cursors.el.
+If you want to define or edit cursor icons, 
+there is a rudimentary mouse driven icon editor in the file
+lisp/sun-cursors.el.  Try invoking (sc:edit-cursor)
 .SH BUGS
 It takes a few milliseconds to create a menu before it pops up.
 .SH ENVIRONMENT VARIABLES
 EMACSTOOL
+IN_EMACSTOOL
+TERM
+TERMCAP
 .SH FILES
 .DT
 emacs
 .SH "SEE ALSO"
 emacs(1)
-.../etc/SUN-SUPPORT
+ .../etc/SUN-SUPPORT
+ .../lisp/term/sun.el

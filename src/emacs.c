@@ -224,12 +224,7 @@ main (argc, argv, envp)
   setuid (getuid ());
 #endif HIGHPRI
 
-#ifdef BSD
-  /* interrupt_input has trouble if we aren't in a separate process group.  */
-  setpgrp (getpid (), getpid ());
-#endif
 
-  inhibit_window_system = 0;
 
 #ifdef HAVE_X_WINDOWS
   xargv = argv;

@@ -1,3 +1,15 @@
+Tue Apr 18 21:31:25 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c: on bsd4.3, use gettimeofday instead of CPUSTATES.
+
+Thu Mar 16 13:43:07 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* MACHINES: m-sequent.h works for symmetry also.
+
+Mon Mar 13 17:03:06 1989  Randall Smith  (randy at sugar-bombs.ai.mit.edu)
+
+	* MACHINES: Added note mentioning m-news3.0.h.
+
 Tue Feb 21 12:58:55 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* movemail.c: On sysv, include unistd.h.

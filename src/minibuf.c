@@ -523,7 +523,7 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
   int list = CONSP (alist);
   int index, obsize;
   Lisp_Object bucket, tem;
-  struct gcpro gcpro1, gcpro2;
+  struct gcpro gcpro1, gcpro2, gcpro3;
 
   CHECK_STRING (string, 0);
   if (!list && XTYPE (alist) != Lisp_Vector)
@@ -594,7 +594,7 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
 		tem = Fcommandp (elt);
 	      else
 		{
-		  GCPRO2 (string, eltstring);
+		  GCPRO3 (tail, eltstring, allmatches);
 		  tem = call1 (pred, elt);
 		  UNGCPRO;
 		}

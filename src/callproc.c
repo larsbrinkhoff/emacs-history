@@ -373,12 +373,10 @@ child_setup (in, out, err, new_argv, env)
   close (out);
   close (err);
 
-#ifdef USG
-  setpgrp ();			/* No arguments but equivalent in this case */
-#else
+#ifndef USG
   setpgrp (pid, pid);
-#endif /* USG */
   setpgrp_of_tty (pid);
+#endif /* USG */
 
 #ifdef vipc
   something missing here;

@@ -223,7 +223,7 @@ of LaTeX-mode-hook."
 	(modify-syntax-entry ?' "w"))
     (set-syntax-table TeX-mode-syntax-table))
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start "^[ \t]*$\\|^[\f\\\\]")
+  (setq paragraph-start "^[ \t]*$\\|^[\f\\\\%]")
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'comment-start)

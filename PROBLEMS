@@ -72,16 +72,25 @@ space than was allocated.
 This could be caused by
  1) adding code to the preloaded Lisp files
  2) adding more preloaded files in loadup.el
- 3) having a site-init.el which loads files.
-   Note that ANY site-init.el is nonstandard;
+ 3) having a site-init.el or site-load.el which loads files.
+   Note that ANY site-init.el or site-load.el is nonstandard;
    if you have received Emacs from some other site
-   and it contains a site-init.el file, consider
+   and it contains a site-init.el or site-load.el file, consider
    deleting that file.
  4) getting the wrong .el or .elc files
    (not from the directory you expected).
  5) deleting some .elc files that are supposed to exist.
    This would cause the source files (.el files) to be
    loaded instead.  They take up more room, so you lose.
+ 6) a bug in the Emacs distribution which underestimates
+   the space required.
+
+If the need for more space is legitimate, change the definition
+of PURESIZE in config.h.
+
+But in some of the cases listed above, this problem is a consequence
+of something else that is wrong.  Be sure to check and fix the real
+problem.
 
 * Changes made to .el files do not take effect.
 
@@ -127,14 +136,39 @@ constructs in Emacs have been fixed.
 * rmail gets error getting new mail
 
 rmail gets new mail from /usr/spool/mail/$USER using a program
-called movemail.  This program interlocks with /bin/mail using
-the protocol defined by /bin/mail, which involves creating a
-lock file.  It must be able to write in /usr/spool/mail
-in order to do this.
+called `movemail'.  This program interlocks with /bin/mail using
+the protocol defined by /bin/mail.
 
-You may have to change config.h to #define MAIL_USE_FLOCK
-if your system is configured to use flock to interlock
-access to mail files.
+There are two different protocols in general use.  One of them uses
+the `flock' system call.  The other involves creating a lock file;
+`movemail' must be able to write in /usr/spool/mail in order to do
+this.  You control which one is used by defining, or not defining,
+the macro MAIL_USE_FLOCK in config.h or the m- or s- file it includes.
+IF YOU DON'T USE THE FORM OF INTERLOCKING THAT IS NORMAL ON YOUR
+SYSTEM, YOU CAN LOSE MAIL!
+
+If your system uses the lock file protocol, and fascist restrictions
+prevent ordinary users from writing the lock files in /usr/spool/mail,
+you may need to make `movemail' setgid to a suitable group such as
+`mail'.
+
+* Emacs won't work with X-windows if the value of DISPLAY is HOSTNAME:0.
+
+Some people have found that Emacs was unable to connect to the local
+host by name, as in DISPLAY=prep:0 if you are running on prep, but
+could handle DISPLAY=unix:0.  Here is what tale@rpi.edu said:
+
+      Seems as
+    though gethostbyname was bombing somewhere along the way.  Well, we
+    had just upgrade from SunOS 3.5 (which X11 was built under) to SunOS
+    4.0.1.  Any new X applications which tried to be built with the pre
+    OS-upgrade libraries had the same problems which Emacs was having.
+    Missing /etc/resolv.conf for a little while (when one of the libraries
+    was built?) also might have had a hand in it.
+
+    The result of all of this (with some speculation) was that we rebuilt
+    X and then rebuilt Emacs with the new libraries.  Works as it should
+    now.  Hoorah.
 
 * Emacs spontaneously displays "I-search: " at the bottom of the screen.
 
@@ -347,6 +381,65 @@ you can redefine Backspace in your .emacs file:
   (global-set-key "\b" 'delete-backward-char)
 You may then wish to put the function  help-command  on some
 other key.  I leave to you the task of deciding which key.
+
+* Editing files through RFS gives spurious "file has changed" warnings.
+It is possible that a change in Emacs 18.37 gets around this problem,
+but in case not, here is a description of how to fix the RFS bug that
+causes it.
+
+    Date: Wed, 28 Jan 87 15:18:40 EST
+    From: Bill Sommerfeld <wesommer@athena.mit.edu>
+    Sender: wesommer@athena.mit.edu
+    To: toddb%crl.tek.csnet@relay.cs.net
+    Cc: bug-rfs, bug-gnu-emacs@prep.ai.mit.edu
+    Subject: Bug in RFS server (fsync())
+
+    There was a serious pair of bugs in the handling of the fsync() system
+    call in the RFS server.
+
+    The first is that the fsync() call is handled as another name for the
+    close() system call (!!).  It appears that fsync() is not used by very
+    many programs; Emacs version 18 does an fsync() before closing files
+    to make sure that the bits are on the disk.
+
+    This is fixed by the enclosed patch to the RFS server.
+
+    The second, more serious problem, is that fsync() is treated as a
+    non-blocking system call (i.e., it's implemented as a message that
+    gets sent to the remote system without waiting for a reply).  Fsync is
+    a useful tool for building atomic file transactions.  Implementing it
+    as a non-blocking RPC call (when the local call blocks until the sync
+    is done) is a bad idea; unfortunately, changing it will break the RFS
+    protocol.  Any suggestions?
+
+					    Bill Sommerfeld
+					    MIT Project Athena
+
+    (as always, your line numbers may vary)
+
+    % rcsdiff -c -r1.2 serversyscall.c
+    RCS file: RCS/serversyscall.c,v
+    retrieving revision 1.2
+    diff -c -r1.2 serversyscall.c
+    *** /tmp/,RCSt1003677   Wed Jan 28 15:15:02 1987
+    --- serversyscall.c     Wed Jan 28 15:14:48 1987
+    ***************
+    *** 163,169 ****
+	    /*
+	     * No return sent for close or fsync!
+	     */
+    !       if (syscall == RSYS_close || syscall == RSYS_fsync)
+		    proc->p_returnval = deallocate_fd(proc, msg->m_args[0]);
+	    else
+	    {
+    --- 166,172 ----
+	    /*
+	     * No return sent for close or fsync!
+	     */
+    !       if (syscall == RSYS_close)
+		    proc->p_returnval = deallocate_fd(proc, msg->m_args[0]);
+	    else
+	    {
 
 * ld complains because `alloca' is not defined on your system.
 

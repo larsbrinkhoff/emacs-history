@@ -53,7 +53,8 @@
   "Name of user's primary mail file.")
 
 (defconst rmail-spool-directory
-  (if (memq system-type '(hpux usg-unix-v unisoft-unix rtu))
+  (if (memq system-type '(hpux usg-unix-v unisoft-unix rtu
+			       silicon-graphics-unix))
       "/usr/mail/"
     "/usr/spool/mail/")
   "Name of directory used by system mailer for delivering new mail.

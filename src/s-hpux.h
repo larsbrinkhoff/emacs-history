@@ -246,3 +246,6 @@ and this notice must be preserved on all copies.  */
 
 /* This is needed for HPUX version 6.2; it may not be needed for 6.2.1.  */
 #define SHORT_CAST_BUG
+
+/* Define killpg so that we have process group functionality under HP.  */
+#define	killpg(PGRP, KSIG)	kill (-(PGRP), KSIG)

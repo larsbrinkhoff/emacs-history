@@ -705,6 +705,8 @@ initial ~ is expanded.  See also the function  substitute-in-file-name.")
 	       (p[2] == '/' || p[2] == 0))
 	p += 2;
       else if (!strncmp (p, "/..", 3)
+	       /* `/../' is the "superroot" on certain file systems.  */
+	       && o != target
 	       && (p[3] == '/' || p[3] == 0))
 	{
 	  while (o != target && *--o != '/')

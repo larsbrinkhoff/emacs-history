@@ -150,7 +150,7 @@ and this notice must be preserved on all copies.  */
 #define DATA_SEG_BITS	0x10000000
 
 #undef LIBS_MACHINE
-#define LIBS_MACHINE -lbsd -lPW -lmld
+#define LIBS_MACHINE -lPW -lmld
 #define LIBS_DEBUG
 
 /* Define this if you have a fairly recent system,
@@ -160,11 +160,12 @@ and this notice must be preserved on all copies.  */
 #ifdef HAVE_CRTN
 /* Must define START-FILES so that the linker can find /usr/lib/crt0.o.  */
 #define START_FILES pre-crt0.o /usr/lib/crt1.o
-#define LIB_STANDARD -lc /usr/lib/crtn.o
+#define LIB_STANDARD -lbsd -lc /usr/lib/crtn.o
 #else
 #define START_FILES pre-crt0.o /usr/lib/crt0.o
 /* The entry-point label (start of text segment) is `start', not `__start'.  */
 #define DEFAULT_ENTRY_ADDRESS start
+#define LIB_STANDARD -lbsd -lc
 #endif
 
 /* Use terminfo instead of termcap.  */

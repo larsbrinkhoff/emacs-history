@@ -63,7 +63,7 @@ with the contents of the startup message.")
   "Alist of command-line switches.
 Elements look like (SWITCH-STRING . HANDLER-FUNCTION).
 HANDLER-FUNCTION receives switch name as sole arg;
-remaining command-line args are in the variable `args'.")
+remaining command-line args are in the variable `command-line-args-left'.")
 
 (defvar term-setup-hook nil
   "Function to be called after loading terminal-specific lisp code.
@@ -79,6 +79,9 @@ definitions made by the terminal-specific file.")
   (if command-line-processed
       (message "Back to top level.")
     (setq command-line-processed t)
+    ;; In presence of symlinks, switch to cleaner form of default directory.
+    (if (getenv "PWD")
+	(setq default-directory (file-name-as-directory (getenv "PWD"))))
     (unwind-protect
 	(command-line)
       (and term-setup-hook

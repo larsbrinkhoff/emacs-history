@@ -502,6 +502,7 @@ total 100
 -rw-rw-rw-  4 rms       wheel        2647 Feb 11 02:14 vt200.el
 -rw-rw-rw-  4 rms       wheel          47 Dec 14  1985 vt220.el
 -rw-rw-rw-  4 rms       wheel          47 Jan 31 18:54 vt240.el
+-rw-rw-rw-  1 rms            89 Apr 26 21:52 xterm.el
 -rw-rw-rw-  3 rms       wheel        7675 Aug 11 22:19 x-win.el
 
 ./man:

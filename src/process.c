@@ -81,6 +81,7 @@ and this notice must be preserved on all copies.  */
 #include "buffer.h"
 #include "process.h"
 #include "termhooks.h"
+#include "termopts.h"
 #include "commands.h"
 
 /* a process object is a network connection when its childp field is neither
@@ -121,10 +122,14 @@ and this notice must be preserved on all copies.  */
 #endif /* not BSD 4.1 */
 #define WAITTYPE union wait
 #define WRETCODE(w) w.w_retcode
-#define WSTOPSIG(w) w.w_stopsig
 #define WCOREDUMP(w) w.w_coredump
+#ifndef WTERMSIG
 #define WTERMSIG(w) w.w_termsig
 #endif
+#ifndef WSTOPSIG
+#define WSTOPSIG(w) w.w_stopsig
+#endif
+#endif /* BSD or UNIPLUS or STRIDE */
 
 extern errno;
 extern sys_nerr;
@@ -348,6 +353,14 @@ pty (ptyv)
 	      ioctl (*ptyv, FIONBIO, &on);
 	    }
 #endif
+#endif
+#ifdef IBMRTAIX
+   /* On AIX, the parent gets SIGHUP when a pty attached child dies.  So, we */
+   /* ignore SIGHUP once we've started a child on a pty.  Note that this may */
+   /* cause EMACS not to die when it should, i.e., when its own controlling  */
+   /* tty goes away.  I've complained to the AIX developers, and they may    */
+   /* change this behavior, but I'm not going to hold my breath.             */
+	    signal (SIGHUP, SIG_IGN);
 #endif
 	    return ptyname;
 	  }
@@ -906,8 +919,8 @@ create_process (process, new_argv)
   outchannel = inchannel;
   if (ptyname)
     {
-#ifndef IRIS
-      /* On the IRIS system it does not work to open
+#ifndef USG
+      /* On USG systems it does not work to open
 	 the pty's tty here and then close and reopen it in the child.  */
       forkout = forkin = open (ptyname, O_RDWR, 0);
       if (forkin < 0)
@@ -986,11 +999,19 @@ create_process (process, new_argv)
       {
 	int xforkin = forkin;
 	int xforkout = forkout;
+
+	/* Make the pty be the controlling terminal of the process.  */
 #ifdef HAVE_PTYS
+	/* First, disconnect its current controlling terminal.  */
+#ifdef USG
+	/* It's very important to call setpgrp() here and no time
+	   afterwards.  Otherwise, we lose our controlling tty which
+	   is set when we open the pty. */
+	setpgrp ();
+#endif /* USG */
 #ifdef TIOCNOTTY
 	/* In 4.3BSD, the TIOCSPGRP bug has been fixed, and now you
-	   can do TIOCSPGRP only to the process's controlling tty.
-	   We must make the pty terminal the controlling tty of the child.  */
+	   can do TIOCSPGRP only to the process's controlling tty.  */
 	if (ptyname)
 	  {
 	    /* I wonder: would just ioctl (0, TIOCNOTTY, 0) work here? 
@@ -998,11 +1019,16 @@ create_process (process, new_argv)
 	    int j = open ("/dev/tty", O_RDWR, 0);
 	    ioctl (j, TIOCNOTTY, 0);
 	    close (j);
+	  }
+#endif /* TIOCNOTTY */
 
-#if !defined (RTU) && !defined(UNIPLUS)
-#ifdef USG
-	    setpgrp ();
-#endif
+#if !defined (RTU) && !defined (UNIPLUS)
+/*** There is a suggestion that this ought to be a
+     conditional on TIOCSPGRP.  */
+	/* Now close the pty (if we had it open) and reopen it.
+	   This makes the pty the controlling terminal of the subprocess.  */
+	if (ptyname)
+	  {
 	    /* I wonder if close (open (ptyname, ...)) would work?  */
 	    if (xforkin >= 0)
 	      close (xforkin);
@@ -1010,9 +1036,14 @@ create_process (process, new_argv)
 
 	    if (xforkin < 0)
 	      abort ();
-#endif /* not UNIPLUS and not RTU */
 	  }
-#endif /* TIOCNOTTY */
+#endif /* not UNIPLUS and not RTU */
+#ifdef IBMRTAIX
+	/* On AIX, we've disabled SIGHUP above once we start a child on a pty.
+	   Now reenable it in the child, so it will die when we want it to.  */
+	if (ptyname)
+	  signal (SIGHUP, SIG_DFL);
+#endif
 #endif /* HAVE_PTYS */
 	child_setup_tty (xforkout);
 	child_setup (xforkin, xforkout, xforkout, new_argv, env);
@@ -1116,7 +1147,10 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
     report_file_error ("error creating socket", Fcons (name, Qnil));
 
   if (connect (s, &address, sizeof address) == -1)
-    error ("Host \"%s\" not responding", XSTRING (host)->data);
+    {
+      close (s);
+      error ("Host \"%s\" not responding", XSTRING (host)->data);
+    }
 
   inch = s;
   outch = dup (s);
@@ -1398,6 +1432,11 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	  else
 	    error("select error: %s", sys_errlist[xerrno]);
 	}
+#ifdef sun
+      else if (nfds > 0 && (Available & 1) && interrupt_input)
+	/* System sometimes fails to deliver SIGIO.  */
+	kill (getpid (), SIGIO);
+#endif
 
       /* Check for keyboard input */
       /* If there is any, return immediately

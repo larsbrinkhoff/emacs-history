@@ -335,9 +335,8 @@ See also documentation for variable  picture-tab-chars."
     (move-to-column-force target)
     (if arg
 	(let (indent-tabs-mode)
-	  (delete-region opoint point)
+	  (delete-region opoint (point))
 	  (indent-to target)))))
-
 
 ;; Picture Rectangles
 

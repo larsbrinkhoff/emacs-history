@@ -84,7 +84,6 @@ static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrenc
 #include <strings.h>
 #endif
 #include <sys/stat.h>
-#include <sys/time.h>
 
 #include "dispextern.h"
 #include "termhooks.h"
@@ -531,14 +530,13 @@ updateline (first)
 writechars (start, end)
 	register char *start, *end;
 {
-  register int temp_length;
   BLOCK_INPUT_DECLARE ();
 
 #ifdef XDEBUG
   fprintf(stderr, "writechars (cursX %d temp_len %d InUpd %d)\n",
 	  cursX, end-start+1, InUpdate);
 #endif XDEBUG
-	
+
   BLOCK_INPUT ();
 
   if ((cursY < 0) || (cursY >= screen_height))
@@ -558,8 +556,8 @@ writechars (start, end)
 			cursX*XXfontw+XXInternalBorder,
 			cursY*XXfonth+XXInternalBorder+XXbase,
 			start,
-			end - start + 1);
-      XTtopos (cursY, temp_length);
+			(end - start) + 1);
+      XTtopos (cursY, (end - start) + 1);
 
       UNBLOCK_INPUT ();
       return;

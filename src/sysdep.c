@@ -100,6 +100,10 @@ extern char *sys_errlist[];
 #include <sys/ioctl.h>
 #endif 
 
+#ifdef mips
+#include <sys/ioctl.h>
+#endif 
+
 /* Get rid of LLITOUT in 4.1, since it is said to stimulate kernel bugs.  */
 #ifdef BSD4_1
 #undef LLITOUT
@@ -140,6 +144,9 @@ extern char *sys_errlist[];
 #include <sys/utsname.h>
 #include <memory.h>
 #include <string.h>
+#ifdef TIOCGWINSZ
+#include <sys/sioctl.h>
+#endif
 #ifdef HAVE_TIMEVAL
 #ifdef HPUX
 #include <time.h>
@@ -501,8 +508,12 @@ sys_suspend ()
     }
   return -1;
 #else
+#ifdef SIGTSTP
 #ifdef BSD
   killpg (getpgrp (0), SIGTSTP);
+#else
+  kill (-getpgrp (0), SIGTSTP);
+#endif
 
 #else
 #ifdef USG_JOBCTRL /* If you don't know what this is don't mess with it */
@@ -834,6 +845,7 @@ init_sys_modes ()
 	   If not going to use CBREAK mode, do this anyway
 	   so as to turn off local flow control for user coming over
 	   network on 4.2; in this case, only t_stopc and t_startc really matter.  */
+#ifndef HAVE_TERMIO
 #ifdef TIOCGLTC
       ioctl (0, TIOCGLTC, &old_ltchars);
 #endif /* TIOCGLTC */
@@ -866,6 +878,7 @@ init_sys_modes ()
 #ifdef TIOCGLTC
       ioctl (0, TIOCSLTC, &new_ltchars);
 #endif /* TIOCGLTC */
+#endif /* not HAVE_TERMIO */
 
 #ifdef BSD4_1
       if (interrupt_input)
@@ -987,6 +1000,7 @@ reset_sys_modes ()
   fsync (fileno (stdout));
 #endif
 #endif
+#ifndef HAVE_TERMIO
 #ifdef TIOCGLTC
   ioctl (0, TIOCSLTC, &old_ltchars);
 #endif /* TIOCGLTC */
@@ -994,6 +1008,7 @@ reset_sys_modes ()
   ioctl (0, TIOCSETC, &old_tchars);
   ioctl (0, TIOCLSET, &old_lmode);
 #endif /* TIOCGETC */
+#endif /* not HAVE_TERMIO */
 #ifdef F_SETFL
 #ifdef F_SETOWN		/* F_SETFL does not imply existance of F_SETOWN */
   if (interrupt_input)
@@ -1810,10 +1825,14 @@ sys_getenv (name)
 
   d_name.dsc$w_length = strlen (name);
   d_name.dsc$a_pointer = name;
-  if (lib$sys_trnlog(&d_name, &eqlen, &equiv) == 1)
+  if (lib$sys_trnlog (&d_name, &eqlen, &equiv) == 1)
     {
-      buf[eqlen] = '\0';
-      return buf;
+      char *str = (char *) xmalloc (eqlen + 1);
+      bcopy (buf, str, eqlen);
+      str[eqlen] = '\0';
+      /* This is a storage leak, but a pain to fix.  With luck,
+	 no one will ever notice.  */
+      return str;
     }
   return (char *) getenv (name);
 }

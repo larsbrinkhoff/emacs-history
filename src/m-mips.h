@@ -121,13 +121,28 @@ and this notice must be preserved on all copies.  */
 
 /* Alter some of the options used when linking.  */
 
+#ifdef BSD
+
+#define LIBS_MACHINE -lmld
+#define LD_SWITCH_MACHINE -D 800000
+#define LIBS_DEBUG
+
+#else
+
 #define LIBS_MACHINE -lmld
 #define LD_SWITCH_MACHINE -D 800000 -g3
 #define START_FILES pre-crt0.o /usr/lib/crt1.o
 #define LIB_STANDARD -lbsd -lc /usr/lib/crtn.o
+#define LIBS_TERMCAP -lcurses
 
 #define C_SWITCH_SYSTEM -I/usr/include/bsd
 #define C_DEBUG_SWITCH -O -g3
+
+#if defined(HAVE_X_WINDOWS) && defined(HAVE_X11)
+#define HAVE_VFORK		/* Graciously provided by libX.a */
+#endif
+
+#endif
 
 /* The standard definitions of these macros would work ok,
    but these are faster because the constants are short.  */
@@ -141,10 +156,10 @@ and this notice must be preserved on all copies.  */
 #define XSETUINT(a, b) XSET(a, XTYPE(a), b)
 #define XSETPNTR(a, b) XSET(a, XTYPE(a), b)
 
-#define XMARKBIT(a) ((a) < 0)
-#define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
 #define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
 
+#ifdef USG
+
 /* Cancel certain parts of standard sysV.3 support.  */
 #undef SYSV_SYSTEM_DIR
 #undef static
@@ -176,3 +191,5 @@ and this notice must be preserved on all copies.  */
 
 /* ??? */
 #define IRIS
+
+#endif

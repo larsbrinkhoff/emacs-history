@@ -1,5 +1,5 @@
-/* m- file for Sony's NEWS 800 workstations.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+/* m- file for Sony's NEWS workstations, NEWS-OS 3.0.
+   Copyright (C) 1985, 1986, 1989 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -18,6 +18,12 @@ can know your rights and responsibilities.  It should be in a
 file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  */
 
+
+/* Say this machine is a 68000 */
+
+#ifndef m68000
+#define m68000
+#endif
 
 /* The following three symbols give information on
  the size of various data types.  */
@@ -45,34 +51,19 @@ and this notice must be preserved on all copies.  */
 
 #define NO_UNION_TYPE
 
-/* Sun can't write competent compilers */
-/* ??? Is this really necessary? */
-#define COMPILER_REGISTER_BUG
-
-/* XINT must explicitly sign-extend */
-
-#define EXPLICIT_SIGN_EXTEND
-
-/* News machine has alloca, despite what the manual says. */
+/* The News machine has alloca. */
 
 #define HAVE_ALLOCA
 
 /* Data type of load average, as read out of kmem.  */
 
-#define LOAD_AVE_TYPE long
+#define LOAD_AVE_TYPE double
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 
-#define LOAD_AVE_CVT(x) (int) (((double) (x)) * 100.0 / FSCALE)
+#define LOAD_AVE_CVT(x) ((int) ((x) * 100.0))
 
 /* Must use the system's termcap.  It does special things.  */
 
 #define LIBS_TERMCAP -ltermcap
-
-/* Mask for address bits within a memory segment */
-
-#define SEGMENT_MASK (SEGSIZ - 1)
-
-/* No sigmask defined anywhere else that I know of. */
-#define sigmask(n) (1 << ((n) - 1))
 
