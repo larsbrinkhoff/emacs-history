@@ -5,18 +5,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".  An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (provide 'mim-mode)
 
@@ -93,10 +95,10 @@ are bound.")
 <FOO ...> will be indented n spaces from start of form.
 \(put 'FOO 'indent-mim-hook 'DEFINE\) is like above but means use
 value of mim-body-indent as offset from start of form.
-\(put 'FOO 'indent-mim-hook <cons>\) where <cons> is a list or dotted list
+\(put 'FOO 'indent-mim-hook <cons>\) where <cons> is a list or pointted list
 of integers, means indent each form in <FOO ...> by the amount specified
 in <cons>.  When <cons> is exhausted, indent remaining forms by
-mim-body-indent unless <cons> is a dotted list, in which case the last
+mim-body-indent unless <cons> is a pointted list, in which case the last
 cdr is used.  Confused? Here is an example:
 \(put 'FROBIT 'indent-mim-hook '\(4 2 . 1\)\)
 <FROBIT
@@ -164,13 +166,13 @@ The default action is bind the escape keys.
   M-C-e      Move to the end of surrounding toplevel mim form.
   M-C-u      Move up a level of mim structure backwards.
   M-C-d      Move down a level of mim structure forwards.
-  M-C-t      Transpose mim objects on either side of dot.
+  M-C-t      Transpose mim objects on either side of point.
   M-C-k      Kill next mim object.
   M-C-h      Place mark at end of next mim object.
   M-C-o      Insert a newline before current line and indent.
   M-Delete   Kill previous mim object.
   M-^        Join current line to previous line.
-  M-\\        Delete whitespace around dot.
+  M-\\        Delete whitespace around point.
   M-;        Move to existing comment or insert empty comment if none.
   M-Tab      Indent following mim object and all contained lines.
 Other Commands:
@@ -187,7 +189,7 @@ Entry to this mode calls the value of mim-mode-hook if non-nil."
   (kill-all-local-variables)
   (if (not mim-mode-map)
       (progn
-	(setq mim-mode-map (make-keymap))
+	(setq mim-mode-map (make-sparse-keymap))
 	(define-key mim-mode-map "\e\^o" 'open-mim-line)
 	(define-key mim-mode-map "\e\^q" 'indent-mim-object)
 	(define-key mim-mode-map "\e\^p" 'previous-mim-object)
@@ -253,7 +255,7 @@ Entry to this mode calls the value of mim-mode-hook if non-nil."
   (setq local-abbrev-table mim-mode-abbrev-table)
   (setq major-mode 'mim-mode)
   (setq mode-name "Mim")
-  (and (boundp 'mim-mode-hook) mim-mode-hook (funcall mim-mode-hook)))
+  (run-hooks 'mim-mode-hook))
 
 (defun line-to-top-of-window ()
   "Move current line to top of window."
@@ -300,9 +302,9 @@ With ARG, move forward that many objects."
       (error (if (not skip-bracket-p)
 		 (signal 'error (cdr conditions))
 	       (skip-mim-whitespace direction)
-	       (goto-char (+ (dot) direction)))))
+	       (goto-char (+ (point) direction)))))
     ;; If we moved too far move back to first interesting character.
-    (if (= (dot) (buffer-end direction)) (skip-mim-whitespace (- direction)))))
+    (if (= (point) (buffer-end direction)) (skip-mim-whitespace (- direction)))))
 				    
 (defun backward-mim-object (&optional arg)
   "Move backward across Mim object.
@@ -314,13 +316,13 @@ With ARG, move backward that many objects."
   "Mark following Mim object.
 With ARG, mark that many following (preceding, ARG < 0) objects."
   (interactive "p")
-  (push-mark (save-excursion (forward-mim-object (or arg 1)) (dot))))
+  (push-mark (save-excursion (forward-mim-object (or arg 1)) (point))))
 
 (defun forward-kill-mim-object (&optional arg)
   "Kill following Mim object.
 With ARG, kill that many objects."
   (interactive "*p")
-  (kill-region (dot) (progn (forward-mim-object (or arg 1)) (dot))))
+  (kill-region (point) (progn (forward-mim-object (or arg 1)) (point))))
 
 (defun backward-kill-mim-object (&optional arg)
   "Kill preceding Mim object.
@@ -339,7 +341,7 @@ A negative ARG will raise current line and previous lines."
       (while (/= arg 0)
 	;; move over eol and kill it
 	(forward-line direction)
-	(delete-region (dot) (1- (dot)))
+	(delete-region (point) (1- (point)))
 	(fixup-whitespace)
 	(setq arg (- arg increment))))))
 
@@ -361,11 +363,11 @@ With ARG, move down that many levels forwards (backwards, ARG < 0)."
 			   (= (char-syntax c) ?w)))
 		     (progn (forward-sexp direction)
 			    (if (inside-adecl-or-trailer-p direction)
-				(dot))))
-		(scan-lists (dot) direction -1)
+				(point))))
+		(scan-lists (point) direction -1)
 		(buffer-end direction))))
       (while (/= arg 0)
-	(goto-char (or (scan-lists (dot) direction -1) (buffer-end direction)))
+	(goto-char (or (scan-lists (point) direction -1) (buffer-end direction)))
 	(setq arg (- arg direction))))))
 
 (defun backward-down-mim-object (&optional arg)
@@ -380,7 +382,7 @@ With ARG, move up that many levels forwards (backwards, ARG < 0)."
   (interactive "p")
   (let ((direction (sign (or arg (setq arg 1)))))
     (while (/= arg 0)
-      (goto-char (or (scan-lists (dot) direction 1) (buffer-end arg)))
+      (goto-char (or (scan-lists (point) direction 1) (buffer-end arg)))
       (setq arg (- arg direction)))
     (if (< direction 0) (backward-prefix-chars))))
 
@@ -394,11 +396,11 @@ With ARG, move up that many levels backwards (forwards, ARG > 0)."
   "Replace string in following Mim object."
   (interactive "*sReplace in object: \nsReplace %s with: ")
   (save-restriction
-    (narrow-to-region (dot) (save-excursion (forward-mim-object 1) (dot)))
+    (narrow-to-region (point) (save-excursion (forward-mim-object 1) (point)))
     (replace-string old new)))
   
 (defun transpose-mim-objects (&optional arg)
-  "Transpose Mim objects around dot.
+  "Transpose Mim objects around point.
 With ARG, transpose preceding object that many times with following objects.
 A negative ARG will transpose backwards."
   (interactive "*p")
@@ -411,11 +413,11 @@ end is reached."
   (interactive "p")
   (let ((direction (sign (or arg (setq arg 1)))))
     (if (not move) (setq move t))
-    (if (< direction 0) (goto-char (1+ (dot))))
+    (if (< direction 0) (goto-char (1+ (point))))
     (while (and (/= arg 0) (re-search-backward "^<" nil move direction))
       (setq arg (- arg direction)))
     (if (< direction 0)
-	(goto-char (1- (dot))))))
+	(goto-char (1- (point))))))
 
 (defun end-of-DEFINE (&optional arg)
   "Move forward to end of surrounding or next toplevel mim form.
@@ -439,16 +441,16 @@ is reached."
   (let ((search-string (if mim-stop-for-slop "^\\S " "^\\s("))
 	(direction (sign (or arg (setq arg 1)))))
     (if (> direction 0)
-	(goto-char (1+ (dot))))		; no error if end of buffer
+	(goto-char (1+ (point))))		; no error if end of buffer
     (while (and (/= arg 0)
 		(re-search-forward search-string nil t direction))
       (setq arg (- arg direction)))
     (if (> direction 0)
-	(goto-char (1- (dot))))		; no error if beginning of buffer
+	(goto-char (1- (point))))		; no error if beginning of buffer
     ;; scroll to top of window if moving forward and end not visible.
     (if (not (or (< direction 0)
 		 (save-excursion (forward-mim-object 1)
-				 (pos-visible-in-window-p (dot)))))
+				 (pos-visible-in-window-p (point)))))
 	(recenter 0))))
 
 (defun previous-mim-object (&optional arg)
@@ -462,7 +464,7 @@ is reached."
   "Calculate indentation for Mim line.  Returns column."
   (save-excursion			; some excursion, huh, toto?
     (beginning-of-line)
-    (let ((indent-point (dot)) retry state containing-sexp last-sexp
+    (let ((indent-point (point)) retry state containing-sexp last-sexp
 	  desired-indent start peek where paren-depth)
       (if parse-start
 	  (goto-char parse-start)	; should be containing environment
@@ -483,13 +485,13 @@ is reached."
 	  (if (not (bobp)) (forward-char -1))     ; onto unclosed open
 	  (backward-prefix-chars)))
       ;; find outermost containing sexp if we started inside an sexp.
-      (while (< (dot) indent-point)    
-	(setq state (parse-partial-sexp (dot) indent-point 0)))
+      (while (< (point) indent-point)    
+	(setq state (parse-partial-sexp (point) indent-point 0)))
       ;; find usual column to indent under (not in string or toplevel).
       ;; on termination, state will correspond to containing environment
       ;; (if retry is nil), where will be position of character to indent
       ;; under normally, and desired-indent will be the column to indent to
-      ;; except if inside form, string, or at toplevel.  dot will be in
+      ;; except if inside form, string, or at toplevel.  point will be in
       ;; in column to indent to unless inside string.
       (setq retry t)
       (while (and retry (setq paren-depth (car state)) (> paren-depth 0))
@@ -498,7 +500,7 @@ is reached."
 	(setq last-sexp (car (nthcdr 2 state)))
 	(setq containing-sexp (car (cdr state)))
 	(goto-char (1+ containing-sexp))	  ; to last unclosed open
-	(if (and last-sexp (> last-sexp (dot)))
+	(if (and last-sexp (> last-sexp (point)))
 	    ;; is the last sexp a containing sexp?
 	    (progn (setq peek (parse-partial-sexp last-sexp indent-point 0))
 		   (if (setq retry (car (cdr peek))) (setq state peek))))
@@ -510,21 +512,21 @@ is reached."
 	   ((not last-sexp)		      ; indent-point after bracket
 	    (setq desired-indent (current-column)))
 	   ((= (preceding-char) ?\<)	      ; it's a form
-	    (cond ((> (progn (forward-sexp 1) (dot)) last-sexp)
+	    (cond ((> (progn (forward-sexp 1) (point)) last-sexp)
 		   (goto-char where))	      ; only one frob
-		  ((> (save-excursion (forward-line 1) (dot)) last-sexp)
+		  ((> (save-excursion (forward-line 1) (point)) last-sexp)
 		   (skip-chars-forward " \t") ; last-sexp is on same line
-		   (setq where (dot)))	      ; as containing-sexp
+		   (setq where (point)))	      ; as containing-sexp
 		  ((progn
 		     (goto-char last-sexp)
 		     (beginning-of-line)
-		     (parse-partial-sexp (dot) last-sexp 0 t)
-		     (or (= (dot) last-sexp)
+		     (parse-partial-sexp (point) last-sexp 0 t)
+		     (or (= (point) last-sexp)
 			 (save-excursion
-			   (= (car (parse-partial-sexp (dot) last-sexp 0))
+			   (= (car (parse-partial-sexp (point) last-sexp 0))
 			      0))))
 		   (backward-prefix-chars)    ; last-sexp 1st on line or 1st
-		   (setq where (dot)))        ; frob on that line level 0
+		   (setq where (point)))        ; frob on that line level 0
 		  (t (goto-char where))))     ; punt, should never occur
 	   ((and indent-mim-arglist	      ; maybe hack arglist    
 		 (= (preceding-char) ?\()     ; its a list
@@ -543,24 +545,24 @@ is reached."
 	    ;; mim-indent-arglist is not t, in which case they stack
 	    ;; under the last string, if any, else the start of the arglist.
 	    (let ((eol 0) last-string)
-	      (while (< (dot) last-sexp)      ; find out where the strings are
+	      (while (< (point) last-sexp)      ; find out where the strings are
 		(skip-chars-forward mim-whitespace last-sexp)		
-		(if (> (setq start (dot)) eol)
+		(if (> (setq start (point)) eol)
 		    (progn                    ; simultaneously keeping track
 		      (setq where (min where start))
 		      (end-of-line)	      ; of indentation of first frob
-		      (setq eol (dot))	      ; on each line
+		      (setq eol (point))	      ; on each line
 		      (goto-char start)))
 		(if (= (following-char) ?\")
-		    (progn (setq last-string (dot))
+		    (progn (setq last-string (point))
 			   (forward-sexp 1)
 			   (if (= last-string last-sexp)
 			       (setq where last-sexp)
 			     (skip-chars-forward mim-whitespace last-sexp)
-			     (setq where (dot))))
+			     (setq where (point))))
 		  (forward-sexp 1)))
 	      (goto-char indent-point)	           ; if string is first on
-	      (skip-chars-forward " \t" (dot-max)) ; line we are indenting, it 
+	      (skip-chars-forward " \t" (point-max)) ; line we are indenting, it 
 	      (if (= (following-char) ?\")         ; goes under arglist start
 		  (if (and last-string (not (equal indent-mim-arglist t)))
 		      (setq where last-string)     ; or under last string.
@@ -568,19 +570,19 @@ is reached."
 	    (goto-char where)
 	    (setq desired-indent (current-column)))
 	   (t				      ; plain vanilla structure
-	    (cond ((> (save-excursion (forward-line 1) (dot)) last-sexp)
+	    (cond ((> (save-excursion (forward-line 1) (point)) last-sexp)
 		   (skip-chars-forward " \t") ; last-sexp is on same line
-		   (setq where (dot)))	      ; as containing-sexp
+		   (setq where (point)))	      ; as containing-sexp
 		  ((progn
 		     (goto-char last-sexp)
 		     (beginning-of-line)
-		     (parse-partial-sexp (dot) last-sexp 0 t)
-		     (or (= (dot) last-sexp)
+		     (parse-partial-sexp (point) last-sexp 0 t)
+		     (or (= (point) last-sexp)
 			 (save-excursion
-			   (= (car (parse-partial-sexp (dot) last-sexp 0))
+			   (= (car (parse-partial-sexp (point) last-sexp 0))
 			      0))))
 		     (backward-prefix-chars)  ; last-sexp 1st on line or 1st
-		     (setq where (dot)))      ; frob on that line level 0
+		     (setq where (point)))      ; frob on that line level 0
 		  (t (goto-char where)))      ; punt, should never occur
 	    (setq desired-indent (current-column))))))
       ;; state is innermost containing environment unless toplevel or string.
@@ -594,7 +596,7 @@ is reached."
 	      (goto-char indent-point)	      ; toplevel string, look for it
 	      (re-search-backward "[^\\]\"")
 	      (forward-char 1))
-	    (setq start (dot))		      ; opening double quote
+	    (setq start (point))		      ; opening double quote
 	    (skip-chars-backward " \t")
 	    (backward-prefix-chars)
 	    ;; see if the string is really a comment.
@@ -605,7 +607,7 @@ is reached."
 	      (goto-char indent-point)
 	      (skip-chars-forward " \t"))
 	    (setq desired-indent (current-column))))
-      ;; dot is sitting in usual column to indent to and if retry is nil
+      ;; point is sitting in usual column to indent to and if retry is nil
       ;; then state corresponds to containing environment.  if desired
       ;; indentation not determined, we are inside a form, so call hook.
       (or desired-indent
@@ -619,7 +621,7 @@ is reached."
 
 (defun indent-mim-hook (state indent-point)
   "Compute indentation for Mim special forms.  Returns column or nil."
-  (let ((containing-sexp (car (cdr state))) (current-indent (dot)))
+  (let ((containing-sexp (car (cdr state))) (current-indent (point)))
     (save-excursion
       (goto-char (1+ containing-sexp))
       (backward-prefix-chars)
@@ -632,9 +634,9 @@ is reached."
       (if (looking-at "\\sw\\|\\s_")
 	  (let* ((start (current-column))
 		 (function
-		  (intern-soft (buffer-substring (dot)
+		  (intern-soft (buffer-substring (point)
 						 (progn (forward-sexp 1)
-							(dot)))))
+							(point)))))
 		 (method (get function 'indent-mim-hook)))
 	    (if (or (if (equal method 'DEFINE) (setq method mim-body-indent))
 		    (integerp method))
@@ -646,11 +648,11 @@ is reached."
 		;; calculate-mim-indent already knows right indentation -
 		;; give luser chance to change indentation manually by changing
 		;; 1st line after containing-sexp.
-		(if (> (progn (forward-line 1) (dot)) (car (nthcdr 2 state)))
+		(if (> (progn (forward-line 1) (point)) (car (nthcdr 2 state)))
 		    (+ method start))
 	      (goto-char current-indent)
 	      (if (consp method)
-		  ;; list or dotted list of explicit indentations
+		  ;; list or pointted list of explicit indentations
 		  (indent-mim-offset state indent-point)
 		(if (and (symbolp method) (fboundp method))
 		    ;; luser function - s/he better know what's going on.
@@ -659,7 +661,7 @@ is reached."
 		    ;; documentation the function is guaranteed the following:
 		    ;; (1) state describes the closest surrounding form,
 		    ;; (2) indent-point is the beginning of the line being
-		    ;; indented, (3) dot points to char in column that would
+		    ;; indented, (3) point points to char in column that would
 		    ;; normally be used for indentation, (4) function is bound
 		    ;; to the special ATOM.  See indent-mim-offset for example
 		    ;; of a special function.
@@ -674,10 +676,10 @@ is reached."
 	indentation)
     (goto-char (1+ containing-sexp))
     ;; determine wheich of the indentations to use.
-    (while (and (< (dot) indent-point)
+    (while (and (< (point) indent-point)
 		(condition-case nil
 		    (progn (forward-sexp 1)
-			   (parse-partial-sexp (dot) indent-point 1 t))
+			   (parse-partial-sexp (point) indent-point 1 t))
 		  (error nil)))
       (skip-chars-backward " \t")
       (backward-prefix-chars)
@@ -694,12 +696,12 @@ is reached."
 
 (defun indent-mim-comment (&optional start)
   "Indent a one line (string) Mim comment following object, if any."
-  (let* ((old-dot (dot)) (eol (progn (end-of-line) (dot))) state last-sexp)
+  (let* ((old-point (point)) (eol (progn (end-of-line) (point))) state last-sexp)
     ;; this function assumes that comment indenting is enabled.  it is caller's
     ;; responsibility to check the indent-mim-comment flag before calling.
     (beginning-of-line)
     (catch 'no-comment
-      (setq state (parse-partial-sexp (dot) eol))
+      (setq state (parse-partial-sexp (point) eol))
       ;; determine if there is an existing regular comment.  a `regular'
       ;; comment is defined as a commented string which is the last thing
       ;; on the line and does not extend beyond the end of the line.
@@ -709,8 +711,8 @@ is reached."
 	  (throw 'no-comment nil))	
       ;; could be a comment, but make sure its not the only object.
       (beginning-of-line)
-      (parse-partial-sexp (dot) eol 0 t)
-      (if (= (dot) last-sexp)
+      (parse-partial-sexp (point) eol 0 t)
+      (if (= (point) last-sexp)
 	  ;; only one object on line
 	  (throw 'no-comment t))
       (goto-char last-sexp)
@@ -725,21 +727,21 @@ is reached."
       (if (< (current-column) comment-column)
 	  (indent-to comment-column)
 	(tab-to-tab-stop)))
-    (goto-char old-dot)))
+    (goto-char old-point)))
 	
 (defun indent-mim-line ()
   "Indent line of Mim code."
   (interactive "*")
-  (let* ((position (- (dot-max) (dot)))
-	 (bol (progn (beginning-of-line) (dot)))
+  (let* ((position (- (point-max) (point)))
+	 (bol (progn (beginning-of-line) (point)))
 	 (indent (calculate-mim-indent)))
     (skip-chars-forward " \t")
     (if (/= (current-column) indent)
-	(progn (delete-region bol (dot)) (indent-to indent)))
-    (if (> (- (dot-max) position) (dot)) (goto-char (- (dot-max) position)))))
+	(progn (delete-region bol (point)) (indent-to indent)))
+    (if (> (- (point-max) position) (point)) (goto-char (- (point-max) position)))))
 
 (defun newline-and-mim-indent ()
-  "Insert newline at dot and indent."
+  "Insert newline at point and indent."
   (interactive "*")
   ;; commented code would correct indentation of line in arglist which
   ;; starts with string, but it would indent every line twice.  luser can
@@ -749,7 +751,7 @@ is reached."
   (indent-mim-line))
 
 (defun open-mim-line (&optional lines)
-  "Insert newline before dot and indent.
+  "Insert newline before point and indent.
 With ARG insert that many newlines."
   (interactive "*p")
   (beginning-of-line)
@@ -761,22 +763,22 @@ With ARG insert that many newlines."
       (setq lines (1- lines)))))
 
 (defun indent-mim-object (&optional dont-indent-first-line)
-  "Indent object following dot and all lines contained inside it.
+  "Indent object following point and all lines contained inside it.
 With ARG, idents only contained lines (skips first line)."
   (interactive "*P")
   (let (end bol indent start)
-    (save-excursion (parse-partial-sexp (dot) (dot-max) 0 t)
-		    (setq start (dot))
+    (save-excursion (parse-partial-sexp (point) (point-max) 0 t)
+		    (setq start (point))
 		    (forward-sexp 1)
-		    (setq end (- (dot-max) (dot))))
+		    (setq end (- (point-max) (point))))
     (save-excursion
       (if (not dont-indent-first-line) (indent-mim-line))
-      (while (progn (forward-line 1) (> (- (dot-max) (dot)) end))
+      (while (progn (forward-line 1) (> (- (point-max) (point)) end))
 	(setq indent (calculate-mim-indent start))
-	(setq bol (dot))
+	(setq bol (point))
 	(skip-chars-forward " \t")
 	(if (/= indent (current-column))
-	    (progn (delete-region bol (dot)) (indent-to indent)))
+	    (progn (delete-region bol (point)) (indent-to indent)))
 	(if indent-mim-comment (indent-mim-comment))))))
   
 (defun find-mim-definition (name)
@@ -785,13 +787,13 @@ You need type only enough of the name to be unambiguous."
   (interactive "sName: ")
   (let (where)
     (save-excursion
-      (goto-char (dot-min))
+      (goto-char (point-min))
       (condition-case nil
 	  (progn
 	    (re-search-forward
 	     (concat "^<\\(DEFINE\\|\\DEFMAC\\|FCN\\|GFCN\\)\\([ \t]*\\)"
 		     name))
-	    (setq where (dot)))
+	    (setq where (point)))
 	(error (error "Can't find %s" name))))
     (if where
 	(progn (push-mark)
@@ -802,26 +804,26 @@ You need type only enough of the name to be unambiguous."
 (defun begin-mim-comment ()
   "Move to existing comment or insert empty comment."
   (interactive "*")
-  (let* ((eol (progn (end-of-line) (dot)))
-	 (bol (progn (beginning-of-line) (dot))))
+  (let* ((eol (progn (end-of-line) (point)))
+	 (bol (progn (beginning-of-line) (point))))
     ;; check for existing comment first.
     (if (re-search-forward ";[ \t]*\"" eol t)
 	;; found it.  indent if desired and go there.
 	(if indent-mim-comment
-	    (let ((where (- (dot-max) (dot))))
+	    (let ((where (- (point-max) (point))))
 	      (indent-mim-comment)
-	      (goto-char (- (dot-max) where))))
+	      (goto-char (- (point-max) where))))
       ;; nothing there, make a comment.
       (let (state last-sexp)
 	;; skip past all the sexps on the line
 	(goto-char bol)
-	(while (and (equal (car (setq state (parse-partial-sexp (dot) eol 0)))
+	(while (and (equal (car (setq state (parse-partial-sexp (point) eol 0)))
 			   0)
 		    (car (nthcdr 2 state)))
 	  (setq last-sexp (car (nthcdr 2 state))))
 	(if (car (nthcdr 3 state))
 	    nil					    ; inside a string, punt
-      (delete-region (dot) eol)			    ; flush trailing whitespace
+      (delete-region (point) eol)			    ; flush trailing whitespace
       (if (and (not last-sexp) (equal (car state) 0))
 	  (indent-to (calculate-mim-indent))	    ; empty, indent like code
 	(if (> (current-column) comment-column)	    ; indent to comment column
@@ -836,8 +838,8 @@ You need type only enough of the name to be unambiguous."
 
 (defun skip-mim-whitespace (direction)
   (if (>= direction 0)
-      (skip-chars-forward mim-whitespace (dot-max))
-    (skip-chars-backward mim-whitespace (dot-min))))
+      (skip-chars-forward mim-whitespace (point-max))
+    (skip-chars-backward mim-whitespace (point-min))))
 
 (defun inside-adecl-or-trailer-p (direction)
   (if (>= direction 0)

@@ -4,18 +4,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (require 'electric)			; command loop
 (require 'chistory)			; history lister
@@ -49,7 +51,8 @@ With prefix argument NOCONFIRM, execute current line as is without editing."
 (define-key electric-history-map "\e\C-n" 'forward-list)
 (define-key electric-history-map "\e\C-p" 'backward-list)
 (define-key electric-history-map "q" 'Electric-history-quit)
-(define-key electric-history-map "\C-c" 'Electric-history-quit)
+(define-key electric-history-map "\C-c" nil)
+(define-key electric-history-map "\C-c\C-c" 'Electric-history-quit)
 (define-key electric-history-map "\C-]" 'Electric-history-quit)
 (define-key electric-history-map "\C-z" 'suspend-emacs)
 (define-key electric-history-map "\C-h" 'Helper-help)
@@ -90,9 +93,9 @@ Space or !	edit then evaluate current line in history inside
 		   the ORIGINAL buffer which invoked this mode.
 		   The previous window configuration is restored
 		   unless the invoked command changes it.
-C-c, C-], Q	Quit and restore previous window configuration.
-LF, CR		Move to the next line in the history.
-Delete		Move to the previous line in the history.
+C-c C-c, C-], Q	Quit and restore previous window configuration.
+LFD, RET	Move to the next line in the history.
+DEL		Move to the previous line in the history.
 ?		Provides a complete list of commands.
 
 Calls the value of  electric-command-history-hook  if that is non-nil
@@ -112,9 +115,7 @@ The Command History listing is recomputed each time this mode is invoked."
 					   "Electric History"
 					   electric-history-map))
 		  (Electric-pop-up-window "*Command History*")
-		  (and (boundp 'electric-command-history-hook)
-		       electric-command-history-hook
-		       (funcall 'electric-command-history-hook))
+		  (run-hooks 'electric-command-history-hook)
 		  (let ((mode-line-format "-- %[%m%]  %M  ----%3p-%-"))
 		    (if (eobp)
 			(progn (ding)
@@ -145,15 +146,3 @@ The Command History listing is recomputed each time this mode is invoked."
   (if (boundp 'electric-history-in-progress)
       (progn (message "")
 	     (throw 'electric-history-quit nil))))
-
-
-
-
-
-
-
-
-
-
-                
-  

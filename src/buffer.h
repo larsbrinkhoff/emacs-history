@@ -4,25 +4,30 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
+#ifdef lint
+#include "undo.h"
+#endif /* lint */
 
-#define SetDot  dot =
 
-#define DotRight  dot +=
-#define  DotLeft  dot -=
+#define SetPoint  point =
+
+#define PointRight  point +=
+#define  PointLeft  point -=
 
 struct buffer_text
   {
@@ -34,7 +39,7 @@ struct buffer_text
     int modified;		/* tick at which contents last modified */
     int head_clip;		/* # of first char that's visible (origin 1) */
     int tail_clip;		/* # chars not visible at end of buffer */
-    int dotloc;			/* # of char dot is at (origin 1) */
+    int pointloc;		/* # of char point is at (origin 1) */
   };
 
 /* structure that defines a buffer */
@@ -60,7 +65,10 @@ struct buffer
     int auto_save_modified;	/* the value of text.modified at the last auto-save. */
     Lisp_Object read_only;      /* Non-nil if buffer read-only */
 
-    Lisp_Object markers;	/* the markers that refer to this
+    Lisp_Object markers;	/* the markers that refer to this buffer.
+				   This is actually a single marker ---
+				   successive elements in its marker `chain'
+				   are the other markers referring to this
 				   buffer */
     Lisp_Object mark;		/* "The mark"; may be nil */
 
@@ -92,7 +100,8 @@ struct buffer
     Lisp_Object truncate_lines;
     /* Non-nil means display ctl chars with uparrow */
     Lisp_Object ctl_arrow;
-    /* Non-nil means do selective display; value controls details */
+    /* Non-nil means do selective display;
+       See doc string in syms_of_buffer (buffer.c) for details.  */
     Lisp_Object selective_display;
     /* Alist of (FUNCTION . STRING) for each minor mode enabled in buffer. */
     Lisp_Object minor_modes;
@@ -100,6 +109,8 @@ struct buffer
     struct UndoData *undodata;
     /* t if "self-insertion" should overwrite */
     Lisp_Object overwrite_mode;
+    /* non-nil means abbrev mode is on.  Expand abbrevs automatically. */
+    Lisp_Object abbrev_mode;
     /* Next buffer, in chain of all buffers that exist.  */
     struct buffer *next;
 };
@@ -119,13 +130,13 @@ extern struct buffer_text bf_text;
 #define bf_modified bf_text.modified
 #define bf_head_clip bf_text.head_clip
 #define bf_tail_clip bf_text.tail_clip
-#define dot bf_text.dotloc
+#define point bf_text.pointloc
 
-/* Lowest legal value of dot for current buffer */
+/* Lowest legal value of point for current buffer */
 #define FirstCharacter bf_text.head_clip
 
 /* Number of last visible character in current buffer */
-/* The highest legal value for dot is one greater than this */
+/* The highest legal value for point is one greater than this */
 #define NumCharacters (bf_text.size1+bf_text.size2-bf_text.tail_clip)
 
 /* Return character at position n.  No range checking */

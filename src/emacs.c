@@ -4,19 +4,22 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
+
+#include <signal.h>
 
 #include "config.h"
 #include <stdio.h>
@@ -24,17 +27,22 @@ copyright notice and this notice must be preserved on all copies.  */
 #include "lisp.h"
 #include "commands.h"
 
-#include <signal.h>
-#ifdef USG
 #include <sys/types.h>
+#include <sys/file.h>
+
+#ifdef USG5
 #include <fcntl.h>
 #endif
-#include <sys/file.h>
-#ifndef USG
-#include <sys/time.h>
-#include <sys/resource.h>
-#endif
+
+#ifdef BSD
 #include <sys/ioctl.h>
+#endif
+
+#ifndef O_RDWR
+#define O_RDWR 2
+#endif
+
+#define PRIO_PROCESS 0
 
 /* Command line args from shell, as list of strings */
 Lisp_Object Vcommand_line_args;
@@ -50,10 +58,13 @@ Lisp_Object Vsystem_type;
 /* Nonzero means running Emacs without interactive terminal.  */
 
 int noninteractive;
-
-static finish_fatal_error_signal ();
-static tty_unavailable ();
 
+/* Value of Lisp variable `noninteractive'.
+   Normally same as C variable `noninteractive'
+   but nothing terrible happens if user sets this one.  */
+
+int noninteractive1;
+
 /* Signal code for the fatal signal that was received */
 int fatal_error_code;
 
@@ -64,7 +75,9 @@ int fatal_error_in_progress;
 fatal_error_signal (sig)
      int sig;
 {
+#ifdef BSD
   int tpgrp;
+#endif /* BSD */
 
   fatal_error_code = sig;
   signal (sig, SIG_DFL);
@@ -76,12 +89,12 @@ fatal_error_signal (sig)
   fatal_error_in_progress = 1;
 
   /* If we are controlling the terminal, reset terminal modes */
-#ifndef USG
+#ifdef BSD
   if (ioctl(0, TIOCGPGRP, &tpgrp) == 0
       && tpgrp == getpgrp (0))
-#endif /* not USG */
+#endif /* BSD */
     {
-      RstDsp ();
+      reset_sys_modes ();
       if (sig != SIGTERM)
 	fprintf (stderr, "Fatal error.");
     }
@@ -91,6 +104,10 @@ fatal_error_signal (sig)
   kill_buffer_processes (Qnil);
 #endif
   Fdo_auto_save (Qt);
+
+#ifdef CLASH_DETECTION
+  unlock_all_files ();
+#endif /* CLASH_DETECTION */
 
   /* Signal the same code; this time it will really be fatal.  */
   kill (getpid (), fatal_error_code);
@@ -116,11 +133,19 @@ init_cmdargs (argc, argv, skip_args)
     }
 }
 
-main (argc, argv)
+/* ARGSUSED */
+main (argc, argv, envp)
      int argc;
      char **argv;
+     char **envp;
 {
   int skip_args = 0;
+  extern int errno;
+  clearerr (stdin);
+
+#ifdef APOLLO			/* Reserve memory space for sbrk to get */
+  set_sbrk_size (4000000);
+#endif /* APOLLO */
 
   signal (SIGHUP, fatal_error_signal);
   signal (SIGQUIT, fatal_error_signal);
@@ -164,6 +189,8 @@ main (argc, argv)
       noninteractive = 1;
     }
 
+  noninteractive1 = noninteractive;
+
 /* Perform basic initializations (not merely interning symbols) */
 
   if (!initialized)
@@ -187,10 +214,10 @@ main (argc, argv)
   init_cmdargs (argc, argv, skip_args);	/* Create list Vcommand_line_args */
   init_buffer ();	/* Init default directory of main buffer */
   if (!noninteractive)
-    init_display ();	/* Determine terminal type.  Must precede InitDsp */
-  InitDsp ();		/* " the display */
+    init_display ();	/* Determine terminal type.  init_sys_modes uses results */
+  init_keyboard ();	/* This too must precede init_sys_modes */
+  init_sys_modes ();	/* Init system terminal modes (RAW or CBREAK, etc.) */
   init_xdisp ();
-  init_keyboard ();
   init_macros ();
   init_editfns ();
   init_callproc ();
@@ -219,14 +246,17 @@ main (argc, argv)
       syms_of_casefiddle ();
       syms_of_callproc ();
       syms_of_cmds ();
-#ifndef USG  /* This file not converted yet */
+#ifndef NO_DIR_LIBRARY
       syms_of_dired ();
-#endif /* not USG */
+#endif /* not NO_DIR_LIBRARY */
       syms_of_display ();
       syms_of_doc ();
       syms_of_editfns ();
       syms_of_emacs ();
       syms_of_fileio ();
+#ifdef CLASH_DETECTION
+      syms_of_filelock ();
+#endif /* CLASH_DETECTION */
       syms_of_indent ();
       syms_of_keyboard ();
       syms_of_keymap ();
@@ -236,12 +266,15 @@ main (argc, argv)
       syms_of_mocklisp ();
 #ifdef subprocesses
       syms_of_process ();
-#endif subprocesses
+#endif /* subprocesses */
       syms_of_search ();
       syms_of_syntax ();
       syms_of_undo ();
       syms_of_window ();
       syms_of_xdisp ();
+#ifdef HAVE_X_WINDOWS
+      syms_of_xfns ();
+#endif /* HAVE_X_WINDOWS */
 
       keys_of_casefiddle ();
       keys_of_cmds ();
@@ -259,50 +292,74 @@ main (argc, argv)
       if (argc > 2 + skip_args && !strcmp (argv[1 + skip_args], "-l"))
 	Vtop_level = Fcons (intern ("load"),
 			    Fcons (build_string (argv[2 + skip_args]), Qnil));
+#ifdef CANNOT_DUMP
+      /* Unless next switch is -nl, load "loadup.el" first thing.  */
+      if (!(argc > 1 + skip_args && !strcmp (argv[1 + skip_args], "-nl")))
+	Vtop_level = Fcons (intern ("load"),
+			    Fcons (build_string ("loadup.el"), Qnil));
+#endif /* CANNOT_DUMP */
     }
 
   initialized = 1;
 
   /* Enter editor command loop.  This never returns.  */
   Frecursive_edit ();
+  /* NOTREACHED */
 }
 
 DEFUN ("kill-emacs", Fkill_emacs, Skill_emacs, 0, 1, "P",
-  "Exit the Emacs job and kill it.  Arg means no query.")
+  "Exit the Emacs job and kill it.  ARG means no query.\n\
+If emacs is running noninteractively and ARG is an integer,\n\
+return ARG as the exit program code.")
   (arg)
      Lisp_Object arg;
 {
   Lisp_Object answer;
-  int modbufcount;
+  int i;
 
   if (feof (stdin))
     arg = Qt;
-  if (NULL (arg) && (modbufcount = ModExist())
-      && (answer = Fyes_or_no_p (format1 (
+  if (!noninteractive && NULL (arg))
+    {
+      if ((i = ModExist())
+	  && (answer = Fyes_or_no_p (format1 (
 "%d modified buffer%s exist%s, do you really want to exit? ",
-				    modbufcount, modbufcount == 1 ? "" : "s",
-				    modbufcount == 1 ? "s" : "")),
-	  NULL (answer)))
-    return Qnil;
+					      i, i == 1 ? "" : "s",
+					      i == 1 ? "s" : "")),
+	      NULL (answer)))
+	return Qnil;
 
 #ifdef subprocesses
-  if (NULL (arg) && count_active_processes()
-      && (answer = Fyes_or_no_p (format1 (
+      if (count_active_processes()
+	  && (answer = Fyes_or_no_p (format1 (
 "Subprocesses are executing; kill them and exit? ")),
-	  NULL (answer)))
-    return Qnil;
+	      NULL (answer)))
+	return Qnil;
+#endif /* subprocesses */
+    }
 
+#ifdef subprocesses
   kill_buffer_processes (Qnil);
-#endif
+#endif /* subprocesses */
 
   Fdo_auto_save (Qt);
+
+#ifdef CLASH_DETECTION
+  unlock_all_files ();
+#endif /* CLASH_DETECTION */
+
   fflush (stdout);
-  RstDsp ();
-  exit (0);
+  reset_sys_modes ();
+  stuff_buffered_input (arg);
+  exit ((XTYPE (arg) == Lisp_Int) ? XINT (arg) : 0);
+  /* NOTREACHED */
 }
 
-DEFUN ("dump-emacs", Fdump_emacs, Sdump_emacs, 2, 2,
-  "FDump as file: \nfWith symbols from file: ",
+#ifndef CANNOT_DUMP
+/* Nothing like this can be implemented on an Apollo.
+   What a loss!  */
+
+DEFUN ("dump-emacs", Fdump_emacs, Sdump_emacs, 2, 2, 0,
   "Dump current state of Emacs into executable file FILENAME.\n\
 Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
   (intoname, symname)
@@ -336,6 +393,8 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
 
   return Qnil;
 }
+
+#endif /* not CANNOT_DUMP */
 
 Lisp_Object
 decode_env_path (evarname, defalt)
@@ -366,7 +425,10 @@ decode_env_path (evarname, defalt)
 
 syms_of_emacs ()
 {
+#ifndef CANNOT_DUMP
   defsubr (&Sdump_emacs);
+#endif /* not CANNOT_DUMP */
+
   defsubr (&Skill_emacs);
 
   DefLispVar ("command-line-args", &Vcommand_line_args,
@@ -376,6 +438,6 @@ syms_of_emacs ()
     "Symbol indicating type of operating system you are using.");
   Vsystem_type = intern (SYSTEM_TYPE);
 
-  DefBoolVar ("noninteractive", &noninteractive,
+  DefBoolVar ("noninteractive", &noninteractive1,
     "Non-nil means Emacs is running without interactive terminal.");
 }

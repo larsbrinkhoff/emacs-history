@@ -202,6 +202,7 @@ main (argc, argv)
     }
 
   flush_tempfiles (tempcount);
+  exit (0);
 }
 
 /* This page decodes the command line arguments to set the parameter variables
@@ -475,7 +476,7 @@ find_field (keyfield, str, lengthptr)
   if (keyfield->braced) fun = find_braced_pos;
   else fun = find_pos;
 
-  start = fun (str, keyfield->startwords, keyfield->startchars,
+  start = ( *fun )(str, keyfield->startwords, keyfield->startchars,
 	       keyfield->ignore_blanks);
   if (keyfield->endwords < 0)
     {
@@ -489,7 +490,7 @@ find_field (keyfield, str, lengthptr)
     }
   else
     {
-      end = fun (str, keyfield->endwords, keyfield->endchars, 0);
+      end = ( *fun )(str, keyfield->endwords, keyfield->endchars, 0);
       if (end - str < start - str) end = start;
     }
   *lengthptr = end - start;
@@ -958,7 +959,15 @@ int pending;
 
 /* The initial (for sorting purposes) of the last primary entry written.
  When this changes, a \initial {c} line is written */
-int lastinitial;
+
+char * lastinitial;
+
+int lastinitiallength;
+
+/* When we need a string of length 1 for the value of lastinitial,
+   store it here.  */
+
+char lastinitial1[2];
 
 /* Initialize static storage for writing an index */
 
@@ -966,7 +975,10 @@ void
 init_index ()
 {
   pending = 0;
-  lastinitial = -1;
+  lastinitial = lastinitial1;
+  lastinitial1[0] = 0;
+  lastinitial1[1] = 0;
+  lastinitiallength = 0;
   lastprimarylength = 100;
   lastprimary = (char *) xmalloc (lastprimarylength + 1);
   bzero (lastprimary, lastprimarylength + 1);
@@ -986,17 +998,36 @@ indexify (line, ostream)
   int primarylength, secondarylength, pagelength;
   int len = strlen (line);
   int nosecondary;
-  char thisinitial;
-  char *p;
+  int initiallength;
+  char *initial;
+  char initial1[2];
+  register char *p;
 
   /* First, analyze the parts of the entry fed to us this time */
 
-  thisinitial = *find_braced_pos (line, 0, 0, 0);
-  if (thisinitial >= 'a' && thisinitial <= 'z')
-    thisinitial -= 040;
+  p = find_braced_pos (line, 0, 0, 0);
+  if (*p == '{')
+    {
+      initial = p;
+      /* Get length of inner pair of braces starting at p,
+	 including that inner pair of braces.  */
+      initiallength = find_braced_end (p + 1) + 1 - p;
+    }
+  else
+    {
+      initial = initial1;
+      initial1[0] = *p;
+      initial1[1] = 0;
+      initiallength = 1;
+
+      if (initial1[0] >= 'a' && initial1[0] <= 'z')
+	initial1[0] -= 040;
+    }
 
   pagenumber = find_braced_pos (line, 1, 0, 0);
   pagelength = find_braced_end (pagenumber) - pagenumber;
+  if (pagelength == 0)
+    abort ();
 
   primary = find_braced_pos (line, 2, 0, 0);
   primarylength = find_braced_end (primary) - primary;
@@ -1017,10 +1048,21 @@ indexify (line, ostream)
 	}
 
       /* If this primary has a different initial, include an entry for the initial */
-      if (lastinitial != thisinitial)
+      if (initiallength != lastinitiallength || strcmp (initial, lastinitial))
 	{
-	  fprintf (ostream, "\\initial {%c}\n", thisinitial);
-	  lastinitial = thisinitial;
+	  fprintf (ostream, "\\initial {");
+	  fwrite (initial, 1, initiallength, ostream);
+	  fprintf (ostream, "}\n", initial);
+	  if (initial == initial1)
+	    {
+	      lastinitial = lastinitial1;
+	      *lastinitial1 = *initial1;
+	    }
+	  else
+	    {
+	      lastinitial = initial;
+	    }
+	  lastinitiallength = initiallength;
 	}
 
       /* Make the entry for the primary.  */

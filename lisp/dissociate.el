@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun dissociated-press (&optional arg)
@@ -40,48 +41,48 @@ Default is 2."
       (save-excursion
 	(goto-char last-query-point)
 	(vertical-motion (- (window-height) 4))
-	(or (= (dot) (dot-max))
-	    (and (progn (goto-char (dot-max))
+	(or (= (point) (point-max))
+	    (and (progn (goto-char (point-max))
 			(y-or-n-p "Continue dissociation? "))
 		 (progn
 		   (message "")
 		   (recenter 1)
-		   (setq last-query-point (dot-max))
+		   (setq last-query-point (point-max))
 		   t))))
       (let (start end)
 	(save-excursion
 	 (set-buffer inbuf)
-	 (setq start (dot))
+	 (setq start (point))
 	 (if (eq move-function 'forward-char)
 	     (progn
 	       (setq end (+ start (+ move-amount (logand 15 (random)))))
-	       (if (> end (dot-max))
+	       (if (> end (point-max))
 		   (setq end (+ 1 move-amount (logand 15 (random)))))
 	       (goto-char end))
 	   (funcall move-function
 		    (+ move-amount (logand 15 (random)))))
-	 (setq end (dot)))
-	(let ((odot (dot)))
+	 (setq end (point)))
+	(let ((opoint (point)))
 	  (insert-buffer-substring inbuf start end)
 	  (save-excursion
-	   (goto-char odot)
+	   (goto-char opoint)
 	   (end-of-line)
 	   (and (> (current-column) fill-column)
 		(do-auto-fill)))))
       (save-excursion
        (set-buffer inbuf)
        (if (eobp)
-	   (goto-char (dot-min))
+	   (goto-char (point-min))
 	 (let ((overlap
-		(buffer-substring (prog1 (dot)
+		(buffer-substring (prog1 (point)
 					 (funcall move-function
 						  (- move-amount)))
-				  (dot))))
+				  (point))))
 	   (let (ranval)
 	     (while (< (setq ranval (random)) 0))
-	     (goto-char (1+ (% ranval (1- (dot-max))))))
+	     (goto-char (1+ (% ranval (1- (point-max))))))
 	   (or (funcall search-function overlap nil t)
-	       (let ((odot (dot)))
+	       (let ((opoint (point)))
 		 (goto-char 1)
-		 (funcall search-function overlap odot t))))))
+		 (funcall search-function overlap opoint t))))))
       (sit-for 0))))

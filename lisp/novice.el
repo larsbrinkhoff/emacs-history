@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 ;; This function is called (autoloaded)
@@ -59,13 +60,13 @@ to future sessions."
   (put command 'disabled nil)
   (save-excursion
    (set-buffer (find-file-noselect (substitute-in-file-name "~/.emacs")))
-   (goto-char (dot-min))
+   (goto-char (point-min))
    (if (search-forward (concat "(put '" (symbol-name command) " ") nil t)
        (delete-region
-	(progn (beginning-of-line) (dot))
-	(progn (forward-line 1) (dot)))
+	(progn (beginning-of-line) (point))
+	(progn (forward-line 1) (point)))
      ;; Must have been disabled by default.
-     (goto-char (dot-max))
+     (goto-char (point-max))
      (insert "\n(put '" (symbol-name command) " 'disabled nil)\n"))
    (setq foo (buffer-modified-p))
    (save-buffer)))
@@ -78,12 +79,12 @@ to future sessions."
   (put command 'disabled t)
   (save-excursion
    (set-buffer (find-file-noselect (substitute-in-file-name "~/.emacs")))
-   (goto-char (dot-min))
+   (goto-char (point-min))
    (if (search-forward (concat "(put '" (symbol-name command) " ") nil t)
        (delete-region
-	(progn (beginning-of-line) (dot))
-	(progn (forward-line 1) (dot))))
-   (goto-char (dot-max))
+	(progn (beginning-of-line) (point))
+	(progn (forward-line 1) (point))))
+   (goto-char (point-max))
    (insert "(put '" (symbol-name command) " 'disabled t)\n")
    (save-buffer)))
 

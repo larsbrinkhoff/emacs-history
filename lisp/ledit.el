@@ -4,22 +4,25 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 ;;; To do:
 ;;; o lisp -> emacs side of things (grind-definition and find-definition)
+
+(defvar ledit-mode-map nil)
 
 (defconst ledit-zap-file (concat "/tmp/" (getenv "USER") ".l1")
   "File name for data sent to Lisp by Ledit.")
@@ -43,9 +46,9 @@
   (interactive)
   (save-excursion
    (end-of-defun)
-   (let ((end (dot)))
+   (let ((end (point)))
      (beginning-of-defun)
-     (append-to-buffer ledit-buffer (dot) end))
+     (append-to-buffer ledit-buffer (point) end))
    (message "Current defun saved for Lisp")))
 
 (defun ledit-save-region (beg end)
@@ -80,8 +83,8 @@
   (if (get-buffer ledit-buffer)
       (save-excursion
        (set-buffer ledit-buffer)
-       (goto-char (dot-min))
-       (write-region (dot-min) (dot-max) ledit-zap-file)
+       (goto-char (point-min))
+       (write-region (point-min) (point-max) ledit-zap-file)
        (erase-buffer)))
   (suspend-emacs ledit-go-to-lisp-string)
   (load ledit-read-file t t))
@@ -94,16 +97,18 @@
   (if (get-buffer ledit-buffer)
       (save-excursion
        (set-buffer ledit-buffer)
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (insert "(declare (macros t))\n")
-       (write-region (dot-min) (dot-max) ledit-compile-file)
+       (write-region (point-min) (point-max) ledit-compile-file)
        (erase-buffer)))
   (suspend-emacs ledit-go-to-liszt-string)
   (load ledit-read-file t t))
 
 (defun ledit-setup ()
-  "Setup key bindings for the Lisp / Emacs interface"
-  (setq ledit-mode-map (copy-sequence lisp-mode-map))
+  "Set up key bindings for the Lisp / Emacs interface"
+  (if (not ledit-mode-map)
+      (progn (setq ledit-mode-map (make-sparse-keymap))
+	     (lisp-mode-commands ledit-mode-map)))
   (define-key ledit-mode-map "\e\^d" 'ledit-save-defun)
   (define-key ledit-mode-map "\e\^r" 'ledit-save-region)
   (define-key ledit-mode-map "\^xz" 'ledit-go-to-lisp)
@@ -114,12 +119,13 @@
 (defun ledit-mode ()
   "Major mode for editing text and stuffing it to a Lisp job.
 Like Lisp mode, plus these special commands:
-  M-C-d	-- record defun at or after dot
+  M-C-d	-- record defun at or after point
 	   for later transmission to Lisp job.
   M-C-r -- record region for later transmission to Lisp job.
   C-x z -- transfer to Lisp job and transmit saved text.
   M-C-c -- transfer to Liszt (Lisp compiler) job
 	   and transmit saved text.
+\\{ledit-mode-map}
 To make Lisp mode automatically change to Ledit mode,
 do (setq lisp-mode-hook 'ledit-from-lisp-mode)"
   (interactive)
@@ -130,6 +136,4 @@ do (setq lisp-mode-hook 'ledit-from-lisp-mode)"
   (use-local-map ledit-mode-map)
   (setq mode-name "Ledit")
   (setq major-mode 'ledit-mode)
-  (if (and (boundp 'ledit-mode-hook)
-	   ledit-mode-hook)
-      (funcall ledit-mode-hook)))
+  (run-hooks 'ledit-mode-hook))

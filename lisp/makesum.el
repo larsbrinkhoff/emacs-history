@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun make-command-summary ()
@@ -32,52 +33,52 @@ Previous contents of that buffer are killed first."
        (set-buffer standard-output)
        (erase-buffer)
        (insert-buffer-substring "*Help*")
-       (goto-char (dot-min))
-       (delete-region (dot) (progn (forward-line 1) (dot)))
+       (goto-char (point-min))
+       (delete-region (point) (progn (forward-line 1) (point)))
        (while (search-forward "         " nil t)
 	 (replace-match "  "))
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (while (search-forward "-@ " nil t)
 	 (replace-match "-SP"))
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (while (search-forward "  .. ~ " nil t)
 	 (replace-match "SP .. ~"))
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (while (search-forward "C-?" nil t)
 	 (replace-match "DEL"))
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (while (search-forward "C-i" nil t)
 	 (replace-match "TAB"))
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (if (re-search-forward "^Local Bindings:" nil t)
 	   (progn
 	    (forward-char -1)
 	    (insert " for " cur-mode " Mode")
 	    (while (search-forward "??\n" nil t)
-	      (delete-region (dot)
+	      (delete-region (point)
 			     (progn
 			      (forward-line -1)
-			      (dot))))))
-       (goto-char (dot-min))
+			      (point))))))
+       (goto-char (point-min))
        (insert "Emacs command summary, " (substring (current-time-string) 0 10)
 	       ".\n")
        ;; Delete "key    binding" and underlining of dashes.
-       (delete-region (dot) (progn (forward-line 2) (dot)))
+       (delete-region (point) (progn (forward-line 2) (point)))
        (forward-line 1)			;Skip blank line
        (while (not (eobp))
-	 (let ((beg (dot)))
+	 (let ((beg (point)))
 	   (or (re-search-forward "^$" nil t)
-	       (goto-char (dot-max)))
-	   (double-column beg (dot))
+	       (goto-char (point-max)))
+	   (double-column beg (point))
 	   (forward-line 1)))
-       (goto-char (dot-min)))))
+       (goto-char (point-min)))))
   (message "Making command summary...done"))
 
 (defun double-column (start end)
   (interactive "r")
   (let (half cnt
         line lines nlines
-	(from-end (- (dot-max) end)))
+	(from-end (- (point-max) end)))
     (setq nlines (count-lines start end))
     (if (<= nlines 1)
 	nil
@@ -87,9 +88,9 @@ Previous contents of that buffer are killed first."
        (forward-line half)
        (while (< half nlines)
 	 (setq half (1+ half))
-	 (setq line (buffer-substring (dot) (save-excursion (end-of-line) (dot))))
+	 (setq line (buffer-substring (point) (save-excursion (end-of-line) (point))))
 	 (setq lines (cons line lines))
-	 (delete-region (dot) (progn (forward-line 1) (dot)))))
+	 (delete-region (point) (progn (forward-line 1) (point)))))
       (setq lines (nreverse lines))
       (while lines
 	(end-of-line)
@@ -97,4 +98,4 @@ Previous contents of that buffer are killed first."
 	(insert (car lines))
 	(forward-line 1)
 	(setq lines (cdr lines))))
-    (goto-char (- (dot-max) from-end))))
+    (goto-char (- (point-max) from-end))))

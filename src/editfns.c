@@ -4,32 +4,29 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
 #include <pwd.h>
-#ifdef USG
-#include <string.h>
-#else
-#include <strings.h>
-#endif
 #include "lisp.h"
 #include "buffer.h"
 #include "window.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
 Lisp_Object ml_apply ();
 
@@ -48,6 +45,7 @@ init_editfns ()
   register int c;
   int first;
   struct passwd *pw;	/* password entry for the current user */
+  extern char *index ();
 
   /* Don't bother with this on initial start when just dumping out */
   if (!NULL (Vpurify_flag))
@@ -57,51 +55,56 @@ init_editfns ()
   strncpy (user_real_name, pw->pw_name, sizeof user_real_name);
 
   user_name = (char *) getenv ("USER");
+#ifdef USG
+  if (!user_name)
+    user_name = (char *) getenv ("LOGNAME");		/* USG equivalent */
+#endif
   if (!user_name)
     user_name = user_real_name;
 
   if (strcmp (user_name, user_real_name))
     pw = (struct passwd *) getpwnam (user_name);
-
+  
 #ifndef AMPERSAND_FULL_NAME
-  strncpy (user_full_name, USER_FULL_NAME, sizeof user_full_name);
+  if (pw == 0)
+    strcpy (user_full_name, "unknown");
+  else
+    strncpy (user_full_name, USER_FULL_NAME, sizeof user_full_name);
   p = index (user_full_name, ',');
   if (p) *p = 0;
-#endif
+#else
+  if (pw == 0)
+    p = "unknown";
+  else
+    p = USER_FULL_NAME;
+  q = user_full_name; r = user_name; first = 1;
 
-#ifdef AMPERSAND_FULL_NAME
-  p = pw->pw_gecos; q = user_full_name; r = USER_FULL_NAME; first = 1;
-
-  while (1)
+  for (; (*p != 0) && (*p != ','); p++)
     {
-      switch (*p)
+      if (*p == '&')
 	{
-	case 0:
-	  break;
-	case ',':
-	  c = 0; break;
-	case '&':
-	  c = *r++;
-	  if ((! --first) && (c > 'Z')) c -= 32;
-	  if (c == 0)
+	  if (*r != 0)
 	    {
-	      p++;
-	      c = -1;
+	      *q = *r++;
+	      if ((*q >= 'a') && (*q <= 'z'))
+		*q -= 32;
+	      for (q++; *r != 0; r++)
+		{
+		  if (q == &user_full_name[sizeof user_full_name - 1])
+		    break;
+		  *q++ = *r;
+		}
 	    }
-	  break;
-	default:
-	  c = *p++;
 	}
-      /*Putnextchar:*/
-      if (c >= 0)
-	*q++ = c;
-      if (c == 0 || q == &user_full_name[sizeof user_full_name - 1])
+      else
+	*q++ = *p;
+      if (q == &user_full_name[sizeof user_full_name - 2])
 	break;
     }
   *q = 0;
 #endif /* AMPERSAND_FULL_NAME */
 
-  p = SYSTEM_NAME;
+  p = (char *) get_system_name ();
   if (p == 0 || *p == 0)
     p = "Bogus System Name";
   strncpy (system_name, p, sizeof system_name);
@@ -153,21 +156,21 @@ buildmark (val)
   return mark;
 }
 
-DEFSIMPLE ("dot", Fdot, Sdot,
-  "Return value of dot, as an integer.\n\
-Beginning of buffer is position (dot-min)",
-	   Lisp_Int, XSETINT, dot)
+DEFSIMPLE ("point", Fpoint, Spoint,
+  "Return value of point, as an integer.\n\
+Beginning of buffer is position (point-min)",
+	   Lisp_Int, XSETINT, point)
 
-DEFUN ("dot-marker", Fdot_marker, Sdot_marker, 0, 0, 0,
-   "Return value of dot, as a marker object.")
+DEFUN ("point-marker", Fpoint_marker, Spoint_marker, 0, 0, 0,
+   "Return value of point, as a marker object.")
   ()
 {
-  return buildmark (dot);
+  return buildmark (point);
 }
 
 DEFUN ("goto-char", Fgoto_char, Sgoto_char, 1, 1, "nGoto char: ",
-  "One arg, a number.  Set dot to that number.\n\
-Beginning of buffer is position (dot-min), end is (dot-max).")
+  "One arg, a number.  Set point to that number.\n\
+Beginning of buffer is position (point-min), end is (point-max).")
   (n)
      Lisp_Object n;
 {
@@ -176,15 +179,36 @@ Beginning of buffer is position (dot-min), end is (dot-max).")
   charno = XINT (n);
   if (charno < FirstCharacter) charno = FirstCharacter;
   if (charno > NumCharacters) charno = NumCharacters + 1;
-  SetDot (charno);
+  SetPoint (charno);
   return n;
+}
+
+DEFUN ("region-beginning", Fregion_beginning, Sregion_beginning, 0, 0, 0,
+  "Return position of beginning of region, as an integer.")
+  ()
+{
+  register int tem;
+  if (NULL (bf_cur->mark))
+    error ("There is no region now");
+  tem = marker_position (bf_cur->mark);
+  return make_number (min (point, tem));
+}
+
+DEFUN ("region-end", Fregion_end, Sregion_end, 0, 0, 0,
+  "Return position of end of region, as an integer.")
+  ()
+{
+  register int tem;
+  if (NULL (bf_cur->mark))
+    error ("There is no region now");
+  tem = marker_position (bf_cur->mark);
+  return make_number (max (point, tem));
 }
 
 DEFUN ("mark", Fmark, Smark, 0, 0, 0,
   "Return this buffer's mark value as integer, or nil if no mark.")
   ()
 {
-  Lisp_Object val;
   if (!NULL (bf_cur->mark))
     return Fmarker_position (bf_cur->mark);
   return Qnil;
@@ -221,19 +245,20 @@ Argument is character position, or nil to clear out the mark.")
 Lisp_Object
 save_excursion_save ()
 {
-  Lisp_Object olddot, oldmark;
+  Lisp_Object oldpoint, oldmark;
   int visible = XBUFFER (XWINDOW (selected_window)->buffer) == bf_cur;
 
-  olddot = Fdot_marker ();
+  oldpoint = Fpoint_marker ();
 
   if (!NULL (bf_cur->mark))
     oldmark = Fcopy_marker (bf_cur->mark);
   else
     oldmark = Qnil;
 
-  return Fcons (olddot, Fcons (oldmark, visible ? Qt : Qnil));
+  return Fcons (oldpoint, Fcons (oldmark, visible ? Qt : Qnil));
 }
 
+Lisp_Object
 save_excursion_restore (info)
      Lisp_Object info;
 {
@@ -245,7 +270,7 @@ save_excursion_restore (info)
      and crash */
   /* In that case, Fmarker_buffer returns nil now.  */
   if (NULL (tem))
-    return;
+    return Qnil;
   Fset_buffer (tem);
   Fgoto_char (Fcar (info));
   unchain_marker (Fcar (info));
@@ -255,12 +280,13 @@ save_excursion_restore (info)
     unchain_marker (tem);
   tem = Fcdr (Fcdr (info));
   if (!NULL (tem) && bf_cur != XBUFFER (XWINDOW (selected_window)->buffer))
-    Fswitch_to_buffer (Fcurrent_buffer ());
+    Fswitch_to_buffer (Fcurrent_buffer (), Qnil);
+  return Qnil;
 }
 
 DEFUN ("save-excursion", Fsave_excursion, Ssave_excursion, 0, UNEVALLED, 0,
-  "Save dot (and mark), execute BODY, then restore dot and mark.\n\
-Executes BODY just like PROGN.  Dot and mark values are restored\n\
+  "Save point (and mark), execute BODY, then restore point and mark.\n\
+Executes BODY just like PROGN.  Point and mark values are restored\n\
 even in case of abnormal exit (throw or error).")
   (args)
      Lisp_Object args;
@@ -275,21 +301,16 @@ even in case of abnormal exit (throw or error).")
   return val;
 }
 
-extern baud_rate;
-
-DEFSIMPLE ("baud-rate", Fbaud_rate, Sbaud_rate,
-	   "Return the output baud rate of the terminal.",
-	   Lisp_Int, XSETINT, baud_rate)
 DEFSIMPLE ("buffer-size", Fbufsize, Sbufsize,
 	   "Return the number of characters in the current buffer.",
 	   Lisp_Int, XSETINT, bf_s1 + bf_s2)
 
-DEFSIMPLE ("dot-min", Fdot_min, Sdot_min,
-	   "Return the minimum permissible value of dot in the current buffer.\n\
+DEFSIMPLE ("point-min", Fpoint_min, Spoint_min,
+	   "Return the minimum permissible value of point in the current buffer.\n\
 This is 1, unless a clipping restriction is in effect.",
 	   Lisp_Int, XSETINT, FirstCharacter)
 
-DEFUN ("dot-min-marker", Fdot_min_marker, Sdot_min_marker, 0, 0, 0,
+DEFUN ("point-min-marker", Fpoint_min_marker, Spoint_min_marker, 0, 0, 0,
   "Return a marker to the beginning of the currently visible part of the buffer.\n\
 This is the beginning, unless a clipping restriction is in effect.")
   ()
@@ -297,13 +318,13 @@ This is the beginning, unless a clipping restriction is in effect.")
   return buildmark (FirstCharacter);
 }
 
-DEFSIMPLE ("dot-max", Fdot_max, Sdot_max,
-  "Return the maximum permissible value of dot in the current buffer.\n\
+DEFSIMPLE ("point-max", Fpoint_max, Spoint_max,
+  "Return the maximum permissible value of point in the current buffer.\n\
 This is (1+ (buffer-size)), unless a clipping restriction is in effect,\n\
 in which case it is less.",
 	   Lisp_Int, XSETINT, NumCharacters+1)
 
-DEFUN ("dot-max-marker", Fdot_max_marker, Sdot_max_marker, 0, 0, 0,
+DEFUN ("point-max-marker", Fpoint_max_marker, Spoint_max_marker, 0, 0, 0,
   "Return a marker to the end of the currently visible part of the buffer.\n\
 This is the actual end, unless a clipping restriction is in effect.")
   ()
@@ -312,23 +333,31 @@ This is the actual end, unless a clipping restriction is in effect.")
 }
 
 DEFSIMPLE ("following-char", Ffollchar, Sfollchar,
-	   "Return the character following dot, as a number.",
-	   Lisp_Int, XSETINT, dot>NumCharacters ? 0 : CharAt(dot))
+	   "Return the character following point, as a number.",
+	   Lisp_Int, XSETINT, point>NumCharacters ? 0 : CharAt(point))
 DEFSIMPLE ("preceding-char", Fprevchar, Sprevchar,
-	   "Return the character preceding dot, as a number.",
-	   Lisp_Int, XSETINT, dot<=FirstCharacter ? 0 : CharAt(dot-1))
+	   "Return the character preceding point, as a number.",
+	   Lisp_Int, XSETINT, point<=FirstCharacter ? 0 : CharAt(point-1))
 
-DEFPRED ("bobp", Fbobp, Sbobp, "Return T if dot is at the beginning of the buffer.",
-	 dot<=FirstCharacter)
-DEFPRED ("eobp", Feobp, Seobp, "Return T if dot is at the end of the buffer.",
-	 dot>NumCharacters)
-DEFPRED ("bolp", Fbolp, Sbolp, "Return T if dot is at the beginning of a line.",
-	 dot<=FirstCharacter || CharAt(dot-1)=='\n')
-DEFPRED ("eolp", Feolp, Seolp, "Return T if dot is at the end of a line.",
-	 dot>NumCharacters || CharAt(dot)=='\n')
+DEFPRED ("bobp", Fbobp, Sbobp,
+  "Return T if point is at the beginning of the buffer.\n\
+If the buffer is narrowed, this means the beginning of the narrowed part.",
+	 point<=FirstCharacter)
+DEFPRED ("eobp", Feobp, Seobp,
+  "Return T if point is at the end of the buffer.\n\
+If the buffer is narrowed, this means the end of the narrowed part.",
+	 point>NumCharacters)
+DEFPRED ("bolp", Fbolp, Sbolp,
+  "Return T if point is at the beginning of a line.",
+	 point<=FirstCharacter || CharAt(point-1)=='\n')
+DEFPRED ("eolp", Feolp, Seolp,
+  "Return T if point is at the end of a line.\n\
+`End of a line' includes point being at the end of the buffer.",
+	 point>NumCharacters || CharAt(point)=='\n')
 
 DEFUN ("char-after", Fchar_after, Schar_after, 1, 1, 0,
-  "One arg, POS, a number.  Return the character in the current buffer at position POS.\n\
+  "One arg, POS, a number.  Return the character in the current buffer\n\
+at position POS.\n\
 If POS is out of range, the value is NIL.")
   (pos)
      Lisp_Object pos;
@@ -371,7 +400,7 @@ DEFUN ("system-name", Fsystem_name, Ssystem_name, 0, 0, "",
   return build_string (system_name);
 }
 
-DEFUN ("current-time-string", Fcurrent_time_string, Scurrent_time_string, 0, 0, "",
+DEFUN ("current-time-string", Fcurrent_time_string, Scurrent_time_string, 0, 0, 0,
   "Return the current time, as a human-readable string.")
   ()
 {
@@ -382,7 +411,7 @@ DEFUN ("current-time-string", Fcurrent_time_string, Scurrent_time_string, 0, 0, 
 }
 
 DEFUN ("insert", Finsert, Sinsert, 0, MANY, 0,
-  "Any number of args, strings or chars.  Insert them after dot, moving dot forward.")
+  "Any number of args, strings or chars.  Insert them after point, moving point forward.")
   (nargs, args)
      int nargs;
      Lisp_Object *args;
@@ -394,6 +423,7 @@ DEFUN ("insert", Finsert, Sinsert, 0, MANY, 0,
   for (argnum = 0; argnum < nargs; argnum++)
     {
       tem = args[argnum];
+    retry:
       if (XTYPE (tem) == Lisp_Int)
 	{
 	  str[0] = XINT (tem);
@@ -404,7 +434,44 @@ DEFUN ("insert", Finsert, Sinsert, 0, MANY, 0,
 	  InsCStr (XSTRING (tem)->data, XSTRING (tem)->size);
 	}
       else
-	wrong_type_argument (Qchar_or_string_p, tem, argnum);
+	{
+	  tem = wrong_type_argument (Qchar_or_string_p, tem);
+	  goto retry;
+	}
+    }
+  return Qnil;
+}
+
+DEFUN ("insert-before-markers", Finsert_before_markers, Sinsert_before_markers, 0, MANY, 0,
+  "Any number of args, strings or chars.  Insert them after point,\n\
+moving point forward.  Also, any markers pointing at the insertion point\n\
+get relocated to point after the newly inserted text.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+  int argnum;
+  Lisp_Object tem;
+  char str[1];
+
+  for (argnum = 0; argnum < nargs; argnum++)
+    {
+      tem = args[argnum];
+    retry:
+      if (XTYPE (tem) == Lisp_Int)
+	{
+	  str[0] = XINT (tem);
+	  insert_before_markers (str, 1);
+	}
+      else if (XTYPE (tem) == Lisp_String)
+	{
+	  insert_before_markers (XSTRING (tem)->data, XSTRING (tem)->size);
+	}
+      else
+	{
+	  tem = wrong_type_argument (Qchar_or_string_p, tem);
+	  goto retry;
+	}
     }
   return Qnil;
 }
@@ -437,25 +504,9 @@ DEFUN ("buffer-string", Fbuffer_string, Sbuffer_string, 0, 0, 0,
   return make_string (&CharAt (FirstCharacter), NumCharacters + 1 - FirstCharacter);
 }
 
-DEFUN ("region-to-string", Fregion_to_string, Sregion_to_string, 0, 0, 0,
-  "Return the contents of the region as a string")
-  ()
-{
-  int foo;
-  Lisp_Object b, e;
-
-  if (NULL (bf_cur->mark))
-    error ("The mark is not set now");
-  foo = marker_position (bf_cur->mark);
-
-  XFASTINT (b) = dot < foo ? dot : foo;
-  XFASTINT (e) = dot > foo ? dot : foo;
-  return Fbuffer_substring (b, e);
-}
-
 DEFUN ("insert-buffer-substring", Finsert_buffer_substring, Sinsert_buffer_substring,
   1, 3, 0,
-  "Insert before dot a substring of the contents buffer BUFFER.\n\
+  "Insert before point a substring of the contents buffer BUFFER.\n\
 BUFFER may be a buffer or a buffer name.\n\
 Arguments START and END are character numbers specifying the substring.\n\
 They default to the beginning and the end of BUFFER.")
@@ -491,7 +542,7 @@ They default to the beginning and the end of BUFFER.")
 	&& beg <= end
         && end <= XBUFFER (buf)->text.size1 + XBUFFER (buf)->text.size2
 			- XBUFFER (buf)->text.tail_clip))
-    Fsignal (Qargs_out_of_range, Fcons (b, Fcons (e, Qnil)));
+    args_out_of_range (b, e);
 
   if (beg < XBUFFER (buf)->text.size1)
     {
@@ -505,10 +556,12 @@ They default to the beginning and the end of BUFFER.")
 }
 
 DEFUN ("subst-char-in-region", Fsubst_char_in_region,
-  Ssubst_char_in_region, 4, 4, 0,
-  "From START to END, replace FROMCHAR with TOCHAR each time it occurs.")
-  (start, end, fromchar, tochar)
-     Lisp_Object start, end, fromchar, tochar;
+  Ssubst_char_in_region, 4, 5, 0,
+  "From START to END, replace FROMCHAR with TOCHAR each time it occurs.\n\
+If optional arg NOUNDO is non-nil, don't record this change for undo\n\
+and don't mark the buffer as really changed.")
+  (start, end, fromchar, tochar, noundo)
+     Lisp_Object start, end, fromchar, tochar, noundo;
 {
   register int pos, stop, look;
 
@@ -527,7 +580,8 @@ DEFUN ("subst-char-in-region", Fsubst_char_in_region,
     {
       if (CharAt (pos) == look)
 	{
-	  RecordChange (pos, 1);
+	  if (NULL (noundo))
+	    RecordChange (pos, 1);
 	  CharAt (pos) = XINT (tochar);
 	}
       pos++;
@@ -538,7 +592,7 @@ DEFUN ("subst-char-in-region", Fsubst_char_in_region,
 }
 
 DEFUN ("delete-region", Fdelete_region, Sdelete_region, 2, 2, "r",
-  "Delete the text between dot and mark.\n\
+  "Delete the text between point and mark.\n\
 When called from a program, expects two arguments,\n\
 character numbers specifying the stretch to be deleted.")
   (b, e)
@@ -560,7 +614,7 @@ DEFUN ("widen", Fwiden, Swiden, 0, 0, "",
 }
 
 DEFUN ("narrow-to-region", Fnarrow_to_region, Snarrow_to_region, 2, 2, "r",
-  "Restrict editing in current buffer to text between present values of dot and mark.\n\
+  "Restrict editing in current buffer to text between present values of point and mark.\n\
 Use  widen  to undo the effects of this command.\n\
 Called non-interactively, takes two arguments; character numbers which\n\
 specify the stretch to which to restrict.")
@@ -581,14 +635,14 @@ specify the stretch to which to restrict.")
 
   if (!(1 <= XINT (b) && XINT (b) <= XINT (e)
         && XINT (e) <= bf_s1 + bf_s2 + 1))
-    Fsignal (Qargs_out_of_range, Fcons (b, Fcons (e, Qnil)));
+    args_out_of_range (b, e);
 
   bf_cur->text.head_clip = bf_head_clip = XFASTINT (b);
   bf_cur->text.tail_clip = bf_tail_clip = bf_s1 + bf_s2 + 1 - XFASTINT (e);
-  if (dot < XFASTINT (b))
-    SetDot (XFASTINT (b));
-  if (dot > XFASTINT (e))
-    SetDot (XFASTINT (e));
+  if (point < XFASTINT (b))
+    SetPoint (XFASTINT (b));
+  if (point > XFASTINT (e))
+    SetPoint (XFASTINT (e));
   clip_changed = 1;
   return Qnil;
 }
@@ -606,6 +660,7 @@ save_restriction_save ()
   return Fcons (Fcurrent_buffer (), Fcons (ml, mh));
 }
 
+Lisp_Object
 save_restriction_restore (data)
      Lisp_Object data;
 {
@@ -627,13 +682,14 @@ save_restriction_restore (data)
   bf_cur->text.tail_clip = bf_tail_clip = newtail;
   clip_changed = 1;
 
-  /* If dot is outside the new visible range, move it inside. */
-  if (dot < FirstCharacter)
-    SetDot (FirstCharacter);
-  if (dot > NumCharacters+1)
-    SetDot (NumCharacters+1);
+  /* If point is outside the new visible range, move it inside. */
+  if (point < FirstCharacter)
+    SetPoint (FirstCharacter);
+  if (point > NumCharacters+1)
+    SetPoint (NumCharacters+1);
 
   SetBfp (old);
+  return Qnil;
 }
 
 DEFUN ("save-restriction", Fsave_restriction, Ssave_restriction, 0, UNEVALLED, 0,
@@ -643,7 +699,10 @@ Thus, the restrictions are the same after this function as they were before it.\
 The value returned is that returned by the last form in the body.\n\
 \n\
 This function can be confused if, within the body, you widen\n\
-and then make changes outside the area within the saved restrictions.")
+and then make changes outside the area within the saved restrictions.\n\
+\n\
+Note: if you are using both save-excursion and save-restriction,\n\
+use save-excursion outermost.")
   (body)
      Lisp_Object body;
 {
@@ -669,14 +728,10 @@ the argument used by %d or %c must be a number.")
      Lisp_Object *args;
 {
   Lisp_Object val;
-  static char buf[100];
 
   val = Fformat (nargs, args);
-  strncpy (buf, XSTRING (val)->data, 99);
-  buf[99] = 0;
-
-  message1 (buf);
-  return Qnil;
+  message ("%s", XSTRING (val)->data);
+  return val;
 }
 
 DEFUN ("format", Fformat, Sformat, 1, MANY, 0,
@@ -690,34 +745,76 @@ The argument used by %s must be a string or a symbol;\n\
 the argument used by %d, %b, %o, %x or %c must be a number.")
   (nargs, args)
      int nargs;
-     Lisp_Object *args;
+     register Lisp_Object *args;
 {
-  int i;
-  char buf[100];
-  unsigned char **strings = (unsigned char **) alloca (nargs * sizeof (char *));
+  register int i;
+  register int total = 5;
+  char *buf;
+  register unsigned char **strings = (unsigned char **) alloca (nargs * sizeof (char *));
 
   for (i = 0; i < nargs; i++)
     {
-      if (XTYPE (args[i]) == Lisp_String)
-        strings[i] = XSTRING (args[i])->data;
-      else if (XTYPE (args[i]) == Lisp_Symbol)
-        strings[i] = XSYMBOL (args[i])->name->data;
+      if (XTYPE (args[i]) == Lisp_Symbol)
+	{
+	  strings[i] = XSYMBOL (args[i])->name->data;
+	  total += XSYMBOL (args[i])->name->size;
+	}
+      else if (XTYPE (args[i]) == Lisp_String)
+	{
+	  strings[i] = XSTRING (args[i])->data;
+	  total += XSTRING (args[i])->size;
+	}
       else if (XTYPE (args[i]) == Lisp_Int)
-        strings[i] = (unsigned char *) XINT (args[i]);
+	{
+	  strings[i] = (unsigned char *) XINT (args[i]);
+	  total += 10;
+	}
       else
-        strings[i] = (unsigned char *) "??";
+	{
+	  strings[i] = (unsigned char *) "??";
+	  total += 2;
+	}
     }
 
-  doprnt (buf, sizeof buf, strings[0], strings + 1);
+  /* Format it in bigger and bigger buf's until it all fits. */
+
+  while (1)
+    {
+      buf = (char *) alloca (total + 1);
+      buf[total - 1] = 0;
+
+      doprnt (buf, total + 1, strings[0], strings + 1);
+      if (buf[total - 1] == 0)
+	break;
+
+      total *= 2;
+    }
 
   return build_string (buf);
 }
 
-Lisp_Object format1 (string1)
+/* VARARGS 1 */
+Lisp_Object
+#ifdef NO_ARG_ARRAY
+format1 (string1, arg0, arg1, arg2, arg3, arg4)
+     Lisp_Object arg0, arg1, arg2, arg3, arg4;
+#else
+format1 (string1)
+#endif
      char *string1;
 {
   char buf[100];
+#ifdef NO_ARG_ARRAY
+  Lisp_Object args[5];
+  args[0] = arg0;
+  args[1] = arg1;
+  args[2] = arg2;
+  args[3] = arg3;
+  args[4] = arg4;
+  doprnt (buf, sizeof buf, string1, args);
+#else
   doprnt (buf, sizeof buf, string1, &string1 + 1);
+#endif
   return build_string (buf);
 }
 
@@ -759,21 +856,27 @@ syms_of_editfns ()
   defsubr (&Sgoto_char);
   defsubr (&Sstring_to_char);
   defsubr (&Schar_to_string);
-  defsubr (&Sregion_to_string);
   defsubr (&Sbuffer_substring);
   defsubr (&Sbuffer_string);
-  defsubr (&Sbaud_rate);
 
-  defsubr (&Sdot_marker);
+  defsubr (&Spoint_marker);
+  defalias (&Spoint_marker, "dot-marker");
   defsubr (&Smark_marker);
-  defsubr (&Sdot);
+  defsubr (&Spoint);
+  defalias (&Spoint, "dot");
+  defsubr (&Sregion_beginning);
+  defsubr (&Sregion_end);
   defsubr (&Smark);
   defsubr (&Sset_mark);
   defsubr (&Ssave_excursion);
 
   defsubr (&Sbufsize);
-  defsubr (&Sdot_max);
-  defsubr (&Sdot_min);
+  defsubr (&Spoint_max);
+  defsubr (&Spoint_min);
+  defalias (&Spoint_max, "dot-max");
+  defalias (&Spoint_min, "dot-min");
+  defsubr (&Spoint_min_marker);
+  defsubr (&Spoint_max_marker);
 
   defsubr (&Sbobp);
   defsubr (&Seobp);
@@ -783,6 +886,7 @@ syms_of_editfns ()
   defsubr (&Sprevchar);
   defsubr (&Schar_after);
   defsubr (&Sinsert);
+  defsubr (&Sinsert_before_markers);
 
   defsubr (&Suser_login_name);
   defsubr (&Suser_real_login_name);

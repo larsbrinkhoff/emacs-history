@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun untabify (start end)
@@ -27,11 +28,11 @@ The variable tab-width controls the action."
       (narrow-to-region start end)
       (goto-char start)
       (while (search-forward "\t" nil t)	; faster than re-search
-	(let ((start (dot))
+	(let ((start (point))
 	      (column (current-column))
 	      (indent-tabs-mode nil))
 	  (skip-chars-backward "\t")
-	  (delete-region start (dot))
+	  (delete-region start (point))
 	  (indent-to column))))))
 
 (defun tabify (start end)
@@ -47,5 +48,5 @@ The variable tab-width controls the action."
       (while (re-search-forward "[ \t][ \t][ \t]*" nil t)
 	(let ((column (current-column))
 	      (indent-tabs-mode t))
-	  (delete-region (match-beginning 0) (dot))
+	  (delete-region (match-beginning 0) (point))
 	  (indent-to column))))))

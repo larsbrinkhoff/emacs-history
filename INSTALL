@@ -18,11 +18,11 @@ Copyright (c) 1985 Richard M. Stallman
 PREPARATION
 
 0) Make sure your system has enough swapping space allocated
- to handle a program whose pure code is 400k bytes (vax) or
- 600k (68000), and whose data area is at least 150k and can
- reach 600k bytes.  If the swapping space is insufficient, you
+ to handle a program whose pure code is 400k bytes or
+ and whose data area is at least 150k and can reach 600k
+ bytes or much more.  If the swapping space is insufficient, you
  will get an error in the command temacs -l loadup inc dump,
- found in $BUILD/src/Makefile, or possibly when running the
+ found in $BUILD/src/ymakefile, or possibly when running the
  final dumped Emacs.
  
 1) Choose a place in the file structure for the main directory
@@ -31,7 +31,8 @@ PREPARATION
  $EMACS.  Let $BUILD stand for the name the directory has now.
 
 2) Copy $BUILD/src/config.h.dist to config.h, and edit it to
- set the right options for your system.
+ set the right options for your system.  The file
+ $BUILD/etc/MACHINES may help you decide what to put there.
 
 3) Copy $BUILD/src/paths.h.dist to paths.h, and edit it to
  contain the correct directory names: $EMACS/lisp for the
@@ -46,15 +47,25 @@ PREPARATION
  must be renamed to $EMACS afterwards in order for Emacs to
  work properly.
 
-4) Put into $BUILD/lisp/site-init.el any Lisp code
+4) Look at $BUILD/lisp/paths.el; if some of those values
+ are not right for your system, create a file
+ $BUILD/lisp/site-init.el containing Lisp code to override them.
+ You would use the Lisp function `setq'.  For example,
+
+     (setq news-inews-program "/usr/bin/inews")
+
+ is how you would override the default value of the
+ variable news-inews-program (which is "/usr/local/inews").
+
+5) Put into $BUILD/lisp/site-init.el any Lisp code
  you want loaded into Emacs before it is dumped out.
 
  This file is nonexistent in the distribution.
  You do not need to create it, if you have nothing
  to put in it.
 
-5) Decide what compiler switches to use.
- You might want to replace the `-g' in the Makefile
+6) Decide what compiler switches to use.
+ You might want to replace the `-g' in the file $BUILD/src/ymakefile
  with `-O'.  If you are not running on 4.2 on a vax,
  it is possible that no debugger you have will be able
  to run Emacs with its symbol table, so you might as well
@@ -62,7 +73,7 @@ PREPARATION
  it is probably best to use `-g' so that you are not
  helpless in the face of a problem.
 
-6) Refer to the file $BUILD/etc/TERMS for information on
+7) Refer to the file $BUILD/etc/TERMS for information on
  fields you may wish to add to various termcap entries.
 
 BUILDING GNU EMACS
@@ -81,11 +92,11 @@ The steps below are done by the shell script `build-install'.
  stored in $BUILD/lisp/version.el.
 
  It also creates a file in $BUILD/etc, whose name is
- DOCSTR followed by the current Emacs version.
+ DOC followed by the current Emacs version.
  This file contains documentation strings for all the
  functions in Emacs.  Each time you run make to make a new xemacs,
- a new DOCSTR file with a new name is made.  You must keep
- the DOCSTR file for an Emacs version as long as you keep using
+ a new DOC file with a new name is made.  You must keep
+ the DOC file for an Emacs version as long as you keep using
  that Emacs version.
 
 
@@ -111,9 +122,9 @@ The steps below are done by the shell script `build-install'.
  The program $EMACS/etc/loadst is invoked by Emacs when appropriate.
 
  The programs $EMACS/etc/make-docfile and $EMACS/etc/test-distrib
- are not used any more; they were invoked from src/Makefile.
+ are not used any more; they were used in building Emacs.
 
- $EMACS/etc/digest-doc can be used to convert DOCSTR into a
+ $EMACS/etc/digest-doc can be used to convert DOC into a
  file for users to read.  There is no important reason to move it.
 
 4) The files in $EMACS/src subdirectory, except for xemacs,
@@ -142,7 +153,8 @@ On 68000's, it has also happened because of bugs in the
 subroutine `alloca'.  Verify that `alloca' works right, even
 for large blocks (many pages).
 
-* temacs prints "Command key out of range 0-127"
+* test-distrib says that the distribution has been clobbered
+* or, temacs prints "Command key out of range 0-127"
 * or, temacs runs and dumps xemacs, but xemacs totally fails to work.
 * or, temacs gets errors dumping xemacs
 
@@ -162,7 +174,7 @@ file transfer programs are suspected of clobbering the high bit.
 
 The only verified ways to transfer GNU Emacs are `tar'
 and rcp or internet ftp between two Unix systems, or chaosnet
-cftp.
+cftp using raw mode.
 
 If you have a copy of Emacs that has been damaged in its
 nonprinting characters, you can fix them:
@@ -186,10 +198,15 @@ space than was allocated.
 
 This could be caused by
  1) adding code to the preloaded Lisp files
- 2) adding more preloaded packages in loadup.el
- 3) getting the wrong .el or .elc files
+ 2) adding more preloaded files in loadup.el
+ 3) having a site-init.el which loads files.
+   Note that ANY site-init.el is nonstandard;
+   if you have received Emacs from some other site
+   and it contains a site-init.el file, consider
+   deleting that file.
+ 4) getting the wrong .el or .elc files
    (not from the directory you expected).
- 4) deleting some .elc files that are supposed to exist.
+ 5) deleting some .elc files that are supposed to exist.
    This would cause the source files (.el files) to be
    loaded instead.  They take up more room, so you lose.
 
@@ -200,6 +217,21 @@ Then the old .elc files will be loaded, and your changes
 will not be seen.  To fix this, do M-x byte-recompile-directory
 and specify the directory that contains the Lisp files.
 
+* The dumped Emacs (xemacs) crashes when run, trying to write pure data.
+
+Two causes have been seen for such problems.
+
+1) On a system where getpagesize is not a system call, it is defined
+as a macro.  If the definition (in both unexec.c and malloc.c) is wrong,
+it can cause problems like this.  You might be able to find the correct
+value in the man page for a.out (5).
+
+2) Some systems allocate variables declared static among the
+initialized variables.  Emacs makes all initialized variables in most
+of its files pure after dumping, but the variables declared static and
+not initialized are not supposed to be pure.  On these systems you
+may need to add "#define static" to the m- or the s- file.
+
 * rmail gets error getting new mail
 
 rmail gets new mail from /usr/spool/mail/$USER using a program
@@ -207,6 +239,10 @@ called movemail.  This program interlocks with /bin/mail using
 the protocol defined by /bin/mail, which involves creating a
 lock file.  It must be able to write in /usr/spool/mail
 in order to do this.
+
+You may have to change config.h to #define MAIL_USE_FLOCK
+if your system is configured to use flock to interlock
+access to mail files.
 
 * Emacs spontaneously displays "I-search: " at the bottom of the screen.
 
@@ -324,15 +360,15 @@ tested on many kinds of terminals.
 
 3) The termcap entry is wrong.
 
-Watch out for termcap entries for VT100's that fail to specify
-the sf string, or that omit the padding needed for the sf and sr
-strings (2msec per line affected).
+See the file TERMS in this directory for information on changes
+that are known to be needed in commonly used termcap entries
+for certain terminals.
 
 4) The characters sent are incorrect, and clearly cannot be
  right for any terminal with the termcap entry you were using.
 
 This is unambiguously an Emacs bug, and can probably be fixed
-in term.c, scroll.c, cm.c or dispnew.c.
+in termcap.c, tparam.c, term.c, scroll.c, cm.c or dispnew.c.
 
 * Output from Control-V is slow.
 
@@ -374,16 +410,20 @@ You should also define the `IC' and `DC' strings if your terminal
 has a command to insert or delete multiple characters.  These
 take the number of positions to insert or delete as an argument.
 
+A `cs' string to set the scrolling region will reduce the amount
+of motion you see on the screen when part of the screen is scrolled.
+
 * You type Control-H (Backspace) expecting to delete characters.
 
 Put `stty dec' in your .login file and your problems will disappear
 after a day or two.
 
-The choice of Backspace for erasure was based on confusion,
-caused by the fact that backspacing causes erasure on most
-display terminals.  But it is a mistake.  Deletion of text
-is not the same thing as backspacing followed by faulty overprinting.
-I do not wish to propagate this confusion by conforming to it.
+The choice of Backspace for erasure was based on confusion, caused by
+the fact that backspacing causes erasure (later, when you type another
+character) on most display terminals.  But it is a mistake.  Deletion
+of text is not the same thing as backspacing followed by failure to
+overprint.  I do not wish to propagate this confusion by conforming
+to it.
 
 For this reason, I believe `stty dec' is the right mode to use,
 and I have designed Emacs to go with that.  If there were a thousand
@@ -406,10 +446,11 @@ to arrange for the storage to be freed, and do so even in the case of
 a longjmp happening inside a subroutine.  Many subroutines in Emacs
 can do longjmp.
 
-Therefore, if your system does not have alloca, add a definition valid
-for your CPU type to the file alloca.s.  alloca must be written in
-assembler language.  I am happy to receive versions of alloca for
-additional CPUs and add them to the distribution.
+If your system does not support alloca, try defining the symbol
+C_ALLOCA in the m-...h file for that machine.  This will enable the use
+in Emacs of a portable simulation for alloca.  But you will find that
+Emacs's performance and memory use improve if you write a true
+alloca in assembler language.
 
 alloca (N) should return the address of an N-byte block of memory
 added dynamically to the current stack frame.
@@ -479,11 +520,8 @@ If the code is incorrect, your compiler has this problem.
 In the XCONS, etc., macros in lisp.h you must replace (a).u.val with
 ((a).u.val + coercedummy) where coercedummy is declared as int.
 
-* PC AT compiler problems
-
-I am told this compiler fails to handle the comma operator.
-I have eliminated many uses of the comma operator since
-receiving that news, but I'm sure many more remain.
+This problem will not happen if the m-...h file for your type
+of machine defines NO_UNION_TYPE.  That is the recommended setting now.
 
 * C compilers lose on returning unions
 

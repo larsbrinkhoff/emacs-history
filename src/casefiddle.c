@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -27,6 +28,7 @@ copyright notice and this notice must be preserved on all copies.  */
 #define UPCASE 0
 #define DOWNCASE 1
 #define CAPITALIZE 2
+#define CAPITALIZE_UP 3
 
 Lisp_Object
 casify_object (flag, obj)
@@ -36,32 +38,35 @@ casify_object (flag, obj)
   register int i, c, len;
   register int inword = flag == DOWNCASE;
 
-  if (XTYPE (obj) == Lisp_Int)
+  while (1)
     {
-      c = XINT (obj);
-      if (inword
-	  ? (c >= 'A' && c <= 'Z')
-	  : (c >= 'a' && c <= 'z'))
-	XFASTINT (obj) = c ^ ('a' - 'A');
-      return obj;
-    }
-  if (XTYPE (obj) == Lisp_String)
-    {
-      obj = Fcopy_sequence (obj);
-      len = XSTRING (obj)->size;
-      for (i = 0; i < len; i++)
+      if (XTYPE (obj) == Lisp_Int)
 	{
-	  c = XSTRING (obj)->data[i];
+	  c = XINT (obj);
 	  if (inword
 	      ? (c >= 'A' && c <= 'Z')
 	      : (c >= 'a' && c <= 'z'))
-	    XSTRING (obj)->data[i] = c ^ ('a' - 'A');
-	  if (flag == CAPITALIZE)
-	    inword = SYNTAX (c) == Sword;
+	    XFASTINT (obj) = c ^ ('a' - 'A');
+	  return obj;
 	}
-      return obj;
+      if (XTYPE (obj) == Lisp_String)
+	{
+	  obj = Fcopy_sequence (obj);
+	  len = XSTRING (obj)->size;
+	  for (i = 0; i < len; i++)
+	    {
+	      c = XSTRING (obj)->data[i];
+	      if (inword
+		  ? (c >= 'A' && c <= 'Z')
+		  : (c >= 'a' && c <= 'z'))
+		XSTRING (obj)->data[i] = c ^ ('a' - 'A');
+	      if (flag == CAPITALIZE)
+		inword = SYNTAX (c) == Sword;
+	    }
+	  return obj;
+	}
+      obj = wrong_type_argument (Qchar_or_string_p, obj, 0);
     }
-  wrong_type_argument (Qchar_or_string_p, obj, 0);
 }
 
 DEFUN ("upcase", Fupcase, Supcase, 1, 1, 0,
@@ -89,7 +94,7 @@ This means that each word's first character is upper case and the rest is lower 
   return casify_object (CAPITALIZE, obj);
 }
 
-/* flag is UPCASE, DOWNCASE or CAPITALIZE.
+/* flag is UPCASE, DOWNCASE or CAPITALIZE or CAPITALIZE_UP.
    b and e specify range of buffer to operate on. */
 
 casify_region (flag, b, e)
@@ -109,10 +114,10 @@ casify_region (flag, b, e)
     {
       c = CharAt (i);
       if (inword
-	  ? (c >= 'A' && c <= 'Z')
+	  ? (c >= 'A' && c <= 'Z' && flag != CAPITALIZE_UP)
 	  : (c >= 'a' && c <= 'z'))
 	CharAt (i) = c ^ ('a' - 'A');
-      if (flag == CAPITALIZE)
+      if (flag >= CAPITALIZE)
 	inword = SYNTAX (c) == Sword;
     }
 }
@@ -121,7 +126,7 @@ DEFUN ("upcase-region", Fupcase_region, Supcase_region, 2, 2, "r",
   "Convert the region to upper case.  In programs, wants two arguments.\n\
 These arguments specify the starting and ending character numbers of\n\
 the region to operate on.  When used as a command, the text between\n\
-dot and the mark is operated on.")
+point and the mark is operated on.")
   (b, e)
      Lisp_Object b, e;
 {
@@ -133,7 +138,7 @@ DEFUN ("downcase-region", Fdowncase_region, Sdowncase_region, 2, 2, "r",
   "Convert the region to lower case.  In programs, wants two arguments.\n\
 These arguments specify the starting and ending character numbers of\n\
 the region to operate on.  When used as a command, the text between\n\
-dot and the mark is operated on.")
+point and the mark is operated on.")
   (b, e)
      Lisp_Object b, e;
 {
@@ -145,13 +150,23 @@ DEFUN ("capitalize-region", Fcapitalize_region, Scapitalize_region, 2, 2, "r",
   "Convert the region to upper case.  In programs, wants two arguments.\n\
 These arguments specify the starting and ending character numbers of\n\
 the region to operate on.  When used as a command, the text between\n\
-dot and the mark is operated on.\n\
+point and the mark is operated on.\n\
 Capitalized form means each word's first character is upper case\n\
 and the rest of it is lower case.")
   (b, e)
      Lisp_Object b, e;
 {
   casify_region (CAPITALIZE, b, e);
+  return Qnil;
+}
+
+/* Like Fcapitalize but change only the initials.  */
+
+Lisp_Object
+upcase_initials_region (b, e)
+     Lisp_Object b, e;
+{
+  casify_region (CAPITALIZE_UP, b, e);
   return Qnil;
 }
 
@@ -163,13 +178,13 @@ operate_on_word (flag, arg)
   Lisp_Object beg, end;
   int farend;
   CHECK_NUMBER (arg, 0);
-  farend = scan_words (dot, XINT (arg));
+  farend = scan_words (point, XINT (arg));
   if (!farend)
     farend = XINT (arg) > 0 ? NumCharacters + 1 : FirstCharacter;
-  XFASTINT (beg) = dot < farend ? dot : farend;
-  XFASTINT (end) = dot > farend ? dot : farend;
+  XFASTINT (beg) = point < farend ? point : farend;
+  XFASTINT (end) = point > farend ? point : farend;
   casify_region (flag, beg, end);
-  SetDot (XFASTINT (end));
+  SetPoint (XFASTINT (end));
 }
 
 DEFUN ("upcase-word", Fupcase_word, Supcase_word, 1, 1, "p",

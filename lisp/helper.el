@@ -6,18 +6,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (provide 'helper)			; hey, here's a helping hand.
 
@@ -38,17 +40,21 @@
 ;; But define it anyway for those who can use it.  Non-standard loops
 ;; will probably have to use Helper-help.  You can't autoload the
 ;; keymap either.
-(let ((k (make-keymap)))
-  (fillarray k 'undefined)
-  (define-key k "m" 'Helper-describe-mode)
-  (define-key k "c" 'Helper-describe-key-briefly)
-  (define-key k "k" 'Helper-describe-key)
-  (define-key k "f" 'Helper-describe-function)
-  (define-key k "v" 'Helper-describe-variable)
-  (define-key k "?" 'Helper-help-options)
-  (define-key k "\C-h" 'Helper-help-options)
-  (setq Helper-help-map k)
-  (fset 'Helper-help-map k))
+
+
+(defvar Helper-help-map nil)
+(if Helper-help-map
+    nil
+  (setq Helper-help-map (make-keymap))
+  (fillarray Helper-help-map 'undefined)
+  (define-key Helper-help-map "m" 'Helper-describe-mode)
+  (define-key Helper-help-map "c" 'Helper-describe-key-briefly)
+  (define-key Helper-help-map "k" 'Helper-describe-key)
+  (define-key Helper-help-map "f" 'Helper-describe-function)
+  (define-key Helper-help-map "v" 'Helper-describe-variable)
+  (define-key Helper-help-map "?" 'Helper-help-options)
+  (define-key Helper-help-map "\C-h" 'Helper-help-options)
+  (fset 'Helper-help-map Helper-help-map))
 
 (defun Helper-help-scroller ()
   (save-window-excursion
@@ -56,11 +62,11 @@
     (if (get-buffer-window "*Help*")
 	(pop-to-buffer "*Help*")
       (switch-to-buffer "*Help*"))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (let ((continue t) state)
       (while continue
-	(setq state (+ (* 2 (if (pos-visible-in-window-p (dot-max)) 1 0))
-		       (if (pos-visible-in-window-p (dot-min)) 1 0)))
+	(setq state (+ (* 2 (if (pos-visible-in-window-p (point-max)) 1 0))
+		       (if (pos-visible-in-window-p (point-min)) 1 0)))
 	(message
 	 (nth state
 	      '("Space forward, Delete back. Other keys %s"
@@ -72,6 +78,8 @@
 	(setq continue (read-char))
 	(cond ((and (memq continue '(?\ ?\C-v)) (< state 2))
 	       (scroll-up))
+	      ((= continue ?\C-l)
+	       (recenter))
 	      ((and (= continue ?\177) (zerop (% state 2)))
 	       (scroll-down))
 	      (t (setq continue nil)))))))
@@ -110,7 +118,7 @@
   "Describe the current mode."
   (interactive)
   (save-excursion
-    (set-buffer (get-buffer "*Help*"))
+    (set-buffer (get-buffer-create "*Help*"))
     (erase-buffer)
     (insert (or (and (boundp 'Helper-mode-name) Helper-mode-name) mode-name)
 	    " Mode\n"
@@ -122,21 +130,16 @@
   "Describe current local key bindings."
   (interactive)
   (message "Making binding list...")
-  (let ((global-map '(keymap)))		; fake out describe-bindings
+  (let ((global-map (make-sparse-keymap))) ; fake out describe-bindings
     (save-window-excursion (describe-bindings)))
   (save-excursion
     (set-buffer "*Help*")
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (forward-line 1)
-    (delete-region (dot-min) (dot))
-    (forward-line 1)
-    (delete-region (dot)
-		   (progn (search-forward "Local Bindings:" nil)
-			  (forward-line 1)
-			  (dot)))
+    (delete-region (point-min) (point))
     (while (search-forward "undefined" nil t)
       (beginning-of-line)
-      (delete-region (dot) (progn (forward-line 1) (dot)))))
+      (delete-region (point) (progn (forward-line 1) (point)))))
   (Helper-help-scroller))
 
 (defun Helper-help ()

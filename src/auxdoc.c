@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 *********
@@ -29,9 +30,12 @@ and give this file to make-docfile as if it were the C source.
 
 
 DEFUN ("modify-syntax-entry", foo, bar, 0, 0, 0,
-  "Set syntax for character C according to string S.\n\
+  "Set syntax for character CHAR according to string S.\n\
+The syntax is changed only for table TABLE, which defaults to\n\
+ the current buffer's syntax table.\n\
 The first character of S should be one of the following:\n\
-  Space    whitespace syntax.    w   word constituent.   _  symbol constituent.\n\
+  Space    whitespace syntax.    w   word constituent.\n\
+  _        symbol constituent.   .   punctuation.\n\
   (        open-parenthesis.     )   close-parenthesis.\n\
   \"        string quote.         \\   character-quote.\n\
   $        paired delimiter.     '   expression prefix operator.\n\
@@ -50,7 +54,7 @@ Defined flags are the characters 1, 2, 3 and 4.\n\
 DEFUN ("parse-partial-sexp", Ffoo, Sfoo, 0, 0, 0,
   "Parse Lisp syntax starting at FROM until TO; return status of parse at TO.\n\
 Parsing stops at TO or when certain criteria are met;\n\
- dot is set to where parsing stops.\n\
+ point is set to where parsing stops.\n\
 If fifth arg STATE is omitted or nil,\n\
  parsing assumes that FROM is the beginning of a function.\n\
 Value is a list of six elements describing final state of parsing:\n\
@@ -92,7 +96,7 @@ b -- Name of existing buffer.\n\
 B -- Name of buffer, possibly nonexistent.\n\
 c -- Character.\n\
 C -- Command name: symbol with interactive function definition.\n\
-d -- Value of dot as number.  Does not do I/O.\n\
+d -- Value of point as number.  Does not do I/O.\n\
 D -- Directory name.\n\
 f -- Existing file name.\n\
 F -- Possibly nonexistent file name.\n\
@@ -101,12 +105,12 @@ m -- Value of mark as number.  Does not do I/O.\n\
 n -- Number read using minibuffer.\n\
 p -- Prefix arg converted to number.  Does not do I/O.\n\
 P -- Prefix arg in raw form.  Does not do I/O.\n\
-r -- Region: dot and mark as 2 numeric args, smallest first.  Does no I/O.\n\
+r -- Region: point and mark as 2 numeric args, smallest first.  Does no I/O.\n\
 s -- Any string.\n\
 S -- Any symbol.\n\
-v -- Variable name: symbol that is boundp.\n\
+v -- Variable name: symbol that is user-variable-p.\n\
 x -- Lisp expression read but not evaluated.\n\
 X -- Lisp expression read and evaluated.\n\
 In addition, if the first character of the string is '*' then an error is\n\
-  signalled if the buffer is read-only.\n\
-  This happens before reading any arguments.")
+ signaled if the buffer is read-only.\n\
+ This happens before reading any arguments.")

@@ -57,7 +57,7 @@ so it is not clear what an "exit" command should do.
 The only way to "exit" in general is to type C-x b, C-x C-f, or
 some other suitable command to switch buffers.  Some
 subsystem-like major modes, such as Info and Mail mode, provide
-commands to "exit" byt switching to the previously selected
+commands to "exit" by switching to the previously selected
 buffer.
 
 ** Files are always visited in their own buffers.
@@ -143,9 +143,9 @@ You'll just have to make a new one in a minute.
 This is why the convenient command C-z is provided for
 suspending.
 
-C-c is used for various purposes; in some modes, it is a mode-specific
-prefix key.  We deliberately do not make C-c ever kill Emacs, because
-it should not be so easy to do something irreversible.
+C-c is used as a prefix key for mode-specific commands and for users'
+own commands.  We deliberately do not make C-c ever kill Emacs,
+because it should not be so easy to do something irreversible.
 
 ** Quitting with C-g.
 
@@ -237,8 +237,8 @@ windows and yank in the minibuffer, etc.
 
 You can even issue a command that uses the minibuffer while in the
 minibuffer.  This gets you temporarily into a recursive minibuffer.
-You can read a file into a minibuffer argument--just use
-M-x insert file!
+However, this is allowed only if you enable it, since it could be
+confusing for beginners.
 
 When you exit the minibuffer, the cursor immediately moves back to
 column zero of the minibuffer line, to show you that the exit
@@ -355,9 +355,9 @@ files, such as this one.
 
 Headings should be lines starting with one or more asterisks.
 Major headings have one asterisk, subheadings two, etc.
-Lines not starting with asterisks are ordinary text.
+Lines not starting with asterisks are body text.
 
-You can make the text under a heading, or the subheadings
+You can make the body under a heading, or the subheadings
 under a heading, temporarily invisible, or visible again.
 Invisible lines are attached to the end of the previous line
 so they go with it if you kill it and yank it back.
@@ -366,17 +366,17 @@ Commands:
 Meta-}   next-visible-heading      move by visible headings
 Meta-{   previous-visible-heading  move by visible headings
 
-Meta-x hide-text	make all text invisible (not headings).
+Meta-x hide-body	make all body text invisible (not headings).
 Meta-x show-all		make everything in buffer visible.
 
 The remaining commands are used when dot is on a heading line.
-They apply to some of the text or subheadings of that heading.
-Meta-H   hide-subtree	make text and subheadings invisible.
-Meta-S   show-subtree	make text and subheadings visible.
-Meta-s   show-children	make direct subheadings visible.
-		 No effect on text, or subheadings 2 or more levels down.
+They apply to some of the body or subheadings of that heading.
+C-c C-h  hide-subtree	make text and subheadings invisible.
+C-c C-s  show-subtree	make text and subheadings visible.
+C-c C-i  show-children	make direct subheadings visible.
+		 No effect on body, or subheadings 2 or more levels down.
 		 With arg N, affects subheadings N levels down.
-M-x hide-entry	make immediately following text invisible.
+M-x hide-entry	make immediately following body invisible.
 M-x show-entry	make it visible.
 M-x hide-leaves	 make text under heading and under its subheadings invisible.
 		 The subheadings remain visible.
@@ -396,23 +396,13 @@ something I consider vital and which cannot be done
 if the other style is used.
 
 The Tab command indents C code very cleverly.
-I know of only two cases in which Tab does not indent C code nicely:
+I know of only one cases in which Tab does not indent C code nicely:
+ Expressions continued over several lines with few parentheses.
+ Tab does not know the precedences of C operators, so it does
+ not know which lines of the expression should go where.
+ Using parentheses to indicate the nesting of operators
+ except within a line makes this problem go away.
 
- 1) expressions continued over several lines with few parentheses.
-   Tab does not know the precedences of C operatoes, so it does
-   not know which lines of the expression should go where.
-   Using parentheses to indicate the nesting of operators
-   except within a line makes this problem go away.
- 2) else statements within if's or while's or for's
-  that lack braces, as in
-    while (a)
-      if (x) foo;
-      else ...;
-  Tab does not realize that the else statement is nested
-  within the while statement.  Using braces inside the while
-  avoids this problem.
-
-It may be practical to fix case 2.  Anyone want to try?
 The indenting algorithm is entirely written in Lisp.
 
 Tab with a numeric argument in Twenex Emacs indents
@@ -525,9 +515,7 @@ is Meta-comma in GNU Emacs.
 ** Auto Save is on by default.
 
 Auto Save mode is enabled by default in all buffers
-that are visiting files.  It is also called "checkpointing",
-and you will see that string in the minibuffer while files
-are being saved.
+that are visiting files.
 
 The file name used for auto saving is made by prepending
 "#" to the file name visited.
@@ -539,6 +527,10 @@ GNU Emacs compensates slightly in the customary fashion:
 when a file is modified and saved for the first time in
 a particular GNU Emacs run, the original file is renamed,
 appending "~" to its name.  Thus, foo.c becomes foo.c~.
+
+Emacs can also put a version number into the name of the backup file,
+as in foo.c.~69~ for version number 69.  This is an optional feature
+that the user has to enable.
 
 ** Mode Line differences.
 
@@ -588,7 +580,7 @@ Libraries of commands, and init files, are written in Lisp.
 libraries conventionally have names ending in .el, while the
 init file is named .emacs and is in your home directory.
 
-Use Meta-x load to load a library.  Most standard libararies load
+Use  Meta-x load  to load a library.  Most standard libararies load
 automatically if you try to use the commands in them.
 
 Meta-x byte-compile-file filename
@@ -600,7 +592,7 @@ Meta-x byte-recompile-directory directoryname
 compiles all files in the specified directory (globbing not allowed)
 which have been compiled before but have been changed since then.
 
-Meta-x load automatically checks for a compiled file
+Meta-x  load automatically checks for a compiled file
 before loading the source file.
 
 Libraries once loaded do not retain their identity within GNU

@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -31,12 +32,10 @@ Returns nil if MARKER points into a dead buffer.")
      Lisp_Object marker;
 {
   Lisp_Object buf;
-  if (XTYPE (marker) != Lisp_Marker)
-    wrong_type_argument (Qmarkerp, marker, 0);
+  CHECK_MARKER (marker, 0);
   if (XMARKER (marker)->buffer)
     {
-      XSETTYPE (buf, Lisp_Buffer);
-      XSETBUFFER (buf, XMARKER (marker)->buffer);
+      XSET (buf, Lisp_Buffer, XMARKER (marker)->buffer);
       /* Return marker's buffer only if it is not dead.  */
       if (!NULL (XBUFFER (buf)->name))
 	return buf;
@@ -54,8 +53,7 @@ DEFUN ("marker-position", Fmarker_position, Smarker_position, 1, 1, 0,
   struct buffer *buf;
   struct buffer_text *text;
 
-  if (XTYPE (marker) != Lisp_Marker)
-    wrong_type_argument (Qmarkerp, marker, 0);
+  CHECK_MARKER (marker, 0);
   if (XMARKER (marker)->buffer)
     {
       buf = XMARKER (marker)->buffer;
@@ -90,8 +88,7 @@ Returns MARKER.")
   register struct buffer_text *text;
   register struct Lisp_Marker *m;
 
-  if (XTYPE (marker) != Lisp_Marker)
-    wrong_type_argument (Qmarkerp, marker, 0);
+  CHECK_MARKER (marker, 0);
   if (NULL (pos))
     {
       unchain_marker (marker);
@@ -204,19 +201,21 @@ at that position in the current buffer.")
 {
   Lisp_Object new;
 
-  if (XTYPE (marker) == Lisp_Int
-      || XTYPE (marker) == Lisp_Marker)
+  while (1)
     {
-      new = Fmake_marker ();
-      Fset_marker (new, marker,
-		   XTYPE (marker) == Lisp_Marker
-		   ? Fmarker_buffer (marker)
-		   : Qnil);
+      if (XTYPE (marker) == Lisp_Int
+	  || XTYPE (marker) == Lisp_Marker)
+	{
+	  new = Fmake_marker ();
+	  Fset_marker (new, marker,
+		       XTYPE (marker) == Lisp_Marker
+		       ? Fmarker_buffer (marker)
+		       : Qnil);
+	  return new;
+	}
+      else
+	marker = wrong_type_argument (Qinteger_or_marker_p, marker);
     }
-  else
-    wrong_type_argument (Qinteger_or_marker_p, marker, 0);
-
-  return new;
 }
 
 syms_of_marker ()

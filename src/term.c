@@ -1,21 +1,22 @@
-/* terminal control module for terminals described by TERMCAP */
-
-/*		Copyright (c) 1985 Richard M. Stallman
+/* terminal control module for terminals described by TERMCAP
+   Copyright (C) 1985 Richard M. Stallman.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but there is no warranty of any sort, and no contributor accepts
-responsibility for the consequences of using this program
-or for whether it serves any particular purpose.
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include <stdio.h>
@@ -51,6 +52,9 @@ int scroll_region_ok;		/* Terminal supports setting the scroll window */
 int memory_below_screen;	/* Terminal remembers lines scrolled off bottom */
 int fast_clear_end_of_line;	/* Terminal has a `ce' string */
 
+int dont_calculate_costs;	/* Nonzero means don't bother computing */
+				/* various cost tables; we won't use them.  */
+
 /* DCICcost[n] is cost of inserting N characters.
    DCICcost[-n] is cost of deleting N characters. */
 
@@ -61,6 +65,9 @@ int DC_ICcost[1 + 2 * MScreenWidth];
 /* Hook functions that you can set to snap out the functions in this file.
    These are all extern'd in termhooks.h  */
 
+int (*topos_hook) ();
+int (*raw_topos_hook) ();
+
 int (*clear_to_end_hook) ();
 int (*clear_screen_hook) ();
 int (*clear_end_of_line_hook) ();
@@ -68,6 +75,7 @@ int (*clear_end_of_line_hook) ();
 int (*ins_del_lines_hook) ();
 
 int (*change_line_highlight_hook) ();
+int (*reassert_line_highlight_hook) ();
 
 int (*insert_chars_hook) ();
 int (*write_chars_hook) ();
@@ -82,7 +90,7 @@ int (*update_end_hook) ();
 int (*set_terminal_window_hook) ();
 
 int (*read_socket_hook) ();
-int (*change_size_hook) ();
+int (*fix_screen_hook) ();
 
 /* Strings, numbers and flags taken from the termcap entry.  */
 
@@ -93,6 +101,9 @@ char *TS_clr_to_bottom;		/* "cd" */
 char *TS_clr_line;		/* "ce", clear to end of line */
 char *TS_clr_screen;		/* "cl" */
 char *TS_set_scroll_region;	/* "cs" (2 params, first line and last line) */
+char *TS_set_scroll_region_1;   /* "cS" (4 params: total lines,
+				   lines above scroll region, lines below it,
+				   total lines again) */
 char *TS_del_char;		/* "dc" */
 char *TS_del_multi_chars;	/* "DC" (one parameter, # chars to delete) */
 char *TS_del_line;		/* "dl" */
@@ -161,25 +172,33 @@ int specified_window;
 ring_bell ()
 {
   if (ring_bell_hook)
-    return (*ring_bell_hook) ();
+    {
+      (*ring_bell_hook) ();
+      return;
+    }
   OUTPUT (TS_visible_bell && visible_bell ? TS_visible_bell : TS_bell);
 }
 
 set_terminal_modes ()
 {
-  if (reset_terminal_modes_hook)
-    return (*reset_terminal_modes_hook) ();
+  if (set_terminal_modes_hook)
+    {
+      (*set_terminal_modes_hook) ();
+      return;
+    }
   OUTPUT_IF (TS_termcap_modes);
   OUTPUT_IF (TS_visual_mode);
   OUTPUT_IF (TS_keypad_mode);
   losecursor ();
-  clear_screen ();
 }
 
 reset_terminal_modes ()
 {
-  if (set_terminal_modes_hook)
-    return (*set_terminal_modes_hook) ();
+  if (reset_terminal_modes_hook)
+    {
+      (*reset_terminal_modes_hook) ();
+      return;
+    }
   if (TN_standout_width < 0)
     turn_off_highlight ();
   turn_off_insert ();
@@ -191,13 +210,16 @@ reset_terminal_modes ()
 update_begin ()
 {
   if (update_begin_hook)
-    return (*update_begin_hook) ();
+    (*update_begin_hook) ();
 }
 
 update_end ()
 {
   if (update_end_hook)
-    return (*update_end_hook) ();
+    {
+      (*update_end_hook) ();
+      return;
+    }
   turn_off_insert ();
   background_highlight ();
   standout_requested = 0;
@@ -207,7 +229,10 @@ set_terminal_window (size)
      int size;
 {
   if (set_terminal_window_hook)
-    return (*set_terminal_window_hook) (size);
+    {
+      (*set_terminal_window_hook) (size);
+      return;
+    }
   specified_window = size ? size : screen_height;
   if (!scroll_region_ok)
     return;
@@ -221,7 +246,13 @@ set_scroll_region (start, stop)
   if (TS_set_scroll_region)
     {
       buf = (char *) alloca (strlen (TS_set_scroll_region) + 10);
-      tparam (TS_set_scroll_region, buf, start, stop);
+      tparam (TS_set_scroll_region, buf, start, stop - 1);
+    }
+  else if (TS_set_scroll_region_1)
+    {
+      buf = (char *) alloca (strlen (TS_set_scroll_region_1) + 20);
+      tparam (TS_set_scroll_region_1, buf,
+	      screen_height, start, screen_height - stop, screen_height);
     }
   else
     {
@@ -314,8 +345,7 @@ highlight_if_desired ()
 write_standout_marker (flag, vpos)
      int flag, vpos;
 {
-  if (flag || (TS_end_standout_mode && TN_standout_width > 0
-	       && !TF_teleray && !se_is_so))
+  if (flag || (TS_end_standout_mode && !TF_teleray && !se_is_so))
     {
       cmgoto (vpos, 0);
       cmplus (TN_standout_width);
@@ -330,7 +360,13 @@ write_standout_marker (flag, vpos)
 
 reassert_line_highlight (highlight, vpos)
      int highlight;
+     int vpos;
 {
+  if (reassert_line_highlight_hook)
+    {
+      (*reassert_line_highlight_hook) (highlight, vpos);
+      return;
+    }
   if (TN_standout_width < 0)
     /* Handle terminals where standout takes affect at output time */
     standout_requested = highlight;
@@ -348,7 +384,10 @@ change_line_highlight (new_highlight, vpos, first_unused_hpos)
 {
   standout_requested = new_highlight;
   if (change_line_highlight_hook)
-    return (*change_line_highlight_hook) ();
+    {
+      (*change_line_highlight_hook) (new_highlight, vpos, first_unused_hpos);
+      return;
+    }
 
   topos (vpos, 0);
 
@@ -368,10 +407,8 @@ change_line_highlight (new_highlight, vpos, first_unused_hpos)
 	}
       else
 	cmgoto (curY, 0);	/* reposition to kill standout marker */
-
-      chars_wasted[curY] = 0;
     }
-  clear_end_of_line (first_unused_hpos);
+  clear_end_of_line_raw (first_unused_hpos);
   reassert_line_highlight (new_highlight, curY);
 }
 
@@ -380,6 +417,11 @@ change_line_highlight (new_highlight, vpos, first_unused_hpos)
 topos (row, col)
 {
   col += chars_wasted[row] & 077;
+  if (topos_hook)
+    {
+      (*topos_hook) (row, col);
+      return;
+    }
   if (curY == row && curX == col)
     return;
   if (!TF_standout_motion)
@@ -393,6 +435,11 @@ topos (row, col)
 
 raw_topos (row, col)
 {
+  if (raw_topos_hook)
+    {
+      (*raw_topos_hook) (row, col);
+      return;
+    }
   if (curY == row && curX == col)
     return;
   if (!TF_standout_motion)
@@ -410,9 +457,13 @@ clear_to_end ()
   register int i;
 
   if (clear_to_end_hook)
-    return (*clear_to_end_hook) ();
+    {
+      (*clear_to_end_hook) ();
+      return;
+    }
   if (TS_clr_to_bottom)
     {
+      background_highlight ();
       OUTPUT (TS_clr_to_bottom);
       bzero (chars_wasted + curY, screen_height - curY);
     }
@@ -421,7 +472,7 @@ clear_to_end ()
       for (i = curY; i < screen_height; i++)
 	{
 	  topos (i, 0);
-	  clear_end_of_line (screen_width);
+	  clear_end_of_line_raw (screen_width);
 	}
     }
 }
@@ -431,9 +482,13 @@ clear_to_end ()
 clear_screen ()
 {
   if (clear_screen_hook)
-    return (*clear_screen_hook) ();
+    {
+      (*clear_screen_hook) ();
+      return;
+    }
   if (TS_clr_screen)
     {
+      background_highlight ();
       OUTPUT (TS_clr_screen);
       bzero (chars_wasted, screen_height);
       cmat (0, 0);
@@ -445,16 +500,42 @@ clear_screen ()
     }
 }
 
-/* Clear from cursor to end of line */
+/* Clear to end of line, but do not clear any standout marker.
+   Assumes that the cursor is positioned at a character of real text,
+   which implies it cannot be before a standout marker
+   unless the marker has zero width.
+
+   Note that the cursor may be moved.  */
 
 clear_end_of_line (first_unused_hpos)
      int first_unused_hpos;
 {
+  if (TN_standout_width == 0 && curX == 0 && chars_wasted[curY] != 0)
+    write_chars (" ", 1);
+  clear_end_of_line_raw (first_unused_hpos);
+}
+
+/* Clear from cursor to end of line.
+   Assume that the line is already clear starting at column first_unused_hpos.
+   If the cursor is at a standout marker, erase the marker.
+
+   Note that the cursor may be moved, on terminals lacking a `ce' string.  */
+
+clear_end_of_line_raw (first_unused_hpos)
+     int first_unused_hpos;
+{
   register int i;
+  first_unused_hpos += chars_wasted[curY] & 077;
   if (clear_end_of_line_hook)
-    return (*clear_end_of_line_hook) (first_unused_hpos);
+    {
+      (*clear_end_of_line_hook) (first_unused_hpos);
+      return;
+    }
   if (curX >= first_unused_hpos)
     return;
+  /* Notice if we are erasing a magic cookie */
+  if (curX == 0)
+    chars_wasted[curY] = 0;
   background_highlight ();
   if (TS_clr_line)
     {
@@ -463,13 +544,13 @@ clear_end_of_line (first_unused_hpos)
   else
     {			/* have to do it the hard way */
       turn_off_insert ();
-      cmplus (first_unused_hpos - curX);
       for (i = curX; i < first_unused_hpos; i++)
 	{
 	  if (termscript)
 	    fputc (' ', termscript);
 	  putchar (' ');
 	}
+      cmplus (first_unused_hpos - curX);
     }
 }
 
@@ -483,7 +564,10 @@ write_chars (start, len)
   register int c;
 
   if (write_chars_hook)
-    return (*write_chars_hook) (start, len);
+    {
+      (*write_chars_hook) (start, len);
+      return;
+    }
   highlight_if_desired ();
   turn_off_insert ();
 
@@ -498,6 +582,8 @@ write_chars (start, len)
   if (RPov > len && !TF_underscore && !TF_hazeltine)
     {
       fwrite (start, 1, len, stdout);
+      if (ferror (stdout))
+	clearerr (stdout);
       if (termscript)
 	fwrite (start, 1, len, termscript);
     }
@@ -507,16 +593,18 @@ write_chars (start, len)
 	if (RPov + 1 < len && *start == start[1])
 	  {
 	    p = start + 1;
-	    n = 0;
+
 	    /* Now, len is number of chars left starting at p */
-	    while (n < len && *p++ == *start)
-	      n++;
+	    while (*p++ == *start);
+	    /* n is number of identical chars in this run */
+	    n = p - start;
 	    if (n > RPov)
 	      {
 		buf = (char *) alloca (strlen (TS_repeat) + 10);
 		tparam (TS_repeat, buf, *start, n);
 		tputs (buf, n, cmputc);
 		start = p;
+		len -= n - 1;
 		continue;
 	      }
 	  }
@@ -542,13 +630,14 @@ insert_chars (start, len)
      register char *start;
      int len;
 {
-  register char *p;
-  register int n;
   register char *buf;
   register int c;
 
   if (insert_chars_hook)
-    return (*insert_chars_hook) (start, len);
+    {
+      (*insert_chars_hook) (start, len);
+      return;
+    }
   highlight_if_desired ();
 
   if (TS_ins_multi_chars)
@@ -597,7 +686,10 @@ delete_chars (n)
   register int i;
 
   if (delete_chars_hook)
-    return (*delete_chars_hook) ();
+    {
+      (*delete_chars_hook) (n);
+      return;
+    }
 
   if (delete_in_insert_mode)
     {
@@ -636,7 +728,10 @@ ins_del_lines (vpos, n)
   char copybuf[MScreenWidth];
 
   if (ins_del_lines_hook)
-    return (*ins_del_lines_hook) (vpos, n);
+    {
+      (*ins_del_lines_hook) (vpos, n);
+      return;
+    }
 
   /* If the lines below the insertion are being pushed
      into the end of the window, this is the same as clearing;
@@ -701,15 +796,8 @@ ins_del_lines (vpos, n)
     }
 }
 
-static int cost;		/* sums up costs */
-
-/* ARGSUSED */
-static
-evalcost (c)
-     char c;
-{
-  cost++;
-}
+extern int cost;		/* In cm.c */
+extern evalcost ();
 
 /* Compute cost of sending "str", in characters,
    not counting any line-dependent padding.  */
@@ -807,10 +895,16 @@ calculate_ins_del_char_costs ()
 
 calculate_costs ()
 {
-  if (TS_set_scroll_region && (!TS_ins_line && !TS_del_line))
+  register char *s
+    = TS_set_scroll_region ? TS_set_scroll_region : TS_set_scroll_region_1;
+
+  if (dont_calculate_costs)
+    return;
+
+  if (s && (!TS_ins_line && !TS_del_line))
     CalcIDCosts (TS_rev_scroll, TS_ins_multi_lines,
 		 TS_fwd_scroll, TS_del_multi_lines,
-		 TS_set_scroll_region, TS_set_scroll_region);
+		 s, s);
   else
     CalcIDCosts (TS_ins_line, TS_ins_multi_lines,
 		 TS_del_line, TS_del_multi_lines,
@@ -838,11 +932,16 @@ term_init (terminal_type)
   extern char *tgetstr ();
 
   Wcm_clear ();
+  dont_calculate_costs = 0;
 
   if (tgetent (tbuf, terminal_type) <= 0)
-    fatal ("Terminal type %s is not defined.", terminal_type);
+    fatal ("Terminal type %s is not defined.\n", terminal_type);
 
+#ifdef TERMINFO
+  combuf = (char *) malloc (2044);
+#else
   combuf = (char *) malloc (strlen (tbuf));
+#endif /* not TERMINFO */
   if (combuf == 0)
     abort ();
   fill = combuf;
@@ -858,6 +957,7 @@ term_init (terminal_type)
   AbsPosition = tgetstr ("cm", &fill);
   CR = tgetstr ("cr", &fill);
   TS_set_scroll_region = tgetstr ("cs", &fill);
+  TS_set_scroll_region_1 = tgetstr ("cS", &fill);
   RowPosition = tgetstr ("cv", &fill);
   TS_del_char = tgetstr ("dc", &fill);
   TS_del_multi_chars = tgetstr ("DC", &fill);
@@ -902,8 +1002,13 @@ term_init (terminal_type)
   MagicWrap = tgetflag ("xn");
   TF_teleray = tgetflag ("xt");
 
-  screen_width = tgetnum ("co");
-  screen_height = tgetnum ("li");
+  /* Get screen size fro system, or else from termcap.  */
+  get_screen_size (&screen_width, &screen_height);
+  if (screen_width <= 0)
+    screen_width = tgetnum ("co");
+  if (screen_height <= 0)
+    screen_height = tgetnum ("li");
+
   min_padding_speed = tgetnum ("pb");
   TN_standout_width = tgetnum ("sg");
   TabWidth = tgetnum ("tw");
@@ -961,13 +1066,30 @@ term_init (terminal_type)
   if (!strncmp (terminal_type, "c10", 3)
       || !strcmp (terminal_type, "perq"))
     {
-      /* This is actually incorrect except
+      /* Supply a makeshift :wi string.
+	 This string is not valid in general since it works only
 	 for windows starting at the upper left corner;
-	 but that is all we use it for.  */
-      TS_set_window = "\033v%C %C %C %C ";
-      /* Termcap fails to have :in: flag */
+	 but that is all Emacs uses.
+
+	 This string works only if the screen is using
+	 the top of the video memory, because addressing is memory-relative.
+	 So first check the :ti string to see if that is true.
+
+	 It would be simpler if the :wi string could go in the termcap
+	 entry, but it can't because it is not fully valid.
+	 If it were in the termcap entry, it would confuse other programs.  */
+      if (!TS_set_window)
+	{
+	  p = TS_termcap_modes;
+	  while (*p && strcmp (p, "\033v  "))
+	    p++;
+	  if (*p)
+	    TS_set_window = "\033v%C %C %C %C ";
+	}
+      /* Termcap entry often fails to have :in: flag */
       must_write_spaces = 1;
-      /* :te string typically fails to have \E^G! in it */
+      /* :ti string typically fails to have \E^G! in it */
+      /* This limits scope of insert-char to one line.  */
       strcpy (fill, TS_termcap_modes);
       strcat (fill, "\033\007!");
       TS_termcap_modes = fill;
@@ -1010,15 +1132,17 @@ use the C-shell command `setenv TERM ...' to specify the correct type.\n",
 
   UseTabs = tabs_safe_p () && TabWidth == 8;
 
+  scroll_region_ok = TS_set_window || TS_set_scroll_region
+    || TS_set_scroll_region_1;
+
   line_ins_del_ok = (((TS_ins_line || TS_ins_multi_lines)
 		      && (TS_del_line || TS_del_multi_lines))
-		     || (TS_set_scroll_region && TS_fwd_scroll
+		     || (scroll_region_ok
+			 && TS_fwd_scroll
 			 && TS_rev_scroll));
 
   char_ins_del_ok = ((TS_ins_char || TS_ins_multi_chars)
 		     && (TS_del_char || TS_del_multi_chars));
-
-  scroll_region_ok = TS_set_window || TS_set_scroll_region;
 
   fast_clear_end_of_line = TS_clr_line != 0;
 
@@ -1030,6 +1154,7 @@ use the C-shell command `setenv TERM ...' to specify the correct type.\n",
   calculate_costs ();
 }
 
+/* VARARGS 1 */
 fatal (str, arg1, arg2)
 {
   fprintf (stderr, "emacs: ");

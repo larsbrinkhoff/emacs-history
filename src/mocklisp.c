@@ -4,26 +4,26 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 /* Compatibility for mocklisp */
 
 #include "config.h"
 #include "lisp.h"
-
-Lisp_Object Qmocklisp_arguments, Vmocklisp_arguments, Qmocklisp;
+#include "buffer.h"
 
 /* Now in lisp code ("macrocode...")
 * DEFUN ("ml-defun", Fml_defun, Sml_defun, 0, UNEVALLED, 0,
@@ -47,7 +47,7 @@ DEFUN ("ml-if", Fml_if, Sml_if, 0, UNEVALLED, 0, "if  for mocklisp programs")
   (args)
      Lisp_Object args;
 {
-  Lisp_Object tem, val;
+  register Lisp_Object val;
   struct gcpro gcpro1;
 
   GCPRO1 (args);
@@ -97,8 +97,8 @@ Lisp_Object
 ml_apply (function, args)
      Lisp_Object function, args;
 {
-  int count = specpdl_ptr - specpdl;
-  Lisp_Object val;
+  register int count = specpdl_ptr - specpdl;
+  register Lisp_Object val;
 
   specbind (Qmocklisp_arguments, args);
   val = Fprogn (Fcdr (function));
@@ -126,7 +126,7 @@ DEFUN ("ml-arg", Fml_arg, Sml_arg, 1, 2, 0, "Argument #N to this mocklisp functi
 }
 
 DEFUN ("ml-interactive", Fml_interactive, Sml_interactive, 0, 0, 0,
- "true if this mocklisp function was called interactively.")
+ "True if this mocklisp function was called interactively.")
   ()
 {
   return (EQ (Vmocklisp_arguments, Qinteractive)) ? Qt : Qnil;
@@ -138,7 +138,6 @@ DEFUN ("ml-provide-prefix-argument", Fml_provide_prefix_argument, Sml_provide_pr
   (args)
      Lisp_Object args;
 {
-  Lisp_Object argval;
   struct gcpro gcpro1;
   GCPRO1 (args);
   Vcurrent_prefix_arg = Feval (Fcar (args));
@@ -152,8 +151,8 @@ DEFUN ("ml-prefix-argument-loop", Fml_prefix_argument_loop, Sml_prefix_argument_
   (args)
      Lisp_Object args;
 {
-  Lisp_Object tem;
-  int i;
+  register Lisp_Object tem;
+  register int i;
   struct gcpro gcpro1;
 
   /* Set `arg' in case we call a built-in function that looks at it.  Still are a few. */
@@ -182,11 +181,9 @@ If either FROM or LENGTH is negative, the length of STRING is added to it.")
   (string, from, to)
      Lisp_Object string, from, to;
 {
-  Lisp_Object val, len;
-
   CHECK_STRING (string, 0);
   CHECK_NUMBER (from, 1);
-  CHECK_NUMBER (to, 1);
+  CHECK_NUMBER (to, 2);
 
   if (XINT (from) < 0)
     XSETINT (from, XINT (from) + XSTRING (string)->size);
@@ -197,19 +194,19 @@ If either FROM or LENGTH is negative, the length of STRING is added to it.")
 }
 
 DEFUN ("insert-string", Finsert_string, Sinsert_string, 0, MANY, 0,
-  "Insert the arguments (all strings) into the buffer, moving dot forward.\n\
+  "Insert the arguments (all strings) into the buffer, moving point forward.\n\
 Any argument that is a number is converted to a string by printing it in decimal.")
   (nargs, args)
      int nargs;
      Lisp_Object *args;
 {
-  int argnum;
-  Lisp_Object tem;
-  char str[1];
+  register int argnum;
+  register Lisp_Object tem;
 
   for (argnum = 0; argnum < nargs; argnum++)
     {
       tem = args[argnum];
+    retry:
       if (XTYPE (tem) == Lisp_Int)
 	tem = Fint_to_string (tem);
       if (XTYPE (tem) == Lisp_String)
@@ -217,7 +214,10 @@ Any argument that is a number is converted to a string by printing it in decimal
 	  InsCStr (XSTRING (tem)->data, XSTRING (tem)->size);
 	}
       else
-	wrong_type_argument (Qstringp, tem, argnum);
+	{
+	  tem = wrong_type_argument (Qstringp, tem);
+	  goto retry;
+	}
     }
   return Qnil;
 }

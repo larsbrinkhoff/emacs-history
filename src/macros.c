@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -37,7 +38,6 @@ Lisp_Object Vexecuting_macro;
 int executing_macro_index;
 
 Lisp_Object Fexecute_kbd_macro ();
-extern void command_loop_1 ();
 
 DEFUN ("start-kbd-macro", Fstart_kbd_macro, Sstart_kbd_macro, 1, 1, "P",
   "Record subsequent keyboard input, defining a keyboard macro.\n\
@@ -82,6 +82,9 @@ counting the definition just completed as the first repetition.")
   (arg)
      Lisp_Object arg;
 {
+  if (!defining_kbd_macro)
+      error ("Not defining kbd macro.");
+
   if (NULL (arg))
     XFASTINT (arg) = 1;
   else
@@ -110,16 +113,16 @@ counting the definition just completed as the first repetition.")
 /* Store character c into kbd macro being defined */
 
 store_kbd_macro_char (c)
-unsigned char c;
+     unsigned char c;
 {
   if (defining_kbd_macro)
     {
       if (kbd_macro_ptr - kbd_macro_buffer == kbd_macro_bufsize)
 	{
-	  char *old = kbd_macro_buffer;
-	  kbd_macro_buffer = (char *) realloc (kbd_macro_buffer, kbd_macro_bufsize *= 2);
-	  kbd_macro_ptr += kbd_macro_buffer - old;
-	  kbd_macro_end = kbd_macro_buffer + kbd_macro_bufsize;
+	  register char *new = (char *) xrealloc (kbd_macro_buffer, kbd_macro_bufsize *= 2);
+	  kbd_macro_ptr += new - kbd_macro_buffer;
+	  kbd_macro_end = new + kbd_macro_bufsize;
+	  kbd_macro_buffer = new;
 	}
       *kbd_macro_ptr++ = c;
     }
@@ -150,7 +153,7 @@ defining others, use \\[name-last-kbd-macro].")
   return Qnil;
 }
 
-static void
+static Lisp_Object
 pop_kbd_macro (info)
      Lisp_Object info;
 {
@@ -158,6 +161,7 @@ pop_kbd_macro (info)
   Vexecuting_macro = Fcar (info);
   tem = Fcdr (info);
   executing_macro_index = XINT (tem);
+  return Qnil;
 }
 
 DEFUN ("execute-kbd-macro", Fexecute_kbd_macro, Sexecute_kbd_macro, 1, 2, 0,
@@ -246,6 +250,9 @@ syms_of_macros ()
     "Non-nil means store keyboard input into kbd macro being defined.");
 
   DefLispVar ("executing-macro", &Vexecuting_macro,
+    "Currently executing keyboard macro (a string); nil if none executing.");
+
+  DefLispVar ("executing-kbd-macro", &Vexecuting_macro,
     "Currently executing keyboard macro (a string); nil if none executing.");
 
   DefLispVar ("last-kbd-macro", &Vlast_kbd_macro,

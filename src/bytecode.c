@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -72,12 +73,12 @@ Lisp_Object Qbytecode;
 #define Bmax 0135
 #define Bmin 0136
 
-#define Bdot 0140
+#define Bpoint 0140
 #define Bmark 0141
 #define Bgoto_char 0142
 #define Binsert 0143
-#define Bdot_max 0144
-#define Bdot_min 0145
+#define Bpoint_max 0144
+#define Bpoint_min 0145
 #define Bchar_after 0146
 #define Bfollowing_char 0147
 #define Bpreceding_char 0150
@@ -124,19 +125,23 @@ Lisp_Object Qbytecode;
 /* Fetch two bytes from the bytecode stream
  and make a 16-bit number out of them */
 
-#define FETCH2 (tem1 = FETCH, tem1 + (FETCH << 8))
+#define FETCH2 (op = FETCH, op + (FETCH << 8))
 
 /* Push x onto the execution stack. */
 
-#define PUSH(x) (*stackp++ = (x))
+#define PUSH(x) (*++stackp = (x))
 
 /* Pop a value off the execution stack.  */
 
-#define POP (*--stackp)
+#define POP (*stackp--)
+
+/* Discard n values from the execution stack.  */
+
+#define DISCARD(n) (stackp -= (n))
 
 /* Get the value which is at the top of the execution stack, but don't pop it. */
 
-#define TOP (*(stackp - 1))
+#define TOP (*stackp)
 
 
 DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
@@ -148,32 +153,32 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
   int count = specpdl_ptr - specpdl;
   register int pc = 0;
   register int op;
-  int tem, tem1;
   Lisp_Object *stack;
   register Lisp_Object *stackp;
   Lisp_Object *stacke;
-  register Lisp_Object val, v1, v2, v3;
+  register Lisp_Object v1, v2;
   Lisp_Object *vectorp = XVECTOR (vector)->contents;
 
   CHECK_STRING (bytestr, 0);
   if (XTYPE (vector) != Lisp_Vector)
-    vector = wrong_type_argument (Qvectorp, vector, 1);
+    vector = wrong_type_argument (Qvectorp, vector);
   CHECK_NUMBER (maxdepth, 2);
 
-  stack = (Lisp_Object *) alloca (XINT (maxdepth) * sizeof (Lisp_Object));
-  stackp = stack;
-  stacke = stack + XINT (maxdepth);
-  bzero (stack, XINT (maxdepth) * sizeof (Lisp_Object));
+  stackp = (Lisp_Object *) alloca (XFASTINT (maxdepth) * sizeof (Lisp_Object));
+  bzero (stackp, XFASTINT (maxdepth) * sizeof (Lisp_Object));
+  GCPRO3 (bytestr, vector, *stackp);
+  gcpro3.nvars = XFASTINT (maxdepth);
 
-  GCPRO3 (bytestr, vector, *stack);
-  gcpro3.nvars = XINT (maxdepth);
+  --stackp;
+  stack = stackp;
+  stacke = stackp + XFASTINT (maxdepth);
 
   while (1)
     {
       if (stackp > stacke)
-	error ("Stack overflow in byte code interpretation");
+	error ("Stack overflow in byte code (byte compiler bug!)");
       if (stackp < stack)
-	error ("Stack underflow in byte code interpretation");
+	error ("Stack underflow in byte code (byte compiler bug!)");
       switch (op = FETCH)
 	{
 	case Bvarref: case Bvarref+1: case Bvarref+2: case Bvarref+3:
@@ -217,20 +222,20 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 
 	case Bcall: case Bcall+1: case Bcall+2: case Bcall+3:
 	case Bcall+4: case Bcall+5:
-	  tem = 1 + op - Bcall;
+	  op -= Bcall;
 	docall:
-	  stackp -= tem;
-	  gcpro3.nvars = stackp - stack;
-	  PUSH (Ffuncall (tem, stackp));
+	  DISCARD(op);
+	  gcpro3.nvars = &TOP - stack;
+	  TOP = Ffuncall (op + 1, &TOP);
 	  gcpro3.nvars = XFASTINT (maxdepth);
 	  break;
 
 	case Bcall+6:
-	  tem = FETCH + 1;
+	  op = FETCH;
 	  goto docall;
 
 	case Bcall+7:
-	  tem = FETCH2 + 1;
+	  op = FETCH2;
 	  goto docall;
 
 	case Bunbind: case Bunbind+1: case Bunbind+2: case Bunbind+3:
@@ -248,55 +253,51 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 
 	case Bgoto:
 	  QUIT;
-	  tem = FETCH2;    /* pc = FETCH2 loses since FETCH2 contains pc++ */
-	  pc = tem;
+	  op = FETCH2;    /* pc = FETCH2 loses since FETCH2 contains pc++ */
+	  pc = op;
 	  break;
 
 	case Bgotoifnil:
 	  QUIT;
-	  val = POP;
-	  tem = FETCH2;
-	  if (NULL (val))
-	    pc = tem;
+	  op = FETCH2;
+	  if (NULL (POP))
+	    pc = op;
 	  break;
 
 	case Bgotoifnonnil:
 	  QUIT;
-	  val = POP;
-	  tem = FETCH2;
-	  if (!NULL (val))
-	    pc = tem;
+	  op = FETCH2;
+	  if (!NULL (POP))
+	    pc = op;
 	  break;
 
 	case Bgotoifnilelsepop:
 	  QUIT;
-	  val = TOP;
-	  tem = FETCH2;
-	  if (NULL (val))
-	    pc = tem;
-	  else POP;
+	  op = FETCH2;
+	  if (NULL (TOP))
+	    pc = op;
+	  else DISCARD(1);
 	  break;
 
 	case Bgotoifnonnilelsepop:
 	  QUIT;
-	  val = TOP;
-	  tem = FETCH2;
-	  if (!NULL (val))
-	    pc = tem;
-	  else POP;
+	  op = FETCH2;
+	  if (!NULL (TOP))
+	    pc = op;
+	  else DISCARD(1);
 	  break;
 
 	case Breturn:
-	  val = POP;
+	  v1 = POP;
 	  goto exit;
 
 	case Bdiscard:
-	  POP;
+	  DISCARD(1);
 	  break;
 
 	case Bdup:
-	  val = TOP;
-	  PUSH (val);
+	  v1 = TOP;
+	  PUSH (v1);
 	  break;
 
 	case Bconstant2:
@@ -308,8 +309,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bsave_window_excursion:
-	  val = Fsave_window_excursion (POP);
-	  PUSH (val);
+	  TOP = Fsave_window_excursion (TOP);
 	  break;
 
 	case Bsave_restriction:
@@ -317,9 +317,8 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bcatch:
-	  val = POP;
-	  val = internal_catch (POP, Feval, val);
-	  PUSH (val);
+	  v1 = POP;
+	  TOP = internal_catch (TOP, Feval, v1);
 	  break;
 
 	case Bunwind_protect:
@@ -328,244 +327,247 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bcondition_case:
-	  val = POP;
-	  val = Fcons (POP, val);
-	  val = Fcons (POP, val);
-	  val = Fcondition_case (val);
-	  PUSH (val);
+	  v1 = POP;
+	  v1 = Fcons (POP, v1);
+	  TOP = Fcondition_case (Fcons (TOP, v1));
 	  break;
 
 	case Btemp_output_buffer_setup:
-	  val = POP;
-	  temp_output_buffer_setup (XSTRING (val)->data);
-	  PUSH (Vstandard_output);
+	  temp_output_buffer_setup (XSTRING (TOP)->data);
+	  TOP = Vstandard_output;
 	  break;
 
 	case Btemp_output_buffer_show:
-	  val = POP;
-	  temp_output_buffer_show (POP);
-	  PUSH (val);
+	  v1 = POP;
+	  temp_output_buffer_show (TOP);
+	  TOP = v1;
 	  break;
 
 	case Bnth:
 	  v1 = POP;
-	  val = POP;
-	  CHECK_NUMBER (val, 0);
-	  while (XINT (val) > 0)
+	  v2 = TOP;
+	  CHECK_NUMBER (v2, 0);
+	  op = XINT (v2);
+	  while (--op >= 0)
 	    {
 	      if (LISTP (v1))
 		v1 = XCONS (v1)->cdr;
 	      else if (!NULL (v1))
-		wrong_type_argument (Qlistp, v1, 0);
-	      XSETINT (val, XINT (val) - 1);
+		{
+		  v1 = wrong_type_argument (Qlistp, v1);
+		  op++;
+		}
 	    }
 	  goto docar;
 
 	case Bsymbolp:
-	  v1 = POP;
-	  PUSH (XTYPE (v1) == Lisp_Symbol ? Qt : Qnil);
+	  TOP = XTYPE (TOP) == Lisp_Symbol ? Qt : Qnil;
 	  break;
 
 	case Bconsp:
-	  v1 = POP;
-	  PUSH (LISTP (v1) ? Qt : Qnil);
+	  TOP = LISTP (TOP) ? Qt : Qnil;
 	  break;
 
 	case Bstringp:
-	  v1 = POP;
-	  PUSH (XTYPE (v1) == Lisp_String ? Qt : Qnil);
+	  TOP = XTYPE (TOP) == Lisp_String ? Qt : Qnil;
 	  break;
 
 	case Blistp:
-	  v1 = POP;
-	  PUSH (LISTP (v1) || NULL (v1) ? Qt : Qnil);
+	  TOP = LISTP (TOP) || NULL (TOP) ? Qt : Qnil;
 	  break;
 
 	case Beq:
-	  v1 = POP; v2 = POP;
-	  PUSH (EQ (v1, v2) ? Qt : Qnil);
+	  v1 = POP;
+	  TOP = EQ (v1, TOP) ? Qt : Qnil;
 	  break;
 
 	case Bmemq:
-	  v2 = POP; v1 = POP;
-	  val = Fmemq (v1, v2);
-	  PUSH (val);
+	  v1 = POP;
+	  TOP = Fmemq (TOP, v1);
 	  break;
 
 	case Bnot:
-	  v1 = POP;
-	  PUSH (NULL (v1) ? Qt : Qnil);
+	  TOP = NULL (TOP) ? Qt : Qnil;
 	  break;
 
 	case Bcar:
-	  v1 = POP;
+	  v1 = TOP;
 	docar:
-	  if (LISTP (v1)) PUSH (XCONS (v1)->car);
-	  else if (NULL (v1)) PUSH (Qnil);
-	  else wrong_type_argument (Qlistp, v1, 0);
+	  if (LISTP (v1)) TOP = XCONS (v1)->car;
+	  else if (NULL (v1)) TOP = Qnil;
+	  else Fcar (wrong_type_argument (Qlistp, v1));
 	  break;
 
 	case Bcdr:
-	  v1 = POP;
-	  if (LISTP (v1)) PUSH (XCONS (v1)->cdr);
-	  else if (NULL (v1)) PUSH (Qnil);
-	  else wrong_type_argument (Qlistp, v1, 0);
+	  v1 = TOP;
+	  if (LISTP (v1)) TOP = XCONS (v1)->cdr;
+	  else if (NULL (v1)) TOP = Qnil;
+	  else Fcdr (wrong_type_argument (Qlistp, v1));
 	  break;
 
 	case Bcons:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fcons (v1, v2));
+	  v1 = POP;
+	  TOP = Fcons (TOP, v1);
 	  break;
 
 	case Blist1:
-	  PUSH (Fcons (POP, Qnil));
+	  TOP = Fcons (TOP, Qnil);
 	  break;
 
 	case Blist2:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fcons (v1, Fcons (v2, Qnil)));
+	  v1 = POP;
+	  TOP = Fcons (TOP, Fcons (v1, Qnil));
 	  break;
 
 	case Blist3:
-	  PUSH (Flist (3, stackp -= 3));
+	  DISCARD(2);
+	  TOP = Flist (3, &TOP);
 	  break;
 
 	case Blist4:
-	  PUSH (Flist (4, stackp -= 4));
+	  DISCARD(3);
+	  TOP = Flist (4, &TOP);
 	  break;
 
 	case Blength:
-	  PUSH (Flength (POP));
+	  TOP = Flength (TOP);
 	  break;
 
 	case Baref:
-	  v2 = POP; v1 = POP;
-	  PUSH (Faref (v1, v2));
+	  v1 = POP;
+	  TOP = Faref (TOP, v1);
 	  break;
 
 	case Baset:
-	  v3 = POP; v2 = POP; v1 = POP;
-	  PUSH (Faset (v1, v2, v3));
+	  v2 = POP; v1 = POP;
+	  TOP = Faset (TOP, v1, v2);
 	  break;
 
 	case Bsymbol_value:
-	  PUSH (Fsymbol_value (POP));
+	  TOP = Fsymbol_value (TOP);
 	  break;
 
 	case Bsymbol_function:
-	  PUSH (Fsymbol_function (POP));
+	  TOP = Fsymbol_function (TOP);
 	  break;
 
 	case Bset:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fset (v1, v2));
+	  v1 = POP;
+	  TOP = Fset (TOP, v1);
 	  break;
 
 	case Bfset:
-	  v2 = POP; v1 = POP;
-	  PUSH (Ffset (v1, v2));
+	  v1 = POP;
+	  TOP = Ffset (TOP, v1);
 	  break;
 
 	case Bget:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fget (v1, v2));
+	  v1 = POP;
+	  TOP = Fget (TOP, v1);
 	  break;
 
 	case Bsubstring:
-	  v3 = POP; v2 = POP; v1 = POP;
-	  PUSH (Fsubstring (v1, v2, v3));
+	  v2 = POP; v1 = POP;
+	  TOP = Fsubstring (TOP, v1, v2);
 	  break;
 
 	case Bconcat2:
-	  PUSH (Fconcat (2, stackp -= 2));
+	  DISCARD(1);
+	  TOP = Fconcat (2, &TOP);
 	  break;
 
 	case Bconcat3:
-	  PUSH (Fconcat (3, stackp -= 3));
+	  DISCARD(2);
+	  TOP = Fconcat (3, &TOP);
 	  break;
 
 	case Bconcat4:
-	  PUSH (Fconcat (4, stackp -= 4));
+	  DISCARD(3);
+	  TOP = Fconcat (4, &TOP);
 	  break;
 
 	case Bsub1:
-	  v1 = POP;
+	  v1 = TOP;
 	  if (XTYPE (v1) == Lisp_Int)
 	    {
 	      XSETINT (v1, XINT (v1) - 1);
-	      PUSH (v1);
+	      TOP = v1;
 	    }
 	  else
-	    PUSH (Fsub1 (v1));
+	    TOP = Fsub1 (v1);
 	  break;
 
 	case Badd1:
-	  v1 = POP;
+	  v1 = TOP;
 	  if (XTYPE (v1) == Lisp_Int)
 	    {
 	      XSETINT (v1, XINT (v1) + 1);
-	      PUSH (v1);
+	      TOP = v1;
 	    }
 	  else
-	    PUSH (Fadd1 (v1));
+	    TOP = Fadd1 (v1);
 	  break;
 
 	case Beqlsign:
-	  v2 = POP; v1 = POP;
+	  v2 = POP; v1 = TOP;
 	  CHECK_NUMBER_COERCE_MARKER (v1, 0);
 	  CHECK_NUMBER_COERCE_MARKER (v2, 0);
-	  PUSH (XINT (v1) == XINT (v2) ? Qt : Qnil);
+	  TOP = XINT (v1) == XINT (v2) ? Qt : Qnil;
 	  break;
 
 	case Bgtr:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fgtr (v1, v2));
+	  v1 = POP;
+	  TOP = Fgtr (TOP, v1);
 	  break;
 
 	case Blss:
-	  v2 = POP; v1 = POP;
-	  PUSH (Flss (v1, v2));
+	  v1 = POP;
+	  TOP = Flss (TOP, v1);
 	  break;
 
 	case Bleq:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fleq (v1, v2));
+	  v1 = POP;
+	  TOP = Fleq (TOP, v1);
 	  break;
 
 	case Bgeq:
-	  v2 = POP; v1 = POP;
-	  PUSH (Fgeq (v1, v2));
+	  v1 = POP;
+	  TOP = Fgeq (TOP, v1);
 	  break;
 
 	case Bdiff:
-	  PUSH (Fminus (2, stackp -= 2));
+	  DISCARD(1);
+	  TOP = Fminus (2, &TOP);
 	  break;
 
 	case Bnegate:
-	  v1 = POP;
+	  v1 = TOP;
 	  if (XTYPE (v1) == Lisp_Int)
 	    {
 	      XSETINT (v1, - XINT (v1));
-	      PUSH (v1);
+	      TOP = v1;
 	    }
 	  else
-	    PUSH (Fminus (1, stackp));
+	    TOP = Fminus (1, &TOP);
 	  break;
 
 	case Bplus:
-	  PUSH (Fplus (2, stackp -= 2));
+	  DISCARD(1);
+	  TOP = Fplus (2, &TOP);
 	  break;
 
 	case Bmax:
-	  PUSH (Fmax (2, stackp -= 2));
+	  DISCARD(1);
+	  TOP = Fmax (2, &TOP);
 	  break;
 
 	case Bmin:
-	  PUSH (Fmin (2, stackp -= 2));
+	  DISCARD(1);
+	  TOP = Fmin (2, &TOP);
 	  break;
 
-	case Bdot:
-	  XFASTINT (v1) = dot;
+	case Bpoint:
+	  XFASTINT (v1) = point;
 	  PUSH (v1);
 	  break;
 
@@ -574,34 +576,34 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bgoto_char:
-	  PUSH (Fgoto_char (POP));
+	  TOP = Fgoto_char (TOP);
 	  break;
 
 	case Binsert:
-	  PUSH (Finsert (1, stackp -= 1));
+	  TOP = Finsert (1, &TOP);
 	  break;
 
-	case Bdot_max:
+	case Bpoint_max:
 	  XFASTINT (v1) = NumCharacters+1;
 	  PUSH (v1);
 	  break;
 
-	case Bdot_min:
+	case Bpoint_min:
 	  XFASTINT (v1) = FirstCharacter;
 	  PUSH (v1);
 	  break;
 
 	case Bchar_after:
-	  PUSH (Fchar_after (POP));
+	  TOP = Fchar_after (TOP);
 	  break;
 
 	case Bfollowing_char:
-	  XFASTINT (v1) = dot>NumCharacters ? 0 : CharAt(dot);
+	  XFASTINT (v1) = point>NumCharacters ? 0 : CharAt(point);
 	  PUSH (v1);
 	  break;
 
 	case Bpreceding_char:
-	  XFASTINT (v1) = dot<=FirstCharacter ? 0 : CharAt(dot-1);
+	  XFASTINT (v1) = point<=FirstCharacter ? 0 : CharAt(point-1);
 	  PUSH (v1);
 	  break;
 
@@ -611,13 +613,12 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bindent_to:
-	  v1 = POP;
-	  PUSH (Findent_to (v1, Qnil, Qnil));
+	  TOP = Findent_to (TOP, Qnil);
 	  break;
 
 	case Bscan_buffer:
-	  v3 = POP; v2 = POP; v1 = POP;
-	  PUSH (Fscan_buffer (v1, v2, v3));
+	  v2 = POP; v1 = POP;
+	  TOP = Fscan_buffer (TOP, v1, v2);
 	  break;
 
 	case Beolp:
@@ -641,7 +642,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bset_buffer:
-	  PUSH (Fset_buffer (POP));
+	  TOP = Fset_buffer (TOP);
 	  break;
 
 	case Bread_char:
@@ -650,7 +651,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bset_mark:
-	  PUSH (Fset_mark (POP));
+	  TOP = Fset_mark (TOP);
 	  break;
 
 	case Binteractive_p:
@@ -658,21 +659,22 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	default:
-	  if (op >= Bconstant && op < Bconstant + CONSTANTLIM)
-	    PUSH (vectorp[op - Bconstant]);
+	  if ((op -= Bconstant) < (unsigned)CONSTANTLIM)
+	    PUSH (vectorp[op]);
 	}
     }
 
  exit:
   UNGCPRO;
   unbind_to (count);
-  return val;
+  return v1;
 }
 
 syms_of_bytecode ()
 {
-  Qbytecode = intern ("bytecode");
+  Qbytecode = intern ("byte-code");
   staticpro (&Qbytecode);
 
   defsubr (&Sbyte_code);
 }
+

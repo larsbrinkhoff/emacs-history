@@ -1,4 +1,4 @@
-	GNU Emacs availability information, July 3, 1985
+	GNU Emacs availability information, 22 Nov 1985
 	     Copyright (C) 1985 Richard M. Stallman
 
    Permission is granted to anyone to make or distribute
@@ -11,100 +11,141 @@ public, since all software ought to be the common property of
 mankind.
 
 I permit everyone to have and run copies of GNU Emacs, at no
-charge, and to redistribute copies under certain conditions
-which are designed to make sure that that all modified versions
-of GNU Emacs remain as free as the versions I distribute.
-These conditions are stated in the document "GNU Emacs copying
-permission notice", a copy of which is required to be
-distributed with every copy of GNU Emacs.  It is usually in a
-file named COPYING in the same directory as this file.
+charge, and to redistribute copies under certain conditions which
+are designed to make sure that that all modified versions of GNU
+Emacs remain as free as the versions I distribute.  These
+conditions are stated in the document "GNU Emacs General Public
+License", a copy of which is required to be distributed with
+every copy of GNU Emacs.  It is usually in a file named COPYING
+in the same directory as this file.
 
-I also ship copies of GNU Emacs, and provide some services,
-to people who pay for this.
-I will send you a tape of the latest version of GNU Emacs,
-including full sources, if you send $150 to
-  Richard M. Stallman
-  c/o Lisp Machine Incorporated
-  1000 Mass Ave
-  Cambridge, MA 02139.
-(This price is subject to change without notice.)
-Make checks out to Richard Stallman.  LMI provides me with an address,
-but GNU Emacs is not an LMI product.
+If you do not know anyone to get a copy of GNU Emacs from, you
+can order a tape from the Free Software Foundation.  We distribute
+Emacs in tar format on 1600bpi industry standard mag tapes.  We
+also distributed nicely typeset copies of the Emacs manual.
+See the order form at the end of this file.
 
-If you are on the Internet, you can at present copy the latest
-distribution version from the file /u2/emacs/edist.tar on host
-MIT-PREP.  After you unpack it, be sure to look at the files README
-and INSTALL.  The files are also present individually under the
-directory /u2/emacs/dist.
+If you have Internet access, you can copy the latest Emacs
+distribution from host PREP.AI.MIT.ARPA.  There are several ways to do
+this; see the file `/u2/emacs/GETTING.GNU.SOFTWARE' for info on
+current arrangements.
 
-Files of differences from previous widely distributed versions to
-the present version are also available on MIT-PREP under names
-of the form diff-OO.OO-NN.NN.  These are made with diff -c.
+See the file MACHINES in this directory for a list of machines
+that GNU Emacs has been tested on.  Emacs has been run on both
+Berkeley Unix and System V Unix, on a variety of types of cpu.
 
-A special version of rcp exists which allows you, on an Internet host,
-to copy all files whose last-mod-dates don't match your files.
-See the file RCP in this directory for information on using it.
+Note that there is significant variation between Unix systems
+supposedly running the same version of Unix; it is possible that
+what works in GNU Emacs for me does not work on your system due
+to such an incompatibility.  Since I must avoid reading Unix
+source code, I cannot even guess what such problems may exist.
 
-Currently GNU Emacs has only been tested on Berkeley 4.2/4.3 on Vaxes,
-68000's, 16000's and Pyramids.  Version 15 worked on a 16000 system,
-but version 16 has not yet been tested on one.  GNU Emacs is far too
-large ever to run on a PDP-11.  Version 16 is within inches of running
-on one particular version of System V, but missing many features.  You
-should not expect to be able to use it on System V yet without doing
-some programming.  Perhaps in a month or two the remaining work will
-be done.  A VMS port is also under way.
+GNU Emacs is distributed with no warranty (see the General Public
+License for full details), and neither I nor the Free Software
+Foundation promises any kind of support or assistance to users.
+The foundation keeps a list of people who are willing to offer
+support and assistance for hire.  We will list anyone who pays a
+$50 listing fee.
 
-The GNU Emacs manual source file should be on Emacs distributions by
-July 15, 1985.  Printed copies should be available for mail order by
-the end of July, but the cost has not yet been determined.  Tapes sent
-before then will be followed by manuals as soon as they are ready.
+However, I plan to continue to improve GNU Emacs and keep it
+reliable, so please send me any complaints and suggestions you
+have.  I will probably fix anything that is clearly (to me) a
+malfunction.  I may make an improvement if I consider it worth
+the effort, but you should not be surprised if I don't think I
+can spare time for it.  I hope to keep Emacs stable now, and
+avoid putting much time into it, so I can work on other parts of
+the GNU system.
 
-GNU Emacs is distributed on an as-is basis; no guarantee is made that
-it will not break down or that it is suitable for any particular
-purpose.  I do not promise any users that I will make any particular
-change.  However, I plan to continue to improve GNU Emacs and keep it
-reliable, so please send me any complaints and suggestions you have.
-I will probably fix anything that is clearly (to me) a malfunction,
-and install any easily made improvement if I agree it is desirable.
-More difficult improvements I may or may not make, depending on my
-evaluation of their importance and difficulty; also I may be willing
-to accept a contract to make a specific improvement.  Other people may
-also be willing to do this for you.
+If you are on the Internet, report bugs to
+bug-gnu-emacs@prep.ai.mit.edu; on Usenet, use the address
+...!ucbvax!bug-gnu-emacs%prep.ai.mit.edu.  Otherwise, phone the
+foundation at (617) 876-3296, or write to the address listed
+below.
 
-If you are on the Internet, report bugs to bug-gnu-emacs@mit-prep.
-On Usenet, use the address ...!ucbvax!bug-gnu-emacs%mit-prep.
+If you are a computer manufacturer, I encourage you to ship a
+copy of GNU Emacs with every computer you deliver.  The same
+copying permission terms apply to computer manufacturers as to
+everyone else.
 
-If you have paid for a tape, I will also notify you by mail
-when a new version is available and give you a reasonable
-amount of assistance in getting GNU Emacs to work for the
-first time, as long as you use it on a system it is supposed
-to work on.  Note that there is significant variation between Unix
-systems supposedly running the same version of Unix; it is
-possible that what works in GNU Emacs for me does not work
-on your system due to such an incompatibility.  Since I must
-avoid reading Unix source code, I cannot even guess what such
-problems may exist.
+If you like GNU Emacs, please express your satisfaction with a
+donation: send me or the Foundation what you feel Emacs has been
+worth to you.  If you are glad that I developed GNU Emacs and
+distribute it as freeware, rather than following the obstructive
+and antisocial practices typical of software developers, reward
+me for doing so!
 
-If you are a computer manufacturer, I encourage you to ship
-a copy of GNU Emacs with every computer you deliver.  The
-same copying permission terms apply to computer manufacturers
-as to everyone else.
-
-If you like GNU Emacs, please express your satisfaction with
-a donation: send me what you feel would be a fair price
-for GNU Emacs, if you were buying it.  If you are glad that I
-developed GNU Emacs and distribute it as freeware, rather
-than following the obstructive and antisocial practices
-typical of software developers, reward me for doing so!
-
-Your donations will help to support a career dedicated to
-developing useful software such as GNU Emacs, and distributing
-it all on the same free basis.  In particular, I am working on
-a complete imitation of the Unix operating system, called GNU
-(Gnu's Not Unix), which will run Unix user programs.  For more
-information on GNU, see the file GNU in this directory.
+Your donations will help to support the development of more
+useful software to be distributed on the same basis as GNU Emacs.
+Eventually we will have a complete imitation of the Unix
+operating system, called GNU (Gnu's Not Unix), which will run
+Unix user programs.  For more information on GNU, see the file
+GNU in this directory.
 
 
 			Richard M Stallman
 			Chief GNUisance,
-			 inventor of the first (PDP-10) Emacs.
+			President of the Free Software Foundation
+
+
+		Free Software Foundation Order Form
+			  March 26, 1986
+
+All software and publications are distributed with permission to
+copy and redistribute.
+
+Quantity  Price  Item
+
+________  $150	GNU Emacs source code, on a 1600bpi industry standard
+		mag tape in tar format.  The tape also contains
+		MIT Scheme (a dialect of Lisp), hack (a rogue-like game)
+		and bison (a compatible replacement for yacc).
+
+________  $15	GNU Emacs manual.  This includes a reference card.
+		These manuals are phototypeset and offset printed.
+		We may have both plastic ring binding and standard
+		paperback book binding.
+
+		Do you have a preference? _________________________
+
+		If that's out of stock, do you want to wait? ______
+
+		There may be a choice of two cover designs: the
+		"strong" cover (warning: material may be offensive
+		to the guilty consciences of software "owners") and
+		the "innocuous" cover.
+
+		Do you have a preference? _________________________
+
+		If that's out of stock, do you want to wait? ______
+
+Thus, a tape and one manual come to $165.
+
+________  $60	Box of six GNU Emacs manuals, shipped book rate.
+
+________  $1	GNU Emacs reference card. Or:
+
+________  $5    Packet of ten GNU Emacs reference cards.
+
+
+Shipping outside North America is normally by surface mail.  For air
+mail delivery, please add $15 per tape or manual, $1 for an individual
+reference card, or 50 cents per card in quantity ten or more.
+
+Prices are subject to change without notice.  Massachusetts residents
+please add 5% sales tax to all prices.
+
+
+________   Total paid
+
+Orders are filled upon receipt of check or money order.  We do not have
+the staff to handle the billing of unpaid orders.  Please help keep
+our lives simple by including your payment with your order.
+
+Make checks payable to Free Software Foundation.  Mail orders to:
+
+   Free Software Foundation, Inc.
+   1000 Mass Ave
+   Cambridge, MA 02138
+
+All software from the Free Software Foundation is provided on an "as
+is" basis, with no warranty of any kind.

@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defvar tag-table-files nil
@@ -25,17 +26,24 @@ nil means it has not been computed yet; do (tag-table-files) to compute it.")
 (defvar last-tag nil
   "Tag found by the last find-tag.")
 
-(defun visit-tag-table (file)
+(defun visit-tags-table (file)
   "Tell tags commands to use tag table file FILE.
-FILE should be the name of a file created with the `etags' program."
-  (interactive "fVisit tag table: ")
-  (setq tags-file-name (expand-file-name file)))
+FILE should be the name of a file created with the `etags' program.
+A directory name is ok too; it means file TAGS in that directory."
+  (interactive (list (read-file-name "Visit tags table: (default TAGS) "
+				     default-directory
+				     (concat default-directory "TAGS")
+				     t)))
+  (setq file (expand-file-name file))
+  (if (file-directory-p file)
+      (setq file (concat file "TAGS")))
+  (setq tags-file-name file))
 
-(defun visit-tag-table-buffer ()
+(defun visit-tags-table-buffer ()
   "Select the buffer containing the current tag table.
 This is a file whose name is in the variable tags-file-name."
   (or tags-file-name
-      (call-interactively 'visit-tag-table))
+      (call-interactively 'visit-tags-table))
   (set-buffer (or (get-file-buffer tags-file-name)
 		  (progn
 		    (setq tag-table-files nil)
@@ -48,46 +56,46 @@ This is a file whose name is in the variable tags-file-name."
 	     (setq tag-table-files nil)))))
 
 (defun file-of-tag ()
-  "Return the file name of the file whose tags dot is within.
-Assuems the tag table is the current buffer.
+  "Return the file name of the file whose tags point is within.
+Assumes the tag table is the current buffer.
 File name returned is relative to tag table file's directory."
-  (let ((odot (dot))
+  (let ((opoint (point))
 	prev size)
     (save-excursion
-     (goto-char (dot-min))
-     (while (< (dot) odot)
+     (goto-char (point-min))
+     (while (< (point) opoint)
        (forward-line 1)
        (end-of-line)
        (skip-chars-backward "^,\n")
-       (setq prev (dot))
+       (setq prev (point))
        (setq size (read (current-buffer)))
        (goto-char prev)
        (forward-line 1)
        (forward-char size))
      (goto-char (1- prev))
-     (buffer-substring (dot)
-		       (progn (beginning-of-line) (dot))))))
+     (buffer-substring (point)
+		       (progn (beginning-of-line) (point))))))
 
 (defun tag-table-files ()
   "Return a list of files in the current tag table.
 File names returned are absolute."
   (save-excursion
-   (visit-tag-table-buffer)
+   (visit-tags-table-buffer)
    (or tag-table-files
        (let (files)
-	(goto-char (dot-min))
+	(goto-char (point-min))
 	(while (not (eobp))
 	  (forward-line 1)
 	  (end-of-line)
 	  (skip-chars-backward "^,\n")
-	  (setq prev (dot))
+	  (setq prev (point))
 	  (setq size (read (current-buffer)))
 	  (goto-char prev)
 	  (setq files (cons (expand-file-name
-			     (buffer-substring (1- (dot))
+			     (buffer-substring (1- (point))
 					       (save-excursion
-						(beginning-of-line)
-						(dot)))
+						 (beginning-of-line)
+						 (point)))
 			     (file-name-directory tags-file-name))
 			    files))
 	  (forward-line 1)
@@ -97,25 +105,27 @@ File names returned are absolute."
 (defun find-tag (tagname &optional next other-window)
   "Find tag (in current tag table) whose name contains TAGNAME.
  Selects the buffer that the tag is contained in
-and puts dot at its definition.
+and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
-around or before dot is used as the tag name.
+around or before point is used as the tag name.
  If second arg NEXT is non-nil (interactively, with prefix arg),
 searches for the next tag in the tag table
 that matches the tagname used in the previous find-tag.
 
 See documentation of variable tags-file-name."
-  (interactive "sFind tag: \nP")
+  (interactive (if current-prefix-arg
+		   '(nil t)
+		 (list (read-string "Find tag: "))))
   (if (equal tagname "")
       (setq tagname (save-excursion
 		     (buffer-substring
-		      (progn (backward-sexp 1) (dot))
-		      (progn (forward-sexp 1) (dot))))))
+		      (progn (backward-sexp 1) (point))
+		      (progn (forward-sexp 1) (point))))))
   (let (buffer file linebeg startpos)
     (save-excursion
-     (visit-tag-table-buffer)
+     (visit-tags-table-buffer)
      (if (not next)
-	 (goto-char (dot-min))
+	 (goto-char (point-min))
        (setq tagname last-tag))
      (setq last-tag tagname)
      (while (progn
@@ -125,18 +135,19 @@ See documentation of variable tags-file-name."
      (setq file (expand-file-name (file-of-tag)
 				  (file-name-directory tags-file-name)))
      (setq linebeg
-	   (buffer-substring (1- (dot))
-			     (save-excursion (beginning-of-line) (dot))))
+	   (buffer-substring (1- (point))
+			     (save-excursion (beginning-of-line) (point))))
      (search-forward ",")
      (setq startpos (read (current-buffer))))
     (if other-window
 	(find-file-other-window file)
       (find-file file))
     (widen)
+    (push-mark)
     (let ((offset 1000)
 	  found
 	  (pat (concat "^" (regexp-quote linebeg))))
-      (or startpos (setq startpos (dot-min)))
+      (or startpos (setq startpos (point-min)))
       (while (and (not found)
 		  (progn
 		   (goto-char (- startpos offset))
@@ -146,14 +157,17 @@ See documentation of variable tags-file-name."
 	(setq offset (* 3 offset)))
       (or found
 	  (re-search-forward pat)))
-    (beginning-of-line)))
+    (beginning-of-line))
+  (setq tags-loop-form '(find-tag nil t))
+  ;; Return t in case used as the tags-loop-form.
+  t)
 
 (defun find-tag-other-window (tagname &optional next)
   "Find tag (in current tag table) whose name contains TAGNAME.
  Selects the buffer that the tag is contained in
-and puts dot at its definition.
+and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
-around or before dot is used as the tag name.
+around or before point is used as the tag name.
  If second arg NEXT is non-nil (interactively, with prefix arg),
 searches for the next tag in the tag table
 that matches the tagname used in the previous find-tag.
@@ -178,20 +192,20 @@ initializes to the beginning of the list of files in the tag table."
   (setq next-file-list (cdr next-file-list)))
 
 (defvar tags-loop-form nil
-  "Form for tags-loop to eval to process one file.
+  "Form for tags-loop-continue to eval to process one file.
 If it returns nil, it is through with one file; move on to next.")
 
 (defun tags-loop-continue (&optional first-time)
-  "Continue last tags-search or tags-query-replace command.
+  "Continue last \\[tags-search] or \\[tags-query-replace] command.
 Used noninteractively with non-nil argument
 to begin such a command.  See variable tags-loop-form."
   (interactive)
   (if first-time
       (progn (next-file t)
-	     (goto-char (dot-min))))
+	     (goto-char (point-min))))
   (while (not (eval tags-loop-form))
     (next-file)
-    (goto-char (dot-min))))
+    (goto-char (point-min))))
 
 (defun tags-search (regexp)
   "Search through all files listed in tag table for match for REGEXP.
@@ -228,14 +242,14 @@ unless it has one in the tag table."
     (princ string)
     (terpri)
     (save-excursion
-     (visit-tag-table-buffer)
+     (visit-tags-table-buffer)
      (goto-char 1)
      (search-forward (concat "\f\n" string ","))
      (forward-line 1)
      (while (not (looking-at "\f"))
-       (princ (buffer-substring (dot)
+       (princ (buffer-substring (point)
 				(progn (skip-chars-forward "^\177")
-				       (dot))))
+				       (point))))
        (terpri)
        (forward-line 1)))))
 
@@ -247,12 +261,12 @@ unless it has one in the tag table."
     (prin1 string)
     (terpri)
     (save-excursion
-     (visit-tag-table-buffer)
+     (visit-tags-table-buffer)
      (goto-char 1)
      (while (re-search-forward string nil t)
        (beginning-of-line)
-       (princ (buffer-substring (dot)
+       (princ (buffer-substring (point)
 				(progn (skip-chars-forward "^\177")
-				       (dot))))
+				       (point))))
        (terpri)
        (forward-line 1)))))

@@ -1,10 +1,22 @@
-/* Mark end of data space to dump as pure,ld -X -o temacs crt0.o dispnew.o scroll.o xdisp.o window.o  term.o cm.o TrmXTERM.o  emacs.o keyboard.o macros.o keymap.o sysdep.o  buffer.o insdel.o marker.o  minibuf.o fileio.o dired.o filemode.o userid.o  cmds.o casefiddle.o indent.o search.o regex.o undo.o  alloc.o data.o doc.o editfns.o callint.o  eval.o fns.o print.o read.o doprnt.o  abbrev.o syntax.o unexec.o mocklisp.o bytecode.o  process.o callproc.o  malloc.o tparam.o  lastfile.o -ltermlib alloca.o  -lc -lg
-s described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+/* Mark end of data space to dump as pure, for GNU Emacs.
+   Copyright (C) 1985 Richard M. Stallman.
+
+This file is part of GNU Emacs.
+
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU Emacs, but only under the conditions described in the
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 /* How this works:
@@ -24,4 +36,4 @@ copyright notice and this notice must be preserved on all copies.  */
  coming from libraries.
 */
 
-int my_edata = 0;
+char my_edata = 0;

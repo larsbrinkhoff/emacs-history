@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defvar register-alist nil
@@ -35,16 +36,16 @@ mark or list.  A list represents a rectangle; its elements are strings.")
       (setq aelt (cons char value))
       (setq register-alist (cons aelt register-alist)))))
 
-(defun dot-to-register (char)
-  "Store current location of dot in a register.
+(defun point-to-register (char)
+  "Store current location of point in a register.
 Argument is a character, naming the register."
-  (interactive "cDot to register: ")
-  (set-register char (dot-marker)))
+  (interactive "cPoint to register: ")
+  (set-register char (point-marker)))
 
-(defun register-to-dot (char)
-  "Move dot to location stored in a register.
+(defun register-to-point (char)
+  "Move point to location stored in a register.
 Argument is a character, naming the register."
-  (interactive "cRegister to dot: ")
+  (interactive "cRegister to point: ")
   (let ((val (get-register char)))
     (if (markerp val)
 	(progn
@@ -55,7 +56,7 @@ Argument is a character, naming the register."
 ;(defun number-to-register (arg char)
 ;  "Store a number in a register.
 ;Two args, NUMBER and REGISTER (a character, naming the register).
-;If NUMBER is nil, digits in the buffer following dot are read
+;If NUMBER is nil, digits in the buffer following point are read
 ;to get the number to store.
 ;Interactively, NUMBER is the prefix arg (none means nil)."
 ;  (interactive "P\ncNumber to register: ")
@@ -65,10 +66,10 @@ Argument is a character, naming the register."
 ;		  (if (looking-at "[0-9][0-9]*")
 ;		      (save-excursion
 ;		       (save-restriction
-;			(narrow-to-region (dot)
+;			(narrow-to-region (point)
 ;					  (progn (skip-chars-forward "0-9")
-;						 (dot)))
-;			(goto-char (dot-min))
+;						 (point)))
+;			(goto-char (point-min))
 ;			(read (current-buffer))))
 ;		    0))))
 
@@ -112,8 +113,8 @@ REGISTER is a character."
 
 (defun insert-register (char &optional arg)
   "Insert contents of register REG.  REG is a character.
-Normally puts dot before and mark after the inserted text.
-If optional second arg is non-nil, puts mark before and dot after.
+Normally puts point before and mark after the inserted text.
+If optional second arg is non-nil, puts mark before and point after.
 Interactively, second arg is non-nil if prefix arg is supplied."
   (interactive "cInsert register: \nP")
   (push-mark)
@@ -125,7 +126,7 @@ Interactively, second arg is non-nil if prefix arg is supplied."
 	(if (or (integerp val) (markerp val))
 	    (princ (+ 0 val) (current-buffer))
 	  (error "Register does not contain text")))))
-  (or arg (exchange-dot-and-mark)))
+  (or arg (exchange-point-and-mark)))
 
 (defun copy-to-register (char start end &optional delete-flag)
   "Copy region into register REG.

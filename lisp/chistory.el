@@ -4,18 +4,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (provide 'chistory)
 
@@ -45,7 +47,7 @@ for editing and the result is evaluated."
       (setq temp (car history))
       (if (and (or (not pattern) (string-match pattern (symbol-name (car temp))))
 	       (y-or-n-p (format "Redo %s? " (setq temp (prin1-to-string temp)))))
-	  (setq what temp)
+	  (setq what (car history))
 	(setq history (cdr history))))
     (if (not what)
 	(error "Command history exhausted.")
@@ -99,7 +101,7 @@ The buffer is left in Command History mode."
 	  (prin1 (car history))
 	  (terpri))
 	(setq history (cdr history))))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (if (eobp)
 	(error "No command history.")
       (Command-history-setup))))
@@ -117,12 +119,15 @@ The buffer is left in Command History mode."
 (defvar command-history-hook nil
   "If non-nil, its value is called on entry to  command-history-mode.")
 
-(defconst command-history-map (make-keymap))
-(lisp-mode-commands command-history-map)
-(suppress-keymap command-history-map)
-(define-key command-history-map "\n" 'next-line)
-(define-key command-history-map "\r" 'next-line)
-(define-key command-history-map "\177" 'previous-line)  
+(defvar command-history-map nil)
+(if command-history-map
+    nil
+  (setq command-history-map (make-keymap))
+  (lisp-mode-commands command-history-map)
+  (suppress-keymap command-history-map)
+  (define-key command-history-map "\n" 'next-line)
+  (define-key command-history-map "\r" 'next-line)
+  (define-key command-history-map "\177" 'previous-line))
 
 (defun command-history-mode ()
   "Major mode for examining commands from  command-history.
@@ -130,20 +135,15 @@ The number of commands listed is controlled by  list-command-history-max.
 The command history is filtered by  list-command-history-filter  if non-nil.
 
 Like Emacs-Lisp Mode except that characters do not insert themselves and
-Digits provide prefix arguments.  Tab does not indent.  Instead these
-commands are provided:
-     LF, CR	Move to the next line in the history.
-     Delete	Move to the previous line in the history.
-
+Digits provide prefix arguments.  Tab does not indent.
+\\{command-history-map}
 Calls the value of  command-history-hook  if that is non-nil
 The Command History listing is recomputed each time this mode is
 invoked."
   (interactive)
   (list-command-history)
   (pop-to-buffer "*Command History*")
-  (and (boundp 'command-history-hook)
-       command-history-hook
-       (funcall command-history-hook)))
+  (run-hooks 'command-history-hook))
 
 
       

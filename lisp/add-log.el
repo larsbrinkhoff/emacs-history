@@ -4,18 +4,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 ;; >> Potential lossage if two people edit change log at same time.
 ;; >> Maybe should lock file and unlock when written out.
@@ -46,7 +48,7 @@ With ARG, prompt for name and site of person."
 	  (setq left-margin 8)
 	  (setq fill-column 74)))
     (auto-fill-mode 1)
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (if (not (and (looking-at (substring (current-time-string) 0 10))
 		  (save-excursion (re-search-forward "(.* at")
 				  (skip-chars-backward "^(")
@@ -55,14 +57,14 @@ With ARG, prompt for name and site of person."
 		       "  " full-name
 		       "  (" login-name
 		       " at " site-name ")\n\n")))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (forward-line 1)
     (while (looking-at "\\sW")
       (forward-line 1))
-    (delete-region (dot)
+    (delete-region (point)
 		   (progn
 		     (skip-chars-backward "\n")
-		     (dot)))
+		     (point)))
     (open-line 3)
     (forward-line 2)
     (indent-to left-margin)

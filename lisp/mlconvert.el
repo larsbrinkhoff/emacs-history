@@ -4,33 +4,33 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun convert-mocklisp-buffer ()
   "Convert buffer of mocklisp code into real lisp."
   (interactive)
+  (emacs-lisp-mode)
   (message "Converting mocklisp (ugh!)...")
-  (goto-char (dot-min))
+  (goto-char (point-min))
   (insert ";;; GNU Emacs code converted from Mocklisp\n")
   (insert "(require 'mlsupport)\n\n")
   (fix-mlisp-syntax)
-  (goto-char (dot-min))
+  (goto-char (point-min))
   (fix-mlisp-symbols)
-  (goto-char (dot-min))
-  (while (re-search-forward "(setq[ \t\n]*(buffer-modified-p)" nil t)
-    (replace-match "(set-buffer-modified-p "))
+  (goto-char (point-min))
   (message "Converting mocklisp...done"))
 
 (defun fix-mlisp-syntax ()
@@ -51,38 +51,45 @@
   (while (progn
 	   (skip-chars-forward " \t\n()")
 	   (not (eobp)))
-    (if (or (= (following-char) ?\?)
-	    (= (following-char) ?\"))
-	(forward-sexp 1)
-      (if (= (following-char) ?\;)
-	  (forward-line 1)
-	(let ((start (dot)) prop)
-	  (forward-sexp 1)
-	  (setq prop (get (intern-soft (buffer-substring start (dot))) 'mocklisp))
-	  (cond ((null prop))
-		((stringp prop)
-		 (delete-region start (dot))
-		 (insert prop))
-		(t (funcall prop))))))))
+    (cond ((or (= (following-char) ?\?)
+	       (= (following-char) ?\"))
+	   (forward-sexp 1))
+	  ((= (following-char) ?\;)
+	   (forward-line 1))
+	  (t
+	   (let ((start (point)) prop)
+	     (forward-sexp 1)
+	     (setq prop (get (intern-soft (buffer-substring start (point)))
+			     'mocklisp))
+	     (cond ((null prop))
+		   ((stringp prop)
+		    (delete-region start (point))
+		    (insert prop))
+		   (t
+		    (save-excursion
+		      (goto-char start)
+		      (funcall prop)))))))))
 
 (defun ml-expansion (ml-name lisp-string)
   (put ml-name 'mocklisp lisp-string))
 
 (ml-expansion 'defun "ml-defun")
 (ml-expansion 'if "ml-if")
+(ml-expansion 'setq '(lambda ()
+		       (if (looking-at "setq[ \t\n]+buffer-modified-p")
+			   (replace-match "set-buffer-modified-p"))))
+
 (ml-expansion 'while '(lambda ()
-			 (let ((end (progn (forward-sexp 1) (dot-marker)))
-			       (start (progn (forward-sexp -1) (dot))))
+			 (let ((end (progn (forward-sexp 2) (point-marker)))
+			       (start (progn (forward-sexp -1) (point))))
 			   (let ((cond (buffer-substring start end)))
-			     (cond ((equal cond "0")
-				    (delete-region (dot) end)
-				    (insert "nil"))
-				   ((equal cond "1")
-				    (delete-region (dot) end)
+			     (cond ((equal cond "1")
+				    (delete-region (point) end)
 				    (insert "t"))
-				   (t (insert "(not (zerop ")
-				      (goto-char end)
-				      (insert "))")))
+				   (t
+				    (insert "(not (zerop ")
+				    (goto-char end)
+				    (insert "))")))
 			     (set-marker end nil)
 			     (goto-char start)))))
 
@@ -101,7 +108,7 @@
 (ml-expansion 'modify-syntax-entry "ml-modify-syntax-entry")
 (ml-expansion 'error-message "error")
 
-(ml-expansion 'dot "dot-marker")
+(ml-expansion 'dot "point-marker")
 (ml-expansion 'mark "mark-marker")
 (ml-expansion 'beginning-of-file "beginning-of-buffer")
 (ml-expansion 'end-of-file "end-of-buffer")
@@ -125,6 +132,13 @@
 (ml-expansion 'yank-buffer "insert-buffer")
 (ml-expansion 'delete-white-space "delete-horizontal-space")
 (ml-expansion 'widen-region "widen")
+
+(ml-expansion 'forward-word '(lambda ()
+			       (if (looking-at "forward-word[ \t\n]*)")
+				   (replace-match "forward-word 1)"))))
+(ml-expansion 'backward-word '(lambda ()
+			       (if (looking-at "backward-word[ \t\n]*)")
+				   (replace-match "backward-word 1)"))))
 
 (ml-expansion 'forward-paren "forward-list")
 (ml-expansion 'backward-paren "backward-list")
@@ -176,7 +190,6 @@
 (ml-expansion 'define-keyboard-macro "name-last-kbd-macro")
 (ml-expansion 'define-string-macro "ml-define-string-macro")
 
-(ml-expansion 'dot-is-visible "dot-visible-p")
 (ml-expansion 'current-column "ml-current-column")
 (ml-expansion 'current-indent "ml-current-indent")
 (ml-expansion 'insert-character "insert")

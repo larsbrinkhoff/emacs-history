@@ -4,19 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
-
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 /* Define the fundamental Lisp data structures */
@@ -225,9 +225,16 @@ Lisp_Object;
 
 #define Lisp_Object int
 
+/* These values are overridden by the m- file on some machines.  */
+#ifndef VALBITS
 #define VALBITS 24
-#define VALMASK ((1<<VALBITS) - 1)
+#endif
+
+#ifndef GCTYPEBITS
 #define GCTYPEBITS 7
+#endif
+
+#define VALMASK ((1<<VALBITS) - 1)
 #define GCTYPEMASK ((1<<GCTYPEBITS) - 1)
 #define MARKBIT (1 << (VALBITS + GCTYPEBITS))
 
@@ -246,11 +253,14 @@ Lisp_Object;
   to be positive.  This takes advantage of the fact that Lisp_Int is 0.  */
 #define XFASTINT(a) (a)
 
-#define XINT(a) ((a) << INTBITS-VALBITS >> INTBITS-VALBITS)
+#define XINT(a) (((a) << INTBITS-VALBITS) >> INTBITS-VALBITS)
 #define XUINT(a) ((a) & VALMASK)
 
-#define XSETINT(a, b) ((a)  =  ((a) & ~VALMASK)  +  ((b) & VALMASK))
-#define XSETUINT(a, b) ((a)  =  ((a) & ~VALMASK)  +  ((b) & VALMASK))
+#define XSETINT(a, b) ((a) = ((a) & ~VALMASK)  +  ((b) & VALMASK))
+#define XSETUINT(a, b) ((a) = ((a) & ~VALMASK)  +  ((b) & VALMASK))
+
+#define XSET(var, type, ptr) \
+   ((var) = ((int)(type) << VALBITS) + ((int) (ptr) & VALMASK))
 
 /* During garbage collection, XGCTYPE must be used for extracting types
  so that the mark bit is ignored.  XMARKBIT access the markbit.
@@ -285,6 +295,9 @@ Lisp_Object;
 #define XUINT(a) ((a).u.val)
 #define XSETINT(a, b) ((a).s.val = (int) (b))
 #define XSETUINT(a, b) ((a).s.val = (int) (b))
+
+#define XSET(var, vartype, ptr) \
+   (((var).s.type = ((char) (vartype))), ((var).s.val = ((int) (ptr))))
 
 /* During garbage collection, XGCTYPE must be used for extracting types
  so that the mark bit is ignored.  XMARKBIT access the markbit.
@@ -416,9 +429,29 @@ struct Lisp_Marker
 #define CHECK_NUMBER(x, i) \
   { if (XTYPE ((x)) != Lisp_Int) x = wrong_type_argument (Qintegerp, (x)); }
 
+#define CHECK_MARKER(x, i) \
+  { if (XTYPE ((x)) != Lisp_Marker) x = wrong_type_argument (Qmarkerp, (x)); }
+
 #define CHECK_NUMBER_COERCE_MARKER(x, i) \
   { if (XTYPE ((x)) == Lisp_Marker) XFASTINT (x) = marker_position (x); \
     else if (XTYPE ((x)) != Lisp_Int) x = wrong_type_argument (Qinteger_or_marker_p, (x)); }
+
+#ifdef VIRT_ADDR_VARIES
+/* For machines like APOLLO where text and data can go anywhere
+   in virtual memory.  */
+#define CHECK_IMPURE(obj) \
+  { extern int pure[]; \
+    if (XUINT (obj) < (int) ((char *) pure + PURESIZE) \
+	&& XUINT (obj) >= (int) pure) \
+      pure_write_error (); }
+
+#else /* not VIRT_ADDR_VARIES */
+
+#define CHECK_IMPURE(obj) \
+  { extern int my_edata; \
+    if (XUINT (obj) < (unsigned int) &my_edata) \
+      pure_write_error (); }
+#endif /* not VIRT_ADDR_VARIES */
 
 /* Define a built-in function for calling from Lisp.
  `lname' should be the name to give the function in Lisp,
@@ -479,7 +512,7 @@ extern void defsubr ();
   DEFUN (lname, fnname, sname, 0, 0, 0, 0) () \
   { \
     Lisp_Object val; \
-    XSETTYPE (val, valtype); setcomp (val, exp); \
+    XSET (val, valtype, exp); \
     return val; }
 
 #define DEFPRED(lname, fnname, sname, doc, boolexp) \
@@ -564,11 +597,6 @@ struct gcpro
   gcpro4.next = &gcpro3; gcpro4.var = &varname4; gcpro4.nvars = 1; \
   gcprolist = &gcpro4; }
 
-/* A similar chain of `struct gcpro' that is set up at initialization time
- and never changes thereafter.  It protects static variables.  */
-
-extern struct gcpro *staticprolist;
-
 /* Call staticpro (&var) to protect static variable `var'. */
 
 void staticpro();
@@ -579,7 +607,8 @@ void staticpro();
 extern Lisp_Object Qnil, Qt, Qquote, Qlambda, Qsubr, Qunbound;
 extern Lisp_Object Qerror_conditions, Qerror_message, Qtop_level;
 extern Lisp_Object Qerror, Qquit, Qwrong_type_argument, Qargs_out_of_range;
-extern Lisp_Object Qvoid_symbol, Qsetting_constant, Qinvalid_read_syntax;
+extern Lisp_Object Qvoid_variable, Qvoid_function;
+extern Lisp_Object Qsetting_constant, Qinvalid_read_syntax;
 extern Lisp_Object Qinvalid_function, Qwrong_number_of_arguments, Qno_catch;
 extern Lisp_Object Qend_of_file, Qarith_error;
 extern Lisp_Object Qbeginning_of_buffer, Qend_of_buffer, Qbuffer_read_only;
@@ -617,14 +646,16 @@ extern Lisp_Object wrong_type_argument ();
 
 /* Defined in fns.c */
 extern Lisp_Object Qstring_lessp;
+extern Lisp_Object Vfeatures;
 extern Lisp_Object Fidentity (), Frandom ();
 extern Lisp_Object Flength (), Fstring_equal (), Fstring_lessp ();
 extern Lisp_Object Fappend (), Fconcat (), Fvconcat (), Fcopy_sequence (), Fsubstring ();
-extern Lisp_Object Fnthcdr (), Fmemq (), Fassq (), Fassoc (), Frassq (), Fdelq (), Fsort ();
+extern Lisp_Object Fnth (), Fnthcdr (), Fmemq (), Fassq (), Fassoc ();
+extern Lisp_Object Frassq (), Fdelq (), Fsort ();
 extern Lisp_Object Freverse (), Fnreverse (), Fget (), Fput (), Fequal ();
 extern Lisp_Object Ffillarray (), Fnconc (), Fmapcar (), Fmapconcat ();
 extern Lisp_Object Fy_or_n_p (), Fyes_or_no_p ();
-extern Lisp_Object Vfeatures, Ffeaturep (), Frequire () , Fprovide ();
+extern Lisp_Object Ffeaturep (), Frequire () , Fprovide ();
 extern Lisp_Object concat2 (), nconc2 ();
 
 /* Defined in alloc.c */
@@ -637,26 +668,29 @@ extern Lisp_Object pure_cons (), make_pure_vector ();
 extern Lisp_Object Fgarbage_collect ();
 
 /* Defined in print.c */
+extern Lisp_Object Vprin1_to_string_buffer;
 extern Lisp_Object Fprin1 (), Fprin1_to_string (), Fprinc ();
 extern Lisp_Object Fterpri (), Fprint ();
 extern Lisp_Object Vstandard_output, Qstandard_output;
 extern temp_output_buffer_setup (), temp_output_buffer_show ();
 
 /* Defined in read.c */
-extern Lisp_Object Qvariable_documentation, Qeval;
+extern Lisp_Object Qvariable_documentation;
 extern Lisp_Object Vobarray, Vstandard_input;
 extern Lisp_Object Fread (), Fread_from_string ();
 extern Lisp_Object Fintern (), Fintern_soft (), Fload ();
 extern Lisp_Object Fget_file_char (), Fread_char ();
-extern Lisp_Object Feval_current_buffer (), Feval_region (), Fget_buffer_char ();
+extern Lisp_Object Feval_current_buffer (), Feval_region ();
 extern Lisp_Object intern (), oblookup ();
 
 /* Defined in eval.c */
 extern Lisp_Object Qautoload, Qexit, Qinteractive, Qcommandp, Qdefun, Qmacro;
 extern Lisp_Object Vinhibit_quit, Vquit_flag;
-extern Lisp_Object Vmocklisp_arguments, Qmocklisp;
+extern Lisp_Object Vmocklisp_arguments, Qmocklisp, Qmocklisp_arguments;
+extern Lisp_Object Vautoload_queue;
 extern Lisp_Object Fand (), For (), Fif (), Fprogn (), Fprog1 (), Fprog2 ();
 extern Lisp_Object Fsetq (), Fquote ();
+extern Lisp_Object Fuser_variable_p ();
 extern Lisp_Object Fdefun (), Flet (), FletX (), Fwhile ();
 extern Lisp_Object Fcatch (), Fthrow (), Funwind_protect ();
 extern Lisp_Object Fcondition_case (), Fsignal ();
@@ -673,16 +707,16 @@ extern void error ();
 /* Defined in editfns.c */
 extern Lisp_Object Vprefix_arg, Qminus, Vcurrent_prefix_arg;
 extern Lisp_Object Finteractive_p (), Fgoto_char ();
-extern Lisp_Object Fdot_min_marker (), Fdot_max_marker ();
-extern Lisp_Object Fdot_min (), Fdot_max ();
-extern Lisp_Object Fdot (), Fmark (), Fdot_marker (), Fmark_marker ();
+extern Lisp_Object Fpoint_min_marker (), Fpoint_max_marker ();
+extern Lisp_Object Fpoint_min (), Fpoint_max ();
+extern Lisp_Object Fpoint (), Fmark (), Fpoint_marker (), Fmark_marker ();
 extern Lisp_Object Ffollchar (), Fprevchar (), Fchar_after (), Finsert ();
 extern Lisp_Object Feolp (), Feobp (), Fbolp (), Fbobp (), Fset_mark ();
 extern Lisp_Object Fformat (), format1 ();
 extern Lisp_Object Fgetenv ();
 extern Lisp_Object Fbuffer_substring (), Fbuffer_string ();
 extern Lisp_Object save_excursion_save (), save_restriction_save ();
-extern save_excursion_restore (), save_restriction_restore ();
+extern Lisp_Object save_excursion_restore (), save_restriction_restore ();
 extern Lisp_Object Fchar_to_string ();
 
 /* defined in buffer.c */
@@ -690,12 +724,12 @@ extern Lisp_Object Vbuffer_alist;
 extern Lisp_Object Fget_buffer (), Fget_buffer_create (), Fset_buffer ();
 extern Lisp_Object Fbarf_if_buffer_read_only ();
 extern Lisp_Object Fcurrent_buffer (), Fswitch_to_buffer (), Fpop_to_buffer ();
-extern Lisp_Object Fcurrent_buffer_name (), Fother_buffer ();
+extern Lisp_Object Fother_buffer ();
 extern struct buffer *all_buffers;
 
 /* defined in marker.c */
 
-extern Lisp_Object Fmarker_position (), Fmarker_buffer (), Fmove_marker ();
+extern Lisp_Object Fmarker_position (), Fmarker_buffer ();
 extern Lisp_Object Fcopy_marker ();
 
 /* Defined in fileio.c */
@@ -709,7 +743,7 @@ extern Lisp_Object Ffile_symlink_p ();
 
 extern Lisp_Object Vfundamental_mode_abbrev_table;
 
-/* defined in search,c */
+/* defined in search.c */
 
 extern Lisp_Object Fstring_match ();
 extern Lisp_Object Fscan_buffer ();
@@ -719,6 +753,7 @@ extern Lisp_Object Fscan_buffer ();
 extern Lisp_Object last_minibuf_string;
 extern Lisp_Object read_minibuf_string (), Fcompleting_read ();
 extern Lisp_Object Fread_from_minibuffer ();
+extern Lisp_Object Fread_variable ();
 extern Lisp_Object Fread_minibuffer (), Feval_minibuffer ();
 extern Lisp_Object Fread_string (), Fread_file_name ();
 extern Lisp_Object Fread_no_blanks_input ();
@@ -752,10 +787,11 @@ extern Lisp_Object get_keyelt (), get_keymap();
 extern Lisp_Object Fvertical_motion (), Findent_to (), Fcurrent_column ();
 
 /* defined in window.c */
+extern Lisp_Object Qwindowp;
 extern Lisp_Object Fget_buffer_window ();
 extern Lisp_Object Fsave_window_excursion ();
 extern Lisp_Object save_window_save ();
-extern save_window_restore ();
+extern Lisp_Object  save_window_restore ();
 
 /* defined in emacs.c */
 extern Lisp_Object decode_env_path ();
@@ -770,7 +806,8 @@ extern Lisp_Object Fprocess_status (), Fkill_process ();
 extern Lisp_Object Vexec_path, Vexec_directory;
 
 /* defined in doc.c */
-extern Lisp_Object Fsubstitute_command_keys (), substitute_command_keys ();
+extern Lisp_Object Vdoc_file_name;
+extern Lisp_Object Fsubstitute_command_keys ();
 
 /* defined in bytecode.c */
 extern Lisp_Object Qbytecode;
@@ -779,3 +816,6 @@ extern Lisp_Object Qbytecode;
 extern Lisp_Object Fexecute_kbd_macro ();
 
 extern void debugger ();
+
+extern char *malloc (), *realloc (), *getenv (), *ctime (), *getwd ();
+extern long *xmalloc (), *xrealloc ();

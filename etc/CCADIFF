@@ -7,11 +7,6 @@ Copyright (c) 1985 Richard M. Stallman
    and that the distributor grants the recipient permission
    for further redistribution as permitted by this notice.
 
-   Permission is granted to distribute modified versions
-   of this document, or of portions of it,
-   under the above conditions, provided also that they
-   carry prominent notices stating who last changed them.
-
 * GNU Emacs Lisp vs CCA Elisp.
 
 GNU Emacs Lisp does not have a distinction between Lisp functions
@@ -21,8 +16,8 @@ with defun is callable as an editor command if you put an
 interactive calling spec in it; for example, 
   (defun forward-character (n)
     (interactive "p")
-    (goto-char (+ (dot) n)))
-defines a function of one argument that moves dot forward by
+    (goto-char (+ (point) n)))
+defines a function of one argument that moves point forward by
 a specified number of characters.  Programs could call this function,
 as in (forward-character 6), or it could be assigned to a key,
 in which case the "p" says to pass the prefix numeric arg as
@@ -32,7 +27,8 @@ and another to read arguments from the user conveniently; the same
 function can do both.
 
 CCA Elisp tries to be a subset of Common Lisp and tries to
-have as many Common Lisp functions as possible.  GNU Emacs Lisp
+have as many Common Lisp functions as possible (though it is still
+only a small fraction of full Common Lisp).  GNU Emacs Lisp
 is somewhat similar to Common Lisp just because of my Maclisp
 and Lisp Machine background, but it has several distinct incompatibilities
 in both syntax and semantics.  Also, I have not attempted to
@@ -44,7 +40,7 @@ GNU Emacs Lisp does not have packages, readtables, or character objects
 
 On the other hand, windows, buffers, relocatable markers and processes
 are first class objects in GNU Emacs Lisp.  You can get information about them
-and do things to them in a Lispy fashion.
+and do things to them in a Lispy fashion.  Not so in CCA Emacs.
 
 In GNU Emacs Lisp, you cannot open a file and read or write characters
 or Lisp objects from it.  This feature is painful to support, and
@@ -122,10 +118,6 @@ Dissociated Press is supported.
 * GNU Emacs Editing Disadvantages.
 
 GNU Emacs does not display the location of the mark.
-
-GNU Emacs does not currently use C-c and C-z as prefix characters;
-as a result, its initial command layout is somewhat different from
-CCA Emacs.  A user could change this easily.
 
 GNU Emacs does not have a concept of numbers of buffers,
 or a permanent ordering of buffers, or searching through multiple

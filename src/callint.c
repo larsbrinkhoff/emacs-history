@@ -4,28 +4,22 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
-
-#ifdef USG
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-
 #include "lisp.h"
 #include "buffer.h"
 #include "commands.h"
@@ -42,6 +36,7 @@ Lisp_Object Vcommand_history;
 extern Lisp_Object ml_apply ();
 extern Lisp_Object Fread_buffer (), Fread_key_sequence (), Fread_file_name ();
 
+/* ARGSUSED */
 DEFUN ("interactive", Finteractive, Sinteractive, 0, UNEVALLED, 0,
   0 /* See auxdoc.c */)
   (args)
@@ -50,8 +45,41 @@ DEFUN ("interactive", Finteractive, Sinteractive, 0, UNEVALLED, 0,
   return Qnil;
 }
 
+/* Quotify EXP: if EXP is constant, return it.
+   If EXP is not constant, return (quote EXP).  */
+Lisp_Object
+quotify_arg (exp)
+     register Lisp_Object exp;
+{
+  if (XTYPE (exp) != Lisp_Int && XTYPE (exp) != Lisp_String
+      && !NULL (exp) && !EQ (exp, Qt))
+    return Fcons (Qquote, Fcons (exp, Qnil));
+
+  return exp;
+}
+
+/* Modify EXP by quotifying each element (except the first).  */
+Lisp_Object
+quotify_args (exp)
+     Lisp_Object exp;
+{
+  register Lisp_Object tail;
+  register struct Lisp_Cons *ptr;
+  for (tail = exp; LISTP (tail); tail = ptr->cdr)
+    {
+      ptr = XCONS (tail);
+      ptr->car = quotify_arg (ptr->car);
+    }
+  return exp;
+}
+
+char *callint_argfuns[]
+    = {"", "point", "mark", "region-beginning", "region-end"};
+
+#define argfuns callint_argfuns
+
 DEFUN ("call-interactively", Fcall_interactively, Scall_interactively, 1, 2, 0,
-  "Call FUNCTION, reading args from the terminal.\n\
+  "Call FUNCTION, reading args from the terminal,\n\
 if the interactive calling specs of FUNCTION request one.\n\
 \n\
 The function contains a specification of how to do the argument reading.\n\
@@ -66,9 +94,11 @@ the function  interactive  at the top level of the function body.  See  interact
   Lisp_Object funcar;
   Lisp_Object specs;
   Lisp_Object teml;
+
   Lisp_Object prefix_arg;
   unsigned char *string;
   unsigned char *tem;
+  int *varies;
   register int i, j;
   int count, foo;
   char prompt[100];
@@ -90,16 +120,20 @@ retry:
     {
       string = (unsigned char *) XSUBR (fun)->prompt;
       if (!string)
-	wrong_type_argument (Qcommandp, function, 0);
+	{
+	lose:
+	  function = wrong_type_argument (Qcommandp, function, 0);
+	  goto retry;
+	}
       else if ((int) string == 1)
 	return Fapply (function, Qnil);
     }
   else if (!LISTP (fun))
-    wrong_type_argument (Qcommandp, function, 0);
+    goto lose;
   else if (funcar = Fcar (fun), EQ (funcar, Qautoload))
     {
       GCPRO2 (function, prefix_arg);
-      Fload (Fcar (Fcdr (fun)), Qnil, Qnil);
+      do_autoload (fun, function);
       UNGCPRO;
       goto retry;
     }
@@ -107,7 +141,7 @@ retry:
     {
       specs = Fassq (Qinteractive, Fcdr (Fcdr (fun)));
       if (NULL (specs))
-	wrong_type_argument (Qcommandp, function, 0);
+	goto lose;
       specs = Fcar (Fcdr (specs));
       if (XTYPE (specs) == Lisp_String)
 	string = XSTRING (specs)->data;
@@ -117,14 +151,15 @@ retry:
 	  specs = Feval (specs);
 	  if (i != num_input_chars || !NULL (record))
 	    Vcommand_history
-	      = Fcons (Fcons (function, specs), Vcommand_history);
+	      = Fcons (Fcons (function, quotify_args (Fcopy_sequence (specs))),
+		       Vcommand_history);
 	  return Fapply (function, specs);
 	}
     }
   else if (EQ (funcar, Qmocklisp))
     return ml_apply (fun, Qinteractive);
   else
-    wrong_type_argument (Qcommandp, function, 0);
+    goto lose;
 
   /* Here if function specifies a string to control parsing the defaults */
 
@@ -148,9 +183,14 @@ retry:
   args = (Lisp_Object *) alloca ((count + 1) * sizeof (Lisp_Object));
   visargs = (Lisp_Object *) alloca ((count + 1) * sizeof (Lisp_Object));
   argstrings = (unsigned char **) alloca ((count + 1) * sizeof (char *));
+  varies = (int *) alloca ((count + 1) * sizeof (int));
 
   for (i = 0; i < (count + 1); i++)
-    args[i] = Qnil;
+    {
+      args[i] = Qnil;
+      visargs[i] = Qnil;
+      varies[i] = 0;
+    }
 
   GCPRO4 (prefix_arg, function, *args, *visargs);
   gcpro3.nvars = (count + 1);
@@ -168,8 +208,6 @@ retry:
 
       doprnt (prompt, sizeof prompt, prompt1, argstrings + 1);
 
-      visargs[i] = Qnil;
-
       switch (*tem)
 	{
 	case 'a':		/* Symbol defined as a function */
@@ -178,7 +216,6 @@ retry:
 	  /* Passing args[i] directly stimulates compiler bug */
 	  teml = visargs[i];
 	  args[i] = Fintern (teml, Qnil);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'b':   		/* Name of existing buffer */
@@ -186,22 +223,19 @@ retry:
 	  if (EQ (selected_window, minibuf_window))
 	    args[i] = Fother_buffer (args[i]);
 	  args[i] = Fread_buffer (build_string (prompt), args[i], Qt);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'B':		/* Name of buffer, possibly nonexistent */
 	  args[i] = Fread_buffer (build_string (prompt),
 				  Fother_buffer (Fcurrent_buffer ()), Qnil);
-	  arg_from_tty = 1;
 	  break;
 
         case 'c':		/* Character */
-	  message ("%s", prompt);
+	  message1 (prompt);
 	  args[i] = Fread_char ();
 	  /* Passing args[i] directly stimulates compiler bug */
 	  teml = args[i];
-	  visargs[i] = Fint_to_string (teml);
-	  arg_from_tty = 1;
+	  visargs[i] = Fchar_to_string (teml);
 	  break;
 
 	case 'C':		/* Command: symbol with interactive function */
@@ -210,44 +244,41 @@ retry:
 	  /* Passing args[i] directly stimulates compiler bug */
 	  teml = visargs[i];
 	  args[i] = Fintern (teml, Qnil);
-	  arg_from_tty = 1;
 	  break;
 
-	case 'd':		/* Value of dot.  Does not do I/O.  */
-	  XFASTINT (args[i]) = dot;
-	  XFASTINT (visargs[i]) = (int) "dot";
+	case 'd':		/* Value of point.  Does not do I/O.  */
+	  XFASTINT (args[i]) = point;
+	  visargs[i] = build_string ("point");
+	  varies[i] = 1;
 	  break;
 
 	case 'D':		/* Directory name. */
 	  args[i] = Fread_file_name (build_string (prompt), Qnil,
 				     bf_cur->directory, Qlambda);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'f':		/* Existing file name. */
 	  args[i] = Fread_file_name (build_string (prompt),
 				     Qnil, Qnil, Qlambda);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'F':		/* Possibly nonexistent file name. */
 	  args[i] = Fread_file_name (build_string (prompt),
 				     Qnil, Qnil, Qnil);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'k':		/* Key sequence (string) */
 	  args[i] = Fread_key_sequence (build_string (prompt));
 	  teml = args[i];
 	  visargs[i] = Fkey_description (teml);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'm':		/* Value of mark.  Does not do I/O.  */
 	  if (NULL (bf_cur->mark))
 	    error ("The mark is not set now");
-	  XFASTINT (visargs[i]) = (int) "the mark";
+	  visargs[i] = build_string ("the mark");
 	  XFASTINT (args[i]) = marker_position (bf_cur->mark);
+	  varies[i] = 2;
 	  break;
 
 	case 'n':		/* Read number from minibuffer.  */
@@ -255,32 +286,34 @@ retry:
 	    args[i] = Fread_minibuffer (build_string (prompt), Qnil);
 	  while (XTYPE (args[i]) != Lisp_Int);
 	  visargs[i] = last_minibuf_string;
-	  arg_from_tty = 1;
 	  break;
 
 	case 'P':		/* Prefix arg in raw form.  Does no I/O.  */
 	  args[i] = prefix_arg;
 	  XFASTINT (visargs[i]) = (int) "";
+	  varies[i] = -1;
 	  break;
 
 	case 'p':		/* Prefix arg converted to number.  No I/O. */
 	  args[i] = Fprefix_numeric_value (prefix_arg);
 	  XFASTINT (visargs[i]) = (int) "";
+	  varies[i] = -1;
 	  break;
 
-	case 'r':		/* Region, dot and mark as 2 args. */
+	case 'r':		/* Region, point and mark as 2 args. */
 	  if (NULL (bf_cur->mark))
 	    error ("The mark is not set now");
 	  foo = marker_position (bf_cur->mark);
-	  XFASTINT (visargs[i]) = (int) "dot";
-	  XFASTINT (args[i]) = dot < foo ? dot : foo;
-	  XFASTINT (visargs[++i]) = (int) "the mark";
-	  XFASTINT (args[i]) = dot > foo ? dot : foo;
+	  visargs[i] = build_string ("point");
+	  XFASTINT (args[i]) = point < foo ? point : foo;
+	  varies[i] = 3;
+	  visargs[++i] = build_string ("the mark");
+	  XFASTINT (args[i]) = point > foo ? point : foo;
+	  varies[i] = 4;
 	  break;
 
 	case 's':		/* String read via minibuffer.  */
 	  args[i] = Fread_string (build_string (prompt), Qnil);
-	  arg_from_tty = 1;
 	  break;
 
 	case 'S':		/* Any symbol.  */
@@ -290,33 +323,30 @@ retry:
 	  /* Passing args[i] directly stimulates compiler bug */
 	  teml = visargs[i];
 	  args[i] = Fintern (teml, Qnil);
-	  arg_from_tty = 1;
 	  break;
 
-	case 'v':		/* Variable name: symbol that is boundp.  */
-	  visargs[i] = Fcompleting_read (build_string (prompt),
-					 Vobarray, Qboundp, Qt, Qnil);
-	  /* Passing args[i] directly stimulates compiler bug */
-	  teml = visargs[i];
-	  args[i] = Fintern (teml, Qnil);
-	  arg_from_tty = 1;
+	case 'v':		/* Variable name: symbol that is
+				   user-variable-p. */
+	  args[i] = Fread_variable (build_string (prompt));
+	  visargs[i] = last_minibuf_string;
 	  break;
 
 	case 'x':		/* Lisp expression read but not evaluated */
 	  args[i] = Fread_minibuffer (build_string (prompt), Qnil);
 	  visargs[i] = last_minibuf_string;
-	  arg_from_tty = 1;
 	  break;
 
 	case 'X':		/* Lisp expression read and evaluated */
 	  args[i] = Feval_minibuffer (build_string (prompt), Qnil);
 	  visargs[i] = last_minibuf_string;
-	  arg_from_tty = 1;
  	  break;
 
 	default:
 	  error ("Invalid control letter in interactive calling string");
 	}
+
+      if (varies[i] == 0)
+	arg_from_tty = 1;
 
       if (NULL (visargs[i]))
 	visargs[i] = args[i];
@@ -333,7 +363,16 @@ retry:
   args[0] = function;
 
   if (arg_from_tty || !NULL (record))
-    Vcommand_history = Fcons (Flist (count + 1, args), Vcommand_history);
+    {
+      visargs[0] = function;
+      for (i = 1; i < count + 1; i++)
+	if (varies[i] > 0)
+	  visargs[i] = Fcons (intern (argfuns[varies[i]]), Qnil);
+	else
+	  visargs[i] = quotify_arg (args[i]);
+      Vcommand_history = Fcons (Flist (count + 1, visargs),
+				Vcommand_history);
+    }
 
   return Ffuncall (count + 1, args);
 }  
@@ -380,17 +419,19 @@ or nil if no argument has been specified.\n\
 \n\
 You cannot examine this variable to find the argument for this command\n\
 since it has been set to nil by the time you can look.\n\
-Normally, commands get the prefix argument with (interactive \"p\").");
+Instead, you should use the variable current-prefix-arg, although\n\
+normally commands can get this prefix argument with (interactive \"P\").");
 
   DefLispVar ("current-prefix-arg", &Vcurrent_prefix_arg,
     "The value of the prefix argument for this editing command.\n\
 It may be a number, or the symbol - for just a minus sign as arg,\n\
 or a list whose car is a number for just one or more C-U's\n\
-or nil if no argument has been specified.");
+or nil if no argument has been specified.\n\
+This is what (interactive \"P\") returns.");
 
   DefLispVar ("command-history", &Vcommand_history,
     "List of recent commands that read arguments from terminal.\n\
-Each command is represented as (FUNCTION . ARGS).");
+Each command is represented as a form to evaluate.");
   Vcommand_history = Qnil;
 
   defsubr (&Sinteractive);

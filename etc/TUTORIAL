@@ -14,7 +14,7 @@ we'll use the following abbreviations:
 	  then type the character <chr>.  "<ESC>" stands for the
 	  key labelled "ALT" or "ESC".
 
-Important note: if you must exit at some point, type C-x C-z.
+Important note: if you must exit at some point, type C-z.
 The characters ">>" at the left margin indicate directions for you to
 try using a command.  For instance:
 <<Blank lines inserted here by startup of teach-emacs>>
@@ -72,6 +72,9 @@ in a more graphical form are the commands:
 				  :
 			  Next line, C-n
 
+>> Move the cursor to the line in the middle of that diagram
+   and type C-l to see the whole diagram centered in the screen.
+
 You'll probably find it easy to think of these by letter.  P for
 previous, N for next, B for backward and F for forward.  These are
 the basic cursor positioning commands and you'll be using them ALL
@@ -119,12 +122,13 @@ farther.  Do you think that this is right?
 Two other simple cursor motion commands are M-< (Meta Less-than),
 which moves to the beginning of the file, and M-> (Meta Greater-than),
 which moves to the end of the file.  You probably don't need to try
-them, since finding this spot again will be boring.  If you need the
-shift key to type a "<", then you must also use the shift key to type
-M-<.  Otherwise, you would be typing M-, .
+them, since finding this spot again will be boring.  On most terminals
+the "<" is above the comma and you must use the shift key to type it.
+On these terminals you must use the shift key to type M-< also;
+without the shift key, you would be typing M-comma.
 
-The location of the cursor in the text is also called "dot".  To
-paraphrase, the cursor shows on the screen where dot is located in
+The location of the cursor in the text is also called "point".  To
+paraphrase, the cursor shows on the screen where point is located in
 the text.
 
 Here is a summary of simple moving operations including the word and
@@ -218,8 +222,8 @@ That is Control-x followed by the digit 1.
 C-x 1 makes the window which the cursor is in become
 the full screen, by getting rid of any other windows.
 
->> Move the cursor to this line, then type
-   Control-h k Control-f
+>> Move the cursor to this line and type C-u 0 C-l.
+>> Type Control-h k Control-f.
    See how this window shrinks, while a new one appears
    to display documentation on the Control-f command.
 
@@ -356,7 +360,9 @@ of up to 20.  This is to reduce the number of C-x u's you have to type.
 C-_ is another command for undoing; it is just the same as C-x u
 but easier to type several times in a row.  The problem with C-_ is
 that on some keyboards it is not obvious how to type it.  That is
-why C-x u is provided as well.
+why C-x u is provided as well.  On some DEC terminals, you can type
+C-_ by typing / while holding down CTRL.  Illogical, but what can
+you expect from DEC?
 
 Giving a numeric argument to C-_ or C-x u is equivalent to repeating
 it as many times as the argument says.
@@ -376,7 +382,7 @@ file around when you don't want to.  Even then, Emacs leaves the
 original file under a changed name in case your changes turn out
 to be a mistake.
 
-If you look near the botton of the screen you will see a line that
+If you look near the bottom of the screen you will see a line that
 begins and ends with dashes, and contains the string "Emacs: TUTORIAL".
 Your copy of the Emacs tutorial is called "TUTORIAL".  Whatever
 file you find, that file's name will appear in that precise
@@ -482,32 +488,31 @@ the X (eXtend) command.  This comes in two flavors:
 These are commands that are generally useful but used less than the
 commands you have already learned about.  You have already seen two
 of them: the file commands C-x C-f to Find and C-x C-s to Save.
-There is also the command C-x C-z which stops Emacs in such a way
-that you can return to it.  Another example is the command to tell
-Emacs that you'd like to stop editing and get rid of Emacs.  The
-command to do this is C-x C-c.  (Don't worry; it offers to save each
-changed file before it kills the Emacs.)
+Another example is the command to tell Emacs that you'd like to stop
+editing and get rid of Emacs.  The command to do this is C-x C-c.
+(Don't worry; it offers to save each changed file before it kills the
+Emacs.)
 
-C-x C-z is the usual way to exit Emacs, because it is always better
+C-z is the usual way to exit Emacs, because it is always better
 not to kill the Emacs if you are going to do any more editing.
+On systems which allow it, C-z exits from Emacs to the shell but
+does not destroy the Emacs; you can resume it with the C-shell
+command "%emacs".  On systems where this is not possible, C-z creates
+a subshell running under Emacs to give you the chance to run other
+programs and return to Emacs afterward, but it does not truly
+"exit" from Emacs.  In this case, you must ask an expert on your
+computer how to get back to Emacs from the subshell.
+
 You would use C-x C-c if you were about to log out.  You would
 also use it to exit an Emacs invoked under mail handling programs
 and other random utilities, since they may not believe you have
 really finished using the Emacs if it continues to exist.
-
->> Type C-x C-z to exit Emacs; then, back in the C-shell,
-   type %emacs<return> to reenter Emacs.  `%emacs'
-   is a command meaning "resume the emacs job".
-   You must actually type the `%' sign.  Without it,
-   you will create a new Emacs, meaning you will have
-   two Emacses, then three, and so on till the system fills up.
 
 There are many C-x commands.  The ones you know are:
 
 	C-x C-f		Find file.
 	C-x C-s		Save file.
 	C-x C-b		List buffers.
-	C-x C-z		Exit Emacs temporarily.
 	C-x C-c		Quit Emacs.
 	C-x u		Undo.
 
@@ -517,13 +522,13 @@ commands are usually called "functions".  An example is the function
 replace-string, which globally replaces one string with another.  When
 you type M-x, Emacs prompts you at the bottom of the screen with
 M-x and you should type the name of the function you wish to call; in
-this case, "replace-string".  Just type "repl s<ESC>" and Emacs will
+this case, "replace-string".  Just type "repl s<TAB>" and Emacs will
 complete the name.  End the command name with <Return>.
 Then type the two "arguments"--the string to be replaced, and the string
 to replace it with--each one ended with a Return.
 
 >> Move the cursor to the blank line two lines below this one.
-   Then type M-x rep s<Return>changed<Return>altered<Return>.
+   Then type M-x repl s<Return>changed<Return>altered<Return>.
 
    Notice how this line has changed: you've replaced
    the word c-h-a-n-g-e-d with "altered" wherever it occured
@@ -534,10 +539,9 @@ MODE LINE
 ---------
 
 If Emacs sees that you are typing commands slowly it shows them to you
-at the bottom of the screen in an area called the echo area.  The echo
-area contains the bottom three lines of the screen.  The line
-immediately above them is called the MODE LINE.  The mode line says
-something like
+at the bottom of the screen in an area called the "echo area."  The echo
+area contains the bottom line of the screen.  The line immediately above
+it is called the MODE LINE.  The mode line says something like
 
 --**--Emacs: TUTORIAL		    (Fundamental)----58%-------------
 
@@ -551,7 +555,7 @@ on the screen, it will say --BOT--.  If you are looking at a file so
 small it all fits on the screen, it says --ALL--.
 
 The stars near the front mean that you have made changes to the text.
-Right after you visit or save a file, there are no starts, just dashes.
+Right after you visit or save a file, there are no stars, just dashes.
 
 The part of the mode line inside the parentheses is to tell you what
 modes you are in.  The default mode is Fundamental which is what you
@@ -579,6 +583,7 @@ work a little bit differently.
 
 To get documentation on your current major mode, type C-h m.
 
+>> Use C-u C-v once or more to bring this line near the top of screen.
 >> Type C-h m, to see how Text mode differs from Fundamental mode.
 >> Type C-x 1 to remove the documentation from the screen.
 
@@ -610,6 +615,12 @@ as a numeric argument.
    characters with it.  Then set the margin back to 70 using
    C-x f again.
 
+If you makes changes in the middle of a paragraph, Auto Fill mode
+does not re-fill it for you.
+To re-fill the paragraph, type M-q (Meta-q) with the cursor inside
+that paragraph.
+
+>> Move the cursor into the previous paragraph and type M-q.
 
 SEARCHING
 ---------
@@ -705,7 +716,7 @@ If you have typed <HELP> and decide you don't want any help, just
 type C-G to cancel it.
 
 The most basic HELP feature is <HELP> c.  Type <HELP>, a c, and a
-command character or sequence, and Emacs displays a very bried
+command character or sequence, and Emacs displays a very brief
 description of the command.
 
 >> Type <HELP> c Control-p.
@@ -718,7 +729,7 @@ writing Lisp code to extend Emacs; it also is enough to remind
 you of what the command does if you have seen it before but did
 not remember.
 
-Multi-character commands such as C-x C-z and (if you have no META or
+Multi-character commands such as C-x C-s and (if you have no META or
 EDIT key) <ESC>v are also allowed after <HELP> c.
 
 To get more information on the command, use <HELP> k instead of <HELP> c.
@@ -755,8 +766,8 @@ find-file and write_file.
 CONCLUSION
 ----------
 
-Remember, to exit Emacs permanently use C-x C-c.  To exit it
-temporarily, so that you can come back in, use C-x C-z.
+Remember, to exit Emacs permanently use C-x C-c.  To exit to a shell
+temporarily, so that you can come back in, use C-z.
 
 This tutorial is meant to be understandable to all new users, so if
 you found something unclear, don't sit and blame yourself - complain!
@@ -779,7 +790,7 @@ Copyright (c) 1985 Richard M. Stallman
    Permission is granted to distribute modified versions
    of this document, or of portions of it,
    under the above conditions, provided also that they
-   carry prominent notices stating who last changed them.
+   carry prominent notices stating who last altered them.
 
 The conditions for copying Emacs itself are slightly different
 but in the same spirit.  Please read the file COPYING and then

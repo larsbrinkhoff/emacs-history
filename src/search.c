@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include <ctype.h>
@@ -44,21 +45,34 @@ Lisp_Object last_regexp;
 
 static struct re_registers search_regs;
 
+/* error condition signalled when regexp compile_pattern fails */
+
+Lisp_Object Qinvalid_regexp;
+
 /* Compile a regexp and signal a Lisp error if anything goes wrong.  */
 
-compile_pattern (pattern, bufp)
+compile_pattern (pattern, bufp, translate)
      Lisp_Object pattern;
      struct re_pattern_buffer *bufp;
+     char *translate;
 {
   char *val;
+  Lisp_Object dummy;
 
-  if (EQ (pattern, last_regexp))
+  if (EQ (pattern, last_regexp)
+      && translate == bufp->translate)
     return;
   last_regexp = Qnil;
+  bufp->translate = translate;
   val = re_compile_pattern (XSTRING (pattern)->data,
 			    XSTRING (pattern)->size,
 			    bufp);
-  if (val) error (val);
+  if (val)
+    {
+      dummy = build_string (val);
+      while (1)
+	Fsignal (Qinvalid_regexp, Fcons (dummy, Qnil));
+    }
   last_regexp = pattern;
   return;
 }
@@ -66,14 +80,16 @@ compile_pattern (pattern, bufp)
 /* Error condition used for failing searches */
 Lisp_Object Qsearch_failed;
 
+Lisp_Object
 signal_failure (arg)
      Lisp_Object arg;
 {
   Fsignal (Qsearch_failed, Fcons (arg, Qnil));
+  return Qnil;
 }
 
 DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
-  "t if text after dot matches regular expression PAT.")
+  "t if text after point matches regular expression PAT.")
   (string)
      Lisp_Object string;
 {
@@ -83,8 +99,8 @@ DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
   register int i;
 
   CHECK_STRING (string, 0);
-  searchbuf.translate = !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0;
-  compile_pattern (string, &searchbuf);
+  compile_pattern (string, &searchbuf,
+		   !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0);
 
   immediate_quit = 1;
   QUIT;			/* Do a pending quit right away, to avoid paradoxical behavior */
@@ -109,7 +125,8 @@ DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
     }
   
   val = (0 <= re_match_2 (&searchbuf, p1, s1, p2, s2,
-			  dot - FirstCharacter, &search_regs)
+			  point - FirstCharacter, &search_regs,
+			  NumCharacters + 1 - FirstCharacter)
 	 ? Qt : Qnil);
   for (i = 0; i < RE_NREGS; i++)
     {
@@ -122,7 +139,10 @@ DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
 
 DEFUN ("string-match", Fstring_match, Sstring_match, 2, 3, 0,
   "Return index of start of first match for REGEXP in STRING, or nil.\n\
-If third arg START is non-nil, start search at that index in STRING.")
+If third arg START is non-nil, start search at that index in STRING.\n\
+For index of first char beyond the match, do (match-end 0).\n\
+match-end and match-beginning also give indices of substrings\n\
+matched by parenthesis constructs in the pattern.")
   (regexp, string, start)
      Lisp_Object regexp, string, start;
 {
@@ -140,9 +160,18 @@ If third arg START is non-nil, start search at that index in STRING.")
       s = XINT (start);
     }
 
-  compile_pattern (regexp, &searchbuf);
+  compile_pattern (regexp, &searchbuf,
+		   !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0);
   val = re_search (&searchbuf, XSTRING (string)->data, XSTRING (string)->size,
-			       s, XSTRING (string)->size - s, 0);
+			       s, XSTRING (string)->size - s, &search_regs);
+  /* Correct for propensity of match-beginning and match-end
+     to add 1 to each of these (which is correct for buffer positions
+     since they are origin-1, but not for indices in strings).  */
+  for (s = 0; s < RE_NREGS; s++)
+    {
+      search_regs.start[s]--;
+      search_regs.end[s]--;
+    }
   if (val < 0) return Qnil;
   return make_number (val);
 }
@@ -188,7 +217,7 @@ ScanBf (target, pos, cnt)
 }
 
 DEFUN ("skip-chars-forward", Fskip_chars_forward, Sskip_chars_forward, 1, 2, 0,
-  "Move dot forward, stopping before a char not in CHARS, or at position LIM.\n\
+  "Move point forward, stopping before a char not in CHARS, or at position LIM.\n\
 CHARS is like the inside of a [...] in a regular expression\n\
 except that ] is never special and \\ quotes ^, - or \\.\n\
 Thus, with arg \"a-zA-Z\", this skips letters stopping before first nonletter.\n\
@@ -201,7 +230,7 @@ With arg \"^a-zA-Z\", skips nonletters stopping before first letter.")
 }
 
 DEFUN ("skip-chars-backward", Fskip_chars_backward, Sskip_chars_backward, 1, 2, 0,
-  "Move dot backward, stopping after a char not in CHARS, or at position LIM.\n\
+  "Move point backward, stopping after a char not in CHARS, or at position LIM.\n\
 See skip-chars-forward for details.")
   (string, lim)
      Lisp_Object string, lim;
@@ -269,13 +298,13 @@ skip_chars (forwardp, string, lim)
 
   if (forwardp)
     {
-      while (dot < XINT (lim) && fastmap[CharAt (dot)])
-	DotRight (1);
+      while (point < XINT (lim) && fastmap[CharAt (point)])
+	PointRight (1);
     }
   else
     {
-      while (dot > XINT (lim) && fastmap[CharAt (dot - 1)])
-	DotLeft (1);
+      while (point > XINT (lim) && fastmap[CharAt (point - 1)])
+	PointLeft (1);
     }
 }
 
@@ -304,26 +333,26 @@ search_command (string, bound, noerror, count, direction, RE)
     {
       CHECK_NUMBER_COERCE_MARKER (bound, 1);
       lim = XINT (bound);
-      if (n > 0 ? lim < dot : lim > dot)
-	error ("Invalid search bound (wrong side of dot)");
+      if (n > 0 ? lim < point : lim > point)
+	error ("Invalid search bound (wrong side of point)");
       if (lim > NumCharacters + 1)
 	lim = NumCharacters + 1;
       if (lim < FirstCharacter)
 	lim = FirstCharacter;
     }
 
-  np = search_buffer (string, dot, lim, n, RE,
+  np = search_buffer (string, point, lim, n, RE,
 		      !NULL (bf_cur->case_fold_search) ? downcase_table : 0);
   if (np == 0)
     {
       if (NULL (noerror))
-	signal_failure (string);
+	return signal_failure (string);
       if (!EQ (noerror, Qt))
-	SetDot (lim);
+	SetPoint (lim);
       return Qnil;
     }
   else
-    SetDot (np);
+    SetPoint (np);
 
   return Qt;
 }
@@ -354,7 +383,6 @@ search_buffer (string, from, lim, n, RE, trt)
   register int i, j;
   unsigned char *p1, *p2;
   int s1, s2;
-  int startpos;
 
   immediate_quit = 1;	/* Quit immediately if user types ^G,
 			   because letting this function finish can take too long. */
@@ -362,8 +390,7 @@ search_buffer (string, from, lim, n, RE, trt)
 
   if (RE)
     {
-      searchbuf.translate = (char *) trt;
-      compile_pattern (string, &searchbuf);
+      compile_pattern (string, &searchbuf, (char *) trt);
 
       /* Get pointers and sizes of the two strings
 	 that make up the visible portion of the buffer. */
@@ -417,29 +444,25 @@ search_buffer (string, from, lim, n, RE, trt)
 	}
       else
 	{
-	  startpos = pos;
-	  while (1)
+	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
+			   pos - FirstCharacter, lim - pos, &search_regs,
+			   /* Don't allow match past current point */
+			   pos - FirstCharacter)
+	      >= 0)
 	    {
-	      if (pos < lim
-		  || 0 > re_search_2 (&searchbuf, p1, s1, p2, s2,
-				      pos - FirstCharacter,
-				      lim - pos, &search_regs))
-		{
-		  immediate_quit = 0;
-		  return 0;
-		}
 	      j = FirstCharacter - 1;
-	      if (search_regs.end[0] <= startpos - FirstCharacter)
+	      for (i = 0; i < RE_NREGS; i++)
 		{
-		  for (i = 0; i < RE_NREGS; i++)
-		    {
-		      search_regs.start[i] += j;
-		      search_regs.end[i] += j;
-		    }
-		  pos = search_regs.start[0] + 1;
-		  break;
+		  search_regs.start[i] += j;
+		  search_regs.end[i] += j;
 		}
-	      pos = search_regs.start[0] + j;
+	      /* Set pos to the new position. */
+	      pos = search_regs.start[0] + 1;
+	    }
+	  else
+	    {
+	      immediate_quit = 0;
+	      return 0;
 	    }
 	}
       n++;
@@ -482,7 +505,8 @@ search_buffer (string, from, lim, n, RE, trt)
       else
 	{
 	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
-			   pos - FirstCharacter, lim - pos, &search_regs)
+			   pos - FirstCharacter, lim - pos, &search_regs,
+			   lim - FirstCharacter)
 	      >= 0)
 	    {
 	      j = FirstCharacter - 1;
@@ -609,8 +633,8 @@ wordify (string)
 
 DEFUN ("search-backward", Fsearch_backward, Ssearch_backward, 1, 4,
   "sSearch backward: ",
-  "Search backward from dot for STRING.\n\
-Set dot to the beginning of the occurrence found, and return t.\n\
+  "Search backward from point for STRING.\n\
+Set point to the beginning of the occurrence found, and return t.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
 The match found must not extend before that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
@@ -623,10 +647,10 @@ Optional fourth argument is repeat count--search for successive occurrences.")
 }
 
 DEFUN ("search-forward", Fsearch_forward, Ssearch_forward, 1, 4, "sSearch: ",
-  "Search forward from dot for STRING.\n\
-Set dot to the end of the occurrence found, and return t.\n\
+  "Search forward from point for STRING.\n\
+Set point to the end of the occurrence found, and return t.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
-The match found must not extend before that position.\n\
+The match found must not extend after that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
 Optional fourth argument is repeat count--search for successive occurrences.")
@@ -638,8 +662,8 @@ Optional fourth argument is repeat count--search for successive occurrences.")
 
 DEFUN ("word-search-backward", Fword_search_backward, Sword_search_backward, 1, 4,
   "sWord search backward: ",
-  "Search backward from dot for STRING, ignoring differences in punctuation.\n\
-Set dot to the beginning of the occurrence found, and return t.\n\
+  "Search backward from point for STRING, ignoring differences in punctuation.\n\
+Set point to the beginning of the occurrence found, and return t.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
 The match found must not extend before that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
@@ -653,10 +677,10 @@ Optional fourth argument is repeat count--search for successive occurrences.")
 
 DEFUN ("word-search-forward", Fword_search_forward, Sword_search_forward, 1, 4,
   "sWord search: ",
-  "Search forward from dot for STRING, ignoring differences in punctuation.\n\
-Set dot to the end of the occurrence found, and return t.\n\
+  "Search forward from point for STRING, ignoring differences in punctuation.\n\
+Set point to the end of the occurrence found, and return t.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
-The match found must not extend before that position.\n\
+The match found must not extend after that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
 Optional fourth argument is repeat count--search for successive occurrences.")
@@ -668,13 +692,14 @@ Optional fourth argument is repeat count--search for successive occurrences.")
 
 DEFUN ("re-search-backward", Fre_search_backward, Sre_search_backward, 1, 4,
   "sRE search backward: ",
-  "Search backward from dot for regular expression REGEXP.\n\
-Set dot to the beginning of the occurrence found, and return t.\n\
+  "Search backward from point for regular expression REGEXP.\n\
+Set point to the beginning of the occurrence found, and return t.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
 The match found must not extend before that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
-Optional fourth argument is repeat count--search for successive occurrences.")
+Optional fourth argument is repeat count--search for successive occurrences.\n\
+See also the functions match-beginning and match-end and replace-match.")
   (string, bound, noerror, count)
      Lisp_Object string, bound, noerror, count;
 {
@@ -683,13 +708,14 @@ Optional fourth argument is repeat count--search for successive occurrences.")
 
 DEFUN ("re-search-forward", Fre_search_forward, Sre_search_forward, 1, 4,
   "sRE search: ",
-  "Search forward from dot for regular expression REGEXP.\n\
-Set dot to the end of the occurrence found, and return t.\n\
+  "Search forward from point for regular expression REGEXP.\n\
+Set point to the end of the occurrence found, and return t.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
-The match found must not extend before that position.\n\
+The match found must not extend after that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
-Optional fourth argument is repeat count--search for successive occurrences.")
+Optional fourth argument is repeat count--search for successive occurrences.\n\
+See also the functions match-beginning and match-end and replace-match.")
   (string, bound, noerror, count)
      Lisp_Object string, bound, noerror, count;
 {
@@ -701,9 +727,11 @@ DEFUN ("replace-match", Freplace_match, Sreplace_match, 1, 3, 0,
 If second arg FIXEDCASE is non-nil, do not alter case of replacement text.\n\
 Otherwise convert to all caps or cap initials, like replaced text.\n\
 If third arg LITERAL is non-nil, insert NEWTEXT literally.\n\
-Otherwise treat \\& in NEWTEXT as \"substitute original matched text\"\n\
-and \\<n> as \"substitute match for \\(...\\) number <n>\".\n\
-Leaves dot at end of replacement text.")
+Otherwise treat \\ as special:\n\
+  \\& in NEWTEXT means substitute original matched text,\n\
+  \\<n> means substitute match for \\(...\\) number <n>,\n\
+  \\\\ means insert one \\.\n\
+Leaves point at end of replacement text.")
   (string, fixedcase, literal)
      Lisp_Object string, fixedcase, literal;
 {
@@ -717,10 +745,8 @@ Leaves dot at end of replacement text.")
   if (search_regs.start[0] + 1 < FirstCharacter
       || search_regs.start[0] > search_regs.end[0]
       || search_regs.end[0] > NumCharacters)
-    Fsignal (Qargs_out_of_range,
-	     Fcons (make_number (search_regs.start[0]),
-		    Fcons (make_number (search_regs.end[0]),
-			   Qnil)));
+    args_out_of_range(make_number (search_regs.start[0]),
+		      make_number (search_regs.end[0]));
 
   if (NULL (fixedcase))
     {
@@ -770,7 +796,7 @@ Leaves dot at end of replacement text.")
       if (!some_letter) case_action = nochange;
     }
 
-  SetDot (search_regs.end[0] + 1);
+  SetPoint (search_regs.end[0] + 1);
   if (!NULL (literal))
     Finsert (1, &string);
   else
@@ -788,22 +814,22 @@ Leaves dot at end of replacement text.")
 		place (search_regs.start[c - '0'] + 1,
 		       search_regs.end[c - '0'] + 1);
 	      else
-		insert_char ('\\'), insert_char (c);
+		insert_char (c);
 	    }
 	  else
 	    insert_char (c);
 	}
     }
 
-  inslen = dot - (search_regs.end[0] + 1);
+  inslen = point - (search_regs.end[0] + 1);
   del_range (search_regs.start[0] + 1, search_regs.end[0] + 1);
 
   if (case_action == all_caps)
-    Fupcase_region (make_number (dot - inslen), make_number (dot));
+    Fupcase_region (make_number (point - inslen), make_number (point));
   else if (case_action == cap_initial)
     {  /* Fcapitalize_region won't do; must not downcase anything.  */
       last = 0;
-      for (pos = dot - inslen; pos < dot; pos++)
+      for (pos = point - inslen; pos < point; pos++)
 	{
 	  c = CharAt (pos);
 	  if (!last && (c >= 'a' && c <= 'z'))
@@ -825,7 +851,7 @@ place (l1, l2)
   if (l2 < l1) l2 = l1;
   if (l2 >= NumCharacters)
     l2 = NumCharacters;
-  GapTo (dot);
+  GapTo (point);
   InsCStr (&CharAt (l1), l2 - l1);
 }
 
@@ -860,7 +886,9 @@ Zero means the entire text matched by the whole regexp.")
 }
 
 DEFUN ("match-data", Fmatch_data, Smatch_data, 0, 0, 0,
-  "Return list containing all info on what the last search matched.")
+  "Return list containing all info on what the last search matched.\n\
+Element 2N is (match-beginning N); element 2N + 1 is (match-end N).\n\
+All are represented as markers.")
   ()
 {
   Lisp_Object data[2 * RE_NREGS];
@@ -882,52 +910,28 @@ DEFUN ("store-match-data", Fstore_match_data, Sstore_match_data, 1, 1, 0,
   "Set internal data on last search match from elements of LIST.\n\
 LIST should have been created by calling match-data previously.")
   (list)
-     Lisp_Object list;
+     register Lisp_Object list;
 {
-  int i;
-  Lisp_Object marker;
+  register int i;
+  register Lisp_Object marker;
 
   if (!LISTP (list))
-    wrong_type_argument (Qlistp, list, 0);
+    list = wrong_type_argument (Qlistp, list, 0);
 
   for (i = 0; i < RE_NREGS; i++)
     {
       marker = Fcar (list);
-      if (XTYPE (marker) != Lisp_Marker)
-	wrong_type_argument (Qmarkerp, marker, 0);
+      CHECK_MARKER (marker, 0);
       search_regs.start[i] = marker_position (marker) - 1;
       list = Fcdr (list);
 
       marker = Fcar (list);
-      if (XTYPE (marker) != Lisp_Marker)
-	wrong_type_argument (Qmarkerp, marker, 0);
+      CHECK_MARKER (marker, 0);
       search_regs.end[i] = marker_position (marker) - 1;
       list = Fcdr (list);
     }
 
   return Qnil;  
-}
-
-DEFUN ("region-around-match", Fregion_around_match, Sregion_around_match, 1, 1, "p",
-  "Put dot and the mark around the text matched by part of last regexp searched for.\n\
-ARG, a number (the prefix arg, in interactive use) specifies which parenthesized\n\
-expression in the last regexp.  Zero means the entire text matched by the whole regexp.")
-  (num)
-     Lisp_Object num;
-{
-  register    n;
-  register    lo,
-	      hi;
-  CHECK_NUMBER (num, 0);
-  n = XINT (num);
-  if (n < 0 || n >= RE_NREGS)
-    error ("Out-of-bounds argument");
-  lo = search_regs.start[n];
-  hi = search_regs.end[n];
-
-  Fset_mark (make_number (lo + 1));
-  SetDot (hi + 1);
-  return Qnil;
 }
 
 /* Quote a string to inactivate reg-expr chars */
@@ -983,11 +987,18 @@ syms_of_search ()
 
   Qsearch_failed = intern ("search-failed");
   staticpro (&Qsearch_failed);
+  Qinvalid_regexp = intern ("invalid-regexp");
+  staticpro (&Qinvalid_regexp);
 
   Fput (Qsearch_failed, Qerror_conditions,
 	Fcons (Qsearch_failed, Fcons (Qerror, Qnil)));
   Fput (Qsearch_failed, Qerror_message,
 	build_string ("Search failed"));
+
+  Fput (Qinvalid_regexp, Qerror_conditions,
+	Fcons (Qinvalid_regexp, Fcons (Qerror, Qnil)));
+  Fput (Qinvalid_regexp, Qerror_message,
+	build_string ("Invalid regexp"));
 
   last_regexp = Qnil;
   staticpro (&last_regexp);
@@ -1008,6 +1019,5 @@ syms_of_search ()
   defsubr (&Smatch_end);
   defsubr (&Smatch_data);
   defsubr (&Sstore_match_data);
-  defsubr (&Sregion_around_match);
   defsubr (&Sregexp_quote);
 }

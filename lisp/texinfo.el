@@ -4,20 +4,31 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (defvar texinfo-mode-syntax-table nil)
+
+(defvar texinfo-format-syntax-table nil)
+
+(defvar texinfo-vindex)
+(defvar texinfo-findex)
+(defvar texinfo-cindex)
+(defvar texinfo-pindex)
+(defvar texinfo-tindex)
+(defvar texinfo-kindex)
 
 (let ((st (syntax-table)))
   (unwind-protect
@@ -26,12 +37,20 @@
     (set-syntax-table texinfo-mode-syntax-table)
     (modify-syntax-entry ?\" " ")
     (modify-syntax-entry ?\\ " ")
+    (modify-syntax-entry ?@ "\\")
     (modify-syntax-entry ?\^q "\\")
     (modify-syntax-entry ?\[ "(]")
     (modify-syntax-entry ?\] ")[")
     (modify-syntax-entry ?{ "(}")
     (modify-syntax-entry ?} "){")
-    (modify-syntax-entry ?' "w"))
+    (modify-syntax-entry ?\' "w")
+    (setq texinfo-format-syntax-table (copy-sequence texinfo-mode-syntax-table))
+    (set-syntax-table texinfo-format-syntax-table)
+    (modify-syntax-entry ?\' ".")
+    (modify-syntax-entry ?\[ ".")
+    (modify-syntax-entry ?\] ".")
+    (modify-syntax-entry ?\( ".")
+    (modify-syntax-entry ?\) "."))
    (set-syntax-table st)))
 
 (defun texinfo-mode ()
@@ -51,66 +70,88 @@ which is set up so expression commands skip texinfo bracket groups."
   (make-local-variable 'require-final-newline)
   (setq require-final-newline t)
   (make-local-variable 'paragraph-separate)
-  (setq paragraph-separate (concat "^\b\\|^@\\|" paragraph-separate))
+  (setq paragraph-separate (concat "^\b\\|^@[a-z]*[ \n]\\|" paragraph-separate))
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^\b\\|^@\\|" paragraph-start))
-  (and (boundp 'texinfo-mode-hook)
-       texinfo-mode-hook
-       (funcall texinfo-mode-hook)))
+  (setq paragraph-start (concat "^\b\\|^@[a-z]*[ \n]\\|" paragraph-start))
+  (make-local-variable 'fill-column)
+  (setq fill-column 75)
+  (run-hooks 'text-mode-hook 'texinfo-mode-hook))
 
 (defun texinfo-format-buffer ()
   "Process the current buffer as texinfo code, into an Info file.
 The Info file output is generated in a buffer
 visiting the Info file names specified in the @setfilename command."
   (interactive)
-  (message "Formatting Info file...")
   (let (texinfo-format-filename
 	texinfo-example-start
 	texinfo-command-start
 	texinfo-command-end
 	texinfo-command-name
+	texinfo-last-node
+	texinfo-vindex
+	texinfo-findex
+	texinfo-cindex
+	texinfo-pindex
+	texinfo-tindex
+	texinfo-kindex
 	texinfo-stack
 	outfile
 	(fill-column fill-column)
 	(input-buffer (current-buffer)))
     (save-excursion
-      (goto-char (dot-min))
+      (goto-char (point-min))
       (search-forward "@setfilename")
-      (setq texinfo-command-end (dot))
+      (setq texinfo-command-end (point))
       (setq outfile (texinfo-parse-line-arg)))
     (find-file outfile)
+    (message "Formatting Info file...")
     (texinfo-mode)
+    (set-syntax-table texinfo-format-syntax-table)
     (erase-buffer)
     (insert-buffer-substring input-buffer)
-    (goto-char (dot-min))
+    (goto-char (point-min))
+    (search-forward "@setfilename")
+    (beginning-of-line)
+    (delete-region (point-min) (point))
     (while (search-forward "``" nil t)
       (replace-match "\""))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (while (search-forward "''" nil t)
       (replace-match "\""))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (while (search-forward "@" nil t)
-      (if (= (following-char) ?@)
-	  (delete-char 1)
-	(setq texinfo-command-start (1- (dot)))
-	(if (= (char-syntax (following-char)) ?w)
-	    (forward-word 1)
-	  (forward-char 1))
-	(setq texinfo-command-end (dot))
-	(setq texinfo-command-name
-	      (intern (buffer-substring (1+ texinfo-command-start)
-					texinfo-command-end)))
-	(let ((cmd (get texinfo-command-name 'texinfo-format)))
-	  (if cmd (funcall cmd)
-	    (texinfo-unsupported)))))
+      ;; If the @ is preceded by an odd number of ^Q's, do nothing,
+      (if (and (eq (char-after (- (point) 2)) ?\^Q)
+	       (save-excursion
+		 (forward-char -1)
+		 (let ((opoint (point)))
+		   (skip-chars-backward "\^Q")
+		   (= (logand 1 (- opoint (point))) 1))))
+	  nil
+	(if (looking-at "[@{}'` *]")
+	    (if (= (following-char) ?*)
+		(delete-region (1- (point)) (1+ (point)))
+	      (delete-char -1)
+	      (forward-char 1))
+	  (setq texinfo-command-start (1- (point)))
+	  (if (= (char-syntax (following-char)) ?w)
+	      (forward-word 1)
+	    (forward-char 1))
+	  (setq texinfo-command-end (point))
+	  (setq texinfo-command-name
+		(intern (buffer-substring (1+ texinfo-command-start)
+					  texinfo-command-end)))
+	  (let ((cmd (get texinfo-command-name 'texinfo-format)))
+	    (if cmd (funcall cmd)
+	      (texinfo-unsupported))))))
     (cond (texinfo-stack
 	   (goto-char (nth 2 (car texinfo-stack)))
 	   (error "Unterminated @%s" (car (car texinfo-stack)))))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (while (search-forward "\^q" nil t)
       (delete-char -1)
       (forward-char 1))
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (message "Formatting Info file...done.  Now save it.")))
 
 (put 'begin 'texinfo-format 'texinfo-format-begin)
@@ -129,36 +170,63 @@ visiting the Info file names specified in the @setfilename command."
 
 (defun texinfo-parse-line-arg ()
   (goto-char texinfo-command-end)
-  (skip-chars-forward " ")
-  (let ((start (dot)))
-    (if (not (looking-at "[[{(]"))
-	(progn
-	 (end-of-line)
-	 (setq texinfo-command-end (dot)))
-      (setq start (1+ (dot)))
-      (forward-list 1)
-      (setq texinfo-command-end (dot))
-      (forward-char -1))
-    (prog1 (buffer-substring start (dot))
+  (let ((start (point)))
+    (cond ((looking-at " ")
+	   (skip-chars-forward " ")
+	   (setq start (point))
+	   (end-of-line)
+	   (setq texinfo-command-end (1+ (point))))
+	  ((looking-at "{")
+	   (setq start (1+ (point)))
+	   (forward-list 1)
+	   (setq texinfo-command-end (point))
+	   (forward-char -1))
+	  (t
+	   (error "Invalid texinfo command arg format")))
+    (prog1 (buffer-substring start (point))
 	   (if (eolp) (forward-char 1)))))
 
 (defun texinfo-parse-arg-discard ()
   (prog1 (texinfo-parse-line-arg)
 	 (texinfo-discard-command)))
 
-(defun texinfo-format-parse-args ()
-  (let ((start (1- (dot)))
+(defun texinfo-discard-command ()
+  (delete-region texinfo-command-start texinfo-command-end))
+
+(defun texinfo-format-parse-line-args ()
+  (let ((start (1- (point)))
 	next beg end
 	args)
-    (search-forward "[")
-    (while (/= (preceding-char) ?\])
+    (skip-chars-forward " ")
+    (while (not (eolp))
+      (setq beg (point))
+      (re-search-forward "[\n,]")
+      (setq next (point))
+      (if (bolp) (setq next (1- next)))
+      (forward-char -1)
+      (skip-chars-backward " ")
+      (setq end (point))
+      (setq args (cons (if (> end beg) (buffer-substring beg end))
+		       args))
+      (goto-char next)
+      (skip-chars-forward " "))
+    (if (eolp) (forward-char 1))
+    (setq texinfo-command-end (point))
+    (nreverse args)))
+
+(defun texinfo-format-parse-args ()
+  (let ((start (1- (point)))
+	next beg end
+	args)
+    (search-forward "{")
+    (while (/= (preceding-char) ?\})
       (skip-chars-forward " \t\n")
-      (setq beg (dot))
-      (re-search-forward "[],]")
-      (setq next (dot))
+      (setq beg (point))
+      (re-search-forward "[},]")
+      (setq next (point))
       (forward-char -1)
       (skip-chars-backward " \t\n")
-      (setq end (dot))
+      (setq end (point))
       (cond ((< beg end)
 	     (goto-char beg)
 	     (while (search-forward "\n" end t)
@@ -167,31 +235,31 @@ visiting the Info file names specified in the @setfilename command."
 		       args))
       (goto-char next))
     (if (eolp) (forward-char 1))
-    (setq texinfo-command-end (dot))
+    (setq texinfo-command-end (point))
     (nreverse args)))
 
 (put 'setfilename 'texinfo-format 'texinfo-format-setfilename)
 (defun texinfo-format-setfilename ()
-  (let ((arg (texinfo-parse-line-arg)))
-    (texinfo-discard-line)
+  (let ((arg (texinfo-parse-arg-discard)))
+    (setq texinfo-format-filename (file-name-nondirectory arg))
     (insert "Info file "
-	    arg
-	    ", produced by texinfo-format-buffer\nfrom "
+	    texinfo-format-filename
+	    ", produced by texinfo-format-buffer   -*-Text-*-\nfrom "
 	    (if (buffer-file-name input-buffer)
 		(concat "file "
 			(file-name-nondirectory (buffer-file-name input-buffer)))
 	      (concat "buffer " (buffer-name input-buffer)))
-	    ?\n)
-    (setq texinfo-format-filename arg)))
+	    ?\n)))
 
 (put 'node 'texinfo-format 'texinfo-format-node)
 (defun texinfo-format-node ()
-  (let* ((args (texinfo-format-parse-args))
+  (let* ((args (texinfo-format-parse-line-args))
 	 (name (nth 0 args))
 	 (next (nth 1 args))
 	 (prev (nth 2 args))
 	 (up (nth 3 args)))
     (texinfo-discard-command)
+    (setq texinfo-last-node name)
     (or (bolp)
 	(insert ?\n))
     (insert "\^_\nFile: " texinfo-format-filename
@@ -209,7 +277,7 @@ visiting the Info file names specified in the @setfilename command."
   (texinfo-discard-line)
   (insert "* Menu:\n\n"))
 
-(put 'menu 'texinfo-end 'texinfo-discard-line)
+(put 'menu 'texinfo-end 'texinfo-discard-command)
 (defun texinfo-discard-line ()
   (goto-char texinfo-command-end)
   (or (eolp)
@@ -217,11 +285,9 @@ visiting the Info file names specified in the @setfilename command."
   (goto-char texinfo-command-start)
   (or (bolp)
       (error "Extraneous text at beginning of command line."))
-  (delete-region (dot) (progn (forward-line 1) (dot))))
+  (delete-region (point) (progn (forward-line 1) (point))))
 
-; @note [NODE, FNAME, NAME, FILE, DOCUMENT]
-;or
-; @xref [NODE, FNAME, NAME, FILE, DOCUMENT]
+; @xref {NODE, FNAME, NAME, FILE, DOCUMENT}
 ; -> *Note FNAME: (FILE)NODE
 ;   If FILE is missing,
 ;    *Note FNAME: NODE
@@ -235,9 +301,8 @@ visiting the Info file names specified in the @setfilename command."
 ;   If fifth argument DOCUMENT is specified, produces
 ;    See section <xref to NODE> [NAME, else NODE], page <xref to NODE>
 ;    of DOCUMENT
-(put 'note 'texinfo-format 'texinfo-format-note)
-(put 'xref 'texinfo-format 'texinfo-format-note)
-(defun texinfo-format-note ()
+(put 'xref 'texinfo-format 'texinfo-format-xref)
+(defun texinfo-format-xref ()
   (let ((args (texinfo-format-parse-args)))
     (texinfo-discard-command)
     (insert "*Note ")
@@ -249,11 +314,19 @@ visiting the Info file names specified in the @setfilename command."
 	    (insert "(" (nth 3 args) ")"))
 	(insert (car args))))))
 
-;@infonote[NODE, FNAME, FILE]
-;Like @xref[NODE, FNAME,,FILE] in texinfo.
+(put 'pxref 'texinfo-format 'texinfo-format-pxref)
+(defun texinfo-format-pxref ()
+  (texinfo-format-xref)
+  (or (save-excursion
+	(forward-char -2)
+	(looking-at "::"))
+      (insert ".")))
+
+;@inforef{NODE, FNAME, FILE}
+;Like @xref{NODE, FNAME,,FILE} in texinfo.
 ;In Tex, generates "See Info file FILE, node NODE"
-(put 'infonote 'texinfo-format 'texinfo-format-infonote)
-(defun texinfo-format-infonote ()
+(put 'inforef 'texinfo-format 'texinfo-format-inforef)
+(defun texinfo-format-inforef ()
   (let ((args (texinfo-format-parse-args)))
     (texinfo-discard-command)
     (insert "*Note " (nth 1 args) ": (" (nth 2 args) ")" (car args))))
@@ -271,6 +344,8 @@ visiting the Info file names specified in the @setfilename command."
 (put 'section 'texinfo-format 'texinfo-format-section)
 (put 'iappendixsection 'texinfo-format 'texinfo-format-section)
 (put 'appendixsection 'texinfo-format 'texinfo-format-section)
+(put 'iappendixsec 'texinfo-format 'texinfo-format-section)
+(put 'appendixsec 'texinfo-format 'texinfo-format-section)
 (put 'iunnumberedsec 'texinfo-format 'texinfo-format-section)
 (put 'unnumberedsec 'texinfo-format 'texinfo-format-section)
 (defun texinfo-format-section ()
@@ -295,15 +370,13 @@ visiting the Info file names specified in the @setfilename command."
   (texinfo-format-chapter-1 ?.))
 
 (defun texinfo-format-chapter-1 (belowchar)
-  (let ((arg (texinfo-parse-line-arg)))
-    (texinfo-discard-line)
-    (insert arg ?\n "@SectionPAD " belowchar ?\n)
+  (let ((arg (texinfo-parse-arg-discard)))
+    (insert ?\n arg ?\n "@SectionPAD " belowchar ?\n)
     (forward-line -2)))
 
 (put 'SectionPAD 'texinfo-format 'texinfo-format-sectionpad)
 (defun texinfo-format-sectionpad ()
-  (let ((str (texinfo-parse-line-arg)))
-    (texinfo-discard-line)
+  (let ((str (texinfo-parse-arg-discard)))
     (forward-char -1)
     (let ((column (current-column)))
       (forward-char 1)
@@ -346,14 +419,13 @@ visiting the Info file names specified in the @setfilename command."
 
 (put 'itemize 'texinfo-format 'texinfo-itemize)
 (defun texinfo-itemize ()
-  (texinfo-push-stack 'itemize (texinfo-parse-line-arg))
-  (setq fill-column (- fill-column 5))
-  (texinfo-discard-line))
+  (texinfo-push-stack 'itemize (texinfo-parse-arg-discard))
+  (setq fill-column (- fill-column 5)))
 
 (put 'itemize 'texinfo-end 'texinfo-end-itemize)
 (defun texinfo-end-itemize ()
   (setq fill-column (+ fill-column 5))
-  (texinfo-discard-line)
+  (texinfo-discard-command)
   (let ((stacktop
 	 (texinfo-pop-stack 'itemize)))
     (texinfo-do-itemize (nth 1 stacktop))))
@@ -367,26 +439,25 @@ visiting the Info file names specified in the @setfilename command."
 (put 'enumerate 'texinfo-end 'texinfo-end-enumerate)
 (defun texinfo-end-enumerate ()
   (setq fill-column (+ fill-column 5))
-  (texinfo-discard-line)
+  (texinfo-discard-command)
   (let ((stacktop
 	 (texinfo-pop-stack 'enumerate)))
     (texinfo-do-itemize (nth 1 stacktop))))
 
 (put 'table 'texinfo-format 'texinfo-table)
 (defun texinfo-table ()
-  (texinfo-push-stack 'table (texinfo-parse-line-arg))
-  (setq fill-column (- fill-column 5))
-  (texinfo-discard-line))
+  (texinfo-push-stack 'table (texinfo-parse-arg-discard))
+  (setq fill-column (- fill-column 5)))
 
 (put 'ftable 'texinfo-format 'texinfo-ftable)
 (defun texinfo-ftable ()
-  (texinfo-push-stack 'table "3")
+  (texinfo-push-stack 'table "@code")
   (setq fill-column (- fill-column 5))
   (texinfo-discard-line))
 
 (put 'description 'texinfo-format 'texinfo-description)
 (defun texinfo-description ()
-  (texinfo-push-stack 'table "1")
+  (texinfo-push-stack 'table "@asis")
   (setq fill-column (- fill-column 5))
   (texinfo-discard-line))
 
@@ -395,7 +466,7 @@ visiting the Info file names specified in the @setfilename command."
 (put 'description 'texinfo-end 'texinfo-end-table)
 (defun texinfo-end-table ()
   (setq fill-column (+ fill-column 5))
-  (texinfo-discard-line)
+  (texinfo-discard-command)
   (let ((stacktop
 	 (texinfo-pop-stack 'table)))
     (texinfo-do-itemize (nth 1 stacktop))))
@@ -406,7 +477,7 @@ visiting the Info file names specified in the @setfilename command."
 (defun texinfo-do-itemize (from)
   (save-excursion
    (while (progn (forward-line -1)
-		 (>= (dot) from))
+		 (>= (point) from))
      (if (= (following-char) ?\b)
 	 (save-excursion
 	   (delete-char 1)
@@ -415,6 +486,7 @@ visiting the Info file names specified in the @setfilename command."
        (save-excursion (insert "     "))))))
 
 (put 'item 'texinfo-format 'texinfo-item)
+(put 'itemx 'texinfo-format 'texinfo-item)
 (defun texinfo-item ()
   (funcall (get (car (car texinfo-stack)) 'texinfo-item)))
 
@@ -434,30 +506,35 @@ visiting the Info file names specified in the @setfilename command."
 
 (put 'table 'texinfo-item 'texinfo-table-item)
 (defun texinfo-table-item ()
-  (let ((arg (texinfo-parse-line-arg))
-	(fontcode (aref (car (cdr (car texinfo-stack))) 0)))
-    (texinfo-discard-line)
-    (cond ((= fontcode ?3)
-	   (insert "\b`" arg "'\n"))
-	  ((= fontcode ?2)
-	   (insert ?\b (upcase arg) ?\n))
-	  (t
-	   (insert ?\b arg ?\n)))
-    (insert ?\n))
+  (let ((arg (texinfo-parse-arg-discard))
+	(itemfont (car (cdr (car texinfo-stack)))))
+    (insert ?\b itemfont ?\{ arg "}\n     \n"))
   (forward-line -2))
 
 (put 'ifinfo 'texinfo-format 'texinfo-discard-command)
-(defun texinfo-discard-command ()
-  (delete-region texinfo-command-start texinfo-command-end))
 (put 'ifinfo 'texinfo-end 'texinfo-discard-command)
 
 (put 'iftex 'texinfo-format 'texinfo-format-iftex)
 (defun texinfo-format-iftex ()
   (delete-region texinfo-command-start
-		 (progn (re-search-forward "@end[ \n]iftex")
-			(dot))))
+		 (progn (re-search-forward "@end iftex\n")
+			(point))))
 
-(put 'endiftex 'texinfo-format 'texinfo-discard-command)
+(put 'titlepage 'texinfo-format 'texinfo-format-titlepage)
+(defun texinfo-format-titlepage ()
+  (delete-region texinfo-command-start
+		 (progn (search-forward "@end titlepage\n")
+			(point))))
+
+(put 'endtitlepage 'texinfo-format 'texinfo-discard-line)
+
+(put 'ignore 'texinfo-format 'texinfo-format-ignore)
+(defun texinfo-format-ignore ()
+  (delete-region texinfo-command-start
+		 (progn (search-forward "@end ignore\n")
+			(point))))
+
+(put 'endignore 'texinfo-format 'texinfo-discard-line)
 
 (put 'var 'texinfo-format 'texinfo-format-var)
 (put 'heading 'texinfo-format 'texinfo-format-var)
@@ -465,14 +542,19 @@ visiting the Info file names specified in the @setfilename command."
   (insert (upcase (texinfo-parse-arg-discard)))
   (goto-char texinfo-command-start))
 
+(put 'asis 'texinfo-format 'texinfo-format-noop)
 (put 'b 'texinfo-format 'texinfo-format-noop)
+(put 't 'texinfo-format 'texinfo-format-noop)
 (put 'i 'texinfo-format 'texinfo-format-noop)
+(put 'key 'texinfo-format 'texinfo-format-noop)
 (put 'w 'texinfo-format 'texinfo-format-noop)
 (defun texinfo-format-noop ()
   (insert (texinfo-parse-arg-discard))
   (goto-char texinfo-command-start))
 
 (put 'code 'texinfo-format 'texinfo-format-code)
+(put 'samp 'texinfo-format 'texinfo-format-code)
+(put 'file 'texinfo-format 'texinfo-format-code)
 (put 'kbd 'texinfo-format 'texinfo-format-code)
 (defun texinfo-format-code ()
   (insert "`" (texinfo-parse-arg-discard) "'")
@@ -489,6 +571,7 @@ visiting the Info file names specified in the @setfilename command."
   (texinfo-discard-command)
   (insert "*"))
 
+(put 'smallexample 'texinfo-format 'texinfo-format-example)
 (put 'example 'texinfo-format 'texinfo-format-example)
 (put 'quotation 'texinfo-format 'texinfo-format-example)
 (put 'lisp 'texinfo-format 'texinfo-format-example)
@@ -496,12 +579,11 @@ visiting the Info file names specified in the @setfilename command."
 (put 'format 'texinfo-format 'texinfo-format-example)
 (put 'flushleft 'texinfo-format 'texinfo-format-example)
 (defun texinfo-format-example ()
-  (if texinfo-example-start
-      (error "@%s starts inside another such environment"
-	     texinfo-command-name))
-  (setq texinfo-example-start texinfo-command-start)
+  (texinfo-push-stack 'example nil)
+  (setq fill-column (- fill-column 5))
   (texinfo-discard-line))
 
+(put 'smallexample 'texinfo-end 'texinfo-end-example)
 (put 'example 'texinfo-end 'texinfo-end-example)
 (put 'quotation 'texinfo-end 'texinfo-end-example)
 (put 'lisp 'texinfo-end 'texinfo-end-example)
@@ -509,61 +591,123 @@ visiting the Info file names specified in the @setfilename command."
 (put 'format 'texinfo-end 'texinfo-end-example)
 (put 'flushleft 'texinfo-end 'texinfo-end-example)
 (defun texinfo-end-example ()
-  (texinfo-discard-line)
-  (if (null texinfo-example-start)
-      (error "@end %s with no beginning" texinfo-command-name))
-  (save-excursion
-   (while (progn (forward-line -1)
-		 (>= (dot) texinfo-example-start))
-     (if (= (following-char) ?\b)
-	 (delete-char 1)
-       (save-excursion (insert "    ")))))
-  (setq texinfo-example-start nil))
+  (setq fill-column (+ fill-column 5))
+  (texinfo-discard-command)
+  (let ((stacktop
+	 (texinfo-pop-stack 'example)))
+    (texinfo-do-itemize (nth 1 stacktop))))
+
 
 (put 'exdent 'texinfo-format 'texinfo-format-exdent)
 (defun texinfo-format-exdent ()
   (texinfo-discard-command)
-  (delete-region (dot)
+  (delete-region (point)
 		 (progn
-		  (forward-word 1)
-		  (skip-chars-forward " ")))
-  (insert ?\b))
+		  (skip-chars-forward " ")
+		  (point)))
+  (insert ?\b)
+  ;; Cancel out the deletion that texinfo-do-itemize
+  ;; is going to do at the end of this line.
+  (save-excursion
+    (end-of-line)
+    (insert "\n     ")))
 
 (put 'ctrl 'texinfo-format 'texinfo-format-ctrl)
-(defun texinfo-format-ctrl
-  (let ((str (texinfo-parse-arg)))
+(defun texinfo-format-ctrl ()
+  (let ((str (texinfo-parse-arg-discard)))
     (insert (logand 31 (aref str 0)))))
 
 (put 'TeX 'texinfo-format 'texinfo-format-TeX)
 (defun texinfo-format-TeX ()
-  (texinfo-discard-command)
+  (texinfo-parse-arg-discard)
   (insert "TeX"))
+
+(put 'copyright 'texinfo-format 'texinfo-format-copyright)
+(defun texinfo-format-copyright ()
+  (texinfo-parse-arg-discard)
+  (insert "(C)"))
+
+(put 'dots 'texinfo-format 'texinfo-format-dots)
+(defun texinfo-format-dots ()
+  (texinfo-parse-arg-discard)
+  (insert "..."))
 
 (put 'refill 'texinfo-format 'texinfo-format-refill)
 (defun texinfo-format-refill ()
   (texinfo-discard-command)
   (fill-paragraph nil))
 
+;; Index generation
+
+(put 'vindex 'texinfo-format 'texinfo-format-vindex)
+(defun texinfo-format-vindex ()
+  (texinfo-index 'texinfo-vindex))
+
+(put 'cindex 'texinfo-format 'texinfo-format-cindex)
+(defun texinfo-format-cindex ()
+  (texinfo-index 'texinfo-cindex))
+
+(put 'findex 'texinfo-format 'texinfo-format-findex)
+(defun texinfo-format-findex ()
+  (texinfo-index 'texinfo-findex))
+
+(put 'pindex 'texinfo-format 'texinfo-format-pindex)
+(defun texinfo-format-pindex ()
+  (texinfo-index 'texinfo-pindex))
+
+(put 'tindex 'texinfo-format 'texinfo-format-tindex)
+(defun texinfo-format-tindex ()
+  (texinfo-index 'texinfo-tindex))
+
+(put 'kindex 'texinfo-format 'texinfo-format-kindex)
+(defun texinfo-format-kindex ()
+  (texinfo-index 'texinfo-kindex))
+
+(defun texinfo-index (indexvar)
+  (set indexvar
+       (cons (list (texinfo-parse-arg-discard) texinfo-last-node)
+	     (symbol-value indexvar))))
+
+(defconst texinfo-indexvar-alist
+  '(("cp" . texinfo-cindex)
+    ("fn" . texinfo-findex)
+    ("vr" . texinfo-vindex)
+    ("tp" . texinfo-tindex)
+    ("pg" . texinfo-pindex)
+    ("ky" . texinfo-kindex)))
+
+(put 'printindex 'texinfo-format 'texinfo-format-printindex)
+(defun texinfo-format-printindex ()
+  (let ((indexelts (symbol-value
+		    (cdr (assoc (texinfo-parse-arg-discard)
+				texinfo-indexvar-alist))))
+	opoint)
+    (insert "\n* Menu:\n\n")
+    (setq opoint (point))
+    (while indexelts
+      (insert "* " (car (car indexelts)) ": " (nth 1 (car indexelts)) ".\n")
+      (setq indexelts (cdr indexelts)))
+    (shell-command-on-region opoint (point) "sort -f" 1)))
+
 ;; Lots of bolio constructs do nothing in texinfo.
 
+(put 'page 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'c 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'comment 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'setchapternewpage 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'contents 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'summarycontents 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'nopara 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'noindent 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'setx 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'setq 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'settitle 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'defindex 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'synindex 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'cindex 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'findex 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'vindex 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'kindex 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'hsize 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'parindent 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'lispnarrowing 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'itemindent 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'titlepage 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'copyrightpage 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'copyrightpage 'texinfo-end 'texinfo-discard-line-with-args)
 (put 'headings 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'group 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'group 'texinfo-end 'texinfo-discard-line-with-args)
@@ -571,7 +715,7 @@ visiting the Info file names specified in the @setfilename command."
 
 (defun texinfo-discard-line-with-args ()
   (goto-char texinfo-command-start)
-  (delete-region (dot) (progn (forward-line 1) (dot))))
+  (delete-region (point) (progn (forward-line 1) (point))))
 
 ;; Some cannot be handled
 

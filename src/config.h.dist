@@ -1,26 +1,30 @@
-/* GNU Emacs site configuration file.
+/* GNU Emacs site configuration template file.
    Copyright (C) 1985 Richard M. Stallman.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
+
+
 
 /* Include here a s- file that describes the system type you are using.
-   Alternatives now defined include s-bsd4.2.h and s-bsd4.3.h for Berkeley
-   systems, and s-uniplus5.2.h and s-uniplus.5.0.h for Unisoft-modified
-   system V.
+   Alternatives now defined include
+   s-bsd4.1.h, s-bsd4.2.h and s-bsd4.3.h for Berkeley systems,
+   s-unipl5.2.h and s-unipl.5.0.h for Unisoft-modified system V,
+   and s-usg5.2.h for ordinary losing system V.
    See s-template.h for documentation on writing s- files.  */
 #include "s-bsd4.2.h"
  
@@ -31,22 +35,35 @@ copyright notice and this notice must be preserved on all copies.  */
     m-sun.h	for Sun 68000's.
     m-ns16000.h	for 16000's (not sure how general this is yet)
     m-pyramid.h for pyramids.
-    m-dual68.h  for dual 68000's (that run Unisoft port).
+    m-tahoe.h   for tahoe machines (s-bsd4.2.h).
+
+    m-dual.h    for dual 68000's (with s-unipl5.2.h).
+    m-nu.h      for TI nu machine (with s-usg5.2.h)
+    m-apollo.h  for Apollo running their own system.
    See m-template.h for info on what m- files should define.
    */
 #include "m-vax.h"
 
+/* Load in the conversion definitions if this system
+   needs them and the source file being compiled has not
+   said to inhibit this.  */
 
-/* define XVSWINDOW if you want to use the X window system
-   for the Vaxstation-100.  To make this work, you must change the makefile
-   to pass -lX to ld.  */
+#ifdef SHORTNAMES
+#ifndef NO_SHORTNAMES
+#include "../shortnames/remap.h"
+#endif /* not NO_SHORTNAMES */
+#endif /* SHORTNAMES */
 
-#undef XVSWINDOW
+/* define HAVE_X_WINDOWS if you want to use the X window system
+   for the Vaxstation-100.  */
+
+#undef HAVE_X_WINDOWS
 
 /* subprocesses should be defined if you want to
  have code for asynchronous subprocesses
  (as used in M-x compile and M-x shell).
- These do not work for USG systems yet.  */
+ These do not work for some USG systems yet;
+ for the ones where they work, the s-*.h file defines this flag.  */
 
 #ifndef USG
 #define subprocesses
@@ -78,10 +95,10 @@ copyright notice and this notice must be preserved on all copies.  */
 #define MScreenLength 300
 
 /* # bytes of pure Lisp code to leave space for.
-  120000 is enough for Emacs as distributed by me, Richard Stallman,
+  130000 is enough for Emacs as distributed by me, Richard Stallman,
   with the set of preloaded packages I set up.  */
 
-#define PURESIZE 120000
+#define PURESIZE 130000
 
 /* Define HIGHPRI as a negative number
  if you want Emacs to run at a higher than normal priority.

@@ -4,19 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
-
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 ; Put buffer *Buffer List* into proper mode right away
@@ -29,7 +29,7 @@
 Each line describes one of the buffers in Emacs.
 Letters do not insert themselves; instead, they are commands.
 m -- mark buffer to be displayed.
-q -- select buffer of line dot is on.
+q -- select buffer of line point is on.
   Also show buffers marked with m in other windows.
 1 -- select that buffer in full-screen window.
 2 -- select that buffer in one window,
@@ -39,7 +39,8 @@ s -- mark that buffer to be saved.
 d or k or C-D or C-K -- mark that buffer to be killed.
 x -- kill or save marked buffers.
 u -- remove all kinds of marks from current line.
-Delete -- back up a line and remove marks."
+Delete -- back up a line and remove marks.
+Precisely,\\{Buffer-menu-mode-map}"
   (kill-all-local-variables)
   (use-local-map Buffer-menu-mode-map)
   (setq truncate-lines t)
@@ -74,7 +75,7 @@ Delete -- back up a line and remove marks."
   "Return buffer described by this line of buffer menu."
   (if (null Buffer-menu-buffer-column)
       (save-excursion
-       (goto-char (dot-min))
+       (goto-char (point-min))
        (search-forward "Buffer")
        (backward-word 1)
        (setq Buffer-menu-buffer-column (current-column))
@@ -82,18 +83,18 @@ Delete -- back up a line and remove marks."
        (backward-word 1)
        (setq Buffer-menu-size-column (current-column))))
   (save-excursion
-   (beginning-of-line)
-   (forward-char Buffer-menu-buffer-column)
-   (let ((start (dot))
-	 string)
-     (move-to-column (1- Buffer-menu-size-column))
-     (skip-chars-forward "^ \t")
-     (skip-chars-backward " \t")
-     (setq string (buffer-substring start (dot)))
-     (or (get-buffer string)
-	 (if error-if-non-existent-p
-	     (error "No buffer named \"%s\"" string)
-	   nil)))))
+    (beginning-of-line)
+    (forward-char Buffer-menu-buffer-column)
+    (let ((start (point))
+	  string)
+      ;; End of buffer name marked by tab or two spaces.
+      (re-search-forward "\t\\|  ")
+      (skip-chars-backward " \t")
+      (setq string (buffer-substring start (point)))
+      (or (get-buffer string)
+	  (if error-if-non-existent-p
+	      (error "No buffer named \"%s\"" string)
+	    nil)))))
 
 (defun buffer-menu (arg)
   "Make a menu of buffers so you can save, kill or select them.
@@ -182,7 +183,7 @@ Type ? after invocation to get help on commands available within."
 
 (defun Buffer-menu-do-saves ()
   (save-excursion
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (forward-line 1)
     (while (re-search-forward "^.S" nil t)
       (let ((modp nil))
@@ -196,7 +197,7 @@ Type ? after invocation to get help on commands available within."
 
 (defun Buffer-menu-do-kills ()
   (save-excursion
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (forward-line 1)
     (let ((buff-menu-buffer (current-buffer))
 	  (buffer-read-only nil))
@@ -209,7 +210,7 @@ Type ? after invocation to get help on commands available within."
 	(if (Buffer-menu-buffer nil)
 	    (progn (delete-char 1)
 		   (insert ? ))
-	  (delete-region (dot) (progn (forward-line 1) (dot)))
+	  (delete-region (point) (progn (forward-line 1) (point)))
  	  (forward-char -1))))))
 
 (defun Buffer-menu-select ()
@@ -219,14 +220,14 @@ You can mark buffers with the \\[Buffer-menu-mark] command."
   (let ((buff (Buffer-menu-buffer t))
 	(menu (current-buffer))	      
 	others height)
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (while (search-forward "\n>" nil t)
       (setq others (cons (Buffer-menu-buffer t) others))
       (let ((buffer-read-only nil))
 	(delete-char -1)
 	(insert ?\ )))
     (setq others (nreverse others)
-	  height (/ (window-height (selected-window)) (1+ (length others))))
+	  height (/ (1- (screen-height)) (1+ (length others))))
     (delete-other-windows)
     (switch-to-buffer buff)
     (or (eq menu buff)

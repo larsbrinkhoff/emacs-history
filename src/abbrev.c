@@ -3,18 +3,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -31,10 +32,6 @@ copyright notice and this notice must be preserved on all copies.  */
  If its function definition is non-nil, it is called
   after the expansion is done.
  The plist slot of the abbrev symbol is its usage count. */
-
-/* Nonzero means abbrev mode is on.  Expand abbrevs automatically. */
-
-int abbrev_mode;
 
 /* List of all abbrev-table name symbols:
  symbols whose values are abbrev tables.  */
@@ -57,7 +54,7 @@ int abbrevs_changed;
 int abbrev_all_caps;
 
 /* Non-nil => use this location as the start of abbrev to expand
- (rather than taking the word before dot as the abbrev) */
+ (rather than taking the word before point as the abbrev) */
 
 Lisp_Object Vabbrev_start_location;
 
@@ -70,7 +67,7 @@ Lisp_Object Vlast_abbrev;
 
 /* Character address of start of last abbrev expanded */
 
-int last_abbrev_dot;
+int last_abbrev_point;
 
 extern Lisp_Object oblookup ();
 
@@ -137,7 +134,8 @@ DEFUN ("define-global-abbrev", Fdefine_global_abbrev, Sdefine_global_abbrev, 2, 
   (name, expansion)
      Lisp_Object name, expansion;
 {
-  Fdefine_abbrev (Vglobal_abbrev_table, name, expansion, Qnil);
+  Fdefine_abbrev (Vglobal_abbrev_table, Fdowncase (name),
+		  expansion, Qnil, make_number (0));
   return name;
 }
 
@@ -150,7 +148,8 @@ DEFUN ("define-mode-abbrev", Fdefine_mode_abbrev, Sdefine_mode_abbrev, 2, 2,
   if (NULL (bf_cur->abbrev_table))
     error ("No local abbrev table associated with this buffer");
 
-  Fdefine_abbrev (bf_cur->abbrev_table, name, expansion, Qnil);
+  Fdefine_abbrev (bf_cur->abbrev_table, Fdowncase (name),
+		  expansion, Qnil, make_number (0));
   return name;
 }
 
@@ -192,11 +191,11 @@ Optionally specify an abbrev table; then ABBREV is looked up in that table only.
   return Fsymbol_value (sym);
 }
 
-/* Expand the word before dot, if it is an abbrev.
+/* Expand the word before point, if it is an abbrev.
   Returns 1 if an expansion is done. */
 
 DEFUN ("expand-abbrev", Fexpand_abbrev, Sexpand_abbrev, 0, 0, "",
-  "Expand the abbrev before dot, if it is an abbrev.\n\
+  "Expand the abbrev before point, if it is an abbrev.\n\
 Returns t if expansion took place.")
   ()
 {
@@ -216,12 +215,12 @@ Returns t if expansion took place.")
       Vabbrev_start_location = Qnil;
     }
   else
-    wordstart = scan_words (dot, -1);
+    wordstart = scan_words (point, -1);
 
-  if (!wordstart || dot - wordstart >= sizeof buffer || dot <= wordstart)
+  if (!wordstart || point - wordstart >= sizeof buffer || point <= wordstart)
     return Qnil;
 
-  for (idx = wordstart; idx < dot; idx++)
+  for (idx = wordstart; idx < point; idx++)
     {
       *p = CharAt (idx);
       if (*p >= 'A' && *p <= 'Z')
@@ -242,12 +241,12 @@ Returns t if expansion took place.")
       NULL (XSYMBOL (sym)->value))
     return Qnil;
 
-  SetDot (wordstart);
-  del_range (dot, dot + (p - buffer));
+  SetPoint (wordstart);
+  del_range (point, point + (p - buffer));
 
   /* Now sym is the abbrev symbol. */
   Vlast_abbrev = sym;
-  last_abbrev_dot = dot;
+  last_abbrev_point = point;
 
   if (XTYPE (XSYMBOL (sym)->plist) == Lisp_Int)
     XSETINT (XSYMBOL (sym)->plist,
@@ -268,22 +267,23 @@ Returns t if expansion took place.")
 	  /* This used to be if (!... && ... >= ...) Fcapitalize; else Fupcase
 	     but Megatest 68000 compiler can't handle that */
 	  if (!abbrev_all_caps)
-	    if (scan_words (dot, -1) > scan_words (wordstart, 1))
+	    if (scan_words (point, -1) > scan_words (wordstart, 1))
 	      {
-		Fcapitalize_region (make_number (wordstart), make_number (dot));
+		upcase_initials_region (make_number (wordstart),
+					make_number (point));
 		goto caped;
 	      }
 	  /* If expansion is one word, or if user says so, upcase it all. */
-	  Fupcase_region (make_number (wordstart), make_number (dot));
+	  Fupcase_region (make_number (wordstart), make_number (point));
 	caped: ;
 	}
       else if (uccount)
 	{
 	  /* Abbrev included some caps.  Cap first initial of expansion */
-	  idx = dot;
-	  SetDot (wordstart);
+	  idx = point;
+	  SetPoint (wordstart);
 	  Fcapitalize_word (make_number (1));
-	  SetDot (idx);
+	  SetPoint (idx);
 	}
     }
 
@@ -294,7 +294,7 @@ DEFUN ("unexpand-abbrev", Funexpand_abbrev, Sunexpand_abbrev, 0, 0, "",
   "Undo the expansion of the last abbrev that expanded.")
   ()
 {
-  SetDot (last_abbrev_dot);
+  SetPoint (last_abbrev_point);
   if (NULL (Vlast_abbrev))
     {
       Fforward_word (make_number (1));
@@ -302,7 +302,7 @@ DEFUN ("unexpand-abbrev", Funexpand_abbrev, Sunexpand_abbrev, 0, 0, "",
     }
   else if (XTYPE (Vlast_abbrev) == Lisp_Symbol)
     {
-      del_range (dot, dot + XSTRING (XSYMBOL (Vlast_abbrev)->value)->size);
+      del_range (point, point + XSTRING (XSYMBOL (Vlast_abbrev)->value)->size);
       InsCStr (XSYMBOL (Vlast_abbrev)->name->data, XSYMBOL (Vlast_abbrev)->name->size);
       Vlast_abbrev = Qnil;
     }
@@ -324,8 +324,7 @@ write_abbrev (sym, stream)
   if (NULL (XSYMBOL (sym)->value))
     return;
   InsCStr ("    (", 5);
-  XSETTYPE (name, Lisp_String);
-  XSETSTRING (name, XSYMBOL (sym)->name);
+  XSET (name, Lisp_String, XSYMBOL (sym)->name);
   Fprin1 (name, stream);
   InsCStr (" ", 1);
   Fprin1 (XSYMBOL (sym)->value, stream);
@@ -355,13 +354,13 @@ describe_abbrev (sym, stream)
       Findent_to (make_number (45), one);
       Fprin1 (XSYMBOL (sym)->function, stream);
     }
-  Fterpri (Qnil);
+  Fterpri (stream);
 }
 
 DEFUN ("insert-abbrev-table-description",
   Finsert_abbrev_table_description, Sinsert_abbrev_table_description,
   2, 2, 0,
-  "Insert before dot a description of abbrev table named NAME.\n\
+  "Insert before point a description of abbrev table named NAME.\n\
 NAME is a symbol whose value is an abbrev table.\n\
 If 2nd arg READABLE is non-nil, a readable description is inserted.\n\
 Otherwise description is an expression,\n\
@@ -377,7 +376,7 @@ define NAME exactly as it is currently defined.")
   table = Fsymbol_value (name);
   CHECK_VECTOR (table, 0);
 
-  XSETTYPE (stream, Lisp_Buffer), XSETBUFFER (stream, bf_cur);
+  XSET (stream, Lisp_Buffer, bf_cur);
 
   if (!NULL (readable))
     {
@@ -460,16 +459,16 @@ for any particular abbrev defined in both.");
   DefLispVar ("last-abbrev", &Vlast_abbrev,
     "The abbrev-symbol of the last abbrev expanded.");
 
-  DefIntVar ("last-abbrev-location", &last_abbrev_dot,
+  DefIntVar ("last-abbrev-location", &last_abbrev_point,
     "The location of the last abbrev expanded.");
 */
   staticpro (&Vlast_abbrev);
   Vlast_abbrev = Qnil;
-  last_abbrev_dot = 0;
+  last_abbrev_point = 0;
 
   DefLispVar ("abbrev-start-location", &Vabbrev_start_location,
     "Buffer position for expand-abbrev to use as the start of the abbrev.\n\
-nil means use the word before dot as the abbrev.\n\
+nil means use the word before point as the abbrev.\n\
 Set to nil each time expand-abbrev is called.");
   Vabbrev_start_location = Qnil;
 
@@ -484,10 +483,6 @@ Trying to expand an abbrev in any other buffer clears abbrev-start-location.");
   DefBoolVar ("abbrevs-changed", &abbrevs_changed,
     "Set non-nil by defining or altering any word abbrevs.");
   abbrevs_changed = 0;
-
-  DefBoolVar ("abbrev-mode", &abbrev_mode,
-    "*Non-nil turns on automatic expansion of abbrevs when inserted.");
-  abbrev_mode = 0;
 
   DefBoolVar ("abbrev-all-caps", &abbrev_all_caps,
     "*Set non-nil means expand multi-word abbrevs all caps if abbrev was so.");

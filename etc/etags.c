@@ -87,10 +87,8 @@ struct	nd_st {			/* sorting structure			*/
 long	ftell();
 typedef	struct	nd_st	NODE;
 
-logical	number,				/* T if on line starting with #	*/
-	term	= FALSE,		/* T if print on terminal	*/
-	makefile= TRUE,			/* T if to creat "tags" file	*/
-	gotone,				/* found a func already on line	*/
+int number; /* tokens found so far on line starting with # (including #) */
+logical gotone,				/* found a func already on line	*/
 					/* boolean "func" (see init)	*/
 	_wht[0177],_etk[0177],_itk[0177],_btk[0177],_gd[0177];
 
@@ -371,7 +369,7 @@ pfnote (name, f, linestart, linelen, lno, cno)
   register char *fp;
   register NODE *np;
   char *altname;
-  int tem;
+  char tem[51];
 
   if ((np = (NODE *) malloc(sizeof (NODE))) == NULL)
     {
@@ -401,19 +399,16 @@ pfnote (name, f, linestart, linelen, lno, cno)
   np->lno = lno;
   np->cno = cno;
   np->left = np->right = 0;
-  tem = linestart[50];
   if (eflag)
     {
       linestart[linelen] = 0;
     }
   else if (xflag == 0)
     {
-      linestart[50] = 0;
-      strcat (linestart, "$");
-      linestart[50] = 0;
+      sprintf (tem, strlen (linestart) < 50 ? "%s$" : "%.50s", linestart);
+      linestart = tem;
     }
   np->pat = savestr (linestart);
-  linestart[50] = tem;
   if (head == NULL)
     head = np;
   else
@@ -426,7 +421,7 @@ free_tree(node)
   while (node)
     {
       free_tree(node->right);
-      cfree(node);
+      free(node);
       node = node->left;
     }
 }
@@ -505,10 +500,7 @@ put_entries(node)
 
 	  for (sp = node->pat; *sp; sp++)
 	    {
-	      if (*sp == '\\' || *sp == '^' || *sp == '*'
-		  || *sp == '.' || *sp == '[' || *sp == ']'
-		  || (*sp == '$' && sp[1])
-		  || *sp == searchar)
+	      if (*sp == '\\' || *sp == searchar)
 		putc ('\\', outf);
 	      putc (*sp, outf);
 	    }
@@ -538,7 +530,6 @@ put_entries(node)
 total_size_of_entries(node)
      reg NODE *node;
 {
-  reg char *sp;
   reg int total = 0;
   reg long num;
 
@@ -576,11 +567,16 @@ total_size_of_entries(node)
  * This routine finds functions and typedefs in C syntax and adds them
  * to the list.
  */
-#define CNEWLINE \
+#define CNL_SAVE_NUMBER \
 { \
   linecharno = charno; lineno++; \
   charno += 1 + readline (&lb, inf); \
   lp = lb.buffer; \
+}
+
+#define CNL \
+{ \
+  CNL_SAVE_NUMBER; \
   number = 0; \
 }
 
@@ -597,7 +593,8 @@ C_entries ()
   lp = lb.buffer;
   *lp = 0;
 
-  number = gotone = midtoken = inquote = inchar = incomm = FALSE;
+  number = 0;
+  gotone = midtoken = inquote = inchar = incomm = FALSE;
   level = 0;
 
   while (!feof (inf))
@@ -605,14 +602,14 @@ C_entries ()
       c = *lp++;
       if (c == 0)
 	{
-	  CNEWLINE;
+	  CNL;
 	  gotone = FALSE;
 	}
       if (c == '\\')
 	{
 	  c = *lp++;
 	  if (c == 0)
-	    CNEWLINE;
+	    CNL_SAVE_NUMBER;
 	  c = ' ';
 	} 
       else if (incomm)
@@ -622,7 +619,7 @@ C_entries ()
 	      while ((c = *lp++) == '*')
 		continue;
 	      if (c == 0)
-		CNEWLINE;
+		CNL;
 	      if (c == '/')
 		incomm = FALSE;
 	    }
@@ -660,7 +657,7 @@ C_entries ()
 	  continue;
 	case '#':
 	  if (lp == lb.buffer + 1)
-	    number = TRUE;
+	    number = 1;
 	  continue;
 	case '{':
 	  if (tydef == begin)
@@ -692,7 +689,7 @@ C_entries ()
 		  char *lp1 = lp;
 		  int line = lineno;
 		  long linestart = linecharno;
-		  int tem = consider_token (&lp1, token, tp, &f);
+		  int tem = consider_token (&lp1, token, &f);
 		  lp = lp1;
 		  if (tem)
 		    {
@@ -735,13 +732,12 @@ C_entries ()
  * It updates the input line * so that the '(' will be
  * in it when it returns.
  */
-consider_token (lpp, token, tp, f)
-     char **lpp, *token, *tp;
+consider_token (lpp, token, f)
+     char **lpp, *token;
      int *f;
 {
   reg char *lp = *lpp;
-  reg char c, *tsp;
-  static logical found;
+  reg char c;
   static logical next_token_is_func;
   logical firsttok;	/* T if have seen first token in ()'s */
   int bad, win;
@@ -758,7 +754,7 @@ consider_token (lpp, token, tp, f)
 	    {
 	      if (feof (inf))
 		break;
-	      CNEWLINE;
+	      CNL;
 	    }
 	}
       /* the following tries to make it so that a #define a b(c)	*/
@@ -766,11 +762,8 @@ consider_token (lpp, token, tp, f)
     }
   else
     {
-      if (!strncmp(token, "define", 6))
-	found = 0;
-      else
-	found++;
-      if (found >= 2)
+      number++;
+      if (number >= 4  || (number==2 && strncmp (token, "define", 6)))
 	{
 	  gotone = TRUE;
 	badone:
@@ -801,7 +794,7 @@ consider_token (lpp, token, tp, f)
       goto ret;
     }
   /* Detect GNUmacs's function-defining macros. */
-  if (!strncmp (token, "DEF", 3))
+  if (!number && !strncmp (token, "DEF", 3))
 	 
     {
       next_token_is_func = 1;
@@ -822,7 +815,7 @@ consider_token (lpp, token, tp, f)
 	{
 	  if (feof (inf))
 	    break;
-	  CNEWLINE;
+	  CNL;
 	}
       /*
 	* This line used to confuse ctags:
@@ -837,7 +830,7 @@ consider_token (lpp, token, tp, f)
   while (iswhite (c = *lp++))
     {
       if (!c)
-	CNEWLINE;
+	CNL;
     }
   win = isgood (c);
 ret:
@@ -1054,20 +1047,20 @@ initbuffer (linebuffer)
 long
 readline (linebuffer, stream)
      struct linebuffer *linebuffer;
-     FILE *stream;
+     register FILE *stream;
 {
   char *buffer = linebuffer->buffer;
-  char *p = linebuffer->buffer;
-  char *end = p + linebuffer->size;
+  register char *p = linebuffer->buffer;
+  register char *pend = p + linebuffer->size;
 
   while (1)
     {
       int c = getc (stream);
-      if (p == end)
+      if (p == pend)
 	{
 	  buffer = (char *) xrealloc (buffer, linebuffer->size *= 2);
 	  p += buffer - linebuffer->buffer;
-	  end += buffer - linebuffer->buffer;
+	  pend += buffer - linebuffer->buffer;
 	  linebuffer->buffer = buffer;
 	}
       if (c < 0 || c == '\n')

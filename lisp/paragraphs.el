@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun forward-paragraph (&optional arg)
@@ -36,10 +37,10 @@ to which the end of the previous line belongs, or the end of the buffer."
 	    paragraph-separate)))
     (while (< arg 0)
       (if (and (not (looking-at paragraph-separate))
-	       (re-search-backward "^\n" (max (1- (dot)) (dot-min)) t))
+	       (re-search-backward "^\n" (max (1- (point)) (point-min)) t))
 	  nil
 	(forward-char -1) (beginning-of-line)
-	(while (looking-at paragraph-separate)
+	(while (and (not (bobp)) (looking-at paragraph-separate))
 	  (forward-line -1))
 	(end-of-line)
 	;; Saerch back for line that starts or separates paragraphs.
@@ -57,10 +58,10 @@ to which the end of the previous line belongs, or the end of the buffer."
 	    (progn
 	      (while (looking-at paragraph-separate)
 		(forward-line 1))
-	      (if (eq (char-after (- (dot) 2)) ?\n)
+	      (if (eq (char-after (- (point) 2)) ?\n)
 		  (forward-line -1)))
 	  ;; No starter or separator line => use buffer beg.
-	  (goto-char (dot-min))))
+	  (goto-char (point-min))))
       (setq arg (1+ arg)))
     (while (> arg 0)
       (beginning-of-line)
@@ -75,7 +76,7 @@ to which the end of the previous line belongs, or the end of the buffer."
 	    (forward-line 1))
 	(if (re-search-forward paragraph-start nil t)
 	    (goto-char (match-beginning 0))
-	  (goto-char (dot-max))))
+	  (goto-char (point-max))))
       (setq arg (1- arg)))))
 
 (defun backward-paragraph (&optional arg)
@@ -93,18 +94,18 @@ See forward-paragraph for more information."
   "Put point at beginning of this paragraph, mark at end."
   (interactive)
   (forward-paragraph 1)
-  (set-mark (dot))
+  (set-mark (point))
   (backward-paragraph 1))
 
 (defun kill-paragraph (arg)
   "Kill to end of paragraph."
   (interactive "p")
-  (kill-region (dot) (progn (forward-paragraph arg) (dot))))
+  (kill-region (point) (progn (forward-paragraph arg) (point))))
 
 (defun backward-kill-paragraph (arg)
   "Kill back to start of paragraph."
   (interactive "p")
-  (kill-region (dot) (progn (backward-paragraph arg) (dot))))
+  (kill-region (point) (progn (backward-paragraph arg) (point))))
 
 (defun transpose-paragraphs (arg)
   "Interchange this (or next) paragraph with previous one."
@@ -112,24 +113,24 @@ See forward-paragraph for more information."
   (transpose-subr 'forward-paragraph arg))
 
 (defun start-of-paragraph-text ()
-  (let ((odot (dot)) ndot)
+  (let ((opoint (point)) npoint)
     (forward-paragraph -1)
-    (setq ndot (dot))
+    (setq npoint (point))
     (skip-chars-forward " \t\n")
-    (if (>= (dot) odot)
+    (if (>= (point) opoint)
 	(progn
-	  (goto-char ndot)
-	  (if (> ndot (dot-min))
+	  (goto-char npoint)
+	  (if (> npoint (point-min))
 	      (start-of-paragraph-text))))))
 
 (defun end-of-paragraph-text ()
-  (let ((odot (dot)))
+  (let ((opoint (point)))
     (forward-paragraph 1)
     (if (eq (preceding-char) ?\n) (forward-char -1))
-    (if (<= (dot) odot)
+    (if (<= (point) opoint)
 	(progn
 	  (forward-char 1)
-	  (if (< (dot) (dot-max))
+	  (if (< (point) (point-max))
 	      (end-of-paragraph-text))))))
 
 (defun forward-sentence (&optional arg)
@@ -141,13 +142,13 @@ terminates sentences as well."
   (interactive "p")
   (or arg (setq arg 1))
   (while (< arg 0)
-    (let ((par-beg (save-excursion (start-of-paragraph-text) (dot))))
+    (let ((par-beg (save-excursion (start-of-paragraph-text) (point))))
       (if (re-search-backward (concat sentence-end "[^ \t\n]") par-beg t)
 	  (goto-char (1- (match-end 0)))
 	(goto-char par-beg)))
     (setq arg (1+ arg)))
   (while (> arg 0)
-    (let ((par-end (save-excursion (end-of-paragraph-text) (dot))))
+    (let ((par-end (save-excursion (end-of-paragraph-text) (point))))
       (if (re-search-forward sentence-end par-end t)
 	  (skip-chars-backward " \t\n")
 	(goto-char par-end)))
@@ -161,20 +162,20 @@ See forward-sentence for more information."
   (forward-sentence (- arg)))
 
 (defun kill-sentence (&optional arg)
-  "Kill from dot to end of sentence.
+  "Kill from point to end of sentence.
 With arg, repeat, or backward if negative arg."
   (interactive "p")
-  (let ((beg (dot)))
+  (let ((beg (point)))
     (forward-sentence arg)
-    (kill-region beg (dot))))
+    (kill-region beg (point))))
 
 (defun backward-kill-sentence (&optional arg)
-  "Kill back from dot to start of sentence.
+  "Kill back from point to start of sentence.
 With arg, repeat, or forward if negative arg."
   (interactive "p")
-  (let ((beg (dot)))
+  (let ((beg (point)))
     (backward-sentence arg)
-    (kill-region beg (dot))))
+    (kill-region beg (point))))
 
 (defun mark-end-of-sentence (arg)
   "Put mark at end of sentence.  Arg works as in forward-sentence."
@@ -182,7 +183,7 @@ With arg, repeat, or forward if negative arg."
   (push-mark
     (save-excursion
       (forward-sentence arg)
-      (dot))))
+      (point))))
 
 (defun transpose-sentences (arg)
   "Interchange this (next) and previous sentence."

@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun append-kbd-macro (macroname filename &optional keys)
@@ -50,7 +51,7 @@ Fourth argument APPENDFLAG non-nil meams append to FILE's existing contents."
 	 (prin1 macroname buffer)
 	 (insert ")\n")
 	 (setq keys (cdr keys))))
-     (write-region (dot-min) (dot-max) filename appendflag))))
+     (write-region (point-min) (point-max) filename appendflag))))
 
 (defun kbd-macro-query (flag)
   "Query user during kbd macro execution.
@@ -64,6 +65,9 @@ Without prefix argument, reads a character.  Your options are:
  C-r -- enter a recursive edit, then on exit ask again for a character
  C-l -- redisplay screen and ask again."
   (interactive "P")
+  (or executing-macro
+      defining-kbd-macro
+      (error "Not defining or executing kbd macro"))
   (if flag
       (let (executing-macro defining-kbd-macro)
 	(recursive-edit))
@@ -82,7 +86,7 @@ Without prefix argument, reads a character.  Your options are:
 		  ((= char ?\^d)
 		   (setq loop nil)
 		   (setq executing-macro t))
-		  ((= char ?^\l)
+		  ((= char ?\^l)
 		   (redraw-screen))
 		  ((= char ?\^r)
 		   (let (executing-macro defining-kbd-macro)

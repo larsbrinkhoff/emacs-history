@@ -4,38 +4,39 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defvar outline-mode-map nil "")
 
 (if outline-mode-map
     nil
-  (setq outline-mode-map (make-keymap))
+  (setq outline-mode-map (copy-alist text-mode-map))
   (define-key outline-mode-map "\e}" 'next-visible-heading)
   (define-key outline-mode-map "\e{" 'previous-visible-heading)
-  (define-key outline-mode-map "\es" 'show-children)
-  (define-key outline-mode-map "\eS" 'show-subtree)
-  (define-key outline-mode-map "\eH" 'hide-subtree))
+  (define-key outline-mode-map "\C-c\t" 'show-children)
+  (define-key outline-mode-map "\C-c\C-s" 'show-subtree)
+  (define-key outline-mode-map "\C-c\C-h" 'hide-subtree))
 
 (defun outline-mode ()
   "Set major mode for editing outlines with selective display.
 Headings should be lines starting with one or more asterisks.
 Major headings have one asterisk, subheadings two, etc.
-Lines not starting with asterisks are ordinary text.
+Lines not starting with asterisks are body lines.
 
-You can make the text under a heading, or the subheadings
+You can make the body text under a heading, or the subheadings
 under a heading, temporarily invisible, or visible again.
 Invisible lines are attached to the end of the previous line
 so they go with it if you kill it and yank it back.
@@ -44,19 +45,19 @@ Commands:
 Meta-}   next-visible-heading      move by visible headings
 Meta-{   previous-visible-heading  move by visible headings
 
-Meta-X hide-text	make all text invisible (not headings).
-Meta-X show-all		make everything in buffer visible.
+Meta-x hide-body	make all text invisible (not headings).
+Meta-x show-all		make everything in buffer visible.
 
-The remaining commands are used when dot is on a heading line.
-They apply to some of the text or subheadings of that heading.
-Meta-H   hide-subtree	make text and subheadings invisible.
-Meta-S   show-subtree	make text and subheadings visible.
-Meta-s   show-children	make direct subheadings visible.
-		 No effect on text, or subheadings 2 or more levels down.
+The remaining commands are used when point is on a heading line.
+They apply to some of the body or subheadings of that heading.
+C-c C-h   hide-subtree	make body and subheadings invisible.
+C-c C-s   show-subtree	make body and subheadings visible.
+C-c C-i   show-children	make direct subheadings visible.
+		 No effect on body, or subheadings 2 or more levels down.
 		 With arg N, affects subheadings N levels down.
-hide-entry	make immediately following text invisible.
+hide-entry	make immediately following body invisible.
 show-entry	make it visible.
-hide-leaves	make text under heading and under its subheadings invisible.
+hide-leaves	make body under heading and under its subheadings invisible.
 		 The subheadings remain visible.
 show-branches	make all subheadings at all levels visible."
   (interactive)
@@ -68,13 +69,15 @@ show-branches	make all subheadings at all levels visible."
   (define-abbrev-table 'text-mode-abbrev-table ())
   (setq local-abbrev-table text-mode-abbrev-table)
   (set-syntax-table text-mode-syntax-table)
-  (and (boundp 'outline-mode-hook)
-       outline-mode-hook
-       (funcall outline-mode-hook)))
+  (make-local-variable 'paragraph-start)
+  (setq paragraph-start (concat paragraph-start "\\|*"))
+  (make-local-variable 'paragraph-separate)
+  (setq paragraph-separate (concat paragraph-separate "\\|*"))
+  (run-hooks 'text-mode-hook 'outline-mode-hook))
 
 (defun outline-level ()
   (save-excursion
-   (- (- (dot) (progn (skip-chars-forward "^ \t") (dot))))))
+   (- (- (point) (progn (skip-chars-forward "^ \t") (point))))))
 
 (defun next-heading-preface ()
   (if (re-search-forward "[\n\^M]\\*"
@@ -115,42 +118,42 @@ With argument, repeats or can move forward if negative."
     (unwind-protect
      (subst-char-in-region from to
 			   (if (= flag ?\n) ?\^M ?\n)
-			   flag)
+			   flag t)
      (set-buffer-modified-p modp))))
 
 (defun hide-entry ()
-  "Hide the text directly following this heading."
+  "Hide the body directly following this heading."
   (interactive)
   (save-excursion
-   (flag-lines-in-region (dot) (progn (next-heading-preface) (dot)) ?\^M)))
+   (flag-lines-in-region (point) (progn (next-heading-preface) (point)) ?\^M)))
 
 (defun show-entry ()
-  "Show the text directly following this heading."
+  "Show the body directly following this heading."
   (interactive)
   (save-excursion
-   (flag-lines-in-region (dot) (progn (next-heading-preface) (dot)) ?\n)))
+   (flag-lines-in-region (point) (progn (next-heading-preface) (point)) ?\n)))
 
-(defun hide-text ()
+(defun hide-body ()
   "Hide all of buffer except headings."
   (interactive)
-  (hide-region-text (dot-min) (dot-max)))
+  (hide-region-body (point-min) (point-max)))
 
-(defun hide-region-text (start end)
-  "Hide all text lines in the region, but not headings."
+(defun hide-region-body (start end)
+  "Hide all body lines in the region, but not headings."
   (save-excursion
    (save-restriction
     (narrow-to-region start end)
-    (goto-char (dot-min))
+    (goto-char (point-min))
     (while (not (eobp))
-     (flag-lines-in-region (dot) (progn (next-heading-preface) (dot)) ?\^M)
+     (flag-lines-in-region (point) (progn (next-heading-preface) (point)) ?\^M)
      (forward-char
       (if (looking-at "[\n\^M][\n\^M]")
 	  2 1))))))
 
 (defun show-all ()
-  "Show all of the text in the buffer."
+  "Show all of the body in the buffer."
   (interactive)
-  (flag-lines-in-region (dot-min) (dot-max) ?\n))
+  (flag-lines-in-region (point-min) (point-max) ?\n))
 
 (defun hide-subtree ()
   "Hide everything after this heading at deeper levels."
@@ -158,9 +161,9 @@ With argument, repeats or can move forward if negative."
   (flag-subtree ?\^M))
 
 (defun hide-leaves ()
-  "Hide all text after this heading at deeper levels."
+  "Hide all body after this heading at deeper levels."
   (interactive)
-  (hide-region-text (dot) (progn (end-of-subtree) (dot))))
+  (hide-region-body (point) (progn (end-of-subtree) (point))))
 
 (defun show-subtree ()
   "Show everything after this heading at deeper levels."
@@ -169,13 +172,13 @@ With argument, repeats or can move forward if negative."
 
 (defun flag-subtree (flag)
   (save-excursion
-   (flag-lines-in-region (dot)
-			 (progn (end-of-subtree) (dot))
+   (flag-lines-in-region (point)
+			 (progn (end-of-subtree) (point))
 			 flag)))
 
 (defun end-of-subtree ()
   (beginning-of-line)
-  (let ((odot (dot))
+  (let ((opoint (point))
 	(first t)
 	(level (outline-level)))
     (while (and (not (eobp))
@@ -187,7 +190,7 @@ With argument, repeats or can move forward if negative."
 	(forward-char -1))))
 
 (defun show-branches ()
-  "Show all subheadings of this heading, but not their text."
+  "Show all subheadings of this heading, but not their bodies."
   (interactive)
   (show-children 1000))
 
@@ -199,18 +202,18 @@ With argument, repeats or can move forward if negative."
    (save-restriction
     (beginning-of-line)
     (setq level (+ level (outline-level)))
-    (narrow-to-region (dot)
-		      (progn (end-of-subtree) (1+ (dot))))
-    (goto-char (dot-min))
+    (narrow-to-region (point)
+		      (progn (end-of-subtree) (1+ (point))))
+    (goto-char (point-min))
     (while (and (not (eobp))
 		(progn
 		 (next-heading)
 		 (not (eobp))))
       (if (<= (outline-level) level)
 	  (save-excursion
-	   (let ((end (1+ (dot))))
+	   (let ((end (1+ (point))))
 	     (forward-char -1)
 	     (if (memq (preceding-char) '(?\n ?\^M))
 		 (forward-char -1))
-	     (flag-lines-in-region (dot) end ?\n))))))))
+	     (flag-lines-in-region (point) end ?\n))))))))
 

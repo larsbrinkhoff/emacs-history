@@ -4,32 +4,36 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (provide 'mlsupport)
 
-(defun ml-defun (&quote &rest args)
+(defmacro ml-defun (&rest defs)
+  (list 'ml-defun-1 (list 'quote defs)))
+
+(defun ml-defun-1 (args)
   (while args
     (fset (car (car args)) (cons 'mocklisp (cdr (car args))))
     (setq args (cdr args))))
 
-(defun declare-buffer-specific (&quote &rest vars)
-  (while vars
-    (make-variable-buffer-local (car vars))))
+(defmacro declare-buffer-specific (&rest vars)
+  (cons 'progn (mapcar (function (lambda (var) (list 'make-variable-buffer-local (list 'quote var)))) vars)))
 
-(defun setq-default (&quote &rest args)
-  (set-default (car args) (eval (car (cdr args)))))
+(defmacro setq-default (var val)
+  (list 'set-default (list 'quote var) val))
 
 (defun ml-set-default (varname value)
   (set-default (intern varname) value))
@@ -80,25 +84,14 @@
 (defun to-col (column)
   (indent-to column 0))
 
-(defun is-bound (&quote &rest syms)
-  (while (and syms (boundp (car syms)))
-    (setq syms (cdr syms)))
-  (not syms))
+(defmacro is-bound (&rest syms)
+  (cons 'and (mapcar (function (lambda (sym) (list 'boundp (list 'quote sym)))) syms)))
 
-(defun declare-global (&quote &rest syms)
-  (while syms
-    (set (car syms) nil)
-    (put (car syms) 'variable-documentation
-		    "Defined by mocklisp; documentation not given")
-    (setq syms (cdr syms))))
+(defmacro declare-global (&rest syms)
+  (cons 'progn (mapcar (function (lambda (sym) (list 'defvar sym nil))) syms)))
 
-(defun error-occurred (&quote &rest body)
-  (condition-case ()
-      (progn
-        (while body
-	  (eval (car body)) (setq body (cdr body)))
-	nil)
-    (error t)))
+(defmacro error-occurred (&rest body)
+  (list 'condition-case nil (cons 'progn (append body '(nil))) '(error t)))
 
 (defun return-prefix-argument (value)
   (setq prefix-arg value))
@@ -121,7 +114,10 @@
 
 (defun kill-to-end-of-line ()
   (ml-prefix-argument-loop
-    (if (eolp) (kill-region (dot) (1+ (dot))))))
+    (if (eolp)
+	(kill-region (point) (1+ (point)))
+      (kill-region (point) (if (search-forward ?\n nil t)
+			       (1- (point)) (point-max))))))
 
 (defun set-auto-fill-hook (arg)
   (setq auto-fill-hook (intern arg)))
@@ -137,29 +133,29 @@
   (indent-to comment-column))
 
 (defun erase-region ()
-  (delete-region (dot) (mark)))
+  (delete-region (point) (mark)))
 
 (defun delete-region-to-buffer (bufname)
-  (copy-to-buffer bufname (dot) (mark))
-  (delete-region (dot) (mark)))
+  (copy-to-buffer bufname (point) (mark))
+  (delete-region (point) (mark)))
 
 (defun copy-region-to-buffer (bufname)
-  (copy-to-buffer bufname (dot) (mark)))
+  (copy-to-buffer bufname (point) (mark)))
 
 (defun append-region-to-buffer (bufname)
-  (append-to-buffer bufname (dot) (mark)))
+  (append-to-buffer bufname (point) (mark)))
 
 (defun prepend-region-to-buffer (bufname)
-  (prepend-to-buffer bufname (dot) (mark)))
+  (prepend-to-buffer bufname (point) (mark)))
 
 (defun delete-next-character ()
   (delete-char (ml-prefix-argument)))
 
 (defun delete-next-word ()
-  (delete-region (dot) (progn (forward-word (ml-prefix-argument)) (dot))))
+  (delete-region (point) (progn (forward-word (ml-prefix-argument)) (point))))
 
 (defun delete-previous-word ()
-  (delete-region (dot) (progn (backward-word (ml-prefix-argument)) (dot))))
+  (delete-region (point) (progn (backward-word (ml-prefix-argument)) (point))))
 
 (defun delete-previous-character ()
   (delete-backward-char (ml-prefix-argument)))
@@ -180,10 +176,10 @@
   (previous-line (ml-prefix-argument)))
 
 (defun delete-to-kill-buffer ()
-  (kill-region (dot) (mark)))
+  (kill-region (point) (mark)))
 
 (defun narrow-region ()
-  (narrow-to-region (dot) (mark)))
+  (narrow-to-region (point) (mark)))
 
 (defun ml-newline-and-indent ()
   (let ((column (current-indentation)))
@@ -200,7 +196,14 @@
   (1+ (current-column)))
 
 (defun ml-current-indent ()
-  (1+ (current-indent)))
+  (1+ (current-indentation)))
+
+(defun region-around-match (&optional n)
+  (set-mark (match-beginning n))
+  (goto-char (match-end n)))
+
+(defun region-to-string ()
+  (buffer-substring (min (point) (mark)) (max (point) (mark))))
 
 (defun use-abbrev-table (name)
   (let ((symbol (intern (concat name "-abbrev-table"))))
@@ -227,18 +230,18 @@
   (save-excursion
    (forward-char 1)
    (forward-word -1)
-   (funcall fun (dot)
+   (funcall fun (point)
 	    (progn (forward-word (ml-prefix-argument))
-		   (dot)))))
+		   (point)))))
 
 (defun case-region-lower ()
-  (downcase-region (dot) (mark)))
+  (downcase-region (point) (mark)))
 
 (defun case-region-upper ()
-  (upcase-region (dot) (mark)))
+  (upcase-region (point) (mark)))
 
 (defun case-region-capitalize ()
-  (capitalize-region (dot) (mark)))
+  (capitalize-region (point) (mark)))
 
 (defun argc ()
   (setq inhibit-command-line t)
@@ -263,7 +266,7 @@
 ;; Lisp function buffer-size returns total including invisible;
 ;; mocklisp wants just visible.
 (defun ml-buffer-size ()
-  (- (dot-max) (dot-min)))
+  (- (point-max) (point-min)))
 
 (defun previous-command ()
   last-command)
@@ -297,7 +300,7 @@
 (defun filter-region (command)
   (let ((shell (if (/= use-users-shell 0) shell-file-name "/bin/sh"))
 	(csh (equal (file-name-nondirectory shell) "csh")))
-    (call-process-region (dot) (mark) shell t t nil
+    (call-process-region (point) (mark) shell t t nil
 			 (if (and csh use-csh-option-f) "-cf" "-c")
 			 (concat "exec " command))))
 
@@ -312,7 +315,7 @@
   (set-syntax-table (symbol-value (intern (concat name "-syntax-table")))))
 
 (defun line-to-top-of-window ()
-  (recenter-window (1- (ml-prefix-argument))))
+  (recenter (1- (ml-prefix-argument))))
 
 (defun ml-previous-page (&optional arg)
   (let ((count (or arg (ml-prefix-argument))))
@@ -354,6 +357,11 @@
 
 (defun execute-mlisp-line (string)
   (eval (read string)))
+
+(defun move-dot-to-x-y (x y)
+  (goto-char (window-start (selected-window)))
+  (vertical-motion (1- y))
+  (move-to-column (1- x)))
 
 (defun ml-modify-syntax-entry (string)
   (let ((i 5)

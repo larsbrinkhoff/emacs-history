@@ -21,6 +21,17 @@ copyright notice and this notice must be preserved on all copies.  */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#define NO_SHORTNAMES   /* Tell config not to load remap.h */
+#include "../src/config.h"
+
+#ifdef USG
+#include <fcntl.h>
+#endif /* USG */
+
+/* Cancel substitutions made by config.h for Emacs.  */
+#undef open
+#undef read
+#undef write
 
 char *concat ();
 
@@ -30,14 +41,17 @@ main (argc, argv)
 {
   char *inname, *outname;
   int indesc, outdesc;
+  char buf[1024];
+  int nread;
+
+#ifndef MAIL_USE_FLOCK
+  struct stat st;
   long now;
   int tem;
   char *lockname, *p;
   char tempname[40];
   int desc;
-  char buf[1024];
-  int nread;
-  struct stat st;
+#endif /* not MAIL_USE_FLOCK */
 
   if (argc < 3)
     fatal ("two arguments required");
@@ -45,6 +59,9 @@ main (argc, argv)
   inname = argv[1];
   outname = argv[2];
 
+#ifndef MAIL_USE_FLOCK
+  /* Use a lock file named /usr/spool/mail/$USER.lock:
+     If it exists, the mail file is locked.  */
   lockname = concat (inname, ".lock", "");
   strcpy (tempname, inname);
   p = tempname + strlen (tempname);
@@ -57,8 +74,13 @@ main (argc, argv)
 
   while (1)
     {
+      /* Create the lock file, but not under the lock file name.  */
+      /* Give up if cannot do that.  */
       desc = open (tempname, O_WRONLY | O_CREAT, 0666);
+      if (desc < 0)
+	exit (1);
       close (desc);
+
       tem = link (tempname, lockname);
       unlink (tempname);
       if (tem >= 0)
@@ -73,13 +95,28 @@ main (argc, argv)
 	    unlink (lockname);
 	}
     }
+#endif /* not MAIL_USE_FLOCK */
 
+#ifdef MAIL_USE_FLOCK
+  indesc = open (inname, O_RDWR);
+#else /* if not MAIL_USE_FLOCK */
   indesc = open (inname, O_RDONLY);
+#endif /* not MAIL_USE_FLOCK */
   if (indesc < 0)
     pfatal_with_name (inname);
-  outdesc = open (outname, O_WRONLY | O_CREAT | O_EXCL, 0777);
+#ifdef BSD
+  /* In case movemail is setuid to root, make sure the user can
+     read the output file.  */
+  /* This is desirable for all systems
+     but I don't want to assume all have the umask system call */
+  umask (umask (0) & 0333);
+#endif /* BSD */
+  outdesc = open (outname, O_WRONLY | O_CREAT | O_EXCL, 0666);
   if (outdesc < 0)
     pfatal_with_name (outname);
+#ifdef MAIL_USE_FLOCK
+  (void) flock (indesc, LOCK_EX);
+#endif /* MAIL_USE_FLOCK */
 
   while (1)
     {
@@ -90,10 +127,15 @@ main (argc, argv)
 	break;
     }
 
+#ifdef MAIL_USE_FLOCK
+  (void) ftruncate (indesc, 0L);
+#endif /* MAIL_USE_FLOCK */
   close (indesc);
   close (outdesc);
+#ifndef MAIL_USE_FLOCK
   unlink (inname);
   unlink (lockname);
+#endif /* not MAIL_USE_FLOCK */
   exit (0);
 }
 

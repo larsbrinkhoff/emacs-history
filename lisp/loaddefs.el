@@ -4,26 +4,23 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 ;; Know which function the debuger is!
 (setq debugger 'debug)
-
-;; Just establish default.
-;; Site may override this in site-init.el.
-(setq Info-directory (expand-file-name "../info/" exec-directory))
 
 ;; These variables are used by autoloadable packages.
 ;; They are defined here so that they do not get overridden
@@ -61,7 +58,8 @@ Makes the commands to define mode-specific abbrevs define global ones instead.")
 ;; Names in directory that end in one of these
 ;; are ignored in completion,
 ;; making it more likely you will get a unique match.
-(setq completion-ignored-extensions '(".o" ".elc" "~"))
+(setq completion-ignored-extensions
+      '(".o" ".elc" "~" ".dvi" ".toc" ".log" ".aux" ".lof"))
 
 (defvar compile-command "make -k"
   "*Last shell command used to do a compilation; default for next compilation.")
@@ -98,28 +96,26 @@ is deemed to be prompt, and is not reexecuted.")
 
 (defvar auto-mode-alist
 	'(("\\.text$" . text-mode)
-	  ("\\.text~$" . text-mode)
 	  ("\\.mss$" . text-mode)
-	  ("\\.mss~$" . text-mode)
-	  ("\\.tex$" . text-mode)
-	  ("\\.tex~$" . text-mode)
+	  ("\\.tex$" . TeX-mode)
+	  ("\\.TeX$" . TeX-mode)
+	  ("\\.sty$" . TeX-mode)
 	  ("\\.texinfo$" . texinfo-mode)
-	  ("\\.texinfo~$" . texinfo-mode)
 	  ;; Mailer puts message to be edited in /tmp/Re.... or Message
-	  ("^/tmp/Re" . text-mode)
+	  ("^/tmp/Re" . non-saved-text-mode)
 	  ;; some news reader is reported to use this
-	  ("^/tmp/fol/" . text-mode)
+	  ("^/tmp/fol/" . non-saved-text-mode)
  	  ("/Message[0-9]*$" . text-mode)
-          ("\\.c$" . c-mode) ("\\.c~$" . c-mode)
-          ("\\.h$" . c-mode) ("\\.h~$" . c-mode)
-          ("\\.y$" . c-mode) ("\\.y~$" . c-mode)
-          ("\\.scm$" . scheme-mode) ("\\.scm~$" . scheme-mode)
+          ("\\.c$" . c-mode)
+          ("\\.h$" . c-mode)
+          ("\\.y$" . c-mode)
+          ("\\.scm$" . scheme-mode)
 	  ("\\.scm.[0-9]*$" . scheme-mode)
 	  ("/\\..*emacs" . emacs-lisp-mode)
-          ("\\.el$" . emacs-lisp-mode) ("\\.el~$" . emacs-lisp-mode)
-          ("\\.ml$" . lisp-mode) ("\\.ml~$" . lisp-mode)
-	  ("\\.l$" . lisp-mode) ("\\.l~$" . lisp-mode)
-	  ("\\.lisp$" . lisp-mode) ("\\.lisp~$" . lisp-mode))
+          ("\\.el$" . emacs-lisp-mode)
+          ("\\.ml$" . lisp-mode)
+	  ("\\.l$" . lisp-mode)
+	  ("\\.lisp$" . lisp-mode))
   "Alist of filename patterns vs corresponding major mode functions.
 Each element looks like (REGEXP . FUNCTION).
 Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
@@ -146,6 +142,12 @@ with cursor initially at the next successive entry.
 This is useful for stepping through located lines rapidly in order."
   t)
 
+(autoload '\` "backquote"
+  "\
+(` FORM) Expands to a form that will generate FORM.
+FORM is `almost quoted' -- see backquote.el for a description."
+  nil t)
+
 (autoload 'byte-compile-file "bytecomp"
   "\
 Compile a file of Lisp code named FILENAME into a file of byte code.
@@ -159,6 +161,14 @@ This is if a .elc file exists but is older than the .el file.
 If the .elc file does not exist, offer to compile the .el file
 only if a prefix argument has been specified." 
   t)
+
+(autoload 'batch-byte-compile "bytecomp"
+  "\
+Runs byte-compile-file on the files remaining on the command line.
+Must be used only with -batch, and kills emacs on completion.
+Each file will be processed even if an error occurred previously.
+For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\""
+  nil)
 
 
 (autoload 'list-command-history "chistory"
@@ -201,7 +211,7 @@ for editing and the result is evaluated.  Prefix args don't count."
 (autoload 'compare-windows "compare-w"
   "\
 Compare text in current window with text in next window.
-Compares the text starting at dot in each window,
+Compares the text starting at point in each window,
 moving over text in each one as fas as they match."
   t)
 
@@ -256,11 +266,6 @@ Works by modifying the definition of FUNCTION,
 which must be written in Lisp, not predefined."
   t)
 
-(autoload 'convert-mocklisp-buffer "mlconvert"
-  "\
-Convert buffer of mocklisp code into real lisp."
-  t)
-
 (define-key ctl-x-map "d" 'dired)
 
 (autoload 'dired "dired"
@@ -268,7 +273,7 @@ Convert buffer of mocklisp code into real lisp."
 \"Edit\" directory DIRNAME.  Delete some files in it.
 Dired displays a list of files in DIRNAME.
 You can move around in it with the usual commands.
-You can mark files for deletion with C-d
+You can flag files for deletion with C-d
 and then delete them by typing `x'.
 Type `h' after entering dired for more info."
   t)
@@ -294,6 +299,11 @@ Every so often the user must say whether to continue.
 If ARG is positive, require ARG words of continuity.
 If ARG is negative, require -ARG chars of continuity.
 Default is 2." t)
+
+(autoload 'doctor "doctor"
+  "\
+Switch to *doctor* buffer and start giving psychotherapy."
+  t)
 
 (autoload 'electric-buffer-list "ebuff-menu"
   "\
@@ -334,7 +344,7 @@ Space or !	edit then evaluate current line in history inside
 		   the ORIGINAL buffer which invoked this mode.
 		   The previous window configuration is restored
 		   unless the invoked command changes it.
-C-c, C-], Q	Quit and restore previous window configuration.
+C-c C-c, C-], Q	Quit and restore previous window configuration.
 LF, CR		Move to the next line in the history.
 Delete		Move to the previous line in the history.
 ?		Provides a complete list of commands.
@@ -343,6 +353,10 @@ Calls the value of  electric-command-history-hook  if that is non-nil
 The Command History listing is recomputed each time this mode is invoked."
   t)
 
+(autoload 'hanoi "hanoi"
+  "\
+Towers of Hanoi diversion.  Arg is number of rings."
+  t)
 
 (autoload 'Helper-help "helper"
   "\
@@ -364,7 +378,7 @@ Enter Info documentation browser."
   "\
 Major mode for editing text and stuffing it to a Lisp job.
 Like Lisp mode, plus these special commands:
-  M-C-d	-- record defun at or after dot
+  M-C-d	-- record defun at or after point
 	   for later transmission to Lisp job.
   M-C-r -- record region for later transmission to Lisp job.
   C-x z -- transfer to Lisp job and transmit saved text.
@@ -444,6 +458,10 @@ Make a summary of current key bindings in the buffer *Summary*.
 Previous contents of that buffer are killed first."
   t)
 
+(autoload 'define-mail-alias "mailalias"
+  "Define NAME as a mail-alias that translates to DEFINITION."
+  t)
+
 (autoload 'manual-entry "man"
   "\
 Display Unix manual entry for TOPIC."
@@ -476,6 +494,15 @@ to future sessions." t)
 Require special confirmation to execute COMMAND from now on.
 The user's .emacs file is altered so that this will apply
 to future sessions." t)
+
+(autoload 'nroff-mode "nroff-mode"
+  "\
+Major mode for editing text intended for nroff to format.
+\\{nroff-mode-map}
+Turning on Nroff mode runs text-mode-hook, then nroff-mode-hook.
+Also, try nroff-electric-mode, for automatically inserting
+closing requests for requests that are used in matched pairs."
+  t)
 
 (autoload 'list-options "options"
   "\
@@ -530,16 +557,16 @@ You can edit tabular text with these commands:
 	    which defines \"interesting character\".  You can manually
 	    change the tab stop list with command \\[edit-tab-stops].
 You can manipulate text with these commands:
-  C-d	  Clear (replace) ARG columns after dot without moving.
-  C-c C-d Delete char at dot - the command normally assigned to C-d.
-  Delete  Clear (replace) ARG columns before dot, moving back over them.
+  C-d	  Clear (replace) ARG columns after point without moving.
+  C-c C-d Delete char at point - the command normally assigned to C-d.
+  Delete  Clear (replace) ARG columns before point, moving back over them.
   C-k	  Clear ARG lines, advancing over them.	 The cleared
 	    text is saved in the kill ring.
   C-o	  Open blank line(s) beneath current line.
 You can manipulate rectangles with these commands:
   C-c C-k Clear (or kill) a rectangle and save it.
   C-c k	  Like C-c C-k except rectangle is saved in named register.
-  C-c C-y Overlay (or insert) currently saved rectangle at dot.
+  C-c C-y Overlay (or insert) currently saved rectangle at point.
   C-c y	  Like C-c C-y except rectangle is taken from named register.
   \\[copy-rectangle-to-register]   Copies a rectangle to a register.
   \\[advertised-undo]   Can undo effects of rectangle overlay commands
@@ -558,13 +585,13 @@ they are not defaultly assigned to keys."
 
 (autoload 'clear-rectangle "rect"
   "\
-Blank out rectangle with corners at dot and mark.
+Blank out rectangle with corners at point and mark.
 The text previously in the region is overwritten by the blanks."
   t)
 
 (autoload 'delete-rectangle "rect"
   "\
-Delete (don't save) text in rectangle with dot and mark as corners.
+Delete (don't save) text in rectangle with point and mark as corners.
 The same range of columns is deleted in each line
 starting with the line where the region begins
 and ending with the line where the region ends."
@@ -582,28 +609,28 @@ Value is list of strings, one for each line of the rectangle.")
 
 (autoload 'insert-rectangle "rect"
   "\
-Insert text of RECTANGLE with upper left corner at dot.
-RECTANGLE's first line is inserted at dot,
-its second line is inserted at a point vertically under dot, etc.
+Insert text of RECTANGLE with upper left corner at point.
+RECTANGLE's first line is inserted at point,
+its second line is inserted at a point vertically under point, etc.
 RECTANGLE should be a list of strings.")
 
 (autoload 'kill-rectangle "rect"
   "\
-Delete rectangle with corners at dot and mark; save as last killed one.
+Delete rectangle with corners at point and mark; save as last killed one.
 Calling from program, supply two args START and END, buffer positions.
 But in programs you might prefer to use delete-extract-rectangle."
   t)
 
 (autoload 'open-rectangle "rect"
   "\
-Blank out rectangle with corners at dot and mark, shifting text right.
+Blank out rectangle with corners at point and mark, shifting text right.
 The text previously in the region is not overwritten by the blanks,
 but insted winds up to the right of the rectangle."
   t)
 
 (autoload 'yank-rectangle "rect"
   "\
-Yank the last killed rectangle with upper left corner at dot."
+Yank the last killed rectangle with upper left corner at point."
   t)
 
 (autoload 'rnews "rnews"
@@ -634,26 +661,10 @@ nil means dont reply to yourself.")
    "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^received:\\|^[a-z-]*message-id:\\|^summary-line:"
    "*Gubbish headers one would rather not see.")
 
-(defconst rmail-file-name "~/RMAIL"
-  "")
+(defvar rmail-delete-after-output nil
+  "*Non-nil means automatically delete a message that is copied to a file.")
 
-(defconst rmail-spool-directory "/usr/spool/mail/"
-  "Name of directory used by system mailer for delivering new mail.
-It's name should end with a slash.")
-
-(defconst rmail-inbox-list 
-  '("~/mbox" "/usr/spool/mail/$USER")
- "List of files which contain mail stored in the usual unix
-\(\"From\"-delimited) mailbox format")
-
-(defconst rmail-mmdf-inbox-list '() ;("~/mailbox")
-  "*List of files which contain new mail stored in mmdf format")
-
-(defvar rmail-make-summary-line-function 'rmail-make-stupid-summary-line
-  "*Compute text of summary line for rmail.
-Should return a string (sans terminating newline)
-Called with region narrowed to headers of message to be summarized.")
-
+;;; Others are in paths.el.
 
 
 (autoload 'scheme-mode "scheme"
@@ -667,7 +678,7 @@ to edit and zap functions."
 ;; Useful to set in site-init.el
 (defconst send-mail-function 'sendmail-send-it
   "Function to call to send the current buffer as mail.
-The headers are delimited by \"--text follows this line--\"")
+The headers are delimited by a string found in mail-header-separator.")
 
 (defconst mail-self-blind nil
   "*Non-nil means insert BCC to self in messages to be sent.
@@ -681,6 +692,16 @@ nil means let mailer mail back a message to report errors.")
 (defconst mail-yank-ignored-headers
    "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^remailed\\|^received:\\|^[a-z-]*message-id:\\|^summary-line:\\|^to:\\|^cc:\\|^subject:\\|^in-reply-to:\\|^return-path:"
    "Delete these headers from old message when it's inserted in a reply.")
+
+(defconst mail-header-separator "--text follows this line--"
+  "*Line used to separate headers from text in messages being composed.")
+
+(defconst mail-archive-file-name nil
+  "*Name of file to write all outgoing messages in, or nil for none.")
+
+(defvar mail-aliases t
+  "Alias of mail address aliases,
+or t meaning should be initialized from .mailrc.")
 
 (autoload 'mail-other-window "sendmail"
   "\
@@ -740,7 +761,7 @@ From program, applies from START to END."
 (define-key esc-map "$" 'spell-word)
 (autoload 'spell-word "spell"
   "\
-Check spelling of word at or after dot.
+Check spelling of word at or before point.
 If it is not correct, ask user for the correct spelling
 and query-replace the entire buffer to substitute it."
   t)
@@ -770,9 +791,9 @@ The variable tab-width controls the action."
   "\
 Find next tag (in current tag table) whose name contains TAGNAME.
  Selects the buffer that the tag is contained in
-and puts dot at its definition.
+and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
-around or before dot is used as the tag name.
+around or before point is used as the tag name.
  If second arg NEXT is non-nil (interactively, with prefix arg),
 searches for the next tag in the tag table
 that matches the tagname used in the previous find-tag.
@@ -786,9 +807,9 @@ See documentation of variable tags-file-name."
   "\
 Find tag (in current tag table) whose name contains TAGNAME.
  Selects the buffer that the tag is contained in
-and puts dot at its definition.
+and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
-around or before dot is used as the tag name.
+around or before point is used as the tag name.
  If second arg NEXT is non-nil (interactively, with prefix arg),
 searches for the next tag in the tag table
 that matches the tagname used in the previous find-tag.
@@ -843,11 +864,29 @@ To continue searching for next match, use command \\[tags-loop-continue].
 See documentation of variable tags-file-name."
   t)
 
-(autoload 'visit-tag-table "tags"
+(autoload 'visit-tags-table "tags"
   "\
 Tell tags commands to use tag table file FILE.
-FILE should be the name of a file created with the `etags' program."
+FILE should be the name of a file created with the `etags' program.
+A directory name is ok too; it means file TAGS in that directory."
   t)
+
+(autoload 'telnet "telnet"
+  "\
+Open a network login connection to host named HOST (a string).
+Communication with HOST is recorded in a buffer *HOST-telnet*.
+Normally input is edited in Emacs and sent a line at a time."
+  t)
+
+(autoload 'tex-mode "tex-mode"
+  "\
+Major mode for editing TeX input files.\n\
+Activates $ and \" with TeX meaning, makes ()[]{} have proper syntax.\n\
+M-$ erects barrier to speed up matching $ searches.\n\
+Turning on TeX-mode calls the value of the variable TeX-mode-hook,\n\
+if that value is non-nil."
+  t)
+(fset 'TeX-mode 'tex-mode)
 
 (autoload 'texinfo-format-buffer "texinfo"
   "\
@@ -889,6 +928,17 @@ Called from program, takes two arguments START and END
 which specify the range to operate on."
   t)
 
+(autoload 'ask-user-about-lock "userlock"
+  "\
+Ask user what to do when he wants to edit FILE but it is locked by USER.
+This function has a choice of three things to do:
+  do (signal 'buffer-file-locked (list FILE USER))
+    to refrain from editing the file
+  return t (grab the lock on the file)
+  return nil (edit the file even though it is locked).
+You can rewrite it to use any criterion you like to choose which one to do."
+  nil)
+
 (autoload 'view-file "view"
   "\
 View FILE in View mode, returning to previous buffer when done.
@@ -912,25 +962,37 @@ For list of all View commands, type ? or h while viewing.
 
 Calls the value of  view-hook  if that is non-nil."
   t)
+
+(autoload 'view-mode "view"
+  "\
+Major mode for viewing text but not editing it."
+  t)
+
+
+(autoload 'yow "yow"
+  "Return or display a Zippy quotation" t)
+(autoload 'psychoanalyze-pinhead "yow"
+  "Zippy goes to the analyst" t)
+
 
-(define-key esc-map "\^f" 'forward-sexp)
-(define-key esc-map "\^b" 'backward-sexp)
-(define-key esc-map "\^u" 'backward-up-list)
-(define-key esc-map "\^@" 'mark-sexp)
-(define-key esc-map "\^d" 'down-list)
-(define-key esc-map "\^k" 'kill-sexp)
-(define-key esc-map "\^n" 'forward-list)
-(define-key esc-map "\^p" 'backward-list)
-(define-key esc-map "\^a" 'beginning-of-defun)
-(define-key esc-map "\^e" 'end-of-defun)
-(define-key esc-map "\^h" 'mark-defun)
+(define-key esc-map "\C-f" 'forward-sexp)
+(define-key esc-map "\C-b" 'backward-sexp)
+(define-key esc-map "\C-u" 'backward-up-list)
+(define-key esc-map "\C-@" 'mark-sexp)
+(define-key esc-map "\C-d" 'down-list)
+(define-key esc-map "\C-k" 'kill-sexp)
+(define-key esc-map "\C-n" 'forward-list)
+(define-key esc-map "\C-p" 'backward-list)
+(define-key esc-map "\C-a" 'beginning-of-defun)
+(define-key esc-map "\C-e" 'end-of-defun)
+(define-key esc-map "\C-h" 'mark-defun)
 (define-key esc-map "(" 'insert-parentheses)
 (define-key esc-map ")" 'move-past-close-and-reindent)
 
-(define-key ctl-x-map "" 'eval-last-sexp)
+(define-key ctl-x-map "\C-e" 'eval-last-sexp)
 
-(define-key ctl-x-map "/" 'dot-to-register)
-(define-key ctl-x-map "j" 'register-to-dot)
+(define-key ctl-x-map "/" 'point-to-register)
+(define-key ctl-x-map "j" 'register-to-point)
 (define-key ctl-x-map "x" 'copy-to-register)
 (define-key ctl-x-map "g" 'insert-register)
 (define-key ctl-x-map "r" 'copy-rectangle-to-register)
@@ -949,7 +1011,8 @@ Calls the value of  view-hook  if that is non-nil."
 
 (define-key ctl-x-map "[" 'backward-page)
 (define-key ctl-x-map "]" 'forward-page)
-(define-key ctl-x-map "\^p" 'mark-page)
+(define-key ctl-x-map "\C-p" 'mark-page)
+(put 'narrow-to-region 'disabled t)
 (define-key ctl-x-map "p" 'narrow-to-page)
 (define-key ctl-x-map "l" 'count-lines-page)
 
@@ -958,7 +1021,7 @@ Calls the value of  view-hook  if that is non-nil."
 Do incremental search forward.
 As you type characters, they add to the search string and are found.
 Type Delete to cancel characters from end of search string.
-Type ESC to exit, leaving dot at location found.
+Type ESC to exit, leaving point at location found.
 Type C-S to search again forward, C-R to search again backward.
 Type C-W to yank word from buffer onto end of search string and search for it.
 Type C-Y to yank rest of line onto end of search string, etc.
@@ -969,7 +1032,7 @@ The above special characters are mostly controlled by parameters;
  do M-x apropos on search-.*-char to find them.
 C-G while searching or when search has failed
  cancels input back to what has been found successfully.
-C-G when search is successful aborts and moves dot to starting point."
+C-G when search is successful aborts and moves point to starting point."
   (interactive)
   (isearch t))
 
@@ -1001,35 +1064,41 @@ is treated as a regexp.  See  isearch-forward  for more info."
 This does not include direct calls to the primitive search functions,
 and does not include searches that are aborted.")
 
-(defconst search-repeat-char ?\^S
+(defconst search-repeat-char ?\C-s
   "Character to repeat incremental search forwards.")
-(defconst search-reverse-char ?\^R
+(defconst search-reverse-char ?\C-r
   "Character to repeat incremental search backwards.")
 (defconst search-exit-char ?\e
   "Character to exit incremental search.")
 (defconst search-delete-char ?\177
   "Character to delete from incremental search string.")
-(defconst search-quote-char ?\^Q
+(defconst search-quote-char ?\C-q
   "Character to quote special characters for incremental search.")
-(defconst search-yank-word-char ?\^W
+(defconst search-yank-word-char ?\C-w
   "Character to pull next word from buffer into search string.")
-(defconst search-yank-line-char ?\^Y
+(defconst search-yank-line-char ?\C-y
   "Character to pull rest of line from buffer into search string.")
 (defconst search-exit-option t
   "Non-nil means random control characters terminate incremental search.")
 
+(defvar isearch-slow-window-lines 1
+  "*Number of lines in slow search display windows.")
+(defvar isearch-slow-speed 1200
+  "*Highest terminal speed at which to use \"slow\" style incremental search.
+This is the style where a one-line window is created to show the line
+that the search has reached.")
+
 (autoload 'isearch "isearch")
 
-(define-key global-map "\^s" 'isearch-forward)
-(define-key global-map "\^r" 'isearch-backward)
-(define-key esc-map "\^s" 'isearch-forward-regexp)
+(define-key global-map "\C-s" 'isearch-forward)
+(define-key global-map "\C-r" 'isearch-backward)
+(define-key esc-map "\C-s" 'isearch-forward-regexp)
 
 (defun query-replace (from-string to-string &optional arg)
   "\
 Replace some occurrences of FROM-STRING with TO-STRING.
 As each match is found, the user must type a character saying
-what to do with it.
-Type Help char within query-replace for directions.
+what to do with it.  For directions, type \\[help-command] at that time.
 
 Preserves case in each replacement if  case-replace  and  case-fold-search
 are non-nil and FROM-STRING has no uppercase letters.
@@ -1040,10 +1109,9 @@ only matches surrounded by word boundaries."
 
 (defun query-replace-regexp (regexp to-string &optional arg)
   "\
-Replace some things after dot matching REGEXP with TO-STRING.
+Replace some things after point matching REGEXP with TO-STRING.
 As each match is found, the user must type a character saying
-what to do with it.
-Type Help char within query-replace for directions.
+what to do with it.  For directions, type \\[help-command] at that time.
 
 Preserves case in each replacement if  case-replace  and  case-fold-search
 are non-nil and REGEXP has no uppercase letters.
@@ -1066,7 +1134,7 @@ only matches surrounded by word boundaries."
 
 (defun replace-regexp (regexp to-string &optional delimited)
   "\
-Replace things after dot matching REGEXP with TO-STRING.
+Replace things after point matching REGEXP with TO-STRING.
 Preserve case in each match if case-replace and case-fold-search
 are non-nil and REGEXP has no uppercase letters.
 Third arg DELIMITED (prefix arg if interactive) non-nil means replace
@@ -1080,8 +1148,8 @@ and \\<n> means insert what matched <n>th \\(...\\) in REGEXP."
 
 (autoload 'perform-replace "replace")
 
-(define-key ctl-x-map "\^a" 'add-mode-abbrev)
+(define-key ctl-x-map "\C-a" 'add-mode-abbrev)
 (define-key ctl-x-map "\+" 'add-global-abbrev)
-(define-key ctl-x-map "\^h" 'inverse-add-mode-abbrev)
+(define-key ctl-x-map "\C-h" 'inverse-add-mode-abbrev)
 (define-key ctl-x-map "\-" 'inverse-add-global-abbrev)
 (define-key esc-map "'" 'abbrev-prefix-mark)

@@ -4,18 +4,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (defun operate-on-rectangle (function start end coerce-tabs)
   "Call FUNCTION for each line of rectangle with corners at START, END.
@@ -25,33 +27,33 @@ to multiple spaces before calling FUNCTION.
 FUNCTION is called with three arguments:
  position of start of segment of this line within the rectangle,
  number of columns that belong to rectangle but are before that position,
- number of columns that belong to rectangle but are after dot.
-Dot is at the end of the segment of this line within the rectangle."
+ number of columns that belong to rectangle but are after point.
+Point is at the end of the segment of this line within the rectangle."
   (let (startcol startlinepos endcol endlinepos)
     (save-excursion
      (goto-char start)
      (setq startcol (current-column))
      (beginning-of-line)
-     (setq startlinepos (dot)))
+     (setq startlinepos (point)))
     (save-excursion
      (goto-char end)
      (setq endcol (current-column))
      (forward-line 1)
-     (setq endlinepos (dot-marker)))
+     (setq endlinepos (point-marker)))
     (if (< endcol startcol)
 	(let ((tem startcol))
 	  (setq startcol endcol endcol tem)))
     (if (/= endcol startcol)
 	(save-excursion
 	 (goto-char startlinepos)
-	 (while (< (dot) endlinepos)
+	 (while (< (point) endlinepos)
 	   (let (startpos begextra endextra)
 	     (move-to-column startcol)
 	     (and coerce-tabs
 		  (> (current-column) startcol)
 		  (rectangle-coerce-tab startcol))
 	     (setq begextra (- (current-column) startcol))
-	     (setq startpos (dot))
+	     (setq startpos (point))
 	     (move-to-column endcol)
 	     (if (> (current-column) endcol)
 		 (if coerce-tabs
@@ -66,24 +68,24 @@ Dot is at the end of the segment of this line within the rectangle."
     (- endcol startcol)))
 
 (defun delete-rectangle-line (startdelpos ignore ignore)
-  (delete-region startdelpos (dot)))
+  (delete-region startdelpos (point)))
 
 (defun delete-extract-rectangle-line (startdelpos begextra endextra)
   (save-excursion
    (extract-rectangle-line startdelpos begextra endextra))
-  (delete-region startdelpos (dot)))
+  (delete-region startdelpos (point)))
 
 (defun extract-rectangle-line (startdelpos begextra endextra)
-  (let ((line (buffer-substring startdelpos (dot)))
-	(end (dot)))
+  (let ((line (buffer-substring startdelpos (point)))
+	(end (point)))
     (goto-char startdelpos)
     (while (search-forward "\t" end t)
       (let ((width (- (current-column)
 		      (save-excursion (forward-char -1)
 				      (current-column)))))
-	(setq line (concat (substring line 0 (- (dot) end 1))
+	(setq line (concat (substring line 0 (- (point) end 1))
 			   (spaces-string width)
-			   (substring line (+ (length line) (- (dot) end)))))))
+			   (substring line (+ (length line) (- (point) end)))))))
     (if (or (> begextra 0) (> endextra 0))
 	(setq line (concat (spaces-string begextra)
 			   line
@@ -102,7 +104,7 @@ Dot is at the end of the segment of this line within the rectangle."
       (concat val (aref spaces-strings n)))))
     
 (defun delete-rectangle (start end)
-  "Delete (don't save) text in rectangle with dot and mark as corners.
+  "Delete (don't save) text in rectangle with point and mark as corners.
 The same range of columns is deleted in each line
 starting with the line where the region begins
 and ending with the line where the region ends."
@@ -128,21 +130,21 @@ Value is list of strings, one for each line of the rectangle."
   "Rectangle for yank-rectangle to insert.")
 
 (defun kill-rectangle (start end)
-  "Delete rectangle with corners at dot and mark; save as last killed one.
+  "Delete rectangle with corners at point and mark; save as last killed one.
 Calling from program, supply two args START and END, buffer positions.
 But in programs you might prefer to use delete-extract-rectangle."
   (interactive "r")
   (setq killed-rectangle (delete-extract-rectangle start end)))
 
 (defun yank-rectangle ()
-  "Yank the last killed rectangle with upper left corner at dot."
+  "Yank the last killed rectangle with upper left corner at point."
   (interactive)
   (insert-rectangle killed-rectangle))
 
 (defun insert-rectangle (rectangle)
-  "Insert text of RECTANGLE with upper left corner at dot.
-RECTANGLE's first line is inserted at dot,
-its second line is inserted at a point vertically under dot, etc.
+  "Insert text of RECTANGLE with upper left corner at point.
+RECTANGLE's first line is inserted at point,
+its second line is inserted at a point vertically under point, etc.
 RECTANGLE should be a list of strings."
   (let ((lines rectangle)
 	(insertcolumn (current-column))
@@ -162,7 +164,7 @@ RECTANGLE should be a list of strings."
       (setq lines (cdr lines)))))
 
 (defun open-rectangle (start end)
-  "Blank out rectangle with corners at dot and mark, shifting text right.
+  "Blank out rectangle with corners at point and mark, shifting text right.
 The text previously in the region is not overwritten by the blanks,
 but insted winds up to the right of the rectangle."
   (interactive "r")
@@ -174,13 +176,13 @@ but insted winds up to the right of the rectangle."
     (let ((ocol (current-column)))
       (skip-chars-forward " \t")
       (setq column (+ column (- (current-column) ocol))))
-    (delete-region (dot)
+    (delete-region (point)
                    (progn (skip-chars-backward " \t")
-			  (dot)))
+			  (point)))
     (indent-to column)))
 
 (defun clear-rectangle (start end)
-  "Blank out rectangle with corners at dot and mark.
+  "Blank out rectangle with corners at point and mark.
 The text previously in the region is overwritten by the blanks."
   (interactive "r")
   (operate-on-rectangle 'clear-rectangle-line start end t))
@@ -188,10 +190,10 @@ The text previously in the region is overwritten by the blanks."
 (defun clear-rectangle-line (startpos begextra endextra)
   (skip-chars-forward " \t")
   (let ((column (+ (current-column) endextra)))
-    (delete-region (dot)
+    (delete-region (point)
                    (progn (goto-char startpos)
 			  (skip-chars-backward " \t")
-			  (dot)))
+			  (point)))
     (indent-to column)))
 
 (defun rectangle-coerce-tab (column)

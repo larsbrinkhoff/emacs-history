@@ -6,18 +6,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include <stdio.h>
@@ -36,56 +37,70 @@ doprnt (buffer, bufsize, format, args)
   register int tem;
   char *string;
   char fmtcpy[20];
+  int minlen;
 
   bufsize--;
   while (*fmt && bufsize > 0)	/* Loop until end of format string or buffer full */
     {
       if (*fmt == '%')	/* Check for a '%' character */
-	switch (*++fmt)
-	  {
-	  default:
-	    /* Copy this one %-spec into fmtcopy.  */
-	    string = fmtcpy;
-	    *string++ = '%';
-	    while (1)
-	      {
-		*string++ = *fmt;
-		if (! (*fmt >= '0' && *fmt <= '9') && *fmt != '-' && *fmt != ' ')
-		  break;
-		fmt++;
-	      }
-	    *string = 0;
-	    /* If this fmt spec is valid for us, format it into tembuf.
-	       Otherwise, error.  */
-	    if (*fmt == 'b' || *fmt == 'o' || *fmt == 'x' || *fmt == 'd')
+	{
+	  fmt++;
+	  /* Copy this one %-spec into fmtcopy.  */
+	  string = fmtcpy;
+	  *string++ = '%';
+	  while (1)
+	    {
+	      *string++ = *fmt;
+	      if (! (*fmt >= '0' && *fmt <= '9') && *fmt != '-' && *fmt != ' ')
+		break;
+	      fmt++;
+	    }
+	  *string = 0;
+	  minlen = 0;
+	  switch (*fmt++)
+	    {
+	    default:
+	      error ("Invalid format operation %%%c", fmt[-1]);
+
+	    case 'b':
+	    case 'd':
+	    case 'o':
+	    case 'x':
 	      sprintf (tembuf, fmtcpy, args[cnt++]);
-	    else
-	      error ("Invalid format operation %%%c", *fmt);
-	    /* Now copy tembuf into final outupt, truncating as nec.  */
-	    string = tembuf;
-	    goto doit;
+	      /* Now copy tembuf into final output, truncating as nec.  */
+	      string = tembuf;
+	      goto doit;
 
-	  case 's':
-	    string = args[cnt++];
-	    /* Copy string into final output, truncating if no room.  */
-	  doit:
-	    fmt++;
-	    tem = strlen (string);
-	    if (tem > bufsize)
-	      tem = bufsize;
-	    strncpy (bufptr, string, tem);
-	    bufptr += tem;
-	    bufsize -= tem;
-	    continue;
+	    case 's':
+	      string = args[cnt++];
+	      if (fmtcpy[1] != 's')
+		minlen = atoi (&fmtcpy[1]);
+	      /* Copy string into final output, truncating if no room.  */
+	    doit:
+	      tem = strlen (string);
+	      minlen -= tem;
+	      while (minlen > 0 && bufsize > 0)
+		{
+		  *bufptr++ = ' ';
+		  bufsize--;
+		  minlen--;
+		}
+	      if (tem > bufsize)
+		tem = bufsize;
+	      strncpy (bufptr, string, tem);
+	      bufptr += tem;
+	      bufsize -= tem;
+	      continue;
 
-	  case 'c':
-	    fmt++;
-	    *bufptr++ = (int) args[cnt++];
-	    bufsize--;
-	    continue;
+	    case 'c':
+	      *bufptr++ = (int) args[cnt++];
+	      bufsize--;
+	      continue;
 
-	  case '%': ;
-	  }
+	    case '%':
+	      fmt--;    /* Drop thru and this % will be treated as normal */
+	    }
+	}
       *bufptr++ = *fmt++;	/* Just some characters; Copy 'em */
       bufsize--;
     };

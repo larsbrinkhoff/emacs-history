@@ -4,27 +4,49 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
-
-(defvar isearch-slow-window-lines 1
-  "*Number of lines in slow search display windows.")
-
-(defconst isearch-slow-speed 1200
-  "*Highest terminal speed at which to use \"slow\" style incremental search.
-This is the style where a one-line window is created to show the line
-that the search has reached.")
+; in loaddefs.el
+;(defvar search-last-string ""
+;  "Last string search for by a search command.
+;This does not include direct calls to the primitive search functions,
+;and does not include searches that are aborted.")
+;
+;(defconst search-repeat-char ?\C-s
+;  "Character to repeat incremental search forwards.")
+;(defconst search-reverse-char ?\C-r
+;  "Character to repeat incremental search backwards.")
+;(defconst search-exit-char ?\e
+;  "Character to exit incremental search.")
+;(defconst search-delete-char ?\177
+;  "Character to delete from incremental search string.")
+;(defconst search-quote-char ?\C-q
+;  "Character to quote special characters for incremental search.")
+;(defconst search-yank-word-char ?\C-w
+;  "Character to pull next word from buffer into search string.")
+;(defconst search-yank-line-char ?\C-y
+;  "Character to pull rest of line from buffer into search string.")
+;(defconst search-exit-option t
+;  "Non-nil means random control characters terminate incremental search.")
+;
+;(defvar isearch-slow-window-lines 1
+;  "*Number of lines in slow search display windows.")
+;(defconst isearch-slow-speed 1200
+;  "*Highest terminal speed at which to use \"slow\" style incremental search.
+;This is the style where a one-line window is created to show the line
+;that the search has reached.")
 
 ;; This function does all the work of incremental search.
 ;; The functions attached to ^R and ^S are trivial,
@@ -37,15 +59,16 @@ that the search has reached.")
 	(search-message "")
 	(cmds nil)
 	(success t)
+	(invalid-regexp nil)
 	(slow-terminal-mode (<= (baud-rate) isearch-slow-speed))
 	(other-end nil)    ;Start of last match if fwd, end if backwd.
 	(small-window nil)		;if t, using a small window
 	(window-min-height (min window-min-height (1+ isearch-slow-window-lines)))
 					;so we can make small windows
-	(found-dot nil)			;to restore dot from a small window
+	(found-point nil)			;to restore point from a small window
 	;; This is the window-start value found by the search.
 	(found-start nil)
-	(odot (dot))
+	(opoint (point))
 	(inhibit-quit t))  ;Prevent ^G from quitting immediately.
     (isearch-push-state)
     (save-window-excursion
@@ -53,21 +76,23 @@ that the search has reached.")
        (while t
 	 (or (>= unread-command-char 0)
 	     (progn
-	       (message "%s" (isearch-message))
+	       (or (input-pending-p)
+		   (isearch-message))
 	       (if (and slow-terminal-mode
 			(not (or small-window (pos-visible-in-window-p))))
 		   (progn
-		    (setq small-window t)
-		    (setq found-dot (dot))
-		    (move-to-window-line 0)
-		    (split-window nil (- (window-height)
-					 (1+ isearch-slow-window-lines)))
-		    (other-window 1)
-		    (goto-char found-dot)))))
+		     (setq small-window t)
+		     (setq found-point (point))
+		     (move-to-window-line 0)
+		     (split-window nil (- (window-height)
+					  (1+ isearch-slow-window-lines)))
+		     (other-window 1)
+		     (goto-char found-point)))))
 	 (let ((char (if quit-flag
 			 ?\C-g
 		       (read-char))))
-	   (setq quit-flag nil)
+	   (setq quit-flag nil
+		 invalid-regexp nil)
 	   ;; Meta character means exit search.
 	   (cond ((and (>= char 128)
 		       search-exit-option)
@@ -79,17 +104,15 @@ that the search has reached.")
 		  (if (= 0 (length search-string))
 		      (nonincremental-search forward regexp))
 		  (throw 'search-done t))
-		 ((= char ?\^G)
+		 ((= char ?\C-g)
 		  ;; ^G means the user tried to quit.
 		  (ding)
 		  (discard-input)
 		  (if success
-		      ;; If search is successful, move back to starting dot
+		      ;; If search is successful, move back to starting point
 		      ;; and really do quit.
-		      (progn (goto-char odot)
-			     (setq inhibit-quit nil quit-flag t)
-			     ;; Cause the quit, just requested, to happen.
-			     (eval '(progn nil)))
+		      (progn (goto-char opoint)
+			     (signal 'quit nil))
 		    ;; If search is failing, rub out until it is once more
 		    ;;  successful.
 		    (while (not success) (isearch-pop))))
@@ -99,24 +122,26 @@ that the search has reached.")
 		  (if (null (cdr cmds))
 		      ;; If the first char typed,
 		      ;; it means search for the string of the previous search
-		      (setq search-string search-last-string
-			    search-message 
-			    (mapconcat 'text-char-description
-				       search-string "")))
+		      (progn
+		        (setq search-string search-last-string
+			      search-message
+			        (mapconcat 'text-char-description
+					   search-string ""))))
 		  (isearch-search)
 		  (isearch-push-state))
 		 ((eq char search-reverse-char)
 		  ;; ^R is similar but it searches backward.
 		  (setq forward nil)
 		  (if (null (cdr cmds))
-		      (setq search-string search-last-string
-			    search-message
-			    (mapconcat 'text-char-description
-				       search-string "")))
+		      (progn
+			(setq search-string search-last-string
+			      search-message
+			        (mapconcat 'text-char-description
+					   search-string ""))))
 		  (isearch-search)
 		  (isearch-push-state))
 		 ((= char search-delete-char)
-		  ;; Rubout means discard last input item and move dot
+		  ;; Rubout means discard last input item and move point
 		  ;; back.  If buffer is empty, just beep.
 		  (if (null (cdr cmds))
 		      (ding)
@@ -130,61 +155,72 @@ that the search has reached.")
 				       (and (not forward) other-end
 					    (goto-char other-end))
 				       (buffer-substring
-					(dot)
+					(point)
 					(save-excursion
 					  (if (eq char search-yank-line-char)
 					      (end-of-line)
 					    (forward-word 1))
-					  (dot))))))
+					  (point))))))
 			   (setq search-string (concat search-string word)
 				 search-message
-				 (concat search-message
-					 (mapconcat 'text-char-description
-						    word "")))))
+				   (concat search-message
+					   (mapconcat 'text-char-description
+						      word "")))))
 			 ;; Any other control char =>
 			 ;;  unread it and exit the search normally.
 			 ((and search-exit-option
 			       (/= char search-quote-char)
-			       (< char ? ) (/= char ?\t) (/= char ?\^m))
+			       (< char ? ) (/= char ?\t) (/= char ?\r))
 			  (setq unread-command-char char)
 			  (throw 'search-done t))
 			 (t
-			  (if (= char ?\^m) (setq char ?\n))
-			  (cond ((= char search-quote-char)
-				 (setq char (read-quoted-char
-					      (isearch-message t)))))
-
 			  ;; Any other character => add it to the
 			  ;;  search string and search.
+			  (cond ((= char search-quote-char)
+				 (setq char (read-quoted-char
+					     (isearch-message t))))
+				((= char ?\r)
+				 ;; unix braindeath
+				 (setq char ?\n)))
 			  (setq search-string (concat search-string
 						      (char-to-string char))
 				search-message (concat search-message
 						       (text-char-description char)))))
-		  (if (or (not success)
-			  (and regexp (= char ?\\)))
+		  (if (and (not success)
+			   ;; unsuccessful regexp search may become
+			   ;;  successful by addition of characters which
+			   ;;  make search-string valid
+			   (not regexp))
 		      nil
 		    (if other-end
 			(goto-char (if forward other-end
-				     (min odot (1+ other-end)))))
+				     (min opoint (1+ other-end)))))
 		    (isearch-search))
 		  (isearch-push-state))))))
      (setq found-start (window-start (selected-window)))
-     (setq found-dot (dot)))
+     (setq found-point (point)))
     (setq search-last-string search-string)
     ;; If there was movement, mark the starting position.
     ;; Maybe should test difference between and set mark iff > threshold.
-    (if (/= (dot) odot) (push-mark odot))
+    (if (/= (point) opoint) (push-mark opoint))
     (if small-window
-	(goto-char found-dot)
-    ;; Exiting the save-window-excursion clobbers this; restore it.
-    (set-window-start (selected-window) found-start t))))
+	(goto-char found-point)
+      ;; Exiting the save-window-excursion clobbers this; restore it.
+      (set-window-start (selected-window) found-start t))
+    (message "")))
 
-(defun isearch-message (&optional ctl-q)
-  (concat (if success "" "Failing ")
-	  (if regexp (if success "Regexp " "regexp ") "")
-	  (if forward "I-search: " "I-search backward: ")
-	  search-message
-	  (if ctl-q "^Q" "")))
+(defun isearch-message (&optional c-q-hack ing)
+  (or success (setq ing nil))
+  (let ((m (concat (if success "" "Failing ")
+		   (if regexp (if success "Regexp " "regexp ") "")
+		   "I-search"
+		   (if forward ": " " backward: ")
+		   search-message
+		   (if c-q-hack "^Q" "")
+		   (if invalid-regexp
+		       (concat " [" invalid-regexp "]")
+		     (if (and ing (not slow-terminal-mode)) " ..." "")))))
+    (if c-q-hack m (message "%s" m))))
 
 (defun isearch-pop ()
   (setq cmds (cdr cmds))
@@ -193,28 +229,35 @@ that the search has reached.")
 	  search-message (car (cdr cmd))
 	  success (car (cdr (cdr (cdr cmd))))
 	  forward (car (cdr (cdr (cdr (cdr cmd)))))
-	  other-end (car (cdr (cdr (cdr (cdr (cdr cmd)))))))
+	  other-end (car (cdr (cdr (cdr (cdr (cdr cmd))))))
+	  invalid-regexp (car (cdr (cdr (cdr (cdr (cdr (cdr cmd))))))))
     (goto-char (car (cdr (cdr cmd))))))
 
 (defun isearch-push-state ()
-  (setq cmds (cons (list search-string search-message (dot)
-			 success forward other-end)
+  (setq cmds (cons (list search-string search-message (point)
+			 success forward other-end invalid-regexp)
 		   cmds)))
 
 (defun isearch-search ()
+  (isearch-message nil t)
   (if (setq success
-	    (condition-case ()
+	    (condition-case lossage
 		(let ((inhibit-quit nil))
+		  (if regexp (setq invalid-regexp nil))
 		  (funcall
-		   (if regexp
-		       (if forward 're-search-forward 're-search-backward)
-		     (if forward 'search-forward 'search-backward))
-		   search-string nil t))
+		    (if regexp
+			(if forward 're-search-forward 're-search-backward)
+		        (if forward 'search-forward 'search-backward))
+		    search-string nil t))
 	      (quit (setq unread-command-char ?\C-g)
-		    nil)))
+		    nil)
+	      (invalid-regexp (setq invalid-regexp (car (cdr lossage)))
+			      nil)))
       (setq other-end
 	    (if forward (match-beginning 0) (match-end 0)))
-    (ding)
+    (or invalid-regexp
+	(not (car (cdr (cdr (cdr (car cmds)))))) ;unsuccusful last time
+	(ding))
     (goto-char (car (cdr (cdr (car cmds)))))))
 
 ;; This is called from incremental-search

@@ -4,24 +4,20 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
-
-
-/* Address where text segment start appears in memory.  */
-
-#define TEXT_START 0x400000
 
 /* The following three symbols give information on
  the size of various data types.  */
@@ -39,6 +35,11 @@ copyright notice and this notice must be preserved on all copies.  */
 /* XINT must explicitly sign-extend */
 
 #define EXPLICIT_SIGN_EXTEND
+
+/* Define how to take a char and sign-extend into an int.
+   On machines where char is signed, this is a no-op.  */
+
+#define SIGN_EXTEND_CHAR(c) (c)
 
 /* Say this machine is a 68000 */
 

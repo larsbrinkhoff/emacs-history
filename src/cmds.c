@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -28,7 +29,7 @@ Lisp_Object Qkill_forward_chars, Qkill_backward_chars, Vblink_paren_hook;
 
 
 DEFUN ("forward-char", Fforward_char, Sforward_char, 0, 1, "p",
-  "Move dot right ARG characters (left if ARG negative).\n\
+  "Move point right ARG characters (left if ARG negative).\n\
 On reaching end of buffer, stop and signal error.")
   (n)
      Lisp_Object n;
@@ -38,22 +39,22 @@ On reaching end of buffer, stop and signal error.")
   else
     CHECK_NUMBER (n, 0);
 
-  SetDot (dot + XINT (n));
-  if (dot < FirstCharacter)
+  SetPoint (point + XINT (n));
+  if (point < FirstCharacter)
     {
-      SetDot (FirstCharacter);
+      SetPoint (FirstCharacter);
       Fsignal (Qbeginning_of_buffer, Qnil);
     }
-  if (dot > NumCharacters + 1)
+  if (point > NumCharacters + 1)
     {
-      SetDot (NumCharacters + 1);
+      SetPoint (NumCharacters + 1);
       Fsignal (Qend_of_buffer, Qnil);
     }
   return Qnil;
 }
 
 DEFUN ("backward-char", Fbackward_char, Sbackward_char, 0, 1, "p",
-  "Move dot left ARG characters (right if ARG negative).\n\
+  "Move point left ARG characters (right if ARG negative).\n\
 On reaching end of buffer, stop and signal error.")
   (n)
      Lisp_Object n;
@@ -68,7 +69,7 @@ On reaching end of buffer, stop and signal error.")
 }
 
 DEFUN ("forward-line", Fforward_line, Sforward_line, 0, 1, "p",
-  "Move dot forward past ARG newlines.\n\
+  "Move point forward past ARG newlines.\n\
 If ARG is zero, position after previous newline.\n\
 If ARG is negative, position after -ARG'th newline before that one.\n\
 If scan reaches end of buffer, stop there without error;\n\
@@ -76,7 +77,7 @@ If scan reaches end of buffer, stop there without error;\n\
   (n)
      Lisp_Object n;
 {
-  register int pos = dot;
+  register int pos = point;
   register int count, stop;
 
   if (NULL (n))
@@ -110,13 +111,13 @@ If scan reaches end of buffer, stop there without error;\n\
       while (++pos < stop && CharAt (pos) != '\n');
       pos++;
     }
-  SetDot (pos);
+  SetPoint (pos);
   return make_number (count);
 }
 
 DEFUN ("beginning-of-line", Fbeginning_of_line, Sbeginning_of_line,
   0, 1, "p",
-  "Move dot to beginning of current line.\n\
+  "Move point to beginning of current line.\n\
 With argument ARG not nil or 1, move forward ARG - 1 lines first.\n\
 If scan reaches end of buffer, stop there without error.")
   (n)
@@ -133,7 +134,7 @@ If scan reaches end of buffer, stop there without error.")
 
 DEFUN ("end-of-line", Fend_of_line, Send_of_line,
   0, 1, "p",
-  "Move dot to end of current line.\n\
+  "Move point to end of current line.\n\
 With argument ARG not nil or 1, move forward ARG - 1 lines first.\n\
 If scan reaches end of buffer, stop there without error.")
   (n)
@@ -150,10 +151,10 @@ If scan reaches end of buffer, stop there without error.")
   if (XINT (n) != 1)
     Fforward_line (make_number (XINT (n) - 1));
 
-  pos = dot;
+  pos = point;
   stop = NumCharacters + 1;
   while (pos < stop && CharAt (pos) != '\n') pos++;
-  SetDot (pos);
+  SetPoint (pos);
 
   return Qnil;
 }
@@ -171,15 +172,17 @@ Interactively, ARG is the prefix arg, and kill if ARG was explicitly specd.")
     {
       if (XINT (n) < 0)
 	{
-	  if (dot + XINT (n) < FirstCharacter)
+	  if (point + XINT (n) < FirstCharacter)
 	    Fsignal (Qbeginning_of_buffer, Qnil);
-	  del_range (dot + XINT (n), dot);
+	  else
+	    del_range (point + XINT (n), point);
 	}
       else
 	{
-	  if (dot + XINT (n) > NumCharacters + 1)
+	  if (point + XINT (n) > NumCharacters + 1)
 	    Fsignal (Qend_of_buffer, Qnil);
-	  del_range (dot, dot + XINT (n));
+	  else
+	    del_range (point, point + XINT (n));
 	}
     }
   else
@@ -233,14 +236,16 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
 
   arg = Fprefix_numeric_value (arg1);
 
+  if (!NULL (bf_cur->read_only))
+    Fsignal (Qbuffer_read_only, Qnil);
+
   if (NULL (arg1)
       && !NULL (bf_cur->auto_fill_hook)
-      && NULL (bf_cur->read_only)
       && current_column () > XFASTINT (bf_cur->fill_column))
     Fapply (bf_cur->auto_fill_hook, Qnil);
 
-  flag = dot > FirstCharacter && CharAt (dot - 1) == '\n';
-  if (flag) DotLeft (1);
+  flag = point > FirstCharacter && CharAt (point - 1) == '\n';
+  if (flag) PointLeft (1);
 
   while (XINT (arg) > 0)
     {
@@ -248,31 +253,34 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
     }
 
-  if (flag) DotRight (1);
+  if (flag) PointRight (1);
 
   return Qnil;
 }
 
-SelfInsert(c)
-     char c;
+SelfInsert (c1)
+     char c1;
 {
-  extern int abbrev_mode;  /* Defined in abbrev.c */
   extern Lisp_Object Fexpand_abbrev ();
   int hairy = 0;
   Lisp_Object tem;
+  register enum syntaxcode synt;
+  register int c = c1;
 
-  if (!NULL (bf_cur->overwrite_mode) && (dot<=NumCharacters)
-      && (c != '\n') && (CharAt (dot) != '\n')
-      && (CharAt (dot) != '\t'
+  if (!NULL (bf_cur->overwrite_mode)
+      && point <= NumCharacters
+      && c != '\n' && CharAt (point) != '\n'
+      && (CharAt (point) != '\t'
 	  || XINT (bf_cur->tab_width) <= 0
 	  || !((current_column () + 1) % XFASTINT (bf_cur->tab_width))))
     {
-      del_range (dot, dot + 1);
+      del_range (point, point + 1);
       hairy = 1;
     }
-  if (abbrev_mode && SYNTAX (c) != Sword
+  if (!NULL (bf_cur->abbrev_mode)
+      && SYNTAX (c) != Sword
       && NULL (bf_cur->read_only)
-      && dot > FirstCharacter && SYNTAX (CharAt (dot - 1)) == Sword)
+      && point > FirstCharacter && SYNTAX (CharAt (point - 1)) == Sword)
     {
       tem = Fexpand_abbrev ();
       if (!NULL (tem))
@@ -282,13 +290,15 @@ SelfInsert(c)
       && !NULL (bf_cur->auto_fill_hook)
       && current_column () > XFASTINT (bf_cur->fill_column))
     {
-      InsCStr (&c, 1);
+      InsCStr (&c1, 1);
       Fapply (bf_cur->auto_fill_hook, Qnil);
       hairy = 1;
     }
   else
-    InsCStr (&c, 1);
-  if (SYNTAX (c) == Sclose && !NULL (Vblink_paren_hook) && INTERACTIVE)
+    InsCStr (&c1, 1);
+  synt = SYNTAX (c);
+  if ((synt == Sclose || synt == Smath)
+      && !NULL (Vblink_paren_hook) && INTERACTIVE)
     {
       Fapply (Vblink_paren_hook, Qnil);
       hairy = 1;

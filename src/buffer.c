@@ -4,21 +4,28 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include <sys/param.h>
+
+#ifndef MAXPATHLEN
+/* in 4.1, param.h fails to define this. */
+#define MAXPATHLEN 1024
+#endif /* not MAXPATHLEN */
+
 #undef NULL
 #include "config.h"
 #include "lisp.h"
@@ -69,6 +76,8 @@ int default_truncate_lines;
 int default_fill_column;
 int default_left_margin;
 
+Lisp_Object Vdefault_abbrev_mode;
+
 nsberror (spec)
      Lisp_Object spec;
 {
@@ -105,7 +114,7 @@ If there is no such buffer, nil is returned.")
   (filename)
      Lisp_Object filename;
 {
-  Lisp_Object tail, buf, tem;
+  register Lisp_Object tail, buf, tem;
   CHECK_STRING (filename, 0);
   filename = Fexpand_file_name (filename, Qnil);
 
@@ -147,7 +156,7 @@ DEFUN ("get-buffer-create", Fget_buffer_create, Sget_buffer_create, 1, 1, 0,
   b->text.p2 = data - 1 + b->text.gap;
   b->text.size1 = b->text.size2 = 0;
   b->text.modified = 1;
-  b->text.dotloc = 1;
+  b->text.pointloc = 1;
   b->text.head_clip = 1;
   b->text.tail_clip = 0;
 
@@ -224,6 +233,7 @@ reset_buffer_local_variables(b)
   b->truncate_lines = default_truncate_lines ? Qt : Qnil;
   b->selective_display = Qnil;
   b->overwrite_mode = Qnil;
+  b->abbrev_mode = Vdefault_abbrev_mode;
 
   b->major_mode = Qfundamental_mode;
   b->mode_name = QSFundamental;
@@ -270,8 +280,7 @@ No arg means return name of current buffer.")
 {
   if (NULL (buffer))
     return bf_cur->name;
-  if (XTYPE (buffer) != Lisp_Buffer)
-    wrong_type_argument (Qbufferp, buffer, 0);
+  CHECK_BUFFER (buffer, 0);
   return XBUFFER (buffer)->name;
 }
 
@@ -283,8 +292,7 @@ No arg means return number of current buffer.")
 {
   if (NULL (buffer))
     return bf_cur->number;
-  if (XTYPE (buffer) != Lisp_Buffer)
-    wrong_type_argument (Qbufferp, buffer, 0);
+  CHECK_BUFFER (buffer, 0);
   return XBUFFER (buffer)->number;
 }
 
@@ -296,8 +304,7 @@ No argument means use current buffer as BUFFER.")
 {
   if (NULL (buffer))
     return bf_cur->filename;
-  if (XTYPE (buffer) != Lisp_Buffer)
-    wrong_type_argument (Qbufferp, buffer, 0);
+  CHECK_BUFFER (buffer, 0);
   return XBUFFER (buffer)->filename;
 }
 
@@ -312,8 +319,7 @@ No argument means use current buffer as BUFFER.")
 {
   if (NULL (buffer))
     return bf_cur->local_var_alist;
-  if (XTYPE (buffer) != Lisp_Buffer)
-    wrong_type_argument (Qbufferp, buffer, 0);
+  CHECK_BUFFER (buffer, 0);
   return XBUFFER (buffer)->local_var_alist;
 }
 
@@ -324,13 +330,14 @@ No argument means use current buffer as BUFFER.")
   (buffer)
      Lisp_Object buffer;
 {
-  struct buffer *buf;
+  register struct buffer *buf;
   if (NULL (buffer))
     buf = bf_cur;
-  else if (XTYPE (buffer) == Lisp_Buffer)
-    buf = XBUFFER (buffer);
   else
-    wrong_type_argument (Qbufferp, buffer, 0);
+    {
+      CHECK_BUFFER (buffer, 0);
+      buf = XBUFFER (buffer);
+    }
 
   bf_cur->text.modified = bf_modified;
   return buf->save_modified < buf->text.modified ? Qt : Qnil;
@@ -342,6 +349,24 @@ DEFUN ("set-buffer-modified-p", Fset_buffer_modified_p, Sset_buffer_modified_p,
   (flag)
      Lisp_Object flag;
 {
+  register int already;
+  register Lisp_Object fn;
+
+#ifdef CLASH_DETECTION
+  /* If buffer becoming modified, lock the file.
+     If buffer becoming unmodified, unlock the file.  */
+
+  fn = bf_cur->filename;
+  if (!NULL (fn))
+    {
+      already = bf_cur->save_modified < bf_modified;
+      if (!already && !NULL (flag))
+	lock_file (fn);
+      else if (already && NULL (flag))
+	unlock_file (fn);
+    }
+#endif /* CLASH_DETECTION */
+
   bf_cur->save_modified = NULL (flag) ? bf_modified : 0;
   RedoModes++;
   return flag;
@@ -352,9 +377,9 @@ DEFUN ("set-buffer-modified-p", Fset_buffer_modified_p, Sset_buffer_modified_p,
 int
 ModExist ()
 {
-  Lisp_Object tail, buf;
-  struct buffer *b;
-  int modcount = 0;
+  register Lisp_Object tail, buf;
+  register struct buffer *b;
+  register int modcount = 0;
 
   bf_cur->text.modified = bf_modified;
 
@@ -375,7 +400,7 @@ DEFUN ("rename-buffer", Frename_buffer, Srename_buffer, 1, 1,
   (name)
      Lisp_Object name;
 {
-  Lisp_Object tem, buf;
+  register Lisp_Object tem, buf;
 
   CHECK_STRING (name, 0);
   tem = Fget_buffer (name);
@@ -383,7 +408,7 @@ DEFUN ("rename-buffer", Frename_buffer, Srename_buffer, 1, 1,
     error("Buffer \"%s\" already exists", XSTRING (name)->data);
 
   bf_cur->name = name;
-  XSETTYPE (buf, Lisp_Buffer), XSETBUFFER (buf, bf_cur);
+  XSET (buf, Lisp_Buffer, bf_cur);
   return Fsetcar (Frassq (buf, Vbuffer_alist), name);
 }
 
@@ -433,10 +458,16 @@ Fdelete_buffer_internal (buf)
      Lisp_Object buf;
 {
   register struct buffer *b = XBUFFER (buf);
-  Lisp_Object tem;
+  register Lisp_Object tem;
+  register struct Lisp_Marker *m;
 
   if (NULL (b->name))
     return Qnil;
+
+#ifdef CLASH_DETECTION
+  /* Unlock this buffer's file, if it is locked.  */
+  Funlock_buffer ();
+#endif /* CLASH_DETECTION */
 
   /* make this buffer not be current */
   if (b == bf_cur)
@@ -454,6 +485,16 @@ Fdelete_buffer_internal (buf)
   Vbuffer_alist = Fdelq (Frassq (buf, Vbuffer_alist), Vbuffer_alist);
   Freplace_buffer_in_windows (buf);
 
+  /* Unchain all markers of this buffer
+     and leave them pointing nowhere.  */
+  for (tem = b->markers; !EQ (tem, Qnil); )
+    {
+      m = XMARKER (tem);
+      m->buffer = 0;
+      tem = m->chain;
+      m->chain = Qnil;
+    }
+
   b->name = Qnil;
   free (b->text.p1 + 1);
   if (b->undodata)
@@ -467,8 +508,7 @@ DEFUN ("kill-buffer", Fkill_buffer, Skill_buffer, 1, 1, "bKill buffer: ",
   (bufname)
      Lisp_Object bufname;
 {
-  Lisp_Object buf, answer;
-  register char *reply;
+  register Lisp_Object buf, answer;
 
   if (NULL (bufname))
     buf = Fcurrent_buffer ();
@@ -500,48 +540,52 @@ DEFUN ("kill-buffer", Fkill_buffer, Skill_buffer, 1, 1, "bKill buffer: ",
 record_buffer (buf)
      Lisp_Object buf;
 {
-  Lisp_Object aelt, link;
+  register Lisp_Object aelt, link;
   aelt = Frassq (buf, Vbuffer_alist);
   link = Fmemq (aelt, Vbuffer_alist);
   XCONS(link)->cdr = Fdelq (aelt, Vbuffer_alist);
   Vbuffer_alist = link;
 }
 
-DEFUN ("switch-to-buffer", Fswitch_to_buffer, Sswitch_to_buffer, 1, 1, "BSwitch to buffer: ",
+DEFUN ("switch-to-buffer", Fswitch_to_buffer, Sswitch_to_buffer, 1, 2, "BSwitch to buffer: ",
   "One arg, a string or buffer.  Select the specified buffer\n\
-in the current window.")
-  (bufname)
-     Lisp_Object bufname;
+in the current window.  Optional arg NORECORD non-nil means\n\
+do not put this buffer at the front of the list of recently selected ones.")
+  (bufname, norecord)
+     Lisp_Object bufname, norecord;
 {
-  Lisp_Object buf;
+  register Lisp_Object buf;
   if (NULL (bufname))
     buf = Fother_buffer (Fcurrent_buffer ());
   else
     buf = Fget_buffer_create (bufname);
   Fset_buffer (buf);
-  record_buffer (buf);
+  if (NULL (norecord))
+    record_buffer (buf);
 
   Fshow_buffer (EQ (selected_window, minibuf_window)
-		  ? Fnext_window (minibuf_window) : selected_window,
+		  ? Fnext_window (minibuf_window, Qnil) : selected_window,
 		buf);
 
   return Qnil;
 }
 
-DEFUN ("pop-to-buffer", Fpop_to_buffer, Spop_to_buffer, 1, 1, "BPop to buffer: ",
-  "One arg, a string or buffer.  Select the specified buffer,\n\
-popping up a window, if  pop-up-windows  is non-nil.")
-  (bufname)
-     Lisp_Object bufname;
+DEFUN ("pop-to-buffer", Fpop_to_buffer, Spop_to_buffer, 1, 2, 0,
+  "Select buffer BUFFER in some window, preferably a different one.\n\
+If  pop-up-windows  is non-nil, windows can be split to do this.\n\
+If second arg  OTHER-WINDOW is non-nil, insist on finding another\n\
+window even if BUFFER is already visible in the selected window.")
+  (bufname, other)
+     Lisp_Object bufname, other;
 {
-  Lisp_Object buf;
+  register Lisp_Object buf;
   if (NULL (bufname))
     buf = Fother_buffer (Fcurrent_buffer ());
   else
     buf = Fget_buffer_create (bufname);
   Fset_buffer (buf);
   record_buffer (buf);
-  Fselect_window (Fdisplay_buffer (buf));
+  Fselect_window (Fdisplay_buffer (buf, other));
   return Qnil;
 }
 
@@ -549,24 +593,23 @@ DEFUN ("current-buffer", Fcurrent_buffer, Scurrent_buffer, 0, 0, 0,
   "Return the current buffer as a Lisp buffer object.")
   ()
 {
-  Lisp_Object buf;
-  XSETTYPE (buf, Lisp_Buffer), XSETBUFFER (buf, bf_cur);
+  register Lisp_Object buf;
+  XSET (buf, Lisp_Buffer, bf_cur);
   return buf;
 }
 
 DEFUN ("set-buffer", Fset_buffer, Sset_buffer, 1, 1, 0,
   "Set the current buffer to the buffer or buffer name supplied as argument.\n\
 That buffer will then be the default for editing operations and printing.\n\
-This function will not accomplish buffer switching interactively,\n\
-(ie such things as keymaps and buffer-local variables are unaffected.)\n\
-This is because returning to command level always selects\n\
-the buffer tied to the current window,\n\
+This function's effect can't last past end of current command\n\
+because returning to command level\n\
+selects the chosen buffer of the current window,\n\
 and this function has no effect on what buffer that is.\n\
 Use  switch-to-buffer  or  pop-to-buffer  for interactive buffer selection.")
   (bufname)
      Lisp_Object bufname;
 {
-  Lisp_Object buffer;
+  register Lisp_Object buffer;
   buffer = Fget_buffer (bufname);
   if (NULL (buffer))
     nsberror (bufname);
@@ -580,7 +623,7 @@ DEFUN ("barf-if-buffer-read-only", Fbarf_if_buffer_read_only,
   ()
 {
   if (!NULL (bf_cur->read_only))
-     Fsignal (Qbuffer_read_only, Qnil);
+    Fsignal (Qbuffer_read_only, Qnil);
   return Qnil;
 }
 
@@ -591,7 +634,7 @@ thus, the least likely buffer for \\[switch-to-buffer] to select by default.")
   (buf)
      Lisp_Object buf;
 {
-  Lisp_Object aelt, link;
+  register Lisp_Object aelt, link;
 
   buf = Fget_buffer (buf);
 
@@ -603,7 +646,7 @@ thus, the least likely buffer for \\[switch-to-buffer] to select by default.")
   return Qnil;
 }
 
-extern int last_known_column_dot;
+extern int last_known_column_point;
 
 /* set the current buffer to p */
 SetBfp (p)
@@ -628,9 +671,9 @@ SetBfp (p)
   if (c)
     {
       if (c == swb)
-	Fset_marker (w->dotm, make_number (dot), w->buffer);
+	Fset_marker (w->pointm, make_number (point), w->buffer);
 
-      if (dot < FirstCharacter || dot > NumCharacters + 1)
+      if (point < FirstCharacter || point > NumCharacters + 1)
 	abort ();
 
       c->text = bf_text;
@@ -639,18 +682,18 @@ SetBfp (p)
   bf_text = p->text;
   if (p == swb)
     {
-      SetDot (marker_position (w->dotm));
-      if (dot < FirstCharacter)
-	dot = FirstCharacter;
-      if (dot > NumCharacters + 1)
-	dot = NumCharacters + 1;
+      SetPoint (marker_position (w->pointm));
+      if (point < FirstCharacter)
+	point = FirstCharacter;
+      if (point > NumCharacters + 1)
+	point = NumCharacters + 1;
     }
-  last_known_column_dot = -1;   /* invalidate indentation cache */
+  last_known_column_point = -1;   /* invalidate indentation cache */
 
   /* Vcheck_symbol is set up to the symbol paragraph-start
      in order to check for the bug that clobbers it.  */
   if (c && EQ (c->major_mode, Qlisp_mode)
-      && Vcheck_symbol
+      && XFASTINT (Vcheck_symbol) != 0
       && !NULL (Vcheck_symbol))
     {
       valcontents = XSYMBOL (Vcheck_symbol)->value;
@@ -731,20 +774,16 @@ DEFUN ("erase-buffer", Ferase_buffer, Serase_buffer, 0, 0, 0,
   "Delete the entire contents of the current buffer.")
   ()
 {
-  int odot = dot;
-
   Fwiden ();
   del_range (1, NumCharacters + 1);
-  if (dot != 1)			/* Should be impossible, but appears to happen */
-    abort ();
   bf_cur->last_window_start = 1;
   return Qnil;
 }
 
 validate_region (b, e)
-     Lisp_Object *b, *e;
+     register Lisp_Object *b, *e;
 {
-  int i;
+  register int i;
 
   CHECK_NUMBER_COERCE_MARKER (*b, 0);
   CHECK_NUMBER_COERCE_MARKER (*e, 1);
@@ -758,7 +797,7 @@ validate_region (b, e)
 
   if (!(FirstCharacter <= XINT (*b) && XINT (*b) <= XINT (*e)
         && XINT (*e) <= 1 + NumCharacters))
-    Fsignal (Qargs_out_of_range, Fcons (*b, Fcons (*e, Qnil)));
+    args_out_of_range (*b, *e);
 }
 
 Lisp_Object
@@ -767,7 +806,7 @@ list_buffers_1 (files)
 {
   Lisp_Object tail, buf, col1, col2, col3, minspace, tem, mode;
   register struct buffer *old = bf_cur, *b;
-  int desired_dot = 0;
+  int desired_point = 0;
 
   bf_cur->text.modified = bf_modified;
 
@@ -801,13 +840,13 @@ list_buffers_1 (files)
 	continue;
       /* Identify the current buffer. */
       if (b == old)
-	desired_dot = dot;
+	desired_point = point;
       write_string (b == old ? "." : " ", -1);
       /* Identify modified buffers */
       write_string (b->text.modified > b->save_modified ? "*" : " ", -1);
       write_string (NULL (b->read_only) ? "  " : "% ", -1);
       Fprinc (b->name, Qnil);
-      Findent_to (col1, minspace);
+      Findent_to (col1, make_number (2));
       XFASTINT (tem) = b->text.size1 + b->text.size2;
       Fprin1 (tem, Qnil);
       Findent_to (col2, minspace);
@@ -820,9 +859,9 @@ list_buffers_1 (files)
 
   bf_cur->read_only = Qt;
   SetBfp (old);
-  /* Foo.  This doesn't work since temp_output_buffer_show sets dot to 1 */
-  if (desired_dot)
-    XBUFFER (Vstandard_output)->text.dotloc = desired_dot;
+  /* Foo.  This doesn't work since temp_output_buffer_show sets point to 1 */
+  if (desired_point)
+    XBUFFER (Vstandard_output)->text.pointloc = desired_point;
   return Qnil;
 }
 
@@ -848,7 +887,7 @@ DEFUN ("kill-all-local-variables", Fkill_all_local_variables, Skill_all_local_va
 This buffer will then see the default values of all variables.")
   ()
 {
-  Lisp_Object alist, sym, tem;
+  register Lisp_Object alist, sym, tem;
 
   for (alist = bf_cur->local_var_alist; !NULL (alist); alist = XCONS (alist)->cdr)
     {
@@ -876,15 +915,14 @@ This buffer will then see the default values of all variables.")
 extern Lisp_Object Vprin1_to_string_buffer;	/* in print.c */
 init_buffer_once ()
 {
-  Lisp_Object tem;
+  register Lisp_Object tem;
 
   /* Must do these before making the first buffer! */
 
   Vdefault_mode_line_format
     = build_string ("--%1*%1*-Emacs: %17b   %M   %[(%m)%]----%3p-%-");
+  Vdefault_abbrev_mode = Qnil;
   default_case_fold_search = 1;
-
-  QSFundamental = build_string ("Fundamental");
 
   default_tab_width = 8;
   default_truncate_lines = 0;
@@ -897,6 +935,8 @@ init_buffer_once ()
   bf_cur = 0;
   all_buffers = 0;
 
+  QSFundamental = build_string ("Fundamental");
+
   Qfundamental_mode = intern ("fundamental-mode");
   Vdefault_major_mode = Qfundamental_mode;
 
@@ -904,19 +944,20 @@ init_buffer_once ()
   /* super-magic invisible buffer */
   Vbuffer_alist = Qnil;
 
-  Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
+  tem = Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
   /* Want no undo records for *scratch*
      until after Emacs is dumped */
-  Fbuffer_flush_undo (Fcurrent_buffer ());
+  Fbuffer_flush_undo (tem);
 }
 
 init_buffer ()
 {
-  char buf[MAXPATHLEN];
+  char buf[MAXPATHLEN+1];
 
   Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
-  getwd(buf);
-  strcat (buf, "/");
+  getwd (buf);
+  if (buf[strlen (buf) - 1] != '/')
+    strcat (buf, "/");
   bf_cur->directory = build_string (buf);
   if (NULL (Vpurify_flag))
     make_undo_records (bf_cur);
@@ -941,12 +982,18 @@ Each buffer has its own value of this variable.\n\
 The string is printed verbatim in the mode line\n\
 except for %-constructs:\n\
   %b -- print buffer name.   %f -- print visited file name.\n\
-  %* -- print *, % or space.   %m -- print value of mode-name.\n\
+  %* -- print *, % or hyphen.   %m -- print value of mode-name.\n\
   %s -- print process status.   %M -- print value of global-mode-string.\n\
   %p -- print percent of buffer above top of window, or top, bot or all.\n\
   %[ -- print one [ for each recursive editing level.  %] similar.\n\
   %% -- print %.   %- -- print infinitely many dashes.\n\
 Decimal digits after the % specify field width to pad or truncate to.");
+
+  DefLispVar ("default-abbrev-mode", &Vdefault_abbrev_mode,
+    "Default value of abbrev-mode for new buffers.");
+
+  DefBufferLispVar ("abbrev-mode", &bf_cur->abbrev_mode,
+    "*Non-nil turns on automatic expansion of abbrevs when inserted.");
 
   DefBoolVar ("default-case-fold-search", &default_case_fold_search,
     "*Default value of case-fold-search for new buffers.");
@@ -1010,6 +1057,8 @@ or nil if buffer should not be auto-saved.");
   DefBufferLispVar ("buffer-read-only", &bf_cur->read_only,
     "*Non-nil if this buffer is read-only.");
 
+/* LMCL: Second arg should really be a Lisp_Object but it needs this address.
+ * A Lisp_Object had better take up only one word! */
   DefBufferLispVar ("buffer-backed-up", &bf_cur->backed_up,
     "Non-nil if this buffer's file has been backed up.\n\
 Backing up is done before the first time the file is saved.");
@@ -1017,8 +1066,6 @@ Backing up is done before the first time the file is saved.");
   DefBufferLispVar ("buffer-saved-size", &bf_cur->save_length,
     "Length of current buffer when last read in, saved or auto-saved.\n\
 0 initially.");
-  DefBufferLispVar ("buffer-number", &bf_cur->number,
-    "Number of current buffer, in order of creation.");
 
   DefBufferLispVar ("selective-display", &bf_cur->selective_display,
     "t enables selective display:\n\

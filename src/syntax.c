@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -40,14 +41,25 @@ Any vector of 256 elements will do.")
   return Qnil;
 }
 
+Lisp_Object
+check_syntax_table (obj)
+     Lisp_Object obj;
+{
+  register Lisp_Object tem;
+  while (tem = Fsyntax_table_p (obj),
+	 NULL (tem))
+    obj = wrong_type_argument (Qsyntax_table_p, obj, 0);
+  return obj;
+}   
+
+
 DEFUN ("syntax-table", Fsyntax_table, Ssyntax_table, 0, 0, 0,
   "Return the current syntax table.\n\
 This is the one specified by the current buffer.")
   ()
 {
   Lisp_Object vector;
-  XSETTYPE (vector, Lisp_Vector);
-  XSETVECTOR (vector, bf_cur->syntax_table_v);
+  XSET (vector, Lisp_Vector, bf_cur->syntax_table_v);
   return vector;
 }
 
@@ -60,34 +72,35 @@ This is the one used for new buffers.")
   return Vstandard_syntax_table;
 }
 
-DEFUN ("make-syntax-table", Fmake_syntax_table, Smake_syntax_table, 0, 0, 0,
+DEFUN ("copy-syntax-table", Fcopy_syntax_table, Scopy_syntax_table, 0, 1, 0,
   "Construct a new syntax table and return it.\n\
-It is a copy of the standard syntax table's current contents.")
-  ()
+It is a copy of the TABLE, which defaults to the standard syntax table.")
+  (table)
+     Lisp_Object table;
 {
   Lisp_Object size, val;
   XFASTINT (size) = 0400;
   XFASTINT (val) = 0;
   val = Fmake_vector (size, val);
-  if (!NULL (Vstandard_syntax_table))
-    bcopy (XVECTOR (Vstandard_syntax_table)->contents,
-	   XVECTOR (val)->contents, 0400 * sizeof (Lisp_Object));
+  if (!NULL (table))
+    table = check_syntax_table (table);
+  else if (NULL (Vstandard_syntax_table))
+    /* Can only be null during initialization */
+    return val;
+  else table = Vstandard_syntax_table;
+
+  bcopy (XVECTOR (table)->contents,
+	 XVECTOR (val)->contents, 0400 * sizeof (Lisp_Object));
   return val;
 }
 
-DEFUN ("set-syntax-table", Fset_syntax_table, Sset_syntax_table, 1, 1,
-  "sSet syntax table: ",
+DEFUN ("set-syntax-table", Fset_syntax_table, Sset_syntax_table, 1, 1, 0,
   "Select a new syntax table for the current buffer.\n\
 One argument, a syntax table.")
   (table)
      Lisp_Object table;
 {
-  Lisp_Object tem;
-
-  tem = Fsyntax_table_p (table);
-  if (NULL (tem))
-    wrong_type_argument (Qsyntax_table_p, table, 0);
-
+  table = check_syntax_table (table);
   bf_cur->syntax_table_v = XVECTOR (table);
   return table;
 }
@@ -104,7 +117,7 @@ char syntax_spec_code[0400] =
     (char) Swhitespace, 0377, (char) Sstring, 0377,
         (char) Smath, 0377, 0377, (char) Squote,
     (char) Sopen, (char) Sclose, 0377, 0377,
-	0377, (char) Swhitespace, 0377, (char) Scharquote,
+	0377, (char) Swhitespace, (char) Spunct, (char) Scharquote,
     0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,
     0377, 0377, 0377, 0377,
 	(char) Scomment, 0377, (char) Sendcomment, 0377,
@@ -120,9 +133,9 @@ char syntax_spec_code[0400] =
 
 /* Indexed by syntax code, give the letter that describes it. */
 
-char syntax_code_spec[12] =
+char syntax_code_spec[13] =
   {
-    ' ', 'w', '_', '(', ')', '\'', '\"', '$', '\\', '/', '<', '>'
+    ' ', '.', 'w', '_', '(', ')', '\'', '\"', '$', '\\', '/', '<', '>'
   };
 
 DEFUN ("char-syntax", Fchar_syntax, Schar_syntax, 1, 1, 0,
@@ -137,11 +150,14 @@ are listed in the documentation of  modify-syntax-entry.")
   return make_number (syntax_code_spec[(int) SYNTAX (XINT (ch))]);
 }
 
-DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 2,
+DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3, 
+  /* I really don't know why this is interactive
+     help-form should at least be made useful whilst reading the second arg
+   */
   "cSet syntax for character: \nsSet syntax for %s to: ",
   0 /* See auxdoc.c */)
-  (c, newentry)
-     Lisp_Object c, newentry;
+  (c, newentry, syntax_table)
+     Lisp_Object c, newentry, syntax_table;
 {
   register unsigned char *p, match;
   register enum syntaxcode code;
@@ -149,13 +165,17 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 2,
 
   CHECK_NUMBER (c, 0);
   CHECK_STRING (newentry, 1);
+  if (NULL (syntax_table))
+    XSET (syntax_table, Lisp_Vector, bf_cur->syntax_table_v);
+  else syntax_table = check_syntax_table (syntax_table);
 
   p = XSTRING (newentry)->data;
   code = (enum syntaxcode) syntax_spec_code[*p++];
   if (((int) code & 0377) == 0377)
-    error ("invalid syntax description letter", c);
+    error ("invalid syntax description letter: %c", c);
 
-  match = *p++;
+  match = *p;
+  if (match) p++;
   if (match == ' ') match = 0;
 
   XFASTINT (val) = (match << 8) + (int) code;
@@ -163,30 +183,29 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 2,
     switch (*p++)
       {
       case '1':
-	XFASTINT (val) += 1 << 16;
+	XFASTINT (val) |= 1 << 16;
 	break;
 
       case '2':
-	XFASTINT (val) += 1 << 17;
+	XFASTINT (val) |= 1 << 17;
 	break;
 
       case '3':
-	XFASTINT (val) += 1 << 18;
+	XFASTINT (val) |= 1 << 18;
 	break;
 
       case '4':
-	XFASTINT (val) += 1 << 19;
+	XFASTINT (val) |= 1 << 19;
 	break;
       }
 	
-  bf_cur->syntax_table_v->contents[XINT (c)] = val;
+  XVECTOR (syntax_table)->contents[XINT (c)] = val;
 
   return Qnil;
 }
 
 /* Dump syntax table to buffer in human-readable format */
 
-Lisp_Object
 describe_syntax (value)
     Lisp_Object value;
 {
@@ -233,10 +252,16 @@ describe_syntax (value)
 
   InsStr ("\twhich means: ");
 
+#ifdef SWITCH_ENUM_BUG
+  switch ((int) code)
+#else
   switch (code)
+#endif
     {
     case Swhitespace:
       InsStr ("whitespace"); break;
+    case Spunct:
+      InsStr ("punctuation"); break;
     case Sword:
       InsStr ("word"); break;
     case Ssymbol:
@@ -281,16 +306,17 @@ describe_syntax (value)
     InsStr (",\n\t  is the first character of a comment-end sequence");
   if (end2)
     InsStr (",\n\t  is the second character of a comment-end sequence");
-  return Qnil;
 }
 
+Lisp_Object
 describe_syntax_1 (vector)
      Lisp_Object vector;
 {
   struct buffer *old = bf_cur;
   SetBfp (XBUFFER (Vstandard_output));
-  describe_vector (vector, Qnil, describe_syntax);
+  describe_vector (vector, Qnil, describe_syntax, 0);
   SetBfp (old);
+  return Qnil;
 }
 
 DEFUN ("describe-syntax", Fdescribe_syntax, Sdescribe_syntax, 0, 0, "",
@@ -298,12 +324,11 @@ DEFUN ("describe-syntax", Fdescribe_syntax, Sdescribe_syntax, 0, 0, "",
 The descriptions are inserted in a buffer, which is selected so you can see it.")
   ()
 {
-  Lisp_Object vector;
+  register Lisp_Object vector;
 
-  XSETVECTOR (vector, bf_cur->syntax_table_v);
-  XSETTYPE (vector, Lisp_Vector);
+  XSET (vector, Lisp_Vector, bf_cur->syntax_table_v);
   internal_with_output_to_temp_buffer
-     (" *Syntax table*", describe_syntax_1, vector);
+     ("*Help*", describe_syntax_1, vector);
 
   return Qnil;
 }
@@ -319,12 +344,17 @@ scan_words (from, count)
   register int end = NumCharacters + 1;
 
   immediate_quit = 1;
+  QUIT;
 
   while (count > 0)
     {
       while (1)
 	{
-	  if (from == end) return 0;
+	  if (from == end)
+	    {
+	      immediate_quit = 0;
+	      return 0;
+	    }
 	  if (SYNTAX(CharAt (from)) == Sword)
 	    break;
 	  from++;
@@ -342,7 +372,11 @@ scan_words (from, count)
     {
       while (1)
 	{
-	  if (from == beg) return 0;
+	  if (from == beg)
+	    {
+	      immediate_quit = 0;
+	      return 0;
+	    }
 	  if (SYNTAX(CharAt (from - 1)) == Sword)
 	    break;
 	  from--;
@@ -363,9 +397,9 @@ scan_words (from, count)
 }
 
 DEFUN ("forward-word", Fforward_word, Sforward_word, 1, 1, "p",
-  "Move dot forward ARG words (backward if ARG is negative).\n\
+  "Move point forward ARG words (backward if ARG is negative).\n\
 Normally returns t.\n\
-If an edge of the buffer is reached, dot is left there\n\
+If an edge of the buffer is reached, point is left there\n\
 and nil is returned.")
   (count)
      Lisp_Object count;
@@ -373,12 +407,12 @@ and nil is returned.")
   int val;
   CHECK_NUMBER (count, 0);
 
-  if (!(val = scan_words (dot, XINT (count))))
+  if (!(val = scan_words (point, XINT (count))))
     {
-      SetDot (XINT (count) > 0 ? NumCharacters + 1 : FirstCharacter);
+      SetPoint (XINT (count) > 0 ? NumCharacters + 1 : FirstCharacter);
       return Qnil;
     }
-  SetDot (val);
+  SetPoint (val);
   return Qt;
 }
 
@@ -394,13 +428,14 @@ scan_lists (from, count, depth, sexpflag)
   register int c;
   char stringterm;
   int quoted;
-  int mathexit;
+  int mathexit = 0;
   register enum syntaxcode code;
   int min_depth = depth;    /* Err out if depth gets less than this. */
 
   if (depth > 0) min_depth = 0;
 
   immediate_quit = 1;
+  QUIT;
 
   while (count > 0)
     {
@@ -415,7 +450,11 @@ scan_lists (from, count, depth, sexpflag)
 	      && parse_sexp_ignore_comments)
 	    code = Scomment, from++;
 
+#ifdef SWITCH_ENUM_BUG
+	  switch ((int) code)
+#else
 	  switch (code)
+#endif
 	    {
 	    case Sescape:
 	    case Scharquote:
@@ -428,7 +467,11 @@ scan_lists (from, count, depth, sexpflag)
 	      /* This word counts as a sexp; return at end of it. */
 	      while (from < stop)
 		{
+#ifdef SWITCH_ENUM_BUG
+		  switch ((int) SYNTAX(CharAt (from)))
+#else
 		  switch (SYNTAX(CharAt (from)))
+#endif
 		    {
 		    case Scharquote:
 		    case Sescape:
@@ -459,11 +502,20 @@ scan_lists (from, count, depth, sexpflag)
 		}
 	      break;
 
+	    case Smath:
+	      if (!sexpflag)
+		break;
+	      if (from != stop && c == CharAt (from))
+		from++;
+	      if (mathexit) goto close1;
+	      mathexit = 1;
+
 	    case Sopen:
 	      if (!++depth) goto done;
 	      break;
 
 	    case Sclose:
+	    close1:
 	      if (!--depth) goto done;
 	      if (depth < min_depth)
 		error ("Containing expression ends prematurely");
@@ -475,7 +527,11 @@ scan_lists (from, count, depth, sexpflag)
 		{
 		  if (from >= stop) goto lose;
 		  if (CharAt (from) == stringterm) break;
+#ifdef SWITCH_ENUM_BUG
+		  switch ((int) SYNTAX(CharAt (from)))
+#else
 		  switch (SYNTAX(CharAt (from)))
+#endif
 		    {
 		    case Scharquote:
 		    case Sescape:
@@ -485,12 +541,6 @@ scan_lists (from, count, depth, sexpflag)
 		}
 	      from++;
 	      if (!depth && sexpflag) goto done;
-	      break;
-
-	    case Smath:
-	      if (mathexit) goto done;
-	      if (sexpflag)
-		mathexit = 1;
 	      break;
 	    }
 	}
@@ -522,7 +572,11 @@ scan_lists (from, count, depth, sexpflag)
 	      && parse_sexp_ignore_comments)
 	    code = Sendcomment, from--;
 
+#ifdef SWITCH_ENUM_BUG
+	  switch ((int) (quoted ? Sword : code))
+#else
 	  switch (quoted ? Sword : code)
+#endif
 	    {
 	    case Sword:
 	    case Ssymbol:
@@ -539,11 +593,20 @@ scan_lists (from, count, depth, sexpflag)
 		}
 	      goto done2;
 
+	    case Smath:
+	      if (!sexpflag)
+		break;
+	      if (from != stop && c == CharAt (from - 1))
+		from--;
+	      if (mathexit) goto open2;
+	      mathexit = 1;
+
 	    case Sclose:
 	      if (!++depth) goto done2;
 	      break;
 
 	    case Sopen:
+	    open2:
 	      if (!--depth) goto done2;
 	      if (depth < min_depth)
 		error ("Containing expression ends prematurely");
@@ -551,16 +614,17 @@ scan_lists (from, count, depth, sexpflag)
 
 	    case Sendcomment:
 	      if (!parse_sexp_ignore_comments) break;
+	      if (from != stop) from--;
 	      while (1)
 		{
-		  if (from == stop) goto done;
 		  if (SYNTAX (c = CharAt (from)) == Scomment)
 		    break;
+		  if (from == stop) goto done;
 		  from--;
-		  if (from > stop && SYNTAX_COMSTART_SECOND (c)
-		       && SYNTAX_COMSTART_FIRST (CharAt (from))
+		  if (SYNTAX_COMSTART_SECOND (c)
+		      && SYNTAX_COMSTART_FIRST (CharAt (from))
 		      && !char_quoted (from))
-		    { from--; break; }
+		    break;
 		}
 	      break;
 
@@ -576,12 +640,6 @@ scan_lists (from, count, depth, sexpflag)
 		}
 	      from--;
 	      if (!depth && sexpflag) goto done2;
-	      break;
-
-	    case Smath:
-	      if (mathexit) goto done2;
-	      if (sexpflag)
-		mathexit = 1;
 	      break;
 	    }
 	}
@@ -603,6 +661,7 @@ scan_lists (from, count, depth, sexpflag)
 
  lose:
   error ("Unbalanced parentheses");
+  /* NOTREACHED */
 }
 
 char_quoted (pos)
@@ -664,16 +723,16 @@ nil is returned.")
 
 DEFUN ("backward-prefix-chars", Fbackward_prefix_chars, Sbackward_prefix_chars,
   0, 0, 0,
-  "Move dot backward over any number of chars with syntax \"prefix\".")
+  "Move point backward over any number of chars with syntax \"prefix\".")
   ()
 {
   int beg = FirstCharacter;
-  int pos = dot;
+  int pos = point;
 
   while (pos > beg && !char_quoted (pos - 1) && SYNTAX (CharAt (pos - 1)) == Squote)
     pos--;
 
-  SetDot (pos);
+  SetPoint (pos);
 
   return Qnil;
 }
@@ -692,7 +751,9 @@ struct lisp_parse_state
 /* Parse forward from `from' to `end', assuming that `from'
 is the start of a function, and return a description of the state of the parse at `end'. */
 
-struct lisp_parse_state
+struct lisp_parse_state val_scan_sexps_forward;
+
+struct lisp_parse_state *
 scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
      register int from;
      int end, targetdepth, stopbefore;
@@ -709,16 +770,17 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
   register int depth;	/* Paren depth of current scanning location.
 			   level - levelstart equals this except
 			   when the depth becomes negative.  */
+  int start_quoted = 0;		/* Nonzero means starting after a char quote */
   Lisp_Object tem;
 
   immediate_quit = 1;
+  QUIT;
 
   if (NULL (oldstate))
     {
       depth = 0;
       state.instring = -1;
       state.incomment = 0;
-      state.quoted = 0;
     }
   else
     {
@@ -740,8 +802,9 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 
       oldstate = Fcdr (oldstate);
       tem = Fcar (oldstate);
-      state.quoted = !NULL (tem);
+      start_quoted = !NULL (tem);
     }
+  state.quoted = 0;
 
   curlevel->prev = -1;
 
@@ -750,10 +813,10 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
   if (state.incomment) goto startincomment;
   if (state.instring >= 0)
     {
-      if (state.quoted) goto startquotedinstring;
+      if (start_quoted) goto startquotedinstring;
       goto startinstring;
     }
-  if (state.quoted) goto startquoted;
+  if (start_quoted) goto startquoted;
 
   while (from < end)
     {
@@ -762,7 +825,11 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
       if (from < end && SYNTAX_COMSTART_FIRST (CharAt (from - 1))
 	   && SYNTAX_COMSTART_SECOND (CharAt (from)))
 	code = Scomment, from++;
+#ifdef SWITCH_ENUM_BUG
+      switch ((int) code)
+#else
       switch (code)
+#endif
 	{
 	case Sescape:
 	case Scharquote:
@@ -780,7 +847,11 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 	symstarted:
 	  while (from < end)
 	    {
+#ifdef SWITCH_ENUM_BUG
+	      switch ((int) SYNTAX(CharAt (from)))
+#else
 	      switch (SYNTAX(CharAt (from)))
+#endif
 		{
 		case Scharquote:
 		case Sescape:
@@ -818,8 +889,9 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 	case Sopen:
 	  if (stopbefore) goto stop;  /* this arg means stop at sexp start */
 	  depth++;
-	  curlevel++->last = from - 1;
-	  if (curlevel == endlevel)
+	  /* curlevel++->last ran into compiler bug on Apollo */
+	  curlevel->last = from - 1;
+	  if (++curlevel == endlevel)
 	    error ("Nesting too deep for parser");
 	  curlevel->prev = -1;
 	  curlevel->last = -1;
@@ -843,13 +915,17 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 	    {
 	      if (from >= end) goto done;
 	      if (CharAt (from) == state.instring) break;
+#ifdef SWITCH_ENUM_BUG
+	      switch ((int) SYNTAX(CharAt (from)))
+#else
 	      switch (SYNTAX(CharAt (from)))
+#endif
 		{
 		case Scharquote:
 		case Sescape:
-		  if (from >= end) goto endquoted;
-		startquotedinstring:
 		  from++;
+		startquotedinstring:
+		  if (from >= end) goto endquoted;
 		}
 	      from++;
 	    }
@@ -877,7 +953,9 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
     = (curlevel == levelstart) ? -1 : (curlevel - 1)->last;
   state.location = from;
   immediate_quit = 0;
-  return state;
+
+  val_scan_sexps_forward = state;
+  return &val_scan_sexps_forward;
 }
 
 DEFUN ("parse-partial-sexp", Fparse_partial_sexp, Sparse_partial_sexp, 2, 5, 0,
@@ -897,10 +975,10 @@ DEFUN ("parse-partial-sexp", Fparse_partial_sexp, Sparse_partial_sexp, 2, 5, 0,
     target = -100000;		/* We won't reach this depth */
 
   validate_region (&from, &to);
-  state = scan_sexps_forward (XINT (from), XINT (to),
-			      target, !NULL (stopbefore), oldstate);
+  state = *scan_sexps_forward (XINT (from), XINT (to),
+			       target, !NULL (stopbefore), oldstate);
 
-  SetDot (state.location);
+  SetPoint (state.location);
   
   return Fcons (make_number (state.depth),
 	   Fcons (state.prevlevelstart < 0 ? Qnil : make_number (state.prevlevelstart),
@@ -916,10 +994,10 @@ init_syntax_once ()
   register struct Lisp_Vector *v;
 
   /* Set this now, so first buffer creation can refer to it. */
-  /* Make it nil before calling make-syntax-table
-    so that make-syntax-table will know not to try to copy from garbage */
+  /* Make it nil before calling copy-syntax-table
+    so that copy-syntax-table will know not to try to copy from garbage */
   Vstandard_syntax_table = Qnil;
-  Vstandard_syntax_table = Fmake_syntax_table ();
+  Vstandard_syntax_table = Fcopy_syntax_table (Qnil);
 
   v = XVECTOR (Vstandard_syntax_table);
 
@@ -934,17 +1012,18 @@ init_syntax_once ()
 
   XFASTINT (v->contents['(']) = (int) Sopen + (')' << 8);
   XFASTINT (v->contents[')']) = (int) Sclose + ('(' << 8);
+  XFASTINT (v->contents['[']) = (int) Sopen + (']' << 8);
+  XFASTINT (v->contents[']']) = (int) Sclose + ('[' << 8);
+  XFASTINT (v->contents['{']) = (int) Sopen + ('}' << 8);
+  XFASTINT (v->contents['}']) = (int) Sclose + ('{' << 8);
   XFASTINT (v->contents['"']) = (int) Sstring;
   XFASTINT (v->contents['\\']) = (int) Sescape;
 
-  XFASTINT (v->contents['_']) = (int) Ssymbol;
-  XFASTINT (v->contents['-']) = (int) Ssymbol;
-  XFASTINT (v->contents['+']) = (int) Ssymbol;
-  XFASTINT (v->contents['*']) = (int) Ssymbol;
-  XFASTINT (v->contents['/']) = (int) Ssymbol;
-  XFASTINT (v->contents['<']) = (int) Ssymbol;
-  XFASTINT (v->contents['>']) = (int) Ssymbol;
-  XFASTINT (v->contents['=']) = (int) Ssymbol;
+  for (i = 0; i < 10; i++)
+    XFASTINT (v->contents["_-+*/&|<>="[i]]) = (int) Ssymbol;
+
+  for (i = 0; i < 12; i++)
+    XFASTINT (v->contents[".,;:?!#@~^'`"[i]]) = (int) Spunct;
 }
 
 syms_of_syntax ()
@@ -968,7 +1047,7 @@ you must make this variable nil.");
   defsubr (&Ssyntax_table_p);
   defsubr (&Ssyntax_table);
   defsubr (&Sstandard_syntax_table);
-  defsubr (&Smake_syntax_table);
+  defsubr (&Scopy_syntax_table);
   defsubr (&Sset_syntax_table);
   defsubr (&Schar_syntax);
   defsubr (&Smodify_syntax_entry);

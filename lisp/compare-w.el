@@ -4,38 +4,39 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 (defun compare-windows ()
   "Compare text in current window with text in next window.
-Compares the text starting at dot in each window,
+Compares the text starting at point in each window,
 moving over text in each one as far as they match."
   (interactive)
   (let (p1 p2 np1 np2 maxp1 maxp2 b1 b2 w2
 	   success size
-	   (odot (dot)))
-    (setq p1 (dot) b1 (current-buffer))
+	   (opoint (point)))
+    (setq p1 (point) b1 (current-buffer))
     (setq w2 (next-window (selected-window)))
     (if (eq w2 (selected-window))
 	(error "No other window."))
-    (setq p2 (window-dot w2)
+    (setq p2 (window-point w2)
 	  b2 (window-buffer w2))
-    (setq maxp1 (dot-max))
+    (setq maxp1 (point-max))
     (save-excursion
      (set-buffer b2)
-     (setq maxp2 (dot-max)))
+     (setq maxp2 (point-max)))
 
     (setq losep1 (+ 10 maxp1) losep2 (+ 10 maxp2))
 
@@ -65,6 +66,6 @@ moving over text in each one as far as they match."
       (setq size (min (- maxp1 p1) (- maxp2 p2) (/ size 2))))
 
     (goto-char p1)
-    (set-window-dot w2 p2)
-    (if (= (dot) odot)
+    (set-window-point w2 p2)
+    (if (= (point) opoint)
 	(ding))))

@@ -4,30 +4,34 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
+
+
+#include <signal.h>
 
 #include "config.h"
 
-#include <signal.h>
 #include <sys/types.h>
 #define PRIO_PROCESS 0
 #include <sys/file.h>
-#include <sys/ioctl.h>
-#ifndef USG
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+#ifdef USG5
+#include <fcntl.h>
+#endif
+
+#ifndef O_RDONLY
+#define O_RDONLY 0
 #endif
 
 #include "lisp.h"
@@ -40,6 +44,13 @@ copyright notice and this notice must be preserved on all copies.  */
 Lisp_Object Vexec_path, Vexec_directory;
 
 Lisp_Object Vshell_file_name;
+
+#ifdef BSD4_1
+/* Set nonzero when a synchronous subprocess is made,
+   and set to zero again when it is observed to die.
+   We wait for this to be zero in order to wait for termination.  */
+int synch_process_pid;
+#endif /* BSD4_1 */
 
 Lisp_Object
 call_process_cleanup (fdpid)
@@ -56,7 +67,7 @@ call_process_cleanup (fdpid)
 DEFUN ("call-process", Fcall_process, Scall_process, 1, MANY, 0,
   "Call PROGRAM in separate process.\n\
 Program's input comes from file INFILE (nil means /dev/null).\n\
-Insert output in BUFFER before dot; t means current buffer;\n\
+Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Fourth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining arguments are strings passed as command arguments to PROGRAM.\n\
@@ -66,7 +77,7 @@ if you quit, the process is killed.")
      int nargs;
      Lisp_Object *args;
 {
-  Lisp_Object infile, display, buffer, tem, tem1;
+  Lisp_Object display, buffer, tem, tem1;
   int fd[2];
   int filefd;
   int pid;
@@ -120,16 +131,15 @@ if you quit, the process is killed.")
       tem = args[1];
       report_file_error ("Opening process input file", Fcons (tem, Qnil));
     }
-  /* If program file name is not absolute, search our path for it */
-  if (new_argv[0][0] != '/')
+  /* Search for program; barf if not found.  */
+  tem1 = args[0];
+  openp (Vexec_path, tem1, "", &tem, 1);
+  if (NULL (tem))
     {
-      tem = Qnil;
-      tem1 = args[0];
-      openp (Vexec_path, tem1, "", &tem, 1);
-      if (NULL (tem))
-	report_file_error ("Searching for program", Fcons (tem1, Qnil));
-      new_argv[0] = XSTRING (tem)->data;
+      close (filefd);
+      report_file_error ("Searching for program", Fcons (tem1, Qnil));
     }
+  new_argv[0] = XSTRING (tem)->data;
 
   if (XTYPE (buffer) == Lisp_Int)
     fd[1] = open ("/dev/null", 0), fd[0] = -1;
@@ -140,6 +150,11 @@ if you quit, the process is killed.")
     }
 
   pid = vfork();
+#ifdef BSD4_1
+  /* cause SIGCHLD interrupts to look for this pid. */
+  synch_process_pid = pid;
+#endif /* BSD4_1 */
+
   if (!pid)
     child_setup (filefd, fd[1], fd[1], new_argv);
 
@@ -168,37 +183,22 @@ if you quit, the process is killed.")
     Fset_buffer (buffer);
 
   immediate_quit = 1;
+  QUIT;
   while ((nread = read (fd[0], buf, sizeof buf)) > 0)
     {
       immediate_quit = 0;
-      QUIT;
       if (!NULL (buffer))
 	InsCStr (buf, nread);
       if (!NULL (display) && INTERACTIVE)
 	DoDsp (1);
       immediate_quit = 1;
+      QUIT;
     }
 
   /* Wait for it to terminate, unless it already has.  */
-  while (1)
-    {
-#ifdef subprocesses
-      sigsetmask (1 << (SIGCHLD - 1));
-      if (0 > kill (pid, 0))
-	{
-	  sigsetmask (0);
-	  break;
-	}
-      sigpause (0);
-#else
-      if (0 > kill (pid, 0))
-	break;
-      wait ();
-#endif
-    }
+  wait_for_termination (pid);
 
   immediate_quit = 0;
-  QUIT;
 
   SetBfp (old);
 
@@ -217,7 +217,7 @@ child_setup (in, out, err, new_argv)
 
   child_setup_tty (out);
 
-  setpriority(PRIO_PROCESS, getpid(), 0);
+  setpriority (PRIO_PROCESS, pid, 0);
 
   if (XTYPE (bf_cur->directory) == Lisp_String)
     {
@@ -238,7 +238,11 @@ child_setup (in, out, err, new_argv)
   dup2 (out, 1);
   dup2 (err, 2);
 
+#ifdef USG
+  setpgrp ();			/* No arguments but equivalent in this case */
+#else
   setpgrp (pid, pid);
+#endif /* USG */
   setpgrp_of_tty (pid);
 
 #ifdef vipc
@@ -254,8 +258,8 @@ child_setup (in, out, err, new_argv)
 DEFUN ("call-process-region", Fcall_process_region, Scall_process_region,
   3, MANY, 0,
   "Send text from START to END to a process running PROGRAM.\n\
-Delete it if DELETE is non-nil.\n\
-Put output in BUFFER, before dot.  nil => discard it, t => current buffer.\n\
+Delete the text if DELETE is non-nil.\n\
+Put output in BUFFER, before point.  nil => discard it, t => current buffer.\n\
 Sixth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining args are passed to PROGRAM at startup as command args.\n\
 This function normally waits for the process to terminate;\n\

@@ -4,25 +4,24 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
 #include <stdio.h>
 #include <ctype.h>
-#include <signal.h>
-#include <sys/ioctl.h>
 #undef NULL
 #include "lisp.h"
 #include "window.h"
@@ -33,13 +32,11 @@ copyright notice and this notice must be preserved on all copies.  */
 #include "commands.h"
 #include "macros.h"
 
-int interrupt_input;
+extern int interrupt_input;
 
 /* Nonzero means print newline before next minibuffer message.  */
 
 int noninteractive_need_newline;
-
-int RecurseDepth;		/* Depth of recursion in recursive edits */
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -83,8 +80,8 @@ Lisp_Object Vglobal_mode_string;
 Lisp_Object Vglobal_minor_modes;
 
 /* The number of lines to try scrolling a
-  window by when dot leaves the window; if
-  it is <=0 then dot is centered in the window */
+  window by when point leaves the window; if
+  it is <=0 then point is centered in the window */
 int scroll_step;
 
 /* Nonzero if try_window_id has made blank lines at window bottom
@@ -94,12 +91,12 @@ int blank_end_of_window;
 /* Number of windows showing the buffer of the selected window.  */
 static int buffer_shared;
 
-/* display_text_line sets these to the screen position (origin 0) of dot,
+/* display_text_line sets these to the screen position (origin 0) of point,
   whether the window is selected or not.
- Set one to -1 first to determine whether dot was found afterwards.  */
+ Set one to -1 first to determine whether point was found afterwards.  */
 
-int dot_vpos;
-int dot_hpos;
+int point_vpos;
+int point_hpos;
 
 int debug_end_pos;
 
@@ -108,9 +105,13 @@ extern int default_ctl_arrow;	/* Nonzero means display ctl chars */
 
 int mode_line_inverse_video;	/* Nonzero means display mode line highlighted */
 
-struct position display_text_line ();
+struct position *display_text_line ();
 
 char *minibuf_prompt;	/* Prompt to display in front of the minibuffer contents */
+
+/* Width in columns of current minibuffer prompt.  */
+
+int minibuf_prompt_width;
 
 char *minibuf_message;	/* Message to display instead of minibuffer contents
 			   This is what the functions error and message make,
@@ -151,20 +152,26 @@ DEFUN ("redraw-display", Fredraw_display, Sredraw_display, 0, 0, "",
   "Clear the screen and output again what is supposed to appear on it.")
   ()
 {
+  if (screen_height == 0) abort (); /* Some bug zeros some core */
   set_terminal_modes ();
+  clear_screen ();
   fflush (stdout);
   clear_screen_records ();
+  if (screen_height == 0) abort (); /* Some bug zeros some core */
   windows_or_buffers_changed++;
   /* Mark all windows as INaccurate,
      so that every window will have its redisplay done.  */
   mark_window_display_accurate (XWINDOW (minibuf_window)->prev, 0);
+  if (screen_height == 0) abort (); /* Some bug zeros some core */
   return Qnil;
 }
 
-static char buf[200];
+static char message_buf[MScreenWidth + 1];
 
 /* dump an informative message to the minibuf */
+/* VARARGS 1 */
 message (m, a1, a2, a3)
+     char *m;
 {
   if (noninteractive)
     {
@@ -176,8 +183,8 @@ message (m, a1, a2, a3)
     }
   else if (INTERACTIVE)
     {
-      sprintf (buf, m, a1, a2, a3);
-      minibuf_message = buf;
+      doprnt (message_buf, sizeof message_buf - 1, m, &a1);
+      minibuf_message = message_buf;
       display_minibuf_message ();
       update_screen (1, 1);
     }
@@ -222,8 +229,8 @@ display_minibuf_message ()
 		      0, 0, 0);
 
       /* If desired cursor location is on this line, put it at end of text */
-      if (cursY == vpos + 1)
-	cursX = line->length + 1;
+      if (cursY == vpos)
+	cursX = line->length;
     }
   else if (!EQ (minibuf_window, selected_window))
     windows_or_buffers_changed++;
@@ -247,7 +254,6 @@ DoDsp (SaveMiniBuf)
   register int tlbufpos, tlendpos;
   struct position pos;
   extern int input_pending;
-  int nread;
 
   if (noninteractive)
     return;
@@ -282,9 +288,9 @@ DoDsp (SaveMiniBuf)
   tlbufpos = this_line_bufpos;
   tlendpos = this_line_endpos;
   if (!all_windows && tlbufpos > 0 && NULL (w->redo_mode_line)
-      /* Dot must be on the line that we have info recorded about */
-      && dot >= tlbufpos
-      && dot <= bf_s1 + bf_s2 + 1 - tlendpos
+      /* Point must be on the line that we have info recorded about */
+      && point >= tlbufpos
+      && point <= bf_s1 + bf_s2 + 1 - tlendpos
       /* All text outside that line, including its final newline,
 	 must be unchanged */
       && (XFASTINT (w->last_modified) >= bf_modified
@@ -305,15 +311,15 @@ DoDsp (SaveMiniBuf)
       else if (XFASTINT (w->last_modified) < bf_modified
 	       || EQ (selected_window, minibuf_window))
 	{
-	  dot_vpos = -1;
+	  point_vpos = -1;
 	  display_text_line (w, tlbufpos, this_line_vpos, this_line_hpos,
 			     pos_tab_offset (w, tlbufpos));
-	  /* If line contains dot, is not continued,
+	  /* If line contains point, is not continued,
 		 and ends at same distance from eob as before, we win */
-	  if (dot_vpos >= 0 && this_line_bufpos
+	  if (point_vpos >= 0 && this_line_bufpos
 	      && this_line_endpos == tlendpos)
 	    {
-	      cursX = dot_hpos + 1;
+	      cursX = point_hpos;
 	      if (XFASTINT (w->width) != screen_width)
 		preserve_other_columns (w);
 	      if (interrupt_input)
@@ -321,27 +327,29 @@ DoDsp (SaveMiniBuf)
 	      goto update;
 	    }
 	}
-      else if (dot == XFASTINT (w->last_dot))
+      else if (point == XFASTINT (w->last_point))
 	{
 	  if (!must_finish)
 	    return;
+	  goto update;
 	}
       else
 	{
-	  pos = compute_motion (tlbufpos, 0, XINT (w->hscroll) ? 1 - XINT (w->hscroll) : 0,
-				dot, 2, - (1 << (SHORTBITS - 1)),
+	  pos = *compute_motion (tlbufpos, 0,
+				XINT (w->hscroll) ? 1 - XINT (w->hscroll) : 0,
+				point, 2, - (1 << (SHORTBITS - 1)),
 				XFASTINT (w->width) - 1
 				- (XFASTINT (w->width) + XFASTINT (w->left) != screen_width),
 				XINT (w->hscroll), 0);
 	  if (pos.vpos < 1)
 	    {
-	      cursX = max (XFASTINT (w->left), pos.hpos) + 1;
+	      cursX = max (XFASTINT (w->left), pos.hpos);
 	      if (interrupt_input)
 		unrequest_sigio ();
 	      goto update;
 	    }
 	}
-      /* Text changed drastically or dot moved off of line */
+      /* Text changed drastically or point moved off of line */
       cancel_line (this_line_vpos);
     }
 
@@ -380,9 +388,9 @@ update:
       unchanged_modified = t->modified;
       beg_unchanged = t->size1, end_unchanged = t->size2;
 
-      XFASTINT (w->last_dot) = t->dotloc;
-      XFASTINT (w->last_dot_x) = cursX;
-      XFASTINT (w->last_dot_y) = cursY;
+      XFASTINT (w->last_point) = t->pointloc;
+      XFASTINT (w->last_point_x) = cursX;
+      XFASTINT (w->last_point_y) = cursY;
 
       if (all_windows)
 	mark_window_display_accurate (XWINDOW (minibuf_window)->prev, 1);
@@ -406,13 +414,6 @@ update:
 
   if (interrupt_input)
     request_sigio ();
-/*  if (input_pending)
-    {
-      ioctl (0, FIONREAD, &nread);
-      if (nread)
-	kill (getpid (), SIGIO);
-    }
-*/
 }
 
 mark_window_display_accurate (window, flag)
@@ -468,7 +469,7 @@ redisplay_window (window, just_this_one)
 {
   register struct window *w = XWINDOW (window);
   int height;
-  register int ldot = dot;
+  register int lpoint = point;
   struct buffer *old = bf_cur;
   register int width = XFASTINT (w->width) - 1
     - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
@@ -476,6 +477,10 @@ redisplay_window (window, just_this_one)
   register int hscroll = XINT (w->hscroll);
   struct position pos;
   int inhibit_hairy_id = 0;
+  int opoint;
+  int tem;
+
+  if (screen_height == 0) abort (); /* Some bug zeros some core */
 
   /* If this is a combination window, do its children; that's all.  */
 
@@ -495,7 +500,7 @@ redisplay_window (window, just_this_one)
   if (RedoModes)
     w->redo_mode_line = Qt;
 
-  /* Otherwise set up data on this window; select its buffer and dot value */
+  /* Otherwise set up data on this window; select its buffer and point value */
 
   height = XFASTINT (w->height);
   if (w != XWINDOW (minibuf_window))
@@ -504,12 +509,20 @@ redisplay_window (window, just_this_one)
     return 0;
 
   SetBfx (XBUFFER (w->buffer));
+  opoint = point;
+
   if (!just_this_one
       && bf_cur == XBUFFER (XWINDOW (selected_window)->buffer))
     buffer_shared++;
 
   if (!EQ (window, selected_window))
-    SetDot (marker_position (w->dotm));
+    {
+      SetPoint (marker_position (w->pointm));
+      if (point < FirstCharacter)
+	point = FirstCharacter;
+      else if (point > NumCharacters)
+	point = NumCharacters + 1;
+    }
 
   /* Handle case where place to start displaying has been specified */
 
@@ -520,48 +533,56 @@ redisplay_window (window, just_this_one)
       XFASTINT (w->last_modified) = 0;
       if (!try_window (window, startp))
 	{
-	  /* If dot does not appear, move dot so it does appear */
-	  pos = compute_motion (startp, 0, hscroll ? 1 - hscroll : 0,
+	  /* If point does not appear, move point so it does appear */
+	  pos = *compute_motion (startp, 0,
+				((EQ (window, minibuf_window) && startp == 1)
+				 ? minibuf_prompt_width : 0)
+				+
+				(hscroll ? 1 - hscroll : 0),
 				NumCharacters + 1, height / 2,
 				- (1 << (SHORTBITS - 1)),
 				width, hscroll, pos_tab_offset (w, startp));
-	  SetDot (pos.bufpos);
+	  SetPoint (pos.bufpos);
 	  if (w != XWINDOW (selected_window))
-	    Fset_marker (w->dotm, make_number (dot), Qnil);
+	    Fset_marker (w->pointm, make_number (point), Qnil);
 	  else
-	    ldot = dot;
+	    lpoint = point;
 
 	  if (EQ (window, selected_window))
 	    {
-	      cursX = max (0, pos.hpos) + 1 + XFASTINT (w->left);
-	      cursY = pos.vpos + 1 + XFASTINT (w->top);
+	      cursX = max (0, pos.hpos) + XFASTINT (w->left);
+	      cursY = pos.vpos + XFASTINT (w->top);
 	    }
 	}
       goto done;
     }
 
-  /* Handle case where text has not changed, only dot,
+  /* Handle case where text has not changed, only point,
      and it has not moved off the screen */
 
+  /* This code is not used for minibuffer for the sake of
+     the case of redisplaying to replace an echo area message;
+     since in that case the minibuffer contents per se are usually unchanged.
+     This code is of no real use in the minibuffer since
+     the handling of tlbufpos, etc., in DoDsp handles the same cases.  */
+
   if (XFASTINT (w->last_modified) >= bf_modified
-      && dot >= startp && !clip_changed
+      && point >= startp && !clip_changed
       && (just_this_one || XFASTINT (w->width) == screen_width)
-      /* Cannot do this in minibuffer,
-	 since it does not take the prompt string into account. */
       && !EQ (window, minibuf_window))
     {
-      pos = compute_motion (startp, 0, hscroll ? 1 - hscroll : 0,
-			    dot, height + 1, 10000, width, hscroll,
+      pos = *compute_motion (startp, 0, (hscroll ? 1 - hscroll : 0),
+			    point, height + 1, 10000, width, hscroll,
 			    pos_tab_offset (w, startp));
 
       if (pos.vpos < height)
 	{
-	  /* Ok, dot is still on screen */
+	  /* Ok, point is still on screen */
 	  if (w == XWINDOW (selected_window))
 	    {
 	      /* These variables are supposed to be origin 1 */
-	      cursX = max (0, pos.hpos) + 1 + XFASTINT (w->left);
-	      cursY = pos.vpos + 1 + XFASTINT (w->top);
+	      cursX = max (0, pos.hpos) + XFASTINT (w->left);
+	      cursY = pos.vpos + XFASTINT (w->top);
 	    }
 /* This doesn't do the trick, because if a window to the right of
  this one must be redisplayed, this does nothing because there
@@ -576,20 +597,29 @@ redisplay_window (window, just_this_one)
 	we already know it will lose */
     }
   else if (just_this_one && !EQ (window, minibuf_window)
-	   && dot >= startp
+	   && point >= startp
 	   && XFASTINT (w->last_modified)
 	   && XFASTINT (w->window_end_pos) >= 0
 	   && do_id && !clip_changed
 	   && !blank_end_of_window
 	   && XFASTINT (w->width) == screen_width
-	   && try_window_id (selected_window))
+	   && (tem = try_window_id (selected_window))
+	   && tem != -2)
     {
+      /* tem > 0 means success.  tem == -1 means choose new start.
+	 tem == -2 means try again with same start,
+	  and nothing but whitespace follows the changed stuff.
+	 tem == 0 means try again with same start.  */
+      if (tem > 0)
+	{
 /*       inhibit_hairy_id = 1;   */
-      goto done;
+	  goto done;
+	}
     }
   else if (startp >= FirstCharacter && startp <= NumCharacters + 1
 	   /* Avoid starting display at end of buffer! */
-	   && (startp <= NumCharacters || startp == FirstCharacter))
+	   && (startp <= NumCharacters || startp == FirstCharacter
+	       || (XFASTINT (w->last_modified) >= bf_modified)))
     {
       /* Try to redisplay starting at same place as before */
       /* If point has not moved off screen, accept the results */
@@ -606,18 +636,18 @@ redisplay_window (window, just_this_one)
 
   if (scroll_step && !clip_changed)
     {
-      if (dot > startp)
+      if (point > startp)
 	{
-	  pos = vmotion (bf_s1 + bf_s2 + 1 - CURRENT_END_POS (w),
-			 scroll_step, width, hscroll);
+	  pos = *vmotion (bf_s1 + bf_s2 + 1 - CURRENT_END_POS (w),
+			  scroll_step, width, hscroll, window);
 	  if (pos.vpos >= height)
 	    goto scroll_fail;
 	}
 
-      pos = vmotion (startp, dot < startp ? - scroll_step : scroll_step,
-		     width, hscroll);
+      pos = *vmotion (startp, point < startp ? - scroll_step : scroll_step,
+		      width, hscroll, window);
 
-      if (dot >= pos.bufpos)
+      if (point >= pos.bufpos)
 	{
 	  if (try_window (window, pos.bufpos))
 	    goto done;
@@ -627,9 +657,9 @@ redisplay_window (window, just_this_one)
     scroll_fail: ;
     }
 
-  /* Finally, just choose place to start which centers dot */
+  /* Finally, just choose place to start which centers point */
 
-  pos = vmotion (dot, - height / 2, width, hscroll);
+  pos = *vmotion (point, - height / 2, width, hscroll, window);
   try_window (window, pos.bufpos);
 
 done:
@@ -640,18 +670,16 @@ done:
       && !EQ (window, minibuf_window))
     display_mode_line (w);
 
+  SetPoint (opoint);
   SetBfx (old);
-  SetDot (ldot);
+  SetPoint (lpoint);
 
   return inhibit_hairy_id;
 }
 
-int dot_vpos;
-int dot_hpos;
-
 /* Do full redisplay on one window,
   starting at position `pos',
-  and return nonzero if dot appears in the displayed text */
+  and return nonzero if point appears in the displayed text */
 
 try_window (window, pos)
      Lisp_Object window;
@@ -667,12 +695,12 @@ try_window (window, pos)
 
   Fset_marker (w->start, make_number (pos), Qnil);
 
-  dot_vpos = -1;
+  point_vpos = -1;
   val.hpos = XINT (w->hscroll) ? 1 - XINT (w->hscroll) : 0;
 
   while (--height >= 0)
     {
-      val = display_text_line (w, pos, vpos, val.hpos, tab_offset);
+      val = *display_text_line (w, pos, vpos, val.hpos, tab_offset);
       tab_offset += XFASTINT (w->width) - 1;
       if (val.vpos) tab_offset = 0;
       vpos++;
@@ -694,17 +722,21 @@ try_window (window, pos)
      change this to its correct positive value */
   XFASTINT (w->window_end_pos) = -1 - (bf_s1 + bf_s2 + 1 - pos);
   XFASTINT (w->window_end_vpos) = last_text_vpos - XFASTINT (w->top);
-  return dot_vpos >= 0;
+  return point_vpos >= 0;
 }
 
 /* Try to redisplay when buffer is modified locally,
  computing insert/delete line to preserve text outside
- the bounds of the changes */
+ the bounds of the changes.
+ Return 1 if successful, 0 if if cannot tell what to do,
+ or -1 to tell caller to find a new window start,
+ or -2 to tell caller that we did nothing because only whitespace
+ appears below the changed part of the screen.  */
 
 try_window_id (window)
      Lisp_Object window;
 {
-  register int pos;
+  int pos;
   register struct window *w = XWINDOW (window);
   register int height = XFASTINT (w->height) - !EQ (window, minibuf_window);
   int top = XFASTINT (w->top);
@@ -714,7 +746,7 @@ try_window_id (window)
   int hscroll = XINT (w->hscroll);
   int lmargin = hscroll > 0 ? 1 - hscroll : 0;
   register int vpos;
-  int tem;
+  register int i, tem;
   int last_text_vpos = 0;
   int stop_vpos;
 
@@ -732,26 +764,28 @@ try_window_id (window)
     return 0;			/* Give up if changes go above top of window */
 
   /* Find position before which nothing is changed.  */
-  bp = compute_motion (start, 0, lmargin,
+  bp = *compute_motion (start, 0, lmargin,
 		       beg_unchanged + 1, 10000, 10000, width, hscroll,
 		       pos_tab_offset (w, start));
   if (bp.vpos >= height)
-    return dot < bp.bufpos && !bp.contin;
+    return point < bp.bufpos && !bp.contin;
 
   vpos = bp.vpos;
 
   /* Find beginning of that screen line.  Must display from there.  */
-  bp = vmotion (bp.bufpos, 0, width, hscroll);
+  bp = *vmotion (bp.bufpos, 0, width, hscroll, window);
 
   pos = bp.bufpos;
   val.hpos = lmargin;
+  if (pos < start)
+    return -1;
 
   /* If about to start displaying at the beginning of a continuation line,
      really start with previous screen line, in case it was not
      continued when last redisplayed */
   if (bp.contin && bp.bufpos - 1 == beg_unchanged && vpos > 0)
     {
-      bp = vmotion (bp.bufpos, -1, width, hscroll);
+      bp = *vmotion (bp.bufpos, -1, width, hscroll, window);
       --vpos;
       pos = bp.bufpos;
     }
@@ -765,12 +799,12 @@ try_window_id (window)
   bp.vpos = vpos;
 
   /* Find first newline after which no more is changed */
-  ep = compute_motion (pos, vpos, lmargin,
+  ep = *compute_motion (pos, vpos, val.hpos,
 		       ScanBf ('\n',
 			       bf_s1 + bf_s2 + 1 - max (end_unchanged, bf_tail_clip),
 			       1),
 		       height, - (1 << (SHORTBITS - 1)),
-		       width, hscroll, pos_tab_offset (w, pos));
+		       width, hscroll, pos_tab_offset (w, bp.bufpos));
 
   /* If changes reach past the text available on the screen,
      just display rest of screen.  */
@@ -790,7 +824,7 @@ try_window_id (window)
 	  || ep.bufpos == bf_s1 + bf_s2 + 1 - end_unchanged))
     stop_vpos = ep.vpos + 1;
 
-  dot_vpos = -1;
+  point_vpos = -1;
 
   /* If changes do not reach to bottom of window,
      figure out how much to scroll the rest of the window */
@@ -798,32 +832,43 @@ try_window_id (window)
     {
       /* Now determine how far up or down the rest of the window has moved */
       epto = pos_tab_offset (w, ep.bufpos);
-      xp = compute_motion (ep.bufpos, ep.vpos, ep.hpos,
+      xp = *compute_motion (ep.bufpos, ep.vpos, ep.hpos,
 			   bf_s1 + bf_s2 + 1 - XFASTINT (w->window_end_pos),
 			   10000, 0, width, hscroll, epto);
-
       scroll_amount = xp.vpos - XFASTINT (w->window_end_vpos);
+
+      /* Is everything on screen below the changes whitespace?
+	 If so, no scrolling is really necessary.  */
+      for (i = ep.bufpos; i < xp.bufpos; i++)
+	{
+	  tem = CharAt (i);
+	  if (tem != ' ' && tem != '\n' && tem != '\t')
+	    break;
+	}
+      if (i == xp.bufpos)
+	return -2;
+
       XFASTINT (w->window_end_vpos) += scroll_amount;
 
-      /* Before doing any scrolling, verify that dot will be on screen. */
-      if (dot > ep.bufpos && !(dot <= xp.bufpos && xp.bufpos < height))
+      /* Before doing any scrolling, verify that point will be on screen. */
+      if (point > ep.bufpos && !(point <= xp.bufpos && xp.bufpos < height))
 	{
-	  if (dot <= xp.bufpos)
+	  if (point <= xp.bufpos)
 	    {
-	      pp = compute_motion (ep.bufpos, ep.vpos, ep.hpos,
-				   dot, height, - (1 << (SHORTBITS - 1)),
+	      pp = *compute_motion (ep.bufpos, ep.vpos, ep.hpos,
+				   point, height, - (1 << (SHORTBITS - 1)),
 				   width, hscroll, epto);
 	    }
 	  else
 	    {
-	      pp = compute_motion (xp.bufpos, xp.vpos, xp.hpos,
-				   dot, height, - (1 << (SHORTBITS - 1)),
+	      pp = *compute_motion (xp.bufpos, xp.vpos, xp.hpos,
+				   point, height, - (1 << (SHORTBITS - 1)),
 				   width, hscroll, pos_tab_offset (w, xp.bufpos));
 	    }
-	  if (pp.bufpos < dot || pp.vpos == height)
+	  if (pp.bufpos < point || pp.vpos == height)
 	    return 0;
-	  dot_vpos = pp.vpos + top;
-	  dot_hpos = pp.hpos + XFASTINT (w->left);
+	  point_vpos = pp.vpos + top;
+	  point_hpos = pp.hpos + XFASTINT (w->left);
 	}
 
       if (stop_vpos - scroll_amount >= height
@@ -881,7 +926,7 @@ try_window_id (window)
     tab_offset += XFASTINT (w->width) - 1;
   while (vpos < stop_vpos)
     {
-      val = display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
+      val = *display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
       tab_offset += XFASTINT (w->width) - 1;
       if (val.vpos) tab_offset = 0;
       if (pos != val.bufpos)
@@ -927,17 +972,17 @@ try_window_id (window)
 
       while (vpos < height)
 	{
-	  val = display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
+	  val = *display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
 	  tab_offset += XFASTINT (w->width) - 1;
 	  if (val.vpos) tab_offset = 0;
 	  pos = val.bufpos;
 	}
 
-      /* Here is a case where display_line_text sets dot_vpos wrong.
+      /* Here is a case where display_line_text sets point_vpos wrong.
 	 Make it be fixed up, below.  */
       if (xp.bufpos == NumCharacters + 1
-	  && xp.bufpos == dot)
-	dot_vpos = -1;
+	  && xp.bufpos == point)
+	point_vpos = -1;
     }
 
   /* Attempt to adjust end-of-text positions to new bottom line */
@@ -948,35 +993,35 @@ try_window_id (window)
 	  || (delta > 0 && xp.bufpos <= NumCharacters)
 	  || (delta == 0 && xp.hpos))
 	{
-	  val = vmotion (bf_s1 + bf_s2 + 1 - XFASTINT (w->window_end_pos),
-			 delta, width, hscroll);
+	  val = *vmotion (bf_s1 + bf_s2 + 1 - XFASTINT (w->window_end_pos),
+			  delta, width, hscroll, window);
 	  XFASTINT (w->window_end_pos) = bf_s1 + bf_s2 + 1 - val.bufpos;
 	  XFASTINT (w->window_end_vpos) += val.vpos;
 	}
     }
 
-  /* If dot was not in a line that was displayed, find it */
-  if (dot_vpos < 0)
+  /* If point was not in a line that was displayed, find it */
+  if (point_vpos < 0)
     {
-      val = compute_motion (start, 0, lmargin, dot, 10000, 10000,
+      val = *compute_motion (start, 0, lmargin, point, 10000, 10000,
 			    width, hscroll, pos_tab_offset (w, start));
-      /* Admit failure if dot is off screen now */
+      /* Admit failure if point is off screen now */
       if (val.vpos >= height)
 	{
 	  for (vpos = 0; vpos < height; vpos++)
 	    cancel_line (vpos + top);
 	  return 0;
 	}
-      dot_vpos = val.vpos + top;
-      dot_hpos = val.hpos + XFASTINT (w->left);
+      point_vpos = val.vpos + top;
+      point_hpos = val.hpos + XFASTINT (w->left);
     }
 
-  cursX = max (0, dot_hpos) + 1;
-  cursY = dot_vpos + 1;
+  cursX = max (0, point_hpos);
+  cursY = point_vpos;
 
   if (debug_end_pos)
     {
-      val = compute_motion (start, 0, lmargin, NumCharacters + 1,
+      val = *compute_motion (start, 0, lmargin, NumCharacters + 1,
 			    height, - (1 << (SHORTBITS - 1)),
 			    width, hscroll, pos_tab_offset (w, start));
       if (val.vpos != XFASTINT (w->window_end_vpos))
@@ -1006,7 +1051,9 @@ try_window_id (window)
  and where to display it, including a zero or negative hpos.
  The vpos field is not really a vpos; it is 1 unless the line is continued */
 
-struct position
+struct position val_display_text_line;
+
+struct position *
 display_text_line (w, start, vpos, hpos, taboffset)
      struct window *w;
      int start;
@@ -1045,11 +1092,14 @@ display_text_line (w, start, vpos, hpos, taboffset)
   line = get_display_line (vpos, XFASTINT (w->left));
   if (tab_width <= 0) tab_width = 1;
 
-  if (w == XWINDOW (minibuf_window) && start == 1 && minibuf_prompt
-      && vpos == XFASTINT (XWINDOW (minibuf_window)->top))
-    hpos = display_string (w, line, minibuf_prompt, hpos,
-			   !truncate ? '\\' : '$',
-			   0);
+  if (w == XWINDOW (minibuf_window) && start == 1)
+    {
+      if (minibuf_prompt)
+	hpos = display_string (w, line, minibuf_prompt, hpos,
+			       !truncate ? '\\' : '$',
+			       0);
+      minibuf_prompt_width = hpos;
+    }
 
   p1 = line->body + hpos;
 
@@ -1070,15 +1120,15 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	{
 	  if (pos == end)
 	    break;
-	  if (pos == dot && dot_vpos < 0)
+	  if (pos == point && point_vpos < 0)
 	    {
-	      dot_vpos = vpos;
-	      dot_hpos = p1 - startp;
+	      point_vpos = vpos;
+	      point_hpos = p1 - startp;
 	    }
 
 	  pause = end;
-	  if (pos < dot && dot < pause)
-	    pause = dot;
+	  if (pos < point && point < pause)
+	    pause = point;
 	  if (pos <= bf_s1 && bf_s1 + 1 < pause)
 	    pause = bf_s1 + 1;
 
@@ -1204,7 +1254,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	    {
 	      *p1++ = '$';
 	      /* Truncating => start next line after next newline,
-		 and dot is on this line if it is before the newline,
+		 and point is on this line if it is before the newline,
 		 and skip none of first char of next line */
 	      pos = ScanBf ('\n', pos, 1);
 	      val.hpos = XINT (w->hscroll) ? 1 - XINT (w->hscroll) : 0;
@@ -1220,21 +1270,21 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	}
     }
 
-  if (start <= dot && dot <= lastpos && dot_vpos < 0)
+  if (start <= point && point <= lastpos && point_vpos < 0)
     {
-      dot_vpos = vpos;
-      dot_hpos = p1 - startp;
+      point_vpos = vpos;
+      point_hpos = p1 - startp;
     }
 
-  if (dot_vpos == vpos)
+  if (point_vpos == vpos)
     {
-      if (dot_hpos < 0) dot_hpos = 0;
-      if (dot_hpos > width) dot_hpos = width;
-      dot_hpos += XFASTINT (w->left);
+      if (point_hpos < 0) point_hpos = 0;
+      if (point_hpos > width) point_hpos = width;
+      point_hpos += XFASTINT (w->left);
       if (w == XWINDOW (selected_window))
 	{
-	  cursY = dot_vpos + 1;
-	  cursX = dot_hpos + 1;
+	  cursY = point_vpos;
+	  cursX = point_hpos;
 
 	  /* Line is not continued and did not start in middle of character */
 	  if (hpos == (XINT (w->hscroll) ? 1 - XINT (w->hscroll) : 0)
@@ -1262,7 +1312,8 @@ display_text_line (w, start, vpos, hpos, taboffset)
   line->body[line->length] = 0;
 
   val.bufpos = pos;
-  return val;
+  val_display_text_line = val;
+  return &val_display_text_line;
 }
 
 /* Display the mode line for window w */
@@ -1276,18 +1327,27 @@ display_mode_line (w)
   register unsigned char *s = XSTRING (bf_cur->mode_line_format)->data;
 
   display_string (w, line, s, XFASTINT (w->left), 0, 1);
-  if (XFASTINT (w->width) == screen_width)
+  /* Make the mode line inverse video if the entire line
+     is made of mode lines.
+     I.e. if this window is full width,
+     or if it is the child of a full width window
+     (which implies that that window is split side-by-side
+     and the rest of this line is mode lines of the sibling windows).  */
+  if (XFASTINT (w->width) == screen_width
+      || XFASTINT (XWINDOW (w->parent)->width) == screen_width)
     line->highlighted = mode_line_inverse_video;
 }
+
+char fmodetrunc_buf[100];
 
 char *
 fmodetrunc (str, width)
      char *str;
      long width;
 {
-  static char buf[100];
-  char *bp = buf;
-  long len;
+  register char *buf = fmodetrunc_buf;
+  register char *bp = buf;
+  register long len;
     
   len = strlen(str);
   if (width && width < len)
@@ -1307,7 +1367,7 @@ fmodetrunc (str, width)
   return str;
 }
 
-extern int abbrev_mode;
+char decode_mode_spec_buf[MScreenWidth + 1];
 
 char *
 decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
@@ -1323,7 +1383,8 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
   register char *str;
   int len;
   int pos, total;
-  static char tbuf[MScreenWidth + 1];
+  char *tbuf = decode_mode_spec_buf;
+#define tbufsize (sizeof decode_mode_spec_buf)
 
   lstr = Qnil, str = 0;
 
@@ -1354,7 +1415,8 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
 
     case 'm': 
       lstr = bf_cur->mode_name;
-      total = min (XSTRING (lstr)->size, sizeof tbuf - 30);
+      total = min (XSTRING (lstr)->size, tbufsize - 30);
+      if (total < 0) total = 0;
       bcopy (XSTRING (lstr)->data, tbuf, total);
       len = 0;
       list = bf_cur->minor_modes;
@@ -1366,7 +1428,7 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
 	      len = 1;
 	    }
 
-	  if (!(total < sizeof tbuf - 30 && LISTP (list)))
+	  if (!(total < tbufsize - 30 && LISTP (list)))
 	    break;
 
 	  lstr = XCONS (list)->car;
@@ -1376,7 +1438,9 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
 	  if (XTYPE (lstr) != Lisp_String)
 	    goto foo;
 	  tbuf[total++] = ' ';
-	  pos = min (XSTRING (lstr)->size, sizeof tbuf - 30 - total);
+	  pos = min (XSTRING (lstr)->size, tbufsize - 30 - total);
+	  if (pos < 0)
+	    pos = 0;
 	  bcopy (XSTRING (lstr)->data, tbuf + total, pos);
 	  total += pos;
 	foo:
@@ -1384,8 +1448,8 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
 	}
       str = tbuf;
       tbuf[total] = 0;
-      if (abbrev_mode)
-	strcat (tbuf, " Abbrev");
+/*    if (bf_cur->abbrev_mode)
+	strcat (tbuf, " Abbrev"); */
       if (bf_head_clip > 1 || bf_tail_clip > 0)
 	strcat (tbuf, " Narrow");
       if (defining_kbd_macro)
@@ -1404,11 +1468,15 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
 
     case 's':
       /* status of process */
+#ifdef subprocesses
       proc = Fget_buffer_process (Fcurrent_buffer ());
       if (NULL (proc))
 	str = "no process";
       else
 	lstr = Fsymbol_name (Fprocess_status (proc));
+#else
+      str = "no process";
+#endif /* subprocesses */
       break;
 
     case 'p':
@@ -1429,8 +1497,12 @@ decode_mode_spec (w, string, data_ptr, len_ptr, max_ptr)
 	str = "Top";
       else
 	{
-	  sprintf (tbuf, "%2d%%",
-		   ((pos - FirstCharacter) * 100 + total - 1) / total);
+	  total = ((pos - FirstCharacter) * 100 + total - 1) / total;
+	  /* We can't normally display a 3-digit number,
+	     so get us a 2-digit number that is close.  */
+	  if (total == 100)
+	    total = 99;
+	  sprintf (tbuf, "%2d%%", total);
 	  str = tbuf;
 	}
       break;
@@ -1490,7 +1562,6 @@ display_string (w, line, string, hpos, truncate, modeline)
      int modeline;
 {
   register int c;
-  register unsigned char *p;
   register unsigned char *p1;
   int width = XFASTINT (w->width) - 1
     - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
@@ -1599,9 +1670,9 @@ syms_of_xdisp ()
 Cdr of each element is a string to display in mode line.");
 
   DefIntVar ("scroll-step", &scroll_step,
-    "*The number of lines to try scrolling a window by when dot moves out.\n\
-If that fails to bring dot back on screen, dot is centered instead.\n\
-If this is zero, dot is always centered after it moves off screen.");
+    "*The number of lines to try scrolling a window by when point moves out.\n\
+If that fails to bring point back on screen, point is centered instead.\n\
+If this is zero, point is always centered after it moves off screen.");
 
   DefIntVar ("debug-end-pos", &debug_end_pos, "Don't ask");
 
@@ -1621,7 +1692,10 @@ If this is zero, dot is always centered after it moves off screen.");
 init_xdisp ()
 {
   Lisp_Object root_window;
-  struct window *mini_w;	/* Not register for Sun compiler's sake.  */
+#ifndef COMPILER_REGISTER_BUG
+  register
+#endif COMPILER_REGISTER_BUG
+    struct window *mini_w;
 
   this_line_bufpos = 0;
 
@@ -1631,11 +1705,14 @@ init_xdisp ()
   minibuf_message = 0;
   prev_minibuf_message = 0;
 
-  XFASTINT (XWINDOW (root_window)->top) = 0;
-  set_window_height (root_window, screen_height - 1);
-  XFASTINT (mini_w->top) = screen_height - 1;
-  set_window_height (minibuf_window, 1);
+  if (!noninteractive)
+    {
+      XFASTINT (XWINDOW (root_window)->top) = 0;
+      set_window_height (root_window, screen_height - 1, 0);
+      XFASTINT (mini_w->top) = screen_height - 1;
+      set_window_height (minibuf_window, 1, 0);
 
-  XFASTINT (XWINDOW (root_window)->width) = screen_width;
-  XFASTINT (mini_w->width) = screen_width;
+      XFASTINT (XWINDOW (root_window)->width) = screen_width;
+      XFASTINT (mini_w->width) = screen_width;
+    }
 }

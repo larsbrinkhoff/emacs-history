@@ -4,18 +4,19 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
 ;(defconst lpr-switches nil
@@ -25,13 +26,13 @@
   "Print buffer contents as with Unix command `lpr'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
   (interactive)
-  (print-region-1 (dot-min) (dot-max) lpr-switches))
+  (print-region-1 (point-min) (point-max) lpr-switches))
 
 (defun print-buffer ()
   "Print buffer contents as with Unix command `lpr -p'.
 `lpr-switches' is a list of extra switches (strings) to pass to lpr."
   (interactive)
-  (print-region-1 (dot-min) (dot-max) (cons "-p" lpr-switches)))
+  (print-region-1 (point-min) (point-max) (cons "-p" lpr-switches)))
 
 (defun lpr-region (start end)
   "Print region contents as with Unix command `lpr'.
@@ -53,13 +54,13 @@
 	(set-buffer (get-buffer-create " *spool temp*"))
 	(widen) (erase-buffer)
 	(insert-buffer-substring oldbuf)
-	(call-process-region start end "/usr/ucb/expand"
+	(call-process-region start end "expand"
 			     t t nil
-			     (format1 "-%d" tab-width))))
+			     (format "-%d" tab-width))))
    (apply 'call-process-region
-	  (nconc (list start end "/usr/ucb/lpr"
+	  (nconc (list start end "lpr"
 		       nil nil nil
-		       "-J" (concat "Emacs buffer " (buffer-name))
-		       "-T" (concat "Emacs buffer " (buffer-name)))
+		       "-J" (concat (buffer-name) " Emacs buffer")
+		       "-T" (concat (buffer-name) " Emacs buffer"))
 		 switches))
    (message "Spooling...done")))

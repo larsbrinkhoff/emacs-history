@@ -1,26 +1,27 @@
 /* Support routines for the undo facility.
-   Copyright (C) 1984 Fen Labalme and Richard Stallman
+   Copyright (C) 1985 Fen Labalme and Richard M. Stallman.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
-#include "undo.h"
 #include "lisp.h"
+#include "undo.h"
 #include "commands.h"
 #include "buffer.h"
 
@@ -48,10 +49,10 @@ make_undo_records (b)
      struct buffer *b;
 {
   register struct UndoData *u;
-  b->undodata = u = (struct UndoData *) malloc (sizeof (struct UndoData));
+  b->undodata = u = (struct UndoData *) xmalloc (sizeof (struct UndoData));
   u->undorecs
-    = (struct UndoRec *) malloc (sizeof (struct UndoRec) * InitNUndoR);
-  u->undochars = (char *) malloc (InitNUndoC);
+    = (struct UndoRec *) xmalloc (sizeof (struct UndoRec) * InitNUndoR);
+  u->undochars = (char *) xmalloc (InitNUndoC);
   u->undorecs[InitNUndoR - 1].kind = Unundoable;
   u->nextrec = 0;
   u->nextchar = 0;
@@ -81,7 +82,7 @@ NewUndo (kind, pos, len)
     FillRQ = 0;
   else if (FillRQ >= u->num_undorecs)
     {
-      np = (struct UndoRec *) realloc (UndoRQ, NUndoR * sizeof *p);
+      np = (struct UndoRec *) xrealloc (UndoRQ, NUndoR * sizeof *p);
       if (np)
 	{
 	  UndoRQ = np;
@@ -127,7 +128,6 @@ RecordDelete (pos, n)
      int pos, n;
 {
   register struct UndoRec *p = LastUndoRec;
-  register char *cp;
 
   if (!bf_cur->undodata)
     return;
@@ -192,8 +192,7 @@ record_block (p, n)
 	}
       else
 	{
-	  cp = (char *) realloc (UndoCQ, NUndoC);
-	  if (!cp) memory_full ();
+	  cp = (char *) xrealloc (UndoCQ, NUndoC);
 	  UndoCQ = cp;
 	  cp += FillCQ;
 	  NCharsLeft += NUndoC - u->num_undochars;
@@ -256,7 +255,7 @@ DoneIsDone ()
 
   p = &UndoRQ[(FillRQ + u->num_undorecs - 1) % u->num_undorecs];
   if (p->kind != Unundoable)
-    NewUndo (Unundoable, dot, 0);
+    NewUndo (Unundoable, point, 0);
   return 0;
 }
 
@@ -274,7 +273,7 @@ but another undo command will undo to the previous boundary.")
 
   p = &UndoRQ[(FillRQ + u->num_undorecs - 1) % u->num_undorecs];
   if (p->kind != Uboundary)
-    NewUndo (Uboundary, dot, 0);
+    NewUndo (Uboundary, point, 0);
   return Qnil;
 }
 
@@ -327,7 +326,11 @@ then call undo-more one or more times to undo them.")
 
       len = UndoRQ[i].len;
       pos = UndoRQ[i].pos;
+#ifdef SWITCH_ENUM_BUG
+      switch ((int) UndoRQ[i].kind)
+#else
       switch (UndoRQ[i].kind)
+#endif
 	{
 	case Uboundary: 
 	  break;
@@ -336,15 +339,15 @@ then call undo-more one or more times to undo them.")
 	  if (pos < FirstCharacter
 	      || pos + len > NumCharacters + 1)
 	    error ("Changes to be undone are outside visible portion of buffer");
-	  SetDot (pos);
-	  del_range (dot, dot + len);
+	  SetPoint (pos);
+	  del_range (point, point + len);
 	  break;
 
 	case Uchange:
 	  if (pos < FirstCharacter
 	      || pos + len > NumCharacters + 1)
 	    error ("Changes to be undone are outside visible portion of buffer");
-	  SetDot (pos);
+	  SetPoint (pos);
 	  if (len > NUndoC)
 	    /* Should have already said "No more undo info available" */
 	    abort ();
@@ -352,20 +355,20 @@ then call undo-more one or more times to undo them.")
 	  chars -= len;
 	  if (chars < 0)
 	    {
-	      replace_chars (dot - chars, len + chars, UndoCQ);
-	      replace_chars (dot, - chars, UndoCQ + chars + u->num_undochars);
+	      replace_chars (point - chars, len + chars, UndoCQ);
+	      replace_chars (point, - chars, UndoCQ + chars + u->num_undochars);
 	      chars += u->num_undochars;
 	    }
 	  else
-	    replace_chars (dot, len, UndoCQ + chars);
-	  RecordChange1 (dot, tembuf, len);
+	    replace_chars (point, len, UndoCQ + chars);
+	  RecordChange1 (point, tembuf, len);
 	  break;
 
 	case Uinsert:
 	  if (pos < FirstCharacter
 	      || pos > NumCharacters + 1)
 	    error ("Changes to be undone are outside visible portion of buffer");
-	  SetDot (pos);
+	  SetPoint (pos);
 	  chars -= len;
 	  if (chars < 0)
 	    {
@@ -375,10 +378,13 @@ then call undo-more one or more times to undo them.")
 	    }
 	  else
 	    InsCStr (UndoCQ + chars, len);
-	  SetDot (pos);
+	  SetPoint (pos);
 	  break;
 
 	case Uunmod:
+#ifdef CLASH_DETECTION
+	  Funlock_buffer ();
+#endif /* CLASH_DETECTION */
 	  bf_cur->save_modified = bf_modified;
 	  RedoModes++;
 	  break;
@@ -426,11 +432,9 @@ The next call to undo-more will undo the most recently made change.")
   ()
 {
   register struct UndoData *u = bf_cur->undodata;
-  register int nundorecs;
 
   if (!u)
     error ("Undo information not kept for this buffer");
-  nundorecs = u->num_undorecs;
   LastUndoneBuf = bf_cur;
   NCharsLeft = u->num_undochars;
   NUndone = 0;

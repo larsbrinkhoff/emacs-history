@@ -1,25 +1,31 @@
 #include <stdio.h>
 
-char string[] = "Testing distribution of nonprinting chars:\n\
+/* Break string in two parts to avoid buggy C compilers that ignore characters
+   after nulls in strings.  */
+
+char string1[] = "Testing distribution of nonprinting chars:\n\
 Should be 0177: \177 Should be 0377: \377 Should be 0212: \212.\n\
-Should be 0000: \0.\n\
+Should be 0000: ";
+
+char string2[] = ".\n\
 This file is read by the `test-distribution' program.\n\
 If you change it, you will make that program fail.\n";
+
+char buf[300];
 
 main ()
 {
   int fd = open ("testfile", 0);
-  char buf[300];
-  int nread;
 
   if (fd < 0)
     {
       perror ("opening `testfile'");
       exit (1);
     }
-  bzero (buf, sizeof buf);
-  nread = read (fd, buf, sizeof string);
-  if (nread != sizeof string - 1 || strcmp (buf, string))
+  if (read (fd, buf, sizeof string1) != sizeof string1 ||
+      strcmp (buf, string1) ||
+      read (fd, buf, sizeof string2) != sizeof string2 - 1 ||
+      strncmp (buf, string2, sizeof string2 - 1))
     {
       fprintf (stderr, "Data in file `testfile' has been damaged.\n\
 Most likely this means that many nonprinting characters\n\

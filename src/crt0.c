@@ -1,5 +1,4 @@
-/* C code startup routine for 4.2 BSD!
-   Tested on Vax and on Megatest 68000 so far.
+/* C code startup routine.
    Copyright (C) 1985 Richard M. Stallman
 
 This program is distributed in the hope that it will be useful,
@@ -49,8 +48,13 @@ You are forbidden to forbid anyone else to use, share and improve
 what you give them.   Help stamp out software-hoarding!  */
 
 
+/* The standard Vax 4.2 Unix crt0.c cannot be used for Emacs
+   because it makes `envron' an initialized variable.
+   It is easiest to have a special crt0.c on all machines
+   though I don't know whether other machines actually need it.  */
 
-/* On the vax and 68000, in 4.2, this is the data format on startup.
+/* On the vax and 68000, in BSD4.2 and USG5.2,
+   this is the data format on startup:
   (vax) ap and fp are unpredictable as far as I know; don't use them.
   sp ->  word containing argc
          word pointing to first arg string
@@ -74,9 +78,42 @@ And always:
 
 #include "config.h"
 
+/*		********  WARNING ********
+    Do not insert any data definitions before data_start!
+    Since this is the first file linked, the address of the following
+    variable should correspond to the start of initialized data space.
+    On some systems this is a constant that is independent of the text
+    size for shared executables.  On others, it is a function of the
+    text size. In short, this seems to be the most portable way to
+    discover the start of initialized data space dynamically at runtime,
+    for either shared or unshared executables, on either swapping or
+    virtual systems.  It only requires that the linker allocate objects
+    in the order encountered, a reasonable model for most Unix systems.
+    Similarly, note that the address of _start() should be the start
+    of text space.   Fred Fish, UniSoft Systems Inc.  */
+ 
+int data_start = 0;
+   
+#ifdef NEED_ERRNO
+int errno = 0;
+#endif
+ 
 char **environ;
 
-#ifdef ns16000
+#if defined(orion) || defined(pyramid) || defined (celerity)
+
+_start (argc, argv, envp)
+     int argc;
+     char **argv, **envp;
+{
+  environ = envp;
+
+  exit (main (argc, argv, envp));
+}
+
+#endif /* orion or pyramid or celerity */
+
+#if defined (ns16000) && !defined (sequent) && !defined (UMAX)
 
 _start ()
 {
@@ -97,18 +134,99 @@ start1 (ignore, argc, argv)
     environ--;
   exit (main (argc, argv, environ));
 }
-#endif
+#endif /* ns16000, not sequent and not UMAX */
+
+#ifdef UMAX
+_start()
+{
+	asm("	exit []			# undo enter");
+	asm("	.set	exitsc,1");
+	asm("	.set	sigcatchall,0x400");
+
+	asm("	.globl	_exit");
+	asm("	.globl	start");
+	asm("	.globl	__start");
+	asm("	.globl	_main");
+	asm("	.globl	_environ");
+	asm("	.globl	_sigvec");
+	asm("	.globl	sigentry");
+
+	asm("start:");
+	asm("	br	.xstart");
+	asm("	.org	0x20");
+	asm("	.double	p_glbl,0,0xf00000,0");
+	asm("	.org	0x30");
+	asm(".xstart:");
+	asm("	adjspb	$8");
+	asm("	movd	8(sp),0(sp)	# argc");
+	asm("	addr	12(sp),r0");
+	asm("	movd	r0,4(sp)	# argv");
+	asm("L1:");
+	asm("	movd	r0,r1");
+	asm("	addqd	$4,r0");
+	asm("	cmpqd	$0,0(r1)	# null args term ?");
+	asm("	bne	L1");
+	asm("	cmpd	r0,0(4(sp))	# end of 'env' or 'argv' ?");
+	asm("	blt	L2");
+	asm("	addqd	$-4,r0		# envp's are in list");
+	asm("L2:");
+	asm("	movd	r0,8(sp)	# env");
+	asm("	movd	r0,@_environ	# indir is 0 if no env ; not 0 if env");
+	asm("	movqd	$0,tos		# setup intermediate signal handler");
+	asm("	addr	@sv,tos");
+	asm("	movzwd	$sigcatchall,tos");
+	asm("	jsr	@_sigvec");
+	asm("	adjspb	$-12");
+	asm("	jsr	@_main");
+	asm("	adjspb	$-12");
+	asm("	movd	r0,tos");
+	asm("	jsr	@_exit");
+	asm("	adjspb	$-4");
+	asm("	addr	@exitsc,r0");
+	asm("	svc");
+	asm("	.align	4		# sigvec arg");
+	asm("sv:");
+	asm("	.double	sigentry");
+	asm("	.double	0");
+	asm("	.double	0");
+
+	asm("	.comm	p_glbl,1");
+}
+#endif /* UMAX */
+
+#if defined(vax) || defined(tahoe) || defined (sequent) || defined (BOGUS)
+
+#ifdef sequent
+#define BOGUS bogus_fp,
+#endif /* sequent */
 
 #ifdef vax
+#define BOGUS
+#endif /* vax */
+
+#ifdef tahoe
+#define BOGUS
+#endif /* tahoe */
+
+/* Define symbol "start": here; some systems want that symbol.  */
+#ifdef tower32
+asm("	text		");
+asm("	global start	");
+#else
+asm("	.text		");
+asm("	.globl start	");
+#endif
+asm("	start:		");
 
 _start ()
 {
 /* On vax, nothing is pushed here  */
+/* On sequent, bogus fp is pushed here  */
   start1 ();
 }
 
 static
-start1 (argc, xargv)
+start1 (BOGUS argc, xargv)
      int argc;
      char *xargv;
 {
@@ -119,7 +237,43 @@ start1 (argc, xargv)
     environ--;
   exit (main (argc, argv, environ));
 }
-#endif /* vax */
+#else /* not vax or tahoe or sequent or BOGUS */
+
+/* "m68k" and "m68000" both stand for m68000 processors,
+   but with different program-entry conventions.
+   This is a kludge.  Now that the BOGUS mechanism above exists,
+   most of these machines could use the vax code above
+   with some suitable definition of BOGUS.
+   Then the symbol m68k could be flushed.
+   But I don't want to risk breaking these machines
+   in a version 17 patch release, so that change is being put off.  */
+
+#ifdef m68k			/* Can't do it all from C */
+#ifdef STRIDE
+	asm ("	comm	havefpu%,2");
+#else /* m68k, not STRIDE */
+	asm ("	data");
+	asm ("	even");
+	asm ("	global	splimit%");
+	asm ("splimit%:");
+	asm ("	space 4");
+#endif /* STRIDE */
+	asm ("	global	_start");
+	asm ("	global	exit");
+	asm ("	text");
+	asm ("_start:");
+#ifdef STRIDE
+	asm ("	trap	&3");
+	asm ("	mov.w	%d0,havefpu%");
+#else /* m68k, not STRIDE */
+  	asm ("	mov.l	%d0,splimit%");
+#endif /* STRIDE */
+	asm ("	jsr	start1");
+	asm ("	mov.l	%d0,(%sp)");
+	asm ("	jsr	exit");
+	asm ("	mov.l	&1,%d0");	/* d0 = 1 => exit */
+	asm ("	trap	&0");
+#else /* m68000, not m68k */
 
 #ifdef m68000
 
@@ -128,10 +282,17 @@ _start ()
 /* On 68000, _start pushes a6 onto stack  */
   start1 ();
 }
+#endif /* m68000 */
+#endif /* m68k */
 
+#if defined(m68k) || defined(m68000)
 /* ignore takes care of skipping the a6 value pushed in start.  */
 static
+#ifdef m68k
+start1 (argc, xargv)
+#else
 start1 (ignore, argc, xargv)
+#endif
      int argc;
      char *xargv;
 {
@@ -140,20 +301,57 @@ start1 (ignore, argc, xargv)
 
   if ((char *)environ == xargv)
     environ--;
+#ifdef sun2
+  hack_sky();
+#endif /* sun2 */
   exit (main (argc, argv, environ));
 }
 
-#endif /* m68000 */
+#endif /* m68k or m68000 */
 
-#ifdef pyramid
+#endif /* not vax or tahoe or sequent or BOGUS */
 
-_start (argc, argv, envp)
-     int argc;
-     char **argv;
-     char **envp;
-{
-  environ = envp;
-  return main (argc, argv, envp);
-}
+#ifdef hp9000s200
+int argc_value;
+char **argv_value;
 
-#endif /* pyramid */
+	asm("   text");
+	asm("	globl __start");
+	asm("	globl _exit");
+	asm("	globl _main");
+	asm("__start");
+	asm("	dc.l	0");
+	asm("	subq.w	#0x1,d0");
+	asm("	move.w	d0,float_soft");
+	asm("	move.l	0x4(a7),d0");
+	asm("	beq.s	skip_1");
+	asm("	move.l	d0,a0");
+	asm("	clr.l	-0x4(a0)");
+	asm("skip_1");
+	asm("	move.l	a7,a0");
+	asm("	subq.l	#0x8,a7");
+	asm("	move.l	(a0),(a7)");
+	asm("	move.l	(a0),_argc_value");
+	asm("	addq.l	#0x4,a0");
+	asm("	move.l	a0,0x4(a7)");
+	asm("	move.l	a0,_argv_value");
+	asm("incr_loop");
+	asm("	tst.l	(a0)+");
+	asm("	bne.s	incr_loop");
+	asm("	move.l	0x4(a7),a1");
+	asm("	cmp.l	(a1),a0");
+	asm("	blt.s	skip_2");
+	asm("	subq.l	#0x4,a0");
+	asm("skip_2");
+	asm("	move.l	a0,0x8(a7)");
+	asm("	move.l	a0,_environ");
+	asm("	jsr	_main");
+	asm("	addq.l	#0x8,a7");
+	asm("	move.l	d0,-(a7)");
+	asm("	jsr	_exit");
+	asm("	move.w	#0x1,d0");
+	asm("	trap	#0x0");
+	asm("	comm	float_soft,4");
+/* float_soft is allocated in this way because C would
+   put an underscore character in its name otherwise. */ 
+#endif /* hp9000s200 */

@@ -4,32 +4,35 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
 #include "lisp.h"
 #include "buffer.h"
-#include <sys/file.h>
+#include "paths.h"
 
-#ifdef USG
 #include <sys/types.h>
+#include <sys/file.h>	/* Must be after sys/types.h for USG and BSD4_1*/
+
+#ifdef USG5
 #include <fcntl.h>
-#include <string.h>
-#define index strchr
-#else
-#include <strings.h>
+#endif
+
+#ifndef O_RDONLY
+#define O_RDONLY 0
 #endif
 
 Lisp_Object Vdoc_file_name;
@@ -43,6 +46,7 @@ get_doc_string (filepos)
   register char *name;
   register char *p, *p1;
   register int count;
+  extern char *index ();
 
   if (XTYPE (Vexec_directory) != Lisp_String
       || XTYPE (Vdoc_file_name) != Lisp_String)
@@ -55,11 +59,12 @@ get_doc_string (filepos)
 
   fd = open (name, O_RDONLY, 0);
   if (fd < 0)
-    error ("Cannot open doc string file");
+    error ("Cannot open doc string file \"%s\"", name);
   if (0 > lseek (fd, filepos, 0))
     {
       close (fd);
-      error ("Position out of range in doc string file");
+      error ("Position %ld out of range in doc string file \"%s\"",
+	     filepos, name);
     }
   p = buf;
   while (p != buf + sizeof buf - 1)
@@ -81,8 +86,7 @@ get_doc_string (filepos)
   return make_string (buf, p - buf);
 }
 
-DEFUN ("documentation", Fdocumentation, Sdocumentation, 1, 1,
-  "fDocumentation of function: ",
+DEFUN ("documentation", Fdocumentation, Sdocumentation, 1, 1, 0,
   "Return the documentation string of FUNCTION.")
   (fun1)
      Lisp_Object fun1;
@@ -90,7 +94,6 @@ DEFUN ("documentation", Fdocumentation, Sdocumentation, 1, 1,
   Lisp_Object fun;
   Lisp_Object funcar;
   Lisp_Object tem;
-  Lisp_Object val;
 
   fun = fun1;
   while (XTYPE (fun) == Lisp_Symbol)
@@ -103,16 +106,16 @@ DEFUN ("documentation", Fdocumentation, Sdocumentation, 1, 1,
       return Fsubstitute_command_keys (get_doc_string (- (int) XSUBR (fun)->doc));
     }
   if (XTYPE (fun) == Lisp_Vector)
-    return build_string ("Prefix-command definition (a Lisp vector of subcommands).");
+    return build_string ("Prefix command (definition is a Lisp vector of subcommands).");
   if (XTYPE (fun) == Lisp_String)
     return build_string ("Keyboard macro.");
   if (!LISTP(fun))
-    Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
   funcar = Fcar (fun);
   if (XTYPE (funcar) != Lisp_Symbol)
-    Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
   if (XSYMBOL (funcar) == XSYMBOL (Qkeymap))
-    return build_string ("Prefix-command definition (A list whose cdr is an alist of subcommands.");
+    return build_string ("Prefix command (definition is a list whose cdr is an alist of subcommands.)");
   if (XSYMBOL (funcar) == XSYMBOL (Qlambda)
       || XSYMBOL (funcar) == XSYMBOL (Qautoload))
     {
@@ -128,13 +131,13 @@ DEFUN ("documentation", Fdocumentation, Sdocumentation, 1, 1,
   if (XSYMBOL (funcar) == XSYMBOL (Qmacro))
     return Fdocumentation (Fcdr (fun));
   else
-    Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
 }
 
 DEFUN ("Snarf-documentation", Fsnarf_documentation, Ssnarf_documentation,
   1, 1, 0,
   "Used during Emacs initialization, before dumping runnable Emacs,\n\
-to find pointers to doc strings stored in etc/DOCSTR... and\n\
+to find pointers to doc strings stored in etc/DOC... and\n\
 record them in function definitions.\n\
 One arg, FILENAME, a string which does not include a directory.\n\
 The file is found in ../etc now; found in the exec-directory\n\
@@ -149,12 +152,19 @@ when doc strings are referred to later in the dumped Emacs.")
   register char *p, *end;
   Lisp_Object sym, fun, tem;
   char *name;
+  extern char *index ();
 
   CHECK_STRING (filename, 0);
 
+#ifndef CANNOT_DUMP
   name = (char *) alloca (XSTRING (filename)->size + 8);
   strcpy (name, "../etc/");
-  strcat (name, XSTRING (filename)->data);
+#else /* CANNOT_DUMP */
+  name = (char *) alloca (XSTRING (filename)->size + sizeof(PATH_EXEC)+1);
+  strcpy (name, PATH_EXEC);
+  strcat (name, "/");
+#endif /* CANNOT_DUMP */
+  strcat (name, XSTRING (filename)->data); 	/*** Add this line ***/
 
   fd = open (name, O_RDONLY, 0);
   if (fd < 0)
@@ -202,11 +212,15 @@ when doc strings are referred to later in the dumped Emacs.")
   return Qnil;
 }
 
+extern Lisp_Object where_is_in_buffer ();
+
 DEFUN ("substitute-command-keys", Fsubstitute_command_keys,
   Ssubstitute_command_keys, 1, 1, 0,
   "Return the STRING with substrings of the form \\=\\[COMMAND]\n\
 replaced by either:  a keystroke sequence that will invoke COMMAND,\n\
 or \"M-x COMMAND\" if COMMAND is not on any keys.\n\
+Substrings of the form \\=\\{MAPVAR} are replaced by summaries\n\
+\(made by describe-bindings) of the value of MAPVAR, taken as a keymap.\n\
 \\=\\= quotes the following character and is discarded;\n\
 thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ into the output.")
   (str)
@@ -216,11 +230,13 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
   int didone = 0;
   register unsigned char *strp;
   register unsigned char *bufp;
-  register unsigned char *send, *bend;
-  Lisp_Object key;
+  register unsigned char *send;
+  int bsize;
+  unsigned char *new;
+  Lisp_Object key, tem;
   unsigned char *funp;
   int func;
-  Lisp_Object usual;
+  struct buffer *oldbuf;
 
   if (NULL (str))
     return Qnil;
@@ -229,10 +245,10 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
   strp = (unsigned char *) XSTRING (str)->data;
   send = strp + XSTRING (str)->size;
 
-  bufp = buf = (unsigned char *) alloca (4 * XSTRING (str)->size);
-  bend = buf + 4 * XSTRING (str)->size;
+  bsize = XSTRING (str)->size;
+  bufp = buf = (unsigned char *) xmalloc (bsize);
 
-  while (bufp < bend && strp < send)
+  while (strp < send)
     {
       if (strp[0] == '\\' && strp[1] == '=')
 	{
@@ -253,17 +269,16 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  func = strp - funp;
 
 	  key = Fintern (make_string (funp, func), Qnil);
-	  key = Fcar (Fwhere_is_internal (key));
+	  key = where_is_in_buffer (key, bf_cur, 1);
 	  strp++;			/* skip ] */
 
-	win:
 	  if (NULL (key))	/* but not on any keys */
 	    {
-	      strncpy (bufp, "M-x ", bend - bufp);
-	      if (bend - bufp > 4)
-		bufp += 4;
-	      else
-		bufp = bend;
+	      new = (unsigned char *) xrealloc (buf, bsize += 4);
+	      bufp += new - buf;
+	      buf = new;
+	      strcpy (bufp, "M-x ");
+	      bufp += 4;
 	    }
 	  else
 	    {		/* function is on a key */
@@ -272,19 +287,57 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	      func = XSTRING (key)->size;
 	    }
 
-	  if (func > bend - bufp)
-	    func = bend - bufp;
+	subst:
+	  new = (unsigned char *) xrealloc (buf, bsize += func);
+	  bufp += new - buf;
+	  buf = new;
 	  bcopy (funp, bufp, func);
 	  bufp += func;
+	}
+      else if (strp[0] == '\\' && strp[1] == '{')
+	{
+	  didone = 1;
+	  strp += 2;		/* skip \( */
+	  funp = strp;
+
+	  while (strp < send && *strp != '}')
+	    strp++;
+	  func = strp - funp;
+	  strp++;			/* skip } */
+
+	  oldbuf = bf_cur;
+	  SetBfp (XBUFFER (Vprin1_to_string_buffer));
+	  key = Fintern (make_string (funp, func), Qnil);
+	  if ((tem = (Fboundp (key)), NULL (tem)) ||
+	      (tem = (Fsymbol_value (key)), NULL (tem)))
+	    {
+	      key = Fsymbol_name (key);
+	      InsStr ("\nUses keymap \"");
+	      InsCStr (XSTRING (key)->data, XSTRING (key)->size);
+	      InsStr ("\", which is not currently defined.\n");
+	    }
+	  else
+	    {
+	      key = Fsymbol_value (key);
+	      describe_map_tree (key, 1);
+	    }
+	  key = Fbuffer_string ();
+	  Ferase_buffer ();
+	  SetBfp (oldbuf);
+	  funp = XSTRING (key)->data;
+	  func = XSTRING (key)->size;
+	  goto subst;
 	}
       else			/* just copy other chars */
 	*bufp++ = *strp++;
     }
 
   if (didone)			/* don't bother if nothing substituted */
-    return make_string (buf, bufp - buf);
+    key = make_string (buf, bufp - buf);
   else
-    return str;
+    key = str;
+  free (buf);
+  return key;
 }
 
 syms_of_doc ()

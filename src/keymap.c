@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -25,13 +26,11 @@ copyright notice and this notice must be preserved on all copies.  */
 #include "commands.h"
 #include "buffer.h"
 
-#ifdef USG
-#include <strings.h>
-#else
-#include <strings.h>
-#endif
-
 /* Actually allocate storage for these variables */
+
+#ifdef HAVE_X_WINDOWS
+struct Lisp_Vector *MouseMap;		/* Keymap for mouse commands */
+#endif /* HAVE_X_WINDOWS */
 
 struct Lisp_Vector *CurrentGlobalMap;	/* Current global keymap */
 
@@ -83,12 +82,11 @@ Its car is 'keymap and its cdr is an alist of (CHAR . DEFINITION).\n\
 Initially the alist is nil.")
   ()
 {
-  Lisp_Object val;
   return Fcons (Qkeymap, Qnil);
 }
 
 /* This is used for installing the standard key bindings at initialization time.
- For example,  defkey (CtlXmap, Ctl('X'), "exchange-dot-and-mark");  */
+ For example,  defkey (CtlXmap, Ctl('X'), "exchange-point-and-mark");  */
 
 void
 defkey (keymap, key, defname)
@@ -111,19 +109,21 @@ ndefkey (keymap, key, defname)
 /* Define character fromchar in map frommap as an alias for character tochar in map tomap.
  Subsequent redefinitions of the latter WILL affect the former. */
 
+#ifdef NOTDEF
 void
 synkey (frommap, fromchar, tomap, tochar)
      struct Lisp_Vector *frommap, *tomap;
      int fromchar, tochar;
 {
   Lisp_Object v, c;
-  XSETTYPE (v, Lisp_Vector), XSETVECTOR (v, tomap);
+  XSET (v, Lisp_Vector, tomap);
   XFASTINT (c) = tochar;
   frommap->contents[fromchar] = Fcons (v, c);
 }
+#endif /* NOTDEF */
 
 DEFUN ("keymapp", Fkeymapp, Skeymapp, 1, 1, 0,
-  "T if ARG is a keymap.\n\
+  "Return t if ARG is a keymap.\n\
 A keymap is a vector of length 128, or a list (keymap . ALIST),\n\
 where alist elements look like (CHAR . DEFN).")
   (object)
@@ -151,30 +151,37 @@ get_keymap (object, argnumber)
 {
   Lisp_Object tem;
 
-  tem = object;
-  while (XTYPE (tem) == Lisp_Symbol && !EQ (tem, Qunbound))
-    tem = XSYMBOL (tem)->function;
+  while (1)
+    {
+      tem = object;
+      while (XTYPE (tem) == Lisp_Symbol && !EQ (tem, Qunbound))
+	tem = XSYMBOL (tem)->function;
 
-  if ((XTYPE (tem) == Lisp_Vector && XVECTOR (tem)->size == 0200)
-      || (LISTP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
-    return tem;
-  wrong_type_argument (Qkeymapp, object, argnumber);
+      if ((XTYPE (tem) == Lisp_Vector && XVECTOR (tem)->size == 0200)
+	  || (LISTP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
+	return tem;
+      if (argnumber >= 0)
+	object = wrong_type_argument (Qkeymapp, object);
+      else return Qnil;
+    }
 }
 
 Lisp_Object
 get_keyelt (object)
      Lisp_Object object;
 {
-  Lisp_Object tem;
+  Lisp_Object map, tem;
 
-  while (XTYPE (object) == Lisp_Cons && !EQ (XCONS (object)->car, Qkeymap))
+  while (map = get_keymap (Fcar_safe (object), -1),
+	 tem = Fkeymapp (map),
+	 !NULL (tem))
+      /*(XTYPE (object) == Lisp_Cons && !EQ (XCONS (object)->car, Qkeymap))*/
     {
-      tem = get_keymap (Fcar (object), 0);
       object = Fcdr (object);
-      if (LISTP (tem))
-	object = Fcdr (Fassq (object, tem));
+      if (LISTP (map))
+	object = Fcdr (Fassq (object, Fcdr (map)));
       else
-	object = Faref (tem, object);
+	object = Faref (map, object);
     }
   return object;
 }
@@ -330,7 +337,7 @@ The definition is probably a symbol with a function definition.")
       value = Flookup_key (map, keys);
       if (NULL (value))
 	{
-	  XSETTYPE (map, Lisp_Vector), XSETVECTOR (map, CurrentGlobalMap);
+	  XSET (map, Lisp_Vector, CurrentGlobalMap);
 	  value1 = Flookup_key (map, keys);
 	  if (XTYPE (value1) == Lisp_Int)
 	    return Qnil;
@@ -339,7 +346,7 @@ The definition is probably a symbol with a function definition.")
       else if (XTYPE (value) != Lisp_Int)
 	return value;
     }
-  XSETTYPE (map, Lisp_Vector), XSETVECTOR (map, CurrentGlobalMap);
+  XSET (map, Lisp_Vector, CurrentGlobalMap);
   return Flookup_key (map, keys);
 }
 
@@ -365,7 +372,7 @@ The definition is probably a symbol with a function definition.")
      Lisp_Object keys;
 {
   Lisp_Object map;
-  XSETTYPE (map, Lisp_Vector), XSETVECTOR (map, CurrentGlobalMap);
+  XSET (map, Lisp_Vector, CurrentGlobalMap);
   return Flookup_key (map, keys);
 }
 
@@ -380,7 +387,7 @@ that local definition will continue to shadow any global definition.")
      Lisp_Object keys, function;
 {
   Lisp_Object map;
-  XSETTYPE (map, Lisp_Vector), XSETVECTOR (map, CurrentGlobalMap);
+  XSET (map, Lisp_Vector, CurrentGlobalMap);
   CHECK_STRING (keys, 1);
   Fdefine_key (map, keys, function);
   return Qnil;
@@ -437,9 +444,6 @@ A keymap is created and stored as SYMBOL's function definition.")
   (name)
      Lisp_Object name;
 {
-  if (XTYPE (name) != Lisp_Symbol)
-    wrong_type_argument (Qsymbolp, name, 0);
-
   Fset (name, Fmake_keymap ());
   return name;
 }
@@ -476,8 +480,6 @@ DEFUN ("current-local-map", Fcurrent_local_map, Scurrent_local_map, 0, 0, 0,
   return bf_cur->keymap;
 }
 
-extern Lisp_Object char_to_string ();
-
 DEFUN ("accessible-keymaps", Faccessible_keymaps, Saccessible_keymaps,
   1, 1, 0,
   "Find all keymaps accessible via prefix characters from KEYMAP.\n\
@@ -541,8 +543,8 @@ spaces are put between sequence elements, etc.")
 
 char *
 push_key_description (c, p)
-     unsigned char c;
-     char *p;
+     register unsigned int c;
+     register char *p;
 {
   if (c >= 0200)
     {
@@ -622,8 +624,8 @@ Control characters turn into C-whatever, etc.")
 
 char *
 push_text_char_description (c, p)
-     unsigned char c;
-     char *p;
+     register unsigned int c;
+     register char *p;
 {
   if (c >= 0200)
     {
@@ -631,11 +633,7 @@ push_text_char_description (c, p)
       *p++ = '-';
       c -= 0200;
     }
-  if (c == 033)
-    {
-      *p++ = '$';
-    }
-  else if (c < 040)
+  if (c < 040)
     {
       *p++ = '^';
       *p++ = c + 64;		/* 'A' - 1 */
@@ -656,13 +654,11 @@ Control characters turn into \"C-char\", etc.")
   (chr)
      Lisp_Object chr;
 {
-  unsigned char c;
   char tem[6];
 
   CHECK_NUMBER (chr, 0);
-  c = XINT (chr) & 0377;
 
-  *push_text_char_description (c, tem) = 0;
+  *push_text_char_description (XINT (chr) & 0377, tem) = 0;
 
   return build_string (tem);
 }
@@ -674,27 +670,29 @@ DEFUN ("where-is-internal", Fwhere_is_internal, Swhere_is_internal, 1, 1, 0,
   (definition)
      Lisp_Object definition;
 {
-  return where_is_in_buffer (definition, bf_cur);
+  return where_is_in_buffer (definition, bf_cur, 0);
 }
 
 Lisp_Object
-where_is_in_buffer (definition, buf)
+where_is_in_buffer (definition, buf, firstonly)
      Lisp_Object definition;
      struct buffer *buf;
+     int firstonly;		/* if true, return after finding one */
 {
   Lisp_Object start1, start2;
-  Lisp_Object maps, tail;
+  Lisp_Object maps;
   Lisp_Object this, map;
   Lisp_Object dummy;
   Lisp_Object found;
   Lisp_Object tem;
-  int i;
+  register int i;
 
-  XSETTYPE (start1, Lisp_Vector), XSETVECTOR (start1, CurrentGlobalMap);
-  start2 = bf_cur->keymap;
+  XSET (start1, Lisp_Vector, CurrentGlobalMap);
+  start2 = buf->keymap;
 
   if (!NULL (start2))
-    maps = nconc2 (Faccessible_keymaps (start1), Faccessible_keymaps (start2));
+    maps = nconc2 (Faccessible_keymaps (start2),
+		   Faccessible_keymaps (start1));
   else
     maps = Faccessible_keymaps (start1);
 
@@ -711,9 +709,11 @@ where_is_in_buffer (definition, buf)
 	    tem = Fcdr (Fcar (map));
 	    if (EQ (tem, definition))
 	      {
-		dummy = Fcar (Fcar (map));
-		found = Fcons (concat2(this, Fchar_to_string (dummy)),
-			       found);
+  		dummy = Fcar (Fcar (map));
+		dummy = concat2 (this, Fchar_to_string (dummy));
+		if (firstonly)
+		  return dummy;
+		found = Fcons (dummy, found);
 	      }
 	  }
       else
@@ -724,7 +724,10 @@ where_is_in_buffer (definition, buf)
 	    if (EQ (tem, definition))	/* Match found: record key sequence */
 	      {
 		XFASTINT (dummy) = i;	/* which is `this' followed by character i */
-		found = Fcons (concat2(this, Fchar_to_string (dummy)), found);
+ 		dummy = concat2 (this, Fchar_to_string (dummy));
+		if (firstonly)
+		  return dummy;
+		found = Fcons (dummy, found);
 	      }
 	  }
     }
@@ -738,8 +741,7 @@ Argument is a command definition, usually a symbol with a function definition.")
      Lisp_Object definition;
 {
   Lisp_Object tem;
-  if (XTYPE (definition) != Lisp_Symbol)
-    wrong_type_argument (Qsymbolp, definition, 0);
+  CHECK_SYMBOL (definition, 0);
   tem = Fmapconcat (Qkey_description, Fwhere_is_internal (definition), build_string (", "));
   if (XSTRING (tem)->size)
     message ("%s is on %s", XSYMBOL (definition)->name->data, XSTRING (tem)->data);
@@ -765,49 +767,56 @@ Lisp_Object
 describe_buffer_bindings (descbuf)
      Lisp_Object descbuf;
 {
-  Lisp_Object start1;
-  Lisp_Object maps;
-  Lisp_Object this, map;
+  register Lisp_Object start1;
+  char *heading = "key		binding\n---		-------\n";
 
-  SetBfp (XBUFFER (Vstandard_output));
-
-  InsStr ("Global Bindings:\n\
-key		binding\n---		-------\n");
-
-  XSETTYPE (start1, Lisp_Vector), XSETVECTOR (start1, CurrentGlobalMap);
-
-  maps = Faccessible_keymaps (start1);
-
-  for (; !NULL (maps); maps = Fcdr (maps))
-    {
-      this = Fcar (Fcar (maps));	/* Key sequence to reach map */
-      map = Fcdr (Fcar (maps));		/* The map that it reaches */
-      describe_map (map, this);
-    }
+  Fset_buffer (Vstandard_output);
 
   start1 = XBUFFER (descbuf)->keymap;
   if (!NULL (start1))
     {
-      InsStr ("\nLocal Bindings:\n");
-
-      maps = Faccessible_keymaps (start1);
-
-      for (; !NULL (maps); maps = Fcdr (maps))
-	{
-	  this = Fcar (Fcar (maps));	/* Key sequence to reach map */
-	  map = Fcdr (Fcar (maps));		/* The map that it reaches */
-	  describe_map (map, this);
-	}
+      InsStr ("Local Bindings:\n");
+      InsStr (heading);
+      heading = 0;
+      describe_map_tree (start1, 0);
+      InsStr ("\n");
     }
 
-  SetBfp (XBUFFER (descbuf));
+  InsStr ("Global Bindings:\n");
+  if (heading)
+    InsStr (heading);
+
+  XSET (start1, Lisp_Vector, CurrentGlobalMap);
+  describe_map_tree (start1, 0);
+
+  Fset_buffer (descbuf);
   return Qnil;
+}
+
+/* Insert a desription of the key bindings in STARTMAP,
+   followed by those of all maps reachable through STARTMAP.
+   If PARTIAL is nonzero, omit certain "uninteresting" commands
+   (such as `undefined').  */
+
+describe_map_tree (startmap, partial)
+     Lisp_Object startmap;
+     int partial;
+{
+  register Lisp_Object maps, elt;
+
+  maps = Faccessible_keymaps (startmap);
+
+  for (; !NULL (maps); maps = Fcdr (maps))
+    {
+      elt = Fcar (maps);
+      describe_map (Fcdr (elt), Fcar (elt), partial);
+    }
 }
 
 describe_command (definition)
      Lisp_Object definition;
 {
-  Lisp_Object tem1;
+  register Lisp_Object tem1;
 
   if (XTYPE (definition) == Lisp_Symbol)
     {
@@ -815,35 +824,51 @@ describe_command (definition)
       InsCStr (XSTRING (tem1)->data, XSTRING (tem1)->size);
     }
   else
-    InsStr ("??");
+    {
+      tem1 = Fkeymapp (definition);
+      if (!NULL (tem1))
+	InsStr ("Prefix Command");
+      else
+	InsStr ("??");
+    }
 }
 
-describe_map (map, keys)
+/* Describe the contents of map MAP, assuming that this map
+   itself is reached by the sequence of prefix keys KEYS (a string).
+   PARTIAL is the same as in `describe_map_tree', above.  */
+
+describe_map (map, keys, partial)
      Lisp_Object map, keys;
+     int partial;
 {
-  Lisp_Object keysdesc;
+  register Lisp_Object keysdesc;
 
   InsStr ("\n");
 
-  if (XSTRING (keys)->size > 0)
+  if (!NULL (keys) && XSTRING (keys)->size > 0)
     keysdesc = Fkey_description (keys);
   else
     keysdesc = Qnil;
 
   if (LISTP (map))
-    describe_alist (Fcdr (map), keysdesc, describe_command);
+    describe_alist (Fcdr (map), keysdesc, describe_command, partial);
   else
-    describe_vector (map, keysdesc, describe_command);
+    describe_vector (map, keysdesc, describe_command, partial);
 }
 
-describe_alist (alist, elt_prefix, elt_describer)
-     Lisp_Object alist;
-     Lisp_Object elt_prefix;
-     Lisp_Object (*elt_describer) ();
+describe_alist (alist, elt_prefix, elt_describer, partial)
+     register Lisp_Object alist;
+     register Lisp_Object elt_prefix;
+     int (*elt_describer) ();
+     int partial;
 {
   Lisp_Object this;
-  Lisp_Object tem1, tem2;
+  register Lisp_Object tem1, tem2;
   int indent;
+  Lisp_Object suppress;
+
+  if (partial)
+    suppress = intern ("suppress-keymap");
 
   for (; LISTP (alist); alist = Fcdr (alist))
     {
@@ -851,6 +876,12 @@ describe_alist (alist, elt_prefix, elt_describer)
       tem1 = Fcar (Fcar (alist));
       tem2 = Fcdr (Fcar (alist));
       if (NULL (tem2)) continue;      
+      if (XTYPE (tem2) == Lisp_Symbol && partial)
+	{
+	  this = Fget (tem2, suppress);
+	  if (!NULL (this))
+	    continue;
+	}
 
       indent = 0;
 
@@ -867,27 +898,38 @@ describe_alist (alist, elt_prefix, elt_describer)
 
       InsCStr ("                    ", indent<16 ? 16-indent : 1);
 
-      elt_describer (tem2);
+      (*elt_describer) (tem2);
       InsCStr ("\n", 1);
     }
 }
 
-describe_vector (vector, elt_prefix, elt_describer)
-     Lisp_Object vector;
-     Lisp_Object elt_prefix;
-     Lisp_Object (*elt_describer) ();
+describe_vector (vector, elt_prefix, elt_describer, partial)
+     register Lisp_Object vector;
+     register Lisp_Object elt_prefix;
+     int (*elt_describer) ();
+     int partial;
 {
   Lisp_Object this;
   Lisp_Object dummy;
   Lisp_Object tem1, tem2;
-  int i, size = XVECTOR (vector)->size;
+  register int i, size = XVECTOR (vector)->size;
   int indent;
+  Lisp_Object suppress;
+
+  if (partial)
+    suppress = intern ("suppress-keymap");
 
   for (i = 0; i < size; i++)
     {
       QUIT;
       tem1 = XVECTOR (vector)->contents[i];
       if (NULL (tem1)) continue;      
+      if (XTYPE (tem1) == Lisp_Symbol && partial)
+	{
+	  this = Fget (tem1, suppress);
+	  if (!NULL (this))
+	    continue;
+	}
 
       indent = 0;
 
@@ -924,7 +966,7 @@ describe_vector (vector, elt_prefix, elt_describer)
       InsCStr ("                    ", indent<16 ? 16-indent : 1);
 
       tem1 = XVECTOR (vector)->contents[i];
-      elt_describer (tem1);
+      (*elt_describer) (tem1);
       InsCStr ("\n", 1);
     }
 }
@@ -937,7 +979,7 @@ static
 apropos_accum (symbol, string)
      Lisp_Object symbol, string;
 {
-  Lisp_Object tem;
+  register Lisp_Object tem;
 
   tem = Fstring_match (string, Fsymbol_name (symbol), Qnil);
   if (!NULL (tem) && !NULL (apropos_predicate))
@@ -946,12 +988,12 @@ apropos_accum (symbol, string)
     apropos_accumulate = Fcons (symbol, apropos_accumulate);
 }
 
-static
+static Lisp_Object
 apropos1 (list)
-     Lisp_Object list;
+     register Lisp_Object list;
 {
   struct buffer *old = bf_cur;
-  Lisp_Object symbol, col, tem;
+  register Lisp_Object symbol, col, tem;
 
   while (!NULL (list))
     {
@@ -960,7 +1002,7 @@ apropos1 (list)
       symbol = Fcar (list);
       list = Fcdr (list);
 
-      tem = where_is_in_buffer (symbol, bf_cur);
+      tem = where_is_in_buffer (symbol, bf_cur, 0);
       tem = Fmapconcat (Qkey_description, tem, build_string (", "));
       XFASTINT (col) = 30;
 
@@ -979,6 +1021,7 @@ apropos1 (list)
 	insert_first_line ("  Variable: ", tem);
       SetBfp (old);
     }
+  return Qnil;
 }
 
 static
@@ -986,9 +1029,24 @@ insert_first_line (prefix, str)
      char *prefix;
      Lisp_Object str;
 {
-  unsigned char *p = XSTRING (str)->data;
-  unsigned char *p1 = (unsigned char *) index (p, '\n');
+  extern char *index ();
+  register unsigned char *p;
+  register unsigned char *p1;
+  register unsigned char *p2;
+
   InsStr (prefix);
+
+ retry:
+  p = XSTRING (str)->data;
+  p1 = (unsigned char *) index (p, '\n');
+
+  for (p2 = p; *p2 && p2 != p1; p2++)
+    if (p2[0] == '\\' && p2[1] == '[')
+      {
+	str = Fsubstitute_command_keys (str);
+	goto retry;
+      }
+
   InsCStr (p, p1 ? p1 - p : strlen (p));
   InsCStr ("\n", 1);
 }
@@ -1054,6 +1112,12 @@ syms_of_keymap ()
 /* Initialize the keymaps standardly used.
    Each one is the value of a Lisp variable, and is also
    pointed to by a C variable */
+
+#ifdef HAVE_X_WINDOWS
+  tem = Fmake_keymap ();
+  MouseMap = XVECTOR (tem);
+  Fset (intern ("mouse-map"), tem);
+#endif /* HAVE_X_WINDOWS */
 
   tem = Fmake_keymap ();
   GlobalMap = XVECTOR (tem);

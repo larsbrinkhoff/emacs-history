@@ -13,8 +13,6 @@ Things useful to do for GNU Emacs:
  Alternatively, be able to use secondary storage for copying
  strings if run out of memory for doing so.
 
-* Implement the FRONT_END_PROCESS form of input.
-
 * If a file you can't write is in a directory you can write,
  make sure it works to modify and save this file.
 

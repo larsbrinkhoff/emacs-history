@@ -1,201 +1,231 @@
 \initial {A}
-\entry {Abbrev mode}{159}
-\entry {abbrevs}{139}
-\entry {aborting}{173}
-\entry {againformation}{156}
-\entry {apropos}{34}
-\entry {arguments (from shell)}{15}
-\entry {ASCII}{11}
-\entry {Auto Fill mode}{106, 121, 159}
-\entry {Auto Save mode}{77}
+\entry {Abbrev mode}{195}
+\entry {abbrevs}{159}
+\entry {aborting}{213}
+\entry {againformation}{192}
+\entry {apropos}{43}
+\entry {arguments (from shell)}{19}
+\entry {ASCII}{15}
+\entry {attribute (Rmail)}{179}
+\entry {Auto Fill mode}{124, 140, 195}
+\entry {Auto Save mode}{89}
 \initial {B}
-\entry {backup file}{75}
-\entry {batch mode}{15}
-\entry {binding}{12}
-\entry {blank lines}{20, 121}
-\entry {buffer menu}{88}
-\entry {buffers}{85}
-\entry {buggestion}{157}
-\entry {bugs}{176}
+\entry {backup file}{85}
+\entry {batch mode}{19}
+\entry {binding}{17}
+\entry {blank lines}{26, 140}
+\entry {body lines (Outline mode)}{117}
+\entry {boredom}{192}
+\entry {buffer menu}{100}
+\entry {buffers}{97}
+\entry {buggestion}{192}
+\entry {bugs}{217}
 \initial {C}
-\entry {C}{111}
-\entry {C mode}{111}
-\entry {C-}{11}
-\entry {C-g}{173}
-\entry {case conversion}{69, 108}
-\entry {centering}{107}
-\entry {change log}{124}
-\entry {character set}{11}
-\entry {command}{12, 166}
-\entry {command name}{166}
-\entry {comments}{120}
-\entry {compilation errors}{131}
-\entry {completion}{27}
-\entry {continuation line}{18}
-\entry {Control}{11}
-\entry {Control-Meta}{112}
-\entry {crashes}{77}
-\entry {creating files}{73}
-\entry {current buffer}{85}
-\entry {current stack frame}{136}
-\entry {cursor}{5, 17}
-\entry {customization}{12, 116, 159}
+\entry {C}{129}
+\entry {C mode}{129}
+\entry {C-}{15}
+\entry {C-g}{213}
+\entry {case conversion}{78, 126}
+\entry {centering}{125}
+\entry {change log}{143}
+\entry {character set}{15}
+\entry {command}{17, 203}
+\entry {command name}{203}
+\entry {comments}{139}
+\entry {compilation errors}{149}
+\entry {completion}{35}
+\entry {continuation line}{26}
+\entry {Control}{15}
+\entry {Control-Meta}{130}
+\entry {crashes}{89}
+\entry {creating files}{83}
+\entry {current buffer}{97}
+\entry {current stack frame}{155}
+\entry {cursor}{11, 23}
+\entry {customization}{17, 135, 195}
 \initial {D}
-\entry {debugger}{135}
-\entry {default argument}{25}
-\entry {defuns}{114}
-\entry {deletion}{17, 41}
-\entry {deletion (of files)}{81, 83}
-\entry {directory listing}{79}
-\entry {Dired}{81}
-\entry {disabled command}{168}
-\entry {drastic changes}{77}
+\entry {debugger}{154}
+\entry {default argument}{33}
+\entry {defuns}{132}
+\entry {deletion}{23, 49}
+\entry {deletion (of files)}{91, 94}
+\entry {deletion (Rmail)}{175}
+\entry {digest message}{185}
+\entry {directory listing}{90}
+\entry {Dired}{91}
+\entry {disabled command}{206}
+\entry {doctor}{216}
+\entry {drastic changes}{88}
+\entry {dribble file}{219}
 \initial {E}
-\entry {echo area}{6}
-\entry {Emacs-Lisp mode}{134}
-\entry {entering Emacs}{15}
-\entry {environment}{154}
-\entry {error log}{131}
-\entry {etags program}{125}
-\entry {exiting}{16, 149}
-\entry {expansion (of abbrevs)}{139}
-\entry {expression}{112}
+\entry {echo area}{12}
+\entry {Eliza}{216}
+\entry {Emacs-Lisp mode}{153}
+\entry {entering Emacs}{19}
+\entry {environment}{189}
+\entry {error log}{149}
+\entry {etags program}{144}
+\entry {exiting}{20, 187}
+\entry {expansion (of abbrevs)}{159}
+\entry {expression}{130}
+\entry {expunging (Rmail)}{175}
 \initial {F}
-\entry {file dates}{76}
-\entry {file directory}{79}
-\entry {file names}{71}
-\entry {files}{19, 71, 72}
-\entry {fill prefix}{107}
-\entry {filling}{106}
-\entry {formfeed}{105}
-\entry {function}{12, 166}
+\entry {file dates}{87}
+\entry {file directory}{90}
+\entry {file names}{81}
+\entry {files}{25, 81, 82}
+\entry {fill prefix}{125}
+\entry {filling}{124}
+\entry {formfeed}{123}
+\entry {forward a message}{183}
+\entry {function}{17, 203}
 \initial {G}
-\entry {global keymap}{166}
-\entry {global substitution}{63}
-\entry {graphic characters}{17}
-\entry {grinding}{115}
+\entry {global keymap}{203}
+\entry {global substitution}{71}
+\entry {graphic characters}{23}
+\entry {grinding}{133}
 \initial {H}
-\entry {hardcopy}{155}
-\entry {help}{33}
-\entry {horizontal scrolling}{54}
+\entry {hardcopy}{191}
+\entry {header (TeX mode)}{116}
+\entry {headers (of message)}{169}
+\entry {heading lines (Outline mode)}{117}
+\entry {help}{41}
+\entry {horizontal scrolling}{60}
 \initial {I}
-\entry {ignoriginal}{157}
-\entry {indentation}{97, 115, 120}
-\entry {inferior process}{131}
-\entry {insertion}{17}
+\entry {ignoriginal}{192}
+\entry {inbox file}{176}
+\entry {indentation}{109, 133, 139}
+\entry {inferior process}{149}
+\entry {init file}{209}
+\entry {insertion}{23}
+\entry {invisible lines}{117}
 \initial {J}
-\entry {justification}{107}
+\entry {justification}{125}
 \initial {K}
-\entry {key}{12}
-\entry {keyboard macros}{164}
-\entry {keymap}{12, 166}
-\entry {kill ring}{43}
-\entry {killing}{41}
-\entry {killing Emacs}{16}
+\entry {key}{16}
+\entry {keyboard macros}{200}
+\entry {keymap}{17, 203}
+\entry {kill ring}{51}
+\entry {killing}{49}
+\entry {killing Emacs}{20}
 \initial {L}
-\entry {libraries}{132}
-\entry {Lisp}{111}
-\entry {Lisp mode}{111}
-\entry {list}{112}
-\entry {loading Lisp code}{132}
-\entry {local keymap}{167}
-\entry {local variables}{162}
-\entry {local variables in files}{162}
+\entry {label (Rmail)}{179}
+\entry {LaTeX}{114}
+\entry {libraries}{151}
+\entry {Lisp}{129}
+\entry {Lisp mode}{129}
+\entry {list}{130}
+\entry {loading Lisp code}{151}
+\entry {local keymap}{203}
+\entry {local variables}{198}
+\entry {local variables in files}{199}
 \initial {M}
-\entry {M-}{11}
-\entry {mail}{150}
-\entry {major modes}{95, 122}
-\entry {make}{131}
-\entry {mark}{37}
-\entry {mark ring}{39}
-\entry {Markov chain}{157}
-\entry {matching parentheses}{120}
-\entry {message}{150}
-\entry {Meta}{11, 101}
-\entry {minibuffer}{25, 31}
-\entry {minor modes}{159}
-\entry {mocklisp}{133}
-\entry {Mode attribute}{96}
-\entry {mode line}{7, 159}
-\entry {modified (buffer)}{72}
-\entry {moving text}{43}
+\entry {M-}{15}
+\entry {mail}{169}
+\entry {major modes}{107, 141}
+\entry {make}{149}
+\entry {mark}{45}
+\entry {mark ring}{47}
+\entry {Markov chain}{192}
+\entry {matching parentheses}{139}
+\entry {message}{169, 173}
+\entry {message number}{173}
+\entry {Meta}{15, 119}
+\entry {minibuffer}{33, 39}
+\entry {minor modes}{195}
+\entry {mocklisp}{153}
+\entry {mode hook}{130}
+\entry {mode line}{13, 195}
+\entry {modified (buffer)}{82}
+\entry {moving text}{51}
 \initial {N}
-\entry {narrowing}{153}
-\entry {newline}{17}
-\entry {nonincremental search}{58}
-\entry {numeric arguments}{23}
+\entry {narrowing}{188}
+\entry {newline}{23}
+\entry {nonincremental search}{66}
+\entry {numeric arguments}{29}
 \initial {O}
-\entry {option}{159, 161}
-\entry {outragedy}{157}
-\entry {Overwrite mode}{159}
+\entry {option}{196, 197}
+\entry {outlines}{117}
+\entry {outragedy}{192}
+\entry {Overwrite mode}{195}
 \initial {P}
-\entry {pages}{105}
-\entry {paragraphs}{104}
-\entry {parentheses}{120}
-\entry {pictures}{145}
-\entry {point}{5, 17}
-\entry {prefix key}{12}
-\entry {presidentagon}{156}
-\entry {prompt}{25}
-\entry {properbose}{157}
+\entry {pages}{123}
+\entry {paragraphs}{122}
+\entry {parentheses}{139}
+\entry {pictures}{165}
+\entry {point}{11, 23}
+\entry {prefix key}{16}
+\entry {presidentagon}{192}
+\entry {primary mail file}{173}
+\entry {prompt}{33}
+\entry {properbose}{192}
 \initial {Q}
-\entry {Query Replace}{64}
-\entry {quitting}{173}
-\entry {quitting (in search)}{56}
-\entry {quoting}{17}
+\entry {Query Replace}{73}
+\entry {quitting}{213}
+\entry {quitting (in search)}{64}
+\entry {quoting}{23}
 \initial {R}
-\entry {read-only buffer}{86}
-\entry {rectangle}{50, 147}
-\entry {rectangles}{47}
-\entry {recursive edit}{149}
-\entry {recursive editing level}{173}
-\entry {regexp}{59}
-\entry {region}{37, 109}
-\entry {registers}{49}
-\entry {regular expression}{59}
-\entry {replacement}{63}
-\entry {restriction}{153}
+\entry {read-only buffer}{99}
+\entry {rectangle}{58, 167}
+\entry {rectangles}{55}
+\entry {recursive edit}{187}
+\entry {recursive editing level}{213}
+\entry {regexp}{67}
+\entry {region}{45, 127}
+\entry {registers}{57}
+\entry {regular expression}{67}
+\entry {replacement}{71}
+\entry {reply to a message}{183}
+\entry {restriction}{188}
+\entry {Rmail}{173}
 \initial {S}
-\entry {saving}{72}
-\entry {Scheme mode}{111}
-\entry {screen}{5}
-\entry {scrolling}{53}
-\entry {searching}{55}
-\entry {selected buffer}{85}
-\entry {selected window}{91}
-\entry {self-documentation}{33}
-\entry {sentences}{103}
-\entry {sexp}{112}
-\entry {shell commands}{153}
-\entry {Shell mode}{155}
-\entry {simultaneous editing}{76}
-\entry {sparse keymap}{167}
-\entry {spelling}{69}
-\entry {string substitution}{63}
-\entry {subshell}{153}
-\entry {suspending}{16}
-\entry {syntax table}{103, 169}
+\entry {saving}{82}
+\entry {Scheme mode}{129}
+\entry {screen}{11}
+\entry {scrolling}{59}
+\entry {searching}{63}
+\entry {selected buffer}{97}
+\entry {selected window}{103}
+\entry {selective display}{117}
+\entry {self-documentation}{41}
+\entry {sentences}{121}
+\entry {sexp}{130}
+\entry {shell commands}{189}
+\entry {Shell mode}{190}
+\entry {simultaneous editing}{87}
+\entry {sparse keymap}{204}
+\entry {spelling}{79}
+\entry {string substitution}{71}
+\entry {subshell}{189}
+\entry {subtree (Outline mode)}{118}
+\entry {summary (Rmail)}{180}
+\entry {suspending}{20}
+\entry {syntax table}{120, 206}
 \initial {T}
-\entry {tag table}{125}
-\entry {techniquitous}{157}
-\entry {text}{101}
-\entry {Text mode}{101}
-\entry {top level}{7}
-\entry {transposition}{68, 102, 114}
-\entry {truncation}{18}
-\entry {typos}{67}
+\entry {tag table}{144}
+\entry {techniquitous}{192}
+\entry {termcript file}{220}
+\entry {TeX}{114}
+\entry {text}{113}
+\entry {Text mode}{113}
+\entry {top level}{13}
+\entry {transposition}{77, 120, 132}
+\entry {truncation}{27}
+\entry {typos}{77}
 \initial {U}
-\entry {undo}{51}
+\entry {undeletion (Rmail)}{176}
+\entry {undigestify}{185}
+\entry {undo}{31}
 \initial {V}
-\entry {variable}{159}
-\entry {variables}{13}
-\entry {viewing}{83}
-\entry {visiting}{72}
-\entry {visiting files}{72}
+\entry {variable}{196}
+\entry {variables}{17}
+\entry {viewing}{94}
+\entry {visiting}{82}
+\entry {visiting files}{82}
 \initial {W}
-\entry {widening}{153}
-\entry {windows}{91}
-\entry {word search}{58}
-\entry {words}{69, 101, 108}
+\entry {widening}{188}
+\entry {windows}{103}
+\entry {word search}{66}
+\entry {words}{78, 119, 126}
 \initial {Y}
-\entry {yanking}{43}
+\entry {yanking}{51}

@@ -4,33 +4,67 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
+
 
 #include "config.h"
 
-#ifndef eunice
+/* Define two macros KERNEL_FILE (file to find kernel symtab in)
+   and LDAV_SYMBOL (symbol name to look for), based on system type.
+   Also define NLIST_STRUCT if the type `nlist' is a structure we
+   can get from nlist.h; otherwise must use a.out.h and initialize
+   with strcpy.  Note that config.h may define NLIST_STRUCT
+   for more modrern USG systems.  */
+
 #ifdef USG
-#include <a.out.h> 
-#else
-#include <nlist.h>
-#endif
+#ifdef HPUX
+#define LDAV_SYMBOL "_avenrun"
+#define KERNEL_FILE "/hp-ux"
+#define NLIST_STRUCT
+#else /* not HPUX */
+#define LDAV_SYMBOL "avenrun"
+#define KERNEL_FILE "/unix"
+#endif /* not HPUX */
+#else /* not USG */
+#define LDAV_SYMBOL "_avenrun"
+#define NLIST_STRUCT
+#ifndef KERNEL_FILE
+#define KERNEL_FILE "/vmunix"
+#endif /* no KERNEL_FILE yet */
+#endif /* not USG */
+
+#ifdef LOAD_AVE_TYPE
+#ifdef BSD
 #include <sys/param.h>
-#endif
+#endif /* BSD */
+#ifndef eunice
+#ifndef NLIST_STRUCT
+#include <a.out.h> 
+#else /* NLIST_STRUCT */
+#include <nlist.h>
+#endif /* NLIST_STRUCT */
+#endif /* not eunice */
+#endif /* LOAD_AVE_TYPE */
 
 #undef NULL
 #include "lisp.h"
 #include "commands.h"
+
+#ifdef lint
+#include "buffer.h"
+#endif /* lint */
 
 Lisp_Object Qstring_lessp;
 
@@ -42,11 +76,21 @@ DEFUN ("identity", Fidentity, Sidentity, 1, 1, 0,
   return arg;
 }
 
-DEFUN ("random", Frandom, Srandom, 0, 0, 0,
-  "Return a pseudo-random number.")
-  ()
+DEFUN ("random", Frandom, Srandom, 0, 1, 0,
+  "Return a pseudo-random number.\n\
+On most systems all integers representable in Lisp are equally likely.\n\
+  This is 24 bits' worth.\n\
+If optional argument is supplied as  t,\n\
+ the random number seed is set based on the current time and pid.")
+  (arg)
+     Lisp_Object arg;
 {
   extern long random ();
+  extern srandom ();
+  extern long time ();
+
+  if (EQ (arg, Qt))
+    srandom (getpid () + time (0));
   return make_number ((int) random ());
 }
 
@@ -60,6 +104,7 @@ DEFUN ("length", Flength, Slength, 1, 1, 0,
   register Lisp_Object tail, val;
   register int i;
 
+ retry:
   if (XTYPE (obj) == Lisp_Vector || XTYPE (obj) == Lisp_String)
     return Farray_length (obj);
   else if (LISTP(obj))
@@ -69,10 +114,6 @@ DEFUN ("length", Flength, Slength, 1, 1, 0,
 	  QUIT;
 	  tail = Fcdr (tail);
 	}
-      /* The people hacking the pyramid added a semicolon here.
-	 Perhaps that was to compensate for a funny compiler bug
-	 or perhaps it was a mistake.
-	 Let's see if they really need it, by leaving it out.  */
 
       XFASTINT (val) = i;
       return val;
@@ -83,7 +124,10 @@ DEFUN ("length", Flength, Slength, 1, 1, 0,
       return val;
     }
   else
-    wrong_type_argument (Qsequencep, obj, 0);
+    {
+      obj = wrong_type_argument (Qsequencep, obj);
+      goto retry;
+    }
 }
 
 DEFUN ("string-equal", Fstring_equal, Sstring_equal, 2, 2, 0,
@@ -96,10 +140,8 @@ Symbols are also allowed; their print names are used instead.")
     XSETSTRING (s1, XSYMBOL (s1)->name), XSETTYPE (s1, Lisp_String);
   if (XTYPE (s2) == Lisp_Symbol)
     XSETSTRING (s2, XSYMBOL (s2)->name), XSETTYPE (s2, Lisp_String);
-  if (XTYPE (s1) != Lisp_String)
-    wrong_type_argument (Qstringp, s1, 0);
-  if (XTYPE (s2) != Lisp_String)
-    wrong_type_argument (Qstringp, s2, 1);
+  CHECK_STRING (s1, 0);
+  CHECK_STRING (s2, 1);
 
   if (XSTRING (s1)->size != XSTRING (s2)->size ||
       bcmp (XSTRING (s1)->data, XSTRING (s2)->data, XSTRING (s1)->size))
@@ -121,10 +163,8 @@ Symbols are also allowed; their print names are used instead.")
     XSETSTRING (s1, XSYMBOL (s1)->name), XSETTYPE (s1, Lisp_String);
   if (XTYPE (s2) == Lisp_Symbol)
     XSETSTRING (s2, XSYMBOL (s2)->name), XSETTYPE (s2, Lisp_String);
-  if (XTYPE (s1) != Lisp_String)
-    wrong_type_argument (Qstringp, s1, 0);
-  if (XTYPE (s2) != Lisp_String)
-    wrong_type_argument (Qstringp, s2, 1);
+  CHECK_STRING (s1, 0);
+  CHECK_STRING (s2, 1);
 
   p1 = XSTRING (s1)->data;
   p2 = XSTRING (s2)->data;
@@ -142,11 +182,19 @@ Symbols are also allowed; their print names are used instead.")
 
 static Lisp_Object concat ();
 
+/* ARGSUSED */
 Lisp_Object
 concat2 (s1, s2)
      Lisp_Object s1, s2;
 {
-  return concat (2, &s1, Lisp_String);
+#ifdef NO_ARG_ARRAY
+  Lisp_Object args[2];
+  args[0] = s1;
+  args[1] = s2;
+  return concat (2, args, Lisp_String, 0);
+#else
+  return concat (2, &s1, Lisp_String, 0);
+#endif /* NO_ARG_ARRAY */
 }
 
 DEFUN ("append", Fappend, Sappend, 0, MANY, 0,
@@ -157,7 +205,7 @@ Each argument may be a list, vector or string.")
      int nargs;
      Lisp_Object *args;
 {
-  return concat (nargs, args, Lisp_Cons);
+  return concat (nargs, args, Lisp_Cons, 1);
 }
 
 DEFUN ("concat", Fconcat, Sconcat, 0, MANY, 0,
@@ -169,7 +217,7 @@ of a list or vector must be numbers, or an error is signaled.")
      int nargs;
      Lisp_Object *args;
 {
-  return concat (nargs, args, Lisp_String);
+  return concat (nargs, args, Lisp_String, 0);
 }
 
 DEFUN ("vconcat", Fvconcat, Svconcat, 0, MANY, 0,
@@ -180,7 +228,7 @@ Each argument may be a list, vector or string.")
      int nargs;
      Lisp_Object *args;
 {
-  return concat (nargs, args, Lisp_Vector);
+  return concat (nargs, args, Lisp_Vector, 0);
 }
 
 DEFUN ("copy-sequence", Fcopy_sequence, Scopy_sequence, 1, 1, 0,
@@ -190,23 +238,35 @@ DEFUN ("copy-sequence", Fcopy_sequence, Scopy_sequence, 1, 1, 0,
 {
   if (NULL (arg)) return arg;
   if (!LISTP (arg) && XTYPE (arg) != Lisp_Vector && XTYPE (arg) != Lisp_String)
-    wrong_type_argument (Qsequencep, arg, 0);
-  return concat (1, &arg, LISTP (arg) ? Lisp_Cons : XTYPE (arg));
+    arg = wrong_type_argument (Qsequencep, arg);
+  return concat (1, &arg, LISTP (arg) ? Lisp_Cons : XTYPE (arg), 0);
 }
 
 static Lisp_Object
-concat (nargs, args, target_type)
+concat (nargs, args, target_type, last_special)
      int nargs;
      Lisp_Object *args;
      enum Lisp_Type target_type;
+     int last_special;
 {
   Lisp_Object val;
   Lisp_Object len;
-  Lisp_Object tail;
-  Lisp_Object this;
+  register Lisp_Object tail;
+  register Lisp_Object this;
   int toindex;
-  int leni;
-  int argnum;
+  register int leni;
+  register int argnum;
+  Lisp_Object last_tail;
+  Lisp_Object prev;
+
+  /* In append, the last arg isn't treated like the others */
+  if (last_special && nargs > 0)
+    {
+      nargs--;
+      last_tail = args[nargs];
+    }
+  else
+    last_tail = Qnil;
 
   for (argnum = 0; argnum < nargs; argnum++)
     {
@@ -217,7 +277,7 @@ concat (nargs, args, target_type)
 	  if (XTYPE (this) == Lisp_Int)
             args[argnum] = Fint_to_string (this);
 	  else
-	    wrong_type_argument (Qsequencep, this, argnum);
+	    args[argnum] = wrong_type_argument (Qsequencep, this);
 	}
     }
 
@@ -225,10 +285,10 @@ concat (nargs, args, target_type)
     {
       this = args[argnum];
       len = Flength (this);
-      leni += XINT (len);
+      leni += XFASTINT (len);
     }
 
-  XSETINT (len, leni);
+  XFASTINT (len) = leni;
 
   if (target_type == Lisp_Cons)
     val = Fmake_list (len, Qnil);
@@ -237,14 +297,19 @@ concat (nargs, args, target_type)
   else
     val = Fmake_string (len, len);
 
+  /* In append, if all but last arg are nil, return last arg */
+  if (target_type == Lisp_Cons && EQ (val, Qnil))
+    return last_tail;
+
   if (LISTP (val))
     tail = val, toindex = -1;		/* -1 in toindex is flag we are making a list */
   else
     toindex = 0;
 
+  prev = Qnil;
+
   for (argnum = 0; argnum < nargs; argnum++)
     {
-      register Lisp_Object this;
       Lisp_Object thislen;
       int thisleni;
       register int thisindex = 0;
@@ -274,6 +339,7 @@ concat (nargs, args, target_type)
 	  if (toindex < 0)
 	    {
 	      XCONS (tail)->car = elt;
+	      prev = tail;
 	      tail = XCONS (tail)->cdr;
 	    }
 	  else if (XTYPE (val) == Lisp_Vector)
@@ -281,12 +347,15 @@ concat (nargs, args, target_type)
 	  else
 	    {
 	      if (XTYPE (elt) != Lisp_Int)
-		wrong_type_argument (Qintegerp, elt, -1);
+		elt = wrong_type_argument (Qintegerp, elt);
 	      else
 	        XSTRING (val)->data[toindex++] = XINT (elt);
 	    }
 	}
     }
+  if (!NULL (prev))
+    XCONS (prev)->cdr = last_tail;
+
   return val;  
 }
 
@@ -313,7 +382,7 @@ If FROM or TO is negative, it counts from the end.")
     XSETINT (to, XINT (to) + XSTRING (string)->size);
   if (!(0 <= XINT (from) && XINT (from) <= XINT (to)
         && XINT (to) <= XSTRING (string)->size))
-    Fsignal (Qargs_out_of_range, Fcons (string, Fcons (from, Fcons (to, Qnil))));
+    args_out_of_range_3 (string, from, to);
 
   XFASTINT (len) = XINT (to) - XINT (from);
   val = Fmake_string (len, len);
@@ -341,13 +410,14 @@ DEFUN ("nthcdr", Fnthcdr, Snthcdr, 2, 2, 0,
 }
 
 DEFUN ("nth", Fnth, Snth, 2, 2, 0,
-  "Returns the Nth element of LIST.")
+  "Returns the Nth element of LIST.\n\
+N counts from zero.  If LIST is not that long, nil is returned.")
   (n, list)
      Lisp_Object n, list;
 {
   CHECK_NUMBER (n, 0);
   if (!(XTYPE (list) == Lisp_Cons || NULL (list)))
-    wrong_type_argument (Qlistp, list, 1);
+    list = wrong_type_argument (Qlistp, list);
   return Fcar (Fnthcdr (n, list));
 }
 
@@ -357,13 +427,16 @@ DEFUN ("elt", Felt, Selt, 2, 2, 0,
      register Lisp_Object seq, n;
 {
   CHECK_NUMBER (n, 0);
-  if (XTYPE (seq) == Lisp_Cons || NULL (seq))
-    return Fcar (Fnthcdr (n, seq));
-  else if (XTYPE (seq) == Lisp_String ||
-	   XTYPE (seq) == Lisp_Vector)
-    return Faref (seq, n);
-  else
-    wrong_type_argument (Qsequencep, seq, 1);
+  while (1)
+    {
+      if (XTYPE (seq) == Lisp_Cons || NULL (seq))
+	return Fcar (Fnthcdr (n, seq));
+      else if (XTYPE (seq) == Lisp_String ||
+	       XTYPE (seq) == Lisp_Vector)
+	return Faref (seq, n);
+      else
+	seq = wrong_type_argument (Qsequencep, seq);
+    }
 }
 
 DEFUN ("memq", Fmemq, Smemq, 2, 2, 0,
@@ -518,7 +591,7 @@ DEFUN ("reverse", Freverse, Sreverse, 1, 1, 0,
 Lisp_Object merge ();
 
 DEFUN ("sort", Fsort, Ssort, 2, 2, 0,
-  "Sort LIST, comparing elements using PREDICATE.\n\
+  "Sort LIST, stably, comparing elements using PREDICATE.\n\
 Returns the sorted list.  LIST is modified by side effects.\n\
 PREDICATE is called with two elements of LIST, and should return T\n\
 if the first element is \"less\" than the second.")
@@ -557,7 +630,7 @@ merge (org_l1, org_l2, pred)
   register Lisp_Object tail;
   Lisp_Object tem;
   register Lisp_Object l1, l2;
-  struct gcpro gcpro1, gcpro2;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
   l1 = org_l1;
   l2 = org_l2;
@@ -566,9 +639,8 @@ merge (org_l1, org_l2, pred)
 
   /* It is sufficient to protect org_l1 and org_l2.
      When l1 and l2 are updated, we copy the new values
-     back into those.  */
-  GCPRO2 (org_l1, value);
-  gcpro1.nvars = 3;
+     back into the org_ vars.  */
+  GCPRO4 (org_l1, org_l2, pred, value);
 
   while (1)
     {
@@ -676,6 +748,12 @@ do_cdr:
       o1 = Fcdr (o1), o2 = Fcdr (o2);
       goto do_cdr;
     }
+  if (XTYPE (o1) == Lisp_Marker)
+    {
+      return (XMARKER (o1)->buffer == XMARKER (o2)->buffer
+	      && XMARKER (o1)->bufpos == XMARKER (o2)->bufpos)
+	? Qt : Qnil;
+    }
   if (XTYPE (o1) == Lisp_Vector)
     {
       register int index;
@@ -693,7 +771,6 @@ do_cdr:
     }
   if (XTYPE (o1) == Lisp_String)
     {
-      register int index;
       if (XSTRING (o1)->size != XSTRING (o2)->size)
 	return Qnil;
       if (bcmp (XSTRING (o1)->data, XSTRING (o2)->data, XSTRING (o1)->size))
@@ -709,6 +786,7 @@ DEFUN ("fillarray", Ffillarray, Sfillarray, 2, 2, 0,
      Lisp_Object array, item;
 {
   register int size, index, charval;
+ retry:
   if (XTYPE (array) == Lisp_Vector)
     {
       register Lisp_Object *p = XVECTOR (array)->contents;
@@ -726,15 +804,26 @@ DEFUN ("fillarray", Ffillarray, Sfillarray, 2, 2, 0,
 	p[index] = charval;
     }
   else
-    wrong_type_argument (Farrayp, array, 0);
+    {
+      array = wrong_type_argument (Qarrayp, array);
+      goto retry;
+    }
   return array;
 }
 
+/* ARGSUSED */
 Lisp_Object
 nconc2 (s1, s2)
      Lisp_Object s1, s2;
 {
+#ifdef NO_ARG_ARRAY
+  Lisp_Object args[2];
+  args[0] = s1;
+  args[1] = s2;
+  return Fnconc (2, args);
+#else
   return Fnconc (2, &s1);
+#endif /* NO_ARG_ARRAY */
 }
 
 DEFUN ("nconc", Fnconc, Snconc, 0, MANY, 0,
@@ -755,7 +844,7 @@ Only the last argument is not altered, and need not be a list.")
       if (NULL (tem)) continue;
 
       if (!LISTP (tem))
-	wrong_type_argument (Flistp, tem, argnum);
+	tem = wrong_type_argument (Qlistp, tem);
 
       if (NULL (val))
 	val = tem;
@@ -793,6 +882,10 @@ mapcar1 (leni, vals, fn, seq)
   Lisp_Object dummy;
   register int i;
   struct gcpro gcpro1, gcpro2, gcpro3;
+
+  /* Don't let vals contain any garbage when GC happens.  */
+  for (i = 0; i < leni; i++)
+    vals[i] = Qnil;
 
   GCPRO3 (dummy, fn, seq);
   gcpro1.var = vals;
@@ -862,7 +955,7 @@ Thus, \" \" as SEP results in spaces between the values return by FN.")
 
 DEFUN ("mapcar", Fmapcar, Smapcar, 2, 2, 0,
   "Apply FUNCTION to each element of LIST, and make a list of the results.\n\
-THe result is a list just as long as LIST.")
+The result is a list just as long as LIST.")
   (fn, seq)
      Lisp_Object fn, seq;
 {
@@ -905,6 +998,7 @@ Also accepts Space to mean yes, or Delete to mean no.")
 	return Qnil;
       if (EQ (xprompt, prompt))
 	{
+	  Fdiscard_input ();
 	  args[0] = build_string ("Please answer y or n.  ");
 	  args[1] = prompt;
 	  xprompt = Fconcat (2, args);
@@ -935,26 +1029,29 @@ The user must confirm the answer with a newline, and can rub it out if not confi
       if (XSTRING (ans)->size == 2 && !strcmp (XSTRING (ans)->data, "no"))
 	return Qnil;
 
+      Fdiscard_input ();
       message ("Please answer yes or no.");
       Fsleep_for (make_number (2));
     }
 }
 
+/* Avoid static vars inside a function since in HPUX they dump as pure.  */
+static int ldav_initialized;
+static int ldav_channel;
+#ifdef LOAD_AVE_TYPE
+static struct nlist ldav_nl[2];
+#endif /* LOAD_AVE_TYPE */
+
+#define channel ldav_channel
+#define initialized ldav_initialized
+#define nl ldav_nl
+
 DEFUN ("load-average", Fload_average, Sload_average, 0, 0, 0,
   "Return the current 1 minute, 5 minute and 15 minute load averages\n\
 in a list (all floating point load average values are multiplied by 100\n\
 and then turned into integers).")
   ()
 {
-  /*************************************************************/
-  /* WARNING:  We can't have initialized static data that will */
-  /* -------   be modified later as xemacs makes such things   */
-  /*	     read/only!!				     */
-  /*************************************************************/
-  static short int initialized;
-  static int channel;
-
-
 #ifdef	eunice
 #include <vms/iodef.h>
   /*
@@ -992,16 +1089,15 @@ and then turned into integers).")
     }
 #else  /* not eunice */
 
+#ifndef LOAD_AVE_TYPE
+  error ("load-average not implemented for this operating system");
+#define LOAD_AVE_CVT(x) 0
+#else /* LOAD_AVE_TYPE defined */
   /*
    *	4.2BSD UNIX-specific code -- read _avenrun from /dev/kmem
    */
 
   LOAD_AVE_TYPE load_ave[3];
-
-#ifdef USG
-  error ("load-average not implemented for AT&T unix versions");
-#else /* not USG */
-  static struct nlist nl[2];
 
   /* If this fails for any reason, we can return (0 0 0) */
   load_ave[0] = 0.0; load_ave[1] = 0.0; load_ave[2] = 0.0;
@@ -1014,9 +1110,20 @@ and then turned into integers).")
       /*
        *	Get the address of _avenrun
        */
-      nl[0].n_name = "_avenrun";
-      nl[1].n_name = "";
-      nlist ("/vmunix", nl);
+#ifndef NLIST_STRUCT
+      strcpy (nl[0].n_name, LDAV_SYMBOL);
+      nl[1].n_zeroes = 0;
+#else /* NLIST_STRUCT */
+      nl[0].n_name = LDAV_SYMBOL;
+      nl[1].n_name = 0;
+#endif /* NLIST_STRUCT */
+
+      nlist (KERNEL_FILE, nl);
+
+#ifdef FIXUP_KERNEL_SYMBOL_ADDR
+      if ((nl[0].n_type & N_TYPE) != N_ABS)
+	nl[0].n_value = (nlp->n_value >> 2) | 0xc0000000;
+#endif /* FIXUP_KERNEL_SYMBOL_ADDR */
     }
   /*
    *	Make sure we have /dev/kmem open
@@ -1041,11 +1148,11 @@ and then turned into integers).")
       if (read (channel, load_ave, sizeof load_ave)
 	  != sizeof(load_ave))
 	{
-	  close(channel);
+	  close (channel);
 	  initialized = 0;
 	}
     }
-#endif /* not USG */
+#endif /* LOAD_AVE_TYPE */
 #endif /* not eunice */
 
   /*
@@ -1056,6 +1163,10 @@ and then turned into integers).")
 		       Fcons (make_number (LOAD_AVE_CVT (load_ave[2])),
 			      Qnil)));
 }
+
+#undef channel
+#undef initialized
+#undef nl
 
 Lisp_Object Vfeatures;
 
@@ -1063,7 +1174,8 @@ DEFUN ("featurep", Ffeaturep, Sfeaturep, 1, 1, 0,
   "Returns t if FEATURE is present in this Emacs.\n\
 Use this to conditionalize execution of lisp code based on the presence or\n\
 absence of emacs or environment extensions.\n\
-Use  provide  to declare that a feature is available.")
+Use  provide  to declare that a feature is available.\n\
+This function looks at the value of the variable  features.")
      (feature)
      Lisp_Object feature;
 {
@@ -1080,6 +1192,8 @@ DEFUN ("provide", Fprovide, Sprovide, 1, 1, 0,
 {
   register Lisp_Object tem;
   CHECK_SYMBOL (feature, 0);
+  if (!NULL (Vautoload_queue))
+    Vautoload_queue = Fcons (Fcons (Vfeatures, Qnil), Vautoload_queue);
   tem = Fmemq (feature, Vfeatures);
   if (NULL (tem))
     Vfeatures = Fcons (feature, Vfeatures);
@@ -1087,7 +1201,8 @@ DEFUN ("provide", Fprovide, Sprovide, 1, 1, 0,
 }
 
 DEFUN ("require", Frequire, Srequire, 1, 2, 0,
-       "Same as (if (not featurep FEATURE) (load (or FILE-NAME FEATURE)))")
+  "If FEATURE is not present in Emacs (ie (featurep FEATURE) is false),\n\
+load FILENAME.  FILENAME is optional and defaults to FEATURE.")
      (feature, file_name)
      Lisp_Object feature, file_name;
 {
@@ -1095,7 +1210,9 @@ DEFUN ("require", Frequire, Srequire, 1, 2, 0,
   CHECK_SYMBOL (feature, 0);
   tem = Fmemq (feature, Vfeatures);
   if (NULL (tem))
-    { Fload (NULL (file_name) ? Fsymbol_name (feature) : file_name);
+    {
+      Fload (NULL (file_name) ? Fsymbol_name (feature) : file_name,
+	     Qnil, Qt);
       tem = Fmemq (feature, Vfeatures);
       if (NULL (tem))
 	error ("Required feature %s was not provided",

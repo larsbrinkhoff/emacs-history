@@ -1,24 +1,26 @@
 /* Cursor motion subroutines for GNU Emacs.
-   Copyright (C) 1984 Richard M. Stallman
+   Copyright (C) 1985 Richard M. Stallman.
     based primarily on public domain code written by Chris Torek
 
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
+#include "config.h"
 #include <stdio.h>
 #include "cm.h"
 #include "termhooks.h"
@@ -26,20 +28,21 @@ copyright notice and this notice must be preserved on all copies.  */
 #define	BIG	9999		/* 9999 good on VAXen.  For 16 bit machines
 				   use about 2000.... */
 
-char	*malloc (), *mytgoto (), *getenv ();
+char	*malloc (), *tgoto (), *getenv ();
 
-static int cost;		/* sums up costs */
+extern char *BC, *UP;
+
+int cost;		/* sums up costs */
 
 /* ARGSUSED */
-static
 evalcost (c)
      char c;
 {
   cost++;
 }
 
-static
-put (c)
+void
+cmputc (c)
      char c;
 {
   if (termscript)
@@ -102,12 +105,12 @@ addcol (n) {
  * out of <sgtty.h>.)
  */
 
-static
-costinit ()
+cmcostinit ()
 {
     char *p;
 
 #define	COST(x,e)	(x ? (cost = 0, tputs (x, 1, e), cost) : BIG)
+#define CMCOST(x,e)	((x == 0) ? BIG : (p = tgoto(x, 0, 0), COST(p ,e)))
 
     Wcm.cc_up =		COST (Wcm.cm_up, evalcost);
     Wcm.cc_down =	COST (Wcm.cm_down, evalcost);
@@ -127,14 +130,12 @@ costinit ()
      * cursor motion seem to take straight numeric values.  --ACT)
      */
 
-    p = mytgoto (Wcm.cm_abs, 0, 0);
-    Wcm.cc_abs =  COST (p, evalcost);
-    p = mytgoto (Wcm.cm_habs, 0, 0);
-    Wcm.cc_habs = COST (p, evalcost);
-    p = mytgoto (Wcm.cm_vabs, 0, 0);
-    Wcm.cc_vabs = COST (p, evalcost);
+    Wcm.cc_abs =  CMCOST (Wcm.cm_abs, evalcost);
+    Wcm.cc_habs = CMCOST (Wcm.cm_habs, evalcost);
+    Wcm.cc_vabs = CMCOST (Wcm.cm_vabs, evalcost);
 
-#undef	COST
+#undef CMCOST
+#undef COST
 }
 
 /*
@@ -144,7 +145,8 @@ costinit ()
  */
 
 static
-calccost (srcy, srcx, dsty, dstx, doit) {
+calccost (srcy, srcx, dsty, dstx, doit)
+{
     register int    deltay,
                     deltax,
                     c,
@@ -155,6 +157,13 @@ calccost (srcy, srcx, dsty, dstx, doit) {
             tab2x,
             tabcost;
     register char  *p;
+
+    /* If have just wrapped on a terminal with xn,
+       don't believe the cursor position: give up here
+       and force use of absolute positioning.  */
+
+    if (curX == Wcm.cm_cols)
+      goto fail;
 
     totalcost = 0;
     if ((deltay = dsty - srcy) == 0)
@@ -171,7 +180,7 @@ calccost (srcy, srcx, dsty, dstx, doit) {
     totalcost = c * deltay;
     if (doit)
 	while (--deltay >= 0)
-	    tputs (p, 1, put);
+	    tputs (p, 1, cmputc);
 x: 
     if ((deltax = dstx - srcx) == 0)
 	goto done;
@@ -226,7 +235,7 @@ x:
 	totalcost += tabcost;	/* use the tabs */
 	if (doit)
 	    while (--ntabs >= 0)
-		tputs (Wcm.cm_tab, 1, put);
+		tputs (Wcm.cm_tab, 1, cmputc);
 	srcx = tabx;
     }
 
@@ -245,14 +254,15 @@ olddelta:
 
 dodelta: 
     if (c == BIG) {		/* caint get thar from here */
+fail:
 	if (doit)
 	    printf ("OOPS");
-	return c;
+	return BIG;
     }
     totalcost += c * deltax;
     if (doit)
 	while (--deltax >= 0)
-	    tputs (p, 1, put);
+	    tputs (p, 1, cmputc);
 done: 
     return totalcost;
 }
@@ -267,8 +277,7 @@ losecursor ()
 #define	USELL	2
 #define	USECR	3
 
-static
-xgoto (row, col)
+cmgoto (row, col)
 {
     int     homecost,
             crcost,
@@ -280,7 +289,7 @@ xgoto (row, col)
            *dcm;
 
   /* First the degenerate case */
-  if (row == curY && col == curX)/* already there */
+  if (row == curY && col == curX) /* already there */
     return;
 
   if (curY >= 0 && curX >= 0)
@@ -330,12 +339,12 @@ xgoto (row, col)
     {
       /* compute REAL direct cost */
       cost = 0;
-      p = dcm == Wcm.cm_habs ? mytgoto (dcm, row, col) :
-			       mytgoto (dcm, col, row);
+      p = dcm == Wcm.cm_habs ? tgoto (dcm, row, col) :
+			       tgoto (dcm, col, row);
       tputs (p, 1, evalcost);
       if (cost <= relcost)
 	{	/* really is cheaper */
-	  tputs (p, 1, put);
+	  tputs (p, 1, cmputc);
 	  curY = row, curX = col;
 	  return;
 	}
@@ -344,17 +353,17 @@ xgoto (row, col)
   switch (use)
     {
     case USEHOME: 
-      tputs (Wcm.cm_home, 1, put);
+      tputs (Wcm.cm_home, 1, cmputc);
       curY = 0, curX = 0;
       break;
 
     case USELL: 
-      tputs (Wcm.cm_ll, 1, put);
+      tputs (Wcm.cm_ll, 1, cmputc);
       curY = Wcm.cm_rows - 1, curX = 0;
       break;
 
     case USECR: 
-      tputs (Wcm.cm_cr, 1, put);
+      tputs (Wcm.cm_cr, 1, cmputc);
       if (Wcm.cm_autolf)
 	curY++;
       curX = 0;
@@ -372,6 +381,8 @@ xgoto (row, col)
 Wcm_clear ()
 {
   bzero (&Wcm, sizeof Wcm);
+  UP = 0;
+  BC = 0;
 }
 
 /*
@@ -381,137 +392,15 @@ Wcm_clear ()
 
 Wcm_init ()
 {
-    Wcm.cx_put = put;
-    Wcm.cx_costinit = costinit;
-    Wcm.cx_goto = xgoto;
-
-    /* Check that we know the size of the screen.... */
-    if (Wcm.cm_rows <= 0 || Wcm.cm_cols <= 0)
-	return - 1;
-    if (Wcm.cm_abs && !Wcm.cm_ds)
-	return 0;
-    /* Require up and left, and, if no absolute, down and right */
-    if (!Wcm.cm_up || !Wcm.cm_left)
-	return - 1;
-    if (!Wcm.cm_abs && (!Wcm.cm_down || !Wcm.cm_right))
-	return - 1;
+  /* Check that we know the size of the screen.... */
+  if (Wcm.cm_rows <= 0 || Wcm.cm_cols <= 0)
+    return - 1;
+  if (Wcm.cm_abs && !Wcm.cm_ds)
     return 0;
-}
-
-/*
- * This is a lot like the standard tgoto routine except that it knows:
- *	%m - for NIH 7000 terminals.  (We had someone using one.)
- *      %C - for C-100 and so on.
- */
-
-static char *
-mytgoto (CM, col, line)
-char	*CM;
-int	col, line;
-{
-    static char cmbuf[100],
-                add[100];
-    register char  *cp,
-                   *op;
-    register int    c;
-    int     val,
-            toggle;
-
-    if ((cp = CM) == 0)
-	return 0;
-    op = cmbuf;
-    val = line;
-    toggle = 0;
-    *add = 0;
-    *op = 0;
-    while (c = *cp++) {
-	if (c != '%') {
-	    *op++ = c;
-	    continue;
-	}
-	switch (c = *cp++)
-	  {
-	  case 0: 
-	    cp--;
-	    break;
-	  case 'm': 
-	    col ^= 0177;
-	    line ^= 0177;
-	    goto setval;
-	  case 'n': 
-	    col ^= 0140;
-	    line ^= 0140;
-	    goto setval;
-	  case 'd': 
-	    if (val < 10)
-	      goto onedigit;
-	    if (val < 100)
-	      goto twodigit;
-	  case '3': 
-	    *op++ = (val / 100) + '0';
-	    val %= 100;
-	  case '2': 
-	  twodigit: 
-	    *op++ = (val / 10) + '0';
-	  onedigit: 
-	    *op++ = (val % 10) + '0';
-	  swap: 
-	    toggle = 1 - toggle;
-	  setval: 
-	    val = toggle ? col : line;
-	    continue;
-	  case '>': 
-	    if (val > *cp++)
-	      val += *cp++;
-	    else
-	      cp++;
-	    continue;
-	  case 'C':
-	    /* For c-100: print quotient of value by 96, if nonzero,
-	       then do like %+ */
-	    if (val >= 96)
-	      {
-		*op++ = val / 96;
-		val = val % 96;
-	      }
-	  case '+': 
-	    val += *cp++;
-	  case '.': 
-	  use: 
-	    if (Wcm.cm_ds) {
-	      while (val == 0 || index (Wcm.cm_ds, val))
-		{
-		  strcat (add, toggle ? Wcm.cm_left
-			  : Wcm.cm_up);
-		  ++val;
-		}
-	    }
-
-	    *op++ = val | 0200;
-	    goto swap;
-	  case 'r': 
-	    toggle = 1;
-	    goto setval;
-	  case 'i': 
-	    ++col, ++line, ++val;
-	    continue;
-	  case '%': 
-	    *op++ = c;
-	    continue;
-	  case 'B': 
-	    val = ((val / 10) << 4) + val % 10;
-	    continue;
-	  case 'D': 
-	    val = val - 2 * (val % 16);
-	    continue;
-	  default: 
-	    val += c;
-	    goto use;
-	  }
-    }
-    cp = add;
-    while (*cp)
-	*op++ = *cp++;
-    *op = 0;
-    return cmbuf;
+  /* Require up and left, and, if no absolute, down and right */
+  if (!Wcm.cm_up || !Wcm.cm_left)
+    return - 1;
+  if (!Wcm.cm_abs && (!Wcm.cm_down || !Wcm.cm_right))
+    return - 1;
+  return 0;
 }

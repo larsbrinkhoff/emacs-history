@@ -6,18 +6,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (provide 'electric)                           ; zaaaaaaap
 
@@ -51,7 +53,10 @@
 	(throw return-tag nil)
       (setq unread-command-char cmd cmd nil))
     (while t
-      (setq cmd (key-binding (read-key-sequence prompt)))
+      (setq cmd (read-key-sequence prompt))
+      (setq last-command-char (aref cmd (1- (length cmd)))
+	    this-command (key-binding cmd)
+	    cmd this-command)
       (if (or (prog1 quit-flag (setq quit-flag nil))
 	      (= last-input-char ?\C-g))
 	  (progn (setq unread-command-char -1
@@ -80,6 +85,11 @@
 				(ding)
 				(message "Buffer is read-only")
 				(sit-for 2)))
+	    (beginning-of-buffer (if loop-function
+				     (setq err conditions)
+				   (ding)
+				   (message "Beginning of Buffer")
+				   (sit-for 2)))
 	    (end-of-buffer (if loop-function
 			       (setq err conditions)
 			     (ding)
@@ -109,7 +119,7 @@
 ;; Then if max-height is nil, and not all of the lines in the buffer
 ;; are displayed, grab the whole screen.
 ;;
-;; Returns selected window on buffer positioned at dot-min.
+;; Returns selected window on buffer positioned at point-min.
 
 (defun Electric-pop-up-window (buffer &optional max-height)
   (let* ((win (or (get-buffer-window buffer) (selected-window)))
@@ -122,7 +132,7 @@
 	(error "Buffer %s does not exist" buffer)
       (save-excursion
 	(set-buffer buf)
-	(setq lines (count-lines (dot-min) (dot-max)))
+	(setq lines (count-lines (point-min) (point-max)))
 	(setq target-height
 	      (min (max (if max-height (min max-height (1+ lines)) (1+ lines))
 			window-min-height)
@@ -142,29 +152,5 @@
 	       (> target-height (window-height (selected-window))))
 	  (progn (goto-char (window-start win))
 		 (enlarge-window (- target-height (window-height win)))))
-      (goto-char (dot-min))
+      (goto-char (point-min))
       win)))
-
-
-      
-	       
-	     
-
-
-	    
-
-			 
-
-	
-      
-      
-	     
-	     
-				       
-					    
-	    
-      
-	  
-	
-
-    

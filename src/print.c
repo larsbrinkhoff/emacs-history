@@ -4,18 +4,19 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -27,16 +28,22 @@ copyright notice and this notice must be preserved on all copies.  */
 #include "buffer.h"
 #include "window.h"
 #include "process.h"
-#endif
+#endif /* not standalone */
 
 Lisp_Object Vstandard_output, Qstandard_output;
 
 /* Avoid actual stack overflow in print.  */
 int print_depth;
 
-/* Nonzero means print newline before next minibuffer message.  */
+/* Maximum length of list to print in full; noninteger means
+   effectively infinity */
 
-int noninteractive_need_newline;
+Lisp_Object Vprint_length;
+
+/* Nonzero means print newline before next minibuffer message.
+   Defined in xdisp.c */
+
+extern int noninteractive_need_newline;
 
 /* Low level output routines for charaters and strings */
 
@@ -47,12 +54,11 @@ int noninteractive_need_newline;
  or call strout to output a block of characters.
  Also, each one must have the declarations
    struct buffer *old = bf_cur;
-   int old_dot = -1, start_dot;
+   int old_point = -1, start_point;
    Lisp_Object original;
 */ 
 
 #define PRINTPREPARE \
-   print_depth = 0; \
    original = printcharfun; \
    if (NULL (printcharfun)) printcharfun = Qt; \
    if (XTYPE (printcharfun) == Lisp_Buffer) \
@@ -61,16 +67,16 @@ int noninteractive_need_newline;
    if (XTYPE (printcharfun) == Lisp_Marker) \
      { if (XMARKER (original)->buffer != bf_cur) \
          SetBfp (XMARKER (original)->buffer); \
-       old_dot = dot; \
-       SetDot (marker_position (printcharfun)); \
-       start_dot = dot; \
+       old_point = point; \
+       SetPoint (marker_position (printcharfun)); \
+       start_point = point; \
        printcharfun = Qnil;}
 
 #define PRINTFINISH \
    if (XTYPE (original) == Lisp_Marker) \
-     Fset_marker (original, make_number (dot), Qnil); \
-   if (old_dot >= 0) \
-     SetDot ((old_dot >= start_dot ? dot - start_dot : 0) + old_dot); \
+     Fset_marker (original, make_number (point), Qnil); \
+   if (old_point >= 0) \
+     SetPoint ((old_point >= start_point ? point - start_point : 0) + old_point); \
    if (old != bf_cur) \
      SetBfp (old)
 
@@ -97,19 +103,20 @@ printchar (ch, fun)
     }
   if (EQ (fun, Qt))
     {
+      if (noninteractive)
+	{
+	  putchar (ch);
+	  noninteractive_need_newline = 1;
+	  return;
+	}
       if (minibuf_message != printbuf)
 	minibuf_message = printbuf, printbufidx = 0;
       if (printbufidx < sizeof printbuf - 1)
 	printbuf[printbufidx++] = ch;
       printbuf[printbufidx] = 0;
-      if (noninteractive)
-	{
-	  putchar (ch);
-	  noninteractive_need_newline = 1;
-	}
       return;
     }
-#endif standalone
+#endif /* not standalone */
 
   XFASTINT (ch1) = ch;
   call1 (fun, ch1);
@@ -130,19 +137,20 @@ strout (ptr, size, printcharfun)
     }
   if (EQ (printcharfun, Qt))
     {
+      i = size >= 0 ? size : strlen (ptr);
+      if (noninteractive)
+	{
+	  fwrite (ptr, 1, i, stdout);
+	  noninteractive_need_newline = 1;
+	  return;
+	}
       if (minibuf_message != printbuf)
 	minibuf_message = printbuf, printbufidx = 0;
-      i = size >= 0 ? size : strlen (ptr);
       if (i > sizeof printbuf - printbufidx - 1)
 	i = sizeof printbuf - printbufidx - 1;
       bcopy (ptr, &printbuf[printbufidx], i);
       printbufidx += i;
       printbuf[printbufidx] = 0;
-      if (noninteractive)
-	{
-	  fwrite (ptr, 1, i, stdout);
-	  noninteractive_need_newline = 1;
-	}
       return;
     }
   if (size >= 0)
@@ -160,8 +168,8 @@ STREAM defaults to the value of standard-output (which see).")
      Lisp_Object ch, printcharfun;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   CHECK_NUMBER (ch, 0);
@@ -177,8 +185,8 @@ write_string (data, size)
 {
   struct buffer *old = bf_cur;
   Lisp_Object printcharfun;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   printcharfun = Vstandard_output;
@@ -194,8 +202,8 @@ write_string_1 (data, size, printcharfun)
      Lisp_Object printcharfun;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   PRINTPREPARE;
@@ -209,16 +217,15 @@ write_string_1 (data, size, printcharfun)
 temp_output_buffer_setup (bufname)
     char *bufname;
 {
-  struct buffer *old = bf_cur;
-  Lisp_Object buf;
+  register struct buffer *old = bf_cur;
+  register Lisp_Object buf;
 
   Fset_buffer (Fget_buffer_create (build_string (bufname)));
 
   bf_cur->read_only = Qnil;
   Ferase_buffer ();
 
-  XSETTYPE (buf, Lisp_Buffer);
-  XSETBUFFER (buf, bf_cur);
+  XSET (buf, Lisp_Buffer, bf_cur);
   specbind (Qstandard_output, buf);
 
   SetBfp (old);
@@ -236,7 +243,7 @@ internal_with_output_to_temp_buffer (bufname, function, args)
   temp_output_buffer_setup (bufname);
   buf = Vstandard_output;
 
-  val = function (args);
+  val = (*function) (args);
 
   temp_output_buffer_show (buf);
 
@@ -273,7 +280,7 @@ The value of the last form in BODY is returned.")
   unbind_to (count);
   return val;
 }
-#endif standalone
+#endif /* not standalone */
 
 static void print ();
 
@@ -283,8 +290,8 @@ DEFUN ("terpri", Fterpri, Sterpri, 0, 1, 0,
      Lisp_Object printcharfun;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   if (NULL (printcharfun))
@@ -304,13 +311,14 @@ Output stream is STREAM, or value of standard-output (which see).")
      Lisp_Object obj, printcharfun;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   if (NULL (printcharfun))
     printcharfun = Vstandard_output;
   PRINTPREPARE;
+  print_depth = 0;
   print (obj, printcharfun, 1);
   PRINTFINISH;
   return obj;
@@ -327,12 +335,13 @@ can handle whenever this is possible.")
      Lisp_Object obj;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original, printcharfun;
 
   printcharfun = Vprin1_to_string_buffer;
   PRINTPREPARE;
+  print_depth = 0;
   print (obj, printcharfun, 1);
   /* Make Vprin1_to_string_buffer be the default buffer after PRINTFINSH */
   PRINTFINISH;
@@ -352,34 +361,36 @@ Output stream is STREAM, or value of standard-output (which see).")
      Lisp_Object obj, printcharfun;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   if (NULL (printcharfun))
     printcharfun = Vstandard_output;
   PRINTPREPARE;
+  print_depth = 0;
   print (obj, printcharfun, 0);
   PRINTFINISH;
   return obj;
 }
 
 DEFUN ("print", Fprint, Sprint, 1, 2, 0,
-  "Output the printed representation of OBJECT, with newline before and space after.\n\
-Quoting characters are used, to make output that  read  can handle\n\
-whenever this is possible.\n\
-Output stream is STREAM, or value of standard-output (which see).")
+  "Output the printed representation of OBJECT, with newline before and\n\
+space after.  Quoting characters are used, to make output that  read\n\
+can handle whenever this is possible.\n\
+Output stream is STREAM, or value of  standard-output  (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
   struct buffer *old = bf_cur;
-  int old_dot = -1;
-  int start_dot;
+  int old_point = -1;
+  int start_point;
   Lisp_Object original;
 
   if (NULL (printcharfun))
     printcharfun = Vstandard_output;
   PRINTPREPARE;
+  print_depth = 0;
   PRINTCHAR ('\n');
   print (obj, printcharfun, 1);
   PRINTCHAR ('\n');
@@ -389,15 +400,23 @@ Output stream is STREAM, or value of standard-output (which see).")
 
 static void
 print (obj, printcharfun, escapeflag)
-     Lisp_Object obj, printcharfun;
+     register Lisp_Object obj;
+     Lisp_Object printcharfun;
      int escapeflag;
 {
   char buf[30];
+
+  QUIT;
+
   print_depth++;
   if (print_depth > 200)
     error ("Apparently circular structure being printed");
 
+#ifdef SWITCH_ENUM_BUG
+  switch ((int) XTYPE (obj))
+#else
   switch (XTYPE (obj))
+#endif
     {
     case Lisp_Int:
       sprintf (buf, "%d", XINT (obj));
@@ -409,13 +428,15 @@ print (obj, printcharfun, escapeflag)
 	strout (XSTRING (obj)->data, XSTRING (obj)->size, printcharfun);
       else
 	{
-	  int i;
-	  unsigned char *p = XSTRING (obj)->data;
+	  register int i;
+	  register unsigned char *p = XSTRING (obj)->data;
+	  register unsigned char c;
 
 	  PRINTCHAR ('\"');
 	  for (i = XSTRING (obj)->size; i > 0; i--)
 	    {
-	      unsigned char c = *p++;
+	      QUIT;
+	      c = *p++;
 	      if (c == '\"' || c == '\\')
 		PRINTCHAR ('\\');
 	      PRINTCHAR (c);
@@ -426,19 +447,26 @@ print (obj, printcharfun, escapeflag)
 
     case Lisp_Symbol:
       {
-	int i, confusing;
-	unsigned char *p = XSYMBOL (obj)->name->data;
-	unsigned char *end = p + XSYMBOL (obj)->name->size;
+	register int confusing;
+	register unsigned char *p = XSYMBOL (obj)->name->data;
+	register unsigned char *end = p + XSYMBOL (obj)->name->size;
+	register unsigned char c;
 
 	if (p != end && (*p == '-' || *p == '+')) p++;
-        while (p != end && *p >= '0' && *p <= '9')
-	  p++;
-        confusing = (end == p);
+        if (p == end)
+	  confusing = 0;
+	else
+	  {
+	    while (p != end && *p >= '0' && *p <= '9')
+	      p++;
+	    confusing = (end == p);
+	  }
 
 	p = XSYMBOL (obj)->name->data;
 	while (p != end)
 	  {
-	    char c = *p++;
+	    QUIT;
+	    c = *p++;
 	    if (escapeflag)
 	      {
 		if (c == '\"' || c == '\\' || c == '\'' || c == ';' || c == '#' ||
@@ -454,19 +482,28 @@ print (obj, printcharfun, escapeflag)
     case Lisp_Cons:
       PRINTCHAR ('(');
       {
-	int i = 0;
+	register int i = 0;
+	register int max = 0;
+
+	if (XTYPE (Vprint_length) == Lisp_Int)
+	  max = XINT (Vprint_length);
 	while (LISTP (obj))
 	  {
 	    if (i++)
 	      PRINTCHAR (' ');
-	    print (Fcar (obj), printcharfun, escapeflag, 0);
+	    if (max && i > max)
+	      {
+		strout ("...", 3, printcharfun);
+		break;
+	      }
+	    print (Fcar (obj), printcharfun, escapeflag);
 	    obj = Fcdr (obj);
 	  }
       }
-      if (!NULL (obj))
+      if (!NULL (obj) && !LISTP (obj))
 	{
 	  strout (" . ", 3, printcharfun);
-	  print (obj, printcharfun, escapeflag, 0);
+	  print (obj, printcharfun, escapeflag);
 	}
       PRINTCHAR (')');
       break;
@@ -475,12 +512,12 @@ print (obj, printcharfun, escapeflag)
       PRINTCHAR ('[');
       {
 	register int i;
-	Lisp_Object tem;
+	register Lisp_Object tem;
 	for (i = 0; i < XVECTOR (obj)->size; i++)
 	  {
 	    if (i) PRINTCHAR (' ');
 	    tem = XVECTOR (obj)->contents[i];
-	    print (tem, printcharfun, escapeflag, 0);
+	    print (tem, printcharfun, escapeflag);
 	  }
       }
       PRINTCHAR (']');
@@ -488,7 +525,9 @@ print (obj, printcharfun, escapeflag)
 
 #ifndef standalone
     case Lisp_Buffer:
-      if (escapeflag)
+      if (NULL (XBUFFER (obj)->name))
+	strout ("#<killed buffer>", -1, printcharfun);
+      else if (escapeflag)
 	{
 	  strout ("#<buffer ", -1, printcharfun);
 	  strout (XSTRING (XBUFFER (obj)->name)->data, -1, printcharfun);
@@ -523,17 +562,19 @@ print (obj, printcharfun, escapeflag)
       break;
 
     case Lisp_Marker:
-      strout ("#<marker at ", -1, printcharfun);
-      sprintf (buf, "%d", XMARKER (obj)->bufpos);
-      strout (buf, -1, printcharfun);
-      strout (" in ", -1, printcharfun);
+      strout ("#<marker ", -1, printcharfun);
       if (!(XMARKER (obj)->buffer))
-	strout ("no buffer", -1, printcharfun);
+	strout ("in no buffer", -1, printcharfun);
       else
-	strout (XSTRING (XMARKER (obj)->buffer->name)->data, -1, printcharfun);
+	{
+	  sprintf (buf, "at %d", marker_position (obj));
+	  strout (buf, -1, printcharfun);
+	  strout (" in ", -1, printcharfun);
+	  strout (XSTRING (XMARKER (obj)->buffer->name)->data, -1, printcharfun);
+	}
       PRINTCHAR ('>');
       break;
-#endif standalone
+#endif /* standalone */
 
     case Lisp_Subr:
       strout ("#<subr ", -1, printcharfun);
@@ -551,13 +592,18 @@ syms_of_print ()
   DefLispVar ("standard-output", &Vstandard_output,
     "Function print uses by default for outputting a character.\n\
 This may be any function of one argument.\n\
-It may also be a buffer (output is inserted before dot)\n\
+It may also be a buffer (output is inserted before point)\n\
 or a marker (output is inserted and the marker is advanced)\n\
 or the symbol t (output appears in the minibuffer line).");
   Vstandard_output = Qt;
   Qstandard_output = intern ("standard-output");
   staticpro (&Qstandard_output);
-  
+
+  DefLispVar ("print-length", &Vprint_length,
+    "Maximum length of list to print before abbreviating.\
+`nil' means no limit.");
+  Vprint_length = Qnil;
+
   /* prin1_to_string_buffer initialized in init_buffer_once in buffer.c */
   staticpro (&Vprin1_to_string_buffer);
 
@@ -569,5 +615,5 @@ or the symbol t (output appears in the minibuffer line).");
   defsubr (&Swrite_char);
 #ifndef standalone
   defsubr (&Swith_output_to_temp_buffer);
-#endif standalone
+#endif /* not standalone */
 }

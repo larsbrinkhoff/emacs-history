@@ -1,20 +1,23 @@
 ;; "Picture mode" -- editing using quarter-plane screen model.
 ;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman
+
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
+
 
 (defun move-to-column-force (column)
   "Move to column COLUMN in current line.
@@ -35,13 +38,13 @@ if necessary to attain exactly the specified column."
 ;; Picture Movement Commands
 
 (defun Picture-end-of-line (&optional arg)
-  "Position dot after last non-blank character on current line.
+  "Position point after last non-blank character on current line.
 With ARG not nil, move forward ARG - 1 lines first.
 If scan reaches end of buffer, stop there without error."
   (interactive "P")
   (if arg (forward-line (1- (prefix-numeric-value arg))))
   (beginning-of-line)
-  (skip-chars-backward " \t" (prog1 (dot) (end-of-line))))
+  (skip-chars-backward " \t" (prog1 (point) (end-of-line))))
 
 (defun Picture-forward-column (arg)
   "Move cursor right, making whitespace if necessary.
@@ -135,7 +138,7 @@ The mode line is updated to reflect the current direction."
   (Picture-forward-column picture-horizontal-step))
 
 (defun Picture-motion (arg)
-  "Move dot in direction of current picture motion in Picture mode.
+  "Move point in direction of current picture motion in Picture mode.
 With ARG do it that many times.  Useful for delineating rectangles in
 conjunction with diagonal picture motion.
 Do \\[command-apropos]  picture-movement  to see commands which control motion."
@@ -144,7 +147,7 @@ Do \\[command-apropos]  picture-movement  to see commands which control motion."
   (Picture-forward-column (* arg picture-horizontal-step)))
 
 (defun Picture-motion-reverse (arg)
-  "Move dot in direction opposite of current picture motion in Picture mode.
+  "Move point in direction opposite of current picture motion in Picture mode.
 With ARG do it that many times.  Useful for delineating rectangles in
 conjunction with diagonal picture motion.
 Do \\[command-apropos]  picture-movement  to see commands which control motion."
@@ -169,18 +172,18 @@ Do \\[command-apropos]  picture-movement  to see those commands."
     (Picture-move)))
 
 (defun Picture-clear-column (arg)
-  "Clear out ARG columns after dot without moving."
+  "Clear out ARG columns after point without moving."
   (interactive "p")
-  (let* ((odot (dot))
+  (let* ((opoint (point))
 	 (original-col (current-column))
 	 (target-col (+ original-col arg)))
     (move-to-column-force target-col)
-    (delete-region odot (dot))
+    (delete-region opoint (point))
     (save-excursion
      (indent-to (max target-col original-col)))))
 
 (defun Picture-backward-clear-column (arg)
-  "Clear out ARG columns before dot, moving back over them."
+  "Clear out ARG columns before point, moving back over them."
   (interactive "p")
   (Picture-clear-column (- arg)))
 
@@ -193,11 +196,11 @@ With argument, clear out (and save in kill ring) that many lines."
   (if arg
       (progn
        (setq arg (prefix-numeric-value arg))
-       (kill-region (dot) (scan-buffer (dot) (if (> arg 0) arg (- arg 1)) ?\n))
+       (kill-region (point) (scan-buffer (point) (if (> arg 0) arg (- arg 1)) ?\n))
        (newline (if (> arg 0) arg (- arg))))
     (if (looking-at "[ \t]*$")
-	(kill-ring-save (dot) (progn (forward-line 1) (dot)))
-      (kill-region (dot) (progn (end-of-line) (dot))))))
+	(kill-ring-save (point) (progn (forward-line 1) (point)))
+      (kill-region (point) (progn (end-of-line) (point))))))
 
 (defun Picture-newline (arg)
   "Move to the beginning of the following line.
@@ -225,8 +228,8 @@ With positive argument insert that many lines."
   (save-excursion
    (let ((contents
 	  (buffer-substring
-	   (progn (beginning-of-line) (dot))
-	   (progn (Picture-newline 1) (dot)))))
+	   (progn (beginning-of-line) (point))
+	   (progn (Picture-newline 1) (point)))))
      (forward-line -1)
      (insert contents))))
 
@@ -274,7 +277,7 @@ each stop."
 	  (setq tabs (default-value 'tab-stop-list))
 	(let ((regexp (concat "[ \t]+[" (regexp-quote picture-tab-chars) "]")))
 	  (beginning-of-line)
-	  (let ((bol (dot)))
+	  (let ((bol (point)))
 	    (end-of-line)
 	    (while (re-search-backward regexp bol t)
 	      (skip-chars-forward " \t")
@@ -303,12 +306,12 @@ If no such character is found, move to beginning of line."
 		 (beginning-of-line)
 		 (skip-chars-backward
 		  (concat "^" (regexp-quote picture-tab-chars))
-		  (dot-min))
+		  (point-min))
 		 (not (bobp))))
 	  (move-to-column target))
       (if (re-search-forward
 	   (concat "[ \t]+[" (regexp-quote picture-tab-chars) "]")
-	   (save-excursion (end-of-line) (dot))
+	   (save-excursion (end-of-line) (point))
 	   'move)
 	  (setq target (1- (current-column)))
 	(setq target nil)))
@@ -322,14 +325,14 @@ With ARG overwrite the traversed text with spaces.  The tab stop
 list can be changed by \\[Picture-set-tab-stops] and \\[edit-tab-stops].
 See also documentation for variable  picture-tab-chars."
   (interactive "P")
-  (let* ((odot (dot))
+  (let* ((opoint (point))
 	 (target (prog2 (tab-to-tab-stop)
 			(current-column)
-			(delete-region odot (dot)))))
+			(delete-region opoint (point)))))
     (move-to-column-force target)
     (if arg
 	(let (indent-tabs-mode)
-	  (delete-region odot dot)
+	  (delete-region opoint point)
 	  (indent-to target)))))
 
 
@@ -340,7 +343,7 @@ See also documentation for variable  picture-tab-chars."
 The contents can be retrieved by \\[Picture-yank-rectangle]")
 
 (defun Picture-clear-rectangle (start end register &optional killp)
-  "Clear and save rectangle delineated by dot and mark.
+  "Clear and save rectangle delineated by point and mark.
 The rectangle is saved for yanking by \\[Picture-yank-rectangle] and replaced
 with whitespace.  The previously saved rectangle, if any, is lost.
 With prefix argument, the rectangle is actually killed, shifting remaining
@@ -349,7 +352,7 @@ text."
   (setq picture-killed-rectangle (Picture-snarf-rectangle start end killp)))
 
 (defun Picture-clear-rectangle-to-register (start end register &optional killp)
-  "Clear rectangle delineated by dot and mark into REGISTER.
+  "Clear rectangle delineated by point and mark into REGISTER.
 The rectangle is saved in REGISTER and replaced with whitespace.
 With prefix argument, the rectangle is actually killed, shifting remaining
 text."
@@ -368,10 +371,10 @@ text."
 
 (defun Picture-yank-rectangle (&optional insertp)
   "Overlay rectangle saved by \\[Picture-clear-rectangle]
-The rectangle is positioned with upper left corner at dot, overwriting
+The rectangle is positioned with upper left corner at point, overwriting
 existing text.  With prefix argument, the rectangle is inserted instead,
 shifting existing text.  Leaves mark at one corner of rectangle and
-dot at the other (diagonally opposed) corner."
+point at the other (diagonally opposed) corner."
   (interactive "P")
   (if (not (consp picture-killed-rectangle))
       (error "No rectangle saved.")
@@ -379,10 +382,10 @@ dot at the other (diagonally opposed) corner."
 
 (defun Picture-yank-rectangle-from-register (register &optional insertp)
   "Overlay rectangle saved in REGISTER.
-The rectangle is positioned with upper left corner at dot, overwriting
+The rectangle is positioned with upper left corner at point, overwriting
 existing text.  With prefix argument, the rectangle is
 inserted instead, shifting existing text.  Leaves mark at one corner
-of rectangle and dot at the other (diagonally opposed) corner."
+of rectangle and point at the other (diagonally opposed) corner."
   (interactive "cRectangle from register: \nP")
   (let ((rectangle (get-register register)))
     (if (not (consp rectangle))
@@ -390,17 +393,17 @@ of rectangle and dot at the other (diagonally opposed) corner."
       (Picture-insert-rectangle rectangle insertp))))
 
 (defun Picture-insert-rectangle (rectangle &optional insertp)
-  "Overlay RECTANGLE with upper left corner at dot.
+  "Overlay RECTANGLE with upper left corner at point.
 Optional argument INSERTP, if non-nil causes RECTANGLE to be inserted.
 Leaves the region surrounding the rectangle."
   (let ((indent-tabs-mode nil))
     (if (not insertp)
 	(save-excursion
-	  (delete-rectangle (dot)
+	  (delete-rectangle (point)
 			    (progn
 			      (Picture-forward-column (length (car rectangle)))
 			      (Picture-move-down (1- (length rectangle)))
-			      (dot)))))
+			      (point)))))
     (push-mark)
     (insert-rectangle rectangle)))
 
@@ -432,9 +435,9 @@ Leaves the region surrounding the rectangle."
       (define-key picture-mode-map "\e\t" 'Picture-tab-search)
       (define-key picture-mode-map "\C-c\t" 'Picture-set-tab-stops)
       (define-key picture-mode-map "\C-c\C-k" 'Picture-clear-rectangle)
-      (define-key picture-mode-map "\C-ck" 'Picture-clear-rectangle-to-register)
+      (define-key picture-mode-map "\C-c\C-w" 'Picture-clear-rectangle-to-register)
       (define-key picture-mode-map "\C-c\C-y" 'Picture-yank-rectangle)
-      (define-key picture-mode-map "\C-cy" 'Picture-yank-rectangle-from-register)
+      (define-key picture-mode-map "\C-c\C-x" 'Picture-yank-rectangle-from-register)
       (define-key picture-mode-map "\C-c\C-c" 'Picture-mode-exit)
       (define-key picture-mode-map "\C-c\C-f" 'Picture-motion)
       (define-key picture-mode-map "\C-c\C-b" 'Picture-motion-reverse)
@@ -485,17 +488,17 @@ You can edit tabular text with these commands:
 	    which defines \"interesting character\".  You can manually
 	    change the tab stop list with command \\[edit-tab-stops].
 You can manipulate text with these commands:
-  C-d	  Clear (replace) ARG columns after dot without moving.
-  C-c C-d Delete char at dot - the command normally assigned to C-d.
-  Delete  Clear (replace) ARG columns before dot, moving back over them.
+  C-d	  Clear (replace) ARG columns after point without moving.
+  C-c C-d Delete char at point - the command normally assigned to C-d.
+  Delete  Clear (replace) ARG columns before point, moving back over them.
   C-k	  Clear ARG lines, advancing over them.	 The cleared
 	    text is saved in the kill ring.
   C-o	  Open blank line(s) beneath current line.
 You can manipulate rectangles with these commands:
   C-c C-k Clear (or kill) a rectangle and save it.
-  C-c k	  Like C-c C-k except rectangle is saved in named register.
-  C-c C-y Overlay (or insert) currently saved rectangle at dot.
-  C-c y	  Like C-c C-y except rectangle is taken from named register.
+  C-c C-w Like C-c C-k except rectangle is saved in named register.
+  C-c C-y Overlay (or insert) currently saved rectangle at point.
+  C-c C-x Like C-c C-y except rectangle is taken from named register.
   \\[copy-rectangle-to-register]   Copies a rectangle to a register.
   \\[advertised-undo]   Can undo effects of rectangle overlay commands
 	    commands if invoked soon enough.
@@ -527,9 +530,7 @@ they are not defaultly assigned to keys."
     (make-local-variable 'Picture-vertical-step)
     (make-local-variable 'Picture-horizontal-step)
     (Picture-set-motion 0 1)
-    (and (boundp 'edit-picture-hook)
-	 edit-picture-hook
-	 (funcall edit-picture-hook))
+    (run-hooks 'edit-picture-hook)
     (message
      (substitute-command-keys
       "Type \\[Picture-mode-exit] in this buffer to return it to %s mode.")
@@ -556,6 +557,6 @@ With no argument strips whitespace from end of every line in Picture buffer
 (defun Picture-clean ()
   "Eliminate whitespace at ends of lines."
   (save-excursion
-   (goto-char (dot-min))
+   (goto-char (point-min))
    (while (re-search-forward "[ \t][ \t]*$" nil t)
-     (delete-region (match-beginning 0) (dot)))))
+     (delete-region (match-beginning 0) (point)))))

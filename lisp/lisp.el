@@ -4,47 +4,50 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but without any warranty.  No author or distributor
+;; but WITHOUT ANY WARRANTY.  No author or distributor
 ;; accepts responsibility to anyone for the consequences of using it
 ;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
 ;; Everyone is granted permission to copy, modify and redistribute
 ;; GNU Emacs, but only under the conditions described in the
-;; document "GNU Emacs copying permission notice".   An exact copy
-;; of the document is supposed to have been given to you along with
-;; GNU Emacs so that you can know how you may redistribute it all.
-;; It should be in a file named COPYING.  Among other things, the
-;; copyright notice and this notice must be preserved on all copies.
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
 
-(defun forward-sexp (arg)
+(defun forward-sexp (&optional arg)
   "Move forward across one balanced expression.
 With argument, do this that many times."
   (interactive "p")
-  (goto-char (or (scan-sexps (dot) arg) (buffer-end arg)))
+  (or arg (setq arg 1))
+  (goto-char (or (scan-sexps (point) arg) (buffer-end arg)))
   (if (< arg 0) (backward-prefix-chars)))
 
-(defun backward-sexp (arg)
+(defun backward-sexp (&optional arg)
   "Move backward across one balanced expression.
 With argument, do this that many times."
   (interactive "p")
+  (or arg (setq arg 1))
   (forward-sexp (- arg)))
 
 (defun mark-sexp (arg)
-  "Set mark ARG sexps from dot."
+  "Set mark ARG sexps from point."
   (interactive "p")
   (push-mark
     (save-excursion
       (forward-sexp arg)
-      (dot))))
+      (point))))
 
 (defun forward-list (&optional arg)
   "Move forward across one balanced group of parentheses.
 With argument, do this that many times."
   (interactive "p")
   (or arg (setq arg 1))
-  (goto-char (or (scan-lists (dot) arg 0) (buffer-end arg))))
+  (goto-char (or (scan-lists (point) arg 0) (buffer-end arg))))
 
 (defun backward-list (&optional arg)
   "Move backward across one balanced group of parentheses.
@@ -60,7 +63,7 @@ A negative argument means move backward but still go down a level."
   (interactive "p")
   (let ((inc (if (> arg 0) 1 -1)))
     (while (/= arg 0)
-      (goto-char (or (scan-lists (dot) inc -1) (buffer-end arg)))
+      (goto-char (or (scan-lists (point) inc -1) (buffer-end arg)))
       (setq arg (- arg inc)))))
 
 (defun backward-up-list (arg)
@@ -77,49 +80,22 @@ A negative argument means move backward but still to a less deep spot."
   (interactive "p")
   (let ((inc (if (> arg 0) 1 -1)))
     (while (/= arg 0)
-      (goto-char (or (scan-lists (dot) inc 1) (buffer-end arg)))
+      (goto-char (or (scan-lists (point) inc 1) (buffer-end arg)))
       (setq arg (- arg inc)))))
 
 (defun kill-sexp (arg)
   "Kill the syntactic expression following the cursor.
 With argument, kill that many expressions after (or before) the cursor."
   (interactive "p")
-  (let ((odot (dot)))
+  (let ((opoint (point)))
     (forward-sexp arg)
-    (kill-region odot (dot))))
+    (kill-region opoint (point))))
 
 (defun backward-kill-sexp (arg)
   "Kill the syntactic expression preceding the cursor.
 With argument, kill that many expressions before (or after) the cursor."
   (interactive "p")
   (kill-sexp (- arg)))
-
-(defun eval-last-sexp (arg)
-  "Evaluate sexp before point; print value in minibuffer.
-With argument, print output into current buffer."
-  (interactive "P")
-  (eval-region
-   (let ((stab (syntax-table)))
-     (unwind-protect
-      (save-excursion
-       (set-syntax-table lisp-mode-syntax-table)
-       (forward-sexp -1)
-       (dot))
-      (set-syntax-table stab)))
-   (dot)
-   (if arg (current-buffer) t)))
-
-(defun eval-defun (arg)
-  "Evaluate defun that dot is in or before.
-Print value in minibuffer.
-With argument, insert value in current buffer after the defun."
-  (interactive "P")
-  (save-excursion
-   (end-of-defun)
-   (let ((end (dot)))
-     (beginning-of-defun)
-     (eval-region (dot) end
-		  (if arg (current-buffer) t)))))
 
 (defun beginning-of-defun (&optional arg)
   "Move backward to next beginning-of-defun.
@@ -131,7 +107,7 @@ Returns t unless search stops due to end of buffer."
        (progn (beginning-of-line) t)))
 
 (defun buffer-end (arg)
-  (if (> arg 0) (dot-max) (dot-min)))
+  (if (> arg 0) (point-max) (point-min)))
 
 (defun end-of-defun (&optional arg)
   "Move forward to next end of defun.
@@ -139,8 +115,8 @@ An end of a defun is found by moving forward from the beginning of one."
   (interactive "p")
   (if (or (null arg) (= arg 0)) (setq arg 1))
   (let ((first t))
-    (while (and (> arg 0) (< (dot) (dot-max)))
-      (let ((pos (dot)) npos)
+    (while (and (> arg 0) (< (point) (point-max)))
+      (let ((pos (point)) npos)
 	(while (progn
 		(if (and first
 			 (progn
@@ -154,35 +130,35 @@ An end of a defun is found by moving forward from the beginning of one."
 		(skip-chars-forward " \t")
 		(if (looking-at "[;\n]")
 		    (forward-line 1))
-		(<= (dot) pos))))
+		(<= (point) pos))))
       (setq arg (1- arg)))
     (while (< arg 0)
-      (let ((pos (dot)))
+      (let ((pos (point)))
 	(beginning-of-defun 1)
 	(forward-sexp 1)
-	(goto-char (scan-buffer (dot) 1 ?\n))
-	(if (>= (dot) pos)
+	(goto-char (scan-buffer (point) 1 ?\n))
+	(if (>= (point) pos)
 	    (if (beginning-of-defun 2)
 		(progn
 		 (forward-list 1)
 		 (skip-chars-forward " \t")
 		 (if (looking-at "[;\n]")
 		     (forward-line 1)))
-	      (goto-char (dot-min)))))
+	      (goto-char (point-min)))))
       (setq arg (1+ arg)))))
 
 (defun mark-defun ()
-  "Put mark at end of defun, dot at beginning."
+  "Put mark at end of defun, point at beginning."
   (interactive)
-  (push-mark (dot))
+  (push-mark (point))
   (end-of-defun)
-  (push-mark (dot))
+  (push-mark (point))
   (beginning-of-defun)
-  (re-search-backward "^\n" (- (dot) 1) t))
+  (re-search-backward "^\n" (- (point) 1) t))
 
 (defun insert-parentheses (arg)
-  "Put parentheses around next ARG sexps.  Leave dot after open-paren.
-No argument is equivalent to zero: just insert () and leave dot between."
+  "Put parentheses around next ARG sexps.  Leave point after open-paren.
+No argument is equivalent to zero: just insert () and leave point between."
   (interactive "P")
   (insert ?\()
   (save-excursion
@@ -195,6 +171,10 @@ No argument is equivalent to zero: just insert () and leave dot between."
   (interactive)
   (up-list 1)
   (forward-char -1)
-  (delete-indentation)
+  (while (save-excursion		; this is my contribution
+	   (let ((before-paren (point)))
+	     (back-to-indentation)
+	     (= (point) before-paren)))
+    (delete-indentation))
   (forward-char 1)
   (newline-and-indent))

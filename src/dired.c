@@ -4,40 +4,50 @@
 This file is part of GNU Emacs.
 
 GNU Emacs is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
+but WITHOUT ANY WARRANTY.  No author or distributor
 accepts responsibility to anyone for the consequences of using it
 or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
 Everyone is granted permission to copy, modify and redistribute
 GNU Emacs, but only under the conditions described in the
-document "GNU Emacs copying permission notice".   An exact copy
-of the document is supposed to have been given to you along with
-GNU Emacs so that you can know how you may redistribute it all.
-It should be in a file named COPYING.  Among other things, the
-copyright notice and this notice must be preserved on all copies.  */
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "config.h"
-#include <sys/types.h>
-#ifndef USG
-#include <sys/time.h>
-#endif
-#include <sys/stat.h>
+
+#ifdef NONSYSTEM_DIR_LIBRARY
+#include "ndir.h"
+#else /* not NONSYSTEM_DIR_LIBRARY */
 #include <sys/dir.h>
-#include <stdio.h>
+#endif /* not NONSYSTEM_DIR_LIBRARY */
+
 #undef NULL
+
 #include "lisp.h"
 #include "buffer.h"
 #include "commands.h"
 
-/* This entire file is not handled for system V yet.  */
-
-#ifndef USG
-
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-extern Lisp_Object concat2 ();
+/* if system does not have symbolic links, it does not have lstat.
+   In that case, use ordinary stat instead.  */
+
+#ifndef S_IFLNK
+#define lstat stat
+#endif
+
+extern DIR *opendir ();
+extern struct direct *readdir ();
 
 Lisp_Object Vcompletion_ignored_extensions;
 
@@ -95,6 +105,13 @@ Returns nil if DIR contains no name starting with FILE.")
   (file, dirname)
      Lisp_Object file, dirname;
 {
+  /* Don't waste time trying to complete a null string.
+     Besides, this case happens when user is being asked for
+     a directory name and has supplied one ending in a /.
+     We would not want to add anything in that case
+     even if there are some unique characters in that directory.  */
+  if (XTYPE (file) == Lisp_String && XSTRING (file)->size == 0)
+    return file;
   return file_name_completion (file, dirname, 0);
 }
 
@@ -127,8 +144,10 @@ file_name_completion (file, dirname, all_flag)
   bestmatch = Qnil;
 
   /* passcount = 0, ignore files that end in an ignored extension.
-     If nothing found then try again with passcount = 1, don't ignore them */
-  for (passcount = 0; NULL (bestmatch) && passcount < 2; passcount++)
+     If nothing found then try again with passcount = 1, don't ignore them.
+     If looking for all completions, start with passcount = 1,
+     so always take even the ignored ones.  */
+  for (passcount = !!all_flag; NULL (bestmatch) && passcount < 2; passcount++)
     {
       if (!(d = opendir (XSTRING (dirname)->data)))
 	report_file_error ("Opening directory", Fcons (dirname, Qnil));
@@ -143,8 +162,10 @@ file_name_completion (file, dirname, all_flag)
 	      bcmp (dp->d_name, XSTRING (file)->data, XSTRING (file)->size))
 	    continue;
 
-	  if (!passcount)
-	    /* Compare each extension-to-be-ignored against end of this file name */
+	  tem = Qnil;
+	  /* Compare extensions-to-be-ignored against end of this file name */
+	  /* if name is not an exact match against specified string */
+	  if (!passcount && dp->d_namlen > XSTRING (file)->size)
 	    /* and exit this for loop if a match is found */
 	    for (tem = Vcompletion_ignored_extensions;
 		 LISTP (tem); tem = XCONS (tem)->cdr)
@@ -197,9 +218,12 @@ file_name_completion (file, dirname, all_flag)
 		  p2 = (unsigned char *) dp->d_name;
 		  for (matchsize = 0; matchsize < compare; matchsize++)
 		    if (p1[matchsize] != p2[matchsize]) break;
+		  /* If this dirname all matches,
+		     see if implicit following slash does too.  */
 		  if (directoryp  &&
-		      (bestmatchsize > matchsize) &&
-		      (p1[matchsize + 1] == '/'))
+		      compare == matchsize &&
+		      bestmatchsize > matchsize &&
+		      p1[matchsize] == '/')
 		    matchsize++;
 		  bestmatchsize = min (matchsize, bestmatchsize);
 		}
@@ -216,7 +240,7 @@ file_name_completion (file, dirname, all_flag)
  quit:
   if (d) closedir (d);
   Vquit_flag = Qnil;
-  Fsignal (Qquit, Qnil);
+  return Fsignal (Qquit, Qnil);
 }
 
 file_name_completion_stat (dirname, dp, st_addr)
@@ -255,7 +279,7 @@ Elements are:\n\
  4. Last access time, as a list of two integers.\n\
   First integer has high-order 16 bits of time, second has low 16 bits.\n\
  5. Last modification time, likewise.\n\
- 6. Creation time, likewise.\n\
+ 6. Last status change time, likewise.\n\
  7. Size in bytes.\n\
  8. File modes, as a string of nine letters or dashes as in ls -l.")
   (filename)
@@ -270,8 +294,10 @@ Elements are:\n\
     return Qnil;
 
   values[0] = ((s.st_mode & S_IFMT)==S_IFDIR) ? Qt : Qnil;
+#ifdef S_IFLNK
   if ((s.st_mode & S_IFMT) == S_IFLNK)
     values[0] = Ffile_symlink_p (filename);
+#endif
   XFASTINT (values[1]) = s.st_nlink;
   XFASTINT (values[2]) = s.st_uid;
   XFASTINT (values[3]) = s.st_gid;
@@ -295,5 +321,3 @@ syms_of_dired ()
     "*Completion ignores filenames ending in any string in this list.");
   Vcompletion_ignored_extensions = Qnil;
 }
-
-#endif /* ndef USG */
