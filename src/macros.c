@@ -228,7 +228,7 @@ syms_of_macros ()
   DEFVAR_LISP ("executing-macro", &Vexecuting_macro,
     "Currently executing keyboard macro (a string); nil if none executing.");
 
-  DEFVAR_LISP ("executing-kbd-macro", &Vexecuting_macro,
+  DEFVAR_LISP_NOPRO ("executing-kbd-macro", &Vexecuting_macro,
     "Currently executing keyboard macro (a string); nil if none executing.");
 
   DEFVAR_LISP ("last-kbd-macro", &Vlast_kbd_macro,

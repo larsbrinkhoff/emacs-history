@@ -46,10 +46,11 @@ are displayed as well."
 	      (setq global-mode-string
 		    (append global-mode-string '(display-time-string))))
 	  (setq display-time-string "")
-	  (setq display-time-process
-		(start-process "display-time" nil
-			       (concat exec-directory "wakeup")
-			       (int-to-string display-time-interval)))
+	  (let ((process-connection-type nil))
+	    (setq display-time-process
+		  (start-process "display-time" nil
+				 (concat exec-directory "wakeup")
+				 (int-to-string display-time-interval))))
 	  (process-kill-without-query display-time-process)
 	  (set-process-sentinel display-time-process 'display-time-sentinel)
 	  (set-process-filter display-time-process 'display-time-filter)))))
@@ -67,7 +68,24 @@ are displayed as well."
 	(load (condition-case ()
 		  (if (zerop (car (load-average))) ""
 		    (format "%03d" (car (load-average))))
-		(error "")))
+		(error
+		 (condition-case ()
+		     (unwind-protect
+			 (save-excursion
+			   (set-buffer (get-buffer-create " *uptime*"))
+			   (call-process "/usr/ucb/uptime" nil (current-buffer))
+			   (goto-char (point-min))
+			   (search-forward "average: ")
+			   ;; Get the integer part and fraction part,
+			   ;; discarding the period.
+			   ;; (Because code below adds a period.)
+			   (concat
+			    (buffer-substring (point)
+					      (progn (forward-word 1) (point)))
+			    (buffer-substring (1+ (point))
+					      (progn (forward-word 1) (point)))))
+		       (kill-buffer " *uptime*"))
+		   (error "")))))
 	(mail-spool-file (or display-time-mail-file
 			     (getenv "MAIL")
 			     (concat rmail-spool-directory
@@ -83,10 +101,10 @@ are displayed as well."
 	  (setq hour 12)))
     (setq display-time-string
 	  (concat (format "%d" hour) (substring time 13 16)
-		  (if pm "pm " "am ")
+		  (if pm "pm" "am")
 		  (if (string= load "")
 		      ""
-		    (concat (substring load 0 -2) "." (substring load -2)))
+		    (concat " " (substring load 0 -2) "." (substring load -2)))
 		  (if (and (file-exists-p mail-spool-file)
 			   ;; file not empty?
 			   (> (nth 7 (file-attributes mail-spool-file)) 0))

@@ -63,6 +63,8 @@ extern struct direct *readdir ();
 #define lstat stat
 #endif
 
+extern int completion_ignore_case;
+
 Lisp_Object Vcompletion_ignored_extensions;
 
 Lisp_Object Qcompletion_ignore_case;
@@ -182,7 +184,6 @@ file_name_completion (file, dirname, all_flag, ver_flag)
      int all_flag, ver_flag;
 {
   DIR *d;
-  DIRENTRY *dp;
   int bestmatchsize, skip;
   register int compare, matchsize;
   unsigned char *p1, *p2;
@@ -307,6 +308,32 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 		  matchsize = scmp(p1, p2, compare);
 		  if (matchsize < 0)
 		    matchsize = compare;
+		  if (completion_ignore_case)
+		    {
+		      /* If this is an exact match except for case,
+			 use it as the best match rather than one that is not
+			 an exact match.  This way, we get the case pattern
+			 of the actual match.  */
+		      if ((matchsize == len
+			   && matchsize < XSTRING (bestmatch)->size)
+			  ||
+			  /* If there is no exact match ignoring case,
+			     prefer a match that does not change the case
+			     of the input.  */
+			  (((matchsize == len)
+			    ==
+			    (matchsize == XSTRING (bestmatch)->size))
+			   /* If there is more than one exact match aside from
+			      case, and one of them is exact including case,
+			      prefer that one.  */
+			   && !bcmp (p2, XSTRING (file)->data, XSTRING (file)->size)
+			   && bcmp (p1, XSTRING (file)->data, XSTRING (file)->size)))
+			{
+			  bestmatch = make_string (dp->d_name, len);
+			  if (directoryp)
+			    bestmatch = Ffile_name_as_directory (bestmatch);
+			}
+		    }
 		  /* If this dirname all matches,
 		     see if implicit following slash does too.  */
 		  if (directoryp
@@ -314,7 +341,7 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 		      && bestmatchsize > matchsize
 		      && p1[matchsize] == '/')
 		    matchsize++;
-		  bestmatchsize = min (matchsize, bestmatchsize);
+		  bestmatchsize = matchsize;
 		}
 	    }
 	}
@@ -325,7 +352,19 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 
   if (all_flag || NULL (bestmatch))
     return bestmatch;
-  if (matchcount == 1 && bestmatchsize == XSTRING (file)->size)
+
+  /* If we are ignoring case, and there is no exact match,
+     and no additional text was supplied,
+     don't change the case of what the user typed.  */
+  if (completion_ignore_case && bestmatchsize == XSTRING (file)->size
+      && XSTRING (bestmatch)->size > bestmatchsize)
+    return file;
+
+  /* Return t if the supplied string is an exact match (counting case);
+     it does not require any change to be made.  */
+  if (matchcount == 1 && bestmatchsize == XSTRING (file)->size
+      && !bcmp (XSTRING (bestmatch)->data, XSTRING (file)->data,
+		bestmatchsize))
     return Qt;
   return Fsubstring (bestmatch, make_number (0), make_number (bestmatchsize));
  quit:
@@ -352,7 +391,17 @@ file_name_completion_stat (dirname, dp, st_addr)
   bcopy (dp->d_name, fullname + pos, len);
   fullname[pos + len] = 0;
 
+#ifdef S_IFLNK
+  /* Use ordinary stat first, if that succeeds,
+     so that a symlink pointing to a directory is considered a directory.
+     Afterward, use lstat, so that a link pointing to nowhere
+     at least seems to exist.  */
+  if (stat (fullname, st_addr) >= 0)
+    return 0;
+  return lstat (fullname, st_addr);
+#else
   return stat (fullname, st_addr);
+#endif
 }
 
 Lisp_Object

@@ -203,6 +203,8 @@ read_minibuf_unwind ()
 {
   /* Erase the minibuffer we were using at this level.  */
   Fset_buffer (XWINDOW (minibuf_window)->buffer);
+  /* Prevent error if user has done something strange.  */
+  current_buffer->read_only = Qnil;
   Ferase_buffer ();
 
   /* If this was a recursive minibuffer,
@@ -461,14 +463,53 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
 	      matchsize = scmp (XSTRING (bestmatch)->data,
 				XSTRING (eltstring)->data,
 				compare);
-	      bestmatchsize = (matchsize >= 0) ? matchsize : compare;
+	      if (matchsize < 0)
+		matchsize = compare;
+	      if (completion_ignore_case)
+		{
+		  /* If this is an exact match except for case,
+		     use it as the best match rather than one that is not an
+		     exact match.  This way, we get the case pattern
+		     of the actual match.  */
+		  if ((matchsize == XSTRING (eltstring)->size
+		       && matchsize < XSTRING (bestmatch)->size)
+		      ||
+		      /* If there is no exact match ignoring case,
+			 prefer a match that does not change the case
+			 of the input.  */
+		      (((matchsize == XSTRING (eltstring)->size)
+			==
+			(matchsize == XSTRING (bestmatch)->size))
+		       /* If there is more than one exact match ignoring case,
+			  and one of them is exact including case,
+			  prefer that one.  */
+		       && !bcmp (XSTRING (eltstring)->data,
+				 XSTRING (string)->data,
+				 XSTRING (string)->size)
+		       && bcmp (XSTRING (bestmatch)->data,
+				XSTRING (string)->data,
+				XSTRING (string)->size)))
+		    bestmatch = eltstring;
+		}
+	      bestmatchsize = matchsize;
 	    }
 	}
     }
 
   if (NULL (bestmatch))
     return Qnil;		/* No completions found */
-  if (matchcount == 1 && bestmatchsize == XSTRING (string)->size)
+  /* If we are ignoring case, and there is no exact match,
+     and no additional text was supplied,
+     don't change the case of what the user typed.  */
+  if (completion_ignore_case && bestmatchsize == XSTRING (string)->size
+      && XSTRING (bestmatch)->size > bestmatchsize)
+    return string;
+
+  /* Return t if the supplied string is an exact match (counting case);
+     it does not require any change to be made.  */
+  if (matchcount == 1 && bestmatchsize == XSTRING (string)->size
+      && !bcmp (XSTRING (bestmatch)->data, XSTRING (string)->data,
+		bestmatchsize))
     return Qt;
 
   XFASTINT (zero) = 0;		/* Else extract the part in which */
@@ -654,12 +695,13 @@ temp_echo_area_contents (m)
   if (!NULL (Vquit_flag))
     {
       Vquit_flag = Qnil;
-      unread_command_char = Ctl ('g');
+      unread_command_char = quit_char;
     }
   Vinhibit_quit = oinhibit;
 }
 
 Lisp_Object Fminibuffer_completion_help ();
+Lisp_Object assoc_for_completion ();
 
 /* returns:
  * 0 no possible completion
@@ -680,6 +722,8 @@ do_completion ()
   if (NULL (completion))
     {
       bell ();
+      /* Clearing this prevents sit-for from leaving the message up.  */
+      prev_echo_area_contents = 0;
       temp_echo_area_contents (" [No match]");
       return 0;
     }
@@ -698,7 +742,7 @@ do_completion ()
   /* It did find a match.  Do we match some possibility exactly now? */
   if (CONSP (Vminibuffer_completion_table)
       || NULL (Vminibuffer_completion_table))
-    tem = Fassoc (Fbuffer_string (), Vminibuffer_completion_table);
+    tem = assoc_for_completion (Fbuffer_string (), Vminibuffer_completion_table);
   else if (XTYPE (Vminibuffer_completion_table) == Lisp_Vector)
     {
       /* the primitive used by Fintern_soft */
@@ -734,7 +778,35 @@ do_completion ()
   else
     return (completedp ? 4 : 3);
 }
-  
+
+/* Like assoc but assumes KEY is a string, and ignores case if appropriate.  */
+
+Lisp_Object
+assoc_for_completion (key, list)
+     register Lisp_Object key;
+     Lisp_Object list;
+{
+  register Lisp_Object tail;
+
+  if (completion_ignore_case)
+    key = Fupcase (key);
+
+  for (tail = list; !NULL (tail); tail = Fcdr (tail))
+    {
+      register Lisp_Object elt, tem, thiscar;
+      elt = Fcar (tail);
+      if (!CONSP (elt)) continue;
+      thiscar = Fcar (elt);
+      if (XTYPE (thiscar) != Lisp_String)
+	continue;
+      if (completion_ignore_case)
+	thiscar = Fupcase (thiscar);
+      tem = Fequal (thiscar, key);
+      if (!NULL (tem)) return elt;
+      QUIT;
+    }
+  return Qnil;
+}
 
 DEFUN ("minibuffer-complete", Fminibuffer_complete, Sminibuffer_complete, 0, 0, "",
   "Complete the minibuffer contents as far as possible.")

@@ -169,6 +169,9 @@ extern char *minibuf_prompt;
 /* Message to display instead of minibuffer contents.  */
 extern char *echo_area_contents;
 
+/* Last message that was displayed in the echo area.  */
+extern char *prev_echo_area_contents;
+
 /* Depth in minibuffer invocations.  */
 extern int minibuf_level;
 

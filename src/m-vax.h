@@ -98,3 +98,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifdef VMS
 #define C_ALLOCA
 #endif
+
+#ifdef ultrix
+#define BROKEN_O_NONBLOCK
+#endif

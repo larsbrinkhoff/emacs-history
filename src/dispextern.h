@@ -34,6 +34,10 @@ extern int cursor_hpos, cursor_vpos;
 
 extern int display_completed;
 
+/* Nonzero while trying to read keyboard input at main program level.  */
+
+extern int waiting_for_input;
+
 struct matrix
 {
   /* Height of this matrix.  */
@@ -69,6 +73,9 @@ unsigned char *get_display_line ();
 
 /* Buffer used by `message' for formatting a message, and by print.c.  */
 extern char *message_buf;
+
+/* Nonzero means message_buf is being used by print.  */
+extern int message_buf_print;
 
 /* All costs measured in characters.
    So no cost can exceed the area of a screen, measured in characters.

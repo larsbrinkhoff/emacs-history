@@ -22,6 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include "config.h"
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef HAVE_TIMEVAL
 #ifdef HPUX
@@ -76,7 +77,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    This ought to be built in in stdio, but it isn't.
    Some s- files override this because their stdio internals differ.  */
 #ifdef __GNU_LIBRARY__
-#define	PENDING_OUTPUT_COUNT(FILE) ((FILE)->__bp - (FILE)->__buf)
+#define	PENDING_OUTPUT_COUNT(FILE) ((FILE)->__bufp - (FILE)->__buffer)
 #else
 #define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_ptr - (FILE)->_base)
 #endif
@@ -125,6 +126,11 @@ Lisp_Object Vwindow_system_version;
 
 int cursor_in_echo_area;
 
+/* Nonzero means finish redisplay regardless of available input.
+   This is used with X windows to avoid a weird timing-dependent bug.  */
+
+int force_redisplay;
+
 /* Description of actual screen contents.  */
  
 struct matrix *current_screen;
@@ -144,8 +150,6 @@ FILE *termscript;
 /* Structure for info on cursor positioning */
 
 struct cm Wcm;
-
-int in_display;		/* 1 if in redisplay: can't handle SIGWINCH now.  */
 
 int delayed_size_change;  /* 1 means SIGWINCH happened when not safe.  */
 int delayed_screen_height;  /* Remembered new screen height.  */
@@ -181,6 +185,8 @@ struct matrix *make_screen_structure ();
 
 remake_screen_structures ()
 {
+  int i;
+
   if (current_screen)
     free_screen_structure (current_screen);
   if (new_screen)
@@ -196,6 +202,12 @@ remake_screen_structures ()
     message_buf = (char *) xrealloc (message_buf, screen_width + 1);
   else
     message_buf = (char *) xmalloc (screen_width + 1);
+
+  /* This may fix a problem of occasionally displaying garbage in the echo area
+     after a resize in X Windows.  */
+  for (i = 0; i < screen_width; i++)
+    message_buf[i] = ' ';
+  message_buf[screen_width] = 0;
 }
 
 struct matrix *
@@ -215,15 +227,24 @@ make_screen_structure (empty)
     {
       /* Make the buffer used by decode_mode_spec.  */
       new->total_contents = (unsigned char *) xmalloc (screen_width + 2);
-      bzero (new->contents, screen_height * sizeof (char *));
+      for (i = 0; i < screen_width; i++)
+	new->total_contents[i] = ' ';
+      new->total_contents[screen_width] = 0;
     }
   else
     {
       /* Add 2 to leave extra bytes at beginning and end of each line.  */ 
       new->total_contents = (unsigned char *) xmalloc (screen_height * (screen_width + 2));
-      bzero (new->total_contents, screen_height * (screen_width + 2));
       for (i = 0; i < screen_height; i++)
-	new->contents[i] = new->total_contents + i * (screen_width + 2) + 1;
+	{
+	  int j;
+
+	  new->contents[i] = new->total_contents + i * (screen_width + 2) + 1;
+	  new->contents[i][screen_width] = 0;
+	  new->contents[i][-1] = 0;
+	  for (j = 0; j < screen_width; j++)
+	    new->contents[i][j] = ' ';
+	}
     }
   bzero (new->enable, screen_height);
   return new;
@@ -637,7 +658,11 @@ update_screen (force, inhibit_hairy_id)
 
   if (screen_height == 0) abort (); /* Some bug zeros some core */
 
-  detect_input_pending ();
+  if (force_redisplay)
+    force = 1;
+
+  if (!force)
+    detect_input_pending ();
   if (!force
       && ((num_input_chars == debug_preemption_char_count
 	   && debug_preemption_vpos == screen_height - 1)
@@ -693,7 +718,7 @@ update_screen (force, inhibit_hairy_id)
 		  sleep (outq / baud_rate);
 		}
 	    }
-	  if ((i - 1) % preempt_count == 0)
+	  if ((i - 1) % preempt_count == 0 && !force)
 	    detect_input_pending ();
 	  /* Now update this line.  */
 	  update_line (i);
@@ -860,6 +885,13 @@ update_line (vpos)
     {
       obody = current_screen->contents[vpos];
       olen = current_screen->used[vpos];
+
+      /* Check for bugs that clobber obody[-1].
+	 Such bugs might well clobber more than that,
+	 so we need to find them, not try to ignore them.  */
+      if (obody[-1] != 0)
+	abort ();
+
       if (! current_screen->highlight[vpos])
 	{
 	  /* Note obody[-1] is always 0.  */
@@ -880,7 +912,17 @@ update_line (vpos)
   /* One way or another, this will enable the line being updated.  */
   current_screen->enable[vpos] = 1;
   current_screen->used[vpos] = new_screen->used[vpos];
+#if !defined (ALLIANT) || defined (ALLIANT_2800)
   current_screen->highlight[vpos] = new_screen->highlight[vpos];
+#else
+  {
+    /* Work around for compiler bug in cc on FX/80 which causes
+       "dispnew.c", line 896: compiler error: no table entry for op OREG.  */
+    char tmp;
+    tmp = new_screen->highlight[vpos];
+    current_screen->highlight[vpos] = tmp;
+  }
+#endif
 
   if (!new_screen->enable[vpos])
     {
@@ -897,8 +939,10 @@ update_line (vpos)
   if (! new_screen->highlight[vpos])
     {
       if (!must_write_spaces)
-	while (nbody[nlen - 1] == ' ')
+	while (nlen > 0 && nbody[nlen - 1] == ' ')
 	  nlen--;
+      if (nlen == 0)
+	goto just_erase;
     }
   else
     {
@@ -1004,6 +1048,9 @@ update_line (vpos)
      This is important because direct_output_for_insert
      can write into the line at a later point.  */
   nbody[nlen] = save;
+  /* Likewise, make sure that the null after the usable space in obody
+     always remains a null.  */
+  obody[olen] = 0;
 
   /* tem gets the distance to insert or delete.
      endmatch is how many characters we save by doing so.
@@ -1154,7 +1201,7 @@ but that the idea of the actual height of the screen should not be changed.")
      Lisp_Object n, pretend;
 {
   CHECK_NUMBER (n, 0);
-  change_screen_size (XINT (n), 0, !NULL (pretend));
+  change_screen_size (XINT (n), 0, !NULL (pretend), 0, 0);
   return Qnil;
 }
 
@@ -1166,7 +1213,7 @@ but that the idea of the actual width of the screen should not be changed.")
      Lisp_Object n, pretend;
 {
   CHECK_NUMBER (n, 0);
-  change_screen_size (0, XINT (n), !NULL (pretend));
+  change_screen_size (0, XINT (n), !NULL (pretend), 0, 0);
   return Qnil;
 }
 
@@ -1194,9 +1241,7 @@ window_change_signal ()
   get_screen_size (&width, &height);
   /* Record the new size, but don't reallocate the data structures now.
      Let that be done later outside of the signal handler.  */
-  in_display++;
-  change_screen_size (height, width, 0);
-  in_display--;
+  change_screen_size (height, width, 0, 1, 0);
   signal (SIGWINCH, window_change_signal);
 
   errno = old_errno;
@@ -1213,33 +1258,43 @@ do_pending_window_change ()
       int newwidth = delayed_screen_width;
       int newheight = delayed_screen_height;
       delayed_size_change = 0;
-      change_screen_size_1 (newheight, newwidth, 0);
+      change_screen_size_1 (newheight, newwidth, 0, 0);
     }
 }
 
 /* Change the screen height and/or width.  Values may be given as zero to
    indicate no change is to take place.
-   PRETEND is normally 0; 1 means change used-size only
-   but don't change the size used for calculations;
-   -1 means don't redisplay.  */
 
-change_screen_size (newlength, newwidth, pretend)
-     register int newlength, newwidth, pretend;
+   PRETEND is normally 0; 1 means change used-size only but don't
+   change the size used for calculations; -1 means don't redisplay.
+
+   If DELAYED, don't change the screen size now; just record the new
+   size and do the actual change at a more convenient time.  The
+   SIGWINCH handler and the X Windows ConfigureNotify code use this,
+   because they can both be called at inconvenient times.
+
+   FORCE means finish redisplay now regardless of pending input.
+   This is effective only is DELAYED is not set.  */
+
+change_screen_size (newlength, newwidth, pretend, delayed, force)
+     register int newlength, newwidth, pretend, delayed, force;
 {
   /* If we can't deal with the change now, queue it for later.  */
-  if (in_display)
+  if (delayed)
     {
       delayed_screen_width = newwidth;
       delayed_screen_height = newlength;
       delayed_size_change = 1;
-      return;
     }
-  delayed_size_change = 0;
-  change_screen_size_1 (newlength, newwidth, pretend);
+  else
+    {
+      delayed_size_change = 0;
+      change_screen_size_1 (newlength, newwidth, pretend, force);
+    }
 }
 
-change_screen_size_1 (newlength, newwidth, pretend)
-     register int newlength, newwidth, pretend;
+change_screen_size_1 (newlength, newwidth, pretend, force)
+     register int newlength, newwidth, pretend, force;
 {
   if ((newlength == 0 || newlength == screen_height)
       && (newwidth == 0 || newwidth == screen_width))
@@ -1265,8 +1320,10 @@ change_screen_size_1 (newlength, newwidth, pretend)
   remake_screen_structures ();
   screen_garbaged = 1;
   calculate_costs ();
+  force_redisplay += force;
   if (pretend >= 0)
     redisplay_preserve_echo_area ();
+  force_redisplay -= force;
 }
 
 DEFUN ("baud-rate", Fbaud_rate, Sbaud_rate, 0, 0, 0,
@@ -1361,13 +1418,12 @@ DEFUN ("sleep-for", Fsleep_for, Ssleep_for, 1, 1, 0,
   while (1)
     {
       gettimeofday (&timeout, &garbage1);
-      timeout.tv_sec = end_time.tv_sec - timeout.tv_sec;
-      timeout.tv_usec = end_time.tv_usec - timeout.tv_usec;
-      if (timeout.tv_usec < 0)
-	timeout.tv_usec += 1000000,
-      timeout.tv_sec--;
-      if (timeout.tv_sec < 0)
+
+      /* In effect, timeout = end_time - timeout.
+	 Break if result would be negative.  */
+      if (timeval_subtract (&timeout, end_time, timeout))
 	break;
+
       if (!select (1, 0, 0, 0, &timeout))
 	break;
     }
@@ -1384,6 +1440,41 @@ DEFUN ("sleep-for", Fsleep_for, Ssleep_for, 1, 1, 0,
 #endif /* no subprocesses */
   return Qnil;
 }
+
+#ifdef HAVE_TIMEVAL
+
+/* Subtract the `struct timeval' values X and Y,
+   storing the result in RESULT.
+   Return 1 if the difference is negative, otherwise 0.  */
+
+int
+timeval_subtract (result, x, y)
+     struct timeval *result, x, y;
+{
+  /* Perform the carry for the later subtraction by updating y.
+     This is safer because on some systems
+     the tv_sec member is unsigned.  */
+  if (x.tv_usec < y.tv_usec)
+    {
+      int nsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
+      y.tv_usec -= 1000000 * nsec;
+      y.tv_sec += nsec;
+    }
+  if (x.tv_usec - y.tv_usec > 1000000)
+    {
+      int nsec = (y.tv_usec - x.tv_usec) / 1000000;
+      y.tv_usec += 1000000 * nsec;
+      y.tv_sec -= nsec;
+    }
+
+  /* Compute the time remaining to wait.  tv_usec is certainly positive.  */
+  result->tv_sec = x.tv_sec - y.tv_sec;
+  result->tv_usec = x.tv_usec - y.tv_usec;
+
+  /* Return indication of whether the result should be considered negative.  */
+  return x.tv_sec < y.tv_sec;
+}
+#endif /* HAVE_TIMEVAL */
 
 DEFUN ("sit-for", Fsit_for, Ssit_for, 1, 2, 0,
   "Perform redisplay, then wait for ARG seconds or until input is available.\n\
@@ -1531,7 +1622,8 @@ syms_of_display ()
   DEFVAR_BOOL ("inverse-video", &inverse_video,
     "*Non-nil means use inverse-video.");
   DEFVAR_BOOL ("visible-bell", &visible_bell,
-    "*Non-nil means try to flash the screen to represent a bell.");
+    "*Non-nil means try to flash the screen to represent a bell.\n\
+Note: for X windows, you must use x-set-bell instead.");
   DEFVAR_BOOL ("no-redraw-on-reenter", &no_redraw_on_reenter,
     "*Non-nil means no need to redraw entire screen after suspending.\n\
 It is up to you to set this variable to inform Emacs.");

@@ -53,7 +53,7 @@ enum Lisp_Type
        but which, while active, are reached by GC mark exactly once
        and should be marked through like a vector.  */
     Lisp_Temp_Vector,
-#endif 0
+#endif /* 0 */
 
     /* Editor buffer.  obj.v.buffer points to a struct buffer.
        No buffer is ever truly freed; they can be "killed", but this
@@ -217,9 +217,9 @@ union Lisp_Object
   }
 Lisp_Object;
 
-#endif BIG_ENDIAN
+#endif /* BIG_ENDIAN */
 
-#endif NO_UNION_TYPE
+#endif /* NO_UNION_TYPE */
 
 
 /* If union type is not wanted, define Lisp_Object as just a number
@@ -271,7 +271,7 @@ Lisp_Object;
 /* Extract the value of a Lisp_Object as a signed integer.  */
 
 #ifndef XINT   /* Some machines need to do this differently.  */
-#define XINT(a) (((a) << INTBITS-VALBITS) >> INTBITS-VALBITS)
+#define XINT(a) (((a) << INTBITS-VALBITS) >> (INTBITS-VALBITS))
 #endif
 
 /* Extract the value as an unsigned integer.  This is a basis
@@ -386,7 +386,7 @@ Lisp_Object;
 #define XMARK(a) (XMARKBIT(a) = 1)
 #define XUNMARK(a) (XMARKBIT(a) = 0)
 
-#endif NO_UNION_TYPE
+#endif /* NO_UNION_TYPE */
 
 
 #define XCONS(a) ((struct Lisp_Cons *) XPNTR(a))
@@ -546,8 +546,8 @@ struct Lisp_Marker
     if (XPNTR (obj) < (unsigned int) &my_edata) \
       pure_write_error (); }
 
-#endif PNTR_COMPARISON_TYPE
-#endif VIRT_ADDRESS_VARIES
+#endif /* PNTR_COMPARISON_TYPE */
+#endif /* VIRT_ADDRESS_VARIES */
 
 /* Cast pointers to this type to compare them.  Some machines want int.  */
 #ifndef PNTR_COMPARISON_TYPE
@@ -616,14 +616,14 @@ extern void defsubr ();
 #define DEFVARBOOL(lname, vname, doc) defvar_bool (lname, vname)
 #define DEFVARINT(lname, vname, doc) defvar_int (lname, vname)
 #define DEFVARPERBUFFER(lname, vname, doc)  \
- defvar_per_buffer (lname, vname)
+ defvar_per_buffer (lname, vname, 0)
 
 #define DEFVAR_LISP(lname, vname, doc) defvar_lisp (lname, vname)
 #define DEFVAR_LISP_NOPRO(lname, vname, doc) defvar_lisp_nopro (lname, vname)
 #define DEFVAR_BOOL(lname, vname, doc) defvar_bool (lname, vname)
 #define DEFVAR_INT(lname, vname, doc) defvar_int (lname, vname)
 #define DEFVAR_PER_BUFFER(lname, vname, doc)  \
- defvar_per_buffer (lname, vname)
+ defvar_per_buffer (lname, vname, 0)
 
 /* Structure for recording Lisp call stack for backtrace purposes */
 
@@ -899,7 +899,7 @@ extern Lisp_Object Fscan_buffer ();
 
 /* defined in minibuf.c */
 
-extern Lisp_Object last_minibuf_string;
+extern Lisp_Object last_minibuf_string, Vminibuffer_list;
 extern Lisp_Object read_minibuf (), Fcompleting_read ();
 extern Lisp_Object Fread_from_minibuffer ();
 extern Lisp_Object Fread_variable ();
@@ -962,7 +962,7 @@ extern int size_of_current_environ ();
 extern void get_current_environ ();
 /* extern void current_environ (); */
 extern Lisp_Object Fgetenv ();
-#endif MAINTAIN_ENVIRONMENT
+#endif /* MAINTAIN_ENVIRONMENT */
 
 /* defined in doc.c */
 extern Lisp_Object Vdoc_file_name;

@@ -6,7 +6,11 @@
 
 #ifndef HAVE_GETPAGESIZE
 
+#ifdef VMS
+#include "param.h"
+#else
 #include <sys/param.h>
+#endif
 
 #ifdef EXEC_PAGESIZE
 #define getpagesize() EXEC_PAGESIZE

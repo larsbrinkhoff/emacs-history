@@ -74,8 +74,8 @@
   (define-key view-mode-map "h" 'Helper-describe-bindings)
   (define-key view-mode-map "?" 'Helper-describe-bindings)
   (define-key view-mode-map "\C-h" 'Helper-help)
-  (define-key view-mode-map "\C-n" 'next-line)
-  (define-key view-mode-map "\C-p" 'previous-line)
+  (define-key view-mode-map "\C-n" 'View-next-line)
+  (define-key view-mode-map "\C-p" 'View-previous-line)
   (define-key view-mode-map "\C-s" 'isearch-forward)
   (define-key view-mode-map "\C-r" 'isearch-backward)
   (define-key view-mode-map "s" 'isearch-forward)
@@ -212,7 +212,6 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 		 (if (buffer-file-name)
 		     (file-name-nondirectory (buffer-file-name))
 		     (buffer-name))))
-	(goal-column 0)
 	(view-buffer (buffer-name)))
     (unwind-protect
 	(progn
@@ -357,3 +356,12 @@ invocations return to earlier marks."
       (message "Can't find occurrence %d of %s" times regexp)
       (sit-for 4))))
 
+(defun View-previous-line (count)
+  "Move up to start of previous line.  Argument is repeat count."
+  (interactive "p")
+  (forward-line (- count)))
+
+(defun View-next-line (count)
+  "Move down to start of next line.  Argument is repeat count."
+  (interactive "p")
+  (forward-line count))

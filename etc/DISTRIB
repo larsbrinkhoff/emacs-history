@@ -1,12 +1,12 @@
-						-*- text -*-
-      The prices on the order form below EXPIRE in June 1991
+-*- text -*-
+	The prices on the order form below EXPIRE on 30 June 1992
 
-	   GNU Emacs availability information, January 1991
-Copyright (C) 1986, 1987, 1988, 1989, 1990 Free Software Foundation, Inc.
+	   GNU Emacs availability information, January 1992
+Copyright (C) 1986, 1987, 1988, 1989, 1990, 1991, 1992 Free Software Foundation, Inc.
 
-   Permission is granted to anyone to make or distribute
-   verbatim copies of this document provided that the
-   copyright notice and this permission notice are preserved.
+	Permission is granted to anyone to make or distribute
+	verbatim copies of this document provided that the
+	copyright notice and this permission notice are preserved.
 
 GNU Emacs is legally owned by the Free Software Foundation, but we
 regard the foundation actually as its custodian on behalf of the
@@ -16,24 +16,23 @@ The foundation permits everyone to have and run copies of GNU Emacs,
 at no charge, and to redistribute copies under certain conditions
 which are designed to make sure that that all modified versions of GNU
 Emacs remain as free as the versions we distribute.  These conditions
-are stated in the document "GNU Emacs General Public License", a copy
+are stated in the document "GNU Emacs General Public License," a copy
 of which is required to be distributed with every copy of GNU Emacs.
 It is usually in a file named COPYING in the same directory as this
 file.
 
 If you do not know anyone to get a copy of GNU Emacs from, you can
-order a tape from the Free Software Foundation.  We distribute Emacs
-version 18 on 1600bpi industry standard mag tape in tar format.  We
-will also ship it on 1/4" Sun cartridge tapes in tar format and on
-1600bpi magtape in VMS interchange (aka backup) format.  We also
-distribute nicely typeset copies of the Emacs manual and the Emacs
-reference card.  See the order form at the end of this file.
+order a tape from the Free Software Foundation.	 We distribute Emacs
+version 18 on mag tape in different formats for many machines.	We also
+distribute nicely typeset copies of the Emacs user manual, Emacs Lisp
+Reference Manual, the Emacs reference card, etc.  See the order form at
+the end of this file.
 
 If you have Internet access, you can copy the latest Emacs
-distribution from host prep.ai.mit.edu.  There are several ways to do
+distribution from host prep.ai.mit.edu.	 There are several ways to do
 this; see the file `FTP' in the same directory as this file for more
 information.  Even better, get the latest version of the file from
-`/pub/gnu/etc/FTP' on prep.ai.mit.edu for the most current
+`/pub/gnu/GNUinfo/FTP' on prep.ai.mit.edu for the most current
 arrangements.  It may also be possible to copy Emacs via uucp; the
 file `FTP' contains information on that too.
 
@@ -53,10 +52,10 @@ cannot even guess what such problems may exist.
 GNU Emacs is distributed with no warranty (see the General Public
 License for full details, in the file COPYING in this directory), and
 neither I nor the Free Software Foundation promises any kind of
-support or assistance to users.  The foundation keeps a list of people
+support or assistance to users.	 The foundation keeps a list of people
 who are willing to offer support and assistance for hire.  It is
 usually in a file named SERVICE in the same directory as this file.
-You get the latest version of the file from `/pub/gnu/etc/SERVICE' on
+You get the latest version of the file from `/pub/gnu/GNUinfo/SERVICE' on
 prep.ai.mit.edu.
 
 However, we plan to continue to improve GNU Emacs and keep it
@@ -69,7 +68,7 @@ If you are on the Internet, report bugs to
 bug-gnu-emacs@prep.ai.mit.edu; on UUCP, use the address
 ...!uunet!prep.ai.mit.edu!bug-gnu-emacs.  Otherwise, phone the
 foundation at the number listed below, or write to the address listed
-below.  General questions about the GNU Project can be asked of
+below.	General questions about the GNU Project can be asked of
 gnu@prep.ai.mit.edu.
 
 If you are a computer manufacturer, I encourage you to ship a copy of
@@ -81,7 +80,7 @@ product and divide it by five, that is a good amount.
 
 If you like GNU Emacs, please express your satisfaction with a
 donation: send me or the Foundation what you feel Emacs has been worth
-to you.  If you are glad that I developed GNU Emacs and distribute it
+to you.	 If you are glad that I developed GNU Emacs and distribute it
 as freeware, rather than following the obstructive and antisocial
 practices typical of software developers, reward me.  If you would
 like the Foundation to develop more free software, contribute.
@@ -96,210 +95,333 @@ information on GNU, see the file GNU in this directory.
 			Chief GNUisance,
 			President of the Free Software Foundation
 
-Our Price Increase
-
-Through 1990, our price for tape distribution of an ordinary magnetic
-tape was $150.  That price was unchanged since the FSF was founded, in
-1985.  Inflation since that time has made that price equivalent to
-nearly $200 in today's dollars.  We avoided raising the price for so
-long because any price change results in confusion, but at the
-beginning of 1991, we decided to get it done once and for all.
-
-A Sun cartridge now costs only $10 more than a reel-to-reel tape
-because our quantity purchases have reduced the extra cost to us of
-these cartridges.
-
-The VMS tapes cost $195 just to be different.  Sometimes people order
-tapes and don't say whether they want Unix or VMS.  Now we will be
-able to tell by the price.
-
-We've raised the prices on several manuals because we had very little
-margin on them.  Other manuals that weren't squeezing us have
-unchanged prices.  This increase has allowed us to offer the sort of
-quantity discount for the Emacs manual that bookstores expect, which
-may increase the availability of the manual.
-
-Barring a return to severe inflation, our prices should now be stable
-for years to come.
-
-The old prices, in effect through January 1991, were:
-$150 for a reel-to-reel magnetic tape (regardless of contents), $175
-for a Sun cartridge, $15 for an Emacs user's manual, $60 for six Emacs
-user's manuals.
-
-
 		 Free Software Foundation Order Form
-				   
-       This form is effective from Feb 1 1991 through June 1991
 
-Prices and contents are subject to change without notice.
-Please allow six weeks for delivery (though it won't usually take that
-long).
+	This order form is effective 1 January 1992 - 30 June 1992
 
-All software and publications are distributed with permission to copy
-and redistribute.
+Prices and contents may change without notice.
 
-TeX source for each manual is on the appropriate tape; the prices for
+Please allow six weeks for delivery (though it won't usually take that long).
+
+All software and publications are distributed with permission to copy and to
+redistribute.
+
+Texinfo source for each manual is on the appropriate tape.  The prices for
 tapes do not include printed manuals.
 
-All software and documentation from the Free Software Foundation is
-provided on an "as is" basis, with no warranty of any kind.
+All software and documentation from the Free Software Foundation is provided
+on an "as is" basis, with no warranty of any kind.
 
-Quantity  Price  Item
+Contents of Tapes:
 
-For Unix systems, on 1600 bpi 9-track tape in Unix tar format:
+GNU Emacs Tape
 
-________ $200	GNU Emacs source code and other software.
-		The tape includes:
-		* GNU Emacs (the extensible, customizable, self-documenting
-		  real-time display editor)
-		* The GNU Emacs Lisp Reference Manual, as Texinfo source.
-		* MIT Scheme (a dialect of Lisp)
-		* T, Yale's implementation of Scheme
-		* Bison (a free, compatible replacement for yacc)
-		* Nethack (a rogue-like game)
-		* GNU Chess (a chess playing program with an interface to X).
-							
-________ $200	GNU Compiler and related software, for Unix systems.
-		The tape includes:
-		* GCC (the GNU C Compiler, including COFF support)
-		* G++ (the C++ front end to GCC)
-		* lib-g++ (the G++ class library)
-		* NIH Class Library (formerly known as OOPS)
-		* Bash (GNUs' Bourne Again SHell)
-		* Bison (a free, compatible replacement for yacc)
-		* Flex (Vern Paxson fast rewrite of lex)
-		* Ghostscript (a Postscript interpreter)
-		* Gawk (the GNU implementation of the AWK programming language)
-		* Gas (the GNU Assembler)
-		* GDB (The GNU source-level C debugger)
-		* Gnuplot (an interactive mathematical plotting program)
-		* Data compression software
-		* Perl (version 3.0; a programming language interpreter)
-		* RCS (Revision Control System)
-		* CVS (Concurrent Control System)
-		* GNU object file utilities (ar, ld, make, gprof, size, nm,
-		  strip, ranlib, et al.)
-		* other GNU utilities (make, diff, grep, tar, et al.)
-		* GNU GO (the GNU implementation of the game of GO)
-		* the freed files from the 4.3BSD-Tahoe distribution
+The tape includes source code for:
+* GNU Emacs (the extensible, customizable, self-documenting, real-time display
+  editor)
+* The GNU Emacs Manual, as Texinfo source
+* The GNU Termcap Manual, as Texinfo source (the GNU termcap library is
+  included with GNU Emacs)
+* The GNU Emacs Lisp Reference Manual, as Texinfo source
+* Calc (the extensible, advanced desk calculator and mathematical tool that
+  runs as part of GNU Emacs)
+* The Calc Manual, as Texinfo source
+* MIT Scheme (a dialect of Lisp)
+* T (Yale's implementation of Scheme)
+* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
+  documentation system, included with GNU Emacs.  Texinfo is used to produce
+  both on-line and printed documents.)
+* The Texinfo Manual, as Texinfo source
+* texi2roff (for printing Texinfo source with [nt]roff)
+* Data Compression Software (to uncompress source on the tape)
 
-________ $200	Required MIT X Window System X11R4, core software and
-		documentation, and contributed client software.
+GNU Languages Tape
 
-________ $200   Optional MIT X Window System X11R4, contributed software
-		including libraries, games, Andrew and toolkits.
+The tape includes source code for:
+* GCC 1 (the GNU C Compiler, including COFF support)
+* The GCC Manual, as Texinfo source (not yet on our order form)
+* G++ (the C++ front end to GCC)
+* The GNU G++ Users Guide, as Texinfo source (not yet published on paper)
+* libg++ (the G++ class library)
+* NIH Class Library (formerly known as OOPS)
+* Gas (the GNU Assembler)
+* GNU binary file utilities (ar, gprof, ld, nm, size, strip, & ranlib)
+* dld (a dynamic linker)
+* COFF support for GNU software tools
+* Flex (Vern Paxson's fast rewrite of lex)
+* Bison (a free, compatible replacement for yacc)
+* The Bison Manual, as Texinfo source
+* GDB 3.5 (The GNU source-level C debugger)
+* The GDB Manual, as Texinfo source
+* GNU make
+* The GNU Make Manual, as Texinfo source
+* GNU indent
+* Gawk (the GNU implementation of the AWK programming language)
+* The Gawk Manual, as Texinfo source
+* GNU Smalltalk (the GNU implementation of this programming language system)
+* Perl (a programming language interpreter)
+* gperf (a perfect hash-table generator)
+* ae (works with GCC to produce more complete profiling information)
+* f2c  (a FORTRAN to C translator)
+* gdbm library (GNU implementation of the standard dbm & ndbm libraries)
+* texi2roff (for printing Texinfo source with [nt]roff)
+* Data Compression Software (to uncompress source on the tape)
 
-For Suns and other Unix Systems, on QIC-24 DC300XLP 1/4 inch cartridge
-tape, Unix tar format:
+GNU Experimental Tape
 
-________ $210   GNU Emacs and other software, as above.
+This tape will not be ready until March 1992.  The tape's source code
+will include:
+* GCC 2 (the GNU C/C++/Objective-C Compiler with many new features)
+* GDB 4 (The GNU source-level C debugger)
+* BFD ((Binary File Descriptor Library)
+* GNU C Library (POSIX.1 compliant, upward compatible with 4.3 BSD & System V)
+* GNU Graphics (graph, plot, plot2ps, et al.)
 
-________ $210	GNU compiler tape, for Suns, as above.
+GNU Utilities Tape
 
-________ $210	Required MIT X Window System X11R4, as above.
+The tape includes source code for:
+* Bash (GNU's Bourne Again SHell)
+* Groff (GNU troff & pic, eqn, tbl, refer; -man, -ms, -mm macros; & drivers)
+* GNU tar & cpio
+* GNU diff, grep, egrep, fgrep
+* patch
+* RCS (Revision Control System)
+* CVS (Concurrent Version System)
+* GNU fileutils (chgrp, chmod, chown, cp, dd, df, du, install, ln, ls, mkdir,
+  mkfifo, mknod, mv, mvdir, rm, rmdir, & touch)
+* GNU shellutils (basename, date, dirname, env, expr, groups, id, logname,
+  nice, nohup, pathchk, printenv, printf, sleep, stty, tee, test, tty, uname,
+  whoami, & yes)
+* GNU textutils (cat, cmp, comm, csplit, cut, expand, fold, head, join, paste,
+  pr, sort, split, sum, tac, tail, unexpand, uniq, & wc)
+* Ghostscript (a Postscript interpreter)
+* Gnuplot (an interactive mathematical plotting program)
+* GNU m4, sed, & find
+* elvis (a clone of the vi/ex Unix editor)
+* screen (a terminal multiplexor that allows you to handle several independent
+  ``screens'' (ttys) on a single physical terminal)
+* GNU time & tput
+* ms (MandelSpawn, a parallel Mandelbrot program for the X window system)
+* GNU Chess (a chess playing program with an interface to X)
+* Nethack (a rogue-like game)
+* GNU GO (the GNU implementation of the game of GO)
+* the freed files from the 4.3BSD-Tahoe distribution
+* GNU make
+* The GNU Make Manual, as Texinfo source
+* texi2roff (for printing Texinfo source with [nt]roff)
+* Data Compression Software (to uncompress source on the tape)
 
-________ $210   Optional MIT X Window System X11R4, as above.
+X11R5 Required Tape
 
-For IBM RS/6000 Systems, on QIC-24 DC600A 1/4 inch cartridge
-tape, in an AIX distribution format.
+This tape has source code for the required MIT X Window System X11R5,
+including core software and documentation, and contributed client software.
 
-________ $215   GNU Emacs and other software, as above.
-		plus executable files of Emacs.
+X11R5 Optional Tape
 
-For VMS systems, on 1600 bpi reel-to-reel 9-track tape in VMS BACKUP
-format:
+This tape has source code for the optional MIT X Window System X11R5,
+including contributed software, libraries, games, Andrew and toolkits.
+
+Quantity  Price	 Item
 
-________ $195	GNU Emacs source code and binaries.
 
-________ $195	GNU C compiler source code and binaries.
-		Includes Bison and GAS.
+For Unix systems, on 1600 bpi reel-to-reel 9-track 1/2" tape in Unix tar format
+(tape contents described above):
 
-GNU Emacs manual, ~300 pages, phototypeset, offset printed, spiral
-bound, with a reference card.
+________ $200	GNU Emacs Tape
 
-________  $20	A single GNU Emacs manual.
+________ $200	GNU Languages Tape
 
-________  $13	Emacs manuals, unit price for 6 or more.
+________ $200	GNU Experimental Tape (not ready until March 1992)
 
-The following documentation:
+________ $200	GNU Utilities Tape
+
+________ $200	X11R5 Required Tape
+
+________ $200	X11R5 Optional Tape
+
+
+For Suns and some other Unix Systems, on QIC-24 DC300XLP 1/4 inch
+cartridge tape, Unix tar format (tape contents described above):
+
+________ $210	GNU Emacs Tape
+
+________ $210	GNU Languages Tape
+
+________ $210	GNU Experimental Tape (not ready until March 1992)
+
+________ $210	GNU Utilities Tape
+
+________ $210	X11R5 Required Tape
+
+________ $210	X11R5 Optional Tape
+
+
+For HP Systems, on 16-track DC600HC 1/4 inch cartridge tape, Unix tar format
+(tape contents described above):
+
+________ $230	GNU Emacs Tape
+
+________ $230	GNU Languages Tape
+
+________ $230	GNU Experimental Tape (not ready until March 1992)
+
+________ $230	GNU Utilities Tape
+
+________ $230	X11R5 Required Tape
+
+________ $230	X11R5 Optional Tape
+
+
+For IBM RS/6000 Systems, on DC600A 1/4 inch cartridge tape Unix tar format
+(tape contents described above) (the GNU Languages Tape is not yet available
+for the RS/6000):
+
+________ $215	GNU Emacs Tape, plus executable files of Emacs
+
+________ $215	GNU Experimental Tape (not ready until March 1992)
+
+________ $215	GNU Utilities Tape
+
+________ $215	X11R5 Required Tape
+
+________ $215	X11R5 Optional Tape
+
+
+For VMS systems, on 1600 bpi reel-to-reel 9-track 1/2" tape in VMS BACKUP (aka
+interchange format):
+
+________ $195	GNU Emacs source code and binaries.  None of the other
+		software on the GNU Emacs Tape, described above, is included.
+
+________ $195	GNU C compiler source code and binaries.  Includes Bison and
+		GAS.  None of the other software on the GNU Languages Tape,
+		described above, is included.
+
+
+The following manuals are all bound to lie open, flat on a table:
+
+________  $20	GNU Emacs manual, unit price for 1 to 5 copies.
+		~280 pages with a reference card, phototypeset and
+		offset printed.
+
+________  $13	GNU Emacs manuals, unit price for 6 or more.
+
+________  $50	A single GNU Emacs Lisp Reference Manual, ~550 pages,
+		offset printed, spiral bound.
+
+________ $200	A box of 5 GNU Emacs Lisp Reference Manuals.
+
+________  $50	Calc Manual, ~590 pages.  Calc is an extensible, advanced desk
+		calculator and mathematical tool that runs under GNU Emacs.
+
+________  $15	GDB Manual, ~170 pages, with a reference card.
+
+________  $15	Texinfo Manual, ~220 pages.  Texinfo is GNU's structured
+		documentation system, included with GNU Emacs.	Texinfo is
+		used to produce both on-line and printed documents.  This
+		manual describes how to write Texinfo documents.
+
+________  $10	Termcap Manual, ~60 pages.  Documents the termcap library and
+		GNU's extensions to it.	 The GNU termcap library is included
+		with GNU Emacs.
+
+________  $10	Bison Manual, ~100 pages.
+
+________  $15	Gawk Manual, ~200 pages.
+
+________  $15	Make Manual, ~120 pages.
+
+
+The following reference cards:
 
 ________   $1	One GNU Emacs reference card, without the manual.
 
-________   $5   Packet of ten GNU Emacs reference cards.
+________   $5	Packet of ten GNU Emacs reference cards.
 
-________  $50   GNU Emacs Lisp Reference Manual, ~550 pages, spiral bound.
+________   $1	One GDB reference card, without the manual.
 
-________ $200   Box of 5 GNU Emacs Lisp Reference Manuals.
+________   $5	Packet of ten GDB reference cards.
 
-________  $10   GDB Manual, ~70 pages, side stapled.
 
-________  $15	Texinfo Manual, ~200 pages, side stapled.  Texinfo is GNU's
-		structured documentation system, included with GNU Emacs.
-		Texinfo is used to produce both on-line and printed documents.
-		This manual describes how to write Texinfo documents.
-
-________  $10   Termcap Manual, ~60 pages, side stapled.  Documents the
-		termcap library and GNU's extensions to it.  The GNU termcap
-		library is included with GNU Emacs.
-
-________  $10   Bison Manual, ~80 pages, side stapled.
-
-________  $15   Gawk Manual, ~150 pages, side stapled.
-
-________  $15   Make Manual, ~120 pages, side stapled.
+________  Subtotal
 --------
 
-________  Sub Total
+________	In Massachusetts: add 5% sales tax, or give tax exempt number.
 
-________   If ordering from Massachusetts: add 5% sales tax
-		or give tax exempt number.
-
-We pay for shipping via ground transportation in the 
-   contiguous 48 states and Canada.
+We pay for shipping via UPS ground transportation in the contiguous 48 states
+and Canada.
 
 ________   In Alaska, Hawaii, or Puerto Rico, for shipping:
-		- For Emacs Lisp Reference manuals, add $5 each,
+		- For Emacs Lisp Reference and Emacs Calc manuals, add $5 each,
 		  or $20 per box.  For all other items, add $5 base charge,
-		  then $1 per item except Emacs reference cards.
+		  then $1 per item except reference cards.
+
 	   If outside of U.S., Canada and Puerto Rico, for shipping costs:
-		- for tapes or unboxed manuals, please add $15, and then add
-		  $15 more for each tape or unboxed manual in the order:
+		- for tapes or unboxed manuals, please add $15 base
+		  charge, and then add $15 more for each tape or unboxed
+		  manual (not reference cards) in the order:
 ________	  Shipping cost for tapes and unboxed manuals = $15 + $15 * n;
-		- for each box of Emacs manuals,
+		- for each box of Emacs Lisp Reference manuals,
 ________	  please add $70.
 
 ________   Optional tax deductible donation.
---------
+
 
 ________   Total paid
+--------
 
-Orders are filled upon receipt of check or money order.  We do not have
-the staff to handle the billing of unpaid orders.  Please help keep
-our lives simple by including your payment with your order.
+Orders are filled upon receipt of check or money order.	 We do not have the
+staff to handle the billing of unpaid orders.  Please help keep our lives
+simple by including your payment with your order.
 
-Please make checks payable to Free Software Foundation.  Mail orders to:
+Please make checks payable to: "Free Software Foundation".
 
-   Free Software Foundation, Inc.
-   675 Massachusetts Avenue
-   Cambridge, MA  02139
+Please mail orders to:
 
-   +1 617-876-3296
+	Free Software Foundation, Inc.
+	675 Massachusetts Avenue
+	Cambridge, MA  02139
+	USA
 
-
-
-EFFECTIVE: February 1 1991 to June 1991
-
+	+1 617-876-3296
 
 
-Name: 
+This Order Form is EFFECTIVE 1 January 1992 - 30 June 1992
+
+
+
+Name:
       ----------------------------------------------------------------
 
+Mail Stop/Dept. Name
+		     -------------------------------------------------
+
 Organization:
-              --------------------------------------------------------
+	      --------------------------------------------------------
 
 Street Address:
-                ------------------------------------------------------
+		------------------------------------------------------
 
-City / State / Zip:
-                    --------------------------------------------------
+
+----------------------------------------------------------------------
+
+City / State / Province:
+			 ---------------------------------------------
+
+Zip Code / Postal Code / Country:
+				  ------------------------------------
+
+In case of a problem with your order, or for overseas customs agents,
+please add your voice telephone number (not your FAX number):
+
+
+			      ----------------------------------------
+
+For orders outside the US:  Orders MUST be paid in US dollars.	You are
+responsible for paying all duties, tariffs, and taxes.	If you refuse
+to pay the charges, the shipper will return or abandon your order.
+
+Please write the telephone number that you want custom agents to call
+in the space provided above.
+
+This Order Form is EFFECTIVE 1 January 1992 - 30 June 1992

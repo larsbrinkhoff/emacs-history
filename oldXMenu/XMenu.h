@@ -1,4 +1,4 @@
-#include <X11/copyright.h>
+#include "copyright.h"
 
 /* $Header: XMenu.h,v 1.5 87/12/04 10:26:47 swick Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
@@ -17,7 +17,7 @@
 #define _XMenu_h_
 
 #include <X11/Xutil.h>
-#include <X11/X10.h>
+#include "X10.h"
 
 #define FAILURE			-1
 #define SUCCESS			1
@@ -164,7 +164,7 @@ typedef enum _xmstyle {
  */
 typedef enum _xmmode {
     BOX,			/* BOXed graphic rendition. */
-    INVERT,			/* INVERTed graphic rendition. */
+    INVERT			/* INVERTed graphic rendition. */
 } XMMode;
 
 

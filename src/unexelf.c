@@ -347,6 +347,18 @@ extern void fatal(char *, ...);
 
 typedef unsigned char byte;
 
+/* Round X up to a multiple of Y.  */
+
+int
+round_up (x, y)
+     int x, y;
+{
+  int rem = x % y;
+  if (rem == 0)
+    return x;
+  return x - rem + y;
+}
+
 /* ****************************************************************
  * unexec
  *
@@ -514,12 +526,19 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
 
   for (n = new_file_h->e_phnum - 1; n >= 0; n--)
     {
+      /* Compute maximum of all requirements for alignment of section.  */
+      int alignment = (NEW_PROGRAM_H (n)).p_align;
+      if ((OLD_SECTION_H (old_bss_index)).sh_addralign > alignment)
+	alignment = OLD_SECTION_H (old_bss_index).sh_addralign;
+
       if (NEW_PROGRAM_H(n).p_vaddr + NEW_PROGRAM_H(n).p_filesz > old_bss_addr)
 	fatal ("Program segment above .bss in %s\n", old_name, 0);
 
       if (NEW_PROGRAM_H(n).p_type == PT_LOAD
-	  && (NEW_PROGRAM_H(n).p_vaddr + NEW_PROGRAM_H(n).p_filesz
-	      == old_bss_addr))
+	  && (round_up ((NEW_PROGRAM_H (n)).p_vaddr
+			+ (NEW_PROGRAM_H (n)).p_filesz,
+			alignment)
+	      == round_up (old_bss_addr, alignment)))
 	break;
     }
   if (n < 0)

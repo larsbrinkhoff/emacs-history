@@ -135,6 +135,12 @@ This applies when the local-variables list is scanned automatically
 after you find a file.  If you explicitly request such a scan with
 \\[normal-mode], there is no query, regardless of this variable.")
 
+(defconst ignore-local-eval nil
+  "*Non-nil means ignore the \"variable\" `eval' in a file's local variables.
+This applies when the local-variables list is scanned automatically
+after you find a file.  If you explicitly request such a scan with
+\\[normal-mode], there is no query, regardless of this variable.")
+
 ;; Avoid losing in versions where CLASH_DETECTION is disabled.
 (or (fboundp 'lock-buffer)
     (fset 'lock-buffer 'ignore))
@@ -218,7 +224,8 @@ If the current buffer now contains an empty file that you just visited
 	     (setq buffer-file-name ofile)
 	     (lock-buffer)
 	     (rename-buffer oname))))
-    (kill-buffer obuf)))
+    (or (eq obuf (current-buffer))
+	(kill-buffer obuf))))
 
 (defun create-file-buffer (filename)
   "Create a suitably named buffer for visiting FILENAME, and return it.
@@ -229,6 +236,9 @@ otherwise a string <2> or <3> or ... is appended to get an unused name."
 	(setq lastname filename))
     (generate-new-buffer lastname)))
 
+(defconst automount-dir-prefix "^/tmp_mnt/"
+  "Regexp to match the automounter prefix in a directory name.")
+
 (defun find-file-noselect (filename &optional nowarn)
   "Read file FILENAME into a buffer and return the buffer.
 If a buffer exists visiting FILENAME, return that one,
@@ -236,7 +246,9 @@ but verify that the file has not changed since visited or saved.
 The buffer is not selected, just returned to the caller."
   (setq filename (expand-file-name filename))
   ;; Get rid of the prefixes added by the automounter.
-  (if (string-match "^/tmp_mnt/" filename)
+  (if (and (string-match automount-dir-prefix filename)
+	   (file-exists-p (file-name-directory
+			   (substring filename (1- (match-end 0))))))
       (setq filename (substring filename (1- (match-end 0)))))
   (if (file-directory-p filename)
       (if find-file-run-dired
@@ -446,7 +458,8 @@ for current buffer."
 		       (funcall (intern (concat (downcase (symbol-name val))
 						"-mode"))))
 		      ((eq var 'eval)
-		       (if (string= (user-login-name) "root")
+		       (if (or (and ignore-local-eval (not force))
+			       (string= (user-login-name) "root"))
 			   (message "Ignoring `eval:' in file's local variables")
 			 (eval val)))
 		      (t (make-local-variable var)
@@ -469,15 +482,18 @@ if you wish to pass an empty string as the argument."
       (progn
 	(lock-buffer filename)
 	(unlock-buffer)))
-  (setq buffer-file-name filename)
   (if filename
-      (let ((new-name (file-name-nondirectory buffer-file-name)))
+      (let ((new-name (file-name-nondirectory filename)))
 	(if (string= new-name "")
 	    (error "Empty file name"))
+	(if (file-directory-p filename)
+	    (error "File %s is a directory" filename))
 	(if (eq system-type 'vax-vms)
 	    (setq new-name (downcase new-name)))
+	(setq buffer-file-name filename)
 	(setq default-directory (file-name-directory buffer-file-name))
-	(or (get-buffer new-name) (rename-buffer new-name))))
+	(or (get-buffer new-name) (rename-buffer new-name)))
+    (setq buffer-file-name nil))
   (setq buffer-backed-up nil)
   (clear-visited-file-modtime)
   (kill-local-variable 'write-file-hooks)
@@ -561,11 +577,9 @@ redefine it."
   (substring name 0
 	     (if (eq system-type 'vax-vms)
 		 (or (string-match ";[0-9]+\\'" name)
-		     (string-match ".[0-9]+\\'" name)
-		     (length name))
-	       (or (string-match "\\.~[0-9]+~\\'" name)
-		   (string-match "~\\'" name)
-		   (length name)))))
+		     (and (string-match "\\." name (string-match "[]>]" name))
+			  (string-match "\\.[0-9]+\\'" name (match-end 0))))
+	       (string-match "\\(\\.~[0-9]+\\)?~\\'" name))))
 
 (defun make-backup-file-name (file)
   "Create the non-numeric backup file name for FILE.
@@ -602,7 +616,8 @@ Value is a list whose car is the name for the backup file
       (if (not deserve-versions-p)
 	  (list (make-backup-file-name fn))
 	(cons (concat fn ".~" (int-to-string (1+ high-water-mark)) "~")
-	      (if (> number-to-delete 0)
+	      (if (and (> number-to-delete 0)
+		       (> (+ kept-new-versions kept-old-versions -1) 0))
 		  (mapcar (function (lambda (n)
 				      (concat fn ".~" (int-to-string n) "~")))
 			  (let ((v (nthcdr kept-old-versions versions)))
@@ -706,7 +721,8 @@ if variable  delete-auto-save-files  is non-nil."
 			(not (setq done (funcall (car hooks)))))
 	      (setq hooks (cdr hooks)))
 	    ;; If a hook returned t, file is already "written".
-	    (cond ((not done)
+	    (cond (done (setq setmodes nil))
+		  ((not done)
 		   (if file-precious-flag
 		       ;; If file is precious, rename it away before
 		       ;; overwriting it.
@@ -737,6 +753,9 @@ if variable  delete-auto-save-files  is non-nil."
 		     ;; temporarily while we write it.
 		     ;; But no need to do so if we have just backed it up
 		     ;; (setmodes is set) because that says we're superseding.
+		     ;; Systems with version numbers need not do this.
+		     (if (eq system-type 'vax-vms)
+			 (setq setmodes nil tempsetmodes nil))
 		     (cond ((and tempsetmodes (not setmodes))
 			    ;; Change the mode back, after writing.
 			    (setq setmodes (file-modes buffer-file-name))
@@ -752,7 +771,9 @@ if variable  delete-auto-save-files  is non-nil."
 
 (defun save-some-buffers (&optional arg exiting)
   "Save some modified file-visiting buffers.  Asks user about each one.
-With argument, saves all with no questions."
+Optional argument (the prefix) non-nil means save all with no questions.
+Optional second argument EXITING means ask about certain non-file buffers
+ as well as about file buffers."
   (interactive "P")
   (let (considered (list (buffer-list)))
     (while list

@@ -1,5 +1,5 @@
 		-*- text -*-
-How to get GNU Software by Internet FTP or by UUCP.  Last updated 1 Jan 91.
+How to get GNU Software by Internet FTP or by UUCP.  Last updated 20 Jan 92.
 
 * No Warranties
 
@@ -14,7 +14,7 @@ he says so in writing.
 If you find this file in the Emacs distribution, there is a chance
 it is out of date.  If you plan to FTP files from prep.ai.mit.edu,
 you might as well start by FTPing the current version of this file,
-which is `/pub/gnu/etc/FTP'.
+which is `/pub/gnu/GNUinfo/FTP'.
 
 * FTPing GNU Software
 
@@ -43,7 +43,7 @@ Text mode does not work for tar files or compressed files.
 
 Some ftp'ers have found it necessary for successful file transfer:
    - to explicitly use prep.ai.mit.edu internet address:
-18.71.0.38		(as of 11 April 89)
+18.71.0.38	(as of 11 April 89)
 
 Files of differences from previous widely distributed GNU Emacs
 versions to the present version are also available on prep.ai.mit.edu
@@ -75,7 +75,7 @@ ftp it in binary mode.
 
 ** A VMS version of G++ and How To FTP It.
 
-mango.miami.edu has a VMS version of the G++ compiler.  Contact
+mango.rsmas.miami.edu has a VMS version of the G++ compiler.  Contact
 angel@flipper.miami.edu (angel li) for details.
 
 ** A VMS version of GCC and How To FTP It.
@@ -199,22 +199,22 @@ Read the files INSTALL and README in the top level C Scheme directory.
 
 ** Alternative Internet FTP Sources
 
-The administrators of wsmr-simtel20.army.mil maintains copies of GNU
-distributed software for MILNET/DDN hosts.  It is available via
-anonymous ftp from PD:<UNIX-C.GNU> in the original tar or tar.Z
-format.
-
 The administrators of louie.udel.edu maintains copies of GNU Emacs and
 the compress program.  The files are available via anonymous ftp under
 directory ~ftp/gnu.
 
-Emacs and other GNU programs may be available on nic.nyser.net, in
-/usb/gnu/emacs-dist.tar{,.Z}.  Anonymous ftp starts you in directory
-/usb.
-
-Emacs and other GNU programs may be available on gatekeeper.dec.com,
-labrea.stanford.edu, itstd.sri.com, scam.berkeley.edu,
-wuarchive.wustl.edu, and uunet.uu.net via anonymous ftp.
+Emacs and other GNU programs may be available via anonymous ftp from
+these US sites: gatekeeper.dec.com, labrea.stanford.edu,
+wuarchive.wustl.edu, a.cs.uiuc.edu, itstd.sri.com, scam.berkeley.edu,
+jaguar.utah.edu, archive.cis.ohio-state.edu, and ftp.uu.net.  And
+these foreign sites: mcsun.eu.net (Europe - Internet address
+192.16.202.1), sunic.sunet.se (Sweden), hp4nl.nluug.nl (Netherlands -
+192.16.202.2), funic.funet.fi (Finland - 128.214.6.100), freja.diku.dk
+(Denmark - 129.142.96.1), ftp.cs.titech.ac.jp (Japan - nemacs, the
+japanese port of GNU Emacs, is under ~ftp/JAPAN).  Please do NOT use a
+site outside your country, until you have checked all sites inside
+your country, and then your continent.  Trans-ocean TCP/IP links are
+very expensive and usually very low speed.
 
 * Getting GNU software in Great Britain
 
@@ -230,31 +230,12 @@ qic-24 formats.
 
 lmjm@doc.ic.ac.uk is willing to distribute those GNU sources he has
 available along with comp.sources.unix, comp.sources.x, X windows et
-al.  All items are available using uucp, NIFTP over JANET or, via a
-suitable gateway, from PSS sites as well.  Due to communication costs
-this service is only available within the UK.  Mail to
-info-server@doc.ic.ac.uk for details.  He can also write sun cartridge
-or exabyte tapes.
-
-* Getting GNU software in Sweden
-
-Site sunic.sunet.se has many of the GNU programs available for anonymous ftp.
-
-* Getting GNU software in Finland
-
-Site funic.funet.fi (Internet address 128.214.6.100) has many of the
-GNU programs available for anonymous ftp.
-
-* Getting GNU software in Denmark
-
-Site freja.diku.dk (Internet address 129.142.96.1) has many of the GNU
-programs, TeX, and the X window system available for anonymous ftp.
-
-* Getting GNU software in Japan
-
-Site ftp.cs.titech.ac.jp has some of the GNU programs available for
-anonymous ftp.  nemacs (the japanese port of GNU Emacs) is under
-~ftp/JAPAN.
+al.  The archive, on src.doc.ic.ac.uk in directory /gnu, is available
+via ftp (on 146.169.3.7), niftp over janet (000005102000), ftam and
+uucp.  All items are available using uucp, NIFTP over JANET to
+src.doc.ic.ac.uk:/gnu.  Due to communication costs this service is
+only available within the UK.  Mail to info-server@doc.ic.ac.uk for
+details.  He can also write sun cartridge or exabyte tapes.
 
 * Getting GNU software via UUCP
 
@@ -262,15 +243,14 @@ OSU is distributing via UUCP: most GNU software, MIT C Scheme,
 Compress, News, RN, NNTP, Patch, some Appletalk stuff, some of the
 Internet Requests For Comment (RFC) et al..  See their periodic
 postings on the Usenet newsgroup comp.sources.d for informational
-updates.  Current details from Karl Kleinpaste
-<karl@tut.cis.ohio-state.edu> or <...!osu-cis!karl>.
+updates.  Current details from <staff@cis.ohio-state.edu> or
+<...!osu-cis!uucp>.
 
 Information on how to uucp some GNU programs is available via
-electronic mail from: uunet!hutch!barber, hqda-ai!merlin,
-sun!nosun!illian!darylm, acornrc!bob,
+electronic mail from: uunet!hutch!barber, hqda-ai!merlin, acornrc!bob,
 hao!scicom!qetzal!upba!ugn!nepa!denny, bigtex!james (aka
-james@bigtex.cactus.org), ncar!noao!asuvax!hrc!dan, oli-stl!root, and
-postmaster@uunet.uu.net.
+james@bigtex.cactus.org), ncar!noao!asuvax!hrc!dan, oli-stl!root,
+src@scuzzy.in-berlin.de (in Germany) and info@ftp.uu.net.
 
 * If You Like The Software
 

@@ -21,3 +21,11 @@
 /* In Ultrix 4.1, XvmsAlloc.o in libX11.a seems to insist
    on defining malloc itself.  This should avoid conflicting with it.  */
 #define SYSTEM_MALLOC
+
+/* Override what m-mips.h says about this.  */
+#undef LINKER
+
+/* Ultrix 4.2 (perhaps also 4.1) implements O_NONBLOCK
+   but it doesn't work right;
+   and it causes hanging in read_process_output.  */
+#define BROKEN_O_NONBLOCK

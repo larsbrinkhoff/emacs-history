@@ -84,6 +84,9 @@ char **environ;
 extern unsigned char *_curbrk, *_minbrk;
 extern unsigned char end;
 unsigned char *_setbrk = &end;
+#ifdef ALLIANT_2800
+unsigned char *_end = &end;
+#endif
 #endif
 
 #ifndef DUMMIES
@@ -95,8 +98,13 @@ _start (DUMMIES argc, argv, envp)
      char **argv, **envp;
 {
 #ifdef ALLIANT
+#ifdef ALLIANT_2800
+  _curbrk = _end;
+  _minbrk = _end;
+#else
   _curbrk = _setbrk;
   _minbrk = _setbrk;
+#endif
 #endif
 
   environ = envp;
@@ -201,6 +209,8 @@ asm("	text		");
 asm("	global start	");
 asm("	start:		");
 #endif /* NODOT_GLOBAL_START */
+
+static start1 ();
 
 _start ()
 {

@@ -22,21 +22,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Converted to X11 by Robert French */
 
 #include <stdio.h>
-#ifdef NULL
-#undef NULL
-#endif
 #include <signal.h>
 #include "config.h"
 
 /* Get FIONREAD, if it is available.  */
 #ifdef USG
 #include <termio.h>
+#endif /* USG */
 #include <fcntl.h>
-#else /* not USG */
+
 #ifndef VMS
 #include <sys/ioctl.h>
 #endif /* not VMS */
-#endif /* not USG */
 
 /* Allow m- file to inhibit use of interrupt-driven input.  */
 #ifdef BROKEN_FIONREAD
@@ -51,17 +48,24 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 #endif
 
-#include "lisp.h"
-#include "window.h"
 #include "x11term.h"
 #include "dispextern.h"
 #include "termchar.h"
-#ifdef USG
-#include <time.h>
-#else
-#include <sys/time.h>
+
+/* Prepare for lisp.h definition of NULL.
+   Sometimes x11term.h includes stddef.h.  */
+#ifdef NULL
+#undef NULL
 #endif
-#include <fcntl.h>
+
+#include "lisp.h"
+#include "window.h"
+
+#ifdef HAVE_SOCKETS
+#include <sys/socket.h>		/* Must be done before gettime.h.  */
+#endif
+/* Include time.h or sys/time.h or both.  */
+#include "gettime.h"
 #include <setjmp.h>
 
 #ifdef HAVE_X_WINDOWS
@@ -168,7 +172,7 @@ DEFUN ("x-flip-color", Fx_flip_color, Sx_flip_color, 0, 0, "",
 }
 
 DEFUN ("x-set-foreground-color", Fx_set_foreground_color,
-       Sx_set_foreground_color, 1, 1, "sSet foregroud color:  ",
+       Sx_set_foreground_color, 1, 1, "sSet foreground color:  ",
        "Set foreground (text) color to COLOR.")
   (arg)
      Lisp_Object arg;
@@ -551,13 +555,7 @@ relative to window upper left corner.")
 
 	height = XINT (XWINDOW (window)->height);
 
-	if (window == minibuf_window)
-	  {
-	    XFASTINT (xcoord) -= minibuf_prompt_width;
-	    if(XINT (xcoord) < 0)
-		XFASTINT (xcoord) = 0;
-	  }
-	else
+	if (window != minibuf_window)
 	  height --;
 
 	if ((XINT (ycoord) < XINT (XWINDOW (window)->top)) ||
@@ -605,6 +603,8 @@ the appropriate function to act upon this event.")
 		XXm_queue_num--;
 		com_letter = 3-(event.xbutton.button & 3);
 		key_mask = (event.xbutton.state & 15) << 4;
+		/* Get rid of the shift-lock bit.  */
+		key_mask &= ~0x20;
 		/* Report meta in 2 bit, not in 8 bit.  */
 		if (key_mask & 0x80)
 		  {
@@ -711,7 +711,7 @@ DEFUN ("x-store-cut-buffer", Fx_store_cut_buffer, Sx_store_cut_buffer,
 	check_xterm ();
 
 	BLOCK_INPUT ();
-	XStoreBytes (XXdisplay, XSTRING (string)->data,
+	XStoreBytes (XXdisplay, (char *) XSTRING (string)->data,
 		     XSTRING (string)->size);
 	/* Clear the selection owner, so that other applications
 	   will use the cut buffer rather than a selection.  */

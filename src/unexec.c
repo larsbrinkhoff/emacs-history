@@ -182,6 +182,9 @@ pointer looks like an int) but not on all machines.
 extern char *start_of_text ();		/* Start of text */
 extern char *start_of_data ();		/* Start of initialized data */
 
+static int make_hdr (), copy_text_and_data (), copy_sym ();
+static void mark_x ();
+
 #ifdef COFF
 #ifndef USG
 #ifndef STRIDE
@@ -470,6 +473,9 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 #endif
 
   f_hdr.f_flags |= (F_RELFLG | F_EXEC);
+#ifdef TPIX
+  f_hdr.f_nscns = 3;
+#endif
 #ifdef EXEC_MAGIC
   f_ohdr.magic = EXEC_MAGIC;
 #endif
@@ -490,6 +496,9 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   f_thdr.s_scnptr
     = (f_thdr.s_scnptr + SECTION_ALIGNMENT) & ~SECTION_ALIGNMENT;
 #endif /* SECTION_ALIGNMENT */
+#ifdef TPIX
+  f_thdr.s_scnptr = 0xd0;
+#endif
   text_scnptr = f_thdr.s_scnptr;
   f_dhdr.s_paddr = f_ohdr.data_start;
   f_dhdr.s_vaddr = f_ohdr.data_start;
@@ -874,7 +883,7 @@ copy_sym (new, a_out, a_name, new_name)
  *
  * After succesfully building the new a.out, mark it executable
  */
-static
+static void
 mark_x (name)
      char *name;
 {

@@ -58,14 +58,15 @@ Applies to lines after point."
 (defun how-many (regexp)
   "Print number of matches for REGEXP following point."
   (interactive "sHow many matches for (regexp): ")
-  (let ((count 0) opoint)
+  (let ((count 0) (opoint -1))
     (save-excursion
-     (while (and (not (eobp))
-		 (progn (setq opoint (point))
-			(re-search-forward regexp nil t)))
-       (if (= opoint (point))
-	   (forward-char 1)
-	 (setq count (1+ count))))
+      ;; If we did forward-char on the previous loop,
+      ;; and that brought us to eof, search anyway.
+      (while (and (or (not (eobp)) (/= opoint (point)))
+		  (re-search-forward regexp nil t))
+	(if (prog1 (= opoint (point)) (setq opoint (point)))
+	    (forward-char 1)
+	  (setq count (1+ count))))
      (message "%d occurrences" count))))
 
 (defvar occur-mode-map ())
@@ -206,7 +207,9 @@ C-r to enter recursive edit (\\[exit-recursive-edit] to get out again),
 C-w to delete match and recursive edit,
 C-l to clear the screen, redisplay, and offer same replacement again,
 ! to replace all remaining matches with no more questions,
-^ to move point back to previous match."
+^ to move point back to previous match.
+
+Type a Space now to remove this message."
   "Help message while in query-replace")
 
 (defun perform-replace (from-string to-string

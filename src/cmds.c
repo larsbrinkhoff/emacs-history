@@ -71,8 +71,8 @@ DEFUN ("forward-line", Fforward_line, Sforward_line, 0, 1, "p",
   "If point is on line i, move to the start of line i + ARG.\n\
 If there isn't room, go as far as possible (no error).\n\
 Returns the count of lines left to move.\n\
-With positive ARG, a non-empty line at the end counts as one line\n\
-  successfully moved (for the return value).")
+With positive ARG, a non-empty line traversed at end of buffer \n\
+ counts as one line successfully moved (for the return value).")
   (n)
      Lisp_Object n;
 {
@@ -92,7 +92,7 @@ With positive ARG, a non-empty line at the end counts as one line\n\
   pos = scan_buffer ('\n', pos2, count - negp, &shortage);
   if (shortage > 0
       && (negp
-	  || (ZV > BEGV
+	  || (ZV > BEGV && pos != pos2
 	      && FETCH_CHAR (pos - 1) != '\n')))
     shortage--;
   SET_PT (pos);

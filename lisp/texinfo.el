@@ -134,11 +134,12 @@ move forward past the closing brace.
 Entering Texinfo mode calls the value of text-mode-hook, and then the
 value of texinfo-mode-hook."
   (interactive)
-  (text-mode)
+  (kill-all-local-variables)
   (setq mode-name "Texinfo")
   (setq major-mode 'texinfo-mode)
   (use-local-map texinfo-mode-map)
   (set-syntax-table texinfo-mode-syntax-table)
+  (setq local-abbrev-table text-mode-abbrev-table)
   (make-local-variable 'require-final-newline)
   (setq require-final-newline t)
   (make-local-variable 'paragraph-separate)

@@ -88,6 +88,7 @@
 #endif /* EMACS */
 
 #include <stdio.h>
+#include <errno.h>
 
 extern int execvp ();
 extern char *index ();

@@ -127,3 +127,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #undef LINKER
 #define LINKER cc -Wl,-bnso,-bnodelcsect,-bI:/lib/syscalls.exp
+
+/* The header files seem to be from X11R4, but the library is not.
+   So don don't use the r4 library features.  */
+#define SPECIFY_X11R4 0

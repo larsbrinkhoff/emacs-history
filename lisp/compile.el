@@ -280,7 +280,16 @@ and visits its location."
 		    (progn
 		      (goto-char 1)
 		      (setq last-linenum 1)))
-		(forward-line (- linenum last-linenum))
+		;; Move the right number of lines from the old position.
+		;; If we can't move that many, put 0 in last-linenum
+		;; so the next error message will be handled starting from
+		;; scratch.
+		(if (eq selective-display t)
+		    (or (re-search-forward "[\n\C-m]" nil 'end
+					   (- linenum last-linenum))
+			(setq last-linenum 0))
+		  (or (= 0 (forward-line (- linenum last-linenum)))
+		      (setq last-linenum 0)))
 		(setq last-linenum linenum)
 		(setq text-marker (point-marker))
 		(setq compilation-error-list

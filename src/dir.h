@@ -70,7 +70,11 @@ typedef struct dir$_name {
     } dir___b_flags;
   } dir__b_flags;
   unsigned char dir$b_namecount;
+#ifdef __GNUC__
+  char dir$t_name[0];
+#else
   char dir$t_name[];
+#endif
 } dir$_dirdef;		/* only the fixed first part */
 
 typedef struct dir$_version {
@@ -91,7 +95,11 @@ typedef struct dir$_version {
 
 typedef
 struct dir$_linkname {
+#ifdef __GNUC__
+  char    dir$t_linkname[0];
+#else
   char    dir$t_linkname[];
+#endif
 } dir$_dirdef2;
 
 #endif

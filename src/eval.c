@@ -54,6 +54,7 @@ struct catchtag
     struct gcpro *gcpro;
     jmp_buf jmp;
     struct backtrace *backlist;
+    struct handler *handlerlist;
     int lisp_eval_depth;
     int pdlcount;
     int poll_suppress_count;
@@ -804,6 +805,7 @@ internal_catch (tag, func, arg)
   c.tag = tag;
   c.val = Qnil;
   c.backlist = backtrace_list;
+  c.handlerlist = handlerlist;
   c.lisp_eval_depth = lisp_eval_depth;
   c.poll_suppress_count = poll_suppress_count;
   c.pdlcount = specpdl_ptr - specpdl;
@@ -840,8 +842,7 @@ unbind_catch (catch)
     {
       last_time = catchlist == catch;
       unbind_to (catchlist->pdlcount);
-      if (handlerlist != 0 && handlerlist->tag == catchlist)
-	handlerlist = handlerlist->next;
+      handlerlist = catchlist->handlerlist;
       catchlist = catchlist->next;
     }
   while (! last_time);
@@ -937,6 +938,7 @@ See SIGNAL for more info.")
   c.tag = Qnil;
   c.val = Qnil;
   c.backlist = backtrace_list;
+  c.handlerlist = handlerlist;
   c.lisp_eval_depth = lisp_eval_depth;
   c.poll_suppress_count = poll_suppress_count;
   c.pdlcount = specpdl_ptr - specpdl;
@@ -986,6 +988,7 @@ internal_condition_case (bfun, handlers, hfun)
   c.tag = Qnil;
   c.val = Qnil;
   c.backlist = backtrace_list;
+  c.handlerlist = handlerlist;
   c.lisp_eval_depth = lisp_eval_depth;
   c.poll_suppress_count = poll_suppress_count;
   c.pdlcount = specpdl_ptr - specpdl;
@@ -1345,7 +1348,11 @@ DEFUN ("eval", Feval, Seval, 1, 1, 0,
 
       if (XINT (numargs) < XSUBR (fun)->min_args ||
 	  (XSUBR (fun)->max_args >= 0 && XSUBR (fun)->max_args < XINT (numargs)))
-	return Fsignal (Qwrong_number_of_arguments, Fcons (fun, Fcons (numargs, Qnil)));
+	{
+	  val = Fsignal (Qwrong_number_of_arguments,
+			 Fcons (fun, Fcons (numargs, Qnil)));
+	  goto done;
+	}
 
       if (XSUBR (fun)->max_args == UNEVALLED)
 	{
@@ -1372,12 +1379,12 @@ DEFUN ("eval", Feval, Seval, 1, 1, 0,
 	      args_left = Fcdr (args_left);
 	      gcpro3.nvars = argnum;
 	    }
-	  UNGCPRO;
 
 	  backtrace.args = vals;
 	  backtrace.nargs = XINT (numargs);
 
 	  val = (*XSUBR (fun)->function) (XINT (numargs), vals);
+	  UNGCPRO;
 	  goto done;
 	}
 
@@ -1423,23 +1430,26 @@ DEFUN ("eval", Feval, Seval, 1, 1, 0,
 	}
     }
   if (!CONSP (fun))
-    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    {
+      val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+      goto done;
+    }
   funcar = Fcar (fun);
   if (XTYPE (funcar) != Lisp_Symbol)
-    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
-  if (EQ (funcar, Qautoload))
+    val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+  else if (EQ (funcar, Qautoload))
     {
       do_autoload (fun, original_fun);
       goto retry;
     }
-  if (EQ (funcar, Qmacro))
+  else if (EQ (funcar, Qmacro))
     val = Feval (apply1 (Fcdr (fun), original_args));
   else if (EQ (funcar, Qlambda))
     val = apply_lambda (fun, original_args, 1);
   else if (EQ (funcar, Qmocklisp))
     val = ml_apply (fun, original_args);
   else
-    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
 
  done:
   if (!EQ (Vmocklisp_arguments, Qt))
@@ -1466,8 +1476,9 @@ Thus, (apply '+ 1 2 '(3 4)) returns 10.")
 {
   register int i, numargs;
   register Lisp_Object spread_arg;
-  register Lisp_Object *funcall_args ;
-  Lisp_Object fun;
+  register Lisp_Object *funcall_args;
+  Lisp_Object fun, val;
+  struct gcpro gcpro1;
 
   fun = args [0];
   funcall_args = 0;
@@ -1510,13 +1521,20 @@ Thus, (apply '+ 1 2 '(3 4)) returns 10.")
 					       * sizeof (Lisp_Object));
 	for (i = numargs; i < XSUBR (fun)->max_args;)
 	  funcall_args[++i] = Qnil;
+	GCPRO1 (*funcall_args);
+	gcpro1.nvars = 1 + XSUBR (fun)->max_args;
       }
  funcall:
   /* We add 1 to numargs because funcall_args includes the
      function itself as well as its arguments.  */
   if (!funcall_args)
-    funcall_args = (Lisp_Object *) alloca ((1 + numargs)
-					   * sizeof (Lisp_Object));
+    {
+      funcall_args = (Lisp_Object *) alloca ((1 + numargs)
+					     * sizeof (Lisp_Object));
+      GCPRO1 (*funcall_args);
+      gcpro1.nvars = 1 + numargs;
+    }
+
   bcopy (args, funcall_args, nargs * sizeof (Lisp_Object));
   /* Spread the last arg we got.  Its first element goes in
      the slot that it used to occupy, hence this value of I.  */
@@ -1526,7 +1544,10 @@ Thus, (apply '+ 1 2 '(3 4)) returns 10.")
       funcall_args [i++] = XCONS (spread_arg)->car;
       spread_arg = XCONS (spread_arg)->cdr;
     }
-  return Ffuncall (numargs + 1, funcall_args);
+
+  val = Ffuncall (gcpro1.nvars, funcall_args);
+  UNGCPRO;
+  return val;
 }
 
 /* Apply fn to arg */
@@ -1534,18 +1555,32 @@ Lisp_Object
 apply1 (fn, arg)
      Lisp_Object fn, arg;
 {
+  register Lisp_Object val;
+  struct gcpro gcpro1;
   if (NULL (arg))
+    /* No need to protect if all we have is the function.  */
     return Ffuncall (1, &fn);
+  /* We must protect the vector given to Fapply.
+     If ARG is a list of 1 element, that same vector is passed
+     on to Ffuncall.  */
 #ifdef NO_ARG_ARRAY
   {
     Lisp_Object args[2];
     args[0] = fn;
     args[1] = arg;
-    return Fapply (2, args);
+    GCPRO1 (fn);
+    gcpro1.var = args;
+    gcpro1.nvars = 2;
+    val = Fapply (2, args);
+    UNGCPRO;
   }
 #else /* not NO_ARG_ARRAY */
-  return Fapply (2, &fn);
+  GCPRO1 (fn);
+  gcpro1.nvars = 2;
+  val = Fapply (2, &fn);
+  UNGCPRO;
 #endif /* not NO_ARG_ARRAY */
+  return val;
 }
 
 /* Call function fn on no arguments */
@@ -1562,14 +1597,23 @@ Lisp_Object
 call1 (fn, arg)
      Lisp_Object fn, arg;
 {
+  Lisp_Object val;
+  struct gcpro gcpro1;
 #ifdef NO_ARG_ARRAY
   Lisp_Object args[2];
+#endif
+  GCPRO1 (fn);
+  gcpro1.nvars = 2;
+#ifdef NO_ARG_ARRAY
   args[0] = fn;
   args[1] = arg;
-  return Ffuncall (2, args);
+  gcpro1.var = args;
+  val = Ffuncall (2, args);
 #else /* not NO_ARG_ARRAY */
-  return Ffuncall (2, &fn);
+  val = Ffuncall (2, &fn);
 #endif /* not NO_ARG_ARRAY */
+  UNGCPRO;
+  return val;
 }
 
 /* Call function fn with arguments arg, arg1 */
@@ -1578,15 +1622,24 @@ Lisp_Object
 call2 (fn, arg, arg1)
      Lisp_Object fn, arg, arg1;
 {
+  Lisp_Object val;
+  struct gcpro gcpro1;
 #ifdef NO_ARG_ARRAY
   Lisp_Object args[3];
+#endif
+  GCPRO1 (fn);
+  gcpro1.nvars = 3;
+#ifdef NO_ARG_ARRAY
   args[0] = fn;
   args[1] = arg;
   args[2] = arg1;
-  return Ffuncall (3, args);
+  gcpro1.var = args;
+  val = Ffuncall (3, args);
 #else /* not NO_ARG_ARRAY */
-  return Ffuncall (3, &fn);
+  val = Ffuncall (3, &fn);
 #endif /* not NO_ARG_ARRAY */
+  UNGCPRO;
+  return val;
 }
 
 /* Call function fn with arguments arg, arg1, arg2 */
@@ -1595,16 +1648,25 @@ Lisp_Object
 call3 (fn, arg, arg1, arg2)
      Lisp_Object fn, arg, arg1, arg2;
 {
+  Lisp_Object val;
+  struct gcpro gcpro1;
 #ifdef NO_ARG_ARRAY
   Lisp_Object args[4];
+#endif
+  GCPRO1 (fn);
+  gcpro1.nvars = 4;
+#ifdef NO_ARG_ARRAY
   args[0] = fn;
   args[1] = arg;
   args[2] = arg1;
   args[3] = arg2;
-  return Ffuncall (4, args);
+  gcpro1.var = args;
+  val = Ffuncall (4, args);
 #else /* not NO_ARG_ARRAY */
-  return Ffuncall (4, &fn);
+  val =  Ffuncall (4, &fn);
 #endif /* not NO_ARG_ARRAY */
+  UNGCPRO;
+  return val;
 }
 
 DEFUN ("funcall", Ffuncall, Sfuncall, 1, MANY, 0,
@@ -1620,18 +1682,12 @@ Thus,  (funcall 'cons 'x 'y)  returns  (x . y).")
   Lisp_Object lisp_numargs;
   Lisp_Object val;
   struct backtrace backtrace;
-  struct gcpro gcpro1;
   register Lisp_Object *internal_args;
   register int i;
 
   QUIT;
   if (consing_since_gc > gc_cons_threshold)
-    {
-      GCPRO1 (*args);
-      gcpro1.nvars = nargs;
-      Fgarbage_collect ();
-      UNGCPRO;
-    }
+    Fgarbage_collect ();
 
   if (++lisp_eval_depth > max_lisp_eval_depth)
     {
@@ -1670,11 +1726,16 @@ Thus,  (funcall 'cons 'x 'y)  returns  (x . y).")
 	  (XSUBR (fun)->max_args >= 0 && XSUBR (fun)->max_args < numargs))
 	{
 	  XFASTINT (lisp_numargs) = numargs;
-	  return Fsignal (Qwrong_number_of_arguments, Fcons (fun, Fcons (lisp_numargs, Qnil)));
+	  val = Fsignal (Qwrong_number_of_arguments,
+			 Fcons (fun, Fcons (lisp_numargs, Qnil)));
+	  goto done;
 	}
 
       if (XSUBR (fun)->max_args == UNEVALLED)
-	return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+	{
+	  val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+	  goto done;
+	}
 
       if (XSUBR (fun)->max_args == MANY)
 	{
@@ -1700,8 +1761,7 @@ Thus,  (funcall 'cons 'x 'y)  returns  (x . y).")
 	  val = (*XSUBR (fun)->function) (internal_args[0]);
 	  goto done;
 	case 2:
-	  val = (*XSUBR (fun)->function) (internal_args[0],
-					  internal_args[1]);
+	  val = (*XSUBR (fun)->function) (internal_args[0], internal_args[1]);
 	  goto done;
 	case 3:
 	  val = (*XSUBR (fun)->function) (internal_args[0], internal_args[1],
@@ -1720,11 +1780,14 @@ Thus,  (funcall 'cons 'x 'y)  returns  (x . y).")
 	}
     }
   if (!CONSP (fun))
-    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    {
+      val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+      goto done;
+    }
   funcar = Fcar (fun);
   if (XTYPE (funcar) != Lisp_Symbol)
-    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
-  if (EQ (funcar, Qlambda))
+    val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+  else if (EQ (funcar, Qlambda))
     val = funcall_lambda (fun, numargs, args + 1);
   else if (EQ (funcar, Qmocklisp))
     val = ml_apply (fun, Flist (numargs, args + 1));
@@ -1734,7 +1797,7 @@ Thus,  (funcall 'cons 'x 'y)  returns  (x . y).")
       goto retry;
     }
   else
-    return Fsignal (Qinvalid_function, Fcons (fun, Qnil));
+    val = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
 
  done:
   lisp_eval_depth--;
@@ -1812,13 +1875,15 @@ funcall_lambda (fun, nargs, arg_vector)
     {
       QUIT;
       next = Fcar (syms_left);
+      while (XTYPE (next) != Lisp_Symbol)
+	next = Fsignal (Qinvalid_function, Fcons (fun, Qnil));
       if (EQ (next, Qand_rest))
 	rest = 1;
       else if (EQ (next, Qand_optional))
 	optional = 1;
       else if (rest)
 	{
-	  specbind (Fcar (syms_left), Flist (nargs - i, &arg_vector[i]));
+	  specbind (next, Flist (nargs - i, &arg_vector[i]));
 	  i = nargs;
 	}
       else if (i < nargs)
@@ -1868,6 +1933,8 @@ specbind (symbol, value)
 {
   extern void store_symval_forwarding (); /* in eval.c */
   Lisp_Object ovalue;
+
+  CHECK_SYMBOL (symbol, 0);
 
   if (specpdl_ptr == specpdl + specpdl_size)
     grow_specpdl ();
@@ -2063,6 +2130,8 @@ before making  inhibit-quit  nil.");
   Qmacro = intern ("macro");
   staticpro (&Qmacro);
 
+  /* Note that the process handling also uses Qexit, but we don't want
+     to staticpro it twice, so we just do it here.  */
   Qexit = intern ("exit");
   staticpro (&Qexit);
 

@@ -1,4 +1,4 @@
-/* m- file for convex C1.
+/* m- file for convex C1-C3.
    Copyright (C) 1987, 1989 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -115,7 +115,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Right shift is logical shift, so use this to sign-extend a lisp int.  */
  
-#define XINT(a) ((int) ((((a) & 0x00ffffff) ^ 0x00800000) - 0x00800000))
+#define VSIGNBIT (1 << (VALBITS - 1))
+#define VALLBITS ((1 << VALBITS) - 1)
+#define XINT(a) ((int) ((((a) & VALLBITS) ^ VSIGNBIT) - VSIGNBIT))
 
 /* Convex uses a special version of unexec.  */
 

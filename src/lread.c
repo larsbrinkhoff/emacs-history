@@ -127,6 +127,7 @@ static int readchar (readcharfun)
 #define UNREAD(c) (unrch = c)
 
 static Lisp_Object read0 (), read1 (), read_list (), read_vector ();
+static int read_escape ();
 
 /* get a character from the tty */
 
@@ -155,7 +156,7 @@ DEFUN ("get-file-char", Fget_file_char, Sget_file_char, 0, 0, 0,
   return val;
 }
 
-void readevalloop ();
+static void readevalloop ();
 static Lisp_Object load_unwind ();
 
 DEFUN ("load", Fload, Sload, 1, 4, 0,
@@ -652,8 +653,11 @@ read1 (readcharfun)
       }
 
     default:
-      if (c <= 040) goto retry;
+      if (c <= 040)
+	goto retry;
+
       {
+	int quoted = 0;
 	register char *p = read_buffer;
 
 	{
@@ -673,7 +677,10 @@ read1 (readcharfun)
 		  end = read_buffer + read_buffer_size;
 		}
 	      if (c == '\\')
-		c = READCHAR;
+		{
+		  quoted = 1;
+		  c = READCHAR;
+		}
 	      *p++ = c;
 	      c = READCHAR;
 	    }
@@ -695,7 +702,7 @@ read1 (readcharfun)
 	  register Lisp_Object val;
 	  p1 = read_buffer;
 	  if (*p1 == '+' || *p1 == '-') p1++;
-	  if (p1 != p)
+	  if (p1 != p && !quoted)
 	    {
 	      while (p1 != p && (c = *p1) >= '0' && c <= '9') p1++;
 	      if (p1 == p)
@@ -1039,7 +1046,7 @@ map_obarray (obarray, fn, arg)
   for (i = XVECTOR (obarray)->size - 1; i >= 0; i--)
     {
       tail = XVECTOR (obarray)->contents[i];
-      if (XFASTINT (tail) != 0)
+      if (XFASTINT (tail) != 0 && XTYPE (tail) == Lisp_Symbol)
 	while (1)
 	  {
 	    (*fn) (tail, arg);
@@ -1085,7 +1092,6 @@ init_obarray ()
   Qnil = Fmake_symbol (make_pure_string ("nil", 3));
   Vobarray = Fmake_vector (oblength, make_number (0));
   initial_obarray = Vobarray;
-  staticpro (&Vobarray);
   staticpro (&initial_obarray);
   /* Intern nil in the obarray */
   /* These locals are to kludge around a pyramid compiler bug. */
@@ -1229,8 +1235,22 @@ init_read ()
   char *normal = PATH_LOADSEARCH;
   Lisp_Object normal_path;
 
+  /* Compute the default load-path.  */
+#ifndef CANNOT_DUMP
+  /* If running a dumped Emacs in which load-path was set before dumping
+     to a nonstandard value, use that value.  */
+  if (initialized
+      && !(XTYPE (Vload_path) == Lisp_Cons
+	   && XTYPE (XCONS (Vload_path)->car) == Lisp_String
+	   && !strcmp (XSTRING (XCONS (Vload_path)->car)->data, "../lisp")))
+    normal_path = Vload_path;
+  else
+#endif
+    normal_path = decode_env_path (0, normal);
+
+  Vload_path = normal_path;
+
   /* Warn if dirs in the *standard* path don't exist.  */
-  normal_path = decode_env_path ("", normal);
   for (; !NULL (normal_path); normal_path = XCONS (normal_path)->cdr)
     {
       Lisp_Object dirfile;
@@ -1244,13 +1264,15 @@ init_read ()
 	}
     }
 
-  Vvalues = Qnil;
-
-  Vload_path = decode_env_path ("EMACSLOADPATH", normal);
+  if (egetenv ("EMACSLOADPATH"))
+    Vload_path = decode_env_path ("EMACSLOADPATH", normal);
 #ifndef CANNOT_DUMP
   if (!NULL (Vpurify_flag))
     Vload_path = Fcons (build_string ("../lisp"), Vload_path);
-#endif /* not CANNOT_DUMP */
+#endif				/* not CANNOT_DUMP */
+
+  Vvalues = Qnil;
+
   load_in_progress = 0;
 }
 

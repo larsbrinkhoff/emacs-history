@@ -169,8 +169,12 @@ DEFUN ("redraw-display", Fredraw_display, Sredraw_display, 0, 0, "",
   return Qnil;
 }
 
-/* Buffer used for messages formatted by `message'.  */
+/* Buffer used for messages formatted by `message', and by print.  */
 char *message_buf;
+
+/* Nonzero if message_buf is being used by print;
+   zero if being used by message.  */
+int message_buf_print;
 
 /* dump an informative message to the minibuf */
 /* VARARGS 1 */
@@ -199,6 +203,7 @@ message (m, a1, a2, a3)
       doprnt (message_buf, screen_width, m, 3, &a1);
 #endif /* NO_ARG_ARRAY */
       echo_area_contents = message_buf;
+      message_buf_print = 0;
       do {
 	do_pending_window_change ();
 	display_echo_area_contents ();
@@ -345,6 +350,13 @@ redisplay ()
       && (XFASTINT (w->last_modified) >= MODIFF
 	  || (beg_unchanged >= tlbufpos - 1
 	      && GPT >= tlbufpos
+	      /* If selective display, can't optimize
+		 if the changes start at the beginning of the line.  */
+	      && ((XTYPE (current_buffer->selective_display) == Lisp_Int
+		   && XINT (current_buffer->selective_display) > 0
+		   ? (beg_unchanged >= tlbufpos
+		      && GPT > tlbufpos)
+		   : 1))
 	      && end_unchanged >= tlendpos
 	      && Z - GPT >= tlendpos)))
     {
@@ -388,7 +400,8 @@ redisplay ()
 				point, 2, - (1 << (SHORTBITS - 1)),
 				XFASTINT (w->width) - 1
 				- (XFASTINT (w->width) + XFASTINT (w->left) != screen_width),
-				XINT (w->hscroll), 0);
+				XINT (w->hscroll),
+				 pos_tab_offset (w, tlbufpos));
 	  if (pos.vpos < 1)
 	    {
 	      cursor_hpos = max (XFASTINT (w->left), pos.hpos);
@@ -887,10 +900,25 @@ try_window_id (window)
 
   /* Find position before which nothing is changed.  */
   bp = *compute_motion (start, 0, lmargin,
-			beg_unchanged + 1, 10000, 10000, width, hscroll,
+			beg_unchanged + 1, height + 1, 0, width, hscroll,
 			pos_tab_offset (w, start));
   if (bp.vpos >= height)
-    return point < bp.bufpos && !bp.contin;
+    {
+      if (point < bp.bufpos && !bp.contin)
+	{
+	  /* All changes are below the screen, and point is on the screen.
+	     We don't need to change the screen at all.
+	     But we need to update window_end_pos to account for
+	     any change in buffer size.  */
+	  bp = *compute_motion (start, 0, lmargin,
+				Z, height, 0,
+				width, hscroll, pos_tab_offset (w, start));
+	  XFASTINT (w->window_end_vpos) = height;
+	  XFASTINT (w->window_end_pos) = Z - bp.bufpos;
+	  return 1;
+	}
+      return 0;
+    }
 
   vpos = bp.vpos;
 
@@ -905,7 +933,12 @@ try_window_id (window)
   /* If about to start displaying at the beginning of a continuation line,
      really start with previous screen line, in case it was not
      continued when last redisplayed */
-  if (bp.contin && bp.bufpos - 1 == beg_unchanged && vpos > 0)
+  if ((bp.contin && bp.bufpos - 1 == beg_unchanged && vpos > 0)
+      ||
+      /* Likewise if we have to worry about selective display.  */
+      (XTYPE (current_buffer->selective_display) == Lisp_Int
+       && XINT (current_buffer->selective_display) > 0
+       && bp.bufpos - 1 == beg_unchanged && vpos > 0))
     {
       bp = *vmotion (bp.bufpos, -1, width, hscroll, window);
       --vpos;
@@ -1327,14 +1360,14 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	{
 	  do
 	    {
-	      if (p1 >= startp)
+	      if (p1 >= startp && p1 < endp)
 		*p1 = ' ';
 	      p1++;
 	    }
 	  while ((p1 - startp + taboffset + hscroll - (hscroll > 0))
 		 % tab_width);
 	}
-      else if (c == Ctl('M') && selective == -1)
+      else if (c == Ctl ('M') && selective == -1)
 	{
 	  pos = find_next_newline (pos, 1);
 	  if (FETCH_CHAR (pos - 1) == '\n')
@@ -1354,7 +1387,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	  if (p1 >= startp)
 	    *p1 = '^';
 	  p1++;
-	  if (p1 >= startp)
+	  if (p1 >= startp && p1 < endp)
 	    *p1 = c ^ 0100;
 	  p1++;
 	}
@@ -1363,13 +1396,13 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	  if (p1 >= startp)
 	    *p1 = '\\';
 	  p1++;
-	  if (p1 >= startp)
+	  if (p1 >= startp && p1 < endp)
 	    *p1 = (c >> 6) + '0';
 	  p1++;
-	  if (p1 >= startp)
+	  if (p1 >= startp && p1 < endp)
 	    *p1 = (7 & (c >> 3)) + '0';
 	  p1++;
-	  if (p1 >= startp)
+	  if (p1 >= startp && p1 < endp)
 	    *p1 = (7 & c) + '0';
 	  p1++;
 	}
@@ -1937,7 +1970,7 @@ display_string (w, vpos, string, hpos, truncate, mincol, maxcol)
 	{
 	  do
 	    {
-	      if (p1 >= start)
+	      if (p1 >= start && p1 < end)
 		*p1 = ' ';
 	      p1++;
 	    }
@@ -1948,7 +1981,7 @@ display_string (w, vpos, string, hpos, truncate, mincol, maxcol)
 	  if (p1 >= start)
 	    *p1 = '^';
 	  p1++;
-	  if (p1 >= start)
+	  if (p1 >= start && p1 < end)
 	    *p1 = c ^ 0100;
 	  p1++;
 	}
@@ -1957,13 +1990,13 @@ display_string (w, vpos, string, hpos, truncate, mincol, maxcol)
 	  if (p1 >= start)
 	    *p1 = '\\';
 	  p1++;
-	  if (p1 >= start)
+	  if (p1 >= start && p1 < end)
 	    *p1 = (c >> 6) + '0';
 	  p1++;
-	  if (p1 >= start)
+	  if (p1 >= start && p1 < end)
 	    *p1 = (7 & (c >> 3)) + '0';
 	  p1++;
-	  if (p1 >= start)
+	  if (p1 >= start && p1 < end)
 	    *p1 = (7 & c) + '0';
 	  p1++;
 	}

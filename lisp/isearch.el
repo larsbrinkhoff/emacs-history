@@ -213,11 +213,16 @@
 		    ;; Go back to place last successful search started
 		    ;; or to the last ^S/^R (barrier), whichever is nearer.
 		    (and regexp success cmds
-			 (cond ((memq char '(?* ??))
+			 (cond ((and (memq char '(?* ??))
+				     ;; Don't treat *, ? as special
+				     ;; within [] or after \.
+				     (not (nth 6 (car cmds))))
 				(setq adjusted t)
-				(let ((cs (nth (if forward
-						   5 ; other-end
-						 2) ; saved (point)
+				;; This used to use element 2
+				;; in a reverse search, but it seems that 5
+				;; (which is the end of the old match)
+				;; is better in that case too.
+				(let ((cs (nth 5 ; old other-end.
 					       (car (cdr cmds)))))
 				  ;; (car cmds) is after last search;
 				  ;; (car (cdr cmds)) is from before it.
@@ -253,15 +258,17 @@
 	(if regexp
 	    (setq search-last-regexp search-string)
 	    (setq search-last-string search-string)))
+    ;; If we displayed a single-line window, set point in this window. 
+    (if small-window
+	(goto-char found-point))
     ;; If there was movement, mark the starting position.
     ;; Maybe should test difference between and set mark iff > threshold.
     (if (/= (point) opoint)
 	(push-mark opoint)
       (message ""))
-    (if small-window
-	(goto-char found-point)
-      ;; Exiting the save-window-excursion clobbers this; restore it.
-      (set-window-start (selected-window) found-start t))))
+    (or small-window
+	;; Exiting the save-window-excursion clobbers this; restore it.
+	(set-window-start (selected-window) found-start t))))
 
 (defun isearch-message (&optional c-q-hack ellipsis)
   ;; If about to search, and previous search regexp was invalid,
@@ -366,11 +373,12 @@
 	      (if forward 'search-forward 'search-backward))))
     ;; Read the search string with corrected prompt.
     (setq string (read-string message))
-    ;; Empty means use default.
-    (if (= 0 (length string))
-	(setq string search-last-string)
-      ;; Set last search string now so it is set even if we fail.
-      (setq search-last-string string))
+    (let ((var (if regexp 'search-last-regexp 'search-last-string)))
+      ;; Empty means use default.
+      (if (= 0 (length string))
+	  (setq string (symbol-value var))
+	;; Set last search string now so it is set even if we fail.
+	(set var string)))
     ;; Since we used the minibuffer, we should be available for redo.
     (setq command-history (cons (list function string) command-history))
     ;; Go ahead and search.

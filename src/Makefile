@@ -2,6 +2,9 @@ CPP = $(CC) -E
 MAKE = make  # BSD doesn't have it as a default.
 #Note: an alternative is  CPP = /lib/cpp
 
+# Just to avoid uncertainty.
+SHELL = /bin/sh
+
 all: xmakefile doall
 
 doall:
@@ -9,9 +12,8 @@ doall:
 
 #This is used in making a distribution.
 #Do not use it on development directories!
-distclean:
-	-rm -f paths.h config.h emacs-* temacs xemacs xmakefile core \
-   *~ \#* *.o libXMenu11.a log*
+distclean: clean
+	-rm -f paths.h config.h emacs-* *~ log*
 
 clean:
 	-rm -f temacs xemacs xmakefile core \#* *.o libXMenu11.a
@@ -31,7 +33,7 @@ dotemacs:
 xmakefile: ymakefile config.h
 	-rm -f xmakefile junk.c
 	cp ymakefile junk.c
-	$(CPP) junk.c | sed -e 's/^#.*//' -e 's/^[ \f\t][ \f\t]*$$//' -e 's/^ /	/' | \
+	$(CPP) junk.c | sed -e 's/^#.*//' -e 's/^[ 	][ 	]*$$//' -e 's/^ /	/' | \
 	sed -n -e '/^..*$$/p' > xmakefile
 	rm -f junk.c
 

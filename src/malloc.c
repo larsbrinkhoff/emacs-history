@@ -205,6 +205,8 @@ char *_malloc_base;
 
 static void getpool ();
 
+char *malloc ();
+
 /* Cause reinitialization based on job parameters;
   also declare where the end of pure storage is. */
 void
@@ -414,6 +416,10 @@ malloc (n)		/* get a block */
      multiple of 8, then figure out which nestf[] area to use.
      Both the beginning of the header and the beginning of the
      block should be on an eight byte boundary.  */
+#ifdef SUNOS_LOCALTIME_BUG
+  if (n < 16)
+    n = 16;
+#endif
   nbytes = (n + ((sizeof *p + 7) & ~7) + EXTRA + 7) & ~7;
   {
     register unsigned int   shiftr = (nbytes - 1) >> 2;
@@ -603,6 +609,14 @@ calloc (num, size)
   if (mem != 0)
     bzero (mem, num);
   return mem;
+}
+
+/* This is in case something linked with Emacs calls cfree.  */
+
+cfree (mem)
+     char *mem;
+{
+  return free (mem);
 }
 
 #ifndef VMS
@@ -799,7 +813,7 @@ get_lim_data ()
 #undef malloc
 int vms_out_initial = 0;
 char vms_initial_buffer[VMS_ALLOCATION_SIZE];
-static char *vms_current_brk = &vms_initial_buffer;
+static char *vms_current_brk = vms_initial_buffer;
 static char *vms_end_brk = &vms_initial_buffer[VMS_ALLOCATION_SIZE-1];
 
 #include <stdio.h>
@@ -813,7 +827,7 @@ sys_sbrk (incr)
   if (vms_out_initial)
     {
       /* out of initial allocation... */
-      if (!(temp = malloc (incr)))
+      if (!(temp = (char*) malloc (incr)))
 	temp = (char *) -1;
     }
   else
@@ -828,7 +842,7 @@ sys_sbrk (incr)
       else
 	{
 	  vms_out_initial = 1;	/* mark as out of initial allocation */
-	  if (!(temp = malloc (incr)))
+	  if (!(temp = (char*) malloc (incr)))
 	    temp = (char *) -1;
 	}
     }

@@ -17,7 +17,7 @@
 #define _XMenuInternal_h_
 
 #include <X11/Xlib.h>
-#include <X11/X10.h>
+#include "X10.h"
 #include <stdio.h>
 #include "XMenu.h"
 

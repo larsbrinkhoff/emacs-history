@@ -1,6 +1,8 @@
+# Uncomment following line if linking temacs complains about missing insque.
+# EXTRA=insque.o
 
              AS = as
-             CC = cc
+#            CC = cc
             CPP = /lib/cpp
              LD = ld
            TAGS = etags
@@ -72,12 +74,15 @@ OBJS =  Activate.o \
 
 all:: libXMenu11.a
 
-libXMenu11.a: $(OBJS)
+libXMenu11.a: $(OBJS) $(EXTRA)
 	$(RM) $@
-	$(AR) $@ $(OBJS)
-	$(RANLIB) $@
+	$(AR) $@ $(OBJS) $(EXTRA)
+	-$(RANLIB) $@
+#If running ranlib fails, probably there is none.
+#That's ok.  So don't stop the build.
 
+distclean: clean
 clean::
-	$(RM_CMD) \#*
+	$(RM_CMD) \#* libXMenu11.a *.o
 tags::
 	$(TAGS) -t *.[ch]

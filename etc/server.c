@@ -24,6 +24,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    and passes their commands (consisting of keyboard characters)
    up to the Emacs which then executes them.  */
 
+/* This must precede config.h on certain machines.  */
+#include <sys/signal.h>
+
 #define NO_SHORTNAMES
 #include "../src/config.h"
 #undef read
@@ -50,7 +53,6 @@ main ()
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/signal.h>
 #include <sys/un.h>
 #include <stdio.h>
 #include <errno.h>
@@ -59,6 +61,7 @@ extern int errno;
 
 main ()
 {
+  char system_name[32];
   int s, infd, fromlen;
   struct sockaddr_un server, fromunix;
   char *homedir;
@@ -85,7 +88,9 @@ main ()
     }
   server.sun_family = AF_UNIX;
 #ifndef SERVER_HOME_DIR
-  sprintf (server.sun_path, "/tmp/esrv%d", geteuid ());
+  gethostname (system_name, sizeof (system_name));
+  sprintf (server.sun_path, "/tmp/esrv%d-%s", geteuid (), system_name);
+
   if (unlink (server.sun_path) == -1 && errno != ENOENT)
     {
       perror ("unlink");
@@ -99,7 +104,10 @@ main ()
     }
   strcpy (server.sun_path, homedir);
   strcat (server.sun_path, "/.emacs_server");
+  /* Delete anyone else's old server.  */
+  unlink (server.sun_path);
 #endif
+
   if (bind (s, &server, strlen (server.sun_path) + 2) < 0)
     {
       perror ("bind");
@@ -177,7 +185,13 @@ main ()
       else if (rmask & 1) /* emacs sends codeword, fd, and string message */
 	{
 	  /* Read command codeword and fd */
+	  clearerr (stdin);
 	  scanf ("%s %d%*c", code, &infd);
+	  if (ferror (stdin) || feof (stdin))
+	    {
+	      fprintf (stderr, "server: error reading from standard input\n");
+	      exit (1);
+	    }
 
 	  /* Transfer text from Emacs to the client, up to a newline.  */
 	  infile = openfiles[infd];
@@ -206,13 +220,14 @@ main ()
 #else  /* This is the SYSV IPC section */
 
 #include <sys/types.h>
-#include <sys/signal.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <setjmp.h>
 
 jmp_buf msgenv;
 
+void /* void here fixes bug on sgi.
+	Let's hope this doesn't break other systems.  */
 msgcatch ()
 {
   longjmp (msgenv, 1);
@@ -286,6 +301,7 @@ main ()
       if ((fromlen = msgrcv (s, msgp, BUFSIZ - 1, 1, 0)) < 0)
         {
 	  perror ("msgrcv");
+	  exit (1);
         }
       else
         {

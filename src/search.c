@@ -48,6 +48,8 @@ unsigned char downcase_table[01000] = {0};	/* folds upper to lower case */
 
 struct re_pattern_buffer searchbuf;
 
+extern int re_max_failures;
+
 char search_fastmap[0400];
 
 /* Last regexp we compiled */
@@ -77,6 +79,7 @@ compile_pattern (pattern, bufp, translate)
   if (EQ (pattern, last_regexp)
       && translate == bufp->translate)
     return;
+
   last_regexp = Qnil;
   bufp->translate = translate;
   val = re_compile_pattern (XSTRING (pattern)->data,
@@ -187,6 +190,8 @@ matched by parenthesis constructs in the pattern.")
   val = re_search (&searchbuf, XSTRING (string)->data, XSTRING (string)->size,
 			       s, XSTRING (string)->size - s, &search_regs);
   immediate_quit = 0;
+  if (val == -2)
+    error ("Overflow in regular expression matching");
   if (val < 0) return Qnil;
   return make_number (val);
 }
@@ -519,11 +524,14 @@ search_buffer (string, pos, lim, n, RE, trt)
 	}
       while (n < 0)
 	{
-	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
-			   pos - BEGV, lim - pos, &search_regs,
-			   /* Don't allow match past current point */
-			   pos - BEGV)
-	      >= 0)
+	  int value = re_search_2 (&searchbuf, p1, s1, p2, s2,
+				   pos - BEGV, lim - pos, &search_regs,
+				   /* Don't allow match past current point */
+				   pos - BEGV);
+	  if (value == -2)
+	    error ("Overflow in regular expression matching");
+
+	  if (value >= 0)
 	    {
 	      j = BEGV;
 	      for (i = 0; i < RE_NREGS; i++)
@@ -544,10 +552,13 @@ search_buffer (string, pos, lim, n, RE, trt)
 	}
       while (n > 0)
 	{
-	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
-			   pos - BEGV, lim - pos, &search_regs,
-			   lim - BEGV)
-	      >= 0)
+	  int value = re_search_2 (&searchbuf, p1, s1, p2, s2,
+				   pos - BEGV, lim - pos, &search_regs,
+				   lim - BEGV);
+	  if (value == -2)
+	    error ("Overflow in regular expression matching");
+
+	  if (value >= 0)
 	    {
 	      j = BEGV;
 	      for (i = 0; i < RE_NREGS; i++)
@@ -862,7 +873,8 @@ An optional second argument bounds the search; it is a buffer position.\n\
 The match found must not extend before that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
  If not nil and not t, position at limit of search and return nil.\n\
-Optional fourth argument is repeat count--search for successive occurrences.")
+Optional fourth argument is repeat count--search for successive occurrences.\n\
+See also the functions match-beginning and match-end and replace-match.")
   (string, bound, noerror, count)
      Lisp_Object string, bound, noerror, count;
 {
@@ -876,7 +888,8 @@ An optional second argument bounds the search; it is a buffer position.\n\
 The match found must not extend after that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
-Optional fourth argument is repeat count--search for successive occurrences.")
+Optional fourth argument is repeat count--search for successive occurrences.\n\
+See also the functions match-beginning and match-end and replace-match.")
   (string, bound, noerror, count)
      Lisp_Object string, bound, noerror, count;
 {
@@ -1086,10 +1099,10 @@ match_limit (num, beginningp)
 }
 
 DEFUN ("match-beginning", Fmatch_beginning, Smatch_beginning, 1, 1, 0,
-  "Return the character number of start of text matched by last regexp searched for.\n\
+  "Return the character number of start of text matched by last search.\n\
 ARG, a number, specifies which parenthesized expression in the last regexp.\n\
  Value is nil if ARGth pair didn't match, or there were less than ARG pairs.\n\
-Zero means the entire text matched by the whole regexp.")
+Zero means the entire text matched by the whole regexp or whole string.")
   (num)
      Lisp_Object num;
 {
@@ -1097,10 +1110,10 @@ Zero means the entire text matched by the whole regexp.")
 }
 
 DEFUN ("match-end", Fmatch_end, Smatch_end, 1, 1, 0,
-  "Return the character number of end of text matched by last regexp searched for.\n\
+  "Return the character number of end of text matched by last search.\n\
 ARG, a number, specifies which parenthesized expression in the last regexp.\n\
  Value is nil if ARGth pair didn't match, or there were less than ARG pairs.\n\
-Zero means the entire text matched by the whole regexp.")
+Zero means the entire text matched by the whole regexp or whole string.")
   (num)
      Lisp_Object num;
 {
@@ -1124,16 +1137,18 @@ if a match began at index 0 in the string.")
       int start = search_regs.start[i];
       if (start >= 0)
 	{
-	  if (start == 0)
-	    data[2 * i] = 0;
+	  /* Use an integer if the value is out of range for the
+	     size of the current buffer.  */
+	  if (start < BEG || start > Z)
+	    XFASTINT (data[2 * i]) = start;
 	  else
 	    {
 	      data[2 * i] = Fmake_marker ();
 	      Fset_marker (data[2 * i], make_number (start), Qnil);
 	    }
 
-	  if (search_regs.end[i] == 0)
-	    data[2 * i + 1] = 0;
+	  if (search_regs.end[i] < BEG || search_regs.end[i] > Z)
+	    XFASTINT (data[2 * i + 1]) = search_regs.end[i];
 	  else
 	    {
 	      data[2 * i + 1] = Fmake_marker ();
@@ -1254,6 +1269,9 @@ compute_trt_inverse (trt)
 syms_of_search ()
 {
   register int i;
+
+  /* Avoid running out of regexp stack quite so soon.  */
+  re_max_failures = 10000;
 
   for (i = 0; i < 0400; i++)
     {

@@ -16,3 +16,8 @@ that are used as input in step 3.
 The latest versions of all the intermediate files are supplied,
 so if you want to print the manual with no change, you can start with
 step 3.
+
+
+The software you need to convert the manual into an Info file is
+available in the texinfo2 distribution, which is separate from the
+Emacs distribution (but is included on the Emacs distribution tape).

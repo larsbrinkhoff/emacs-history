@@ -20,7 +20,7 @@
 
 ;; The following line is modified automatically
 ;; by loading inc-version.el, each time a new Emacs is dumped.
-(defconst emacs-version "18.57.0" "\
+(defconst emacs-version "18.58.0" "\
 Version numbers of this version of Emacs.")
 
 (defconst emacs-build-time (current-time-string) "\

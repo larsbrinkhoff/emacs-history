@@ -91,7 +91,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 /* #define VIRT_ADDR_VARIES */

@@ -1,3 +1,295 @@
+Mon Feb  3 16:44:51 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* add-log.el (add-change-log-entry): Don't get confused by
+	old-format entries that use `at' instead of `@'.
+
+Sat Feb  1 16:41:32 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-mouse.el (x-set-mouse-point): Handle continuation at a tab.
+
+Wed Jan 29 12:16:42 1992  Jim Blandy  (jimb at pogo.cs.oberlin.edu)
+
+	* float.el (mantissa-minval): Make this (1- (ash 1 maxbit)),
+	rather than plain (ash 1 maxbit), since the latter can't be
+	negated.
+	(mantissa-half-minval): New constant.
+	(normalize): Shift negative numbers until the next value would be
+	less than mantissa-minval, not until the highest bit is one; the
+	latter is always true of a negative number.
+	(f+): Let f1 and f2 be the arguments with the greatest and least
+	exponents, not values.  If a negative number with a greater
+	exponent is added to a positive number with a lesser exponent, the
+	positive number should be shifted right to meet the negative
+	number, not vice versa.  You can't shift a normalized mantissa
+	left.
+
+Tue Jan 28 16:22:59 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): Put timezone in From line.
+
+Mon Jan 27 15:57:46 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* loaddefs.el (auto-mode-alist): Treat .texi like .texinfo.
+
+Tue Jan 21 18:07:19 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mh-e.el: New version from Gildea.
+
+Thu Jan 16 01:10:02 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* telnet.el (telnet-initial-filter): Bind `password'.
+
+Mon Jan 13 09:44:54 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* files.el (set-visited-file-name): Error check for directories.
+	Do error checks before setting buffer-file-name.
+
+Wed Dec 25 22:24:50 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* mail-utils.el (mail-strip-quoted-names): Return nil if given nil.
+
+Sun Dec  8 00:28:11 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* texinfmt.el: Handle @need and @sp.
+
+Sat Nov 30 22:49:11 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* simple.el (prefix-arg-internal): Make C-u end the arg.
+	Doc fixes on the argument commands.
+
+Mon Nov 18 11:43:56 1991  Stephen Gildea  (gildea at expo.lcs.mit.edu)
+
+	* mh-e.el:
+	(mh-reply): pass -noquery to repl
+	(mh-list-folders): obey mh-recursive-subfolders
+	(mh-redist-full-contents): change default to nil
+	(mh-unshar-msg): new function w variable mh-unshar-default-directory
+	(mh-before-quit-hook): new hook
+	(mh-read-folder-sequences): parse private sequences properly
+	(mh-undo): search backwards if nothing to undo on current message
+	(mh-folder-mode): turn on truncate-lines
+
+Sat Nov 16 00:45:58 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* fill.el (fill-region-as-paragraph): Don't forget which side of
+	a space point and markers were on.  Add lots of comments.
+
+	* files.el (file-name-sans-versions): Quote period in VMS regexp.
+	Don't accept .nnn which is really VMS file extension.
+	Merge non-VMS regexps.  Use just nil as length if no version.
+
+Fri Nov 15 13:18:00 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* replace.el (query-replace-help): Correction to explain action of SPC.
+
+Wed Oct 23 20:42:23 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* bytecomp.el (byte-compile-cond-1): Typo in singleton uncond clause.
+
+Tue Oct 22 00:30:37 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* replace.el (how-many): Do count successive blank lines matching ^$.
+
+Sat Oct 19 12:32:16 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (fixup-whitespace): Leave no space at end of line.
+
+Sun Oct  6 00:32:38 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* bytecomp.el (byte-compile-file): Don't run emacs-lisp-mode-hook.
+
+	* files.el (automount-dir-prefix): New var.
+	(find-file-noselect): Use it.
+
+Sat Oct  5 13:28:25 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* time.el (display-time-filter): Be consistent: space before words.
+
+	* texinfo.el (texinfo-mode): Don't call text-mode; run its hook once.
+
+Tue Sep 24 02:24:42 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* isearch.el (nonincremental-search):
+	Use separate defaults var for regexp search, like isearch.
+
+Sun Sep 15 15:34:14 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* rnewspost.el (news-setup): Delete text rather than killing.
+
+	* inc-vers.el: Search load-path for version.el.
+
+Fri Sep 13 00:32:19 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fill.el (justify-current-line): Rewrite of insertion of spaces.
+
+	* x-mouse.el (x-mouse-select): Compensate for minibuf prompt width.
+
+Sat Sep  7 16:27:20 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* fill.el (fill-individual-paragraphs):
+	Find a fill-prefix that works for the whole paragraph.
+
+Mon Sep  2 20:28:24 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* server.el (server-start): Delete old socket in /tmp as well as in ~.
+
+Tue Jul 30 17:17:39 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* dired.el (dired-chown): Use /bin/chown on certain systems.
+
+Tue Jul 23 14:21:24 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format): Handle Content-Length.
+
+Sat Jun 29 13:07:39 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* simple.el (shell-command-on-region):
+	Handle case where input is from *Shell Command Output*.
+
+	* compile.el (compilation-parse-error): Don't screw up on silly lineno.
+
+Fri Jun 28 08:48:18 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* simple.el (kill-region): If read-only bfr, don't mess with undo.
+
+Mon May 13 11:37:01 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* view.el (View-previous-line, View-next-line): New functions.
+	(view-mode-map): Use them.
+	(view-mode-command-loop): Don't bind goal-column.
+
+	* loaddefs.el (auto-mode-alist): Recognize .emacs only at end.
+
+Thu May  2 14:35:31 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* time.el (display-time-filter): If load-average fails, run uptime.
+
+	* at386.el: New file.
+
+Tue Apr 30 18:14:58 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* mail-utils.el (mail-strip-quoted-names): Handle nested parens.
+
+	* isearch.el (isearch): * and ? are not special after incomplete input.
+	When they are special, use old other-end for cs in both reverse
+	and forward.
+
+Mon Apr 29 15:00:31 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* info.el (Info-read-subfile): Skip blank lines.
+
+Sat Apr 13 18:10:28 1991  Eric Youngdale (youngdale@v6550c.nrl.navy.mil)
+
+	* files.el (basic-save-buffer): Stop messing with the file protection
+	(mode) under VMS, since we are going to write a new file.
+
+	* vms-patch.el (make-auto-save-file-name): Fixed generation of the
+	name of the auto-save file, when the name of the file being edited has
+	a version number. 
+
+
+Sun Mar 24 21:35:34 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* files.el (hack-local-variables): ignore-local-eval ignores `eval'.
+
+	* telnet.el (read-password): Clear quit-flag.
+
+Tue Mar 19 23:17:45 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* fill.el (justify-current-line): Adjust for 18.57 behavior
+	of current-column.
+
+Sun Mar 17 16:13:00 1991  Richard Stallman  (rms@mole.ai.mit.edu)
+
+	* add-log.el (add-change-log-entry): Use @, not ` at '.
+
+	* fill.el (justify-current-line): Handle extra indent after prefix.
+
+Mon Mar 11 18:12:45 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* simple.el (kill-region): Don't copy from undo list if empty.
+
+Sun Mar 10 19:42:39 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (find-backup-file-name): Delete nothing if overflow
+	in number of versions to keep.
+
+Tue Mar  5 21:47:16 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (find-alternate-file): Avoid killing current buffer.
+
+Thu Feb 28 18:04:11 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* server.el (server-start): Don't use a pty.
+	* time.el (display-time): Likewise.
+	* mh-e.el (mh-exec-cmd-daemon): Likewise.
+
+	* bytecomp.el (byte-compile-cond-1): Better handling of
+	unconditional clauses.
+
+Tue Feb 26 16:00:30 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* isearch.el (isearch): Copy point from small window
+	before deciding whether to set the mark.
+
+Mon Feb 25 13:07:37 1991  Paul Hilfinger  (hilfingr at hilfinger.cs.nyu.edu)
+
+	* fill.el (fill-individual-paragraphs): Changed response to mailp
+	to effect only leading lines in a region (was getting confused
+	about colons embedded in ordinary text).  Changed method of
+	moving to next paragraph in the main loop to use forward-paragraph
+	rather than goto-char, since the final character position is
+	rendered obsolete by the intervening fill-region-as-paragraph.
+
+Sun Feb 24 18:06:43 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* vip.el (ex-write): Kill just this buffer, not Emacs.
+
+	* vip.el (vip-emacs-old-commands): New buffer-local variable.
+	(vip-change-mode): Redefine C-x 3 and C-x TAB, saving old definitions.
+	No longer redefine at top level.
+
+Sat Feb  9 13:16:53 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sendmail.el (sendmail-send-it): Turn off undo in tembuf.
+
+	* x-mouse.el (x-mouse-set-point): Take account of minibuffer prompt.
+
+	* rmailout.el (rmail-output-to-rmail-file): Always insert at end.
+
+Fri Feb  8 16:22:43 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* simple.el (goto-line): Take special care of selective-display.
+	* compile.el (compilation-parse-errors): Likewise.
+
+Wed Feb  6 12:44:16 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rnews.el (news-select-message): Error does not prevent update
+	of .newsrc.
+
+	* rmail.el (rmail-insert-inbox-text): Don't insert newline after
+	empty file.
+
+Tue Feb  5 13:19:19 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* info.el (Info-find-node): Try appending .info to node name.
+
+Mon Feb  4 21:49:39 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* info.el (Info-extract-menu-node-name): New arg MULTI-LINE.
+	(Info-follow-reference): Pass t for that.
+
+Sat Feb  2 13:26:42 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* files.el (basic-save-buffer): Clear setmodes if hook writes the file.
+
+Thu Jan 31 13:49:36 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* rmailout.el (rmail-output):
+	Don't pass nil to mail-strip-quoted-names.
+
+	* files.el (find-file-noselect): Strip auto-mount prefix only if safe.
+
 Fri Jan 25 16:41:18 1991  Richard Stallman  (rms at mole.ai.mit.edu)
 
 	* Version 18.57 released.

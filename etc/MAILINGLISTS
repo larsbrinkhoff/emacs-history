@@ -1,4 +1,4 @@
-     GNU Project Electronic Mailing Lists.  Last Updated 16 Jan 91
+     GNU Project Electronic Mailing Lists.  Last Updated 23 Oct 91
 
 	   Please report improvements to: gnu@prep.ai.mit.edu
 
@@ -40,7 +40,8 @@ Thanks!
 Many of the GNU mailing lists are very large and are received by many
 people.  Please don't send them anything that is not seriously important
 to all their readers.  All GNU mailing lists are unmoderated, mail
-reflectors, except info-gnu, info-gnu-emacs, info-gcc and info-g++.
+reflectors, except info-gnu, info-gnu-emacs, info-gcc, info-g++ and
+info-gnu-fortran.
 
 All addresses below are in internet format.  Consult the mail guru for
 your computer to figure out address syntaxes from other networks.  From
@@ -280,8 +281,8 @@ This list is the place for users and installers of GNU Emacs to ask for
 help.  Please send bug reports to bug-gnu-emacs instead of posting them
 here.
 
-Since help-gnu-emacs a very large list, send it only those items that are
-seriously important to many people.
+Since help-gnu-emacs is a very large list, send it only those items that
+are seriously important to many people.
 
 If source or patches that were previously posted or a simple fix is
 requested in help-gnu-emacs, please mail it to the requester.  Do NOT
@@ -494,6 +495,22 @@ Library.
 
 See section '* General Information about bug-* lists and reporting
 program bugs'.
+
+* info-gnu-fortran-request@prep.ai.mit.edu to subscribe to info-gnu-fortran
+** gnUSENET newsgroup: NONE YET
+** Send contributions to: info-gnu-fortran@prep.ai.mit.edu
+
+This list is for progress reports about the GNU Fortran compiler.  In
+the future it will also be used for release notices.
+
+The list is filtered to remove items meant for info-gnu-fortran-request,
+that can be answered by the moderator without bothering the list, or
+should have been sent to another list.
+
+See section '* General Information about info-* lists'.
+
+There are no other GNU mailing lists or gnUSENET newsgroups for GNU
+Fortran (yet).
 
 * bug-gnu-smalltalk-request@prep.ai.mit.edu to subscribe to bug-gnu-smalltalk
 ** gnUSENET newsgroup: gnu.smalltalk.bug

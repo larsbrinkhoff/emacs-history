@@ -974,7 +974,7 @@ term_init (terminal_type)
 {
   char *area;
   char **address = &area;
-  char buffer[2044];
+  char buffer[4092];
   register char *p;
   int status;
 
@@ -990,7 +990,7 @@ term_init (terminal_type)
     fatal ("Terminal type %s is not defined.\n", terminal_type);
 
 #ifdef TERMINFO
-  area = (char *) malloc (2044);
+  area = (char *) malloc (4092);
 #else
   area = (char *) malloc (strlen (buffer));
 #endif /* not TERMINFO */

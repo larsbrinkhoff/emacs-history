@@ -28,7 +28,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "lisp.h"
 #include "paths.h"
 #include "buffer.h"
+
+#ifdef VMS
+#include "pwd.h"
+#else
 #include <pwd.h>
+#endif
+
 #include <errno.h>
 #include <sys/file.h>
 #ifdef USG
@@ -36,6 +42,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif /* USG */
 
 extern int errno;
+
+#ifdef VMS
+/* Prevent the file from being totally empty.  */
+static dummy () {}
+#endif
 
 #ifdef CLASH_DETECTION
   
@@ -48,6 +59,7 @@ extern int errno;
 
 static Lisp_Object
 lock_file_owner_name (lfname)
+     char *lfname;
 {
   struct stat s;
   struct passwd *the_pw;

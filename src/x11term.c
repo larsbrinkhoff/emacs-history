@@ -52,8 +52,8 @@ static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrenc
    but it was moved up above to avoid problems.  */
 #ifdef USG
 #include <termio.h>
-#include <fcntl.h>
 #endif /* USG */
+#include <fcntl.h>
 
 #include "lisp.h"
 #undef NULL
@@ -77,39 +77,27 @@ static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrenc
 
 #include "x11term.h"
 
-#ifdef IRIS
-#include <sys/sysmacros.h>	/* for "minor" */
-#include <sys/time.h>
-#else
-#ifdef UNIPLUS
-#include <sys/time.h>
+#include "X11/Xresource.h"
 
-#else /* not IRIS, not UNIPLUS */
-/* Use socket.h just to control whether to use time.h or sys/time.h.
-   This works like the code in process.c.  */
+/* Allow the config file to specify whether we can assume X11R4.  */
+#ifdef SPECIFY_X11R4
+#if SPECIFY_X11R4 > 0
+#define X11R4
+#endif
+#else /* not SPECIFY_X11R4 */
+/* Try to guess whether this is release 4 or newer.  */
+#ifdef PBaseSize
+#define X11R4
+#endif
+#endif /* not SPECIFY_X11R4 */
+
 #ifdef HAVE_SOCKETS
-#include <sys/socket.h>
+#include <sys/socket.h>		/* Must be done before gettime.h.  */
 #endif
-#ifdef HAVE_TIMEVAL
-/* _h_BSDTYPES is checked because on ISC unix, socket.h includes
-   both time.h and sys/time.h, and the latter file is protected
-   from repeated inclusion.  */
-#if defined(USG) && !defined(_h_BSDTYPES)
-#include <time.h>
-#else /* _h_BSDTYPES or not USG */
-#include <sys/time.h>
-#endif /* _h_BSDTYPES or not USG */
-#endif /* HAVE_TIMEVAL */
-#endif /* not UNIPLUS */
-#endif /* not IRIS */
-
-#ifdef BAT68K
-#include <sys/time.h>   /* In addition to time.h.  */
-#endif
+/* Include time.h, sys/time.h, or both.  */
+#include "gettime.h"
 
 #ifdef AIX
-#include <sys/time.h>   /* In addition to time.h.  */
-
 static KeySym XMOD_Alt[] = { XK_Alt_L };
 static KeySym XMOD_Shift[] = { XK_Shift_L };
 static KeySym XMOD_ShiftAlt[] = { XK_Alt_L, XK_Shift_L };
@@ -119,7 +107,12 @@ static KeySym XMOD_CtrlShift[] = { XK_Control_L, XK_Shift_L };
 static KeySym XMOD_ShiftCtrlAlt[] = { XK_Control_L, XK_Alt_L, XK_Shift_L };
 #endif
 
-#include <fcntl.h>
+#if 0 /* On some machines, stdio.h doesn't define NULL
+	 if stddef.h has been included already!  */
+#ifdef NULL  /* Sometimes various definitions conflict here.  */
+#undef NULL
+#endif
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -127,6 +120,10 @@ static KeySym XMOD_ShiftCtrlAlt[] = { XK_Control_L, XK_Alt_L, XK_Shift_L };
 #include <strings.h>
 #endif
 #include <sys/stat.h>
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 #include "dispextern.h"
 #include "termhooks.h"
@@ -141,8 +138,8 @@ static KeySym XMOD_ShiftCtrlAlt[] = { XK_Control_L, XK_Alt_L, XK_Shift_L };
 
 extern int errno;
 
-#define sigunblockx(sig) sigblock (0)
-#define sigblockx(sig) sigblock (1 << ((sig) - 1))
+#define sigunblockx(sig) sigblock (SIGEMPTYMASK)
+#define sigblockx(sig) sigblock (sigmask ((sig)))
 
 #define METABIT 0200
 #define MINWIDTH 12	/* In pixels */
@@ -165,9 +162,9 @@ int x_focus_flag;
 
 Colormap XXColorMap;
 char *default_window;
-int configure_pending;
 extern int initialized;
 extern int screen_width, screen_height;
+extern int delayed_size_change;
 
 /* Function for init_keyboard to call with no args (if nonzero).  */
 extern void (*keyboard_init_hook) ();
@@ -272,6 +269,7 @@ static struct _xdeftab xDefaultsValueTable[]
 int (*handler)();
 
 static void x_init_1 ();
+static int XInitWindow ();
 
 char *rindex();
 
@@ -524,7 +522,7 @@ dumpchars (active_screen, numcols, tempX, tempY, tempHL)
 	XDrawImageString(XXdisplay, XXwindow, tempHL ? XXgc_rev : XXgc_norm,
 			 tempX*XXfontw+XXInternalBorder,
 			 tempY*XXfonth+XXInternalBorder+XXbase,
-			 &active_screen->contents[tempY][tempX],
+			 (char *) &active_screen->contents[tempY][tempX],
 			 numcols);
 }
 
@@ -546,7 +544,7 @@ updateline (first)
 
 #ifdef XDEBUG
 	fprintf(stderr, "updateline\n");
-#endif XDEBUG
+#endif /* XDEBUG */
 
 	BLOCK_INPUT ();
 	if ((local_cursor_vpos < 0) || (local_cursor_vpos >= screen_height)
@@ -567,7 +565,7 @@ updateline (first)
 				  CurHL ? XXgc_rev : XXgc_norm,
 				  first*XXfontw+XXInternalBorder,
 				  local_cursor_vpos*XXfonth+XXInternalBorder+XXbase,
-				  &new_screen->contents[local_cursor_vpos][first],
+				  (char *) &new_screen->contents[local_cursor_vpos][first],
 				  temp_length);
 		if (temp_length < screen_width)
 			x_clear_end_of_line (temp_length);
@@ -588,7 +586,7 @@ writechars (start, end)
 #ifdef XDEBUG
   fprintf(stderr, "writechars (local_cursor_hpos %d temp_len %d InUpd %d)\n",
 	  local_cursor_hpos, end-start+1, InUpdate);
-#endif XDEBUG
+#endif /* XDEBUG */
 
   BLOCK_INPUT ();
 
@@ -657,7 +655,7 @@ XTflash ()
 #ifdef HAVE_TIMEVAL
 #ifdef HAVE_SELECT
 	XGCValues gcv_temp;
-	struct timeval to;
+	struct timeval wakeup, now;
 	BLOCK_INPUT_DECLARE ();
 
 #ifdef XDEBUG
@@ -670,23 +668,43 @@ XTflash ()
 		  BlackPixel(XXdisplay, XXscreen), GXinvert,
 		  AllPlanes);
 
-	XFillRectangle (XXdisplay, XXwindow, XXgc_temp, 0, 0,
-			screen_width*XXfontw+2*XXInternalBorder,
-	  	 	screen_height*XXfonth+2*XXInternalBorder);
+	/* For speed, flash just 1/4 of the window's area, a rectangle in
+	   the center.  */
+	XFillRectangle (XXdisplay, XXwindow, XXgc_temp,
+			screen_width*XXfontw/4, screen_height*XXfonth/4,
+			screen_width*XXfontw/2, screen_height*XXfonth/2);
 	XFlush (XXdisplay);
 
 	UNBLOCK_INPUT ();
 
-	to.tv_sec = 0;
-	to.tv_usec = 250000;
-	
-	select(0, 0, 0, 0, &to);
+	gettimeofday (&wakeup, (struct timezone *)0);
+
+	/* Compute time to wait until, propagating carry from usecs.  */
+	wakeup.tv_usec += 150000;
+	wakeup.tv_sec += (wakeup.tv_usec / 1000000);
+	wakeup.tv_usec %= 1000000;
+
+	/* Keep waiting until past the time wakeup.  */
+	while (1)
+	  {
+	    struct timeval timeout;
+
+	    gettimeofday (&timeout, (struct timezone *)0);
+
+	    /* In effect, timeout = wakeup - timeout.
+	       Break if result would be negative.  */
+	    if (timeval_subtract (&timeout, wakeup, timeout))
+	      break;
+
+	    /* Try to wait that long--but we might wake up sooner.  */
+	    select (0, 0, 0, 0, &timeout);
+	  }
 	
 	BLOCK_INPUT ();
 
-	XFillRectangle (XXdisplay, XXwindow, XXgc_temp, 0, 0,
-			screen_width*XXfontw+2*XXInternalBorder,
-	  	 	screen_height*XXfonth+2*XXInternalBorder);
+	XFillRectangle (XXdisplay, XXwindow, XXgc_temp,
+			screen_width*XXfontw/4, screen_height*XXfonth/4,
+			screen_width*XXfontw/2, screen_height*XXfonth/2);
 
 	XFreeGC(XXdisplay, XXgc_temp);
 	XFlush (XXdisplay);
@@ -703,7 +721,7 @@ XTfeep ()
 	fprintf (stderr, "XTfeep\n");
 #endif
 	BLOCK_INPUT ();
-	XBell (XXdisplay,50);
+	XBell (XXdisplay, 0);
 	XFlush (XXdisplay);
 	UNBLOCK_INPUT ();
 }
@@ -751,13 +769,13 @@ CursorToggle ()
 			XDrawImageString(XXdisplay, XXwindow, XXgc_norm,
 				    VisibleX*XXfontw+XXInternalBorder,
 				    VisibleY*XXfonth+XXInternalBorder+XXbase,
-				    &active_screen->contents[VisibleY][VisibleX],
+				    (char *) &active_screen->contents[VisibleY][VisibleX],
 				    1);
 		else if (CursorOutline) {
 			XDrawImageString(XXdisplay, XXwindow, XXgc_norm,
 				    VisibleX*XXfontw+XXInternalBorder,
 				    VisibleY*XXfonth+XXInternalBorder+XXbase,
-				    &active_screen->contents[VisibleY][VisibleX],
+				    (char *) &active_screen->contents[VisibleY][VisibleX],
 				    1);
 			XDrawRectangle (XXdisplay, XXwindow, XXgc_norm,
 					VisibleX*XXfontw+XXInternalBorder,
@@ -767,7 +785,7 @@ CursorToggle ()
 			XDrawImageString(XXdisplay, XXwindow, XXgc_curs,
 				    VisibleX*XXfontw+XXInternalBorder,
 				    VisibleY*XXfonth+XXInternalBorder+XXbase,
-				    &active_screen->contents[VisibleY][VisibleX],
+				    (char *) &active_screen->contents[VisibleY][VisibleX],
 				    1);
 	      }
 	else {
@@ -1271,22 +1289,28 @@ char *stringFuncVal(keycode)
 }
 #endif /* not AIX */
 #endif /* not sun */
-	
+
 internal_socket_read(bufp, numchars)
 	register unsigned char *bufp;
 	register int numchars;
 {
   /* Number of keyboard chars we have produced so far.  */
   int count = 0;
-  int nbytes,rows,cols;
+  int nbytes;
   char mapping_buf[20];
   BLOCK_INPUT_DECLARE ();
   XEvent event;
   /* Must be static since data is saved between calls.  */
   static XComposeStatus status;
   KeySym keysym;
+  SIGMASKTYPE oldmask;
 
   BLOCK_INPUT ();
+#ifdef BSD
+#ifndef BSD4_1
+  oldmask = sigblock (sigmask (SIGALRM));
+#endif
+#endif
 #ifdef FIOSNBIO
   /* If available, Xlib uses FIOSNBIO to make the socket
      non-blocking, and then looks for EWOULDBLOCK.  If O_NDELAY is set, FIOSNBIO is
@@ -1325,59 +1349,74 @@ internal_socket_read(bufp, numchars)
       break;
 			
     case ConfigureNotify:
-      if (abs(pixelheight-event.xconfigure.height) <
-	  XXfonth &&
-	  abs(pixelwidth-event.xconfigure.width) <
-	  XXfontw)
-	break;
+      if (abs(pixelheight-event.xconfigure.height) >= XXfonth
+	  || abs(pixelwidth-event.xconfigure.width) >= XXfontw)
+	{
+	  int rows, cols;
 
-      configure_pending = 1;
+	  rows = (event.xconfigure.height-2*XXInternalBorder)/XXfonth;
+	  cols = (event.xconfigure.width-2*XXInternalBorder)/XXfontw;
+	  pixelwidth = cols*XXfontw+2*XXInternalBorder;
+	  pixelheight = rows*XXfonth+2*XXInternalBorder;
 
-      rows = (event.xconfigure.height-2*XXInternalBorder)/
-	XXfonth;
-      cols = (event.xconfigure.width-2*XXInternalBorder)/
-	XXfontw;
-      pixelwidth = cols*XXfontw+2*XXInternalBorder;
-      pixelheight = rows*XXfonth+2*XXInternalBorder;
-
+	  /* This is absolutely, amazingly gross.  However, without
+	     it, emacs will core dump if the window gets too small.
+	     And uwm is too brain-damaged to handle large minimum size
+	     windows.  */
+	  if (cols > 11 && rows > 4)
+	    /* Delay the change unless Emacs is waiting for input.  */
+	    change_screen_size (rows, cols, 0, !waiting_for_input, 1);
+	}
       break;
 
     case Expose:
-      if (configure_pending) {
-	int width, height;
-	if (event.xexpose.count)
-	  break;
-	/* This is absolutely, amazingly gross.
-	 * However, without it, emacs will core
-	 * dump if the window gets too small.  And
-	 * uwm is too brain-damaged to handle
-	 * large minimum size windows. */
-	width = (pixelwidth-2*XXInternalBorder)/XXfontw;
-	height = (pixelheight-2*XXInternalBorder)/XXfonth;
-	if (width > 11 && height > 4)
-		change_screen_size (height, width, 0);
-	dumprectangle (0,0,pixelheight,pixelwidth);
-	configure_pending = 0;
-	break;
-      }
-      dumprectangle (event.xexpose.y-XXInternalBorder,
-		     event.xexpose.x-XXInternalBorder,
-		     event.xexpose.height,
-		     event.xexpose.width);
+      if (!delayed_size_change)
+	dumprectangle (event.xexpose.y-XXInternalBorder,
+		       event.xexpose.x-XXInternalBorder,
+		       event.xexpose.height,
+		       event.xexpose.width);
       break;
 
     case GraphicsExpose:
-      dumprectangle (event.xgraphicsexpose.y-XXInternalBorder,
-		     event.xgraphicsexpose.x-XXInternalBorder,
-		     event.xgraphicsexpose.height,
-		     event.xgraphicsexpose.width);
+      if (!delayed_size_change)
+	dumprectangle (event.xgraphicsexpose.y-XXInternalBorder,
+		       event.xgraphicsexpose.x-XXInternalBorder,
+		       event.xgraphicsexpose.height,
+		       event.xgraphicsexpose.width);
       break;
 
     case NoExpose:
       break;
 
+#if 0
     case FocusIn:
-      x_focus_flag = 1;
+    case FocusOut:
+    case EnterNotify:
+    case LeaveNotify:
+      {
+	int cursor = -1;	/* 0=on, 1=off, -1=no change */
+
+	if (event.type == FocusIn) cursor = 0;
+	else if (event.type == FocusOut) cursor = 1;
+	else
+	  {
+	    Window focus;
+	    int revert_to;	/* dummy return val */
+	    XGetInputFocus (XXdisplay, &focus, &revert_to);
+	    if (focus == PointerRoot)
+	      cursor = (event.type == LeaveNotify) ? 1 : 0;
+	  }
+	if (cursor == -1) break;
+	CursorToggle();
+	CursorOutline = cursor;
+	CursorToggle();
+      }
+#endif
+    case FocusIn:
+      /* kenc@viewlogic.com says adding the following line fixes the
+	 problems with grabbing and twm.  */
+      if (event.xfocus.mode == NotifyNormal)
+	x_focus_flag = 1;
     case EnterNotify:
       if (event.type == FocusIn || (!x_focus_flag && event.xcrossing.focus))
 	{
@@ -1397,7 +1436,7 @@ internal_socket_read(bufp, numchars)
 	  CursorToggle ();
 	}
       break;
-			
+
     case KeyPress:
       nbytes = XLookupString (&event.xkey,
 			      mapping_buf, 20, &keysym,
@@ -1407,8 +1446,10 @@ internal_socket_read(bufp, numchars)
       /* Someday this will be unnecessary as we will
 	 be able to use XRebindKeysym so XLookupString
 	 will have already given us the string we want. */
-      if (IsFunctionKey(keysym) ||
-	  IsMiscFunctionKey(keysym)) {
+      if (IsFunctionKey(keysym)
+	  || IsMiscFunctionKey(keysym)
+	  || keysym == XK_Prior
+	  || keysym == XK_Next) {
 	strcpy(mapping_buf,"[");
 	strcat(mapping_buf,stringFuncVal(keysym));
 #ifdef sun
@@ -1419,6 +1460,7 @@ internal_socket_read(bufp, numchars)
 	nbytes = strlen(mapping_buf);
       }
       else {
+#endif /* not AIX */
 	switch (keysym) {
 	case XK_Left:
 	  strcpy(mapping_buf,"\002");
@@ -1437,6 +1479,7 @@ internal_socket_read(bufp, numchars)
 	  nbytes = 1;
 	  break;
 	}
+#ifndef AIX
       }
 #endif  /* not AIX */
       if (nbytes) {
@@ -1474,6 +1517,11 @@ internal_socket_read(bufp, numchars)
   if (CursorExists)
     xfixscreen ();
 
+#ifdef BSD
+#ifndef BSD4_1
+  sigsetmask (oldmask);
+#endif
+#endif
   UNBLOCK_INPUT ();
   return count;
 }
@@ -1492,9 +1540,10 @@ XIgnoreError ()
 	return 0;
 }
 
+static int server_ping_timer;
+
 xfixscreen ()
 {
-	static int server_ping_timer;
 	BLOCK_INPUT_DECLARE ();
 
 	if (server_ping_timer > 0)
@@ -1529,8 +1578,34 @@ static int
 XT_GetDefaults (class)
     char *class;
 {
-  register char  *option;
   register struct _xdeftab *entry;
+  char *iname, *cname;
+
+  XrmDatabase db = NULL, db2 = NULL;
+  char *disp = 0, *scrn = 0;
+
+  int len = strlen (CLASS);
+  if (strlen (class) > len)
+    len = strlen (class);
+
+  /* 100 is bigger than any of the resource names in our fixed set.  */
+  iname = (char *) alloca (len + 100);
+  cname = (char *) alloca (len + 100);
+
+  XrmInitialize ();
+
+  /* Merge all databases on root window.  */
+
+  disp = XResourceManagerString (XXdisplay);
+  if (disp) db = XrmGetStringDatabase (disp);
+
+#if (XlibSpecificationRelease >= 5)
+  scrn = XScreenResourceString (ScreenOfDisplay (XXdisplay, XXscreen));
+  if (scrn) db2 = XrmGetStringDatabase (scrn);
+
+  /* Screen database takes precedence over global database.  */
+  XrmMergeDatabases (db2, &db);
+#endif
 
   /*
    * Walk the table reading in the resources.  Instance names supersede
@@ -1539,19 +1614,39 @@ XT_GetDefaults (class)
 
   for (entry = xDefaultsValueTable; entry->iname; entry++)
     {
+      /* Build the instance name and class name of resource.  */
+      XrmValue value;
+      char *dummy;
+      register char  *option;
+
+      strcpy (iname, class);
+      strcat (iname, ".");
+      strcat (iname, entry->iname);
+      strcpy (cname, class);
+      strcat (cname, ".");
+      strcat (cname, entry->cname);
+
+      if (XrmGetResource (db, iname, cname, &dummy, &value))
+	{
+	  if (entry->varp)
+	    *entry->varp = (char*)value.addr;
+	}
+      else
+	{
 #ifdef XBACKWARDS
-      if (!(option = XGetDefault (XXdisplay, entry->iname, class)))
-	if (!(option = XGetDefault (XXdisplay, entry->iname, CLASS)))
-	  if (!(option = XGetDefault (XXdisplay, entry->cname, class)))
-	    option = XGetDefault (XXdisplay, entry->cname, CLASS);
+	  if (!(option = XGetDefault (XXdisplay, entry->iname, class)))
+	    if (!(option = XGetDefault (XXdisplay, entry->iname, CLASS)))
+	      if (!(option = XGetDefault (XXdisplay, entry->cname, class)))
+		option = XGetDefault (XXdisplay, entry->cname, CLASS);
 #else
-      if (!(option = XGetDefault (XXdisplay, class, entry->iname)))
-	if (!(option = XGetDefault (XXdisplay, CLASS, entry->iname)))
-	  if (!(option = XGetDefault (XXdisplay, class, entry->cname)))
-	    option = XGetDefault (XXdisplay, CLASS, entry->cname);
+	  if (!(option = XGetDefault (XXdisplay, class, entry->iname)))
+	    if (!(option = XGetDefault (XXdisplay, CLASS, entry->iname)))
+	      if (!(option = XGetDefault (XXdisplay, class, entry->cname)))
+		option = XGetDefault (XXdisplay, CLASS, entry->cname);
 #endif
-      if (option && entry->varp)
-	*entry->varp = option;
+	  if (option && entry->varp)
+	    *entry->varp = option;
+	}
     }
 
   /*
@@ -1598,9 +1693,13 @@ x_error_handler (disp, event)
 
 x_io_error_handler ()
 {
+  int save_errno = errno;
+  if (errno == EPIPE)
+    kill (0, SIGHUP);
   Fdo_auto_save ();
+  errno = save_errno;
   perror ("Fatal X-windows I/O error");
-  Fkill_emacs (make_number (70));
+  kill (0, SIGILL);
 }
 
 x_term_init ()
@@ -1646,7 +1745,6 @@ x_term_init ()
 	meta_key = 1;
 	visible_bell = 1;
 	inverse_video = 0;
-	configure_pending = 0;
 	
 	fix_screen_hook = xfixscreen;
 	clear_screen_hook = XTclear_screen;
@@ -1701,7 +1799,11 @@ x_term_init ()
 
 	XXicon_usebitmap = 0;
 	
+#ifdef X_DEFAULT_FONT
+	temp_font = X_DEFAULT_FONT;
+#else
 	temp_font = "fixed";
+#endif
 	progname = xargv[0];
 	if (ptr = rindex(progname, '/'))
 	  progname = ptr+1;
@@ -1723,7 +1825,7 @@ x_term_init ()
 	    if (strcmp(xargv[ix], "-rn") == 0 &&
 		(valx = ix + 1) < xargc)
 	    {
-		XXidentity = (char *) xmalloc( strlen(xargv[valx]) + 1 );
+		XXidentity = (char *) xmalloc (strlen(xargv[valx]) + 1 );
 		(void) strcpy(XXidentity, xargv[valx]);
 
 		break;
@@ -2002,11 +2104,21 @@ x_init_1 ()
 #endif
 
 	dup2 (ConnectionNumber(XXdisplay), 0);
+#ifndef SYSV_STREAMS
+	/* Streams somehow keeps track of which descriptor number
+	   is being used to talk to X.  So it is not safe to substitute
+	   descriptor 0.  But it is safe to make descriptor 0 a copy of it.  */
 	close (ConnectionNumber(XXdisplay));
 	ConnectionNumber(XXdisplay) = 0;	/* Looks a little strange?
 						 * check the def of the macro;
 						 * it is a genuine lvalue */
-	setpgrp (0,getpid());
+#endif
+
+#ifdef USG
+	setpgrp ();		/* No arguments but equivalent in this case */
+#else
+	setpgrp (0, getpid ());
+#endif /* USG */
 	
 #ifdef F_SETOWN
 	old_fcntl_owner = fcntl (0, F_GETOWN, 0);
@@ -2201,7 +2313,8 @@ XT_Set_Host(w)
     hostname[99] = '\0';
 
     XChangeProperty(XXdisplay, w, XA_WM_CLIENT_MACHINE, XA_STRING, 8,
-		    PropModeReplace, hostname, strlen(hostname));
+		    PropModeReplace,
+		    (unsigned char *) hostname, strlen(hostname));
 }
 
 
@@ -2275,7 +2388,8 @@ XT_Set_Icon_Title(w)
 
 
     XChangeProperty(XXdisplay, w, XA_WM_ICON_NAME, XA_STRING, 8,
-		    PropModeReplace, title_info, strlen(title_info));
+		    PropModeReplace,
+		    (unsigned char *) title_info, strlen(title_info));
 }
 
 
@@ -2289,7 +2403,7 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     Bool  do_resize;
     int pr;
 {
-#ifndef XICCC
+#ifndef X11R4
     XSizeHints  sizehints;
 
     sizehints.flags = (pr & (WidthValue | HeightValue)) ? USSize : PSize;
@@ -2310,7 +2424,7 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     flexlines = height;
 
 
-    change_screen_size (height, width, 0 - (do_resize == False));
+    change_screen_size (height, width, 0 - (do_resize == False), 0, 0);
 
     sizehints.width_inc = XXfontw;
     sizehints.height_inc = XXfonth;
@@ -2318,9 +2432,11 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     sizehints.min_width = XXfontw*MINWIDTH+2*XXInternalBorder;
     sizehints.min_height = XXfonth*MINHEIGHT+2*XXInternalBorder;
 
+#if 0
     /* old, broken versions */
-    sizehints.min_width = 2 * XXInternalBorder;
-    sizehints.min_height = 2 * XXInternalBorder;
+    sizehints.min_width = 3 * XXInternalBorder;
+    sizehints.min_height = 3 * XXInternalBorder;
+#endif
 
     XSetNormalHints(XXdisplay, w, &sizehints);
 
@@ -2329,7 +2445,7 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
 	XResizeWindow(XXdisplay, XXwindow, pixelwidth, pixelheight);
 	XFlush(XXdisplay);
     }
-#else
+#else /* not X11R4 */
     XSizeHints sizehints;
     XWindowChanges changes;
     unsigned int change_mask = 0;
@@ -2349,6 +2465,29 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     changes.height = sizehints.base_height + height * XXfonth;
     sizehints.flags |= ((pr & (WidthValue | HeightValue)) ? USSize : PSize) |
 	 PBaseSize;
+
+    /* If user has specified precise position, ... */
+    if ((pr & XValue) || (pr & YValue))
+      {
+	sizehints.flags |= USSize | USPosition | PWinGravity;
+	/* Tell window manager which corner to keep fixed.  */
+	switch (pr & (XNegative | YNegative))
+	  {
+	  case 0:
+	    sizehints.win_gravity = NorthWestGravity;
+	    break;
+	  case XNegative:
+	    sizehints.win_gravity = NorthEastGravity;
+	    break;
+	  case YNegative:
+	    sizehints.win_gravity = SouthWestGravity;
+	    break;
+	  default:
+	    sizehints.win_gravity = SouthEastGravity;
+	    break;
+	  }
+      }
+
     change_mask |= CWWidth | CWHeight;
     
     /*
@@ -2372,7 +2511,7 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     pixelheight = sizehints.base_height;
     flexlines = height;
 
-    change_screen_size (height, width, 0 - (do_resize == False));
+    change_screen_size (height, width, 0 - (do_resize == False), 0, 0);
 
     sizehints.min_width = XXfontw * MINWIDTH + 2 * XXInternalBorder;
     sizehints.min_height = XXfonth * MINHEIGHT + 2 * XXInternalBorder;
@@ -2384,7 +2523,7 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
 
     XSetWMNormalHints(XXdisplay, w, &sizehints);
     XConfigureWindow(XXdisplay, w, change_mask, &changes);
-#endif /* XICCC */
+#endif /* not X11R4 */
 }
 
 

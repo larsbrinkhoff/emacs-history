@@ -25,12 +25,26 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef NULL
 #endif
 #include <sys/stat.h>
+
+#ifdef VMS
+#include "pwd.h"
+#else
 #include <pwd.h>
+#endif
+
 #include <ctype.h>
+
+#ifdef VMS
+#include "dir.h"
+#include <perror.h>
+#include <stddef.h>
+#include <string.h>
+#else
 #include <sys/dir.h>
+#endif
 #include <errno.h>
 
-#ifndef VMS
+#ifndef vax11c
 extern int errno;
 extern char *sys_errlist[];
 extern int sys_nerr;
@@ -51,11 +65,11 @@ extern int sys_nerr;
 #include "window.h"
 
 #ifdef VMS
-#include <perror.h>
 #include <file.h>
 #include <rmsdef.h>
 #include <fab.h>
 #include <nam.h>
+extern unsigned char vms_file_written[];	/* set in rename_sans_version */
 #endif
 
 #ifdef HAVE_TIMEVAL
@@ -66,9 +80,11 @@ extern int sys_nerr;
 #endif
 #endif
 
-#ifdef HPUX
+#ifdef HPUX_NET
 #include <netio.h>
+#ifndef HPUX8
 #include <errnet.h>
+#endif
 #endif
 
 #ifndef O_WRONLY
@@ -102,8 +118,10 @@ report_file_error (string, data)
   else
     errstring = build_string ("undocumented error code");
 
-  /* System error messages are capitalized.  Downcase the initial. */
-  XSTRING (errstring)->data[0] = DOWNCASE (XSTRING (errstring)->data[0]);
+  /* System error messages are capitalized.  Downcase the initial
+     unless it is followed by a slash.  */
+  if (XSTRING (errstring)->data[1] != '/')
+    XSTRING (errstring)->data[0] = DOWNCASE (XSTRING (errstring)->data[0]);
 
   while (1)
     Fsignal (Qfile_error,
@@ -214,7 +232,8 @@ file_name_as_directory (out, in)
 	  brack = ']';
 	  strcpy (out, "[.");
 	}
-      if (dot = index (p, '.'))
+      dot = (char *) index (p, '.');
+      if (dot)
 	{
 	  /* blindly remove any extension */
 	  size = strlen (out) + (dot - p);
@@ -338,12 +357,13 @@ directory_file_name (src, dst)
 	    }
 	}
       bracket = src[slen];
-      if (!(ptr = index (src, bracket - 2)))
+      ptr = (char *) index (src, bracket - 2);
+      if (ptr == 0)
 	{ /* no opening bracket */
 	  strcpy (dst, src);
 	  return 0;
 	}
-      if (!(rptr = rindex (src, '.')))
+      if (!(rptr = (char *) rindex (src, '.')))
 	rptr = ptr;
       slen = rptr - src;
       strncpy (dst, src, slen);
@@ -388,7 +408,7 @@ directory_file_name (src, dst)
   /* Process as Unix format: just remove any final slash.
      But leave "/" unchanged; do not change it to "".  */
   strcpy (dst, src);
-  if (dst[slen] == '/' && slen > 1)
+  if (dst[slen] == '/' && slen > 0)
     dst[slen] = 0;
   return 1;
 }
@@ -603,7 +623,7 @@ initial ~ is expanded.  See also the function  substitute-in-file-name.")
 	  unsigned char *ptr = (unsigned char *) index (user, '/');
 	  int len = ptr ? ptr - user : strlen (user);
 #ifdef VMS
-	  unsigned char *ptr1 = index (user, ':');
+	  unsigned char *ptr1 = (unsigned char *) index (user, ':');
 	  if (ptr1 != 0 && ptr1 - user < len)
 	    len = ptr1 - user;
 #endif /* VMS */
@@ -645,9 +665,25 @@ initial ~ is expanded.  See also the function  substitute-in-file-name.")
       newdir = XSTRING (defalt)->data;
     }
 
+  if (newdir != 0)
+    {
+      /* Get rid of any slash at the end of newdir.  */
+      int length = strlen (newdir);
+      if (length > 1 && newdir[length - 1] == '/')
+	{
+	  unsigned char *temp = (unsigned char *) alloca (length);
+	  bcopy (newdir, temp, length - 1);
+	  temp[length - 1] = 0;
+	  newdir = temp;
+	}
+      tlen = length + 1;
+    }
+  else
+    tlen = 0;
+
   /* Now concatenate the directory and name to new space in the stack frame */
 
-  tlen = (newdir ? strlen (newdir) + 1 : 0) + strlen (nm) + 1;
+  tlen += strlen (nm) + 1;
   target = (unsigned char *) alloca (tlen);
   *target = 0;
 
@@ -1201,11 +1237,13 @@ This is what happens in interactive use with M-x.")
 
 #ifdef S_IFLNK
 DEFUN ("make-symbolic-link", Fmake_symbolic_link, Smake_symbolic_link, 2, 3,
-  "FMake symbolic link to file: \nFMake symbolic link to file %s: \np",
-  "Make a symbolic link to FILENAME, named LINKNAME.  Both args strings.\n\
-Signals a  file-already-exists  error if NEWNAME already exists\n\
+  "sMake symbolic link to file: \nFMake symbolic link to file %s: \np",
+  "Make a symbolic link to TARGET, named LINKNAME.  Both args strings.\n\
+There is no completion for LINKNAME, because it is read simply as a string;\n\
+this is to enable you to make a link to a relative file name.\n\n\
+Signals a  file-already-exists  error if LINKNAME already exists\n\
 unless optional third argument OK-IF-ALREADY-EXISTS is non-nil.\n\
-A number as third arg means request confirmation if NEWNAME already exists.\n\
+A number as third arg means request confirmation if LINKNAME already exists.\n\
 This happens for interactive use with M-x.")
   (filename, newname, ok_if_already_exists)
      Lisp_Object filename, newname, ok_if_already_exists;
@@ -1218,7 +1256,9 @@ This happens for interactive use with M-x.")
   GCPRO2 (filename, newname);
   CHECK_STRING (filename, 0);
   CHECK_STRING (newname, 1);
+#if 0 /* This made it impossible to make a link to a relative name.  */
   filename = Fexpand_file_name (filename, Qnil);
+#endif
   newname = Fexpand_file_name (newname, Qnil);
   if (NULL (ok_if_already_exists)
       || XTYPE (ok_if_already_exists) == Lisp_Int)
@@ -1226,13 +1266,26 @@ This happens for interactive use with M-x.")
 				  XTYPE (ok_if_already_exists) == Lisp_Int);
   if (0 > symlink (XSTRING (filename)->data, XSTRING (newname)->data))
     {
+      int failure = 1;
+      /* If we failed because the link name already exists,
+	 try deleting it.  */
+      if (errno == EEXIST)
+	{
+	  unlink (XSTRING (newname)->data);
+	  failure = 0 > symlink (XSTRING (filename)->data,
+				 XSTRING (newname)->data);
+	}
+      /* If we have not started to win, report the error.  */
+      if (failure)
+	{
 #ifdef NO_ARG_ARRAY
-      args[0] = filename;
-      args[1] = newname;
-      report_file_error ("Making symbolic link", Flist (2, args));
+	  args[0] = filename;
+	  args[1] = newname;
+	  report_file_error ("Making symbolic link", Flist (2, args));
 #else
-      report_file_error ("Making symbolic link", Flist (2, &filename));
+	  report_file_error ("Making symbolic link", Flist (2, &filename));
 #endif
+	}
     }
   UNGCPRO;
   return Qnil;
@@ -1318,10 +1371,15 @@ See also file-readable-p and file-attributes.")
      Lisp_Object filename;
 {
   Lisp_Object abspath;
+  struct stat sb;
 
   CHECK_STRING (filename, 0);
   abspath = Fexpand_file_name (filename, Qnil);
-  return (access (XSTRING (abspath)->data, 0) >= 0) ? Qt : Qnil;
+#ifdef S_IFLNK
+  return (lstat (XSTRING (abspath)->data, &sb) >= 0) ? Qt : Qnil;
+#else
+  return (stat (XSTRING (abspath)->data, &sb) >= 0) ? Qt : Qnil;
+#endif
 }
 
 DEFUN ("file-readable-p", Ffile_readable_p, Sfile_readable_p, 1, 1, 0,
@@ -1540,7 +1598,11 @@ before the error is signaled.")
 
 #ifndef APOLLO
   if (stat (XSTRING (filename)->data, &st) < 0
-	|| (fd = open (XSTRING (filename)->data, 0)) < 0)
+#if defined (AIX) && defined (S_ISMPX)
+      /* Don't let emacs open /dev/pts, as it causes kernel confusion.  */
+      || S_ISMPX (st.st_mode)
+#endif
+      || (fd = open (XSTRING (filename)->data, 0)) < 0)
 #else
   if ((fd = open (XSTRING (filename)->data, 0)) < 0
       || fstat (fd, &st) < 0)
@@ -1554,6 +1616,13 @@ before the error is signaled.")
     }
 
   record_unwind_protect (close_file_unwind, make_number (fd));
+
+#ifdef VMS
+  /* VAXCRTL adds implied carriage control to certain record types.  */
+  if (st.st_fab_rfm == FAB$C_FIX
+      && (st.st_fab_rat & (FAB$M_FTN | FAB$M_CR) != 0))
+    st.st_size += st.st_size / st.st_fab_mrs;
+#endif
 
   /* Supposedly happens on VMS.  */
   if (st.st_size < 0)
@@ -1710,6 +1779,7 @@ If VISIT is neither t nor nil, it means do not print\n\
 		fn = fname;
 		fname = 0;
 		desc = creat (fn, 0666);
+#if 0
 		if (desc < 0)
 		  {
 		    /* We can't make a new version;
@@ -1717,6 +1787,7 @@ If VISIT is neither t nor nil, it means do not print\n\
 		    vms_truncate (fn);
 		    desc = open (fn, O_RDWR);
 		  }
+#endif
 	      }
 	  }
 	else
@@ -1791,13 +1862,10 @@ If VISIT is neither t nor nil, it means do not print\n\
 #ifndef USG
 #ifndef VMS
 #ifndef BSD4_1
-#ifndef alliant /* trinkle@cs.purdue.edu says fsync can return EBUSY
-		   on alliant, for no visible reason.  */
   /* Note fsync appears to change the modtime on BSD4.2 (both vax and sun).
      Disk full in NFS may be reported here.  */
   if (fsync (desc) < 0)
     failure = 1, save_errno = errno;
-#endif
 #endif
 #endif
 #endif
@@ -1827,8 +1895,8 @@ If VISIT is neither t nor nil, it means do not print\n\
   if (fname)
     {
       if (!failure)
-	failure = (rename (fn, fname) != 0), save_errno = errno;
-      fn = fname;
+	failure = (rename_sans_version (fn, fname) != 0), save_errno = errno;
+      fn = vms_file_written;	/* this is filled by rename_sans_version */
     }
 #endif /* VMS */
 

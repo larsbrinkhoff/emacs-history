@@ -263,12 +263,18 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  op -= Bcall;
 	docall:
 	  DISCARD(op);
+	  /* Ffuncall now follows the standard convention that a
+	     function with MANY args relies on the caller to protect.  */
+#if 0
 	  /* Remove protection from the args we are giving to Ffuncall.
 	     FFuncall will protect them, and double protection would
 	     cause disasters.  */
 	  gcpro3.nvars = &TOP - stack - 1;
+#endif
 	  TOP = Ffuncall (op + 1, &TOP);
+#if 0
 	  gcpro3.nvars = XFASTINT (maxdepth);
+#endif
 	  break;
 
 	case Bunbind+6:

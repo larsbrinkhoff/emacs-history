@@ -563,7 +563,9 @@ start with #."
   (interactive "sChange to Owner: ")
   (let ((buffer-read-only nil)
 	(file (dired-get-filename)))
-    (call-process "/etc/chown" nil nil nil owner file)
+    (call-process (if (memq system-type '(hpux usg-unix-v))
+		      "/bin/chown" "/etc/chown")
+		  nil nil nil owner file)
     (dired-redisplay file)))
 
 (defun dired-redisplay (file) "Redisplay this line."

@@ -218,7 +218,9 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
       (insert-file-contents filename)
       (goto-char 1)
       (set-buffer outbuffer)
-      (emacs-lisp-mode)
+      ;; Avoid running hooks; all we really want is the syntax table.
+      (let (emacs-lisp-mode-hook)
+	(emacs-lisp-mode))
       (erase-buffer)
       (while (save-excursion
 	       (set-buffer inbuffer)
@@ -950,11 +952,15 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
   (if (cdr form)
       (byte-compile-cond-1 (cdr form))
     (byte-compile-constant nil)))
+
 (defun byte-compile-cond-1 (clauses)
   (if (or (eq (car (car clauses)) t)
-	  (eq (car-safe (car (car clauses))) 'quote))
+	  (and (eq (car-safe (car (car clauses))) 'quote)
+	       (car-safe (cdr-safe (car (car clauses))))))
       ;; Unconditional clause
-      (byte-compile-body (cdr (car clauses)))
+      (if (cdr (car clauses))
+	  (byte-compile-body (cdr (car clauses)))
+	(byte-compile-form (car (car clauses))))
     (if (null (cdr clauses))
 	;; Only one clause
 	(let ((donetag (byte-compile-make-tag)))

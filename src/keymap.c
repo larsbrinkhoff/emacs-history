@@ -59,6 +59,8 @@ Lisp_Object Qkeymapp, Qkeymap;
    is equivalent to prefixing with this character.  */
 
 extern int meta_prefix_char;
+
+static void insert_first_line ();
 
 DEFUN ("make-keymap", Fmake_keymap, Smake_keymap, 0, 0, 0,
   "Construct and return a new keymap, a vector of length 128.\n\
@@ -111,7 +113,8 @@ synkey (frommap, fromchar, tomap, tochar)
 DEFUN ("keymapp", Fkeymapp, Skeymapp, 1, 1, 0,
   "Return t if ARG is a keymap.\n\
 A keymap is a vector of length 128, or a list (keymap . ALIST),\n\
-where alist elements look like (CHAR . DEFN).")
+where alist elements look like (CHAR . DEFN).\n\
+A symbol whose function definition is a keymap is itself a keymap.")
   (object)
      Lisp_Object object;
 {
@@ -230,7 +233,9 @@ DEFUN ("copy-keymap", Fcopy_keymap, Scopy_keymap, 1, 1, 0,
   "Return a copy of the keymap KEYMAP.\n\
 The copy starts out with the same definitions of KEYMAP,\n\
 but changing either the copy or KEYMAP does not affect the other.\n\
-Any key definitions that are subkeymaps are recursively copied.")
+Any key definitions that are subkeymaps are recursively copied.\n\
+However, a key definition which is a symbol whose definition is a keymap\n\
+is not copied.")
   (keymap)
      Lisp_Object keymap;
 {
@@ -242,8 +247,10 @@ Any key definitions that are subkeymaps are recursively copied.")
       register int i;
       copy = Fcopy_sequence (keymap);
       for (i = 0; i < XVECTOR (copy)->size; i++)
-	if (tem = Fkeymapp (XVECTOR (copy)->contents[i]), !NULL (tem))
-	  XVECTOR (copy)->contents[i] = Fcopy_keymap (XVECTOR (copy)->contents[i]);
+	if (XTYPE (XVECTOR (copy)->contents[i]) != Lisp_Symbol)
+	  if (tem = Fkeymapp (XVECTOR (copy)->contents[i]), !NULL (tem))
+	    XVECTOR (copy)->contents[i]
+	      = Fcopy_keymap (XVECTOR (copy)->contents[i]);
     }
   else
     {
@@ -253,7 +260,9 @@ Any key definitions that are subkeymaps are recursively copied.")
 	{
 	  register Lisp_Object elt;
 	  elt = XCONS (tail)->car;
-	  if (CONSP (elt) && (tem = Fkeymapp (XCONS (elt)->cdr), !NULL (tem)))
+	  if (CONSP (elt)
+	      && XTYPE (XCONS (elt)->cdr) != Lisp_Symbol
+	      && (tem = Fkeymapp (XCONS (elt)->cdr), !NULL (tem)))
 	    XCONS (elt)->cdr = Fcopy_keymap (XCONS (elt)->cdr);
 	}
     }
@@ -907,9 +916,12 @@ describe_map_tree (startmap, partial, shadow)
      Lisp_Object startmap, shadow;
      int partial;
 {
-  register Lisp_Object maps, elt, sh;
+  Lisp_Object maps;
+  register Lisp_Object elt, sh;
+  struct gcpro gcpro1;
 
   maps = Faccessible_keymaps (startmap);
+  GCPRO1 (maps);
 
   for (; !NULL (maps); maps = Fcdr (maps))
     {
@@ -929,6 +941,8 @@ describe_map_tree (startmap, partial, shadow)
       if (NULL (sh) || !NULL (Fkeymapp (sh)))
 	describe_map (Fcdr (elt), Fcar (elt), partial, sh);
     }
+
+  UNGCPRO;
 }
 
 describe_command (definition)
@@ -1167,7 +1181,7 @@ apropos1 (list)
   return Qnil;
 }
 
-static
+static void
 insert_first_line (prefix, str)
      char *prefix;
      Lisp_Object str;

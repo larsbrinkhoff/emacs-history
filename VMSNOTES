@@ -5,11 +5,12 @@ See the file VMSINSTALL for VMS installation information.
 All GNU Emacs features which on Unix work by running a Unix utility
 in a subprocess currently do not work on VMS.
 
-These include Dired, listing a file directory, reading and sending
-mail, reading and posting netnews, spelling correction, displaying the
-time and load in the mode line, queueing output for printing, and the
-`sort-columns' command.  Naturally, the commands to view Unix manual
-pages and execute Unix shell commands also do not work.
+These include reading and sending mail, reading and posting netnews,
+spelling correction, displaying the time and load in the mode line,
+and the `sort-columns' command.  (dired and sending output to printers
+don't work in version 18, but will in version 19.)  Naturally, the
+commands to view Unix manual pages and execute Unix shell commands
+also do not work.
 
 It is not possible to fix these problems in a general way on VMS
 because they involve interfaces to parts of the operating system which
@@ -21,9 +22,10 @@ on VMS.  This should not be very hard to do.  Most of the code you need
 is already provided in [.src]dired.c.
 
 The normal commands for running an inferior shell or lisp with I/O
-through an Emacs buffer do not work on VMS, but you can instead create
-a DCL subprocess which does I/O through an Emacs buffer and get a
-similar effect.  See the file [.lisp]vms-patch.el.
+through an Emacs buffer do not work on VMS in Emacs version 18, but
+will work in version 19.  For the meanwhile, you can create a DCL
+subprocess which does I/O through an Emacs buffer and get a similar
+effect.  See the file [.lisp]vms-patch.el.
 
 * Specifying terminal type.
 

@@ -368,7 +368,7 @@ Cc|cdc456tst:\
 # D: DATAMEDIA
 #
 D0|dm1520|dm1521|1521|1520|datamedia 1520:\
-	:do=^J:am:le=^H:bs:cd=^K:ce=^]:cl=^L:cm=^^%r%+ %+ :co#80:ho=^Y:\
+	:am:le=^H:bs:cd=^K:ce=^]:cl=^L:cm=^^%r%+ %+ :co#80:ho=^Y:\
 	:ku=^_:kd=^J:kl=^H:kr=^\:kh=^Y:\
 	:li#24:nd=^\:up=^_:xn:ma=^\ ^_^P^YH:pt:
 D2|dm2500|datamedia2500|2500|datamedia 2500:\

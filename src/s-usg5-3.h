@@ -211,3 +211,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define LIBX10_SYSTEM -lnsl_s
 #define LIBX11_SYSTEM -lnsl_s
+/* eric@snark.thyrsus.com suggests the following is needed on version V.3.2.
+   Please tell rms@gnu.ai.mit.edu if you find that it is necessary.  */
+/* #define LIBX11_SYSTEM	-lX11_s -lnls -lnsl_s -lpt -lc_s */
+
+/* The docs for system V/386 suggest v.3 has sigpause,
+   so let's give it a try.  */
+#define HAVE_SYSV_SIGPAUSE

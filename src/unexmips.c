@@ -37,7 +37,7 @@ what you give them.   Help stamp out software-hoarding!  */
 #include <scnhdr.h>
 #include <sym.h>
 
-#ifdef IRIS_4D
+#if defined(IRIS_4D) || defined(sony)
 #include "getpagesize.h"
 #include <fcntl.h>
 #endif
@@ -167,9 +167,12 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
   CHECK_SCNHDR(sdata_section, _SDATA, STYP_SDATA);
   CHECK_SCNHDR(sbss_section,  _SBSS,  STYP_SBSS);
   CHECK_SCNHDR(bss_section,   _BSS,   STYP_BSS);
+#if 0 /* Apparently this error check goes off on irix 3.3,
+	 but it doesn't indicate a real problem.  */
   if (i != hdr.fhdr.f_nscns)
     fprintf(stderr, "unexec: %d sections found instead of %d.\n",
 	    i, hdr.fhdr.f_nscns);
+#endif
 
   pagesize = getpagesize();
   brk = (sbrk(0) + pagesize - 1) & (-pagesize);

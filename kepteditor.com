@@ -45,7 +45,7 @@ $ 	define/user	sys$input	sys$command
 $ 	spawn	/process="''NAME'" -
     		/nolog -
     		edit/'p1' 'args'
-$ 	goto quit
+$ 	goto quit1
 $ check_emacs:
 $	if p1 .nes. "EMACS" then -
 $		goto un_kempt
@@ -53,21 +53,19 @@ $	define/user	sys$input	sys$command
 $	spawn	/process="''NAME'" -
 		/nolog -
 		runemacs 'args'
-$	goto quit
+$	goto quit1
 $ un_kempt:
 $ ! The editor is unruly - spawn a process and let the user deal with the
 $ ! editor himself.
 $	spawn	/process="''NAME'" -
 		/nolog
-$	goto quit
+$	goto quit1
 $ attach:
 $ 	priv_list	= f$setprv ( priv_list )
 $	message_status = f$environment("message")
 $	set noon
+$	on control_y then goto quit
 $	set message /nofacility/noidentification/noseverity/notext
-$	deassign/job emacs_file_name
-$	set on
-$	set message 'message_status
 $	if p2 .eqs. "" then goto no_logical
 $	temp = f$trnlnm("SYS$DISK") + f$directory() + p2
 $	temp = f$edit(temp,"lowercase")
@@ -78,6 +76,11 @@ $ 	write sys$error -
 $ 	define/user	sys$input	sys$command
 $ 	attach "''NAME'"
 $ quit:
+$	set noon
+$	if p2 .eqs. "" then goto quit1
+$	deassign/job emacs_file_name
+$ quit1:
+$	set message 'message_status
 $ 	write sys$error -
 "[Attached to DCL in directory ''F$TRNLNM("SYS$DISK")'''F$DIRECTORY()']"
 $ 	if verify then -

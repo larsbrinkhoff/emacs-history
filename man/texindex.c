@@ -31,6 +31,8 @@
 #define unlink delete
 #define tell(fd) lseek(fd, 0L, 1)
 #else
+#include <sys/types.h>
+#include <sys/fcntl.h>
 #include <sys/file.h>
 
 #define EXIT_SUCCESS 0

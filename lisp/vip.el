@@ -13,10 +13,14 @@
 (defvar vip-emacs-local-map nil
   "Local map used in emacs mode. \(buffer specific\)")
 
+(defvar vip-emacs-old-commands nil
+  "Old Emacs definitions of C-x 3 and C-x TAB.")
+
 (defvar vip-insert-local-map nil
   "Local map used in insert command mode. \(buffer specific\)")
   
 (make-variable-buffer-local 'vip-emacs-local-map)
+(make-variable-buffer-local 'vip-emacs-old-commands)
 (make-variable-buffer-local 'vip-insert-local-map)
 
 (defvar vip-insert-point nil
@@ -169,20 +173,31 @@ or insert-mode."
 		     (vip-copy-region-as-kill (point) vip-insert-point)
 		     (vip-repeat-insert-command))
 		 (setq vip-emacs-local-map (current-local-map)
+		       vip-emacs-old-commands
+		       (cons (lookup-key ctl-x-map "3")
+			     (lookup-key ctl-x-map "\C-i"))
 		       vip-emacs-mode-line-buffer-identification
 		       mode-line-buffer-identification
 		       vip-insert-local-map (vip-copy-keymap
-					     (current-local-map))))
+					     (current-local-map)))
+		 (define-key ctl-x-map "3" 'vip-buffer-in-two-windows)
+		 (define-key ctl-x-map "\C-i" 'insert-file))
 	       (vip-change-mode-line "Vi:   ")
 	       (use-local-map vip-mode-map))
 	      ((eq new-mode 'insert-mode)
 	       (move-marker vip-insert-point (point))
 	       (if (eq vip-current-mode 'emacs-mode)
-		   (setq vip-emacs-local-map (current-local-map)
-			 vip-emacs-mode-line-buffer-identification
-			 mode-line-buffer-identification
-			 vip-insert-local-map (vip-copy-keymap
-					       (current-local-map)))
+		   (progn
+		     (setq vip-emacs-local-map (current-local-map)
+			   vip-emacs-old-commands
+			   (cons (lookup-key ctl-x-map "3")
+				 (lookup-key ctl-x-map "\C-i"))
+			   vip-emacs-mode-line-buffer-identification
+			   mode-line-buffer-identification
+			   vip-insert-local-map (vip-copy-keymap
+						 (current-local-map)))
+		     (define-key ctl-x-map "3" 'vip-buffer-in-two-windows)
+		     (define-key ctl-x-map "\C-i" 'insert-file))
 		 (setq vip-insert-local-map (vip-copy-keymap
 					     vip-emacs-local-map)))
 	       (vip-change-mode-line "Insert")
@@ -196,6 +211,8 @@ or insert-mode."
 		 'vip-delete-backward-word))
 	      ((eq new-mode 'emacs-mode) 
 	       (vip-change-mode-line "Emacs:")
+	       (define-key ctl-x-map "3" (car vip-emacs-old-commands))
+	       (define-key ctl-x-map "\C-i" (cdr vip-emacs-old-commands))
 	       (use-local-map vip-emacs-local-map)))
 	(setq vip-current-mode new-mode)
 	(vip-refresh-mode-line))))
@@ -2017,9 +2034,6 @@ the query replace mode will toggle between string replace and regexp replace."
 (define-key vip-mode-map "~" 'vip-nil)
 (define-key vip-mode-map "\177" 'vip-delete-backward-char)
 
-(define-key ctl-x-map "3" 'vip-buffer-in-two-windows)
-(define-key ctl-x-map "\C-i" 'insert-file)
-
 (defun vip-version ()
   (interactive)
   (message "VIP version 3.5 of September 15, 1987"))
@@ -3019,7 +3033,10 @@ vip-s-string"
       (vip-enlarge-region beg end)
       (write-region (point) (mark) ex-file ex-append t)))
   (if (null buffer-file-name) (setq buffer-file-name ex-file))
-  (if q-flag (save-buffers-kill-emacs)))
+  (if q-flag
+      (progn
+	(delete-auto-save-file-if-necessary)
+	(kill-buffer (current-buffer)))))
 
 (defun ex-yank ()
   "ex yank"

@@ -1,7 +1,7 @@
 /* $Header: Activate.c,v 1.16 88/02/02 19:08:46 jim Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
-#include <X11/copyright.h>
+#include "copyright.h"
 
 /*
  * XMenu:	MIT Project Athena, X Window system menu package

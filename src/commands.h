@@ -50,6 +50,9 @@ extern Lisp_Object last_command;
 /* Nonzero means ^G can quit instantly */
 extern int immediate_quit;
 
+/* Character that causes a quit.  Normally C-g.  */
+extern int quit_char;
+
 extern Lisp_Object Vexecuting_macro;
 
 /* Nonzero if input is coming from the keyboard */

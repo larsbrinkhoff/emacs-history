@@ -1,3 +1,1277 @@
+Tue Feb 18 14:01:01 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 18.58 released.
+
+	* process.c (create_process): Really don't use variable `sigchld'.
+
+Sun Feb 16 00:40:47 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c: Doc fix.
+
+	* x11term.c: Define NULL if nec after all system headers.
+
+Fri Feb 14 02:50:33 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m-news-risc.h (LINKER): #undef it.
+
+Thu Feb 13 17:54:46 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x11term.c (XTflash): Wait just .15 sec.
+
+	* process.c, sysdep.c: Don't include termio.h if NO_TERMIO.
+	(TIOCGPGRP): If TRITON88, define as alias for FIOGETOWN.
+	* m-triton88.h: New file.
+
+Wed Feb 12 12:19:16 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ymakefile ($(OLDXMENU)): If ln fails, use cp.
+
+	* m-tek4300.h (tek4300): Don't define if defined already.
+
+	* m-intel386.h (LIB_STANDARD): Add missing #endif.
+
+Tue Feb 11 16:23:15 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (BROKEN_O_NONBLOCK): New parameter; undefine O_NONBLOCK.
+	* m-pmax.h (BROKEN_O_NONBLOCK): Defined.
+	* m-vax.h (BROKEN_O_NONBLOCK): Defined, if ultrix.
+
+Mon Feb 10 21:14:38 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* data.c (Fset_default): Handle the case of mask < 0.
+
+	* s-isc3-2.h: File deleted.  s-isc2-2.h does work for 3.2.
+
+Sun Feb  9 23:25:05 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* undo.c (Fprimitive_undo): Use Finsert_before_markers.
+
+Sat Feb  8 01:44:14 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c (child_setup_tty) [IRIS_4D]: Make sure we have VSWTCH char.
+
+	* m-intel386.h (HAVE_ALLOCA): Inhibit if C_ALLOCA.
+	(LIB_STANDARD): Alternate USG value if __GNUC__ or C_ALLOCA
+	* s-sco.h (alloca): Define C_ALLOCA or define alloca as builtin.
+	(BROKEN_TIOCWINSZ): Defined.
+
+	* s-isc2-2.h (SIGTSTP): Don't #undef this.
+
+	* process.c (PTY_OPEN): Handle new macro.
+
+Fri Feb  7 23:07:58 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (Fmake_symbolic_link): If error, try deleting link name
+	and then retry.  Read first arg, not second, as raw string.
+
+Thu Feb  6 15:24:25 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s-hpux7.h: Renamed from s-hpux.h.
+	* s-hpux8.h: Include s-hpux7.h.
+
+	* s-isc3-2.h: New file.
+
+Wed Feb  5 19:39:21 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gettime.h: On DPX2, include sys/time.h.
+
+Tue Feb  4 01:03:05 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s-sco.h (DONT_DEFINE_SIGNAL): Defined.
+
+	* window.c (window_scroll): If NOERROR, return indication of failure.
+	(Fscroll_other_window): Signal at end the error inhibited before.
+
+	* s-aix3-2.h: New file.
+
+Mon Feb  3 17:05:05 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* callproc.c (Fcall_process): Clear synch_process_* earlier.
+
+	* x11term.c (XT_Set_Size_Hints) [not X11R4]: Turn off "old, broken"
+	code to set min_width and min_height fields.
+
+	* x11term.c: Undo Jan 27 change.
+
+	* m-intel860.h: New file.
+
+Sun Feb  2 16:49:11 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c [_SEQUENT_]: Include stropts.h.
+
+	* sysdep.c, process.c, x11term.c, keyboard.c: Fix comments on #endif.
+
+Sat Feb  1 14:21:31 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x11term.c (x_init_1): No args for setpgrp if USG.
+
+	* m-iris4d.h (C_SWITCH_MACHINE): Deleted.
+
+	* dispnew.c (remake_screen_structures): Put spaces in message_buf.
+	(make_screen_structure): Fill with spaces even if EMPTY.
+
+	* x11term.c (XT_Set_Size_Hints): Handle window gravity.
+
+Fri Jan 31 04:15:12 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (distclean): Depend on clean; delete redundant stuff.
+
+	* x11term.c (XT_Set_Size_Hints): Test X11R4, not PBaseSize.
+	(X11R4): Default based on PBaseSize or SPECIFY_X11R4.
+	(SPECIFY_X11R4): New parameter macro.
+	* m-ibmrs6000.h (SPECIFY_X11R4): Defined.
+
+	* ymakefile (LIB_GCC, GNULIB_VAR): Handle GCC 2.
+
+	* s-hpux8.h (OLDXMENU_OPTIONS): New definition.
+
+	* s-sunos4-1.h (C_SWITCH_SYSTEM): Delete leading space.
+
+	* s-sunos4-0.h (SYSTEM_MALLOC): Deleted.
+
+Thu Jan 30 01:44:47 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* malloc.c (malloc): If SUNOS_LOCALTIME_BUG, get at least 16 bytes.
+
+	* dispnew.c (update_line): Prevent nlen from getting <0.
+
+	* x11term.c (XT_Set_Size_Hints): Test PBaseSize, not XICCC.
+
+	* m-orion105.h (C_DEBUG_SWITCH, LIBS_DEBUG): Defs deleted.
+
+Wed Jan 29 14:37:42 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m-iris4d.h (C_SWITCH_MACHINE): New definition.
+
+Tue Jan 28 00:46:18 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (Fwrite_region): Remove Alliant conditional.
+	* crt0.c: Conditionals for ALLIANT_2800.
+	* m-all2800.h: New file.
+	* unexfx2800.c: New file.
+
+	* m-mips4.h (C_DEBUG_SWITCH): Alternate defn for GCC.
+
+	* sysdep.c [VMS] (sys_write): Special case for fixed-length
+	with carriage-control characters.
+
+	* s-isc2-2.h (NOMULTIPLEJOBS): Undef this.
+
+Mon Jan 27 18:57:26 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s-isc2-2.h (LIB_STANDARD): Add -lPW.
+
+	* dispnew.c (update_line): ALLIANT patch to work around compiler bug.
+
+	* lread.c (readevalloop): Make forward declaration static.
+
+	* m-mips4.h (LD_SWITCH_MACHINE): Alternate definition if using GCC.
+
+	* dispnew.c (update_screen): If force, don't call detect_input_pending.
+
+	* x11term.c: #undef NULL before stdio.h.
+
+	* dispnew.c (make_screen_structure): Fill lines with spaces to start.
+
+	* s-hpux8.h (NO_SIOCTL_H): Defined.
+
+Sun Jan 26 00:33:35 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dispnew.c: Fix doc string of visible-bell.
+
+	* m-mips.h (C_SWITCH_MACHINE): Defined, instead of C_SWITCH_SYSTEM.
+	(LINKER): Defined, if BSD.
+
+Sat Jan 25 16:01:00 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (Fexpand_file_name): When removing / from end of newdir,
+	don't change `/' to `'.
+
+	* dired.c (file_name_completion_stat): Try stat, then lstat.
+
+	* unexelf.c: Fix typo in last change.
+
+	* fileio.c (Finsert_file_contents) [AIX]: Don't open mpx files.
+
+	* fileio.c (Fmake_symbolic_link): Use `s' to read second arg.
+
+	* dispnew.c: Include errno.h.
+
+Thu Jan 23 14:03:44 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s-usg5-4.h (LIBX10_SYSTEM): Add #undef.
+	(GNULIB): Definition deleted--done in ymakefile.
+	(LIB_STANDARD): Don't use GNULIB.
+	(HAVE_TCATTR): Defined.
+
+	* lisp.h (XINT): Add extra parens.
+
+	* unexelf.c: Handle rounding of section boundaries.
+	(round_up): New function.
+
+Wed Jan 22 22:32:28 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m-tad68.h: New file.
+
+Tue Jan 21 21:49:43 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* sysdep.c (sys_access) [VMS]: Fix bug whereby the default rather 
+	than the actual privileges were used to determine if we have
+	file access.
+
+Mon Jan 20 12:41:27 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* fileio.c (Finsert_file_contents) [VMS]: Adjust st_size
+	if file has fixed length records and implied carriage control.
+
+Sun Jan 19 23:39:10 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* compile.com: Delete useless object file generated when sensing
+	the presence of a C compiler.  Prevent user from seeing error 
+	message when sensing C compiler.
+
+Sun Jan 19 11:29:00 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* fileio.c (file_name_as_directory): Cast result of `index'.
+	(directory_file_name): Likewise.
+	* sysdep.c (getpwnam): Cast result of egetenv.
+
+	* vmsfns.c: Don't include syidef.h if using GCC.
+
+Sat Jan 18 23:16:41 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (xmakefile): Write formfeed and tab literally.
+
+Sat Jan 18 13:41:54 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* compile.com: Automatically use whichever C compiler is installed.
+
+Fri Jan 17 15:43:29 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (process_send_signal): Undo Nov 23 change.
+
+	* process.c (wait_reading_process_input): Use timeout_subtract.
+	* x11term.c (XTflash): Likewise.
+	* dispnew.c (Fsleep_for): Likewise.
+	(timeout_subtract): New function to subtract struct timeval.
+
+Thu Jan 16 01:47:48 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* m-delta88.h: New file.
+
+	* window.c (window_scroll): New arg `noerror'.
+	(scroll_command, Fscroll_other_window): Pass that arg.
+
+	* indent.c (compute_motion): Don't pack vpos and hpos into one int;
+	use separate variables hpos/vpos and prev_hpos/prev_vpos.
+	(vmotion): Use largest int as tovpos arg to compute_motion.
+
+Wed Jan 15 03:39:37 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11term.c (XT_GetDefaults): Use Xrm functions, then XGetDefault.
+	Include Xresource.h.
+
+	* callproc.c (Fcall_process): Get return status from
+	synch_process_death and synch_process_retcode.
+	* process.c (sigchld_handler): Set those vars.
+
+Sun Jan 12 17:05:53 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* ymakefile (OLDXMENU_OPTIONS): New macro, used compiling oldxmenu.
+	* s-sunos4-1.h (OLDXMENU_OPTIONS): New definition.
+	(LD_SWITCH_SYSTEM, C_SWITCH_SYSTEM): New definitions.
+	* s-sunos4.h: File deleted.
+
+Fri Jan 10 15:56:11 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* m-hp9000s800.h (S_IFLNK): Don't #undef this.
+
+	* s-hpux.h (CLASH_DETECTION): Define it.
+
+Thu Jan  9 00:25:15 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sysdep.c, process.c: Include sys/termios.h if NEED_TERMIOS.
+
+Tue Jan  7 23:38:33 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11term.c (XTflash): Wait 1/4 sec even if interrupts come.
+
+	* process.c: Doc fix.
+
+Wed Jan  1 02:12:50 1992  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* window.c (init_window_once): Call make_window with no args.
+
+	* keyboard.c (command_loop_1): Move label directly_done.
+
+Tue Dec 31 15:53:00 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* emacssignal.h (signal_full_mask, signal_empty_mask): Vars renamed.
+	(sigmask): Copy from SIGEMPTYMASK.
+	(sys_sigpause): Argument is a mask.
+	(SIGFULLMASK, sigunblock, sys_sigdel): New non-POSIX definitions.
+	* sysdep.c (sigunblock): Definition removed.
+	(wait_for_termination): Change call to sigpause.
+	(signal_full_mask, signal_empty_mask): Vars renamed.
+	(signal_handler_t): Add missing `typedef'.
+
+	* s-dgux.h: Remove MAKING_MAKEFILE conditional.
+	Don't include signal.h.
+	(C_COMPILER, LINKER, MAKE_COMMAND): New definitions.
+	(LD_SWITCH_SYSTEM, START_FILES, LIBS_SYSTEM): New definitions.
+
+	* ymakefile (CC, MAKE): Set these variables from optional macros.
+	Change all uses of `make' to ${MAKE}.
+
+	* term.c (term_init): Change buffer size and malloc'd size to 4092.
+
+Fri Dec 13 17:22:42 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-isc2-2.h (LIBS_SYSTEM): Defined.
+
+Mon Dec  9 20:50:53 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (Fopen_network_stream): Handle EINTR from connect,
+	but turn off interrupts anyway.
+
+	* emacs.c (main): Do tzset if HAVE_TZSET.
+	* s-sunos4.h: Define HAVE_TZSET.
+
+Sat Dec  7 21:00:21 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-aix3-1.h (FIRST_PTY_LETTER): Deleted.
+	(PTY_ITERATION, PTY_NAME_SPRINTF, PTY_TTY_NAME_SPRINTF): New macros.
+
+Fri Dec  6 15:14:18 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* minibuf.c (read_minibuf_unwind): Clear readonlyness of minibuffer.
+
+Tue Dec  3 22:07:36 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* dispnew.c (change_screen_size_1): New arg FORCE forces redisplay.
+	(change_screen_size): Likewise.  All callers changed.
+	(update_screen): Do the real work.
+	* x11term.c (internal_socket_read): Pass 1 for new arg.
+
+Mon Dec  2 23:14:29 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* lisp.h: Turn text after #endif, #else into real comment.
+
+Thu Nov 28 01:37:13 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* m-ibmps2-aix.h (HAVE_SETSID, HAVE_TCATTR): Defined.
+	(LIB_STANDARD): Remove -lbsd and -lrts.
+	Suggested by tranle@intellicorp.com.
+
+	* sysdep.c (child_setup_tty) [AIX]: If process_send_signal will use 
+	chars, make sure we have chars for VQUIT and VINTR.
+
+	* lisp.h (DEFVARPERBUFFER, DEFVAR_PER_BUFFER):
+	Don't omit 3d arg to defvar_per_buffer.
+
+Sat Nov 23 16:51:13 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* emacs.c (main) [BSD4_3]: Call tzset.
+
+	* process.c (process_send_signal): On AIX, don't try sending character.
+
+Wed Nov 20 21:46:18 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* m-convex.h (XINT): Use submacros VSIGNBIT, VALLBITS.
+
+Tue Nov 19 16:11:57 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* config.h-dist (X11): Define only if HAVE_X_WINDOWS.
+
+	* s-irix3-3.h (IRIX): Defined.
+	* sysdep.c (get_system_name): Special code for IRIX.
+
+Sat Nov 16 16:53:44 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-irix3-3.h (HAVE_SETSID): Define here.
+	* s-irix4-0.h: Instead of here.
+
+	* process.c (process_send_signal): New code for Iris.
+
+Thu Nov 14 18:01:56 1991  Jim Blandy  (jimb at wombat.gnu.ai.mit.edu)
+
+        * eval.c (specbind): Check that the thing being bound is a symbol.
+        (funcall_lambda): Signal an invalid-function error if the
+        arguments are not all symbols.
+
+Fri Oct 25 14:53:40 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* xdisp.c (redisplay): Properly compute TAB_OFFSET for compute_motion.
+
+	* s-irix4-0.h: New file.
+
+	* ymakefile: Fix comments on #endifs.
+
+	* unexmips.c (unexec): Get rid of error check about mismatch
+	in number of sections.
+
+	* s-irix3-3.h (C_ALLOCA): Defined.
+
+Tue Oct 22 01:41:09 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (wait_reading_process_input): Redisplay if screen_garbaged.
+	Call do_pending_window_change first.
+	Include dispextern.h.
+	* ymakefile (process.o): Added dependency.
+
+Mon Oct 21 23:05:15 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* buffer.c: Doc fix. 
+
+Sun Oct 20 18:41:06 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x11term.c (XTflash): Flash just center quarter of window.
+
+Sat Oct 19 11:39:03 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (create_process): Set bit in input_wait_mask before fork,
+	so sigchld_handler can clear it properly at any time.
+
+	* cmds.c (Fforward_line): Moving nowhere at eob after non-newline
+	should return 1, not 0.
+
+	* s-hpux.h (LD_SWITCH_SYSTEM): Defn deleted.
+	* s-hpux8.h (LD_SWITCH_SYSTEM): Move -L here.
+	(LIB_X11_LIB): Moved from here.  Definition deleted.
+
+	* m-intel386.h (signal): Optionally don't define it.
+	* s-isc2-2.h (DONT_DEFINE_SIGNAL): Define this.
+
+	* x11term.c (internal_socket_read):
+	Do window size change immediately if currently waiting for input.
+	* dispextern.h (waiting_for_input): Declared here.
+
+Sun Oct 13 05:20:50 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* config.h-dist (PURESIZE): Increase to 120000 if no X.
+
+	* m-intel386.h: Fix typo in #endif.
+
+	* ymakefile: Use C style comment, not #.
+
+Sat Oct 12 14:34:26 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11term.c (internal_socket_read):
+	Threshold for real size change was off by one.
+
+	* emacs.c (main) [AIX]: Handle SIGURG, not SIGIOINT.
+
+Tue Oct  8 00:43:19 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11term.h: Never include X10.h.
+	* xmenu.c: Include it here.
+
+Tue Oct  8 00:07:47 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* search.c (syms_of_search): Set re_max_failures here.
+	(compile_pattern): Not here.
+
+Sun Oct  6 14:47:52 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* config.h-dist (X11): Define this by default.
+
+Sat Oct  5 14:00:22 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* search.c (compile_pattern): Use bigger than default re_max_failures.
+
+	* x11fns.c: Move lisp.h and window.h later; undef NULL just before.
+
+Tue Sep 24 03:20:07 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* alloca.c: Test __STDC__, not X3J11.
+	Do nothing if alloca is defined as a macro.
+
+Sun Sep 22 03:39:58 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* editfns.c (Ffollowing_char): Really return 0 at eob.
+
+	* m-tandem-s2.h: Near complete rewrite.
+
+Sun Sep 15 17:36:02 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* ymakefile (paths.h, config.h): Never copy, always fail.
+
+Sat Sep 14 02:08:39 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dired.c (file_name_completion): Copy two improvements in ignoring
+	case from Ftry_completion: of inexact matches, prefer one that doesn't
+	change the case, and preserve user's input case whenever we can't
+	add any more text.
+
+	* process.c (create_process): Give subtty its permanent value
+	right from the start.  Duplicate the descriptor.
+	Handle system call failures opening pty or pipes.
+
+	* sysdep.c (tcgetattr): Just one definition, if not HAVE_TCATTR.
+	[HAVE_TERMIO]: Coalesce duplicate definition and include.
+
+	* process.c (close_process_descs): Close subtty of proc if open.
+
+	* x11fns.c (Fcoordinates_in_window_p): Don't consider minibuf prompt.
+	That's now in x-mouse.el.
+
+Wed Sep 11 20:44:27 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* ymakefile (paths.h, config.h): Don't use sh -c.  Get rid of @.
+
+Tue Sep 10 23:18:13 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* ymakefile (paths.h, config.h): Use explicit file names, not $?, $@.
+
+Mon Sep  9 20:32:35 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* crt0.c (start1): Declare static before first use.
+
+	* lread.c (read1): Don't accept integer containing quoted chars.
+
+Sun Sep  8 22:13:50 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* eval.c (Feval): Don't allow return without correcting backtrace_list.
+	(Ffuncall): Likewise.
+
+Tue Sep  3 20:49:28 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sysdep.c (wait_for_termination): Use sleep loop instead of `pause'.
+
+Mon Sep  2 14:57:52 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* search.c (Fstring_match, search_buffer): Real Lisp error on overflow.
+
+	* lread.c (map_obarray): Don't die if obarray contains non-symbol.
+
+Sat Aug 31 14:38:51 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sysdep.c (wait_for_termination): Make use of sysv sigpause.
+	* s-usg5-3.h (HAVE_SYSV_SIGPAUSE): Defined.
+
+	* emacs.c (main): Ignore SIGDANGER on aix.
+
+Thu Aug 29 01:29:47 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* editfns.c: Doc fix.
+
+Mon Aug 26 22:00:16 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* data.c (Fset): When this buffer sees default value,
+	thoroughly set the default value right away.
+
+Sat Aug 24 15:07:16 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* callproc.c: Doc fix.
+
+	* keyboard.c (Fopen_dribble_file): Handle closing the file.
+
+Thu Aug 22 01:37:40 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* commands.h (quit_char): Declare it.
+	* minibuf.c (temp_echo_area_contents): Use that var.
+
+Fri Aug 16 16:04:22 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-hpux.h (LD_SWITCH_SYSTEM): Defined.
+	* fileio.c: Changed a HPUX conditional to HPUX_NET.
+
+Mon Aug 12 21:29:05 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* abbrev.c (Fexpand_abbrev): Don't let capitalization go past point.
+
+Sat Aug 10 15:16:02 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sysdep.c (sys_suspend): Don't use & before array name.
+
+	* sysdep.c [BROKEN_FIONREAD]: Undefine FASYNC.
+
+	* m-tandem-s2.h (START_FILES, LIB_STANDARD): Added.
+
+Fri Aug  2 14:01:24 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-aix3-1.h (HAVE_TCATTR):  Defined.
+	* sysdep.c (HAVE_TERMIO definitions):  Add HAVE_TCATTR inside IBMR2AIX.
+
+Thu Aug  1 18:38:29 1991  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* fileio.c (Fexpand_file_name): Avoid doing strlen (0).
+
+Thu Aug  1 12:31:38 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* emacs.c (main): Add SIGIO conditional within AIX conditional.
+
+	* xdisp.c (try_window_id): Compute proper position for screen bottom
+	when all changes are below the screen.
+	When first computing bp, don't go more than HEIGHT + 1 lines.
+
+Tue Jul 30 21:50:59 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11fns.c (Fx_proc_mouse_event): Clear out shift-lock bit.
+
+Sat Jul 27 13:43:29 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* window.c (init_window_once): Increment window_select_count.
+
+	* keymap.c (Fkeymapp): Doc fix.
+	(Fcopy_keymap): Don't recursively copy keymaps inside symbols.
+
+Mon Jul 22 21:26:00 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-dgux.h, m-aviion.h: New files.
+
+	* emacs.c (main) [POSIX_SIGNALS]: Call init_signal.
+
+	* fns.c (Fload_average) [DGUX]: Add alternate code.
+
+	* sysdep.c [DGUX] (sys_siglist): New variable.
+
+	* sysdep.c (_sobuf): Unsigned chars if DGUX.
+
+	* sysdep.c (init_signals, sys_signal, sys_sigpause): New functions.
+	(sys_sigblock, sys_sigunblock, sys_sigsetmask): New functions.
+
+	* emacssignal.h: New file.
+	* data.c, keyboard.c, process.c, sysdep.c, x11term.h: Include it.
+	* data.c (arith_error): Use SIGEMPTYMASK.
+	* keyboard.c (sigfree, sigunblockx): Use SIGEMPTYMASK.
+	(get_input_pending): Use SIGMASKTYPE.
+	* keyboard.c (sigholdx, sigblockx): Use sigmask.
+	* process.c (create_process): Use sigmask.
+	* sysdep.c (wait_for_termination): Use them.
+	[FASYNC] (request_sigio): Use sigunblock.
+	* x11term.h (BLOCK_INPUT_DECLARE): Use SIGMASKTYPE.
+	* x11term.c (sigunblockx): Use SIGEMPTYMASK.
+
+	* process.h (subtty): New slot.
+	* process.c (create_process): Set it.
+	(process_send_signal): Use it.
+
+	* sysdep.c [DGUX]: Include file.h.
+
+	* xdisp.c (try_window_id): Always update window_end_* if successful.
+
+Sun Jul 21 17:01:38 1991  Jim Blandy  (jimb at geech.gnu.ai.mit.edu)
+
+	* editfns.c (init_editfns): If neither of the environment
+	variables are set, DON'T set Vuser_name to Vuser_real_name; it's
+	supposed to reflect the EFFECTIVE uid.
+	Get the full name according to Vuser_name if it differs from
+	Vuser_real_name, not if they are equal.
+	And pass Vuser_name to getpwnam in that case instead of user_name,
+	which might be 0.
+
+Fri Jul 19 15:15:59 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_avail_input) [SYSV_STREAMS]: Don't alter O_NDELAY.
+	* x11term.c (x_init_1) [SYSV_STREAMS]: Don't close the old descriptor.
+
+Thu Jul 18 20:14:11 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (process_send_signal): Handle case where there is no pgrp.
+
+Mon Jul 15 04:48:44 1991  Jim Blandy  (jimb at pogo.gnu.ai.mit.edu)
+
+	* process.c (status_notify): GCPRO tail.
+
+Sat Jul 13 16:53:15 1991  Jim Blandy  (jimb at geech.gnu.ai.mit.edu)
+
+	* eval.c (Fapply): If we use funcall_args, GCPRO it.
+	And when we call Ffuncall with funcall_args, tell it the correct
+	length of funcall_args, no matter which branch allocated it.
+	(Feval): If we're calling a subr that takes MANY args, don't
+	UNGCPRO until after we call the subr.
+	* callint.c (Fcall_interactively): Don't UNGCPRO until after
+	Ffuncall returns.
+
+Tue Jul  9 13:27:25 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sysdep.c (discard_tty_input): Do nothing if read_socket_hook.
+
+Mon Jul  8 22:04:15 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (create_process): Use O_NOCTTY whenever defined,
+	unless USG.
+
+Sun Jul  7 15:47:50 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (Fprocess_send_eof): If using a pipe, close it.
+	(close_process_descs): Check IN and OUT for nonzeroness. 
+
+Thu Jul  4 00:18:48 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (process_send_signal): Use interrupt chars
+	to send certain signals to the process group.
+	(TIOCGETC): Undefine this if it is not really usable.
+
+Tue Jul  2 15:05:25 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* bytecode.c (Fbyte_code): Don't take away GC protection
+	of args given to Ffuncall.  Ffuncall expects the caller to protect.
+
+Mon Jul  1 22:28:59 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* indent.c (invalidate_current_column): New function.
+	* editfns.c (Fwiden, Fnarrow_to_region): Call it.
+
+Sun Jun 30 16:56:33 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* keyboard.c (init_keyboard): Test HAVE_TERMIO instead of USG.
+
+	* ymakefile (LIBES): Put gnulib before libc.
+
+	* process.c (list_processes_1): Handle status of network streams.
+
+Sat Jun 29 11:59:22 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* search.c: Doc fixes.
+
+	* x11fns.c (Fx_set_foreground_color): Fix prompt.
+
+Sat May 25 02:05:57 1991  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
+
+	* dispnew.c [__GNU_LIBRARY__] (PENDING_OUTPUT_COUNT): Changed FILE
+	member names for recent GNU stdio.h reorganization.
+
+Sat May 18 13:10:24 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (Fprocess_status): Finish handling network connections
+	right.
+
+Thu May 16 12:16:41 1991  Jim Blandy  (jimb at geech.gnu.ai.mit.edu)
+
+	* eval.c (Ffuncall): Don't gcpro args if we decide to
+	garbage-collect; in functions that take MANY arguments, the caller
+	gcpros the arguments.
+
+Tue May 14 21:38:59 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_command_char): Exit at eof if noninteractive.
+
+Mon May 13 14:40:03 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* eval.c (call1, call2, call3): Reorder actions in NO_ARG_ARRAY case.
+
+	* print.c (strout): Set message_buf_print if appropriate.
+
+Wed May  8 16:59:41 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* insdel.c (insert_from_string, insert_from_string_before_markers):
+	New functions.
+	* editfns.c (Finsert, Finsert_before_markers): Use them.
+
+	* eval.c (apply1, call1, call2, call3): Protect arg vector.
+
+	* eval.c (Fapply): Protect funcall_args.
+
+Tue May  7 18:06:52 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-hpux8.h: New file.
+
+	* fileio.c [HPUX8]: Don't include errnet.h.
+
+	* unexhp9k800.c (unexec): Local variable i to avoid compiler bug?
+
+	* sysdep.c (insque) [WRONG_NAME_INSQUE]: New function.
+	* s-386ix.h (WRONG_NAME_INSQUE): Define it.
+
+Sat May  4 12:35:42 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* minibuf.c (Ftry_completion): If ignoring case, and all else equal,
+	try to preserve the case of the characters in the input.
+
+	* keymap.c (describe_map_tree): `maps' no longer register var.
+
+	* lread.c (init_read): If Vload_path was set specially before dumping,
+	preserve it by default.
+
+Fri May  3 15:19:07 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11term.c (internal_socket_read): Accept XK_Prior and XK_Next
+	explicitly as function keys.  Process arrow keys on AIX
+	as on other systems.
+
+	* x11term.c (internal_socket_read):
+	Don't set x_focus_flag for a FocusIn that is not NotifyNormal.
+
+Fri May  3 00:29:20 1991  Jim Blandy  (jimb at pogo.gnu.ai.mit.edu)
+
+	* x11term.c (delayed_size_change): Added extern declaration for
+	this variable, so the Expose and GraphicsExpose event handlers can
+	do nothing if there is a pending size change.
+	(configure_pending): Variable deleted, since the job
+	it used to do is now handled by delayed_size_change.
+	(internal_socket_read): rows and cols are now local to the
+	ConfigureNotify case, which now calls change_screen_size directly,
+	and asks for the size change to be put off until it can be handled
+	comfortably; the Expose case now doesn't deal with resizes at all,
+	and does not bother to redraw any text if there is a pending
+	screen size change.  This eliminates an annoying flicker when the
+	window is resized.  GraphicsExpose case follows a similar
+	inhibition.
+	(x_term_init): Don't initialize configure_pending, since it no
+	longer exists.
+	(XT_Set_Size_Hints): When calling change_screen_size, ask that the
+	size change not be delayed.
+	* dispnew.c (in_display): Variable deleted.  It was only tested by
+	change_screen_size to see if the change should be delayed, only
+	set by the SIGWINCH handler and the X ConfigureNotify code, and
+	then only to tell change_screen_size what to do.  It looks like a
+	parameter to me.
+	(window_change_signal): Instead of incrementing in_display,
+	calling change_screen_size, and then decrimenting, just ask
+	change_screen_size to delay the change.
+	(change_screen_size): Add an argument DELAYED, which indicates
+	that now is not a good time to do the size change, and that it
+	should be put off until a more convenient juncture.
+	(Fset_screen_height, Fset_screen_width): When calling
+	change_screen_size, ask that the size change not be delayed.
+	* keyboard.c (Fsuspend_emacs): Ditto.
+	* window.c (Fset_window_configuration): Ditto.
+	* xterm.c (xfixscreen, XSetWindowSize): Ditto.
+
+Wed May  1 12:30:51 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* keymap.c (describe_map_tree): GCPRO maps.
+
+Tue Apr 30 23:54:29 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (wait_reading_process_input):
+	Check NETCONN_P when checking for EIO.
+
+Tue Apr 30 14:28:45 1991  Jim Blandy  (jimb at churchy.gnu.ai.mit.edu)
+
+	* window.c (save_window_save): Always get the selected window's
+	value of point from its buffer, not just when it's also the
+	current buffer.
+
+Mon Apr 29 23:36:30 1991  Jim Blandy  (jimb at churchy.gnu.ai.mit.edu)
+
+	* abbrev.c (Fdefine_abbrev): When type-checking arguments, allow
+	EXPANSION to be nil.
+
+Sat Apr 27 21:56:59 1991  Jim Blandy  (jimb at pogo.gnu.ai.mit.edu)
+
+	* keyboard.c (syms_of_keyboard): Qtop_level is initialized and
+	staticpro'd in syms_of_data too.  Don't staticpro (or initialize)
+	it again here.
+
+	* macros.c (syms_of_macros): Since executing-macro and
+	executing-kbd-macro are actually the same variable, use
+	DEFVAR_LISP_NOPRO for the second one so it doesn't get staticpro'd
+	twice.
+
+	* process.c (syms_of_process): Don't staticpro or initialize Qexit
+	here, since syms_of_eval already does this and it's bad to
+	staticpro something twice.
+	(Qexit): Remove declaration here, so there will be a compilation
+	error if someone rearranges eval.c without fixing the Qexit stuff.
+	* eval.c (syms_of_eval): Add comment here to say that
+	syms_of_process cares about Qexit too.
+
+	* lread.c (init_obarray): Don't staticpro Vobarray, since the
+	DEFVAR_LISP in syms_of_read takes care of that.
+
+Sun Apr 21 14:44:33 1991  Roland McGrath  (roland at albert.gnu.ai.mit.edu)
+
+	* filelock.c (lock_file_owner_name): Declare type of arg properly.
+
+Mon Apr 15 16:35:35 1991  Eric Youngdale (youngdale@v6550c.nrl.navy.mil)
+
+	* alloc.c (pure): No need to initialize under VMS.  If we do
+	initialize the executable is 132000 bytes larger
+
+	* callproc.c, emacs.c: Fix def of environ when compiling with GCC
+	under VMS.
+
+	* fileio.c: fix data type of vms_file_written.
+
+	* malloc.c: Add a couple of type casts.
+
+	* s-vms.h: Define cfree.  This keeps VAXCRTL memory management
+	functions from getting their grubby fingers in our memory.
+
+	* s-vms.h, vmsmap.c: Give proper name to sdata such that $D$ATA
+	and __DATA correctly bracket the impure memory.  Increase size of
+	sdata and DATA_START, to make sure that impure memory starts at an
+	address > 8191, since otherwise garbage collection gets very
+	confused and Emacs bombs with peculiar errors.  
+
+	Remove some flotsam in mapin_data - someone was trying to save the
+	argv and argc parameters, but never bothered to pass them in the
+	first place.  This was wrong to begin with, since the reason the
+	argv and argc parameters were saved in the dump file was that
+	calloc was not defined as sys_calloc in s-vms.h
+
+	* sysdep.c: Include strings.h, and fix data type of dummy.  Add
+	check to make sure that va_count is not already defined.
+
+	* vmsfns.c: Add type cast.
+
+Sun Apr 14 22:56:47 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* compile.com: Comments added for how to use GCC.
+	* link.com: Alternative command for linking if GCC is in use.
+
+	* malloc.c: Add forward decl for `malloc'.
+
+Sat Apr 13 18:10:28 1991  Eric Youngdale  (youngdale@v6550c.nrl.navy.mil)
+
+	* sysdep.c (creat_copy_attrs, rename_sans_version):  Always set
+	protection to O:REWD when creating file.  Added new function
+	rename_sans_version, which strips the version number from the target
+	filename, renames the temporary file to this filename,  and then
+	sets the file protection of this new file to be the same as the file
+	being edited.
+
+	* fileio.c (write-region): Use rename_sans_version instead of rename.
+
+Sun Apr 14 00:26:45 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* xdisp.c (display_text_line, display_string):
+	Don't go past endp for multi-column chars.
+
+Fri Apr 12 20:26:28 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* editfns.c (init_editfns): Turn off polling.
+
+Tue Apr  9 19:25:22 1991  Richard Stallman  (rms at apple-gunkies)
+
+	* sysdep.c (child_setup_tty): Turn off erase & kill chars for BSD.
+
+	* editfns.c (init_editfns): Don't call getpwnam (0).
+
+Thu Apr  4 14:56:33 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* editfns.c (clip_to_bounds): Not static.
+
+	* vmsfns.c (vms_trnlog): Increased size of str to 256 elements.
+	(vms_symbol): Increased size of str to 1025 elements.
+
+Wed Apr  3 21:13:09 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* window.c (unshow_buffer): Keep PT in bounds when setting it.
+
+Tue Apr  2 17:57:37 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* process.c (Fprocess_status): Test of childp was backwards.
+
+Mon Apr  1 00:06:36 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* emacs.c: Include headers to get FIONREAD, as in keyboard.c.
+
+Sun Mar 31 15:38:48 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* dired.c (file_name_completion_stat): Use lstat.
+	* fileio.c (Ffile_exists_p): Use lstat.
+
+	* getpagesize.h [VMS]: Include param.h from Emacs.
+	* malloc.c (vms_current_brk): Delete spurious ampersand.
+	* s-vms.h (getppid): New macro.
+	(sdata): Alternate declaration for GNU C.
+	(Vminibuffer_completion_table, etc.): New macros.
+	* sysdep.c [VMS]: Include pwd.h from Emacs.  Use sys/file.h if GCC.
+	(F_SETFL) [VMS]: Undefine this, to control conditionals.
+	(bzero, bcopy) [VMS]: Don't take address of `length'.
+	(getpwnam): Make `full' unsigned.
+	(creat_copy_attrs): Add some casts.
+	(sys_access): Change prvmask and CHECKPRIV to use bitfields.
+	Add some casts.
+	(vmserrstr): Add a cast.
+	* vmsmap.c (mapin_data, mapout_data): Add some casts.
+	(sdata, edata): Alternate declarations for GNU C.
+	* vmsfns.c: Include clidef.h and syidef.h.
+	(getjpi, translate_id): Add cast.
+	(translate_id): Make p unsigned.
+	(Fvms_system_into, Fsetprv): Likewise for other variables.
+	(Fspawn_subprocess): Cast call to xmalloc.
+	(vms_version_fn, vms_trnlog, vms_symbol): Add casts.
+
+	* minibuf.c (Ftry_completion): Fix error in previous change.
+
+	* editfns.c, filelock.c [VMS]: Use pwd.h from Emacs, not from system.
+	* fileio.c [VMS]: Likewise.  Also include stddef.h, string.h.
+	Include perror.h only once.
+	(expand_file_name): Cast result of index.
+
+	* window.c (replace_window, unshow_buffer, save_window_save):
+	Add forward declarations.  Make some return void.
+	* keymap.c (insert_first_line): Likewise.
+	* lread.c (read_escape): Likewise.
+	* unexec.c (make_hdr, copy_text_and_data, copy_sym, mark_x): Likewise.
+	* x11term.c (XInitWindow): Likewise.
+
+	* x11term.c: Cast args to avoid warnings from XLib fns.
+
+Sat Mar 30 17:53:09 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* sysdep.c (sys_sleep, input_wait_timeout): Don't use & on constant.
+	(sys_access): Likewise.
+	(sys_creat): Define va_count.
+	* vmsfns.c (Fspawn_subprocess, create_mbx): Don't use & on constant.
+	(translate_id, vms_version_fn, vms_proclist
+	(JPI$_MASTER_PID, JPI$_CLINAME): Don't define if already defined.
+	(CLI$M_NOWAIT, SYI$_VERSION): Likewise.
+
+	* lastfile.c, filelock.c, process.c: Add a dummy function if VMS.
+
+	* fileio.c: Change VMS conditionals for header files.
+
+	* dir.h (dir$t_name, dir$t_linkname): Use standard syntax for pointer.
+
+	* callproc.c (environ) [VMS and __GNUC__]: Different declaration.
+
+Mon Mar 25 17:53:38 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* minibuf.c (Ftry_completion): Fix handling of matches aside from case.
+
+	* dispnew.c (update_line): Crash if obody[-1] is clobbered.
+
+Sun Mar 24 21:15:45 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* x11term.c (x_io_error_handler): Raise a signal to kill Emacs.
+
+	* m-news-risc.h (LD_SWITCH_MACHINE): New definition if USG.
+	(LOAD_AVE_TYPE): Likewise.
+	(START_FILES, LIB_STANDARD): Undef before m-mips.h.
+	(alloca): Use built-in with GCC.
+
+Sat Mar 23 16:14:43 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* fileio.c (directory_file_name): Fix off-by-one testing slen at end.
+	(Fexpand_file_name): Remove excess slash from end of user's home dir.
+
+Fri Mar 22 18:19:21 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* s-usg5-4.h (DATA_SEG_BITS): Definition deleted.
+	* m-intel386.h (DATA_SEG_BITS): Define here if USG5_4.
+
+Thu Mar 21 17:16:15 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* m-mips.h: INHIBIT_BSD_TIME prevents including bsd/sys/time.h.
+
+	* m-news-risc.h: Add conditionals for USG.
+
+	* unexmips.c [sony]: Include getpagesize.h and fcntl.h.
+
+Tue Mar 19 17:30:09 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_avail_input): Raise SIGHUP if no input on AIX.
+
+Mon Mar 18 18:38:55 1991  Roland McGrath  (roland at geech.ai.mit.edu)
+
+	* minibuf.c (assoc_for_completion): Add missing defn of local var.
+
+Mon Mar 18 17:09:40 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* xkeys-aix.h: Turn on redefinition of backspace.
+
+	* x11term.c (x_term_init): Handle X_DEFAULT_FONT.
+
+Sun Mar 17 23:50:50 1991  Richard Stallman  (rms@mole.ai.mit.edu)
+
+	* minibuf.c (assoc_for_completion): New function.
+	(do_completion): Use that to check for exact match.
+
+Thu Mar 14 17:06:14 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* fileio.c (Fwrite_region): On VMS, don't try rewriting old version.
+
+Mon Mar 11 21:09:02 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* xdisp.c (redisplay, try_window_id): Special case for change
+	at beginning of line, if using selective display.
+
+Sun Mar 10 19:44:50 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* fileio.c (Fmake_symbolic_link): Don't expand FILENAME.
+
+Sat Mar  9 22:59:19 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* eval.c (Fcatch, internal_condition_case): Fill in c.handlerlist.
+
+	* buffer.c (Frename_buffer): Refuse to rename a minibuffer.
+
+Fri Mar  8 02:52:31 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* m-intel386.h (signal): Maybe define if USG.
+
+	* keyboard.c (echo_char): Don't have a space at end of echobuf.
+
+Wed Mar  6 14:32:14 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* s-vms.h (DATA_START): Remove `+ 512'.
+
+Tue Mar  5 14:04:03 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* emacs.c, xterm.c:
+	Handle BROKEN_FIONREAD, to undef FIONREAD and SIGIO.
+
+	* m-amdahl.h (LIBX11_SYSTEM): Undefine it.
+
+Sun Mar  3 17:15:44 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sysdep.c (MEMORY_IN_STRING_H): New compilation flag.
+	* s-isc2-2.h: New file.
+
+	* emacs.c: Use EQ rather than NULL.
+	Include stdio.h after lisp.h, and preserve its meaning of NULL.
+
+	* gettime.h: New file.  Handles time.h and/or sys/time.h.
+	* process.c, x11term.c, x11fns.c: Use that, not those others directly.
+	Make sure to include sys/socket.h first, if have sockets.
+
+Tue Feb 26 23:44:05 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* s-vms.h (calloc): Define it like malloc, etc.
+
+Tue Feb 26 15:07:30 1991  Jim Blandy  (jimb at churchy.ai.mit.edu)
+
+	* editfns.c (in_accessible_range): Deleted - insufficently general.
+	(clip_to_bounds): New function, much like in_accessible_range,
+	except that the upper and lower bounds are arguments.
+	(goto_char, save_restriction_restore): Rewritten to use
+	clip_to_bounds instead of in_accessible_range.
+
+Mon Feb 25 23:44:31 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x11term.c (xfixscreen): Move static var outside function.
+
+Sun Feb 24 15:57:05 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* m-amdahl.h (C_OPTIMIZE_SWITCH): Don't define if already defined.
+	(HAVE_TIMEVAL, MISSING_UTIMES, HAVE_SELECT, HAVE_PTYS, HAVE_SOCKETS):
+	(BSTRING, BROKEN_FIONREAD, LIBX11_MACHINE): New macros.
+	* process.c, x11term.c (sys/time.h): Treat uts like aix.
+
+	* xdisp.c (message_buf_print): New variable.
+	* dispextern.h: Declare it.
+	* xdisp.c (message): Store 0 there.
+	* print.c (printchar): Use and set it.
+
+	* process.c (wait_reading_process_input): Use NETCONN_P.
+
+Sat Feb 23 15:22:57 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* process.c (send_process): Handle EAGAIN like EWOULDBLOCK.
+
+Fri Feb 22 15:47:47 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* xkeys-aix.h: Move unmodified keys to the end.
+
+Thu Feb 21 14:55:21 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* window.h (prev_echo_area_contents): Declare it.
+	* minibuf.c (do_completion): Clear that var before temporary message.
+
+	* fileio.c (report_file_error): Don't downcase "I/O".
+
+Sat Feb  9 13:23:05 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* sysdep.c (TERMINAL): Move the definitions inside other #ifdef's.
+	(tcgetattr): New sym.  Define as macro if not HAVE_TCATTR.
+	Use instead of ioctl TIOCGETP.
+	(discard_tty_input, child_setup_tty, init_sys_modes, reset_sys_modes):
+	If HAVE_TCATTR, use tcsetattr.
+	(init_sys_modes): Handle VSUSP, V_DSUSP if HAVE_TCATTR.
+
+	* vmsmap.c (mapin_data): Save and restore argv; copy the strings.
+
+	* m-amdahl.h (NO_SIOCTL_H): Defined.
+
+	* x11fns.c, x11term.c: Include fcntl.h only once.
+
+	* window.c (syms_of_window): New variable minibuffer-prompt-width.
+
+	* emacs.c (decode_env_path): Ignore EVARNAME if 0.
+	* lread.c (init_read): Change call.
+	* callproc.c (init_callproc): Likewise.
+
+	* sysdep.c (dup2): Rewrite of non-F_DUPFD case.
+
+Fri Feb  8 00:03:24 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* m-intel386.h (LOAD_AVE_CVT): Add extra parens.
+	* s-usg5-4.h (LIBX11_SYSTEM): #undef it.
+
+Thu Feb  7 12:47:24 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* search.c (Fmatch_data): Return ints for values above buf size.
+
+	* callint.c (global_map): Make declaration extern.
+	* process.c (Qexit): Likewise.
+
+Wed Feb  6 02:55:40 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* dispnew.c (update_line): If nlen becomes 0, go to just_erase.
+
+	* process.c (create_process): On Apollo, use O_NOCTTY to open pty.
+
+	* process.c (wait_reading_process_input): Special case APOLLO like sun.
+
+	* sysdep.c (discard_tty_input): Use TIOCFLUSH on Apollo.
+	(init_sys_modes): Avoid TIOCSTART on Apollo.
+
+	* keyboard.c (command_loop_1):
+	Don't clear last_command when start macro.
+
+	* window.c (init_window_once): Set use_time to 1 for root_window.
+
+Tue Feb  5 00:27:33 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* xdisp.c (display_text_line, display_string):
+	Don't write past end of available space.
+	* dispnew.c (update_line): Don't clobber the null that follows
+	the writable space in a screen line.
+
+	* x11fns.c: Always include ioctl.h except on VMS.
+
+	* keyboard.c (this_command_keys): Now type unsigned char *.
+	(read_command_char, Fexecute_command_char): Cast to proper type.
+	(init_keyboard): Likewise.
+
+Mon Feb  4 17:50:45 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* s-sunos4-0.h: Renamed from s-sunos4.h.
+	(read, write, open, close): Macro defs moved to s-sunos4-1.h.
+	(INTERRUPTABLE_*): Likewise.
+	* s-sunos4-1.h: New file.
+
+Sun Feb  3 21:50:00 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Makefile, ymakefile (SHELL): Force use of sh.
+
+	* s-usg5-4.h (USG5_4): Define it.
+	(LOAD_AVE_*): Don't define them.
+	* m-intel386.h (LOAD_AVE_*): Define, if USG5_4.
+
+	* buffer.c (Fbuffer_local_variables): Omit slots with no names.
+
+Sat Feb  2 11:45:44 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* process.c (Fprocess_status): For net stream, return Qopen or Qclosed.
+
+	* eval.c (struct catchtag): New slot `handlerlist'.
+	(internal_catch): Record that.
+	(unbind_catch): Use that.
+
+Thu Jan 31 16:13:41 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* x11term.c (XTfeep): Pass 0 as second arg to XBell.
+
+Tue Jan 29 14:55:06 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* unexec.c (make_hdr) [TPIX]: Set f_hdr.f_nscns and f_thdr.f_scnptr.
+
+	* sysdep.c [BROKEN_TIOCGWINSZ]: Undef TIOCGWINSZ.
+
+	* malloc.c (cfree): New function.
+
+	* process.c (wait_reading_process_input): Don't ignore
+	a zero-length read on a network connection.  Do close it.
+
+	* sysdep.c (hft_init, hft_reset): Pass &junk as arg to HFQERROR.
+
 Fri Jan 25 16:40:33 1991  Richard Stallman  (rms at mole.ai.mit.edu)
 
 	* Version 18.57 released.
@@ -3660,8 +4934,7 @@ Tue Mar 17 09:57:26 1987  Richard M. Stallman  (rms at prep)
 
 	* unexec.c [UMAX]: Don't include filehdr.h, etc.
 
-	* bytecode.c (Fbytecode):
-	Another SWITCH_ENUM_BUG problem.
+	* bytecode.c (Fbytecode): Another SWITCH_ENUM_BUG problem.
 
 	* sysdep.c: If not HAVE_TERMIO, override any definition of TCSETAW.
 	Ultrix 2.0 has a TCSETAW but it requires a struct termio.

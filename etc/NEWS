@@ -1,6 +1,34 @@
-GNU Emacs NEWS -- history of user-visible changes.  11 Nov 1990
-Copyright (C) 1988, 1990 Free Software Foundation, Inc.
+GNU Emacs NEWS -- history of user-visible changes.  3 Feb 1992
+Copyright (C) 1988, 1990, 1992 Free Software Foundation, Inc.
 See the end for copying conditions.
+
+Changes in version 18.58.
+
+* RMAIL reply now properly parses nested comments in addesses.
+
+* The "visual bell" feature when used with X windows
+now flashes only 1/4 of the window's total area.  This is because
+flashing the whole window is too slow on some systems.
+
+* call-process and call-process-region now return an indication
+of the exit status of the subprocess: either a numeric exit code
+or a string describing the signal which caused termination.
+
+* It is possible for regular expression matching to overflow the stack
+of failure points.  In the past, such overflow was treated as simple
+failure to match.  Now it causes an error.
+
+* You can use C-u to end a numeric argument.  Thus, type C-u 1 0 0 C-u 1
+to insert 100 1's.
+
+* Emacs now knows how to get resource values from the X server.
+
+* Job control commands in shell mode work properly on more systems
+because they now work by "typing" signal characters such as C-c.
+
+* copy-keymap no longer recursively copies keymaps reached through
+symbols' function definitions (i.e., those that have names).  It does
+copy nested keymaps that appear directly in the other copied keymaps.
 
 Changes in version 18.56.
 

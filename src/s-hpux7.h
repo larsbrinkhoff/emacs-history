@@ -1,4 +1,4 @@
-/* Definitions file for GNU Emacs running on HPUX release 5.0.
+/* Definitions file for GNU Emacs running on HPUX release 7.
    Based on AT&T System V.2.
    Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
@@ -129,7 +129,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    so that Emacs can tell instantly when you try to modify
    a file that someone else has modified in his Emacs.  */
 
-/* #define CLASH_DETECTION */
+#define CLASH_DETECTION
 
 /* Define SHORTNAMES if the C compiler can distinguish only
    short names.  It means that the stuff in ../shortnames
@@ -256,4 +256,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define WAITTYPE int
 #endif
 #define WRETCODE(w) (((w) >> 8) & 0377)
+#endif
+
+#if 0  /* This is in s-hpux8.h.  */
+/* Get rid of this for HP/UX versions before version 8.  */
+#define LD_SWITCH_SYSTEM -a archive
 #endif

@@ -58,13 +58,16 @@ Optional third arg OTHER-WINDOW non-nil means visit in other window."
     (undo-boundary)
     (goto-char (point-min))
     (if (not (and (looking-at (substring (current-time-string) 0 10))
-		  (save-excursion (re-search-forward "(.* at")
+		  (save-excursion (re-search-forward "(.*@"
+						     (save-excursion
+						       (end-of-line) (point))
+						     t)
 				  (skip-chars-backward "^(")
 				  (looking-at login-name))))
 	(progn (insert (current-time-string)
 		       "  " full-name
 		       "  (" login-name
-		       " at " site-name ")\n\n")))
+		       "@" site-name ")\n\n")))
     (goto-char (point-min))
     (forward-line 1)
     (while (looking-at "\\sW")

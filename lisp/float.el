@@ -68,8 +68,15 @@
 (defconst mantissa-maxval (1- (ash 1 maxbit))
   "Maximum permissable value of mantissa")
 
-(defconst mantissa-minval (ash 1 maxbit)
+;;; Note that this value can't be plain (ash 1 maxbit), since
+;;; (- (ash 1 maxbit)) = (ash 1 maxbit) - it overflows.
+(defconst mantissa-minval (1- (ash 1 maxbit))
   "Minimum permissable value of mantissa")
+
+;;; This is used when normalizing negative numbers; if the number is
+;;; less than this, multiplying it by 2 will overflow past
+;;; mantissa-minval.
+(defconst mantissa-half-minval (ash (ash 1 maxbit) -1))
 
 (defconst floating-point-regexp
   "^[ \t]*\\(-?\\)\\([0-9]*\\)\
@@ -120,8 +127,9 @@
   (if (> (car fnum) 0)			; make sure next-to-highest bit is set
       (while (zerop (logand (car fnum) second-bit-mask))
 	(setq fnum (fashl fnum)))
-    (if (< (car fnum) 0)		; make sure highest bit is set
-	(while (zerop (logand (car fnum) high-bit-mask))
+    (if (< (car fnum) 0)		; make sure next-to-highest bit is
+					; zero, but fnum /= mantissa-minval.
+	(while (> (car fnum) mantissa-half-minval)
 	  (setq fnum (fashl fnum)))
       (setq fnum _f0)))			; "standard 0"
   fnum)
@@ -160,8 +168,8 @@
 ;; Arithmetic functions
 (defun f+ (a1 a2)
   "Returns the sum of two floating point numbers."
-  (let ((f1 (fmax a1 a2))
-	(f2 (fmin a1 a2)))
+  (let ((f1 (if (> (cdr a1) (cdr a2)) a1 a2))
+	(f2 (if (> (cdr a1) (cdr a2)) a2 a1)))
     (if (same-sign a1 a2)
 	(setq f1 (fashr f1)		; shift right to avoid overflow
 	      f2 (fashr f2)))

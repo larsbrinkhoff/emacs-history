@@ -1,9 +1,19 @@
 The following text was written by someone at IBM to describe an older
 version of the code for dumping on AIX.
 
-I couldn't understand the code, and I can't fully understand this text
-either.  I rewrote the code to use the same basic principles, as far
-as I understood them, but more cleanly.  It does not always work.
+I (rms) couldn't understand the code, and I can't fully understand
+this text either.  I rewrote the code to use the same basic
+principles, as far as I understood them, but more cleanly.  This
+rewritten code does not always work.  In fact, the basic method 
+seems to be intrinsically flawed.
+
+Since then, someone else implemented a different way of dumping on
+the RS/6000, which does seem to work.  None of the following
+applies to the way Emacs now dumps on the 6000.  However, the
+current method fails to use shared libraries.  Anyone who might be
+interested in trying to resurrect the previous method might still
+find the following information useful.
+
 
 It seems that the IBM dumping code was simply set up to detect when
 the dumped data cannot be used, and in that case to act approximately

@@ -2,7 +2,7 @@ CFLAGS= -g
 # For Xenix.  Needed for movemail
 #  LOADLIBES= -lx
 # For Mips.  Needed for who knows what.
-#  LOADLIBES = -lmld /usr/bsd43/usr/lib/libc.a
+#  CFLAGS = -g -systype bsd43
 
 EXECUTABLES = test-distrib etags ctags wakeup make-docfile \
    digest-doc sorted-doc movemail cvtmail fakemail yow env \

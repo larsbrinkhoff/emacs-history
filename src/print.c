@@ -120,8 +120,12 @@ printchar (ch, fun)
 	  noninteractive_need_newline = 1;
 	  return;
 	}
-      if (echo_area_contents != message_buf)
-	echo_area_contents = message_buf, printbufidx = 0;
+      if (echo_area_contents != message_buf || !message_buf_print)
+	{
+	  echo_area_contents = message_buf;
+	  printbufidx = 0;
+	  message_buf_print = 1;
+	}
       if (printbufidx < screen_width)
 	message_buf[printbufidx++] = ch;
       message_buf[printbufidx] = 0;
@@ -163,8 +167,12 @@ strout (ptr, size, printcharfun)
 	  noninteractive_need_newline = 1;
 	  return;
 	}
-      if (echo_area_contents != message_buf)
-	echo_area_contents = message_buf, printbufidx = 0;
+      if (echo_area_contents != message_buf || !message_buf_print)
+	{
+	  echo_area_contents = message_buf;
+	  printbufidx = 0;
+	  message_buf_print = 1;
+	}
       if (i > screen_width - printbufidx)
 	i = screen_width - printbufidx;
       bcopy (ptr, &message_buf[printbufidx], i);

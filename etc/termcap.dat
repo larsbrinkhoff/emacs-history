@@ -544,14 +544,15 @@ nunix-30|nu-telnet-30|nu-half: Half nu screen thru telnet:\
 nunix-61|nu-telnet-61|nu-full| Full nu screen thru telnet:\
 	:co#78:li#61:tc=nunix-30:
 
-## VT200 entry for VMS.  Make sure not to use \n for nl or anything else.
+## VT200 entry for VMS.  Also for VT300.
+# Make sure not to use \n for nl or anything else.
 # It is bad form to use ^J,^L,^K to scroll the screen.
 # If the VT2xx doesn't have newline mode set those characters
 # donot move the cursor down a line.  Use \ED instead.
-d0|vt200-80|vt200|VT 200 with 80 columns, on VMS:\
+d0|vt200-80|vt200|vt300-80|VT 200 with 80 columns, on VMS:\
 	:AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:IC=\E[%d@:\
 	:LE=\E[%dD:RI=\E[%dC:SR=1*\E[%dM:UP=\E[%dA:al=\E[L:\
-	:am:bl=^G:bs:cd=2*\E[J:ce=2\E[K:cl=45\E[H\E[2J:\
+	:am:bl=^G:bs:cd=2*\E[J:ce=2*\E[K:cl=45\E[H\E[2J:\
 	:cm=%i\E[%d;%dH:co#80:cr=\r:cs=\E[%i%d;%dr:ct=\E[3g:\
 	:dc=\E[P:dl=\E[M:dm=:do=\ED:ec=\E[%dX:ed=:ei=\E[4l:\
 	:ho=\E[H:ic:im=\E[4h:it#8:k1=\EOP:k2=\EOQ:k3=\EOR:\
@@ -560,7 +561,7 @@ d0|vt200-80|vt200|VT 200 with 80 columns, on VMS:\
 	:mr=\E[7m:ms:nd=\E[C:nl=\ED:nw=\EE:pf=\E[?4i:po=\E[?5i:\
 	:ps=\E[i:rc=\E8:sc=\E7:se=\E[27m:sf=1*\ED:so=\E[7m:\
 	:sr=1*\EM:st=\EH:ue=\E[24m:up=\EM:us=\E[4m:xn:
-d0|vt200-132|VT 200 with 132 columns, on VMS:\
+d0|vt200-132|vt300-132|VT 200 with 132 columns, on VMS:\
 	:co#132:tc=vt200-80:
 
 aP|apollo_15P|apollo 15 inch display:\
@@ -603,6 +604,26 @@ ds|vt100|vt100s|dec vt100 (smooth scroll, reverse video):\
 dn|vt100|vt100snv|dec vt100 (smooth scroll, normal video):\
 	:is=\E>\E[?4h\E[?5l\E[?7h\E[?8h:\
 	:if=/usr/lib/tabset/vt100:tc=vt100n:
+# This was designed for a VT320 emulator, but it is probably a good start
+# at support for the VT320 itself.
+# Please send changes with explanations to bug-gnu-emacs@prep.ai.mit.edu.
+k3|vt320|vt320-k3|kermit|MS-Kermit 3.00's vt320 emulation:\
+	:AL=\E[%dL:CC=\E:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:DO=\E[%dB:LE=\E[%dD:\
+	:RI=\E[%dC:SR=\E[%dL:UP=\E[%dA:ae=\E(B:al=\E[L:am:as=\E(0:bl=^G:\
+	:cd=\E[J:ce=\E[K:ch=\E[%i%dG:cl=\E[H\E[J:cm=\E[%i%d;%dH:co#80:cr=^M:\
+	:cs=\E[%i%d;%dr:ct=\E[3g:cv=\E[%i%dd:dc=\E[P:do=^J:dl=\E[M:ds=\E[0$~:\
+	:ec=\E[%dX:ei=\E[4l:es:fs=\E[0$}:ho=\E[H:hs:im=\E[4h:\
+	:is=\E>\E F\E[?1l\E[?7h\E[r\E[2$~:k1=\EOP:k2=\EOQ:\
+	:k3=\EOR:k4=\EOS:k6=\E[17~:k7=\E[18~:k8=\E[19~:k9=\E[20~:k0=\E[21~:\
+	:kI=\E[2~:kL=\E[3~:kN=\E[6~:kP=\E[5~:kb=^H:kd=\EOB:ke=\E[?1l\E>:\
+	:kl=\EOD:km:kn#20:kr=\EOC:ks=\E[?1h\E=:ku=\EOA:\
+	:le=^H:li#49:mb=\E[5m:md=\E[1m:me=\E[m:mi:mr=\E[7m:ms:nd=\E[C:\
+	:nl=^J:pb#9600:po=\E[5i:pf=\E[4i:ps=\E[0i:pt:rc=\E8:\
+	:rs=\E(B\E)B\E>\E F\E[4;20l\E[12h\E[?1;5;6;38;42l\E[?7;25h\E4i\E?4i\E[m\E[r\E[2$~:\
+	:sc=\E7:se=\E[27m:sf=^J:so=\E[7m:sr=\EM:st=\EH:ta=^I:\
+	:ts=\E[1$}^M\E[K:ue=\E[24m:\
+	:up=\E[A:us=\E[4m:vb=\E[?5h\E[?5l\E[?5h\E[?5l\E[?5h\E[?5l:ve=\E[?25h:\
+	:vi=\E[?25l:vt#3:xn:
 sw|switch|intelligent switch:co#80:os:am:
 su|dumb|un|unknown:co#80:os:am:
 sp|plugboard:co#80:os:am:

@@ -24,7 +24,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "commands.h"
 #include "window.h"
 
-Lisp_Object global_map;
+extern Lisp_Object global_map;
 
 extern int num_input_chars;
 
@@ -426,8 +426,6 @@ retry:
       else tem = (unsigned char *) "";
     }
 
-  UNGCPRO;
-
   QUIT;
 
   args[0] = function;
@@ -444,7 +442,9 @@ retry:
 				Vcommand_history);
     }
 
-  return Ffuncall (count + 1, args);
+  teml = Ffuncall (count + 1, args);
+  UNGCPRO;
+  return teml;
 }  
 
 DEFUN ("prefix-numeric-value", Fprefix_numeric_value, Sprefix_numeric_value,

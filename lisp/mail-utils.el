@@ -37,46 +37,76 @@ from START (inclusive) to END (exclusive)."
   "Delete comments and quoted strings in an address list ADDRESS.
 Also delete leading/trailing whitespace and replace FOO <BAR> with just BAR.
 Return a modified address list."
-  (if mail-use-rfc822
-      (progn (require 'rfc822)
-	     (mapconcat 'identity (rfc822-addresses address) ", "))
-    (let (pos)
-     (string-match "\\`[ \t\n]*" address)
-     ;; strip surrounding whitespace
-     (setq address (substring address
-			      (match-end 0)
-			      (string-match "[ \t\n]*\\'" address
-					    (match-end 0))))
-     ;; strip rfc822 comments
-     (while (setq pos (string-match 
-			;; This doesn't hack rfc822 nested comments
-			;;  `(xyzzy (foo) whinge)' properly.  Big deal.
-			"[ \t]*(\\([^)\"\\]\\|\\\\.\\|\\\\\n\\)*)"
-			address))
-       (setq address
-	     (mail-string-delete address
-				 pos (match-end 0))))
-     ;; strip `quoted' names (This is supposed to hack `"Foo Bar" <bar@host>')
-     (setq pos 0)
-     (while (setq pos (string-match
-			"[ \t]*\"\\([^\"\\]\\|\\\\.\\|\\\\\n\\)*\"[ \t\n]*"
-			address pos))
-       ;; If the next thing is "@", we have "foo bar"@host.  Leave it.
-       (if (and (> (length address) (match-end 0))
-		(= (aref address (match-end 0)) ?@))
-	   (setq pos (match-end 0))
-	 (setq address
-	       (mail-string-delete address
-				   pos (match-end 0)))))
-     ;; Retain only part of address in <> delims, if there is such a thing.
-     (while (setq pos (string-match "\\(,\\|\\`\\)[^,]*<\\([^>,]*>\\)"
-				    address))
-       (let ((junk-beg (match-end 1))
-	     (junk-end (match-beginning 2))
-	     (close (match-end 0)))
-	 (setq address (mail-string-delete address (1- close) close))
-	 (setq address (mail-string-delete address junk-beg junk-end))))
-     address)))
+  (if (null address)
+      nil
+    (if mail-use-rfc822
+	(progn (require 'rfc822)
+	       (mapconcat 'identity (rfc822-addresses address) ", "))
+      (let (pos)
+       ;; Strip rfc822 comments (within parens).
+       ;; Understand properly the effect of backslashes and string quotes.
+       (let (instring (depth 0) start)
+	 (setq pos -1)
+	 (while pos
+	   (cond ((< pos 0))
+		 ((= (aref address pos) ?\\)
+		  (setq pos (1+ pos)))
+		 ((= (aref address pos) ?\")
+		  (setq instring (not instring)))
+		 (instring nil)
+		 ((= (aref address pos) ?\()
+		  (if (= depth 0) (setq start pos))
+		  (setq depth (1+ depth)))
+		 ((= (aref address pos) ?\))
+		  (setq depth (1- depth))
+		  (if (= depth 0)
+		      (setq address (mail-string-delete address start (1+ pos))
+			    pos (1- start)))))
+	   (setq pos (string-match "[\"\\()]" address (1+ pos)))))
+
+       ;; strip surrounding whitespace
+       (string-match "\\`[ \t\n]*" address)
+       (setq address (substring address
+				(match-end 0)
+				(string-match "[ \t\n]*\\'" address
+					      (match-end 0))))
+
+       ;; Strip whitespace before commas.
+       (let (instring)
+	 (setq pos -1)
+	 (while pos
+	   (cond ((< pos 0))
+		 ((= (aref address pos) ?\\)
+		  (setq pos (1+ pos)))
+		 ((= (aref address pos) ?\")
+		  (setq instring (not instring)))
+		 (instring nil)
+		 ((eq (string-match "[ \t]*," address pos) pos)
+		  (setq address (mail-string-delete address pos
+						    (1- (match-end 0))))))
+	   (setq pos (string-match "[ \t,\"\\]" address (1+ pos)))))
+
+       ;; strip `quoted' names (This is supposed to hack `"Foo Bar" <bar@host>')
+       (setq pos 0)
+       (while (setq pos (string-match
+			  "[ \t]*\"\\([^\"\\]\\|\\\\.\\|\\\\\n\\)*\"[ \t\n]*"
+			  address pos))
+	 ;; If the next thing is "@", we have "foo bar"@host.  Leave it.
+	 (if (and (> (length address) (match-end 0))
+		  (= (aref address (match-end 0)) ?@))
+	     (setq pos (match-end 0))
+	   (setq address
+		 (mail-string-delete address
+				     pos (match-end 0)))))
+       ;; Retain only part of address in <> delims, if there is such a thing.
+       (while (setq pos (string-match "\\(,\\|\\`\\)[^,]*<\\([^>,]*>\\)"
+				      address))
+	 (let ((junk-beg (match-end 1))
+	       (junk-end (match-beginning 2))
+	       (close (match-end 0)))
+	   (setq address (mail-string-delete address (1- close) close))
+	   (setq address (mail-string-delete address junk-beg junk-end))))
+       address))))
   
 (or (and (boundp 'rmail-default-dont-reply-to-names)
 	 (not (null rmail-default-dont-reply-to-names)))

@@ -38,16 +38,24 @@ static char *rcsid_GXMenu_c = "$Header: xmenu.c,v 1.6 86/08/26 17:23:26 rlk Exp 
 /* On 4.3 this loses if it comes after xterm.h.  */
 #include <signal.h>
 #include "config.h"
-#include "lisp.h"
-#include "window.h"
 
 /* This may include sys/types.h, and that somehow loses
    if this is not done before the other system files.  */
 #ifdef X11
 #include "x11term.h"
+/* #include <X11/X10.h> */
 #else
 #include "xterm.h"
 #endif
+
+/* Prepare for lisp.h definition of NULL.
+   Sometimes x11term.h includes stddef.h.  */
+#ifdef NULL
+#undef NULL
+#endif
+
+#include "lisp.h"
+#include "window.h"
 
 /* Load sys/types.h if not already loaded.
    In some systems loading it twice is suicidal.  */

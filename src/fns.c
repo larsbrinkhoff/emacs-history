@@ -51,6 +51,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif /* not VMS */
 #endif /* LOAD_AVE_TYPE */
 
+#ifdef DGUX
+#include <sys/dg_sys_info.h>  /* for load average info - DJB */
+#endif
+
 /* Note on some machines this defines `vector' as a typedef,
    so make sure we don't use that name in this file.  */
 #undef vector
@@ -1113,6 +1117,11 @@ The user must confirm the answer with a newline, and can rub it out if not confi
 }
 
 /* Avoid static vars inside a function since in HPUX they dump as pure.  */
+#ifdef DGUX
+static struct dg_sys_info_load_info load_info;  /* what-a-mouthful! */
+
+#else /* Not DGUX */
+
 static int ldav_initialized;
 static int ldav_channel;
 #ifdef LOAD_AVE_TYPE
@@ -1124,6 +1133,7 @@ static struct nlist ldav_nl[2];
 #define channel ldav_channel
 #define initialized ldav_initialized
 #define nl ldav_nl
+#endif /* Not DGUX */
 
 DEFUN ("load-average", Fload_average, Sload_average, 0, 0, 0,
   "Return the current 1 minute, 5 minute and 15 minute load averages\n\
@@ -1131,6 +1141,19 @@ in a list (all floating point load average values are multiplied by 100\n\
 and then turned into integers).")
   ()
 {
+#ifdef DGUX
+  /* perhaps there should be a "sys_load_avg" call in sysdep.c?! - DJB */
+  load_info.one_minute     = 0.0;	/* just in case there is an error */
+  load_info.five_minute    = 0.0;
+  load_info.fifteen_minute = 0.0;
+  dg_sys_info (&load_info, DG_SYS_INFO_LOAD_INFO_TYPE,
+	       DG_SYS_INFO_LOAD_VERSION_0);
+
+  return Fcons (make_number ((int)(load_info.one_minute * 100.0)),
+		Fcons (make_number ((int)(load_info.five_minute * 100.0)),
+		       Fcons (make_number ((int)(load_info.fifteen_minute * 100.0)),
+			      Qnil)));
+#else /* not DGUX */
 #ifndef LOAD_AVE_TYPE
   error ("load-average not implemented for this operating system");
 
@@ -1262,6 +1285,7 @@ and then turned into integers).")
 		       Fcons (make_number (LOAD_AVE_CVT (load_ave[2])),
 			      Qnil)));
 #endif /* LOAD_AVE_TYPE */
+#endif /* not DGUX */
 }
 
 #undef channel

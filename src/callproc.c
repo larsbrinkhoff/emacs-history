@@ -61,6 +61,17 @@ Lisp_Object Vprocess_environment;
    We wait for this to be zero in order to wait for termination.  */
 int synch_process_pid;
 #endif /* BSD4_1 */
+
+/* True iff we are about to fork off a synchronous process or if we
+   are waiting for it.  */
+int synch_process_alive;
+
+/* Nonzero => this is a string explaining death of synchronous subprocess.  */
+char *synch_process_death;
+
+/* Exit code of synchronous subprocess if positive,
+   minus the signal number if negative.  */
+int synch_process_retcode;
 
 Lisp_Object
 call_process_cleanup (fdpid)
@@ -75,7 +86,12 @@ call_process_cleanup (fdpid)
 }
 
 #ifdef VMS
+#ifdef __GNUC__
+#define	environ $$PsectAttributes_NOSHR$$environ
+extern char **environ;
+#else
 extern noshare char **environ;
+#endif
 #else
 extern char **environ;
 #endif
@@ -87,8 +103,9 @@ Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Fourth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining arguments are strings passed as command arguments to PROGRAM.\n\
-This function waits for PROGRAM to terminate;\n\
-if you quit, the process is killed.")
+Otherwise waits for PROGRAM to terminate\n\
+and returns a numeric exit status or a signal name as a string.\n\
+If you quit, the process is killed with SIGKILL.")
   (nargs, args)
      int nargs;
      register Lisp_Object *args;
@@ -171,6 +188,9 @@ if you quit, the process is killed.")
       set_exclusive_use (fd[0]);
 #endif
     }
+
+  synch_process_death = 0;
+  synch_process_retcode = 0;
 
   {
     /* child_setup must clobber environ in systems with true vfork.
@@ -258,14 +278,17 @@ if you quit, the process is killed.")
 
   unbind_to (count);
 
-  return Qnil;
+  if (synch_process_death)
+    return build_string (synch_process_death);
+  return make_number (synch_process_retcode);
 }
 
 DEFUN ("call-process-region", Fcall_process_region, Scall_process_region,
   3, MANY, 0,
   "Send text from START to END to a process running PROGRAM.\n\
 Delete the text if DELETE is non-nil.\n\
-Put output in BUFFER, before point.  nil => discard it, t => current buffer.\n\
+Insert output in BUFFER before point; t means current buffer;\n\
+ nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Sixth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining args are passed to PROGRAM at startup as command args.\n\
 This function normally waits for the process to terminate;\n\
@@ -408,9 +431,8 @@ init_callproc ()
   register char **envp;
   Lisp_Object execdir;
 
-  /* Turn PATH_EXEC into a path.  `==' is just a string which we know
-     will not be the name of an environment variable.  */
-  Vexec_path = decode_env_path ("==", PATH_EXEC);
+  /* Turn PATH_EXEC into a path.  Don't look at environment.  */
+  Vexec_path = decode_env_path (0, PATH_EXEC);
   Vexec_directory = Ffile_name_as_directory (Fcar (Vexec_path));
   Vexec_path = nconc2 (decode_env_path ("PATH", ""), Vexec_path);
 

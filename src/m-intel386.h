@@ -67,9 +67,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define DOT_GLOBAL_START
 
-/* USG systems do not actually support the load average,
-so disable it for them.  */
-
 #ifdef XENIX
 /* Data type of load average, as read out of kmem.  */
 #define LOAD_AVE_TYPE short
@@ -78,6 +75,18 @@ so disable it for them.  */
 #define LOAD_AVE_CVT(x) (((double) (x)) * 100.0 / FSCALE)
   
 #define FSCALE 256.0         /* determined by experimentation...  */
+#endif
+
+#ifdef USG5_4 /* Older USG systems do not support the load average.  */
+/* Data type of load average, as read out of kmem.  */
+
+#define LOAD_AVE_TYPE long
+
+/* Convert that into an integer that is 100 for a load average of 1.0  */
+/* This is totally uncalibrated. */
+
+#define LOAD_AVE_CVT(x) ((int) (((double) (x)) * 100.0 / FSCALE))
+#define FSCALE 256.0
 #endif
 
 /* Define CANNOT_DUMP on machines where unexec does not work.
@@ -124,9 +133,15 @@ so disable it for them.  */
 
 #ifdef USG
 #ifndef LIB_STANDARD
+#if defined (__GNUC__) || defined (C_ALLOCA)
+#define	LIB_STANDARD -lc
+#else
 #define LIB_STANDARD -lPW -lc
 #endif
+#endif /* no LIB_STANDARD */
+#ifndef C_ALLOCA
 #define HAVE_ALLOCA
+#endif
 #define NO_REMAP 
 #define TEXT_START 0
 #endif /* USG */
@@ -140,4 +155,17 @@ so disable it for them.  */
 #if defined(__GNUC__) && !defined(alloca)
 #define alloca(n) __builtin_alloca(n)
 #define HAVE_ALLOCA
+#endif
+
+#ifdef USG
+#ifdef __STDC__
+#ifndef DONT_DEFINE_SIGNAL
+/* Cast the function argument to avoid warnings.  */
+#define signal(sig, func) (signal (sig, (void (*) (int)) (func)))
+#endif
+#endif
+#endif
+
+#ifdef USG5_4
+#define DATA_SEG_BITS 0x08000000
 #endif

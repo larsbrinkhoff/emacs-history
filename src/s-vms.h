@@ -163,7 +163,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Hide these names so that we don't get linker errors */
 #define malloc sys_malloc
 #define free sys_free
+#define cfree sys_cfree
 #define realloc sys_realloc
+#define calloc sys_calloc
 
 /* Don't use the standard brk and sbrk */
 #define sbrk sys_sbrk
@@ -187,6 +189,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* getuid only returns the member number, which is not unique on most VMS
    systems.  We emulate it with (getgid()<<16 | getuid()). */
 #define getuid sys_getuid
+
+#define getppid sys_getppid
 
 /* If user asks for TERM, check first for EMACS_TERM.  */
 #define getenv sys_getenv
@@ -212,8 +216,25 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define	_longjmp	longjmp
 #define	_setjmp		setjmp
 
+#ifdef __GNUC__
+/* GAS uses up 7 of the available 30 characters in an external name
+   to distinguish the case of the letters.
+   So make these lower case, so we have all 30 for distinguishing.  */
+#define Vminibuffer_completion_table vminibuffer_completion_table
+#define Qminibuffer_completion_table qminibuffer_completion_table
+#define Vminibuffer_completion_predicate vminibuffer_completion_predicate
+#define Qminibuffer_completion_predicate qminibuffer_completion_predicate
+#define Vminibuffer_completion_confirm vminibuffer_completion_confirm
+#define Qminibuffer_completion_confirm qminibuffer_completion_confirm
+#endif
+
+#ifdef __GNUC__
+extern char sdata[] asm("_$$PsectAttributes_NOOVR$$$D$ATA") ;
+#define DATA_START (((int) sdata + 8191) & ~511)
+#else
 globalref char sdata[];
-#define DATA_START (((int) sdata + 512 + 511) & ~511)
+#define DATA_START (((int) sdata + 511) & ~511)
+#endif
 #define TEXT_START 512
 
 /* Baud-rate values from tty status are not standard.  */

@@ -23,6 +23,9 @@ $ edit/edt/nocommand emacs.com
 s/sys$sysdevice:[emacs.]/$disk1:[rms.dist_18.emacs.]/w
 exit
 $ @emacs
+$ ! Delete the modified emacs.com so we leave the source files clean.
+$ ! emacs.com must be edited for real when Emacs is installed
+$ ! on another machine.  This version wouldn't be right anyway.
 $ delete emacs.com;0
 $
 $ ! Edit the configuration files.

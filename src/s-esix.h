@@ -3,20 +3,27 @@
 
 #include "s-usg5-3.h"
 
-#define ESIX
-
 #define HAVE_TIMEVAL
-#define MISSING_UTIMES 
 
 /* Some versions of V.3 have this, but not all. ESIX does. */
 #define HAVE_PTYS
 #define SYSV_PTYS
 
-#undef sigsetmask
+/* Have -lg be used for debugging. */
+#undef LIBS_DEBUG
+#define LIBS_DEBUG -lg
 
-/* ESIX has FIONREAD, but it doesn't work right on the ptys or pipes */
-#define BROKEN_FIONREAD
+/* If using Roell's X server, define X11R4 */
+#ifdef X11R4			/* Roell's X server */
+#define HAVE_GETTIMEOFDAY /* Thomas Roell's X11R4 lib defines gettimeofday */
+#define select sys_select /* Emacs select() not good enough? */
+#undef LIBX11_SYSTEM
+#define LIBX11_SYSTEM -lpt
+#endif /* X11R4 */
 
-#define LIBS_SYSTEM -lbsd
-
+/* ESIX does not need <sys/sioctl.h>, but needs <sys/ptem.h> */
 #define NO_SIOCTL_H
+#define NEED_PTEM_H
+#define USG_SYS_TIME
+#define USE_UTIME
+#define BROKEN_FIONREAD

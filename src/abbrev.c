@@ -109,7 +109,8 @@ To undefine an abbrev, define it with EXPANSION = nil")
   Lisp_Object sym, oexp, ohook, tem;
   CHECK_VECTOR (table, 0);
   CHECK_STRING (name, 1);
-  CHECK_STRING (expansion, 2);
+  if (! NULL (expansion))
+    CHECK_STRING (expansion, 2);
   if (NULL (count))
     count = make_number (0);
   else
@@ -293,10 +294,14 @@ Returns t if expansion took place.")
   else if (uccount)
     {
       /* Abbrev included some caps.  Cap first initial of expansion */
+      int old_zv = ZV;
       idx = point;
+      /* Don't let Fcapitalize_word operate on text after point.  */
+      ZV = point;
       SET_PT (wordstart);
       Fcapitalize_word (make_number (1));
       SET_PT (idx);
+      ZV = old_zv;
     }
 
   hook = XSYMBOL (sym)->function;

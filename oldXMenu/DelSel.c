@@ -1,4 +1,4 @@
-#include <X11/copyright.h>
+#include "copyright.h"
 
 /* $Header: DelSel.c,v 1.3 87/12/20 12:04:32 rws Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/

@@ -189,7 +189,7 @@ news-reply-mode."
 	      (mail-archive-file-name nil))
 	  (mail-setup to subject in-reply-to nil replybuffer)
 	  (beginning-of-line)
-	  (kill-line 1)
+	  (delete-region (point) (progn (forward-line 1) (point)))
 	  (goto-char (point-max)))
       (mail-setup to subject in-reply-to nil replybuffer))
     ;;;(mail-position-on-field "Posting-Front-End")

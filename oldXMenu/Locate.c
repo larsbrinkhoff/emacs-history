@@ -1,4 +1,4 @@
-#include <X11/copyright.h>
+#include "copyright.h"
 
 /* $Header: Locate.c,v 1.5 88/02/02 19:09:02 jim Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/

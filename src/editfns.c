@@ -24,7 +24,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <stdio.h>
 #undef NULL
 #endif
+
+#ifdef VMS
+#include "pwd.h"
+#else
 #include <pwd.h>
+#endif
+
 #include "lisp.h"
 #include "buffer.h"
 #include "window.h"
@@ -48,6 +54,9 @@ init_editfns ()
   Lisp_Object tem;
   extern char *index ();
 
+  /* Turn off polling so the SIGALRM won't bother getpwuid.  */
+  stop_polling ();
+
   /* Set up system_name even when dumping.  */
 
   Vsystem_name = build_string (get_system_name ());
@@ -68,17 +77,23 @@ init_editfns ()
   pw = (struct passwd *) getpwuid (getuid ());
   Vuser_real_name = build_string (pw ? pw->pw_name : "unknown");
 
+  /* Get the effective user name, by consulting environment variables,
+     or the effective uid if those are unset.  */
   user_name = (char *) getenv ("USER");
   if (!user_name)
     user_name = (char *) getenv ("LOGNAME"); /* USG equivalent */
-  if (user_name)
-    Vuser_name = build_string (user_name);
-  else
-    Vuser_name = Vuser_real_name;
+  if (!user_name)
+    {
+      pw = (struct passwd *) getpwuid (geteuid ());
+      user_name = pw ? pw->pw_name : "unknown";
+    }
+  Vuser_name = build_string (user_name);
 
+  /* If the user name claimed in the environment vars differs from
+     the real uid, use the claimed name to find the full name.  */
   tem = Fstring_equal (Vuser_name, Vuser_real_name);
-  if (!NULL (tem))
-    pw = (struct passwd *) getpwnam (user_name);
+  if (NULL (tem))
+    pw = (struct passwd *) getpwnam (XSTRING (Vuser_name)->data);
   
   p = (unsigned char *) (pw ? USER_FULL_NAME : "unknown");
   q = (unsigned char *) index (p, ',');
@@ -100,6 +115,8 @@ init_editfns ()
       Vuser_full_name = build_string (r);
     }
 #endif				/* AMPERSAND_FULL_NAME */
+
+  start_polling ();
 }
 
 DEFUN ("char-to-string", Fchar_to_string, Schar_to_string, 1, 1, 0,
@@ -159,14 +176,15 @@ DEFUN ("point-marker", Fpoint_marker, Spoint_marker, 0, 0, 0,
 }
 
 int
-in_accessible_range (loc)
-     int loc;
+clip_to_bounds (lower, num, upper)
+     int lower, num, upper;
 {
-  if (loc < BEGV)
-    return BEGV;
-  if (loc > ZV)
-    return ZV;
-  return loc;
+  if (num < lower)
+    return lower;
+  else if (num > upper)
+    return upper;
+  else
+    return num;
 }
 
 DEFUN ("goto-char", Fgoto_char, Sgoto_char, 1, 1, "NGoto char: ",
@@ -178,7 +196,7 @@ Beginning of buffer is position (point-min), end is (point-max).")
   register int charno;
   CHECK_NUMBER_COERCE_MARKER (n, 0);
   charno = XINT (n);
-  SET_PT (in_accessible_range (charno));
+  SET_PT (clip_to_bounds (BEGV, charno, ZV));
   return n;
 }
 
@@ -368,7 +386,10 @@ DEFUN ("following-char", Ffollchar, Sfollchar, 0, 0, 0,
   ()
 {
   Lisp_Object temp;
-  XFASTINT (temp) = FETCH_CHAR (point);
+  if (point >= ZV)
+    XFASTINT (temp) = 0;
+  else
+    XFASTINT (temp) = FETCH_CHAR (point);
   return temp;
 }
 
@@ -524,7 +545,7 @@ DEFUN ("insert", Finsert, Sinsert, 0, MANY, 0,
 	}
       else if (XTYPE (tem) == Lisp_String)
 	{
-	  insert (XSTRING (tem)->data, XSTRING (tem)->size);
+	  insert_from_string (tem, 0, XSTRING (tem)->size);
 	}
       else
 	{
@@ -558,7 +579,7 @@ get relocated to point after the newly inserted text.")
 	}
       else if (XTYPE (tem) == Lisp_String)
 	{
-	  insert_before_markers (XSTRING (tem)->data, XSTRING (tem)->size);
+	  insert_from_string_before_markers (tem, 0, XSTRING (tem)->size);
 	}
       else
 	{
@@ -747,6 +768,8 @@ DEFUN ("widen", Fwiden, Swiden, 0, 0, "",
   BEGV = BEG;
   SET_BUF_ZV (current_buffer, Z);
   clip_changed = 1;
+  /* Changing the buffer bounds invalidates any recorded current column.  */
+  invalidate_current_column ();
   return Qnil;
 }
 
@@ -783,6 +806,8 @@ bounding the text that should remain visible.")
   if (point > XFASTINT (e))
     SET_PT (XFASTINT (e));
   clip_changed = 1;
+  /* Changing the buffer bounds invalidates any recorded current column.  */
+  invalidate_current_column ();
   return Qnil;
 }
 
@@ -825,7 +850,8 @@ save_restriction_restore (data)
   clip_changed = 1;
 
   /* If point is outside the new visible range, move it inside. */
-  SET_BUF_PT (buf, in_accessible_range (BUF_PT (buf)));
+  SET_BUF_PT (buf,
+	      clip_to_bounds (BUF_BEGV (buf), BUF_PT (buf), BUF_ZV (buf)));
 
   return Qnil;
 }
@@ -1007,7 +1033,9 @@ Case is ignored if the current buffer specifies to do so.")
 
 #ifndef MAINTAIN_ENVIRONMENT /* it is done in environ.c in that case */
 DEFUN ("getenv", Fgetenv, Sgetenv, 1, 2, 0,
-  "One arg VAR, a string.  Return the value of environment variable VAR, as a string.")
+  "Return the value of environment variable VAR, as a string.\n\
+VAR should be a string.  If the environment variable VAR is not defined,\n\
+the value is nil.")
   (str)
      Lisp_Object str;
 {

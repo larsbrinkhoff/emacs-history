@@ -67,9 +67,9 @@ Leave one space or none, according to the context."
   (interactive "*")
   (save-excursion
     (delete-horizontal-space)
-    (if (or (looking-at "^\\|\\s)")
+    (if (or (looking-at "^\\|\\s)\\|$")
 	    (save-excursion (forward-char -1)
-			    (looking-at "$\\|\\s(\\|\\s'")))
+			    (looking-at "\\s(\\|\\s'")))
 	nil
       (insert ?\ ))))
 
@@ -358,7 +358,9 @@ Whilst editing the command, the following commands are available:
   (save-restriction
     (widen)
     (goto-char 1)
-    (forward-line (1- arg))))
+    (if (eq selective-display t)
+	(re-search-forward "[\n\C-m]" nil 'end (1- arg))
+      (forward-line (1- arg)))))
 
 ;Put this on C-x u, so we can force that rather than C-_ into startup msg
 (fset 'advertised-undo 'undo)
@@ -409,14 +411,22 @@ and put point at the end, but don't alter the mark."
 			     "-c" command)
 	(and interactive swap (exchange-point-and-mark)))
     (let ((buffer (get-buffer-create "*Shell Command Output*")))
-      (save-excursion
-	(set-buffer buffer)
-	(erase-buffer))
       (if (eq buffer (current-buffer))
-	  (setq start 1 end 1))
-      (call-process-region start end shell-file-name
-			   nil buffer nil
-			   "-c" command)
+	  ;; If the input is the same buffer as the output,
+	  ;; delete everything but the specified region,
+	  ;; then replace that region with the output.
+	  (progn (delete-region end (point-max))
+		 (delete-region (point-min) start)
+		 (call-process-region (point-min) (point-max)
+				      shell-file-name t t nil
+				      "-c" command))
+	;; Clear the output buffer, then run the command with output there.
+	(save-excursion
+	  (set-buffer buffer)
+	  (erase-buffer))
+	(call-process-region start end shell-file-name
+			     nil buffer nil
+			     "-c" command))
       (if (save-excursion
 	    (set-buffer buffer)
 	    (> (buffer-size) 0))
@@ -425,9 +435,11 @@ and put point at the end, but don't alter the mark."
 
 (defun universal-argument ()
   "Begin a numeric argument for the following command.
-Digits or minus sign following this command make up the numeric argument.
-If no digits or minus sign follow, this command by itself provides 4 as argument.
-Used more than once, this command multiplies the argument by 4 each time."
+Digits or minus sign following \\[universal-argument] make up the numeric argument.
+\\[universal-argument] following the digits or minus sign ends the argument.
+\\[universal-argument] without digits or minus sign provides 4 as argument.
+Repeating \\[universal-argument] without digits or minus sign
+ multiplies the argument by 4 each time."
   (interactive nil)
   (let ((c-u 4) (argstartchar last-command-char)
 	char)
@@ -454,6 +466,10 @@ Used more than once, this command multiplies the argument by 4 each time."
       (setq value (+ (* (if (numberp value) value 0) 10) (- char ?0)) c-u nil)
 ;     (describe-arg value sign)
       (setq char (read-char)))
+    ;; Repeating the arg-start char after digits
+    ;; terminates the argument but is ignored.
+    (if (eq (lookup-key global-map (make-string 1 char)) 'universal-argument)
+	(setq char (read-char)))
     (setq prefix-arg
 	  (cond (c-u (list c-u))
 		((numberp value) (* value sign))
@@ -469,12 +485,14 @@ Used more than once, this command multiplies the argument by 4 each time."
 ;	 (message "Arg: -"))))
 
 (defun digit-argument (arg)
-  "Part of the numeric argument for the next command."
+  "Part of the numeric argument for the next command.
+\\[universal-argument] following digits or minus sign ends the argument."
   (interactive "P")
   (prefix-arg-internal last-command-char nil arg))
 
 (defun negative-argument (arg)
-  "Begin a negative numeric argument for the next command."
+  "Begin a negative numeric argument for the next command.
+\\[universal-argument] following digits or minus sign ends the argument."
   (interactive "P")
   (prefix-arg-internal ?- nil arg))
 
@@ -541,7 +559,12 @@ the text killed this time appends to the text killed last time
 to make one entry in the kill ring."
   (interactive "*r")
   (if (and (not (eq buffer-undo-list t))
-	   (not (eq last-command 'kill-region)))
+	   (not (eq last-command 'kill-region))
+	   (not (eq beg end))
+	   ;; This test is here in case someone wants to remove the `*'
+	   ;; above, so that the text gets stored in the kill ring
+	   ;; even though it doesn't get deleted.
+	   (not buffer-read-only))
       ;; Don't let the undo list be truncated before we can even access it.
       (let ((undo-high-threshold (+ (- (max beg end) (min beg end)) 100)))
 	(delete-region beg end)

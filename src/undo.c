@@ -267,7 +267,9 @@ Return what remains of the list.")
 		  if (pos < BEGV || pos > ZV)
 		    error ("Changes to be undone are outside visible portion of buffer");
 		  SET_PT (pos);
-		  Finsert (1, &membuf);
+		  /* The idea here is to leave mark after this text,
+		     which will be the desirable thing if undoing C-w.  */
+		  Finsert_before_markers (1, &membuf);
 		  SET_PT (pos);
 		}
 	    }

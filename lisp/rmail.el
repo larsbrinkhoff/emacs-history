@@ -519,12 +519,14 @@ and use that file as the inbox."
       ;; Either the alternate name (if we renamed)
       ;; or the actual inbox (if not renaming).
       (if (file-exists-p tofile)
-	  (progn (goto-char (point-max))
-		 (insert-file-contents tofile)
-		 (goto-char (point-max))
-		 (or (= (preceding-char) ?\n)
-		     (insert ?\n))
-		 (setq delete-files (cons tofile delete-files))))
+	  (let ((omax (point-max)))
+	    (goto-char (point-max))
+	    (insert-file-contents tofile)
+	    (goto-char (point-max))
+	    (or (= (preceding-char) ?\n)
+		(= opoint (point-max))
+		(insert ?\n))
+	    (setq delete-files (cons tofile delete-files))))
       (message "")
       (setq files (cdr files)))
     delete-files))
@@ -577,6 +579,26 @@ and use that file as the inbox."
 	       (setq start (point))
 	       (insert "\^L\n0, unseen,,\n*** EOOH ***\n")
 	       (rmail-nuke-pinhead-header)
+	       ;; If this message has a Content-Length field,
+	       ;; skip to the end of the contents.
+	       (let* ((header-end (save-excursion
+				    (and (re-search-forward "\n\n" nil t)
+					 (point))))
+		      (case-fold-search t)
+		      (size
+		       ;; Get the numeric value from the Content-Length field.
+		       (save-excursion
+			 ;; Back up to end of prev line,
+			 ;; in case the Content-Length field comes first.
+			 (forward-char -1)
+			 (and (search-forward "\ncontent-length: "
+					      header-end t)
+			      (let ((beg (point))
+				    (eol (progn (end-of-line) (point))))
+				(read (buffer-substring beg eol)))))))
+		 (if size
+		     (goto-char (+ header-end size))))
+			 
 	       (if (re-search-forward
 		    (concat "^[\^_]?\\("
 			    "From [^ \n]*\\(\\|\".*\"[^ \n]*\\)  ?[^ \n]* [^ \n]* *"

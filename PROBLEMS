@@ -1,6 +1,106 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Linking says that the functions insque and remque are undefined.
+
+Change oldXMenu/Makefile by adding insque.o to the variable OBJS.
+
+* Emacs fails to understand most Internet host names, even though
+the names work properly with other programs on the same system.
+
+This typically happens on Suns and other systems that use shared
+libraries.  The cause is that the site has installed a version of the
+shared library which uses a name server--but has not installed a
+similiar version of the unshared library which Emacs uses.
+
+The result is that most programs, using the shared library, work with
+the nameserver, but Emacs does not.
+
+The fix is to install an unshared library that corresponds to what you
+installed in the shared library, and then relink Emacs.
+
+* On a Sun running SunOS 4.1.1, you get this error message from GNU ld:
+
+    /lib/libc.a(_Q_sub.o): Undefined symbol __Q_get_rp_rd referenced from text segment 
+
+The problem is in the Sun shared C library, not in GNU ld.
+
+The solution is to install Patch-ID# 100267-03 from Sun.
+
+* Self documentation messages are garbled.
+
+This means that the file `etc/DOC-...' doesn't properly correspond
+with the Emacs executable.  Redumping Emacs and then installing the
+corresponding pair of files should fix the problem.
+
+* M-x shell immediately responds "Process shell exited abnormally with code 1".
+
+This is often due to inability to run the program `env'.
+This should be in the `etc' subdirectory of the directory
+where Emacs is installed, and it should be marked executable.
+
+* Trouble using ptys on AIX.
+
+People often instll the pty devices on AIX incorrectly.
+Use `smit pty' to reinstall them properly.
+
+* Shell mode on HP/UX gives the message, "`tty`: Ambiguous".
+
+christos@theory.tn.cornell.edu says:
+
+The problem is that in your .cshrc you have something that tries to
+execute `tty`. If you are not running the shell on a real tty then 
+tty will print "not a tty". Csh expects one word in some places, 
+but tty is giving it back 3.
+
+The solution is to add a pair of quotes around `tty` to make it a single
+word: 
+
+if (`tty` == "/dev/console") 
+
+should be changed to:
+
+if ("`tty`" == "/dev/console") 
+
+Even better, move things that set up terminal sections out of .cshrc
+and into .login.
+
+* Using X Windows, control-shift-leftbutton makes Emacs hang.
+
+Use the shell command `xset bc' to make the old X Menu package work.
+
+* Emacs running under X Windows does not handle mouse clicks.
+* `emacs -geometry 80x20' finds a file named `80x20'.
+
+One cause of such problems is having (setq term-file-prefix nil) in
+your .emacs file.
+
+* Emacs starts in a directory other than the one that is current in the shell.
+
+If the PWD environment variable exists, Emacs uses this variable as
+the initial working directory.
+
+Some shells automatically update this variable, while other shells fail
+to do so.  If you use two such shells in combination, the variable can
+end up wrong.  This confuses Emacs.
+
+The solution is to put something in the start-up file for the shell
+that does not update PWD, to get rid of that environment variable.
+For example, in csh, use `unsetenv PWD'.
+
+* Emacs gets error message from linker on Sun.
+
+If the error message says that a symbol such as `f68881_used' or
+`ffpa_used' or `start_float' is undefined, this probably indicates
+that you have compiled some libraries, such as the X libraries, 
+with a floating point option other than the default.
+
+It's not terribly hard to make this work with small changes in
+crt0.c together with linking with Fcrt1.o, Wcrt1.o or Mcrt1.o.
+However, the easiest approach is to build Xlib with the default
+floating point option: to decide at run time what hardware is
+available.
+
 * Emacs fails to get default settings from X Windows server.
 
 The X library in X11R4 has a bug; it interchanges the 2nd and 3rd
@@ -69,21 +169,6 @@ On a Sun, running Emacs on one machine with the X server on another
 may not work if you have used the unshared system libraries.  This
 is because the unshared libraries fail to use YP for host name lookup.
 As a result, the host name you specify may not be recognized.
-
-* Copying text between Emacs and Xterm windows fails in X11R3 or X11R4.
-
-According to Thomas Narten:
-Most X clients now use selections instead of (well, superceding) cut buffers.
-If there is a selection around, Xterms will use that instead of the cut
-buffer.  Emacs doesn't know about selections, but you can convince Xterm to
-always use the cut buffer instead of selections by adding this to you
-.Xdefaults: 
-
-! emacs only copies to cut buffer 0.  xterm by default 
-! wants to paste from the PRIMARY selection 
-XTerm*VT100.Translations: #override ~Meta <Btn2Up>: insert-selection(CUT_BUFFER0)
-
-(Emacs 19 has been changed to use selections.)
 
 * Watch out for .emacs files and EMACSLOADPATH environment vars
 
@@ -255,6 +340,7 @@ you may need to make `movemail' setgid to a suitable group such as
 	chmod 2755 movemail
 
 * Emacs won't work with X-windows if the value of DISPLAY is HOSTNAME:0.
+* GNUs can't make contact with the specified host for nntp.
 
 Some people have found that Emacs was unable to connect to the local
 host by name, as in DISPLAY=prep:0 if you are running on prep, but
@@ -271,6 +357,23 @@ could handle DISPLAY=unix:0.  Here is what tale@rpi.edu said:
     The result of all of this (with some speculation) was that we rebuilt
     X and then rebuilt Emacs with the new libraries.  Works as it should
     now.  Hoorah.
+
+If you have already installed the name resolver in the file libresolv.a,
+then you need to compile Emacs to use that library.  The easiest way to
+do this is to add to config.h a definition of LIBS_SYSTEM, LIBS_MACHINE
+or LIB_STANDARD which uses -lresolv.  Watch out!  If you redefine a macro
+that is already in use in your configuration to supply some other libraries,
+be careful not to lose the others.
+
+Thus, you could start by adding this to config.h:
+
+#define LIBS_SYSTEM -lresolv
+
+Then if this gives you an error for redefining a macro, and you see that
+the s- file defines LIBS_SYSTEM as -lfoo -lbar, you could change config.h
+again to say this:
+
+#define LIBS_SYSTEM -lresolv -lfoo -lbar
 
 * Emacs spontaneously displays "I-search: " at the bottom of the screen.
 
@@ -373,6 +476,22 @@ flow control, as described in the preceding section.
 If that line of approach is not successful, map some other characters
 into C-s and C-q using keyboard-translate-table.  The example above
 shows how to do this with C-^ and C-\.
+
+* Control-S and Control-Q commands are ignored completely on a net connection.
+
+Some versions of rlogin (and possibly telnet) do not pass flow
+control characters to the remote system to which they connect.
+On such systems, emacs on the remote system cannot disable flow
+control on the local system.
+
+One way to cure this is to disable flow control on the local host
+(the one running rlogin, not the one running rlogind) using the
+stty command, before starting the rlogin process.  On many systems,
+"stty start u stop u" will do this.
+
+Some versions of tcsh will prevent even this from working.  One way
+around this is to start another shell before starting rlogin, and
+issue the stty command to disable flow control from that shell.
 
 * Screen is updated wrong, but only on one kind of terminal.
 

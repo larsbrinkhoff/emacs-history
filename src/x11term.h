@@ -3,15 +3,11 @@
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 #include <X11/Xutil.h>
-#include <X11/X10.h>
+#include "emacssignal.h"
 
 #define XMOUSEBUFSIZE 64
 
-#ifndef sigmask
-#define sigmask(no) (1L << ((no) - 1))
-#endif
-
-#define BLOCK_INPUT_DECLARE() int BLOCK_INPUT_mask
+#define BLOCK_INPUT_DECLARE() SIGMASKTYPE BLOCK_INPUT_mask
 #ifdef SIGIO
 #define BLOCK_INPUT() BLOCK_INPUT_mask = sigblock (sigmask (SIGIO))
 #define UNBLOCK_INPUT() sigsetmask (BLOCK_INPUT_mask)

@@ -1,3 +1,11 @@
+Sun Oct  6 12:07:49 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* texindex.c: Include types.h, fcntl.h.
+
+Fri Feb 22 12:39:44 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* getopt.c, getopt1.c, getopt.h, Makefile: New files.
+
 Thu Jan 24 12:41:33 1991  Richard Stallman  (rms at mole.ai.mit.edu)
 
 	* texinfo.tex: Delete spurious character at beginning.

@@ -1,7 +1,7 @@
 /* $Header: Create.c,v 1.14 88/02/02 19:02:31 jim Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
-#include <X11/copyright.h>
+#include "copyright.h"
 
 /*
  * XMenu:	MIT Project Athena, X Window system menu package

@@ -16,3 +16,7 @@
 #define HAVE_TIMEVAL
 #define USE_UTIME
 */
+
+/* This is said to be needed as a result of having _insque rather
+   than insque in -loldX.  This may not always be the right thing.  */
+#define WRONG_NAME_INSQUE

@@ -394,9 +394,11 @@ does not change the local values.")
       {
 	mask = *(int *)(offset + (char *) &buffer_local_flags);
 	if (mask == -1 || (buf->local_var_flags & mask))
-	  val = Fcons (Fcons (*(Lisp_Object *)(offset + (char *)&buffer_local_symbols),
-			      *(Lisp_Object *)(offset + (char *)buf)),
-		       val);
+	  if (XTYPE (*(Lisp_Object *)(offset + (char *)&buffer_local_symbols))
+	      == Lisp_Symbol)
+	    val = Fcons (Fcons (*(Lisp_Object *)(offset + (char *)&buffer_local_symbols),
+				*(Lisp_Object *)(offset + (char *)buf)),
+			 val);
       }
   }
   return (val);
@@ -464,8 +466,12 @@ DEFUN ("rename-buffer", Frename_buffer, Srename_buffer, 1, 1,
   if (!NULL (tem))
     error ("Buffer name \"%s\" is in use", XSTRING (name)->data);
 
-  current_buffer->name = name;
   XSET (buf, Lisp_Buffer, current_buffer);
+  tem = Fmemq (buf, Vminibuffer_list);
+  if (!NULL (tem))
+    error ("Cannot rename a minibuffer");
+
+  current_buffer->name = name;
   Fsetcar (Frassq (buf, Vbuffer_alist), name);
   if (NULL (current_buffer->filename) && !NULL (current_buffer->auto_save_file_name))
     call0 (intern ("rename-auto-save-file"));
@@ -746,7 +752,8 @@ DEFUN ("barf-if-buffer-read-only", Fbarf_if_buffer_read_only,
 DEFUN ("bury-buffer", Fbury_buffer, Sbury_buffer, 0, 1, "",
   "Put BUFFER at the end of the list of all buffers.\n\
 There it is the least likely candidate for other-buffer to return;\n\
-thus, the least likely buffer for \\[switch-to-buffer] to select by default.")
+thus, the least likely buffer for \\[switch-to-buffer] to select by default.\n\
+BUFFER is also removed from the selected window if it was displayed there.")
   (buf)
      register Lisp_Object buf;
 {
@@ -776,6 +783,9 @@ thus, the least likely buffer for \\[switch-to-buffer] to select by default.")
 }
 
 extern int last_known_column_point;
+
+/* Set the current buffer to B, which is a C pointer,
+   rather than a Lisp object.  */
 
 set_buffer_internal (b)
      register struct buffer *b;

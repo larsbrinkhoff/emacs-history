@@ -1,3 +1,63 @@
+Sat Jan 25 16:20:41 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* env.c: Include errno.h.
+
+Sun Jan 19 11:29:00 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* etags-vmslib.c (fn_exp): Add type cast.
+
+Tue Dec 31 16:16:05 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* server.c: Include sys/signal.h before config.h.
+
+Sat Dec  7 17:04:17 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* movemail.c: Copied from Emacs 19.
+	(pfatal_and_delete): New function.
+	(main, popmail): Use it.
+	(popmail): Close output before deleting messages.
+	Check for error on close and on fsync.
+	Use `fatal' where appropriate.
+	(main): Remove (void).
+	(MAIL_USE_MMDF): New compilation flag
+	(main): Report failure of flock.
+
+Fri Oct 25 14:43:33 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* server.c (msgcatch): Declare return type void.
+
+	* make-docfile.c: Fix comment on #endif.
+
+Tue Sep 17 18:15:42 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* etags.c (main): Don't make actions depend on programmer name.
+
+Sat Sep 14 01:42:39 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (C_entries): Clear tydef and next_token_is_func at start.
+	(consider_token): Move next_token_is_func to global.
+
+Mon Sep  2 16:22:04 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* server.c, emacsclient.c [not SERVER_HOME_DIR]:
+	Include host name in the name of the socket.
+
+Tue Jul 30 17:03:41 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* wakeup.c: Terminate if parent goes away.
+
+Fri Mar 29 19:00:10 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* server.c [USG]: Terminate if msgrcv fails.
+
+Sun Mar  3 22:05:52 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* server.c [BSD]: Check for errors on stdin after scanf.
+
+Tue Feb 26 15:55:07 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* etags.c (TEX_mode): Skip comment line at beg of file.
+
 Mon Dec 31 17:52:55 1990  Richard Stallman  (rms at mole.ai.mit.edu)
 
 	* refcard.tex: Change am fonts to cm.

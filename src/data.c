@@ -27,6 +27,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "buffer.h"
 #endif
 
+#include "emacssignal.h"
+
 Lisp_Object Qnil, Qt, Qquote, Qlambda, Qsubr, Qunbound;
 Lisp_Object Qerror_conditions, Qerror_message, Qtop_level;
 Lisp_Object Qerror, Qquit, Qwrong_type_argument, Qargs_out_of_range;
@@ -651,16 +653,16 @@ DEFUN ("set", Fset, Sset, 2, 2, 0,
 	current_buffer->local_var_flags |= mask;
     }
 
-  if (XTYPE (valcontents) == Lisp_Buffer_Local_Value ||
-      XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
+  if (XTYPE (valcontents) == Lisp_Buffer_Local_Value
+      || XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
     {
       /* valcontents is a list
         (REALVALUE BUFFER CURRENT-ALIST-ELEMENT . DEFAULT-VALUE)).
 
         CURRENT-ALIST-ELEMENT is a pointer to an element of BUFFER's
 	local_var_alist, that being the element whose car is this variable.
-        Or it can be a pointer to the (CURRENT-ALIST-ELEMENT . DEFAULT-VALUE), if BUFFER
-	does not have an element in its alist for this variable.
+        Or it can be a pointer to the (CURRENT-ALIST-ELEMENT . DEFAULT-VALUE),
+	if BUFFER does not have an element in its alist for this variable.
 
 	If the current buffer is not BUFFER, we store the current REALVALUE value into
 	CURRENT-ALIST-ELEMENT, then find the appropriate alist element for
@@ -669,28 +671,50 @@ DEFUN ("set", Fset, Sset, 2, 2, 0,
 	Note that REALVALUE can be a forwarding pointer. */
 
       current_alist_element = XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car;
-      if (current_buffer != ((XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
-		     ? XBUFFER (XCONS (XCONS (valcontents)->cdr)->car)
-		     : XBUFFER (XCONS (current_alist_element)->car)))
+      if (current_buffer
+	  != ((XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
+	      /* If the current buffer is already cached,
+		 we don't need to change that fact.  */
+	      ? XBUFFER (XCONS (XCONS (valcontents)->cdr)->car)
+	      /* If setting the variable should make it local,
+		 it's not enough if the current buffer is already cached.
+		 We need to make sure it has a local value for the var.  */
+	      : XBUFFER (XCONS (current_alist_element)->car)))
 	{
-          Fsetcdr (current_alist_element, do_symval_forwarding (XCONS (valcontents)->car));
+	  /* "Swap out" the buffer that was previously cached.  */
+          Fsetcdr (current_alist_element,
+		   do_symval_forwarding (XCONS (valcontents)->car));
 
+	  /* Encache the current buffer.  */
 	  tem1 = Fassq (sym, current_buffer->local_var_alist);
 	  if (NULL (tem1))
-	    /* This buffer sees the default value still.
-	       If type is Lisp_Some_Buffer_Local_Value, set the default value.
-	       If type is Lisp_Buffer_Local_Value, give this buffer a local value
-		and set that.  */
-	    if (XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
-	      tem1 = XCONS (XCONS (valcontents)->cdr)->cdr;
-	    else
-	      {
-		tem1 = Fcons (sym, Fcdr (current_alist_element));
-		current_buffer->local_var_alist = Fcons (tem1, current_buffer->local_var_alist);
-	      }
+	    {
+	      /* This buffer sees the default value still.
+		 If type is Lisp_Some_Buffer_Local_Value, set the default value.
+		 If type is Lisp_Buffer_Local_Value, give this buffer a local value
+		 and set that.  */
+	      if (XTYPE (valcontents) == Lisp_Some_Buffer_Local_Value)
+		tem1 = XCONS (XCONS (valcontents)->cdr)->cdr;
+	      else
+		{
+		  tem1 = Fcons (sym, Fcdr (current_alist_element));
+		  current_buffer->local_var_alist = Fcons (tem1, current_buffer->local_var_alist);
+		}
+	    }
+	  /* Set the CURRENT-ALIST-ELEMENT slot to fit this buffer.  */
+	  current_alist_element = tem1;
 	  XCONS (XCONS (XCONS (valcontents)->cdr)->cdr)->car = tem1;
-	  XSET (XCONS (XCONS (valcontents)->cdr)->car, Lisp_Buffer, current_buffer);
+	  /* Record this buffer in the BUFFER slot.  */
+	  XSET (XCONS (XCONS (valcontents)->cdr)->car,
+		Lisp_Buffer, current_buffer);
+	  /* Now the CURRENT-ALIST-ELEMENT slot in VALCONTENTS
+	     is correct for the current buffer.  */
 	}
+      /* If the current buffer sees the default value,
+	 set the default value in the CURRENT-ALIST-ELEMENT right now.
+	 Don't wait till some other buffer gets cached.  */
+      if (XCONS (XCONS (valcontents)->cdr)->cdr == current_alist_element)
+	XCONS (current_alist_element)->cdr = newval;
       valcontents = XCONS (valcontents)->car;
     }
   store_symval_forwarding (sym, valcontents, newval);
@@ -722,8 +746,16 @@ for this variable.")
 #endif
       register int mask = *(int *) (idx + (char *) &buffer_local_flags);
 
+      if (mask < 0)
+	/* -1 means the variable is always local in every buffer.
+	   Set the default value, but not any of the local values.  */
+	*(Lisp_Object *)(idx + (char *) &buffer_defaults) = value;
+
       if (mask > 0)
 	{
+	  /* Positive means a value that is local in some buffers.
+	     Set the default value, and also the corresponding slot
+	     in buffers where the variable is not local.  */
 	  *(Lisp_Object *)(idx + (char *) &buffer_defaults) = value;
 	  for (b = all_buffers; b; b = b->next)
 	    if (!(b->local_var_flags & mask))
@@ -1069,8 +1101,8 @@ DEFUN ("int-to-string", Fint_to_string, Sint_to_string, 1, 1, 0,
 
 DEFUN ("string-to-int", Fstring_to_int, Sstring_to_int, 1, 1, 0,
   "Convert STRING to an integer by parsing it as a decimal number.")
-  (str, flag)
-     register Lisp_Object str, flag;
+  (str)
+     register Lisp_Object str;
 {
   CHECK_STRING (str, 0);
   return make_number (atoi (XSTRING (str)->data));
@@ -1564,7 +1596,7 @@ arith_error (signo)
 #ifdef BSD4_1
   sigrelse (SIGFPE);
 #else /* not BSD4_1 */
-  sigsetmask (0);
+  sigsetmask (SIGEMPTYMASK);
 #endif /* not BSD4_1 */
 
   Fsignal (Qarith_error, Qnil);

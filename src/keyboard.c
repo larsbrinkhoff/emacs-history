@@ -48,6 +48,8 @@ extern int errno;
 #endif /* not VMS */
 #endif /* not USG */
 
+#include "emacssignal.h"
+
 /* Allow m- file to inhibit use of FIONREAD.  */
 #ifdef BROKEN_FIONREAD
 #undef FIONREAD
@@ -81,7 +83,7 @@ int total_keys;		/* Total number of elements stored into recent_keys */
 char recent_keys[100];	/* Holds last 100 keystrokes */
 
 /* Buffer holding the key that invoked the current command.  */
-char *this_command_keys;
+unsigned char *this_command_keys;
 int this_command_key_count;	/* Size in use.  */
 int this_command_keys_size;	/* Size allocated.  */
 
@@ -184,7 +186,7 @@ int kbd_count;
 unsigned char *kbd_ptr;
 
 /* Address (if not 0) of word to zero out
- if a SIGIO interrupt happens */
+   if a SIGIO interrupt happens */
 long *input_available_clear_word;
 
 /* Nonzero means use SIGIO interrupts; zero means use CBREAK mode.
@@ -201,10 +203,10 @@ int interrupts_deferred;
 int flow_control;
 
 #ifndef BSD4_1
-#define sigfree() sigsetmask (0)
-#define sigholdx(sig) sigsetmask (1 << ((sig) - 1))
-#define sigblockx(sig) sigblock (1 << ((sig) - 1))
-#define sigunblockx(sig) sigblock (0)
+#define sigfree() sigsetmask (SIGEMPTYMASK)
+#define sigholdx(sig) sigsetmask (sigmask (sig))
+#define sigblockx(sig) sigblock (sigmask (sig))
+#define sigunblockx(sig) sigblock (SIGEMPTYMASK)
 #define sigpausex(sig) sigpause (0)
 #endif /* not BSD4_1 */
 
@@ -215,10 +217,6 @@ int flow_control;
 #define sigunblockx(sig) sigrelse (sig)
 #define sigpausex(sig) sigpause (sig)
 #endif /* BSD4_1 */
-
-#ifndef sigmask
-#define sigmask(no) (1L << ((no) - 1))
-#endif
 
 /* We are unable to use interrupts if FIONREAD is not available,
    so flush SIGIO so we won't try. */
@@ -288,11 +286,13 @@ echo_char (c)
       if (ptr - echobuf > sizeof echobuf - 6)
 	return;
 
+      if (echoptr != echobuf)
+	*ptr++ = ' ';
+
       ptr = push_key_description (c, ptr);
-      *ptr++ = ' ';
       if (echoptr == echobuf && c == help_char)
 	{
-	  strcpy (ptr, "(Type ? for further options) ");
+	  strcpy (ptr, " (Type ? for further options)");
 	  ptr += strlen (ptr);
 	}
 
@@ -595,7 +595,11 @@ command_loop_1 ()
   Vprefix_arg = Qnil;
   waiting_for_input = 0;
   cancel_echoing ();
-  last_command = Qt;
+
+  /* Don't clear out last_command at the beginning of a macro.  */
+  if (NULL (Vexecuting_macro)
+      || XTYPE (Vexecuting_macro) != Lisp_String)
+    last_command = Qt;
   nonundocount = 0;
   no_redisplay = 0;
   this_command_key_count = 0;
@@ -771,9 +775,10 @@ command_loop_1 ()
 	  if (NULL (Vprefix_arg))
 	    Fundo_boundary ();
 	  Fcommand_execute (cmd, Qnil);
-
-	directly_done: ;
 	}
+      /* This label logically belongs inside the above group,
+	 but moving it is said to avoid a compiler bug on SCO V.3.2v2.  */
+    directly_done: ;
 
       if (NULL (Vprefix_arg))
 	{
@@ -969,6 +974,10 @@ read_command_char (commandflag)
 
   c = kbd_buffer_read_command_char ();
 
+  /* Terminate Emacs in batch mode if at eof.  */
+  if (noninteractive && c < 0)
+    Fkill_emacs (make_number (1));
+
  non_reread:
 
   bcopy (save_jump, getcjmp, sizeof getcjmp);
@@ -1010,7 +1019,8 @@ read_command_char (commandflag)
     {
       this_command_keys_size *= 2;
       this_command_keys
-	= (char *) xrealloc (this_command_keys, this_command_keys_size);
+	= (unsigned char *) xrealloc (this_command_keys,
+				      this_command_keys_size);
     }
   this_command_keys[this_command_key_count++] = c;
 
@@ -1201,7 +1211,7 @@ get_input_pending (addr)
     /* It seems there is a timing error such that a SIGIO can be handled here
        and cause kbd_count to become nonzero even though raising of SIGIO
        has already been turned off.  */
-    int mask = sigblock (sigmask (SIGIO));
+    SIGMASKTYPE mask = sigblock (sigmask (SIGIO));
     if (kbd_count == 0)
       read_avail_input (*addr);
     sigsetmask (mask);
@@ -1268,7 +1278,12 @@ read_avail_input (nread)
 
 #else /* no FIONREAD */
 #ifdef USG
-  fcntl (fileno (stdin), F_SETFL, O_NDELAY);
+#ifdef SYSV_STREAMS
+  /* When talking to Xwindows using streams, something gets screwed up
+     if Emacs alters this flag in the descriptor.  */
+  if (!read_socket_hook)
+#endif
+    fcntl (fileno (stdin), F_SETFL, O_NDELAY);
   if (read_socket_hook)
     {
       nread = (*read_socket_hook) (0, buf, sizeof buf);
@@ -1277,13 +1292,24 @@ read_avail_input (nread)
     {
       nread = read (fileno (stdin), buf, sizeof buf);
     }
+#ifdef AIX
+  /* The kernel sometimes fails to deliver SIGHUP for ptys.
+     This looks incorrect, but it isn't, because _BSD causes
+     O_NDELAY to be defined in fcntl.h as O_NONBLOCK,
+     and that causes a value other than 0 when there is no input.  */
+  if (nread == 0)
+    kill (SIGHUP, 0);
+#endif
 #ifdef EBADSLT
   if (nread == -1 && (errno == EAGAIN || errno == EBADSLT))
 #else
   if (nread == -1 && errno == EAGAIN)
 #endif
     nread = 0;
-  fcntl (fileno (stdin), F_SETFL, 0);
+#ifdef SYSV_STREAMS
+  if (!read_socket_hook)
+#endif
+    fcntl (fileno (stdin), F_SETFL, 0);
 #else /* not USG */
   you lose
 #endif /* not USG */
@@ -1714,8 +1740,8 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
   if (this_command_keys_size < XSTRING (function)->size)
     {
       this_command_keys_size += XSTRING (function)->size;
-      this_command_keys = (char *) xrealloc (this_command_keys,
-					      this_command_keys_size);
+      this_command_keys = (unsigned char *) xrealloc (this_command_keys,
+						      this_command_keys_size);
     }
   bcopy (XSTRING (function)->data, this_command_keys,
 	 XSTRING (function)->size + 1);
@@ -1784,12 +1810,19 @@ DEFUN ("recursion-depth", Frecursion_depth, Srecursion_depth, 0, 0, 0,
 
 DEFUN ("open-dribble-file", Fopen_dribble_file, Sopen_dribble_file, 1, 1,
   "FOpen dribble file: ",
-  "Start writing all keyboard characters to FILE.")
+  "Start writing all keyboard characters to FILE.\n\
+Use nil as an argument to close the dribble file.")
   (file)
      Lisp_Object file;
 {
-  file = Fexpand_file_name (file, Qnil);
-  dribble = fopen (XSTRING (file)->data, "w");
+  if (dribble != 0)
+    fclose (dribble);
+  dribble = 0;
+  if (!NULL (file))
+    {
+      file = Fexpand_file_name (file, Qnil);
+      dribble = fopen (XSTRING (file)->data, "w");
+    }
   return Qnil;
 }
 
@@ -1856,7 +1889,7 @@ Otherwise, suspend normally and after resumption call\n\
      with a window system; but suspend should be disabled in that case.  */
   get_screen_size (&width, &height);
   if (width != old_width || height != old_height)
-    change_screen_size (height, width, 0);
+    change_screen_size (height, width, 0, 0, 0);
 
   /* Call value of suspend-resume-hook
      if it is bound and value is non-nil.  */
@@ -2083,7 +2116,7 @@ Note that the arguments will change incompatibly in version 19.")
 init_keyboard ()
 {
   this_command_keys_size = 40;
-  this_command_keys = (char *) xmalloc (40);
+  this_command_keys = (unsigned char *) xmalloc (40);
 
   command_loop_level = -1;	/* Correct, before outermost invocation.  */
   quit_char = Ctl ('G');
@@ -2098,15 +2131,15 @@ init_keyboard ()
   if (!noninteractive)
     {
       signal (SIGINT, interrupt_signal);
-#ifdef USG
-      /* On USG systems, C-g is set up for both SIGINT and SIGQUIT
+#ifdef HAVE_TERMIO
+      /* On  systems with TERMIO, C-g is set up for both SIGINT and SIGQUIT
 	 and we can't tell which one it will give us.  */
       signal (SIGQUIT, interrupt_signal);
-#endif /* USG */
+#endif /* HAVE_TERMIO */
 /* Note SIGIO has been undef'd if FIONREAD is missing.  */
 #ifdef SIGIO
       signal (SIGIO, input_available_signal);
-#endif SIGIO
+#endif /* SIGIO */
     }
 
 /* Use interrupt input by default, if it works and noninterrupt input
@@ -2140,9 +2173,6 @@ syms_of_keyboard ()
 
   Qbackward_char = intern ("backward-char");
   staticpro (&Qbackward_char);
-
-  Qtop_level = intern ("top-level");
-  staticpro (&Qtop_level);
 
   Qdisabled = intern ("disabled");
   staticpro (&Qdisabled);

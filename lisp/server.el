@@ -110,6 +110,9 @@ Prefix arg means just kill any existing server communications subprocess."
 	(set-process-sentinel server-process nil)
 	(condition-case () (delete-process server-process) (error nil))))
   (condition-case () (delete-file "~/.emacs_server") (error nil))
+  (condition-case ()
+      (delete-file (format "/tmp/esrv%d-%s" (user-uid) (system-name)))
+    (error nil))
   ;; If we already had a server, clear out associated status.
   (while server-clients
     (let ((buffer (nth 1 (car server-clients))))
@@ -118,7 +121,8 @@ Prefix arg means just kill any existing server communications subprocess."
       nil
     (if server-process
 	(server-log (message "Restarting server")))
-    (setq server-process (start-process "server" nil server-program))
+    (let ((process-connection-type nil))
+      (setq server-process (start-process "server" nil server-program)))
     (set-process-sentinel server-process 'server-sentinel)
     (set-process-filter server-process 'server-process-filter)
     (process-kill-without-query server-process)))

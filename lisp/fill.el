@@ -89,16 +89,26 @@ From program, pass args FROM, TO and JUSTIFY-FLAG."
 	(move-to-column (1+ fill-column))
 	(if (eobp)
 	    nil
+	  ;; Move back to start of word.
 	  (skip-chars-backward "^ \n")
 	  (if (if (zerop prefixcol) (bolp) (>= prefixcol (current-column)))
+	      ;; Move back over whitespace before the word.
 	      (skip-chars-forward "^ \n")
+	    ;; Normally, move back over the single space between the words.
 	    (forward-char -1)))
-	(delete-horizontal-space)
+	;; Replace all whitespace here with one newline.
+	;; Insert before deleting, so we don't forget which side of
+	;; the whitespace point or markers used to be on.
+	(skip-chars-backward " ")
 	(insert ?\n)
+	(delete-horizontal-space)
+	;; Insert the fill prefix at start of each line.
+	;; Set prefixcol so whitespace in the prefix won't get lost.
 	(and (not (eobp)) fill-prefix (not (equal fill-prefix ""))
 	     (progn
 	       (insert fill-prefix)
 	       (setq prefixcol (current-column))))
+	;; Justify the line just ended, if desired.
 	(and justify-flag (not (eobp))
 	     (progn
 	       (forward-line -1)
@@ -138,10 +148,11 @@ means justify as well."
   (interactive)
   (save-excursion
    (save-restriction
-    (let (ncols beg)
+    (let (ncols nwhites beg indent flags)
       (beginning-of-line)
       (forward-char (length fill-prefix))
       (skip-chars-forward " \t")
+      (setq indent (current-column))
       (setq beg (point))
       (end-of-line)
       (narrow-to-region beg (point))
@@ -159,20 +170,39 @@ means justify as well."
 	(forward-char -1)
 	(insert ? ))
       (goto-char (point-max))
-      (setq ncols (- fill-column (current-column)))
-      (if (search-backward " " nil t)
-	  (while (> ncols 0)
-	    (let ((nmove (+ 3 (% (random) 3))))
-	      (while (> nmove 0)
-		(or (search-backward " " nil t)
+      ;; Note that the buffer bounds start after the indentation,
+      ;; so the columns counted by INDENT don't appear in (current-column).
+      (setq ncols (- fill-column (current-column) indent))
+      ;; Count word-boundaries in the line.
+      (setq nwhites 0)
+      (while (search-backward " " nil t)
+	(skip-chars-backward " ")
+	(setq nwhites (1+ nwhites)))
+      (if (> nwhites 0)
+	  (progn
+	    ;; Add space uniformly as far as we can.
+	    (goto-char (point-max))
+	    (while (search-backward " " nil t)
+	      (insert-char ?\  (/ ncols nwhites))
+	      (skip-chars-backward " "))
+	    ;; Make a bit vector for where to add the rest.
+	    (setq ncols (% ncols nwhites))
+	    (setq flags (make-string nwhites 0))
+	    ;; Randomly set NCOLS different bits.
+	    (while (> ncols 0)
+	      (let ((where (% (logand 262143 (random)) nwhites)))
+		(or (> (aref flags where) 0)
 		    (progn
-		     (goto-char (point-max))
-		     (search-backward " ")))
-		(skip-chars-backward " ")
-		(setq nmove (1- nmove))))
-	    (insert " ")
-	    (skip-chars-backward " ")
-	    (setq ncols (1- ncols))))))))
+		      (aset flags where 1)
+		      (setq ncols (1- ncols))))))
+	    ;; Insert a space at the boundaries flagged in the vector.
+	    (goto-char (point-max))
+	    (let ((where 0))
+	      (while (search-backward " " nil t)
+		(if (> (aref flags where) 0)
+		    (insert " "))
+		(setq where (1+ where))
+		(skip-chars-backward " ")))))))))
 
 (defun fill-individual-paragraphs (min max &optional justifyp mailp)
   "Fill each paragraph in region according to its individual fill prefix.
@@ -181,21 +211,41 @@ Optional third and fourth arguments JUSTIFY-FLAG and MAIL-FLAG:
 JUSTIFY-FLAG to justify paragraphs (prefix arg),
 MAIL-FLAG for a mail message, i. e. don't fill header lines."
   (interactive "r\nP")
-  (let (fill-prefix)
-    (save-restriction
-      (save-excursion
-	(narrow-to-region min max)
-	(goto-char (point-min))
-	(while (progn
-		 (skip-chars-forward " \t\n")
-		 (not (eobp)))
-	  (setq fill-prefix (buffer-substring (point) (progn (beginning-of-line) (point))))
-	  (let ((fin (save-excursion (forward-paragraph) (point)))
-		(start (point)))
-	    (if mailp
-		(while (re-search-forward "^[ \t]*[^ \t\n]*:" fin t)
-		  (forward-line 1)))
-	    (cond ((= start (point))
-		   (fill-region-as-paragraph (point) fin justifyp)
-		   (goto-char fin)))))))))
+  (save-restriction
+    (save-excursion
+      (goto-char min)
+      (beginning-of-line)
+      (if mailp 
+	  (while (looking-at "[^ \t\n]*:")
+	    (forward-line 1)))
+      (narrow-to-region (point) max)
+      ;; Loop over paragraphs.
+      (while (progn (skip-chars-forward " \t\n") (not (eobp)))
+	(beginning-of-line)
+	(let ((start (point))
+	      fill-prefix fill-prefix-regexp)
+	  ;; Find end of paragraph, and compute the smallest fill-prefix
+	  ;; that fits all the lines in this paragraph.
+	  (while (progn
+		   ;; Update the fill-prefix on the first line
+		   ;; and whenever the prefix good so far is too long.
+		   (if (not (and fill-prefix
+				 (looking-at fill-prefix-regexp)))
+		       (setq fill-prefix
+			     (buffer-substring (point)
+					       (save-excursion (skip-chars-forward " \t") (point)))
+			     fill-prefix-regexp
+			     (regexp-quote fill-prefix)))
+		   (forward-line 1)
+		   ;; Now stop the loop if end of paragraph.
+		   (and (not (eobp))
+			(not (looking-at paragraph-separate))
+			(save-excursion
+			  (not (and (looking-at fill-prefix-regexp)
+				    (progn (forward-char (length fill-prefix))
+					   (looking-at paragraph-separate))))))))
+	  ;; Fill this paragraph, but don't add a newline at the end.
+	  (let ((had-newline (bolp)))
+	    (fill-region-as-paragraph start (point) justifyp)
+	    (or had-newline (delete-char -1))))))))
 

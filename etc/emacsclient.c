@@ -61,6 +61,7 @@ main (argc, argv)
      int argc;
      char **argv;
 {
+  char system_name[32];
   int s, i;
   FILE *out;
   struct sockaddr_un server;
@@ -88,7 +89,9 @@ main (argc, argv)
     }
   server.sun_family = AF_UNIX;
 #ifndef SERVER_HOME_DIR
-  (void) sprintf (server.sun_path, "/tmp/esrv%d", geteuid());
+  gethostname (system_name, sizeof (system_name));
+  sprintf (server.sun_path, "/tmp/esrv%d-%s", geteuid (), system_name);
+
   if (stat (server.sun_path, &statbfr) == -1)
     {
       perror ("stat");

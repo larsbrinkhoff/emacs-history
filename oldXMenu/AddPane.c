@@ -1,4 +1,4 @@
-#include <X11/copyright.h>
+#include "copyright.h"
 
 /* $Header: AddPane.c,v 1.3 87/12/20 12:03:52 rws Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/

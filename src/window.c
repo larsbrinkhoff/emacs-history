@@ -32,6 +32,11 @@ Lisp_Object Qwindowp;
 Lisp_Object Fnext_window (), Fdelete_window (), Fselect_window ();
 Lisp_Object Fset_window_buffer (), Fsplit_window (), Frecenter ();
 
+static void replace_window (), unshow_buffer ();
+static int save_window_save ();
+
+extern int minibuf_prompt_width;
+
 /* This is the window which displays the minibuffer.
 It is always the same window.  */
 
@@ -411,7 +416,7 @@ DEFUN ("delete-window", Fdelete_window, Sdelete_window, 0, 1, "",
 }
 
 /* Put replacement into the window structure in place of old. */
-static
+static void
 replace_window (old, replacement)
      Lisp_Object old, replacement;
 {
@@ -864,7 +869,7 @@ BUFFER can be a buffer or buffer name.")
 
 /* Record info on buffer window w is displaying
    when it is about to cease to display that buffer.  */
-static
+static void
 unshow_buffer (w)
      register struct window *w;
 {
@@ -884,7 +889,10 @@ unshow_buffer (w)
      is actually stored in that buffer, and the window's pointm isn't used.
      So don't clobber point in that buffer.  */
   if (! EQ (buf, XWINDOW (selected_window)->buffer))
-    BUF_PT (XBUFFER (buf)) = marker_position (w->pointm);
+    BUF_PT (XBUFFER (buf))
+      = clip_to_bounds (BUF_BEGV (XBUFFER (buf)),
+			marker_position (w->pointm),
+			BUF_ZV (XBUFFER (buf)));
 }
 
 DEFUN ("select-window", Fselect_window, Sselect_window, 1, 1, 0,
@@ -1310,10 +1318,16 @@ change_window_height (delta, widthflag)
 #undef CURSIZE
 
 
-static
-window_scroll (window, n)
+/* Scroll window WINDOW (a Lisp object) by N lines.
+   If NOERROR is 0, signal an error if that can't be done.
+   If NOERROR is nonzero, return Qnil if successful
+   and an error name otherwise.  */
+
+static Lisp_Object
+window_scroll (window, n, noerror)
      Lisp_Object window;
      int n;
+     int noerror;
 {
   register struct window *w = XWINDOW (window);
   register int opoint = point;
@@ -1343,7 +1357,11 @@ window_scroll (window, n)
   SET_PT (opoint);
 
   if (lose)
-    Fsignal (Qbeginning_of_buffer, Qnil);
+    {
+      if (noerror)
+	return Qbeginning_of_buffer;
+      Fsignal (Qbeginning_of_buffer, Qnil);
+    }
 
   if (pos < ZV)
     {
@@ -1362,9 +1380,14 @@ window_scroll (window, n)
 	  else
 	    Fvertical_motion (make_number (-1));
 	}
+      return Qnil;
     }
   else
-    Fsignal (Qend_of_buffer, Qnil);
+    {
+      if (!noerror)
+	Fsignal (Qend_of_buffer, Qnil);
+      return Qend_of_buffer;
+    }
 }
 
 scroll_command (n, direction)
@@ -1376,13 +1399,13 @@ scroll_command (n, direction)
 		   - next_screen_context_lines);
 
   if (NULL (n))
-    window_scroll (selected_window, defalt);
+    window_scroll (selected_window, defalt, 0);
   else if (EQ (n, Qminus))
-    window_scroll (selected_window, - defalt);
+    window_scroll (selected_window, - defalt, 0);
   else
     {
       n = Fprefix_numeric_value (n);
-      window_scroll (selected_window, XINT (n) * direction);
+      window_scroll (selected_window, XINT (n) * direction, 0);
     }
 }
 
@@ -1451,6 +1474,7 @@ When calling from a program, supply a number as argument or nil.")
   register int ht;
   register int opoint = point;
   register struct window *w;
+  Lisp_Object result;
 
   if (EQ (selected_window, minibuf_window)
       && !NULL (Vminibuf_scroll_window))
@@ -1468,20 +1492,22 @@ When calling from a program, supply a number as argument or nil.")
   SET_PT (marker_position (w->pointm));
 
   if (NULL (n))
-    window_scroll (window, ht - next_screen_context_lines);
+    result = window_scroll (window, ht - next_screen_context_lines, 1);
   else if (EQ (n, Qminus))
-    window_scroll (window, next_screen_context_lines - ht);
+    result = window_scroll (window, next_screen_context_lines - ht, 1);
   else
     {
       if (XTYPE (n) == Lisp_Cons)
 	n = Fcar (n);
       CHECK_NUMBER (n, 0);
-      window_scroll (window, XINT (n));
+      result = window_scroll (window, XINT (n), 1);
     }
 
   Fset_marker (w->pointm, make_number (point), Qnil);
   set_buffer_internal (old);
   SET_PT (opoint);
+  if (!EQ (result, Qnil))
+    Fsignal (result, Qnil);    
   return Qnil;
 }
 
@@ -1636,7 +1662,7 @@ function for more information.")
   if (XFASTINT (data->screen_height) != screen_height
       || XFASTINT (data->screen_width) != screen_width)
     {
-      change_screen_size (data->screen_height, data->screen_width, 0);
+      change_screen_size (data->screen_height, data->screen_width, 0, 0, 0);
       screen_size_change = 1;
     }
 
@@ -1736,7 +1762,7 @@ function for more information.")
 
   /* Set the screen height to the value it had before this function.  */
   if (screen_size_change)
-    change_screen_size (previous_screen_height, previous_screen_width, 0);
+    change_screen_size (previous_screen_height, previous_screen_width, 0, 0, 0);
 
   Fselect_window (data->current_window);
   if (!NULL (new_current_buffer))
@@ -1835,9 +1861,15 @@ save_window_save (window, vector, i, maxwindow)
       p->hscroll = w->hscroll;
       if (!NULL (w->buffer))
 	{
-	  if (EQ (window, selected_window)
-	      && XBUFFER (w->buffer) == current_buffer)
-	    p->pointm = Fpoint_marker ();
+	  /* Save w's value of point in the window configuration.
+	     If w is the selected window, then get the value of point
+	     from the buffer; pointm is garbage in the selected window.  */
+	  if (EQ (window, selected_window))
+	    {
+	      p->pointm = Fmake_marker ();
+	      Fset_marker (p->pointm, BUF_PT (XBUFFER (w->buffer)),
+			   w->buffer);
+	    }
 	  else
 	    p->pointm = Fcopy_marker (w->pointm);
 
@@ -1898,8 +1930,8 @@ init_window_once ()
   extern Lisp_Object get_minibuffer ();
   register Lisp_Object root_window;
 
-  root_window = make_window (0);
-  minibuf_window = make_window (0);
+  root_window = make_window ();
+  minibuf_window = make_window ();
 
   XWINDOW (root_window)->next = minibuf_window;
   XWINDOW (minibuf_window)->prev = root_window;
@@ -1919,6 +1951,9 @@ init_window_once ()
   Fset_window_buffer (minibuf_window, get_minibuffer (0));
 
   selected_window = root_window;
+  /* Make sure this window seems more recently used than
+     a newly-created, never-selected window.  */
+  XFASTINT (XWINDOW (selected_window)->use_time) = ++window_select_count;
 }
 
 syms_of_window ()
@@ -1928,6 +1963,10 @@ syms_of_window ()
 
   /* Make sure all windows get marked */
   staticpro (&minibuf_window);
+
+  DEFVAR_INT ("minibuffer-prompt-width", &minibuf_prompt_width,
+    "Width of the prompt appearing at the start of the minibuffer window.\n\
+The value is meaningless when the minibuffer is not visible.");
 
   DEFVAR_LISP ("temp-buffer-show-hook", &Vtemp_buffer_show_hook,
     "Non-nil means call as function to display a help buffer.\n\

@@ -184,6 +184,7 @@ the user from the mailer."
     (unwind-protect
 	(save-excursion
 	  (set-buffer tembuf)
+	  (setq buffer-undo-list t)
 	  (erase-buffer)
 	  (insert-buffer-substring mailbuf)
 	  (goto-char (point-max))
@@ -258,6 +259,7 @@ the user from the mailer."
 (defun mail-do-fcc (header-end)
   (let (fcc-list
 	(rmailbuf (current-buffer))
+	timezone
 	(tembuf (generate-new-buffer " rmail output"))
 	(case-fold-search t))
     (save-excursion
@@ -273,8 +275,15 @@ the user from the mailer."
 		       (progn (forward-line 1) (point))))
       (set-buffer tembuf)
       (erase-buffer)
+      (call-process "date" nil t nil)
+      (end-of-line)
+      (forward-word -1)
+      (delete-region (1- (point)) (point-max))
+      (forward-word -1)
+      (setq timezone (buffer-substring (point) (point-max)))
+      (erase-buffer)
       (insert "\nFrom " (user-login-name) " "
-	      (current-time-string) "\n")
+	      (current-time-string) " " timezone "\n")
       (insert-buffer-substring rmailbuf)
       ;; Make sure messages are separated.
       (goto-char (point-max))

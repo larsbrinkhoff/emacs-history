@@ -2,7 +2,7 @@
 ;; into the standard slots in function-keymap where we can;
 ;; set up terminal-specific bindings where we must
 ;;
-;; by: Eric S. Raymond == {ihnp4,rutgers,seismo}!cbmvax!snark!eric
+;; by: Eric S. Raymond, eric@snark.thyrsus.com
 
 (require 'keypad)
 

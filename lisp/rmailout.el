@@ -67,9 +67,9 @@ buffer visiting that file."
 			  rmail-current-message)))
 	    ;; If MSG is non-nil, buffer is in RMAIL mode.
 	    (if msg
-		(progn (rmail-maybe-set-message-counters)
-		       (widen)
-		       (narrow-to-region (point-max) (point-max))))
+		(rmail-maybe-set-message-counters))
+	    (widen)
+	    (narrow-to-region (point-max) (point-max))
 	    (insert-buffer-substring cur beg end)
 	    (if msg
 		(progn
@@ -108,8 +108,9 @@ buffer visiting that file."
       (insert "\n")
       (goto-char (point-min))
       (insert "From "
-	      (or (mail-strip-quoted-names (mail-fetch-field "from"))
-		  "unknown")
+	      (if (mail-fetch-field "from")
+		  (mail-strip-quoted-names (mail-fetch-field "from"))
+		"unknown")
 	      " " (current-time-string) "\n")
       ;; ``Quote'' "\nFrom " as "\n>From "
       ;;  (note that this isn't really quoting, as there is no requirement

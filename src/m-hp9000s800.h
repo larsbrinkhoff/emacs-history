@@ -163,6 +163,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define CPTIME_SYMBOL "cp_time"
 #define DKXFER_SYMBOL "dk_xfer"
 
+#if 0 /* No longer true in HPUX 7.0 */
 /* In hpux, for unknown reasons, S_IFLNK is defined even though
    symbolic links do not exist.
    Make sure our conditionals based on S_IFLNK are not confused.
@@ -171,6 +172,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    so that we can override it here.  */
 
 #undef S_IFLNK
+#endif
 
 /* Define the BSTRING functions in terms of the sysV functions. */
 

@@ -121,6 +121,8 @@ so disable it for them.  */
 #define HAVE_SELECT
 #define HAVE_TIMEVAL
 #define HAVE_VFORK
+#define HAVE_SETSID
+#define HAVE_TCATTR
 
 /*
  * 	Define SYSV_SYSTEM_DIR to use the V.3 getdents/readir
@@ -191,7 +193,7 @@ so disable it for them.  */
 #ifdef __GNUC__
 #define HAVE_ALLOCA
 #define alloca(n) __builtin_alloca(n)
-#define LIB_STANDARD /usr/local/lib/gcc-gnulib -lbsd -lrts -lc 
+#define LIB_STANDARD /usr/local/lib/gcc-gnulib -lc 
 /* -g fails to work, so it is omitted.  */
 /* tranle says that -fstrength-reduce does not help.  */
 #define C_DEBUG_SWITCH -O

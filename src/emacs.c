@@ -22,11 +22,38 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <errno.h>
 
 #include "config.h"
-#include <stdio.h>
+#ifdef NULL
 #undef NULL
+#endif
 #include "lisp.h"
+#undef NULL
 #include "commands.h"
 
+/* Get FIONREAD, if it is available,
+   just to help decide whether SIGIO should be defined.  */
+#ifdef USG
+#include <termio.h>
+#include <fcntl.h>
+#else /* not USG */
+#ifndef VMS
+#include <sys/ioctl.h>
+#endif /* not VMS */
+#endif /* not USG */
+
+/* Allow m- file to inhibit use of FIONREAD.  */
+#ifdef BROKEN_FIONREAD
+#undef FIONREAD
+#endif
+
+/* We are unable to use interrupts if FIONREAD is not available,
+   so flush SIGIO so we won't try. */
+#ifndef FIONREAD
+#ifdef SIGIO
+#undef SIGIO
+#endif
+#endif
+
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/file.h>
 
@@ -173,7 +200,12 @@ init_cmdargs (argc, argv, skip_args)
 #ifdef VMS
 #ifdef LINK_CRTL_SHARE
 #ifdef SHAREABLE_LIB_BUG
+#ifdef __GNUC__
+#define	environ $$PsectAttributes_NOSHR$$environ
+extern char **environ;
+#else
 extern noshare char **environ;
+#endif
 #endif /* SHAREABLE_LIB_BUG */
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
@@ -193,13 +225,13 @@ main (argc, argv, envp)
   if (argc > 1 && !strcmp (argv[1], "-nl"))
     {
       map_in_data (0);
-      /* The shared momory was just restored, which clobbered this.  */
+      /* The shared memory was just restored, which clobbered this.  */
       skip_args = 1;
     }
   else
     {
       map_in_data (1);
-      /* The shared momory was just restored, which clobbered this.  */
+      /* The shared memory was just restored, which clobbered this.  */
       skip_args = 0;
     }
 #endif
@@ -300,6 +332,16 @@ main (argc, argv, envp)
       noninteractive = 1;
     }
 
+#ifdef POSIX_SIGNALS
+  init_signals ();
+#endif
+
+#ifdef HAVE_TZSET
+  /* Reinitialize the time zone if it was initialized before dumping Emacs.  */
+  if (initialized)
+    tzset ();
+#endif
+
   if (
 #ifndef CANNOT_DUMP
       ! noninteractive || initialized
@@ -332,15 +374,25 @@ main (argc, argv, envp)
 #endif SIGXFSZ
 
 #ifdef AIX
-      signal (SIGDANGER, fatal_error_signal);
+      /* This used to run fatal_error_signal,
+	 but it isn't fatal.  There's nothing Emacs can usefully do.
+	 Might as well let the system kill us if it insists.  */
+      signal (SIGDANGER, SIG_IGN);
       signal (20, fatal_error_signal);
       signal (21, fatal_error_signal);
       signal (22, fatal_error_signal);
       signal (23, fatal_error_signal);
       signal (24, fatal_error_signal);
+#ifdef SIGIO
       signal (SIGAIO, fatal_error_signal);
       signal (SIGPTY, fatal_error_signal);
-      signal (SIGIOINT, fatal_error_signal);
+#endif
+#ifdef SIGURG
+      /* Note that SIGIOINT is the same as SIGIO on some machines,
+	 and the same as SIGURG on others.  It seems ore reliable to use the
+	 name with a uniform meaning.  */
+      signal (SIGURG, fatal_error_signal);
+#endif
       signal (SIGGRANT, fatal_error_signal);
       signal (SIGRETRACT, fatal_error_signal);
       signal (SIGSOUND, fatal_error_signal);
@@ -504,7 +556,7 @@ return ARG as the exit program code.")
 
   GCPRO1 (arg);
 
-  if (!NULL (Vkill_emacs_hook))
+  if (!EQ (Vkill_emacs_hook, Qnil))
     call0 (Vkill_emacs_hook);
 
   if (feof (stdin))
@@ -599,7 +651,7 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
 
   CHECK_STRING (intoname, 0);
   intoname = Fexpand_file_name (intoname, Qnil);
-  if (!NULL (symname))
+  if (!EQ (symname, Qnil))
     {
       CHECK_STRING (symname, 0);
       if (XSTRING (symname)->size)
@@ -619,7 +671,7 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
   malloc_init (&my_edata, malloc_warning);
 #endif
   unexec (XSTRING (intoname)->data,
-	  !NULL (symname) ? XSTRING (symname)->data : 0, &my_edata, 0, 0);
+	  !EQ (symname, Qnil) ? XSTRING (symname)->data : 0, &my_edata, 0, 0);
 #endif /* not VMS */
 
   Vpurify_flag = tem;
@@ -646,7 +698,10 @@ decode_env_path (evarname, defalt)
 
   Lisp_Object lpath;
 
-  path = (char *) egetenv (evarname);
+  if (evarname != 0)
+    path = (char *) egetenv (evarname);
+  else
+    path = 0;
   if (!path)
     path = defalt;
   lpath = Qnil;

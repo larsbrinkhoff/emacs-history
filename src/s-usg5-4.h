@@ -25,24 +25,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include "s-usg5-3.h"
 
+#define USG5_4
+
 /* We do have multiple jobs.  Handle ^Z. */
 
 #undef NOMULTIPLEJOBS
 
-/* If compiled by GNU C, we must have gnulib */
-
-#ifdef __GNUC__
-#define GNULIB /usr/local/lib/gcc-gnulib
-#define LIBS_DEBUG
-#else
-#define GNULIB
-#endif
-
 #define START_FILES pre-crt0.o /usr/ccs/lib/crt1.o /usr/ccs/lib/crti.o /usr/ccs/lib/values-Xt.o
 
-#define LIB_STANDARD GNULIB -lsocket -lnsl -lelf -lc /usr/ucblib/libucb.a /usr/ccs/lib/crtn.o
-
-#define DATA_SEG_BITS 0x08000000
+#define LIB_STANDARD -lsocket -lnsl -lelf -lc /usr/ucblib/libucb.a /usr/ccs/lib/crtn.o
 
 /* No <sioctl.h> */
 
@@ -98,18 +89,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define CLASH_DETECTION
 
-/* Data type of load average, as read out of kmem.  */
-
-#define LOAD_AVE_TYPE long
-
-/* Convert that into an integer that is 100 for a load average of 1.0  */
-/* This is totally uncalibrated. */
-
-#define LOAD_AVE_CVT(x) ((int) ((double) (x)) * 100.0 / FSCALE)
-#define FSCALE 256.0
-
 #define HAVE_PTYS
 #define HAVE_SETSID
+#define HAVE_TCATTR
 
 /* It is possible to receive SIGCHLD when there are no children
    waiting, because a previous waitsys(2) cleaned up the carcass of child
@@ -168,3 +150,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
     fatal ("ioctl I_PUSH ldterm", errno);	\
   if (ioctl (xforkin, I_PUSH, "ttcompat") == -1) \
     fatal ("ioctl I_PUSH ttcompat", errno);
+
+/* The definition of this in s-usg5-3.h is not needed in 5.4.  */
+
+#undef LIBX10_SYSTEM
+#undef LIBX11_SYSTEM
+
+/* ??? For next release, suggest adding HAVE_SOCKETS */

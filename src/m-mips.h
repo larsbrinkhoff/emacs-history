@@ -128,6 +128,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define LD_SWITCH_MACHINE -D 800000
 #define LIBS_DEBUG
 
+#define LINKER /bsd43/bin/ld
+
 #else
 
 #define LIBS_MACHINE -lmld
@@ -136,7 +138,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define LIB_STANDARD -lbsd -lc /usr/lib/crtn.o
 #define LIBS_TERMCAP -lcurses
 
-#define C_SWITCH_SYSTEM -I/usr/include/bsd
+#define C_SWITCH_MACHINE -I/usr/include/bsd
 #define C_DEBUG_SWITCH -O -g3
 
 #if defined(HAVE_X_WINDOWS) && defined(HAVE_X11)
@@ -175,7 +177,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_SYSVIPC
 
 #define HAVE_TIMEVAL
-#if defined(emacs)
+#if defined(emacs) && !defined(INHIBIT_BSD_TIME)
 #include <bsd/sys/time.h>
 #endif
 

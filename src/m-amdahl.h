@@ -1,4 +1,4 @@
-/* m-amdahl_uts file 
+/* m-amdahl.h file, used with s-usg5-3.h.
    Copyright (C) 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -20,8 +20,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /*
 This file for amdahl_uts created by modifying the m-template.h
 by Jishnu Mukerji 3/1/87
-
-Use s-usg5-2-2.h with this file.
 
 This file works with the Amdahl uts native C compiler. The 5.2u370
 compiler is so brain damaged that it is not even worth trying to use it.
@@ -146,7 +144,9 @@ extern int sign_extend_temp;
 
 /* Perhaps this means that the optimizer isn't safe to use.  */
 
+#ifndef C_OPTIMIZE_SWITCH
 #define C_OPTIMIZE_SWITCH
+#endif
 
 /* Put text and data on non-segment boundary; makes image smaller */
 
@@ -167,3 +167,36 @@ extern int sign_extend_temp;
 #undef NSIG
 #define NSIG 20
 #endif
+
+#define NO_SIOCTL_H
+
+/* Amdahl has features not in ordinary sys v.3.  */
+
+#define HAVE_TIMEVAL
+
+/* With HAVE_TIMEVAL defined, Emacs expects to use `utimes'.
+   But UTS does not have one.  */
+
+#define MISSING_UTIMES
+
+#define HAVE_SELECT
+
+#define HAVE_PTYS
+
+#define HAVE_SOCKETS
+
+/* Define this symbol if your system has the functions bcopy, etc. */
+
+#define BSTRING
+
+#if 0  /* This is turned off because BROKEN_TIOCGETC is probably harmless.  */
+#undef BROKEN_TIOCGETC
+#endif
+
+/* X needs to talk on the network, so search the network library.  */
+
+#undef LIBX11_SYSTEM		/* What s-usg5-3.h does is not needed.  */
+#define LIBX11_MACHINE -lsocket -lbsd
+
+/* SIGIO is defined but does not work.  Prevent using it.  */
+#define BROKEN_FIONREAD

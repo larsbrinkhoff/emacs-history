@@ -64,10 +64,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* #define INTERRUPT_INPUT */
 
-/* Letter to use in finding device name of first pty,
-  if system supports pty's.  'p' means it is /dev/ptyp0  */
+/* In AIX, you allocate a pty by opening /dev/ptc to get the master side.
+   To get the name of the slave side, you just ttyname() the master side.  */
 
-#define FIRST_PTY_LETTER 'p'
+#define PTY_ITERATION for (c = 0; !c ; c++)
+#define PTY_NAME_SPRINTF strcpy (pty_name, "/dev/ptc");
+#define PTY_TTY_NAME_SPRINTF strcpy (pty_name, ttyname (fd));
 
 /*
  *	Define HAVE_TERMIO if the system provides sysV-style ioctls
@@ -220,6 +222,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Use terminfo instead of termcap.  */
 
 #define TERMINFO
+
+/* The following definition seems to be needed in AIX version 3.1.6.8.
+   It may not have been needed in certain earlier versions.  */
+#define HAVE_TCATTR
 
 #define SYSTEM_MALLOC
 

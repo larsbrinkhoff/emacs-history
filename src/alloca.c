@@ -45,7 +45,9 @@ lose
 #endif static
 #endif emacs
 
-#ifdef X3J11
+#ifndef alloca  /* If compiling with GCC, this file's not needed.  */
+
+#ifdef __STDC__
 typedef void	*pointer;		/* generic pointer type */
 #else
 typedef char	*pointer;		/* generic pointer type */
@@ -189,3 +191,4 @@ alloca (size)			/* returns pointer to storage */
   }
 }
 
+#endif /* no alloca */

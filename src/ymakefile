@@ -26,6 +26,9 @@ shortnamesdir = $(dot)$(dot)/shortnames/
 cppdir = $(dot)$(dot)/cpp/
 oldXMenudir = $(dot)$(dot)/oldXMenu/
 
+/* Just to avoid uncertainty.  */
+SHELL = /bin/sh
+
 #define NO_SHORTNAMES
 #include "config.h"
 
@@ -41,6 +44,17 @@ oldXMenudir = $(dot)$(dot)/oldXMenu/
 /* On some machines #define register is done in config;
    don't let it interfere with this file.  */
 #undef register
+
+/* On some systems we may not to use the system make command. */
+#ifdef MAKE_COMMAND
+MAKE = MAKE_COMMAND
+#else
+MAKE=make
+#endif
+
+#ifdef C_COMPILER
+CC = C_COMPILER
+#endif
 
 /* Some machines don't find the standard C libraries in the usual place.  */
 #ifndef LIB_STANDARD
@@ -94,7 +108,10 @@ oldXMenudir = $(dot)$(dot)/oldXMenu/
 #endif /* have START_FILES */
 STARTFILES = START_FILES
 
-/* Unless inhibited or changed, use -g to compile for debugging.  */
+/* This macro says how to compile for debugging.
+   If you want to optimize, DON'T change this macro.
+   Instead, replace C_DEBUG_SWITCH with C_OPTIMIZE_SWITCH
+   where CFLAGS is set.  */
 #ifndef C_DEBUG_SWITCH
 #define C_DEBUG_SWITCH -g
 #endif
@@ -199,17 +216,24 @@ LIBX= -lX LIBX10_MACHINE LIBX10_SYSTEM
 
 /* Fix linking if compiled with GCC.  */
 #ifdef __GNUC__
+#if __GNUC__ > 1
+#ifndef LIB_GCC
+#define LIB_GCC -lgcc
+#endif
+GNULIB_VAR = LIB_GCC
+#else /* __GNUC__ <= 1 */
 #ifndef LIB_GCC
 #define LIB_GCC /usr/local/lib/gcc-gnulib
 #endif
 GNULIB_VAR = `if [ -f LIB_GCC ] ; then echo LIB_GCC; else echo; fi`
+#endif /* __GNUC__ <= 1 */
 #else
 GNULIB_VAR = 
 #endif
 
 #ifdef MAINTAIN_ENVIRONMENT
 environobj = environ.o
-#endif MAINTAIN_ENVIRONMENT
+#endif /* MAINTAIN_ENVIRONMENT */
 
 /* Allow config.h to specify a replacement file for unexec.c.  */
 #ifndef UNEXEC
@@ -278,7 +302,7 @@ lisp=	${lispdir}simple.elc ${lispdir}help.elc \
 SHELL=/bin/sh
 
 /* Construct full set of libraries to be linked.  */
-LIBES = LIBS_TERMCAP $(LIBX) LIBS_SYSTEM LIBS_MACHINE LIBS_DEBUG LIB_STANDARD $(GNULIB_VAR)
+LIBES = LIBS_TERMCAP $(LIBX) LIBS_SYSTEM LIBS_MACHINE LIBS_DEBUG $(GNULIB_VAR) LIB_STANDARD
 
 /* Enable recompilation of certain other files depending on system type.  */
 
@@ -316,7 +340,7 @@ ${etcdir}DOC: ${etcdir}make-docfile ${obj} ${lisp}
 	${etcdir}make-docfile ${obj} ${lisp} ${lispdir}version.el > ${etcdir}DOC
 
 ${etcdir}make-docfile:
-	cd ${etcdir}; make ${MFLAGS} make-docfile
+	cd ${etcdir}; ${MAKE} ${MFLAGS} make-docfile
 
 /* Some systems define this to cause parallel Make-ing.  */
 #ifndef MAKE_PARALLEL
@@ -330,7 +354,7 @@ temacs: MAKE_PARALLEL $(LOCALCPP) $(SHORT) $(STARTFILES) $(OLDXMENU) ${obj} ${ot
 #ifdef NEED_CPP
 CPP = ./localcpp
 localcpp:
-	cd ${cppdir}; make ${MFLAGS} EMACS=-DEMACS
+	cd ${cppdir}; ${MAKE} ${MFLAGS} EMACS=-DEMACS
 	ln ${cppdir}cpp localcpp  /* Name where CFLAGS will refer to it */
 /* cc appears to be cretinous and require all of these to exist
    if -B is specified -- we can't use one local pass and let the
@@ -347,28 +371,31 @@ CPP = $(CC) -E
 
 #ifdef SHORTNAMES
 shortnames:
-	cd ${shortnamesdir}; make ${MFLAGS}
+	cd ${shortnamesdir}; ${MAKE} ${MFLAGS}
 #endif /* SHORTNAMES */
+
+/* Don't lose if this was not defined.  */
+#ifndef OLDXMENU_OPTIONS
+#define OLDXMENU_OPTIONS
+#endif
 
 #ifdef HAVE_X_WINDOWS
 #ifdef HAVE_X_MENU
 #ifdef HAVE_X11
 $(OLDXMENU):
-	cd ${oldXMenudir}; make ${MFLAGS}
-	ln ${oldXMenudir}libXMenu11.a $(OLDXMENU)
+	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS
+	ln ${oldXMenudir}libXMenu11.a $(OLDXMENU) || cp ${oldXMenudir}libXMenu11.a $(OLDXMENU)
 #endif /* HAVE_X11 */
 #endif /* HAVE_X_MENU */
 #endif /* HAVE_X_WINDOWS */
 
 paths.h: paths.h-dist
-	@sh -c "if test -r $@; then echo $? is newer than $@; exit 1;\
-	  else exit 0; fi"
-	cp $? $@
+	echo paths.h needs to be set up from paths.h-dist
+	exit 1
 
 config.h: config.h-dist
-	@sh -c "if test -r $@; then echo $? is newer than $@; exit 1;\
-	  else exit 0; fi"
-	cp $? $@
+	echo config.h needs to be set up from config.h-dist
+	exit 1
 
 /* Some machines have alloca built-in.
    They should define HAVE_ALLOCA, or may just let alloca.s
@@ -420,7 +447,7 @@ editfns.o : editfns.c window.h buffer.h config.h
 emacs.o : emacs.c commands.h config.h 
 #ifdef MAINTAIN_ENVIRONMENT
 environ.o : environ.c buffer.h commands.h config.h
-#endif MAINTAIN_ENVIRONMENT
+#endif /* MAINTAIN_ENVIRONMENT */
 fileio.o : fileio.c window.h buffer.h config.h 
 filelock.o : filelock.c buffer.h paths.h config.h
 filemode.o : filemode.c 
@@ -434,7 +461,7 @@ malloc.o : malloc.c config.h
 marker.o : marker.c buffer.h config.h 
 minibuf.o : minibuf.c syntax.h window.h buffer.h commands.h config.h 
 mocklisp.o : mocklisp.c buffer.h config.h
-process.o : process.c process.h buffer.h window.h termhooks.h termopts.h commands.h config.h 
+process.o : process.c process.h buffer.h window.h termhooks.h termopts.h commands.h dispextern.h config.h 
 regex.o : regex.c syntax.h buffer.h config.h regex.h 
 scroll.o : scroll.c termchar.h config.h dispextern.h termhooks.h
 search.o : search.c regex.h commands.h buffer.h syntax.h config.h 
@@ -474,4 +501,4 @@ lread.o : lread.c buffer.h paths.h config.h
 sunfns.o  : sunfns.c buffer.h config.h
 
 ${etcdir}emacstool: ${etcdir}emacstool.c
-	cd ${etcdir}; make ${MFLAGS} emacstool
+	cd ${etcdir}; ${MAKE} ${MFLAGS} emacstool

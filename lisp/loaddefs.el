@@ -184,6 +184,7 @@ Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
 				("\\.article$" . text-mode)
 				("\\.letter$" . text-mode)
 				("\\.texinfo$" . texinfo-mode)
+				("\\.texi$" . texinfo-mode)
 				("\\.lsp$" . lisp-mode)
 				("\\.prolog$" . prolog-mode)
 				;; Mailer puts message to be edited in /tmp/Re.... or Message
@@ -196,7 +197,7 @@ Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
 				("\\.scm.[0-9]*$" . scheme-mode)
 				;; .emacs following a directory delimiter
 				;; in either Unix or VMS syntax.
-				("[]>:/]\\..*emacs" . emacs-lisp-mode)
+				("[]>:/]\\..*emacs$" . emacs-lisp-mode)
 				("\\.ml$" . lisp-mode))))
 
 (make-variable-buffer-local 'indent-tabs-mode)

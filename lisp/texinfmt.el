@@ -818,6 +818,11 @@ converted to Info is stored in a temporary buffer."
 (defun texinfo-format-refill ()
   (texinfo-discard-command)
   (fill-paragraph nil))
+
+(put 'sp 'texinfo-format 'texinfo-format-sp)
+(defun texinfo-format-sp ()
+  (texinfo-discard-command)
+  (insert "\n"))
 
 ;; Index generation
 
@@ -1095,6 +1100,7 @@ converted to Info is stored in a temporary buffer."
 
 ;; Lots of bolio constructs do nothing in texinfo.
 
+(put 'need 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'page 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'c 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'comment 'texinfo-format 'texinfo-discard-line-with-args)

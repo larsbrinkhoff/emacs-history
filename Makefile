@@ -1,7 +1,8 @@
 # make all	to compile and build Emacs
 # make install	to install it
-# make install.sysv  to install on system V.
+# make install.sysv   to install on system V.
 # make install.xenix  to install on Xenix
+# make install.aix    to install on AIX.
 # make tags	to update tags tables
 #
 # make distclean	to delete everything that wasn't in the distribution
@@ -13,12 +14,18 @@ SHELL = /bin/sh
 
 # Where to install things
 # Note that on system V you must change MANDIR to /use/local/man/man1.
+# This got changed in late 1991 to say /usr/local/lib/emacs,
+# but there was no explanation of why, so it seems better to keep this stable.
 LIBDIR= /usr/local/emacs
 BINDIR= /usr/local/bin
-MANDIR= /usr/man/man1
+MANDIR= /usr/local/man/man1
 
 # Flags passed down to subdirectory makefiles.
 MFLAGS=
+
+# Command used for installation.
+# If `install' doesn't work on your system, try `./install.sh'.
+INSTALL=install
 
 # Subdirectories to make recursively.  `lisp' is not included
 # because the compiled lisp files are part of the distribution
@@ -29,7 +36,7 @@ SUBDIR= etc src
 COPYDIR= etc info lisp
 
 # Subdirectories to clean
-CLEANDIR= ${COPYDIR} lisp/term
+CLEANDIR= ${COPYDIR} lisp/term oldXMenu
 
 all:	src/paths.h ${SUBDIR}
 
@@ -44,8 +51,11 @@ ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS} all
 
 install: all mkdir lockdir
+# B option to tar xf removed because some systems don't have it.
+# It should work without that as long as the same tar program
+# is running on both sides of the pipe.
 	-if [ `/bin/pwd` != `(cd ${LIBDIR}; /bin/pwd)` ] ; then \
-		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xBf - ) ;\
+		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xf - ) ;\
 		for i in ${CLEANDIR}; do \
 			(rm -rf ${LIBDIR}/$$i/RCS; \
 			 rm -f ${LIBDIR}/$$i/\#*; \
@@ -53,11 +63,11 @@ install: all mkdir lockdir
 		done \
 	else true; \
 	fi
-	install -c -s etc/emacsclient ${BINDIR}/emacsclient
-	install -c -s etc/etags ${BINDIR}/etags
-	install -c -s etc/ctags ${BINDIR}/ctags
-	install -c -s -m 1755 src/xemacs ${BINDIR}/xemacs
-	install -c -m 444 etc/emacs.1 ${MANDIR}/emacs.1
+	$(INSTALL) -c -s etc/emacsclient ${BINDIR}/emacsclient
+	$(INSTALL) -c -s etc/etags ${BINDIR}/etags
+	$(INSTALL) -c -s etc/ctags ${BINDIR}/ctags
+	$(INSTALL) -c -s -m 1755 src/xemacs ${BINDIR}/xemacs
+	$(INSTALL) -c -m 444 etc/emacs.1 ${MANDIR}/emacs.1
 	-rm -f ${BINDIR}/emacs
 	mv ${BINDIR}/xemacs ${BINDIR}/emacs
 
@@ -77,7 +87,7 @@ install.sysv: all mkdir lockdir
 	-cpset etc/emacs.1 ${MANDIR}/emacs.1 444 bin bin
 	-/bin/rm -f ${BINDIR}/emacs
 	-cpset src/xemacs ${BINDIR}/emacs 1755 bin bin
-  
+ 
 install.xenix: all mkdir lockdir
 	if [ `pwd` != `(cd ${LIBDIR}; pwd)` ] ; then \
 		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpf - ) ;\
@@ -97,16 +107,35 @@ install.xenix: all mkdir lockdir
 	chmod 1755 ${BINDIR}/emacs
 	-rm -f ${BINDIR}/emacs.old
 
+install.aix: all mkdir lockdir
+	-if [ `/bin/pwd` != `(cd ${LIBDIR}; /bin/pwd)` ] ; then \
+		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xBf - ) ;\
+		for i in ${CLEANDIR}; do \
+			(rm -rf ${LIBDIR}/$$i/RCS; \
+			 rm -f ${LIBDIR}/$$i/\#*; \
+			 rm -f ${LIBDIR}/$$i/*~); \
+		done \
+	else true; \
+	fi
+	install -f ${BINDIR} etc/emacsclient
+	install -f ${BINDIR} etc/etags
+	install -f ${BINDIR} etc/ctags
+	install -M 1755 -f ${BINDIR} src/xemacs
+	install -M 444 -f ${MANDIR} etc/emacs.1
+	-rm -f ${BINDIR}/emacs
+	mv ${BINDIR}/xemacs ${BINDIR}/emacs
+
 mkdir: FRC
-	-mkdir ${LIBDIR}
-	-chmod 777 ${LIBDIR}
+	-mkdir ${LIBDIR} ${BINDIR} ${MANDIR}
 
 distclean:
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} distclean); done
+	cd oldXMenu; make ${MFLAGS} distclean
 
 clean:
 	cd src; make clean
-	if [ `pwd` != `(cd ${LIBDIR}; pwd)` ] ; then \
+	cd oldXMenu; make ${MFLAGS} clean
+	if [ `/bin/pwd` != `(cd ${LIBDIR}; /bin/pwd)` ] ; then \
 		cd etc; make clean; \
 	else true; \
 	fi

@@ -26,6 +26,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define USG
 #define USG5
 #define IRIS
+#ifndef IRIX
+#define IRIX
+#endif
 
 /* SYSTEM_TYPE should indicate the kind of system you are using.
  It sets the Lisp variable system-type.  */
@@ -157,7 +160,20 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define index strchr
 #define rindex strrchr
 
+/* Use setsid to handle terminals for subprocesses.  */
+#define HAVE_SETSID
+
 /* getwd is defined.  */
 #define HAVE_GETWD
 
 #define HAVE_SYSVIPC
+
+/* Define C_ALLOCA if this machine does not support a true alloca
+   and the one written in C should be used instead.
+   Define HAVE_ALLOCA to say that the system provides a properly
+   working alloca function and it should be used.
+   Define neither one if an assembler-language alloca
+   in the file alloca.s should be used.  */
+
+#define C_ALLOCA
+/* #define HAVE_ALLOCA */

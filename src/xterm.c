@@ -74,6 +74,19 @@ static char *rcsid_TrmXTERM_c = "$Header: xterm.c,v 1.28 86/08/27 13:30:57 rlk E
 #include <X/Xkeyboard.h>
 /*#include <X/Xproto.h>	*/
 
+/* Allow m- file to inhibit use of FIONREAD.  */
+#ifdef BROKEN_FIONREAD
+#undef FIONREAD
+#endif
+
+/* We are unable to use interrupts if FIONREAD is not available,
+   so flush SIGIO so we won't try. */
+#ifndef FIONREAD
+#ifdef SIGIO
+#undef SIGIO
+#endif
+#endif
+
 /* Allow config to specify default font.  */
 #ifndef X_DEFAULT_FONT
 #define X_DEFAULT_FONT "vtsingle"
@@ -1296,7 +1309,8 @@ xfixscreen ()
       temp_width = (windowinfo.width - 2 * XXInternalBorder) / fontinfo->width;
       temp_height = (windowinfo.height- 2*XXInternalBorder) / fontinfo->height;
       if (temp_width != screen_width || temp_height != screen_height)
-	change_screen_size (max (5, temp_height), max (10, temp_width));
+	change_screen_size (max (5, temp_height), max (10, temp_width),
+			    0, 0, 0);
       XXxoffset= windowinfo.x;
       XXyoffset = windowinfo.y;
       /*if (temp_x != XXxoffset || temp_y != XXyoffset)
@@ -1820,7 +1834,7 @@ XSetWindowSize (rows, cols)
   pixelheight = rows * fontinfo->height + 2 * XXInternalBorder;
   XChangeWindow (XXwindow, pixelwidth, pixelheight);
   XFlush ();
-  change_screen_size (rows, cols);
+  change_screen_size (rows, cols, 0, 0, 0);
   PendingExposure = 0;
 }
 

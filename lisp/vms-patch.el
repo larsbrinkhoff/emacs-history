@@ -56,7 +56,8 @@ See also auto-save-file-name-p."
   (if buffer-file-name
       (concat (file-name-directory buffer-file-name)
 	      "_$"
-	      (file-name-nondirectory buffer-file-name)
+	      (file-name-sans-versions (file-name-nondirectory
+					buffer-file-name))
 	      "$")
     (expand-file-name (concat "_$_" (make-legal-file-name (buffer-name)) "$"))))
 

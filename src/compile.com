@@ -11,6 +11,35 @@ $ !***  If an argument is present, compiles all files, otherwise
 $ !***  compiles only files modified since last compile.
 $ !***
 $
+$! First we try to sense which C compiler we have available.
+$!
+$set noon		!do not bomb if an error occurs.
+$assign nla0: sys$output
+$assign nla0: sys$error  !so we do not get an error message about this.
+$cc nla0:compiler_check.c
+$if $status.eq.%x38090 then goto try_gcc
+$goto have_compiler
+$!
+$try_gcc:
+$gcc nla0:compiler_check.c
+$if $status.eq.%x38090 then goto whoops
+$ CC :== GCC
+$goto have_compiler
+$!
+$whoops:
+$write sys$output "You must have a C compiler to build Emacs.  Sorry."
+$deassign sys$output
+$deassign sys$error
+$exit %x38090
+$!
+$!
+$have_compiler:
+$deassign sys$output
+$deassign sys$error
+$set on
+$if f$search("compiler_check.obj").nes."" then dele/nolog compiler_check.obj;
+$write sys$output "Building Emacs with the ''cc' compiler."
+$
 $    @precomp
 $    @recomp dispnew.c
 $    @recomp scroll.c

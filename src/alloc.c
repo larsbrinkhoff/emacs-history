@@ -77,7 +77,11 @@ Lisp_Object Vpurify_flag;
 Lisp_Object memory_exhausted_message;
 
 #ifndef HAVE_SHM
+#ifdef VMS
+int pure[PURESIZE / sizeof (int)];	/*no need to initialize - wasted space*/
+#else
 int pure[PURESIZE / sizeof (int)] = {0,};   /* Force it into data space! */
+#endif	/* NOT VMS */
 #define PUREBEG (char *) pure
 #else
 #define pure PURE_SEG_BITS   /* Use shared memory segment */

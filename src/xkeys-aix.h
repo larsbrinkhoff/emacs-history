@@ -3,50 +3,9 @@
 
 
 /*-------------------------------------------------------------------------*/
-/*---------------------------- normal -------------------------------------*/
-
-#if 0
- XRebindKeysym(XXdisplay, XK_BackSpace, 0, 0, "\177", 1);
-#endif
-
- XRebindKeysym(XXdisplay, XK_F1, 0, 0, "\033[001q", 6);
- XRebindKeysym(XXdisplay, XK_F2, 0, 0, "\033[002q", 6);
- XRebindKeysym(XXdisplay, XK_F3, 0, 0, "\033[003q", 6);
- XRebindKeysym(XXdisplay, XK_F4, 0, 0, "\033[004q", 6);
- XRebindKeysym(XXdisplay, XK_F5, 0, 0, "\033[005q", 6);
- XRebindKeysym(XXdisplay, XK_F6, 0, 0, "\033[006q", 6);
- XRebindKeysym(XXdisplay, XK_F7, 0, 0, "\033[007q", 6);
- XRebindKeysym(XXdisplay, XK_F8, 0, 0, "\033[008q", 6);
- XRebindKeysym(XXdisplay, XK_F9, 0, 0, "\033[009q", 6);
- XRebindKeysym(XXdisplay, XK_F10, 0, 0, "\033[010q", 6);
- XRebindKeysym(XXdisplay, XK_F11, 0, 0, "\033[011q", 6);
- XRebindKeysym(XXdisplay, XK_F12, 0, 0, "\033[012q", 6);
-
- XRebindKeysym(XXdisplay, XK_Print, 0, 0, "\033[209q", 6);
- XRebindKeysym(XXdisplay, XK_Cancel, 0, 0, "\033[213q", 6);
- XRebindKeysym(XXdisplay, XK_Pause, 0, 0, "\033[217q", 6);
-
- XRebindKeysym(XXdisplay, XK_Insert, 0, 0, "\033[139q", 6);
- XRebindKeysym(XXdisplay, XK_Home, 0, 0, "\033[H", 3);
- XRebindKeysym(XXdisplay, XK_Prior, 0, 0, "\033[150q", 6);
-
-#if 0
- XRebindKeysym(XXdisplay, XK_Delete, 0, 0, "\033[P", 3);
-#endif
-
- XRebindKeysym(XXdisplay, XK_End, 0, 0, "\033[146q", 6);
- XRebindKeysym(XXdisplay, XK_Next, 0, 0, "\033[154q", 6);
-
- XRebindKeysym(XXdisplay, XK_Up, 0, 0, "\033[A", 3);
- XRebindKeysym(XXdisplay, XK_Left, 0, 0, "\033[D", 3);
- XRebindKeysym(XXdisplay, XK_Down, 0, 0, "\033[B", 3);
- XRebindKeysym(XXdisplay, XK_Right, 0, 0, "\033[C", 3);
-
- XRebindKeysym(XXdisplay, XK_Execute, 0, 0, "\033[114q", 6);
-
-/*-------------------------------------------------------------------------*/
 /*---------------------------- shift --------------------------------------*/
-#if 0
+/* Turned on in 18.58 because backspace might as well work.  */
+#if 1
  XRebindKeysym(XXdisplay, XK_BackSpace, XMOD_Shift, 1, "\177", 1);
 #endif
 
@@ -156,3 +115,49 @@
  XRebindKeysym(XXdisplay, XK_Left, XMOD_Alt, 1, "\033[160q", 6);
  XRebindKeysym(XXdisplay, XK_Down, XMOD_Alt, 1, "\033[166q", 6);
  XRebindKeysym(XXdisplay, XK_Right, XMOD_Alt, 1, "\033[169q", 6);
+
+/*-------------------------------------------------------------------------*/
+/*---------------------------- normal -------------------------------------*/
+/* These come last because some versions of AIX fail to
+   pay attention to the specified modifier keys.
+   At least this way the unmodified keys will work right.  */
+
+#if 0
+ XRebindKeysym(XXdisplay, XK_BackSpace, 0, 0, "\177", 1);
+#endif
+
+ XRebindKeysym(XXdisplay, XK_F1, 0, 0, "\033[001q", 6);
+ XRebindKeysym(XXdisplay, XK_F2, 0, 0, "\033[002q", 6);
+ XRebindKeysym(XXdisplay, XK_F3, 0, 0, "\033[003q", 6);
+ XRebindKeysym(XXdisplay, XK_F4, 0, 0, "\033[004q", 6);
+ XRebindKeysym(XXdisplay, XK_F5, 0, 0, "\033[005q", 6);
+ XRebindKeysym(XXdisplay, XK_F6, 0, 0, "\033[006q", 6);
+ XRebindKeysym(XXdisplay, XK_F7, 0, 0, "\033[007q", 6);
+ XRebindKeysym(XXdisplay, XK_F8, 0, 0, "\033[008q", 6);
+ XRebindKeysym(XXdisplay, XK_F9, 0, 0, "\033[009q", 6);
+ XRebindKeysym(XXdisplay, XK_F10, 0, 0, "\033[010q", 6);
+ XRebindKeysym(XXdisplay, XK_F11, 0, 0, "\033[011q", 6);
+ XRebindKeysym(XXdisplay, XK_F12, 0, 0, "\033[012q", 6);
+
+ XRebindKeysym(XXdisplay, XK_Print, 0, 0, "\033[209q", 6);
+ XRebindKeysym(XXdisplay, XK_Cancel, 0, 0, "\033[213q", 6);
+ XRebindKeysym(XXdisplay, XK_Pause, 0, 0, "\033[217q", 6);
+
+ XRebindKeysym(XXdisplay, XK_Insert, 0, 0, "\033[139q", 6);
+ XRebindKeysym(XXdisplay, XK_Home, 0, 0, "\033[H", 3);
+ XRebindKeysym(XXdisplay, XK_Prior, 0, 0, "\033[150q", 6);
+
+#if 0
+ XRebindKeysym(XXdisplay, XK_Delete, 0, 0, "\033[P", 3);
+#endif
+
+ XRebindKeysym(XXdisplay, XK_End, 0, 0, "\033[146q", 6);
+ XRebindKeysym(XXdisplay, XK_Next, 0, 0, "\033[154q", 6);
+
+ XRebindKeysym(XXdisplay, XK_Up, 0, 0, "\033[A", 3);
+ XRebindKeysym(XXdisplay, XK_Left, 0, 0, "\033[D", 3);
+ XRebindKeysym(XXdisplay, XK_Down, 0, 0, "\033[B", 3);
+ XRebindKeysym(XXdisplay, XK_Right, 0, 0, "\033[C", 3);
+
+ XRebindKeysym(XXdisplay, XK_Execute, 0, 0, "\033[114q", 6);
+

@@ -90,6 +90,8 @@ typedef enum {none, begin, tag_ok, middle, end } TYST;
 
 TYST tydef = none;
 
+logical next_token_is_func;
+
 char	searchar = '/';			/* use /.../ searches 		*/
 
 int	lineno;			/* line number of current line */
@@ -183,16 +185,7 @@ main(ac,av)
 #ifdef ETAGS
   eflag = 1;
 #else
-#ifdef CTAGS
   eflag = 0;
-#else
-  {
-    char *subname = rindex (progname, '/');
-    if (subname++ == NULL)
-      subname = progname;
-    eflag = ! strcmp(subname, "ctags");
-  }
-#endif
 #endif
 
   while (ac > 1 && av[1][0] == '-')
@@ -741,6 +734,8 @@ C_entries ()
   number = 0;
   gotone = midtoken = inquote = inchar = incomm = FALSE;
   level = 0;
+  tydef = none;
+  next_token_is_func = 0;
 
   while (!feof (inf))
     {
@@ -890,7 +885,6 @@ consider_token (lpp, token, f, level)
 {
   reg char *lp = *lpp;
   reg char c;
-  static logical next_token_is_func;
   logical firsttok;	/* T if have seen first token in ()'s */
   int bad, win;
 
@@ -1348,6 +1342,7 @@ TEX_funcs (fi)
 
 #define TEX_LESC '\\'
 #define TEX_SESC '!'
+#define TEX_CMT  '%'
 
 /* Figure out whether TeX's escapechar is '\\' or '!' and set grouping */
 /* chars accordingly. */
@@ -1355,11 +1350,19 @@ TEX_funcs (fi)
 TEX_mode (f)
      FILE *f;
 {
-  int c;
+  int c, skip_line = 0;
 
   while ((c = getc (f)) != EOF)
-    if (c == TEX_LESC || c == TEX_SESC)
-      break;
+    {
+      /* Skip to next line if we hit the TeX comment char. */
+      if (c == TEX_CMT)
+	skip_line = 1;
+      else if (c == '\n')
+	skip_line = 0;
+      else if (! skip_line)
+	if (c == TEX_LESC || c == TEX_SESC)
+	  break;
+    }
 
   if (c == TEX_LESC)
     {

@@ -247,7 +247,9 @@ InsStr (s)
   insert (s, strlen (s));
 }
 
-/* Insert a string of specified length before point */
+/* Insert a string of specified length before point.
+   DO NOT use this for the contents of a Lisp string!
+   prepare_to_modify_buffer could relocate the string.  */
 
 insert (string, length)
      register unsigned char *string;
@@ -282,8 +284,51 @@ insert (string, length)
   point += length;
 }
 
-/* like insert except that all markers pointing at the place where
-   the insertion happens are adjusted to point after it.  */
+/* Function to insert part of the text of a string (STRING) consisting
+   of LENGTH characters at position POS.
+   It does not work to use `insert' for this, becase a GC could happen
+   before we bcopy the stuff into the buffer, and relocate the string
+   without insert noticing.  */
+insert_from_string (string, pos, length)
+     Lisp_Object string;
+     register int pos, length;
+{
+  register Lisp_Object temp;
+  struct gcpro gcpro1;
+
+  if (length < 1)
+    return;
+
+  /* Make sure point-max won't overflow after this insertion.  */
+  XSET (temp, Lisp_Int, length + Z);
+  if (length + Z != XINT (temp))
+    error ("maximum buffer size exceeded");
+
+  GCPRO1 (string);
+  prepare_to_modify_buffer ();
+
+  if (point != GPT)
+    move_gap (point);
+  if (GAP_SIZE < length)
+    make_gap (length - GAP_SIZE);
+
+  record_insert (point, length);
+  MODIFF++;
+  UNGCPRO;
+
+  bcopy (XSTRING (string)->data, GPT_ADDR, length);
+
+  GAP_SIZE -= length;
+  GPT += length;
+  ZV += length;
+  Z += length;
+  point += length;
+}
+
+/* Like `insert' except that all markers pointing at the place where
+   the insertion happens are adjusted to point after it.
+   Don't use this function to insert part of a Lisp string,
+   since gc could happen and relocate it.  */
 
 insert_before_markers (string, length)
      unsigned char *string;
@@ -291,6 +336,17 @@ insert_before_markers (string, length)
 {
   register int opoint = point;
   insert (string, length);
+  adjust_markers (opoint - 1, opoint, length);
+}
+
+/* Insert part of a Lisp string, relocating markers after.  */
+
+insert_from_string_before_markers (string, pos, length)
+     Lisp_Object string;
+     register int pos, length;
+{
+  register int opoint = point;
+  insert_from_string (string, pos, length);
   adjust_markers (opoint - 1, opoint, length);
 }
 
