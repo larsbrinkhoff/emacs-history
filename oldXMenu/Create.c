@@ -77,6 +77,7 @@
 
 int atoi();
 double atof();
+char *x_get_resource_string ();
 
 XMenu *
 XMenuCreate(display, parent, def_env)
@@ -208,32 +209,32 @@ XMenuCreate(display, parent, def_env)
   /*
    * Get default values from X.
    */
-  def_val = XGetDefault(display, def_env, "MenuFreeze");
+  def_val = x_get_resource_string ("menuFreeze", "MenuFreeze");
   if (def_val != NULL) {
     if (strcmp(def_val, "on") == 0) freeze = 1;
     else if (strcmp(def_val, "off") == 0) freeze = 0;
   }
 
-  def_val = XGetDefault(display, def_env, "MenuReverseVideo");
+  def_val = x_get_resource_string ("menuReverseVideo", "MenuReverseVideo");
   if (def_val != NULL) {
     if (strcmp(def_val, "on") == 0) reverse = 1;
     else if (strcmp(def_val, "off") == 0) reverse = 0;
   }
 
-  def_val = XGetDefault(display, def_env, "MenuStyle");
+  def_val = x_get_resource_string ("menuStyle", "MenuStyle");
   if (def_val != NULL) {
     if (strcmp(def_val, "right_hand") == 0) menu_style = RIGHT;
     else if (strcmp(def_val, "left_hand") == 0) menu_style = LEFT;
     else if (strcmp(def_val, "center") == 0) menu_style = CENTER;
   }
 
-  def_val = XGetDefault(display, def_env, "MenuMode");
+  def_val = x_get_resource_string ("menuMode", "MenuMode");
   if (def_val != NULL) {
     if (strcmp(def_val, "box") == 0) menu_mode = BOX;
     else if (strcmp(def_val, "invert") == 0) menu_mode = INVERT;
   }
     
-  def_val = XGetDefault(display, def_env, "MenuMouse");
+  def_val = x_get_resource_string ("menuMouse", "MenuMouse");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
@@ -257,7 +258,7 @@ XMenuCreate(display, parent, def_env)
     
   else ;
 
-  def_val = XGetDefault(display, def_env, "MenuBackground");
+  def_val = x_get_resource_string ("menuBackground", "MenuBackground");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
@@ -279,7 +280,7 @@ XMenuCreate(display, parent, def_env)
 	   );
   else;
 
-  def_val = XGetDefault(display, def_env, "MenuInactivePattern");
+  def_val = x_get_resource_string ("menuInactivePattern", "MenuInactivePattern");
   if (def_val != NULL) {
     if (strcmp(def_val, "dimple1") == 0) inact_pnum = 0;
     else if (strcmp(def_val, "dimple3") == 0) inact_pnum = 1;
@@ -288,17 +289,17 @@ XMenuCreate(display, parent, def_env)
     else if (strcmp(def_val, "cross_weave") == 0) inact_pnum = 4;
   }
 
-  def_val = XGetDefault(display, def_env, "PaneStyle");
+  def_val = x_get_resource_string ("paneStyle", "PaneStyle");
   if (def_val != NULL) {
     if (strcmp(def_val, "flush_left") == 0) p_style = LEFT;
     else if (strcmp(def_val, "flush_right") == 0) p_style = RIGHT;
     else if (strcmp(def_val, "center") == 0) p_style = CENTER;
   }
 
-  def_val = XGetDefault(display, def_env, "PaneFont");
+  def_val = x_get_resource_string ("paneFont", "Font");
   if (def_val != NULL) p_fnt_name = def_val;
 
-  def_val = XGetDefault(display, def_env, "PaneForeground");
+  def_val = x_get_resource_string ("paneForeground", "PaneForeground");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 
@@ -318,7 +319,7 @@ XMenuCreate(display, parent, def_env)
 			"black",
 			&p_frg_color, &color_def);
 
-  def_val = XGetDefault(display, def_env, "PaneBorder");
+  def_val = x_get_resource_string ("paneBorder", "PaneBorder");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
@@ -338,23 +339,23 @@ XMenuCreate(display, parent, def_env)
 			"black",
 			&p_bdr_color, &color_def);
     
-  def_val = XGetDefault(display, def_env, "PaneBorderWidth");
+  def_val = x_get_resource_string ("paneBorderWidth", "PaneBorderWidth");
   if (def_val != NULL) p_bdr_width = atoi(def_val);
     
-  def_val = XGetDefault(display, def_env, "PaneSpread");
+  def_val = x_get_resource_string ("paneSpread", "PaneSpread");
   if (def_val != NULL) p_spread = atof(def_val);
 
-  def_val = XGetDefault(display, def_env, "SelectionStyle");
+  def_val = x_get_resource_string ("selectionStyle", "SelectionStyle");
   if (def_val != NULL) {
     if (strcmp(def_val, "flush_left") == 0) s_style = LEFT;
     else if (strcmp(def_val, "flush_right") == 0) s_style = RIGHT;
     else if (strcmp(def_val, "center") == 0) s_style = CENTER;
   }
 
-  def_val = XGetDefault(display, def_env, "SelectionFont");
+  def_val = x_get_resource_string ("selectionFont", "Font");
   if (def_val != NULL) s_fnt_name = def_val;
 
-  def_val = XGetDefault(display, def_env, "SelectionForeground");
+  def_val = x_get_resource_string ("selectionForeground", "SelectionForeground");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
@@ -377,7 +378,7 @@ XMenuCreate(display, parent, def_env)
   else ;
     
 
-  def_val = XGetDefault(display, def_env, "SelectionBorder");
+  def_val = x_get_resource_string ("selectionBorder", "SelectionBorder");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
@@ -399,10 +400,10 @@ XMenuCreate(display, parent, def_env)
 	   ) ;
   else ;
 
-  def_val = XGetDefault(display, def_env, "SelectionBorderWidth");
+  def_val = x_get_resource_string ("selectionBorderWidth", "SelectionBorderWidth");
   if (def_val != NULL) s_bdr_width = atoi(def_val);
     
-  def_val = XGetDefault(display, def_env, "SelectionSpread");
+  def_val = x_get_resource_string ("selectionSpread", "SelectionSpread");
   if (def_val != NULL) s_spread = atof(def_val);
 
   /*

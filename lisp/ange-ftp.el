@@ -1326,13 +1326,12 @@ USER pair, and signal an error including MSG in the text."
   (signal 'ftp-error (list (format "FTP Error: %s" msg))))
 
 (defun ange-ftp-set-buffer-mode ()
-  "Set the correct modes for the current buffer if it is visiting a remote
-file."
-  (make-local-variable 'make-backup-files)
-  (setq make-backup-files ange-ftp-make-backup-files)
+  "Set correct modes for the current buffer if visiting a remote file."
   (if (and (stringp buffer-file-name)
 	   (ange-ftp-ftp-name buffer-file-name))
       (progn
+	(make-local-variable 'make-backup-files)
+	(setq make-backup-files ange-ftp-make-backup-files)
 	(auto-save-mode ange-ftp-auto-save))))
 
 (defun ange-ftp-kill-ftp-process (buffer)

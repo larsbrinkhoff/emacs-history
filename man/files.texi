@@ -925,10 +925,11 @@ when actual check-in takes place.
   Once you have checked in your changes, the file is unlocked, so that
 other users can lock it and modify it.
 
-@vindex vc-make-backups
+@vindex vc-make-backup-files
   Emacs does not save backup files for source files that are maintained
 with version control.  If you want to make backup files despite version
-control, set the variable @code{vc-make-backups} to a non-@code{nil} value.
+control, set the variable @code{vc-make-backup-files} to a
+non-@code{nil} value.
 
 @vindex vc-keep-workfiles
   Normally the work file exists all the time, whether it is locked or

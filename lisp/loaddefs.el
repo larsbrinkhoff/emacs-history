@@ -359,7 +359,7 @@ for \\[find-tag] (which see)."
 (define-key ctl-x-map [?r ?\C-\ ] 'point-to-register)
 (define-key ctl-x-map "r " 'point-to-register)
 (define-key ctl-x-map "rj" 'jump-to-register)
-(define-key ctl-x-map "rp" 'copy-to-register)
+(define-key ctl-x-map "rs" 'copy-to-register)
 (define-key ctl-x-map "rx" 'copy-to-register)
 (define-key ctl-x-map "ri" 'insert-register)
 (define-key ctl-x-map "rg" 'insert-register)
@@ -2074,8 +2074,8 @@ Use \\[dired-hide-subdir] to (un)hide a particular subdirectory." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-noselect dired-other-window dired) "dired" "dired.el" (11223 36949))
-;;; Generated autoloads from dired.el
+;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "/home/fsf/rms/e19/lisp/dired.el" (11267 62528))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/dired.el
 
 (defvar dired-listing-switches "-al" "\
 *Switches passed to `ls' for dired.  MUST contain the `l' option.
@@ -2154,6 +2154,10 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh." t
 
 (autoload (quote dired-other-window) "dired" "\
 \"Edit\" directory DIRNAME.  Like `dired' but selects in another window." t nil)
+(define-key ctl-x-5-map "d" 'dired-other-frame)
+
+(autoload (quote dired-other-frame) "dired" "\
+\"Edit\" directory DIRNAME.  Like `dired' but makes a new frame." t nil)
 
 (autoload (quote dired-noselect) "dired" "\
 Like `dired' but returns the dired buffer as value, does not select it." nil nil)
@@ -4731,10 +4735,10 @@ value of texinfo-mode-hook." t nil)
 
 ;;;***
 
-;;;### (autoloads (display-time) "time" "time.el" (11261 43012))
-;;; Generated autoloads from time.el
+;;;### (autoloads (display-time) "time" "/home/fsf/rms/e19/lisp/time.el" (11268 15748))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/time.el
 
-(defconst display-time-day-and-date nil "\
+(defvar display-time-day-and-date nil "\
 *Non-nil means \\[display-time] should display day and date as well as time.")
 
 (autoload (quote display-time) "time" "\

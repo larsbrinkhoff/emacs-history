@@ -71,9 +71,9 @@ short_usage="Usage: ${progname} CONFIGURATION [-OPTION[=VALUE] ...]
 Set compilation and installation parameters for GNU Emacs, and report.
 CONFIGURATION specifies the machine and operating system to build for.
 --with-x		Support the X Window System.
---with-x=no		Don't support the X Window System.
---x-includes=DIR 	Search for X Window System header files in DIR.
---x-libraries=DIR	Search for X Window System libraries in DIR.
+--with-x=no		Don't support X.
+--x-includes=DIR 	Search for X header files in DIR.
+--x-libraries=DIR	Search for X libraries in DIR.
 --with-gcc		Use GCC to compile Emacs.
 --with-gcc=no		Don't use GCC to compile Emacs.
 --run-in-place		Use libraries and data files directly out of the 
@@ -148,7 +148,7 @@ Set it to either \`yes' or \`no'."
         ;;
 
 	## Has the user specified whether or not they want GCC?
-	"with_gcc" )
+	"with_gcc" | "with_gnu_cc" )
 	  ## Make sure the value given was either "yes" or "no".
 	  case "${val}" in
 	    y | ye | yes )	val=yes ;;
@@ -273,11 +273,17 @@ Set it to either \`yes' or \`no'."
 done
 
 if [ "${configuration}" = "" ]; then
-  (echo "${progname}: You must specify a configuration name as an argument."
-   echo "${short_usage}") >&2
-  exit 1
+  echo '- You did not tell me what kind of host system you want to configure.
+- I will attempt to guess the kind of system this is.' 1>&2
+  guesssys=`echo ${progname} | sed 's/configure$/config.guess/'`
+  if configuration=`${guesssys}` ; then
+    echo "- Looks like this is a ${configuration}" 1>&2
+  else
+    echo '- Failed to guess the system type.  You need to tell me.' 1>&2
+    echo "${short_usage}") >&2
+    exit 1
+  fi
 fi
-
 
 #### Decide where the source is.
 case "${srcdir}" in
@@ -519,16 +525,17 @@ case "${configuration}" in
 
   ## HP 9000 series 700 and 800, running HP/UX
   hppa1.0-hp-hpux* )
-    machine=hp9000s800 opsys=hpux.h
+    machine=hp9000s800 opsys=hpux
   ;;
   hppa1.1-hp-hpux* )
-    machine=hp9000s800 opsys=hpux8.h
+    machine=hp9000s800 opsys=hpux8
   ;;
   hppa*-hp-hpux* )
     ## Cross-compilation?  Nah!
-    case "`uname -m`" in
-      9000/8?? ) machine=hp9000s800 opsys=hpux.h ;;
-      9000/7?? ) machine=hp9000s800 opsys=hpux8.h ;;
+    case "`uname -r`" in
+      *.08.* ) machine=hp9000s800 opsys=hpux ;;
+      *.09.* ) machine=hp9000s800 opsys=hpux8 ;;
+      *) machine=hp9000s800 opsys=hpux ;;
     esac
   ;;
 
@@ -725,6 +732,7 @@ case "${configuration}" in
     esac
     case "${configuration}" in
       *-sunos4.0*	  ) opsys=sunos4-0 ;;
+      *-sunos4.1.3*	  ) opsys=sunos4-1-3 ;;
       *-sunos4* | *-sunos ) opsys=sunos4-1 ;;
       *-sunos5* | *-solaris* ) opsys=sol2 ;;
       *			  ) opsys=bsd4-2   ;;
@@ -912,7 +920,7 @@ esac
 case "${window_system}" in
   "none" | "x11" | "x10" ) ;;
   "" )
-    echo "  No window system specifed.  Looking for X Windows."
+    echo "  No window system specifed.  Looking for X window system."
     window_system=none
     if [ -r /usr/lib/libX11.a \
 	 -o -d /usr/include/X11 \
@@ -922,7 +930,7 @@ case "${window_system}" in
     fi
   ;;
   * )
-    echo "Don\'t specify the window system more than once." >&2
+    echo "Don't specify the window system more than once." >&2
     exit 1
   ;;
 esac
@@ -1101,6 +1109,6 @@ Configured for \`${configuration}'.
 
 ### Restore the arguments to this script, so autoconf can record them
 ### in the config.status file.
-set - ${arguments}
+set -- ${arguments}
 ]
 AC_OUTPUT(Makefile)

@@ -1,3 +1,152 @@
+Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Version 19.9 released.
+
+Thu May 27 02:02:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_char): Correct previous change.
+
+Thu May 27 01:04:33 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* systty.h: Always terminate comments, to avoid confusion.
+
+	* xfns.c: Make resource manager work correctly even when
+	Vinvocation_name has periods and asterisks in it.
+	(Vxrdb_name): New variable.
+	(Fx_get_resource): Use it instead of Vinvocation_name.
+	(Fx_open_connection): Initialize it to a copy of Vinvocation_name,
+	with the dots and stars replaced by hyphens.
+	(syms_of_xfns): staticpro it here.
+
+	* xfns.c (Fx_get_resource): Use the proper format string when the
+	attribute has been specified.
+
+Thu May 27 01:09:16 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (x_get_resource_string): New function.
+
+	* ymakefile (ALL_CFLAGS): Put CFLAGS last.
+
+Wed May 26 19:53:16 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* s/sol2.h: (SOLARIS_BROKEN_ACCESS): Don't define this.
+
+	* s/aix3-2.h (C_SWITCH_SYSTEM): Don't define this to be "-ma" if
+	we're using GCC - that's an XLC switch.
+
+	* s/aix3-2.h (LIBS_SYSTEM): Put -LIM -Liconv here.
+
+	* systty.h (HAVE_LTCHARS, HAVE_TCHARS): New macros; define them if
+	we have those structures, but *don't* define them if we have
+	TERMIOS, whose functions take care of those parameters; that
+	screws up AIX.
+	(struct emacs_tty): Test those symbols, instead of the ioctl
+	commands.
+	* sysdep.c (emacs_get_tty, emacs_set_tty, new_ltchars, new_tchars,
+	init_sys_modes): Same.
+
+	* config.h.in (HAVE_RENAME): Include an #undef for this, so
+	configure will have something to edit.
+
+Wed May 26 19:12:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (window_loop, case GET_LRU_WINDOW):
+	Get frame's width properly.
+
+	* xselect.c (x_get_local_selection): If no conversion function
+	exists for the requested type, just return nil.
+
+	* s/linux.h (HAVE_TCATTR): Defined.
+
+	* sysdep.c [HAVE_SOCKETS]: Include socket.h, netdb.h.
+	(get_system_name) [HAVE_SOCKETS]: Use gethostbyname.
+
+Wed May 26 19:00:00 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* s/hpux8.h (LIB_X11_LIB, C_SWITCH_SYSTEM, LD_SWITCH_SYSTEM,
+	LD_SWITCH_SYSTEM, OLDXMENU_OPTIONS): Add X11R5 directories to the
+	search paths in these lists; they shouldn't do any harm if they
+	don't have X11R5.
+
+	* s/aix3-2.h (C_SWITCH_SYSTEM): Don't #define this if we're using
+	GCC.
+
+Wed May 26 01:09:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xrdb.c (magic_searchpath_decoder): Fix typos.
+
+	* xdisp.c (display_text_line): Don't call compute_char_face
+	for a non-X frame.
+
+	* xfns.c (Fx_rebind_key, Fx_rebind_keys): X10 definitions deleted.
+	(syms_of_xfns): Install them only if X11.
+
+	* ralloc.c (r_alloc_sbrk): Declare already_available as long, not SIZE.
+
+	* xfns.c (x_set_cursor_type): If arg not recognized, use box cursor.
+
+	* s/hpux8.h (LD_SWITCH_SYSTEM) [__GNUC__]: Pass -a archive to ld.
+	(HAVE_RANDOM): Defined.
+
+	* s/hpux.h (rand, srand): Definitions deleted.
+
+	* keyboard.c (Fcurrent_input_mode): Fix the call to Flist.
+	(make_lispy_event): Fix off-by-1 error with hpos in menu bar.
+
+	* s/sunos4-1-3.h: New file.
+
+	* ymakefile (XOBJ) [!HAVE_X_MENU]: Add xfaces.o.
+
+	* s/irix4-0.h (SIGNALS_VIA_CHARACTERS): Defined.
+
+	* xterm.c (x_wm_set_size_hint): Don't set hints for max size.
+
+Tue May 25 11:19:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m/ibmrs6000.h (LIBS_MACHINE): Add -lIM and -liconv.
+	(HAVE_GETTIMEOFDAY): Deleted.
+
+	* sysdep.c (wait_for_termination): Don't use the BSD alternative
+	for LINUX.  Use the UNIPLUS alternative.
+
+	* keyboard.c (read_char): If kbd_buffer_get_event returns nil,
+	redisplay and retry.
+	(kbd_buffer_get_event): If event is handled here, return nil.
+	(swallow_events): New function.
+	* process.c (wait_reading_process_input): Call that.
+
+	* ralloc.c (POINTER): Always use char *.
+
+	* s/sol2.h (C_SWITCH_X_SYSTEM): Deleted.
+	(LD_SWITCH_SYSTEM): Delete the -L option, leave just -R.
+
+	* m/symmetry.h (PTY_TTY_NAME_SPRINTF, PTY_NAME_SPRINTF):
+	Use pty_name, not ptyname.
+
+	* syntax.c (Fforward_comment): Arg is a Lisp_Object.
+	Convert it to an int.
+
+	* ymakefile (alloca.o): Get alloca.c and alloca.s from ${srcdir}.
+
+	* floatfns.c (logb): Don't declare if hpux.
+
+	* syntax.c (Fforward_comment): Always set point.
+
+	* s/dgux.h, s/hpux.h, s/esix.h (HAVE_GETTIMEOFDAY): Deleted.
+
+	* s/irix4-0.h (C_ALLOCA, alloca): Definitions deleted.
+	[!NOT_C_CODE]: Include alloca.h.
+	(NEED_SIOCTL): #undef this.
+
+	* xterm.h (PIXEL_TO_CHAR_COL, PIXEL_TO_CHAR_ROW):
+	Fix mismatch in arg names.
+
+	* xfns.c (Fx_open_connection): Set xrm_option correctly.
+
+Tue May 25 18:09:03 1993  David J. MacKenzie  (djm@wiki.eng.umd.edu)
+
+	* xfns.c (x_figure_window_size): Make the default frame coords (0,0).
+
 Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.8 released.

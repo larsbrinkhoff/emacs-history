@@ -608,7 +608,9 @@ The buffer is not selected, just returned to the caller."
 		 (not (member logical find-file-not-true-dirname-list)))
 	       (setq buffer-file-name buffer-file-truename))
 	  (if find-file-visit-truename
-	      (setq buffer-file-name (setq filename buffer-file-truename)))
+	      (setq buffer-file-name
+		    (setq filename
+			  (expand-file-name buffer-file-truename))))
 	  ;; Set buffer's default directory to that of the file.
 	  (setq default-directory (file-name-directory filename))
 	  ;; Turn off backup files for certain file names.  Since
@@ -706,7 +708,9 @@ run `normal-mode' explicitly."
 				  ("\\.mss\\'" . scribe-mode)
 				  ("\\.pl\\'" . prolog-mode)
 				  ("\\.cc\\'" . c++-mode)
+				  ("\\.hh\\'" . c++-mode)
 				  ("\\.C\\'" . c++-mode)
+				  ("\\.H\\'" . c++-mode)
 ;;;				  ("\\.mk\\'" . makefile-mode)
 ;;;				  ("[Mm]akefile" . makefile-mode)
 ;;; Less common extensions come here
@@ -740,6 +744,9 @@ run `normal-mode' explicitly."
 				  ("\\.lex\\'" . c-mode)
 				  ("\\.oak\\'" . scheme-mode)
 				  ("\\.scm.[0-9]*\\'" . scheme-mode)
+				  ("\\.sgm\\'" sgml-mode)
+				  ("\\.sgml\\'" sgml-mode)
+				  ("\\.dtd\\'" sgml-mode)
 				  ;; .emacs following a directory delimiter
 				  ;; in either Unix or VMS syntax.
 				  ("[]>:/]\\..*emacs\\'" . emacs-lisp-mode)

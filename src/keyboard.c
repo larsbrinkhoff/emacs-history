@@ -1485,11 +1485,14 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
     }
 
   /* Actually read a character, waiting if necessary.  */
-  if (NILP (c))
-    c = kbd_buffer_get_event ();
-
-  if (NILP (c))
-    abort ();			/* Don't think this can happen. */
+  while (NILP (c))
+    {
+      c = kbd_buffer_get_event ();
+      if (!NILP (c))
+	break;
+      if (commandflag >= 0 && !input_pending && !detect_input_pending ())
+	redisplay ();
+    }
 
   /* Terminate Emacs in batch mode if at eof.  */
   if (noninteractive && XTYPE (c) == Lisp_Int && XINT (c) < 0)
@@ -1852,7 +1855,6 @@ kbd_buffer_get_event ()
 #ifdef HAVE_X11
 	  x_handle_selection_request (event);
 	  kbd_fetch_ptr = event + 1;
-	  goto retry;
 #else
 	  /* We're getting selection request events, but we don't have
              a window system.  */
@@ -1860,12 +1862,11 @@ kbd_buffer_get_event ()
 #endif
 	}
 
-      if (event->kind == selection_clear_event)
+      else if (event->kind == selection_clear_event)
 	{
 #ifdef HAVE_X11
 	  x_handle_selection_clear (event);
 	  kbd_fetch_ptr = event + 1;
-	  goto retry;
 #else
 	  /* We're getting selection request events, but we don't have
              a window system.  */
@@ -1876,37 +1877,39 @@ kbd_buffer_get_event ()
 #ifdef MULTI_FRAME
       /* If this event is on a different frame, return a switch-frame this
 	 time, and leave the event in the queue for next time.  */
-      {
-	Lisp_Object frame = event->frame_or_window;
-	Lisp_Object focus;
-
-	if (XTYPE (frame) == Lisp_Window)
-	  frame = WINDOW_FRAME (XWINDOW (frame));
-
-	focus = FRAME_FOCUS_FRAME (XFRAME (frame));
-	if (! NILP (focus))
-	  frame = focus;
-
-	if (! EQ (frame, internal_last_event_frame)
-	    && XFRAME (frame) != selected_frame)
-	  obj = make_lispy_switch_frame (frame);
-	internal_last_event_frame = frame;
-      }
-#endif
-
-      /* If we didn't decide to make a switch-frame event, go ahead
-	 and build a real event from the queue entry.  */
-      if (NILP (obj))
+      else
 	{
-	  obj = make_lispy_event (event);
-      
-	  /* Wipe out this event, to catch bugs.  */
-	  event->kind = no_event;
-	  (XVECTOR (kbd_buffer_frame_or_window)->contents[event - kbd_buffer]
-	   = Qnil);
+	  Lisp_Object frame = event->frame_or_window;
+	  Lisp_Object focus;
 
-	  kbd_fetch_ptr = event + 1;
+	  if (XTYPE (frame) == Lisp_Window)
+	    frame = WINDOW_FRAME (XWINDOW (frame));
+
+	  focus = FRAME_FOCUS_FRAME (XFRAME (frame));
+	  if (! NILP (focus))
+	    frame = focus;
+
+	  if (! EQ (frame, internal_last_event_frame)
+	      && XFRAME (frame) != selected_frame)
+	    obj = make_lispy_switch_frame (frame);
+	  internal_last_event_frame = frame;
+
+	  /* If we didn't decide to make a switch-frame event, go ahead
+	     and build a real event from the queue entry.  */
+
+	  if (NILP (obj))
+	    {
+	      obj = make_lispy_event (event);
+
+	      /* Wipe out this event, to catch bugs.  */
+	      event->kind = no_event;
+	      (XVECTOR (kbd_buffer_frame_or_window)->contents[event - kbd_buffer]
+	       = Qnil);
+
+	      kbd_fetch_ptr = event + 1;
+	    }
 	}
+#endif
     }
   else if (do_mouse_tracking && mouse_moved)
     {
@@ -1948,10 +1951,12 @@ kbd_buffer_get_event ()
        something for us to read!  */
     abort ();
 
+#if 0
   /* If something gave back nil as the Lispy event,
      it means the event was discarded, so try again.  */
   if (NILP (obj))
     goto retry;
+#endif
 
   input_pending = readable_events ();
 
@@ -1962,6 +1967,52 @@ kbd_buffer_get_event ()
   return (obj);
 }
 
+/* Process any events that are not user-visible.  */
+
+void
+swallow_events ()
+{
+  while (kbd_fetch_ptr != kbd_store_ptr)
+    {
+      struct input_event *event;
+
+      event = ((kbd_fetch_ptr < kbd_buffer + KBD_BUFFER_SIZE)
+	       ? kbd_fetch_ptr
+	       : kbd_buffer);
+
+      last_event_timestamp = event->timestamp;
+
+      /* These two kinds of events get special handling
+	 and don't actually appear to the command loop.  */
+      if (event->kind == selection_request_event)
+	{
+#ifdef HAVE_X11
+	  x_handle_selection_request (event);
+	  kbd_fetch_ptr = event + 1;
+#else
+	  /* We're getting selection request events, but we don't have
+             a window system.  */
+	  abort ();
+#endif
+	}
+
+      else if (event->kind == selection_clear_event)
+	{
+#ifdef HAVE_X11
+	  x_handle_selection_clear (event);
+	  kbd_fetch_ptr = event + 1;
+#else
+	  /* We're getting selection request events, but we don't have
+             a window system.  */
+	  abort ();
+#endif
+	}
+      else
+	break;
+    }
+
+  get_input_pending (&input_pending);
+}
 
 /* Caches for modify_event_symbol.  */
 static Lisp_Object func_key_syms;
@@ -2170,8 +2221,8 @@ make_lispy_event (event)
 		    Lisp_Object pos, string;
 		    pos = Fcdr (Fcdr (Fcar (items)));
 		    string = Fcar (Fcdr (Fcar (items)));
-		    if (XINT (event->x) > XINT (pos)
-			&& XINT (event->x) <= XINT (pos) + XSTRING (string)->size)
+		    if (XINT (event->x) >= XINT (pos)
+			&& XINT (event->x) < XINT (pos) + XSTRING (string)->size)
 		      break;
 		  }
 		position
@@ -4580,7 +4631,7 @@ The elements of this list correspond to the arguments of\n\
   val[2] = meta_key == 2 ? make_number (0) : meta_key == 1 ? Qt : Qnil;
   XFASTINT (val[3]) = quit_char;
 
-  return Flist (val, sizeof (val) / sizeof (val[0]));
+  return Flist (sizeof (val) / sizeof (val[0]), val);
 }
 
 

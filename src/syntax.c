@@ -570,21 +570,28 @@ Stop scanning if we find something other than a comment or whitespace.\n\
 If N comments are found as expected, with nothing except whitespace\n\
 between them, return t; otherwise return nil.")
   (count)
-     int count;
+     Lisp_Object count;
 {
   register int from;
   register int stop;
   register int c;
   register enum syntaxcode code;
   int comstyle = 0;	    /* style of comment encountered */
+  int found;
+  int count1;
+
+  CHECK_NUMBER (count, 0);
+  count1 = XINT (count);
 
   immediate_quit = 1;
   QUIT;
 
   from = PT;
+  found = from;
 
-  while (count > 0)
+  while (count1 > 0)
     {
+      found = from;
       stop = ZV;
       while (from < stop)
 	{
@@ -612,6 +619,7 @@ between them, return t; otherwise return nil.")
 		  if (from == stop)
 		    {
 		      immediate_quit = 0;
+		      SET_PT (found);
 		      return Qnil;
 		    }
 		  c = FETCH_CHAR (from);
@@ -636,16 +644,19 @@ between them, return t; otherwise return nil.")
 	  else if (code != Swhitespace)
 	    {
 	      immediate_quit = 0;
+	      SET_PT (found);
 	      return Qnil;
 	    }
 	}
 
       /* End of comment reached */
-      count--;
+      count1--;
     }
 
-  while (count < 0)
+  while (count1 < 0)
     {
+      found = from;
+
       stop = BEGV;
       while (from > stop)
 	{
@@ -685,6 +696,7 @@ between them, return t; otherwise return nil.")
 		      if (from == stop)
 			{
 			  immediate_quit = 0;
+			  SET_PT (found);
 			  return Qnil;
 			}
 		      from--;
@@ -808,11 +820,12 @@ between them, return t; otherwise return nil.")
 	  else if (code != Swhitespace || quoted)
 	    {
 	      immediate_quit = 0;
+	      SET_PT (found);
 	      return Qnil;
 	    }
 	}
 
-      count++;
+      count1++;
     }
 
   SET_PT (from);

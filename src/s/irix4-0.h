@@ -2,11 +2,15 @@
 
 #define USG5_3
 
-/* Define HAVE_ALLOCA to say that the system provides a properly
-   working alloca function and it should be used. */
 #define HAVE_ALLOCA
-#undef C_ALLOCA
-#define alloca __builtin_alloca
+#ifndef NOT_C_CODE
+#include <alloca.h>
+#endif
+
+#undef NEED_SIOCTL
+
+/* Make process_send_signal work by "typing" a signal character on the pty.  */
+#define SIGNALS_VIA_CHARACTERS
 
 /* use K&R C */
 #ifndef __GNUC__

@@ -32,7 +32,7 @@
 Each element of list is a list (FILENAME NODENAME BUFFERPOS).")
 
 (defvar Info-enable-edit nil
-  "*Non-nil means the \\<info-mode-map>\\[Info-edit] command in Info can edit the current node.
+  "*Non-nil means the \\<Info-mode-map>\\[Info-edit] command in Info can edit the current node.
 This is convenient if you want to write info files by hand.
 However, we recommend that you not do this.
 It is better to write a Texinfo file and generate the Info file from that,
@@ -496,7 +496,7 @@ to read a file name from the minibuffer."
 	(Info-restore-point (cdr hl)))))
 
 (defvar Info-last-search nil
-  "Default regexp for \\<info-mode-map>\\[Info-search] command to search for.")
+  "Default regexp for \\<Info-mode-map>\\[Info-search] command to search for.")
 
 (defun Info-search (regexp)
   "Search for REGEXP, starting from point, and select node it's found in."
@@ -1075,19 +1075,19 @@ At end of the node's text, moves to the next node."
     (goto-char pos))
   (let (node)
     (cond
-     ((setq node (Info-get-token (point) "\\*note[ \n]" "\\*note[ \n]\\([^:]*\\):" t))
+     ((setq node (Info-get-token (point) "\\*note[ \n]" "\\*note[ \n]\\([^:]*\\):"))
       (Info-follow-reference node))
-     ((setq node (Info-get-token (point) "\\* " "\\* \\([^:]*\\)::" t))
+     ((setq node (Info-get-token (point) "\\* " "\\* \\([^:]*\\)::"))
       (Info-goto-node node))
-     ((setq node (Info-get-token (point) "\\* " "\\* \\([^:]*\\):" t))
+     ((setq node (Info-get-token (point) "\\* " "\\* \\([^:]*\\):"))
       (Info-menu node))
-     ((setq node (Info-get-token (point) "Up: " "Up: \\([^,\n\t]*\\)" t))
+     ((setq node (Info-get-token (point) "Up: " "Up: \\([^,\n\t]*\\)"))
       (Info-goto-node node))
-     ((setq node (Info-get-token (point) "Next: " "Next: \\([^,\n\t]*\\)" t))
+     ((setq node (Info-get-token (point) "Next: " "Next: \\([^,\n\t]*\\)"))
       (Info-goto-node node))
-     ((setq node (Info-get-token (point) "File: " "File: \\([^,\n\t]*\\)" t))
+     ((setq node (Info-get-token (point) "File: " "File: \\([^,\n\t]*\\)"))
       (Info-goto-node "Top"))
-     ((setq node (Info-get-token (point) "Prev: " "Prev: \\([^,\n\t]*\\)" t))
+     ((setq node (Info-get-token (point) "Prev: " "Prev: \\([^,\n\t]*\\)"))
       (Info-goto-node node))
      ((save-excursion (forward-line 1) (eobp))
       (Info-next)))
@@ -1151,7 +1151,7 @@ topics.  Info has commands to follow the references and show you other nodes.
 
 Selecting other nodes:
 \\[Info-next]	Move to the \"next\" node of this node.
-\\[Info-previous]	Move to the \"previous\" node of this node.
+\\[Info-prev]	Move to the \"previous\" node of this node.
 \\[Info-up]	Move \"up\" from this node.
 \\[Info-menu]	Pick menu item specified by name (or abbreviation).
 	Picking a menu item causes another node to be selected.
@@ -1228,7 +1228,7 @@ Allowed only if variable `Info-enable-edit' is non-nil."
   ;; Make mode line update.
   (set-buffer-modified-p (buffer-modified-p))
   (message (substitute-command-keys
-	     "Editing: Type \\<info-mode-map>\\[Info-cease-edit] to return to info")))
+	     "Editing: Type \\<Info-mode-map>\\[Info-cease-edit] to return to info")))
 
 (defun Info-cease-edit ()
   "Finish editing Info node; switch back to Info proper."

@@ -1,3 +1,19 @@
+Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Version 19.9 released.
+
+Thu May 27 01:37:30 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* x-win.el: Check for a geometry resource, and apply it to the
+	initial frame.
+
+Tue May 25 11:06:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el: Pass x-command-line-resources to x-open-connection.
+	(x-command-line-resources): New variable.
+	(x-handle-rn-switch): New function.
+	(command-switch-alist): Add -rn.
+
 Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.8 released.

@@ -521,8 +521,8 @@ to a particular character at a particular place, such as, the letter
 is usually a symbol, and an associated value, which can be any Lisp
 object--just as for properties of symbols.
 
-   You can use the property `face-code' to control the font and color
-of text.  Several other property names have special meanings.  You can
+   You can use the property `face' to control the font and color of
+text.  Several other property names have special meanings.  You can
 create properties of any name and examine them later for your own
 purposes.
 
@@ -617,10 +617,8 @@ Special Properties
 of the character.  It should be a symbol.  The properties of the symbol
 serve as defaults for the properties of the character.
 
-   You can use the property `face-code' to control the font and color
-of text.  That is the only property name which currently has a special
-meaning, but you can create properties of any name and examine them
-later for your own purposes.  about face codes.
+   You can use the property `face' to control the font and color of
+text.
 
    You can specify a different keymap for a portion of the text by means
 of a `local-map' property.  The property's value, for the character

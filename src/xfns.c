@@ -54,6 +54,9 @@ static XrmDatabase xrdb;
 /* The class of this X application.  */
 #define EMACS_CLASS "Emacs"
 
+/* The name we're using for this X application.  */
+Lisp_Object Vxrdb_name;
+
 /* Title name and application name for X stuff. */
 extern char *x_id_name;
 
@@ -758,11 +761,18 @@ x_set_cursor_type (f, arg, oldval)
 {
   if (EQ (arg, Qbar))
     FRAME_DESIRED_CURSOR (f) = bar_cursor;
-  else if (EQ (arg, Qbox))
-    FRAME_DESIRED_CURSOR (f) = filled_box_cursor;
+  else
+#if 0
+    if (EQ (arg, Qbox))
+#endif
+      FRAME_DESIRED_CURSOR (f) = filled_box_cursor;
+  /* Error messages commented out because people have trouble fixing
+     .Xdefaults with Emacs, when it has something bad in it.  */
+#if 0
   else
     error
       ("the `cursor-type' frame parameter should be either `bar' or `box'");
+#endif
 
   /* Make sure the cursor gets redrawn.  This is overkill, but how
      often do people change cursor types?  */
@@ -1097,7 +1107,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
     {
       /* Allocate space for the components, the dots which separate them,
 	 and the final '\0'.  */
-      name_key = (char *) alloca (XSTRING (Vinvocation_name)->size
+      name_key = (char *) alloca (XSTRING (Vxrdb_name)->size
 				  + XSTRING (attribute)->size
 				  + 2);
       class_key = (char *) alloca ((sizeof (EMACS_CLASS) - 1)
@@ -1105,7 +1115,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
 				   + 2);
 
       sprintf (name_key, "%s.%s",
-	       XSTRING (Vinvocation_name)->data,
+	       XSTRING (Vxrdb_name)->data,
 	       XSTRING (attribute)->data);
       sprintf (class_key, "%s.%s",
 	       EMACS_CLASS,
@@ -1113,7 +1123,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
     }
   else
     {
-      name_key = (char *) alloca (XSTRING (Vinvocation_name)->size
+      name_key = (char *) alloca (XSTRING (Vxrdb_name)->size
 				  + XSTRING (component)->size
 				  + XSTRING (attribute)->size
 				  + 3);
@@ -1124,10 +1134,10 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
 				   + 3);
 
       sprintf (name_key, "%s.%s.%s",
-	       XSTRING (Vinvocation_name)->data,
+	       XSTRING (Vxrdb_name)->data,
 	       XSTRING (component)->data,
 	       XSTRING (attribute)->data);
-      sprintf (class_key, "%s.%s",
+      sprintf (class_key, "%s.%s.%s",
 	       EMACS_CLASS,
 	       XSTRING (class)->data,
 	       XSTRING (subclass)->data);
@@ -1139,6 +1149,31 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
     return build_string (value);
   else
     return Qnil;
+}
+
+/* Used when C code wants a resource value.  */
+
+char *
+x_get_resource_string (attribute, class)
+     char *attribute, *class;
+{
+  register char *value;
+  char *name_key;
+  char *class_key;
+
+  /* Allocate space for the components, the dots which separate them,
+     and the final '\0'.  */
+  name_key = (char *) alloca (XSTRING (Vinvocation_name)->size
+			      + strlen (attribute) + 2);
+  class_key = (char *) alloca ((sizeof (EMACS_CLASS) - 1)
+			       + strlen (class) + 2);
+
+  sprintf (name_key, "%s.%s",
+	   XSTRING (Vinvocation_name)->data,
+	   attribute);
+  sprintf (class_key, "%s.%s", EMACS_CLASS, class);
+
+  return x_get_string_resource (xrdb, name_key, class_key);
 }
 
 #else	/* X10 */
@@ -1357,8 +1392,10 @@ x_figure_window_size (f, parms)
      window manager prompting. */
   f->width = DEFAULT_COLS;
   f->height = DEFAULT_ROWS;
-  f->display.x->top_pos = 1;
-  f->display.x->left_pos = 1;
+  /* Window managers expect that if program-specified
+     positions are not (0,0), they're intentional, not defaults.  */
+  f->display.x->top_pos = 0;
+  f->display.x->left_pos = 0;
 
   tem0 = x_get_arg (parms, Qheight, 0, 0, number);
   tem1 = x_get_arg (parms, Qwidth, 0, 0, number);
@@ -3324,88 +3361,7 @@ See the documentation of `x-rebind-key' for more information.")
     }
   return Qnil;
 }
-#else
-DEFUN ("x-rebind-key", Fx_rebind_key, Sx_rebind_key, 3, 3, 0,
-  "Rebind KEYCODE, with shift bits SHIFT-MASK, to new string NEWSTRING.\n\
-KEYCODE and SHIFT-MASK should be numbers representing the X keyboard code\n\
-and shift mask respectively.  NEWSTRING is an arbitrary string of keystrokes.\n\
-If SHIFT-MASK is nil, then KEYCODE's key will be bound to NEWSTRING for\n\
-all shift combinations.\n\
-Shift Lock  1	   Shift    2\n\
-Meta	    4	   Control  8\n\
-\n\
-For values of KEYCODE, see /usr/lib/Xkeymap.txt (remember that the codes\n\
-in that file are in octal!)\n\
-\n\
-NOTE: due to an X bug, this function will not take effect unless one has\n\
-a `~/.Xkeymap' file.  (See the documentation for the `keycomp' program.)\n\
-This problem will be fixed in X version 11.")
-
-  (keycode, shift_mask, newstring)
-     register Lisp_Object keycode;
-     register Lisp_Object shift_mask;
-     register Lisp_Object newstring;
-{
-  char *rawstring;
-  int keysym, rawshift;
-  int i, strsize;
-  
-  CHECK_NUMBER (keycode, 1);
-  if (!NILP (shift_mask))
-    CHECK_NUMBER (shift_mask, 2);
-  CHECK_STRING (newstring, 3);
-  strsize = XSTRING (newstring)->size;
-  rawstring = (char *) xmalloc (strsize);
-  bcopy (XSTRING (newstring)->data, rawstring, strsize);
-
-  keysym = ((unsigned) (XINT (keycode))) & 255;
-
-  if (NILP (shift_mask))
-    {
-      for (i = 0; i <= 15; i++)
-	XRebindCode (keysym, i<<11, rawstring, strsize);
-    }
-  else
-    {
-      rawshift = (((unsigned) (XINT (shift_mask))) & 15) << 11;
-      XRebindCode (keysym, rawshift, rawstring, strsize);
-    }
-  return Qnil;
-}
-  
-DEFUN ("x-rebind-keys", Fx_rebind_keys, Sx_rebind_keys, 2, 2, 0,
-  "Rebind KEYCODE to list of strings STRINGS.\n\
-STRINGS should be a list of 16 elements, one for each shift combination.\n\
-nil as element means don't change.\n\
-See the documentation of `x-rebind-key' for more information.")
-  (keycode, strings)
-     register Lisp_Object keycode;
-     register Lisp_Object strings;
-{
-  register Lisp_Object item;
-  register char *rawstring;
-  KeySym rawkey, modifier[1];
-  int strsize;
-  register unsigned i;
-
-  CHECK_NUMBER (keycode, 1);
-  CHECK_CONS (strings, 2);
-  rawkey = (KeySym) ((unsigned) (XINT (keycode))) & 255;
-  for (i = 0; i <= 15; strings = Fcdr (strings), i++)
-    {
-      item = Fcar (strings);
-      if (!NILP (item))
-	{
-	  CHECK_STRING (item, 2);
-	  strsize = XSTRING (item)->size;
-	  rawstring = (char *) xmalloc (strsize);
-	  bcopy (XSTRING (item)->data, rawstring, strsize);
-	  XRebindCode (rawkey, i << 11, rawstring, strsize);
-	}
-    }
-  return Qnil;
-}
-#endif /* not HAVE_X11 */
+#endif /* HAVE_X11 */
 
 #ifdef HAVE_X11
 Visual *
@@ -3476,7 +3432,7 @@ arg XRM_STRING is a string of resources in xrdb format.")
   if (!EQ (xrm_string, Qnil))
     {
       CHECK_STRING (xrm_string, 1);
-      xrm_option = (unsigned char *) XSTRING (xrm_string);
+      xrm_option = (unsigned char *) XSTRING (xrm_string)->data;
     }
   else
     xrm_option = (unsigned char *) 0;
@@ -3486,6 +3442,19 @@ arg XRM_STRING is a string of resources in xrdb format.")
 #else
   x_current_display->db = xrdb;
 #endif
+
+  /* Make a version of Vinvocation_name suitable for use in xrdb
+     queries - i.e. containing no dots or asterisks.  */
+  Vxrdb_name = Fcopy_sequence (Vinvocation_name);
+  {
+    int i;
+    int len = XSTRING (Vxrdb_name)->size;
+    char *data = XSTRING (Vxrdb_name)->data;
+    
+    for (i = 0; i < len; i++)
+      if (data[i] == '.' || data[i] == '*')
+	data[i] = '-';
+  }
 
   x_screen = DefaultScreenOfDisplay (x_current_display);
 
@@ -3639,6 +3608,8 @@ Changing the value does not affect existing frames\n\
 unless you set the mouse color.");
   Vx_pointer_shape = Qnil;
 
+  staticpro (&Vxrdb_name);
+
 #if 0
   DEFVAR_INT ("x-nontext-pointer-shape", &Vx_nontext_pointer_shape,
 	      "The shape of the pointer when not over text.");
@@ -3685,6 +3656,8 @@ unless you set the mouse color.");
   defsubr (&Sx_display_visual_class);
   defsubr (&Sx_display_backing_store);
   defsubr (&Sx_display_save_under);
+  defsubr (&Sx_rebind_key);
+  defsubr (&Sx_rebind_keys);
 #if 0
   defsubr (&Sx_track_pointer);
   defsubr (&Sx_grab_pointer);
@@ -3702,8 +3675,6 @@ unless you set the mouse color.");
 #if 0
   defsubr (&Sx_horizontal_line);
 #endif
-  defsubr (&Sx_rebind_key);
-  defsubr (&Sx_rebind_keys);
   defsubr (&Sx_open_connection);
   defsubr (&Sx_close_current_connection);
   defsubr (&Sx_synchronize);

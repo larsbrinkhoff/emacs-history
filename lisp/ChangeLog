@@ -1,3 +1,105 @@
+Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Version 19.9 released.
+
+Wed May 26 23:32:25 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* isearch.el (isearch-forward): Remove the claim that
+	isearch-whitespace-chars matches any string of whitespace.
+
+Wed May 26 16:26:16 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* completion.el: Comment out handling of shell-send-input.
+	Delete the "local thinking machines" definitions at the end
+	since they caused compilation failure.
+
+	* cl.el (cl-member): Renamed from member.
+
+	* time.el (display-time-day-and-date): Use defvar, not defconst.
+
+	* subr.el (listify-key-sequence): Avoid the constant ?\M-\200.
+
+	* files.el (find-file-noselect): Expand buffer-file-truename
+	before copying it to anything else.
+
+	* dired.el (dired-other-frame): New function, with binding.
+
+	* compile.el: Make C-x ` binding just once.
+
+	* help.el (finder-by-keyword): Autoload from `finder', not `finder.el'.
+
+	* nroff-mode.el (nroff-mode): Don't leave nroff-electric-mode void.
+
+	* byte-opt.el (byte-optimize-divide):
+	Don't optimize to less than two arguments.
+
+	* hexl.el (hexlify-command, dehexlify-command): Use exec-directory.
+
+	* rmailsort.el: New version from Umeda.  Needs detailed entry.
+
+	* paths.el (gnus-local-organization): Renamed from ...-your-...
+	(gnus-local-domain): Likewise.
+
+Wed May 26 02:49:13 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* faces.el (x-resolve-font-name): If PATTERN is nil, return the
+	frame's face.
+	(set-face-font): Only use x-resolve-font-name if FONT is a string.
+	Copying a faces shouldn't resolve the font.
+
+	* paths.el (Info-default-directory-list): Add
+	configure-info-directory to this list.
+
+Wed May 26 00:18:13 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* scroll-bar.el (scroll-bar-mode): Make default value t.
+
+	* help-macro.el (make-help-screen): Handle mouse events.
+	Be smart about window configurations--when and whether to restore.
+
+	* info.el (Info-follow-nearest-node): Omit 4th arg to Info-get-token.
+
+	* sgml-mode.el (sgml-validate): compile1 renamed to compile-internal.
+	(sgml-mode): Add autoload cookie.
+	* files.el (auto-mode-alist): Recognize .sgm, .sgml, .dtd.
+
+	* files.el (auto-mode-alist): Treat .H and .hh as C++ files.
+
+	* mouse.el (mouse-set-mark): Activate the mark.
+	Don't bounce the cursor if Transient Mark mode.
+	(mouse-save-then-kill): Pass explicit args to kill-ring-save.
+	(mouse-kill-ring-save): Likewise.
+
+	* mail-utils.el (mail-strip-quoted-names):
+	Catch errors from forward-sexp.
+
+	* comint.el (comint-filter): Restore buffer-read-only in proper buffer.
+
+	* ispell.el: Provide `ispell'.
+
+	* ange-ftp.el (ange-ftp-set-buffer-mode): Do nothing unless
+	visited name is an ange ftp magic name.
+
+	* advice.el: New version from Chalupsky.
+
+Tue May 25 11:47:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dired.el (dired-unmark-all-files): Read arg as a string.
+
+	* rmailsum.el (rmail-summary-mark-deleted): Check for end of buffer.
+	Pass t as NOWARN when calling rmail-summary-goto-msg.
+
+	* dired-aux.el (dired-compress-file): Test the return value
+	of dired-check-process properly.
+	Fix use of nonexistent var `name'.
+
+	* info.el (Info-edit, Info-last-search, Info-enable-edit): 
+	Correct case in `Info-mode-map'.
+
+	* rmail.el (rmail-bury): Fix call to set-window-buffer.
+
+	* loaddefs.el: copy-to-register now on C-x r s.
+
 Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.8 released.

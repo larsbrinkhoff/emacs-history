@@ -33,6 +33,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* The important properties of this type are that 1) it's a pointer, and
    2) arithmetic on it should work as if the size of the object pointed
    to has a size of 1.  */
+#if 0 /* Arithmetic on void* is a GCC extension.  */
 #ifdef __STDC__
 typedef void *POINTER;
 #else
@@ -44,6 +45,10 @@ typedef void *POINTER;
 typedef char *POINTER;
 
 #endif
+#endif /* 0 */
+
+/* Unconditionally use char * for this.  */
+typedef char *POINTER;
 
 typedef unsigned long SIZE;
 
@@ -346,7 +351,10 @@ r_alloc_sbrk (size)
   /* This is the first address not currently available for the heap.  */
   POINTER top;
   /* Amount of empty space below that.  */
-  SIZE already_available;
+  /* It is not correct to use SIZE here, because that is usually unsigned.
+     ptrdiff_t would be okay, but is not always available.
+     `long' will work in all cases, in practice.  */
+  long already_available;
   POINTER ptr;
 
   if (! use_relocatable_buffers)

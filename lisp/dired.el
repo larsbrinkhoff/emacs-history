@@ -346,6 +346,13 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   (interactive (dired-read-dir-and-switches "in other window "))
   (switch-to-buffer-other-window (dired-noselect dirname switches)))
 
+;;;###autoload (define-key ctl-x-5-map "d" 'dired-other-frame)
+;;;###autoload
+(defun dired-other-frame (dirname &optional switches)
+  "\"Edit\" directory DIRNAME.  Like `dired' but makes a new frame."
+  (interactive (dired-read-dir-and-switches "in other frame "))
+  (switch-to-buffer-other-frame (dired-noselect dirname switches)))
+
 ;;;###autoload
 (defun dired-noselect (dir-or-list &optional switches)
   "Like `dired' but returns the dired buffer as value, does not select it."
@@ -1752,22 +1759,19 @@ OLD and NEW are both characters used to mark files."
 	(delete-region (point) (1+ (point)))
 	(insert-char new 1)))))
 
-(defun dired-unmark-all-files (flag &optional arg)
+(defun dired-unmark-all-files (mark &optional arg)
   "Remove a specific mark or any mark from every file.
 With prefix arg, query for each marked file.
 Type \\[help-command] at that time for help."
-  (interactive
-   (let* ((cursor-in-echo-area t))
-     (list (progn (message "Remove marks (RET means all): ") (read-char))
-	   current-prefix-arg)))
+  (interactive "sRemove marks (RET means all): \nP")
   (let ((count 0)
-	(re (if (zerop (length flag)) dired-re-mark
-	      (concat "^" (regexp-quote flag)))))
+	(re (if (zerop (length mark)) dired-re-mark
+	      (concat "^" (regexp-quote mark)))))
     (save-excursion
       (let (buffer-read-only case-fold-search query
 			     (help-form "\
-Type SPC or `y' to unflag one file, DEL or `n' to skip to next,
-`!' to unflag all remaining files with no more questions."))
+Type SPC or `y' to unmark one file, DEL or `n' to skip to next,
+`!' to unmark all remaining files with no more questions."))
 	(goto-char (point-min))
 	(while (re-search-forward re nil t)
 	  (if (or (not arg)
@@ -1775,7 +1779,7 @@ Type SPC or `y' to unflag one file, DEL or `n' to skip to next,
 			       (dired-get-filename t)))
 	      (progn (delete-char -1) (insert " ") (setq count (1+ count))))
 	  (forward-line 1))))
-    (message "%s" (format "Flags removed: %d %s" count flag) )))
+    (message "%s" (format "Marks removed: %d %s" count mark))))
 
 ;; Logging failures operating on files, and showing the results.
 

@@ -111,6 +111,11 @@ read file names.  There is a list for arguments of commands like
 `query-replace'.  There are also very specific history lists, such
 as the one that `compile' uses for compilation commands.
 
+* You can now display text in a mixture of fonts and colors, using the
+"face" feature, together with the overlay and text property features.
+See the Emacs Lisp manual for details.  The Emacs Users Manual describes
+how to change the colors and font of standard predefined faces.
+
 * You can refer to files on other machines using special file name syntax:
 
 /HOST:FILENAME
@@ -375,7 +380,7 @@ buffer with a particular name.
 If `compare-ignore-case' is non-nil, then differences in case are also
 ignored.
 
-* `forward-paragraph' is now bound to M-{ by default, and `backward-paragraph'
+* `backward-paragraph' is now bound to M-{ by default, and `forward-paragraph'
 to M-}.  Originally, these commands were bound to M-[ and M-], but they were
 running into conflicts with the use of function keys.  On many terminals,
 function keys send a sequence beginning ESC-[, so many users have defined this

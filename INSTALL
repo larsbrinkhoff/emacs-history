@@ -38,7 +38,10 @@ getting around some possible installation problems.
     ./configure CONFIGURATION-NAME [--OPTION[=VALUE]] ...
 
 The CONFIGURATION-NAME argument should be a configuration name given
-in `./etc/MACHINES'.
+in `./etc/MACHINES'.  If omitted, `configure' will try to guess your
+system type by inspecting its environment; if it cannot, you must find
+the appropriate configuration name in `./etc/MACHINES' and specify it
+explicitly.
 
 The `--with-x', `--with-x11', and `--with-x10' options specify which
 window system Emacs should support.  If you don't want X support,

@@ -228,7 +228,7 @@ SHORT= shortnames
    -DHAVE_CONFIG_H is needed for some other files to take advantage of
    the information in `config.h'.  */
 CFLAGS=-g
-ALL_CFLAGS=${CFLAGS} -Demacs -DHAVE_CONFIG_H $(MYCPPFLAG) -I${srcdir} -I. C_SWITCH_MACHINE C_SWITCH_X_MACHINE C_SWITCH_SYSTEM C_SWITCH_X_SYSTEM C_SWITCH_SITE C_SWITCH_X_SITE
+ALL_CFLAGS=-Demacs -DHAVE_CONFIG_H $(MYCPPFLAG) -I${srcdir} -I. C_SWITCH_MACHINE C_SWITCH_X_MACHINE C_SWITCH_SYSTEM C_SWITCH_X_SYSTEM C_SWITCH_SITE C_SWITCH_X_SITE ${CFLAGS}
 .c.o:
 	$(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) $<
 
@@ -272,7 +272,7 @@ LIBXMENU= -lXMenu
 
 /* Otherwise, omit xmenu.o from the list of X object files, and
    don't worry about the menu library at all.  */
-XOBJ= xterm.o xfns.o xselect.o xrdb.o
+XOBJ= xterm.o xfns.o xfaces.o xselect.o xrdb.o
 LIBXMENU=
 #endif /* ! defined (HAVE_X_MENU) */
 
@@ -609,13 +609,13 @@ config.h: config.h.in
    users of alloca in Emacs.  Check out ../lib-src/getopt.c.  */
 alloca.o : alloca.c
 	$(CC) -c $(CPPFLAGS) -Dfree=xfree -Dmalloc=xmalloc \
-	$(ALL_CFLAGS) alloca.c
+	$(ALL_CFLAGS) ${srcdir}/alloca.c
 #else
 #ifndef HAVE_ALLOCA
 alloca.o : alloca.s config.h
 /* $(CPP) is cc -E, which may get confused by filenames
    that do not end in .c.  So copy file to a safe name.  */
-	cp alloca.s allocatem.c
+	cp ${srcdir}/alloca.s allocatem.c
 /* remove any ^L, blank lines, and preprocessor comments,
    since some assemblers barf on them */
 	$(CPP) allocatem.c | \

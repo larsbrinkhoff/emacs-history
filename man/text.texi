@@ -1038,7 +1038,7 @@ Close the last unended block for La@TeX{} (@code{tex-close-latex-block}).
   In La@TeX{} input, @samp{\begin} and @samp{\end} commands are used to
 group blocks of text.  To insert a @samp{\begin} and a matching
 @samp{\end} (on a new line following the @samp{\begin}), use @kbd{C-c
-C-f} (@code{tex-latex-block}).  A blank line is inserted between the
+C-o} (@code{tex-latex-block}).  A blank line is inserted between the
 two, and point is left there.@refill
 
 @vindex latex-block-names

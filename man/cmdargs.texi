@@ -304,7 +304,7 @@ displays the entire font @samp{6x13}.
 parts of the Emacs display.  To find out what colors are available on
 your system, look at the @file{/usr/lib/X11/rgb.txt} file.  If you do
 not specify colors, the default for the background is white and the
-default for all other resources is black.
+default for all other colors is black.
 
   On a monochrome (black and white) display, the foreground is black, the
 background is white, and the border is grey.  You can reverse the foreground
@@ -497,8 +497,8 @@ what name is used to run them, write @samp{Emacs} instead of
 @samp{emacs}, like this:
 
 @example
-Emacs.Borderwidth: 2
-Emacs.borderwidth: 4
+Emacs.BorderWidth: 2
+Emacs.borderWidth: 4
 @end example
 
   The following table lists the resource names that designate options
@@ -536,10 +536,8 @@ Name to display in icon.
 @item @code{internalBorder} (class @code{BorderWidth})
 Width in pixels of internal border.
 
-@ignore
-@item @code{PaneFont} (class is not usable)
+@item @code{paneFont} (class @code{Font})
 Font name for menu pane titles.
-@end ignore
 
 @item @code{pointerColor} (class @code{Foreground})
 Color of mouse cursor.
@@ -548,10 +546,8 @@ Color of mouse cursor.
 Switch foreground and background default colors if @samp{on}, use colors as
 specified if @samp{off}.
 
-@ignore
-@item @code{SelectionFont} (class is not usable)
+@item @code{selectionFont} (class @code{Font})
 Font name for menu items.
-@end ignore
 
 @item @code{title} (class @code{Title})
 Name to display in title bar of initial Emacs frame.

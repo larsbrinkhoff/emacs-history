@@ -4,7 +4,7 @@
 
 ;; Author: Hans Chalupsky <hans@cs.buffalo.edu>
 ;; Created: 12 Dec 1992
-;; Version: advice.el,v 2.0 1993/05/18 01:29:02 hans Exp
+;; Version: advice.el,v 2.1 1993/05/26 00:07:58 hans Exp
 ;; Keywords: advice, function hooks
 
 ;; This file is part of GNU Emacs.
@@ -26,7 +26,7 @@
 ;; LCD Archive Entry:
 ;; advice|Hans Chalupsky|hans@cs.buffalo.edu|
 ;; Advice mechanism for Emacs Lisp functions|
-;; 1993/05/18 01:29:02|2.0|~/packages/advice.el.Z|
+;; 1993/05/26 00:07:58|2.1|~/packages/advice.el.Z|
 
 
 ;;; Commentary:
@@ -92,11 +92,12 @@
 ;; didn't have the time yet to do all the necessary formatting. So,
 ;; until I do have the time or some kind soul does it for me I cramped
 ;; everything into the source file. Because about 50% of this file is
-;; documentation it is in outline-mode by default. Use `M-x hide-body'
-;; to see just the headings. Use the various other outline-mode functions
-;; to move around in the text. If you use Lucid Emacs, you'll just have
-;; to wait until `selective-display' works properly in order to be
-;; able to use outline-mode, sorry.
+;; documentation it should be in outline-mode by default, but it is not.
+;; If you choose to use outline-mode set `outline-regexp' to `";; @+"'
+;; and use `M-x hide-body' to see just the headings. Use the various
+;; other outline-mode functions to move around in the text. If you use
+;; Lucid Emacs, you'll just have to wait until `selective-display'
+;; works properly in order to be able to use outline-mode, sorry.
 ;;
 ;; And yes, I know: Documentation is for wimps.
 ;;
@@ -121,8 +122,8 @@
 ;;   + advised macros which were expanded during byte-compilation before
 ;;     their advice was activated.
 ;; - This package was developed under GNU Emacs 18.59 and Lucid Emacs 19.6.
-;;   It was adapted and tested for GNU Emacs alpha 19.5 and seems to work ok
-;;   for Epoch 4.2. For different Emacs environments your mileage may vary.
+;;   It was adapted and tested for GNU Emacs 19.8 and seems to work ok for
+;;   Epoch 4.2. For different Emacs environments your mileage may vary.
 
 ;; @ Credits:
 ;; ==========
@@ -1966,6 +1967,13 @@
 
 ;;; Change Log:
 
+;; advice.el,v
+;; Revision 2.1  1993/05/26  00:07:58  hans
+;; 	* advise `defalias' and `define-function' to properly handle forward
+;; 	  advice in GNU Emacs-19.7 and later
+;; 	* fix minor bug in `ad-preactivate-advice'
+;; 	* merge with FSF installation of version 2.0
+;;
 ;; Revision 2.0 1993/05/18 01:29:02 hans
 ;;	* Totally revamped: Now also works with v19s, function indirection
 ;;	  instead of body copying for original function calls, caching of
@@ -2010,7 +2018,7 @@
 ;; @@ Variable definitions:
 ;; ========================
 
-(defconst ad-version "2.0")
+(defconst ad-version "2.1")
 
 (defconst ad-emacs19-p
   (not (or (and (boundp 'epoch::version) epoch::version)
@@ -3545,11 +3553,12 @@ advised definition from scratch."
 
 (defun ad-preactivate-advice (function advice class position)
   ;;"Preactivates FUNCTION and returns the constructed cache."
-  (let ((old-definition
-	 (if (fboundp function)
-	     (symbol-function function)))
-	(old-advice-info (ad-copy-advice-info function))
-	(ad-advised-functions ad-advised-functions))
+  (let* ((function-defined-p (fboundp function))
+	 (old-definition
+	  (if function-defined-p
+	      (symbol-function function)))
+	 (old-advice-info (ad-copy-advice-info function))
+	 (ad-advised-functions ad-advised-functions))
     (unwind-protect
 	(progn
 	  (ad-add-advice function advice class position)
@@ -3561,7 +3570,10 @@ advised definition from scratch."
 	      (list (ad-get-cache-definition function)
 		    (ad-get-cache-id function))))
       (ad-set-advice-info function old-advice-info)
-      (ad-real-fset function old-definition))))
+      ;; Don't `fset' function to nil if it was previously unbound:
+      (if function-defined-p
+	  (ad-real-fset function old-definition)
+	(fmakunbound function)))))
 
 (defun ad-activate-advised-definition (function compile)
   ;;"Redefines FUNCTION with its advised definition from cache or scratch.
@@ -3990,11 +4002,37 @@ in `ad-definition-hooks' will be run after the re/definition with
 in `ad-definition-hooks' will be run after the re/definition with
 `ad-defined-function' bound to the name of the function. This advice was
 mainly created to handle forward-advice for byte-compiled files created
-by Jamie Zawinski's byte-compiler (as used in Emacs v19s).
+by jwz's byte-compiler used in Lemacs.
 CAUTION: If you need the primitive `fset' behavior either deactivate
          its advice or use `ad-real-fset' instead!"
   (let ((ad-defined-function (ad-get-arg 0)))
     (run-hooks 'ad-definition-hooks)))
+
+;; Needed for GNU Emacs-19 (in v18s and Lemacs this is just a noop):
+(defadvice defalias (after ad-definition-hooks first disable preact)
+  "Whenever a function gets re/defined with `defalias' all hook functions
+in `ad-definition-hooks' will be run after the re/definition with
+`ad-defined-function' bound to the name of the function. This advice was
+mainly created to handle forward-advice for byte-compiled files created
+by jwz's byte-compiler used in GNU Emacs-19."
+  (let ((ad-defined-function (ad-get-arg 0)))
+    ;; The new `byte-compile' uses `defalias' to set the definition which
+    ;; leads to infinite recursion if it gets to use the advised version
+    ;; (with `fset' this didn't matter because the compiled `byte-compile'
+    ;; called it via its byte-code). Should there be a general provision to
+    ;; avoid recursive application of definition hooks?
+    (ad-with-originals (defalias)
+      (run-hooks 'ad-definition-hooks))))
+
+;; Needed for GNU Emacs-19 (seems to be an identical copy of `defalias',
+;; it is used by simple.el and might be used later, hence, advise it):
+(defadvice define-function (after ad-definition-hooks first disable preact)
+  "Whenever a function gets re/defined with `define-function' all hook
+functions in `ad-definition-hooks' will be run after the re/definition with
+`ad-defined-function' bound to the name of the function."
+  (let ((ad-defined-function (ad-get-arg 0)))
+    (ad-with-originals (define-function)
+      (run-hooks 'ad-definition-hooks))))
 
 (defadvice documentation (after ad-advised-docstring first disable preact)
   "Builds an advised docstring if FUNCTION is advised."
@@ -4203,7 +4241,7 @@ code in a v19 Emacs with definition hooks enabled."
   ;;`byte-code' if a v19 byte-compiler is used. Redefining these primitives
   ;;might lead to problems. Use `ad-disable-definition-hooks' or
   ;;`ad-stop-advice' in such a case to establish a safe state."
-  (ad-dolist (definer '(defun defmacro fset))
+  (ad-dolist (definer '(defun defmacro fset defalias define-function))
     (ad-enable-advice definer 'after 'ad-definition-hooks)
     (ad-activate definer 'compile))
   (cond (ad-use-jwz-byte-compiler
@@ -4220,7 +4258,7 @@ code in a v19 Emacs with definition hooks enabled."
 (defun ad-disable-definition-hooks ()
   ;;"Disables definition hooks by resetting definition primitives."
   (ad-recover-byte-code)
-  (ad-dolist (definer '(defun defmacro fset))
+  (ad-dolist (definer '(defun defmacro fset defalias define-function))
 	     (ad-disable-advice definer 'after 'ad-definition-hooks)
 	     (ad-update definer))
   (if (not ad-emacs19-p)
@@ -4281,10 +4319,10 @@ Use only in REAL emergencies."
 
 (ad-real-byte-codify 'ad-recover-normality)
 
-;; It only counts if we are compiled:
-(cond ((ad-compiled-p (symbol-function 'ad-execute-defadvices))
-       (provide 'advice)
-       (if ad-start-advice-on-load (ad-start-advice))))
+(if (and ad-start-advice-on-load
+         ;; ...but only if we are compiled:
+	 (ad-compiled-p (symbol-function 'ad-execute-defadvices)))
+    (ad-start-advice))
 
 (provide 'advice)
 

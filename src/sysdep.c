@@ -314,7 +314,7 @@ wait_for_termination (pid)
       status = SYS$FORCEX (&pid, 0, 0);
       break;
 #else /* not VMS */
-#if defined (BSD) || (defined (HPUX) && !defined (HPUX_5))
+#if (defined (BSD) && !defined (LINUX)) || (defined (HPUX) && !defined (HPUX_5))
       /* Note that kill returns -1 even if the process is just a zombie now.
 	 But inevitably a SIGCHLD interrupt should be generated
 	 and child_sig will do wait3 and make the process go away. */
@@ -333,12 +333,12 @@ wait_for_termination (pid)
 	sleep (1);
       else
 	sigpause (SIGEMPTYMASK);
-#else /* not BSD, and not HPUX version >= 6 */
-#ifdef UNIPLUS
+#else /* not BSD, not LINUX, and not HPUX version >= 6 */
+#if defined (UNIPLUS) || defined (LINUX)
       if (0 > kill (pid, 0))
 	break;
       wait (0);
-#else /* neither BSD nor UNIPLUS: random sysV */
+#else /* neither BSD nor UNIPLUS nor LINUX: random sysV */
 #ifdef HAVE_SYSV_SIGPAUSE
       sighold (SIGCHLD);
       if (0 > kill (pid, 0))
@@ -765,13 +765,13 @@ emacs_get_tty (fd, settings)
 #endif
 
   /* Suivant - Do we have to get struct ltchars data?  */
-#ifdef TIOCGLTC
+#ifdef HAVE_LTCHARS
   if (ioctl (fd, TIOCGLTC, &settings->ltchars) < 0)
     return -1;
 #endif
 
   /* How about a struct tchars and a wordful of lmode bits?  */
-#ifdef TIOCGETC
+#ifdef HAVE_TCHARS
   if (ioctl (fd, TIOCGETC, &settings->tchars) < 0
       || ioctl (fd, TIOCLGET, &settings->lmode) < 0)
     return -1;
@@ -846,13 +846,13 @@ emacs_set_tty (fd, settings, waitp)
 #endif
 
   /* Suivant - Do we have to get struct ltchars data?  */
-#ifdef TIOCGLTC
+#ifdef HAVE_LTCHARS
   if (ioctl (fd, TIOCSLTC, &settings->ltchars) < 0)
     return -1;
 #endif
 
   /* How about a struct tchars and a wordful of lmode bits?  */
-#ifdef TIOCGETC
+#ifdef HAVE_TCHARS
   if (ioctl (fd, TIOCSETC, &settings->tchars) < 0
       || ioctl (fd, TIOCLSET, &settings->lmode) < 0)
     return -1;
@@ -888,10 +888,10 @@ unsigned char _sobuf[BUFSIZ+8];
 char _sobuf[BUFSIZ];
 #endif
  
-#ifdef TIOCGLTC
+#ifdef HAVE_LTCHARS
 static struct ltchars new_ltchars = {-1,-1,-1,-1,-1,-1};
 #endif
-#ifdef TIOCGETC
+#ifdef HAVE_TCHARS
   static struct tchars new_tchars = {-1,-1,-1,-1,-1,-1};
 #endif 
 
@@ -1042,7 +1042,7 @@ init_sys_modes ()
 	 control for user coming over network on 4.2; in this case,
 	 only t_stopc and t_startc really matter.  */
 #ifndef HAVE_TERMIO
-#ifdef TIOCGETC
+#ifdef HAVE_TCHARS
       /* Note: if not using CBREAK mode, it makes no difference how we
 	 set this */
       tty.tchars = new_tchars;
@@ -1068,12 +1068,12 @@ init_sys_modes ()
       lmode = tty.lmode;
 #endif
 
-#endif /* TIOCGETC */
+#endif /* HAVE_TCHARS */
 #endif /* not HAVE_TERMIO */
 
-#ifdef TIOCGLTC
+#ifdef HAVE_LTCHARS
       tty.ltchars = new_ltchars;
-#endif /* TIOCGLTC */
+#endif /* HAVE_LTCHARS */
 
       EMACS_SET_TTY (input_fd, &tty, 0);
 
@@ -1712,6 +1712,17 @@ static struct utsname get_system_name_name;
 #endif /* not HAVE_GETHOSTNAME */
 #endif /* USG */
 
+#ifndef BSD4_1
+#ifndef USG
+#ifndef VMS
+#ifdef HAVE_SOCKETS
+#include <sys/socket.h>
+#include <netdb.h>
+#endif /* HAVE_SOCKETS */
+#endif /* not VMS */
+#endif /* not USG */
+#endif /* not BSD4_1 */
+
 char *
 get_system_name ()
 {
@@ -1742,6 +1753,20 @@ get_system_name ()
   strcpy (system_name_saved, sp);
 #else /* not VMS */
   gethostname (system_name_saved, sizeof (system_name_saved));
+#ifdef HAVE_SOCKETS
+  /* Turn the hostname into the official, fully-qualified hostname.
+     Don't do this if we're going to dump; this can confuse system
+     libraries on some machines and make the dumped emacs core dump. */
+#ifndef CANNOT_DUMP
+  if (initialized)
+#endif /* not CANNOT_DUMP */
+    {
+      struct hostent *hp;
+      hp = gethostbyname (system_name_saved);
+      if (hp && strlen (hp->h_name) < sizeof(system_name_saved))
+	strcpy (system_name_saved, hp->h_name);
+    }
+#endif /* HAVE_SOCKETS */
 #endif /* not VMS */
   return system_name_saved;
 #endif /* not USG, not 4.1 */

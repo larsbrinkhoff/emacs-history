@@ -175,7 +175,7 @@ Cydra 5 (cydra-cydrome-sysv)
 
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
-  Version 19 works under Ultrix.
+  Emacs runs under Ultrix and OSF/1 as of 19.7.
 
   See under Ultrix for problems using X windows on Ultrix.
   Note that this is a MIPS machine.
@@ -189,8 +189,10 @@ DECstation (mips-dec-ultrix or mips-dec-osf)
 
 Motorola Delta 147 (m68k-motorola-sysv)
 
+  Emacs runs as of version 19.6.
+
   Motorola Delta boxes running System V/68 release 3.
-  (tested on sys1147 with SVR3V5).  Changes merged in 19.1.
+  (tested on sys1147 with SVR3V5).
 
 Motorola Delta 187 (m88k-motorola-sysv or m88k-motorola-m88kbcs)
 
@@ -255,7 +257,7 @@ Honeywell XPS100 (xps100-honeywell-sysv)
 
   Config file added in version 19.
 
-HP 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
+Hewlett-Packard 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
 
   Version 19 works under BSD.
 
@@ -297,11 +299,12 @@ HP 9000 series 500: not supported.
   which relocates data in memory during execution of a program,
   and support for it would be difficult to implement.
 
-HP 9000 series 700 or 800 (Spectrum) (hppa-hp-hpux)
+HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux)
 
   These files support HP's Precision Architecture machines
   running HP-UX.  It has been moderately tested on the Series
-  840.
+  840.  Use hppa1.1 for the 700 series and hppa1.0 for the 800
+  series machines.  (Emacs may not actually care which one you use.)
 
   It hasn't been tested on the 700's at all.  If you try it out on
   this system, please send us comments and patches.
@@ -334,8 +337,11 @@ IBM PS/2 (i386-ibm-aix1.1 or i386-ibm-aix1.2)
 
 IBM RS/6000 (rs6000-ibm-aix)
 
-  Changes merged in version 19.  Currently the configuration
-  does not actually depend on the version of AIX.
+  Emacs 19.7 runs.
+
+  At last report, Emacs didn't run well on terminals.  Informed
+  persons say that the tty VMIN and VTIME settings have been
+  corrupted; if you have a fix, please send it to us.
 
   Compiling with -O using the IBM compiler has been known
   to make Emacs work incorrectly.
@@ -369,23 +375,26 @@ Integrated Solutions `Optimum V' (m68k-isi-bsd4.2 or -bsd4.3)
   in a system header file, which confuses Emacs (which thinks that UMAX
   indicates the Umax operating system).
 
-Intel 386 (i386-unknown-isc, i386-unknown-esix, i386-unknown-xenix,
-	   i386-unknown-linux, i386-intsys-sysv, i386-unknown-sysv5.2.2,
-	   i386-unknown-sysv5.3, and i386-unknown-bsd4.2)
+Intel 386 (i386-unknown-isc, 		i386-unknown-esix,
+	   i386-unknown-xenix,		i386-unknown-linux,
+	   i386-intsys-sysv,		i386-unknown-sysv5.2.2,
+	   i386-unknown-sysv5.3,	i386-unknown-bsd4.2,
+	   i386-unknown-sco3.2v4)
 
   18.58 should support a wide variety of operating systems.
   Make sure to use i386-unknown-isc2.2 for Interactive 386/ix version
 	2.2 or later.
-  Use i386-unknown-esix for Esix.
-  Use i386-unknown-linux for Linux.
+  Use i386-unknown-esix for Esix; Emacs runs as of version 19.6.
+  Use i386-unknown-linux for Linux; Emacs runs as of version 19.7.
   Use i386-intsys-sysv for Integrated Solutions 386 machines.
   It may also be correct for Microport systems.
-  It isn't clear what to do on an SCO system.  The system's C
-  preprocessor doesn't seem to handle the src subdirectory's Make
-  trickery, so you will probably need to install the GNU C preprocessor.
+  Use i386-unknown-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.6.
 
   If you are using Xenix, see notes at end under Xenix.
   If you are using Esix, see notes at end under Esix.
+  
+  Note that use with Linux requires the experimental "net 2" network
+  software (no relation to Berkeley Net 2).
 
   Some sysV.3 systems seem to have bugs in `opendir';
   for them, alter `config.h' to define NONSYSTEM_DIR_LIBRARY
@@ -434,9 +443,11 @@ Iris 4D (mips-sgi-irix3.3 or mips-sgi-irix4.0)
       #define C_SWITCH_MACHINE -cckr
   to config.h.
 
-  There is a bug in IRIX that can sometimes leave ptys owned by
-  root with a permission of 622.  This causes malfunctions in use
-  of subprocesses of Emacs.  This may be fixed in IRIX 4.0.5.
+  There is a bug in IRIX that can sometimes leave ptys owned by root
+  with a permission of 622.  This causes malfunctions in use of
+  subprocesses of Emacs.  Irix versions 4.0 and later with GNU Emacs
+  versions 18.59 and later fix this bug.
+
 
 Macintosh
 
@@ -617,10 +628,13 @@ Stride (m68k-stride-sysv)
 
 Sun 1, 2 and 3 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
 
+  Emacs runs on Sparcs and Sun 3's, as of version 19.7.
+
   It's important to include the SunOS version number in the
   configuration name.  For example, for SunOS release 4.0 on a Sun 3,
   use `m68k-sun-sunos4.0'; for SunOS release 4.1 on a Sparc, use
-  `sparc-sun-sunos4.1'.
+  `sparc-sun-sunos4.1'.  For SunOS release 4.1.3 on a Sparc, use
+  `sparc-sun-sunos4.1.3'.
 
   Use `m68k' for the 68000-based Sun boxes, `sparc' for Sparcstations,
   and `i386' for Sun Roadrunners.
@@ -628,9 +642,6 @@ Sun 1, 2 and 3 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
   There are three machine files for the different versions of SunOS
   that run on the Motorola 68000 processors.  All are derived from
   Berkeley 4.2.  Emacs 17 has run on all of them.
-
-  See the file etc/SUNBUG for how to solve problems caused by
-  bugs in the "export" version of SunOS 4.
 
   If you have trouble using open-network-stream, get the
   distribution of `bind' (the BSD name-server), build libresolv.a,
@@ -658,35 +669,6 @@ Sun 1, 2 and 3 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
 
   To build a single Emacs that will run on Sun 2 and Sun 3
   HARDWARE, just build it on the Sun 2.
-
-  Changes for the Sparc architecture were merged in 18.50.  Some
-  people say optimizing compilation does not work; some say that -O2
-  (whatever that is) works perhaps with a small change.
-
-  Changes for the Roadrunner architecture were merged in 18.51.
-
-  There is a bug in the Export version of SunOS 4.0 shipped outsde the
-  US; it has something to do with Pentagon export restrictions on the
-  DES chips in Suns.  The symptom is that "cc -Bstatic ..." WILL NOT
-  WORK ON SUNOS 4.0 EXPORT without a little help from "ar".  The
-  static C-library is /lib/libc.a, and this is where the problem
-  occurs.  There are a bunch of .o files in there relating to DES
-  stuff (des_crypt.o, des_soft.o, _crypt.o, etc).  All of them will
-  cause cc -Bstatic to die with these errors:
-
-  > _edata: ld: user attempt to redefine loader-defined symbol
-  > _end: user attempt to redefine loader-defined symbol
-  > _etext: /lib/libc.a(des_crypt.o): multiply defined
-
-  In order to make cc -Bstatic useful, you must remove all the
-  brain-damaged .o files from /lib/libc.a.  To do this use
-
-  ar d /lib/libc.a des_crypt.o des_soft.o _crypt.o ....
-
-  (Make a backup of /lib/libc.a first, you may decide you need the "real"
-  thing someday).  Note that there are a bunch of these files, these may
-  not be  all of them.  You will find them quick enough by trying to
-  compile ANY C program, even one which does NOTHING.
 
 Tadpole 68K (m68k-tadpole-sysv)
 
