@@ -5242,8 +5242,28 @@ x_new_font (f, fontname)
 	  char *atom
 	    = XGetAtomName (x_current_display, font->properties[i].name);
 	  if (!strcmp (atom, "FONT"))
-	    full_name = XGetAtomName (x_current_display,
-				      (Atom) (font->properties[i].card32));
+	    {
+	      char *name = XGetAtomName (x_current_display,
+					 (Atom) (font->properties[i].card32));
+	      char *p = name;
+	      int dashes = 0;
+
+	      /* Count the number of dashes in the "full name".
+		 If it is too few, this isn't really the font's full name,
+		 so don't use it.
+		 In X11R4, the fonts did not come with their canonical names
+		 stored in them.  */
+	      while (*p)
+		{
+		  if (*p == '-')
+		    dashes++;
+		  p++;
+		}
+
+	      if (dashes >= 13)
+		full_name = name;
+	    }
+
 	  XFree (atom);
 	}
 

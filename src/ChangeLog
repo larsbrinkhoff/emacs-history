@@ -1,3 +1,68 @@
+Sun Oct 23 16:25:48 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.28 released.
+
+	* s/linux.h (LD_SWITCH_SYSTEM): Definition deleted.
+
+	* s/freebsd.h (LD_SWITCH_SYSTEM): New definition.
+
+	* s/freebsd.h (BSD): Have two definitions according to version number.
+
+	* s/freebsd.h (DECLARE_GETPWUID_WITH_UID_T): Defined.
+	[NO_SHARED_LIBS and __FreeBSD__]:
+	(LD_SWITCH_SYSTEM, A_TEXT_OFFSET, A_TEXT_SEEK): Alternate definitions.
+
+	* xfns.c (x_real_positions): Catch errors and retry if error happens.
+
+	* textprop.c (Fset_text_properties): Special case for getting
+	rid of all properties of a string.
+
+	* xterm.c (x_new_font): Don't use the FONT property
+	unless it has enough dashes to be an official font name.
+
+	* keyboard.c (read_char): Add local variable key_already_recorded.
+	If an event comes from read_char_minibuf_menu_prompt,
+	return as early as we safely can.
+
+	* textprop.c (Fset_text_properties): Don't let validate_interval_range
+	increment START and END twice.
+
+	* xfaces.c (Fset_face_attribute_internal): Mark frame garbaged whenever
+	any face's font or color is changed.
+
+	* m/hp9000s300.h [not BSD4_3] [__GNUC__] (HAVE_ALLOCA): Defined.
+
+	* m/dpx2.h (POSIX_SIGNALS): Define it.
+	(sigsetmask): Add #undef.
+
+	* s/linux.h: Don't include signal.h, values.h.
+	(signal): Definition deleted.
+
+	* s/sco4.h (POSIX_SIGNALS): Defined.
+
+	* config.h.in (HAVE_X11R6): Add #undef.
+	* s/sol2.h (REL_ALLOC): Test HAVE_X11 and HAVE_X11R6.
+	Don't test USE_X_TOOLKIT.
+
+	* emacs.c (shut_down_emacs): Don't call Fx_close_current_connection.
+
+	* s/hpux9.h (HAVE_TERMIO, HAVE_TERMIOS, NO_TERMIO): Undo Jul 28 change.
+
+	* unexsunos4.c [SUNOS4]: Include link.h.
+	(unexec) [SUNOS4]: Turn off relocations that ld.so did.
+
+	* s/sunos4-0.h (SUNOS4): Defined.
+
+	* unexec.c (make_hdr): Undo June 16 change.
+
+	* s/bsd386.h (__bsdi__): Define, unless already defined.
+	(DECLARE_GETPWUID_WITH_UID_T): Define.
+
+	* filelock.c (getpwuid): Test just DECLARE_GETPWUID_WITH_UID_T,
+	not __bsdi__.
+	* xrdb.c (getpwuid, getpwnam): Test just DECLARE_GETPWUID_WITH_UID_T,
+	not __bsdi__.
+
 Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.27 released.

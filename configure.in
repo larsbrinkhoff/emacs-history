@@ -1494,6 +1494,17 @@ if test "${HAVE_X11}" = "yes"; then
 XScreenNumberOfScreen XSetWMProtocols)
 fi
 
+if test "${HAVE_X11}" = "yes"; then
+  AC_COMPILE_CHECK(X11 version,
+		   [#include <X11/Xlib.h>],
+		   [
+#if XlibSpecificationRelease < 6
+fail;
+#endif
+],
+		   AC_DEFINE(HAVE_X11R6))
+fi
+
 if test "${USE_X_TOOLKIT}" != "none"; then
   AC_COMPILE_CHECK(X11 toolkit version,
 		   [#include <X11/Intrinsic.h>],

@@ -3227,15 +3227,6 @@ Use \\[describe-mode] for more info." t nil)
 
 ;;;***
 
-;;;### (autoloads (set-gosmacs-bindings) "gosmacs" "gosmacs.el" (11190 10276))
-;;; Generated autoloads from gosmacs.el
-
-(autoload (quote set-gosmacs-bindings) "gosmacs" "\
-Rebind some keys globally to make GNU Emacs resemble Gosling Emacs.
-Use \\[set-gnu-bindings] to restore previous global bindings." t nil)
-
-;;;***
-
 ;;;### (autoloads (perldb xdb dbx sdb gdb) "gud" "gud.el" (11711 26140))
 ;;; Generated autoloads from gud.el
 
@@ -4601,6 +4592,13 @@ Called from a program, takes three args; START, END and STRING." t nil)
 Blank out rectangle with corners at point and mark.
 The text previously in the region is overwritten by the blanks.
 When called from a program, requires two args which specify the corners." t nil)
+
+;;;***
+
+;;;### (autoloads (reporter-submit-bug-report) "reporter" "reporter.el" (11818 52911))
+;;; Generated autoloads from reporter.el
+
+(autoload (quote reporter-submit-bug-report) "reporter" nil nil nil)
 
 ;;;***
 

@@ -1476,6 +1476,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
   register Lisp_Object c;
   int count;
   jmp_buf save_jump;
+  int key_already_recorded = 0;
 
   if (CONSP (Vunread_command_events))
     {
@@ -1596,7 +1597,10 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
     {
       c = read_char_minibuf_menu_prompt (commandflag, nmaps, maps);
       if (! NILP (c))
-	goto non_reread;
+	{
+	  key_already_recorded = 1;
+	  goto non_reread;
+	}
     }
 
   /* If in middle of key sequence and minibuffer not active,
@@ -1732,6 +1736,9 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
   /* Buffer switch events are only for internal wakeups
      so don't show them to the user.  */
   if (XTYPE (c) == Lisp_Buffer)
+    return c;
+
+  if (key_already_recorded)
     return c;
 
   /* Wipe the echo area.  */

@@ -2340,6 +2340,38 @@ done
 
 fi
 
+if test "${HAVE_X11}" = "yes"; then
+  test -n "$silent" || echo "checking for X11 version"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+#include <X11/Xlib.h>
+int main() { return 0; }
+int t() { 
+#if XlibSpecificationRelease < 6
+fail;
+#endif
+; return 0; }
+EOF
+if eval $ac_compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_X11R6"
+echo "#define" HAVE_X11R6 "1" >> confdefs.h
+DEFS="$DEFS -DHAVE_X11R6=1"
+ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_X11R6\${ac_dB}HAVE_X11R6\${ac_dC}1\${ac_dD}
+\${ac_uA}HAVE_X11R6\${ac_uB}HAVE_X11R6\${ac_uC}1\${ac_uD}
+\${ac_eA}HAVE_X11R6\${ac_eB}HAVE_X11R6\${ac_eC}1\${ac_eD}
+"
+}
+
+
+fi
+rm -f conftest*
+
+fi
+
 if test "${USE_X_TOOLKIT}" != "none"; then
   test -n "$silent" || echo "checking for X11 toolkit version"
 cat > conftest.${ac_ext} <<EOF

@@ -42,8 +42,8 @@ access(2), but in the meantime, some of us need the right behavior.  */
    to install.  Patch number is 100947-02.  */
 #undef SOLARIS_BROKEN_ACCESS
 
-/* We can't use Xt from X11R6 with ralloc.c, because Xt
+/* We can't use libX11 from X11R6 with ralloc.c, because libX11
    includes libthread.so and that calls sbrk directly.  */
-#if defined (USE_X_TOOLKIT) && defined (HAVE_X11XTR6)
+#if defined (HAVE_X11) && defined (HAVE_X11R6)
 #undef REL_ALLOC
 #endif

@@ -206,7 +206,7 @@ Data General Aviion (m88k-dg-dgux)
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
   This machine is the older Mips-based DECstation.
-  Emacs does not support the Alpha CPU.  We hope to support that in 19.27.
+  Emacs does not support the Alpha CPU.  We hope to support that in 19.29.
 
   19.25 works on Ultrix 4.2.  The 19.26 pretest was reported to work
   on Ultrix 4.2a and on 4.4.

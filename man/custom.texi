@@ -1579,7 +1579,7 @@ is not what you probably want to do in an init file.
 Specify your own email address, if Emacs can't figure it out correctly.
 
 @example
-(setq user-mail-address "coon@yoyodyne.com")
+(setq user-mail-address "coon@@yoyodyne.com")
 @end example
 
 Various Emacs packages that need to use your own email address

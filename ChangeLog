@@ -1,3 +1,9 @@
+Thu Oct  6 01:11:08 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.28 released.
+
+	* configure.in: Determine HAVE_X11R6.
+
 Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.27 released.

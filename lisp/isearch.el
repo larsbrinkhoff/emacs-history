@@ -233,6 +233,13 @@ Default value, nil, means edit the string instead.")
       (define-key map "\C-w" 'isearch-yank-word)
       (define-key map "\C-y" 'isearch-yank-line)
 
+      (define-key map [?\A-\"] nil)
+      (define-key map [?\A-'] nil)
+      (define-key map [?\A-`] nil)
+      (define-key map [?\A-,] nil)
+      (define-key map [?\A-^] nil)
+      (define-key map [?\A-_] nil)
+      (define-key map [?\A-~] nil)
       ;; Bind the ASCII-equivalent "function keys" explicitly to nil
       ;; so that the default binding does not apply.
       ;; As a result, these keys translate thru function-key-map

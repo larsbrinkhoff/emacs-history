@@ -1301,7 +1301,9 @@ The variable `ispell-highlight-face' selects the face to use for highlighting."
        (cond
 	((string-match "Lucid" emacs-version)
 	 'ispell-highlight-spelling-error-lucid)
-	((and (string-lessp "19" emacs-version) (featurep 'faces))
+	((and (string-lessp "19" emacs-version)
+	      (featurep 'faces)
+	      window-system)
 	 'ispell-highlight-spelling-error-overlay)
 	(t 'ispell-highlight-spelling-error-generic))))
 

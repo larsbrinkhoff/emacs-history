@@ -605,36 +605,51 @@ x_real_positions (f, xptr, yptr)
   Window *tmp_children;
   int tmp_nchildren;
 
-  XQueryTree (x_current_display, outer, &tmp_root_window,
-	      &f->display.x->parent_desc,
-	      &tmp_children, &tmp_nchildren);
-  xfree (tmp_children);
-
-  /* Find the position of the outside upper-left corner of
-     the inner window, with respect to the outer window.  */
-  if (f->display.x->parent_desc != ROOT_WINDOW)
+  x_catch_errors ();
+  while (1)
     {
-      BLOCK_INPUT;
-      XTranslateCoordinates (x_current_display,
+      win_x = 0, win_y = 0;
+      XQueryTree (x_current_display, outer, &tmp_root_window,
+		  &f->display.x->parent_desc,
+		  &tmp_children, &tmp_nchildren);
+      xfree (tmp_children);
+
+      /* Find the position of the outside upper-left corner of
+	 the inner window, with respect to the outer window.  */
+      if (f->display.x->parent_desc != ROOT_WINDOW)
+	{
+	  BLOCK_INPUT;
+	  XTranslateCoordinates (x_current_display,
 			       
-			     /* From-window, to-window.  */
+				 /* From-window, to-window.  */
 #ifdef USE_X_TOOLKIT
-			     XtWindow (f->display.x->widget),
+				 XtWindow (f->display.x->widget),
 #else
-			     f->display.x->window_desc,
+				 f->display.x->window_desc,
 #endif
-			     f->display.x->parent_desc,
+				 f->display.x->parent_desc,
 
-			     /* From-position, to-position.  */
-			     0, 0, &win_x, &win_y,
+				 /* From-position, to-position.  */
+				 0, 0, &win_x, &win_y,
 
-			     /* Child of win.  */
-			     &child);
-      UNBLOCK_INPUT;
+				 /* Child of win.  */
+				 &child);
+	  UNBLOCK_INPUT;
 
-      win_x += f->display.x->border_width;
-      win_y += f->display.x->border_width;
+	  win_x += f->display.x->border_width;
+	  win_y += f->display.x->border_width;
+	}
+
+      /* It is possible for the window returned by the XQueryNotify
+	 to become invalid by the time we call XTranslateCoordinates.
+	 That can happen when you restart some window managers.
+	 If so, we get an error in XTranslateCoordinates.
+	 Detect that and try the whole thing over.  */
+      if (!x_had_errors_p ())
+	break;
     }
+  x_uncatch_errors ();
+
   *xptr = f->display.x->left_pos - win_x;
   *yptr = f->display.x->top_pos - win_y;
 }
@@ -1840,9 +1855,10 @@ XSetWMProtocols (dpy, w, protocols, count)
 
 #ifdef USE_X_TOOLKIT
 
-/* If the WM_PROTOCOLS property does not already contain WM_TAKE_FOCUS
-   and WM_DELETE_WINDOW, then add them.  (They may already be present
-   because of the toolkit (Motif adds them, for example, but Xt doesn't).  */
+/* If the WM_PROTOCOLS property does not already contain WM_TAKE_FOCUS,
+   WM_DELETE_WINDOW, and WM_SAVE_YOURSELF, then add them.  (They may
+   already be present because of the toolkit (Motif adds some of them,
+   for example, but Xt doesn't).  */
 
 static void
 hack_wm_protocols (widget)
@@ -1852,6 +1868,7 @@ hack_wm_protocols (widget)
   Window w = XtWindow (widget);
   int need_delete = 1;
   int need_focus = 1;
+  int need_save = 1;
 
   BLOCK_INPUT;
   {
@@ -1868,16 +1885,18 @@ hack_wm_protocols (widget)
       while (nitems > 0)
 	{
 	  nitems--;
-	  if (atoms [nitems] == Xatom_wm_delete_window)   need_delete = 0;
-	  else if (atoms [nitems] == Xatom_wm_take_focus) need_focus = 0;
+ 	  if (atoms[nitems] == Xatom_wm_delete_window)      need_delete = 0;
+	  else if (atoms[nitems] == Xatom_wm_take_focus)    need_focus = 0;
+	  else if (atoms[nitems] == Xatom_wm_save_yourself) need_save = 0;
 	}
     if (atoms) XFree ((char *) atoms);
   }
   {
     Atom props [10];
     int count = 0;
-    if (need_delete) props [count++] = Xatom_wm_delete_window;
-    if (need_focus)  props [count++] = Xatom_wm_take_focus;
+    if (need_delete) props[count++] = Xatom_wm_delete_window;
+    if (need_focus)  props[count++] = Xatom_wm_take_focus;
+    if (need_save)   props[count++] = Xatom_wm_save_yourself;
     if (count)
       XChangeProperty (dpy, w, Xatom_wm_protocols, XA_ATOM, 32, PropModeAppend,
 		       (unsigned char *) props, count);

@@ -305,7 +305,7 @@ This function is called after the function pointed out by
   ;; point nowhere.
   ;; if alist is provided use that list.
   (and imenu--index-alist
-       (mapc 
+       (mapcar 
 	(function
 	 (lambda (item)
 	   (cond

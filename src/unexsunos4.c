@@ -1,3 +1,22 @@
+/* Unexec for Sunos 4 using shared libraries.
+   Copyright (C) 1990, 1994 Free Software Foundation, Inc.
+
+This file is part of GNU Emacs.
+
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
+
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+
 /* Contributed by Viktor Dukhovni.  */
 /*
  * Unexec for Berkeley a.out format + SUNOS shared libraries
@@ -35,6 +54,14 @@
    to define things for this file based on what <a.out.h> defines.  */
 #ifdef emacs
 #include <config.h>
+#endif
+
+#if defined (SUNOS4) || defined (__FreeBSD__)
+#define UNDO_RELOCATION
+#endif
+
+#ifdef UNDO_RELOCATION
+#include <link.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -183,6 +210,64 @@ unexec (new_name, a_name, bndry, bss_start, entry)
   lseek (new, N_TRELOFF (nhdr), L_SET);
   write (new, old + N_TRELOFF (ohdr), stat.st_size - N_TRELOFF (ohdr));
 
+  /* Some other BSD systems use this file.
+     We don't know whether this change is right for them.  */
+#ifdef UNDO_RELOCATION
+  /* Undo the relocations done at startup by ld.so.
+     It will do these relocations again when we start the dumped Emacs.
+     Doing them twice gives incorrect results.  */
+  {
+    unsigned long daddr = N_DATADDR (ohdr);
+    unsigned long rel, erel;
+#ifdef SUNOS4
+    extern struct link_dynamic _DYNAMIC;
+
+    /*  SunOS4.x's ld_rel is relative to N_TXTADDR. */
+    if (_DYNAMIC.ld_version < 2)
+      {
+	rel = _DYNAMIC.ld_un.ld_1->ld_rel + N_TXTADDR (ohdr);
+	erel = _DYNAMIC.ld_un.ld_1->ld_hash + N_TXTADDR (ohdr);
+      }
+    else
+      {
+	rel = _DYNAMIC.ld_un.ld_2->ld_rel + N_TXTADDR (ohdr);
+	erel = _DYNAMIC.ld_un.ld_2->ld_hash + N_TXTADDR (ohdr);
+      }
+#ifdef sparc
+#define REL_INFO_TYPE		struct reloc_info_sparc
+#else
+#define REL_INFO_TYPE		struct reloc_info_m68k
+#endif /* sparc */
+#define REL_TARGET_ADDRESS(r)	(((REL_INFO_TYPE *)(r))->r_address)
+#endif /* SUNOS4 */
+#ifdef __FreeBSD__
+    extern struct _dynamic _DYNAMIC;
+
+    /*  FreeBSD's LD_REL is a virtual address itself. */
+    rel = LD_REL (&_DYNAMIC);
+    erel = rel + LD_RELSZ (&_DYNAMIC);
+#define REL_INFO_TYPE		struct relocation_info
+#define REL_TARGET_ADDRESS(r)	(((REL_INFO_TYPE *)(r))->r_address)
+#endif
+
+    for (; rel < erel; rel += sizeof (REL_INFO_TYPE))
+      {
+	/*  This is the virtual address where ld.so will do relocation.  */
+	unsigned long target = REL_TARGET_ADDRESS (rel);
+	/*  This is the offset in the data segment.  */
+	unsigned long segoffset = target - daddr;
+
+	/*  If it is located below data_start, we have to do nothing here,
+	    because the old data has been already written to the location. */
+	if (target < (unsigned long)&data_start)
+	    continue;
+
+	lseek (new, N_DATOFF (nhdr) + segoffset, L_SET);
+	write (new, old + N_DATOFF (ohdr) + segoffset, sizeof (unsigned long));
+      }
+  }
+#endif /* UNDO_RELOCATION */
+
   fchmod (new, 0755);
 }
 
@@ -245,20 +330,20 @@ run_time_remap (progname)
     }
 }
 
-is_it (path)
-  char *path;
+is_it (filename)
+  char *filename;
 {
   int fd;
-  long paths_cookie;
+  long filenames_cookie;
   struct exec hdr;
 
   /*
    * Open an executable  and check for a valid header!
-   * Can't bcmp() the header with what we had,  it may have been stripped!
+   * Can't bcmp the header with what we had,  it may have been stripped!
    * so we may save looking at non executables with the same name, mostly
    * directories.
    */
-  fd = open (path, O_RDONLY);
+  fd = open (filename, O_RDONLY);
   if (fd != -1)
     {
       if (read (fd, &hdr, sizeof (hdr)) == sizeof (hdr)
@@ -267,8 +352,8 @@ is_it (path)
 	{
 	  /* compare cookies */
 	  lseek (fd, N_DATOFF (hdr) + (int)&cookie - N_DATADDR (hdr), L_SET);
-	  read (fd, &paths_cookie, sizeof (paths_cookie));
-	  if (paths_cookie == cookie)
+	  read (fd, &filenames_cookie, sizeof (filenames_cookie));
+	  if (filenames_cookie == cookie)
 	    {			/* Eureka */
 
 	      /*

@@ -881,11 +881,25 @@ is the string or buffer containing the text.")
   register INTERVAL i, unchanged;
   register INTERVAL prev_changed = NULL_INTERVAL;
   register int s, len;
+  Lisp_Object ostart, oend;
+
+  ostart = start;
+  oend = end;
 
   props = validate_plist (props);
 
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);
+
+  /* If we want no properties for a whole string,
+     get rid of its intervals.  */
+  if (NILP (props) && STRINGP (object)
+      && XFASTINT (start) == 0
+      && XFASTINT (end) == XSTRING (object)->size)
+    {
+      XSTRING (object)->intervals = 0;
+      return Qt;
+    }
 
   i = validate_interval_range (object, &start, &end, soft);
   if (NULL_INTERVAL_P (i))
@@ -893,6 +907,11 @@ is the string or buffer containing the text.")
       /* If buffer has no props, and we want none, return now.  */
       if (NILP (props))
 	return Qnil;
+
+      /* Restore the original START and END values
+	 because validate_interval_range increments them for strings.  */
+      start = ostart;
+      end = oend;
 
       i = validate_interval_range (object, &start, &end, hard);
       /* This can return if start == end.  */

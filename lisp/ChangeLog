@@ -1,3 +1,20 @@
+Thu Oct  6 01:06:27 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.28 released.
+
+	* imenu.el (imenu--cleanup): Use mapcar, not mapc.
+
+	* isearch.el (isearch-mode-map): Explicitly bind to nil
+	the Alt characters that iso-transl defines translators for.
+
+	* ispell.el (ispell-highlight-spelling-error): 
+	Don't use faces if wondow-system is nil.
+
+Fri Sep 23 10:08:09 1994  Boris Goldowsky  <boris@cs.rochester.edu>
+
+	* fill.el (justify-current-line): Do insertion with text-prop
+	inheritance. 
+
 Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.27 released.
