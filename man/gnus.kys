@@ -1,0 +1,445 @@
+\initial {!}
+\entry {\code {! (Summary)}}{46}
+\initial {#}
+\entry {\code {# (Group)}}{21}
+\entry {\code {# (Summary)}}{47}
+\initial {&}
+\entry {\code {& (Summary)}}{78}
+\initial {*}
+\entry {\code {* (Summary)}}{57}
+\initial {,}
+\entry {\code {, (Group)}}{16}
+\entry {\code {, (GroupLens)}}{142}
+\entry {\code {, (Summary)}}{40}
+\initial {.}
+\entry {\code {. (Group)}}{17}
+\entry {\code {. (Summary)}}{40}
+\initial {/}
+\entry {\code {/ / (Summary)}}{48}
+\entry {\code {/ a (Summary)}}{48}
+\entry {\code {/ c (Summary)}}{49}
+\entry {\code {/ C (Summary)}}{49}
+\entry {\code {/ d (Summary)}}{49}
+\entry {\code {/ D (Summary)}}{48}
+\entry {\code {/ E (Summary)}}{48}
+\entry {\code {/ m (Summary)}}{48}
+\entry {\code {/ n (Summary)}}{48}
+\entry {\code {/ u (Summary)}}{48}
+\entry {\code {/ v (Summary)}}{48}
+\entry {\code {/ w (Summary)}}{48}
+\initial {=}
+\entry {\code {= (Summary)}}{78}
+\initial {?}
+\entry {\code {? (Article)}}{84}
+\entry {\code {? (Browse)}}{28}
+\entry {\code {? (Group)}}{33}
+\entry {\code {? (Summary)}}{46}
+\initial {{\tt\gtr}}
+\entry {\code {{\tt\gtr} (Summary)}}{41}
+\initial {{\tt\hat}}
+\entry {\code {{\tt\hat} (Group)}}{31}
+\entry {\code {{\tt\hat} (Summary)}}{72}
+\initial {{\tt\less}}
+\entry {\code {{\tt\less} (Summary)}}{41}
+\initial {A}
+\entry {\code {a (Group)}}{31}
+\entry {\code {a (Server)}}{94}
+\entry {\code {a (Summary)}}{42}
+\entry {\code {A {\tt\gtr} (Summary)}}{41}
+\entry {\code {A {\tt\less} (Summary)}}{41}
+\entry {\code {A a (Group)}}{25}
+\entry {\code {A A (Group)}}{25}
+\entry {\code {A d (Group)}}{25}
+\entry {\code {A D (Summary)}}{78}
+\entry {\code {A g (Summary)}}{41}
+\entry {\code {A k (Group)}}{25}
+\entry {\code {A l (Group)}}{25}
+\entry {\code {A m (Group)}}{25}
+\entry {\code {A M (Group)}}{25}
+\entry {\code {A R (Summary)}}{72}
+\entry {\code {A s (Group)}}{25}
+\entry {\code {A s (Summary)}}{41}
+\entry {\code {A T (Group)}}{30}
+\entry {\code {A u (Group)}}{25}
+\entry {\code {A z (Group)}}{25}
+\initial {B}
+\entry {\code {b (Group)}}{27}
+\entry {\code {B (Group)}}{4, 27}
+\entry {\code {b (Pick)}}{73}
+\entry {\code {B (Pick)}}{73}
+\entry {\code {B c (Summary)}}{76}
+\entry {\code {B C (Summary)}}{76}
+\entry {\code {B DEL (Summary)}}{76}
+\entry {\code {B e (Summary)}}{76}
+\entry {\code {B i (Summary)}}{76}
+\entry {\code {B m (Summary)}}{76}
+\entry {\code {B M-C-e (Summary)}}{76}
+\entry {\code {B q (Summary)}}{77}
+\entry {\code {B r (Summary)}}{76}
+\entry {\code {B w (Summary)}}{76}
+\initial {C}
+\entry {\code {c (Group)}}{17}
+\entry {\code {C (Group)}}{17}
+\entry {\code {c (Server)}}{95}
+\entry {\code {C (Server)}}{97}
+\entry {\code {c (Summary)}}{79}
+\entry {\code {C (Summary)}}{43}
+\entry {\code {C-c {\tt\hat} (Article)}}{84}
+\entry {\code {C-c C-c (Article)}}{76}
+\entry {\code {C-c C-c (Post)}}{87}
+\entry {\code {C-c C-c (Score)}}{134}
+\entry {\code {C-c C-d (Score)}}{134}
+\entry {\code {C-c C-i (Group)}}{33}
+\entry {\code {C-c C-m (Article)}}{84}
+\entry {\code {C-c C-p (Score)}}{134}
+\entry {\code {C-c C-s (Group)}}{26}
+\entry {\code {C-c C-s C-a (Summary)}}{71}
+\entry {\code {C-c C-s C-d (Summary)}}{71}
+\entry {\code {C-c C-s C-i (Summary)}}{71}
+\entry {\code {C-c C-s C-n (Summary)}}{71}
+\entry {\code {C-c C-s C-s (Summary)}}{71}
+\entry {\code {C-c C-x (Group)}}{27}
+\entry {\code {C-c M-C-x (Group)}}{27}
+\entry {\code {C-c M-g (Group)}}{32}
+\entry {\code {C-k (Group)}}{18, 30}
+\entry {\code {C-k (Summary)}}{46}
+\entry {\code {C-t (Summary)}}{78}
+\entry {\code {C-w (Group)}}{18}
+\entry {\code {C-w (Summary)}}{46}
+\entry {\code {C-x C-t (Group)}}{18}
+\entry {\code {C-y (Group)}}{18, 30}
+\initial {D}
+\entry {\code {D (Group)}}{32}
+\entry {\code {D (Server)}}{97}
+\entry {\code {d (Summary)}}{46}
+\entry {\code {DEL (Article)}}{84}
+\entry {\code {DEL (Group)}}{16}
+\entry {\code {DEL (Summary)}}{41}
+\initial {E}
+\entry {\code {e (Pick)}}{73}
+\entry {\code {E (Pick)}}{73}
+\entry {\code {e (Server)}}{94}
+\entry {\code {e (Summary)}}{76}
+\entry {\code {E (Summary)}}{47}
+\initial {F}
+\entry {\code {F (Group)}}{27}
+\entry {\code {f (Summary)}}{43}
+\entry {\code {F (Summary)}}{43}
+\initial {G}
+\entry {\code {g (Binary)}}{74}
+\entry {\code {g (Group)}}{32}
+\entry {\code {g (Summary)}}{41}
+\entry {\code {G a (Group)}}{22}
+\entry {\code {G b (Summary)}}{40}
+\entry {\code {G C-n (Summary)}}{40}
+\entry {\code {G C-p (Summary)}}{40}
+\entry {\code {G d (Group)}}{21}
+\entry {\code {G D (Group)}}{22}
+\entry {\code {G DEL (Group)}}{22}
+\entry {\code {G e (Group)}}{21}
+\entry {\code {G E (Group)}}{21}
+\entry {\code {G f (Group)}}{22}
+\entry {\code {G f (Summary)}}{40}
+\entry {\code {G g (Summary)}}{39}
+\entry {\code {G h (Group)}}{21}
+\entry {\code {G j (Summary)}}{38}
+\entry {\code {G k (Group)}}{22, 123}
+\entry {\code {G l (Summary)}}{40}
+\entry {\code {G m (Group)}}{21}
+\entry {\code {G M-n (Summary)}}{38}
+\entry {\code {G M-p (Summary)}}{38}
+\entry {\code {G n (Summary)}}{40}
+\entry {\code {G N (Summary)}}{40}
+\entry {\code {G p (Group)}}{21}
+\entry {\code {G p (Summary)}}{40}
+\entry {\code {G P (Summary)}}{40}
+\entry {\code {G r (Group)}}{21}
+\entry {\code {G S a (Group)}}{26}
+\entry {\code {G s b (Group)}}{119}
+\entry {\code {G S l (Group)}}{26}
+\entry {\code {G S m (Group)}}{26}
+\entry {\code {G s p (Group)}}{119}
+\entry {\code {G s r (Group)}}{119}
+\entry {\code {G S r (Group)}}{26}
+\entry {\code {G s s (Group)}}{119}
+\entry {\code {G S u (Group)}}{26}
+\entry {\code {G S v (Group)}}{26}
+\entry {\code {G s w (Group)}}{119}
+\entry {\code {G v (Group)}}{22}
+\entry {\code {G V (Group)}}{22}
+\initial {H}
+\entry {\code {H d (Summary)}}{77}
+\entry {\code {H f (Summary)}}{77}
+\entry {\code {H h (Summary)}}{77}
+\entry {\code {H i (Summary)}}{77}
+\initial {I}
+\entry {\code {I C-i (Summary)}}{126}
+\initial {J}
+\entry {\code {j (Group)}}{16}
+\entry {\code {j (Summary)}}{38}
+\initial {K}
+\entry {\code {k (GroupLens)}}{141}
+\entry {\code {k (Server)}}{94}
+\entry {\code {k (Summary)}}{46}
+\initial {L}
+\entry {\code {l (Browse)}}{27}
+\entry {\code {l (Group)}}{25}
+\entry {\code {L (Group)}}{25}
+\entry {\code {l (Server)}}{95}
+\entry {\code {l (Summary)}}{40}
+\entry {\code {L C-l (Summary)}}{126}
+\initial {M}
+\entry {\code {m (Group)}}{31}
+\entry {\code {m (Summary)}}{42}
+\entry {\code {M ? (Summary)}}{46}
+\entry {\code {M b (Group)}}{21}
+\entry {\code {M b (Summary)}}{47}
+\entry {\code {M B (Summary)}}{47}
+\entry {\code {M c (Summary)}}{47}
+\entry {\code {M C (Summary)}}{46}
+\entry {\code {M C-c (Summary)}}{46}
+\entry {\code {M d (Summary)}}{46}
+\entry {\code {M e (Summary)}}{47}
+\entry {\code {M H (Summary)}}{46}
+\entry {\code {M k (Summary)}}{46}
+\entry {\code {M K (Summary)}}{46}
+\entry {\code {M m (Group)}}{21}
+\entry {\code {M P a (Summary)}}{48}
+\entry {\code {M P b (Summary)}}{48}
+\entry {\code {M P p (Summary)}}{47}
+\entry {\code {M P r (Summary)}}{47}
+\entry {\code {M P R (Summary)}}{47}
+\entry {\code {M P s (Summary)}}{48}
+\entry {\code {M P S (Summary)}}{48}
+\entry {\code {M P t (Summary)}}{47}
+\entry {\code {M P T (Summary)}}{48}
+\entry {\code {M P u (Summary)}}{47}
+\entry {\code {M P U (Summary)}}{47}
+\entry {\code {M P v (Summary)}}{48}
+\entry {\code {M r (Group)}}{21}
+\entry {\code {M S (Summary)}}{48}
+\entry {\code {M t (Summary)}}{46}
+\entry {\code {M u (Group)}}{21}
+\entry {\code {M U (Group)}}{21}
+\entry {\code {M V c (Summary)}}{47}
+\entry {\code {M V k (Summary)}}{47}
+\entry {\code {M V m (Summary)}}{47}
+\entry {\code {M V u (Summary)}}{47}
+\entry {\code {M w (Group)}}{21}
+\entry {\code {M-# (Group)}}{21}
+\entry {\code {M-# (Summary)}}{47}
+\entry {\code {M-& (Summary)}}{78}
+\entry {\code {M-* (Summary)}}{57}
+\entry {\code {M-{\tt\hat} (Summary)}}{72}
+\entry {\code {M-C-k (Summary)}}{52}
+\entry {\code {M-C-l (Summary)}}{52}
+\entry {\code {M-d (Group)}}{33}
+\entry {\code {M-f (Group)}}{32}
+\entry {\code {M-g (Group)}}{32}
+\entry {\code {M-g (Summary)}}{79}
+\entry {\code {M-k (Group)}}{140}
+\entry {\code {M-K (Group)}}{140}
+\entry {\code {M-k (Summary)}}{139}
+\entry {\code {M-K (Summary)}}{139}
+\entry {\code {M-n (Group)}}{16}
+\entry {\code {M-n (Summary)}}{38}
+\entry {\code {M-p (Group)}}{16}
+\entry {\code {M-p (Summary)}}{38}
+\entry {\code {M-r (Summary)}}{78}
+\entry {\code {M-RET (Group)}}{17}
+\entry {\code {M-s (Summary)}}{78}
+\entry {\code {M-TAB (Article)}}{84}
+\entry {\code {M-u (Summary)}}{47}
+\entry {\code {M-x gnus}}{3}
+\entry {\code {M-x gnus-binary-mode}}{74}
+\entry {\code {M-x gnus-bug}}{167, 176}
+\entry {\code {M-x gnus-other-frame}}{3}
+\entry {\code {M-x gnus-pick-mode}}{73}
+\entry {\code {M-x gnus-update-format}}{147}
+\entry {\code {M-x nnfolder-generate-active-file}}{115}
+\entry {\code {M-x nnkiboze-generate-groups}}{123}
+\initial {N}
+\entry {\code {n (Browse)}}{27}
+\entry {\code {n (Group)}}{16}
+\entry {\code {N (Group)}}{16}
+\entry {\code {n (GroupLens)}}{142}
+\entry {\code {n (Summary)}}{40}
+\entry {\code {N (Summary)}}{40}
+\initial {O}
+\entry {\code {O (Server)}}{97}
+\entry {\code {o (Summary)}}{58}
+\entry {\code {O b (Summary)}}{58}
+\entry {\code {O f (Summary)}}{58}
+\entry {\code {O h (Summary)}}{58}
+\entry {\code {O m (Summary)}}{58}
+\entry {\code {O o (Summary)}}{58}
+\entry {\code {O p (Summary)}}{58}
+\entry {\code {O r (Summary)}}{58}
+\entry {\code {O s (Summary)}}{119}
+\entry {\code {O v (Summary)}}{58}
+\initial {P}
+\entry {\code {p (Browse)}}{27}
+\entry {\code {p (Group)}}{16}
+\entry {\code {P (Group)}}{16}
+\entry {\code {p (Summary)}}{40}
+\entry {\code {P (Summary)}}{40}
+\initial {Q}
+\entry {\code {q (Browse)}}{27}
+\entry {\code {q (Group)}}{28}
+\entry {\code {Q (Group)}}{28}
+\entry {\code {q (Server)}}{94}
+\entry {\code {q (Summary)}}{78}
+\entry {\code {Q (Summary)}}{79}
+\initial {R}
+\entry {\code {r (Group)}}{33}
+\entry {\code {R (Group)}}{32}
+\entry {\code {r (GroupLens)}}{141}
+\entry {\code {r (Pick)}}{73}
+\entry {\code {R (Pick)}}{73}
+\entry {\code {R (Server)}}{97}
+\entry {\code {r (Summary)}}{41}
+\entry {\code {R (Summary)}}{42}
+\entry {\code {RET (Browse)}}{27}
+\entry {\code {RET (Group)}}{17, 30}
+\entry {\code {RET (Pick)}}{73}
+\entry {\code {RET (Summary)}}{41}
+\initial {S}
+\entry {\code {s (Article)}}{84}
+\entry {\code {s (Group)}}{33}
+\entry {\code {S (Summary)}}{43}
+\entry {\code {S C-k (Group)}}{18}
+\entry {\code {S D b (Summary)}}{42}
+\entry {\code {S D r (Summary)}}{42}
+\entry {\code {S f (Summary)}}{43}
+\entry {\code {S F (Summary)}}{43}
+\entry {\code {S k (Group)}}{18}
+\entry {\code {S l (Group)}}{19}
+\entry {\code {S m (Summary)}}{42}
+\entry {\code {S o m (Summary)}}{42}
+\entry {\code {S O m (Summary)}}{42}
+\entry {\code {S o p (Summary)}}{42}
+\entry {\code {S O p (Summary)}}{42}
+\entry {\code {S p (Summary)}}{42}
+\entry {\code {S r (Summary)}}{41}
+\entry {\code {S R (Summary)}}{42}
+\entry {\code {S s (Group)}}{18}
+\entry {\code {S t (Group)}}{18}
+\entry {\code {S u (Summary)}}{43}
+\entry {\code {S w (Group)}}{18}
+\entry {\code {S y (Group)}}{18}
+\entry {\code {S z (Group)}}{18}
+\entry {\code {SPACE (Article)}}{84}
+\entry {\code {SPACE (Browse)}}{27}
+\entry {\code {SPACE (Group)}}{17}
+\entry {\code {SPACE (Pick)}}{73}
+\entry {\code {SPACE (Server)}}{94}
+\entry {\code {SPACE (Summary)}}{40, 41}
+\initial {T}
+\entry {\code {T # (Group)}}{30}
+\entry {\code {T # (Summary)}}{52}
+\entry {\code {t (Group)}}{28}
+\entry {\code {t (Pick)}}{73}
+\entry {\code {T (Pick)}}{73}
+\entry {\code {T {\tt\hat} (Summary)}}{52}
+\entry {\code {T c (Group)}}{30}
+\entry {\code {T C (Group)}}{30}
+\entry {\code {T D (Group)}}{30}
+\entry {\code {T d (Summary)}}{53}
+\entry {\code {T DEL (Group)}}{30}
+\entry {\code {T h (Summary)}}{52}
+\entry {\code {T H (Summary)}}{52}
+\entry {\code {T i (Summary)}}{52}
+\entry {\code {T k (Summary)}}{52}
+\entry {\code {T l (Summary)}}{52}
+\entry {\code {T m (Group)}}{30}
+\entry {\code {T M (Group)}}{30}
+\entry {\code {T M-# (Group)}}{30}
+\entry {\code {T M-# (Summary)}}{52}
+\entry {\code {T n (Group)}}{30}
+\entry {\code {T n (Summary)}}{53}
+\entry {\code {T o (Summary)}}{53}
+\entry {\code {T p (Summary)}}{53}
+\entry {\code {T r (Group)}}{30}
+\entry {\code {T s (Summary)}}{52}
+\entry {\code {T S (Summary)}}{52}
+\entry {\code {T t (Summary)}}{52}
+\entry {\code {T T (Summary)}}{52}
+\entry {\code {T TAB (Group)}}{30}
+\entry {\code {T u (Summary)}}{53}
+\entry {\code {TAB (Article)}}{84}
+\initial {U}
+\entry {\code {u (Browse)}}{27}
+\entry {\code {u (Group)}}{18}
+\entry {\code {U (Group)}}{18}
+\entry {\code {u (Pick)}}{73}
+\entry {\code {U (Pick)}}{73}
+\initial {V}
+\entry {\code {V (Group)}}{33}
+\entry {\code {V a (Summary)}}{126}
+\entry {\code {V c (Summary)}}{126}
+\entry {\code {V C (Summary)}}{126}
+\entry {\code {V e (Summary)}}{126}
+\entry {\code {V E (Summary)}}{126}
+\entry {\code {V f (Summary)}}{126}
+\entry {\code {V F (Summary)}}{126}
+\entry {\code {V m (Summary)}}{126}
+\entry {\code {V s (Summary)}}{125}
+\entry {\code {V S (Summary)}}{125}
+\entry {\code {V t (Summary)}}{126}
+\initial {W}
+\entry {\code {W b (Summary)}}{69}
+\entry {\code {W B (Summary)}}{69}
+\entry {\code {W c (Summary)}}{69}
+\entry {\code {W f (Group)}}{128}
+\entry {\code {W f (Summary)}}{69}
+\entry {\code {W H a (Summary)}}{66}
+\entry {\code {W H c (Summary)}}{66}
+\entry {\code {W H h (Summary)}}{66}
+\entry {\code {W H s (Summary)}}{67}
+\entry {\code {W l (Summary)}}{69}
+\entry {\code {W L (Summary)}}{69}
+\entry {\code {W m (Summary)}}{69}
+\entry {\code {W o (Summary)}}{69}
+\entry {\code {W q (Summary)}}{69}
+\entry {\code {W r (Summary)}}{69}
+\entry {\code {W t (Summary)}}{69}
+\entry {\code {W T e (Summary)}}{71}
+\entry {\code {W T l (Summary)}}{71}
+\entry {\code {W T o (Summary)}}{71}
+\entry {\code {W T u (Summary)}}{71}
+\entry {\code {W v (Summary)}}{69}
+\entry {\code {W w (Summary)}}{69}
+\entry {\code {W W a (Summary)}}{67}
+\entry {\code {W W b (Summary)}}{68}
+\entry {\code {W W c (Summary)}}{68}
+\entry {\code {W W C (Summary)}}{68}
+\entry {\code {W W h (Summary)}}{67}
+\entry {\code {W W p (Summary)}}{68}
+\entry {\code {W W s (Summary)}}{68}
+\initial {X}
+\entry {\code {x (Summary)}}{48}
+\entry {\code {X p (Summary)}}{62}
+\entry {\code {X P (Summary)}}{62}
+\entry {\code {X s (Summary)}}{62}
+\entry {\code {X S (Summary)}}{62}
+\entry {\code {X u (Summary)}}{61}
+\entry {\code {X U (Summary)}}{62}
+\entry {\code {X v p (Summary)}}{62}
+\entry {\code {X v P (Summary)}}{62}
+\entry {\code {X v s (Summary)}}{62}
+\entry {\code {X v S (Summary)}}{62}
+\entry {\code {X v u (Summary)}}{62}
+\entry {\code {X v U (Summary)}}{62}
+\initial {Y}
+\entry {\code {y (Server)}}{95}
+\initial {Z}
+\entry {\code {z (Group)}}{28}
+\entry {\code {Z c (Summary)}}{79}
+\entry {\code {Z C (Summary)}}{79}
+\entry {\code {Z E (Summary)}}{79}
+\entry {\code {Z G (Summary)}}{79}
+\entry {\code {Z n (Summary)}}{79}
+\entry {\code {Z N (Summary)}}{79}
+\entry {\code {Z P (Summary)}}{79}
+\entry {\code {Z R (Summary)}}{79}
+\entry {\code {Z Z (Summary)}}{78}

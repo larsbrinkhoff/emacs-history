@@ -1,0 +1,39 @@
+\initial {C}
+\entry {\code {C-c C-p}}{18, 30}
+\entry {\code {C-c C-p ?}}{35}
+\entry {\code {C-c C-p c}}{31}
+\entry {\code {C-c C-p C-b}}{35}
+\entry {\code {C-c C-p C-p}}{20, 34}
+\entry {\code {C-c C-p C-t}}{32}
+\entry {\code {C-c C-p f}}{34}
+\entry {\code {C-c C-p g}}{34}
+\entry {\code {C-c C-p h}}{35}
+\entry {\code {C-c C-p i}}{32}
+\entry {\code {C-c C-p o}}{35}
+\entry {\code {C-c C-p r}}{32}
+\entry {\code {C-c C-p u}}{31}
+\entry {\code {C-c C-p v}}{35}
+\entry {\code {C-c C-p w}}{32}
+\entry {\code {C-c C-y}}{1}
+\entry {\code {C-u}}{31}
+\initial {F}
+\entry {\code {f}}{1}
+\initial {G}
+\entry {\code {g}}{11}
+\initial {J}
+\entry {\code {j}}{11}
+\initial {L}
+\entry {\code {LFD}}{11}
+\initial {N}
+\entry {\code {n}}{11}
+\initial {P}
+\entry {\code {p}}{11}
+\initial {Q}
+\entry {\code {q}}{11}
+\initial {R}
+\entry {\code {r}}{1}
+\entry {\code {RET}}{11}
+\initial {S}
+\entry {\code {s}}{11}
+\initial {X}
+\entry {\code {x}}{11}

@@ -1,4 +1,4 @@
-This directory tree holds version 19.33 of GNU Emacs, the extensible,
+This directory tree holds version 19.34 of GNU Emacs, the extensible,
 customizable, self-documenting real-time display editor.
 
 You may encounter bugs in this release.  If you do, please report
@@ -73,7 +73,6 @@ There are several subdirectories:
 (They are twice as large as the Emacs manual in the man subdirectory.)
 
 `msdos' holds configuration files for compiling Emacs under MSDOG.
-    See the file etc/MSDOS for more information.
 `cpp' holds a C preprocessor for use instead of the installed one when
     the installed one fails to distinguish more than 8 characters in a
     symbol name.

@@ -1,0 +1,109 @@
+\initial {!}
+\entry {\code {\kbd {!!{\tt\less}cmd{\tt\gtr}}}}{65}
+\entry {\code {\kbd {!{\tt\less}cmd{\tt\gtr}}}}{65}
+\entry {\code {\kbd {!{\tt\less}move{\tt\gtr}{\tt\less}cmd{\tt\gtr}}}}{65}
+\initial {:}
+\entry {\code {\kbd {:!! {\tt\less}args{\tt\gtr}}}}{65}
+\entry {\code {\kbd {:!{\tt\less}cmd{\tt\gtr}}}}{65}
+\entry {\code {\kbd {:{\tt\less}address{\tt\gtr}r !{\tt\less}cmd{\tt\gtr}}}}{65}
+\entry {\code {\kbd {:{\tt\less}address{\tt\gtr}r {\tt\less}name{\tt\gtr}}}}{65}
+\entry {\code {\kbd {:args}}}{24, 63}
+\entry {\code {\kbd {:cd [{\tt\less}dir{\tt\gtr}]}}}{63}
+\entry {\code {\kbd {:copy [z]}}}{58}
+\entry {\code {\kbd {:e [{\tt\less}files{\tt\gtr}]}}}{63}
+\entry {\code {\kbd {:e!}}}{60}
+\entry {\code {\kbd {:e! [{\tt\less}files{\tt\gtr}]}}}{63}
+\entry {\code {\kbd {:edit [{\tt\less}files{\tt\gtr}]}}}{63}
+\entry {\code {\kbd {:edit! [{\tt\less}files{\tt\gtr}]}}}{63}
+\entry {\code {\kbd {:f}}}{63}
+\entry {\code {\kbd {:g/{\tt\less}string{\tt\gtr}/{\tt\less}cmd{\tt\gtr}}}}{59}
+\entry {\code {\kbd {:global/{\tt\less}string{\tt\gtr}/{\tt\less}cmd{\tt\gtr}}}}{59}
+\entry {\code {\kbd {:k}}}{55}
+\entry {\code {\kbd {:map}}}{34}
+\entry {\code {\kbd {:map {\tt\less}char{\tt\gtr} {\tt\less}seq{\tt\gtr}}}}{64}
+\entry {\code {\kbd {:map! {\tt\less}char{\tt\gtr} {\tt\less}seq{\tt\gtr}}}}{64}
+\entry {\code {\kbd {:mark}}}{55}
+\entry {\code {\kbd {:move [z]}}}{58}
+\entry {\code {\kbd {:n}}}{24}
+\entry {\code {\kbd {:n [{\tt\less}count{\tt\gtr} {\tt\char'174} {\tt\less}file{\tt\gtr}]}}}{63}
+\entry {\code {\kbd {:pre}}}{24, 63}
+\entry {\code {\kbd {:PreviousRelatedFile}}}{24, 41}
+\entry {\code {\kbd {:pwd}}}{24, 63}
+\entry {\code {\kbd {:q}}}{63}
+\entry {\code {\kbd {:q!}}}{60, 63}
+\entry {\code {\kbd {:quit}}}{63}
+\entry {\code {\kbd {:quit!}}}{63}
+\entry {\code {\kbd {:r}}}{63}
+\entry {\code {\kbd {:read}}}{63}
+\entry {\code {\kbd {:rec}}}{60, 63}
+\entry {\code {\kbd {:RelatedFile}}}{24, 41}
+\entry {\code {\kbd {:rew}}}{63}
+\entry {\code {\kbd {:s/{\tt\less}p{\tt\gtr}/{\tt\less}r{\tt\gtr}/{\tt\less}f{\tt\gtr}}}}{58}
+\entry {\code {\kbd {:set}}}{26}
+\entry {\code {\kbd {:set {\tt\less}option{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set {\tt\less}option{\tt\gtr}={\tt\less}value{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set ai}}}{66}
+\entry {\code {\kbd {:set autoindent}}}{66}
+\entry {\code {\kbd {:set ic}}}{66}
+\entry {\code {\kbd {:set ignorecase}}}{66}
+\entry {\code {\kbd {:set magic}}}{66}
+\entry {\code {\kbd {:set no{\tt\less}option{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set readonly}}}{66}
+\entry {\code {\kbd {:set ro}}}{66}
+\entry {\code {\kbd {:set sh={\tt\less}string{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set shell={\tt\less}string{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set shiftwidth={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set showmatch}}}{66}
+\entry {\code {\kbd {:set sm}}}{66}
+\entry {\code {\kbd {:set sw={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set tab-stop-local={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set tabstop={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set ts={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set wm={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set wrapmargin={\tt\less}count{\tt\gtr}}}}{66}
+\entry {\code {\kbd {:set wrapscan}}}{66}
+\entry {\code {\kbd {:set ws}}}{66}
+\entry {\code {\kbd {:sh}}}{65}
+\entry {\code {\kbd {:stop}}}{63}
+\entry {\code {\kbd {:substitute/{\tt\less}p{\tt\gtr}/{\tt\less}r{\tt\gtr}/{\tt\less}f{\tt\gtr}}}}{58, 59}
+\entry {\code {\kbd {:susp}}}{63}
+\entry {\code {\kbd {:t [z]}}}{58}
+\entry {\code {\kbd {:tag {\tt\less}name{\tt\gtr}}}}{59}
+\entry {\code {\kbd {:unmap {\tt\less}char{\tt\gtr}}}}{64}
+\entry {\code {\kbd {:unmap! {\tt\less}char{\tt\gtr}}}}{64}
+\entry {\code {\kbd {:v/{\tt\less}string{\tt\gtr}/{\tt\less}cmd{\tt\gtr}}}}{59}
+\entry {\code {\kbd {:W}}}{63}
+\entry {\code {\kbd {:w !{\tt\less}cmd{\tt\gtr}}}}{65}
+\entry {\code {\kbd {:w {\tt\gtr}{\tt\gtr} {\tt\less}file{\tt\gtr}}}}{63}
+\entry {\code {\kbd {:w {\tt\less}file{\tt\gtr}}}}{63}
+\entry {\code {\kbd {:w! {\tt\less}file{\tt\gtr}}}}{63}
+\entry {\code {\kbd {:wq}}}{63}
+\entry {\code {\kbd {:Write}}}{63}
+\entry {\code {\kbd {:write {\tt\gtr}{\tt\gtr} {\tt\less}file{\tt\gtr}}}}{63}
+\entry {\code {\kbd {:write {\tt\less}file{\tt\gtr}}}}{63}
+\entry {\code {\kbd {:write! {\tt\less}file{\tt\gtr}}}}{63}
+\entry {\code {\kbd {:WW}}}{63}
+\entry {\code {\kbd {:WWrite}}}{63}
+\entry {\code {\kbd {:x}}}{63}
+\entry {\code {\kbd {:x!}}}{63}
+\entry {\code {\kbd {:x,y w !{\tt\less}cmd{\tt\gtr}}}}{65}
+\entry {\code {\kbd {:yank}}}{60}
+\initial {A}
+\entry {\code {\code {add-hook}}}{38}
+\initial {R}
+\entry {\code {\code {remove-hook}}}{38}
+\initial {V}
+\entry {\code {\code {vip-add-local-keys}}}{36}
+\entry {\code {\code {vip-buffer-search-enable}}}{38}
+\entry {\code {\code {vip-describe-kbd-macros}}}{49}
+\entry {\code {\code {vip-ex-nontrivial-find-file-ms}}}{29}
+\entry {\code {\code {vip-ex-nontrivial-find-file-unix}}}{29}
+\entry {\code {\code {vip-harness-minor-mode}}}{38}
+\entry {\code {\code {vip-modify-major-mode}}}{34}
+\entry {\code {\code {vip-mouse-click-insert-word}}}{43}
+\entry {\code {\code {vip-mouse-click-search-word}}}{43}
+\entry {\code {\code {vip-set-expert-level}}}{39}
+\entry {\code {\code {vip-set-hooks}}}{38}
+\entry {\code {\code {vip-unrecord-kbd-macro}}}{39, 46}
+\entry {\code {\code {vip-zap-local-keys}}}{36}
+\entry {\code {\code {viper-mode}}}{38}

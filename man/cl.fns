@@ -1,0 +1,213 @@
+\initial {A}
+\entry {\code {abs}}{63}
+\entry {\code {acons}}{83}
+\entry {\code {adjoin}}{81}
+\entry {\code {assert}}{93}
+\entry {\code {assoc*}}{83}
+\entry {\code {assoc-if}}{83}
+\entry {\code {assoc-if-not}}{83}
+\initial {B}
+\entry {\code {block}}{36}
+\entry {\code {butlast}}{79}
+\initial {C}
+\entry {\code {caddr}}{78}
+\entry {\code {callf}}{24}
+\entry {\code {callf2}}{24}
+\entry {\code {case}}{34}
+\entry {\code {ceiling*}}{64}
+\entry {\code {check-type}}{93}
+\entry {\code {cl-float-limits}}{66}
+\entry {\code {cl-prettyexpand}}{95}
+\entry {\code {clrhash}}{85}
+\entry {\code {coerce}}{14}
+\entry {\code {compiler-macroexpand}}{54}
+\entry {\code {concatenate}}{72}
+\entry {\code {copy-list}}{79}
+\entry {\code {copy-tree}}{79}
+\entry {\code {count}}{75}
+\entry {\code {count-if}}{75}
+\entry {\code {count-if-not}}{75}
+\initial {D}
+\entry {\code {decf}}{22}
+\entry {\code {declaim}}{55}
+\entry {\code {declare}}{55}
+\entry {\code {defalias}}{12}
+\entry {\code {define-compiler-macro}}{53}
+\entry {\code {define-modify-macro}}{25}
+\entry {\code {define-setf-method}}{27}
+\entry {\code {defmacro*}}{5}
+\entry {\code {defsetf}}{26}
+\entry {\code {defstruct}}{87}
+\entry {\code {defsubst*}}{5}
+\entry {\code {deftype}}{14}
+\entry {\code {defun*}}{5}
+\entry {\code {delete}}{73}
+\entry {\code {delete*}}{73}
+\entry {\code {delete-duplicates}}{74}
+\entry {\code {delete-if}}{73}
+\entry {\code {delete-if-not}}{73}
+\entry {\code {destructuring-bind}}{53}
+\entry {\code {do}}{38}
+\entry {\code {do*}}{38}
+\entry {\code {do-all-symbols}}{39}
+\entry {\code {do-symbols}}{39}
+\entry {\code {dolist}}{39}
+\entry {\code {dotimes}}{39}
+\initial {E}
+\entry {\code {ecase}}{35}
+\entry {\code {endp}}{78}
+\entry {\code {eql}}{15}
+\entry {\code {equalp}}{15}
+\entry {\code {etypecase}}{36}
+\entry {\code {eval-when}}{9}
+\entry {\code {eval-when-compile}}{11}
+\entry {\code {evenp}}{62}
+\entry {\code {every}}{70}
+\entry {\code {expt}}{63}
+\initial {F}
+\entry {\code {fill}}{72}
+\entry {\code {find}}{75}
+\entry {\code {find-if}}{75}
+\entry {\code {find-if-not}}{75}
+\entry {\code {first}}{78}
+\entry {\code {flet}}{31}
+\entry {\code {floatp-safe}}{62}
+\entry {\code {floor*}}{63}
+\entry {\code {function*}}{5}
+\initial {G}
+\entry {\code {gcd}}{63}
+\entry {\code {gensym}}{60}
+\entry {\code {gentemp}}{61}
+\entry {\code {get*}}{59}
+\entry {\code {get-setf-method}}{28}
+\entry {\code {getf}}{59}
+\entry {\code {gethash}}{84}
+\initial {H}
+\entry {\code {hash-table-count}}{85}
+\entry {\code {hash-table-p}}{85}
+\initial {I}
+\entry {\code {ignore-errors}}{94}
+\entry {\code {incf}}{21}
+\entry {\code {intersection}}{82}
+\entry {\code {isqrt}}{63}
+\initial {L}
+\entry {\code {labels}}{32}
+\entry {\code {last}}{78}
+\entry {\code {lcm}}{63}
+\entry {\code {ldiff}}{79}
+\entry {\code {letf}}{23}
+\entry {\code {letf*}}{24}
+\entry {\code {lexical-let}}{29}
+\entry {\code {lexical-let*}}{31}
+\entry {\code {list*}}{79}
+\entry {\code {list-length}}{78}
+\entry {\code {load-time-value}}{11}
+\entry {\code {locally}}{55}
+\entry {\code {loop}}{37, 40}
+\initial {M}
+\entry {\code {macrolet}}{32}
+\entry {\code {make-hash-table}}{84}
+\entry {\code {make-random-state}}{65}
+\entry {\code {map}}{70}
+\entry {\code {mapc}}{70}
+\entry {\code {mapcan}}{70}
+\entry {\code {mapcar*}}{69}
+\entry {\code {mapcon}}{70}
+\entry {\code {maphash}}{85}
+\entry {\code {mapl}}{70}
+\entry {\code {maplist}}{70}
+\entry {\code {member}}{81}
+\entry {\code {member*}}{81}
+\entry {\code {member-if}}{81}
+\entry {\code {member-if-not}}{81}
+\entry {\code {merge}}{77}
+\entry {\code {minusp}}{62}
+\entry {\code {mismatch}}{75}
+\entry {\code {mod*}}{64}
+\entry {\code {multiple-value-bind}}{52}
+\entry {\code {multiple-value-setq}}{52}
+\initial {N}
+\entry {\code {nbutlast}}{79}
+\entry {\code {nintersection}}{82}
+\entry {\code {notany}}{71}
+\entry {\code {notevery}}{71}
+\entry {\code {nset-difference}}{82}
+\entry {\code {nset-exclusive-or}}{82}
+\entry {\code {nsublis}}{80}
+\entry {\code {nsubst}}{80}
+\entry {\code {nsubst-if}}{80}
+\entry {\code {nsubst-if-not}}{80}
+\entry {\code {nsubstitute}}{74}
+\entry {\code {nsubstitute-if}}{74}
+\entry {\code {nsubstitute-if-not}}{74}
+\entry {\code {nunion}}{82}
+\initial {O}
+\entry {\code {oddp}}{62}
+\initial {P}
+\entry {\code {pairlis}}{83}
+\entry {\code {plusp}}{62}
+\entry {\code {pop}}{22}
+\entry {\code {position}}{75}
+\entry {\code {position-if}}{75}
+\entry {\code {position-if-not}}{75}
+\entry {\code {proclaim}}{55}
+\entry {\code {progv}}{29}
+\entry {\code {psetf}}{21}
+\entry {\code {psetq}}{17}
+\entry {\code {push}}{22}
+\entry {\code {pushnew}}{22}
+\initial {R}
+\entry {\code {random*}}{65}
+\entry {\code {random-state-p}}{65}
+\entry {\code {rassoc}}{83}
+\entry {\code {rassoc*}}{83}
+\entry {\code {rassoc-if}}{83}
+\entry {\code {rassoc-if-not}}{83}
+\entry {\code {reduce}}{71}
+\entry {\code {rem*}}{64}
+\entry {\code {remf}}{60}
+\entry {\code {remhash}}{85}
+\entry {\code {remove}}{74}
+\entry {\code {remove*}}{73}
+\entry {\code {remove-duplicates}}{74}
+\entry {\code {remove-if}}{73}
+\entry {\code {remove-if-not}}{73}
+\entry {\code {remprop}}{59}
+\entry {\code {remq}}{74}
+\entry {\code {replace}}{73}
+\entry {\code {rest}}{78}
+\entry {\code {return}}{37}
+\entry {\code {return-from}}{37}
+\entry {\code {rotatef}}{23}
+\entry {\code {round*}}{64}
+\initial {S}
+\entry {\code {search}}{76}
+\entry {\code {set-difference}}{82}
+\entry {\code {set-exclusive-or}}{82}
+\entry {\code {setf}}{18}
+\entry {\code {shiftf}}{22}
+\entry {\code {some}}{70}
+\entry {\code {sort*}}{76}
+\entry {\code {stable-sort}}{76}
+\entry {\code {sublis}}{80}
+\entry {\code {subseq}}{72}
+\entry {\code {subsetp}}{82}
+\entry {\code {subst}}{80}
+\entry {\code {subst-if}}{80}
+\entry {\code {subst-if-not}}{80}
+\entry {\code {substitute}}{74}
+\entry {\code {substitute-if}}{74}
+\entry {\code {substitute-if-not}}{74}
+\entry {\code {symbol-macrolet}}{33}
+\initial {T}
+\entry {\code {tailp}}{81}
+\entry {\code {the}}{55}
+\entry {\code {tree-equal}}{80}
+\entry {\code {truncate*}}{64}
+\entry {\code {typecase}}{35}
+\entry {\code {typep}}{13}
+\initial {U}
+\entry {\code {union}}{81}
+\entry {\code {unless}}{34}
+\initial {W}
+\entry {\code {when}}{34}

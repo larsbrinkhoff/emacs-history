@@ -1,0 +1,29 @@
+\initial {%}
+\entry {\code {%Y}}{21}
+\initial {C}
+\entry {\code {C-x 4 C-f}}{18}
+\entry {\code {C-x 4 C-j}}{20}
+\entry {\code {C-x C-f}}{17}
+\entry {\code {C-x C-j}}{20}
+\initial {F}
+\entry {\code {F}}{14}
+\initial {G}
+\entry {\code {g}}{13}
+\initial {I}
+\entry {\code {I}}{20}
+\initial {M}
+\entry {\code {M-!}}{20}
+\entry {\code {M-(}}{15}
+\entry {\code {M-g}}{19}
+\entry {\code {M-G}}{19}
+\entry {\code {M-o}}{6}
+\initial {N}
+\entry {\code {N}}{20}
+\initial {T}
+\entry {\code {T}}{19}
+\initial {V}
+\entry {\code {V}}{20}
+\initial {W}
+\entry {\code {w}}{19}
+\initial {Y}
+\entry {\code {Y}}{20}

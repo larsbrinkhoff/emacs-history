@@ -1,0 +1,160 @@
+\initial {0}
+\entry {\code {000 \kbd {C-{\tt\char'100}} (\code {set-mark-command})}}{25}
+\entry {\code {001 \kbd {C-a} (\code {vip-beginning-of-line})}}{8}
+\entry {\code {002 \kbd {C-b} (\code {vip-scroll-back})}}{15}
+\entry {\code {003 \kbd {C-c} (\code {vip-ctl-c})}}{8, 12}
+\entry {\code {004 \kbd {C-d} (\code {vip-scroll-up})}}{15}
+\entry {\code {005 \kbd {C-e} (\code {vip-scroll-up-one})}}{16}
+\entry {\code {006 \kbd {C-f} (\code {vip-scroll-back})}}{15}
+\entry {\code {007 \kbd {C-g} (\code {vip-keyboard-quit})}}{6, 9, 12}
+\entry {\code {010 \kbd {C-h} (\code {delete-backward-char}) (insert mode)}}{26}
+\entry {\code {010 \kbd {C-h} (\code {vip-delete-backward-char}) (insert mode)}}{6}
+\entry {\code {011 \kbd {TAB} (\code {indent-for-tab-command})}}{25}
+\entry {\code {012 \kbd {LFD} (\code {newline-and-indent})}}{25}
+\entry {\code {013 \kbd {C-k} (\code {kill-line})}}{25}
+\entry {\code {014 \kbd {C-l} (\code {recenter})}}{12, 25}
+\entry {\code {015 \kbd {RET} (\code {vip-scroll-back})}}{9, 15}
+\entry {\code {016 \kbd {C-n} (\code {vip-next-window})}}{8, 10, 13}
+\entry {\code {017 \kbd {C-o} (\code {vip-open-line-at-point})}}{8, 26}
+\entry {\code {020 \kbd {C-p} (\code {previous-line})}}{25}
+\entry {\code {021 \kbd {C-q} (\code {quoted-insert})}}{25}
+\entry {\code {022 \kbd {C-r} (\code {isearch-backward})}}{8, 19, 25}
+\entry {\code {023 \kbd {C-s} (\code {isearch-forward})}}{8, 19, 25}
+\entry {\code {024 \kbd {C-t} (\code {transpose-chars})}}{25}
+\entry {\code {025 \kbd {C-u} (\code {vip-scroll-down})}}{15}
+\entry {\code {026 \kbd {C-v} (\code {scroll-up})}}{25}
+\entry {\code {027 \kbd {C-w} (\code {kill-region})}}{25}
+\entry {\code {027 \kbd {C-w} (\code {vip-delete-backward-word}) (insert mode)}}{6, 26}
+\entry {\code {0300 \kbd {C-x} (\code {vip-ctl-x})}}{8, 12}
+\entry {\code {0301 \kbd {C-x C-z} (\code {suspend-emacs})}}{4}
+\entry {\code {031 \kbd {C-y} (\code {vip-scroll-down-one})}}{16}
+\entry {\code {032 \kbd {C-z} (\code {vip-change-mode-to-vi})}}{4, 5}
+\entry {\code {032 \kbd {C-z} (\code {vip-ESC}) (insert mode)}}{6, 26}
+\entry {\code {033 \kbd {ESC} (\code {vip-change-mode-to-vi}) (insert mode)}}{6, 26}
+\entry {\code {033 \kbd {ESC} (\code {vip-ESC})}}{8, 12}
+\entry {\code {040 \kbd {SPC} (\code {vip-scroll})}}{9, 15}
+\entry {\code {041 \kbd {!} (\code {vip-command-argument})}}{24}
+\entry {\code {042 \kbd {{\tt\char'042}} (\code {vip-command-argument})}}{21}
+\entry {\code {0430 \kbd {#} (\code {vip-command-argument})}}{9}
+\entry {\code {0431 \kbd {# C} (\code {upcase-region})}}{9}
+\entry {\code {0432 \kbd {# c} (\code {downcase-region})}}{9}
+\entry {\code {0432 \kbd {# g} (\code {vip-global-execute})}}{9}
+\entry {\code {0432 \kbd {# q} (\code {vip-quote-region})}}{9}
+\entry {\code {0432 \kbd {# s} (\code {spell-region})}}{9}
+\entry {\code {044 \kbd {$} (\code {vip-goto-eol})}}{17}
+\entry {\code {045 \kbd {%} (\code {vip-paren-match})}}{18}
+\entry {\code {046 \kbd {&} (\code {vip-nil})}}{24}
+\entry {\code {047 \kbd {'} (\code {vip-goto-mark-and-skip-white})}}{18}
+\entry {\code {050 \kbd {(} (\code {vip-backward-sentence})}}{18}
+\entry {\code {051 \kbd {)} (\code {vip-forward-sentence})}}{18}
+\entry {\code {052 \kbd {*} (\code {vip-call-last-kbd-macro})}}{9, 11, 24}
+\entry {\code {053 \kbd {{\tt\char43}} (\code {vip-next-line-at-bol})}}{17}
+\entry {\code {054 \kbd {,} (\code {vip-repeat-find-opposite})}}{19}
+\entry {\code {055 \kbd {-} (\code {vip-previous-line-at-bol})}}{17}
+\entry {\code {056 \kbd {.} (\code {vip-repeat})}}{6, 23}
+\entry {\code {057 \kbd {/} (\code {vip-search-forward})}}{6, 7, 19}
+\entry {\code {060 \kbd {0} (\code {vip-beginning-of-line})}}{17}
+\entry {\code {061 \kbd {1} (numeric argument)}}{12}
+\entry {\code {062 \kbd {2} (numeric argument)}}{12}
+\entry {\code {063 \kbd {3} (numeric argument)}}{12}
+\entry {\code {064 \kbd {4} (numeric argument)}}{12}
+\entry {\code {065 \kbd {5} (numeric argument)}}{12}
+\entry {\code {066 \kbd {6} (numeric argument)}}{12}
+\entry {\code {067 \kbd {7} (numeric argument)}}{12}
+\entry {\code {068 \kbd {8} (numeric argument)}}{12}
+\entry {\code {069 \kbd {9} (numeric argument)}}{12}
+\entry {\code {072 \kbd {:} (\code {vip-ex})}}{27}
+\entry {\code {073 \kbd {;} (\code {vip-repeat-find})}}{19}
+\entry {\code {074 \kbd {{\tt\less}} (\code {vip-command-argument})}}{24}
+\entry {\code {075 \kbd {=} (\code {vip-command-argument})}}{24}
+\entry {\code {076 \kbd {{\tt\gtr}} (\code {vip-command-argument})}}{24}
+\entry {\code {077 \kbd {?} (\code {vip-search-backward})}}{6, 7, 19}
+\initial {1}
+\entry {\code {100 \kbd {{\tt\char'100}} (\code {vip-nil})}}{24}
+\entry {\code {101 \kbd {A} (\code {vip-Append})}}{25}
+\entry {\code {102 \kbd {B} (\code {vip-backward-Word})}}{17}
+\entry {\code {103 \kbd {C} (\code {vip-ctl-c-equivalent})}}{10, 12}
+\entry {\code {104 \kbd {D} (\code {vip-kill-line})}}{21}
+\entry {\code {105 \kbd {E} (\code {vip-end-of-Word})}}{18}
+\entry {\code {106 \kbd {F} (\code {vip-find-char-backward})}}{19}
+\entry {\code {107 \kbd {G} (\code {vip-goto-line})}}{18}
+\entry {\code {110 \kbd {H} (\code {vip-window-top})}}{18}
+\entry {\code {111 \kbd {I} (\code {vip-Insert})}}{25}
+\entry {\code {112 \kbd {J} (\code {vip-join-lines})}}{24}
+\entry {\code {113 \kbd {K} (\code {vip-kill-buffer})}}{8, 10, 13}
+\entry {\code {114 \kbd {L} (\code {vip-window-bottom})}}{18}
+\entry {\code {115 \kbd {M} (\code {vip-window-middle})}}{18}
+\entry {\code {116 \kbd {N} (\code {vip-search-Next})}}{19}
+\entry {\code {117 \kbd {O} (\code {vip-Open-line})}}{7, 26}
+\entry {\code {120 \kbd {P} (\code {vip-Put-back})}}{7, 22}
+\entry {\code {121 \kbd {Q} (\code {vip-query-replace})}}{8, 20}
+\entry {\code {122 \kbd {R} (\code {vip-replace-string})}}{8, 20}
+\entry {\code {123 \kbd {S} (\code {vip-switch-to-buffer-other-window})}}{9, 10, 13}
+\entry {\code {124 \kbd {T} (\code {vip-goto-char-backward})}}{19}
+\entry {\code {125 \kbd {U} (\code {vip-nil})}}{24}
+\entry {\code {126 \kbd {V} (\code {vip-find-file-other-window})}}{9, 11, 14}
+\entry {\code {127 \kbd {W} (\code {vip-forward-Word})}}{17}
+\entry {\code {1300 \kbd {X} (\code {vip-ctl-x-equivalent})}}{10, 12}
+\entry {\code {1301 \kbd {X (} (\code {start-kbd-macro})}}{11}
+\entry {\code {1301 \kbd {X )} (\code {end-kbd-macro})}}{11}
+\entry {\code {1301 \kbd {X 1} (\code {delete-other-windows})}}{10, 13}
+\entry {\code {1301 \kbd {X 2} (\code {split-window-vertically})}}{10, 13}
+\entry {\code {1301 \kbd {X 3} (\code {vip-buffer-in-two-windows})}}{10, 13}
+\entry {\code {1302 \kbd {X B} (\code {list-buffers})}}{14}
+\entry {\code {1302 \kbd {X I} (\code {insert-file})}}{11, 14}
+\entry {\code {1302 \kbd {X S} (\code {save-buffer})}}{11, 14}
+\entry {\code {1302 \kbd {X W} (\code {write-file})}}{11, 14}
+\entry {\code {1302 \kbd {X Z} (\code {suspend-emacs})}}{11}
+\entry {\code {131 \kbd {Y} (\code {vip-yank-line})}}{22}
+\entry {\code {132 \kbd {Z Z} (\code {save-buffers-kill-emacs})}}{24}
+\entry {\code {133 \kbd {[} (\code {vip-nil})}}{24}
+\entry {\code {134 \kbd {{\tt\indexbackslash }} (\code {vip-escape-to-emacs})}}{8, 13}
+\entry {\code {135 \kbd {]} (\code {vip-nil})}}{24}
+\entry {\code {136 \kbd {{\tt\hat}} (\code {vip-bol-and-skip-white})}}{17}
+\entry {\code {137 \kbd {{\_}} (\code {vip-nil})}}{24}
+\entry {\code {140 \kbd {`} (\code {vip-goto-mark})}}{18}
+\entry {\code {141 \kbd {a} (\code {vip-append})}}{25}
+\entry {\code {142 \kbd {b} (\code {vip-backward-word})}}{17}
+\entry {\code {1430 \kbd {c} (\code {vip-command-argument})}}{23}
+\entry {\code {1431 \kbd {c R}}}{23}
+\entry {\code {1432 \kbd {c c}}}{23}
+\entry {\code {1432 \kbd {c r}}}{23}
+\entry {\code {1440 \kbd {d} (\code {vip-command-argument})}}{21}
+\entry {\code {1441 \kbd {d R}}}{21}
+\entry {\code {1442 \kbd {d d}}}{21}
+\entry {\code {1442 \kbd {d r}}}{21}
+\entry {\code {145 \kbd {e} (\code {vip-end-of-word})}}{17}
+\entry {\code {146 \kbd {f} (\code {vip-find-char-forward})}}{19}
+\entry {\code {147 \kbd {g} (\code {vip-info-on-file})}}{9, 14}
+\entry {\code {150 \kbd {h} (\code {vip-backward-char})}}{17}
+\entry {\code {151 \kbd {i} (\code {vip-insert})}}{25}
+\entry {\code {152 \kbd {j} (\code {vip-next-line})}}{17}
+\entry {\code {153 \kbd {k} (\code {vip-previous-line})}}{17}
+\entry {\code {154 \kbd {l} (\code {vip-forward-char})}}{17}
+\entry {\code {155 \kbd {m} (\code {vip-mark-point})}}{7, 16}
+\entry {\code {156 \kbd {n} (\code {vip-search-next})}}{19}
+\entry {\code {157 \kbd {o} (\code {vip-open-line})}}{7, 26}
+\entry {\code {160 \kbd {p} (\code {vip-put-back})}}{7, 22}
+\entry {\code {161 \kbd {q} (\code {vip-nil})}}{24}
+\entry {\code {162 \kbd {r} (\code {vip-replace-char})}}{20}
+\entry {\code {163 \kbd {s} (\code {vip-switch-to-buffer})}}{9, 10, 13}
+\entry {\code {164 \kbd {t} (\code {vip-goto-char-forward})}}{19}
+\entry {\code {165 \kbd {u} (\code {vip-undo})}}{6, 23}
+\entry {\code {166 \kbd {v} (\code {vip-find-file})}}{9, 11, 14}
+\entry {\code {167 \kbd {w} (\code {vip-forward-word})}}{17}
+\entry {\code {170 \kbd {x} (\code {vip-delete-char})}}{21}
+\entry {\code {1710 \kbd {y} (\code {vip-command-argument})}}{22}
+\entry {\code {1711 \kbd {y R}}}{22}
+\entry {\code {1712 \kbd {y r}}}{22}
+\entry {\code {1712 \kbd {y y} (\code {vip-yank-line})}}{22}
+\entry {\code {1721 \kbd {z RET} (\code {vip-line-to-top})}}{7, 16}
+\entry {\code {1722 \kbd {z -} (\code {vip-line-to-bottom})}}{7, 16}
+\entry {\code {1722 \kbd {z .} (\code {vip-line-to-middle})}}{7, 16}
+\entry {\code {1723 \kbd {z H} (\code {vip-line-to-top})}}{7, 16}
+\entry {\code {1723 \kbd {z L} (\code {vip-line-to-bottom})}}{7, 16}
+\entry {\code {1723 \kbd {z M} (\code {vip-line-to-middle})}}{7, 16}
+\entry {\code {173 \kbd {{\tt\char'173}} (\code {vip-backward-paragraph})}}{18}
+\entry {\code {174 \kbd {{\tt\char'174}} (\code {vip-goto-col})}}{17}
+\entry {\code {175 \kbd {{\tt\char'175}} (\code {vip-forward-paragraph})}}{18}
+\entry {\code {176 \kbd {{\tt\char'176}} (\code {vip-nil})}}{24}
+\entry {\code {177 \kbd {DEL} (\code {vip-delete-backward-char})}}{21}

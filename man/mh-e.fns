@@ -1,0 +1,73 @@
+\initial {D}
+\entry {\code {\code {display-time}}}{24}
+\initial {M}
+\entry {\code {\code {mh-burst-digest}}}{12}
+\entry {\code {\code {mh-check-whom}}}{19}
+\entry {\code {\code {mh-copy-msg}}}{24}
+\entry {\code {\code {mh-delete-msg}}}{24}
+\entry {\code {\code {mh-delete-msg-from-seq}}}{29}
+\entry {\code {\code {mh-delete-msg-no-motion}}}{24}
+\entry {\code {\code {mh-delete-seq}}}{29}
+\entry {\code {\code {mh-do-pick-search}}}{28}
+\entry {\code {\code {mh-edit-again}}}{16}
+\entry {\code {\code {mh-edit-mhn}}}{21}
+\entry {\code {\code {mh-execute-commands}}}{26, 45, 50}
+\entry {\code {\code {mh-extract-rejected-mail}}}{16}
+\entry {\code {\code {mh-first-msg}}}{13}
+\entry {\code {\code {mh-forward}}}{15}
+\entry {\code {\code {mh-fully-kill-draft}}}{22}
+\entry {\code {\code {mh-goto-msg}}}{13}
+\entry {\code {\code {mh-inc-folder}}}{24}
+\entry {\code {\code {mh-insert-letter}}}{18}
+\entry {\code {\code {mh-insert-signature}}}{19}
+\entry {\code {\code {mh-insert-signature}, example}}{39}
+\entry {\code {\code {mh-last-msg}}}{13}
+\entry {\code {\code {mh-list-folders}}}{25}
+\entry {\code {\code {mh-list-sequences}}}{29}
+\entry {\code {\code {mh-mhn-compose-anon-ftp}}}{20}
+\entry {\code {\code {mh-mhn-compose-external-compressed-tar}}}{20}
+\entry {\code {\code {mh-mhn-compose-forw}}}{20}
+\entry {\code {\code {mh-mhn-compose-insertion}}}{20}
+\entry {\code {\code {mh-msg-is-in-seq}}}{29}
+\entry {\code {\code {mh-narrow-to-seq}}}{29}
+\entry {\code {\code {mh-next-undeleted-msg}}}{13}
+\entry {\code {\code {mh-pack-folder}}}{25}
+\entry {\code {\code {mh-page-digest}}}{12}
+\entry {\code {\code {mh-page-digest-backwards}}}{12}
+\entry {\code {\code {mh-page-msg}}}{12}
+\entry {\code {\code {mh-pipe-msg}}}{25}
+\entry {\code {\code {mh-previous-page}}}{12}
+\entry {\code {\code {mh-previous-undeleted-msg}}}{13}
+\entry {\code {\code {mh-print-msg}}}{25}
+\entry {\code {\code {mh-put-msg-in-seq}}}{29}
+\entry {\code {\code {mh-quit}}}{26}
+\entry {\code {\code {mh-redistribute}}}{15}
+\entry {\code {\code {mh-refile-msg}}}{24, 46}
+\entry {\code {\code {mh-refile-or-write-again}}}{24}
+\entry {\code {\code {mh-reply}}}{14}
+\entry {\code {\code {mh-rescan-folder}}}{25}
+\entry {\code {\code {mh-rescan-folder}, example}}{45}
+\entry {\code {\code {mh-revert-mhn-edit}}}{22}
+\entry {\code {\code {mh-rmail}}}{7, 11, 26}
+\entry {\code {\code {mh-rmail}, example}}{33}
+\entry {\code {\code {mh-search-folder}}}{26}
+\entry {\code {\code {mh-send}}}{14}
+\entry {\code {\code {mh-send-letter}}}{22}
+\entry {\code {\code {mh-show}}}{12}
+\entry {\code {\code {mh-show}, example}}{45}
+\entry {\code {\code {mh-smail}}}{6, 9, 13, 14}
+\entry {\code {\code {mh-smail-other-window}}}{14}
+\entry {\code {\code {mh-sort-folder}}}{25, 47}
+\entry {\code {\code {mh-store-buffer}}}{50}
+\entry {\code {\code {mh-store-msg}}}{25, 50}
+\entry {\code {\code {mh-to-fcc}}}{18, 46}
+\entry {\code {\code {mh-to-field}}}{18, 27}
+\entry {\code {\code {mh-toggle-showing}}}{13}
+\entry {\code {\code {mh-undo}}}{26}
+\entry {\code {\code {mh-undo-folder}}}{26}
+\entry {\code {\code {mh-update-sequences}}}{29}
+\entry {\code {\code {mh-version}}}{30}
+\entry {\code {\code {mh-visit-folder}}}{25}
+\entry {\code {\code {mh-widen}}}{29}
+\entry {\code {\code {mh-write-msg-to-file}}}{25}
+\entry {\code {\code {mh-yank-cur-msg}}}{18}

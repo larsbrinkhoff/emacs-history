@@ -1,0 +1,87 @@
+\initial {A}
+\entry {\code {add-hook}}{13, 14}
+\initial {C}
+\entry {\code {cite-original (sc-)}}{12, 18}
+\entry {\code {cite-region (sc-)}}{31}
+\initial {D}
+\entry {\code {defvar}}{36}
+\entry {\code {describe (sc-)}}{35}
+\initial {E}
+\entry {\code {eref-abort (sc-)}}{11}
+\entry {\code {eref-exit (sc-)}}{11}
+\entry {\code {eref-goto (sc-)}}{11}
+\entry {\code {eref-jump (sc-)}}{11}
+\entry {\code {eref-next (sc-)}}{11}
+\entry {\code {eref-prev (sc-)}}{11}
+\entry {\code {eref-setn (sc-)}}{11}
+\entry {\code {eval}}{27}
+\initial {F}
+\entry {\code {fill-paragraph}}{3}
+\initial {H}
+\entry {\code {header-attributed-writes (sc-)}}{10}
+\entry {\code {header-author-writes (sc-)}}{10}
+\entry {\code {header-inarticle-writes (sc-)}}{10}
+\entry {\code {header-on-said (sc-)}}{10}
+\entry {\code {header-regarding-adds (sc-)}}{10}
+\entry {\code {header-verbose (sc-)}}{10}
+\initial {I}
+\entry {\code {insert-citation (sc-)}}{32}
+\entry {\code {insert-reference (sc-)}}{32}
+\initial {L}
+\entry {\code {looking-at}}{27}
+\initial {M}
+\entry {\code {mail-field (sc-)}}{6, 23}
+\entry {\code {mail-field-query (sc-)}}{34}
+\entry {\code {mail-process-headers (sc-)}}{34}
+\entry {\code {mail-yank-original}}{36}
+\initial {N}
+\entry {\code {no-blank-line-or-header (sc-)}}{10}
+\entry {\code {no-header (sc-)}}{9}
+\initial {O}
+\entry {\code {open-line}}{35}
+\entry {\code {open-line (sc-)}}{35}
+\initial {P}
+\entry {\code {perform-overloads (sc-)}}{15}
+\initial {R}
+\entry {\code {recite-region (sc-)}}{32}
+\entry {\code {regi-interpret}}{27}
+\initial {S}
+\entry {\code {sc-cite-original}}{2, 12, 18}
+\entry {\code {sc-cite-region}}{31}
+\entry {\code {sc-describe}}{35}
+\entry {\code {sc-eref-abort}}{11}
+\entry {\code {sc-eref-exit}}{11}
+\entry {\code {sc-eref-goto}}{11}
+\entry {\code {sc-eref-jump}}{11}
+\entry {\code {sc-eref-next}}{11}
+\entry {\code {sc-eref-prev}}{11}
+\entry {\code {sc-eref-setn}}{11}
+\entry {\code {sc-header-attributed-writes}}{10}
+\entry {\code {sc-header-author-writes}}{10}
+\entry {\code {sc-header-inarticle-writes}}{10}
+\entry {\code {sc-header-on-said}}{10}
+\entry {\code {sc-header-regarding-adds}}{10}
+\entry {\code {sc-header-verbose}}{10}
+\entry {\code {sc-insert-citation}}{32}
+\entry {\code {sc-insert-reference}}{32}
+\entry {\code {sc-mail-field}}{6, 23}
+\entry {\code {sc-mail-field-query}}{34}
+\entry {\code {sc-mail-process-headers}}{34}
+\entry {\code {sc-no-blank-line-or-header}}{10}
+\entry {\code {sc-no-header}}{9}
+\entry {\code {sc-open-line}}{35}
+\entry {\code {sc-perform-overloads}}{15}
+\entry {\code {sc-recite-region}}{32}
+\entry {\code {sc-setup-filladapt}}{20}
+\entry {\code {sc-submit-bug-report}}{12, 35}
+\entry {\code {sc-uncite-region}}{31}
+\entry {\code {sc-version}}{35}
+\entry {\code {set-variable}}{33}
+\entry {\code {setq}}{13}
+\entry {\code {setup-filladapt (sc-)}}{20}
+\entry {\code {string-match}}{30}
+\entry {\code {submit-bug-report (sc-)}}{12, 35}
+\initial {U}
+\entry {\code {uncite-region (sc-)}}{31}
+\initial {V}
+\entry {\code {version (sc-)}}{35}

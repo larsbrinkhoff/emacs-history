@@ -2,14 +2,6 @@
   it does `cvs status .' to get the whole directory status at once
   and then parse the output to find out about each file.
 
-* Change bibtex.el not to use very complicated regexps
-  which do lots of backtracking.  Currently bibtex.el
-  makes Emacs crash on some systems due to stack overflow.
-  Making Emacs prevent the stack overflow (by detecting an error
-  itself before the stack can overflow) would just make bibtex,el
-  fail on ALL systems.  The only way out is to rewrite bibtex.el
-  so it does not need too much stack.
-
 * Change the Windows NT menu code
   so that it handles the deep_p argument and avoids
   regenerating the whole menu bar menu tree except

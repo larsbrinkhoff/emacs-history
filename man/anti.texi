@@ -7,7 +7,7 @@
 
   For those users who live backwards in time, here is information about
 downgrading to Emacs version 19.28 or 19.29.  We hope you will enjoy the
-greater simplicity that results from the absence of certain Emacs 19.33
+greater simplicity that results from the absence of certain Emacs 19.34
 features.
 
 @itemize @bullet

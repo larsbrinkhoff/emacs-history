@@ -1,3 +1,31 @@
+Wed Aug 21 03:51:42 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* Version 19.34 released.
+
+	* unexalpha.c: Conditionalize previous changes on not __linux__.
+
+Tue Aug 20 16:54:55 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* unexalpha.c: Include reloc.h and elf_abi.h.
+	(rel_dyn_section, dynstr_section, dynsym_section): New variables.
+	(old_data_scnhdr): New variable.
+	(CHECK_SCNHDR): Compare just 8 chars of section name.
+	(unexec): Check for rel_dyn_section, dynsym_section, dynstr_section.
+	Do call update_dynamic_symbols.
+	(update_dynamic_symbols): Finish it up and take away #if 0.
+
+Mon Aug 19 12:53:25 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* unexalpha.c (unexec): Copy the .got section.
+
+Fri Aug 16 15:07:33 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* bytecode.c (Fbyte_code): For relative gotos, force signed arithmetic.
+
+Wed Aug 14 16:58:33 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
+
+	* xfns.c (Fx_open_connection): Don't set Vx_resource_name.
+
 Sun Aug 11 03:36:03 1996  Richard Stallman  <rms@psilocin.gnu.ai.mit.edu>
 
 	* Version 19.33 released.

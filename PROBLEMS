@@ -1,6 +1,13 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Emacs crashes in x-popup-dialog.
+
+This can happen if the dialog widget cannot find the font it wants to
+use.  You can work around the problem by specifying another font with
+an X resource--for example, `Emacs.dialog*.font: 9x15' (or any font that
+happens to exist on your X server).
+
 * Emacs crashes when you use Bibtex mode.
 
 This happens if your system puts a small limit on stack size.  You can

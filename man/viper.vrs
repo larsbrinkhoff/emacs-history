@@ -1,0 +1,53 @@
+\initial {B}
+\entry {\code {\code {buffer-read-only}}}{32}
+\initial {E}
+\entry {\code {\code {ex-cycle-other-window}}}{32}
+\entry {\code {\code {ex-cycle-through-non-files}}}{32}
+\entry {\code {\code {ex-nontrivial-find-file-function}.}}{29}
+\initial {F}
+\entry {\code {\code {function-key-map}}}{36}
+\initial {V}
+\entry {\code {\code {vip-always}}}{32, 38}
+\entry {\code {\code {vip-auto-indent}}}{32}
+\entry {\code {\code {vip-automatic-iso-accents}}}{32}
+\entry {\code {\code {vip-buffer-search-char}}}{32, 38}
+\entry {\code {\code {vip-case-fold-search}}}{32}
+\entry {\code {\code {vip-command-ring-size}}}{40}
+\entry {\code {\code {vip-custom-file-name}}}{32}
+\entry {\code {\code {vip-delete-backwards-in-replace}}}{32}
+\entry {\code {\code {vip-electric-mode}}}{32}
+\entry {\code {\code {vip-emacs-global-user-map}}}{36}
+\entry {\code {\code {vip-emacs-state-hook}}}{32}
+\entry {\code {\code {vip-ESC-key}}}{32}
+\entry {\code {\code {vip-ex-style-editing-in-insert}}}{32}
+\entry {\code {\code {vip-ex-style-motion}}}{32}
+\entry {\code {\code {vip-fast-keyseq-timeout}}}{48}
+\entry {\code {\code {vip-insert-global-user-map}}}{36}
+\entry {\code {\code {vip-insert-state-hook}}}{32}
+\entry {\code {\code {vip-insertion-ring-size}}}{39}
+\entry {\code {\code {vip-keep-point-on-repeat}}}{32}
+\entry {\code {\code {vip-keep-point-on-undo}}}{32}
+\entry {\code {\code {vip-keysequence-delay}}}{32}
+\entry {\code {\code {vip-multiclick-timeout}}}{43}
+\entry {\code {\code {vip-no-multiple-ESC}}}{32}
+\entry {\code {\code {vip-re-query-replace}}}{32}
+\entry {\code {\code {vip-re-search}}}{32}
+\entry {\code {\code {vip-replace-overlay-face}}}{32}
+\entry {\code {\code {vip-replace-region-end-symbol}}}{32}
+\entry {\code {\code {vip-replace-region-start-symbol}}}{32}
+\entry {\code {\code {vip-replace-state-hook}}}{32}
+\entry {\code {\code {vip-search-face}}}{20, 32}
+\entry {\code {\code {vip-search-wrap-around}}}{32}
+\entry {\code {\code {vip-shift-width}}}{32}
+\entry {\code {\code {vip-smart-suffix-list}}}{39}
+\entry {\code {\code {vip-spell-function}}}{22, 32}
+\entry {\code {\code {vip-surrounding-word-function}}}{32}
+\entry {\code {\code {vip-syntax-preference}}}{21, 52}
+\entry {\code {\code {vip-tags-file-name}}}{32}
+\entry {\code {\code {vip-toggle-key}}}{32}
+\entry {\code {\code {vip-vi-global-user-map}}}{36}
+\entry {\code {\code {vip-vi-state-hook}}}{32}
+\entry {\code {\code {vip-vi-style-in-minibuffer}}}{32}
+\entry {\code {\code {vip-want-ctl-h-help}}}{32}
+\entry {\code {\code {vip-want-emacs-keys-in-insert}}}{32, 38}
+\entry {\code {\code {vip-want-emacs-keys-in-vi}}}{32, 38}
