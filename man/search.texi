@@ -119,7 +119,9 @@ string, it ceases to have this effect.  @xref{Search Case}.
 @kbd{C-s}, it starts again from the beginning of the buffer.  Repeating
 a failing reverse search with @kbd{C-r} starts again from the end.  This
 is called @dfn{wrapping around}.  @samp{Wrapped} appears in the search
-prompt once this has happened.
+prompt once this has happened.  If you keep on going past the original
+starting point of the search, it changes to @samp{Overwrapped}, which
+means that you are revisiting matches that you have already seen.
 
 @cindex quitting (in search)
   The @kbd{C-g} ``quit'' character does special things during searches;
@@ -544,6 +546,9 @@ of the buffer.
 matches the empty string, provided it is at the end of
 the buffer.
 
+@item \=
+matches the empty string, provided it is at point.
+
 @item \b
 matches the empty string, provided it is at the beginning or
 end of a word.  Thus, @samp{\bfoo\b} matches any occurrence of
@@ -610,7 +615,7 @@ of times.
 
   To enter the same regexp interactively, you would type @key{TAB} to
 enter a tab, and @kbd{C-q C-j} to enter a newline.  You would also type
-single slashes as themselves, instead of doubling them for Lisp syntax.
+single backslashes as themselves, instead of doubling them for Lisp syntax.
 
 @node Search Case, Replace, Regexps, Search
 @section Searching and Case

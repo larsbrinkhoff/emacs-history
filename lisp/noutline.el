@@ -149,6 +149,9 @@ in the file it applies to.")
     ("\\[\\([A-Z][A-Za-z]+\\)*[0-9]+\\]" . font-lock-type-face))
   "Additional expressions to highlight in Outline mode.")
 
+(defvar outline-view-change-hook nil
+  "Normal hook to be run after outline visibility changes.")
+
 ;;;autoload
 (defun outline-mode ()
   "Set major mode for editing outlines with selective display.
@@ -331,16 +334,18 @@ A heading line is one that starts with a `*' (or that
   (if (< arg 0)
       (beginning-of-line)
     (end-of-line))
-  (let (found)
-    (or (while (and found (> arg 0))
-	  (setq found nil)
-	  (while (not found)
-	    (setq found
-		  (and (re-search-backward (concat "^\\(" outline-regexp "\\)")
-					   nil t)
-		       (outline-visible))))
-	  (setq arg (1- arg)))
-	(error "")))
+  (while (and (not (bobp)) (< arg 0))
+    (while (and (not (bobp))
+		(re-search-backward (concat "^\\(" outline-regexp "\\)")
+				    nil 'move)
+		(not (outline-visible))))
+    (setq arg (1+ arg)))
+  (while (and (not (eobp)) (> arg 0))
+    (while (and (not (eobp))
+		(re-search-forward (concat "^\\(" outline-regexp "\\)")
+				   nil 'move)
+		(not (outline-visible))))
+    (setq arg (1- arg)))
   (beginning-of-line))
 
 (defun outline-previous-visible-heading (arg)
@@ -362,7 +367,8 @@ If FLAG is nil then text is shown, while if FLAG is t the text is hidden."
       (if flag
 	  (let ((o (make-overlay (point) to)))
 	    (overlay-put o 'invisible flag)
-	    (overlay-put o 'outline t))))))
+	    (overlay-put o 'outline t)))))
+  (run-hooks 'outline-view-change-hook))
 
 ;; Exclude from the region BEG ... END all overlays
 ;; with a non-nil PROP property.

@@ -130,6 +130,8 @@ This variable has an effect only when the value of
 ;; I recommend that you set this to nil.
 (defvar dabbrev-case-replace 'case-replace
   "*Non-nil means dabbrev should preserve case when expanding the abbreviation.
+More precisely, it preserves the case pattern of the abbreviation as you
+typed it--as opposed to the case pattern of the expansion that is copied.
 The value of this variable is an expression; it is evaluated
 and the resulting value determines the decision.
 For example, setting this to `case-replace' means evaluate that
@@ -415,7 +417,7 @@ direction of search to backward if set non-nil.
 
 See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
   (interactive "*P")
-  (let (abbrev expansion old direction)
+  (let (abbrev expansion old direction (orig-point (point)))
     ;; abbrev -- the abbrev to expand
     ;; expansion -- the expansion found (eventually) or nil until then
     ;; old -- the text currently in the buffer
@@ -489,8 +491,11 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
       (dabbrev--reset-global-variables)
       (if old
 	  (save-excursion
-	    (search-backward (substring old (length abbrev)))
-	    (delete-region (match-beginning 0) (match-end 0))))
+	    (setq buffer-undo-list (cons orig-point buffer-undo-list))
+	    ;; Put back the original abbrev with its original case pattern.
+	    (search-backward old)
+	    (insert abbrev)
+	    (delete-region (point) (+ (point) (length old)))))
       (error "No%s dynamic expansion for `%s' found"
 	     (if old " further" "") abbrev))
      (t
@@ -507,6 +512,7 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 	  (setq dabbrev--last-expansion-location
 		(copy-marker dabbrev--last-expansion-location)))
       ;; Success: stick it in and return.
+      (setq buffer-undo-list (cons orig-point buffer-undo-list))
       (dabbrev--substitute-expansion old abbrev expansion)
       ;; Save state for re-expand.
       (setq dabbrev--last-expansion expansion)	
@@ -707,6 +713,15 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 			dabbrev--friend-buffer-list
 			(append dabbrev--friend-buffer-list
 				non-friend-buffer-list)))))
+	;; Move buffers that are visible on the screen
+	;; to the front of the list.
+	(if dabbrev--friend-buffer-list
+	    (let ((w (next-window (selected-window))))
+	      (while (not (eq w (selected-window)))
+		(setq dabbrev--friend-buffer-list
+		      (cons (window-buffer w)
+			    (delq (window-buffer w) dabbrev--friend-buffer-list)))
+		(setq w (next-window w)))))
 	;; Walk through the buffers
 	(while (and (not expansion) dabbrev--friend-buffer-list)
 	  (setq dabbrev--last-buffer
@@ -789,38 +804,38 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 		    (if reverse
 			(re-search-backward pattern1 nil t)
 		      (re-search-forward pattern1 nil t)))
-	  (cond
-	   ((progn
-	      (goto-char (match-beginning 0))
-	      (dabbrev--goto-start-of-abbrev)
-	      (/= (point) (match-beginning 0)))
-	    ;; Prefix of found abbreviation not OK
-	    nil)
-	   (t
-	    (goto-char (match-beginning 0))
+	  (goto-char (match-beginning 0))
+	  ;; In case we matched in the middle of a word,
+	  ;; back up to start of word and verify we still match.
+	  (dabbrev--goto-start-of-abbrev)
+
+	  (if (not (looking-at pattern1))
+	      nil
+	    ;; We have a truly valid match.  Find the end.
 	    (re-search-forward pattern2)
 	    (setq found-string
 		  (buffer-substring (match-beginning 1) (match-end 1)))
 	    (and ignore-case (setq found-string (downcase found-string)))
-	    ;; Throw away if found in table
+	    ;; Ignore this match if it's already in the table.
 	    (if (dabbrev-filter-elements
 		 table-string dabbrev--last-table
 		 (string= found-string table-string))
-		(setq found-string nil))))
+		(setq found-string nil)))
+	  ;; Prepare to continue searching.
 	  (if reverse
 	      (goto-char (match-beginning 0))
 	    (goto-char (match-end 0))))
-	(cond
-	 (found-string
-	  ;;--------------------------------
-	  ;; Put in `dabbrev--last-table' and decide if we should return
-	  ;; result or (downcase result)
-	  ;;--------------------------------
-	  (setq dabbrev--last-table (cons found-string dabbrev--last-table))
-	  (let ((result (buffer-substring (match-beginning 0) (match-end 0))))
-	    (if (and ignore-case (eval dabbrev-case-replace))
-		(downcase result)
-	      result))))))))
+	;; If we found something, use it.
+	(if found-string
+	    ;; Put it into `dabbrev--last-table'
+	    ;; and return it (either downcased, or as is).
+	    (let ((result
+		   (buffer-substring (match-beginning 0) (match-end 0))))
+	      (setq dabbrev--last-table
+		    (cons found-string dabbrev--last-table))
+	      (if (and ignore-case (eval dabbrev-case-replace))
+		  (downcase result)
+		result)))))))
 
 (provide 'dabbrev)
 

@@ -24,29 +24,23 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 int dos_ttraw ();
 int dos_ttcooked ();
+int dos_get_saved_screen (char **, int *, int *);
+int dos_set_keyboard (int, int);
+
 int getdefdir (int, char*);
 void unixtodos_filename (char *);
 void dostounix_filename (char *);
-void sleep_or_kbd_hit (int, int);
 char *rootrelativepath (char *);
 void init_environment ();
 void internal_terminal_init ();
-#ifdef _stdio_h_
-int internal_flush (FILE *);
-#endif
 void ctrl_break_func (_go32_dpmi_registers *);
 void install_ctrl_break_check ();
 
 extern int have_mouse;
-int mouse_init1 ();
 void mouse_init ();
 void mouse_on ();
 void mouse_off ();
 void mouse_moveto (int, int);
-void mouse_check_moved ();
-int mouse_pressed (int, int *, int *);
-int mouse_released (int, int *, int *);
-void init_gettimeofday ();
 
 #ifndef HAVE_X_WINDOWS
 /* Dummy types.  */
@@ -59,7 +53,7 @@ typedef int Window;
 #define XDISPLAY
 
 /* This is a cut-down version of the one in xterm.h, which see.  */
-struct x_display
+struct x_output
 {
   int left_pos;
   int top_pos;
@@ -74,7 +68,7 @@ struct x_display
   int size_computed_faces;
 };
 
-extern struct x_display the_only_x_display;
+extern struct x_output the_only_x_display;
 extern Display *x_current_display;
 
 #define FRAME_PARAM_FACES(f) (the_only_x_display.param_faces)

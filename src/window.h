@@ -173,6 +173,9 @@ struct window
     /* The column number currently displayed in this window's mode line,
        or nil if column numbers are not being displayed.  */
     Lisp_Object column_number_displayed;
+    /* If redisplay in this window goes beyond this buffer position,
+       must run the redisplay-end-trigger-hook.  */
+    Lisp_Object redisplay_end_trigger;
   };
 
 /* 1 if W is a minibuffer window.  */
@@ -247,6 +250,11 @@ extern int echo_area_glyphs_length;
   in the minibuffer and it should be erased as soon
   as it is no longer requested to appear. */
 extern char *previous_echo_glyphs;
+
+/* This is the window where the echo area message was displayed.
+   It is always a minibuffer window, but it may not be the
+   same window currently active as a minibuffer.  */
+extern Lisp_Object echo_area_window;
 
 /* Depth in recursive edits.  */
 extern int command_loop_level;

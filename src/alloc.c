@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+/* Note that this declares bzero on OSF/1.  How dumb.  */
 #include <signal.h>
 
 #include <config.h>
@@ -71,6 +72,15 @@ static __malloc_size_t bytes_used_when_full;
 /* Number of bytes of consing done since the last gc */
 int consing_since_gc;
 
+/* Count the amount of consing of various sorts of space.  */
+int cons_cells_consed;
+int floats_consed;
+int vector_cells_consed;
+int symbols_consed;
+int string_chars_consed;
+int misc_objects_consed;
+int intervals_consed;
+
 /* Number of bytes of consing since gc before another gc should be done. */
 int gc_cons_threshold;
 
@@ -100,6 +110,9 @@ static char *spare_memory;
 
 /* Number of extra blocks malloc should get when it needs more core.  */
 static int malloc_hysteresis;
+
+/* Nonzero when malloc is called for allocating Lisp object space.  */
+int allocating_for_lisp;
 
 /* Non-nil means defun should do purecopy on the function definition */
 Lisp_Object Vpurify_flag;
@@ -154,7 +167,7 @@ int stack_copy_size;
 /* Non-zero means ignore malloc warnings.  Set during initialization.  */
 int ignore_warnings;
 
-Lisp_Object Qgc_cons_threshold;
+Lisp_Object Qgc_cons_threshold, Qchar_table_extra_slots;
 
 static void mark_object (), mark_buffer (), mark_kboards ();
 static void clear_marks (), gc_sweep ();
@@ -402,10 +415,12 @@ INTERVAL interval_free_list;
 static void
 init_intervals ()
 {
+  allocating_for_lisp = 1;
   interval_block
     = (struct interval_block *) malloc (sizeof (struct interval_block));
+  allocating_for_lisp = 0;
   interval_block->next = 0;
-  bzero (interval_block->intervals, sizeof interval_block->intervals);
+  bzero ((char *) interval_block->intervals, sizeof interval_block->intervals);
   interval_block_index = 0;
   interval_free_list = 0;
 }
@@ -426,9 +441,12 @@ make_interval ()
     {
       if (interval_block_index == INTERVAL_BLOCK_SIZE)
 	{
-	  register struct interval_block *newi
-	    = (struct interval_block *) xmalloc (sizeof (struct interval_block));
+	  register struct interval_block *newi;
 
+	  allocating_for_lisp = 1;
+	  newi = (struct interval_block *) xmalloc (sizeof (struct interval_block));
+
+	  allocating_for_lisp = 0;
 	  VALIDATE_LISP_STORAGE (newi, sizeof *newi);
 	  newi->next = interval_block;
 	  interval_block = newi;
@@ -437,6 +455,7 @@ make_interval ()
       val = &interval_block->intervals[interval_block_index++];
     }
   consing_since_gc += sizeof (struct interval);
+  intervals_consed++;
   RESET_INTERVAL (val);
   return val;
 }
@@ -529,9 +548,11 @@ struct Lisp_Float *float_free_list;
 void
 init_float ()
 {
+  allocating_for_lisp = 1;
   float_block = (struct float_block *) malloc (sizeof (struct float_block));
+  allocating_for_lisp = 0;
   float_block->next = 0;
-  bzero (float_block->floats, sizeof float_block->floats);
+  bzero ((char *) float_block->floats, sizeof float_block->floats);
   float_block_index = 0;
   float_free_list = 0;
 }
@@ -559,7 +580,11 @@ make_float (float_value)
     {
       if (float_block_index == FLOAT_BLOCK_SIZE)
 	{
-	  register struct float_block *new = (struct float_block *) xmalloc (sizeof (struct float_block));
+	  register struct float_block *new;
+
+	  allocating_for_lisp = 1;
+	  new = (struct float_block *) xmalloc (sizeof (struct float_block));
+	  allocating_for_lisp = 0;
 	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = float_block;
 	  float_block = new;
@@ -570,6 +595,7 @@ make_float (float_value)
   XFLOAT (val)->data = float_value;
   XSETFASTINT (XFLOAT (val)->type, 0);	/* bug chasing -wsr */
   consing_since_gc += sizeof (struct Lisp_Float);
+  floats_consed++;
   return val;
 }
 
@@ -602,9 +628,11 @@ struct Lisp_Cons *cons_free_list;
 void
 init_cons ()
 {
+  allocating_for_lisp = 1;
   cons_block = (struct cons_block *) malloc (sizeof (struct cons_block));
+  allocating_for_lisp = 0;
   cons_block->next = 0;
-  bzero (cons_block->conses, sizeof cons_block->conses);
+  bzero ((char *) cons_block->conses, sizeof cons_block->conses);
   cons_block_index = 0;
   cons_free_list = 0;
 }
@@ -633,7 +661,10 @@ DEFUN ("cons", Fcons, Scons, 2, 2, 0,
     {
       if (cons_block_index == CONS_BLOCK_SIZE)
 	{
-	  register struct cons_block *new = (struct cons_block *) xmalloc (sizeof (struct cons_block));
+	  register struct cons_block *new;
+	  allocating_for_lisp = 1;
+	  new = (struct cons_block *) xmalloc (sizeof (struct cons_block));
+	  allocating_for_lisp = 0;
 	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = cons_block;
 	  cons_block = new;
@@ -644,6 +675,7 @@ DEFUN ("cons", Fcons, Scons, 2, 2, 0,
   XCONS (val)->car = car;
   XCONS (val)->cdr = cdr;
   consing_since_gc += sizeof (struct Lisp_Cons);
+  cons_cells_consed++;
   return val;
 }
 
@@ -654,15 +686,13 @@ Any number of arguments, even zero arguments, are allowed.")
      int nargs;
      register Lisp_Object *args;
 {
-  register Lisp_Object len, val, val_tail;
+  register Lisp_Object val;
+  val = Qnil;
 
-  XSETFASTINT (len, nargs);
-  val = Fmake_list (len, Qnil);
-  val_tail = val;
-  while (!NILP (val_tail))
+  while (nargs > 0)
     {
-      XCONS (val_tail)->car = *args++;
-      val_tail = XCONS (val_tail)->cdr;
+      nargs--;
+      val = Fcons (args[nargs], val);
     }
   return val;
 }
@@ -694,11 +724,14 @@ allocate_vectorlike (len)
 {
   struct Lisp_Vector *p;
 
+  allocating_for_lisp = 1;
   p = (struct Lisp_Vector *)xmalloc (sizeof (struct Lisp_Vector)
 				     + (len - 1) * sizeof (Lisp_Object));
+  allocating_for_lisp = 0;
   VALIDATE_LISP_STORAGE (p, 0);
   consing_since_gc += (sizeof (struct Lisp_Vector)
 		       + (len - 1) * sizeof (Lisp_Object));
+  vector_cells_consed += len;
 
   p->next = all_vectors;
   all_vectors = p;
@@ -725,6 +758,30 @@ See also the function `vector'.")
     p->contents[index] = init;
 
   XSETVECTOR (vector, p);
+  return vector;
+}
+
+DEFUN ("make-char-table", Fmake_char_table, Smake_char_table, 1, 2, 0,
+  "Return a newly created char-table, with purpose PURPOSE.\n\
+Each element is initialized to INIT, which defaults to nil.\n\
+PURPOSE should be a symbol which has a `char-table-extra-slot' property.\n\
+The property's value should be an integer between 0 and 10.")
+  (purpose, init)
+     register Lisp_Object purpose, init;
+{
+  Lisp_Object vector;
+  Lisp_Object n;
+  CHECK_SYMBOL (purpose, 1);
+  n = Fget (purpose, Qchar_table_extra_slots);
+  CHECK_NUMBER (n, 0);
+  if (XINT (n) < 0 || XINT (n) > 10)
+    args_out_of_range (n, Qnil);
+  /* Add 2 to the size for the defalt and parent slots.  */
+  vector = Fmake_vector (make_number (CHAR_TABLE_STANDARD_SLOTS + XINT (n)),
+			 init);
+  XCHAR_TABLE (vector)->parent = Qnil;
+  XCHAR_TABLE (vector)->purpose = purpose;
+  XSETCHAR_TABLE (vector, XCHAR_TABLE (vector));
   return vector;
 }
 
@@ -801,9 +858,11 @@ struct Lisp_Symbol *symbol_free_list;
 void
 init_symbol ()
 {
+  allocating_for_lisp = 1;
   symbol_block = (struct symbol_block *) malloc (sizeof (struct symbol_block));
+  allocating_for_lisp = 0;
   symbol_block->next = 0;
-  bzero (symbol_block->symbols, sizeof symbol_block->symbols);
+  bzero ((char *) symbol_block->symbols, sizeof symbol_block->symbols);
   symbol_block_index = 0;
   symbol_free_list = 0;
 }
@@ -828,7 +887,10 @@ Its value and function definition are void, and its property list is nil.")
     {
       if (symbol_block_index == SYMBOL_BLOCK_SIZE)
 	{
-	  struct symbol_block *new = (struct symbol_block *) xmalloc (sizeof (struct symbol_block));
+	  struct symbol_block *new;
+	  allocating_for_lisp = 1;
+	  new = (struct symbol_block *) xmalloc (sizeof (struct symbol_block));
+	  allocating_for_lisp = 0;
 	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = symbol_block;
 	  symbol_block = new;
@@ -843,6 +905,7 @@ Its value and function definition are void, and its property list is nil.")
   p->function = Qunbound;
   p->next = 0;
   consing_since_gc += sizeof (struct Lisp_Symbol);
+  symbols_consed++;
   return val;
 }
 
@@ -866,9 +929,11 @@ union Lisp_Misc *marker_free_list;
 void
 init_marker ()
 {
+  allocating_for_lisp = 1;
   marker_block = (struct marker_block *) malloc (sizeof (struct marker_block));
+  allocating_for_lisp = 0;
   marker_block->next = 0;
-  bzero (marker_block->markers, sizeof marker_block->markers);
+  bzero ((char *) marker_block->markers, sizeof marker_block->markers);
   marker_block_index = 0;
   marker_free_list = 0;
 }
@@ -888,8 +953,10 @@ allocate_misc ()
     {
       if (marker_block_index == MARKER_BLOCK_SIZE)
 	{
-	  struct marker_block *new
-	    = (struct marker_block *) xmalloc (sizeof (struct marker_block));
+	  struct marker_block *new;
+	  allocating_for_lisp = 1;
+	  new = (struct marker_block *) xmalloc (sizeof (struct marker_block));
+	  allocating_for_lisp = 0;
 	  VALIDATE_LISP_STORAGE (new, sizeof *new);
 	  new->next = marker_block;
 	  marker_block = new;
@@ -898,6 +965,7 @@ allocate_misc ()
       XSETMISC (val, &marker_block->markers[marker_block_index++]);
     }
   consing_since_gc += sizeof (union Lisp_Misc);
+  misc_objects_consed++;
   return val;
 }
 
@@ -914,6 +982,7 @@ DEFUN ("make-marker", Fmake_marker, Smake_marker, 0, 0, 0,
   p->buffer = 0;
   p->bufpos = 0;
   p->chain = Qnil;
+  p->insertion_type = 0;
   return val;
 }
 
@@ -981,7 +1050,9 @@ struct string_block *large_string_blocks;
 void
 init_strings ()
 {
+  allocating_for_lisp = 1;
   current_string_block = (struct string_block *) malloc (sizeof (struct string_block));
+  allocating_for_lisp = 0;
   first_string_block = current_string_block;
   consing_since_gc += sizeof (struct string_block);
   current_string_block->next = 0;
@@ -1008,6 +1079,38 @@ Both LENGTH and INIT must be numbers.")
   while (p != end)
     *p++ = c;
   *p = 0;
+  return val;
+}
+
+DEFUN ("make-bool-vector", Fmake_bool_vector, Smake_bool_vector, 2, 2, 0,
+  "Return a newly created bitstring of length LENGTH, with INIT as each element.\n\
+Both LENGTH and INIT must be numbers.  INIT matters only in whether it is t or nil.")
+  (length, init)
+     Lisp_Object length, init;
+{
+  register Lisp_Object val;
+  struct Lisp_Bool_Vector *p;
+  int real_init, i;
+  int length_in_chars, length_in_elts, bits_per_value;
+
+  CHECK_NATNUM (length, 0);
+
+  bits_per_value = sizeof (EMACS_INT) * BITS_PER_CHAR;
+
+  length_in_elts = (XFASTINT (length) + bits_per_value - 1) / bits_per_value;
+  length_in_chars = length_in_elts * sizeof (EMACS_INT);
+
+  val = Fmake_vector (make_number (length_in_elts), Qnil);
+  p = XBOOL_VECTOR (val);
+  /* Get rid of any bits that would cause confusion.  */
+  p->vector_size = 0;
+  XSETBOOL_VECTOR (val, p);
+  p->size = XFASTINT (length);
+  
+  real_init = (NILP (init) ? 0 : -1);
+  for (i = 0; i < length_in_chars ; i++)
+    p->data[i] = real_init;
+
   return val;
 }
 
@@ -1049,8 +1152,10 @@ make_uninit_string (length)
   else if (fullsize > STRING_BLOCK_OUTSIZE)
     /* This string gets its own string block */
     {
-      register struct string_block *new
-	= (struct string_block *) xmalloc (sizeof (struct string_block_head) + fullsize);
+      register struct string_block *new;
+      allocating_for_lisp = 1;
+      new = (struct string_block *) xmalloc (sizeof (struct string_block_head) + fullsize);
+      allocating_for_lisp = 0;
       VALIDATE_LISP_STORAGE (new, 0);
       consing_since_gc += sizeof (struct string_block_head) + fullsize;
       new->pos = fullsize;
@@ -1063,8 +1168,10 @@ make_uninit_string (length)
   else
     /* Make a new current string block and start it off with this string */
     {
-      register struct string_block *new
-	= (struct string_block *) xmalloc (sizeof (struct string_block));
+      register struct string_block *new;
+      allocating_for_lisp = 1;
+      new = (struct string_block *) xmalloc (sizeof (struct string_block));
+      allocating_for_lisp = 0;
       VALIDATE_LISP_STORAGE (new, sizeof *new);
       consing_since_gc += sizeof (struct string_block);
       current_string_block->next = new;
@@ -1076,6 +1183,7 @@ make_uninit_string (length)
 		  (struct Lisp_String *) current_string_block->chars);
     }
     
+  string_chars_consed += fullsize;
   XSTRING (val)->size = length;
   XSTRING (val)->data[length] = 0;
   INITIALIZE_INTERVAL (XSTRING (val), NULL_INTERVAL);
@@ -1324,7 +1432,7 @@ inhibit_garbage_collection ()
 {
   int count = specpdl_ptr - specpdl;
   Lisp_Object number;
-  int nbits = min (VALBITS, INTBITS);
+  int nbits = min (VALBITS, BITS_PER_INT);
 
   XSETINT (number, ((EMACS_INT) 1 << (nbits - 1)) - 1);
 
@@ -1595,9 +1703,10 @@ Lisp_Object *last_marked[LAST_MARKED_SIZE];
 int last_marked_index;
 
 static void
-mark_object (objptr)
-     Lisp_Object *objptr;
+mark_object (argptr)
+     Lisp_Object *argptr;
 {
+  Lisp_Object *objptr = argptr;
   register Lisp_Object obj;
 
  loop:
@@ -1704,6 +1813,8 @@ mark_object (objptr)
 	  mark_object (&ptr->buffer_predicate);
 	}
 #endif /* MULTI_FRAME */
+      else if (GC_BOOL_VECTOR_P (obj))
+	;
       else
 	{
 	  register struct Lisp_Vector *ptr = XVECTOR (obj);
@@ -2365,6 +2476,53 @@ We divide the value by 1024 to make sure it fits in a Lisp integer.")
   return end;
 }
 
+DEFUN ("memory-use-counts", Fmemory_use_counts, Smemory_use_counts, 0, 0, 0,
+  "Return a list of counters that measure how much consing there has been.\n\
+Each of these counters increments for a certain kind of object.\n\
+The counters wrap around from the largest positive integer to zero.\n\
+Garbage collection does not decrease them.\n\
+The elements of the value are as follows:\n\
+  (CONSES FLOATS VECTOR-CELLS SYMBOLS STRING-CHARS MISCS INTERVALS)\n\
+All are in units of 1 = one object consed\n\
+except for VECTOR-CELLS and STRING-CHARS, which count the total length of\n\
+objects consed.\n\
+MISCS include overlays, markers, and some internal types.\n\
+Frames, windows, buffers, and subprocesses count as vectors\n\
+  (but the contents of a buffer's text do not count here).")
+  ()
+{
+  Lisp_Object lisp_cons_cells_consed;
+  Lisp_Object lisp_floats_consed;
+  Lisp_Object lisp_vector_cells_consed;
+  Lisp_Object lisp_symbols_consed;
+  Lisp_Object lisp_string_chars_consed;
+  Lisp_Object lisp_misc_objects_consed;
+  Lisp_Object lisp_intervals_consed;
+
+  XSETINT (lisp_cons_cells_consed,
+	   cons_cells_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+  XSETINT (lisp_floats_consed,
+	   floats_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+  XSETINT (lisp_vector_cells_consed,
+	   vector_cells_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+  XSETINT (lisp_symbols_consed,
+	   symbols_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+  XSETINT (lisp_string_chars_consed,
+	   string_chars_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+  XSETINT (lisp_misc_objects_consed,
+	   misc_objects_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+  XSETINT (lisp_intervals_consed,
+	   intervals_consed & ~(((EMACS_INT) 1) << (VALBITS - 1)));
+
+  return Fcons (lisp_cons_cells_consed,
+		Fcons (lisp_floats_consed,
+		       Fcons (lisp_vector_cells_consed,
+			      Fcons (lisp_symbols_consed,
+				     Fcons (lisp_string_chars_consed,
+					    Fcons (lisp_misc_objects_consed,
+						   Fcons (lisp_intervals_consed,
+							  Qnil)))))));
+}
 
 /* Initialization */
 
@@ -2398,7 +2556,7 @@ init_alloc_once ()
   gcprolist = 0;
   staticidx = 0;
   consing_since_gc = 0;
-  gc_cons_threshold = 300000;
+  gc_cons_threshold = 100000 * sizeof (Lisp_Object);
 #ifdef VIRT_ADDR_VARIES
   malloc_sbrk_unused = 1<<22;	/* A large number */
   malloc_sbrk_used = 100000;	/* as reasonable as any number */
@@ -2460,16 +2618,22 @@ which includes both saved text and other data.");
   staticpro (&Qgc_cons_threshold);
   Qgc_cons_threshold = intern ("gc-cons-threshold");
 
+  staticpro (&Qchar_table_extra_slots);
+  Qchar_table_extra_slots = intern ("char-table-extra-slots");
+
   defsubr (&Scons);
   defsubr (&Slist);
   defsubr (&Svector);
   defsubr (&Smake_byte_code);
   defsubr (&Smake_list);
   defsubr (&Smake_vector);
+  defsubr (&Smake_char_table);
   defsubr (&Smake_string);
+  defsubr (&Smake_bool_vector);
   defsubr (&Smake_symbol);
   defsubr (&Smake_marker);
   defsubr (&Spurecopy);
   defsubr (&Sgarbage_collect);
   defsubr (&Smemory_limit);
+  defsubr (&Smemory_use_counts);
 }

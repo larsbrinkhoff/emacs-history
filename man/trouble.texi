@@ -121,6 +121,7 @@ normally, and how to recognize them and correct them.
 * Text Garbled::        Garbage in the text.
 * Unasked-for Search::  Spontaneous entry to incremental search.
 * Memory Full::         How to cope when you run out of memory.
+* After a Crash::       Recovering editing in an Emacs session that crashed.
 * Emergency Escape::    Emergency escape---
                           What to do if Emacs stops responding.
 * Total Frustration::   When you are at your wits' end.
@@ -240,6 +241,29 @@ available, in case you run out of memory another time.
   Do not use @kbd{M-x buffer-menu} to save or kill buffers when you run
 out of memory, because the buffer menu needs a fair amount memory
 itself, and the reserve supply may not be enough.
+
+@node After a Crash
+@subsection Recovery After a Crash
+
+  If Emacs or the computer crashes, you can recover the files you were
+editing at the time of the crash from their auto-save files.  To do
+this, start Emacs again and type the command @kbd{M-x recover-session}.
+
+  This command initially displays a buffer which lists interrupted
+session files, each with its date.  You must choose which session to
+recover from.  Typically the one you want is the most recent one.  Move
+point to the one you choose, and type @kbd{C-c C-c}.
+
+  Then @code{recover-session} asks about each of the files that you were
+editing during that session.  It asks whether to recover each file.  If
+you answer @kbd{y} for a file, it shows the dates of that file and its
+auto-save file, then asks once again whether to recover that file.  For
+the second question, you must confirm with @kbd{yes}.  If you do, Emacs
+visits the file but gets the text from the auto-save file.
+
+  When @code{recover-session} is done, the files you've chosen to
+recover are present in Emacs buffers.  You should then save them.  Only
+this---saving them---updates the files themselves.
 
 @node Emergency Escape
 @subsection Emergency Escape
@@ -509,7 +533,7 @@ dribble file.  To start the file, execute the Lisp expression
 @end example
 
 @noindent
-using @kbd{M-@key{ESC}} or from the @samp{*scratch*} buffer just after
+using @kbd{M-:} or from the @samp{*scratch*} buffer just after
 starting Emacs.  From then on, Emacs copies all your input to the
 specified dribble file until the Emacs process is killed.
 
@@ -529,7 +553,7 @@ The way to collect the terminal output is to execute the Lisp expression
 @end example
 
 @noindent
-using @kbd{M-@key{ESC}} or from the @samp{*scratch*} buffer just after
+using @kbd{M-:} or from the @samp{*scratch*} buffer just after
 starting Emacs.  From then on, Emacs copies all terminal output to the
 specified termscript file as well, until the Emacs process is killed.
 If the problem happens when Emacs starts up, put this expression into

@@ -1,13 +1,8 @@
-;; forms-demo -- demo forms-mode	-*- emacs-lisp -*-
+;;; forms-d2.el --- demo forms-mode
 
-;; RCS Status      : $Id: forms-d2.el,v 1.3 1994/07/25 20:53:03 jv Exp $
-;; Author          : Johan Vromans
-;; Created On      : 1989
-;; Last Modified By: Johan Vromans
-;; Last Modified On: Mon Jul 25 22:53:01 1994
-;; Update Count    : 8
-;; Status          : OK
-;; 
+;; Author: Johan Vromans
+;; Created: 1989
+
 ;; This sample forms exploit most of the features of forms mode.
 
 ;; Set the name of the data file.

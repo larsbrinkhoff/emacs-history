@@ -1,0 +1,153 @@
+		 Emacs for Windows NT and Windows 95
+
+This file describes Emacs on Windows NT and Windows 95.  Both ports
+support the base functionality of Emacs as well as the windowing
+features (colors, fonts, menus, scrollbars).  Currently, due to
+limitations encountered with the Win95 command.com, only the NT port
+supports subprocesses.
+
+For instructions on building and installing Emacs, or obtaining
+precompiled versions, see the INSTALL file in this directory.
+
+This release should run on your system with relatively few bugs.  If
+you do encounter Windows specific problems, please first check the web
+page to see if the bug has been encountered already.  If not, please
+email me directly with a description of the problem, and please
+include the version of Emacs and the version and type of the operating
+system and compiler you are using.
+
+Also, if you are interested in testing out trial versions that are
+less stable but have potentially more functionality, browse
+ftp://ftp.cs.washington.edu/pub/voelker/ntemacs/trial.
+
+A description of the current state of the port, including bugs
+encountered and workarounds, can be found in
+http://www.cs.washington.edu/homes/voelker/ntemacs.html.  If you do
+not have direct WWW access, then you can access the WWW using telnet
+or email: for telnet access, run "telnet telnet.w3.org"; for email
+access, send email to "agora@mail.w3.org" with "SEND
+http://www.w3.org/hypertext/WWW/Agora/Help.txt" in the body of the
+message.
+
+For more recent release notes, see the ChangeLog in this directory.
+
+Enjoy.
+
+-geoff
+(voelker@cs.washington.edu)
+
+-   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Old release notes:
+-   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+12.15.94
+
+Merged in 19.28 patches.  Fixed myriad small bugs, including:
+
+* dired finds directories
+* random now really is random
+* directory-file-name handles UNC names
+* M-C key sequences (and [home] and [end]) now work 
+* C-, M-, and M-C- punctuation keys now work
+* can change the bell sound using set-message-beep
+
+10.26.94
+
+Now up to 19.27.  See nt\ChangeLog for all the gory details.
+
+If you've used a previous version, you should look over these changes
+that were made to the runtime environment for emacs:
+
+* For the .emacs file, switched from the emacs.dot convention to the
+_emacs convention of the MSDOS version to keep things consistent.
+Simply rename your emacs.dot or .emacs file to _emacs.
+
+* Emacs now uses INFOPATH instead of EMACSINFOPATH to find info files.
+(This change has been reflected in emacs.cmd).
+
+* Emacs now relies upon the environment variable TERM to be set; "set
+TERM=CMD" does the trick.  (This change has also been reflected in
+emacs.cmd).
+
+* The system-type lisp variable "Windows-NT" is now "windows-nt" to
+conform to the existing lower-case convention for this variable.
+
+Many thanks to Sridhar Boovaragh and Matt Rhoten for the help in beta
+testing the software.
+
+-geoff
+
+9.6.94
+
+The Emacs port to NT has been upgraded to 19.25 and improved.  
+It now supports:
+
+- dumping
+- binary files in a reasonable way
+- larger files (~12MB)
+- case-insensitive completion (actually, it only needed to be enabled)
+- proper expand-file-name processing (i.e., "c:\foo\d:\baz" does
+  the right thing...can't believe I let that go so long).
+- adoption of MSDOS convention of using _emacs instead of emacs.dot
+- plus myriad other small fixes
+
+See the nt\install file for latest directions on installing emacs.
+
+-geoff
+
+12.10.93
+
+This is a port of Emacs version 19.17 for Microsoft Windows NT.  Once
+the dust settles on the latest version of the main emacs source (19.22
+at this writing) and I get more time, this port will be rolled
+forward.
+
+The port has most of the Unix emacs functionality, in particular
+subprocesses (and, hence, support for the compile, shell, and grep
+modes, among others --- for dired, though, you need a 32-bit version
+of ls for now).  However, the port is still rough around the edges
+(the degree of integration with Windows is small as compared with X,
+for example).  
+
+If something is very obviously broken, it shouldn't be; let me know
+immediately.
+
+For those people who feel particularly hackish, you can browse through
+the TODO.NT file and chip away at the remaining things that need to be
+done (this also serves as the problems file, so if you encounter a
+problem first look here to see if it's been noted).  The vast world of
+lisp packages is relatively unexplored, for example.
+
+If you do fix broken lisp packages, or trace down bugs in the emacs
+source, send fixes back so that they can be integrated into the main
+distribution for everyone to use.  It would be great to hear about
+bugs _and_ their fixes, but send the bugs too.  Also, the port has
+been tested only on mips and i386 boxes.  It will be interesting to
+test it out on other architectures.
+
+Read the INSTALL.NT file for directions on installing emacs.
+Regarding disk space requirements, with the mips version the build
+tree requires ~27 MBytes of disk space; if you install in the same
+directory, add ~3 MBytes; if you install in another directory, add ~16
+MBytes.
+
+Enjoy.
+
+-geoff
+
+(voelker@cs.washington.edu)
+
+-----------------------------------------------------------------------
+
+For a brief history, Tim Fleehart did a lot of the hard work porting
+emacs 18.58 to NT.  I upgraded the port to 19.17, changed the memory
+allocation, added subprocess support, etc.  Drew Bliss then did a
+thorough job improving child process support, signal handling, and
+keyboard and mouse events.  I am sure that I can't credit Tim and Drew
+enough for all that they have done, and hope they forgive me for
+leaving anything out.  Darach Foskett and John Sichi graciously tested
+the distribution and provided very helpful feedback.  As with any
+large piece of software, many others have also made contributions, but
+if I started to list names I would leave someone out.
+
+

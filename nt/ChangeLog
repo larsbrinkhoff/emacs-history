@@ -1,3 +1,31 @@
+Fri Nov 24 23:44:08 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+Wed Nov 22 13:53:40 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.def (CP_DIR): Use platform independent switches for xcopy.
+
+	* makefile.nt (install, fast_install, real_install, clean):
+	Don't use switches to del not supported by Win95.
+
+Tue Nov  7 02:55:14 1995  Kevin Gallo  <kgallo@microsoft.com>
+
+	* makefile.nt (addpm.exe): Link with $(ADVAPI32).
+	(install, fast_install): Change same-dir test to create test file in
+	installation tree and thereby support read-only shares.
+	(clean): Remove .pdb files.
+
+	* makefile.def (NTGUI): New macro.
+	[NTGUI] (CFLAGS): Define HAVE_NTGUI.
+
+	* config.nt, config.w95: Update to latest src/config.in.
+
+	* addpm.c (env_vars): New variable.
+	(add_registry): New procedure.
+	(main): Use values of configuration environment variables from
+	the registry if defined, the process environment otherwise.
+
 Mon Jun 19 17:32:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.29 released.

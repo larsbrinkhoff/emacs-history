@@ -119,7 +119,7 @@
   "*Face to use when fontifying overstrike.")
 
 (defvar Man-underline-face 'underline
-  "*Face to use when fontifying underlinining.")
+  "*Face to use when fontifying underlining.")
 
 ;; Use the value of the obsolete user option Man-notify, if set.
 (defvar Man-notify-method (if (boundp 'Man-notify) Man-notify 'friendly)
@@ -422,17 +422,17 @@ that string instead of from the current buffer."
   "Translates REF from \"chmod(2V)\" to \"2v chmod\" style.
 Leave it as is if already in that style.  Possibly downcase and
 translate the section (see the Man-downcase-section-letters-flag
-and the Man-section-translations-alist variables)." 
+and the Man-section-translations-alist variables)."
   (let ((name "")
 	(section "")
 	(slist Man-section-translations-alist))
     (cond
      ;; "chmod(2V)" case ?
-     ((string-match (concat Man-reference-regexp "$") ref)
+     ((string-match (concat "^" Man-reference-regexp "$") ref)
       (setq name (Man-match-substring 1 ref)
 	    section (Man-match-substring 2 ref)))
      ;; "2v chmod" case ?
-     ((string-match (concat "\\(" Man-section-regexp
+     ((string-match (concat "^\\(" Man-section-regexp
 			    "\\) +\\(" Man-name-regexp "\\)$") ref)
       (setq name (Man-match-substring 2 ref)
 	    section (Man-match-substring 1 ref))))
@@ -624,6 +624,9 @@ Same for the ANSI bold and normal escape sequences."
   (while (re-search-forward "[-|]\\(\b[-|]\\)+" nil t)
     (replace-match "+")
     (put-text-property (1- (point)) (point) 'face 'bold))
+  ;; \255 is some kind of dash in Latin-1.
+  (goto-char (point-min))
+  (while (search-forward "\255" nil t) (replace-match "-"))
   (message "%s man page made up" Man-arguments))
 
 (defun Man-cleanup-manpage ()
@@ -647,6 +650,9 @@ Same for the ANSI bold and normal escape sequences."
 	))
   (goto-char (point-min))
   (while (re-search-forward "[-|]\\(\b[-|]\\)+" nil t) (replace-match "+"))
+  ;; \255 is some kind of dash in Latin-1.
+  (goto-char (point-min))
+  (while (search-forward "\255" nil t) (replace-match "-"))
   (message "%s man page cleaned up" Man-arguments))
 
 (defun Man-bgproc-sentinel (process msg)

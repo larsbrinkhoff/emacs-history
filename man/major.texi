@@ -69,12 +69,19 @@ command to select that mode.  Thus, you can enter Lisp mode by executing
 @vindex auto-mode-alist
   When you visit a file, Emacs usually chooses the right major mode based
 on the file's name.  For example, files whose names end in @samp{.c} are
-edited in C mode.  The correspondence between file names and major mode is
+edited in C mode.  The correspondence between file names and major modes is
 controlled by the variable @code{auto-mode-alist}.  Its value is a list in
-which each element has the form
+which each element has this form,
 
 @example
 (@var{regexp} . @var{mode-function})
+@end example
+
+@noindent
+or this form,
+
+@example
+(@var{regexp} @var{mode-function} @var{flag})
 @end example
 
 @noindent
@@ -82,8 +89,11 @@ For example, one element normally found in the list has the form
 @code{(@t{"\\.c\\'"} . c-mode)}, and it is responsible for selecting C mode
 for files whose names end in @file{.c}.  (Note that @samp{\\} is needed in
 Lisp syntax to include a @samp{\} in the string, which is needed to
-suppress the special meaning of @samp{.} in regexps.)  The only practical
-way to change this variable is with Lisp code.
+suppress the special meaning of @samp{.} in regexps.)  If the element has
+the form @code{(@var{regexp} @var{mode-function} @var{flag})} and
+@var{flag} is non-nil, then after calling @var{function}, the suffix that
+matched @var{regexp} is deleted and the list is searched again for another
+match.
 
   You can specify which major mode should be used for editing a certain
 file by a special sort of text in the first nonblank line of the file.  The

@@ -40,15 +40,20 @@ For a current copy of this directory, or to have yourself listed, ask:
 ** Please keep the entries in this file alphabetical **
 
 
-Joseph Arceneaux	<jla@ai.mit.edu>
-PO Box 460633
+Joseph Arceneaux        	<jla@ai.mit.edu>
+PO Box 460633			http://www.samsara.com/~jla
 San Francisco, CA  94146-0633
++1 415 648 9988
 +1 415 285 9088
 
-Former FSF staffmember.	 Performed X11 implementation of Emacs version
-19 and worked on WYSIWYG Emacs.	 Installed and administered FSF
-network.  Maintainer of GNU indent.  Over 10 years experience with Unix
-systems, from writing ROM monitors to UI design and system administration.
+Recently led the project making Wells Fargo Bank the first to provide
+secure customer account access over the Internet.
+
+Former FSF staffmember.  Performed X11 implementation of Emacs version
+19, designed and implemented WYSIWYG Emacs.  Installed and
+administered FSF network.  Maintainer of GNU indent.  Over 15 years
+experience with Unix and other systems, from writing ROM monitors to
+UI design and system administration.
 
 I provide installation, porting, debugging and customization or
 development of GNU and other Unix software.  I also design and
@@ -56,30 +61,31 @@ implement free software projects and consult on software engineering
 and systems design.  Handholding and  teaching services are also
 available as well as things like LAN and compute--infrastructure design.
 
-Rates are upwards of $70 USD per hour, depending upon the particular
-job.  I am also very interested in fixed-bid jobs.  For selected
-non-profit organizations with worthy goals, I work for free.
+Time and material rates around $150 USD per hour, depending upon the
+particular job.  I am also very interested in fixed-bid jobs.  For
+selected non-profit organizations with worthy goals, I work for free.
 
-Updated: 5Apr94
+Updated: 17Oct95
 
-Gerd Aschemann		<ascheman@isa.informatik.th-darmstadt.de>
-Herderstr. 15
+Gerd Aschemann		<aschemann@Informatik.TH-Darmstadt.de>
+Osannstr. 49
 D-64285 Darmstadt
-Tel.: +49 6151 62568
+Tel.: +49 6151 16 2259
+http://www.informatik.th-darmstadt.de/~ascheman/
 
-- System Administrator (UNIX) of Operating Systems Research Group,
-  CS Department, TU Darmstadt, Germany
+- System Administrator (UNIX) at CS Department, TU Darmstadt, Germany
+- 15 years expirience with CS, Systemadministration on different platforms
+-  8 years with UNIX/Networking/FreeWare/GNU/X11
+-  6 years organizer of Operating Systems and Distributed Systems courses
+- Lectures on System and Network Administration
+- Platforms: Solaris, SunOS, Ultrix, OSF1, HP-UX, Linux, FreeBSD, AIX
+- Experience with parallel environments (Connection Machine, Meiko, Parsytec)
 - Consultant for other UNIX users at TU Darmstadt
-- 14 years experience with CS, Systemadministration
--  7 years with UNIX/Networking/FreeWare/GNU/X11
--  5 years organizer of practical OS courses
-- Platforms: SunOS, HP-UX, Ultrix, OSF1, Linux, AIX, Solaris
-- Experience with parallel environments (Transputers: Meiko, Parix)
 
 Rates are at 100,-- DM (~60 US$) per hour minimum, depending on the job.
 I am willing to travel for sufficiently large jobs.
 
-Entered: 10Jun94
+Updated: 17Oct95
 
 Giuseppe Attardi	<attardi@di.unipi.it>
 Dipartimento di Informatica
@@ -92,16 +98,19 @@ GNU: help on obtaininig GNU, for italian sites.
 Updated: 5Apr94
 
 James Craig Burley
-4 Mountain Gate Rd.
-Ashland, MA 01721-2326
+97 Arrowhead Circle
+Ashland, MA 01721-1987
 508 881-6087, -4745
+(Please call only between 0900-1700 Eastern time, and only if you
+are prepared to hire me -- ask me to help you for free only
+via email, to which I might or might not respond.)
 Email: <burley@gnu.ai.mit.edu> --preferred--
        <burley@cygnus.com>
        <burley@world.std.com>
 
 Expertise:
     Compiler Internals (author of GNU Fortran, for example)
-    Operating Systems Internals (lately Linux on the ix86)
+    Operating Systems Internals
     Tools/Utilities Development and Maintenance
     Microcode Development and Maintenance (primarily VLIW machines)
     System Design (computers, operating systems, toolsets, &c)
@@ -110,10 +119,9 @@ Expertise:
     Extensive experience with a variety of operating systems, hardware,
 	languages, and so on
 
-Rate: $75/hour, though somewhat volatile due to commitments regarding
-	GNU Fortran -- willing to consider flat-fee arrangements
+Rate: $70/hour -- willing to consider flat-fee arrangements
 
-Entered: 5Apr94
+Updated: 14Aug95
 
 Michael I. Bushnell		<mib@gnu.ai.mit.edu>
 545 Technology Square, NE43-426
@@ -221,22 +229,6 @@ configurations.
 
 Updated: 2Feb95
 
-Jose A. Fernandez <jaf@inference.com>
-
-WORK:	Inference Corporation	      HOME:
-	550 N. Continental Blvd.	1025 Hillside Dr.
-	El Segundo, CA 90245		Chino Hills, CA 91709
-	(310) 322-0200	x205		(714) 528-2523
-
-RATES:
-   Variable, depending on work to be done.
-
-SERVICES:
-    GNU software: installation, troubleshooting, and instruction.
-    X11 software: installation and troubleshooting.
-
-Entered: 14Apr94
-
 Free Software Association of Germany
 Michaela Merz
 Heimatring 19
@@ -259,32 +251,35 @@ response team)		   :  300 US$ / hour
 
 Entered: 14Apr94
 
-Noah Friedman		   <friedman@prep.ai.mit.edu>
-Building 600, Suite 214
-One Kendall Square
-Cambridge, MA  02139
-+1 617 876 3296
+Noah Friedman             <friedman@prep.ai.mit.edu>
+Building 600, Suite 214             2002-A Guadalupe St. #214
+One Kendall Square                  Austin, TX 78705
+Cambridge, MA  02139                (Local, faster to reach me)
+(Permanent)
 
-Co-maintainer of GNU texinfo and GNU autoconf.	Author of several
-Emacs Lisp packages and parts of Emacs 19, as well as numerous
-utilities written in shell script and perl.  System administrator for
-a small network of heterogenous machines.  FSF employee spring 1991 to
-the present.
 
-Installation, porting, and enhancement of all GNU software and other free
-software; "auto-configuration" a specialty.   System administration
-for most unix-like systems.  Willing to teach shell programming and
+Author of several Emacs Lisp packages and parts of Emacs 19, as well as
+numerous utilities written in shell script and perl.  Co-maintained GNU
+Texinfo and Autoconf for a couple of years.  System administrator for a
+network of heterogenous machines.  FSF employee Feb 1991--Sep 1994.
+
+I can perform installation, porting, and enhancement of all GNU software
+and any other free software; system administration for unix-type systems
+and ethernet networks; and I am willing to teach shell programming and
 Emacs Lisp.
 
-Fees negotiable.  I can work in the Boston area or anywhere on the
-Internet.  For larger jobs I may be willing to travel.
+Fees negotiable, averaging $60-$75/hour.  I can work in the Austin, TX area
+or anywhere accessible on the Internet.  For larger jobs I may be willing
+to travel.
 
-Updated: 5Apr94
+Updated: 16Aug95
 
-Ron Guilmette	<rfg@segfault.us.com>
-396 Ano Nuevo Ave. #216
-Sunnyvale, CA 94086
-408-732-7839
+Ronald F. Guilmette	<rfg@monkeys.com>
+Infinite Monkeys & Co.
+1751 East Roseville Pkwy. #1828
+Roseville, CA 95661
+Tel: +1 916 786 7945
+FAX: +1 916 786 5311
 
 Services:	Development & porting of GNU software development tools.
 
@@ -301,10 +296,10 @@ GNU Contributions:
 		Finished port of GNU compilers to Intel i860 RISC
 		processor.
 
-Experience:	11+ years UNIX systems experience, all working on compilers
+Experience:	13+ years UNIX systems experience, all working on compilers
 		and related tools.
 
-		5+ years working professionally on GCC, G++, and GDB under
+		7+ years working professionally on GCC, G++, and GDB under
 		contract to various firms including the Microelectronics
 		and Computer Technology Corporation (MCC), Data General (DG),
 		Network Computing Devices (NCD), and Intel Corp.
@@ -316,12 +311,11 @@ Other qualifications:
 		Former vice-chairman of UNIX International Programming
 		Languages Special Interest Group (UI/PLSIG).
 
-		Bachelor's and a Master's degree, both in
-		Computer Science.
+		Bachelor's and a Master's degrees, both in Computer Science.
 
 Rates:		Variable depending upon contract duration.  Call for quote.
 
-Updated: 13Apr94
+Updated: 23Sep95
 
 Hundred Acre Consulting		<info@pooh.com>
 1155 W Fourth St Ste 225
@@ -341,6 +335,31 @@ Consulting rates: $70 to $90 per hour, or fixed bid.
 Support contracts:  Several levels, from $495 to $90000 per year.
 
 Updated: 27Dec94
+
+Interactive Information Limited
+
+Interactive Information Limited is an Edinburgh-based company that
+specialises in WWW services and support for using the Internet for
+marketing.
+
+Our staff have many years experience in using, and developing lisp packages
+within, Emacs, and in using other GNU/Unix tools, particularly under public
+domain UNIXes.
+
+We can provide services throughout the UK, at any level from general
+consultancy through fetching, installing and customising software to
+bespoke programming.  Fees would be in the range #300 - #600 per day,
+depending primarily on the size of the job.
+
+You can contact us
+	by email: <enquire@interactive.co.uk>
+	by phone: 0370 30 40 52 (UK)
+		  (+44) 370 30 40 52 (International)
+	by post: 3, Lauriston Gardens,
+		 Edinburgh EH3 9HH
+		 Scotland
+
+Entered: 13Nov95
 
 Scott D. Kalter			<sdk@mithril.com)
 2032 Corral Canyon
@@ -798,6 +817,25 @@ Rates: $65/hour as an independent contractor.
        higher rates if extensive travel is required.
 
 Updated: 27Sep94.
+
+Herb Wood
+phone: 1-415-789-7173
+email: <ru@ccnext.ucsf.edu>
+
+I'm a better "planner" than I am a hacker.  A really good hacker will be able
+to keep many pieces of information in their short-term memory and to memorize
+new pieces of information at a fast rate.  This is not my strong point.
+Rather, I excel in domains that require knowledge of the slightly more
+theoretical parts of computer science --for example, logic, formal methods of
+program development, and functional programming.  I can write, and I have
+"tutoring" (teaching one-on-one) experience, an, unlike some programmers,
+I enjoy doing these things.
+
+I have spend a lot of time looking at the Emacs Lisp sources and customizing
+Emacs and VM.  I think I can customize Emacs and its packages quickly and
+effectively.
+
+Entered: 30Jul95
 
 Yggdrasil Computing, Inc./ Freesoft, Inc.	<info@yggdrasil.com>
 4880 Stevens Creek Blvd. Ste. 205

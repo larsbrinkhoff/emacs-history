@@ -1,9 +1,9 @@
 ;;; mh-funcs --- mh-e functions not everyone will use right away
-;; Time-stamp: <95/01/25 16:35:24 gildea>
+;; Time-stamp: <95/08/19 16:44:06 gildea>
 
 ;; Copyright (C) 1993, 1995 Free Software Foundation, Inc.
 
-;; This file is part of GNU Emacs.
+;; This file is part of mh-e, part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 ;;; Change Log:
 
-;; $Id: mh-funcs.el,v 1.3 1995/04/10 00:20:07 kwzh Exp $
+;; $Id: mh-funcs.el,v 1.4 1995/11/03 02:29:34 kwzh Exp $
 
 ;;; Code:
 

@@ -8,7 +8,7 @@
 ;; LCD Archive Entry:
 ;; edebug|Daniel LaLiberte|liberte@cs.uiuc.edu
 ;; |A source level debugger for Emacs Lisp.
-;; |$Date: 1995/05/06 01:27:21 $|$Revision: 3.5.1.19 $|~/modes/edebug.el|
+;; |$Date: 1995/08/27 17:52:46 $|$Revision: 3.5.1.22 $|~/modes/edebug.el|
 
 ;; This file is part of GNU Emacs.
 
@@ -83,7 +83,7 @@
 ;;; For the early revision history, see edebug-history.
 
 (defconst edebug-version
-  (let ((raw-version "$Revision: 3.5.1.19 $"))
+  (let ((raw-version "$Revision: 3.5.1.22 $"))
     (substring raw-version (string-match "[0-9.]*" raw-version)
 	       (match-end 0))))
      
@@ -367,6 +367,7 @@ A lambda list keyword is a symbol that starts with `&'."
   "Returns the function named by OBJECT, or nil if it is not a function."
   (setq object (edebug-lookup-function object))
   (if (or (subrp object)
+	  (byte-code-function-p object)
 	  (and (listp object)
 	       (eq (car object) 'lambda)
 	       (listp (car (cdr object)))))
@@ -2155,10 +2156,12 @@ expressions; a `progn' form will be returned enclosing these forms."
 
 (defvar edebug-outside-pre-command-hook)
 (defvar edebug-outside-post-command-hook)
+(defvar edebug-outside-post-command-idle-hook)
 
 ;; Emacs 19
 (defvar pre-command-hook nil)
 (defvar post-command-hook nil)
+(defvar post-command-idle-hook nil)
 
 (defvar cl-lexical-debug)  ;; Defined in cl.el
 
@@ -2225,7 +2228,8 @@ error is signaled again."
 	    ;; Save the outside value of executing macro.  (here??)
 	    (edebug-outside-executing-macro executing-macro)
 	    (edebug-outside-pre-command-hook pre-command-hook)
-	    (edebug-outside-post-command-hook post-command-hook))
+	    (edebug-outside-post-command-hook post-command-hook)
+	    (edebug-outside-post-command-idle-hook post-command-idle-hook))
 	(unwind-protect
 	    (let (;; Don't keep reading from an executing kbd macro
 		  ;; within edebug unless edebug-continue-kbd-macro is
@@ -2237,7 +2241,8 @@ error is signaled again."
 		  ;; a hook function is instrumented - to avoid infinite loop.
 		  ;; This may be more than we need, however.
 		  (pre-command-hook nil)
-		  (post-command-hook nil))
+		  (post-command-hook nil)
+		  (post-command-idle-hook nil))
 	      (setq edebug-execution-mode (or edebug-next-execution-mode 
 					      edebug-initial-mode 
 					      edebug-execution-mode)
@@ -2251,6 +2256,7 @@ error is signaled again."
 	  (setq executing-macro edebug-outside-executing-macro
 		pre-command-hook edebug-outside-pre-command-hook
 		post-command-hook edebug-outside-post-command-hook
+		post-command-idle-hook edebug-outside-post-command-idle-hook
 		)))
     
     (let* ((edebug-data (get edebug-function 'edebug))
@@ -2723,7 +2729,6 @@ MSG is printed after `::::} '."
 
 ;; Emacs 18
 (defvar edebug-outside-unread-command-char)
-(defvar unread-command-char -1)
 
 ;; Lucid Emacs
 (defvar edebug-outside-unread-command-event)  ;; like unread-command-events
@@ -2736,14 +2741,6 @@ MSG is printed after `::::} '."
 (defvar edebug-outside-last-event-frame)
 (defvar edebug-outside-last-nonmenu-event)
 (defvar edebug-outside-track-mouse)
-
-;; For Emacs 18, define vars defined by Emacs 19.
-(defvar last-input-event nil)
-(defvar last-command-event nil)
-(defvar unread-command-events nil)
-(defvar last-event-frame nil)
-(defvar last-nonmenu-event nil)
-(defvar track-mouse nil)
 
 ;; Disable byte compiler warnings about unread-command-char and -event
 ;; (maybe works with byte-compile-version 2.22 at least)
@@ -3541,6 +3538,7 @@ Return the result of the last expression."
 	     (defining-kbd-macro edebug-outside-defining-kbd-macro)
 	     (pre-command-hook edebug-outside-pre-command-hook)
 	     (post-command-hook edebug-outside-post-command-hook)
+	     (post-command-idle-hook edebug-outside-post-command-idle-hook)
 
 	     ;; See edebug-display
 	     (overlay-arrow-position edebug-outside-o-a-p)
@@ -3582,6 +3580,7 @@ Return the result of the last expression."
 	    edebug-outside-defining-kbd-macro defining-kbd-macro
 	    edebug-outside-pre-command-hook pre-command-hook
 	    edebug-outside-post-command-hook post-command-hook
+	    edebug-outside-post-command-idle-hook post-command-idle-hook
 
 	    edebug-outside-o-a-p overlay-arrow-position
 	    edebug-outside-o-a-s overlay-arrow-string

@@ -307,13 +307,39 @@ NCOL should be zero or positive.")
 
   CHECK_NUMBER (ncol, 1);
   if (XINT (ncol) < 0) XSETFASTINT (ncol, 0);
-  if (XFASTINT (ncol) >= (1 << (SHORTBITS - 1)))
-    args_out_of_range (ncol, Qnil);
   w = decode_window (window);
   if (XINT (w->hscroll) != XINT (ncol))
-    clip_changed = 1;		/* Prevent redisplay shortcuts */
+    XBUFFER (w->buffer)->clip_changed = 1; /* Prevent redisplay shortcuts */
   w->hscroll = ncol;
   return ncol;
+}
+
+DEFUN ("window-redisplay-end-trigger", Fwindow_redisplay_end_trigger,
+       Swindow_redisplay_end_trigger, 0, 1, 0,
+  "Return WINDOW's redisplay end trigger value.\n\
+See `set-window-redisplay-end-trigger' for more information.")
+  (window)
+     Lisp_Object window;
+{
+  return decode_window (window)->redisplay_end_trigger;
+}
+
+DEFUN ("set-window-redisplay-end-trigger", Fset_window_redisplay_end_trigger,
+       Sset_window_redisplay_end_trigger, 2, 2, 0,
+  "Set WINDOW's redisplay end trigger value to VALUE.\n\
+VALUE should be a buffer position (typically a marker) or nil.\n\
+If it is a buffer position, then if redisplay in WINDOW reaches a position\n\
+beyond VALUE, the functions in `redisplay-end-trigger-functions' are called\n\
+with two arguments: WINDOW, and the end trigger value.\n\
+Afterwards the end-trigger value is reset to nil.")
+  (window, value)
+     register Lisp_Object window, value;
+{
+  register struct window *w;
+
+  w = decode_window (window);
+  w->redisplay_end_trigger = value;
+  return value;
 }
 
 DEFUN ("window-edges", Fwindow_edges, Swindow_edges, 0, 1, 0,
@@ -491,7 +517,8 @@ But that is hard to define.")
 }
 
 DEFUN ("window-start", Fwindow_start, Swindow_start, 0, 1, 0,
-  "Return position at which display currently starts in WINDOW.")
+  "Return position at which display currently starts in WINDOW.\n\
+This is updated by redisplay or by calling `set-window-start'.")
   (window)
      Lisp_Object window;
 {
@@ -621,20 +648,20 @@ DEFUN ("window-display-table", Fwindow_display_table, Swindow_display_table,
    Ignore the specified tables if they are not valid;
    if no valid table is specified, return 0.  */
 
-struct Lisp_Vector *
+struct Lisp_Char_Table *
 window_display_table (w)
      struct window *w;
 {
   Lisp_Object tem;
   tem = w->display_table;
-  if (VECTORP (tem) && XVECTOR (tem)->size == DISP_TABLE_SIZE)
-    return XVECTOR (tem);
+  if (DISP_TABLE_P (tem))
+    return XCHAR_TABLE (tem);
   tem = XBUFFER (w->buffer)->display_table;
-  if (VECTORP (tem) && XVECTOR (tem)->size == DISP_TABLE_SIZE)
-    return XVECTOR (tem);
+  if (DISP_TABLE_P (tem))
+    return XCHAR_TABLE (tem);
   tem = Vstandard_display_table;
-  if (VECTORP (tem) && XVECTOR (tem)->size == DISP_TABLE_SIZE)
-    return XVECTOR (tem);
+  if (DISP_TABLE_P (tem))
+    return XCHAR_TABLE (tem);
   return 0;
 }
 
@@ -915,12 +942,17 @@ DEFUN ("next-window", Fnext_window, Snext_window, 0, 3, 0,
   /* minibuf == nil may or may not include minibuffers.
      Decide if it does.  */
   if (NILP (minibuf))
-    minibuf = (minibuf_level ? Qt : Qlambda);
+    minibuf = (minibuf_level ? minibuf_window : Qlambda);
+  else if (! EQ (minibuf, Qt))
+    minibuf = Qlambda;
+  /* Now minibuf can be t => count all minibuffer windows,
+     lambda => count none of them,
+     or a specific minibuffer window (the active one) to count.  */
 
 #ifdef MULTI_FRAME
   /* all_frames == nil doesn't specify which frames to include.  */
   if (NILP (all_frames))
-    all_frames = (EQ (minibuf, Qt)
+    all_frames = (! EQ (minibuf, Qlambda)
 		  ? (FRAME_MINIBUF_WINDOW
 		     (XFRAME
 		      (WINDOW_FRAME
@@ -993,11 +1025,13 @@ DEFUN ("next-window", Fnext_window, Snext_window, 0, 3, 0,
     }
   /* Which windows are acceptible?
      Exit the loop and accept this window if
-     this isn't a minibuffer window, or
-     we're accepting minibuffer windows, or
+     this isn't a minibuffer window,
+     or we're accepting all minibuffer windows,
+     or this is the active minibuffer and we are accepting that one, or
      we've come all the way around and we're back at the original window.  */
   while (MINI_WINDOW_P (XWINDOW (window))
 	 && ! EQ (minibuf, Qt)
+	 && ! EQ (minibuf, window)
 	 && ! EQ (window, start_window));
 
   return window;
@@ -1054,13 +1088,18 @@ DEFUN ("previous-window", Fprevious_window, Sprevious_window, 0, 3, 0,
   /* minibuf == nil may or may not include minibuffers.
      Decide if it does.  */
   if (NILP (minibuf))
-    minibuf = (minibuf_level ? Qt : Qlambda);
+    minibuf = (minibuf_level ? minibuf_window : Qlambda);
+  else if (! EQ (minibuf, Qt))
+    minibuf = Qlambda;
+  /* Now minibuf can be t => count all minibuffer windows,
+     lambda => count none of them,
+     or a specific minibuffer window (the active one) to count.  */
 
 #ifdef MULTI_FRAME
   /* all_frames == nil doesn't specify which frames to include.
      Decide which frames it includes.  */
   if (NILP (all_frames))
-    all_frames = (EQ (minibuf, Qt)
+    all_frames = (! EQ (minibuf, Qlambda)
 		   ? (FRAME_MINIBUF_WINDOW
 		      (XFRAME
 		       (WINDOW_FRAME
@@ -1146,14 +1185,16 @@ DEFUN ("previous-window", Fprevious_window, Sprevious_window, 0, 3, 0,
 	    window = tem;
 	}
     }
-  /* Which windows are acceptable?
+  /* Which windows are acceptible?
      Exit the loop and accept this window if
-     this isn't a minibuffer window, or
-     we're accepting minibuffer windows, or
+     this isn't a minibuffer window,
+     or we're accepting all minibuffer windows,
+     or this is the active minibuffer and we are accepting that one, or
      we've come all the way around and we're back at the original window.  */
   while (MINI_WINDOW_P (XWINDOW (window))
-	 && !EQ (minibuf, Qt)
-	 && !EQ (window, start_window));
+	 && ! EQ (minibuf, Qt)
+	 && ! EQ (minibuf, window)
+	 && ! EQ (window, start_window));
 
   return window;
 }
@@ -1530,6 +1571,9 @@ value is reasonable when this function is called.")
       w->start_at_line_beg = ((pos.bufpos == BEGV
 			       || FETCH_CHAR (pos.bufpos - 1) == '\n') ? Qt
 			      : Qnil);
+      /* We need to do this, so that the window-scroll-functions
+	 get called.  */
+      w->force_start = Qt;
 
       set_buffer_internal (obuf);
     }
@@ -1867,6 +1911,21 @@ before each command.")
   return window;
 }
 
+/* Deiconify the frame containing the window WINDOW, then return WINDOW.  */
+
+static Lisp_Object
+display_buffer_1 (window)
+     Lisp_Object window;
+{
+#ifdef MULTI_FRAME
+  FRAME_PTR f = XFRAME (WINDOW_FRAME (XWINDOW (window)));
+  FRAME_SAMPLE_VISIBILITY (f);
+  if (FRAME_ICONIFIED_P (f))
+    Fmake_frame_visible (WINDOW_FRAME (XWINDOW (window)));
+#endif
+  return window;
+}
+
 DEFUN ("display-buffer", Fdisplay_buffer, Sdisplay_buffer, 1, 2,
        "bDisplay buffer: \nP",
   "Make BUFFER appear in some window but don't select it.\n\
@@ -1889,7 +1948,7 @@ Returns the window displaying BUFFER.")
 
   if (NILP (not_this_window)
       && XBUFFER (XWINDOW (selected_window)->buffer) == XBUFFER (buffer))
-    return selected_window;
+    return display_buffer_1 (selected_window);
 
   /* See if the user has specified this buffer should appear
      in the selected window.  */
@@ -1899,14 +1958,14 @@ Returns the window displaying BUFFER.")
       if (!NILP (tem))
 	{
 	  Fswitch_to_buffer (buffer, Qnil);
-	  return selected_window;
+	  return display_buffer_1 (selected_window);
 	}
 
       tem = Fassoc (XBUFFER (buffer)->name, Vsame_window_buffer_names);
       if (!NILP (tem))
 	{
 	  Fswitch_to_buffer (buffer, Qnil);
-	  return selected_window;
+	  return display_buffer_1 (selected_window);
 	}
 
       for (tem = Vsame_window_regexps; CONSP (tem); tem = XCONS (tem)->cdr)
@@ -1916,7 +1975,7 @@ Returns the window displaying BUFFER.")
 	      && fast_string_match (car, XBUFFER (buffer)->name) >= 0)
 	    {
 	      Fswitch_to_buffer (buffer, Qnil);
-	      return selected_window;
+	      return display_buffer_1 (selected_window);
 	    }
 	  else if (CONSP (car)
 		   && STRINGP (XCONS (car)->car)
@@ -1924,7 +1983,7 @@ Returns the window displaying BUFFER.")
 					 XBUFFER (buffer)->name) >= 0)
 	    {
 	      Fswitch_to_buffer (buffer, Qnil);
-	      return selected_window;
+	      return display_buffer_1 (selected_window);
 	    }
 	}
     }
@@ -1942,11 +2001,7 @@ Returns the window displaying BUFFER.")
   if (!NILP (window)
       && (NILP (not_this_window) || !EQ (window, selected_window)))
     {
-#ifdef MULTI_FRAME
-      if (FRAME_ICONIFIED_P (XFRAME (WINDOW_FRAME (XWINDOW (window)))))
-	Fmake_frame_visible (WINDOW_FRAME (XWINDOW (window)));
-#endif
-      return window;
+      return display_buffer_1 (window);
     }
 
   /* Certain buffer names get special handling.  */
@@ -1983,7 +2038,7 @@ Returns the window displaying BUFFER.")
     {
       window = Fframe_selected_window (call0 (Vpop_up_frame_function));
       Fset_window_buffer (window, buffer);
-      return window;
+      return display_buffer_1 (window);
     }
 #endif /* MULTI_FRAME */
 
@@ -2095,7 +2150,7 @@ Returns the window displaying BUFFER.")
     window = Fget_lru_window (Qnil);
 
   Fset_window_buffer (window, buffer);
-  return window;
+  return display_buffer_1 (window);
 }
 
 void
@@ -2111,7 +2166,7 @@ temp_output_buffer_show (buf)
   BEGV = BEG;
   ZV = Z;
   SET_PT (BEG);
-  clip_changed = 1;
+  XBUFFER (buf)->clip_changed = 1;
   set_buffer_internal (old);
 
   if (!EQ (Vtemp_buffer_show_function, Qnil))
@@ -2231,9 +2286,11 @@ and put SIZE columns in the first of the pair.")
 
   if (NILP (horflag))
     {
-      if (size < window_min_height
-	  || size + window_min_height > XFASTINT (o->height))
-	args_out_of_range_3 (window, chsize, horflag);
+      if (size < window_min_height)
+	error ("Window height %d too small (after splitting)", size);
+      if (size + window_min_height > XFASTINT (o->height))
+	error ("Window height %d too small (after splitting)", 
+	       XFASTINT (o->height) - size);
       if (NILP (o->parent)
 	  || NILP (XWINDOW (o->parent)->vchild))
 	{
@@ -2244,9 +2301,11 @@ and put SIZE columns in the first of the pair.")
     }
   else
     {
-      if (size < window_min_width
-	  || size + window_min_width > XFASTINT (o->width))
-	args_out_of_range_3 (window, chsize, horflag);
+      if (size < window_min_width)
+	error ("Window width %d too small (after splitting)", size);
+      if (size + window_min_width > XFASTINT (o->width))
+	error ("Window width %d too small (after splitting)", 
+	       XFASTINT (o->width) - size);
       if (NILP (o->parent)
 	  || NILP (XWINDOW (o->parent)->hchild))
 	{
@@ -2530,6 +2589,10 @@ window_scroll (window, n, noerror)
   int lose;
   Lisp_Object bolp, nmoved;
 
+  /* Always set force_start so that redisplay_window will run
+     thw window-scroll-functions.  */
+  w->force_start = Qt;
+
   XSETFASTINT (tem, PT);
   tem = Fpos_visible_in_window_p (tem, window);
 
@@ -2538,7 +2601,6 @@ window_scroll (window, n, noerror)
       Fvertical_motion (make_number (- (ht / 2)), window);
       XSETFASTINT (tem, PT);
       Fset_marker (w->start, tem, w->buffer);
-      w->force_start = Qt;
     }
 
   SET_PT (marker_position (w->start));
@@ -2947,7 +3009,7 @@ by `current-window-configuration' (which see).")
       if (XFASTINT (data->frame_height) != previous_frame_height
 	  || XFASTINT (data->frame_width) != previous_frame_width)
 	change_frame_size (f, data->frame_height, data->frame_width, 0, 0);
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
       if (XFASTINT (data->frame_menu_bar_lines)
 	  != previous_frame_menu_bar_lines)
 	x_set_menu_bar_lines (f, data->frame_menu_bar_lines, 0);
@@ -3096,7 +3158,7 @@ by `current-window-configuration' (which see).")
 	  || previous_frame_width != FRAME_WIDTH (f))
 	change_frame_size (f, previous_frame_height, previous_frame_width,
 			   0, 0);
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
       if (previous_frame_menu_bar_lines != FRAME_MENU_BAR_LINES (f))
 	x_set_menu_bar_lines (f, previous_frame_menu_bar_lines, 0);
 #endif
@@ -3198,13 +3260,13 @@ save_window_save (window, vector, i)
 			   w->buffer);
 	    }
 	  else
-	    p->pointm = Fcopy_marker (w->pointm);
+	    p->pointm = Fcopy_marker (w->pointm, Qnil);
 
-	  p->start = Fcopy_marker (w->start);
+	  p->start = Fcopy_marker (w->start, Qnil);
 	  p->start_at_line_beg = w->start_at_line_beg;
 
 	  tem = XBUFFER (w->buffer)->mark;
-	  p->mark = Fcopy_marker (tem);
+	  p->mark = Fcopy_marker (tem, Qnil);
 	}
       else
 	{
@@ -3511,6 +3573,8 @@ If there is only one window, it is split regardless of this value.");
   defsubr (&Swindow_width);
   defsubr (&Swindow_hscroll);
   defsubr (&Sset_window_hscroll);
+  defsubr (&Swindow_redisplay_end_trigger);
+  defsubr (&Sset_window_redisplay_end_trigger);
   defsubr (&Swindow_edges);
   defsubr (&Scoordinates_in_window_p);
   defsubr (&Swindow_at);

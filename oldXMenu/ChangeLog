@@ -1,3 +1,14 @@
+Fri Nov 24 23:42:45 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+Mon Nov 13 00:16:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (ALL_CFLAGS): Add some -I options.
+
+	* Activate.c, AddPane.c, AddSel.c, Create.c, InsPane.c, InsSel.c:
+	* Internal.c, XCrAssoc.c, XMakeAssoc.c: Include config.h.
+
 Mon Jun 19 22:50:41 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.29 released.

@@ -226,7 +226,7 @@ appears in the buffer.
 This variable is buffer-local.")
 
 (defvar comint-password-prompt-regexp
-  "\\(^[Pp]assword\\|pass phrase\\):\\s *\\'"
+  "\\(\\([Oo]ld \\|[Nn]ew \\|^\\)[Pp]assword\\|pass phrase\\):\\s *\\'"
   "*Regexp matching prompts for passwords in the inferior process.
 This is used by `comint-watch-for-password-prompt'.")
 
@@ -587,10 +587,11 @@ buffer.  The hook `comint-exec-hook' is run after each exec."
 	  ;; Some programs that use terminfo get very confused
 	  ;; if TERM is not a valid terminal type.
 	  (if (and (boundp 'system-uses-terminfo) system-uses-terminfo)
-	      (list "EMACS=t" "TERM=unknown"
+	      (list "TERM=unknown"
 		    (format "COLUMNS=%d" (frame-width)))
-	    (list "EMACS=t" "TERM=emacs"
+	    (list "TERM=emacs"
 		  (format "TERMCAP=emacs:co#%d:tc=unknown:" (frame-width))))
+	  (if (getenv "EMACS") nil (list "EMACS=t"))
 	  process-environment))
 	(default-directory
 	  (if (file-directory-p default-directory)
@@ -1473,7 +1474,7 @@ Does not delete the prompt."
 			  (beginning-of-line nil)
 			  (point-marker))))
 	(delete-region comint-last-input-end pmark)
-	(comint-skip-prompt)
+	(goto-char (process-mark proc))
 	(setq replacement (concat "*** output flushed ***\n"
 				  (buffer-substring pmark (point))))
 	(delete-region pmark (point))))

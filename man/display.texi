@@ -323,11 +323,12 @@ Inverted question mark.
 @cindex Line Number mode
 @cindex mode, Line Number
 @findex line-number-mode
-  To add the current line number of point to the mode line, enable Line
-Number mode with the command @kbd{M-x line-number-mode}.  The line
-number appears before the buffer percentage @var{pos}, with the letter
-@samp{L} to indicate what it is.  @xref{Minor Modes}, for more
-information about minor modes and about how to use this command.
+  The current line number of point appears in the mode line when Line
+Number mode is enabled.  Use the command @kbd{M-x line-number-mode} to
+turn this mode on and off; normally it is on.  The line number appears
+before the buffer percentage @var{pos}, with the letter @samp{L} to
+indicate what it is.  @xref{Minor Modes}, for more information about
+minor modes and about how to use this command.
 
 @vindex line-number-display-limit
   If the buffer is very large (larger than the value of
@@ -336,6 +337,13 @@ Emacs doesn't compute the line number when the buffer is large, because
 that would be too slow.  If you have narrowed the buffer
 (@pxref{Narrowing}), the displayed line number is relative to the
 accessible portion of the buffer.
+
+@cindex Column Number mode
+@cindex mode, Column Number
+@findex column-number-mode
+  You can also display the current column number by turning on Column
+Number mode.  It displays the current column number after the letter
+@samp{C}.  Type @kbd{M-x column-number-mode} to toggle this mode.
 
 @findex display-time
 @cindex time (on mode line)

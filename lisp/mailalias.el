@@ -146,10 +146,9 @@ By default, this is the file specified by `mail-personal-alias-file'."
 		   (beginning-of-line))
 		  (t (setq file nil))))
 	  (goto-char (point-min))
-	  (while (or (re-search-forward "^a\\(lias\\|\\)[ \t]+" nil t)
-		     (re-search-forward "^g\\(roup\\|\\)[ \t]+" nil t))
-	    (re-search-forward "[^ \t]+")
-	    (let* ((name (buffer-substring (match-beginning 0) (match-end 0)))
+	  (while (re-search-forward
+		  "^\\(a\\|alias\\|g\\|group\\)[ \t]+\\([^ \t]+\\)" nil t)
+	    (let* ((name (match-string 2))
 		   (start (progn (skip-chars-forward " \t") (point))))
 	      (end-of-line)
 	      (define-mail-alias
@@ -166,8 +165,12 @@ By default, this is the file specified by `mail-personal-alias-file'."
 (defun define-mail-alias (name definition &optional from-mailrc-file)
   "Define NAME as a mail alias that translates to DEFINITION.
 This means that sending a message to NAME will actually send to DEFINITION.
-DEFINITION can be one or more mail addresses separated by spaces.
-An address can contain spaces if it is quoted with double-quotes."
+
+Normally, the addresses in DEFINITION must be separated by commas.
+If FROM-MAILRC-FILE is non-nil, then addresses in DEFINITION 
+can be separated by spaces; an address can contain spaces
+if it is quoted with double-quotes."
+
   (interactive "sDefine mail alias: \nsDefine %s as mail alias for: ")
   ;; Read the defaults first, if we have not done so.
   (sendmail-synch-aliases)

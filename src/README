@@ -5,12 +5,13 @@ executable and map files (on VMS systems) are copied elsewhere.
 
 See the files ../README and then ../INSTALL for installation instructions.
 
-Under Unix, the file `Makefile.in.in' is used as a template by the script
-`../configure' to produce `Makefile.in'.  The same script then uses `cpp'
-to produce the machine-dependent `Makefile' from `Makefile.in';
-`Makefile' is the file which actually controls the compilation of
-Emacs.  Most of this should work transparently to the user; you should
-only need to run `../configure', and then type `make'.
+Under GNU and Unix systems, the file `Makefile.in' is used as a
+template by the script `../configure' to produce `Makefile.c'.  The
+same script then uses `cpp' to produce the machine-dependent
+`Makefile' from `Makefile.c'; `Makefile' is the file which actually
+controls the compilation of Emacs.  Most of this should work
+transparently to the user; you should only need to run `../configure',
+and then type `make'.
 
 See the file VMSBUILD in this directory for instructions on compiling,
 linking and building Emacs on VMS.

@@ -146,7 +146,12 @@ echo "Updating Info files."
 echo "Updating finder-inf.el."
 
 ### update finder-inf.el.
-(cd src; emacs -batch -l finder -f finder-compile-keywords)
+(cd lisp; ../src/emacs -batch -l finder -f finder-compile-keywords)
+(cd lisp; ../src/emacs -batch -f batch-byte-compile finder-inf.el)
+
+echo "Making lisp/MANIFEST"
+
+(cd lisp; head -1 *.el | grep '^;' | sed -e 's/;;; //' > MANIFEST)
 
 echo "Creating staging directory: \`${tempparent}'"
 
@@ -204,8 +209,10 @@ echo "Making links to \`lisp'."
  ln ChangeLog Makefile makefile.nt ChangeLog.? README dired.todo ../${tempdir}/lisp
  cd ../${tempdir}/lisp
  rm -f TAGS =*
+ rm -f subdirs.el
  rm -f site-init site-init.el site-init.elc
  rm -f site-load site-load.el site-load.elc
+ rm -f site-start site-start.el site-start.elc
  rm -f default default.el default.elc)
 
 #echo "Making links to \`lisp/calc-2.02'."
@@ -228,7 +235,7 @@ echo "Making links to \`lisp/term'."
 
 echo "Making links to \`src'."
 ### Don't distribute =*.[ch] files, or the configured versions of
-### config.h.in, paths.h.in, or Makefile.in.in, or TAGS.
+### config.in, paths.in, or Makefile.in, or TAGS.
 (cd src
  echo "  (If we can't link gmalloc.c, that's okay.)"
  ln [a-zA-Z]*.c ../${tempdir}/src
@@ -236,13 +243,13 @@ echo "Making links to \`src'."
  test -f ../${tempdir}/src/gmalloc.c || cp gmalloc.c ../${tempdir}/src
  ln [a-zA-Z]*.h ../${tempdir}/src
  ln [a-zA-Z]*.s ../${tempdir}/src
- ln README Makefile.in.in ChangeLog ChangeLog.? config.h.in paths.h.in \
+ ln README Makefile.in ChangeLog ChangeLog.? config.in paths.in \
     ../${tempdir}/src
  ln makefile.nt ../${tempdir}/src
  ln .gdbinit .dbxinit ../${tempdir}/src
  ln *.opt vms-pp.trans ../${tempdir}/src
  cd ../${tempdir}/src
- rm -f config.h paths.h Makefile
+ rm -f config.h paths.h Makefile Makefile.c
  rm -f =* TAGS)
 
 echo "Making links to \`src/bitmaps'."
@@ -261,17 +268,17 @@ echo "Making links to \`src/s'."
 echo "Making links to \`lib-src'."
 (cd lib-src
  ln [a-zA-Z]*.[chy] ../${tempdir}/lib-src
- ln ChangeLog Makefile.in.in README testfile vcdiff ../${tempdir}/lib-src
+ ln ChangeLog Makefile.in README testfile vcdiff ../${tempdir}/lib-src
  ln emacs.csh rcs2log rcs-checkin makefile.nt ../${tempdir}/lib-src
  cd ../${tempdir}/lib-src
- rm -f getdate.tab.c y.tab.c y.tab.h
+ rm -f getdate.tab.c y.tab.c y.tab.h Makefile.c
  rm -f =* TAGS)
 
 echo "Making links to \`nt'."
 (cd nt
  ln emacs.ico emacs.rc config.nt config.w95 [a-z]*.in [a-z]*.c ../${tempdir}/nt
  ln [a-z]*.bat [a-z]*.h makefile.def makefile.nt ../${tempdir}/nt
- ln todo ChangeLog install readme ../${tempdir}/nt)
+ ln TODO ChangeLog INSTALL README ../${tempdir}/nt)
 
 echo "Making links to \`nt/inc'."
 (cd nt/inc
@@ -305,13 +312,13 @@ echo "Making links to \`etc'."
 (cd etc
  ln `ls -d * | grep -v 'RCS' | grep -v 'Old' | grep -v '^e$'` ../${tempdir}/etc
  cd ../${tempdir}/etc
- rm -f DOC* *~ \#*\# *.dvi *.log *,v =* core
+ rm -f DOC* *~ \#*\# *.dvi *.log *.orig *.rej *,v =* core
  rm -f TAGS)
 
 echo "Making links to \`etc/e'."
 (cd etc/e
  ln `ls -d * | grep -v 'RCS'` ../../${tempdir}/etc/e
- cd ../../${tempdir}/etc
+ cd ../../${tempdir}/etc/e
  rm -f *~ \#*\# *,v =* core)
 
 echo "Making links to \`cpp'."
@@ -362,9 +369,14 @@ done
 #### than two.  (Yes, strictly greater than 2 is correct; since we
 #### created these files by linking them in from the original tree,
 #### they'll have exactly two links normally.)
-echo "Breaking intra-tree links."
-find ${tempdir} ! -type d -links +2 \
-  -exec cp -p {} $$ \; -exec rm -f {} \; -exec mv $$ {} \;
+####
+#### Commented out since it's not stricly necessary; it should suffice
+#### to just break the link on alloca.c.
+#echo "Breaking intra-tree links."
+#find ${tempdir} ! -type d -links +2 \
+#  -exec cp -p {} $$ \; -exec rm -f {} \; -exec mv $$ {} \;
+rm -f $tempdir/lib-src/alloca.c
+cp $tempdir/src/alloca.c $tempdir/lib-src/alloca.c
 
 if [ "${newer}" ]; then
   echo "Removing files older than $newer."

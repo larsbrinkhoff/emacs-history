@@ -24,6 +24,9 @@ After a prefix key, it displays a list of the alternatives that can
 follow the prefix key.  (A few prefix keys don't support this because
 they define other meanings for @kbd{C-h}.)
 
+  Most help buffers use a special major mode, Help mode, which lets you
+scroll conveniently with @key{SPC} and @key{DEL}.
+
 @menu
 * Help Summary::	Brief list of all Help commands.
 * Key Help::		Asking what a key does in Emacs.
@@ -46,7 +49,7 @@ they define other meanings for @kbd{C-h}.)
 @table @kbd
 @item C-h a @var{regexp} @key{RET}
 Display list of commands whose names match @var{regexp}
-(@code{command-apropos}).
+(@code{apropos-command}).
 @item C-h b
 Display a table of all key bindings in effect now, in this order: minor
 mode bindings, major mode bindings, and global bindings
@@ -181,7 +184,7 @@ variable.  @xref{Variables}.@refill
 @section Apropos
 
 @kindex C-h a
-@findex command-apropos
+@findex apropos-command
 @cindex apropos
   A more sophisticated sort of question to ask is, ``What are the
 commands for working with files?''  To ask this question, type @kbd{C-h
@@ -191,7 +194,9 @@ so on.  With each command name appears a brief description of how to use
 the command, and what keys you can currently invoke it with.  For
 example, it would say that you can invoke @code{find-file} by typing
 @kbd{C-x C-f}.  The @kbd{a} in @kbd{C-h a} stands for `Apropos';
-@kbd{C-h a} runs the command @code{command-apropos}.
+@kbd{C-h a} runs the command @code{apropos-command}.  This command does
+not check user variables by default; specify a numeric argument if you
+want it to check them.
 
   Because @kbd{C-h a} looks only for functions whose names contain the
 string which you specify, you must use ingenuity in choosing the
@@ -221,10 +226,21 @@ the ones that are defined as commands, use the command @kbd{M-x apropos}
 instead of @kbd{C-h a}.  This command does not check key bindings by
 default; specify a numeric argument if you want it to check them.
 
-@findex super-apropos
-  The @code{super-apropos} command is like @code{apropos} except that it
-searches documentation strings as well as symbol names for matches for
-the specified regular expression.
+@findex apropos-documentation
+  The @code{apropos-documentation} command is like @code{apropos} except
+that it searches documentation strings as well as symbol names for
+matches for the specified regular expression.
+
+@findex apropos-value
+  The @code{apropos-value} command is like @code{apropos} except that it
+searches symbol's values for matches for the specified regular
+expression.  This command does not check function definitions or
+property lists by default; specify a numeric argument if you want it to
+check them.
+
+  If you want more information about a function definition, variable or
+symbol property listed in the Apropos buffer, you can click on it with
+@kbd{Mouse-2} or move there and type @key{RET}.
 
 @node Library Keywords
 @section Keyword Search for Lisp Libraries
@@ -248,8 +264,6 @@ Calendar and time management support.
 Communications, networking, remote access to files.
 @item data
 Support for editing files of data.
-@item debugging
-Support for debugging programs.
 @item docs
 Support for Emacs documentation.
 @item emulations

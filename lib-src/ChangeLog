@@ -1,3 +1,183 @@
+Fri Nov 24 23:42:28 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+Wed Nov 22 14:01:11 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.nt (DOC, clean): Don't use switches to del not
+	supported by Win95.
+
+Mon Nov 13 21:59:08 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (regex.o): Depend on ../src/config.h.
+
+Sun Nov 12 01:31:57 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (LIB_STANDARD): Extract this as in src/Makefile.in.
+	(LOADLIBES): Use LIB_STANDARD.
+
+Tue Nov  7 02:43:26 1995  Kevin Gallo  <kgallo@microsoft.com>
+
+	* makefile.nt (DOC): Include strings from w32term.c, w32xfns.c,
+	w32fns.c, w32faces.c, w32select.c, w32menu.c, w32reg.c; remove
+	Win95 conditional.
+
+Mon Nov  6 13:03:32 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (get_lang_from_name, get_lang_from_interpreter,
+	get_lang_from_suffix): New functions.
+	(get_language): Function deleted.
+	(lang_entry): Two members added to struct.
+	(lang_names): Reflect the new layout of lang_entry.
+	(print_language_names, main, find_entries): Use the new functions.
+	(find_entries): Look at the first line for #! if no language.
+	(C_entries): Invalidate the token when funcdef is reset.
+	(Perl_functions): New function.
+	(lang_suffixes): .pl and .pm are Perl suffixes.
+
+Thu Nov  2 14:31:54 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (lowcase): Use the standard tolower function.
+	(substitute): Remove some wrong and some useless code related with
+	escape `\` character in regexp replacement string.
+	(TEX_defenv): Added part, appendix, entry, index.  Removed typeout.
+	(lang_suffixes): New suffixes: .hpp for C++; .f90 for Fortran;
+	.bib, .ltx, .TeX for TeX (.bbl, .dtx removed); .ml for Lisp;
+	.prolog for prolog (.pl removed).
+	(massage_name, etags_getcwd): Use lowcase instead of tolower.
+	(C_entries, find_entries): Added comments about memory leakage.
+	(add_node): Dead code removed.
+
+Sun Oct 29 15:36:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (getdate.o, movemail.o): Specify -Demacs.
+	(ALL_CFLAGS, LINK_CFLAGS, CPP_CFLAGS): Delete -Demacs.
+
+Wed Aug 30 22:36:40 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* test-distrib.c: Add #undef for open, close, read, write.
+
+Wed Aug 23 13:42:24 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* test-distrib.c [HAVE_CONFIG_H]: Include config.h.
+	[! O_RDONLY]: Define it to zero.
+	(main): Use O_RDONLY instead of explicit zero.
+
+Thu Aug 17 13:43:17 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (Pascal_functions): Close comment bug corrected.
+	(add_node): Correctly compare node file names.
+	(Pascal_functions): Correctly allocate and free memory for tline.
+	(pfnote): Put the definition of fp in the innermost block.
+	(NODE): `named' member removed.
+	(pfnote, free_tree, put_entries, total_size_of_entries): Do not
+	use the `named' member, check whether `name' is NULL instead. 
+	(pfnote): `named' argument removed, all callers changed.
+	(getit, Asm_labels, Pascal_functions, L_getit, get_scheme,
+	TeX_functions, TEX_getit, prolog_getit): Useless string allocation
+	removed from pfnote call, some code cleanup. 
+	(relative_filename): Free temporary space allocated by concat.
+
+Wed Aug 16 10:16:04 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (getdate.c): New target.
+	(getdate.o): Just compile getdate.c.
+
+Sat Aug 12 14:14:49 1995  Karl Heuer  <kwzh@golden-grahams>
+
+	* fakemail.c (xrealloc): Change cast to match return type.
+
+Thu Aug 10 21:43:32 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fakemail.c (xmalloc, xrealloc): Use return-type long *.
+
+Sun Aug  6 19:56:48 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* movemail.c (main): Fix previous change.
+	Add error check for empty OUTNAME.
+
+Sat Aug  5 16:19:04 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* movemail.c (main): Mention lock file name in error message.
+
+Sun Jul 30 03:07:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* profile.c (gettimeofday): New function, defined if necessary.
+
+Tue Jul 18 02:04:21 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in: Renamed from Makefile.in.in.
+	(distclean): Delete Makefile.c, not Makefile.in.
+
+Mon Jul 17 17:55:18 1995  Michael Shields  <shields@tembel.org>
+
+	* Makefile.in.in (tags): Synonym for `TAGS'.
+
+Sun Jul 16 14:15:20 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Makefile.in.in (install, maybe-blessmail): Don't cd ..;
+	configure has already set $(INSTALL) to the proper relative path.
+
+Tue Jun 27 16:01:40 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (plain_C_entries): new function.
+	(lowcase): new macro.
+	(tail, Fortran_functions, Pascal_functions): use new macro lowcase.
+	(lang_suffixes): new suffix ".pc" for Pro*C files.
+	(consider_token): don't tag all tokens beginning with DEFUN & Co..
+	(tail): look for the end of the token when comparing.
+	(takeprec): since now tail behaves differently, use strneq.
+
+Sat Jul  8 18:44:04 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* rcs2log (datearg): Separate date from time with comma, not space,
+	to work around CVS 1.5 bug.
+	(CVSROOT): Don't abort when unset if repository is absolute.
+
+Fri Jul  7 22:47:57 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* rcs-checkin, rcs2log, vcdiff:
+	Replace `#!/bin/sh' with `#! /bin/sh', for benefit of systems
+	that interpret `#! /' as a 4-byte magic number.
+
+Thu Jun 29 21:12:05 1995  Jonathan I. Kamens  <jik@cam.ov.com>
+
+	* movemail.c (main) [MAIL_USE_POP]: When a user specifies a
+	mailbox with "po:mailbox", the mailbox is everything after the
+	"po:" prefix.
+
+Wed Jun 28 05:54:43 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacsserver.c: Make all error messages start with `Error: '.
+ 	(fatal_error, perror_1): New functions, use throughout.
+
+Wed Jun 28 01:47:55 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* rcs2log (CVSROOT, repository):
+	Allow remote repositories a la CVS 1.4.
+
+Tue Jun 27 16:01:40 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (plain_C_entries): new function.
+	(lowcase): new macro.
+	(tail, Fortran_functions, Pascal_functions): use new macro lowcase.
+	(lang_suffixes): new suffix ".pc" for Pro*C files.
+	(consider_token): don't tag all tokens beginning with DEFUN & Co..
+	(tail): look for the end of the token when comparing.
+	(takeprec): since now tail behaves differently, use strneq.
+
+Mon Jun 26 16:28:23 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* movemail.c (main): Add newline in usage message.
+
+Wed Jun 21 15:46:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-docfile.c (scan_file): Make sure it never looks at filename[-1].
+
+Wed Jun 21 13:43:16 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (find_entries): Rewind before rereading the input file.
+
 Tue Jun 20 10:35:36 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.29 released.
@@ -825,7 +1005,8 @@ Sat Mar 19 21:04:52 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Makefile.in (UTILITIES): `env' deleted.
 	(env): Target deleted.
-
+	* env.c: File deleted.
+	
 Mon Mar 14 17:08:59 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Makefile.in (install, ${archlibdir}): Switch back to ..

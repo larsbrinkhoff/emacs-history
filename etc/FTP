@@ -150,7 +150,8 @@ ftp.hawaii.edu:/mirrors/gnu, f.ms.uky.edu:/pub3/gnu,
 ftp.digex.net:/pub/gnu (Internet address 164.109.10.23, nightly full
 mirror, ran by mcguire@digex.net), wuarchive.wustl.edu:/systems/gnu,
 col.hp.com:/mirrors/gnu, ftp.cs.columbia.edu:/archives/gnu/prep,
-vixen.cso.uiuc.edu:/gnu, mrcnext.cso.uiuc.edu:/pub/gnu,
+uiarchive.cso.uiuc.edu:/pub/gnu (Internet address 128.174.5.14,
+nightly full mirror, ran by ftpadmin@uiuc.edu),
 jaguar.utah.edu:/gnustuff, gatekeeper.dec.com:/pub/GNU,
 labrea.stanford.edu, archive.cis.ohio-state.edu, and
 ftp.uu.net:/archive/systems/gnu.
@@ -162,16 +163,17 @@ by ftp@inf.utfsm.cl), ftp.unicamp.br:/pub/gnu (Brazil manual mirror,
 ran by oliva@dcc.unicamp.br), archie.au:/gnu (Australia (archie.oz or
 archie.oz.au for ACSnet)), ftp.technion.ac.il:/pub/unsupported/gnu
 (Israel, daily full mirror, ran by ftp-admin), ftp.sun.ac.za:/pub/gnu
-(South Africa), ftp.mcc.ac.uk:/pub/gnu (130.88.203.12 daily full
-mirror, ran by root@ftp.mcc.ac.uk),
-unix.hensa.ac.uk:/mirrors/uunet/systems/gnu, ftp.warwick.ac.uk
-(137.205.192.14 daily full mirror, ran by unixhelp@warwick.ac.uk),
-ftp.informatik.tu-muenchen.de, ftp.informatik.rwth-aachen.de or
-germany.eu.net (mirror ran by archive-admin@germany.eu.net) (Germany),
-isy.liu.se (Sweden), ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu
-(Sweden), ftp.sunet.se:/pub/gnu (Sweden 130.238.127.3 daily mirror,
-ran by archive@ftp.sunet.se (also mirrors the Mailing List Archives)
-hp4nl.nluug.nl (Netherlands), ftp.win.tue.nl:/pub/gnu (Netherlands
+(South Africa), ftp.etsimo.uniovi.es:/pub/gnu (Spain),
+ftp.mcc.ac.uk:/pub/gnu (130.88.203.12 daily full mirror, ran by
+root@ftp.mcc.ac.uk), unix.hensa.ac.uk:/mirrors/uunet/systems/gnu,
+ftp.warwick.ac.uk (137.205.192.14 daily full mirror, ran by
+unixhelp@warwick.ac.uk), ftp.informatik.tu-muenchen.de,
+ftp.informatik.rwth-aachen.de, or germany.eu.net (mirror ran by
+archive-admin@germany.eu.net) (Germany), isy.liu.se (Sweden),
+ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
+ftp.sunet.se:/pub/gnu (Sweden 130.238.127.3 daily mirror, ran by
+archive@ftp.sunet.se (also mirrors the Mailing List Archives)
+ftp.nl.net (Netherlands), ftp.win.tue.nl:/pub/gnu (Netherlands
 131.155.70.100 daily mirror, ran by ftp@win.tue.nl),
 ftp.funet.fi:/pub/gnu (Finland 128.214.6.100, ran by gnu-adm),
 ftp.denet.dk (Denmark), ugle.unit.no (Norway 129.241.1.97),

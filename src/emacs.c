@@ -110,9 +110,9 @@ int display_arg;
    Tells GC how to save a copy of the stack.  */
 char *stack_bottom;
 
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
 extern Lisp_Object Vwindow_system;
-#endif /* HAVE_X_WINDOWS */
+#endif /* HAVE_WINDOW_SYSTEM */
 
 extern Lisp_Object Vauto_save_list_file_name;
 
@@ -217,6 +217,11 @@ init_cmdargs (argc, argv, skip_args)
       if (yes == 1)
 	Vinvocation_directory = Ffile_name_directory (found);
     }
+
+  if (!NILP (Vinvocation_directory)
+      && NILP (Ffile_name_absolute_p (Vinvocation_directory)))
+    /* Emacs was started with relative path, like ./emacs  */
+    Vinvocation_directory = Fexpand_file_name (Vinvocation_directory, Qnil);
 
   Vinstallation_directory = Qnil;
 
@@ -414,6 +419,10 @@ main (argc, argv, envp)
   extern int errno;
   extern sys_nerr;
 
+#ifdef LINUX_SBRK_BUG
+  __sbrk (1);
+#endif
+
   sort_args (argc, argv);
 
   if (argmatch (argv, argc, "-version", "--version", 3, NULL, &skip_args))
@@ -551,7 +560,7 @@ main (argc, argv, envp)
 	    exit (1);
 	  }
 	fprintf (stderr, "Using %s\n", term);
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
 	inhibit_window_system = 1; /* -t => -nw */
 #endif
       }
@@ -570,9 +579,9 @@ main (argc, argv, envp)
       printf ("\
 Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
       [-q] [--no-init-file]  [-u user] [--user user]  [--debug-init]\n\
-\(Arguments above this line must be first; those below may be in any order)\n\
+      [--version] [--no-site-file]\n\
       [-f func] [--funcall func]  [-l file] [--load file]  [--insert file]\n\
-      file-to-visit  [--kill]\n", argv[0]);
+      [+linenum] file-to-visit  [--kill]\n", argv[0]);
       exit (0);
     }
 
@@ -742,6 +751,12 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
   init_dosfns ();
   /* Set defaults for several environment variables.  */
   if (initialized) init_environment (argc, argv, skip_args);
+  else init_gettimeofday ();
+#endif
+
+#ifdef WINDOWSNT
+  /* Initialize environment from registry settings.  */
+  init_environment ();
 #endif
 
   /* egetenv is a pretty low-level facility, which may get called in
@@ -860,6 +875,14 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
       syms_of_xmenu ();
 #endif
 
+#ifdef HAVE_NTGUI
+      syms_of_win32term ();
+      syms_of_win32fns ();
+      syms_of_win32faces ();
+      syms_of_win32select ();
+      syms_of_win32menu ();
+#endif /* HAVE_NTGUI */
+
 #ifdef SYMS_SYSTEM
       SYMS_SYSTEM;
 #endif
@@ -906,14 +929,14 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
 
   initialized = 1;
 
-#if defined (sun) || defined (LOCALTIME_CACHE)
-  /* sun's localtime has a bug.  it caches the value of the time
+#ifdef LOCALTIME_CACHE
+  /* Some versions of localtime have a bug.  They cache the value of the time
      zone rather than looking it up every time.  Since localtime() is
      called to bolt the undumping time into the undumped emacs, this
      results in localtime ignoring the TZ environment variable.
      This flushes the new TZ value into localtime. */
   tzset ();
-#endif /* defined (sun) || defined (LOCALTIME_CACHE) */
+#endif /* defined (LOCALTIME_CACHE) */
 
   /* Enter editor command loop.  This never returns.  */
   Frecursive_edit ();
@@ -983,6 +1006,7 @@ struct standard_args standard_args[] =
   { "-load", 0, 0, 1 },
   { "-f", "--funcall", 0, 1 },
   { "-funcall", 0, 0, 1 },
+  { "-eval", "--eval", 0, 1 },
   { "-insert", "--insert", 0, 1 },
   /* This should be processed after ordinary file name args and the like.  */
   { "-kill", "--kill", -10, 0 },
@@ -1075,7 +1099,7 @@ sort_args (argc, argv)
   while (to < argc)
     {
       int best = -1;
-      int best_priority = -2;
+      int best_priority = -9999;
 
       /* Find the highest priority remaining option.
 	 If several have equal priority, take the first of them.  */
@@ -1342,7 +1366,8 @@ decode_env_path (evarname, defalt)
     {
       p = index (path, SEPCHAR);
       if (!p) p = path + strlen (path);
-      lpath = Fcons (p - path ? make_string (path, p - path) : Qnil,
+      lpath = Fcons (p - path ? make_string (path, p - path)
+		     : build_string ("."),
 		     lpath);
       if (*p)
 	path = p + 1;

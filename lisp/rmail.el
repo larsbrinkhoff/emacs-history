@@ -112,6 +112,24 @@ and the value of the environment variable MAIL overrides it).")
 (defvar rmail-secondary-file-regexp "\\.xmail$"
   "*Regexp for which files are secondary Rmail files.")
 
+;;;###autoload
+(defvar rmail-mode-hook nil
+  "List of functions to call when Rmail is invoked.")
+
+;;;###autoload
+(defvar rmail-get-new-mail-hook nil
+  "List of functions to call when Rmail has retrieved new mail.")
+
+;;;###autoload
+(defvar rmail-show-message-hook nil
+  "List of functions to call when Rmail displays a message.")
+
+;;;###autoload
+(defvar rmail-delete-message-hook nil
+  "List of functions to call when Rmail deletes a message.
+When the hooks are called, the message has been marked deleted but is
+still the current message in the Rmail buffer.")
+
 ;; These may be altered by site-init.el to match the format of mmdf files
 ;;  delimiting used on a given host (delim1 and delim2 from the config
 ;;  files).
@@ -151,12 +169,19 @@ Called with region narrowed to the message, including headers.")
 (defvar rmail-overlay-list nil)
 
 (defvar rmail-font-lock-keywords
-  '(("^\\(From\\|Sender\\):" . font-lock-function-name-face)
-    ("^Reply-To:.*$" . font-lock-function-name-face)
-    ("^Subject:" . font-lock-comment-face)
-    ("^\\(To\\|Apparently-To\\|Cc\\):" . font-lock-keyword-face)
-    ("^[ \t]*\\sw*[>|}].*$" . font-lock-reference-face)		; Citation.
-    ("^\\(X-[A-Za-z0-9-]+\\|In-reply-to\\|Date\\):.*$" . font-lock-string-face))
+  (eval-when-compile
+    (let* ((cite-prefix "A-Za-z") (cite-suffix (concat cite-prefix "0-9_.@-")))
+      (list
+       '("^\\(From\\|Sender\\):" . font-lock-function-name-face)
+       '("^Reply-To:.*$" . font-lock-function-name-face)
+       '("^Subject:" . font-lock-comment-face)
+       '("^\\(To\\|Apparently-To\\|Cc\\):" . font-lock-keyword-face)
+       (cons (concat "^[ \t]*"
+		     "\\([" cite-prefix "]+[" cite-suffix "]*\\)?"
+		     "[>|}].*")
+	     'font-lock-reference-face)
+       '("^\\(X-[A-Za-z0-9-]+\\|In-reply-to\\|Date\\):.*$"
+	 . font-lock-string-face))))
   "Additional expressions to highlight in Rmail mode.")
 
 ;; These are used by autoloaded rmail-summary.
@@ -182,7 +207,7 @@ Called with region narrowed to the message, including headers.")
 ;;; that knows the exact ordering of the \\( \\) subexpressions.
 (defvar rmail-unix-mail-delimiter
   (let ((time-zone-regexp
-	 (concat "\\([A-Z]?[A-Z][A-Z][A-Z]\\( DST\\)?"
+	 (concat "\\([A-Z]?[A-Z]?[A-Z][A-Z]\\( DST\\)?"
 		 "\\|[-+]?[0-9][0-9][0-9][0-9]"
 		 "\\|"
 		 "\\) *")))
@@ -338,8 +363,8 @@ If `rmail-display-summary' is non-nil, make a summary for this RMAIL file."
     (if (or convert
 	    (save-excursion
 	      (goto-char (point-max))
-	      (search-backward "\^_")
-	      (forward-char 1)
+	      (search-backward "\n\^_")
+	      (forward-char 2)
 	      (looking-at "\n*From ")))
 	(let ((buffer-read-only nil))
 	  (message "Converting to Babyl format...")
@@ -448,6 +473,9 @@ Note:    it means the file has no messages in it.\n\^_")))
 
 (define-key rmail-mode-map [menu-bar summary]
   (cons "Summary" (make-sparse-keymap "Summary")))
+
+(define-key rmail-mode-map [menu-bar summary senders]
+  '("By Senders..." . rmail-summary-by-senders))
 
 (define-key rmail-mode-map [menu-bar summary labels]
   '("By Labels..." . rmail-summary-by-labels))
@@ -657,7 +685,7 @@ Instead, these commands are available:
 
 ;; Handle M-x revert-buffer done in an rmail-mode buffer.
 (defun rmail-revert (arg noconfirm)
-  (let (revert-buffer-function)
+  (let ((revert-buffer-function (default-value 'revert-buffer-function)))
     ;; Call our caller again, but this time it does the default thing.
     (if (revert-buffer arg noconfirm)
 	;; If the user said "yes", and we changed something,
@@ -762,8 +790,9 @@ original copy."
 	;; Sort here instead of in directory-files
 	;; because this list is usually much shorter.
 	(sort ret 'string<))
-    (if (string-match rmail-secondary-file-regexp start)
-	(list (file-name-nondirectory start)))))
+    (let ((case-fold-search nil))
+      (if (string-match rmail-secondary-file-regexp start)
+	  (list (file-name-nondirectory start))))))
 
 (defun rmail-list-to-menu (menu-name l action &optional full-name)
   (let ((menu (make-sparse-keymap menu-name)))
@@ -922,33 +951,31 @@ It returns t if it got any new messages."
     (while files
       (setq file (file-truename
 		  (expand-file-name (substitute-in-file-name (car files))))
-	    ;;>> un*x specific <<
-	    ;; The "+" used to be "~", which is an extremely poor choice;
-	    ;; it might accidentally be deleted when space is low
-	    ;; (as happened to me!).
-	    tofile (concat file "+"))
-      ;; If getting from mail spool directory,
-      ;; use movemail to move rather than just renaming,
-      ;; so as to interlock with the mailer.
-      (setq movemail (string= file
-			      (file-truename
-			       (concat rmail-spool-directory
-				       (file-name-nondirectory file))))
-	    popmail (string-match "^po:" (file-name-nondirectory file)))
+	    tofile (expand-file-name
+		    ;; Generate name to move to from inbox name,
+		    ;; in case of multiple inboxes that need moving.
+		    (concat ".newmail-" (file-name-nondirectory file))
+		    ;; Use the directory of this rmail file
+		    ;; because it's a nuisance to use the homedir
+		    ;; if that is on a full disk and this rmail
+		    ;; file isn't.
+		    (file-name-directory
+		     (expand-file-name buffer-file-name))))
+      ;; Always use movemail to rename the file,
+      ;; since there can be mailboxes in various directories.
+      (setq movemail t)
+;;;      ;; If getting from mail spool directory,
+;;;      ;; use movemail to move rather than just renaming,
+;;;      ;; so as to interlock with the mailer.
+;;;      (setq movemail (string= file
+;;;			      (file-truename
+;;;			       (concat rmail-spool-directory
+;;;				       (file-name-nondirectory file)))))
+      (setq popmail (string-match "^po:" (file-name-nondirectory file)))
       (if popmail (setq file (file-name-nondirectory file)
 			renamep t))
       (if movemail
 	  (progn
-	    (setq tofile (expand-file-name
-			   ;; Generate name to move to from inbox name,
-			   ;; in case of multiple inboxes that need moving.
-			   (concat ".newmail-" (file-name-nondirectory file))
-			   ;; Use the directory of this rmail file
-			   ;; because it's a nuisance to use the homedir
-			   ;; if that is on a full disk and this rmail
-			   ;; file isn't.
-			   (file-name-directory
-			     (expand-file-name buffer-file-name))))
 	    ;; On some systems, /usr/spool/mail/foo is a directory
 	    ;; and the actual inbox is /usr/spool/mail/foo/foo.
 	    (if (file-directory-p file)
@@ -1866,7 +1893,8 @@ If N is negative, go forwards instead."
 (defun rmail-delete-message ()
   "Delete this message and stay on it."
   (interactive)
-  (rmail-set-attribute "deleted" t))
+  (rmail-set-attribute "deleted" t)
+  (run-hooks 'rmail-delete-message-hook))
 
 (defun rmail-undelete-previous-message ()
   "Back up to deleted message, select it, and undelete it."
@@ -1894,6 +1922,7 @@ With prefix argument, delete and move backward.
 Returns t if a new message is displayed after the delete, or nil otherwise."
   (interactive "P")
   (rmail-set-attribute "deleted" t)
+  (run-hooks 'rmail-delete-message-hook)
   (let ((del-msg rmail-current-message))
     (if (rmail-summary-exists)
 	(rmail-select-summary
@@ -2333,7 +2362,7 @@ The variable `rmail-retry-ignored-headers' is a regular expression
 specifying headers which should not be copied into the new message."
   (interactive)
   (require 'mail-utils)
-  (let (mail-buffer bounce-start bounce-end resending)
+  (let (mail-buffer bounce-start bounce-end bounce-indent resending)
     (save-excursion
       ;; Narrow down to just the quoted original message
       (rmail-beginning-of-message)
@@ -2360,36 +2389,26 @@ specifying headers which should not be copied into the new message."
 	  ;; Support a style of failure message in which the original
 	  ;; message is indented, and included within lines saying
 	  ;; `Start of returned message' and `End of returned message'.
-	  (if (looking-at " *Received:")
-	      (let (column)
+	  (if (looking-at " +Received:")
+	      (progn
+		(setq bounce-start (point))
 		(skip-chars-forward " ")
-		(setq column (current-column))
-		(let ((old-buffer (current-buffer)))
-		  (set-buffer (get-buffer-create " rmail retry temp"))
-		  (insert-buffer old-buffer)
-		  (goto-char (point-max))
-		  (if (re-search-backward "^End of returned message$" nil t)
-		      (delete-region (point) (point-max)))
-		  (indent-rigidly (point-min) (point-max) (- column))
-		  (goto-char (point-min))
-		  (re-search-forward mail-unsent-separator nil t))))
-	  (save-restriction
-	    (let ((old-end (point-max)))
-	      ;; One message contained a few random lines before the old
-	      ;; message header.  The first line of the message started with
-	      ;; two hyphens.  A blank line follows these random lines.
-	      (skip-chars-forward "\n")
-	      (if (looking-at "^--")
-		  (progn
-		    (search-forward "\n\n")
-		    (skip-chars-forward "\n")))
-	      (beginning-of-line)
-	      (narrow-to-region (point) (point-max))
-	      (setq mail-buffer (current-buffer)
-		    bounce-start (point)
-		    bounce-end (point-max))
-	      (or (search-forward "\n\n" nil t)
-		  (error "Cannot find end of header in failed message")))))))
+		(setq bounce-indent (- (current-column)))
+		(goto-char (point-max))
+		(re-search-backward "^End of returned message$" nil t)
+		(setq bounce-end (point)))
+	    ;; One message contained a few random lines before the old
+	    ;; message header.  The first line of the message started with
+	    ;; two hyphens.  A blank line follows these random lines.
+	    (if (looking-at "^--")
+		(progn
+		  (search-forward "\n\n")
+		  (skip-chars-forward "\n")))
+	    (setq bounce-start (point)
+		  bounce-end (point-max))
+	    (or (search-forward "\n\n" nil t)
+		(error "Cannot find end of header in failed message")))
+	  (setq mail-buffer (current-buffer)))))
     ;; Start sending a new message; default header fields from the original.
     ;; Turn off the usual actions for initializing the message body
     ;; because we want to get only the text from the failure message.
@@ -2400,8 +2419,10 @@ specifying headers which should not be copied into the new message."
 	    (erase-buffer)
 	    (insert-buffer-substring mail-buffer bounce-start bounce-end)
 	    (goto-char (point-min))
+	    (if bounce-indent
+		(indent-rigidly (point-min) (point-max) bounce-indent))
 	    (rmail-clear-headers rmail-retry-ignored-headers)
-	    (rmail-clear-headers "^sender:\\|^from\\|^return-path")
+	    (rmail-clear-headers "^sender:\\|^from:\\|^return-path:")
 	    (goto-char (point-min))
 	    (save-restriction
 	      (search-forward "\n\n")
@@ -2563,6 +2584,11 @@ Normally checks the Subject field of headers;
 but if WHOLE-MESSAGE is non-nil (prefix arg given), 
  look in the whole message.
 SUBJECT is a string of regexps separated by commas."
+  t)
+
+(autoload 'rmail-summary-by-sender "rmailsum"
+  "Display a summary of all messages with the given SENDERS.
+SENDERS is a string of names separated by commas."
   t)
 
 ;;;; *** Rmail output messages to files ***

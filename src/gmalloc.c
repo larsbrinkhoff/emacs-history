@@ -36,12 +36,6 @@ Cambridge, MA 02139, USA.
 #include <config.h>
 #endif
 
-#ifdef emacs
-/* Avoid our `valloc' declaration, since it may conflict with
-   a bogus declaration in Emacs's config.h (and `valloc' is unused).  */
-#define valloc emacs_loser_valloc
-#endif
-
 #if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
 #include <string.h>
 #else
@@ -116,7 +110,9 @@ extern __ptr_t memalign __P ((__malloc_size_t __alignment,
 			      __malloc_size_t __size));
 
 /* Allocate SIZE bytes on a page boundary.  */
+#if ! (defined (_MALLOC_INTERNAL) && defined (emacs)) /* Avoid conflict.  */
 extern __ptr_t valloc __P ((__malloc_size_t __size));
+#endif
 
 
 #ifdef _MALLOC_INTERNAL
@@ -378,6 +374,7 @@ __malloc_size_t __malloc_extra_blocks;
 void (*__malloc_initialize_hook) __P ((void));
 void (*__after_morecore_hook) __P ((void));
 
+
 /* Aligned allocation.  */
 static __ptr_t align __P ((__malloc_size_t));
 static __ptr_t
@@ -392,8 +389,9 @@ align (size)
 						  (char *) NULL)) % BLOCKSIZE;
   if (adj != 0)
     {
+      __ptr_t new;
       adj = BLOCKSIZE - adj;
-      (void) (*__morecore) (adj);
+      new = (*__morecore) (adj);
       result = (char *) result + adj;
     }
 
@@ -401,6 +399,39 @@ align (size)
     (*__after_morecore_hook) ();
 
   return result;
+}
+
+/* Get SIZE bytes, if we can get them starting at END.
+   Return the address of the space we got.
+   If we cannot get space at END, fail and return -1.  */
+static __ptr_t get_contiguous_space __P ((__malloc_ptrdiff_t, __ptr_t));
+static __ptr_t
+get_contiguous_space (size, position)
+     __malloc_ptrdiff_t size;
+     __ptr_t position;
+{
+  __ptr_t before;
+  __ptr_t after;
+
+  before = (*__morecore) (0);
+  /* If we can tell in advance that the break is at the wrong place,
+     fail now.  */
+  if (before != position)
+    return 0;
+
+  /* Allocate SIZE bytes and get the address of them.  */
+  after = (*__morecore) (size);
+  if (!after)
+    return 0;
+
+  /* It was not contiguous--reject it.  */
+  if (after != position)
+    {
+      (*__morecore) (- size);
+      return 0;
+    }
+
+  return after;
 }
 
 
@@ -411,7 +442,7 @@ static void register_heapinfo __P ((void));
 #ifdef __GNUC__
 __inline__
 #endif
-static void 
+static void
 register_heapinfo ()
 {
   __malloc_size_t block, blocks;
@@ -515,21 +546,30 @@ morecore (size)
 	  }
       }
 
-      /* We need new core from the system for the new heapinfo table.
-	 Find out where the new space will be and make sure the info
-	 table will be large enough to cover it.  */
-      newinfo = (malloc_info *) (*__morecore) (0);
-      while ((__malloc_size_t) BLOCK ((char *) newinfo
-				      + newsize * sizeof (malloc_info))
-	     > newsize)
-	newsize *= 2;
+      /* Allocate new space for the malloc info table.  */
+      while (1)
+  	{
+ 	  newinfo = (malloc_info *) align (newsize * sizeof (malloc_info));
 
-      newinfo = (malloc_info *) align (newsize * sizeof (malloc_info));
-      if (newinfo == NULL)
-	{
-	  (*__morecore) (-size);
-	  return NULL;
-	}
+ 	  /* Did it fail?  */
+ 	  if (newinfo == NULL)
+ 	    {
+ 	      (*__morecore) (-size);
+ 	      return NULL;
+ 	    }
+
+ 	  /* Is it big enough to record status for its own space?
+ 	     If so, we win.  */
+ 	  if ((__malloc_size_t) BLOCK ((char *) newinfo
+ 				       + newsize * sizeof (malloc_info))
+ 	      < newsize)
+ 	    break;
+
+ 	  /* Must try again.  First give back most of what we just got.  */
+ 	  (*__morecore) (- newsize * sizeof (malloc_info));
+ 	  newsize *= 2;
+  	}
+
       /* Copy the old table to the beginning of the new,
 	 and zero the rest of the new table.  */
       memcpy (newinfo, _heapinfo, heapsize * sizeof (malloc_info));
@@ -633,14 +673,18 @@ _malloc_internal (size)
 	    return NULL;
 
 	  /* Link all fragments but the first into the free list.  */
-	  for (i = 1; i < (__malloc_size_t) (BLOCKSIZE >> log); ++i)
+	  next = (struct list *) ((char *) result + (1 << log));
+	  next->next = NULL;
+	  next->prev = &_fraghead[log];
+	  _fraghead[log].next = next;
+
+	  for (i = 2; i < (__malloc_size_t) (BLOCKSIZE >> log); ++i)
 	    {
 	      next = (struct list *) ((char *) result + (i << log));
 	      next->next = _fraghead[log].next;
 	      next->prev = &_fraghead[log];
 	      next->prev->next = next;
-	      if (next->next != NULL)
-		next->next->prev = next;
+	      next->next->prev = next;
 	    }
 
 	  /* Initialize the nfree and first counters for this block.  */
@@ -674,15 +718,19 @@ _malloc_internal (size)
 	      /* Check to see if the new core will be contiguous with the
 		 final free block; if so we don't need to get as much.  */
 	      if (_heaplimit != 0 && block + lastblocks == _heaplimit &&
-		  (*__morecore) (0) == ADDRESS (block + lastblocks) &&
-		  (morecore ((wantblocks - lastblocks) * BLOCKSIZE)) != NULL)
+		  /* We can't do this if we will have to make the heap info
+                     table bigger to accomodate the new space.  */
+		  block + wantblocks <= heapsize &&
+		  get_contiguous_space ((wantblocks - lastblocks) * BLOCKSIZE,
+					ADDRESS (block + lastblocks)))
 		{
- 		  /* Which block we are extending (the `final free
- 		     block' referred to above) might have changed, if
- 		     it got combined with a freed info table.  */
+ 		  /* We got it contiguously.  Which block we are extending
+		     (the `final free block' referred to above) might have
+		     changed, if it got combined with a freed info table.  */
  		  block = _heapinfo[0].free.prev;
   		  _heapinfo[block].free.size += (wantblocks - lastblocks);
 		  _bytes_free += (wantblocks - lastblocks) * BLOCKSIZE;
+ 		  _heaplimit += wantblocks - lastblocks;
 		  continue;
 		}
 	      result = morecore (wantblocks * BLOCKSIZE);
@@ -843,6 +891,19 @@ _free_internal (ptr)
     /* Threshold of free space at which we will return some to the system.  */
     = FINAL_FREE_BLOCKS + 2 * __malloc_extra_blocks;
 
+  register struct alignlist *l;
+
+  if (ptr == NULL)
+    return;
+
+  for (l = _aligned_blocks; l != NULL; l = l->next)
+    if (l->aligned == ptr)
+      {
+	l->aligned = NULL;	/* Mark the slot in the list as free.  */
+	ptr = l->exact;
+	break;
+      }
+
   block = BLOCK (ptr);
 
   type = _heapinfo[block].busy.type;
@@ -924,7 +985,7 @@ _free_internal (ptr)
 		 info table, and the two free blocks together form a useful
 		 amount to return to the system.  */
 	      (block + blocks == _heaplimit &&
-	       info_block + info_blocks == block && 
+	       info_block + info_blocks == block &&
 	       prev_block != 0 && prev_block + prev_blocks == info_block &&
 	       blocks + prev_blocks >= lesscore_threshold) ||
 	      /* Nope, not the case.  We can also win if this block being
@@ -997,7 +1058,7 @@ _free_internal (ptr)
 
       /* Get the address of the first free fragment in this block.  */
       prev = (struct list *) ((char *) ADDRESS (block) +
-			   (_heapinfo[block].busy.info.frag.first << type));
+			      (_heapinfo[block].busy.info.frag.first << type));
 
       if (_heapinfo[block].busy.info.frag.nfree == (BLOCKSIZE >> type) - 1)
 	{
@@ -1058,19 +1119,6 @@ void
 free (ptr)
      __ptr_t ptr;
 {
-  register struct alignlist *l;
-
-  if (ptr == NULL)
-    return;
-
-  for (l = _aligned_blocks; l != NULL; l = l->next)
-    if (l->aligned == ptr)
-      {
-	l->aligned = NULL;	/* Mark the slot in the list as free.  */
-	ptr = l->exact;
-	break;
-      }
-
   if (__free_hook != NULL)
     (*__free_hook) (ptr);
   else
@@ -1395,7 +1443,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifdef __GNU_LIBRARY__
 /* It is best not to declare this and cast its result on foreign operating
    systems with potentially hostile include files.  */
-extern __ptr_t __sbrk __P ((int increment));
+
+#include <stddef.h>
+extern __ptr_t __sbrk __P ((ptrdiff_t increment));
 #endif
 
 #ifndef NULL
@@ -1444,20 +1494,43 @@ memalign (alignment, size)
      __malloc_size_t size;
 {
   __ptr_t result;
-  unsigned long int adj;
+  unsigned long int adj, lastadj;
 
   if (__memalign_hook)
     return (*__memalign_hook) (alignment, size);
 
-  size = ((size + alignment - 1) / alignment) * alignment;
-
-  result = malloc (size);
+  /* Allocate a block with enough extra space to pad the block with up to
+     (ALIGNMENT - 1) bytes if necessary.  */
+  result = malloc (size + alignment - 1);
   if (result == NULL)
     return NULL;
-  adj = (unsigned long int) ((unsigned long int) ((char *) result -
-						  (char *) NULL)) % alignment;
+
+  /* Figure out how much we will need to pad this particular block
+     to achieve the required alignment.  */
+  adj = (unsigned long int) ((char *) result - (char *) NULL) % alignment;
+
+  do
+    {
+      /* Reallocate the block with only as much excess as it needs.  */
+      free (result);
+      result = malloc (adj + size);
+      if (result == NULL)	/* Impossible unless interrupted.  */
+	return NULL;
+
+      lastadj = adj;
+      adj = (unsigned long int) ((char *) result - (char *) NULL) % alignment;
+      /* It's conceivable we might have been so unlucky as to get a
+	 different block with weaker alignment.  If so, this block is too
+	 short to contain SIZE after alignment correction.  So we must
+	 try again and get another block, slightly larger.  */
+    } while (adj > lastadj);
+
   if (adj != 0)
     {
+      /* Record this block in the list of aligned blocks, so that `free'
+	 can identify the pointer it is passed, which will be in the middle
+	 of an allocated block.  */
+
       struct alignlist *l;
       for (l = _aligned_blocks; l != NULL; l = l->next)
 	if (l->aligned == NULL)

@@ -1,5 +1,5 @@
 /* Work-alike for termcap, plus extra features.
-   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 93, 94, 95 Free Software Foundation, Inc.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,8 +17,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Emacs config.h may rename various library functions such as malloc.  */
 #ifdef HAVE_CONFIG_H
-
 #include <config.h>
+#endif
+
+#ifdef emacs
 
 /* Get the O_* definitions for open et al.  */
 #include <sys/file.h>
@@ -26,11 +28,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <fcntl.h>
 #endif
 
-#else /* not HAVE_CONFIG_H */
-
-#if defined(HAVE_STRING_H) || defined(STDC_HEADERS)
-#define bcopy(s, d, n) memcpy ((d), (s), (n))
-#endif
+#else /* not emacs */
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>
@@ -41,6 +39,11 @@ char *malloc ();
 char *realloc ();
 #endif
 
+/* Do this after the include, in case string.h prototypes bcopy.  */
+#if (defined(HAVE_STRING_H) || defined(STDC_HEADERS)) && !defined(bcopy)
+#define bcopy(s, d, n) memcpy ((d), (s), (n))
+#endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -48,7 +51,7 @@ char *realloc ();
 #include <fcntl.h>
 #endif
 
-#endif /* not HAVE_CONFIG_H */
+#endif /* not emacs */
 
 #ifndef NULL
 #define NULL (char *) 0
@@ -75,8 +78,8 @@ int bufsize = 128;
 #endif
 #endif
 
-#ifndef TERMCAP_NAME
-#define TERMCAP_NAME "/etc/termcap"
+#ifndef TERMCAP_FILE
+#define TERMCAP_FILE "/etc/termcap"
 #endif
 
 #ifndef emacs
@@ -442,6 +445,11 @@ tgetent (bp, name)
     }
 #endif /* INTERNAL_TERMINAL */
 
+  /* For compatibility with programs like `less' that want to
+     put data in the termcap buffer themselves as a fallback.  */
+  if (bp)
+    term_entry = bp;
+
   termcap_name = getenv ("TERMCAP");
   if (termcap_name && *termcap_name == '\0')
     termcap_name = NULL;
@@ -479,7 +487,7 @@ tgetent (bp, name)
     }
 
   if (!termcap_name || !filep)
-    termcap_name = TERMCAP_NAME;
+    termcap_name = TERMCAP_FILE;
 
   /* Here we know we must search a file and termcap_name has its name.  */
 

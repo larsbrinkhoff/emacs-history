@@ -489,10 +489,11 @@ area.  To go to a given line by number, use @kbd{M-x goto-line}; it
 prompts you for the number.  These line numbers count from one at the
 beginning of the buffer.
 
-  @kbd{M-x line-number-mode} enables display of the current line number
-in the mode line; once you turn this on, the number updates as you move
-point, so it remains valid all the time.  @xref{Mode Line}.  If you
-narrow the buffer, only the accessible portion counts for this feature.
+  You can also see the current line number in the mode line; @xref{Mode
+Line}.  If you narrow the buffer, then the line number in the mode line
+is relative to the accessible portion (@pxref{Narrowing}).  By contrast,
+@code{what-line} shows both the line number relative to the narrowed
+region and the line number relative to the whole buffer.
 
   By contrast, @kbd{M-x what-page} counts pages from the beginning of
 the file, and counts lines within the page, printing both numbers.
@@ -512,12 +513,12 @@ the column that the cursor is in, and other miscellaneous information about
 point.  It prints a line in the echo area that looks like this:
 
 @smallexample
-Char: x (0170)  point=65986 of 563027(12%)  x=44
+Char: c (0143, 99, 0x63)  point=21044 of 26883(78%)  column 53 
 @end smallexample
 
 @noindent
-(In fact, this is the output produced when point is before the @samp{x=44}
-in the example.)
+(In fact, this is the output produced when point is before the
+@samp{column} in the example.)
 
   The two values after @samp{Char:} describe the character that follows point,
 first by showing it and second by giving its octal character code.
@@ -528,8 +529,8 @@ as 2, and so on.  The next, larger number is the total number of characters
 in the buffer.  Afterward in parentheses comes the position expressed as a
 percentage of the total size.
 
-  @samp{x=} is followed by the horizontal position of point, in columns from the
-left edge of the window.
+  @samp{column} is followed by the horizontal position of point, in
+columns from the left edge of the window.
 
   If the buffer has been narrowed, making some of the text at the
 beginning and the end temporarily inaccessible, @kbd{C-x =} prints
@@ -537,7 +538,7 @@ additional text describing the currently accessible range.  For example, it
 might display this:
 
 @smallexample
-Char: x (0170)  point=65986 of 563025(12%) <65102 - 68533>  x=44
+Char: C (0103, 67, 0x43)  point=22015 of 26889(82%) <21660 - 22099>  column 0 
 @end smallexample
 
 @noindent
@@ -547,10 +548,10 @@ two positions are the accessible ones.  @xref{Narrowing}.
 
   If point is at the end of the buffer (or the end of the accessible
 part), @w{@kbd{C-x =}} omits any description of the character after point.
-The output looks like this:
+The output might look like this:
 
 @smallexample
-point=563026 of 563025(100%)  x=0
+point=26957 of 26956(100%)  column 0 
 @end smallexample
 
 @node Arguments
@@ -560,12 +561,14 @@ point=563026 of 563025(100%)  x=0
 @cindex arguments, numeric
 @cindex arguments, prefix
 
-  Any Emacs command can be given a @dfn{numeric argument} (also called a
-@dfn{prefix argument}).  Some commands interpret the argument as a
-repetition count.  For example, @kbd{C-f} with an argument of ten moves
-forward ten characters instead of one.  With these commands, no argument
-is equivalent to an argument of one.  Negative arguments tell most such
-commands to move or act in the opposite direction.
+  In mathematics and computer usage, the word @dfn{argument} means
+``data provided to a function or operation.''  You can give any Emacs
+command a @dfn{numeric argument} (also called a @dfn{prefix argument}).
+Some commands interpret the argument as a repetition count.  For
+example, @kbd{C-f} with an argument of ten moves forward ten characters
+instead of one.  With these commands, no argument is equivalent to an
+argument of one.  Negative arguments tell most such commands to move or
+act in the opposite direction.
 
 @kindex M-1
 @kindex M-@t{-}
@@ -638,28 +641,3 @@ digit to insert from the argument, type another @kbd{C-u}; for example,
 emphasize that you type the argument before the command, and to
 distinguish these arguments from minibuffer arguments that come after
 the command.
-
-@c section Autoarg Mode
-@ignore
-@cindex Autoarg mode
-@cindex mode, autoarg
-  Users of ASCII keyboards may prefer to use Autoarg mode.  Autoarg mode
-means that you don't need to type C-U to specify a numeric argument.
-Instead, you type just the digits.  Digits followed by an ordinary
-inserting character are themselves inserted, but digits followed by an
-Escape or Control character serve as an argument to it and are not
-inserted.  A minus sign can also be part of an argument, but only at the
-beginning.  If you type a minus sign following some digits, both the digits
-and the minus sign are inserted.
-
-  To use Autoarg mode, set the variable Autoarg Mode nonzero.
-@xref{Variables}.
-
-  Autoargument digits echo at the bottom of the screen; the first nondigit
-causes them to be inserted or uses them as an argument.  To insert some
-digits and nothing else, you must follow them with a Space and then rub it
-out.  C-G cancels the digits, while Delete inserts them all and then rubs
-out the last.
-@end ignore
-
-

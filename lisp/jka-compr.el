@@ -1,8 +1,25 @@
-;;; jka-compr.el - reading/writing/loading compressed files.
+;;; jka-compr.el --- reading/writing/loading compressed files
+
 ;;; Copyright (C) 1993, 1994  Free Software Foundation, Inc.
 
 ;; Author: jka@ece.cmu.edu (Jay K. Adams)
 ;; Keywords: data
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary: 
 
@@ -624,7 +641,8 @@ There should be no more than seven characters after the final `/'")
 	  (or nomessage
 	      (message "Loading %s..." file))
 
-	  (load load-file noerror t t)
+	  (let ((load-force-doc-strings t))
+	    (load load-file noerror t t))
 
 	  (or nomessage
 	      (message "Loading %s...done." file)))
@@ -632,11 +650,20 @@ There should be no more than seven characters after the final `/'")
       (jka-compr-delete-temp-file local-copy))
 
     t))
+
+(defun jka-compr-byte-compiler-base-file-name (file)
+  (let ((info (jka-compr-get-compression-info file)))
+    (if (and info (jka-compr-info-strip-extension info))
+	(save-match-data
+	  (substring file 0 (string-match (jka-compr-info-regexp info) file)))
+      file)))
 
 (put 'write-region 'jka-compr 'jka-compr-write-region)
 (put 'insert-file-contents 'jka-compr 'jka-compr-insert-file-contents)
 (put 'file-local-copy 'jka-compr 'jka-compr-file-local-copy)
 (put 'load 'jka-compr 'jka-compr-load)
+(put 'byte-compiler-base-file-name 'jka-compr
+     'jka-compr-byte-compiler-base-file-name)
 
 (defun jka-compr-handler (operation &rest args)
   (save-match-data
@@ -657,8 +684,9 @@ There should be no more than seven characters after the final `/'")
 	(inhibit-file-name-operation operation))
     (apply operation args)))
 
-(defun toggle-auto-compression (arg)
-  "Toggle automatic file compression and decompression.
+;;;###autoload
+(defun auto-compression-mode (&optional arg)
+  "Toggle automatic file compression and uncompression.
 With prefix argument ARG, turn auto compression on if positive, else off.
 Returns the new status of auto compression (non-nil means on)."
   (interactive "P")
@@ -685,7 +713,7 @@ Returns the new status of auto compression (non-nil means on)."
 	   (message "Automatic file (de)compression is now OFF.")))
 
     flag))
-
+(defalias 'toggle-auto-compression 'auto-compression-mode)
 
 (defun jka-compr-build-file-regexp ()
   (concat

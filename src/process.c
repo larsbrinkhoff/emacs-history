@@ -52,6 +52,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#ifdef NEED_NET_ERRNO_H
+#include <net/errno.h>
+#endif /* NEED_NET_ERRNO_H */
 #endif /* HAVE_SOCKETS */
 
 /* TERM is a poor-man's SLIP, used on Linux.  */
@@ -205,9 +208,9 @@ int update_tick;
 
 #include "sysselect.h"
 
-/* If we support X Windows, turn on the code to poll periodically
+/* If we support a window system, turn on the code to poll periodically
    to detect C-g.  It isn't actually used when doing interrupt input.  */
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
 #define POLL_FOR_INPUT
 #endif
 
@@ -1093,10 +1096,16 @@ Remaining arguments are strings to give program as arguments.")
       UNGCPRO;
       if (NILP (tem))
 	report_file_error ("Searching for program", Fcons (program, Qnil));
+      tem = Fexpand_file_name (tem, Qnil);
       new_argv[0] = XSTRING (tem)->data;
     }
   else
-    new_argv[0] = XSTRING (program)->data;
+    {
+      if (!NILP (Ffile_directory_p (program)))
+	error ("Specified program for new process is a directory");
+
+      new_argv[0] = XSTRING (program)->data;
+    }
 
   for (i = 3; i < nargs; i++)
     {
@@ -1658,6 +1667,10 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
 	goto loop;
       if (errno == EADDRINUSE && retry < 20)
 	{
+	  /* A delay here is needed on some FreeBSD systems,
+	     and it is harmless, since this retrying takes time anyway
+	     and should be infrequent.  */
+	  Fsleep_for (make_number (1), Qnil);
 	  retry++;
 	  goto loop;
 	}
@@ -2374,12 +2387,17 @@ read_process_output (proc, channel)
       /* Handling the process output should not deactivate the mark.  */
       Vdeactivate_mark = odeactivate;
 
+#if 0 /* Call record_asynch_buffer_change unconditionally,
+	 because we might have changed minor modes or other things
+	 that affect key bindings.  */
       if (! EQ (Fcurrent_buffer (), obuffer)
 	  || ! EQ (current_buffer->keymap, okeymap))
-	record_asynch_buffer_change ();
-
-      if (waiting_for_user_input_p)
-	prepare_menu_bars ();
+#endif
+	/* But do it only if the caller is actually going to read events.
+	   Otherwise there's no need to make him wake up, and it could
+	   cause trouble (for example it would make Fsit_for return).  */
+	if (waiting_for_user_input_p == -1)
+	  record_asynch_buffer_change ();
 
 #ifdef VMS
       start_vms_process_read (vs);
@@ -3373,12 +3391,16 @@ exec_sentinel (proc, reason)
   restore_match_data ();
 
   Vdeactivate_mark = odeactivate;
+#if 0
   if (! EQ (Fcurrent_buffer (), obuffer)
       || ! EQ (current_buffer->keymap, okeymap))
-    record_asynch_buffer_change ();
+#endif
+    /* But do it only if the caller is actually going to read events.
+       Otherwise there's no need to make him wake up, and it could
+       cause trouble (for example it would make Fsit_for return).  */
+    if (waiting_for_user_input_p == -1)
+      record_asynch_buffer_change ();
 
-  if (waiting_for_user_input_p)
-    prepare_menu_bars ();
   unbind_to (count, Qnil);
 }
 
@@ -3538,7 +3560,7 @@ keyboard_bit_set (mask)
 {
   int fd;
 
-  for (fd = 0; fd < max_keyboard_desc; fd++)
+  for (fd = 0; fd <= max_keyboard_desc; fd++)
     if (FD_ISSET (fd, mask) && FD_ISSET (fd, &input_wait_mask)
 	&& !FD_ISSET (fd, &non_keyboard_wait_mask))
       return 1;
@@ -3718,9 +3740,6 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
   else
     /* It's infinite.  */
     timeout_p = 0;
-
-  /* This must come before stop_polling.  */
-  prepare_menu_bars ();
 
   /* Turn off periodic alarms (in case they are in use)
      because the select emulator uses alarms.  */

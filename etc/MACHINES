@@ -68,9 +68,11 @@ Alliant FX/2800 (i860-alliant-bsd)
 
   Known to work with 19.26 and OS version 2.2, compiler version 1.3.
 
-Alpha (DEC) running OSF/1 (alpha-dec-osf1)
+Alpha (DEC) running OSF/1 (alpha-dec-osf1, alpha-dec-linux)
 
-  Patches merged in 19.29.
+  Patches merged in 19.29.  Note that the X11 libraries on GNU/Linux systems
+  for the Alpha are said to have bugs that prevent Emacs from working with X
+  (as of November 1995).
 
 Altos 3068 (m68k-altos-sysv)
 
@@ -89,7 +91,7 @@ Amdahl UTS (580-amdahl-sysv)
   even worth trying to use it.  Success was obtained with the
   uts native C compiler on uts version 5.2.5.
 
-Apollo running X Windows (m68k-apollo-domain)
+Apollo running X Windows (m68k-apollo-bsd)
 
   Apollo version now supports dumping.  It has been tested on SR10.3 and
   SR10.4.  It certainly requires at least SR10.0, and maybe SR10.2.  Be sure
@@ -516,7 +518,7 @@ Integrated Solutions `Optimum V' (m68k-isi-bsd4.2 or -bsd4.3)
   in a system header file, which confuses Emacs (which thinks that UMAX
   indicates the Umax operating system).
 
-Intel 386 (i386-*-isc, 		i386-*-esix,	 i386-*-bsdos2,
+Intel 386 (i386-*-isc, 		i386-*-esix,	 i386-*-bsdi2,
 	   i386-*-xenix,	i386-*-linux,    i386-*-freebsd,
 	   i386-*-sol2.4,	i386-intsys-sysv, i386-*-sysv3,
 	   i386-*-sysv4,	i386-*-sysv4.2,
@@ -550,7 +552,8 @@ Intel 386 (i386-*-isc, 		i386-*-esix,	 i386-*-bsdos2,
     #define HAVE_XSCREENNUMBEROFSCREEN
 
   To work around the problem, add those definitions by hand.
-  It is possible that this problem happens only with X11R6.
+  It is possible that this problem happens only with X11R6
+  or that newer system versions have fixed it.
 
   The 19.26 pretest was reported to work on SVR4.3 and on Freebsd.
 
@@ -873,7 +876,8 @@ Stride (m68k-stride-sysv)
   in the s- file would be needed.
 
 Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
-			       sparc-sun-sunos4shr, sparc-sun-solaris2.*)
+			       sparc-sun-sunos4shr, sparc-sun-solaris2.*,
+			       i386-sun-solaris2.*)
 
   19.26 is believed to work on Sparcs and Sun 3's.  Some people report
   that Emacs crashes immediately on startup when used with a non-X
@@ -888,12 +892,13 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   configuration name.  For example, for SunOS release 4.0 on a Sun 3,
   use `m68k-sun-sunos4.0'; for SunOS release 4.1 on a Sparc, use
   `sparc-sun-sunos4.1'.  For SunOS release 4.1.3 on a Sparc, use
-  `sparc-sun-sunos4.1.3'.  Use sunos4shr to link with shared libraries
-  on Sunos 4.1.
-
-  Use of shared libraries does not work with X11R5 or X11R6 on Sunos 4
-  as of 19.26.  unexsunos4.c needs to be changed.  Can someone
-  please write the necessary changes?
+  `sparc-sun-sunos4.1.3'.  Note that shared libraries are now
+  used by default on SunOS 4.1.
+  
+  A user reported unreproducible segmentation faults when using 19.29
+  on Solaris 2.3 and 2.4 after compiling it with the Sun compiler.
+  The problem went away when GCC 2.7.0 was used instead.  We do not know
+  whether anything in Emacs is partly to blame for this.
 
   X11R6 is set up to make shared libraries only, on Sunos 4.
   Therefore, in order to link Emacs, you need to create static X libraries.

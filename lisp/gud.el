@@ -33,7 +33,8 @@
 ;; added support for xdb (HPUX debugger).  Rick Sladkey <jrs@world.std.com>
 ;; wrote the GDB command completion code.  Dave Love <d.love@dl.ac.uk>
 ;; added the IRIX kluge, re-implemented the Mips-ish variant and added
-;; a menu.
+;; a menu. Brian D. Carlstrom <bdc@ai.mit.edu> combined the IRIX kluge with 
+;; the gud-xdb-directories hack producing gud-dbx-directories.
 
 ;;; Code:
 
@@ -511,7 +512,36 @@ and source-file directory for your debugger."
 ;;; History of argument lists passed to dbx.
 (defvar gud-dbx-history nil)
 
-(defun gud-dbx-massage-args (file args) args)
+(defvar gud-dbx-directories nil
+  "*A list of directories that dbx should search for source code.
+If nil, only source files in the program directory
+will be known to dbx.
+
+The file names should be absolute, or relative to the directory
+containing the executable being debugged.")
+
+(defun gud-dbx-massage-args (file args)
+  (nconc (let ((directories gud-dbx-directories)
+	       (result nil))
+	   (while directories
+	     (setq result (cons (car directories) (cons "-I" result)))
+	     (setq directories (cdr directories)))
+	   (nreverse result))
+	 args))
+
+(defun gud-dbx-file-name (f)
+  "Transform a relative file name to an absolute file name, for dbx."
+  (let ((result nil))
+    (if (file-exists-p f)
+        (setq result (expand-file-name f))
+      (let ((directories gud-dbx-directories))
+        (while directories
+          (let ((path (concat (car directories) "/" f)))
+            (if (file-exists-p path)
+                (setq result (expand-file-name path)
+                      directories nil)))
+          (setq directories (cdr directories)))))
+    result))
 
 (defun gud-dbx-marker-filter (string)
   (setq gud-marker-acc (if gud-marker-acc (concat gud-marker-acc string) string))
@@ -680,8 +710,9 @@ This works in IRIX 4, 5 and 6.")
 	  result)
 	 ((string-match			; kluged-up marker as above
 	   "\032\032\\([0-9]*\\):\\(.*\\)\n" result)
-	  (let ((file (substring result (match-beginning 2) (match-end 2))))
-	    (if (file-exists-p file)
+	  (let ((file (gud-dbx-file-name
+		       (substring result (match-beginning 2) (match-end 2)))))
+	    (if (and file (file-exists-p file))
 		(setq gud-last-frame
 		      (cons
 		       file
@@ -693,12 +724,15 @@ This works in IRIX 4, 5 and 6.")
 
 (defun gud-dbx-find-file (f)
   (save-excursion
-    (let ((buf (find-file-noselect f)))
-      (set-buffer buf)
-      (gud-make-debug-menu)
-      (local-set-key [menu-bar debug up] '("Up Stack" . gud-up))
-      (local-set-key [menu-bar debug down] '("Down Stack" . gud-down))
-      buf)))
+    (let ((realf (gud-dbx-file-name f)))
+      (if realf
+	  (let ((buf (find-file-noselect f)))
+	    (set-buffer buf)
+	    (gud-make-debug-menu)
+	    (local-set-key [menu-bar debug up] '("Up Stack" . gud-up))
+	    (local-set-key [menu-bar debug down] '("Down Stack" . gud-down))
+	    buf)
+	nil))))
 
 ;;;###autoload
 (defun dbx (command-line)
@@ -808,10 +842,11 @@ containing the executable being debugged.")
               gud-marker-acc "")
       (setq gud-marker-acc (concat gud-marker-acc string)))
     (if result
-        (if (or (string-match "\\([^\n \t:]+\\): [^:]+: \\([0-9]+\\):" result)
+        (if (or (string-match "\\([^\n \t:]+\\): [^:]+: \\([0-9]+\\)[: ]"
+			      result)
                 (string-match "[^: \t]+:[ \t]+\\([^:]+\\): [^:]+: \\([0-9]+\\):"
                               result))
-            (let ((line (string-to-int 
+            (let ((line (string-to-int
                          (substring result (match-beginning 2) (match-end 2))))
                   (file (gud-xdb-file-name
                          (substring result (match-beginning 1) (match-end 1)))))
@@ -1174,34 +1209,64 @@ comint mode, which see."
   (cond ((eq major-mode 'gud-mode)
 	(setq gud-comint-buffer (current-buffer)))))
 
+(defvar gud-filter-defer-flag nil
+  "Non-nil means don't process anything from the debugger right now.
+It is saved for when this flag is not set.")
+
+(defvar gud-filter-pending-text nil
+  "Non-nil means this is text that has been saved for later in `gud-filter'.")
+
 ;; These functions are responsible for inserting output from your debugger
 ;; into the buffer.  The hard work is done by the method that is
 ;; the value of gud-marker-filter.
 
 (defun gud-filter (proc string)
   ;; Here's where the actual buffer insertion is done
-  (let (output)
+  (let (output process-window)
     (if (buffer-name (process-buffer proc))
-	(save-excursion
-	  (set-buffer (process-buffer proc))
-	  ;; If we have been so requested, delete the debugger prompt.
-	  (if (marker-buffer gud-delete-prompt-marker)
-	      (progn
-		(delete-region (process-mark proc) gud-delete-prompt-marker)
-		(set-marker gud-delete-prompt-marker nil)))
-	  ;; Save the process output, checking for source file markers.
-	  (setq output (gud-marker-filter string))
-	  ;; Check for a filename-and-line number.
-	  ;; Don't display the specified file
-	  ;; unless (1) point is at or after the position where output appears
-	  ;; and (2) this buffer is on the screen.
-	  (if (and gud-last-frame
-		   (>= (point) (process-mark proc))
-		   (get-buffer-window (current-buffer)))
-	      (gud-display-frame))
-	  ;; Let the comint filter do the actual insertion.
-	  ;; That lets us inherit various comint features.
-	  (comint-output-filter proc output)))))
+	(if gud-filter-defer-flag
+	    ;; If we can't process any text now,
+	    ;; save it for later.
+	    (setq gud-filter-pending-text
+		  (concat (or gud-filter-pending-text "") string))
+	  (save-excursion
+	    ;; If we have to ask a question during the processing,
+	    ;; defer any additional text that comes from the debugger
+	    ;; during that time.
+	    (let ((gud-filter-defer-flag t))
+	      ;; Process now any text we previously saved up.
+	      (if gud-filter-pending-text
+		  (setq string (concat gud-filter-pending-text string)
+			gud-filter-pending-text nil))
+	      (set-buffer (process-buffer proc))
+	      ;; If we have been so requested, delete the debugger prompt.
+	      (if (marker-buffer gud-delete-prompt-marker)
+		  (progn
+		    (delete-region (process-mark proc) gud-delete-prompt-marker)
+		    (set-marker gud-delete-prompt-marker nil)))
+	      ;; Save the process output, checking for source file markers.
+	      (setq output (gud-marker-filter string))
+	      ;; Check for a filename-and-line number.
+	      ;; Don't display the specified file
+	      ;; unless (1) point is at or after the position where output appears
+	      ;; and (2) this buffer is on the screen.
+	      (setq process-window
+		    (and gud-last-frame
+			 (>= (point) (process-mark proc))
+			 (get-buffer-window (current-buffer)))))
+	    (if process-window
+		(save-selected-window
+		  (select-window process-window)
+		  (gud-display-frame)))
+
+	    ;; Let the comint filter do the actual insertion.
+	    ;; That lets us inherit various comint features.
+	    (comint-output-filter proc output)
+
+	    ;; If we deferred text that arrived during this processing,
+	    ;; handle it now.
+	    (if gud-filter-pending-text
+		(gud-filter proc "")))))))
 
 (defun gud-sentinel (proc msg)
   (cond ((null (buffer-name (process-buffer proc)))

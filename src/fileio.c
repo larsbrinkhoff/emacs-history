@@ -658,7 +658,10 @@ directory_file_name (src, dst)
 #else
   if (slen > 1 
       && IS_DIRECTORY_SEP (dst[slen - 1])
-      && !IS_ANY_SEP (dst[slen - 2]))
+#ifdef DOS_NT
+      && !IS_ANY_SEP (dst[slen - 2])
+#endif
+      )
     dst[slen - 1] = 0;
 #endif
   return 1;
@@ -832,6 +835,32 @@ See also the function `substitute-in-file-name'.")
   }
 #endif /* DOS_NT */
 
+  /* Handle // and /~ in middle of file name
+     by discarding everything through the first / of that sequence.  */
+  p = nm;
+  while (*p)
+    {
+      /* Since we know the path is absolute, we can assume that each
+	 element starts with a "/".  */
+
+      /* "//" anywhere isn't necessarily hairy; we just start afresh
+	 with the second slash.  */
+      if (IS_DIRECTORY_SEP (p[0]) && IS_DIRECTORY_SEP (p[1])
+#if defined (APOLLO) || defined (WINDOWSNT)
+	  /* // at start of filename is meaningful on Apollo 
+	     and WindowsNT systems */
+	  && nm != p
+#endif /* APOLLO || WINDOWSNT */
+	  )
+	nm = p + 1;
+
+      /* "~" is hairy as the start of any path element.  */
+      if (IS_DIRECTORY_SEP (p[0]) && p[1] == '~')
+	nm = p + 1;
+
+      p++;
+    }
+
   /* If nm is absolute, flush ...// and detect /./ and /../.
      If no /./ or /../ we can return right away. */
   if (
@@ -854,21 +883,6 @@ See also the function `substitute-in-file-name'.")
 	{
 	  /* Since we know the path is absolute, we can assume that each
 	     element starts with a "/".  */
-
-	  /* "//" anywhere isn't necessarily hairy; we just start afresh
-	     with the second slash.  */
-	  if (IS_DIRECTORY_SEP (p[0]) && IS_DIRECTORY_SEP (p[1])
-#if defined (APOLLO) || defined (WINDOWSNT)
-	      /* // at start of filename is meaningful on Apollo 
-		 and WindowsNT systems */
-	      && nm != p
-#endif /* APOLLO || WINDOWSNT */
-	      )
-	    nm = p + 1;
-
-	  /* "~" is hairy as the start of any path element.  */
-	  if (IS_DIRECTORY_SEP (p[0]) && p[1] == '~')
-	    nm = p + 1, lose = 1;
 
 	  /* "." and ".." are hairy.  */
 	  if (IS_DIRECTORY_SEP (p[0])
@@ -1774,11 +1788,20 @@ expand_and_dir_to_file (filename, defdir)
   return abspath;
 }
 
+/* Signal an error if the file ABSNAME already exists.
+   If INTERACTIVE is nonzero, ask the user whether to proceed,
+   and bypass the error if the user says to go ahead.
+   QUERYSTRING is a name for the action that is being considered
+   to alter the file.
+   *STATPTR is used to store the stat information if the file exists.
+   If the file does not exist, STATPTR->st_mode is set to 0.  */
+
 void
-barf_or_query_if_file_exists (absname, querystring, interactive)
+barf_or_query_if_file_exists (absname, querystring, interactive, statptr)
      Lisp_Object absname;
      unsigned char *querystring;
      int interactive;
+     struct stat *statptr;
 {
   register Lisp_Object tem;
   struct stat statbuf;
@@ -1800,6 +1823,13 @@ barf_or_query_if_file_exists (absname, querystring, interactive)
 	Fsignal (Qfile_already_exists,
 		 Fcons (build_string ("File already exists"),
 			Fcons (absname, Qnil)));
+      if (statptr)
+	*statptr = statbuf;
+    }
+  else
+    {
+      if (statptr)
+	statptr->st_mode = 0;
     }
   return;
 }
@@ -1819,7 +1849,7 @@ A prefix arg makes KEEP-TIME non-nil.")
 {
   int ifd, ofd, n;
   char buf[16 * 1024];
-  struct stat st;
+  struct stat st, out_st;
   Lisp_Object handler;
   struct gcpro gcpro1, gcpro2;
   int count = specpdl_ptr - specpdl;
@@ -1844,7 +1874,9 @@ A prefix arg makes KEEP-TIME non-nil.")
   if (NILP (ok_if_already_exists)
       || INTEGERP (ok_if_already_exists))
     barf_or_query_if_file_exists (newname, "copy to it",
-				  INTEGERP (ok_if_already_exists));
+				  INTEGERP (ok_if_already_exists), &out_st);
+  else if (stat (XSTRING (newname)->data, &out_st) < 0)
+    out_st.st_mode = 0;
 
   ifd = open (XSTRING (filename)->data, O_RDONLY);
   if (ifd < 0)
@@ -1856,6 +1888,16 @@ A prefix arg makes KEEP-TIME non-nil.")
      copyable by us. */
   input_file_statable_p = (fstat (ifd, &st) >= 0);
 
+#ifndef DOS_NT
+  if (out_st.st_mode != 0
+      && st.st_dev == out_st.st_dev && st.st_ino == out_st.st_ino)
+    {
+      errno = 0;
+      report_file_error ("Input and output files are the same",
+			 Fcons (filename, Fcons (newname, Qnil)));
+    }
+#endif
+
 #if defined (S_ISREG) && defined (S_ISLNK)
   if (input_file_statable_p)
     {
@@ -1865,7 +1907,7 @@ A prefix arg makes KEEP-TIME non-nil.")
 	  /* Get a better looking error message. */
 	  errno = EISDIR;
 #endif /* EISDIR */
-	report_file_error ("Non-regular file", Fcons (filename, Qnil));
+	  report_file_error ("Non-regular file", Fcons (filename, Qnil));
 	}
     }
 #endif /* S_ISREG && S_ISLNK */
@@ -1882,7 +1924,7 @@ A prefix arg makes KEEP-TIME non-nil.")
 #endif /* not MSDOS */
 #endif /* VMS */
   if (ofd < 0)
-      report_file_error ("Opening output file", Fcons (newname, Qnil));
+    report_file_error ("Opening output file", Fcons (newname, Qnil));
 
   record_unwind_protect (close_file_unwind, make_number (ofd));
 
@@ -1890,7 +1932,7 @@ A prefix arg makes KEEP-TIME non-nil.")
   QUIT;
   while ((n = read (ifd, buf, sizeof buf)) > 0)
     if (write (ofd, buf, n) != n)
-	report_file_error ("I/O error", Fcons (newname, Qnil));
+      report_file_error ("I/O error", Fcons (newname, Qnil));
   immediate_quit = 0;
 
   /* Closing the output clobbers the file times on some systems.  */
@@ -1907,7 +1949,18 @@ A prefix arg makes KEEP-TIME non-nil.")
 	  if (set_file_times (XSTRING (newname)->data, atime, mtime))
 	    report_file_error ("I/O error", Fcons (newname, Qnil));
 	}
+#ifndef MSDOS
+      chmod (XSTRING (newname)->data, st.st_mode & 07777);
+#else /* MSDOS */
+#if defined (__DJGPP__) && __DJGPP__ > 1
+      /* In DJGPP v2.0 and later, fstat usually returns true file mode bits,
+         and if it can't, it tells so.  Otherwise, under MSDOS we usually
+         get only the READ bit, which will make the copied file read-only,
+         so it's better not to chmod at all.  */
+      if ((_djstat_flags & _STFAIL_WRITEBIT) == 0)
 	chmod (XSTRING (newname)->data, st.st_mode & 07777);
+#endif /* DJGPP version 2 or newer */
+#endif /* MSDOS */
     }
 
   close (ifd);
@@ -2040,7 +2093,7 @@ This is what happens in interactive use with M-x.")
   if (NILP (ok_if_already_exists)
       || INTEGERP (ok_if_already_exists))
     barf_or_query_if_file_exists (newname, "rename to it",
-				  INTEGERP (ok_if_already_exists));
+				  INTEGERP (ok_if_already_exists), 0);
 #ifndef BSD4_1
   if (0 > rename (XSTRING (filename)->data, XSTRING (newname)->data))
 #else
@@ -2110,10 +2163,17 @@ This is what happens in interactive use with M-x.")
     RETURN_UNGCPRO (call4 (handler, Qadd_name_to_file, filename,
 			   newname, ok_if_already_exists));
 
+  /* If the new name has special constructs in it,
+     call the corresponding file handler.  */
+  handler = Ffind_file_name_handler (newname, Qadd_name_to_file);
+  if (!NILP (handler))
+    RETURN_UNGCPRO (call4 (handler, Qadd_name_to_file, filename,
+			   newname, ok_if_already_exists));
+
   if (NILP (ok_if_already_exists)
       || INTEGERP (ok_if_already_exists))
     barf_or_query_if_file_exists (newname, "make it a new name",
-				  INTEGERP (ok_if_already_exists));
+				  INTEGERP (ok_if_already_exists), 0);
 #ifdef WINDOWSNT
   /* Windows does not support this operation.  */
   report_file_error ("Adding new name", Flist (2, &filename));
@@ -2170,10 +2230,17 @@ This happens for interactive use with M-x.")
     RETURN_UNGCPRO (call4 (handler, Qmake_symbolic_link, filename,
 			   linkname, ok_if_already_exists));
 
+  /* If the new link name has special constructs in it,
+     call the corresponding file handler.  */
+  handler = Ffind_file_name_handler (linkname, Qmake_symbolic_link);
+  if (!NILP (handler))
+    RETURN_UNGCPRO (call4 (handler, Qmake_symbolic_link, filename,
+			   linkname, ok_if_already_exists));
+
   if (NILP (ok_if_already_exists)
       || INTEGERP (ok_if_already_exists))
     barf_or_query_if_file_exists (linkname, "make it a link",
-				  INTEGERP (ok_if_already_exists));
+				  INTEGERP (ok_if_already_exists), 0);
   if (0 > symlink (XSTRING (filename)->data, XSTRING (linkname)->data))
     {
       /* If we didn't complain already, silently delete existing file.  */
@@ -2281,6 +2348,19 @@ static int
 check_executable (filename)
      char *filename;
 {
+#ifdef DOS_NT
+  int len = strlen (filename);
+  char *suffix;
+  struct stat st;
+  if (stat (filename, &st) < 0)
+    return 0;
+  return (S_ISREG (st.st_mode)
+	  && len >= 5
+	  && (stricmp ((suffix = filename + len-4), ".com") == 0
+	      || stricmp (suffix, ".exe") == 0
+	      || stricmp (suffix, ".bat") == 0)
+	  || (st.st_mode & S_IFMT) == S_IFDIR);
+#else /* not DOS_NT */
 #ifdef HAVE_EACCESS
   return (eaccess (filename, 1) >= 0);
 #else
@@ -2289,6 +2369,7 @@ check_executable (filename)
      But Unix doesn't give us a right way to do it.  */
   return (access (filename, 1) >= 0);
 #endif
+#endif /* not DOS_NT */
 }
 
 /* Return nonzero if file FILENAME exists and can be written.  */
@@ -2297,6 +2378,12 @@ static int
 check_writable (filename)
      char *filename;
 {
+#ifdef MSDOS
+  struct stat st;
+  if (stat (filename, &st) < 0)
+    return 0;
+  return (st.st_mode & S_IWRITE || (st.st_mode & S_IFMT) == S_IFDIR);
+#else /* not MSDOS */
 #ifdef HAVE_EACCESS
   return (eaccess (filename, 2) >= 0);
 #else
@@ -2307,6 +2394,7 @@ check_writable (filename)
      but would lose for directories.  */
   return (access (filename, 2) >= 0);
 #endif
+#endif /* not MSDOS */
 }
 
 DEFUN ("file-exists-p", Ffile_exists_p, Sfile_exists_p, 1, 1, 0,
@@ -2562,16 +2650,8 @@ DEFUN ("file-modes", Ffile_modes, Sfile_modes, 1, 1, 0,
   if (stat (XSTRING (abspath)->data, &st) < 0)
     return Qnil;
 #ifdef DOS_NT
-  {
-    int len;
-    char *suffix;
-    if (S_ISREG (st.st_mode)
-	&& (len = XSTRING (abspath)->size) >= 5
-	&& (stricmp ((suffix = XSTRING (abspath)->data + len-4), ".com") == 0
-	    || stricmp (suffix, ".exe") == 0
-	    || stricmp (suffix, ".bat") == 0))
-      st.st_mode |= S_IEXEC;
-  }
+  if (check_executable (XSTRING (abspath)->data))
+    st.st_mode |= S_IEXEC;
 #endif /* DOS_NT */
 
   return make_number (st.st_mode & 07777);
@@ -2903,6 +2983,10 @@ and (2) it puts less data in the undo list.")
 	     Otherwise loop around and scan the preceding bufferfull.  */
 	  if (bufpos != 0)
 	    break;
+	  /* If display current starts at beginning of line,
+	     keep it that way.  */
+	  if (XBUFFER (XWINDOW (selected_window)->buffer) == current_buffer)
+	    XWINDOW (selected_window)->start_at_line_beg = Fbolp ();
 	}
       immediate_quit = 0;
 
@@ -3102,7 +3186,7 @@ build_annotations_unwind (buf)
   return Qnil;
 }
 
-DEFUN ("write-region", Fwrite_region, Swrite_region, 3, 5,
+DEFUN ("write-region", Fwrite_region, Swrite_region, 3, 6,
   "r\nFWrite region to file: ",
   "Write current region into specified file.\n\
 When called from a program, takes three arguments:\n\
@@ -3117,10 +3201,12 @@ If VISIT is a string, it is a second file name;\n\
   VISIT is also the file name to lock and unlock for clash detection.\n\
 If VISIT is neither t nor nil nor a string,\n\
   that means do not print the \"Wrote file\" message.\n\
+The optional sixth arg LOCKNAME, if non-nil, specifies the name to\n\
+  use for locking and unlocking, overriding FILENAME and VISIT.\n\
 Kludgy feature: if START is a string, then that string is written\n\
 to the file, instead of any buffer contents, and END is ignored.")
-  (start, end, filename, append, visit)
-     Lisp_Object start, end, filename, append, visit;
+  (start, end, filename, append, visit, lockname)
+     Lisp_Object start, end, filename, append, visit, lockname;
 {
   register int desc;
   int failure;
@@ -3137,7 +3223,7 @@ to the file, instead of any buffer contents, and END is ignored.")
   Lisp_Object visit_file;
   Lisp_Object annotations;
   int visiting, quietly;
-  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4, gcpro5;
   struct buffer *given_buffer;
 #ifdef DOS_NT
   int buffer_file_type
@@ -3150,7 +3236,7 @@ to the file, instead of any buffer contents, and END is ignored.")
   if (!NILP (start) && !STRINGP (start))
     validate_region (&start, &end);
 
-  GCPRO2 (filename, visit);
+  GCPRO3 (filename, visit, lockname);
   filename = Fexpand_file_name (filename, Qnil);
   if (STRINGP (visit))
     visit_file = Fexpand_file_name (visit, Qnil);
@@ -3163,7 +3249,10 @@ to the file, instead of any buffer contents, and END is ignored.")
 
   annotations = Qnil;
 
-  GCPRO4 (start, filename, annotations, visit_file);
+  if (NILP (lockname))
+    lockname = visit_file;
+
+  GCPRO5 (start, filename, annotations, visit_file, lockname);
 
   /* If the file name has special constructs in it,
      call the corresponding file handler.  */
@@ -3208,7 +3297,7 @@ to the file, instead of any buffer contents, and END is ignored.")
 
 #ifdef CLASH_DETECTION
   if (!auto_saving)
-    lock_file (visit_file);
+    lock_file (lockname);
 #endif /* CLASH_DETECTION */
 
   fn = XSTRING (filename)->data;
@@ -3282,7 +3371,7 @@ to the file, instead of any buffer contents, and END is ignored.")
     {
 #ifdef CLASH_DETECTION
       save_errno = errno;
-      if (!auto_saving) unlock_file (visit_file);
+      if (!auto_saving) unlock_file (lockname);
       errno = save_errno;
 #endif /* CLASH_DETECTION */
       report_file_error ("Opening output file", Fcons (filename, Qnil));
@@ -3294,7 +3383,7 @@ to the file, instead of any buffer contents, and END is ignored.")
     if (lseek (desc, 0, 2) < 0)
       {
 #ifdef CLASH_DETECTION
-	if (!auto_saving) unlock_file (visit_file);
+	if (!auto_saving) unlock_file (lockname);
 #endif /* CLASH_DETECTION */
 	report_file_error ("Lseek error", Fcons (filename, Qnil));
       }
@@ -3350,13 +3439,12 @@ to the file, instead of any buffer contents, and END is ignored.")
 	  nwritten += XINT (end) - tem;
 	  save_errno = errno;
 	}
-
-      if (nwritten == 0)
-	{
-	  /* If file was empty, still need to write the annotations */
-	  failure = 0 > a_write (desc, "", 0, XINT (start), &annotations);
-	  save_errno = errno;
-	}
+    }
+  else
+    {
+      /* If file was empty, still need to write the annotations */
+      failure = 0 > a_write (desc, "", 0, XINT (start), &annotations);
+      save_errno = errno;
     }
 
   immediate_quit = 0;
@@ -3367,7 +3455,11 @@ to the file, instead of any buffer contents, and END is ignored.")
   /* mib says that closing the file will try to write as fast as NFS can do
      it, and that means the fsync here is not crucial for autosave files.  */
   if (!auto_saving && fsync (desc) < 0)
-    failure = 1, save_errno = errno;
+    {
+      /* If fsync fails with EINTR, don't treat that as serious.  */
+      if (errno != EINTR)
+	failure = 1, save_errno = errno;
+    }
 #endif
 
   /* Spurious "file has changed on disk" warnings have been 
@@ -3413,7 +3505,7 @@ to the file, instead of any buffer contents, and END is ignored.")
 
 #ifdef CLASH_DETECTION
   if (!auto_saving)
-    unlock_file (visit_file);
+    unlock_file (lockname);
 #endif /* CLASH_DETECTION */
 
   /* Do this before reporting IO error
@@ -3719,13 +3811,14 @@ auto_save_1 ()
   return
     Fwrite_region (Qnil, Qnil,
 		   current_buffer->auto_save_file_name,
-		   Qnil, Qlambda);
+		   Qnil, Qlambda, Qnil);
 }
 
 static Lisp_Object
 do_auto_save_unwind (desc)  /* used as unwind-protect function */
      Lisp_Object desc;
 {
+  auto_saving = 0;
   close (XINT (desc));
   return Qnil;
 }
@@ -3763,7 +3856,6 @@ Non-nil second argument means save only current buffer.")
   /* No GCPRO needed, because (when it matters) all Lisp_Object variables
      point to non-strings reached from Vbuffer_alist.  */
 
-  auto_saving = 1;
   if (minibuf_level)
     no_message = Qt;
 
@@ -3785,9 +3877,12 @@ Non-nil second argument means save only current buffer.")
   else
     listdesc = -1;
   
-  /* Arrange to close that file whether or not we get an error.  */
+  /* Arrange to close that file whether or not we get an error.
+     Also reset auto_saving to 0.  */
   if (listdesc >= 0)
     record_unwind_protect (do_auto_save_unwind, make_number (listdesc));
+
+  auto_saving = 1;
 
   /* First, save all files which don't have handlers.  If Emacs is
      crashing, the handlers may tweak what is causing Emacs to crash
@@ -3896,7 +3991,6 @@ Non-nil second argument means save only current buffer.")
 
   Vquit_flag = oquit;
 
-  auto_saving = 0;
   unbind_to (count, Qnil);
   return Qnil;
 }

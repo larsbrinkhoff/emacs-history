@@ -36,7 +36,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "intervals.h"
 #include "keyboard.h"
 
-#ifdef USE_X_TOOLKIT
+#if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
 extern void set_frame_menubar ();
 #endif
 
@@ -49,6 +49,8 @@ extern Lisp_Object Voverriding_local_map;
 extern Lisp_Object Voverriding_local_map_menu_flag;
 
 Lisp_Object Qoverriding_local_map, Qoverriding_terminal_local_map;
+Lisp_Object Qwindow_scroll_functions, Vwindow_scroll_functions;
+Lisp_Object Qredisplay_end_trigger_functions;
 
 /* Nonzero means print newline to stdout before next minibuffer message.  */
 
@@ -187,6 +189,11 @@ char *echo_area_glyphs;
 /* This is the length of the message in echo_area_glyphs.  */
 int echo_area_glyphs_length;
 
+/* This is the window where the echo area message was displayed.
+   It is always a minibuffer window, but it may not be the
+   same window currently active as a minibuffer.  */
+Lisp_Object echo_area_window;
+
 /* true iff we should redraw the mode lines on the next redisplay */
 int update_mode_lines;
 
@@ -204,10 +211,6 @@ int end_unchanged;
    if it matches MODIFF, beg_unchanged and end_unchanged
    contain no useful information */
 int unchanged_modified;
-
-/* Nonzero if head_clip or tail_clip of current buffer has changed
-   since last redisplay that finished */
-int clip_changed;
 
 /* Nonzero if window sizes or contents have changed
    since last redisplay that finished */
@@ -396,15 +399,19 @@ message2_nolog (m, len)
      cmd_error, so this must be just an informative message; toss it.  */
   else if (INTERACTIVE && FRAME_MESSAGE_BUF (selected_frame))
     {
-#ifdef MULTI_FRAME
-      Lisp_Object minibuf_frame;
+      Lisp_Object mini_window;
+      FRAME_PTR f;
 
-      choose_minibuf_frame ();
-      minibuf_frame = WINDOW_FRAME (XWINDOW (minibuf_window));
-      FRAME_SAMPLE_VISIBILITY (XFRAME (minibuf_frame));
+      /* Get the frame containing the minibuffer
+	 that the selected frame is using.  */
+      mini_window = FRAME_MINIBUF_WINDOW (selected_frame);
+      f = XFRAME (WINDOW_FRAME (XWINDOW (mini_window)));
+
+#ifdef MULTI_FRAME
+      FRAME_SAMPLE_VISIBILITY (f);
       if (FRAME_VISIBLE_P (selected_frame)
-	  && ! FRAME_VISIBLE_P (XFRAME (minibuf_frame)))
-	Fmake_frame_visible (WINDOW_FRAME (XWINDOW (minibuf_window)));
+	  && ! FRAME_VISIBLE_P (f))
+	Fmake_frame_visible (WINDOW_FRAME (XWINDOW (mini_window)));
 #endif
 
       if (m)
@@ -417,10 +424,10 @@ message2_nolog (m, len)
 
       do_pending_window_change ();
       echo_area_display ();
-      update_frame (XFRAME (XWINDOW (minibuf_window)->frame), 1, 1);
+      update_frame (f, 1, 1);
       do_pending_window_change ();
       if (frame_up_to_date_hook != 0 && ! gc_in_progress)
-	(*frame_up_to_date_hook) (XFRAME (XWINDOW (minibuf_window)->frame));
+	(*frame_up_to_date_hook) (f);
     }
 }
 
@@ -482,18 +489,18 @@ message (m, a1, a2, a3)
       /* The frame whose minibuffer we're going to display the message on.
 	 It may be larger than the selected frame, so we need
 	 to use its buffer, not the selected frame's buffer.  */
-      FRAME_PTR echo_frame;
-#ifdef MULTI_FRAME
-      choose_minibuf_frame ();
-      echo_frame = XFRAME (WINDOW_FRAME (XWINDOW (minibuf_window)));
-#else
-      echo_frame = selected_frame;
-#endif
+      Lisp_Object mini_window;
+      FRAME_PTR f;
+
+      /* Get the frame containing the minibuffer
+	 that the selected frame is using.  */
+      mini_window = FRAME_MINIBUF_WINDOW (selected_frame);
+      f = XFRAME (WINDOW_FRAME (XWINDOW (mini_window)));
 
       /* A null message buffer means that the frame hasn't really been
 	 initialized yet.  Error messages get reported properly by
 	 cmd_error, so this must be just an informative message; toss it.  */
-      if (FRAME_MESSAGE_BUF (echo_frame))
+      if (FRAME_MESSAGE_BUF (f))
 	{
 	  if (m)
 	    {
@@ -504,14 +511,14 @@ message (m, a1, a2, a3)
 	      a[1] = a2;
 	      a[2] = a3;
 
-	      len = doprnt (FRAME_MESSAGE_BUF (echo_frame),
-			    FRAME_WIDTH (echo_frame), m, (char *)0, 3, a);
+	      len = doprnt (FRAME_MESSAGE_BUF (f),
+			    FRAME_WIDTH (f), m, (char *)0, 3, a);
 #else
-	      len = doprnt (FRAME_MESSAGE_BUF (echo_frame),
-			    FRAME_WIDTH (echo_frame), m, (char *)0, 3, &a1);
+	      len = doprnt (FRAME_MESSAGE_BUF (f),
+			    FRAME_WIDTH (f), m, (char *)0, 3, &a1);
 #endif /* NO_ARG_ARRAY */
 
-	      message2 (FRAME_MESSAGE_BUF (echo_frame), len);
+	      message2 (FRAME_MESSAGE_BUF (f), len);
 	    }
 	  else
 	    message1 (0);
@@ -547,12 +554,13 @@ echo_area_display ()
 {
   register int vpos;
   FRAME_PTR f;
+  Lisp_Object mini_window;
 
-#ifdef MULTI_FRAME
-  choose_minibuf_frame ();
-#endif
-
-  f = XFRAME (WINDOW_FRAME (XWINDOW (minibuf_window)));
+  /* Choose the minibuffer window for this display.
+     It is the minibuffer window used by the selected frame.  */
+  mini_window = FRAME_MINIBUF_WINDOW (selected_frame);
+  /* This is the frame that window is in.  */
+  f = XFRAME (WINDOW_FRAME (XWINDOW (mini_window)));
 
   if (! FRAME_VISIBLE_P (f))
     return;
@@ -565,42 +573,46 @@ echo_area_display ()
 
   if (echo_area_glyphs || minibuf_level == 0)
     {
-      vpos = XFASTINT (XWINDOW (minibuf_window)->top);
+      echo_area_window = mini_window;
+
+      vpos = XFASTINT (XWINDOW (mini_window)->top);
       get_display_line (f, vpos, 0);
-      display_string (XWINDOW (minibuf_window), vpos,
+      display_string (XWINDOW (mini_window), vpos,
 		      echo_area_glyphs ? echo_area_glyphs : "",
 		      echo_area_glyphs ? echo_area_glyphs_length : -1,
 		      0, 0, 0, 0, FRAME_WIDTH (f));
 
+#if 0 /* This just gets in the way.  update_frame does the job.  */
       /* If desired cursor location is on this line, put it at end of text */
       if (cursor_in_echo_area)
 	FRAME_CURSOR_Y (f) = vpos;
       if (FRAME_CURSOR_Y (f) == vpos)
 	FRAME_CURSOR_X (f) = FRAME_DESIRED_GLYPHS (f)->used[vpos];
+#endif
 
       /* Fill the rest of the minibuffer window with blank lines.  */
       {
 	int i;
 
 	for (i = vpos + 1;
-	     i < vpos + XFASTINT (XWINDOW (minibuf_window)->height); i++)
+	     i < vpos + XFASTINT (XWINDOW (mini_window)->height); i++)
 	  {
 	    get_display_line (f, i, 0);
-	    display_string (XWINDOW (minibuf_window), vpos,
+	    display_string (XWINDOW (mini_window), vpos,
 			    "", 0, 0, 0, 0, 0, FRAME_WIDTH (f));
 	  }
       }
     }
-  else if (!EQ (minibuf_window, selected_window))
+  else if (!EQ (mini_window, selected_window))
     windows_or_buffers_changed++;
 
-  if (EQ (minibuf_window, selected_window))
+  if (EQ (mini_window, selected_window))
     this_line_bufpos = 0;
 
   previous_echo_glyphs = echo_area_glyphs;
 }
 
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
 static char frame_title_buf[512];
 static char *frame_title_ptr;
 
@@ -629,7 +641,7 @@ x_consider_frame_title (frame)
   int len;
   FRAME_PTR f = XFRAME (frame);
 
-  if (!FRAME_X_P (f) || FRAME_MINIBUF_ONLY_P (f) || f->explicit_name)
+  if (!(FRAME_WINDOW_P (f) || FRAME_MINIBUF_ONLY_P (f) || f->explicit_name))
     return;
 
   /* Do we have more than one visible frame on this X display?  */
@@ -682,7 +694,7 @@ prepare_menu_bars ()
   struct gcpro gcpro1, gcpro2;
 
   all_windows = (update_mode_lines || buffer_shared > 1
-		 || clip_changed || windows_or_buffers_changed);
+		 || windows_or_buffers_changed);
 
   /* Update all frame titles based on their buffer names, etc.
      We do this before the menu bars so that the buffer-menu
@@ -694,7 +706,7 @@ prepare_menu_bars ()
      create its menu bar using the name `emacs' if no other name
      has yet been specified."
      I think that is no longer a concern.  */
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
   if (windows_or_buffers_changed)
     {
       Lisp_Object tail, frame;
@@ -769,6 +781,9 @@ static int do_verify_charstarts;
    no more than once ever 1000 redisplays.  */
 static int clear_face_cache_count;
 
+/* Record the previous terminal frame we displayed.  */
+static FRAME_PTR previous_terminal_frame;
+
 void
 redisplay ()
 {
@@ -781,6 +796,19 @@ redisplay ()
 
   if (noninteractive)
     return;
+
+#ifdef MULTI_FRAME
+  if (FRAME_TERMCAP_P (selected_frame)
+      && previous_terminal_frame != selected_frame)
+    {
+      /* Since frames on an ASCII terminal share the same display area,
+	 displaying a different frame means redisplay the whole thing.  */
+      windows_or_buffers_changed++;
+      SET_FRAME_GARBAGED (selected_frame);
+      XSETFRAME (Vterminal_frame, selected_frame);
+    }
+  previous_terminal_frame = selected_frame;
+#endif
 
   /* Set the visible flags for all frames.
      Do this before checking for resized or garbaged frames; they want
@@ -810,9 +838,7 @@ redisplay ()
 
   prepare_menu_bars ();
 
-  if (clip_changed || windows_or_buffers_changed
-      || (!NILP (w->column_number_displayed)
-	  && XFASTINT (w->column_number_displayed) != current_column ()))
+  if (windows_or_buffers_changed)
     update_mode_lines++;
 
   /* Detect case that we need to write a star in the mode line.  */
@@ -824,6 +850,15 @@ redisplay ()
 	update_mode_lines++;
     }
 
+  /* If %c is in use, update it if needed.  */
+  if (!NILP (w->column_number_displayed)
+      /* This alternative quickly identifies a common case
+	 where no change is needed.  */
+      && !(PT == XFASTINT (w->last_point)
+	   && XFASTINT (w->last_modified) >= MODIFF)
+      && XFASTINT (w->column_number_displayed) != current_column ())
+    w->update_mode_line = Qt; 
+
   FRAME_SCROLL_BOTTOM_VPOS (XFRAME (w->frame)) = -1;
 
   all_windows = update_mode_lines || buffer_shared > 1;
@@ -832,7 +867,7 @@ redisplay ()
      to ensure we remove any arrow that should no longer exist.  */
   if (! EQ (Voverlay_arrow_position, last_arrow_position)
       || ! EQ (Voverlay_arrow_string, last_arrow_string))
-    all_windows = 1, clip_changed = 1;
+    all_windows = 1;
 
   /* Normally the message* functions will have already displayed and
      updated the echo area, but the frame may have been trashed, or
@@ -856,6 +891,7 @@ redisplay ()
   tlbufpos = this_line_bufpos;
   tlendpos = this_line_endpos;
   if (!all_windows && tlbufpos > 0 && NILP (w->update_mode_line)
+      && !current_buffer->clip_changed
       && FRAME_VISIBLE_P (XFRAME (w->frame))
       /* Make sure recorded data applies to current buffer, etc */
       && this_line_buffer == current_buffer
@@ -927,7 +963,12 @@ redisplay ()
 	  else
 	    goto cancel;
 	}
-      else if (PT == XFASTINT (w->last_point))
+      else if (PT == XFASTINT (w->last_point)
+	       /* Make sure the cursor was last displayed
+		  in this window.  Otherwise we have to reposition it.  */
+	       && XINT (w->top) <= FRAME_CURSOR_Y (selected_frame)
+	       && (XINT (w->top) + XINT (w->height)
+		   > FRAME_CURSOR_Y (selected_frame)))
 	{
 	  if (!must_finish)
 	    {
@@ -946,7 +987,7 @@ redisplay ()
 	  pos = *compute_motion (tlbufpos, 0,
 				 XINT (w->hscroll) ? 1 - XINT (w->hscroll) : 0,
 				 0,
-				 PT, 2, - (1 << (SHORTBITS - 1)),
+				 PT, 2, - (1 << (BITS_PER_SHORT - 1)),
 				 window_internal_width (w) - 1,
 				 XINT (w->hscroll),
 				 pos_tab_offset (w, tlbufpos), w);
@@ -1068,10 +1109,14 @@ update:
 	 above call to update_frame would not have caught it.  Catch
 	 it here.  */
       {
-	FRAME_PTR mini_frame
-	  = XFRAME (WINDOW_FRAME (XWINDOW (minibuf_window)));
+	Lisp_Object mini_window;
+	FRAME_PTR mini_frame;
+
+	mini_window = FRAME_MINIBUF_WINDOW (selected_frame);
+	mini_frame = XFRAME (WINDOW_FRAME (XWINDOW (mini_window)));
 	
-	if (mini_frame != selected_frame)
+	if (mini_frame != selected_frame
+	    && ! FRAME_TERMCAP_P (mini_frame))
 	  pause |= update_frame (mini_frame, 0, 0);
       }
     }
@@ -1102,7 +1147,6 @@ update:
       register struct buffer *b = XBUFFER (w->buffer);
 
       blank_end_of_window = 0;
-      clip_changed = 0;
       unchanged_modified = BUF_MODIFF (b);
       beg_unchanged = BUF_GPT (b) - BUF_BEG (b);
       end_unchanged = BUF_Z (b) - BUF_GPT (b);
@@ -1115,6 +1159,7 @@ update:
 	mark_window_display_accurate (FRAME_ROOT_WINDOW (selected_frame), 1);
       else
 	{
+	  b->clip_changed = 0;
 	  w->update_mode_line = Qnil;
 	  XSETFASTINT (w->last_modified, BUF_MODIFF (b));
 	  w->window_end_valid = w->buffer;
@@ -1196,6 +1241,8 @@ mark_window_display_accurate (window, flag)
 
       w->window_end_valid = w->buffer;
       w->update_mode_line = Qnil;
+      if (!NILP (w->buffer))
+	XBUFFER (w->buffer)->clip_changed = 0;
 
       if (!NILP (w->vchild))
 	mark_window_display_accurate (w->vchild, flag);
@@ -1237,13 +1284,14 @@ update_menu_bar (f, save_match_data)
   if (update_mode_lines)
     w->update_mode_line = Qt;
 
-  if (
-#ifdef USE_X_TOOLKIT
+  if (FRAME_X_P (f)
+      ?
+#if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
       FRAME_EXTERNAL_MENU_BAR (f) 
 #else
       FRAME_MENU_BAR_LINES (f) > 0
 #endif
-      )
+      : FRAME_MENU_BAR_LINES (f) > 0)
     {
       /* If the user has switched buffers or windows, we need to
 	 recompute to reflect the new bindings.  But we'll
@@ -1281,9 +1329,10 @@ update_menu_bar (f, save_match_data)
 	    call0 (Qrecompute_lucid_menubar);
 	  call1 (Vrun_hooks, Qmenu_bar_update_hook);
 	  FRAME_MENU_BAR_ITEMS (f) = menu_bar_items (FRAME_MENU_BAR_ITEMS (f));
-#ifdef USE_X_TOOLKIT
-	  set_frame_menubar (f, 0);
-#endif /* USE_X_TOOLKIT */
+#if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
+	  if (FRAME_X_P (f))
+	    set_frame_menubar (f, 0, 0);
+#endif /* USE_X_TOOLKIT || HAVE_NTGUI */
 
 	  unbind_to (count, Qnil);
 	  set_buffer_internal_1 (prev);
@@ -1322,7 +1371,7 @@ redisplay_window (window, just_this_one)
   int opoint = PT;
   int tem;
   int update_mode_line;
-  struct Lisp_Vector *dp = window_display_table (w);
+  struct Lisp_Char_Table *dp = window_display_table (w);
 
   if (FRAME_HEIGHT (f) == 0) abort (); /* Some bug zeros some core */
 
@@ -1343,20 +1392,19 @@ redisplay_window (window, just_this_one)
   
   height = window_internal_height (w);
   update_mode_line = (!NILP (w->update_mode_line) || update_mode_lines);
+  if (XBUFFER (w->buffer)->clip_changed)
+    update_mode_line = 1;
 
   if (MINI_WINDOW_P (w))
     {
-      if (w == XWINDOW (minibuf_window))
+      if (w == XWINDOW (echo_area_window) && echo_area_glyphs)
+	/* We've already displayed the echo area glyphs in this window.  */
+	goto finish_scroll_bars;
+      else if (w != XWINDOW (minibuf_window))
 	{
-	  if (echo_area_glyphs)
-	    /* We've already displayed the echo area glyphs, if any.  */
-	    goto finish_scroll_bars;
-	}
-      else
-	{
-	  /* This is a minibuffer, but it's not the currently active one, so
-	     clear it.  */
-	  int vpos = XFASTINT (XWINDOW (FRAME_MINIBUF_WINDOW (f))->top);
+	  /* This is a minibuffer, but it's not the currently active one,
+	     so clear it.  */
+	  int vpos = XFASTINT (w->top);
 	  int i;
 
 	  for (i = 0; i < height; i++)
@@ -1377,6 +1425,15 @@ redisplay_window (window, just_this_one)
     set_buffer_temp (XBUFFER (w->buffer));
 
   opoint = PT;
+
+  /* If %c is in mode line, update it if needed.  */
+  if (!NILP (w->column_number_displayed)
+      /* This alternative quickly identifies a common case
+	 where no change is needed.  */
+      && !(PT == XFASTINT (w->last_point)
+	   && XFASTINT (w->last_modified) >= MODIFF)
+      && XFASTINT (w->column_number_displayed) != current_column ())
+    update_mode_line = 1; 
 
   /* Count number of windows showing the selected buffer.
      An indirect buffer counts as its base buffer.  */
@@ -1421,7 +1478,7 @@ redisplay_window (window, just_this_one)
      changed, so why should we worry about doing any better?  */
   if (current_buffer->width_run_cache)
     {
-      struct Lisp_Vector *disptab = buffer_display_table ();
+      struct Lisp_Char_Table *disptab = buffer_display_table ();
 
       if (! disptab_matches_widthtab (disptab,
                                       XVECTOR (current_buffer->width_table)))
@@ -1445,13 +1502,21 @@ redisplay_window (window, just_this_one)
     {
       /* Forget any recorded base line for line number display.  */
       w->base_line_number = Qnil;
-      /* Redisplay the mode line.  Select the buffer properly for that.  */
-      if (!update_mode_line)
+      /* Redisplay the mode line.  Select the buffer properly for that.
+	 Also, run the hook window-scroll-functions
+	 because we have scrolled.  */
+      if (!update_mode_line
+	  || ! NILP (Vwindow_scroll_functions))
 	{
+	  Lisp_Object temp[3];
+
 	  set_buffer_temp (old);
 	  set_buffer_internal_1 (XBUFFER (w->buffer));
 	  update_mode_line = 1;
 	  w->update_mode_line = Qt;
+	  if (! NILP (Vwindow_scroll_functions))
+	    run_hook_with_args_2 (Qwindow_scroll_functions, window,
+				  make_number (startp));
 	}
       w->force_start = Qnil;
       XSETFASTINT (w->last_modified, 0);
@@ -1468,7 +1533,7 @@ redisplay_window (window, just_this_one)
 				  + (hscroll ? 1 - hscroll : 0)),
 				 0,
 				 ZV, height / 2,
-				 - (1 << (SHORTBITS - 1)),
+				 - (1 << (BITS_PER_SHORT - 1)),
 				 width, hscroll, pos_tab_offset (w, startp), w);
 	  BUF_PT (current_buffer) = pos.bufpos;
 	  if (w != XWINDOW (selected_window))
@@ -1504,7 +1569,7 @@ redisplay_window (window, just_this_one)
      in redisplay handles the same cases.  */
 
   if (XFASTINT (w->last_modified) >= MODIFF
-      && PT >= startp && !clip_changed
+      && PT >= startp && !current_buffer->clip_changed
       && (just_this_one || XFASTINT (w->width) == FRAME_WIDTH (f))
       /* If force-mode-line-update was called, really redisplay;
 	 that's how redisplay is forced after e.g. changing
@@ -1558,7 +1623,7 @@ redisplay_window (window, just_this_one)
 	   /* or else vmotion on first line won't work.  */
 	   && ! NILP (w->start_at_line_beg)
 	   && ! EQ (w->window_end_valid, Qnil)
-	   && do_id && !clip_changed
+	   && do_id && !current_buffer->clip_changed
 	   && !blank_end_of_window
 	   && XFASTINT (w->width) == FRAME_WIDTH (f)
 	   /* Can't use this case if highlighting a region.  */
@@ -1590,7 +1655,8 @@ redisplay_window (window, just_this_one)
       try_window (window, startp);
       if (cursor_vpos >= 0)
 	{
-	  if (!just_this_one || clip_changed || beg_unchanged < startp)
+	  if (!just_this_one || current_buffer->clip_changed
+	      || beg_unchanged < startp)
 	    /* Forget any recorded base line for line number display.  */
 	    w->base_line_number = Qnil;
 	  goto done;
@@ -1611,7 +1677,7 @@ redisplay_window (window, just_this_one)
 
   /* Try to scroll by specified few lines */
 
-  if (scroll_step && !clip_changed)
+  if (scroll_step && !current_buffer->clip_changed)
     {
       if (PT > startp)
 	{
@@ -1624,10 +1690,14 @@ redisplay_window (window, just_this_one)
 
       if (PT >= pos.bufpos)
 	{
+	  if (! NILP (Vwindow_scroll_functions))
+	    run_hook_with_args_2 (Qwindow_scroll_functions, window,
+				  make_number (pos.bufpos));
 	  try_window (window, pos.bufpos);
 	  if (cursor_vpos >= 0)
 	    {
-	      if (!just_this_one || clip_changed || beg_unchanged < startp)
+	      if (!just_this_one || current_buffer->clip_changed
+		  || beg_unchanged < startp)
 		/* Forget any recorded base line for line number display.  */
 		w->base_line_number = Qnil;
 	      goto done;
@@ -1645,6 +1715,9 @@ recenter:
   w->base_line_number = Qnil;
 
   pos = *vmotion (PT, - (height / 2), w);
+  if (! NILP (Vwindow_scroll_functions))
+    run_hook_with_args_2 (Qwindow_scroll_functions, window,
+			  make_number (pos.bufpos));
   try_window (window, pos.bufpos);
 
   startp = marker_position (w->start);
@@ -1670,11 +1743,14 @@ done:
 
   /* When we reach a frame's selected window, redo the frame's menu bar.  */
   if (update_mode_line
-#ifdef USE_X_TOOLKIT
-      && FRAME_EXTERNAL_MENU_BAR (f) 
+      && (FRAME_X_P (f)
+	  ?
+#if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
+	  FRAME_EXTERNAL_MENU_BAR (f) 
 #else
-      && FRAME_MENU_BAR_LINES (f) > 0
+	  FRAME_MENU_BAR_LINES (f) > 0
 #endif
+	  : FRAME_MENU_BAR_LINES (f) > 0)
       && EQ (FRAME_SELECTED_WINDOW (f), window))
     display_menu_bar (w);
 
@@ -1823,7 +1899,7 @@ try_window_id (window)
   struct position val, bp, ep, xp, pp;
   int scroll_amount = 0;
   int delta;
-  int tab_offset, epto;
+  int tab_offset, epto, old_tick;
 
   if (GPT - BEG < beg_unchanged)
     beg_unchanged = GPT - BEG;
@@ -1841,12 +1917,12 @@ try_window_id (window)
     {
       if (PT < bp.bufpos)
 	{
-	  /* All changes are below the frame, and point is on the frame.
-	     We don't need to change the frame at all.
+	  /* All changes are beyond the window end, and point is on the screen.
+	     We don't need to change the text at all.
 	     But we need to update window_end_pos to account for
 	     any change in buffer size.  */
 	  bp = *compute_motion (start, 0, lmargin, 0,
-				Z, height, 0,
+				ZV, height, 0,
 				width, hscroll, pos_tab_offset (w, start), w);
 	  XSETFASTINT (w->window_end_vpos, height);
 	  XSETFASTINT (w->window_end_pos, Z - bp.bufpos);
@@ -1896,7 +1972,7 @@ try_window_id (window)
 
   /* Compute the cursor position after that newline.  */
   ep = *compute_motion (pos, vpos, val.hpos, did_motion, tem,
-			height, - (1 << (SHORTBITS - 1)),
+			height, - (1 << (BITS_PER_SHORT - 1)),
 			width, hscroll, pos_tab_offset (w, bp.bufpos), w);
 
   /* If changes reach past the text available on the frame,
@@ -1952,13 +2028,13 @@ try_window_id (window)
 	  if (PT <= xp.bufpos)
 	    {
 	      pp = *compute_motion (ep.bufpos, ep.vpos, ep.hpos, 1,
-				    PT, height, - (1 << (SHORTBITS - 1)),
+				    PT, height, - (1 << (BITS_PER_SHORT - 1)),
 				    width, hscroll, epto, w);
 	    }
 	  else
 	    {
 	      pp = *compute_motion (xp.bufpos, xp.vpos, xp.hpos, 1,
-				    PT, height, - (1 << (SHORTBITS - 1)),
+				    PT, height, - (1 << (BITS_PER_SHORT - 1)),
 				    width, hscroll,
 				    pos_tab_offset (w, xp.bufpos), w);
 	    }
@@ -2068,9 +2144,15 @@ try_window_id (window)
      to account for passing the line that that character really starts in.  */
   if (val.hpos < lmargin)
     tab_offset += width;
+  old_tick = MODIFF;
   while (vpos < stop_vpos)
     {
       val = *display_text_line (w, pos, top + vpos++, val.hpos, tab_offset);
+      /* If display_text_line ran a hook and changed some text,
+	 redisplay all the way to bottom of buffer
+	 So that we show the changes.  */
+      if (old_tick != MODIFF)
+	stop_vpos = height;
       tab_offset += width;
       if (val.vpos) tab_offset = 0;
       if (pos != val.bufpos)
@@ -2179,7 +2261,7 @@ try_window_id (window)
   if (debug_end_pos)
     {
       val = *compute_motion (start, 0, lmargin, 0, ZV,
-			     height, - (1 << (SHORTBITS - 1)),
+			     height, - (1 << (BITS_PER_SHORT - 1)),
 			     width, hscroll, pos_tab_offset (w, start), w);
       if (val.vpos != XFASTINT (w->window_end_vpos))
 	abort ();
@@ -2401,7 +2483,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
 		   ? XINT (current_buffer->selective_display)
 		   : !NILP (current_buffer->selective_display) ? -1 : 0);
   register struct frame_glyphs *desired_glyphs = FRAME_DESIRED_GLYPHS (f);
-  register struct Lisp_Vector *dp = window_display_table (w);
+  register struct Lisp_Char_Table *dp = window_display_table (w);
 
   Lisp_Object default_invis_vector[3];
   /* Number of characters of ellipsis to display after an invisible line
@@ -2546,6 +2628,8 @@ display_text_line (w, start, vpos, hpos, taboffset)
     {
       if (pos >= pause)
 	{
+	  int e_t_h;
+
 	  while (pos == next_boundary)
 	    {
 	      Lisp_Object position, limit, prop, ww;
@@ -2627,15 +2711,45 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	      break;
 	    }
 
+	  /* Figure out where (if at all) the
+	     redisplay_end_trigger-hook should run.  */
+	  if (MARKERP (w->redisplay_end_trigger)
+	      && XMARKER (w->redisplay_end_trigger)->buffer != 0)
+	    e_t_h = marker_position (w->redisplay_end_trigger);
+	  else if (INTEGERP (w->redisplay_end_trigger))
+	    e_t_h = XINT (w->redisplay_end_trigger);
+	  else
+	    e_t_h = ZV;
+
+	  /* If we've gone past the place to run a hook,
+	     run the hook.  */
+	  if (pos >= e_t_h && e_t_h != ZV)
+	    {
+	      Lisp_Object args[3];
+
+	      args[0] = Qredisplay_end_trigger_functions;
+	      XSETWINDOW (args[1], w);
+	      XSETINT (args[2], e_t_h);
+	      Frun_hook_with_args (3, args);
+
+	      w->redisplay_end_trigger = Qnil;
+	      e_t_h = ZV;
+	      /* Notice if it changed the face of this character.  */
+	      next_face_change = pos;
+	    }
+
 #ifdef HAVE_FACES
 	  /* Did we hit a face change?  Figure out what face we should
 	     use now.  We also hit this the first time through the
 	     loop, to see what face we should start with.  */
-	  if (pos >= next_face_change && FRAME_X_P (f))
+	  if (pos >= next_face_change && (FRAME_WINDOW_P (f)))
 	    current_face = compute_char_face (f, w, pos,
 					      region_beg, region_end,
 					      &next_face_change, pos + 50, 0);
 #endif
+
+	  /* Compute the next place we need to stop
+	     and do something special; set PAUSE.  */
 
 	  pause = ZV;
 
@@ -2643,6 +2757,9 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	    pause = next_boundary;
 	  if (pos < next_face_change && next_face_change < pause)
 	    pause = next_face_change;
+
+	  if (e_t_h < pause)
+	    pause = e_t_h;
 
 	  /* Wouldn't you hate to read the next line to someone over
              the phone?  */
@@ -2981,11 +3098,16 @@ display_text_line (w, start, vpos, hpos, taboffset)
          covered up by the scroll bars, and it's distracting to see
          them when the scroll bar windows are flickering around to be
          reconfigured.  */
-      *p1++ = (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
-	       ? ' '
-	       : (dp && INTEGERP (DISP_BORDER_GLYPH (dp))
-		  ? DISP_BORDER_GLYPH (dp)
-		  : '|'));
+      if (FRAME_HAS_VERTICAL_SCROLL_BARS (f))
+	{
+	  int i;
+	  for (i = 0; i < FRAME_SCROLL_BAR_COLS (f); i++)
+	    *p1++ = SPACEGLYPH;
+	}
+      else
+	*p1++ = (dp && INTEGERP (DISP_BORDER_GLYPH (dp))
+		 ? DISP_BORDER_GLYPH (dp)
+		 : '|');
     }
   desired_glyphs->used[vpos] = max (desired_glyphs->used[vpos],
 				   p1 - desired_glyphs->glyphs[vpos]);
@@ -3056,9 +3178,14 @@ display_menu_bar (w)
   int hpos = 0;
   int i;
 
-#ifndef USE_X_TOOLKIT
-  if (FRAME_MENU_BAR_LINES (f) <= 0)
+#ifdef HAVE_NTGUI
+  return;
+#endif
+
+#ifdef USE_X_TOOLKIT
+  if (FRAME_X_P (f))
     return;
+#endif /* USE_X_TOOLKIT */
 
   get_display_line (f, vpos, 0);
 
@@ -3097,7 +3224,6 @@ display_menu_bar (w)
   vpos++;
   while (vpos < FRAME_MENU_BAR_LINES (f))
     get_display_line (f, vpos++, 0);
-#endif /* not USE_X_TOOLKIT */
 }
 
 /* Display the mode line for window w */
@@ -3212,6 +3338,7 @@ display_mode_element (w, vpos, hpos, depth, minendcol, maxendcol, elt)
 	      }
 	    else /* c == '%' */
 	      {
+		register int minendcol;
 		register int spec_width = 0;
 
 		/* We can't allow -ve args due to the "%-" construct */
@@ -3224,9 +3351,12 @@ display_mode_element (w, vpos, hpos, depth, minendcol, maxendcol, elt)
 		    spec_width = spec_width * 10 + (c - '0');
 		  }
 
-		spec_width += hpos;
-		if (spec_width > maxendcol)
-		  spec_width = maxendcol;
+		minendcol = hpos + spec_width;
+		if (minendcol > maxendcol)
+		  {
+		    spec_width = maxendcol - hpos;
+		    minendcol = maxendcol;
+		  }
 
 		if (c == 'M')
 		  hpos = display_mode_element (w, vpos, hpos, depth,
@@ -3234,13 +3364,14 @@ display_mode_element (w, vpos, hpos, depth, minendcol, maxendcol, elt)
 					       Vglobal_mode_string);
 		else if (c != 0)
 		  {
-		    char *spec = decode_mode_spec (w, c, maxendcol - hpos);
+		    char *spec = decode_mode_spec (w, c, spec_width,
+						   maxendcol - hpos);
 		    if (frame_title_ptr)
-		      hpos = store_frame_title (spec, spec_width, maxendcol);
+		      hpos = store_frame_title (spec, minendcol, maxendcol);
 		    else
 		      hpos = display_string (w, vpos, spec, -1,
 					     hpos, 0, 1,
-					     spec_width, maxendcol);
+					     minendcol, maxendcol);
 		  }
 	      }
 	  }
@@ -3374,15 +3505,47 @@ display_mode_element (w, vpos, hpos, depth, minendcol, maxendcol, elt)
   return hpos;
 }
 
+/* Write a null-terminated, right justified decimal representation of
+   the positive integer D to BUF using a minimal field width WIDTH.  */
+
+static void
+pint2str (buf, width, d)
+     register char *buf;
+     register int width;
+     register int d;
+{
+  register char *p = buf;
+  
+  if (d <= 0)
+      *p++ = '0';
+  else
+      while (d > 0)
+      {
+	  *p++ = d % 10 + '0';
+	  d /= 10;
+      }
+  for (width -= (int) (p - buf); width > 0; --width) *p++ = ' ';
+  *p-- = '\0';
+  while (p > buf)
+  {
+      d = *buf;
+      *buf++ = *p;
+      *p-- = d;
+  }
+}
+
 /* Return a string for the output of a mode line %-spec for window W,
-   generated by character C and width MAXWIDTH.  */
+   generated by character C.  SPEC_WIDTH is the field width when
+   padding to the left (%c, %l).  The value returned from this
+   function will later be truncated to width MAXWIDTH. */
 
 static char lots_of_dashes[] = "--------------------------------------------------------------------------------------------------------------------------------------------";
 
 static char *
-decode_mode_spec (w, c, maxwidth)
+decode_mode_spec (w, c, spec_width, maxwidth)
      struct window *w;
      register char c;
+     register int spec_width;
      register int maxwidth;
 {
   Lisp_Object obj;
@@ -3481,7 +3644,7 @@ decode_mode_spec (w, c, maxwidth)
       {
 	int col = current_column ();
 	XSETFASTINT (w->column_number_displayed, col);
-	sprintf (decode_mode_spec_buf, "%d", col);
+	pint2str (decode_mode_spec_buf, spec_width, col);
 	return decode_mode_spec_buf;
       }
 
@@ -3519,14 +3682,14 @@ decode_mode_spec (w, c, maxwidth)
 	/* If we decided that this buffer isn't suitable for line numbers, 
 	   don't forget that too fast.  */
 	if (EQ (w->base_line_pos, w->buffer))
-	  return "??";
+	  goto no_value;
 
 	/* If the buffer is very big, don't waste time.  */
 	if (BUF_ZV (b) - BUF_BEGV (b) > line_number_display_limit)
 	  {
 	    w->base_line_pos = Qnil;
 	    w->base_line_number = Qnil;
-	    return "??";
+	    goto no_value;
 	  }
 
 	if (!NILP (w->base_line_number)
@@ -3576,7 +3739,7 @@ decode_mode_spec (w, c, maxwidth)
 	      {
 		w->base_line_pos = w->buffer;
 		w->base_line_number = Qnil;
-		return "??";
+		goto no_value;
 	      }
 
 	    XSETFASTINT (w->base_line_number, topline - nlines);
@@ -3590,8 +3753,15 @@ decode_mode_spec (w, c, maxwidth)
 	line_number_displayed = 1;
 
 	/* Make the string to show.  */
-	sprintf (decode_mode_spec_buf, "%d", topline + nlines);
+	pint2str (decode_mode_spec_buf, spec_width, topline + nlines);
 	return decode_mode_spec_buf;
+    no_value:
+        {
+	  char* p = decode_mode_spec_buf;
+	  for (spec_width -= 2; spec_width > 0; --spec_width) *p++ = ' ';
+	  strcpy (p, "??");
+	  return decode_mode_spec_buf;
+	}
       }
       break;
 
@@ -3848,6 +4018,7 @@ display_string (w, vpos, string, length, hpos, truncate,
      int mincol, maxcol;
 {
   register int c;
+  int truncated;
   register GLYPH *p1;
   int hscroll = XINT (w->hscroll);
   int tab_width = XINT (XBUFFER (w->buffer)->tab_width);
@@ -3860,12 +4031,11 @@ display_string (w, vpos, string, length, hpos, truncate,
 
   /* Use the standard display table, not the window's display table.
      We don't want the mode line in rot13.  */
-  register struct Lisp_Vector *dp = 0;
+  register struct Lisp_Char_Table *dp = 0;
   int i;
 
-  if (VECTORP (Vstandard_display_table)
-      && XVECTOR (Vstandard_display_table)->size == DISP_TABLE_SIZE)
-    dp = XVECTOR (Vstandard_display_table);
+  if (DISP_TABLE_P (Vstandard_display_table))
+    dp = XCHAR_TABLE (Vstandard_display_table);
 
   if (tab_width <= 0 || tab_width > 1000) tab_width = 8;
 
@@ -3901,7 +4071,10 @@ display_string (w, vpos, string, length, hpos, truncate,
   if (maxcol >= 0 && mincol > maxcol)
     mincol = maxcol;
 
-  while (p1 < end)
+  /* We set truncated to 1 if we get stopped by trying to pass END
+     (that is, trying to pass MAXCOL.)  */
+  truncated = 0;
+  while (1)
     {
       if (length == 0)
 	break;
@@ -3912,6 +4085,12 @@ display_string (w, vpos, string, length, hpos, truncate,
       /* Unspecified length (null-terminated string).  */
       else if (c == 0)
 	break;
+
+      if (p1 >= end)
+	{
+	  truncated = 1;
+	  break;
+	}
 
       if (dp != 0 && VECTORP (DISP_CHAR_VECTOR (dp, c)))
 	{
@@ -3966,7 +4145,7 @@ display_string (w, vpos, string, length, hpos, truncate,
 	}
     }
 
-  if (c && length > 0)
+  if (truncated)
     {
       p1 = end;
       if (truncate) *p1++ = fix_glyph (f, truncate, 0);
@@ -4081,6 +4260,12 @@ syms_of_xdisp ()
   staticpro (&Qoverriding_local_map);
   Qoverriding_local_map = intern ("overriding-local-map");
 
+  staticpro (&Qwindow_scroll_functions);
+  Qwindow_scroll_functions = intern ("window-scroll-functions");
+
+  staticpro (&Qredisplay_end_trigger_functions);
+  Qredisplay_end_trigger_functions = intern ("redisplay-end-trigger-functions");
+
   staticpro (&last_arrow_position);
   staticpro (&last_arrow_string);
   last_arrow_position = Qnil;
@@ -4127,8 +4312,8 @@ If this is zero, point is always centered after it moves off frame.");
   DEFVAR_BOOL ("multiple-frames", &multiple_frames,
     "Non-nil if more than one frame is visible on this display.\n\
 Minibuffer-only frames don't count, but iconified frames do.\n\
-This variable is not guaranteed to be accurate except while parsing\n\
-frame-title-format.");
+This variable is not guaranteed to be accurate except while processing\n\
+`frame-title-format' and `icon-title-format'.");
 
   DEFVAR_LISP ("frame-title-format", &Vframe_title_format,
     "Template for displaying the titlebar of visible frames.\n\
@@ -4166,6 +4351,13 @@ Just before redisplay, for each frame, if any of its windows have changed\n\
 size since the last redisplay, or have been split or deleted,\n\
 all the functions in the list are called, with the frame as argument.");
   Vwindow_size_change_functions = Qnil;
+
+  DEFVAR_LISP ("window-scroll-functions", &Vwindow_scroll_functions,
+    "List of Functions to call before redisplaying a window with scrolling.\n\
+Each function is called with two arguments, the window\n\
+and its new display-start position.  Note that the value of `window-end'\n\
+is not valid when these functions are called.");
+  Vwindow_scroll_functions = Qnil;
 }
 
 /* initialize the window system */

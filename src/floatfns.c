@@ -53,13 +53,6 @@ Lisp_Object Qarith_error;
 
 #ifdef LISP_FLOAT_TYPE
 
-#ifdef MSDOS
-/* These are redefined (correctly, but differently) in values.h.  */
-#undef INTBITS
-#undef LONGBITS
-#undef SHORTBITS
-#endif
-
 /* Work around a problem that happens because math.h on hpux 7
    defines two static variables--which, in Emacs, are not really static,
    because `static' is defined as nothing.  The problem is that they are
@@ -436,7 +429,7 @@ DEFUN ("exp", Fexp, Sexp, 1, 1, 0,
 }
 
 DEFUN ("expt", Fexpt, Sexpt, 2, 2, 0,
-  "Return the exponential X ** Y.")
+  "Return the exponential ARG1 ** ARG2.")
   (arg1, arg2)
      register Lisp_Object arg1, arg2;
 {
@@ -447,7 +440,7 @@ DEFUN ("expt", Fexpt, Sexpt, 2, 2, 0,
   if (INTEGERP (arg1)     /* common lisp spec */
       && INTEGERP (arg2)) /* don't promote, if both are ints */
     {				/* this can be improved by pre-calculating */
-      int acc, x, y;		/* some binary powers of x then accumulating */
+      EMACS_INT acc, x, y;	/* some binary powers of x then accumulating */
       Lisp_Object val;
 
       x = XINT (arg1);
@@ -747,7 +740,7 @@ With optional DIVISOR, return the largest integer no greater than ARG/DIVISOR.")
 
   if (! NILP (divisor))
     {
-      int i1, i2;
+      EMACS_INT i1, i2;
 
       CHECK_NUMBER_OR_FLOAT (divisor, 1);
 

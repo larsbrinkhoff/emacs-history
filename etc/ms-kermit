@@ -1,5 +1,5 @@
 ;;; This file is designed for an 8-bit connection.
-;;; Use the file ms-kermit-7bit if you have a 7-bit connection.
+;;; Use the file ms-7bkermit if you have a 7-bit connection.
 
 ;; Meta key mappings for EMACS
 ;; By Robert Earl (rearl@watnxt3.ucr.edu)

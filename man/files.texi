@@ -30,6 +30,7 @@ on file directories.
 * Directories::      Creating, deleting and listing file directories.
 * Comparing Files::  Finding where two files differ.
 * Misc File Ops::    Other things you can do on files.
+* Compressed Files:: Accessing compressed files.
 @end menu
 
 @node File Names
@@ -146,6 +147,8 @@ change the selected window.
 @item C-x 5 C-f
 Visit a file, in a new frame (@code{find-file-other-frame}).  Don't
 change the selected frame.
+@item M-x auto-compression-mode
+Toggle automatic uncompression and recompression for compressed files.
 @end table
 
 @cindex files, visiting and saving
@@ -266,6 +269,12 @@ arguments.  Of these two variables, @code{find-file-not-found-hooks}
 takes effect first.  These variables are @emph{not} normal hooks, and
 their names end in @samp{-hooks} rather than @samp{-hook} to indicate
 that fact.  @xref{Hooks}.
+
+@cindex Auto Compression mode
+@findex auto-compression-mode
+  The command @kbd{M-x auto-compression-mode} toggles a mode in which
+visiting a compressed file automatically uncompresses it.  (Editing the
+file and saving it automatically recompresses it.)
 
   There are several ways to specify automatically the major mode for
 editing the file (@pxref{Choosing Modes}), and to specify local
@@ -407,7 +416,8 @@ throws away the old contents of the file---or it would, except that
 Emacs carefully copies the old contents to another file, called the
 @dfn{backup} file, before actually saving.  (This assumes that the
 variable @code{make-backup-files} is non-@code{nil}.  Backup files are
-not written if this variable is @code{nil}.)
+not written if this variable is @code{nil}.)  Emacs does not normally
+make backup files for files in @file{/tmp}.
 
   At your option, Emacs can keep either a single backup file or a series of
 numbered backup files for each file that you edit.
@@ -800,6 +810,14 @@ auto-save file, and asks once again whether to recover that file.
 recover are present in Emacs buffers.  You should then save them.  Only
 this---saving them---updates the files themselves.
 
+  Interrupted sessions are recorded in files named
+@file{.save-@var{pid}-@var{hostname}} in your home directory.  You can
+turn off the recording of sessions by setting the variable
+@code{auto-save-file-name-list} to @code{nil}.  You can store the
+current session in a different place by setting the variable to a
+different file name, but you'll have to redefine @code{recover-session}
+separately to make it look for the new name.
+
 @node File Aliases
 @section File Name Aliases
 
@@ -884,10 +902,10 @@ everything you can do with RCS can be done through VC.
 @cindex CVS
   CVS is built on top of RCS, and extends the features of RCS, allowing
 for more sophisticated release management, and concurrent multi-user
-development.  However, its concepts are rather different from those of
-RCS and VC; consequently, some VC commands work differently when used
-with CVS.  Note that before using CVS you must set up a repository,
-which is a subject too complex to treat here.  @xref{CVS and VC}.
+development.  VC supports basic editing operations under CVS, but for
+some less common tasks you still need to call CVS from the command line.
+Note also that before using CVS you must set up a repository, which is a
+subject too complex to treat here.  @xref{CVS and VC}.
 
 @cindex SCCS
   SCCS is a proprietary but widely used version control system.  In
@@ -932,13 +950,15 @@ the source file so that other people can lock it and thus modify it.
 can do both of them with a single Emacs command: @w{@kbd{C-x C-q}}
 (@code{vc-toggle-read-only}).
 
+  There are variants of this basic pattern, though.  CVS, for example,
+has no such thing as locking, and therefore you can normally edit files
+right away, without having to check them out first.  @xref{CVS and VC}.
+With RCS, you can optionally select @dfn{non-strict locking} for a
+particular source file; then you can edit the file in Emacs without
+explicitly locking it.
+
   A @dfn{snapshot} is a coherent collection of versions of the various
 files that make up a program.  @xref{Snapshots}.
-
-  The model of checkin and checkout does not quite fit CVS.  CVS has no
-such thing as locking; multiple users can simultaneously edit their
-copies of a file, and then check in their own variants of the file, but
-these variants must be reconciled later.  @xref{CVS and VC}.
 
 @node Editing with VC
 @subsection Editing with Version Control
@@ -993,6 +1013,23 @@ Emacs asks you for a version number, and checks out that version
 branches of the file (@pxref{Branches}).  You can then start editing the
 selected version by typing @kbd{C-x C-q} again.  (If you edit an old
 version of a file this way, checking it in again creates a new branch.)
+
+  Under CVS, you normally don't need to check out files explicitly.  CVS
+does not have locking; multiple users can edit their copies of a file
+whenever they want.  (If two users make conflicting changes, they need
+to reconcile their changes when checking them in.)  We therefore say
+that an @dfn{implicit} check-out happens when you make the first change
+in the file.
+
+@cindex explicit check-out
+@cindex non-strict locking
+  CVS has an alternative mode in which explicit check-out is required.
+And RCS has an alternative mode called @dfn{non-strict locking} in which
+explicit check-out is not required.  Selecting these modes is done
+outside of VC, but once you have selected them, VC obeys them.  With
+RCS, you can select non-strict locking for a particular file using the
+@samp{rcs -U} command.  @xref{CVS and VC}, for an explanation of how to
+do this with CVS.
 
 @node Check-In
 @subsubsection Check-In
@@ -1095,18 +1132,20 @@ it and then decide not to change it.
 (@code{vc-cancel-version}).  This command discards all record of the
 most recent checked in version.  @kbd{C-x v c} also offers to revert
 your work file and buffer to the previous version (the one that precedes
-the version that is deleted).  If you say @kbd{no}, then the buffer and
-work file do not change.
+the version that is deleted).  If you say @kbd{no}, then VC keeps your
+changes in the buffer and locks the file.  It also unexpands version
+headers so that they don't contain wrong information.  @xref{Version
+Headers}.
 
-@ignore
-  This command with a numeric argument is useful when you have checked in
-a change and then discover a trivial error in it; you can cancel the
-erroneous check-in, fix the error, and repeat the check-in.
-@end ignore
+  The no-revert option is useful when you have checked in a change and
+then discover a trivial error in it; you can cancel the erroneous
+check-in, fix the error, and check the file in again.
 
   Be careful when invoking @kbd{C-x v c}, as it is easy to throw away a
 lot of work with it.  To help you be careful, this command always
-requires confirmation with @kbd{yes}.
+requires confirmation with @kbd{yes}.  Note also that this command is
+disabled under CVS, because canceling versions is very dangerous and
+discouraged with this back end.
 
 @node VC Mode Line
 @subsubsection The VC Mode Line
@@ -1135,25 +1174,71 @@ at the same time; each user has a separate copy and can edit it.  Work
 files are always writable; once you have one, you need not type a VC
 command to start editing the file.  You can edit it at any time.
 
-@cindex committing a change (CVS)
-  CVS terminology speaks of @dfn{committing} a change rather than
-checking it in.  But in practical terms they work the same way: Emacs
-asks you to type in a log entry, and you finish it with @kbd{C-c C-c}.
-When using RCS and SCCS, you normally use @kbd{C-x C-q} twice for each
+  When using RCS and SCCS, you normally use @kbd{C-x C-q} twice for each
 change; once before the change, for checkout, and once after, for
 checkin.  With CVS, it's different: you normally use @kbd{C-x C-q} just
 once for each change, to commit the change when it is done.  The work
 file remains writable, so you can begin editing again with no special
 commands.
 
-@cindex conflict (CVS)
-  When you commit a change in a file, and someone else has committed
-another change in the meanwhile, that creates a @dfn{conflict}.  Then
-@kbd{C-x C-q} asks you to resolve the conflict and try again.
+@cindex implicit check-out (CVS)
+  One way to understand this is that VC does an @dfn{implicit} check-out
+when you save the modified file for the first time.  VC indicates this
+on the mode line: the status indicator changes from @samp{-} to @samp{:}
+as soon as you save a modified version, telling you that you are not in
+sync with the repository anymore (@pxref{VC Mode Line}).  The file stays
+``checked out'' until you check it back in, even if you kill the buffer
+and visit the file again.
+
+@cindex @code{CVSREAD} environment variable
+@c ??? What value of CVSREAD
+  If, instead, you would like to use explicit check-out with CVS, set
+the @code{CVSREAD} environment variable to some value.  (It does not
+matter what value you use.)  CVS then makes your work files read-only by
+default, and VC requires you to check them out explicitly with @kbd{C-x
+C-q}.  When setting @code{CVSREAD} for the first time, make sure to
+check out all your modules anew, so that the file protections are set
+correctly.
 
   VC does not provide a way to check out a working copy of an existing
 file in the repository.  You have to use the CVS shell commands to do
 that.  Once you have a work file, you can start using VC for that file.
+
+@cindex committing a change (CVS)
+  CVS terminology speaks of @dfn{committing} a change rather than
+checking it in.  But in practical terms they work the same way: Emacs
+asks you to type in a log entry, and you finish it with @kbd{C-c C-c}.
+
+@cindex conflict (CVS)
+@cindex merging changes (CVS)
+  When you try to commit a change in a file, but someone else has
+committed another change in the meanwhile, that creates a
+@dfn{conflict}.  VC detects this situation and offers to @dfn{merge}
+your changes and those of the other user, creating a new local version
+of the file, which you can then commit to the repository.  This works
+smoothly if the changes are in different parts of the file, although it
+is wise to check the resulting file for semantic consistency.
+
+  However, if you and the other user changed the same parts of the file,
+the conflict cannot be resolved automatically.  In this case, CVS
+inserts both variants of the conflicting regions into your working file,
+and puts so-called @dfn{conflict markers} around them.  They indicate
+how the region looks in the respective user's version.  You must resolve
+the conflict manually, for example by choosing one of the two variants
+and deleting the other one (and the conflict markers).  Then you can
+commit the resulting file into the repository.  The example below shows
+how a conflict region looks; the file is called @samp{name} and the
+current repository version with user B's changes in it is 1.11.
+
+@smallexample
+@group
+<<<<<<< name
+  @var{User A's version}
+=======
+  @var{User B's version}
+>>>>>>> 1.11
+@end group
+@end smallexample
 
 @vindex vc-handle-cvs
   You can turn off use of VC for CVS-managed files by setting the
@@ -1452,12 +1537,16 @@ For example, if the current version is 2.5, the branch number should be
 that point.
 
   To create a new branch at an older version (one that is no longer the
-head of a branch), first select that version, lock it with @kbd{C-x
-C-q}, and make your changes.  Then type @kbd{C-x C-q} again to check in
-a new version.  This automatically creates a new branch starting from
-the selected version.  You need not specially request a new branch,
-because that's the only way to add a new version at a point that is not
-the head of a branch.
+head of a branch), first select that version, then lock it with @kbd{C-x
+C-q}.  You'll be asked to confirm, when you lock the old version, that
+you really mean to create a new branch---if you say no, you'll be offered
+a chance to lock the latest version instead.
+
+  Then make your changes and type @kbd{C-x C-q} again to check in a new
+version.  This automatically creates a new branch starting from the
+selected version.  You need not specially request a new branch, because
+that's the only way to add a new version at a point that is not the head
+of a branch.
 
   After the branch is created, you ``stay'' on it.  That means that
 subsequent checkouts and checkins create new versions on that branch.
@@ -1500,16 +1589,17 @@ output appears in a separate window.
   When you are working on a large program, it's often useful to find all
 the files that are currently locked, or all the files maintained in
 version control at all.  You can use @kbd{C-x v d} (@code{vc-directory})
-to show all the locked files in or beneath the current directory.  This
+to show all the locked files in or beneath a certain directory.  This
 includes all files that are locked by any user.  @kbd{C-u C-x v d} lists
-all files in or beneath the current directory that are maintained with
+all files in or beneath the specified directory that are maintained with
 version control.
 
   The list of files is displayed as a buffer that uses an augmented
 Dired mode.  The names of the users locking various files are shown (in
-parentheses) in place of the owner and group.  All the normal Dired
-commands work in this buffer.  Most interactive VC commands work also,
-and apply to the file name on the current line.
+parentheses) in place of the owner and group.  (With CVS, a more
+detailed status is shown for each file.)  All the normal Dired commands
+work in this buffer.  Most interactive VC commands work also, and apply
+to the file name on the current line.
 
   The @kbd{C-x v v} command (@code{vc-next-action}), when used in the
 augmented Dired buffer, operates on all the marked files (or the file on
@@ -1895,9 +1985,9 @@ screenfuls.  It reads a file name argument using the minibuffer.  After
 reading the file into an Emacs buffer, @code{view-file} displays the
 beginning.  You can then type @key{SPC} to scroll forward one windowful,
 or @key{DEL} to scroll backward.  Various other commands are provided
-for moving around in the file, but none for changing it; type @kbd{C-h}
+for moving around in the file, but none for changing it; type @kbd{?}
 while viewing for a list of them.  They are mostly the same as normal
-Emacs cursor motion commands.  To exit from viewing, type @kbd{C-c}.
+Emacs cursor motion commands.  To exit from viewing, type @kbd{q}.
 The commands for viewing are defined by a special major mode called View
 mode.
 
@@ -1953,3 +2043,25 @@ as the target of the link.
 
   Confirmation is required when creating the link if @var{linkname} is
 in use.  Note that not all systems support symbolic links.
+
+@node Compressed Files
+@section Accessing Compressed Files
+@cindex compression
+@cindex uncompression
+@pindex gzip
+
+@findex auto-compression-mode
+  Emacs comes with a library that can automatically uncompress
+compressed files when you visit them, and automatically recompress them
+if you alter them and save them.  To enable this feature, type the
+command @kbd{M-x auto-compression-mode}.
+
+  When automatic compression (which implies automatic uncompresson as
+well) is enabled, Emacs recognizes compressed files by their file names.
+File names ending in @samp{.gz} indicate a file compressed with
+@code{gzip}.  Other endings indicate other compression programs.
+
+  Automatic uncompression and compression apply to all the operations in
+which Emacs uses the contents of a file.  This includes visiting it,
+saving it, inserting its contents into a buffer, loading it, and byte
+compiling it.

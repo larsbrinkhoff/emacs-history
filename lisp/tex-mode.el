@@ -155,10 +155,10 @@ The name of the file, preceded by a blank, will be added to this string.")
   "String appended after the end of a region sent to TeX by \\[tex-region].")
 
 (defvar tex-start-of-header nil
-  "String used by \\[tex-region] to delimit the start of the file's header.")
+  "Regular expression used by \\[tex-region] to find start of file's header.")
 
 (defvar tex-end-of-header nil
-  "String used by \\[tex-region] to delimit the end of the file's header.")
+  "Regular expression used by \\[tex-region] to find end of file's header.")
 
 (defvar tex-shell-cd-command "cd"
   "Command to give to shell running TeX to change directory.
@@ -177,6 +177,20 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
 
 (defvar tex-mode-syntax-table nil
   "Syntax table used while in TeX mode.")
+
+;; Written by Wolfgang Bangerth <zcg51122@rpool1.rus.uni-stuttgart.de>
+(defvar latex-imenu-generic-expression
+  '(
+    ("Part" "\\\\part{\\([^}]*\\)}" 1)
+    ("Chapter" "\\\\chapter{\\([^}]*\\)}" 1)
+    ("Section" "\\\\[a-zA-Z]*section{\\([^}]*\\)}" 1)
+    ;; i put numbers like 3.15 before my
+    ;; \begin{equation}'s which tell me
+    ;; the number the equation will get when
+    ;; being printed.
+    ("Equations" "%[ \t]*\\([0-9]+\\.[0-9]+\\)[,;]?[ \t]?" 1))  
+
+  "Imenu generic expression for LaTex mode.  See `imenu-generic-expression'.")
 
 (defun tex-define-common-keys (keymap)
   "Define the keys that we want defined both in TeX mode and in the TeX shell."
@@ -324,8 +338,8 @@ special subshell is initiated, the hook `tex-shell-hook' is run."
   (setq mode-name "TeX")
   (setq major-mode 'plain-tex-mode)
   (setq tex-command tex-run-command)
-  (setq tex-start-of-header "%**start of header")
-  (setq tex-end-of-header "%**end of header")
+  (setq tex-start-of-header "%\\*\\*start of header")
+  (setq tex-end-of-header "%\\*\\*end of header")
   (setq tex-trailer "\\bye\n")
   (run-hooks 'text-mode-hook 'tex-mode-hook 'plain-tex-mode-hook))
 ;;;###autoload
@@ -377,8 +391,8 @@ subshell is initiated, `tex-shell-hook' is run."
   (setq mode-name "LaTeX")
   (setq major-mode 'latex-mode)
   (setq tex-command latex-run-command)
-  (setq tex-start-of-header "\\documentstyle")
-  (setq tex-end-of-header "\\begin{document}")
+  (setq tex-start-of-header "\\\\documentstyle\\|\\\\documentclass")
+  (setq tex-end-of-header "\\\\begin{document}")
   (setq tex-trailer "\\end{document}\n")
   ;; A line containing just $$ is treated as a paragraph separator.
   ;; A line starting with $$ starts a paragraph,
@@ -401,6 +415,8 @@ subshell is initiated, `tex-shell-hook' is run."
 \\\\[a-z]*space\\|\\\\[a-z]*skip\\|\
 \\\\newpage\\|\\\\[a-z]*page[a-z]*\\|\\\\footnote\\|\
 \\\\marginpar\\|\\\\parbox\\|\\\\caption\\)[ \t]*\\($\\|%\\)")
+  (make-local-variable 'imenu-generic-expression)
+  (setq imenu-generic-expression latex-imenu-generic-expression)
   (run-hooks 'text-mode-hook 'tex-mode-hook 'latex-mode-hook))
 
 ;;;###autoload
@@ -450,8 +466,8 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
   (setq mode-name "SliTeX")
   (setq major-mode 'slitex-mode)
   (setq tex-command slitex-run-command)
-  (setq tex-start-of-header "\\documentstyle{slides}")
-  (setq tex-end-of-header "\\begin{document}")
+  (setq tex-start-of-header "\\\\documentstyle{slides}\\|\\\\docuentclass{slides}")
+  (setq tex-end-of-header "\\\\begin{document}")
   (setq tex-trailer "\\end{document}\n")
   ;; A line containing just $$ is treated as a paragraph separator.
   ;; A line starting with $$ starts a paragraph,
@@ -867,7 +883,7 @@ substitution will be made in COMMAND.  COMMAND can be any expression that
 evaluates to a command string."
   (save-excursion
     (let* ((cmd (eval command))
-	   (proc (get-process "tex-shell"))
+	   (proc (or (get-process "tex-shell") (error "No TeX subprocess")))
 	   (buf (process-buffer proc))
            (star (string-match "\\*" cmd))
 	   (string
@@ -952,11 +968,11 @@ The value of `tex-command' specifies the command to use to run TeX."
 	      (default-directory zap-directory))
 	  (goto-char (point-min))
 	  ;; Initialize the temp file with either the header or nothing
-	  (if (search-forward tex-start-of-header search-end t)
+	  (if (re-search-forward tex-start-of-header search-end t)
 	      (progn
 		(beginning-of-line)
 		(setq hbeg (point))	;mark beginning of header
-		(if (search-forward tex-end-of-header nil t)
+		(if (re-search-forward tex-end-of-header nil t)
 		    (progn (forward-line 1)
 			   (setq hend (point)))	;mark end of header
 		  (setq hbeg (point-min))))) ;no header

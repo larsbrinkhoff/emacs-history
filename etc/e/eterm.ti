@@ -1,4 +1,3 @@
-# These are ordered as in the O'Reilly "termcap and terminfo" book.
 eterm,
 	lines#24,cols#80,
 	cuu1=\E[A,cud1=\n,cub1=\b,cuf1=\E[C,home=\E[H,cr=\r,

@@ -1,4 +1,5 @@
 \input texinfo   @c -*-texinfo-*-
+@c $Id: mh-e.texi,v 1.17 95/08/23 07:00:16 wohler Exp $
 @c %**start of header
 @setfilename ../info/mh-e
 @settitle mh-e
@@ -7,10 +8,10 @@
 @setchapternewpage odd
 
 @c Version variables.
-@set EDITION 1.1
-@set VERSION 5.0.1
-@set UPDATED 26 April 1995
-@set UPDATE-MONTH April 1995
+@set EDITION 1.2
+@set VERSION 5.0.2
+@set UPDATED 22 August 1995
+@set UPDATE-MONTH August 1995
 
 @ifinfo
 This is Edition @value{EDITION}, last updated @value{UPDATED}, of
@@ -99,7 +100,7 @@ MH}, last updated @value{UPDATED} for mh-e Version @value{VERSION}.
 * History::                     The authors speak up!
 * Changes to mh-e::             Actual changes between Versions 3 and beyond.
 * Copying::                     The GNU General Public License
-* Function Index::              
+* Command Index::              
 * Variable Index::              
 * Concept Index::               
 @end menu
@@ -120,14 +121,19 @@ GNU Emacs and MH@.  Now I'm fully hooked on both of them.
 
 @cindex history
 
-The mh-e package is distributed with GNU Emacs, so you shouldn't have to
-do anything special to use it.  But it's important to note a brief
-history of mh-e.  @w{Version 3} was prevalent through the @w{Emacs 18}
-and early @w{Emacs 19} years.  Then @w{Version 4} came out (@w{Emacs
+The mh-e package is distributed with GNU Emacs, @footnote{Note that mh-e
+is supported with MH 6 and either GNU @w{Emacs 18} or GNU @w{Emacs 19}.
+Reportedly, large parts of it work with @w{MH 5} and also with
+Lucid/XEmacs and Epoch, but there are no guarantees.  It is also
+distributed with Lucid/XEmacs, as well as with MH itself.} so you shouldn't
+have to do anything special to use it.  But it's important to note a
+brief history of mh-e.  @w{Version 3} was prevalent through the @w{Emacs
+18} and early @w{Emacs 19} years.  Then @w{Version 4} came out (@w{Emacs
 19.23}), which introduced several new and changed commands.  Finally,
 @w{Version 5.0} was released, which fixed some bugs and
 incompatibilities.  This is the version covered by this manual.
-@ref{Getting Started} will help you decide which version you have.
+@ref{Getting Started} will help you decide which version you
+have.
 
 If you don't already use GNU Emacs but want to learn more, you can read
 an online tutorial by starting GNU Emacs and typing @kbd{C-h t}
@@ -3666,7 +3672,7 @@ mh-mhn-args
 @end group
 @end example
 
-@node Copying, Function Index, Changes to mh-e, Top
+@node Copying, Command Index, Changes to mh-e, Top
 @appendix GNU GENERAL PUBLIC LICENSE
 @center Version 2, June 1991
 
@@ -4062,12 +4068,12 @@ consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Library General
 Public License instead of this License.
 
-@node    Function Index, Variable Index, Copying, Top
-@unnumbered Function Index
+@node    Command Index, Variable Index, Copying, Top
+@unnumbered Command Index
 
 @printindex fn
 
-@node    Variable Index, Concept Index, Function Index, Top
+@node    Variable Index, Concept Index, Command Index, Top
 @unnumbered Variable Index
 
 @printindex vr

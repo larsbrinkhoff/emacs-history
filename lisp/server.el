@@ -122,8 +122,8 @@ by the programs that invoke the emacs server.")
       (save-excursion
 	(set-buffer "*server*")
 	(goto-char (point-max))
-	(insert string)
-	(or (bobp) (newline)))))
+	(insert (current-time-string) " " string)
+	(or (bolp) (newline)))))
 
 (defun server-sentinel (proc msg)
   (cond ((eq (process-status proc) 'exit)
@@ -147,9 +147,18 @@ Prefix arg means just kill any existing server communications subprocess."
 	(set-process-sentinel server-process nil)
 	(condition-case () (delete-process server-process) (error nil))))
   (condition-case () (delete-file "~/.emacs_server") (error nil))
-  (condition-case ()
-      (delete-file (format "/tmp/esrv%d-%s" (user-uid) (system-name)))
-    (error nil))
+  (let* ((sysname (system-name))
+	 (dot-index (string-match "\\." sysname)))
+    (condition-case ()
+	(delete-file (format "/tmp/esrv%d-%s" (user-uid) sysname))
+      (error nil))
+    ;; In case the server file name was made with a domainless hostname,
+    ;; try deleting that name too.
+    (if dot-index
+	(condition-case ()
+	    (delete-file (format "/tmp/esrv%d-%s" (user-uid)
+				 (substring sysname 0 dot-index)))
+	  (error nil))))
   ;; If we already had a server, clear out associated status.
   (while server-clients
     (let ((buffer (nth 1 (car server-clients))))
@@ -180,27 +189,30 @@ Prefix arg means just kill any existing server communications subprocess."
 	  (lineno 1))
       ;; Remove this line from STRING.
       (setq string (substring string (match-end 0)))	  
-      (if (string-match "^Client: " request)
-	  (setq request (substring request (match-end 0))))
-      (setq client (list (substring request 0 (string-match " " request))))
-      (setq request (substring request (match-end 0)))
-      (while (string-match "[^ ]+ " request)
-	(let ((arg
-	       (substring request (match-beginning 0) (1- (match-end 0)))))
-	  (setq request (substring request (match-end 0)))
-	  (if (string-match "\\`\\+[0-9]+\\'" arg)
-	      (setq lineno (read (substring arg 1)))
-	    (setq files
-		  (cons (list arg lineno)
-			files))
-	    (setq lineno 1))))
-      (server-visit-files files client)
-      ;; CLIENT is now a list (CLIENTNUM BUFFERS...)
-      (setq server-clients (cons client server-clients))
-      (server-switch-buffer (nth 1 client))
-      (run-hooks 'server-switch-hook)
-      (message (substitute-command-keys
-		"When done with a buffer, type \\[server-edit]."))))
+      (if (string-match "^Error: " request)
+	  (message (concat "Server error: " (substring request (match-end 0))))
+	(if (string-match "^Client: " request)
+	    (progn
+	      (setq request (substring request (match-end 0)))
+	      (setq client (list (substring request 0 (string-match " " request))))
+	      (setq request (substring request (match-end 0)))
+	      (while (string-match "[^ ]+ " request)
+		(let ((arg
+		       (substring request (match-beginning 0) (1- (match-end 0)))))
+		  (setq request (substring request (match-end 0)))
+		  (if (string-match "\\`\\+[0-9]+\\'" arg)
+		      (setq lineno (read (substring arg 1)))
+		    (setq files
+			  (cons (list arg lineno)
+				files))
+		    (setq lineno 1))))
+	      (server-visit-files files client)
+	      ;; CLIENT is now a list (CLIENTNUM BUFFERS...)
+	      (setq server-clients (cons client server-clients))
+	      (server-switch-buffer (nth 1 client))
+	      (run-hooks 'server-switch-hook)
+	      (message (substitute-command-keys
+			"When done with a buffer, type \\[server-edit]")))))))
   ;; Save for later any partial line that remains.
   (setq server-previous-string string))
 
@@ -246,6 +258,7 @@ or nil.  KILLED is t if we killed BUFFER (because it was a temp file)."
   (let ((running (eq (process-status server-process) 'run))
 	(next-buffer nil)
 	(killed nil)
+	(first t)
 	(old-clients server-clients))
     (while old-clients
       (let ((client (car old-clients)))
@@ -264,12 +277,13 @@ or nil.  KILLED is t if we killed BUFFER (because it was a temp file)."
 	(if (cdr client) nil
 	  (if running
 	      (progn
-		(send-string server-process 
-			     (format "Close: %s Done\n" (car client)))
-		(server-log (format "Close: %s Done\n" (car client)))
 		;; Don't send emacsserver two commands in close succession.
 		;; It cannot handle that.
-		(sit-for 1)))
+		(or first (sit-for 1))
+		(setq first nil)
+		(send-string server-process 
+			     (format "Close: %s Done\n" (car client)))
+		(server-log (format "Close: %s Done\n" (car client)))))
 	  (setq server-clients (delq client server-clients))))
       (setq old-clients (cdr old-clients)))
     (if (and (bufferp buffer) (buffer-name buffer))

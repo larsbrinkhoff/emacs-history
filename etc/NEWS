@@ -1,9 +1,682 @@
-GNU Emacs NEWS -- history of user-visible changes.  1 May 1995
+GNU Emacs NEWS -- history of user-visible changes.  24 Nov 1995
 Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
+
+* Editing Changes in Emacs 19.30.
+
+** Be sure to recompile your byte-compiled Emacs Lisp files
+if you last compiled them with Emacs 19.28 or earlier.
+You can use M-x byte-force-recompile to recompile all the .elc files
+in a specified directory.
+
+** Emacs now provides multiple-frame support on Windows NT
+and Windows 95.
+
+** M-x column-number-mode toggles a minor mode which displays
+the current column number in the mode line.
+
+** Line Number mode is now enabled by default.
+
+** M-x what-line now displays the line number in the accessible
+portion of the buffer as well as the line number in the full buffer,
+when narrowing is in effect.
+
+** If you type a M-x command that has an equivalent key binding,
+the equivalent is shown in the minibuffer before the command executes.
+This feature is enabled by default for the sake of beginning users.
+You can turn the feature off by setting suggest-key-bindings to nil.
+
+** The menu bar is now visible on text-only terminals.  To choose a
+command from the menu bar when you have no mouse, type M-`
+(Meta-Backquote) or F10.
+
+** Whenever you invoke a minibuffer, it appears in the minibuffer
+window that the current frame uses.
+
+Emacs can only use one minibuffer window at a time.  If you activate
+the minibuffer while a minibuffer window is active in some other
+frame, the outer minibuffer window disappears while the inner one is
+active.
+
+** Echo area messages always appear in the minibuffer window that the
+current frame uses.  If a minibuffer is active in some other frame,
+the echo area message does not hide it even temporarily.
+
+** The minibuffer now has a menu-bar menu.  You can use it to exit or
+abort the minibuffer, or to ask for completion.
+
+** Dead-key and composite character processing is done in the standard
+X11R6 manner (through the default "input method" using the
+/usr/lib/X11/locale/*/Compose databases of key combinations).  I.e. if
+it works in xterm, it should also work in emacs now.
+
+** Mouse changes
+
+*** You can now use the mouse when running Emacs in an xterm.
+Use M-x xterm-mouse-mode to let emacs take control over the mouse.
+
+*** C-mouse-1 now once again provides a menu of buffers to select.
+S-mouse-1 is now the way to select a default font for the frame.
+
+*** There is a new mouse-scroll-min-lines variable to control the
+minimum number of lines scrolled by dragging the mouse outside a
+window's edge.
+
+*** Dragging mouse-1 on a vertical line that separates windows
+now moves the line, thus changing the widths of the two windows.
+(This feature is available only if you don't have vertical scroll bars.
+If you do use them, a scroll bar separates two side-by-side windows.)
+
+*** Double-click mouse-1 on a character with "symbol" syntax (such as
+underscore, in C mode) selects the entire symbol surrounding that
+character.  (Double-click mouse-1 on a letter selects a whole word.)
+
+** When incremental search wraps around to the beginning (or end) of
+the buffer, if you keep on searching until you go past the original
+starting point of the search, the echo area changes from "Wrapped" to
+"Overwrapped".  That tells you that you are revisiting matches that
+you have already seen.
+
+** Filling changes.
+
+*** If the variable colon-double-space is non-nil, the explicit fill
+commands put two spaces after a colon.
+
+*** Auto-Fill mode now supports Adaptive Fill mode just as the
+explicit fill commands do.  The variable adaptive-fill-regexp
+specifies a regular expression to match text at the beginning of
+a line that should be the fill prefix.
+
+*** Adaptive Fill mode can take a fill prefix from the first line of a
+paragraph, *provided* that line is not a paragraph-starter line.
+
+Paragraph-starter lines are indented lines that start a new
+paragraph because they are indented.  This indentation shouldn't
+be copied to additional lines.
+
+Whether indented lines are paragraph lines depends on the value of the
+variable paragraph-start.  Some major modes set this; you can set it
+by hand or in mode hooks as well.  For editing text in which paragraph
+first lines are not indented, and which contains paragraphs in which
+all lines are indented, you should use Indented Text mode or arrange
+for paragraph-start not to match these lines.
+
+*** You can specify more complex ways of choosing a fill prefix
+automatically by setting `adaptive-fill-function'.  This function
+is called with point after the left margin of a line, and it should
+return the appropriate fill prefix based on that line.
+If it returns nil, that means it sees no fill prefix in that line.
+
+** Gnus changes.
+
+Gnus, the Emacs newsreader, has been rewritten and expanded.  Most
+things that worked with the old version should still work with the new
+version.  Code that relies heavily on Gnus internals is likely to
+fail, though.
+
+*** Incompatabilities with the old GNUS.
+
+**** All interactive commands have kept their names, but many internal
+functions have changed names.
+
+**** The summary mode gnus-uu commands have been moved from the `C-c
+C-v' keymap to the `X' keymap.
+
+**** There can now be several summary buffers active at once.
+Variables that are relevant to each summary buffer are buffer-local to
+that buffer.
+
+**** Old hilit code doesn't work at all.  Gnus performs its own
+highlighting based not only on what's visible in the buffer, but on
+other data structures.
+
+**** Old packages like `expire-kill' will no longer work.  
+
+**** `C-c C-l' in the group buffer no longer switches to a different
+buffer, but instead lists killed groups in the group buffer.
+
+*** New features.
+
+**** The look of all buffers can be changed by setting format-like
+variables.
+ 
+**** Local spool and several NNTP servers can be used at once.
+
+**** Groups can be combined into virtual groups.
+
+**** Different mail formats can be read much the same way as one would
+read newsgroups.  All the mail backends implement mail expiry schemes.
+
+**** Gnus can use various strategies for gathering threads that have
+lost their roots (thereby gathering loose sub-threads into one thread)
+or it can go back and retrieve enough headers to build a complete
+thread.
+
+**** Killed groups can be read.
+
+**** Gnus can do partial group updates - you do not have to retrieve
+the entire active file just to check for new articles in a few groups.
+
+**** Gnus implements a sliding scale of subscribedness to groups.
+
+**** You can score articles according to any number of criteria.  You
+can get Gnus to score articles for you using adaptive scoring.
+
+**** Gnus maintains a dribble buffer that is auto-saved the normal
+Emacs manner, so it should be difficult to lose much data on what you
+have read if your machine should go down.
+
+**** Gnus now has its own startup file (`.gnus.el') to avoid
+cluttering up the `.emacs' file.
+
+**** You can set the process mark on both groups and articles and
+perform operations on all the marked items.
+
+**** You can grep through a subset of groups and create a group from
+the results.
+
+**** You can list subsets of groups using matches on group names or
+group descriptions.
+
+**** You can browse foreign servers and subscribe to groups from those
+servers.
+
+**** Gnus can pre-fetch articles asynchronously on a second connection
+to the servers.
+
+**** You can cache articles locally.
+
+**** Gnus can fetch FAQs to and descriptions of groups.
+
+**** Digests (and other files) can be used as the basis for groups.
+
+**** Articles can be highlighted and customized.
+
+** Changes to Version Control (VC)
+
+*** General changes (all backends).
+
+VC directory listings (C-x v d) are now kept up to date when you do a
+vc-next-action (C-x v v) on the marked files.  The `g' command updates
+the buffer properly.  `=' in a VC dired buffer produces a version
+control diff, not an ordinary diff.
+
+*** CVS changes.
+
+Under CVS, you no longer need to type C-x C-q before you can edit a
+file.  VC doesn't write-protect unmodified buffers anymore; you can
+freely change them at any time.  The mode line keeps track of the
+file status.
+
+If you do want unmodified files to be write-protected, set your
+CVSREAD environment variable.  VC sees this and behaves accordingly;
+that will give you the behaviour of Emacs 19.29, similar to that under
+RCS and SCCS.  In this mode, if the variable vc-mistrust-permissions
+is nil, VC learns the modification state from the file permissions.
+When setting CVSREAD for the first time, you should check out the
+whole module anew, so that the file permissions are set correctly.
+
+VC also works with remote repositories now.  When you visit a file, it
+doesn't run "cvs status" anymore, so there shouldn't be any long delays.
+
+Directory listings under VC/CVS have been enhanced.  Type C-x v d, and
+you get a list of all files in or below the current directory that are
+not up-to-date.  The actual status (modified, merge, conflict, ...) is
+displayed for each file.  If you give a prefix argument (C-u C-x v d),
+up-to-date files are also listed.  You can mark any number of files,
+and execute the next logical version control command on them (C-x v v).
+
+*** Starting a new branch.
+
+If you try to lock a version that is not the latest on its branch, 
+VC asks for confirmation in the minibuffer.  If you say no, it offers
+to lock the latest version instead.
+
+*** RCS non-strict locking.
+
+VC can now handle RCS non-strict locking, too.  In this mode, working
+files are always writable and you needn't lock the file before making
+changes, similar to the default mode under CVS.  To enable non-strict
+locking for a file, use the "rcs -U" command.
+
+*** Sharing RCS master files.
+
+If you share RCS subdirs with other users (through symbolic links),
+and you always want to work on the latest version, set
+vc-consult-headers to nil and vc-mistrust-permissions to `t'.
+Then you see the state of the *latest* version on the mode line, not
+that of your working file.  When you do a check out, VC overwrites
+your working file with the latest version from the master.
+
+*** RCS customization.
+
+There is a new variable vc-consult-headers.  If it is t (the default),
+VC searches for RCS headers in working files (like `$Id$') and
+determines the state of the file from them, not from the master file.
+This is fast and more reliable when you use branches.  (The variable
+was already present in Emacs 19.29, but didn't get mentioned in the
+NEWS.)
+
+** Calendar changes.
+
+*** New calendars supported: Chinese, Coptic, Ethiopic
+
+Here are the commands for converting to and from these calendars:
+
+   gC: calendar-goto-chinese-date
+   gk: calendar-goto-coptic-date
+   ge: calendar-goto-ethiopic-date
+
+   pC: calendar-print-chinese-date
+   pk: calendar-print-coptic-date
+   pe: calendar-print-ethiopic-date
+
+*** Printed calendars
+
+Calendar mode now has commands to produce fancy printed calendars via
+LaTeX.  You can ask for a calendar for one or more days, weeks, months
+or years.  The commands all start with `t'; see the manual for a list
+of them.
+
+*** New sexp diary entry type
+
+Reminders that apply in the days leading up to an event. 
+
+** The CC-mode package now provides the default C and C++ modes.
+See the manual for documentation of its features.
+
+** The uniquify package chooses buffer names differently when you
+visit multiple files with the same name (in different directories).
+
+** RMAIL now always uses the movemail program when it renames an
+inbox file, so that it can interlock properly with the mailer
+no matter where it is delivering mail.
+
+** tex-start-of-header and tex-end-of-header are now regular expressions,
+not strings.
+
+** To enable automatic uncompression of compressed files,
+type M-x auto-compression-mode.  (This command used to be called
+toggle-auto-compression, but was not documented before.)  In Lisp,
+you can do
+
+   (auto-compression-mode 1)
+
+to turn the mode on.
+
+** The new pc-select package emulates the key bindings for cutting and
+pasting, and selection of regions, found in Windows, Motif, and the
+Macintosh.
+
+** Help buffers now use a special major mode, Help mode.  This mode
+normally turns on View mode; it also provides a hook, help-mode-hook,
+which you can use for other customization.
+
+** Apropos now uses faces for enhanced legibility.  It now describes
+symbol properties as well as their function definitions and variable
+values.  You can use Mouse-2 or RET to get more information about a
+function definition, variable, or property.
+
+** Font Lock mode
+
+*** Supports Scheme, TCL and Help modes
+
+For example, to automatically turn on Font Lock mode in the *Help*
+buffer, put:
+
+ (add-hook 'help-mode-hook 'turn-on-font-lock)
+
+in your ~/.emacs.
+
+*** Enhanced fontification
+
+The structure of font-lock-keywords is extended to allow "anchored" keywords.
+Typically, a keyword item of font-lock-keywords comprises a regexp to search
+for and information to specify how the regexp should be highlighted.  However,
+the highlighting information is extended so that it can be another keyword
+item.  This keyword item, its regexp and highlighting information, is processed
+before resuming with the keyword item of which it is part.
+
+For example, a typical keyword item might be:
+
+ ("\\<anchor\\>" (0 anchor-face))
+
+which fontifies each occurrence of the discrete word "anchor" in the value of
+the variable anchor-face.  However, the highlighting information can be used to
+fontify text that is anchored to the word "anchor".  For example:
+
+ ("\\<anchor\\>" (0 anchor-face) ("\\=[ ,]*\\(item\\)" nil nil (1 item-face)))
+
+which fontifies each occurrence of "anchor" as above, but for each occurrence
+of "anchor", each occurrence of "item", in any following comma separated list,
+is fontified in the value of the variable item-face.  Thus the "item" text is
+anchored to the "anchor" text.  See the variable documentation for further
+information.
+
+This feature is used to extend the level and quality of fontification in a
+number of modes.  For example, C/C++ modes now have level 3 decoration that
+includes the fontification of variable and function names in declaration lists.
+In this instance, the "anchor" described in the above example is a type or
+class name, and an "item" is a variable or function name.
+
+*** Fontification levels
+
+The variables font-lock-maximum-decoration and font-lock-maximum-size are
+extended to specify levels and sizes for specific modes.  The variable
+font-lock-maximum-decoration specifies the preferred level of fontification for
+modes that provide multiple levels (typically from "subdued" to "gaudy").  The
+variable font-lock-maximum-size specifies the buffer size for which buffer
+fontification is suppressed when Font Lock mode is turned on (typically because
+it would take too long).
+
+These variables can now specify values for individual modes, by supplying
+lists of mode names and values.  For example, to use the above mentioned level
+3 decoration for buffers in C/C++ modes, and default decoration otherwise, put:
+
+ (setq font-lock-maximum-decoration '((c-mode . 3) (c++-mode . 3)))
+
+in your ~/.emacs.  Maximum buffer size values for individual modes are
+specified in the same way with the variable font-lock-maximum-size.
+
+*** Font Lock configuration
+
+The mechanism to provide default settings for Font Lock mode are the variables
+font-lock-defaults and font-lock-maximum-decoration.  Typically, you should
+only need to change the value of font-lock-maximum-decoration.  However, to
+support Font Lock mode for buffers in modes that currently do not support Font
+Lock mode, you should set a buffer local value of font-lock-defaults for that
+mode, typically via its mode hook.
+
+These variables are used by Font Lock mode to set the values of the variables
+font-lock-keywords, font-lock-keywords-only, font-lock-syntax-table,
+font-lock-beginning-of-syntax-function and font-lock-keywords-case-fold-search.
+
+You need not set these variables directly, and should not set them yourself
+since the underlining mechanism may change in future.
+
+** Archive mode is now the default mode for various sorts of
+archive files (files whose names end with .arc, .lzh, .zip, and .zoo).
+
+** You can automatically update the years in copyright notice by
+means of (add-hook 'write-file-hooks 'copyright-update).
+Optionally it can update the GPL version as well.
+
+** Scripts of various languages (Shell, AWK, Perl, makefiles ...) can
+be automatically provided with a magic number and be made executable
+by their respective modes under control of various user variables.
+The mode must call (executable-set-magic "perl") or
+(executable-set-magic "make" "-f").  The latter for example has no
+effect on [Mm]akefile.
+
+** Shell script mode now supports over 15 different shells.  The new
+command C-c ! executes the region, and optionally beginning of script
+as well, by passing them to the shell.
+
+Cases such as `sh' being a `bash' are now accounted for.
+Fontification now also does variables, the magic number and all
+builtin commands.  Shell script mode no longer mingles `tab-width' and
+indentation style.  The variable `sh-tab-width' has been renamed to
+`sh-indentation'.  Empty lines are now indented like previous
+non-empty line, rather than just previous line.
+
+The annoying $ variable prompting has been eliminated.  Instead, shell
+script mode uses `comint-dynamic-completion' for commands, variables
+and filenames.
+
+** Two-column mode now automatically scrolls both buffers together,
+which makes it possible to eliminate the special scrolling commands
+that used to do so.
+
+The commands that operate in two-column mode are no longer bound to
+keys outside that mode.  f2 o will now position at the same point in
+associated buffer.
+
+the new command f2 RET inserts a newline in both buffers, at point and
+at the corresponding position in the associated buffer.
+
+** Skeleton commands now work smoothly as abbrev definitions.  The
+element < no longer exists, ' is a new element.
+
+** The autoinsert insert facility for prefilling empty files as soon
+as they are found has been extended to accomodate skeletons or calling
+functions.  See the function auto-insert.
+
+** TPU-edt Changes
+
+Loading tpu-edt no longer turns on tpu-edt mode.  In fact, it is no
+longer necessary to explicitly load tpu-edt.  All you need to do to
+turn on tpu-edt is run the tpu-edt function.  Here's how to run
+tpu-edt instead of loading the file:
+  
+  Running Emacs:   Type      emacs -f tpu-edt
+                    not      emacs -l tpu-edt
+
+  Within Emacs:    Type      M-x tpu-edt <ret>
+                    not      M-x load-library <ret> tpu-edt <ret>
+  
+  In .emacs:       Use       (tpu-edt)
+                   not       (load "tpu-edt")
+  
+The default name of the tpu-edt X key definition file has changed from
+~/.tpu-gnu-keys to ~/.tpu-keys.  If you don't rename the file yourself,
+tpu-edt will offer to rename it the first time you invoke it under
+x-windows.
+
+** MS-DOS Enhancements:
+
+*** Better mouse control by adding the following functions [in dosfns.c]
+msdos-mouse-enable, msdos-mouse-disable, msdos-mouse-init.
+
+*** If another foreground/background color than the default is setup in
+your ~/_emacs, then the screen briefly flickers with the default
+colors before changing to the colors you have specified.  To avoid
+this, the EMACSCOLORS environment variable exists.  It shall be
+defined as a string with the following elements:
+  
+    set EMACSCOLORS=fb;fb
+  
+The first set of "fb" defines the initial foreground and background
+colors using standard dos color numbers (0=black,.., 7=white).
+If specified, the second set of "fb" defines the colors which are
+restored when you leave emacs.
+  
+*** The new SUSPEND environment variable can now be set as the shell to
+use when suspending emacs.  This can be used to override the stupid
+limitation on the environment of sub-shells in MS-DOS (they are just
+large enough to hold the currently defined variables, not leaving
+room for more); to overcome this limitation, add this to autoexec.bat:
+  
+    set SUSPEND=%COMSPEC% /E:2000
+
+** The escape character can now be displayed (as a tiny left arrow)
+on X window frames.  Try this:
+    (aset standard-display-table 27 (vector 27))
+after first creating a display table.
+
+** The new command-line option --eval specifies an expression to evaluate
+from the command line.
+
+** etags has now the ability to tag Perl files.  They are recognised
+either by the .pm and .pl suffixes or by a first line which starts
+with `#!' and specifies a Perl interpreter.  The tagged lines are
+those beginning with the `sub' keyword.
+
+New suffixes recognised are .hpp for C++; .f90 for Fortran; .bib,
+.ltx, .TeX for TeX (.bbl, .dtx removed); .ml for Lisp; .prolog for
+prolog (.pl is now Perl).
+
+** The files etc/termcap.dat and etc/termcap.ucb have been replaced
+with a new, merged, and much more comprehensive termcap file.  The
+new file should include all the special entries from the old one.
+This new file is under active development as part of the ncurses
+project.  If you have any questions about this file, or problems with
+an entry in it, email terminfo@ccil.org.
+
+* Lisp changes in Emacs 19.30.
+
+** New Data Types
+
+*** There is a new data type called a char-table which is an array
+indexed by a character.  Currently this is mostly equivalent to a
+vector of length 256, but in the future, when a wider character set is
+in use, it will be different.  To create one, call
+   (make-char-table SUBTYPE INITIAL-VALUE)
+
+SUBTYPE is a symbol that identifies the specific use of this
+character table.  It can be any of these values:
+
+  syntax-table
+  display-table
+  keyboard-translate-table
+  case-table
+
+The function `char-table-subtype' returns the subtype of a char-table.
+You cannot alter the subtype of an existing char-table.
+
+A char-table has an element for each character code.  It also has some
+"extra slots".  The number of extra slots depends on the subtype and
+their use depends on the subtype.  (Each subtype symbol has a
+`char-table-extra-slots' property that says how many extra slots to
+make.)  Use (char-table-extra-slot TABLE N) to access extra slot N and
+(set-char-table-extra-slot TABLE N VALUE) to store VALUE in slot N.
+
+A char-table T can have a parent, which should be another char-table
+P.  If you look for the value in T for character C, and the table T
+actually holds nil, P's element for character C is used instead.
+The functions `char-table-parent' and `set-char-table-parent'
+let you read or set the parent of a char-table.
+
+To scan all the values in a char-table, do not try to loop through all
+possible character codes.  That would work for now, but will not work
+in the future.  Instead, call map-char-table.  (map-char-table
+FUNCTION TABLE) calls FUNCTION once for each character or character
+set that has a distinct value in TABLE.  FUNCTION gets two arguments,
+RANGE and VALUE.  RANGE specifies a range of TABLE that has one
+uniform value, and VALUE is the value in TABLE for that range.
+
+Currently, RANGE is always a vector containing a single character
+and it refers to that character alone.  In the future, other kinds
+of ranges will occur.  You can set the value for a given range
+with (set-char-table-range TABLE RANGE VALUE) and examine the value
+for a range with (char-table-range TABLE RANGE).
+
+*** Syntax tables are now represented as char-tables.
+All syntax tables other than the standard syntax table
+normally have the standard syntax table as their parent.
+Their subtype is `syntax-table'.
+
+*** Display tables are now represented as char-tables.
+Their subtype is `display-table'.
+
+*** Case tables are now represented as char-tables.
+Their subtype is `case-table'.
+
+*** The value of keyboard-translate-table may now be a char-table
+instead of a string.  Normally the char-tables used for this purpose
+have the subtype `keyboard-translate-table', but that is not required.
+
+*** A new data type called a bool-vector is a vector of values
+that are either t or nil.  To create one, do
+   (make-bool-vector LENGTH INITIAL-VALUE)
+
+** You can now specify, for each marker, how it should relocate when
+text is inserted at the place where the marker points.  This is called
+the "insertion type" of the marker.
+
+To set the insertion type, do (set-marker-insertion-type MARKER TYPE).
+If TYPE is t, it means the marker advances when text is inserted.  If
+TYPE is nil, it means the marker does not advance.  (In Emacs 19.29,
+markers did not advance.)
+
+The function marker-insertion-type reports the insertion type of a
+given marker.  The function copy-marker takes a second argument TYPE
+which specifies the insertion type of the new copied marker.
+
+** When you create an overlay, you can specify the insertion type of
+the beginning and of the end.  To do this, you can use two new
+arguments to make-overlay: front-advance and rear-advance.
+
+** The new function overlays-in returns a list of the overlays that
+overlap a specified range of the buffer.  The returned list includes
+empty overlays at the beginning of this range, as well as within the
+range.
+
+** The new hook window-scroll-functions is run when a window has been
+scrolled.  The functions in this list are called just before
+redisplay, after the new window-start has been computed.  Each function
+is called with two arguments--the window that has been scrolled, and its
+new window-start position.
+
+This hook is useful for on-the-fly fontification and other features
+that affect how the redisplayed text will look when it is displayed.
+
+The window-end value of the window is not valid when these functions
+are called.  The computation of window-end is byproduct of actual
+redisplay of the window contents, which means it has not yet happened
+when the hook is run.  Computing window-end specially in advance for
+the sake of these functions would cause a slowdown.
+
+The hook functions can determine where the text on the window will end
+by calling vertical-motion starting with the window-start position.
+
+** The new hook redisplay-end-trigger-functions is run whenever
+redisplay in window uses text that extends past a specified end
+trigger position.  You set the end trigger position with the function
+set-window-redisplay-end-trigger.  The functions are called with two
+arguments: the window, and the end trigger position.  Storing nil for
+the end trigger position turns off the feature, and the trigger value
+is automatically reset to nil just after the hook is run.
+
+You can use the function window-redisplay-end-trigger to read a
+window's current end trigger value.
+
+** The new function insert-file-contents-literally inserts the
+contents of a file without any character set translation or decoding.
+
+** The new function safe-length computes the length of a list.
+It never gets an error--it treats any non-list like nil.
+If given a circular list, it returns an upper bound for the number
+of elements before the circularity.
+
+** replace-match now takes a fifth argument, SUBEXP.  If SUBEXP is
+non-nil, that says to replace just subexpression number SUBEXP of the
+regexp that was matched, not the entire match.  For example, after
+matching `foo \(ba*r\)' calling replace-match with 1 as SUBEXP means
+to replace just the text that matched `\(ba*r\)'.
+
+** The new keymap special-event-map defines bindings for certain
+events that should be handled at a very low level--as soon as they
+are read.  The read-event function processes these events itself,
+and never returns them.
+
+Events that are handled in this way do not echo, they are never
+grouped into key sequences, and they never appear in the value of
+last-command-event or (this-command-keys).  They do not discard a
+numeric argument, they cannot be unread with unread-command-events,
+they may not appear in a keyboard macro, and they are not recorded
+in a keyboard macro while you are defining one.
+
+These events do, however, appear in last-input-event immediately after
+they are read, and this is the way for the event's definition to find
+the actual event.
+
+The events types iconify-frame, make-frame-visible and delete-frame
+are normally handled in this way.
+
+** encode-time now supports simple date arithmetic by means of
+out-of-range values for its SEC, MINUTE, HOUR, DAY, and MONTH
+arguments; for example, day 0 means the day preceding the given month.
+Also, the ZONE argument can now be a TZ-style string.
+
+** command-execute and call-interactively now accept an optional third
+argument KEYS.  If specified and non-nil, this specifies the key
+sequence containing the events that were used to invoke the command.
+
+** The environment variable NAME, if set, now specifies the value of
+(user-full-name), when Emacs starts up.
 
 * User Editing Changes in Emacs 19.29
 
@@ -86,6 +759,10 @@ via Emacs.  Specify the X display of the person you want to talk to.
 You can talk to any number of people (within reason) by using
 this command repeatedly to specify different people.
 
+Emacs does not make a fuss about security; the people who you talk to
+can use all Emacs features, including visiting and editing files.  If
+this frightens you, don't use M-x talk-connect.
+
 ** The range of integer values is now at least 2**28 on all machines.
 This means the maximum size of a buffer is at least 2**27-1,
 or 134,217,727.
@@ -129,6 +806,9 @@ C-Home and C-End move to beginning and end of buffer.
 is now ESC :.  It used to be ESC ESC, but we moved it to make way for
 the ESC ESC ESC feature, on the grounds that people who evaluate Lisp
 expressions are experienced users and can cope with a change.
+If you prefer the old ESC ESC binding, put in your `~/.emacs':
+
+	(global-set-key "\e\e" 'eval-expression)
 
 ** The f1 function key is now equivalent to the help key.  This is
 done with key-translation-map; delete the binding for f1 in that map
@@ -572,23 +1252,6 @@ and Fast Lock mode turned on for the first time, the file's buffer is
 fontified as normal.  When certain events occur (such as exiting
 Emacs), Fast Lock saves the highlighting in a cache file.  When you
 subsequently visit this file, its cache is used to restore the
-highlighting.
-
-To use this package, put in your `~/.emacs':
-
- (add-hook 'font-lock-mode-hook 'turn-on-fast-lock)
-
-To control the use of caches, see the documentation for `fast-lock-mode'.
-
-*** New extension fast-lock.
-
-The fast-lock package speeds up Font Lock mode by saving (and reading)
-a file's highlighting to (and from) associated cache files.  When you
-visit a file with Font Lock mode and Fast Lock mode turned on for the
-first time, the file's buffer is fontified as normal.  When certain
-events occur (such as exiting Emacs), Fast Lock saves the highlighting
-in a cache file.  When you subsequently visit that file with Font Lock
-mode and Fast Lock mode turned on, its cache is used to restore the
 highlighting.
 
 To use this package, put in your `~/.emacs':
@@ -1460,13 +2123,13 @@ specified.  You can specify what kind of conversion to use with
 %-specifications.
 
 *** The new function decode-time converts a time value into a list of
-specific items of information, such as the year, month, day of week,
-day of month, hour, minute and second.  (A time value is a list
-of two or three integers.)
+specific items of information: the year, month, day of week, day of
+month, hour, minute and second.  (A time value is a list of two or
+three integers.)
 
-*** The new function encode-time converts a list of specific items of
-information, such as the year, month, day of week, day of month, hour,
-minute and second into a time value.
+*** The new function encode-time converts specific items of time
+information--the second, minute, hour, day, month, year, and time
+zone--into a time value.
 
 * Changes in Emacs 19.27
 

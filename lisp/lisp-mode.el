@@ -78,12 +78,24 @@
 
 (define-abbrev-table 'lisp-mode-abbrev-table ())
 
+(defvar lisp-imenu-generic-expression
+      '(
+	(nil 
+	 "^\\s-*(def\\(un\\|subst\\|macro\\|advice\\)\\s-+\\([-A-Za-z0-9+]+\\)" 2)
+	("Variables" 
+	 "^\\s-*(def\\(var\\|const\\)\\s-+\\([-A-Za-z0-9+]+\\)" 2)
+	("Types" 
+	 "^\\s-*(def\\(type\\|struct\\|class\\|ine-condition\\)\\s-+\\([-A-Za-z0-9+]+\\)" 
+	 2))
+
+  "Imenu generic expression for Lisp mode.  See `imenu-generic-expression'.")
+
 (defun lisp-mode-variables (lisp-syntax)
   (cond (lisp-syntax
 	  (set-syntax-table lisp-mode-syntax-table)))
   (setq local-abbrev-table lisp-mode-abbrev-table)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^$\\|" page-delimiter))
+  (setq paragraph-start (concat page-delimiter "\\|$" ))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'paragraph-ignore-fill-prefix)
@@ -105,7 +117,9 @@
   (make-local-variable 'comment-column)
   (setq comment-column 40)
   (make-local-variable 'comment-indent-function)
-  (setq comment-indent-function 'lisp-comment-indent))
+  (setq comment-indent-function 'lisp-comment-indent)
+  (make-local-variable 'imenu-generic-expression)
+  (setq imenu-generic-expression lisp-imenu-generic-expression))
 
 (defvar shared-lisp-mode-map ()
   "Keymap for commands shared by all sorts of Lisp modes.")
@@ -114,12 +128,11 @@
     ()
    (setq shared-lisp-mode-map (make-sparse-keymap))
    (define-key shared-lisp-mode-map "\e\C-q" 'indent-sexp)
-   (define-key shared-lisp-mode-map "\177" 'backward-delete-char-untabify)
-   (define-key shared-lisp-mode-map "\t" 'lisp-indent-line))
+   (define-key shared-lisp-mode-map "\177" 'backward-delete-char-untabify))
 
 (defvar emacs-lisp-mode-map ()
   "Keymap for Emacs Lisp mode.
-All commands in shared-lisp-mode-map are inherited by this map.")
+All commands in `shared-lisp-mode-map' are inherited by this map.")
 
 (if emacs-lisp-mode-map
     ()
@@ -277,7 +290,8 @@ With argument, insert value in current buffer after the defun."
 		(end-of-defun)
 		(beginning-of-defun)
 		(read (current-buffer)))))
-    (if (eq (car form) 'defvar)
+    (if (and (eq (car form) 'defvar)
+	     (cdr-safe (cdr-safe form)))
 	(setq form (cons 'defconst (cdr form))))
     (prin1 (eval form))))
 
@@ -717,8 +731,8 @@ and initial semicolons."
 	   (point)))
 
 	;; Lines with only semicolons on them can be paragraph boundaries.
-	(let ((paragraph-start (concat paragraph-start "\\|^[ \t;]*$"))
-	      (paragraph-separate (concat paragraph-start "\\|^[ \t;]*$"))
+	(let ((paragraph-start (concat paragraph-start "\\|[ \t;]*$"))
+	      (paragraph-separate (concat paragraph-start "\\|[ \t;]*$"))
 	      (fill-prefix comment-fill-prefix))
 	  (fill-paragraph justify))))
     t))

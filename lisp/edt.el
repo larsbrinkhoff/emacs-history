@@ -1,4 +1,4 @@
-;;; edt.el  ---  Enhanced EDT Keypad Mode Emulation for GNU Emacs 19
+;;; edt.el --- Enhanced EDT Keypad Mode Emulation for GNU Emacs 19
 
 ;; Copyright (C) 1986, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 
@@ -1499,7 +1499,7 @@ If FILE is nil, try to load a default file.  The default file names are
           (setq term nil)))
     ;; Override terminal-specific file if running X Windows.  X Windows support
     ;; is handled differently in edt-load-xkeys
-    (if window-system
+    (if (eq window-system 'x)
 	(edt-load-xkeys nil)
       (if (null term)
 	  (error "Unable to load EDT terminal specific file for %s" edt-term)))
@@ -1769,6 +1769,8 @@ If FILE is nil, try to load a default file.  The default file names are
   ;; GOLD bindings for a few Control keys.
   (edt-bind-gold-key  "\C-g" 'keyboard-quit t); Just in case.
   (edt-bind-gold-key  "\C-h" 'help-for-help t)
+  (edt-bind-gold-key  [f1] 'help-for-help t)
+  (edt-bind-gold-key  [help] 'help-for-help t)
   (edt-bind-gold-key  "\C-\\" 'split-window-vertically t)
 
   ;; GOLD bindings for regular keys.
@@ -1806,8 +1808,8 @@ If FILE is nil, try to load a default file.  The default file names are
   (edt-bind-gold-key "P" 'edt-key-not-assigned t)
   (edt-bind-gold-key "q" 'edt-quit t)
   (edt-bind-gold-key "Q" 'edt-quit t)
-  (edt-bind-gold-key "r" 'revert-file t)
-  (edt-bind-gold-key "R" 'revert-file t)
+  (edt-bind-gold-key "r" 'revert-buffer t)
+  (edt-bind-gold-key "R" 'revert-buffer t)
   (edt-bind-gold-key "s" 'save-buffer t)
   (edt-bind-gold-key "S" 'save-buffer t)
   (edt-bind-gold-key "t" 'edt-key-not-assigned t)
@@ -1988,21 +1990,25 @@ G-C-\\: Split Window                     |  FNDNXT  |   Yank   |   CUT    |
   (edt-electric-helpify 'edt-user-keypad-help))
 
 ;;;
-;;; Generic EDT emulation screen width commands.
+;;; EDT emulation screen width commands.
 ;;;
-;; If modification of terminal attributes is desired when invoking these
-;; commands, then the corresponding terminal specific file will contain a 
-;; re-definition of these commands.
+;; Some terminals require modification of terminal attributes when changing the
+;; number of columns displayed, hence the fboundp tests below.  These functions
+;; are defined in the corresponding terminal specific file, if needed.
 
 (defun edt-set-screen-width-80 ()
   "Set screen width to 80 columns."
   (interactive)
+  (if (fboundp 'edt-set-term-width-80)
+      (edt-set-term-width-80))
   (set-screen-width 80)
   (message "Screen width 80"))
 
 (defun edt-set-screen-width-132 ()
   "Set screen width to 132 columns."
   (interactive)
+  (if (fboundp 'edt-set-term-width-132)
+      (edt-set-term-width-132))
   (set-screen-width 132)
   (message "Screen width 132"))
 

@@ -21,6 +21,10 @@
 # BEGIN CONFIGURATION
 #
 
+# Define the following to build the GUI version
+#
+NTGUI=1
+
 # Set INSTALL_DIR to be the directory into which you want emacs installed.
 #
 !ifndef INSTALL_DIR
@@ -131,6 +135,9 @@ CFLAGS          = $(CFLAGS_COMMON) -D_CRTAPI1=_cdecl
 !else
 CFLAGS          = $(CFLAGS_COMMON) 
 !endif
+!ifdef NTGUI
+CFLAGS          = $(CFLAGS) -DHAVE_NTGUI=1
+!endif
 
 OBJDIR          = obj
 $(OBJDIR):;	-mkdir $(OBJDIR)
@@ -139,7 +146,7 @@ $(BLD):         $(OBJDIR)
 		-mkdir $(BLD)
 
 CP		= copy
-CP_DIR		= xcopy /fried
+CP_DIR		= xcopy /f/r/i/e/d
 
 # This is completely braindamaged, but it's the only routine known to be there
 DEL_TREE	= echo y | rmdir /s

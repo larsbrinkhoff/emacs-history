@@ -38,8 +38,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+extern char **environ;
+extern Lisp_Object make_time ();
 extern void insert_from_buffer ();
 static long difftm ();
+static void set_time_zone_rule ();
 
 /* Some static data, and a function to initialize it for each run */
 
@@ -235,17 +238,6 @@ DEFUN ("region-end", Fregion_end, Sregion_end, 0, 0, 0,
   return (region_limit (0));
 }
 
-#if 0 /* now in lisp code */
-DEFUN ("mark", Fmark, Smark, 0, 0, 0,
-  "Return this buffer's mark value as integer, or nil if no mark.\n\
-If you are using this in an editing command, you are most likely making\n\
-a mistake; see the documentation of `set-mark'.")
-  ()
-{
-  return Fmarker_position (current_buffer->mark);
-}
-#endif /* commented out code */
-
 DEFUN ("mark-marker", Fmark_marker, Smark_marker, 0, 0, 0,
   "Return this buffer's mark, as a marker object.\n\
 Watch out!  Moving this marker changes the mark position.\n\
@@ -255,41 +247,6 @@ If you set the marker not to point anywhere, the buffer will have no mark.")
   return current_buffer->mark;
 }
 
-#if 0 /* this is now in lisp code */
-DEFUN ("set-mark", Fset_mark, Sset_mark, 1, 1, 0,
-  "Set this buffer's mark to POS.  Don't use this function!\n\
-That is to say, don't use this function unless you want\n\
-the user to see that the mark has moved, and you want the previous\n\
-mark position to be lost.\n\
-\n\
-Normally, when a new mark is set, the old one should go on the stack.\n\
-This is why most applications should use push-mark, not set-mark.\n\
-\n\
-Novice programmers often try to use the mark for the wrong purposes.\n\
-The mark saves a location for the user's convenience.\n\
-Most editing commands should not alter the mark.\n\
-To remember a location for internal use in the Lisp program,\n\
-store it in a Lisp variable.  Example:\n\
-\n\
-   (let ((beg (point))) (forward-line 1) (delete-region beg (point))).")
-  (pos)
-     Lisp_Object pos;
-{
-  if (NILP (pos))
-    {
-      current_buffer->mark = Qnil;
-      return Qnil;
-    }
-  CHECK_NUMBER_COERCE_MARKER (pos, 0);
-
-  if (NILP (current_buffer->mark))
-    current_buffer->mark = Fmake_marker ();
-
-  Fset_marker (current_buffer->mark, pos, Qnil);
-  return pos;
-}
-#endif /* commented-out code */
-
 Lisp_Object
 save_excursion_save ()
 {
@@ -297,7 +254,7 @@ save_excursion_save ()
 			  == current_buffer);
 
   return Fcons (Fpoint_marker (),
-		Fcons (Fcopy_marker (current_buffer->mark),
+		Fcons (Fcopy_marker (current_buffer->mark, Qnil),
 		       Fcons (visible ? Qt : Qnil,
 			      current_buffer->mark_active)));		       
 }
@@ -586,7 +543,7 @@ DEFUN ("emacs-pid", Femacs_pid, Semacs_pid, 0, 0, 0,
 }
 
 DEFUN ("current-time", Fcurrent_time, Scurrent_time, 0, 0, 0,
-  "Return the current time, as the number of seconds since 12:00 AM January 1970.\n\
+  "Return the current time, as the number of seconds since 1970-01-01 00:00:00.\n\
 The time is returned as a list of three integers.  The first has the\n\
 most significant 16 bits of the seconds, while the second has the\n\
 least significant 16 bits.  The third integer gives the microsecond\n\
@@ -698,13 +655,14 @@ DEFUN ("decode-time", Fdecode_time, Sdecode_time, 0, 1, 0,
 The optional SPECIFIED-TIME should be a list of (HIGH LOW . IGNORED)\n\
 or (HIGH . LOW), as from `current-time' and `file-attributes', or `nil'\n\
 to use the current time.  The list has the following nine members:\n\
-SEC is an integer between 0 and 59.  MINUTE is an integer between 0 and 59.\n\
+SEC is an integer between 0 and 60; SEC is 60 for a leap second, which\n\
+only some operating systems support.  MINUTE is an integer between 0 and 59.\n\
 HOUR is an integer between 0 and 23.  DAY is an integer between 1 and 31.\n\
 MONTH is an integer between 1 and 12.  YEAR is an integer indicating the\n\
 four-digit year.  DOW is the day of week, an integer between 0 and 6, where\n\
 0 is Sunday.  DST is t if daylight savings time is effect, otherwise nil.\n\
 ZONE is an integer indicating the number of seconds east of Greenwich.\n\
-(Note that Common Lisp has different meanings for DOW and ZONE.)")
+\(Note that Common Lisp has different meanings for DOW and ZONE.)")
   (specified_time)
      Lisp_Object specified_time;
 {
@@ -736,102 +694,79 @@ ZONE is an integer indicating the number of seconds east of Greenwich.\n\
   return Flist (9, list_args);
 }
 
-static char days_per_month[11]
-  = { 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31 };
-
 DEFUN ("encode-time", Fencode_time, Sencode_time, 6, 7, 0,
   "Convert SEC, MINUTE, HOUR, DAY, MONTH, YEAR and ZONE to internal time.\n\
 This is the reverse operation of `decode-time', which see.  ZONE defaults\n\
-to the current time zone and daylight savings time if not specified; if\n\
-specified, it can be either a list (as from `current-time-zone') or an\n\
-integer (as from `decode-time'), and is applied without consideration for\n\
-daylight savings time.\n\
+to the current time zone rule if not specified; if specified, it can\n\
+be a string (as from `set-time-zone-rule'), or it can be a list\n\
+(as from `current-time-zone') or an integer (as from `decode-time')\n\
+applied without consideration for daylight savings time.\n\
+Out-of-range values for SEC, MINUTE, HOUR, DAY, or MONTH are allowed;\n\
+for example, a DAY of 0 means the day preceding the given month.\n\
 Year numbers less than 100 are treated just like other year numbers.\n\
-If you want them to stand for years above 1900, you must do that yourself.")
+If you want them to stand for years in this century, you must do that yourself.")
   (sec, minute, hour, day, month, year, zone)
      Lisp_Object sec, minute, hour, day, month, year, zone;
 {
   time_t time;
-  int fullyear, mon, days, seconds, tz = 0;
+  struct tm tm;
 
-  CHECK_NATNUM (sec, 0);
-  CHECK_NATNUM (minute, 1);
-  CHECK_NATNUM (hour, 2);
-  CHECK_NATNUM (day, 3);
-  CHECK_NATNUM (month, 4);
-  CHECK_NATNUM (year, 5);
+  CHECK_NUMBER (sec, 0);
+  CHECK_NUMBER (minute, 1);
+  CHECK_NUMBER (hour, 2);
+  CHECK_NUMBER (day, 3);
+  CHECK_NUMBER (month, 4);
+  CHECK_NUMBER (year, 5);
 
-  fullyear = XINT (year);
+  tm.tm_sec = XINT (sec);
+  tm.tm_min = XINT (minute);
+  tm.tm_hour = XINT (hour);
+  tm.tm_mday = XINT (day);
+  tm.tm_mon = XINT (month) - 1;
+  tm.tm_year = XINT (year) - 1900;
+  tm.tm_isdst = -1;
 
-  /* Adjust incoming datespec to epoch = March 1, year 0.
-     The "date" March 1, year 0, is an abstraction used purely for its
-     computational convenience; year 0 never existed.  */
-  mon = XINT (month) - 1 + 10;
-  fullyear += mon/12 - 1;
-  mon %= 12;
-
-  days = XINT (day) - 1;		/* day of month */
-  while (mon-- > 0)			/* day of year */
-    days += days_per_month[mon];
-  days += 146097 * (fullyear/400);	/* 400 years = 146097 days */
-  fullyear %= 400;
-  days += 36524 * (fullyear/100);	/* 100 years = 36524 days */
-  fullyear %= 100;
-  days += 1461 * (fullyear/4);		/* 4 years = 1461 days */
-  fullyear %= 4;
-  days += 365 * fullyear;		/* 1 year = 365 days */
-
-  /* Adjust computed datespec to epoch = January 1, 1970.  */
-  days += 59;				/* March 1 is 59th day.  */
-  days -= 719527;			/* 1970 years = 719527 days */
-
-  seconds = XINT (sec) + 60 * XINT (minute) + 3600 * XINT (hour);
-
-  if (sizeof (time_t) == 4
-      && ((days+(seconds/86400) > 24854) || (days+(seconds/86400) < -24854)))
-    error ("the specified time is outside the representable range");
-
-  time = days * 86400 + seconds;
-
-  /* We have the correct value for UTC.  Adjust for timezones.  */
+  if (CONSP (zone))
+    zone = Fcar (zone);
   if (NILP (zone))
+    time = mktime (&tm);
+  else
     {
-      struct tm gmt, *t;
-      time_t adjusted_time;
-      int adjusted_tz;
-      /* If the system does not use timezones, gmtime returns 0, and we
-	 already have the correct value, by definition.  */
-      if ((t = gmtime (&time)) != 0)
+      char tzbuf[100];
+      char *tzstring;
+      char **oldenv = environ, **newenv;
+      
+      if (STRINGP (zone))
+	tzstring = (char *) XSTRING (zone)->data;
+      else if (INTEGERP (zone))
 	{
-	  gmt = *t;
-	  t = localtime (&time);
-	  tz = difftm (t, &gmt);
-	  /* The timezone returned is that at the specified Universal Time,
-	     not the local time, which is what we want.  Adjust, repeat.  */
-	  adjusted_time = time - tz;
-	  gmt = *gmtime (&adjusted_time); /* this is safe now */
-	  t = localtime (&adjusted_time);
-	  adjusted_tz = difftm (t, &gmt);
-	  /* In case of discrepancy, adjust again for extra accuracy.  */
-	  if (adjusted_tz != tz)
-	    {
-	      adjusted_time = time - adjusted_tz;
-	      gmt = *gmtime (&adjusted_time);
-	      t = localtime (&adjusted_time);
-	      adjusted_tz = difftm (t, &gmt);
-	    }
-	  tz = adjusted_tz;
+	  int abszone = abs (XINT (zone));
+	  sprintf (tzbuf, "XXX%s%d:%02d:%02d", "-" + (XINT (zone) < 0),
+		   abszone / (60*60), (abszone/60) % 60, abszone % 60);
+	  tzstring = tzbuf;
 	}
-    }
-  else 
-    {
-      if (CONSP (zone))
-	zone = Fcar (zone);
-      CHECK_NUMBER (zone, 6);
-      tz = XINT (zone);
+      else
+	error ("Invalid time zone specification");
+
+      /* Set TZ before calling mktime; merely adjusting mktime's returned 
+	 value doesn't suffice, since that would mishandle leap seconds.  */
+      set_time_zone_rule (tzstring);
+
+      time = mktime (&tm);
+
+      /* Restore TZ to previous value.  */
+      newenv = environ;
+      environ = oldenv;
+      free (newenv);
+#ifdef LOCALTIME_CACHE
+      tzset ();
+#endif
     }
 
-  return make_time (time - tz);
+  if (time == (time_t) -1)
+    error ("Specified time is not representable");
+
+  return make_time (time);
 }
 
 DEFUN ("current-time-string", Fcurrent_time_string, Scurrent_time_string, 0, 1, 0,
@@ -944,6 +879,65 @@ the data it can't find.")
     return Fmake_list (2, Qnil);
 }
 
+DEFUN ("set-time-zone-rule", Fset_time_zone_rule, Sset_time_zone_rule, 1, 1, 0,
+  "Set the local time zone using TZ, a string specifying a time zone rule.\n\
+If TZ is nil, use implementation-defined default time zone information.")
+  (tz)
+     Lisp_Object tz;
+{
+  static char **environbuf;
+  char *tzstring;
+
+  if (NILP (tz))
+    tzstring = 0;
+  else
+    {
+      CHECK_STRING (tz, 0);
+      tzstring = (char *) XSTRING (tz)->data;
+    }
+
+  set_time_zone_rule (tzstring);
+  if (environbuf)
+    free (environbuf);
+  environbuf = environ;
+
+  return Qnil;
+}
+
+/* Set the local time zone rule to TZSTRING.
+   This allocates memory into `environ', which it is the caller's
+   responsibility to free.  */
+static void
+set_time_zone_rule (tzstring)
+     char *tzstring;
+{
+  int envptrs;
+  char **from, **to, **newenv;
+
+  for (from = environ; *from; from++)
+    continue;
+  envptrs = from - environ + 2;
+  newenv = to = (char **) xmalloc (envptrs * sizeof (char *)
+				   + (tzstring ? strlen (tzstring) + 4 : 0));
+  if (tzstring)
+    {
+      char *t = (char *) (to + envptrs);
+      strcpy (t, "TZ=");
+      strcat (t, tzstring);
+      *to++ = t;
+    }
+
+  for (from = environ; *from; from++)
+    if (strncmp (*from, "TZ=", 3) != 0)
+      *to++ = *from;
+  *to = 0;
+
+  environ = newenv;
+
+#ifdef LOCALTIME_CACHE
+  tzset ();
+#endif
+}
 
 void
 insert1 (arg)
@@ -1378,6 +1372,13 @@ subst_char_in_region_unwind (arg)
   return current_buffer->undo_list = arg;
 }
 
+static Lisp_Object
+subst_char_in_region_unwind_1 (arg)
+     Lisp_Object arg;
+{
+  return current_buffer->filename = arg;
+}
+
 DEFUN ("subst-char-in-region", Fsubst_char_in_region,
   Ssubst_char_in_region, 4, 5, 0,
   "From START to END, replace FROMCHAR with TOCHAR each time it occurs.\n\
@@ -1400,12 +1401,17 @@ and don't mark the buffer as really changed.")
 
   /* If we don't want undo, turn off putting stuff on the list.
      That's faster than getting rid of things,
-     and it prevents even the entry for a first change.  */
+     and it prevents even the entry for a first change.
+     Also inhibit locking the file.  */
   if (!NILP (noundo))
     {
       record_unwind_protect (subst_char_in_region_unwind,
 			     current_buffer->undo_list);
       current_buffer->undo_list = Qt;
+      /* Don't do file-locking.  */
+      record_unwind_protect (subst_char_in_region_unwind_1,
+			     current_buffer->filename);
+      current_buffer->filename = Qnil;
     }
 
   while (pos < stop)
@@ -1509,7 +1515,7 @@ This allows the buffer's full text to be seen and edited.")
 {
   BEGV = BEG;
   SET_BUF_ZV (current_buffer, Z);
-  clip_changed = 1;
+  current_buffer->clip_changed = 1;
   /* Changing the buffer bounds invalidates any recorded current column.  */
   invalidate_current_column ();
   return Qnil;
@@ -1545,7 +1551,7 @@ or markers) bounding the text that should remain visible.")
     SET_PT (XFASTINT (b));
   if (point > XFASTINT (e))
     SET_PT (XFASTINT (e));
-  clip_changed = 1;
+  current_buffer->clip_changed = 1;
   /* Changing the buffer bounds invalidates any recorded current column.  */
   invalidate_current_column ();
   return Qnil;
@@ -1587,7 +1593,7 @@ save_restriction_restore (data)
     }
   BUF_BEGV (buf) = BUF_BEG (buf) + newhead;
   SET_BUF_ZV (buf, BUF_Z (buf) - newtail);
-  clip_changed = 1;
+  current_buffer->clip_changed = 1;
 
   /* If point is outside the new visible range, move it inside. */
   SET_BUF_PT (buf,
@@ -1633,12 +1639,9 @@ static int message_length;
 
 DEFUN ("message", Fmessage, Smessage, 1, MANY, 0,
   "Print a one-line message at the bottom of the screen.\n\
-The first argument is a control string.\n\
-It may contain %s or %d or %c to print successive following arguments.\n\
-%s means print an argument as a string, %d means print as number in decimal,\n\
-%c means print a number as a single character.\n\
-The argument used by %s must be a string or a symbol;\n\
-the argument used by %d or %c must be a number.\n\
+The first argument is a format control string, and the rest are data\n\
+to be formatted under control of the string.  See `format' for details.\n\
+\n\
 If the first argument is nil, clear any existing message; let the\n\
 minibuffer contents show.")
   (nargs, args)
@@ -1758,9 +1761,13 @@ The other arguments are substituted into it to make the result, a string.\n\
 It may contain %-sequences meaning to substitute the next argument.\n\
 %s means print a string argument.  Actually, prints any object, with `princ'.\n\
 %d means print as number in decimal (%o octal, %x hex).\n\
+%e means print a number in exponential notation.\n\
+%f means print a number in decimal-point notation.\n\
+%g means print a number in exponential notation\n\
+  or decimal-point notation, whichever uses fewer characters.\n\
 %c means print a number as a single character.\n\
 %S means print any object as an s-expression (using prin1).\n\
-  The argument used for %d, %o, %x or %c must be a number.\n\
+  The argument used for %d, %o, %x, %e, %f, %g or %c must be a number.\n\
 Use %% to put a single % into the output.")
   (nargs, args)
      int nargs;
@@ -1787,10 +1794,9 @@ Use %% to put a single % into the output.")
 
 	/* Process a numeric arg and skip it.  */
 	minlen = atoi (format);
-	if (minlen > 0)
-	  total += minlen;
-	else
-	  total -= minlen;
+	if (minlen < 0)
+	  minlen = - minlen;
+
 	while ((*format >= '0' && *format <= '9')
 	       || *format == '-' || *format == ' ' || *format == '.')
 	  format++;
@@ -1798,7 +1804,7 @@ Use %% to put a single % into the output.")
 	if (*format == '%')
 	  format++;
 	else if (++n >= nargs)
-	  error ("not enough arguments for format string");
+	  error ("Not enough arguments for format string");
 	else if (*format == 'S')
 	  {
 	    /* For `S', prin1 the argument and then treat like a string.  */
@@ -1818,6 +1824,10 @@ Use %% to put a single % into the output.")
 	    if (*format != 's' && *format != 'S')
 	      error ("format specifier doesn't match argument type");
 	    total += XSTRING (args[n])->size;
+	    /* We have to put an arbitrary limit on minlen
+	       since otherwise it could make alloca fail.  */
+	    if (minlen < XSTRING (args[n])->size + 1000)
+	      total += minlen;
 	  }
 	/* Would get MPV otherwise, since Lisp_Int's `point' to low memory.  */
 	else if (INTEGERP (args[n]) && *format != 's')
@@ -1831,6 +1841,10 @@ Use %% to put a single % into the output.")
 	      args[n] = Ffloat (args[n]);
 #endif
 	    total += 30;
+	    /* We have to put an arbitrary limit on minlen
+	       since otherwise it could make alloca fail.  */
+	    if (minlen < 1000)
+	      total += minlen;
 	  }
 #ifdef LISP_FLOAT_TYPE
 	else if (FLOATP (args[n]) && *format != 's')
@@ -1838,6 +1852,10 @@ Use %% to put a single % into the output.")
 	    if (! (*format == 'e' || *format == 'f' || *format == 'g'))
 	      args[n] = Ftruncate (args[n]);
 	    total += 30;
+	    /* We have to put an arbitrary limit on minlen
+	       since otherwise it could make alloca fail.  */
+	    if (minlen < 1000)
+	      total += minlen;
 	  }
 #endif
 	else
@@ -1878,9 +1896,16 @@ Use %% to put a single % into the output.")
 	    strings[i++] = (unsigned char *) u.half[1];
 	  }
 #endif
-	else
+	else if (i == 0)
+	  /* The first string is treated differently
+	     because it is the format string.  */
 	  strings[i++] = XSTRING (args[n])->data;
+	else
+	  strings[i++] = (unsigned char *) XFASTINT (args[n]);
       }
+
+    /* Make room in result for all the non-%-codes in the control string.  */
+    total += XSTRING (args[0])->size;
 
     /* Format it in bigger and bigger buf's until it all fits. */
     while (1)
@@ -1888,7 +1913,8 @@ Use %% to put a single % into the output.")
 	buf = (char *) alloca (total + 1);
 	buf[total - 1] = 0;
 
-	length = doprnt (buf, total + 1, strings[0], end, i-1, strings + 1);
+	length = doprnt_lisp (buf, total + 1, strings[0],
+			      end, i-1, strings + 1);
 	if (buf[total - 1] == 0)
 	  break;
 
@@ -1932,12 +1958,13 @@ Case is ignored if `case-fold-search' is non-nil in the current buffer.")
   (c1, c2)
      register Lisp_Object c1, c2;
 {
-  unsigned char *downcase = DOWNCASE_TABLE;
+  Lisp_Object *downcase = DOWNCASE_TABLE;
   CHECK_NUMBER (c1, 0);
   CHECK_NUMBER (c2, 1);
 
   if (!NILP (current_buffer->case_fold_search)
-      ? (downcase[0xff & XFASTINT (c1)] == downcase[0xff & XFASTINT (c2)]
+      ? ((XINT (downcase[0xff & XFASTINT (c1)])
+	  == XINT (downcase[0xff & XFASTINT (c2)]))
 	 && (XFASTINT (c1) & ~0xff) == (XFASTINT (c2) & ~0xff))
       : XINT (c1) == XINT (c2))
     return Qt;
@@ -2337,6 +2364,7 @@ syms_of_editfns ()
   defsubr (&Sencode_time);
   defsubr (&Scurrent_time_string);
   defsubr (&Scurrent_time_zone);
+  defsubr (&Sset_time_zone_rule);
   defsubr (&Ssystem_name);
   defsubr (&Smessage);
   defsubr (&Smessage_box);

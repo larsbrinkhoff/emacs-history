@@ -1,6 +1,6 @@
 ;;; startup.el --- process Emacs shell arguments
 
-;; Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -63,9 +63,9 @@
 ;; -------------------------
 ;; -q                        Do not load user's init file and do not load
 ;; -no-init-file             "default.el".  Regardless of this switch,
-;; --no-init-file            "site-init.el" is still loaded.
+;; --no-init-file            "site-start" is still loaded.
 ;; -------------------------
-;; -no-site-file             Do not load "site-init.el".  (This is the ONLY
+;; -no-site-file             Do not load "site-start.el".  (This is the ONLY
 ;; --no-site-file            way to prevent loading that file.)
 ;; -------------------------
 ;; -u USER                   Load USER's init file instead of the init
@@ -100,6 +100,9 @@
 ;; -funcall FUNC             no arguments.  The "-e" form is outdated
 ;; --funcall FUNC            and should not be used.  (It's a typo
 ;; -e FUNC                   promoted to a feature.)
+;;
+;; -eval FORM                Execute Emacs lisp form FORM.
+;; --eval FORM
 ;;
 ;; -insert FILE              Insert the contents of FILE into buffer.
 ;; --insert FILE
@@ -220,7 +223,14 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
   "*Name of this machine, for purposes of naming users.")
 
 (defvar user-mail-address nil
-  "*Full mailing address of this user.")
+  "*Full mailing address of this user.
+This is initialized based on `mail-host-address',
+after your init file is read, in case it sets `mail-host-address'.")
+
+(defvar auto-save-list-file-prefix "~/.saves-"
+  "Prefix for generating auto-save-list-file-name.
+Emacs's pid and the system name will be appended to
+this prefix to create a unique file name.")
 
 (defvar init-file-debug nil)
 
@@ -267,21 +277,19 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 			   (delete (concat "PWD=" pwd)
 				   process-environment)))))))
     (setq default-directory (abbreviate-file-name default-directory))
-    (setq user-mail-address (concat (user-login-name) "@"
-				    (or mail-host-address
-					(system-name))))
-    ;; Specify the file for recording all the auto save files of this session.
-    ;; This is used by multiple-recover.
-    (setq auto-save-list-file-name
-	  (expand-file-name
-	   (format "~/.saves-%d-%s"
-		   (emacs-pid)
-		   (or mail-host-address (system-name)))))
     (let ((menubar-bindings-done nil))
       (unwind-protect
 	  (command-line)
 	;; Do this again, in case .emacs defined more abbreviations.
 	(setq default-directory (abbreviate-file-name default-directory))
+	;; Specify the file for recording all the auto save files of this session.
+	;; This is used by recover-session.
+	(setq auto-save-list-file-name
+	      (expand-file-name
+	       (format "%s%d-%s"
+		       auto-save-list-file-prefix
+		       (emacs-pid)
+		       (system-name))))
 	(run-hooks 'emacs-startup-hook)
 	(and term-setup-hook
 	     (run-hooks 'term-setup-hook))
@@ -295,7 +303,7 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	(and window-setup-hook
 	     (run-hooks 'window-setup-hook))
 	(or menubar-bindings-done
-	    (if (eq window-system 'x)
+	    (if (or (eq window-system 'x) (eq window-system 'win32))
 		(precompute-menubar-bindings)))))))
 
 ;; Precompute the keyboard equivalents in the menu bar items.
@@ -395,7 +403,9 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 			("--debug-init") ("--iconic") ("--icon-type")))
 	    (argi (car args))
 	    (argval nil))
-	(if (string-match "=" argi)
+	;; Handle --OPTION=VALUE format.
+	(if (and (string-match "\\`--" argi)
+		 (string-match "=" argi))
 	    (setq argval (substring argi (match-end 0))
 		  argi (substring argi 0 (match-beginning 0))))
 	(let ((completion (try-completion argi longopts)))
@@ -415,8 +425,8 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	 ((or (string-equal argi "-u")
 	      (string-equal argi "-user"))
 	  (or argval
-	      (setq argval (car args)
-		    args (cdr args)))
+	      (setq args (cdr args)
+		    argval (car args)))
 	  (setq init-file-user argval
 		argval nil
 		args (cdr args)))
@@ -450,8 +460,8 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
   (if (fboundp 'frame-initialize)
       (frame-initialize))
   ;; If frame was created with a menu bar, set menu-bar-mode on.
-  (if (and (eq window-system 'x)
-	   (> (cdr (assq 'menu-bar-lines (frame-parameters))) 0))
+  (if (or (not (or (eq window-system 'x) (eq window-system 'win32)))
+	  (> (cdr (assq 'menu-bar-lines (frame-parameters))) 0))
       (menu-bar-mode t))
 
   (run-hooks 'before-init-hook)
@@ -515,6 +525,12 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 		debug-on-error-from-init-file debug-on-error)))
     (if debug-on-error-should-be-set
 	(setq debug-on-error debug-on-error-from-init-file)))
+
+  ;; Do this here in case the init file sets mail-host-address.
+  (or user-mail-address
+      (setq user-mail-address (concat (user-login-name) "@"
+				      (or mail-host-address
+					  (system-name)))))
 
   (run-hooks 'after-init-hook)
 
@@ -594,14 +610,17 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	     (setq window-setup-hook nil)
 	     ;; Do this now to avoid an annoying delay if the user
 	     ;; clicks the menu bar during the sit-for.
-	     (if (eq window-system 'x)
+	     (if (or (eq window-system 'x) (eq window-system 'win32))
 		 (precompute-menubar-bindings))
 	     (setq menubar-bindings-done t)
 	     (unwind-protect
 		 (progn
+		   ;; The convention for this piece of code is that
+		   ;; each piece of output starts with one or two newlines
+		   ;; and does not end with any newlines.
 		   (insert (emacs-version)
 			   "
-Copyright (C) 1994 Free Software Foundation, Inc.\n\n")
+Copyright (C) 1995 Free Software Foundation, Inc.")
 		   ;; If keys have their default meanings,
 		   ;; use precomputed string to save lots of time.
 		   (if (and (eq (key-binding "\C-h") 'help-command)
@@ -609,13 +628,14 @@ Copyright (C) 1994 Free Software Foundation, Inc.\n\n")
 			    (eq (key-binding "\C-x\C-c") 'save-buffers-kill-emacs)
 			    (eq (key-binding "\C-ht") 'help-with-tutorial)
 			    (eq (key-binding "\C-hi") 'info))
-		       (insert 
-       "Type C-h for help; C-x u to undo changes.  (`C-' means use CTRL key.)
+		       (insert "\n
+Type C-h for help; C-x u to undo changes.  (`C-' means use CTRL key.)
 To kill the Emacs job, type C-x C-c.
 Type C-h t for a tutorial on using Emacs.
 Type C-h i to enter Info, which you can use to read GNU documentation.")
 		     (insert (substitute-command-keys
-			      (format "Type %s for help; \\[advertised-undo] to undo changes.  (`C-' means use CTRL key.)
+			      (format "\n
+Type %s for help; \\[advertised-undo] to undo changes.  (`C-' means use CTRL key.)
 To kill the Emacs job, type \\[save-buffers-kill-emacs].
 Type \\[help-with-tutorial] for a tutorial on using Emacs.
 Type \\[info] to enter Info, which you can use to read GNU documentation."
@@ -624,27 +644,39 @@ Type \\[info] to enter Info, which you can use to read GNU documentation."
 					(if where
 					    (key-description where)
 					  "M-x help"))))))
+		   ;; Say how to use the menu bar
+		   ;; if that is not with the mouse.
+		   (if (not (assq 'display (frame-parameters)))
+		       (if (eq (key-binding "\M-`") 'tmm-menubar)
+			   (insert "\n\nType F10, ESC ` or Meta-` to use the menu bar.")
+			 (insert (substitute-command-keys
+				  "\n\nType \\[tmm-menubar] to use the menu bar."))))
 
 		   ;; Windows and MSDOS (currently) do not count as
 		   ;; window systems, but do have mouse support.
 		   (if (or (memq system-type '(msdos windowsnt))
 			   window-system)
-		       (insert "
+		       (insert "\n
 C-mouse-3 (third mouse button, with Control) gets a mode-specific menu."))
-		   (insert "\n")
+		   (if (directory-files "~/" nil "\\`\\.saves-" t)
+		       (insert "\n\nIf an Emacs session crashed recently,\n"
+			       "type M-x recover-session RET to recover"
+			       " the files you were editing."))
+
 		   (if (and (eq (key-binding "\C-h\C-c") 'describe-copying)
 			    (eq (key-binding "\C-h\C-d") 'describe-distribution)
 			    (eq (key-binding "\C-h\C-w") 'describe-no-warranty))
 		       (insert 
-			"
+			"\n
 GNU Emacs comes with ABSOLUTELY NO WARRANTY; type C-h C-w for full details.
 You may give out copies of Emacs; type C-h C-c to see the conditions.
 Type C-h C-d for information on getting the latest version.")
 		     (insert (substitute-command-keys
-			      "
+			      "\n
 GNU Emacs comes with ABSOLUTELY NO WARRANTY; type \\[describe-no-warranty] for full details.
 You may give out copies of Emacs; type \\[describe-copying] to see the conditions.
 Type \\[describe-distribution] for information on getting the latest version.")))
+
 		   (set-buffer-modified-p nil)
 		   (sit-for 120))
 	       (save-excursion
@@ -668,7 +700,7 @@ Type \\[describe-distribution] for information on getting the latest version."))
 	       ;; and long versions of what's on command-switch-alist.
 	       (longopts
 	        (append '(("--funcall") ("--load") ("--insert") ("--kill")
-			  ("--directory"))
+			  ("--directory") ("--eval"))
 			(mapcar '(lambda (elt)
 				   (list (concat "-" (car elt))))
 				command-switch-alist)))
@@ -711,6 +743,12 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		 (if (arrayp (symbol-function tem))
 		     (command-execute tem)
 		   (funcall tem)))
+		((string-equal argi "-eval")
+		 (if argval
+		     (setq tem argval)
+		   (setq tem (car command-line-args-left))
+		   (setq command-line-args-left (cdr command-line-args-left)))
+		 (eval (read tem)))
 		;; Set the default directory as specified in -L.
 		((or (string-equal argi "-L")
 		     (string-equal argi "-directory"))
@@ -735,12 +773,12 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		       (setq file (expand-file-name file)))
 		   (load file nil t)))
 		((string-equal argi "-insert")
-		 (or (stringp (car command-line-args-left))
-		     (error "File name omitted from `-insert' option"))
 		 (if argval
 		     (setq tem argval)
 		   (setq tem (car command-line-args-left)
 			 command-line-args-left (cdr command-line-args-left)))
+		 (or (stringp tem)
+		     (error "File name omitted from `-insert' option"))
 		 (insert-file-contents tem))
 		((string-equal argi "-kill")
 		 (kill-emacs t))
@@ -757,6 +795,8 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		   (if (not did-hook)
 		       ;; Ok, presume that the argument is a file name
 		       (progn
+			 (if (string-match "\\`-" argi)
+			     (error "Unknown option `%s'" argi))
 			 (setq file-count (1+ file-count))
 			 (cond ((= file-count 1)
 				(setq first-file-buffer

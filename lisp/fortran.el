@@ -4,7 +4,7 @@
 
 ;; Author: Michael D. Prange <prange@erl.mit.edu>
 ;; Maintainer: bug-fortran-mode@erl.mit.edu
-;; Version 1.30.5.1 (Sept 16, 1994)
+;; Version 1.30.6 (July 27, 1995)
 ;; Keywords: languages
 
 ;; This file is part of GNU Emacs.
@@ -46,7 +46,7 @@
 
 ;;; Bugs to bug-fortran-mode@erl.mit.edu
 
-(defconst fortran-mode-version "version 1.30.5.1")
+(defconst fortran-mode-version "version 1.30.6")
 
 ;;; Code:
 
@@ -160,7 +160,7 @@ This variable used in TAB format mode.")
  style.")
 
 (defvar fortran-break-before-delimiters t
-  "*Non-nil causes `fortran-do-auto-fill' to break lines before delimiters.")
+  "*Non-nil causes `fortran-fill' to break lines before delimiters.")
 
 (if fortran-mode-syntax-table
     ()
@@ -188,28 +188,17 @@ This variable used in TAB format mode.")
 ;; Regexps done by simon@gnu with help from Ulrik Dickow <dickow@nbi.dk> and
 ;; probably others Si's forgotten about (sorry).
 
-(defconst fortran-font-lock-keywords-1
-  (let ((comment-chars "c!*"))
-    (list
-     ;;
-     ;; Fontify comments and strings.  We assume that strings cannot be quoted.
-     (cons (concat "^[" comment-chars "].*") 'font-lock-comment-face)
-     '(fortran-match-!-comment . font-lock-comment-face)
-     (list (concat "^[^" comment-chars "\t]" (make-string 71 ?.) "\\(.*\\)")
-           '(1 font-lock-comment-face))
-     '("'[^'\n]*'?" . font-lock-string-face)
-     ;;
-     ;; Program, subroutine and function declarations, plus calls.
-     (list (concat "\\<\\(block[ \t]*data\\|call\\|entry\\|function\\|"
-                   "program\\|subroutine\\)\\>[ \t]*\\(\\sw+\\)?")
-           '(1 font-lock-keyword-face)
-           '(2 font-lock-function-name-face nil t))))
-  "For consideration as a value of `fortran-font-lock-keywords'.
-This does fairly subdued highlighting.")
+(defconst fortran-font-lock-keywords-1 nil
+  "Subdued level highlighting for Fortran mode.")
 
-(defconst fortran-font-lock-keywords-2
-  (append fortran-font-lock-keywords-1
-   (let ((type-types
+(defconst fortran-font-lock-keywords-2 nil
+  "Medium level highlighting for Fortran mode.")
+
+(defconst fortran-font-lock-keywords-3 nil
+  "Gaudy level highlighting for Fortran mode.")
+
+(let ((comment-chars "c!*")
+      (fortran-type-types
 ;     (make-regexp
 ;      (let ((simple-types '("character" "byte" "integer" "logical"
 ;			    "none" "real" "complex"
@@ -235,7 +224,7 @@ This does fairly subdued highlighting.")
                   "nt\\(eger\\|rinsic\\)\\)\\|"
                   "logical\\|map\\|none\\|parameter\\|re\\(al\\|cord\\)\\|"
                   "s\\(ave\\|tructure\\)\\|union"))
-	 (fkeywords
+	 (fortran-keywords
 ;	  ("continue" "format" "end" "enddo" "if" "then" "else" "endif"
 ;	   "elseif" "while" "inquire" "stop" "return" "include" "open"
 ;	   "close" "read" "write" "format" "print")
@@ -243,52 +232,84 @@ This does fairly subdued highlighting.")
 		  "e\\(lse\\(\\|if\\)\\|nd\\(\\|do\\|if\\)\\)\\|format\\|"
 		  "i\\(f\\|n\\(clude\\|quire\\)\\)\\|open\\|print\\|"
 		  "re\\(ad\\|turn\\)\\|stop\\|then\\|w\\(hile\\|rite\\)"))
-	 (flogicals
-;	  ("and" "or" "not" "lt" "le" "eq" "ge" "gt" "ne" "true" "false")
-	  "and\\|eq\\|false\\|g[et]\\|l[et]\\|n\\(e\\|ot\\)\\|or\\|true"))
-     (list
-      ;;
-      ;; Fontify types and variable names (but not length specs or `/'s).
-      (list (concat "\\<\\(" type-types "\\)\\>[0-9 \t/*]*\\(\\sw+\\)?")
-	    '(1 font-lock-type-face)
-	    '(15 font-lock-variable-name-face nil t))
-      ;;
-      ;; Fontify all builtin keywords (except logical, do and goto; see below).
-      (concat "\\<\\(" fkeywords "\\)\\>")
-      ;;
-      ;; Fontify all builtin operators.
-      (concat "\\.\\(" flogicals "\\)\\.")
-      ;;
-      ;; Fontify do/goto keywords and targets, and goto tags.
-      (list "\\<\\(do\\|go *to\\)\\>[ \t]*\\([0-9]+\\)?"
-	    '(1 font-lock-keyword-face)
-	    '(2 font-lock-reference-face nil t))
-      (cons "^ *\\([0-9]+\\)" 'font-lock-reference-face))))
-  "For consideration as a value of `fortran-font-lock-keywords'.
-This does a lot more highlighting.")
+        (fortran-logicals
+;       ("and" "or" "not" "lt" "le" "eq" "ge" "gt" "ne" "true" "false")
+         "and\\|eq\\|false\\|g[et]\\|l[et]\\|n\\(e\\|ot\\)\\|or\\|true"))
 
-(defconst fortran-font-lock-keywords-3
-  (append fortran-font-lock-keywords-2
+  (setq fortran-font-lock-keywords-1
    (list
     ;;
-    ;; Fontify goto-like `err=label'/`end=label' in read/write statements.
-    (list ", *\\(e\\(nd\\|rr\\)\\)\\> *\\(= *\\([0-9]+\\)\\)?"
-          '(1 font-lock-keyword-face)
-          '(4 font-lock-reference-face nil t))
+    ;; Fontify syntactically (assuming strings cannot be quoted or span lines).
+    (cons (concat "^[" comment-chars "].*") 'font-lock-comment-face)
+    '(fortran-match-!-comment . font-lock-comment-face)
+    (list (concat "^[^" comment-chars "\t\n]" (make-string 71 ?.) "\\(.*\\)")
+	  '(1 font-lock-comment-face))
+    '("'[^'\n]*'?" . font-lock-string-face)
     ;;
-    ;; Highlight a standard continuation character and in a TAB-formatted line.
-    '("^     \\([^ 0]\\)" 1 font-lock-string-face)
-    '("^\t\\([1-9]\\)" 1 font-lock-string-face)))
-  "For consideration as a value of `fortran-font-lock-keywords'.
-This does even more highlighting.")
+    ;; Program, subroutine and function declarations, plus calls.
+    (list (concat "\\<\\(block[ \t]*data\\|call\\|entry\\|function\\|"
+		  "program\\|subroutine\\)\\>[ \t]*\\(\\sw+\\)?")
+	  '(1 font-lock-keyword-face)
+	  '(2 font-lock-function-name-face nil t))))
 
-(defvar fortran-font-lock-keywords (cond ((null font-lock-maximum-decoration)
-					  fortran-font-lock-keywords-1)
-					 ((eq font-lock-maximum-decoration 2)
-					  fortran-font-lock-keywords-2)
-					 (t
-					  fortran-font-lock-keywords-3))
-  "Additional expressions to highlight in Fortran mode.")
+  (setq fortran-font-lock-keywords-2
+   (append fortran-font-lock-keywords-1
+    (list
+     ;;
+     ;; Fontify all type specifiers (must be first; see below).
+     (cons (concat "\\<\\(" fortran-type-types "\\)\\>") 'font-lock-type-face)
+     ;;
+     ;; Fontify all builtin keywords (except logical, do and goto; see below).
+     (concat "\\<\\(" fortran-keywords "\\)\\>")
+     ;;
+     ;; Fontify all builtin operators.
+     (concat "\\.\\(" fortran-logicals "\\)\\.")
+     ;;
+     ;; Fontify do/goto keywords and targets, and goto tags.
+     (list "\\<\\(do\\|go *to\\)\\>[ \t]*\\([0-9]+\\)?"
+	   '(1 font-lock-keyword-face)
+	   '(2 font-lock-reference-face nil t))
+     (cons "^ *\\([0-9]+\\)" 'font-lock-reference-face))))
+
+  (setq fortran-font-lock-keywords-3
+   (append
+    ;;
+    ;; The list `fortran-font-lock-keywords-1'.
+    fortran-font-lock-keywords-1
+    ;;
+    ;; Fontify all type specifiers plus their declared items.
+    (list
+     (list (concat "\\<\\(" fortran-type-types "\\)\\>[ \t(/]*\\(*\\)?")
+	   ;; Fontify the type specifier.
+	   '(1 font-lock-type-face)
+	   ;; Fontify each declaration item (or just the /.../ block name).
+	   '(font-lock-match-c++-style-declaration-item-and-skip-to-next
+	     ;; Start after any *(...) expression.
+	     (and (match-beginning 15) (forward-sexp 1))
+	     ;; No need to clean up.
+	     nil
+	     ;; Fontify as a variable name, functions are fontified elsewhere.
+	     (1 font-lock-variable-name-face nil t))))
+    ;;
+    ;; Things extra to `fortran-font-lock-keywords-3' (must be done first).
+    (list
+     ;;
+     ;; Fontify goto-like `err=label'/`end=label' in read/write statements.
+     '(", *\\(e\\(nd\\|rr\\)\\)\\> *\\(= *\\([0-9]+\\)\\)?"
+       (1 font-lock-keyword-face) (4 font-lock-reference-face nil t))
+     ;;
+     ;; Highlight standard continuation character and in a TAB-formatted line.
+     '("^     \\([^ 0]\\)" 1 font-lock-string-face)
+     '("^\t\\([1-9]\\)" 1 font-lock-string-face))
+    ;;
+    ;; The list `fortran-font-lock-keywords-2' less that for types (see above).
+    (cdr (nthcdr (length fortran-font-lock-keywords-1)
+		 fortran-font-lock-keywords-2))))
+  )
+
+(defvar fortran-font-lock-keywords fortran-font-lock-keywords-1
+  "Default expressions to highlight in Fortran mode.")
+
 
 (defvar fortran-mode-map () 
   "Keymap used in Fortran mode.")
@@ -450,7 +471,7 @@ Variables controlling indentation style and extra features:
     Non-nil causes line number digits to be moved to the correct column 
     as typed.  (default t)
  fortran-break-before-delimiters
-    Non-nil causes `fortran-do-auto-fill' breaks lines before delimiters.
+    Non-nil causes `fortran-fill' breaks lines before delimiters.
     (default t)
  fortran-startup-message
     Set to nil to inhibit message first time Fortran mode is used.
@@ -465,8 +486,13 @@ with no args, if that value is non-nil."
   (setq fortran-startup-message nil)
   (setq local-abbrev-table fortran-mode-abbrev-table)
   (set-syntax-table fortran-mode-syntax-table)
+  ;; Font Lock mode support.
   (make-local-variable 'font-lock-defaults)
-  (setq font-lock-defaults '(fortran-font-lock-keywords t t))
+  (setq font-lock-defaults '((fortran-font-lock-keywords
+			      fortran-font-lock-keywords-1
+			      fortran-font-lock-keywords-2
+			      fortran-font-lock-keywords-3)
+			     t t ((?/ . "$/"))))
   (make-local-variable 'fortran-break-before-delimiters)
   (setq fortran-break-before-delimiters t)
   (make-local-variable 'indent-line-function)
@@ -1040,7 +1066,7 @@ The marks are pushed."
 	     (> (save-excursion (end-of-line) (current-column)) fill-column))
 	(save-excursion
 	  (end-of-line)
-	  (fortran-do-auto-fill)))
+	  (fortran-fill)))
     (if fortran-blink-matching-if
 	(progn
 	  (fortran-blink-matching-if)
@@ -1414,11 +1440,15 @@ automatically breaks the line at a previous space."
 	       (if (if (null arg)
 		       (not auto-fill-function)
 		     (> (prefix-numeric-value arg) 0))
-		   'fortran-indent-line
+		   'fortran-do-auto-fill
 		 nil))
     (force-mode-line-update)))
 
 (defun fortran-do-auto-fill ()
+  (if (> (current-column) fill-column)
+      (fortran-indent-line)))
+
+(defun fortran-fill ()
   (interactive)
   (let* ((opoint (point))
 	 (bol (save-excursion (beginning-of-line) (point)))
@@ -1513,11 +1543,10 @@ automatically breaks the line at a previous space."
 			(or (looking-at "     [^ 0\n]")
 			    (looking-at "\t[1-9]")))
 	(progn
-	  (forward-line 1)
-	  (delete-indentation)
-	  (delete-char 2)
+	  (end-of-line)
+	  (delete-region (point) (match-end 0))
 	  (delete-horizontal-space)
-	  (fortran-do-auto-fill))
+	  (fortran-fill))
       (fortran-split-line))
     (if comment-string
 	(save-excursion

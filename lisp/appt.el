@@ -119,6 +119,8 @@
 ;; Make sure calendar is loaded when we compile this.
 (require 'calendar)
 
+(provide 'appt)
+
 ;;;###autoload
 (defvar appt-issue-message t
   "*Non-nil means check for appointments in the diary buffer.
@@ -375,6 +377,7 @@ Therefore, you need to have `(display-time)' in your .emacs file."
     (insert-string appt-msg)
     (shrink-window-if-larger-than-buffer (get-buffer-window appt-disp-buf t))
     (set-buffer-modified-p nil)
+    (raise-frame (selected-frame))
     (select-window this-window)
     (if appt-audible
 	(beep 1))))

@@ -26,6 +26,7 @@ information about the calendar and diary.
 * Scroll Calendar::       Bringing earlier or later months onto the screen.
 * Counting Days::         How many days are there between two dates?
 * General Calendar::      Exiting or recomputing the calendar.
+* TeX Calendar::          Print a calendar using TeX.
 * Holidays::              Displaying dates of holidays.
 * Sunrise/Sunset::        Displaying local times of sunrise and sunset.
 * Lunar Phases::          Displaying phases of the moon.
@@ -309,6 +310,65 @@ buries all buffers related to the calendar, selecting other buffers.
 (If a frame contains a dedicated calendar window, exiting from the
 calendar iconifies that frame.)
 
+@node TeX Calendar
+@section TeX Calendar
+@cindex calendar and @TeX{}
+
+   The Calendar @TeX{} commands produce a buffer of LaTeX code that
+prints as a calendar.  Depending on the command you use, the printed
+calendar covers the day, week, month or year that point is in.
+
+@kindex t @r{(Calendar mode)}
+@table @kbd
+@item t m
+Generate a one-month calendar (@code{cal-tex-cursor-month}).
+@item t M
+Generate a sideways-printing one-month calendar
+(@code{cal-tex-cursor-month-landscape}).
+@item t d
+Generate a one-day calendar
+(@code{cal-tex-cursor-day}).
+@item t w 1
+Generate a one-page calendar for one week
+(@code{cal-tex-cursor-week}).
+@item t w 2
+Generate a two-page calendar for one week
+(@code{cal-tex-cursor-week2}).
+@item t w 3
+Generate an ISO-style calendar for one week
+(@code{cal-tex-cursor-week-iso}).
+@item t w 4
+Generate a calendar for one Monday-starting week
+(@code{cal-tex-cursor-week-monday}).
+@item t f w
+Generate a Filofax-style two-weeks-at-a-glance calendar
+(@code{cal-tex-cursor-filofax-2week}).
+@item t f W
+Generate a Filofax-style one-weeks-at-a-glance calendar
+(@code{cal-tex-cursor-filofax-week}).
+@item t y
+Generate a calendar for one year
+(@code{cal-tex-cursor-year}).
+@item t Y
+Generate a sideways-printing calendar for one year
+(@code{cal-tex-cursor-landscape-year}).
+@item t f y
+Generate a Filofax-style calendar for one year
+(@code{cal-tex-cursor-filofax-year}).
+@end table
+
+  Some of these commands print the calendar sideways (in ``landscape
+mode''), so it can be wider than it is long.  Some of them use Filofax
+paper size (3.75in x 6.75in).  All of these commands accept a prefix
+argument which specifies how many days, weeks, months or years to print
+(starting always with the selected one).
+
+  If the variable @code{cal-text-holidays} is non-@code{nil}, then the
+printed calendars show the holidays in @code{calendar-holidays}.  If the
+variable @code{cal-tex-diary} is non-@code{nil} (the default is
+@code{nil}), diary entries are included also (in weekly and monthly
+calendars only).
+
 @node Holidays
 @section Holidays
 @cindex holidays
@@ -573,6 +633,24 @@ Emacs knows about all three of these calendars.  Experts dispute the
 exact correlation between the Mayan calendar and our calendar; Emacs uses the
 Goodman-Martinez-Thompson correlation in its calculations.
 
+@cindex Coptic calendar
+@cindex Ethiopic calendar
+  The Copts use a calendar based on the ancient Egyptian solar calendar.
+Their calendar consists of twelve 30-day months followed by an extra
+five day period.  Once every fourth year they add a leap day is added to
+this extra period to make it six days.  The Ethiopic calendar is
+identical in structure, but has a different year numbers and month
+names.
+
+@cindex Chinese calendar
+  The Chinese calendar is a complicated system of lunar months arranged
+into solar years.  The years go in cycles of sixty, each year containing
+either twelve months in an ordinary year or thirteen months in a leap
+year; each month has either 29 or 30 days.  Years, ordinary months, and
+days are named by combining one of ten ``celestial stems'' with one of
+twelve ``terrestial branchs'' for a total of sixty names that are
+repeated in a cycle of sixty.
+
 @node To Other Calendar
 @subsection Converting To Other Calendars
 
@@ -604,6 +682,18 @@ Display Islamic date for selected day (@code{calendar-print-islamic-date}).
 @item p f
 Display French Revolutionary date for selected day
 (@code{calendar-print-french-date}).
+@findex calendar-print-chinese-date
+@item p C
+Display Chinese date for selected day
+(@code{calendar-print-chinese-date}).
+@findex calendar-print-coptic-date
+@item p k
+Display Coptic date for selected day
+(@code{calendar-print-coptic-date}).
+@findex calendar-print-ethiopic-date
+@item p e
+Display Ethiopic date for selected day
+(@code{calendar-print-ethiopic-date}).
 @findex calendar-print-mayan-date
 @item p m
 Display Mayan date for selected day (@code{calendar-print-mayan-date}).
@@ -634,6 +724,9 @@ other than Mayan; for the Mayan calendar, see the following section.
 @findex calendar-goto-hebrew-date
 @findex calendar-goto-islamic-date
 @findex calendar-goto-french-date
+@findex calendar-goto-chinese-date
+@findex calendar-goto-coptic-date
+@findex calendar-goto-ethiopic-date
 @table @kbd
 @item g c
 Move to a date specified in the ISO commercial calendar
@@ -653,6 +746,15 @@ Move to a date specified in the Islamic calendar
 @item g f
 Move to a date specified in the French Revolutionary calendar
 (@code{calendar-goto-french-date}).
+@item g C
+Move to a date specified in the Chinese calendar
+(@code{calendar-goto-chinese-date}).
+@item g k
+Move to a date specified in the Coptic calendar
+(@code{calendar-goto-coptic-date}).
+@item g e
+Move to a date specified in the Ethiopic calendar
+(@code{calendar-goto-ethiopic-date}).
 @end table
 
   These commands ask you for a date on the other calendar, move point to
@@ -750,7 +852,7 @@ date.
 date.  This combination is a cycle of about 52 years called a
 @emph{calendar round}.  If you type @kbd{g m p c}, Emacs asks you for
 both a haab and a tzolkin date and then moves point to the previous
-occurrence of that combination.  Use @kbd{g m p c} to move point to the
+occurrence of that combination.  Use @kbd{g m n c} to move point to the
 next occurrence of a combination.  These commands signal an error if the
 haab/tzolkin date combination you have typed is impossible.
 
@@ -1203,7 +1305,8 @@ Monday
 Then on Mondays, after you have displayed the diary, you will be
 reminded at 9:20am about your coffee break and at 11:50am about lunch.
 
-  You can write times in conventional American am/pm style, or 24-hour
+  You can write times in am/pm style (with @samp{12:00am} standing
+for midnight and @samp{12:00pm} standing for noon), or 24-hour
 European/military style.  You need not be consistent; your diary file
 can have a mixture of the two styles.
 

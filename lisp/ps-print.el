@@ -455,8 +455,8 @@ customizable by changing variables `ps-header-left' and
 Note: page numbers are displayed as part of headers, see variable
 `ps-print-headers'.")
 
-(defvar ps-print-color-p (and (or (fboundp 'x-color-values)   ; fsf
-				(fboundp 'pixel-components))  ; xemacs
+(defvar ps-print-color-p (and (or (fboundp 'x-color-values)   ; Emacs
+				(fboundp 'pixel-components))  ; XEmacs
 			      (fboundp 'float))
 ; Printing color requires both floating point and x-color-values.
   "*If non-nil, print the buffer's text in color.")
@@ -706,15 +706,14 @@ number, prompt the user for the name of the file to save in."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility functions and variables:
 
-(if (featurep 'emacs-vers)
-    nil
-  (defvar emacs-type (cond ((string-match "XEmacs" emacs-version) 'xemacs)
-			   ((string-match "Lucid" emacs-version) 'lucid)
-			   ((string-match "Epoch" emacs-version) 'epoch)
-			   (t 'fsf))))
+(defvar ps-print-emacs-type
+  (cond ((string-match "XEmacs" emacs-version) 'xemacs)
+	((string-match "Lucid" emacs-version) 'lucid)
+	((string-match "Epoch" emacs-version) 'epoch)
+	(t 'emacs)))
 
-(if (or (eq emacs-type 'lucid)
-	(eq emacs-type 'xemacs))
+(if (or (eq ps-print-emacs-type 'lucid)
+	(eq ps-print-emacs-type 'xemacs))
     (if (< emacs-minor-version 12)
 	(setq ps-print-color-p nil))
   (require 'faces))			; face-font, face-underline-p,
@@ -1104,7 +1103,7 @@ StandardEncoding 46 82 getinterval aload pop
 
 (defvar ps-razchunk 0)
 
-(defvar ps-color-format (if (eq emacs-type 'fsf)
+(defvar ps-color-format (if (eq ps-print-emacs-type 'emacs)
 
 			    ;;Emacs understands the %f format; we'll
 			    ;;use it to limit color RGB values to
@@ -1613,7 +1612,7 @@ EndDSCPage\n"))
     (goto-char to)))
 
 
-(defun ps-fsf-face-kind-p (face kind kind-regex kind-list)
+(defun ps-emacs-face-kind-p (face kind kind-regex kind-list)
   (let ((frame-font (face-font face))
 	(face-defaults (face-font face t)))
     (or
@@ -1635,15 +1634,15 @@ EndDSCPage\n"))
 	(memq face kind-list))))
 
 (defun ps-face-bold-p (face)
-  (if (eq emacs-type 'fsf)
-      (ps-fsf-face-kind-p face 'bold "-\\(bold\\|demibold\\)-"
+  (if (eq ps-print-emacs-type 'emacs)
+      (ps-emacs-face-kind-p face 'bold "-\\(bold\\|demibold\\)-"
 			  ps-bold-faces)
     (ps-xemacs-face-kind-p face 'WEIGHT_NAME "bold\\|demibold"
 			   ps-bold-faces)))
 
 (defun ps-face-italic-p (face)
-  (if (eq emacs-type 'fsf)
-      (ps-fsf-face-kind-p face 'italic "-[io]-" ps-italic-faces)
+  (if (eq ps-print-emacs-type 'emacs)
+      (ps-emacs-face-kind-p face 'italic "-[io]-" ps-italic-faces)
     (or
      (ps-xemacs-face-kind-p face 'ANGLE_NAME "i\\|o" ps-italic-faces)
      (ps-xemacs-face-kind-p face 'SLANT "i\\|o" ps-italic-faces))))
@@ -1716,7 +1715,7 @@ EndDSCPage\n"))
     (let ((face 'default)
 	  (position to))
       (ps-print-ensure-fontified from to)
-      (cond ((or (eq emacs-type 'lucid) (eq emacs-type 'xemacs))
+      (cond ((or (eq ps-print-emacs-type 'lucid) (eq ps-print-emacs-type 'xemacs))
 	   ;; Build the list of extents...
 	   (let ((a (cons 'dummy nil))
 		 record type extent extent-list)
@@ -1767,7 +1766,7 @@ EndDSCPage\n"))
 	       (setq from position)
 	       (setq a (cdr a)))))
 
-	    ((eq emacs-type 'fsf)
+	    ((eq ps-print-emacs-type 'emacs)
 	     (let ((property-change from)
 		   (overlay-change from))
 	       (while (< from to)
@@ -1924,10 +1923,13 @@ EndDSCPage\n"))
 ;; WARNING!!! The following code is *sample* code only. Don't use it
 ;; unless you understand what it does!
 
-(defmacro ps-prsc () (list 'if (list 'eq 'emacs-type ''fsf) [f22] ''f22))
-(defmacro ps-c-prsc () (list 'if (list 'eq 'emacs-type ''fsf) [C-f22]
+(defmacro ps-prsc () (list 'if (list 'eq 'ps-print-emacs-type ''emacs)
+			   [f22] ''f22))
+(defmacro ps-c-prsc () (list 'if (list 'eq 'ps-print-emacs-type ''emacs)
+			     [C-f22]
 			     ''(control f22)))
-(defmacro ps-s-prsc () (list 'if (list 'eq 'emacs-type ''fsf) [S-f22]
+(defmacro ps-s-prsc () (list 'if (list 'eq 'ps-print-emacs-type ''emacs)
+			     [S-f22]
 			     ''(shift f22)))
 
 ;; Look in an article or mail message for the Subject: line.  To be

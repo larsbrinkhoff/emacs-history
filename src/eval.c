@@ -143,6 +143,8 @@ Lisp_Object Vdebugger;
 
 void specbind (), record_unwind_protect ();
 
+Lisp_Object run_hook_with_args ();
+
 Lisp_Object funcall_lambda ();
 extern Lisp_Object ml_apply (); /* Apply a mocklisp function to unevaluated argument list */
 
@@ -1738,6 +1740,7 @@ DEFUN ("eval", Feval, Seval, 1, 1, 0,
 
 DEFUN ("apply", Fapply, Sapply, 2, MANY, 0,
   "Call FUNCTION with our remaining args, using our last arg as list of args.\n\
+Then return the value FUNCTION returns.\n\
 Thus, (apply '+ 1 2 '(3 4)) returns 10.")
   (nargs, args)
      int nargs;
@@ -1813,6 +1816,228 @@ Thus, (apply '+ 1 2 '(3 4)) returns 10.")
     }
 
   RETURN_UNGCPRO (Ffuncall (gcpro1.nvars, funcall_args));
+}
+
+/* Run hook variables in various ways.  */
+
+enum run_hooks_condition {to_completion, until_success, until_failure};
+
+DEFUN ("run-hooks", Frun_hooks, Srun_hooks, 1, MANY, 0,
+  "Run each hook in HOOKS.  Major mode functions use this.\n\
+Each argument should be a symbol, a hook variable.\n\
+These symbols are processed in the order specified.\n\
+If a hook symbol has a non-nil value, that value may be a function\n\
+or a list of functions to be called to run the hook.\n\
+If the value is a function, it is called with no arguments.\n\
+If it is a list, the elements are called, in order, with no arguments.\n\
+\n\
+To make a hook variable buffer-local, use `make-local-hook',\n\
+not `make-local-variable'.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+  Lisp_Object hook[1];
+  register int i;
+
+  for (i = 0; i < nargs; i++)
+    {
+      hook[0] = args[i];
+      run_hook_with_args (1, hook, to_completion);
+    }
+
+  return Qnil;
+}
+      
+DEFUN ("run-hook-with-args",
+  Frun_hook_with_args, Srun_hook_with_args, 1, MANY, 0,
+  "Run HOOK with the specified arguments ARGS.\n\
+HOOK should be a symbol, a hook variable.  If HOOK has a non-nil\n\
+value, that value may be a function or a list of functions to be\n\
+called to run the hook.  If the value is a function, it is called with\n\
+the given arguments and its return value is returned.  If it is a list\n\
+of functions, those functions are called, in order,\n\
+with the given arguments ARGS.\n\
+It is best not to depend on the value return by `run-hook-with-args',\n\
+as that may change.\n\
+\n\
+To make a hook variable buffer-local, use `make-local-hook',\n\
+not `make-local-variable'.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+  return run_hook_with_args (nargs, args, to_completion);
+}
+
+DEFUN ("run-hook-with-args-until-success",
+  Frun_hook_with_args_until_success, Srun_hook_with_args_until_success,
+  1, MANY, 0,
+  "Run HOOK with the specified arguments ARGS.\n\
+HOOK should be a symbol, a hook variable.  Its value should\n\
+be a list of functions.  We call those functions, one by one,\n\
+passing arguments ARGS to each of them, until one of them\n\
+returns a non-nil value.  Then we return that value.\n\
+If all the functions return nil, we return nil.\n\
+\n\
+To make a hook variable buffer-local, use `make-local-hook',\n\
+not `make-local-variable'.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+  return run_hook_with_args (nargs, args, until_success);
+}
+
+DEFUN ("run-hook-with-args-until-failure",
+  Frun_hook_with_args_until_failure, Srun_hook_with_args_until_failure,
+  1, MANY, 0,
+  "Run HOOK with the specified arguments ARGS.\n\
+HOOK should be a symbol, a hook variable.  Its value should\n\
+be a list of functions.  We call those functions, one by one,\n\
+passing arguments ARGS to each of them, until one of them\n\
+returns nil.  Then we return nil.\n\
+If all the functions return non-nil, we return non-nil.\n\
+\n\
+To make a hook variable buffer-local, use `make-local-hook',\n\
+not `make-local-variable'.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+  return run_hook_with_args (nargs, args, until_failure);
+}
+
+/* ARGS[0] should be a hook symbol.
+   Call each of the functions in the hook value, passing each of them
+   as arguments all the rest of ARGS (all NARGS - 1 elements).
+   COND specifies a condition to test after each call
+   to decide whether to stop.
+   The caller (or its caller, etc) must gcpro all of ARGS,
+   except that it isn't necessary to gcpro ARGS[0].  */
+
+Lisp_Object
+run_hook_with_args (nargs, args, cond)
+     int nargs;
+     Lisp_Object *args;
+     enum run_hooks_condition cond;
+{
+  Lisp_Object sym, val, ret;
+  struct gcpro gcpro1, gcpro2;
+
+  sym = args[0];
+  val = find_symbol_value (sym);
+  ret = (cond == until_failure ? Qt : Qnil);
+
+  if (EQ (val, Qunbound) || NILP (val))
+    return ret;
+  else if (!CONSP (val) || EQ (XCONS (val)->car, Qlambda))
+    {
+      args[0] = val;
+      return Ffuncall (nargs, args);
+    }
+  else
+    {
+      GCPRO2 (sym, val);
+
+      for (;
+	   CONSP (val) && ((cond == to_completion)
+			   || (cond == until_success ? NILP (ret)
+			       : !NILP (ret)));
+	   val = XCONS (val)->cdr)
+	{
+	  if (EQ (XCONS (val)->car, Qt))
+	    {
+	      /* t indicates this hook has a local binding;
+		 it means to run the global binding too.  */
+	      Lisp_Object globals;
+
+	      for (globals = Fdefault_value (sym);
+		   CONSP (globals) && ((cond == to_completion)
+				       || (cond == until_success ? NILP (ret)
+					   : !NILP (ret)));
+		   globals = XCONS (globals)->cdr)
+		{
+		  args[0] = XCONS (globals)->car;
+		  /* In a global value, t should not occur.  If it does, we
+		     must ignore it to avoid an endless loop.  */
+		  if (!EQ (args[0], Qt))
+		    ret = Ffuncall (nargs, args);
+		}
+	    }
+	  else
+	    {
+	      args[0] = XCONS (val)->car;
+	      ret = Ffuncall (nargs, args);
+	    }
+	}
+
+      UNGCPRO;
+      return ret;
+    }
+}
+
+/* Run a hook symbol ARGS[0], but use FUNLIST instead of the actual
+   present value of that symbol.
+   Call each element of FUNLIST,
+   passing each of them the rest of ARGS.
+   The caller (or its caller, etc) must gcpro all of ARGS,
+   except that it isn't necessary to gcpro ARGS[0].  */
+
+Lisp_Object
+run_hook_list_with_args (funlist, nargs, args)
+     Lisp_Object funlist;
+     int nargs;
+     Lisp_Object *args;
+{
+  Lisp_Object sym;
+  Lisp_Object val;
+  struct gcpro gcpro1, gcpro2;
+
+  sym = args[0];
+  GCPRO2 (sym, val);
+
+  for (val = funlist; CONSP (val); val = XCONS (val)->cdr)
+    {
+      if (EQ (XCONS (val)->car, Qt))
+	{
+	  /* t indicates this hook has a local binding;
+	     it means to run the global binding too.  */
+	  Lisp_Object globals;
+
+	  for (globals = Fdefault_value (sym);
+	       CONSP (globals);
+	       globals = XCONS (globals)->cdr)
+	    {
+	      args[0] = XCONS (globals)->car;
+	      /* In a global value, t should not occur.  If it does, we
+		 must ignore it to avoid an endless loop.  */
+	      if (!EQ (args[0], Qt))
+		Ffuncall (nargs, args);
+	    }
+	}
+      else
+	{
+	  args[0] = XCONS (val)->car;
+	  Ffuncall (nargs, args);
+	}
+    }
+  UNGCPRO;
+  return Qnil;
+}
+
+/* Run the hook HOOK, giving each function the two args ARG1 and ARG2.  */
+
+void
+run_hook_with_args_2 (hook, arg1, arg2)
+     Lisp_Object hook, arg1, arg2;
+{
+  Lisp_Object temp[3];
+  temp[0] = hook;
+  temp[1] = arg1;
+  temp[2] = arg2;
+
+  Frun_hook_with_args (3, temp);
 }
 
 /* Apply fn to arg */
@@ -1994,6 +2219,7 @@ call6 (fn, arg1, arg2, arg3, arg4, arg5, arg6)
 
 DEFUN ("funcall", Ffuncall, Sfuncall, 1, MANY, 0,
   "Call first argument as a function, passing remaining arguments to it.\n\
+Return the value that function returns.\n\
 Thus, (funcall 'cons 'x 'y) returns (x . y).")
   (nargs, args)
      int nargs;
@@ -2655,6 +2881,10 @@ Otherwise, nil (in a bare Emacs without preloaded Lisp code).");
   defsubr (&Seval);
   defsubr (&Sapply);
   defsubr (&Sfuncall);
+  defsubr (&Srun_hooks);
+  defsubr (&Srun_hook_with_args);
+  defsubr (&Srun_hook_with_args_until_success);
+  defsubr (&Srun_hook_with_args_until_failure);
   defsubr (&Sfetch_bytecode);
   defsubr (&Sbacktrace_debug);
   defsubr (&Sbacktrace);

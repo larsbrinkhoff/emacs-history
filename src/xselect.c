@@ -818,6 +818,7 @@ x_clear_frame_selections (f)
   /* Otherwise, we're really honest and truly being told to drop it.
      Don't use Fdelq as that may QUIT;.  */
 
+  /* Delete elements from the beginning of Vselection_alist.  */
   while (!NILP (Vselection_alist)
 	 && EQ (frame, Fcar (Fcdr (Fcdr (Fcdr (Fcar (Vselection_alist)))))))
     {
@@ -825,7 +826,7 @@ x_clear_frame_selections (f)
       Lisp_Object hooks, selection_symbol;
 
       hooks = Vx_lost_selection_hooks;
-      selection_symbol = Fcar (Vselection_alist);
+      selection_symbol = Fcar (Fcar (Vselection_alist));
 
       if (!EQ (hooks, Qunbound))
 	{
@@ -837,6 +838,7 @@ x_clear_frame_selections (f)
       Vselection_alist = Fcdr (Vselection_alist);
     }
 
+  /* Delete elements after the beginning of Vselection_alist.  */
   for (rest = Vselection_alist; !NILP (rest); rest = Fcdr (rest))
     if (EQ (frame, Fcar (Fcdr (Fcdr (Fcdr (Fcar (XCONS (rest)->cdr)))))))
       {
@@ -844,7 +846,7 @@ x_clear_frame_selections (f)
 	Lisp_Object hooks, selection_symbol;
 
 	hooks = Vx_lost_selection_hooks;
-	selection_symbol = Fcar (XCONS (rest)->cdr);
+	selection_symbol = Fcar (Fcar (XCONS (rest)->cdr));
 
 	if (!EQ (hooks, Qunbound))
 	  {
@@ -2121,7 +2123,7 @@ and there is no meaningful selection value.");
 \(This happens when some other X client makes its own selection\n\
 or when a Lisp program explicitly clears the selection.)\n\
 The functions are called with one argument, the selection type\n\
-\(a symbol, typically `PRIMARY', `SECONDARY', or `CLIPBOARD'.)");
+\(a symbol, typically `PRIMARY', `SECONDARY', or `CLIPBOARD').");
   Vx_lost_selection_hooks = Qnil;
 
   DEFVAR_LISP ("x-sent-selection-hooks", &Vx_sent_selection_hooks,

@@ -620,8 +620,8 @@ Alternatively, you can arrange for Emacs to notice password prompts
 and turn off echoing for them, as follows:
 
 @example
-(add-hook `comint-output-filter-functions
-          `comint-watch-for-password-prompt)
+(add-hook 'comint-output-filter-functions
+          'comint-watch-for-password-prompt)
 @end example
 
 @item M-x comint-continue-subjob
@@ -634,7 +634,7 @@ this command won't do it.}
 
 @item M-x comint-strip-ctrl-m
 @findex comint-strip-ctrl-m
-Discard all control-m characters from the shell output.
+Discard all control-m characters from the current group of shell output.
 The most convenient way to use this command is to make it run
 automatically when you get output from the subshell.  To do that,
 evaluate this Lisp expression:
@@ -824,11 +824,11 @@ non-@code{nil}, insertion and yank commands scroll the selected window
 to the bottom before inserting.
 
 @vindex comint-scroll-show-maximum-output
-  If @code{comint-scroll-show-maximum-output} is non-@code{nil} (which is the
-default), then scrolling due to arrival of output tries to place the
-last line of text at the bottom line of the window, so as to show as
-much useful text as possible.  (This mimics the scrolling behavior of
-many terminals.)
+  If @code{comint-scroll-show-maximum-output} is non-@code{nil}, then
+scrolling due to arrival of output tries to place the last line of text
+at the bottom line of the window, so as to show as much useful text as
+possible.  (This mimics the scrolling behavior of many terminals.)
+The default is @code{nil}.
 
 @vindex comint-scroll-to-bottom-on-output
   By setting @code{comint-scroll-to-bottom-on-output}, you can opt for
@@ -1024,7 +1024,6 @@ Print hardcopy of current buffer with page headings containing the file
 name and page number.
 @item M-x lpr-buffer
 Print hardcopy of current buffer without page headings.
-makes no page headings.
 @item M-x print-region
 Like @code{print-buffer} but print only the current region.
 @item M-x lpr-region
@@ -1047,8 +1046,14 @@ an option starting with @samp{-}.  For example, to use a printer named
 @end example
 
 @vindex lpr-header-switches
-  The variable @code{lpr-header-switches} similarly specifies the
-extra switches to use to make page headers.
+@vindex lpr-commands
+@vindex lpr-add-switches
+  The variable @code{lpr-header-switches} similarly specifies the extra
+switches to use to make page headers.  The variable
+@code{lpr-add-switches} controls whether to supply @samp{-T} and
+@samp{-J} options for the printer program: @code{nil} means don't do so.
+The variable @code{lpr-command} specifies the name of the printer
+program to run; the default value depends on your operating system type.
 
 @node Postscript, Sorting, Hardcopy, Top
 @section Postscript Hardcopy
@@ -1089,9 +1094,12 @@ corresponding @samp{-with-faces} commands,
 use Postscript features to show the faces (fonts and colors) in the text
 properties of the text being printed.
 
+  If you are using a color display, you can print a buffer of program
+code with color highlighting by turning on Font-Lock mode in that
+buffer, and using @code{ps-print-buffer-with-faces}.
+
 @vindex ps-lpr-command
 @vindex ps-lpr-switches
-@vindex ps-print-color-p
   All four of the commands above use the variables @code{ps-lpr-command}
 and @code{ps-lpr-switches} to specify how to print the output.
 @code{ps-lpr-command} specifies the command name to run, and
@@ -1100,6 +1108,7 @@ don't set these variables yourself, they take their initial values from
 @code{lpr-command} and @code{lpr-switches}.
 
 @vindex ps-print-header
+@vindex ps-print-color-p
   The variable @code{ps-print-header} controls whether these commands
 add header lines to each page---set it to @code{nil} to turn headers
 off.  You can turn off color processing by setting
@@ -1324,23 +1333,25 @@ buffer.
   There are three ways to enter two-column mode:
 
 @table @kbd
-@item C-x 6 2
+@item f2 2  or  C-x 6 2
+@kindex f2 2
 @kindex C-x 6 2
-@findex tc-two-columns
+@findex 2C-two-columns
 Enter two-column mode with the current buffer on the left, and on the
 right, a buffer whose name is based on the current buffer's name
-(@code{tc-two-columns}).  If the right-hand buffer doesn't already
+(@code{2C-two-columns}).  If the right-hand buffer doesn't already
 exist, it starts out empty; the current buffer's contents are not
 changed.
 
-This command is appropriate when the current buffer contains just one
-column and you want to add another column.
+This command is appropriate when the current buffer is empty or contains
+just one column and you want to add another column.
 
-@item C-x 6 s
+@item f2 s  or  C-x 6 s
+@kindex f2 s
 @kindex C-x 6 s
-@findex tc-split
+@findex 2C-split
 Split the current buffer, which contains two-column text, into two
-buffers, and display them side by side (@code{tc-split}).  The current
+buffers, and display them side by side (@code{2C-split}).  The current
 buffer becomes the left-hand buffer, but the text in the right-hand
 column is moved into the right-hand buffer.  The current column
 specifies the split point.  Splitting starts with the current line and
@@ -1349,60 +1360,51 @@ continues to the end of the buffer.
 This command is appropriate when you have a buffer that already contains
 two-column text, and you wish to separate the columns temporarily.
 
-@item C-x 6 b @var{buffer} @key{RET}
+@item f2 b  or  C-x 6 b @var{buffer} @key{RET}
+@kindex f2 b
 @kindex C-x 6 b
-@findex tc-associate-buffer
+@findex 2C-associate-buffer
 Enter two-column mode using the current buffer as the left-hand buffer,
 and using buffer @var{buffer} as the right-hand buffer
-(@code{tc-associate-buffer}).
+(@code{2C-associate-buffer}).
 @end table
 
-  @kbd{C-x 6 s} looks for a column separator which is a string that
-appears on each line between the two columns.  You can specify the width
-of the separator with a numeric argument to @kbd{C-x 6 s}; that many
-characters, before point, constitute the separator string.  By default,
-the width is 1, so the column separator is the character before point.
+  @kbd{f2 s} or @kbd{C-x 6 s} looks for a column separator which is a string
+that appears on each line between the two columns.  You can specify the width
+of the separator with a numeric argument to @kbd{f2 s}; that many characters,
+before point, constitute the separator string.  By default, the width is 1, so
+the column separator is the character before point.
 
-  When a line has the separator at the proper place, @kbd{C-x 6 s} puts
-the text after the separator into the right-hand buffer, and deletes the
-separator.  Lines that don't have the column separator at the proper
-place remain unsplit; they stay in the left-hand buffer, and the
-right-hand buffer gets an empty line to correspond.  (This is the way
-to write a line that spans both columns while in two-column mode:
-write it in the left-hand buffer, and put an empty line in the right-hand
-buffer.)
+  When a line has the separator at the proper place, @kbd{f2 s} puts the text
+after the separator into the right-hand buffer, and deletes the separator.
+Lines that don't have the column separator at the proper place remain unsplit;
+they stay in the left-hand buffer, and the right-hand buffer gets an empty
+line to correspond.  (This is the way to write a line which ``spans both
+columns while in two-column mode'': write it in the left-hand buffer, and put
+an empty line in the right-hand buffer.)
 
-  It's not a good idea to use ordinary scrolling commands during
-two-column editing, because that separates the two parts of each split
-line.  Instead, use these special scroll commands:
+@kindex f2 @key{RET}
+@kindex C-x 6 @key{RET}
+@findex 2C-newline
+  The command @kbd{C-x 6 @key{RET}} or @kbd{f2 @key{RET}}
+(@code{2C-newline}) inserts a newline in each of the two buffers at
+corresponding positions.  This is the easiest way to add a new line to
+the two-column text while editing it in split buffers.
 
-@table @kbd
-@item C-x 6 @key{SPC}
-@kindex C-x 6 @key{SPC}
-@findex tc-scroll-up
-Scroll both buffers up, in lock step (@code{tc-scroll-up}).
-@item C-x 6 @key{DEL}
-@kindex C-x 6 @key{DEL}
-@findex tc-scroll-down
-Scroll both buffers down, in lock step (@code{tc-scroll-down}).
-@item C-x 6 C-l
-@kindex C-x 6 C-l
-@findex tc-recenter
-Recenter both buffers, in lock step (@code{tc-recenter}).
-@end table
-
+@kindex f2 1
 @kindex C-x 6 1
-@findex tc-merge
-  When you have edited both buffers as you wish, merge them with
-@kbd{C-x 6 1} (@code{tc-merge}).  This copies the text from the
-right-hand buffer as a second column in the other buffer.  To go back to
-two-column editing, use @kbd{C-x 6 s}.
+@findex 2C-merge
+  When you have edited both buffers as you wish, merge them with @kbd{f2 1} or
+@kbd{C-x 6 1} (@code{2C-merge}).  This copies the text from the right-hand
+buffer as a second column in the other buffer.  To go back to two-column
+editing, use @kbd{f2 s}.
 
+@kindex f2 d
 @kindex C-x 6 d
-@findex tc-dissociate
-  Use @kbd{C-x 6 d} to disassociate the two buffers, leaving each as it
-stands (@code{tc-dissociate}).  If the other buffer, the one not current
-when you type @kbd{C-x 6 d}, is empty, @kbd{C-x 6 d} kills it.
+@findex 2C-dissociate
+  Use @kbd{f2 d} or @kbd{C-x 6 d} to disassociate the two buffers, leaving
+each as it stands (@code{2C-dissociate}).  If the other buffer, the one not
+current when you type @kbd{f2 d}, is empty, @kbd{f2 d} kills it.
 
 @node Editing Binary Files, Saving Emacs Sessions, Two-Column, Top
 @section Editing Binary Files

@@ -29,6 +29,9 @@
 
 ;;; Code:
 
+;; For rmail-select-summary
+(require 'rmail)
+
 (defvar rmail-summary-font-lock-keywords
   '(("^....D.*" . font-lock-string-face)			; Deleted.
     ("^....-.*" . font-lock-type-face)				; Unread.
@@ -206,19 +209,26 @@ nil for FUNCTION means all messages."
       (setq rmail-summary-buffer sumbuf))
     ;; Now display the summary buffer and go to the right place in it.
     (or was-in-summary
-	(if (and (one-window-p)
-		 pop-up-windows (not pop-up-frames))
-	    ;; If there is just one window, put the summary on the top.
-	    (progn
-	      (split-window)
-	      (select-window (next-window (frame-first-window)))
-	      (pop-to-buffer sumbuf)
-	      ;; If pop-to-buffer did not use that window, delete that
-	      ;; window.  (This can happen if it uses another frame.)
-	      (if (not (eq sumbuf (window-buffer (frame-first-window))))
-		  (delete-other-windows)))
-	  (pop-to-buffer sumbuf)))
+	(progn
+	  (if (and (one-window-p)
+		   pop-up-windows (not pop-up-frames))
+	      ;; If there is just one window, put the summary on the top.
+	      (progn
+		(split-window (selected-window) rmail-summary-window-size)
+		(select-window (next-window (frame-first-window)))
+		(pop-to-buffer sumbuf)
+		;; If pop-to-buffer did not use that window, delete that
+		;; window.  (This can happen if it uses another frame.)
+		(if (not (eq sumbuf (window-buffer (frame-first-window))))
+		    (delete-other-windows)))
+	    (pop-to-buffer sumbuf))
+	  (set-buffer rmail-buffer)
+	  ;; This is how rmail makes the summary buffer reappear.
+	  ;; We do this here to make the window the proper size.
+	  (rmail-select-summary nil)
+	  (set-buffer rmail-summary-buffer)))
     (rmail-summary-goto-msg mesg t t)
+    (rmail-summary-construct-io-menu)
     (message "Computing summary lines...done")))
 
 ;; Low levels of generating a summary.
@@ -862,6 +872,7 @@ Commands for sorting the summary:
   '("Next" . rmail-summary-next-all))
 
 (defvar rmail-summary-overlay nil)
+(put 'rmail-summary-overlay 'permanent-local t)
 
 (defun rmail-summary-goto-msg (&optional n nowarn skip-rmail)
   (interactive "P")
@@ -1315,18 +1326,22 @@ The variables `rmail-secondary-file-directory' and
 
 (defun rmail-summary-construct-io-menu ()
   (let ((files (rmail-find-all-files rmail-secondary-file-directory)))
-    (if (listp files)
+    (if files
 	(progn
 	  (define-key rmail-summary-mode-map [menu-bar classify input-menu]
 	    (cons "Input Rmail File" 
 		  (rmail-list-to-menu "Input Rmail File" 
-				      (cdr files) 
+				      files
 				      'rmail-summary-input)))
 	  (define-key rmail-summary-mode-map [menu-bar classify output-menu]
 	    (cons "Output Rmail File" 
 		  (rmail-list-to-menu "Output Rmail File" 
-				      (cdr files) 
-				      'rmail-summary-output-to-rmail-file)))))))
+				      files
+				      'rmail-summary-output-to-rmail-file))))
+      (define-key rmail-summary-mode-map [menu-bar classify input-menu]
+	'("Input Rmail File" . rmail-disable-menu))
+      (define-key rmail-summary-mode-map [menu-bar classify output-menu]
+	'("Output Rmail File" . rmail-disable-menu)))))
 
 
 ;; Sorting messages in Rmail Summary buffer.

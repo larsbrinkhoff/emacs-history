@@ -281,7 +281,7 @@ Stevens and others.
 @item
 David
 @ifinfo
-Kegedal
+Kågedal
 @end ifinfo
 @iftex
 K@aa gedal
@@ -406,6 +406,7 @@ Jurgen Nickelsen wrote @file{ws-mode.el}, providing WordStar emulation.
 Jeff Norden wrote @file{kermit.el}, a package to help the Kermit
 dialup communications program run comfortably in an Emacs shell buffer.
 
+@item
 Andrew Norman wrote @file{ange-ftp.el}, providing transparent FTP support.
 
 @item

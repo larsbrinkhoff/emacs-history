@@ -308,7 +308,8 @@ with a prefix argument."
   (dired-mark-pop-up
    nil 'shell files
    (function read-string)
-   (format prompt (dired-mark-prompt arg files))))
+   (format prompt (dired-mark-prompt arg files))
+   nil 'shell-command-history))
 
 ;; The in-background argument is only needed in Emacs 18 where
 ;; shell-command doesn't understand an appended ampersand `&'.
@@ -648,6 +649,8 @@ and use this command with a prefix argument (the value does not matter)."
       (error
        (setq failure err)))
     (setq elc-file (byte-compile-dest-file filename))
+    (or (file-exists-p elc-file)
+	(setq failure t))
     (if failure
 	(progn
 	  (dired-log "Byte compile error for %s:\n%s\n" filename failure)
@@ -991,39 +994,6 @@ Special value `always' suppresses confirmation.")
 	      (dired-normalize-subdir
 	       (dired-replace-in-string regexp newtext (car elt)))))))
 
-(defun dired-expand-newtext (string newtext)
-  ;; Expand \& and \1..\9 (referring to STRING) in NEWTEXT, using match data.
-  ;; Note that in Emacs 18 match data are clipped to current buffer
-  ;; size...so the buffer should better not be smaller than STRING.
-  (let ((pos 0)
-	(len (length newtext))
-	(expanded-newtext ""))
-    (while (< pos len)
-      (setq expanded-newtext
-	    (concat expanded-newtext
-		    (let ((c (aref newtext pos)))
-		      (if (= ?\\ c)
-			  (cond ((= ?\& (setq c
-					      (aref newtext
-						    (setq pos (1+ pos)))))
-				 (substring string
-					    (match-beginning 0)
-					    (match-end 0)))
-				((and (>= c ?1) (<= c ?9))
-				 ;; return empty string if N'th
-				 ;; sub-regexp did not match:
-				 (let ((n (- c ?0)))
-				   (if (match-beginning n)
-				       (substring string
-						  (match-beginning n)
-						  (match-end n))
-				     "")))
-				(t
-				 (char-to-string c)))
-			(char-to-string c)))))
-      (setq pos (1+ pos)))
-    expanded-newtext))
-
 ;; The basic function for half a dozen variations on cp/mv/ln/ln -s.
 (defun dired-create-files (file-creator operation fn-list name-constructor
 					&optional marker-char)
@@ -1232,8 +1202,8 @@ ESC or `q' to not overwrite any of the remaining files,
   "Copy all marked (or next ARG) files, or copy the current file.
 This normally preserves the last-modified date when copying.
 When operating on just the current file, you specify the new name.
-When operating on multiple or marked files, you specify a directory
-and new symbolic links are made in that directory
+When operating on multiple or marked files, you specify a directory,
+and new copies of these files are made in that directory
 with the same names that the files currently have."
   (interactive "P")
   (dired-do-create-files 'copy (function dired-copy-file)

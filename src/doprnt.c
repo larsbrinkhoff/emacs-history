@@ -23,8 +23,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <config.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "lisp.h"
 
 extern long *xmalloc (), *xrealloc ();
+
+static int doprnt1 ();
 
 /* Generate output from a format-spec FORMAT,
    terminated at position FORMAT_END.
@@ -32,9 +35,38 @@ extern long *xmalloc (), *xrealloc ();
    If the output does not fit, truncate it to fit.
    Returns the number of characters stored into BUFFER.
    ARGS points to the vector of arguments, and NARGS says how many.
-   A double counts as two arguments.  */
+   A double counts as two arguments.
+   String arguments are passed as C strings.
+   Integers are passed as C integers.  */
 
 doprnt (buffer, bufsize, format, format_end, nargs, args)
+     char *buffer;
+     register int bufsize;
+     char *format;
+     char *format_end;
+     int nargs;
+     char **args;
+{
+  return doprnt1 (0, buffer, bufsize, format, format_end, nargs, args);
+}
+
+/* Like doprnt except that strings in ARGS are passed
+   as Lisp_Object.  */
+
+doprnt_lisp (buffer, bufsize, format, format_end, nargs, args)
+     char *buffer;
+     register int bufsize;
+     char *format;
+     char *format_end;
+     int nargs;
+     char **args;
+{
+  return doprnt1 (1, buffer, bufsize, format, format_end, nargs, args);
+}
+
+static int
+doprnt1 (lispstrings, buffer, bufsize, format, format_end, nargs, args)
+     int lispstrings;
      char *buffer;
      register int bufsize;
      char *format;
@@ -104,6 +136,9 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    size_bound = -size_bound;
 	  size_bound += 50;
 
+	  if (size_bound > (unsigned) (1 << (BITS_PER_INT - 1)))
+	    error ("Format padding too large");
+
 	  /* Make sure we have that much.  */
 	  if (size_bound > size_allocated)
 	    {
@@ -125,7 +160,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    case 'o':
 	    case 'x':
 	      if (cnt == nargs)
-		error ("not enough arguments for format string");
+		error ("Not enough arguments for format string");
 	      if (sizeof (int) == sizeof (EMACS_INT))
 		;
 	      else if (sizeof (long) == sizeof (EMACS_INT))
@@ -161,9 +196,21 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    case 's':
 	      if (cnt == nargs)
 		error ("not enough arguments for format string");
-	      string = args[cnt++];
 	      if (fmtcpy[1] != 's')
 		minlen = atoi (&fmtcpy[1]);
+	      if (lispstrings)
+		{
+		  string = (char *) XSTRING (((Lisp_Object *) args)[cnt])->data;
+		  tem = XSTRING (((Lisp_Object *) args)[cnt])->size;
+		  cnt++;
+		}
+	      else
+		{
+		  string = args[cnt++];
+		  tem = strlen (string);
+		}
+	      goto doit1;
+
 	      /* Copy string into final output, truncating if no room.  */
 	    doit:
 	      tem = strlen (string);
@@ -180,7 +227,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 		}
 	      if (tem > bufsize)
 		tem = bufsize;
-	      strncpy (bufptr, string, tem);
+	      bcopy (string, bufptr, tem);
 	      bufptr += tem;
 	      bufsize -= tem;
 	      if (minlen < 0)

@@ -21,6 +21,8 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;; Avishai Yacobi suggested some menu rearrangements.
+
 ;;; Code:
 
 ;; Don't clobber an existing menu-bar keymap, to preserve any menu-bar key
@@ -98,7 +100,9 @@
 
 (if (fboundp 'delete-frame)
     (progn
-      (define-key menu-bar-files-menu [delete-frame]
+      ;; Don't use delete-frame as event name
+      ;; because that is a special event.
+      (define-key menu-bar-files-menu [delete-this-frame]
 	'("Delete Frame" . delete-frame))
       (define-key menu-bar-files-menu [make-frame-on-display]
 	'("Open New Display..." . make-frame-on-display))
@@ -120,9 +124,6 @@
 (define-key menu-bar-files-menu [dired] '("Open Directory..." . dired))
 (define-key menu-bar-files-menu [open-file] '("Open File..." . find-file))
 
-;; This is just one element of the ediff menu--the first.
-(define-key menu-bar-ediff-menu [window]
-  '("This Window And Next Window" . compare-windows))
 
 (defun nonincremental-search-forward (string)
   "Read a string and search for it nonincrementally."
@@ -182,7 +183,6 @@
   '("Query Replace..." . query-replace))
 (define-key menu-bar-search-menu [find-tag]
   '("Find Tag..." . find-tag))
-(put 'find-tag 'menu-enable 'tags-table-list)
 (define-key menu-bar-search-menu [bookmark]
   '("Bookmarks" . menu-bar-bookmark-map))
 
@@ -235,17 +235,20 @@
       (message "Select a region with the mouse does `copy' automatically")
     (kill-ring-save beg end)))
 
-(put 'fill-region 'menu-enable 'mark-active)
-(put 'kill-region 'menu-enable 'mark-active)
+(put 'fill-region 'menu-enable '(and mark-active (not buffer-read-only)))
+(put 'kill-region 'menu-enable '(and mark-active (not buffer-read-only)))
 (put 'menu-bar-kill-ring-save 'menu-enable 'mark-active)
-(put 'yank 'menu-enable '(x-selection-exists-p))
-(put 'yank-menu 'menu-enable '(cdr yank-menu))
+(put 'yank 'menu-enable '(and (x-selection-exists-p) (not buffer-read-only)))
+(put 'yank-menu 'menu-enable '(and (cdr yank-menu) (not buffer-read-only)))
 (put 'delete-region 'menu-enable '(and mark-active
+				       (not buffer-read-only)
 				       (not (mouse-region-match))))
-(put 'undo 'menu-enable '(if (eq last-command 'undo)
-			     pending-undo-list
-			   (consp buffer-undo-list)))
+(put 'undo 'menu-enable '(and (not buffer-read-only)
+			      (if (eq last-command 'undo)
+				  pending-undo-list
+				(consp buffer-undo-list))))
 (put 'query-replace 'menu-enable '(not buffer-read-only))
+(put 'query-replace-regexp 'menu-enable '(not buffer-read-only))
 
 (autoload 'ispell-menu-map "ispell" nil t 'keymap)
 
@@ -300,9 +303,12 @@ Do the same for the keys of the same name."
   '("Show Version" . emacs-version))
 (define-key menu-bar-help-menu [report-emacs-bug]
   '("Send Bug Report..." . report-emacs-bug))
+(define-key menu-bar-help-menu [finder-by-keyword]
+  '("Find Lisp Packages..." . finder-by-keyword))
 (define-key menu-bar-help-menu [emacs-tutorial]
   '("Emacs Tutorial" . help-with-tutorial))
-(define-key menu-bar-help-menu [man] '("Man..." . manual-entry))
+(define-key menu-bar-help-menu [man]
+  '("Man..." . manual-entry))
 (define-key menu-bar-help-menu [describe-variable]
   '("Describe Variable..." . describe-variable))
 (define-key menu-bar-help-menu [describe-function]
@@ -390,6 +396,10 @@ Do the same for the keys of the same name."
 			(substring string 0 (/ yank-menu-length 2))
 			"..."
 			(substring string (- (/ yank-menu-length 2)))))))
+    ;; Don't let the menu string be all dashes
+    ;; because that has a special meaning in a menu.
+    (if (string-match "\\`-+\\'" menu-string)
+	(setq menu-string (concat menu-string " ")))
     ;; If we're supposed to be extending an existing string, and that
     ;; string really is at the front of the menu, then update it in place.
     (if (and old (or (eq old (car front))
@@ -409,9 +419,10 @@ Do the same for the keys of the same name."
   (push-mark (point))
   (insert last-command-event))
 
-(define-key global-map [menu-bar buffer] '("Buffers" . menu-bar-buffers))
-
-(defalias 'menu-bar-buffers (make-sparse-keymap "Buffers"))
+;; This definition is just to show what this looks like.
+;; It gets overridden below when menu-bar-update-buffers is called.
+(define-key global-map [menu-bar buffer]
+  (cons "Buffers" (make-sparse-keymap "Buffers")))
 
 (defvar buffers-menu-max-size 10
   "*Maximum number of entries which may appear on the Buffers menu.
@@ -573,6 +584,8 @@ A large number or nil slows down menu responsiveness.")
 
 (add-hook 'menu-bar-update-hook 'menu-bar-update-buffers)
 
+(menu-bar-update-buffers)
+
 ;; this version is too slow
 ;;;(defun format-buffers-menu-line (buffer)
 ;;;  "Returns a string to represent the given buffer in the Buffer menu.
@@ -589,6 +602,46 @@ A large number or nil slows down menu responsiveness.")
 ;;;	       size
 ;;;	       mode-name
 ;;;	       (or (buffer-file-name) ""))))))
+
+;;; Set up a menu bar menu for the minibuffer.
+
+(mapcar
+ (function
+  (lambda (map)
+    (define-key map [menu-bar minibuf]
+      (cons "Minibuf" (make-sparse-keymap "Minibuf")))))
+ (list minibuffer-local-ns-map
+       minibuffer-local-must-match-map
+       minibuffer-local-isearch-map
+       minibuffer-local-map
+       minibuffer-local-completion-map))
+
+(mapcar
+ (function
+  (lambda (map)
+    (define-key map [menu-bar minibuf ?\?]
+      '("List Completions" . minibuffer-completion-help))
+    (define-key map [menu-bar minibuf space]
+      '("Complete Word" . minibuffer-complete-word))
+    (define-key map [menu-bar minibuf tab]
+      '("Complete" . minibuffer-complete))
+    ))
+ (list minibuffer-local-must-match-map
+       minibuffer-local-completion-map))
+
+(mapcar
+ (function
+  (lambda (map)
+    (define-key map [menu-bar minibuf quit]
+      '("Quit" . keyboard-escape-quit))
+    (define-key map [menu-bar minibuf return]
+      '("Enter" . exit-minibuffer))
+    ))
+ (list minibuffer-local-ns-map
+       minibuffer-local-must-match-map
+       minibuffer-local-isearch-map
+       minibuffer-local-map
+       minibuffer-local-completion-map))
 
 (defvar menu-bar-mode nil)
 

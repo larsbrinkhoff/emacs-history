@@ -71,8 +71,10 @@ match the variable `mail-header-separator'.")
 This can be an inbox file or an Rmail file.")
 
 ;;;###autoload
-(defvar mail-default-reply-to t
-  "*Address to insert as default Reply-to field of outgoing messages.")
+(defvar mail-default-reply-to nil
+  "*Address to insert as default Reply-to field of outgoing messages.
+If nil, it will be initialized from the REPLYTO environment variable
+when you first send mail.")
 
 ;;;###autoload
 (defvar mail-alias-file nil
@@ -87,6 +89,10 @@ This variable has no effect unless your system uses sendmail as its mailer.")
 This file typically should be in same format as the `.mailrc' file used by
 the `Mail' or `mailx' program.
 This file need not actually exist.")
+
+(defvar mail-setup-hook nil
+  "Normal hook, run each time a new outgoing mail message is initialized.
+The function `mail-setup' runs this hook.")
 
 (defvar mail-aliases t
   "Alist of mail address aliases,
@@ -140,7 +146,10 @@ removed from alias expansions."
 ;;;###autoload
 (defvar mail-signature nil
   "*Text inserted at end of mail buffer when a message is initialized.
-If t, it means to insert the contents of the file `~/.signature'.")
+If t, it means to insert the contents of the file `mail-signature-file'.")
+
+(defvar mail-signature-file "~/.signature"
+  "*File containing the text inserted at end of mail buffer.")
 
 (defvar mail-reply-buffer nil)
 (defvar mail-send-actions nil
@@ -190,14 +199,19 @@ actually occur.")
      (modify-syntax-entry ?% ". " mail-mode-syntax-table)))
 
 (defvar mail-font-lock-keywords
-  (list '("^To:" . font-lock-function-name-face)
-	'("^B?CC:\\|^Reply-To:" . font-lock-keyword-face)
-	'("^Subject:" . font-lock-comment-face)
-	'("^Subject:\\s *\\(.+\\)" 1 font-lock-type-face)
-	(list (concat "^\\(" (regexp-quote mail-header-separator) "\\)$") 1
-	      'font-lock-comment-face)
-	'("^[ \t]*\\sw*[>|}].*" . font-lock-reference-face)	; Citation.
-	'("^\\(X-[A-Za-z0-9-]+\\|In-reply-to\\):.*" . font-lock-string-face))
+  (let* ((cite-prefix "A-Za-z") (cite-suffix (concat cite-prefix "0-9_.@-")))
+    (list '("^To:" . font-lock-function-name-face)
+	  '("^B?CC:\\|^Reply-To:" . font-lock-keyword-face)
+	  '("^\\(Subject:\\)[ \t]*\\(.+\\)?"
+	    (1 font-lock-comment-face) (2 font-lock-type-face nil t))
+	  (list (concat "^\\(" (regexp-quote mail-header-separator) "\\)$")
+		1 'font-lock-comment-face)
+	  (cons (concat "^[ \t]*"
+			"\\([" cite-prefix "]+[" cite-suffix "]*\\)?"
+			"[>|}].*")
+		'font-lock-reference-face)
+	  '("^\\(X-[A-Za-z0-9-]+\\|In-reply-to\\):.*"
+	    . font-lock-string-face)))
   "Additional expressions to highlight in Mail mode.")
 
 (defvar mail-send-hook nil
@@ -210,7 +224,7 @@ actually occur.")
 	      mail-aliases t))))
 
 (defun mail-setup (to subject in-reply-to cc replybuffer actions)
-  (if (eq mail-default-reply-to t)
+  (or mail-default-reply-to
       (setq mail-default-reply-to (getenv "REPLYTO")))
   (sendmail-synch-aliases)
   (if (eq mail-aliases t)
@@ -256,10 +270,10 @@ actually occur.")
     ;; Insert the signature.  But remember the beginning of the message.
     (if to (setq to (point)))
     (cond ((eq mail-signature t)
-	   (if (file-exists-p "~/.signature")
+	   (if (file-exists-p mail-signature-file)
 	       (progn
 		 (insert "\n\n-- \n")
-		 (insert-file-contents "~/.signature"))))
+		 (insert-file-contents mail-signature-file))))
 	  (mail-signature
 	   (insert mail-signature)))
     (goto-char (point-max))
@@ -279,7 +293,7 @@ C-c C-f  move to a header field (and create it if there isn't):
 	 C-c C-f C-c  move to CC:	C-c C-f C-b  move to BCC:
 	 C-c C-f C-f  move to FCC:
 C-c C-t  mail-text (move to beginning of message text).
-C-c C-w  mail-signature (insert `~/.signature' file).
+C-c C-w  mail-signature (insert `mail-signature-file' file).
 C-c C-y  mail-yank-original (insert current message, in Rmail).
 C-c C-q  mail-fill-yanked-message (fill what was yanked).
 C-c C-v  mail-sent-via (add a Sent-via field for each To or CC)."
@@ -444,6 +458,7 @@ the user from the mailer."
 	      (delete-auto-save-file-if-necessary t))))))
 
 (defun sendmail-send-it ()
+  (require 'mail-utils)
   (let ((errbuf (if mail-interactive
 		    (generate-new-buffer " sendmail errors")
 		  0))
@@ -478,12 +493,6 @@ the user from the mailer."
 	    (replace-match "\n"))
 	  (let ((case-fold-search t))
 	    (goto-char (point-min))
-	    ;; Find and handle any FCC fields.
-	    (goto-char (point-min))
-	    (if (re-search-forward "^FCC:" delimline t)
-		(mail-do-fcc delimline))
-	    (goto-char (point-min))
-	    (require 'mail-utils)
 	    (while (re-search-forward "^Resent-to:" delimline t)
 	      (setq resend-to-addresses
 		    (save-restriction
@@ -516,12 +525,46 @@ the user from the mailer."
 	    ;; they put one in themselves.
 	    (goto-char (point-min))
 	    (if (not (re-search-forward "^From:" delimline t))
-		(let* ((login (user-login-name))
+		(let* ((login user-mail-address)
 		       (fullname (user-full-name)))
 		  (cond ((eq mail-from-style 'angles)
-			 (insert "From: " fullname " <" login ">\n"))
+			 (insert "From: " fullname)
+			 (let ((fullname-start (+ (point-min) 6))
+			       (fullname-end (point-marker)))
+			   (goto-char fullname-start)
+			   ;; Look for a character that cannot appear unquoted
+			   ;; according to RFC 822.
+			   (if (re-search-forward "[^- !#-'*+/-9=?A-Z^-~]"
+						  fullname-end 1)
+			       (progn
+				 ;; Quote fullname, escaping specials.
+				 (goto-char fullname-start)
+				 (insert "\"")
+				 (while (re-search-forward "[\"\\]"
+							   fullname-end 1)
+				   (replace-match "\\\\\\&" t))
+				 (insert "\""))))
+			 (insert " <" login ">\n"))
 			((eq mail-from-style 'parens)
-			 (insert "From: " login " (" fullname ")\n"))
+			 (insert "From: " login " (")
+			 (let ((fullname-start (point)))
+			   (insert fullname)
+			   (let ((fullname-end (point-marker)))
+			     (goto-char fullname-start)
+			     ;; RFC 822 says \ and nonmatching parentheses
+			     ;; must be escaped in comments.
+			     ;; Escape every instance of ()\ ...
+			     (while (re-search-forward "[()\\]" fullname-end 1)
+			       (replace-match "\\\\\\&" t))
+			     ;; ... then undo escaping of matching parentheses,
+			     ;; including matching nested parentheses.
+			     (goto-char fullname-start)
+			     (while (re-search-forward 
+				     "\\(\\=\\|[^\\]\\(\\\\\\\\\\)*\\)\\\\(\\(\\([^\\]\\|\\\\\\\\\\)*\\)\\\\)"
+				     fullname-end 1)
+			       (replace-match "\\1(\\3)" t)
+			       (goto-char fullname-start))))
+			 (insert ")\n"))
 			((null mail-from-style)
 			 (insert "From: " login "\n")))))
 	    ;; Insert an extra newline if we need it to work around
@@ -529,34 +572,39 @@ the user from the mailer."
 	    (goto-char (1+ delimline))
 	    (if (eval mail-mailer-swallows-blank-line)
 		(newline))
+	    ;; Find and handle any FCC fields.
+	    (goto-char (point-min))
+	    (if (re-search-forward "^FCC:" delimline t)
+		(mail-do-fcc delimline))
 	    (if mail-interactive
 		(save-excursion
 		  (set-buffer errbuf)
 		  (erase-buffer))))
-	  (apply 'call-process-region
-		 (append (list (point-min) (point-max)
-			       (if (boundp 'sendmail-program)
-				   sendmail-program
-				 "/usr/lib/sendmail")
-			       nil errbuf nil "-oi")
-			 ;; Always specify who from,
-			 ;; since some systems have broken sendmails.
-			 (list "-f" (user-login-name))
-;;;			 ;; Don't say "from root" if running under su.
-;;;			 (and (equal (user-real-login-name) "root")
-;;;			      (list "-f" (user-login-name)))
-			 (and mail-alias-file
-			      (list (concat "-oA" mail-alias-file)))
-			 ;; These mean "report errors by mail"
-			 ;; and "deliver in background".
-			 (if (null mail-interactive) '("-oem" "-odb"))
-			 ;; Get the addresses from the message
-			 ;; unless this is a resend.
-			 ;; We must not do that for a resend
-			 ;; because we would find the original addresses.
-			 ;; For a resend, include the specific addresses.
-			 (or resend-to-addresses
-			     '("-t"))))
+	  (let ((default-directory "/"))
+	    (apply 'call-process-region
+		   (append (list (point-min) (point-max)
+				 (if (boundp 'sendmail-program)
+				     sendmail-program
+				   "/usr/lib/sendmail")
+				 nil errbuf nil "-oi")
+			   ;; Always specify who from,
+			   ;; since some systems have broken sendmails.
+			   (list "-f" (user-login-name))
+;;;			   ;; Don't say "from root" if running under su.
+;;;			   (and (equal (user-real-login-name) "root")
+;;;				(list "-f" (user-login-name)))
+			   (and mail-alias-file
+				(list (concat "-oA" mail-alias-file)))
+			   ;; These mean "report errors by mail"
+			   ;; and "deliver in background".
+			   (if (null mail-interactive) '("-oem" "-odb"))
+			   ;; Get the addresses from the message
+			   ;; unless this is a resend.
+			   ;; We must not do that for a resend
+			   ;; because we would find the original addresses.
+			   ;; For a resend, include the specific addresses.
+			   (or resend-to-addresses
+			       '("-t")))))
 	  (if mail-interactive
 	      (save-excursion
 		(set-buffer errbuf)
@@ -569,16 +617,6 @@ the user from the mailer."
       (kill-buffer tembuf)
       (if (bufferp errbuf)
 	  (kill-buffer errbuf)))))
-
-;; Return non-nil if file FILE is an Rmail file.
-(defun mail-file-babyl-p (file)
-  (unwind-protect
-      (save-excursion
-	(set-buffer (get-buffer-create " mail-temp"))
-	(erase-buffer)
-	(insert-file-contents file nil 0 20)
-	(looking-at "BABYL OPTIONS:"))
-  (kill-buffer " mail-temp")))
 
 (defun mail-do-fcc (header-end)
   (let (fcc-list
@@ -647,7 +685,6 @@ the user from the mailer."
 			      (widen)
 			      (narrow-to-region (point-max) (point-max))
 			      (insert "\C-l\n0, unseen,,\n*** EOOH ***\n"
-				      "From: " (user-login-name) "\n"
 				      "Date: " (mail-rfc822-date) "\n")
 			      (insert-buffer-substring curbuf beg2 end)
 			      (insert "\n\C-_")
@@ -671,12 +708,14 @@ the user from the mailer."
 		;; convert the message to Babyl format.
 		(save-excursion
 		  (set-buffer (get-buffer-create " mail-temp"))
+		  (setq buffer-read-only nil)
+		  (erase-buffer)
 		  (insert "\C-l\n0, unseen,,\n*** EOOH ***\n"
-			  "From: " (user-login-name) "\n"
 			  "Date: " (mail-rfc822-date) "\n")
 		  (insert-buffer-substring curbuf beg2 end)
 		  (insert "\n\C-_")
-		  (write-region (point-min) (point-max) (car fcc-list) t))
+		  (write-region (point-min) (point-max) (car fcc-list) t)
+		  (erase-buffer))
 	      (write-region
 	       (1+ (point-min)) (point-max) (car fcc-list) t))))
 	(setq fcc-list (cdr fcc-list))))
@@ -778,7 +817,7 @@ the user from the mailer."
   (search-forward (concat "\n" mail-header-separator "\n")))
 
 (defun mail-signature (atpoint)
-  "Sign letter with contents of the file `~/.signature'.
+  "Sign letter with contents of the file `mail-signature-file'.
 Prefix arg means put contents at point."
   (interactive "P")
   (save-excursion
@@ -789,7 +828,7 @@ Prefix arg means put contents at point."
     (or atpoint
 	(delete-region (point) (point-max)))
     (insert "\n\n-- \n")
-    (insert-file-contents (expand-file-name "~/.signature"))))
+    (insert-file-contents (expand-file-name mail-signature-file))))
 
 (defun mail-fill-yanked-message (&optional justifyp)
   "Fill the paragraphs of a message yanked into this one.
@@ -854,19 +893,20 @@ and don't delete any header fields."
 	(if (not (eolp)) (insert ?\n)))))
 
 (defun mail-yank-clear-headers (start end)
-  (save-excursion
-    (goto-char start)
-    (if (search-forward "\n\n" end t)
-	(save-restriction
-	  (narrow-to-region start (point))
-	  (goto-char start)
-	  (while (let ((case-fold-search t))
-		   (re-search-forward mail-yank-ignored-headers nil t))
-	    (beginning-of-line)
-	    (delete-region (point)
-			   (progn (re-search-forward "\n[^ \t]")
-				  (forward-char -1)
-				  (point))))))))
+  (if mail-yank-ignored-headers
+      (save-excursion
+	(goto-char start)
+	(if (search-forward "\n\n" end t)
+	    (save-restriction
+	      (narrow-to-region start (point))
+	      (goto-char start)
+	      (while (let ((case-fold-search t))
+		       (re-search-forward mail-yank-ignored-headers nil t))
+		(beginning-of-line)
+		(delete-region (point)
+			       (progn (re-search-forward "\n[^ \t]")
+				      (forward-char -1)
+				      (point)))))))))
 
 ;; Put these last, to reduce chance of lossage from quitting in middle of loading the file.
 
@@ -876,8 +916,8 @@ and don't delete any header fields."
 When this function returns, the buffer `*mail*' is selected.
 The value is t if the message was newly initialized; otherwise, nil.
 
-Optionally, the signature file `~/.signature' can be inserted at the end;
-see the variable `mail-signature'.
+Optionally, the signature file `mail-signature-file' can be inserted at the
+end; see the variable `mail-signature'.
 
 \\<mail-mode-map>
 While editing message, type \\[mail-send-and-exit] to send the message and exit.
@@ -895,8 +935,8 @@ a Reply-to: field with that address is inserted.
 If `mail-archive-file-name' is non-nil, an FCC field with that file name
 is inserted.
 
-If `mail-setup-hook' is bound, its value is called with no arguments
-after the message is initialized.  It can add more default fields.
+The normal hook `mail-setup-hook' is run after the message is
+initialized.  It can add more default fields to the message.
 
 When calling from a program, the first argument if non-nil says
 not to erase the existing contents of the `*mail*' buffer.
@@ -955,8 +995,6 @@ The seventh argument ACTIONS is a list of actions to take
 ;;;	      (message "Auto save file for draft message exists; consider M-x mail-recover"))
 ;;;          t))
   (pop-to-buffer "*mail*")
-  (if (file-exists-p (expand-file-name "~/"))
-      (setq default-directory (expand-file-name "~/")))
   (auto-save-mode auto-save-default)
   (mail-mode)
   ;; Disconnect the buffer from its visited file
@@ -982,7 +1020,9 @@ The seventh argument ACTIONS is a list of actions to take
 	     (if (not (eq system-type 'vax-vms))
 		 (with-output-to-temp-buffer "*Directory*"
 		   (buffer-disable-undo standard-output)
-		   (call-process "ls" nil standard-output nil "-l" file-name)))
+		   (let ((default-directory "/"))
+		     (call-process
+		      "ls" nil standard-output nil "-l" file-name))))
 	     (yes-or-no-p (format "Recover auto save file %s? " file-name)))
 	   (let ((buffer-read-only nil))
 	     (erase-buffer)

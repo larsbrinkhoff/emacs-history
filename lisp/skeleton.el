@@ -1,9 +1,9 @@
-;;; skeleton.el --- Metalanguage for writing statement skeletons
-;; Copyright (C) 1993 by Free Software Foundation, Inc.
+;;; skeleton.el --- Lisp language extension for writing statement skeletons
+;; Copyright (C) 1993, 1994, 1995 by Free Software Foundation, Inc.
 
-;; Author: Daniel Pfeiffer, fax (+49 69) 75 88 529, c/o <bonhoure@cict.fr>
+;; Author: Daniel.Pfeiffer@Informatik.START.dbp.de, fax (+49 69) 7588-2389
 ;; Maintainer: FSF
-;; Keywords: shell programming
+;; Keywords: extensions, abbrev, languages, tools
 
 ;; This file is part of GNU Emacs.
 
@@ -23,7 +23,7 @@
 
 ;;; Commentary:
 
-;; A very concise metalanguage for writing structured statement
+;; A very concise language extension for writing structured statement
 ;; skeleton insertion commands for programming language modes.  This
 ;; originated in shell-script mode and was applied to ada-mode's
 ;; commands which shrunk to one third.  And these commands are now
@@ -31,13 +31,13 @@
 
 ;;; Code:
 
-;; page 1:	statement skeleton metalanguage definition & interpreter
+;; page 1:	statement skeleton language definition & interpreter
 ;; page 2:	paired insertion
 ;; page 3:	mirror-mode, an example for setting up paired insertion
 
 
 (defvar skeleton-transformation nil
-  "*If non-nil, function applied to strings before they are inserted.
+  "*If non-nil, function applied to literal strings before they are inserted.
 It should take strings and characters and return them transformed, or nil
 which means no transformation.
 Typical examples might be `upcase' or `capitalize'.")
@@ -48,91 +48,213 @@ Typical examples might be `upcase' or `capitalize'.")
 
 
 
+(defvar skeleton-end-hook
+  (lambda ()
+    (or (eolp) (newline-and-indent)))
+  "Hook called at end of skeleton but before going to point of interest.
+By default this moves out anything following to next line.
+The variables `v1' and `v2' are still set when calling this.")
+
+
+;;;###autoload
+(defvar skeleton-filter 'identity
+  "Function for transforming a skeleton-proxy's aliases' variable value.")
+
+(defvar skeleton-untabify t
+  "When non-`nil' untabifies when deleting backwards with element -ARG.")
+
+(defvar skeleton-newline-indent-rigidly nil
+  "When non-`nil', indent rigidly under current line for element `\\n'.
+Else use mode's `indent-line-function'.")
+
+(defvar skeleton-further-elements ()
+  "A buffer-local varlist (see `let') of mode specific skeleton elements.
+These variables are bound while interpreting a skeleton.  Their value may
+in turn be any valid skeleton element if they are themselves to be used as
+skeleton elements.")
+(make-variable-buffer-local 'skeleton-further-elements)
+
+
 (defvar skeleton-subprompt
   (substitute-command-keys
    "RET, \\<minibuffer-local-map>\\[abort-recursive-edit] or \\[help-command]")
-  "*Replacement for %s in prompts of recursive skeleton definitions.")
+  "*Replacement for %s in prompts of recursive subskeletons.")
 
+
+(defvar skeleton-abbrev-cleanup nil)
 
 
 (defvar skeleton-debug nil
   "*If non-nil `define-skeleton' will override previous definition.")
 
-
+;; reduce the number of compiler warnings
+(defvar skeleton)
+(defvar skeleton-modified)
+(defvar skeleton-point)
+(defvar skeleton-regions)
 
 ;;;###autoload
-(defmacro define-skeleton (command documentation &rest definition)
+(defmacro define-skeleton (command documentation &rest skeleton)
   "Define a user-configurable COMMAND that enters a statement skeleton.
 DOCUMENTATION is that of the command, while the variable of the same name,
-which contains the definition, has a documentation to that effect.
-PROMPT and ELEMENT ... are as defined under `skeleton-insert'."
+which contains the skeleton, has a documentation to that effect.
+INTERACTOR and ELEMENT ... are as defined under `skeleton-insert'."
   (if skeleton-debug
-      (set command definition))
-  (require 'backquote)
-  (`(progn
-      (defvar (, command) '(, definition)
-	(, (concat "*Definition for the "
-		   (symbol-name command)
-		   " skeleton command.
-See function `skeleton-insert' for meaning."))	)
-      (defun (, command) ()
-	(, documentation)
-	(interactive)
-	;; Don't use last-command to guarantee command does the same thing,
-	;; whatever other name it is given.
-	(skeleton-insert (, command))))))
+      (set command skeleton))
+  `(progn
+     (defvar ,command ',skeleton ,documentation)
+     (defalias ',command 'skeleton-proxy)))
 
+
+
+;; This command isn't meant to be called, only it's aliases with meaningful
+;; names are.
+;;;###autoload
+(defun skeleton-proxy (&optional str arg)
+  "Insert skeleton defined by variable of same name (see `skeleton-insert').
+Prefix ARG allows wrapping around words or regions (see `skeleton-insert').
+This command can also be an abbrev expansion (3rd and 4th columns in
+\\[edit-abbrevs]  buffer: \"\"  command-name).
+
+When called as a function, optional first argument STR may also be a string
+which will be the value of `str' whereas the skeleton's interactor is then
+ignored."
+  (interactive "*P\nP")
+  (let ((function (nth 1 (backtrace-frame 1))))
+    (if (eq function 'nth)		; uncompiled lisp function
+	(setq function (nth 1 (backtrace-frame 5)))
+      (if (eq function 'byte-code)	; tracing byte-compiled function
+	  (setq function (nth 1 (backtrace-frame 2)))))
+    (if (not (setq function (funcall skeleton-filter (symbol-value function))))
+	(if (memq this-command '(self-insert-command
+				 skeleton-pair-insert-maybe
+				 expand-abbrev))
+	    (setq buffer-undo-list (primitive-undo 1 buffer-undo-list)))
+      (skeleton-insert function
+		       (if (setq skeleton-abbrev-cleanup
+				 (or (eq this-command 'self-insert-command)
+				     (eq this-command
+					 'skeleton-pair-insert-maybe)))
+			   ()
+			 ;; Pretend  C-x a e  passed its prefix arg to us
+			 (if (or arg current-prefix-arg)
+			     (prefix-numeric-value (or arg
+						       current-prefix-arg))))
+		       (if (stringp str)
+			   str))
+      (if skeleton-abbrev-cleanup
+	  (setq deferred-action-list t
+		deferred-action-function 'skeleton-abbrev-cleanup
+		skeleton-abbrev-cleanup (point))))))
+
+
+(defun skeleton-abbrev-cleanup (&rest list)
+  "Value for `post-command-hook' to remove char that expanded abbrev."
+  (if (integerp skeleton-abbrev-cleanup)
+      (progn
+	(delete-region skeleton-abbrev-cleanup (point))
+	(setq deferred-action-list ()
+	      deferred-action-function nil
+	      skeleton-abbrev-cleanup nil))))
 
 
 ;;;###autoload
-(defun skeleton-insert (definition &optional no-newline)
-  "Insert the complex statement skeleton DEFINITION describes very concisely.
-If optional NO-NEWLINE is nil the skeleton will end on a line of its own.
+(defun skeleton-insert (skeleton &optional skeleton-regions str)
+  "Insert the complex statement skeleton SKELETON describes very concisely.
 
-DEFINITION is made up as (PROMPT ELEMENT ...).  PROMPT may be nil if not
-needed, a prompt-string or an expression for complex read functions.
+With optional third REGIONS wrap first interesting point (`_') in skeleton
+around next REGIONS words, if REGIONS is positive.  If REGIONS is negative,
+wrap REGIONS preceding interregions into first REGIONS interesting positions
+\(successive `_'s) in skeleton.  An interregion is the stretch of text between
+two contiguous marked points.  If you marked A B C [] (where [] is the cursor)
+in alphabetical order, the 3 interregions are simply the last 3 regions.  But
+if you marked B A [] C, the interregions are B-A, A-[], []-C.
+
+Optional fourth STR is the value for the variable `str' within the skeleton.
+When this is non-`nil' the interactor gets ignored, and this should be a valid
+skeleton element.
+
+SKELETON is made up as (INTERACTOR ELEMENT ...).  INTERACTOR may be nil if
+not needed, a prompt-string or an expression for complex read functions.
 
 If ELEMENT is a string or a character it gets inserted (see also
 `skeleton-transformation').  Other possibilities are:
 
-	\\n	go to next line and align cursor
-	>	indent according to major mode
-	<	undent tab-width spaces but not beyond beginning of line
-	_	cursor after termination
-	&	skip next ELEMENT if previous didn't move point
-	|	skip next ELEMENT if previous moved point
-	-num	delete num preceding characters
+	\\n	go to next line and indent according to mode
+	_	interesting point, interregion here, point after termination
+	>	indent line (or interregion if > _) according to major mode
+	&	do next ELEMENT if previous moved point
+	|	do next ELEMENT if previous didn't move point
+	-num	delete num preceding characters (see `skeleton-untabify')
 	resume:	skipped, continue here if quit is signaled
 	nil	skipped
 
-ELEMENT may itself be DEFINITION with a PROMPT.  The user is prompted
-repeatedly for different inputs.  The DEFINITION is processed as often
-as the user enters a non-empty string.  \\[keyboard-quit] terminates
-skeleton insertion, but continues after `resume:' and positions at `_'
-if any.  If PROMPT in such a sub-definition contains a \".. %s ..\" it
-is replaced by `skeleton-subprompt'.
+Further elements can be defined via `skeleton-further-elements'.  ELEMENT may
+itself be a SKELETON with an INTERACTOR.  The user is prompted repeatedly for
+different inputs.  The SKELETON is processed as often as the user enters a
+non-empty string.  \\[keyboard-quit] terminates skeleton insertion, but
+continues after `resume:' and positions at `_' if any.  If INTERACTOR in such
+a subskeleton is a prompt-string which contains a \".. %s ..\" it is
+formatted with `skeleton-subprompt'.  Such an INTERACTOR may also a list of
+strings with the subskeleton being repeated once for each string.
 
+Quoted lisp-expressions are evaluated evaluated for their side-effect.
 Other lisp-expressions are evaluated and the value treated as above.
-The following local variables are available:
+Note that expressions may not return `t' since this impplies an
+endless loop.  Modes can define other symbols by locally setting them
+to any valid skeleton element.  The following local variables are
+available:
 
-	str	first time: read a string prompting with PROMPT and insert it
-			    if PROMPT is not a string it is evaluated instead
+	str	first time: read a string according to INTERACTOR
 		then: insert previously read string once more
-	quit	non-nil when resume: section is entered by keyboard quit
-	v1, v2	local variables for memorising anything you want"
-  (let (modified opoint point resume: quit v1 v2)
-    (skeleton-internal-list definition (car definition))
-    (or no-newline
-	(eolp)
-	(newline)
-	(indent-relative t))
-    (if point
-	(goto-char point))))
+	help	help-form during interaction with the user or `nil'
+	input	initial input (string or cons with index) while reading str
+	v1, v2	local variables for memorising anything you want
 
+When done with skeleton, but before going back to `_'-point call
+`skeleton-end-hook' if that is non-`nil'."
+  (and skeleton-regions
+       (setq skeleton-regions
+	     (if (> skeleton-regions 0)
+		 (list (point-marker)
+		       (save-excursion (forward-word skeleton-regions)
+				       (point-marker)))
+	       (setq skeleton-regions (- skeleton-regions))
+	       ;; copy skeleton-regions - 1 elements from `mark-ring'
+	       (let ((l1 (cons (mark-marker) mark-ring))
+		     (l2 (list (point-marker))))
+		 (while (and l1 (> skeleton-regions 0))
+		   (setq l2 (cons (car l1) l2)
+			 skeleton-regions (1- skeleton-regions)
+			 l1 (cdr l1)))
+		 (sort l2 '<))))
+       (goto-char (car skeleton-regions))
+       (setq skeleton-regions (cdr skeleton-regions)))
+  (let ((beg (point))
+	skeleton-modified skeleton-point resume: help input v1 v2)
+    (unwind-protect
+	(eval `(let ,skeleton-further-elements
+		 (skeleton-internal-list skeleton str)))
+      (run-hooks 'skeleton-end-hook)
+      (sit-for 0)
+      (or (pos-visible-in-window-p beg)
+	  (progn
+	    (goto-char beg)
+	    (recenter 0)))
+      (if skeleton-point
+	  (goto-char skeleton-point)))))
 
-
-(defun skeleton-internal-read (str)
-  (let ((minibuffer-help-form "\
+(defun skeleton-read (str &optional initial-input recursive)
+  "Function for reading a string from the minibuffer within skeletons.
+PROMPT may contain a `%s' which will be replaced by `skeleton-subprompt'.
+If non-`nil' second arg INITIAL-INPUT or variable `input' is a string or
+cons with index to insert before reading.  If third arg RECURSIVE is non-`nil'
+i.e. we are handling the iterator of a subskeleton, returns empty string if
+user didn't modify input.
+While reading, the value of `minibuffer-help-form' is variable `help' if that
+is non-`nil' or a default string."
+  (let ((minibuffer-help-form (or (if (boundp 'help) (symbol-value 'help))
+				  (if recursive "\
 As long as you provide input you will insert another subskeleton.
 
 If you enter the empty string, the loop inserting subskeletons is
@@ -140,147 +262,214 @@ left, and the current one is removed as far as it has been entered.
 
 If you quit, the current subskeleton is removed as far as it has been
 entered.  No more of the skeleton will be inserted, except maybe for a
-syntactically necessary termination."))
-    (setq str (if (stringp str)
-		  (read-string
-		   (format str skeleton-subprompt))
-		(eval str))))
-  (if (string= str "")
+syntactically necessary termination."
+					 "\
+You are inserting a skeleton.  Standard text gets inserted into the buffer
+automatically, and you are prompted to fill in the variable parts.")))
+	(eolp (eolp)))
+    ;; since Emacs doesn't show main window's cursor, do something noticeable
+    (or eolp
+	(open-line 1))
+    (unwind-protect
+	(setq str (if (stringp str)
+		      (read-string (format str skeleton-subprompt)
+				   (setq initial-input
+					 (or initial-input
+					     (symbol-value 'input))))
+		    (eval str)))
+      (or eolp
+	  (delete-char 1))))
+  (if (and recursive
+	   (or (null str)
+	       (string= str "")
+	       (equal str initial-input)
+	       (equal str (car-safe initial-input))))
       (signal 'quit t)
     str))
 
-
-(defun skeleton-internal-list (definition &optional str recursive start line)
-  (condition-case quit
-      (progn
-	(setq start (save-excursion (beginning-of-line) (point))
-	      column (current-column)
-	      line (buffer-substring start
-				     (save-excursion (end-of-line) (point)))
-	      str (list 'setq 'str
-			(if recursive
-			    (list 'skeleton-internal-read (list 'quote str))
-			  (list (if (stringp str)
-				    'read-string
-				  'eval)
-				str))))
-	(while (setq modified (eq opoint (point))
-		     opoint (point)
-		     definition (cdr definition))
-	  (skeleton-internal-1 (car definition)))
-	;; maybe continue loop
-	recursive)
-    (quit ;; remove the subskeleton as far as it has been shown
-	  (if (eq (cdr quit) 'recursive)
-	      ()
-	    ;; the subskeleton shouldn't have deleted outside current line
-	    (end-of-line)
-	    (delete-region start (point))
-	    (insert line)
-	    (move-to-column column))
-	  (if (eq (cdr quit) t)
-	      ;; empty string entered
-	      nil
-	    (while (if definition
-		       (not (eq (car (setq definition (cdr definition)))
-				'resume:))))
-	    (if definition
-		(skeleton-internal-list definition)
-	      ;; propagate signal we can't handle
-	      (if recursive (signal 'quit 'recursive)))))))
+(defun skeleton-internal-list (skeleton &optional str recursive)
+  (let* ((start (save-excursion (beginning-of-line) (point)))
+	 (column (current-column))
+	 (line (buffer-substring start
+				 (save-excursion (end-of-line) (point))))
+	 opoint)
+    (or str
+	(setq str `(setq str (skeleton-read ',(car skeleton) nil ,recursive))))
+    (while (setq skeleton-modified (eq opoint (point))
+		 opoint (point)
+		 skeleton (cdr skeleton))
+      (condition-case quit
+	  (skeleton-internal-1 (car skeleton))
+	(quit
+	 (if (eq (cdr quit) 'recursive)
+	     (setq recursive 'quit
+		   skeleton (memq 'resume: skeleton))
+	   ;; remove the subskeleton as far as it has been shown
+	   ;; the subskeleton shouldn't have deleted outside current line
+	   (end-of-line)
+	   (delete-region start (point))
+	   (insert line)
+	   (move-to-column column)
+	   (if (cdr quit)
+	       (setq skeleton ()
+		     recursive nil)
+	     (signal 'quit 'recursive)))))))
+  ;; maybe continue loop or go on to next outer resume: section
+  (if (eq recursive 'quit)
+      (signal 'quit 'recursive)
+    recursive))
 
 
-
-(defun skeleton-internal-1 (element)
-  (cond ((and (integerp element)
-	      (< element 0))
-	 (delete-char element))
-	((char-or-string-p element)
-	 (insert (if skeleton-transformation
-		     (funcall skeleton-transformation element)
-		   element)) )
+(defun skeleton-internal-1 (element &optional literal)
+  (cond ((char-or-string-p element)
+	 (if (and (integerp element)	; -num
+		  (< element 0))
+	     (if skeleton-untabify
+		 (backward-delete-char-untabify (- element))
+	       (delete-backward-char (- element)))
+	   (insert-before-markers (if (and skeleton-transformation
+					   (not literal))
+				      (funcall skeleton-transformation element)
+				    element))))
 	((eq element '\n)		; actually (eq '\n 'n)
-	 (newline)
-	 (indent-relative t) )
+	 (if (and skeleton-regions
+		  (eq (nth 1 skeleton) '_))
+	     (progn
+	       (or (eolp)
+		   (newline))
+	       (indent-region (point) (car skeleton-regions) nil))
+	   (if skeleton-newline-indent-rigidly
+	       (indent-to (prog1 (current-indentation)
+			    (newline)))
+	     (newline)
+	     (indent-according-to-mode))))
 	((eq element '>)
-	 (indent-for-tab-command) )
-	((eq element '<)
-	 (backward-delete-char-untabify (min tab-width (current-column))) )
+	 (if (and skeleton-regions
+		  (eq (nth 1 skeleton) '_))
+	     (indent-region (point) (car skeleton-regions) nil)
+	   (indent-according-to-mode)))
 	((eq element '_)
-	 (or point
-	     (setq point (point))) )
+	 (if skeleton-regions
+	     (progn
+	       (goto-char (car skeleton-regions))
+	       (setq skeleton-regions (cdr skeleton-regions))
+	       (and (<= (current-column) (current-indentation))
+		    (eq (nth 1 skeleton) '\n)
+		    (end-of-line 0)))
+	   (or skeleton-point
+	       (setq skeleton-point (point)))))
 	((eq element '&)
-	 (if modified
-	     (setq definition (cdr definition))) )
+	 (if skeleton-modified
+	     (setq skeleton (cdr skeleton))))
 	((eq element '|)
-	 (or modified
-	     (setq definition (cdr definition))) )
-	((if (consp element)
-	     (or (stringp (car element))
-		 (consp (car element))))
-	 (while (skeleton-internal-list element (car element) t)) )
-	((null element) )
-	((skeleton-internal-1 (eval element)) )))
+	 (or skeleton-modified
+	     (setq skeleton (cdr skeleton))))
+	((eq 'quote (car-safe element))
+	 (eval (nth 1 element)))
+	((or (stringp (car-safe element))
+	     (consp (car-safe element)))
+	 (if (symbolp (car-safe (car element)))
+	     (while (skeleton-internal-list element nil t))
+	   (setq literal (car element))
+	   (while literal
+	     (skeleton-internal-list element (car literal))
+	     (setq literal (cdr literal)))))
+	((null element))
+	((skeleton-internal-1 (eval element) t))))
 
+
+;; Maybe belongs into simple.el or elsewhere
+
+(define-skeleton local-variables-section
+  "Insert a local variables section.  Use current comment syntax if any."
+  ()
+  '(save-excursion
+     (if (re-search-forward page-delimiter nil t)
+	 (error "Not on last page.")))
+  comment-start "Local Variables:" comment-end \n
+  comment-start "mode: "
+  (completing-read "Mode: " obarray
+		   (lambda (symbol)
+		     (if (commandp symbol)
+			 (string-match "-mode$" (symbol-name symbol))))
+		   t)
+  & -5 | '(kill-line 0) & -1 | comment-end \n
+  ( (completing-read (format "Variable, %s: " skeleton-subprompt)
+		     obarray
+		     (lambda (symbol)
+		       (or (eq symbol 'eval)
+			   (user-variable-p symbol)))
+		     t)
+    comment-start str ": "
+    (read-from-minibuffer "Expression: " nil read-expression-map nil
+			  'read-expression-history) | _
+    comment-end \n)
+  resume:
+  comment-start "End:" comment-end)
 
-;; variables and command for automatically inserting pairs like () or ""
+;; Variables and command for automatically inserting pairs like () or "".
 
-(defvar pair nil
+(defvar skeleton-pair nil
   "*If this is nil pairing is turned off, no matter what else is set.
-Otherwise modes with `pair-insert-maybe' on some keys will attempt this.")
+Otherwise modes with `skeleton-pair-insert-maybe' on some keys
+will attempt to insert pairs of matching characters.")
 
 
-(defvar pair-on-word nil
-  "*If this is nil pairing is not attempted before or inside a word.")
+(defvar skeleton-pair-on-word nil
+  "*If this is nil, paired insertion is inhibited before or inside a word.")
 
 
-(defvar pair-filter (lambda ())
-  "Attempt pairing if this function returns nil, before inserting.
+(defvar skeleton-pair-filter (lambda ())
+  "Attempt paired insertion if this function returns nil, before inserting.
 This allows for context-sensitive checking whether pairing is appropriate.")
 
 
-(defvar pair-alist ()
-  "An override alist of pairing partners matched against
-`last-command-char'.  Each alist element, which looks like (ELEMENT
-...), is passed to `skeleton-insert' with no prompt.  Variable `str'
-does nothing.
+(defvar skeleton-pair-alist ()
+  "An override alist of pairing partners matched against `last-command-char'.
+Each alist element, which looks like (ELEMENT ...), is passed to
+`skeleton-insert' with no interactor.  Variable `str' does nothing.
 
-Elements might be (?` ?` _ \"''\"), (?\\( ?  _ \" )\") or (?{ \\n > _ \\n < ?}).")
-
+Elements might be (?` ?` _ \"''\"), (?\\( ?  _ \" )\") or (?{ \\n > _ \\n ?} >).")
 
 
 ;;;###autoload
-(defun pair-insert-maybe (arg)
+(defun skeleton-pair-insert-maybe (arg)
   "Insert the character you type ARG times.
 
-With no ARG, if `pair' is non-nil, and if
-`pair-on-word' is non-nil or we are not before or inside a
-word, and if `pair-filter' returns nil, pairing is performed.
+With no ARG, if `skeleton-pair' is non-nil, and if
+`skeleton-pair-on-word' is non-nil or we are not before or inside a
+word, and if `skeleton-pair-filter' returns nil, pairing is performed.
 
-If a match is found in `pair-alist', that is inserted, else
+If a match is found in `skeleton-pair-alist', that is inserted, else
 the defaults are used.  These are (), [], {}, <> and `' for the
 symmetrical ones, and the same character twice for the others."
   (interactive "*P")
   (if (or arg
-	  (not pair)
-	  (if (not pair-on-word) (looking-at "\\w"))
-	  (funcall pair-filter))
+	  overwrite-mode
+	  (not skeleton-pair)
+	  (if (not skeleton-pair-on-word) (looking-at "\\w"))
+	  (funcall skeleton-pair-filter))
       (self-insert-command (prefix-numeric-value arg))
-    (insert last-command-char)
-    (if (setq arg (assq last-command-char pair-alist))
-	;; typed char is inserted, and car means no prompt
-	(skeleton-insert arg t)
-      (save-excursion
-	(insert (or (cdr (assq last-command-char
-			       '((?( . ?))
-				 (?[ . ?])
-				 (?{ . ?})
-				 (?< . ?>)
-				 (?` . ?'))))
-		    last-command-char))))))
+    (self-insert-command 1)
+    (if skeleton-abbrev-cleanup
+	()
+      ;; (preceding-char) is stripped of any Meta-stuff in last-command-char
+      (if (setq arg (assq (preceding-char) skeleton-pair-alist))
+	  ;; typed char is inserted (car is no real interactor)
+	  (let (skeleton-end-hook)
+	    (skeleton-insert arg))
+	(save-excursion
+	  (insert (or (cdr (assq (preceding-char)
+				 '((?( . ?))
+				   (?[ . ?])
+				   (?{ . ?})
+				   (?< . ?>)
+				   (?` . ?'))))
+		      last-command-char)))))))
 
 
-;; a more serious example can be found in sh-script.el
+;;; ;; A more serious example can be found in sh-script.el
+;;; ;; The quote before (defun prevents this from being byte-compiled.
 ;;;(defun mirror-mode ()
 ;;;  "This major mode is an amusing little example of paired insertion.
 ;;;All printable characters do a paired self insert, while the other commands
@@ -305,13 +494,13 @@ symmetrical ones, and the same character twice for the others."
 ;;;			   (window-width))))
 ;;;	;; mirror these the other way round as well
 ;;;	pair-alist '((?) _ ?()
-;;;			      (?] _ ?[)
-;;;			      (?} _ ?{)
-;;;			      (?> _ ?<)
-;;;			      (?/ _ ?\\)
-;;;			      (?\\ _ ?/)
-;;;			      (?` ?` _ "''")
-;;;			      (?' ?' _ "``"))
+;;;		     (?] _ ?[)
+;;;		     (?} _ ?{)
+;;;		     (?> _ ?<)
+;;;		     (?/ _ ?\\)
+;;;		     (?\\ _ ?/)
+;;;		     (?` ?` _ "''")
+;;;		     (?' ?' _ "``"))
 ;;;	;; in this mode we exceptionally ignore the user, else it's no fun
 ;;;	pair t)
 ;;;  (let ((map (make-keymap))
@@ -319,7 +508,7 @@ symmetrical ones, and the same character twice for the others."
 ;;;    (use-local-map map)
 ;;;    (setq map (car (cdr map)))
 ;;;    (while (< i ?\^?)
-;;;      (aset map i 'pair-insert-maybe)
+;;;      (aset map i 'skeleton-pair-insert-maybe)
 ;;;      (setq i (1+ i))))
 ;;;  (run-hooks 'mirror-mode-hook))
 

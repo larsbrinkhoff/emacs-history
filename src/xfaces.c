@@ -87,13 +87,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    (assq FACE-NAME global-face-data) returns a vector describing the
    global parameters for that face.
 
-   Let PARAM-FACE be FRAME->display.x->param_faces[Faref (FACE-VECTOR, 2)].
+   Let PARAM-FACE be FRAME->output_data.x->param_faces[Faref (FACE-VECTOR, 2)].
    PARAM_FACE is a struct face whose members are the Xlib analogues of
    the parameters in FACE-VECTOR.  If an element of FACE-VECTOR is
    nil, then the corresponding member of PARAM_FACE is FACE_DEFAULT.
    These faces are called "parameter faces", because they're the ones
    lisp manipulates to control what gets displayed.  Elements 0 and 1
-   of FRAME->display.x->param_faces are special - they describe the
+   of FRAME->output_data.x->param_faces are special - they describe the
    default and mode line faces.  None of the faces in param_faces have
    GC's.  (See src/dispextern.h for the definiton of struct face.
    lisp/faces.el maintains the isomorphism between face_alist and
@@ -104,9 +104,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    properties.  The resulting faces are called "computed faces"; none
    of their members are FACE_DEFAULT; they are completely specified.
    They then call intern_compute_face to search
-   FRAME->display.x->computed_faces for a matching face, add one if
+   FRAME->output_data.x->computed_faces for a matching face, add one if
    none is found, and return the index into
-   FRAME->display.x->computed_faces.  FRAME's glyph matrices use these
+   FRAME->output_data.x->computed_faces.  FRAME's glyph matrices use these
    indices to record the faces of the matrix characters, and the X
    display hooks consult compute_faces to decide how to display these
    characters.  Elements 0 and 1 of computed_faces always describe the
@@ -120,6 +120,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    clear_face_cache clears out the GCs of all computed faces.
    This is done from time to time so that we don't hold on to
    lots of GCs that are no longer needed.
+
+   If a computed face has 0 as its font,
+   it is unused, and can be reused by new_computed_face.
 
    Constraints:
 
@@ -231,17 +234,17 @@ intern_face (f, face)
   if (face->foreground != FACE_DEFAULT)
     xgcv.foreground = face->foreground;
   else
-    xgcv.foreground = f->display.x->foreground_pixel;
+    xgcv.foreground = f->output_data.x->foreground_pixel;
 
   if (face->background != FACE_DEFAULT)
     xgcv.background = face->background;
   else
-    xgcv.background = f->display.x->background_pixel;
+    xgcv.background = f->output_data.x->background_pixel;
 
   if (face->font && face->font != (XFontStruct *) FACE_DEFAULT)
     xgcv.font = face->font->fid;
   else
-    xgcv.font = f->display.x->font->fid;
+    xgcv.font = f->output_data.x->font->fid;
 
   xgcv.graphics_exposures = 0;
 
@@ -327,10 +330,29 @@ unload_font (f, font)
      struct frame *f;
      XFontStruct *font;
 {
+  int len = FRAME_N_COMPUTED_FACES (f);
+  int i;
+
   if (!font || font == ((XFontStruct *) FACE_DEFAULT))
     return;
 
   BLOCK_INPUT;
+  /* Invalidate any computed faces which use this font,
+     and free their GC's if they have any.  */
+  for (i = 2; i < len; i++)
+    {
+      struct face *face = FRAME_COMPUTED_FACES (f)[i];
+      if (face->font == font)
+	{
+	  Display *dpy = FRAME_X_DISPLAY (f);
+	  if (face->gc)
+	    XFreeGC (dpy, face->gc);
+	  face->gc = 0;
+	  /* This marks the computed face as available to reuse.  */
+	  face->font = 0;
+	}
+    }
+
   XFreeFont (FRAME_X_DISPLAY (f), font);
   UNBLOCK_INPUT;
 }
@@ -363,14 +385,42 @@ unload_color (f, pixel)
 {
   Colormap cmap;
   Display *dpy = FRAME_X_DISPLAY (f);
+  int class = FRAME_X_DISPLAY_INFO (f)->visual->class;
+
   if (pixel == FACE_DEFAULT
       || pixel == BLACK_PIX_DEFAULT (f)
       || pixel == WHITE_PIX_DEFAULT (f))
     return;
   cmap = DefaultColormapOfScreen (DefaultScreenOfDisplay (dpy));
-  BLOCK_INPUT;
-  XFreeColors (dpy, cmap, &pixel, 1, (unsigned long)0);
-  UNBLOCK_INPUT;
+  
+  /* If display has an immutable color map, freeing colors is not
+     necessary and some servers don't allow it.  So don't do it.  */
+  if (! (class == StaticColor || class == StaticGray || class == TrueColor))
+    {
+      int len = FRAME_N_COMPUTED_FACES (f);
+      int i;
+
+      BLOCK_INPUT;
+      /* Invalidate any computed faces which use this color,
+	 and free their GC's if they have any.  */
+      for (i = 2; i < len; i++)
+	{
+	  struct face *face = FRAME_COMPUTED_FACES (f)[i];
+	  if (face->foreground == pixel
+	      || face->background == pixel)
+	    {
+	      Display *dpy = FRAME_X_DISPLAY (f);
+	      if (face->gc)
+		XFreeGC (dpy, face->gc);
+	      face->gc = 0;
+	      /* This marks the computed face as available to reuse.  */
+	      face->font = 0;
+	    }
+	}
+
+      XFreeColors (dpy, cmap, &pixel, 1, (unsigned long)0);
+      UNBLOCK_INPUT;
+    }
 }
 
 DEFUN ("pixmap-spec-p", Fpixmap_spec_p, Spixmap_spec_p, 1, 1, 0,
@@ -392,7 +442,7 @@ DEFUN ("pixmap-spec-p", Fpixmap_spec_p, Spixmap_spec_p, 1, 1, 0,
 	       && XINT (height) > 0
 	       /* The string must have enough bits for width * height.  */
 	       && ((XSTRING (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->car)->size
-		    * (INTBITS / sizeof (int)))
+		    * (BITS_PER_INT / sizeof (int)))
 		   >= XFASTINT (width) * XFASTINT (height))))
 	  ? Qt : Qnil);
 }
@@ -596,7 +646,19 @@ new_computed_face (f, new_face)
      struct frame *f;
      struct face *new_face;
 {
-  int i = FRAME_N_COMPUTED_FACES (f);
+  int len = FRAME_N_COMPUTED_FACES (f);
+  int i;
+
+  /* Search for an unused computed face in the middle of the table.  */
+  for (i = 0; i < len; i++)
+    {
+      struct face *face = FRAME_COMPUTED_FACES (f)[i];
+      if (face->font == 0)
+	{
+	  FRAME_COMPUTED_FACES (f)[i] = copy_face (new_face);
+	  return i;
+	}
+    }
 
   if (i >= FRAME_SIZE_COMPUTED_FACES (f))
     {
@@ -691,21 +753,21 @@ frame_update_line_height (f)
      FRAME_PTR f;
 {
   int i;
-  int biggest = FONT_HEIGHT (f->display.x->font);
+  int biggest = FONT_HEIGHT (f->output_data.x->font);
 
-  for (i = 0; i < f->display.x->n_param_faces; i++)
-    if (f->display.x->param_faces[i] != 0
-	&& f->display.x->param_faces[i]->font != (XFontStruct *) FACE_DEFAULT)
+  for (i = 0; i < f->output_data.x->n_param_faces; i++)
+    if (f->output_data.x->param_faces[i] != 0
+	&& f->output_data.x->param_faces[i]->font != (XFontStruct *) FACE_DEFAULT)
       {
-	int height = FONT_HEIGHT (f->display.x->param_faces[i]->font);
+	int height = FONT_HEIGHT (f->output_data.x->param_faces[i]->font);
 	if (height > biggest)
 	  biggest = height;
       }
 
-  if (biggest == f->display.x->line_height)
+  if (biggest == f->output_data.x->line_height)
     return 0;
 
-  f->display.x->line_height = biggest;
+  f->output_data.x->line_height = biggest;
   return 1;
 }
 #endif /* not HAVE_X_WINDOWS */
@@ -895,9 +957,12 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
   if (CONSP (prop))
     {
       /* We have a list of faces, merge them in reverse order */
-      Lisp_Object length = Flength (prop);
-      int len = XINT (length);
+      Lisp_Object length;
+      int len;
       Lisp_Object *faces;
+
+      length = Fsafe_length (prop);
+      len = XFASTINT (length);
 
       /* Put them into an array */
       faces = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
@@ -932,10 +997,12 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
       if (CONSP (prop))
 	{
 	  /* We have a list of faces, merge them in reverse order */
-	  Lisp_Object length = Flength (prop);
-	  int len = XINT (length);
+	  Lisp_Object length;
+	  int len;
 	  Lisp_Object *faces;
-	  int i;
+
+	  length = Fsafe_length (prop);
+	  len = XFASTINT (length);
 
 	  /* Put them into an array */
 	  faces = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
@@ -1089,10 +1156,12 @@ DEFUN ("set-face-attribute-internal", Fset_face_attribute_internal,
   if (EQ (attr_name, intern ("font")))
     {
 #if defined (MSDOS) && !defined (HAVE_X_WINDOWS)
-      face->font = 0; /* The one and only font.  */
+      /* The one and only font.  Must *not* be zero (which
+	 is taken to mean an unused face nowadays).  */
+      face->font = (XFontStruct *)1 ;
 #else
       XFontStruct *font = load_font (f, attr_value);
-      if (face->font != f->display.x->font)
+      if (face->font != f->output_data.x->font)
 	unload_font (f, face->font);
       face->font = font;
       if (frame_update_line_height (f))

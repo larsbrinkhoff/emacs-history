@@ -426,6 +426,14 @@ the first line and the beginning of the second so that each line is
 a separate comment; the variable @code{comment-multi-line} controls the
 choice (@pxref{Comments}).
 
+  Adaptive filling (see the following section) works for Auto Filling as
+well as for explicit fill commands.  It will take a non-whitespace fill
+prefix automatically from the second line of a paragraph.  In a mode
+where an indented line does not start a paragraph, it will take a
+whitespace fill prefix automatically from the first or second line.
+Non-whitespace fill prefixes can come automatically only from the second
+line, never from the first.
+
   Auto Fill mode does not refill entire paragraphs; it can break lines but
 cannot merge lines.  So editing in the middle of a paragraph can result in
 a paragraph that is not correctly filled.  The easiest way to make the
@@ -466,6 +474,7 @@ where necessary.
   To refill many paragraphs, use @kbd{M-x fill-region}, which
 divides the region into paragraphs and fills each of them.
 
+@findex fill-region-as-paragraph
   @kbd{M-q} and @code{fill-region} use the same criteria as @kbd{M-h}
 for finding paragraph boundaries (@pxref{Paragraphs}).  For more
 control, you can use @kbd{M-x fill-region-as-paragraph}, which refills
@@ -483,15 +492,27 @@ other styles of filling, is with the @code{justification} text property;
 see @ref{Format Justification}.
 
 @vindex adaptive-fill-mode
-@findex fill-region-as-paragraph
-  When @code{adaptive-fill-mode} is non-@code{nil} (which is normally
-the case), if you use @code{fill-region-as-paragraph} on an indented
-paragraph and you don't have a fill prefix, it uses the indentation of
-the second line of the paragraph as the fill prefix.  The effect of
-adaptive filling is not noticeable in Text mode, because an indented
-line counts as a paragraph starter and thus each line of an indented
-paragraph is considered a paragraph of its own.  But you do notice the
-effect in Indented Text mode and some other major modes.
+  The fill commands can deduce the proper fill prefix for a paragraph
+automatically in certain cases: either whitespace or certain punctuation
+characters at the beginning of a line are treated as a fill prefix.
+They take the fill prefix from the paragraph's second line, unless the
+paragraph has just one line.  You can turn off this feature by setting
+@code{adaptive-fill-mode} to @code{nil}.
+
+@vindex adaptive-fill-regexp
+  The variable @code{adaptive-fill-regexp} determines what kinds of line
+beginnings can serve as a fill prefix: any characters at the start of
+the line which match this regular expression are used.  However,
+whitespace can only be an automatic fill prefix in major modes where an
+indented line does not start a paragraph.
+
+@vindex adaptive-fill-function
+  You can specify more complex ways of choosing a fill prefix
+automatically by setting the variable @code{adaptive-fill-function} to a
+function.  This function is called with point after the left margin of a
+line, and it should return the appropriate fill prefix based on that
+line.  If it returns @code{nil}, that means it sees no fill prefix in
+that line.
 
 @kindex M-s @r{(Text mode)}
 @cindex centering
@@ -523,6 +544,10 @@ commands do not break a line after a period followed by just one space.
 fill commands expect and leave just one space at the end of a sentence.
 Ordinarily this variable is @code{t}, so the fill commands insist on
 two spaces for the end of a sentence, as explained above.  @xref{Sentences}.
+
+@vindex colon-double-space
+  If the variable @code{colon-double-space} is non-@code{nil}, the
+fill commands put two spaces after a colon.
 
 @node Fill Prefix
 @subsection The Fill Prefix

@@ -226,6 +226,9 @@ struct buffer
        the last time this buffer was displayed.  */
     int last_window_start;
 
+    /* Set nonzero whenever the narrowing is changed in this buffer.  */
+    int clip_changed;
+
     /* If the long line scan cache is enabled (i.e. the buffer-local
        variable cache-long-line-scans is non-nil), newline_cache
        points to the newline cache, and width_run_cache points to the
@@ -305,13 +308,14 @@ struct buffer
        This value is meaningful only on certain operating systems.  */
     Lisp_Object buffer_file_type;
 
-    /* String of length 256 mapping each char to its lower-case version.  */
+    /* Case table for case-conversion in this buffer.
+       This char-table maps each char into its lower-case version.  */
     Lisp_Object downcase_table;
-    /* String of length 256 mapping each char to its upper-case version.  */
+    /* Char-table mapping each char to its upper-case version.  */
     Lisp_Object upcase_table;
-    /* Translate table for case-folding search.  */
+    /* Char-table for conversion for case-folding search.  */
     Lisp_Object case_canon_table;
-    /* Inverse translate (equivalence class) table for case-folding search.  */
+    /* Char-table of equivalences for case-folding search.  */
     Lisp_Object case_eqv_table;
 
     /* Non-nil means do not display continuation lines.  */
@@ -398,6 +402,14 @@ struct buffer
        A list => `invisible' property means invisible
                  if it is memq in that list.  */
     Lisp_Object invisibility_spec;
+
+    /* If redisplay goes beyond this point in the buffer,
+       run redisplay-end-trigger-hook.  */
+    Lisp_Object redisplay_end_trigger;
+
+    /* These are so we don't have to recompile everything
+       the next few times we add a new slot.  */
+    Lisp_Object extra1, extra2, extra3;
   };
 
 /* This points to the current buffer.  */
@@ -472,6 +484,8 @@ extern Lisp_Object Vafter_change_function;
 extern Lisp_Object Vbefore_change_functions;
 extern Lisp_Object Vafter_change_functions;
 extern Lisp_Object Vfirst_change_hook;
+extern Lisp_Object Qbefore_change_functions;
+extern Lisp_Object Qafter_change_functions;
 extern Lisp_Object Qfirst_change_hook;
 
 extern Lisp_Object Vdeactivate_mark;

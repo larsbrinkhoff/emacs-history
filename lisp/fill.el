@@ -37,6 +37,9 @@ A value of nil means that any change in indentation starts a new paragraph.")
 (defconst sentence-end-double-space t
   "*Non-nil means a single space does not end a sentence.")
 
+(defconst colon-double-space nil
+  "*Non-nil means put two spaces after a colon when filling.")
+
 (defvar fill-paragraph-function nil
   "Mode-specific function to fill a paragraph.")
 
@@ -61,7 +64,12 @@ reinserts the fill prefix in each resulting line."
   "*Regexp to match text at start of line that constitutes indentation.
 If Adaptive Fill mode is enabled, whatever text matches this pattern
 on the second line of a paragraph is used as the standard indentation
-for the paragraph.")
+for the paragraph.  If the paragraph has just one line, the indentation
+is taken from that line.")
+
+(defvar adaptive-fill-function nil
+  "*Function to call to choose a fill prefix for a paragraph.
+This function is used when `adaptive-fill-regexp' does not match.")
 
 (defun current-fill-column ()
   "Return the fill-column to use for this line.
@@ -72,26 +80,27 @@ subtracted from `fill-column'.
 The fill column to use for a line is the first column at which the column
 number equals or exceeds the local fill-column - right-margin difference."
   (save-excursion
-    (let* ((here (progn (beginning-of-line) (point)))
-	   (here-col 0)
-	   (eol (progn (end-of-line) (point)))
-	   margin fill-col change col)
-      ;; Look separately at each region of line with a different right-margin
-      (while (and (setq margin (get-text-property here 'right-margin)
-			fill-col (- fill-column (or margin 0))
-			change (text-property-not-all here eol 
-						      'right-margin margin))
-		  (progn (goto-char (1- change))
-			 (setq col (current-column))
-			 (< col fill-col)))
-	(setq here change
-	      here-col col))
-      (max here-col fill-col))))
+    (if fill-column
+	(let* ((here (progn (beginning-of-line) (point)))
+	       (here-col 0)
+	       (eol (progn (end-of-line) (point)))
+	       margin fill-col change col)
+	  ;; Look separately at each region of line with a different right-margin.
+	  (while (and (setq margin (get-text-property here 'right-margin)
+			    fill-col (- fill-column (or margin 0))
+			    change (text-property-not-all
+				    here eol 'right-margin margin))
+		      (progn (goto-char (1- change))
+			     (setq col (current-column))
+			     (< col fill-col)))
+	    (setq here change
+		  here-col col))
+	  (max here-col fill-col)))))
 
 (defun canonically-space-region (beg end)
   "Remove extra spaces between words in region.
 Puts one space between words in region; two between sentences.
-Remove indenation from each line."
+Remove indentation from each line."
   (interactive "r")
   (save-excursion
     (goto-char beg)
@@ -109,6 +118,8 @@ Remove indenation from each line."
 	    (skip-chars-backward " ]})\"'")
 	    (cond ((and sentence-end-double-space
 			(memq (preceding-char) '(?. ?? ?!)))  2)
+		  ((and colon-double-space
+			(= (preceding-char) ?:))  2)
 		  ((char-equal (preceding-char) ?\n)  0)
 		  (t 1))))
        (match-end 0)))
@@ -119,11 +130,43 @@ Remove indenation from each line."
 		(re-search-forward "[.?!][])}\"']*$" end t))
       (insert-and-inherit ? ))))
 
+(defun fill-context-prefix (from to &optional first-line-regexp)
+  "Compute a fill prefix from the text between FROM and TO.
+This uses the variables `adapive-fill-prefix' and `adaptive-fill-function'.
+If FIRST-LINE-REGEXP is non-nil, then when taking a prefix from the
+first line, insist it must match FIRST-LINE-REGEXP."
+  (save-excursion
+    (goto-char from)
+    (if (eolp) (forward-line 1))
+    ;; Move to the second line unless there is just one.
+    (let ((firstline (point))
+	  ;; Non-nil if we are on the second line.
+	  at-second
+	  result)
+      (forward-line 1)
+      (if (>= (point) to)
+	  (goto-char firstline)
+	(setq at-second t))
+      (move-to-left-margin)
+      (let ((start (point))
+	    (eol (save-excursion (end-of-line) (point))))
+	(setq result
+	      (if (not (looking-at paragraph-start))
+		  (cond ((and adaptive-fill-regexp (looking-at adaptive-fill-regexp))
+			 (buffer-substring-no-properties start (match-end 0)))
+			(adaptive-fill-function (funcall adaptive-fill-function)))))
+	(and result
+	     (or at-second
+		 (null first-line-regexp)
+		 (string-match first-line-regexp result))
+	     result)))))
+
 (defun fill-region-as-paragraph (from to &optional justify nosqueeze)
   "Fill the region as one paragraph.
-Removes any paragraph breaks in the region and extra newlines at the end,
+It removes any paragraph breaks in the region and extra newlines at the end,
 indents and fills lines between the margins given by the
 `current-left-margin' and `current-fill-column' functions.
+It leaves point at the beginning of the line following the paragraph.
 
 Normally performs justification according to the `current-justification'
 function, but with a prefix arg, does full justification instead.
@@ -140,14 +183,20 @@ space does not end a sentence, so don't break a line there."
   (if (and buffer-undo-list (not (eq buffer-undo-list t)))
       (setq buffer-undo-list (cons (point) buffer-undo-list)))
 
-  ;; Make sure "to" is the endpoint.  Make sure that we end up there.
+  ;; Make sure "to" is the endpoint.
   (goto-char (min from to))
   (setq to   (max from to))
-  (setq from (point))
+  ;; Ignore blank lines at beginning of region.
+  (skip-chars-forward " \t\n")
 
-  ;; Delete all but one soft newline at end of region.
-  (goto-char to)
-  (let ((oneleft nil))
+  (let ((from-plus-indent (point))
+	(oneleft nil))
+
+    (beginning-of-line)
+    (setq from (point))
+  
+    ;; Delete all but one soft newline at end of region.
+    (goto-char to)
     (while (and (> (point) from) (eq ?\n (char-after (1- (point)))))
       (if (and oneleft
 	       (not (and use-hard-newlines
@@ -155,19 +204,16 @@ space does not end a sentence, so don't break a line there."
 	  (delete-backward-char 1)
 	(backward-char 1)
 	(setq oneleft t)))
-    ;; If there was no newline, create one.
-    (if (and (not oneleft) (> (point) from))
-	(save-excursion (newline))))
-  (setq to (point))
+    (setq to (point))
 
-  ;; Ignore blank lines at beginning of region.
-  (goto-char from)
-  (skip-chars-forward " \t\n")
-  (beginning-of-line)
-  (setq from (point))
-  
-  (if (>= from to)
-      nil ; There is no paragraph at all.
+    ;; If there was no newline, and there is text in the paragraph, then
+    ;; create a newline.
+    (if (and (not oneleft) (> to from-plus-indent))
+	(newline))
+    (goto-char from-plus-indent))
+
+  (if (not (> to (point)))
+      nil ; There is no paragraph, only whitespace: exit now.
 
     (or justify (setq justify (current-justification)))
 
@@ -176,21 +222,7 @@ space does not end a sentence, so don't break a line there."
       ;; Figure out how this paragraph is indented, if desired.
       (if (and adaptive-fill-mode
 	       (or (null fill-prefix) (string= fill-prefix "")))
-	  (save-excursion
-	    (goto-char from)
-	    (if (eolp) (forward-line 1))
-	    (forward-line 1)
-	    (move-to-left-margin)
-	    (if (< (point) to)
-		(let ((start (point)))
-		  (re-search-forward adaptive-fill-regexp)
-		  (setq fill-prefix (buffer-substring start (point)))
-		  (set-text-properties 0 (length fill-prefix) nil
-				       fill-prefix)))
-	    ;; If paragraph has only one line, don't assume in general
-	    ;; that additional lines would have the same starting
-	    ;; decoration.  Assume no indentation.
-	    ))
+	  (setq fill-prefix (fill-context-prefix from to)))
 
       (save-restriction
 	(goto-char from)
@@ -244,7 +276,7 @@ space does not end a sentence, so don't break a line there."
 	  ;; Make sure sentences ending at end of line get an extra space.
 	  ;; loses on split abbrevs ("Mr.\nSmith")
 	  (while (re-search-forward "[.?!][])}\"']*$" nil t)
-	    (insert-and-inherit ? ))
+	    (or (eobp) (insert-and-inherit ?\ )))
 	  (goto-char from)
 	  (skip-chars-forward " \t")
 	  ;; Then change all newlines to spaces.
@@ -279,13 +311,15 @@ space does not end a sentence, so don't break a line there."
 				(eq (char-after (- (point) 2)) ?\.))
 		      (forward-char -2)
 		      (skip-chars-backward "^ \n" linebeg)))
+		;; If the left margin and fill prefix by themselves
+		;; pass the fill-column, keep at least one word.
+		;; This handles ALL BUT the first line of the paragraph.
 		(if (if (zerop prefixcol)
 			(save-excursion
-			  (skip-chars-backward " " linebeg)
+			  (skip-chars-backward " \t" linebeg)
 			  (bolp))
 		      (>= prefixcol (current-column)))
-		    ;; Keep at least one word even if fill prefix exceeds margin.
-		    ;; This handles all but the first line of the paragraph.
+		    ;; Ok, skip at least one word.
 		    ;; Meanwhile, don't stop at a period followed by one space.
 		    (let ((first t))
 		      (move-to-column prefixcol)
@@ -296,18 +330,26 @@ space does not end a sentence, so don't break a line there."
 					   (save-excursion (forward-char -1)
 							   (and (looking-at "\\. ")
 								(not (looking-at "\\.  ")))))))
-			(skip-chars-forward " ")
-			(skip-chars-forward "^ \n")
+			(skip-chars-forward " \t")
+			(skip-chars-forward "^ \n\t")
 			(setq first nil)))
 		  ;; Normally, move back over the single space between the words.
 		  (forward-char -1))
-		(if (and fill-prefix (zerop prefixcol)
-			 (< (- (point) (point-min)) (length fill-prefix))
-			 (string= (buffer-substring (point-min) (point))
-				  (substring fill-prefix 0 (- (point) (point-min)))))
-		    ;; Keep at least one word even if fill prefix exceeds margin.
-		    ;; This handles the first line of the paragraph.
-		    ;; Don't stop at a period followed by just one space.
+		;; If the left margin and fill prefix by themselves
+		;; pass the fill-column, keep at least one word.
+		;; This handles the first line of the paragraph.
+		(if (and (zerop prefixcol)
+			 (let ((fill-point (point)) nchars)
+			   (save-excursion
+			     (move-to-left-margin)
+			     (setq nchars (- fill-point (point)))
+			     (or (< nchars 0)
+				 (and fill-prefix
+				      (< nchars (length fill-prefix))
+				      (string= (buffer-substring (point) fill-point)
+					       (substring fill-prefix 0 nchars)))))))
+		    ;; Ok, skip at least one word.  But
+		    ;; don't stop at a period followed by just one space.
 		    (let ((first t))
 		      (while (and (not (eobp))
 				  (or first
@@ -316,12 +358,12 @@ space does not end a sentence, so don't break a line there."
 					   (save-excursion (forward-char -1)
 							   (and (looking-at "\\. ")
 								(not (looking-at "\\.  ")))))))
-			(skip-chars-forward " ")
-			(skip-chars-forward "^ \n")
+			(skip-chars-forward " \t")
+			(skip-chars-forward "^ \t\n")
 			(setq first nil))))
 		;; Replace whitespace here with one newline, then indent to left
 		;; margin.
-		(skip-chars-backward " ")
+		(skip-chars-backward " \t")
 		(insert ?\n)
 		;; Give newline the properties of the space(s) it replaces
 		(set-text-properties (1- (point)) (point)
@@ -551,8 +593,10 @@ it will not be stretched by full justification.
 Third arg NOSQUEEZE non-nil means to leave interior whitespace unchanged,
 otherwise it is made canonical."
   (interactive)
-  (if (eq t how) (setq how (or (current-justification) 'none)))
-  (if (null how) (setq how 'full))
+  (if (eq t how) (setq how (or (current-justification) 'none))
+    (if (null how) (setq how 'full)
+      (or (memq how '(none left right center))
+	  (setq how 'full))))
   (or (memq how '(none left))  ; No action required for these.
       (let ((fc (current-fill-column))
 	    (pos (point-marker))
@@ -742,15 +786,15 @@ MAIL-FLAG for a mail message, i. e. don't fill header lines."
       (narrow-to-region (point) max)
       (if mailp 
 	  (while (and (not (eobp))
-		      (or (looking-at "[ \t]*[^ \t\n]*:")
+		      (or (looking-at "[ \t]*[^ \t\n]+:")
 			  (looking-at "[ \t]*$")))
-	    (if (looking-at "[ \t]*[^ \t\n]*:")
+	    (if (looking-at "[ \t]*[^ \t\n]+:")
 		(search-forward "\n\n" nil 'move)
 	      (forward-line 1))))
       (narrow-to-region (point) max)
       ;; Loop over paragraphs.
       (while (progn (skip-chars-forward " \t\n") (not (eobp)))
-	(beginning-of-line)
+	(move-to-left-margin)
 	(let ((start (point))
 	      fill-prefix fill-prefix-regexp)
 	  ;; Find end of paragraph, and compute the smallest fill-prefix
@@ -761,21 +805,26 @@ MAIL-FLAG for a mail message, i. e. don't fill header lines."
 		   (if (not (and fill-prefix
 				 (looking-at fill-prefix-regexp)))
 		       (setq fill-prefix
-			     (buffer-substring (point)
-					       (save-excursion (skip-chars-forward " \t") (point)))
-			     fill-prefix-regexp
-			     (regexp-quote fill-prefix)))
+			     (if (and adaptive-fill-mode adaptive-fill-regexp
+				      (looking-at adaptive-fill-regexp))
+				 (match-string 0)
+			       (buffer-substring 
+				(point)
+				(save-excursion (skip-chars-forward " \t")
+						(point))))
+			     fill-prefix-regexp (regexp-quote fill-prefix)))
 		   (forward-line 1)
+		   (move-to-left-margin)
 		   ;; Now stop the loop if end of paragraph.
 		   (and (not (eobp))
 			(if fill-individual-varying-indent
 			    ;; If this line is a separator line, with or
 			    ;; without prefix, end the paragraph.
 			    (and 
-			(not (looking-at paragraph-separate))
-			(save-excursion
-			  (not (and (looking-at fill-prefix-regexp)
-				    (progn (forward-char (length fill-prefix))
+			     (not (looking-at paragraph-separate))
+			     (save-excursion
+			       (not (and (looking-at fill-prefix-regexp)
+					 (progn (forward-char (length fill-prefix))
 						(looking-at paragraph-separate))))))
 			  ;; If this line has more or less indent
 			  ;; than the fill prefix wants, end the paragraph.

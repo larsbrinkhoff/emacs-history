@@ -125,6 +125,23 @@ in that frame; otherwise change each frame."
   (interactive (internal-face-interactive "foreground"))
   (internal-set-face-1 face 'foreground color 4 frame))
 
+(defvar face-default-stipple "gray3" 
+  "Default stipple pattern used on monochrome displays.
+This stipple pattern is used on monochrome displays
+instead of shades of gray for a face background color.
+See `set-face-stipple' for possible values for this variable.")
+
+(defun face-color-gray-p (color &optional frame)
+  "Return t if COLOR is a shade of gray (or white or black).
+FRAME specifies the frame and thus the display for interpreting COLOR."
+  (let* ((values (x-color-values color frame))
+	 (r (nth 0 values))
+	 (g (nth 1 values))
+	 (b (nth 2 values)))
+    (and (< (abs (- r g)) (/ (max 1 (abs r) (abs g)) 20))
+	 (< (abs (- g b)) (/ (max 1 (abs g) (abs b)) 20))
+	 (< (abs (- b r)) (/ (max 1 (abs b) (abs r)) 20)))))
+
 (defun set-face-background (face color &optional frame)
   "Change the background color of face FACE to COLOR (a string).
 If the optional FRAME argument is provided, change only
@@ -132,11 +149,13 @@ in that frame; otherwise change each frame."
   (interactive (internal-face-interactive "background"))
   ;; For a specific frame, use gray stipple instead of gray color
   ;; if the display does not support a gray color.
-  (if (and frame (not (eq frame t))
-	   (member color '("gray" "gray1" "gray3"))
-	   (not (x-display-color-p frame))
-	   (not (x-display-grayscale-p frame)))
-      (set-face-stipple face color frame)
+  (if (and frame (not (eq frame t)) color
+	   ;; Check for supportedness for foreground, not for background!
+	   ;; face-color-supported-p is smart enough to know
+	   ;; that grays are "supported" as background
+	   ;; because we are supposed to use stipple for them!
+	   (not (face-color-supported-p frame color nil)))
+      (set-face-stipple face face-default-stipple frame)
     (if (null frame)
 	(let ((frames (frame-list)))
 	  (while frames
@@ -146,7 +165,7 @@ in that frame; otherwise change each frame."
 	  color)
       (internal-set-face-1 face 'background color 5 frame))))
 
-(defun set-face-stipple (face name &optional frame)
+(defun set-face-stipple (face pixmap &optional frame)
   "Change the stipple pixmap of face FACE to PIXMAP.
 PIXMAP should be a string, the name of a file of pixmap data.
 The directories listed in the `x-bitmap-file-path' variable are searched.
@@ -158,7 +177,7 @@ and DATA is a string, containing the raw bits of the bitmap.
 If the optional FRAME argument is provided, change only
 in that frame; otherwise change each frame."
   (interactive (internal-face-interactive "stipple"))
-  (internal-set-face-1 face 'background-pixmap name 6 frame))
+  (internal-set-face-1 face 'background-pixmap pixmap 6 frame))
 
 (defalias 'set-face-background-pixmap 'set-face-stipple)
 
@@ -327,7 +346,7 @@ If the face already exists, it is unmodified."
 	    (setq frames (cdr frames)))
 	  (setq global-face-data (cons (cons name face) global-face-data)))
 	;; when making a face after frames already exist
-	(if (eq window-system 'x)
+	(if (or (eq window-system 'x) (eq window-system 'win32))
 	    (make-face-x-resource-internal face))
 	;; add to menu
 	(if (fboundp 'facemenu-add-new-face)
@@ -341,7 +360,7 @@ If the face already exists, it is unmodified."
   (cond ((null frame)
 	 (let ((frames (frame-list)))
 	   (while frames
-	     (if (eq (framep (car frames)) 'x)
+	     (if (or (eq (framep (car frames)) 'x) (eq (framep (car frames)) 'win32))
 		 (make-face-x-resource-internal (face-name face)
 						(car frames) set-anyway))
 	     (setq frames (cdr frames)))))
@@ -383,8 +402,18 @@ If the face already exists, it is unmodified."
 		)
 	   (if fn
 	       (condition-case ()
-		   (set-face-font face fn frame)
-		 (error (message "font `%s' not found for face `%s'" fn name))))
+		   (cond ((string= fn "italic")
+			  (make-face-italic face))
+			 ((string= fn "bold")
+			  (make-face-bold face))
+			 ((string= fn "bold-italic")
+			  (make-face-bold-italic face))
+			 (t
+			  (set-face-font face fn frame)))
+		 (error
+		  (if (member fn '("italic" "bold" "bold-italic"))
+		      (message "no %s version found for face `%s'" fn name)
+		    (message "font `%s' not found for face `%s'" fn name)))))
 	   (if fg
 	       (condition-case ()
 		   (set-face-foreground face fg frame)
@@ -528,6 +557,11 @@ set its foreground and background to the default background and foreground."
 (defconst x-font-regexp-weight nil)
 (defconst x-font-regexp-slant nil)
 
+(defconst x-font-regexp-weight-subnum 1)
+(defconst x-font-regexp-slant-subnum 2)
+(defconst x-font-regexp-swidth-subnum 3)
+(defconst x-font-regexp-adstyle-subnum 4)
+
 ;;; Regexps matching font names in "Host Portable Character Representation."
 ;;;
 (let ((- 		"[-?]")
@@ -542,7 +576,7 @@ set its foreground and background to the default background and foreground."
 ;     (swidth		"\\(\\*\\|normal\\|semicondensed\\|\\)")	; 3
       (swidth		"\\([^-]*\\)")					; 3
 ;     (adstyle		"\\(\\*\\|sans\\|\\)")				; 4
-      (adstyle		"[^-]*")					; 4
+      (adstyle		"\\([^-]*\\)")					; 4
       (pixelsize	"[0-9]+")
       (pointsize	"[0-9][0-9]+")
       (resx		"[0-9][0-9]+")
@@ -555,8 +589,8 @@ set its foreground and background to the default background and foreground."
   (setq x-font-regexp
 	(concat "\\`\\*?[-?*]"
 		foundry - family - weight\? - slant\? - swidth - adstyle -
-		pixelsize - pointsize - resx - resy - spacing - registry -
-		encoding "[-?*]\\*?\\'"
+		pixelsize - pointsize - resx - resy - spacing - avgwidth -
+		registry - encoding "\\*?\\'"
 		))
   (setq x-font-regexp-head
 	(concat "\\`[-?*]" foundry - family - weight\? - slant\?
@@ -595,23 +629,36 @@ also the same size as FACE on FRAME, or fail."
     (cdr (assq 'font (frame-parameters (selected-frame))))))
 
 (defun x-frob-font-weight (font which)
-  (if (or (string-match x-font-regexp font)
-	  (string-match x-font-regexp-head font)
-	  (string-match x-font-regexp-weight font))
-      (concat (substring font 0 (match-beginning 1)) which
-	      (substring font (match-end 1)))
-    nil))
+  (cond ((string-match x-font-regexp font)
+	 (concat (substring font 0 (match-beginning x-font-regexp-weight-subnum))
+		 which
+		 (substring font (match-end x-font-regexp-weight-subnum)
+			    (match-beginning x-font-regexp-adstyle-subnum))
+		 ;; Replace the ADD_STYLE_NAME field with *
+		 ;; because the info in it may not be the same
+		 ;; for related fonts.
+		 "*"
+		 (substring font (match-end x-font-regexp-adstyle-subnum))))
+	((or (string-match x-font-regexp-head font)
+	     (string-match x-font-regexp-weight font))
+	 (concat (substring font 0 (match-beginning 1)) which
+		 (substring font (match-end 1))))))
 
 (defun x-frob-font-slant (font which)
-  (cond ((or (string-match x-font-regexp font)
-	     (string-match x-font-regexp-head font))
-	 (concat (substring font 0 (match-beginning 2)) which
-		 (substring font (match-end 2))))
-	((string-match x-font-regexp-slant font)
+  (cond ((string-match x-font-regexp font)
+	 (concat (substring font 0 (match-beginning x-font-regexp-slant-subnum))
+		 which
+		 (substring font (match-end x-font-regexp-slant-subnum)
+			    (match-beginning x-font-regexp-adstyle-subnum))
+		 ;; Replace the ADD_STYLE_NAME field with *
+		 ;; because the info in it may not be the same
+		 ;; for related fonts.
+		 "*"
+		 (substring font (match-end x-font-regexp-adstyle-subnum))))
+	((or (string-match x-font-regexp-head font)
+	     (string-match x-font-regexp-slant font))
 	 (concat (substring font 0 (match-beginning 1)) which
-		 (substring font (match-end 1))))
-	(t nil)))
-
+		 (substring font (match-end 1))))))
 
 (defun x-make-font-bold (font)
   "Given an X font specification, make a bold version of it.
@@ -653,8 +700,7 @@ If NOERROR is non-nil, return nil on failure."
       (set-face-font face (if (memq 'italic (face-font face t))
 			      '(bold italic) '(bold))
 		     t)
-    (let ((ofont (face-font face frame))
-	  font)
+    (let (font)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face bold in global-face-data.
@@ -671,10 +717,10 @@ If NOERROR is non-nil, return nil on failure."
 	(setq font (or font
 		       (face-font 'default frame)
 		       (cdr (assq 'font (frame-parameters frame)))))
-	(and font (make-face-bold-internal face frame font)))
-      (or (not (equal ofont (face-font face)))
-	  (and (not noerror)
-	       (error "No bold version of %S" font))))))
+	(or (and font (make-face-bold-internal face frame font))
+	    ;; We failed to find a bold version of the font.
+	    noerror
+	    (error "No bold version of %S" font))))))
 
 (defun make-face-bold-internal (face frame font)
   (let (f2)
@@ -691,8 +737,7 @@ If NOERROR is non-nil, return nil on failure."
       (set-face-font face (if (memq 'bold (face-font face t))
 			      '(bold italic) '(italic))
 		     t)
-    (let ((ofont (face-font face frame))
-	  font)
+    (let (font)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face italic in global-face-data.
@@ -709,10 +754,10 @@ If NOERROR is non-nil, return nil on failure."
 	(setq font (or font
 		       (face-font 'default frame)
 		       (cdr (assq 'font (frame-parameters frame)))))
-	(and font (make-face-italic-internal face frame font)))
-      (or (not (equal ofont (face-font face)))
-	  (and (not noerror)
-	       (error "No italic version of %S" font))))))
+	(or (and font (make-face-italic-internal face frame font))
+	    ;; We failed to find an italic version of the font.
+	    noerror
+	    (error "No italic version of %S" font))))))
 
 (defun make-face-italic-internal (face frame font)
   (let (f2)
@@ -727,8 +772,7 @@ If NOERROR is non-nil, return nil on failure."
   (interactive (list (read-face-name "Make which face bold-italic: ")))
   (if (and (eq frame t) (listp (face-font face t)))
       (set-face-font face '(bold italic) t)
-    (let ((ofont (face-font face frame))
-	  font)
+    (let (font)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face bold-italic in global-face-data.
@@ -745,10 +789,10 @@ If NOERROR is non-nil, return nil on failure."
 	(setq font (or font
 		       (face-font 'default frame)
 		       (cdr (assq 'font (frame-parameters frame)))))
-	(and font (make-face-bold-italic-internal face frame font)))
-      (or (not (equal ofont (face-font face)))
-	  (and (not noerror)
-	       (error "No bold italic version of %S" font))))))
+	(or (and font (make-face-bold-italic-internal face frame font))
+	    ;; We failed to find a bold italic version.
+	    noerror
+	    (error "No bold italic version of %S" font))))))
 
 (defun make-face-bold-italic-internal (face frame font)
   (let (f2 f3)
@@ -781,8 +825,7 @@ If NOERROR is non-nil, return nil on failure."
       (set-face-font face (if (memq 'italic (face-font face t))
 			      '(italic) nil)
 		     t)
-    (let ((ofont (face-font face frame))
-	  font font1)
+    (let (font font1)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face unbold in global-face-data.
@@ -800,10 +843,9 @@ If NOERROR is non-nil, return nil on failure."
 			(face-font 'default frame)
 			(cdr (assq 'font (frame-parameters frame)))))
 	(setq font (and font1 (x-make-font-unbold font1)))
-	(if font (internal-try-face-font face font frame)))
-      (or (not (equal ofont (face-font face)))
-	  (and (not noerror)
-	       (error "No unbold version of %S" font1))))))
+	(or (if font (internal-try-face-font face font frame))
+	    noerror
+	    (error "No unbold version of %S" font1))))))
 
 (defun make-face-unitalic (face &optional frame noerror)
   "Make the font of the given face be non-italic, if possible.  
@@ -813,8 +855,7 @@ If NOERROR is non-nil, return nil on failure."
       (set-face-font face (if (memq 'bold (face-font face t))
 			      '(bold) nil)
 		     t)
-    (let ((ofont (face-font face frame))
-	  font font1)
+    (let (font font1)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face unitalic in global-face-data.
@@ -832,10 +873,9 @@ If NOERROR is non-nil, return nil on failure."
 			(face-font 'default frame)
 			(cdr (assq 'font (frame-parameters frame)))))
 	(setq font (and font1 (x-make-font-unitalic font1)))
-	(if font (internal-try-face-font face font frame)))
-      (or (not (equal ofont (face-font face)))
-	  (and (not noerror)
-	       (error "No unitalic version of %S" font1))))))
+	(or (if font (internal-try-face-font face font frame))
+	    noerror
+	    (error "No unitalic version of %S" font1))))))
 
 (defvar list-faces-sample-text
   "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -886,6 +926,19 @@ selected frame."
 	  (while faces
 	    (copy-face (car faces) (car faces) frame disp-frame)
 	    (setq faces (cdr faces)))))))
+
+(defun describe-face (face)
+  "Display the properties of face FACE."
+  (interactive (list (read-face-name "Describe face: ")))
+  (with-output-to-temp-buffer "*Help*"
+    (princ "Properties of face `")
+    (princ (face-name face))
+    (princ "':") (terpri)
+    (princ "Foreground: ") (princ (face-foreground face)) (terpri)
+    (princ "Background: ") (princ (face-background face)) (terpri)
+    (princ "      Font: ") (princ (face-font face)) (terpri)
+    (princ "Underlined: ") (princ (if (face-underline-p face) "yes" "no")) (terpri)
+    (princ "   Stipple: ") (princ (or (face-stipple face) "none"))))
 
 ;;; Make the standard faces.
 ;;; The C code knows the default and modeline faces as faces 0 and 1,
@@ -958,57 +1011,81 @@ selected frame."
 	  (setq parameters (append parameters
 				   default-frame-alist
 				   parsed)))))
-  (if (null global-face-data)
-      (x-create-frame parameters)
-    (let* ((visibility-spec (assq 'visibility parameters))
-	   (frame (x-create-frame (cons '(visibility . nil) parameters)))
-	   (faces (copy-alist global-face-data))
-	   success
-	   (rest faces))
-      (unwind-protect
-	  (progn
-	    (set-frame-face-alist frame faces)
+  (let (frame)
+    (if (null global-face-data)
+	(setq frame (x-create-frame parameters))
+      (let* ((visibility-spec (assq 'visibility parameters))
+	     (faces (copy-alist global-face-data))
+	     success
+	     (rest faces))
+	(setq frame (x-create-frame (cons '(visibility . nil) parameters)))
+	(unwind-protect
+	    (progn
+	      (set-frame-face-alist frame faces)
 
-	    (if (cdr (or (assq 'reverse parameters)
-			 (assq 'reverse default-frame-alist)
-			 (let ((resource (x-get-resource "reverseVideo"
-							 "ReverseVideo")))
-			   (if resource
-			       (cons nil (member (downcase resource)
-						 '("on" "true")))))))
-		(let* ((params (frame-parameters frame))
-		       (bg (cdr (assq 'foreground-color params)))
-		       (fg (cdr (assq 'background-color params))))
-		  (modify-frame-parameters frame
-					   (list (cons 'foreground-color fg)
-						 (cons 'background-color bg)))
-		  (if (equal bg (cdr (assq 'border-color params)))
-		      (modify-frame-parameters frame
-					       (list (cons 'border-color fg))))
-		  (if (equal bg (cdr (assq 'mouse-color params)))
-		      (modify-frame-parameters frame
-					       (list (cons 'mouse-color fg))))
-		  (if (equal bg (cdr (assq 'cursor-color params)))
-		      (modify-frame-parameters frame
-					       (list (cons 'cursor-color fg))))))
-	    ;; Copy the vectors that represent the faces.
-	    ;; Also fill them in from X resources.
-	    (while rest
-	      (let ((global (cdr (car rest))))
-		(setcdr (car rest) (vector 'face
-					   (face-name (cdr (car rest)))
-					   (face-id (cdr (car rest)))
-					   nil nil nil nil nil))
-		(face-fill-in (car (car rest)) global frame))
-	      (make-face-x-resource-internal (cdr (car rest)) frame t)
-	      (setq rest (cdr rest)))
-	    (if (null visibility-spec)
-		(make-frame-visible frame)
-	      (modify-frame-parameters frame (list visibility-spec)))
-	    (setq success t)
-	    frame)
-	(or success
-	    (delete-frame frame))))))
+	      (if (cdr (or (assq 'reverse parameters)
+			   (assq 'reverse default-frame-alist)
+			   (let ((resource (x-get-resource "reverseVideo"
+							   "ReverseVideo")))
+			     (if resource
+				 (cons nil (member (downcase resource)
+						   '("on" "true")))))))
+		  (let* ((params (frame-parameters frame))
+			 (bg (cdr (assq 'foreground-color params)))
+			 (fg (cdr (assq 'background-color params))))
+		    (modify-frame-parameters frame
+					     (list (cons 'foreground-color fg)
+						   (cons 'background-color bg)))
+		    (if (equal bg (cdr (assq 'border-color params)))
+			(modify-frame-parameters frame
+						 (list (cons 'border-color fg))))
+		    (if (equal bg (cdr (assq 'mouse-color params)))
+			(modify-frame-parameters frame
+						 (list (cons 'mouse-color fg))))
+		    (if (equal bg (cdr (assq 'cursor-color params)))
+			(modify-frame-parameters frame
+						 (list (cons 'cursor-color fg))))))
+	      ;; Copy the vectors that represent the faces.
+	      ;; Also fill them in from X resources.
+	      (while rest
+		(let ((global (cdr (car rest))))
+		  (setcdr (car rest) (vector 'face
+					     (face-name (cdr (car rest)))
+					     (face-id (cdr (car rest)))
+					     nil nil nil nil nil))
+		  (face-fill-in (car (car rest)) global frame))
+		(make-face-x-resource-internal (cdr (car rest)) frame t)
+		(setq rest (cdr rest)))
+	      (if (null visibility-spec)
+		  (make-frame-visible frame)
+		(modify-frame-parameters frame (list visibility-spec)))
+	      (setq success t))
+	  (or success
+	      (delete-frame frame)))))
+    ;; Set up the background-mode frame parameter
+    ;; so that programs can decide good ways of highlighting
+    ;; on this frame.
+    (let ((bg-resource (x-get-resource ".backgroundMode"
+				       "BackgroundMode"))
+	  (params (frame-parameters frame))
+	  (bg-mode))
+      (setq bg-mode
+	    (cond (bg-resource (intern (downcase bg-resource)))
+		  ((< (apply '+ (x-color-values
+				 (cdr (assq 'background-color params))
+				 frame))
+		      (/ (apply '+ (x-color-values "white" frame)) 3))
+		   'dark)
+		  (t 'light)))
+      (modify-frame-parameters frame
+			       (list (cons 'background-mode bg-mode)
+				     (cons 'display-type
+					   (cond ((x-display-color-p frame)
+						  'color)
+						 ((x-display-grayscale-p frame)
+						  'grayscale)
+						 (t 'mono))))))
+    frame))
 
 ;; Update a frame's faces when we change its default font.
 (defun frame-update-faces (frame)
@@ -1099,21 +1176,16 @@ selected frame."
 ;; Assuming COLOR is a valid color name,
 ;; return t if it can be displayed on FRAME.
 (defun face-color-supported-p (frame color background-p)
-  (or (x-display-color-p frame)
-      ;; A black-and-white display can implement these.
-      (member color '("black" "white"))
-      ;; A black-and-white display can fake these for background.
-      (and background-p
-	   (member color '("gray" "gray1" "gray3")))
-      ;; A grayscale display can implement colors that are gray (more or less).
-      (and (x-display-grayscale-p frame)
-	   (let* ((values (x-color-values color frame))
-		  (r (nth 0 values))
-		  (g (nth 1 values))
-		  (b (nth 2 values)))
-	     (and (< (abs (- r g)) (/ (abs (+ r g)) 20))
-		  (< (abs (- g b)) (/ (abs (+ g b)) 20))
-		  (< (abs (- b r)) (/ (abs (+ b r)) 20)))))))
+  (and window-system
+       (or (x-display-color-p frame)
+	   ;; A black-and-white display can implement these.
+	   (member color '("black" "white"))
+	   ;; A black-and-white display can fake gray for background.
+	   (and background-p
+		(face-color-gray-p color frame))
+	   ;; A grayscale display can implement colors that are gray (more or less).
+	   (and (x-display-grayscale-p frame)
+		(face-color-gray-p color frame)))))
 
 ;; Use FUNCTION to store a color in FACE on FRAME.
 ;; COLORS is either a single color or a list of colors.
@@ -1157,7 +1229,7 @@ selected frame."
 	  (setq colors (cdr colors)))))))
 
 ;; If we are already using x-window frames, initialize faces for them.
-(if (eq (framep (selected-frame)) 'x)
+(if (or (eq (framep (selected-frame)) 'x) (eq (framep (selected-frame)) 'win32))
     (face-initialize))
 
 (provide 'faces)

@@ -32,7 +32,9 @@ function, i.e., stored as the function value of a symbol, passed to
 funcall or mapcar, etc.
 
 ARGS should take the same form as an argument list for a `defun'.
-DOCSTRING should be a string, as described for `defun'.  It may be omitted.
+DOCSTRING is an optional documentation string.
+ If present, it should describe how to call the function.
+ But documentation strings are usually not useful in nameless functions.
 INTERACTIVE should be a call to the function `interactive', which see.
 It may also be omitted.
 BODY should be a list of lisp expressions."
@@ -127,7 +129,9 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 		(if (and (keymapp defn)
 			 ;; Avoid recursively scanning
 			 ;; where KEYMAP does not have a submap.
-			 (keymapp (lookup-key keymap prefix1))
+			 (let ((elt (lookup-key keymap prefix1)))
+			   (or (null elt)
+			       (keymapp elt)))
 			 ;; Avoid recursively rescanning keymap being scanned.
 			 (not (memq inner-def
 				    key-substitution-in-progress)))
@@ -161,7 +165,9 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 			(define-key keymap prefix1
 			  (nconc (nreverse skipped) newdef))
 		      (if (and (keymapp defn)
-			       (keymapp (lookup-key keymap prefix1))
+			       (let ((elt (lookup-key keymap prefix1)))
+				 (or (null elt)
+				     (keymapp elt)))
 			       (not (memq inner-def
 					  key-substitution-in-progress)))
 			  (substitute-key-definition olddef newdef keymap
@@ -446,122 +452,11 @@ Please convert your programs to use the variable `baud-rate' directly."
 
 ;;;; Hook manipulation functions.
 
-(defun run-hooks (&rest hooklist)
-  "Takes hook names and runs each one in turn.  Major mode functions use this.
-Each argument should be a symbol, a hook variable.
-These symbols are processed in the order specified.
-If a hook symbol has a non-nil value, that value may be a function
-or a list of functions to be called to run the hook.
-If the value is a function, it is called with no arguments.
-If it is a list, the elements are called, in order, with no arguments.
-
-To make a hook variable buffer-local, use `make-local-hook', not
-`make-local-variable'."
-  (while hooklist
-    (let ((sym (car hooklist)))
-      (and (boundp sym)
-	   (symbol-value sym)
-	   (let ((value (symbol-value sym)))
-	     (if (and (listp value) (not (eq (car value) 'lambda)))
-		 (while value
-		   (if (eq (car value) t)
-		       ;; t indicates this hook has a local binding;
-		       ;; it means to run the global binding too.
-		       (let ((functions (default-value sym)))
-			 (while functions
-			   (funcall (car functions))
-			   (setq functions (cdr functions))))
-		     (funcall (car value)))
-		   (setq value (cdr value)))
-	       (funcall value)))))
-    (setq hooklist (cdr hooklist))))
-
-(defun run-hook-with-args (hook &rest args)
-  "Run HOOK with the specified arguments ARGS.
-HOOK should be a symbol, a hook variable.  If HOOK has a non-nil
-value, that value may be a function or a list of functions to be
-called to run the hook.  If the value is a function, it is called with
-the given arguments and its return value is returned.  If it is a list
-of functions, those functions are called, in order,
-with the given arguments ARGS.
-It is best not to depend on the value return by `run-hook-with-args',
-as that may change.
-
-To make a hook variable buffer-local, use `make-local-hook', not
-`make-local-variable'."
-  (and (boundp hook)
-       (symbol-value hook)
-       (let ((value (symbol-value hook)))
-	 (if (and (listp value) (not (eq (car value) 'lambda)))
-	     (while value
-	       (if (eq (car value) t)
-		   ;; t indicates this hook has a local binding;
-		   ;; it means to run the global binding too.
-		   (let ((functions (default-value hook)))
-		     (while functions
-		       (apply (car functions) args)
-		       (setq functions (cdr functions))))
-		 (apply (car value) args))
-	       (setq value (cdr value)))
-	   (apply value args)))))
-
-(defun run-hook-with-args-until-success (hook &rest args)
-  "Run HOOK with the specified arguments ARGS.
-HOOK should be a symbol, a hook variable.  Its value should
-be a list of functions.  We call those functions, one by one,
-passing arguments ARGS to each of them, until one of them
-returns a non-nil value.  Then we return that value.
-If all the functions return nil, we return nil.
-
-To make a hook variable buffer-local, use `make-local-hook', not
-`make-local-variable'."
-  (and (boundp hook)
-       (symbol-value hook)
-       (let ((value (symbol-value hook))
-	     success)
-	 (while (and value (not success))
-	   (if (eq (car value) t)
-	       ;; t indicates this hook has a local binding;
-	       ;; it means to run the global binding too.
-	       (let ((functions (default-value hook)))
-		 (while (and functions (not success))
-		   (setq success (apply (car functions) args))
-		   (setq functions (cdr functions))))
-	     (setq success (apply (car value) args)))
-	   (setq value (cdr value)))
-	 success)))
-
-(defun run-hook-with-args-until-failure (hook &rest args)
-  "Run HOOK with the specified arguments ARGS.
-HOOK should be a symbol, a hook variable.  Its value should
-be a list of functions.  We call those functions, one by one,
-passing arguments ARGS to each of them, until one of them
-returns nil.  Then we return nil.
-If all the functions return non-nil, we return non-nil.
-
-To make a hook variable buffer-local, use `make-local-hook', not
-`make-local-variable'."
-  ;; We must return non-nil if there are no hook functions!
-  (or (not (boundp hook))
-      (not (symbol-value hook))
-      (let ((value (symbol-value hook))
-	    (success t))
-	(while (and value success)
-	  (if (eq (car value) t)
-	      ;; t indicates this hook has a local binding;
-	      ;; it means to run the global binding too.
-	      (let ((functions (default-value hook)))
-		(while (and functions success)
-		  (setq success (apply (car functions) args))
-		  (setq functions (cdr functions))))
-	    (setq success (apply (car value) args)))
-	  (setq value (cdr value)))
-	success)))
-
-;; Tell C code how to call this function.
+;; We used to have this variable so that C code knew how to run hooks.  That
+;; calling convention is made obsolete now the hook running functions are in C.
 (defconst run-hooks 'run-hooks
   "Variable by which C primitives find the function `run-hooks'.
-Don't change it.")
+Don't change it.  Don't use it either; use the hook running C primitives.")
 
 (defun make-local-hook (hook)
   "Make the hook HOOK local to the current buffer.
@@ -862,17 +757,20 @@ STRING should be given if the last search was by `string-match' on STRING."
 
 (defun shell-quote-argument (argument)
   "Quote an argument for passing as argument to an inferior shell."
-  ;; Quote everything except POSIX filename characters.
-  ;; This should be safe enough even for really weird shells.
-  (if (eq system-type 'windows-nt)
-      (concat "\"" argument "\"")
-    (let ((result "") (start 0) end)
-      (while (string-match "[^-0-9a-zA-Z_./]" argument start)
-	(setq end (match-beginning 0)
-	      result (concat result (substring argument start end)
-			     "\\" (substring argument end (1+ end)))
-	      start (1+ end)))
-      (concat result (substring argument start)))))
+  (if (eq system-type 'ms-dos)
+      ;; MS-DOS shells don't have quoting, so don't do any.
+      argument
+    (if (eq system-type 'windows-nt)
+	(concat "\"" argument "\"")
+      ;; Quote everything except POSIX filename characters.
+      ;; This should be safe enough even for really weird shells.
+      (let ((result "") (start 0) end)
+	(while (string-match "[^-0-9a-zA-Z_./]" argument start)
+	  (setq end (match-beginning 0)
+		result (concat result (substring argument start end)
+			       "\\" (substring argument end (1+ end)))
+		start (1+ end)))
+	(concat result (substring argument start))))))
 
 (defun make-syntax-table (&optional oldtable)
   "Return a new syntax table.
@@ -884,19 +782,19 @@ syntax table; other characters are copied from the standard syntax table."
 	  i)
       (setq i 0)
       (while (<= i 31)
-	(aset table i 13)
+	(aset table i nil)
 	(setq i (1+ i)))
       (setq i ?A)
       (while (<= i ?Z)
-	(aset table i 13)
+	(aset table i nil)
 	(setq i (1+ i)))
       (setq i ?a)
       (while (<= i ?z)
-	(aset table i 13)
+	(aset table i nil)
 	(setq i (1+ i)))
       (setq i 128)
       (while (<= i 255)
-	(aset table i 13)
+	(aset table i nil)
 	(setq i (1+ i)))
       table)))
 

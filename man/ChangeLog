@@ -1,3 +1,25 @@
+Fri Nov 24 23:41:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+Sat Nov  4 01:57:53 1995  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
+
+	* gnus.texi: New file.
+
+Sat Nov  4 01:55:44 1995  Erik Naggum  <erik@naggum.no>
+
+	* gnus.texi: File deleted.
+
+Thu Nov  2 21:12:40 1995  Stephen Gildea <gildea@x.org>
+
+	* mh-e.texi: "Function Index" -> "Command Index" to work with
+	Emacs 19.30 C-h C-k support of separately-documented commands.
+
+Mon Jun 26 03:41:38 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (../info/ediff, ediff.dvi): New targets.
+	(INFO_TARGETS, DVI_TARGETS): Add those new targets.
+
 Mon Apr 24 00:30:14 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Makefile.in (INFO_TARGETS, DVI_TARGETS): Add viper targets.

@@ -102,7 +102,7 @@ enum gdb_lisp_params
 {
   gdb_valbits = VALBITS,
   gdb_gctypebits = GCTYPEBITS,
-  gdb_emacs_intbits = sizeof (EMACS_INT) * INTBITS / sizeof (int),
+  gdb_emacs_intbits = sizeof (EMACS_INT) * BITS_PER_CHAR,
 #ifdef DATA_SEG_BITS
   gdb_data_seg_bits = DATA_SEG_BITS
 #else
@@ -226,19 +226,21 @@ Lisp_Object;
 enum pvec_type
 {
   PVEC_NORMAL_VECTOR = 0,
-  PVEC_BUFFER = 0x100,
   PVEC_PROCESS = 0x200,
   PVEC_FRAME = 0x400,
   PVEC_COMPILED = 0x800,
   PVEC_WINDOW = 0x1000,
   PVEC_WINDOW_CONFIGURATION = 0x2000,
   PVEC_SUBR = 0x4000,
-  PVEC_TYPE_MASK = 0x7f00,
+  PVEC_CHAR_TABLE = 0x8000,
+  PVEC_BOOL_VECTOR = 0x10000,
+  PVEC_BUFFER = 0x20000,
+  PVEC_TYPE_MASK = 0x3fe00,
   PVEC_FLAG = PSEUDOVECTOR_FLAG
 };
 
 /* For convenience, we also store the number of elements in these bits.  */
-#define PSEUDOVECTOR_SIZE_MASK 0xff
+#define PSEUDOVECTOR_SIZE_MASK 0x1ff
 
 #endif /* NO_UNION_TYPE */
 
@@ -269,7 +271,7 @@ enum pvec_type
 /* Extract the value of a Lisp_Object as a signed integer.  */
 
 #ifndef XINT   /* Some machines need to do this differently.  */
-#define XINT(a) (((a) << (INTBITS-VALBITS)) >> (INTBITS-VALBITS))
+#define XINT(a) (((a) << (BITS_PER_INT-VALBITS)) >> (BITS_PER_INT-VALBITS))
 #endif
 
 /* Extract the value as an unsigned integer.  This is a basis
@@ -314,7 +316,7 @@ extern int pure_size;
 #define XGCTYPE(a) ((enum Lisp_Type) (((a) >> VALBITS) & GCTYPEMASK))
 #endif
 
-#if VALBITS + GCTYPEBITS == INTBITS - 1
+#if VALBITS + GCTYPEBITS == BITS_PER_INT - 1
 /* Make XMARKBIT faster if mark bit is sign bit.  */
 #ifndef XMARKBIT
 #define XMARKBIT(a) ((a) < 0)
@@ -352,7 +354,7 @@ extern int pure_size;
 
 #ifdef EXPLICIT_SIGN_EXTEND
 /* Make sure we sign-extend; compilers have been known to fail to do so.  */
-#define XINT(a) (((a).i << (INTBITS-VALBITS)) >> (INTBITS-VALBITS))
+#define XINT(a) (((a).i << (BITS_PER_INT-VALBITS)) >> (BITS_PER_INT-VALBITS))
 #else
 #define XINT(a) ((a).s.val)
 #endif /* EXPLICIT_SIGN_EXTEND */
@@ -402,6 +404,8 @@ extern int pure_size;
 #define XWINDOW(a) ((struct window *) XPNTR(a))
 #define XSUBR(a) ((struct Lisp_Subr *) XPNTR(a))
 #define XBUFFER(a) ((struct buffer *) XPNTR(a))
+#define XCHAR_TABLE(a) ((struct Lisp_Char_Table *) XPNTR(a))
+#define XBOOL_VECTOR(a) ((struct Lisp_Bool_Vector *) XPNTR(a))
 
 
 /* Construct a Lisp_Object from a value or address.  */
@@ -427,6 +431,8 @@ extern int pure_size;
 #define XSETSUBR(a, b) (XSETPSEUDOVECTOR (a, b, PVEC_SUBR))
 #define XSETCOMPILED(a, b) (XSETPSEUDOVECTOR (a, b, PVEC_COMPILED))
 #define XSETBUFFER(a, b) (XSETPSEUDOVECTOR (a, b, PVEC_BUFFER))
+#define XSETCHAR_TABLE(a, b) (XSETPSEUDOVECTOR (a, b, PVEC_CHAR_TABLE))
+#define XSETBOOL_VECTOR(a, b) (XSETPSEUDOVECTOR (a, b, PVEC_BOOL_VECTOR))
 
 #ifdef USE_TEXT_PROPERTIES
 /* Basic data type for use of intervals.  See the macros in intervals.h.  */
@@ -535,6 +541,59 @@ struct Lisp_Vector
     Lisp_Object contents[1];
   };
 
+/* A char table is a kind of vectorlike, with contents are like a vector
+   but with a few other slots.  For some purposes, it makes sense
+   to handle a chartable with type struct Lisp_Vector.  */
+
+/* This is the number of slots that apply to characters
+   or character sets.  */
+#define CHAR_TABLE_ORDINARY_SLOTS 256
+
+/* This is the number of slots that every char table must have.
+   This counts the ordinary slots and the parent and defalt slots.  */
+#define CHAR_TABLE_STANDARD_SLOTS (256+3)
+
+/* Return the number of "extra" slots in the char table CT.  */
+
+#define CHAR_TABLE_EXTRA_SLOTS(CT)	\
+  (((CT)->size & PSEUDOVECTOR_SIZE_MASK) - CHAR_TABLE_STANDARD_SLOTS)
+
+struct Lisp_Char_Table
+  {
+    /* This is the vector's size field, which also holds the
+       pseudovector type information.  It holds the size, too.
+       The size counts the defalt and parent slots.  */
+    EMACS_INT size;
+    struct Lisp_Vector *next;
+    Lisp_Object contents[CHAR_TABLE_ORDINARY_SLOTS];
+    /* This holds a default value,
+       which is used whenever the value for a specific character is nil.  */
+    Lisp_Object defalt;
+    /* This points to another char table, which we inherit from
+       when the value for a specific character is nil.
+       The `defalt' slot takes precedence over this.  */
+    Lisp_Object parent;
+    /* This should be a symbol which says what kind of use
+       this char-table is meant for.
+       Typically now the values can be `syntax-table' and `display-table'.  */
+    Lisp_Object purpose;
+    /* These hold additional data.  */
+    Lisp_Object extras[1];
+  };
+
+/* A boolvector is a kind of vectorlike, with contents are like a string.  */
+struct Lisp_Bool_Vector
+  {
+    /* This is the vector's size field.  It doesn't have the real size,
+       just the subtype information.  */
+    EMACS_INT vector_size;
+    struct Lisp_Vector *next;
+    /* This is the size in bits.  */
+    EMACS_INT size;
+    /* This contains the actual bits, packed into bytes.  */
+    unsigned char data[1];
+  };
+
 /* In a symbol, the markbit of the plist is used as the gc mark bit */
 
 struct Lisp_Symbol
@@ -576,16 +635,16 @@ struct Lisp_Free
 
 /* In a marker, the markbit of the chain field is used as the gc mark bit */
 struct Lisp_Marker
-  {
-    int type : 16;	/* = Lisp_Misc_Marker */
-    int spacer : 15;
-    /* 1 means normal insertion at the marker's position
-       leaves the marker after the inserted text.  */
-    int insertion_type : 1;
-    struct buffer *buffer;
-    Lisp_Object chain;
-    int bufpos;
-  };
+{
+  int type : 16;		/* = Lisp_Misc_Marker */
+  int spacer : 15;
+  /* 1 means normal insertion at the marker's position
+     leaves the marker after the inserted text.  */
+  unsigned int insertion_type : 1;
+  struct buffer *buffer;
+  Lisp_Object chain;
+  int bufpos;
+};
 
 /* Forwarding pointer to an int variable.
    This is allowed only in the value cell of a symbol,
@@ -899,6 +958,10 @@ typedef unsigned char UCHAR;
 #define GC_COMPILEDP(x) GC_PSEUDOVECTORP (x, PVEC_COMPILED)
 #define BUFFERP(x) PSEUDOVECTORP (x, PVEC_BUFFER)
 #define GC_BUFFERP(x) GC_PSEUDOVECTORP (x, PVEC_BUFFER)
+#define CHAR_TABLE_P(x) PSEUDOVECTORP (x, PVEC_CHAR_TABLE)
+#define GC_CHAR_TABLE_P(x) GC_PSEUDOVECTORP (x, PVEC_CHAR_TABLE)
+#define BOOL_VECTOR_P(x) PSEUDOVECTORP (x, PVEC_BOOL_VECTOR)
+#define GC_BOOL_VECTOR_P(x) GC_PSEUDOVECTORP (x, PVEC_BOOL_VECTOR)
 
 #ifdef MULTI_FRAME
 #define FRAMEP(x) PSEUDOVECTORP (x, PVEC_FRAME)
@@ -928,8 +991,17 @@ typedef unsigned char UCHAR;
 #define CHECK_SYMBOL(x, i) \
   do { if (!SYMBOLP ((x))) x = wrong_type_argument (Qsymbolp, (x)); } while (0)
 
+#define CHECK_CHAR_TABLE(x, i) \
+  do { if (!CHAR_TABLE_P ((x)))	\
+	 x = wrong_type_argument (Qchar_table_p, (x)); } while (0)
+
 #define CHECK_VECTOR(x, i) \
   do { if (!VECTORP ((x))) x = wrong_type_argument (Qvectorp, (x)); } while (0)
+
+#define CHECK_VECTOR_OR_CHAR_TABLE(x, i)				\
+  do { if (!VECTORP ((x)) && !CHAR_TABLE_P ((x)))			\
+	 x = wrong_type_argument (Qvector_or_char_table_p, (x));	\
+     } while (0)
 
 #define CHECK_BUFFER(x, i) \
   do { if (!BUFFERP ((x))) x = wrong_type_argument (Qbufferp, (x)); } while (0)
@@ -1155,42 +1227,39 @@ extern char *stack_bottom;
 /* 1 if CH is upper case.  */
 
 #define UPPERCASEP(CH) \
-  (XSTRING (current_buffer->downcase_table)->data[CH] != (CH))
+  (XCHAR_TABLE (current_buffer->downcase_table)->contents[CH] != (CH))
 
 /* 1 if CH is lower case.  */
 
 #define LOWERCASEP(CH) \
   (!UPPERCASEP (CH) \
-   && XSTRING (current_buffer->upcase_table)->data[CH] != (CH))
+   && XCHAR_TABLE (current_buffer->upcase_table)->contents[CH] != (CH))
 
 /* 1 if CH is neither upper nor lower case.  */
 
-#define NOCASEP(CH) (XSTRING (current_buffer->upcase_table)->data[CH] == (CH))
+#define NOCASEP(CH) \
+  (XCHAR_TABLE (current_buffer->upcase_table)->contents[CH] == (CH))
 
 /* Upcase a character, or make no change if that cannot be done.  */
 
 #define UPCASE(CH) \
-  (XSTRING (current_buffer->downcase_table)->data[CH] == (CH) \
+  (XCHAR_TABLE (current_buffer->downcase_table)->contents[CH] == (CH) \
    ? UPCASE1 (CH) : (CH))
 
 /* Upcase a character known to be not upper case.  */
 
-#define UPCASE1(CH) (XSTRING (current_buffer->upcase_table)->data[CH])
+#define UPCASE1(CH) (XCHAR_TABLE (current_buffer->upcase_table)->contents[CH])
 
 /* Downcase a character, or make no change if that cannot be done.  */
 
-#define DOWNCASE(CH) (XSTRING (current_buffer->downcase_table)->data[CH])
+#define DOWNCASE(CH) \
+  (XCHAR_TABLE (current_buffer->downcase_table)->contents[CH])
 
 /* Current buffer's map from characters to lower-case characters.  */
 
-#define DOWNCASE_TABLE XSTRING (current_buffer->downcase_table)->data
+#define DOWNCASE_TABLE XCHAR_TABLE (current_buffer->downcase_table)->contents
 
-/* Table mapping each char to the next char with the same lowercase version.
-   This mapping is a no-op only for characters that don't have case.  */
-#define UPCASE_TABLE XSTRING (current_buffer->upcase_table)->data
-
-extern Lisp_Object Vascii_downcase_table, Vascii_upcase_table;
-extern Lisp_Object Vascii_canon_table, Vascii_eqv_table;
+extern Lisp_Object Vascii_downcase_table;
 
 /* Number of bytes of structure consed since last GC.  */
 
@@ -1288,6 +1357,7 @@ extern Lisp_Object Qsymbolp, Qlistp, Qconsp;
 extern Lisp_Object Qstringp, Qarrayp, Qsequencep, Qbufferp;
 extern Lisp_Object Qchar_or_string_p, Qmarkerp, Qvectorp;
 extern Lisp_Object Qinteger_or_marker_p, Qnumber_or_marker_p;
+extern Lisp_Object Qchar_table_p, Qvector_or_char_table_p;
 extern Lisp_Object Qboundp, Qfboundp;
 extern Lisp_Object Qbuffer_or_string_p;
 extern Lisp_Object Qcdr;
@@ -1354,7 +1424,7 @@ extern Lisp_Object Fforward_word ();
 extern Lisp_Object Qstring_lessp;
 extern Lisp_Object Vfeatures;
 extern Lisp_Object Fidentity (), Frandom ();
-extern Lisp_Object Flength ();
+extern Lisp_Object Flength (), Fsafe_length ();
 extern Lisp_Object Fappend (), Fconcat (), Fvconcat (), Fcopy_sequence ();
 extern Lisp_Object Fsubstring ();
 extern Lisp_Object Fnth (), Fnthcdr (), Fmemq (), Fassq (), Fassoc ();
@@ -1409,6 +1479,7 @@ extern Lisp_Object Fpurecopy (), make_pure_string ();
 extern Lisp_Object pure_cons (), make_pure_vector ();
 extern Lisp_Object Fgarbage_collect ();
 extern Lisp_Object Fmake_byte_code ();
+extern Lisp_Object Qchar_table_extra_slots;
 extern struct Lisp_Vector *allocate_vectorlike ();
 extern int gc_in_progress;
 
@@ -1442,10 +1513,17 @@ extern Lisp_Object Vinhibit_quit, Qinhibit_quit, Vquit_flag;
 extern Lisp_Object Vmocklisp_arguments, Qmocklisp, Qmocklisp_arguments;
 extern Lisp_Object Vautoload_queue;
 extern Lisp_Object Vdebug_on_error;
-/* To run a normal hook, do
+/* To run a normal hook, use the appropriate function from the list below.
+   The calling convention:
+
    if (!NILP (Vrun_hooks))
-     call1 (Vrun_hooks, Qmy_funny_hook);  */
+     call1 (Vrun_hooks, Qmy_funny_hook);
+
+   should no longer be used.  */
 extern Lisp_Object Vrun_hooks;
+extern Lisp_Object Frun_hooks (), Frun_hook_with_args ();
+extern Lisp_Object Frun_hook_with_args_until_success ();
+extern Lisp_Object Frun_hook_with_args_until_failure ();
 extern Lisp_Object Fand (), For (), Fif (), Fprogn (), Fprog1 (), Fprog2 ();
 extern Lisp_Object Fsetq (), Fquote ();
 extern Lisp_Object Fuser_variable_p (), Finteractive_p ();
@@ -1576,7 +1654,7 @@ extern Lisp_Object current_global_map;
 extern Lisp_Object Fkey_description (), Fsingle_key_description ();
 extern Lisp_Object Fwhere_is_internal ();
 extern Lisp_Object access_keymap (), store_in_keymap ();
-extern Lisp_Object get_keyelt (), get_keymap ();
+extern Lisp_Object get_keyelt (), get_keymap (), get_keymap_1 ();
 extern void describe_map_tree ();
 
 /* defined in indent.c */

@@ -96,9 +96,11 @@ rectangle is represented as a list of strings.  @xref{Rectangles}, for
 basic information on how to specify a rectangle in the buffer.
 
 @table @kbd
+@findex copy-rectangle-to-register
+@kindex C-x r r
 @item C-x r r @var{r}
 Copy the region-rectangle into register @var{r}
-(@code{copy-region-to-rectangle}).  With numeric argument, delete it as
+(@code{copy-rectangle-to-register}).  With numeric argument, delete it as
 well.
 @item C-x r i @var{r}
 Insert the rectangle stored in register @var{r} (if it contains a

@@ -720,19 +720,26 @@ sys_subshell ()
 #ifdef WINDOWSNT
   pid = -1;
 #else /* not WINDOWSNT */
+#ifdef MSDOS
+  pid = 0;
+#else  
   pid = vfork ();
-
   if (pid == -1)
     error ("Can't spawn subshell");
+#endif
+
   if (pid == 0)
 #endif /* not WINDOWSNT */
     {
-      char *sh;
+      char *sh = 0;
 
 #ifdef MSDOS    /* MW, Aug 1993 */
       getwd (oldwd);
+      if (sh == 0)
+	sh = (char *) egetenv ("SUSPEND");	/* KFS, 1994-12-14 */
 #endif
-      sh = (char *) egetenv ("SHELL");
+      if (sh == 0)
+	sh = (char *) egetenv ("SHELL");
       if (sh == 0)
 	sh = "sh";
 
@@ -756,8 +763,10 @@ sys_subshell ()
 #ifdef MSDOS    /* Demacs 1.1.2 91/10/20 Manabu Higashida */
       st = system (sh);
       chdir (oldwd);
+#if 0	/* This is also reported if last command executed in subshell failed, KFS */
       if (st)
 	report_file_error ("Can't execute subshell", Fcons (build_string (sh), Qnil));
+#endif
 #else /* not MSDOS */
 #ifdef  WINDOWSNT
       /* Waits for process completion */
@@ -776,7 +785,9 @@ sys_subshell ()
 
   save_signal_handlers (saved_handlers);
   synch_process_alive = 1;
+#ifndef MSDOS
   wait_for_termination (pid);
+#endif
   restore_signal_handlers (saved_handlers);
 #endif /* !VMS */
 }
@@ -1215,7 +1226,7 @@ init_sys_modes ()
     narrow_foreground_group ();
 #endif
 
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
   /* Emacs' window system on MSDOG uses the `internal terminal' and therefore
      needs the initialization code below.  */
   if (!read_socket_hook && EQ (Vwindow_system, Qnil))
@@ -1458,7 +1469,11 @@ init_sys_modes ()
 #else
   setbuf (stdout, _sobuf);
 #endif
+#ifdef HAVE_WINDOW_SYSTEM
+  /* Emacs' window system on MSDOG uses the `internal terminal' and therefore
+     needs the initialization code below.  */
   if (! read_socket_hook && EQ (Vwindow_system, Qnil))
+#endif
     set_terminal_modes ();
 
   if (term_initted && no_redraw_on_reenter)
@@ -1597,22 +1612,13 @@ reset_sys_modes ()
     }
   if (!term_initted)
     return;
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
   /* Emacs' window system on MSDOG uses the `internal terminal' and therefore
      needs the clean-up code below.  */
   if (read_socket_hook || !EQ (Vwindow_system, Qnil))
     return;
 #endif
   cursor_to (FRAME_HEIGHT (selected_frame) - 1, 0);
-#ifdef MSDOS
-  if (!EQ (Vwindow_system, Qnil))
-    {
-      /* Change to grey on white.  */
-      putchar ('\e');
-      putchar ('A');
-      putchar (7);
-    }
-#endif
   clear_end_of_line (FRAME_WIDTH (selected_frame));
   /* clear_end_of_line may move the cursor */
   cursor_to (FRAME_HEIGHT (selected_frame) - 1, 0);
@@ -2170,7 +2176,7 @@ init_system_name ()
 	}
       if (hp)
 	{
-	  char *fqdn = hp->h_name;
+	  char *fqdn = (char *) hp->h_name;
 	  char *p;
 
 	  if (!index (fqdn, '.'))
@@ -2211,6 +2217,7 @@ init_system_name ()
   }
 }
 
+#ifndef MSDOS
 #ifndef VMS
 #if !defined (HAVE_SELECT) || defined (BROKEN_SELECT_NON_X)
 
@@ -2331,9 +2338,6 @@ sys_select (nfds, rfds, wfds, efds, timeout)
 #ifdef FIONREAD
 		      status = ioctl (fd, FIONREAD, &avail);
 #else /* no FIONREAD */
-#ifdef MSDOS
-		      abort (); /* I don't think we need it.  */
-#else /* not MSDOS */
 		      /* Hoping it will return -1 if nothing available
 			 or 0 if all 0 chars requested are read.  */
 		      if (proc_buffered_char[fd] >= 0)
@@ -2344,7 +2348,6 @@ sys_select (nfds, rfds, wfds, efds, timeout)
 			  if (avail > 0)
 			    proc_buffered_char[fd] = buf;
 			}
-#endif /* not MSDOS */
 #endif /* no FIONREAD */
 		    }
 		  if (status >= 0 && avail > 0)
@@ -2365,10 +2368,6 @@ sys_select (nfds, rfds, wfds, efds, timeout)
       while (select_alarmed == 0 && *local_timeout != 0
 	     && process_tick == update_tick)
 	{
-#ifdef MSDOS
-	  sleep_or_kbd_hit (SELECT_PAUSE, FD_ISSET (0, &orfds) != 0);
-	  select_alarm ();
-#else /* not MSDOS */
 	  /* If we are interested in terminal input,
 	     wait by reading the terminal.
 	     That makes instant wakeup for terminal input at least.  */
@@ -2380,7 +2379,6 @@ sys_select (nfds, rfds, wfds, efds, timeout)
 	    }
 	  else
 	    pause ();
-#endif /* not MSDOS */
 	}
       (*local_timeout) -= SELECT_PAUSE;
       /* Reset the old alarm if there was one */
@@ -2405,8 +2403,8 @@ sys_select (nfds, rfds, wfds, efds, timeout)
 /* Read keyboard input into the standard buffer,
    waiting for at least one character.  */
 
-/* Make all keyboard buffers much bigger when using X windows.  */
-#ifdef HAVE_X_WINDOWS
+/* Make all keyboard buffers much bigger when using a window system.  */
+#ifdef HAVE_WINDOW_SYSTEM
 #define BUFFER_SIZE_FACTOR 16
 #else
 #define BUFFER_SIZE_FACTOR 1
@@ -2473,6 +2471,7 @@ read_input_waiting ()
 
 #endif /* not HAVE_SELECT */
 #endif /* not VMS */
+#endif /* not MSDOS */
 
 #ifdef BSD4_1
 /*
@@ -2884,10 +2883,19 @@ sys_open (path, oflag, mode)
 sys_close (fd)
      int fd;
 {
+  int did_retry = 0;
   register int rtnval;
 
   while ((rtnval = close (fd)) == -1
-	 && (errno == EINTR));
+	 && (errno == EINTR))
+    did_retry = 1;
+
+  /* If close is interrupted SunOS 4.1 may or may not have closed the
+     file descriptor.  If it did the second close will fail with
+     errno = EBADF.  That means we have succeeded.  */
+  if (rtnval == -1 && did_retry && errno == EBADF)
+    return 0;
+
   return rtnval;
 }
 

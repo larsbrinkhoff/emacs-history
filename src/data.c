@@ -31,13 +31,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include "syssignal.h"
 
-#ifdef MSDOS
-/* These are redefined (correctly, but differently) in values.h.  */
-#undef INTBITS
-#undef LONGBITS
-#undef SHORTBITS
-#endif
-
 #ifdef LISP_FLOAT_TYPE
 
 #ifdef STDC_HEADERS
@@ -74,6 +67,7 @@ Lisp_Object Qstringp, Qarrayp, Qsequencep, Qbufferp;
 Lisp_Object Qchar_or_string_p, Qmarkerp, Qinteger_or_marker_p, Qvectorp;
 Lisp_Object Qbuffer_or_string_p;
 Lisp_Object Qboundp, Qfboundp;
+Lisp_Object Qchar_table_p, Qvector_or_char_table_p;
 
 Lisp_Object Qcdr;
 Lisp_Object Qad_advice_info, Qad_activate;
@@ -314,6 +308,35 @@ DEFUN ("stringp", Fstringp, Sstringp, 1, 1, 0, "T if OBJECT is a string.")
   return Qnil;
 }
 
+DEFUN ("char-table-p", Fchar_table_p, Schar_table_p, 1, 1, 0, "T if OBJECT is a char-table.")
+  (object)
+     Lisp_Object object;
+{
+  if (CHAR_TABLE_P (object))
+    return Qt;
+  return Qnil;
+}
+
+DEFUN ("vector-or-char-table-p", Fvector_or_char_table_p,
+       Svector_or_char_table_p, 1, 1, 0,
+       "T if OBJECT is a char-table or vector.")
+  (object)
+     Lisp_Object object;
+{
+  if (VECTORP (object) || CHAR_TABLE_P (object))
+    return Qt;
+  return Qnil;
+}
+
+DEFUN ("bool-vector-p", Fbool_vector_p, Sbool_vector_p, 1, 1, 0, "T if OBJECT is a bool-vector.")
+  (object)
+     Lisp_Object object;
+{
+  if (BOOL_VECTOR_P (object))
+    return Qt;
+  return Qnil;
+}
+
 DEFUN ("arrayp", Farrayp, Sarrayp, 1, 1, 0, "T if OBJECT is an array (string or vector).")
   (object)
      Lisp_Object object;
@@ -328,7 +351,8 @@ DEFUN ("sequencep", Fsequencep, Ssequencep, 1, 1, 0,
   (object)
      register Lisp_Object object;
 {
-  if (CONSP (object) || NILP (object) || VECTORP (object) || STRINGP (object))
+  if (CONSP (object) || NILP (object) || VECTORP (object) || STRINGP (object)
+      || CHAR_TABLE_P (object) || BOOL_VECTOR_P (object))
     return Qt;
   return Qnil;
 }
@@ -1260,6 +1284,11 @@ Use `make-local-hook' instead.")
   tem = Fassq (sym, current_buffer->local_var_alist);
   if (NILP (tem))
     {
+      /* Swap out any local binding for some other buffer, and make
+	 sure the current value is permanently recorded, if it's the
+	 default value.  */
+      find_symbol_value (sym);
+
       current_buffer->local_var_alist
         = Fcons (Fcons (sym, XCONS (XCONS (XBUFFER_LOCAL_VALUE (XSYMBOL (sym)->value)->cdr)->cdr)->cdr),
 		 current_buffer->local_var_alist);
@@ -1268,7 +1297,9 @@ Use `make-local-hook' instead.")
 	 force it to look once again for this buffer's value */
       {
 	Lisp_Object *pvalbuf;
+
 	valcontents = XSYMBOL (sym)->value;
+
 	pvalbuf = &XCONS (XBUFFER_LOCAL_VALUE (valcontents)->cdr)->car;
 	if (current_buffer == XBUFFER (*pvalbuf))
 	  *pvalbuf = Qnil;
@@ -1480,7 +1511,8 @@ function chain of symbols.")
 
 DEFUN ("aref", Faref, Saref, 2, 2, 0,
   "Return the element of ARRAY at index INDEX.\n\
-ARRAY may be a vector or a string, or a byte-code object.  INDEX starts at 0.")
+ARRAY may be a vector, a string, a char-table, a bool-vector,\n\
+or a byte-code object.  INDEX starts at 0.")
   (array, idx)
      register Lisp_Object array;
      Lisp_Object idx;
@@ -1496,6 +1528,74 @@ ARRAY may be a vector or a string, or a byte-code object.  INDEX starts at 0.")
 	args_out_of_range (array, idx);
       XSETFASTINT (val, (unsigned char) XSTRING (array)->data[idxval]);
       return val;
+    }
+  else if (BOOL_VECTOR_P (array))
+    {
+      int val;
+
+      if (idxval < 0 || idxval >= XBOOL_VECTOR (array)->size)
+	args_out_of_range (array, idx);
+
+      val = (unsigned char) XBOOL_VECTOR (array)->data[idxval / BITS_PER_CHAR];
+      return (val & (1 << (idxval % BITS_PER_CHAR)) ? Qt : Qnil);
+    }
+  else if (CHAR_TABLE_P (array))
+    {
+      Lisp_Object val;
+
+      if (idxval < 0)
+	args_out_of_range (array, idx);
+#if 1
+      if ((unsigned) idxval >= CHAR_TABLE_ORDINARY_SLOTS)
+	args_out_of_range (array, idx);
+      return val = XCHAR_TABLE (array)->contents[idxval];
+#else /* 0 */
+      if ((unsigned) idxval < CHAR_TABLE_ORDINARY_SLOTS)
+	val = XCHAR_TABLE (array)->data[idxval];
+      else
+	{
+	  int charset;
+	  unsigned char c1, c2;
+	  Lisp_Object val, temp;
+
+	  BREAKUP_NON_ASCII_CHAR (idxval, charset, c1, c2);
+
+	try_parent_char_table:
+	  val = XCHAR_TABLE (array)->contents[charset];
+	  if (c1 == 0 || !CHAR_TABLE_P (val))
+	    return val;
+
+	  temp = XCHAR_TABLE (val)->contents[c1];
+	  if (NILP (temp))
+	    val = XCHAR_TABLE (val)->defalt;
+	  else
+	    val = temp;
+
+	  if (NILP (val) && !NILP (XCHAR_TABLE (array)->parent))
+	    {
+	      array = XCHAR_TABLE (array)->parent;
+	      goto try_parent_char_table;
+
+	    }
+
+	  if (c2 == 0 || !CHAR_TABLE_P (val))
+	    return val;
+
+	  temp = XCHAR_TABLE (val)->contents[c2];
+	  if (NILP (temp))
+	    val = XCHAR_TABLE (val)->defalt;
+	  else
+	    val = temp;
+
+	  if (NILP (val) && !NILP (XCHAR_TABLE (array)->parent))
+	    {
+	      array = XCHAR_TABLE (array)->parent;
+	      goto try_parent_char_table;
+	    }
+
+	  return val;
+	}
+#endif /* 0 */
     }
   else
     {
@@ -1524,7 +1624,8 @@ ARRAY may be a vector or a string.  IDX starts at 0.")
 
   CHECK_NUMBER (idx, 1);
   idxval = XINT (idx);
-  if (!VECTORP (array) && !STRINGP (array))
+  if (!VECTORP (array) && !STRINGP (array) && !BOOL_VECTOR_P (array)
+      && ! CHAR_TABLE_P (array))
     array = wrong_type_argument (Qarrayp, array);
   CHECK_IMPURE (array);
 
@@ -1533,6 +1634,63 @@ ARRAY may be a vector or a string.  IDX starts at 0.")
       if (idxval < 0 || idxval >= XVECTOR (array)->size)
 	args_out_of_range (array, idx);
       XVECTOR (array)->contents[idxval] = newelt;
+    }
+  else if (BOOL_VECTOR_P (array))
+    {
+      int val;
+
+      if (idxval < 0 || idxval >= XBOOL_VECTOR (array)->size)
+	args_out_of_range (array, idx);
+
+      val = (unsigned char) XBOOL_VECTOR (array)->data[idxval / BITS_PER_CHAR];
+
+      if (! NILP (newelt))
+	val |= 1 << (idxval % BITS_PER_CHAR);
+      else
+	val &= ~(1 << (idxval % BITS_PER_CHAR));
+      XBOOL_VECTOR (array)->data[idxval / BITS_PER_CHAR] = val;
+    }
+  else if (CHAR_TABLE_P (array))
+    {
+      Lisp_Object val;
+
+      if (idxval < 0)
+	args_out_of_range (array, idx);
+#if 1
+      if (idxval >= CHAR_TABLE_ORDINARY_SLOTS)
+	args_out_of_range (array, idx);
+      XCHAR_TABLE (array)->contents[idxval] = newelt;
+      return newelt;
+#else /* 0 */
+      if (idxval < CHAR_TABLE_ORDINARY_SLOTS)
+	val = XCHAR_TABLE (array)->contents[idxval];
+      else
+	{
+	  int charset;
+	  unsigned char c1, c2;
+	  Lisp_Object val, val2;
+
+	  BREAKUP_NON_ASCII_CHAR (idxval, charset, c1, c2);
+
+	  if (c1 == 0)
+	    return XCHAR_TABLE (array)->contents[charset] = newelt;
+
+	  val = XCHAR_TABLE (array)->contents[charset];
+	  if (!CHAR_TABLE_P (val))
+	    XCHAR_TABLE (array)->contents[charset]
+	      = val = Fmake_char_table (Qnil);
+
+	  if (c2 == 0)
+	    return XCHAR_TABLE (val)->contents[c1] = newelt;
+
+	  val2 = XCHAR_TABLE (val)->contents[c2];
+	  if (!CHAR_TABLE_P (val2))
+	    XCHAR_TABLE (val)->contents[charset]
+	      = val2 = Fmake_char_table (Qnil);
+
+	  return XCHAR_TABLE (val2)->contents[c2] = newelt;
+	}
+#endif /* 0 */
     }
   else
     {
@@ -1717,7 +1875,7 @@ NUM may be an integer or a floating point number.")
   (num)
      Lisp_Object num;
 {
-  char buffer[20];
+  char buffer[VALBITS];
 
 #ifndef LISP_FLOAT_TYPE
   CHECK_NUMBER (num, 0);
@@ -1982,11 +2140,9 @@ double
 fmod (f1, f2)
      double f1, f2;
 {
-#ifdef HAVE_DREM  /* Some systems use this non-standard name.  */
-  return (drem (f1, f2));
-#else  /* Other systems don't seem to have it at all.  */
+  if (f2 < 0.0)
+    f2 = -f2;
   return (f1 - f2 * floor (f1/f2));
-#endif
 }
 #endif /* ! HAVE_FMOD */
 
@@ -2232,6 +2388,9 @@ syms_of_data ()
   Qnumber_or_marker_p = intern ("number-or-marker-p");
 #endif /* LISP_FLOAT_TYPE */
 
+  Qchar_table_p = intern ("char-table-p");
+  Qvector_or_char_table_p = intern ("vector-or-char-table-p");
+
   Qcdr = intern ("cdr");
 
   /* Handle automatic advice activation */
@@ -2416,6 +2575,8 @@ syms_of_data ()
   staticpro (&Qnumberp);
   staticpro (&Qnumber_or_marker_p);
 #endif /* LISP_FLOAT_TYPE */
+  staticpro (&Qchar_table_p);
+  staticpro (&Qvector_or_char_table_p);
 
   staticpro (&Qboundp);
   staticpro (&Qfboundp);
@@ -2474,6 +2635,9 @@ syms_of_data ()
   defsubr (&Ssymbolp);
   defsubr (&Sstringp);
   defsubr (&Svectorp);
+  defsubr (&Schar_table_p);
+  defsubr (&Svector_or_char_table_p);
+  defsubr (&Sbool_vector_p);
   defsubr (&Sarrayp);
   defsubr (&Ssequencep);
   defsubr (&Sbufferp);

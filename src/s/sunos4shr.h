@@ -28,6 +28,7 @@
 #define UNEXEC	unexsunos4.o
 #define RUN_TIME_REMAP
 #define ORDINARY_LINK
+#define SUNOS4_SHARED_LIBRARIES
 
 #undef LD_SWITCH_SYSTEM
 
@@ -43,3 +44,9 @@
 #define memmove(to, from, size) bcopy (from, to, size)
 
 #undef USE_DL_STUBS
+
+#ifdef __GNUC__
+#define LIBXMU -Xlinker -Bstatic -lXmu -Xlinker -Bdynamic
+#else
+#define LIBXMU -Bstatic -lXmu -Bdynamic
+#endif

@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 # RCS to ChangeLog generator
 
@@ -12,7 +12,7 @@
 
 # Author: Paul Eggert <eggert@twinsun.com>
 
-# $Id: rcs2log,v 1.23 1995/06/04 01:34:39 eggert Exp $
+# $Id: rcs2log,v 1.26 1995/07/08 18:44:04 eggert Exp $
 
 # Copyright 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 
@@ -158,7 +158,8 @@ case $rlog_options in
 						}
 					}
 				}
-				printf "%d/%02d/%02d %02d:%02d:%02d\n", year,i+1,dd,hh,mm,ss
+				# Output comma instead of space to avoid CVS 1.5 bug.
+				printf "%d/%02d/%02d,%02d:%02d:%02d\n", year,i+1,dd,hh,mm,ss
 				exit
 			}
 		'
@@ -178,15 +179,23 @@ then
 else
 	rlog='cvs log'
 	repository=`sed 1q <CVS/Repository` || exit
-	case $repository in
-	/*) ;;
-	*) repository=${CVSROOT?}/$repository
+	test ! -f CVS/Root || CVSROOT=`cat <CVS/Root` || exit
+	case $CVSROOT in
+	*:/*)
+		# remote repository
+		;;
+	*)
+		# local repository
+		case $repository in
+		/*) ;;
+		*) repository=${CVSROOT?}/$repository
+		esac
+		if test ! -d "$repository"
+		then
+			echo >&2 "$0: $repository: bad repository (see CVS/Repository)"
+			exit 1
+		fi
 	esac
-	if test ! -d "$repository"
-	then
-		echo >&2 "$0: $repository: bad repository (see CVS/Repository)"
-		exit 1
-	fi
 fi
 
 # With no arguments, examine all files under the RCS directory.

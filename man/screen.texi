@@ -135,11 +135,13 @@ add @samp{done} at the end when they are finished.
 @cindex @samp{*Messages*} buffer
 @cindex saved echo area messages
 @cindex messages saved from echo area
-  Echo area informative messages appear also in a buffer named
-@samp{*Messages*}.  If you miss a message that appears briefly on the
-screen, you can switch to the @samp{*Messages*} buffer to see it again.
-Garbage collection messages are omitted from @samp{*Messages*}, and
-successive progress messages are often collapsed into one.
+  Echo area informative messages are saved in an editor buffer named
+@samp{*Messages*}.  (We have not explained buffers yet; see
+@ref{Buffers}, for more information about them.)  If you miss a message
+that appears briefly on the screen, you can switch to the
+@samp{*Messages*} buffer to see it again.  Garbage collection messages
+are omitted from @samp{*Messages*}, and successive progress messages are
+often collapsed into one.
 
 @vindex message-log-max
   The size of @samp{*Messages*} is limited to a certain number of lines.
@@ -173,9 +175,9 @@ the mode line still has the usual meaning.
 
   Normally, the mode line looks like this:
 
-@example
---@var{ch}-Emacs: @var{buf}      (@var{major} @var{minor})----@var{pos}------
-@end example
+@smallexample
+--@var{ch}-Emacs: @var{buf}      (@var{major} @var{minor})--@var{line}--@var{pos}------
+@end smallexample
 
 @noindent
 This gives information about the buffer being displayed in the window: the
@@ -195,6 +197,10 @@ this is the same as the name of a file you are editing.  @xref{Buffers}.
 cursor is in) is also Emacs's selected buffer, the one that editing
 takes place in.  When we speak of what some command does to ``the
 buffer'', we are talking about the currently selected buffer.
+
+  @var{line} is @samp{L} followed by the current line number of point.
+This is present when Line Number mode is enabled (which it normally is).
+@xref{Optional Mode Line}.
 
   @var{pos} tells you whether there is additional text above the top of
 the window, or below the bottom.  If your buffer is small and it is all

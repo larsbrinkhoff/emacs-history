@@ -1,3 +1,25 @@
+Fri Nov 24 23:41:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+Mon Nov 13 21:45:28 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (display_menu_item): Fix previous change.
+
+Sat Nov  4 15:06:40 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* xlwmenu.c (display_menu_item): Don't treat buttons specially.
+
+Mon Aug 14 19:10:49 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (RANLIB): Get this var from configure.
+
+Wed Aug  2 03:12:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib.c (lw_popup_menu): New arg `event', passed along.
+	* lwlib-Xlw.c (xlw_popup_menu): New arg `event'.
+	* lwlib-Xm.c (xm_popup_menu): New arg `event'.
+
 Mon Jun 19 22:50:57 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.29 released.

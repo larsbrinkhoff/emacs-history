@@ -653,6 +653,7 @@ parenthesized expressions in REGEXP for the components (in that order).")
 (defvar ange-ftp-skip-msgs
   (concat "^200 \\(PORT\\|Port\\) \\|^331 \\|^150 \\|^350 \\|^[0-9]+ bytes \\|"
 	  "^Connected \\|^$\\|^Remote system\\|^Using\\|^ \\|Password:\\|"
+	  "^Data connection \\|"
 	  "^local:\\|^Trying\\|^125 \\|^550-\\|^221 .*oodbye")
   "*Regular expression matching ftp messages that can be ignored.")
 
@@ -1275,7 +1276,7 @@ Optional DEFAULT is password to start with."
     (setq ange-ftp-ftp-name-arg name
 	  ange-ftp-ftp-name-res
 	  (save-match-data
-	    (if (string-match (car ange-ftp-name-format) name)
+	    (if (posix-string-match (car ange-ftp-name-format) name)
 		(let* ((ns (cdr ange-ftp-name-format))
 		       (host (ange-ftp-ftp-name-component 0 ns name))
 		       (user (ange-ftp-ftp-name-component 1 ns name))
@@ -1289,7 +1290,7 @@ Optional DEFAULT is password to start with."
 ;; replace the name component with NAME.
 (defun ange-ftp-replace-name-component (fullname name)
   (save-match-data
-    (if (string-match (car ange-ftp-name-format) fullname)
+    (if (posix-string-match (car ange-ftp-name-format) fullname)
 	(let* ((ns (cdr ange-ftp-name-format))
 	       (elt (nth 2 ns)))
 	  (concat (substring fullname 0 (match-beginning elt))
@@ -1421,7 +1422,8 @@ good, skip, fatal, or unknown."
 	ange-ftp-hash-mark-count (+ (- (match-end 0)
 				       (match-beginning 0))
 				    ange-ftp-hash-mark-count))
-  (and ange-ftp-process-msg
+  (and ange-ftp-hash-mark-unit
+       ange-ftp-process-msg
        ange-ftp-process-verbose
        (not (eq (selected-window) (minibuffer-window)))
        (not (boundp 'search-message))	;screws up isearch otherwise
@@ -1465,8 +1467,7 @@ good, skip, fatal, or unknown."
 	      (set-buffer (process-buffer proc))
 	      
 	      ;; handle hash mark printing
-	      (and ange-ftp-hash-mark-unit
-		   ange-ftp-process-busy
+	      (and ange-ftp-process-busy
 		   (string-match "^#+$" str)
 		   (setq str (ange-ftp-process-handle-hash str)))
 	      (comint-output-filter proc str)
@@ -1522,7 +1523,7 @@ good, skip, fatal, or unknown."
 (defun ange-ftp-process-sentinel (proc str)
   "When ftp process changes state, nuke all file-entries in cache."
   (let ((name (process-name proc)))
-    (if (string-match "\\*ftp \\([^@]+\\)@\\([^*]+\\)*" name)
+    (if (string-match "\\*ftp \\([^@]+\\)@\\([^*]+\\)\\*" name)
 	(let ((user (substring name (match-beginning 1) (match-end 1)))
 	      (host (substring name (match-beginning 2) (match-end 2))))
 	  (ange-ftp-wipe-file-entries host user))))
@@ -1601,8 +1602,10 @@ good, skip, fatal, or unknown."
 
 (defun ange-ftp-gwp-filter (proc str)
   (comint-output-filter proc str)
-  ;; Replace STR by the result of the comint processing.
-  (setq str (buffer-substring comint-last-output-start (process-mark proc)))
+  (save-excursion
+    (set-buffer (process-buffer proc))
+    ;; Replace STR by the result of the comint processing.
+    (setq str (buffer-substring comint-last-output-start (process-mark proc))))
   (cond ((string-match "login: *$" str)
 	 (send-string proc
 		      (concat
@@ -1823,6 +1826,10 @@ on the gateway machine to do the ftp instead."
     (setq ange-ftp-process-result-line "")
 
     (setq comint-prompt-regexp "^ftp> ")
+    (make-local-variable 'comint-password-prompt-regexp)
+    ;; This is a regexp that can't match anything.
+    ;; ange-ftp has its own ways of handling passwords.
+    (setq comint-password-prompt-regexp "^a\\'z")
     (make-local-variable 'paragraph-start)
     (setq paragraph-start comint-prompt-regexp)))
 
@@ -1861,9 +1868,10 @@ host specified in ``ange-ftp-gateway-host''."
 (defun ange-ftp-normal-login (host user pass account proc)
   "Connect to the FTP-server on HOST as USER using PASSWORD and ACCOUNT.
 PROC is the process to the FTP-client."
-  (let ((result (ange-ftp-raw-send-cmd
+  (let* ((nshost (ange-ftp-nslookup-host host))
+	 (result (ange-ftp-raw-send-cmd
 		 proc
-		 (format "open %s" (ange-ftp-nslookup-host host))
+		 (format "open %s" nshost)
 		 (format "Opening FTP connection to %s" host))))
     (or (car result)
 	(ange-ftp-error host user
@@ -1871,7 +1879,9 @@ PROC is the process to the FTP-client."
 				(cdr result))))
     (setq result (ange-ftp-raw-send-cmd
 		  proc
-		  (format "user \"%s\" %s %s" user pass account)
+		  (if (ange-ftp-use-smart-gateway-p host)
+		      (format "user \"%s\"@%s %s %s" user nshost pass account)
+		    (format "user \"%s\" %s %s" user pass account))
 		  (format "Logging in as user %s@%s" user host)))
     (or (car result)
 	(progn
@@ -2199,7 +2209,7 @@ Works by doing a pwd and examining the directory syntax."
 ;; Returns whether HOST's FTP server doesn't like \'ls\' or \'dir\' commands
 ;; to take switch arguments.
 (defun ange-ftp-dumb-unix-host (host)
-  (and ange-ftp-dumb-unix-host-regexp
+  (and host ange-ftp-dumb-unix-host-regexp
        (save-match-data
 	 (string-match ange-ftp-dumb-unix-host-regexp host))))
 
@@ -3823,10 +3833,11 @@ NEWNAME should be the name to give the new compressed or uncompressed file.")
 
 ;;; This regexp takes care of real ange-ftp file names (with a slash
 ;;; and colon).
+;;; Don't allow the host name to end in a period--some systems use /.:
 ;;;###autoload
-(or (assoc "^/[^/:]*[^/:]:" file-name-handler-alist)
+(or (assoc "^/[^/:]*[^/:.]:" file-name-handler-alist)
     (setq file-name-handler-alist
-	  (cons '("^/[^/:]*[^/:]:" . ange-ftp-hook-function)
+	  (cons '("^/[^/:]*[^/:.]:" . ange-ftp-hook-function)
 		file-name-handler-alist)))
 
 ;;; This regexp recognizes and absolute filenames with only one component,
@@ -4831,7 +4842,7 @@ Other orders of $ and _ seem to all work just fine.")
 ;;	  (cons '(vms . ange-ftp-dired-vms-ls-trim)
 ;;		ange-ftp-dired-ls-trim-alist)))	
 
-(defun ange-ftp-vms-sans-version (name)
+(defun ange-ftp-vms-sans-version (name &rest args)
   (save-match-data
     (if (string-match ";[0-9]+$" name)
 	(substring name 0 (match-beginning 0))

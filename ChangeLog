@@ -1,6 +1,213 @@
+Fri Nov 24 23:40:55 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+	* make-dist (lisp): Exclude subdirs.el.
+
+Wed Nov 22 17:44:34 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-dist (etc): Delete *.orig and *.rej.
+
+Thu Nov 16 16:59:07 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (install-arch-indep): Rename old info/dir only if exists.
+
+Wed Nov 15 16:50:17 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (hppa*-hp-hpux10*): Use s/hpux10.h.
+
+Tue Nov 14 14:39:08 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* make-dist (nt): Rename install, readme, and todo to
+	INSTALL, README, and TODO.
+
+Fri Nov 10 01:07:35 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-dist (lisp): Don't distribute site-start.
+
+Mon Nov  6 17:00:58 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* make-dist: Break the hard link on alloca.c.
+
+Sat Nov  4 12:41:57 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* configure.in (LIBS): Add libsrc_libs and keep the old LIBS.
+
+Thu Nov  2 18:29:03 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* make-dist (src, lib-src): Don't distribute Makefile.c.
+	(etc/e): Do cleanup in $tempdir/etc/e, not $tempdir/etc.
+
+Tue Oct 31 15:57:22 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (mkdir): Create man1dir, not mandir.
+	(uninstall): Use man1dir, not mandir.
+
+Mon Oct 30 12:49:31 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (man1dir): New variable.
+ 	(install-arch-indep): Use man1dir.
+
+	* configure.in (sparc-*-nextstep*): Remove incorrect .h's.
+
+	* make-dist: Create lisp/MANIFEST.
+
+Sat Oct 28 17:01:41 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* configure.in (m68k-*-linux*): New alternative.
+
+Fri Oct 27 02:28:47 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-dist: Use new names config.in, paths.in, and
+	{src,lib-src}/Makefile.in.
+
+Wed Oct 25 15:23:23 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* configure.in: Don't bother checking for drem.
+
+Fri Oct 20 18:07:42 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (distclean): Delete line with just a tab in it.
+	(install-arch-indep): Delete spaces that precede tabs.
+	Delete spurious `fi' left from previous change.
+	(install): Supply `true' as command, to avoid null command.
+
+Thu Oct  5 12:35:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (--with-x-toolkit)): Add `athen' as alias for `athena'.
+
+Sat Sep 30 23:42:45 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (powerpc-*-solaris2): New alternative.x
+
+Tue Sep 12 13:42:33 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Makefile.in (src/paths.h, paths-force): Use paths.h.$$ instead
+	of paths.h.tmp$$, to avoid going beyond 14 characters.
+
+Sun Sep 10 11:15:55 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Improve error msg for invalid --with-x-toolkit value.
+
+Wed Sep  6 04:25:50 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* configure.in (LOCALTIME_CACHE): Define if tzset exists and
+	if localtime caches TZ.  Check for tzset.
+
+Fri Sep  1 12:12:02 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* config.bat: Simplify using new names file names src/makefile.in,
+	config.in, paths.in.  Change Echo commands not to use `.
+
+Thu Aug 31 22:39:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (install-arch-indep): Always install the new dir file;
+	rename the previous dir file to dir.bak or dir.old.
+
+Mon Aug 14 19:13:37 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (RANLIB): Substitute this into makefiles.
+	Set it specially on solaris; set it by default on other systems.
+
+	* configure.in: Fix previous Alpha change.
+
+Sun Aug 13 01:08:48 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (i*386-*-isc4.*): Set GCC_TEST_OPTIONS and
+	NON_GCC_TEST_OPTIONS.
+
+Thu Aug 10 01:00:49 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (CFLAGS): When computing CFLAGS and REAL_CFLAGS
+	from config.h, use SPECIFIED_CFLAGS to get what the user specified.
+
+	* configure.in (alpha-*-linux*): New configuration.
+
+Sat Aug  5 01:58:56 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (m68*-next-*): Use m68k.h and nextstep.h.
+	(m68k-next-nextstep*): New alias for that.
+	(i*86-*-nextstep*): Use nextstep.h.
+	(sparc-*-nextstep*): New configuration.
+	
+Wed Aug  2 22:05:03 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (CPP): Save original CFLAGS value in SPECIFIED_CFLAGS.
+	And get CFLAGS from config.h if SPECIFIED_CFLAGS is null.
+
+Thu Jul 27 20:34:27 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Handle sunos4shr by sharing; not like sunos4*.
+	Determine GETTIMEOFDAY_ONE_ARGUMENT by experiment.
+
+Tue Jul 18 11:47:04 1995  Mike Long  <mike.long@analog.com>
+
+	* make-dist: Fix update of finder-inf.el, and byte-compile it.
+
+Tue Jul 18 01:27:54 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (src/paths.h, paths-force):
+	Rename src/paths.h.in to src/paths.in.
+	(Makefile): Depend on src/Makefile.in, not src/Makefile.in.in.
+
+	* configure.in: Rename {src,lib-src}/Makefile.in.in to Makefile.in.
+	Use Makefile.c for intermediate file.
+	Rename src/config.h.in to src/config.in.
+
+Mon Jul 17 17:53:57 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* configure.in (mips-dec-ultrix*): Assume version 4.3.
+	(mips-dec-ultrix4.[12]): New alternative for old versions.
+
+Thu Jul  6 14:08:34 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* make-dist: Don't break intra-tree links.
+
+Thu Jul  6 01:42:51 1995  David J. MacKenzie  <djm@geech.gnu.ai.mit.edu>
+
+	* configure.in: Put back archlibdir initialization.  Require
+ 	autoconf 2.4.1 or later.
+
+Sat Jul  1 00:58:41 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Use sunos4shr normally for Sunos 4.1.[3-9].
+	(mips-mips-riscos5*): New alternative.
+
+Thu Jun 29 20:04:21 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (uninstall, install-arch-indep): Install info/ediff*.
+
+Tue Jun 27 19:00:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (bindir, datadir, sharedstatedir, libexecdir)
+	(mandir, infodir, archlibdir): Initializations deleted.
+
+	* configure.in: On hpux9, use hpux9-x11r4.h if we have X11R4.
+	On hpux9shr, use hpux9shxr4.h.
+	
+Sat Jun 24 18:58:17 1995  Morten Welinder  <terra+@cs.cmu.edu>
+
+	* configure.in: Added target mips-dec-mach_bsd4.3.
+	* config.guess: Guess mips-dec-mach_bsd4.3.
+
+Sat Jun 24 14:42:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (mkdir): Use symbolic chmod.
+
+Thu Jun 22 07:45:40 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* configure.in: Treat SunOS 4.1.4 like SunOS 4.1.3.
+	(Likewise for SunOS 4.1.5 thorugh 4.1.9, should they ever exist.)
+
+Thu Jun 22 02:32:58 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* Makefile.in (SUBDIR_MAKEFILES):
+	Add man/Makefile, so `make distclean' removes it.
+	(top_distclean): Add config.log to the list of files to be removed.
+
 Mon Jun 19 22:50:10 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
-	* Versin 19.29 released.
+	* Version 19.29 released.
 
 Sat Jun 17 08:43:47 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 

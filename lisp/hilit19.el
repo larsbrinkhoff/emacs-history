@@ -1,23 +1,25 @@
-;; hilit19.el (Release 2.19) -- customizable highlighting for Emacs19.
+;;; hilit19.el --- customizable highlighting for Emacs19
+
 ;; Copyright (c) 1993, 1994 Free Software Foundation, Inc.
-;;
-;; Author:   Jonathan Stigelman <Stig@netcom.com>
+
+;; Author:   Jonathan Stigelman <stig@hackvan.com>
 ;; Keywords: faces
-;; 
-;; This program is free software; you can redistribute it and/or modify
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
-;; (at your option) any later version.
-;; 
-;; This program is distributed in the hope that it will be useful,
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;; 
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-;;
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -29,7 +31,7 @@
 ;; WHERE TO GET THE LATEST VERSIONS OF HILIT19.EL (beta and release), 
 ;; PLUS LOTS OF OTHER *WAY COOL* STUFF VIA ANONYMOUS FTP:
 ;;
-;;      netcom.com:/pub/stig/src/{Beta,Release}/hilit19.el.gz
+;;      ftp.hackvan.com:/pub/stig/src/elisp/hilit19.el.gz
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -42,7 +44,7 @@
 ;; hilit19.el,v 2.19 1993/09/08 18:44:10 stig Release
 ;;
 ;; LCD Archive Entry:
-;; hilit19|Jonathan Stigelman|Stig@netcom.com|
+;; hilit19|Jonathan Stigelman|stig@hackvan.com|
 ;; Comprehensive (and comparatively fast) regex-based highlighting for Emacs 19|
 ;; 1993/09/08 18:44:10|Release 2.19|~/packages/hilit19.el.Z|
 ;;
@@ -401,12 +403,12 @@ your init file.")
 (eval-when-compile (require 'reporter))	; no compilation gripes
 
 (defun hilit-submit-feedback ()
-  "Submit feedback on hilit19 to the author: Stig@netcom.com"
+  "Submit feedback on hilit19 to the author: stig@hackvan.com"
   (interactive)
   (require 'reporter)
   (and (y-or-n-p "Do you really want to submit a report on hilit19? ")
        (reporter-submit-bug-report
-	"Jonathan Stigelman <Stig@netcom.com>"
+	"Jonathan Stigelman <stig@hackvan.com>"
 	"hilit19.el (Release 2.19)"
 	(and (y-or-n-p "Do you need to include a dump hilit variables? ")
 	     (append
@@ -440,9 +442,9 @@ your init file.")
 	  "  [ ] a PATCH. (output of 'diff -uw old.el new.el' or 'diff -cw')\n"
 	  "  [ ] a SERIOUS AND REPRODUCABLE BUG that is not an EMACS bug\n"
 	  "     - I *swear* that it's not already mentioned in the KNOWN BUGS\n"
-	  "     - I HAVE CHECKED netcom.com:/pub/stig/src/Beta/hilit19.el.gz\n"
+	  "     - I HAVE CHECKED ftp.hackvan.com:/pub/stig/src/elisp/hilit19.el.gz\n"
 	  "       for a newer release that fixes the problem.\n"
-	  "    >> I HAVE ALSO CHECKED netcom.com:/pub/stig/src/Beta/hl319.el.gz\n"
+	  "    >> I HAVE ALSO CHECKED ftp.hackvan.com:/pub/stig/src/elisp/hl319.el.gz\n"
 	  "       This is the alpha version...what will become hilit19 (Beta 3.0).\n"
 	  "\n"
 	  "Hey Stig, I *know* you're busy but...\n"))))
@@ -972,35 +974,12 @@ the entire buffer is forced."
 		     vm-preview-message-hook
 		     vm-show-message-hook
 
-		     gnus-article-prepare-hook
-		     gnus-summary-prepare-hook
-		     gnus-group-prepare-hook
-
 		     rmail-show-message-hook
 		     mail-setup-hook 
 		     mh-show-mode-hook
 
 		     dired-after-readin-hook
 		     ))
-
-	   ;; rehighlight only visible part of summary buffer for speed.
-	   (add-hook 'gnus-mark-article-hook
-		     (function
-		      (lambda ()
-			(or (memq gnus-current-article gnus-newsgroup-marked)
-			    (gnus-summary-mark-as-read gnus-current-article))
-			(gnus-summary-set-current-mark)
-			(save-excursion
-			  (set-buffer gnus-summary-buffer)
-			  (hilit-rehighlight-region (window-start)
-						    (window-end) t)
-			  ))))
-	   ;; only need prepare article hook
-	   ;;
-	   ;;	(add-hook 'gnus-select-article-hook
-	   ;;		  '(lambda () (save-excursion
-	   ;;				(set-buffer gnus-article-buffer)
-	   ;;				(hilit-rehighlight-buffer))))
 	   )
        (error (message "Error loading highlight hooks: %s" c)
 	      (ding) (sit-for 1))))
@@ -1328,20 +1307,10 @@ number of backslashes."
 
 (hilit-set-mode-patterns
  'gnus-group-mode
- '(("^U.*$" nil gnus-group-unsubscribed)
-   ("^ +[01]?[0-9]:.*$" nil gnus-group-empty)
+ '(("^ U.*$" nil gnus-group-unsubscribed)
+   ("^\\*? +[01]?[0-9]:.*$" nil gnus-group-empty)
    ("^ +[2-9][0-9]:.*$" nil gnus-group-full)
    ("^ +[0-9][0-9][0-9]+:.*$" nil gnus-group-overflowing)))
-
-(hilit-set-mode-patterns
- 'gnus-summary-mode
- '(("^D +[0-9]+: \\[.*$" nil summary-seen)
-   ("^K +[0-9]+: \\[.*$" nil summary-killed)
-   ("^X +[0-9]+: \\[.*$" nil summary-Xed)
-   ("^- +[0-9]+: \\[.*$" nil summary-unread)
-   ("^. +[0-9]+:\\+\\[.*$" nil summary-current)
-   ("^  +[0-9]+: \\[.*$" nil summary-new)
-   ))
 
 (hilit-set-mode-patterns
  'vm-summary-mode
@@ -1540,10 +1509,3 @@ number of backslashes."
 (provide 'hilit19)
 
 ;;; hilit19 ends here.
-
-
-;; __________________________________________________________________________
-;; Stig@netcom.com                            netcom.com:/pub/stig/00-PGP-KEY
-;; It's hard to be cutting-edge at your own pace...   32 DF B9 19 AE 28 D1 7A
-;; Bullet-proof code cannot stand up to teflon bugs.  A3 9D 0B 1A 33 13 4D 7F
-

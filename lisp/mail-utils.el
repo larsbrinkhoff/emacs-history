@@ -38,6 +38,17 @@
 Otherwise, (the default) use a smaller, somewhat faster, and
 often correct parser.")
 
+;; Returns t if file FILE is an Rmail file.
+;;;###autoload
+(defun mail-file-babyl-p (file)
+  (let ((buf (generate-new-buffer " *rmail-file-p*")))
+    (unwind-protect
+	(save-excursion
+	  (set-buffer buf)
+	  (insert-file-contents file nil 0 100)
+	  (looking-at "BABYL OPTIONS:"))
+      (kill-buffer buf))))
+
 (defun mail-string-delete (string start end)
   "Returns a string containing all of STRING except the part
 from START (inclusive) to END (exclusive)."
@@ -105,7 +116,7 @@ Return a modified address list."
 		 (mail-string-delete address
 				     pos (match-end 0)))))
        ;; Retain only part of address in <> delims, if there is such a thing.
-       (while (setq pos (string-match "\\(,\\|\\`\\)[^,]*<\\([^>,]*>\\)"
+       (while (setq pos (string-match "\\(,\\s-*\\|\\`\\)[^,]*<\\([^>,]*>\\)"
 				      address))
 	 (let ((junk-beg (match-end 1))
 	       (junk-end (match-beginning 2))
@@ -136,7 +147,7 @@ Usenet paths ending in an element that matches are removed also."
 	(case-fold-search t)
 	pos epos)
     (while (setq pos (string-match match userids))
-      (if (> pos 0) (setq pos (1+ pos)))
+      (if (> pos 0) (setq pos (match-beginning 2)))
       (setq epos
 	    (if (string-match "[ \t\n,]+" userids (match-end 0))
 		(match-end 0)
@@ -174,7 +185,8 @@ If third arg ALL is non-nil, concatenate all such fields with commas between."
 		  (forward-char -1))
 		(setq value (concat value
 				    (if (string= value "") "" ", ")
-				    (buffer-substring opoint (point))))))
+				    (buffer-substring-no-properties
+				     opoint (point))))))
 	    (and (not (string= value "")) value))
 	(if (re-search-forward name nil t)
 	    (progn
@@ -186,7 +198,7 @@ If third arg ALL is non-nil, concatenate all such fields with commas between."
 		(forward-char -1)
 		(while (member (preceding-char) '(?  ?\t))
 		  (forward-char -1))
-		(buffer-substring opoint (point)))))))))
+		(buffer-substring-no-properties opoint (point)))))))))
 
 ;; Parse a list of tokens separated by commas.
 ;; It runs from point to the end of the visible part of the buffer.

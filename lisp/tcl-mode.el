@@ -1,10 +1,9 @@
-;; tcl-mode.el - A major-mode for editing tcl/tk scripts
-;;
+;;; tcl-mode.el --- a major-mode for editing tcl/tk scripts
+
 ;; Author: Gregor Schmid <schmid@fb3-s7.math.tu-berlin.de>
 ;; Keywords: languages, processes, tools
-;;
-;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
-;; Version 1.1
+
+;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -27,12 +26,13 @@
 ;; 		schmid@fb3-s7.math.tu-berlin.de
 ;;
 
+;; Special Thanks to Simon Marshall <simonm@mail.esrin.esa.it> for
+;; font-lock patches.
+
 ;; This file was written with emacs using Jamie Lokier's folding mode
 ;; That's what the funny ;;{{{ marks are there for
 
 ;;{{{ Usage
-
-;;; Commentary:
 
 ;; Tcl-mode supports c-mode style formatting and sending of
 ;; lines/regions/files to a tcl interpreter. An interpreter (see
@@ -41,9 +41,6 @@
 ;; (named after the application you chose) as if it were an
 ;; interactive shell. See the documentation for `comint.el' for
 ;; details.
-
-;; Another version of this package which has support for other Emacs
-;; versions is in the LCD archive.
 
 ;;}}}
 ;;{{{ Key-bindings
@@ -123,6 +120,42 @@ Should be a list of strings.")
 (defvar tcl-mode-menu (make-sparse-keymap "Tcl-Mode")
   "Keymap for tcl-mode's menu.")
 
+(defvar tcl-font-lock-keywords
+  (eval-when-compile
+    (list
+     ;;
+     ;; Function name declarations.
+     '("\\<\\(itcl_class\\|method\\|proc\\)\\>[ \t]*\\(\\sw+\\)?"
+       (1 font-lock-keyword-face) (2 font-lock-function-name-face nil t))
+     ;;
+     ;; Keywords.
+;(make-regexp '("if" "then" "else" "elseif" "for" "foreach" "break"
+;	       "continue" "while" "eval" "case" "in" "switch" "default"
+;	       "exit" "error" "proc" "return" "uplevel" "constructor"
+;	       "destructor" "itcl_class" "loop" "for_array_keys"
+;	       "for_recursive_glob" "for_file"))
+     (concat "\\<\\("
+	     "break\\|c\\(ase\\|on\\(structor\\|tinue\\)\\)\\|"
+	     "de\\(fault\\|structor\\)\\|"
+	     "e\\(lse\\(\\|if\\)\\|rror\\|val\\|xit\\)\\|"
+	     "for\\(\\|_\\(array_keys\\|file\\|recursive_glob\\)\\|each\\)\\|"
+	     "i\\([fn]\\|tcl_class\\)\\|loop\\|proc\\|return\\|switch\\|"
+	     "then\\|uplevel\\|while"
+	     "\\)\\>")
+     ;;
+     ;; Types.
+;   (make-regexp '("global" "upvar" "inherit" "public" "protected" "common"))
+     (cons (concat "\\<\\(common\\|global\\|inherit\\|"
+		   "p\\(rotected\\|ublic\\)\\|upvar\\)\\>")
+	   'font-lock-type-face)
+     ))
+  "Default expressions to highlight in TCL modes.")
+
+(defvar tcl-imenu-generic-expression
+  '("^[ \t]*proc[ \t]+\\(\\(\\s_\\|\\sw\\)+\\)" 1)
+  "Imenu generic expression for tcl-mode.  See `imenu-generic-expression'.")
+
+
 ;;}}}
 ;;{{{ tcl-mode
 
@@ -142,8 +175,12 @@ The following keys are bound:
     (set (make-local-variable 'tcl-process-buffer) nil)
     (make-local-variable 'tcl-default-command-switches)
     (set (make-local-variable 'indent-line-function) 'tcl-indent-line)
-    (set (make-local-variable 'comment-start) "#")
-    (set (make-local-variable 'comment-start-skip) "\\(\\(^\\|;\\)[ \t]*\\)#")
+    (set (make-local-variable 'comment-start) "# ")
+    (set (make-local-variable 'comment-start-skip) "# *")
+    (set (make-local-variable 'font-lock-defaults)
+	 '(tcl-font-lock-keywords nil nil ((?_ . "w"))))
+    (set (make-local-variable 'imenu-generic-expression)
+	 tcl-imenu-generic-expression)
     (make-local-variable 'tcl-default-eval)
     (or tcl-mode-map
 	(tcl-setup-keymap))
@@ -292,7 +329,7 @@ In usual case returns an integer: the column to indent to."
 		     0))))
 	  (forward-char 1)
 	  (if (re-search-backward
-	       "\\(^[^ \t\n\r]\\)\\|\\({\\s *\n\\)\\|\\(}\\s *\n\\)"
+	       "\\(^[^ \t\n\r#]\\)\\|\\({\\s *[#\n]\\)\\|\\(}\\s *\n\\)"
 	       nil  t)
 	      (+ (- (current-indentation)
 		    (if (save-excursion
@@ -615,10 +652,11 @@ If `tcl-process' is nil or dead, start a new process first."
 
 ;;}}}
 
+(provide 'tcl-mode)
+
 ;;{{{ Emacs local variables
 
 
-(provide 'tcl-mode)
 
 ;; Local Variables:
 ;; folded-file: t

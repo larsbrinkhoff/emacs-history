@@ -30,7 +30,7 @@
 
 (require 'case-table)
 
-(let ((downcase (concat (car (standard-case-table)))))
+(let ((downcase (standard-case-table)))
   (set-case-syntax 160 " " downcase)	; NBSP (no-break space)
   (set-case-syntax 161 "." downcase)	; inverted exclamation mark
   (set-case-syntax 162 "w" downcase)	; cent sign
@@ -97,7 +97,7 @@
   (set-case-syntax 223 "w" downcase)	; small sharp s, German
   (set-case-syntax 247 "_" downcase)	; division sign
   (set-case-syntax 255 "w" downcase)	; small y with diaeresis or umlaut mark
-  (set-standard-case-table (list downcase nil nil nil)))
+)
 
 (provide 'iso-syntax)
 

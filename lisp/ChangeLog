@@ -1,3 +1,3266 @@
+Fri Nov 24 17:58:03 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+	* diary-lib.el: Renamed from diary.el.
+	* calendar.el, cal-tex.el: Use new name diary-lib.
+
+	* cc-mode.el (c++-mode, objc-mode, c-mode): Doc fix.
+
+	* font-lock.el (font-lock-make-faces): Add special code for ms-dos.
+
+	* view.el (view-mode, view-mode-enter): Doc changes.
+	(view-mode-map): Change h and ? to use describe-mode.
+	Delete binding of help char.
+	(view-mode-enter): Use describe-mode in message.
+
+Thu Nov 23 12:40:47 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* ediff-mult.el (ediff-intersect-directories): Quote symbols
+	starting with `:'.
+
+	* view.el (view-mode-enter): Replace Help-helper by help-command
+	in doc string and message.
+
+	* sort.el (sort-regexp-fields): Doc fix.
+	* inf-lisp.el (inferior-lisp-load-command): Doc fix.
+	* imenu.el (imenu-generic-expression, imenu--generic-function):
+	Doc fix.
+
+	* add-log.el (add-change-log-entry): Initialize add-log-full-name
+	and add-log-mailing-address before prompting.
+
+Thu Nov 23 00:56:16 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* completion.el (cmpl-make-standard-completion-syntax-table)
+	(cmpl-make-c-def-completion-syntax-table): Use make-syntax-table.
+	(completion-c-mode-hook): Encapsulate C-mode changes in new function.
+	Either call it now or put it on c-mode-hook.
+
+Wed Nov 22 14:55:12 1995  Barry Warsaw  <bwarsaw@anthem (Barry Warsaw)>
+
+	* cc-mode.el (c-beginning-of-statement-1): CASE 3, can't just
+	return t at end of let clause since this will break
+	arglist-cont-nonempty lines.
+
+Wed Nov 22 14:03:08 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.nt (install, clean): Don't use switches to del not 
+	supported by Win95.
+
+Tue Nov 21 00:12:36 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* man.el (Man-fontify-manpage, Man-cleanup-manpage):
+	Convert \255 to a dash.
+
+	* apropos.el (apropos-print): Put the item property
+	on the whole printed symbol.
+	(apropos-follow): Look for the item property only adjacent to point.
+	Signal an error if there is none.
+
+Mon Nov 20 00:39:01 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* apropos.el (apropos-print): Use apropos-local-map as buffer's map,
+	not as a text property.
+
+	* ediff-hook.el (menu-bar-epatch-menu, menu-bar-ediff-merge-menu)
+	(menu-bar-ediff-menu): Give names to the menus.
+	
+	* ediff-mult.el: Renamed from ediff-meta.el.  Changed provide.
+	* ediff.el, ediff-util.el: Require ediff-mult.
+	* ediff-hook.el (ediff-show-registry): Use renamed file ediff-mult.el.
+
+	* array.el (array-mode): Set overwrite-mode to overwrite-mode-textual.
+
+	* term/pc-win.el (msdos-color-aliases): Add more aliases.
+	(msdos-face-setup): Change colors for bold, bold-italic, underline.
+	(x-frob-font-slant): Define as no-op.
+
+	* saveplace.el (save-place-to-alist): Handle hexl-mode specially.
+
+Sun Nov 19 18:24:58 1995  Erik Naggum  <erik@naggum.no>
+
+	* calendar.el (cal-tex-cursor-week-iso): Doc fix.
+
+Sun Nov 19 15:39:49 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* calendar.el:
+	(cal-tex-cursor-filofax-week): Renamed from cal-tex-cursor-week6.
+	(cal-tex-cursor-filofax-2week): Renamed from cal-tex-cursor-week5.
+	(cal-tex-cursor-week-monday): Renamed from cal-tex-cursor-week4.
+	(cal-tex-cursor-week-iso): Renamed from cal-tex-cursor-week3.
+
+	* cal-tex.el (cal-tex-version): Deleted.
+	(cal-tex-cursor-year-landscape): Doc fix.
+	(cal-tex-cursor-filofax-week): Renamed from cal-tex-cursor-week6.
+	(cal-tex-cursor-filofax-2week): Renamed from cal-tex-cursor-week5.
+	(cal-tex-cursor-week-monday): Renamed from cal-tex-cursor-week4.
+	(cal-tex-cursor-week-iso): Renamed from cal-tex-cursor-week3.
+
+	* info.el (Info-directory-list): Use source-directory.
+
+Sat Nov 18 10:49:47 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* calendar.el (calendar-goto-info-node): Don't let
+	same-window-buffer-names do its usual job--force *info* buffer
+	into another window.
+
+	* simple.el (do-auto-fill): Look at 2nd line for fill prefix
+	even when on the first line.  Don't accept non-whitespace prefix
+	from the first line.
+
+	* fill.el (fill-context-prefix): New arg first-line-regexp.
+
+	* finder.el (finder-known-keywords): Delete `debugging'.
+
+Sat Nov 18 03:09:37 1995  Lars Magne Ingebrigtsen  <larsi@surt.ifi.uio.no>
+
+	* nntp.el (nntp-open-server): Accept a second optional parameter
+	for just changing virtual server.  Doc fix.
+	(nntp-possibly-change-server): Use it.
+	(nntp-close-server): Ditto.
+
+Fri Nov 17 21:39:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* cc-mode.el (c-guess-basic-syntax, c-beginning-of-statement-1):
+	Do not check for c-conditional-key when skipping backwards over
+	statements that look sort of like conditionals.  This makes
+	statements following nested functions indent correctly.  CASE 9B.3
+	(unknown catchall) now gets triggered by the brace that opens a
+	nested function.  Also, this changes the relpos for top-level
+	defun-open braces, but that will be very hard to fix, and it may
+	break backward compatibility.
+
+	* cc-mode.el (c-guess-basic-syntax):
+	CASE 5H, inclass relpos should be relative to
+	boi of the open brace, not the beginning of the class keyword.
+
+	* cc-mode.el (c-fill-paragraph): Doc fix.
+
+Fri Nov 17 20:51:54 1995  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
+
+	* gnus.el (gnus-group-quit-config): Return the quit-config instead
+	of a list containing the quit-config.
+
+Fri Nov 17 17:34:13 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* mail-utils.el (rmail-dont-reply-to): Preserve whitespace after comma.
+
+Fri Nov 17 13:36:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* etags.el (next-file): Make interactive arg t if had any prefix arg.
+
+	* faces.el (face-color-supported-p): Return nil if no window system.
+
+Fri Nov 17 12:39:59 1995  Ed Reingold  <reingold@spiff.gnu.ai.mit.edu>
+
+        * cal-coptic.el: Fix epoch of Ethiopiac calendar.
+
+        * cal-chinese.el: Minor fixes.
+
+Fri Nov 17 11:03:20 1995  Boris Goldowsky  <boris@gnu.ai.mit.edu>
+
+	* indent.el (move-to-left-margin): Removed left-over code that
+ 	made it fail on right-justified and centered text.
+
+	* fill.el (fill-region-as-paragraph): Remove redundant "setq from".  
+	Don't add extra newline at end if there is no text in paragraph --
+	doing so can make fill-region loop.
+	When testing for indentation exceeding fill-column, skip back over
+	tabs too. 
+
+Fri Nov 17 03:19:45 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* rmail.el (rmail-retry-failure): Add missing colons in regexp.
+	Use " +", not " *", to check for indented text.
+	Don't make a temp buffer; just record the indent amount.  Simplify.
+
+Fri Nov 17 00:26:48 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* simple.el (do-auto-fill): Ignore the result of fill-context-prefix
+	if it is empty.
+
+	* cc-mode.el (c-common-init): Set adaptive-fill-regexp to nil.
+
+	* fill.el (fill-context-prefix): Use adaptive-fill-regexp only if non-nil.
+
+Thu Nov 16 16:49:56 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* calendar.el (calendar-julian-date-string): Autoload this.
+
+Thu Nov 16 17:23:03 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* ange-ftp.el (ange-ftp-process-handle-hash): If
+	ange-ftp-hash-mark-unit is nil, don't display a message.
+	(ange-ftp-process-filter): Call ange-ftp-process-handle-hash even
+	if ange-ftp-hash-mark-unit is nil.
+	
+Thu Nov 16 15:06:51 1995  Johan Vromans  <jvromans@squirrel.nl>
+
+	* forms.el: Use `buffer-substring-no-properties' instead of
+ 	`buffer-substring' to avoid the properties being copied.
+
+Thu Nov 16 12:22:11 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* cc-mode.el (c-beginning-of-statement, c-end-of-statement):
+	New arg sentence-flag.  Use that instead of interactive-p.
+	(c-mode-help-address): Send bug reports to bug-gnu-emacs too.
+
+	* fill.el (fill-context-prefix): Check adaptive-fill-function non-nil.
+
+Thu Nov 16 15:38:58 1995  Per Abrahamsen  <abraham@dina.kvl.dk>
+
+	* menu-bar.el (minibuffer maps): Delete extra quote.
+
+Thu Nov 16 11:31:46 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* info.el (Info-complete-menu-item): Don't treat `* Menu:'
+	as a menu item.
+
+Wed Nov 15 12:24:00 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* nntp.el (nntp-close-server-internal):
+	Don't call nntp-possibly-change-server.
+
+	* cplus-md.el (c++-mode): Remove autoload cookie.
+
+	* mouse-sel.el (mouse-sel-lost-selection-hook): Undo prev change.
+
+	* tmm.el (tmm-prompt): Delete tmm-add-prompt if we fail.
+	Don't switch to *Completions* if it wasn't created.
+	
+	* startup.el (command-line-1): Mention F10.
+
+Tue Nov 14 12:34:00 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fill.el (fill-individual-paragraphs): Advance 1 line in inner loop.
+	(fill-region-as-paragraph): Handle left margin extending to or past
+	fill-column.
+
+	* mouse-sel.el (mouse-sel-lost-selection-hook): Use (car selection).
+
+	* indent.el (indent-line-to): Delete spaces before inserting a tab.
+
+	* calendar.el (calendar-julian-from-absolute): Autoload it.
+
+	* goto-addr.el (goto-address): Use S-mouse-2, not S-mouse-1.
+	Add autoload cookie.
+
+	* startup.el (command-line-1): Reorganize the initial help output.
+
+	* hexl.el (hexl-mode): Set require-final-newline to nil.
+	If point was at end of buffer, move it back one byte.
+
+Tue Nov 14 20:25:01 1995  Eric Ding  <ericding@mit.edu>
+
+	* goto-addr.el (goto-address-highlight-p): New variable.
+	(goto-address-fontify): Removed check for invisible text,
+	set inhibit-point-motion-hooks instead
+
+Mon Nov 13 15:20:42 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* vc-hooks.el (vc-locking-user): In CVS case, convert
+	user number to a string.
+
+	* vc.el (vc-directory): Require dired.
+	(vc-revert-buffer): Ignore vc-suppress-confirm.
+
+Mon Nov 13 13:10:12 1995  Morten Welinder  <terra@diku.dk>
+
+	* arc-mode.el (archive-remote-regexp): Doc fix.
+
+Sun Nov 12 16:54:33 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* compile.el (compilation-sentinel): Use the local value of
+	compilation-exit-message-function in the process buffer.
+
+Sun Nov 12 14:33:59 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tmm.el (tmm-define-keys): Don't define ESC ESC.
+
+	* ffap.el: New file.
+
+	* info.el (info-insert-file-contents-1): Various rewrites.
+	Compute EXT-LEFT after removing the dot from SUFFIX.
+
+Sat Nov 11 00:24:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* window.el (balance-windows): Don't count the menu bar's lines
+	in the frame height.
+
+	* menu-bar.el (delete-frame): Don't use delete-frame as event name.
+
+	* startup.el (command-line): Don't reject unknown args here.
+	(command-line-1): Detect it here.
+
+	* dabbrev.el (dabbrev-case-replace): Doc fix.
+
+Fri Nov 10 19:30:48 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tmm.el: Define menu-bar mouse-1 as tmm-menubar.
+
+	* simple.el (universal-argument-other-key): Add to existing
+	unread-command-events value.
+
+Fri Nov 10 19:34:15 1995  Per Abrahamsen  <abraham@dina.kvl.dk>
+
+	* xt-mouse.el (global-map): Removed bindings of down events to ignore. 
+	(xterm-mouse-translate): Only generate down event when bound.
+	Cleanup.  Support for mode line and vertical bar dragging, and
+	menu-bar events.
+	(xterm-mouse-x): New variable.
+	(xterm-mouse-y): New variable.
+	(mouse-position): Advice to use above variables.
+	(xterm-mouse-event): Support menu-bar.  Set xterm-mouse-x and
+	xterm-mouse-y. 
+
+Fri Nov 10 10:29:12 1995  Boris Goldowsky  <boris@gnu.ai.mit.edu>
+	
+	* add-log.el (change-log-mode): Remove incorrect "^" anchors from
+ 	paragraph-start and -separate.
+ 	(change-log-fill-paragraph): Use regular value of paragraph-start
+ 	to bound paragraph to be filled, modified values only to do the
+ 	filling.  Make lines beginning with parentheses
+ 	paragraph-starters, but not paragraph-separators.
+
+	* cc-mode.el (c-common-init): Remove "^" from paragraph-start and
+ 	paragraph-separate.  Moved page-delimiter first in case it has a
+ 	"^" also.
+
+	* lisp-mode.el (lisp-mode-variables, lisp-fill-paragraph): Remove
+	"^" from paragraph-start and paragraph-separate.  Moved
+	page-delimiter first in case it has a "^" also.
+	
+	* sh-script.el (sh-mode): as above.  Use page-delimiter rather than
+ 	literal "^L".
+
+	* fill.el (fill-region-as-paragraph): Since adaptive-fill-regexp
+ 	is supposed to match text STARTING at the left margin, use
+ 	`looking-at' rather than `re-search-forward'.
+	(fill-individual-paragraphs): Match fill-prefixes starting at
+ 	left-margin.
+
+Fri Nov 10 04:55:12 1995  Erik Naggum  <erik@naggum.no>
+
+	* view.el (View-scroll-lines-forward): Don't recenter at end.
+
+Fri Nov 10 14:11:43 1995  Kevin Rodgers <kevinr@ihs.com>
+
+	* files.el (find-file-noselect): Respect the value of
+	find-file-visit-truename when FILENAME is a directory and
+	find-file-run-dired is non-nil.
+
+Fri Nov 10 13:55:55 1995  Boris Goldowsky  <boris@gnu.ai.mit.edu>
+
+	* facemenu.el (facemenu-unlisted-faces): Remove font-lock faces from
+ 	the default list.  The list of face names was out of sync; to
+ 	prevent this from happenning again I made font-lock.el, and other
+	packages that create "private" faces, put them on the list
+	themselves.  This should give them a better chance of being
+	updated when the packages are changed.
+
+	* calendar.el (holiday-face, calendar-today-face, diary-face): Add
+ 	faces to facemenu-unlisted-faces before creating so that facemenu
+	won't list them as faces to be added interactively.
+
+	* viper.el: Don't list any faces in menu.
+
+	* paren.el (show-paren-command-hook): Don't list `paren-mismatch'
+ 	face in menu.
+
+	* make-mode.el (makefile-space-face): Don't list in facemenu.
+
+	* ediff-init.el: All faces added to facemenu-unlisted-faces list.
+
+	* facemenu.el (facemenu-active-faces): Replaces function
+	`facemenu-discard-redundant-faces'.  This version, written by
+	Simon Marshall, is faster and does not require optional
+	argument for recursive re-entry.  New argument FRAME allows
+	check to be done relative to face definitions in any frame.
+
+Fri Nov 10 12:58:36 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* enriched.el (enriched-next-annotation): Doc fix.
+
+	* dos-fns.el: Fix previous change.
+
+Thu Nov  9 23:27:08 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-mode.el (makefile-mode): Call makefile-define-space-face
+	only if it is defined.
+	(makefile-define-space-face): Create the face unconditionally;
+	alter it only if have X.
+
+	* cal-x.el: Require calendar.
+
+Thu Nov  9 12:40:50 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* simple.el (do-auto-fill): Use fill-context-prefix.
+
+	* fill.el (fill-region-as-paragraph): Use fill-context-prefix.
+	(fill-context-prefix): New function.
+
+Thu Nov  9 03:20:51 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* font-lock.el (font-lock-mode): Use make-local-hook.
+	(font-lock-fontify-buffer): Don't preserve buffer modification here,
+	it is done elsewhere, but do preserve match-data.
+	(font-lock-fontify-syntactically-region,
+	font-lock-fontify-keywords-region): Don't preserve buffer modification
+	and temporarily install font-lock-syntax-table here.
+	(font-lock-fontify-region): Do it here instead.
+	(font-lock-fontify-anchored-keywords): Ensure LIMIT is end of line.
+	(font-lock-match-c++-style-declaration-item-and-skip-to-next): No need
+	to do end-of-line here now.
+	(font-lock-keywords): Doc fix.
+	(font-lock-make-face): Add the face to facemenu-unlisted-faces, from
+	Boris Goldowsky <boris@gnu.ai.mit.edu>.
+	
+	* compile.el (compilation-mode-font-lock-keywords): No leading spaces.
+
+Wed Nov  8 05:59:35 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* apropos.el (apropos-print): Use buffer *Apropos*, not *Help*.
+	(apropos-follow): Don't print a "how to get back" message.
+
+	* awk-mode.el (awk-mode): Require cc-mode.
+
+	* term/pc-win.el (x-display-color-p): Accept optional arg.
+
+	* dos-fns.el (mode-line-format): Modify it, don't override it entirely.
+
+	* startup.el (command-line): Complain about unknown options.
+
+Tue Nov  7 14:47:02 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* simple.el (shell-command-on-region): Use region-beginning
+	and region-end, to put them in the command history.
+
+Tue Nov  7 02:46:06 1995  Kevin Gallo  <kgallo@microsoft.com>
+
+	* term/win32-win.el: New file.
+
+	* startup.el [win32] (normal-top-level, command-line, command-line-1):
+	* mouse.el [win32] (mouse-set-region):
+	* faces.el [win32] (make-face, make-face-x-resource-internal):
+	* facemenu.el [win32] (face-menu-read-color, list-colors-display,
+		facemenu-color-equal, face-menu-get-face): 
+	Test for 'win32 window system as well as 'x.
+
+	* makefile.nt (install): Change same-dir test to create test file in
+	installation tree and thereby support read-only shares.
+
+Mon Nov  6 15:37:54 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* apropos.el (apropos-follow): Fix error message.
+
+	* startup.el (command-line): Handle = in option only if starts with --.
+
+	* tmm.el (tmm-define-keys): New subroutine.
+	(tmm-add-prompt): Use that to define keys in both maps separately.
+
+	* term/internal.el: Rewrite for new case tables.
+
+Mon Nov  6 11:03:34 1995  Boris Goldowsky  <boris@gnu.ai.mit.edu>
+
+	* fill.el (fill-region-as-paragraph): Don't insert extra space
+	at end of filled region.
+
+Mon Nov  6 08:27:45 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* bytecomp.el (byte-force-recompile): Make suitably interactive.
+
+Sat Nov  4 13:57:09 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* tmm.el: Use f10 as well as M-`.
+
+	* menu-bar.el (menu-bar-tools-menu): Always define GNUS entry.
+
+	* bytecomp.el (byte-compile-associative): Do operations left to right.
+
+Sat Nov  4 23:36:01 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* make-mode.el (makefile-define-space-face): Don't make face if non-X.
+
+Sat Nov  4 01:22:21 1995  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
+
+	* nnvirtual.el, nntp.el, nnspool.el, nnml.el, nnmh.el, nnmbox.el,
+	* nnmail.el, nnkiboze.el, nnheader.el, nnfolder.el, nneething.el,
+	* nndoc.el, nndir.el, nnbabyl.el, gnus.el, gnus-vm.el,
+	* gnus-vis.el, gnus-uu.el, gnus-score.el, gnus-msg.el, gnus-mh.el,
+	* gnus-kill.el, gnus-ems.el, gnus-edit.el, gnus-cite.el,
+	* gnus-cache.el, custom.el: New files.
+
+Fri Nov  3 21:18:13 1995  Erik Naggum  <erik@naggum.no>
+
+	* gnus.el, gnusmail.el, gnuspost.el, gnusmisc.el, gnus-uu.el,
+ 	* mhspool.el, nnspool.el, nntp.el: GNUS release 4 files deleted.
+
+	* hilit19.el: Removed old gnus hooks.
+	(gnus-group-mode): Adapt to new Gnus.
+	(gnus-summary-mode): Removed.
+
+Fri Nov  3 18:11:32 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* sendmail.el (mail): Don't change directory for *mail* buffer.
+	(sendmail-send-it, mail-recover): Instead, temporarily change to a
+	safe directory for just the subprocess.
+
+	* tex-mode.el (tex-send-command): Give meaningful error message.
+
+Fri Nov  3 12:26:02 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* sendmail.el (mail-yank-clear-headers): Do nothing if
+	mail-yank-ignored-headers is nil.
+
+	* pc-select.el (pc-selection-mode): Don't mess with c-mode-map.
+
+	* startup.el (user-mail-address): Doc fix.
+
+	* view.el (view-mode-map): Use ordinary Help command.
+
+Thu Nov  2 21:58:56 1995  Daniel Pfeiffer <Daniel.Pfeiffer@Informatik.START.dbp.de>
+
+	* sh-script.el (sh-shells): Eliminated variable redundant with
+	`interpreter-mode-alist'.
+	(sh-beginning-of-command): Take into account \quoted newline.
+	(sh-builtins, sh-leading-keywords, sh-other-keywords): Now three
+	distinct sets for font-locking.
+	(sh-font-lock-keywords-1, sh-font-lock-keywords-2): New variables
+	and functions to give the user finer control over how much to fontify,
+	including new distinction between keywords and builtins.
+	(sh-mode): Use new features of `font-lock-defaults' and adaptation
+	to skeleton changes.
+	(sh-while): Fix csh, es & rc skeletons.
+
+	* skeleton.el (skeleton-end-hook): Now defvared and responsible for
+	pushing out anything following skeleton to next line.  Thus this
+	behaviour can now be controlled by modes.
+	(skeleton-insert): Parameter `no-newline' removed.
+	(skeleton-read): Take this into account.
+	(skeleton-internal-1): Less spurious empty lines when wrapping.
+
+	* sh-script.el (sh-remember-variable): Set variable to empty string,
+	so as not to mess up subprocesses' environment.  Not so nice for
+	completion.
+
+	* two-column.el (minor-mode-map-alist): Use substitute-key-definition
+	to find the appropriate bindings for window enlarge/shrink.
+	(2C-shrink-window-horizontally, 2C-enlarge-window-horizontally):
+	Renamed from shrink-window-horizontally, enlarge-window-horizontally
+	to avoid redefining the standard functions.
+
+Thu Nov  2 21:27:35 1995  Stephen Gildea <gildea@x.org>
+
+	* mh-e.el (mh-make-folder-mode-line): support mh-msg-count.
+	(mh-delete-scan-msgs): use fast new mh-goto-msg.
+	* mh-utils.el (mh-goto-msg): binary search (much faster!).
+	(mh-prompt-for-folder): error if regular file.
+	* mh-comp.el: reporter.el support.
+
+Thu Nov  2 15:53:02 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* rmail.el (rmail-delete-message-hook): New hook.
+	(rmail-delete-message, rmail-delete-forward): Run the hook.
+
+	* rmail.el (rmail-mode-hook, rmail-get-new-mail-hook): Add defvars.
+	(rmail-show-message-hook): Likewise.
+
+	* simple.el (do-auto-fill): When choosing fill-prefix,
+	don't include the left-margin indentation.
+
+	* fill.el (fill-individual-paragraphs): Insist on nonempty header name,
+	in the special mailp case.
+
+Thu Nov  2 15:29:22 1995  Erik Naggum  <erik@naggum.no>
+
+	* ehelp.el (with-electric-help): Add missing argument MINHEIGHT.
+
+Thu Nov  2 04:31:32 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-utc-string): Use timezone of TIMEVAL for the 
+	correction, not the current one.
+	(vc-rcsdiff-knows-brief): New variable.
+	(vc-rcs-lock-from-diff): Use it.
+
+	* vc.el (vc-backend-diff): Use new variable vc-rcsdiff-knows-brief.
+
+Wed Nov  1 23:30:20 1995  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* make-mode.el: Renamed from makefile.el.
+
+	* term/x-win.el: Don't require initial whitespace in vendor name.
+
+	* tpu-edt.el (tpu-set-mode-line): Add element for column number.
+
+Tue Oct 31 19:44:58 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* cc-mode.el (c-recognize-knr-p): Default now t.
+
+	* server.el (server-log): Record the current time.
+	End with newline whenever STRING doesn't end with one.
+
+	* sh-script.el (sh-mode-map): Put sh-execute-region on C-M-x.
+	Put executable-interpret on C-c C-x.
+
+Tue Oct 31 00:24:32 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* loadup.el: Always load menu-bar.
+
+	* msb.el (msb--toggle-menu-type): Pass t as arg.
+
+	* startup.el (command-line-1): Say how to invoke menu bar, if not X.
+
+	* jka-compr.el (auto-compression-mode): Make arg optional.
+
+	* loadup.el: Fix previous change.
+
+Mon Oct 30 19:25:42 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* mailabbrev.el (mail-abbrev-syntax-table): Fix initialization.
+
+	* startup.el (command-line): If not X, do enable menu bar.
+
+Mon Oct 30 19:00:50 1995  Stephen Gildea  <gildea@x.org>
+
+	* time-stamp.el: Update some doc strings.
+	(time-stamp-strftime): Ignore some additional chars we might want
+	to use in the future for additional controls or parameters.
+	(time-stamp): Minor optimizations.
+
+Mon Oct 30 12:38:27 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* help.el (describe-function): Call documentation just once.
+	(describe-key): Likewise.
+
+	* files.el (set-auto-mode): If mode cmds move point, obey them.
+
+	* help.el (describe-variable): Don't call substitute-command-keys.
+
+	* rmailsum.el (rmail-summary-overlay): Make it a permanent local.
+
+	* vmsx.el: File deleted.
+
+Mon Oct 30 03:31:21 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* makefile.el (makefile-define-space-face): Use frame-parameters for
+	frame and display attributes.
+
+Sun Oct 29 17:22:51 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* loadup.el (finding existing executable versions):
+	Add a period to the end of BASE.
+
+	* arc-mode.el (archive-zoo-summarize): Handle archives
+	with long file names.
+
+	* disass.el (disassemble-internal): Handle lazy-loaded doc strings.
+	(disassemble-1): Handle lazy-loaded bytecode objects.
+
+	* etags.el (select-tags-table): Don't modify the value of
+	tags-table-list.
+
+Sun Oct 29 15:21:43 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tmm.el (tmm-old-mb-map): Initialize to nil.
+	(tmm-delete-map): Don't use tmm-old-mb-map if nil.
+	(tmm-add-prompt): Bind C-n and C-p.
+	Put only the shortcuts into the completion buffer's map.
+	Produce the completion list by hand so as not to sort it.
+	(tmm-prompt): Start at the first item in the menu.
+	Don't reverse tmm-km-list; reverse compl-list instead.
+	Use try-completion in last-ditch attempt to find a match.
+	Rename compl-list to history.
+	(tmm-get-keybind): Put more local bindings last in a menu.
+	Major rewrite.
+	(tmm-menubar): Handle menu-bar-final-items.
+	(tmm-remove-shortcuts): Function deleted.
+	(tmm-add-shortcuts): If we can't find a letter shortcut,
+	use a numeric shortcut.
+
+	* simple.el (column-number-mode): Make default value nil.
+
+	* cc-mode.el (c-guess-basic-syntax): Verify c-access-key is non-nil
+	before looking for it.
+
+	* bytecomp.el (byte-recompile-directory): New arg FORCE.
+	(byte-force-recompile): New function.
+
+	* case-table.el (describe-buffer-case-table): Use set-char-table-range.
+
+Sat Oct 28 02:19:32 1995  Erik Naggum  <erik@naggum.no>
+
+	* iso02-syn.el: Adapt to new char-table implementation.  Fix name
+ 	of file in the first line, part number syntax of ISO standards,
+ 	and `provide' clause.  Register file with RCS.
+
+	* ange-ftp.el (ange-ftp-ftp-name,ange-ftp-replace-name-component):
+ 	Use posix-string-match for complex regexp in `ange-ftp-name-format'.
+	(ange-ftp-process-sentinel): Quote final * in buffer name match.
+
+Fri Oct 27 17:40:51 1995  Noah Friedman  <friedman@prep.ai.mit.edu>
+
+        * rlogin.el (rlogin): If `buffer' arg is a buffer object,
+        initialize `buffer-name' to the buffer name.
+        Set `buffer' to buffer actually created or returned by
+        get-buffer-create.
+        Set `proc' to the process actually in the new buffer, not the
+        process with the name buffer-name; they may not be the same if
+        buffers have been renamed.
+
+Thu Oct 26 18:38:26 1995  Ed Reingold  <reingold@spiff.gnu.ai.mit.edu>
+
+        * cal-chinese.el (calendar-chinese-sexagisimal-name): New
+        function.
+        (holiday-chinese-new-year,calendar-chinese-date-string): Use it.
+
+Thu Oct 26 14:21:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (set-visited-file-name, basic-save-buffer):
+	Set buffer-file-number consistently with find-file-noselect.
+
+Thu Oct 26 09:52:51 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* font-lock.el: General reorganisation.
+	(font-lock-fontify-syntactically-region): Renamed from
+ 	font-lock-fontify-region.  Assume that region end-points are at bol.
+	Don't bother wrapping with save-excursion; caller does this.
+	(font-lock-fontify-keywords-region): Renamed from
+	font-lock-hack-keywords.  Call font-lock-fontify-anchored-keywords if
+	car of HIGHLIGHT is not a number (i.e., is another MATCHER, not a
+	MATCH), for new MATCH-ANCHORED font-lock-keywords structure.
+	(font-lock-fontify-region): Use them.
+	(font-lock-after-change-function): Use it.  Don't bother invalidating
+	font-lock-cache-position; called function does this.
+	(font-lock-keywords-only): Renamed from font-lock-no-comments.
+	(font-lock-maximum-decoration, font-lock-maximum-size): Doc fix for new
+	functionality.
+	(font-lock-set-defaults, font-lock-mode): Cope if they are lists.
+	(font-lock-keywords): Doc fix for new MATCH-ANCHORED structure and
+	new OVERRIDE values.
+	(font-lock-fontify-anchored-keywords): New function for processing the
+	new MATCH-ANCHORED structure.
+	(font-lock-fillin-text-property, font-lock-prepend-text-property,
+	font-lock-append-text-property): New text property functions.
+	(font-lock-apply-highlight): Use them for new OVERRIDE values.
+	(scheme-font-lock-keywords): New variable.
+	(c-font-lock-keywords-3, c++-font-lock-keywords-3): New variables.
+	(font-lock-defaults-alist): Use them for Scheme, C and C++ modes.
+
+	* fast-lock.el (fast-lock-read-cache): Set fast-lock-cache-filename.
+	(fast-lock-cache-data): Don't set it here via caller's local variable.
+
+	* fortran.el (fortran-mode): Addition for font-lock-defaults.
+	(fortran-font-lock-keywords-3): Rewrite using MATCH-ANCHORED structure.
+
+	* rmail.el (rmail-font-lock-keywords): Better citation regexp.
+
+	* sendmail.el (mail-font-lock-keywords): Likewise.
+
+Thu Oct 26 02:39:28 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* morse.el: New file.
+
+Wed Oct 25 15:23:31 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* cc-mode.el (c-mode): Add autoload.
+
+	* loadup.el: Don't load c-mode.
+	* loaddefs.el: Get rid of cplus-md.el; add cc-mode.el.
+
+	* cmacexp.el: Require cc-mode.
+
+	* hideif.el: Provide hideif; require cc-mode.
+
+	* help.el (describe-key, describe-key-briefly): For a mouse click,
+ 	go to its buffer and position before looking up the key.
+
+Wed Oct 25 13:01:36 1995  Gregor Schmid  <gs@ivu-berlin.de>
+
+	* tcl-mode.el: Add support for imenu.
+	Add support for font-lock-mode (thanks to <simonm@mail.esrin.esa.it>).
+
+Tue Oct 24 12:38:43 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (set-visited-file-name): Abbreviate buffer-file-name.
+
+	* mouse.el (mouse-drag-region): Set end-of-range after
+	calling mouse-scroll-subr.
+	(mouse-set-region): Don't do the sit-for on a pc frame.
+
+Tue Oct 24 10:29:59 1995 Brian D. Carlstrom  <bdc@ai.mit.edu>
+
+	* gud.el (gud-dbx-directories): New variable.
+	(gud-dbx-massage-args): Use gud-dbx-directories.
+	(gud-dbx-file-name): New function.
+	(gud-irixdbx-marker-filter): Use gud-dbx-file-name.
+	(gud-dbx-file-file): Use gud-dbx-file-name.
+
+	* gud.el (gud-filter): Fix previous change.
+
+Tue Oct 24 11:44:45 1995  Ed Reingold  <reingold@spiff.gnu.ai.mit.edu>
+
+        * cal-menu.el (calendar-mouse-print-dates): Fix entry for Chinese
+        calendar.
+
+        * cal-chinese.el: Completely rewritten!
+
+Tue Oct 24 00:06:14 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* add-log.el (get-method-definition, get-method-definition-1):
+	Rename var md to get-method-definition-md and defvar it.
+
+Mon Oct 23 12:50:38 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* ange-ftp.el (internal-ange-ftp-mode):
+	Set comint-password-prompt-regexp locally to not match anything.
+
+	* informat.el (Info-validate, Info-validate-node-name):
+	Use buffer-substring-no-properties.
+	(Info-tagify, batch-info-validate, Info-validate-tags-table): Likewise.
+
+	* informat.el (Info-validate-tags-table): Change handling
+	of newline in the loop reading node names.
+
+	* info.el (Info-following-node-name, Info-extract-menu-node-name)
+	(Info-select-node): Use buffer-substring-no-properties.
+
+Sun Oct 22 12:30:46 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* case-table.el (copy-case-table): New function.
+	(set-case-syntax-delims, set-case-syntax-pair, set-case-syntax):
+	Clear out the three extra slots.
+
+Sun Oct 22 02:28:11 1995  Erik Naggum  <erik@naggum.no>
+
+	* derived.el (derived-mode-init-mode-variables): Make proper
+ 	syntax-table.
+
+	* iso-syntax.el: Handle new case-table implementation.
+
+Sat Oct 21 13:31:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* msb.el: Require cl only when compiling.
+
+Sat Oct 21 13:31:39 1995  Axel Boldt  <boldt@math.ucsb.edu>
+
+	* electric.el (Electric-command-loop): Don't display a prompt
+        if 2nd arg equals or returns 'noprompt.
+
+	* ehelp.el: Fix key bindings.
+        (electric-help-mode): Use mouse-leave-buffer-hook.
+        (electric-help-retain): Remove mouse-leave-buffer-hook.
+	(with-electric-help): New argument minheight.
+        (electric-help-execute-extended): New function.
+        (electric-help-ctrl-x-prefix): New function.
+	(electric-help-command-loop): Make messages more consistent.
+	Include strategic sit-for 0, so that
+	pos-visible-in-window-p will return the right thing.
+	Make 2nd arg of Electric-command-loop return 'noprompt if we
+        are in isearch-mode.
+        Eval to-be-executed at the very end.
+	(ehelp-map): Electrify apropos too.
+
+Fri Oct 20 15:34:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* noutline.el (outline-view-change-hook): New hook variable.
+	(outline-flag-region): Run the hook.
+
+	* informat.el (Info-validate-tags-table): Fix the scan of the
+	tags table checking that the positions are right.
+	(Info-validate): Use buffer-substring-no-properties.
+
+	* dabbrev.el (dabbrev-expand): When no more expansions,
+	Put back the original abbrev with its original case pattern.
+	(dabbrev--find-expansion): Move buffers that are visible on the screen
+	to the front of the list to be searched.
+
+	* startup.el (normal-top-level): Set auto-save-list-file-name later,
+	after calling command-line.
+
+Fri Oct 20 15:08:22 1995  Erik Naggum  <erik@naggum.no>
+
+	* comint.el (comint-exec-1): Fix previous change.
+
+Fri Oct 20 11:22:25 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* add-log.el (add-log-current-defun):
+	Handle `private', `public' in C++ class definitions.
+
+Thu Oct 19 01:14:59 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* isearch.el (isearch-message-prefix):
+	Change "wrapped" to "overwrapped" when past original start point.
+
+	* comint.el (comint-exec-1): Don't alter EMACS envvar
+	if it's already defined.
+
+	* cplus-md.el (calculate-c++-indent): Skip over paren-group
+	when looking back to determine context of a top-level line.
+	Don't treat a line starting with } as a continuation.
+
+Wed Oct 18 21:06:59 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacsbug.el (report-emacs-bug): Don't mention
+	system-configuration-options if it is empty.
+	Make it clearer what that text is.
+
+Tue Oct 17 14:10:19 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tex-mode.el (tex-start-of-header): Now a regexp.
+	(tex-end-of-header): Likewise.
+	(plain-tex-mode, latex-mode, slitex-mode, tex-region):
+	Changed accordingly.
+
+	* pc-select.el (pc-selection-mode): Add autoload cookie.
+
+	* pc-select.el: New file.
+
+Mon Oct 16 22:21:38 1995  Rolf Ebert  <re@waporo.muc.de>
+
+	* ada-mode.el:
+	All doc strings changed to comply with standard Emacs conventions.
+	(ada-mode): Support new font-lock-mode.
+	(ada-format-paramlist): Changed all `accept' to `access'.
+	(ada-insert-paramlist): Changed all `accept' to `access'.
+	(ada-in-comment-p): Use standard Emacs way `parse-partial-sexp'.
+	(ada-font-lock-keywords-1): Change order of some alternatives.
+
+Mon Oct 16 17:45:22 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* cc-mode.el (c-emacs-features): Don't expect integer in syntax table.
+
+	* flow-ctrl.el (enable-flow-control): Use a char-table.
+
+Sun Oct 15 04:53:55 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* mailabbrev.el (mail-abbrev-syntax-table): Rewrite using
+	map-char-table.
+
+	* derived.el (derived-mode-merge-syntax-tables): Rewrite using
+	map-char-table.
+
+	* hippie-exp.el (he-transfer-case): Fix typo in prev change.
+
+Fri Oct 13 23:14:10 1995  Michael Kifer  <Michael Kifer <kifer@cs.sunysb.edu>>
+
+	* ediff.el (ediff-version): is now autoloaded.
+	* ediff-init.el: Moved defsubsts up.
+	* ediff-hook.el: Now defines [window] in menu-bar-ediff-menu.
+
+Fri Oct 13 20:14:10 1995  Michael Kifer  <Michael Kifer <kifer@cs.sunysb.edu>>
+
+	* viper.el (vip-set-hooks): Use view-mode-hook in emacs and view
+	hook in xemacs.
+	(vip-read-string-with-history): minibuffer-setup-hook no longer
+	waits for the user to type, if there are unread events.
+	Added (vip-leave-region-active) to all simple movement commands.
+	Viper now understands syntactic tables.
+	Harnessed view-minor-mode.
+	(vip-read-string-with-history,vip-search): won't pause inside
+	macros any more.
+	* viper-mous.el (vip-surrounding-word): modified to understand
+	tripple clicks.
+	* viper-util.el (vip-leave-region-active): new function.
+	* viper-ex.el (ex-write): uses better defaults.
+	* viper-macs.el (vip-record-kbd-macro): correctly escapes `.' and
+	`[' now.
+
+Fri Oct 13 15:17:28 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* help.el (variable-at-point, function-called-at-point):
+	Switch temporarily to emacs-lisp-mode-syntax-table.
+
+	* goto-addr.el: New file.
+	* browse-url.el: New file.
+
+Fri Oct 13 1995  Anders Holst (aho@nada.kth.se)
+
+	* hippie-exp.el:
+	(hippie-expand): Removed bug - don't undo from another buffer.
+	(he-reset-string): Removed bug - don't move markers.
+	(he-capitalize-first): New function, defining new "case".
+	(he-transfer-case): New function.
+	(he-transfer-case-ok): Function removed.
+	(he-substitute-string,he-ordinary-case-p,he-string-member): Use the
+	new functions above, for the new case handling.
+	(he-file-name-chars): New variable.
+	(he-file-name-beg): Use `he-file-name-chars'.
+	(he-file-name-nondirectory,he-file-name-directory,
+	he-file-directory-p,he-concat-directory-file-name): New functions
+	to handle VMS and PC filename formats more accurately.
+	(try-complete-file-name,try-complete-file-name-partially): Use the
+	new functions above.
+	(try-expand-line-all-buffers,try-expand-list-all-buffers,
+	try-expand-dabbrev-all-buffers): Use `case-fold-search' from the
+	original buffer.
+	(he-line-beg): Removed bug that made point move.
+	(try-expand-all-abbrevs): Check that abbrev tables exist before use.
+	(try-expand-dabbrev-visible): New try function.
+	(he-search-window): New variable used by `try-expand-dabbrev-visible'.
+	(he-dab-search-regexp): Function removed.
+	(he-dab-search): Renamed to `he-dabbrev-search'.
+	(he-dabbrev-search): Find only whole matching symbols.
+	(he-dabbrev-skip-space): New variable.
+	(he-dabbrev-beg): Use `he-dabbrev-skip-space'.
+	(try-expand-dabbrev-from-kill,he-dabbrev-kill-search): New try
+	function, with requisites.
+	(try-expand-whole-kill,he-whole-kill-search,he-kill-beg): New try
+	function, with requisites.
+	(he-search-loc2): New variable, used by `try-expand-whole-kill'
+	and `try-expand-dabbrev-from-kill'.
+	(hippie-expand-try-functions-list): Added the try functions
+	`try-complete-file-name-partially', `try-expand-dabbrev-from-kill'
+	and `try-complete-lisp-symbol-partially'.
+	(Several functions): Adjusted and corrected use of `he-tried-table'.
+
+Fri Oct 13 09:06:37 1995  Ed Reingold  <reingold@spiff.gnu.ai.mit.edu>
+
+        * cal-tex.el: Minor fixes to doc strings and other small changes.
+
+Thu Oct 12 13:55:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* help.el (variable-at-point, function-called-at-point):
+	Fix revious changes.
+
+	* iso-transl.el: Handle aliases dead-acute,...
+
+Thu Oct 12 11:28:50 1995  Ed Reingold  <reingold@cs.uiuc.edu>
+
+        * cal-tex.el: New file.
+
+        * calendar.el: Add autoloads and key definitions for cal-tex.el.
+
+        * cal-menu.el: Add menu items for cal-tex.el.
+
+Wed Oct 11 14:26:34 1995  Robert J. Chassell  <bob@hill.gnu.ai.mit.edu>
+
+        * texinfmt.el (texinfo-unsupported): Handle commands in all capitals.
+
+Wed Oct 11 11:38:55 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (find-alternate-file-other-window): New function.
+
+Wed Oct 11 01:23:31 1995  Michael Kifer  <kifer@cs.sunysb.edu>
+
+	* menu-bar.el: Moved (define-key menu-bar-ediff-menu ...) to
+	ediff-hook.el, as menu-bar-ediff-menu is not defined yet.
+
+Wed Oct 11 00:59:00 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fill.el (adaptive-fill-function): Change defun to defvar.
+
+Tue Oct 10 12:52:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* simple.el (next-completion): Specify the LIMIT arg when
+	searching for text properties.
+
+	* help.el (function-called-at-point, variable-at-point):
+	Don't back up if we start at the beginning of a symbol.
+
+	* disp-table.el (display-table-slot, set-display-table-slot):
+	Get slot number from a property of its name.
+	Eliminate the type-checking.
+	(make-display-table): Call make-char-table the new way.
+	(describe-display-table): Use slot names to access slots.
+	(display-table): Give it the char-table-extra-slots property.
+	(display-table-char-p, display-table-vector-p): Functions deleted.
+	(display-table-slot-name-alist): Variable deleted.
+
+Mon Oct  9 22:30:42 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* mail-utils.el (mail-strip-quoted-names): Preserve white space
+ 	after comma when stripping text outside of <> delims.
+
+Mon Oct  9 15:41:18 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* view.el: Doc fixes.
+	(view-highlight-face): New variable.
+	(view-search): Use that variable.
+
+Mon Oct  9 14:01:04 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* etags.el (tags-table-check-computed-list): Map
+	 tags-expand-table-name over lists of included tables.
+
+Mon Oct  9 13:44:43 1995  Erik Naggum  <erik@naggum.no>
+
+	* disp-table.el: New implementation with char-tables.
+
+Mon Oct  9 13:08:04 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xt-mouse.el: New file.
+
+Mon Oct  9 00:49:37 1995  Noah Friedman  <friedman@prep.ai.mit.edu>
+
+	* mailabbrev.el (mail-abbrev-syntax-table): Use `equal' instead of
+	`=', in case elts of syntax table are lists, not integers.
+
+Sun Oct  8 15:58:21 1995  Erik Naggum  <erik@naggum.no>
+
+	* ada-mode.el (ada-gen-treat-proc): Bind `procname' and `functype'.
+
+	* view.el (view-exit): Delete view-overlay only if it exists.
+
+Sun Oct  8 14:56:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* server.el (server-start): Try both full hostname and shortened
+	hostname when deleting the socket file.
+
+	* gud.el (gud-filter): Move the gud-display-frame call
+	outside of the save-excursion.  New var process-window
+	controls which window to do it in.
+
+Sat Oct  7 00:08:29 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* subr.el (make-syntax-table): Use nil for "inherit".
+
+Fri Oct  6 11:11:31 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* bytecomp.el (byte-compile-from-buffer): Bind print-level.
+
+	* simple.el (newline): Call barf-if-buffer-read-only.
+
+	* iso-acc.el: Fix typo calling iso-accents-customize.
+	(iso-accents-compose): If this-command is non-nil, do prompt.
+
+Thu Oct 5  20:54:29 1995  Michael Kifer  <kifer@cs.sunysb.edu>
+
+	* ediff-meta.el: new file.
+	* ediff-hook.el: new file.
+	* ediff.el: Moved menubar definitions to a new file, ediff-hook.el
+	(ediff-files,ediff-merge-files): better file-name defaults.
+	(ediff-split-string): new function.
+	(ediff-exec-process): now handles diff args separated by space.
+	(ediff-backup-extension): new variable.
+	Replaced -hooks with -hook.
+	(ediff-revision-key): variable deleted.
+	* ediff-util.el (ediff-toggle-read-only,ediff-read-file-name):
+	replaced abbreviate-file-name with ediff-abbreviate-file-name.
+	(ediff-documentation): bug fix.
+	(ediff-setup,ediff-really-quit): modified to work with Ediff
+	session groups.
+	(ediff-quit,ediff-really-quit): now ask if the user wants to delete
+	buffers.
+	* ediff-init.el (ediff-abbreviate-file-name): function modified.
+	(ediff-truncate-string-left): new function.
+	(ediff-strip-last-dir,ediff-key-press-event-p,ediff-event-point,
+	ediff-event-buffer): new functions.
+	(ediff-frame-has-menubar,ediff-protect-meta-chars): functions deleted.
+	* ediff-wind.el (ediff-make-frame-position): fixed bugs.
+	(ediff-control-frame-parameters): fixed defaults.
+	* ediff-diff.el (ediff-setup-diff-regions,ediff-setup-diff-regions3,
+	ediff-setup-fine-diff-regions): functions modified.
+	(ediff-shell-command,ediff-shell-command-sentinel,
+	ediff-shell-command-filter): deleted.
+	(ediff-exec-process,ediff-process-sentinel,ediff-process-filter): new.
+
+Thu Oct  5 18:24:01 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* appt.el (appt-disp-window): Call raise-frame.
+
+	* view.el (View-search-regexp-forward, View-search-regexp-backward):
+	If arg is empty, use view-last-regexp.
+	(view-overlay): New variable, local in all buffers.
+	(view-search): Highlight the match using view-overlay.
+	(view-exit): Delete view-overlay.
+
+Wed Oct  4 11:59:54 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* desktop.el (desktop-outvar): Support truncation.
+	(desktop-globals-to-save): Doc fix.
+
+	* startup.el (command-line): Init user-mail-address here,
+	after reading init file.
+	(normal-top-level): Not here.
+
+	* gnuspost.el (gnus-inews-do-fcc): Use mail-file-babyl-p.
+
+	* gnus.el (gnus-summary-save-in-mail): Use mail-file-babyl-p.
+
+	* startup.el (auto-save-list-file-prefix): New variable.
+	(normal-top-level): Use it.
+
+	* files.el (recover-session): Use auto-save-list-file-prefix.
+
+	* sendmail.el (mail-signature-file): New variable.
+	Fix various doc strings to mention it.
+	(mail-signature): Use mail-signature-file.
+
+	* unrmail.el (unrmail): Call rmail-toggle-header.
+
+	* isearch.el (isearch-forward): Doc fix.
+
+Wed Oct  4 11:15:40 1995  Andre Spiegel  <spiegel@pogo.gnu.ai.mit.edu>
+
+	* vc.el (vc-next-action-on-file): When locking the latest trunk
+	version, use empty version number.
+
+Sun Oct  1 16:33:43 1995  Noah Friedman  <friedman@prep.ai.mit.edu>
+
+        * terminal.el (te-escape): Remove spurious partial duplicate
+        definition.
+
+Sun Oct  1 13:59:29 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (recover-session-finish): Ask only about files that
+ 	have auto-save files now.  Don't put "temp" into temp file names.
+
+Sat Sep 30 12:35:24 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* files.el (cd): Fix interactive spec to require match if there is
+	no CDPATH.
+
+Thu Sep 28 23:48:41 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* comint.el (comint-password-prompt-regexp): Recognize
+	Old Password and New password.
+
+Thu Sep 28 16:36:14 1995  Michael Ernst  <mernst@rice.edu>
+
+	* ispell.el (ispell-message-text-end): Match reporter.el bug reports.
+
+Thu Sep 28 15:18:50 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* help.el (print-help-return-message): Handle lists in
+	special-display-regexps and same-window-regexps.  Also in
+ 	special-display-buffer-names and same-window-buffer-names
+
+	* files.el (interpreter-mode-alist): Handle nawk.
+
+Wed Sep 27 11:25:56 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* sendmail.el (sendmail-send-it): Handle FCC after all text changes.
+	(mail-do-fcc): Don't add From field here.
+
+	* undigest.el (undigestify-rmail-message): Better error messages.
+
+Tue Sep 26 15:33:27 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* ange-ftp.el (ange-ftp-dumb-unix-host): Avoid error if HOST is nil.
+
+Mon Sep 25 18:14:51 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* add-log.el (add-log-current-defun): Ignore quotes before fcn name.
+
+Mon Sep 25 14:53:24 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* info.el (Info-title-face-alist): New var.
+	(Info-fontify-node): Check for headings that are `underlined' with
+	characters on the following line.
+
+Mon Sep 25 10:53:57 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* help.el (help-mode): Call view-mode.
+
+	* diary.el (mark-sexp-diary-entries): Add \ for C-M-f's sake.
+
+	* view.el (view-mode-enter): Renamed from view-mode.  Callers changed.
+	Don't create local vars here.  Set view-mode-auto-exit.
+	Don't change local map--just set view-mode.
+	(view-mode): New function toggles minor mode in the usual way.
+	(view-mode-map): Put this on minor-mode-map-alist.
+	(view-mode-exit): Do the exit actions only if view-mode-auto-exit.
+	(View-scroll-lines-forward): Exit only if view-scroll-lines-forward.
+ 	(view-mode-auto-exit, view-old-buffer-read-only)
+	(view-old-Helper-return-blurb, view-scroll-size, view-last-regexp)
+	(view-exit-action, view-return-here, view-exit-position):
+	Defvar them and make them always-local.
+
+Mon Sep 25 06:53:32 1995  Erik Naggum  <erik@naggum.no>
+
+	* startup.el (command-line-1): --eval: Don't print the value.
+	(command-line-1): --insert: Don't complain on --insert=file.
+
+Sun Sep 24 19:24:35 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* replace.el (occur): Indent better for matches that contain newlines.
+
+Sat Sep 23 23:49:25 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* jka-compr.el (auto-compression-mode): Add autoload cookie.
+	Renamed from toggle-auto-compression.
+	(toggle-auto-compression): Define as alias.
+
+Fri Sep 22 17:51:48 1995  Erik Naggum  <erik@naggum.no>
+
+	* cl-macs.el (get-setf-method): Protect caller's match-data from
+	string-match.
+
+Fri Sep 22 17:33:18 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* edt.el (edt-setup-default-bindings): Revert function is
+	revert-buffer, not revert-file.
+
+Fri Sep 22 17:31:07 1995  Torbjorn Einarsson <T.Einarsson@clab.ericsson.se>
+
+	* f90.el: Major revision.
+	Much improved and quicker highlighting using font-lock.
+	Support for hilit19 removed.
+	Support for imenu added.
+	Changed indentation for continue statements.
+	Added treatment of preprocessor directives.
+	(f90-directive-comment-re) is now a regular expression.
+	Many bug fixes.
+
+Fri Sep 22 15:36:23 1995  Ed Reingold  <reingold@spiff.gnu.ai.mit.edu>
+
+	* cal-menu.el (calendar-mouse-chinese-date): New function.
+	(calendar-mouse-print-dates): Use it.
+
+Thu Sep 21 21:38:19 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* sendmail.el (mail-do-fcc): Erase the ` mail-temp' buffer.
+	(mail-do-fcc): Clear read-only flag in ` mail-temp' buffer.
+
+	* undigest.el (undigestify-rmail-message): Scan back as far as start
+	of message, to find end of digest.
+
+	* rmailout.el (rmail-file-p): Function moved to mail-utils.el
+	ad renamed to mail-file-babyl-p.
+	(rmail-output, rmail-output-to-rmail-file): Use new name.
+	* mail-utils.el (mail-file-babyl-p): Function moved from
+	rmail.el and renamed.
+
+	* sendmail.el (mail-file-babyl-p): Function deleted.
+	(sendmail-send-it): Load mail-utils first thing.
+
+Thu Sep 21 18:01:48 1995  Erik Naggum  <erik@naggum.no>
+
+	* byte-opt.el (byte-boolean-vars): Update list to reflect actual
+ 	DEFVAR_BOOL symbols in the C code.
+
+Thu Sep 21 16:53:08 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* edt.el (edt-set-screen-width-80, edt-set-screen-width-132):
+	If a terminal-specific function exists, call it.
+	* edt-vt100.el (edt-set-term-width-80, edt-set-term-width-132):
+	Terminal-specific functions.
+	Don't redefine edt-set-screen-width-80 and edt-set-screen-width-132.
+
+	* terminal.el (te-escape, te-escape-help): Handle non-ASCII events.
+
+Tue Sep 19 16:02:37 1995  Edward M. Reingold  <reingold@emr.cs.uiuc.edu>
+
+	* cal-chinese.el: New file.
+
+	* cal-coptic.el: New file.
+
+	* cal-julian.el: New file.  All Julian calendar related code moved here
+	from calendar.el, holidays.el, and diary-lib.el.
+
+	* cal-iso.el: New file.  All ISO calendar related code moved here
+	from calendar.el and diary-lib.el.
+
+	* cal-islamic.el: New file. All Islamic calendar related code
+	moved here from calendar.el, holiday.el, diary-lib.el, and
+ 	diary-ins.el.
+
+	* cal-hebrew.el: New file. All Hebrew calendar related code
+	moved here from calendar.el, holiday.el, diary-lib.el, and
+ 	diary-ins.el.
+
+	* cal-move.el: New file.  All functions related to movement in the
+	calendar moved here from calendar.el.
+
+	* diary.el: New file.  Functions related to the diary moved from
+	diary-lib.el and diary-ins.el.
+
+	* holidays.el (holiday-hebrew):  Moved to cal-hebrew.
+	(holiday-islamic): Moved to cal-islamic.
+	(holiday-julian): Moved to cal-julian.
+
+	* cal-x.el (calendar-setup):  Moved to calendar.el.
+
+	* diary-lib.el: Deleted.
+ 	(diary-date, diary-remind): New functions.
+  	(list-sexp-diary-entries): Mention them in doc string.
+  	(diary-remind-message, marking-diary-entries,
+	marking-diary-entry): New variables.
+  	(diary-mark-sexp-diary-entries, mark-diary-entries): Rewritten to
+ 	accomodate marking-diary-entries.
+	(diary-sexp-entry): Fix indentation.
+	(diary-chinese-date, diary-coptic-date, diary-ethiopic-date):
+	Do autoloads.
+	(diary-islamic-date, list-islamic-diary-entries,
+	mark-islamic-diary-entries, mark-islamic-calendar-date-pattern):
+	Moved to cal-islamic.el.
+	(diary-hebrew-date, list-hebrew-diary-entries,
+	mark-hebrew-diary-entries, mark-hebrew-calendar-date-pattern):
+	Moved to cal-hebrew.el.
+	Everything else moved to diary.el.
+
+	* diary-ins.el: Deleted.
+	(insert-islamic-diary-entry, insert-monthly-islamic-diary-entry,
+ 	insert-yearly-islamic-diary-entry): Moved to cal-islamic.el.
+  	(insert-hebrew-diary-entry, insert-monthly-hebrew-diary-entry,
+ 	insert-yearly-hebrew-diary-entry): Moved to cal-hebrew.el.
+  	Everything else moved to diary.el.
+
+	* cal-menu.el (calendar-mouse-print-dates): Add Chinese and Coptic
+	dates; fix astro date message.
+	(calendar-mouse-2-date-menu): Add dayname to menu.
+
+	* cal-french.el (french-calendar-special-days-array,
+ 	calendar-french-date-string): Fix accents.
+	(calendar-goto-french-date): Use reverse instead of nreverse; fix
+	accents.
+        (french-calendar-epoch): New variable.
+	(calendar-french-from-absolute, calendar-absolute-from-french): Use it.
+
+	* cal-dst.el: Fix commentary.
+	(dst-adjust-time): Moved and renamed from solar.el.
+	(dst-in-effect): New function.
+
+	* solar.el (solar-equinoxes-solstices, solar-ephemeris-correction,
+	solar-equinoxes/solstices): Rewritten.
+	(solar-apparent-longitude-of-sun): Deleted.
+        (solar-longitude, solar-date-next-longitude): New functions.
+	(solar-adj-time-for-dst): Renamed dst-adjust-time and moved to
+	cal-dst.el.
+	(solar-sin-degrees, solar-cosine-degrees, solar-tangent-degrees):
+	Take angle mod 360.0.
+	(solar-tangent-degrees): Change to macro.
+
+	* calendar.el (calendar-mod, calendar-absolute-from-astro,
+ 	calendar-astro-from-absolute): New functions.
+  	(calendar-astro-date-string, calendar-goto-astro-day-number): Use
+ 	them.  Autoload holiday-chinese-new-year,
+ 	calendar-goto-chinese-date, calendar-print-chinese-date,
+ 	calendar-chinese-date-string, calendar-goto-coptic-date,
+ 	calendar-print-coptic-date, calendar-coptic-date-string,
+ 	calendar-goto-ethiopic-date, calendar-print-ethiopic-date,
+ 	calendar-ethiopic-date-string, calendar-one-frame-setup, and
+ 	calendar-two-frame-setup.  (oriental-holidays): New variable for
+ 	Chinese New Year.  (calendar-mode-map): Put Chinese and Coptic
+ 	calendar functions on keys.  (calendar-setup): Moved here from
+ 	cal-x.el.  (diary-file): Mention Chinese, Coptic, and Ethiopic
+ 	dates.  (calendar-goto-today, calendar-forward-month,
+ 	calendar-forward-year, calendar-backward-month,
+ 	calendar-backward-year, scroll-calendar-left,
+ 	scroll-calendar-right, scroll-calendar-left-three-months,
+ 	scroll-calendar-right-three-months,
+ 	calendar-cursor-to-nearest-date, calendar-forward-day,
+ 	calendar-backward-day, calendar-forward-week,
+ 	calendar-backward-week, calendar-beginning-of-week,
+ 	calendar-end-of-week, calendar-beginning-of-month,
+ 	calendar-end-of-month, calendar-beginning-of-year,
+ 	calendar-end-of-year, calendar-cursor-to-visible-date,
+ 	calendar-goto-date, calendar-goto-iso-date): Moved to cal-move.el.
+  	(calendar-goto-julian-date): Moved to cal-julian.
+  	(calendar-cursor-to-date, generate-calendar-month): Consider the
+ 	space next to a one-digit date as being on that date.
+
+	* cal-mayan.el (calendar-mayan-tzolkin-from-absolute): Use them.
+	(mayan-adjusted-mod): Moved to calendar.el and renamed calendar-mod.
+
+	* lunar.el (lunar-new-moon-time, lunar-new-moon-on-or-after) New
+	functions.
+
+
+Mon Sep 18 10:45:24 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* subr.el (substitute-key-definition): Do recursively scan
+	where KEYMAP has nothing at all.
+
+	* mouse.el (C-down-mouse-1): Use buffer menu, not font menu.
+	(S-down-mouse-1): Put font menu here.
+
+	* mouse.el (mouse-drag-vertical-line): New function.
+	(mouse-scroll-min-lines): New variable.
+	(mouse-scroll-subr): Use it.
+
+Sun Sep 17 10:11:08 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* files.el (find-alternate-file): Kill any preexisting ` **lose**' buf.
+
+Thu Sep 14 10:44:41 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* dunnet.el (dun-climb): Handle unknown object name.
+	(dun-objnames): Add "palm" as alias for "tree".
+
+	* indent.el (indent-for-tab-command): Get the prefix arg
+	and pass it along to indent-line-function if it isn't nil.
+
+Thu Sep 14 03:25:26 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-fetch-master-properties): Call "cvs status"
+	in the right directory, passing only the nondirectory part of
+	the file name.
+	(vc-find-cvs-master): Bind `mtime' locally instead of using it
+	as a free variable.
+
+Tue Sep 12 00:31:50 1995  Erik Naggum  <erik@naggum.no>
+
+	* dired-x.el: Remove `dired-up-directory'.
+	(dired-find-buffer-nocreate): Add optional argument `mode' like
+	the function it redefines from dired.el.
+
+	* dired.el (dired-up-directory): Add optional argument
+	`other-window' to obviate the need to redefine it in dired-x.el.
+
+Tue Sep 12 16:57:07 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* files.el (auto-mode-alist): .pl is now Perl.
+
+	* delsel.el (clipboard-yank): Add delete-selection property.
+
+Mon Sep 11 19:33:17 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* server.el (server-process-filter): Ignore lines that don't start
+	with `Error:' or `Client:'.
+
+Fri Sep  8 16:43:10 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* dired.el (dired-internal-noselect): Set dired-directory
+	when refreshing a buffer that displays a list of files.
+	(dired-find-buffer-nocreate): Handle the case when
+	dired-directory is a list.
+	(dired-sort-other): Don't set mode-name if we are not in
+	dired-mode.
+
+	* vc.el (vc-dired-mode): Now a major mode derived from dired-mode.
+	(vc-directory): Take DIRNAME as an argument.  Ask for it in
+	the minibuffer.  Don't kill pre-existing vc-dired buffers
+        (dired now re-uses the right one).
+	(vc-file-tree-walk): New argument DIRNAME.  Updated all callers.
+	(vc-dired-update): New function.  `g' in vc-dired-mode calls it.
+	(vc-dired-reformat-line): Handle different ls -l formats.
+
+	* vc-hooks.el (vc-locking-user): Fixed wrong parentheses.
+
+Fri Sep  8 13:19:17 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* register.el: Rename all register-name args to `register'.
+
+Thu Sep  7 06:12:50 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* env.el (setenv): Call set-time-zone-rule when setting TZ.
+
+Thu Sep  7 00:14:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* text-mode.el (center-line): New arg NLINES.
+	Do nothing for lines that are too wide.
+
+	* hexl.el (hexl-current-address): New arg VALIDATE.
+	Handle point values in the ASCII text section and in the addresses.
+	(hexl-insert-char): Handle point located in the ASCII text.
+
+Wed Sep  6 12:42:02 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* info.el (Info-suffix-list): Add .inf to MSDOS list.
+
+	* ange-ftp.el (ange-ftp-gwp-filter): Go to process buffer
+	before getting text from it.
+
+	* mouse.el (mouse-drag-region): Record where the mouse drag has reached
+	and use that to adjust the drag event before replaying it.
+
+	* gud.el (gud-filter): Save up text that arrives while processing
+	previous text.
+
+Wed Sep  6 14:28:03 1995  Fred Pierresteguy  <F.Pierresteguy@frcl.bull.fr>
+
+	* rmailsum.el (rmail-summary-construct-io-menu): Use all of FILES.
+	Also disable the menu instead of not displaying it, if FILES is empty.
+
+Tue Sep  5 17:28:56 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* browse-url.el: New file.
+
+Mon Sep  4 16:25:53 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* mailabbrev.el (mail-interactive-insert-alias):
+	Call mail-abbrev-expand-hook.
+
+Sat Sep  2 12:27:45 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* info.el (info-insert-file-contents): Use info-insert-file-contents-1
+	to set FULLNAME.  Use call-process-region to run the decode program.
+	(Info-find-node): Use info-insert-file-contents-1.
+	(info-insert-file-contents-1) [MSDOS]: Don't use the dot in SUFFIX
+	if FILENAME already has one.
+
+	* dired.el (dired-internal-noselect): New arg MODE.
+	If it's non-nil, switch to that nil.
+	(dired-find-buffer-nocreate): New arg MODE.
+
+	* mouse.el (mouse-drag-region): Store the right end position
+	in the drag-event before replaying it at the end.
+
+	* files.el (auto-mode-alist): Handle .f90 files.
+
+	* dired.el (dired-internal-noselect): Use dirname when finding
+	existing buffer.
+
+Thu Aug 31 19:48:44 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* cc-compat.el: New file.
+
+	* sendmail.el (sendmail-send-it): Use user-mail-address.
+
+Thu Aug 31 23:41:21 1995  Barry Warsaw  <bwarsaw@anthem (Barry Warsaw)>
+
+	* cc-mode.el (c-backslashify-current-line): Obsolete.
+	(c-append-backslash, c-delete-backslash): Taken from c-mode.el.
+	(c-backslash-region): Likewise.
+
+	* cc-mode.el (c-indent-defun): Watch out for point being on the
+	first top-level open brace in the buffer.
+
+	* cc-mode.el (c-copy-tree, c-mapcar-defun): Define functions only
+	available in XEmacs 19.12, or Emacs 19 + lucid.el.
+
+	* cc-mode.el (c-lineup-ObjC-method-call): New implementation
+	better handles 1. indentation of arguments to keyword parameters,
+	2. multiline method calls.
+
+	* cc-mode.el (c-electric-brace): Fixed preservation of
+	no-whitespace before brace.
+
+	* cc-mode.el (c-guess-basic-syntax): CASE 5A.1: Watch out for
+	c-state-cache; it may or may not be in place, but it should be
+	ignored.
+
+	* cc-mode.el (c-electric-colon): In call to c-lookup-lists, fixed
+	incorrect quoting of symbols in the quoted list.
+
+	* cc-mode.el (c-search-uplist-for-classkey): Watch out for
+	embedded c-class-key keywords.
+
+	* cc-mode.el (c-common-init): Make a deep copy of c-offsets-alist
+	so that changing the buffer-local value in one buffer doesn't
+	affect the global value, or other buffers.
+
+	* cc-mode.el (c-snug-do-while): forward-sexp call could fail;
+	wrap it in a c-safe.
+
+	* cc-mode.el (c++-mode, objc-mode): comment-multi-line must be nil
+	if // is the default comment style.
+
+Thu Aug 31 11:04:43 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* ange-ftp.el (ange-ftp-vms-sans-version): Accept extra args.
+
+Wed Aug 30 12:01:14 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* simple.el (kill-new): Compute 2nd arg to interprogram-cut-function
+	based on REPLACE.
+
+	* files.el (list-directory): Set default-directory.
+
+Wed Aug 30 14:37:25 1995  Per Abrahamsen  <abraham@dina.kvl.dk>
+
+	* mouse.el (mouse-skip-word): Skip complete symbol when over a
+	character with symbol syntax.
+
+Tue Aug 29 11:30:37 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* dired-aux.el (dired-byte-compile): Report failure if output file
+	is not created.
+
+	* term/x-win.el (function-key-map): Consistently map CLEAR to C-l.
+
+Tue Aug 29 06:57:29 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-utc-string): New function.
+	(vc-find-cvs-master): Use it to compare mtime and checkout time.
+	(vc-locking-user): CVS case: *only* use checkout time.
+	(vc-find-cvs-master): Don't attempt to find the RCS master file.
+	Throw the full name of CVS/Entries.
+	(vc-name): Doc change (special CVS case).
+	(vc-after-save): Handle the case when a file is saved in the very
+	second in which it was checked out.
+
+	* vc.el (vc-dired-update-line): Don't use dired-do-redisplay.
+	(vc-next-action-dired): Adjust default-directory before calling
+	vc-next-action-on-file.
+	(vc-next-action-on-file): Handle CVS merge in vc-dired-mode correctly.
+	(vc-next-action): Ask for a check-in comment if there are "added"
+	CVS files.  Don't special-case single files in vc-dired-mode.
+	(vc-file-clear-masterprops): Typo fix.
+	(vc-latest-on-branch-p): Always true for CVS.
+	(vc-directory): Header change.  Do display the buffer, even if no
+	locked/registered files were found.
+
+Mon Aug 28 11:09:11 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (recover-session-finish): Catch erorr in recover-file.
+
+	* makefile.el (makefile-font-lock-keywords): Highlight lines with
+	tab followed by #, and initial spaces preceding tabs--not all
+	initial spaces.
+
+Sun Aug 27 03:19:50 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tmm.el: Fix typo in global-map define.
+
+	* cl-seq.el (rassoc): Definition deleted.
+
+	* mailabbrev.el (mail-mode-syntax-table): defvar deleted.
+
+	* edebug.el: Delete redundant defvars of built-in variables.
+
+	* edmacro.el: Load cl only during compilation.
+	(edmacro-mismatch, edmacro-subseq): New functions.
+	Use them instead of mismatch and subseq.
+
+	* hideif.el (hide-ifdef-hiding): Delete duplicate defvar.
+
+	* modula2.el (m2-execute-monitor-command): Renamed from
+	execute-monitor-command.
+
+Sat Aug 26 16:24:44 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* refer.el (refer-every): Renamed from every.
+  	(refer-convert-string-to-list-of-strings): Renamed from
+ 	convert-string-to-list-of-strings.
+
+	* levents.el (eventp): Duplicate definition deleted.
+
+	* ws-mode.el (wordstar-center-line): Renamed from center-line.
+	(wordstar-center-region): Renamed from center-region.
+	(wordstar-center-paragraph): Renamed from center-paragraph.
+
+	* x-menu.el: Doc fixes.
+	(caar, cdar): Deleted--use (car (car ...)).
+
+	* find-file.el (ada-spec-suffix): Definition deleted.
+	(ada-make-filename-from-adaname): Delete autoload.
+	(ff-special-constructs): Load ada-mode before referring to
+	ada-spec-suffix and ada-make-filename-from-adaname.
+
+	* life.el (abs): Function definition deleted.
+	(goto-beginning-of-buffer): Macro deleted.  Use goto-char.
+	(goto-end-of-buffer): Macro deleted.  Use goto-char.
+	(maxint): Macro deleted.
+	(life-increment): Renamed from increment.
+	(life-initialized): New variable.
+	(life): Do (random t) only once and only when `life' is called.
+
+	* info.el (Info-default-directory-list): Duplicate defvar deleted.
+
+Fri Aug 25 17:18:04 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* uniquify.el: New file.
+
+	* mailabbrev.el (rebuild-mail-abbrevs): FILE defaults to visited file.
+
+	* executable.el (executable-set-magic): Use make-local-hook
+	for after-save-hook.
+
+	* files.el (basic-save-buffer): Doc fix.
+	(after-save-hook): Add defvar.
+
+Fri Aug 25 14:39:29 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+	* vc.el: Enhanced vc-dired-mode.
+	(vc-directory): Kill existing vc-dired buffers for this directory.
+	Provide a better header.  Corrected the check whether any files were
+	found at all (don't display a listing in this case).  Under CVS,
+	display cvs-status rather than vc-locking-user.
+	(vc-next-action-on-file): When doing a check-in in vc-dired-mode, find
+	the file in another window.
+	(vc-next-action-dired): Update dired listing while processing the
+	files.
+	(vc-next-action): Check whether a check-in comment is really needed
+	for this mass operation.
+	(vc-checkout): Resynch the buffer, even if it's not current.
+	(vc-dired-state-info, vc-dired-update-line): New functions.
+	(vc-dired-prefix-map): Added local definition for `g' and `='.
+	(vc-dired-reformat-line): Simplified.  Erase the hardlink count from
+	the listing, because it doesn't relate to version control.
+
+	* vc.el: Added functions to dispatch on backend release numbers.
+	Under RCS, use this to find out whether new features can be used.
+	(vc-rcs-release, vc-cvs-release, vc-sccs-release): New variables, may
+	be set by the user.
+	(vc-backend-release, vc-release-greater-or-equal,
+	vc-backend-release-p): New Functions.
+	(vc-do-command): Allow FILE to be nil.
+	(vc-backend-checkin): When creating a branch, don't bother to unlock
+	the old version if this is RCS 5.6.2 or higher.
+	(vc-next-action-on-file): Allow lock-stealing only if RCS 5.6.2 or
+	higher.
+	(vc-backend-admin, vc-backend-checkin): If available, use ci -i
+	and -j.  Updated Developer's Notes.
+
+	* vc.el (vc-backend-diff): Handle the case of a locally added CVS
+	file correctly.
+
+	* vc-hooks.el (vc-fetch-master-properties): Count cvs status
+	"Needs Patch" as `needs-checkout'.
+	(vc-after-save): Clear the cvs status.
+
+Fri Aug 25 12:39:51 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* etags.el (next-file): Advance next-file-list before finding the
+	file named in its car, in case finding signals an error.
+
+Fri Aug 25 10:15:53 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* help.el (describe-function): Show file name for autoloaded fns.
+
+	* simple.el (what-line): Print narrowed linenum with full buffer num.
+
+Thu Aug 24 01:24:48 1995  Tom Tromey  <tromey@irish.colorado.edu>
+
+	* makefile.el (makefile-mode-syntax-table): "]" is a close-paren.
+	(makefile-add-log-defun): Avoid error at eob.
+
+Wed Aug 23 19:40:22 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* makefile.el: Doc fixes.
+	(makefile-font-lock-keywords): Highlight lines of just whitespace.
+
+Tue Aug 22 16:24:49 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* edebug.el (edebug-outside-post-command-idle-hook)
+	(post-command-idle-hook): New variables.
+	(edebug-enter, edebug-outside-excursion): Use them.
+
+	* avoid.el (mouse-avoidance-mode): Use post-command-idle-hook.
+	Use remove-hook.
+
+	* two-column.el (2C-mode): Use make-local-hook and add-hook.
+
+	* icomplete.el (icomplete-minibuffer-setup): Use make-local-hook
+	and add and remove hooks locally.
+
+	* ediff-util.el (ediff-profile): Use make-local-hook
+	and add and remove hooks locally.
+
+Tue Aug 22 13:57:30 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* files.el (basic-save-buffer): Call vc-after-save, to
+	support implicit locking in VC.
+
+	* vc-hooks.el (vc-simple-command): New function.
+	(vc-fetch-master-properties): CVS case: Use it.
+	(vc-lock-from-permissions, vc-file-owner, vc-rcs-lock-from-diff):
+	New functions.
+	(vc-locking-user): Largely rewritten.  Uses the above, handles RCS
+	non-strict locking.  Under CVS in CVSREAD-mode, learn the locking
+	state from the permissions.
+	(vc-find-cvs-master): Use vc-insert-file, rather than
+	find-file-noselect. Greatly speeds up things.
+	(vc-consult-rcs-headers): Bug fix, return status in all cases.
+
+	* vc.el: Removed the comment that said we assume strict locking.
+	(vc-next-action-dired): Don't switch to vc-parent-buffer, because
+	that was already done.
+
+Tue Aug 22 12:43:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* sc.el: Provide sc.
+
+Mon Aug 21 18:16:07 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* compile.el (compilation-exit-message-function): New variable.
+	(compilation-sentinel): If compilation-exit-message-function is
+	non-nil, call it to produce messages for buffer and mode line.
+	(grep): Use that variable to produce snazzier messages.
+
+Mon Aug 21 17:59:43 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* paren.el: Use post-command-idle-hook.
+ 	(show-paren-command-hook): No need to test for idleness.
+
+Mon Aug 21 15:28:47 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-fetch-master-properties): RCS case: get locking
+	mode.  CVS case: new state `locally-added'.
+	(vc-locking-user): Under RCS with non-strict locking, don't trust
+	the file permissions.  CVS case: change which states count as
+	"locked".
+	(vc-consult-rcs-headers): Streamlined. Don't set vc-locking-user if
+	this is called under CVS.  Under RCS, use a heuristic to find the
+	value of vc-checkout-model without examining the master file.
+	(vc-parse-locks): Set vc-checkout-model.
+	(vc-status): Comment change.
+	(vc-after-save-hook, vc-after-save): The former renamed to the
+	latter. Now unconditionally called by `basic-save-buffer', determines
+	whether the buffer should be "locked" or not.
+	(vc-checkout-model): Values are now `manual' and `implicit'.  Derive
+	the property on a per-file basis, supporting all possible modes.
+	(vc-mode-line): No longer use dynamic after-save-hook. Changed
+	references to `automatic' into `implicit'.
+
+	* vc.el (vc-latest-on-branch-p): Under CVS, handle the case when
+	the file is added, but not yet committed.
+	(vc-backend-checkout): RCS case: In non-strict locking mode, force
+	to overwrite the writable workfile. CVS case: Do the right thing in
+	CVSREAD-mode.
+
+Mon Aug 21 10:47:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (auto-mode-alist): Turn on use of makefile-mode.
+
+	* rmailsum.el: Require rmail.
+	(rmail-new-summary): Specify size in split-window.
+	Call rmail-select-summary to force size to specified amount.
+
+Mon Aug 21 08:15:47 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* fast-lock.el: New version 3.07 from author.
+	(fast-lock-mode): Use buffer-file-truename, not buffer-file-name.
+	(fast-lock-cache-directories, fast-lock-cache-name): Doc fixes.
+
+Mon Aug 21 01:18:55 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* solar.el: Doc fixes.
+
+Sun Aug 20 15:12:09 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* icon.el: Define user options with defvar, not defconst.
+
+Sun Aug 20 01:05:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* dired.el (dired-string-replace-match): Simplify using replace-match.
+
+	* dired-aux.el (dired-expand-newtext): Function deleted.
+
+	* bytecomp.el (byte-compiler-base-file-name): New function.
+	(byte-compile-dest-file): Call byte-compiler-base-file-name.
+
+	* jka-compr.el (jka-compr-byte-compiler-base-file-name): New function.
+	Use it to handle byte-compiler-base-file-name operation.
+
+Sun Aug 20 00:34:10 1995  Michael Kifer  <Michael Kifer <kifer@cs.sunysb.edu>>
+
+	* viper.el (vip-set-hooks): Use view-mode-hook in emacs and view
+	hook in xemacs.
+	(vip-read-string-with-history): minibuffer-setup-hook no longer
+	waits for the user to type, if there are unread events.
+	Harnessed view-minor-mode.
+	Added (vip-leave-region-active) to all simple movement commands.
+	* viper-mous.el (vip-surrounding-word): modified to understand
+	tripple clicks.
+	* viper-util.el (vip-leave-region-active): new function.
+
+Sat Aug 19 12:38:16 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* vc.el (file-regular-p-18): Fix test for whether to use this.
+
+	* info.el (Info-find-emacs-command-nodes): Fix previous change.
+	(Info-suffix-list): For MS-DOS, use gunzip as the only uncompressor,
+	and don't include .info as suffix.
+	(info-insert-file-contents-1): New function.
+	(info-insert-file-contents): Use info-insert-file-contents-1.
+
+	* macros.el (insert-kbd-macro): Express vector char modifiers with
+	escape prefixes.  Express big basic char codes in octal.
+
+Sat Aug 19 02:33:10 1995  Karl Heuer  <kwzh@gnu.ai.imt.edu>
+
+	* hilit19.el (hilit-submit-feedback): New ftp site.
+
+Sat Aug 19 00:37:47 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* info.el (Info-file-list-for-emacs): New variable.
+	(Info-find-emacs-command-nodes): Look in those files, if appropriate.
+
+	* files.el (basic-save-buffer): Confirm for overwriting old file
+	when a file name is specified.
+
+Fri Aug 18 20:28:58 1995  Daniel Pfeiffer  <Daniel.Pfeiffer@Informatik.START.dbp.de>
+
+	* skeleton.el (skeleton-newline-indent-rigidly): New variable.
+	(skeleton-internal-1): Use it for indenting after \n because previous
+	behaviour was only useful for `sh-script.el' and old `ada.el'.  Other
+	modes now get their own indentation.
+	(skeleton, skeleton-modified, skeleton-point, skeleton-regions): `New'
+	variables for passing between the mutually recursive functions of
+	the skeleton engine.  Introduced to remove compiler warnings.
+	(skeleton-proxy): New argument `str' to make this settable when calling
+	a skeleton as a function.
+	(skeleton-insert): New argument `str' to pass down.  Element `\n'
+	now usually indents according to mode.  Subskeletons may also have
+	a list of strings as iterator.  Earlier modification also removed
+	meaning of `quit' -- I did not put it back in since it's useless.
+	When quitting out of a subskeleton while still wrapping around text
+	don't duplicate first line of that text.
+	(skeleton-end-hook): New hook useful say for modes that leave a `;' on
+	an empty line to indent right and then want to clean it up when doing
+	a skeleton there.
+
+	* sh-script.el (sh-newline-and-indent): Don't interpret prefix arg
+	since `newline-and-indent' doesn't either.  Don't turn a trailing
+	quoted tab into a space.
+	(sh-mode): Use new `skeleton-newline-indent-rigidly'.
+	(sh-set-shell): Make maximum font-locking also hightlight keywords
+	after ``' and `!'.  (The latter is for ksh '93 but should't hurt other
+	shells.)
+
+Fri Aug 18 16:36:52 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc.el (vc-next-action-on-file): Changed doc string, CVS case.
+	(vc-backend-checkin): Clear master properties before doing the
+	check-in.  In the CVS case, catch error and display an appropriate
+	message in the echo area.
+	(vc-backend-revert): Clear master properties, because some might get
+	outdated by the operation.
+	(vc-backend-merge-news): Scan the output of "cvs update" and find out
+	whether conflicts have occurred.
+
+	* vc-hooks.el (vc-fetch-master-properties):
+	Recognize cvs status "Unresolved Conflict".
+	(vc-locking-user): Count cvs status `unresolved-conflict' as "locked".
+
+	* vc.el (vc-finish-logentry):
+	Delete the *VC-log* buffer *before* doing the
+	actual check-in. That leads to a better display in case the check-in
+	fails.
+
+	* vc.el (vc-latest-on-branch-p): Defined it for CVS in the obvious way.
+	(vc-next-action-on-file): Removed special CVS cases. At this level,
+	CVS is now mostly handled like the other backends.
+	(vc-backend-checkout): CVS case: Clear sticky tag as default when
+	doing a verbose checkout. (This used to be done in
+	vc-next-action-on-file.)
+
+	* vc-hooks.el (vc-checkout-model):
+	New property and access function (still simplistic).
+	(vc-after-save-hook): New function.
+	(vc-mode-line): When the file is locked by somebody else, make the
+	buffer read-only.  (Formerly this was only done for root.)  Don't
+	write-protect the buffer if the file is unlocked.  Instead, install
+	vc-after-save-hook, which "locks" the file when modifications are
+	saved.
+
+Fri Aug 18 12:42:13 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* makefile.el (makefile-space-face): New variable.
+	(makefile-define-space-face): New function.
+	(makefile-tab-face): Variable deleted.
+	(makefile-define-tab-face): Function deleted.
+	(makefile-font-lock-keywords): Highlight leading spaces, not tabs.
+
+Thu Aug 17 15:40:32 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* hilit19.el (hilit-submit-feedback): New bug-reporting address.
+
+Thu Aug 17 08:46:53 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc.el (vc-next-action-on-file): Moved the setting of the default
+	branch to vc-backend-checkout, where it belongs.
+	(vc-backend-checkout): If an explicit version was specified, adjust
+	the default branch accordingly.
+
+	* vc-hooks.el (vc-top-version): Renamed to vc-master-workfile-version.
+ 	Updated all references.
+	vc.el: Changed references to vc-top-version into
+	vc-master-workfile-version.
+
+	* vc.el (vc-next-action-on-file): Query when trying to lock
+	non-latest version.
+
+	* vc.el: Let vc-cancel-version handle branches correctly, and
+	behave more comfortably in the `norevert' case.
+	(vc-revert-buffer1): Split part of the function into vc-buffer-context
+	and vc-restore-buffer-context, so we can use it also in other
+	circumstances.
+	(vc-buffer-context, vc-restore-buffer-context): New functions.
+	(vc-clear-headers): New function, uses the above.
+	(vc-cancel-version): When `norevert', locks the most recent remaining
+	version.  Also, refuse to work on anything but the latest version of
+	a branch.  Removed the check whether the version is the user's,
+	because that is difficult to decide, now that multiple branches are
+	possible.
+	(vc-latest-on-branch-p): New function.
+	(vc-head-version): New access function to the already existing
+	property.
+	(vc-trunk-p, vc-branch-part): Functions moved before first use.
+
+Thu Aug  16 22:21:38 1995  Fred Pierresteguy  <F.Pierresteguy@frcl.bull.fr>
+
+	* rmailsum.el (rmail-new-summary): Enable the Input/output menu.
+
+Wed Aug 16 16:13:43 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* pascal.el (pascal-mode): Set comment-start.
+	(pascal-toggle-completions): Doc fix.
+
+Wed Aug 16 10:36:06 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* simple.el (blink-matching-paren-dont-ignore-comments): New var.
+	(blink-matching-open): Use it.
+	Also, if the matching char hasn't paren syntax, call that mismatch.
+
+	* inf-lisp.el (inferior-lisp): Use pop-to-buffer.
+	Add *inferior-lisp* to same-window-buffer-names.
+
+	* cmuscheme.el (run-scheme): Use pop-to-buffer.
+	Add *scheme* to same-window-buffer-names.
+
+	* xscheme.el (run-scheme): Use pop-to-buffer.
+
+Tue Aug 15 16:02:34 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* sh-script.el (sh-mode-map): Use new name skeleton-pair-insert-maybe.
+	(sh-mode): Use new names skeleton-pair-alist, skeleton-pair-filter.
+
+Tue Aug 15 15:48:33 1995  Daniel Pfeiffer <Daniel.Pfeiffer@Informatik.START.dbp.de>
+
+	* skeleton.el (skeleton-pair-insert-maybe): Plain insert in Ovwrt mode
+	(skeleton-insert): If skeleton doesn't fit in window, put beginning
+	at top before going to _ point.
+	(skeleton-internal-list): Rewritten so that resume: sections pertain
+	only to inferior skeletons and make str available there
+	(skeleton-read): Don't quit and remove partial skeleton when empty
+	string entered for outer iterator.  Added implicit argument `input'.
+	(define-skeleton, skeleton-insert, skeleton-internal-list): Use `x
+	rather than backquote's (` x) or own (list 'x)
+
+	* sh-script.el (sh-test): New variable.
+	(sh-if, sh-until, sh-while): Use it.
+	(sh-while-getopts): Handle csh passably well.
+	(sh-font-lock-keywords): Use `font-lock-variable-name-face'.
+	(sh-set-shell): Respect `font-lock-maximum-decoration'.
+
+Tue Aug 15 08:30:32 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* supercite.el (sc-attribs-extract-namestring): If name has <...>,
+	treat everything before that as the full name.
+
+Mon Aug 14 17:56:23 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* view.el: Rewrite as a minor mode.
+
+	* viper.el (vip-set-hooks): Use view-mode-hook, not view-hook.
+
+Mon Aug 14 13:21:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (basic-save-buffer-1): Pass new arg to write-region.
+
+Mon Aug 14 12:01:33 1995  Erik Naggum  <erik@naggum.no>
+
+	* files.el (insert-file-contents-literally): New function.
+  	(find-file-noselect): Use it if new optional argument `rawfile' is
+ 	non-nil.
+
+	* startup.el (command-line-1): Add option --eval to evalute an
+	expression on the command line and print the result.
+
+Mon Aug 14 02:17:09 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* paren.el (show-paren-command-hook): Do nothing if have unread events.
+
+Sun Aug 13 11:45:09 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* mouse.el (mouse-drag-region): Unread the up-event
+	rather than execute it here.
+
+Sat Aug 12 05:20:56 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* rmail.el (rmail-convert-file): Look back for ^_ only at bol.
+
+	* simple.el (shell-command-on-region): Don't examine order of
+	point and mark; use order of START and END instead.
+	Interactively pass point and mark, not region-beg and region-end.
+
+Thu Aug 10 16:01:19 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* isearch.el (isearch-other-meta-char): Avoid bug checking whether
+	a key is defined in the function key map.
+	Call cancel-kbd-macro-events.
+
+	* bytecomp.el (byte-compile-insert-header): Use 19.29, not 19.28.90
+	as limit for where dynamic docstrings are allowed.
+
+	* server.el (server-buffer-done): Pause between client commands,
+	but not after the last one.
+
+	* files.el (recover-file): It's ok if the visited file doesn't exist.
+	(recover-session-finish): Compute "file name" from autosave file
+	if no visited file.
+
+Thu Aug 10 10:50:21 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc.el (vc-dired-reformat-line): Display eight character user names
+	correctly.
+
+Thu Aug 10 09:57:30 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* font-lock.el (font-lock-beginning-of-syntax-function): New variable.
+	(font-lock-defaults-alist): New element to specify it.
+	(font-lock-set-defaults): Set it.
+	(font-lock-fontify-region): Use it when calculating the cache state.
+	(font-lock-maximum-size): Add autoload cookie.
+	(font-lock-fontify-region, font-lock-unfontify-region): Also wrap
+	value of buffer-file-truename to avoid clash detection.
+	(font-lock-hack-keywords): Likewise.  Also use a while loop, not
+	mapcar, when applying keywords.
+	(tex-font-lock-keywords): Rewritten again.
+	(scheme-font-lock-keywords): New keywords.
+	(font-lock-defaults-alist): Specify defaults for them.
+
+	* fortran.el (fortran-font-lock-keywords-1): Fix column 72 comments.
+
+	* texinfo.el (texinfo-font-lock-keywords): Rewritten.
+	(texinfo-mode): Set up font-lock-defaults for keywords only.
+
+	* help.el (help-font-lock-keywords): New keywords.
+	(help-mode): Set up font-lock-defaults.
+
+Wed Aug  9 18:09:15 1995  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* man.el (Man-translate-references): Anchor the regexps.
+
+Tue Aug  8 13:03:51 1995  Boris Goldowsky  <boris@gnu.ai.mit.edu>
+
+	* forms.el (forms-check-number-of-fields): New vbl.
+	(forms-mode): Don't issue warning if vbl says not to.
+
+Tue Aug  8 01:14:27 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* vc.el (vc-revert-buffer): In a dedicated solitary window,
+	make the frame invisible instead of trying to delete window.
+
+	* paragraphs.el (forward-paragraph): Don't overlook a paragraph-start
+	line just because it ends at eob.
+
+	* edebug.el (edebug-functionp): Return t for a bytecode function.
+
+	* dired.el (dired-mode-map): Set up the map completely
+	before storing it into dired-mode-map.
+
+Mon Aug  7 04:44:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* bytecomp.el (byte-compile-insert-header): New args inbuffer and
+ 	outbuffer.  Test byte-compile-dynamic-docstrings in the initially
+ 	current buffer.
+	(byte-compile-from-buffer): Add new args to byte-compile-insert-header.
+
+	* startup.el (command-line-1): Fix previous change.
+
+	* bytecomp.el (byte-compile-output-docform): Check
+	byte-compile-dynamic-docstrings in input buffer, not output buffer.
+
+Sun Aug  6 02:26:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* delsel.el (delete-selection-pre-hook): New type value `yank'.
+	(yank): Use `yank' as delete-selection property.
+
+	* simple.el (column-number-mode, line-number-mode): Default now t.
+
+Sat Aug  5 02:32:33 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* faces.el (set-face-background): When using face-color-supported-p,
+	specify foreground, not background.
+
+Fri Aug  4 15:55:57 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* bibtex.el (bibtex-maintain-sorted-entries): Make nil the default.
+
+	* ps-print.el: Renamed `fsf' to `emacs' in all names.
+	(ps-print-emacs-type): Renamed from emacs-type.
+
+Fri Aug  4 15:39:50 1995  Stephen A. Wood  <saw@hallc1.cebaf.gov>
+
+	* fortran.el (fortran-auto-fill-mode, fortran-do-auto-fill,
+	fortran-fill): Invoke auto filling only when past fill-column.
+
+Fri Aug  4 14:02:11 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* compile.el (compilation-error-regexp-alist): Add regexp for Sun
+ 	ada.
+
+Thu Aug  3 22:27:24 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* solitaire.el: New file.
+
+Thu Aug  3 13:53:55 1995  Morten Welinder  <terra+@cs.cmu.edu>
+
+	* arc-mode.el: Standardize layout of doc strings.
+
+Thu Aug  3 03:26:29 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* rsz-mini.el (resize-minibuffer-setup): Use make-local-hook.
+
+	* tmm.el: Don't alter bindings in minibuffer-local-must-match-map
+	or completion-list-mode-map.
+	(tmm-add-prompt): Use make-local-hook; add hook locally.
+	(tmm-delete-map): Delete hook locally.
+
+	* indent.el (tab-to-tab-stop): Expand abbrevs only after a word-char.
+
+Wed Aug  2 17:59:22 1995  Rob Riepel  <riepel@Snowflake.Stanford.EDU>
+
+        * tpu-edt.el (tpu-control-keys): New initial value, nil.
+        (tpu-help): Back up one page at a time.
+        (tpu-set-control-keys): New function.
+        (tpu-edt-on): Call tpu-set-control-keys.
+
+Wed Aug  2 00:41:09 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* jka-compr.el (jka-compr-load): Bind load-force-doc-strings.
+
+	* dired-aux.el (dired-do-copy): Doc fix.
+
+	* arc-mode.el (archive-remote-regexp): Don't accept hostnames
+	ending in period.  (See previous ange-ftp.el change.)
+
+	* gud.el (gud-xdb-marker-filter): Change pattern to accept spc at end.
+
+Tue Aug  1 19:38:13 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* ange-ftp.el (file-name-handler-alist): Don't match host name
+	ending in period.
+
+Tue Aug  1 18:40:22 1995  Daniel Pfeiffer  <Daniel.Pfeiffer@Informatik.START.dbp.de>
+
+	* two-column.el (2C-toggle-autoscroll, 2C-autoscroll):
+	Only (sit-for 0) once for smoother scrolling.
+	(2C-associated-buffer): go to same line and column.
+	(2C-newline): new function.
+	(2C-other): optional arg to signal missing other buffer.
+
+Tue Aug  1 02:36:29 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* byte-opt.el (byte-optimize-nthcdr): Fix previous change.
+
+Mon Jul 31 16:19:04 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* startup.el (command-line-1):
+	Mention recover-session if there's a .saves file.
+
+	* files.el (recover-session): Mention deletion is possible.
+	(recover-session-finish): Call dired-do-flagged-delete.
+
+	* dired.el (dired-do-flagged-delete): New arg nomessage.
+
+	* vi.el (vi-scroll-amount, vi-shift-width): Fix syntax of doc strings.
+
+Mon Jul 31 05:55:56 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* subr.el (run-hooks): Variable doc fix.
+	(run-hooks, run-hook-with-args-until-success,
+	run-hook-with-args-until-failure): Functions moved to C.
+
+Sun Jul 30 18:28:45 1995  Andreas Schwab  <schwab@issan.informatik.uni-dortmund.de>
+
+	* dired-aux.el (dired-read-shell-command): Use
+	`shell-command-history' in read-string.
+
+Sun Jul 30 02:43:41 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* iso-acc.el: Major additions by Gustavo Chaves.
+	(iso-languages): New variable.
+	(iso-accents-list): Now set by iso-customize-accents.
+	(iso-customize-accents): New function.
+	(iso-accentuate, iso-deaccentuate, iso-unaccentuate):
+	(iso-accent-rassoc-unit): New functions.
+
+	* rmail.el (rmail-unix-mail-delimiter): Allow two-letter timezone name.
+
+	* faces.el (set-face-background): Don't treat nil as a color.
+
+	* loadhist.el (unload-feature): Delete the file's load-history element.
+	(file-set-intersect): Renamed from set-intersect.
+	(file-dependents): Use new name.
+
+	* ehelp.el (with-electric-help): Doc fix.
+
+	* files.el (cd): When reading arg, use just directory as the default.
+
+	* bytecomp.el (byte-compile-insert-header): If compiling for vers 18,
+	arrange to set current-load-list when loading the file.
+
+Sat Jul 29 19:32:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fill.el (fill-region-as-paragraph): Don't find adaptive-fill-regexp
+	on first line of paragraph if it's a paragraph-separate line.
+	Don't look past the intended line.
+	(adaptive-fill-function): New variable.
+	(fill-region-as-paragraph): Use it.
+	(colon-double-space): New variable.
+	(canonically-space-region): Put two spaces after colon if necessary.
+
+	* simple.el (do-auto-fill): Use adaptive-fill-function.
+
+	* paragraphs.el (forward-paragraph): Don't move back over a line
+ 	before the paragraph which doesn't start with fill-prefix unless
+ 	that is the only line we've moved over.
+
+Fri Jul 28 15:51:15 1995  Michael Ernst  <mernst@research.microsoft.com>
+
+	* simple.el (scroll-other-window-down): Bind to S-C-M-v.  Enhance
+	documentation.
+
+Fri Jul 28 21:49:53 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* info.el (Info-read-node-name-1): New function.
+	(Info-read-node-name): Use Info-read-node-name-1
+	to avoid getting confused by spaces when text starts with (FILENAME).
+
+Fri Jul 28 16:26:10 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc.el (vc-resynch-buffer): New function.
+	(vc-locked-example): Renamed to vc-snapshot-precondition. It now also
+	checks whether any of the files are visited.
+	(vc-retrieve-snapshot): If any files are visited, ask whether to
+	revert their buffers. Use vc-backend-checkout and vc-resynch-buffer
+	to do that, instead of vc-checkout.
+
+	* vc.el (vc-backend-checkout): Adjust default-directory so that the
+	checked-out file goes to the right place.
+
+Fri Jul 28 13:10:38 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* dired.el (dired-insert-set-properties): Catch errors.
+
+	* simple.el (next-line): Doc fix.
+
+	* dabbrev.el (dabbrev-expand): Save previous point for undo.
+
+Thu Jul 27 18:04:03 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* simple.el (do-auto-fill): Handle adaptive-fill-regexp.
+
+	* texnfo-upd.el (texinfo-specific-section-type):
+	Use buffer-substring-no-properties.
+
+Thu Jul 27 15:08:32 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* imenu.el: (imenu-generic-lisp-expression)
+	(imenu-generic-c++-expression, imenu-generic-c-expression)
+	(imenu-generic-ada-expression, imenu-generic-texinfo-expression)
+	(imenu-generic-latex-expression): Vars deleted; now handled by the
+	major modes themselves.
+	(imenu--scanning-method-alist): Var deleted.
+	(imenu-default-create-index-function): Don't use that alist.
+	* cplus-md.el (c++-imenu-generic-expression): Var defined.
+	(c++-mode): Set imenu-generic-expression.
+	* c-mode.el (c-imenu-generic-expression): Var defined.
+	(c-mode): Set imenu-generic-expression.
+	* tex-mode.el (latex-imenu-generic-expression): Var defined.
+	(latex-mode): Set imenu-generic-expression.
+	* texinfo.el (texinfo-imenu-generic-expression): Var defined.
+	(texinfo-mode): Set imenu-generic-expression.
+	* ada-mode.el (ada-imenu-generic-expression): Var defined.
+	(ada-mode): Set imenu-generic-expression.
+	* lisp-mode.el (lisp-imenu-generic-expression): Var defined.
+	(lisp-mode-variables): Set imenu-generic-expression.
+
+	* faces.el (x-font-regexp): Add \\(\\) for substring extraction.
+
+Thu Jul 27 11:04:08 1995  Ulrich Mueller  <ulm@vsnhd1.cern.ch>
+
+	* fortran.el (fortran-break-line): Fixed a bug that sometimes
+	deleted first character in statement field of continuation line.
+
+Thu Jul 27 10:11:59 1995  Espen Skoglund  <espensk@tklab1.cs.uit.no>
+
+	* pascal.el (pascal-mode): Added imenu support.
+	(pascal-imenu-generic-expression): New variable.
+
+Thu Jul 27 03:04:18 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* texinfo.el (texinfo-environment-regexp): Allow whitespace at BOL.
+
+	* isearch.el (isearch-mode-map): Don't bind tab, return, kp-N, etc.
+	(isearch-other-meta-char): Special handling for keys like tab, etc.
+
+Wed Jul 26 16:01:29 1995  Stefan Schoef  <schoef@OFFIS.Uni-Oldenburg.DE>
+
+        * bibtex.el: Add keywords and comments as per conventions.
+
+        * bibtex.el: Changed almost all occurences of buffer-substring to
+        buffer-substring-no-properties..
+
+        * bibtex.el (bibtex-find-entry-location, bibtex-clean-entry):
+        Added support to handle invalidate buffers in a more friendly
+        manner.
+
+        * bibtex.el (bibtex-make-field): Changed to be called either
+ 	interactively with a string (field name) or from Lisp with a list
+ 	of two strings (FIELDNAME COMMENT).
+
+Wed Jul 26 13:47:14 1995  Rob Riepel  <riepel@Snowflake.Stanford.edu>
+
+        * tpu-edt.el (tpu-version): New version.
+        (tpu-help-keypad-map): New help text.
+        (tpu-backward-line): Only move to BOL if not already there.
+
+        * tpu-extras.el (tpu-backward-line): Only move to BOL if not
+        already there.
+
+Wed Jul 26 18:19:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* indent.el (indent-region-function): Doc fix.
+
+	* lisp-mode.el (shared-lisp-mode-map):
+	Don't bind TAB, just set indent-line-function.
+
+Wed Jul 26 15:40:00 Michael Kifer  (kifer@cs.sunysb.edu)
+
+	* viper-ex.el (vip-submit-report): fnc modified.
+
+	* viper-keym.el (vip-overriding-map): new variable.
+
+	* viper-macs.el (vip-repeat-from-history-key): new default.
+	(vip-read-fast-keysequence, ex-unmap-read-args, ex-map-read-args):
+	changed to use vip-read-key.
+
+	* viper-mous.el (vip-multiclick-timeout): new default.
+	(vip-surrounding-word, vip-mouse-click-get-word): fnc modified.
+
+	* viper-util.el (vip-add-hook, vip-remove-hook): new fncs.
+
+	* viper.el (vip-info-file-name): variable removed.
+	(vip-envelop-ESC-key, vip-start-replace, vip-finish-R-mode,
+	vip-start-R-mode, vip-insert-state-pre-command-sentinel,
+	vip-R-state-post-command-sentinel, vip-replace-char) fncs modified.
+
+Tue Jul 25 18:04:33 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* faces.el (x-font-regexp-weight-subnum, x-font-regexp-slant-subnum)
+	(x-font-regexp-swidth-subnum, x-font-regexp-adstyle-subnum): Defconst.
+
+Tue Jul 25 17:01:48 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* imenu.el (imenu--history-list): Don't make this buffer-local.
+	(imenu): Call imenu-choose-buffer-index from interactive spec.
+
+Tue Jul 25 15:35:07 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* subr.el (run-hook-with-args): Deleted; now in C code.
+
+Mon Jul 24 21:52:52 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* imenu.el: Many doc fixes.
+
+Tue Jul 25 07:17:02 1995  Ake Stenhoff  <etxaksf@aom.ericsson.se>
+
+	* perl-mode.el (perl-imenu-generic-expression) New variable.
+	(perl-mode): Set imenu-generic-expression.
+
+	* imenu.el (imenu-generic-expression): Call make-variable-buffer-local.
+	(imenu-create-index-pattern): Variable deleted.
+
+Sat Jul 22 17:24:07 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tar-mode.el (tar-copy): Inhibit use of jka-compr handler
+	when both to- and from- files would use it.
+
+Sat Jul 22 11:13:54 1995  Daniel Pfeiffer  <Daniel.Pfeiffer@Informatik.START.dbp.de>
+
+	* apropos.el: Add latest changes of old library and some more.
+	(apropos): Only show unbound symbols when do-all
+	(apropos-documentation-check-elc-file): new copied function.
+	(apropos-command): also use `apropos-do-all' when called as function.
+	(apropos-print-doc): renamed from `apropos-print-documentation', i
+	is numeric index, replaces parameter tem.
+	(apropos-macrop): new function.
+	(apropos-print): use it to differentiate macros.
+	(apropos-symbol-face, apropos-keybinding-face, apropos-label-face)
+	(apropos-property-face, apropos-match-face): new variables
+	replace and extend the effect of `apropos-use-faces'.
+	(apropos-safe-documentation): renames `safe-documentation', also
+	returns a cons.
+	(apropos-regexp, apropos-files-scanned, apropos-accumulator)
+	(apropos-item): new variables to prevent compiler warnings.
+	(apropos-value-internal, apropos-documentation-internal): new fns.
+
+Fri Jul 21 01:04:25 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* byte-opt.el (byte-optimize-lapcode): Fix format calls.
+
+	* imenu.el (imenu-choose-buffer-index):
+	Avoid trying to select WINDOW if it is nil.
+
+	* menu-bar.el (menu-bar-buffer-menu): Function deleted.
+	(global-map): Define [menu-bar buffer] as a keymap with no fcn name.
+	(menu-bar-update-buffers): After defining it, call it.
+
+	* faces.el (make-face-bold, make-face-italic, make-face-bold-italic)
+	(make-face-unbold, make-face-unitalic):
+	No error if font is already bold, italic, or whatever.
+
+	* font-lock.el (font-lock-make-faces): Redo logic for whether
+	to call font-lock-make-face for a given face.
+
+Thu Jul 20 16:16:37 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* rmail.el (rmail-insert-inbox-text): Always use movemail
+	when renaming a file.
+
+	* simple.el (indent-new-comment-line):
+	fill-prefix overrides comment indentation.
+
+	* skeleton.el (local-variables-section): Delete autoload cookie.
+	(skeleton-pair-insert-maybe): Renamed from pair-insert-maybe.
+	(skeleton-pair, skeleton-pair-filter, skeleton-pair-alist)
+	(skeleton-pair-on-word): Renamed from pair-...
+	(mirror-mode): Commented out.
+
+	* info.el (Info-current-file): Doc fix.
+	(Info-find-node): Set Info-current-file to file name as specified.
+
+Thu Jul 20 15:34:52 1995  Dave Love  <d.love@dl.ac.uk>
+
+	* mail-utils.el (mail-fetch-field): Use buffer-substring-no-properties.
+
+Thu Jul 20 02:13:52 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* derived.el (derived-mode-set-keymap): Cope if old-map is nil.
+
+	* menu-bar.el (menu-bar-update-yank-menu): Treat all-dashes specially.
+
+Wed Jul 19 11:43:14 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* sendmail.el (mail-default-reply-to): Doc fix.
+
+Tue Jul 18 09:06:10 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* backquote.el (backquote): Doc fix.
+
+	* noutline.el (outline-next-visible-heading): Rewritten to handle
+	backwards motion and handle beg/end of buffer properly.
+
+	* menu-bar.el (menu-bar-tools-menu): Don't define gnus entry
+	if no network support.
+
+	* faces.el (x-create-frame-with-faces):
+	Specify frame arg to x-color-values and frame-parameters.
+	(set-face-background): Pass background-p arg to face-color-supported-p.
+
+Tue Jul 18 21:45:17 1995  Michael Ernst  <mernst@research.microsoft.com>
+
+	* ehelp.el (electric-helpify): Autoload with-electric-help,
+	electric-helpify.
+
+Tue Jul 18 21:05:34 1995  Rolf Ebert  <re@waporo.muc.de>
+
+	* ada-mode.el (ada-ident-re): Doc fix.
+	(ada-end-stmt-re): Corrected serious pb of wrong parentheses.
+	(ada-subprog-start-re): Removed 'body' from the list.
+	(ada-format-paramlist): Simplified a regexp.
+	(ada-indent-current): On first line of the buffer, indent to column 0.
+	Don't reindent if new position is the same as the old one.  Thus, a
+	correcly indended line is not modified.
+	(ada-get-indent-subprog): Simplified a regexp.
+	(ada-goto-matching-decl-start): Distinguish between normal type
+	declaration and protected types, which are more like procedures.
+	(ada-remove-trailing-spaces): Use save-match-data, save-restriction
+	and widen when removing whitespace.
+	(ada-font-lock-keywords-1): Add 'pragma' as keyword.
+	(ada-font-lock-keywords-2): Allow *qualified* idents after 'end'.
+
+	* files.el (auto-mode-alist): Recognize *.ads and *.adb as Ada
+	specs and bodies.
+
+Tue Jul 18 15:26:23 1995  Dave Love  <d.love@dl.ac.uk>
+
+	* nroff-mode.el (font-lock-defaults): New variable.
+	(nroff-mode-syntax-table): New variable to provide comment syntax
+	for font-lock; I'm not sure if this is (or should be) necessary in
+	19.29 with font-lock-defaults.
+	(nroff-font-lock-keywords): New variable.
+	(nroff-mode): Install nroff syntax table and font lock keywords.
+	Comment about comments in filling and line-counting.
+
+Tue Jul 18 14:47:21 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc.el (vc-do-command): Added parameter BUFFER (the default,
+	if nil, is *vc*). Updated all callers.
+	(vc-next-action-on-file, vc-diff, vc-version-diff, vc-backend-diff):
+	Use buffer *vc-diff* for diff output instead of *vc*.
+
+	* vc-hooks.el (vc-mode-line, vc-find-file-hook): Moved the test for
+	version-controlled symbolic link from the former to the latter.
+
+	* files.el (file-name-sans-versions):
+	Recognize version control version numbers.
+
+Tue Jul 18 12:37:47 1995  Mike Williams  <mikew@gopher.dosli.govt.nz>
+
+	* mouse-sel.el:	Don't (require 'backquote).
+
+	* mouse-sel.el (mouse-extend-internal): Select space in between
+	"things" when extending selection, ie. we are extending to
+	"thing" boundaries.
+
+	* mouse-sel.el:	Use x-lost-selection-hooks to handle loss of selection.
+	(mouse-sel-lost-selection-hook): New function.
+	(mouse-sel-selection-owner-p-function): Variable removed.
+	(mouse-sel-selection-owner-p): Function removed.
+	(mouse-sel-validate-selection): Function removed.
+
+	* thingatpt.el (forward-same-syntax): New function.
+
+Sun Jul 16 14:31:08 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* appt.el: Add provide.
+
+Sat Jul 15 11:41:42 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* byte-opt.el (byte-optimize-if): Optimize (if (not foo) nil ...).
+
+	* add-log.el (add-log-current-defun): Handle C struct definitions.
+	(add-change-log-entry): Use case-sensitive search for file name.
+	Find first blank line correctly.
+
+Fri Jul 14 15:12:07 1995  Karl Fogel  <kfogel@floss.cyclic.com>
+
+	* bookmark.el (bookmark-make): Strip text properties off name.
+	(bookmark-make-cell): Use `buffer-substring-no-properties'.
+
+Fri Jul 14 03:38:32 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* bytecomp.el (byte-compile-output-file-form): Bind print-length
+	and print-level to nil.
+
+Thu Jul 13 21:02:01 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* mouse.el (mouse-major-mode-menu): Catch quit in read-key-sequence.
+
+Wed Jul 12 20:25:29 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* bookmark.el (bookmark-yank-word): Use buffer-substring-no-properties.
+
+Thu Jul 13 11:25:21 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* files.el (auto-mode-alist): Move .scm.[0-9] before nroff-mode.
+	Escape the second period.
+
+Wed Jul 12 19:22:59 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* dabbrev.el (dabbrev--search): Don't let spurious match in middle
+	of word obscure real match at start of same word.
+
+	* term/x-win.el (vendor-specific-keysyms):
+	In Sun keys, f36 was misnamed f35 and f37 misnamed f36.
+
+	* fill.el (canonically-space-region): Doc fix.
+
+	* menu-bar.el (menu-bar-help-menu): Add finder-by-keyword.
+
+	* ediff-wind.el (ediff-skip-unsuitable-frames): Use make-frame,
+	not ediff-make-frame.
+
+Wed Jul 12 23:10:46 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* paths.el (remote-shell-program): Try rcmd also.
+
+Tue Jul 11 10:39:52 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-mode-line): Don't write-protect a
+	VC-Log buffer.  Better mode line text for initial comments.
+	Streamlined the function.
+
+Mon Jul 10 02:59:13 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* faces.el (x-create-frame-with-faces): Set background-mode
+	and display-type frame parameters.
+
+	* mouse.el (mouse-major-mode-menu): Don't call command-execute
+	if lookup-key gives nil.
+
+	* byte-opt.el (byte-optimize-nth, byte-optimize-nthcdr):
+	Do nothing if form wrong length.
+	(byte-optimize-multiply): Fix bug in 0 case.
+	(byte-optimize-divide): Optimize (/ CONST CONST) if safe.
+
+Sun Jul  9 03:14:03 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* fill.el (fill-region-as-paragraph): In adaptive-fill-mode,
+	if paragraph has one line, take the fill prefix from it.
+	(adaptive-fill-regexp): Doc fix.
+
+	* startup.el (normal-top-level): Don't use mail-host-address
+	for auto-save-list-file-name.
+
+	* sendmail.el (mail-setup-hook): New defvar.
+	(mail): Doc fix.
+
+Thu Jul  6 14:21:50 1995  Francesco Potorti`  <pot@cnuce.cnr.it>
+
+	* simple.el (shell-command): Use save-match-data.
+	Put the buffer in shell mode, don't use shell-command-filter.
+	(shell-command-filter): Deleted.
+	(shell-command-sentinel): Don't reset the mode line.
+	Don't test the buffer name--what was that for, anyway?.
+
+Thu Jul  6 10:04:10 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc.el (vc-backend-merge-news): Force to refetch the
+	properties after the merge.
+
+	* vc-hooks.el (vc-locking-user): Consider a cvs file "locked"
+	if its status is either 'locally-modified or 'needs-merge.
+	(vc-workfile-version): Catch 'found when calling vc-find-cvs-master.
+	(vc-fetch-master-properties): Handle cvs status "Needs Checkout".
+	This is intended for future use.
+
+Thu Jul  6 04:14:54 1995  Richard Stallman  <rms@whiz-bang.frob.com>
+
+	* byte-opt.el (byte-optimize-logmumble): Fix (logior -1 ...) case.
+
+	* cc-mode.el (c-set-style-1): Copy c-offsets-alist if nec.
+
+Wed Jul  5 08:00:09 1995  Richard Stallman  <rms@whiz-bang.frob.com>
+
+	* faces.el (x-frob-font-slant, x-frob-font-weight):
+	Replace the adstyle field with *, if we can find it.
+
+	* find-file.el (ff-set-point-accordingly): Doc fix.
+
+	* vc-hooks.el (vc-fetch-master-properties): Shrink the window
+	that displays the error message.
+
+	* faces.el (set-face-background): Use face-color-supported-p.
+
+Tue Jul  4 15:38:12 1995  Ralf Fassel  <ralf@prl.philips.nl>
+
+	* fill.el (fill-individual-paragraphs): Use `adaptive-fill-regexp'
+	to determine `fill-prefix' if `adaptive-fill-mode' is non-nil.
+
+Tue Jul  4 01:22:44 1995  Richard Stallman  <rms@whiz-bang.frob.com>
+
+	* cc-mode.el (c-common-init): Copy c-offsets-alist.
+
+Sun Jul  2 12:32:38 1995  Richard Stallman  <rms@whiz-bang.frob.com>
+
+	* ebuff-menu.el (electric-buffer-list): Save point before
+	finding the first buffer line, and use that saved point to
+	determine the buffer to use, if it is a reasonable value.
+
+	* faces.el (face-color-gray-p): New function.
+	(face-default-stipple): New variable.
+	(set-face-background): Use face-default-stipple for all grays.
+	(set-face-stipple): Change arg name.
+	(face-color-supported-p): Use face-color-gray-p.
+
+	* simple.el (column-number-mode): New variable and new command.
+	* loaddefs.el (mode-line-format): Use column-number-mode.
+
+Mon Jul 17 16:14:39 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* sh-script.el (interpreter-mode-alist): Delete autoload cookie.
+	* executable.el (interpreter-mode-alist): Delete autoload cookie.
+
+Wed Jul 12 15:14:12 1995  Karl Heuer  <kwzh@kropotkin.gnu.ai.mit.edu>
+
+	* comint.el (comint-kill-output): Preserve entire partial line at
+	end, even if it doesn't match comint-prompt-regexp.
+
+Wed Jul 12 13:22:20 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* copyright.el: Fixed Author: comment.  This code bears no
+	relation to what I wrote.
+
+Sun Jul  9 07:41:19 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* font-lock.el: Moved font-lock-doc-string-face to bytecomp.el.
+	(font-lock-fontify-region): Do all cleanups inside unwind-protect.
+	(font-lock-hack-keywords): Likewise.
+	(font-lock-choose-keywords): Don't eval here.
+	(font-lock-set-defaults): Do it here and compile too.
+
+	* bytecomp.el: Make executing-macro, before-change-function,
+	after-change-function and font-lock-doc-string-face obsolete.
+
+	* version.el: Do a purecopy of emacs-version for UN*X's what command.
+
+Sat Jul  8 09:17:23 1995  Johan Vromans  <jvromans@hill.gnu.ai.mit.edu>
+
+	* forms.el (forms-mode): Treat local-write-file-hooks as a list.
+
+Fri Jul  7 18:09:41 1995  Francesco Potorti`  <pot@cnuce.cnr.it>
+
+	* mailalias.el (build-mail-aliases): Fixed the regexp for "^group".
+
+Fri Jul  7 14:43:05 1995  Daniel Pfeiffer  <Daniel.Pfeiffer@Informatik.START.dbp.de>
+
+	* apropos.el: Restructured, largely rewritten and extended.
+	(apropos-use-faces, apropos-local-map): New variables.
+	(apropos-command): New name for `command-apropos' no longer in help.el.
+	(apropos-value): New command.
+	(apropos-documentation): New name for `super-apropos'
+	(apropos-follow, apropos-mouse-follow): New commands for hypertext.
+	(apropos-describe-plist): New function.
+
+	* help.el: (command-apropos): Deleted function.  This is replaced by
+	apropos-command in apropos.el.
+
+	* autoload.el: (make-autoload): Generate `(autoload ...)' form for
+	`(define-skeleton ...)'
+
+	* skeleton.el: partly rewritten and extended.
+	(skeleton-filter, skeleton-untabify, skeleton-further-elements)
+	(skeleton-abbrev-cleanup): New variables
+	(skeleton-proxy, skeleton-abbrev-cleanup): New functions
+	(skeleton-insert): Sublanguage element < must now be handled via
+	`skeleton-further-elements' (used only in sh-script and ada).  Lisp
+	expressions can be quoted to ignore the return value.
+	(skeleton-read): New name for `skeleton-internal-read' because this may
+	be useful in skeletons.
+	(local-variables-section): New skeleton command, might go to simple.el.
+
+	* autoinsert.el: extended to use skeletons or call functions
+	(auto-insert, auto-insert-query, auto-insert-prompt): New variables
+	(auto-insert-alist): New features
+	(auto-insert): New name for `insert-auto-insert-files'
+	(define-auto-insert): New function
+
+	* copyright.el: New name for generalized upd-copyr.el
+	(copyright-limit, copyright-regexp): New variables
+	(copyright-query): New name for `inhibit-update-copyright'
+	(copyright-current-year): New name for `current-year'
+	(copyright-current-gpl-version): New name for `current-gpl-version'
+	(copyright-update): New name for `update-copyright' and
+	`ask-to-update-copyright'
+	(copyright): New skeleton command
+
+	* executable.el: New file extracted and optimized from sh-script.el
+
+	* sh-script.el: restructured, largely rewritten without the bugs and
+	extended to cover over 15 shells.  Most variables can now work as a
+	lookup table, and, unless set by user, do.
+	(sh-mode-syntax-table): Possibly multiple tables.
+	(sh-shell): Set initially so shell or other libraries may use features.
+	(sh-assignment-regexp): Replaces `sh-assignment-space'.
+	(sh-here-document-word): Set to more common "EOF".
+	(sh-variables): Changed semantics.
+	(sh-font-lock-keywords): Much nicer.
+	(sh-ancestor-alist, sh-alias-alist, sh-shells, sh-abbrevs)
+	(sh-dynamic-complete-functions, sh-require-final-newline)
+	(sh-comment-prefix, sh-indentation, sh-header-marker, sh-builtins)
+	(sh-leading-keywords): New variables.
+	(sh-use-prefix, sh-find-file-modifies, sh-query-for-magic)
+	(sh-magicless-file-regexp, magic-number-alist, sh-executable)
+	(sh-chmod-argument, sh-shell-is-csh, sh-tab-width)
+	(sh-sh-font-lock-keywords, sh-ksh-font-lock-keywords)
+	(sh-bash-font-lock-keywords, sh-csh-font-lock-keywords)
+	(sh-tcsh-font-lock-keywords): Variables deleted, see also executable.el.
+
+	(sh-mode): Shell dependent code moved to `sh-set-shell'.
+	(sh-feature, sh-abbrevs, sh-syntax-table, sh-append, sh-modify): New
+	functions.
+	(sh-execute-region): New command.
+	(sh-indexed-loop): Far more efficient code generated for sh.
+	(sh-repeat, sh-tmp-file, sh-while-getopts): New skeletons.
+	(sh-or-other-mode, define-sh-skeleton, sh-executable, sh-chmod)
+	(sh-query-for-variable): Command deleted.
+
+	* two-column.el: Symbols renamed to be like mode-line indicator.
+	Supposed to now also work for Lucid.
+	(2C-mode-map): New name for `tc-mode-map'.  Additionally bound to [f2].
+	(2C-minor-mode-map) New variable.
+	(2C-mode): New name for `tc-other'.
+	(2C-mode-line-format): New name for `tc-mode-line-format'.
+	(2C-other-buffer-hook): New variable.
+	(2C-separator): New name for `tc-separator'.
+	(2C-window-width): New name for `tc-window-width'.
+	(2C-beyond-fill-column): New name for `tc-beyond-fill-column'.
+	(2C-autoscroll, 2C-autoscroll-start): New variables.
+
+	(2C-other): New name for `tc-other'.
+	(2C-mode): New name for `tc-mode', `tc-two-columns'.
+	(2C-two-columns): New function.
+	(2C-associate-buffer): New name for `tc-associate-buffer'.
+	(2C-split): New name for `tc-split'.
+	(2C-dissociate): New name for `tc-dissociate'.
+	(2C-merge): New name for `tc-merge'.
+	(2C-associated-buffer): New name for `tc-associated-buffer'.
+	(2C-toggle-autoscroll, 2C-autoscroll): New functions.
+	(tc-scroll-line, tc-scroll-up, tc-scroll-down, tc-recenter): Deleted
+	functions.
+
+Thu Jul  6 14:16:18 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* timezone.el (timezone-parse-date): Ignore text properties.
+
+	* find-dired.el (find-dired): Undefine the g command.
+
+Sun Jul  2 04:13:00 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* bytecomp.el (byte-compile-obsolete): Do the funcall to compile
+	the form whether or not we warn.
+
+	* c-mode.el (calculate-c-indent-after-brace): New function.
+	(calculate-c-indent, indent-c-exp): Use it.
+
+	* faces.el (x-font-regexp): Include the avgwidth.
+
+	* iso-transl.el (iso-transl-char-map): Treat m, *m like u and *u.
+
+Sat Jul  1 01:39:19 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* subr.el (shell-quote-argument): Don't do anything, on MS-DOS.
+
+	* sendmail.el (mail-default-reply-to): Initialize to nil.
+	(mail-setup): Override it from env var if nil.
+
+	* talk.el (talk-disconnect): Make it interactive.
+	(talk-add-display): Ignore dead buffers and deleted frames.
+
+	* font-lock.el (font-lock-make-faces): On grayscale screen,
+	use grays for background, not foreground.
+
+	* faces.el (describe-face): new function.
+
+Fri Jun 30 09:10:07 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-fetch-master-properties): Better error
+        message in case the "cvs status" command fails.
+
+Fri Jun 30 16:27:02 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* man.el (Man-underline-face): Doc fix.
+
+	* mailalias.el (define-mail-alias): Doc fix.
+
+Fri Jun 30 19:07:05 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* sendmail.el (sendmail-send-it): If mail-from-style is parens,
+ 	don't escape all parentheses; escape only the nonmatching ones.
+
+	* sendmail.el (sendmail-send-it): If user-full-name contains
+	special characters, quote or escape them for the From: line.
+
+Fri Jun 30 01:12:40 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* rmail.el (rmail-find-all-files): Bind case-fold-search.
+
+	* term/x-win.el (x-colors): Doc fix.
+
+Fri Jun 30 00:13:38 1995  Kevin Rodgers <kevinr@ihs.com>
+
+	* mailabbrev.el (mail-resolve-all-aliases-1):
+	Downcase address before recursive call.
+
+Thu Jun 29 18:07:10 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* time.el (display-time-filter): Move run-hooks inside let.
+
+	* simple.el (switch-to-completions): Make a completions window if none.
+
+	* mouse.el (mouse-selection-click-count-buffer): New variable.
+	(mouse-drag-region): Set it.
+	(mouse-save-then-kill): Test it.
+
+Thu Jun 29 17:28:26 1995  David M Smith  <D.M.Smith@lancaster.ac.uk>
+
+	* ielm.el (ielm-font-lock-keywords): New variable
+	(inferior-emacs-lisp-mode): Use it for font-lock support
+
+Thu Jun 29 13:42:46 1995  Bryan O'Sullivan  <bos@Eng.Sun.COM>
+
+	* ange-ftp.el (ange-ftp-normal-login): if ange-ftp-smart-gateway
+ 	is set but ange-ftp-gateway-host is nil, use user@host
+ 	proxy protocol.
+
+Thu Jun 29 10:51:47 1995  Morten Welinder  <terra+@cs.cmu.edu>
+
+	* arc-mode.el (archive-mode): Add autoload cookie.
+
+	* files.el (auto-mode-alist): Make archive-mode the default for
+	.arc, .lzh, .zip, and .zoo files.
+
+Thu Jun 29 14:48:25 1995  Karl Fogel  (kfogel@wombat.gnu.ai.mit.edu)
+
+	* bookmark.el: use "Save" and "Save As" instead of the nonstandard
+	"Save" and "Write", in menu item titles.
+
+Thu Jun 29 00:35:53 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* menu-bar.el (find-tag): Delete the menu-enable property.
+
+	* info.el (Info-goto-node, Info-search):
+	In Transient Mark mode, deactivate the mark.
+
+	* faces.el (make-face-x-resource-internal): Give special meanings
+	to font "names" `italic', `bold', and `bold-italic'.
+
+	* rmail.el (rmail-summary-by-sender): Autoload this.
+	(rmail-mode-map): Add rmail-summary-by-senders.
+
+Wed Jun 28 06:01:36 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fill.el (current-fill-column): If fill-column is nil, return nil.
+	* simple.el (do-auto-fill): No-op if (current-fill-column) is nil.
+
+	* loadup.el: Put isearch before menu-bar.
+
+	* loaddefs.el: Don't set up key-translation-map.
+
+	* help-macro.el (make-help-screen): Handle help-event-list.
+	Handle backspace like delete.
+	* help.el: Bind f1 and help like C-h.
+
+	* supercite.el (sc-electric-mode-map): Bind f1 and help like C-h.
+	* ediff-util.el (ediff-setup-keymap): Bind f1 and help like C-h.
+	* edt.el (edt-setup-default-bindings): Bind f1 and help like C-h.
+
+	* cplus-md.el (electric-c++-terminator): Fix logic for handling colon.
+
+	* menu-bar.el: Make more menu-enables check (not buffer-read-only).
+	Add minibuffer local menu bar menus.
+
+	* startup.el: Update copyright year in message.
+
+	* server.el (server-process-filter): Detect error messages from server.
+
+Tue Jun 27 18:58:43 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* edt.el (edt-emulation-on): Check window-system for x, specifically.
+
+Tue Jun 27 12:23:58 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-consult-rcs-headers): Use an even more
+	pedantic regexp to match RCS time strings.  Improved
+	efficiency by using looking-at instead of re-search "\\=...
+
+Tue Jun 27 02:51:17 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* ediff-wind.el (ediff-control-frame-parameters):
+	Specify user-position.
+
+	* imenu.el (imenu-choose-buffer-index): Understand that (menu-bar)
+	doesn't specify a window.
+
+	* startup.el (command-line): Extract arg value properly for -u.
+
+	* subr.el (lambda): Doc fix.
+
+Mon Jun 26 15:40:39 1995  Ake Stenhoff  <etxaksf@aom.ericsson.se>
+
+	* imenu.el (imenu-use-keymap-menu): New variable.
+	(imenu-auto-rescan): New variable.
+        (imenu-auto-rescan-maxout): New variable.
+	(imenu-generic-expression): Doc changes.
+	(imenu-generic-lisp-expression): New variable.
+	(imenu-generic-c-expression): New variable.
+	(imenu-example--generic-c++-expression): Changed the name to
+	imenu-generic-c++-expression.
+        (imenu-example--generic-texinfo-expression): Changed the name to
+	imenu-generic-texinfo-expression.
+	(imenu-example--generic-latex-expression): Changed the name to
+	imenu-generic-latex-expression.
+	(imenu--scanning-method-alist): New variable.
+	(imenu--split-menu): Changed it to make the title "Index menu"
+	instead of "Function menus".
+        (imenu--make-index-alist): Changed to handle auto rescan.
+	(imenu--create-keymap-2): New function to create a keymap.
+	(imenu--create-keymap-1): New function.
+	(imenu--in-alist): New function.
+        (imenu-default-create-index-function): Changed to handle
+	imenu--scanning-method-alist).
+	(imenu--generic-extract-name): Removed.
+	(imenu--generic-function): Rewritten to handle submenus.
+	(imenu--mouse-menu): Changed to handle keymaps.
+
+Mon Jun 26 19:19:52 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* paths.el (remote-shell-program): Fix typo checking /usr/bin/remsh.
+
+Mon Jun 26 17:04:23 1995  Eric S. Raymond  <esr@snark.thyrsus.com>
+
+	* vc.el (vc-start-entry): Prevent lossage when doing a mass checkin
+	from a VC-dired buffer.
+
+Mon Jun 26 21:05:21 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-consult-rcs-headers): Handle the new time
+	string formats of RCS 5.7.
+
+Mon Jun 26 13:56:46 1995  Mike Long  <mike.long@analog.com>
+
+	* view.el (view-file-other-window): Re-add missing argument to
+        switch-buffer-other-window.
+	(view-mode-map): Leave C-c alone!
+	(view-mode): Doc fix.
+
+Mon Jun 26 07:55:44 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
+
+	* font-lock.el (font-lock-defaults-alist): List all keywords for C and
+	Emacs Lisp modes.  Doc fix.
+	(font-lock-maximum-decoration): Doc fix.
+	(font-lock-choose-keywords): New function.  Use them.
+	(font-lock-set-defaults): Use it.  Doc fix.
+	(lisp-font-lock-keywords): Default to lisp-font-lock-keywords-1.
+	(c-font-lock-keywords): Default to c-font-lock-keywords-1.
+	(c++-font-lock-keywords): Default to c++-font-lock-keywords-1.
+
+	* fortran.el (fortran-mode): List all keywords for font-lock-defaults.
+	(fortran-font-lock-keywords): Default to fortran-font-lock-keywords-1.
+
+Sat Jun 24 17:58:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* rmail.el (rmail-revert): Use the default revert-buffer-function
+
+	* simple.el (newline): Put point at right place if insert gets error.
+
+Sat Jun 24 00:43:32 1995  Karl Fogel  <kfogel@floss.cyclic.com>
+
+	* mail-hist.el (mail-hist-text-size-limit): New var.
+	(mail-hist-text-too-long-p): New func.
+	(mail-hist-add-header-contents-to-ring): call above; if the text is
+	too long, then store the empty string in the history.
+
+Sat Jun 24 00:17:08 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* pc-mode.el (pc-bindings-mode): Add autoload.
+
+	* enriched.el (excerpt): Ignore error making `excerpt' italic.
+
+Fri Jun 23 23:39:14 1995  Tom Tromey  <tromey@drip.colorado.edu>
+
+	* makefile.el (makefile-define-tab-face): New function.
+	(makefile-tab-face): Don't create face here.
+	(makefile-mode): Call makefile-define-tab-face.
+
+Fri Jun 23 18:11:26 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* cc-mode.el (c-mode): Delete autoload cookie.
+
+	* mail-hist.el: Don't autoload anything to turn on mail-hist.
+	(mail-hist-enable): New function, autoloaded.
+
+Fri Jun 23 11:21:18 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el: Fix bug concerning vc-latest-version.
+	Accessing that property left erroneous contents in the
+	*vc-info* buffer, which could later be misinterpreted by
+	other functions.
+	(vc-insert-file): Erase the current buffer before inserting the file.
+	(vc-fetch-master-properties, vc-fetch-properties): Don't erase the
+	buffer because that is now done in vc-insert-file.
+	(vc-fetch-properties): Kill the *vc-info* buffer when done.
+
+Fri Jun 23 01:52:12 1995  Paul Eggert  <eggert@twinsun.com>
+
+	* vc.el (vc-backend-admin, vc-backend-checkin): Assume that
+	comments are empty if they contain only white space.
+
+Thu Jun 22 13:50:29 1995  Andre Spiegel  <spiegel@berlin.informatik.uni-stuttgart.de>
+
+	* vc-hooks.el (vc-fetch-master-properties): Pass an absolute
+	pathname to the cvs status command. This is required to make
+	recursive vc-directory listings work.
+
+Thu Jun 22 11:59:49 1995  Ethan Bradford  <ethanb@phys.washington.edu>
+
+	* vt-control.el (vt-keypad-on, vt-keypad-off): Updated codes sent
+ 	to terminal to eliminate some garbage that made NCSA telnet crash.
+
+Thu Jun 22 00:36:05 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* vip.el (vip-push-mark-silent): Use (mark t).
+
+	* mouse.el (mouse-yank-at-click): Clear mouse-selection-click-count.
+
+Wed Jun 21 19:03:13 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* files.el (buffer-file-truename): Duplicate definition deleted.
+
+	* simple.el (mark-even-if-inactive): Duplicate definition deleted.
+
+	* lisp-mode.el (eval-defun): Don't change defvar to defconst
+	if it has just one argument.
+
 Wed Jun 21 14:26:10 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.29 released.
@@ -110,7 +3373,7 @@ Sat Jun 17 11:20:25 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* loadup.el: Call precompute-menubar-bindings.
 	Then set define-key-rebound-commands to nil.
-	
+
 	* subr.el (add-hook): Use local local-variable-if-set-p.
 
 	* info.el (Info-directory-list): If path-separator isn't available,
@@ -140,7 +3403,7 @@ Fri Jun 16 19:38:19 1995  Andre Spiegel <spiegel@berlin.informatik.uni-stuttgart
 	* vc.el (vc-register): Inhibit backups for the file's buffer
 
 	* vc.el (vc-add-triple, vc-lookup-triple, vc-record-rename):
-	Use absolute file names to access the SCCS named configuration files 
+	Use absolute file names to access the SCCS named configuration files
 	("VC-names").
 
 	* vc-hooks.el (vc-consult-rcs-headers): Fix typo in prev change.
@@ -150,10 +3413,10 @@ Fri Jun 16 19:38:19 1995  Andre Spiegel <spiegel@berlin.informatik.uni-stuttgart
 
 	* vc.el (vc-lookup-triple): Call vc-parse-buffer instead of
 	vc-master-info.
-	
+
 	* vc.el (vc-retrieve-snapshot): Use vc-checkout instead of
 	vc-backend-checkout, as the former also updates the current buffer.
-	(vc-file-tree-walk, vc-file-tree-walk-internal): Use 
+	(vc-file-tree-walk, vc-file-tree-walk-internal): Use
 	expand-file-name, so that FUNC gets called with an unabbreviated name.
 
 Fri Jun 16 09:09:09 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
@@ -308,7 +3571,7 @@ Wed Jun 14 22:16:14 1995  Geoff Voelker  <voelker@cs.washington.edu>
 	(save-to-unix-hook,revert-from-unix-hook): Defined.
 	(using-unix-filesystems): Defined.
 	(window-frame): Unaliased.
-	
+
 Wed Jun 14 18:27:58 1995  Karl Heuer  <kwzh@churchy.gnu.ai.mit.edu>
 
 	* simple.el (universal-argument, describe-arg): Restore Lisp code,
@@ -331,7 +3594,7 @@ Wed Jun 14 11:47:33 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
 
 Wed Jun 14 21:55:27 1995  Johan Vromans  <jv@NL.net>
 
-	* forms.el (forms--mode-menu-edit,forms--mode-menu-ro): 
+	* forms.el (forms--mode-menu-edit,forms--mode-menu-ro):
 	Set `mouse-major-mode-menu'.
 
 Wed Jun 14 10:50:27 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
@@ -352,7 +3615,7 @@ Wed Jun 14 07:06:47 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 	* vc.el (vc-backend-checkin): Provide an explicit string saying
 	the log message is empty instead of providing it as empty.
 	Always use -m option for ci.
-	
+
 	* shell.el (shell-mode): Make shell-directory-tracker a hook
 	function locally only.
 
@@ -473,7 +3736,7 @@ Thu Jun  8 20:06:03 1995  Michael Kifer <kifer@cs.sunysb.edu>
 	into a function key, pretend that this key was the last command event.
 
 	* viper.el (vip-put-back,vip-Put-back): now emulate Vi's behavior
-	more closely. 
+	more closely.
 
 	* viper.el (vip-line): no longer not bombs out.
 	(vip-exec-shift) now preserves the point.
@@ -548,7 +3811,7 @@ Mon Jun  5 19:36:35 1995  Michael Kifer  <kifer@cs.sunysb.edu>
 	* ediff.el: Added ediff-cleanup-hooks and ediff-janitor.
 
 	* ediff-wind.el (ediff-setup-control-frame, ediff-keep-window-config):
-	bug fix. 
+	bug fix.
 
 	* ediff-init.el (ediff-frame-has-menubar): function deleted.
 	(ediff-device-type, ediff-color-display-p): new functions.
@@ -597,7 +3860,7 @@ Mon Jun  5 19:36:35 1995  Michael Kifer  <kifer@cs.sunysb.edu>
 Mon Jun  5 16:43:29 1995  Boris Goldowsky  <boris@spiff.gnu.ai.mit.edu>
 
 	* avoid.el, enriched.el, facemenu.el, format.el, shadowfile.el:
-	Change email address for Boris. 
+	Change email address for Boris.
 
 Sat Jun  3 14:10:48 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
 
@@ -727,7 +3990,7 @@ Tue May 30 14:27:18 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
 	(facemenu-remove-special): New function.
 	(facemenu-set-face-from-menu): If prefix arg, treat region as inactive.
 	(facemenu-set-face): Likewise.
-	(facemenu-keymap, facemenu-foreground-menu, facemenu-background-menu): 
+	(facemenu-keymap, facemenu-foreground-menu, facemenu-background-menu):
 	Add ... after Other.
 	(facemenu-menu): Change name to Text Properties.
 
@@ -811,7 +4074,7 @@ Sun May 28 18:17:22 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
 	* ediff-wind.el (ediff-setup-control-frame): Use
  	designated-minibuffer-frame while making the new frame.
 	And delete the old frame if its minibuffer is not in that frame.
-	(ediff-setup-windows-multiframe-compare) 
+	(ediff-setup-windows-multiframe-compare)
 	(ediff-setup-windows-multiframe-merge): Don't mess with
 	default-minibuffer-frame here and don't kill the old control frame.
 
@@ -1174,7 +4437,7 @@ Sat May  6 00:23:02 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* term/x-win.el (x-colors): Delete "medium goldenrod" in both forms.
 	Delete "medium forest green" in both forms.
-	
+
 	* gnus.el (gnus-use-generic-from): Doc fix.
 
 Fri May  5 18:30:45 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
@@ -1262,7 +4525,7 @@ Mon May  1 11:48:34 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 	* makefile.el (makefile-mode): Set dabbrev-abbrev-skip-leading-regexp.
 
 	* dabbrev.el (dabbrev-completion): Use mapcar, not mapc.
-	Call dabbrev--reset-global-variables as the first thing.  
+	Call dabbrev--reset-global-variables as the first thing.
 
 	* files.el (set-auto-mode): If buffer has no file, use buffer name.
 
@@ -1441,7 +4704,7 @@ Mon Apr 24 10:58:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 	(tpu-gnu-emacs19-p): Function deleted.  Callers changed.
 	(tpu-load-xkeys): Use file name .tpu-keys by default.
 	(tpu-gnu-emacs18-p): Function deleted.
-	
+
 	* tpu-mapper.el: At end, use default file name .tpu-keys.
 	Do not kill Emacs.
 	(tpu-emacs-map-key): Renamed from tpu-gnu-map-key.
@@ -1476,7 +4739,7 @@ Mon Apr 24 06:51:48 1995  Simon Marshall  <simon@duality.gnu.ai.mit.edu>
 	(fortran-font-lock-keywords-3): New variable.
 	(fortran-find-comment-start-skip): Clean code.
 
-	* add-log.el (change-log-font-lock-keywords): 
+	* add-log.el (change-log-font-lock-keywords):
 	dired.el (dired-font-lock-keywords):
 	sendmail.el (mail-font-lock-keywords):
 	rmailsum.el (rmail-summary-font-lock-keywords):
@@ -1587,7 +4850,7 @@ Wed Apr 19 10:39:00 1995  Mike Williams  <mikew@gopher.dosli.govt.nz>
 	(mouse-extend): Re-written using mouse-extend-internal,
 	mouse-sel-region-to-primary and mouse-sel-primary-to-region.
 	(mouse-extend-secondary): New function.
-	(mouse-insert-selection-internal): New function.	
+	(mouse-insert-selection-internal): New function.
 	(mouse-insert-selection): Re-written using
 	mouse-insert-selection-internal.
 	(mouse-insert-secondary): New function.
@@ -1817,7 +5080,7 @@ Thu Apr 13 18:00:00 1995  Andre Spiegel  <spiegel@bruessel.informatik.uni-stuttg
 	if a new branch was created.  After every check-in, adjust
 	the current branch using `rcs -b' (this cannot be avoided).
 	CVS case: allow for explicit checkin, but only on the trunk.
-	(vc-next-action-on-file, vc-backend-checkout, vc-backend-checkin, 
+	(vc-next-action-on-file, vc-backend-checkout, vc-backend-checkin,
 	vc-backend-revert, vc-backend-diff): Explicitly use
 	vc-workfile-version as the default version to operate on.
 
@@ -1873,7 +5136,7 @@ Tue Apr 11 19:00:36 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 Tue Apr 11 11:46:38 1995  Boris Goldowsky  <boris@cs.rochester.edu>
 
-	* facemenu.el (facemenu-read-color): Don't ignore PROMPT arg.  
+	* facemenu.el (facemenu-read-color): Don't ignore PROMPT arg.
 	Make arg optional.
 	(facemenu-unlisted-faces): Add font-lock faces to default value.
 
@@ -1888,7 +5151,7 @@ Mon Apr 10 08:30:04 1995  Stefan Schoef  <schoef@Informatik.Uni-Oldenburg.DE>
 	Support both kind of delimiters (braces or quotes) regardless of the
 	value of bibtex-field-left-delimiter and bibtex-field-right-delimiter.
         (bibtex-field-left-delimiter, bibtex-field-right-delimiter):
-	Made buffer-local.        
+	Made buffer-local.
 
         * bibtex.el (bibtex-beginning-of-entry): At the beginning of an
  	entry, leave point at the beginning of that entry instead of
@@ -1986,7 +5249,7 @@ Sat Apr  8 18:37:04 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* simple.el (completion-setup-function): Undo March 11 change.
 	Add some doc strings to completion-related variables.
-	
+
 Sat Apr  8 16:15:37 1995  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
 
 	* compile.el (compilation-error-regexp-alist): Extend Ultrix 3.0
@@ -5780,8 +9043,7 @@ Mon Oct 17 08:15:45 1994  Fred Pierresteguy <F.Pierresteguy@frcl.bull.fr>
 Mon Oct 17 04:05:11 1994  Morten Welinder  <terra@mole.gnu.ai.mit.edu>
 
 	* dos-fns.el (window-frame, raise-frame, select-frame): Clean stubs.
-I believe	* faces.el (face-initialize): Fill in the faces for non-X frames
-	also.
+	* faces.el (face-initialize): Fill in the faces for non-X frames also.
 	* info.el (Info-mode): Also use fonts for `pc' window system.
 	* loadup.el ((eq system-type 'ms-dos)): Rearrange what to load.
 	((eq system-type 'ms-dos)): Under X, let the documentation be
@@ -8550,7 +11812,7 @@ Fri Jul  1 12:27:28 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
 
 Thu Jun 30 23:49:08 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
-	* tcl-mode.el (tcl-mode): Fix regexp to avoid nexted loop.
+	* tcl-mode.el (tcl-mode): Fix regexp to avoid nested loop.
 
 Thu Jun 30 14:56:58 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
 

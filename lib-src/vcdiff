@@ -1,9 +1,9 @@
-#!/bin/sh
+#! /bin/sh
 #
 # Enhanced sccs diff utility for use with vc mode.
 # This version is more compatible with rcsdiff(1).
 #
-#	$Id: vcdiff,v 1.4 1993/12/03 09:29:18 eggert Exp $
+#	$Id: vcdiff,v 1.5 1995/07/07 22:47:57 eggert Exp $
 #
 
 DIFF="diff"

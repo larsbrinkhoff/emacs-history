@@ -1,25 +1,25 @@
-;;; pascal.el  -  Major mode for editing pascal source in emacs.
+;;; pascal.el --- major mode for editing pascal source in Emacs
 
-;;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
-;;; Author: Espen Skoglund (espensk@stud.cs.uit.no)
-;;; Keywords: languages
+;; Author: Espen Skoglund (espensk@stud.cs.uit.no)
+;; Keywords: languages
 
-;;; This file is part of GNU Emacs.
+;; This file is part of GNU Emacs.
 
-;;; This program is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2 of the License, or
-;;; (at your option) any later version.
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
 
-;;; This program is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;;; You should have received a copy of the GNU General Public License
-;;; along with this program; if not, write to the Free Software
-;;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -93,6 +93,10 @@
 ;  (define-key pascal-mode-map "\C-cu"    'pascal-upcase-keywords)
 ;  (define-key pascal-mode-map "\C-cc"    'pascal-capitalize-keywords)
   )
+
+(defvar pascal-imenu-generic-expression
+  '("^[ \t]*\\(function\\|procedure\\)[ \t\n]+\\([a-zA-Z0-9_.:]+\\)" . (2))
+  "Imenu expression for Pascal-mode.  See `imenu-generic-expression'.")
   
 (defvar pascal-keywords
   '("and" "array" "begin" "case" "const" "div" "do" "downto" "else" "end" 
@@ -192,10 +196,10 @@ instance will do lineup in case-statements and parameterlist, while '(all)
 will do all lineups.")
 
 (defvar pascal-toggle-completions nil
-  "*Non-nil means that \\<pascal-mode-map>\\[pascal-complete-label] should \
-not display a completion buffer when
-the label couldn't be completed, but instead toggle the possible completions
-with repeated \\[pascal-complete-label]'s.")
+  "*Non-nil means \\<pascal-mode-map>\\[pascal-complete-word] should try all possible completions one by one.
+Repeated use of \\[pascal-complete-word] will show you all of them.
+Normally, when there is more than one possible completion,
+it displays a list of all possible completions.")
 
 (defvar pascal-type-keywords
   '("array" "file" "packed" "char" "integer" "real" "string" "record")
@@ -316,12 +320,18 @@ no args, if that value is non-nil."
   (setq parse-sexp-ignore-comments nil)
   (make-local-variable 'case-fold-search)
   (setq case-fold-search t)
+  (make-local-variable 'comment-start)
+  (setq comment-start "{")
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip "(\\*+ *\\|{ *")
   (make-local-variable 'comment-end)
   (setq comment-end "}")
+  ;; Font lock support
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '(pascal-font-lock-keywords nil t))
+  ;; Imenu support
+  (make-local-variable 'imenu-generic-expression)
+  (setq imenu-generic-expression pascal-imenu-generic-expression)
   (run-hooks 'pascal-mode-hook))
 
 

@@ -1,3 +1,26 @@
+Fri Nov 24 23:41:58 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.30 released.
+
+Sat Nov  4 02:04:53 1995  Lars Magne Ingebrigtsen  <larsi@ifi.uio.no>
+
+	* gnus-tut.txt: New file.
+
+Wed Jul 26 16:59:25 1995  David J. MacKenzie  <djm@geech.gnu.ai.mit.edu>
+
+	* Rename termcap to termcap.src, the historical name for an
+	uninstalled termcap file.
+
+Wed Jun 28 17:40:46 1995  Eric S. Raymond  <esr@spiff.gnu.ai.mit.edu>
+
+	* termcap.dat, termcap.ucb: deleted and replaced.
+
+	* termcap: New termcap file from the ncurses project; bigger,
+	better, brighter, does away with waxy yellow buildup.  Email
+	me at terminfo@ccil.org if you have any trouble with this.
+
+	* README: Changed to track above change.
+
 Wed May 24 16:12:15 1995  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
 
 	* TUTORIAL: Delete reference to ALT.  Change <Rubout> to <Delete>.

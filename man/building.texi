@@ -690,6 +690,13 @@ typescript is the most useful thing I can think of for the initial
 buffer to do.  Type @kbd{M-x lisp-interaction-mode} to put the current
 buffer in Lisp Interaction mode.
 
+@findex ielm
+  An alternative way of evaluating Emacs Lisp expressions interactively
+is to use Inferior Emacs-Lisp mode, which provides an interface rather
+like Shell mode (@pxref{Shell Mode}) for evaluating Emacs Lisp
+expressions.  Type @kbd{M-x ielm} to create an @samp{*ielm*} buffer
+which uses this mode.
+
 @node External Lisp
 @section Running an External Lisp
 

@@ -297,7 +297,7 @@ If DEFINITION contains multiple addresses, separate them with commas."
 	  (setq definition
 		(mapconcat (function (lambda (x)
 			     (or (mail-resolve-all-aliases-1
-				   (intern-soft x mail-abbrevs)
+				   (intern-soft (downcase x) mail-abbrevs)
 				   (cons sym so-far))
 				 x)))
 			   (nreverse result)
@@ -347,9 +347,6 @@ it will be turned off.  (You don't need to worry about continuation lines.)
 This should be set to match those mail fields in which you want abbreviations
 turned on.")
 
-(defvar mail-mode-syntax-table (copy-syntax-table text-mode-syntax-table)
-  "The syntax table which is used in send-mail mode message bodies.")
-
 (defvar mail-mode-header-syntax-table
   (let ((tab (copy-syntax-table text-mode-syntax-table)))
     ;; This makes the characters "@%!._-" be considered symbol-constituents
@@ -371,16 +368,18 @@ non-address headers.")
 
 (defvar mail-abbrev-syntax-table
   (let* ((tab (copy-syntax-table mail-mode-header-syntax-table))
-	 (i (1- (length tab)))
 	 (_ (aref (standard-syntax-table) ?_))
 	 (w (aref (standard-syntax-table) ?w)))
-    (while (>= i 0)
-      (if (= (aref tab i) _) (aset tab i w))
-      (setq i (1- i)))
+    (map-char-table
+     (function (lambda (key value)
+		 (if (equal value _)
+		     (set-char-table-range tab key w))))
+     tab)
     tab)
-  "The syntax-table used for abbrev-expansion purposes; this is not actually
-made the current syntax table of the buffer, but simply controls the set of
-characters which may be a part of the name of a mail alias.")
+  "The syntax-table used for abbrev-expansion purposes.
+This is not actually made the current syntax table of the buffer, but
+simply controls the set of characters which may be a part of the name
+of a mail alias.")
 
 
 (defun mail-abbrev-in-expansion-header-p ()
@@ -486,7 +485,7 @@ characters which may be a part of the name of a mail alias.")
 		    t))))
   (build-mail-abbrevs file))
 
-(defun rebuild-mail-abbrevs (file)
+(defun rebuild-mail-abbrevs (&optional file)
   "Rebuild all the mail aliases from the given file."
   (interactive (list
 		(let ((insert-default-directory t)
@@ -497,6 +496,8 @@ characters which may be a part of the name of a mail alias.")
 		   default-directory
 		   (expand-file-name def default-directory)
 		   t))))
+  (if (null file)
+      (setq file buffer-file-name))
   (setq mail-abbrevs nil)
   (build-mail-abbrevs file))
 
@@ -506,7 +507,8 @@ characters which may be a part of the name of a mail alias.")
 		(if (not (vectorp mail-abbrevs)) (mail-abbrevs-setup))
 		(list (completing-read "Expand alias: " mail-abbrevs nil t))))
   (if (not (vectorp mail-abbrevs)) (mail-abbrevs-setup))
-  (insert (or (and alias (symbol-value (intern-soft alias mail-abbrevs))) "")))
+  (insert (or (and alias (symbol-value (intern-soft alias mail-abbrevs))) ""))
+  (mail-abbrev-expand-hook))
 
 (defun mail-abbrev-next-line (&optional arg)
   "Expand any mail abbrev, then move cursor vertically down ARG lines.

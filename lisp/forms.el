@@ -1,7 +1,8 @@
-;;; forms.el -- Forms mode: edit a file as a form to fill in.
-;;; Copyright (C) 1991, 1994, 1995 Free Software Foundation, Inc.
+;;; forms.el --- Forms mode: edit a file as a form to fill in
 
-;; Author: Johan Vromans <jv@nl.net>
+;; Copyright (C) 1991, 1994, 1995 Free Software Foundation, Inc.
+
+;; Author: Johan Vromans <jvromans@squirrel.nl>
 
 ;; This file is part of GNU Emacs.
 
@@ -101,6 +102,11 @@
 ;;;			read-only (view mode) as opposed to edit mode.
 ;;;			If no write access to the data file is
 ;;;			possible, view mode is enforced. 
+;;;
+;;;     forms-check-number-of-fields            [bool, default t]
+;;;                   If non-nil, a warning will be issued whenever
+;;;                   a record is found that does not have the number
+;;;                   of fields specified by `forms-number-of-fields'.
 ;;;
 ;;;	forms-multi-line			[string, default "^K"]
 ;;;			If non-null the records of the data file may
@@ -282,10 +288,10 @@
 (provide 'forms)			;;; official
 (provide 'forms-mode)			;;; for compatibility
 
-(defconst forms-version (substring "$Revision: 2.18 $" 11 -2)
+(defconst forms-version (substring "$Revision: 2.23 $" 11 -2)
   "The version number of forms-mode (as string).  The complete RCS id is:
 
-  $Id: forms.el,v 2.18 1995/06/18 14:43:23 jvromans Exp $")
+  $Id: forms.el,v 2.23 1995/11/16 20:04:57 jvromans Exp $")
 
 (defvar forms-mode-hooks nil
   "Hook functions to be run upon entering Forms mode.")
@@ -302,6 +308,9 @@
   "Number of fields per record.")
 
 ;;; Optional variables with default values.
+
+(defvar forms-check-number-of-fields t
+  "*If non-nil, warn about records with wrong number of fields.")
 
 (defvar forms-field-sep "\t"
   "Field separator character (default TAB).")
@@ -619,7 +628,7 @@ Commands:                        Equivalent keys in read-only mode:
 	  (save-excursion
 	    (set-buffer forms--file-buffer)
 	    (make-variable-buffer-local 'local-write-file-hooks)
-	    (setq local-write-file-hooks write-file-filter)))))
+	    (setq local-write-file-hooks (list write-file-filter))))))
 
   ;; count the number of records, and set see if it may be modified
   (let (ro)
@@ -1084,9 +1093,9 @@ Commands:                        Equivalent keys in read-only mode:
 	(if (setq there 
 		  (next-single-property-change here 'read-only))
 	    (aset forms--recordv (aref forms--elements i)
-		  (buffer-substring here there))
+		  (buffer-substring-no-properties here there))
 	  (aset forms--recordv (aref forms--elements i)
-		(buffer-substring here (point-max)))))
+		(buffer-substring-no-properties here (point-max)))))
       (setq i (1+ i)))))
 
 (defun forms--make-parser-elt (el)
@@ -1108,7 +1117,7 @@ Commands:                        Equivalent keys in read-only mode:
   ;;     (setq here (point))
   ;;     (if (not (search-forward "\nmore text: " nil t nil))
   ;; 	    (error "Parse error: cannot find \"\\nmore text: \""))
-  ;;     (aset forms--recordv 5 (buffer-substring here (- (point) 12)))
+  ;;     (aset forms--recordv 5 (buffer-substring-no-properties here (- (point) 12)))
   ;;
   ;;	 ;;  (tocol 40)
   ;;	(let ((forms--dyntext (car-safe forms--dynamic-text)))
@@ -1118,7 +1127,7 @@ Commands:                        Equivalent keys in read-only mode:
   ;;	  (setq forms--dynamic-text (cdr-safe forms--dynamic-text)))
   ;;     ... 
   ;;     ;; final flush (due to terminator sentinel, see below)
-  ;;	(aset forms--recordv 7 (buffer-substring (point) (point-max)))
+  ;;	(aset forms--recordv 7 (buffer-substring-no-properties (point) (point-max)))
 
   (cond
    ((stringp el)
@@ -1128,7 +1137,7 @@ Commands:                        Equivalent keys in read-only mode:
 		(if (not (search-forward (, el) nil t nil))
 		    (error "Parse error: cannot find \"%s\"" (, el)))
 		(aset forms--recordv (, (1- forms--field))
-		      (buffer-substring here
+		      (buffer-substring-no-properties here
 					(- (point) (, (length el)))))))
 	  (` ((if (not (looking-at (, (regexp-quote el))))
 		  (error "Parse error: not looking at \"%s\"" (, el)))
@@ -1144,7 +1153,7 @@ Commands:                        Equivalent keys in read-only mode:
    ((null el)
     (if forms--field
 	(` ((aset forms--recordv (, (1- forms--field))
-		  (buffer-substring (point) (point-max)))))))
+		  (buffer-substring-no-properties (point) (point-max)))))))
    ((listp el)
     (prog1
 	(if forms--field
@@ -1153,7 +1162,7 @@ Commands:                        Equivalent keys in read-only mode:
 		  (if (not (search-forward forms--dyntext nil t nil))
 		      (error "Parse error: cannot find \"%s\"" forms--dyntext))
 		  (aset forms--recordv (, (1- forms--field))
-			(buffer-substring here
+			(buffer-substring-no-properties here
 					  (- (point) (length forms--dyntext)))))))
 	  (` ((let ((forms--dyntext (aref forms--dyntexts (, forms--dyntext))))
 		(if (not (looking-at (regexp-quote forms--dyntext)))
@@ -1453,7 +1462,7 @@ Commands:                        Equivalent keys in read-only mode:
   (let ((here (point)))
     (prog2
      (end-of-line)
-     (buffer-substring here (point))
+     (buffer-substring-no-properties here (point))
      (goto-char here))))
 
 (defun forms--show-record (the-record)
@@ -1484,9 +1493,11 @@ Commands:                        Equivalent keys in read-only mode:
   ;; Verify the number of fields, extend forms--the-record-list if needed.
   (if (= (length forms--the-record-list) forms-number-of-fields)
       nil
-    (beep)
-    (message "Warning: this record has %d fields instead of %d"
-	     (length forms--the-record-list) forms-number-of-fields)
+    (if (null forms-check-number-of-fields)
+	nil
+      (beep)
+      (message "Warning: this record has %d fields instead of %d"
+	       (length forms--the-record-list) forms-number-of-fields))
     (if (< (length forms--the-record-list) forms-number-of-fields)
 	(setq forms--the-record-list 
 	      (append forms--the-record-list

@@ -149,7 +149,7 @@ main (argc, argv)
 
   if (argc < 3)
     {
-      fprintf (stderr, "Usage: movemail inbox destfile");
+      fprintf (stderr, "Usage: movemail inbox destfile\n");
       exit(1);
     }
 
@@ -159,6 +159,9 @@ main (argc, argv)
 #ifdef MAIL_USE_MMDF
   mmdf_init (argv[0]);
 #endif
+
+  if (*outname == 0)
+    fatal ("Destination file name is empty", 0);
 
   /* Check access to output file.  */
   if (access (outname, F_OK) == 0 && access (outname, W_OK) != 0)
@@ -182,14 +185,9 @@ main (argc, argv)
 #ifdef MAIL_USE_POP
   if (!strncmp (inname, "po:", 3))
     {
-      int status; char *user;
+      int status;
 
-      for (user = &inname[strlen (inname) - 1]; user >= inname; user--)
-	if (*user == ':')
-	  break;
-
-      user++;
-      status = popmail (user, outname);
+      status = popmail (inname + 3, outname);
       exit (status);
     }
 
@@ -202,7 +200,7 @@ main (argc, argv)
 
 #ifndef MAIL_USE_MMDF
 #ifndef MAIL_USE_SYSTEM_LOCK
-  /* Use a lock file named /usr/spool/mail/$USER.lock:
+  /* Use a lock file named after our first argument with .lock appended:
      If it exists, the mail file is locked.  */
   /* Note: this locking mechanism is *required* by the mailer
      (on systems which use it) to prevent loss of mail.
@@ -211,7 +209,7 @@ main (argc, argv)
      WILL occasionally cause loss of mail due to timing errors!
 
      So, if creation of the lock file fails
-     due to access permission on /usr/spool/mail,
+     due to access permission on the mail spool directory,
      you simply MUST change the permission
      and/or make movemail a setgid program
      so it can create lock files properly.
@@ -242,7 +240,12 @@ main (argc, argv)
       /* Give up if cannot do that.  */
       desc = open (tempname, O_WRONLY | O_CREAT | O_EXCL, 0666);
       if (desc < 0)
-	pfatal_with_name ("lock file--see source file lib-src/movemail.c");
+	{
+	  char *message = (char *) xmalloc (strlen (tempname) + 50);
+	  sprintf (message, "%s--see source file lib-src/movemail.c",
+		   tempname);
+	  pfatal_with_name (message);
+	}
       close (desc);
 
       tem = link (tempname, lockname);

@@ -11,7 +11,6 @@ set $nonvalbits = gdb_emacs_intbits - gdb_valbits
 # Set up something to print out s-expressions.
 define pr
 set debug_print ($)
-echo \n
 end
 document pr
 Print the emacs s-expression which is $.
@@ -146,7 +145,7 @@ end
 
 define xsymbol
 print (struct Lisp_Symbol *) ((((int) $) & $valmask) | gdb_data_seg_bits)
-output &$->name->data
+output (char*)&$->name->data
 echo \n
 end
 document xsymbol

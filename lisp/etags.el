@@ -237,8 +237,9 @@ file the tag was in."
 		  (if (tags-included-tables)
 		      ;; Insert the included tables into the list we
 		      ;; are processing.
-		      (setcdr tables (append (tags-included-tables)
-					     (cdr tables)))))
+		      (setcdr tables (nconc (mapcar 'tags-expand-table-name
+						    (tags-included-tables))
+					    (cdr tables)))))
 	      ;; This table is not in core yet.  Insert a placeholder
 	      ;; saying we must read it into core to check for included
 	      ;; tables before searching the next table in the list.
@@ -1247,7 +1248,8 @@ Non-nil second argument NOVISIT means use a temporary buffer
 
 Value is nil if the file was already visited;
 if the file was newly read in, the value is the filename."
-  (interactive "P")
+  ;; Make the interactive arg t if there was any prefix arg.
+  (interactive (list (if current-prefix-arg t)))
   (cond ((not initialize)
 	 ;; Not the first run.
 	 )
@@ -1280,16 +1282,19 @@ if the file was newly read in, the value is the filename."
 	 (get-buffer " *next-file*")
 	 (kill-buffer " *next-file*"))
     (error "All files processed."))
-  (let ((new (not (get-file-buffer (car next-file-list)))))
+  (let* ((next (car next-file-list))
+	 (new (not (get-file-buffer next))))
+    ;; Advance the list before trying to find the file.
+    ;; If we get an error finding the file, don't get stuck on it.
+    (setq next-file-list (cdr next-file-list))
     (if (not (and new novisit))
-	(set-buffer (find-file-noselect (car next-file-list) novisit))
+	(set-buffer (find-file-noselect next novisit))
       ;; Like find-file, but avoids random warning messages.
       (set-buffer (get-buffer-create " *next-file*"))
       (kill-all-local-variables)
       (erase-buffer)
-      (setq new (car next-file-list))
+      (setq new next)
       (insert-file-contents new nil))
-    (setq next-file-list (cdr next-file-list))
     new))
 
 (defvar tags-loop-operate nil
@@ -1457,7 +1462,7 @@ see the doc of that variable if you want to add names to the list."
 	  (prin1 tags-file-name (current-buffer)) ;invisible
 	  (insert "\n")))
     (setq set-list (delete tags-file-name
-			   (apply 'nconc (cons tags-table-list
+			   (apply 'nconc (cons (copy-sequence tags-table-list)
 					       (mapcar 'copy-sequence
 						       tags-table-set-list)))))
     (while set-list

@@ -6,3 +6,10 @@
 	 in Mule, but we don't know why.  Anyway, it's not needed now.  */
 #define SYSTEM_MALLOC
 #endif
+
+/* olson@mcs.anl.gov says -li18n is needed by -lXm.  */
+#define LIB_MOTIF -lXm -li18n
+
+#ifdef __GNUC__
+#undef _NO_PROTO
+#endif

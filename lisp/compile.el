@@ -189,6 +189,10 @@ of[ \t]+\"?\\([^\":\n]+\\)\"?:" 3 2)
     ;;  foo.c(3:8) : warning EDC0833: Implicit return statement encountered.
     ;;  foo.c(5:5) : error EDC0350: Syntax error.
     ("\n\\([^( \n\t]+\\)(\\([0-9]+\\):\\([0-9]+\\)) : " 1 2 3)
+
+    ;; Sun ada (VADS, Solaris):
+    ;;  /home3/xdhar/rcds_rc/main.a, line 361, char 6:syntax error: "," inserted
+    ("\n\\([^, ]+\\), line \\([0-9]+\\), char \\([0-9]+\\)[:., \(-]" 1 2 3)
     )
   "Alist that specifies how to match errors in compiler output.
 Each elt has the form (REGEXP FILE-IDX LINE-IDX [COLUMN-IDX FILE-FORMAT...])
@@ -253,16 +257,23 @@ The default value matches lines printed by the `-w' option of GNU Make.")
   "Stack of previous directories for `compilation-leave-directory-regexp'.
 The head element is the directory the compilation was started in.")
 
+(defvar compilation-exit-message-function nil "\
+If non-nil, called when a compilation process dies to return a status message.
+This should be a function a two arguments as passed to a process sentinel
+\(see `set-process-sentinel\); it returns a cons (MESSAGE . MODELINE) of the
+strings to write into the compilation buffer, and to put in its mode line.")
+
 ;; History of compile commands.
 (defvar compile-history nil)
 ;; History of grep commands.
 (defvar grep-history nil)
 
 (defvar compilation-mode-font-lock-keywords
-  '(("^\\([^\n:]*:\\([0-9]+:\\)+\\)\\(.*\\)$" 1 font-lock-function-name-face))
+  ;; This regexp needs a bit of rewriting.  What is the third grouping for?
+  '(("^\\([^ \n:]*:\\([0-9]+:\\)+\\)\\(.*\\)$" 1 font-lock-function-name-face))
 ;;;  ("^\\([^\n:]*:\\([0-9]+:\\)+\\)\\(.*\\)$" 0 font-lock-keyword-face keep)
   "Additional expressions to highlight in Compilation mode.")
-
+
 ;;;###autoload
 (defun compile (command)
   "Compile the program including the current buffer.  Default: run `make'.
@@ -313,10 +324,23 @@ easily repeat a grep command."
   (interactive
    (list (read-from-minibuffer "Run grep (like this): "
 			       grep-command nil nil 'grep-history)))
-  (compile-internal (concat command-args " " grep-null-device)
-		    "No more grep hits" "grep"
-		    ;; Give it a simpler regexp to match.
-		    nil grep-regexp-alist))
+  (let ((buf (compile-internal (concat command-args " " grep-null-device)
+			       "No more grep hits" "grep"
+			       ;; Give it a simpler regexp to match.
+			       nil grep-regexp-alist)))
+    (save-excursion
+      (set-buffer buf)
+      (set (make-local-variable 'compilation-exit-message-function)
+	   (lambda (proc msg)
+	     (let ((code (process-exit-status proc)))
+	       (if (eq (process-status proc) 'exit)
+		   (cond ((zerop code)
+			  '("finished (matches found)\n" . "matched"))
+			 ((= code 1)
+			  '("finished with no matches found\n" . "no match"))
+			 (t
+			  (cons msg code)))
+		 (cons msg code))))))))
 
 (defun compile-internal (command error-message
 				 &optional name-of-mode parser regexp-alist
@@ -550,19 +574,23 @@ See `compilation-mode'."
 		    ;; Write something in the compilation buffer
 		    ;; and hack its mode line.
 		    (set-buffer buffer)
-		    (let ((buffer-read-only nil))
+		    (let ((buffer-read-only nil)
+			  (status (if compilation-exit-message-function
+				      (funcall compilation-exit-message-function
+					       proc msg)
+				    (cons msg (process-exit-status proc)))))
 		      (setq omax (point-max)
 			    opoint (point))
 		      (goto-char omax)
 		      ;; Record where we put the message, so we can ignore it
 		      ;; later on.
-		      (insert ?\n mode-name " " msg)
+		      (insert ?\n mode-name " " (car status))
 		      (forward-char -1)
 		      (insert " at " (substring (current-time-string) 0 19))
 		      (forward-char 1)
 		      (setq mode-line-process
-			    (format ":%s [%d]" (process-status proc)
-				    (process-exit-status proc)))
+			    (format ":%s [%s]"
+				    (process-status proc) (cdr status)))
 		      ;; Since the buffer and mode line will show that the
 		      ;; process is dead, we can delete it now.  Otherwise it
 		      ;; will stay around until M-x list-processes.

@@ -486,7 +486,7 @@ This returns ARGS with the arguments that have been processed removed."
 		   "Yellow"
 		   "green yellow"
 		   "GreenYellow")
-  "The full list of X colors from the `rgb.text' file.")
+  "The list of X colors from the `rgb.txt' file.")
 
 (defun x-defined-colors (&optional frame)
   "Return a list of colors supported for a particular frame.
@@ -521,15 +521,15 @@ The value may be different for frames on different X displays."
 (define-key function-key-map [delete] [127])
 (define-key function-key-map [tab] [?\t])
 (define-key function-key-map [linefeed] [?\n])
-(define-key function-key-map [clear] [11])
-(define-key function-key-map [return] [13])
+(define-key function-key-map [clear] [?\C-l])
+(define-key function-key-map [return] [?\C-m])
 (define-key function-key-map [escape] [?\e])
 (define-key function-key-map [M-backspace] [?\M-\d])
 (define-key function-key-map [M-delete] [?\M-\d])
 (define-key function-key-map [M-tab] [?\M-\t])
 (define-key function-key-map [M-linefeed] [?\M-\n])
-(define-key function-key-map [M-clear] [?\M-\013])
-(define-key function-key-map [M-return] [?\M-\015])
+(define-key function-key-map [M-clear] [?\M-\C-l])
+(define-key function-key-map [M-return] [?\M-\C-m])
 (define-key function-key-map [M-escape] [?\M-\e])
 
 ;; These tell read-char how to convert
@@ -591,8 +591,8 @@ as returned by (x-server-vendor)."
 	   (65397 . kp-backtab)))
 	((or (string-equal vendor "X11/NeWS - Sun Microsystems Inc.")
 	     (string-equal vendor "X Consortium"))
-	 '((392976 . f35)
-	   (392977 . f36)
+	 '((392976 . f36)
+	   (392977 . f37)
 	   (393056 . req)
 	   ;; These are for Sun under X11R6
 	   (393072 . props)
@@ -704,7 +704,7 @@ This is in addition to the primary selection.")
 
 ;; Sun expects the menu bar cut and paste commands to use the clipboard.
 ;; This has ,? to match both on Sunos and on Solaris.
-(if (string-match " Sun Microsystems,? Inc\\."
+(if (string-match "Sun Microsystems,? Inc\\."
 		  (x-server-vendor))
     (menu-bar-enable-clipboard))
 

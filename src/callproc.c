@@ -647,10 +647,10 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   end = args[1];
 #ifdef DOS_NT
   specbind (Qbuffer_file_type, Vbinary_process_input);
-  Fwrite_region (start, end, filename_string, Qnil, Qlambda);
+  Fwrite_region (start, end, filename_string, Qnil, Qlambda, Qnil);
   unbind_to (count, Qnil);
 #else  /* not DOS_NT */
-  Fwrite_region (start, end, filename_string, Qnil, Qlambda);
+  Fwrite_region (start, end, filename_string, Qnil, Qlambda, Qnil);
 #endif /* not DOS_NT */
 
   record_unwind_protect (delete_temp_file, filename_string);
@@ -807,14 +807,25 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
      descriptors zero, one, or two; this could happen if Emacs is
      started with its standard in, out, or error closed, as might
      happen under X.  */
-  in = relocate_fd (in, 3);
-  if (out == err)
-    err = out = relocate_fd (out, 3);
-  else
-    {
+  {
+    int oin = in, oout = out;
+
+    /* We have to avoid relocating the same descriptor twice!  */
+
+    in = relocate_fd (in, 3);
+
+    if (out == oin)
+      out = in;
+    else
       out = relocate_fd (out, 3);
+
+    if (err == oin)
+      err = in;
+    else if (err == oout)
+      err = out;
+    else
       err = relocate_fd (err, 3);
-    }
+  }
 
   close (0);
   close (1);
@@ -984,7 +995,7 @@ init_callproc_1 ()
   Vexec_path = nconc2 (decode_env_path ("PATH", ""), Vexec_path);
 }
 
-/* This is run after init_cmdargs, so that Vinvocation_directory is valid.  */
+/* This is run after init_cmdargs, when Vinstallation_directory is valid.  */
 
 init_callproc ()
 {
@@ -1006,21 +1017,20 @@ init_callproc ()
 	  Vexec_path = nconc2 (Vexec_path, Fcons (tem, Qnil));
 	  Vexec_directory = Ffile_name_as_directory (tem);
 #endif /* not DOS_NT */
+	}
 
-	  /* If we use ../lib-src, maybe use ../etc as well.
-	     Do so if ../etc exists and has our DOC-... file in it.  */
-	  if (data_dir == 0)
-	    {
-	      tem = Fexpand_file_name (build_string ("etc"),
-				       Vinstallation_directory);
-	      Vdoc_directory = Ffile_name_as_directory (tem);
-	    }
+      /* Maybe use ../etc as well as ../lib-src.  */
+      if (data_dir == 0)
+	{
+	  tem = Fexpand_file_name (build_string ("etc"),
+				   Vinstallation_directory);
+	  Vdoc_directory = Ffile_name_as_directory (tem);
 	}
     }
 
   /* Look for the files that should be in etc.  We don't use
      Vinstallation_directory, because these files are never installed
-     in /bin near the executable, and they are never in the build
+     near the executable, and they are never in the build
      directory when that's different from the source directory.
 
      Instead, if these files are not in the nominal place, we try the

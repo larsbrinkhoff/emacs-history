@@ -195,17 +195,28 @@
   "*Regexp which matches Emacs Lisp source files.
 You may want to redefine `byte-compile-dest-file' if you change this.")
 
+;; This enables file name handlers such as jka-compr
+;; to remove parts of the file name that should not be copied
+;; through to the output file name.
+(defun byte-compiler-base-file-name (filename)
+  (let ((handler (find-file-name-handler filename
+					 'byte-compiler-base-file-name)))
+    (if handler
+	(funcall handler 'byte-compiler-base-file-name filename)
+      filename)))
+
 (or (fboundp 'byte-compile-dest-file)
     ;; The user may want to redefine this along with emacs-lisp-file-regexp,
     ;; so only define it if it is undefined.
     (defun byte-compile-dest-file (filename)
       "Convert an Emacs Lisp source file name to a compiled file name."
+      (setq filename (byte-compiler-base-file-name filename))
       (setq filename (file-name-sans-versions filename))
       (cond ((eq system-type 'vax-vms)
-	     (concat (substring filename 0 (string-match ";" filename)) "c"))
-	    ((string-match emacs-lisp-file-regexp filename)
-	     (concat (substring filename 0 (match-beginning 0)) ".elc"))
-	    (t (concat filename ".elc")))))
+		 (concat (substring filename 0 (string-match ";" filename)) "c"))
+		((string-match emacs-lisp-file-regexp filename)
+		 (concat (substring filename 0 (match-beginning 0)) ".elc"))
+		(t (concat filename ".elc")))))
 
 ;; This can be the 'byte-compile property of any symbol.
 (autoload 'byte-compile-inline-expand "byte-opt")
@@ -812,13 +823,13 @@ otherwise pop it")
 
 ;;; Used by make-obsolete.
 (defun byte-compile-obsolete (form)
-  (if (memq 'obsolete byte-compile-warnings)
-      (let ((new (get (car form) 'byte-obsolete-info)))
+  (let ((new (get (car form) 'byte-obsolete-info)))
+    (if (memq 'obsolete byte-compile-warnings)
 	(byte-compile-warn "%s is an obsolete function; %s" (car form)
 			   (if (stringp (car new))
 			       (car new)
-			       (format "use %s instead." (car new))))
-	(funcall (or (cdr new) 'byte-compile-normal-call) form))))
+			       (format "use %s instead." (car new)))))
+    (funcall (or (cdr new) 'byte-compile-normal-call) form)))
 
 ;; Compiler options
 
@@ -1111,7 +1122,14 @@ otherwise pop it")
 
 
 ;;;###autoload
-(defun byte-recompile-directory (directory &optional arg)
+(defun byte-force-recompile (directory)
+  "Recompile every `.el' file in DIRECTORY that already has a `.elc' file.
+Files in subdirectories of DIRECTORY are processed also."
+  (interactive "DByte force recompile (directory): ")
+  (byte-recompile-directory directory nil t))
+
+;;;###autoload
+(defun byte-recompile-directory (directory &optional arg force)
   "Recompile every `.el' file in DIRECTORY that needs recompilation.
 This is if a `.elc' file exists but is older than the `.el' file.
 Files in subdirectories of DIRECTORY are processed also.
@@ -1121,7 +1139,10 @@ But a prefix argument (optional second arg) means ask user,
 for each such `.el' file, whether to compile it.  Prefix argument 0 means
 don't ask and compile the file anyway.
 
-A nonzero prefix argument also means ask about each subdirectory."
+A nonzero prefix argument also means ask about each subdirectory.
+
+If the third argument FORCE is non-nil,
+recompile every `.el' file that already has a `.elc' file."
   (interactive "DByte recompile directory: \nP")
   (if arg
       (setq arg (prefix-numeric-value arg)))
@@ -1144,16 +1165,20 @@ A nonzero prefix argument also means ask about each subdirectory."
 	   (if (and (not (member (car files) '("." ".." "RCS" "CVS")))
 		    (file-directory-p source)
 		    (not (file-symlink-p source)))
+	       ;; This file is a subdirectory.  Handle them differently.
 	       (if (or (null arg)
 		       (eq 0 arg)
 		       (y-or-n-p (concat "Check " source "? ")))
 		   (setq directories
 			 (nconc directories (list source))))
+	     ;; It is an ordinary file.  Decide whether to compile it.
 	     (if (and (string-match emacs-lisp-file-regexp source)
 		      (not (auto-save-file-name-p source))
 		      (setq dest (byte-compile-dest-file source))
 		      (if (file-exists-p dest)
-			  (file-newer-than-file-p source dest)
+			  ;; File was already compiled.
+			  (or force (file-newer-than-file-p source dest))
+			;; No compiled file exists yet.
 			(and arg
 			     (or (eq 0 arg)
 				 (y-or-n-p (concat "Compile " source "? "))))))
@@ -1311,6 +1336,7 @@ With argument, insert value in current buffer after the form."
 	(float-output-format nil)
 	(case-fold-search nil)
 	(print-length nil)
+	(print-level nil)
 	;; Simulate entry to byte-compile-top-level
 	(byte-compile-constants nil)
 	(byte-compile-variables nil)
@@ -1330,7 +1356,7 @@ With argument, insert value in current buffer after the form."
        (erase-buffer)
        ;;	 (emacs-lisp-mode)
        (setq case-fold-search nil)
-       (and filename (byte-compile-insert-header filename))
+       (and filename (byte-compile-insert-header filename inbuffer outbuffer))
 
        ;; This is a kludge.  Some operating systems (OS/2, DOS) need to
        ;; write files containing binary information specially.
@@ -1361,57 +1387,61 @@ With argument, insert value in current buffer after the form."
 	(setq byte-compile-unresolved-functions nil))))
     outbuffer))
 
-(defun byte-compile-insert-header (filename)
-  (set-buffer outbuffer)
-  (goto-char 1)
-  ;;
-  ;; The magic number of .elc files is ";ELC", or 0x3B454C43.  After that is
-  ;; the file-format version number (18 or 19) as a byte, followed by some
-  ;; nulls.  The primary motivation for doing this is to get some binary
-  ;; characters up in the first line of the file so that `diff' will simply
-  ;; say "Binary files differ" instead of actually doing a diff of two .elc
-  ;; files.  An extra benefit is that you can add this to /etc/magic:
-  ;;
-  ;; 0	string		;ELC		GNU Emacs Lisp compiled file,
-  ;; >4	byte		x		version %d
-  ;;
-  (insert
-   ";ELC"
-   (if (byte-compile-version-cond byte-compile-compatibility) 18 19)
-   "\000\000\000\n"
-   )
-  (insert ";;; compiled by "
-	  (or (and (boundp 'user-mail-address) user-mail-address)
-	      (concat (user-login-name) "@" (system-name)))
-	  " on "
-	  (current-time-string) "\n;;; from file " filename "\n")
-  (insert ";;; emacs version " emacs-version ".\n")
-  (insert ";;; bytecomp version " byte-compile-version "\n;;; "
-	  (cond
-	   ((eq byte-optimize 'source) "source-level optimization only")
-	   ((eq byte-optimize 'byte) "byte-level optimization only")
-	   (byte-optimize "optimization is on")
-	   (t "optimization is off"))
-	  (if (byte-compile-version-cond byte-compile-compatibility)
-	      "; compiled with Emacs 18 compatibility.\n"
-	    ".\n"))
-  (if (not (byte-compile-version-cond byte-compile-compatibility))
-      (insert ";;; this file uses opcodes which do not exist in Emacs 18.\n"
-	      ;; Have to check if emacs-version is bound so that this works
-	      ;; in files loaded early in loadup.el.
-	      "\n(if (and (boundp 'emacs-version)\n"
-	      "\t (or (and (boundp 'epoch::version) epoch::version)\n"
-	      (if byte-compile-dynamic-docstrings
-		  "\t     (string-lessp emacs-version \"19.28.90\")))\n"
-		"\t     (string-lessp emacs-version \"19\")))\n")
-	      "    (error \"`"
-	      ;; prin1-to-string is used to quote backslashes.
-	      (substring (prin1-to-string (file-name-nondirectory filename))
-			 1 -1)
-	      (if byte-compile-dynamic-docstrings
-		  "' was compiled for Emacs 19.29 or later\"))\n\n"
-		"' was compiled for Emacs 19\"))\n\n")
-	      )))
+(defun byte-compile-insert-header (filename inbuffer outbuffer)
+  (set-buffer inbuffer)
+  (let ((dynamic-docstrings byte-compile-dynamic-docstrings))
+    (set-buffer outbuffer)
+    (goto-char 1)
+    ;;
+    ;; The magic number of .elc files is ";ELC", or 0x3B454C43.  After that is
+    ;; the file-format version number (18 or 19) as a byte, followed by some
+    ;; nulls.  The primary motivation for doing this is to get some binary
+    ;; characters up in the first line of the file so that `diff' will simply
+    ;; say "Binary files differ" instead of actually doing a diff of two .elc
+    ;; files.  An extra benefit is that you can add this to /etc/magic:
+    ;;
+    ;; 0	string		;ELC		GNU Emacs Lisp compiled file,
+    ;; >4	byte		x		version %d
+    ;;
+    (insert
+     ";ELC"
+     (if (byte-compile-version-cond byte-compile-compatibility) 18 19)
+     "\000\000\000\n"
+     )
+    (insert ";;; compiled by "
+	    (or (and (boundp 'user-mail-address) user-mail-address)
+		(concat (user-login-name) "@" (system-name)))
+	    " on "
+	    (current-time-string) "\n;;; from file " filename "\n")
+    (insert ";;; emacs version " emacs-version ".\n")
+    (insert ";;; bytecomp version " byte-compile-version "\n;;; "
+	    (cond
+	     ((eq byte-optimize 'source) "source-level optimization only")
+	     ((eq byte-optimize 'byte) "byte-level optimization only")
+	     (byte-optimize "optimization is on")
+	     (t "optimization is off"))
+	    (if (byte-compile-version-cond byte-compile-compatibility)
+		"; compiled with Emacs 18 compatibility.\n"
+	      ".\n"))
+    (if (not (byte-compile-version-cond byte-compile-compatibility))
+	(insert ";;; this file uses opcodes which do not exist in Emacs 18.\n"
+		;; Have to check if emacs-version is bound so that this works
+		;; in files loaded early in loadup.el.
+		"\n(if (and (boundp 'emacs-version)\n"
+		"\t (or (and (boundp 'epoch::version) epoch::version)\n"
+		(if dynamic-docstrings
+		    "\t     (string-lessp emacs-version \"19.29\")))\n"
+		  "\t     (string-lessp emacs-version \"19\")))\n")
+		"    (error \"`"
+		;; prin1-to-string is used to quote backslashes.
+		(substring (prin1-to-string (file-name-nondirectory filename))
+			   1 -1)
+		(if dynamic-docstrings
+		    "' was compiled for Emacs 19.29 or later\"))\n\n"
+		  "' was compiled for Emacs 19\"))\n\n"))
+      (insert "(or (boundp 'current-load-list) (setq current-load-list nil))\n"
+	      "\n")
+      )))
 
 
 (defun byte-compile-output-file-form (form)
@@ -1426,6 +1456,8 @@ With argument, insert value in current buffer after the form."
       (byte-compile-output-docform nil nil '("\n(" 3 ")") form nil
 				   (eq (car form) 'autoload))
     (let ((print-escape-newlines t)
+	  (print-length nil)
+	  (print-level nil)
 	  (print-readably t)	; print #[] for bytecode, 'x for (quote x)
 	  (print-gensym nil))	; this is too dangerous for now
       (princ "\n" outbuffer)
@@ -1433,72 +1465,75 @@ With argument, insert value in current buffer after the form."
       nil)))
 
 (defun byte-compile-output-docform (preface name info form specindex quoted)
-  ;; Print a form with a doc string.  INFO is (prefix doc-index postfix).
-  ;; If PREFACE and NAME are non-nil, print them too,
-  ;; before INFO and the FORM but after the doc string itself.
-  ;; If SPECINDEX is non-nil, it is the index in FORM
-  ;; of the function bytecode string.  In that case,
-  ;; we output that argument and the following argument (the constants vector)
-  ;; together, for lazy loading.
-  ;; QUOTED says that we have to put a quote before the
-  ;; list that represents a doc string reference.
-  ;; `autoload' needs that.
-  (set-buffer
-   (prog1 (current-buffer)
-     (set-buffer outbuffer)
-     (let (position)
+  "Print a form with a doc string.  INFO is (prefix doc-index postfix).
+If PREFACE and NAME are non-nil, print them too,
+before INFO and the FORM but after the doc string itself.
+If SPECINDEX is non-nil, it is the index in FORM
+of the function bytecode string.  In that case,
+we output that argument and the following argument (the constants vector)
+together, for lazy loading.
+QUOTED says that we have to put a quote before the
+list that represents a doc string reference.
+`autoload' needs that."
+  ;; We need to examine byte-compile-dynamic-docstrings
+  ;; in the input buffer (now current), not in the output buffer.
+  (let ((dynamic-docstrings byte-compile-dynamic-docstrings))
+    (set-buffer
+     (prog1 (current-buffer)
+       (set-buffer outbuffer)
+       (let (position)
 
-       ;; Insert the doc string, and make it a comment with #@LENGTH.
-       (and (>= (nth 1 info) 0)
-	    byte-compile-dynamic-docstrings
-	    (progn
-	      ;; Make the doc string start at beginning of line
-	      ;; for make-docfile's sake.
-	      (insert "\n")
-	      (setq position
-		    (byte-compile-output-as-comment
-		     (nth (nth 1 info) form) nil))
-	      ;; If the doc string starts with * (a user variable),
-	      ;; negate POSITION.
-	      (if (and (stringp (nth (nth 1 info) form))
-		       (> (length (nth (nth 1 info) form)) 0)
-		       (eq (aref (nth (nth 1 info) form) 0) ?*))
-		  (setq position (- position)))))
+	 ;; Insert the doc string, and make it a comment with #@LENGTH.
+	 (and (>= (nth 1 info) 0)
+	      dynamic-docstrings
+	      (progn
+		;; Make the doc string start at beginning of line
+		;; for make-docfile's sake.
+		(insert "\n")
+		(setq position
+		      (byte-compile-output-as-comment
+		       (nth (nth 1 info) form) nil))
+		;; If the doc string starts with * (a user variable),
+		;; negate POSITION.
+		(if (and (stringp (nth (nth 1 info) form))
+			 (> (length (nth (nth 1 info) form)) 0)
+			 (eq (aref (nth (nth 1 info) form) 0) ?*))
+		    (setq position (- position)))))
 
-       (if preface
-	   (progn
-	     (insert preface)
-	     (prin1 name outbuffer)))
-       (insert (car info))
-       (let ((print-escape-newlines t)
-	     (print-readably t)		; print #[] for bytecode, 'x for (quote x)
-	     (print-gensym nil)	; this is too dangerous for now
-	     (index 0))
-	 (prin1 (car form) outbuffer)
-	 (while (setq form (cdr form))
-	   (setq index (1+ index))
-	   (insert " ")
-	   (cond ((and (numberp specindex) (= index specindex))
-		  (let ((position
-			 (byte-compile-output-as-comment
-			  (cons (car form) (nth 1 form))
-			  t)))
-		    (princ (format "(#$ . %d) nil" position) outbuffer)
-		    (setq form (cdr form))
-		    (setq index (1+ index))))
-		 ((= index (nth 1 info))
-		  (if position
-		      (princ (format (if quoted "'(#$ . %d)"  "(#$ . %d)")
-				     position)
-			     outbuffer)
-		    (let ((print-escape-newlines nil))
-		      (goto-char (prog1 (1+ (point))
-				   (prin1 (car form) outbuffer)))
-		      (insert "\\\n")
-		      (goto-char (point-max)))))
-		 (t
-		  (prin1 (car form) outbuffer)))))
-       (insert (nth 2 info)))))
+	 (if preface
+	     (progn
+	       (insert preface)
+	       (prin1 name outbuffer)))
+	 (insert (car info))
+	 (let ((print-escape-newlines t)
+	       (print-readably t)	; print #[] for bytecode, 'x for (quote x)
+	       (print-gensym nil)	; this is too dangerous for now
+	       (index 0))
+	   (prin1 (car form) outbuffer)
+	   (while (setq form (cdr form))
+	     (setq index (1+ index))
+	     (insert " ")
+	     (cond ((and (numberp specindex) (= index specindex))
+		    (let ((position
+			   (byte-compile-output-as-comment
+			    (cons (car form) (nth 1 form))
+			    t)))
+		      (princ (format "(#$ . %d) nil" position) outbuffer)
+		      (setq form (cdr form))
+		      (setq index (1+ index))))
+		   ((= index (nth 1 info))
+		    (if position
+			(princ (format (if quoted "'(#$ . %d)"  "(#$ . %d)")
+				       position)
+			       outbuffer)
+		      (let ((print-escape-newlines nil))
+			(goto-char (prog1 (1+ (point))
+				     (prin1 (car form) outbuffer)))
+			(insert "\\\n")
+			(goto-char (point-max)))))
+		   (t
+		    (prin1 (car form) outbuffer)))))
+	 (insert (nth 2 info))))))
   nil)
 
 (defun byte-compile-keep-pending (form &optional handler)
@@ -1870,9 +1905,16 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 		  ;; If the interactive spec is a call to `list',
 		  ;; don't compile it, because `call-interactively'
 		  ;; looks at the args of `list'.
-		  (or (eq (car-safe (nth 1 int)) 'list)
-		      (setq int (list 'interactive
-				      (byte-compile-top-level (nth 1 int))))))
+		  (let ((form (nth 1 int)))
+		    (while (or (eq (car-safe form) 'let)
+			       (eq (car-safe form) 'let*)
+			       (eq (car-safe form) 'save-excursion))
+		      (while (consp (cdr form))
+			(setq form (cdr form)))
+		      (setq form (car form)))
+		    (or (eq (car-safe form) 'list)
+			(setq int (list 'interactive
+					(byte-compile-top-level (nth 1 int)))))))
 		 ((cdr int)
 		  (byte-compile-warn "malformed interactive spec: %s"
 				     (prin1-to-string int))))))
@@ -2383,13 +2425,18 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 
 
 ;; Compile a function that accepts one or more args and is right-associative.
+;; We do it by left-associativity so that the operations
+;; are done in the same order as in interpreted code.
 (defun byte-compile-associative (form)
   (if (cdr form)
-      (let ((opcode (get (car form) 'byte-opcode)))
-	;; To compile all the args first may enable some optimizations.
-	(mapcar 'byte-compile-form (setq form (cdr form)))
-	(while (setq form (cdr form))
-	  (byte-compile-out opcode 0)))
+      (let ((opcode (get (car form) 'byte-opcode))
+	    (args (copy-sequence (cdr form))))
+	(byte-compile-form (car args))
+	(setq args (cdr args))
+	(while args
+	  (byte-compile-form (car args))
+	  (byte-compile-out opcode 0)
+	  (setq args (cdr args))))
     (byte-compile-constant (eval form))))
 
 
@@ -3266,10 +3313,16 @@ For example, invoke `emacs -batch -f batch-byte-recompile-directory .'."
 (make-obsolete-variable 'unread-command-char
   "use unread-command-events instead.  That variable is a list of events to reread, so it now uses nil to mean `no event', instead of -1.")
 (make-obsolete-variable 'unread-command-event
-  "use unread-command-events; this is now a list of events.")
+  "use unread-command-events; which is a list of events rather than a single event.")
 (make-obsolete-variable 'suspend-hooks 'suspend-hook)
 (make-obsolete-variable 'comment-indent-hook 'comment-indent-function)
 (make-obsolete-variable 'meta-flag "Use the set-input-mode function instead.")
+(make-obsolete-variable 'executing-macro 'executing-kbd-macro)
+(make-obsolete-variable 'before-change-function
+  "use before-change-functions; which is a list of functions rather than a single function.")
+(make-obsolete-variable 'after-change-function
+  "use after-change-functions; which is a list of functions rather than a single function.")
+(make-obsolete-variable 'font-lock-doc-string-face 'font-lock-string-face)
 
 (provide 'byte-compile)
 (provide 'bytecomp)
@@ -3307,22 +3360,22 @@ For example, invoke `emacs -batch -f batch-byte-recompile-directory .'."
 ;; itself, compile some of its most used recursive functions (at load time).
 ;;
 (eval-when-compile
- (or (byte-code-function-p (symbol-function 'byte-compile-form))
-     (assq 'byte-code (symbol-function 'byte-compile-form))
-     (let ((byte-optimize nil) ; do it fast
-	   (byte-compile-warnings nil))
-       (mapcar '(lambda (x)
-		  (or noninteractive (message "compiling %s..." x))
-		  (byte-compile x)
-		  (or noninteractive (message "compiling %s...done" x)))
-	       '(byte-compile-normal-call
-		 byte-compile-form
-		 byte-compile-body
-		 ;; Inserted some more than necessary, to speed it up.
-		 byte-compile-top-level
-		 byte-compile-out-toplevel
-		 byte-compile-constant
-		 byte-compile-variable-ref))))
- nil)
+  (or (byte-code-function-p (symbol-function 'byte-compile-form))
+      (assq 'byte-code (symbol-function 'byte-compile-form))
+      (let ((byte-optimize nil)		; do it fast
+	    (byte-compile-warnings nil))
+	(mapcar '(lambda (x)
+		   (or noninteractive (message "compiling %s..." x))
+		   (byte-compile x)
+		   (or noninteractive (message "compiling %s...done" x)))
+		'(byte-compile-normal-call
+		  byte-compile-form
+		  byte-compile-body
+		  ;; Inserted some more than necessary, to speed it up.
+		  byte-compile-top-level
+		  byte-compile-out-toplevel
+		  byte-compile-constant
+		  byte-compile-variable-ref))))
+  nil)
 
 ;;; bytecomp.el ends here

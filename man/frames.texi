@@ -66,10 +66,13 @@ Set the region to the text you select by dragging, and copy it to the
 kill ring (@code{mouse-set-region}).  You can specify both ends of
 the region with this single command.
 
+@vindex mouse-scroll-min-lines
 If you move the mouse off the top or bottom of the window while
 dragging, the window scrolls at a steady rate until you move the mouse
 back into the window.  This way, you can select regions that don't fit
-entirely on the screen.
+entirely on the screen.  The number of lines scrolled per step depends
+on how far away from the window edge the mouse has gone; the variable
+@code{mouse-scroll-min-lines} specifies a minimum step size.
 
 @item Mouse-2
 Yank the last killed text, where you click (@code{mouse-yank-at-click}).
@@ -110,6 +113,9 @@ that kills the region already selected.
 
 @item Double-Mouse-1
 This key sets the region around the word which you click on.
+If you click on a character with ``symbol'' syntax (such as
+underscore, in C mode), it sets the region around the symbol
+surrounding that character.
 
 @item Double-Drag-Mouse-1
 This key selects a region made up of the words that you drag across.
@@ -239,12 +245,13 @@ over it.
 @node Menu Mouse Clicks
 @section Mouse Clicks for Menus
 
-  Mouse clicks modified with the @key{CONTROL} bring up menus.
+  Mouse clicks modified with the @key{CONTROL} and @key{SHIFT} keys
+bring up menus.
 
 @kindex C-Mouse-3
 @table @kbd
 @item C-Mouse-1
-This menu is for specifying the frame's default font.
+This menu is for selecting a buffer.
 
 @item C-Mouse-2
 This menu is for specifying faces and other text properties
@@ -257,6 +264,9 @@ may specify a different menu for this button.@footnote{Some systems use
 @kbd{Mouse-3} for a mode-specific menu.  We took a survey of users, and
 found they preferred to keep @kbd{Mouse-3} for selecting and killing
 regions.  Hence the decision to use @kbd{C-Mouse-3} for this menu.}
+
+@item S-mouse-1
+This menu is for specifying the frame's default font.
 @end table
 
 @node Mode Line Mouse
@@ -554,6 +564,15 @@ use to perform certain common operations.  There's no need to describe
 them in detail here, as you can more easily see for yourself; also,
 we may change them and add to them in subsequent Emacs versions.
 
+@kindex M-`
+@findex tmm-menubar
+  When you are using a window system, you can use the mouse to choose a
+command from the menu bar.  On text-only terminals, you can use the menu
+bar by typing @kbd{M-`} (@code{tmm-menubar}).  This enters a mode in
+which you can select a menu item from the keyboard.  Either type the
+initial of the item you want, or use the left and right arrow keys to
+choose an item and use @key{RET} to finalize the choice.
+
   Each of the operations in the menu bar is bound to an ordinary Emacs
 command which you can invoke equally well with @kbd{M-x} or with its own
 key bindings.  The menu lists one equivalent key binding (if the command
@@ -566,7 +585,9 @@ menu-bar-mode}.  With no argument, this command toggles Menu Bar mode, a
 minor mode.  With an argument, the command turns Menu Bar mode on if the
 argument is positive, off if the argument is not positive.  You can use
 the X resource @samp{menuBarLines} to control the initial setting of
-Menu Bar mode.  @xref{Resources X}.
+Menu Bar mode.  @xref{Resources X}.  Expert users often turn off the
+menu bar, especially on text-only terminals where this makes one
+additional line available for text.
 
 @node Faces
 @section Using Multiple Typefaces
@@ -661,6 +682,26 @@ you need to have a color or grayscale screen.  The variable
 use font styles, colors, or shades of gray to distinguish the various
 kinds of text.  Emacs chooses the default value according to the
 characteristics of your display.
+
+@vindex font-lock-maximum-size
+@vindex font-lock-maximum-decoration
+  The variable @code{font-lock-maximum-size} specifies a buffer size
+beyond which Font-Lock mode is suppressed (lest it take too long).  The
+variable @code{font-lock-maximum-decoration} specifies the preferred
+level of fontification for modes that provide multiple levels.  The
+normal default is 1; larger numbers request more fontification, and some
+modes support levels as high as 3.  These variables can also specify
+different numbers for particular major modes; for example, to use level
+3 for C/C++ modes, and the default level otherwise, use this:
+
+@example
+(setq font-lock-maximum-decoration
+      '((c-mode . 3) (c++-mode . 3)))
+@end example
+
+  You can print out the buffer with the highlighting that appears
+on your screen using the command @code{ps-print-buffer-with-faces}.
+@xref{Postscript}.
 
 @node Modifying Faces
 @section Modifying Faces

@@ -28,10 +28,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define USG5_4
 
-/* On most SVR4 systems, gettimeofday takes one arg
-   and the compiler might crash.  */
-#define GETTIMEOFDAY_ONE_ARGUMENT
-
 /* We do have multiple jobs.  Handle ^Z. */
 
 #undef NOMULTIPLEJOBS
@@ -59,7 +55,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* there are no -lg libraries on this system, and no libPW */
 
 #define LIBS_DEBUG
-#define LIBS_STANDARD -lc
+/* This is turned off because nobody actually uses LIBS_STANDARD (Nov 1995).
+   That name is a typo.  The next step is to delete this entirely.  */
+/* #define LIBS_STANDARD -lc */
 
 /* No <sioctl.h> */
 
@@ -82,12 +80,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  * interfere.  And don't try to use SIGIO yet.
  */
 
+#ifndef NOT_C_CODE
+#include <sys/wait.h>
+#endif
+
 #ifdef emacs
 #include <sys/filio.h>
 #include <termio.h>
 #include <sys/ttold.h>
 #include <signal.h>
-#include <sys/wait.h>
 #include <sys/stream.h>
 #include <sys/stropts.h>
 #include <sys/termios.h>

@@ -80,6 +80,7 @@
  *
  */
 
+#include <config.h>
 #include "XMenuInt.h"
 
 int

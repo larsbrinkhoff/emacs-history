@@ -128,7 +128,10 @@ Lisp_Object Vkill_buffer_query_functions;
 
 /* List of functions to call before changing an unmodified buffer.  */
 Lisp_Object Vfirst_change_hook;
+
 Lisp_Object Qfirst_change_hook;
+Lisp_Object Qbefore_change_functions;
+Lisp_Object Qafter_change_functions;
 
 Lisp_Object Qfundamental_mode, Qmode_class, Qpermanent_local;
 
@@ -227,6 +230,24 @@ See also `find-buffer-visiting'.")
       if (!BUFFERP (buf)) continue;
       if (!STRINGP (XBUFFER (buf)->filename)) continue;
       tem = Fstring_equal (XBUFFER (buf)->filename, filename);
+      if (!NILP (tem))
+	return buf;
+    }
+  return Qnil;
+}
+
+Lisp_Object
+get_truename_buffer (filename)
+     register Lisp_Object filename;
+{
+  register Lisp_Object tail, buf, tem;
+
+  for (tail = Vbuffer_alist; CONSP (tail); tail = XCONS (tail)->cdr)
+    {
+      buf = Fcdr (XCONS (tail)->car);
+      if (!BUFFERP (buf)) continue;
+      if (!STRINGP (XBUFFER (buf)->file_truename)) continue;
+      tem = Fstring_equal (XBUFFER (buf)->file_truename, filename);
       if (!NILP (tem))
 	return buf;
     }
@@ -395,12 +416,18 @@ NAME should be a string which is not the name of an existing buffer.")
       b->base_buffer->zv_marker = Fmake_marker ();
       Fset_marker (b->base_buffer->zv_marker,
 		   make_number (BUF_ZV (b->base_buffer)), base_buffer);
+      XMARKER (b->base_buffer->zv_marker)->insertion_type = 1;
     }
 
   /* Give the indirect buffer markers for its narrowing.  */
-  b->pt_marker = Fpoint_marker ();
-  b->begv_marker = Fpoint_min_marker ();
-  b->zv_marker = Fpoint_max_marker ();
+  b->pt_marker = Fmake_marker ();
+  Fset_marker (b->pt_marker, make_number (BUF_PT (b)), buf);
+  b->begv_marker = Fmake_marker ();
+  Fset_marker (b->begv_marker, make_number (BUF_BEGV (b)), buf);
+  b->zv_marker = Fmake_marker ();
+  Fset_marker (b->zv_marker, make_number (BUF_ZV (b)), buf);
+
+  XMARKER (b->zv_marker)->insertion_type = 1;
 
   return buf;
 }
@@ -429,6 +456,10 @@ reset_buffer (b)
   b->mark_active = Qnil;
   b->point_before_scroll = Qnil;
   b->file_format = Qnil;
+  b->redisplay_end_trigger = Qnil;
+  b->extra1 = Qnil;
+  b->extra2 = Qnil;
+  b->extra3 = Qnil;
 }
 
 /* Reset buffer B's local variables info.
@@ -450,10 +481,18 @@ reset_buffer_local_variables (b)
   b->abbrev_table = Vfundamental_mode_abbrev_table;
   b->mode_name = QSFundamental;
   b->minor_modes = Qnil;
+
+  /* If the standard case table has been altered and invalidated,
+     fix up its insides first.  */
+  if (! (CHAR_TABLE_P (XCHAR_TABLE (Vascii_downcase_table)->extras[0])
+	 && CHAR_TABLE_P (XCHAR_TABLE (Vascii_downcase_table)->extras[1])
+	 && CHAR_TABLE_P (XCHAR_TABLE (Vascii_downcase_table)->extras[2])))
+    Fset_standard_case_table (Vascii_downcase_table);
+
   b->downcase_table = Vascii_downcase_table;
-  b->upcase_table = Vascii_upcase_table;
-  b->case_canon_table = Vascii_canon_table;
-  b->case_eqv_table = Vascii_eqv_table;
+  b->upcase_table = XCHAR_TABLE (Vascii_downcase_table)->extras[0];
+  b->case_canon_table = XCHAR_TABLE (Vascii_downcase_table)->extras[1];
+  b->case_eqv_table = XCHAR_TABLE (Vascii_downcase_table)->extras[2];
   b->buffer_file_type = Qnil;
   b->invisibility_spec = Qt;
 
@@ -990,7 +1029,8 @@ with `delete-process'.")
 
   /* Delete any auto-save file, if we saved it in this session.  */
   if (STRINGP (b->auto_save_file_name)
-      && b->auto_save_modified != 0)
+      && b->auto_save_modified != 0
+      && SAVE_MODIFF < b->auto_save_modified)
     {
       Lisp_Object tem;
       tem = Fsymbol_value (intern ("delete-auto-save-files"));
@@ -1693,7 +1733,139 @@ overlays_at (pos, extend, vec_ptr, len_ptr, next_ptr, prev_ptr)
     *prev_ptr = prev;
   return idx;
 }
+
+/* Find all the overlays in the current buffer that overlap the range BEG-END
+   or are empty at BEG.
 
+   Return the number found, and store them in a vector in *VEC_PTR.  
+   Store in *LEN_PTR the size allocated for the vector.
+   Store in *NEXT_PTR the next position after POS where an overlay starts,
+     or ZV if there are no more overlays.
+   Store in *PREV_PTR the previous position before POS where an overlay ends,
+     or BEGV if there are no previous overlays.
+   NEXT_PTR and/or PREV_PTR may be 0, meaning don't store that info.
+
+   *VEC_PTR and *LEN_PTR should contain a valid vector and size
+   when this function is called.
+
+   If EXTEND is non-zero, we make the vector bigger if necessary.
+   If EXTEND is zero, we never extend the vector,
+   and we store only as many overlays as will fit.
+   But we still return the total number of overlays.  */
+
+int
+overlays_in (beg, end, extend, vec_ptr, len_ptr, next_ptr, prev_ptr)
+     int beg, end;
+     int extend;
+     Lisp_Object **vec_ptr;
+     int *len_ptr;
+     int *next_ptr;
+     int *prev_ptr;
+{
+  Lisp_Object tail, overlay, ostart, oend, result;
+  int idx = 0;
+  int len = *len_ptr;
+  Lisp_Object *vec = *vec_ptr;
+  int next = ZV;
+  int prev = BEGV;
+  int inhibit_storing = 0;
+
+  for (tail = current_buffer->overlays_before;
+       GC_CONSP (tail);
+       tail = XCONS (tail)->cdr)
+    {
+      int startpos, endpos;
+
+      overlay = XCONS (tail)->car;
+
+      ostart = OVERLAY_START (overlay);
+      oend = OVERLAY_END (overlay);
+      endpos = OVERLAY_POSITION (oend);
+      if (endpos < beg)
+	{
+	  if (prev < endpos)
+	    prev = endpos;
+	  break;
+	}
+      startpos = OVERLAY_POSITION (ostart);
+      /* Count an interval if it either overlaps the range
+	 or is empty at the start of the range.  */
+      if ((beg < endpos && startpos < end)
+	  || (startpos == endpos && beg == endpos))
+	{
+	  if (idx == len)
+	    {
+	      /* The supplied vector is full.
+		 Either make it bigger, or don't store any more in it.  */
+	      if (extend)
+		{
+		  *len_ptr = len *= 2;
+		  vec = (Lisp_Object *) xrealloc (vec, len * sizeof (Lisp_Object));
+		  *vec_ptr = vec;
+		}
+	      else
+		inhibit_storing = 1;
+	    }
+
+	  if (!inhibit_storing)
+	    vec[idx] = overlay;
+	  /* Keep counting overlays even if we can't return them all.  */
+	  idx++;
+	}
+      else if (startpos < next)
+	next = startpos;
+    }
+
+  for (tail = current_buffer->overlays_after;
+       GC_CONSP (tail);
+       tail = XCONS (tail)->cdr)
+    {
+      int startpos, endpos;
+
+      overlay = XCONS (tail)->car;
+
+      ostart = OVERLAY_START (overlay);
+      oend = OVERLAY_END (overlay);
+      startpos = OVERLAY_POSITION (ostart);
+      if (end < startpos)
+	{
+	  if (startpos < next)
+	    next = startpos;
+	  break;
+	}
+      endpos = OVERLAY_POSITION (oend);
+      /* Count an interval if it either overlaps the range
+	 or is empty at the start of the range.  */
+      if ((beg < endpos && startpos < end)
+	  || (startpos == endpos && beg == endpos))
+	{
+	  if (idx == len)
+	    {
+	      if (extend)
+		{
+		  *len_ptr = len *= 2;
+		  vec = (Lisp_Object *) xrealloc (vec, len * sizeof (Lisp_Object));
+		  *vec_ptr = vec;
+		}
+	      else
+		inhibit_storing = 1;
+	    }
+
+	  if (!inhibit_storing)
+	    vec[idx] = overlay;
+	  idx++;
+	}
+      else if (endpos < beg && endpos > prev)
+	prev = endpos;
+    }
+
+  if (next_ptr)
+    *next_ptr = next;
+  if (prev_ptr)
+    *prev_ptr = prev;
+  return idx;
+}
+
 /* Fast function to just test if we're at an overlay boundary.  */
 int
 overlay_touches_p (pos)
@@ -1817,10 +1989,28 @@ sort_overlays (overlay_vec, noverlays, w)
 
 struct sortstr
 {
-  Lisp_Object string;
+  Lisp_Object string, string2;
   int size;
   int priority;
 };
+
+struct sortstrlist
+{
+  struct sortstr *buf;	/* An array that expands as needed; never freed.  */
+  int size;		/* Allocated length of that array.  */
+  int used;		/* How much of the array is currently in use.  */
+  int bytes;		/* Total length of the strings in buf.  */
+};
+
+/* Buffers for storing information about the overlays touching a given
+   position.  These could be automatic variables in overlay_strings, but
+   it's more efficient to hold onto the memory instead of repeatedly
+   allocating and freeing it.  */
+static struct sortstrlist overlay_heads, overlay_tails;
+static char *overlay_str_buf;
+
+/* Allocated length of overlay_str_buf.  */
+static int overlay_str_len;
 
 /* A comparison function suitable for passing to qsort.  */
 static int
@@ -1836,32 +2026,53 @@ cmp_for_strings (as1, as2)
   return 0;
 }
 
-/* Buffers for storing the overlays touching a given position.
-   These are expanded as needed, but never freed.  */
-static struct sortstr *overlay_heads, *overlay_tails;
-static char *overlay_str_buf;
-
-/* Allocated length of those buffers.  */
-static int overlay_heads_len, overlay_tails_len, overlay_str_len;
+static void
+record_overlay_string (ssl, str, str2, pri, size)
+     struct sortstrlist *ssl;
+     Lisp_Object str, str2, pri;
+     int size;
+{
+  if (ssl->used == ssl->size)
+    {
+      if (ssl->buf)
+	ssl->size *= 2;
+      else
+	ssl->size = 5;
+      ssl->buf = ((struct sortstr *)
+		  xrealloc (ssl->buf, ssl->size * sizeof (struct sortstr)));
+    }
+  ssl->buf[ssl->used].string = str;
+  ssl->buf[ssl->used].string2 = str2;
+  ssl->buf[ssl->used].size = size;
+  ssl->buf[ssl->used].priority = (INTEGERP (pri) ? XINT (pri) : 0);
+  ssl->used++;
+  ssl->bytes += XSTRING (str)->size;
+  if (STRINGP (str2))
+    ssl->bytes += XSTRING (str2)->size;
+}
 
 /* Return the concatenation of the strings associated with overlays that
    begin or end at POS, ignoring overlays that are specific to a window
    other than W.  The strings are concatenated in the appropriate order:
    shorter overlays nest inside longer ones, and higher priority inside
-   lower.  Returns the string length, and stores the contents indirectly
-   through PSTR, if that variable is non-null.  The string may be
-   overwritten by subsequent calls.  */
+   lower.  Normally all of the after-strings come first, but zero-sized
+   overlays have their after-strings ride along with the before-strings
+   because it would look strange to print them inside-out.
+
+   Returns the string length, and stores the contents indirectly through
+   PSTR, if that variable is non-null.  The string may be overwritten by
+   subsequent calls.  */
 int
 overlay_strings (pos, w, pstr)
      int pos;
      struct window *w;
      char **pstr;
 {
-  Lisp_Object ov, overlay, window, str, tem;
-  int ntail = 0, nhead = 0;
-  int total = 0;
+  Lisp_Object ov, overlay, window, str;
   int startpos, endpos;
 
+  overlay_heads.used = overlay_heads.bytes = 0;
+  overlay_tails.used = overlay_tails.bytes = 0;
   for (ov = current_buffer->overlays_before; CONSP (ov); ov = XCONS (ov)->cdr)
     {
       overlay = XCONS (ov)->car;
@@ -1877,64 +2088,19 @@ overlay_strings (pos, w, pstr)
       window = Foverlay_get (overlay, Qwindow);
       if (WINDOWP (window) && XWINDOW (window) != w)
 	continue;
-      if (endpos == pos)
-	{
-	  str = Foverlay_get (overlay, Qafter_string);
-	  if (STRINGP (str))
-	    {
-	      if (ntail == overlay_tails_len)
-		{
-		  if (! overlay_tails)
-		    {
-		      overlay_tails_len = 5;
-		      overlay_tails = ((struct sortstr *)
-				       xmalloc (5 * sizeof (struct sortstr)));
-		    }
-		  else
-		    {
-		      overlay_tails_len *= 2;
-		      overlay_tails = ((struct sortstr *)
-				       xrealloc ((overlay_tails_len
-						  * sizeof (struct sortstr))));
-		    }
-		}
-	      overlay_tails[ntail].string = str;
-	      overlay_tails[ntail].size = endpos - startpos;
-	      tem = Foverlay_get (overlay, Qpriority);
-	      overlay_tails[ntail].priority = (INTEGERP (tem) ? XINT (tem) : 0);
-	      ntail++;
-	      total += XSTRING (str)->size;
-	    }
-	}
-      if (startpos == pos)
-	{
-	  str = Foverlay_get (overlay, Qbefore_string);
-	  if (STRINGP (str))
-	    {
-	      if (nhead == overlay_heads_len)
-		{
-		  if (! overlay_heads)
-		    {
-		      overlay_heads_len = 5;
-		      overlay_heads = ((struct sortstr *)
-				       xmalloc (5 * sizeof (struct sortstr)));
-		    }
-		  else
-		    {
-		      overlay_heads_len *= 2;
-		      overlay_heads = ((struct sortstr *)
-				       xrealloc ((overlay_heads_len
-						  * sizeof (struct sortstr))));
-		    }
-		}
-	      overlay_heads[nhead].string = str;
-	      overlay_heads[nhead].size = endpos - startpos;
-	      tem = Foverlay_get (overlay, Qpriority);
-	      overlay_heads[nhead].priority = (INTEGERP (tem) ? XINT (tem) : 0);
-	      nhead++;
-	      total += XSTRING (str)->size;
-	    }
-	}
+      if (startpos == pos
+	  && (str = Foverlay_get (overlay, Qbefore_string), STRINGP (str)))
+	record_overlay_string (&overlay_heads, str,
+			       (startpos == endpos
+				? Foverlay_get (overlay, Qafter_string)
+				: Qnil),
+			       Foverlay_get (overlay, Qpriority),
+			       endpos - startpos);
+      else if (endpos == pos
+	  && (str = Foverlay_get (overlay, Qafter_string), STRINGP (str)))
+	record_overlay_string (&overlay_tails, str, Qnil,
+			       Foverlay_get (overlay, Qpriority),
+			       endpos - startpos);
     }
   for (ov = current_buffer->overlays_after; CONSP (ov); ov = XCONS (ov)->cdr)
     {
@@ -1946,99 +2112,67 @@ overlay_strings (pos, w, pstr)
       endpos = OVERLAY_POSITION (OVERLAY_END (overlay));
       if (startpos > pos)
 	break;
-      if (endpos == pos)
-	{
-	  str = Foverlay_get (overlay, Qafter_string);
-	  if (STRINGP (str))
-	    {
-	      if (ntail == overlay_tails_len)
-		{
-		  if (! overlay_tails)
-		    {
-		      overlay_tails_len = 5;
-		      overlay_tails = ((struct sortstr *)
-				       xmalloc (5 * sizeof (struct sortstr)));
-		    }
-		  else
-		    {
-		      overlay_tails_len *= 2;
-		      overlay_tails = ((struct sortstr *)
-				       xrealloc ((overlay_tails_len
-						  * sizeof (struct sortstr))));
-		    }
-		}
-	      overlay_tails[ntail].string = str;
-	      overlay_tails[ntail].size = endpos - startpos;
-	      tem = Foverlay_get (overlay, Qpriority);
-	      overlay_tails[ntail].priority = (INTEGERP (tem) ? XINT (tem) : 0);
-	      ntail++;
-	      total += XSTRING (str)->size;
-	    }
-	}
-      if (startpos == pos)
-	{
-	  str = Foverlay_get (overlay, Qbefore_string);
-	  if (STRINGP (str))
-	    {
-	      if (nhead == overlay_heads_len)
-		{
-		  if (! overlay_heads)
-		    {
-		      overlay_heads_len = 5;
-		      overlay_heads = ((struct sortstr *)
-				       xmalloc (5 * sizeof (struct sortstr)));
-		    }
-		  else
-		    {
-		      overlay_heads_len *= 2;
-		      overlay_heads = ((struct sortstr *)
-				       xrealloc ((overlay_heads_len
-						  * sizeof (struct sortstr))));
-		    }
-		}
-	      overlay_heads[nhead].string = str;
-	      overlay_heads[nhead].size = endpos - startpos;
-	      tem = Foverlay_get (overlay, Qpriority);
-	      overlay_heads[nhead].priority = (INTEGERP (tem) ? XINT (tem) : 0);
-	      nhead++;
-	      total += XSTRING (str)->size;
-	    }
-	}
+      if (endpos != pos && startpos != pos)
+	continue;
+      window = Foverlay_get (overlay, Qwindow);
+      if (WINDOWP (window) && XWINDOW (window) != w)
+	continue;
+      if (startpos == pos
+	  && (str = Foverlay_get (overlay, Qbefore_string), STRINGP (str)))
+	record_overlay_string (&overlay_heads, str,
+			       (startpos == endpos
+				? Foverlay_get (overlay, Qafter_string)
+				: Qnil),
+			       Foverlay_get (overlay, Qpriority),
+			       endpos - startpos);
+      else if (endpos == pos
+	       && (str = Foverlay_get (overlay, Qafter_string), STRINGP (str)))
+	record_overlay_string (&overlay_tails, str, Qnil,
+			       Foverlay_get (overlay, Qpriority),
+			       endpos - startpos);
     }
-  if (ntail > 1)
-    qsort (overlay_tails, ntail, sizeof (struct sortstr), cmp_for_strings);
-  if (nhead > 1)
-    qsort (overlay_heads, nhead, sizeof (struct sortstr), cmp_for_strings);
-  if (total)
+  if (overlay_tails.used > 1)
+    qsort (overlay_tails.buf, overlay_tails.used, sizeof (struct sortstr),
+	   cmp_for_strings);
+  if (overlay_heads.used > 1)
+    qsort (overlay_heads.buf, overlay_heads.used, sizeof (struct sortstr),
+	   cmp_for_strings);
+  if (overlay_heads.bytes || overlay_tails.bytes)
     {
+      Lisp_Object tem;
       int i;
       char *p;
+      int total = overlay_heads.bytes + overlay_tails.bytes;
 
       if (total > overlay_str_len)
-	{
-	  if (! overlay_str_buf)
-	    overlay_str_buf = (char *)xmalloc (total);
-	  else
-	    overlay_str_buf = (char *)xrealloc (overlay_str_buf, total);
-	  overlay_str_len = total;
-	}
+	overlay_str_buf = (char *)xrealloc (overlay_str_buf,
+					    overlay_str_len = total);
       p = overlay_str_buf;
-      for (i = ntail; --i >= 0;)
+      for (i = overlay_tails.used; --i >= 0;)
 	{
-	  tem = overlay_tails[i].string;
+	  tem = overlay_tails.buf[i].string;
 	  bcopy (XSTRING (tem)->data, p, XSTRING (tem)->size);
 	  p += XSTRING (tem)->size;
 	}
-      for (i = 0; i < nhead; ++i)
+      for (i = 0; i < overlay_heads.used; ++i)
 	{
-	  tem = overlay_heads[i].string;
+	  tem = overlay_heads.buf[i].string;
 	  bcopy (XSTRING (tem)->data, p, XSTRING (tem)->size);
 	  p += XSTRING (tem)->size;
+	  tem = overlay_heads.buf[i].string2;
+	  if (STRINGP (tem))
+	    {
+	      bcopy (XSTRING (tem)->data, p, XSTRING (tem)->size);
+	      p += XSTRING (tem)->size;
+	    }
 	}
+      if (p != overlay_str_buf + total)
+	abort ();
       if (pstr)
 	*pstr = overlay_str_buf;
+      return total;
     }
-  return total;
+  return 0;
 }
 
 /* Shift overlays in BUF's overlay lists, to center the lists at POS.  */
@@ -2348,12 +2482,17 @@ DEFUN ("overlayp", Foverlayp, Soverlayp, 1, 1, 0,
   return (OVERLAYP (object) ? Qt : Qnil);
 }
 
-DEFUN ("make-overlay", Fmake_overlay, Smake_overlay, 2, 3, 0,
+DEFUN ("make-overlay", Fmake_overlay, Smake_overlay, 2, 5, 0,
   "Create a new overlay with range BEG to END in BUFFER.\n\
 If omitted, BUFFER defaults to the current buffer.\n\
-BEG and END may be integers or markers.")
-  (beg, end, buffer)
+BEG and END may be integers or markers.\n\
+The fourth arg FRONT-ADVANCE, if non-nil, makes the\n\
+front delimiter advance when text is inserted there.\n\
+The fifth arg REAR-ADVANCE, if non-nil, makes the\n\
+rear delimiter advance when text is inserted there.")
+  (beg, end, buffer, front_advance, rear_advance)
      Lisp_Object beg, end, buffer;
+     Lisp_Object front_advance, rear_advance;
 {
   Lisp_Object overlay;
   struct buffer *b;
@@ -2382,6 +2521,11 @@ BEG and END may be integers or markers.")
 
   beg = Fset_marker (Fmake_marker (), beg, buffer);
   end = Fset_marker (Fmake_marker (), end, buffer);
+
+  if (!NILP (front_advance))
+    XMARKER (beg)->insertion_type = 1;
+  if (!NILP (rear_advance))
+    XMARKER (end)->insertion_type = 1;
 
   overlay = allocate_misc ();
   XMISCTYPE (overlay) = Lisp_Misc_Overlay;
@@ -2619,6 +2763,38 @@ DEFUN ("overlays-at", Foverlays_at, Soverlays_at, 1, 1, 0,
   return result;
 }
 
+DEFUN ("overlays-in", Foverlays_in, Soverlays_in, 2, 2, 0,
+  "Return a list of the overlays that overlap the region BEG ... END.\n\
+Overlap means that at least one character is contained within the overlay\n\
+and also contained within the specified region.\n\
+Empty overlays are included in the result if they are located at BEG\n\
+or between BEG and END.")
+  (beg, end)
+     Lisp_Object beg, end;
+{
+  int noverlays;
+  Lisp_Object *overlay_vec;
+  int len;
+  Lisp_Object result;
+
+  CHECK_NUMBER_COERCE_MARKER (beg, 0);
+  CHECK_NUMBER_COERCE_MARKER (end, 0);
+
+  len = 10;
+  overlay_vec = (Lisp_Object *) xmalloc (len * sizeof (Lisp_Object));
+
+  /* Put all the overlays we want in a vector in overlay_vec.
+     Store the length in len.  */
+  noverlays = overlays_in (XINT (beg), XINT (end), 1, &overlay_vec, &len,
+			   (int *) 0, (int *) 0);
+
+  /* Make a list of them all.  */
+  result = Flist (noverlays, overlay_vec);
+
+  xfree (overlay_vec);
+  return result;
+}
+
 DEFUN ("next-overlay-change", Fnext_overlay_change, Snext_overlay_change,
   1, 1, 0,
   "Return the next position after POS where an overlay starts or ends.\n\
@@ -2825,15 +3001,58 @@ DEFUN ("overlay-put", Foverlay_put, Soverlay_put, 3, 3, 0,
   return value;
 }
 
+/* Subroutine of report_overlay_modification.  */
+
+/* Lisp vector holding overlay hook functions to call.
+   Vector elements come in pairs.
+   Each even-index element is a list of hook functions.
+   The following odd-index element is the overlay they came from.
+
+   Before the buffer change, we fill in this vector
+   as we call overlay hook functions.
+   After the buffer change, we get the functions to call from this vector.
+   This way we always call the same functions before and after the change.  */
+static Lisp_Object last_overlay_modification_hooks;
+
+/* Number of elements actually used in last_overlay_modification_hooks.  */
+static int last_overlay_modification_hooks_used;
+
+/* Add one functionlist/overlay pair
+   to the end of last_overlay_modification_hooks.  */
+
+static void
+add_overlay_mod_hooklist (functionlist, overlay)
+     Lisp_Object functionlist, overlay;
+{
+  int oldsize = XVECTOR (last_overlay_modification_hooks)->size;
+
+  if (last_overlay_modification_hooks_used == oldsize)
+    {
+      Lisp_Object old;
+      old = last_overlay_modification_hooks;
+      last_overlay_modification_hooks
+	= Fmake_vector (make_number (oldsize * 2), Qnil);
+      bcopy (XVECTOR (last_overlay_modification_hooks)->contents,
+	     XVECTOR (old)->contents,
+	     sizeof (Lisp_Object) * oldsize);
+    }
+  XVECTOR (last_overlay_modification_hooks)->contents[last_overlay_modification_hooks_used++] = functionlist;
+  XVECTOR (last_overlay_modification_hooks)->contents[last_overlay_modification_hooks_used++] = overlay;
+}
+
 /* Run the modification-hooks of overlays that include
    any part of the text in START to END.
-   Run the insert-before-hooks of overlay starting at END,
+   If this change is an insertion, also
+   run the insert-before-hooks of overlay starting at END,
    and the insert-after-hooks of overlay ending at START.
 
    This is called both before and after the modification.
    AFTER is nonzero when we call after the modification.
 
-   ARG1, ARG2, ARG3 are arguments to pass to the hook functions.  */
+   ARG1, ARG2, ARG3 are arguments to pass to the hook functions.
+   When AFTER is nonzero, they are the start position,
+   the position after the inserted new text,
+   and the length of deleted or replaced old text.  */
 
 void
 report_overlay_modification (start, end, after, arg1, arg2, arg3)
@@ -2842,7 +3061,8 @@ report_overlay_modification (start, end, after, arg1, arg2, arg3)
      Lisp_Object arg1, arg2, arg3;
 {
   Lisp_Object prop, overlay, tail;
-  int insertion = EQ (start, end);
+  /* 1 if this change is an insertion.  */
+  int insertion = (after ? XFASTINT (arg3) == 0 : EQ (start, end));
   int tail_copied;
   struct gcpro gcpro1, gcpro2, gcpro3, gcpro4, gcpro5;
 
@@ -2850,6 +3070,35 @@ report_overlay_modification (start, end, after, arg1, arg2, arg3)
   tail = Qnil;
   GCPRO5 (overlay, tail, arg1, arg2, arg3);
 
+  if (after)
+    {
+      /* Call the functions recorded in last_overlay_modification_hooks
+	 rather than scanning the overlays again.
+	 First copy the vector contents, in case some of these hooks
+	 do subsequent modification of the buffer.  */
+      int size = last_overlay_modification_hooks_used;
+      Lisp_Object *copy = (Lisp_Object *) alloca (size * sizeof (Lisp_Object));
+      int i;
+
+      bcopy (XVECTOR (last_overlay_modification_hooks)->contents,
+	     copy, size * sizeof (Lisp_Object));
+      gcpro1.var = copy;
+      gcpro1.nvars = size;
+
+      for (i = 0; i < size;)
+	{
+	  Lisp_Object prop, overlay;
+	  prop = copy[i++];
+	  overlay = copy[i++];
+	  call_overlay_mod_hooks (prop, overlay, after, arg1, arg2, arg3);
+	}
+      UNGCPRO;
+      return;
+    }
+
+  /* We are being called before a change.
+     Scan the overlays to find the functions to call.  */
+  last_overlay_modification_hooks_used = 0;
   tail_copied = 0;
   for (tail = current_buffer->overlays_before;
        CONSP (tail);
@@ -2866,7 +3115,8 @@ report_overlay_modification (start, end, after, arg1, arg2, arg3)
       if (XFASTINT (start) > endpos)
 	break;
       startpos = OVERLAY_POSITION (ostart);
-      if (XFASTINT (end) == startpos && insertion)
+      if (insertion && (XFASTINT (start) == startpos
+			|| XFASTINT (end) == startpos))
 	{
 	  prop = Foverlay_get (overlay, Qinsert_in_front_hooks);
 	  if (!NILP (prop))
@@ -2878,7 +3128,8 @@ report_overlay_modification (start, end, after, arg1, arg2, arg3)
 	      call_overlay_mod_hooks (prop, overlay, after, arg1, arg2, arg3);
 	    }
 	}
-      if (XFASTINT (start) == endpos && insertion)
+      if (insertion && (XFASTINT (start) == endpos
+			|| XFASTINT (end) == endpos))
 	{
 	  prop = Foverlay_get (overlay, Qinsert_behind_hooks);
 	  if (!NILP (prop))
@@ -2920,7 +3171,8 @@ report_overlay_modification (start, end, after, arg1, arg2, arg3)
       endpos = OVERLAY_POSITION (oend);
       if (XFASTINT (end) < startpos)
 	break;
-      if (XFASTINT (end) == startpos && insertion)
+      if (insertion && (XFASTINT (start) == startpos
+			|| XFASTINT (end) == startpos))
 	{
 	  prop = Foverlay_get (overlay, Qinsert_in_front_hooks);
 	  if (!NILP (prop))
@@ -2931,7 +3183,8 @@ report_overlay_modification (start, end, after, arg1, arg2, arg3)
 	      call_overlay_mod_hooks (prop, overlay, after, arg1, arg2, arg3);
 	    }
 	}
-      if (XFASTINT (start) == endpos && insertion)
+      if (insertion && (XFASTINT (start) == endpos
+			|| XFASTINT (end) == endpos))
 	{
 	  prop = Foverlay_get (overlay, Qinsert_behind_hooks);
 	  if (!NILP (prop))
@@ -2967,7 +3220,11 @@ call_overlay_mod_hooks (list, overlay, after, arg1, arg2, arg3)
      Lisp_Object arg1, arg2, arg3;
 {
   struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
+
   GCPRO4 (list, arg1, arg2, arg3);
+  if (! after)
+    add_overlay_mod_hooklist (list, overlay);
+
   while (!NILP (list))
     {
       if (NILP (arg3))
@@ -3117,6 +3374,8 @@ init_buffer_once ()
   XSETINT (buffer_local_flags.point_before_scroll, -1);
   XSETINT (buffer_local_flags.file_truename, -1);
   XSETINT (buffer_local_flags.invisibility_spec, -1);
+  XSETINT (buffer_local_flags.file_format, -1);
+  XSETINT (buffer_local_flags.redisplay_end_trigger, -1);
 
   XSETFASTINT (buffer_local_flags.mode_line_format, 1);
   XSETFASTINT (buffer_local_flags.abbrev_mode, 2);
@@ -3136,7 +3395,6 @@ init_buffer_once ()
   XSETFASTINT (buffer_local_flags.display_table, 0x2000);
   XSETFASTINT (buffer_local_flags.syntax_table, 0x8000);
   XSETFASTINT (buffer_local_flags.cache_long_line_scans, 0x10000);
-  XSETFASTINT (buffer_local_flags.file_format, 0x20000);
 #ifdef DOS_NT
   XSETFASTINT (buffer_local_flags.buffer_file_type, 0x4000);
 #endif
@@ -3208,6 +3466,10 @@ syms_of_buffer ()
 {
   extern Lisp_Object Qdisabled;
 
+  staticpro (&last_overlay_modification_hooks);
+  last_overlay_modification_hooks
+    = Fmake_vector (make_number (10), Qnil);
+
   staticpro (&Vbuffer_defaults);
   staticpro (&Vbuffer_local_symbols);
   staticpro (&Qfundamental_mode);
@@ -3217,17 +3479,18 @@ syms_of_buffer ()
   staticpro (&Qprotected_field);
   staticpro (&Qpermanent_local);
   staticpro (&Qkill_buffer_hook);
+  Qoverlayp = intern ("overlayp");
   staticpro (&Qoverlayp);
   Qevaporate = intern ("evaporate");
   staticpro (&Qevaporate);
-  staticpro (&Qmodification_hooks);
   Qmodification_hooks = intern ("modification-hooks");
-  staticpro (&Qinsert_in_front_hooks);
+  staticpro (&Qmodification_hooks);
   Qinsert_in_front_hooks = intern ("insert-in-front-hooks");
-  staticpro (&Qinsert_behind_hooks);
+  staticpro (&Qinsert_in_front_hooks);
   Qinsert_behind_hooks = intern ("insert-behind-hooks");
-  staticpro (&Qget_file_buffer);
+  staticpro (&Qinsert_behind_hooks);
   Qget_file_buffer = intern ("get-file-buffer");
+  staticpro (&Qget_file_buffer);
   Qpriority = intern ("priority");
   staticpro (&Qpriority);
   Qwindow = intern ("window");
@@ -3236,8 +3499,12 @@ syms_of_buffer ()
   staticpro (&Qbefore_string);
   Qafter_string = intern ("after-string");
   staticpro (&Qafter_string);
-
-  Qoverlayp = intern ("overlayp");
+  Qfirst_change_hook = intern ("first-change-hook");
+  staticpro (&Qfirst_change_hook);
+  Qbefore_change_functions = intern ("before-change-functions");
+  staticpro (&Qbefore_change_functions);
+  Qafter_change_functions = intern ("after-change-functions");
+  staticpro (&Qafter_change_functions);
 
   Fput (Qprotected_field, Qerror_conditions,
 	Fcons (Qprotected_field, Fcons (Qerror, Qnil)));
@@ -3416,7 +3683,7 @@ Each buffer has its own value of this variable.");
 
   DEFVAR_PER_BUFFER ("buffer-file-truename", &current_buffer->file_truename,
 		     make_number (Lisp_String),
-    "Truename of file visited in current buffer, or nil if not visiting a file.\n\
+    "Abbreviated truename of file visited in current buffer, or nil if none.\n\
 The truename of a file is calculated by `file-truename'\n\
 and then abbreviated with `abbreviate-file-name'.\n\
 Each buffer has its own value of this variable.");
@@ -3476,21 +3743,22 @@ Automatically becomes buffer-local when set in any fashion.");
 		     Qnil,
     "Display table that controls display of the contents of current buffer.\n\
 Automatically becomes buffer-local when set in any fashion.\n\
-The display table is a vector created with `make-display-table'.\n\
-The first 256 elements control how to display each possible text character.\n\
-Each value should be a vector of characters or nil;\n\
+The display table is a char-table created with `make-display-table'.\n\
+The ordinary char-table elements control how to display each possible text\n\
+character.  Each value should be a vector of characters or nil;\n\
 nil means display the character in the default fashion.\n\
-The remaining six elements control the display of\n\
-  the end of a truncated screen line (element 256, a single character);\n\
-  the end of a continued line (element 257, a single character);\n\
+There are six extra slots to control the display of\n\
+  the end of a truncated screen line (extra-slot 0, a single character);\n\
+  the end of a continued line (extra-slot 1, a single character);\n\
   the escape character used to display character codes in octal\n\
-    (element 258, a single character);\n\
-  the character used as an arrow for control characters (element 259,\n\
+    (extra-slot 2, a single character);\n\
+  the character used as an arrow for control characters (extra-slot 3,\n\
     a single character);\n\
-  the decoration indicating the presence of invisible lines (element 260,\n\
+  the decoration indicating the presence of invisible lines (extra-slot 4,\n\
     a vector of characters);\n\
   the character used to draw the border between side-by-side windows\n\
-    (element 261, a single character).\n\
+    (extra-slot 5, a single character).\n\
+See also the functions `display-table-slot' and `set-display-table-slot'.\n\
 If this variable is nil, the value of `standard-display-table' is used.\n\
 Each window can have its own, overriding display table.");
 #endif
@@ -3569,8 +3837,6 @@ accomplishing an equivalent result by using other variables.");
   "A list of functions to call before changing a buffer which is unmodified.\n\
 The functions are run using the `run-hooks' function.");
   Vfirst_change_hook = Qnil;
-  Qfirst_change_hook = intern ("first-change-hook");
-  staticpro (&Qfirst_change_hook);
 
 #if 0 /* The doc string is too long for some compilers,
 	 but make-docfile can find it in this comment.  */
@@ -3713,6 +3979,7 @@ is a member of the list.");
   defsubr (&Soverlay_buffer);
   defsubr (&Soverlay_properties);
   defsubr (&Soverlays_at);
+  defsubr (&Soverlays_in);
   defsubr (&Snext_overlay_change);
   defsubr (&Sprevious_overlay_change);
   defsubr (&Soverlay_recenter);

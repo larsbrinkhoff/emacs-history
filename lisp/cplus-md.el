@@ -143,8 +143,102 @@ with the colon on the first line.")
   "*Indicates how far to indent an line following an empty argument
 list.  Nil indicates to just after the paren.")
 
+(defvar c++-imenu-generic-expression
+  (` 
+   ((nil
+     (, 
+      (concat
+       "^"				  ; beginning of line is required
+       "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
+       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; type specs; there can be no
+       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; more than 3 tokens, right?
+       
+       "\\("				  ; last type spec including */&
+       "[a-zA-Z0-9_:]+"
+       "\\([ \t]*[*&]+[ \t]*\\|[ \t]+\\)"	  ; either pointer/ref sign or whitespace
+       "\\)?"				  ; if there is a last type spec
+       "\\("			      ; name; take that into the imenu entry
+       "[a-zA-Z0-9_:~]+"		      ; member function, ctor or dtor...
+					; (may not contain * because then 
+					; "a::operator char*" would become "char*"!)
+       "\\|"
+       "\\([a-zA-Z0-9_:~]*::\\)?operator"
+       "[^a-zA-Z1-9_][^(]*"	      ; ...or operator
+       " \\)"
+       "[ \t]*([^)]*)[ \t\n]*[^	      ;]" ; require something other than a ; after
+					; the (...) to avoid prototypes.  Can't
+					; catch cases with () inside the parentheses
+					; surrounding the parameters
+					; (like "int foo(int a=bar()) {...}"
+       
+       )) 6)    
+    ("Class" 
+     (, (concat 
+	 "^"				   ; beginning of line is required
+	 "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
+	 "class[ \t]+"
+	 "\\([a-zA-Z0-9_]+\\)"                ; this is the string we want to get
+	 "[ \t]*[:{]"
+	 )) 2)
+;; Example of generic expression for finding prototypes, structs, unions, enums.
+;; Uncomment if you want to find these too.  It will be a bit slower gathering
+;; the indexes.
+;    ("Prototypes"
+;     (, 
+;      (concat
+;       "^"				  ; beginning of line is required
+;       "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
+;       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; type specs; there can be no
+;       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; more than 3 tokens, right?
+       
+;       "\\("				  ; last type spec including */&
+;       "[a-zA-Z0-9_:]+"
+;       "\\([ \t]*[*&]+[ \t]*\\|[ \t]+\\)"	  ; either pointer/ref sign or whitespace
+;       "\\)?"				  ; if there is a last type spec
+;       "\\("			      ; name; take that into the imenu entry
+;       "[a-zA-Z0-9_:~]+"		      ; member function, ctor or dtor...
+;					; (may not contain * because then 
+;					; "a::operator char*" would become "char*"!)
+;       "\\|"
+;       "\\([a-zA-Z0-9_:~]*::\\)?operator"
+;       "[^a-zA-Z1-9_][^(]*"	      ; ...or operator
+;       " \\)"
+;       "[ \t]*([^)]*)[ \t\n]*;" 	; require ';' after
+;					; the (...) Can't
+;					; catch cases with () inside the parentheses
+;					; surrounding the parameters
+;					; (like "int foo(int a=bar());"       
+;       )) 6)    
+;    ("Struct"
+;     (, (concat
+;	 "^"				; beginning of line is required
+;	 "\\(static[ \t]+\\)?"		; there may be static or const.
+;	 "\\(const[ \t]+\\)?"
+;	 "struct[ \t]+"
+;	 "\\([a-zA-Z0-9_]+\\)"		; this is the string we want to get
+;	 "[ \t]*[{]"
+;	 )) 3)
+;    ("Enum"
+;     (, (concat
+;	 "^"				; beginning of line is required
+;	 "\\(static[ \t]+\\)?"		; there may be static or const.
+;	 "\\(const[ \t]+\\)?"
+;	 "enum[ \t]+"
+;	 "\\([a-zA-Z0-9_]+\\)"		; this is the string we want to get
+;	 "[ \t]*[{]"
+;	 )) 3)
+;    ("Union"
+;     (, (concat
+;	 "^"				; beginning of line is required
+;	 "\\(static[ \t]+\\)?"		; there may be static or const.
+;	 "\\(const[ \t]+\\)?"
+;	 "union[ \t]+"
+;	 "\\([a-zA-Z0-9_]+\\)"		; this is the string we want to get
+;	 "[ \t]*[{]"
+;	 )) 3)
+    ))
+  "Imenu generic expression for C++ mode.  See `imenu-generic-expression'.")
 
-;;;###autoload
 (defun c++-mode ()
   "Major mode for editing C++ code.  Very much like editing C code.
 Expression and list commands understand all C++ brackets.
@@ -228,6 +322,8 @@ no args if that value is non-nil."
   (set (make-local-variable 'paragraph-ignore-fill-prefix) t)
   (set (make-local-variable 'require-final-newline) t)
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
+  (make-local-variable 'imenu-generic-expression)
+  (setq imenu-generic-expression c++-imenu-generic-expression)
   (run-hooks 'c++-mode-hook)
   (if c++-electric-colon
       (define-key c++-mode-map ":" 'electric-c++-terminator)))
@@ -301,15 +397,15 @@ no args if that value is non-nil."
 			;; So quickly rule out most other uses of colon
 			;; and do no indentation for them.
 			(and (eq last-command-char ?:)
-			     (not (looking-at "case[ \t]"))
-			     (save-excursion
-			       (forward-word 1)
-			       (skip-chars-forward " \t")
-			       (< (point) end))
-			     ;; Do re-indent double colons
-			     (save-excursion
-			       (end-of-line 1)
-			       (looking-at ":")))
+			     (or (not (or (looking-at "case[ \t]")
+					  (save-excursion
+					    (forward-word 1)
+					    (skip-chars-forward " \t")
+					    (>= (point) end))))
+				 ;; Do re-indent double colons
+				 (save-excursion
+				   (end-of-line 1)
+				   (looking-at ":"))))
 			(progn
 			  (beginning-of-defun)
 			  (let ((pps (parse-partial-sexp (point) end)))
@@ -466,6 +562,8 @@ Returns nil if line starts inside a string, t if in a comment."
 		     (backward-char 1))
 		 (if (= (preceding-char) ?})
 		     0
+		   (if (= (preceding-char) ?\))
+		       (forward-list -1))
 		   (beginning-of-line)	; continued arg decls or member inits
 		   (skip-chars-forward " \t")
 		   (if (= (following-char) ?:)
@@ -511,7 +609,14 @@ Returns nil if line starts inside a string, t if in a comment."
 	     ;; Statement.  Find previous non-comment character.
 	     (goto-char indent-point)
 	     (c++-backward-to-noncomment containing-sexp)
-	     (if (not (memq (preceding-char) '(nil ?\, ?\; ?} ?: ?\{)))
+	     (if (and (not (memq (preceding-char) '(0 ?\, ?\; ?\} ?\{)))
+		      ;; But don't treat a line with a close-brace
+		      ;; as a continuation.  It is probably the
+		      ;; end of an enum type declaration.
+		      (save-excursion
+			(goto-char indent-point)
+			(skip-chars-forward " \t")
+			(not (= (following-char) ?}))))
 		 ;; This line is continuation of preceding line's statement;
 		 ;; indent  c-continued-statement-offset  more than the
 		 ;; previous line of the statement.

@@ -147,6 +147,49 @@ Brackets @samp{[]} indicate optional parameters; @samp{<count>} also
 optional, usually defaulting to 1. Brackets are elided for
 @samp{<count>} to eschew obfuscation.
 
+Viper's idea of Vi's words is slightly different from Vi. First, Viper
+words understand Emacs symbol tables. Therefore, all symbols declared to be
+alphanumeric in a symbol table can automatically be made part of the Viper
+word.  This is useful when, for instance, editing text containing European,
+Cyrillic, etc., letters.
+
+Second, Viper lets you depart from Vi's idea of a word by changing the
+value of @code{vip-syntax-preference}. By default, this variable is set to
+@code{'strict-vi}, which means that alphanumeric symbols are exactly as
+in Vi.
+However, if the value is @code{'reformed-vi} then alphanumeric
+symbols will be those specified by the current Emacs syntax table (which
+may be different for different major modes) plus the underscore symbol
+@code{_}. The user can also specify the value @code{'emacs}, which would
+make Viper use exactly the Emacs notion of word. In particular, the
+underscore may not be part of a word. Finally, if
+@code{vip-syntax-preference} is set to @code{'extended}, Viper words would
+consist of characters that are classified as alphanumeric @emph{or} as
+parts of symbols. This is convenient for writing programs and in many other
+situations.
+
+@vindex @code{vip-syntax-preference}
+@cindex syntax table
+
+@code{vip-syntax-preference} is a local variable, so it can have different
+values for different major modes. For instance, in programming modes it can
+have the value @code{'extended}. In text modes where words contain special
+characters, such as European (non-English) letters, Cyrillic letters, etc.,
+the value can be @code{'reformed-vi} or @code{'emacs}.
+
+Changes to @code{vip-syntax-preference} should be done in the hooks to
+various major modes. Furthermore, for these changes to take effect, you
+should execute @code{(vip-update-alphanumeric-class)} right after changing
+the value of @code{vip-syntax-preference}.
+
+The above discussion concerns only the movement commands. In regular
+expressions, words remain the same as in Emacs.  That is, the expressions
+@code{\w}, @code{\>}, @code{\<}, etc., use Emacs' idea of what is a word,
+and they don't look into the value of variable
+@code{vip-syntax-preference}. This is because Viper doesn't change syntax
+tables in order to not thwart the various major modes that set these
+tables.
+
 The usual Emacs convention is used to indicate Control Characters, i.e
 C-h for Control-h. @emph{Do not confuse this to mean the separate
 characters C - h!!!} The @kbd{^} is itself, never used to indicate a
@@ -846,7 +889,12 @@ visit files.
 @item :stop
 Suspend Viper
 @item :[x,y] w
-Write the file.
+Write the file. Viper nakes sure that a final newline is always added to
+any file where this newline is missing. This is done by setting Emacs
+variable @code{require-final-newline} to @code{t}. If you don't like this
+feature, use @code{setq-default} to set @code{require-final-newline} to
+@code{nil}. This must be done either in @file{.vip} file or in
+@code{.emacs} after Viper is loaded.
 @item :[x,y] w <name>
 Write to the file <name>.
 @item :[x,y] w>> <name>

@@ -1,6 +1,76 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* "Cannot find callback list" messages from dialog boxes on HPUX, in
+Emacs built with Motif.
+
+This problem resulted from a bug in GCC 2.4.5.  Newer GCC versions
+such as 2.7.0 fix the problem.
+
+* On Irix 6.0, make tries (and fails) to build a program named unexelfsgi
+
+A compiler bug inserts spaces into the string "unexelfsgi . o"
+in src/Makefile.  Edit src/Makefile, after configure is run,
+find that string, and take out the spaces.
+
+Compiler fixes in Irix 6.0.1 should eliminate this problem.
+
+* With certain fonts, when the cursor appears on a character, the
+character doesn't appear--you get a solid box instead.
+
+One user on a Linux-based GNU system reported that this problem went
+away with installation of a new X server.  The failing server was
+XFree86 3.1.1.  XFree86 3.1.2 works.
+
+* On SunOS 4.1.3, Emacs unpredictably crashes in _yp_dobind_soft.
+
+This happens if you configure Emacs specifying just `sparc-sun-sunos4'
+on a system that is version 4.1.3.  You must specify the precise
+version number (or let configure figure out the configuration, which
+it can do perfectly well for SunOS).
+
+* On SunOS 4, Emacs processes keep going after you kill the X server
+(or log out, if you logged in using X).
+
+Someone reported that recompiling with GCC 2.7.0 fixed this problem.
+
+* On AIX 4, some programs fail when run in a Shell buffer
+with an error message like   No terminfo entry for "unknown".
+
+On AIX, many terminal type definitions are not installed by default.
+`unknown' is one of them.  Install the "Special Generic Terminal
+Definitions" to make them defined.
+
+* On SunOS, you get linker errors
+   ld: Undefined symbol 
+      _get_wmShellWidgetClass
+      _get_applicationShellWidgetClass
+
+The fix to this is to install patch 100573 for OpenWindows 3.0
+or link libXmu statically.
+
+* On AIX 4.1.2, linker error messages such as
+  ld: 0711-212 SEVERE ERROR: Symbol .__quous, found in the global symbol table
+	of archive /usr/lib/libIM.a, was not defined in archive member shr.o.
+
+This is a problem in libIM.a.  You can work around it by executing
+these shell commands in the src subdirectory of the directory where
+you build Emacs:
+
+    cp /usr/lib/libIM.a .
+    chmod 664 libIM.a
+    ranlib libIM.a
+
+Then change -lIM to ./libIM.a in the command to link temacs (in
+Makefile).
+
+* Unpredictable segmentation faults on Solaris 2.3 and 2.4.
+
+A user reported that this happened in 19.29 when it was compiled with
+the Sun compiler, but not when he recompiled with GCC 2.7.0.
+
+We do not know whether something in Emacs is partly to blame for this.
+
 * Emacs exits with "X protocol error" when run with an X server for
 Windows.
 
@@ -148,11 +218,11 @@ simpler solution: create an empty `/etc/host.conf' file.  The command
 `touch /etc/host.conf' suffices to create the file.  The `/etc/hosts'
 file is not necessary with this approach.
 
-* On Solaris, Dired hangs and C-g does not work.  Or Emacs hangs
+* On Solaris 2.4, Dired hangs and C-g does not work.  Or Emacs hangs
 forever waiting for termination of a subprocess that is a zombie.
 
 casper@fwi.uva.nl says the problem is in X11R6.  Rebuild libX11.so
-after changing:
+after changing the file xc/config/cf/sunLib.tmpl.  Change the lines
 
     #if ThreadedX
     #define SharedX11Reqs -lthread
@@ -165,6 +235,30 @@ to:
     #define SharedX11Reqs -lthread
     #endif
     #endif
+
+Be sure also to edit x/config/cf/sun.cf so that OSMinorVersion is 4
+(as it should be for Solaris 2.4).  The file has three definitions for
+OSMinorVersion: the first is for x86, the second for SPARC under
+Solaris, and the third for SunOS 4.  Make sure to update the
+definition for your type of machine and system.
+
+Then do `make Everything' in the top directory of X11R6, to rebuild
+the makefiles and rebuild X.  The X built this way work only on
+Solaris 2.4, not on 2.3.
+
+For multithreaded X to work it necessary to install patch
+101925-02 to fix problems in header files [2.4].  You need
+to reinstall gcc or re-run just-fixinc after installing that
+patch.
+
+However, Frank Rust <frust@iti.cs.tu-bs.de> used a simpler solution:
+he changed
+    #define ThreadedX          YES
+to
+    #define ThreadedX          NO
+in sun.cf and did `make World' to rebuild X11R6.  Removing all
+`-DXTHREAD*' flags and `-lthread' entries from lib/X11/Makefile and
+typing 'make install' in that directory also seemed to work.
 
 * With M-x enable-flow-control, you need to type C-\ twice
   to do incremental search--a single C-\ gets no response.

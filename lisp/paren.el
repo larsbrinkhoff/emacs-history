@@ -45,7 +45,7 @@
   ;; Do nothing if no window system to display results with.
   ;; Do nothing if executing keyboard macro.
   ;; Do nothing if input is pending.
-  (if (and window-system (not executing-kbd-macro) (sit-for 0 100))
+  (if window-system
       (let (pos dir mismatch (oldpos (point))
 		(face show-paren-face))
 	(cond ((eq (char-syntax (preceding-char)) ?\))
@@ -81,6 +81,8 @@
 		      (and (null show-paren-mismatch-face)
 			   (x-display-color-p)
 			   (progn
+			     (add-to-list 'facemenu-unlisted-faces 
+					  'paren-mismatch)
 			     (make-face 'paren-mismatch)
 			     (or (face-nontrivial-p 'paren-mismatch t)
 				 (progn
@@ -129,14 +131,14 @@
 (if window-system
     (progn
       (setq blink-paren-function nil)
-      (add-hook 'post-command-hook 'show-paren-command-hook)))
+      (add-hook 'post-command-idle-hook 'show-paren-command-hook)))
 ;;; This is in case paren.el is preloaded.
 (add-hook 'window-setup-hook
 	  (function (lambda ()
 		      (if window-system
 			  (progn
 			    (setq blink-paren-function nil)
-			    (add-hook 'post-command-hook
+			    (add-hook 'post-command-idle-hook
 				      'show-paren-command-hook))))))
 (provide 'paren)
 

@@ -231,37 +231,6 @@ Default value, nil, means edit the string instead.")
       (define-key map "\C-w" 'isearch-yank-word)
       (define-key map "\C-y" 'isearch-yank-line)
 
-      ;; Bind the ASCII-equivalent "function keys" explicitly to nil
-      ;; so that the default binding does not apply.
-      ;; As a result, these keys translate thru function-key-map
-      ;; as normal, and they have the effect of the equivalent ASCII char.
-      ;; We bind [escape] below.
-      (define-key map [tab] 'nil)
-      (define-key map [kp-0] 'nil)
-      (define-key map [kp-1] 'nil)
-      (define-key map [kp-2] 'nil)
-      (define-key map [kp-3] 'nil)
-      (define-key map [kp-4] 'nil)
-      (define-key map [kp-5] 'nil)
-      (define-key map [kp-6] 'nil)
-      (define-key map [kp-7] 'nil)
-      (define-key map [kp-8] 'nil)
-      (define-key map [kp-9] 'nil)
-      (define-key map [kp-add] 'nil)
-      (define-key map [kp-subtract] 'nil)
-      (define-key map [kp-multiply] 'nil)
-      (define-key map [kp-divide] 'nil)
-      (define-key map [kp-decimal] 'nil)
-      (define-key map [kp-separator] 'nil)
-      (define-key map [kp-equal] 'nil)
-      (define-key map [kp-tab] 'nil)
-      (define-key map [kp-space] 'nil)
-      (define-key map [kp-enter] 'nil)
-      (define-key map [delete] 'nil)
-      (define-key map [backspace] 'nil)
-      (define-key map [return] 'nil)
-      (define-key map [newline] 'nil)
-
       ;; Define keys for regexp chars * ? |.
       ;; Nothing special for + because it matches at least once.
       (define-key map "*" 'isearch-*-char)
@@ -417,6 +386,7 @@ The above keys, bound in `isearch-mode-map', are often controlled by
  options; do M-x apropos on search-.* to find them.
 Other control and meta characters terminate the search
  and are then executed normally (depending on `search-exit-option').
+Likewise for function keys and mouse button events.
 
 If this function is called non-interactively, it does not return to
 the calling function until the search is done."
@@ -1037,7 +1007,22 @@ and the meta character is unread so that it applies to editing the string."
   (let* ((key (this-command-keys))
 	 (main-event (aref key 0))
 	 (keylist (listify-key-sequence key)))
-    (cond (
+    (cond ((and (= (length key) 1)
+		(let ((lookup (lookup-key function-key-map key)))
+		  (not (or (null lookup) (integerp lookup)))))
+	   ;; Handle a function key that translates into something else.
+	   ;; If the key has a global definition too,
+	   ;; exit and unread the key itself, so its global definition runs.
+	   ;; Otherwise, unread the translation,
+	   ;; so that the translated key takes effect within isearch.
+	   (cancel-kbd-macro-events)
+	   (if (lookup-key global-map key)
+	       (progn 
+		 (isearch-done)
+		 (apply 'isearch-unread keylist))
+	     (apply 'isearch-unread
+		    (listify-key-sequence (lookup-key function-key-map key)))))
+	  (
 	   ;; Handle an undefined shifted control character
 	   ;; by downshifting it if that makes it defined.
 	   ;; (As read-key-sequence would normally do,
@@ -1053,12 +1038,14 @@ and the meta character is unread so that it applies to editing the string."
 				copy)
 			      nil)))
 	   (setcar keylist (- main-event (- ?\C-\S-a ?\C-a)))
+	   (cancel-kbd-macro-events)
 	   (apply 'isearch-unread keylist))
 	  ((eq search-exit-option 'edit)
 	   (apply 'isearch-unread keylist)
 	   (isearch-edit-string))
 	  (search-exit-option
 	   (let (window)
+	     (cancel-kbd-macro-events)
 	     (apply 'isearch-unread keylist)
 	     ;; Properly handle scroll-bar and mode-line clicks
 	     ;; for which a dummy prefix event was generated as (aref key 0).
@@ -1325,6 +1312,11 @@ If there is no completion possible, say so and continue searching."
   ;; If currently failing, display no ellipsis.
   (or isearch-success (setq ellipsis nil))
   (let ((m (concat (if isearch-success "" "failing ")
+		   (if (and isearch-wrapped
+			    (if isearch-forward
+				(> (point) isearch-opoint)
+			      (< (point) isearch-opoint)))
+		       "over")
 		   (if isearch-wrapped "wrapped ")
 		   (if isearch-word "word " "")
 		   (if isearch-regexp "regexp " "")

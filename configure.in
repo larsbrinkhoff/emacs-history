@@ -2,16 +2,10 @@ dnl This is an autoconf script.
 dnl To rebuild the `configure' script from this, execute the command
 dnl 	autoconf
 dnl in the directory containing this script.
-AC_PREREQ(2.0)dnl
+AC_PREREQ(2.4.1)dnl
 AC_INIT(src/lisp.h)
-AC_CONFIG_HEADER(src/config.h)
+AC_CONFIG_HEADER(src/config.h:src/config.in)
 
-bindir='${exec_prefix}/bin'
-datadir='${prefix}/share'
-sharedstatedir='${prefix}/com'
-libexecdir='${exec_prefix}/libexec'
-mandir='${prefix}/man/man1'
-infodir='${prefix}/info'
 lispdir='${datadir}/emacs/${version}/lisp'
 locallisppath='${datadir}/emacs/site-lisp'
 lisppath='${locallisppath}:${lispdir}'
@@ -40,7 +34,7 @@ AC_ARG_WITH(x-toolkit,
 	    y | ye | yes )	val=athena ;;
 	    n | no )		val=no  ;;
 	    l | lu | luc | luci | lucid )	val=lucid ;;
-	    a | at | ath | athe | athena )	val=athena ;;
+	    a | at | ath | athe | athen | athena )	val=athena ;;
 	    m | mo | mot | moti | motif )	val=motif ;;
 dnl These don't currently work.
 dnl	    o | op | ope | open | open- | open-l | open-lo \
@@ -48,8 +42,8 @@ dnl		| open-loo | open-look )	val=open-look ;;
 	    * )
 dnl AC_MSG_ERROR([the \`--with-x-toolkit' option is supposed to have a value
 dnl which is \`yes', \`no', \`lucid', \`athena', \`motif' or \`open-look'.])
-AC_MSG_ERROR([the \`--with-x-toolkit' option is supposed to have a value
-which is \`yes', \`no', \`lucid', \`athena', or \`motif'.
+AC_MSG_ERROR([\`--with-x-toolkit=$withval' is invalid\;
+this option's value should be \`yes', \`no', \`lucid', \`athena', or \`motif'.
 Currently, \`yes', \`athena' and \`lucid' are synonyms.])
 	    ;;
 	  esac
@@ -170,8 +164,13 @@ case "${canonical}" in
     machine=alliant-2800 opsys=bsd4-3
   ;;
 
+  ## Alpha (DEC) machines.
   alpha-dec-osf* )
     machine=alpha opsys=osf1
+  ;;
+
+  alpha-*-linux* )
+    machine=alpha opsys=linux
   ;;
 
   ## Altos 3068
@@ -265,11 +264,17 @@ case "${canonical}" in
   mips-dec-ultrix[0-3].* | mips-dec-ultrix4.0* | mips-dec-bsd4.2* )
     machine=pmax opsys=bsd4-2
   ;;
-  mips-dec-ultrix* | mips-dec-bsd* )
+  mips-dec-ultrix4.[12]* | mips-dec-bsd* )
     machine=pmax opsys=bsd4-3
+  ;;
+  mips-dec-ultrix* )
+    machine=pmax opsys=ultrix4-3
   ;;
   mips-dec-osf* )
     machine=pmax opsys=osf1
+  ;;
+  mips-dec-mach_bsd4.3* )
+    machine=pmax opsys=mach-bsd4-3
   ;;
 
   ## Motorola Delta machines
@@ -380,7 +385,7 @@ case "${canonical}" in
     machine=hp800 opsys=hpux9
   ;;
   hppa*-hp-hpux10* )
-    machine=hp800 opsys=hpux9shr
+    machine=hp800 opsys=hpux10
   ;;
 
   ## HP 9000 series 700 and 800, running HP/UX
@@ -529,6 +534,11 @@ case "${canonical}" in
     NON_GNU_CC="cc -systype bsd43"
     NON_GNU_CPP="cc -systype bsd43 -E"
   ;;
+  mips-mips-riscos5* )
+    machine=mips4 opsys=riscos5
+    NON_GNU_CC="cc -systype bsd43"
+    NON_GNU_CPP="cc -systype bsd43 -E"
+  ;;
   mips-mips-bsd* )
     machine=mips opsys=bsd4-3
   ;;
@@ -537,8 +547,8 @@ case "${canonical}" in
   ;;
 
   ## NeXT
-  m68*-next-* | i[345]86-next-* )
-    machine=next opsys=mach2
+  m68*-next-* | m68k-*-nextstep* )
+    machine=m68k opsys=nextstep
   ;;
 
   ## The complete machine from National Semiconductor
@@ -639,13 +649,16 @@ case "${canonical}" in
   ;;
 
   ## Suns
-  *-sun-sunos* | *-sun-bsd* | *-sun-solaris* | i[345]86-*-solaris2* | i[345]86-*-sunos5* )
+  *-sun-sunos* | *-sun-bsd* | *-sun-solaris* \
+    | i[345]86-*-solaris2* | i[345]86-*-sunos5* | powerpc*-*-solaris2* \
+    | rs6000-*-solaris2*)
     case "${canonical}" in
       m68*-sunos1* )	machine=sun1 ;;
       m68*-sunos2* )	machine=sun2 ;;
       m68* )		machine=sun3 ;;
       i[345]86-sun-sunos[34]* )	machine=sun386 ;;
       i[345]86-*-* )     machine=intel386 ;;
+      powerpc* | rs6000* )  machine=rs6000 ;;
       sparc* )		machine=sparc ;;
       * )		unported=yes ;;
     esac
@@ -653,7 +666,8 @@ case "${canonical}" in
       ## The Sun386 didn't get past 4.0.
       i[345]86-*-sunos4	  ) opsys=sunos4-0 ;;
       *-sunos4.0*	  ) opsys=sunos4-0 ;;
-      *-sunos4.1.3* | *-sunos4shr*  ) opsys=sunos4shr
+      *-sunos4.1.[3-9]* | *-sunos4shr*)
+		opsys=sunos4shr
 		NON_GNU_CPP=/usr/lib/cpp
 		;;
       *-sunos4* | *-sunos ) opsys=sunos4-1
@@ -667,10 +681,12 @@ case "${canonical}" in
       *-sunos5.4* | *-solaris2.4* )
 		opsys=sol2-4
 		NON_GNU_CPP=/usr/ccs/lib/cpp
+		RANLIB="ar -ts"
 		;;
       *-sunos5.5* | *-solaris2.5* )
 		opsys=sol2-5
 		NON_GNU_CPP=/usr/ccs/lib/cpp
+		RANLIB="ar -ts"
 		;;
       *-sunos5* | *-solaris* )
 		opsys=sol2
@@ -678,6 +694,9 @@ case "${canonical}" in
 		;;
       *			  ) opsys=bsd4-2   ;;
     esac
+  ;;
+  sparc-*-nextstep* )
+    machine=sparc opsys=nextstep
   ;;
 
   ## Tadpole 68k
@@ -757,7 +776,10 @@ case "${canonical}" in
       *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
       *-isc2.2* )		opsys=isc2-2 ;;
       *-isc4.0* )		opsys=isc4-0 ;;
-      *-isc4.* )		opsys=isc4-1 ;;
+      *-isc4.* )		opsys=isc4-1
+				GCC_TEST_OPTIONS=-posix
+				NON_GCC_TEST_OPTIONS=-Xp
+				;;
       *-isc* )			opsys=isc3-0 ;;
       *-esix5* )		opsys=esix5r4; NON_GNU_CPP=/usr/lib/cpp ;;
       *-esix* )			opsys=esix ;;
@@ -768,9 +790,14 @@ case "${canonical}" in
       *-bsdi2* )		opsys=bsdos2 ;;
       *-386bsd* )	        opsys=386bsd ;;
       *-freebsd* )	        opsys=freebsd ;;
-      *-nextstep* )             opsys=mach2 ;;
+      *-nextstep* )             opsys=nextstep ;;
       ## Otherwise, we'll fall through to the generic opsys code at the bottom.
     esac
+  ;;
+
+  ## Linux/68k
+  m68k-*-linux* )
+    machine=m68k opsys=linux
   ;;
 
   * )
@@ -793,20 +820,24 @@ if test x"${opsys}" = x; then
     *-sysv0 | *-sysvr0 )		opsys=usg5-0 ;;
     *-sysv2 | *-sysvr2 )		opsys=usg5-2 ;;
     *-sysv2.2 | *-sysvr2.2 )		opsys=usg5-2-2 ;;
-    *-sysv3 | *-sysvr3 )		opsys=usg5-3 ;;
-    *-sysv4 | *-sysvr4 )		opsys=usg5-4 ;;
-    *-sysv4.1 | *-sysvr4.1 )
+    *-sysv3* | *-sysvr3* )		opsys=usg5-3 ;;
+    *-sysv4.1* | *-sysvr4.1* )
 	NON_GNU_CPP=/usr/lib/cpp
 	opsys=usg5-4 ;;
-    *-sysv4.2 | *-sysvr4.2 )
+    *-sysv4.[2-9]* | *-sysvr4.[2-9]* )
 	if [ x$NON_GNU_CPP = x ]; then
 	  NON_GNU_CPP=/usr/ccs/lib/cpp
 	fi
 	opsys=usg5-4-2 ;;
+    *-sysv4* | *-sysvr4* )		opsys=usg5-4 ;;
     * )
       unported=yes
     ;;
   esac
+fi
+
+if test "x$RANLIB" = x; then
+  RANLIB=ranlib
 fi
 
 changequote([, ])dnl
@@ -822,6 +853,9 @@ opsysfile="s/${opsys}.h"
 
 #### Choose a compiler.
 test -n "$CC" && cc_specified=yes
+
+# Save the value of CFLAGS that the user specified.
+SPECIFIED_CFLAGS="$CFLAGS"
 
 case ${with_gcc} in
   "yes" ) CC="gcc" GCC=yes ;;
@@ -914,6 +948,7 @@ AC_TRY_COMPILE([#ifdef TIME_WITH_SYS_TIME
 #endif
 #endif], [static struct timeval x; x.tv_sec = x.tv_usec;],
   [AC_MSG_RESULT(yes)
+   HAVE_TIMEVAL=yes
    AC_DEFINE(HAVE_TIMEVAL)],
   AC_MSG_RESULT(no))
 
@@ -988,6 +1023,22 @@ HAVE_X_MENU=no
 case ${HAVE_X11} in
   yes ) HAVE_X_MENU=yes ;;
 esac
+
+if test "${opsys}" = "hpux9"; then
+  case "${x_libraries}" in
+    *X11R4* )
+      opsysfile="s/hpux9-x11r4.h"
+      ;;
+  esac
+fi
+
+if test "${opsys}" = "hpux9shr"; then
+  case "${x_libraries}" in
+    *X11R4* )
+      opsysfile="s/hpux9shxr4.h"
+      ;;
+  esac
+fi
 
 #### Extract some information from the operating system and machine files.
 
@@ -1066,18 +1117,18 @@ configure___ system_malloc=no
 
 /* Get the CFLAGS for tests in configure.  */
 #ifdef __GNUC__
-configure___ CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH '${CFLAGS}'
+configure___ CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH '${SPECIFIED_CFLAGS}'
 #else
-configure___ CFLAGS=C_DEBUG_SWITCH '${CFLAGS}'
+configure___ CFLAGS=C_DEBUG_SWITCH '${SPECIFIED_CFLAGS}'
 #endif
 
 #else /* not THIS_IS_CONFIGURE */
 
 /* Get the CFLAGS for real compilation.  */
 #ifdef __GNUC__
-configure___ REAL_CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH '${CFLAGS}'
+configure___ REAL_CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH '${SPECIFIED_CFLAGS}'
 #else
-configure___ REAL_CFLAGS=C_DEBUG_SWITCH '${CFLAGS}'
+configure___ REAL_CFLAGS=C_DEBUG_SWITCH '${SPECIFIED_CFLAGS}'
 #endif
 
 #endif /* not THIS_IS_CONFIGURE */
@@ -1089,7 +1140,7 @@ CPP=`eval "echo $CPP"`
 changequote(, )dnl
 eval `${CPP} -Isrc ${tempcname} \
        | sed -n -e 's/^configure___ \([^=]*=\)\(.*\)$/\1"\2"/p'`
-if test "x$CFLAGS" = x; then
+if test "x$SPECIFIED_CFLAGS" = x; then
   eval `${CPP} -Isrc -DTHIS_IS_CONFIGURE ${tempcname} \
 	 | sed -n -e 's/^configure___ \([^=]*=\)\(.*\)$/\1"\2"/p'`
 else
@@ -1120,7 +1171,7 @@ LISP_FLOAT_TYPE=yes
 #### Add the libraries to LIBS and check for some functions.
 
 CPPFLAGS="$c_switch_system $c_switch_machine $CPPFLAGS"
-LIBS="$libsrc_libs"
+LIBS="$libsrc_libs $LIBS"
 
 dnl If found, this defines HAVE_LIBDNET, which m/pmax.h checks,
 dnl and also adds -ldnet to LIBS, which Autoconf uses for checks.
@@ -1151,13 +1202,13 @@ if test "${HAVE_X11}" = "yes"; then
   LIBS="$LD_SWITCH_X_SITE $LIBX $LIBS"
   CFLAGS="$C_SWITCH_X_SITE $CFLAGS"
 
-  if test "${HAVE_XFREE386}" = "yes" && test "${opsys}" = "linux"; then
-    AC_MSG_CHECKING(whether XFree86 needs -b to link)
+  if test "${opsys}" = "linux"; then
+    AC_MSG_CHECKING(whether X on GNU/Linux needs -b to link)
     AC_TRY_LINK([],
      [XOpenDisplay ("foo");],
-     [xfree86_first_failure=no],
-     [xfree86_first_failure=yes])
-    if test "${xfree86_first_failure}" = "yes"; then
+     [xlinux_first_failure=no],
+     [xlinux_first_failure=yes])
+    if test "${xlinux_first_failure}" = "yes"; then
       OLD_LD_SWITCH_X_SITE="$LD_SWITCH_X_SITE"
       OLD_C_SWITCH_X_SITE="$C_SWITCH_X_SITE"
       OLD_CPPFLAGS="$CPPFLAGS"
@@ -1168,9 +1219,9 @@ if test "${HAVE_X11}" = "yes"; then
       LIBS="$LIBS -b i486-linuxaout"
       AC_TRY_LINK([],
        [XOpenDisplay ("foo");],
-       [xfree86_second_failure=no],
-       [xfree86_second_failure=yes])
-      if test "${xfree86_second_failure}" = "yes"; then
+       [xlinux_second_failure=no],
+       [xlinux_second_failure=yes])
+      if test "${xlinux_second_failure}" = "yes"; then
 	# If we get the same failure with -b, there is no use adding -b.
 	# So take it out.  This plays safe.
 	LD_SWITCH_X_SITE="$OLD_LD_SWITCH_X_SITE"
@@ -1215,8 +1266,62 @@ AC_FUNC_ALLOCA
 # On HPUX 9.01, -lm does not contain logb, so check for sqrt.
 AC_CHECK_LIB(m, sqrt(0.0) + t)
 AC_CHECK_FUNCS(gettimeofday gethostname dup2 rename closedir mkdir rmdir \
-random lrand48 bcopy bcmp logb frexp fmod drem ftime res_init setsid \
-strerror fpathconf select mktime eaccess getpagesize)
+random lrand48 bcopy bcmp logb frexp fmod ftime res_init setsid \
+strerror fpathconf select mktime eaccess getpagesize tzset)
+
+AC_MSG_CHECKING(whether localtime caches TZ)
+AC_CACHE_VAL(emacs_cv_localtime_cache,
+[if test $ac_cv_func_tzset = yes; then
+AC_TRY_RUN([#include <time.h>
+#if STDC_HEADERS
+# include <stdlib.h>
+#endif
+main()
+{
+  time_t now = time ((time_t *) 0);
+  int hour;
+  if (putenv ("TZ=GMT0") != 0)
+    exit (1);
+  hour = localtime (&now)->tm_hour;
+  if (putenv ("TZ=PST8") != 0)
+    exit (1);
+  exit (localtime (&now)->tm_hour == hour);
+}], emacs_cv_localtime_cache=no, emacs_cv_localtime_cache=yes,
+[# If we have tzset, assume the worst when cross-compiling.
+emacs_cv_localtime_cache=yes])
+else
+	# If we lack tzset, report that localtime does not cache TZ,
+	# since we can't invalidate the cache if we don't have tzset.
+	emacs_cv_localtime_cache=no
+fi])dnl
+AC_MSG_RESULT($emacs_cv_localtime_cache)
+if test $emacs_cv_localtime_cache = yes; then
+  AC_DEFINE(LOCALTIME_CACHE)
+fi
+
+if test $HAVE_TIMEVAL = yes; then
+AC_MSG_CHECKING(whether gettimeofday can't accept two arguments)
+AC_TRY_LINK([
+#ifdef TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#endif
+  ],
+  [
+  struct timeval time;
+  struct timezone dummy;
+  gettimeofday (&time, &dummy);
+],
+  [AC_MSG_RESULT(no)],
+  [AC_MSG_RESULT(yes)
+   AC_DEFINE(GETTIMEOFDAY_ONE_ARGUMENT)])
+fi
 
 ok_so_far=yes
 AC_CHECK_FUNC(socket, , ok_so_far=no)
@@ -1277,6 +1382,7 @@ AC_SUBST(CFLAGS)
 AC_SUBST(X_TOOLKIT_TYPE)
 AC_SUBST(machfile)
 AC_SUBST(opsysfile)
+AC_SUBST(RANLIB)
 
 AC_DEFINE_UNQUOTED(EMACS_CONFIGURATION,  "${canonical}")
 AC_DEFINE_UNQUOTED(EMACS_CONFIG_OPTIONS, "${ac_configure_args}")
@@ -1346,16 +1452,17 @@ test "${exec_prefix}" != NONE &&
   exec_prefix=`echo "${exec_prefix}" | sed 's,\([^/]\)/*$,\1,'`
 changequote([, ])dnl
 
-AC_OUTPUT(Makefile lib-src/Makefile.in oldXMenu/Makefile \
-	man/Makefile lwlib/Makefile src/Makefile.in, [
+AC_OUTPUT(Makefile lib-src/Makefile.c:lib-src/Makefile.in oldXMenu/Makefile \
+	man/Makefile lwlib/Makefile src/Makefile.c:src/Makefile.in, [
 
 ### Make the necessary directories, if they don't exist.
 for dir in cpp etc ; do
   test -d ${dir} || mkdir ${dir}
 done
 
-# Build src/Makefile from ${srcdir}/src/Makefile.in.  This must be done
-# after src/config.h is built, since we rely on that file.
+# Build src/Makefile from ${srcdir}/src/Makefile.c
+# and lib-src/Makefile from ${srcdir}/lib-src/Makefile.c
+# This must be done after src/config.h is built, since we rely on that file.
 
 changequote(, )dnl The horror, the horror.
 # Now get this: Some word that is part of the ${srcdir} directory name
@@ -1374,10 +1481,10 @@ echo creating lib-src/Makefile
 ( cd lib-src
   rm -f junk.c junk1.c junk2.c
   sed -e '/start of cpp stuff/q' \
-      < Makefile.in > junk1.c
+      < Makefile.c > junk1.c
   sed -e '1,/start of cpp stuff/d'\
       -e 's@/\*\*/#\(.*\)$@/* \1 */@' \
-      < Makefile.in > junk.c
+      < Makefile.c > junk.c
   $CPP $undefs -I. -I$top_srcdir/src $CPPFLAGS junk.c | \
       sed -e 's/^ /	/' -e '/^#/d' -e '/^[ 	]*$/d' > junk2.c
   cat junk1.c junk2.c > Makefile.new
@@ -1390,10 +1497,10 @@ echo creating src/Makefile
 ( cd src
   rm -f junk.c junk1.c junk2.c
   sed -e '/start of cpp stuff/q' \
-      < Makefile.in > junk1.c
+      < Makefile.c > junk1.c
   sed -e '1,/start of cpp stuff/d'\
       -e 's@/\*\*/#\(.*\)$@/* \1 */@' \
-      < Makefile.in > junk.c
+      < Makefile.c > junk.c
   $CPP $undefs -I. -I$top_srcdir/src $CPPFLAGS junk.c | \
       sed -e 's/^ /	/' -e '/^#/d' -e '/^[ 	]*$/d' > junk2.c
   cat junk1.c junk2.c > Makefile.new

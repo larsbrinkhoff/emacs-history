@@ -1,4 +1,5 @@
-;;; viper-keym.el -- Main Viper keymaps
+;;; viper-keym.el --- main Viper keymaps
+
 ;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
@@ -29,6 +30,10 @@
 (defvar vip-vi-intercept-map (make-sparse-keymap))
 (defvar vip-insert-intercept-map (make-sparse-keymap))
 (defvar vip-emacs-intercept-map (make-sparse-keymap))
+
+;; keymap used to zap all keymaps other than function-key-map,
+;; devide-function-key-map, etc.
+(defvar vip-overriding-map (make-sparse-keymap))
   
 (vip-deflocalvar vip-vi-local-user-map (make-sparse-keymap)
   "Keymap for user-defined local bindings.

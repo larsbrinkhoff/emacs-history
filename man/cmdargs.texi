@@ -90,6 +90,9 @@ Load a file @var{file} of Lisp code with the function @code{load}.
 @itemx --funcall=@var{function}
 Call Lisp function @var{function} with no arguments.
 
+@item --eval @var{expression}
+Evaluate Lisp expression @var{expression}.
+
 @item --insert=@var{file}
 Insert the contents of @var{file} into the current buffer.  This is like
 what @kbd{M-x insert-file} does.  @xref{Misc File Ops}.
@@ -848,8 +851,8 @@ Color name for text.
 Window size and position.  Be careful not to specify this resource as
 @samp{emacs*geometry}, because that may affect individual menus as well
 as the Emacs frame itself.  If this resource specifies a position, that
-affects only the initial Emacs frame; but the size (if specified)
-applies to all frames.
+affects only the initial Emacs frame and frames with explicitly
+specified names; but the size (if specified) applies to all frames.
 
 @item @code{iconName} (class @code{Title})
 Name to display in the icon.
@@ -894,7 +897,8 @@ Foreground color for face @var{face}.
 @item @var{face}.attributeBackground
 Background color for face @var{face}.
 @item @var{face}.attributeUnderline
-Underline flag for face @var{face}.
+Underline flag for face @var{face}.  Use @samp{on} or @samp{true} for
+yes.
 @end table
 
 @node Lucid Resources
@@ -918,16 +922,17 @@ write this:
 Emacs.pane.menubar.font:  8x16
 @end example
 
-  Resources for toolkit popup menus have @samp{menu*}, in like fashion.
-For example, to specify the font @samp{8x16} for the popup menu items,
-write this:
+  Resources for @emph{non-menubar} toolkit popup menus have
+@samp{menu*}, in like fashion.  For example, to specify the font
+@samp{8x16} for the popup menu items, write this:
 
 @example
 Emacs.menu*.font:	8x16
 @end example
 
   Experience shows that on some systems you may need to add
-@samp{shell.}@: before the @samp{pane.menubar} or @samp{menu*}.
+@samp{shell.}@: before the @samp{pane.menubar} or @samp{menu*}.  On
+some other systems, you must not add @samp{shell.}.
 
   Here is a list of the specific resources for menu bars and popup menus:
 

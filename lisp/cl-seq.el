@@ -1,4 +1,4 @@
-;; cl-seq.el --- Common Lisp extensions for GNU Emacs Lisp (part three)
+;;; cl-seq.el --- Common Lisp extensions for GNU Emacs Lisp (part three)
 
 ;; Copyright (C) 1993 Free Software Foundation, Inc.
 
@@ -694,8 +694,6 @@ Keywords supported:  :test :test-not :key"
 	  (setq cl-alist (cdr cl-alist)))
 	(and cl-alist (car cl-alist)))
     (rassq cl-item cl-alist)))
-
-(defun rassoc (item alist) (rassoc* item alist ':test 'equal))
 
 (defun rassoc-if (cl-pred cl-list &rest cl-keys)
   "Find the first item whose cdr satisfies PREDICATE in LIST.

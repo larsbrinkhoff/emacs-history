@@ -169,6 +169,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Here we assume that signal.h is already included.  */
 #ifdef emacs
 #undef SIGIO
+/* Some versions of Linux define SIGURG and SIGPOLL as aliases for SIGIO.
+   This prevents lossage in process.c.  */
+#undef SIGURG
+#undef SIGPOLL
 #endif
 
 /* This is needed for sysdep.c */
@@ -183,12 +187,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define POSIX                 /* affects getpagesize.h and systty.h */
 #define POSIX_SIGNALS
-
-/* libc-linux/sysdeps/linux/i386/ulimit.c says that due to shared library, */
-/* we cannot get the maximum address for brk */
-#define ULIMIT_BREAK_VALUE (32*1024*1024)
-
-#define SEGMENT_MASK ((SEGMENT_SIZE)-1)
 
 /* Best not to include -lg, unless it is last on the command line */
 #define LIBS_DEBUG
@@ -217,14 +215,17 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    and is a very common addition to previous versions.  */
 
 #ifdef TERM
-#define LIBS_MACHINE -lclient
+#define LIBS_SYSTEM -lclient
 #define C_SWITCH_SYSTEM -D_BSD_SOURCE -I/usr/src/term
 #else
 /* alane@wozzle.linet.org says that -lipc is not a separate library,
    since libc-4.4.1.  So -lipc was deleted.  */
-#define LIBS_MACHINE
+#define LIBS_SYSTEM
 #define C_SWITCH_SYSTEM -D_BSD_SOURCE
 #endif
+
+/* Paul Abrahams <abrahams@equinox.shaysnet.com> says this is needed.  */
+#define LIB_MOTIF -lXm -lXpm
 
 #define HAVE_SYSVIPC
 
@@ -264,10 +265,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifndef HAVE_XSCREENNUMBEROFSCREEN
 #define HAVE_XSCREENNUMBEROFSCREEN
 #endif
+#endif /* 0 */
+
+/* This is to work around mysterious gcc failures in some system versions.
+   It is unlikely that Emacs changes will work around this problem;
+   therefore, this should remain permanently.  */
 #ifndef HAVE_XRMSETDATABASE
 #define HAVE_XRMSETDATABASE
 #endif
-#endif /* 0 */
 
 /* The regex.o routines are a part of the GNU C-library used with Linux.  */
-#define REGEXP_IN_LIBC
+/* However, sometimes they disagree with the src/regex.h that comes with Emacs,
+   and that can make trouble in etags.c because it gets the regex.h from Emacs
+   and the function definitions in libc.  So turn this off.  */
+/* #define REGEXP_IN_LIBC */
+

@@ -9,6 +9,11 @@ all mh-e files that are already loaded or restart your Emacs.
    mh-e 5.0.1 contains minor changes from mh-e 5.0 to integrate it with
 Emacs 19.29.
 
+   mh-e 5.0.2 contains additional minor changes to integrate it with
+reporter.el (requires reporter.el version 3.1c or later) and Emacs
+19.30.  The mh-goto-msg function is much faster, which also speeds up
+several other operations.
+
 Major Changes and New Features in mh-e
 ======================================
 

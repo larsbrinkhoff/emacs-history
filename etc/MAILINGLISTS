@@ -1,4 +1,4 @@
-     GNU Project Electronic Mailing Lists.  Last Updated 27 Feb 95
+     GNU Project Electronic Mailing Lists.  Last Updated 15 Aug 95
 
 	   Please report improvements to: gnu@prep.ai.mit.edu
 
@@ -721,6 +721,22 @@ that can be answered by the moderator without bothering the list, or
 should have been sent to another list.
 
 See section '* General Information about info-* lists'.
+
+* info-cvs-request@prep.ai.mit.edu to subscribe to info-cvs.
+** USENET newsgroup: (none)
+** CVS discussions/questions to: info-cvs@prep.ai.mit.edu
+
+This list is for discussion and dissemination of information about
+CVS.  Please check the FAQ before posting questions, however.
+
+* bug-cvs-request@prep.ai.mit.edu to subscribe to bug-cvs.
+** USENET newsgroup: (none)
+** CVS bug reports to: bug-cvs@prep.ai.mit.edu
+
+This list distributes bug reports, fixes, and suggestions for
+improvements to the maintainers of CVS.  It also feeds directly into a
+GNATS database, so it's best if bug reports are sent in the from of
+GNATS Problem Reports.
 
 * bug-fortran-mode-request@erl.mit.edu to subscribe to bug-fortran-mode
 ** USENET newsgroup: (none)

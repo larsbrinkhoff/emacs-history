@@ -102,6 +102,31 @@ extern Lisp_Object Vminibuf_scroll_window;
 
 extern Lisp_Object Voverriding_local_map;
 
+/* Put minibuf on currently selected frame's minibuffer.
+   We do this whenever the user starts a new minibuffer
+   or when a minibuffer exits.  */
+
+void
+choose_minibuf_frame ()
+{
+  if (selected_frame != 0
+      && !EQ (minibuf_window, selected_frame->minibuffer_window))
+    {
+#ifdef MSDOS
+      selected_frame->minibuffer_window = minibuf_window;
+#else
+      /* I don't think that any frames may validly have a null minibuffer
+	 window anymore.  */
+      if (NILP (selected_frame->minibuffer_window))
+	abort ();
+
+      Fset_window_buffer (selected_frame->minibuffer_window,
+			  XWINDOW (minibuf_window)->buffer);
+      minibuf_window = selected_frame->minibuffer_window;
+#endif
+    }
+}
+
 /* Actual minibuffer invocation. */
 
 void read_minibuf_unwind ();
@@ -148,12 +173,12 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
   if (!enable_recursive_minibuffers
       && minibuf_level > 0
       && (EQ (selected_window, minibuf_window)))
-#if 0
-	  || selected_frame != XFRAME (WINDOW_FRAME (XWINDOW (minibuf_window)))
-#endif
     error ("Command attempted to use minibuffer while in minibuffer");
 
   /* Could we simply bind these variables instead?  */
+  minibuf_save_list
+    = Fcons (Voverriding_local_map,
+	     Fcons (minibuf_window, minibuf_save_list));
   minibuf_save_list
     = Fcons (minibuf_prompt,
 	     Fcons (make_number (minibuf_prompt_width),
@@ -161,12 +186,14 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
 			   Fcons (Vcurrent_prefix_arg,
 				  Fcons (Vminibuffer_history_position,
 					 Fcons (Vminibuffer_history_variable,
-						Fcons (Voverriding_local_map,
-						       minibuf_save_list)))))));
+						minibuf_save_list))))));
+
   minibuf_prompt_width = 0;	/* xdisp.c puts in the right value.  */
   minibuf_prompt = Fcopy_sequence (prompt);
   Vminibuffer_history_position = histpos;
   Vminibuffer_history_variable = histvar;
+
+  choose_minibuf_frame ();
 
   record_unwind_protect (Fset_window_configuration,
 			 Fcurrent_window_configuration (Qnil));
@@ -373,7 +400,7 @@ read_minibuf_unwind (data)
      so run the hook.  */
   if (!NILP (Vminibuffer_exit_hook) && !EQ (Vminibuffer_exit_hook, Qunbound)
       && !NILP (Vrun_hooks))
-    call1 (Vrun_hooks, Qminibuffer_exit_hook);
+    safe_run_hooks (Qminibuffer_exit_hook);
 
   /* Erase the minibuffer we were using at this level.  */
   Fset_buffer (XWINDOW (minibuf_window)->buffer);
@@ -406,6 +433,8 @@ read_minibuf_unwind (data)
   Vminibuffer_history_variable = Fcar (minibuf_save_list);
   minibuf_save_list = Fcdr (minibuf_save_list);
   Voverriding_local_map = Fcar (minibuf_save_list);
+  minibuf_save_list = Fcdr (minibuf_save_list);
+  minibuf_window = Fcar (minibuf_save_list);
   minibuf_save_list = Fcdr (minibuf_save_list);
 }
 
@@ -1046,6 +1075,7 @@ temp_echo_area_glyphs (m)
      char *m;
 {
   int osize = ZV;
+  int opoint = PT;
   Lisp_Object oinhibit;
   oinhibit = Vinhibit_quit;
 
@@ -1054,10 +1084,11 @@ temp_echo_area_glyphs (m)
 
   SET_PT (osize);
   insert_string (m);
-  SET_PT (osize);
+  SET_PT (opoint);
   Vinhibit_quit = Qt;
   Fsit_for (make_number (2), Qnil, Qnil);
-  del_range (PT, ZV);
+  del_range (osize, ZV);
+  SET_PT (opoint);
   if (!NILP (Vquit_flag))
     {
       Vquit_flag = Qnil;
@@ -1475,16 +1506,19 @@ It can find the completion buffer in `standard-output'.")
   (completions)
      Lisp_Object completions;
 {
-  register Lisp_Object tail, elt;
+  Lisp_Object tail, elt;
   register int i;
   int column = 0;
-  struct gcpro gcpro1;
+  struct gcpro gcpro1, gcpro2;
   struct buffer *old = current_buffer;
   int first = 1;
 
   /* Note that (when it matters) every variable
-     points to a non-string that is pointed to by COMPLETIONS.  */
-  GCPRO1 (completions);
+     points to a non-string that is pointed to by COMPLETIONS,
+     except for ELT.  ELT can be pointing to a string
+     when terpri or Findent_to calls a change hook.  */
+  elt = Qnil;
+  GCPRO2 (completions, elt);
 
   if (BUFFERP (Vstandard_output))
     set_buffer_internal (XBUFFER (Vstandard_output));
@@ -1499,6 +1533,7 @@ It can find the completion buffer in `standard-output'.")
 	{
 	  Lisp_Object tem;
 	  int length;
+	  Lisp_Object startpos, endpos;
 
 	  elt = Fcar (tail);
 	  /* Compute the length of this element.  */
@@ -1522,6 +1557,9 @@ It can find the completion buffer in `standard-output'.")
 	     Sadly, the window it will appear in is not known
 	     until after the text has been made.  */
 
+	  if (BUFFERP (Vstandard_output))
+	    XSETINT (startpos, BUF_PT (XBUFFER (Vstandard_output)));
+
 	  /* If the previous completion was very wide,
 	     or we have two on this line already,
 	     don't put another on the same line.  */
@@ -1538,6 +1576,7 @@ It can find the completion buffer in `standard-output'.")
 	      if (BUFFERP (Vstandard_output))
 		{
 		  tem = Findent_to (make_number (35), make_number (2));
+		  
 		  column = XINT (tem);
 		}
 	      else
@@ -1549,6 +1588,13 @@ It can find the completion buffer in `standard-output'.")
 		    }
 		  while (column < 35);
 		}
+	    }
+
+	  if (BUFFERP (Vstandard_output))
+	    {
+	      XSETINT (endpos, BUF_PT (XBUFFER (Vstandard_output)));
+	      Fset_text_properties (startpos, endpos,
+				    Qnil, Vstandard_output);
 	    }
 
 	  /* Output this element and update COLUMN.  */
@@ -1751,7 +1797,8 @@ t means to return a list of all possible completions of STRING.\n\
 
   DEFVAR_LISP ("minibuffer-history-variable", &Vminibuffer_history_variable,
     "History list symbol to add minibuffer values to.\n\
-Each minibuffer output is added with\n\
+Each string of minibuffer input, as it appears on exit from the minibuffer,\n\
+is added with\n\
   (set minibuffer-history-variable\n\
        (cons STRING (symbol-value minibuffer-history-variable)))");
   XSETFASTINT (Vminibuffer_history_variable, 0);

@@ -1,4 +1,4 @@
-;; cl-macs.el --- Common Lisp extensions for GNU Emacs Lisp (part four)
+;;; cl-macs.el --- Common Lisp extensions for GNU Emacs Lisp (part four)
 
 ;; Copyright (C) 1993 Free Software Foundation, Inc.
 
@@ -1726,7 +1726,8 @@ a macro like `setf' or `incf'."
 			    method
 			  (error "Setf-method for %s returns malformed method"
 				 func)))
-		   (and (string-match "\\`c[ad][ad][ad]?[ad]?r\\'" name)
+		   (and (save-match-data
+			  (string-match "\\`c[ad][ad][ad]?[ad]?r\\'" name))
 			(get-setf-method (compiler-macroexpand place)))
 		   (and (eq func 'edebug-after)
 			(get-setf-method (nth (1- (length place)) place)

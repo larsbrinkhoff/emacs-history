@@ -149,6 +149,10 @@ Fourth arg NEW-ENTRY non-nil means always create a new entry at the front;
 never append to an existing entry."
   (interactive (list current-prefix-arg
 		     (prompt-for-change-log-name)))
+  (or add-log-full-name
+      (setq add-log-full-name (user-full-name)))
+  (or add-log-mailing-address
+      (setq add-log-mailing-address user-mail-address))
   (if whoami
       (progn
 	(setq add-log-full-name (read-input "Full name: " add-log-full-name))
@@ -158,10 +162,6 @@ never append to an existing entry."
 	 ;; s/he can edit the full name field in prompter if s/he wants.
 	(setq add-log-mailing-address
 	      (read-input "Mailing address: " add-log-mailing-address))))
-  (or add-log-full-name
-      (setq add-log-full-name (user-full-name)))
-  (or add-log-mailing-address
-      (setq add-log-mailing-address user-mail-address))
   (let ((defun (funcall (or add-log-current-defun-function
 			    'add-log-current-defun)))
 	paragraph-end entry)
@@ -208,15 +208,17 @@ never append to an existing entry."
 	   (if entry
 	       (insert entry)))
 	  ((and (not new-entry)
-		(re-search-forward
-		 (concat (regexp-quote (concat "* " entry))
-			 ;; Don't accept `foo.bar' when
-			 ;; looking for `foo':
-			 "\\(\\s \\|[(),:]\\)")
-		 paragraph-end t))
+		(let (case-fold-search)
+		  (re-search-forward
+		   (concat (regexp-quote (concat "* " entry))
+			   ;; Don't accept `foo.bar' when
+			   ;; looking for `foo':
+			   "\\(\\s \\|[(),:]\\)")
+		   paragraph-end t)))
 	   ;; Add to the existing entry for the same file.
 	   (re-search-forward "^\\s *$\\|^\\s \\*")
-	   (beginning-of-line)
+	   (goto-char (match-beginning 0))
+	   ;; Delete excess empty lines; make just 2.
 	   (while (and (not (eobp)) (looking-at "^\\s *$"))
 	     (delete-region (point) (save-excursion (forward-line 1) (point))))
 	   (insert "\n\n")
@@ -280,8 +282,10 @@ Runs `change-log-mode-hook'."
 	fill-column 74)
   (use-local-map change-log-mode-map)
   ;; Let each entry behave as one paragraph:
-  (set (make-local-variable 'paragraph-start) "^\\s *$\\|^\f")
-  (set (make-local-variable 'paragraph-separate) "^\\s *$\\|^\f\\|^\\sw")
+  ;; We really do want "^" in paragraph-start below: it is only the lines that
+  ;; begin at column 0 (despite the left-margin of 8) that we are looking for.
+  (set (make-local-variable 'paragraph-start) "\\s *$\\|\f\\|^\\sw")
+  (set (make-local-variable 'paragraph-separate) "\\s *$\\|\f\\|^\\sw")
   ;; Let all entries for one day behave as one page.
   ;; Match null string on the date-line so that the date-line
   ;; is grouped with what follows.
@@ -300,9 +304,10 @@ Runs `change-log-mode-hook'."
   "Fill the paragraph, but preserve open parentheses at beginning of lines.
 Prefix arg means justify as well."
   (interactive "P")
-  (let ((paragraph-separate (concat paragraph-separate "\\|^\\s *\\s("))
-	(paragraph-start (concat paragraph-start "\\|^\\s *\\s(")))
-    (fill-paragraph justify)))
+  (let ((end (save-excursion (forward-paragraph) (point)))
+	(beg (save-excursion (backward-paragraph)(point)))
+	(paragraph-start (concat paragraph-start "\\|\\s *\\s(")))
+    (fill-region beg end justify)))
 
 (defvar add-log-current-defun-header-regexp
   "^\\([A-Z][A-Z_ ]*[A-Z_]\\|[-_a-zA-Z]+\\)[ \t]*[:=]"
@@ -326,7 +331,7 @@ Has a preference of looking backwards."
 	(let ((location (point)))
 	  (cond ((memq major-mode '(emacs-lisp-mode lisp-mode scheme-mode
 						    lisp-interaction-mode))
-		 ;; If we are now precisely a the beginning of a defun,
+		 ;; If we are now precisely at the beginning of a defun,
 		 ;; make sure beginning-of-defun finds that one
 		 ;; rather than the previous one.
 		 (or (eobp) (forward-char 1))
@@ -340,7 +345,7 @@ Has a preference of looking backwards."
 		       (if (looking-at "\\s(")
 			   (forward-char 1))
 		       (forward-sexp 1)
-		       (skip-chars-forward " ")
+		       (skip-chars-forward " '")
 		       (buffer-substring (point)
 					 (progn (forward-sexp 1) (point))))))
 		((and (memq major-mode '(c-mode c++-mode c++-c-mode objc-mode))
@@ -405,34 +410,55 @@ Has a preference of looking backwards."
                                (get-method-definition)
                              ;; Ordinary C function syntax.
                              (setq beg (point))
-                             (if (condition-case nil
-                                     ;; Protect against "Unbalanced parens" error.
-                                     (progn
-                                       (down-list 1) ; into arglist
-                                       (backward-up-list 1)
-                                       (skip-chars-backward " \t")
-                                       t)
-                                   (error nil))
-                                 ;; Verify initial pos was after
-                                 ;; real start of function.
-                                 (if (and (save-excursion
-                                            (goto-char beg)
-                                            ;; For this purpose, include the line
-                                            ;; that has the decl keywords.  This
-                                            ;; may also include some of the
-                                            ;; comments before the function.
-                                            (while (and (not (bobp))
-                                                        (save-excursion
-                                                          (forward-line -1)
-                                                          (looking-at "[^\n\f]")))
-                                              (forward-line -1))
-                                            (>= location (point)))
+                             (if (and (condition-case nil
+					  ;; Protect against "Unbalanced parens" error.
+					  (progn
+					    (down-list 1) ; into arglist
+					    (backward-up-list 1)
+					    (skip-chars-backward " \t")
+					    t)
+					(error nil))
+				      ;; Verify initial pos was after
+				      ;; real start of function.
+				      (save-excursion
+					(goto-char beg)
+					;; For this purpose, include the line
+					;; that has the decl keywords.  This
+					;; may also include some of the
+					;; comments before the function.
+					(while (and (not (bobp))
+						    (save-excursion
+						      (forward-line -1)
+						      (looking-at "[^\n\f]")))
+					  (forward-line -1))
+					(>= location (point)))
                                           ;; Consistency check: going down and up
                                           ;; shouldn't take us back before BEG.
                                           (> (point) beg))
-                                     (buffer-substring (point)
-                                                       (progn (backward-sexp 1)
-                                                              (point)))))))))))
+				 (let (end middle)
+				   ;; Don't include any final newline
+				   ;; in the name we use.
+				   (if (= (preceding-char) ?\n)
+				       (forward-char -1))
+				   (setq end (point))
+				   (backward-sexp 1)
+				   ;; Now find the right beginning of the name.
+				   ;; Include certain keywords if they
+				   ;; precede the name.
+				   (setq middle (point))
+				   (forward-word -1)
+				   ;; Ignore these subparts of a class decl
+				   ;; and move back to the class name itself.
+				   (while (looking-at "public \\|private ")
+				     (skip-chars-backward " \t:")
+				     (setq end (point))
+				     (backward-sexp 1)
+				     (setq middle (point))
+				     (forward-word -1))
+				   (and (bolp)
+					(looking-at "struct \\|union \\|class ")
+					(setq middle (point)))
+				   (buffer-substring middle end)))))))))
 		((memq major-mode
 		       '(TeX-mode plain-TeX-mode LaTeX-mode;; tex-mode.el
 				  plain-tex-mode latex-mode;; cmutex.el
@@ -483,18 +509,21 @@ Has a preference of looking backwards."
 					 (match-end 1))))))))
     (error nil)))
 
+(defvar get-method-definition-md)
+
 ;; Subroutine used within get-method-definition.
 ;; Add the last match in the buffer to the end of `md',
 ;; followed by the string END; move to the end of that match.
 (defun get-method-definition-1 (end)
-  (setq md (concat md 
-		   (buffer-substring (match-beginning 1) (match-end 1))
-		   end))
+  (setq get-method-definition-md
+	(concat get-method-definition-md 
+		(buffer-substring (match-beginning 1) (match-end 1))
+		end))
   (goto-char (match-end 0)))
 
 ;; For objective C, return the method name if we are in a method.
 (defun get-method-definition ()
-  (let ((md "["))
+  (let ((get-method-definition-md "["))
     (save-excursion
       (if (re-search-backward "^@implementation\\s-*\\([A-Za-z_]*\\)" nil t)
 	  (get-method-definition-1 " ")))
@@ -506,7 +535,7 @@ Has a preference of looking backwards."
 	  (looking-at
 	   "\\([A-Za-z_]*:?\\)\\s-*\\(([^)]*)\\)?[A-Za-z_]*[ \t\n\f\r]*")
 	  (get-method-definition-1 ""))
-	(concat md "]"))))))
+	(concat get-method-definition-md "]"))))))
 
 
 (provide 'add-log)

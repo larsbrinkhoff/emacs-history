@@ -54,6 +54,8 @@
 (garbage-collect)
 (load "indent")
 (garbage-collect)
+(load "isearch")
+(garbage-collect)
 (load "window")
 (if (fboundp 'delete-frame)
     (progn
@@ -69,9 +71,9 @@
       (garbage-collect)
       (load "mouse")
       (garbage-collect)
-      (load "menu-bar")
       (load "scroll-bar")
       (load "select")))
+(load "menu-bar")
 (garbage-collect)
 (load "paths.el")  ;Don't get confused if someone compiled paths by mistake.
 (garbage-collect)
@@ -90,10 +92,6 @@
 (load "text-mode")
 (garbage-collect)
 (load "fill")
-(garbage-collect)
-(load "c-mode")
-(garbage-collect)
-(load "isearch")
 (garbage-collect)
 (load "replace")
 (if (eq system-type 'vax-vms)
@@ -130,13 +128,14 @@
 
 (garbage-collect)
 (load "vc-hooks")
+(load "ediff-hook")
 
 ;If you want additional libraries to be preloaded and their
 ;doc strings kept in the DOC file rather than in core,
 ;you may load them with a "site-load.el" file.
 ;But you must also cause them to be scanned when the DOC file
 ;is generated.  For VMS, you must edit ../vms/makedoc.com.
-;For other systems, you must edit ../src/Makefile.in.in.
+;For other systems, you must edit ../src/Makefile.in.
 (if (load "site-load" t)
     (garbage-collect))
 
@@ -151,10 +150,10 @@
 (if (and (or (equal (nth 3 command-line-args) "dump")
 	     (equal (nth 4 command-line-args) "dump"))
 	 (not (eq system-type 'ms-dos)))
-    (let* ((base (concat "emacs-" emacs-version))
+    (let* ((base (concat "emacs-" emacs-version "."))
 	   (files (file-name-all-completions base default-directory))
 	   (versions (mapcar (function (lambda (name)
-					 (string-to-int (substring name (1+ (length base))))))
+					 (string-to-int (substring name (length base)))))
 			     files)))
       (setq emacs-version (format "%s.%d"
 				  emacs-version

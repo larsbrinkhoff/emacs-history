@@ -73,6 +73,9 @@ Lisp_Object Vminor_mode_map_alist;
    documentation.  */
 Lisp_Object Vfunction_key_map;
 
+/* Keymap mapping ASCII function key sequences onto their preferred forms.  */
+Lisp_Object Vkey_translation_map;
+
 /* A list of all commands given new bindings since a certain time
    when nil was stored here.
    This is used to speed up recomputation of menu key equivalents
@@ -90,7 +93,7 @@ extern Lisp_Object Voverriding_local_map;
 
 static Lisp_Object define_as_prefix ();
 static Lisp_Object describe_buffer_bindings ();
-static void describe_command ();
+static void describe_command (), describe_translation ();
 static void describe_map ();
 
 /* Keymap object support - constructors and predicates.			*/
@@ -799,6 +802,13 @@ append_key (key_sequence, key)
 static Lisp_Object *cmm_modes, *cmm_maps;
 static int cmm_size;
 
+/* Error handler used in current_minor_maps.  */
+static Lisp_Object
+current_minor_maps_error ()
+{
+  return Qnil;
+}
+
 /* Store a pointer to an array of the keymaps of the currently active
    minor modes in *buf, and return the number of maps it contains.
 
@@ -830,6 +840,8 @@ current_minor_maps (modeptr, mapptr)
 	&& (val = find_symbol_value (var), ! EQ (val, Qunbound))
 	&& ! NILP (val))
       {
+	Lisp_Object temp;
+
 	if (i >= cmm_size)
 	  {
 	    Lisp_Object *newmodes, *newmaps;
@@ -865,9 +877,17 @@ current_minor_maps (modeptr, mapptr)
 	    else
 	      break;
 	  }
-	cmm_modes[i] = var;
-	cmm_maps [i] = Findirect_function (XCONS (assoc)->cdr);
-	i++;
+
+	/* Get the keymap definition--or nil if it is not defined.  */
+	temp = internal_condition_case_1 (Findirect_function,
+					  XCONS (assoc)->cdr,
+					  Qerror, current_minor_maps_error);
+	if (!NILP (temp))
+	  {
+	    cmm_modes[i] = var;
+	    cmm_maps [i] = temp;
+	    i++;
+	  }
       }
 
   if (modeptr) *modeptr = cmm_modes;
@@ -1822,7 +1842,7 @@ nominal         alternate\n\
   Fset_buffer (Vstandard_output);
 
   /* Report on alternates for keys.  */
-  if (STRINGP (Vkeyboard_translate_table))
+  if (STRINGP (Vkeyboard_translate_table) && !NILP (prefix))
     {
       int c;
       unsigned char *translate = XSTRING (Vkeyboard_translate_table)->data;
@@ -1852,6 +1872,10 @@ nominal         alternate\n\
       insert ("\n", 1);
     }
 
+  if (!NILP (Vkey_translation_map))
+    describe_map_tree (Vkey_translation_map, 0, Qnil, prefix,
+		       "Key translations", 0, 1, 0);
+
   {
     int i, nmaps;
     Lisp_Object *modes, *maps;
@@ -1859,6 +1883,7 @@ nominal         alternate\n\
     /* Temporarily switch to descbuf, so that we can get that buffer's
        minor modes correctly.  */
     Fset_buffer (descbuf);
+
     if (!NILP (current_kboard->Voverriding_terminal_local_map)
 	|| !NILP (Voverriding_local_map))
       nmaps = 0;
@@ -1888,7 +1913,7 @@ nominal         alternate\n\
 	p += sizeof (" Minor Mode Bindings") - 1;
 	*p = 0;
 
-	describe_map_tree (maps[i], 0, shadow, prefix, title, 0);
+	describe_map_tree (maps[i], 0, shadow, prefix, title, 0, 0, 0);
 	shadow = Fcons (maps[i], shadow);
       }
   }
@@ -1904,12 +1929,17 @@ nominal         alternate\n\
   if (!NILP (start1))
     {
       describe_map_tree (start1, 0, shadow, prefix,
-			 "Major Mode Bindings", 0);
+			 "Major Mode Bindings", 0, 0, 0);
       shadow = Fcons (start1, shadow);
     }
 
   describe_map_tree (current_global_map, 0, shadow, prefix,
-		     "Global Bindings", 0);
+		     "Global Bindings", 0, 0, 1);
+
+  /* Print the function-key-map translations under this prefix.  */
+  if (!NILP (Vfunction_key_map))
+    describe_map_tree (Vfunction_key_map, 0, Qnil, prefix,
+		       "Function key map translations", 0, 1, 0);
 
   call0 (intern ("help-mode"));
   Fset_buffer (descbuf);
@@ -1926,14 +1956,23 @@ nominal         alternate\n\
    PREFIX, if non-nil, says mention only keys that start with PREFIX.
    TITLE, if not 0, is a string to insert at the beginning.
    TITLE should not end with a colon or a newline; we supply that.
-   If NOMENU is not 0, then omit menu-bar commands.  */
+   If NOMENU is not 0, then omit menu-bar commands.
+
+   If TRANSL is nonzero, the definitions are actually key translations
+   so print strings and vectors differently.
+
+   If ALWAYS_TITLE is nonzero, print the title even if there are no maps
+   to look through.  */
 
 void
-describe_map_tree (startmap, partial, shadow, prefix, title, nomenu)
+describe_map_tree (startmap, partial, shadow, prefix, title, nomenu, transl,
+		   always_title)
      Lisp_Object startmap, shadow, prefix;
      int partial;
      char *title;
      int nomenu;
+     int transl;
+     int always_title;
 {
   Lisp_Object maps, seen, sub_shadows;
   struct gcpro gcpro1, gcpro2, gcpro3;
@@ -1968,7 +2007,7 @@ key             binding\n\
 	}
     }
 
-  if (!NILP (maps))
+  if (!NILP (maps) || always_title)
     {
       if (title)
 	{
@@ -2024,7 +2063,8 @@ key             binding\n\
 	    sub_shadows = Fcons (shmap, sub_shadows);
 	}
 
-      describe_map (Fcdr (elt), Fcar (elt), describe_command,
+      describe_map (Fcdr (elt), Fcar (elt),
+		    transl ? describe_translation : describe_command,
 		    partial, sub_shadows, &seen);
 
     skip: ;
@@ -2050,8 +2090,37 @@ describe_command (definition)
       insert1 (tem1);
       insert_string ("\n");
     }
-  else if (STRINGP (definition))
+  else if (STRINGP (definition) || VECTORP (definition))
     insert_string ("Keyboard Macro\n");
+  else
+    {
+      tem1 = Fkeymapp (definition);
+      if (!NILP (tem1))
+	insert_string ("Prefix Command\n");
+      else
+	insert_string ("??\n");
+    }
+}
+
+static void
+describe_translation (definition)
+     Lisp_Object definition;
+{
+  register Lisp_Object tem1;
+
+  Findent_to (make_number (16), make_number (1));
+
+  if (SYMBOLP (definition))
+    {
+      XSETSTRING (tem1, XSYMBOL (definition)->name);
+      insert1 (tem1);
+      insert_string ("\n");
+    }
+  else if (STRINGP (definition) || VECTORP (definition))
+    {
+      insert1 (Fkey_description (definition));
+      insert_string ("\n");
+    }
   else
     {
       tem1 = Fkeymapp (definition);
@@ -2211,11 +2280,36 @@ This is text showing the elements of vector matched against indices.")
   int count = specpdl_ptr - specpdl;
 
   specbind (Qstandard_output, Fcurrent_buffer ());
-  CHECK_VECTOR (vector, 0);
+  CHECK_VECTOR_OR_CHAR_TABLE (vector, 0);
   describe_vector (vector, Qnil, describe_vector_princ, 0, Qnil, Qnil);
 
   return unbind_to (count, Qnil);
 }
+
+/* Insert in the current buffer a description of the contents of VECTOR.
+   We call ELT_DESCRIBER to insert the description of one value found
+   in VECTOR.
+
+   ELT_PREFIX describes what "comes before" the keys or indices defined
+   by this vector.
+
+   If the vector is in a keymap, ELT_PREFIX is a prefix key which
+   leads to this keymap.
+
+   If the vector is a chartable, ELT_PREFIX is the vector
+   of bytes that lead to the character set or portion of a character
+   set described by this chartable.
+
+   If PARTIAL is nonzero, it means do not mention suppressed commands
+   (that assumes the vector is in a keymap).
+
+   SHADOW is a list of keymaps that shadow this map.
+   If it is non-nil, then we look up the key in those maps
+   and we don't mention it now if it is defined by any of them.
+
+   ENTIRE_MAP is the keymap in which this vector appears.
+   If the definition in effect in the whole map does not match
+   the one in this vector, we ignore this one.  */
 
 describe_vector (vector, elt_prefix, elt_describer,
 		 partial, shadow, entire_map)
@@ -2233,21 +2327,27 @@ describe_vector (vector, elt_prefix, elt_describer,
   register int i;
   Lisp_Object suppress;
   Lisp_Object kludge;
+  Lisp_Object chartable_kludge;
   int first = 1;
-  struct gcpro gcpro1, gcpro2, gcpro3;
+  int size;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
   definition = Qnil;
+  chartable_kludge = Qnil;
 
   /* This vector gets used to present single keys to Flookup_key.  Since
      that is done once per vector element, we don't want to cons up a
      fresh vector every time.  */
   kludge = Fmake_vector (make_number (1), Qnil);
-  GCPRO3 (elt_prefix, definition, kludge);
+  GCPRO4 (elt_prefix, definition, kludge, chartable_kludge);
 
   if (partial)
     suppress = intern ("suppress-keymap");
 
-  for (i = 0; i < XVECTOR (vector)->size; i++)
+  /* This does the right thing for char-tables as well as ordinary vectors.  */
+  size = XFASTINT (Flength (vector));
+
+  for (i = 0; i < size; i++)
     {
       QUIT;
       definition = get_keyelt (XVECTOR (vector)->contents[i], 0);
@@ -2286,22 +2386,65 @@ describe_vector (vector, elt_prefix, elt_describer,
 	    continue;
 	}
 
+      /* If we find a char-table within a char-table,
+	 scan it recursively; it defines the details for
+	 a character set or a portion of a character set.  */
+      if (CHAR_TABLE_P (vector) && CHAR_TABLE_P (definition))
+	{
+	  int outer_level
+	    = !NILP (elt_prefix) ? XVECTOR (elt_prefix)->size : 0;
+	  if (NILP (chartable_kludge))
+	    {
+	      chartable_kludge
+		= Fmake_vector (make_number (outer_level + 1), Qnil);
+	      if (outer_level != 0)
+		bcopy (XVECTOR (elt_prefix)->contents,
+		       XVECTOR (chartable_kludge)->contents,
+		       outer_level * sizeof (Lisp_Object));
+	    }
+	  XVECTOR (chartable_kludge)->contents[outer_level]
+	    = make_number (i);
+	  describe_vector (definition, chartable_kludge, elt_describer,
+			   partial, shadow, entire_map);
+	  continue;
+	}
+
       if (first)
 	{
 	  insert ("\n", 1);
 	  first = 0;
 	}
 
-      /* Output the prefix that applies to every entry in this map.  */
-      if (!NILP (elt_prefix))
-	insert1 (elt_prefix);
+      if (CHAR_TABLE_P (vector))
+	{
+	  if (!NILP (elt_prefix))
+	    {
+	      /* Must combine elt_prefix with i to produce a character
+		 code, then insert that character's description.  */
+	    }
+	  else
+	    {
+	      /* Get the string to describe the character I, and print it.  */
+	      XSETFASTINT (dummy, i);
 
-      /* Get the string to describe the character I, and print it.  */
-      XSETFASTINT (dummy, i);
+	      /* THIS gets the string to describe the character DUMMY.  */
+	      this = Fsingle_key_description (dummy);
+	      insert1 (this);
+	    }
+	}
+      else
+	{
+	  /* Output the prefix that applies to every entry in this map.  */
+	  if (!NILP (elt_prefix))
+	    insert1 (elt_prefix);
 
-      /* THIS gets the string to describe the character DUMMY.  */
-      this = Fsingle_key_description (dummy);
-      insert1 (this);
+	  /* Get the string to describe the character I, and print it.  */
+	  XSETFASTINT (dummy, i);
+
+	  /* THIS gets the string to describe the character DUMMY.  */
+	  this = Fsingle_key_description (dummy);
+	  insert1 (this);
+	}
 
       /* Find all consecutive characters that have the same definition.  */
       while (i + 1 < XVECTOR (vector)->size
@@ -2315,11 +2458,29 @@ describe_vector (vector, elt_prefix, elt_describer,
       if (i != XINT (dummy))
 	{
 	  insert (" .. ", 4);
-	  if (!NILP (elt_prefix))
-	    insert1 (elt_prefix);
+	  if (CHAR_TABLE_P (vector))
+	    {
+	      if (!NILP (elt_prefix))
+		{
+		  /* Must combine elt_prefix with i to produce a character
+		     code, then insert that character's description.  */
+		}
+	      else
+		{
+		  XSETFASTINT (dummy, i);
 
-	  XSETFASTINT (dummy, i);
-	  insert1 (Fsingle_key_description (dummy));
+		  this = Fsingle_key_description (dummy);
+		  insert1 (this);
+		}
+	    }
+	  else
+	    {
+	      if (!NILP (elt_prefix))
+		insert1 (elt_prefix);
+
+	      XSETFASTINT (dummy, i);
+	      insert1 (Fsingle_key_description (dummy));
+	    }
 	}
 
       /* Print a description of the definition of this character.
@@ -2442,6 +2603,12 @@ Typing `ESC O P' to `read-key-sequence' would return [f1].  Typing\n\
 `C-x ESC O P' would return [?\\C-x f1].  If [f1] were a prefix\n\
 key, typing `ESC O P x' would return [f1 x].");
   Vfunction_key_map = Fmake_sparse_keymap (Qnil);
+
+  DEFVAR_LISP ("key-translation-map", &Vkey_translation_map,
+    "Keymap of key translations that can override keymaps.\n\
+This keymap works like `function-key-map', but comes after that,\n\
+and applies even for keys that have ordinary bindings.");
+  Vkey_translation_map = Qnil;
 
   Qsingle_key_description = intern ("single-key-description");
   staticpro (&Qsingle_key_description);

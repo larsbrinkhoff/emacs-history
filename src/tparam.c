@@ -1,5 +1,5 @@
 /* Merge parameters into a termcap entry string.
-   Copyright (C) 1985, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 87, 93, 95 Free Software Foundation, Inc.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,8 +18,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Emacs config.h may rename various library functions such as malloc.  */
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#else /* not HAVE_CONFIG_H */
+#endif
 
+#ifndef emacs
 #if defined(HAVE_STRING_H) || defined(STDC_HEADERS)
 #define bcopy(s, d, n) memcpy ((d), (s), (n))
 #endif
@@ -32,7 +33,7 @@ char *malloc ();
 char *realloc ();
 #endif
 
-#endif /* not HAVE_CONFIG_H */
+#endif /* not emacs */
 
 #ifndef NULL
 #define NULL (char *) 0
@@ -92,16 +93,13 @@ tparam (string, outstring, len, arg0, arg1, arg2, arg3)
      int len;
      int arg0, arg1, arg2, arg3;
 {
-#ifdef NO_ARG_ARRAY
   int arg[4];
+
   arg[0] = arg0;
   arg[1] = arg1;
   arg[2] = arg2;
   arg[3] = arg3;
   return tparam1 (string, outstring, len, NULL, NULL, arg);
-#else
-  return tparam1 (string, outstring, len, NULL, NULL, &arg0);
-#endif
 }
 
 char *BC;

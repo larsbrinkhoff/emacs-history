@@ -109,7 +109,7 @@ static void
 compile_pattern_1 (cp, pattern, translate, regp, posix)
      struct regexp_cache *cp;
      Lisp_Object pattern;
-     char *translate;
+     Lisp_Object *translate;
      struct re_registers *regp;
      int posix;
 {
@@ -147,7 +147,7 @@ struct re_pattern_buffer *
 compile_pattern (pattern, regp, translate, posix)
      Lisp_Object pattern;
      struct re_registers *regp;
-     char *translate;
+     Lisp_Object *translate;
      int posix;
 {
   struct regexp_cache *cp, **cpp;
@@ -309,7 +309,7 @@ string_match_1 (regexp, string, start, posix)
   bufp = compile_pattern (regexp, &search_regs,
 			  (!NILP (current_buffer->case_fold_search)
 			   ? DOWNCASE_TABLE : 0),
-			  0);
+			  posix);
   immediate_quit = 1;
   val = re_search (bufp, (char *) XSTRING (string)->data,
 		   XSTRING (string)->size, s, XSTRING (string)->size - s,
@@ -835,9 +835,11 @@ search_command (string, bound, noerror, count, direction, RE, posix)
 
   np = search_buffer (string, point, lim, n, RE,
 		      (!NILP (current_buffer->case_fold_search)
-		       ? XSTRING (current_buffer->case_canon_table)->data : 0),
+		       ? XCHAR_TABLE (current_buffer->case_canon_table)->contents
+		       : 0),
 		      (!NILP (current_buffer->case_fold_search)
-		       ? XSTRING (current_buffer->case_eqv_table)->data : 0),
+		       ? XCHAR_TABLE (current_buffer->case_eqv_table)->contents
+		       : 0),
 		      posix);
   if (np <= 0)
     {
@@ -918,8 +920,8 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt, posix)
      int lim;
      int n;
      int RE;
-     register unsigned char *trt;
-     register unsigned char *inverse_trt;
+     Lisp_Object *trt;
+     Lisp_Object *inverse_trt;
      int posix;
 {
   int len = XSTRING (string)->size;
@@ -952,7 +954,7 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt, posix)
     {
       struct re_pattern_buffer *bufp;
 
-      bufp = compile_pattern (string, &search_regs, (char *) trt, posix);
+      bufp = compile_pattern (string, &search_regs, trt, posix);
 
       immediate_quit = 1;	/* Quit immediately if user types ^G,
 				   because letting this function finish
@@ -1122,7 +1124,7 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt, posix)
 	      BM_tab[j] = dirlen - i;
 	      /* A translation table is accompanied by its inverse -- see */
 	      /* comment following downcase_table for details */ 
-	      while ((j = inverse_trt[j]) != k)
+	      while ((j = (unsigned char) inverse_trt[j]) != k)
 		BM_tab[j] = dirlen - i;
 	    }
 	  else
@@ -1501,7 +1503,7 @@ See also the functions `match-beginning', `match-end' and `replace-match'.")
   return search_command (regexp, bound, noerror, count, 1, 1, 1);
 }
 
-DEFUN ("replace-match", Freplace_match, Sreplace_match, 1, 4, 0,
+DEFUN ("replace-match", Freplace_match, Sreplace_match, 1, 5, 0,
   "Replace text matched by last search with NEWTEXT.\n\
 If second arg FIXEDCASE is non-nil, do not alter case of replacement text.\n\
 Otherwise maybe capitalize the whole text, or maybe just word initials,\n\
@@ -1521,9 +1523,14 @@ Leaves point at end of replacement text.\n\
 \n\
 The optional fourth argument STRING can be a string to modify.\n\
 In that case, this function creates and returns a new string\n\
-which is made by replacing the part of STRING that was matched.")
-  (newtext, fixedcase, literal, string)
-     Lisp_Object newtext, fixedcase, literal, string;
+which is made by replacing the part of STRING that was matched.\n\
+\n\
+The optional fifth argument SUBEXP specifies a subexpression of the match.\n\
+It says to replace just that subexpression instead of the whole match.\n\
+This is useful only after a regular expression search or match\n\
+since only regular expressions have distinguished subexpressions.")
+  (newtext, fixedcase, literal, string, subexp)
+     Lisp_Object newtext, fixedcase, literal, string, subexp;
 {
   enum { nochange, all_caps, cap_initial } case_action;
   register int pos, last;
@@ -1533,6 +1540,7 @@ which is made by replacing the part of STRING that was matched.")
   int some_nonuppercase_initial;
   register int c, prevc;
   int inslen;
+  int sub;
 
   CHECK_STRING (newtext, 0);
 
@@ -1545,28 +1553,38 @@ which is made by replacing the part of STRING that was matched.")
   if (search_regs.num_regs <= 0)
     error ("replace-match called before any match found");
 
+  if (NILP (subexp))
+    sub = 0;
+  else
+    {
+      CHECK_NUMBER (subexp, 3);
+      sub = XINT (subexp);
+      if (sub < 0 || sub >= search_regs.num_regs)
+	args_out_of_range (subexp, make_number (search_regs.num_regs));
+    }
+
   if (NILP (string))
     {
-      if (search_regs.start[0] < BEGV
-	  || search_regs.start[0] > search_regs.end[0]
-	  || search_regs.end[0] > ZV)
-	args_out_of_range (make_number (search_regs.start[0]),
-			   make_number (search_regs.end[0]));
+      if (search_regs.start[sub] < BEGV
+	  || search_regs.start[sub] > search_regs.end[sub]
+	  || search_regs.end[sub] > ZV)
+	args_out_of_range (make_number (search_regs.start[sub]),
+			   make_number (search_regs.end[sub]));
     }
   else
     {
-      if (search_regs.start[0] < 0
-	  || search_regs.start[0] > search_regs.end[0]
-	  || search_regs.end[0] > XSTRING (string)->size)
-	args_out_of_range (make_number (search_regs.start[0]),
-			   make_number (search_regs.end[0]));
+      if (search_regs.start[sub] < 0
+	  || search_regs.start[sub] > search_regs.end[sub]
+	  || search_regs.end[sub] > XSTRING (string)->size)
+	args_out_of_range (make_number (search_regs.start[sub]),
+			   make_number (search_regs.end[sub]));
     }
 
   if (NILP (fixedcase))
     {
       /* Decide how to casify by examining the matched text. */
 
-      last = search_regs.end[0];
+      last = search_regs.end[sub];
       prevc = '\n';
       case_action = all_caps;
 
@@ -1577,7 +1595,7 @@ which is made by replacing the part of STRING that was matched.")
       some_nonuppercase_initial = 0;
       some_uppercase = 0;
 
-      for (pos = search_regs.start[0]; pos < last; pos++)
+      for (pos = search_regs.start[sub]; pos < last; pos++)
 	{
 	  if (NILP (string))
 	    c = FETCH_CHAR (pos);
@@ -1634,8 +1652,8 @@ which is made by replacing the part of STRING that was matched.")
       Lisp_Object before, after;
 
       before = Fsubstring (string, make_number (0),
-			   make_number (search_regs.start[0]));
-      after = Fsubstring (string, make_number (search_regs.end[0]), Qnil);
+			   make_number (search_regs.start[sub]));
+      after = Fsubstring (string, make_number (search_regs.end[sub]), Qnil);
 
       /* Do case substitution into NEWTEXT if desired.  */
       if (NILP (literal))
@@ -1659,8 +1677,8 @@ which is made by replacing the part of STRING that was matched.")
 		  c = XSTRING (newtext)->data[++pos];
 		  if (c == '&')
 		    {
-		      substart = search_regs.start[0];
-		      subend = search_regs.end[0];
+		      substart = search_regs.start[sub];
+		      subend = search_regs.end[sub];
 		    }
 		  else if (c >= '1' && c <= '9' && c <= search_regs.num_regs + '0')
 		    {
@@ -1716,7 +1734,7 @@ which is made by replacing the part of STRING that was matched.")
      delete the original text.  This means that markers at the
      beginning or end of the original will float to the corresponding
      position in the replacement.  */
-  SET_PT (search_regs.start[0]);
+  SET_PT (search_regs.start[sub]);
   if (!NILP (literal))
     Finsert_and_inherit (1, &newtext);
   else
@@ -1726,7 +1744,7 @@ which is made by replacing the part of STRING that was matched.")
 
       for (pos = 0; pos < XSTRING (newtext)->size; pos++)
 	{
-	  int offset = point - search_regs.start[0];
+	  int offset = point - search_regs.start[sub];
 
 	  c = XSTRING (newtext)->data[pos];
 	  if (c == '\\')
@@ -1735,8 +1753,8 @@ which is made by replacing the part of STRING that was matched.")
 	      if (c == '&')
 		Finsert_buffer_substring
 		  (Fcurrent_buffer (),
-		   make_number (search_regs.start[0] + offset),
-		   make_number (search_regs.end[0] + offset));
+		   make_number (search_regs.start[sub] + offset),
+		   make_number (search_regs.end[sub] + offset));
 	      else if (c >= '1' && c <= '9' && c <= search_regs.num_regs + '0')
 		{
 		  if (search_regs.start[c - '0'] >= 1)
@@ -1754,8 +1772,8 @@ which is made by replacing the part of STRING that was matched.")
       UNGCPRO;
     }
 
-  inslen = point - (search_regs.start[0]);
-  del_range (search_regs.start[0] + inslen, search_regs.end[0] + inslen);
+  inslen = point - (search_regs.start[sub]);
+  del_range (search_regs.start[sub] + inslen, search_regs.end[sub] + inslen);
 
   if (case_action == all_caps)
     Fupcase_region (make_number (point - inslen), make_number (point));

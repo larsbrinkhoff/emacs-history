@@ -39,9 +39,13 @@
   "Keymap for help mode.")
 
 (define-key global-map (char-to-string help-char) 'help-command)
+(define-key global-map [help] 'help-command)
+(define-key global-map [f1] 'help-command)
 (fset 'help-command help-map)
 
 (define-key help-map (char-to-string help-char) 'help-for-help)
+(define-key help-map [help] 'help-for-help)
+(define-key help-map [f1] 'help-for-help)
 (define-key help-map "?" 'help-for-help)
 
 (define-key help-map "\C-c" 'describe-copying)
@@ -85,6 +89,25 @@
 
 (define-key help-map "q" 'help-quit)
 
+(defvar help-font-lock-keywords
+  (let ((name-char "[-+a-zA-Z0-9_*]") (sym-char "[-+a-zA-Z0-9_:*]"))
+    (list
+     ;;
+     ;; The symbol itself.
+     (list (concat "\\`\\(" name-char "+\\)\\(:\\)?")
+	   '(1 (if (match-beginning 2)
+		   font-lock-function-name-face
+		 font-lock-variable-name-face)
+	       nil t))
+     ;;
+     ;; Words inside `' which tend to be symbol names.
+     (list (concat "`\\(" sym-char sym-char "+\\)'")
+	   1 'font-lock-reference-face t)
+     ;;
+     ;; CLisp `:' keywords as references.
+     (list (concat "\\<:" sym-char "+\\>") 0 'font-lock-reference-face t)))
+  "Default expressions to highlight in Help mode.")
+
 (defun help-mode ()
   "Major mode for viewing help text.
 Entry to this mode runs the normal hook `help-mode-hook'.
@@ -95,6 +118,9 @@ Commands:
   (use-local-map help-mode-map)
   (setq mode-name "Help")
   (setq major-mode 'help-mode)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(help-font-lock-keywords))
+  (view-mode)
   (run-hooks 'help-mode-hook))
 
 (defun help-quit ()
@@ -141,12 +167,29 @@ Commands:
     (and (symbolp type)
 	 (memq 'down (event-modifiers type))
 	 (read-event)))
-  (let ((defn (key-binding key)))
-    (if (or (null defn) (integerp defn))
-        (message "%s is undefined" (key-description key))
-      (message "%s runs the command %s"
-	       (key-description key)
-	       (if (symbolp defn) defn (prin1-to-string defn))))))
+  (save-excursion
+    (let ((modifiers (event-modifiers (aref key 0)))
+	  window position)
+      ;; For a mouse button event, go to the button it applies to
+      ;; to get the right key bindings.  And go to the right place
+      ;; in case the keymap depends on where you clicked.
+      (if (or (memq 'click modifiers) (memq 'down modifiers)
+	      (memq 'drag modifiers))
+	  (setq window (posn-window (event-start (aref key 0)))
+		position (posn-point (event-start (aref key 0)))))
+      (if (windowp window)
+	  (progn
+	    (set-buffer (window-buffer window))
+	    (goto-char position)))
+      ;; Ok, now look up the key and name the command.
+      (let ((defn (key-binding key)))
+	(if (or (null defn) (integerp defn))
+	    (message "%s is undefined" (key-description key))
+	  (message (if (windowp window)
+		       "%s at that spot runs the command %s"
+		     "%s runs the command %s")
+		   (key-description key)
+		   (if (symbolp defn) defn (prin1-to-string defn))))))))
 
 (defun print-help-return-message (&optional function)
   "Display or return message saying how to restore windows after help command.
@@ -194,13 +237,21 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
 		   ;; it's no use mentioning a command to scroll, so don't.
 		   (if (or (member (buffer-name standard-output)
 				   special-display-buffer-names)
+			   (assoc (buffer-name standard-output)
+				  special-display-buffer-names)
 			   (memq t (mapcar '(lambda (elt)
+					      (if (consp elt)
+						  (setq elt (car elt)))
 					      (string-match elt (buffer-name standard-output)))
 					   special-display-regexps)))
 		       nil
 		     (if (or (member (buffer-name standard-output)
 				     same-window-buffer-names)
+			     (assoc (buffer-name standard-output)
+				    same-window-buffer-names)
 			     (memq t (mapcar '(lambda (elt)
+						(if (consp elt)
+						    (setq elt (car elt)))
 						(string-match elt (buffer-name standard-output)))
 					     same-window-regexps)))
 			 ;; Say how to scroll this window.
@@ -221,19 +272,39 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
     (and (symbolp type)
 	 (memq 'down (event-modifiers type))
 	 (read-event)))
-  (let ((defn (key-binding key)))
-    (if (or (null defn) (integerp defn))
-        (message "%s is undefined" (key-description key))
-      (with-output-to-temp-buffer "*Help*"
-	(prin1 defn)
-	(princ ":\n")
-	(if (documentation defn)
-	    (princ (documentation defn))
-	  (princ "not documented"))
-	(save-excursion
-	  (set-buffer standard-output)
-	  (help-mode))
-	(print-help-return-message)))))
+  (save-excursion
+    (let ((modifiers (event-modifiers (aref key 0)))
+	  window position)
+      ;; For a mouse button event, go to the button it applies to
+      ;; to get the right key bindings.  And go to the right place
+      ;; in case the keymap depends on where you clicked.
+      (if (or (memq 'click modifiers) (memq 'down modifiers)
+	      (memq 'drag modifiers))
+	  (setq window (posn-window (event-start (aref key 0)))
+		position (posn-point (event-start (aref key 0)))))
+      (if (windowp window)
+	  (progn
+	    (set-buffer (window-buffer window))
+	    (goto-char position)))
+      (let ((defn (key-binding key)))
+	(if (or (null defn) (integerp defn))
+	    (message "%s is undefined" (key-description key))
+	  (with-output-to-temp-buffer "*Help*"
+	    (princ (key-description key))
+	    (if (windowp window)
+		(princ " at that spot"))
+	    (princ " runs the command ")
+	    (prin1 defn)
+	    (princ ":\n")
+	    (let ((doc (documentation defn)))
+	      (if doc
+		  (progn (terpri)
+			 (princ doc))
+		(princ "not documented")))
+	    (save-excursion
+	      (set-buffer standard-output)
+	      (help-mode))
+	    (print-help-return-message)))))))
 
 (defun describe-mode ()
   "Display documentation of current major mode and minor modes.
@@ -410,11 +481,18 @@ C-w print information on absence of warranty for GNU Emacs."
 		(and (symbolp obj) (fboundp obj) obj))))
 	(error nil))
       (condition-case ()
-	  (save-excursion
-	    (forward-sexp -1)
-	    (skip-chars-forward "'")
-	    (let ((obj (read (current-buffer))))
-	      (and (symbolp obj) (fboundp obj) obj)))
+	  (let ((stab (syntax-table)))
+	    (unwind-protect
+		(save-excursion
+		  (set-syntax-table emacs-lisp-mode-syntax-table)
+		  (or (not (zerop (skip-syntax-backward "_w")))
+		      (eq (char-syntax (following-char)) ?w)
+		      (eq (char-syntax (following-char)) ?_)
+		      (forward-sexp -1))
+		  (skip-chars-forward "'")
+		  (let ((obj (read (current-buffer))))
+		    (and (symbolp obj) (fboundp obj) obj)))
+	      (set-syntax-table stab)))
 	(error nil))))
 
 (defun describe-function-find-file (function)
@@ -442,6 +520,7 @@ C-w print information on absence of warranty for GNU Emacs."
     (prin1 function)
     (princ ": ")
     (let* ((def (symbol-function function))
+	   file-name
 	   (beg (if (commandp def) "an interactive " "a ")))
       (princ (cond ((or (stringp def)
 			(vectorp def))
@@ -459,21 +538,21 @@ C-w print information on absence of warranty for GNU Emacs."
 		   ((eq (car-safe def) 'mocklisp)
 		    "a mocklisp function")
 		   ((eq (car-safe def) 'autoload)
+		    (setq file-name (nth 1 def))
 		    (format "%s autoloaded Lisp %s"
 			    (if (commandp def) "an interactive" "an")
 			    (if (nth 4 def) "macro" "function")
-;;; Including the file name made this line too long.
-;;;			    (nth 1 def)
 			    ))
 		   (t "")))
-      (let ((file (describe-function-find-file function)))
-	(if file
-	    (progn
-	      (princ " in `")
-	      ;; We used to add .el to the file name,
-	      ;; but that's completely wrong when the user used load-file.
-	      (princ file)
-	      (princ "'"))))
+      (or file-name
+	  (setq file-name (describe-function-find-file function)))
+      (if file-name
+	  (progn
+	    (princ " in `")
+	    ;; We used to add .el to the file name,
+	    ;; but that's completely wrong when the user used load-file.
+	    (princ file-name)
+	    (princ "'")))
       (princ ".")
       (terpri)
       (let ((arglist (cond ((byte-code-function-p def)
@@ -490,11 +569,11 @@ C-w print information on absence of warranty for GNU Emacs."
 				       (intern (upcase (symbol-name arg)))))
 				   arglist)))
 	      (terpri))))
-      (if (documentation function)
-	  (progn (terpri)
-		 (princ (documentation function)))
-	(princ "not documented"))
-      )
+      (let ((doc (documentation function)))
+	(if doc
+	    (progn (terpri)
+		   (princ doc))
+	  (princ "not documented"))))
     (print-help-return-message)
     (save-excursion
       (set-buffer standard-output)
@@ -504,11 +583,18 @@ C-w print information on absence of warranty for GNU Emacs."
 
 (defun variable-at-point ()
   (condition-case ()
-      (save-excursion
-	(forward-sexp -1)
-	(skip-chars-forward "'")
-	(let ((obj (read (current-buffer))))
-	  (and (symbolp obj) (boundp obj) obj)))
+      (let ((stab (syntax-table)))
+	(unwind-protect
+	    (save-excursion
+	      (set-syntax-table emacs-lisp-mode-syntax-table)
+	      (or (not (zerop (skip-syntax-backward "_w")))
+		  (eq (char-syntax (following-char)) ?w)
+		  (eq (char-syntax (following-char)) ?_)
+		  (forward-sexp -1))
+	      (skip-chars-forward "'")
+	      (let ((obj (read (current-buffer))))
+		(and (symbolp obj) (boundp obj) obj)))
+	  (set-syntax-table stab)))
     (error nil)))
 
 (defun describe-variable (variable)
@@ -543,9 +629,7 @@ Returns the documentation as a string, also."
     (princ "Documentation:")
     (terpri)
     (let ((doc (documentation-property variable 'variable-documentation)))
-      (if doc
-	  (princ (substitute-command-keys doc))
-	(princ "not documented as a variable.")))
+      (princ (or doc "not documented as a variable.")))
     (print-help-return-message)
     (save-excursion
       (set-buffer standard-output)
@@ -572,18 +656,6 @@ Argument is a command definition, usually a symbol with a function definition."
 	(message "%s is on %s" definition keys1)
       (message "%s is not on any key" definition)))
   nil)
-
-(defun command-apropos (string)
-  "Like apropos but lists only symbols that are names of commands
-\(interactively callable functions).  Argument REGEXP is a regular expression
-that is matched against command symbol names.  Returns list of symbols and
-documentation found."
-  (interactive "sCommand apropos (regexp): ")
-  (let ((message
-	 (let ((standard-output (get-buffer-create "*Help*")))
-	   (print-help-return-message 'identity))))
-    (if (apropos string t 'commandp t)
-	(and message (message message)))))
 
 (defun locate-library (library &optional nosuffix)
   "Show the full path name of Emacs library LIBRARY.

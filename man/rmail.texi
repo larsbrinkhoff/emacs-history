@@ -36,11 +36,13 @@ mail.
 @section Basic Concepts of Rmail
 
 @cindex primary Rmail file
+@vindex rmail-file-name
   Using Rmail in the simplest fashion, you have one Rmail file
 @file{~/RMAIL} in which all of your mail is saved.  It is called your
 @dfn{primary Rmail file}.  The command @kbd{M-x rmail} reads your primary
 Rmail file, merges new mail in from your inboxes, displays the first
-message you haven't read yet, and lets you begin reading.
+message you haven't read yet, and lets you begin reading.  The variable
+@code{rmail-file-name} specifies the name of the primary Rmail file.
 
   Rmail uses narrowing to hide all but one message in the Rmail file.
 The message that is shown is called the @dfn{current message}.  Rmail
@@ -242,6 +244,12 @@ moves to the following message, skipping messages already deleted, while
 If there is no nondeleted message to move to in the specified direction,
 the message that was just deleted remains current.
 
+@vindex rmail-delete-message-hook
+  Whenever Rmail deletes a message, it invokes the function(s) listed in
+@code{rmail-delete-message-hook}.  When the hook functions are invoked,
+the message has been marked deleted, but it is still the current message
+in the Rmail buffer.
+
 @cindex undeletion (Rmail)
 @kindex x @r{(Rmail)}
 @findex rmail-expunge
@@ -286,13 +294,15 @@ can get new mail at any time in Rmail by typing @kbd{g}.
 
 @vindex rmail-primary-inbox-list
 @cindex @code{MAIL} environment variable
-  The variable @code{rmail-primary-inbox-list} contains a list of the 
+  The variable @code{rmail-primary-inbox-list} contains a list of the
 files which are inboxes for your primary Rmail file.  If you don't set
 this variable explicitly, it is initialized from the @code{MAIL}
 environment variable, or, as a last resort, set to @code{nil}, which
 means to use the default inbox.  The default inbox is
 @file{/var/mail/@var{username}}, @file{/usr/spool/mail/@var{username}},
 or @file{/usr/mail/@var{username}}, depending on your operating system.
+You can specify the inbox file(s) for any Rmail file with the command
+@code{set-rmail-inbox-list}; see @ref{Rmail Files}.
 
   Some sites use a method called POP for accessing users' inbox data
 instead of storing the data in inbox files.  @code{movemail} can work
@@ -907,7 +917,7 @@ header or to repeat the header reformatting operation.
 
 @table @kbd
 @item t
-Toggle display of complete header (@code{rmail-toggle-headers}).
+Toggle display of complete header (@code{rmail-toggle-header}).
 @end table
 
 @kindex t @r{(Rmail)}
@@ -920,7 +930,7 @@ which header fields to hide in this way---if it matches the beginning of
 a header field, that whole field is hidden.
 
   Rmail saves the complete original header before reformatting; to see
-it, use the @kbd{t} command (@code{rmail-toggle-headers}).  This
+it, use the @kbd{t} command (@code{rmail-toggle-header}).  This
 discards the reformatted headers of the current message and displays it
 with the original header.  Repeating @kbd{t} reformats the message
 again.  Selecting the message again also reformats.

@@ -29,8 +29,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "termchar.h"
 #include "termopts.h"
 #include "termhooks.h"
-#include "cm.h"
+/* cm.h must come after dispextern.h on Windows.  */
 #include "dispextern.h"
+#include "cm.h"
 #include "buffer.h"
 #include "frame.h"
 #include "window.h"
@@ -40,10 +41,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "intervals.h"
 
 #include "systty.h"
+#include "syssignal.h"
 
 #ifdef HAVE_X_WINDOWS
 #include "xterm.h"
 #endif	/* HAVE_X_WINDOWS */
+
+#ifdef HAVE_NTGUI
+#include "w32term.h"
+#endif /* HAVE_NTGUI */
 
 /* Include systime.h after xterm.h to avoid double inclusion of time.h. */
 #include "systime.h"
@@ -121,6 +127,8 @@ Lisp_Object Vstandard_display_table;
    positive means at end of text in echo area;
    negative means at beginning of line.  */
 int cursor_in_echo_area;
+
+Lisp_Object Qdisplay_table;
 
 /* The currently selected frame.
    In a single-frame version, this variable always holds the address of
@@ -268,8 +276,8 @@ make_frame_glyphs (frame, empty)
   bzero (new->enable, height * sizeof (char));
   new->bufp = (int *) xmalloc (height * sizeof (int));
 
-#ifdef HAVE_X_WINDOWS
-  if (FRAME_X_P (frame))
+#ifdef HAVE_WINDOW_SYSTEM
+  if (FRAME_WINDOW_P (frame))
     {
       new->top_left_x = (short *) xmalloc (height * sizeof (short));
       new->top_left_y = (short *) xmalloc (height * sizeof (short));
@@ -277,7 +285,7 @@ make_frame_glyphs (frame, empty)
       new->pix_height = (short *) xmalloc (height * sizeof (short));
       new->max_ascent = (short *) xmalloc (height * sizeof (short));
     }
-#endif
+#endif /* HAVE_WINDOW_SYSTEM */
 
   if (empty)
     {
@@ -342,8 +350,8 @@ free_frame_glyphs (frame, glyphs)
   if (glyphs->charstarts)
     xfree (glyphs->charstarts);
 
-#ifdef HAVE_X_WINDOWS
-  if (FRAME_X_P (frame))
+#ifdef HAVE_WINDOW_SYSTEM
+  if (FRAME_WINDOW_P (frame))
     {
       xfree (glyphs->top_left_x);
       xfree (glyphs->top_left_y);
@@ -351,7 +359,7 @@ free_frame_glyphs (frame, glyphs)
       xfree (glyphs->pix_height);
       xfree (glyphs->max_ascent);
     }
-#endif
+#endif /* HAVE_WINDOW_SYSTEM */
 
   xfree (glyphs);
 }
@@ -531,9 +539,6 @@ get_display_line (frame, vpos, hpos)
   register GLYPH *p;
 
   if (vpos < 0)
-    abort ();
-
-  if ((desired_glyphs->enable[vpos]) && desired_glyphs->used[vpos] > hpos)
     abort ();
 
   if (! desired_glyphs->enable[vpos])
@@ -718,8 +723,8 @@ scroll_frame_lines (frame, from, end, amount, newpos)
 		  current_frame->bufp + from + amount,
 		  (end - from) * sizeof current_frame->bufp[0]);
 
-#ifdef HAVE_X_WINDOWS
-      if (FRAME_X_P (frame))
+#ifdef HAVE_WINDOW_SYSTEM
+      if (FRAME_WINDOW_P (frame))
 	{
 	  safe_bcopy (current_frame->top_left_x + from,
 		      current_frame->top_left_x + from + amount,
@@ -741,7 +746,7 @@ scroll_frame_lines (frame, from, end, amount, newpos)
 		      current_frame->max_ascent + from + amount,
 		      (end - from) * sizeof current_frame->max_ascent[0]);
 	}
-#endif				/* HAVE_X_WINDOWS */
+#endif /* HAVE_WINDOW_SYSTEM */
 
       update_end (frame);
     }
@@ -814,8 +819,8 @@ scroll_frame_lines (frame, from, end, amount, newpos)
 		  current_frame->bufp + from + amount,
 		  (end - from) * sizeof current_frame->bufp[0]);
 
-#ifdef HAVE_X_WINDOWS
-      if (FRAME_X_P (frame))
+#ifdef HAVE_WINDOW_SYSTEM
+      if (FRAME_WINDOW_P (frame))
 	{
 	  safe_bcopy (current_frame->top_left_x + from,
 		      current_frame->top_left_x + from + amount,
@@ -837,7 +842,7 @@ scroll_frame_lines (frame, from, end, amount, newpos)
 		      current_frame->max_ascent + from + amount,
 		      (end - from) * sizeof current_frame->max_ascent[0]);
 	}
-#endif				/* HAVE_X_WINDOWS */
+#endif /* HAVE_WINDOW_SYSTEM */
 
       update_end (frame);
     }
@@ -1110,7 +1115,7 @@ direct_output_for_insert (g)
 #ifdef HAVE_FACES
     int dummy;
 
-    if (FRAME_X_P (frame))
+    if (FRAME_WINDOW_P (frame))
       face = compute_char_face (frame, w, point - 1, -1, -1, &dummy, point, 0);
 #endif
     current_frame->glyphs[vpos][hpos] = MAKE_GLYPH (frame, g, face);
@@ -1215,7 +1220,7 @@ update_frame (f, force, inhibit_hairy_id)
   int pause;
   int preempt_count = baud_rate / 2400 + 1;
   extern input_pending;
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
   register int downto, leftmost;
 #endif
 
@@ -1258,21 +1263,21 @@ update_frame (f, force, inhibit_hairy_id)
   if (desired_frame->enable[FRAME_HEIGHT (f) - 1])
     update_line (f, FRAME_HEIGHT (f) - 1);
 
-#ifdef HAVE_X_WINDOWS
-  if (FRAME_X_P (f))
+#ifdef HAVE_WINDOW_SYSTEM
+  if (FRAME_WINDOW_P (f))
     {
-      leftmost = downto = f->display.x->internal_border_width;
+      leftmost = downto = FRAME_INTERNAL_BORDER_WIDTH (f);
       if (desired_frame->enable[0])
 	{
 	  current_frame->top_left_x[FRAME_HEIGHT (f) - 1] = leftmost;
 	  current_frame->top_left_y[FRAME_HEIGHT (f) - 1]
-	    = PIXEL_HEIGHT (f) - f->display.x->internal_border_width
+	    = PIXEL_HEIGHT (f) - FRAME_INTERNAL_BORDER_WIDTH (f)
 	      - current_frame->pix_height[FRAME_HEIGHT (f) - 1];
 	  current_frame->top_left_x[0] = leftmost;
 	  current_frame->top_left_y[0] = downto;
 	}
     }
-#endif /* HAVE_X_WINDOWS */
+#endif /* HAVE_WINDOW_SYSTEM */
 
   /* Now update the rest of the lines. */
   for (i = 0; i < FRAME_HEIGHT (f) - 1 && (force || !input_pending); i++)
@@ -1308,26 +1313,34 @@ update_frame (f, force, inhibit_hairy_id)
 	    }
 
 	  update_line (f, i);
-#ifdef HAVE_X_WINDOWS
-	  if (FRAME_X_P (f))
+#ifdef HAVE_WINDOW_SYSTEM
+	  if (FRAME_WINDOW_P (f))
 	    {
 	      current_frame->top_left_y[i] = downto;
 	      current_frame->top_left_x[i] = leftmost;
 	    }
-#endif /* HAVE_X_WINDOWS */
+#endif /* HAVE_WINDOW_SYSTEM */
 	}
 
-#ifdef HAVE_X_WINDOWS
-      if (FRAME_X_P (f))
+#ifdef HAVE_WINDOW_SYSTEM
+      if (FRAME_WINDOW_P (f))
 	downto += current_frame->pix_height[i];
-#endif
+#endif /* HAVE_WINDOW_SYSTEM */
     }
   pause = (i < FRAME_HEIGHT (f) - 1) ? i : 0;
 
   /* Now just clean up termcap drivers and set cursor, etc.  */
   if (!pause)
     {
-      if (cursor_in_echo_area
+      if ((cursor_in_echo_area
+	   /* If we are showing a message instead of the minibuffer,
+	      show the cursor for the message instead of for the
+	      (now hidden) minibuffer contents.  */
+	   || (EQ (minibuf_window, selected_window)
+	       && EQ (minibuf_window, echo_area_window)
+	       && echo_area_glyphs != 0))
+	  /* These cases apply only to the frame that contains
+	     the active minibuffer window.  */
 	  && FRAME_HAS_MINIBUF_P (f)
 	  && EQ (FRAME_MINIBUF_WINDOW (f), minibuf_window))
 	{
@@ -1391,12 +1404,14 @@ update_frame (f, force, inhibit_hairy_id)
 void
 quit_error_check ()
 {
+#if 0
   if (FRAME_DESIRED_GLYPHS (selected_frame) == 0)
     return;
   if (FRAME_DESIRED_GLYPHS (selected_frame)->enable[0])
     abort ();
   if (FRAME_DESIRED_GLYPHS (selected_frame)->enable[FRAME_HEIGHT (selected_frame) - 1])
     abort ();
+#endif
 }
 
 /* Decide what insert/delete line to do, and do it */
@@ -1594,7 +1609,7 @@ update_line (frame, vpos)
       if (! current_frame->highlight[vpos])
 	{
 	  if (!must_write_spaces)
-	    while (obody[olen - 1] == SPACEGLYPH && olen > 0)
+	    while (olen > 0 && obody[olen - 1] == SPACEGLYPH)
 	      olen--;
 	}
       else
@@ -1614,16 +1629,16 @@ update_line (frame, vpos)
   current_frame->highlight[vpos] = desired_frame->highlight[vpos];
   current_frame->bufp[vpos] = desired_frame->bufp[vpos];
 
-#ifdef HAVE_X_WINDOWS
-  if (FRAME_X_P (frame))
+#ifdef HAVE_WINDOW_SYSTEM
+  if (FRAME_WINDOW_P (frame))
     {
       current_frame->pix_width[vpos]
 	= current_frame->used[vpos]
-	  * FONT_WIDTH (frame->display.x->font);
+	  * FONT_WIDTH (FRAME_FONT (frame));
       current_frame->pix_height[vpos]
-	= frame->display.x->line_height;
+	= FRAME_LINE_HEIGHT (frame);
     }
-#endif /* HAVE_X_WINDOWS */
+#endif /* HAVE_WINDOW_SYSTEM */
 
   if (!desired_frame->enable[vpos])
     {
@@ -2427,8 +2442,6 @@ Value is t if waited the full time with no input arriving.")
     error ("millisecond `sit-for' not supported on %s", SYSTEM_TYPE);
 #endif
 
-  if (NILP (nodisp))
-    prepare_menu_bars ();
   return sit_for (sec, usec, 0, NILP (nodisp));
 }
 
@@ -2483,6 +2496,15 @@ init_display ()
       return;
     }
 #endif /* HAVE_X_WINDOWS */
+
+#ifdef HAVE_NTGUI
+  if (!inhibit_window_system) 
+    {
+      Vwindow_system = intern ("win32");
+      Vwindow_system_version = make_number (1);
+      return;
+    }
+#endif /* HAVE_NTGUI */
 
   /* If no window system has been specified, try to use the terminal.  */
   if (! isatty (0))
@@ -2555,6 +2577,9 @@ syms_of_display ()
 
   frame_and_buffer_state = Fmake_vector (make_number (20), Qlambda);
   staticpro (&frame_and_buffer_state);
+
+  Qdisplay_table = intern ("display-table");
+  staticpro (&Qdisplay_table);
 
   DEFVAR_INT ("baud-rate", &baud_rate,
     "*The output baud rate of the terminal.\n\

@@ -38,12 +38,14 @@ Function to indent current line.")
   (interactive)
   (funcall indent-line-function))
 
-(defun indent-for-tab-command ()
+(defun indent-for-tab-command (&optional prefix-arg)
   "Indent line in proper way for current major mode."
-  (interactive)
+  (interactive "P")
   (if (eq indent-line-function 'indent-to-left-margin)
       (insert-tab)
-    (funcall indent-line-function)))
+    (if prefix-arg
+	(funcall indent-line-function prefix-arg)
+      (funcall indent-line-function))))
 
 (defun insert-tab ()
   (if abbrev-mode
@@ -80,6 +82,9 @@ only if necessary.  It leaves point at end of indentation."
   (back-to-indentation)
   (let ((cur-col (current-column)))
     (cond ((< cur-col column)
+	   (if (> (- column (* (/ cur-col tab-width) tab-width)) tab-width)
+	       (delete-region (point)
+			      (progn (skip-chars-backward " ") (point))))
 	   (indent-to column))
 	  ((> cur-col column) ; too far right (after tab?)
 	   (delete-region (progn (move-to-column column t) (point))
@@ -105,17 +110,15 @@ If the line's indentation appears to be wrong, and this command is called
 interactively or with optional argument FORCE, it will be fixed."
   (interactive (list (prefix-numeric-value current-prefix-arg) t))
   (beginning-of-line n)
-  (let ((lm (current-left-margin)))
-    (if (memq (current-justification) '(right center))
-	(move-to-column lm)
-      (skip-chars-forward " \t"))
-    (let ((cc (current-column)))
-      (cond ((> cc lm)
-	     (if (> (move-to-column lm force) lm)
-		 ;; If lm is in a tab and we are not forcing, move before tab
-		 (backward-char 1)))
-	    ((and force (< cc lm))
-	     (indent-to-left-margin))))))
+  (skip-chars-forward " \t")
+  (let ((lm (current-left-margin))
+	(cc (current-column)))
+    (cond ((> cc lm)
+	   (if (> (move-to-column lm force) lm)
+	       ;; If lm is in a tab and we are not forcing, move before tab
+	       (backward-char 1)))
+	  ((and force (< cc lm))
+	   (indent-to-left-margin)))))
 
 ;; This is the default indent-line-function,
 ;; used in Fundamental Mode, Text Mode, etc.
@@ -268,8 +271,8 @@ line, but does not move past any whitespace that was explicitly inserted
       (skip-chars-forward " \t")))
 
 (defvar indent-region-function nil
-  "Function which is short cut to indent region using indent-according-to-mode.
-A value of nil means really run indent-according-to-mode on each line.")
+  "Short cut function to indent region using `indent-according-to-mode'.
+A value of nil means really run `indent-according-to-mode' on each line.")
 
 (defun indent-region (start end column)
   "Indent each nonblank line in the region.
@@ -419,7 +422,8 @@ You can add or remove colons and then do \\<edit-tab-stops-map>\\[edit-tab-stops
 The variable `tab-stop-list' is a list of columns at which there are tab stops.
 Use \\[edit-tab-stops] to edit them interactively."
   (interactive)
-  (if abbrev-mode (expand-abbrev))
+  (and abbrev-mode (= (char-syntax (preceding-char)) ?w)
+       (expand-abbrev))
   (let ((tabs tab-stop-list))
     (while (and tabs (>= (current-column) (car tabs)))
       (setq tabs (cdr tabs)))

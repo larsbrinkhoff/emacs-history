@@ -50,10 +50,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef MSDOS
 #include "msdos.h"
-/* These are redefined (correctly, but differently) in values.h.  */
-#undef INTBITS
-#undef LONGBITS
-#undef SHORTBITS
 #endif
 
 #include <math.h>
@@ -68,12 +64,15 @@ extern int errno;
 Lisp_Object Qread_char, Qget_file_char, Qstandard_input, Qcurrent_load_list;
 Lisp_Object Qvariable_documentation, Vvalues, Vstandard_input, Vafter_load_alist;
 Lisp_Object Qascii_character, Qload, Qload_file_name;
-Lisp_Object Qbackquote, Qcomma, Qcomma_at, Qcomma_dot;
+Lisp_Object Qbackquote, Qcomma, Qcomma_at, Qcomma_dot, Qfunction;
 
 extern Lisp_Object Qevent_symbol_element_mask;
 
 /* non-zero if inside `load' */
 int load_in_progress;
+
+/* Directory in which the sources were found.  */
+Lisp_Object Vsource_directory;
 
 /* Search path for files to be loaded. */
 Lisp_Object Vload_path;
@@ -91,18 +90,30 @@ Lisp_Object Vload_file_name;
 /* Function to use for reading, in `load' and friends.  */
 Lisp_Object Vload_read_function;
 
+/* Nonzero means load should forcibly load all dynamic doc strings.  */
+static int load_force_doc_strings;
+
 /* List of descriptors now open for Fload.  */
 static Lisp_Object load_descriptor_list;
 
-/* File for get_file_char to read from.  Use by load */
+/* File for get_file_char to read from.  Use by load.  */
 static FILE *instream;
 
 /* When nonzero, read conses in pure space */
 static int read_pure;
 
-/* For use within read-from-string (this reader is non-reentrant!!) */
+/* For use within read-from-string (this reader is non-reentrant!!)  */
 static int read_from_string_index;
 static int read_from_string_limit;
+
+/* This contains the last string skipped with #@.  */
+static char *saved_doc_string;
+/* Length of buffer allocated in saved_doc_string.  */
+static int saved_doc_string_size;
+/* Length of actual data in saved_doc_string.  */
+static int saved_doc_string_length;
+/* This is the file position that string came from.  */
+static int saved_doc_string_position;
 
 /* Nonzero means inside a new-style backquote
    with no surrounding parentheses.
@@ -356,8 +367,8 @@ Print messages at start and end of loading unless\n\
 If optional fourth arg NOSUFFIX is non-nil, don't try adding\n\
  suffixes `.elc' or `.el' to the specified name FILE.\n\
 Return t if file exists.")
-  (str, noerror, nomessage, nosuffix)
-     Lisp_Object str, noerror, nomessage, nosuffix;
+  (file, noerror, nomessage, nosuffix)
+     Lisp_Object file, noerror, nomessage, nosuffix;
 {
   register FILE *stream;
   register int fd = -1;
@@ -373,24 +384,24 @@ Return t if file exists.")
   char *dosmode = "rt";
 #endif /* DOS_NT */
 
-  CHECK_STRING (str, 0);
+  CHECK_STRING (file, 0);
 
   /* If file name is magic, call the handler.  */
-  handler = Ffind_file_name_handler (str, Qload);
+  handler = Ffind_file_name_handler (file, Qload);
   if (!NILP (handler))
-    return call5 (handler, Qload, str, noerror, nomessage, nosuffix);
+    return call5 (handler, Qload, file, noerror, nomessage, nosuffix);
 
   /* Do this after the handler to avoid
      the need to gcpro noerror, nomessage and nosuffix.
      (Below here, we care only whether they are nil or not.)  */
-  str = Fsubstitute_in_file_name (str);
+  file = Fsubstitute_in_file_name (file);
 
   /* Avoid weird lossage with null string as arg,
      since it would try to load a directory as a Lisp file */
-  if (XSTRING (str)->size > 0)
+  if (XSTRING (file)->size > 0)
     {
-      GCPRO1 (str);
-      fd = openp (Vload_path, str, !NILP (nosuffix) ? "" : ".elc:.el:",
+      GCPRO1 (file);
+      fd = openp (Vload_path, file, !NILP (nosuffix) ? "" : ".elc:.el:",
 		  &found, 0);
       UNGCPRO;
     }
@@ -400,7 +411,7 @@ Return t if file exists.")
       if (NILP (noerror))
 	while (1)
 	  Fsignal (Qfile_error, Fcons (build_string ("Cannot open load file"),
-				       Fcons (str, Qnil)));
+				       Fcons (file, Qnil)));
       else
 	return Qnil;
     }
@@ -437,13 +448,13 @@ Return t if file exists.")
   if (stream == 0)
     {
       close (fd);
-      error ("Failure to create stdio stream for %s", XSTRING (str)->data);
+      error ("Failure to create stdio stream for %s", XSTRING (file)->data);
     }
 
   if (NILP (nomessage) && !nomessage1)
-    message ("Loading %s...", XSTRING (str)->data);
+    message ("Loading %s...", XSTRING (file)->data);
 
-  GCPRO1 (str);
+  GCPRO1 (file);
   lispstream = Fcons (Qnil, Qnil);
   XSETFASTINT (XCONS (lispstream)->car, (EMACS_UINT)stream >> 16);
   XSETFASTINT (XCONS (lispstream)->cdr, (EMACS_UINT)stream & 0xffff);
@@ -453,17 +464,22 @@ Return t if file exists.")
   load_descriptor_list
     = Fcons (make_number (fileno (stream)), load_descriptor_list);
   load_in_progress++;
-  readevalloop (Qget_file_char, stream, str, Feval, 0);
+  readevalloop (Qget_file_char, stream, file, Feval, 0);
   unbind_to (count, Qnil);
 
   /* Run any load-hooks for this file.  */
-  temp = Fassoc (str, Vafter_load_alist);
+  temp = Fassoc (file, Vafter_load_alist);
   if (!NILP (temp))
     Fprogn (Fcdr (temp));
   UNGCPRO;
 
+  if (saved_doc_string)
+    free (saved_doc_string);
+  saved_doc_string = 0;
+  saved_doc_string_size = 0;
+
   if (!noninteractive && NILP (nomessage))
-    message ("Loading %s...done", XSTRING (str)->data);
+    message ("Loading %s...done", XSTRING (file)->data);
   return Qt;
 }
 
@@ -889,27 +905,27 @@ STREAM or the value of `standard-input' may be:\n\
      call it with a char as argument to push a char back)\n\
  a string (takes text from string, starting at the beginning)\n\
  t (read text line using minibuffer and use it).")
-  (readcharfun)
-     Lisp_Object readcharfun;
+  (stream)
+     Lisp_Object stream;
 {
   extern Lisp_Object Fread_minibuffer ();
 
-  if (NILP (readcharfun))
-    readcharfun = Vstandard_input;
-  if (EQ (readcharfun, Qt))
-    readcharfun = Qread_char;
+  if (NILP (stream))
+    stream = Vstandard_input;
+  if (EQ (stream, Qt))
+    stream = Qread_char;
 
   new_backquote_flag = 0;
 
 #ifndef standalone
-  if (EQ (readcharfun, Qread_char))
+  if (EQ (stream, Qread_char))
     return Fread_minibuffer (build_string ("Lisp expression: "), Qnil);
 #endif
 
-  if (STRINGP (readcharfun))
-    return Fcar (Fread_from_string (readcharfun, Qnil, Qnil));
+  if (STRINGP (stream))
+    return Fcar (Fread_from_string (stream, Qnil, Qnil));
 
-  return read0 (readcharfun);
+  return read0 (stream);
 }
 
 DEFUN ("read-from-string", Fread_from_string, Sread_from_string, 1, 3, 0,
@@ -1163,6 +1179,45 @@ read1 (readcharfun, pch, first_in_list)
 
     case '#':
       c = READCHAR;
+      if (c == '^')
+	{
+	  c = READCHAR;
+	  if (c == '[')
+	    {
+	      Lisp_Object tmp;
+	      tmp = read_vector (readcharfun);
+	      if (XVECTOR (tmp)->size < CHAR_TABLE_STANDARD_SLOTS
+		  || XVECTOR (tmp)->size > CHAR_TABLE_STANDARD_SLOTS + 10)
+		error ("Invalid size char-table");
+	      XSETCHAR_TABLE (tmp, XCHAR_TABLE (tmp));
+	      return tmp;
+	    }
+	  Fsignal (Qinvalid_read_syntax, Fcons (make_string ("#^", 2), Qnil));
+	}
+      if (c == '&')
+	{
+	  Lisp_Object length;
+	  length = read1 (readcharfun, pch, first_in_list);
+	  c = READCHAR;
+	  if (c == '"')
+	    {
+	      Lisp_Object tmp, val;
+	      int size_in_chars = ((XFASTINT (length) + BITS_PER_CHAR)
+				   / BITS_PER_CHAR);
+
+	      UNREAD (c);
+	      tmp = read1 (readcharfun, pch, first_in_list);
+	      if (size_in_chars != XSTRING (tmp)->size)
+		Fsignal (Qinvalid_read_syntax,
+			 Fcons (make_string ("#&", 2), Qnil));
+		
+	      val = Fmake_bool_vector (length, Qnil);
+	      bcopy (XSTRING (tmp)->data, XBOOL_VECTOR (val)->data,
+		     size_in_chars);
+	      return val;
+	    }
+	  Fsignal (Qinvalid_read_syntax, Fcons (make_string ("#&", 2), Qnil));
+	}
       if (c == '[')
 	{
 	  /* Accept compiled functions at read-time so that we don't have to
@@ -1223,13 +1278,46 @@ read1 (readcharfun, pch, first_in_list)
 	  if (c >= 0)
 	    UNREAD (c);
 	  
-	  /* Skip that many characters.  */
-	  for (i = 0; i < nskip && c >= 0; i++)
-	    c = READCHAR;
+#ifndef DOS_NT /* I don't know if filepos works right on MSDOS and Windoze.  */
+	  if (load_force_doc_strings && EQ (readcharfun, Qget_file_char))
+	    {
+	      /* If we are supposed to force doc strings into core right now,
+		 record the last string that we skipped,
+		 and record where in the file it comes from.  */
+	      if (saved_doc_string_size == 0)
+		{
+		  saved_doc_string_size = nskip + 100;
+		  saved_doc_string = (char *) malloc (saved_doc_string_size);
+		}
+	      if (nskip > saved_doc_string_size)
+		{
+		  saved_doc_string_size = nskip + 100;
+		  saved_doc_string = (char *) realloc (saved_doc_string,
+						       saved_doc_string_size);
+		}
+
+	      saved_doc_string_position = ftell (instream);
+
+	      /* Copy that many characters into saved_doc_string.  */
+	      for (i = 0; i < nskip && c >= 0; i++)
+		saved_doc_string[i] = c = READCHAR;
+
+	      saved_doc_string_length = i;
+	    }
+	  else
+#endif /* not DOS_NT */
+	    {
+	      /* Skip that many characters.  */
+	      for (i = 0; i < nskip && c >= 0; i++)
+		c = READCHAR;
+	    }
 	  goto retry;
 	}
       if (c == '$')
 	return Vload_file_name;
+      if (c == '\'')
+	return Fcons (Qfunction, Fcons (read0 (readcharfun), Qnil));
+
 
       UNREAD (c);
       Fsignal (Qinvalid_read_syntax, Fcons (make_string ("#", 1), Qnil));
@@ -1564,7 +1652,10 @@ read_list (flag, readcharfun)
   Lisp_Object val, tail;
   register Lisp_Object elt, tem;
   struct gcpro gcpro1, gcpro2;
-  int cancel = 0;
+  /* 0 is the normal case.
+     1 means this list is a doc reference; replace it with the number 0.
+     2 means this list is a doc reference; replace it with the doc string.  */ 
+  int doc_reference = 0;
 
   /* Initialize this to 1 if we are reading a list.  */
   int first_in_list = flag <= 0;
@@ -1581,13 +1672,28 @@ read_list (flag, readcharfun)
 
       first_in_list = 0;
 
-	/* If purifying, and the list starts with #$,
-	   return 0 instead.  This is a doc string reference
-	   and it will be replaced anyway by Snarf-documentation,
-	   so don't waste pure space with it.  */
+      /* While building, if the list starts with #$, treat it specially.  */
       if (EQ (elt, Vload_file_name)
-	  && !NILP (Vpurify_flag) && NILP (Vdoc_file_name))
-	cancel = 1;
+	  && !NILP (Vpurify_flag))
+	{
+	  if (NILP (Vdoc_file_name))
+	    /* We have not yet called Snarf-documentation, so assume
+	       this file is described in the DOC-MM.NN file
+	       and Snarf-documentation will fill in the right value later.
+	       For now, replace the whole list with 0.  */
+	    doc_reference = 1;
+	  else
+	    /* We have already called Snarf-documentation, so make a relative
+	       file name for this file, so it can be found properly
+	       in the installed Lisp directory.
+	       We don't use Fexpand_file_name because that would make
+	       the directory absolute now.  */
+	    elt = concat2 (build_string ("../lisp/"),
+			   Ffile_name_nondirectory (elt));
+	}
+      else if (EQ (elt, Vload_file_name)
+	       && load_force_doc_strings)
+	doc_reference = 2;
 
       if (ch)
 	{
@@ -1595,7 +1701,8 @@ read_list (flag, readcharfun)
 	    {
 	      if (ch == ']')
 		return val;
-	      Fsignal (Qinvalid_read_syntax, Fcons (make_string (") or . in a vector", 18), Qnil));
+	      Fsignal (Qinvalid_read_syntax,
+		       Fcons (make_string (") or . in a vector", 18), Qnil));
 	    }
 	  if (ch == ')')
 	    return val;
@@ -1609,7 +1716,51 @@ read_list (flag, readcharfun)
 	      read1 (readcharfun, &ch, 0);
 	      UNGCPRO;
 	      if (ch == ')')
-		return (cancel ? make_number (0) : val);
+		{
+		  if (doc_reference == 1)
+		    return make_number (0);
+		  if (doc_reference == 2)
+		    {
+		      /* Get a doc string from the file we are loading.
+			 If it's in saved_doc_string, get it from there.  */
+		      int pos = XINT (XCONS (val)->cdr);
+		      if (pos >= saved_doc_string_position
+			  && pos < (saved_doc_string_position
+				    + saved_doc_string_length))
+			{
+			  int start = pos - saved_doc_string_position;
+			  int from, to;
+
+			  /* Process quoting with ^A,
+			     and find the end of the string,
+			     which is marked with ^_ (037).  */
+			  for (from = start, to = start;
+			       saved_doc_string[from] != 037;)
+			    {
+			      int c = saved_doc_string[from++];
+			      if (c == 1)
+				{
+				  c = saved_doc_string[from++];
+				  if (c == 1)
+				    saved_doc_string[to++] = c;
+				  else if (c == '0')
+				    saved_doc_string[to++] = 0;
+				  else if (c == '_')
+				    saved_doc_string[to++] = 037;
+				}
+			      else
+				saved_doc_string[to++] = c;
+			    }
+
+			  return make_string (saved_doc_string + start,
+					      to - start);
+			}
+		      else
+			return read_doc_string (val);
+		    }
+
+		  return val;
+		}
 	      return Fsignal (Qinvalid_read_syntax, Fcons (make_string (". in wrong context", 18), Qnil));
 	    }
 	  return Fsignal (Qinvalid_read_syntax, Fcons (make_string ("] in a list", 11), Qnil));
@@ -1764,7 +1915,12 @@ OBARRAY defaults to the value of the variable `obarray'.")
   hash = oblookup_last_bucket_number;
 
   if (EQ (XVECTOR (obarray)->contents[hash], tem))
-    XSETSYMBOL (XVECTOR (obarray)->contents[hash], XSYMBOL (tem)->next);
+    {
+      if (XSYMBOL (tem)->next)
+	XSETSYMBOL (XVECTOR (obarray)->contents[hash], XSYMBOL (tem)->next);
+      else
+	XSETINT (XVECTOR (obarray)->contents[hash], 0);
+    }
   else
     {
       Lisp_Object tail, following;
@@ -1808,6 +1964,8 @@ oblookup (obarray, ptr, size)
       obarray = check_obarray (obarray);
       obsize = XVECTOR (obarray)->size;
     }
+  /* This is sometimes needed in the middle of GC.  */
+  obsize &= ~ARRAY_MARK_FLAG;
   /* Combining next two lines breaks VMS C 2.3.  */
   hash = hash_string (ptr, size);
   hash %= obsize;
@@ -2089,6 +2247,10 @@ init_lread ()
       Lisp_Object dump_path;
 
       dump_path = decode_env_path (0, PATH_DUMPLOADSEARCH);
+
+      Vsource_directory = Fexpand_file_name (build_string ("../"),
+					     Fcar (dump_path));
+
       if (! NILP (Fequal (dump_path, Vload_path)))
 	{
 	  Vload_path = decode_env_path (0, normal);
@@ -2247,6 +2409,15 @@ or variables, and cons cells `(provide . FEATURE)' and `(require . FEATURE)'.");
 The default is nil, which means use the function `read'.");
   Vload_read_function = Qnil;
 
+  DEFVAR_BOOL ("load-force-doc-strings", &load_force_doc_strings,
+     "Non-nil means `load' should force-load all dynamic doc strings.\n\
+This is useful when the file being loaded is a temporary copy.");
+  load_force_doc_strings = 0;
+
+  DEFVAR_LISP ("source-directory", &Vsource_directory,
+     "Directory in which Emacs sources were found when Emacs was built.\n\
+You cannot count on them to still be there!");
+  Vsource_directory = Qnil;
   load_descriptor_list = Qnil;
   staticpro (&load_descriptor_list);
 
@@ -2273,6 +2444,9 @@ The default is nil, which means use the function `read'.");
 
   Qascii_character = intern ("ascii-character");
   staticpro (&Qascii_character);
+
+  Qfunction = intern ("function");
+  staticpro (&Qfunction);
 
   Qload = intern ("load");
   staticpro (&Qload);

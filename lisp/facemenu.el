@@ -1,4 +1,4 @@
-;;; facemenu.el -- Create a face menu for interactively adding fonts to text
+;;; facemenu.el --- create a face menu for interactively adding fonts to text
 ;; Copyright (c) 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Boris Goldowsky <boris@gnu.ai.mit.edu>
@@ -124,13 +124,12 @@ This should be nil to put them at the top of the menu, or t to put them
 just before \"Other\" at the end.")
 
 (defvar facemenu-unlisted-faces
-  '(modeline region secondary-selection highlight scratch-face
-    font-lock-comment-face font-lock-string-face font-lock-keyword-face
-    font-lock-function-name-face font-lock-variable-name-face
-    font-lock-type-face font-lock-reference-face)
+  '(modeline region secondary-selection highlight scratch-face)
   "List of faces not to include in the Face menu.
-Set this before loading facemenu.el, or call `facemenu-update' after
-changing it.
+You can set this list before loading facemenu.el, or add a face to it before
+creating that face if you do not want it to be listed.  If you change the
+variable so as to eliminate faces that have already been added to the menu,
+call `facemenu-update' to recalculate the menu contents.
 
 If this variable is t, no faces will be added to the menu.  This is useful for
 temporarily turning off the feature that automatically adds faces to the menu
@@ -412,7 +411,7 @@ These special properties include `invisible', `intangible' and `read-only'."
   "Read a color using the minibuffer."
   (let ((col (completing-read (or prompt "Color: ") 
 			      (or facemenu-color-alist
-				  (if (eq 'x window-system)
+				  (if (or (eq window-system 'x) (eq window-system 'win32))
 				      (mapcar 'list (x-defined-colors))))
 			      nil t)))
     (if (equal "" col)
@@ -426,7 +425,7 @@ If the optional argument LIST is non-nil, it should be a list of
 colors to display.  Otherwise, this command computes a list
 of colors that the current display can handle."
   (interactive)
-  (if (and (null list) (eq 'x window-system))
+  (if (and (null list) (or (eq window-system 'x) (eq window-system 'win32)))
       (progn
 	(setq list (x-defined-colors))
 	;; Delete duplicate colors.
@@ -461,7 +460,7 @@ This function queries the window-system server to find out what the
 color names mean.  It returns nil if the colors differ or if it can't
 determine the correct answer."
   (cond ((equal a b) t)
-	((and (eq 'x window-system)
+	((and (or (eq window-system 'x) (eq window-system 'win32))
 	      (equal (x-color-values a) (x-color-values b))))))
 
 (defun facemenu-add-face (face start end)
@@ -483,33 +482,31 @@ effect."
 	  (put-text-property part-start part-end 'face
 			     (if (null prev)
 				 face
-			       (facemenu-discard-redundant-faces
+			       (facemenu-active-faces
 				(cons face
 				      (if (listp prev) prev (list prev)))))))
 	(setq part-start part-end)))))
 
-(defun facemenu-discard-redundant-faces (face-list &optional mask)
-  "Remove from FACE-LIST any faces that won't show at all.
-This means they have no non-nil elements that aren't also non-nil in an
-earlier face."
-  (let ((useful nil))
-    (cond ((null face-list) nil)
-	  ((null mask)
-	   (cons (car face-list)
-		 (facemenu-discard-redundant-faces
-		  (cdr face-list) 
-		  (copy-sequence (internal-get-face (car face-list))))))
-	  ((let ((i (length mask))
-		 (face (internal-get-face (car face-list))))
-	     (while (>= (setq i (1- i)) 0)
-	       (if (and (aref face i)
-			(not (aref mask i)))
-		   (progn (setq useful t)
-			  (aset mask i t))))
-	     useful)
-	   (cons (car face-list)
-		 (facemenu-discard-redundant-faces (cdr face-list) mask)))
-	  (t (facemenu-discard-redundant-faces (cdr face-list) mask)))))
+(defun facemenu-active-faces (face-list &optional frame)
+  "Return from FACE-LIST those faces that would be used for display.
+This means each face attribute is not specified in a face earlier in FACE-LIST
+and such a face is therefore active when used to display text.
+If the optional argument FRAME is given, use the faces in that frame; otherwise
+use the selected frame.  If t, then the global, non-frame faces are used."
+  (let* ((mask-atts (copy-sequence (internal-get-face (car face-list) frame)))
+	 (active-list (list (car face-list)))
+	 (face-list (cdr face-list))
+	 (mask-len (length mask-atts)))
+    (while face-list
+      (if (let ((face-atts (internal-get-face (car face-list) frame))
+		(i mask-len) (useful nil))
+	    (while (> (setq i (1- i)) 1)
+	      (and (aref face-atts i) (not (aref mask-atts i))
+		   (aset mask-atts i (setq useful t))))
+	    useful)
+	  (setq active-list (cons (car face-list) active-list)))
+      (setq face-list (cdr face-list)))
+    (nreverse active-list)))
 
 (defun facemenu-get-face (symbol)
   "Make sure FACE exists.
@@ -523,10 +520,10 @@ or nil if given a bad color."
 		 (color (substring name 3)))
 	    (cond ((string-match "^fg:" name)
 		   (set-face-foreground face color)
-		   (and (eq 'x window-system) (x-color-defined-p color)))
+		   (and (or (eq window-system 'x) (eq window-system 'win32)) (x-color-defined-p color)))
 		  ((string-match "^bg:" name)
 		   (set-face-background face color)
-		   (and (eq 'x window-system) (x-color-defined-p color)))
+		   (and (or (eq window-system 'x) (eq window-system 'win32)) (x-color-defined-p color)))
 		  (t))))
       symbol))
 

@@ -28,14 +28,7 @@ NOTE-END
 
 */
 
-/* The following three symbols give information on
- the size of various data types.  */
-
-#define SHORTBITS 16		/* Number of bits in a short */
-
-#define INTBITS 32		/* Number of bits in an int */
-
-#define LONGBITS 64		/* Number of bits in a long */
+#define BITS_PER_LONG 64
 
 /* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
@@ -159,7 +152,7 @@ NOTE-END
 
 #define DATA_SEG_BITS 0x140000000
 
-
+#ifdef OSF1
 #define ORDINARY_LINK
 
 /* Some systems seem to have this, others don't.  */
@@ -168,6 +161,7 @@ NOTE-END
 #else
 #define LIBS_MACHINE -ldnet_stub
 #endif
+#endif /* OSF1 */
 
 #if 0 /* Rainer Schoepf <schoepf@uni-mainz.de> says this loses with X11R6
 	 since it has only shared libraries.  */
@@ -179,9 +173,15 @@ NOTE-END
 #endif
 #endif /* 0 */
 
+#ifdef OSF1
 #define LIBS_DEBUG
 #define START_FILES pre-crt0.o
+#endif
 
+#ifdef LINUX
+/* This controls a conditional in main.  */
+#define LINUX_SBRK_BUG
+#endif
 
 /* The program to be used for unexec. */
 
@@ -203,7 +203,7 @@ NOTE-END
 
 /* Define XINT and XUINT so that they can take arguments of type int */
 
-#define XINT(a)  (((long) (a) << (LONGBITS - VALBITS)) >> (LONGBITS - VALBITS))
+#define XINT(a)  (((long) (a) << (BITS_PER_LONG - VALBITS)) >> (BITS_PER_LONG - VALBITS))
 #define XUINT(a) ((long) (a) & VALMASK)
 
 /* Define XPNTR to avoid or'ing with DATA_SEG_BITS */
@@ -214,7 +214,6 @@ NOTE-END
    But not in makefiles!  */
 
 #ifndef NOT_C_CODE
-#ifndef THIS_IS_YMAKEFILE
 /* We need these because pointers are larger than the default ints.  */
 #include <alloca.h>
 
@@ -236,12 +235,12 @@ NOTE-END
 #ifdef _MALLOC_INTERNAL
 /* These declarations are designed to match the ones in gmalloc.c.  */
 #if defined (__STDC__) && __STDC__
-extern void *malloc (), *realloc ();
+extern void *malloc (), *realloc (), *calloc ();
 #else
-extern char *malloc (), *realloc ();
+extern char *malloc (), *realloc (), *calloc ();
 #endif
 #else /* not _MALLOC_INTERNAL */
-extern void *malloc (), *realloc ();
+extern void *malloc (), *realloc (), *calloc ();
 #endif /* not _MALLOC_INTERNAL */
 
 
@@ -257,5 +256,29 @@ extern void r_alloc_free ();
 #endif /* not _MALLOC_INTERNAL */
 #endif /* REL_ALLOC */
 
-#endif /* not THIS_IS_YMAKEFILE */
 #endif /* not NOT_C_CODE */
+
+#ifdef OSF1
+#define PTY_ITERATION		for (i = 0; i < 1; i++) /* ick */
+#define PTY_NAME_SPRINTF	/* none */
+#define PTY_TTY_NAME_SPRINTF	/* none */
+#define PTY_OPEN					\
+  do							\
+    {							\
+      int dummy;					\
+      if (-1 == openpty (&fd, &dummy, pty_name, 0, 0))	\
+	fd = -1;					\
+      close (dummy);					\
+    }							\
+  while (0)
+#endif
+
+#ifdef linux
+#define COFF
+/* Linux/Alpha doesn't like it if termio.h and termios.h get included
+   simultaneously.  */
+#define NO_TERMIO
+
+#define TEXT_END ({ extern int _etext; &_etext; })
+#define DATA_END ({ extern int _EDATA; &_EDATA; })
+#endif

@@ -309,10 +309,15 @@ subcommands.)");
       else if (EQ (funcar, Qlambda)
 	       || EQ (funcar, Qautoload))
 	{
-	  tem = Fcar (Fcdr (Fcdr (fun)));
+	  Lisp_Object tem1;
+	  tem1 = Fcdr (Fcdr (fun));
+	  tem = Fcar (tem1);
 	  if (STRINGP (tem))
 	    doc = tem;
-	  else if (NATNUMP (tem) || CONSP (tem))
+	  /* Handle a doc reference--but these never come last
+	     in the function body, so reject them if they are last.  */
+	  else if ((NATNUMP (tem) || CONSP (tem))
+		   && ! NILP (XCONS (tem1)->cdr))
 	    doc = get_doc_string (tem);
 	  else
 	    return Qnil;
@@ -663,7 +668,7 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  else if (start[-1] == '<')
 	    keymap = tem;
 	  else
-	    describe_map_tree (tem, 1, Qnil, Qnil, (char *)0, 1);
+	    describe_map_tree (tem, 1, Qnil, Qnil, (char *)0, 1, 0);
 	  tem = Fbuffer_string ();
 	  Ferase_buffer ();
 	  set_buffer_internal (oldbuf);

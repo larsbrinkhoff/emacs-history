@@ -48,21 +48,6 @@ Prime EXL (-machine=intel386 -opsystem=usg5-3)
   Minor changes merged in 19.1.
 NOTE-END */
 
-/* The following three symbols give information on
- the size of various data types.  */
-
-
-/* Linux defines these in <values.h>, but they can't be used in #if's */
-#undef SHORTBITS
-#undef INTBITS
-#undef LONGBITS
-  
-#define SHORTBITS 16		/* Number of bits in a short */
-
-#define INTBITS 32		/* Number of bits in an int */
-
-#define LONGBITS 32		/* Number of bits in a long */
-
 /* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
@@ -118,10 +103,13 @@ NOTE-END */
 /* This is totally uncalibrated. */
 #define LOAD_AVE_CVT(x) ((int) (((double) (x)) * 100.0 / FSCALE))
 
-#ifndef SOLARIS2_4
-/* j.w.hawtin@lut.ac.uk says Solaris 2.1 on the X86 needs -lkvm, and it 
-   already has FSCALE defined in a system header.  */
+/* J.W.Hawtin@lut.ac.uk say Solaris 2.4 as well as Solaris 2.1 on X86
+   requires -lkvm as well */
 #define LIBS_MACHINE -lkvm
+
+#ifndef SOLARIS2_4
+/* J.W.hawtin@lut.ac.uk says Solaris 2.1 on the X86 has FSCALE defined in a
+   system header. */
 
 #define HAVE_VFORK
 
@@ -235,4 +223,12 @@ NOTE-END */
 #define DATA_START 	get_data_start ()
 #define HAVE_ALLOCA
 #define NO_ARG_ARRAY
+#endif
+
+#ifdef linux
+/* libc-linux/sysdeps/linux/i386/ulimit.c says that due to shared library, */
+/* we cannot get the maximum address for brk */
+#define ULIMIT_BREAK_VALUE (32*1024*1024)
+
+#define SEGMENT_MASK ((SEGMENT_SIZE)-1)
 #endif

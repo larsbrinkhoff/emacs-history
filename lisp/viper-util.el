@@ -219,6 +219,32 @@
 		  (error "%S: Invalid op in vip-check-version" op))))
     (cond ((memq op '(= > >=)) nil)
 	  ((memq op '(< <=)) t))))
+	  
+;;;; warn if it is a wrong version of emacs
+;;(if (or (vip-check-version '< 19 29 'emacs)
+;;	(vip-check-version '< 19 12 'xemacs))
+;;    (progn
+;;      (with-output-to-temp-buffer " *vip-info*"
+;;	(switch-to-buffer " *vip-info*")
+;;	(insert
+;;	 (format "
+;;
+;;This version of Viper requires 
+;;
+;;\t Emacs 19.29 and higher
+;;\t OR
+;;\t XEmacs 19.12 and higher
+;;
+;;It is unlikely to work under Emacs version %s
+;;that you are using... " emacs-version))
+;;
+;;	(if noninteractive
+;;	    ()
+;;	  (beep 1)
+;;	  (beep 1)
+;;	  (insert "\n\nType any key to continue... ")
+;;	  (vip-read-event)))
+;;      (kill-buffer " *vip-info*")))
   
 
 (defun vip-get-visible-buffer-window (wind)
@@ -551,6 +577,7 @@
   (vip-change-cursor-color vip-replace-overlay-cursor-color)
   )
   
+
   
 (defsubst vip-hide-replace-overlay ()
   (vip-set-replace-overlay-glyphs nil nil)
@@ -617,7 +644,7 @@
 
 ;;; XEmacs compatibility
     
-;; Sit for VAL miliseconds. XEmacs doesn't support the millisecond arg 
+;; Sit for VAL milliseconds. XEmacs doesn't support the millisecond arg 
 ;; in sit-for, so this function smoothes out the differences.
 (defsubst vip-sit-for-short (val &optional nodisp)
   (if vip-xemacs-p
@@ -649,6 +676,10 @@
       (zmacs-deactivate-region)
     (deactivate-mark)))
 
+(defsubst vip-leave-region-active ()
+  (if vip-xemacs-p
+      (setq zmacs-region-stays t)))
+
     
 (defsubst vip-events-to-keys (events)
   (cond (vip-xemacs-p (events-to-keys events))
@@ -665,6 +696,50 @@
 	  (setq elt (nconc elt (list form)))))
     form
     ))
+
+;; This is here because Emacs changed the way local hooks work.
+;;
+;;Add to the value of HOOK the function FUNCTION.
+;;FUNCTION is not added if already present.
+;;FUNCTION is added (if necessary) at the beginning of the hook list
+;;unless the optional argument APPEND is non-nil, in which case
+;;FUNCTION is added at the end.
+;;
+;;HOOK should be a symbol, and FUNCTION may be any valid function.  If
+;;HOOK is void, it is first set to nil.  If HOOK's value is a single
+;;function, it is changed to a list of functions."
+(defun vip-add-hook (hook function &optional append)
+  (if (not (boundp hook)) (set hook nil))
+  ;; If the hook value is a single function, turn it into a list.
+  (let ((old (symbol-value hook)))
+    (if (or (not (listp old)) (eq (car old) 'lambda))
+	(setq old (list old)))
+    (if (member function old)
+	nil
+      (set hook (if append
+		    (append old (list function)) ; don't nconc
+		  (cons function old))))))
+
+;; This is here because of Emacs's changes in the semantics of add/remove-hooks
+;; and due to the bugs they introduced.
+;;
+;; Remove from the value of HOOK the function FUNCTION.
+;; HOOK should be a symbol, and FUNCTION may be any valid function.  If
+;; FUNCTION isn't the value of HOOK, or, if FUNCTION doesn't appear in the
+;; list of hooks to run in HOOK, then nothing is done.  See `vip-add-hook'."
+(defun vip-remove-hook (hook function)
+  (if (or (not (boundp hook))		;unbound symbol, or
+	  (null (symbol-value hook))	;value is nil, or
+	  (null function))		;function is nil, then
+      nil				;Do nothing.
+    (let ((hook-value (symbol-value hook)))
+      (if (consp hook-value)
+	  ;; don't side-effect the list
+	  (setq hook-value (delete function (copy-sequence hook-value)))
+	(if (equal hook-value function)
+	    (setq hook-value nil)))
+      (set hook hook-value))))
+
     
     
 ;; like read-event, but in XEmacs also try to convert to char, if possible
@@ -676,6 +751,18 @@
       (or (event-to-character event)
 	  event))
     ))
+
+;; This function lets function-key-map convert key sequences into logical
+;; keys. This does a better job than vip-read-event when it comes to kbd
+;; macros, since it enables certain macros to be shared between X and TTY
+;; modes.
+(defun vip-read-key () 
+  (let ((overriding-local-map vip-overriding-map) 
+        key) 
+    (use-global-map vip-overriding-map) 
+    (setq key (elt (read-key-sequence nil) 0)) 
+    (use-global-map global-map) 
+    key)) 
 
 
 ;; Emacs has a bug in eventp, which causes (eventp nil) to return (nil)
@@ -772,6 +859,14 @@
 	  ((vip-char-symbol-sequence-p event-seq)
 	   (mapconcat 'symbol-name event-seq ""))
 	  (t (prin1-to-string event-seq)))))
+
+(defun vip-key-press-events-to-chars (events)
+  (mapconcat (if vip-emacs-p
+		 'char-to-string
+	       (function
+		(lambda (elt) (char-to-string (event-to-character elt)))))
+	     events
+	     ""))
 	   
     
 (defsubst vip-fast-keysequence-p ()
@@ -801,6 +896,146 @@ the `Local variables' section of a file."
 	  other-files-or-buffers)
   (vip-ring-insert vip-related-files-and-buffers-ring (buffer-name))
   )
+
+;;; Movement utilities
+
+(defvar vip-syntax-preference 'strict-vi
+  "*Syntax type characterizing Viper's alphanumeric symbols.
+`emacs' means only word constituents are considered to be alphanumeric.
+Word constituents are symbols specified as word constituents by the current
+syntax table.
+`extended' means word and symbol constituents.
+`reformed-vi' means Vi-ish behavior: word constituents and the symbol `_'.
+However, word constituents are determined according to Emacs syntax tables,
+which may be different from Vi in some major modes.
+`strict-vi' means Viper words are exactly as in Vi.")
+
+(vip-deflocalvar vip-ALPHA-char-class "w"
+  "String of syntax classes characterizing Viper's alphanumeric symbols.
+In addition, the symbol `_' may be considered alphanumeric if
+`vip-syntax-preference'is `reformed-vi'.")
+
+(vip-deflocalvar vip-strict-ALPHA-chars "a-zA-Z0-9_"
+  "Regexp matching the set of alphanumeric characters acceptable to strict
+Vi.")
+(vip-deflocalvar vip-strict-SEP-chars " \t\n"
+  "Regexp matching the set of alphanumeric characters acceptable to strict
+Vi.")
+
+(vip-deflocalvar vip-SEP-char-class " -"
+  "String of syntax classes for Vi separators.
+Usually contains ` ', linefeed, TAB or formfeed.")
+
+(defun vip-update-alphanumeric-class ()
+  "Set the syntactic class of Viper alphanumeric symbols according to
+the variable `vip-ALPHA-char-class'. Should be called in order for changes to
+`vip-ALPHA-char-class' to take effect."
+  (interactive)
+  (setq-default
+   vip-ALPHA-char-class
+   (cond ((eq vip-syntax-preference 'emacs) "w")     ; only word constituents
+	 ((eq vip-syntax-preference 'extended) "w_") ; word & symbol chars
+	 (t "w"))))     ; vi syntax: word constituents and the symbol `_'
+
+;; addl-chars are characters to be temporarily considered as alphanumerical
+(defun vip-looking-at-alpha (&optional addl-chars)
+  (or (stringp addl-chars) (setq addl-chars ""))
+  (if (eq vip-syntax-preference 'reformed-vi)
+      (setq addl-chars (concat addl-chars "_")))
+  (let ((char (char-after (point))))
+    (if char
+	(if (eq vip-syntax-preference 'strict-vi)
+	    (looking-at (concat "[" vip-strict-ALPHA-chars addl-chars "]"))
+	  (or (memq char
+		    ;; convert string to list
+		    (append (vconcat addl-chars) nil))
+	      (memq (char-syntax char)
+		    (append (vconcat vip-ALPHA-char-class) nil)))))
+    ))
+
+(defsubst vip-looking-at-separator ()
+  (let ((char (char-after (point))))
+    (if char
+	(or (eq char ?\n) ; RET is always a separator in Vi
+	    (memq (char-syntax char)
+		  (append (vconcat vip-SEP-char-class) nil))))))
+
+(defsubst vip-looking-at-alphasep (&optional addl-chars)
+  (or (vip-looking-at-separator) (vip-looking-at-alpha addl-chars)))
+
+(defsubst vip-skip-alpha-forward (&optional addl-chars)
+  (or (stringp addl-chars) (setq addl-chars ""))
+  (vip-skip-syntax
+   'forward 
+   (cond ((eq vip-syntax-preference 'strict-vi)
+	  "")
+	 (t vip-ALPHA-char-class ))
+   (cond ((eq vip-syntax-preference 'strict-vi)
+	  (concat vip-strict-ALPHA-chars addl-chars))
+	 (t addl-chars))))
+
+(defsubst vip-skip-alpha-backward (&optional addl-chars)
+  (or (stringp addl-chars) (setq addl-chars ""))
+  (vip-skip-syntax
+   'backward 
+   (cond ((eq vip-syntax-preference 'strict-vi)
+	  "")
+	 (t vip-ALPHA-char-class ))
+   (cond ((eq vip-syntax-preference 'strict-vi)
+	  (concat vip-strict-ALPHA-chars addl-chars))
+	 (t addl-chars))))
+
+;; weird syntax tables may confuse strict-vi style
+(defsubst vip-skip-all-separators-forward (&optional within-line)
+  (vip-skip-syntax 'forward
+		   vip-SEP-char-class
+		   (or within-line "\n")
+		   (if within-line (vip-line-pos 'end))))
+(defsubst vip-skip-all-separators-backward (&optional within-line)
+  (vip-skip-syntax 'backward
+		   vip-SEP-char-class
+		   (or within-line "\n")
+		   (if within-line (vip-line-pos 'start))))
+(defun vip-skip-nonseparators (direction)
+  (let ((func (intern (format "skip-syntax-%S" direction))))
+    (funcall func (concat "^" vip-SEP-char-class)
+	     (vip-line-pos (if (eq direction 'forward) 'end 'start)))))
+
+(defsubst vip-skip-nonalphasep-forward ()
+  (if (eq vip-syntax-preference 'strict-vi)
+      (skip-chars-forward
+       (concat "^" vip-strict-SEP-chars vip-strict-ALPHA-chars))
+    (skip-syntax-forward
+     (concat
+      "^" vip-ALPHA-char-class vip-SEP-char-class) (vip-line-pos 'end))))
+(defsubst vip-skip-nonalphasep-backward ()
+  (if (eq vip-syntax-preference 'strict-vi)
+      (skip-chars-backward
+       (concat "^" vip-strict-SEP-chars vip-strict-ALPHA-chars))
+    (skip-syntax-backward
+     (concat
+      "^" vip-ALPHA-char-class vip-SEP-char-class) (vip-line-pos 'start))))
+
+;; Skip SYNTAX like skip-syntax-* and ADDL-CHARS like skip-chars-*
+;; Return the number of chars traveled.
+;; Either SYNTAX or ADDL-CHARS can be nil, in which case they are interpreted
+;; as an empty string.
+(defun vip-skip-syntax (direction syntax addl-chars &optional limit)
+  (let ((total 0)
+	(local 1)
+	(skip-chars-func (intern (format "skip-chars-%S" direction)))
+	(skip-syntax-func (intern (format "skip-syntax-%S" direction))))
+    (or (stringp addl-chars) (setq addl-chars ""))
+    (or (stringp syntax) (setq syntax ""))
+    (while (and (not (= local 0)) (not (eobp)))
+      (setq local
+	    (+ (funcall skip-syntax-func syntax limit)
+	       (funcall skip-chars-func addl-chars limit)))
+      (setq total (+ total local)))
+    total
+    ))
+  
+
   
   
 (provide 'viper-util)

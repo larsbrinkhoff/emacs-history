@@ -53,7 +53,8 @@ all:: libXMenu11.a
 
 ALL_CFLAGS=$(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_MACHINE) \
   $(C_SWITCH_X_SITE) $(C_SWITCH_X_SYSTEM) $(C_SWITCH_X_MACHINE) \
-  $(CPPFLAGS) $(CFLAGS) -DEMACS_BITMAP_FILES
+  $(CPPFLAGS) $(CFLAGS) -DEMACS_BITMAP_FILES \
+  -I../src -I${srcdir} -I${srcdir}/../src
 
 .c.o:
 	$(CC) -c ${ALL_CFLAGS} $<

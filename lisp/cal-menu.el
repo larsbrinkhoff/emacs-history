@@ -1,6 +1,6 @@
 ;;; cal-menu.el --- calendar functions for menu bar and popup menu support
 
-;; Copyright (C) 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;;	Lara Rios <lrios@coewl.cen.uiuc.edu>
@@ -100,6 +100,12 @@
   '("French Date" . calendar-goto-french-date))
 (define-key calendar-mode-map [menu-bar goto mayan]
   (cons "Mayan Date" (make-sparse-keymap "Mayan")))
+(define-key calendar-mode-map [menu-bar goto ethiopic]
+  '("Ethiopic Date" . calendar-goto-ethiopic-date))
+(define-key calendar-mode-map [menu-bar goto coptic]
+  '("Coptic Date" . calendar-goto-coptic-date))
+(define-key calendar-mode-map [menu-bar goto chinese]
+  '("Chinese Date" . calendar-goto-chinese-date))
 (define-key calendar-mode-map [menu-bar goto julian]
   '("Julian Date" . calendar-goto-julian-date))
 (define-key calendar-mode-map [menu-bar goto islamic]
@@ -188,6 +194,18 @@
 (put 'insert-yearly-diary-entry 'menu-enable '(calendar-cursor-to-date))
 (put 'insert-monthly-diary-entry 'menu-enable '(calendar-cursor-to-date))
 (put 'insert-weekly-diary-entry 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-day 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-week 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-week2 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-week3 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-week4 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-week5 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-week6 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-month 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-month-landscape 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-year 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-filofax-year 'menu-enable '(calendar-cursor-to-date))
+(put 'cal-tex-cursor-year-landscape 'menu-enable '(calendar-cursor-to-date))
 
 (defun calendar-event-to-date (&optional error)
   "Date of last event.
@@ -265,33 +283,145 @@ ERROR is t, otherwise just returns nil."
     (calendar-goto-date (calendar-event-to-date))
     (calendar-set-mark nil)))
 
+(defun cal-tex-mouse-day ()
+  "Make a buffer with LaTeX commands for the day mouse is on."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-day nil)))
+
+(defun cal-tex-mouse-week ()
+  "One page calendar for week indicated by cursor.
+Holidays are included if `cal-tex-holidays' is t."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-week nil)))
+
+(defun cal-tex-mouse-week2 ()
+  "Make a buffer with LaTeX commands for the week cursor is on.
+The printed output will be on two pages."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-week2 nil)))
+
+(defun cal-tex-mouse-week3 ()
+  "One page calendar for week indicated by cursor.
+Holidays are included if `cal-tex-holidays' is t."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-week3 nil)))
+
+(defun cal-tex-mouse-week4 ()
+  "One page calendar for week indicated by cursor."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-week4 nil)))
+
+(defun cal-tex-mouse-week5 ()
+  "One page Filofax calendar for week indicated by cursor."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-week5 nil)))
+
+(defun cal-tex-mouse-week6 ()
+  "Two page Filofax calendar for week indicated by cursor."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-week6 nil)))
+
+(defun cal-tex-mouse-month ()
+  "Make a buffer with LaTeX commands for the month cursor is on.
+Calendar is condensed onto one page."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-month nil)))
+
+(defun cal-tex-mouse-month-landscape ()
+  "Make a buffer with LaTeX commands for the month cursor is on.
+The output is in landscape format, one month to a page."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-month-landscape nil)))
+
+(defun cal-tex-mouse-year ()
+  "Make a buffer with LaTeX commands for the year cursor is on."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-year nil)))
+
+(defun cal-tex-mouse-filofax-year ()
+  "Make a buffer with LaTeX commands for Filofax calendar of year cursor is on."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-filofax-year nil)))
+
+(defun cal-tex-mouse-year-landscape ()
+  "Make a buffer with LaTeX commands for the year cursor is on."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (cal-tex-cursor-year-landscape nil)))
+
 (defun calendar-mouse-print-dates ()
   "Pop up menu of equivalent dates to mouse selected date."
   (interactive)
-  (let ((date (calendar-event-to-date)))
-    (x-popup-menu
-     event
-     (list
-      "Date Menu"
-      (append
-       (list
-        (concat (calendar-date-string date) " (Gregorian)")
-        (list (calendar-day-of-year-string date))
-        (list (format "ISO date: %s" (calendar-iso-date-string date)))
-        (list (format "Julian date: %s" (calendar-julian-date-string date)))
-        (list (format "Astronomical (Julian) date (before noon): %s"
-                      (calendar-astro-date-string date)))
-        (list (format "Hebrew date (before sunset): %s"
-                      (calendar-hebrew-date-string date))))
-       (let ((i (calendar-islamic-date-string date)))
-         (if (not (string-equal i ""))
-             (list (list (format "Islamic date (before sunset): %s" i)))))
-       (let ((f (calendar-french-date-string date)))
-         (if (not (string-equal f ""))
-             (list (list (format "French Revolutionary date: %s" f)))))
-       (list
-	(list
-         (format "Mayan date: %s" (calendar-mayan-date-string date)))))))))
+  (let ((date (calendar-event-to-date))
+        (selection
+         (x-popup-menu
+          event
+          (list
+           "Date Menu"
+           (append
+            (list
+             (concat (calendar-date-string date) " (Gregorian)")
+             (list (calendar-day-of-year-string date))
+             (list (format "ISO date: %s" (calendar-iso-date-string date)))
+             (list (format "Julian date: %s"
+                           (calendar-julian-date-string date)))
+             (list
+              (format "Astronomical (Julian) day number (after noon UTC): %s"
+                           (calendar-astro-date-string date)))
+             (list (format "Hebrew date (before sunset): %s"
+                           (calendar-hebrew-date-string date))))
+            (let ((i (calendar-islamic-date-string date)))
+              (if (not (string-equal i ""))
+                  (list (list (format "Islamic date (before sunset): %s" i)))))
+            (list
+             (list (format "Chinese date: %s"
+                           (calendar-chinese-date-string date))))
+;            (list '("Chinese date (select to echo Chinese date)"
+;                    . calendar-mouse-chinese-date))
+            (let ((c (calendar-coptic-date-string date)))
+              (if (not (string-equal c ""))
+                  (list (list (format "Coptic date: %s" c)))))
+            (let ((e (calendar-ethiopic-date-string date)))
+              (if (not (string-equal e ""))
+                  (list (list (format "Ethiopic date: %s" e)))))
+            (let ((f (calendar-french-date-string date)))
+              (if (not (string-equal f ""))
+                  (list (list (format "French Revolutionary date: %s" f)))))
+            (list
+             (list
+              (format "Mayan date: %s"
+                      (calendar-mayan-date-string date)))))))))
+        (and selection (call-interactively selection))))
+
+(defun calendar-mouse-chinese-date ()
+  "Show Chinese equivalent for mouse-selected date."
+  (interactive)
+  (save-excursion
+    (calendar-goto-date (calendar-event-to-date))
+    (calendar-print-chinese-date)))
 
 (defun calendar-mouse-2-date-menu (event)
   "Pop up menu for Mouse-2 for selected date in the calendar window."
@@ -302,15 +432,53 @@ ERROR is t, otherwise just returns nil."
            event
            (list "Menu"
                  (list
-                  (calendar-date-string date t t)
+                  (calendar-date-string date t nil)
                   '("Holidays" . calendar-mouse-holidays)
                   '("Mark date" . calendar-mouse-set-mark)
                   '("Sunrise/sunset" . calendar-mouse-sunrise/sunset)
                   '("Other calendars" . calendar-mouse-print-dates)
+                  '("Prepare LaTeX buffer" . calendar-mouse-cal-tex-menu)
                   '("Diary entries" . calendar-mouse-view-diary-entries)
                   '("Insert diary entry" . calendar-mouse-insert-diary-entry)
                   '("Other diary file entries"
                     . calendar-mouse-view-other-diary-entries)
+                  )))))
+    (and selection (call-interactively selection))))
+
+(defun calendar-mouse-cal-tex-menu (event)
+  "Pop up submenu for Mouse-2 for cal-tex commands for selected date in the calendar window."
+  (interactive "e")
+  (let* ((selection
+          (x-popup-menu
+           event
+           (list "Menu"
+                 (list
+                  (calendar-date-string date t nil)
+                  '("Daily (1 page)" . cal-tex-mouse-day)
+                  '("Weekly (1 page)" . cal-tex-mouse-week)
+                  '("Weekly (2 pages)" . cal-tex-mouse-week2)
+                  '("Weekly (other style; 1 page)" . cal-tex-mouse-week3)
+                  '("Weekly (yet another style; 1 page)" . cal-tex-mouse-week4)
+                  '("Monthly" . cal-tex-mouse-month)
+                  '("Monthly (landscape)" . cal-tex-mouse-month-landscape)
+                  '("Yearly" . cal-tex-mouse-year)
+                  '("Yearly (landscape)" . cal-tex-mouse-year-landscape)
+                  '("Filofax styles" . cal-tex-mouse-filofax)
+                  )))))
+    (and selection (call-interactively selection))))
+
+(defun cal-tex-mouse-filofax (event)
+  "Pop up sub-submenu for Mouse-2 for Filofax cal-tex commands for selected date."
+  (interactive "e")
+  (let* ((selection
+          (x-popup-menu
+           event
+           (list "Menu"
+                 (list
+                  (calendar-date-string date t nil)
+                  '("Filofax Weekly (1 page)" . cal-tex-mouse-week5)
+                  '("Filofax Weekly (2 pages)" . cal-tex-mouse-week6)
+                  '("Filofax Yearly" . cal-tex-mouse-filofax-year)
                   )))))
     (and selection (call-interactively selection))))
 

@@ -3,10 +3,11 @@
 
 #include "usg5-3.h"
 
-/* With this defined, subprocesses made by (e.g.) M-x grep don't exit
-   cleanly, they just hang.  ISC 2.2.1 does have select, in the -linet
-   library, but I guess it's not what Emacs needs.  --karl@cs.umb.edu  */
-#undef HAVE_SELECT /* override configuration decision */
+/* select (in -linet) works okay on X ptys, but not on the serial port.
+   karl@cs.umb.edu says that with that select call, subprocesses made by
+   (e.g.) M-x grep don't exit cleanly, they just hang.  Similar problems
+   have been observed in ISC 3.0.  */
+#define BROKEN_SELECT_NON_X
 
 /* Although ISC has sockets, again in -linet, again it's not what Emacs
    needs.  With this defined, interrupt-shell-subjob and the like do
@@ -38,18 +39,24 @@
    for the rename function, but some people say ISC's rename doesn't
    work correctly with Emacs so we use Emacs' emulation instead. */
 #if defined (__GNUC__)
-#  define LIB_STANDARD -lcposix -lc
+#  define LIB_STANDARD_1 -lcposix
 #else /* !__GNUC__ */
-#  define LIB_STANDARD -lPW -lc
+#  define LIB_STANDARD_1 -lPW
 #endif /* !__GNUC__ */
+
+/* LIB_STANDARD_1 is used both here and in LIBS_SYSTEM
+   (the latter for the sake of configure).  */
+#define LIB_STANDARD LIB_STANDARD_1 -lc
 
 #define NO_X_DESTROY_DATABASE
 
-/* May be needed to avoid undefined symbols such as gethostname,
+/* -linet may be needed to avoid undefined symbols such as gethostname,
    inet_addr, gethostbyname, socket, connect, ...  But if we are not
    compiling with X support, it's not needed.  */
 #ifdef HAVE_X_WINDOWS
-#define LIBS_SYSTEM -linet
+#define LIBS_SYSTEM -linet LIB_STANDARD_1
+#else
+#define LIBS_SYSTEM LIB_STANDARD_1
 #endif
 
 /* This system has job control.  */

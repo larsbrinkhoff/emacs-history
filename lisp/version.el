@@ -1,6 +1,6 @@
 ;;; version.el --- record version number of Emacs.
 
-;;; Copyright (C) 1985, 1992, 1994 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -23,7 +23,7 @@
 
 ;;; Code:
 
-(defconst emacs-version "19.29" "\
+(defconst emacs-version "19.30" "\
 Version numbers of this version of Emacs.")
 
 (defconst emacs-major-version
@@ -53,11 +53,9 @@ to the system configuration; look at `system-configuration' instead."
          (format "GNU Emacs %s (%s%s) of %s %s on %s"
                  emacs-version
 		 system-configuration
-		 (if (featurep 'motif)
-		     ", Motif"
-		   (if (featurep 'x-toolkit)
-		       ", X toolkit"
-		     ""))
+		 (cond ((featurep 'motif) ", Motif")
+		       ((featurep 'x-toolkit) ", X toolkit")
+		       (t ""))
                  (substring emacs-build-time 0
                             (string-match " *[0-9]*:" emacs-build-time))
                  (substring emacs-build-time 
@@ -70,7 +68,11 @@ to the system configuration; look at `system-configuration' instead."
         version-string))))
 
 ;;; We hope that this alias is easier for people to find.
-(fset 'version 'emacs-version)
+(defalias 'version 'emacs-version)
+
+;;; We put version info into the executable in the form that UNIX what(1) uses.
+(or (memq system-type '(vax-vms windows-nt ms-dos))
+    (purecopy (concat "\n@(#)" (emacs-version) "\n")))
 
 ;;Local variables:
 ;;version-control: never

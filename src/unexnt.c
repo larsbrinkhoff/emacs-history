@@ -63,6 +63,30 @@ DWORD  data_size = 0;
 PUCHAR bss_start = 0;
 DWORD  bss_size = 0;
 
+#ifdef HAVE_NTGUI
+HINSTANCE hinst = NULL;
+HINSTANCE hprevinst = NULL;
+LPSTR lpCmdLine = "";
+int nCmdShow = 0;
+    
+int __stdcall 
+WinMain (_hinst, _hPrevInst, _lpCmdLine, _nCmdShow)
+     HINSTANCE _hinst;
+     HINSTANCE _hPrevInst;
+     LPSTR _lpCmdLine;
+     int _nCmdShow;
+{
+  /* Need to parse command line */
+    
+  hinst = _hinst;
+  hprevinst = _hPrevInst;
+  lpCmdLine = _lpCmdLine;
+  nCmdShow = _nCmdShow;
+
+  return (main (__argc,__argv,_environ));
+}
+#endif /* HAVE_NTGUI */
+
 /* Startup code for running on NT.  When we are running as the dumped
    version, we need to bootstrap our heap and .bss section into our
    address space before we can actually hand off control to the startup
@@ -70,7 +94,11 @@ DWORD  bss_size = 0;
 void
 _start (void)
 {
+#ifdef HAVE_NTGUI
+  extern void WinMainCRTStartup (void);
+#else
   extern void mainCRTStartup (void);
+#endif /* HAVE_NTGUI */
 
   /* Cache system info, e.g., the NT page size.  */
   cache_system_info ();
@@ -103,7 +131,11 @@ _start (void)
 
   /* Invoke the NT CRT startup routine now that our housecleaning
      is finished.  */
+#ifdef HAVE_NTGUI
+  WinMainCRTStartup ();
+#else
   mainCRTStartup ();
+#endif /* HAVE_NTGUI */
 }
 
 /* Dump out .data and .bss sections into a new exectubale.  */
@@ -142,8 +174,8 @@ unexec (char *new_name, char *old_name, void *start_data, void *start_bss,
 
   /* The size of the dumped executable is the size of the original
      executable plus the size of the heap and the size of the .bss section.  */
-  heap_index_in_executable = round_to_next (in_file.size, 
-					    get_allocation_unit ());
+  heap_index_in_executable = (unsigned long)
+    round_to_next ((unsigned char *) in_file.size, get_allocation_unit ());
   size = heap_index_in_executable + get_committed_heap_size () + bss_size;
   open_output_file (&out_file, out_filename, size);
 
@@ -209,13 +241,15 @@ open_output_file (file_data *p_file, char *filename, unsigned long size)
   HANDLE file;
   HANDLE file_mapping;
   void  *file_base;
-  
+  int    i;
+
   file = CreateFile (filename, GENERIC_READ | GENERIC_WRITE, 0, NULL,
 		     CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
   if (file == INVALID_HANDLE_VALUE) 
     {
+      i = GetLastError ();
       printf ("open_output_file: Failed to open %s (%d).\n", 
-	     filename, GetLastError ());
+	     filename, i);
       exit (1);
     }
   
@@ -223,16 +257,18 @@ open_output_file (file_data *p_file, char *filename, unsigned long size)
 				    0, size, NULL);
   if (!file_mapping) 
     {
+      i = GetLastError ();
       printf ("open_output_file: Failed to create file mapping of %s (%d).\n",
-	     filename, GetLastError ());
+	     filename, i);
       exit (1);
     }
   
   file_base = MapViewOfFile (file_mapping, FILE_MAP_WRITE, 0, 0, size);
   if (file_base == 0) 
     {
+      i = GetLastError ();
       printf ("open_output_file: Failed to map view of file of %s (%d).\n",
-	     filename, GetLastError ());
+	     filename, i);
       exit (1);
     }
   
@@ -315,12 +351,20 @@ get_section_info (file_data *p_infile)
 	}
       if (!strcmp (section->Name, ".data")) 
 	{
+	  /* From lastfile.c  */
+	  extern char my_edata[];
+
 	  /* The .data section.  */
 	  ptr  = (char *) nt_header->OptionalHeader.ImageBase +
 	    section->VirtualAddress;
 	  data_start_va = ptr;
 	  data_start_file = section->PointerToRawData;
-	  data_size = get_section_size (section);
+
+	  /* We want to only write Emacs data back to the executable,
+	     not any of the library data (if library data is included,
+	     then a dumped Emacs won't run on system versions other
+	     than the one Emacs was dumped on).  */
+	  data_size = my_edata - data_start_va;
 	}
       section++;
     }
@@ -429,18 +473,12 @@ read_in_bss (char *filename)
   
   /* Ok, read in the saved .bss section and initialize all 
      uninitialized variables.  */
-  total_read = 0;
-  size = bss_size;
-  bss = bss_start;
-  while (ReadFile (file, buffer, 512, &n_read, NULL)) 
+  if (!ReadFile (file, bss_start, bss_size, &n_read, NULL))
     {
-      if (n_read == 0)
-	break;
-      memcpy (bss, buffer, n_read);
-      bss += n_read;
-      total_read += n_read;
+      i = GetLastError ();
+      exit (1);
     }
-    
+
   CloseHandle (file);
 }
 
@@ -451,7 +489,7 @@ map_in_heap (char *filename)
   HANDLE file;
   HANDLE file_mapping;
   void  *file_base;
-  unsigned long size, upper_size;
+  unsigned long size, upper_size, n_read;
   int    i;
 
   file = CreateFile (filename, GENERIC_READ, FILE_SHARE_READ, NULL,
@@ -467,17 +505,46 @@ map_in_heap (char *filename)
 				    0, size, NULL);
   if (!file_mapping) 
     {
-	i = GetLastError ();
-	exit (1);
+      i = GetLastError ();
+      exit (1);
     }
     
   size = get_committed_heap_size ();
   file_base = MapViewOfFileEx (file_mapping, FILE_MAP_COPY, 0, 
 			       heap_index_in_executable, size,
 			       get_heap_start ());
-  if (file_base == 0) 
+  if (file_base != 0) 
+    {
+      return;
+    }
+
+  /* If we don't succeed with the mapping, then copy from the 
+     data into the heap.  */
+
+  CloseHandle (file_mapping);
+
+  if (VirtualAlloc (get_heap_start (), get_committed_heap_size (),
+		    MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE) == NULL)
     {
       i = GetLastError ();
       exit (1);
     }
+
+  /* Seek to the location of the heap data in the executable.  */
+  i = heap_index_in_executable;
+  if (SetFilePointer (file, i, NULL, FILE_BEGIN) == 0xFFFFFFFF)
+    {
+      i = GetLastError ();
+      exit (1);
+    }
+
+  /* Read in the data.  */
+  if (!ReadFile (file, get_heap_start (), 
+		 get_committed_heap_size (), &n_read, NULL))
+    {
+      i = GetLastError ();
+      exit (1);
+    }
+
+  CloseHandle (file);
 }

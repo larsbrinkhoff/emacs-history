@@ -7,7 +7,7 @@
 ;;          1985 Richard M. Stallman
 ;; Maintainer: cc-mode-help@merlin.cnri.reston.va.us
 ;; Created: a long, long, time ago. adapted from the original c-mode.el
-;; Barry Warsaw Version:    4.222
+;; Barry Warsaw Version:    4.249
 ;; Keywords: c languages oop
 ;; NOTE: Read the commentary below for the right way to submit bug reports!
 
@@ -103,10 +103,9 @@
 ;; Without their patience, testing, insight, code contributions, and
 ;; encouragement cc-mode.el would be a far inferior package.
 
-;; LCD Archive Entry:
-;; cc-mode.el|Barry A. Warsaw|cc-mode-help@merlin.cnri.reston.va.us
-;; |Major mode for editing C++, Objective-C, and ANSI/K&R C code
-;; |1995/06/01 16:51:16|4.222|
+;; Anonymous ftp URL:
+;;
+;;    ftp://ftp.python.org/pub/emacs/cc-mode.tar.gz
 
 ;;; Code:
 
@@ -420,7 +419,7 @@ This hook gets called after a line is indented by the mode.")
   "*List of behaviors for electric pound insertion.
 Only currently supported behavior is `alignleft'.")
 
-(defvar c-recognize-knr-p nil
+(defvar c-recognize-knr-p t
   "*If non-nil, `c-mode' and `objc-mode' will recognize K&R constructs.
 This variable is needed because of ambiguities in C syntax that make
 fast recognition of K&R constructs problematic, and slow.  If you are
@@ -613,7 +612,8 @@ as designated in the variable `c-file-style'.")
     (if (eq major 'v19)
 	(let ((table (copy-syntax-table)))
 	  (modify-syntax-entry ?a ". 12345678" table)
-	  (if (= (logand (lsh (aref table ?a) -16) 255) 255)
+	  (if (and (vectorp table)
+		   (= (logand (lsh (aref table ?a) -16) 255) 255))
 	      (setq comments '8-bit)
 	    (setq comments '1-bit)))
       (setq comments 'no-dual-comments))
@@ -1008,9 +1008,9 @@ The expansion is entirely correct because it uses the C preprocessor."
 
 
 ;; main entry points for the modes
-;;;###autoload
 (defconst c-list-of-mode-names nil)
 
+;;;###autoload
 (defun c++-mode ()
   "Major mode for editing C++ code.
 To submit a problem report, enter `\\[c-submit-bug-report]' from a
@@ -1020,11 +1020,6 @@ of the problem, including a reproducable test case and send the
 message.
 
 To see what version of cc-mode you are running, enter `\\[c-version]'.
-
-Note that the details of configuring c++-mode have been moved to the
-accompanying texinfo manual (which is not yet completed -- volunteers
-are welcome).  Until then, please read the README file that came with
-the cc-mode distribution.
 
 The hook variable `c++-mode-hook' is run with no args, if that
 variable is bound and has a non-nil value.  Also the common hook
@@ -1042,6 +1037,7 @@ Key bindings:
   (c-common-init)
   (setq comment-start "// "
 	comment-end ""
+	comment-multi-line nil
 	c-conditional-key c-C++-conditional-key
 	c-comment-start-regexp c-C++-comment-start-regexp
 	c-class-key c-C++-class-key
@@ -1059,11 +1055,6 @@ information already added.  You just need to add a description of the
 problem, including a reproducable test case and send the message.
 
 To see what version of cc-mode you are running, enter `\\[c-version]'.
-
-Note that the details of configuring c-mode have been moved to the
-accompanying texinfo manual (which is not yet completed -- volunteers
-are welcome).  Until then, please read the README file that came with
-the cc-mode distribution.
 
 The hook variable `c-mode-hook' is run with no args, if that value is
 bound and has a non-nil value.  Also the common hook
@@ -1101,11 +1092,6 @@ message.
 
 To see what version of cc-mode you are running, enter `\\[c-version]'.
 
-Note that the details of configuring objc-mode have been moved to the
-accompanying texinfo manual (which is not yet completed -- volunteers
-are welcome).  Until then, please read the README file that came with
-the cc-mode distribution.
-
 The hook variable `objc-mode-hook' is run with no args, if that value
 is bound and has a non-nil value.  Also the common hook
 c-mode-common-hook is run first, by this defun, `c-mode', and `c++-mode'.
@@ -1122,6 +1108,7 @@ Key bindings:
   (c-common-init)
   (setq comment-start "// "
 	comment-end   ""
+	comment-multi-line nil
 	c-conditional-key c-C-conditional-key
 	c-comment-start-regexp c-C++-comment-start-regexp
  	c-class-key c-ObjC-class-key
@@ -1147,8 +1134,9 @@ Key bindings:
   (make-local-variable 'comment-start-skip)
   (make-local-variable 'outline-regexp)
   (make-local-variable 'outline-level)
+  (make-local-variable 'adaptive-fill-regexp)
   ;; now set their values
-  (setq paragraph-start (concat "^$\\|" page-delimiter)
+  (setq paragraph-start (concat page-delimiter "\\|$")
 	paragraph-separate paragraph-start
 	paragraph-ignore-fill-prefix t
 	require-final-newline t
@@ -1158,7 +1146,11 @@ Key bindings:
 	outline-regexp "[^#\n\^M]"
 	outline-level 'c-outline-level
 	comment-column 32
-	comment-start-skip "/\\*+ *\\|// *")
+	comment-start-skip "/\\*+ *\\|// *"
+	adaptive-fill-regexp nil)
+  ;; we have to do something special for c-offsets-alist so that the
+  ;; buffer local value has its own alist structure.
+  (setq c-offsets-alist (copy-alist c-offsets-alist))
   ;; setup the comment indent variable in a Emacs version portable way
   ;; ignore any byte compiler warnings you might get here
   (if (boundp 'comment-indent-function)
@@ -1216,9 +1208,8 @@ it finds in `c-file-offsets'."
 	     )))
 	c-file-offsets)))
 
-;; Add the posprocessing function to hack-local-variables-hook. as of
-;; 14-Dec-1994 no Emacs supports this, although it is hoped XEmacs
-;; 19.12 and Emacs 19.29 will when they are released.
+;; Add the posprocessing function to hack-local-variables-hook.  As of
+;; 28-Aug-1995, XEmacs 19.12 and Emacs 19.29 support this.
 (and (fboundp 'add-hook)
      (add-hook 'hack-local-variables-hook 'c-postprocess-file-styles))
 
@@ -1604,7 +1595,9 @@ the brace is inserted inside a literal."
 		 ;; if there is whitespace before point, then preserve
 		 ;; at least one space.
 		 (delete-indentation)
-		 (and preserve-p (just-one-space))))
+		 (just-one-space)
+		 (if (not preserve-p)
+		     (delete-char -1))))
 	  ;; since we're hanging the brace, we need to recalculate
 	  ;; syntax.  Update the state to accurately reflect the
 	  ;; beginning of the line.  We punt if we cross any open or
@@ -1846,7 +1839,7 @@ value of `c-cleanup-list'."
 	    ;; colon
 	    newlines
 	    (and c-auto-newline
-		 (or (c-lookup-lists '(case-label 'label 'access-label)
+		 (or (c-lookup-lists '(case-label label access-label)
 				     syntax c-hanging-colons-alist)
 		     (c-lookup-lists '(member-init-intro inher-intro)
 				     (prog2
@@ -2040,7 +2033,9 @@ VALUE.  This function also sets the current style to STYLE using
   "Like \\[fill-paragraph] but handles C and C++ style comments.
 If any of the current line is a comment or within a comment,
 fill the comment or the paragraph of it that point is in,
-preserving the comment indentation or line-starting decorations."
+preserving the comment indentation or line-starting decorations.
+
+Optional prefix ARG means justify paragraph as well."
   (interactive "P")
   (let* (comment-start-place
 	 (first-line
@@ -2241,7 +2236,7 @@ No indentation or other \"electric\" behavior is performed."
   (insert "::"))
 
 
-(defun c-beginning-of-statement (&optional count lim)
+(defun c-beginning-of-statement (&optional count lim sentence-flag)
   "Go to the beginning of the innermost C statement.
 With prefix arg, go back N - 1 statements.  If already at the
 beginning of a statement then go to the beginning of the preceding
@@ -2249,9 +2244,10 @@ one.  If within a string or comment, or next to a comment (only
 whitespace between), move by sentences instead of statements.
 
 When called from a program, this function takes 2 optional args: the
-prefix arg, and a buffer position limit which is the farthest back to
-search."
-  (interactive "p")
+repetition count, a buffer position limit which is the farthest back to
+search, and a flag saying whether to do sentence motion when in a comment."
+  (interactive (list (prefix-numeric-value current-prefix-arg)
+		     nil t))
   (let ((here (point))
 	(count (or count 1))
 	(lim (or lim (c-point 'bod)))
@@ -2259,7 +2255,7 @@ search."
     (save-excursion
       (goto-char lim)
       (setq state (parse-partial-sexp (point) here nil nil)))
-    (if (and (interactive-p)
+    (if (and sentence-flag
 	     (or (nth 3 state)
 		 (nth 4 state)
 		 (looking-at (concat "[ \t]*" comment-start-skip))
@@ -2279,7 +2275,7 @@ search."
     )
   (c-keep-region-active))
 
-(defun c-end-of-statement (&optional count lim)
+(defun c-end-of-statement (&optional count lim sentence-flag)
   "Go to the end of the innermost C statement.
 
 With prefix arg, go forward N - 1 statements.  Move forward to end of
@@ -2287,10 +2283,11 @@ the next statement if already at end.  If within a string or comment,
 move by sentences instead of statements.
 
 When called from a program, this function takes 2 optional args: the
-prefix arg, and a buffer position limit which is the farthest back to
-search."
-  (interactive "p")
-  (c-beginning-of-statement (- (or count 1)) lim)
+repetition count, a buffer position limit which is the farthest back to
+search, and a flag saying whether to do sentence motion when in a comment."
+  (interactive (list (prefix-numeric-value current-prefix-arg)
+		     nil t))
+  (c-beginning-of-statement (- (or count 1)) lim sentence-flag)
   (c-keep-region-active))
 
 
@@ -2352,7 +2349,15 @@ search."
 				   (and lim
 					(<= lim (point))
 					(not (c-in-literal lim))
-					(looking-at c-conditional-key)))))
+;;;					(looking-at c-conditional-key)
+					;; backward-up-list could be slow
+					;; but I don't see any other way.
+					(save-excursion
+					  (if (c-safe
+					       (progn (backward-up-list 1) t))
+					      (/= (following-char) ?\()
+					    t))
+					))))
 		     ;; did we find a conditional?
 		     (if (not foundp)
 			 (goto-char here))
@@ -2622,8 +2627,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	       (error "Cannot find start of balanced expression to indent."))
 	  (and (not end)
 	       (not shutup-p)
-	       (error "Cannot find end of balanced expression to
-	       indent."))
+	       (error "Cannot find end of balanced expression to indent."))
 	  (c-progress-init start end 'c-indent-exp)
 	  (setq progress-p t)
 	  (goto-char start)
@@ -2649,6 +2653,11 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
     (if brace
 	(goto-char brace)
       (beginning-of-defun))
+    ;; if we're sitting at b-o-b, it might be becase there was no
+    ;; least enclosing brace and we were sitting on the defun's open
+    ;; brace.
+    (if (and (bobp) (not (= (following-char) ?\{)))
+	(goto-char here))
     ;; if defun-prompt-regexp is non-nil, b-o-d might not leave us at
     ;; the open brace. I consider this an Emacs bug.
     (and (boundp 'defun-prompt-regexp)
@@ -3279,33 +3288,41 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	(save-excursion
 	  (save-restriction
 	    (goto-char search-start)
-	    (let (foundp class)
+	    (let (foundp class match-end)
 	      (while (and (not foundp)
 			  (progn
 			    (c-forward-syntactic-ws)
 			    (> search-end (point)))
 			  (re-search-forward c-class-key search-end t))
-		(setq class (match-beginning 0))
+		(setq class (match-beginning 0)
+		      match-end (match-end 0))
 		(if (c-in-literal search-start)
 		    nil			; its in a comment or string, ignore
 		  (goto-char class)
 		  (skip-chars-forward " \t\n")
 		  (setq foundp (vector (c-point 'boi) search-end))
-		  ;; make sure we're really looking at the start of
-		  ;; a class definition, and not a forward decl,
-		  ;; return arg, template arg list, or an ObjC method.
-		  (if (eq major-mode 'objc-mode)
-		      (if (re-search-forward c-ObjC-method-key search-end t)
-			  (setq foundp nil))
-		    ;; Its impossible to define a regexp for this, and
-		    ;; nearly so to do it programmatically.
-		    ;;
-		    ;; ; picks up forward decls
-		    ;; = picks up init lists
-		    ;; ) picks up return types
-		    ;; > picks up templates, but remember that we can
-		    ;;   inherit from templates!
-		    (let ((skipchars "^;=)"))
+		  (cond
+		   ;; check for embedded keywords
+		   ((let ((char (char-after (1- class))))
+		      (and char
+			   (memq (char-syntax char) '(?w ?_))))
+		    (goto-char match-end)
+		    (setq foundp nil))
+		   ;; make sure we're really looking at the start of a
+		   ;; class definition, and not a forward decl, return
+		   ;; arg, template arg list, or an ObjC method.
+		   ((and (eq major-mode 'objc-mode)
+			 (re-search-forward c-ObjC-method-key search-end t))
+		    (setq foundp nil))
+		   ;; Its impossible to define a regexp for this, and
+		   ;; nearly so to do it programmatically.
+		   ;;
+		   ;; ; picks up forward decls
+		   ;; = picks up init lists
+		   ;; ) picks up return types
+		   ;; > picks up templates, but remember that we can
+		   ;;   inherit from templates!
+		   ((let ((skipchars "^;=)"))
 		      ;; try to see if we found the `class' keyword
 		      ;; inside a template arg list
 		      (save-excursion
@@ -3313,9 +3330,9 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 			(if (= (preceding-char) ?<)
 			    (setq skipchars (concat skipchars ">"))))
 		      (skip-chars-forward skipchars search-end)
-		      (if (/= (point) search-end)
-			  (setq foundp nil))
-		      ))))
+		      (/= (point) search-end))
+		    (setq foundp nil))
+		   )))
 	      foundp))
 	  )))))
 
@@ -3521,7 +3538,19 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	     ((save-excursion
 		(goto-char indent-point)
 		(skip-chars-forward " \t{")
-		(let ((decl (c-search-uplist-for-classkey (c-parse-state))))
+		;; TBD: watch out! there could be a bogus
+		;; c-state-cache in place when we get here.  we have
+		;; to go through much chicanery to ignore the cache.
+		;; But of course, there may not be!  BLECH!  BOGUS!
+		(let ((decl
+		       (if (boundp 'c-state-cache)
+			   (let ((old-cache c-state-cache))
+			     (prog2
+				 (makunbound 'c-state-cache)
+				 (c-search-uplist-for-classkey (c-parse-state))
+			       (setq c-state-cache old-cache)))
+			 (c-search-uplist-for-classkey (c-parse-state))
+			 )))
 		  (and decl
 		       (setq placeholder (aref decl 0)))
 		  ))
@@ -3663,9 +3692,9 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	     (t
 	      (c-beginning-of-statement-1 lim)
 	      ;; skip over any access-specifiers
-	      (if inclass-p
-		  (while (looking-at c-access-key)
-		    (forward-line 1)))
+	      (and inclass-p c-access-key
+		   (while (looking-at c-access-key)
+		     (forward-line 1)))
 	      ;; skip over comments, whitespace
 	      (c-forward-syntactic-ws indent-point)
 	      (c-add-syntax 'statement-cont (c-point 'boi)))
@@ -3739,8 +3768,11 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	    ;; enclosure in a class block
 	    (save-restriction
 	      (widen)
-	      (c-add-syntax 'topmost-intro (c-point 'bol)))
-	    (and inclass-p (c-add-syntax 'inclass (aref inclass-p 0))))
+	      (c-add-syntax 'topmost-intro (c-point 'bol))
+	      (if inclass-p
+		  (progn
+		    (goto-char (aref inclass-p 1))
+		    (c-add-syntax 'inclass (c-point 'boi))))))
 	   ;; CASE 5I: we are at a method definition continuation line
 	   ((and (eq major-mode 'objc-mode)
 		 (progn
@@ -3930,7 +3962,8 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 		;; after the next release, I may call a recognition
 		;; hook like so: (run-hooks 'c-recognize-hook), but I
 		;; dunno.
-		(c-add-syntax 'statement-cont placeholder)
+		(goto-char placeholder)
+		(c-add-syntax 'statement-cont (c-point 'boi))
 		(c-add-syntax 'block-open))
 	       ))
 	     ;; CASE 9C: iostream insertion or extraction operator
@@ -4365,16 +4398,25 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
   ;; of the first method call argument, so lineup the current line
   ;; with it.
   (save-excursion
-    (let* ((open-bracket-pos (cdr langelem))
-           (open-bracket-col (progn (goto-char open-bracket-pos)
-                                    (current-column)))
-           (target-col (progn (forward-char)
-                              (forward-sexp)
-			      (skip-chars-forward " \t")
-			      (if (eolp)
-                                  (+ open-bracket-col (* 2 c-basic-offset))
-                                (current-column)))))
-      (- target-col open-bracket-col))))
+    (let* ((extra (save-excursion
+		    (back-to-indentation)
+		    (c-backward-syntactic-ws (cdr langelem))
+		    (if (= (preceding-char) ?:)
+			(- c-basic-offset)
+		      0)))
+	   (open-bracket-pos (cdr langelem))
+           (open-bracket-col (progn
+			       (goto-char open-bracket-pos)
+			       (current-column)))
+           (target-col (progn
+			 (forward-char)
+			 (forward-sexp)
+			 (skip-chars-forward " \t")
+			 (if (eolp)
+			     (+ open-bracket-col c-basic-offset)
+			   (current-column))))
+	   )
+      (- target-col open-bracket-col extra))))
 
 (defun c-lineup-ObjC-method-args (langelem)
   ;; Line up the colons that separate args. This is done trying to
@@ -4430,72 +4472,85 @@ ACTION associated with `block-close' syntax."
 	       (setq langelem (assq 'block-close c-syntactic-context))
 	       (progn (goto-char (cdr langelem))
 		      (if (= (following-char) ?{)
-			  (forward-sexp -1))
+			  (c-safe (forward-sexp -1)))
 		      (looking-at "\\<do\\>[^_]")))
 	  '(before)
 	'(before after)))))
 
 
-;; commands for "macroizations" -- making C++ parameterized types via
-;; macros. Also commands for commentifying regions
+;;; This page handles insertion and removal of backslashes for C macros.
 
-(defun c-backslashify-current-line (doit)
-  ;; Backslashifies current line if DOIT is non-nil, otherwise
-  ;; unbackslashifies the current line.
-  (end-of-line)
-  (if doit
-      ;; Note that "\\\\" is needed to get one backslash.
-      (if (not (save-excursion
-		 (forward-char -1)
-		 (looking-at "\\\\")))
-	  (progn
-	    (if (>= (current-column) c-backslash-column)
-		(insert " \\")
-	      (while (<= (current-column) c-backslash-column)
-		(insert "\t")
-		(end-of-line))
-	      (delete-char -1)
-	      (while (< (current-column) c-backslash-column)
-		(insert " ")
-		(end-of-line))
-	      (insert "\\"))))
-    (if (not (bolp))
-	(progn
-	  (forward-char -1)
-	  (if (looking-at "\\\\")
-	      (progn
-		(skip-chars-backward " \t")
-		(delete-region (point) (c-point 'eol))))
-	  ))))
+(defun c-backslash-region (from to delete-flag)
+  "Insert, align, or delete end-of-line backslashes on the lines in the region.
+With no argument, inserts backslashes and aligns existing backslashes.
+With an argument, deletes the backslashes.
 
-(defun c-backslash-region (beg end arg)
-  "Insert backslashes at end of every line in region.
-Useful for defining cpp macros.  If called with a prefix argument,
-it trailing backslashes are removed."
+This function does not modify the last line of the region if the region ends 
+right at the start of the following line; it does not modify blank lines
+at the start of the region.  So you can put the region around an entire macro
+definition and conveniently use this command."
   (interactive "r\nP")
   (save-excursion
-    (let ((do-lastline-p (progn (goto-char end) (not (bolp)))))
-      (save-restriction
-	(narrow-to-region beg end)
-	(goto-char (point-min))
-	(while (not (save-excursion
-		      (forward-line 1)
-		      (eobp)))
-	  (c-backslashify-current-line (null arg))
-	  (forward-line 1)))
-      (and do-lastline-p
-	   (progn (goto-char end)
-		  (c-backslashify-current-line (null arg))))
-      )))
+    (goto-char from)
+    (let ((column c-backslash-column)
+          (endmark (make-marker)))
+      (move-marker endmark to)
+      ;; Compute the smallest column number past the ends of all the lines.
+      (if (not delete-flag)
+          (while (< (point) to)
+            (end-of-line)
+            (if (= (preceding-char) ?\\)
+                (progn (forward-char -1)
+                       (skip-chars-backward " \t")))
+            (setq column (max column (1+ (current-column))))
+            (forward-line 1)))
+      ;; Adjust upward to a tab column, if that doesn't push past the margin.
+      (if (> (% column tab-width) 0)
+          (let ((adjusted (* (/ (+ column tab-width -1) tab-width) tab-width)))
+            (if (< adjusted (window-width))
+                (setq column adjusted))))
+      ;; Don't modify blank lines at start of region.
+      (goto-char from)
+      (while (and (< (point) endmark) (eolp))
+        (forward-line 1))
+      ;; Add or remove backslashes on all the lines.
+      (while (and (< (point) endmark)
+                  ;; Don't backslashify the last line
+                  ;; if the region ends right at the start of the next line.
+                  (save-excursion
+                    (forward-line 1)
+                    (< (point) endmark)))
+        (if (not delete-flag)
+            (c-append-backslash column)
+          (c-delete-backslash))
+        (forward-line 1))
+      (move-marker endmark nil))))
 
+(defun c-append-backslash (column)
+  (end-of-line)
+  ;; Note that "\\\\" is needed to get one backslash.
+  (if (= (preceding-char) ?\\)
+      (progn (forward-char -1)
+             (delete-horizontal-space)
+             (indent-to column))
+    (indent-to column)
+    (insert "\\")))
+
+(defun c-delete-backslash ()
+  (end-of-line)
+  (forward-char -1)
+  (if (looking-at "\\\\")
+      (delete-region (1+ (point))
+                     (progn (skip-chars-backward " \t") (point)))))
 
 ;; defuns for submitting bug reports
 
-(defconst c-version (concat "4.222"
+(defconst c-version (concat "4.249"
 			    " as included in "
 			    emacs-version))
-(defconst c-mode-help-address "cc-mode-help@merlin.cnri.reston.va.us"
-  "Address accepting submission of bug reports.")
+(defconst c-mode-help-address
+  "cc-mode-help@merlin.cnri.reston.va.us, bug-gnu-emacs@prep.ai.mit.edu"
+  "Address for CC mode bug reports.")
 
 (defun c-version ()
   "Echo the current version of cc-mode in the minibuffer."
@@ -4570,6 +4625,31 @@ it trailing backslashes are removed."
   (c-keep-region-active))
     
 
+(defun c-copy-tree (tree)
+  ;; Line XEmacs 19.12's copy-tree
+  (if (consp tree)
+      (cons (c-copy-tree (car tree))
+	    (c-copy-tree (cdr tree)))
+    (if (vectorp tree)
+	(let* ((new (copy-sequence tree))
+	       (i (1- (length new))))
+	  (while (>= i 0)
+	    (aset new i (c-copy-tree (aref new i)))
+	    (setq i (1- i)))
+	  new)
+      tree)))
+
+(defun c-mapcar-defun (var)
+  (let ((val (symbol-value var)))
+    (cons var (if (atom val) val
+		;; XEmacs 19.12 and Emacs 19 + lucid.el have this
+		(if (fboundp 'copy-tree)
+		    (copy-tree val)
+		  ;; Emacs 19 and Emacs 18
+		  (c-copy-tree val)
+		  )))
+    ))
+
 ;; dynamically append the default value of most variables. This is
 ;; crucial because future c-set-style calls will always reset the
 ;; variables first to the "CC-MODE" style before instituting the new
@@ -4577,29 +4657,23 @@ it trailing backslashes are removed."
 (or (assoc "CC-MODE" c-style-alist)
     (progn
       (c-add-style "CC-MODE"
-		   (mapcar
-		    (function
-		     (lambda (var)
-		       (let ((val (symbol-value var)))
-			 (cons var (if (atom val) val
-				     (copy-alist val)))
-			 )))
-		    '(c-backslash-column
-		      c-basic-offset
-		      c-block-comments-indent-p
-		      c-cleanup-list
-		      c-comment-only-line-offset
-		      c-echo-syntactic-information-p
-		      c-electric-pound-behavior
-		      c-hanging-braces-alist
-		      c-hanging-colons-alist
-		      c-hanging-comment-ender-p
-		      c-offsets-alist
-		      c-recognize-knr-p
-		      c-strict-syntax-p
-		      c-tab-always-indent
-		      c-inhibit-startup-warnings-p
-		      ))))
+		   (mapcar 'c-mapcar-defun
+			   '(c-backslash-column
+			     c-basic-offset
+			     c-block-comments-indent-p
+			     c-cleanup-list
+			     c-comment-only-line-offset
+			     c-echo-syntactic-information-p
+			     c-electric-pound-behavior
+			     c-hanging-braces-alist
+			     c-hanging-colons-alist
+			     c-hanging-comment-ender-p
+			     c-offsets-alist
+			     c-recognize-knr-p
+			     c-strict-syntax-p
+			     c-tab-always-indent
+			     c-inhibit-startup-warnings-p
+			     ))))
     ;; the default style is now GNU.  This can be overridden in
     ;; c-mode-common-hook or {c,c++,objc}-mode-hook.
     (c-set-style "GNU"))
