@@ -1924,6 +1924,9 @@ Non-nil argument means do not print any message if successful.")
 	{
 	  if ((XFASTINT (b->save_length) * 10
 	       > (b->text.size1 + b->text.size2) * 13)
+	      /* A short file is likely to change a large fraction;
+		 spare the user annoying messages.  */
+	      && XFASTINT (b->save_length) > 5000
 	      /* These messages are frequent and annoying for `*mail*'.  */
 	      && !EQ (b->filename, Qnil))
 	    {

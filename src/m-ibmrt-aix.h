@@ -122,13 +122,20 @@ and this notice must be preserved on all copies.  */
 
 /* Here override various assumptions in ymakefile */
 
-#define OBJECTS_MACHINE hftctl.o
-#define START_FILES /lib/crt0.o
+/* On AIX 2.2.1, use these definitions instead
+#define C_SWITCH_MACHINE -I/usr/include -Nn2000
+#define LIBS_MACHINE -lX -lrts
+#define LIBX10_MACHINE -lrts
+*/
+
 #define C_SWITCH_MACHINE -I/usr/include -I/usr/include/bsd -Nn2000
-#define LIBS_MACHINE -lsock -lbsd -lrts
-#define LIBX10_MACHINE -lsock -lbsd -lrts
 /* need to duplicate -lsock -lbsd -lrts so refs in libX can be resolved   */
 /* order of lib specs in ymakefile should probably be changed.            */
+#define LIBS_MACHINE -lXMenu -lX -lsock -lbsd -lrts
+#define LIBX10_MACHINE -lsock -lbsd -lrts
+
+#define OBJECTS_MACHINE hftctl.o
+#define START_FILES /lib/crt0.o
 #define LD_SWITCH_MACHINE -n -T0x10000000 -K -e start
 
 #if 0 /* I refuse to promulgate a recommendation that would make
@@ -158,3 +165,6 @@ and this notice must be preserved on all copies.  */
 /* getwd is in same object module as getcwd in AIX 2.2, but doesn't exist */
 /* at all in 2.1.2.  So, for compatibility, avoid name collision on 2.2 */
 #define getwd AIX_getwd
+
+/* AIX defines FIONREAD, but it does not work.  */
+#define BROKEN_FIONREAD

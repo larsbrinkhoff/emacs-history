@@ -736,7 +736,8 @@ converted to Info is stored in a temporary buffer."
 (put 'emph 'texinfo-format 'texinfo-format-emph)
 (put 'strong 'texinfo-format 'texinfo-format-emph)
 (defun texinfo-format-emph ()
-  (insert "*" (texinfo-parse-arg-discard) "*"))
+  (insert "*" (texinfo-parse-arg-discard) "*")
+  (goto-char texinfo-command-start))
 
 (put 'defn 'texinfo-format 'texinfo-format-defn)
 (put 'dfn 'texinfo-format 'texinfo-format-defn)
@@ -911,7 +912,10 @@ converted to Info is stored in a temporary buffer."
     (insert "* " type ": " (car args))
     (let ((args (cdr args)))
       (while args
-	(insert " " (upcase (car args)))
+	(insert " "
+		(if (= ?& (aref (car args) 0))
+		    (car args)
+		  (upcase (car args))))
 	(setq args (cdr args))))
     ;; Insert extra newline so that paragraph filling does not mess
     ;; with header line.

@@ -141,22 +141,26 @@ static void fatal_unexec ();
 	if (lseek(_fd, _position, L_SET) != _position) \
 	  fatal_unexec(_error_message, _error_arg);
 
-#define private static
-
 extern int errno;
 extern int sys_nerr;
 extern char *sys_errlist[];
 #define EEOF -1
 
+static struct scnhdr *text_section;
+static struct scnhdr *init_section;
+static struct scnhdr *finit_section;
+static struct scnhdr *rdata_section;
+static struct scnhdr *data_section;
+static struct scnhdr *lit8_section;
+static struct scnhdr *lit4_section;
+static struct scnhdr *sdata_section;
+static struct scnhdr *sbss_section;
+static struct scnhdr *bss_section;
+
 struct headers {
     struct filehdr fhdr;
     struct aouthdr aout;
-    struct scnhdr text_section;
-    struct scnhdr rdata_section;
-    struct scnhdr data_section;
-    struct scnhdr sdata_section;
-    struct scnhdr sbss_section;
-    struct scnhdr bss_section;
+    struct scnhdr section[10];
 };
 
 /* Define name of label for entry point for the dumped executable.  */
@@ -174,98 +178,122 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
   int newsyms, symrel;
   int nread;
   struct headers hdr;
+  int i;
+  int vaddr, scnptr;
 #define BUFSIZE 8192
   char buffer[BUFSIZE];
 
   old = open (a_name, O_RDONLY, 0);
-  if (old < 0) fatal_unexec("openning %s", a_name);
+  if (old < 0) fatal_unexec ("opening %s", a_name);
 
   new = creat (new_name, 0666);
-  if (new < 0) fatal_unexec("creating %s", new_name);
+  if (new < 0) fatal_unexec ("creating %s", new_name);
 
   hdr = *((struct headers *)TEXT_START);
   if (hdr.fhdr.f_magic != MIPSELMAGIC
-      && hdr.fhdr.f_magic != MIPSEBMAGIC) {
+      && hdr.fhdr.f_magic != MIPSEBMAGIC)
+    {
       fprintf(stderr, "unexec: input file magic number is %x, not %x or %x.\n",
 	      hdr.fhdr.f_magic, MIPSELMAGIC, MIPSEBMAGIC);
       exit(1);
-  }
-  if (hdr.fhdr.f_opthdr != sizeof(hdr.aout)) {
+    }
+  if (hdr.fhdr.f_opthdr != sizeof(hdr.aout))
+    {
       fprintf(stderr, "unexec: input a.out header is %d bytes, not %d.\n",
 	      hdr.fhdr.f_opthdr, sizeof(hdr.aout));
       exit(1);
-  }
-#if 0
-  if (hdr.aout.magic != ZMAGIC
-      && hdr.aout.magic != NMAGIC
-      && hdr.aout.magic != OMAGIC) {
-      fprintf(stderr, "unexec: input file a.out magic number is %o, not %o, %o, or %o.\n",
-	      hdr.aout.magic, ZMAGIC, NMAGIC, OMAGIC);
-      exit(1);
-  }
-#else
-  if (hdr.aout.magic != ZMAGIC) {
+    }
+  if (hdr.aout.magic != ZMAGIC)
+    {
       fprintf(stderr, "unexec: input file a.out magic number is %o, not %o.\n",
 	      hdr.aout.magic, ZMAGIC);
       exit(1);
-  }
-#endif
-  if (hdr.fhdr.f_nscns != 6) {
-      fprintf(stderr, "unexec: %d sections instead of 6.\n", hdr.fhdr.f_nscns);
-  }
-#define CHECK_SCNHDR(field, name, flags) \
-  if (strcmp(hdr.field.s_name, name) != 0) { \
-      fprintf(stderr, "unexec: %s section where %s expected.\n", \
-	      hdr.field.s_name, name); \
-      exit(1); \
-  } \
-  else if (hdr.field.s_flags != flags) { \
+    }
+
+#define CHECK_SCNHDR(ptr, name, flags) \
+  if (strcmp(hdr.section[i].s_name, name) == 0) { \
+    if (hdr.section[i].s_flags != flags) { \
       fprintf(stderr, "unexec: %x flags where %x expected in %s section.\n", \
-	      hdr.field.s_flags, flags, name); \
-  }
+	      hdr.section[i].s_flags, flags, name); \
+    } \
+    ptr = hdr.section + i; \
+    i += 1; \
+  } \
+  else { \
+    ptr = NULL; \
+    }
+
+  i = 0;
   CHECK_SCNHDR(text_section,  _TEXT,  STYP_TEXT);
+  CHECK_SCNHDR(init_section,  _INIT,  STYP_INIT);
   CHECK_SCNHDR(rdata_section, _RDATA, STYP_RDATA);
   CHECK_SCNHDR(data_section,  _DATA,  STYP_DATA);
+#ifdef _LIT8
+  CHECK_SCNHDR(lit8_section,  _LIT8,  STYP_LIT8);
+  CHECK_SCNHDR(lit4_section,  _LIT4,  STYP_LIT4);
+#endif /* _LIT8 */
   CHECK_SCNHDR(sdata_section, _SDATA, STYP_SDATA);
   CHECK_SCNHDR(sbss_section,  _SBSS,  STYP_SBSS);
   CHECK_SCNHDR(bss_section,   _BSS,   STYP_BSS);
+  if (i != hdr.fhdr.f_nscns)
+    fprintf(stderr, "unexec: %d sections found instead of %d.\n",
+	    i, hdr.fhdr.f_nscns);
 
   pagesize = getpagesize();
   brk = (sbrk(0) + pagesize - 1) & (-pagesize);
   hdr.aout.dsize = brk - DATA_START;
   hdr.aout.bsize = 0;
-  if (entry_address == 0) {
-    extern DEFAULT_ENTRY_ADDRESS();
-    hdr.aout.entry = (unsigned)DEFAULT_ENTRY_ADDRESS;
-  }
-  else {
+  if (entry_address == 0)
+    {
+      extern DEFAULT_ENTRY_ADDRESS();
+      hdr.aout.entry = (unsigned)DEFAULT_ENTRY_ADDRESS;
+    }
+  else
     hdr.aout.entry = entry_address;
-  }
+
   hdr.aout.bss_start = hdr.aout.data_start + hdr.aout.dsize;
-  hdr.rdata_section.s_size = data_start - DATA_START;
-  hdr.data_section.s_vaddr = data_start;
-  hdr.data_section.s_paddr = data_start;
-  hdr.data_section.s_size = brk - DATA_START;
-  hdr.data_section.s_scnptr = hdr.rdata_section.s_scnptr
-				+ hdr.rdata_section.s_size;
-  hdr.sdata_section.s_vaddr = hdr.data_section.s_vaddr
-				+ hdr.data_section.s_size;
-  hdr.sdata_section.s_paddr = hdr.sdata_section.s_paddr;
-  hdr.sdata_section.s_size = 0;
-  hdr.sdata_section.s_scnptr = hdr.data_section.s_scnptr
-				+ hdr.data_section.s_size;
-  hdr.sbss_section.s_vaddr = hdr.sdata_section.s_vaddr
-				+ hdr.sdata_section.s_size;
-  hdr.sbss_section.s_paddr = hdr.sbss_section.s_vaddr;
-  hdr.sbss_section.s_size = 0;
-  hdr.sbss_section.s_scnptr = hdr.sdata_section.s_scnptr
-				+ hdr.sdata_section.s_size;
-  hdr.bss_section.s_vaddr = hdr.sbss_section.s_vaddr
-				+ hdr.sbss_section.s_size;
-  hdr.bss_section.s_paddr = hdr.bss_section.s_vaddr;
-  hdr.bss_section.s_size = 0;
-  hdr.bss_section.s_scnptr = hdr.sbss_section.s_scnptr
-				+ hdr.sbss_section.s_size;
+  rdata_section->s_size = data_start - DATA_START;
+  data_section->s_vaddr = data_start;
+  data_section->s_paddr = data_start;
+  data_section->s_size = brk - DATA_START;
+  data_section->s_scnptr = rdata_section->s_scnptr + rdata_section->s_size;
+  vaddr = data_section->s_vaddr + data_section->s_size;
+  scnptr = data_section->s_scnptr + data_section->s_size;
+  if (lit8_section != NULL)
+    {
+      lit8_section->s_vaddr = vaddr;
+      lit8_section->s_paddr = vaddr;
+      lit8_section->s_size = 0;
+      lit8_section->s_scnptr = scnptr;
+    }
+  if (lit4_section != NULL)
+    {
+      lit4_section->s_vaddr = vaddr;
+      lit4_section->s_paddr = vaddr;
+      lit4_section->s_size = 0;
+      lit4_section->s_scnptr = scnptr;
+    }
+  if (sdata_section != NULL)
+    {
+      sdata_section->s_vaddr = vaddr;
+      sdata_section->s_paddr = vaddr;
+      sdata_section->s_size = 0;
+      sdata_section->s_scnptr = scnptr;
+    }
+  if (sbss_section != NULL)
+    {
+      sbss_section->s_vaddr = vaddr;
+      sbss_section->s_paddr = vaddr;
+      sbss_section->s_size = 0;
+      sbss_section->s_scnptr = scnptr;
+    }
+  if (bss_section != NULL)
+    {
+      bss_section->s_vaddr = vaddr;
+      bss_section->s_paddr = vaddr;
+      bss_section->s_size = 0;
+      bss_section->s_scnptr = scnptr;
+    }
 
   WRITE(new, TEXT_START, hdr.aout.tsize,
 	"writing text section to %s", new_name);
@@ -292,13 +320,14 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
   symhdr->cbRfdOffset += symrel;
   symhdr->cbExtOffset += symrel;
 #undef symhdr
-  do {
+  do
+    {
       if (write(new, buffer, nread) != nread)
 	fatal_unexec("writing symbols to %s", new_name);
       nread = read(old, buffer, BUFSIZE);
       if (nread < 0) fatal_unexec("reading symbols from %s", a_name);
 #undef BUFSIZE
-  } while (nread != 0);
+    } while (nread != 0);
 
   SEEK(new, 0, "seeking to start of header in %s", new_name);
   WRITE(new, &hdr, sizeof(hdr),
@@ -314,6 +343,7 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
  *
  * After succesfully building the new a.out, mark it executable
  */
+
 static
 mark_x (name)
      char *name;
@@ -330,7 +360,7 @@ mark_x (name)
 
 static void
 fatal_unexec (s, va_alist)
-    va_dcl
+     va_dcl
 {
   va_list ap;
   if (errno == EEOF)

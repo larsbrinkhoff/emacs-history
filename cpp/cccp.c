@@ -98,6 +98,9 @@ typedef unsigned char U_CHAR;
 #ifdef EMACS
 #define NO_SHORTNAMES
 #include "../src/config.h"
+#ifdef static
+#undef static
+#endif
 #ifdef open
 #undef open
 #undef read

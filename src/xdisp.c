@@ -198,10 +198,12 @@ message (m, a1, a2, a3)
       doprnt (message_buf, sizeof message_buf - 1, m, 3, &a1);
 #endif /* NO_ARG_ARRAY */
       minibuf_message = message_buf;
-      hold_window_change ();
-      display_minibuf_message ();
-      update_screen (1, 1);
-      unhold_window_change ();
+      do {
+	hold_window_change ();
+	display_minibuf_message ();
+	update_screen (1, 1);
+	unhold_window_change ();
+      } while (screen_garbaged);
     }
 }
 
@@ -219,10 +221,12 @@ message1 (m)
   else if (INTERACTIVE)
     {
       minibuf_message = m;
-      hold_window_change ();
-      display_minibuf_message ();
-      update_screen (1, 1);
-      unhold_window_change ();
+      do {
+	hold_window_change ();
+	display_minibuf_message ();
+	update_screen (1, 1);
+	unhold_window_change ();
+      } while (screen_garbaged);
     }
 }
 
@@ -473,6 +477,9 @@ update:
     request_sigio ();
 
   unhold_window_change ();
+
+  if (screen_garbaged)
+    DoDsp (SaveMiniBuf);
 }
 
 mark_window_display_accurate (window, flag)

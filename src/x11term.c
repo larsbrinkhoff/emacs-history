@@ -84,6 +84,7 @@ static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrenc
 #include <strings.h>
 #endif
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include "dispextern.h"
 #include "termhooks.h"
@@ -1477,6 +1478,23 @@ XT_GetDefaults (class)
   return 0;
 }
 
+x_error_handler (disp, event)
+     Display *disp;
+     XErrorEvent *event;
+{
+  char msg[200];
+  XGetErrorText (disp, event->error_code, msg, 200);
+  fprintf (stderr, "Fatal X-windows error: %s\n", msg);
+  Fkill_emacs (make_number (70));
+}
+
+x_io_error_handler ()
+{
+  Fdo_auto_save ();
+  perror ("Fatal X-windows I/O error");
+  Fkill_emacs (make_number (70));
+}
+
 x_term_init ()
 {
 	register char *vardisplay;
@@ -1508,6 +1526,10 @@ x_term_init ()
 	XXscreen = DefaultScreen (XXdisplay);
 	XXisColor = DisplayCells (XXdisplay, XXscreen) > 2;
 	XXColorMap = DefaultColormap (XXdisplay, XXscreen);
+
+	XSetErrorHandler (x_error_handler);
+	XSetIOErrorHandler (x_io_error_handler);
+	signal (SIGPIPE, x_io_error_handler);
 
 	WindowMapped = 0;
 	baud_rate = 9600;
@@ -2171,7 +2193,7 @@ XT_Set_Size_Hints(w, x, y, width, height, do_resize, pr)
     flexlines = height;
 
 
-    change_screen_size(height, width);
+    change_screen_size (height, width, 0 - (do_resize == False));
 
     if (do_resize)
     {

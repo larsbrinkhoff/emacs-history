@@ -237,7 +237,8 @@ expressed as a string.  If ICON is nil then the original arrow cursor is used")
     cp = XSTRING(Data)->data;
     p = CursorData;
     i = 16;
-    while(--i >= 0)	*p++ = (*cp++ << 8) | (*cp++);
+    while(--i >= 0)
+      *p++ = (cp[0] << 8) | cp[1], cp += 2;
     CurrentCursor = NewCursor;
   }
   win_setcursor(win_fd, &CurrentCursor);

@@ -24,6 +24,9 @@
 (defvar dbx-trace-flag nil
   "Dbx trace switch.")
 
+(defvar dbx-process nil
+  "The process in which dbx is running.")
+
 (defvar dbx-break-point
   "stopped in .* at line \\([0-9]*\\) in file \"\\([^\"]*\\)\""
   "Regexp of pattern that dbx writes at break point.")
@@ -94,7 +97,8 @@ Return not at end copies rest of line to end and sends it.
     (switch-to-buffer (concat "*dbx-" file "*"))
     (setq default-directory (file-name-directory path))
     (switch-to-buffer (make-shell (concat "dbx-" file) "dbx" nil file)))
-  (set-process-filter (get-buffer-process (current-buffer)) 'dbx-filter)
+  (setq dbx-process (get-buffer-process (current-buffer)))
+  (set-process-filter dbx-process 'dbx-filter)
   (inferior-dbx-mode))
 
 (defun dbx-trace-mode (arg)
@@ -157,5 +161,5 @@ BEGIN bounds the search. If QUIET, just return nil (no error) if fail."
 	(line (save-restriction
 		(widen)
 		(1+ (count-lines 1 (point))))))
-    (send-string "dbx"
+    (send-string dbx-process
 		 (concat "stop at \"" file-name "\":" line "\n"))))

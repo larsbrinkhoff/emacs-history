@@ -229,7 +229,7 @@ of LaTeX-mode-hook."
   (make-local-variable 'comment-start)
   (setq comment-start "%")
   (make-local-variable 'comment-start-skip)
-  (setq comment-start-skip "[^\\]\\(\\(\\\\\\\\\\)*\\)%+ *")
+  (setq comment-start-skip "\\(\\(^\\|[^\\]\\)\\(\\\\\\\\\\)*\\)\\(%+ *\\)")
   (make-local-variable 'comment-indent-hook)
   (setq comment-indent-hook 'TeX-comment-indent)
   (make-local-variable 'TeX-command)
@@ -348,7 +348,9 @@ puts point on the blank line between them."
     (set-buffer (make-shell "TeX-shell" nil nil "-v"))
     (setq TeX-shell-map (copy-keymap shell-mode-map))
     (TeX-define-common-keys TeX-shell-map)
-    (use-local-map TeX-shell-map)))
+    (use-local-map TeX-shell-map)
+    (if (zerop (buffer-size))
+	(sleep-for 1))))
 
 (defun set-buffer-directory (buffer directory)
   "Set BUFFER's default directory to be DIRECTORY."
@@ -394,7 +396,7 @@ of TeX-trailer is appended to the temporary file after the region."
 	  ;; Initialize the temp file with either the header or nothing
 	  (if (search-forward TeX-start-of-header search-end t)
 	      (progn
-		(forward-line -1)
+		(beginning-of-line)
 		(setq hbeg (point))	;mark beginning of header
 		(if (search-forward TeX-end-of-header nil t)
 		    (progn (forward-line 1)

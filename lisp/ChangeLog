@@ -1,3 +1,37 @@
+Thu Feb 23 06:47:13 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.53 released.
+
+	* tex-mode.el (TeX-start): Wait 1 second for TeX to start.
+	(TeX-common-initialization): Make comment-start-skip find comment
+	at start of a line.
+	(TeX-region): don't include previous line (before start) in the header.
+
+	* autoinsert.el: Change defconst to defvar.
+
+Wed Feb 15 03:55:23 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dbx.el (run-dbx): Set dbx-process.
+	(dbx-stop-at): Use that to decide where to send the string.
+
+Thu Dec 29 14:23:37 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* compile.el (compilation-sentinel): Set OPOINT, OMAX in proper buffer.
+
+Wed Dec 28 23:07:35 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* debug.el (cancel-debug-on-entry): Paren error in case for macros.
+
+	* spell.el (spell-region): Don't lose if `spell-filter' is local.
+
+	* texinfmt.el (texinfo-format-defun-1): Fix bug in &-kwds in @defun.
+	(texinfo-format-emph): Rescan the argument.
+
+	* lpr.el (print-region-1): sysV wants different options.
+
+	* rmail.el (rmail-convert-to-babyl-format):
+	Do case-significant searches.
+
 Thu Sep  1 14:22:30 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* Version 18.52 released.

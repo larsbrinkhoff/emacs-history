@@ -1,6 +1,120 @@
+Fri Feb 24 06:36:11 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Version 18.53 released.
+
+	* x11fns.c, keymap.c: MouseMap now a Lisp_Object.
+
+Sat Feb 18 09:03:52 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacs.c (main) [BSD]: Do setpgrp.  May avoid some Unix signal bugs.
+
+Fri Feb 17 01:48:04 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-ibmrt-aix.h: Define BROKEN_FIONREAD.
+
+Wed Feb 15 22:34:58 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* callproc.c (Fcall_process): Open /dev/null with O_WRONLY.
+
+Mon Feb 13 05:22:20 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* alloc.c: Change all block sizes to 2^n - 8.
+	* malloc.c (malloc, free, realloc): Leave 8 bytes of space, not 4,
+	before the actual data block.
+
+Sat Feb 11 01:14:39 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* data.c (Fkill_local_variable): New local to simplify big stmt.
+
+Thu Feb  9 06:37:24 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes, child_setup_tty) [IBMRTAIX]:
+	Don't ignore BRK, and don't signal it.
+
+Wed Feb  8 13:24:39 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* keymap.c (Fdefine_prefix_command): Use Ffset, not Fset.
+
+Mon Feb  6 22:48:45 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11term.c: Include sys/time.h; AIX needs it.
+
+Fri Jan 20 14:27:37 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes): Do TIOCSTART if def, like TCXONC.
+
+Fri Jan 13 01:21:51 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11term.c (x_term_init): Set up an error handler and an I/O
+	error handler.  Also handle SIGPIPE.
+	(x_error_handler, x_io_error_handler): New functions.
+
+	* sunfns.c (Fsun_change_cursor_icon): Avoid ambiguity in eval order.
+
+Wed Jan 11 16:20:56 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dispnew.c (init_display): don't handle SIGWINCH if using X.
+	Set inhibit_window_system in that case.
+	This is said to stop Emacs from being wrong about the screen size
+	under X.  [danapple@flotsam.mit.edu].
+
+Wed Dec 28 23:04:25 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fileio.c (Fdo_auto_save): No "file has shrunk" msg if < 5000 chars.
+
+	* sysdep.c (utime): Use new flag IRIS_UTIME, not IRIS.
+	* s-iris*.h: Define that flag.
+
+	* sysdep.c (TIOCSETN) [USG]: Use TCSETAW, not TCSETA.
+
+	* editfns.c (Fsubst_char_in_region): Fix typo in when to un-modify buf.
+
+	* m-sun386.h (LDAV_SYMBOL): Define as "avenrun" with no underscore.
+
+	* search.c (place): Was clipping to (1- (point-max)) by mistake.
+
+	* m-iris4d.h: (conditionally) delete DEFAULT_ENTRY_ADDRESS
+	and change START_FILES and LIB_STANDARD.
+
+	* s-iris3-6.h: Define sigblock as no-op.
+
+	* m/m-mips.h: Cancel defn of VIRT_ADDR_VARIES, `static'.
+	Undef SIGIO.  Define BROKEN_FIONREAD.
+	Define various HAVE_... flags a la BSD.
+	Add options, libraries for linking and compilation.
+
+	* unexmips.c (unexec): Handle additional optional sections now likely.
+	New scheme for recording what sections there are.
+	Make handling of the LIT8,LIT4 sections conditional (not on IRIS).
+
+	* keymap.c (Fwhere_is_internal): Special handling if
+	DEFINITION is a cons: don't go thru indirect defns.
+
+	* xterm.c (XPopUpWindow, XTread_socket): No HPUX conditionals;
+	treat HPUX like other systems.
+
+	* s-hpux.h: Define SHORT_CAST_BUG (needed for 6.2).
+
+	* xdisp.c (message{,1}, DoDsp): At end, if screen_garbaged,
+	retry.  A size-change can cause this, under X.
+
+	* dispnew.c (change_screen_size): Split out change_screen_size_1
+	which does the real work.
+	PRETEND == -1 means do like normal but don't redisplay.
+	(unhold_window_change): Always process deferred change directly,
+	using change_screen_size_1.  During that, hold any new changes.
+	* x11term.c (XT_Set_Size_Hint): Don't omit PRETEND arg.
+	Pass -1 when this is called at startup--avoids calling DoDsp
+	before the X connection is really set up.
+
+Tue Sep  6 20:43:10 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* data.c (Fmake_local_variable): Add local variable to simplify
+	too-complex expression.
+	
 Wed Aug 31 02:45:27 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
 
-	* Version 1.27 released.
+	* Version 18.52 released.
 
 	* x11term.c (XT_GetDefaults): Replaced entire function.
 

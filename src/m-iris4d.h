@@ -152,6 +152,20 @@ and this notice must be preserved on all copies.  */
 #undef LIBS_MACHINE
 #define LIBS_MACHINE -lbsd -lPW -lmld
 #define LIBS_DEBUG
+
+/* Define this if you have a fairly recent system,
+   in which crt1.o and crt1.n should be used.  */
+#define HAVE_CRTN
+
+#ifdef HAVE_CRTN
+/* Must define START-FILES so that the linker can find /usr/lib/crt0.o.  */
+#define START_FILES pre-crt0.o /usr/lib/crt1.o
+#define LIB_STANDARD -lc /usr/lib/crtn.o
+#else
+#define START_FILES pre-crt0.o /usr/lib/crt0.o
+/* The entry-point label (start of text segment) is `start', not `__start'.  */
+#define DEFAULT_ENTRY_ADDRESS start
+#endif
 
 /* Use terminfo instead of termcap.  */
 
@@ -166,10 +180,6 @@ and this notice must be preserved on all copies.  */
 /* Define STACK_DIRECTION for alloca.c */
 
 #define STACK_DIRECTION -1
-
-/* Must define START-FILES so that the linker can find /usr/lib/crt0.o */
-
-#define START_FILES pre-crt0.o /usr/lib/crt0.o
 
 /* The standard definitions of these macros would work ok,
    but these are faster because the constants are short.  */
@@ -186,6 +196,3 @@ and this notice must be preserved on all copies.  */
 #define XMARKBIT(a) ((a) < 0)
 #define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
 #define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
-
-/* The entry-point label (start of text segment) is `start', not `__start'.  */
-#define DEFAULT_ENTRY_ADDRESS start

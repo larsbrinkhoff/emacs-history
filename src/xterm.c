@@ -1130,9 +1130,7 @@ XTread_socket (sd, bufp, numchars)
 	    }*/
 	  break;
 	case ButtonPressed:
-#ifndef HPUX
 	case ButtonReleased:
-#endif
 	  switch (spacecheck (Xxrepbuffer.mindex,
 			      Xxrepbuffer.rindex,
 			      Xxrepbuffer.windex, 0))
@@ -1846,9 +1844,7 @@ XPopUpWindow ()
 		 screen_height * fontinfo->height + 2 * XXInternalBorder,
 		 screen_width * fontinfo->width + 2 * XXInternalBorder);
   XSelectInput (XXwindow, KeyPressed | ExposeWindow | ButtonPressed
-#ifndef HPUX
 		| ButtonReleased
-#endif
 		| ExposeRegion | ExposeCopy);
   /*	XWarpMouse (XXwindow, pixelwidth >> 1, pixelheight >> 1);*/
   XTtopos (0, 0);

@@ -45,6 +45,7 @@ copyright notice and this notice must be preserved on all copies.  */
 
 #ifdef USG
 #include <fcntl.h>
+#include <unistd.h>
 #endif /* USG */
 
 #ifdef XENIX
@@ -59,6 +60,9 @@ copyright notice and this notice must be preserved on all copies.  */
 
 char *concat ();
 extern int errno;
+
+/* Nonzero means this is name of a lock file to delete on fatal error.  */
+char *delete_lockname;
 
 main (argc, argv)
      int argc;
@@ -78,11 +82,34 @@ main (argc, argv)
   int desc;
 #endif /* not MAIL_USE_FLOCK */
 
+  delete_lockname = 0;
+
   if (argc < 3)
     fatal ("two arguments required");
 
   inname = argv[1];
   outname = argv[2];
+
+  /* Check access to input and output file.  */
+  if (access (inname, R_OK | W_OK) != 0)
+    pfatal_with_name (inname);
+  if (access (outname, F_OK) == 0 && access (outname, W_OK) != 0)
+    pfatal_with_name (outname);
+
+  /* Also check that outname's directory is writeable to the real uid.  */
+  {
+    char *buf = (char *) malloc (strlen (outname) + 1);
+    char *p, q;
+    strcpy (buf, outname);
+    p = buf + strlen (buf);
+    while (p > buf && p[-1] != '/')
+      *--p = 0;
+    if (p == buf)
+      *p++ = '.';
+    if (access (buf, W_OK) != 0)
+      pfatal_with_name (buf);
+    free (buf);
+  }
 
 #ifdef MAIL_USE_POP
   if (!bcmp (inname, "po:", 3))
@@ -108,7 +135,7 @@ main (argc, argv)
   *p = 0;
   strcpy (p, "EXXXXXX");
   mktemp (tempname);
-  unlink (tempname);
+  (void) unlink (tempname);
 
   while (1)
     {
@@ -116,11 +143,11 @@ main (argc, argv)
       /* Give up if cannot do that.  */
       desc = open (tempname, O_WRONLY | O_CREAT, 0666);
       if (desc < 0)
-	fatal ("error creating lock file");
+        pfatal_with_name (concat ("temporary file \"", tempname, "\""));
       close (desc);
 
       tem = link (tempname, lockname);
-      unlink (tempname);
+      (void) unlink (tempname);
       if (tem >= 0)
 	break;
       sleep (1);
@@ -130,9 +157,11 @@ main (argc, argv)
 	{
 	  now = time (0);
 	  if (st.st_ctime < now - 60)
-	    unlink (lockname);
+	    (void) unlink (lockname);
 	}
     }
+
+  delete_lockname = lockname;
 #endif /* not MAIL_USE_FLOCK */
 
 #ifdef MAIL_USE_FLOCK
@@ -142,6 +171,7 @@ main (argc, argv)
 #endif /* not MAIL_USE_FLOCK */
   if (indesc < 0)
     pfatal_with_name (inname);
+
 #if defined(BSD) || defined(XENIX)
   /* In case movemail is setuid to root, make sure the user can
      read the output file.  */
@@ -167,15 +197,25 @@ main (argc, argv)
 	{
 	  int saved_errno = errno;
 	  (void) unlink (outname);
-#ifndef MAIL_USE_FLOCK
-	  (void) unlink (lockname);
-#endif /* not MAIL_USE_FLOCK */ 
 	  errno = saved_errno;
 	  pfatal_with_name (outname);
 	}
       if (nread < sizeof buf)
 	break;
     }
+
+#ifdef BSD
+  fsync (outdesc);
+#endif
+
+  /* Check to make sure no errors before we zap the inbox.  */
+  if (close (outdesc) != 0)
+    {
+      int saved_errno = errno;
+      (void) unlink (outname);
+      errno = saved_errno;
+      pfatal_with_name (outname);
+  }
 
 #ifdef MAIL_USE_FLOCK
 #if defined(STRIDE) || defined(XENIX)
@@ -186,13 +226,13 @@ main (argc, argv)
 #endif /* STRIDE or XENIX */
 #endif /* MAIL_USE_FLOCK */
   close (indesc);
-  close (outdesc);
+
 #ifndef MAIL_USE_FLOCK
   /* Delete the input file; if we can't, at least get rid of its contents.  */
   if (unlink (inname) < 0)
     if (errno != ENOENT)
       creat (inname, 0666);
-  unlink (lockname);
+  (void) unlink (lockname);
 #endif /* not MAIL_USE_FLOCK */
   exit (0);
 }
@@ -202,6 +242,8 @@ main (argc, argv)
 fatal (s1, s2)
      char *s1, *s2;
 {
+  if (delete_lockname)
+    unlink (delete_lockname);
   error (s1, s2);
   exit (1);
 }

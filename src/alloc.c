@@ -111,12 +111,12 @@ xrealloc (block, size)
  GC are put on a free list to be reallocated before allocating
  any new cons cells from the latest cons_block.
 
- Each cons_block is just under 1020 bytes long,
+ Each cons_block is just under 1016 bytes long,
  since malloc really allocates in units of powers of two
- and uses 4 bytes for its own overhead. */
+ and uses 8 bytes for its own overhead. */
 
 #define CONS_BLOCK_SIZE \
-  ((1020 - sizeof (struct cons_block *)) / sizeof (struct Lisp_Cons))
+  ((1016 - sizeof (struct cons_block *)) / sizeof (struct Lisp_Cons))
 
 struct cons_block
   {
@@ -269,12 +269,12 @@ DEFUN ("vector", Fvector, Svector, 0, MANY, 0,
 /* Allocation of symbols.
  Just like allocation of conses!
 
- Each symbol_block is just under 1020 bytes long,
+ Each symbol_block is just under 1016 bytes long,
  since malloc really allocates in units of powers of two
- and uses 4 bytes for its own overhead. */
+ and uses 8 bytes for its own overhead. */
 
 #define SYMBOL_BLOCK_SIZE \
-  ((1020 - sizeof (struct symbol_block *)) / sizeof (struct Lisp_Symbol))
+  ((1016 - sizeof (struct symbol_block *)) / sizeof (struct Lisp_Symbol))
 
 struct symbol_block
   {
@@ -340,7 +340,7 @@ Its value and function definition are void, and its property list is NIL.")
  Works like allocation of conses. */
 
 #define MARKER_BLOCK_SIZE \
-  ((1020 - sizeof (struct marker_block *)) / sizeof (struct Lisp_Marker))
+  ((1016 - sizeof (struct marker_block *)) / sizeof (struct Lisp_Marker))
 
 struct marker_block
   {
@@ -414,8 +414,8 @@ DEFUN ("make-marker", Fmake_marker, Smake_marker, 0, 0, 0,
 
 
 /* String blocks contain this many useful bytes.
-   8188 is power of 2, minus 4 for malloc overhead. */
-#define STRING_BLOCK_SIZE (8188 - sizeof (struct string_block_head))
+   8184 is power of 2, minus 8 for malloc overhead. */
+#define STRING_BLOCK_SIZE (8184 - sizeof (struct string_block_head))
 
 /* A string bigger than this gets its own specially-made string block
  if it doesn't fit in the current one. */

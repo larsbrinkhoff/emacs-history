@@ -111,7 +111,7 @@ extern char *sys_errlist[];
 #undef TIOCGETP
 #define TIOCGETP TCGETA
 #undef TIOCSETN
-#define TIOCSETN TCSETA
+#define TIOCSETN TCSETAW
 #undef TIOCSETP
 #define TIOCSETP TCSETAF
 #define TERMINAL struct termio
@@ -441,6 +441,10 @@ child_setup_tty (out)
 /* AIX enhanced edit looses NULs, so disable it */
   s.c_line = 0;
   s.c_iflag &= ~ASCEDIT;
+  /* Also, PTY overloads NUL and BREAK.
+     don't ignore break, but don't signal either, so it looks like NUL.  */
+  s.c_iflag &= ~IGNBRK;
+  s.c_iflag &= ~BRKINT;
 /* QUIT and INTR work better as signals, so disable character forms */
   s.c_cc[VQUIT] = 0377;
   s.c_cc[VINTR] = 0377;
@@ -772,6 +776,12 @@ init_sys_modes ()
       /* AIX enhanced edit loses NULs, so disable it */
       sg.c_line = 0;
       sg.c_iflag &= ~ASCEDIT;
+      /* Also, PTY overloads NUL and BREAK.
+	 don't ignore break, but don't signal either, so it looks like NUL.
+	 This really serves a purpose only if running in an XTERM window
+	 or via TELNET or the like, but does no harm elsewhere.  */
+      s.c_iflag &= ~IGNBRK;
+      s.c_iflag &= ~BRKINT;
 #endif
 #else /* if not HAVE_TERMIO */
 #ifdef VMS
@@ -795,10 +805,13 @@ init_sys_modes ()
       ioctl (0, TIOCSETN, &sg);
 #endif /* not VMS */
 
+      /* This code added to insure that, if flow-control is not to be used,
+	 we have an unlocked screen at the start. */
 #ifdef TCXONC
-      /* This code added to insure that if flow-control is not to be used we have 
-	 an unlocked screen at the start. */
       if (!flow_control) ioctl (0, TCXONC, 1);
+#endif
+#ifdef TIOCSTART
+      if (!flow_control) ioctl (0, TIOCSTART, 0);
 #endif
 
 #ifdef IBMRTAIX
@@ -2083,7 +2096,7 @@ utimes ()
 }
 #endif
 
-#ifdef IRIS
+#ifdef IRIS_UTIME
 
 /* The IRIS (3.5) has timevals, but uses sys V utime, and doesn't have the
    utimbuf structure defined anywhere but in the man page. */
@@ -2103,7 +2116,7 @@ utimes (name, tvp)
   utb.modtime = tvp[1].tv_sec;
   utime (name, &utb);
 }
-#endif /* IRIS */
+#endif /* IRIS_UTIME */
 
 
 #ifdef HPUX

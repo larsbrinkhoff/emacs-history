@@ -1,3 +1,34 @@
+Tue Feb 21 12:58:55 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: On sysv, include unistd.h.
+
+Tue Jan  3 13:29:46 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Check access before doing real work.
+	Check that outfile is in a writable directory.
+	On fatal error, delete the lock file.
+
+Fri Dec 30 16:37:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Use `access' to check input and output files.
+
+Wed Dec 28 23:16:28 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c [USG]: Don't append cwd if abs pathname is spec'd.
+
+Wed Nov 30 15:21:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Do fsync before closing output.
+
+Tue Nov 29 09:59:54 1988  Richard Mlynarik  (mly at pickled-brain.ai.mit.edu)
+
+        * movemail.c:  Better error message when can't create tempname.
+        This file needs a great deal of extra error-checking and lucid reporting...
+
+Tue Nov 15 10:00:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Close output and check errors before deleting input.
+
 Thu Aug  4 19:42:45 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* emacsclient.c: Args like +DIGITS are passed through unchanged.

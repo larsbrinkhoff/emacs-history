@@ -58,7 +58,7 @@ Lisp_Object Vx_mouse_abs_pos;
 
 Lisp_Object Vx_mouse_item;
 
-extern struct Lisp_Vector *MouseMap;
+extern Lisp_Object MouseMap;
 
 extern XEvent *XXm_queue[XMOUSEBUFSIZE];
 extern int XXm_queue_num;

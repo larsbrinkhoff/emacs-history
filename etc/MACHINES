@@ -1,5 +1,5 @@
 This is a list of the status of GNU Emacs on various machines and systems.
-Last updated 31 August 1988
+Last updated 23 Feb 1989
 
 Systems:
   For each type of system, the name of the appropriate s- header file
@@ -170,11 +170,9 @@ Celerity (m-celerity.h; s-bsd4-2.h)
 
   Version 18.49 works.
 
-Convex (m-convex.h; s-bsd4-2.h)
+Convex (m-convex.h; s-bsd4-3.h)
 
-  Changes that should work merged in 18.50.
-
-  18.51 should fix the problems in dumping on operating system version 6.1.
+  18.53 is supposed to work.
 
 Cydra 5 (m-cydra5.h; s-usg5-3.h)
 
@@ -210,6 +208,9 @@ Encore machine (m-ns16000.h; s-umax.h)
   WARNING: If you compile Emacs with the "-O" compiler switch, you
   must also use the "-q enter_exits" switch so that all functions have
   stack frames.  Otherwise routines that call `alloca' all lose.
+
+  A kernel bug in some system versions causes input characters to be lost
+  occasionally.
 
 GEC 93 (m-gec93.h; s-usg5-2.h?)
 
@@ -285,9 +286,13 @@ IBM RT/PC (m-ibmrt.h or m-ibmrt-aix.h; s-bsd4-2.h or s-usg5-2-2.h)
   18.52 works on both operating systems.
   Use s-bsd-4-2.h for the 4.2-like system and s-usg5-2-2.h for AIX.
 
+  On BSD, if you have trouble, try compiling with a different compiler.
+
   On AIX, the file /usr/lib/samples/hft/hftctl.c must be compiled into
   hftctl.o, with this result left in the src directory (hftctl.c is
   part of the standard AIX distribution).
+
+  window.c must not be compiled with -O on AIX.
 
 Integrated Solutions `Optimum V' (m-isi-ov.h; s-bsd4-2.h or s-bsd4-3.h)
 
@@ -309,9 +314,10 @@ Intel 80386 (m-intel386.h; s-bsd4-2.h, s-usg5-2-2.h, s-usg5-3.h or s-xenix.h)
 
   Changes merged in 18.50 for all three operating systems.
   If you are using Xenix, see notes above under Xenix.
-  Note one version of system V.3 lacks the pty and socket support
-  that the V.3 normally (I am told) has; in this case, you should
-  #undef HAVE_PTYS and HAVE_SOCKETS in config.h.
+
+  Some sysV.3 systems seem to have bugs in `opendir';
+  for them, alter `config.h' to define NONSYSTEM_DIR_LIBRARY
+  and undefine SYSV_SYSTEM_DIR.
 
 Iris 2500 (m-irist.h; s-iris3-5.h or s-iris3-6.h)
 
@@ -480,7 +486,24 @@ Ustation E30 (SS5E) (m-ustation.h; s-unipl5-2.h).
 
 Vax running Berkeley Unix (m-vax.h; s-bsd4-1.h, s-bsd4-2.h or s-bsd4-3.h)
 
-  Works.  Note that "ultrix" is essentially 4.2; use s-bsd4-2.h.
+  Works.
+
+Vax running Ultrix (m-vax.h; s-bsd4-2.h or s-bsd4-3.h)
+
+  Works.  Note that "ultrix" is essentially 4.2 or 4.3, depending on version.
+
+  Ultrix 3.0 has incompatibilities in its X library; to solve them,
+  you need to prevent XvmsAlloc.o in Xlib from being used.  Israel Pinkas says:
+
+    I added the following lines to config.h after the X defines:
+
+    #if defined(ultrix) && defined(X11)
+    #define OBJECTS_SYSTEM calloc.o
+    #endif
+
+    Then I ran the following:
+
+    ar x /usr/lib/libc.a calloc.o
 
 Vax running System V rel 2 (m-vax.h; s-usg5-2.h)
 

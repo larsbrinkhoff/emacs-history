@@ -838,10 +838,17 @@ See also `make-variable-buffer-local'.")
       bf_cur->local_var_alist
         = Fcons (Fcons (sym, XCONS (XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->cdr)->cdr),
 		 bf_cur->local_var_alist);
+
       /* Make sure symbol does not think it is set up for this buffer;
 	 force it to look once again for this buffer's value */
-      if (bf_cur == XBUFFER (XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car))
-	XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car = Qnil;
+      {
+	/* This local variable avoids "expression to complex" on IBM RT.  */
+	Lisp_Object xs;
+    
+	xs = XSYMBOL (sym)->value;
+	if (bf_cur == XBUFFER (XCONS (XCONS (xs)->cdr)->car))
+	  XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car = Qnil; 
+      }
     }
   return sym;
 }
@@ -885,8 +892,12 @@ From now on the default value will apply in this buffer.")
 
   /* Make sure symbol does not think it is set up for this buffer;
      force it to look once again for this buffer's value */
-  if (bf_cur == XBUFFER (XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car))
-    XCONS (XCONS (XSYMBOL (sym)->value)->cdr)->car = Qnil;
+  {
+    Lisp_Object sv;
+    sv = XSYMBOL (sym)->value;
+    if (bf_cur == XBUFFER (XCONS (XCONS (sv)->cdr)->car))
+      XCONS (XCONS (sv)->cdr)->car = Qnil;
+  }
 
   return sym;
 }

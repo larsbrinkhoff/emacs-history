@@ -460,8 +460,8 @@ malloc (n)		/* get a block */
   register int nunits = 0;
 
   /* Figure out how many bytes are required, rounding up to the nearest
-     multiple of 4, then figure out which nextf[] area to use */
-  nbytes = (n + sizeof *p + EXTRA + 3) & ~3;
+     multiple of 8, then figure out which nextf[] area to use */
+  nbytes = (n + ((sizeof *p + 7) & ~7) + EXTRA + 7) & ~7;
   {
     register unsigned int   shiftr = (nbytes - 1) >> 2;
 
@@ -517,7 +517,7 @@ malloc (n)		/* get a block */
   nmalloc[nunits]++;
   nmal++;
 #endif /* MSTATS */
-  return (char *) (p + 1);
+  return (char *) p + ((sizeof *p + 7) & ~7);
 }
 
 free (mem)
@@ -530,11 +530,11 @@ free (mem)
     if (ap == 0)
       return;
 
-    p = (struct mhead *) ap - 1;
+    p = (struct mhead *) (ap - ((sizeof *p + 7) & ~7));
     if (p -> mh_alloc == ISMEMALIGN)
       {
 	ap -= p->mh_size;
-	p = (struct mhead *) ap - 1;
+	p = (struct mhead *) (ap - ((sizeof *p + 7) & ~7));
       }
 
     if (p -> mh_alloc != ISALLOC)
@@ -579,7 +579,7 @@ realloc (mem, n)
 
   if ((p = (struct mhead *) mem) == 0)
     return malloc (n);
-  p--;
+  p -= (8 / sizeof (struct mhead));
   nunits = p -> mh_index;
   ASSERT (p -> mh_alloc == ISALLOC);
 #ifdef rcheck
@@ -591,7 +591,7 @@ realloc (mem, n)
   }
 #else /* not rcheck */
   if (p -> mh_index >= 13)
-    tocopy = (1 << (p -> mh_index + 3)) - sizeof *p;
+    tocopy = (1 << (p -> mh_index + 3)) - ((sizeof *p + 7) & ~7);
   else
     tocopy = p -> mh_size;
 #endif /* not rcheck */

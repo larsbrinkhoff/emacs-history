@@ -34,6 +34,10 @@ and this notice must be preserved on all copies.  */
 #define O_RDONLY 0
 #endif
 
+#ifndef O_WRONLY
+#define O_WRONLY 1
+#endif
+
 #include "lisp.h"
 #include "commands.h"
 #include "buffer.h"
@@ -158,7 +162,7 @@ if you quit, the process is killed.")
 #ifdef VMS
     fd[1] = open ("NLA0:", 0), fd[0] = -1;
 #else
-    fd[1] = open ("/dev/null", 0), fd[0] = -1;
+    fd[1] = open ("/dev/null", O_WRONLY), fd[0] = -1;
 #endif /* not VMS */
   else
     {

@@ -61,6 +61,10 @@ and this notice must be preserved on all copies.  */
  */
 
 #define HAVE_TIMEVAL
+
+/* `utime' system call doesn't understand timevals.  */
+
+#define IRIS_UTIME
  
 /*
  *	Define HAVE_SELECT if the system supports the `select' system call.
@@ -138,6 +142,7 @@ and this notice must be preserved on all copies.  */
  */
 
 #define sigsetmask(mask)	/* Null expansion */
+#define sigblock(x) x
 
 /* The IRIS defines SIGIO in signal.h, but doesn't implement it. */
 #undef SIGIO

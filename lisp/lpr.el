@@ -65,7 +65,8 @@
 	  (setq start (point-min) end (point-max))))
      (apply 'call-process-region
 	    (nconc (list start end lpr-command
-			 nil nil nil
-			 "-J" name "-T" name)
-		   switches))
+			 nil nil nil)
+		   (nconc (and (eq system-type 'berkeley-unix)
+			       (list "-J" name "-T" name))
+			  switches)))
      (message "Spooling...done"))))

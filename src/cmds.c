@@ -237,7 +237,7 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
       if (flag)
 	InsCStr (&c1, 1);
       else
-	SelfInsert ('\n', XFASTINT (arg1) > 1);
+	SelfInsert ('\n', !NULL (arg1));
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
     }
 

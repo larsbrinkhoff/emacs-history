@@ -249,7 +249,8 @@ Redefining FUNCTION also does that."
   (interactive "aCancel debug on entry (to function): ")
   (let ((defn (symbol-function function)))
     (if (eq (car defn) 'macro)
-	(fset function (cons 'macro (debug-on-entry-1 function (cdr defn)) nil))
+	(fset function
+	      (cons 'macro (debug-on-entry-1 function (cdr defn) nil)))
       (fset function (debug-on-entry-1 function defn nil))))
   function)
 

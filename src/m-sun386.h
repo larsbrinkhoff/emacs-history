@@ -37,6 +37,10 @@ and this notice must be preserved on all copies.  */
 
 #define LOAD_AVE_CVT(x) (int) (((double) (x)) * 100.0 / FSCALE)
 
+/* Underscores are not prepended to C symbols on this machine.  */ 
+#undef LDAV_SYMBOL
+#define LDAV_SYMBOL "avenrun"
+
 /* Must use the system's termcap.  It does special things.  */
 
 #define LIBS_TERMCAP -ltermcap

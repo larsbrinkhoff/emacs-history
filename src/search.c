@@ -1062,11 +1062,11 @@ place (l1, l2)
 {
   if (l1 < FirstCharacter)
     l1 = FirstCharacter;
-  if (l1 >= NumCharacters)
-    l1 = NumCharacters;
+  if (l1 >= NumCharacters + 1)
+    l1 = NumCharacters + 1;
   if (l2 < l1) l2 = l1;
-  if (l2 >= NumCharacters)
-    l2 = NumCharacters;
+  if (l2 >= NumCharacters + 1)
+    l2 = NumCharacters + 1;
   move_gap (point);
   InsCStr (&CharAt (l1), l2 - l1);
 }

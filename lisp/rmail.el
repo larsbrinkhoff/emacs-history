@@ -509,7 +509,7 @@ and use that file as the inbox."
 ;; the  rmail-break-forwarded-messages  feature is not implemented
 (defun rmail-convert-to-babyl-format ()
   (let ((count 0) start
-	(case-fold-search t))
+	(case-fold-search nil))
     (goto-char (point-min))
     (save-restriction
       (while (not (eobp))

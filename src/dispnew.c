@@ -1127,27 +1127,36 @@ window_change_signal ()
 }
 #endif /* SIGWINCH */
 
-/* Prevent window-change signals from being handled.  */
+/* Prevent screen size from being changed by signals.  */
 hold_window_change ()
 {
   in_display = 1;
 }
 
-/* Allow waiting window-change signals to be handled.  */
+/* Reenable signals to change the screen size
+   and handle any signals that have happened already.  */
+
 unhold_window_change ()
 {
   in_display = 0;
-  /* If window_change_signal should have run before, run it now.  */
-  if (delayed_size_change)
-#ifdef SIGWINCH
-    kill (getpid (), SIGWINCH);
-#else
-    change_screen_size (delayed_screen_height, delayed_screen_width, 0);
-#endif
+  /* If change_screen_size should have run before, run it now.  */
+  while (delayed_size_change)
+    {
+      int newwidth = delayed_screen_width;
+      int newheight = delayed_screen_height;
+      delayed_size_change = 0;
+      in_display = 1;
+      change_screen_size_1 (newheight, newwidth, 0);
+      in_display = 0;
+    }
 }
 
 /* Change the screen height and/or width.  Values may be given as zero to
-   indicate no change is to take place. */
+   indicate no change is to take place.
+   PRETEND is normally 0; 1 means change used-size only
+   but don't change the size used for calculations;
+   -1 means don't redisplay.  */
+
 change_screen_size (newlength, newwidth, pretend)
      register int newlength, newwidth, pretend;
 {
@@ -1159,8 +1168,13 @@ change_screen_size (newlength, newwidth, pretend)
       delayed_size_change = 1;
       return;
     }
-
   delayed_size_change = 0;
+  change_screen_size_1 (newlength, newwidth, pretend);
+}
+
+change_screen_size_1 (newlength, newwidth, pretend)
+     register int newlength, newwidth, pretend;
+{
   if ((newlength == 0 || newlength == screen_height)
       && (newwidth == 0 || newwidth == screen_width))
     return;
@@ -1172,7 +1186,7 @@ change_screen_size (newlength, newwidth, pretend)
       XFASTINT (XWINDOW (minibuf_window)->top) = newlength - 1;
       set_window_height (minibuf_window, 1, 0);
       screen_height = newlength;
-      if (!pretend)
+      if (pretend <= 0)
 	ScreenRows = newlength;
       set_terminal_window (0);
     }
@@ -1183,12 +1197,13 @@ change_screen_size (newlength, newwidth, pretend)
       set_window_width (XWINDOW (minibuf_window)->prev, newwidth, 0);
       set_window_width (minibuf_window, newwidth, 0);
       screen_width = newwidth;
-      if (!pretend)
+      if (pretend <= 0)
 	ScreenCols = newwidth;
     }
   make_display_lines ();
   calculate_costs ();
-  DoDsp (1);
+  if (pretend >= 0)
+    DoDsp (1);
 }
 
 DEFSIMPLE ("baud-rate", Fbaud_rate, Sbaud_rate,
@@ -1400,6 +1415,8 @@ init_display ()
 #endif /* HAVE_X_WINDOWS */
       ;
     }
+  /* Record we aren't using a window system.  */
+  inhibit_window_system = 1;
 
   /* Look at the TERM variable */
   terminal_type = (char *) getenv ("TERM");
@@ -1427,7 +1444,8 @@ For types not defined in VMS, use  define emacs_term \"TYPE\".\n\
 #ifndef CANNOT_DUMP
   if (initialized)
 #endif /* CANNOT_DUMP */
-    signal (SIGWINCH, window_change_signal);
+    if (inhibit_window_system)
+      signal (SIGWINCH, window_change_signal);
 #endif /* SIGWINCH */
 }
 

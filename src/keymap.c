@@ -31,7 +31,7 @@ and this notice must be preserved on all copies.  */
 /* Actually allocate storage for these variables */
 
 #ifdef HAVE_X_WINDOWS
-struct Lisp_Vector *MouseMap;		/* Keymap for mouse commands */
+Lisp_Object MouseMap;		/* Keymap for mouse commands */
 #endif /* HAVE_X_WINDOWS */
 
 struct Lisp_Vector *CurrentGlobalMap;	/* Current global keymap */
@@ -523,7 +523,7 @@ A keymap is created and stored as SYMBOL's function definition.")
   (name)
      Lisp_Object name;
 {
-  Fset (name, Fmake_keymap ());
+  Ffset (name, Fmake_keymap ());
   return name;
 }
 
@@ -806,7 +806,8 @@ sequence found, rather than a list of all possible key sequences.")
 	      i++;
 	    }
 
-	  elt = get_keyelt (elt);
+	  if (XTYPE (definition) != Lisp_Cons)
+	    elt = get_keyelt (elt);
 
 	  /* End this iteration if this element does not match
 	     the target.  */
@@ -1269,7 +1270,7 @@ syms_of_keymap ()
 
 #ifdef HAVE_X_WINDOWS
   tem = Fmake_keymap ();
-  MouseMap = XVECTOR (tem);
+  MouseMap = tem;
   Fset (intern ("mouse-map"), tem);
 #endif /* HAVE_X_WINDOWS */
 

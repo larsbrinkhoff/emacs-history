@@ -56,13 +56,14 @@ Used in a program, applies from START to END.
 DESCRIPTION is an optional string naming the unit being checked:
 for example, \"word\"."
   (interactive "r")
-  (let ((buf (get-buffer-create " *temp*")))
+  (let ((filter spell-filter)
+	(buf (get-buffer-create " *temp*")))
     (save-excursion
      (set-buffer buf)
      (widen)
      (erase-buffer))
     (message "Checking spelling of %s..." (or description "region"))
-    (if (and (null spell-filter) (= ?\n (char-after (1- end))))
+    (if (and (null filter) (= ?\n (char-after (1- end))))
 	(if (string= "spell" spell-command)
 	    (call-process-region start end "spell" nil buf)
 	  (call-process-region start end shell-file-name
@@ -72,7 +73,7 @@ for example, \"word\"."
 	 (set-buffer buf)
 	 (insert-buffer-substring oldbuf start end)
 	 (or (bolp) (insert ?\n))
-	 (if spell-filter (funcall spell-filter))
+	 (if filter (funcall filter))
 	 (if (string= "spell" spell-command)
 	     (call-process-region (point-min) (point-max) "spell" t buf)
 	   (call-process-region (point-min) (point-max) shell-file-name

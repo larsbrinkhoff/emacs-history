@@ -5,6 +5,8 @@
    verbatim copies of this document provided that the
    copyright notice and this permission notice are preserved.
 
+	The prices on the order form below EXPIRE in June 1989
+
 GNU Emacs is legally owned by the Free Software Foundation, but we
 regard the foundation actually as its custodian on behalf of the
 public, since all software ought to be the common property of mankind.
@@ -92,75 +94,98 @@ information on GNU, see the file GNU in this directory.
 			President of the Free Software Foundation
 
 		Free Software Foundation Order Form
-			    31 May 1988
+			   17 January 1989
+
+	   This form is effective January 1989--June 1989.
 
 All software and publications are distributed with permission to
 copy and redistribute.
 
 Quantity  Price  Item
 
-________ $150	GNU Emacs source code, on a 1600bpi industry standard
-		mag tape in tar format.  The tape also contains:
-		* GDB (the GNU source-level C debugger)
+________ $150	GNU Emacs and other software, for Unix systems,
+		on 1600bpi reel-to-reel 9-track tape in tar format.
+		The tape also contains:
 		* MIT Scheme (a dialect of Lisp)
 		* T, Yale's implementation of Scheme
-		* Hack (a rogue-like game)
 		* Bison (a free, compatible replacement for yacc)
+		* Hack (a rogue-like game)
+		* GNU Chess (a chess playing program with an interface to X).
+		* GDB (the GNU source-level C debugger)
 		* The X window system (a window system for bitmap
 		  displays written at MIT) (version 10r4)
-		* GNU Chess (a chess playing program with an interface to X).
 							
-________ $175   Same data as above on a Sun DC300XL 1/4" cartridge tape.
-
-________ $150	GNU Emacs only, on a 1600bpi industry standard mag
-		tape in VMS backup format.
-
-________ $150	GNU C Compiler source code, on a 1600bpi industry standard
-		mag tape in tar format.  The tape also contains:
-		* Gawk (the GNU implementation of the AWK programming language)
-		* GNU Assembler
+________ $150	GNU Beta Test tape, for Unix systems, on tape as in last item.
+		The tape includes:
+		* GCC (the GNU C Compiler)
+		* G++ (the C++ front end to GCC)
 		* Bison (a free, compatible replacement for yacc)
-		* The X window system (a window system for bitmap
-		  displays written at MIT) (version 11r2)
-		* GNU versions of ld, make, gprof, size, nm and strip
 		* Flex (Vern Paxson fast rewrite of lex)
+		* Gnostscript (a Postscript interpreter)
+		* Gawk (the GNU implementation of the AWK programming language)
+		* Gas (the GNU Assembler)
+		* Gnuplot (an interactive mathematical plotting program)
+		* GNU object file utilities (ar, ld, make, gprof, size, nm,
+		  strip, ranlib, et al.)
+		* other GNU utilities (diff, grep, tar, et al.)
+		* the freed files from the 4.3BSD-Tahoe distribution
 
-________ $175   Same data as above on a Sun DC300XL 1/4" cartridge tape.
+________ $150	MIT X Window System X11R3, for Unix systems,
+		on tape as in last item.
 
-________ $150   GNU C compiler sources and executables for VMS
-		in a special self-loading format; also assembler and Bison.
+________ $175   GNU Emacs and other software, for Suns, as in the first item,
+		on DC300XLP 1/4inch cartridge tape, in QIC-24 format.
 
-________  $15	GNU Emacs manual (~300 pages).  These manuals are phototypeset
-		and offset printed, with illustrated covers, a GBC plastic ring
-		binding that stays open flat, and a tear-out reference card.
+________ $175	GNU Beta Test tape, for Suns, as in the second item,
+                on tape as in last item.
+
+________ $175	MIT X Window System X11R3, as in the third item,
+                on tape as in last item.
+
+________ $150	GNU Emacs source code and binaries, for VMS, on 1600
+		bpi reel-to-reel 9-track tape in VMS backup format.
+
+________ $150	GNU C compiler source code and binaries, for VMS, on
+		tape as in last item.  Includes Bison and GAS.
+
+________  $15	GNU Emacs manual, ~300 pages.  The manual is phototypeset,
+		offset printed, and spiral bound; it includes a reference card.
 
 Thus, a 1600 bpi tape and one Emacs manual come to $165.
 
-________  $10   GDB Manual (~55 pages, side stapled.)
+________  $60	Box of six GNU Emacs manuals, each with reference card.
 
-________  $10	Texinfo Manual (~100 pages, side stapled.  Texinfo is GNU's
+________   $1	One GNU Emacs reference card, without the manual.
+
+________   $5   Packet of ten GNU Emacs reference cards.
+
+________  $10   GDB Manual, ~70 pages, side stapled.
+
+________  $10	Texinfo Manual, ~100 pages, side stapled.  Texinfo is GNU's
 		structured documentation system, included with GNU Emacs
-		This manual describes how to write Texinfo documents).
+		This manual describes how to write Texinfo documents.
 
-________  $10   Termcap Manual (~60 pages, side stapled.  Documents the
-		termcap library and GNU's extensions to it.)
+________  $10   Termcap Manual, ~60 pages, side stapled.  Documents the
+		termcap library and GNU's extensions to it.  The GNU termcap
+		library is included with GNU Emacs.
 
-________  $60	Box of six GNU Emacs manuals.
+________  $10   Bison Manual, ~70 pages, side stapled.
 
-________   $1	One GNU Emacs reference card.
+________  $10   Gawk Manual, ~100 pages, side stapled.
 
-________   $5   Ten GNU Emacs reference cards.
+________  $10   Make Manual, ~100 pages, side stapled.
 
-Prices are subject to change without notice.
+Prices and contents of tapes are subject to change without notice.
+This form is effective January 1989--June 1989.
 
-________   Massachusetts residents please add 5% sales tax to all prices.
+________   If ordering from Massachusetts:} add 5% sales tax.
 
-________   Shipping outside North America is normally by surface mail.
-	   For air mail delivery, please add $15 per tape or manual,
-	   $1 for an individual reference card, or
-	   50 cents per card in quantity ten or more.
+________   If outside of North America and Hawaii:  for shipping costs,
+	   please add $60 for each box of Emacs manuals; for tapes or
+	   unboxed manuals, please add $15, and then add $15 more for
+	   each tape or unboxed manual. 
 
-________   Optional tax deductable donation.
+________   Optional tax deductible donation.
 
 
 ________   Total paid

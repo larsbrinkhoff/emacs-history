@@ -658,7 +658,7 @@ and don't mark the buffer as really changed.")
   look = XINT (fromchar);
 
   modify_region (pos, stop);
-  if (NULL (noundo))
+  if (! NULL (noundo))
     bf_modified--;
 
   while (pos < stop)

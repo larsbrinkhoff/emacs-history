@@ -1,5 +1,5 @@
 /* m- file for convex C1.
-   Copyright (C) 1987 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1989 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -34,10 +34,9 @@ and this notice must be preserved on all copies.  */
 #define BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
- * group of arguments and treat it as an array of the arguments.
- * Maybe it would be better to simply correct the code. */
+ * group of arguments and treat it as an array of the arguments.  */
 
-#define NO_ARG_ARRAY
+/* #define NO_ARG_ARRAY */
 
 /* Define WORD_MACHINE if addresses and such have
  * to be corrected before they can be used as byte counts.  */
@@ -88,7 +87,7 @@ and this notice must be preserved on all copies.  */
    Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
-/*#define VIRT_ADDR_VARIES*/
+/* #define VIRT_ADDR_VARIES */
 
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.
@@ -97,8 +96,12 @@ and this notice must be preserved on all copies.  */
    Define neither one if an assembler-language alloca
    in the file alloca.s should be used.  */
 
-/*#define C_ALLOCA*/
+/* #define C_ALLOCA */
 #define HAVE_ALLOCA
+
+#ifdef __GNUC__
+#define alloca __builtin_alloca
+#endif
 
 /* Define NO_REMAP if memory segmentation makes it not work well
    to change the boundary between the text section and data section
@@ -108,14 +111,12 @@ and this notice must be preserved on all copies.  */
 /* #define NO_REMAP */
 
 /* Addresses on the Convex have the high bit set.  */
-#define DATA_SEG_BITS (1 << (INTBITS-1))
 
-/* Right shift is logical shift.
-   And the usual way of handling such machines, which involves
-   copying the number into sign_extend_temp, does not work
-   for reasons as yet unknown.  */
+#define DATA_SEG_BITS 0x80000000
 
-#define XINT(a)  sign_extend_lisp_int (a)
+/* Right shift is logical shift, so use this to sign-extend a lisp int.  */
+ 
+#define XINT(a) ((int) ((((a) & 0x00ffffff) ^ 0x00800000) - 0x00800000))
 
 /* Convex uses a special version of unexec.  */
 

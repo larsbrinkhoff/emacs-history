@@ -243,3 +243,6 @@ and this notice must be preserved on all copies.  */
 #define BAUD_CONVERT  \
 { 0, 50, 75, 110, 135, 150, 200, 300, 600, 900, 1200,  \
   1800, 2400, 3600, 4800, 7200, 9600, 19200, 38400 }
+
+/* This is needed for HPUX version 6.2; it may not be needed for 6.2.1.  */
+#define SHORT_CAST_BUG

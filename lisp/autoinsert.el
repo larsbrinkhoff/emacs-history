@@ -49,18 +49,18 @@
 ;;;
 ;;;  Date: Fri Jul  1 16:15:31 EDT 1988
 
-(defconst auto-insert-alist '(("\\.tex$" . "tex-insert.tex")
-			       ("\\.c$" . "c-insert.c")
-			       ("\\.h$" . "h-insert.c")
-			       ("[Mm]akefile" . "makefile.inc")
-			       ("\\.bib$" . "tex-insert.tex"))
+(defvar auto-insert-alist '(("\\.tex$" . "tex-insert.tex")
+			    ("\\.c$" . "c-insert.c")
+			    ("\\.h$" . "h-insert.c")
+			    ("[Mm]akefile" . "makefile.inc")
+			    ("\\.bib$" . "tex-insert.tex"))
   "Alist specifying text to insert by default into a new file.
 Elements look like (REGEXP . FILENAME); if the new file's name
 matches REGEXP, then the file FILENAME is inserted into the buffer.
 Only the first matching element is effective.")
 
 ;;; Establish a default value for auto-insert-directory
-(defconst auto-insert-directory "~/insert/"
+(defvar auto-insert-directory "~/insert/"
   "Directory from which auto-inserted files are taken.")
 
 (defun insert-auto-insert-files ()

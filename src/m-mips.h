@@ -90,7 +90,7 @@ and this notice must be preserved on all copies.  */
    Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
-#define VIRT_ADDR_VARIES
+/* #define VIRT_ADDR_VARIES */
 
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.
@@ -122,8 +122,12 @@ and this notice must be preserved on all copies.  */
 /* Alter some of the options used when linking.  */
 
 #define LIBS_MACHINE -lmld
-#define LD_SWITCH_MACHINE -D 800000
-#define LIBS_DEBUG
+#define LD_SWITCH_MACHINE -D 800000 -g3
+#define START_FILES pre-crt0.o /usr/lib/crt1.o
+#define LIB_STANDARD -lbsd -lc /usr/lib/crtn.o
+
+#define C_SWITCH_SYSTEM -I/usr/include/bsd
+#define C_DEBUG_SWITCH -O -g3
 
 /* The standard definitions of these macros would work ok,
    but these are faster because the constants are short.  */
@@ -140,3 +144,35 @@ and this notice must be preserved on all copies.  */
 #define XMARKBIT(a) ((a) < 0)
 #define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
 #define XUNMARK(a) ((a) = (((unsigned)(a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
+
+/* Cancel certain parts of standard sysV.3 support.  */
+#undef SYSV_SYSTEM_DIR
+#undef static
+
+/* Don't try to use SIGIO or FIONREAD even though they are defined.  */
+#undef SIGIO
+#define BROKEN_FIONREAD
+
+/* Describe special kernel features.  */
+
+#define HAVE_SYSVIPC
+
+#define HAVE_TIMEVAL
+#if defined(emacs)
+#include <bsd/sys/time.h>
+#endif
+
+/* #define HAVE_SELECT
+   The `select' in the system won't work for pipes,
+   so don't use it.  */
+
+#define HAVE_DUP2
+#define HAVE_GETWD
+#define HAVE_GETTIMEOFDAY
+
+#define HAVE_PTYS
+#define HAVE_SOCKETS
+#define BSTRING
+
+/* ??? */
+#define IRIS

@@ -193,9 +193,9 @@ main (argc, argv)
 	      fprintf (stderr, cwd);
 	      *cwd = '\0';
 	    }
+	  strcat (msgp->mtext, cwd);
 	}
 	
-      strcat (msgp->mtext, cwd);
       strcat (msgp->mtext, argv[0]);
       strcat (msgp->mtext, " ");
       argv++; argc--;

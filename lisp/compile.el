@@ -123,14 +123,14 @@ to find the text that grep hits refer to."
 	 (set-process-buffer proc nil))
 	((memq (process-status proc) '(signal exit))
 	 (let* ((obuf (current-buffer))
-		(omax (point-max))
-		(opoint (point)))
+		omax opoint)
 	   ;; save-excursion isn't the right thing if
 	   ;;  process-buffer is current-buffer
 	   (unwind-protect
 	       (progn
 		 ;; Write something in *compilation* and hack its mode line,
 		 (set-buffer (process-buffer proc))
+		 (setq omax (point-max) opoint (point))
 		 (goto-char (point-max))
 		 (insert ?\n mode-name " " msg)
 		 (forward-char -1)
@@ -147,7 +147,7 @@ to find the text that grep hits refer to."
 	     (setq compilation-process nil)
 	     ;; Force mode line redisplay soon
 	     (set-buffer-modified-p (buffer-modified-p)))
-	   (if (< opoint omax)
+	   (if (and opoint (< opoint omax))
 	       (goto-char opoint))
 	   (set-buffer obuf)))))
 
