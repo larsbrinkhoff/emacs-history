@@ -40,6 +40,7 @@ command line.
 * Colors X::	    Choosing colors, under X.
 * Window Size X::   Start-up window size, under X.
 * Borders X::	    Internal and external borders, under X.
+* Icons X::         Choosing what sort of icon to use, under X.
 * Resources X::     Advanced use of classes and resources, under X.
 @end menu
 
@@ -65,7 +66,6 @@ Load a file @var{file} of Lisp code with the function @code{load}.
 @itemx -funcall @var{function}
 Call Lisp function @var{function} with no arguments.
 
-@item -i @var{file}
 @itemx -insert @var{file}
 Insert the contents of @var{file} into the current buffer.
 This is like what @kbd{M-x insert-buffer} does; @xref{Misc File Ops}.
@@ -411,6 +411,27 @@ specify the width of the external border (though the window manager may
 add to this on certain edges).  The default width of the external border
 is 2.
 
+@node Icons X
+@appendixsec Icons
+@cindex icons (X Windows)
+
+  Most window managers allow the user to ``iconify'' a frame, removing
+it from sight, and leaving a small, distinctive ``icon'' window in its
+place.  Clicking on the icon window will make the original frame visible
+again.  If a user has many clients running at once, they can avoid
+cluttering up their screen by iconifying all but the clients currently
+in use.
+
+  The @samp{-i} and @samp{-itype} option tells Emacs to use an icon
+window containing a picture of the GNU gnu.  If omitted, Emacs lets the
+window manager choose what sort of icon to use --- usually just a small
+rectangle containing the frame's title.
+
+  The @samp{-iconic} option tells Emacs to begin running as an icon,
+rather than opening a frame right away.  In this situation, the icon
+window provides only indication that Emacs has started; the usual text
+frame doesn't appear until you de-iconify it.
+
 @node Resources X
 @appendixsec X Resources
 
@@ -503,12 +524,6 @@ Color name for text cursor (point).
 @item @code{font} (class @code{Font})
 Font name for text.
 
-@item @code{PaneFont} (class @code{Font})
-Font name for menu pane titles.
-
-@item @code{SelectionFont} (class @code{Font})
-Font name for menu items.
-
 @item @code{foreground} (class @code{Foreground})
 Color name for text.
 
@@ -521,12 +536,22 @@ Name to display in icon.
 @item @code{internalBorder} (class @code{BorderWidth})
 Width in pixels of internal border.
 
+@ignore
+@item @code{PaneFont} (class is not usable)
+Font name for menu pane titles.
+@end ignore
+
 @item @code{pointerColor} (class @code{Foreground})
 Color of mouse cursor.
 
 @item @code{reverseVideo} (class @code{ReverseVideo})
 Switch foreground and background default colors if @samp{on}, use colors as
 specified if @samp{off}.
+
+@ignore
+@item @code{SelectionFont} (class is not usable)
+Font name for menu items.
+@end ignore
 
 @item @code{title} (class @code{Title})
 Name to display in title bar of initial Emacs frame.

@@ -6,6 +6,52 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.8.
+
+* It is now simpler to tell Emacs to display accented characters under
+X windows.  M-x standard-display-european toggles the display of
+buffer text according to the ISO Latin-1 standard.  With a prefix
+argument, this command enables European character display iff the
+argument is positive.
+
+* The `-i' command-line argument tells Emacs to use a picture of the
+GNU gnu as its icon, instead of letting the window manager choose an
+icon for it.  This option used to insert a file into the current
+buffer; use `-insert' to do that now.
+
+* The `configure' script now supports `--prefix' and `--exec-prefix'
+options.
+
+The `--prefix=PREFIXDIR' option specifies where the installation process
+should put emacs and its data files.  This defaults to `/usr/local'.
+- Emacs (and the other utilities users run) go in PREFIXDIR/bin
+  (unless the `--exec-prefix' option says otherwise).
+- The architecture-independent files go in PREFIXDIR/lib/emacs/VERSION
+  (where VERSION is the version number of Emacs, like `19.7').
+- The architecture-dependent files go in
+  PREFIXDIR/lib/emacs/VERSION/CONFIGURATION
+  (where CONFIGURATION is the configuration name, like mips-dec-ultrix4.2),
+  unless the `--exec-prefix' option says otherwise.
+
+The `--exec-prefix=EXECDIR' option allows you to specify a separate
+portion of the directory tree for installing architecture-specific
+files, like executables and utility programs.  If specified,
+- Emacs (and the other utilities users run) go in EXECDIR/bin, and
+- The architecture-dependent files go in
+  EXECDIR/lib/emacs/VERSION/CONFIGURATION.
+EXECDIR/bin should be a directory that is normally in users' PATHs.
+
+* When running under X Windows, the new lisp function `x-list-fonts'
+allows code to find out which fonts are available from the X server.
+The first argument PATTERN is a string, perhaps with wildcard characters;
+  the * character matches any substring, and
+  the ? character matches any single character.
+  PATTERN is case-insensitive.
+If the optional arguments FACE and FRAME are specified, then
+`x-list-fonts' returns only fonts the same size as FACE on FRAME.
+
+
+
 Changes in version 19.
 
 * When you kill buffers, Emacs now returns memory to the operating system,
@@ -41,14 +87,7 @@ buffer is very large.
 * You can quit while Emacs is waiting to read or write files.
 
 * The arrow keys now have default bindings to move in the appropriate
-directions.  (Of course, you must provide a terminal-specific file to
-tell Emacs what sequences the arrow keys send on each kind of
-terminal, or Emacs won't recognize the arrow keys.) 
-
-* The arrow keys now act like true motion commands; down-arrow will
-beep when you try to move past the buffer end and not insert newlines,
-left and right arrow will trigger horizontal scrolling when point
-would otherwise move off the screen.
+directions. 
 
 * You can suppress next-line's habit of inserting a newline when
 called at the end of a buffer by setting next-line-add-newlines to nil

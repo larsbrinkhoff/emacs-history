@@ -712,11 +712,11 @@ XMenuCreate(display, parent, def_env)
   menu->s_frg_color = s_frg_color.pixel;
   menu->bkgnd_color = bkgnd_color.pixel;
   /* -------------------- Pixmap data -------------------- */
-  menu->p_bdr_pixmap = NULL;
-  menu->s_bdr_pixmap = NULL;
-  menu->p_frg_pixmap = NULL;
-  menu->s_frg_pixmap = NULL;
-  menu->bkgnd_pixmap = NULL;
+  menu->p_bdr_pixmap = None;
+  menu->s_bdr_pixmap = None;
+  menu->p_frg_pixmap = None;
+  menu->s_frg_pixmap = None;
+  menu->bkgnd_pixmap = None;
   menu->inact_pixmap = inact_bitmap;
 
   /*

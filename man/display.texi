@@ -206,6 +206,22 @@ the three dots.
 @node Optional Display
 @section Optional Display Features
 
+@cindex European character sets
+@cindex accented characters
+@cindex ISO Latin-1 character sets
+@findex standard-display-european
+
+  Emacs can display accented characters, assuming the font in use
+supports them.  The @kbd{M-x standard-display-european} command toggles
+European character display.  When enabled, Emacs displays characters
+according to the ISO 8859 Latin-1 encoding for European languages; when
+disabled, Emacs uses octal notation for all characters not specified by
+the ordinary ASCII standard.
+
+With a prefix argument, @kbd{M-x standard-display-european} enables
+European character display iff the argument is positive.
+
+
 @cindex Line Number mode
 @cindex mode, Line Number
 @findex line-number-mode

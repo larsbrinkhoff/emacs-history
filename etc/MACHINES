@@ -297,11 +297,14 @@ HP 9000 series 500: not supported.
   which relocates data in memory during execution of a program,
   and support for it would be difficult to implement.
 
-HP 9000 series 800 (Spectrum) (hppa1.0-hp-hpux)
+HP 9000 series 700 or 800 (Spectrum) (hppa-hp-hpux)
 
   These files support HP's Precision Architecture machines
   running HP-UX.  It has been moderately tested on the Series
   840.
+
+  It hasn't been tested on the 700's at all.  If you try it out on
+  this system, please send us comments and patches.
 
   If you are running HP-UX release 8.0 or later, you need the optional
   "C/ANSI C" software in order to build Emacs (older releases of HP-UX

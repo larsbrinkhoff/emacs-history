@@ -1,5 +1,6 @@
 srcdir=@srcdir@/oldXmenu
 VPATH=@srcdir@/oldXMenu
+C_SWITCH_X_SITE=
 
 # Uncomment following line if linking temacs complains about missing insque.
 # EXTRA=insque.o
@@ -78,8 +79,9 @@ OBJS =  Activate.o \
 	SetSel.o \
       XDelAssoc.o XLookAssoc.o XCrAssoc.o XDestAssoc.o XMakeAssoc.o
 
+ALL_CFLAGS=$(CFLAGS) $(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) $(C_SWITCH_X_SITE)
 .c.o:
-	$(CC) -c $(CFLAGS) $(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) ${srcdir}/$*.c
+	$(CC) -c ${ALL_CFLAGS} ${srcdir}/$*.c
 
 all:: libXMenu11.a
 

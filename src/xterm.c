@@ -27,16 +27,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define NEW_SELECTIONS
 
+/* On 4.3 these lose if they come after xterm.h.  */
+/* On HP-UX 8.0 signal.h loses if it comes after config.h.  */
+/* Putting these at the beginning seems to be standard for other .c files.  */
+#include <stdio.h>
+#include <signal.h>
+
 #include "config.h"
 
 #ifdef HAVE_X_WINDOWS
 
 #include "lisp.h"
 #include "blockinput.h"
-
-/* On 4.3 these lose if they come after xterm.h.  */
-#include <stdio.h>
-#include <signal.h>
 
 /* This may include sys/types.h, and that somehow loses
    if this is not done before the other system files.  */
@@ -421,8 +423,6 @@ dumpglyphs (f, left, top, gp, n, hl)
   register Lisp_Object *tbase = GLYPH_TABLE_BASE;
   Window window = FRAME_X_WINDOW (f);
 
-  extern struct face *intern_face (/* FRAME_PTR, struct face * */);
-
   while (n > 0)
     {
       /* Get the face-code of the next GLYPH.  */
@@ -490,30 +490,37 @@ dumpglyphs (f, left, top, gp, n, hl)
 #define FACE_DEFAULT (~0)
 
 	/* Now override that if the cursor's on this character.  */
-	if (hl == 2 && (defaulted
-			|| !(face->font && (int) face->font != FACE_DEFAULT)))
+	if (hl == 2)
 	  {
-	    gc = f->display.x->cursor_gc;
-	  }
-	/* Cursor on non-default face: must merge.  */
-	else if (hl == 2)
-	  {
-	    XGCValues xgcv;
-	    unsigned long mask;
+	    if (defaulted
+		|| !face->font
+		|| (int) face->font == FACE_DEFAULT)
+	      {
+		gc = f->display.x->cursor_gc;
+	      }
+	    /* Cursor on non-default face: must merge.  */
+	    else
+	      {
+		XGCValues xgcv;
+		unsigned long mask;
 
-	    xgcv.background = f->display.x->cursor_pixel;
-	    xgcv.foreground = f->display.x->cursor_foreground_pixel;
-	    xgcv.font = face->font->fid;
-	    xgcv.graphics_exposures = 0;
-	    mask = GCForeground | GCBackground | GCFont | GCGraphicsExposures;
-	    gc = XCreateGC (x_current_display, FRAME_X_WINDOW (f),
-			    mask, &xgcv);
+		xgcv.background = f->display.x->cursor_pixel;
+		xgcv.foreground = f->display.x->cursor_foreground_pixel;
+		xgcv.font = face->font->fid;
+		xgcv.graphics_exposures = 0;
+		mask = GCForeground | GCBackground | GCFont | GCGraphicsExposures;
+		gc = XCreateGC (x_current_display, FRAME_X_WINDOW (f),
+				mask, &xgcv);
 #if 0
-	    if (face->stipple && face->stipple != FACE_DEFAULT)
-	      XSetStipple (x_current_display, gc, face->stipple);
+		if (face->stipple && face->stipple != FACE_DEFAULT)
+		  XSetStipple (x_current_display, gc, face->stipple);
 #endif
-	    gc_temporary = 1;
+		gc_temporary = 1;
+	      }
 	  }
+
+	if ((int) font == FACE_DEFAULT)
+	  font = f->display.x->font;
 
 	XDrawImageString (x_current_display, window, gc,
 			  left, top + FONT_BASE (font), buf, len);
@@ -2386,69 +2393,65 @@ x_scroll_bar_report_motion (f, bar_window, part, x, y, time)
 {
   struct scroll_bar *bar = XSCROLL_BAR (last_mouse_scroll_bar);
   int win_x, win_y;
+  Window dummy_window;
+  int dummy_coord;
+  unsigned int dummy_mask;
 
   BLOCK_INPUT;
 
   /* Get the mouse's position relative to the scroll bar window, and
      report that.  */
-  {
-    Window dummy_window;
-    int dummy_coord;
-    unsigned int dummy_mask;
+  if (! XQueryPointer (x_current_display,
+		       SCROLL_BAR_X_WINDOW (bar),
 
-    if (! XQueryPointer (x_current_display,
-			 SCROLL_BAR_X_WINDOW (bar),
+		       /* Root, child, root x and root y.  */
+		       &dummy_window, &dummy_window,
+		       &dummy_coord, &dummy_coord,
 
-			 /* Root, child, root x and root y.  */
-			 &dummy_window, &dummy_window,
-			 &dummy_coord, &dummy_coord,
+		       /* Position relative to scroll bar.  */
+		       &win_x, &win_y,
 
-			 /* Position relative to scroll bar.  */
-			 &win_x, &win_y,
+		       /* Mouse buttons and modifier keys.  */
+		       &dummy_mask))
+    *f = 0;
+  else
+    {
+      int inside_height
+	= VERTICAL_SCROLL_BAR_INSIDE_HEIGHT (XINT (bar->height));
+      int top_range
+	= VERTICAL_SCROLL_BAR_TOP_RANGE     (XINT (bar->height));
 
-			 /* Mouse buttons and modifier keys.  */
-			 &dummy_mask))
-      {
-	*f = 0;
-	goto done;
-      }
-  }
+      win_y -= VERTICAL_SCROLL_BAR_TOP_BORDER;
 
-  {
-    int inside_height = VERTICAL_SCROLL_BAR_INSIDE_HEIGHT (XINT (bar->height));
-    int top_range     = VERTICAL_SCROLL_BAR_TOP_RANGE     (XINT (bar->height));
+      if (! NILP (bar->dragging))
+	win_y -= XINT (bar->dragging);
 
-    win_y -= VERTICAL_SCROLL_BAR_TOP_BORDER;
+      if (win_y < 0)
+	win_y = 0;
+      if (win_y > top_range)
+	win_y = top_range;
 
-    if (! NILP (bar->dragging))
-      win_y -= XINT (bar->dragging);
+      *f = XFRAME (WINDOW_FRAME (XWINDOW (bar->window)));
+      *bar_window = bar->window;
 
-    if (win_y < 0)
-      win_y = 0;
-    if (win_y > top_range)
-      win_y = top_range;
+      if (! NILP (bar->dragging))
+	*part = scroll_bar_handle;
+      else if (win_y < XINT (bar->start))
+	*part = scroll_bar_above_handle;
+      else if (win_y < XINT (bar->end) + VERTICAL_SCROLL_BAR_MIN_HANDLE)
+	*part = scroll_bar_handle;
+      else
+	*part = scroll_bar_below_handle;
 
-    *f = XFRAME (WINDOW_FRAME (XWINDOW (bar->window)));
-    *bar_window = bar->window;
+      XSET (*x, Lisp_Int, win_y);
+      XSET (*y, Lisp_Int, top_range);
 
-    if (! NILP (bar->dragging))
-      *part = scroll_bar_handle;
-    else if (win_y < XINT (bar->start))
-      *part = scroll_bar_above_handle;
-    else if (win_y < XINT (bar->end) + VERTICAL_SCROLL_BAR_MIN_HANDLE)
-      *part = scroll_bar_handle;
-    else
-      *part = scroll_bar_below_handle;
+      mouse_moved = 0;
+      last_mouse_scroll_bar = Qnil;
+    }
 
-    XSET (*x, Lisp_Int, win_y);
-    XSET (*y, Lisp_Int, top_range);
-    *time = last_mouse_movement_time;
-  }
+  *time = last_mouse_movement_time;
 
-  mouse_moved = 0;
-  last_mouse_scroll_bar = Qnil;
-
- done:
   UNBLOCK_INPUT;
 }
 
@@ -2697,6 +2700,12 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 	      x_send_incremental (event);
 	    }
 #endif
+	  break;
+
+	case ReparentNotify:
+	  f = x_window_to_frame (event.xreparent.window);
+	  if (f)
+	    f->display.x->parent_desc = event.xreparent.parent;
 	  break;
 
 	case Expose:
@@ -3090,6 +3099,30 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		{
 		  change_frame_size (f, rows, columns, 0, 1);
 		  SET_FRAME_GARBAGED (f);
+		}
+
+	      if (! event.xconfigure.send_event)
+		{
+		  Window win, child;
+		  int win_x, win_y;
+
+		  /* Coords are relative to the parent.
+		     Convert them to root-relative.  */
+		  XTranslateCoordinates (x_current_display,
+			       
+					 /* From-window, to-window.  */
+					 f->display.x->parent_desc,
+					 ROOT_WINDOW,
+
+					 /* From-position, to-position.  */
+					 event.xconfigure.x,
+					 event.xconfigure.y,
+					 &win_x, &win_y,
+
+					 /* Child of win.  */
+					 &child);
+		  event.xconfigure.x = win_x;
+		  event.xconfigure.y = win_y;
 		}
 
 	      f->display.x->pixel_width = event.xconfigure.width;
@@ -3863,11 +3896,11 @@ static int x_font_table_size;
    0 <= n_fonts <= x_font_table_size.  */
 static int n_fonts;
 
+Lisp_Object
 x_new_font (f, fontname)
      struct frame *f;
      register char *fontname;
 {
-  XFontStruct *temp;
   int already_loaded;
   int n_matching_fonts;
   XFontStruct *font_info;
@@ -3879,10 +3912,11 @@ x_new_font (f, fontname)
   font_names = (char **) XListFontsWithInfo (x_current_display, fontname,
 					     1024, &n_matching_fonts,
 					     &font_info);
+
   /* If the server couldn't find any fonts whose named matched fontname,
      return an error code.  */
   if (n_matching_fonts == 0)
-    return 1;
+    return Qnil;
 
   /* See if we've already loaded a matching font. */
   {
@@ -3894,6 +3928,7 @@ x_new_font (f, fontname)
 	if (x_font_table[i]->fid == font_info[j].fid)
 	  {
 	    already_loaded = i;
+	    fontname = font_names[j];
 	    goto found_font;
 	  }
   }
@@ -3906,11 +3941,27 @@ x_new_font (f, fontname)
   /* Otherwise, load the font and add it to the table.  */
   else
     {
+      int i;
       XFontStruct *font;
+
+      /* Try to find a character-cell font in the list.  */
+#if 0 
+      /* A laudable goal, but this isn't how to do it.  */
+      for (i = 0; i < n_matching_fonts; i++)
+	if (! font_info[i].per_char)
+	  break;
+#else
+      i = 0;
+#endif
+
+      if (i >= n_matching_fonts)
+	return Qt;
+      else
+	fontname = font_names[i];
 
       font = (XFontStruct *) XLoadQueryFont (x_current_display, fontname);
       if (! font)
-	return 1;
+	return Qnil;
 
       /* Do we need to create the table?  */
       if (x_font_table_size == 0)
@@ -3933,10 +3984,6 @@ x_new_font (f, fontname)
       f->display.x->font = x_font_table[n_fonts++] = font;
     }
   
-  /* Free the information from XListFontsWithInfo.  The data
-     we actually retain comes from XLoadQueryFont.  */
-  XFreeFontInfo (font_names, font_info, n_matching_fonts);
-
   /* Now make the frame display the given font.  */
   if (FRAME_X_WINDOW (f) != 0)
     {
@@ -3946,12 +3993,20 @@ x_new_font (f, fontname)
 		f->display.x->font->fid);
       XSetFont (x_current_display, f->display.x->cursor_gc,
 		f->display.x->font->fid);
-      init_frame_faces (f);
 
       x_set_window_size (f, f->width, f->height);
     }
 
-  return 0;
+  {
+    Lisp_Object lispy_name = build_string (fontname);
+
+
+    /* Free the information from XListFontsWithInfo.  The data
+       we actually retain comes from XLoadQueryFont.  */
+    XFreeFontInfo (font_names, font_info, n_matching_fonts);
+
+    return lispy_name;
+  }
 }
 #else /* ! defined (HAVE_X11) */
 x_new_font (f, newname)

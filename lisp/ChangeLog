@@ -1,3 +1,94 @@
+Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+	* startup.el (command-line-1): Don't handle `-i'.  We're
+	abandoning the `insert file' meaning in favor of the `use a
+	bitmapped icon' meaning.
+
+	* faces.el (set-face-font): Call x-resolve-font-name on the font
+	before including it in the face.
+	(x-resolve-font-name): New function.
+
+	* iso-syntax.el: Make downcase into a proper case table before
+	passing it to set-standard-case-table.
+
+	* disp-table.el (standard-display-european): Doc fix.  Make
+	it autoload.  Make it respond to prefix arg like a minor mode.
+
+Mon May 24 17:16:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (find-file-read-only-other-window): 
+	Use find-file-other-window.
+
+	* paths.el (Info-default-directory-list): Add ../../info.
+
+	* info.el (Info-suffix-list): Fix duplicate .z to .info.z.
+
+	* faces.el (x-create-frame-with-faces): Handle `reverse' as parameter.
+	* frame.el (frame-initialize): Likewise.
+
+	* dired.el (dired-flag-backup-files): Speedup:
+	check explicitly for ~ at end of line.
+	(dired-flag-auto-save-files): Similar change.
+
+	* register.el (jump-to-register):
+	Don't fail if frame-configuration-p is unbound.
+
+	* files.el (cd): Set cd-path to a list.
+
+	* simple.el (kill-new): Pass t as 2nd arg to interprogram-cut-function.
+	* select.el (x-set-cut-buffer): New arg PUSH.
+
+Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* disp-table.el (standard-display-default): New function.
+	(standard-display-european): New command.
+
+	* loaddefs.el: Bind [?\M-\C-\ ] to mark-sexp.
+
+Mon May 24 14:44:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (shell-command): Don't activate mark even momentarily.
+
+Mon May 24 03:54:44 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* case-table.el, disp-table.el, finder.el, iso-ascii.el,
+	iso-insert.el, iso-swed.el, iso-syntax.el, iso8859-1.el,
+	swedish.el: Change "i14n" keyword to "i18n".
+	* finder.el (finder-compile-keywords): Replacement unnecessary.
+
+Mon May 24 01:06:01 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* menu-bar.el (menu-bar-mode): Doc fix.
+
+Sun May 23 21:58:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* lucid.el (switch-to-other-buffer): Build the list of acceptable
+	buffers properly.
+
+	* faces.el (make-face): Change interactive spec to 'S'.
+
+Sun May 23 18:44:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ange-ftp.el (ange-ftp-raw-send-cmd): Allow quitting
+	during accept-process-output.
+
+	* finder.el (finder-known-keywords): Use i18n, not i14n.
+	(finder-compile-keywords): Substitute i18n for i14n.
+	Turn off undo in *finder-scratch*.  Ignore file names
+	starting with =.
+	(finder-mode, finder-current-item): Rename headmark to finder-headmark.
+	(finder-list-matches, finder-list-keywords): Likewise.
+
+	* iso8859-1.el: Call set-case-..., not standard-case-...
+
+Sun May 23 18:56:04 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* calendar.el (calendar-daylight-savings-starts,
+	calendar-daylight-savings-ends): Default to nil if the locale
+	never has DST.
+
 Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
         * Version 19.7 released.
@@ -12149,3 +12240,10 @@ Tue Sep  6 21:03:07 1988  Richard Stallman  (rms@mole.ai.mit.edu)
 	* loaddefs.el (shell-prompt-pattern): Allow prompt enclosed in parens.
 
 	* lisp-mode.el (calculate-lisp-indent): bug in lisp-indent-offset case.
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+fill-column: 74
+version-control: never
+End:

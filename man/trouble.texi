@@ -184,16 +184,16 @@ of baud.)
 is to tell Emacs to cope with it.  To do this, call the function
 @code{enable-flow-control}.
 
-@findex evade-flow-control-on
+@findex enable-flow-control-on
   Typically there are particular terminal types with which you must use
 flow control.  You can conveniently ask for flow control on those
-terminal types only, using @code{evade-flow-control-on}.  For example,
+terminal types only, using @code{enable-flow-control-on}.  For example,
 if you find you must use flow control on VT-100 and H19 terminals, put
 the following in your @file{.emacs} file:
 
-@findex evade-flow-control-on
+@findex enable-flow-control-on
 @example
-(evade-flow-control-on "vt100" "h19")
+(enable-flow-control-on "vt100" "h19")
 @end example
 
   When flow control is enabled, you must type @kbd{C-\} to get the

@@ -2026,9 +2026,9 @@ static char *lispy_function_keys[] =
     "insertchar",
     "deletechar",
     "backtab",
-    "kp_backtab",		/* 0x1000ff75 */
+    "kp-backtab",		/* 0x1000ff75 */
     0,				/* 0xff76 */
-    0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0xff7f */
+    0, 0, 0, 0, 0, 0, 0, 0, "kp-numlock",	/* 0xff7f */
     "kp-space",			/* 0xff80 */	/* IsKeypadKey */
     0, 0, 0, 0, 0, 0, 0, 0,
     "kp-tab",			/* 0xff89 */
@@ -2354,6 +2354,8 @@ make_lispy_movement (frame, bar_window, part, x, y, time)
 	{
 	  window = Qnil;
 	  posn = Qnil;
+	  XFASTINT (x) = 0;
+	  XFASTINT (y) = 0;
 	}
 
       return Fcons (Qmouse_movement,
@@ -2737,7 +2739,14 @@ modify_event_symbol (symbol_num, modifiers, symbol_kind, name_table,
   if (NILP (*slot))
     {
       /* No; let's create it.  */
-      *slot = intern (name_table[symbol_num]);
+      if (name_table[symbol_num])
+	*slot = intern (name_table[symbol_num]);
+      else
+	{
+	  char buf[20];
+	  sprintf (buf, "key-%d", symbol_num);
+	  *slot = intern (buf);
+	}
 
       /* Fill in the cache entries for this symbol; this also 	
 	 builds the Qevent_symbol_elements property, which the user
@@ -4569,7 +4578,7 @@ The elements of this list correspond to the arguments of\n\
   val[0] = interrupt_input ? Qt : Qnil;
   val[1] = flow_control ? Qt : Qnil;
   val[2] = meta_key == 2 ? make_number (0) : meta_key == 1 ? Qt : Qnil;
-  XSETINT (val[3], quit_char);
+  XFASTINT (val[3]) = quit_char;
 
   return Flist (val, sizeof (val) / sizeof (val[0]));
 }

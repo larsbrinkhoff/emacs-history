@@ -1,3 +1,26 @@
+Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+	* make-docfile.c: Doc fix.
+
+Mon May 24 19:33:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* tcp.c: Fix comment syntax at top of file.
+	(main): Don't call htons with the port number.
+
+Mon May 24 01:53:42 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Makefile.in (timer.o, sorted-doc.c): Link with alloca.o, if it's
+	appropriate. 
+
+	* Makefile.in (install): Refer to the variables INSTALLABLES and
+	INSTALLABLE_SCRIPTS, instead of writing them out.
+
+Sun May 23 14:52:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-path.c (main): Return 0.
+
 Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
         * Version 19.7 released.

@@ -4,7 +4,7 @@
 
 ;; Author: Howard Gayle
 ;; Maintainer: FSF
-;; Keywords: i14n
+;; Keywords: i18n
 
 ;; This file is part of GNU Emacs.
 
@@ -97,7 +97,7 @@
   (set-case-syntax 223 "w" downcase)	; small sharp s, German
   (set-case-syntax 247 "_" downcase)	; division sign
   (set-case-syntax 255 "w" downcase)	; small y with diaeresis or umlaut mark
-  (set-standard-case-table downcase))
+  (set-standard-case-table (list downcase nil nil nil)))
 
 (provide 'iso-syntax)
 

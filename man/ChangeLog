@@ -1,3 +1,18 @@
+Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+Tue May 25 01:51:29 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* cmdargs.texi: Document the -i, -itype, and -iconic options.
+
+	* trouble.texi: It's `enable-flow-control-on', not
+	`evade-flow-control-on'.
+
+Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* display.texi: Document standard-display-european.
+
 Sat May 22 17:41:18 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.7 released.

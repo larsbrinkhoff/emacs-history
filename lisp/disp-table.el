@@ -4,7 +4,7 @@
 
 ;; Author: Howard Gayle
 ;; Maintainer: FSF
-;; Keywords: i14n
+;; Keywords: i18n
 
 ;; This file is part of GNU Emacs.
 
@@ -72,6 +72,17 @@
     (setq l (1+ l))))
 
 ;;;###autoload
+(defun standard-display-default (l h)
+  "Display characters in the range L to H using the default notation."
+  (while (<= l h)
+    (if (and (>= l ?\ ) (< l 127))
+	(if standard-display-table (aset standard-display-table l nil))
+      (or standard-display-table
+	  (setq standard-display-table (make-vector 261 nil)))
+      (aset standard-display-table l nil))
+    (setq l (1+ l))))
+
+;;;###autoload
 (defun standard-display-ascii (c s)
   "Display character C using string S."
   (or standard-display-table
@@ -109,6 +120,21 @@
       (error "No free glyph codes remain"))
   (setq glyph-table (vconcat glyph-table (list string)))
   (1- (length glyph-table)))
+
+;;;###autoload
+(defun standard-display-european (arg)
+  "Toggle display of European characters encoded with ISO 8859.
+When enabled, characters in the range of 160 to 255 display not
+as octal escapes, but as accented characters.
+With prefix argument, enable European character display iff arg is positive."
+  (interactive "P")
+  (if (or (< (prefix-numeric-value arg) 0)
+	  (and (null arg)
+	       (vectorp standard-display-table)
+	       (>= (length standard-display-table) 161)
+	       (equal (aref standard-display-table 160) [160])))
+      (standard-display-default 160 255)
+    (standard-display-8bit 160 255)))
 
 (provide 'disp-table)
 

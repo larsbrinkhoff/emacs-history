@@ -1,3 +1,18 @@
+Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+Sun May 23 17:47:43 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in (C_SWITCH_X_SITE): New variable, so that the
+	configuration process can correctly implement the --x-includes
+	option.
+
+Sat May 22 23:48:24 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Create.c (XMenuCreate): Initialize the menu's pixmaps to None,
+	not NULL.
+
 Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
         * Version 19.7 released.

@@ -85,7 +85,8 @@ Otherwise report on the defaults for face FACE (for new frames)."
 If the optional FRAME argument is provided, change only
 in that frame; otherwise change each frame."
   (interactive (internal-face-interactive "font"))
-  (internal-set-face-1 face 'font font 3 frame))
+  (internal-set-face-1 face 'font (x-resolve-font-name font face frame)
+		       3 frame))
 
 (defsubst set-face-foreground (face color &optional frame)
   "Change the foreground color of face FACE to COLOR (a string).
@@ -201,7 +202,7 @@ If NAME is already a face, it is simply returned."
   "Define a new FACE on all frames.  
 You can modify the font, color, etc of this face with the set-face- functions.
 If the face already exists, it is unmodified."
-  (interactive "sMake face: ")
+  (interactive "SMake face: ")
   (or (internal-find-face name)
       (let ((face (make-vector 8 nil)))
 	(aset face 0 'face)
@@ -411,6 +412,19 @@ set its foreground and background to the default background and foreground."
   (setq x-font-regexp-slant (concat - slant -))
   (setq x-font-regexp-weight (concat - weight -))
   nil)	    
+
+(defun x-resolve-font-name (pattern &optional face frame)
+  "Return a font name matching PATTERN.
+All wildcards in PATTERN become substantiated.
+Given optional arguments FACE and FRAME, try to return a font which is
+also the same size as FACE on FRAME,"
+  (let ((fonts (x-list-fonts pattern face frame)))
+    (or fonts
+	(if face
+	    (error "no fonts match `%S'." pattern)
+	  (error "no fonts matching pattern are the same size as `%s'."
+		 pattern face)))
+    (car fonts)))
 
 (defun x-frob-font-weight (font which)
   (if (or (string-match x-font-regexp font)
@@ -723,6 +737,17 @@ If NOERROR is non-nil, return nil on failure."
 	   (faces (copy-alist global-face-data))
 	   (rest faces))
       (set-frame-face-alist frame faces)
+
+      (if (cdr (or (assq 'reverse parameters)
+		   (assq 'reverse default-frame-alist)))
+	  (let ((params (frame-parameters frame)))
+	    (modify-frame-parameters
+	     frame
+	     (list (cons 'foreground-color (cdr (assq 'background-color params)))
+		   (cons 'background-color (cdr (assq 'foreground-color params)))
+		   (cons 'mouse-color (cdr (assq 'background-color params)))
+		   (cons 'cursor-color (cdr (assq 'background-color params)))
+		   (cons 'border-color (cdr (assq 'background-color params)))))))
 
       ;; Copy the vectors that represent the faces.
       ;; Also fill them in from X resources.

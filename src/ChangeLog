@@ -1,3 +1,252 @@
+Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+Tue May 25 00:52:36 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xfns.c: Clear out the old face stuff.
+	(x_face_table, n_faces, x_set_face, x_set_glyph, Fx_set_face_font,
+	Fx_set_face, Fx_get_face): Removed.
+	(syms_of_xfns): Remove defsubr for Fx_set_face.
+
+	Arrange for font names to get fully resolved - no wildcards.
+	* xfns.c (x_set_frame_parameters): Store the value in the frame
+	parameter alist before we call the setter function, so the setter
+	function can touch up the value if it chooses.
+	(x_set_foreground_color, x_set_background_color): Call
+	recompute_basic_faces, so their GC's will reflect the changes.
+	(x_new_font): Add extern declaration - this returns a Lisp_Object
+	now, the fully resolved font name.
+	(x_set_font): Accept the fully resolved name from x_new_font, and
+	put it in the frame's parameter alist.  Call recompute_basic_faces.
+	* xterm.c (x_new_font): Return the fully resolved font name, Qnil
+	(if no match), or Qt (match, but unacceptable metrics).
+	* xterm.c (x_new_font): Don't call init_frame_faces.
+
+	* xterm.h: New section for declarations for xfaces.c.
+	(init_frame_faces, free_frame_faces, intern_face,
+	face_name_id_number, same_size_fonts, recompute_basic_faces,
+	compute_char_face, compute_glyph_face): Declare these here.
+	* xfaces.c (same_size_fonts): We can now remove this extern
+	declaration.
+	* xfns.c (face_name_id_number): Likewise.
+	* xterm.c (intern_face): Likewise.
+
+	* xterm.c (dumpglyphs): Remember that the default faces can have
+	null fonts, too.
+
+	* xfns.c (Fx_list_fonts): Remember that FACE may not have a font
+	specified.  Don't specify 30000 as the maximum limit on the number
+	of fontns returned  - 2000 is more reasonable. 
+
+	* xfaces.c (build_face, unload_font, free_frame_faces): Don't
+	forget to block input while making X calls.
+
+	Treat faces as structures specifying modifications to the frame's
+	parameters, rather than things which need to specify a complete
+	set of parameters by themselves.
+	* xfaces.c (init_frame_faces): Don't set up the two frame display
+	faces by querying the GC - just leave all their fields blank, and
+	call recompute_basic_faces, letting build_face do the work of
+	consulting the frame when necessary.
+	(recompute_basic_faces): New function.
+	(compute_base_faces): New function for obtaining the "identity"
+	for compute_char_face and compute_glyph_face.
+	(compute_char_face, compute_glyph_face): Call it, instead of copying
+	FRAME_DEFAULT_FACE.
+	* xfns.c (x_make_gc): No need to call init_frame_faces here.
+
+	* xfaces.c (intern_frame_face): This can be static.
+
+	* dispextern.h (struct face): New field - `copy', to help us with
+	resource allocation.
+	* xfaces.c (free_frame_faces): Do free the first two faces; don't
+	free anything from a face that's a copy.
+	(intern_frame_face): Mark every face we intern as a copy; its
+	resources are actually a combination of the real faces.
+	(Fset_face_attribute_internal): No need to check if we're trying
+	to free one of the frame's GC's; they never enter into the
+	picture.
+
+	* casetab.c: Fix formatting, so as not to confuse etags.
+
+	* xfns.c (Fx_list_fonts): New function.
+	(face_name_id_number): Add extern declaration for this.
+	* xfaces.c (face_name_id_number): Make this externally visible,
+	and make the FRAME argument a FRAME_PTR, not a Lisp_Object.
+	(compute_char_face): Call face_name_id_number properly.
+
+	* xfaces.c (unload_color): Don't free the pixel for now.
+
+	* xfaces.c (merge_faces): You can't tell if a font is a
+	character-cell font or not by testing whether or not it has a
+	per_char table.  They all do.
+	* xterm.c (x_new_font): Same deal.
+	* xfns.c (Fx_list_fonts): Same deal.
+
+	* m/iris4d.h: Dyke out the section which specifies how to get the
+	load average.
+
+	* paths.h (PATH_INFO): New path, to edited by the configuration
+	process.
+	* callproc.c (Vconfigure_info_directory): New variable, used
+	internally by build process.
+	(syms_of_callproc): DEFVAR it and initialize it.
+
+	* keyboard.c (Fcurrent_input_mode): Use XFASTINT to build the last
+	element of the return value, not XSETINT.
+
+Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	Changes for OSF/1:
+	* mem-limits.h [__osf__ && (__mips || mips)]: #include
+	<sys/time.h> and <sys/resource.h>.
+	(get_lim_data): OSF wants a definition like BSD4_2's.
+	* s/osf1.h: #include "bsd4-3.h", not "s-bsd4-3.h".
+
+	* ymakefile (LIBX): Put LD_SWITCH_X_SITE before the libraries, so
+	it actually has an effect.
+
+	Some makes can't handle form feed characters in their makefiles.
+	* s/usg5-3.h: Remove form feed.
+	* s/template.h, m/template.h: Remove form feeds.
+
+	* xfns.c (select_visual): Include the screen number in the
+	template of things XGetVisualInfo must match.
+
+Mon May 24 17:41:19 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/dgux.h (NO_GET_LOAD_AVG): Test _M88KBCS_TARGET, not __GNUC__.
+
+	* xterm.c (XTread_socket, ConfigureNotify case):
+	Convert from parent window, not Emacs window.
+	(XTread_socket): Handle ReparentNotify events.
+
+	* m/i860.h: New file.
+
+	* keyboard.c (lispy_function_keys): Add kp-numlock.  Fix kp-backspace.
+
+Mon May 24 15:15:41 1993  Thorsten Ohl  (ohl@chico.harvard.edu)
+
+	* m/next.h (C_SWITCH_MACHINE): Definition deleted.
+
+	* lread.c: Don't #undef NULL.
+
+Mon May 24 16:50:42 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* buffer.c (Fmake_overlay): Put beg and end in the
+	right order.
+	(Fmove_overlay): If beg and end are markers, make sure they're in
+	the right buffer.
+
+Mon May 24 15:21:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (modify_event_symbol): If a name_table elt is null,
+	generate a name to use.  Don't crash.
+
+	* fileio.c (Fread_file_name): If input is empty, do return the default
+	even if !insert_default_directory.
+
+	* xterm.c (XTread_socket): For ConfigureNotify event,
+	translate coordinates if send_event field is false
+	provided the x-coord value is not large.
+
+Mon May 24 13:42:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/irix4-0.h (NO_MATHERR): Defined.
+	* floatfns.c [NO_MATHERR]: Undef HAVE_MATHERR.
+
+Mon May 24 04:05:22 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* fileio.c (Ffile_writable_p): Pass XSTRING (foo)->data to
+	ro_fsys, not XSTRING (foo).
+
+	* xterm.c (x_new_font): Reject fonts with varying spacing.  We
+	don't support them yet.
+	* xfns.c (x_set_font): Report the error message properly.
+
+	* xfns.c (Fx_parse_geometry): No need to call check_x here; it
+	doesn't interact with the server at all, and we need it in order
+	to create our first frame.
+
+Mon May 24 02:14:58 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/linux.h (HAVE_SETSID): Defined.
+	(HAVE_SOCKETS): Defined.
+
+	* process.c (create_process): Ignore retval from TIOCSTTY.
+	(sys_siglist) [LINUX]: Don't even declare it.
+
+Mon May 24 01:11:23 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* syssignal.h (sys_signal): Declare the second argument to have
+	type signal_handler_t.  We're told this is necessary for Linux.
+
+Mon May 24 01:01:43 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/dgux.h (NO_GET_LOAD_AVG): Define, if __GNUC__.
+
+Sun May 23 23:39:35 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* s/hpux8.h (NO_SIOCTL_H): Defined.
+
+Sun May 23 23:29:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/linux.h (HAVE_DUP2, HAVE_ALLOCA_H): Deleted.
+
+Sun May 23 22:27:33 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* syssignal.h: Don't #include <signal.h>
+	* alloc.c: #include <signal.h>, but before "config.h".
+
+Sun May 23 18:38:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfaces.c (Fset_face_attribute_internal): Don't call unload_font
+	for the frame's own font.
+
+	* xfns.c (check_x): New function.
+	Call it in almost every Lisp function in this file.
+	(x_set_menu_bar_lines_1): Pass both args in recursive call.
+
+Sun May 23 21:44:35 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* editfns.c (Fcurrent_time_zone): Make `am' an int, not long.
+
+Sun May 23 15:23:05 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	Changes for SGI from Matthew J Brown <mjb@doc.ic.ac.uk>.
+	* m/iris4d.h, m/iris5d.h: Don't use the --cckr CC switch if we're
+	using GCC.
+	* m/iris4d.h (NEED_SIOCTL): Move this to...
+	* s/irix3-3.h (NEED_SIOCTL): ... here; apparently it's not
+	necessary in irix4-0.h.
+	* s/irix4-0.h: Remove declaration of getpty; apparently Irix 4.0
+	already declares this elsewhere.
+	(PTY_TTY_NAME_SPRINTF): #undef this before re-#defining it.
+	* m/ibmps2-aix.h, m/pfa50.h, s/hpux.h, s/isc2-2.h, s/linux.h,
+	s/sco4.h, s/usg5-4.h: Remove HAVE_RENAME; configure guesses that now.
+
+	* config.h.in (LD_SWITCH_X_SITE, C_SWITCH_X_SITE): Change the
+	#defines to #undef's, so ../configure knows it should tweak them.
+
+	* xterm.c (x_scroll_bar_report_motion): Set *TIME whether or not
+	the mouse is over a scroll bar.
+
+	* xfaces.c (Fset_face_attribute_internal): Don't free the frame's
+	normal_gc or reverse_gc.
+
+        * keyboard.c (make_lispy_movement): Deal properly with mouse
+	motion outside of all windows.
+
+	* lisp.h (GLYPH_FACE): Remember that the face portion of a glyph
+	can be 24 bits, not just eight.
+
+Sun May 23 14:03:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c: Move signal.h and stdio.h before config.h.
+
+	* editfns.c (Fcurrent_time_zone): Assign gmt, instead of init.
+
 Sat May 22 17:44:54 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
         * Version 19.7 released.
@@ -15992,3 +16241,10 @@ Tue Sep  6 20:43:10 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 	too-complex expression.
 
 	* fileio.c (Fdo_auto_save): No "file has shrunk" msg if < 5000 chars.
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+fill-column: 74
+version-control: never
+End:

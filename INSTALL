@@ -53,7 +53,7 @@ compiler should be able to find these by default; these options should
 only be necessary if you have your X Window System files installed in
 unusual places.
 
-The --run-in-place option sets up default values for the path
+The `--run-in-place' option sets up default values for the path
 variables in `./Makefile' so that Emacs will expect to find its data
 files (lisp libraries, runnable programs, and the like) in the same
 locations they occupy while Emacs builds.  This means that you don't
@@ -65,10 +65,28 @@ compile Emacs using GCC.  If you don't want to use GCC, specify
 `--with-gcc=no'.  If this option is omitted, `configure' will search
 for GCC in your load path, and use it if present.
 
-The --srcdir=DIR option specifies that the configuration and build
+The `--srcdir=DIR' option specifies that the configuration and build
 processes should look for the Emacs source code in DIR, when DIR is
 not the current directory.
 
+The `--prefix=PREFIXDIR' option specifies where the installation process
+should put emacs and its data files.  This defaults to `/usr/local'.
+- Emacs (and the other utilities users run) go in PREFIXDIR/bin
+  (unless the `--exec-prefix' option says otherwise).
+- The architecture-independent files go in PREFIXDIR/lib/emacs/VERSION
+  (where VERSION is the version number of Emacs, like `19.7').
+- The architecture-dependent files go in
+  PREFIXDIR/lib/emacs/VERSION/CONFIGURATION
+  (where CONFIGURATION is the configuration name, like mips-dec-ultrix4.2),
+  unless the `--exec-prefix' option says otherwise.
+
+The `--exec-prefix=EXECDIR' option allows you to specify a separate
+portion of the directory tree for installing architecture-specific
+files, like executables and utility programs.  If specified,
+- Emacs (and the other utilities users run) go in EXECDIR/bin, and
+- The architecture-dependent files go in
+  EXECDIR/lib/emacs/VERSION/CONFIGURATION.
+EXECDIR/bin should be a directory that is normally in users' PATHs.
 
 For example, the command
 

@@ -1,3 +1,17 @@
+Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+Tue May 25 06:26:51 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* x-win.el (command-switch-alist, x-switch-definitions): Treat
+	`-i' like `-itype', as in Emacs 18.
+
+Mon May 24 17:17:02 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el (x-select-text): New arg PUSH.
+	(x-switch-definitions): Represent -r as `reverse' option.
+
 Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
         * Version 19.7 released.

@@ -577,9 +577,9 @@ which is usually a symbol, and an associated value, which can be any
 Lisp object---just as for properties of symbols.
 
   You can use the property @code{face-code} to control the font and
-color of text.  That is the only property name which currently has a
-special meaning, but you can create properties of any name and examine
-them later for your own purposes.
+color of text.  Several other property names have special meanings.  You
+can create properties of any name and examine them later for your own
+purposes.
 
   Copying text between strings and buffers preserves the properties
 along with the characters; this includes such diverse functions as
@@ -628,7 +628,7 @@ property list of the character after @var{pos} in the string or buffer
 
 @subsection Changing Text Properties
 
-  There are three primitives for changing properties of a specified
+  There are four primitives for changing properties of a specified
 range of text:
 
 @table @code
@@ -680,10 +680,7 @@ that property only.  The property is the second argument, and
 of the symbol serve as defaults for the properties of the character.
 
   You can use the property @code{face-code} to control the font and
-color of text.  That is the only property name which currently has a
-special meaning, but you can create properties of any name and examine
-them later for your own purposes.
-about face codes.
+color of text.
 
   You can specify a different keymap for a portion of the text by means
 of a @code{local-map} property.  The property's value, for the character
@@ -1699,10 +1696,6 @@ given an object that is a window configuration (such as is returned by
 @section Display Features
 
 @itemize @bullet
-@item
-We removed the variable @code{line-number-display-limit} and the
-function @code{line-number-mode}.
-
 @item
 @code{baud-rate} is now a variable rather than a function.  This is so
 you can set it to reflect the effective speed of your terminal, when the

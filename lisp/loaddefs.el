@@ -341,6 +341,7 @@ for \\[find-tag] (which see)."
 (define-key esc-map "\C-b" 'backward-sexp)
 (define-key esc-map "\C-u" 'backward-up-list)
 (define-key esc-map "\C-@" 'mark-sexp)
+(define-key esc-map [?\C-\ ] 'mark-sexp)
 (define-key esc-map "\C-d" 'down-list)
 (define-key esc-map "\C-k" 'kill-sexp)
 (define-key esc-map "\C-n" 'forward-list)
@@ -985,8 +986,8 @@ no args if that value is non-nil." t nil)
 
 ;;;***
 
-;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11259 8752))
-;;; Generated autoloads from calendar.el
+;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "/home/fsf/rms/e19/lisp/calendar.el" (11264 3998))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/calendar.el
 
 (defvar view-diary-entries-initially nil "\
 *If t, the diary entries for the current date will be displayed on entry.
@@ -1332,12 +1333,11 @@ For example, \"EDT\" in New York City, \"PDT\" for Los Angeles.
 If this is nil, it will be set for the local time zone when the calendar
 package loads.")
 
-(defvar calendar-daylight-savings-starts (quote (calendar-nth-named-day 1 0 4 year)) "\
+(defvar calendar-daylight-savings-starts nil "\
 *A sexp in the variable `year' that gives the Gregorian date, in the form
 of a list (month day year), on which daylight savings time starts.  This is
 used to determine the starting date of daylight savings time for the holiday
-list and for correcting times of day in the solar and lunar calculations.  The
-default value is the American rule of the first Sunday in April.
+list and for correcting times of day in the solar and lunar calculations.
 
 For example, if daylight savings time is mandated to start on October 1,
 you would set `calendar-daylight-savings-starts' to
@@ -1352,14 +1352,19 @@ to
          (calendar-absolute-from-hebrew
             (list 1 1 (+ year 3760))))
 
-because Nisan is the first month in the Hebrew calendar.")
+because Nisan is the first month in the Hebrew calendar.
 
-(defvar calendar-daylight-savings-ends (quote (calendar-nth-named-day -1 0 10 year)) "\
+If this is nil and the locale ever uses daylight savings time,
+it will be set to the American rule of the first Sunday in April
+when the calendar package loads.")
+
+(defvar calendar-daylight-savings-ends nil "\
 *An expression in the variable `year' that gives the Gregorian date, in the
 form of a list (month day year), on which daylight savings time ends.  This
 is used to determine the ending date of daylight savings time for the holiday
 list and for correcting times of day in the solar and lunar calculations.
-The default value is the American rule of the last Sunday in October.
+The default value is the American rule of the last Sunday in October
+if the locale ever uses daylight savings time, otherwise nil.
 See the documentation for `calendar-daylight-savings-starts' for other
 examples.")
 
@@ -2167,7 +2172,7 @@ redefine OBJECT if it is a symbol." t nil)
 
 ;;;***
 
-;;;### (autoloads (create-glyph standard-display-underline standard-display-graphic standard-display-g1 standard-display-ascii standard-display-8bit make-display-table describe-current-display-table) "disp-table" "disp-table.el" (11247 46371))
+;;;### (autoloads (standard-display-european create-glyph standard-display-underline standard-display-graphic standard-display-g1 standard-display-ascii standard-display-default standard-display-8bit make-display-table describe-current-display-table) "disp-table" "disp-table.el" (11265 29044))
 ;;; Generated autoloads from disp-table.el
 
 (autoload (quote describe-current-display-table) "disp-table" "\
@@ -2178,6 +2183,9 @@ Return a new, empty display table." nil nil)
 
 (autoload (quote standard-display-8bit) "disp-table" "\
 Display characters in the range L to H literally." nil nil)
+
+(autoload (quote standard-display-default) "disp-table" "\
+Display characters in the range L to H using the default notation." nil nil)
 
 (autoload (quote standard-display-ascii) "disp-table" "\
 Display character C using string S." nil nil)
@@ -2192,6 +2200,12 @@ Display character C as character GC in graphics character set." nil nil)
 Display character C as character UC plus underlining." nil nil)
 
 (autoload (quote create-glyph) "disp-table" nil nil nil)
+
+(autoload (quote standard-display-european) "disp-table" "\
+Toggle display of European characters encoded with ISO 8859.
+When enabled, characters in the range of 160 to 255 display not
+as octal escapes, but as accented characters.
+With prefix argument, enable European character display iff arg is positive." t nil)
 
 ;;;***
 

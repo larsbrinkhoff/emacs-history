@@ -53,6 +53,8 @@
 ;; -font		*font
 ;; -foreground		*foreground
 ;; -geometry		.geometry
+;; -i			.iconType
+;; -itype		.iconType
 ;; -iconic		.iconic
 ;; -name		.name
 ;; -reverse		*reverseVideo
@@ -94,6 +96,7 @@
 		("-background".	x-handle-switch)
 		("-ms" .	x-handle-switch)
 		("-itype" .	x-handle-switch)
+		("-i" 	.	x-handle-switch)
 		("-iconic" .	x-handle-switch)
 		("-cr" .	x-handle-switch)
 		("-vb" .	x-handle-switch)
@@ -104,9 +107,9 @@
 (defconst x-switch-definitions
   '(("-name" name)
     ("-T" name)
-    ("-r" lose)
-    ("-rv" lose)
-    ("-reverse" lose)
+    ("-r" reverse t)
+    ("-rv" reverse t)
+    ("-reverse" reverse t)
     ("-fn" font)
     ("-font" font)
     ("-ib" internal-border-width)
@@ -117,6 +120,7 @@
     ("-ms" mouse-color)
     ("-cr" cursor-color)
     ("-itype" icon-type t)
+    ("-i" icon-type t)
     ("-iconic" iconic-startup t)
     ("-vb" vertical-scroll-bars t)
     ("-hb" horizontal-scroll-bars t)
@@ -469,8 +473,8 @@ This returns ARGS with the arguments that have been processed removed."
 ;;; have a window on a copy of the kill-ring.
 ;;; Also, set the value of X cut buffer 0, for backward compatibility
 ;;; with older X applications.
-(defun x-select-text (text)
-  (x-set-cut-buffer text)
+(defun x-select-text (text &optional push)
+  (x-set-cut-buffer text push)
   (x-set-selection 'CLIPBOARD text)
   (x-set-selection 'PRIMARY text)
   (setq x-last-selected-text text))

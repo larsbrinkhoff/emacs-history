@@ -250,7 +250,7 @@ Games, jokes and amusements.
 Support for interfacing with exotic hardware.
 @item help
 Support for on-line help systems.
-@item i14n
+@item i18n
 Internationalization and alternate character-set support.
 @item internal
 Code for Emacs internals, build process, defaults.
@@ -275,7 +275,7 @@ Support for the @TeX{} formatter.
 @item tools
 Programming tools.
 @item unix
-Front-ends/assistants for, or emulators of, UNIX features.
+Front-ends/assistants for, or emulators of, Unix features.
 @item vms
 Support code for VMS.
 @item wp

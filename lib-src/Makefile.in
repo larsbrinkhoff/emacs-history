@@ -137,7 +137,7 @@ ${archlibdir}: all
 install: ${archlibdir}
 	@echo
 	@echo "Installing utilities for users to run."
-	for file in emacsclient etags ctags b2m ; do \
+	for file in ${INSTALLABLES} ${INSTALLABLE_SCRIPTS} ; do \
 	  cp $${file} ${bindir}/$${file}.new ; \
 	  chmod 755 ${bindir}/$${file}.new ; \
         done
@@ -203,8 +203,8 @@ make-docfile: ${srcdir}/make-docfile.c
 digest-doc: ${srcdir}/digest-doc.c
 	$(CC) ${ALL_CFLAGS} ${srcdir}/digest-doc.c $(LOADLIBES) -o digest-doc 
 
-sorted-doc: ${srcdir}/sorted-doc.c
-	$(CC) ${ALL_CFLAGS} ${srcdir}/sorted-doc.c $(LOADLIBES) -o sorted-doc
+sorted-doc: ${srcdir}/sorted-doc.c ${ALLOCA}
+	$(CC) ${ALL_CFLAGS} ${srcdir}/sorted-doc.c ${ALLOCA} $(LOADLIBES) -o sorted-doc
 
 b2m: ${srcdir}/b2m.c ../src/config.h
 	$(CC) -I${srcdir}/../src ${ALL_CFLAGS} ${srcdir}/b2m.c $(LOADLIBES) -o b2m 
@@ -233,14 +233,15 @@ emacsclient: ${srcdir}/emacsclient.c ../src/config.h
 hexl: ${srcdir}/hexl.c
 	$(CC) ${ALL_CFLAGS} ${srcdir}/hexl.c $(LOADLIBES) -o hexl
 
+TIMEROBJS=getdate.o timer.o $(ALLOCA)
 getdate.o: ${srcdir}/getdate.y ../src/config.h
 	${YACC} ${YFLAGS} ${srcdir}/getdate.y
 	$(CC) -I${srcdir}/../src $(ALL_CFLAGS) -c y.tab.c
 	mv y.tab.o getdate.o
 timer.o: ${srcdir}/timer.c ../src/config.h
 	$(CC) -c -I${srcdir}/../src $(ALL_CFLAGS) ${srcdir}/timer.c
-timer: getdate.o timer.o
-	$(CC) -I${srcdir}/../src $(ALL_CFLAGS) getdate.o timer.o -o timer
+timer: ${TIMEROBJS}
+	$(CC) -I${srcdir}/../src $(ALL_CFLAGS) ${TIMEROBJS} -o timer
 
 make-path: ${srcdir}/make-path.c
 	$(CC) $(ALL_CFLAGS) ${srcdir}/make-path.c -o make-path

@@ -134,7 +134,9 @@ ftp.cs.widener.edu, itstd.sri.com, a.cs.uiuc.edu, uxc.cso.uiuc.edu,
 scam.berkeley.edu, jaguar.utah.edu, gatekeeper.dec.com:/pub/gnu,
 archive.cis.ohio-state.edu, and ftp.uu.net:/archive/systems/gnu).  And
 these foreign sites: archie.oz.au:/gnu (Australia (archie.oz or
-archie.oz.au for ACSnet)), ftp.informatik.tu-muenchen.de or
+archie.oz.au for ACSnet)),
+ftp-admin@ftp.technion.al.il:/pub/unsupported/gnu (Israel, automatic
+update daily), ftp.informatik.tu-muenchen.de or
 ftp.informatik.rwth-aachen.de (Germany), isy.liu.se,
 ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
 hp4nl.nluug.nl (Netherlands), ftp.win.tue.nl (Netherlands Internet
@@ -183,9 +185,9 @@ updates.  Current details from <staff@cis.ohio-state.edu> or
 
 Information on how to uucp some GNU programs is available via
 electronic mail from: uunet!hutch!barber, hqda-ai!merlin, acornrc!bob,
-hao!scicom!qetzal!upba!ugn!nepa!denny, bigtex!james (aka
-james@bigtex.cactus.org), ncar!noao!asuvax!hrc!dan, oli-stl!root,
-src@contrib.de (in Germany) and info@ftp.uu.net.
+hao!scicom!qetzal!upba!ugn!nepa!denny, ncar!noao!asuvax!hrc!dan,
+bigtex!james (aka james@bigtex.cactus.org), oli-stl!root,
+src@contrib.de (Germany), toku@dit.co.jp (Japan) and info@ftp.uu.net.
 
 * If You Like The Software
 

@@ -19,7 +19,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef POSIX_SIGNALS
 
-#include <signal.h>
+/* Don't #include <signal.h>.  That header shouldalways be #included
+   before "config.h", because some configuration files (like s/hpux.h)
+   indicate that SIGIO doesn't work by #undef-ing SIGIO.  If this file
+   #includes <signal.h>, then that will re-#define SIGIO and confuse
+   things.  */
 
 #define SIGMASKTYPE sigset_t
 
@@ -54,7 +58,7 @@ extern sigset_t empty_mask, full_mask, temp_mask;
    appears to be assumed in the source, for example data.c:arith_error() */
 typedef RETSIGTYPE (*signal_handler_t) (int);
 
-signal_handler_t sys_signal (int signal_number, int (*action)());
+signal_handler_t sys_signal (int signal_number, signal_handler_t action);
 int      sys_sigpause   (sigset_t new_mask);
 sigset_t sys_sigblock   (sigset_t new_mask);
 sigset_t sys_sigunblock (sigset_t new_mask);

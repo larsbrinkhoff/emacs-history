@@ -127,7 +127,7 @@ The tape includes source code for:
 GNU Utilities Tape
 
 The tape includes source code for:
-* acm
+* acm (multiplayer aerial combat simulation for the X window system)
 * autoconf (produces shell scripts to automatically configure software builds)
 * Bash (GNU's Bourne Again SHell)
 * GNU bc, dc & cpio
@@ -135,7 +135,7 @@ The tape includes source code for:
 * GNU diffutils (cmp, diff, diff3 & sdiff)
 * doschk (checks if file names are under 15 characters and in MS-DOS format)
 * elvis (a clone of the vi/ex Unix editor)
-* es (a new shell with closure and other lisp-like features)
+* es (extensible rc-like shell with lexical scope, first class functions, etc.)
 * Fax (a fax spooling system)
 * GNU find & finger
 * GNU fontutils (create and support fonts for use with Ghostscript or TeX)
@@ -157,9 +157,9 @@ The tape includes source code for:
 * GNU m4
 * mtools (allows Unix systems to manipulate files on an MS-DOS file system)
 * patch
-* rc (a new minimalist shell)
+* rc (shell with far more C-like syntax and far cleaner quoting than csh or sh)
 * RCS (Revision Control System)
-* recode (converts files between character sets and usages)
+* recode (converts files between many character sets and usages)
 * screen (a terminal multiplexor that allows you to handle several independent
   ``screens'' (ttys) on a single physical terminal)
 * GNU sed & tar

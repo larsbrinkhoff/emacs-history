@@ -1,3 +1,99 @@
+Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Version 19.8 released.
+
+Tue May 25 00:55:45 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: When looking for source in the same directory as
+	the configure script, make the path thus discovered absolute.
+	If the user specifies the `--srcdir' switch, make that directory
+	absolute too.
+
+	* Makefile.in (srcdir): Remove comment saying this doesn't work.
+
+	* Makefile.in (src/paths.h): Edit the `infodir' variable into this
+	too, as the value of the PATH_INFO macro.
+
+	* configure.in: Check to see if the source lives in the same
+	directory as the configure script.
+
+Mon May 24 12:14:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Makefile.in (install): Split this into `install' and
+	`do-install', to give people more control over exactly what gets
+	done.
+	(do-install): New target, containing the guts of `install'.  Don't
+	remove and recreate the directories inside the copying loop - do
+	it all before the copying loop.  Pass more flags to the lib-src
+	make.
+	(mkdir): Create ${infodir}, ${mandir}, and ${sitelispdir} here, to
+	avoid errors and warnings.
+
+	* configure.in: For generic IBM PC boxes, insist on "unknown" for
+	the manufacturer - the more general case was blocking other i386
+	configuration names below, and that's how the names are written in
+	MACHINES anyway.
+
+	* make-dist: When breaking links, remove the link before moving
+	the copy onto it, to avoid interactive behavior.
+
+	* Makefile.in: Doc fix.
+
+	* configure.in: Doc fix.
+
+	* INSTALL: Mention --exec-prefix option.
+
+	* configure.in: Add support for the `--exec-prefix' option.
+	* Makefile.in: Accept that support.
+
+	* configure.in: Use the AC_PROG_INSTALL macro.
+	* Makefile.in (INSTALL): Variable removed.
+	(INSTALL_PROGRAM, INSTALL_DATA): Accept these values from configure.
+
+	* configure.in: Distinguish between hp800's and hp700's by calling
+	"uname -m".
+
+Mon May 24 00:12:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+        * configure.in: Recognize configuration names for i860 boxes
+	running SYSV.
+
+Sun May 23 00:37:44 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in: Distinguish between hp800's and hp700's by the
+	version of HP/UX they run, since that's something people are more
+	likely to know - hp700's run 8.0.
+	Add HP 700 configuration.
+
+	* configure.in: Test for the presence of the `rename' function.
+
+	* Makefile.in (C_SWITCH_X_SITE): New variable - get this from
+	configure.in.
+	(oldXMenu/Makefile): Edit C_SWITCH_X_SITE into this.
+
+	* make-dist: Break intra-tree links.
+
+	* configure.in: Explain that this is an autoconf script, and give
+	instructions for rebuilding configure from it.  Arrange to put
+	comments in configure explaining this too.
+
+	* configure.in: Make the first line of the configure script be
+	"#!/bin/sh".  Leaving the first line blank didn't work.
+
+	* configure.in (long_usage): Removed; made short_usage describe
+	the options briefly.
+
+	* configure.in: Implement the --prefix option.
+	* Makefile.in (prefix): Add support for it here.
+	* INSTALL: Document it here.
+
+	* Makefile.in (install): Don't assume that the files in the `info'
+	subdirectory match  *.info.  They don't have that prefix.
+
+Sat May 22 22:53:24 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in: Add case for version 5 of Esix.
+
 Sat May 22 17:24:06 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
         * Version 19.7 released.

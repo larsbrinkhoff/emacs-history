@@ -1,4 +1,4 @@
-/* machine description file template.
+/* machine description file for i860.
    Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -34,7 +34,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Define BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
-#define BIG_ENDIAN
+/* i860 is not big-endian: lowest numbered byte is least significant. */
+
+#undef BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -44,12 +46,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Define WORD_MACHINE if addresses and such have
  * to be corrected before they can be used as byte counts.  */
 
-#define WORD_MACHINE
+/* #define WORD_MACHINE */
 
 /* Now define a symbol for the cpu type, if your compiler
    does not define it automatically:
    Ones defined so far include vax, m68000, ns16000, pyramid,
    orion, tahoe, APOLLO and many others */
+
+#define INTEL860
 
 /* Use type int rather than a union, to represent Lisp_Object */
 /* This is desirable for most machines.  */
@@ -76,7 +80,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Then the function dump-emacs will not be defined
    and temacs will do (load "loadup") automatically unless told otherwise.  */
 
-#define CANNOT_DUMP
+/* #define CANNOT_DUMP */
 
 /* Define VIRT_ADDR_VARIES if the virtual addresses of
    pure and impure space as loaded can vary, and even their
@@ -85,7 +89,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
-#define VIRT_ADDR_VARIES
+/* #define VIRT_ADDR_VARIES */
 
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.
@@ -95,7 +99,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    in the file alloca.s should be used.  */
 
 #define C_ALLOCA
-#define HAVE_ALLOCA
+/* #define HAVE_ALLOCA */
 
 /* Define NO_REMAP if memory segmentation makes it not work well
    to change the boundary between the text section and data section
@@ -103,27 +107,3 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    code will not be sharable; but that's better than failing completely.  */
 
 #define NO_REMAP
-
-/* Some really obscure 4.2-based systems (like Sequent DYNIX)
- * do not support asynchronous I/O (using SIGIO) on sockets,
- * even though it works fine on tty's.  If you have one of
- * these systems, define the following, and then use it in
- * config.h (or elsewhere) to decide when (not) to use SIGIO.
- *
- * You'd think this would go in an operating-system description file,
- * but since it only occurs on some, but not all, BSD systems, the
- * reasonable place to select for it is in the machine description
- * file.
- */
-
-#define NO_SOCK_SIGIO
-
-
-/* After adding support for a new system, modify the large case
-   statement in the `configure' script to recognize reasonable
-   configuration names, and add a description of the system to
-   `etc/MACHINES'.
-
-   If you've just fixed a problem in an existing configuration file,
-   you should also check `etc/MACHINES' to make sure its descriptions
-   of known problems in that configuration should be updated.  */

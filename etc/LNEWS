@@ -299,12 +299,6 @@ number as argument, but always return floating point numbers.
 `log'
      Logarithm base E.
 
-`expm1'
-     Power of E, minus 1.
-
-`log1p'
-     Add 1, then take the logarithm.
-
 `log10'
      Logarithm base 10
 
@@ -438,12 +432,12 @@ Changes in Basic Editing Functions
      take note of `deactivate-mark' and actually deactivate the mark.
 
      Transient Mark mode enables highlighting of the region when the
-     mark is active.  This is currently implemented only using X
-     Windows.  A few other commands vary their behavior slightly in
-     this case, by testing `transient-mark-mode'.  More specifically,
-     they avoid special display actions such as moving the cursor
-     temporarily, which are not needed when the region is shown by
-     highlighting.
+     mark is active.  This is currently implemented only under the X
+     Window System.  A few other commands vary their behavior slightly
+     in this case, by testing `transient-mark-mode'.  More
+     specifically, they avoid special display actions such as moving
+     the cursor temporarily, which are not needed when the region is
+     shown by highlighting.
 
      The variables `activate-mark-hook' and `deactivate-mark-hook' are
      normal hooks run, respectively, when the mark becomes active
@@ -528,9 +522,9 @@ is usually a symbol, and an associated value, which can be any Lisp
 object--just as for properties of symbols.
 
    You can use the property `face-code' to control the font and color
-of text.  That is the only property name which currently has a special
-meaning, but you can create properties of any name and examine them
-later for your own purposes.
+of text.  Several other property names have special meanings.  You can
+create properties of any name and examine them later for your own
+purposes.
 
    Copying text between strings and buffers preserves the properties
 along with the characters; this includes such diverse functions as
@@ -573,7 +567,7 @@ defaults to the current buffer).
 Changing Text Properties
 ------------------------
 
-   There are three primitives for changing properties of a specified
+   There are four primitives for changing properties of a specified
 range of text:
 
 `add-text-properties'
@@ -905,8 +899,9 @@ given frame.
 Creating and Deleting Frames
 ----------------------------
 
-   Use `make-frame' to create a new frame (supported under X Windows
-only).  This is the only primitive for creating frames.
+   Use `make-frame' to create a new frame.  This is the only primitive
+for creating frames.  In principle it could work under any window system
+which Emacs understands; the only one we support is X.
 
    `make-frame' takes just one argument, which is an alist specifying
 frame parameters.  Any parameters not mentioned in the argument alist
@@ -930,8 +925,8 @@ either both size parameters or neither.  You must specify either both
 position parameters or neither.  The geometry parameters that you don't
 specify are chosen by the window manager in its usual fashion.
 
-   The function `x-parse-geometry' converts a standard X windows
-geometry string to an alist which you can use as part of the argument to
+   The function `x-parse-geometry' converts a standard X-style geometry
+string to an alist which you can use as part of the argument to
 `make-frame'.
 
    Use the function `delete-frame' to eliminate a frame.  Frames are
@@ -1087,7 +1082,7 @@ uses.  Here is a table of the parameters of an X window frame:
 
 `foreground-color'
      The color to use for the inside of a character.  Use strings to
-     designate colors; X windows defines the meaningful color names.
+     designate colors; the X server defines the meaningful color names.
 
 `background-color'
      The color to use for the background of text.
@@ -1141,8 +1136,8 @@ value should be a frame which does have a minibuffer.
    You can also specify a minibuffer window explicitly when you create a
 frame; then `default-minibuffer-frame' is not used.
 
-X Windows Features
-==================
+X Window System Features
+========================
 
    * The new functions `mouse-position' and `set-mouse-position' give
      access to the current position of the mouse.
@@ -1168,22 +1163,22 @@ X Windows Features
 
      `track-mouse' returns the value of the last form in BODY.
 
-     The format of these events is described under "New features for key
-     bindings and input."
+     The format of these events is described under "New Input Event
+     Formats."
 
-   * `x-set-selection' sets a "selection" in the X Windows server.  It
-     takes two arguments: a selection type TYPE, and the value to
-     assign to it, DATA.  If DATA is `nil', it means to clear out the
-     selection.  Otherwise, DATA may be a string, a symbol, an integer
-     (or a cons of two integers or list of two integers), or a cons of
-     two markers pointing to the same buffer.  In the last case, the
-     selection is considered to be the text between the markers.  The
-     data may also be a vector of valid non-vector selection values.
+   * `x-set-selection' sets a "selection" in the X server.  It takes
+     two arguments: a selection type TYPE, and the value to assign to
+     it, DATA.  If DATA is `nil', it means to clear out the selection.
+     Otherwise, DATA may be a string, a symbol, an integer (or a cons
+     of two integers or list of two integers), or a cons of two markers
+     pointing to the same buffer.  In the last case, the selection is
+     considered to be the text between the markers.  The data may also
+     be a vector of valid non-vector selection values.
 
      Each possible TYPE has its own selection value, which changes
      independently.  The usual values of TYPE are `PRIMARY' and
      `SECONDARY'; these are symbols with upper-case names, in accord
-     with X Windows conventions.  The default is `PRIMARY'.
+     with X protocol conventions.  The default is `PRIMARY'.
 
      To get the value of the selection, call `x-get-selection'.  This
      function accesses selections set up by Emacs and those set up by
@@ -1198,29 +1193,29 @@ X Windows Features
      upper-case names in accord with X Windows conventions.) The
      default for DATA-TYPE is `STRING'.
 
-   * X Windows has a set of numbered "cut buffers" which can store text
-     or other data being moved between applications.  Use
+   * The X server has a set of numbered "cut buffers" which can store
+     text or other data being moved between applications.  Use
      `x-get-cut-buffer' to get the contents of a cut buffer; specify the
      cut buffer number as argument.  Use `x-set-cut-buffer' with
      argument STRING to store a new string into the first cut buffer
      (moving the other values down through the series of cut buffers,
      kill-ring-style).
 
-     Cut buffers are considered obsolete in X Windows, but Emacs
-     supports them for the sake of X clients that still use them.
+     Cut buffers are considered obsolete, but Emacs supports them for
+     the sake of X clients that still use them.
 
-   * You can close the connection with the X Windows server with the
-     function `x-close-current-connection'.  This takes no arguments.
+   * You can close the connection with the X server with the function
+     `x-close-current-connection'.  This takes no arguments.
 
-     Then you can connect to a different X Windows server with
+     Then you can connect to a different X server with
      `x-open-connection'.  The first argument, DISPLAY, is the name of
      the display to connect to.
 
      The optional second argument XRM-STRING is a string of resource
      names and values, in the same format used in the `.Xresources'
      file.  The values you specify override the resource values
-     recorded in the X Windows server itself.  Here's an example of
-     what this string might look like:
+     recorded in the X server itself.  Here's an example of what this
+     string might look like:
 
           "*BorderWidth: 3\n*InternalBorder: 2\n"
 
@@ -1293,8 +1288,8 @@ X Windows Features
      If you specify them, the key is `INSTANCE.COMPONENT.ATTRIBUTE',
      and the class is `Emacs.SUBCLASS'.
 
-   * `x-display-color-p' returns `t' if you are using an X Window
-     server with a color display, and `nil' otherwise.
+   * `x-display-color-p' returns `t' if you are using an X server with
+     a color display, and `nil' otherwise.
 
      `x-color-defined-p' takes as argument a string describing a color;
      it returns `t' if the display supports that color.  (If the color
@@ -1316,8 +1311,7 @@ X Windows Features
      that pop up menus.
 
    * You can use the function `x-rebind-key' to change the sequence of
-     characters generated by one of the keyboard keys.  This works only
-     with X Windows.
+     characters generated by the X server for one of the keyboard keys.
 
      The first two arguments, KEYCODE and SHIFT-MASK, should be numbers
      representing the keyboard code and shift mask respectively.  They
@@ -1360,9 +1354,9 @@ X Windows Features
      shift mask.
 
    * The function `x-parse-geometry' parses a string specifying window
-     size and position in the usual fashion for X windows.  It returns
-     an alist describing which parameters were specified, and the
-     values that were given for them.
+     size and position in the usual X format.  It returns an alist
+     describing which parameters were specified, and the values that
+     were given for them.
 
      The elements of the alist look like `(PARAMETER .  VALUE)'.  The
      possible PARAMETER values are `left', `top', `width', and `height'.
@@ -1534,9 +1528,6 @@ New Window Features
 Display Features
 ================
 
-   * We removed the variable `line-number-display-limit' and the
-     function `line-number-mode'.
-
    * `baud-rate' is now a variable rather than a function.  This is so
      you can set it to reflect the effective speed of your terminal,
      when the system doesn't accurately know the speed.
@@ -1568,8 +1559,8 @@ character set.
 position on the screen.  You can also define how to display each glyph
 on your terminal, using the "glyph table".
 
-Display Tables
---------------
+Display Tables Proper
+---------------------
 
    Use `make-display-table' to create a display table.  The table
 initially has `nil' in all elements.
@@ -1640,11 +1631,12 @@ of a glyph code are:
 
 INTEGER
      Define this glyph code as an alias for code INTEGER.  This is used
-     with X windows to specify a face code.
+     with X Windows to specify a face code.
 
 STRING
      Send the characters in STRING to the terminal to output this
-     glyph.  This alternative is not available with X Windows.
+     glyph.  This alternative is available only for character
+     terminals, not with X.
 
 `NIL'
      This glyph is simple.  On an ordinary terminal, the glyph code mod
@@ -1655,14 +1647,11 @@ STRING
    Any glyph code beyond the length of the glyph table is automatically
 simple.
 
-   A face code for X windows is the combination of a font and a color.
-Emacs uses integers to identify face codes.  You can define a new face
-code with `(x-set-face FACE-CODE FONT FOREGROUND BACKGROUND)'.
-fACE-CODE is an integer from 0 to 255; it specifies which face to
-define.  The other three arguments are strings: FONT is the name of the
-font to use, and FOREGROUND and BACKGROUND specify the colors to use.
-
    If `glyph-table' is `nil', then all possible glyph codes are simple.
+
+   A "face" is a named combination of a font and a pair of colors
+(foreground and background).  A glyph code can specify a face id number
+to use for displaying that glyph.
 
 ISO Latin 1
 -----------
@@ -1688,6 +1677,118 @@ terminals.
    You can load the appropriate display table for your terminal
 automatically by writing a terminal-specific Lisp file for the terminal
 type.
+
+Overlays
+========
+
+   You can use "overlays" to alter the appearance of a buffer's text on
+the screen.  An overlay is an object which belongs to a particular
+buffer, and has a specified beginning and end.  It also has properties
+which you can examine and set; these affect the display of the text
+within the overlay.
+
+Overlay Properties
+------------------
+
+   Overlay properties are like text properties in some respects, but the
+differences are more important than the similarities.  Text properties
+are considered a part of the text; overlays are specifically considered
+not to be part of the text.  Thus, copying text between various buffers
+and strings preserves text properties, but does not try to preserve
+overlays.  Changing a buffer's text properties marks the buffer as
+modified, while moving an overlay or changing its properties does not.
+
+`face'
+     This property specifies a face for displaying the text within the
+     overlay.
+
+`priority'
+     This property's value (which should be a nonnegative number)
+     determines the priority of the overlay.  The priority matters when
+     two or more overlays cover the same character and both specify a
+     face for display; the one whose `priority' value is larger takes
+     priority over the other, and its face attributes override the face
+     attributes of the lower priority overlay.
+
+     Currently, all overlays take priority over text properties.  Please
+     avoid using negative priority values, as we have not yet decided
+     just what they should mean.
+
+`window'
+     If the `window' property is non-`nil', then the overlay applies
+     only on that window.
+
+Overlay Functions
+-----------------
+
+   Use the functions `overlay-get' and `overlay-put' to access and set
+the properties of an overlay.  They take arguments like `get' and
+`put', except that the first argument is an overlay rather than a
+symbol.
+
+   To create an overlay, call `(make-overlay START END)'.  You can
+specify the buffer as the third argument if you wish.  To delete one,
+use `delete-overlay'.
+
+   Use `overlay-start', `overlay-end' and `overlay-buffer' to examine
+the location and range of an overlay.  Use `move-overlay' to change
+them; its arguments are OVERLAY, START, END and (optionally) the buffer.
+
+   There are two functions to search for overlays: `overlays-at' and
+`next-overlay-change'.  `overlays-at' returns a list of all the
+overlays containing a particular position.  `(next-overlay-change POS)'
+returns the position of the next overlay beginning or end following POS.
+
+Faces
+=====
+
+   A "face" is a named collection of graphical attributes: font,
+foreground color, background color and optional underlining.  Faces
+control the display of text on the screen.
+
+   Each face has its own "face id number" which distinguishes faces at
+low levels within Emacs.  However, for most purposes, you can refer to
+faces in Lisp programs by their names.
+
+   Each face name is meaningful for all frames, and by default it has
+the same meaning in all frames.  But you can arrange to give a
+particular face name a special meaning in one frame if you wish.
+
+Choosing a Face for Display
+---------------------------
+
+   Here are all the ways to specify which face to use for display of
+text:
+
+   * With defaults.  Each frame has a "default face", whose id number is
+     zero, which is used for all text that doesn't somehow specify
+     another face.
+
+   * With text properties.  A character may have a `face' property; if
+     so, it's displayed with that face.  If the character has a
+     `mouse-face' property, that is used instead of the `face' property
+     when the mouse is "near enough" to the character.
+
+   * With overlays.  An overlay may have `face' and `mouse-face'
+     properties too; they apply to all the text covered by the overlay.
+
+   * With special glyphs.  Each glyph can specify a particular face id
+     number.
+
+   If these various sources together specify more than one face for a
+particular character, Emacs merges the attributes of the various faces
+specified.  The attributes of the faces of special glyphs come first;
+then come attributes of faces from overlays, followed by those from text
+properties, and last the default face.
+
+   When multiple overlays cover one character, an overlay with higher
+priority overrides those with lower priority.
+
+   If an attribute such as the font or a color is not specified in any
+of the above ways, the frame's own font or color is used.
+
+   *Note Face Functions: (elisp)Face Functions, for functions to create
+and change faces.
 
 New Input Event Formats
 =======================
