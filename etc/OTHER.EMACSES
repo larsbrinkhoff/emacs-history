@@ -161,7 +161,7 @@ If you type C-g while GNU Emacs is waiting for input, it
 is an ordinary command (which is defined to beep).  If you
 type C-g while Lisp code is executing, it sets a flag which
 causes a special signal, nearly the same as an error, to
-happen atthe next safe place in Lisp execution.  This usually
+happen at the next safe place in Lisp execution.  This usually
 has the effect of aborting the current command in a safe way.
 
 Because at times there have been bugs causing GNU Emacs to loop

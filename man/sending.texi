@@ -155,9 +155,10 @@ file when it is sent.
 
 @item From
 Use the @samp{From} field to say who you are, when the account you are
-using to send the mail is not your own.  The contents of the
-@samp{From} field should be a valid mailing address, since replies
-will normally go there.
+using to send the mail is not your own.  The contents of the @samp{From}
+field should be a valid mailing address, since replies will normally go
+there.  If you don't specify the @samp{From} field yourself, Emacs uses
+the value of @code{user-mail-address} as the default.
 
 @item Reply-to
 Use this field to direct replies to a different address.  Most
@@ -311,10 +312,16 @@ useful when editing the message text itself or a header field such as
 afterward.  However, you can rebind @kbd{C-n} and @kbd{M->} to cause
 expansion as well.  Here's how to do that:
 
-@example
-(define-key mail-mode-map "\C-n" 'mail-abbrev-next-line)
-(define-key mail-mode-map "\M->" 'mail-abbrev-end-of-buffer)
-@end example
+@smallexample
+(add-hook 'mail-setup-hook
+          '(lambda ()
+             (substitute-key-definition
+               'next-line 'mail-abbrev-next-line
+               mail-mode-map global-map)
+             (substitute-key-definition
+               'end-of-buffer 'mail-abbrev-end-of-buffer
+               mail-mode-map global-map)))
+@end smallexample
 
 @node Mail Mode
 @section Mail Mode
@@ -330,6 +337,8 @@ editing or sending the message.
 Send the message, and leave the mail buffer selected (@code{mail-send}).
 @item C-c C-c
 Send the message, and select some other buffer (@code{mail-send-and-exit}).
+@item M-@key{TAB}
+Complete a mailing address (@code{mail-complete}).
 @item C-c C-f C-t
 Move to the @samp{To} header field, creating one if there is none
 (@code{mail-to}).
@@ -374,6 +383,23 @@ message (perhaps with new recipients) and send it again.  @kbd{C-c C-c}
 switches to another buffer.  It puts the mail buffer at the lowest
 priority for reselection by default, since you are finished with using
 it.  This is the usual way to send the message.
+
+@findex mail-complete
+@kindex M-@key{TAB}
+@vindex mail-directory-process
+@vindex mail-directory-stream
+  While editing a header field that contains mailing addresses, such as
+@samp{To:}, @samp{CC:} and @samp{BCC:}, you can complete a mailing
+address by typing @kbd{M-@key{TAB}} (@code{mail-complete}).  For
+completion purposes, the valid mailing addresses are taken to be the
+local users' names plus your personal mail aliases.  Additionally, if
+your site provides a mail directory or a specific host to use for any
+unrecognized user name, you can arrange to query that host for
+completion---see the variables @code{mail-directory-process} and
+@code{mail-directory-stream} in the source code.
+
+  If you type @kbd{M-@key{TAB}} in the body of the message, it invokes
+@code{ispell-complete-word}, as in Text mode.
 
 @kindex C-c C-f C-t @r{(Mail mode)}
 @findex mail-to
@@ -485,9 +511,9 @@ After these default contents are inserted, @code{mail-setup-hook} runs.
 mail message.  The keywords are chosen from a list of words that suggest
 you are discussing something subversive.
 
-  The idea behind this feature is that the suspicion that the NSA snoops
-on all electronic mail messages that contain keywords suggesting they
-might be interested.  (The NSA says they don't, but that's what they
+  The idea behind this feature is the suspicion that the NSA snoops on
+all electronic mail messages that contain keywords suggesting they might
+find them interesting.  (The NSA says they don't, but that's what they
 @emph{would} say.)  The idea is that if lots of people add suspicious
 words to their messages, the NSA will get so busy with spurious input
 that they will have to give up reading it all.

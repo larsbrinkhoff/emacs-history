@@ -42,7 +42,7 @@ This renames all files in the Emacs distribution from their old-VMS names
 (containing `_' characters) to their new-VMS names (containing `-' instead).
 
 Now execute the command file DEV:[LIB.EMACS.VMS]EMACS.COM.  This defines a
-command EMACS that runs a suspendable permanent Emacs.  To fully install
+command EMACS that runs a suspendible permanent Emacs.  To fully install
 Emacs, you must arrange for users to run this file on login, or arrange for
 this file to be run when the system boots.
 

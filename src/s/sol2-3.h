@@ -35,25 +35,16 @@
 #undef PTY_TTY_NAME_SPRINTF
 #define PTY_TTY_NAME_SPRINTF			\
   {						\
-    char *ptsname(), *ptyname;			\
+    char *ptsname (), *ptyname;			\
 						\
-    sigblock(sigmask(SIGCLD));			\
-    if (grantpt(fd) == -1)			\
-      fatal("could not grant slave pty");	\
-    sigunblock(sigmask(SIGCLD));		\
-    if (unlockpt(fd) == -1)			\
-      fatal("could not unlock slave pty");	\
-    if (!(ptyname = ptsname(fd)))		\
-      fatal ("could not enable slave pty");	\
-    strncpy(pty_name, ptyname, sizeof(pty_name)); \
-    pty_name[sizeof(pty_name) - 1] = 0;		\
+    sigblock (sigmask (SIGCLD));		\
+    if (grantpt (fd) == -1)			\
+      { close (fd); return -1; }		\
+    sigunblock (sigmask (SIGCLD));		\
+    if (unlockpt (fd) == -1)			\
+      { close (fd); return -1; }		\
+    if (!(ptyname = ptsname (fd)))		\
+      { close (fd); return -1; }		\
+    strncpy (pty_name, ptyname, sizeof (pty_name)); \
+    pty_name[sizeof (pty_name) - 1] = 0;	\
   }
-
-/* David Miller <davem@caip.rutgers.edu> says vfork fails on 2.4.
-   Brendan Kehoe <brendan@zen.org> says it also fails on 2.3.
-   So we'll use the alternate definition in sysdep.c.
-   But a header file has a declaration
-   that would conflict with the definition of vfork in sysdep.c.
-   So we'll choose the return type to match the system header.  */
-#undef HAVE_VFORK
-#define VFORK_RETURN_TYPE pid_t

@@ -1,3 +1,19 @@
+Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Version 19.31 released.
+
+Sat May 25 14:50:49 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* TUTORIAL: Rephrase the first page to fit on a standard tty screen.
+
+Fri May  3 16:56:54 1996  Richard Stallman  <rms@delasyd.gnu.ai.mit.edu>
+
+	* emacs.bash: Use >|.
+
+Sat Jan 20 19:15:06 1996  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* rgb.txt: New file.
+
 Fri Nov 24 23:41:58 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.30 released.

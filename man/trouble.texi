@@ -324,7 +324,7 @@ you.
 the doctor, you must end it by typing @key{RET} @key{RET}.  This lets
 the doctor know you are finished.
 
-@node Bugs, Service, Lossage, Top
+@node Bugs, Contributing, Lossage, Top
 @section Reporting Bugs
 
 @cindex bugs
@@ -525,7 +525,7 @@ The precise commands we need to type to reproduce the bug.
 
 @findex open-dribble-file
 @cindex dribble file
-  The easy way to record the input to Emacs precisely is to to write a
+  The easy way to record the input to Emacs precisely is to write a
 dribble file.  To start the file, execute the Lisp expression
 
 @example
@@ -889,7 +889,23 @@ Please help us keep up with the workload by designing the patch in a
 form that is clearly safe to install.
 @end itemize
 
-@node Service, Command Arguments, Bugs, Top
+@node Contributing, Service, Bugs, Top
+@section Contributing to Emacs Development
+
+If you would like to help pretest Emacs releases to assure they work
+well, or if you would like to work on improving Emacs, please contact
+the maintainers at @code{bug-gnu-emacs@@prep.ai.mit.edu}.  A pretester
+should be prepared to investigate bugs as well as report them.  If you'd
+like to work on improving Emacs, please ask for suggested projects or
+suggest your own ideas.
+
+If you have already written an improvement, please tell us about it.  If
+you have not yet started work, it is useful to contact
+@code{bug-gnu-emacs@@prep.ai.mit.edu} before you start; it might be
+possible to suggest ways to make your extension fit in better with the
+rest of Emacs.
+
+@node Service, Command Arguments, Contributing, Top
 @section How To Get Help with GNU Emacs
 
 If you need help installing, using or changing GNU Emacs, there are two

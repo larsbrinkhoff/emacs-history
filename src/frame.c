@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #include <config.h>
 
@@ -79,6 +80,7 @@ Lisp_Object Qx;
 Lisp_Object Qwin32;
 Lisp_Object Qvisible;
 Lisp_Object Qbuffer_predicate;
+Lisp_Object Qtitle;
 
 Lisp_Object Vterminal_frame;
 Lisp_Object Vdefault_frame_alist;
@@ -119,6 +121,8 @@ syms_of_frame_1 ()
   staticpro (&Qvisible);
   Qbuffer_predicate = intern ("buffer-predicate");
   staticpro (&Qbuffer_predicate);
+  Qtitle = intern ("title");
+  staticpro (&Qtitle);
 
   Qmouse_leave_buffer_hook = intern ("mouse-leave-buffer-hook");
   staticpro (&Qmouse_leave_buffer_hook);
@@ -295,6 +299,7 @@ make_frame (mini_p)
   f->kboard = initial_kboard;
 #endif
   f->namebuf = 0;
+  f->title = Qnil;
 
   root_window = make_window ();
   if (mini_p)
@@ -399,12 +404,16 @@ make_frame_without_minibuffer (mini_window, kb, display)
 	}
       mini_window = XFRAME (kb->Vdefault_minibuffer_frame)->minibuffer_window;
     }
-  /* Install the chosen minibuffer window, with proper buffer.  */
+
   f->minibuffer_window = mini_window;
-  Fset_window_buffer (mini_window,
-		      (NILP (Vminibuffer_list)
-		       ? get_minibuffer (0)
-		       : Fcar (Vminibuffer_list)));
+
+  /* Make the chosen minibuffer window display the proper minibuffer,
+     unless it is already showing a minibuffer.  */
+  if (NILP (Fmemq (XWINDOW (mini_window)->buffer, Vminibuffer_list)))
+    Fset_window_buffer (mini_window,
+			(NILP (Vminibuffer_list)
+			 ? get_minibuffer (0)
+			 : Fcar (Vminibuffer_list)));
   return f;
 }
 
@@ -626,13 +635,13 @@ This function selects the selected window of the frame of EVENT.\n\
 \n\
 If EVENT is frame object, handle it as if it were a switch-frame event\n\
 to that frame.")
-  (frame, no_enter)
-     Lisp_Object frame, no_enter;
+  (event, no_enter)
+     Lisp_Object event, no_enter;
 {
   /* Preserve prefix arg that the command loop just cleared.  */
   current_kboard->Vprefix_arg = Vcurrent_prefix_arg;
   call1 (Vrun_hooks, Qmouse_leave_buffer_hook);
-  return do_switch_frame (frame, no_enter, 0);
+  return do_switch_frame (event, no_enter, 0);
 }
 
 DEFUN ("ignore-event", Fignore_event, Signore_event, 0, 0, "",
@@ -1690,6 +1699,7 @@ If FRAME is omitted, return information on the currently selected frame.")
 {
   Lisp_Object alist;
   FRAME_PTR f;
+  int height, width;
 
   if (EQ (frame, Qnil))
     f = selected_frame;
@@ -1704,8 +1714,10 @@ If FRAME is omitted, return information on the currently selected frame.")
 
   alist = Fcopy_alist (f->param_alist);
   store_in_alist (&alist, Qname, f->name);
-  store_in_alist (&alist, Qheight, make_number (FRAME_HEIGHT (f)));
-  store_in_alist (&alist, Qwidth, make_number (FRAME_WIDTH (f)));
+  height = (FRAME_NEW_HEIGHT (f) ? FRAME_NEW_HEIGHT (f) : FRAME_HEIGHT (f));
+  store_in_alist (&alist, Qheight, make_number (height));
+  width = (FRAME_NEW_WIDTH (f) ? FRAME_NEW_WIDTH (f) : FRAME_WIDTH (f));
+  store_in_alist (&alist, Qwidth, make_number (width));
   store_in_alist (&alist, Qmodeline, (FRAME_WANTS_MODELINE_P (f) ? Qt : Qnil));
   store_in_alist (&alist, Qminibuffer,
 		  (! FRAME_HAS_MINIBUF_P (f) ? Qnil
@@ -1876,12 +1888,12 @@ DEFUN ("set-frame-height", Fset_frame_height, Sset_frame_height, 2, 3, 0,
   "Specify that the frame FRAME has LINES lines.\n\
 Optional third arg non-nil means that redisplay should use LINES lines\n\
 but that the idea of the actual height of the frame should not be changed.")
-  (frame, rows, pretend)
-     Lisp_Object frame, rows, pretend;
+  (frame, lines, pretend)
+     Lisp_Object frame, lines, pretend;
 {
   register struct frame *f;
 
-  CHECK_NUMBER (rows, 0);
+  CHECK_NUMBER (lines, 0);
   if (NILP (frame))
     f = selected_frame;
   else
@@ -1894,12 +1906,12 @@ but that the idea of the actual height of the frame should not be changed.")
 #ifdef HAVE_WINDOW_SYSTEM
   if (FRAME_WINDOW_P (f))
     {
-      if (XINT (rows) != f->height)
-	x_set_window_size (f, 1, f->width, XINT (rows));
+      if (XINT (lines) != f->height)
+	x_set_window_size (f, 1, f->width, XINT (lines));
     }
   else
 #endif
-    change_frame_size (f, XINT (rows), 0, !NILP (pretend), 0);
+    change_frame_size (f, XINT (lines), 0, !NILP (pretend), 0);
   return Qnil;
 }
 
@@ -1950,7 +1962,8 @@ DEFUN ("set-frame-size", Fset_frame_size, Sset_frame_size, 3, 3, 0,
 #ifdef HAVE_WINDOW_SYSTEM
   if (FRAME_WINDOW_P (f))
     {
-      if (XINT (rows) != f->height || XINT (cols) != f->width)
+      if (XINT (rows) != f->height || XINT (cols) != f->width
+	  || FRAME_NEW_HEIGHT (f) || FRAME_NEW_WIDTH (f))
 	x_set_window_size (f, 1, XINT (cols), XINT (rows));
     }
   else
@@ -2329,6 +2342,7 @@ DEFUN ("frame-parameters", Fframe_parameters, Sframe_parameters, 0, 1, 0,
 {
   Lisp_Object alist;
   FRAME_PTR f;
+  int height, width;
 
   if (EQ (frame, Qnil))
     f = selected_frame;
@@ -2359,8 +2373,10 @@ DEFUN ("frame-parameters", Fframe_parameters, Sframe_parameters, 0, 1, 0,
 #endif
   store_in_alist (&alist, intern ("font"), build_string ("default"));
   store_in_alist (&alist, Qname, build_string ("emacs"));
-  store_in_alist (&alist, Qheight, make_number (FRAME_HEIGHT (f)));
-  store_in_alist (&alist, Qwidth, make_number (FRAME_WIDTH (f)));
+  height = (FRAME_NEW_HEIGHT (f) ? FRAME_NEW_HEIGHT (f) : FRAME_HEIGHT (f));
+  store_in_alist (&alist, Qheight, make_number (height));
+  width = (FRAME_NEW_WIDTH (f) ? FRAME_NEW_WIDTH (f) : FRAME_WIDTH (f));
+  store_in_alist (&alist, Qwidth, make_number (width));
   store_in_alist (&alist, Qmodeline, (FRAME_WANTS_MODELINE_P (f) ? Qt : Qnil));
   store_in_alist (&alist, Qminibuffer, FRAME_MINIBUF_WINDOW (f));
   store_in_alist (&alist, Qunsplittable, (FRAME_NO_SPLIT_P (f) ? Qt : Qnil));
@@ -2463,6 +2479,7 @@ syms_of_frame ()
   defsubr (&Sframe_width);
   Ffset (intern ("screen-width"), intern ("frame-width"));
   defsubr (&Smouse_position);
+  Ffset (intern ("mouse-pixel-position"), intern ("mouse-position"));
   defsubr (&Sframe_parameters);
   defsubr (&Smodify_frame_parameters);
   defsubr (&Sframe_live_p);

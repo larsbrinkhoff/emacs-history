@@ -155,7 +155,8 @@ minor modes you prefer.
 @node Variables
 @section Variables
 @cindex variable
-@cindex option
+@cindex option, user
+@cindex user option
 
   A @dfn{variable} is a Lisp symbol which has a value.  The symbol's
 name is also called the name of the variable.  A variable name can
@@ -173,21 +174,22 @@ feature is on for @emph{any} other value.  The conventional value to use to
 turn on the feature---since you have to pick one particular value when you
 set the variable---is @code{t}.
 
-  Emacs uses many Lisp variables for internal record keeping, as any Lisp
-program must, but the most interesting variables for you are the ones that
-exist for the sake of customization.  Emacs does not (usually) change the
-values of these variables; instead, you set the values, and thereby alter
-and control the behavior of certain Emacs commands.  These variables are
-called @dfn{options}.  Most options are documented in this manual, and
-appear in the Variable Index (@pxref{Variable Index}).
+  Emacs uses many Lisp variables for internal record keeping, as any
+Lisp program must, but the most interesting variables for you are the
+ones that exist for the sake of customization.  Emacs does not (usually)
+change the values of these variables; instead, you set the values, and
+thereby alter and control the behavior of certain Emacs commands.  These
+variables are called @dfn{user options}.  Most user options are
+documented in this manual, and appear in the Variable Index
+(@pxref{Variable Index}).
 
-  One example of a variable which is an option is @code{fill-column}, which
+  One example of a variable which is a user option is @code{fill-column}, which
 specifies the position of the right margin (as a number of characters from
 the left margin) to be used by the fill commands (@pxref{Filling}).
 
 @menu
 * Examining::	     Examining or setting one variable's value.
-* Edit Options::     Examining or editing list of all variables' values.
+* Edit Options::     Examining or editing list of all user options' values.
 * Hooks::	     Hook variables let you specify programs for parts
 		       of Emacs to run on particular occasions.
 * Locals::	     Per-buffer values of variables.
@@ -227,12 +229,12 @@ Automatically becomes buffer-local when set in any fashion.
 @end smallexample
 
 @noindent
-The star at the beginning of the documentation indicates that this variable
-is an option.  @kbd{C-h v} is not restricted to options; it allows any
-variable name.
+The star at the beginning of the documentation indicates that this
+variable is a user option.  @kbd{C-h v} is not restricted to user
+options; it allows any variable name.
 
 @findex set-variable
-  The most convenient way to set a specific option is with @kbd{M-x
+  The most convenient way to set a specific user option is with @kbd{M-x
 set-variable}.  This reads the variable name with the minibuffer (with
 completion), and then reads a Lisp expression for the new value using
 the minibuffer a second time.  For example,
@@ -244,8 +246,9 @@ M-x set-variable @key{RET} fill-column @key{RET} 75 @key{RET}
 @noindent
 sets @code{fill-column} to 75.
 
-  You can set any variable with a Lisp expression using the function
-@code{setq}.  Here's how to use it to set @code{fill-column}:
+ @kbd{M-x set-variable} is limited to user option variables.  You can
+set any variable with a Lisp expression using the function @code{setq}.
+Here's how to use it to set @code{fill-column}:
 
 @example
 (setq fill-column 75)
@@ -257,21 +260,21 @@ otherwise stated, affects only the current Emacs session.
 @node Edit Options
 @subsection Editing Variable Values
 
-These two functions make it easy to display all the Emacs option
+These two functions make it easy to display all the Emacs user option
 variables, and to change some of them if you wish.
 
 @table @kbd
 @item M-x list-options
 Display a buffer listing names, values and documentation of all options.
 @item M-x edit-options
-Change option values by editing a list of options.
+Change user option values by editing a list of user option variables.
 @end table
 
 @findex list-options
-  @kbd{M-x list-options} displays a list of all Emacs option variables, in
-an Emacs buffer named @samp{*List Options*}.  Each option is shown with its
-documentation and its current value.  Here is what a portion of it might
-look like:
+  @kbd{M-x list-options} displays a list of all Emacs option variables,
+in an Emacs buffer named @samp{*List Options*}.  Each user option is
+shown with its documentation and its current value.  Here is what a
+portion of it might look like:
 
 @smallexample
 ;; exec-path:
@@ -288,10 +291,10 @@ Automatically becomes buffer-local when set in any fashion.
 @end smallexample
 
 @findex edit-options
-  @kbd{M-x edit-options} goes one step further and immediately selects the
-@samp{*List Options*} buffer; this buffer uses the major mode Options mode,
-which provides commands that allow you to point at an option and change its
-value:
+  @kbd{M-x edit-options} goes one step further and immediately selects
+the @samp{*List Options*} buffer; this buffer uses the major mode
+Options mode, which provides commands that allow you to point at a user
+option variable and change its value:
 
 @table @kbd
 @item s
@@ -306,7 +309,7 @@ Set the variable point is in or near to @code{t}.
 Set the variable point is in or near to @code{nil}.
 @item n
 @itemx p
-Move to the next or previous variable.
+Move to the next or previous user option.
 @end table
 
   Any changes take effect immediately, and last until you exit from
@@ -349,18 +352,23 @@ lambda expression.
 
 @example
 @group
-(add-hook 'c-mode-hook 
-  (function (lambda ()
-              (setq c-indent-level 4
-                    c-argdecl-indent 0
-                    c-label-offset -4
+(setq my-c-style
+  '((c-comment-only-line-offset . 4)
 @end group
 @group
-                    c-continued-statement-indent 0
-                    c-brace-offset 0
-                    comment-column 40))))
+    (c-cleanup-list . (scope-operator
+		       empty-defun-braces
+		       defun-close-semi))
+@end group
+@group
+    (c-offsets-alist . ((arglist-close . c-lineup-arglist)
+			(substatement-open . 0)))))
+@end group
 
-(setq c++-mode-hook c-mode-hook)
+@group
+(add-hook 'c-mode-common-hook
+  (function (lambda ()
+    (c-add-style "my-style" my-c-style t))))
 @end group
 @end example
 
@@ -758,13 +766,13 @@ macro definition, the @kbd{C-x q} does nothing, but when you run the
 macro later, @kbd{C-x q} asks you interactively whether to continue.
 
   The valid responses when @kbd{C-x q} asks are @key{SPC} (or @kbd{y}),
-@key{DEL} (or @kbd{n}), @key{ESC} (or @kbd{q}), @kbd{C-l} and @kbd{C-r}.
+@key{DEL} (or @kbd{n}), @key{RET} (or @kbd{q}), @kbd{C-l} and @kbd{C-r}.
 The answers are the same as in @code{query-replace}, though not all of
 the @code{query-replace} options are meaningful.
 
   These responses include @key{SPC} to continue, and @key{DEL} to skip
 the remainder of this repetition of the macro and start right away with
-the next repetition.  @key{ESC} means to skip the remainder of this
+the next repetition.  @key{RET} means to skip the remainder of this
 repetition and cancel further repetitions.  @kbd{C-l} redraws the screen
 and asks you again for a character to say what to do.
 
@@ -883,6 +891,13 @@ key, then @kbd{@key{SELECT} C-n} makes sense.  You can even mix mouse
 events with keyboard events, but we recommend against it, because such
 sequences are inconvenient to type in.
 
+  As a user, you can redefine any key; but it might be best to stick to
+key sequences that consist of @kbd{C-c} followed by a letter.  These
+keys are ``reserved for users,'', so they won't conflict with any
+properly designed Emacs extension.  If you redefine some other key, your
+definition may be overridden by certain extensions or major modes which
+redefine the same key.
+
 @node Prefix Keymaps
 @subsection Prefix Keymaps
 
@@ -899,6 +914,13 @@ of @kbd{C-x} is the symbol @code{Ctl-X-Prefix}, whose function
 definition is the keymap for @kbd{C-x} commands.  The definitions of
 @kbd{C-c}, @kbd{C-x}, @kbd{C-h} and @key{ESC} as prefix keys appear in
 the global map, so these prefix keys are always available.
+
+  Aside from ordinary prefix keys, there is a fictitious ``prefix key''
+which represents the menu bar; see @ref{Menu Bar,,,elisp, The Emacs Lisp
+Reference Manual}, for special information about menu bar key bindings.
+Mouse button events that invoke pop-up menus are also prefix keys; see
+@ref{Menu Keymaps,,,elisp, The Emacs Lisp Reference Manual}, for more
+details.
 
   Some prefix keymaps are stored in variables with names:
 
@@ -940,13 +962,13 @@ mode's local keymap and the global keymap.
 
 @vindex c-mode-map
 @vindex lisp-mode-map
-  The local keymaps for Lisp mode, C mode, and several other major modes
-always exist even when not in use.  These are kept in variables named
-@code{lisp-mode-map}, @code{c-mode-map}, and so on.  For major modes
-less often used, the local keymap is normally constructed only when the
-mode is used for the first time in a session.  This is to save space.
-If you wish to change one of these keymaps, you must use the major
-mode's @dfn{mode hook}---see below.
+  The local keymaps for Lisp mode and several other major modes always
+exist even when not in use.  These are kept in variables named
+@code{lisp-mode-map} and so on.  For major modes less often used, the
+local keymap is normally constructed only when the mode is used for the
+first time in a session.  This is to save space.  If you wish to change
+one of these keymaps, you must use the major mode's @dfn{mode
+hook}---see below.
 
   All minor mode keymaps are created in advance.  There is no way to
 defer their creation until the first time the minor mode is enabled.
@@ -1741,10 +1763,10 @@ Note once again the single-quote used to refer to the symbol
 @code{make-symbolic-link} instead of its value as a variable.
 
 @item
-Do the same thing for C mode only.
+Do the same thing for Lisp mode only.
 
 @example
-(define-key c-mode-map "\C-xl" 'make-symbolic-link)
+(define-key lisp-mode-map "\C-xl" 'make-symbolic-link)
 @end example
 
 @item

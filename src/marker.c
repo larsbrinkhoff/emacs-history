@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -72,13 +73,13 @@ DEFUN ("marker-position", Fmarker_position, Smarker_position, 1, 1, 0,
 }
 
 DEFUN ("set-marker", Fset_marker, Sset_marker, 2, 3, 0,
-  "Position MARKER before character number NUMBER in BUFFER.\n\
+  "Position MARKER before character number POSITION in BUFFER.\n\
 BUFFER defaults to the current buffer.\n\
-If NUMBER is nil, makes marker point nowhere.\n\
+If POSITION is nil, makes marker point nowhere.\n\
 Then it no longer slows down editing in any buffer.\n\
 Returns MARKER.")
-  (marker, pos, buffer)
-     Lisp_Object marker, pos, buffer;
+  (marker, position, buffer)
+     Lisp_Object marker, position, buffer;
 {
   register int charno;
   register struct buffer *b;
@@ -87,14 +88,14 @@ Returns MARKER.")
   CHECK_MARKER (marker, 0);
   /* If position is nil or a marker that points nowhere,
      make this marker point nowhere.  */
-  if (NILP (pos)
-      || (MARKERP (pos) && !XMARKER (pos)->buffer))
+  if (NILP (position)
+      || (MARKERP (position) && !XMARKER (position)->buffer))
     {
       unchain_marker (marker);
       return marker;
     }
 
-  CHECK_NUMBER_COERCE_MARKER (pos, 1);
+  CHECK_NUMBER_COERCE_MARKER (position, 1);
   if (NILP (buffer))
     b = current_buffer;
   else
@@ -109,7 +110,7 @@ Returns MARKER.")
 	}
     }
 
-  charno = XINT (pos);
+  charno = XINT (position);
   m = XMARKER (marker);
 
   if (charno < BUF_BEG (b))

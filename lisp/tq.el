@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
  
@@ -100,9 +101,9 @@ that's how we tell where the answer ends."
 	  (copy-to-buffer buf (point-min) (point-max))
 	  (delete-region (point-min) (point))
 	  (pop-to-buffer buf nil)
-	  (error (concat "Spurious communication from process "
-			 (process-name (tq-process tq))
-			 ", see buffer " (buffer-name buf) ".")))
+	  (error "Spurious communication from process %s, see buffer %s"
+		 (process-name (tq-process tq))
+		 (buffer-name buf)))
       (goto-char (point-min))
       (if (re-search-forward (tq-queue-head-regexp tq) nil t)
 	  (let ((answer (buffer-substring (point-min) (point))))

@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* The following line tells the configuration script what sort of 
    operating system this machine is likely to run.
@@ -83,7 +84,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
-/* Text does preceed data space, but this is never a safe assumption.  */
+/* Text does precede data space, but this is never a safe assumption.  */
 #define VIRT_ADDR_VARIES
 
 /* Define C_ALLOCA if this machine does not support a true alloca

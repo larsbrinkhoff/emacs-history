@@ -1,4 +1,4 @@
-;;; derived.el -- allow inheritance of major modes.
+;;; derived.el --- allow inheritance of major modes.
 ;;; (formerly mode-clone.el)
 
 ;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -330,11 +331,7 @@ be automatic inheritance."
 (defun derived-mode-merge-syntax-tables (old new)
   "Merge an old syntax table into a new one.
 Where the new table already has an entry, nothing is copied from the old one."
-  (map-char-table
-   (function (lambda (key value)
-	       (or (char-table-range new key)
-		   (set-char-table-range new key value))))
-   old))
+  (set-char-table-parent new old))
 
 ;; Merge an old abbrev table into a new one.
 ;; This function requires internal knowledge of how abbrev tables work,

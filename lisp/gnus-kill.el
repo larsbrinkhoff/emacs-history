@@ -1,4 +1,5 @@
 ;;; gnus-kill.el --- kill commands for Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -213,7 +215,7 @@ If NEWSGROUP is nil, the global kill file is selected."
  
 (defun gnus-kill-file-kill-by-thread ()
   "Kill by author."
-  (interactive "p")
+  (interactive)
   (gnus-kill-file-enter-kill
    "References" 
    (if (vectorp gnus-current-headers)

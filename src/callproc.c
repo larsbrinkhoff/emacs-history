@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <signal.h>
@@ -324,12 +325,6 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   }
 
 #ifdef MSDOS /* MW, July 1993 */
-  /* These vars record information from process termination.
-     Clear them now before process can possibly terminate,
-     to avoid timing error if process terminates soon.  */
-  synch_process_death = 0;
-  synch_process_retcode = 0;
-
   if ((outf = egetenv ("TMP")) || (outf = egetenv ("TEMP")))
     strcpy (tempfile = alloca (strlen (outf) + 20), outf);
   else
@@ -349,6 +344,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       close (filefd);
       report_file_error ("Opening process output file", Fcons (tempfile, Qnil));
     }
+  fd[1] = outfilefd;
 #endif
 
   if (INTEGERP (buffer))
@@ -356,11 +352,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   else
     {
 #ifndef MSDOS
-#ifdef WINDOWSNT
-      pipe_with_inherited_out (fd);
-#else  /* not WINDOWSNT */
       pipe (fd);
-#endif /* not WINDOWSNT */
 #endif
 #if 0
       /* Replaced by close_process_descs */
@@ -388,21 +380,6 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
     synch_process_death = 0;
     synch_process_retcode = 0;
 
-#ifdef MSDOS /* MW, July 1993 */
-    /* ??? Someone who knows MSDOG needs to check whether this properly
-       closes all descriptors that it opens.  */
-    pid = run_msdos_command (new_argv, current_dir, filefd, outfilefd);
-    close (outfilefd);
-    fd1 = -1; /* No harm in closing that one!  */
-    fd[0] = open (tempfile, NILP (Vbinary_process_output) ? O_TEXT : O_BINARY);
-    if (fd[0] < 0)
-      {
-	unlink (tempfile);
-	close (filefd);
-	report_file_error ("Cannot re-open temporary file", Qnil);
-      }
-#else /* not MSDOS */
-
     if (NILP (error_file))
       fd_error = open (NULL_DEVICE, O_WRONLY);
     else if (STRINGP (error_file))
@@ -424,7 +401,35 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 	  close (fd1);
 	report_file_error ("Cannot open", error_file);
       }
+#ifdef MSDOS /* MW, July 1993 */
+    /* ??? Someone who knows MSDOG needs to check whether this properly
+       closes all descriptors that it opens.
 
+       Note that run_msdos_command() actually returns the child process
+       exit status, not its PID, so we assign it to `synch_process_retcode'
+       below.  */
+    pid = run_msdos_command (new_argv, current_dir,
+			     filefd, outfilefd, fd_error);
+
+    /* Record that the synchronous process exited and note its
+       termination status.  */
+    synch_process_alive = 0;
+    synch_process_retcode = pid;
+    if (synch_process_retcode < 0)  /* means it couldn't be exec'ed */
+      synch_process_death = strerror(errno);
+
+    close (outfilefd);
+    if (fd_error != outfilefd)
+      close (fd_error);
+    fd1 = -1; /* No harm in closing that one!  */
+    fd[0] = open (tempfile, NILP (Vbinary_process_output) ? O_TEXT : O_BINARY);
+    if (fd[0] < 0)
+      {
+	unlink (tempfile);
+	close (filefd);
+	report_file_error ("Cannot re-open temporary file", Qnil);
+      }
+#else /* not MSDOS */
 #ifdef WINDOWSNT
     pid = child_setup (filefd, fd1, fd_error, new_argv, 0, current_dir);
 #else  /* not WINDOWSNT */
@@ -434,22 +439,26 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       {
 	if (fd[0] >= 0)
 	  close (fd[0]);
-#ifdef USG
+#if defined(USG) && !defined(BSD_PGRPS)
         setpgrp ();
 #else
         setpgrp (pid, pid);
 #endif /* USG */
 	child_setup (filefd, fd1, fd_error, new_argv, 0, current_dir);
       }
-#endif /* not MSDOS */
 #endif /* not WINDOWSNT */
+
+    /* The MSDOS case did this already.  */
+    if (fd_error >= 0)
+      close (fd_error);
+#endif /* not MSDOS */
 
     environ = save_environ;
 
     /* Close most of our fd's, but not fd[0]
        since we will use that to read input from.  */
     close (filefd);
-    if (fd1 >= 0)
+    if (fd1 >= 0 && fd1 != fd_error)
       close (fd1);
   }
 
@@ -501,7 +510,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       {
 	/* Repeatedly read until we've filled as much as possible
 	   of the buffer size we have.  But don't read
-	   less than 1024--save that for the next bufferfull.  */
+	   less than 1024--save that for the next bufferful.  */
 
 	nread = 0;
 	while (nread < bufsize - 1024)
@@ -622,7 +631,6 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       tempfile = alloca (20);
       *tempfile = '\0';
     }
-  dostounix_filename (tempfile);
   if (!IS_DIRECTORY_SEP (tempfile[strlen (tempfile) - 1]))
     strcat (tempfile, "/");
 #ifdef WINDOWSNT
@@ -630,6 +638,10 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 #else
   strcat (tempfile, "detmp.XXX");
 #endif
+  if ('/' == DIRECTORY_SEP)
+    dostounix_filename (tempfile);
+  else
+    unixtodos_filename (tempfile);
 #else /* not DOS_NT */
 
 #ifdef VMS
@@ -699,7 +711,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
   char *pwd_var;
 #ifdef WINDOWSNT
   int cpid;
-  HANDLE handles[4];
+  HANDLE handles[3];
 #endif /* WINDOWSNT */
 
   int pid = getpid ();
@@ -839,7 +851,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
   close (err);
 #endif /* not WINDOWSNT */
 
-#ifdef USG
+#if defined(USG) && !defined(BSD_PGRPS)
 #ifndef SETPGRP_RELEASES_CTTY
   setpgrp ();			/* No arguments but equivalent in this case */
 #endif
@@ -868,7 +880,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
   environ = env;
   execvp (new_argv[0], new_argv);
 
-  write (1, "Can't exec program: ", 26);
+  write (1, "Can't exec program: ", 20);
   write (1, new_argv[0], strlen (new_argv[0]));
   write (1, "\n", 1);
   _exit (1);

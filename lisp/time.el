@@ -1,6 +1,6 @@
 ;;; time.el --- display time and load in mode line of Emacs.
 
-;; Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 87, 93, 94, 1996 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 
@@ -17,13 +17,14 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; Facilities to display current time/date and a new-mail indicator
-;;; in the Emacs mode line.  The single entry point is `display-time'.
+;; Facilities to display current time/date and a new-mail indicator
+;; in the Emacs mode line.  The single entry point is `display-time'.
 
 ;;; Code:
 
@@ -36,7 +37,7 @@ default, which is system-dependent, and is the same as used by Rmail.")
 (defvar display-time-day-and-date nil "\
 *Non-nil means \\[display-time] should display day and date as well as time.")
 
-(defvar display-time-process nil)
+(defvar display-time-timer nil)
 
 (defvar display-time-interval 60
   "*Seconds between updates of time in the mode line.")
@@ -62,34 +63,17 @@ If `display-time-day-and-date' is non-nil, the current day and date
 are displayed as well.
 After each update, `display-time-hook' is run with `run-hooks'."
   (interactive)
-  (let ((live (and display-time-process
-		   (eq (process-status display-time-process) 'run))))
-    (if (not live)
-	(progn
-	  (if display-time-process
-	      (delete-process display-time-process))
-	  (or global-mode-string (setq global-mode-string '("")))
-	  (or (memq 'display-time-string global-mode-string)
-	      (setq global-mode-string
-		    (append global-mode-string '(display-time-string))))
-	  (setq display-time-string "")
-	  ;; Using a pty is wasteful, and the separate session causes
-	  ;; annoyance sometimes (some systems kill idle sessions).
-	  (let ((process-connection-type nil))
-	    (setq display-time-process
-		  (start-process "display-time" nil
-				 (expand-file-name "wakeup" exec-directory)
-				 (int-to-string display-time-interval))))
-	  (process-kill-without-query display-time-process)
-	  (set-process-sentinel display-time-process 'display-time-sentinel)
-	  (set-process-filter display-time-process 'display-time-filter)))))
-
-(defun display-time-sentinel (proc reason)
-  (or (eq (process-status proc) 'run)
-      (setq display-time-string ""))
-  ;; Force mode-line updates
-  (force-mode-line-update t)
-  (sit-for 0))
+  (setq display-time-string "")
+  (or global-mode-string (setq global-mode-string '("")))
+  (or (memq 'display-time-string global-mode-string)
+      (setq global-mode-string
+	    (append global-mode-string '(display-time-string))))
+  ;; Setup the time timer.
+  (and display-time-timer (cancel-timer display-time-timer))
+  (setq display-time-timer
+	(run-at-time nil display-time-interval 'display-time-event-handler))
+  ;; When you get new mail, clear "Mail" from the mode line.
+  (add-hook 'rmail-after-get-new-mail-hook 'display-time-event-handler))
 
 (defvar display-time-string-forms
   '((if display-time-day-and-date
@@ -116,7 +100,16 @@ For example, the form
 
 would give mode line times like `94/12/30 21:07:48 (UTC)'.")
 
-(defun display-time-filter (proc string)
+(defun display-time-event-handler ()
+  (display-time-update)
+  ;; Do redisplay right now, if no input pending.
+  (sit-for 0))
+
+;; Update the display-time info for the mode line
+;; but don't redisplay right now.  This is used for
+;; things like Rmail `g' that want to force an update
+;; which can wait for the next redisplay.
+(defun display-time-update ()
   (let* ((now (current-time))
 	 (time (current-time-string now))
          (load (condition-case ()
@@ -167,9 +160,7 @@ would give mode line times like `94/12/30 21:07:48 (UTC)'.")
     ;; This is inside the let binding, but we are not going to document
     ;; what variables are available.
     (run-hooks 'display-time-hook))
-  (force-mode-line-update)
-  ;; Do redisplay right now, if no input pending.
-  (sit-for 0))
+  (force-mode-line-update))
 
 (defun display-time-file-nonempty-p (file)
   (and (file-exists-p file)

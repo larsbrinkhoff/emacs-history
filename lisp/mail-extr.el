@@ -20,10 +20,20 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
+
+;;; This file has been censored by the Communications Decency Act.
+;;; That law was passed under the guise of a ban on pornography, but
+;;; it bans far more than that.  This file did not contain pornography,
+;;; but it was censored nonetheless.
+
+;;; For information on US government censorship of the Internet, and
+;;; what you can do to bring back freedom of the press, see the web
+;;; site http://www.vtw.org/
 
 ;; The entry point of this code is
 ;;
@@ -645,7 +655,7 @@ by translating things like \"foo!bar!baz@host\" into \"baz@bar.UUCP\".")
   ;;  which lie outside of the range, one character at that position is
   ;;  replaced with a SPC.
   (or (memq no-replace '(t nil))
-      (error "no-replace must be t or nil, evalable at macroexpand-time."))
+      (error "no-replace must be t or nil, evaluable at macroexpand-time"))
   (` (let ((temp (, list-symbol))
 	   ch)
        (while temp
@@ -759,7 +769,7 @@ If ADDRESS contains more than one RFC-822 address, only the first is
 	    ((bufferp address)
 	     (insert-buffer-substring address))
 	    (t
-	     (error "Illegal address: %s" address)))
+	     (error "Invalid address: %s" address)))
       
       ;; stolen from rfc822.el
       ;; Unfold multiple lines.
@@ -1273,7 +1283,8 @@ If ADDRESS contains more than one RFC-822 address, only the first is
 		   (backward-char 1)
 		   (mail-extr-delete-char 1)
 		   (goto-char quote-beg)
-		   (mail-extr-delete-char 1))
+		   (or (eobp)
+		       (mail-extr-delete-char 1)))
 		 (mail-extr-undo-backslash-quoting quote-beg quote-end)
 		 (or (eq ?\  (char-after (point)))
 		     (insert " "))
@@ -1306,9 +1317,9 @@ If ADDRESS contains more than one RFC-822 address, only the first is
 		   (cond
 		    
 		    ;; Handle X.400 addresses encoded in RFC-822.
-		    ;; *** Shit!  This has to handle the case where it is
+		    ;; *** This has to handle the case where it is
 		    ;; *** embedded in a quote too!
-		    ;; *** Shit!  The input is being broken up into atoms
+		    ;; *** The input is being broken up into atoms
 		    ;; *** by periods!
 		    ((looking-at mail-extr-x400-encoded-address-pattern)
 		     
@@ -1701,7 +1712,7 @@ If ADDRESS contains more than one RFC-822 address, only the first is
       
       ;; If the last thing in the name is 2 or more periods, or one or more
       ;; other sentence terminators (but not a single period) then keep them
-      ;; and the preceeding word.  This is for the benefit of whole sentences
+      ;; and the preceding word.  This is for the benefit of whole sentences
       ;; in the name field: it's better behavior than dropping the last word
       ;; of the sentence...
       (if (and (not suffix-flag)
@@ -1740,7 +1751,7 @@ If ADDRESS contains more than one RFC-822 address, only the first is
 	     (narrow-to-region (point) (point-max))))
       
       ;; Delete leading and trailing junk characters.
-      ;; *** This is probably completly unneeded now.
+      ;; *** This is probably completely unneeded now.
       ;;(goto-char (point-max))
       ;;(skip-chars-backward mail-extr-non-end-name-chars)
       ;;(if (eq ?. (following-char))
@@ -1856,7 +1867,7 @@ If ADDRESS contains more than one RFC-822 address, only the first is
        ("kp" "Korea (North)")
        ("kr" "Korea (South)")
        ("kw" "Kuwait")
-       ("kz" "Kazachstan")
+       ("kz" "Kazakhstan")
        ("lb" "Lebanon")
        ("lc" "St. Lucia")
        ("li" "Liechtenstein")
@@ -1893,7 +1904,7 @@ If ADDRESS contains more than one RFC-822 address, only the first is
        ("pk" "Pakistan")
        ("pl" "Poland")
        ("pr" "Puerto Rico (U.S.)")
-       ("pt" "Portugal"		"The Portugese Republic")
+       ("pt" "Portugal"		"The Portuguese Republic")
        ("py" "Paraguay")
        ("re" "Reunion (Fr.)")		; In .fr domain
        ("ro" "Romania")
@@ -1955,7 +1966,7 @@ If ADDRESS contains more than one RFC-822 address, only the first is
 			    mail-extr-all-top-level-domains nil t))))
   (or (setq domain (intern-soft (downcase domain)
 				mail-extr-all-top-level-domains))
-      (error "no such domain"))
+      (error "No such domain"))
   (message "%s: %s" (upcase (symbol-name domain)) (get domain 'domain-name)))
 
 

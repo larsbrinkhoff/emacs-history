@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -69,6 +70,10 @@ munge_doc_file_name (name)
 #endif /* VMS */
 }
 
+/* Buffer used for reading from documentation file.  */
+static char *get_doc_string_buffer;
+static int get_doc_string_buffer_size;
+
 /* Extract a doc string from a file.  FILEPOS says where to get it.
    If it is an integer, use that position in the standard DOC-... file.
    If it is (FILE . INTEGER), use FILE as the file name
@@ -81,16 +86,12 @@ static Lisp_Object
 get_doc_string (filepos)
      Lisp_Object filepos;
 {
-  char buf[512 * 32 + 1];
-  char *buffer;
-  int buffer_size;
-  int free_it;
   char *from, *to;
   register int fd;
   register char *name;
   register char *p, *p1;
   int minsize;
-  int position;
+  int offset, position;
   Lisp_Object file, tem;
 
   if (INTEGERP (filepos))
@@ -149,53 +150,44 @@ get_doc_string (filepos)
 	  fd = open (name, O_RDONLY, 0);
 	}
 #endif
-
       if (fd < 0)
 	error ("Cannot open doc string file \"%s\"", name);
     }
 
-  if (0 > lseek (fd, position, 0))
+  /* Seek only to beginning of disk block.  */
+  offset = position % (8 * 1024);
+  if (0 > lseek (fd, position - offset, 0))
     {
       close (fd);
       error ("Position %ld out of range in doc string file \"%s\"",
 	     position, name);
     }
 
-  /* Read the doc string into a buffer.
-     Use the fixed buffer BUF if it is big enough;
-     otherwise allocate one and set FREE_IT.
-     We store the buffer in use in BUFFER and its size in BUFFER_SIZE.  */
+  /* Read the doc string into get_doc_string_buffer.
+     P points beyond the data just read.  */
 
-  buffer = buf;
-  buffer_size = sizeof buf;
-  free_it = 0;
-  p = buf;
+  p = get_doc_string_buffer;
   while (1)
     {
-      int space_left = buffer_size - (p - buffer);
+      int space_left = (get_doc_string_buffer_size
+			- (p - get_doc_string_buffer));
       int nread;
 
-      /* Switch to a bigger buffer if we need one.  */
+      /* Allocate or grow the buffer if we need to.  */
       if (space_left == 0)
 	{
-	  if (free_it)
-	    {
-	      int offset = p - buffer;
-	      buffer = (char *) xrealloc (buffer,
-					  buffer_size *= 2);
-	      p = buffer + offset;
-	    }
-	  else
-	    {
-	      buffer = (char *) xmalloc (buffer_size *= 2);
-	      bcopy (buf, buffer, p - buf);
-	      p = buffer + (p - buf);
-	    }
-	  free_it = 1;
-	  space_left = buffer_size - (p - buffer);
+	  int in_buffer = p - get_doc_string_buffer;
+	  get_doc_string_buffer_size += 16 * 1024;
+	  get_doc_string_buffer
+	    = (char *) xrealloc (get_doc_string_buffer,
+				 get_doc_string_buffer_size + 1);
+	  p = get_doc_string_buffer + in_buffer;
+	  space_left = (get_doc_string_buffer_size
+			- (p - get_doc_string_buffer));
 	}
 
-      /* Don't read too too much at one go.  */
+      /* Read a disk block at a time.
+         If we read the same block last time, maybe skip this?  */
       if (space_left > 1024 * 8)
 	space_left = 1024 * 8;
       nread = read (fd, p, space_left);
@@ -207,7 +199,10 @@ get_doc_string (filepos)
       p[nread] = 0;
       if (!nread)
 	break;
-      p1 = index (p, '\037');
+      if (p == get_doc_string_buffer)
+	p1 = index (p + offset, '\037');
+      else
+	p1 = index (p, '\037');
       if (p1)
 	{
 	  *p1 = 0;
@@ -220,8 +215,8 @@ get_doc_string (filepos)
 
   /* Scan the text and perform quoting with ^A (char code 1).
      ^A^A becomes ^A, ^A0 becomes a null char, and ^A_ becomes a ^_.  */
-  from = buffer;
-  to = buffer;
+  from = get_doc_string_buffer + offset;
+  to = get_doc_string_buffer + offset;
   while (from != p)
     {
       if (*from == 1)
@@ -243,11 +238,8 @@ get_doc_string (filepos)
 	*to++ = *from++;
     }
 
-  tem = make_string (buffer, to - buffer);
-  if (free_it)
-    free (buffer);
-
-  return tem;
+  return make_string (get_doc_string_buffer + offset,
+		      to - (get_doc_string_buffer + offset));
 }
 
 /* Get a string from position FILEPOS and pass it through the Lisp reader.
@@ -263,7 +255,7 @@ read_doc_string (filepos)
 
 DEFUN ("documentation", Fdocumentation, Sdocumentation, 1, 2, 0,
   "Return the documentation string of FUNCTION.\n\
-Unless a non-nil second argument is given, the\n\
+Unless a non-nil second argument RAW is given, the\n\
 string is passed through `substitute-command-keys'.")
   (function, raw)
      Lisp_Object function, raw;
@@ -350,14 +342,14 @@ DEFUN ("documentation-property", Fdocumentation_property, Sdocumentation_propert
   "Return the documentation string that is SYMBOL's PROP property.\n\
 This is like `get', but it can refer to strings stored in the\n\
 `etc/DOC' file; and if the value is a string, it is passed through\n\
-`substitute-command-keys'.  A non-nil third argument avoids this\n\
+`substitute-command-keys'.  A non-nil third argument RAW avoids this\n\
 translation.")
-  (sym, prop, raw)
-     Lisp_Object sym, prop, raw;
+  (symbol, prop, raw)
+     Lisp_Object symbol, prop, raw;
 {
   register Lisp_Object tem;
 
-  tem = Fget (sym, prop);
+  tem = Fget (symbol, prop);
   if (INTEGERP (tem))
     tem = get_doc_string (XINT (tem) > 0 ? tem : make_number (- XINT (tem)));
   else if (CONSP (tem))
@@ -528,8 +520,8 @@ Substrings of the form \\=\\<MAPVAR> specify to use the value of MAPVAR\n\
 as the keymap for future \\=\\[COMMAND] substrings.\n\
 \\=\\= quotes the following character and is discarded;\n\
 thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ into the output.")
-  (str)
-     Lisp_Object str;
+  (string)
+     Lisp_Object string;
 {
   unsigned char *buf;
   int changed = 0;
@@ -545,28 +537,28 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
   Lisp_Object name;
   struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
-  if (NILP (str))
+  if (NILP (string))
     return Qnil;
 
-  CHECK_STRING (str, 0);
+  CHECK_STRING (string, 0);
   tem = Qnil;
   keymap = Qnil;
   name = Qnil;
-  GCPRO4 (str, tem, keymap, name);
+  GCPRO4 (string, tem, keymap, name);
 
   /* KEYMAP is either nil (which means search all the active keymaps)
      or a specified local map (which means search just that and the
      global map).  If non-nil, it might come from Voverriding_local_map,
-     or from a \\<mapname> construct in STR itself..  */
+     or from a \\<mapname> construct in STRING itself..  */
   keymap = current_kboard->Voverriding_terminal_local_map;
   if (NILP (keymap))
     keymap = Voverriding_local_map;
 
-  bsize = XSTRING (str)->size;
+  bsize = XSTRING (string)->size;
   bufp = buf = (unsigned char *) xmalloc (bsize);
 
-  strp = (unsigned char *) XSTRING (str)->data;
-  while (strp < (unsigned char *) XSTRING (str)->data + XSTRING (str)->size)
+  strp = (unsigned char *) XSTRING (string)->data;
+  while (strp < (unsigned char *) XSTRING (string)->data + XSTRING (string)->size)
     {
       if (strp[0] == '\\' && strp[1] == '=')
 	{
@@ -584,15 +576,15 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  strp += 2;		/* skip \[ */
 	  start = strp;
 
-	  while ((strp - (unsigned char *) XSTRING (str)->data
-		  < XSTRING (str)->size)
+	  while ((strp - (unsigned char *) XSTRING (string)->data
+		  < XSTRING (string)->size)
 		 && *strp != ']')
 	    strp++;
 	  length = strp - start;
 	  strp++;		/* skip ] */
 
 	  /* Save STRP in IDX.  */
-	  idx = strp - (unsigned char *) XSTRING (str)->data;
+	  idx = strp - (unsigned char *) XSTRING (string)->data;
 	  tem = Fintern (make_string (start, length), Qnil);
 	  tem = Fwhere_is_internal (tem, keymap, Qt, Qnil);
 
@@ -631,15 +623,15 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  strp += 2;		/* skip \{ or \< */
 	  start = strp;
 
-	  while ((strp - (unsigned char *) XSTRING (str)->data
-		  < XSTRING (str)->size)
+	  while ((strp - (unsigned char *) XSTRING (string)->data
+		  < XSTRING (string)->size)
 		 && *strp != '}' && *strp != '>')
 	    strp++;
 	  length = strp - start;
 	  strp++;			/* skip } or > */
 
 	  /* Save STRP in IDX.  */
-	  idx = strp - (unsigned char *) XSTRING (str)->data;
+	  idx = strp - (unsigned char *) XSTRING (string)->data;
 
 	  /* Get the value of the keymap in TEM, or nil if undefined.
 	     Do this while still in the user's current buffer
@@ -682,8 +674,8 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  buf = new;
 	  bcopy (start, bufp, length);
 	  bufp += length;
-	  /* Check STR again in case gc relocated it.  */
-	  strp = (unsigned char *) XSTRING (str)->data + idx;
+	  /* Check STRING again in case gc relocated it.  */
+	  strp = (unsigned char *) XSTRING (string)->data + idx;
 	}
       else			/* just copy other chars */
 	*bufp++ = *strp++;
@@ -692,7 +684,7 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
   if (changed)			/* don't bother if nothing substituted */
     tem = make_string (buf, bufp - buf);
   else
-    tem = str;
+    tem = string;
   xfree (buf);
   RETURN_UNGCPRO (tem);
 }

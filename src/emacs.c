@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <signal.h>
@@ -40,6 +41,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "intervals.h"
 
 #include "systty.h"
+#include "blockinput.h"
 #include "syssignal.h"
 #include "process.h"
 
@@ -48,6 +50,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 extern void malloc_warning ();
+extern void set_time_zone_rule ();
 extern char *index ();
 extern char *strerror ();
 
@@ -152,6 +155,8 @@ fatal_error_signal (sig)
 {
   fatal_error_code = sig;
   signal (sig, SIG_DFL);
+
+  TOTALLY_UNBLOCK_INPUT;
 
   /* If fatal error occurs in code below, avoid infinite recursion.  */
   if (! fatal_error_in_progress)
@@ -309,11 +314,17 @@ DEFUN ("invocation-directory", Finvocation_directory, Sinvocation_directory,
 
 #ifdef VMS
 #ifdef LINK_CRTL_SHARE
-#ifdef SHAREABLE_LIB_BUG
+#ifdef SHARABLE_LIB_BUG
 extern noshare char **environ;
-#endif /* SHAREABLE_LIB_BUG */
+#endif /* SHARABLE_LIB_BUG */
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
+
+#ifdef HAVE_TZSET
+/* A valid but unlikely value for the TZ environment value.
+   It is OK (though a bit slower) if the user actually chooses this value.  */
+static char dump_tz[] = "UtC0";
+#endif
 
 #ifndef ORDINARY_LINK
 /* We don't include crtbegin.o and crtend.o in the link,
@@ -476,7 +487,7 @@ main (argc, argv, envp)
   }
 
 #ifdef LINK_CRTL_SHARE
-#ifdef SHAREABLE_LIB_BUG
+#ifdef SHARABLE_LIB_BUG
   /* Bletcherous shared libraries! */
   if (!stdin)
     stdin = fdopen (0, "r");
@@ -486,7 +497,7 @@ main (argc, argv, envp)
     stderr = fdopen (2, "w");
   if (!environ)
     environ = envp;
-#endif /* SHAREABLE_LIB_BUG */
+#endif /* SHARABLE_LIB_BUG */
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
 
@@ -521,9 +532,20 @@ main (argc, argv, envp)
   /* We do all file input/output as binary files.  When we need to translate
      newlines, we do that manually.  */
   _fmode = O_BINARY;
+
+#if __DJGPP__ >= 2
+  if (!isatty (fileno (stdin)))
+    setmode (fileno (stdin), O_BINARY);
+  if (!isatty (fileno (stdout)))
+    {
+      fflush (stdout);
+      setmode (fileno (stdout), O_BINARY);
+    }
+#else  /* not __DJGPP__ >= 2 */
   (stdin)->_flag &= ~_IOTEXT;
   (stdout)->_flag &= ~_IOTEXT;
   (stderr)->_flag &= ~_IOTEXT;
+#endif /* not __DJGPP__ >= 2 */
 #endif /* MSDOS */
 
 #ifdef SET_EMACS_PRIORITY
@@ -591,7 +613,7 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
      because we don't even know which window system dependent code
      to run until we've recognized this argument.  */
   {
-    char *displayname;
+    char *displayname = 0;
     int i;
     int count_before = skip_args;
 
@@ -620,7 +642,7 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
     /* Change --display to -d, when its arg is separate.  */
     else if (displayname != 0 && skip_args > count_before
 	     && argv[count_before + 1][1] == '-')
-      argv[count_before] = "-d";
+      argv[count_before + 1] = "-d";
 
     /* Don't actually discard this arg.  */
     skip_args = count_before;
@@ -646,6 +668,22 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
   init_signals ();
 #endif
 
+  /* Don't catch SIGHUP if dumping.  */
+  if (1
+#ifndef CANNOT_DUMP
+      && initialized
+#endif
+      )
+    {
+      sigblockx (SIGHUP);
+      /* In --batch mode, don't catch SIGHUP if already ignored.
+	 That makes nohup work.  */
+      if (! noninteractive
+	  || signal (SIGHUP, SIG_IGN) != SIG_IGN)
+	signal (SIGHUP, fatal_error_signal);
+      sigunblockx (SIGHUP);
+    }
+
   if (
 #ifndef CANNOT_DUMP
       ! noninteractive || initialized
@@ -654,10 +692,9 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
 #endif
       )
     {
-      /* Don't catch these signals in batch mode if not initialized.
+      /* Don't catch these signals in batch mode if dumping.
 	 On some machines, this sets static data that would make
 	 signal fail to work right when the dumped Emacs is run.  */
-      signal (SIGHUP, fatal_error_signal);
       signal (SIGQUIT, fatal_error_signal);
       signal (SIGILL, fatal_error_signal);
       signal (SIGTRAP, fatal_error_signal);
@@ -750,13 +787,16 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
   /* Call early 'cause init_environment needs it.  */
   init_dosfns ();
   /* Set defaults for several environment variables.  */
-  if (initialized) init_environment (argc, argv, skip_args);
-  else init_gettimeofday ();
-#endif
+  if (initialized)
+    init_environment (argc, argv, skip_args);
+  else
+    tzset ();
+#endif /* MSDOS */
 
 #ifdef WINDOWSNT
   /* Initialize environment from registry settings.  */
   init_environment ();
+  init_ntproc ();	/* must precede init_editfns */
 #endif
 
   /* egetenv is a pretty low-level facility, which may get called in
@@ -856,6 +896,9 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
 #ifdef VMS
       syms_of_vmsproc ();
 #endif /* VMS */
+#ifdef WINDOWSNT
+      syms_of_ntproc ();
+#endif /* WINDOWSNT */
       syms_of_window ();
       syms_of_xdisp ();
 #ifdef HAVE_X_WINDOWS
@@ -865,13 +908,13 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
 #ifdef HAVE_X11
       syms_of_xselect ();
 #endif
-#ifdef HAVE_X_MENU
-      syms_of_xmenu ();
-#endif /* HAVE_X_MENU */
 #endif /* HAVE_X_WINDOWS */
 
 #if defined (MSDOS) && !defined (HAVE_X_WINDOWS)
       syms_of_xfaces ();
+#endif
+
+#ifndef HAVE_NTGUI
       syms_of_xmenu ();
 #endif
 
@@ -925,6 +968,23 @@ Usage: %s [-t term] [--terminal term]  [-nw] [--no-windows]  [--batch]\n\
       XSETFASTINT (Vmessage_log_max, 0);
       message_dolog ("", 0, 1);
       Vmessage_log_max = old_log_max;
+
+#ifdef HAVE_TZSET
+      {
+	/* If the execution TZ happens to be the same as the dump TZ,
+	   change it to some other value and then change it back,
+	   to force the underlying implementation to reload the TZ info.
+	   This is needed on implementations that load TZ info from files,
+	   since the TZ file contents may differ between dump and execution.  */
+	char *tz = getenv ("TZ");
+	if (tz && !strcmp (tz, dump_tz))
+	  {
+	    ++*tz;
+	    tzset ();
+	    --*tz;
+	  }
+      }
+#endif
     }
 
   initialized = 1;
@@ -992,11 +1052,14 @@ struct standard_args standard_args[] =
   { "-g", "--geometry", 10, 1 },
   { "-geometry", 0, 10, 1 },
   { "-T", "--title", 10, 1 },
+  { "-title", 0, 10, 1 },
   { "-name", "--name", 10, 1 },
+  { "-rn", 0, 10, 1 },
   { "-xrm", "--xrm", 10, 1 },
   { "-r", "--reverse-video", 5, 0 },
   { "-rv", 0, 5, 0 },
   { "-reverse", 0, 5, 0 },
+  { "-hb", "--horizontal-scroll-bars", 5, 0 },
   { "-vb", "--vertical-scroll-bars", 5, 0 },
   /* These have the same priority as ordinary file name args,
      so they are not reordered with respect to those.  */
@@ -1051,6 +1114,8 @@ sort_args (argc, argv)
 	      {
 		options[from] = standard_args[i].nargs;
 		priority[from] = standard_args[i].priority;
+		if (from + standard_args[i].nargs >= argc)
+		  fatal ("Option `%s' requires an argument\n", argv[from]);
 		from += standard_args[i].nargs;
 		goto done;
 	      }
@@ -1087,6 +1152,8 @@ sort_args (argc, argv)
 		     this option uses just one argv element.  */
 		  if (equals != 0)
 		    options[from] = 0;
+		  if (from + options[from] >= argc)
+		    fatal ("Option `%s' requires an argument\n", argv[from]);
 		  from += options[from];
 		}
 	    }
@@ -1250,6 +1317,10 @@ shut_down_emacs (sig, no_x, stuff)
   unrequest_sigio ();
   signal (SIGIO, SIG_IGN);
 #endif
+
+#ifdef WINDOWSNT
+  term_ntproc ();
+#endif
 }
 
 
@@ -1261,14 +1332,14 @@ shut_down_emacs (sig, no_x, stuff)
 DEFUN ("dump-emacs-data", Fdump_emacs_data, Sdump_emacs_data, 1, 1, 0,
   "Dump current state of Emacs into data file FILENAME.\n\
 This function exists on systems that use HAVE_SHM.")
-  (intoname)
-     Lisp_Object intoname;
+  (filename)
+     Lisp_Object filename;
 {
   extern char my_edata[];
   Lisp_Object tem;
 
-  CHECK_STRING (intoname, 0);
-  intoname = Fexpand_file_name (intoname, Qnil);
+  CHECK_STRING (filename, 0);
+  filename = Fexpand_file_name (filename, Qnil);
 
   tem = Vpurify_flag;
   Vpurify_flag = Qnil;
@@ -1279,7 +1350,7 @@ This function exists on systems that use HAVE_SHM.")
 #ifndef SYSTEM_MALLOC
   memory_warnings (my_edata, malloc_warning);
 #endif
-  map_out_data (XSTRING (intoname)->data);
+  map_out_data (XSTRING (filename)->data);
 
   Vpurify_flag = tem;
 
@@ -1296,27 +1367,35 @@ This is used in the file `loadup.el' when building Emacs.\n\
 Bind `command-line-processed' to nil before dumping,\n\
 if you want the dumped Emacs to process its command line\n\
 and announce itself normally when it is run.")
-  (intoname, symname)
-     Lisp_Object intoname, symname;
+  (filename, symfile)
+     Lisp_Object filename, symfile;
 {
   extern char my_edata[];
   Lisp_Object tem;
 
-  CHECK_STRING (intoname, 0);
-  intoname = Fexpand_file_name (intoname, Qnil);
-  if (!NILP (symname))
+  CHECK_STRING (filename, 0);
+  filename = Fexpand_file_name (filename, Qnil);
+  if (!NILP (symfile))
     {
-      CHECK_STRING (symname, 0);
-      if (XSTRING (symname)->size)
-	symname = Fexpand_file_name (symname, Qnil);
+      CHECK_STRING (symfile, 0);
+      if (XSTRING (symfile)->size)
+	symfile = Fexpand_file_name (symfile, Qnil);
     }
 
   tem = Vpurify_flag;
   Vpurify_flag = Qnil;
 
+#ifdef HAVE_TZSET
+  set_time_zone_rule (dump_tz);
+#ifndef LOCALTIME_CACHE
+  /* Force a tz reload, since set_time_zone_rule doesn't.  */
+  tzset ();
+#endif
+#endif
+
   fflush (stdout);
 #ifdef VMS
-  mapout_data (XSTRING (intoname)->data);
+  mapout_data (XSTRING (filename)->data);
 #else
   /* Tell malloc where start of impure now is */
   /* Also arrange for warnings when nearly out of space.  */
@@ -1327,8 +1406,8 @@ and announce itself normally when it is run.")
   memory_warnings (my_edata, malloc_warning);
 #endif /* not WINDOWSNT */
 #endif
-  unexec (XSTRING (intoname)->data,
-	  !NILP (symname) ? XSTRING (symname)->data : 0, my_edata, 0, 0);
+  unexec (XSTRING (filename)->data,
+	  !NILP (symfile) ? XSTRING (symfile)->data : 0, my_edata, 0, 0);
 #endif /* not VMS */
 
   Vpurify_flag = tem;

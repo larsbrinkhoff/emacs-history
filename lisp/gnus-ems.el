@@ -1,4 +1,5 @@
 ;;; gnus-ems.el --- functions for making Gnus work under different Emacsen
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Lars Magne Ingebrigtsen <larsi@ifi.uio.no>
@@ -17,10 +18,20 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
+
+;;; This file has been censored by the Communications Decency Act.
+;;; That law was passed under the guise of a ban on pornography, but
+;;; it bans far more than that.  This file did not contain pornography,
+;;; but it was censored nonetheless.
+
+;;; For information on US government censorship of the Internet, and
+;;; what you can do to bring back freedom of the press, see the web
+;;; site http://www.vtw.org/
 
 ;;; Code:
 
@@ -205,8 +216,7 @@ pounce directly on the real variables themselves.")
 	(require 'mode-motion)
 	(setq mode-motion-hook 'mode-motion-highlight-line)))
 
-     ((and (not (string-match "28.9" emacs-version)) 
-	   (not (string-match "29" emacs-version)))
+     ((< emacs-minor-version 30)
       ;; Remove the `intangible' prop.
       (let ((props (and (boundp 'gnus-hidden-properties) 
 			gnus-hidden-properties)))
@@ -362,7 +372,7 @@ NOTE: This command only works with newsgroups that use real or simulated NNTP."
 	(article (gnus-summary-article-number))
 	b)
     (or (gnus-summary-goto-subject article)
-	(error (format "No such article: %d" article)))
+	(error "No such article: %d" article))
     (or gnus-newsgroup-headers-hashtb-by-number
 	(gnus-make-headers-hashtable-by-number))
     (gnus-summary-position-cursor)
@@ -412,10 +422,10 @@ NOTE: This command only works with newsgroups that use real or simulated NNTP."
 			  'gnus-mark gnus-unread-mark 
 			  'gnus-level 0
 			  'gnus-pseudo (car pslist)))
-	  ;; Fucking XEmacs redisplay bug with truncated lines.
+	  ;; Fire-trucking XEmacs redisplay bug with truncated lines.
 	  (goto-char b)
 	  (sit-for 0)
-	  ;; Grumble.. Fucking XEmacs stickyness of text properties.
+	  ;; Grumble.. fire-trucking XEmacs stickiness of text properties.
 	  (remove-text-properties
 	   (1+ b) (1+ (gnus-point-at-eol))
 	   '(gnus-number nil gnus-mark nil gnus-level nil))

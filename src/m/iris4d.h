@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
@@ -112,7 +113,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef USG5_4
 #undef UNEXEC
-#define UNEXEC unexelfsgi.o
+#define UNEXEC unexsgi.o
 #else
 #define UNEXEC unexmips.o
 #endif
@@ -181,7 +182,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Turn off some "helpful" error checks for type mismatches
    that we can't fix without breaking other machines.  */
 #ifdef IRIX_FORCE_32_BITS
+#ifdef THIS_IS_MAKEFILE
 #define C_SWITCH_MACHINE -32
+#endif
 #endif
 
 #endif /* not __GNUC__ */

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -156,7 +157,7 @@ void (*set_vertical_scroll_bar_hook)
    away is a real pain - can you say set-window-configuration?
    Instead, we just assert at the beginning of redisplay that *all*
    scroll bars are to be removed, and then save scroll bars from the
-   firey pit when we actually redisplay their window.  */
+   fiery pit when we actually redisplay their window.  */
 
 /* Arrange for all scroll bars on FRAME to be removed at the next call
    to `*judge_scroll_bars_hook'.  A scroll bar may be spared if
@@ -297,7 +298,6 @@ extern char *tgetstr ();
 
 
 #ifdef WINDOWSNT
-#ifndef HAVE_NTGUI
 /* We aren't X windows, but we aren't termcap either.  This makes me
    uncertain as to what value to use for frame.output_method.  For
    this file, we'll define FRAME_TERMCAP_P to be zero so that our
@@ -306,7 +306,6 @@ extern char *tgetstr ();
 
 #undef FRAME_TERMCAP_P
 #define FRAME_TERMCAP_P(_f_) 0
-#endif /* not HAVE_NTGUI */
 #endif /* WINDOWSNT */
 
 ring_bell ()
@@ -1091,7 +1090,7 @@ calculate_ins_del_char_costs (frame)
 
   /* Delete costs are at negative offsets */
   p = &char_ins_del_cost (frame)[0];
-  for (i = FRAME_WIDTH (selected_frame); --i >= 0;)
+  for (i = FRAME_WIDTH (frame); --i >= 0;)
     *--p = (del_startup_cost += del_cost_per_char);
 
   /* Doing nothing is free */

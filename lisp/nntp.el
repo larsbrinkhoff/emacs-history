@@ -1,5 +1,6 @@
 ;;; nntp.el --- nntp access for Gnus
-;; Copyright (C) 1987,88,89,90,92,93,94,95 Free Software Foundation, Inc.
+
+;; Copyright (C) 1987,88,89,90,92,93,94,95,96 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
 ;; 	Lars Magne Ingebrigtsen <larsi@ifi.uio.no>
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -326,7 +328,7 @@ instead call function `nntp-status-message' to get status message.")
       (if nntp-server-list-active-group
 	  (progn
 	    ;; We have read active entries, so we just delete the
-	    ;; superfluos gunk.
+	    ;; superfluous gunk.
 	    (goto-char (point-min))
 	    (while (re-search-forward "^[.2-5]" nil t)
 	      (delete-region (match-beginning 0) 
@@ -363,7 +365,7 @@ servers."
     ;; check that the physical server is opened.
     (if (or (nntp-server-opened server)
 	    connectionless)
-	()
+	t
       (if (member nntp-address nntp-timeout-servers)
 	  nil
 	;; We open a connection to the physical nntp server.
@@ -589,8 +591,14 @@ servers."
 (defun nntp-request-post (&optional server)
   "Post the current buffer."
   (nntp-possibly-change-server nil server)
+  (save-excursion
+    (set-buffer nntp-server-buffer)
+    (erase-buffer))
   (if (nntp-send-command "^[23].*\r?\n" "POST")
       (progn
+	(save-excursion
+	  (set-buffer nntp-server-buffer)
+	  (erase-buffer))
 	(nntp-encode-text)
 	(nntp-send-region-to-server (point-min) (point-max))
 	;; 1.2a NNTP's post command is buggy. "^M" (\r) is not
@@ -936,7 +944,7 @@ It will prompt for a password."
 		(accept-process-output)
 		;; On some Emacs versions the preceding function has
 		;; a tendency to change the buffer. Perhaps. It's
-		;; quite difficult to reporduce, because it only
+		;; quite difficult to reproduce, because it only
 		;; seems to happen once in a blue moon. 
 		(set-buffer buf) 
 		(while (progn
@@ -1012,41 +1020,33 @@ It will prompt for a password."
     ;; We open the nntp server if it is down.
     (or (nntp-server-opened nntp-current-server)
 	(nntp-open-server nntp-current-server)
-	(error (nntp-status-message)))
+	(error "%s" (nntp-status-message)))
     ;; Send the strings.
     (process-send-string nntp-server-process cmd)))
 
 (defun nntp-send-region-to-server (begin end)
-  "Send current buffer region (from BEGIN to END) to news server."
+  "Send the current buffer region (from BEGIN to END) to the server."
   (save-excursion
-    ;; We have to work in the buffer associated with NNTP server
-    ;;  process because of NEmacs hack.
-    (copy-to-buffer nntp-server-buffer begin end)
-    (set-buffer nntp-server-buffer)
-    (setq begin (point-min))
-    (setq end (point-max))
-    ;; `process-send-region' does not work if text to be sent is very
-    ;;  large. I don't know maximum size of text sent correctly.
-    (let ((last nil)
-	  (size 100))			;Size of text sent at once.
-      (save-restriction
-	(narrow-to-region begin end)
-	(goto-char begin)
-	(while (not (eobp))
-	  ;;(setq last (min end (+ (point) size)))
-	  ;; NEmacs gets confused if character at `last' is Kanji.
-	  (setq last (save-excursion
-		       (goto-char (min end (+ (point) size)))
-		       (or (eobp) (forward-char 1)) ;Adjust point
-		       (point)))
-	  (process-send-region nntp-server-process (point) last)
-	  ;; I don't know whether the next codes solve the known
-	  ;;  problem of communication error of GNU Emacs.
-	  (accept-process-output)
-	  ;;(sit-for 0)
-	  (goto-char last))))
-    ;; We cannot erase buffer, because reply may be received.
-    (delete-region begin end)))
+    (let ((cur (current-buffer)))
+      ;; Copy the buffer over to the send buffer.
+      (set-buffer (get-buffer-create " *nntp send*"))
+      (buffer-disable-undo (current-buffer))
+      (erase-buffer)
+      (insert-buffer-substring cur begin end)
+      (save-excursion
+	(set-buffer cur)
+	(erase-buffer))
+      ;; `process-send-region' does not work if the text to be sent is very
+      ;; large, so we send it piecemeal.
+      (let ((last (point-min))
+	    (size 100))			;Size of text sent at once.
+	(while (/= last (point-max))
+	  (process-send-region 
+	   nntp-server-process
+	   last (setq last (min (+ last size) (point-max))))
+	  ;; Read any output from the server.  May be unnecessary.
+	  (accept-process-output)))
+      (kill-buffer (current-buffer)))))
 
 (defun nntp-open-server-semi-internal (server &optional service)
   "Open SERVER.
@@ -1181,7 +1181,7 @@ defining this function as macro."
 		(sleep-for 1)
 		(message ""))
 	    (condition-case errorcode
-		(accept-process-output nntp-server-process)
+		(accept-process-output nntp-server-process 1)
 	      (error
 	       (cond ((string-equal "select error: Invalid argument" 
 				    (nth 1 errorcode))
@@ -1258,7 +1258,7 @@ defining this function as macro."
   (let ((cmd (concat (mapconcat 'identity strings " ") "\r\n")))
     (or (nntp-async-server-opened)
 	(nntp-async-open-server)
-	(error (nntp-status-message)))
+	(error "%s" (nntp-status-message)))
     (process-send-string nntp-async-process cmd)))
 
 (defun nntp-async-request-group (group)

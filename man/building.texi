@@ -85,6 +85,13 @@ compilation continues in any case.  While a compilation is going on, the
 string @samp{Compiling} appears in the mode lines of all windows.  When
 this string disappears, the compilation is finished.
 
+  If you want to watch the compilation transcript as it appears, switch
+to the @samp{*compilation*} buffer and move point to the end of the
+buffer.  When point is at the end, new compilation output is inserted
+above point, which remains at the end.  If point is not at the end of
+the buffer, it remains fixed while more compilation output is added at
+the end of the buffer.
+
 @findex kill-compilation
   To kill the compilation process, do @kbd{M-x kill-compilation}.  When
 the compiler process terminates, the mode line of the
@@ -400,6 +407,10 @@ stops for some other reason).
   These commands interpret a numeric argument as a repeat count, when
 that makes sense.
 
+  Because @key{TAB} serves as a completion command, you can't use it to
+enter a tab as input to the program you are debugging with GDB.
+Instead, type @kbd{C-q @key{TAB}} to enter a tab.
+
 @node GUD Customization
 @subsection GUD Customization
 
@@ -493,23 +504,8 @@ Like Lisp mode but for Scheme programs.
 The mode for an interactive session with an inferior Scheme process.
 @end table
 
-@iftex
   Most editing commands for working with Lisp programs are in fact
 available globally.  @xref{Programs}.
-@end iftex
-@menu
-These subnodes of the chapter on editing programs describe the editing
-commands for working with Lisp programs, which are in fact available
-globally.
-
-* Lists::	      Expressions with balanced parentheses.
-* List Commands::     The commands for working with list and sexps.
-* Defuns::	      Each program is made up of separate functions.
-			There are editing commands to operate on them.
-* Program Indent::    Adjusting indentation to show the nesting.
-* Matching::	      Insertion of a close-delimiter flashes matching open.
-* Comments::	      Inserting, killing, and aligning comments.
-@end menu
 
 @node Lisp Libraries
 @section Libraries of Lisp Code for Emacs

@@ -1,5 +1,6 @@
 
-/*  A Bison parser, made from getdate.y with Bison version GNU Bison version 1.22
+/*  A Bison parser, made from getdate.y
+ by  Bison version A2.5 (Andrew Consortium)
   */
 
 #define YYBISON 1  /* Identify Bison output.  */
@@ -115,6 +116,7 @@ static int yylex ();
 static int yyerror ();
 
 #define EPOCH		1970
+#define DOOMSDAY	2038
 #define HOUR(x)		((time_t)(x) * 60)
 #define SECSPERDAY	(24L * 60L * 60L)
 
@@ -172,28 +174,11 @@ static time_t	yyRelMonth;
 static time_t	yyRelSeconds;
 
 
-#line 155 "getdate.y"
+#line 156 "getdate.y"
 typedef union {
     time_t		Number;
     enum _MERIDIAN	Meridian;
 } YYSTYPE;
-
-#ifndef YYLTYPE
-typedef
-  struct yyltype
-    {
-      int timestamp;
-      int first_line;
-      int first_column;
-      int last_line;
-      int last_column;
-      char *text;
-   }
-  yyltype;
-
-#define YYLTYPE yyltype
-#endif
-
 #include <stdio.h>
 
 #ifndef __cplusplus
@@ -269,17 +254,21 @@ static const short yyrhs[] = {    -1,
 
 #if YYDEBUG != 0
 static const short yyrline[] = { 0,
-   169,   170,   173,   176,   179,   182,   185,   188,   191,   197,
-   203,   210,   216,   226,   230,   234,   241,   245,   249,   255,
-   259,   264,   270,   276,   280,   285,   289,   296,   300,   303,
-   306,   309,   312,   315,   318,   321,   324,   327,   332,   359,
-   362
+   170,   171,   174,   177,   180,   183,   186,   189,   192,   198,
+   204,   211,   217,   227,   231,   235,   242,   246,   250,   256,
+   260,   265,   271,   277,   281,   286,   290,   297,   301,   304,
+   307,   310,   313,   316,   319,   322,   325,   328,   333,   360,
+   363
 };
+#endif
 
-static const char * const yytname[] = {   "$","error","$illegal.","tAGO","tDAY",
+
+#if YYDEBUG != 0
+
+static const char * const yytname[] = {   "$","error","$undefined.","tAGO","tDAY",
 "tDAYZONE","tID","tMERIDIAN","tMINUTE_UNIT","tMONTH","tMONTH_UNIT","tSEC_UNIT",
 "tSNUMBER","tUNUMBER","tZONE","tDST","':'","','","'/'","spec","item","time",
-"zone","day","date","rel","relunit","number","o_merid",""
+"zone","day","date","rel","relunit","number","o_merid", NULL
 };
 #endif
 
@@ -345,14 +334,14 @@ static const short yycheck[] = {     0,
     13,    47
 };
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "/usr/local/lib/bison.simple"
+#line 3 "/usr/share/bison.simple"
 
 /* Skeleton output parser for bison,
-   Copyright (C) 1984, 1989, 1990 Bob Corbett and Richard Stallman
+   Copyright (C) 1984, 1989, 1990 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 1, or (at your option)
+   the Free Software Foundation; either version 2, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -364,6 +353,10 @@ static const short yycheck[] = {     0,
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+/* As a special exception, when this file is copied by Bison into a
+   Bison output file, you may use that output file without restriction.
+   This special exception was added by the Free Software Foundation
+   in version 1.24 of Bison.  */
 
 #ifndef alloca
 #ifdef __GNUC__
@@ -437,10 +430,18 @@ while (0)
 
 #ifdef YYPURE
 #ifdef YYLSP_NEEDED
+#ifdef YYLEX_PARAM
+#define YYLEX		yylex(&yylval, &yylloc, YYLEX_PARAM)
+#else
 #define YYLEX		yylex(&yylval, &yylloc)
+#endif
+#else /* not YYLSP_NEEDED */
+#ifdef YYLEX_PARAM
+#define YYLEX		yylex(&yylval, YYLEX_PARAM)
 #else
 #define YYLEX		yylex(&yylval)
 #endif
+#endif /* not YYLSP_NEEDED */
 #endif
 
 /* If nonreentrant, generate the variables here */
@@ -488,14 +489,14 @@ int yyparse (void);
 #endif
 
 #if __GNUC__ > 1		/* GNU C and GNU C++ define this.  */
-#define __yy_bcopy(FROM,TO,COUNT)	__builtin_memcpy(TO,FROM,COUNT)
+#define __yy_memcpy(FROM,TO,COUNT)	__builtin_memcpy(TO,FROM,COUNT)
 #else				/* not GNU C or C++ */
 #ifndef __cplusplus
 
 /* This is the most reliable way to avoid incompatibilities
    in available built-in functions on various systems.  */
 static void
-__yy_bcopy (from, to, count)
+__yy_memcpy (from, to, count)
      char *from;
      char *to;
      int count;
@@ -513,7 +514,7 @@ __yy_bcopy (from, to, count)
 /* This is the most reliable way to avoid incompatibilities
    in available built-in functions on various systems.  */
 static void
-__yy_bcopy (char *from, char *to, int count)
+__yy_memcpy (char *from, char *to, int count)
 {
   register char *f = from;
   register char *t = to;
@@ -526,7 +527,7 @@ __yy_bcopy (char *from, char *to, int count)
 #endif
 #endif
 
-#line 184 "/usr/local/lib/bison.simple"
+#line 192 "/usr/share/bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into yyparse.  The argument should have type void *.
@@ -659,12 +660,12 @@ yynewstate:
       if (yystacksize > YYMAXDEPTH)
 	yystacksize = YYMAXDEPTH;
       yyss = (short *) alloca (yystacksize * sizeof (*yyssp));
-      __yy_bcopy ((char *)yyss1, (char *)yyss, size * sizeof (*yyssp));
+      __yy_memcpy ((char *)yyss1, (char *)yyss, size * sizeof (*yyssp));
       yyvs = (YYSTYPE *) alloca (yystacksize * sizeof (*yyvsp));
-      __yy_bcopy ((char *)yyvs1, (char *)yyvs, size * sizeof (*yyvsp));
+      __yy_memcpy ((char *)yyvs1, (char *)yyvs, size * sizeof (*yyvsp));
 #ifdef YYLSP_NEEDED
       yyls = (YYLTYPE *) alloca (yystacksize * sizeof (*yylsp));
-      __yy_bcopy ((char *)yyls1, (char *)yyls, size * sizeof (*yylsp));
+      __yy_memcpy ((char *)yyls1, (char *)yyls, size * sizeof (*yylsp));
 #endif
 #endif /* no yyoverflow */
 
@@ -825,37 +826,37 @@ yyreduce:
   switch (yyn) {
 
 case 3:
-#line 173 "getdate.y"
+#line 174 "getdate.y"
 {
 	    yyHaveTime++;
 	;
     break;}
 case 4:
-#line 176 "getdate.y"
+#line 177 "getdate.y"
 {
 	    yyHaveZone++;
 	;
     break;}
 case 5:
-#line 179 "getdate.y"
+#line 180 "getdate.y"
 {
 	    yyHaveDate++;
 	;
     break;}
 case 6:
-#line 182 "getdate.y"
+#line 183 "getdate.y"
 {
 	    yyHaveDay++;
 	;
     break;}
 case 7:
-#line 185 "getdate.y"
+#line 186 "getdate.y"
 {
 	    yyHaveRel++;
 	;
     break;}
 case 9:
-#line 191 "getdate.y"
+#line 192 "getdate.y"
 {
 	    yyHour = yyvsp[-1].Number;
 	    yyMinutes = 0;
@@ -864,7 +865,7 @@ case 9:
 	;
     break;}
 case 10:
-#line 197 "getdate.y"
+#line 198 "getdate.y"
 {
 	    yyHour = yyvsp[-3].Number;
 	    yyMinutes = yyvsp[-1].Number;
@@ -873,7 +874,7 @@ case 10:
 	;
     break;}
 case 11:
-#line 203 "getdate.y"
+#line 204 "getdate.y"
 {
 	    yyHour = yyvsp[-3].Number;
 	    yyMinutes = yyvsp[-1].Number;
@@ -883,7 +884,7 @@ case 11:
 	;
     break;}
 case 12:
-#line 210 "getdate.y"
+#line 211 "getdate.y"
 {
 	    yyHour = yyvsp[-5].Number;
 	    yyMinutes = yyvsp[-3].Number;
@@ -892,7 +893,7 @@ case 12:
 	;
     break;}
 case 13:
-#line 216 "getdate.y"
+#line 217 "getdate.y"
 {
 	    yyHour = yyvsp[-5].Number;
 	    yyMinutes = yyvsp[-3].Number;
@@ -903,56 +904,56 @@ case 13:
 	;
     break;}
 case 14:
-#line 226 "getdate.y"
+#line 227 "getdate.y"
 {
 	    yyTimezone = yyvsp[0].Number;
 	    yyDSTmode = DSToff;
 	;
     break;}
 case 15:
-#line 230 "getdate.y"
+#line 231 "getdate.y"
 {
 	    yyTimezone = yyvsp[0].Number;
 	    yyDSTmode = DSTon;
 	;
     break;}
 case 16:
-#line 235 "getdate.y"
+#line 236 "getdate.y"
 {
 	    yyTimezone = yyvsp[-1].Number;
 	    yyDSTmode = DSTon;
 	;
     break;}
 case 17:
-#line 241 "getdate.y"
+#line 242 "getdate.y"
 {
 	    yyDayOrdinal = 1;
 	    yyDayNumber = yyvsp[0].Number;
 	;
     break;}
 case 18:
-#line 245 "getdate.y"
+#line 246 "getdate.y"
 {
 	    yyDayOrdinal = 1;
 	    yyDayNumber = yyvsp[-1].Number;
 	;
     break;}
 case 19:
-#line 249 "getdate.y"
+#line 250 "getdate.y"
 {
 	    yyDayOrdinal = yyvsp[-1].Number;
 	    yyDayNumber = yyvsp[0].Number;
 	;
     break;}
 case 20:
-#line 255 "getdate.y"
+#line 256 "getdate.y"
 {
 	    yyMonth = yyvsp[-2].Number;
 	    yyDay = yyvsp[0].Number;
 	;
     break;}
 case 21:
-#line 259 "getdate.y"
+#line 260 "getdate.y"
 {
 	    yyMonth = yyvsp[-4].Number;
 	    yyDay = yyvsp[-2].Number;
@@ -960,7 +961,7 @@ case 21:
 	;
     break;}
 case 22:
-#line 264 "getdate.y"
+#line 265 "getdate.y"
 {
 	    /* ISO 8601 format.  yyyy-mm-dd.  */
 	    yyYear = yyvsp[-2].Number;
@@ -969,7 +970,7 @@ case 22:
 	;
     break;}
 case 23:
-#line 270 "getdate.y"
+#line 271 "getdate.y"
 {
 	    /* e.g. 17-JUN-1992.  */
 	    yyDay = yyvsp[-2].Number;
@@ -978,14 +979,14 @@ case 23:
 	;
     break;}
 case 24:
-#line 276 "getdate.y"
+#line 277 "getdate.y"
 {
 	    yyMonth = yyvsp[-1].Number;
 	    yyDay = yyvsp[0].Number;
 	;
     break;}
 case 25:
-#line 280 "getdate.y"
+#line 281 "getdate.y"
 {
 	    yyMonth = yyvsp[-3].Number;
 	    yyDay = yyvsp[-2].Number;
@@ -993,14 +994,14 @@ case 25:
 	;
     break;}
 case 26:
-#line 285 "getdate.y"
+#line 286 "getdate.y"
 {
 	    yyMonth = yyvsp[0].Number;
 	    yyDay = yyvsp[-1].Number;
 	;
     break;}
 case 27:
-#line 289 "getdate.y"
+#line 290 "getdate.y"
 {
 	    yyMonth = yyvsp[-1].Number;
 	    yyDay = yyvsp[-2].Number;
@@ -1008,68 +1009,68 @@ case 27:
 	;
     break;}
 case 28:
-#line 296 "getdate.y"
+#line 297 "getdate.y"
 {
 	    yyRelSeconds = -yyRelSeconds;
 	    yyRelMonth = -yyRelMonth;
 	;
     break;}
 case 30:
-#line 303 "getdate.y"
+#line 304 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[-1].Number * yyvsp[0].Number * 60L;
 	;
     break;}
 case 31:
-#line 306 "getdate.y"
+#line 307 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[-1].Number * yyvsp[0].Number * 60L;
 	;
     break;}
 case 32:
-#line 309 "getdate.y"
+#line 310 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[0].Number * 60L;
 	;
     break;}
 case 33:
-#line 312 "getdate.y"
+#line 313 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[-1].Number;
 	;
     break;}
 case 34:
-#line 315 "getdate.y"
+#line 316 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[-1].Number;
 	;
     break;}
 case 35:
-#line 318 "getdate.y"
+#line 319 "getdate.y"
 {
 	    yyRelSeconds++;
 	;
     break;}
 case 36:
-#line 321 "getdate.y"
+#line 322 "getdate.y"
 {
 	    yyRelMonth += yyvsp[-1].Number * yyvsp[0].Number;
 	;
     break;}
 case 37:
-#line 324 "getdate.y"
+#line 325 "getdate.y"
 {
 	    yyRelMonth += yyvsp[-1].Number * yyvsp[0].Number;
 	;
     break;}
 case 38:
-#line 327 "getdate.y"
+#line 328 "getdate.y"
 {
 	    yyRelMonth += yyvsp[0].Number;
 	;
     break;}
 case 39:
-#line 332 "getdate.y"
+#line 333 "getdate.y"
 {
 	    if (yyHaveTime && yyHaveDate && !yyHaveRel)
 		yyYear = yyvsp[0].Number;
@@ -1097,20 +1098,20 @@ case 39:
 	;
     break;}
 case 40:
-#line 359 "getdate.y"
+#line 360 "getdate.y"
 {
 	    yyval.Meridian = MER24;
 	;
     break;}
 case 41:
-#line 362 "getdate.y"
+#line 363 "getdate.y"
 {
 	    yyval.Meridian = yyvsp[0].Meridian;
 	;
     break;}
 }
    /* the action file gets copied in in place of this dollarsign */
-#line 480 "/usr/local/lib/bison.simple"
+#line 487 "/usr/share/bison.simple"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1306,7 +1307,7 @@ yyerrhandle:
   yystate = yyn;
   goto yynewstate;
 }
-#line 367 "getdate.y"
+#line 368 "getdate.y"
 
 
 /* Month and day table. */
@@ -1559,11 +1560,13 @@ Convert (Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode)
 
   if (Year < 0)
     Year = -Year;
-  if (Year < 100)
+  if (Year < DOOMSDAY-2000)
+    Year += 2000;
+  else if (Year < 100)
     Year += 1900;
   DaysInMonth[1] = Year % 4 == 0 && (Year % 100 != 0 || Year % 400 == 0)
     ? 29 : 28;
-  if (Year < EPOCH || Year > 1999
+  if (Year < EPOCH || Year >= DOOMSDAY
       || Month < 1 || Month > 12
       /* Lint fluff:  "conversion from long may lose accuracy" */
       || Day < 1 || Day > DaysInMonth[(int)--Month])
@@ -1628,7 +1631,7 @@ RelativeMonth (Start, RelMonth)
   if (RelMonth == 0)
     return 0;
   tm = localtime (&Start);
-  Month = 12 * tm->tm_year + tm->tm_mon + RelMonth;
+  Month = 12 * (1900 + tm->tm_year) + tm->tm_mon + RelMonth;
   Year = Month / 12;
   Month = Month % 12 + 1;
   return DSTcorrect (Start,

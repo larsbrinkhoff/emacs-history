@@ -17,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -399,7 +400,13 @@ output files usually are created there instead of in a subdir."
 (defun dired-call-process (program discard &rest arguments)
 ;  "Run PROGRAM with output to current buffer unless DISCARD is t.
 ;Remaining arguments are strings passed as command arguments to PROGRAM."
-  (apply 'call-process program nil (not discard) nil arguments))
+  ;; Look for a handler for default-directory in case it is a remote file name.
+  (let ((handler
+	 (find-file-name-handler (directory-file-name default-directory)
+				 'dired-call-process)))
+    (if handler (apply handler 'dired-call-process
+		       program discard arguments)
+      (apply 'call-process program nil (not discard) nil arguments))))
 
 (defun dired-check-process (msg program &rest arguments)
 ;  "Display MSG while running PROGRAM, and check for output.
@@ -507,45 +514,73 @@ and use this command with a prefix argument (the value does not matter)."
       (dired-log (concat "Failed to compress" from-file))
       from-file)))
 
+(defvar dired-compress-file-suffixes
+  '(("\\.gz\\'" "" "gunzip")
+    ("\\.tgz\\'" ".tar" "gunzip")
+    ("\\.Z\\'" "" "uncompress")
+    ;; For .z, try gunzip.  It might be an old gzip file,
+    ;; or it might be from compact? pack? (which?) but gunzip handles both.
+    ("\\.z\\'" "" "gunzip")
+    ;; This item controls naming for compression.
+    ("\\.tar\\'" ".tgz" nil))
+  "Control changes in file name suffixes for compression and uncompression.
+Each element specifies one transformation rule, and has the form:
+  (REGEXP NEW-SUFFIX PROGRAM)
+The rule applies when the old file name matches REGEXP.
+The new file name is computed by deleting the part that matches REGEXP
+ (as well as anything after that), then adding NEW-SUFFIX in its place.
+If PROGRAM is non-nil, the rule is an uncompression rule,
+and uncompression is done by running PROGRAM.
+Otherwise, the rule is a compression rule, and compression is done with gzip.")
+
 ;;;###autoload
 (defun dired-compress-file (file)
   ;; Compress or uncompress FILE.
   ;; Return the name of the compressed or uncompressed file.
   ;; Return nil if no change in files.
-  (let ((handler (find-file-name-handler file 'dired-compress-file)))
+  (let ((handler (find-file-name-handler file 'dired-compress-file))
+	suffix newname
+	(suffixes dired-compress-file-suffixes))
+    ;; See if any suffix rule matches this file name.
+    (while suffixes
+      (let (case-fold-search)
+	(if (string-match (car (car suffixes)) file)
+	    (setq suffix (car suffixes) suffixes nil))
+	(setq suffixes (cdr suffixes))))
+    ;; If so, compute desired new name.
+    (if suffix	
+	(setq newname (concat (substring file 0 (match-beginning 0))
+			      (nth 1 suffix))))
     (cond (handler
 	   (funcall handler 'dired-compress-file file))
 	  ((file-symlink-p file)
 	   nil)
-	  ((let (case-fold-search)
-	     (string-match "\\.Z$" file))
+	  ((and suffix (nth 2 suffix))
+	   ;; We found an uncompression rule.
 	   (if (not (dired-check-process (concat "Uncompressing " file)
-					 "uncompress" file))
-	       (substring file 0 -2)))
-	  ((let (case-fold-search)
-	     (string-match "\\.gz$" file))
-	   (if (not (dired-check-process (concat "Uncompressing " file)
-					 "gunzip" file))
-	       (substring file 0 -3)))
-	  ;; For .z, try gunzip.  It might be an old gzip file,
-	  ;; or it might be from compact? pack? (which?) but gunzip handles
-	  ;; both.
-	  ((let (case-fold-search)
-	     (string-match "\\.z$" file))
-	   (if (not (dired-check-process (concat "Uncompressing " file)
-					 "gunzip" file))
-	       (substring file 0 -2)))
+					 (nth 2 suffix) file))
+	       newname))
 	  (t
+	   ;;; We don't recognize the file as compressed, so compress it.
 	   ;;; Try gzip; if we don't have that, use compress.
 	   (condition-case nil
 	       (if (not (dired-check-process (concat "Compressing " file)
 					     "gzip" "-f" file))
-		   (cond ((file-exists-p (concat file ".gz"))
-			  (concat file ".gz"))
-			 (t (concat file ".z"))))
+		   (let ((out-name
+			  (if (file-exists-p (concat file ".gz"))
+			      (concat file ".gz")
+			    (concat file ".z"))))
+		     ;; Rename the compressed file to NEWNAME
+		     ;; if it hasn't got that name already.
+		     (if (and newname (not (equal newname out-name)))
+			 (progn
+			   (rename-file out-name newname t)
+			   newname)
+		       out-name)))
 	     (file-error
 	      (if (not (dired-check-process (concat "Compressing " file)
 					    "compress" "-f" file))
+		  ;; Don't use NEWNAME with `compress'.
 		  (concat file ".Z"))))))))
 
 (defun dired-mark-confirm (op-symbol arg)
@@ -890,14 +925,16 @@ Special value `always' suppresses confirmation.")
   ;; Save old version of a to be overwritten file TO.
   ;; `dired-overwrite-confirmed' and `overwrite-backup-query' are fluid vars
   ;; from dired-create-files.
-  (if (and dired-backup-overwrite
-	   dired-overwrite-confirmed
-	   (or (eq 'always dired-backup-overwrite)
-	       (dired-query 'overwrite-backup-query
-			(format "Make backup for existing file `%s'? " to))))
-      (let ((backup (car (find-backup-file-name to))))
-	(rename-file to backup 0)	; confirm overwrite of old backup
-	(dired-relist-entry backup))))
+  (let (backup)
+    (if (and dired-backup-overwrite
+	     dired-overwrite-confirmed
+	     (setq backup (car (find-backup-file-name to)))
+	     (or (eq 'always dired-backup-overwrite)
+		 (dired-query 'overwrite-backup-query
+			      (format "Make backup for existing file `%s'? " to))))
+	(progn
+	  (rename-file to backup 0)	; confirm overwrite of old backup
+	  (dired-relist-entry backup)))))
 
 ;;;###autoload
 (defun dired-copy-file (from to ok-flag)
@@ -1008,7 +1045,7 @@ Special value `always' suppresses confirmation.")
 ;; which will be added.  The user will be queried if the file already
 ;; exists.  If oldfile is removed by FILE-CREATOR (i.e, it is a
 ;; rename), it is FILE-CREATOR's responsibility to update dired
-;; buffers.  FILE-CREATOR must abort by signalling a file-error if it
+;; buffers.  FILE-CREATOR must abort by signaling a file-error if it
 ;; could not create newfile.  The error is caught and logged.
 
 ;; OPERATION (a capitalized string, e.g. `Copy') describes the

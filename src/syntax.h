@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 extern Lisp_Object Qsyntax_table_p;
@@ -118,7 +119,8 @@ extern Lisp_Object syntax_parent_lookup ();
      = RAW_SYNTAX_ENTRY (current_buffer->syntax_table, (c)),		\
    (NILP (syntax_temp)							\
     ? (syntax_temp							\
-       = syntax_parent_lookup (current_buffer->syntax_table, (c)))	\
+       = syntax_parent_lookup (current_buffer->syntax_table,		\
+			       (unsigned char) (c)))			\
     : syntax_temp))
 
 #define SYNTAX(c)							\

@@ -1,5 +1,6 @@
 ;;; browse-url.el --- ask a WWW browser to load a URL
-;; Copyright 1995 Free Software Foundation, Inc.
+
+;; Copyright 1995, 1996 Free Software Foundation, Inc.
 
 ;; Author: Denis Howe <dbh@doc.ic.ac.uk>
 ;; Maintainer: Denis Howe <dbh@doc.ic.ac.uk>
@@ -10,20 +11,20 @@
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published
-;; by the Free Software Foundation; either version 2, or (at your
-;; option) any later version.
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;; GNU Emacs is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Commentary:
 
 ;; The latest version of this package should be available from
@@ -90,22 +91,6 @@
 ;; Do any other browsers have remote control?
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Installation
-
-;; Put the following in your ~/.emacs file:
-;;
-;; (autoload 'browse-url-at-point "browse-url"
-;;   "Ask a WWW browser to load the URL at or before point." t)
-;; (autoload 'browse-url-at-mouse "browse-url"
-;;   "Ask a WWW browser to load a URL clicked with the mouse." t)
-;; (autoload 'browse-url-of-buffer "browse-url"
-;;   "Ask a WWW browser to display BUFFER." t)
-;; (autoload 'browse-url-of-file "browse-url"
-;;   "Ask a WWW browser to display FILE." t)
-;; (autoload 'browse-url-of-dired-file "browse-url"
-;;   "In Dired, ask a WWW browser to display the file named on this line." t)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Usage
 
 ;; To display the URL at or before point:
@@ -113,7 +98,9 @@
 
 ;; To display a URL by shift-clicking on it, put this in your ~/.emacs
 ;; file:
-;;      (global-set-key [S-mouse-1] 'browse-url-at-mouse)
+;;      (global-set-key [S-mouse-2] 'browse-url-at-mouse)
+;; (Note that using Shift-mouse-1 is not desirable because
+;; that event has a standard meaning in Emacs.)
 
 ;; To display the current buffer in a web browser:
 ;; M-x browse-url-of-buffer RET
@@ -312,10 +299,10 @@ file rather than displaying a cached copy.")
 (defvar browse-url-usr1-signal
   (if (and (boundp 'emacs-major-version)
            (or (> emacs-major-version 19) (>= emacs-minor-version 29)))
-      'sigusr1
+      'SIGUSR1
     30)                                 ; Check /usr/include/signal.h.
   "The argument to `signal-process' for sending SIGUSR1 to XMosaic.
-Emacs 19.29 accepts 'sigusr1, earlier versions require an integer
+Emacs 19.29 accepts 'SIGUSR1, earlier versions require an integer
 which is 30 on SunOS and 16 on HP-UX and Solaris.")
 
 (defvar browse-url-CCI-port 3003
@@ -355,12 +342,14 @@ use in `interactive'."
     (and (listp event) (mouse-set-point event)))
   (list (read-string (or prompt "URL: ") (browse-url-url-at-point))))
 
+;;;###autoload
 (defun browse-url-at-point ()
   "Ask a WWW browser to load the URL at or before point.
 The URL is loaded according to the value of `browse-url-browser-function'."
   (interactive)
   (funcall browse-url-browser-function (browse-url-url-at-point)))
 
+;;;###autoload
 (defun browse-url-at-mouse (event)
   "Ask a WWW browser to load a URL clicked with the mouse.
 The URL is the one around or before the position of the mouse click
@@ -379,6 +368,7 @@ but point is not changed.  The URL is loaded according to the value of
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Browse current buffer
 
+;;;###autoload
 (defun browse-url-of-file (&optional file)
   "Ask a WWW browser to display FILE.
 Display the current buffer's file if FILE is nil or if called
@@ -421,6 +411,7 @@ Uses variable `browse-url-filename-alist' to map filenames to URLs."
 
 (defvar browse-url-temp-file-list '())
 
+;;;###autoload
 (defun browse-url-of-buffer (&optional buffer)
   "Ask a WWW browser to display BUFFER.
 Display the current buffer if BUFFER is nil."
@@ -469,6 +460,7 @@ Display the current buffer if BUFFER is nil."
 (add-hook 'kill-buffer-hook 'browse-url-delete-temp-file)
 (add-hook 'kill-emacs-hook 'browse-url-delete-temp-file-list)
 
+;;;###autoload
 (defun browse-url-of-dired-file ()
   "In Dired, ask a WWW browser to display the file named on this line."
   (interactive)
@@ -494,18 +486,22 @@ used instead of browse-url-new-window-p."
   (interactive (append (browse-url-interactive-arg "Netscape URL: ")
                        (list (not (eq (null browse-url-new-window-p)
                                       (null current-prefix-arg))))))
-  (or (zerop
-       (apply 'call-process "netscape" nil nil nil
-              (append browse-url-netscape-arguments
-                      (if new-window '("-noraise"))
-                      (list "-remote" 
-                            (concat "openURL(" url 
-                                    (if new-window ",new-window")
-                                    ")")))))
-      (progn                            ; Netscape not running - start it
-        (message "Starting Netscape...")
-        (apply 'start-process "netscape" nil "netscape"
-               (append browse-url-netscape-arguments (list url))))))
+  (let ((res
+	 (apply 'call-process "netscape" nil nil nil
+		(append browse-url-netscape-arguments
+			(if new-window '("-noraise"))
+			(list "-remote" 
+			      (concat "openURL(" url 
+				      (if new-window ",new-window")
+				      ")"))))
+	 ))
+    (if (stringp res)
+	(error "netscape got signal: %s" res)
+      (or (zerop res)
+	  (progn			; Netscape not running - start it
+	    (message "Starting Netscape...")
+	    (apply 'start-process "netscape" nil "netscape"
+		   (append browse-url-netscape-arguments (list url))))))))
 
 (defun browse-url-netscape-reload ()
   "Ask Netscape to reload its current document."
@@ -538,15 +534,16 @@ Default to the URL around or before point."
           (save-buffer)
           (kill-buffer nil)
           ;; Send signal SIGUSR to Mosaic
-          (message "Signalling Mosaic...")
           (signal-process pid browse-url-usr1-signal)
+          (message "Signal sent to Mosaic")
           ;; Or you could try:
           ;; (call-process "kill" nil 0 nil "-USR1" (int-to-string pid))
           )
       ;; Mosaic not running - start it
       (message "Starting Mosaic...")
       (apply 'start-process "xmosaic" nil "xmosaic"
-             (append browse-url-mosaic-arguments (list url))))))
+             (append browse-url-mosaic-arguments (list url)))
+      (message "Starting Mosaic...done"))))
 
 (defun browse-url-cci (url &optional new-window)
   "Ask the XMosaic WWW browser to load URL.

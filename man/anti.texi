@@ -3,16 +3,45 @@
 @c See file emacs.texi for copying conditions.
 
 @node Antinews, MS-DOS, Command Arguments, Top
-@appendix Emacs 19.28 Antinews
+@appendix Emacs 19.28 and 19.29 Antinews
 
   For those users who live backwards in time, here is information about
-downgrading to Emacs version 19.28.  We hope you will enjoy the greater
-simplicity that results from the absence of certain Emacs 19.29
+downgrading to Emacs version 19.28 or 19.29.  We hope you will enjoy the
+greater simplicity that results from the absence of certain Emacs 19.30
 features.
 
 @itemize @bullet
 @item
 This version doesn't support Windows NT, or the DEC Alpha.
+
+@item
+In Emacs 19.28, or even 19.29, the features for controlling indentation
+in C are much simpler.  There is a separate variable for each aspect of
+indentation which you can control.  Here is a list of them:
+
+@table @code
+@item c-indent-level
+Level of indentation of C statements with respect to containing block.
+
+@item c-label-offset
+Offset of C label lines and case statements relative to usual indentation.
+
+@item c-continued-brace-offset
+Extra indentation for substatements that start with open-braces.  This
+is in addition to @code{c-continued-statement-offset}.@refill
+
+@item c-continued-statement-offset
+Extra indentation for lines not starting new statements.
+
+@item c-brace-offset
+Extra indentation for braces, compared with other text in same context.
+
+@item c-brace-imaginary-offset
+Imagined indentation of a C open brace that actually follows a statement.
+
+@item c-argdecl-indent
+Indentation level of declarations of C function arguments.
+@end table
 
 @item
 There is no support for editing formatted text.  The text formatter
@@ -74,4 +103,17 @@ must come before all the action options, and whatever initial options
 you use must appear in this order: @samp{-t}, @samp{-d}, @samp{-nw},
 @samp{-batch}, @samp{-q} or @samp{-no-init-file}, @samp{-no-site-file},
 @samp{-u} or @samp{-user}, @samp{-debug-init}.
+
+@item
+Many improvements which make various Emacs command work on MS-DOS are
+gone.  For instance, you cannot print from within Emacs, @samp{Dired}
+doesn't support shell wildcards in filenames, some packages use
+filenames which are illegal in MS-DOS, @samp{display-time} doesn't work,
+@samp{font-lock} won't work unless you create some faces by hand first,
+and @samp{call-process} cannot redirect @code{stderr}.  As an additional
+bonus, you get random characters inserted into the buffer without a
+warning (unless you're smart enough to discover that setting
+@var{visible-bell} makes this problem to go away).  In a word, it's a
+great relief for those who still need proof that MS-DOG isn't an
+operating system for someone who uses Emacs.
 @end itemize

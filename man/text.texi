@@ -286,8 +286,8 @@ that either starts or separates paragraphs.  The value of
 that separate paragraphs without being part of any paragraph.  Lines
 that start a new paragraph and are contained in it must match only
 @code{paragraph-start}, not @code{paragraph-separate}.  For example,
-normally @code{paragraph-start} is @code{"^[ @t{\}t@t{\}n@t{\}f]"} and
-@code{paragraph-separate} is @code{"^[ @t{\}t@t{\}f]*$"}.@refill
+normally @code{paragraph-start} is @code{"[ @t{\}t@t{\}n@t{\}f]"} and
+@code{paragraph-separate} is @code{"[ @t{\}t@t{\}f]*$"}.@refill
 
   Normally it is desirable for page boundaries to separate paragraphs.
 The default values of these variables recognize the usual separator for
@@ -606,7 +606,7 @@ produces this:
 @end example
 
   Lines that do not start with the fill prefix are considered to start
-paragraphs, both in @kbd{M-q} and the paragraph commands; this is gives
+paragraphs, both in @kbd{M-q} and the paragraph commands; this gives
 good results for paragraphs with hanging indentation (every line
 indented except the first one).  Lines which are blank or indented once
 the prefix is removed also separate or start paragraphs; this is what
@@ -751,21 +751,18 @@ this hook, followed by hooks of their own; this includes Nroff mode,
 @code{text-mode-hook} can look at the value of @code{major-mode} to see
 which of these modes is actually being entered.  @xref{Hooks}.
 
-@menu
+@ifinfo
   Emacs provides two other modes for editing text that is to be passed
 through a text formatter to produce fancy formatted printed output.
-
-* Nroff Mode::	  The major mode for editing input to the formatter nroff.
-* TeX Mode::	  The major modes for editing input to the formatter TeX.
+@xref{Nroff Mode}, for editing input to the formatter nroff.
+@xref{TeX Mode}, for editing input to the formatter TeX.
 
   Another mode is used for editing outlines.  It allows you to view the
 text at various levels of detail.  You can view either the outline
 headings alone or both headings and text; you can also hide some of the
 headings at lower levels from view to make the high level structure more
-visible.
-
-* Outline Mode::  The major mode for editing outlines.
-@end menu
+visible.  @xref{Outline Mode}.
+@end ifinfo
 
 @node Outline Mode
 @section Outline Mode
@@ -925,8 +922,8 @@ Move point up to a lower-level (more inclusive) visible heading line
 @findex outline-previous-visible-heading
 @kindex C-c C-n @r{(Outline mode)}
 @kindex C-c C-p @r{(Outline mode)}
-  @kbd{C-c C-n} (@code{next-visible-heading}) moves down to the next
-heading line.  @kbd{C-c C-p} (@code{previous-visible-heading}) moves
+  @kbd{C-c C-n} (@code{outline-next-visible-heading}) moves down to the next
+heading line.  @kbd{C-c C-p} (@code{outline-previous-visible-heading}) moves
 similarly backward.  Both accept numeric arguments as repeat counts.  The
 names emphasize that invisible headings are skipped, but this is not really
 a special feature.  All editing commands that look for lines ignore the

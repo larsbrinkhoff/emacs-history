@@ -1,24 +1,25 @@
-;;; ispell.el --- this is the GNU EMACS interface to GNU ISPELL version 4.
+;;; ispell4.el --- this is the GNU EMACS interface to GNU ISPELL version 4.
 
-;;Copyright (C) 1990, 1991, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1990, 1991, 1993 Free Software Foundation, Inc.
 
 ;; Keywords: wp
 
-;;This file is part of GNU Emacs.
-;;
-;;GNU Emacs is free software; you can redistribute it and/or modify
-;;it under the terms of the GNU General Public License as published by
-;;the Free Software Foundation; either version 2, or (at your option)
-;;any later version.
-;;
-;;GNU Emacs is distributed in the hope that it will be useful,
-;;but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;GNU General Public License for more details.
-;;
-;;You should have received a copy of the GNU General Public License
-;;along with GNU Emacs; see the file COPYING.  If not, write to
-;;the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -125,7 +126,7 @@ that have not already been dumped will be lost."
       (let ((greeting (read (current-buffer))))
 	(if (not (= (car greeting) 1))
 	    (error "Bad ispell version: wanted 1, got %d" (car greeting)))
-	(message (car (cdr greeting))))
+	(message "%s" (car (cdr greeting))))
       (delete-region (point-min) last-char))))
   
 ;; Make sure ispell is ready for a command.
@@ -348,7 +349,8 @@ Return value is t unless exit is due to typing `q'."
 	(cond ((null ispell-bad-words)
 	       (error "Ispell has not yet been run"))
 	      ((markerp (car ispell-bad-words))
-	       (message (substitute-command-keys
+	       (message "%s"
+			(substitute-command-keys
 			   "Type \\[ispell-next] to continue")))
 	      ((eq (car ispell-bad-words) nil)
 	       (setq ispell-bad-words nil)
@@ -454,7 +456,7 @@ With a prefix argument, resume handling of the previous Ispell command."
 ;;; This just causes confusion. -- rms.
 ;;;	     (goto-char start)
 ;;;	     (sit-for 0)
-		 (message (format "Ispell checking %s" word))
+		 (message "Ispell checking %s" word)
 		 (ispell-cmd word)
 		 (let ((message (ispell-next-message)))
 		   (cond ((eq message t)
@@ -760,7 +762,7 @@ Overrides default dictionary file such as \"/usr/dict/words\" or GNU look's
 \"${prefix}/lib/ispell/ispell.words\"")
 
 (defvar ispell-gnu-look-still-broken-p nil
-  "*t if GNU look -r can give different results with and without trialing `.*'.
+  "*t if GNU look -r can give different results with and without trailing `.*'.
 Example: `look -dfr \"^ya\" foo' returns nothing, while `look -dfr \"^ya.*\" foo'
 returns `yacc', where `foo' is a dictionary file containing the three lines
 
@@ -976,7 +978,7 @@ an interior word fragment.  `ispell-have-new-look' should be t."
 				"\\|")
 	      "\\)")
   "*End of text which will be checked in ispell-message.
-If it is a string, limit at first occurence of that regular expression.
+If it is a string, limit at first occurrence of that regular expression.
 Otherwise, it must be a function which is called to get the limit.")
 
 (defvar ispell-message-limit (* 100 80)

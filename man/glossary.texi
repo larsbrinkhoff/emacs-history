@@ -611,10 +611,6 @@ A numeric argument is a number, specified before a command, to change
 the effect of the command.  Often the numeric argument serves as a
 repeat count.  @xref{Arguments}.
 
-@item Option
-An option is a variable (q.v.@:) that exists so that you can customize
-Emacs by setting it to a new value.  @xref{Variables}.
-
 @item Overwrite Mode
 Overwrite mode is a minor mode.  When it is enabled, ordinary text
 characters replace the existing text after point rather than pushing
@@ -888,10 +884,14 @@ Undoing means making your previous editing go in reverse, bringing
 back the text that existed earlier in the editing session.
 @xref{Undo}.
 
+@item User Option
+A user option is a variable (q.v.@:) that exists so that you can customize
+Emacs by setting it to a new value.  @xref{Variables}.
+
 @item Variable
 A variable is an object in Lisp that can store an arbitrary value.
 Emacs uses some variables for internal purposes, and has others (known
-as `options' (q.v.@:)) just so that you can set their values to
+as `user options' (q.v.@:)) just so that you can set their values to
 control the behavior of Emacs.  The variables used in Emacs that you
 are likely to be interested in are listed in the Variables Index in
 this manual.  @xref{Variables}, for information on variables.

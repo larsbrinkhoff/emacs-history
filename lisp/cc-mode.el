@@ -1,15 +1,16 @@
 ;;; cc-mode.el --- major mode for editing C, C++, and Objective-C code
 
-;; Copyright (C) 1985, 87, 92, 93, 94, 95 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 87, 92, 93, 94, 95, 96 Free Software Foundation, Inc.
 
-;; Authors: 1992-1995 Barry A. Warsaw
+;; Authors: 1992-1996 Barry A. Warsaw
 ;;          1987 Dave Detlefs and Stewart Clamen
 ;;          1985 Richard M. Stallman
-;; Maintainer: cc-mode-help@merlin.cnri.reston.va.us
 ;; Created: a long, long, time ago. adapted from the original c-mode.el
-;; Barry Warsaw Version:    4.249
+;; Barry Warsaw Version:    4.282
 ;; Keywords: c languages oop
+
 ;; NOTE: Read the commentary below for the right way to submit bug reports!
+;; NOTE: See the accompanying texinfo manual for details on using this mode!
 
 ;; This file is part of GNU Emacs.
 
@@ -24,8 +25,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -36,31 +38,33 @@
 ;;;    reporting bugs to him with C-c C-b.  Even when they are not his fault,
 ;;;    he may fix them for the FSF's sake.
 
-;; This package provides modes in GNU Emacs for editing C, C++, and
-;; Objective-C code. It is intended to be a replacement for c-mode.el
-;; (a.k.a. BOCM -- Boring Old C-Mode), and c++-mode.el (a.k.a
-;; cplus-md.el and cplus-md1.el), both of which are ancestors of this
-;; file.  A number of important improvements have been made, briefly:
-;; complete K&R C, ANSI C, `ARM' C++, and Objective-C support with
-;; consistent indentation across all modes, more intuitive indentation
-;; controlling variables, compatibility across all known Emacsen, nice
-;; new features, and tons of bug fixes.  This package is called
-;; "cc-mode" to distinguish it from its ancestors, but there really is
-;; no top-level cc-mode.  Usage and programming details are contained
-;; in an accompanying texinfo manual.
+;; This package provides modes in GNU Emacs for editing C, C++, 
+;; Objective-C, and Java code. It is intended to be a replacement for
+;; c-mode.el (a.k.a. BOCM -- Boring Old C-Mode), and c++-mode.el
+;; (a.k.a cplus-md.el and cplus-md1.el), both of which are ancestors
+;; of this file.  A number of important improvements have been made,
+;; briefly: complete K&R C, ANSI C, `ARM' C++, Objective-C, and Java
+;; support with consistent indentation across all modes, more
+;; intuitive indentation controlling variables, compatibility across
+;; all known Emacsen, nice new features, and tons of bug fixes.  This
+;; package is called "cc-mode" to distinguish it from its ancestors,
+;; but there really is no top-level cc-mode.  Usage and programming
+;; details are contained in an accompanying texinfo manual.
 
-;; To submit bug reports, type "C-c C-b". Please include a code sample
-;; and exact recipe so I can reproduce your problem.  If you have
-;; other questions contact me at the following address:
-;; cc-mode-help@merlin.cnri.reston.va.us.  Please don't send bug
-;; reports to my personal account, I may not get it for a long time.
+;; To submit bug reports, type "C-c C-b".  These will be sent to
+;; bug-gnu-emacs@prep.ai.mit.edu and I'll read about them there (this
+;; is mirrored as the Usenet newsgroup gnu.emacs.bug).  Questions can
+;; sent to help-gnu-emacs@prep.ai.mit.edu (mirrored as
+;; gnu.emacs.help).  Please do not send bugs or questions to my
+;; personal account.
 
 ;; YOU CAN IGNORE ALL BYTE-COMPILER WARNINGS. They are the result of
-;; the multi-Emacsen support.  Emacs 19, XEmacs 19 (formerly
-;; Lucid), and Emacs 18 all do things differently and there's no
-;; way to shut the byte-compiler up at the necessary granularity.  Let
-;; me say this again: YOU CAN IGNORE ALL BYTE-COMPILER WARNINGS (you'd
-;; be surprised at how many people don't follow this advice :-).
+;; the multi-Emacsen support.  Emacs 19 (from the FSF), XEmacs 19
+;; (formerly Lucid Emacs), and GNU Emacs 18 all do things differently
+;; and there's no way to shut the byte-compiler up at the necessary
+;; granularity.  Let me say this again: YOU CAN IGNORE ALL
+;; BYTE-COMPILER WARNINGS (you'd be surprised at how many people don't
+;; follow this advice :-).
 
 ;; If your Emacs is dumped with c-mode.el and/or c++-mode.el, you will
 ;; need to add the following to your .emacs file before any other
@@ -72,32 +76,38 @@
 ;; (makunbound 'c++-mode-map)
 ;; (makunbound 'c-style-alist)
 
-;; There are three major mode entry points provided by this package,
+;; If your Emacs comes with cc-mode already (and as of 18-Jan-1996,
+;; XEmacs 19.13 and Emacs 19.30 both do), you only need to add the
+;; following to use the latest version of cc-mode:
+;;
+;; (load "cc-mode")
+;;
+;; Make sure the new version is earlier on your load-path.
+
+;; There are four major mode entry points provided by this package,
 ;; one for editing C++ code, one for editing C code (both K&R and
-;; ANSI), and one for editing Objective-C code.  To use cc-mode, add
-;; the following to your .emacs file.  This assumes you will use .cc
-;; or .C extensions for your C++ source, .c for your C code, and .m
-;; for your Objective-C code:
+;; ANSI), one for editing Objective-C code, and one for editing Java
+;; code.  The commands are M-x c-mode, M-x c++-mode, M-x objc-mode,
+;; and M-x java-mode.
+
+;; If you are using an old version of Emacs which does not come
+;; with cc-mode.el, you will need to do these things
+;; to use it:
 ;;
 ;; (autoload 'c++-mode  "cc-mode" "C++ Editing Mode" t)
 ;; (autoload 'c-mode    "cc-mode" "C Editing Mode" t)
 ;; (autoload 'objc-mode "cc-mode" "Objective-C Editing Mode" t)
+;; (autoload 'java-mode "cc-mode" "Java Editing Mode" t)
 ;; (setq auto-mode-alist
-;;   (append '(("\\.C$"  . c++-mode)
-;;             ("\\.cc$" . c++-mode)
-;;             ("\\.c$"  . c-mode)
-;;             ("\\.h$"  . c-mode)
-;;             ("\\.m$"  . objc-mode)
+;;   (append '(("\\.C$"    . c++-mode)
+;;             ("\\.cc$"   . c++-mode)
+;;             ("\\.c$"    . c-mode)
+;;             ("\\.h$"    . c-mode)
+;;             ("\\.m$"    . objc-mode)
+;;             ("\\.java$" . java-mode)
 ;;            ) auto-mode-alist))
-
-;; Several Majordomo mailing lists exist for those of you who are
-;; interested in beta testing new versions: cc-mode-announce for
-;; announcements of new beta versions only, and cc-mode-victims for
-;; more technical discussions of the mode.  For more information, send
-;; the word `help' in a message to one of the following addresses:
 ;;
-;;       cc-mode-victims-request@merlin.cnri.reston.va.us
-;;       cc-mode-announce-request@merlin.cnri.reston.va.us
+;; You do not need these changes in Emacs versions that come with cc-mode.
 
 ;; Many, many thanks go out to all the folks on the beta test list.
 ;; Without their patience, testing, insight, code contributions, and
@@ -135,7 +145,7 @@ reported and the syntactic symbol is ignored.")
     (class-close           . 0)
     (inline-open           . +)
     (inline-close          . 0)
-    (ansi-funcdecl-cont    . -)
+    (ansi-funcdecl-cont    . +)
     (knr-argdecl-intro     . +)
     (knr-argdecl           . 0)
     (topmost-intro         . 0)
@@ -434,7 +444,7 @@ that many seconds.   Set to nil to inhibit updating.  This is only
 useful for Emacs 19.")
 
 (defvar c-style-alist
-  '(("GNU"
+  '(("gnu"
      (c-basic-offset . 2)
      (c-comment-only-line-offset . (0 . 0))
      (c-offsets-alist . ((statement-block-intro . +)
@@ -447,7 +457,7 @@ useful for Emacs 19.")
 			 (arglist-close . c-lineup-arglist)
 			 ))
      )
-    ("K&R"
+    ("k&r"
      (c-basic-offset . 5)
      (c-comment-only-line-offset . 0)
      (c-offsets-alist . ((statement-block-intro . +)
@@ -457,7 +467,7 @@ useful for Emacs 19.")
 			 (statement-cont . +)
 			 ))
      )
-    ("BSD"
+    ("bsd"
      (c-basic-offset . 4)
      (c-comment-only-line-offset . 0)
      (c-offsets-alist . ((statement-block-intro . +)
@@ -467,7 +477,7 @@ useful for Emacs 19.")
 			 (statement-cont . +)
 			 ))
      )
-    ("Stroustrup"
+    ("stroustrup"
      (c-basic-offset . 4)
      (c-comment-only-line-offset . 0)
      (c-offsets-alist . ((statement-block-intro . +)
@@ -476,7 +486,7 @@ useful for Emacs 19.")
 			 (statement-cont . +)
 			 ))
      )
-    ("Whitesmith"
+    ("whitesmith"
      (c-basic-offset . 4)
      (c-comment-only-line-offset . 0)
      (c-offsets-alist . ((statement-block-intro . +)
@@ -487,7 +497,7 @@ useful for Emacs 19.")
 			 ))
 
      )
-    ("Ellemtel"
+    ("ellemtel"
      (c-basic-offset . 3)
      (c-comment-only-line-offset . 0)
      (c-hanging-braces-alist     . ((substatement-open before after)))
@@ -501,7 +511,23 @@ useful for Emacs 19.")
                          (inclass              . 6)
                          (inline-open          . 0)
                          ))
-     ))
+     )
+    ("java"
+     (c-basic-offset . 2)
+     (c-comment-only-line-offset . (0 . 0))
+     (c-offsets-alist . ((statement-block-intro . +)
+ 			 (knr-argdecl-intro     . 5)
+ 			 (substatement-open     . +)
+ 			 (label                 . 0)
+ 			 (statement-case-open   . +)
+ 			 (statement-cont        . +)
+ 			 (arglist-intro . c-lineup-arglist-intro-after-paren)
+ 			 (arglist-close . c-lineup-arglist)
+ 			 (access-label  . 0)
+			 ))
+
+     )
+    )
   "Styles of Indentation.
 Elements of this alist are of the form:
 
@@ -520,7 +546,7 @@ as described in `c-offsets-alist'.  These are passed directly to
 `c-set-offset' so there is no need to set every syntactic symbol in
 your style, only those that are different from the default.
 
-Note that all styles inherit from the \"CC-MODE\" style, which is
+Note that all styles inherit from the `cc-mode' style, which is
 computed at the time the mode is loaded.")
 
 (defvar c-file-style nil
@@ -535,12 +561,20 @@ as designated in the variable `c-file-offsets'.")
 (defvar c-file-offsets nil
   "*Variable interface for setting offsets via File Local Variables.
 In a file's Local Variable section, you can set this variable to an
-association list similiar to the values allowed in `c-offsets-alist'.
+association list similar to the values allowed in `c-offsets-alist'.
 When the file is visited, cc-mode will institute these offset settings
 automatically.
 
 Note that file offset settings are applied after file style settings
 as designated in the variable `c-file-style'.")
+
+(defvar c-site-default-style "gnu"
+  "Default style for your site.
+To change the default style at your site, you can set this variable to
+any style defined in `c-style-alist'.  However, if cc-mode is usually
+loaded into your Emacs at compile time, you will need to set this
+variable in the `site-init.el' file before cc-mode is loaded, then
+re-dump Emacs.")
 
 (defvar c-mode-hook nil
   "*Hook called by `c-mode'.")
@@ -548,6 +582,8 @@ as designated in the variable `c-file-style'.")
   "*Hook called by `c++-mode'.")
 (defvar objc-mode-hook nil
   "*Hook called by `objc-mode'.")
+(defvar java-mode-hook nil
+  "*Hook called by `java-mode'.")
 
 (defvar c-mode-common-hook nil
   "*Hook called by `c-mode', `c++-mode', and 'objc-mode' during common init.")
@@ -566,7 +602,57 @@ as designated in the variable `c-file-style'.")
     ["Backward Statement"     c-beginning-of-statement t]
     ["Forward Statement"      c-end-of-statement t]
     )
-  "XEmacs 19 (formerly Lucid) menu for C/C++/ObjC modes.")
+  "XEmacs 19 menu for C/C++/ObjC modes.")
+
+;; Sadly we need this for a macro in Emacs 19.
+(eval-when-compile
+  ;; Imenu isn't used in XEmacs, so just ignore load errors.
+  (condition-case ()
+      (require 'imenu)
+    (error nil)))
+
+(defvar cc-imenu-c++-generic-expression
+  (` 
+   ((nil
+     (, 
+      (concat
+       "^"				; beginning of line is required
+       "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
+       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	; type specs; there can be no
+       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	; more than 3 tokens, right?
+        
+       "\\("				; last type spec including */&
+       "[a-zA-Z0-9_:]+"
+       "\\([ \t]*[*&]+[ \t]*\\|[ \t]+\\)" ; either pointer/ref sign or whitespace
+       "\\)?"				; if there is a last type spec
+       "\\("				; name; take that into the imenu entry
+       "[a-zA-Z0-9_:~]+"		; member function, ctor or dtor...
+ 					; (may not contain * because then 
+ 					; "a::operator char*" would become "char*"!)
+       "\\|"
+       "\\([a-zA-Z0-9_:~]*::\\)?operator"
+       "[^a-zA-Z1-9_][^(]*"		; ...or operator
+       " \\)"
+       "[ \t]*([^)]*)[ \t\n]*[^		;]" ; require something other than a ; after
+ 					; the (...) to avoid prototypes.  Can't
+ 					; catch cases with () inside the parentheses
+ 					; surrounding the parameters
+ 					; (like "int foo(int a=bar()) {...}"
+        
+       )) 6)    
+    ("Class" 
+     (, (concat 
+ 	 "^"				; beginning of line is required
+ 	 "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
+ 	 "class[ \t]+"
+ 	 "\\([a-zA-Z0-9_]+\\)"		; this is the string we want to get
+ 	 "[ \t]*[:{]"
+ 	 )) 2)))
+  "Imenu generic expression for C++ mode.  See `imenu-generic-expression'.")
+ 
+(defvar cc-imenu-c-generic-expression
+  cc-imenu-c++-generic-expression
+  "Imenu generic expression for C mode.  See `imenu-generic-expression'.")
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -583,6 +669,7 @@ as designated in the variable `c-file-style'.")
 		    emacs-major-version))
 	(minor (and (boundp 'emacs-minor-version)
 		    emacs-minor-version))
+	(re-suite 'old-re)
 	flavor comments)
     ;; figure out version numbers if not already discovered
     (and (or (not major) (not minor))
@@ -605,21 +692,36 @@ as designated in the variable `c-file-style'.")
 				    'XEmacs 'FSF)))
      ;; I don't know
      (t (error "Cannot recognize major version number: %s" major)))
-    ;; All XEmacs 19's (formerly Lucid) use 8-bit modify-syntax-entry
-    ;; flags, as do all patched (obsolete) Emacs 19, Emacs 18,
-    ;; Epoch 4's.  Only vanilla Emacs 19 uses 1-bit flag.  Lets be
-    ;; as smart as we can about figuring this out.
+    ;; Regular expression suites...
+    (if (and (eq major 'v19)
+	     (or (and (eq flavor 'XEmacs) (>= minor 14))
+		 (and (eq flavor 'FSF) (>= minor 30))))
+	(setq re-suite 'new-re))
+    ;; XEmacs 19 uses 8-bit modify-syntax-entry flags, as do all
+    ;; patched Emacs 19, Emacs 18, Epoch 4's.  Only Emacs 19 uses a
+    ;; 1-bit flag.  Let's be as smart as we can about figuring this
+    ;; out.
     (if (eq major 'v19)
 	(let ((table (copy-syntax-table)))
 	  (modify-syntax-entry ?a ". 12345678" table)
-	  (if (and (vectorp table)
-		   (= (logand (lsh (aref table ?a) -16) 255) 255))
-	      (setq comments '8-bit)
-	    (setq comments '1-bit)))
+	  (cond
+	   ;; XEmacs pre 20 and Emacs pre 19.30 use vectors for syntax tables.
+	   ((vectorp table)
+	    (if (= (logand (lsh (aref table ?a) -16) 255) 255)
+		(setq comments '8-bit)
+	      (setq comments '1-bit)))
+	   ;; XEmacs 20 is known to be 8-bit
+	   ((eq flavor 'XEmacs) (setq comments '8-bit))
+	   ;; Emacs 19.30 and beyond are known to be 1-bit
+	   ((eq flavor 'FSF) (setq comments '1-bit))
+	   ;; Don't know what this is
+	   (t (error "Couldn't figure out syntax table format."))
+	   ))
+      ;; Emacs 18 has no support for dual comments
       (setq comments 'no-dual-comments))
     ;; lets do some minimal sanity checking.
     (if (and (or
-	      ;; Lemacs before 19.6 had bugs
+	      ;; Lucid Emacs before 19.6 had bugs
 	      (and (eq major 'v19) (eq flavor 'XEmacs) (< minor 6))
 	      ;; Emacs 19 before 19.21 has known bugs
 	      (and (eq major 'v19) (eq flavor 'FSF) (< minor 21)))
@@ -659,18 +761,23 @@ the main release."
 	(with-output-to-temp-buffer "*cc-mode warnings*"
 	  (print (format
 "You are running a syntax patched Emacs 18 variant.  While this should
-work for you, you may want to consider upgrading to Emacs 19.
-The syntax patches are no longer supported either for syntax.c or cc-mode."))))
-    (list major comments))
+work for you, you may want to consider upgrading to Emacs 19.  The
+syntax patches are no longer supported either for syntax.c or
+cc-mode."))))
+    (list major comments re-suite))
   "A list of features extant in the Emacs you are using.
 There are many flavors of Emacs out there, each with different
 features supporting those needed by cc-mode.  Here's the current
 supported list, along with the values for this variable:
 
- Vanilla Emacs 18/Epoch 4:   (v18 no-dual-comments)
- Emacs 18/Epoch 4 (patch2):  (v18 8-bit)
- XEmacs (formerly Lucid) 19: (v19 8-bit)
- Emacs 19:                   (v19 1-bit).")
+ Emacs 18/Epoch 4:           (v18 no-dual-comments RS)
+ Emacs 18/Epoch 4 (patch2):  (v18 8-bit RS)
+ XEmacs 19:                  (v19 8-bit RS)
+ Emacs 19:                   (v19 1-bit RS)
+
+RS is the regular expression suite to use.  XEmacs versions after
+19.13, and Emacs versions after 19.29 use the `new-re' regex suite.
+All other Emacsen use the `old-re' suite.")
 
 (defvar c++-mode-abbrev-table nil
   "Abbrev table in use in c++-mode buffers.")
@@ -683,6 +790,10 @@ supported list, along with the values for this variable:
 (defvar objc-mode-abbrev-table nil
   "Abbrev table in use in objc-mode buffers.")
 (define-abbrev-table 'objc-mode-abbrev-table ())
+
+(defvar java-mode-abbrev-table nil
+  "Abbrev table in use in java-mode buffers.")
+(define-abbrev-table 'java-mode-abbrev-table ())
 
 (defun c-mode-fsf-menu (name map)
   ;; Add menu to a keymap.  FSF menus suck.  Don't add them for
@@ -727,7 +838,7 @@ supported list, along with the values for this variable:
 (if c-mode-map
     ()
   ;; TBD: should we even worry about naming this keymap. My vote: no,
-  ;; because Emacs and XEmacs (formerly Lucid) do it differently.
+  ;; because Emacs and XEmacs do it differently.
   (setq c-mode-map (make-sparse-keymap))
   ;; put standard keybindings into MAP
   ;; the following mappings correspond more or less directly to BOCM
@@ -736,7 +847,8 @@ supported list, along with the values for this variable:
   (define-key c-mode-map ";"         'c-electric-semi&comma)
   (define-key c-mode-map "#"         'c-electric-pound)
   (define-key c-mode-map ":"         'c-electric-colon)
-  ;; Lemacs 19.9 defines these two, the second of which is commented out
+  ;; Lucid Emacs 19.9 defined these two, the second of which was
+  ;; commented out...
   ;; (define-key c-mode-map "\e{" 'c-insert-braces)
   ;; Commented out electric square brackets because nobody likes them.
   ;; (define-key c-mode-map "[" 'c-insert-brackets)
@@ -744,8 +856,11 @@ supported list, along with the values for this variable:
   (define-key c-mode-map "\e\C-q"    'c-indent-exp)
   (define-key c-mode-map "\ea"       'c-beginning-of-statement)
   (define-key c-mode-map "\ee"       'c-end-of-statement)
-  ;; I'd rather use an adaptive fill program instead of this.
-  (define-key c-mode-map "\eq"       'c-fill-paragraph)
+  ;; Emacs 19.30 introduces fill-paragraph-function, but it's not in
+  ;; every version of Emacs cc-mode supports.
+  (if (not (boundp 'fill-paragraph-function))
+      ;; I'd rather use an adaptive fill program instead of this.
+      (define-key c-mode-map "\eq"   'c-fill-paragraph))
   (define-key c-mode-map "\C-c\C-n"  'c-forward-conditional)
   (define-key c-mode-map "\C-c\C-p"  'c-backward-conditional)
   (define-key c-mode-map "\C-c\C-u"  'c-up-conditional)
@@ -753,7 +868,6 @@ supported list, along with the values for this variable:
   (define-key c-mode-map "\177"      'c-electric-delete)
   ;; these are new keybindings, with no counterpart to BOCM
   (define-key c-mode-map ","         'c-electric-semi&comma)
-  (define-key c-mode-map "/"         'c-electric-slash)
   (define-key c-mode-map "*"         'c-electric-star)
   (define-key c-mode-map "\C-c\C-q"  'c-indent-defun)
   (define-key c-mode-map "\C-c\C-\\" 'c-backslash-region)
@@ -768,14 +882,15 @@ supported list, along with the values for this variable:
   (define-key c-mode-map "\C-c\C-t"  'c-toggle-auto-hungry-state)
   ;; conflicts with OOBR
   ;;(define-key c-mode-map "\C-c\C-v"  'c-version)
+  ;;
   ;; Emacs 19 defines menus in the mode map. This call will return
   ;; t on Emacs 19, otherwise no-op and return nil.
   (if (and (not (c-mode-fsf-menu "C" c-mode-map))
-	   ;; in XEmacs (formerly Lucid) 19, we want the menu to popup
-	   ;; when the 3rd button is hit.  In 19.10 and beyond this is
+	   ;; in XEmacs 19, we want the menu to popup when the 3rd
+	   ;; button is hit.  In Lucid Emacs 19.10 and beyond this is
 	   ;; done automatically if we put the menu on mode-popup-menu
-	   ;; variable, see c-common-init. RMS decided that this
-	   ;; feature should not be included in Emacs.
+	   ;; variable, see c-common-init. Emacs 19 uses C-Mouse-3 for
+	   ;; this, and it works with no special effort.
 	   (boundp 'current-menubar)
 	   (not (boundp 'mode-popup-menu)))
       (define-key c-mode-map 'button3 'c-popup-menu)))
@@ -786,15 +901,23 @@ supported list, along with the values for this variable:
     ()
   ;; In Emacs 19, it makes more sense to inherit c-mode-map
   (if (memq 'v19 c-emacs-features)
-      ;; XEmacs (formerly Lucid) and Emacs 19 do this differently
-      (if (not (fboundp 'set-keymap-parent))
-	  (setq c++-mode-map (cons 'keymap c-mode-map))
+      ;; XEmacs and Emacs 19 do this differently
+      (cond
+       ;; XEmacs 19.13
+       ((fboundp 'set-keymap-parents)
+	(setq c++-mode-map (make-sparse-keymap))
+	(set-keymap-parents c++-mode-map c-mode-map))
+       ((fboundp 'set-keymap-parent)
 	(setq c++-mode-map (make-sparse-keymap))
 	(set-keymap-parent c++-mode-map c-mode-map))
+       (t (setq c++-mode-map (cons 'keymap c-mode-map))))
     ;; Do it the hard way for Emacs 18 -- given by JWZ
     (setq c++-mode-map (nconc (make-sparse-keymap) c-mode-map)))
   ;; add bindings which are only useful for C++
   (define-key c++-mode-map "\C-c:"  'c-scope-operator)
+  (define-key c++-mode-map "/"      'c-electric-slash)
+  (define-key c++-mode-map "<"      'c-electric-lt-gt)
+  (define-key c++-mode-map ">"      'c-electric-lt-gt)
   ;; Emacs 19 defines menus in the mode map. This call will return
   ;; t on Emacs 19, otherwise no-op and return nil.
   (c-mode-fsf-menu "C++" c++-mode-map))
@@ -805,20 +928,48 @@ supported list, along with the values for this variable:
     ()
   ;; In Emacs 19, it makes more sense to inherit c-mode-map
   (if (memq 'v19 c-emacs-features)
-      ;; XEmacs (formerly Lucid) and Emacs 19 do this differently
-      (if (not (fboundp 'set-keymap-parent))
-	  (setq objc-mode-map (cons 'keymap c-mode-map))
+      ;; XEmacs and Emacs 19 do this differently
+      (cond
+       ;; XEmacs 19.13
+       ((fboundp 'set-keymap-parents)
+	(setq objc-mode-map (make-sparse-keymap))
+	(set-keymap-parents objc-mode-map c-mode-map))
+       ((fboundp 'set-keymap-parent)
 	(setq objc-mode-map (make-sparse-keymap))
 	(set-keymap-parent objc-mode-map c-mode-map))
+       (t (setq objc-mode-map (cons 'keymap c-mode-map))))
     ;; Do it the hard way for Emacs 18 -- given by JWZ
     (setq objc-mode-map (nconc (make-sparse-keymap) c-mode-map)))
   ;; add bindings which are only useful for Objective-C
-  ;;
-  ;; no additional bindings
-  ;;
+  (define-key objc-mode-map "/"      'c-electric-slash)
   ;; Emacs 19 defines menus in the mode map. This call will return
   ;; t on Emacs 19, otherwise no-op and return nil.
   (c-mode-fsf-menu "ObjC" objc-mode-map))
+
+(defvar java-mode-map ()
+  "Keymap used in java-mode buffers.")
+(if java-mode-map
+    ()
+  ;; In Emacs 19, it makes more sense to inherit c-mode-map
+  (if (memq 'v19 c-emacs-features)
+      ;; XEmacs and Emacs 19 do this differently
+      (cond
+       ;; XEmacs 19.13
+       ((fboundp 'set-keymap-parents)
+	(setq java-mode-map (make-sparse-keymap))
+	(set-keymap-parents java-mode-map c-mode-map))
+       ((fboundp 'set-keymap-parent)
+	(setq java-mode-map (make-sparse-keymap))
+	(set-keymap-parent java-mode-map c-mode-map))
+       (t (setq java-mode-map (cons 'keymap c-mode-map)))
+       )
+    ;; Do it the hard way for Emacs 18 -- given by JWZ
+    (setq java-mode-map (nconc (make-sparse-keymap) c-mode-map)))
+  ;; add bindings which are only useful for Java
+  (define-key java-mode-map "/"      'c-electric-slash)
+  ;; Emacs 19 defines menus in the mode map. This call will return t
+  ;; on Emacs 19, otherwise no-op and return nil.
+  (c-mode-fsf-menu "Java" java-mode-map))
 
 (defun c-populate-syntax-table (table)
   ;; Populate the syntax TABLE
@@ -839,7 +990,7 @@ supported list, along with the values for this variable:
   ;; Set up TABLE to handle block and line style comments
   (cond
    ((memq '8-bit c-emacs-features)
-    ;; XEmacs (formerly Lucid) has the best implementation
+    ;; XEmacs 19 has the best implementation
     (modify-syntax-entry ?/  ". 1456" table)
     (modify-syntax-entry ?*  ". 23"   table)
     (modify-syntax-entry ?\n "> b"    table)
@@ -893,6 +1044,18 @@ supported list, along with the values for this variable:
   (modify-syntax-entry ?@ "_" objc-mode-syntax-table)
   )
 
+(defvar java-mode-syntax-table nil
+  "Syntax table used in java-mode buffers.")
+(if java-mode-syntax-table
+    ()
+  (setq java-mode-syntax-table (make-syntax-table))
+  (c-populate-syntax-table java-mode-syntax-table)
+  ;; add extra comment syntax
+  (c-setup-dual-comments java-mode-syntax-table)
+  ;; everyone gets these
+  (modify-syntax-entry ?@ "_" java-mode-syntax-table)
+  )
+
 (defvar c-hungry-delete-key nil
   "Internal state of hungry delete key feature.")
 (defvar c-auto-newline nil
@@ -909,6 +1072,10 @@ supported list, along with the values for this variable:
   "Buffer local language-specific access key regexp.")
 (defvar c-class-key nil
   "Buffer local language-specific class key regexp.")
+(defvar c-method-key nil
+  "Buffer local language-specific method regexp.")
+(defvar c-double-slash-is-comments-p nil
+  "Buffer local language-specific comment style flag.")
 (defconst c-protection-key
   "\\<\\(public\\|protected\\|private\\)\\>"
   "Regexp describing protection keywords.")
@@ -932,6 +1099,8 @@ behavior that users are familiar with.")
 (make-variable-buffer-local 'c-conditional-key)
 (make-variable-buffer-local 'c-access-key)
 (make-variable-buffer-local 'c-class-key)
+(make-variable-buffer-local 'c-method-key)
+(make-variable-buffer-local 'c-double-slash-is-comments-p)
 (make-variable-buffer-local 'c-baseclass-key)
 (make-variable-buffer-local 'c-recognize-knr-p)
 ;; style variables are made buffer local at tail end of this file.
@@ -998,6 +1167,26 @@ The expansion is entirely correct because it uses the C preprocessor."
    )
   "Regexp describing a class or protocol declaration for Objective-C.")
 
+(defconst c-Java-method-key
+  (concat
+   "^\\s *[+-]\\s *"
+   "\\(([^)]*)\\)?"			; return type
+   ;; \\s- in java syntax table does not include \n
+   ;; since it is considered the end of //-comments.
+   "[ \t\n]*" c-symbol-key)
+  "Regexp describing a Java method intro.")
+(defconst c-Java-access-key
+  (concat c-protection-key)
+  "Regexp describing access specification keywords for Java.")
+(defconst c-Java-class-key
+  (concat
+   "\\(interface\\|class\\)\\s +"
+   c-symbol-key				;name of the class
+   "\\(\\s *extends\\s *" c-symbol-key "\\)?" ;maybe followed by superclass 
+   ;;"\\(\\s *implements *[^{]+{\\)?"	;and maybe the adopted protocols list
+   )
+  "Regexp describing a class or protocol declaration for Java.")
+
 ;; KLUDGE ALERT.  We default these variables to their `C' values so
 ;; that non-cc-mode-ized modes that depend on c-mode will still work
 ;; out of the box.  The most glaring example is awk-mode.  There ought
@@ -1011,54 +1200,18 @@ The expansion is entirely correct because it uses the C preprocessor."
 (defconst c-list-of-mode-names nil)
 
 ;;;###autoload
-(defun c++-mode ()
-  "Major mode for editing C++ code.
-To submit a problem report, enter `\\[c-submit-bug-report]' from a
-c++-mode buffer.  This automatically sets up a mail buffer with
-version information already added.  You just need to add a description
-of the problem, including a reproducable test case and send the
-message.
-
-To see what version of cc-mode you are running, enter `\\[c-version]'.
-
-The hook variable `c++-mode-hook' is run with no args, if that
-variable is bound and has a non-nil value.  Also the common hook
-c-mode-common-hook is run first, by this defun, `c-mode', and `objc-mode'.
-
-Key bindings:
-\\{c++-mode-map}"
-  (interactive)
-  (kill-all-local-variables)
-  (set-syntax-table c++-mode-syntax-table)
-  (setq major-mode 'c++-mode
-	mode-name "C++"
-	local-abbrev-table c++-mode-abbrev-table)
-  (use-local-map c++-mode-map)
-  (c-common-init)
-  (setq comment-start "// "
-	comment-end ""
-	comment-multi-line nil
-	c-conditional-key c-C++-conditional-key
-	c-comment-start-regexp c-C++-comment-start-regexp
-	c-class-key c-C++-class-key
-	c-access-key c-C++-access-key)
-  (run-hooks 'c-mode-common-hook)
-  (run-hooks 'c++-mode-hook))
-(setq c-list-of-mode-names (cons "C++" c-list-of-mode-names))
-
-;;;###autoload
 (defun c-mode ()
   "Major mode for editing K&R and ANSI C code.
 To submit a problem report, enter `\\[c-submit-bug-report]' from a
 c-mode buffer.  This automatically sets up a mail buffer with version
 information already added.  You just need to add a description of the
-problem, including a reproducable test case and send the message.
+problem, including a reproducible test case and send the message.
 
 To see what version of cc-mode you are running, enter `\\[c-version]'.
 
 The hook variable `c-mode-hook' is run with no args, if that value is
-bound and has a non-nil value.  Also the common hook
-c-mode-common-hook is run first, by this defun, `c++-mode', and `objc-mode'.
+bound and has a non-nil value.  Also the hook `c-mode-common-hook' is
+run first.
 
 Key bindings:
 \\{c-mode-map}"
@@ -1076,10 +1229,51 @@ Key bindings:
 	c-conditional-key c-C-conditional-key
 	c-class-key c-C-class-key
 	c-baseclass-key nil
-	c-comment-start-regexp c-C-comment-start-regexp)
+	c-comment-start-regexp c-C-comment-start-regexp
+	imenu-generic-expression cc-imenu-c-generic-expression)
   (run-hooks 'c-mode-common-hook)
   (run-hooks 'c-mode-hook))
 (setq c-list-of-mode-names (cons "C" c-list-of-mode-names))
+
+;;;###autoload
+(defun c++-mode ()
+  "Major mode for editing C++ code.
+To submit a problem report, enter `\\[c-submit-bug-report]' from a
+c++-mode buffer.  This automatically sets up a mail buffer with
+version information already added.  You just need to add a description
+of the problem, including a reproducible test case, and send the
+message.
+
+To see what version of cc-mode you are running, enter `\\[c-version]'.
+
+The hook variable `c++-mode-hook' is run with no args, if that
+variable is bound and has a non-nil value.  Also the hook
+`c-mode-common-hook' is run first.
+
+Key bindings:
+\\{c++-mode-map}"
+  (interactive)
+  (kill-all-local-variables)
+  (set-syntax-table c++-mode-syntax-table)
+  (setq major-mode 'c++-mode
+	mode-name "C++"
+	local-abbrev-table c++-mode-abbrev-table)
+  (use-local-map c++-mode-map)
+  (c-common-init)
+  (setq comment-start "// "
+	comment-end ""
+	comment-multi-line nil
+	c-conditional-key c-C++-conditional-key
+	c-comment-start-regexp c-C++-comment-start-regexp
+	c-class-key c-C++-class-key
+	c-access-key c-C++-access-key
+	c-double-slash-is-comments-p t
+	imenu-generic-expression cc-imenu-c++-generic-expression)
+  (make-local-variable 'c-recognize-knr-p)
+  (setq c-recognize-knr-p nil)
+  (run-hooks 'c-mode-common-hook)
+  (run-hooks 'c++-mode-hook))
+(setq c-list-of-mode-names (cons "C++" c-list-of-mode-names))
 
 ;;;###autoload
 (defun objc-mode ()
@@ -1087,14 +1281,14 @@ Key bindings:
 To submit a problem report, enter `\\[c-submit-bug-report]' from an
 objc-mode buffer.  This automatically sets up a mail buffer with
 version information already added.  You just need to add a description
-of the problem, including a reproducable test case and send the
+of the problem, including a reproducible test case, and send the
 message.
 
 To see what version of cc-mode you are running, enter `\\[c-version]'.
 
 The hook variable `objc-mode-hook' is run with no args, if that value
-is bound and has a non-nil value.  Also the common hook
-c-mode-common-hook is run first, by this defun, `c-mode', and `c++-mode'.
+is bound and has a non-nil value.  Also the hook `c-mode-common-hook'
+is run first.
 
 Key bindings:
 \\{objc-mode-map}"
@@ -1113,10 +1307,52 @@ Key bindings:
 	c-comment-start-regexp c-C++-comment-start-regexp
  	c-class-key c-ObjC-class-key
 	c-baseclass-key nil
-	c-access-key c-ObjC-access-key)
+	c-access-key c-ObjC-access-key
+	c-double-slash-is-comments-p t
+	c-method-key c-ObjC-method-key)
   (run-hooks 'c-mode-common-hook)
   (run-hooks 'objc-mode-hook))
 (setq c-list-of-mode-names (cons "ObjC" c-list-of-mode-names))
+
+;;;###autoload
+(defun java-mode ()
+  "Major mode for editing Java code.
+To submit a problem report, enter `\\[c-submit-bug-report]' from an
+java-mode buffer.  This automatically sets up a mail buffer with
+version information already added.  You just need to add a description
+of the problem, including a reproducible test case and send the
+message.
+
+To see what version of cc-mode you are running, enter `\\[c-version]'.
+
+The hook variable `java-mode-hook' is run with no args, if that value
+is bound and has a non-nil value.  Also the common hook
+`c-mode-common-hook' is run first.
+
+Key bindings:
+\\{java-mode-map}"
+  (interactive)
+  (kill-all-local-variables)
+  (set-syntax-table java-mode-syntax-table)
+  (setq major-mode 'java-mode
+ 	mode-name "Java"
+ 	local-abbrev-table java-mode-abbrev-table)
+  (use-local-map java-mode-map)
+  (c-common-init)
+  (setq comment-start "// "
+ 	comment-end   ""
+ 	comment-multi-line nil
+ 	c-conditional-key c-C-conditional-key
+ 	c-comment-start-regexp c-C++-comment-start-regexp
+  	c-class-key c-Java-class-key
+	c-method-key c-Java-method-key
+	c-double-slash-is-comments-p t
+ 	c-baseclass-key nil
+ 	c-access-key c-Java-access-key)
+  (c-set-style "Java")
+  (run-hooks 'c-mode-common-hook)
+  (run-hooks 'java-mode-hook))
+(setq c-list-of-mode-names (cons "Java" c-list-of-mode-names))
 
 (defun c-common-init ()
   ;; Common initializations for c++-mode and c-mode.
@@ -1132,11 +1368,20 @@ Key bindings:
   (make-local-variable 'comment-end)
   (make-local-variable 'comment-column)
   (make-local-variable 'comment-start-skip)
+  (make-local-variable 'comment-multi-line)
   (make-local-variable 'outline-regexp)
   (make-local-variable 'outline-level)
   (make-local-variable 'adaptive-fill-regexp)
+  (make-local-variable 'imenu-generic-expression) ;set in the mode functions
+  ;; Emacs 19.30 and beyond only, AFAIK
+  (if (boundp 'fill-paragraph-function)
+      (progn
+	(make-local-variable 'fill-paragraph-function)
+	(setq fill-paragraph-function 'c-fill-paragraph)))
   ;; now set their values
-  (setq paragraph-start (concat page-delimiter "\\|$")
+  (setq paragraph-start (if (memq 'new-re c-emacs-features)
+			    (concat page-delimiter "\\|$")
+			  (concat "^$\\|" page-delimiter))
 	paragraph-separate paragraph-start
 	paragraph-ignore-fill-prefix t
 	require-final-newline t
@@ -1159,8 +1404,8 @@ Key bindings:
 	   (setq comment-indent-function 'c-comment-indent))
     (make-local-variable 'comment-indent-hook)
     (setq comment-indent-hook 'c-comment-indent))
-  ;; put C menu into menubar and on popup menu for XEmacs (formerly
-  ;; Lucid) 19. I think this happens automatically for Emacs 19.
+  ;; Put C menu into menubar and on popup menu for XEmacs 19. I think
+  ;; this happens automatically for Emacs 19.
   (if (and (boundp 'current-menubar)
 	   current-menubar
 	   (not (assoc mode-name current-menubar)))
@@ -1190,7 +1435,7 @@ Key bindings:
 		  minor-mode-alist))))
 
 (defun c-postprocess-file-styles ()
-  "Function that post processes relevent file local variables.
+  "Function that post processes relevant file local variables.
 Currently, this function simply applies any style and offset settings
 found in the file's Local Variable list.  It first applies any style
 setting found in `c-file-style', then it applies any offset settings
@@ -1208,8 +1453,8 @@ it finds in `c-file-offsets'."
 	     )))
 	c-file-offsets)))
 
-;; Add the posprocessing function to hack-local-variables-hook.  As of
-;; 28-Aug-1995, XEmacs 19.12 and Emacs 19.29 support this.
+;; Add the postprocessing function to hack-local-variables-hook.  As
+;; of 28-Aug-1995, XEmacs 19.12 and Emacs 19.29 support this.
 (and (fboundp 'add-hook)
      (add-hook 'hack-local-variables-hook 'c-postprocess-file-styles))
 
@@ -1389,8 +1634,8 @@ global and affect all future `c-mode' buffers."
 
 ;; active regions, and auto-newline/hungry delete key
 (defun c-keep-region-active ()
-  ;; do whatever is necessary to keep the region active in Xemacs
-  ;; (formerly Lucid). ignore byte-compiler warnings you might see
+  ;; Do whatever is necessary to keep the region active in
+  ;; XEmacs 19. ignore byte-compiler warnings you might see
   (and (boundp 'zmacs-region-stays)
        (setq zmacs-region-stays t)))
 
@@ -1679,8 +1924,7 @@ construct, and we are on a comment-only-line, indent line as comment.
 If numeric ARG is supplied or point is inside a literal, indentation
 is inhibited."
   (interactive "P")
-  (let ((indentp (and (memq major-mode '(c++-mode objc-mode))
-		      (not arg)
+  (let ((indentp (and (not arg)
 		      (= (preceding-char) ?/)
 		      (= last-command-char ?/)
 		      (not (c-in-literal))))
@@ -1868,9 +2112,28 @@ value of `c-cleanup-list'."
 	    (c-indent-line)))
       )))
 
+(defun c-electric-lt-gt (arg)
+  "Insert a less-than, or greater-than character.
+When the auto-newline feature is turned on, as evidenced by the \"/a\"
+or \"/ah\" string on the mode line, the line will be re-indented if
+the character inserted is the second of a C++ style stream operator
+and the buffer is in C++ mode.
+
+The line will also not be re-indented if a numeric argument is
+supplied, or point is inside a literal."
+  (interactive "P")
+  (let ((indentp (and (not arg)
+		      (= (preceding-char) last-command-char)
+		      (not (c-in-literal))))
+	;; shut this up
+	(c-echo-syntactic-information-p nil))
+    (self-insert-command (prefix-numeric-value arg))
+    (if indentp
+	(c-indent-line))))
+
 ;; set up electric character functions to work with pending-del,
 ;; (a.k.a. delsel) mode.  All symbols get the t value except
-;; c-electric-delete which gets 'supercede.
+;; c-electric-delete which gets 'supersede.
 (mapcar
  (function
   (lambda (sym)
@@ -1881,6 +2144,7 @@ value of `c-cleanup-list'."
    c-electric-slash
    c-electric-star
    c-electric-semi&comma
+   c-electric-lt-gt
    c-electric-colon))
 (put 'c-electric-delete 'delete-selection 'supersede) ; delsel
 (put 'c-electric-delete 'pending-delete   'supersede) ; pending-del
@@ -1988,6 +2252,7 @@ offset for that syntactic element.  Optional ADD says to add SYMBOL to
 	)))
    stylevars))
 
+;;;###autoload
 (defun c-set-style (stylename)
   "Set cc-mode variables to use one of several different indentation styles.
 STYLENAME is a string representing the desired style from the list of
@@ -1997,14 +2262,17 @@ for details of setting up styles."
 			   (prompt (format "Which %s indentation style? "
 					   mode-name)))
 		       (completing-read prompt c-style-alist nil t))))
-  (let ((vars (cdr (assoc stylename c-style-alist)))
-	(default (cdr (assoc "CC-MODE" c-style-alist))))
+  (let ((vars (cdr (or (assoc (downcase stylename) c-style-alist)
+		       ;; backwards compatibility
+		       (assoc (upcase stylename) c-style-alist)
+		       )))
+	(default (cdr (assoc "cc-mode" c-style-alist))))
     (or vars (error "Invalid indentation style `%s'" stylename))
-    (or default (error "No \"CC-MODE\" style found!"))
-    ;; first reset the style to CC-MODE to give every style a common
+    (or default (error "No `cc-mode' style found!"))
+    ;; first reset the style to `cc-mode' to give every style a common
     ;; base. Then institute the new style.
     (c-set-style-1 default)
-    (if (not (string= stylename "CC-MODE"))
+    (if (not (string= stylename "cc-mode"))
 	(c-set-style-1 vars)))
   (c-keep-region-active))
 
@@ -2023,6 +2291,7 @@ VALUE.  This function also sets the current style to STYLE using
 	 (description (eval-minibuffer "Style description: ")))
      (list stylename description
 	   (y-or-n-p "Set the style too? "))))
+  (setq style (downcase style))
   (let ((s (assoc style c-style-alist)))
     (if s
 	(setcdr s (copy-alist descrip))	; replace
@@ -2044,22 +2313,21 @@ Optional prefix ARG means justify paragraph as well."
 	    (beginning-of-line)
 	    (skip-chars-forward " \t\n")
 	    (and (looking-at comment-start-skip)
-		 (setq comment-start-place (point))))))
-    (if (and (memq major-mode '(c++-mode objc-mode))
+		 (setq comment-start-place (point)))))
+	 (re1 (if (memq 'new-re c-emacs-features)
+		  "\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"
+		"\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
+	 )
+    (if (and c-double-slash-is-comments-p
 	     (save-excursion
 	       (beginning-of-line)
 	       (looking-at ".*//")))
 	(let (fill-prefix
-	      (paragraph-start
 	       ;; Lines containing just a comment start or just an end
-	       ;; should not be filled into paragraphs they are next to.
-	       (concat 
-		paragraph-start
-		"\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
-	      (paragraph-separate
-	       (concat
-		paragraph-separate
-		"\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$")))
+	       ;; should not be filled into paragraphs they are next
+	       ;; to.
+	      (paragraph-start (concat paragraph-start re1))
+	      (paragraph-separate (concat paragraph-separate re1)))
 	  (save-excursion
 	    (beginning-of-line)
 	    ;; Move up to first line of this comment.
@@ -2083,7 +2351,7 @@ Optional prefix ARG means justify paragraph as well."
 				    (forward-line 1))
 				  (point)))
 	      (fill-paragraph arg)
-	      )))
+	      t)))
       ;; else C style comments
       (if (or first-line
 	      ;; t if we enter a comment between start of function and
@@ -2145,16 +2413,11 @@ Optional prefix ARG means justify paragraph as well."
 					       (point))
 					(progn (end-of-line) (point))))))))
 
-		(paragraph-start
-		 ;; Lines containing just a comment start or just an end
-		 ;; should not be filled into paragraphs they are next to.
-		 (concat 
-		  paragraph-start
-		  "\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
-		(paragraph-separate
-		 (concat
-		  paragraph-separate
-		  "\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
+		;; Lines containing just a comment start or just an end
+		;; should not be filled into paragraphs they are next
+		;; to.
+		(paragraph-start (concat paragraph-start re1))
+		(paragraph-separate (concat paragraph-separate re1))
 		(chars-to-delete 0))
 	    (save-restriction
 	      ;; Don't fill the comment together with the code
@@ -2200,9 +2463,8 @@ Optional prefix ARG means justify paragraph as well."
 		    ;(delete-indentation)))))
 		    (let ((fill-column (+ fill-column 9999)))
 		      (forward-line -1)
-		      (fill-region-as-paragraph (point) (point-max)))))))
-	;; Outside of comments: do ordinary filling.
-	(fill-paragraph arg)))))
+		      (fill-region-as-paragraph (point) (point-max))))))
+	    t)))))
 
 ;; better movement routines for ThisStyleOfVariablesCommonInCPlusPlus
 ;; originally contributed by Terry_Glanfield.Southern@rxuk.xerox.com
@@ -2243,9 +2505,10 @@ beginning of a statement then go to the beginning of the preceding
 one.  If within a string or comment, or next to a comment (only
 whitespace between), move by sentences instead of statements.
 
-When called from a program, this function takes 2 optional args: the
-repetition count, a buffer position limit which is the farthest back to
-search, and a flag saying whether to do sentence motion when in a comment."
+When called from a program, this function takes 3 optional args: the
+repetition count, a buffer position limit which is the farthest back
+to search, and a flag saying whether to do sentence motion when in a
+comment."
   (interactive (list (prefix-numeric-value current-prefix-arg)
 		     nil t))
   (let ((here (point))
@@ -2282,14 +2545,14 @@ With prefix arg, go forward N - 1 statements.  Move forward to end of
 the next statement if already at end.  If within a string or comment,
 move by sentences instead of statements.
 
-When called from a program, this function takes 2 optional args: the
-repetition count, a buffer position limit which is the farthest back to
-search, and a flag saying whether to do sentence motion when in a comment."
+When called from a program, this function takes 3 optional args: the
+repetition count, a buffer position limit which is the farthest back
+to search, and a flag saying whether to do sentence motion when in a
+comment."
   (interactive (list (prefix-numeric-value current-prefix-arg)
 		     nil t))
   (c-beginning-of-statement (- (or count 1)) lim sentence-flag)
   (c-keep-region-active))
-
 
 (defun c-beginning-of-statement-1 (&optional lim)
   ;; move to the start of the current statement, or the previous
@@ -2349,14 +2612,7 @@ search, and a flag saying whether to do sentence motion when in a comment."
 				   (and lim
 					(<= lim (point))
 					(not (c-in-literal lim))
-;;;					(looking-at c-conditional-key)
-					;; backward-up-list could be slow
-					;; but I don't see any other way.
-					(save-excursion
-					  (if (c-safe
-					       (progn (backward-up-list 1) t))
-					      (/= (following-char) ?\()
-					    t))
+					(looking-at c-conditional-key)
 					))))
 		     ;; did we find a conditional?
 		     (if (not foundp)
@@ -2407,9 +2663,9 @@ search, and a flag saying whether to do sentence motion when in a comment."
 		       (goto-char here)
 		       nil))
 		   (looking-at c-label-key))))
-	 ;; CASE 8: ObjC method def
-	 ((and (eq major-mode 'objc-mode)
-	       (setq last-begin (c-in-objc-method-def-p)))
+	 ;; CASE 8: ObjC or Java method def
+	 ((and c-method-key
+	       (setq last-begin (c-in-method-def-p)))
 	  (setq donep t))
 	 ;; CASE 9: nothing special
 	 (t (setq last-begin (point)))
@@ -2653,7 +2909,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
     (if brace
 	(goto-char brace)
       (beginning-of-defun))
-    ;; if we're sitting at b-o-b, it might be becase there was no
+    ;; if we're sitting at b-o-b, it might be because there was no
     ;; least enclosing brace and we were sitting on the defun's open
     ;; brace.
     (if (and (bobp) (not (= (following-char) ?\{)))
@@ -2824,7 +3080,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
       (progn
 	(set-marker (aref c-progress-info 1) nil)
 	(setq c-progress-info nil)
-	(message "indenting region... done."))))
+	(message "indenting region...done"))))
 
 
 ;; Skipping of "syntactic whitespace" for Emacs 19.  Syntactic
@@ -3024,7 +3280,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
       (if (consp car)
 	  (setq car (car cdr)
 		cdr (cdr cdr)))
-      ;; TBD: is this test relevent???
+      ;; TBD: is this test relevant???
       (if (consp car)
 	  state				;on error, don't change
 	;; watch out for balanced expr already on cdr of list
@@ -3078,14 +3334,15 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
   ;; multi-line macros too well
   (back-to-indentation))
 
-(defun c-in-objc-method-def-p ()
+(defun c-in-method-def-p ()
   ;; Return nil if we aren't in a method definition, otherwise the
   ;; position of the initial [+-].
   (save-excursion
     (beginning-of-line)
-    (if (looking-at c-ObjC-method-key)
-        (point)
-      nil)))
+    (and c-method-key
+	 (looking-at c-method-key)
+	 (point))
+    ))
 
 (defun c-just-after-func-arglist-p (&optional containing)
   ;; Return t if we are between a function's argument list closing
@@ -3115,7 +3372,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	)
       (and (= (preceding-char) ?\))
 	   ;; check if we are looking at a method def
-	   (or (not (eq major-mode 'objc-mode))
+	   (or (not c-method-key)
 	       (progn
 		 (forward-sexp -1)
 		 (forward-char -1)
@@ -3152,7 +3409,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	     ((looking-at "do\\b[^_]")
 	      (if (zerop (setq do-level (1- do-level)))
 		  (setq foundp t)))
-	     ((< (point) lim)
+	     ((<= (point) lim)
 	      (setq do-level 0)
 	      (goto-char lim))))
 	(error
@@ -3310,9 +3567,9 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 		    (setq foundp nil))
 		   ;; make sure we're really looking at the start of a
 		   ;; class definition, and not a forward decl, return
-		   ;; arg, template arg list, or an ObjC method.
-		   ((and (eq major-mode 'objc-mode)
-			 (re-search-forward c-ObjC-method-key search-end t))
+		   ;; arg, template arg list, or an ObjC or Java method.
+		   ((and c-method-key
+			 (re-search-forward c-method-key search-end t))
 		    (setq foundp nil))
 		   ;; Its impossible to define a regexp for this, and
 		   ;; nearly so to do it programmatically.
@@ -3458,8 +3715,8 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	     (case-fold-search nil)
 	     (fullstate (c-parse-state))
 	     (state fullstate)
-	     (in-method-intro-p (and (eq major-mode 'objc-mode)
-				     (looking-at c-ObjC-method-key)))
+	     (in-method-intro-p (and c-method-key
+				     (looking-at c-method-key)))
 	     literal containing-sexp char-before-ip char-after-ip lim
 	     syntax placeholder c-in-literal-cache inswitch-p
 	     ;; narrow out any enclosing class
@@ -3565,8 +3822,9 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 		(and (or (looking-at "enum[ \t\n]+")
 			 (= char-before-ip ?=))
 		     (save-excursion
-		       (skip-chars-forward "^;" indent-point)
-		       (/= (following-char) ?\;))))
+		       (skip-chars-forward "^;(" indent-point)
+		       (not (memq (following-char) '(?\; ?\()))
+		       )))
 	      (c-add-syntax 'brace-list-open placeholder))
 	     ;; CASE 5A.3: inline defun open
 	     (inclass-p
@@ -3603,11 +3861,12 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	     (c-recognize-knr-p
 	      (c-add-syntax 'knr-argdecl-intro (c-point 'boi))
 	      (and inclass-p (c-add-syntax 'inclass (aref inclass-p 0))))
-	     ;; CASE 5B.3: nether region after a C++ func decl
+	     ;; CASE 5B.3: Nether region after a C++ func decl, which
+	     ;; could include a `throw' declaration.
 	     (t
+	      (c-beginning-of-statement-1 lim)
 	      (c-add-syntax 'ansi-funcdecl-cont (c-point 'boi))
-	      (and inclass-p (c-add-syntax 'inclass (aref inclass-p 0))))
-	     ))
+	      )))
 	   ;; CASE 5C: inheritance line. could be first inheritance
 	   ;; line, or continuation of a multiple inheritance
 	   ((or (and c-baseclass-key (looking-at c-baseclass-key))
@@ -3732,7 +3991,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 		     (setq placeholder (point))
 		     (c-backward-syntactic-ws lim))
 		   (and (= (preceding-char) ?\))
-			(or (not (eq major-mode 'objc-mode))
+			(or (not c-method-key)
 			    (progn
 			      (forward-sexp -1)
 			      (forward-char -1)
@@ -3773,12 +4032,13 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 		  (progn
 		    (goto-char (aref inclass-p 1))
 		    (c-add-syntax 'inclass (c-point 'boi))))))
-	   ;; CASE 5I: we are at a method definition continuation line
-	   ((and (eq major-mode 'objc-mode)
+	   ;; CASE 5I: we are at an ObjC or Java method definition
+	   ;; continuation line.
+	   ((and c-method-key
 		 (progn
 		   (c-beginning-of-statement-1 lim)
 		   (beginning-of-line)
-		   (looking-at c-ObjC-method-key)))
+		   (looking-at c-method-key)))
 	    (c-add-syntax 'objc-method-args-cont (point)))
 	   ;; CASE 5J: we are at a topmost continuation line
 	   (t
@@ -3793,10 +4053,10 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	  (c-backward-syntactic-ws containing-sexp)
 	  (cond
 	   ;; CASE 6A: we are looking at the arglist closing paren or
-	   ;; at an Objective-C method call closing bracket.
+	   ;; at an Objective-C or Java method call closing bracket.
 	   ((and (/= char-before-ip ?,)
 		 (memq char-after-ip '(?\) ?\])))
-	    (if (and (eq major-mode 'objc-mode)
+	    (if (and c-method-key
 		     (progn
 		       (goto-char (1- containing-sexp))
 		       (c-backward-syntactic-ws lim)
@@ -3826,7 +4086,7 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	   ;; CASE 6D: maybe a continued method call. This is the case
 	   ;; when we are inside a [] bracketed exp, and what precede
 	   ;; the opening bracket is not an identifier.
-	   ((and (eq major-mode 'objc-mode)
+	   ((and c-method-key
 		 (= (char-after containing-sexp) ?\[)
 		 (save-excursion
 		   (goto-char (1- containing-sexp))
@@ -3956,12 +4216,10 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 		(c-add-syntax 'brace-list-open placeholder))
 	       ;; CASE 9B.3: catch-all for unknown construct.
 	       (t
-		;; Even though this isn't right, it's the best I'm
-		;; going to do for now. Exceptions probably fall
-		;; through to here, but aren't supported yet.  Also,
-		;; after the next release, I may call a recognition
-		;; hook like so: (run-hooks 'c-recognize-hook), but I
-		;; dunno.
+		;; Can and should I add an extensibility hook here?
+		;; Something like c-recognize-hook so support for
+		;; unknown constructs could be added.  It's probably a
+		;; losing proposition, so I dunno.
 		(goto-char placeholder)
 		(c-add-syntax 'statement-cont (c-point 'boi))
 		(c-add-syntax 'block-open))
@@ -4106,6 +4364,13 @@ Optional SHUTUP-P if non-nil, inhibits message printing and error checking."
 	    (let ((safepos (c-most-enclosing-brace fullstate)))
 	      (goto-char indent-point)
 	      (c-beginning-of-statement-1 safepos)
+	      ;; It is possible we're on the brace that opens a nested
+	      ;; function.
+	      (if (and (= (following-char) ?{)
+		       (save-excursion
+			 (c-backward-syntactic-ws safepos)
+			 (/= (preceding-char) ?\;)))
+		  (c-beginning-of-statement-1 safepos))
 	      (c-add-syntax 'statement (c-point 'boi))
 	      (if (= char-after-ip ?{)
 		  (c-add-syntax 'block-open))))
@@ -4538,19 +4803,22 @@ definition and conveniently use this command."
 
 (defun c-delete-backslash ()
   (end-of-line)
-  (forward-char -1)
-  (if (looking-at "\\\\")
-      (delete-region (1+ (point))
-                     (progn (skip-chars-backward " \t") (point)))))
+  (or (bolp)
+      (progn
+ 	(forward-char -1)
+ 	(if (looking-at "\\\\")
+ 	    (delete-region (1+ (point))
+ 			   (progn (skip-chars-backward " \t") (point)))))))
+
 
 ;; defuns for submitting bug reports
 
-(defconst c-version (concat "4.249"
+(defconst c-version (concat "4.282"
 			    " as included in "
-			    emacs-version))
-(defconst c-mode-help-address
-  "cc-mode-help@merlin.cnri.reston.va.us, bug-gnu-emacs@prep.ai.mit.edu"
-  "Address for CC mode bug reports.")
+			    emacs-version)
+  "cc-mode version number.")
+(defconst c-mode-help-address "bug-gnu-emacs@prep.ai.mit.edu"
+  "Address for cc-mode bug reports.")
 
 (defun c-version ()
   "Echo the current version of cc-mode in the minibuffer."
@@ -4577,7 +4845,9 @@ definition and conveniently use this command."
       (concat "cc-mode " c-version " ("
 	      (cond ((eq major-mode 'c++-mode)  "C++")
 		    ((eq major-mode 'c-mode)    "C")
-		    ((eq major-mode 'objc-mode) "ObjC"))
+		    ((eq major-mode 'objc-mode) "ObjC")
+		    ((eq major-mode 'java-mode) "Java")
+		    )
 	      ")")
       (let ((vars (list
 		   ;; report only the vars that affect indentation
@@ -4617,7 +4887,7 @@ definition and conveniently use this command."
       ))))
 
 
-;; menus for XEmacs (formerly Lucid)
+;; menus for XEmacs 19
 (defun c-popup-menu (e)
   "Pops up the C/C++/ObjC menu."
   (interactive "@e")
@@ -4626,7 +4896,7 @@ definition and conveniently use this command."
     
 
 (defun c-copy-tree (tree)
-  ;; Line XEmacs 19.12's copy-tree
+  ;; Lift XEmacs 19.12's copy-tree
   (if (consp tree)
       (cons (c-copy-tree (car tree))
 	    (c-copy-tree (cdr tree)))
@@ -4650,13 +4920,13 @@ definition and conveniently use this command."
 		  )))
     ))
 
-;; dynamically append the default value of most variables. This is
+;; Dynamically append the default value of most variables. This is
 ;; crucial because future c-set-style calls will always reset the
-;; variables first to the "CC-MODE" style before instituting the new
+;; variables first to the `cc-mode' style before instituting the new
 ;; style.  Only do this once!
-(or (assoc "CC-MODE" c-style-alist)
+(or (assoc "cc-mode" c-style-alist)
     (progn
-      (c-add-style "CC-MODE"
+      (c-add-style "cc-mode"
 		   (mapcar 'c-mapcar-defun
 			   '(c-backslash-column
 			     c-basic-offset
@@ -4673,10 +4943,10 @@ definition and conveniently use this command."
 			     c-strict-syntax-p
 			     c-tab-always-indent
 			     c-inhibit-startup-warnings-p
-			     ))))
-    ;; the default style is now GNU.  This can be overridden in
-    ;; c-mode-common-hook or {c,c++,objc}-mode-hook.
-    (c-set-style "GNU"))
+			     )))
+      ;; the default style is now GNU.  This can be overridden in
+      ;; c-mode-common-hook or {c,c++,objc}-mode-hook.
+      (c-set-style c-site-default-style)))
 
 ;; style variables
 (make-variable-buffer-local 'c-offsets-alist)
@@ -4700,8 +4970,8 @@ definition and conveniently use this command."
 ;; there is no cc-mode equivalent for electric-c-terminator
 (fset 'mark-c-function       'c-mark-function)
 (fset 'indent-c-exp          'c-indent-exp)
-(fset 'set-c-style           'c-set-style)
-;; lemacs 19.9 + font-lock + cc-mode - c++-mode lossage
+;;;###autoload (fset 'set-c-style           'c-set-style)
+;; Lucid Emacs 19.9 + font-lock + cc-mode - c++-mode lossage
 (fset 'c++-beginning-of-defun 'beginning-of-defun)
 (fset 'c++-end-of-defun 'end-of-defun)
 
@@ -4712,7 +4982,7 @@ definition and conveniently use this command."
      (let* ((na "Nothing appropriate.")
 	    (vars
 	     (list
-	      (cons 'c++-c-mode-syntax-table 'c-mode-syntaxt-table)
+	      (cons 'c++-c-mode-syntax-table 'c-mode-syntax-table)
 	      (cons 'c++-tab-always-indent 'c-tab-always-indent)
 	      (cons 'c++-always-arglist-indent-p na)
 	      (cons 'c++-block-close-brace-offset 'c-offsets-alist)

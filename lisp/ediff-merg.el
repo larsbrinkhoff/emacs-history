@@ -1,5 +1,6 @@
 ;;; ediff-merg.el --- merging utilities
-;;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+
+;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Michael Kifer <kifer@cs.sunysb.edu>
 
@@ -16,18 +17,20 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
+;;; Code:
 
 (require 'ediff-init)
 
-(defvar ediff-default-variant 'default-A
+(defvar ediff-default-variant 'combined
   "*The variant to be used as a default for buffer C in merging.
 Valid values are the symbols `default-A', `default-B', and `combined'.")
 
 (defvar ediff-combination-pattern 
-  '("#ifdef NEW /* variant A */" "#else /* variant B */" "#endif /* NEW */")
+  '("<<<<<<<<<<<<<< variant A" ">>>>>>>>>>>>>> variant B" "======= end of combination")
   "*Pattern to be used for combining difference regions in buffers A and B.
 The value is (STRING1 STRING2 STRING3). The combined text will look like this:
 
@@ -137,7 +140,7 @@ skiped over. Nil means show all regions.")
 		    (and (string= state-of-merge "combined")
 			 (not (string=
 			       (ediff-make-combined-diff reg-A reg-B) reg-C)))
-		    ;; was prefered--ignore
+		    ;; was preferred--ignore
 		    (string-match "prefer" state-of-merge))
 		(setq do-not-copy t))
 		
@@ -210,9 +213,11 @@ Used only for merging jobs."
 ;; N here is the user's region number. It is 1+ what Ediff uses internally.
 (defun ediff-combine-diffs (n &optional batch-invocation)
   "Combine Nth diff regions of buffers A and B and place the combination in C.
-Combining is done using the list in variable `ediff-combination-pattern'."
+N is a prefix argument. If nil, combine the current difference regions.
+Combining is done according to the specifications in variable
+`ediff-combination-pattern'."
   (interactive "P")
-  (setq n (if n (1- n) ediff-current-difference))
+  (setq n (if (numberp n) (1- n) ediff-current-difference))
   
   (let (regA regB reg-combined)
     (setq regA (ediff-get-region-contents n 'A ediff-control-buffer)
@@ -221,7 +226,7 @@ Combining is done using the list in variable `ediff-combination-pattern'."
     (setq reg-combined (ediff-make-combined-diff regA regB))
     
     (ediff-copy-diff n nil 'C batch-invocation reg-combined))
-    (or batch-invocation (ediff-recenter)))
+    (or batch-invocation (ediff-jump-to-difference (1+ n))))
     
 
 ;; Checks if the region in buff C looks like a combination of the regions

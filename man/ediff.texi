@@ -37,9 +37,9 @@ paragraph not being relevant to the printed manual).
 @titlepage
 @title Ediff User's Manual
 @sp 4
-@subtitle Ediff version 2.46
+@subtitle Ediff version 2.50
 @sp 1
-@subtitle September 1995
+@subtitle November 1995
 @sp 5
 @author Michael Kifer
 @page
@@ -519,7 +519,7 @@ Sometimes, it is convenient to exclude certain session records from a group.
 Usually this happens when the user doesn't intend to run Ediff of certain
 files in the group, and the corresponding session records just add clutter
 to the session group buffer. To help alleviate this problem, the user can
-type @kbd{x} to mark a session as a candidate for exclusion and @kbd{x} to
+type @kbd{h} to mark a session as a candidate for exclusion and @kbd{x} to
 actually hide the marked sessions. There actions are reversible: with a
 prefix argument, @kbd{h} unmarks the session under the cursor, and @kbd{x}
 brings the hidden sessions into the view (@kbd{x} doesn't unmark them,
@@ -590,9 +590,9 @@ refer to Emacs manual for the information on how to set Emacs X resources.
 @menu
 * Hooks::                       Customization via the hooks.
 * Quick Help::                  How to customize Ediff's quick help feature.
-* Window and Frame Configuration::  Controling the way Ediff displays things.
+* Window and Frame Configuration::  Controlling the way Ediff displays things.
 * Selective Browsing::          Advanced browsing through difference regions.
-* Highlighting Difference Regions::  Controling highlighting.
+* Highlighting Difference Regions::  Controlling highlighting.
 * Narrowing::                   Comparing regions, windows, etc.
 * Refinement of Difference Regions::  How to control the refinement process.
 * Patch and Diff Programs::     Changing the utilities that compute differences
@@ -721,7 +721,7 @@ sessions. @xref{Session Groups}, for details.
 
 @node Quick Help, Window and Frame Configuration, Hooks, Customization
 @section Quick Help
-@vindex ediff-prefer-long-help-message
+@vindex ediff-use-long-help-message
 @vindex ediff-control-buffer
 @vindex ediff-startup-hook
 @vindex ediff-help-message
@@ -731,11 +731,12 @@ takes a fair share of the screen real estate, you can toggle it off by
 typing @kbd{?}.  The control window will then shrink to just one line and a
 mode line, displaying a short help message.
 
-The variable @code{ediff-prefer-long-help-message} tells Ediff whether
-you prefer the short message initially or the long one.  By default, it
-is set to @code{nil}, meaning that the short message is shown on
-startup.  Set this to @code{t}, if you want Ediff to start with the long
-message.
+The variable @code{ediff-use-long-help-message} tells Ediff whether
+you use the short message or the long one.  By default, it
+is set to @code{nil}, meaning that the short message is used.
+Set this to @code{t}, if you want Ediff to use the long
+message by default. This property can always be changed interactively, by
+typing @kbd{?} into Ediff Control Buffer.
 
 If you want to change the appearance of the help message on a per-buffer
 basis, you must use @code{ediff-startup-hook} to change the value of
@@ -791,7 +792,7 @@ via the prefix @code{Ediff*}.
 
 @item ediff-control-frame-position-function
 @vindex ediff-control-frame-position-function
-The prefered way of specifying the position of the control frame is by
+The preferred way of specifying the position of the control frame is by
 setting the variable @code{ediff-control-frame-position-function} to an
 appropriate function.
 The default value of this variable is
@@ -901,6 +902,11 @@ where the region in buffer A matches @var{regexp-A} and/or the region in
 buffer B matches @var{regexp-B}, etc.  Whether `and' or `or' will be used
 depends on how you respond to a question.
 
+When scanning difference regions for the aforesaid regular expressions,
+Ediff narrows the buffers to those regions. This means that you can use
+the expressions @kbd{\`} and @kbd{\'} to tie search to the beginning or end
+of the difference regions.
+
 On the other hand, typing @kbd{#h} lets you specify (hide) uninteresting
 regions. That is, if a difference region in buffer A matches
 @var{regexp-A}, the corresponding region in buffer B matches @var{regexp-B}
@@ -957,10 +963,10 @@ in the white space and newlines.
 
 @strong{Note:} In order for this feature to work, auto-refining of
 difference regions must be on, since otherwise Ediff won't know if there
-are fine differences between regions.  Under X, auto-refining is a
-default, but it is not turned on by default on text-only terminals.  In
-that case, you must explicitly turn auto-refining on (such as, by typing
-@kbd{@@}).
+are fine differences between regions.  On devices where Emacs can display
+faces, auto-refining is a default, but it is not turned on by default on
+text-only terminals.  In that case, you must explicitly turn auto-refining
+on (such as, by typing @kbd{@@}).
 
 @strong{Reassurance:} If many inessential regions appear in a row, Ediff may
 take a long time to jump to the next region because it has to compute
@@ -982,10 +988,10 @@ regions:
 @vindex ediff-after-flag-eol
 @vindex ediff-before-flag-mol
 @vindex ediff-after-flag-mol
-These variables hold strings that Ediff uses to mark the beginning and
-the end of the differences found in files A, B, and C.  Ediff uses
-different flags to highlight regions that begin/end at the beginning/end
-of a line or in a middle of a line.
+These variables hold strings that Ediff uses to mark the beginning and the
+end of the differences found in files A, B, and C on devices where Emacs
+cannot display faces. Ediff uses different flags to highlight regions that
+begin/end at the beginning/end of a line or in a middle of a line.
 
 @item ediff-current-diff-face-A
 @itemx ediff-current-diff-face-B
@@ -993,11 +999,11 @@ of a line or in a middle of a line.
 @vindex ediff-current-diff-face-A
 @vindex ediff-current-diff-face-B
 @vindex ediff-current-diff-face-C
-Ediff uses these faces to highlight current differences on X displays.
-These and subsequently described faces can be set either in @file{.emacs}
-or in @file{.Xdefaults}. The X resource for Ediff is @samp{Ediff}, @emph{not}
-@samp{emacs}. Please refer to Emacs manual for the information on how to set X
-resources.
+Ediff uses these faces to highlight current differences on devices where
+Emacs can display faces.  These and subsequently described faces can be set
+either in @file{.emacs} or in @file{.Xdefaults}. The X resource for Ediff
+is @samp{Ediff}, @emph{not} @samp{emacs}. Please refer to Emacs manual for
+the information on how to set X resources.
 @item ediff-fine-diff-face-A
 @itemx ediff-fine-diff-face-B
 @itemx ediff-fine-diff-face-C
@@ -1023,6 +1029,13 @@ Non-current difference regions are displayed using these alternating
 faces. The odd and the even faces are actually identical on monochrome
 displays, because without colors options are limited.
 So, Ediff uses italics to highlight non-current differences.
+
+@item ediff-force-faces
+@vindex ediff-force-faces
+Ediff generally can detect when Emacs is running on a device where it can
+use highlighting with faces. However, if it fails to determine that faces
+can be used, the user can set this variable to @code{t} to make sure that
+Ediff uses faces to highlight differences.
 
 @item ediff-highlight-all-diffs
 @vindex ediff-highlight-all-diffs
@@ -1410,7 +1423,7 @@ the difference number).
 
 Ediff supports version control and lets you compare versions of files
 visited by Emacs buffers via the function @code{ediff-revision}. This
-feature is controled by the following variables:
+feature is controlled by the following variables:
 
 @table @code
 @item ediff-version-control-package
@@ -1420,28 +1433,37 @@ A symbol. The default is @samp{vc}.
 If you are like most Emacs users, Ediff will use VC as the version control
 package. This is the standard Emacs interface to RCS, CVS, and SCCS.
 
-However, if you are that unlikely person with needs that are better
-served by other interfaces, you will have to tell Ediff which version control
-package you are using, e.g.,
+However, if your needs are better served by other interfaces, you will
+have to tell Ediff which version control package you are using, e.g.,
 @example
 (setq ediff-version-control-package 'rcs)
 @end example
 
-Apart from the standard @file{vc.el}, Ediff supports two other interfaces
+Apart from the standard @file{vc.el}, Ediff supports three other interfaces
 to version control:
-@file{rcs.el} and @file{generic-sc.el}. 
+@file{rcs.el}, @file{pcl-cvs.el}, and @file{generic-sc.el}. 
 The package @file{rcs.el} is written by Sebastian Kremer
 <sk@@thp.Uni-Koeln.DE> and is available as
 @example
 @file{ftp.cs.buffalo.edu:pub/Emacs/rcs.tar.Z}
 @file{ftp.uni-koeln.de:/pub/gnu/emacs/rcs.tar.Z}
 @end example
-The package @file{generic-sc.el} is part of XEmacs distribution (but not
-Emacs distribution).
+The packages @file{pcl-cvs.el} and @file{generic-sc.el} are found in XEmacs
+distribution.
 @pindex @file{vc.el}
 @pindex @file{rcs.el}
+@pindex @file{pcl-cvs.el}
 @pindex @file{generic-sc.el}
 @end table
+
+Ediff's interface to the above packages allows the user to compare the
+versions of the current buffer or to merge them (with or without an
+ancestor-version). These operations can also be performed on directories
+containing files under version control.
+
+In case of @file{pcl-cvs.el}, Ediff can also be invoked via the function
+@code{run-ediff-from-cvs-buffer}---see the documentation string for this
+function.
 
 @node Customizing the Mode Line, Miscellaneous, Support for Version Control, Customization
 @section Customizing the Mode Line
@@ -1651,12 +1673,15 @@ Without them, Ediff would not be nearly as useful as it is today.
 Here is a full list of contributors (I hope I didn't miss anyone):
 
 @example
+Neal Becker (neal@@ctd.comsat.com),
 Alastair Burt (burt@@dfki.uni-kl.de), Paul Bibilo (peb@@delcam.co.uk),
 Kevin Broadey (KevinB@@bartley.demon.co.uk),
 Harald Boegeholz (hwb@@machnix.mathematik.uni-stuttgart.de),
+Bradley A. Bosch (brad@@lachman.com),
 Michael D. Carney  (carney@@ltx-tr.com),
 Jin S. Choi (jin@@atype.com), Eric Eide (eeide@@asylum.cs.utah.edu),
 Kevin Esler (esler@@ch.hp.com), Robert Estes (estes@@ece.ucdavis.edu), 
+Xavier Fornari (xavier@@europe.cma.fr),
 Eric Freudenthal (freudent@@jan.ultra.nyu.edu),
 Job Ganzevoort (Job.Ganzevoort@@cwi.nl),
 Boris Goldowsky (boris@@cs.rochester.edu),
@@ -1676,10 +1701,11 @@ Richard Mlynarik (mly@@adoc.xerox.com),
 Chris Murphy (murphycm@@sun.aston.ac.uk),
 Erik Naggum (erik@@naggum.no),
 Eyvind Ness (Eyvind.Ness@@hrp.no), Ray Nickson (nickson@@cs.uq.oz.au), 
-Paul Raines (raines@@slac.stanford.edu), 
+David Petchey (petchey_david@@jpmorgan.com),
 Benjamin Pierce (benjamin.pierce@@cl.cam.ac.uk),
 Tibor Polgar (tlp00@@spg.amdahl.com),
 David Prince (dave0d@@fegs.co.uk),
+Paul Raines (raines@@slac.stanford.edu), 
 C.S. Roberson (roberson@@aur.alcatel.com),
 Kevin Rodgers (kevin.rodgers@@ihs.com),
 Sandy Rutherford (sandy@@ibm550.sissa.it),
@@ -1689,8 +1715,11 @@ Richard Stallman (rms@@gnu.ai.mit.edu),
 Richard Stanton (stanton@@haas.berkeley.edu), 
 Ake Stenhoff (etxaksf@@aom.ericsson.se), Stig (stig@@hackvan.com),
 Peter Stout (Peter_Stout@@cs.cmu.edu), Chuck Thompson (cthomp@@cs.uiuc.edu),
+Ray Tomlinson (tomlinso@@bbn.com),
 Raymond Toy (toy@@rtp.ericsson.se),
-Ilya Zakharevich (ilya@@math.ohio-state.edu)
+Ben Wing (wing@@666.com),
+Ilya Zakharevich (ilya@@math.ohio-state.edu),
+Eli Zaretskii (eliz@@is.elta.co.il)
 @end example
 
 @node Index, , Credits, Top

@@ -15,11 +15,19 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+/* Definitions of these in config.h can cause
+   declaration conflicts later on between declarations for index
+   and declarations for strchr.  This file doesn't use
+   index and rindex, so cancel them.  */
+#undef index
+#undef rindex
 
 #include <X11/Xatom.h>
 #include <X11/IntrinsicP.h>

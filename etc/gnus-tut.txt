@@ -124,7 +124,7 @@ with a shotgun.
 
 nnmbox uses a Unix mail box to store mail. Nice, but slow.
 
-nnmh uses mh-e folders, which is also a one-file-one-mail thingie, but
+nnmh uses mh-e folders, which is also a one-file-one-mail thingy, but
 slower than nnml. (It doesn't support NOV files.)
 
 So if you want to go with nnmbox, you can simply say:
@@ -191,7 +191,7 @@ remove all hihit code from all the Gnus hooks
 (`gnus-group-prepare-hook', `gnus-summary-prepare-hook' and
 `gnus-summary-article-hook').  (Well, at the very least the first
 two.)  Gnus provides various integrated functions for highlighting,
-which are both faster and more accurated.
+which are both faster and more accurate.
 
 There is absolutely no chance, whatsoever, of getting Gnus to work
 with Emacs 18.
@@ -204,7 +204,7 @@ Subject: Bugs & stuff
 Message-ID: <lars-doc7@eyesore.no>
 
 If you want to report a bug, please type `M-x gnus-bug'. This will
-give me a precice overview of your Gnus and Emacs version numbers,
+give me a precise overview of your Gnus and Emacs version numbers,
 along with a look at all Gnus variables you have changed.
 
 Du not expect a reply back, but your bug should be fixed in the next

@@ -493,7 +493,7 @@ these commands help peruse the history of Vi's destructive commands.
 Successive typing of @kbd{C-c M-p} causes Viper to search the history in
 the direction 
 of older commands, while hitting @kbd{C-c M-n} does so in reverse
-order. Each command in the history is displayed in the Monibuffer. The
+order. Each command in the history is displayed in the Minibuffer. The
 displayed command can 
 then be executed by typing `@kbd{.}'.
 

@@ -12,7 +12,7 @@
 over and over again.  This is especially true of form letters and programming
 language constructs.  Project-specific header comments, flow-control
 constructs or magic numbers are essentially the same every time.  Emacs has
-various features for doing tedious and repetetive typing chores for you.
+various features for doing tedious and repetitive typing chores for you.
 
   One solution is using skeletons, flexible rules that say what to
 insert, and how to do it.  Various programming language modes offer some
@@ -171,7 +171,7 @@ Interesting point.  When wrapping skeletons around successive regions, they are
 put at these places.  Point is left at first @code{_} where nothing is wrapped.
 @item >
 Indent line according to major mode.  When following element is @code{_}, and
-there is a interregion that will be wrappped here, indent that interregion.
+there is a interregion that will be wrapped here, indent that interregion.
 @item &
 Logical and.  Iff preceding element moved point, i.e. usually inserted
 something, do following element.
@@ -289,7 +289,7 @@ File}).
 @code{auto-insert-alist}.  The @code{car}s of this list are each either a mode
 name, making an element applicable when a buffer is in that mode.  Or they
 can be a string, which is a regexp matched against the buffer's file name.
-In that way diferent kinds of files that have the same mode in Emacs can be
+In that way different kinds of files that have the same mode in Emacs can be
 distinguished.  The @code{car}s may also be @code{cons}-cells consisting of
 mode name or regexp as above and an additional descriptive string.
 

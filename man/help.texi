@@ -6,6 +6,9 @@
 @kindex Help
 @cindex help
 @cindex self-documentation
+@findex help-command
+@kindex C-h
+@kindex @key{F1}
 
   Emacs provides extensive help features accessible through a single
 character, @kbd{C-h}.  @kbd{C-h} is a prefix key that is used only for
@@ -14,9 +17,11 @@ documentation-printing commands.  The characters that you can type after
 that is how you ask for help about using @kbd{C-h}.  To cancel, type
 @kbd{C-g}.  The function key @key{F1} is equivalent to @kbd{C-h}.
 
-  @kbd{C-h C-h} displays a list of the possible help options, each with
-a brief description.  Before you type a help option, you can use
-@key{SPC} or @key{DEL} to scroll through the list.
+@kindex C-h C-h
+@findex help-for-help
+  @kbd{C-h C-h} (@code{help-for-help}) displays a list of the possible
+help options, each with a brief description.  Before you type a help
+option, you can use @key{SPC} or @key{DEL} to scroll through the list.
 
   @kbd{C-h} or @key{F1} means ``help'' in various other contexts as well.  For
 example, in @code{query-replace}, it describes the options available.
@@ -90,10 +95,10 @@ Display the documentation of the Lisp variable @var{var}
 Print which keys run the command named @var{command} (@code{where-is}).
 @item C-h C-f @var{function} @key{RET}
 Enter Info and go to the node documenting the Emacs function @var{function}
-(@code{info-goto-emacs-command-node}).
+(@code{Info-goto-emacs-command-node}).
 @item C-h C-k @var{key}
 Enter Info and go to the node where the key sequence @var{key} is
-documented (@code{info-goto-emacs-key-command-node}).
+documented (@code{Info-goto-emacs-key-command-node}).
 @item C-h C-c
 Display the copying conditions for GNU Emacs.
 @item C-h C-d

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Define PURESIZE, the number of bytes of pure Lisp code to leave space for.
 
@@ -62,31 +63,38 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define PURESIZE  (BASE_PURESIZE * PURESIZE_RATIO)
 #endif
 
-#ifdef VIRT_ADDR_VARIES
+/* Signal an error if OBJ is pure.  */
+#define CHECK_IMPURE(obj) \
+  { if (PURE_P (obj))	  \
+      pure_write_error (); }
+
+/* Define PURE_P.  */
 
+#ifdef VIRT_ADDR_VARIES
 /* For machines like APOLLO where text and data can go anywhere
    in virtual memory.  */
-#define CHECK_IMPURE(obj) \
-  { extern EMACS_INT pure[]; \
-    if ((PNTR_COMPARISON_TYPE) XPNTR (obj) < (PNTR_COMPARISON_TYPE) ((char *) pure + PURESIZE) \
-	&& (PNTR_COMPARISON_TYPE) XPNTR (obj) >= (PNTR_COMPARISON_TYPE) pure) \
-      pure_write_error (); }
+
+extern EMACS_INT pure[];
+
+#define PURE_P(obj) \
+ ((PNTR_COMPARISON_TYPE) XPNTR (obj) < (PNTR_COMPARISON_TYPE) ((char *) pure + PURESIZE) \
+  && (PNTR_COMPARISON_TYPE) XPNTR (obj) >= (PNTR_COMPARISON_TYPE) pure)
 
 #else /* not VIRT_ADDR_VARIES */
 #ifdef PNTR_COMPARISON_TYPE
+/* When PNTR_COMPARISON_TYPE is not the default (unsigned int).  */
 
-/* when PNTR_COMPARISON_TYPE is not the default (unsigned int) */
-#define CHECK_IMPURE(obj) \
-  { extern char my_edata[]; \
-    if ((PNTR_COMPARISON_TYPE) XPNTR (obj) < (PNTR_COMPARISON_TYPE) my_edata) \
-      pure_write_error (); }
+extern char my_edata[];
+
+#define PURE_P(obj) \
+  ((PNTR_COMPARISON_TYPE) XPNTR (obj) < (PNTR_COMPARISON_TYPE) my_edata)
 
 #else /* not VIRT_ADDRESS_VARIES, not PNTR_COMPARISON_TYPE */
 
-#define CHECK_IMPURE(obj) \
-  { extern char my_edata[]; \
-    if (XPNTR (obj) < (unsigned int) my_edata) \
-      pure_write_error (); }
+extern char my_edata[];
+    
+#define PURE_P(obj) \
+  (XPNTR (obj) < (unsigned int) my_edata)
 
 #endif /* PNTR_COMPARISON_TYPE */
 #endif /* VIRT_ADDRESS_VARIES */

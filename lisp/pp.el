@@ -1,7 +1,8 @@
 ;;; pp.el --- pretty printer for Emacs Lisp
+
 ;; Copyright (C) 1989, 1993 Free Software Foundation, Inc.
 
-;; Author: Randal Schwartz <merlyn@ora.com>
+;; Author: Randal Schwartz <merlyn@stonehenge.com>
 
 ;; This file is part of GNU Emacs.
 
@@ -16,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -115,7 +117,7 @@ value."
 	       (goto-char (point-min))
 	       (end-of-line 1)
 	       (if (or (< (1+ (point)) (point-max))
-		       (>= (- (point) (point-min)) (screen-width)))
+		       (>= (- (point) (point-min)) (frame-width)))
 		   (let ((temp-buffer-show-function old-show-function)
 			 (old-selected (selected-window))
 			 (window (display-buffer buf)))

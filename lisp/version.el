@@ -18,12 +18,13 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
-(defconst emacs-version "19.30" "\
+(defconst emacs-version "19.31" "\
 Version numbers of this version of Emacs.")
 
 (defconst emacs-major-version
@@ -38,7 +39,7 @@ This variable first existed in version 19.23.")
   "Minor version number of this version of Emacs.
 This variable first existed in version 19.23.")
 
-(defconst emacs-build-time (current-time-string) "\
+(defconst emacs-build-time (current-time) "\
 Time at which Emacs was dumped out.")
 
 (defconst emacs-build-system (system-name))
@@ -50,16 +51,13 @@ Don't use this function in programs to choose actions according
 to the system configuration; look at `system-configuration' instead."
   (interactive "P")
   (let ((version-string 
-         (format "GNU Emacs %s (%s%s) of %s %s on %s"
+         (format "GNU Emacs %s (%s%s) of %s on %s"
                  emacs-version
 		 system-configuration
 		 (cond ((featurep 'motif) ", Motif")
 		       ((featurep 'x-toolkit) ", X toolkit")
 		       (t ""))
-                 (substring emacs-build-time 0
-                            (string-match " *[0-9]*:" emacs-build-time))
-                 (substring emacs-build-time 
-                            (string-match "[0-9]*$" emacs-build-time))
+		 (format-time-string "%a %b %e %Y" emacs-build-time)
                  emacs-build-system)))
     (if here 
         (insert version-string)

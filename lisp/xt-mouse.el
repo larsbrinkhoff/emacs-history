@@ -1,32 +1,43 @@
 ;;; xt-mouse.el --- Support the mouse when emacs run in an xterm.
+
 ;; Copyright (C) 1994 Free Software Foundation
 
 ;; Author: Per Abrahamsen <abraham@iesd.auc.dk>
 ;; Keywords: mouse, terminals
 
-;; This program is free software; you can redistribute it and/or modify
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
-;; 
-;; This program is distributed in the hope that it will be useful,
+
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;; 
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Comments:
 
-;; Enable mouse support when running inside an xterm. 
+;; Enable mouse support when running inside an xterm or Linux console.
 
 ;; This is actually useful when you are running X11 locally, but is
 ;; working on remote machine over a modem line or through a gateway.
 
 ;; It works by translating xterm escape codes into generic emacs mouse
 ;; events so it should work with any package that uses the mouse.
+
+;; The xterm mouse escape codes are supposedly also supported by the
+;; Linux console, but I have not been able to verify this.
+
+;; You don't have to turn off xterm mode to use the normal xterm mouse
+;; functionality, it is still available by holding down the SHIFT key
+;; when you press the mouse button.
 
 ;;; Todo:
 
@@ -38,12 +49,14 @@
 
 (define-key function-key-map "\e[M" 'xterm-mouse-translate)
 
+(defvar xterm-mouse-last)
+
 (defun xterm-mouse-translate (event)
   ;; Read a click and release event from XTerm.
   (save-excursion
     (save-window-excursion
       (deactivate-mark)
-      (let* ((last)
+      (let* ((xterm-mouse-last)
 	     (down (xterm-mouse-event))
 	     (down-command (nth 0 down))
 	     (down-data (nth 1 down))
@@ -73,7 +86,7 @@
 		     ;; Generate a drag event.
 		     (if (symbolp down-where)
 			 0
-		       (list (intern (concat "drag-mouse-" (+ 1 last)))
+		       (list (intern (concat "drag-mouse-" (+ 1 xterm-mouse-last)))
 			     down-data click-data))
 		     )))
 	    (if (and (symbolp down-where)
@@ -115,8 +128,8 @@
 		    (point))
 		where))
 	 (mouse (intern (if (eq type 3)
-			    (concat "mouse-" (+ 1 last))
-			  (setq last type)
+			    (concat "mouse-" (+ 1 xterm-mouse-last))
+			  (setq xterm-mouse-last type)
 			  (concat "down-mouse-" (+ 1 type))))))
     (setq xterm-mouse-x x
 	  xterm-mouse-y y)

@@ -1,25 +1,26 @@
 ;;; autoload.el --- maintain autoloads in loaddefs.el.
 
-;;; Copyright (C) 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
-;;;
+;; Copyright (C) 1991, 92, 93, 94, 95, 96 Free Software Foundation, Inc.
+
 ;; Author: Roland McGrath <roland@gnu.ai.mit.edu>
 ;; Keywords: maint
 
-;;; This program is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
-;;;
-;;; This program is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; A copy of the GNU General Public License can be obtained from this
-;;; program's author (send electronic mail to roland@ai.mit.edu) or from
-;;; the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA
-;;; 02139, USA.
-;;;
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -150,7 +151,16 @@ are used."
     (save-excursion
       (unwind-protect
 	  (progn
-	    (set-buffer (find-file-noselect file))
+	    (if visited
+		(set-buffer visited)
+	      ;; It is faster to avoid visiting the file.
+	      (set-buffer (get-buffer-create " *generate-autoload-file*"))
+	      (kill-all-local-variables)
+	      (erase-buffer)
+	      (setq buffer-undo-list t
+		    buffer-read-only nil)
+	      (emacs-lisp-mode)
+	      (insert-file-contents file nil))
 	    (save-excursion
 	      (save-restriction
 		(widen)
@@ -215,9 +225,16 @@ are used."
 			    (let ((print-escape-newlines t))
 			      (print autoload outbuf))))
 			  ;; Copy the rest of the line to the output.
-			  (let ((begin (point)))
-			    (forward-line 1)
-			    (princ (buffer-substring begin (point)) outbuf))))
+		      (princ (buffer-substring
+			      (progn
+				;; Back up over whitespace, to preserve it.
+				(skip-chars-backward " \f\t")
+				(if (= (char-after (1+ (point))) ? )
+				    ;; Eat one space.
+				    (forward-char 1))
+				(point))
+			      (progn (forward-line 1) (point)))
+			     outbuf)))
 		   ((looking-at ";")
 		    ;; Don't read the comment.
 		    (forward-line 1))
@@ -273,7 +290,8 @@ autoloads go somewhere else.")
     (save-excursion
       ;; We want to get a value for generated-autoload-file from
       ;; the local variables section if it's there.
-      (set-buffer (find-file-noselect file))
+      (if existing-buffer
+	  (set-buffer existing-buffer))
       (set-buffer (find-file-noselect generated-autoload-file))
       (save-excursion
 	(save-restriction
@@ -299,8 +317,10 @@ autoloads go somewhere else.")
 					 (>= (nth 1 last-time)
 					     (nth 1 file-time)))))
 			   (progn
-			     (message "Autoload section for %s is up to date."
-				      file)
+			     (if (interactive-p)
+				 (message "\
+Autoload section for %s is up to date."
+					  file))
 			     (setq found 'up-to-date))
 			 (search-forward generate-autoload-section-trailer)
 			 (delete-region begin (point))
@@ -312,109 +332,84 @@ autoloads go somewhere else.")
 		     ;; insert one before the section here.
 		     (goto-char (match-beginning 0))
 		     (setq found 'new)))))
+	  (or found
+	      (progn
+		(setq found 'new)
+		;; No later sections in the file.  Put before the last page.
+		(goto-char (point-max))
+		(search-backward "\f")))
 	  (or (eq found 'up-to-date)
 	      (and (eq found 'new)
 		   ;; Check that FILE has any cookies before generating a
 		   ;; new section for it.
 		   (save-excursion
-		     (set-buffer (find-file-noselect file))
+		     (if existing-buffer
+			 (set-buffer existing-buffer)
+		       ;; It is faster to avoid visiting the file.
+		       (set-buffer (get-buffer-create " *autoload-file*"))
+		       (kill-all-local-variables)
+		       (erase-buffer)
+		       (setq buffer-undo-list t
+			     buffer-read-only nil)
+		       (emacs-lisp-mode)
+		       (insert-file-contents file nil))
 		     (save-excursion
-		       (widen)
-		       (goto-char (point-min))
-		       (if (search-forward (concat "\n"
-						   generate-autoload-cookie)
-					   nil t)
-			   nil
-			 (if (interactive-p)
-			     (message file " has no autoloads"))
-			 t))))
+		       (save-restriction
+			 (widen)
+			 (goto-char (point-min))
+			 (prog1
+			     (if (search-forward
+				  (concat "\n" generate-autoload-cookie)
+				  nil t)
+				 nil
+			       (if (interactive-p)
+				   (message "%s has no autoloads" file))
+			       t)
+			   (or existing-buffer
+			       (kill-buffer (current-buffer))))))))
 	      (generate-file-autoloads file))))
-      (if (interactive-p) (save-buffer))
-      (if (and (null existing-buffer)
-	       (setq existing-buffer (get-file-buffer file)))
-	  (kill-buffer existing-buffer)))))
+      (if (interactive-p) (save-buffer)))))
 
 ;;;###autoload
-(defun update-autoloads-here ()
+(defun update-autoloads-from-directory (dir)
   "\
-Update sections of the current buffer generated by \\[update-file-autoloads]."
-  (interactive)
-  (let ((generated-autoload-file (buffer-file-name)))
+Update loaddefs.el with all the current autoloads from DIR, and no old ones.
+This uses `update-file-autoloads' (which see) do its work."
+  (interactive "DUpdate autoloads from directory: ")
+  (setq dir (expand-file-name dir))
+  (let ((files (directory-files dir nil "^[^=].*\\.el$")))
     (save-excursion
-      (goto-char (point-min))
-      (while (search-forward generate-autoload-section-header nil t)
-	(let* ((form (condition-case ()
-			 (read (current-buffer))
-		       (end-of-file nil)))
-	       (file (nth 3 form)))
-	  (if (and (stringp file)
-		   (or (get-file-buffer file)
-		       (file-exists-p file)))
-	      ()
-	    (setq file (if (y-or-n-p (format "Can't find library `%s'; remove its autoloads? "
-					     (nth 2 form) file))
-			   t
-			 (condition-case ()
-			     (read-file-name (format "Find `%s' load file: "
-						     (nth 2 form))
-					     nil nil t)
-			   (quit nil)))))
-	  (if file
-	      (let ((begin (match-beginning 0)))
-		(search-forward generate-autoload-section-trailer)
-		(delete-region begin (point))))
-	  (if (stringp file)
-	      (generate-file-autoloads file)))))))
-
-;;;###autoload
-(defun update-directory-autoloads (dir)
-  "Run \\[update-file-autoloads] on each .el file in DIR."
-  (interactive "DUpdate autoloads for directory: ")
-  (let ((enable-local-eval nil))
-    (mapcar 'update-file-autoloads
-	    (directory-files dir t "^[^=].*\\.el$")))
-  (if (interactive-p)
+      (set-buffer (find-file-noselect
+		   (if (file-exists-p generated-autoload-file)
+		       generated-autoload-file
+		     (expand-file-name generated-autoload-file
+				       dir))))
       (save-excursion
-	(set-buffer (find-file-noselect generated-autoload-file))
-	(save-buffer))))
+	(goto-char (point-min))
+	(while (search-forward generate-autoload-section-header nil t)
+	  (let* ((form (condition-case ()
+			   (read (current-buffer))
+			 (end-of-file nil)))
+		 (file (nth 3 form)))
+	    (cond ((not (stringp file)))
+		  ((not (file-exists-p (expand-file-name file dir)))
+		   ;; Remove the obsolete section.
+		   (let ((begin (match-beginning 0)))
+		     (search-forward generate-autoload-section-trailer)
+		     (delete-region begin (point))))
+		  (t
+		   (update-file-autoloads file)))
+	    (setq files (delete file files)))))
+      ;; Elements remaining in FILES have no existing autoload sections.
+      (mapcar 'update-file-autoloads files)
+      (save-buffer))))
 
 ;;;###autoload
 (defun batch-update-autoloads ()
-  "Update the autoloads for the files or directories on the command line.
-Runs \\[update-file-autoloads] on files and \\[update-directory-autoloads]
-on directories.  Must be used only with -batch, and kills Emacs on completion.
-Each file will be processed even if an error occurred previously.
-For example, invoke `emacs -batch -f batch-update-autoloads *.el'."
-  (if (not noninteractive)
-      (error "batch-update-autoloads is to be used only with -batch"))
-  (let ((lost nil)
-	(args command-line-args-left)
-	(enable-local-eval nil))	;Don't query in batch mode.
-    (message "Updating autoloads in %s..." generated-autoload-file)
-    (let ((frob (function
- 		 (lambda (file)
- 		   (condition-case lossage
- 		       (update-file-autoloads file)
- 		     (error
- 		      (princ ">>Error processing ")
- 		      (princ file)
- 		      (princ ": ")
- 		      (if (fboundp 'display-error)
- 			  (display-error lossage nil)
- 			(prin1 lossage))
- 		      (princ "\n")
- 		      (setq lost t)))))))
-      (while args
- 	(if (file-directory-p (expand-file-name (car args)))
- 	    (let ((rest (directory-files (car args) t "\\.el$")))
- 	      (while rest
- 		(funcall frob (car rest))
- 		(setq rest (cdr rest))))
- 	  (funcall frob (car args)))
- 	(setq args (cdr args))))
-    (save-some-buffers t)
-    (message "Done")
-    (kill-emacs (if lost 1 0))))
+  "Update loaddefs.el autoloads in batch mode.
+Calls `update-autoloads-from-directory' on each command line argument."
+  (mapcar 'update-autoloads-from-directory command-line-args-left)
+  (setq command-line-args-left nil))
 
 (provide 'autoload)
 

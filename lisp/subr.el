@@ -1,6 +1,6 @@
 ;;; subr.el --- basic lisp subroutines for Emacs
 
-;;; Copyright (C) 1985, 1986, 1992, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,8 +15,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -565,6 +566,7 @@ To make a hook variable buffer-local, always use
 
 (defun add-to-list (list-var element)
   "Add to the value of LIST-VAR the element ELEMENT if it isn't there yet.
+The test for presence of ELEMENT is done with `equal'.
 If you want to use `add-to-list' on a variable that is not defined
 until a certain package is loaded, you should put the call to `add-to-list'
 into a hook function that will be run only after loading the package.
@@ -623,8 +625,7 @@ or three octal digits representing its character code."))
 	    ((and (<= ?0 char) (<= char ?7))
 	     (setq code (+ (* code 8) (- char ?0))
 		   count (1+ count))
-	     (and prompt (message (setq prompt
-					(format "%s %c" prompt char)))))
+	     (and prompt (setq prompt (message "%s %c" prompt char))))
 	    ((> count 0)
 	     (setq unread-command-events (list char) count 259))
 	    (t (setq code char count 259))))
@@ -696,6 +697,17 @@ This variable is meaningful on MS-DOG and Windows NT.
 On those systems, it is automatically local in every buffer.
 On other systems, this variable is normally always nil.")
 
+;; This should probably be written in C (i.e., without using `walk-windows').
+(defun get-buffer-window-list (buffer &optional minibuf frame)
+  "Return windows currently displaying BUFFER, or nil if none.
+See `walk-windows' for the meaning of MINIBUF and FRAME."
+  (let ((buffer (if (bufferp buffer) buffer (get-buffer buffer))) windows)
+    (walk-windows (function (lambda (window)
+			      (if (eq (window-buffer window) buffer)
+				  (setq windows (cons window windows)))))
+		  minibuf frame)
+    windows))
+
 (defun ignore (&rest ignore)
   "Do nothing and return nil.
 This function accepts any number of arguments, but ignores them."
@@ -703,7 +715,10 @@ This function accepts any number of arguments, but ignores them."
   nil)
 
 (defun error (&rest args)
-  "Signal an error, making error message by passing all args to `format'."
+  "Signal an error, making error message by passing all args to `format'.
+In Emacs, the convention is that error messages start with a capital
+letter but *do not* end with a period.  Please follow this convention
+for the sake of consistency."
   (while t
     (signal 'error (list (apply 'format args)))))
 
@@ -748,12 +763,6 @@ STRING should be given if the last search was by `string-match' on STRING."
       (if string
 	  (substring string (match-beginning num) (match-end num))
 	(buffer-substring (match-beginning num) (match-end num)))))
-
-(defun buffer-substring-no-properties (beg end)
-  "Return the text from BEG to END, without text properties, as a string."
-  (let ((string (buffer-substring beg end)))
-    (set-text-properties 0 (length string) nil string)
-    string))
 
 (defun shell-quote-argument (argument)
   "Quote an argument for passing as argument to an inferior shell."

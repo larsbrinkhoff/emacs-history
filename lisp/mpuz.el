@@ -1,6 +1,6 @@
 ;;; mpuz.el --- multiplication puzzle for GNU Emacs
 
-;;; Copyright (C) 1990 Free Software Foundation, Inc.
+;; Copyright (C) 1990 Free Software Foundation, Inc.
 
 ;; Author: Philippe Schnoebelen <phs@lifia.imag.fr>
 ;; Keywords: games
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -185,7 +186,7 @@ You may abort a game by typing \\<mpuz-mode-map>\\[mpuz-offer-abort]."
 		   D (* A (/ B 10))
 		   E (* A B))
 	     (or (< C 1000) (< D 1000)))) ; forbid leading zeros in C or D
-    ;; Individual digits are now put on their respectives squares.
+    ;; Individual digits are now put on their respective squares.
     ;; [NB: A square is a pair <row,column> of the screen.]
     (mpuz-put-digit-on-board A		 '(2 . 9))
     (mpuz-put-digit-on-board (/ A 10)	 '(2 . 7))

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #ifdef USE_TEXT_PROPERTIES
@@ -402,10 +403,6 @@ struct buffer
        A list => `invisible' property means invisible
                  if it is memq in that list.  */
     Lisp_Object invisibility_spec;
-
-    /* If redisplay goes beyond this point in the buffer,
-       run redisplay-end-trigger-hook.  */
-    Lisp_Object redisplay_end_trigger;
 
     /* These are so we don't have to recompile everything
        the next few times we add a new slot.  */

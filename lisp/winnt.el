@@ -1,4 +1,5 @@
-;; winnt.el --- Lisp routines for Windows NT.
+;;; winnt.el --- Lisp routines for Windows NT.
+
 ;; Copyright (C) 1994 Free Software Foundation, Inc.
 
 ;; Author: Geoff Voelker (voelker@cs.washington.edu)
@@ -16,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -50,6 +52,7 @@
    (purecopy "%n")
    (purecopy ")%]--")
    (purecopy '(line-number-mode "L%l--"))
+   (purecopy '(column-number-mode "C%c--"))
    (purecopy '(-3 . "%p"))
    (purecopy "-%-")))
 
@@ -143,15 +146,35 @@ against the file name, and TYPE is nil for text, t for binary.")
 
 ;; Really should provide this capability at the drive letter granularity.
 (defun using-unix-filesystems (flag)
+  "Read and write all files assuming that they are on a drive attached 
+to a remote Unix file system.  No CR/LF translation is done on any files
+in this case.  This behavior is activated when FLAG is t and deactived
+when FLAG is any other value."
   (if flag
       (progn
 	(add-hook 'write-file-hooks 'save-to-unix-hook)
-	(add-hook 'write-contents-hooks 'save-to-unix-hook)
 	(add-hook 'after-save-hook 'revert-from-unix-hook))
     (progn
       (remove-hook 'write-file-hooks 'save-to-unix-hook)
-      (remove-hook 'write-contents-hooks 'save-to-unix-hook)
       (remove-hook 'after-save-hook 'revert-from-unix-hook))))
+
+;;; Avoid creating auto-save file names containing illegal characters
+;;; (primarily "*", eg. for the *mail* buffer).
+(fset 'original-make-auto-save-file-name
+      (symbol-function 'make-auto-save-file-name))
+
+(defun make-auto-save-file-name ()
+  "Return file name to use for auto-saves of current buffer.
+Does not consider `auto-save-visited-file-name' as that variable is checked
+before calling this function.  You can redefine this for customization.
+See also `auto-save-file-name-p'."
+  (let ((name (original-make-auto-save-file-name))
+	(start 0))
+    ;; destructively replace occurences of * or ? with $
+    (while (string-match "[?*]" name start)
+      (aset name (match-beginning 0) ?$)
+      (setq start (1+ (match-end 0))))
+    name))
 
 ;;; Fix interface to (X-specific) mouse.el
 (defalias 'x-set-selection 'ignore)

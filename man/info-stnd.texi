@@ -145,7 +145,7 @@ Emacs and standalone versions) have several commands which allow you to
 move the cursor about the screen.  The notation used in this manual to
 describe keystrokes is identical to the notation used within the Emacs
 manual, and the GNU Readline manual.  @xref{Characters, , Character
-Conventions, emacs, the GNU Emacs Manual}, if you are unfamilar with the
+Conventions, emacs, the GNU Emacs Manual}, if you are unfamiliar with the
 notation.
 
 The following table lists the basic cursor movement commands in Info.
@@ -483,7 +483,7 @@ Moves to the node containing the next matching index item from the last
 
 The most basic searching command is @samp{s} (@code{search}).  The
 @samp{s} command prompts you for a string in the echo area, and then
-searches the remainder of the info file for an ocurrence of that string.
+searches the remainder of the info file for an occurrence of that string.
 If the string is found, the node containing it is selected, and the
 cursor is left positioned at the start of the found string.  Subsequent
 @samp{s} commands show you the default search string within @samp{[} and
@@ -1225,7 +1225,7 @@ Info, as well as display them.
 @node Info for Sys Admins
 @chapter Info for System Administrators
 
-This text describes some common ways of setting up an Info heierarchy
+This text describes some common ways of setting up an Info hierarchy
 from scratch, and details the various options that are available when
 installing Info.  This text is designed for the person who is installing
 GNU Info on the system; although users may find the information present
@@ -1235,9 +1235,9 @@ use GNU Info.
 @menu
 * Setting the INFOPATH::	Where are my Info files kept?
 * Editing the DIR node::	What goes in `DIR', and why?
-* Storing Info files::		Alternate formats allow flexibilty in setups.
+* Storing Info files::		Alternate formats allow flexibility in setups.
 * Using `localdir'::		Building DIR on the fly.
-* Example setups::		Some common ways to origanize Info files.
+* Example setups::		Some common ways to organize Info files.
 @end menu
 
 @node Setting the INFOPATH
@@ -1250,7 +1250,7 @@ What goes in `DIR', and why?
 
 @node Storing Info files
 @section Storing Info files
-Alternate formats allow flexibilty in setups.
+Alternate formats allow flexibility in setups.
 
 @node Using `localdir'
 @section Using `localdir'
@@ -1258,7 +1258,7 @@ Building DIR on the fly.
 
 @node Example setups
 @section Example setups
-Some common ways to origanize Info files.
+Some common ways to organize Info files.
 @end ifset
 
 @ifset STANDALONE

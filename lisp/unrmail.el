@@ -17,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -52,6 +53,8 @@ For example, invoke `emacs -batch -f batch-unrmail RMAIL'."
 	(rmail-display-summary nil)
 	(rmail-delete-after-output nil))
     (rmail file)
+    ;; Default the directory of TO-FILE based on where FILE is.
+    (setq to-file (expand-file-name to-file default-directory))
     (message "Writing messages to %s..." to-file)
     (while (< message-count rmail-total-messages)
       (rmail-show-message

@@ -1,5 +1,5 @@
 /* Minibuffer input and completion.
-   Copyright (C) 1985, 1986, 1993, 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 93, 94, 95, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -112,7 +113,7 @@ choose_minibuf_frame ()
   if (selected_frame != 0
       && !EQ (minibuf_window, selected_frame->minibuffer_window))
     {
-#ifdef MSDOS
+#if defined(MSDOS) && !defined(HAVE_X_WINDOWS)
       selected_frame->minibuffer_window = minibuf_window;
 #else
       /* I don't think that any frames may validly have a null minibuffer
@@ -126,6 +127,24 @@ choose_minibuf_frame ()
 #endif
     }
 }
+
+DEFUN ("set-minibuffer-window", Fset_minibuffer_window,
+       Sset_minibuffer_window, 1, 1, 0,
+  "Specify which minibuffer window to use for the minibuffer.\n\
+This effects where the minibuffer is displayed if you put text in it\n\
+without invoking the usual minibuffer commands.")
+  (window)
+     Lisp_Object window;
+{
+  CHECK_WINDOW (window, 1);
+  if (! MINI_WINDOW_P (XWINDOW (window)))
+    error ("Window is not a minibuffer window");
+
+  minibuf_window = window;
+
+  return window;
+}
+
 
 /* Actual minibuffer invocation. */
 
@@ -156,16 +175,18 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
 {
   Lisp_Object val;
   int count = specpdl_ptr - specpdl;
-  Lisp_Object mini_frame;
-  struct gcpro gcpro1, gcpro2, gcpro3;
+  Lisp_Object mini_frame, ambient_dir;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
   single_kboard_state ();
 
   val = Qnil;
+  ambient_dir = current_buffer->directory;
+
   /* Don't need to protect PROMPT, HISTVAR, and HISTPOS because we
      store them away before we can GC.  Don't need to protect
      BACKUP_N because we use the value only if it is an integer.  */
-  GCPRO3 (map, initial, val);
+  GCPRO4 (map, initial, val, ambient_dir);
 
   if (!STRINGP (prompt))
     prompt = build_string ("");
@@ -175,23 +196,7 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
       && (EQ (selected_window, minibuf_window)))
     error ("Command attempted to use minibuffer while in minibuffer");
 
-  /* Could we simply bind these variables instead?  */
-  minibuf_save_list
-    = Fcons (Voverriding_local_map,
-	     Fcons (minibuf_window, minibuf_save_list));
-  minibuf_save_list
-    = Fcons (minibuf_prompt,
-	     Fcons (make_number (minibuf_prompt_width),
-		    Fcons (Vhelp_form,
-			   Fcons (Vcurrent_prefix_arg,
-				  Fcons (Vminibuffer_history_position,
-					 Fcons (Vminibuffer_history_variable,
-						minibuf_save_list))))));
-
-  minibuf_prompt_width = 0;	/* xdisp.c puts in the right value.  */
-  minibuf_prompt = Fcopy_sequence (prompt);
-  Vminibuffer_history_position = histpos;
-  Vminibuffer_history_variable = histvar;
+  /* Choose the minibuffer window and frame, and take action on them.  */
 
   choose_minibuf_frame ();
 
@@ -214,7 +219,37 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
     Fraise_frame (mini_frame);
 #endif
 
-  val = current_buffer->directory;
+  /* We have to do this after saving the window configuration
+     since that is what restores the current buffer.  */
+
+  /* Arrange to restore a number of minibuffer-related variables.
+     We could bind each variable separately, but that would use lots of
+     specpdl slots.  */
+  minibuf_save_list
+    = Fcons (Voverriding_local_map,
+	     Fcons (minibuf_window, minibuf_save_list));
+  minibuf_save_list
+    = Fcons (minibuf_prompt,
+	     Fcons (make_number (minibuf_prompt_width),
+		    Fcons (Vhelp_form,
+			   Fcons (Vcurrent_prefix_arg,
+				  Fcons (Vminibuffer_history_position,
+					 Fcons (Vminibuffer_history_variable,
+						minibuf_save_list))))));
+
+  record_unwind_protect (read_minibuf_unwind, Qnil);
+  minibuf_level++;
+
+  /* Now that we can restore all those variables, start changing them.  */
+
+  minibuf_prompt_width = 0;	/* xdisp.c puts in the right value.  */
+  minibuf_prompt = Fcopy_sequence (prompt);
+  Vminibuffer_history_position = histpos;
+  Vminibuffer_history_variable = histvar;
+  Vhelp_form = Vminibuffer_help_form;
+
+  /* Switch to the minibuffer.  */
+
   Fset_buffer (get_minibuffer (minibuf_level));
 
   /* The current buffer's default directory is usually the right thing
@@ -225,8 +260,8 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
      up Emacs and buf's default directory is Qnil.  Here's a hack; can
      you think of something better to do?  Find another buffer with a
      better directory, and use that one instead.  */
-  if (STRINGP (val))
-    current_buffer->directory = val;
+  if (STRINGP (ambient_dir))
+    current_buffer->directory = ambient_dir;
   else
     {
       Lisp_Object buf_list;
@@ -250,19 +285,24 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
   if (XFRAME (mini_frame) != selected_frame)
     Fredirect_frame_focus (Fselected_frame (), mini_frame);
 #endif
-  Fmake_local_variable (Qprint_escape_newlines);
-  print_escape_newlines = 1;
-
-  record_unwind_protect (read_minibuf_unwind, Qnil);
 
   Vminibuf_scroll_window = selected_window;
   Fset_window_buffer (minibuf_window, Fcurrent_buffer ());
   Fselect_window (minibuf_window);
   XSETFASTINT (XWINDOW (minibuf_window)->hscroll, 0);
 
-  Ferase_buffer ();
-  minibuf_level++;
+  Fmake_local_variable (Qprint_escape_newlines);
+  print_escape_newlines = 1;
 
+  /* Erase the buffer.  */
+  {
+    int count1 = specpdl_ptr - specpdl;
+    specbind (Qinhibit_read_only, Qt);
+    Ferase_buffer ();
+    unbind_to (count1, Qnil);
+  }
+
+  /* Put in the initial input.  */
   if (!NILP (initial))
     {
       Finsert (1, &initial);
@@ -274,12 +314,11 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
   /* This is in case the minibuffer-setup-hook calls Fsit_for.  */
   previous_echo_glyphs = 0;
 
-  Vhelp_form = Vminibuffer_help_form;
   current_buffer->keymap = map;
 
   /* Run our hook, but not if it is empty.
      (run-hooks would do nothing if it is empty,
-     but it's important to save time here in the usual case.  */
+     but it's important to save time here in the usual case).  */
   if (!NILP (Vminibuffer_setup_hook) && !EQ (Vminibuffer_setup_hook, Qunbound)
       && !NILP (Vrun_hooks))
     call1 (Vrun_hooks, Qminibuffer_setup_hook);
@@ -298,8 +337,10 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
     }
 
   /* Make minibuffer contents into a string */
-  val = make_buffer_string (1, Z);
+  val = make_buffer_string (1, Z, 1);
+#if 0  /* make_buffer_string should handle the gap.  */
   bcopy (GAP_END_ADDR, XSTRING (val)->data + GPT - BEG, Z - GPT);
+#endif
 
   /* VAL is the string of minibuffer text.  */
   last_minibuf_string = val;
@@ -395,6 +436,7 @@ read_minibuf_unwind (data)
      Lisp_Object data;
 {
   Lisp_Object old_deactivate_mark;
+  Lisp_Object window;
 
   /* We are exiting the minibuffer one way or the other,
      so run the hook.  */
@@ -402,24 +444,16 @@ read_minibuf_unwind (data)
       && !NILP (Vrun_hooks))
     safe_run_hooks (Qminibuffer_exit_hook);
 
-  /* Erase the minibuffer we were using at this level.  */
-  Fset_buffer (XWINDOW (minibuf_window)->buffer);
-
-  /* Prevent error in erase-buffer.  */
-  current_buffer->read_only = Qnil;
-
-  old_deactivate_mark = Vdeactivate_mark;
-  Ferase_buffer ();
-  Vdeactivate_mark = old_deactivate_mark;
-
   /* If this was a recursive minibuffer,
-     tie the minibuffer window back to the outer level minibuffer buffer */
+     tie the minibuffer window back to the outer level minibuffer buffer.  */
   minibuf_level--;
-  /* Make sure minibuffer window is erased, not ignored */
-  windows_or_buffers_changed++;
-  XSETFASTINT (XWINDOW (minibuf_window)->last_modified, 0);
 
-  /* Restore prompt, etc from outer minibuffer */
+  window = minibuf_window;
+  /* To keep things predictable, in case it matters, let's be in the minibuffer
+     when we reset the relevant variables.  */
+  Fset_buffer (XWINDOW (window)->buffer);
+
+  /* Restore prompt, etc, from outer minibuffer level.  */
   minibuf_prompt = Fcar (minibuf_save_list);
   minibuf_save_list = Fcdr (minibuf_save_list);
   minibuf_prompt_width = XFASTINT (Fcar (minibuf_save_list));
@@ -436,6 +470,21 @@ read_minibuf_unwind (data)
   minibuf_save_list = Fcdr (minibuf_save_list);
   minibuf_window = Fcar (minibuf_save_list);
   minibuf_save_list = Fcdr (minibuf_save_list);
+
+  /* Erase the minibuffer we were using at this level.  */
+  {
+    int count = specpdl_ptr - specpdl;
+    /* Prevent error in erase-buffer.  */
+    specbind (Qinhibit_read_only, Qt);
+    old_deactivate_mark = Vdeactivate_mark;
+    Ferase_buffer ();
+    Vdeactivate_mark = old_deactivate_mark;
+    unbind_to (count, Qnil);
+  }
+
+  /* Make sure minibuffer window is erased, not ignored.  */
+  windows_or_buffers_changed++;
+  XSETFASTINT (XWINDOW (window)->last_modified, 0);
 }
 
 
@@ -649,8 +698,8 @@ it is used to test each possible match.\n\
 The match is a candidate only if PREDICATE returns non-nil.\n\
 The argument given to PREDICATE is the alist element\n\
 or the symbol from the obarray.")
-  (string, alist, pred)
-     Lisp_Object string, alist, pred;
+  (string, alist, predicate)
+     Lisp_Object string, alist, predicate;
 {
   Lisp_Object bestmatch, tail, elt, eltstring;
   int bestmatchsize;
@@ -663,7 +712,7 @@ or the symbol from the obarray.")
 
   CHECK_STRING (string, 0);
   if (!list && !VECTORP (alist))
-    return call3 (alist, string, pred, Qnil);
+    return call3 (alist, string, predicate, Qnil);
 
   bestmatch = Qnil;
 
@@ -737,14 +786,14 @@ or the symbol from the obarray.")
 	  /* Ignore this element if there is a predicate
 	     and the predicate doesn't like it. */
 
-	  if (!NILP (pred))
+	  if (!NILP (predicate))
 	    {
-	      if (EQ (pred, Qcommandp))
+	      if (EQ (predicate, Qcommandp))
 		tem = Fcommandp (elt);
 	      else
 		{
 		  GCPRO4 (tail, string, eltstring, bestmatch);
-		  tem = call1 (pred, elt);
+		  tem = call1 (predicate, elt);
 		  UNGCPRO;
 		}
 	      if (NILP (tem)) continue;
@@ -862,8 +911,8 @@ or the symbol from the obarray.\n\
 If the optional fourth argument HIDE-SPACES is non-nil,\n\
 strings in ALIST that start with a space\n\
 are ignored unless STRING itself starts with a space.")
-  (string, alist, pred, hide_spaces)
-     Lisp_Object string, alist, pred, hide_spaces;
+  (string, alist, predicate, hide_spaces)
+     Lisp_Object string, alist, predicate, hide_spaces;
 {
   Lisp_Object tail, elt, eltstring;
   Lisp_Object allmatches;
@@ -875,7 +924,7 @@ are ignored unless STRING itself starts with a space.")
   CHECK_STRING (string, 0);
   if (!list && !VECTORP (alist))
     {
-      return call3 (alist, string, pred, Qt);
+      return call3 (alist, string, predicate, Qt);
     }
   allmatches = Qnil;
 
@@ -954,14 +1003,14 @@ are ignored unless STRING itself starts with a space.")
 	  /* Ignore this element if there is a predicate
 	     and the predicate doesn't like it. */
 
-	  if (!NILP (pred))
+	  if (!NILP (predicate))
 	    {
-	      if (EQ (pred, Qcommandp))
+	      if (EQ (predicate, Qcommandp))
 		tem = Fcommandp (elt);
 	      else
 		{
 		  GCPRO4 (tail, eltstring, allmatches, string);
-		  tem = call1 (pred, elt);
+		  tem = call1 (predicate, elt);
 		  UNGCPRO;
 		}
 	      if (NILP (tem)) continue;
@@ -984,7 +1033,6 @@ Lisp_Object Vminibuffer_completion_confirm, Qminibuffer_completion_confirm;
 
 DEFUN ("completing-read", Fcompleting_read, Scompleting_read, 2, 6, 0,
   "Read a string in the minibuffer, with completion.\n\
-Args: PROMPT, TABLE, PREDICATE, REQUIRE-MATCH, INITIAL-INPUT, HIST.\n\
 PROMPT is a string to prompt with; normally it ends in a colon and a space.\n\
 TABLE is an alist whose elements' cars are strings, or an obarray.\n\
 PREDICATE limits completion to a subset of TABLE.\n\
@@ -1013,14 +1061,14 @@ Completion ignores case if the ambient value of\n\
 */
 DEFUN ("completing-read", Fcompleting_read, Scompleting_read, 2, 6, 0,
   0 /* See immediately above */)
-  (prompt, table, pred, require_match, init, hist)
-     Lisp_Object prompt, table, pred, require_match, init, hist;
+  (prompt, table, predicate, require_match, init, hist)
+     Lisp_Object prompt, table, predicate, require_match, init, hist;
 {
   Lisp_Object val, histvar, histpos, position;
   int pos = 0;
   int count = specpdl_ptr - specpdl;
   specbind (Qminibuffer_completion_table, table);
-  specbind (Qminibuffer_completion_predicate, pred);
+  specbind (Qminibuffer_completion_predicate, predicate);
   specbind (Qminibuffer_completion_confirm,
 	    EQ (require_match, Qt) ? Qnil : Qt);
   last_exact_completion = Qnil;
@@ -1815,6 +1863,7 @@ is added with\n\
     "List of regexps that should restrict possible completions.");
   Vcompletion_regexp_list = Qnil;
 
+  defsubr (&Sset_minibuffer_window);
   defsubr (&Sread_from_minibuffer);
   defsubr (&Seval_minibuffer);
   defsubr (&Sread_minibuffer);

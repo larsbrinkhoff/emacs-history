@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -361,7 +362,7 @@ This function is suitable for execution in a .emacs file."
 
 (defun lunar-new-moon-on-or-after (d)
   "Astronomical (Julian) day number of first new moon on or after astronomical
-(Julian) day number d.  The fractional part is the time of day.
+\(Julian) day number d.  The fractional part is the time of day.
 
 The date and time are local time, including any daylight savings rules,
 as governed by the values of calendar-daylight-savings-starts,

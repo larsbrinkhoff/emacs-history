@@ -1,6 +1,6 @@
 ;;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands.
 
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: lisp, languages
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -102,6 +103,11 @@
   (setq paragraph-ignore-fill-prefix t)
   (make-local-variable 'fill-paragraph-function)
   (setq fill-paragraph-function 'lisp-fill-paragraph)
+  ;; Adaptive fill mode gets in the way of auto-fill,
+  ;; and should make no difference for explicit fill
+  ;; because lisp-fill-paragraph should do the job.
+  (make-local-variable 'adaptive-fill-mode)
+  (setq adaptive-fill-mode nil)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'lisp-indent-line)
   (make-local-variable 'indent-region-function)
@@ -148,6 +154,8 @@ All commands in `shared-lisp-mode-map' are inherited by this map.")
       '("Instrument Function for Debugging" . edebug-defun))
     (define-key map [byte-recompile]
       '("Byte-recompile Directory..." . byte-recompile-directory))
+    (define-key map [emacs-byte-compile-and-load]
+      '("Byte-compile And Load" . emacs-lisp-byte-compile-and-load))
     (define-key map [byte-compile]
       '("Byte-compile This File" . emacs-lisp-byte-compile))
     (define-key map [separator-eval] '("--"))
@@ -167,7 +175,22 @@ All commands in `shared-lisp-mode-map' are inherited by this map.")
   (interactive)
   (if buffer-file-name
       (byte-compile-file buffer-file-name)
-    (error "The buffer must be saved in a file first.")))
+    (error "The buffer must be saved in a file first")))
+
+(defun emacs-lisp-byte-compile-and-load ()
+  "Byte-compile the current file (if it has changed), then load compiled code."
+  (interactive)
+  (or buffer-file-name
+      (error "The buffer must be saved in a file first"))
+  (require 'bytecomp)
+  ;; Recompile if file or buffer has changed since last compilation.
+  (if (and (buffer-modified-p)
+	   (y-or-n-p (format "save buffer %s first? " (buffer-name))))
+      (save-buffer))
+  (let ((compiled-file-name (byte-compile-dest-file buffer-file-name)))
+    (if (file-newer-than-file-p compiled-file-name buffer-file-name)
+	(load-file compiled-file-name)
+      (byte-compile-file buffer-file-name t))))
 
 (defun emacs-lisp-mode ()
   "Major mode for editing Lisp code to run in Emacs.
@@ -680,6 +703,9 @@ and initial semicolons."
 	;; Non-nil if the current line contains a comment.
 	has-comment
 
+	;; Non-nil if the current line contains code and a comment.
+	has-code-and-comment
+
 	;; If has-comment, the appropriate fill-prefix for the comment.
 	comment-fill-prefix
 	)
@@ -698,45 +724,72 @@ and initial semicolons."
        ;; A line with some code, followed by a comment?  Remember that the
        ;; semi which starts the comment shouldn't be part of a string or
        ;; character.
-       ((progn
-	  (while (not (looking-at ";\\|$"))
-	    (skip-chars-forward "^;\n\"\\\\?")
-	    (cond
-	     ((eq (char-after (point)) ?\\) (forward-char 2))
-	     ((memq (char-after (point)) '(?\" ??)) (forward-sexp 1))))
-	  (looking-at ";+[\t ]*"))
-	(setq has-comment t)
+       ((condition-case nil
+	    (save-restriction
+	      (narrow-to-region (point-min)
+				(save-excursion (end-of-line) (point)))
+	      (while (not (looking-at ";\\|$"))
+		(skip-chars-forward "^;\n\"\\\\?")
+		(cond
+		 ((eq (char-after (point)) ?\\) (forward-char 2))
+		 ((memq (char-after (point)) '(?\" ??)) (forward-sexp 1))))
+	      (looking-at ";+[\t ]*"))
+	  (error nil))
+	(setq has-comment t has-code-and-comment t)
 	(setq comment-fill-prefix
-	      (concat (make-string (current-column) ? )
+	      (concat (make-string (/ (current-column) 8) ?\t)
+		      (make-string (% (current-column) 8) ?\ )
 		      (buffer-substring (match-beginning 0) (match-end 0)))))))
 
     (if (not has-comment)
 	(fill-paragraph justify)
 
       ;; Narrow to include only the comment, and then fill the region.
-      (save-restriction
-	(narrow-to-region
-	 ;; Find the first line we should include in the region to fill.
-	 (save-excursion
-	   (while (and (zerop (forward-line -1))
-		       (looking-at "^[ \t]*;")))
-	   ;; We may have gone to far.  Go forward again.
-	   (or (looking-at "^[ \t]*;")
-	       (forward-line 1))
-	   (point))
-	 ;; Find the beginning of the first line past the region to fill.
-	 (save-excursion
-	   (while (progn (forward-line 1)
+      (save-excursion
+	(save-restriction
+	  (beginning-of-line)
+	  (narrow-to-region
+	   ;; Find the first line we should include in the region to fill.
+	   (save-excursion
+	     (while (and (zerop (forward-line -1))
 			 (looking-at "^[ \t]*;")))
-	   (point)))
+	     ;; We may have gone too far.  Go forward again.
+	     (or (looking-at ".*;")
+		 (forward-line 1))
+	     (point))
+	   ;; Find the beginning of the first line past the region to fill.
+	   (save-excursion
+	     (while (progn (forward-line 1)
+			   (looking-at "^[ \t]*;")))
+	     (point)))
 
-	;; Lines with only semicolons on them can be paragraph boundaries.
-	(let ((paragraph-start (concat paragraph-start "\\|[ \t;]*$"))
-	      (paragraph-separate (concat paragraph-start "\\|[ \t;]*$"))
-	      (fill-prefix comment-fill-prefix))
-	  (fill-paragraph justify))))
+	  ;; Lines with only semicolons on them can be paragraph boundaries.
+	  (let* ((paragraph-start (concat paragraph-start "\\|[ \t;]*$"))
+		 (paragraph-separate (concat paragraph-start "\\|[ \t;]*$"))
+		 (paragraph-ignore-fill-prefix nil)
+		 (fill-prefix comment-fill-prefix)
+		 (after-line (if has-code-and-comment
+				 (save-excursion
+				   (forward-line 1) (point))))
+		 (end (progn
+			(forward-paragraph)
+			(or (bolp) (newline 1))
+			(point)))
+		 ;; If this comment starts on a line with code,
+		 ;; include that like in the filling.
+		 (beg (progn (backward-paragraph)
+			     (if (eq (point) after-line)
+				 (forward-line -1))
+			     (point))))
+	    (fill-region-as-paragraph beg end
+				      justify nil
+				      (save-excursion
+					(goto-char beg)
+					(if (looking-at fill-prefix)
+					    nil
+					  (re-search-forward comment-start-skip)
+					  (point))))))))
     t))
-
 
 (defun indent-code-rigidly (start end arg &optional nochange-regexp)
   "Indent all lines of code, starting in the region, sideways by ARG columns.

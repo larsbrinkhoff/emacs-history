@@ -19,26 +19,25 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; Jeff Peck, Sun Microsystems, Jan 1987.
-;;; Original idea by Stan Jefferson
+;; Jeff Peck, Sun Microsystems, Jan 1987.
+;; Original idea by Stan Jefferson
 
-;;;
-;;;     Modelled after the GNUEMACS keymap interface.
-;;;
-;;; User Functions:
-;;;   make-mousemap, copy-mousemap, 
-;;;   define-mouse, global-set-mouse, local-set-mouse,
-;;;   use-global-mousemap, use-local-mousemap,
-;;;   mouse-lookup, describe-mouse-bindings
-;;;
-;;; Options:
-;;;   extra-click-wait, scrollbar-width
-;;;
+;;     Modeled after the GNUEMACS keymap interface.
+;;
+;; User Functions:
+;;   make-mousemap, copy-mousemap, 
+;;   define-mouse, global-set-mouse, local-set-mouse,
+;;   use-global-mousemap, use-local-mousemap,
+;;   mouse-lookup, describe-mouse-bindings
+;;
+;; Options:
+;;   extra-click-wait, scrollbar-width
 
 ;;; Code:
 
@@ -273,7 +272,7 @@ Returns nil."
 (defun sm::combined-hits ()
   "Read and return next mouse-hit, include possible double click"
   (let ((hit1 (mouse-hit-read)))
-    (if (not (sm::hit-up-p hit1))	; Up hits dont start doubles or chords.
+    (if (not (sm::hit-up-p hit1))      ; Up hits don't start doubles or chords.
 	(let ((hit2 (mouse-second-hit extra-click-wait)))
 	  (if hit2	; we cons'd it, we can smash it.
 	      ; (setf (sm::hit-code hit1) (logior (sm::hit-code hit1) ...))
@@ -351,7 +350,7 @@ Returns list (window x y) where x and y are relative to window."
 	      (setq re (1+ re)))
 	  (if (= be (frame-height))
 	      ;; include partial line at bottom of frame with this window
-	      ;; id est, if window is not multple of char size.
+	      ;; id est, if window is not multiple of char size.
 	      (setq be (1+ be)))
 
 	  (if (and (>= x le) (< x re)
@@ -547,7 +546,7 @@ where each mouse-list is bound to the function in REGION."
 
 (defun describe-mouse-briefly (mouse-list)
   "Print a short description of the function bound to MOUSE-LIST."
-  (interactive "xDescibe mouse list briefly: ")
+  (interactive "xDescribe mouse list briefly: ")
   (let ((function (mouse-lookup (mouse-list-to-mouse-code mouse-list))))
     (if function
 	(message "%s runs the command %s" mouse-list function)

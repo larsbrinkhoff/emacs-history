@@ -4,7 +4,8 @@
 @comment %**start of header (This is for running Texinfo on a region)
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-@setfilename  cc-mode.info
+@comment This Info file name was chosen to avoid lossage on MSDOS.
+@setfilename  ../info/ccmode
 @settitle     CC-MODE Version 4 Documentation
 @footnotestyle end
 
@@ -17,12 +18,12 @@
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 @comment 
 @comment texinfo manual for @file{cc-mode.el} version 4
-@comment manual version: 2.30
+@comment manual version: 2.35
 @comment generated from the original README file by Krishna Padmasola
 @comment <krishna@earth-gw.njit.edu>
 @comment 
 @comment Barry A. Warsaw <bwarsaw@cnri.reston.va.us>
-@comment Last modification: 1995/08/29 15:55:54
+@comment Last modification: 1996/01/19 20:50:48
 @comment 
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -51,7 +52,7 @@ Copyright @copyright{} 1995 Free Software Foundation, Inc.
 @center @titlefont{CC-MODE Version 4}
 @sp 2
 @center A GNU Emacs mode for editing C, C++, and Objective-C code.
-@center (manual revision: 2.30)
+@center (manual revision: 2.35)
 @sp 2
 @center Barry A. Warsaw
 
@@ -110,7 +111,7 @@ Copyright @copyright{} 1995 Free Software Foundation, Inc.
 
 @cindex BOCM
 Welcome to @code{cc-mode}, version 4.  This is a GNU Emacs mode for
-editing files containing C, C++, and Objective-C code.
+editing files containing C, C++, Objective-C, and Java code.
 This incarnation of the mode is descendant from @file{c-mode.el} (also
 called "Boring Old C Mode" or BOCM @code{:-)}, and @file{c++-mode.el}
 version 2, which I have been maintaining since 1992.  @code{cc-mode}
@@ -121,9 +122,9 @@ developed.
 
 @code{cc-mode} version 4 supports the editing of K&R and ANSI C,
 @dfn{ARM} @footnote{i.e. ``The Annotated C++ Reference Manual'', by
-Ellis and Stroustrup.} C++, and Objective-C files.  In this way, you can
-easily set up consistent coding styles for use in editing all C, C++,
-and Objective-C programs.
+Ellis and Stroustrup.} C++, Objective-C, and Java files.  In this way,
+you can easily set up consistent coding styles for use in editing all C,
+C++, Objective-C, and Java programs.
 
 This manual will describe the following:
 
@@ -144,29 +145,27 @@ refer to the package as @code{cc-mode}, but there really is no top level
 @code{cc-mode} entry point.  I call it @code{cc-mode} simply to
 differentiate it from @file{c-mode.el}.  All of the variables, commands,
 and functions in @code{cc-mode} are prefixed with @code{c-<thing>}, and
-@code{c-mode}, @code{c++-mode}, and @code{objc-mode} entry points are
-provided.  This file is intended to be a replacement for
-@file{c-mode.el} and @file{c++-mode.el}.
+@code{c-mode}, @code{c++-mode}, @code{objc-mode}, and @code{java-mode}
+entry points are provided.  This file is intended to be a replacement
+for @file{c-mode.el} and @file{c++-mode.el}.
 
 @findex c-version
 The major version number was incremented to 4 with the addition of
 @code{objc-mode}. To find the minor revision number of this release, use
-@kbd{M-x c-version RET}.  This release will be the last for major
-release version 4 and the last release for which Emacs 18 will be
-supported.  Work has already begun on @code{cc-mode} version 5.
+@kbd{M-x c-version RET}.  Work has already begun on @code{cc-mode}
+version 5, in which Emacs 18 will not be supported.
 
-XEmacs 19.11 (formerly Lucid Emacs) is distributed with @code{cc-mode}
-4.85 as its default C and C++ editing modes; it has completely replaced
-@file{c-mode.el} and @file{c++-mode.el}.  If you have XEmacs 19.11 or
-19.12 you should upgrade your @file{cc-mode.el} to version 4.241 (see
-@ref{Getting the latest cc-mode release}).  XEmacs 19.13 will be
-distributed with version 4.241.
+As of this writing (19-Jan-1996), both Emacs 19.30 and XEmacs 19.13 are
+distributed with @code{cc-mode}.  Emacs 19.31 and XEmacs 19.14 will both
+contain the latest version of cc-mode when it is released.  If you are
+running older versions of these Emacsen, you may want to upgrade your
+copy of @code{cc-mode}.  See @ref{Getting the latest cc-mode release}.
 
 @cindex @file{cc-compat.el} file
-Both XEmacs and this distribution also contain a new file called
-@file{cc-compat.el} which should ease your transition from BOCM to
-@code{cc-mode}.  It currently comes unguaranteed and unsupported, but
-this may change for future versions.
+This distribution also contains a file called @file{cc-compat.el}
+which should ease your transition from BOCM to @code{cc-mode}.  It
+currently comes unguaranteed and unsupported, but this may change for
+future versions.
 
 A special word of thanks goes to Krishna Padmasola for his work in
 converting the original @file{README} file to texinfo format.
@@ -185,10 +184,10 @@ and thanks to Krishna, it is now available <clap> <clap> <clap>!
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 @file{cc-mode.el} works well with the 2 main branches of Emacs 19:
-XEmacs and the Emacs 19 maintained by the FSF.  FSF's Emacs 19 users
-will want to use Emacs version 19.21 or better, XEmacs users will want
-19.6 or better.  Earlier versions of these Emacsen have deficiencies
-and/or bugs which will adversely affect the performance and usability of
+XEmacs and the Emacs 19 maintained by the FSF.  Emacs 19 users will want
+to use Emacs version 19.21 or better, XEmacs users will want 19.6 or
+better.  Earlier versions of these Emacsen have deficiencies and/or bugs
+which will adversely affect the performance and usability of
 @code{cc-mode}.
 
 @cindex @file{cc-mode-18.el} file
@@ -201,12 +200,9 @@ it is highly recommended that you upgrade to Emacs 19.  If you use
 @code{cc-mode} under Emacs 18, you're on your own.  With @code{cc-mode}
 version 5, Emacs 18 support will be dropped altogether.
 
-Note that XEmacs 19.13 already comes with the latest @code{cc-mode}
-version 4 preconfigured for your use.  You should be able to safely skip
-the rest of the setup information in this chapter.  XEmacs 19.11 and
-19.12 ships older versions of @code{cc-mode}, so those users will want
-to continue reading to learn how to upgrade to the latest @code{cc-mode}
-version 4 (see @ref{Getting the latest cc-mode release}).
+Note that as of XEmacs 19.13 and Emacs 19.30, your Emacs already comes
+with @code{cc-mode} version 4 preconfigured for your use.  You should be
+able to safely skip the rest of the setup information in this chapter.
 
 @cindex @file{.emacs} file
 The first thing you will want to do is put @file{cc-mode.el} somewhere
@@ -251,20 +247,21 @@ M-x byte-compile-file RET ~/mylisp/cc-mode.el RET
 
 @end example
 
-If you are running XEmacs 19.11 or 19.12, you can simply add the
-following to your @file{.emacs} file in order to upgrade to the latest
-version of @code{cc-mode}:
+If you are running a version of Emacs or XEmacs that comes with
+@code{cc-mode} by default, you can simply add the following to your
+@file{.emacs} file in order to upgrade to the latest version of
+@code{cc-mode}:
 @example
 
 (load "cc-mode")
 
 @end example
 
-Users of FSF's Emacs 19, Emacs 18, or of the older Lucid Emacs will
-probably be running an Emacs that has BOCM @file{c-mode.el} and possible
-@file{c++-mode.el} pre-dumped.  If your Emacs is dumped with either of
-these files you first need to make Emacs ``forget'' about those older
-modes.
+Users of even older versions of Emacs 19, Emacs 18, or of the older
+Lucid Emacs will probably be running an Emacs that has BOCM
+@file{c-mode.el} and possible @file{c++-mode.el} pre-dumped.  If your
+Emacs is dumped with either of these files you first need to make Emacs
+``forget'' about those older modes.
 
 If you can do a @kbd{C-h v c-mode-map RET} without getting an error, you
 need to add these lines at the top of your @file{.emacs} file:
@@ -288,6 +285,7 @@ After those lines you will want to add the following autoloads to your
 (autoload 'c++-mode  "cc-mode" "C++ Editing Mode" t)
 (autoload 'c-mode    "cc-mode" "C Editing Mode" t)
 (autoload 'objc-mode "cc-mode" "Objective-C Editing Mode" t)
+(autoload 'java-mode "cc-mode" "Java Editing Mode" t)
 
 @end group
 @end example
@@ -306,19 +304,21 @@ Next, you will want to set up Emacs so that it edits C files in
 @code{objc-mode}. All users should add the following to their
 @file{.emacs} file.  Note that this assumes you'll be editing @code{.h}
 and @code{.c} files as C, @code{.hh}, @code{.cc}, @code{.H}, and
-@code{.C} files as C++, and @code{.m} files as Objective-C. YMMV:
+@code{.C} files as C++, @code{.m} files as Objective-C, and @code{.java}
+files as Java code. YMMV:
 @example
 @group
 
 (setq auto-mode-alist
   (append
-    '(("\\.C$"  . c++-mode)
-      ("\\.H$"  . c++-mode)
-      ("\\.cc$" . c++-mode)
-      ("\\.hh$" . c++-mode)
-      ("\\.c$"  . c-mode)
-      ("\\.h$"  . c-mode)
-      ("\\.m$"  . objc-mode)
+    '(("\\.C$"    . c++-mode)
+      ("\\.H$"    . c++-mode)
+      ("\\.cc$"   . c++-mode)
+      ("\\.hh$"   . c++-mode)
+      ("\\.c$"    . c-mode)
+      ("\\.h$"    . c-mode)
+      ("\\.m$"    . objc-mode)
+      ("\\.java$" . java-mode)
      ) auto-mode-alist))
 
 @end group
@@ -329,14 +329,15 @@ You may already have some or all of these settings on your
 
 That's all you need -- I know, I know, it sounds like a lot @code{:-)},
 but after you've done all this, you should only need to quit and restart
-Emacs.  The next time you visit a C, C++, or Objective-C file you should
-be using @code{cc-mode}.  You can check this easily by hitting
-@kbd{M-x c-version RET}
-in the @code{c-mode}, @code{c++-mode}, or @code{objc-mode} buffer.
-You should see this message in the echo area:
+Emacs.  The next time you visit a C, C++, Objective-C, or Java file you
+should be using @code{cc-mode}.  You can check this easily by hitting
+@kbd{M-x c-version RET} in the @code{c-mode}, @code{c++-mode}, or
+@code{objc-mode} buffer.  You should see this message in the echo area:
 @example
 
-Using @code{cc-mode} version 4.241.
+Using @code{cc-mode} version 4.@var{xxx}
+
+Where @var{xxx} is the latest release minor number.
 
 @end example
 
@@ -394,13 +395,14 @@ construct on that line.  A @dfn{syntactic component} consists of a pair
 of information (in lisp parlance, a @emph{cons cell}), where the first
 part is a @dfn{syntactic symbol}, and the second part is a @dfn{relative
 buffer position}.  Syntactic symbols describe elements of C code
-@footnote{or C++, or Objective-C code.  In general, for the rest of this
-manual I'll use the term ``C code'' to refer to all the C-like dialects,
-unless otherwise noted.}, e.g. @code{statement}, @code{substatement},
-@code{class-open}, @code{class-close}, etc.  @xref{Syntactic Symbols},
-for a complete list of currently recognized syntactic symbols and their
-semantics.  The variable @code{c-offsets-alist} also contains the list
-of currently supported syntactic symbols.
+@footnote{or C++, Objective-C, or Java code.  In general, for the rest
+of this manual I'll use the term ``C code'' to refer to all the C-like
+dialects, unless otherwise noted.}, e.g. @code{statement},
+@code{substatement}, @code{class-open}, @code{class-close}, etc.
+@xref{Syntactic Symbols}, for a complete list of currently recognized
+syntactic symbols and their semantics.  The variable
+@code{c-offsets-alist} also contains the list of currently supported
+syntactic symbols.
 
 Conceptually, a line of C code is always indented relative to the
 indentation of some line higher up in the buffer.  This is represented
@@ -474,7 +476,7 @@ Hitting @kbd{C-c C-s} on line 4 gives us:
 @end example
 
 @cindex substatement
-@cindex substatment block
+@cindex substatement block
 @noindent
 which tells us that this is a brace that @emph{opens} a substatement
 block. @footnote{A @dfn{substatement} indicates the line after an
@@ -647,7 +649,7 @@ on the modeline of the @code{cc-mode} buffer.  When auto-newline mode is
 enabled, you will see @samp{C/a} on the mode line @footnote{Remember
 that the @samp{C} would be replaced with @samp{C++} or @samp{ObjC} if
 you were editing C++ or Objective-C code.}.  When hungry delete mode is
-enabled you would see @samp{C/h} and when mode modes are enabled, you'd
+enabled you would see @samp{C/h} and when both modes are enabled, you'd
 see @samp{C/ah}.
 
 @kindex C-c C-a
@@ -730,8 +732,8 @@ normal, with no @kbd{C-u} prefix).
 
 Certain other conditions may apply on a language specific basis.  For
 example, the second slash (@kbd{/}) of a C++ style line comment is
-electric in @code{c++-mode} and @code{objc-mode}, but not in
-@code{c-mode}.
+electric in @code{c++-mode}, @code{objc-mode}, and @code{java-mode}, but
+not in @code{c-mode}.
 
 
 @menu
@@ -856,7 +858,7 @@ an @var{ACTION}.
 Using a mechanism similar to brace hanging (see @ref{Hanging Braces}),
 colons can also be made to hang using the variable
 @code{c-hanging-colons-alist}.  The syntactic symbols appropriate for
-this assocation list are: @code{case-label}, @code{label},
+this association list are: @code{case-label}, @code{label},
 @code{access-label}, @code{member-init-intro}, and @code{inher-intro}.
 @xref{Hanging Braces} and @ref{Custom Brace and Colon Hanging} for
 details.  Note however, that @code{c-hanging-colons-alist} does not
@@ -948,7 +950,7 @@ defined by @code{c-offsets-alist}.
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 @dfn{Clean-ups} are a mechanism complementary to colon and brace
-hanging.  On the surface, it would see that clean-ups overlap the
+hanging.  On the surface, it would seem that clean-ups overlap the
 functionality provided by the @code{c-hanging-*-alist} variables, and
 similarly, clean-ups are only enabled when auto-newline minor mode is
 enabled.  Clean-ups are used however to adjust code ``after-the-fact'',
@@ -1183,7 +1185,7 @@ the opening brace or parenthesis of the expression you want to indent.
 @findex indent-defun (c-)
 Another very convenient keystroke is @kbd{C-c C-q}
 (@code{c-indent-defun}) when re-indents the entire top-level function or
-class definition that encompases point.  It leaves point at the
+class definition that encompasses point.  It leaves point at the
 same position within the buffer.
 
 @kindex M-C-\
@@ -1430,17 +1432,19 @@ adjustments.
 @vindex c-mode-hook
 @vindex c++-mode-hook
 @vindex objc-mode-hook
+@vindex java-mode-hook
 @cindex hooks
 To make this change permanent, you need to add some lisp code to your
 @file{.emacs} file.  @code{cc-mode} provides four hooks that you can use
-to customize your language editing styles.  Three language specific
-hooks are provided, according to Emacs major mode conventions:
-@code{c-mode-hook}, @code{c++-mode-hook}, and @code{objc-mode-hook}.
-These get run as the last thing when you enter @code{c-mode},
-@code{c++-mode}, or @code{objc-mode} respectively.  @code{cc-mode} also
-provides a hook called @code{c-mode-common-hook} which is run by all
-three modes @emph{before} the language specific hook.  Thus, to make
-changes consistently across all supported @code{cc-mode} modes, use
+to customize your language editing styles.  Four language specific hooks
+are provided, according to Emacs major mode conventions:
+@code{c-mode-hook}, @code{c++-mode-hook}, @code{objc-mode-hook}, and
+@code{java-mode-hook}.  These get run as the last thing when you enter
+@code{c-mode}, @code{c++-mode}, @code{objc-mode}, or
+@code{java-mode-hook} respectively.  @code{cc-mode} also provides a hook
+called @code{c-mode-common-hook} which is run by all three modes
+@emph{before} the language specific hook.  Thus, to make changes
+consistently across all supported @code{cc-mode} modes, use
 @code{c-mode-common-hook}.  Most of the examples in this section will
 assume you are using the common hook.
 
@@ -1455,7 +1459,7 @@ Emacs 19.  Workarounds are available if you are using Emacs 18.}
 @group
 
 (defun my-c-mode-common-hook ()
-  ;; my customizations for all of c-mode, c++-mode, and objc-mode
+  ;; my customizations for all of c-mode, c++-mode, objc-mode, java-mode
   (c-set-offset 'substatement-open 0)
   ;; other customizations can go here
   )
@@ -1514,33 +1518,39 @@ already built-in.  These include:
 @itemize @bullet
 @item
 @cindex GNU style
-@code{GNU} -- coding style blessed by the Free Software Foundation
+@code{gnu} -- coding style blessed by the Free Software Foundation
 for C code in GNU programs.
 
 @item
 @cindex K&R style
-@code{K&R} -- The classic Kernighan and Ritchie style for C code.
+@code{k&r} -- The classic Kernighan and Ritchie style for C code.
 
 @item
 @cindex BSD style
-@code{BSD} -- @strong{<TBD> Anybody know anything about the history of
+@code{bsd} -- @strong{<TBD> Anybody know anything about the history of
 this style?}
 
 @item
 @cindex Stroustrup style
-@code{Stroustrup} -- The classic Stroustrup style for C++ code.
+@code{stroustrup} -- The classic Stroustrup style for C++ code.
 
 @item
 @cindex Whitesmith style
-@code{Whitesmith} -- @strong{<TBD> Anybody know anything about the history of
+@code{whitesmith} -- @strong{<TBD> Anybody know anything about the history of
 this style?}
 
 @item
 @cindex Ellemtel style
-@code{Ellemtel} -- Popular C++ coding standards as defined by
+@code{ellemtel} -- Popular C++ coding standards as defined by
 ``Programming in C++, Rules and Recommendations'', Erik Nyquist and Mats
 Henricson, Ellemtel @footnote{This document is ftp'able from
 @code{euagate.eua.ericsson.se}}.
+
+@item
+@cindex Java style
+@cindex java-mode
+@code{java} -- The style for editing Java code.  Note that this style is
+automatically installed when you enter @code{java-mode}.
 
 @item
 @cindex CC-MODE style
@@ -1561,20 +1571,22 @@ type the following in a @code{cc-mode} buffer:
 @end group
 @end example
 @noindent
-Note however that setting a style in this way does @emph{not}
-automatically re-indent your file.  For commands that you can use to
-view the effect of your changes, see @ref{Indentation Commands}.
+Note that all style names are case insensitive, even the ones you define.
+
+Setting a style in this way does @emph{not} automatically re-indent your
+file.  For commands that you can use to view the effect of your changes,
+see @ref{Indentation Commands}.
 
 Once you find a built-in style you like, you can make the change
 permanent by adding a call to your @file{.emacs} file.  Let's say for
-example that you want to use the @code{Ellemtel} style in all your
+example that you want to use the @code{ellemtel} style in all your
 files.  You would add this:
 @example
 @group
 
 (defun my-c-mode-common-hook ()
   ;; use Ellemtel style for all C, C++, and Objective-C code
-  (c-set-style "Ellemtel")
+  (c-set-style "ellemtel")
   ;; other customizations can go here
   )
 (add-hook 'c-mode-common-hook 'my-c-mode-common-hook)
@@ -1589,10 +1601,10 @@ implicitly inherit from it; in other words, whenever you set a style,
 @code{cc-mode} first re-instates the @code{CC-MODE} style, then applies
 your new style configurations.
 
-The @code{CC-MODE} style exists because once @code{cc-mode} initializes, it
-institutes the @code{GNU} style for compatibility with BOCM's defaults.
-Any customizations you make in mode hooks will be based on the
-@code{GNU} style, unless you first do a @code{c-set-style} to
+The @code{CC-MODE} style exists because once @code{cc-mode} initializes,
+it institutes the @code{gnu} style for compatibility with BOCM's
+defaults.  Any customizations you make in mode hooks will be based on
+the @code{gnu} style, unless you first do a @code{c-set-style} to
 @code{CC-MODE} or some other built-in style.
 
 
@@ -1623,9 +1635,6 @@ institutes the new style in the current buffer.
 
 The sample @file{.emacs} file provides a concrete example of how a new
 style can be added and automatically set.  @xref{Sample .emacs File}.
-
-@strong{<TBD: give some examples of the built-in styles>}
-
 
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 @node     File Styles, ,  Adding Styles, Styles
@@ -1659,7 +1668,7 @@ using @code{c-set-style}.
 @findex set-offset (c-)
 Another variable, @code{c-file-offsets}, takes an association list
 similar to what is allowed in @code{c-offsets-alist}.  When the file is
-visited, @code{cc-mode} will automatically institute these offets using
+visited, @code{cc-mode} will automatically institute these offsets using
 @code{c-set-offset}.
 
 Note that file style settings (i.e. @code{c-file-style}) are applied
@@ -1766,7 +1775,7 @@ Now, to associate the function @code{c-lineup-streamop} with the
 @code{stream-op} syntactic symbol, we can add something like the
 following to our @code{c++-mode-hook}@footnote{It probably makes more
 sense to add this to @code{c++-mode-hook} than @code{c-mode-common-hook}
-since stream operators are only relevent for C++.}:
+since stream operators are only relevant for C++.}:
 @example
 
 (c-set-offset 'stream-op 'c-lineup-streamop)
@@ -2537,25 +2546,18 @@ by @code{font-lock-mode}.  It is not part of @code{cc-mode}.
 @cindex   Getting the latest @code{cc-mode} release
 @comment !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-The canonical version of the latest @code{cc-mode} release will always
-be available for anonymous ftp from the Emacs Lisp Archive Server:
+@code{cc-mode} is now distributed with both Emacs 19 and XEmacs 19, so
+you would typically just use the version that comes with your Emacs.
+Users of older versions of Emacs can get the latest release from this
+URL:
+
 @example
 
-@code{archive.cis.ohio-state.edu}
+    @code{ftp://ftp.python.org/pub/emacs/cc-mode.tar.gz}
 
 @end example
-@noindent
-and the path to the file is:
-@example
 
-/pub/gnu/emacs/elisp-archive/modes/cc-mode.tar.gz
-
-@end example
-Note that this is a ``gzipped'' tar file.  There may be other anonymous
-ftp servers that mirror the full @code{cc-mode} release, including
-@code{cs.uiuc.edu} and @code{ftp.hackvan.com}.  These latter are not
-guaranteed, and you should always try the Emacs Lisp Archive Server
-first!
+Note that this is a ``gzipped'' tar file.
 
 If you do not have anonymous ftp access, you can get the distribution
 through an anonymous ftp-to-mail gateway, such as the one run by DEC at
@@ -2564,10 +2566,10 @@ the following message in the body of your mail to that address:
 @example
 
 reply <a valid net address back to you>
-connect archive.cis.ohio-state.edu
+connect ftp.python.org
 binary
 uuencode
-chdir pub/gnu/emacs/elisp-archive/modes
+chdir pub/emacs
 get cc-mode.tar.gz
 
 @end example
@@ -2711,34 +2713,15 @@ to reproduce the problem, and include an exact recipe of steps needed to
 expose the bug.  Be especially sure to include any code that appears
 @emph{before} your bug example.
 
-Send a message to @code{cc-mode-help@@merlin.cnri.reston.va.us} for
-other help or suggestions.
+Bug reports are now to be sent to @code{bug-gnu-emacs@@prep.ai.mit.edu}
+which is mirrored on the Usenet newsgroup @code{gnu.emacs.bug}.  Other
+questions and suggestions should be mailed to
+@code{help-gnu-emacs@@prep.ai.mit.edu} which is mirrored on
+@code{gnu.emacs.help}.
 
-To join the beta testers list, send the word @samp{subscribe} in the
-body of a message to
-@code{cc-mode-victims-request@@merlin.cnri.reston.va.us}.  Note that
-this is a fairly technical discussion list so you should be moderately
-Emacs lisp fluent and have anonymous ftp access.  I generally won't
-email patches to individual victims.  Note that non-members are
-prohibited from posting messages to this list (i.e. you must join it
-first!).
-
-There is also an announce only list where you will get beta version
-update diffs, but will not join in the technical discussions.  You
-should still have anon-ftp, and you shouldn't expect beta releases to be
-as stable as public releases.  Send the word @samp{subscribe} in the
-body of a message to
-@code{cc-mode-announce-request@@merlin.cnri.reston.va.us} to be added to
-this list.  This is is moderated; you cannot post messages to it.
-
-Both of these lists are maintained by Majordomo.  Send the word
-@samp{help} in the body of a mail message to
-@code{majordomo@@merlin.cnri.reston.va.us} for details of how to
-interact with these Majordomo administered mailing lists.
-
-Please use the proper address so I can concentrate less on administrivia
-and more on the next version of @code{cc-mode}!  Thanks!
-
+Note that the @code{cc-mode} Majordomo mailing lists have been
+disbanded!  With the inclusion of @code{cc-mode} in both of the latest
+flavors of Emacs 19, the need for them has ended.
 
 @c !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 @node    Concept Index, Command Index,  Mailing Lists and Submitting Bug Reports, Top

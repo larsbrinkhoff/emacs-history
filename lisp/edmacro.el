@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -87,6 +88,10 @@ Default nil means to write characters above \\177 in octal notation.")
   (define-key edmacro-mode-map "\C-c\C-c" 'edmacro-finish-edit)
   (define-key edmacro-mode-map "\C-c\C-q" 'edmacro-insert-key))
 
+(defvar edmacro-store-hook)
+(defvar edmacro-finish-hook)
+(defvar edmacro-original-buffer)
+
 ;;;###autoload
 (defun edit-kbd-macro (keys &optional prefix finish-hook store-hook)
   "Edit a keyboard macro.
@@ -111,6 +116,8 @@ With a prefix argument, format the macro in a more concise way."
 	     (setq cmd 'last-kbd-macro))
 	    ((eq cmd 'execute-extended-command)
 	     (setq cmd (read-command "Name of keyboard macro to edit: "))
+	     (if (string-equal cmd "")
+		 (error "No command name given"))
 	     (setq mac (symbol-function cmd)))
 	    ((eq cmd 'view-lossage)
 	     (setq mac (recent-keys))

@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -190,6 +191,7 @@ to which the end of the previous line belongs, or the end of the buffer."
 	    (goto-char (point-min)))))
       (setq arg (1+ arg)))
     (while (and (> arg 0) (not (eobp)))
+      ;; Move forward over separator lines, and one more line.
       (while (prog1 (and (not (eobp))
 			 (progn (move-to-left-margin) (not (eobp)))
 			 (looking-at paragraph-separate))

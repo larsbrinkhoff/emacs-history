@@ -2343,7 +2343,7 @@ to a non-@code{nil} value.  You can set this variable either to @code{t}
 to use the default format file or to a filename if you have your own
 format file (@code{mhl}(1) tells you how to write one).  When writing
 your own format file, use a nonzero value for @code{overflowoffset} to
-ensure the header is RFC 822 compliant and parseable by mh-e.
+ensure the header is RFC 822 compliant and parsable by mh-e.
 @code{mhl} is always used for printing and forwarding; in this case, the
 value of @code{mhl-formfile} is consulted if it is a filename.
 

@@ -19,7 +19,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
  *
  * Yasunari, Itoh at PFU limited contributed for Fujitsu UTS and SX/A.
@@ -121,7 +122,7 @@ main (argc, argv)
   bzero (&sockin, sizeof (sockin));
   sockin.sin_family = host->h_addrtype;
   bcopy (host->h_addr, &sockin.sin_addr, host->h_length);
-  sockin.sin_port = port;
+  sockin.sin_port = htons (port);
   if ((server = socket (AF_INET, SOCK_STREAM, 0)) < 0)
     {
       perror ("socket");

@@ -1,5 +1,5 @@
 /* pop.c: client routines for talking to a POP3-protocol post-office server
-   Copyright (c) 1991,1993 Free Software Foundation, Inc.
+   Copyright (c) 1991, 1993, 1996 Free Software Foundation, Inc.
    Written by Jonathan Kamens, jik@security.ov.com.
 
 This file is part of GNU Emacs.
@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #ifdef HAVE_CONFIG_H
 #define NO_SHORTNAMES	/* Tell config not to load remap.h */
@@ -36,8 +37,20 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #include <sys/types.h>
+#ifdef WINDOWSNT
+#include "ntlib.h"
+#include <winsock.h>
+#undef SOCKET_ERROR
+#define RECV(s,buf,len,flags) recv(s,buf,len,flags)
+#define SEND(s,buf,len,flags) send(s,buf,len,flags)
+#define CLOSESOCKET(s) closesocket(s)
+#else
 #include <netinet/in.h>
 #include <sys/socket.h>
+#define RECV(s,buf,len,flags) read(s,buf,len)
+#define SEND(s,buf,len,flags) write(s,buf,len)
+#define CLOSESOCKET(s) close(s)
+#endif
 #include <pop.h>
 
 #ifdef sun
@@ -75,6 +88,7 @@ extern char *getenv (/* char * */);
 extern char *getlogin (/* void */);
 extern char *getpass (/* char * */);
 extern char *strerror (/* int */);
+extern char *index ();
 
 #ifdef KERBEROS
 #ifndef KRB5
@@ -86,8 +100,10 @@ extern char *krb_realmofhost (/* char * */);
 #endif /* ! KRB5 */
 #endif /* KERBEROS */
 
+#ifndef WINDOWSNT
 #if !defined(HAVE_H_ERRNO) || !defined(HAVE_CONFIG_H)
 extern int h_errno;
+#endif
 #endif
 
 static int socket_connection (/* char *, int */);
@@ -104,7 +120,11 @@ static char *find_crlf (/* char * */);
 #define ERROR_MAX 80		/* a pretty arbitrary size */
 #define POP_PORT 110
 #define KPOP_PORT 1109
+#ifdef WINDOWSNT
+#define POP_SERVICE "pop3"	/* we don't want the POP2 port! */
+#else
 #define POP_SERVICE "pop"
+#endif
 #ifdef KERBEROS
 #ifdef KRB5
 #define KPOP_SERVICE "k5pop";
@@ -267,6 +287,7 @@ pop_open (host, username, password, flags)
   server->buffer_index = 0;
   server->buffer_size = GETLINE_MIN;
   server->in_multi = 0;
+  server->trash_started = 0;
 
   if (getok (server))
     return (0);
@@ -559,7 +580,7 @@ pop_retrieve (server, message, markfrom)
    * allocate more space for them below.
    */
   bufsize = sizes[0] + (markfrom ? 5 : 0);
-  ptr = malloc (bufsize);
+  ptr = (char *)malloc (bufsize);
   free ((char *) IDs);
   free ((char *) sizes);
 
@@ -586,7 +607,7 @@ pop_retrieve (server, message, markfrom)
 	  if (++fromcount == 5)
 	    {
 	      bufsize += 5;
-	      ptr = realloc (ptr, bufsize);
+	      ptr = (char *)realloc (ptr, bufsize);
 	      if (! ptr)
 		{
 		  strcpy (pop_error, "Out of memory in pop_retrieve");
@@ -906,7 +927,7 @@ pop_reset (server)
  * Return value: 0 for success, non-zero otherwise with error in
  * 	pop_error.
  *
- * Side Effects: The popserver passed in is unuseable after this
+ * Side Effects: The popserver passed in is unusable after this
  * 	function is called, even if an error occurs.
  */
 int
@@ -936,6 +957,10 @@ pop_quit (server)
 
   return (ret);
 }
+
+#ifdef WINDOWSNT
+static int have_winsock = 0;
+#endif
 
 /*
  * Function: socket_connection
@@ -979,6 +1004,14 @@ socket_connection (host, flags)
 #endif /* KERBEROS */
 
   int try_count = 0;
+
+#ifdef WINDOWSNT
+  {
+    WSADATA winsockData;
+    if (WSAStartup (0x101, &winsockData) == 0)
+      have_winsock = 1;
+  }
+#endif
 
   do
     {
@@ -1054,7 +1087,7 @@ socket_connection (host, flags)
      
   if (! *hostent->h_addr_list)
     {
-      (void) close (sock);
+      CLOSESOCKET (sock);
       strcpy (pop_error, CONNECT_ERROR);
       strncat (pop_error, strerror (errno),
 	       ERROR_MAX - sizeof (CONNECT_ERROR));
@@ -1075,7 +1108,7 @@ socket_connection (host, flags)
 	  strcpy (pop_error, KRB_ERROR);
 	  strncat (pop_error, error_message (rem),
 		   ERROR_MAX - sizeof(KRB_ERROR));
-	  (void) close (sock);
+	  CLOSESOCKET (sock);
 	  return (-1);
 	}
 
@@ -1132,7 +1165,7 @@ socket_connection (host, flags)
 	  if (err_ret)
 	    krb5_free_error (err_ret);
 
-	  (void) close (sock);
+	  CLOSESOCKET (sock);
 	  return (-1);
 	}
 #else  /* ! KRB5 */	  
@@ -1149,7 +1182,7 @@ socket_connection (host, flags)
 	  strcpy (pop_error, KRB_ERROR);
 	  strncat (pop_error, krb_err_txt[rem],
 		   ERROR_MAX - sizeof (KRB_ERROR));
-	  (void) close (sock);
+	  CLOSESOCKET (sock);
 	  return (-1);
 	}
 #endif /* KRB5 */
@@ -1233,7 +1266,7 @@ getline (server)
       if (server->data == server->buffer_size - 1)
 	{
 	  server->buffer_size += GETLINE_INCR;
-	  server->buffer = realloc (server->buffer, server->buffer_size);
+	  server->buffer = (char *)realloc (server->buffer, server->buffer_size);
 	  if (! server->buffer)
 	    {
 	      strcpy (pop_error, "Out of memory in getline");
@@ -1241,8 +1274,8 @@ getline (server)
 	      return (0);
 	    }
 	}
-      ret = read (server->file, server->buffer + server->data,
-		  server->buffer_size - server->data - 1);
+      ret = RECV (server->file, server->buffer + server->data,
+		  server->buffer_size - server->data - 1, 0);
       if (ret < 0)
 	{
 	  strcpy (pop_error, GETLINE_ERROR);
@@ -1347,7 +1380,7 @@ fullwrite (fd, buf, nbytes)
   int ret;
 
   cp = buf;
-  while ((ret = write (fd, cp, nbytes)) > 0)
+  while ((ret = SEND (fd, cp, nbytes, 0)) > 0)
     {
       cp += ret;
       nbytes -= ret;
@@ -1368,7 +1401,7 @@ fullwrite (fd, buf, nbytes)
  * 
  * Returns: 0 for success, else for failure and puts error in pop_error.
  *
- * Side effects: On failure, may make the connection unuseable.
+ * Side effects: On failure, may make the connection unusable.
  */
 static int
 getok (server)
@@ -1439,7 +1472,7 @@ gettermination (server)
  * 	try to get the server to quit, but ignoring any responses that
  * 	are received.
  *
- * Side effects: The server is unuseable after this function returns.
+ * Side effects: The server is unusable after this function returns.
  * 	Changes made to the maildrop since the session was started (or
  * 	since the last pop_reset) may be lost.
  */
@@ -1466,10 +1499,15 @@ pop_trash (server)
 {
   if (server->file >= 0)
     {
+      /* avoid recursion; sendline can call pop_trash */
+      if (server->trash_started)
+	return;
+      server->trash_started = 1;
+
       sendline (server, "RSET");
       sendline (server, "QUIT");
 
-      close (server->file);
+      CLOSESOCKET (server->file);
       server->file = -1;
       if (server->buffer)
 	{
@@ -1477,6 +1515,11 @@ pop_trash (server)
 	  server->buffer = 0;
 	}
     }
+
+#ifdef WINDOWSNT
+  if (have_winsock)
+    WSACleanup ();
+#endif
 }
 
 /* Return a pointer to the first CRLF in IN_STRING,

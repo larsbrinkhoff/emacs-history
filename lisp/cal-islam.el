@@ -1,4 +1,4 @@
-;;; cal-islamic.el --- calendar functions for the Islamic calendar.
+;;; cal-islam.el --- calendar functions for the Islamic calendar.
 
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -486,6 +487,6 @@ Prefix arg will make the entry nonmarking."
          (calendar-cursor-to-date t)))))
      arg)))
 
-(provide 'cal-islamic)
+(provide 'cal-islam)
 
-;;; cal-islamic.el ends here
+;;; cal-islam.el ends here

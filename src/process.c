@@ -1,5 +1,6 @@
 /* Asynchronous subprocess control for GNU Emacs.
-   Copyright (C) 1985, 86, 87, 88, 93, 94, 95 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 88, 93, 94, 95, 1996
+      Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <signal.h>
@@ -247,6 +249,9 @@ Lisp_Object Vprocess_alist;
 int proc_buffered_char[MAXDESC];
 
 static Lisp_Object get_process ();
+
+extern EMACS_TIME timer_check ();
+extern int timers_run;
 
 /* Maximum number of bytes to send to a pty without an eof.  */
 static int pty_max_bytes;
@@ -502,17 +507,16 @@ remove_process (proc)
 
   pair = Frassq (proc, Vprocess_alist);
   Vprocess_alist = Fdelq (pair, Vprocess_alist);
-  Fset_marker (XPROCESS (proc)->mark, Qnil, Qnil);
 
   deactivate_process (proc);
 }
 
 DEFUN ("processp", Fprocessp, Sprocessp, 1, 1, 0,
   "Return t if OBJECT is a process.")
-  (obj)
-     Lisp_Object obj;
+  (object)
+     Lisp_Object object;
 {
-  return PROCESSP (obj) ? Qt : Qnil;
+  return PROCESSP (object) ? Qt : Qnil;
 }
 
 DEFUN ("get-process", Fget_process, Sget_process, 1, 1, 0,
@@ -529,13 +533,13 @@ DEFUN ("get-process", Fget_process, Sget_process, 1, 1, 0,
 DEFUN ("get-buffer-process", Fget_buffer_process, Sget_buffer_process, 1, 1, 0,
   "Return the (or, a) process associated with BUFFER.\n\
 BUFFER may be a buffer or the name of one.")
-  (name)
-     register Lisp_Object name;
+  (buffer)
+     register Lisp_Object buffer;
 {
   register Lisp_Object buf, tail, proc;
 
-  if (NILP (name)) return Qnil;
-  buf = Fget_buffer (name);
+  if (NILP (buffer)) return Qnil;
+  buf = Fget_buffer (buffer);
   if (NILP (buf)) return Qnil;
 
   for (tail = Vprocess_alist; !NILP (tail); tail = Fcdr (tail))
@@ -590,27 +594,27 @@ DEFUN ("delete-process", Fdelete_process, Sdelete_process, 1, 1, 0,
   "Delete PROCESS: kill it and forget about it immediately.\n\
 PROCESS may be a process, a buffer, the name of a process or buffer, or\n\
 nil, indicating the current buffer's process.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  proc = get_process (proc);
-  XPROCESS (proc)->raw_status_low = Qnil;
-  XPROCESS (proc)->raw_status_high = Qnil;
-  if (NETCONN_P (proc))
+  process = get_process (process);
+  XPROCESS (process)->raw_status_low = Qnil;
+  XPROCESS (process)->raw_status_high = Qnil;
+  if (NETCONN_P (process))
     {
-      XPROCESS (proc)->status = Fcons (Qexit, Fcons (make_number (0), Qnil));
-      XSETINT (XPROCESS (proc)->tick, ++process_tick);
+      XPROCESS (process)->status = Fcons (Qexit, Fcons (make_number (0), Qnil));
+      XSETINT (XPROCESS (process)->tick, ++process_tick);
     }
-  else if (XINT (XPROCESS (proc)->infd) >= 0)
+  else if (XINT (XPROCESS (process)->infd) >= 0)
     {
-      Fkill_process (proc, Qnil);
+      Fkill_process (process, Qnil);
       /* Do this now, since remove_process will make sigchld_handler do nothing.  */
-      XPROCESS (proc)->status 
+      XPROCESS (process)->status 
 	= Fcons (Qsignal, Fcons (make_number (SIGKILL), Qnil));
-      XSETINT (XPROCESS (proc)->tick, ++process_tick);
+      XSETINT (XPROCESS (process)->tick, ++process_tick);
       status_notify ();
     }
-  remove_process (proc);
+  remove_process (process);
   return Qnil;
 }
 
@@ -625,27 +629,27 @@ closed -- for a network stream connection that is closed.\n\
 nil -- if arg is a process name and no such process exists.\n\
 PROCESS may be a process, a buffer, the name of a process or buffer, or\n\
 nil, indicating the current buffer's process.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
   register struct Lisp_Process *p;
   register Lisp_Object status;
 
-  if (STRINGP (proc))
-    proc = Fget_process (proc);
+  if (STRINGP (process))
+    process = Fget_process (process);
   else
-    proc = get_process (proc);
+    process = get_process (process);
 
-  if (NILP (proc))
-    return proc;
+  if (NILP (process))
+    return process;
 
-  p = XPROCESS (proc);
+  p = XPROCESS (process);
   if (!NILP (p->raw_status_low))
     update_status (p);
   status = p->status;
   if (CONSP (status))
     status = XCONS (status)->car;
-  if (NETCONN_P (proc))
+  if (NETCONN_P (process))
     {
       if (EQ (status, Qrun))
 	status = Qopen;
@@ -659,14 +663,14 @@ DEFUN ("process-exit-status", Fprocess_exit_status, Sprocess_exit_status,
        1, 1, 0,
   "Return the exit status of PROCESS or the signal number that killed it.\n\
 If PROCESS has not yet exited or died, return 0.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  if (!NILP (XPROCESS (proc)->raw_status_low))
-    update_status (XPROCESS (proc));
-  if (CONSP (XPROCESS (proc)->status))
-    return XCONS (XCONS (XPROCESS (proc)->status)->cdr)->car;
+  CHECK_PROCESS (process, 0);
+  if (!NILP (XPROCESS (process)->raw_status_low))
+    update_status (XPROCESS (process));
+  if (CONSP (XPROCESS (process)->status))
+    return XCONS (XCONS (XPROCESS (process)->status)->cdr)->car;
   return make_number (0);
 }
 
@@ -674,22 +678,22 @@ DEFUN ("process-id", Fprocess_id, Sprocess_id, 1, 1, 0,
   "Return the process id of PROCESS.\n\
 This is the pid of the Unix process which PROCESS uses or talks to.\n\
 For a network connection, this value is nil.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->pid;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->pid;
 }
 
 DEFUN ("process-name", Fprocess_name, Sprocess_name, 1, 1, 0,
   "Return the name of PROCESS, as a string.\n\
 This is the name of the program invoked in PROCESS,\n\
 possibly modified to make it unique among process names.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->name;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->name;
 }
 
 DEFUN ("process-command", Fprocess_command, Sprocess_command, 1, 1, 0,
@@ -697,34 +701,34 @@ DEFUN ("process-command", Fprocess_command, Sprocess_command, 1, 1, 0,
 This is a list of strings, the first string being the program executed\n\
 and the rest of the strings being the arguments given to it.\n\
 For a non-child channel, this is nil.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->command;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->command;
 }
 
 DEFUN ("process-tty-name", Fprocess_tty_name, Sprocess_tty_name, 1, 1, 0,
   "Return the name of the terminal PROCESS uses, or nil if none.\n\
 This is the terminal that the process itself reads and writes on,\n\
 not the name of the pty that Emacs uses to talk with that terminal.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->tty_name;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->tty_name;
 }
 
 DEFUN ("set-process-buffer", Fset_process_buffer, Sset_process_buffer,
   2, 2, 0,
   "Set buffer associated with PROCESS to BUFFER (a buffer, or nil).")
-  (proc, buffer)
-     register Lisp_Object proc, buffer;
+  (process, buffer)
+     register Lisp_Object process, buffer;
 {
-  CHECK_PROCESS (proc, 0);
+  CHECK_PROCESS (process, 0);
   if (!NILP (buffer))
     CHECK_BUFFER (buffer, 1);
-  XPROCESS (proc)->buffer = buffer;
+  XPROCESS (process)->buffer = buffer;
   return buffer;
 }
 
@@ -733,21 +737,21 @@ DEFUN ("process-buffer", Fprocess_buffer, Sprocess_buffer,
   "Return the buffer PROCESS is associated with.\n\
 Output from PROCESS is inserted in this buffer\n\
 unless PROCESS has a filter.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->buffer;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->buffer;
 }
 
 DEFUN ("process-mark", Fprocess_mark, Sprocess_mark,
   1, 1, 0,
   "Return the marker for the end of the last output from PROCESS.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->mark;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->mark;
 }
 
 DEFUN ("set-process-filter", Fset_process_filter, Sset_process_filter,
@@ -758,21 +762,21 @@ When a process has a filter, each time it does output\n\
 the entire string of output is passed to the filter.\n\
 The filter gets two arguments: the process and the string of output.\n\
 If the process has a filter, its buffer is not used for output.")
-  (proc, filter)
-     register Lisp_Object proc, filter;
+  (process, filter)
+     register Lisp_Object process, filter;
 {
-  CHECK_PROCESS (proc, 0);
+  CHECK_PROCESS (process, 0);
   if (EQ (filter, Qt))
     {
-      FD_CLR (XINT (XPROCESS (proc)->infd), &input_wait_mask);
-      FD_CLR (XINT (XPROCESS (proc)->infd), &non_keyboard_wait_mask);
+      FD_CLR (XINT (XPROCESS (process)->infd), &input_wait_mask);
+      FD_CLR (XINT (XPROCESS (process)->infd), &non_keyboard_wait_mask);
     }
-  else if (EQ (XPROCESS (proc)->filter, Qt))
+  else if (EQ (XPROCESS (process)->filter, Qt))
     {
-      FD_SET (XINT (XPROCESS (proc)->infd), &input_wait_mask);
-      FD_SET (XINT (XPROCESS (proc)->infd), &non_keyboard_wait_mask);
+      FD_SET (XINT (XPROCESS (process)->infd), &input_wait_mask);
+      FD_SET (XINT (XPROCESS (process)->infd), &non_keyboard_wait_mask);
     }
-  XPROCESS (proc)->filter = filter;
+  XPROCESS (process)->filter = filter;
   return filter;
 }
 
@@ -780,11 +784,11 @@ DEFUN ("process-filter", Fprocess_filter, Sprocess_filter,
   1, 1, 0,
   "Returns the filter function of PROCESS; nil if none.\n\
 See `set-process-filter' for more info on filter functions.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->filter;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->filter;
 }
 
 DEFUN ("set-process-sentinel", Fset_process_sentinel, Sset_process_sentinel,
@@ -792,11 +796,11 @@ DEFUN ("set-process-sentinel", Fset_process_sentinel, Sset_process_sentinel,
   "Give PROCESS the sentinel SENTINEL; nil for none.\n\
 The sentinel is called as a function when the process changes state.\n\
 It gets two arguments: the process, and a string describing the change.")
-  (proc, sentinel)
-     register Lisp_Object proc, sentinel;
+  (process, sentinel)
+     register Lisp_Object process, sentinel;
 {
-  CHECK_PROCESS (proc, 0);
-  XPROCESS (proc)->sentinel = sentinel;
+  CHECK_PROCESS (process, 0);
+  XPROCESS (process)->sentinel = sentinel;
   return sentinel;
 }
 
@@ -804,23 +808,23 @@ DEFUN ("process-sentinel", Fprocess_sentinel, Sprocess_sentinel,
   1, 1, 0,
   "Return the sentinel of PROCESS; nil if none.\n\
 See `set-process-sentinel' for more info on sentinels.")
-  (proc)
-     register Lisp_Object proc;
+  (process)
+     register Lisp_Object process;
 {
-  CHECK_PROCESS (proc, 0);
-  return XPROCESS (proc)->sentinel;
+  CHECK_PROCESS (process, 0);
+  return XPROCESS (process)->sentinel;
 }
 
 DEFUN ("set-process-window-size", Fset_process_window_size,
   Sset_process_window_size, 3, 3, 0,
   "Tell PROCESS that it has logical window size HEIGHT and WIDTH.")
-  (proc, height, width)
-     register Lisp_Object proc, height, width;
+  (process, height, width)
+     register Lisp_Object process, height, width;
 {
-  CHECK_PROCESS (proc, 0);
+  CHECK_PROCESS (process, 0);
   CHECK_NATNUM (height, 0);
   CHECK_NATNUM (width, 0);
-  if (set_window_size (XINT (XPROCESS (proc)->infd),
+  if (set_window_size (XINT (XPROCESS (process)->infd),
 		       XINT (height), XINT(width)) <= 0)
     return Qnil;
   else
@@ -832,14 +836,14 @@ DEFUN ("process-kill-without-query", Fprocess_kill_without_query,
   "Say no query needed if PROCESS is running when Emacs is exited.\n\
 Optional second argument if non-nil says to require a query.\n\
 Value is t if a query was formerly required.")
-  (proc, value)
-     register Lisp_Object proc, value;
+  (process, value)
+     register Lisp_Object process, value;
 {
   Lisp_Object tem;
 
-  CHECK_PROCESS (proc, 0);
-  tem = XPROCESS (proc)->kill_without_query;
-  XPROCESS (proc)->kill_without_query = Fnull (value);
+  CHECK_PROCESS (process, 0);
+  tem = XPROCESS (process)->kill_without_query;
+  XPROCESS (process)->kill_without_query = Fnull (value);
 
   return Fnull (tem);
 }
@@ -1141,7 +1145,7 @@ Remaining arguments are strings to give program as arguments.")
 }
 
 /* This function is the unwind_protect form for Fstart_process.  If
-   PROC doesn't have its pid set, then we know someone has signalled
+   PROC doesn't have its pid set, then we know someone has signaled
    an error and the process wasn't started successfully, so we should
    remove it from the process list.  */
 static Lisp_Object
@@ -1197,9 +1201,19 @@ create_process (process, new_argv, current_dir)
 {
   int pid, inchannel, outchannel;
   int sv[2];
+#ifdef POSIX_SIGNALS
+  sigset_t procmask;
+  sigset_t blocked;
+  struct sigaction sigint_action;
+  struct sigaction sigquit_action;
+#ifdef AIX
+  struct sigaction sighup_action;
+#endif
+#else /* !POSIX_SIGNALS */
 #ifdef SIGCHLD
   SIGTYPE (*sigchld)();
 #endif
+#endif /* !POSIX_SIGNALS */
   /* Use volatile to protect variables from being clobbered by longjmp.  */
   volatile int forkin, forkout;
   volatile int pty_flag = 0;
@@ -1241,22 +1255,12 @@ create_process (process, new_argv, current_dir)
     }
 #else /* not SKTPAIR */
     {
-#ifdef WINDOWSNT
-      pipe_with_inherited_out (sv);
-      inchannel = sv[0];
-      forkout = sv[1];
-
-      pipe_with_inherited_in (sv);
-      forkin = sv[0];
-      outchannel = sv[1];
-#else /* not WINDOWSNT */
       pipe (sv);
       inchannel = sv[0];
       forkout = sv[1];
       pipe (sv);
       outchannel = sv[1];
       forkin = sv[0];
-#endif /* not WINDOWSNT */
     }
 #endif /* not SKTPAIR */
 
@@ -1277,9 +1281,11 @@ create_process (process, new_argv, current_dir)
 
 #ifdef O_NONBLOCK
   fcntl (inchannel, F_SETFL, O_NONBLOCK);
+  fcntl (outchannel, F_SETFL, O_NONBLOCK);
 #else
 #ifdef O_NDELAY
   fcntl (inchannel, F_SETFL, O_NDELAY);
+  fcntl (outchannel, F_SETFL, O_NDELAY);
 #endif
 #endif
 
@@ -1298,6 +1304,24 @@ create_process (process, new_argv, current_dir)
 
   /* Delay interrupts until we have a chance to store
      the new fork's pid in its process structure */
+#ifdef POSIX_SIGNALS
+  sigemptyset (&blocked);
+#ifdef SIGCHLD
+  sigaddset (&blocked, SIGCHLD);
+#endif
+#ifdef HAVE_VFORK
+  /* On many hosts (e.g. Solaris 2.4), if a vforked child calls `signal',
+     this sets the parent's signal handlers as well as the child's.
+     So delay all interrupts whose handlers the child might munge,
+     and record the current handlers so they can be restored later.  */
+  sigaddset (&blocked, SIGINT );  sigaction (SIGINT , 0, &sigint_action );
+  sigaddset (&blocked, SIGQUIT);  sigaction (SIGQUIT, 0, &sigquit_action);
+#ifdef AIX
+  sigaddset (&blocked, SIGHUP );  sigaction (SIGHUP , 0, &sighup_action );
+#endif
+#endif /* HAVE_VFORK */
+  sigprocmask (SIG_BLOCK, &blocked, &procmask);
+#else /* !POSIX_SIGNALS */
 #ifdef SIGCHLD
 #ifdef BSD4_1
   sighold (SIGCHLD);
@@ -1312,6 +1336,7 @@ create_process (process, new_argv, current_dir)
 #endif /* ordinary USG */
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
+#endif /* !POSIX_SIGNALS */
 
   FD_SET (inchannel, &input_wait_mask);
   FD_SET (inchannel, &non_keyboard_wait_mask);
@@ -1455,6 +1480,13 @@ create_process (process, new_argv, current_dir)
 #endif
 #endif /* HAVE_PTYS */
 
+	signal (SIGINT, SIG_DFL);
+	signal (SIGQUIT, SIG_DFL);
+
+	/* Stop blocking signals in the child.  */
+#ifdef POSIX_SIGNALS
+	sigprocmask (SIG_SETMASK, &procmask, 0);
+#else /* !POSIX_SIGNALS */
 #ifdef SIGCHLD
 #ifdef BSD4_1
 	sigrelse (SIGCHLD);
@@ -1468,9 +1500,7 @@ create_process (process, new_argv, current_dir)
 #endif /* ordinary USG */
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
-
-	signal (SIGINT, SIG_DFL);
-	signal (SIGQUIT, SIG_DFL);
+#endif /* !POSIX_SIGNALS */
 
 	if (pty_flag)
 	  child_setup_tty (xforkout);
@@ -1485,42 +1515,59 @@ create_process (process, new_argv, current_dir)
     environ = save_environ;
   }
 
+  /* This runs in the Emacs process.  */
   if (pid < 0)
     {
       if (forkin >= 0)
 	close (forkin);
       if (forkin != forkout && forkout >= 0)
 	close (forkout);
-      report_file_error ("Doing vfork", Qnil);
     }
-  
-  XSETFASTINT (XPROCESS (process)->pid, pid);
+  else
+    {
+      /* vfork succeeded.  */
+      XSETFASTINT (XPROCESS (process)->pid, pid);
 
 #ifdef WINDOWSNT
-  register_child (pid, inchannel);
+      register_child (pid, inchannel);
 #endif /* WINDOWSNT */
 
-  /* If the subfork execv fails, and it exits,
-     this close hangs.  I don't know why.
-     So have an interrupt jar it loose.  */
-  stop_polling ();
-  signal (SIGALRM, create_process_1);
-  alarm (1);
-  XPROCESS (process)->subtty = Qnil;
-  if (forkin >= 0)
-    close (forkin);
-  alarm (0);
-  start_polling ();
-  if (forkin != forkout && forkout >= 0)
-    close (forkout);
+      /* If the subfork execv fails, and it exits,
+	 this close hangs.  I don't know why.
+	 So have an interrupt jar it loose.  */
+      stop_polling ();
+      signal (SIGALRM, create_process_1);
+      alarm (1);
+      XPROCESS (process)->subtty = Qnil;
+      if (forkin >= 0)
+	close (forkin);
+      alarm (0);
+      start_polling ();
+      if (forkin != forkout && forkout >= 0)
+	close (forkout);
 
 #ifdef HAVE_PTYS
-  if (pty_flag)
-    XPROCESS (process)->tty_name = build_string (pty_name);
-  else
+      if (pty_flag)
+	XPROCESS (process)->tty_name = build_string (pty_name);
+      else
 #endif
-    XPROCESS (process)->tty_name = Qnil;
+	XPROCESS (process)->tty_name = Qnil;
+    }
 
+  /* Restore the signal state whether vfork succeeded or not.
+     (We will signal an error, below, if it failed.)  */
+#ifdef POSIX_SIGNALS
+#ifdef HAVE_VFORK
+  /* Restore the parent's signal handlers.  */
+  sigaction (SIGINT, &sigint_action, 0);
+  sigaction (SIGQUIT, &sigquit_action, 0);
+#ifdef AIX
+  sigaction (SIGHUP, &sighup_action, 0);
+#endif
+#endif /* HAVE_VFORK */
+  /* Stop blocking signals in the parent.  */
+  sigprocmask (SIG_SETMASK, &procmask, 0);
+#else /* !POSIX_SIGNALS */
 #ifdef SIGCHLD
 #ifdef BSD4_1
   sigrelse (SIGCHLD);
@@ -1538,6 +1585,11 @@ create_process (process, new_argv, current_dir)
 #endif /* ordinary USG */
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
+#endif /* !POSIX_SIGNALS */
+
+  /* Now generate the error if vfork failed.  */
+  if (pid < 0)
+    report_file_error ("Doing vfork", Qnil);
 }
 #endif /* not VMS */
 
@@ -1596,13 +1648,23 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
       port = svc_info->s_port;
     }
 
+  /* Slow down polling to every ten seconds.
+     Some kernels have a bug which causes retrying connect to fail
+     after a connect.  Polling can interfere with gethostbyname too.  */
+#ifdef POLL_FOR_INPUT
+  bind_polling_period (10);
+#endif
+
 #ifndef TERM
   while (1)
     {
 #ifdef TRY_AGAIN
       h_errno = 0;
 #endif
+      immediate_quit = 1;
+      QUIT;
       host_info_ptr = gethostbyname (XSTRING (host)->data);
+      immediate_quit = 0;
 #ifdef TRY_AGAIN
       if (! (host_info_ptr == 0 && h_errno == TRY_AGAIN))
 #endif
@@ -1628,7 +1690,8 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
 #endif
       host_info.h_addr = (char*)(&numeric_addr);
       addr_list[1] = 0;
-      host_info.h_length = strlen (addr_list[0]);
+      /* numeric_addr isn't null-terminated; it has fixed length.  */
+      host_info.h_length = sizeof (numeric_addr);
     }
 
   bzero (&address, sizeof address);
@@ -1650,18 +1713,17 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
   if (interrupt_input)
     unrequest_sigio ();
 
-  /* Slow down polling to every ten seconds.
-     Some kernels have a bug which causes retrying connect to fail
-     after a connect.  */
-#ifdef POLL_FOR_INPUT
-  bind_polling_period (10);
-#endif
-
  loop:
+
+  immediate_quit = 1;
+  QUIT;
+
   if (connect (s, (struct sockaddr *) &address, sizeof address) == -1
       && errno != EISCONN)
     {
       int xerrno = errno;
+
+      immediate_quit = 0;
 
       if (errno == EINTR)
 	goto loop;
@@ -1684,6 +1746,8 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
       report_file_error ("connection failed",
 			 Fcons (host, Fcons (name, Qnil)));
     }
+
+  immediate_quit = 0;
 
 #ifdef POLL_FOR_INPUT
   unbind_to (count, Qnil);
@@ -1726,7 +1790,7 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
   XPROCESS (proc)->filter = Qnil;
   XPROCESS (proc)->command = Qnil;
   XPROCESS (proc)->pid = Qnil;
-  XSETINT (XPROCESS (proc)->infd, s);
+  XSETINT (XPROCESS (proc)->infd, inch);
   XSETINT (XPROCESS (proc)->outfd, outch);
   XPROCESS (proc)->status = Qrun;
   FD_SET (inch, &input_wait_mask);
@@ -1819,8 +1883,8 @@ Non-nil second arg TIMEOUT and third arg TIMEOUT-MSECS are number of\n\
 seconds and microseconds to wait; return after that much time whether\n\
 or not there is input.\n\
 Return non-nil iff we received any output before the timeout expired.")
-  (proc, timeout, timeout_msecs)
-     register Lisp_Object proc, timeout, timeout_msecs;
+  (process, timeout, timeout_msecs)
+     register Lisp_Object process, timeout, timeout_msecs;
 {
   int seconds;
   int useconds;
@@ -1855,22 +1919,22 @@ Return non-nil iff we received any output before the timeout expired.")
     {
       CHECK_NUMBER (timeout, 1);
       seconds = XINT (timeout);
-      if (seconds <= 0)
+      if (seconds < 0 || (seconds == 0 && useconds == 0))
 	seconds = -1;
     }
   else
     {
-      if (NILP (proc))
+      if (NILP (process))
 	seconds = -1;
       else
 	seconds = 0;
     }
 
-  if (NILP (proc))
-    XSETFASTINT (proc, 0);
+  if (NILP (process))
+    XSETFASTINT (process, 0);
 
   return
-    (wait_reading_process_input (seconds, useconds, proc, 0)
+    (wait_reading_process_input (seconds, useconds, process, 0)
      ? Qt : Qnil);
 }
 
@@ -1884,6 +1948,12 @@ Return non-nil iff we received any output before the timeout expired.")
    For that purpose, this must be 0
    when not inside wait_reading_process_input.  */
 static int waiting_for_user_input_p;
+
+/* This is here so breakpoints can be put on it.  */
+static
+wait_reading_process_input_1 ()
+{
+}
 
 /* Read and dispose of subprocess output while waiting for timeout to
    elapse and/or keyboard input to be available.
@@ -1964,6 +2034,8 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 
   while (1)
     {
+      int timeout_reduced_for_timers = 0;
+
       /* If calling from keyboard input, do not quit
 	 since we want to return C-g as an input character.
 	 Otherwise, do pending quit if requested.  */
@@ -1994,6 +2066,44 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       else
 	{
 	  EMACS_SET_SECS_USECS (timeout, 100000, 0);
+	}
+
+      /* Normally we run timers here.
+	 But not if wait_for_cell; in those cases,
+	 the wait is supposed to be short,
+	 and those callers cannot handle running arbitrary Lisp code here.  */
+      if (! wait_for_cell)
+	{
+	  EMACS_TIME timer_delay;
+	  int old_timers_run;
+
+	retry:
+	  old_timers_run = timers_run;
+	  timer_delay = timer_check (1);
+	  if (timers_run != old_timers_run && do_display)
+	    {
+	      redisplay_preserve_echo_area ();
+	      /* We must retry, since a timer may have requeued itself
+		 and that could alter the time_delay.  */
+	      goto retry;
+	    }
+
+	  if (! EMACS_TIME_NEG_P (timer_delay) && time_limit != -1)
+	    {
+	      EMACS_TIME difference;
+	      EMACS_SUB_TIME (difference, timer_delay, timeout);
+	      if (EMACS_TIME_NEG_P (difference))
+		{
+		  timeout = timer_delay;
+		  timeout_reduced_for_timers = 1;
+		}
+	    }
+	  /* If time_limit is -1, we are not going to wait at all.  */
+	  else if (time_limit != -1)
+	    {
+	      /* This is so a breakpoint can be put here.  */
+	      wait_reading_process_input_1 ();
+	    }
 	}
 
       /* Cause C-g and alarm signals to take immediate action,
@@ -2071,7 +2181,8 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       /*  If we woke up due to SIGWINCH, actually change size now.  */
       do_pending_window_change ();
 
-      if (time_limit && nfds == 0) /* timeout elapsed */
+      if (time_limit && nfds == 0 && ! timeout_reduced_for_timers)
+	/* We wanted the full specified time, so return now.  */
 	break;
       if (nfds < 0)
 	{
@@ -2108,7 +2219,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 #endif
 	    }
 	  else
-	    error("select error: %s", strerror (xerrno));
+	    error ("select error: %s", strerror (xerrno));
 	}
 #if defined(sun) && !defined(USG5_4)
       else if (nfds > 0 && keyboard_bit_set (&Available)
@@ -2127,12 +2238,24 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       /* If there is any, return immediately
 	 to give it higher priority than subprocesses */
 
-      /* We used to do this if wait_for_cell,
-	 but that caused infinite recursion in selection request events.  */
-      if ((XINT (read_kbd) || wait_for_cell)
+      if ((XINT (read_kbd) != 0)
+	  && detect_input_pending_run_timers (do_display))
+	{
+	  swallow_events (do_display);
+	  if (detect_input_pending_run_timers (do_display))
+	    break;
+	}
+
+      /* If wait_for_cell. check for keyboard input
+	 but don't run any timers.
+	 ??? (It seems wrong to me to check for keyboard
+	 input at all when wait_for_cell, but the code
+	 has been this way since July 1994.
+	 Try changing this after version 19.31.)  */
+      if (wait_for_cell
 	  && detect_input_pending ())
 	{
-	  swallow_events ();
+	  swallow_events (do_display);
 	  if (detect_input_pending ())
 	    break;
 	}
@@ -2149,7 +2272,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 
       if (XINT (read_kbd) && interrupt_input
 	  && (keyboard_bit_set (&Available)))
-	kill (0, SIGIO);
+	kill (getpid (), SIGIO);
 #endif
 
       if (! wait_proc)
@@ -2330,20 +2453,12 @@ read_process_output (proc, channel)
 #else /* not VMS */
 
   if (proc_buffered_char[channel] < 0)
-#ifdef WINDOWSNT
-    nchars = read_child_output (channel, chars, sizeof (chars));
-#else
-    nchars = read (channel, chars, sizeof chars);
-#endif
+    nchars = read (channel, chars, sizeof (chars));
   else
     {
       chars[0] = proc_buffered_char[channel];
       proc_buffered_char[channel] = -1;
-#ifdef WINDOWSNT
-      nchars = read_child_output (channel, chars + 1, sizeof (chars) - 1);
-#else
-      nchars = read (channel, chars + 1, sizeof chars - 1);
-#endif
+      nchars = read (channel, chars + 1, sizeof (chars) - 1);
       if (nchars < 0)
 	nchars = 1;
       else
@@ -3095,12 +3210,7 @@ SIGCODE may be an integer, or a symbol whose name is a signal name.")
 
 #undef handle_signal
 
-#ifdef WINDOWSNT
-  /* Only works for kill-type signals */
-  return make_number (win32_kill_process (XINT (pid), XINT (sigcode)));
-#else
   return make_number (kill (XINT (pid), XINT (sigcode)));
-#endif
 }
 
 DEFUN ("process-send-eof", Fprocess_send_eof, Sprocess_send_eof, 0, 1, 0,
@@ -3236,7 +3346,7 @@ sigchld_handler (signo)
       /* Find the process that signaled us, and record its status.  */
 
       p = 0;
-      for (tail = Vprocess_alist; XSYMBOL (tail) != XSYMBOL (Qnil); tail = XCONS (tail)->cdr)
+      for (tail = Vprocess_alist; CONSP (tail); tail = XCONS (tail)->cdr)
 	{
 	  proc = XCONS (XCONS (tail)->car)->cdr;
 	  p = XPROCESS (proc);
@@ -3248,7 +3358,7 @@ sigchld_handler (signo)
       /* Look for an asynchronous process whose pid hasn't been filled
 	 in yet.  */
       if (p == 0)
-	for (tail = Vprocess_alist; XSYMBOL (tail) != XSYMBOL (Qnil); tail = XCONS (tail)->cdr)
+	for (tail = Vprocess_alist; CONSP (tail); tail = XCONS (tail)->cdr)
 	  {
 	    proc = XCONS (XCONS (tail)->car)->cdr;
 	    p = XPROCESS (proc);
@@ -3689,6 +3799,8 @@ The value takes effect when `start-process' is called.");
 
 extern int frame_garbaged;
 
+extern EMACS_TIME timer_check ();
+extern int timers_run;
 
 /* As described above, except assuming that there are no subprocesses:
 
@@ -3704,6 +3816,8 @@ extern int frame_garbaged;
      1 to return when input is available, or
      -1 means caller will actually read the input, so don't throw to
        the quit handler.
+     a cons cell, meaning wait until its car is non-nil
+       (and gobble terminal input into the buffer if any arrives), or
      We know that read_kbd will never be a Lisp_Process, since
      `subprocesses' isn't defined.
 
@@ -3718,15 +3832,21 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
      Lisp_Object read_kbd;
      int do_display;
 {
-  EMACS_TIME end_time, timeout, *timeout_p;
-  int waitchannels;
+  EMACS_TIME end_time, timeout;
+  SELECT_TYPE waitchannels;
+  int xerrno;
+  Lisp_Object *wait_for_cell = 0;
+
+  /* If waiting for non-nil in a cell, record where.  */
+  if (CONSP (read_kbd))
+    {
+      wait_for_cell = &XCONS (read_kbd)->car;
+      XSETFASTINT (read_kbd, 0);
+    }
 
   /* What does time_limit really mean?  */
   if (time_limit || microsecs)
     {
-      /* It's not infinite.  */
-      timeout_p = &timeout;
-
       if (time_limit == -1)
 	/* In fact, it's zero.  */
 	EMACS_SET_SECS_USECS (timeout, 0, 0);
@@ -3739,7 +3859,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
     }
   else
     /* It's infinite.  */
-    timeout_p = 0;
+    EMACS_SET_SECS_USECS (timeout, 100000, 0);
 
   /* Turn off periodic alarms (in case they are in use)
      because the select emulator uses alarms.  */
@@ -3748,8 +3868,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
   for (;;)
     {
       int nfds;
-
-      waitchannels = XINT (read_kbd) ? 1 : 0;
+      int timeout_reduced_for_timers = 0;
 
       /* If calling from keyboard input, do not quit
 	 since we want to return C-g as an input character.
@@ -3757,12 +3876,50 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       if (XINT (read_kbd) >= 0)
 	QUIT;
 
-      if (timeout_p)
+      /* Exit now if the cell we're waiting for became non-nil.  */
+      if (wait_for_cell && ! NILP (*wait_for_cell))
+	break;
+
+      /* Compute time from now till when time limit is up */
+      /* Exit if already run out */
+      if (time_limit > 0 || microsecs)
 	{
-	  EMACS_GET_TIME (*timeout_p);
-	  EMACS_SUB_TIME (*timeout_p, end_time, *timeout_p);
-	  if (EMACS_TIME_NEG_P (*timeout_p))
+	  EMACS_GET_TIME (timeout);
+	  EMACS_SUB_TIME (timeout, end_time, timeout);
+	  if (EMACS_TIME_NEG_P (timeout))
 	    break;
+	}
+
+      /* If our caller will not immediately handle keyboard events,
+	 run timer events directly.
+	 (Callers that will immediately read keyboard events
+	 call timer_delay on their own.)  */
+      if (! wait_for_cell)
+	{
+	  EMACS_TIME timer_delay;
+	  int old_timers_run;
+
+	retry:
+	  old_timers_run = timers_run;
+	  timer_delay = timer_check (1);
+	  if (timers_run != old_timers_run && do_display)
+	    {
+	      redisplay_preserve_echo_area ();
+	      /* We must retry, since a timer may have requeued itself
+		 and that could alter the time delay.  */
+	      goto retry;
+	    }
+
+	  if (! EMACS_TIME_NEG_P (timer_delay) && time_limit != -1)
+	    {
+	      EMACS_TIME difference;
+	      EMACS_SUB_TIME (difference, timer_delay, timeout);
+	      if (EMACS_TIME_NEG_P (difference))
+		{
+		  timeout = timer_delay;
+		  timeout_reduced_for_timers = 1;
+		}
+	    }
 	}
 
       /* Cause C-g and alarm signals to take immediate action,
@@ -3770,16 +3927,33 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       if (XINT (read_kbd) < 0)
 	set_waiting_for_input (&timeout);
 
+      /* Wait till there is something to do.  */
+
+      if (! XINT (read_kbd) && wait_for_cell == 0)
+	FD_ZERO (&waitchannels);
+      else
+	FD_SET (0, &waitchannels);
+
       /* If a frame has been newly mapped and needs updating,
 	 reprocess its display stuff.  */
       if (frame_garbaged && do_display)
-	redisplay_preserve_echo_area ();
+	{
+	  clear_waiting_for_input ();
+	  redisplay_preserve_echo_area ();
+	  if (XINT (read_kbd) < 0)
+	    set_waiting_for_input (&timeout);
+	}
 
       if (XINT (read_kbd) && detect_input_pending ())
-	nfds = 0;
+	{
+	  nfds = 0;
+	  FD_ZERO (&waitchannels);
+	}
       else
 	nfds = select (1, &waitchannels, (SELECT_TYPE *)0, (SELECT_TYPE *)0,
-		       timeout_p);
+		       &timeout);
+
+      xerrno = errno;
 
       /* Make C-g and alarm signals set flags again */
       clear_waiting_for_input ();
@@ -3787,12 +3961,18 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       /*  If we woke up due to SIGWINCH, actually change size now.  */
       do_pending_window_change ();
 
+      if (time_limit && nfds == 0 && ! timeout_reduced_for_timers)
+	/* We waited the full specified time, so return now.  */
+	break;
+
       if (nfds == -1)
 	{
 	  /* If the system call was interrupted, then go around the
 	     loop again.  */
-	  if (errno == EINTR)
-	    waitchannels = 0;
+	  if (xerrno == EINTR)
+	    FD_ZERO (&waitchannels);
+	  else
+	    error ("select error: %s", strerror (xerrno));
 	}
 #ifdef sun
       else if (nfds > 0 && (waitchannels & 1)  && interrupt_input)
@@ -3801,12 +3981,35 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 #endif
 #ifdef SIGIO
       if (XINT (read_kbd) && interrupt_input && (waitchannels & 1))
-	kill (0, SIGIO);
+	kill (getpid (), SIGIO);
 #endif
 
-      /* If we have timed out (nfds == 0) or found some input (nfds > 0),
-	 we should exit.  */
-      if (nfds >= 0)
+      /* Check for keyboard input */
+
+      if ((XINT (read_kbd) != 0)
+	  && detect_input_pending_run_timers (do_display))
+	{
+	  swallow_events (do_display);
+	  if (detect_input_pending_run_timers (do_display))
+	    break;
+	}
+
+      /* If wait_for_cell. check for keyboard input
+	 but don't run any timers.
+	 ??? (It seems wrong to me to check for keyboard
+	 input at all when wait_for_cell, but the code
+	 has been this way since July 1994.
+	 Try changing this after version 19.31.)  */
+      if (wait_for_cell
+	  && detect_input_pending ())
+	{
+	  swallow_events (do_display);
+	  if (detect_input_pending ())
+	    break;
+	}
+
+      /* Exit now if the cell we're waiting for became non-nil.  */
+      if (wait_for_cell && ! NILP (*wait_for_cell))
 	break;
     }
 

@@ -164,7 +164,7 @@ has been modified as follows:
            function distributed with Emacs anticipates this problem but the
            AIX 3.1 version does not.  Therefore, repeated malloc calls are
            needed to exhaust this initial malloc space.  How do you know
-           when malloc has exhausted its free memroy? You don't!  So the
+           when malloc has exhausted its free memory?  You don't!  So the
            code must repeatedly call malloc for each buffer size and
            detect when a new memory page has been allocated.  Once the new
            memory page is allocated, you can calculate the number of free

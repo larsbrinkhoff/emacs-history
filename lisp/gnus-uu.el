@@ -1,4 +1,5 @@
 ;;; gnus-uu.el --- extract (uu)encoded files in Gnus
+
 ;; Copyright (C) 1985,86,87,93,94,95 Free Software Foundation, Inc.
 
 ;; Author: Lars Magne Ingebrigtsen <larsi@ifi.uio.no>
@@ -19,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -180,7 +182,7 @@ Note that this variable can be used in conjunction with the
 Default is \"/tmp/\".")
 
 (defvar gnus-uu-do-not-unpack-archives nil 
-  "*Non-nil means that gnus-uu won't peek inside archives looking for files to dispay. 
+  "*Non-nil means that gnus-uu won't peek inside archives looking for files to display. 
 Default is nil.")
 
 (defvar gnus-uu-view-and-save nil 

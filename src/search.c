@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -73,7 +74,7 @@ static struct re_registers search_regs;
    Qnil if no searching has been done yet.  */
 static Lisp_Object last_thing_searched;
 
-/* error condition signalled when regexp compile_pattern fails */
+/* error condition signaled when regexp compile_pattern fails */
 
 Lisp_Object Qinvalid_regexp;
 
@@ -1802,24 +1803,28 @@ match_limit (num, beginningp)
 
 DEFUN ("match-beginning", Fmatch_beginning, Smatch_beginning, 1, 1, 0,
   "Return position of start of text matched by last search.\n\
-NUM specifies which parenthesized expression in the last regexp.\n\
- Value is nil if NUMth pair didn't match, or there were less than NUM pairs.\n\
+SUBEXP, a number, specifies which parenthesized expression in the last\n\
+  regexp.\n\
+Value is nil if SUBEXPth pair didn't match, or there were less than\n\
+  SUBEXP pairs.\n\
 Zero means the entire text matched by the whole regexp or whole string.")
-  (num)
-     Lisp_Object num;
+  (subexp)
+     Lisp_Object subexp;
 {
-  return match_limit (num, 1);
+  return match_limit (subexp, 1);
 }
 
 DEFUN ("match-end", Fmatch_end, Smatch_end, 1, 1, 0,
   "Return position of end of text matched by last search.\n\
-ARG, a number, specifies which parenthesized expression in the last regexp.\n\
- Value is nil if ARGth pair didn't match, or there were less than ARG pairs.\n\
+SUBEXP, a number, specifies which parenthesized expression in the last\n\
+  regexp.\n\
+Value is nil if SUBEXPth pair didn't match, or there were less than\n\
+  SUBEXP pairs.\n\
 Zero means the entire text matched by the whole regexp or whole string.")
-  (num)
-     Lisp_Object num;
+  (subexp)
+     Lisp_Object subexp;
 {
-  return match_limit (num, 0);
+  return match_limit (subexp, 0);
 } 
 
 DEFUN ("match-data", Fmatch_data, Smatch_data, 0, 0, 0,
@@ -2001,20 +2006,20 @@ restore_match_data ()
 
 DEFUN ("regexp-quote", Fregexp_quote, Sregexp_quote, 1, 1, 0,
   "Return a regexp string which matches exactly STRING and nothing else.")
-  (str)
-     Lisp_Object str;
+  (string)
+     Lisp_Object string;
 {
   register unsigned char *in, *out, *end;
   register unsigned char *temp;
 
-  CHECK_STRING (str, 0);
+  CHECK_STRING (string, 0);
 
-  temp = (unsigned char *) alloca (XSTRING (str)->size * 2);
+  temp = (unsigned char *) alloca (XSTRING (string)->size * 2);
 
   /* Now copy the data into the new string, inserting escapes. */
 
-  in = XSTRING (str)->data;
-  end = in + XSTRING (str)->size;
+  in = XSTRING (string)->data;
+  end = in + XSTRING (string)->size;
   out = temp; 
 
   for (; in != end; in++)

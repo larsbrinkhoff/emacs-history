@@ -1850,10 +1850,26 @@ body is enclosed in an implicit block as if by @code{defun*}.
 @end defspec
 
 @defspec labels (bindings@dots{}) forms@dots{}
-The @code{labels} form is a synonym for @code{flet}.  (In Common
-Lisp, @code{labels} and @code{flet} differ in ways that depend on
-their lexical scoping; these distinctions vanish in dynamically
-scoped Emacs Lisp.)
+The @code{labels} form is like @code{flet}, except that it
+makes lexical bindings of the function names rather than
+dynamic bindings.  (In true Common Lisp, both @code{flet} and
+@code{labels} make lexical bindings of slightly different sorts;
+since Emacs Lisp is dynamically bound by default, it seemed
+more appropriate for @code{flet} also to use dynamic binding.
+The @code{labels} form, with its lexical binding, is fully
+compatible with Common Lisp.)
+
+Lexical scoping means that all references to the named
+functions must appear physically within the body of the
+@code{labels} form.  References may appear both in the body
+@var{forms} of @code{labels} itself, and in the bodies of
+the functions themselves.  Thus, @code{labels} can define
+local recursive functions, or mutually-recursive sets of
+functions.
+
+A ``reference'' to a function name is either a call to that
+function, or a use of its name quoted by @code{quote} or
+@code{function} to be passed on to, say, @code{mapcar}.
 @end defspec
 
 @node Macro Bindings, , Function Bindings, Variable Bindings
@@ -2020,7 +2036,7 @@ a @key{RET} or @key{LFD}, or anything else.
 
 @defspec ecase keyform clause@dots{}
 This macro is just like @code{case}, except that if the key does
-not match any of the clauses, an error is signalled rather than
+not match any of the clauses, an error is signaled rather than
 simply returning @code{nil}.
 @end defspec
 
@@ -2045,7 +2061,7 @@ several types, use an @code{(or ...)} type specifier.
 
 @defspec etypecase keyform clause@dots{}
 This macro is just like @code{typecase}, except that if the key does
-not match any of the clauses, an error is signalled rather than
+not match any of the clauses, an error is signaled rather than
 simply returning @code{nil}.
 @end defspec
 
@@ -4305,7 +4321,7 @@ This function is a synonym for @code{(cdr @var{x})}.
 
 @defun endp x
 Common Lisp defines this function to act like @code{null}, but
-signalling an error if @code{x} is neither a @code{nil} nor a
+signaling an error if @code{x} is neither a @code{nil} nor a
 cons cell.  This package simply defines @code{endp} as a synonym
 for @code{null}.
 @end defun
@@ -5155,7 +5171,7 @@ The following error-related macro is also defined:
 @defspec ignore-errors forms@dots{}
 This executes @var{forms} exactly like a @code{progn}, except that
 errors are ignored during the @var{forms}.  More precisely, if
-an error is signalled then @code{ignore-errors} immediately
+an error is signaled then @code{ignore-errors} immediately
 aborts execution of the @var{forms} and returns @code{nil}.
 If the @var{forms} complete successfully, @code{ignore-errors}
 returns the result of the last @var{form}.
@@ -5194,7 +5210,7 @@ readable @code{incf} and @code{push} forms in your compiled code.
 @emph{Interpreted} code, on the other hand, must expand these macros
 every time they are executed.  For this reason it is strongly
 recommended that code making heavy use of macros be compiled.
-(The features labelled ``Special Form'' instead of ``Function'' in
+(The features labeled ``Special Form'' instead of ``Function'' in
 this manual are macros.)  A loop using @code{incf} a hundred times
 will execute considerably faster if compiled, and will also
 garbage-collect less because the macro expansion will not have
@@ -5278,7 +5294,7 @@ encouraged but not required to signal an error in these situations.
 This package sometimes omits such error checking in the interest of
 compactness and efficiency.  For example, @code{do} variable
 specifiers are supposed to be lists of one, two, or three forms;
-extra forms are ignored by this package rather than signalling a
+extra forms are ignored by this package rather than signaling a
 syntax error.  The @code{endp} function is simply a synonym for
 @code{null} in this package.  Functions taking keyword arguments
 will accept an odd number of arguments, treating the trailing

@@ -26,6 +26,7 @@ Abbrevs}.
 * Editing Abbrevs::   Viewing or editing the entire list of defined abbrevs.
 * Saving Abbrevs::    Saving the entire list of abbrevs for another session.
 * Dynamic Abbrevs::   Abbreviations for words already in the buffer.
+* Dabbrev Customization:: What is a word, for dynamic abbrevs.  Case handling.
 @end menu
 
 @node Abbrev Concepts
@@ -323,6 +324,7 @@ Complete the word before point as a dynamic abbrev
 (@code{dabbrev-completion}).
 @end table
 
+@vindex dabbrev-limit
   For example, if the buffer contains @samp{does this follow } and you
 type @kbd{f o M-/}, the effect is to insert @samp{follow} because that
 is the last word in the buffer that starts with @samp{fo}.  A numeric
@@ -330,8 +332,13 @@ argument to @kbd{M-/} says to take the second, third, etc.@: distinct
 expansion found looking backward from point.  Repeating @kbd{M-/}
 searches for an alternative expansion by looking farther back.  After
 considering the entire buffer before point, it searches the text after
-point.  After searching all of the current buffer, @kbd{M-/} searches
-other buffers.
+point.  The variable @code{dabbrev-limit}, if non-@code{nil}, specifies
+how far in the buffer to search for an expansion.
+
+@vindex dabbrev-check-all-buffers
+  After searching all of the current buffer, @kbd{M-/} normally searches
+other buffers, unless you have set @code{dabbrev-check-all-buffers} to
+@code{nil}.
 
   A negative argument to @kbd{M-/}, as in @kbd{C-u - M-/}, says to
 search first for expansions after point, and second for expansions
@@ -344,14 +351,6 @@ words that follow the expansion in its original context.  Simply type
 @kbd{@key{SPC} M-/} for each word you want to copy.  The spacing and
 punctuation between words is copied along with the words.
 
-@vindex dabbrev-abbrev-skip-leading-regexp
-  In shell scripts and makefiles, a variable name is sometimes prefixed
-with @samp{$} and sometimes not.  Major modes for this kind of text can
-customize dynamic abbreviation to handle optional prefixes by setting
-the variable @code{dabbrev-abbrev-skip-leading-regexp}.  Its value
-should be a regular expression that matches the optional prefix that
-dynamic abbreviation should ignore.
-
   The command @kbd{C-M-/} (@code{dabbrev-completion}) performs
 completion of a dynamic abbreviation.  Instead of trying the possible
 expansions one by one, it finds all of them, then inserts the text that
@@ -362,3 +361,45 @@ the usual manner.  @xref{Completion}.
   Dynamic abbrev expansion is completely independent of Abbrev mode; the
 expansion of a word with @kbd{M-/} is completely independent of whether
 it has a definition as an ordinary abbrev.
+
+@node Dabbrev Customization
+@section Customizing Dynamic Abbreviation
+
+@vindex dabbrev-case-fold-search
+  Normally, dynamic abbrev expansion ignores case when searching for
+expansions.  That is, the expansion need not agree in case with the
+word you are expanding.  If you set @code{dabbrev-case-fold-search}
+to @code{nil}, then the word and the expansion must match in case.
+
+@vindex dabbrev-case-replace
+  Normally, dynamic abbrev expansion preserves the case pattern @emph{of
+the word you are expanding}, by converting the expansion to that case
+pattern.  If you set @code{dabbrev-case-replace} to @code{nil}, the
+expansion is copied without conversion.
+
+  The variables @code{dabbrev-case-fold-search} and
+@code{dabbrev-case-replace} are handled in a special way.  Their values
+are actually Lisp expressions which are evaluated each time a decision
+needs to be made.  If the expression's value is non-@code{nil}, then
+case is ignored in searching, or converted on replacement, respectively.
+If the expression's value is @code{nil}, the action is not done.  The
+default values let the variables @code{case-fold-search} (@pxref{Search
+Case}) and @code{case-replace} (@pxref{Replacement and Case}) control
+what to do.
+
+@vindex dabbrev-abbrev-char-regexp
+  The variable @code{dabbrev-abbrev-char-regexp}, if non-@code{nil}
+controls which characters are part of a word, for dynamic expansion
+purposes.  The regular expression must match just one character, never
+two or more.  The same regular expression also determines what
+characters are part of an expansion.  The value @code{nil} has a special
+meaning: abbreviations are made of word characters, but expansions are
+made of word and symbol characters.
+
+@vindex dabbrev-abbrev-skip-leading-regexp
+  In shell scripts and makefiles, a variable name is sometimes prefixed
+with @samp{$} and sometimes not.  Major modes for this kind of text can
+customize dynamic abbreviation to handle optional prefixes by setting
+the variable @code{dabbrev-abbrev-skip-leading-regexp}.  Its value
+should be a regular expression that matches the optional prefix that
+dynamic abbreviation should ignore.

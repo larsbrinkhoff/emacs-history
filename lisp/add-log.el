@@ -17,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -35,10 +36,12 @@
 \\[add-change-log-entry] calls this function (if nil, `add-log-current-defun'
 instead) with no arguments.  It returns a string or nil if it cannot guess.")
 
+;;;###autoload
 (defvar add-log-full-name nil
   "*Full name of user, for inclusion in ChangeLog daily headers.
 This defaults to the value returned by the `user-full-name' function.")
 
+;;;###autoload
 (defvar add-log-mailing-address nil
   "*Electronic mail address of user, for inclusion in ChangeLog daily headers.
 This defaults to the value of `user-mail-address'.")
@@ -279,7 +282,9 @@ Runs `change-log-mode-hook'."
   (setq major-mode 'change-log-mode
 	mode-name "Change Log"
 	left-margin 8
-	fill-column 74)
+	fill-column 74
+    indent-tabs-mode t
+    tab-width 8)
   (use-local-map change-log-mode-map)
   ;; Let each entry behave as one paragraph:
   ;; We really do want "^" in paragraph-start below: it is only the lines that
@@ -337,7 +342,8 @@ Has a preference of looking backwards."
 		 (or (eobp) (forward-char 1))
 		 (beginning-of-defun)
 		 ;; Make sure we are really inside the defun found, not after it.
-		 (if (and (progn (end-of-defun)
+		 (if (and (looking-at "\\s(")
+			  (progn (end-of-defun)
 				 (< location (point)))
 			  (progn (forward-sexp -1)
 				 (>= location (point))))

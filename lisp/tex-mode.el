@@ -1,6 +1,6 @@
 ;;; tex-mode.el --- TeX, LaTeX, and SliTeX mode commands.
 
-;; Copyright (C) 1985, 86, 89, 92, 94, 95 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 89, 92, 94, 95, 96 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: tex
@@ -21,8 +21,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -178,19 +179,23 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
 (defvar tex-mode-syntax-table nil
   "Syntax table used while in TeX mode.")
 
-;; Written by Wolfgang Bangerth <zcg51122@rpool1.rus.uni-stuttgart.de>
-(defvar latex-imenu-generic-expression
-  '(
-    ("Part" "\\\\part{\\([^}]*\\)}" 1)
-    ("Chapter" "\\\\chapter{\\([^}]*\\)}" 1)
-    ("Section" "\\\\[a-zA-Z]*section{\\([^}]*\\)}" 1)
-    ;; i put numbers like 3.15 before my
-    ;; \begin{equation}'s which tell me
-    ;; the number the equation will get when
-    ;; being printed.
-    ("Equations" "%[ \t]*\\([0-9]+\\.[0-9]+\\)[,;]?[ \t]?" 1))  
-
-  "Imenu generic expression for LaTex mode.  See `imenu-generic-expression'.")
+(defun latex-imenu-create-index ()
+  "Generates an alist for imenu from a LaTeX buffer."
+  (let (result temp)
+    (goto-char (point-max))
+    (while (re-search-backward "\\\\\\(part\\|chapter\\|\
+\\(sub\\)?\\(\\(sub\\)?section\\|paragraph\\)\\)\\*?[ \t\n]*{\\([^}]*\\)}" nil t)
+      (setq temp
+	    (assoc (buffer-substring-no-properties (match-beginning 1)
+						   (match-end 1)) 
+		   '(("part" . "") ("chapter" . " ")
+		     ("section" . "  ") ("subsection" . "   ")
+		     ("subsubsection" . "    ")
+		     ("paragraph" . "     ") ("subparagraph" . "      "))))
+      (setq result (cons (cons (concat (cdr temp) (match-string 5)) 
+			       (match-beginning 0))
+			 result)))
+    result))
 
 (defun tex-define-common-keys (keymap)
   "Define the keys that we want defined both in TeX mode and in the TeX shell."
@@ -254,6 +259,20 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
 (defvar tex-shell-map nil
   "Keymap for the TeX shell.
 Inherits `shell-mode-map' with a few additions.")
+
+(defvar tex-face-alist
+  '((bold . "{\\bf ")
+    (italic . "{\\it ")
+    (bold-italic . "{\\bi ")		; hypothetical
+    (underline . "\\underline{")
+    (default . "{\\rm "))
+  "Alist of face and TeX font name for facemenu.")
+
+(defvar tex-latex-face-alist
+  `((italic . "{\\em ")
+    ,@tex-face-alist)
+  "Alist of face and LaTeX font name for facemenu.")
+
 
 (defvar compare-windows-whitespace)	; Pacify the byte-compiler
 
@@ -415,8 +434,10 @@ subshell is initiated, `tex-shell-hook' is run."
 \\\\[a-z]*space\\|\\\\[a-z]*skip\\|\
 \\\\newpage\\|\\\\[a-z]*page[a-z]*\\|\\\\footnote\\|\
 \\\\marginpar\\|\\\\parbox\\|\\\\caption\\)[ \t]*\\($\\|%\\)")
-  (make-local-variable 'imenu-generic-expression)
-  (setq imenu-generic-expression latex-imenu-generic-expression)
+  (make-local-variable 'imenu-create-index-function)
+  (setq imenu-create-index-function 'latex-imenu-create-index)
+  (make-local-variable 'tex-face-alist)
+  (setq tex-face-alist tex-latex-face-alist)
   (run-hooks 'text-mode-hook 'tex-mode-hook 'latex-mode-hook))
 
 ;;;###autoload
@@ -466,7 +487,7 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
   (setq mode-name "SliTeX")
   (setq major-mode 'slitex-mode)
   (setq tex-command slitex-run-command)
-  (setq tex-start-of-header "\\\\documentstyle{slides}\\|\\\\docuentclass{slides}")
+  (setq tex-start-of-header "\\\\documentstyle{slides}\\|\\\\documentclass{slides}")
   (setq tex-end-of-header "\\\\begin{document}")
   (setq tex-trailer "\\end{document}\n")
   ;; A line containing just $$ is treated as a paragraph separator.
@@ -535,6 +556,17 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
   (setq parse-sexp-ignore-comments t)
   (make-local-variable 'compare-windows-whitespace)
   (setq compare-windows-whitespace 'tex-categorize-whitespace)
+  (make-local-variable 'facemenu-add-face-function)
+  (make-local-variable 'facemenu-end-add-face)
+  (make-local-variable 'facemenu-remove-face-function)
+  (setq facemenu-add-face-function
+	(lambda (face end)
+	  (let ((face-text (cdr (assq face tex-face-alist))))
+	    (if face-text
+		face-text
+	      (error "Face %s not configured for %s mode" face mode-name))))
+	facemenu-end-add-face "}"
+	facemenu-remove-face-function t)
   (make-local-variable 'tex-command)
   (make-local-variable 'tex-start-of-header)
   (make-local-variable 'tex-end-of-header)
@@ -1121,7 +1153,7 @@ so normally SUFFIX starts with one."
   (if (stringp file-name)
       (let ((file (file-name-nondirectory file-name))
 	    trial-name)
-	;; Try spliting on last period.
+	;; Try splitting on last period.
 	;; The first-period split can get fooled when two files
 	;; named a.tex and a.b.tex are both tex'd;
 	;; the last-period split must be right if it matches at all.

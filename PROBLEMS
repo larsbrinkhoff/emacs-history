@@ -1,6 +1,72 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* On Windows 95, Alt-f6 does not get through to Emacs.
+
+This character seems to be trapped by the kernel in Windows 95.
+You can enter M-f6 by typing ESC f6.
+
+* Typing Alt-Shift has strange effects on Windows 95.
+
+This combination of keys is a command to change keyboard layout.  If
+you proceed to type another non-modifier key before you let go of Alt
+and Shift, the Alt and Shift act as modifiers in the usual way.
+
+* `tparam' reported as a multiply-defined symbol when linking with ncurses.
+
+This problem results from an incompatible change in ncurses, in
+version 1.9.9e approximately.  This version is unable to provide a
+definition of tparm without also defining tparam.  This is also
+incompatible with Terminfo; as a result, the Emacs Terminfo support
+does not work with this version of ncurses.
+
+Until ncurses is fixed, the workaround is to link temacs without
+terminfo.o.
+
+* Strange results from format %d in a few cases, on a Sun.
+
+Sun compiler version SC3.0 has been found to miscompile part of
+editfns.c.  The workaround is to compile with some other compiler such
+as GCC.
+
+* Output from subprocess (such as man or diff) is randomly truncated
+on GNU/Linux systems.
+
+This is due to a kernel bug which seems to be fixed in Linux version
+1.3.75.
+
+* Error messages `internal facep []' happen on GNU/Linux systems.
+
+There is a report that replacing libc.so.5.0.9 with libc.so.5.2.16
+caused this to start happening.  People are not sure why, but the
+problem seems unlikely to be in Emacs itself.  Some suspect that it
+is actually Xlib which won't work with libc.so.5.2.16.
+
+Using the old library version is a workaround.
+
+* On Solaris, Emacs crashes if you use (display-time).
+
+This can happen if you configure Emacs without specifying the precise
+version of Solaris that you are using.
+
+* Emacs dumps core on startup, on Solaris.
+
+Bill Sebok says that the cause of this is Solaris 2.4 vendor patch
+102303-05, which extends the Solaris linker to deal with the Solaris
+Common Desktop Environment's linking needs.  You can fix the problem
+by removing this patch and installing patch 102049-02 instead.
+However, that linker version won't work with CDE.
+
+On Solaris 2.5, the linker has this bug and there is no patch you
+could remove to get rid of the bug.  However, the GNU linker does
+work.
+
+* Emacs dumps core if lisp-complete-symbol is called, on Solaris.
+
+If you compile Emacs with the -fast or -xO4 option with version 3.0.2
+of the Sun C compiler, Emacs dumps core when lisp-complete-symbol is
+called.  The problem does not happen if you compile with GCC.
+
 * "Cannot find callback list" messages from dialog boxes on HPUX, in
 Emacs built with Motif.
 
@@ -14,6 +80,39 @@ in src/Makefile.  Edit src/Makefile, after configure is run,
 find that string, and take out the spaces.
 
 Compiler fixes in Irix 6.0.1 should eliminate this problem.
+
+* "out of virtual swap space" on Irix 5.3
+
+This message occurs when the system runs out of swap space due to too
+many large programs running.  The solution is either to provide more
+swap space or to reduce the number of large programs being run.  You
+can check the current status of the swap space by executing the
+command `swap -l'.
+
+You can increase swap space by changing the file /etc/fstab.  Adding a
+line like this:
+
+/usr/swap/swap.more     swap    swap    pri=3 0 0
+
+where /usr/swap/swap.more is a file previously created (for instance
+by using /etc/mkfile), will increase the swap space by the size of
+that file.  Execute `swap -m' or reboot the machine to activate the
+new swap area.  See the manpages for `swap' and `fstab' for further
+information.
+
+The objectserver daemon can use up lots of memory because it can be
+swamped with NIS information.  It collects information about all users
+on the network that can log on to the host.
+
+If you want to disable the objectserver completely, you can execute
+the command `chkconfig objectserver off' and reboot.  That may disable
+some of the window system functionality, such as responding CDROM
+icons.
+
+You can also remove NIS support from the objectserver.  The SGI `admin'
+FAQ has a detailed description on how to do that; see question 35
+("Why isn't the objectserver working?").  The admin FAQ can be found at
+ftp://viz.tamu.edu/pub/sgi/faq/.
 
 * With certain fonts, when the cursor appears on a character, the
 character doesn't appear--you get a solid box instead.
@@ -102,7 +201,7 @@ the djgpp faq for configuration hints.
 twm normally ignores "program-specified" positions.
 You can tell it to obey them with this command in your `.twmrc' file:
 
-  UsePPosition	"on"		#allow clents to request a position
+  UsePPosition	"on"		#allow clients to request a position
 
 * Compiling lib-src says there is no rule to make test-distrib.c.
 
@@ -395,7 +494,7 @@ directory contains scalable fonts if it contains the file
 "fonts.scale".
 
 If this is so, re-order your X windows font path to put the scalable
-font directories last.  See the documentatoin of `xset' for details.
+font directories last.  See the documentation of `xset' for details.
 
 With some X servers, it may be necessary to take the scalable font
 directories out of your path entirely, at least for Emacs 19.26.

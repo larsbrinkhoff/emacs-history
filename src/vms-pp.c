@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
  *
  * Usage:
@@ -42,7 +43,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  *		#define defined(XX) XX_val
  *		#if defined(foo)
  *
- *	This last contruction only works on single line #if's and takes
+ *	This last construction only works on single line #if's and takes
  *	advantage of a questionable C pre-processor trick. If there are
  *	comments within the #if, that contain "defined", then this will
  *	bomb.

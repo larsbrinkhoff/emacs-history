@@ -1,94 +1,95 @@
 ;;; tar-mode.el --- simple editing of tar files from GNU emacs
 
-;;; Copyright (C) 1990, 1991, 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1990, 1991, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Jamie Zawinski <jwz@lucid.com>
 ;; Created: 04 Apr 1990
 ;; Keywords: unix
 
-;;; This file is part of GNU Emacs.
-;;;
-;;; GNU Emacs is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
-;;;
-;;; GNU Emacs is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; You should have received a copy of the GNU General Public License
-;;; along with GNU Emacs; see the file COPYING.  If not, write to
-;;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; This package attempts to make dealing with Unix 'tar' archives easier.
-;;; When this code is loaded, visiting a file whose name ends in '.tar' will
-;;; cause the contents of that archive file to be displayed in a Dired-like
-;;; listing.  It is then possible to use the customary Dired keybindings to
-;;; extract sub-files from that archive, either by reading them into their own
-;;; editor buffers, or by copying them directly to arbitrary files on disk.
-;;; It is also possible to delete sub-files from within the tar file and write
-;;; the modified archive back to disk, or to edit sub-files within the archive
-;;; and re-insert the modified files into the archive.  See the documentation
-;;; string of tar-mode for more info.
+;; This package attempts to make dealing with Unix 'tar' archives easier.
+;; When this code is loaded, visiting a file whose name ends in '.tar' will
+;; cause the contents of that archive file to be displayed in a Dired-like
+;; listing.  It is then possible to use the customary Dired keybindings to
+;; extract sub-files from that archive, either by reading them into their own
+;; editor buffers, or by copying them directly to arbitrary files on disk.
+;; It is also possible to delete sub-files from within the tar file and write
+;; the modified archive back to disk, or to edit sub-files within the archive
+;; and re-insert the modified files into the archive.  See the documentation
+;; string of tar-mode for more info.
 
-;;; This code now understands the extra fields that GNU tar adds to tar files.
+;; This code now understands the extra fields that GNU tar adds to tar files.
 
-;;; This interacts correctly with "uncompress.el" in the Emacs library,
-;;; which you get with 
-;;;
-;;;  (autoload 'uncompress-while-visiting "uncompress")
-;;;  (setq auto-mode-alist (cons '("\\.Z$" . uncompress-while-visiting)
-;;;			   auto-mode-alist))
-;;;
-;;; Do not attempt to use tar-mode.el with crypt.el, you will lose.
+;; This interacts correctly with "uncompress.el" in the Emacs library,
+;; which you get with 
+;;
+;;  (autoload 'uncompress-while-visiting "uncompress")
+;;  (setq auto-mode-alist (cons '("\\.Z$" . uncompress-while-visiting)
+;;			   auto-mode-alist))
+;;
+;; Do not attempt to use tar-mode.el with crypt.el, you will lose.
 
-;;;    ***************   TO DO   *************** 
-;;;
-;;; o  chmod should understand "a+x,og-w".
-;;;
-;;; o  It's not possible to add a NEW file to a tar archive; not that 
-;;;    important, but still...
-;;;
-;;; o  The code is less efficient that it could be - in a lot of places, I
-;;;    pull a 512-character string out of the buffer and parse it, when I could
-;;;    be parsing it in place, not garbaging a string.  Should redo that.
-;;;
-;;; o  I'd like a command that searches for a string/regexp in every subfile
-;;;    of an archive, where <esc> would leave you in a subfile-edit buffer.
-;;;    (Like the Meta-R command of the Zmacs mail reader.)
-;;;
-;;; o  Sometimes (but not always) reverting the tar-file buffer does not 
-;;;    re-grind the listing, and you are staring at the binary tar data.
-;;;    Typing 'g' again immediately after that will always revert and re-grind
-;;;    it, though.  I have no idea why this happens.
-;;;
-;;; o  Tar-mode interacts poorly with crypt.el and zcat.el because the tar
-;;;    write-file-hook actually writes the file.  Instead it should remove the
-;;;    header (and conspire to put it back afterwards) so that other write-file
-;;;    hooks which frob the buffer have a chance to do their dirty work.  There
-;;;    might be a problem if the tar write-file-hook does not come *first* on
-;;;    the list.
-;;;
-;;; o  Block files, sparse files, continuation files, and the various header 
-;;;    types aren't editable.  Actually I don't know that they work at all.
+;;    ***************   TO DO   *************** 
+;;
+;; o  chmod should understand "a+x,og-w".
+;;
+;; o  It's not possible to add a NEW file to a tar archive; not that 
+;;    important, but still...
+;;
+;; o  The code is less efficient that it could be - in a lot of places, I
+;;    pull a 512-character string out of the buffer and parse it, when I could
+;;    be parsing it in place, not garbaging a string.  Should redo that.
+;;
+;; o  I'd like a command that searches for a string/regexp in every subfile
+;;    of an archive, where <esc> would leave you in a subfile-edit buffer.
+;;    (Like the Meta-R command of the Zmacs mail reader.)
+;;
+;; o  Sometimes (but not always) reverting the tar-file buffer does not 
+;;    re-grind the listing, and you are staring at the binary tar data.
+;;    Typing 'g' again immediately after that will always revert and re-grind
+;;    it, though.  I have no idea why this happens.
+;;
+;; o  Tar-mode interacts poorly with crypt.el and zcat.el because the tar
+;;    write-file-hook actually writes the file.  Instead it should remove the
+;;    header (and conspire to put it back afterwards) so that other write-file
+;;    hooks which frob the buffer have a chance to do their dirty work.  There
+;;    might be a problem if the tar write-file-hook does not come *first* on
+;;    the list.
+;;
+;; o  Block files, sparse files, continuation files, and the various header 
+;;    types aren't editable.  Actually I don't know that they work at all.
 
-;;; Rationale:
+;; Rationale:
 
-;;; Why does tar-mode edit the file itself instead of using tar?
+;; Why does tar-mode edit the file itself instead of using tar?
 
-;;; That means that you can edit tar files which you don't have room for
-;;; on your local disk.
+;; That means that you can edit tar files which you don't have room for
+;; on your local disk.
 
-;;; I don't know about recent features in gnu tar, but old versions of tar
-;;; can't replace a file in the middle of a tar file with a new version.
-;;; Tar-mode can.  I don't think tar can do things like chmod the subfiles.
-;;; An implementation which involved unpacking and repacking the file into
-;;; some scratch directory would be very wasteful, and wouldn't be able to
-;;; preserve the file owners.
+;; I don't know about recent features in gnu tar, but old versions of tar
+;; can't replace a file in the middle of a tar file with a new version.
+;; Tar-mode can.  I don't think tar can do things like chmod the subfiles.
+;; An implementation which involved unpacking and repacking the file into
+;; some scratch directory would be very wasteful, and wouldn't be able to
+;; preserve the file owners.
 
 ;;; Code:
 
@@ -456,15 +457,20 @@ is visible (and the real data of the buffer is hidden)."
     ;; A tar file should end with a block or two of nulls,
     ;; but let's not get a fatal error if it doesn't.
     (if (eq tokens 'empty-tar-block)
-	(message "Parsing tar file...done.")
+	(message "Parsing tar file...done")
       (message "Warning: premature EOF parsing tar file")))
   (save-excursion
     (goto-char (point-min))
-    (let ((buffer-read-only nil))
-      (tar-dolist (tar-desc tar-parse-info)
-	(insert-string
-	  (tar-header-block-summarize (tar-desc-tokens tar-desc)))
-	(insert-string "\n"))
+    (let ((buffer-read-only nil)
+	  (summaries nil))
+      ;; Collect summary lines and insert them all at once since tar files
+      ;; can be pretty big.
+      (tar-dolist (tar-desc (reverse tar-parse-info))
+	(setq summaries
+	      (cons (tar-header-block-summarize (tar-desc-tokens tar-desc))
+		    (cons "\n"
+			  summaries))))
+      (insert (apply 'concat summaries))
       (make-local-variable 'tar-header-offset)
       (setq tar-header-offset (point))
       (narrow-to-region 1 tar-header-offset)
@@ -596,9 +602,9 @@ See also: variables `tar-update-datestamp' and `tar-anal-blocksize'.
 
 (defun tar-subfile-mode (p)
   "Minor mode for editing an element of a tar-file.
-This mode redefines the save-buffer command to save the current buffer back
-into its associated tar-file buffer.  You must save that buffer to actually
-save your changes to disk."
+This mode arranges for \"saving\" this buffer to write the data
+into the tar-file buffer that it came from.  The changes will actually
+appear on disk when you save the tar-file's buffer."
   (interactive "P")
   (or (and (boundp 'tar-superior-buffer) tar-superior-buffer)
       (error "This buffer is not an element of a tar file"))
@@ -725,9 +731,9 @@ save your changes to disk."
 		(make-local-variable 'tar-superior-descriptor)
 		(setq tar-superior-buffer tar-buffer)
 		(setq tar-superior-descriptor descriptor)
-		(tar-subfile-mode 1)		
-		(setq buffer-read-only read-only-p)
-		(set-buffer-modified-p nil))
+		(setq buffer-read-only read-only-p)		
+		(set-buffer-modified-p nil)
+		(tar-subfile-mode 1))
 	      (set-buffer tar-buffer))
 	  (narrow-to-region 1 tar-header-offset)))
       (if view-p
@@ -851,7 +857,7 @@ With a prefix argument, un-mark that many files backward."
       (let ((line-len (- (point) line-start)))
 	(delete-region line-start (point))
 	;;
-	;; decrement the header-pointer to be in synch...
+	;; decrement the header-pointer to be in sync...
 	(setq tar-header-offset (- tar-header-offset line-len))))
     ;;
     ;; delete the data pointer...

@@ -1,6 +1,6 @@
 ;;; startup.el --- process Emacs shell arguments
 
-;; Copyright (C) 1985, 1986, 1992, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 92, 94, 95, 1996 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -156,19 +157,79 @@ altering `command-line-args-left' to remove them.")
   "Default directory to use for command line arguments.
 This is normally copied from `default-directory' when Emacs starts.")
 
+;;; This is here, rather than in x-win.el, so that we can ignore these
+;;; options when we are not using X.
+(defvar command-line-x-option-alist
+  '(("-bw" 1 x-handle-numeric-switch border-width)
+    ("-d" 1 x-handle-display)
+    ("-display" 1 x-handle-display)
+    ("-name" 1 x-handle-name-rn-switch)
+    ("-rn" 1 x-handle-name-rn-switch)
+    ("-title" 1 x-handle-switch title)
+    ("-T" 1 x-handle-switch title)
+    ("-r" 0 x-handle-switch reverse t)
+    ("-rv" 0 x-handle-switch reverse t)
+    ("-reverse" 0 x-handle-switch reverse t)
+    ("-reverse-video" 0 x-handle-switch reverse t)
+    ("-fn" 1 x-handle-switch font)
+    ("-font" 1 x-handle-switch font)
+    ("-ib" 1 x-handle-numeric-switch internal-border-width)
+    ("-g" 1 x-handle-geometry)
+    ("-geometry" 1 x-handle-geometry)
+    ("-fg" 1 x-handle-switch foreground-color)
+    ("-foreground" 1 x-handle-switch foreground-color)
+    ("-bg" 1 x-handle-switch background-color)
+    ("-background" 1 x-handle-switch background-color)
+    ("-ms" 1 x-handle-switch mouse-color)
+    ("-itype" 0 x-handle-switch icon-type t)
+    ("-i" 0 x-handle-switch icon-type t)
+    ("-iconic" 0 x-handle-iconic)
+    ("-xrm" 1 x-handle-xrm-switch)
+    ("-cr" 1 x-handle-switch cursor-color)
+    ("-vb" 0 x-handle-switch vertical-scroll-bars t)
+    ("-hb" 0 x-handle-switch horizontal-scroll-bars t)
+    ("-bd" 1 x-handle-switch)
+    ("--border-width" 1 x-handle-numeric-switch border-width)
+    ("--display" 1 x-handle-display)
+    ("--name" 1 x-handle-name-rn-switch)
+    ("--title" 1 x-handle-switch title)
+    ("--reverse-video" 0 x-handle-switch reverse t)
+    ("--font" 1 x-handle-switch font)
+    ("--internal-border" 1 x-handle-numeric-switch internal-border-width)
+    ("--geometry" 1 x-handle-geometry)
+    ("--foreground-color" 1 x-handle-switch foreground-color)
+    ("--background-color" 1 x-handle-switch background-color)
+    ("--mouse-color" 1 x-handle-switch mouse-color)
+    ("--icon-type" 0 x-handle-switch icon-type t)
+    ("--iconic" 0 x-handle-iconic)
+    ("--xrm" 1 x-handle-xrm-switch)
+    ("--cursor-color" 1 x-handle-switch cursor-color)
+    ("--vertical-scroll-bars" 0 x-handle-switch vertical-scroll-bars t)
+    ("--border-color" 1 x-handle-switch border-width))
+  "Alist of X Windows options.
+Each element has the form
+  (NAME NUMARGS HANDLER FRAME-PARAM VALUE)
+where NAME is the option name string, NUMARGS is the number of arguments
+that the option accepts, HANDLER is a function to call to handle the option.
+FRAME-PARAM (optional) is the frame parameter this option specifies,
+and VALUE is the value which is given to that frame parameter
+\(most options use the argument for this, so VALUE is not present).")
+
 (defvar before-init-hook nil
-  "Functions to call after handling urgent options but before init files.
-The frame system uses this to open frames to display messages while
-Emacs loads the user's initialization file.")
+  "Normal hook run after handling urgent options but before loading init files.")
 
 (defvar after-init-hook nil
-  "Functions to call after loading the init file (`~/.emacs').
-The call is not protected by a condition-case, so you can set `debug-on-error'
-in `.emacs', and put all the actual code on `after-init-hook'.")
+  "Normal hook run after loading the init files, `~/.emacs' and `default.el'.
+There is no `condition-case' around the running of these functions;
+therefore, if you set `debug-on-error' non-nil in `.emacs',
+an error in one of these functions will invoke the debugger.")
+
+(defvar emacs-startup-hook nil
+  "Normal hook run after loading init files and handling the command line.")
 
 (defvar term-setup-hook nil
-  "Functions to be called after loading terminal-specific Lisp code.
-See `run-hooks'.  This variable exists for users to set,
+  "Normal hook run after loading terminal-specific Lisp code.
+It also follows `emacs-startup-hook'.  This hook exists for users to set,
 so as to override the definitions made by the terminal-specific file.
 Emacs never sets this variable itself.")
 
@@ -227,10 +288,16 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 This is initialized based on `mail-host-address',
 after your init file is read, in case it sets `mail-host-address'.")
 
-(defvar auto-save-list-file-prefix "~/.saves-"
-  "Prefix for generating auto-save-list-file-name.
-Emacs's pid and the system name will be appended to
-this prefix to create a unique file name.")
+(defvar auto-save-list-file-prefix
+  (if (eq system-type 'ms-dos)
+      "~/_s"  ; MS-DOS cannot have initial dot, and allows only 8.3 names
+    "~/.saves-")
+  "Prefix for generating `auto-save-list-file-name'.
+This is used after reading your `.emacs' file to initialize
+`auto-save-list-file-name', by appending Emacs's pid and the system name,
+if you have not already set `auto-save-list-file-name' yourself.
+Set this to nil if you want to prevent `auto-save-list-file-name'
+from being initialized.")
 
 (defvar init-file-debug nil)
 
@@ -284,12 +351,21 @@ this prefix to create a unique file name.")
 	(setq default-directory (abbreviate-file-name default-directory))
 	;; Specify the file for recording all the auto save files of this session.
 	;; This is used by recover-session.
-	(setq auto-save-list-file-name
-	      (expand-file-name
-	       (format "%s%d-%s"
-		       auto-save-list-file-prefix
-		       (emacs-pid)
-		       (system-name))))
+	(or auto-save-list-file-name
+	    (and auto-save-list-file-prefix
+		 (setq auto-save-list-file-name
+		       ;; Under MS-DOS our PID is almost always reused between
+		       ;; Emacs invocations.  We need something more unique.
+		       (if (eq system-type 'ms-dos)
+			   (concat 
+			    (make-temp-name
+			     (expand-file-name auto-save-list-file-prefix))
+			    "~")
+
+			 (expand-file-name (format "%s%d-%s~"
+						   auto-save-list-file-prefix
+						   (emacs-pid)
+						   (system-name)))))))
 	(run-hooks 'emacs-startup-hook)
 	(and term-setup-hook
 	     (run-hooks 'term-setup-hook))
@@ -493,7 +569,9 @@ this prefix to create a unique file name.")
 			   ((eq system-type 'ms-dos)
 			    (concat "~" init-file-user "/_emacs"))
 			   ((eq system-type 'windows-nt)
-			    "~/_emacs")
+			    (if (file-exists-p "~/.emacs") 
+				"~/.emacs"
+			      "~/_emacs"))
 			   ((eq system-type 'vax-vms) 
 			    "sys$login:.emacs")
 			   (t 
@@ -620,7 +698,7 @@ this prefix to create a unique file name.")
 		   ;; and does not end with any newlines.
 		   (insert (emacs-version)
 			   "
-Copyright (C) 1995 Free Software Foundation, Inc.")
+Copyright (C) 1996 Free Software Foundation, Inc.")
 		   ;; If keys have their default meanings,
 		   ;; use precomputed string to save lots of time.
 		   (if (and (eq (key-binding "\C-h") 'help-command)
@@ -629,14 +707,14 @@ Copyright (C) 1995 Free Software Foundation, Inc.")
 			    (eq (key-binding "\C-ht") 'help-with-tutorial)
 			    (eq (key-binding "\C-hi") 'info))
 		       (insert "\n
-Type C-h for help; C-x u to undo changes.  (`C-' means use CTRL key.)
-To kill the Emacs job, type C-x C-c.
+Type C-x C-c to exit Emacs.
+Type C-h for help; C-x u to undo changes.
 Type C-h t for a tutorial on using Emacs.
 Type C-h i to enter Info, which you can use to read GNU documentation.")
 		     (insert (substitute-command-keys
 			      (format "\n
-Type %s for help; \\[advertised-undo] to undo changes.  (`C-' means use CTRL key.)
-To kill the Emacs job, type \\[save-buffers-kill-emacs].
+Type \\[save-buffers-kill-emacs] to exit Emacs.
+Type %s for help; \\[advertised-undo] to undo changes.
 Type \\[help-with-tutorial] for a tutorial on using Emacs.
 Type \\[info] to enter Info, which you can use to read GNU documentation."
 				      (let ((where (where-is-internal
@@ -644,24 +722,34 @@ Type \\[info] to enter Info, which you can use to read GNU documentation."
 					(if where
 					    (key-description where)
 					  "M-x help"))))))
+		   ;; Many users seem to have problems with these.
+		   (insert "
+(`C-' means use the CTRL key.  `M-' means use the Meta (or Alt) key.
+If you have no Meta key, you may instead type ESC followed by the character.)")
 		   ;; Say how to use the menu bar
 		   ;; if that is not with the mouse.
 		   (if (not (assq 'display (frame-parameters)))
 		       (if (eq (key-binding "\M-`") 'tmm-menubar)
-			   (insert "\n\nType F10, ESC ` or Meta-` to use the menu bar.")
+			   (insert "\n\nType F10 or M-` to use the menu bar.")
 			 (insert (substitute-command-keys
 				  "\n\nType \\[tmm-menubar] to use the menu bar."))))
 
 		   ;; Windows and MSDOS (currently) do not count as
 		   ;; window systems, but do have mouse support.
-		   (if (or (memq system-type '(msdos windowsnt))
-			   window-system)
+		   (if window-system
 		       (insert "\n
 C-mouse-3 (third mouse button, with Control) gets a mode-specific menu."))
-		   (if (directory-files "~/" nil "\\`\\.saves-" t)
-		       (insert "\n\nIf an Emacs session crashed recently,\n"
-			       "type M-x recover-session RET to recover"
-			       " the files you were editing."))
+		   (and auto-save-list-file-prefix
+			(directory-files
+			 (file-name-directory auto-save-list-file-prefix)
+			 nil
+			 (concat "\\`"
+				 (regexp-quote (file-name-nondirectory
+						auto-save-list-file-prefix)))
+			 t)
+			(insert "\n\nIf an Emacs session crashed recently,\n"
+				"type M-x recover-session RET to recover"
+				" the files you were editing."))
 
 		   (if (and (eq (key-binding "\C-h\C-c") 'describe-copying)
 			    (eq (key-binding "\C-h\C-d") 'describe-distribution)
@@ -711,6 +799,13 @@ Type \\[describe-distribution] for information on getting the latest version."))
 	       (initial-load-path load-path))
 	  (setq command-line-args-left (cdr command-line-args-left))
 
+	  ;; Add the long X options to longopts.
+	  (setq tem command-line-x-option-alist)
+	  (while tem
+	    (if (string-match "^--" (car (car tem)))
+		(setq longopts (cons (list (car (car tem))) longopts)))
+	    (setq tem (cdr tem)))
+
 	  ;; Convert long options to ordinary options
 	  ;; and separate out an attached option argument into argval.
 	  (if (string-match "^--[^=]*=" argi)
@@ -756,6 +851,7 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		     (setq tem argval)
 		   (setq tem (car command-line-args-left)
 			 command-line-args-left (cdr command-line-args-left)))
+		 (setq tem (command-line-normalize-file-name tem))
 		 (setq extra-load-path
 		       (cons (expand-file-name tem) extra-load-path))
 		 (setq load-path (append (nreverse extra-load-path)
@@ -766,7 +862,7 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		     (setq tem argval)
 		   (setq tem (car command-line-args-left)
 			 command-line-args-left (cdr command-line-args-left)))
-		 (let ((file tem))
+		 (let ((file (command-line-normalize-file-name tem)))
 		   ;; Take file from default dir if it exists there;
 		   ;; otherwise let `load' search for it.
 		   (if (file-exists-p (expand-file-name file))
@@ -779,11 +875,15 @@ Type \\[describe-distribution] for information on getting the latest version."))
 			 command-line-args-left (cdr command-line-args-left)))
 		 (or (stringp tem)
 		     (error "File name omitted from `-insert' option"))
-		 (insert-file-contents tem))
+		 (insert-file-contents (command-line-normalize-file-name tem)))
 		((string-equal argi "-kill")
 		 (kill-emacs t))
 		((string-match "^\\+[0-9]+\\'" argi)
 		 (setq line (string-to-int argi)))
+		((setq tem (assoc argi command-line-x-option-alist))
+		 ;; Ignore X-windows options and their args if not using X.
+		 (setq command-line-args-left
+		       (nthcdr (nth 1 tem) command-line-args-left)))
 		(t
 		 ;; We have almost exhausted our options. See if the
 		 ;; user has made any other command-line options available
@@ -798,6 +898,7 @@ Type \\[describe-distribution] for information on getting the latest version."))
 			 (if (string-match "\\`-" argi)
 			     (error "Unknown option `%s'" argi))
 			 (setq file-count (1+ file-count))
+			 (setq argi (command-line-normalize-file-name argi))
 			 (cond ((= file-count 1)
 				(setq first-file-buffer
 				      (find-file (expand-file-name argi dir))))
@@ -812,5 +913,17 @@ Type \\[describe-distribution] for information on getting the latest version."))
 	  (or (get-buffer-window first-file-buffer)
 	      (progn (other-window 1)
 		     (buffer-menu)))))))
+
+(defun command-line-normalize-file-name (file)
+  "Collapse multiple slashes to one, to handle non-Emacs file names."
+  (save-match-data
+    ;; Use arg 1 so that we don't collapse // at the start of the file name.
+    ;; That is significant on some systems.
+    ;; However, /// at the beginning is supposed to mean just /, not //.
+    (if (string-match "^///+" file)
+	(setq file (replace-match "/" t t file)))
+    (while (string-match "//+" file 1)
+      (setq file (replace-match "/" t t file)))
+    file))
 
 ;;; startup.el ends here

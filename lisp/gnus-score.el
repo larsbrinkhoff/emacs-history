@@ -1,4 +1,5 @@
 ;;; gnus-score.el --- scoring code for Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Per Abrahamsen <amanda@iesd.auc.dk>
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -910,7 +912,7 @@ SCORE is the score to add."
             (if last
                 (progn
                   ;; Insert the line, with a text property on the
-                  ;; terminating newline refering to the articles with
+                  ;; terminating newline referring to the articles with
                   ;; this line.
                   (insert last ?\n)
                   (put-text-property (1- (point)) (point) 'articles alike)))
@@ -1252,7 +1254,7 @@ SCORE is the score to add."
 
 (defun gnus-score-string (score-list header now expire &optional trace)
   ;; Score ARTICLES according to HEADER in SCORE-LIST.
-  ;; Update matches entries to NOW and remove unmatched entried older
+  ;; Update matching entries to NOW and remove unmatched entries older
   ;; than EXPIRE.
   
   ;; Insert the unique article headers in the buffer.
@@ -1281,7 +1283,7 @@ SCORE is the score to add."
 	(if last
 	    (progn
 	      ;; Insert the line, with a text property on the
-	      ;; terminating newline refering to the articles with
+	      ;; terminating newline referring to the articles with
 	      ;; this line.
 	      (insert last ?\n)
 	      (put-text-property (1- (point)) (point) 'articles alike)))

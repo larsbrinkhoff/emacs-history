@@ -23,3 +23,7 @@
 #undef sigsetmask
 #undef _setjmp
 #undef _longjmp
+
+/* Bill Woodward <wpwood@austin.ibm.com> says:
+   libIM *must* precede libXm, to avoid getting aixLoadIM error messages.  */
+#define LIB_MOTIF -lIM -lXm

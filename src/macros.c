@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -50,18 +51,25 @@ Non-nil arg (prefix arg) means append to last macro defined;\n\
     {
       current_kboard->kbd_macro_bufsize = 30;
       current_kboard->kbd_macro_buffer
-	= (Lisp_Object *)malloc (30 * sizeof (Lisp_Object));
+	= (Lisp_Object *)xmalloc (30 * sizeof (Lisp_Object));
     }
   update_mode_lines++;
   if (NILP (append))
     {
+      if (current_kboard->kbd_macro_bufsize > 200)
+	{
+	  current_kboard->kbd_macro_bufsize = 30;
+	  current_kboard->kbd_macro_buffer
+	    = (Lisp_Object *)xrealloc (current_kboard->kbd_macro_buffer,
+				       30 * sizeof (Lisp_Object));
+	}
       current_kboard->kbd_macro_ptr = current_kboard->kbd_macro_buffer;
       current_kboard->kbd_macro_end = current_kboard->kbd_macro_buffer;
-      message("Defining kbd macro...");
+      message ("Defining kbd macro...");
     }
   else
     {
-      message("Appending to kbd macro...");
+      message ("Appending to kbd macro...");
       current_kboard->kbd_macro_ptr = current_kboard->kbd_macro_end;
       Fexecute_kbd_macro (current_kboard->Vlast_kbd_macro,
 			  make_number (1));
@@ -81,16 +89,16 @@ under that name.\n\
 With numeric arg, repeat macro now that many times,\n\
 counting the definition just completed as the first repetition.\n\
 An argument of zero means repeat until error.")
-  (arg)
-     Lisp_Object arg;
+  (repeat)
+     Lisp_Object repeat;
 {
   if (NILP (current_kboard->defining_kbd_macro))
     error ("Not defining kbd macro.");
 
-  if (NILP (arg))
-    XSETFASTINT (arg, 1);
+  if (NILP (repeat))
+    XSETFASTINT (repeat, 1);
   else
-    CHECK_NUMBER (arg, 0);
+    CHECK_NUMBER (repeat, 0);
 
   if (!NILP (current_kboard->defining_kbd_macro))
     {
@@ -100,16 +108,16 @@ An argument of zero means repeat until error.")
 	= make_event_array ((current_kboard->kbd_macro_end
 			     - current_kboard->kbd_macro_buffer),
 			    current_kboard->kbd_macro_buffer);
-      message("Keyboard macro defined");
+      message ("Keyboard macro defined");
     }
 
-  if (XFASTINT (arg) == 0)
-    Fexecute_kbd_macro (current_kboard->Vlast_kbd_macro, arg);
+  if (XFASTINT (repeat) == 0)
+    Fexecute_kbd_macro (current_kboard->Vlast_kbd_macro, repeat);
   else
     {
-      XSETINT (arg, XINT (arg)-1);
-      if (XINT (arg) > 0)
-	Fexecute_kbd_macro (current_kboard->Vlast_kbd_macro, arg);
+      XSETINT (repeat, XINT (repeat)-1);
+      if (XINT (repeat) > 0)
+	Fexecute_kbd_macro (current_kboard->Vlast_kbd_macro, repeat);
     }
   return Qnil;
 }
@@ -155,6 +163,16 @@ DEFUN ("cancel-kbd-macro-events", Fcancel_kbd_macro_events,
 {
   current_kboard->kbd_macro_ptr = current_kboard->kbd_macro_end;
 }
+
+DEFUN ("store-kbd-macro-event", Fstore_kbd_macro_event,
+       Sstore_kbd_macro_event, 1, 1, 0,
+  "Store EVENT into the keyboard macro being defined.")
+  (event)
+     Lisp_Object event;
+{
+  store_kbd_macro_char (event);
+  return Qnil;
+}
 
 DEFUN ("call-last-kbd-macro", Fcall_last_kbd_macro, Scall_last_kbd_macro,
   0, 1, "p",
@@ -193,18 +211,20 @@ DEFUN ("execute-kbd-macro", Fexecute_kbd_macro, Sexecute_kbd_macro, 1, 2, 0,
   "Execute MACRO as string of editor command characters.\n\
 If MACRO is a symbol, its function definition is used.\n\
 COUNT is a repeat count, or nil for once, or 0 for infinite loop.")
-  (macro, prefixarg)
-     Lisp_Object macro, prefixarg;
+  (macro, count)
+     Lisp_Object macro, count;
 {
   Lisp_Object final;
   Lisp_Object tem;
-  int count = specpdl_ptr - specpdl;
+  int pdlcount = specpdl_ptr - specpdl;
   int repeat = 1;
   struct gcpro gcpro1;
 
-  if (!NILP (prefixarg))
-    prefixarg = Fprefix_numeric_value (prefixarg),
-    repeat = XINT (prefixarg);
+  if (!NILP (count))
+    {
+      count = Fprefix_numeric_value (count);
+      repeat = XINT (count);
+    }
 
   final = indirect_function (macro);
   if (!STRINGP (final) && !VECTORP (final))
@@ -229,7 +249,7 @@ COUNT is a repeat count, or nil for once, or 0 for infinite loop.")
 	 && (STRINGP (Vexecuting_macro) || VECTORP (Vexecuting_macro)));
 
   UNGCPRO;
-  return unbind_to (count, Qnil);
+  return unbind_to (pdlcount, Qnil);
 }
 
 init_macros ()
@@ -247,6 +267,7 @@ syms_of_macros ()
   defsubr (&Scall_last_kbd_macro);
   defsubr (&Sexecute_kbd_macro);
   defsubr (&Scancel_kbd_macro_events);
+  defsubr (&Sstore_kbd_macro_event);
 
   DEFVAR_KBOARD ("defining-kbd-macro", defining_kbd_macro,
     "Non-nil while a keyboard macro is being defined.  Don't set this!");

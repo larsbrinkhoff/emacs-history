@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -118,7 +119,7 @@ Otherwise, ICON should be a vector or the name of a vector of [x y 32-chars]"
   ("Set Cursor" sc:set-cursor
 		(sc::menu-choose-cursor *menu-window* *menu-x* *menu-y*)) 
   ("Reset Cursor" sc:set-cursor nil)
-  ("Help". sc::edit-icon-help-menu)
+  ("Help" sc::edit-icon-help-menu)
   ("Quit" sc::quit-edit)
   )
 

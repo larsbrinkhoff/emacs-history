@@ -363,11 +363,11 @@ paper size (3.75in x 6.75in).  All of these commands accept a prefix
 argument which specifies how many days, weeks, months or years to print
 (starting always with the selected one).
 
-  If the variable @code{cal-text-holidays} is non-@code{nil}, then the
-printed calendars show the holidays in @code{calendar-holidays}.  If the
-variable @code{cal-tex-diary} is non-@code{nil} (the default is
-@code{nil}), diary entries are included also (in weekly and monthly
-calendars only).
+  If the variable @code{cal-text-holidays} is non-@code{nil} (the
+default), then the printed calendars show the holidays in
+@code{calendar-holidays}.  If the variable @code{cal-tex-diary} is
+non-@code{nil} (the default is @code{nil}), diary entries are included
+also (in weekly and monthly calendars only).
 
 @node Holidays
 @section Holidays
@@ -381,7 +381,7 @@ and can display them.
 Display holidays for the selected date
 (@code{calendar-cursor-holidays}).
 @item Mouse-2 Holidays
-Display any diary entries for the date you click on.
+Display any holidays for the date you click on.
 @item x
 Mark holidays in the calendar window (@code{mark-calendar-holidays}).
 @item u
@@ -637,10 +637,16 @@ Goodman-Martinez-Thompson correlation in its calculations.
 @cindex Ethiopic calendar
   The Copts use a calendar based on the ancient Egyptian solar calendar.
 Their calendar consists of twelve 30-day months followed by an extra
-five day period.  Once every fourth year they add a leap day is added to
-this extra period to make it six days.  The Ethiopic calendar is
-identical in structure, but has a different year numbers and month
-names.
+five day period.  Once every fourth year they add a leap day to this
+extra period to make it six days.  The Ethiopic calendar is identical in
+structure, but has a different year numbers and month names.
+
+@cindex Persian calendar
+  The Persians use a solar calendar based on a design of Omar Khayyam.
+Their calendar consists of twelve months of which the first six have 31
+days, the next five have 30 days, and the last has 29 in ordinary years
+and 30 in leap years.  Leap years occur in a complicated pattern every
+four or five years.
 
 @cindex Chinese calendar
   The Chinese calendar is a complicated system of lunar months arranged
@@ -648,7 +654,7 @@ into solar years.  The years go in cycles of sixty, each year containing
 either twelve months in an ordinary year or thirteen months in a leap
 year; each month has either 29 or 30 days.  Years, ordinary months, and
 days are named by combining one of ten ``celestial stems'' with one of
-twelve ``terrestial branchs'' for a total of sixty names that are
+twelve ``terrestrial branches'' for a total of sixty names that are
 repeated in a cycle of sixty.
 
 @node To Other Calendar
@@ -694,17 +700,21 @@ Display Coptic date for selected day
 @item p e
 Display Ethiopic date for selected day
 (@code{calendar-print-ethiopic-date}).
+@findex calendar-print-persian-date
+@item p p
+Display Perisan date for selected day
+(@code{calendar-print-persian-date}).
 @findex calendar-print-mayan-date
 @item p m
 Display Mayan date for selected day (@code{calendar-print-mayan-date}).
 @end table
 
-  If you are using X windows, the easiest way to translate a date into
-other calendars is to click on it with @kbd{Mouse-2}, then choose
-@kbd{Other Calendars} from the menu that appears.  This displays the
-equivalent forms of the date in all the calendars Emacs understands, in
-the form of a menu.  (Choosing an alternative from this menu doesn't
-actually do anything---the menu is used only for display.)
+  If you are using X, the easiest way to translate a date into other
+calendars is to click on it with @kbd{Mouse-2}, then choose @kbd{Other
+Calendars} from the menu that appears.  This displays the equivalent
+forms of the date in all the calendars Emacs understands, in the form of
+a menu.  (Choosing an alternative from this menu doesn't actually do
+anything---the menu is used only for display.)
 
   Put point on the desired date of the Gregorian calendar, then type the
 appropriate keys.  The @kbd{p} is a mnemonic for ``print'' since Emacs
@@ -725,6 +735,7 @@ other than Mayan; for the Mayan calendar, see the following section.
 @findex calendar-goto-islamic-date
 @findex calendar-goto-french-date
 @findex calendar-goto-chinese-date
+@findex calendar-goto-persian-date
 @findex calendar-goto-coptic-date
 @findex calendar-goto-ethiopic-date
 @table @kbd
@@ -749,6 +760,9 @@ Move to a date specified in the French Revolutionary calendar
 @item g C
 Move to a date specified in the Chinese calendar
 (@code{calendar-goto-chinese-date}).
+@item g p
+Move to a date specified in the Persian calendar
+(@code{calendar-goto-persian-date}).
 @item g k
 Move to a date specified in the Coptic calendar
 (@code{calendar-goto-coptic-date}).
@@ -1153,15 +1167,15 @@ exiting Emacs.
 @subsection Special Diary Entries
 
   In addition to entries based on calendar dates, the diary file can
-contain @dfn{special entries} for regular events such as anniversaries.
+contain @dfn{sexp entries} for regular events such as anniversaries.
 These entries are based on Lisp expressions (sexps) that Emacs evaluates
-as it scans the diary file.  Instead of a date, a special entry contains
+as it scans the diary file.  Instead of a date, a sexp entry contains
 @samp{%%} followed by a Lisp expression which must begin and end with
 parentheses.  The Lisp expression determines which dates the entry
 applies to.
 
   Calendar mode provides commands to insert certain commonly used
-special entries:
+sexp entries:
 
 @table @kbd
 @item i a
@@ -1263,7 +1277,7 @@ the 11 above to @samp{'(1 2 3)} and have the entry apply to the last
 Thursday of January, February, and March.  If the month is @code{t}, the
 entry applies to all months of the year.@refill
 
-  Most generally, special diary entries can perform arbitrary
+  Most generally, sexp diary entries can perform arbitrary
 computations to determine when they apply.  @xref{Sexp Diary Entries,,
 Sexp Diary Entries, elisp, The Emacs Lisp Reference Manual}.
 
@@ -1388,7 +1402,7 @@ minutes.  The value for Cambridge, Massachusetts is 60.
 @c @vindex calendar-daylight-savings-starts-time  too long!
 @vindex calendar-daylight-savings-ends-time
   The two variables @code{calendar-daylight-savings-starts-time} and
-@code{calendar-daylight-savings-ends-time} specify the number of
-minutes after midnight local time when the transition to and from
-daylight savings time should occur.  For Cambridge, both variables'
+@code{calendar-daylight-savings-ends-time} specify the number of minutes
+after midnight local time when the transition to and from daylight
+savings time should occur.  For Cambridge, Massachusetts both variables'
 values are 120.

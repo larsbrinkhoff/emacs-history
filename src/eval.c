@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -127,6 +128,10 @@ Lisp_Object Vstack_trace_on_error;
    if an error is handled by the command loop's error handler.  */
 Lisp_Object Vdebug_on_error;
 
+/* List of conditions and regexps specifying error messages which
+   do not enter the debugger even if Vdebug_on_errors says they should.  */
+Lisp_Object Vdebug_ignored_errors;
+
 /* Nonzero means enter debugger if a quit signal
    is handled by the command loop's error handler. */
 int debug_on_quit;
@@ -152,6 +157,7 @@ init_eval_once ()
 {
   specpdl_size = 50;
   specpdl = (struct specbinding *) xmalloc (specpdl_size * sizeof (struct specbinding));
+  specpdl_ptr = specpdl;
   max_specpdl_size = 600;
   max_lisp_eval_depth = 200;
 
@@ -785,9 +791,9 @@ Otherwise, the macro is expanded and the expansion is considered\n\
 in place of FORM.  When a non-macro-call results, it is returned.\n\n\
 The second optional arg ENVIRONMENT species an environment of macro\n\
 definitions to shadow the loaded ones for use in file byte-compilation.")
-  (form, env)
+  (form, environment)
      register Lisp_Object form;
-     Lisp_Object env;
+     Lisp_Object environment;
 {
   /* With cleanups from Hallvard Furuseth.  */
   register Lisp_Object expander, sym, def, tem;
@@ -807,7 +813,7 @@ definitions to shadow the loaded ones for use in file byte-compilation.")
 	{
 	  QUIT;
 	  sym = def;
-	  tem = Fassq (sym, env);
+	  tem = Fassq (sym, environment);
 	  if (NILP (tem))
 	    {
 	      def = XSYMBOL (sym)->function;
@@ -816,11 +822,11 @@ definitions to shadow the loaded ones for use in file byte-compilation.")
 	    }
 	  break;
 	}
-      /* Right now TEM is the result from SYM in ENV,
+      /* Right now TEM is the result from SYM in ENVIRONMENT,
 	 and if TEM is nil then DEF is SYM's function definition.  */
       if (NILP (tem))
 	{
-	  /* SYM is not mentioned in ENV.
+	  /* SYM is not mentioned in ENVIRONMENT.
 	     Look at its function definition.  */
 	  if (EQ (def, Qunbound) || !CONSP (def))
 	    /* Not defined or definition not suitable */
@@ -956,8 +962,8 @@ unwind_to_catch (catch, value)
 DEFUN ("throw", Fthrow, Sthrow, 2, 2, 0,
   "(throw TAG VALUE): throw to the catch for TAG and return VALUE from it.\n\
 Both TAG and VALUE are evalled.")
-  (tag, val)
-     register Lisp_Object tag, val;
+  (tag, value)
+     register Lisp_Object tag, value;
 {
   register struct catchtag *c;
 
@@ -967,9 +973,9 @@ Both TAG and VALUE are evalled.")
 	for (c = catchlist; c; c = c->next)
 	  {
 	    if (EQ (c->tag, tag))
-	      unwind_to_catch (c, val);
+	      unwind_to_catch (c, value);
 	  }
-      tag = Fsignal (Qno_catch, Fcons (tag, Fcons (val, Qnil)));
+      tag = Fsignal (Qno_catch, Fcons (tag, Fcons (value, Qnil)));
     }
 }
 
@@ -1078,6 +1084,16 @@ See also the function `signal' for more info.")
   return val;
 }
 
+/* Call the function BFUN with no arguments, catching errors within it
+   according to HANDLERS.  If there is an error, call HFUN with
+   one argument which is the data that describes the error:
+   (SIGNALNAME . DATA)
+
+   HANDLERS can be a list of conditions to catch.
+   If HANDLERS is Qt, catch all errors.
+   If HANDLERS is Qerror, catch all errors
+   but allow the debugger to run if that is enabled.  */
+
 Lisp_Object
 internal_condition_case (bfun, handlers, hfun)
      Lisp_Object (*bfun) ();
@@ -1118,6 +1134,8 @@ internal_condition_case (bfun, handlers, hfun)
   handlerlist = h.next;
   return val;
 }
+
+/* Like internal_condition_case but call HFUN with ARG as its argument.  */
 
 Lisp_Object
 internal_condition_case_1 (bfun, arg, handlers, hfun)
@@ -1183,7 +1201,7 @@ See also the function `condition-case'.")
   if (gc_in_progress || waiting_for_input)
     abort ();
 
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_WINDOW_SYSTEM
   TOTALLY_UNBLOCK_INPUT;
 #endif
 
@@ -1204,8 +1222,8 @@ See also the function `condition-case'.")
 #else
       if (EQ (clause, Qlambda))
 	{
-	  /* We can't return values to code which signalled an error, but we
-	     can continue code which has signalled a quit.  */
+	  /* We can't return values to code which signaled an error, but we
+	     can continue code which has signaled a quit.  */
 	  if (EQ (error_symbol, Qquit))
 	    return Qnil;
 	  else
@@ -1259,6 +1277,45 @@ wants_debugger (list, conditions)
   return 0;
 }
 
+/* Return 1 if an error with condition-symbols CONDITIONS,
+   and described by SIGNAL-DATA, should skip the debugger
+   according to debugger-ignore-errors.  */
+
+static int
+skip_debugger (conditions, data)
+     Lisp_Object conditions, data;
+{
+  Lisp_Object tail;
+  int first_string = 1;
+  Lisp_Object error_message;
+
+  for (tail = Vdebug_ignored_errors; CONSP (tail);
+       tail = XCONS (tail)->cdr)
+    {
+      if (STRINGP (XCONS (tail)->car))
+	{
+	  if (first_string)
+	    {
+	      error_message = Ferror_message_string (data);
+	      first_string = 0;
+	    }
+	  if (fast_string_match (XCONS (tail)->car, error_message) >= 0)
+	    return 1;
+	}
+      else
+	{
+	  Lisp_Object contail;
+
+	  for (contail = conditions; CONSP (contail);
+	       contail = XCONS (contail)->cdr)
+	    if (EQ (XCONS (tail)->car, XCONS (contail)->car))
+	      return 1;
+	}
+    }
+
+  return 0;
+}
+
 /* Value of Qlambda means we have called debugger and user has continued.
    Store value returned from debugger into *DEBUGGER_VALUE_PTR.  */
 
@@ -1279,14 +1336,15 @@ find_handler_clause (handlers, conditions, sig, data, debugger_value_ptr)
       if ((EQ (sig, Qquit)
 	   ? debug_on_quit
 	   : wants_debugger (Vdebug_on_error, conditions))
+	  && ! skip_debugger (conditions, Fcons (sig, data))
 	  && when_entered_debugger < num_nonmacro_input_chars)
 	{
 	  int count = specpdl_ptr - specpdl;
 	  specbind (Qdebug_on_error, Qnil);
-	  *debugger_value_ptr =
-	    call_debugger (Fcons (Qerror,
-				  Fcons (Fcons (sig, data),
-					 Qnil)));
+	  *debugger_value_ptr
+	    = call_debugger (Fcons (Qerror,
+				    Fcons (Fcons (sig, data),
+					   Qnil)));
 	  return unbind_to (count, Qlambda);
 	}
       return Qt;
@@ -1924,6 +1982,11 @@ run_hook_with_args (nargs, args, cond)
 {
   Lisp_Object sym, val, ret;
   struct gcpro gcpro1, gcpro2;
+
+  /* If we are dying or still initializing,
+     don't do anything--it would probably crash if we tried.  */
+  if (NILP (Vrun_hooks))
+    return;
 
   sym = args[0];
   val = find_symbol_value (sym);
@@ -2712,7 +2775,7 @@ Output stream used is value of `standard-output'.")
 }
 
 DEFUN ("backtrace-frame", Fbacktrace_frame, Sbacktrace_frame, 1, 1, "",
-  "Return the function and arguments N frames up from current execution point.\n\
+  "Return the function and arguments NFRAMES up from current execution point.\n\
 If that frame has not evaluated the arguments yet (or is a special form),\n\
 the value is (nil FUNCTION ARG-FORMS...).\n\
 If that frame has evaluated its arguments and called its function already,\n\
@@ -2720,7 +2783,7 @@ the value is (t FUNCTION ARG-VALUES...).\n\
 A &rest arg is represented as the tail of the list ARG-VALUES.\n\
 FUNCTION is whatever was supplied as car of evaluated list,\n\
 or a lambda expression for macro calls.\n\
-If N is more than the number of frames, the value is nil.")
+If NFRAMES is more than the number of frames, the value is nil.")
   (nframes)
      Lisp_Object nframes;
 {
@@ -2769,7 +2832,7 @@ Typing C-g sets `quit-flag' non-nil, regardless of `inhibit-quit'.");
   DEFVAR_LISP ("inhibit-quit", &Vinhibit_quit,
     "Non-nil inhibits C-g quitting from happening immediately.\n\
 Note that `quit-flag' will still be set by typing C-g,\n\
-so a quit will be signalled as soon as `inhibit-quit' is nil.\n\
+so a quit will be signaled as soon as `inhibit-quit' is nil.\n\
 To prevent this happening, set `quit-flag' to nil\n\
 before making `inhibit-quit' nil.");
   Vinhibit_quit = Qnil;
@@ -2820,6 +2883,15 @@ If the value is a list, an error only means to enter the debugger\n\
 if one of its condition symbols appears in the list.\n\
 See also variable `debug-on-quit'.");
   Vdebug_on_error = Qnil;
+
+  DEFVAR_LISP ("debug-ignored-errors", &Vdebug_ignored_errors,
+    "*List of errors for which the debugger should not be called.\n\
+Each element may be a condition-name or a regexp that matches error messages.\n\
+If any element applies to a given error, that error skips the debugger\n\
+and just returns to top level.\n\
+This overrides the variable `debug-on-error'.\n\
+It does not apply to errors handled by `condition-case'.");
+  Vdebug_ignored_errors = Qnil;
 
   DEFVAR_BOOL ("debug-on-quit", &debug_on_quit,
     "*Non-nil means enter debugger if quit is signaled (C-g, for example).\n\

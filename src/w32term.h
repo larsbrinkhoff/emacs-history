@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Added by Kevin Gallo */
 
@@ -24,10 +25,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* The class of this X application.  */
 #define EMACS_CLASS "Emacs"
 
-#define BLACK_PIX_DEFAULT(f) RGB(0,0,0)
-#define WHITE_PIX_DEFAULT(f) RGB(255,255,255)
+#define BLACK_PIX_DEFAULT(f) PALETTERGB(0,0,0)
+#define WHITE_PIX_DEFAULT(f) PALETTERGB(255,255,255)
 
-#define FONT_WIDTH(f)	((f)->tm.tmMaxCharWidth)
+#define FONT_WIDTH(f)	((f)->tm.tmAveCharWidth)
 #define FONT_HEIGHT(f)	((f)->tm.tmHeight)
 #define FONT_BASE(f)    ((f)->tm.tmAscent)
 
@@ -74,6 +75,23 @@ struct win32_bitmap_record
   /* Record some info about this pixmap.  */
   int height, width, depth;
 };
+
+/* Palette book-keeping stuff for mapping requested colors into the
+   system palette.  Keep a ref-counted list of requested colors and
+   regenerate the app palette whenever the requested list changes. */
+
+extern Lisp_Object Vwin32_enable_palette;
+
+struct win32_palette_entry {
+  struct win32_palette_entry * next;
+  PALETTEENTRY entry;
+#if 0
+  unsigned refcount;
+#endif
+};
+
+extern void win32_regenerate_palette(struct frame *f);
+
 
 /* For each display (currently only one on win32), we have a structure that
    records information about it.  */
@@ -100,6 +118,15 @@ struct win32_display_info
   Window root_window;
   /* The cursor to use for vertical scroll bars.  */
   Cursor vertical_scroll_bar_cursor;
+
+  /* color palette information */
+  int has_palette;
+  struct win32_palette_entry * color_list;
+  unsigned num_colors;
+  HPALETTE palette;
+
+  /* deferred action flags checked when starting frame update */
+  int regen_palette;
 
   /* A table of all the fonts we have already loaded.  */
   struct font_info *font_table;
@@ -186,6 +213,9 @@ extern struct win32_display_info *win32_term_init ();
 
 struct win32_output
 {
+  /* Original palette (used to deselect real palette after drawing) */
+  HPALETTE old_palette;
+
   /* Position of the Win32 window (x and y offsets in root window).  */
   int left_pos;
   int top_pos;
@@ -547,17 +577,24 @@ win32_fill_area (f,hdc,f->output_data.win32->background_pixel,x,y,nx,ny)
 extern XFontStruct *win32_load_font ();
 extern void win32_unload_font ();
 
-extern HDC map_mode();
-
-#define my_get_dc(hwnd) (map_mode (GetDC (hwnd)))
-
 #define WM_EMACS_START                 (WM_USER + 1)
 #define WM_EMACS_KILL                  (WM_EMACS_START + 0x00)
 #define WM_EMACS_CREATEWINDOW          (WM_EMACS_START + 0x01)
 #define WM_EMACS_DONE                  (WM_EMACS_START + 0x02)
 #define WM_EMACS_CREATESCROLLBAR       (WM_EMACS_START + 0x03)
-#define WM_EMACS_DESTROYWINDOW         (WM_EMACS_START + 0x04)
+#define WM_EMACS_SHOWWINDOW            (WM_EMACS_START + 0x04)
+#define WM_EMACS_SETWINDOWPOS          (WM_EMACS_START + 0x05)
+#define WM_EMACS_DESTROYWINDOW         (WM_EMACS_START + 0x06)
 #define WM_EMACS_END                   (WM_EMACS_START + 0x10)
+
+typedef struct {
+  HWND hwndAfter;
+  int x;
+  int y;
+  int cx;
+  int cy;
+  int flags;
+} Win32WindowPos;
 
 #define WND_X_UNITS_INDEX      (0) 
 #define WND_Y_UNITS_INDEX      (4) 
@@ -577,13 +614,45 @@ typedef struct Win32Msg {
     RECT rect;
 } Win32Msg;
 
+extern CRITICAL_SECTION critsect;
+
 extern void init_crit ();
-extern void enter_crit ();
-extern void leave_crit ();
 extern void delete_crit ();
+
+#define enter_crit() EnterCriticalSection (&critsect)
+#define leave_crit() LeaveCriticalSection (&critsect)
+
+extern void select_palette (struct frame * f, HDC hdc);
+extern void deselect_palette (struct frame * f, HDC hdc);
+extern HDC get_frame_dc (struct frame * f);
+extern int release_frame_dc (struct frame * f, HDC hDC);
 
 extern BOOL get_next_msg ();
 extern BOOL post_msg ();
 extern void wait_for_sync ();
 
 extern BOOL parse_button ();
+
+/* Keypad command key support.  Win32 doesn't have virtual keys defined
+   for the function keys on the keypad (they are mapped to the standard
+   fuction keys), so we define our own.  */
+#define VK_NUMPAD_BEGIN		0x92
+#define VK_NUMPAD_CLEAR		(VK_NUMPAD_BEGIN + 0)
+#define VK_NUMPAD_ENTER		(VK_NUMPAD_BEGIN + 1)
+#define VK_NUMPAD_PRIOR		(VK_NUMPAD_BEGIN + 2)
+#define VK_NUMPAD_NEXT		(VK_NUMPAD_BEGIN + 3)
+#define VK_NUMPAD_END		(VK_NUMPAD_BEGIN + 4)
+#define VK_NUMPAD_HOME		(VK_NUMPAD_BEGIN + 5)
+#define VK_NUMPAD_LEFT		(VK_NUMPAD_BEGIN + 6)
+#define VK_NUMPAD_UP		(VK_NUMPAD_BEGIN + 7)
+#define VK_NUMPAD_RIGHT		(VK_NUMPAD_BEGIN + 8)
+#define VK_NUMPAD_DOWN		(VK_NUMPAD_BEGIN + 9)
+#define VK_NUMPAD_INSERT	(VK_NUMPAD_BEGIN + 10)
+#define VK_NUMPAD_DELETE	(VK_NUMPAD_BEGIN + 11)
+
+#ifndef VK_LWIN
+/* Older compiler environments don't have these defined.  */
+#define VK_LWIN			0x5B
+#define VK_RWIN			0x5C
+#define VK_APPS			0x5D
+#endif

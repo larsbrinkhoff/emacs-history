@@ -4,6 +4,23 @@
 ;; Version: 3.5
 ;; Keywords: emulations
 
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
 ;;; Commentary:
 
 ;; A full-featured vi(1) emulator.
@@ -70,7 +87,7 @@
 re-execute last destructive command")
 
 (defconst vip-shift-width 8
-  "*The number of colums shifted by > and < command.")
+  "*The number of columns shifted by > and < command.")
 
 (defconst vip-re-replace nil
   "*If t then do regexp replace, if nil then do string replace.")
@@ -121,6 +138,9 @@ bound to delete-backward-char.")
 (defvar vip-tags-file-name "TAGS")
 
 (defvar vip-inhibit-startup-message nil)
+
+(defvar vip-startup-file (convert-standard-filename "~/.vip")
+  "filename used as strtup file for `vip-mode'.")
 
 ;; basic set up
 
@@ -243,7 +263,8 @@ Type `n' to quit this window for now.\n")
 	    (progn
 	      (save-excursion
 		(set-buffer
-		 (find-file-noselect (substitute-in-file-name "~/.vip")))
+		 (find-file-noselect
+		  (substitute-in-file-name vip-startup-file)))
 		(goto-char (point-max))
 		(insert "\n(setq vip-inhibit-startup-message t)\n")
 		(save-buffer)
@@ -392,7 +413,7 @@ obtained so far, and COM is the command part obtained so far."
 	(setq unread-command-events (list char)))
     ;; as com is non-nil, this means that we have a command to execute
     (if (or (= (car com) ?r) (= (car com) ?R))
-	;; execute apropriate region command.
+	;; execute appropriate region command.
 	(let ((char (car com)) (com (cdr com)))
 	  (setq prefix-arg (cons value com))
 	  (if (= char ?r) (vip-region prefix-arg)
@@ -918,9 +939,9 @@ the query replace mode will toggle between string replace and regexp replace."
     (if (string= str "")
 	(progn
 	  (setq vip-re-replace (not vip-re-replace))
-	  (message (format "Replace mode changed to %s."
-			   (if vip-re-replace "regexp replace"
-			     "string replace"))))
+	  (message "Replace mode changed to %s."
+		   (if vip-re-replace "regexp replace"
+		     "string replace")))
       (if vip-re-replace
 	  ;; (replace-regexp
 	  ;;  str
@@ -1439,9 +1460,9 @@ giving null search string."
     (if (string= vip-s-string "")
 	(progn
 	  (setq vip-re-search (not vip-re-search))
-	  (message (format "Search mode changed to %s search."
-			   (if vip-re-search "regular expression"
-			     "vanilla"))))
+	  (message "Search mode changed to %s search."
+		   (if vip-re-search "regular expression"
+		     "vanilla")))
       (vip-search vip-s-string t val)
       (if com
 	  (progn
@@ -1459,9 +1480,9 @@ giving null search string."
     (if (string= vip-s-string "")
 	(progn
 	  (setq vip-re-search (not vip-re-search))
-	  (message (format "Search mode changed to %s search."
-			   (if vip-re-search "regular expression"
-			     "vanilla"))))
+	  (message "Search mode changed to %s search."
+		   (if vip-re-search "regular expression"
+		     "vanilla")))
       (vip-search vip-s-string nil val)
       (if com
 	  (progn
@@ -2533,7 +2554,7 @@ a token has type \(command, address, end-mark\) and value."
 	     (string= ex-token "insert")
 	     (string= ex-token "open")
 	     )
-	 (error (format "%s: no such command from VIP" ex-token)))
+	 (error "%s: no such command from VIP" ex-token))
 	((or (string= ex-token "abbreviate")
 	     (string= ex-token "list")
 	     (string= ex-token "next")
@@ -2546,8 +2567,8 @@ a token has type \(command, address, end-mark\) and value."
 	     (string= ex-token "xit")
 	     (string= ex-token "z")
 	     )
-	 (error (format "%s: not implemented in VIP" ex-token)))
-	(t (error (format "%s: Not an editor command" ex-token)))))
+	 (error "%s: not implemented in VIP" ex-token))
+	(t (error "%s: Not an editor command" ex-token))))
 
 (defun ex-goto ()
   "ex goto command"
@@ -2963,7 +2984,7 @@ vip-s-string"
   (if (and (not (string= ex-file (buffer-file-name)))
 	   (file-exists-p ex-file)
 	   (not ex-variant))
-      (error (format "\"%s\" File exists - use w! to override" ex-file)))
+      (error "\"%s\" File exists - use w! to override" ex-file))
   (let ((end (car ex-addresses)) (beg (car (cdr ex-addresses))))
     (if (> beg end) (error "First address exceeds second"))
     (save-excursion
@@ -3020,6 +3041,6 @@ vip-s-string"
 		(point-min)
 		(if (null ex-addresses) (point-max) (car ex-addresses))))))
 
-(if (file-exists-p "~/.vip") (load "~/.vip"))
+(if (file-exists-p vip-startup-file) (load vip-startup-file))
 
 ;;; vip.el ends here

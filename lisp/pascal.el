@@ -7,55 +7,56 @@
 
 ;; This file is part of GNU Emacs.
 
-;; This program is free software; you can redistribute it and/or modify
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
-;; (at your option) any later version.
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;; This program is distributed in the hope that it will be useful,
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; USAGE
-;;; =====
+;; USAGE
+;; =====
 
-;;; Emacs should enter Pascal mode when you find a Pascal source file.
-;;; When you have entered Pascal mode, you may get more info by pressing
-;;; C-h m. You may also get online help describing various functions by:
-;;; C-h f <Name of function you want described>
+;; Emacs should enter Pascal mode when you find a Pascal source file.
+;; When you have entered Pascal mode, you may get more info by pressing
+;; C-h m. You may also get online help describing various functions by:
+;; C-h f <Name of function you want described>
 
-;;; If you want to customize Pascal mode to fit you better, you may add
-;;; these lines (the values of the variables presented here are the defaults):
-;;;
-;;; ;; User customization for Pascal mode
-;;; (setq pascal-indent-level       3
-;;;       pascal-case-indent        2
-;;;       pascal-auto-newline       nil
-;;;       pascal-tab-always-indent  t
-;;;       pascal-auto-endcomments   t
-;;;       pascal-auto-lineup        '(all)
-;;;       pascal-toggle-completions nil
-;;;       pascal-type-keywords      '("array" "file" "packed" "char" 
-;;; 				      "integer" "real" "string" "record")
-;;;       pascal-start-keywords     '("begin" "end" "function" "procedure"
-;;; 				      "repeat" "until" "while" "read" "readln"
-;;; 				      "reset" "rewrite" "write" "writeln")
-;;;       pascal-separator-keywords '("downto" "else" "mod" "div" "then"))
+;; If you want to customize Pascal mode to fit you better, you may add
+;; these lines (the values of the variables presented here are the defaults):
+;;
+;; ;; User customization for Pascal mode
+;; (setq pascal-indent-level       3
+;;       pascal-case-indent        2
+;;       pascal-auto-newline       nil
+;;       pascal-tab-always-indent  t
+;;       pascal-auto-endcomments   t
+;;       pascal-auto-lineup        '(all)
+;;       pascal-toggle-completions nil
+;;       pascal-type-keywords      '("array" "file" "packed" "char" 
+;; 				      "integer" "real" "string" "record")
+;;       pascal-start-keywords     '("begin" "end" "function" "procedure"
+;; 				      "repeat" "until" "while" "read" "readln"
+;; 				      "reset" "rewrite" "write" "writeln")
+;;       pascal-separator-keywords '("downto" "else" "mod" "div" "then"))
 
-;;; KNOWN BUGS / BUGREPORTS
-;;; =======================
-;;; As far as I know, there are no bugs in the current version of this
-;;; package.  This may not be true however, since I never use this mode
-;;; myself and therefore would never notice them anyway.   If you do
-;;; find any bugs, you may submit them to: espensk@stud.cs.uit.no
-;;; as well as to bug-gnu-emacs@prep.ai.mit.edu.
+;; KNOWN BUGS / BUGREPORTS
+;; =======================
+;; As far as I know, there are no bugs in the current version of this
+;; package.  This may not be true however, since I never use this mode
+;; myself and therefore would never notice them anyway.   If you do
+;; find any bugs, you may submit them to: espensk@stud.cs.uit.no
+;; as well as to bug-gnu-emacs@prep.ai.mit.edu.
 
 ;;; Code:
 
@@ -176,8 +177,8 @@
   "*Indentation for case statements.")
 
 (defvar pascal-auto-newline nil
-  "*Non-nil means automatically newline after simcolons and the punctation mark
-after an end.")
+  "*Non-nil means automatically newline after semicolons and the punctuation
+mark after an end.")
 
 (defvar pascal-tab-always-indent t
   "*Non-nil means TAB in Pascal mode should always reindent the current line,
@@ -243,7 +244,8 @@ Pascal program are completed runtime and should not be added to this list.")
 		 "[:=]\\|\\(\\<record\\>\\)\\|\\(\\<end\\>\\)" 
 		 (save-excursion (end-of-line 2) (point)) t))
       (cond ((match-beginning 1) (setq nest (1+ nest)))
-	    ((match-beginning 2) (setq nest (1- nest)))))))
+	    ((match-beginning 2) (setq nest (1- nest)))
+	    ((looking-at "[^(\n]+)") (setq nest 0))))))
 
 
 (defun pascal-declaration-beg ()
@@ -290,8 +292,8 @@ Variables controlling indentation/edit style:
  pascal-case-indent       (default 2)
     Indentation for case statements.
  pascal-auto-newline      (default nil)
-    Non-nil means automatically newline after simcolons and the punctation mark
-    after an end.
+    Non-nil means automatically newline after semicolons and the punctuation
+    mark after an end.
  pascal-tab-always-indent (default t)
     Non-nil means TAB in Pascal mode should always reindent the current line,
     regardless of where in the line point is when the TAB command is used.
@@ -406,7 +408,7 @@ no args, if that value is non-nil."
 	(pascal-indent-command))))
 
 (defun electric-pascal-hash ()
-  "Insert `#', and indent to coulmn 0 if this is a CPP directive."
+  "Insert `#', and indent to column 0 if this is a CPP directive."
   (interactive)
   (insert last-command-char)
   (if (save-excursion (beginning-of-line) (looking-at "^[ \t]*#"))
@@ -426,7 +428,11 @@ no args, if that value is non-nil."
 	(save-excursion
 	  (beginning-of-line)
 	  (pascal-indent-line))
-      (insert "\t"))
+      (if (save-excursion
+	    (skip-chars-backward " \t")
+	    (bolp))
+	  (pascal-indent-line)
+	(insert "\t")))
     (pascal-indent-command)))
 
 
@@ -606,7 +612,8 @@ area.  See also `pascal-comment-area'."
 (defun pascal-end-of-statement ()
   "Move forward to end of current statement."
   (interactive)
-  (let ((nest 0) pos
+  (let ((parse-sexp-ignore-comments t)
+	(nest 0) pos
 	(regexp (concat "\\(" pascal-beg-block-re "\\)\\|\\("
 			pascal-end-block-re "\\)")))
     (if (not (looking-at "[ \t\n]")) (forward-sexp -1))
@@ -778,7 +785,8 @@ on the line which ends a function or procedure named NAME."
   "Calculate the indent of the current Pascal line.
 Return a list of two elements: (INDENT-TYPE INDENT-LEVEL)."
   (save-excursion
-    (let* ((oldpos (point))
+    (let* ((parse-sexp-ignore-comments t)
+	   (oldpos (point))
 	   (state (save-excursion (parse-partial-sexp (point-min) (point))))
 	   (nest 0) (par 0) (complete (looking-at "[ \t]*end\\>"))
 	   (elsed (looking-at "[ \t]*else\\>"))
@@ -889,8 +897,8 @@ column number the line should be indented to."
 
 (defun pascal-indent-case ()
   "Indent within case statements."
-  (skip-chars-forward ": \t")
-  (let ((end (prog2
+  (let ((savepos (point-marker))
+	(end (prog2
 		 (end-of-line)
 		 (point-marker)
 	       (re-search-backward "\\<case\\>" nil t)))
@@ -902,10 +910,12 @@ column number the line should be indented to."
 	   "^[ \t]*[^ \t,:]+[ \t]*\\(,[ \t]*[^ \t,:]+[ \t]*\\)*:"
 	   (marker-position end) 'move)
 	  (forward-char -1))
-      (delete-horizontal-space)
-      (if (> (current-column) ind)
-	  (setq ind (current-column)))
-      (pascal-end-of-statement))
+      (if (< (point) (marker-position end))
+	  (progn
+	    (delete-horizontal-space)
+	    (if (> (current-column) ind)
+		(setq ind (current-column)))
+	    (pascal-end-of-statement))))
     (goto-char beg)
     (setq oldpos (marker-position end))
     ;; Indent all case statements
@@ -922,7 +932,7 @@ column number the line should be indented to."
 	(insert " "))
       (setq oldpos (point))
       (pascal-end-of-statement))
-    (goto-char oldpos)))
+    (goto-char savepos)))
 
 (defun pascal-indent-paramlist (&optional arg)
   "Indent current line in parameterlist.
@@ -1083,7 +1093,7 @@ indent of the current line in parameterlist."
 
 (defun pascal-get-completion-decl ()
   ;; Macro for searching through current declaration (var, type or const)
-  ;; for matches of `str' and adding the occurence tp `all'
+  ;; for matches of `str' and adding the occurrence tp `all'
   (let ((end (save-excursion (pascal-declaration-end)
 			     (point)))
 	match)
@@ -1133,7 +1143,7 @@ indent of the current line in parameterlist."
       (save-excursion
 	(if (> start (prog1 (save-excursion (pascal-end-of-defun)
 					    (point))))
-	    () ; Declarations not reacable
+	    () ; Declarations not reachable
 	  (if (search-forward "(" (pascal-get-end-of-line) t)
 	      ;; Check parameterlist
 		(pascal-get-completion-decl))
@@ -1172,7 +1182,7 @@ indent of the current line in parameterlist."
   (save-excursion
     (let ((pascal-all nil))
       ;; Set buffer to use for searching labels. This should be set
-      ;; within functins which use pascal-completions
+      ;; within functions which use pascal-completions
       (set-buffer pascal-buffer-to-use)
 
       ;; Determine what should be completed
@@ -1282,7 +1292,7 @@ indent of the current line in parameterlist."
 	      (insert "" pascal-last-word-shown)
 	    (insert "" pascal-str)
 	    (message "(No match)")))
-      ;; The other form of completion does not necessarly do that.
+      ;; The other form of completion does not necessarily do that.
 
       ;; Insert match if found, or the original string if no match
       (if (or (null match) (equal match 't))
@@ -1358,7 +1368,7 @@ With optional second arg non-nil, STR is the complete name of the instruction."
 	  match)
 
       ;; Set buffer to use for searching labels. This should be set
-      ;; within functins which use pascal-completions
+      ;; within functions which use pascal-completions
       (set-buffer pascal-buffer-to-use)
 
       (let ((pascal-str pascal-str))

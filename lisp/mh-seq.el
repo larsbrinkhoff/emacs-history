@@ -16,8 +16,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -25,7 +26,7 @@
 
 ;;; Change Log:
 
-;; $Id: mh-seq.el,v 1.4 1995/11/03 02:30:17 kwzh Exp $
+;; $Id: mh-seq.el,v 1.6 1996/01/29 23:16:57 kwzh Exp $
 
 ;;; Code:
 
@@ -168,7 +169,7 @@ If optional prefix argument provided, then prompt for the message sequence."
 		    (t (intern input))))
 	 (msgs (mh-seq-to-msgs seq)))
     (if (and (null msgs) not-empty)
-	(error (format "No messages in sequence `%s'" seq)))
+	(error "No messages in sequence `%s'" seq))
     seq))
 
 

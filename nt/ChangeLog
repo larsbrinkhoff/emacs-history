@@ -1,3 +1,60 @@
+Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Version 19.31 released.
+
+Mon May 13 17:35:11 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* install.bat: Set BUILD_TYPE and INSTALL_DIR before calling make;
+	undo settings afterwards.
+
+Wed May  8 15:28:59 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* addpm.c (env_vars): Set SHELL registry entry to value of COMSPEC
+ 	environment variable.
+
+Fri May  3 15:02:44 1996  Andrew Innes <andrewi@harlequin.co.uk>
+
+	* install.bat: Allow for optimized build.
+	* makefile.def [BUILD_TYPE]: Build optimized version in its own dir.
+	(ARCH_CFLAGS) [BUILD_TYPE == spd]: Build optimized version.
+
+Fri May  3 14:18:18 1996  Andrew Innes <andrewi@harlequin.co.uk>
+
+	* addpm.c (REG_ROOT): Don't use a trailing backslash.
+	(env_vars): Rename field emacs_path to emacs_dir.
+	(main): Add link to runemacs instead of emacs.
+
+	* install.bat: Check if INSTALL_DIR is passed as an argument.
+
+	* makefile.def (CONFIG_H) [WIN95]: Use config.nt.
+
+	* makefile.nt: Build and install runemacs.exe.
+
+	* runemacs.c: New file.
+
+	* config.w95: File removed.
+
+	* inc/netdb.h, inc/unistd.h, inc/arpa/inet.h, inc/netinet/in.h,
+	inc/sys/socket.h, inc/sys/time.h: New header files.
+
+	* inc/sys/file.h (F_OK, X_OK, W_OK, R_OK): New macros.
+	
+Wed Mar 27 23:37:07 1996  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.def (DEL): Defined.
+	(DEL_TREE) [win95]: Defined.
+	(SYS_LDFLAGS): Set executable versions to 3.10.
+	
+	* makefile.nt: Change uses of del to $(DEL).
+
+Wed Jan 17 14:48:00 1996  Erik Naggum  <erik@naggum.no>
+
+	* All files: Update FSF's address in comment preamble.
+
+Wed Jan  3 22:10:17 1996  George V. Reilly  <georger@microcrafts.com>
+
+	* emacs.ico: Now the proverbial kitchen sink icon.
+
 Fri Nov 24 23:44:08 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.30 released.

@@ -1,6 +1,6 @@
 ;;; vc-hooks.el --- resident support for version-control
 
-;; Copyright (C) 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Modified by:
@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -65,12 +66,22 @@ when creating new masters.")
   "*If non-nil, backups of registered files are made as with other files.
 If nil (the default), files covered by version control don't get backups.")
 
+(defvar vc-follow-symlinks 'ask
+  "*Indicates what to do if you visit a symbolic link to a file
+that is under version control.  Editing such a file through the
+link bypasses the version control system, which is dangerous and
+probably not what you want.  
+  If this variable is t, VC follows the link and visits the real file,
+telling you about it in the echo area.  If it is `ask', VC asks for
+confirmation whether it should follow the link.  If nil, the link is
+visited and a warning displayed.")
+
 (defvar vc-display-status t
   "*If non-nil, display revision number and lock status in modeline.
 Otherwise, not displayed.")
 
 (defvar vc-consult-headers t
-  "*Identify work files by searching for version headers.")
+  "*If non-nil, identify work files by searching for version headers.")
 
 (defvar vc-keep-workfiles t
   "*If non-nil, don't delete working files after registering changes.
@@ -78,7 +89,9 @@ If the back-end is CVS, workfiles are always kept, regardless of the
 value of this flag.")
 
 (defvar vc-mistrust-permissions nil
-  "*Don't assume that permissions and ownership track version-control status.")
+  "*If non-nil, don't assume that permissions and ownership track 
+version-control status.  If nil, do rely on the permissions.
+See also variable `vc-consult-headers'.")
 
 (defun vc-mistrust-permissions (file)
   ;; Access function to the above.
@@ -181,7 +194,7 @@ value of this flag.")
   ;; Insert the contents of FILE into the current buffer.
   ;; Optional argument LIMIT is a regexp. If present,
   ;; the file is inserted in chunks of size BLOCKSIZE
-  ;; (default 8 kByte), until the first occurence of
+  ;; (default 8 kByte), until the first occurrence of
   ;; LIMIT is found. The function returns nil if FILE 
   ;; doesn't exist.
   (erase-buffer)
@@ -380,7 +393,8 @@ value of this flag.")
 		 (looking-at "[^ ]+ \\([0-9.]+\\) ")))
 	(goto-char (match-end 0))
 	;; if found, store the revision number ...
-	(setq version (buffer-substring (match-beginning 1) (match-end 1)))
+	(setq version (buffer-substring-no-properties (match-beginning 1)
+						      (match-end 1)))
 	;; ... and check for the locking state
 	(cond 
 	 ((looking-at
@@ -396,7 +410,8 @@ value of this flag.")
 	   ;; revision is locked by some user
 	   ((looking-at "\\([^ ]+\\) \\$")
 	    (setq locking-user
-		  (buffer-substring (match-beginning 1) (match-end 1)))
+		  (buffer-substring-no-properties (match-beginning 1)
+						  (match-end 1)))
 	    (setq status 'rev-and-lock))
 	   ;; everything else: false
 	   (nil)))
@@ -409,13 +424,15 @@ value of this flag.")
 				   "Revision: \\([0-9.]+\\) \\$")
 			   nil t)
 	;; if found, store the revision number ...
-	(setq version (buffer-substring (match-beginning 1) (match-end 1)))
+	(setq version (buffer-substring-no-properties (match-beginning 1)
+						      (match-end 1)))
 	;; and see if there's any lock information
 	(goto-char (point-min))
 	(if (re-search-forward (concat "\\$" "Locker:") nil t)
 	    (cond ((looking-at " \\([^ ]+\\) \\$")
-		   (setq locking-user (buffer-substring (match-beginning 1)
-							(match-end 1)))
+		   (setq locking-user (buffer-substring-no-properties
+				       (match-beginning 1)
+				       (match-end 1)))
 		   (setq status 'rev-and-lock))
 		  ((looking-at " *\\$") 
 		   (setq locking-user 'none)
@@ -751,20 +768,6 @@ For CVS, the full name of CVS/Entries is returned."
 	   vc-master-templates)
 	  nil)))))
 
-(defun vc-utc-string (timeval)
-  ;; Convert a time value into universal time, and return it as a
-  ;; human-readable string.  This is for comparing CVS checkout times
-  ;; with file modification times.
-  (let (utc (high (car timeval)) (low  (nth 1 timeval))
-        (offset (car (current-time-zone timeval))))
-    (setq low (- low offset))
-    (setq utc (if (> low 65535) 
-		  (list (1+ high) (- low 65536))
-		(if (< low 0)
-		    (list (1- high) (+ 65536 low))
-		  (list high low))))
-    (current-time-string utc)))
-	  
 (defun vc-find-cvs-master (dirname basename)
   ;; Check if DIRNAME/BASENAME is handled by CVS.
   ;; If it is, do a (throw 'found (cons MASTER 'CVS)).
@@ -788,7 +791,7 @@ For CVS, the full name of CVS/Entries is returned."
 	      (cond
 	       ((re-search-forward
 		 (concat "^/" (regexp-quote basename) 
-			 "/\\([^/]*\\)/\\([^/]*\\)/")
+			 "/\\([^/]*\\)/[^ /]* \\([A-Z][a-z][a-z]\\) *\\([0-9]*\\) \\([0-9]*\\):\\([0-9]*\\):\\([0-9]*\\) \\([0-9]*\\)")
 		 nil t)
 		(setq case-fold-search fold)  ;; restore the old value
 		;; We found it.  Store away version number now that we 
@@ -798,8 +801,20 @@ For CVS, the full name of CVS/Entries is returned."
 				 (match-string 1))
 		;; If the file hasn't been modified since checkout,
 		;; store the checkout-time.
-		(let ((mtime (nth 5 (file-attributes file))))
-		  (if (string= (match-string 2) (vc-utc-string mtime))
+		(let ((mtime (nth 5 (file-attributes file)))
+		      (second (string-to-number (match-string 6)))
+		      (minute (string-to-number (match-string 5)))
+		      (hour (string-to-number (match-string 4)))
+		      (day (string-to-number (match-string 3)))
+		      (year (string-to-number (match-string 7))))
+		  (if (equal mtime
+			     (encode-time
+			      second minute hour day
+			      (/ (string-match
+				  (match-string 2)
+				  "xxxJanFebMarAprMayJunJulAugSepOctNovDec")
+				 3)
+			      year 0))
 		      (vc-file-setprop file 'vc-checkout-time mtime)
 		    (vc-file-setprop file 'vc-checkout-time 0)))
 		(throw 'found (cons (concat dirname "CVS/Entries") 'CVS)))
@@ -904,6 +919,24 @@ control system name."
 	  (t 
 	   (concat ":" locker ":" rev)))))
 
+(defun vc-follow-link ()
+  ;; If the current buffer visits a symbolic link, this function makes it
+  ;; visit the real file instead.  If the real file is already visited in 
+  ;; another buffer, make that buffer current, and kill the buffer 
+  ;; that visits the link.
+  (let* ((truename (abbreviate-file-name (file-chase-links buffer-file-name)))
+         (true-buffer (find-buffer-visiting truename))
+	 (this-buffer (current-buffer)))
+    (if (eq true-buffer this-buffer)
+	(progn
+	  (kill-buffer this-buffer)
+	  ;; In principle, we could do something like set-visited-file-name.
+	  ;; However, it can't be exactly the same as set-visited-file-name.
+	  ;; I'm not going to work out the details right now. -- rms.
+	  (set-buffer (find-file-noselect truename)))
+      (set-buffer true-buffer)
+      (kill-buffer this-buffer))))
+
 ;;; install a call to the above as a find-file hook
 (defun vc-find-file-hook ()
   ;; Recompute whether file is version controlled,
@@ -920,11 +953,31 @@ control system name."
 	     (make-local-variable 'backup-inhibited)
 	     (setq backup-inhibited t))))
      ((let* ((link (file-symlink-p buffer-file-name))
-	     (link-type (and link (vc-backend link))))
+	     (link-type (and link (vc-backend (file-chase-links link)))))
 	(if link-type
-	    (message
-	     "Warning: symbolic link to %s-controlled source file"
-	     link-type))))))))
+            (cond ((eq vc-follow-symlinks nil)
+                   (message
+        "Warning: symbolic link to %s-controlled source file" link-type))
+                  ((or (not (eq vc-follow-symlinks 'ask))
+		       ;; If we already visited this file by following
+		       ;; the link, don't ask again if we try to visit
+		       ;; it again.  GUD does that, and repeated questions
+		       ;; are painful.
+		       (get-file-buffer
+			(abbreviate-file-name (file-chase-links buffer-file-name))))
+		       
+		   (vc-follow-link)
+		   (message "Followed link to %s" buffer-file-name)
+		   (vc-find-file-hook))
+                  (t
+                   (if (yes-or-no-p (format
+        "Symbolic link to %s-controlled source file; follow link? " link-type))
+                       (progn (vc-follow-link)
+                              (message "Followed link to %s" buffer-file-name)
+                              (vc-find-file-hook))
+                     (message 
+        "Warning: editing through the link bypasses version control")
+                     ))))))))))
 
 (add-hook 'find-file-hooks 'vc-find-file-hook)
 
@@ -994,20 +1047,20 @@ Returns t if checkout was successful, nil otherwise."
     '("Insert Header" . vc-insert-headers))
   (define-key vc-menu-map [vc-menu-check-in] '("Check In" . vc-next-action))
   (define-key vc-menu-map [vc-check-out] '("Check Out" . vc-toggle-read-only))
-  (define-key vc-menu-map [vc-register] '("Register" . vc-register))
-  (put 'vc-rename-file 'menu-enable 'vc-mode)
-  (put 'vc-version-other-window 'menu-enable 'vc-mode)
-  (put 'vc-diff 'menu-enable 'vc-mode)
-  (put 'vc-update-change-log 'menu-enable
-       '(eq (vc-buffer-backend) 'RCS))
-  (put 'vc-print-log 'menu-enable 'vc-mode)
-  (put 'vc-cancel-version 'menu-enable 'vc-mode)
-  (put 'vc-revert-buffer 'menu-enable 'vc-mode)
-  (put 'vc-insert-headers 'menu-enable 'vc-mode)
-  (put 'vc-next-action 'menu-enable '(and vc-mode (not buffer-read-only)))
-  (put 'vc-toggle-read-only 'menu-enable '(and vc-mode buffer-read-only))
-  (put 'vc-register 'menu-enable '(and buffer-file-name (not vc-mode)))
-  )
+  (define-key vc-menu-map [vc-register] '("Register" . vc-register)))
+
+(put 'vc-rename-file 'menu-enable 'vc-mode)
+(put 'vc-version-other-window 'menu-enable 'vc-mode)
+(put 'vc-diff 'menu-enable 'vc-mode)
+(put 'vc-update-change-log 'menu-enable
+     '(eq (vc-buffer-backend) 'RCS))
+(put 'vc-print-log 'menu-enable 'vc-mode)
+(put 'vc-cancel-version 'menu-enable 'vc-mode)
+(put 'vc-revert-buffer 'menu-enable 'vc-mode)
+(put 'vc-insert-headers 'menu-enable 'vc-mode)
+(put 'vc-next-action 'menu-enable 'vc-mode)
+(put 'vc-toggle-read-only 'menu-enable 'vc-mode)
+(put 'vc-register 'menu-enable '(and buffer-file-name (not vc-mode)))
 
 (provide 'vc-hooks)
 

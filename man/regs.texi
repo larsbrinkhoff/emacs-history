@@ -254,8 +254,8 @@ Save all the current bookmark values in the file @var{filename}.
 @findex bookmark-delete
 Delete the bookmark named @var{bookmark}.
 
-@item M-x bookmark-locate @key{RET} @var{bookmark} @key{RET}
-@findex bookmark-locale
+@item M-x bookmark-insert-location @key{RET} @var{bookmark} @key{RET}
+@findex bookmark-insert-location
 Insert in the buffer the name of the file that bookmark @var{bookmark}
 points to.
 

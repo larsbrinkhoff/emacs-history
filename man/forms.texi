@@ -1,7 +1,7 @@
 \input texinfo			@c -*-texinfo-*-
 @c documentation for forms-mode
 @c Written by Johan Vromans, and edited by Richard Stallman
-@c $Id: forms.texi,v 1.7 1994/10/15 10:58:31 jv Exp $
+@c $Id: forms.texi,v 1.10 1996/03/01 21:36:47 jv Exp $
 
 @comment %**start of header (This is for running Texinfo on a region.)
 @setfilename ../info/forms
@@ -39,14 +39,14 @@ paragraph not being relevant to the printed manual).
 @sp 4
 @center Forms-Mode version 2
 @sp 1
-@center January 1995
+@center March 1996
 @sp 5
 @center Johan Vromans
-@center @i{jv@@nl.net}
+@center @i{jvromans@@squirrel.nl}
 @page
 
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1989, 1995 Free Software Foundation, Inc.
+Copyright @copyright{} 1989, 1995, 1996 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -263,8 +263,8 @@ Search forward for @var{regexp} in all records following this one
 If you give an empty argument, the previous regexp is used again.
 
 @findex forms-search-backward
-@kindex C-c C-s @var{regexp} @key{RET}
-@item C-c C-s @var{regexp} @key{RET}
+@kindex C-c C-r @var{regexp} @key{RET}
+@item C-c C-r @var{regexp} @key{RET}
 Search backward for @var{regexp} in all records following this one
 (@code{forms-search-backward}).  If found, this record is shown.
 If you give an empty argument, the previous regexp is used again.
@@ -503,6 +503,18 @@ This variable holds a function to be called whenever a record is
 modified, just before updating the Forms data file.  If it is
 @code{nil}, no function is called.
 @xref{Modifying Forms Contents}, for details.
+
+@findex forms-insert-after
+@item forms-insert-after
+If this variable is not @code{nil}, new records are created @emph{after} the 
+current record. Also, upon visiting a file, the initial position will be
+at the last record instead of the first one.
+
+@findex forms-check-number-of-fields
+@item forms-check-number-of-fields
+Normally each record is checked to contain the correct number of fields.
+Under certain circumstances, this can be undesirable.
+If this variable is set to @code{nil}, these checks will be bypassed.
 @end table
 
 @node Format Description

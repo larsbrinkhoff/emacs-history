@@ -15,12 +15,12 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
 #include <stdio.h>
-#undef NULL
 #include "lisp.h"
 
 #ifndef standalone
@@ -326,10 +326,10 @@ print_string (string, printcharfun)
 }
 
 DEFUN ("write-char", Fwrite_char, Swrite_char, 1, 2, 0,
-  "Output character CHAR to stream PRINTCHARFUN.\n\
+  "Output character CHARACTER to stream PRINTCHARFUN.\n\
 PRINTCHARFUN defaults to the value of `standard-output' (which see).")
-  (ch, printcharfun)
-     Lisp_Object ch, printcharfun;
+  (character, printcharfun)
+     Lisp_Object character, printcharfun;
 {
   struct buffer *old = current_buffer;
   int old_point = -1;
@@ -338,11 +338,11 @@ PRINTCHARFUN defaults to the value of `standard-output' (which see).")
 
   if (NILP (printcharfun))
     printcharfun = Vstandard_output;
-  CHECK_NUMBER (ch, 0);
+  CHECK_NUMBER (character, 0);
   PRINTPREPARE;
-  PRINTCHAR (XINT (ch));
+  PRINTCHAR (XINT (character));
   PRINTFINISH;
-  return ch;
+  return character;
 }
 
 /* Used from outside of print.c to print a block of SIZE chars at DATA
@@ -492,8 +492,8 @@ DEFUN ("prin1", Fprin1, Sprin1, 1, 2, 0,
 Quoting characters are printed when needed to make output that `read'\n\
 can handle, whenever this is possible.\n\
 Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
-  (obj, printcharfun)
-     Lisp_Object obj, printcharfun;
+  (object, printcharfun)
+     Lisp_Object object, printcharfun;
 {
   struct buffer *old = current_buffer;
   int old_point = -1;
@@ -507,9 +507,9 @@ Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
     printcharfun = Vstandard_output;
   PRINTPREPARE;
   print_depth = 0;
-  print (obj, printcharfun, 1);
+  print (object, printcharfun, 1);
   PRINTFINISH;
-  return obj;
+  return object;
 }
 
 /* a buffer which is used to hold output being built by prin1-to-string */
@@ -520,30 +520,38 @@ DEFUN ("prin1-to-string", Fprin1_to_string, Sprin1_to_string, 1, 2, 0,
 any Lisp object.  Quoting characters are used when needed to make output\n\
 that `read' can handle, whenever this is possible, unless the optional\n\
 second argument NOESCAPE is non-nil.")
-  (obj, noescape)
-     Lisp_Object obj, noescape;
+  (object, noescape)
+     Lisp_Object object, noescape;
 {
   struct buffer *old = current_buffer;
   int old_point = -1;
   int start_point;
   Lisp_Object original, printcharfun;
-  struct gcpro gcpro1;
+  struct gcpro gcpro1, gcpro2;
+  Lisp_Object tem;
+
+  /* Save and restore this--we are altering a buffer
+     but we don't want to deactivate the mark just for that.
+     No need for specbind, since errors deactivate the mark.  */
+  tem = Vdeactivate_mark;
+  GCPRO2 (object, tem);
 
   printcharfun = Vprin1_to_string_buffer;
   PRINTPREPARE;
   print_depth = 0;
-  print (obj, printcharfun, NILP (noescape));
+  print (object, printcharfun, NILP (noescape));
   /* Make Vprin1_to_string_buffer be the default buffer after PRINTFINSH */
   PRINTFINISH;
   set_buffer_internal (XBUFFER (Vprin1_to_string_buffer));
-  obj = Fbuffer_string ();
+  object = Fbuffer_string ();
 
-  GCPRO1 (obj);
   Ferase_buffer ();
   set_buffer_internal (old);
+
+  Vdeactivate_mark = tem;
   UNGCPRO;
 
-  return obj;
+  return object;
 }
 
 DEFUN ("princ", Fprinc, Sprinc, 1, 2, 0,
@@ -551,8 +559,8 @@ DEFUN ("princ", Fprinc, Sprinc, 1, 2, 0,
 No quoting characters are used; no delimiters are printed around\n\
 the contents of strings.\n\
 Output stream is PRINTCHARFUN, or value of standard-output (which see).")
-  (obj, printcharfun)
-     Lisp_Object obj, printcharfun;
+  (object, printcharfun)
+     Lisp_Object object, printcharfun;
 {
   struct buffer *old = current_buffer;
   int old_point = -1;
@@ -563,9 +571,9 @@ Output stream is PRINTCHARFUN, or value of standard-output (which see).")
     printcharfun = Vstandard_output;
   PRINTPREPARE;
   print_depth = 0;
-  print (obj, printcharfun, 0);
+  print (object, printcharfun, 0);
   PRINTFINISH;
-  return obj;
+  return object;
 }
 
 DEFUN ("print", Fprint, Sprint, 1, 2, 0,
@@ -573,8 +581,8 @@ DEFUN ("print", Fprint, Sprint, 1, 2, 0,
 Quoting characters are printed when needed to make output that `read'\n\
 can handle, whenever this is possible.\n\
 Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
-  (obj, printcharfun)
-     Lisp_Object obj, printcharfun;
+  (object, printcharfun)
+     Lisp_Object object, printcharfun;
 {
   struct buffer *old = current_buffer;
   int old_point = -1;
@@ -588,11 +596,11 @@ Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
 #endif /* MAX_PRINT_CHARS */
   if (NILP (printcharfun))
     printcharfun = Vstandard_output;
-  GCPRO1 (obj);
+  GCPRO1 (object);
   PRINTPREPARE;
   print_depth = 0;
   PRINTCHAR ('\n');
-  print (obj, printcharfun, 1);
+  print (object, printcharfun, 1);
   PRINTCHAR ('\n');
   PRINTFINISH;
 #ifdef MAX_PRINT_CHARS
@@ -600,7 +608,7 @@ Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
   print_chars = 0;
 #endif /* MAX_PRINT_CHARS */
   UNGCPRO;
-  return obj;
+  return object;
 }
 
 /* The subroutine object for external-debugging-output is kept here
@@ -630,11 +638,86 @@ debug_print (arg)
   fprintf (stderr, "\r\n");
 }
 
+DEFUN ("error-message-string", Ferror_message_string, Serror_message_string,
+       1, 1, 0,
+  "Convert an error value (ERROR-SYMBOL . DATA) to an error message.")
+  (obj)
+     Lisp_Object obj;
+{
+  struct buffer *old = current_buffer;
+  Lisp_Object original, printcharfun, value;
+  struct gcpro gcpro1;
+
+  print_error_message (obj, Vprin1_to_string_buffer, NULL);
+
+  set_buffer_internal (XBUFFER (Vprin1_to_string_buffer));
+  value = Fbuffer_string ();
+
+  GCPRO1 (value);
+  Ferase_buffer ();
+  set_buffer_internal (old);
+  UNGCPRO;
+
+  return value;
+}
+
+/* Print an error message for the error DATA
+   onto Lisp output stream STREAM (suitable for the print functions).  */
+
+print_error_message (data, stream)
+     Lisp_Object data, stream;
+{
+  Lisp_Object errname, errmsg, file_error, tail;
+  struct gcpro gcpro1;
+  int i;
+
+  errname = Fcar (data);
+
+  if (EQ (errname, Qerror))
+    {
+      data = Fcdr (data);
+      if (!CONSP (data)) data = Qnil;
+      errmsg = Fcar (data);
+      file_error = Qnil;
+    }
+  else
+    {
+      errmsg = Fget (errname, Qerror_message);
+      file_error = Fmemq (Qfile_error,
+			  Fget (errname, Qerror_conditions));
+    }
+
+  /* Print an error message including the data items.  */
+
+  tail = Fcdr_safe (data);
+  GCPRO1 (tail);
+
+  /* For file-error, make error message by concatenating
+     all the data items.  They are all strings.  */
+  if (!NILP (file_error) && !NILP (tail))
+    errmsg = XCONS (tail)->car, tail = XCONS (tail)->cdr;
+
+  if (STRINGP (errmsg))
+    Fprinc (errmsg, stream);
+  else
+    write_string_1 ("peculiar error", -1, stream);
+
+  for (i = 0; CONSP (tail); tail = Fcdr (tail), i++)
+    {
+      write_string_1 (i ? ", " : ": ", 2, stream);
+      if (!NILP (file_error))
+	Fprinc (Fcar (tail), stream);
+      else
+	Fprin1 (Fcar (tail), stream);
+    }
+  UNGCPRO;
+}
+
 #ifdef LISP_FLOAT_TYPE
 
 /*
  * The buffer should be at least as large as the max string size of the
- * largest float, printed in the biggest notation.  This is undoubtably
+ * largest float, printed in the biggest notation.  This is undoubtedly
  * 20d float_output_format, with the negative of the C-constant "HUGE"
  * from <math.h>.
  * 
@@ -1204,7 +1287,7 @@ syms_of_print ()
 This may be any function of one argument.\n\
 It may also be a buffer (output is inserted before point)\n\
 or a marker (output is inserted and the marker is advanced)\n\
-or the symbol t (output appears in the minibuffer line).");
+or the symbol t (output appears in the echo area).");
   Vstandard_output = Qt;
   Qstandard_output = intern ("standard-output");
   staticpro (&Qstandard_output);
@@ -1249,6 +1332,7 @@ Also print formfeeds as backslash-f.");
 
   defsubr (&Sprin1);
   defsubr (&Sprin1_to_string);
+  defsubr (&Serror_message_string);
   defsubr (&Sprinc);
   defsubr (&Sprint);
   defsubr (&Sterpri);

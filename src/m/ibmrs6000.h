@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* The following line tells the configuration script what sort of 
@@ -173,6 +174,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define LD_SWITCH_MACHINE -Wl,-bnso,-bnodelcsect,-bI:/lib/syscalls.exp,-bI:$(srcdir)/m/ibmrs6000.inp
 #endif
 #endif /* not AIX4 */
+
+/* Avoid gcc 2.7.x collect2 bug by using /bin/ld instead.  */
+#if __GNUC__ == 2 && __GNUC_MINOR__ == 7
+#define LD_SWITCH_SITE -B/bin/
+#endif
 
 /* AIX supposedly doesn't use this interface, but on the RS/6000
    it apparently does.  */

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <signal.h>
@@ -85,6 +86,11 @@ extern int h_errno;
 #include "dosfns.h"
 #include "msdos.h"
 #include <sys/param.h>
+
+#if __DJGPP__ > 1
+extern int etext;
+extern unsigned start __asm__ ("start");
+#endif
 #endif
 
 extern int errno;
@@ -453,6 +459,9 @@ wait_for_termination (pid)
 #endif /* not BSD, and not HPUX version >= 6 */
 #endif /* not VMS */
 #else /* not subprocesses */
+#if __DJGPP__ > 1
+      break;
+#else /* not __DJGPP__ > 1 */
 #ifndef BSD4_1
       if (kill (pid, 0) < 0)
 	break;
@@ -463,6 +472,7 @@ wait_for_termination (pid)
       if (status == pid || status == -1)
 	break;
 #endif /* BSD4_1 */
+#endif /* not __DJGPP__ > 1*/
 #endif /* not subprocesses */
     }
 }
@@ -521,9 +531,13 @@ child_setup_tty (out)
 #ifdef IUCLC
   s.main.c_iflag &= ~IUCLC;	/* Disable downcasing on input.  */
 #endif
+#ifdef ISTRIP
+  s.main.c_iflag &= ~ISTRIP;	/* don't strip 8th bit on input */
+#endif
 #ifdef OLCUC
   s.main.c_oflag &= ~OLCUC;	/* Disable upcasing on output.  */
 #endif
+  s.main.c_oflag &= ~TAB3;	/* Disable tab expansion */
   s.main.c_cflag = (s.main.c_cflag & ~CSIZE) | CS8; /* Don't strip 8th bit */
 #if 0
   /* Said to be unnecessary:  */
@@ -720,8 +734,13 @@ sys_subshell ()
 #ifdef WINDOWSNT
   pid = -1;
 #else /* not WINDOWSNT */
+
 #ifdef MSDOS
   pid = 0;
+#if __DJGPP__ > 1
+  save_signal_handlers (saved_handlers);
+  synch_process_alive = 1;
+#endif /* __DJGPP__ > 1 */
 #else  
   pid = vfork ();
   if (pid == -1)
@@ -783,12 +802,17 @@ sys_subshell ()
 #endif /* not MSDOS */
     }
 
+  /* Do this now if we did not do it before.  */
+#if !defined (MSDOS) || __DJGPP__ == 1
   save_signal_handlers (saved_handlers);
   synch_process_alive = 1;
+#endif
+
 #ifndef MSDOS
   wait_for_termination (pid);
 #endif
   restore_signal_handlers (saved_handlers);
+  synch_process_alive = 0;
 #endif /* !VMS */
 }
 
@@ -1245,6 +1269,10 @@ init_sys_modes ()
 #endif
       tty.main.c_iflag |= (IGNBRK);	/* Ignore break condition */
       tty.main.c_iflag &= ~ICRNL;	/* Disable map of CR to NL on input */
+#ifdef INLCR  /* I'm just being cautious,
+		 since I can't check how widespread INLCR is--rms.  */
+      tty.main.c_iflag &= ~INLCR;	/* Disable map of NL to CR on input */
+#endif
 #ifdef ISTRIP
       tty.main.c_iflag &= ~ISTRIP;	/* don't strip 8th bit on input */
 #endif
@@ -1314,7 +1342,7 @@ init_sys_modes ()
 #endif /* VSTOP */
 #endif /* mips or HAVE_TCATTR */
 #ifdef SET_LINE_DISCIPLINE
-      /* Need to explicitely request TERMIODISC line discipline or
+      /* Need to explicitly request TERMIODISC line discipline or
          Ultrix's termios does not work correctly.  */
       tty.main.c_line = SET_LINE_DISCIPLINE;
 #endif
@@ -2029,7 +2057,7 @@ start_of_text ()
  *	at least on UniPlus, is temacs will have to be made unshared so
  *	that text and data are contiguous.  Then once loadup is complete,
  *	unexec will produce a shared executable where the data can be
- *	at the normal shared text boundry and the startofdata variable
+ *	at the normal shared text boundary and the startofdata variable
  *	will be patched by unexec to the correct value.
  *
  */
@@ -2795,7 +2823,7 @@ sys_abort ()
 
 #ifdef VMS
 #ifdef LINK_CRTL_SHARE
-#ifdef SHAREABLE_LIB_BUG
+#ifdef SHARABLE_LIB_BUG
 /* Variables declared noshare and initialized in sharable libraries
    cannot be shared.  The VMS linker incorrectly forces you to use a private
    version which is uninitialized... If not for this "feature", we
@@ -2841,7 +2869,7 @@ char *sys_errlist[] =
     "I/O stream empty",
     "vax/vms specific error code nontranslatable error"
   };
-#endif /* SHAREABLE_LIB_BUG */
+#endif /* SHARABLE_LIB_BUG */
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
 
@@ -3040,7 +3068,7 @@ char *sys_siglist[NSIG + 1] =
 #ifdef sun
   "window size change",			    /* 20 SIGWINCH */
   "urgent socket condition",		    /* 21 SIGURG */
-  "pollable event occured",		    /* 22 SIGPOLL */
+  "pollable event occurred",		    /* 22 SIGPOLL */
   "stop (cannot be caught or ignored)", /*  23 SIGSTOP */
   "user stop requested from tty",	    /* 24 SIGTSTP */
   "stopped process has been continued",	/* 25 SIGCONT */
@@ -3760,7 +3788,7 @@ sys_access (filename, type)
   /* Check write protection. */
     
 #define CHECKPRIV(bit)    (prvmask.bit)
-#define WRITEABLE(field)  (! ((xab.xab$w_pro >> field) & XAB$M_NOWRITE))
+#define WRITABLE(field)  (! ((xab.xab$w_pro >> field) & XAB$M_NOWRITE))
 
   /* Find privilege bits */
   status = SYS$SETPRV (0, 0, 0, prvmask);
@@ -3781,7 +3809,7 @@ sys_access (filename, type)
     return -1;
   SYS$CLOSE (&fab, 0, 0);
   /* Check system access */
-  if (CHECKPRIV (PRV$V_SYSPRV) && WRITEABLE (XAB$V_SYS))
+  if (CHECKPRIV (PRV$V_SYSPRV) && WRITABLE (XAB$V_SYS))
     return 0;
   /* Check ACL entries, if any */
   acl_controlled = 0;
@@ -3807,16 +3835,16 @@ sys_access (filename, type)
 	return -1;
     }
   /* No ACL entries specified, check normal protection */
-  if (WRITEABLE (XAB$V_WLD))	/* World writeable */
+  if (WRITABLE (XAB$V_WLD))	/* World writable */
     return 0;
-  if (WRITEABLE (XAB$V_GRP) &&
+  if (WRITABLE (XAB$V_GRP) &&
       (unsigned short) (xab.xab$l_uic >> 16) == grpid)
-    return 0;			/* Group writeable */
-  if (WRITEABLE (XAB$V_OWN) &&
+    return 0;			/* Group writable */
+  if (WRITABLE (XAB$V_OWN) &&
       (xab.xab$l_uic & 0xFFFF) == memid)
-    return 0;			/* Owner writeable */
+    return 0;			/* Owner writable */
 
-  return -1;	/* Not writeable */
+  return -1;	/* Not writable */
 }
 #endif /* not VMS4_4 */
 #endif /* access */
@@ -4499,7 +4527,7 @@ cnv_uaf_pw (up)
   retpw.pw_uid = up->uaf$w_mem;
   retpw.pw_gid = up->uaf$w_grp;
 
-  /* I suppose this is not the best sytle, to possibly overwrite one
+  /* I suppose this is not the best style, to possibly overwrite one
      byte beyond the end of the field, but what the heck... */
   ptr = &up->uaf$t_username[UAF$S_USERNAME];
   while (ptr[-1] == ' ')

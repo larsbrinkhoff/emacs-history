@@ -200,7 +200,9 @@ buffer'', we are talking about the currently selected buffer.
 
   @var{line} is @samp{L} followed by the current line number of point.
 This is present when Line Number mode is enabled (which it normally is).
-@xref{Optional Mode Line}.
+You can optionally display the current column number too, by turning on
+Column Number mode (which is not enabled by default because it is
+somewhat slower).  @xref{Optional Mode Line}.
 
   @var{pos} tells you whether there is additional text above the top of
 the window, or below the bottom.  If your buffer is small and it is all

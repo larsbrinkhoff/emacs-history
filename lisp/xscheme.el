@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -456,8 +457,8 @@ waiting for input.  Otherwise, it is busy evaluating something.")
 
 (defconst xscheme-control-g-synchronization-p t
   "If non-nil, insert markers in the scheme input stream to indicate when
-control-g interrupts were signalled.  Do not allow more control-g's to be
-signalled until the scheme process acknowledges receipt.")
+control-g interrupts were signaled.  Do not allow more control-g's to be
+signaled until the scheme process acknowledges receipt.")
 
 (defvar xscheme-control-g-disabled-p nil
   "This variable, if non-nil, indicates that a control-g is being processed

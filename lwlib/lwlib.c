@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #ifdef NeXT
 #undef __STRICT_BSD__ /* ick */
@@ -74,7 +75,7 @@ char *lwlib_toolkit_type = "lucid";
 #endif
 /* Forward declarations */
 static void
-instanciate_widget_instance (/* widget_instance* instance */);
+instantiate_widget_instance (/* widget_instance* instance */);
 
 lwlib_memset (address, value, length)
      char *address;
@@ -161,7 +162,7 @@ malloc_widget_value ()
   return wv;
 }
 
-/* this is analagous to free().  It frees only what was allocated
+/* this is analogous to free().  It frees only what was allocated
    by malloc_widget_value(), and no substructures. 
  */
 void
@@ -200,7 +201,7 @@ free_widget_value_tree (wv)
 
   if (wv->toolkit_data && wv->free_toolkit_data)
     {
-      free (wv->toolkit_data);
+      XtFree (wv->toolkit_data);
       wv->toolkit_data = (void *) 0xDEADBEEF;
     }
 
@@ -237,6 +238,7 @@ copy_widget_value_tree (val, change)
   copy->selected = val->selected;
   copy->edited = False;
   copy->change = change;
+  copy->this_one_change = change;
   copy->contents = copy_widget_value_tree (val->contents, change);
   copy->call_data = val->call_data;
   copy->next = copy_widget_value_tree (val->next, change);
@@ -310,7 +312,7 @@ allocate_widget_instance (info, parent, pop_up_p)
   instance->next = info->instances;
   info->instances = instance;
 
-  instanciate_widget_instance (instance);
+  instantiate_widget_instance (instance);
 
   XtAddCallback (instance->widget, XtNdestroyCallback,
 		 mark_widget_destroyed, (XtPointer)instance);
@@ -438,7 +440,7 @@ merge_widget_value (val1, val2, level)
      widget_value* val2;
      int level;
 {
-  change_type change;
+  change_type change, this_one_change;
   widget_value* merged_next;
   widget_value* merged_contents;
 
@@ -510,9 +512,14 @@ merge_widget_value (val1, val2, level)
       
       if (val1->contents && !merged_contents)
 	{
-	  EXPLAIN (val1->name, change, INVISIBLE_CHANGE, "(contents gone)",
+	  /* This used to say INVISIBLE_CHANGE,
+	     but it is visible and vitally important when
+	     the contents of the menu bar itself are entirely deleted.
+
+	     But maybe it doesn't matter.  This fails to fix the bug.  */
+	  EXPLAIN (val1->name, change, STRUCTURAL_CHANGE, "(contents gone)",
 		   0, 0);
-	  change = max (change, INVISIBLE_CHANGE);
+	  change = max (change, STRUCTURAL_CHANGE);
 	}
       else if (merged_contents && merged_contents->change != NO_CHANGE)
 	{
@@ -523,6 +530,8 @@ merge_widget_value (val1, val2, level)
       
       val1->contents = merged_contents;
     }
+
+  this_one_change = change;
 
   merged_next = merge_widget_value (val1->next, val2->next, level);
 
@@ -542,12 +551,13 @@ merge_widget_value (val1, val2, level)
 
   val1->next = merged_next;
 
+  val1->this_one_change = this_one_change;
   val1->change = change;
   
   if (change > NO_CHANGE && val1->toolkit_data)
     {
       if (val1->free_toolkit_data)
-	free (val1->toolkit_data);
+	XtFree (val1->toolkit_data);
       val1->toolkit_data = NULL;
     }
 
@@ -759,7 +769,7 @@ dialog_spec_p (name)
 }
 
 static void
-instanciate_widget_instance (instance)
+instantiate_widget_instance (instance)
      widget_instance* instance;
 {
   widget_creation_function function = NULL;
@@ -1196,6 +1206,10 @@ lw_get_widget_value_for_widget (instance, w)
 }
 
 /* update other instances value when one thing changed */
+
+/* To forbid recursive calls */
+static Boolean lwlib_updating;
+
 /* This function can be used as a an XtCallback for the widgets that get 
   modified to update other instances of the widgets.  Closure should be the
   widget_instance. */
@@ -1205,17 +1219,14 @@ lw_internal_update_other_instances (widget, closure, call_data)
      XtPointer closure;
      XtPointer call_data;
 {
-  /* To forbid recursive calls */
-  static Boolean updating;
-  
   widget_instance* instance = (widget_instance*)closure;
   char* name = XtName (widget);
   widget_info* info;
   widget_instance* cur;
   widget_value* val;
 
-  /* never recurse as this could cause infinite recursions. */
-  if (updating)
+  /* Avoid possibly infinite recursion.  */
+  if (lwlib_updating)
     return;
 
   /* protect against the widget being destroyed */
@@ -1227,7 +1238,7 @@ lw_internal_update_other_instances (widget, closure, call_data)
   if (!info->instances->next)
     return;
 
-  updating = True;
+  lwlib_updating = True;
 
   for (val = info->val; val && strcmp (val->name, name); val = val->next);
 
@@ -1236,7 +1247,7 @@ lw_internal_update_other_instances (widget, closure, call_data)
       if (cur != instance)
 	set_one_value (cur, val, True);
 
-  updating = False;
+  lwlib_updating = False;
 }
 
 
@@ -1338,9 +1349,10 @@ lw_window_is_in_menubar (win, menubar_widget)
       && XtWindow (menubar_widget) == win;
 #endif
 #if defined (USE_MOTIF)
-      && XtWindowToWidget (XtDisplay (menubar_widget), win)
-      && (XtParent (XtWindowToWidget (XtDisplay (menubar_widget), win))
-	  == menubar_widget);
+      && ((XtWindow (menubar_widget) == win)
+	  || (XtWindowToWidget (XtDisplay (menubar_widget), win)
+	      && (XtParent (XtWindowToWidget (XtDisplay (menubar_widget), win))
+		  == menubar_widget)));
 #endif
 }
 

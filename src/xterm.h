@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
@@ -93,25 +94,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define FONT_HEIGHT(f)	((f)->ascent + (f)->descent)
 #define FONT_BASE(f)    ((f)->ascent)
 
-#define CHECK_X_FRAME(f, frame)			\
-  if (NILP (frame))				\
-    f = selected_frame;				\
-  else						\
-    {						\
-      CHECK_LIVE_FRAME (frame, 0);		\
-      f = XFRAME (frame);			\
-    }						\
-  if (! FRAME_X_P (f))
-
-  
-
 /* The mask of events that text windows always want to receive.  This
-   does not include mouse movement events.  It is used when the window
-   is created (in x_window) and and in selection processing.
-
-   We do include ButtonReleases in this set because Emacs isn't always
-   fast enough to catch them when it wants them, and they're rare
-   enough that they don't use much processor time.  */
+   includes mouse movement events, since handling the mouse-font text property
+   means that we must track mouse motion all the time.  */
 
 #define STANDARD_EVENT_SET      \
   (KeyPressMask			\
@@ -119,7 +104,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    | ButtonPressMask		\
    | ButtonReleaseMask		\
    | PointerMotionMask		\
-   | PointerMotionHintMask	\
    | StructureNotifyMask	\
    | FocusChangeMask		\
    | LeaveWindowMask		\
@@ -488,6 +472,8 @@ struct x_output
   char asked_for_visible;
 
 #ifdef HAVE_X_I18N
+  /* Input method. */
+  XIM xim;
   /* Input context (currently, this means Compose key handler setup).  */
   XIC xic;
 #endif
@@ -529,6 +515,7 @@ struct x_output
 
 #define FRAME_DESIRED_CURSOR(f) ((f)->output_data.x->desired_cursor)
 
+#define FRAME_XIM(f) ((f)->output_data.x->xim)
 #define FRAME_XIC(f) ((f)->output_data.x->xic)
 
 /* X-specific scroll bar stuff.  */
@@ -703,11 +690,15 @@ struct scroll_bar {
    by this structure.  */
 
 /* For an event of kind selection_request_event,
-   this structure really describes the contents.  */
+   this structure really describes the contents.
+   **Don't make this struct longer!**
+   If it overlaps the frame_or_window field of struct input_event,
+   that will cause GC to crash.  */
 struct selection_input_event
 {
   int kind;
   Display *display;
+  /* We spell it with an "o" here because X does.  */
   Window requestor;
   Atom selection, target, property;
   Time time;
@@ -715,6 +706,7 @@ struct selection_input_event
 
 #define SELECTION_EVENT_DISPLAY(eventp)	\
   (((struct selection_input_event *) (eventp))->display)
+/* We spell it with an "o" here because X does.  */
 #define SELECTION_EVENT_REQUESTOR(eventp)	\
   (((struct selection_input_event *) (eventp))->requestor)
 #define SELECTION_EVENT_SELECTION(eventp)	\

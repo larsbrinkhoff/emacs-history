@@ -1,7 +1,7 @@
 ;;; texinfmt.el --- format Texinfo files into Info files.
 
-;; Copyright (C) 1985, 1986, 1988,
-;;               1990, 1991, 1992, 1993  Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1988, 1990, 1991, 1992, 1993 Free Software
+;; Foundation, Inc.
 
 ;; Maintainer: Robert J. Chassell <bug-texinfo@prep.ai.mit.edu>
 
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -2893,7 +2894,7 @@ The command  `@value{foo}'  expands to the value."
 ;; In the original version, include files were ignored by Info but
 ;; incorporated in to the printed manual.  To make references to the
 ;; included file, the Texinfo source file has to refer to the included
-;; files using the `(filename)nodename' format for refering to other
+;; files using the `(filename)nodename' format for referring to other
 ;; Info files.  Also, the included files had to be formatted on their
 ;; own.  It was just like they were another file.
 

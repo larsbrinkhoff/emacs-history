@@ -1,23 +1,22 @@
-/*
-   unexec for GNU Emacs on Windows NT.
-
+/* unexec for GNU Emacs on Windows NT.
    Copyright (C) 1994 Free Software Foundation, Inc.
 
-   This file is part of GNU Emacs.
+This file is part of GNU Emacs.
 
-   GNU Emacs is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
-   version.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   GNU Emacs is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-   more details.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with GNU Emacs; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
    Geoff Voelker (voelker@cs.washington.edu)                         8-12-94
 */
@@ -68,23 +67,6 @@ HINSTANCE hinst = NULL;
 HINSTANCE hprevinst = NULL;
 LPSTR lpCmdLine = "";
 int nCmdShow = 0;
-    
-int __stdcall 
-WinMain (_hinst, _hPrevInst, _lpCmdLine, _nCmdShow)
-     HINSTANCE _hinst;
-     HINSTANCE _hPrevInst;
-     LPSTR _lpCmdLine;
-     int _nCmdShow;
-{
-  /* Need to parse command line */
-    
-  hinst = _hinst;
-  hprevinst = _hPrevInst;
-  lpCmdLine = _lpCmdLine;
-  nCmdShow = _nCmdShow;
-
-  return (main (__argc,__argv,_environ));
-}
 #endif /* HAVE_NTGUI */
 
 /* Startup code for running on NT.  When we are running as the dumped
@@ -94,11 +76,7 @@ WinMain (_hinst, _hPrevInst, _lpCmdLine, _nCmdShow)
 void
 _start (void)
 {
-#ifdef HAVE_NTGUI
-  extern void WinMainCRTStartup (void);
-#else
   extern void mainCRTStartup (void);
-#endif /* HAVE_NTGUI */
 
   /* Cache system info, e.g., the NT page size.  */
   cache_system_info ();
@@ -132,13 +110,15 @@ _start (void)
   /* Invoke the NT CRT startup routine now that our housecleaning
      is finished.  */
 #ifdef HAVE_NTGUI
-  WinMainCRTStartup ();
-#else
+  /* determine WinMain args like crt0.c does */
+  hinst = GetModuleHandle(NULL);
+  lpCmdLine = GetCommandLine();
+  nCmdShow = SW_SHOWDEFAULT;
+#endif
   mainCRTStartup ();
-#endif /* HAVE_NTGUI */
 }
 
-/* Dump out .data and .bss sections into a new exectubale.  */
+/* Dump out .data and .bss sections into a new executable.  */
 void
 unexec (char *new_name, char *old_name, void *start_data, void *start_bss,
 	void *entry_address)
@@ -291,6 +271,44 @@ close_file_data (file_data *p_file)
 
 /* Routines to manipulate NT executable file sections.  */
 
+static void
+get_bss_info_from_map_file (file_data *p_infile, PUCHAR *p_bss_start, 
+			    DWORD *p_bss_size)
+{
+  int n, start, len;
+  char map_filename[MAX_PATH];
+  char buffer[256];
+  FILE *map;
+
+  /* Overwrite the .exe extension on the executable file name with
+     the .map extension.  */
+  strcpy (map_filename, p_infile->name);
+  n = strlen (map_filename) - 3;
+  strcpy (&map_filename[n], "map");
+
+  map = fopen (map_filename, "r");
+  if (!map)
+    {
+      printf ("Failed to open map file %s, error %d...bailing out.\n",
+	      map_filename, GetLastError ());
+      exit (-1);
+    }
+
+  while (fgets (buffer, sizeof (buffer), map))
+    {
+      if (!(strstr (buffer, ".bss") && strstr (buffer, "DATA")))
+	continue;
+      n = sscanf (buffer, " %*d:%x %x", &start, &len);
+      if (n != 2)
+	{
+	  printf ("Failed to scan the .bss section line:\n%s", buffer);
+	  exit (-1);
+	}
+      break;
+    }
+  *p_bss_start = (PUCHAR) start;
+  *p_bss_size = (DWORD) len;
+}
 
 static unsigned long
 get_section_size (PIMAGE_SECTION_HEADER p_section)
@@ -311,7 +329,7 @@ get_section_info (file_data *p_infile)
 {
   PIMAGE_DOS_HEADER dos_header;
   PIMAGE_NT_HEADERS nt_header;
-  PIMAGE_SECTION_HEADER section;
+  PIMAGE_SECTION_HEADER section, data_section;
   unsigned char *ptr;
   int i;
   
@@ -355,7 +373,8 @@ get_section_info (file_data *p_infile)
 	  extern char my_edata[];
 
 	  /* The .data section.  */
-	  ptr  = (char *) nt_header->OptionalHeader.ImageBase +
+	  data_section = section;
+	  ptr = (char *) nt_header->OptionalHeader.ImageBase +
 	    section->VirtualAddress;
 	  data_start_va = ptr;
 	  data_start_file = section->PointerToRawData;
@@ -367,6 +386,21 @@ get_section_info (file_data *p_infile)
 	  data_size = my_edata - data_start_va;
 	}
       section++;
+    }
+
+  if (!bss_start && !bss_size)
+    {
+      /* Starting with MSVC 4.0, the .bss section has been eliminated
+	 and appended virtually to the end of the .data section.  Our
+	 only hint about where the .bss section starts in the address
+	 comes from the SizeOfRawData field in the .data section
+	 header.  Unfortunately, this field is only approximate, as it
+	 is a rounded number and is typically rounded just beyond the
+	 start of the .bss section.  To find the start and size of the
+	 .bss section exactly, we have to peek into the map file.  */
+      get_bss_info_from_map_file (p_infile, &ptr, &bss_size);
+      bss_start = ptr + nt_header->OptionalHeader.ImageBase
+	+ data_section->VirtualAddress;
     }
 }
 

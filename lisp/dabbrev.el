@@ -1,4 +1,5 @@
 ;;; dabbrev.el --- dynamic abbreviation package
+
 ;; Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Don Morrison
@@ -7,19 +8,22 @@
 ;; Lindberg's last update version: 5.7
 ;; Keywords: abbrev expand completion
 
-;; This program is free software; you can redistribute it and/or modify
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
-;; (at your option) any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;;
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -41,7 +45,7 @@
 ;;
 ;; Set the variables you want special for your mode like this:
 ;; (set (make-local-variable 'dabbrev-case-replace) nil)
-;; Then you don't interfer with other modes.
+;; Then you don't interfere with other modes.
 ;;
 ;; If your mode handles buffers that refers to other buffers
 ;; (i.e. compilation-mode, gud-mode), then try to set
@@ -90,11 +94,9 @@
 
 ;;; Code:
 
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
-;;; Customization variables
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
+;;----------------------------------------------------------------
+;; Customization variables
+;;----------------------------------------------------------------
 (defvar dabbrev-backward-only nil
   "*If non-nil, `dabbrev-expand' only looks backwards.")
 
@@ -106,7 +108,7 @@
 
 Example: Set this to \"\\\\$\" for programming languages
 in which variable names may appear with or without a leading `$'.
-(For example, in Makefiles.)
+\(For example, in Makefiles.)
 
 Set this to nil if no characters should be skipped.")
 
@@ -213,11 +215,9 @@ If this variable is non-nil, dabbrev will only look in these buffers.
 It will not even look in the current buffer if it is not a member of
 this list.")
 
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
-;;; Internal variables
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
+;;----------------------------------------------------------------
+;; Internal variables
+;;----------------------------------------------------------------
 
 ;; Last obarray of completions in `dabbrev-completion'
 (defvar dabbrev--last-obarray nil)
@@ -258,11 +258,9 @@ this list.")
 ;; The regexp for recognizing a character in an abbreviation.
 (defvar dabbrev--abbrev-char-regexp nil)
 
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
-;;; Macros
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
+;;----------------------------------------------------------------
+;; Macros
+;;----------------------------------------------------------------
 
 ;;; Get the buffer that mini-buffer was activated from
 (defsubst dabbrev--minibuffer-origin ()
@@ -282,11 +280,9 @@ this list.")
 	 (setq dabbrev-tail (cdr dabbrev-tail)))
        (nreverse dabbrev-result))))
 
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
-;;; Exported functions
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
+;;----------------------------------------------------------------
+;; Exported functions
+;;----------------------------------------------------------------
 
 ;;;###autoload
 (define-key esc-map "/" 'dabbrev-expand)
@@ -519,11 +515,9 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
       (setq dabbrev--last-abbreviation abbrev)
       (setq dabbrev--last-abbrev-location (point-marker))))))
 
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
-;;; Local functions
-;;;----------------------------------------------------------------
-;;;----------------------------------------------------------------
+;;----------------------------------------------------------------
+;; Local functions
+;;----------------------------------------------------------------
 
 ;;; Checks if OTHER-BUFFER has the same major mode as current buffer.
 (defun dabbrev--same-major-mode-p (other-buffer)
@@ -771,7 +765,7 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 
 ;;; ABBREV is string to find as prefix of word.  Second arg, REVERSE,
 ;;; is t for reverse search, nil for forward.  Variable dabbrev-limit
-;;; controls the maximum search region size.  Third argment IGNORE-CASE
+;;; controls the maximum search region size.  Third argument IGNORE-CASE
 ;;; non-nil means treat case as insignificant while looking for a match
 ;;; and when comparing with previous matches.  Also if that's non-nil
 ;;; and the match is found at the beginning of a sentence and is in
@@ -839,6 +833,4 @@ See also `dabbrev-abbrev-char-regexp' and \\[dabbrev-completion]."
 
 (provide 'dabbrev)
 
-;; dabbrev.el ends here
-
-
+;;; dabbrev.el ends here

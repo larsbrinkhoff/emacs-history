@@ -1,21 +1,22 @@
 /* Terminal hooks for Windows NT port of GNU Emacs.
    Copyright (C) 1992 Free Software Foundation, Inc.
 
-   This file is part of GNU Emacs.
+This file is part of GNU Emacs.
 
-   GNU Emacs is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
-   version.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   GNU Emacs is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-   more details.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with GNU Emacs; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
    Tim Fleehart (apollo@online.com)		1-17-92
    Geoff Voelker (voelker@cs.washington.edu)	9-12-93
@@ -79,6 +80,7 @@ COORD	cursor_coords;
 HANDLE	prev_screen, cur_screen;
 UCHAR	char_attr, char_attr_normal, char_attr_reverse;
 HANDLE  keyboard_handle;
+DWORD   prev_console_mode;
 
 
 /* Setting this as the ctrl handler prevents emacs from being killed when
@@ -122,25 +124,18 @@ clear_to_end (void)
 void
 clear_frame (void)
 {
-  SMALL_RECT scroll;
-  COORD	     dest;
-  CHAR_INFO  fill;
   FRAME_PTR  f = PICK_FRAME ();
-  
+  COORD	     dest;
+  int        n, r;
+
   hl_mode (0);
   
-  scroll.Top = 0;
-  scroll.Bottom = FRAME_HEIGHT (f) - 1;
-  scroll.Left = 0;
-  scroll.Right = FRAME_WIDTH (f) - 1;
-  
-  dest.Y = FRAME_HEIGHT (f);
-  dest.X = 0;
-  
-  fill.Char.AsciiChar = 0x20;
-  fill.Attributes = char_attr;
-  
-  ScrollConsoleScreenBuffer (cur_screen, &scroll, NULL, dest, &fill);
+  n = FRAME_HEIGHT (f) * FRAME_WIDTH (f);
+  dest.X = dest.Y = 0;
+
+  FillConsoleOutputAttribute (cur_screen, char_attr, n, dest, &r);
+  FillConsoleOutputCharacter (cur_screen, ' ', n, dest, &r);
+
   move_cursor (0, 0);
 }
 
@@ -346,6 +341,9 @@ write_glyphs (register GLYPH *string, register int len)
   char *chars;
   int i;
   
+  if (len <= 0)
+    return;
+
   attrs = alloca (len * sizeof (*attrs));
   chars = alloca (len * sizeof (*chars));
   if (attrs == NULL || chars == NULL)
@@ -524,15 +522,18 @@ set_terminal_window (int size)
 void
 unset_kbd (void)
 {
-  SetConsoleMode (keyboard_handle, ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT |
-		  ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT);
+  SetConsoleMode (keyboard_handle, prev_console_mode);
 }
 
 void
 reset_kbd (void)
 {
   keyboard_handle = GetStdHandle (STD_INPUT_HANDLE);
+  GetConsoleMode (keyboard_handle, &prev_console_mode);
   SetConsoleMode (keyboard_handle, ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT);
+
+  /* Try to use interrupt input; if we can't, then start polling.  */
+  Fset_input_mode (Qt, Qnil, Qt, Qnil);
 }
 
 typedef int (*term_hook) ();

@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -161,7 +162,7 @@ nil if it is not visible in the current calendar window."
   (format "Julian date: %s" (calendar-julian-date-string date)))
 
 (defun calendar-absolute-from-astro (d)
-  "Absolute date of astronical (Julian) day number D."
+  "Absolute date of astronomical (Julian) day number D."
   (- d 1721424.5))
 
 (defun calendar-astro-from-absolute (d)
@@ -181,7 +182,7 @@ Defaults to today's date if DATE is not given."
   "Show astronomical (Julian) day number after noon UTC on date shown by cursor."
   (interactive)
   (message
-   "Astronomical (Julian) day number (after noon UTC): %s"
+   "Astronomical (Julian) day number (at noon UTC): %s.0"
    (calendar-astro-date-string (calendar-cursor-to-date t))))
 
 (defun calendar-goto-astro-day-number (daynumber &optional noecho)

@@ -186,7 +186,7 @@ XMenuCreate(display, parent, def_env)
 
   Pixmap cursor;		/* Cursor pixmap holder. */
   Pixmap cursor_mask;		/* Cursor mask pixmap holder. */
-  Pixmap stipple_pixmap;	/* Stippple mask for half-tone text. */
+  Pixmap stipple_pixmap;	/* Stipple mask for half-tone text. */
   unsigned long valuemask;
   XGCValues *values;
     

@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -39,7 +40,6 @@
 
 (require 'lisp-mnt)
 (require 'finder-inf)
-(require 'picture)
 
 ;; Local variable in finder buffer.
 (defvar finder-headmark)
@@ -114,45 +114,59 @@ arguments compiles from `load-path'."
       (insert ";;; Code:\n")
       (insert "\n(setq finder-package-info '(\n")
       (mapcar
-       (function
-	(lambda (d)
-	  (mapcar
-	   (function
-	    (lambda (f) 
-	      (if (and (string-match "^[^=].*\\.el$" f)
-		       (not (member f processed)))
-		  (let (summary keystart keywords)
-		    (setq processed (cons f processed))
-		    (save-excursion
-		      (set-buffer (get-buffer-create "*finder-scratch*"))
-		      (buffer-disable-undo (current-buffer))
-		      (erase-buffer)
-		      (insert-file-contents
-		       (concat (file-name-as-directory (or d ".")) f))
-		      (setq summary (lm-synopsis))
-		      (setq keywords (lm-keywords)))
-		    (insert
-		     (format "    (\"%s\"\n        " f))
-		    (prin1 summary (current-buffer))
-		    (insert
-		     "\n        ")
-		    (setq keystart (point))
-		    (insert
-		     (if keywords (format "(%s)" keywords) "nil")
-		     ")\n")
-		    (subst-char-in-region keystart (point) ?, ? )
-		    )
-		)))
-	   (directory-files (or d ".")))
-	  ))
+       (lambda (d)
+	 (mapcar
+	  (lambda (f) 
+	    (if (and (string-match "^[^=].*\\.el$" f)
+		     (not (member f processed)))
+		(let (summary keystart keywords)
+		  (setq processed (cons f processed))
+		  (save-excursion
+		    (set-buffer (get-buffer-create "*finder-scratch*"))
+		    (buffer-disable-undo (current-buffer))
+		    (erase-buffer)
+		    (insert-file-contents
+		     (concat (file-name-as-directory (or d ".")) f))
+		    (setq summary (lm-synopsis))
+		    (setq keywords (lm-keywords)))
+		  (insert
+		   (format "    (\"%s\"\n        " f))
+		  (prin1 summary (current-buffer))
+		  (insert
+		   "\n        ")
+		  (setq keystart (point))
+		  (insert
+		   (if keywords (format "(%s)" keywords) "nil")
+		   ")\n")
+		  (subst-char-in-region keystart (point) ?, ? )
+		  )))
+	  (directory-files (or d "."))))
        (or dirs load-path))
       (insert "))\n\n(provide 'finder-inf)\n\n;;; finder-inf.el ends here\n")
       (kill-buffer "*finder-scratch*")
       (eval-current-buffer) ;; So we get the new keyword list immediately
-      (basic-save-buffer)
-      )))
+      (basic-save-buffer))))
+
+(defun finder-compile-keywords-make-dist ()
+  "Regenerate `finder-inf.el' for the Emacs distribution."
+  (finder-compile-keywords default-directory))
 
 ;;; Now the retrieval code
+
+(defun finder-insert-at-column (column &rest strings)
+  "Insert list of STRINGS, at column COLUMN."
+  (if (> (current-column) column) (insert "\n"))
+  (move-to-column column)
+  (let ((col (current-column)))
+    (if (< col column)
+	(indent-to column)
+      (if (and (/= col column)
+	       (= (preceding-char) ?\t))
+	  (let (indent-tabs-mode)
+	    (delete-char -1)
+            (indent-to col)
+            (move-to-column column)))))
+  (apply 'insert strings))
 
 (defun finder-list-keywords ()
   "Display descriptions of the keywords in the Finder buffer."
@@ -160,11 +174,11 @@ arguments compiles from `load-path'."
   (setq buffer-read-only nil)
   (erase-buffer)
   (mapcar
-   (function (lambda (assoc)
-	       (let ((keyword (car assoc)))
-		 (insert (symbol-name keyword))
-		 (insert-at-column 14 (concat (cdr assoc) "\n"))
-		 (cons (symbol-name keyword) keyword))))
+   (lambda (assoc)
+     (let ((keyword (car assoc)))
+       (insert (symbol-name keyword))
+       (finder-insert-at-column 14 (concat (cdr assoc) "\n"))
+       (cons (symbol-name keyword) keyword)))
    finder-known-keywords)
   (goto-char (point-min))
   (setq finder-headmark (point))
@@ -181,14 +195,11 @@ arguments compiles from `load-path'."
      "The following packages match the keyword `" key "':\n\n")
     (setq finder-headmark (point))
     (mapcar
-     (function (lambda (x)
-		 (if (memq id (car (cdr (cdr x))))
-		     (progn
-		       (insert (car x))
-		       (insert-at-column 16
-					 (concat (car (cdr x)) "\n"))
-		       ))
-		 ))
+     (lambda (x)
+       (if (memq id (car (cdr (cdr x))))
+	   (progn
+	     (insert (car x))
+	     (finder-insert-at-column 16 (concat (car (cdr x)) "\n")))))
      finder-package-info)
     (goto-char (point-min))
     (forward-line)
@@ -231,8 +242,7 @@ arguments compiles from `load-path'."
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)
     (shrink-window-if-larger-than-buffer)
-    (finder-summary)
-    ))
+    (finder-summary)))
 
 (defun finder-current-item ()
   (if (and finder-headmark (< (point) finder-headmark))
@@ -269,13 +279,12 @@ arguments compiles from `load-path'."
   (setq mode-name "Finder")
   (setq major-mode 'finder-mode)
   (make-local-variable 'finder-headmark)
-  (setq finder-headmark nil)
-)
+  (setq finder-headmark nil))
 
 (defun finder-summary ()
   "Summarize basic Finder commands."
   (interactive)
-  (message
+  (message "%s"
    (substitute-command-keys
     "\\<finder-mode-map>\\[finder-select] = select, \\[finder-list-keywords] = to finder directory, \\[finder-exit] = quit, \\[finder-summary] = help")))
 

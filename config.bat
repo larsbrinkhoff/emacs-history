@@ -22,20 +22,22 @@ rem   ----------------------------------------------------------------------
 rem   YOU'LL NEED THE FOLLOWING UTILITIES TO MAKE EMACS:
 rem
 rem   + msdos version 3 or better.
-rem   + djgpp version 1,11 maint 4 or better.
+rem   + djgpp version 1.12maint1 or later (version 2.0 or later recommended).
 rem   + make utility that allows breaking of the 128 chars limit on
 rem     command lines.  ndmake (as of version 4.5) won't work due to a
-rem     line length limit.
-rem   + rm, mv, chmod (From GNU file utilities).
-rem   + sed.
+rem     line length limit.  The make that comes with djgpp does work.
+rem   + rm and mv (from GNU file utilities).
+rem   + sed (you can use the port that comes with DJGPP).
 rem
-rem   You should be able to get all the above utilities from all
-rem   Simtel repositories, e.g., oak.oakland.edu in the directories
-rem   "/pub/msdos/djgpp" and "/pub/msdos/gnuish".  As usual, please
-rem   use your local mirroring site to reduce trans-Atlantic traffic.
+rem   You should be able to get all the above utilities from any SimTel
+rem   repository, e.g. ftp.coast.net, in the directories
+rem   "SimTel/vendors/djgpp" and "SimTel/vendors/gnu/gnuish/dos_only".  As
+rem   usual, please use your local mirroring site to reduce trans-Atlantic
+rem   traffic.
 rem   ----------------------------------------------------------------------
 set X11=
 set nodebug=
+set djgpp_ver=
 :again
 if "%1" == "" goto usage
 if "%1" == "--with-x" goto withx
@@ -87,7 +89,34 @@ Echo To configure 'Emacs' you need to have 'gcc'!
 rm -f junk.c
 Goto End
 :gccOk
-rm -f junk.c junk.o
+rm -f junk.c junk.o junk junk.exe
+Echo Checking what version of DJGPP is installed...
+If Not "%DJGPP%" == "" goto djgppOk
+Echo To compile 'Emacs' under MS-DOS you MUST have DJGPP installed!
+Goto End
+:djgppOk
+echo int main()           >junk.c
+echo #ifdef __DJGPP__    >>junk.c
+echo {return (__DJGPP__)*10;} >>junk.c
+echo #else               >>junk.c
+echo #ifdef __GO32__     >>junk.c
+echo {return 10;}         >>junk.c
+echo #else               >>junk.c
+echo {return 0;}         >>junk.c
+echo #endif              >>junk.c
+echo #endif              >>junk.c
+gcc -o junk junk.c
+if not exist junk.exe coff2exe junk
+junk
+If ErrorLevel 10 Goto go32Ok
+rm -f junk.c junk junk.exe
+Echo To compile 'Emacs' under MS-DOS you MUST have DJGPP installed!
+Goto End
+:go32Ok
+set djgpp_ver=1
+If ErrorLevel 20 set djgpp_ver=2
+rm -f junk.c junk junk.exe
+Echo Configuring for DJGPP Version %DJGPP_VER% ...
 Rem   ----------------------------------------------------------------------
 Echo Configuring the source directory...
 cd src
@@ -113,7 +142,12 @@ if exist dir.h ren dir.h vmsdir.h
 rem   Create "makefile" from "makefile.in".
 rm -f makefile junk.c
 sed -e "1,/cpp stuff/s@^# .*$@@" <makefile.in >junk.c
+If "%DJGPP_VER%" == "1" Goto mfV1
+gcc -E junk.c | sed -f ../msdos/sed1v2.inp >makefile
+goto mfDone
+:mfV1
 gcc -E junk.c | sed -f ../msdos/sed1.inp >makefile
+:mfDone
 rm -f junk.c
 
 if "%X11%" == "" goto src5
@@ -124,7 +158,8 @@ rm -f makefile.tmp
 
 if "%nodebug%" == "" goto src6
 sed -e "/^CFLAGS *=/s/ *-g//" <makefile >makefile.tmp
-mv -f makefile.tmp makefile
+sed -e "/^LDFLAGS *=/s/=/=-s/" <makefile.tmp >makefile
+rm -f makefile.tmp
 :src6
 cd ..
 rem   ----------------------------------------------------------------------
@@ -133,12 +168,18 @@ cd lib-src
 rem   Create "makefile" from "makefile.in".
 sed -e "1,/cpp stuff/s@^# .*$@@" <makefile.in >junk.c
 gcc -E -I. -I../src junk.c | sed -e "s/^ /	/" -e "/^#/d" -e "/^[ 	]*$/d" >makefile.new
+If "%DJGPP_VER%" == "2" goto libsrc-v2
 sed -f ../msdos/sed3.inp <makefile.new >makefile
-rm -f makefile.new junk.c
-if "%nodebug%" == "" goto libsrc2
-sed -e "/^CFLAGS *=/s/ *-g//" <makefile >makefile.tmp
-mv -f makefile.tmp makefile
+Goto libsrc2
+:libsrc-v2
+sed -f ../msdos/sed3v2.inp <makefile.new >makefile
 :libsrc2
+rm -f makefile.new junk.c
+if "%nodebug%" == "" goto libsrc3
+sed -e "/^CFLAGS *=/s/ *-g//" <makefile >makefile.tmp
+sed -e "/^ALL_CFLAGS *=/s/=/= -s/" <makefile.tmp >makefile
+rm -f makefile.tmp
+:libsrc3
 cd ..
 rem   ----------------------------------------------------------------------
 if "%X11%" == "" goto oldx1
@@ -153,8 +194,24 @@ cd ..
 :oldx1
 rem   ----------------------------------------------------------------------
 Echo Configuring the main directory...
-copy msdos\mainmake makefile >nul
+If "%DJGPP_VER%" == "1" goto mainv1
+Echo Looking for the GDB init file...
+If Exist src\_gdbinit goto gdbinitOk
+Echo ERROR:
+Echo I cannot find the GDB init file.  It was called ".gdbinit" in
+Echo the Emacs distribution, but was probably renamed to some other
+Echo name without the leading dot when you untarred the archive.
+Echo It should be in the "src/" subdirectory.  Please make sure this
+Echo file exists and is called "_gdbinit" with a leading underscore.
+Echo Then run CONFIG.BAT again with the same arguments you did now.
+goto End
+:gdbinitOk
+Echo Looking for the GDB init file...found
+copy msdos\mainmake.v2 makefile >nul
+:mainv1
+If "%DJGPP_VER%" == "1" copy msdos\mainmake makefile >nul
 rem   ----------------------------------------------------------------------
 :end
 set X11=
 set nodebug=
+set djgpp_ver=

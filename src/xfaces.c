@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* This is derived from work by Lucid (some parts very loosely so).  */
 
@@ -95,7 +96,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    lisp manipulates to control what gets displayed.  Elements 0 and 1
    of FRAME->output_data.x->param_faces are special - they describe the
    default and mode line faces.  None of the faces in param_faces have
-   GC's.  (See src/dispextern.h for the definiton of struct face.
+   GC's.  (See src/dispextern.h for the definition of struct face.
    lisp/faces.el maintains the isomorphism between face_alist and
    param_faces.)
 
@@ -424,24 +425,24 @@ unload_color (f, pixel)
 }
 
 DEFUN ("pixmap-spec-p", Fpixmap_spec_p, Spixmap_spec_p, 1, 1, 0,
-  "Return t if ARG is a valid pixmap specification.")
-  (arg)
-     Lisp_Object arg;
+  "Return t if OBJECT is a valid pixmap specification.")
+  (object)
+     Lisp_Object object;
 {
   Lisp_Object height, width;
 
-  return ((STRINGP (arg)
-	   || (CONSP (arg)
-	       && CONSP (XCONS (arg)->cdr)
-	       && CONSP (XCONS (XCONS (arg)->cdr)->cdr)
-	       && NILP (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->cdr)
-	       && (width = XCONS (arg)->car, INTEGERP (width))
-	       && (height = XCONS (XCONS (arg)->cdr)->car, INTEGERP (height))
-	       && STRINGP (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->car)
+  return ((STRINGP (object)
+	   || (CONSP (object)
+	       && CONSP (XCONS (object)->cdr)
+	       && CONSP (XCONS (XCONS (object)->cdr)->cdr)
+	       && NILP (XCONS (XCONS (XCONS (object)->cdr)->cdr)->cdr)
+	       && (width = XCONS (object)->car, INTEGERP (width))
+	       && (height = XCONS (XCONS (object)->cdr)->car, INTEGERP (height))
+	       && STRINGP (XCONS (XCONS (XCONS (object)->cdr)->cdr)->car)
 	       && XINT (width) > 0
 	       && XINT (height) > 0
 	       /* The string must have enough bits for width * height.  */
-	       && ((XSTRING (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->car)->size
+	       && ((XSTRING (XCONS (XCONS (XCONS (object)->cdr)->cdr)->car)->size
 		    * (BITS_PER_INT / sizeof (int)))
 		   >= XFASTINT (width) * XFASTINT (height))))
 	  ? Qt : Qnil);

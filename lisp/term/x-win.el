@@ -1,24 +1,26 @@
 ;;; x-win.el --- parse switches controlling interface with X window system
+
 ;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: FSF
 ;; Keywords: terminals
 
-;;; This file is part of GNU Emacs.
-;;;
-;;; GNU Emacs is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
-;;;
-;;; GNU Emacs is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; You should have received a copy of the GNU General Public License
-;;; along with GNU Emacs; see the file COPYING.  If not, write to
-;;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -78,105 +80,38 @@
 
 (defvar x-command-line-resources nil)
 
-(defconst x-option-alist
-  '(("-bw" .	x-handle-numeric-switch)
-    ("-d" .		x-handle-display)
-    ("-display" .	x-handle-display)
-    ("-name" .	x-handle-name-rn-switch)
-    ("-rn" .	x-handle-name-rn-switch)
-    ("-T" .		x-handle-switch)
-    ("-r" .		x-handle-switch)
-    ("-rv" .	x-handle-switch)
-    ("-reverse" .	x-handle-switch)
-    ("-fn" .	x-handle-switch)
-    ("-font" .	x-handle-switch)
-    ("-ib" .	x-handle-numeric-switch)
-    ("-g" .		x-handle-geometry)
-    ("-geometry" .	x-handle-geometry)
-    ("-fg" .	x-handle-switch)
-    ("-foreground".	x-handle-switch)
-    ("-bg" .	x-handle-switch)
-    ("-background".	x-handle-switch)
-    ("-ms" .	x-handle-switch)
-    ("-itype" .	x-handle-switch)
-    ("-i" 	.	x-handle-switch)
-    ("-iconic" .	x-handle-iconic)
-    ("-xrm" .       x-handle-xrm-switch)
-    ("-cr" .	x-handle-switch)
-    ("-vb" .	x-handle-switch)
-    ("-hb" .	x-handle-switch)
-    ("-bd" .	x-handle-switch)))
-
-(defconst x-long-option-alist
-  '(("--border-width" .	"-bw")
-    ("--display" .	"-d")
-    ("--name" .		"-name")
-    ("--title" .	"-T")
-    ("--reverse-video" . "-reverse")
-    ("--font" .		"-font")
-    ("--internal-border" . "-ib")
-    ("--geometry" .	"-geometry")
-    ("--foreground-color" . "-fg")
-    ("--background-color" . "-bg")
-    ("--mouse-color" .	"-ms")
-    ("--icon-type" .	"-itype")
-    ("--iconic" .	"-iconic")
-    ("--xrm" .		"-xrm")
-    ("--cursor-color" .	"-cr")
-    ("--vertical-scroll-bars" . "-vb")
-    ("--border-color" .	"-bd")))
-
-(defconst x-switch-definitions
-  '(("-name" name)
-    ("-T" name)
-    ("-r" reverse t)
-    ("-rv" reverse t)
-    ("-reverse" reverse t)
-    ("-fn" font)
-    ("-font" font)
-    ("-ib" internal-border-width)
-    ("-fg" foreground-color)
-    ("-foreground" foreground-color)
-    ("-bg" background-color)
-    ("-background" background-color)
-    ("-ms" mouse-color)
-    ("-cr" cursor-color)
-    ("-itype" icon-type t)
-    ("-i" icon-type t)
-    ("-vb" vertical-scroll-bars t)
-    ("-hb" horizontal-scroll-bars t)
-    ("-bd" border-color)
-    ("-bw" border-width)))
-
 ;; Handler for switches of the form "-switch value" or "-switch".
 (defun x-handle-switch (switch)
-  (let ((aelt (assoc switch x-switch-definitions)))
+  (let ((aelt (assoc switch command-line-x-option-alist)))
     (if aelt
-	(if (nth 2 aelt)
+	(let ((param (nth 3 aelt))
+	      (value (nth 4 aelt)))
+	  (if value
+	      (setq default-frame-alist
+		    (cons (cons param value)
+			  default-frame-alist))
 	    (setq default-frame-alist
-		  (cons (cons (nth 1 aelt) (nth 2 aelt))
-			default-frame-alist))
+		  (cons (cons param
+			      (car x-invocation-args))
+			default-frame-alist)
+		  x-invocation-args (cdr x-invocation-args)))))))
+
+;; Handler for switches of the form "-switch n"
+(defun x-handle-numeric-switch (switch)
+  (let ((aelt (assoc switch command-line-x-option-alist)))
+    (if aelt
+	(let ((param (nth 3 aelt)))
 	  (setq default-frame-alist
-		(cons (cons (nth 1 aelt)
-			    (car x-invocation-args))
+		(cons (cons param
+			    (string-to-int (car x-invocation-args)))
 		      default-frame-alist)
-		x-invocation-args (cdr x-invocation-args))))))
+		x-invocation-args
+		(cdr x-invocation-args))))))
 
 ;; Make -iconic apply only to the initial frame!
 (defun x-handle-iconic (switch)
   (setq initial-frame-alist
 	(cons '(visibility . icon) initial-frame-alist)))
-
-;; Handler for switches of the form "-switch n"
-(defun x-handle-numeric-switch (switch)
-  (let ((aelt (assoc switch x-switch-definitions)))
-    (if aelt
-	(setq default-frame-alist
-	      (cons (cons (nth 1 aelt)
-			  (string-to-int (car x-invocation-args)))
-		    default-frame-alist)
-	      x-invocation-args
-	      (cdr x-invocation-args)))))
 
 ;; Handle the -xrm option.
 (defun x-handle-xrm-switch (switch)
@@ -214,53 +149,56 @@
 
 (defun x-handle-display (switch)
   (setq x-display-name (car x-invocation-args)
-	x-invocation-args (cdr x-invocation-args)))
-
-(defvar x-invocation-args nil)
+	x-invocation-args (cdr x-invocation-args))
+  ;; Make subshell programs see the same DISPLAY value Emacs really uses.
+  ;; Note that this isn't completely correct, since Emacs can use
+  ;; multiple displays.  However, there is no way to tell an already
+  ;; running subshell which display the user is currently typing on.
+  (setenv "DISPLAY" x-display-name))
 
 (defun x-handle-args (args)
   "Process the X-related command line options in ARGS.
 This is done before the user's startup file is loaded.  They are copied to
-x-invocation args from which the X-related things are extracted, first
+`x-invocation-args', from which the X-related things are extracted, first
 the switch (e.g., \"-fg\") in the following code, and possible values
 \(e.g., \"black\") in the option handler code (e.g., x-handle-switch).
-This returns ARGS with the arguments that have been processed removed."
-  (message "%s" args)
+This function returns ARGS minus the arguments that have been processed."
+  ;; We use ARGS to accumulate the args that we don't handle here, to return.
   (setq x-invocation-args args
 	args nil)
   (while x-invocation-args
     (let* ((this-switch (car x-invocation-args))
 	   (orig-this-switch this-switch)
-	   completion argval aelt)
+	   completion argval aelt handler)
       (setq x-invocation-args (cdr x-invocation-args))
       ;; Check for long options with attached arguments
       ;; and separate out the attached option argument into argval.
       (if (string-match "^--[^=]*=" this-switch)
 	  (setq argval (substring this-switch (match-end 0))
 		this-switch (substring this-switch 0 (1- (match-end 0)))))
-      (setq completion (try-completion this-switch x-long-option-alist))
-      (if (eq completion t)
-	  ;; Exact match for long option.
-	  (setq this-switch (cdr (assoc this-switch x-long-option-alist)))
-	(if (stringp completion)
-	    (let ((elt (assoc completion x-long-option-alist)))
-	      ;; Check for abbreviated long option.
-	      (or elt
-		  (error "Option `%s' is ambiguous" this-switch))
-	      (setq this-switch (cdr elt)))
-	  ;; Check for a short option.
-	  (setq argval nil this-switch orig-this-switch)))
-      (setq aelt (assoc this-switch x-option-alist))
-      (if aelt
+      ;; Complete names of long options.
+      (if (string-match "^--" this-switch)
+	  (progn
+	    (setq completion (try-completion this-switch command-line-x-option-alist))
+	    (if (eq completion t)
+		;; Exact match for long option.
+		nil
+	      (if (stringp completion)
+		  (let ((elt (assoc completion command-line-x-option-alist)))
+		    ;; Check for abbreviated long option.
+		    (or elt
+			(error "Option `%s' is ambiguous" this-switch))
+		    (setq this-switch completion))))))
+      (setq aelt (assoc this-switch command-line-x-option-alist))
+      (if aelt (setq handler (nth 2 aelt)))
+      (if handler
 	  (if argval
 	      (let ((x-invocation-args
 		     (cons argval x-invocation-args)))
-		(funcall (cdr aelt) this-switch))
-	    (funcall (cdr aelt) this-switch))
-	(setq args (cons this-switch args)))))
-  (setq args (nreverse args)))
-
-
+		(funcall handler this-switch))
+	    (funcall handler this-switch))
+	(setq args (cons orig-this-switch args)))))
+  (nreverse args))
 
 ;;
 ;; Standard X cursor shapes, courtesy of Mr. Fox, who wanted ALL of them.
@@ -647,13 +585,13 @@ This is in addition to the primary selection.")
     ;; Don't die if x-get-selection signals an error.
     (condition-case c
 	(setq text (x-get-selection 'PRIMARY))
-      (error (message "%s" c)))
+      (error nil))
     (if (string= text "") (setq text nil))
 
     (if x-select-enable-clipboard
 	(condition-case c
 	    (setq text (x-get-selection 'CLIPBOARD))
-	  (error (message "%s" c))))
+	  (error nil)))
     (if (string= text "") (setq text nil))
     (or text (setq text (x-get-cut-buffer 0)))
     (if (string= text "") (setq text nil))
@@ -762,5 +700,9 @@ This is in addition to the primary selection.")
 
 ;; Don't show the frame name; that's redundant with X.
 (setq-default mode-line-buffer-identification '("Emacs: %12b"))
+
+;; Motif normally handles f10 itself, so don't try to handle it a second time.
+(if (featurep 'motif)
+    (global-set-key [f10] 'ignore))
 
 ;;; x-win.el ends here

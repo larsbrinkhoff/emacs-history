@@ -1,3 +1,80 @@
+Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Version 19.31 released.
+
+Sun Mar 31 15:19:31 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib-Xm.c (destroy_all_children): When freeing a cascade button,
+	free its submenu too.
+	(make_menu_in_widget): Use a cascade button gadget, not a widget.
+	Include Xm/CascadeBG.h.
+
+Fri Mar 29 09:47:25 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (tags): New target.
+
+Thu Mar 28 13:38:14 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (TAGS): Renamed from `tags' and fixed to work.
+
+Tue Mar 26 13:45:45 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (xlwmenu.o): New explicit target.
+
+Sun Mar 24 06:55:06 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib.h (struct widget_value): New field this_one_change.
+	* lwlib.c (merge_widget_value): Set the this_one_change field.
+	* lwlib-Xm.c (destroy_all_children): New arg first_child_to_destroy.
+	(make_menu_in_widget): New arg keep_first_children.
+	(xm_update_menu): Preserve the first children even if later ones
+	have a structural change.
+	(update_one_menu_entry): Use this_one_change field.
+
+Fri Mar  1 14:41:35 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (motion_event_is_in_menu): Make x and y signed.
+
+Sun Feb 25 01:59:30 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib.c (lw_window_is_in_menubar) [USE_MOTIF]:
+	With Motif, the window WIN can be the menu bar widget itself.
+
+Wed Feb 21 15:54:25 1996  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* lwlib.c (free_widget_value_tree, merge_widget_value):
+	Use XtFree for the toolkit_data.
+
+Mon Feb 19 02:36:44 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* lwlib.c (lw_internal_update_other_instances): Move static var
+	outside the function, and rename it to lwlib_updating.
+
+Thu Jan  4 19:09:22 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* lwlib.c (instantiate_widget_instance): Renamed from
+	instanciate_widget_instance (spelling correction).
+	All callers changed.
+
+Sun Dec 31 13:57:56 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (xlwMenuActionsList): Add "key" and "nothing".
+	(xlwMenuTranslations): Add translations for Key, KeyUp,
+	and for the modifier keysyms.
+	(Nothing, Key): New functions.
+
+Sun Dec 24 11:02:18 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (XlwMenuSetValues): Do redisplay if non-null contents
+	get replaced by empty contents.
+
+	* lwlib.c (merge_widget_value): Treat disappearance of entire contents
+	as a STRUCTURAL_CHANGE.
+
+Wed Dec 20 20:31:41 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* lwlib-utils.c: Add #undef for index and rindex.
+
 Fri Nov 24 23:41:12 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.30 released.

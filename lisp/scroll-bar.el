@@ -1,32 +1,32 @@
 ;;; scroll-bar.el --- window system-independent scroll bar support.
 
-;;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: hardware
 
-;;; This file is part of GNU Emacs.
+;; This file is part of GNU Emacs.
 
-;;; GNU Emacs is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;;; GNU Emacs is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;;; You should have received a copy of the GNU General Public License
-;;; along with GNU Emacs; see the file COPYING.  If not, write to
-;;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
-
-;;; Code:
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
 ;; Window-system-independent bindings of mouse clicks on the scroll bar.
 ;; Presently emulates the scroll-bar behavior of xterm.
+
 ;;; Code:
 
 (require 'mouse)
@@ -113,6 +113,40 @@ EVENT should be a scroll bar click or drag event."
 					(- (point-max) (point-min)))))
 	(beginning-of-line)
 	(set-window-start window (point))))))
+
+(defun scroll-bar-drag-position (portion-whole)
+  "Calculate new window start for drag event."
+  (save-excursion
+    (goto-char (+ (point-min)
+		  (scroll-bar-scale portion-whole
+				    (- (point-max) (point-min)))))
+    (beginning-of-line)
+    (point)))
+
+(defun scroll-bar-maybe-set-window-start (event)
+  "Set the window start according to where the scroll bar is dragged.
+Only change window start if the new start is substantially different.
+EVENT should be a scroll bar click or drag event."
+  (interactive "e")
+  (let* ((end-position (event-end event))
+	 (window (nth 0 end-position))
+	 (portion-whole (nth 2 end-position))
+	 (next-portion-whole (cons (1+ (car portion-whole))
+				   (cdr portion-whole)))
+	 portion-start
+	 next-portion-start
+	 (current-start (window-start window)))
+    (save-excursion
+      (set-buffer (window-buffer window))
+      (setq portion-start (scroll-bar-drag-position portion-whole))
+      (setq next-portion-start (max
+				(scroll-bar-drag-position next-portion-whole)
+				(1+ portion-start)))
+      (if (or (> current-start next-portion-start)
+	      (< current-start portion-start))
+	  (set-window-start window portion-start)
+	;; Always set window start, to ensure scroll bar position is updated.
+	(set-window-start window current-start)))))
 
 ;; Scroll the window to the proper position for EVENT.
 (defun scroll-bar-drag-1 (event)

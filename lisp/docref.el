@@ -1,4 +1,5 @@
 ;;; docref.el --- Simple cross references for Elisp documentation strings
+
 ;; Copyright (C) 1994 Free Software Foundation, Inc.
 
 ;; Author: Vadim Geshel <vadik@unas.cs.kiev.ua>
@@ -19,15 +20,16 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-;;
+
 ;; This package allows you to use a simple form of cross references in
 ;; your Emacs Lisp documentation strings. Cross-references look like
 ;; \\(type@[label@]data), where type defines a method for retrieving
-;; reference informatin, data is used by a method routine as an argument,
+;; reference information, data is used by a method routine as an argument,
 ;; and label "represents" the reference in text. If label is absent, data
 ;; is used instead.
 ;; 
@@ -127,7 +129,7 @@ Find cross-reference information in a buffer and
 highlight them with face defined by \\(v@docref-highlight-face).
 
 Cross-reference has the following format: \\ (TYPE[@LABEL]@DATA), where
-TYPE defines method used to retrive xref data (like reading from file or
+TYPE defines method used to retrieve xref data (like reading from file or
 calling \\(f@describe-function)), DATA is an argument to this method
 \(like file name or function name), and LABEL is displayed in text using
 \\(v@docref-highlight-face).

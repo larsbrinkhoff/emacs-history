@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #define NO_SHORTNAMES
@@ -171,6 +172,7 @@ main (argc, argv)
 
   rewind (out); /* re-read the output */
   str = fgets (string, BUFSIZ, out); 
+  printf ("\n");
 
   /* Now, wait for an answer and print any messages.  */
   
@@ -324,7 +326,9 @@ main (argc, argv)
   msgrcv (s, msgp, BUFSIZ, getpid (), 0);	/* wait for anything back */
   strcpy (buf, msgp->mtext);
 
-  printf ("\n%s\n", buf);
+  printf ("\n");
+  if (*buf)
+    printf ("%s\n", buf);
   exit (0);
 }
 

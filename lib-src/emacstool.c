@@ -1,19 +1,22 @@
 /*
    Copyright (C) 1986, 1988, 1990, 1991 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+This file is part of GNU Emacs.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /*
  * For Emacs in SunView/Sun-Windows: (supported by Sun Unix v3.2 or greater)
@@ -150,7 +153,7 @@ button_value (event)
  *  Variables to store the time of the previous mouse event that was
  *  sent to emacs.
  *
- *  The theory is that to time double clicks while ignoreing UP buttons,
+ *  The theory is that to time double clicks while ignoring UP buttons,
  *  we must keep track of the accumulated time.
  *
  *  If someone writes a SUN-SET-INPUT-MASK for emacstool,
@@ -376,7 +379,7 @@ int interpose_on_window(argc,argv)
     char **argv;
 {
 #ifndef TTERM
-    int i, font_width_adjust = 1; /* hackery, and hueristics */
+    int i, font_width_adjust = 1; /* hackery, and heuristics */
     /* if -Wt is not supplied, then font comes out as lucida-14 (width=8)
      * rather than the screen.r.12 (width=7) typically used
      * this hack attempts to workaround it.

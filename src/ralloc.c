@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* NOTES:
 
@@ -131,7 +132,7 @@ static int extra_bytes;
    but they never move.
 
    We try to make just one heap and make it larger as necessary.
-   But sometimes we can't do that, because we can't get continguous
+   But sometimes we can't do that, because we can't get contiguous
    space to add onto the heap.  When that happens, we start a new heap.  */
    
 typedef struct heap
@@ -171,7 +172,7 @@ static heap_ptr first_heap, last_heap;
    An element with variable==NIL denotes a freed block, which has not yet
    been collected.  They may only appear while r_alloc_freeze > 0, and will be
    freed when the arena is thawed.  Currently, these blocs are not reusable,
-   while the arena is frozen.  Very inefficent.  */
+   while the arena is frozen.  Very inefficient.  */
 
 typedef struct bp
 {
@@ -180,7 +181,7 @@ typedef struct bp
   POINTER *variable;
   POINTER data;
   SIZE size;
-  POINTER new_data;		/* tmporarily used for relocation */
+  POINTER new_data;		/* temporarily used for relocation */
   struct heap *heap; 		/* Heap this bloc is in.  */
 } *bloc_ptr;
 
@@ -220,8 +221,8 @@ find_heap (address)
    if we can get that many within one heap.
 
    If enough space is not presently available in our reserve, this means
-   getting more page-aligned space from the system. If the retuned space
-   is not contiguos to the last heap, allocate a new heap, and append it
+   getting more page-aligned space from the system.  If the returned space
+   is not contiguous to the last heap, allocate a new heap, and append it
 
    obtain does not try to keep track of whether space is in use
    or not in use.  It just returns the address of SIZE bytes that
@@ -795,7 +796,7 @@ r_alloc_sbrk (size)
     {
       /* Allocate a page-aligned space.  GNU malloc would reclaim an
 	 extra space if we passed an unaligned one.  But we could
-	 not always find a space which is contiguos to the previous.  */
+	 not always find a space which is contiguous to the previous.  */
       POINTER new_bloc_start;
       heap_ptr h = first_heap;
       SIZE get = ROUNDUP (size);
@@ -978,7 +979,7 @@ r_alloc_free (ptr)
    do nothing.
 
    In case r_alloc_freeze is set, a new bloc is allocated, and the
-   memory copied to it.  Not very efficent.  We could traverse the
+   memory copied to it.  Not very efficient.  We could traverse the
    bloc_list for a best fit of free blocs first.
 
    Change *PTR to reflect the new bloc, and return this value.
@@ -1077,7 +1078,7 @@ r_alloc_thaw ()
   if (--r_alloc_freeze_level < 0)
     abort ();
 
-  /* This frees all unused blocs.  It is not too inefficent, as the resize 
+  /* This frees all unused blocs.  It is not too inefficient, as the resize 
      and bcopy is done only once.  Afterwards, all unreferenced blocs are 
      already shrunk to zero size.  */
   if (!r_alloc_freeze_level) 
@@ -1163,7 +1164,11 @@ r_alloc_check ()
     {
       assert (h->prev == ph);
       assert ((POINTER) ROUNDUP (h->end) == h->end);
+#if 0 /* ??? The code in ralloc.c does not really try to ensure
+	 the heap start has any sort of alignment.
+	 Perhaps it should.  */
       assert ((POINTER) MEM_ROUNDUP (h->start) == h->start);
+#endif
       assert ((POINTER) MEM_ROUNDUP (h->bloc_start) == h->bloc_start);
       assert (h->start <= h->bloc_start && h->bloc_start <= h->end);
 

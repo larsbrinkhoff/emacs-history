@@ -13,7 +13,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Emacs config.h may rename various library functions such as malloc.  */
 #ifdef HAVE_CONFIG_H
@@ -300,8 +301,10 @@ tputs (str, nlines, outfun)
 #else
   if (ospeed == 0)
     speed = tputs_baud_rate;
-  else
+  else if (ospeed > 0 && ospeed < (sizeof speeds / sizeof speeds[0]))
     speed = speeds[ospeed];
+  else
+    speed = 0;
 #endif
 
   if (!str)
@@ -421,7 +424,7 @@ tgetent (bp, name)
   register int fd;
   struct buffer buf;
   register char *bp1;
-  char *bp2;
+  char *tc_search_point;
   char *term;
   int malloc_size = 0;
   register int c;
@@ -509,7 +512,7 @@ tgetent (bp, name)
       malloc_size = indirect ? strlen (tcenv) + 1 : buf.size;
       bp = (char *) xmalloc (malloc_size);
     }
-  bp1 = bp;
+  tc_search_point = bp1 = bp;
 
   if (indirect)
     /* Copy the data from the environment variable.  */
@@ -540,10 +543,9 @@ tgetent (bp, name)
 	  malloc_size = bp1 - bp + buf.size;
 	  termcap_name = (char *) xrealloc (bp, malloc_size);
 	  bp1 += termcap_name - bp;
+	  tc_search_point += termcap_name - bp;
 	  bp = termcap_name;
 	}
-
-      bp2 = bp1;
 
       /* Copy the line of the entry from buf into bp.  */
       termcap_name = buf.ptr;
@@ -558,7 +560,8 @@ tgetent (bp, name)
 
       /* Does this entry refer to another terminal type's entry?
 	 If something is found, copy it into heap and null-terminate it.  */
-      term = tgetst1 (find_capability (bp2, "tc"), (char **) 0);
+      tc_search_point = find_capability (tc_search_point, "tc");
+      term = tgetst1 (tc_search_point, (char **) 0);
     }
 
   close (fd);
@@ -779,4 +782,3 @@ tprint (cap)
 }
 
 #endif /* TEST */
-

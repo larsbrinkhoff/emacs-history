@@ -1,6 +1,6 @@
 ;;; flow-ctrl.el --- help for lusers on cu(1) or ttys with wired-in ^S/^Q flow control
 
-;;; Copyright (C) 1990, 1991, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1990, 1991, 1994 Free Software Foundation, Inc.
 
 ;; Author Kevin Gallagher
 ;; Maintainer: FSF
@@ -20,26 +20,27 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;;; Terminals that use XON/XOFF flow control can cause problems with
-;;;; GNU Emacs users.  This file contains Emacs Lisp code that makes it
-;;;; easy for a user to deal with this problem, when using such a
-;;;; terminal. 
-;;;;      
-;;;; To invoke these adjustments, a user need only invoke the function
-;;;; enable-flow-control-on with a list of terminal types in his/her own
-;;;; .emacs file.  As arguments, give it the names of one or more terminal
-;;;; types in use by that user which require flow control adjustments.
-;;;; Here's an example: 
-;;;; 
-;;;;	(enable-flow-control-on "vt200" "vt300" "vt101" "vt131")
+;; Terminals that use XON/XOFF flow control can cause problems with
+;; GNU Emacs users.  This file contains Emacs Lisp code that makes it
+;; easy for a user to deal with this problem, when using such a
+;; terminal. 
+;;      
+;; To invoke these adjustments, a user need only invoke the function
+;; enable-flow-control-on with a list of terminal types in his/her own
+;; .emacs file.  As arguments, give it the names of one or more terminal
+;; types in use by that user which require flow control adjustments.
+;; Here's an example: 
+;; 
+;;	(enable-flow-control-on "vt200" "vt300" "vt101" "vt131")
 
-;;; Portability note: This uses (getenv "TERM"), and therefore probably
-;;; won't work outside of UNIX-like environments.
+;; Portability note: This uses (getenv "TERM"), and therefore probably
+;; won't work outside of UNIX-like environments.
 
 ;;; Code:
 
@@ -94,14 +95,10 @@ With arg, enable flow control mode if arg is positive, otherwise disable."
     ;; Swap C-q and C-^
     (aset keyboard-translate-table flow-control-c-q-replacement ?\^q)
     (aset keyboard-translate-table ?\^q flow-control-c-q-replacement)
-    (message (concat 
-	      "XON/XOFF adjustment for " 
-	      (getenv "TERM") 
-	      ": use "
-	      (single-key-description flow-control-c-s-replacement)
-	      " for C-s, and use "
-	      (single-key-description flow-control-c-q-replacement)
-	      " for C-q"))
+    (message "XON/XOFF adjustment for %s: use %s for C-s, and use %s for C-q"
+	     (getenv "TERM") 
+	     (single-key-description flow-control-c-s-replacement)
+	     (single-key-description flow-control-c-q-replacement))
     (sleep-for 2)))			; Give user a chance to see message.
 
 ;;;###autoload
@@ -113,13 +110,16 @@ you must type C-\\ to get the effect of a C-s, and type C-^
 to get the effect of a C-q."
   (let ((term (getenv "TERM"))
 	hyphend)
+    ;; Look for TERM in LOSING-TERMINAL-TYPES.
+    ;; If we don't find it literally, try stripping off words
+    ;; from the end, one by one.
+    (while (and term (not (member term losing-terminal-types)))
+      ;; Strip off last hyphen and what follows, then try again.
+      (if (setq hyphend (string-match "[-_][^-_]+$" term))
+	  (setq term (substring term 0 hyphend))
+	(setq term nil)))
     (if term
-	(progn
-	  ;; Strip off hyphen and what follows
-	  (while (setq hyphend (string-match "[-_][^-_]+$" term))
-	    (setq term (substring term 0 hyphend)))
-	  (and (member term losing-terminal-types)
-	       (enable-flow-control))))))
+	(enable-flow-control))))
 
 (provide 'flow-ctrl)
 

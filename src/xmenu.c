@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* X pop-up deck-of-cards menu facility for gnuemacs.
  *
@@ -673,7 +674,7 @@ single_keymap_panes (keymap, pane_name, prefix, notreal)
     }
 }
 
-/* Push all the panes and items of a menu decsribed by the
+/* Push all the panes and items of a menu described by the
    alist-of-alists MENU.
    This handles old-fashioned calls to x-popup-menu.  */
 
@@ -770,6 +771,7 @@ cached information about equivalent key sequences.")
   int for_click = 0;
   struct gcpro gcpro1;
 
+#ifdef HAVE_MENUS
   if (! NILP (position))
     {
       check_x ();
@@ -843,6 +845,7 @@ cached information about equivalent key sequences.")
       xpos += XINT (x);
       ypos += XINT (y);
     }
+#endif /* HAVE_MENUS */
 
   title = Qnil;
   GCPRO1 (title);
@@ -922,6 +925,7 @@ cached information about equivalent key sequences.")
       return Qnil;
     }
 
+#ifdef HAVE_MENUS
   /* Display them in a menu.  */
   BLOCK_INPUT;
 
@@ -932,10 +936,13 @@ cached information about equivalent key sequences.")
   discard_menu_items ();
 
   UNGCPRO;
+#endif /* HAVE_MENUS */
 
   if (error_name) error (error_name);
   return selection;
 }
+
+#ifdef HAVE_MENUS
 
 DEFUN ("x-popup-dialog", Fx_popup_dialog, Sx_popup_dialog, 2, 2, 0,
   "Pop up a dialog box and return user's selection.\n\
@@ -1051,7 +1058,8 @@ on the left of the dialog box and all following items on the right.\n\
 #ifdef USE_X_TOOLKIT
 
 /* Loop in Xt until the menu pulldown or dialog popup has been
-   popped down (deactivated).
+   popped down (deactivated).  This is used for x-popup-menu
+   and x-popup-dialog; it is not used for the menu bar any more.
 
    NOTE: All calls to popup_get_selection should be protected
    with BLOCK_INPUT, UNBLOCK_INPUT wrappers.  */
@@ -1291,6 +1299,19 @@ popup_deactivate_callback (widget, id, client_data)
   popup_activated_flag = 0;
 }
 
+/* Allocate a widget_value, blocking input.  */
+
+widget_value *
+xmalloc_widget_value ()
+{
+  widget_value *value;
+
+  BLOCK_INPUT;
+  value = malloc_widget_value ();
+  UNBLOCK_INPUT;
+
+  return value;
+}
 
 /* This recursively calls free_widget_value on the tree of widgets.
    It must free all data that was malloc'ed for these widget_values.
@@ -1371,7 +1392,7 @@ single_submenu (item_key, item_name, maps)
 
   submenu_stack
     = (widget_value **) alloca (menu_items_used * sizeof (widget_value *));
-  wv = malloc_widget_value ();
+  wv = xmalloc_widget_value ();
   wv->name = "menu";
   wv->value = 0;
   wv->enabled = 1;
@@ -1425,7 +1446,7 @@ single_submenu (item_key, item_name, maps)
 	     with its items as a submenu beneath it.  */
 	  if (strcmp (pane_string, ""))
 	    {
-	      wv = malloc_widget_value ();
+	      wv = xmalloc_widget_value ();
 	      if (save_wv)
 		save_wv->next = wv;
 	      else
@@ -1452,7 +1473,7 @@ single_submenu (item_key, item_name, maps)
 	    = XVECTOR (menu_items)->contents[i + MENU_ITEMS_ITEM_EQUIV_KEY];
 	  def = XVECTOR (menu_items)->contents[i + MENU_ITEMS_ITEM_DEFINITION];
 
-	  wv = malloc_widget_value ();
+	  wv = xmalloc_widget_value ();
 	  if (prev_wv) 
 	    prev_wv->next = wv;
 	  else
@@ -1568,7 +1589,7 @@ set_frame_menubar (f, first_time, deep_p)
   if (! menubar_widget)
     deep_p = 1;
 
-  wv = malloc_widget_value ();
+  wv = xmalloc_widget_value ();
   wv->name = "menubar";
   wv->value = 0;
   wv->enabled = 1;
@@ -1607,7 +1628,7 @@ set_frame_menubar (f, first_time, deep_p)
 	 really recompute the menubar from the value.  */
       if (! NILP (Vlucid_menu_bar_dirty_flag))
 	call0 (Qrecompute_lucid_menubar);
-      call1 (Vrun_hooks, Qmenu_bar_update_hook);
+      safe_run_hooks (Qmenu_bar_update_hook);
       FRAME_MENU_BAR_ITEMS (f) = menu_bar_items (FRAME_MENU_BAR_ITEMS (f));
 
       items = FRAME_MENU_BAR_ITEMS (f);
@@ -1622,7 +1643,7 @@ set_frame_menubar (f, first_time, deep_p)
       menu_items = f->menu_bar_vector;
       menu_items_allocated = XVECTOR (menu_items)->size;
       init_menu_items ();
-      for (i = 0; i < XVECTOR (items)->size; i += 3)
+      for (i = 0; i < XVECTOR (items)->size; i += 4)
 	{
 	  Lisp_Object key, string, maps;
 
@@ -1654,7 +1675,7 @@ set_frame_menubar (f, first_time, deep_p)
 	if (menu_items_used == i
 	    || (previous_items[i] != XVECTOR (menu_items)->contents[i]))
 	  break;
-      if (i == menu_items_used && i == previous_menu_items_used)
+      if (i == menu_items_used && i == previous_menu_items_used && i != 0)
 	{
 	  free_menubar_widget_value_tree (first_wv);
 	  menu_items = Qnil;
@@ -1665,7 +1686,7 @@ set_frame_menubar (f, first_time, deep_p)
       /* Now GC cannot happen during the lifetime of the widget_value,
 	 so it's safe to store data from a Lisp_String.  */
       wv = first_wv->contents;
-      for (i = 0; i < XVECTOR (items)->size; i += 3)
+      for (i = 0; i < XVECTOR (items)->size; i += 4)
 	{
 	  Lisp_Object string;
 	  string = XVECTOR (items)->contents[i + 1];
@@ -1685,7 +1706,7 @@ set_frame_menubar (f, first_time, deep_p)
 	 just the top level menu bar strings.  */
 
       items = FRAME_MENU_BAR_ITEMS (f);
-      for (i = 0; i < XVECTOR (items)->size; i += 3)
+      for (i = 0; i < XVECTOR (items)->size; i += 4)
 	{
 	  Lisp_Object string;
 
@@ -1693,7 +1714,7 @@ set_frame_menubar (f, first_time, deep_p)
 	  if (NILP (string))
 	    break;
 
-	  wv = malloc_widget_value ();
+	  wv = xmalloc_widget_value ();
 	  wv->name = (char *) XSTRING (string)->data;
 	  wv->value = 0;
 	  wv->enabled = 1;
@@ -1704,6 +1725,11 @@ set_frame_menubar (f, first_time, deep_p)
 	    first_wv->contents = wv;
 	  prev_wv = wv;
 	}
+
+      /* Forget what we thought we knew about what is in the
+	 detailed contents of the menu bar menus.
+	 Changing the top level always destroys the contents.  */
+      f->menu_bar_items_used = 0;
     }
 
   /* Create or update the menu bar widget.  */
@@ -1760,7 +1786,7 @@ set_frame_menubar (f, first_time, deep_p)
   UNBLOCK_INPUT;
 }
 
-/* Called from Fx_create_frame to create the inital menubar of a frame
+/* Called from Fx_create_frame to create the initial menubar of a frame
    before it is mapped, so that the window is mapped with the menubar already
    there instead of us tacking it on later and thrashing the window after it
    is visible.  */
@@ -1876,7 +1902,7 @@ xmenu_show (f, x, y, for_click, keymaps, title, error)
 
   /* Create a tree of widget_value objects
      representing the panes and their items.  */
-  wv = malloc_widget_value ();
+  wv = xmalloc_widget_value ();
   wv->name = "menu";
   wv->value = 0;
   wv->enabled = 1;
@@ -1928,7 +1954,7 @@ xmenu_show (f, x, y, for_click, keymaps, title, error)
 	     with its items as a submenu beneath it.  */
 	  if (!keymaps && strcmp (pane_string, ""))
 	    {
-	      wv = malloc_widget_value ();
+	      wv = xmalloc_widget_value ();
 	      if (save_wv)
 		save_wv->next = wv;
 	      else
@@ -1959,7 +1985,7 @@ xmenu_show (f, x, y, for_click, keymaps, title, error)
 	    = XVECTOR (menu_items)->contents[i + MENU_ITEMS_ITEM_EQUIV_KEY];
 	  def = XVECTOR (menu_items)->contents[i + MENU_ITEMS_ITEM_DEFINITION];
 
-	  wv = malloc_widget_value ();
+	  wv = xmalloc_widget_value ();
 	  if (prev_wv) 
 	    prev_wv->next = wv;
 	  else 
@@ -1983,9 +2009,9 @@ xmenu_show (f, x, y, for_click, keymaps, title, error)
   /* Deal with the title, if it is non-nil.  */
   if (!NILP (title))
     {
-      widget_value *wv_title = malloc_widget_value ();
-      widget_value *wv_sep1 = malloc_widget_value ();
-      widget_value *wv_sep2 = malloc_widget_value ();
+      widget_value *wv_title = xmalloc_widget_value ();
+      widget_value *wv_sep1 = xmalloc_widget_value ();
+      widget_value *wv_sep2 = xmalloc_widget_value ();
 
       wv_sep2->name = "--";
       wv_sep2->next = first_wv->contents;
@@ -2188,7 +2214,7 @@ xdialog_show (f, keymaps, title, error)
     prefix = XVECTOR (menu_items)->contents[MENU_ITEMS_PANE_PREFIX];
     pane_string = (NILP (pane_name)
 		   ? "" : (char *) XSTRING (pane_name)->data);  
-    prev_wv = malloc_widget_value ();
+    prev_wv = xmalloc_widget_value ();
     prev_wv->value = pane_string;
     if (keymaps && !NILP (prefix))
       prev_wv->name++;
@@ -2229,7 +2255,7 @@ xdialog_show (f, keymaps, title, error)
 	    return Qnil;
 	  }
 
-	wv = malloc_widget_value ();
+	wv = xmalloc_widget_value ();
 	prev_wv->next = wv;
 	wv->name = (char *) button_names[nb_buttons];
 	if (!NILP (descrip))
@@ -2251,7 +2277,7 @@ xdialog_show (f, keymaps, title, error)
     if (! boundary_seen)
       left_count = nb_buttons - nb_buttons / 2;
 
-    wv = malloc_widget_value ();
+    wv = xmalloc_widget_value ();
     wv->name = dialog_name;
 
     /* Dialog boxes use a really stupid name encoding
@@ -2611,6 +2637,8 @@ xmenu_show (f, x, y, for_click, keymaps, title, error)
 }
 
 #endif /* not USE_X_TOOLKIT */
+
+#endif /* HAVE_MENUS */
 
 syms_of_xmenu ()
 {
@@ -2626,5 +2654,7 @@ syms_of_xmenu ()
 #endif
 
   defsubr (&Sx_popup_menu);
+#ifdef HAVE_MENUS
   defsubr (&Sx_popup_dialog);
+#endif
 }

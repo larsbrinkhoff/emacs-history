@@ -1,6 +1,6 @@
 ;;; window.el --- GNU Emacs window commands aside from those written in C.
 
-;;; Copyright (C) 1985, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 
@@ -17,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -51,17 +52,17 @@ minibuffer even if it is active.
 
 Several frames may share a single minibuffer; if the minibuffer
 counts, all windows on all frames that share that minibuffer count
-too.  Therefore, when a separate minibuffer frame is active,
+too.  Therefore, if you are using a separate minibuffer frame
+and the minibuffer is active and MINIBUF says it counts,
 `walk-windows' includes the windows in the frame from which you
-entered the minibuffer, as well as the minibuffer window.  But if the
-minibuffer does not count, only windows from WINDOW's frame count.
+entered the minibuffer, as well as the minibuffer window.
 
 ALL-FRAMES is the optional third argument.
 ALL-FRAMES nil or omitted means cycle within the frames as specified above.
 ALL-FRAMES = `visible' means include windows on all visible frames.
 ALL-FRAMES = 0 means include windows on all visible and iconified frames.
 ALL-FRAMES = t means include windows on all frames including invisible frames.
-Anything else means restrict to WINDOW's frame."
+Anything else means restrict to the selected frame."
   ;; If we start from the minibuffer window, don't fail to come back to it.
   (if (window-minibuffer-p (selected-window))
       (setq minibuf t))
@@ -87,8 +88,8 @@ Anything else means restrict to WINDOW's frame."
 
 (defun count-windows (&optional minibuf)
    "Returns the number of visible windows.
-Optional arg NO-MINI non-nil means don't count the minibuffer
-even if it is active."
+Optional arg MINIBUF non-nil means count the minibuffer
+even if it is inactive."
    (let ((count 0))
      (walk-windows (function (lambda (w)
 			       (setq count (+ count 1))))
@@ -167,7 +168,8 @@ new mode line."
   (let ((old-w (selected-window))
 	(old-point (point))
 	(size (and arg (prefix-numeric-value arg)))
-	new-w bottom switch)
+        (window-full-p nil)
+	new-w bottom switch moved)
     (and size (< size 0) (setq size (+ (window-height) size)))
     (setq new-w (split-window nil size))
     (or split-window-keep-point
@@ -175,18 +177,23 @@ new mode line."
 	  (save-excursion
 	    (set-buffer (window-buffer))
 	    (goto-char (window-start))
-	    (vertical-motion (window-height))
+            (setq moved (vertical-motion (window-height)))
 	    (set-window-start new-w (point))
 	    (if (> (point) (window-point new-w))
 		(set-window-point new-w (point)))
-	    (vertical-motion -1)
-	    (setq bottom (point)))
-	  (if (<= bottom (point))
-	      (set-window-point old-w (1- bottom)))
-	  (if (< (window-start new-w) old-point)
-	      (progn
-		(set-window-point new-w old-point)
-		(select-window new-w)))))
+            (and (= moved (window-height))
+                 (progn
+                   (setq window-full-p t)
+                   (vertical-motion -1)))
+            (setq bottom (point)))
+          (and window-full-p
+               (<= bottom (point))
+               (set-window-point old-w (1- bottom)))
+	  (and window-full-p
+               (<= (window-start new-w) old-point)
+               (progn
+                 (set-window-point new-w old-point)
+                 (select-window new-w)))))
     new-w))
 
 (defun split-window-horizontally (&optional arg)

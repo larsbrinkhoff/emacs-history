@@ -6,7 +6,7 @@
 /*
  * XMenu:	MIT Project Athena, X Window system menu package
  *
- * 	XMenuInternal.c - XMenu internal (not user visable) routines.
+ * 	XMenuInternal.c - XMenu internal (not user visible) routines.
  *
  *	Author:		Tony Della Fera, DEC
  *			November, 1985

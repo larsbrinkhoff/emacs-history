@@ -30,7 +30,7 @@ XMenuInsertSelection(menu, p_num, s_num, data, label, active)
 
     XMSelect *select;		/* Newly created selection. */
 
-    int label_length;		/* Label lenght in characters. */
+    int label_length;		/* Label length in characters. */
     int label_width;		/* Label width in pixels. */
     
     /*

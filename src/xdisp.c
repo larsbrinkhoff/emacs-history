@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -158,6 +159,7 @@ static int debug_end_pos;
 /* Nonzero means display mode line highlighted */
 int mode_line_inverse_video;
 
+static void redisplay_internal ();
 static int message_log_check_duplicate ();
 static void echo_area_display ();
 void mark_window_display_accurate ();
@@ -227,6 +229,8 @@ static int line_number_display_limit;
    t means infinite.  nil means don't log at all.  */
 Lisp_Object Vmessage_log_max;
 
+/* Output a newline in the *Messages* buffer if "needs" one.  */
+
 void
 message_log_maybe_newline ()
 {
@@ -248,6 +252,7 @@ message_dolog (m, len, nlflag)
     {
       struct buffer *oldbuf;
       int oldpoint, oldbegv, oldzv;
+      int old_windows_or_buffers_changed = windows_or_buffers_changed;
 
       oldbuf = current_buffer;
       Fset_buffer (Fget_buffer_create (build_string ("*Messages*")));
@@ -316,10 +321,10 @@ message_dolog (m, len, nlflag)
       ZV = oldzv;
       TEMP_SET_PT (oldpoint);
       set_buffer_internal (oldbuf);
+      windows_or_buffers_changed = old_windows_or_buffers_changed;
       message_log_need_newline = !nlflag;
     }
 }
-
 
 /* We are at the end of the buffer after just having inserted a newline.
    (Note: We depend on the fact we won't be crossing the gap.)
@@ -358,11 +363,16 @@ message_log_check_duplicate (prev_bol, this_bol)
     }
   return 0;
 }
-
+
 /* Display an echo area message M with a specified length of LEN chars.
-   The string may include null characters.  If m is 0, clear out any
+   The string may include null characters.  If M is 0, clear out any
    existing message, and let the minibuffer text show through.
-   Do not pass text that is stored in a Lisp string.  */
+
+   The buffer M must continue to exist until after the echo area
+   gets cleared or some other message gets displayed there.
+
+   Do not pass text that is stored in a Lisp string.
+   Do not pass text in a buffer that was alloca'd.  */
 
 void
 message2 (m, len)
@@ -377,7 +387,7 @@ message2 (m, len)
 }
 
 
-/* The non-logging part of that function.  */
+/* The non-logging counterpart of message2.  */
 
 void
 message2_nolog (m, len)
@@ -430,6 +440,15 @@ message2_nolog (m, len)
 	(*frame_up_to_date_hook) (f);
     }
 }
+
+/* Display a null-terminated echo area message M.  If M is 0, clear out any
+   existing message, and let the minibuffer text show through.
+
+   The buffer M must continue to exist until after the echo area
+   gets cleared or some other message gets displayed there.
+
+   Do not pass text that is stored in a Lisp string.
+   Do not pass text in a buffer that was alloca'd.  */
 
 void
 message1 (m)
@@ -463,8 +482,9 @@ truncate_echo_area (len)
    zero if being used by message.  */
 int message_buf_print;
 
-/* Dump an informative message to the minibuf.  If m is 0, clear out
+/* Dump an informative message to the minibuf.  If M is 0, clear out
    any existing message, and let the minibuffer text show through.  */
+
 /* VARARGS 1 */
 void
 message (m, a1, a2, a3)
@@ -530,7 +550,7 @@ message (m, a1, a2, a3)
     }
 }
 
-/* The non-logging version of that function.  */
+/* The non-logging version of message.  */
 void
 message_nolog (m, a1, a2, a3)
      char *m;
@@ -548,7 +568,7 @@ update_echo_area ()
 {
   message2 (echo_area_glyphs, echo_area_glyphs_length);
 }
-
+
 static void
 echo_area_display ()
 {
@@ -611,6 +631,8 @@ echo_area_display ()
 
   previous_echo_glyphs = echo_area_glyphs;
 }
+
+/* Update frame titles.  */
 
 #ifdef HAVE_WINDOW_SYSTEM
 static char frame_title_buf[512];
@@ -707,7 +729,7 @@ prepare_menu_bars ()
      has yet been specified."
      I think that is no longer a concern.  */
 #ifdef HAVE_WINDOW_SYSTEM
-  if (windows_or_buffers_changed)
+  if (windows_or_buffers_changed || update_mode_lines)
     {
       Lisp_Object tail, frame;
 
@@ -787,6 +809,19 @@ static FRAME_PTR previous_terminal_frame;
 void
 redisplay ()
 {
+  redisplay_internal (0);
+}
+
+/* If PRESERVE_ECHO_AREA is nonzero, it means this redisplay
+   is not in response to any user action; therefore, we should
+   preserve the echo area.  (Actually, our caller does that job.)
+   Perhaps in the future avoid recentering windows
+   if it is not necessary; currently that causes some problems.  */
+
+static void
+redisplay_internal (preserve_echo_area)
+     int preserve_echo_area;
+{
   register struct window *w = XWINDOW (selected_window);
   register int pause;
   int must_finish = 0;
@@ -796,6 +831,11 @@ redisplay ()
 
   if (noninteractive)
     return;
+
+#ifdef USE_X_TOOLKIT
+  if (popup_activated ())
+    return;
+#endif
 
 #ifdef MULTI_FRAME
   if (FRAME_TERMCAP_P (selected_frame)
@@ -1042,7 +1082,7 @@ redisplay ()
 		(*condemn_scroll_bars_hook) (f);
 
 	      if (FRAME_VISIBLE_P (f))
-		redisplay_windows (FRAME_ROOT_WINDOW (f));
+		redisplay_windows (FRAME_ROOT_WINDOW (f), preserve_echo_area);
 
 	      /* Any scroll bars which redisplay_windows should have nuked
 		 should now go away.  */
@@ -1053,7 +1093,7 @@ redisplay ()
     }
   else if (FRAME_VISIBLE_P (selected_frame))
     {
-      redisplay_window (selected_window, 1);
+      redisplay_window (selected_window, 1, preserve_echo_area);
       if (XFASTINT (w->width) != FRAME_WIDTH (selected_frame))
 	preserve_other_columns (w);
     }
@@ -1207,11 +1247,11 @@ redisplay_preserve_echo_area ()
   if (echo_area_glyphs == 0 && previous_echo_glyphs != 0)
     {
       echo_area_glyphs = previous_echo_glyphs;
-      redisplay ();
+      redisplay_internal (1);
       echo_area_glyphs = 0;
     }
   else
-    redisplay ();
+    redisplay_internal (1);
 }
 
 void
@@ -1241,7 +1281,7 @@ mark_window_display_accurate (window, flag)
 
       w->window_end_valid = w->buffer;
       w->update_mode_line = Qnil;
-      if (!NILP (w->buffer))
+      if (!NILP (w->buffer) && flag)
 	XBUFFER (w->buffer)->clip_changed = 0;
 
       if (!NILP (w->vchild))
@@ -1284,7 +1324,7 @@ update_menu_bar (f, save_match_data)
   if (update_mode_lines)
     w->update_mode_line = Qt;
 
-  if (FRAME_X_P (f)
+  if (FRAME_WINDOW_P (f)
       ?
 #if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
       FRAME_EXTERNAL_MENU_BAR (f) 
@@ -1327,10 +1367,12 @@ update_menu_bar (f, save_match_data)
 	     really recompute the menubar from the value.  */
 	  if (! NILP (Vlucid_menu_bar_dirty_flag))
 	    call0 (Qrecompute_lucid_menubar);
-	  call1 (Vrun_hooks, Qmenu_bar_update_hook);
+	  safe_run_hooks (Qmenu_bar_update_hook);
 	  FRAME_MENU_BAR_ITEMS (f) = menu_bar_items (FRAME_MENU_BAR_ITEMS (f));
+	  /* Make sure to redisplay the menu bar in case we change it.  */
+	  w->update_mode_line = Qt;
 #if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
-	  if (FRAME_X_P (f))
+	  if (FRAME_WINDOW_P (f))
 	    set_frame_menubar (f, 0, 0);
 #endif /* USE_X_TOOLKIT || HAVE_NTGUI */
 
@@ -1345,19 +1387,20 @@ int do_id = 1;
 /* Redisplay WINDOW and its subwindows and siblings.  */
 
 static void
-redisplay_windows (window)
+redisplay_windows (window, preserve_echo_area)
      Lisp_Object window;
+     int preserve_echo_area;
 {
   for (; !NILP (window); window = XWINDOW (window)->next)
-    redisplay_window (window, 0);
+    redisplay_window (window, 0, preserve_echo_area);
 }
 
 /* Redisplay window WINDOW and its subwindows.  */
 
 static void
-redisplay_window (window, just_this_one)
+redisplay_window (window, just_this_one, preserve_echo_area)
      Lisp_Object window;
-     int just_this_one;
+     int just_this_one, preserve_echo_area;
 {
   register struct window *w = XWINDOW (window);
   FRAME_PTR f = XFRAME (WINDOW_FRAME (w));
@@ -1379,12 +1422,12 @@ redisplay_window (window, just_this_one)
 
   if (!NILP (w->vchild))
     {
-      redisplay_windows (w->vchild);
+      redisplay_windows (w->vchild, preserve_echo_area);
       return;
     }
   if (!NILP (w->hchild))
     {
-      redisplay_windows (w->hchild);
+      redisplay_windows (w->hchild, preserve_echo_area);
       return;
     }
   if (NILP (w->buffer))
@@ -1500,11 +1543,16 @@ redisplay_window (window, just_this_one)
      unless the specified location is outside the accessible range.  */
   if (!NILP (w->force_start))
     {
+      w->force_start = Qnil;
       /* Forget any recorded base line for line number display.  */
       w->base_line_number = Qnil;
       /* Redisplay the mode line.  Select the buffer properly for that.
 	 Also, run the hook window-scroll-functions
 	 because we have scrolled.  */
+      /* Note, we do this after clearing force_start because
+	 if there's an error, it is better to forget about force_start
+	 than to get into an infinite loop calling the hook functions
+	 and having them get more errors.  */
       if (!update_mode_line
 	  || ! NILP (Vwindow_scroll_functions))
 	{
@@ -1515,10 +1563,12 @@ redisplay_window (window, just_this_one)
 	  update_mode_line = 1;
 	  w->update_mode_line = Qt;
 	  if (! NILP (Vwindow_scroll_functions))
-	    run_hook_with_args_2 (Qwindow_scroll_functions, window,
-				  make_number (startp));
+	    {
+	      run_hook_with_args_2 (Qwindow_scroll_functions, window,
+				    make_number (startp));
+	      startp = marker_position (w->start);
+	    }
 	}
-      w->force_start = Qnil;
       XSETFASTINT (w->last_modified, 0);
       if (startp < BEGV) startp = BEGV;
       if (startp > ZV)   startp = ZV;
@@ -1559,7 +1609,7 @@ redisplay_window (window, just_this_one)
     }
 
   /* Handle case where text has not changed, only point,
-     and it has not moved off the frame */
+     and it has not moved off the frame.  */
 
   /* This code is not used for minibuffer for the sake of
      the case of redisplaying to replace an echo area message;
@@ -1646,8 +1696,16 @@ redisplay_window (window, just_this_one)
 	goto done;
     }
   else if (startp >= BEGV && startp <= ZV
-	   /* Avoid starting display at end of buffer! */
-	   && (startp < ZV || startp == BEGV
+	   && (startp < ZV
+	       /* Avoid starting at end of buffer.  */
+#if 0 /* This change causes trouble for M-! finger & RET.
+	 It will have to be considered later.  */
+	       || ! EQ (window, selected_window)
+	       /* Don't do the recentering if redisplay
+		  is not for no user action.  */
+	       || preserve_echo_area
+#endif
+	       || startp == BEGV
 	       || (XFASTINT (w->last_modified) >= MODIFF)))
     {
       /* Try to redisplay starting at same place as before */
@@ -1677,7 +1735,8 @@ redisplay_window (window, just_this_one)
 
   /* Try to scroll by specified few lines */
 
-  if (scroll_step && !current_buffer->clip_changed)
+  if (scroll_step && !current_buffer->clip_changed
+      && startp >= BEGV && startp <= ZV)
     {
       if (PT > startp)
 	{
@@ -1691,8 +1750,12 @@ redisplay_window (window, just_this_one)
       if (PT >= pos.bufpos)
 	{
 	  if (! NILP (Vwindow_scroll_functions))
-	    run_hook_with_args_2 (Qwindow_scroll_functions, window,
-				  make_number (pos.bufpos));
+	    {
+	      Fset_marker (w->start, make_number (pos.bufpos), Qnil);
+	      run_hook_with_args_2 (Qwindow_scroll_functions, window,
+				    make_number (pos.bufpos));
+	      pos.bufpos = marker_position (w->start);
+	    }
 	  try_window (window, pos.bufpos);
 	  if (cursor_vpos >= 0)
 	    {
@@ -1715,9 +1778,15 @@ recenter:
   w->base_line_number = Qnil;
 
   pos = *vmotion (PT, - (height / 2), w);
+  /* Set startp here explicitly in case that helps avoid an infinite loop
+     in case the window-scroll-functions functions get errors.  */
+  Fset_marker (w->start, make_number (pos.bufpos), Qnil);
   if (! NILP (Vwindow_scroll_functions))
-    run_hook_with_args_2 (Qwindow_scroll_functions, window,
-			  make_number (pos.bufpos));
+    {
+      run_hook_with_args_2 (Qwindow_scroll_functions, window,
+			    make_number (pos.bufpos));
+      pos.bufpos = marker_position (w->start);
+    }
   try_window (window, pos.bufpos);
 
   startp = marker_position (w->start);
@@ -1743,7 +1812,7 @@ done:
 
   /* When we reach a frame's selected window, redo the frame's menu bar.  */
   if (update_mode_line
-      && (FRAME_X_P (f)
+      && (FRAME_WINDOW_P (f)
 	  ?
 #if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
 	  FRAME_EXTERNAL_MENU_BAR (f) 
@@ -2093,8 +2162,8 @@ try_window_id (window)
 		 lines' charstarts in the case where the text of the
 		 screen line at bp.vpos has changed.
 		 (This can happen in a deletion that ends in mid-line.)
-		 To adjust properly, we need to make things constent at
-		 the position ep.
+		 To adjust properly, we need to make things consistent
+		 at the position ep.
 		 So do a second adjust to make that happen.
 		 Note that stop_vpos >= ep.vpos, so it is sufficient
 		 to update the charstarts for lines at ep.vpos and below.  */
@@ -2730,9 +2799,12 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	      args[0] = Qredisplay_end_trigger_functions;
 	      XSETWINDOW (args[1], w);
 	      XSETINT (args[2], e_t_h);
+
+	      /* Since we are *trying* to run these functions,
+		 don't try to run them again, even if they get an error.  */
+	      w->redisplay_end_trigger = Qnil;
 	      Frun_hook_with_args (3, args);
 
-	      w->redisplay_end_trigger = Qnil;
 	      e_t_h = ZV;
 	      /* Notice if it changed the face of this character.  */
 	      next_face_change = pos;
@@ -3179,7 +3251,8 @@ display_menu_bar (w)
   int i;
 
 #ifdef HAVE_NTGUI
-  return;
+  if (!NILP (Vwindow_system))
+    return;
 #endif
 
 #ifdef USE_X_TOOLKIT
@@ -3190,14 +3263,14 @@ display_menu_bar (w)
   get_display_line (f, vpos, 0);
 
   items = FRAME_MENU_BAR_ITEMS (f);
-  for (i = 0; i < XVECTOR (items)->size; i += 3)
+  for (i = 0; i < XVECTOR (items)->size; i += 4)
     {
       Lisp_Object pos, string;
       string = XVECTOR (items)->contents[i + 1];
       if (NILP (string))
 	break;
 
-      XSETFASTINT (XVECTOR (items)->contents[i + 2], hpos);
+      XSETFASTINT (XVECTOR (items)->contents[i + 3], hpos);
 
       if (hpos < maxendcol)
 	hpos = display_string (XWINDOW (FRAME_ROOT_WINDOW (f)), vpos,
@@ -3651,10 +3724,12 @@ decode_mode_spec (w, c, spec_width, maxwidth)
     case 'F':
       /* %F displays the frame name.  */
 #ifdef MULTI_FRAME
-      return (char *) XSTRING (selected_frame->name)->data;
-#else
-      return "Emacs";
+      if (!NILP (f->title))
+	return (char *) XSTRING (f->title)->data;
+      if (f->explicit_name || FRAME_TERMCAP_P (f))
+	return (char *) XSTRING (f->name)->data;
 #endif
+      return "Emacs";
 
     case 'f': 
       obj = b->filename;
@@ -3790,7 +3865,11 @@ decode_mode_spec (w, c, spec_width, maxwidth)
 	  return "Top";
 	else
 	  {
-	    total = ((pos - BUF_BEGV (b)) * 100 + total - 1) / total;
+	    if (total > 1000000)
+	      /* Do it differently for a large value, to avoid overflow.  */
+	      total = ((pos - BUF_BEGV (b)) + (total / 100) - 1) / (total / 100);
+	    else
+	      total = ((pos - BUF_BEGV (b)) * 100 + total - 1) / total;
 	    /* We can't normally display a 3-digit number,
 	       so get us a 2-digit number that is close.  */
 	    if (total == 100)
@@ -3816,7 +3895,11 @@ decode_mode_spec (w, c, spec_width, maxwidth)
 	  }
 	else
 	  {
-	    total = ((botpos - BUF_BEGV (b)) * 100 + total - 1) / total;
+	    if (total > 1000000)
+	      /* Do it differently for a large value, to avoid overflow.  */
+	      total = ((botpos - BUF_BEGV (b)) + (total / 100) - 1) / (total / 100);
+	    else
+	      total = ((botpos - BUF_BEGV (b)) * 100 + total - 1) / total;
 	    /* We can't normally display a 3-digit number,
 	       so get us a 2-digit number that is close.  */
 	    if (total == 100)

@@ -1,5 +1,6 @@
 ;;; executable.el --- base functionality for executable interpreter scripts
-;; Copyright (C) 1994, 1995 by Free Software Foundation, Inc.
+
+;; Copyright (C) 1994, 1995, 1996 by Free Software Foundation, Inc.
 
 ;; Author: Daniel.Pfeiffer@Informatik.START.dbp.de, fax (+49 69) 7588-2389
 ;; Keywords: languages, unix
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -26,13 +28,27 @@
 ;; #! line at the beginning of the file, if the file does not already
 ;; have one.
 
-;; This is support code for the likes of sh-, awk-, perl-, tcl- or
-;; makefile-mode.  Those mode-setting commands can call the like of
-;; `(executable-set-magic "sh")' or `(executable-set-magic "perl" "-f")'.
-;; Unless the file name matches `executable-magicless-file-regexp' this will
-;; search $PATH if the given interpreter isn't absolute, and then insert a
-;; first line like `#! /bin/sh' or `#! /usr/local/bin/perl -f'.
-;; Also it makes the file executable as soon as it's saved, if it wasn't.
+;; Unless it has a magic number, a Unix file with executable mode is passed to
+;; a new instance of the running shell (or to a Bourne shell if a csh is
+;; running and the file starts with `:').  Only a shell can start such a file,
+;; exec() cannot, which is why it is important to have a magic number in every
+;; executable script.  Such a magic number is made up by the characters `#!'
+;; the filename of an interpreter (in COFF, ELF or somesuch format) and one
+;; optional argument.
+
+;; This library is for certain major modes like sh-, awk-, perl-, tcl- or
+;; makefile-mode to insert or update a suitable #! line at the beginning of
+;; the file, if the file does not already have one and the file is not a
+;; default file of that interpreter (like .profile or makefile).  It also
+;; makes the file executable if it wasn't, as soon as it's saved.
+
+;; It also allows debugging scripts, with an adaptation of compile, as far
+;; as interpreters give out meaningful error messages.
+
+;; Modes that use this should nconc `executable-map' to the end of their own
+;; keymap and `executable-font-lock-keywords' to the end of their own font
+;; lock keywords.  Their mode-setting commands should call
+;; `executable-set-magic'.
 
 ;;; Code:
 
@@ -70,16 +86,6 @@ Typical values are 73 (+x) or -493 (rwxr-xr-x).")
 
 (defvar executable-command nil)
 
-
-;; Autoload cookie deleted here because it made loaddefs.el fail to load.
-;; -rms
-(or (assoc "tail" interpreter-mode-alist)
-    (nconc interpreter-mode-alist
-	   '(("tail" . text-mode)
-	     ("more" . text-mode)
-	     ("less" . text-mode)
-	     ("pg" . text-mode))))
-
 (defvar executable-self-display "tail"
   "*Command you use with argument `+2' to make text files self-display.
 Note that the like of `more' doesn't work too well under Emacs  \\[shell].")
@@ -111,19 +117,20 @@ This can be included in `font-lock-keywords' by modes that call `executable'.")
   "Alist of regexps used to match script errors.
 See `compilation-error-regexp-alist'.")
 
-;; The C function openp() slightly modified would do the trick fine
-(defun executable (command)
-  "If COMMAND is an executable in $PATH its full name is returned.  Else nil."
+;; The C function openp slightly modified would do the trick fine
+(defun executable-find (command)
+  "Search for COMMAND in $PATH and return the absolute file name.
+Return nil if COMMAND is not found anywhere in $PATH."
   (let ((list exec-path)
-	path)
+	file)
     (while list
-      (setq list (if (and (setq path (expand-file-name command (car list)))
-			  (file-executable-p path)
-			  (not (file-directory-p path)))
+      (setq list (if (and (setq file (expand-file-name command (car list)))
+			  (file-executable-p file)
+			  (not (file-directory-p file)))
 		     nil
-		   (setq path nil)
+		   (setq file nil)
 		   (cdr list))))
-    path))
+    file))
 
 
 (defun executable-chmod ()
@@ -158,17 +165,21 @@ to find the next error."
 
 
 ;;;###autoload
-(defun executable-set-magic (interpreter &optional argument)
+(defun executable-set-magic (interpreter &optional argument
+					 no-query-flag insert-flag)
   "Set this buffer's interpreter to INTERPRETER with optional ARGUMENT.
 The variables `executable-magicless-file-regexp', `executable-prefix',
 `executable-insert', `executable-query' and `executable-chmod' control
 when and how magic numbers are inserted or replaced and scripts made
 executable."
-  (interactive "sName or path of interpreter: \nsArgument for %s: ")
+  (interactive
+   (let* ((name (read-string "Name or file name of interpreter: "))
+	  (arg (read-string (format "Argument for %s: " name))))
+     (list name arg (eq executable-query 'function) t)))
   (setq interpreter (if (file-name-absolute-p interpreter)
 			interpreter
-		      (or (executable interpreter)
-			  (error "Cannot find %s." interpreter)))
+		      (or (executable-find interpreter)
+			  (error "Interpreter %s not recognized" interpreter)))
 	argument (concat interpreter
 			 (and argument (string< "" argument) " ")
 			 argument))
@@ -176,36 +187,34 @@ executable."
       (if buffer-file-name
 	  (string-match executable-magicless-file-regexp
 			buffer-file-name))
-      (not (or (eq this-command 'executable-set-magic)
-	       executable-insert))
+      (not (or insert-flag executable-insert))
       (> (point-min) 1)
-      (let ((point (point-marker))
-	    (buffer-modified-p (buffer-modified-p)))
-	(goto-char (point-min))
-	(make-local-hook 'after-save-hook)
-	(add-hook 'after-save-hook 'executable-chmod nil t)
-	(if (looking-at "#![ \t]*\\(.*\\)$")
-	    (and (goto-char (match-beginning 1))
-		 (not (string= argument
-			       (buffer-substring (point) (match-end 1))))
-		 (save-window-excursion
-		   ;; make buffer visible before question or message
-		   (switch-to-buffer (current-buffer))
-		   (if (or (not executable-query)
-			   (and (eq executable-query 'function)
-				(eq this-command 'executable-set-magic)))
-		       (message "%s Magic number ``%s'' replaced." this-command
-				(buffer-substring (point-min) (match-end 1)))
-		     (y-or-n-p (concat "Replace magic number by ``"
-				       executable-prefix argument "''? "))))
-		 (not (delete-region (point) (match-end 1)))
-		 (insert argument))
-	  (insert executable-prefix argument ?\n))
-	(or (< (marker-position point) (point))
-	    (goto-char point))
-	(or (eq this-command 'executable-set-magic))
-	    (eq executable-insert t)
-	    (set-buffer-modified-p buffer-modified-p)))
+      (save-excursion
+	(let ((point (point-marker))
+	      (buffer-modified-p (buffer-modified-p)))
+	  (goto-char (point-min))
+	  (make-local-hook 'after-save-hook)
+	  (add-hook 'after-save-hook 'executable-chmod nil t)
+	  (if (looking-at "#![ \t]*\\(.*\\)$")
+	      (and (goto-char (match-beginning 1))
+		   (not (string= argument
+				 (buffer-substring (point) (match-end 1))))
+		   (or (not executable-query) no-query-flag
+		       (save-window-excursion
+			 ;; Make buffer visible before question.
+			 (switch-to-buffer (current-buffer))
+			 (y-or-n-p (concat "Replace magic number by `"
+					   executable-prefix argument "'? "))))
+		   (progn
+		     (replace-match argument t t nil 1)
+		     (message "Magic number changed to `%s'"
+			      (concat executable-prefix argument))))
+	    (insert executable-prefix argument ?\n)
+	    (message "Magic number changed to `%s'"
+		     (concat executable-prefix argument)))
+	  (or insert-flag
+	      (eq executable-insert t)
+	      (set-buffer-modified-p buffer-modified-p)))))
   interpreter)
 
 

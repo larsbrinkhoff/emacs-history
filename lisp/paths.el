@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -48,7 +49,10 @@ They are searched in the order they are given in this list.
 Therefore, the directory of Info files that come with Emacs
 normally should come last (so that local files override standard ones).")
 
-(defvar news-path "/usr/spool/news/"
+(defvar news-path
+  (if (file-exists-p "/usr/spool/news/")
+      "/usr/spool/news/"
+    "/var/spool/news/")
   "The root directory below which all news files are stored.")
 
 (defvar news-inews-program
@@ -98,6 +102,9 @@ Will use `gnus-startup-file'-SERVER instead if exists.")
 	;; let's assume this dir is never used for anything else.
 	((file-exists-p "/var/mail")
 	 "/var/mail/")
+	;; Many GNU/Linux systems use this name.
+	((file-exists-p "/var/spool/mail")
+	 "/var/spool/mail/")
 	((memq system-type '(dgux hpux usg-unix-v unisoft-unix rtu irix))
 	 "/usr/mail/")
 	(t "/usr/spool/mail/"))
@@ -142,7 +149,7 @@ the terminal-initialization file to be loaded.")
 (defconst abbrev-file-name 
   (if (eq system-type 'vax-vms)
       "~/abbrev.def"
-    "~/.abbrev_defs")
+    (convert-standard-filename "~/.abbrev_defs"))
   "*Default name of file to read abbrevs from.")
 
 ;;; paths.el ends here

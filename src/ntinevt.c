@@ -1,21 +1,22 @@
 /* Input event support for Windows NT port of GNU Emacs.
    Copyright (C) 1992, 1993, 1995 Free Software Foundation, Inc.
 
-   This file is part of GNU Emacs.
+This file is part of GNU Emacs.
 
-   GNU Emacs is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
-   version.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   GNU Emacs is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-   more details.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with GNU Emacs; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
    Drew Bliss                   01-Oct-93
      Adapted from ntkbd.c by Tim Fleehart
@@ -91,7 +92,7 @@ get_frame (void)
 
 /* Translate console modifiers to emacs modifiers.  
    German keyboard support (Kai Morgan Zeise 2/18/95).  */
-static int 
+int
 win32_kbd_mods_to_emacs (DWORD mods)
 {
   int retval = 0;
@@ -119,60 +120,44 @@ win32_kbd_mods_to_emacs (DWORD mods)
   return retval;
 }
 
-/* Patch up NT keyboard events when info is missing that should be there,
-   assuming that map_virt_key says that the key is a valid ASCII char. */
-static char win32_number_shift_map[] = {
-  ')', '!', '@', '#', '$', '%', '^', '&', '*', '('
-};
-
-#define WIN32_KEY_SHIFTED(mods, no, yes) \
-  ((mods & (SHIFT_PRESSED | CAPSLOCK_ON)) ? yes : no)
-
-static void
+/* The return code indicates key code size. */
+int
 win32_kbd_patch_key (KEY_EVENT_RECORD *event)
 {
   unsigned int key_code = event->wVirtualKeyCode;
   unsigned int mods = event->dwControlKeyState;
-  int mapped_punct = 0;
+  BYTE keystate[256];
+  static BYTE ansi_code[4];
+  static int isdead = 0;
 
-  /* map_virt_key says its a valid key, but the uChar.AsciiChar field
-     is empty.  patch up the uChar.AsciiChar field using wVirtualKeyCode.  */
-  if (event->uChar.AsciiChar == 0
-      && ((key_code >= '0' && key_code <= '9')
-	  || (key_code >= 'A' && key_code <= 'Z')
-	  || (key_code >= 0xBA && key_code <= 0xC0)
-	  || (key_code >= 0xDB && key_code <= 0xDE)
-	  )) {
-    if (key_code >= '0' && key_code <= '9') {
-      event->uChar.AsciiChar = 
-	WIN32_KEY_SHIFTED (mods, key_code,
-			win32_number_shift_map[key_code - '0']);
-      return;
+  if (isdead == 2)
+    {
+      event->uChar.AsciiChar = ansi_code[2];
+      isdead = 0;
+      return 1;
     }
-    switch (key_code) {
-    case 0xBA: mapped_punct = WIN32_KEY_SHIFTED (mods, ';', ':'); break;
-    case 0xBB: mapped_punct = WIN32_KEY_SHIFTED (mods, '=', '+'); break;
-    case 0xBC: mapped_punct = WIN32_KEY_SHIFTED (mods, ',', '<'); break;
-    case 0xBD: mapped_punct = WIN32_KEY_SHIFTED (mods, '-', '_'); break;
-    case 0xBE: mapped_punct = WIN32_KEY_SHIFTED (mods, '.', '>'); break;
-    case 0xBF: mapped_punct = WIN32_KEY_SHIFTED (mods, '/', '?'); break;
-    case 0xC0: mapped_punct = WIN32_KEY_SHIFTED (mods, '`', '~'); break;
-    case 0xDB: mapped_punct = WIN32_KEY_SHIFTED (mods, '[', '{'); break;
-    case 0xDC: mapped_punct = WIN32_KEY_SHIFTED (mods, '\\', '|'); break;
-    case 0xDD: mapped_punct = WIN32_KEY_SHIFTED (mods, ']', '}'); break;
-    case 0xDE: mapped_punct = WIN32_KEY_SHIFTED (mods, '\'', '"'); break;
-    default:
-      mapped_punct = 0;
-      break;
+  if (event->uChar.AsciiChar != 0) 
+    return 1;
+
+  memset (keystate, 0, sizeof (keystate));
+  if (mods & SHIFT_PRESSED) 
+    keystate[VK_SHIFT] = 0x80;
+  if (mods & CAPSLOCK_ON) 
+    keystate[VK_CAPITAL] = 1;
+  if ((mods & LEFT_CTRL_PRESSED) && (mods & RIGHT_ALT_PRESSED))
+    {
+      keystate[VK_CONTROL] = 0x80;
+      keystate[VK_LCONTROL] = 0x80;
+      keystate[VK_MENU] = 0x80;
+      keystate[VK_RMENU] = 0x80;
     }
-    if (mapped_punct) {
-      event->uChar.AsciiChar = mapped_punct;
-      return;
-    }
-    /* otherwise, it's a letter.  */
-    event->uChar.AsciiChar = WIN32_KEY_SHIFTED (mods, key_code - 'A' + 'a',
-						key_code);
-  }
+
+  isdead = ToAscii (event->wVirtualKeyCode, event->wVirtualScanCode,
+		    keystate, (LPWORD) ansi_code, 0);
+  if (isdead == 0) 
+    return 0;
+  event->uChar.AsciiChar = ansi_code[0];
+  return isdead;
 }
 
 /* Map virtual key codes into:
@@ -186,7 +171,11 @@ win32_kbd_patch_key (KEY_EVENT_RECORD *event)
 
 static int map_virt_key[256] =
 {
+#ifdef MULE
+  -3,
+#else
   -1,
+#endif
   -1,                 /* VK_LBUTTON */
   -1,                 /* VK_RBUTTON */
   0x69,               /* VK_CANCEL */
@@ -293,14 +282,17 @@ static int map_virt_key[256] =
                           -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 /* 0xff */
 };
 
-static int 
+/* return code -1 means that event_queue_ptr won't be incremented. 
+   In other word, this event makes two key codes.   (by himi)       */
+int 
 key_event (KEY_EVENT_RECORD *event, struct input_event *emacs_ev)
 {
   int map;
+  int key_flag = 0;
   static BOOL map_virt_key_init_done;
   
   /* Skip key-up events.  */
-  if (event->bKeyDown == FALSE)
+  if (!event->bKeyDown)
     return 0;
   
   if (event->wVirtualKeyCode > 0xff)
@@ -326,7 +318,7 @@ key_event (KEY_EVENT_RECORD *event, struct input_event *emacs_ev)
      the queue.  If they're backing up then we don't generally want
      to honor them later since that leads to significant slop in
      cursor motion when the system is under heavy load.  */
-  
+
   map = map_virt_key[event->wVirtualKeyCode];
   if (map == -1)
     {
@@ -336,30 +328,62 @@ key_event (KEY_EVENT_RECORD *event, struct input_event *emacs_ev)
     {
       /* ASCII */
       emacs_ev->kind = ascii_keystroke;
-      win32_kbd_patch_key (event);
+      key_flag = win32_kbd_patch_key (event); /* 95.7.25 by himi */
+      if (key_flag == 0) 
+	return 0;
       XSETINT (emacs_ev->code, event->uChar.AsciiChar);
     }
+#ifdef MULE
+  /* for IME */
+  else if (map == -3)
+    {
+      if ((event->dwControlKeyState & NLS_IME_CONVERSION)
+	  && !(event->dwControlKeyState & RIGHT_ALT_PRESSED)
+	  && !(event->dwControlKeyState & LEFT_ALT_PRESSED)
+	  && !(event->dwControlKeyState & RIGHT_CTRL_PRESSED)
+	  && !(event->dwControlKeyState & LEFT_CTRL_PRESSED))
+	{
+	  emacs_ev->kind = ascii_keystroke;
+	  XSETINT (emacs_ev->code, event->uChar.AsciiChar);
+	}
+      else
+	return 0;
+    }
+#endif
   else
     {
       /* non-ASCII */
       emacs_ev->kind = non_ascii_keystroke;
+#ifdef HAVE_NTGUI
+      /* use Windows keysym map */
+      XSETINT (emacs_ev->code, event->wVirtualKeyCode);
+#else
       /*
        * make_lispy_event () now requires non-ascii codes to have
        * the full X keysym values (2nd byte is 0xff).  add it on.
        */
       map |= 0xff00;
       XSETINT (emacs_ev->code, map);
+#endif /* HAVE_NTGUI */
     }
+/* for Mule 2.2 (Based on Emacs 19.28) */
+#ifdef MULE
+  XSET (emacs_ev->frame_or_window, Lisp_Frame, get_frame ());
+#else
   XSETFRAME (emacs_ev->frame_or_window, get_frame ());
+#endif
   emacs_ev->modifiers = win32_kbd_mods_to_emacs (event->dwControlKeyState);
   emacs_ev->timestamp = GetTickCount ();
+  if (key_flag == 2) return -1; /* 95.7.25 by himi */
   return 1;
 }
 
 /* Mouse position hook.  */
 void 
 win32_mouse_position (FRAME_PTR *f,
+#ifndef MULE
 		      int insist,
+#endif
 		      Lisp_Object *bar_window,
 		      enum scroll_bar_part *part,
 		      Lisp_Object *x,
@@ -367,8 +391,10 @@ win32_mouse_position (FRAME_PTR *f,
 		      unsigned long *time)
 {
   BLOCK_INPUT;
-  
+
+#ifndef MULE  
   insist = insist;
+#endif
 
   *f = get_frame ();
   *bar_window = Qnil;
@@ -458,7 +484,12 @@ do_mouse_event (MOUSE_EVENT_RECORD *event,
   
   XSETFASTINT (emacs_ev->x, event->dwMousePosition.X);
   XSETFASTINT (emacs_ev->y, event->dwMousePosition.Y);
+/* for Mule 2.2 (Based on Emacs 19.28 */
+#ifdef MULE
+  XSET (emacs_ev->frame_or_window, Lisp_Frame, get_frame ());
+#else
   XSETFRAME (emacs_ev->frame_or_window, get_frame ());
+#endif
   
   return 1;
 }
@@ -506,6 +537,11 @@ win32_read_socket (int sd, struct input_event *bufp, int numchars,
             {
             case KEY_EVENT:
 	      add = key_event (&queue_ptr->Event.KeyEvent, bufp);
+	      if (add == -1) /* 95.7.25 by himi */
+		{ 
+		  queue_ptr--;
+		  add = 1;
+		}
 	      bufp += add;
 	      ret += add;
 	      numchars -= add;

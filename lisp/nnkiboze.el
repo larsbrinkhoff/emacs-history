@@ -1,4 +1,5 @@
 ;;; nnkiboze.el --- select virtual news access for Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Lars Magne Ingebrigtsen <larsi@ifi.uio.no>
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -101,7 +103,7 @@ If the stream is opened, return T, otherwise return NIL."
   "Select article by message number."
   (nnkiboze-possibly-change-newsgroups newsgroup)
   (if (not (numberp article))
-      ;; This is a real cludge. It might not work at times, but it
+      ;; This is a real kludge. It might not work at times, but it
       ;; does no harm I think. The only alternative is to offer no
       ;; article fetching by message-id at all.
       (nntp-request-article article newsgroup gnus-nntp-server buffer)
@@ -145,7 +147,8 @@ If the stream is opened, return T, otherwise return NIL."
 (defun nnkiboze-close-group (group &optional server)
   (nnkiboze-possibly-change-newsgroups group)
   ;; Remove NOV lines of articles that are marked as read.
-  (if (not (file-exists-p (nnkiboze-nov-file-name)))
+  (if (or (not (file-exists-p (nnkiboze-nov-file-name)))
+	  (not (eq major-mode 'gnus-summary-mode)))
       ()
     (save-excursion
       (let ((unreads gnus-newsgroup-unreads)

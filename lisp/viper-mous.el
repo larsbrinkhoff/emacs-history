@@ -1,6 +1,6 @@
 ;;; viper-mous.el --- mouse support for Viper
 
-;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,11 +15,18 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
+;; Code
 
 (require 'viper-util)
+
+;; compiler pacifier
+(defvar double-click-time)
+(defvar mouse-track-multi-click-time)
+;; end compiler pacifier
 
 
 ;;; Variables
@@ -69,7 +76,32 @@ considered related.")
 
 (defsubst vip-multiclick-p ()
   (not (vip-sit-for-short vip-multiclick-timeout t)))
+
+;; Returns window where click occurs
+(defsubst vip-mouse-click-window (click)
+  (if vip-xemacs-p
+      (event-window click)
+    (posn-window (event-start click))))
+
+;; Returns window where click occurs
+(defsubst vip-mouse-click-frame (click)
+  (window-frame (vip-mouse-click-window click)))
+
+;; Returns the buffer of the window where click occurs
+(defsubst vip-mouse-click-window-buffer (click)
+  (window-buffer (vip-mouse-click-window click)))
+
+;; Returns the name of the buffer in the window where click occurs
+(defsubst vip-mouse-click-window-buffer-name (click)
+  (buffer-name (vip-mouse-click-window-buffer click)))
+
+;; Returns position of a click
+(defsubst vip-mouse-click-posn (click)
+  (if vip-xemacs-p
+      (event-point click)
+    (posn-point (event-start click))))
 	     
+
 (defun vip-surrounding-word (count click-count)
    "Returns word surrounding point according to a heuristic.
 COUNT indicates how many regions to return.
@@ -175,29 +207,6 @@ On single or double click, returns the word as determined by
 	  (error "Click must be over a window."))
 	click-word))))
 
-;; Returns window where click occurs
-(defsubst vip-mouse-click-frame (click)
-  (window-frame (vip-mouse-click-window click)))
-
-;; Returns window where click occurs
-(defsubst vip-mouse-click-window (click)
-  (if vip-xemacs-p
-      (event-window click)
-    (posn-window (event-start click))))
-
-;; Returns the buffer of the window where click occurs
-(defsubst vip-mouse-click-window-buffer (click)
-  (window-buffer (vip-mouse-click-window click)))
-
-;; Returns the name of the buffer in the window where click occurs
-(defsubst vip-mouse-click-window-buffer-name (click)
-  (buffer-name (vip-mouse-click-window-buffer click)))
-
-;; Returns position of a click
-(defsubst vip-mouse-click-posn (click)
-  (if vip-xemacs-p
-      (event-point click)
-    (posn-point (event-start click))))
 
 (defun vip-mouse-click-insert-word (click arg)
   "Insert word clicked or double-clicked on.
@@ -222,7 +231,7 @@ See `vip-surrounding-word' for the definition of a word in this case."
 	 (vip-multiclick-p)
 	 ;; This trick checks if there is a pending mouse event
 	 ;; if so, we use this latter event and discard the current mouse click
-	 ;; If the next panding event is not a mouse event, we execute
+	 ;; If the next pending event is not a mouse event, we execute
 	 ;; the current mouse event
 	 (progn
 	   (setq interrupting-event (vip-read-event))
@@ -402,13 +411,13 @@ bindings in viper.el and in the Viper manual."
 
 (cond ((vip-window-display-p)
        (let* ((search-key (if vip-xemacs-p
-			      [(meta shift button1up)] [S-mouse-1]))
+			      [(meta shift button1up)] [M-S-mouse-1]))
 	      (search-key-catch (if vip-xemacs-p
-				    [(meta shift button1)] [S-down-mouse-1]))
+				    [(meta shift button1)] [M-S-down-mouse-1]))
 	      (insert-key (if vip-xemacs-p
-			      [(meta shift button2up)] [S-mouse-2]))
+			      [(meta shift button2up)] [M-S-mouse-2]))
 	      (insert-key-catch (if vip-xemacs-p
-				    [(meta shift button2)] [S-down-mouse-2]))
+				    [(meta shift button2)] [M-S-down-mouse-2]))
 	      (search-key-unbound (and (not (key-binding search-key))
 				       (not (key-binding search-key-catch))))
 	      (insert-key-unbound (and (not (key-binding insert-key))

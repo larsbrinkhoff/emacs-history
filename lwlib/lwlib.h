@@ -48,6 +48,9 @@ typedef struct _widget_value
   Boolean	edited;
   /* true if has changed (maintained by lw library) */
   change_type	change;
+  /* true if this widget itself has changed,
+     but not counting the other widgets found in the `next' field.  */
+  change_type   this_one_change;
   /* Contents of the sub-widgets, also selected slot for checkbox */
   struct _widget_value*	contents;
   /* data passed to callback */
@@ -102,7 +105,7 @@ void lw_set_keyboard_focus (/* Widget parent, Widget w */);
 void lw_show_busy (/* Widget w, Boolean busy */);
 
 /* Silly hack to assist with Lucid/Athena geometry management. */
-void lw_refigure_widget (/* Widget w, Boolan doit */);
+void lw_refigure_widget (/* Widget w, Boolean doit */);
 
 /* Toolkit independent way of determining if an event occurred on a
    menubar. */

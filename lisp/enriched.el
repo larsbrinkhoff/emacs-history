@@ -1,4 +1,5 @@
 ;;; enriched.el --- read and save files in text/enriched format
+
 ;; Copyright (c) 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Boris Goldowsky <boris@gnu.ai.mit.edu>
@@ -10,31 +11,34 @@
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
-;;
+
 ;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;;
+
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-;;
+
 ;; This file implements reading, editing, and saving files with
-;; text-properties such as faces, levels of indentation, and true line breaks
-;; distinguished from newlines just used to fit text into the window.
-;;
+;; text-properties such as faces, levels of indentation, and true line
+;; breaks distinguished from newlines just used to fit text into the window.
+
 ;; The file format used is the MIME text/enriched format, which is a
-;; standard format defined in internet RFC 1563.  All standard annotations are
-;; supported except for <smaller> and <bigger>, which are currently not
+;; standard format defined in internet RFC 1563.  All standard annotations
+;; are supported except for <smaller> and <bigger>, which are currently not
 ;; possible to display.
-;; 
+
 ;; A separate file, enriched.doc, contains further documentation and other
-;; important information about this code.  It also serves as an example file
-;; in text/enriched format.  It should be in the etc directory of your emacs
-;; distribution.
+;; important information about this code.  It also serves as an example
+;; file in text/enriched format.  It should be in the etc directory of your
+;; emacs distribution.
+
+;;; Code:
 
 (provide 'enriched)
 (if window-system (require 'facemenu))
@@ -145,7 +149,7 @@ Any property that is neither on this list nor dealt with by
 ;;; Internal variables
 
 (defvar enriched-mode nil
-  "True if `enriched-mode' is in use.")
+  "True if Enriched mode is in use.")
 (make-variable-buffer-local 'enriched-mode)
 
 (if (not (assq 'enriched-mode minor-mode-alist))
@@ -153,10 +157,10 @@ Any property that is neither on this list nor dealt with by
 	  (cons '(enriched-mode " Enriched")
 		minor-mode-alist)))
 
-(defvar enriched-mode-hooks nil
-  "Functions to run when entering `enriched-mode'.
+(defvar enriched-mode-hook nil
+  "Functions to run when entering Enriched mode.
 If you set variables in this hook, you should arrange for them to be restored
-to their old values if enriched-mode is left.  One way to do this is to add
+to their old values if you leave Enriched mode.  One way to do this is to add
 them and their old values to `enriched-old-bindings'.")
 
 (defvar enriched-old-bindings nil
@@ -176,9 +180,9 @@ The value is a list of \(VAR VALUE VAR VALUE...).")
   "Minor mode for editing text/enriched files.
 These are files with embedded formatting information in the MIME standard
 text/enriched format.
-Turning the mode on runs `enriched-mode-hooks'.
+Turning the mode on runs `enriched-mode-hook'.
 
-More information about enriched-mode is available in the file 
+More information about Enriched mode is available in the file 
 etc/enriched.doc  in the Emacs distribution directory.
 
 Commands:
@@ -204,7 +208,7 @@ Commands:
 		 (setq buffer-file-format 
 		       (cons 'text/enriched buffer-file-format)))
 	     ;; Save old variable values before we change them.
-	     ;; These will be restored if we exit enriched-mode.
+	     ;; These will be restored if we exit Enriched mode.
 	     (setq enriched-old-bindings
 		   (list 'buffer-display-table buffer-display-table
 			 'indent-line-function indent-line-function
@@ -226,7 +230,7 @@ Commands:
 		   (setq default-text-properties
 			 (plist-put default-text-properties
 				    'front-sticky sticky))))
-	     (run-hooks 'enriched-mode-hooks)))
+	     (run-hooks 'enriched-mode-hook)))
     (set-buffer-modified-p mod)
     (force-mode-line-update)))
 
@@ -235,7 +239,7 @@ Commands:
 ;;;
 
 (defvar enriched-mode-map nil
-  "Keymap for `enriched-mode'.")
+  "Keymap for Enriched mode.")
 
 (if (null enriched-mode-map)
     (fset 'enriched-mode-map (setq enriched-mode-map (make-sparse-keymap))))
@@ -425,8 +429,8 @@ Return value is \(begin end name positive-p), or nil if none was found."
 	(delete-char 1)
       ;; A single < that does not start an annotation is an error,
       ;; which we note and then ignore.
-      (message (format "Warning: malformed annotation in file at %s" 
-		       (1- (point))))))
+      (message "Warning: malformed annotation in file at %s" 
+	       (1- (point)))))
   (if (not (eobp))
       (let* ((beg (match-beginning 0))
 	     (end (match-end 0))

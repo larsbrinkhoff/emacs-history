@@ -15,7 +15,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with GNU Emacs; see the file COPYING.  If not, write to
-# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+# the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
 
 # Avoid trouble on systems where the `SHELL' variable might be
 # inherited from the environment.
@@ -134,7 +135,7 @@ MOVE_LIBS=
 /* From here on, comments must be done in C syntax.  */
 
 #define NO_SHORTNAMES
-#define THIS_IS_YMAKEFILE
+#define THIS_IS_MAKEFILE
 #define NOT_C_CODE
 #include "../src/config.h"
 
@@ -146,21 +147,21 @@ MOVE_LIBS=
 
 /* Some machines don't find the standard C libraries in the usual place.  */
 #ifndef ORDINARY_LINK
-#ifndef LIB_STANDARD
-#define LIB_STANDARD -lc
+#ifndef LIB_STANDARD_LIBSRC
+#define LIB_STANDARD_LIBSRC -lc
 #endif
 #else
-#ifndef LIB_STANDARD
-#define LIB_STANDARD
+#ifndef LIB_STANDARD_LIBSRC
+#define LIB_STANDARD_LIBSRC
 #endif
 #endif
 
-/* Some s/*.h files define this to request special libraries.  */
+/* Some s/SYSTEM.h files define this to request special libraries.  */
 #ifndef LIBS_SYSTEM
 #define LIBS_SYSTEM
 #endif
 
-/* Some m/*.h files define this to request special libraries.  */
+/* Some m/MACHINE.h files define this to request special libraries.  */
 #ifndef LIBS_MACHINE
 #define LIBS_MACHINE
 #endif
@@ -186,7 +187,7 @@ MOVE_LIBS=
 #define BLESSMAIL
 #endif
 
-LOADLIBES=LIBS_SYSTEM LIBS_MACHINE LIB_STANDARD
+LOADLIBES=LIBS_SYSTEM LIBS_MACHINE LIB_STANDARD_LIBSRC
 
 /* We need to #define emacs to get the right versions of some files.
    Some other files - those shared with other GNU utilities - need
@@ -257,9 +258,11 @@ install: ${archlibdir}
 	@echo "Installing utilities for users to run."
 	for file in ${INSTALLABLES} ; do \
 	  $(INSTALL_PROGRAM) $${file} ${bindir}/$${file} ; \
+	  chmod a+rx ${bindir}/$${file}; \
 	done
 	for file in ${INSTALLABLE_SCRIPTS} ; do \
 	  $(INSTALL_PROGRAM) ${srcdir}/$${file} ${bindir}/$${file} ; \
+	  chmod a+rx ${bindir}/$${file}; \
 	done
 
 uninstall:
@@ -332,8 +335,8 @@ etags: ${srcdir}/etags.c $(GETOPTDEPS) $(REGEXPDEPS) ../src/config.h
 
 /* We depend on etags to assure that parallel makes don't write two
    etags.o files on top of each other.  */
-ctags: ${srcdir}/etags.c $(GETOPTDEPS) etags
-	$(CC) ${ALL_CFLAGS} -DCTAGS -DVERSION="\"${version}\"" ${srcdir}/etags.c $(GETOPTOBJS) $(LOADLIBES) -o ctags
+ctags: etags
+	$(CC) ${ALL_CFLAGS} -DCTAGS -DVERSION="\"${version}\"" -DETAGS_REGEXPS ${srcdir}/etags.c $(GETOPTOBJS) $(REGEXPOBJ) $(LOADLIBES) -o ctags
 
 wakeup: ${srcdir}/wakeup.c
 	$(CC) ${ALL_CFLAGS} ${srcdir}/wakeup.c $(LOADLIBES) -o wakeup

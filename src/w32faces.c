@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Ported xfaces.c for win32 - Kevin Gallo */
 
@@ -69,7 +70,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    lisp manipulates to control what gets displayed.  Elements 0 and 1
    of FRAME->display.x->param_faces are special - they describe the
    default and mode line faces.  None of the faces in param_faces have
-   GC's.  (See src/dispextern.h for the definiton of struct face.
+   GC's.  (See src/dispextern.h for the definition of struct face.
    lisp/faces.el maintains the isomorphism between face_alist and
    param_faces.)
 

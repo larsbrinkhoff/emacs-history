@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -27,6 +28,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "keyboard.h"
 #include "termhooks.h"
 #include "blockinput.h"
+#include "puresize.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -178,7 +180,7 @@ synkey (frommap, fromchar, tomap, tochar)
 #endif /* 0 */
 
 DEFUN ("keymapp", Fkeymapp, Skeymapp, 1, 1, 0,
-  "Return t if ARG is a keymap.\n\
+  "Return t if OBJECT is a keymap.\n\
 \n\
 A keymap is a list (keymap . ALIST),\n\
 or a symbol whose function definition is itself a keymap.\n\
@@ -405,8 +407,7 @@ store_in_keymap (keymap, idx, def)
 {
   /* If we are preparing to dump, and DEF is a menu element
      with a menu item string, copy it to ensure it is not pure.  */
-  if (!NILP (Vpurify_flag) && CONSP (def)
-      && STRINGP (XCONS (def)->car))
+  if (CONSP (def) && PURE_P (def) && STRINGP (XCONS (def)->car))
     def = Fcons (XCONS (def)->car, XCONS (def)->cdr);
 
   if (!CONSP (keymap) || ! EQ (XCONS (keymap)->car, Qkeymap))
@@ -673,7 +674,7 @@ it takes to reach a non-prefix command.\n\
 \n\
 Normally, `lookup-key' ignores bindings for t, which act as default\n\
 bindings, used when nothing else in the keymap applies; this makes it\n\
-useable as a general function for probing keymaps.  However, if the\n\
+usable as a general function for probing keymaps.  However, if the\n\
 third optional argument ACCEPT-DEFAULT is non-nil, `lookup-key' will\n\
 recognize the default bindings, just as `read-key-sequence' does.")
   (keymap, key, accept_default)
@@ -931,6 +932,8 @@ recognize the default bindings, just as `read-key-sequence' does.")
     }
   else
     { 
+      Lisp_Object local;
+
       nmaps = current_minor_maps (0, &maps);
       /* Note that all these maps are GCPRO'd
 	 in the places where we found them.  */
@@ -943,9 +946,11 @@ recognize the default bindings, just as `read-key-sequence' does.")
 	      RETURN_UNGCPRO (value);
 	  }
 
-      if (! NILP (current_buffer->keymap))
+      local = get_local_map (PT, current_buffer);
+
+      if (! NILP (local))
 	{
-	  value = Flookup_key (current_buffer->keymap, key, accept_default);
+	  value = Flookup_key (local, key, accept_default);
 	  if (! NILP (value) && !INTEGERP (value))
 	    RETURN_UNGCPRO (value);
 	}
@@ -1046,17 +1051,17 @@ A new sparse keymap is stored as COMMAND's function definition and its value.\n\
 If a second optional argument MAPVAR is given, the map is stored as\n\
 its value instead of as COMMAND's value; but COMMAND is still defined\n\
 as a function.")
-  (name, mapvar)
-     Lisp_Object name, mapvar;
+  (command, mapvar)
+     Lisp_Object command, mapvar;
 {
   Lisp_Object map;
   map = Fmake_sparse_keymap (Qnil);
-  Ffset (name, map);
+  Ffset (command, map);
   if (!NILP (mapvar))
     Fset (mapvar, map);
   else
-    Fset (name, map);
-  return name;
+    Fset (command, map);
+  return command;
 }
 
 DEFUN ("use-global-map", Fuse_global_map, Suse_global_map, 1, 1, 0,
@@ -1066,7 +1071,6 @@ DEFUN ("use-global-map", Fuse_global_map, Suse_global_map, 1, 1, 0,
 {
   keymap = get_keymap (keymap);
   current_global_map = keymap;
-  record_asynch_buffer_change ();
 
   return Qnil;
 }
@@ -1081,7 +1085,6 @@ If KEYMAP is nil, that means no local keymap.")
     keymap = get_keymap (keymap);
 
   current_buffer->keymap = keymap;
-  record_asynch_buffer_change ();
 
   return Qnil;
 }
@@ -1119,11 +1122,11 @@ DEFUN ("accessible-keymaps", Faccessible_keymaps, Saccessible_keymaps,
   "Find all keymaps accessible via prefix characters from KEYMAP.\n\
 Returns a list of elements of the form (KEYS . MAP), where the sequence\n\
 KEYS starting from KEYMAP gets you to MAP.  These elements are ordered\n\
-so that the KEYS increase in length.  The first element is (\"\" . KEYMAP).\n\
+so that the KEYS increase in length.  The first element is ([] . KEYMAP).\n\
 An optional argument PREFIX, if non-nil, should be a key sequence;\n\
 then the value includes only maps for prefixes that start with PREFIX.")
-  (startmap, prefix)
-     Lisp_Object startmap, prefix;
+  (keymap, prefix)
+     Lisp_Object keymap, prefix;
 {
   Lisp_Object maps, good_maps, tail;
   int prefixlen = 0;
@@ -1138,7 +1141,7 @@ then the value includes only maps for prefixes that start with PREFIX.")
       /* If a prefix was specified, start with the keymap (if any) for
 	 that prefix, so we don't waste time considering other prefixes.  */
       Lisp_Object tem;
-      tem = Flookup_key (startmap, prefix, Qt);
+      tem = Flookup_key (keymap, prefix, Qt);
       /* Flookup_key may give us nil, or a number,
 	 if the prefix is not defined in this particular map.
 	 It might even give us a list that isn't a keymap.  */
@@ -1150,7 +1153,7 @@ then the value includes only maps for prefixes that start with PREFIX.")
     }
   else
     maps = Fcons (Fcons (Fmake_vector (make_number (0), Qnil),
-			 get_keymap (startmap)),
+			 get_keymap (keymap)),
 		  Qnil);
 
   /* For each map in the list maps,
@@ -1515,16 +1518,16 @@ push_text_char_description (c, p)
 /* This function cannot GC.  */
 
 DEFUN ("text-char-description", Ftext_char_description, Stext_char_description, 1, 1, 0,
-  "Return a pretty description of file-character CHAR.\n\
+  "Return a pretty description of file-character CHARACTER.\n\
 Control characters turn into \"^char\", etc.")
-  (chr)
-     Lisp_Object chr;
+  (character)
+     Lisp_Object character;
 {
   char tem[6];
 
-  CHECK_NUMBER (chr, 0);
+  CHECK_NUMBER (character, 0);
 
-  *push_text_char_description (XINT (chr) & 0377, tem) = 0;
+  *push_text_char_description (XINT (character) & 0377, tem) = 0;
 
   return build_string (tem);
 }
@@ -1947,7 +1950,7 @@ nominal         alternate\n\
   return Qnil;
 }
 
-/* Insert a desription of the key bindings in STARTMAP,
+/* Insert a description of the key bindings in STARTMAP,
     followed by those of all maps reachable through STARTMAP.
    If PARTIAL is nonzero, omit certain "uninteresting" commands
     (such as `undefined').
@@ -2065,7 +2068,7 @@ key             binding\n\
 
       describe_map (Fcdr (elt), Fcar (elt),
 		    transl ? describe_translation : describe_command,
-		    partial, sub_shadows, &seen);
+		    partial, sub_shadows, &seen, nomenu);
 
     skip: ;
     }
@@ -2076,13 +2079,30 @@ key             binding\n\
   UNGCPRO;
 }
 
+static int previous_description_column;
+
 static void
 describe_command (definition)
      Lisp_Object definition;
 {
   register Lisp_Object tem1;
+  int column = current_column ();
+  int description_column;
 
-  Findent_to (make_number (16), make_number (1));
+  /* If column 16 is no good, go to col 32;
+     but don't push beyond that--go to next line instead.  */
+  if (column > 30)
+    {
+      insert_char ('\n');
+      description_column = 32;
+    }
+  else if (column > 14 || (column > 10 && previous_description_column == 32))
+    description_column = 32;
+  else
+    description_column = 16;
+
+  Findent_to (make_number (description_column), make_number (1));
+  previous_description_column = description_column;
 
   if (SYMBOLP (definition))
     {
@@ -2151,16 +2171,17 @@ shadow_lookup (shadow, key, flag)
 
 /* Describe the contents of map MAP, assuming that this map itself is
    reached by the sequence of prefix keys KEYS (a string or vector).
-   PARTIAL, SHADOW are as in `describe_map_tree' above.  */
+   PARTIAL, SHADOW, NOMENU are as in `describe_map_tree' above.  */
 
 static void
-describe_map (map, keys, elt_describer, partial, shadow, seen)
+describe_map (map, keys, elt_describer, partial, shadow, seen, nomenu)
      register Lisp_Object map;
      Lisp_Object keys;
      int (*elt_describer) ();
      int partial;
      Lisp_Object shadow;
      Lisp_Object *seen;
+     int nomenu;
 {
   Lisp_Object elt_prefix;
   Lisp_Object tail, definition, event;
@@ -2206,6 +2227,9 @@ describe_map (map, keys, elt_describer, partial, shadow, seen)
 	  if (! (SYMBOLP (event) || INTEGERP (event)))
 	    continue;
 
+	  if (nomenu && EQ (event, Qmenu_bar))
+	    continue;
+
 	  definition = get_keyelt (XCONS (XCONS (tail)->car)->cdr, 0);
 
 	  /* Don't show undefined commands or suppressed commands.  */
@@ -2232,6 +2256,7 @@ describe_map (map, keys, elt_describer, partial, shadow, seen)
 
 	  if (first)
 	    {
+	      previous_description_column = 0;
 	      insert ("\n", 1);
 	      first = 0;
 	    }
@@ -2511,18 +2536,18 @@ apropos_accum (symbol, string)
 
 DEFUN ("apropos-internal", Fapropos_internal, Sapropos_internal, 1, 2, 0, 
   "Show all symbols whose names contain match for REGEXP.\n\
-If optional 2nd arg PRED is non-nil, (funcall PRED SYM) is done\n\
+If optional 2nd arg PREDICATE is non-nil, (funcall PREDICATE SYMBOL) is done\n\
 for each symbol and a symbol is mentioned only if that returns non-nil.\n\
 Return list of symbols found.")
-  (string, pred)
-     Lisp_Object string, pred;
+  (regexp, predicate)
+     Lisp_Object regexp, predicate;
 {
   struct gcpro gcpro1, gcpro2;
-  CHECK_STRING (string, 0);
-  apropos_predicate = pred;
+  CHECK_STRING (regexp, 0);
+  apropos_predicate = predicate;
   GCPRO2 (apropos_predicate, apropos_accumulate);
   apropos_accumulate = Qnil;
-  map_obarray (Vobarray, apropos_accum, string);
+  map_obarray (Vobarray, apropos_accum, regexp);
   apropos_accumulate = Fsort (apropos_accumulate, Qstring_lessp);
   UNGCPRO;
   return apropos_accumulate;

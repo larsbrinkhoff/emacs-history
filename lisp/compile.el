@@ -1,6 +1,6 @@
 ;;; compile.el --- run compiler as inferior of Emacs, parse error messages.
 
-;; Copyright (C) 1985, 86, 87, 93, 94, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 87, 93, 94, 1995, 1996 Free Software Foundation, Inc.
 
 ;; Author: Roland McGrath <roland@prep.ai.mit.edu>
 ;; Maintainer: FSF
@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -49,18 +50,18 @@ The value may be t instead of a list; this means that the buffer of
 error messages should be reparsed the next time the list of errors is wanted.
 
 Some other commands (like `diff') use this list to control the error
-message tracking facilites; if you change its structure, you should make
+message tracking facilities; if you change its structure, you should make
 sure you also change those packages.  Perhaps it is better not to change
 it at all.")
 
 (defvar compilation-old-error-list nil
   "Value of `compilation-error-list' after errors were parsed.")
 
-(defvar compilation-parse-errors-function 'compilation-parse-errors 
+(defvar compilation-parse-errors-function 'compilation-parse-errors
   "Function to call to parse error messages from a compilation.
 It takes args LIMIT-SEARCH and FIND-AT-LEAST.
 If LIMIT-SEARCH is non-nil, don't bother parsing past that location.
-If FIND-AT-LEAST is non-nil, don't bother parsing after finding that 
+If FIND-AT-LEAST is non-nil, don't bother parsing after finding that
 many new errors.
 It should read in the source files which have errors and set
 `compilation-error-list' to a list with an element for each error message
@@ -110,44 +111,56 @@ or when it is used with \\[next-error] or \\[compile-goto-error].")
     ;; 	foo.f          :16    some horrible error message
     ;; or GNU utilities with column (GNAT 1.82):
     ;;   foo.adb:2:1: Unit name does not match file name
-    ;; 
+    ;;
     ;; We'll insist that the number be followed by a colon or closing
     ;; paren, because otherwise this matches just about anything
     ;; containing a number with spaces around it.
     ("\n\
-\\([^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\)\\([) \t]\\|\
+\\([a-zA-Z]?:?[^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\)\\([) \t]\\|\
 :\\([^0-9\n]\\|\\([0-9]+:\\)\\)\\)" 1 2 5)
+
+    ;; Microsoft C/C++:
+    ;;  keyboard.c(537) : warning C4005: 'min' : macro redefinition
+    ;;  d:\tmp\test.c(23) : error C2143: syntax error : missing ';' before 'if'
+    ("\n\\(\\([a-zA-Z]:\\)?[^:( \t\n-]+\\)[:(][ \t]*\\([0-9]+\\)[:) \t]" 1 3)
 
     ;; Borland C++:
     ;;  Error ping.c 15: Unable to open include file 'sys/types.h'
     ;;  Warning ping.c 68: Call to function 'func' with no prototype
-    ("\n\\(Error\\|Warning\\) \\([^:( \t\n]+\\)\
+    ("\n\\(Error\\|Warning\\) \\([a-zA-Z]?:?[^:( \t\n]+\\)\
  \\([0-9]+\\)\\([) \t]\\|:[^0-9\n]\\)" 2 3)
 
     ;; 4.3BSD lint pass 2
     ;; 	strcmp: variable # of args. llib-lc(359)  ::  /usr/src/foo/foo.c(8)
-    ("[ \t:]\\([^:( \t\n]+\\)[:(](+[ \t]*\\([0-9]+\\))[:) \t]*$" 1 2)
+    ("[ \t:]\\([a-zA-Z]?:?[^:( \t\n]+\\)[:(](+[ \t]*\\([0-9]+\\))[:) \t]*$"
+     1 2)
 
     ;; 4.3BSD lint pass 3
     ;; 	bloofle defined( /users/wolfgang/foo.c(4) ), but never used
     ;; This used to be
-    ;; ("[ \t(]+\\([^:( \t\n]+\\)[:( \t]+\\([0-9]+\\)[:) \t]+" 1 2)
+    ;; ("[ \t(]+\\([a-zA-Z]?:?[^:( \t\n]+\\)[:( \t]+\\([0-9]+\\)[:) \t]+" 1 2)
     ;; which is regexp Impressionism - it matches almost anything!
-    ("([ \t]*\\([^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\))" 1 2)
+    ("([ \t]*\\([a-zA-Z]?:?[^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\))" 1 2)
+
+    ;; MIPS lint pass<n>; looks good for SunPro lint also
+    ;;  TrimMask (255) in solomon.c may be indistinguishable from TrimMasks (93) in solomon.c due to truncation
+    ("[^ ]+ (\\([0-9]+\\)) in \\([^ ]+\\)" 2 1)
+    ;;  name defined but never used: LinInt in cmap_calc.c(199)
+    ("in \\([^(]+\\)(\\([0-9]+\\))$" 1 2)
 
     ;; Ultrix 3.0 f77:
     ;;  fort: Severe: addstf.f, line 82: Missing operator or delimiter symbol
     ;; Some SGI cc version:
     ;;  cfe: Warning 835: foo.c, line 2: something
     ("\n\\(cfe\\|fort\\): [^:\n]*: \\([^ \n]*\\), line \\([0-9]+\\):" 2 3)
-    ;;  Error on line 3 of t.f: Execution error unclassifiable statement    
+    ;;  Error on line 3 of t.f: Execution error unclassifiable statement
     ;; Unknown who does this:
-    ;;  Line 45 of "foo.c": bloofel undefined
+    ;;  Line 45 of "foo.c": bloofle undefined
     ;; Absoft FORTRAN 77 Compiler 3.1.3
     ;;  error on line 19 of fplot.f: spelling error?
     ;;  warning on line 17 of fplot.f: data type is undefined for variable d
     ("\\(\n\\|on \\)[Ll]ine[ \t]+\\([0-9]+\\)[ \t]+\
-of[ \t]+\"?\\([^\":\n]+\\)\"?:" 3 2)
+of[ \t]+\"?\\([a-zA-Z]?:?[^\":\n]+\\)\"?:" 3 2)
 
     ;; Apollo cc, 4.3BSD fc:
     ;;	"foo.f", line 3: Error: syntax error near end of statement
@@ -157,14 +170,17 @@ of[ \t]+\"?\\([^\":\n]+\\)\"?:" 3 2)
     ;;  File "foobar.ml", lines 5-8, characters 20-155: blah blah
     ;; Microtec mcc68k:
     ;;  "foo.c", line 32 pos 1; (E) syntax error; unexpected symbol: "lossage"
-    ;; GNAT (as of July 94): 
+    ;; GNAT (as of July 94):
     ;;  "foo.adb", line 2(11): warning: file name does not match ...
-    ("\"\\([^,\" \n\t]+\\)\", lines? \\([0-9]+\\)[:., (-]" 1 2)
+    ;; IBM AIX xlc compiler:
+    ;;  "src/swapping.c", line 30.34: 1506-342 (W) "/*" detected in comment.
+    ("\"\\([^,\" \n\t]+\\)\", lines? \
+\\([0-9]+\\)\\([\(.]\\([0-9]+\\)\)?\\)?[:., (-]" 1 2 4)
 
     ;; MIPS RISC CC - the one distributed with Ultrix:
     ;;	ccom: Error: foo.c, line 2: syntax error
     ;; DEC AXP OSF/1 cc
-    ;;  /usr/lib/cmplrs/cc/cfe: Error: foo.c: 1: blah blah 
+    ;;  /usr/lib/cmplrs/cc/cfe: Error: foo.c: 1: blah blah
     ("rror: \\([^,\" \n\t]+\\)[,:] \\(line \\)?\\([0-9]+\\):" 1 3)
 
     ;; IBM AIX PS/2 C version 1.1:
@@ -178,7 +194,7 @@ of[ \t]+\"?\\([^\":\n]+\\)\"?:" 3 2)
     ("\n[EW], \\([^(\n]*\\)(\\([0-9]+\\),[ \t]*\\([0-9]+\\)" 1 2 3)
 
     ;; GNU messages with program name and optional column number.
-    ("\n[^0-9 \n\t:]+:[ \t]*\\([^ \n\t:]+\\):\
+    ("\n[a-zA-Z]?:?[^0-9 \n\t:]+:[ \t]*\\([^ \n\t:]+\\):\
 \\([0-9]+\\):\\(\\([0-9]+\\)[: \t]\\)?" 1 2 4)
 
     ;; Cray C compiler error messages
@@ -212,7 +228,7 @@ Otherwise, M-x compile just uses the value of `compile-command'.")
 Otherwise, it saves all modified buffers without asking.")
 
 (defvar grep-regexp-alist
-  '(("^\\([^:( \t\n]+\\)[:( \t]+\\([0-9]+\\)[:) \t]" 1 2))
+  '(("^\\([a-zA-Z]?:?[^:( \t\n]+\\)[:( \t]+\\([0-9]+\\)[:) \t]" 1 2))
   "Regexp used to match grep hits.  See `compilation-error-regexp-alist'.")
 
 (defvar grep-command "grep -n "
@@ -259,9 +275,9 @@ The head element is the directory the compilation was started in.")
 
 (defvar compilation-exit-message-function nil "\
 If non-nil, called when a compilation process dies to return a status message.
-This should be a function a two arguments as passed to a process sentinel
-\(see `set-process-sentinel\); it returns a cons (MESSAGE . MODELINE) of the
-strings to write into the compilation buffer, and to put in its mode line.")
+This should be a function of three arguments: process status, exit status,
+and exit message; it returns a cons (MESSAGE . MODELINE) of the strings to
+write into the compilation buffer, and to put in its mode line.")
 
 ;; History of compile commands.
 (defvar compile-history nil)
@@ -270,7 +286,8 @@ strings to write into the compilation buffer, and to put in its mode line.")
 
 (defvar compilation-mode-font-lock-keywords
   ;; This regexp needs a bit of rewriting.  What is the third grouping for?
-  '(("^\\([^ \n:]*:\\([0-9]+:\\)+\\)\\(.*\\)$" 1 font-lock-function-name-face))
+  '(("^\\([a-zA-Z]?:?[^ \n:]*:\\([0-9]+:\\)+\\)\\(.*\\)$"
+     1 font-lock-function-name-face))
 ;;;  ("^\\([^\n:]*:\\([0-9]+:\\)+\\)\\(.*\\)$" 0 font-lock-keyword-face keep)
   "Additional expressions to highlight in Compilation mode.")
 
@@ -331,16 +348,15 @@ easily repeat a grep command."
     (save-excursion
       (set-buffer buf)
       (set (make-local-variable 'compilation-exit-message-function)
-	   (lambda (proc msg)
-	     (let ((code (process-exit-status proc)))
-	       (if (eq (process-status proc) 'exit)
-		   (cond ((zerop code)
-			  '("finished (matches found)\n" . "matched"))
-			 ((= code 1)
-			  '("finished with no matches found\n" . "no match"))
-			 (t
-			  (cons msg code)))
-		 (cons msg code))))))))
+	   (lambda (status code msg)
+	     (if (eq status 'exit)
+		 (cond ((zerop code)
+			'("finished (matches found)\n" . "matched"))
+		       ((= code 1)
+			'("finished with no matches found\n" . "no match"))
+		       (t
+			(cons msg code)))
+	       (cons msg code)))))))
 
 (defun compile-internal (command error-message
 				 &optional name-of-mode parser regexp-alist
@@ -390,7 +406,7 @@ Returns the compilation buffer created."
     (let ((regexp-alist (or regexp-alist compilation-error-regexp-alist))
 	  (parser (or parser compilation-parse-errors-function))
 	  (thisdir default-directory)
-	  outwin) 
+	  outwin)
       (save-excursion
 	;; Clear out the compilation buffer and make it writable.
 	;; Change its default-directory to the directory where the compilation
@@ -432,14 +448,29 @@ Returns the compilation buffer created."
 	      (set-process-sentinel proc 'compilation-sentinel)
 	      (set-process-filter proc 'compilation-filter)
 	      (set-marker (process-mark proc) (point) outbuf)
-	      (setq compilation-in-progress 
+	      (setq compilation-in-progress
 		    (cons proc compilation-in-progress)))
-	  ;; No asynchronous processes available
-	  (message (format "Executing `%s'..." command))
-	  (sit-for 0) ;; Force redisplay
+	  ;; No asynchronous processes available.
+	  (message "Executing `%s'..." command)
+	  ;; Fake modeline display as if `start-process' were run.
+	  (setq mode-line-process ":run")
+	  (force-mode-line-update)
+	  (sit-for 0)			; Force redisplay
 	  (let ((status (call-process shell-file-name nil outbuf nil "-c"
-				      command))))
-	  (message (format "Executing `%s'...done" command)))))
+				      command)))
+	    (cond ((numberp status)
+		   (compilation-handle-exit 'exit status
+					    (if (zerop status)
+						"finished\n"
+					      (format "\
+exited abnormally with code %d\n"
+						      status))))
+		  ((stringp status)
+		   (compilation-handle-exit 'signal status
+					    (concat status "\n")))
+		  (t
+		   (compilation-handle-exit 'bizarre status status))))
+	  (message "Executing `%s'...done" command))))
     ;; Make it so the next C-x ` will use this buffer.
     (setq compilation-last-buffer outbuf)))
 
@@ -504,6 +535,7 @@ Returns the compilation buffer created."
   "Keymap for compilation log buffers.
 `compilation-minor-mode-map' is a cdr of this.")
 
+;;;###autoload
 (defun compilation-mode ()
   "Major mode for compilation log buffers.
 \\<compilation-mode-map>To visit the source for a line-numbered error,
@@ -549,12 +581,39 @@ Compilation major mode are available.")
 (defun compilation-minor-mode (&optional arg)
   "Toggle compilation minor mode.
 With arg, turn compilation mode on if and only if arg is positive.
-See `compilation-mode'."
+See `compilation-mode'.
+Turning the mode on runs the normal hook `compilation-minor-mode-hook'."
   (interactive "P")
   (if (setq compilation-minor-mode (if (null arg)
 				       (null compilation-minor-mode)
 				     (> (prefix-numeric-value arg) 0)))
-      (compilation-setup)))
+      (progn
+	(compilation-setup)
+	(run-hooks 'compilation-minor-mode-hook))))
+
+;; Write msg in the current buffer and hack its mode-line-process.
+(defun compilation-handle-exit (process-status exit-status msg)
+  (let ((buffer-read-only nil)
+	(status (if compilation-exit-message-function
+		    (funcall compilation-exit-message-function
+			     process-status exit-status msg)
+		  (cons msg exit-status)))
+	(omax (point-max))
+	(opoint (point)))
+    ;; Record where we put the message, so we can ignore it
+    ;; later on.
+    (goto-char omax)
+    (insert ?\n mode-name " " (car status))
+    (forward-char -1)
+    (insert " at " (substring (current-time-string) 0 19))
+    (forward-char 1)
+    (setq mode-line-process (format ":%s [%s]" process-status (cdr status)))
+    ;; Force mode line redisplay soon.
+    (force-mode-line-update)
+    (if (and opoint (< opoint omax))
+	(goto-char opoint))
+    (if compilation-finish-function
+	(funcall compilation-finish-function (current-buffer) msg))))
 
 ;; Called when compilation process changes state.
 (defun compilation-sentinel (proc msg)
@@ -565,8 +624,7 @@ See `compilation-mode'."
 	  (if (null (buffer-name buffer))
 	      ;; buffer killed
 	      (set-process-buffer proc nil)
-	    (let ((obuf (current-buffer))
-		  omax opoint)
+	    (let ((obuf (current-buffer)))
 	      ;; save-excursion isn't the right thing if
 	      ;; process-buffer is current-buffer
 	      (unwind-protect
@@ -574,33 +632,13 @@ See `compilation-mode'."
 		    ;; Write something in the compilation buffer
 		    ;; and hack its mode line.
 		    (set-buffer buffer)
-		    (let ((buffer-read-only nil)
-			  (status (if compilation-exit-message-function
-				      (funcall compilation-exit-message-function
-					       proc msg)
-				    (cons msg (process-exit-status proc)))))
-		      (setq omax (point-max)
-			    opoint (point))
-		      (goto-char omax)
-		      ;; Record where we put the message, so we can ignore it
-		      ;; later on.
-		      (insert ?\n mode-name " " (car status))
-		      (forward-char -1)
-		      (insert " at " (substring (current-time-string) 0 19))
-		      (forward-char 1)
-		      (setq mode-line-process
-			    (format ":%s [%s]"
-				    (process-status proc) (cdr status)))
-		      ;; Since the buffer and mode line will show that the
-		      ;; process is dead, we can delete it now.  Otherwise it
-		      ;; will stay around until M-x list-processes.
-		      (delete-process proc)
-		      ;; Force mode line redisplay soon.
-		      (force-mode-line-update))
-		    (if (and opoint (< opoint omax))
-			(goto-char opoint))
-		    (if compilation-finish-function
-			(funcall compilation-finish-function buffer msg)))
+		    (compilation-handle-exit (process-status proc)
+					     (process-exit-status proc)
+					     msg)
+		    ;; Since the buffer and mode line will show that the
+		    ;; process is dead, we can delete it now.  Otherwise it
+		    ;; will stay around until M-x list-processes.
+		    (delete-process proc))
 		(set-buffer obuf))))
 	  (setq compilation-in-progress (delq proc compilation-in-progress))
 	  ))))
@@ -615,6 +653,7 @@ Just inserts the text, but uses `insert-before-markers'."
 	  (save-excursion
 	    (goto-char (process-mark proc))
 	    (insert-before-markers string)
+	    (run-hooks 'compilation-filter-hook)
 	    (set-marker (process-mark proc) (point)))))))
 
 ;; Return the cdr of compilation-old-error-list for the error containing point.
@@ -722,7 +761,7 @@ Does NOT find the source line like \\[next-error]."
 				  ;; Parse some more.
 				  (compile-reinitialize-errors nil nil 2)
 				  (setq errors compilation-error-list)))
-			      (error "%s is the last erring file" 
+			      (error "%s is the last erring file"
 				     (compilation-error-filedata-file-name
 				      filedata))))))
 	(setq errors (cdr errors)))
@@ -879,6 +918,7 @@ other kinds of prefix arguments are ignored."
       ;; The current buffer is a compilation buffer.
       (current-buffer)
     (if (and compilation-last-buffer (buffer-name compilation-last-buffer)
+	     (compilation-buffer-p compilation-last-buffer)
 	     (or (not other-buffer) (not (eq compilation-last-buffer
 					     (current-buffer)))))
 	compilation-last-buffer
@@ -955,7 +995,7 @@ marker at the location in the source code indicated by the error message.
 Optional first arg MOVE says how many error messages to move forwards (or
 backwards, if negative); default is 1.  Optional second arg REPARSE, if
 non-nil, says to reparse the error message buffer and reset to the first
-error (plus MOVE - 1).  If optional third argument SILENT is non-nil, return 
+error (plus MOVE - 1).  If optional third argument SILENT is non-nil, return
 nil instead of raising an error if there are no more errors.
 
 The current buffer should be the desired compilation output buffer."
@@ -967,7 +1007,7 @@ The current buffer should be the desired compilation output buffer."
       (save-excursion
 	(set-buffer compilation-last-buffer)
 	;; compilation-error-list points to the "current" error.
-	(setq next-errors 
+	(setq next-errors
 	      (if (> move 0)
 		  (nthcdr (1- move)
 			  compilation-error-list)
@@ -1356,7 +1396,7 @@ See variable `compilation-parse-errors-function' for the interface it uses."
 	     (if alist
 		 (setq alist (car alist))
 	       (error "compilation-parse-errors: impossible regexp match!"))
-	     
+
 	     ;; Extract the file name and line number from the error message.
 	     (let ((beginning-of-match (match-beginning 0)) ;looking-at nukes
 		   (filename (buffer-substring (match-beginning (nth 1 alist))
@@ -1381,9 +1421,17 @@ See variable `compilation-parse-errors-function' for the interface it uses."
 		    ;; compile-abbreviate-directory).
 		    (file-name-absolute-p filename)
 		    (setq filename (concat comint-file-name-prefix filename)))
+
+	       ;; Some compilers (e.g. Sun's java compiler, reportedly)
+	       ;; produce bogus file names like "./bar//foo.c" for the file
+	       ;; "bar/foo.c"; expand-file-name will collapse these into
+	       ;; "/foo.c" and fail to find the appropriate file.  So we look
+	       ;; for doubled slashes in the file name and fix them up in the
+	       ;; buffer.
+	       (setq filename (command-line-normalize-file-name filename))
 	       (setq filename (cons filename (cons default-directory
 						   (nthcdr 4 alist))))
-				     
+
 
 	       ;; Locate the erring file and line.
 	       ;; Cons a new elt onto compilation-error-list,

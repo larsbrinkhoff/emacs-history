@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -332,27 +333,26 @@ If the locale never uses daylight savings time, set this to nil.")
 
 (defun dst-in-effect (date)
   "True if on absolute DATE daylight savings time is in effect.
-Fractional part of DATE is time of day."
+Fractional part of DATE is local standard time of day."
   (let* ((year (extract-calendar-year
                 (calendar-gregorian-from-absolute (floor date))))
-         (dst-starts (and (eval calendar-daylight-savings-starts)
+         (dst-starts-gregorian (eval calendar-daylight-savings-starts))
+         (dst-ends-gregorian (eval calendar-daylight-savings-ends))
+         (dst-starts (and dst-starts-gregorian
                           (+ (calendar-absolute-from-gregorian
-                              (eval calendar-daylight-savings-starts))
+                              dst-starts-gregorian)
                              (/ calendar-daylight-savings-starts-time
                                 60.0 24.0))))
-         (dst-ends (and (eval calendar-daylight-savings-ends)
+         (dst-ends (and dst-ends-gregorian
                         (+ (calendar-absolute-from-gregorian
-                            (eval calendar-daylight-savings-ends))
+                            dst-ends-gregorian)
                            (/ (- calendar-daylight-savings-ends-time
                                  calendar-daylight-time-offset)
                               60.0 24.0)))))
-    (and (and dst-starts dst-ends
-              (or (and (< dst-starts dst-ends);; northern hemi.
-                       (<= dst-starts date) (< date dst-ends))
-                  (and (< dst-ends dst-starts);; southern hemi.
-                       (<= dst-starts date) (< date dst-ends))
-                  (and dst-starts (not dst-ends) (<= dst-starts date))
-                  (and dst-ends (not dst-starts) (< date dst-ends)))))))
+    (and dst-starts dst-ends
+         (if (< dst-starts dst-ends)
+             (and (<= dst-starts date) (< date dst-ends))
+           (or (<= dst-starts date) (< date dst-ends))))))
 
 (defun dst-adjust-time (date time &optional style)
   "Adjust, to account for dst on DATE, decimal fraction standard TIME.

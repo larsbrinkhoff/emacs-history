@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Usage:
 
@@ -399,7 +400,7 @@ Accepts a positive prefix argument for the number of BOL marks to move."
 ;;;
 
 (defun edt-find-forward (&optional find)
-  "Find first occurance of a string in forward direction and save it."
+  "Find first occurrence of a string in forward direction and save it."
   (interactive)
   (if (not find)
       (set 'search-last-string (read-string "Search forward: ")))
@@ -407,14 +408,14 @@ Accepts a positive prefix argument for the number of BOL marks to move."
       (search-backward search-last-string)))
 
 (defun edt-find-backward (&optional find)
-  "Find first occurance of a string in the backward direction and save it."
+  "Find first occurrence of a string in the backward direction and save it."
   (interactive)
   (if (not find)
       (set 'search-last-string (read-string "Search backward: ")))
   (search-backward search-last-string))
 
 (defun edt-find ()
-  "Find first occurance of string in current direction and save it."
+  "Find first occurrence of string in current direction and save it."
   (interactive)
   (set 'search-last-string (read-string "Search: "))
   (if (equal edt-direction-string edt-forward-string)
@@ -427,7 +428,7 @@ Accepts a positive prefix argument for the number of BOL marks to move."
 ;;;
 
 (defun edt-find-next-forward ()
-  "Find next occurance of a string in forward direction."
+  "Find next occurrence of a string in forward direction."
   (interactive)
   (forward-char 1)
   (if (search-forward search-last-string nil t)
@@ -437,14 +438,14 @@ Accepts a positive prefix argument for the number of BOL marks to move."
         (error "Search failed: \"%s\"." search-last-string))))
 
 (defun edt-find-next-backward ()
-  "Find next occurance of a string in backward direction."
+  "Find next occurrence of a string in backward direction."
   (interactive)
   (if (eq (search-backward search-last-string nil t) nil)
       (progn
         (error "Search failed: \"%s\"." search-last-string))))
 
 (defun edt-find-next ()
-  "Find next occurance of a string in current direction."
+  "Find next occurrence of a string in current direction."
   (interactive)
   (if (equal edt-direction-string edt-forward-string)
       (edt-find-next-forward)
@@ -1184,7 +1185,7 @@ Accepts a positive prefix argument for the number times to duplicate the line."
   "Display the current time."
   (interactive)
   (set 'time-string (current-time-string))
-  (message time-string))
+  (message "%s" time-string))
 
 ;;;
 ;;; LEARN
@@ -1407,7 +1408,7 @@ and the cursor is left to rest at the beginning of that word."
   "Prompt for a y or n answer with positive default.
 Optional second argument NOT-YES changes default to negative.
 Like emacs y-or-n-p, also accepts space as y and DEL as n."
-  (message (format "%s[%s]" prompt (if not-yes "n" "y")))
+  (message "%s[%s]" prompt (if not-yes "n" "y"))
   (let ((doit t))
     (while doit
       (setq doit nil)
@@ -1419,8 +1420,8 @@ Like emacs y-or-n-p, also accepts space as y and DEL as n."
 	      ((= ans ?\r) (setq edt-last-answer (not not-yes)))
 	      (t
 	       (setq doit t) (beep)
-	       (message (format "Please answer y or n.  %s[%s]"
-				prompt (if not-yes "n" "y"))))))))
+	       (message "Please answer y or n.  %s[%s]"
+			prompt (if not-yes "n" "y")))))))
   edt-last-answer)
 
 (defun edt-load-xkeys (file)
@@ -1482,7 +1483,7 @@ If FILE is nil, try to load a default file.  The default file names are
   "Turn on EDT Emulation."
   (interactive)
   ;; If using MS-DOS, need to load edt-pc.el
-  (if (string-equal system-type "ms-dos")
+  (if (eq system-type 'ms-dos)
       (setq edt-term "pc")
     (setq edt-term (getenv "TERM")))
   ;; All DEC VT series terminals are supported by loading edt-vt100.el

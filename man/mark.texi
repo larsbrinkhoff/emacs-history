@@ -189,7 +189,7 @@ selected window is the region that editing commands use.
 mark also activates it, and nothing ever deactivates it.
 
 @vindex mark-even-if-inactive
-  If you the variable @code{mark-even-if-inactive} is non-@code{nil} in
+  If the variable @code{mark-even-if-inactive} is non-@code{nil} in
 Transient Mark mode, then commands can use the mark and the region
 even when it is inactive.  Region highlighting appears and disappears 
 just as it normally does in Transient Mark mode, but the mark doesn't

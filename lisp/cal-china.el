@@ -1,4 +1,4 @@
-;;; cal-chinese.el --- calendar functions for the Chinese calendar.
+;;; cal-china.el --- calendar functions for the Chinese calendar.
 
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -325,7 +326,7 @@ Gregorian date Sunday, December 31, 1 BC."
           (list
            (list chinese-new-year
                  (format "Chinese New Year (%s)"
-                         (calendar-chinese-sexagisimal-name (+ y 57))))))))))
+                         (calendar-chinese-sexagesimal-name (+ y 57))))))))))
 
 (defun calendar-chinese-date-string (&optional date)
   "String of Chinese date of Gregorian DATE.
@@ -347,7 +348,7 @@ Defaults to today's date if DATE is not given."
          (m-cycle (% (+ (* year 5) (floor month)) 60)))
     (format "Cycle %s, year %s (%s), %smonth %s%s, day %s (%s)"
             cycle
-            year (calendar-chinese-sexagisimal-name year)
+            year (calendar-chinese-sexagesimal-name year)
             (if (not (integerp month))
                 "second "
               (if (< 30 (- next-month this-month))
@@ -355,13 +356,13 @@ Defaults to today's date if DATE is not given."
                 ""))
             (floor month)
             (if (integerp month)
-                (format " (%s)" (calendar-chinese-sexagisimal-name
+                (format " (%s)" (calendar-chinese-sexagesimal-name
                                  (+ (* 5 year) month 44)))
               "")
-            day (calendar-chinese-sexagisimal-name (+ a-date 15)))))
+            day (calendar-chinese-sexagesimal-name (+ a-date 15)))))
 
-(defun calendar-chinese-sexagisimal-name (n)
-  "The N-th name of the Chinese sexagisimal cycle.
+(defun calendar-chinese-sexagesimal-name (n)
+  "The N-th name of the Chinese sexagesimal cycle.
 N congruent to 1 gives the first name, N congruent to 2 gives the second name,
 ..., N congruent to 60 gives the sixtieth name."
   (format "%s-%s"
@@ -449,6 +450,6 @@ Echo Chinese date unless NOECHO is t."
   "Chinese calendar equivalent of date diary entry."
   (format "Chinese date: %s" (calendar-chinese-date-string date)))
 
-(provide 'cal-chinese)
+(provide 'cal-china)
 
-;;; cal-chinese ends here
+;;; cal-china.el ends here

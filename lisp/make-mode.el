@@ -25,8 +25,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -177,7 +178,7 @@ You will be offered to complete on one of those in the minibuffer whenever
 you enter a \".\" at the beginning of a line in makefile-mode.")
 
 (defvar makefile-runtime-macros-list
-  '(("@") ("&") (">") ("<") ("*") ("^") ("?") ("%") ("$"))
+  '(("@") ("&") (">") ("<") ("*") ("^") ("+") ("?") ("%") ("$"))
   "List of macros that are resolved by make at runtime.
 If you insert a macro reference using makefile-insert-macro-ref, the name
 of the macro is checked against this list. If it can be found its name will
@@ -201,7 +202,8 @@ not be enclosed in { } or ( ).")
   "\\(^\\..*\\)\\|\\(.*~$\\)\\|\\(.*,v$\\)\\|\\(\\.[chy]\\)"
   "Regex for filenames that will NOT be included in the target list.")
 
-(add-to-list 'facemenu-unlisted-faces 'makefile-space-face)
+(if (fboundp 'facemenu-unlisted-faces)
+    (add-to-list 'facemenu-unlisted-faces 'makefile-space-face))
 (defvar makefile-space-face 'makefile-space-face
   "Face to use for highlighting leading spaces in Font-Lock mode.")
 
@@ -212,10 +214,10 @@ not be enclosed in { } or ( ).")
    (list makefile-macroassign-regex 1 'font-lock-variable-name-face)
    ;;
    ;; Variable references even in targets/strings/comments:
-   '("\\$[({]\\([a-zA-Z0-9_]+\\)[})]" 1 font-lock-reference-face t)
+   '("\\$[({]\\([a-zA-Z0-9_]+\\)[})]" 1 font-lock-reference-face prepend)
    ;;
    ;; Do dependencies.  These get the function name face.
-   (list makefile-dependency-regex 1 'font-lock-function-name-face)
+   (list makefile-dependency-regex 1 'font-lock-function-name-face 'prepend)
 
    ;; Highlight lines that contain just whitespace.
    ;; They can cause trouble, especially if they start with a tab.
@@ -223,7 +225,7 @@ not be enclosed in { } or ( ).")
 
    ;; Highlight shell comments that Make treats as commands,
    ;; since these can fool people.
-   '("^\t+#" makefile-space-face t)
+   '("^\t+#" 0 makefile-space-face t)
 
    ;; Highlight spaces that precede tabs.
    ;; They can make a tab fail to be effective.
@@ -488,7 +490,7 @@ makefile-special-targets-list:
   (make-local-variable 'makefile-need-macro-pickup)
 
   ;; Font lock.
-  (if (fboundp 'makefile-define-space-face)
+  (if (fboundp 'make-face)
       (makefile-define-space-face))
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '(makefile-font-lock-keywords))
@@ -561,7 +563,7 @@ Anywhere else just self-inserts."
     (self-insert-command arg)))
 
 (defun makefile-insert-special-target ()
-  "Propmt for and insert a special target name.
+  "Prompt for and insert a special target name.
 Uses `makefile-special-targets' list."
   (interactive)
   (makefile-pickup-targets)
@@ -862,7 +864,7 @@ The context determines which are considered."
 (defun makefile-backslash-region (beg end arg)
   "Insert backslashes at end of every line in region.
 Useful for defining multi-line rules.
-If called with a prefix argument, trailing backslahes are removed."
+If called with a prefix argument, trailing backslashes are removed."
   (interactive "r\nP")
   (save-excursion
     (let ((do-lastline-p (progn (goto-char end) (not (bolp)))))
@@ -969,13 +971,13 @@ If called with a prefix argument, trailing backslahes are removed."
       (beginning-of-line)
       (if (makefile-browser-on-macro-line-p)
 	  (let ((macro-name (makefile-browser-this-line-macro-name)))
-	    (kill-line)
+	    (delete-region (point) (progn (end-of-line) (point)))
 	    (insert
 	     (makefile-browser-format-macro-line
 		macro-name
 		(makefile-browser-get-state-for-line this-line))))
 	(let ((target-name (makefile-browser-this-line-target-name)))
-	  (kill-line)
+	  (delete-region (point) (progn (end-of-line) (point)))
 	  (insert
 	   (makefile-browser-format-target-line
 	      target-name
@@ -1328,19 +1330,30 @@ Uses `makefile-use-curly-braces-for-macros-p'."
 ;;; Support for other packages, like add-log and imenu.
 
 (defun makefile-add-log-defun ()
-  ;; "Return name of target or macro point is in, or nil."
+  "Return name of target or variable assignment that point is in.
+If it isn't in one, return nil."
   (save-excursion
-    (beginning-of-line)
-    (cond
-     ((looking-at makefile-macroassign-regex)
-      (buffer-substring (match-beginning 1)
-			(match-end 1)))
-     ((progn
-	(or (eobp) (forward-char))
-	(re-search-backward makefile-dependency-regex nil t))
-      (buffer-substring (match-beginning 1)
-			(match-end 1)))
-     (t nil))))
+    (let (found)
+      (beginning-of-line)
+      ;; Scan back line by line, noticing when we come to a
+      ;; variable or rule definition, and giving up when we see
+      ;; a line that is not part of either of those.
+      (while (not found)
+	(cond
+	 ((looking-at makefile-macroassign-regex)
+	  (setq found (buffer-substring-no-properties (match-beginning 1)
+							(match-end 1))))
+	 ((looking-at makefile-dependency-regex)
+	  (setq found (buffer-substring-no-properties (match-beginning 1)
+						      (match-end 1))))
+	 ;; Don't keep looking across a blank line or comment.  Give up.
+	 ((looking-at "$\\|#")
+	  (setq found 'bobp))
+	 ((bobp)
+	  (setq found 'bobp)))
+	(or found
+	    (forward-line -1)))
+      (if (stringp found) found))))
 
 ;; FIXME it might be nice to have them separated by macro vs target.
 (defun makefile-menu-index-function ()

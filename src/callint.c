@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -175,8 +176,8 @@ See `interactive'.\n\
 Optional second arg RECORD-FLAG non-nil\n\
 means unconditionally put this command in the command-history.\n\
 Otherwise, this is done only if an arg is read using the minibuffer.")
-  (function, record, keys)
-     Lisp_Object function, record, keys;
+  (function, record_flag, keys)
+     Lisp_Object function, record_flag, keys;
 {
   Lisp_Object *args, *visargs;
   unsigned char **argstrings;
@@ -291,7 +292,7 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
       input = specs;
       /* Compute the arg values using the user's expression.  */
       specs = Feval (specs);
-      if (i != num_input_chars || !NILP (record))
+      if (i != num_input_chars || !NILP (record_flag))
 	{
 	  /* We should record this command on the command history.  */
 	  Lisp_Object values, car;
@@ -479,8 +480,12 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
 	  break;
 
         case 'c':		/* Character */
-	  message1 (callint_message);
+	  /* Use message_nolog rather than message1_nolog here,
+	     so that nothing bad happens if callint_message is changed
+	     within Fread_char (by a timer, for example).  */
+	  message_nolog ("%s", callint_message);
 	  args[i] = Fread_char ();
+	  message1_nolog ((char *) 0);
 	  /* Passing args[i] directly stimulates compiler bug */
 	  teml = args[i];
 	  visargs[i] = Fchar_to_string (teml);
@@ -565,13 +570,13 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
 	  break;
 
 	case 'P':		/* Prefix arg in raw form.  Does no I/O.  */
-	have_prefix_arg:
 	  args[i] = prefix_arg;
 	  /* visargs[i] = Qnil; */
 	  varies[i] = -1;
 	  break;
 
 	case 'p':		/* Prefix arg converted to number.  No I/O. */
+	have_prefix_arg:
 	  args[i] = Fprefix_numeric_value (prefix_arg);
 	  /* visargs[i] = Qnil; */
 	  varies[i] = -1;
@@ -641,7 +646,7 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
 
   args[0] = function;
 
-  if (arg_from_tty || !NILP (record))
+  if (arg_from_tty || !NILP (record_flag))
     {
       visargs[0] = function;
       for (i = 1; i < count + 1; i++)
@@ -675,7 +680,7 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
 
 DEFUN ("prefix-numeric-value", Fprefix_numeric_value, Sprefix_numeric_value,
   1, 1, 0,
-  "Return numeric meaning of raw prefix argument ARG.\n\
+  "Return numeric meaning of raw prefix argument RAW.\n\
 A raw prefix argument is what you get from `(interactive \"P\")'.\n\
 Its numeric meaning is what you would get from `(interactive \"p\")'.")
   (raw)

@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -39,6 +40,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/inode.h>
 #endif /* lint */
 
+#ifdef MSDOS
+#if __DJGPP__ < 2
+#include <unistd.h>	/* to get X_OK */
+#endif
+#include "msdos.h"
+#endif
+
 #ifndef X_OK
 #define X_OK 01
 #endif
@@ -48,12 +56,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <stdlib.h>
 #endif
 
-#ifdef MSDOS
-#include "msdos.h"
-#endif
-
 #include <math.h>
 #endif /* LISP_FLOAT_TYPE */
+
+#ifdef HAVE_SETLOCALE
+#include <locale.h>
+#endif /* HAVE_SETLOCALE */
 
 #ifndef O_RDONLY
 #define O_RDONLY 0
@@ -245,6 +253,7 @@ extern Lisp_Object read_char ();
    get isn't an ASCII character with modifiers.  If it's zero but
    ASCII_REQUIRED is non-zero, we just re-read until we get an ASCII
    character.  */
+
 Lisp_Object
 read_filtered_event (no_switch_frame, ascii_required, error_nonascii)
      int no_switch_frame, ascii_required, error_nonascii;
@@ -264,7 +273,7 @@ read_filtered_event (no_switch_frame, ascii_required, error_nonascii)
     goto retry;
 
   /* switch-frame events are put off until after the next ASCII
-     character.  This is better than signalling an error just because
+     character.  This is better than signaling an error just because
      the last characters were typed to a separate minibuffer frame,
      for example.  Eventually, some code which can deal with
      switch-frame events will read it and process it.  */
@@ -336,7 +345,7 @@ DEFUN ("read-event", Fread_event, Sread_event, 0, 0, 0,
 
 DEFUN ("read-char-exclusive", Fread_char_exclusive, Sread_char_exclusive, 0, 0, 0,
   "Read a character from the command input (keyboard or macro).\n\
-It is returned as a number.  Non character events are ignored.")
+It is returned as a number.  Non-character events are ignored.")
   ()
 {
   return read_filtered_event (1, 1, 0);
@@ -507,9 +516,11 @@ load_descriptor_unwind (oldlist)
 void
 close_load_descs ()
 {
+#ifndef WINDOWSNT
   Lisp_Object tail;
   for (tail = load_descriptor_list; !NILP (tail); tail = XCONS (tail)->cdr)
     close (XFASTINT (XCONS (tail)->car));
+#endif
 }
 
 static int
@@ -803,16 +814,16 @@ nil means discard it; anything else is stream for print.\n\
 \n\
 If there is no error, point does not move.  If there is an error,\n\
 point remains at the end of the last character read from the buffer.")
-  (bufname, printflag)
-     Lisp_Object bufname, printflag;
+  (buffer, printflag)
+     Lisp_Object buffer, printflag;
 {
   int count = specpdl_ptr - specpdl;
   Lisp_Object tem, buf;
 
-  if (NILP (bufname))
+  if (NILP (buffer))
     buf = Fcurrent_buffer ();
   else
-    buf = Fget_buffer (bufname);
+    buf = Fget_buffer (buffer);
   if (NILP (buf))
     error ("No such buffer.");
 
@@ -867,8 +878,8 @@ nil means discard it; anything else is stream for printing it.\n\
 \n\
 If there is no error, point does not move.  If there is an error,\n\
 point remains at the end of the last character read from the buffer.")
-  (b, e, printflag)
-     Lisp_Object b, e, printflag;
+  (start, end, printflag)
+     Lisp_Object start, end, printflag;
 {
   int count = specpdl_ptr - specpdl;
   Lisp_Object tem, cbuf;
@@ -885,9 +896,9 @@ point remains at the end of the last character read from the buffer.")
     record_unwind_protect (save_excursion_restore, save_excursion_save ());
   record_unwind_protect (save_restriction_restore, save_restriction_save ());
 
-  /* This both uses b and checks its type.  */
-  Fgoto_char (b);
-  Fnarrow_to_region (make_number (BEGV), e);
+  /* This both uses start and checks its type.  */
+  Fgoto_char (start);
+  Fnarrow_to_region (make_number (BEGV), end);
   readevalloop (cbuf, 0, XBUFFER (cbuf)->filename, Feval, !NILP (printflag));
 
   return unbind_to (count, Qnil);
@@ -994,6 +1005,9 @@ read_escape (readcharfun)
   register int c = READCHAR;
   switch (c)
     {
+    case -1:
+      error ("End of file");
+
     case 'a':
       return '\007';
     case 'b':
@@ -1287,13 +1301,13 @@ read1 (readcharfun, pch, first_in_list)
 	      if (saved_doc_string_size == 0)
 		{
 		  saved_doc_string_size = nskip + 100;
-		  saved_doc_string = (char *) malloc (saved_doc_string_size);
+		  saved_doc_string = (char *) xmalloc (saved_doc_string_size);
 		}
 	      if (nskip > saved_doc_string_size)
 		{
 		  saved_doc_string_size = nskip + 100;
-		  saved_doc_string = (char *) realloc (saved_doc_string,
-						       saved_doc_string_size);
+		  saved_doc_string = (char *) xrealloc (saved_doc_string,
+							saved_doc_string_size);
 		}
 
 	      saved_doc_string_position = ftell (instream);
@@ -1835,23 +1849,23 @@ DEFUN ("intern", Fintern, Sintern, 1, 2, 0,
 If there is none, one is created by this function and returned.\n\
 A second optional argument specifies the obarray to use;\n\
 it defaults to the value of `obarray'.")
-  (str, obarray)
-     Lisp_Object str, obarray;
+  (string, obarray)
+     Lisp_Object string, obarray;
 {
   register Lisp_Object tem, sym, *ptr;
 
   if (NILP (obarray)) obarray = Vobarray;
   obarray = check_obarray (obarray);
 
-  CHECK_STRING (str, 0);
+  CHECK_STRING (string, 0);
 
-  tem = oblookup (obarray, XSTRING (str)->data, XSTRING (str)->size);
+  tem = oblookup (obarray, XSTRING (string)->data, XSTRING (string)->size);
   if (!INTEGERP (tem))
     return tem;
 
   if (!NILP (Vpurify_flag))
-    str = Fpurecopy (str);
-  sym = Fmake_symbol (str);
+    string = Fpurecopy (string);
+  sym = Fmake_symbol (string);
 
   ptr = &XVECTOR (obarray)->contents[XINT (tem)];
   if (SYMBOLP (*ptr))
@@ -1866,17 +1880,17 @@ DEFUN ("intern-soft", Fintern_soft, Sintern_soft, 1, 2, 0,
   "Return the canonical symbol whose name is STRING, or nil if none exists.\n\
 A second optional argument specifies the obarray to use;\n\
 it defaults to the value of `obarray'.")
-  (str, obarray)
-     Lisp_Object str, obarray;
+  (string, obarray)
+     Lisp_Object string, obarray;
 {
   register Lisp_Object tem;
 
   if (NILP (obarray)) obarray = Vobarray;
   obarray = check_obarray (obarray);
 
-  CHECK_STRING (str, 0);
+  CHECK_STRING (string, 0);
 
-  tem = oblookup (obarray, XSTRING (str)->data, XSTRING (str)->size);
+  tem = oblookup (obarray, XSTRING (string)->data, XSTRING (string)->size);
   if (!INTEGERP (tem))
     return tem;
   return Qnil;
@@ -2222,10 +2236,19 @@ defvar_kboard (namestring, offset)
   XSYMBOL (sym)->value = val;
 }
 
+/* Record the value of load-path used at the start of dumping
+   so we can see if the site changed it later during dumping.  */
+static Lisp_Object dump_path;
+
 init_lread ()
 {
   char *normal;
   int turn_off_warning = 0;
+
+#ifdef HAVE_SETLOCALE
+  /* Make sure numbers are parsed as we expect.  */
+  setlocale (LC_NUMERIC, "C");
+#endif /* HAVE_SETLOCALE */
 
   /* Compute the default load-path.  */
 #ifdef CANNOT_DUMP
@@ -2244,13 +2267,6 @@ init_lread ()
      from the default before dumping, don't override that value.  */
   if (initialized)
     {
-      Lisp_Object dump_path;
-
-      dump_path = decode_env_path (0, PATH_DUMPLOADSEARCH);
-
-      Vsource_directory = Fexpand_file_name (build_string ("../"),
-					     Fcar (dump_path));
-
       if (! NILP (Fequal (dump_path, Vload_path)))
 	{
 	  Vload_path = decode_env_path (0, normal);
@@ -2288,13 +2304,19 @@ init_lread ()
 	}
     }
   else
-    Vload_path = decode_env_path (0, normal);
+    {
+      /* ../lisp refers to the build directory.
+	 NORMAL refers to the lisp dir in the source directory.  */
+      Vload_path = Fcons (build_string ("../lisp"),
+			  decode_env_path (0, normal));
+      dump_path = Vload_path;
+    }
 #endif
 
 #ifndef WINDOWSNT
   /* When Emacs is invoked over network shares on NT, PATH_LOADSEARCH is 
      almost never correct, thereby causing a warning to be printed out that 
-     confuses users.  Since PATH_LOADSEARCH is always overriden by the
+     confuses users.  Since PATH_LOADSEARCH is always overridden by the
      EMACSLOADPATH environment variable below, disable the warning on NT.  */
 
   /* Warn if dirs in the *standard* path don't exist.  */
@@ -2331,6 +2353,7 @@ init_lread ()
   Vvalues = Qnil;
 
   load_in_progress = 0;
+  Vload_file_name = Qnil;
 
   load_descriptor_list = Qnil;
 }
@@ -2417,7 +2440,12 @@ This is useful when the file being loaded is a temporary copy.");
   DEFVAR_LISP ("source-directory", &Vsource_directory,
      "Directory in which Emacs sources were found when Emacs was built.\n\
 You cannot count on them to still be there!");
-  Vsource_directory = Qnil;
+  Vsource_directory
+    = Fexpand_file_name (build_string ("../"),
+			 Fcar (decode_env_path (0, PATH_DUMPLOADSEARCH)));
+
+  /* Vsource_directory was initialized in init_lread.  */
+
   load_descriptor_list = Qnil;
   staticpro (&load_descriptor_list);
 
@@ -2453,4 +2481,6 @@ You cannot count on them to still be there!");
 
   Qload_file_name = intern ("load-file-name");
   staticpro (&Qload_file_name);
+
+  staticpro (&dump_path);
 }

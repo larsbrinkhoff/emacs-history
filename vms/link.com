@@ -83,7 +83,7 @@ environ
 ! If you don't have MultiNet, comment the following line.
 !multinet:multinet_socket_library/share
 ! If you don't have UCX, comment the following line.
-sys$library:ucx$ipc/library ! You cannot link in the shareable.
+sys$library:ucx$ipc/library ! You cannot link in the sharable.
 ! If you don't link for X, comment the following line.
 sys$share:decw$xlibshr/share
 SYS$SHARE:VAXCRTL/SHARE ! Always link with this library.

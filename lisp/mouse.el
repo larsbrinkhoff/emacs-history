@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -484,11 +485,12 @@ Upon exit, point is at the far edge of the newly visible text."
   "Set the region to the text that the mouse is dragged over.
 Highlight the drag area as you move the mouse.
 This must be bound to a button-down mouse event.
-In Transient Mark mode, the highlighting remains once you
-release the mouse button.  Otherwise, it does not."
+In Transient Mark mode, the highlighting remains as long as the mark
+remains active.  Otherwise, it remains until the next input event."
   (interactive "e")
   (mouse-minibuffer-check start-event)
-  (let* ((start-posn (event-start start-event))
+  (let* ((echo-keystrokes 0)
+	 (start-posn (event-start start-event))
 	 (start-point (posn-point start-posn))
 	 (start-window (posn-window start-posn))
 	 (start-frame (window-frame start-window))
@@ -558,7 +560,7 @@ release the mouse button.  Otherwise, it does not."
 	    ;; Run the binding of the terminating up-event, if possible.
 	    ;; In the case of a multiple click, it gives the wrong results,
 	    ;; because it would fail to set up a region.
-	    (if (and (= (mod mouse-selection-click-count 3) 0) (fboundp fun))
+	    (if nil ;; (and (= (mod mouse-selection-click-count 3) 0) (fboundp fun))
 		;; In this case, we can just let the up-event execute normally.
 		(let ((end (event-end event)))
 		  ;; Set the position in the event before we replay it,
@@ -575,9 +577,13 @@ release the mouse button.  Otherwise, it does not."
 		  (let (last-command this-command)
 		    (push-mark (overlay-start mouse-drag-overlay) t t)
 		    (goto-char (overlay-end mouse-drag-overlay))
-		    (delete-overlay mouse-drag-overlay)
 		    (copy-region-as-kill (point) (mark t))
-		    (mouse-set-region-1))
+		    (let ((inhibit-quit t))
+		      (setq unread-command-events
+			    (cons (read-event) unread-command-events))
+		      (setq quit-flag nil))
+		    (mouse-set-region-1)
+		    (delete-overlay mouse-drag-overlay))
 		(goto-char (overlay-end mouse-drag-overlay))
 		(setq this-command 'mouse-set-point)
 		(delete-overlay mouse-drag-overlay))))
@@ -916,7 +922,8 @@ Highlight the drag area as you move the mouse.
 This must be bound to a button-down mouse event."
   (interactive "e")
   (mouse-minibuffer-check start-event)
-  (let* ((start-posn (event-start start-event))
+  (let* ((echo-keystrokes 0)
+	 (start-posn (event-start start-event))
 	 (start-point (posn-point start-posn))
 	 (start-window (posn-window start-posn))
 	 (start-frame (window-frame start-window))
@@ -1152,50 +1159,75 @@ again.  If you do this twice in the same position, it kills the selection."
 			    (overlay-start mouse-secondary-overlay)
 			    (overlay-end mouse-secondary-overlay)))))))
 
+(defvar mouse-menu-buffer-maxlen 20
+  "*Number of buffers in one pane (submenu) of the buffer menu.
+If we have lots of buffers, divide them into groups of
+`mouse-menu-buffer-maxlen' and make a pane (or submenu) for each one.")
+
 (defun mouse-buffer-menu (event)
   "Pop up a menu of buffers for selection with the mouse.
 This switches buffers in the window that you clicked on,
 and selects that window."
   (interactive "e")
   (mouse-minibuffer-check event)
-  (let ((menu
-	 (list "Buffer Menu"
-	       (cons "Select Buffer"
-		     (let ((tail (buffer-list))
-			   (maxbuf 0)
-			   head)
-		       (while tail
-			 (or (eq ?\ (aref (buffer-name (car tail)) 0))
-			     (setq maxbuf
-				   (max maxbuf
-					(length (buffer-name (car tail))))))
-			 (setq tail (cdr tail)))
-		       (setq tail (buffer-list))
-		       (while tail
-			 (let ((elt (car tail)))
-			   (if (not (string-match "^ "
-						  (buffer-name elt)))
-			       (setq head
-				(cons
-				 (cons
-				  (format
-				   (format "%%%ds  %%s%%s  %%s" maxbuf)
-				   (buffer-name elt)
-				   (if (buffer-modified-p elt) "*" " ")
-				   (save-excursion
-				     (set-buffer elt)
-				     (if buffer-read-only "%" " "))
-				   (or (buffer-file-name elt) 
-				       (save-excursion
-					 (set-buffer elt)
-					 (if list-buffers-directory
-					     (expand-file-name
-					      list-buffers-directory)))
-				       ""))
-				  elt)
-				 head))))
-			 (setq tail (cdr tail)))
-		       (reverse head))))))
+  (let* ((buffers
+	  ;; Make an alist of (MENU-ITEM . BUFFER).
+	  (let ((tail (buffer-list))
+		(maxlen 0)
+		head)
+	    (while tail
+	      (or (eq ?\ (aref (buffer-name (car tail)) 0))
+		  (setq maxlen
+			(max maxlen
+			     (length (buffer-name (car tail))))))
+	      (setq tail (cdr tail)))
+	    (setq tail (buffer-list))
+	    (while tail
+	      (let ((elt (car tail)))
+		(if (not (string-match "^ "
+				       (buffer-name elt)))
+		    (setq head
+			  (cons
+			   (cons
+			    (format
+			     (format "%%%ds  %%s%%s  %%s" maxlen)
+			     (buffer-name elt)
+			     (if (buffer-modified-p elt) "*" " ")
+			     (save-excursion
+			       (set-buffer elt)
+			       (if buffer-read-only "%" " "))
+			     (or (buffer-file-name elt) 
+				 (save-excursion
+				   (set-buffer elt)
+				   (if list-buffers-directory
+				       (expand-file-name
+					list-buffers-directory)))
+				 ""))
+			    elt)
+			   head))))
+	      (setq tail (cdr tail)))
+	    ;; Compensate for the reversal that the above loop does.
+	    (nreverse head)))
+	 (menu
+	  ;; If we have lots of buffers, divide them into groups of 20
+	  ;; and make a pane (or submenu) for each one.
+	  (if (> (length buffers) (/ (* mouse-menu-buffer-maxlen 3) 2))
+	      (let ((buffers buffers) sublists next
+		    (i 1))
+		(while buffers
+		  ;; Pull off the next mouse-menu-buffer-maxlen buffers
+		  ;; and make them the next element of sublist.
+		  (setq next (nthcdr mouse-menu-buffer-maxlen buffers))
+		  (if next
+		      (setcdr (nthcdr (1- mouse-menu-buffer-maxlen) buffers)
+			      nil))
+		  (setq sublists (cons (cons (format "Buffers %d" i) buffers)
+				       sublists))
+		  (setq i (1+ i))
+		  (setq buffers next))
+		(cons "Buffer Menu" (nreverse sublists)))
+	    ;; Few buffers--put them all in one pane.
+	    (list "Buffer Menu" (cons "Select Buffer" buffers)))))
     (let ((buf (x-popup-menu event menu))
 	  (window (posn-window (event-start event))))
       (if buf

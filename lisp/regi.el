@@ -22,8 +22,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -106,7 +107,7 @@ t       -- always produces a true outcome
 `every' -- execute after frame is matched on a line
 
 Note that NEGATE-P and CASE-FOLD-SEARCH are meaningless if PRED is one
-of these special symbols.  Only the first occurance of each symbol in
+of these special symbols.  Only the first occurrence of each symbol in
 a frame entry is used, the rest are ignored.
 
 Your FUNC can return values which control regi processing.  If a list

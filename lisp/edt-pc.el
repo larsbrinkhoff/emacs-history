@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Usage:
 
@@ -38,7 +39,7 @@
 ;; NumLock must be ON.
 ;;
 ;; The PC keypad keys are mapped to the corresponding DEC LK-201
-;; keypad keys according to the corresponding physical possition on
+;; keypad keys according to the corresponding physical position on
 ;; the keyboard.  Thus, the physical position of the PC keypad key
 ;; determines its function, not the PC keycap name.
 ;;

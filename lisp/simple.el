@@ -15,8 +15,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -285,11 +286,7 @@ and KILLP is t if a prefix arg was specified."
 	      (delete-char 1)))
 	(forward-char -1)
 	(setq count (1- count)))))
-  (delete-backward-char arg killp)
-  ;; In overwrite mode, back over columns while clearing them out,
-  ;; unless at end of line.
-  (and overwrite-mode (not (eolp))
-       (save-excursion (insert-char ?\  arg))))
+  (delete-backward-char arg killp))
 
 (defun zap-to-char (arg char)
   "Kill up to and including ARG'th occurrence of CHAR.
@@ -477,7 +474,7 @@ the minibuffer, then read and evaluate the result."
 				       read-expression-map t
 				       '(command-history . 1))))
     ;; If command was added to command-history as a string,
-    ;; get rid of that.  We want only evallable expressions there.
+    ;; get rid of that.  We want only evaluable expressions there.
     (if (stringp (car command-history))
 	(setq command-history (cdr command-history)))
 
@@ -510,7 +507,7 @@ to get different commands to edit and resubmit."
 		   (cons 'command-history arg))))
 
 	  ;; If command was added to command-history as a string,
-	  ;; get rid of that.  We want only evallable expressions there.
+	  ;; get rid of that.  We want only evaluable expressions there.
 	  (if (stringp (car command-history))
 	      (setq command-history (cdr command-history)))
 
@@ -771,54 +768,60 @@ In either case, the output is inserted after point (leaving mark after it)."
   (interactive (list (read-from-minibuffer "Shell command: "
 					   nil nil nil 'shell-command-history)
 		     current-prefix-arg))
-  (if (and output-buffer
-	   (not (or (bufferp output-buffer)  (stringp output-buffer))))
-      (progn (barf-if-buffer-read-only)
-	     (push-mark)
-	     ;; We do not use -f for csh; we will not support broken use of
-	     ;; .cshrcs.  Even the BSD csh manual says to use
-	     ;; "if ($?prompt) exit" before things which are not useful
-	     ;; non-interactively.  Besides, if someone wants their other
-	     ;; aliases for shell commands then they can still have them.
-	     (call-process shell-file-name nil t nil
-			   shell-command-switch command)
-	     ;; This is like exchange-point-and-mark, but doesn't
-	     ;; activate the mark.  It is cleaner to avoid activation,
-	     ;; even though the command loop would deactivate the mark
-	     ;; because we inserted text.
-	     (goto-char (prog1 (mark t)
-			  (set-marker (mark-marker) (point)
-				      (current-buffer)))))
-    ;; Preserve the match data in case called from a program.
-    (save-match-data
-      (if (string-match "[ \t]*&[ \t]*$" command)
-	  ;; Command ending with ampersand means asynchronous.
-	  (let ((buffer (get-buffer-create
-			 (or output-buffer "*Asynch Shell Command*")))
-		(directory default-directory)
-		proc)
-	    ;; Remove the ampersand.
-	    (setq command (substring command 0 (match-beginning 0)))
-	    ;; If will kill a process, query first.
-	    (setq proc (get-buffer-process buffer))
-	    (if proc
-		(if (yes-or-no-p "A command is running.  Kill it? ")
-		    (kill-process proc)
-		  (error "Shell command in progress")))
-	    (save-excursion
-	      (set-buffer buffer)
-	      (setq buffer-read-only nil)
-	      (erase-buffer)
-	      (display-buffer buffer)
-	      (setq default-directory directory)
-	      (setq proc (start-process "Shell" buffer shell-file-name 
-					shell-command-switch command))
-	      (setq mode-line-process '(":%s"))
-	      (require 'shell) (shell-mode)
-	      (set-process-sentinel proc 'shell-command-sentinel)
-	      ))
-	(shell-command-on-region (point) (point) command nil)
-	))))
+  ;; Look for a handler in case default-directory is a remote file name.
+  (let ((handler
+	 (find-file-name-handler (directory-file-name default-directory)
+				 'shell-command)))
+    (if handler
+	(funcall handler 'shell-command command output-buffer)
+      (if (and output-buffer
+	       (not (or (bufferp output-buffer)  (stringp output-buffer))))
+	  (progn (barf-if-buffer-read-only)
+		 (push-mark)
+		 ;; We do not use -f for csh; we will not support broken use of
+		 ;; .cshrcs.  Even the BSD csh manual says to use
+		 ;; "if ($?prompt) exit" before things which are not useful
+		 ;; non-interactively.  Besides, if someone wants their other
+		 ;; aliases for shell commands then they can still have them.
+		 (call-process shell-file-name nil t nil
+			       shell-command-switch command)
+		 ;; This is like exchange-point-and-mark, but doesn't
+		 ;; activate the mark.  It is cleaner to avoid activation,
+		 ;; even though the command loop would deactivate the mark
+		 ;; because we inserted text.
+		 (goto-char (prog1 (mark t)
+			      (set-marker (mark-marker) (point)
+					  (current-buffer)))))
+	;; Preserve the match data in case called from a program.
+	(save-match-data
+	  (if (string-match "[ \t]*&[ \t]*$" command)
+	      ;; Command ending with ampersand means asynchronous.
+	      (let ((buffer (get-buffer-create
+			     (or output-buffer "*Async Shell Command*")))
+		    (directory default-directory)
+		    proc)
+		;; Remove the ampersand.
+		(setq command (substring command 0 (match-beginning 0)))
+		;; If will kill a process, query first.
+		(setq proc (get-buffer-process buffer))
+		(if proc
+		    (if (yes-or-no-p "A command is running.  Kill it? ")
+			(kill-process proc)
+		      (error "Shell command in progress")))
+		(save-excursion
+		  (set-buffer buffer)
+		  (setq buffer-read-only nil)
+		  (erase-buffer)
+		  (display-buffer buffer)
+		  (setq default-directory directory)
+		  (setq proc (start-process "Shell" buffer shell-file-name 
+					    shell-command-switch command))
+		  (setq mode-line-process '(":%s"))
+		  (require 'shell) (shell-mode)
+		  (set-process-sentinel proc 'shell-command-sentinel)
+		  ))
+	    (shell-command-on-region (point) (point) command nil)
+	    ))))))
 
 ;; We have a sentinel to prevent insertion of a termination message
 ;; in the buffer itself.
@@ -865,7 +868,8 @@ In either case, the output is inserted after point (leaving mark after it)."
 		       current-prefix-arg)))
   (if (or replace
 	  (and output-buffer
-	       (not (or (bufferp output-buffer) (stringp output-buffer)))))
+	       (not (or (bufferp output-buffer) (stringp output-buffer))))
+	  (equal (buffer-name (current-buffer)) "*Shell Command Output*"))
       ;; Replace specified region with output from command.
       (let ((swap (and replace (< start end))))
 	;; Don't muck with mark unless REPLACE says we should.
@@ -890,7 +894,7 @@ In either case, the output is inserted after point (leaving mark after it)."
 	      ;; then replace that region with the output.
 	      (progn (setq buffer-read-only nil)
 		     (delete-region (max start end) (point-max))
-		     (delete-region (point-min) (max start end))
+		     (delete-region (point-min) (min start end))
 		     (call-process-region (point-min) (point-max)
 					  shell-file-name t t nil
 					  shell-command-switch command)
@@ -1180,6 +1184,10 @@ yanking point; just return the Nth kill forward."
 (defvar kill-read-only-ok nil
   "*Non-nil means don't signal an error for killing read-only text.")
 
+(put 'text-read-only 'error-conditions
+     '(text-read-only buffer-read-only error))
+(put 'text-read-only 'error-message "Text is read-only")
+
 (defun kill-region (beg end)
   "Kill between point and mark.
 The text is deleted but saved in the kill ring.
@@ -1209,7 +1217,10 @@ to make one entry in the kill ring."
     (if kill-read-only-ok
 	(message "Read only text copied to kill ring")
       (setq this-command 'kill-region)
-      (barf-if-buffer-read-only)))
+      ;; Signal an error if the buffer is read-only.
+      (barf-if-buffer-read-only)
+      ;; If the buffer isn't read-only, the text is.
+      (signal 'text-read-only (list (current-buffer)))))
 
    ;; In certain cases, we can arrange for the undo list and the kill
    ;; ring to share the same string object.  This code does that.
@@ -1311,7 +1322,8 @@ comes the newest one."
   (if (not (eq last-command 'yank))
       (error "Previous command was not a yank"))
   (setq this-command 'yank)
-  (let ((before (< (point) (mark t))))
+  (let ((inhibit-read-only t)
+	(before (< (point) (mark t))))
     (delete-region (point) (mark t))
     (set-marker (mark-marker) (point) (current-buffer))
     (insert (current-kill arg))
@@ -1361,10 +1373,15 @@ With argument, rotate that many kills forward (or backward, if negative)."
   "Insert after point the contents of BUFFER.
 Puts mark after the inserted text.
 BUFFER may be a buffer or a buffer name."
-  (interactive (list (progn (barf-if-buffer-read-only)
-			    (read-buffer "Insert buffer: " 
-					 (other-buffer (current-buffer) t)
-					 t))))
+  (interactive
+   (list
+    (progn
+      (barf-if-buffer-read-only)
+      (read-buffer "Insert buffer: "
+		   (if (eq (selected-window) (next-window (selected-window)))
+		       (other-buffer (current-buffer))
+		     (window-buffer (next-window (selected-window))))
+		   t))))
   (or (bufferp buffer)
       (setq buffer (get-buffer buffer)))
   (let (start end newmark)
@@ -2313,6 +2330,9 @@ Setting this variable automatically makes it local to the current buffer.")
 (defconst auto-fill-inhibit-regexp nil
   "*Regexp to match lines which should not be auto-filled.")
 
+;; This function is the auto-fill-function of a buffer
+;; when Auto-Fill mode is enabled.
+;; It returns t if it really did any work.
 (defun do-auto-fill ()
   (let (fc justify bol give-up
 	   (fill-prefix fill-prefix))
@@ -2402,7 +2422,8 @@ Setting this variable automatically makes it local to the current buffer.")
 	    ;; No place to break => stop trying.
 	    (setq give-up t))))
       ;; justify last line
-      (justify-current-line justify t t)))) 
+      (justify-current-line justify t t)
+      t))) 
 
 (defun auto-fill-mode (&optional arg)
   "Toggle auto-fill mode.
@@ -2610,6 +2631,11 @@ in the mode line."
 (defvar blink-matching-paren t
   "*Non-nil means show matching open-paren when close-paren is inserted.")
 
+(defvar blink-matching-paren-on-screen t
+  "*Non-nil means show matching open-paren when it is on screen.
+nil means don't show it (but the open-paren can still be shown
+when it is off screen.")
+
 (defconst blink-matching-paren-distance 12000
   "*If non-nil, is maximum distance to search for matching open-paren.")
 
@@ -2657,7 +2683,8 @@ in the mode line."
 	       (progn
 		(goto-char blinkpos)
 		(if (pos-visible-in-window-p)
-		    (sit-for blink-matching-delay)
+		    (and blink-matching-paren-on-screen
+			 (sit-for blink-matching-delay))
 		  (goto-char blinkpos)
 		  (message
 		   "Matches %s"
@@ -2824,7 +2851,7 @@ Go to the window from which completion was requested."
 
 (defun next-completion (n)
   "Move to the next item in the completion list.
-WIth prefix argument N, move N items (negative N means move backward)."
+With prefix argument N, move N items (negative N means move backward)."
   (interactive "p")
   (while (and (> n 0) (not (eobp)))
     (let ((prop (get-text-property (point) 'mouse-face))

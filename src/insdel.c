@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -209,11 +210,16 @@ gap_right (pos)
   QUIT;
 }
 
-/* Add `amount' to the position of every marker in the current buffer
-   whose current position is between `from' (exclusive) and `to' (inclusive).
+/* Add AMOUNT to the position of every marker in the current buffer
+   whose current position is between FROM (exclusive) and TO (inclusive).
+
    Also, any markers past the outside of that interval, in the direction
    of adjustment, are first moved back to the near end of the interval
-   and then adjusted by `amount'.  */
+   and then adjusted by AMOUNT.
+
+   When the latter adjustment is done, if AMOUNT is negative,
+   we record the adjustment for undo.  (This case happens only for
+   deletion.)  */
 
 static void
 adjust_markers (from, to, amount)
@@ -236,8 +242,14 @@ adjust_markers (from, to, amount)
 	}
       else
 	{
+	  /* Here's the case where a marker is inside text being deleted.
+	     AMOUNT can be negative for gap motion, too,
+	     but then this range contains no markers.  */
 	  if (mpos > from + amount && mpos <= from)
-	    mpos = from + amount;
+	    {
+	      record_marker_adjustment (marker, from + amount - mpos);
+	      mpos = from + amount;
+	    }
 	}
       if (mpos > from && mpos <= to)
 	mpos += amount;
@@ -271,7 +283,7 @@ adjust_markers_for_insert (pos, amount)
    a conceptual change in point as a marker.  In particular, point is
    not crossing any interval boundaries, so there's no need to use the
    usual SET_PT macro.  In fact it would be incorrect to do so, because
-   either the old or the new value of point is out of synch with the
+   either the old or the new value of point is out of sync with the
    current set of intervals.  */
 static void
 adjust_point (amount)
@@ -654,6 +666,12 @@ del_range_1 (from, to, prepare)
   if (prepare)
     prepare_to_modify_buffer (from, to);
 
+  /* Relocate all markers pointing into the new, larger gap
+     to point at the end of the text before the gap.
+     This has to be done before recording the deletion,
+     so undo handles this after reinserting the text.  */
+  adjust_markers (to + GAP_SIZE, to + GAP_SIZE, - numdel - GAP_SIZE);
+
   record_delete (from, numdel);
   MODIFF++;
 
@@ -663,10 +681,6 @@ del_range_1 (from, to, prepare)
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
   offset_intervals (current_buffer, from, - numdel);
-
-  /* Relocate all markers pointing into the new, larger gap
-     to point at the end of the text before the gap.  */
-  adjust_markers (to + GAP_SIZE, to + GAP_SIZE, - numdel - GAP_SIZE);
 
   /* Adjust the overlay center as needed.  This must be done after
      adjusting the markers that bound the overlays.  */
@@ -822,9 +836,8 @@ signal_before_change (start, end)
    POS is the address of the start of the changed text.
    LENDEL is the number of characters of the text before the change.
    (Not the whole buffer; just the part that was changed.)
-   LENINS is the number of characters in the changed text.
-
-   (Hence POS + LENINS - LENDEL is the position after the changed text.)  */
+   LENINS is the number of characters in that part of the text
+   after the change.  */
 
 void
 signal_after_change (pos, lendel, lenins)
@@ -871,7 +884,7 @@ signal_after_change (pos, lendel, lenins)
   if (!NILP (current_buffer->overlays_before)
       || !NILP (current_buffer->overlays_after))
     report_overlay_modification (make_number (pos),
-				 make_number (pos + lenins - lendel),
+				 make_number (pos + lenins),
 				 1,
 				 make_number (pos), make_number (pos + lenins),
 				 make_number (lendel));

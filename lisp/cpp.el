@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -47,11 +48,14 @@
 
 ;;; Customization:
 
+(defvar cpp-config-file (convert-standard-filename ".cpp.el")
+  "*File name to save cpp configuration.")
+
 (defvar cpp-known-face 'invisible
   "*Face used for known cpp symbols.")
 
 (defvar cpp-unknown-face 'highlight
-  "*Face used for unknown cpp cymbols.")
+  "*Face used for unknown cpp symbols.")
 
 (defvar cpp-face-type 'light 
   "*Indicate what background face type you prefer.
@@ -130,7 +134,7 @@ Each entry is a list with the following elements:
     ("bold-italic" . 'bold-italic)
     ("italic" . 'italic)
     ("underline" . 'underline))
-  "Alist of names and faces to be used for monocrome screens.")
+  "Alist of names and faces to be used for monochrome screens.")
 
 (defvar cpp-face-none-list
    '(("default" . default)
@@ -142,7 +146,7 @@ Each entry is a list with the following elements:
 	  cpp-face-dark-list
 	  cpp-face-mono-list
 	  cpp-face-none-list)
-  "All faces used for highligting text inside cpp conditionals.")
+  "All faces used for highlighting text inside cpp conditionals.")
 
 ;;; Parse Buffer:
 
@@ -276,7 +280,7 @@ A prefix arg suppresses display of that buffer."
 
 (defun cpp-parse-error (error)
   ;; Error message issued by the cpp parser.
-  (error (concat error " at line %d") (count-lines (point-min) (point))))
+  (error "%s at line %d" error (count-lines (point-min) (point))))
 
 (defun cpp-parse-reset ()
   "Reset display of cpp conditionals to normal."
@@ -506,10 +510,10 @@ You can also use the keyboard accelerators indicated like this: [K]ey."
 (defun cpp-edit-load ()
   "Load cpp configuration."
   (interactive)
-  (cond ((file-readable-p ".cpp.el")
-	 (load-file ".cpp.el"))
-	((file-readable-p "~/.cpp.el")
-	 (load-file ".cpp.el")))
+  (cond ((file-readable-p cpp-config-file)
+	 (load-file cpp-config-file))
+	((file-readable-p (concat "~/" cpp-config-file))
+	 (load-file cpp-config-file)))
   (if (eq major-mode 'cpp-edit-mode)
       (cpp-edit-reset)))
 
@@ -519,7 +523,7 @@ You can also use the keyboard accelerators indicated like this: [K]ey."
   (require 'pp)
   (save-excursion
     (set-buffer cpp-edit-buffer)
-    (let ((buffer (find-file-noselect ".cpp.el")))
+    (let ((buffer (find-file-noselect cpp-config-file)))
       (set-buffer buffer)
       (erase-buffer)
       (pp (list 'setq 'cpp-known-face
@@ -534,7 +538,7 @@ You can also use the keyboard accelerators indicated like this: [K]ey."
 		(list 'quote cpp-unknown-writable)) buffer)
       (pp (list 'setq 'cpp-edit-list
 		(list 'quote cpp-edit-list)) buffer)
-      (write-file ".cpp.el"))))
+      (write-file cpp-config-file))))
 
 (defun cpp-edit-home ()
   "Switch back to original buffer."

@@ -204,6 +204,11 @@ would consider significant in the current line.  The use of this command,
 together with @key{TAB}, can get the effect of context-based tabbing.  But
 @kbd{M-@key{TAB}} is more convenient in the cases where it is sufficient.
 
+  It may be convenient to prevent use of actual tab characters in
+pictures.  For example, this prevents @kbd{C-x @key{TAB}} from messing
+up the picture.  You can do this by setting the variable
+@code{indent-tabs-mode} to @code{nil}.  @xref{Just Spaces}.
+
 @node Rectangles in Picture,, Tabs in Picture, Picture
 @section Picture Mode Rectangle Commands
 @cindex rectangles and Picture mode

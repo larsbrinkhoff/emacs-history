@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <ctype.h>
-#ifdef MSDOS
+#ifdef DOS_NT
 #include <fcntl.h>
+#if __DJGPP__ >= 2
+#include <io.h>
+#endif
+#endif
+#ifdef WINDOWSNT
+#include <io.h>
 #endif
 
 #define DEFAULT_GROUPING	0x01
@@ -133,9 +139,14 @@ main (argc, argv)
 	{
 	  char buf[18];
 
-#ifdef MSDOS
+#ifdef DOS_NT
+#if (__DJGPP__ >= 2) || (defined WINDOWSNT)
+          if (!isatty (fileno (stdout)))
+	    setmode (fileno (stdout), O_BINARY);
+#else
 	  (stdout)->_flag &= ~_IOTEXT; /* print binary */
 	  _setmode (fileno (stdout), O_BINARY);
+#endif
 #endif
 	  for (;;)
 	    {
@@ -177,9 +188,14 @@ main (argc, argv)
 	}
       else
 	{
-#ifdef MSDOS
+#ifdef DOS_NT
+#if (__DJGPP__ >= 2) || (defined WINDOWSNT)
+          if (!isatty (fileno (fp)))
+	    setmode (fileno (fp), O_BINARY);
+#else
 	  (fp)->_flag &= ~_IOTEXT; /* read binary */
 	  _setmode (fileno (fp), O_BINARY);
+#endif
 #endif
 	  address = 0;
 	  string[0] = ' ';

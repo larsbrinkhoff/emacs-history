@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* Miscellanea.   */
@@ -58,7 +59,9 @@ extern int (*set_terminal_window_hook) ();
 enum scroll_bar_part {
   scroll_bar_above_handle,
   scroll_bar_handle,
-  scroll_bar_below_handle
+  scroll_bar_below_handle,
+  scroll_bar_up_arrow,
+  scroll_bar_down_arrow
 };
 
 /* Return the current position of the mouse.
@@ -147,7 +150,7 @@ extern void (*set_vertical_scroll_bar_hook)
    away is a real pain - can you say set-window-configuration?
    Instead, we just assert at the beginning of redisplay that *all*
    scroll bars are to be removed, and then save scroll bars from the
-   firey pit when we actually redisplay their window.  */
+   fiery pit when we actually redisplay their window.  */
 
 /* Arrange for all scroll bars on FRAME to be removed at the next call
    to `*judge_scroll_bars_hook'.  A scroll bar may be spared if
@@ -219,6 +222,7 @@ enum event_kind
 				   which the key was typed.
 				   .timestamp gives a timestamp (in
 				   milliseconds) for the keystroke.  */
+  timer_event,                  /* A timer fired.  */
   mouse_click,			/* The button number is in .code; it must
 				   be >= 0 and < NUM_MOUSE_BUTTONS, defined
 				   below.
@@ -243,6 +247,10 @@ enum event_kind
 				   whose scroll bar was clicked in.
 				   .timestamp gives a timestamp (in
 				   milliseconds) for the click.  */
+#ifdef WINDOWSNT
+  win32_scroll_bar_click,	/* as for scroll_bar_click, but only generated
+				   by MS-Windows scroll bar controls. */
+#endif
   selection_request_event,	/* Another X client wants a selection from us.
 				   See `struct selection_event'.  */
   selection_clear_event,	/* Another X client cleared our selection.  */
@@ -267,10 +275,11 @@ enum event_kind
    a window system event.  These get turned into their lispy forms when
    they are removed from the event queue.  */
 
-struct input_event {
+struct input_event
+{
 
   /* What kind of event was this?  */
-  enum event_kind kind;
+  int kind;
   
   /* For an ascii_keystroke, this is the character.
      For a non_ascii_keystroke, this is the keysym code.
@@ -278,16 +287,22 @@ struct input_event {
   int code;
   enum scroll_bar_part part;
 
-  /* This field is copied into a vector while the event is in the queue,
-     so that garbage collections won't kill it.  */
-  /* In a menu_bar_event, this is a cons cell whose car is the frame
-     and whose cdr is the Lisp object that is the event's value.  */
-  Lisp_Object frame_or_window;
-
   int modifiers;		/* See enum below for interpretation.  */
 
   Lisp_Object x, y;
   unsigned long timestamp;
+
+  /* This is padding just to put the frame_or_window field
+     past the size of struct selection_event.  */
+  int *padding[2];
+
+  /* This field is copied into a vector while the event is in the queue,
+     so that garbage collections won't kill it.  */
+  /* In a menu_bar_event, this is a cons cell whose car is the frame
+     and whose cdr is the Lisp object that is the event's value.  */
+  /* This field is last so that struct selection_input_event
+     does not overlap with it.  */
+  Lisp_Object frame_or_window;
 };
 
 /* This is used in keyboard.c, to tell how many buttons we will need

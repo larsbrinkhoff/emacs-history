@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -33,6 +34,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <Xm/BulletinB.h>
 #include <Xm/CascadeB.h>
+#include <Xm/CascadeBG.h>
 #include <Xm/DrawingA.h>
 #include <Xm/FileSB.h>
 #include <Xm/Label.h>
@@ -146,9 +148,13 @@ resource_motif_string (widget, name)
   return result;
 }
 
+/* Destroy all of the children of WIDGET
+   starting with number FIRST_CHILD_TO_DESTROY.  */
+
 static void
-destroy_all_children (widget)
+destroy_all_children (widget, first_child_to_destroy)
      Widget widget;
+     int first_child_to_destroy;
 {
   Widget* children;
   unsigned int number;
@@ -157,17 +163,27 @@ destroy_all_children (widget)
   children = XtCompositeChildren (widget, &number);
   if (children)
     {
+      XtUnmanageChildren (children + first_child_to_destroy,
+			  number - first_child_to_destroy);
+
       /* Unmanage all children and destroy them.  They will only be 
-       * really destroyed when we get out of DispatchEvent. */
-      for (i = 0; i < number; i++)
+	 really destroyed when we get out of DispatchEvent.  */
+      for (i = first_child_to_destroy; i < number; i++)
 	{
-	  Widget child = children [i];
-	  if (!child->core.being_destroyed)
-	    {
-	      XtUnmanageChild (child);
-	      XtDestroyWidget (child);
-	    }
+	  Arg al[2];
+	  Widget submenu = 0;
+	  /* Cascade buttons have submenus,and these submenus
+	     need to be freed.  But they are not included in
+	     XtCompositeChildren.  So get it out of the cascade button
+	     and free it.  If this child is not a cascade button,
+	     then submenu should remain unchanged.  */
+	  XtSetArg (al[0], XmNsubMenuId, &submenu); 
+  	  XtGetValues (children[i], al, 1);
+	  if (submenu)
+	    XtDestroyWidget (submenu);
+	  XtDestroyWidget (children[i]);
 	}
+
       XtFree ((char *) children);
     }
 }
@@ -336,11 +352,14 @@ all_dashes_p (s)
   return True;
 }
 
+/* KEEP_FIRST_CHILDREN gives the number of initial children to keep.  */
+
 static void
-make_menu_in_widget (instance, widget, val)
+make_menu_in_widget (instance, widget, val, keep_first_children)
      widget_instance* instance;
      Widget widget;
      widget_value* val;
+     int keep_first_children;
 {
   Widget* children = 0;
   int num_children;
@@ -351,6 +370,11 @@ make_menu_in_widget (instance, widget, val)
   Arg al [256];
   int ac;
   Boolean menubar_p;
+
+  Widget* old_children;
+  unsigned int old_num_children;
+
+  old_children = XtCompositeChildren (widget, &old_num_children);
 
   /* Allocate the children array */
   for (num_children = 0, cur = val; cur; num_children++, cur = cur->next);
@@ -367,7 +391,18 @@ make_menu_in_widget (instance, widget, val)
     XtAddCallback (XtParent (widget), XmNpopdownCallback,
 		   xm_pop_down_callback, (XtPointer)instance);
 
-  for (child_index = 0, cur = val; cur; child_index++, cur = cur->next)
+  /* Preserve the first KEEP_FIRST_CHILDREN old children.  */
+  for (child_index = 0, cur = val; child_index < keep_first_children;
+       child_index++, cur = cur->next)
+    children[child_index] = old_children[child_index];
+
+  /* Check that those are all we have
+     (the caller should have deleted the rest).  */
+  if (old_num_children != keep_first_children)
+    abort ();
+
+  /* Create the rest.  */
+  for (child_index = keep_first_children; cur; child_index++, cur = cur->next)
     {    
       ac = 0;
       XtSetArg (al [ac], XmNsensitive, cur->enabled); ac++;
@@ -404,9 +439,9 @@ make_menu_in_widget (instance, widget, val)
       else
 	{
 	  menu = XmCreatePulldownMenu (widget, cur->name, NULL, 0);
-	  make_menu_in_widget (instance, menu, cur->contents);
+	  make_menu_in_widget (instance, menu, cur->contents, 0);
 	  XtSetArg (al [ac], XmNsubMenuId, menu); ac++;
-	  button = XmCreateCascadeButton (widget, cur->name, al, ac);
+	  button = XmCreateCascadeButtonGadget (widget, cur->name, al, ac);
 
 	  xm_update_label (instance, button, cur);
 
@@ -429,6 +464,8 @@ make_menu_in_widget (instance, widget, val)
     }
 
   XtFree ((char *) children);
+  if (old_children)
+    XtFree ((char *) old_children);
 }
 
 static void
@@ -443,7 +480,7 @@ update_one_menu_entry (instance, widget, val, deep_p)
   Widget menu;
   widget_value* contents;
 
-  if (val->change == NO_CHANGE)
+  if (val->this_one_change == NO_CHANGE)
     return;
 
   /* update the sensitivity and userdata */
@@ -454,7 +491,7 @@ update_one_menu_entry (instance, widget, val, deep_p)
 		 0);
 
   /* update the menu button as a label. */
-  if (val->change >= VISIBLE_CHANGE)
+  if (val->this_one_change >= VISIBLE_CHANGE)
     xm_update_label (instance, widget, val);
 
   /* update the pulldown/pullaside as needed */
@@ -470,7 +507,7 @@ update_one_menu_entry (instance, widget, val, deep_p)
       if (contents)
 	{
 	  menu = XmCreatePulldownMenu (XtParent (widget), XtName (widget), NULL, 0);
-	  make_menu_in_widget (instance, menu, contents);
+	  make_menu_in_widget (instance, menu, contents, 0);
 	  ac = 0;
 	  XtSetArg (al [ac], XmNsubMenuId, menu); ac++;
 	  XtSetValues (widget, al, ac);
@@ -494,39 +531,64 @@ xm_update_menu (instance, widget, val, deep_p)
      widget_value* val;
      Boolean deep_p;
 {
+  Widget* children;
+  unsigned int num_children;
+  int num_children_to_keep = 0;
+  int i;
+  widget_value* cur;
+
+  children = XtCompositeChildren (widget, &num_children);
+
   /* Widget is a RowColumn widget whose contents have to be updated
    * to reflect the list of items in val->contents */
-  if (val->contents->change == STRUCTURAL_CHANGE)
-    {
-      destroy_all_children (widget);
-      make_menu_in_widget (instance, widget, val->contents);
-    }
-  else
-    {
-      /* Update all the buttons of the RowColumn in order. */
-      Widget* children;
-      unsigned int num_children;
-      int i;
-      widget_value* cur;
 
-      children = XtCompositeChildren (widget, &num_children);
+  /* See how many buttons we can keep, and how many we
+     must completely replace.  */
+  if (val->contents == 0)
+    num_children_to_keep = 0;
+  else if (val->contents->change == STRUCTURAL_CHANGE)
+    {
       if (children)
 	{
-	  for (i = 0, cur = val->contents; i < num_children; i++)
+	  for (i = 0, cur = val->contents; i < num_children;
+	       i++, cur = cur->next)
 	    {
-	      if (!cur)
-		abort ();
-	      if (children [i]->core.being_destroyed
-		  || strcmp (XtName (children [i]), cur->name))
-		continue;
-	      update_one_menu_entry (instance, children [i], cur, deep_p);
-	      cur = cur->next;
+	      if (cur->this_one_change == STRUCTURAL_CHANGE)
+		break;
 	    }
-	  XtFree ((char *) children);
+
+	  num_children_to_keep = i;
 	}
-      if (cur)
-	abort ();
     }
+  else
+    num_children_to_keep = num_children;
+
+  /* Update all the buttons of the RowColumn, in order,
+     except for those we are going to replace entirely.  */
+  if (children)
+    {
+      for (i = 0, cur = val->contents; i < num_children_to_keep; i++)
+	{
+	  if (!cur)
+	    abort ();
+	  if (children [i]->core.being_destroyed
+	      || strcmp (XtName (children [i]), cur->name))
+	    continue;
+	  update_one_menu_entry (instance, children [i], cur, deep_p);
+	  cur = cur->next;
+	}
+    }
+
+  /* Now replace from scratch all the buttons after the last
+     place that the top-level structure changed.  */
+  if (val->contents->change == STRUCTURAL_CHANGE)
+    {
+      destroy_all_children (widget, num_children_to_keep);
+      make_menu_in_widget (instance, widget, val->contents,
+			   num_children_to_keep);
+    }
+
+  XtFree ((char *) children);
 }
 
 
@@ -726,7 +788,7 @@ xm_update_one_value (instance, widget, val)
 /* This function is for activating a button from a program.  It's wrong because
    we pass a NULL argument in the call_data which is not Motif compatible.
    This is used from the XmNdefaultAction callback of the List widgets to
-   have a dble-click put down a dialog box like the button woudl do. 
+   have a double-click put down a dialog box like the button would do. 
    I could not find a way to do that with accelerators.
  */
 static void
@@ -841,7 +903,7 @@ make_dialog (name, parent, pop_up_p, shell_title, icon_name, text_input_slot,
       n_children++;
     }
 
-  /* invisible seperator button */
+  /* invisible separator button */
   ac = 0;
   XtSetArg (al[ac], XmNmappedWhenManaged, FALSE); ac++;
   children [n_children] = XmCreateLabel (row, "separator_button", al, ac);

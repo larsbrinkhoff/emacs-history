@@ -1,5 +1,6 @@
-/* This file is the configuration file for GNU/Linux operating systems.
-   Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
+/* This file is the configuration file for Lignux systems
+   (that is,  Linux-based GNU operating systems.)
+   Copyright (C) 1985, 1986, 1992, 1994, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* This file was put together by Michael K. Johnson and Rik Faith.  */
 
@@ -34,31 +36,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* SYSTEM_TYPE should indicate the kind of system you are using.
  It sets the Lisp variable system-type.  */
 
-#define SYSTEM_TYPE "linux"		/* All the best software is free. */
+#define SYSTEM_TYPE "lignux"		/* All the best software is free. */
 
-/* Emacs can read input using SIGIO and buffering characters itself,
-   or using CBREAK mode and making C-g cause SIGINT.
-   The choice is controlled by the variable interrupt_input.
-   Define INTERRUPT_INPUT to make interrupt_input = 1 the default (use SIGIO)
+/* Check the version number of Linux--if it is at least 1.2.0,
+   it is safe to use SIGIO.  */
+#ifndef NOT_C_CODE
+#ifdef emacs
+#ifdef HAVE_LINUX_VERSION_H
+#include <linux/version.h>
 
-   SIGIO can be used only on systems that implement it (4.2 and 4.3).
-   CBREAK mode has two disadvantages
-     1) At least in 4.2, it is impossible to handle the Meta key properly.
-        I hear that in system V this problem does not exist.
-     2) Control-G causes output to be discarded.
-        I do not know whether this can be fixed in system V.
-
-   Another method of doing input is planned but not implemented.
-   It would have Emacs fork off a separate process
-   to read the input and send it to the true Emacs process
-   through a pipe.
-*/
-
-/* There have been suggestions made to add SIGIO to Linux.  If this
-   is done, you may, at your discretion, uncomment the line below.
-*/
-
-/* #define INTERRUPT_INPUT */
+#if LINUX_VERSION_CODE > 0x10200
+#define LINUX_SIGIO_DOES_WORK
+#endif /* LINUX_VERSION_CODE > 0x10200 */
+#endif /* HAVE_LINUX_VERSION_H */
+#endif /* emacs */
+#endif /* NOT_C_CODE */
 
 /* Letter to use in finding device name of first pty,
   if system supports pty's.  'p' means it is /dev/ptyp0  */
@@ -140,7 +132,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* #define LINUX_LDAV_FILE "/proc/loadavg" */
 
-/* This is needed for disknew.c:update_frame */
+/* This is needed for dispnew.c:update_frame */
 
 #ifdef emacs
 #include <stdio.h>  /* Get the definition of _IO_STDIO_H.  */
@@ -168,11 +160,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* As of version 1.1.51, Linux does not actually implement SIGIO.  */
 /* Here we assume that signal.h is already included.  */
 #ifdef emacs
+#ifdef LINUX_SIGIO_DOES_WORK
+#define INTERRUPT_INPUT
+#else
 #undef SIGIO
 /* Some versions of Linux define SIGURG and SIGPOLL as aliases for SIGIO.
    This prevents lossage in process.c.  */
 #undef SIGURG
 #undef SIGPOLL
+#endif
 #endif
 
 /* This is needed for sysdep.c */
@@ -182,6 +178,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_VFORK
 #define HAVE_SYS_SIGLIST
 #define HAVE_GETWD            /* cure conflict with getcwd? */
+#define HAVE_WAIT_HEADER
 
 #define SYSV_SYSTEM_DIR       /* use dirent.h */
 
@@ -190,7 +187,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Best not to include -lg, unless it is last on the command line */
 #define LIBS_DEBUG
-#define LIBS_TERMCAP -ltermcap -lcurses /* save some space with shared libs*/
 #ifndef __ELF__
 #define LIB_STANDARD -lc /* avoid -lPW */
 #else
@@ -226,6 +222,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Paul Abrahams <abrahams@equinox.shaysnet.com> says this is needed.  */
 #define LIB_MOTIF -lXm -lXpm
+
+#ifdef HAVE_LIBNCURSES
+#define TERMINFO
+#define LIBS_TERMCAP -lncurses
+#endif
 
 #define HAVE_SYSVIPC
 
@@ -280,3 +281,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    and the function definitions in libc.  So turn this off.  */
 /* #define REGEXP_IN_LIBC */
 
+/* Use BSD process groups, but use setpgid() instead of setpgrp() to
+   actually set a process group. */
+
+#define BSD_PGRPS
+#define setpgrp(pid,pgid) setpgid((pid),(pgid))

@@ -1738,7 +1738,7 @@ those who wish to customize certain aspects of Supercite need concern
 themselves with it.  It is important to understand though, that any
 conceivable citation style that can be described by a regular expression
 can be recognized by Supercite.  This leads to some interesting
-applications.  For example, if you regularly recieve email from a
+applications.  For example, if you regularly receive email from a
 co-worker that uses an uncommon citation style (say one that employs a
 @samp{|} or @samp{@}} character at the front of the line), it is
 possible for Supercite to recognize this and @emph{coerce} the citation
@@ -1801,7 +1801,7 @@ been matched against the current line.
 @end table
 
 Note that @var{negate-p} and @var{case-fold-search} are ignored if
-@var{pred} is one of these special symbols.  Only the first occurance of
+@var{pred} is one of these special symbols.  Only the first occurrence of
 each symbol in a frame is used; any duplicates are ignored.  Also
 note that for performance reasons, the entries associated with these
 symbols are removed from the frame during the main interpreting loop.
@@ -2349,7 +2349,7 @@ to this interface ``out of the box.''
 @end ifinfo
 @cindex sc-unsupp.el file
 With version 3, Supercite has undergone an almost complete rewrite, and
-has hopefully benefitted in a number of ways, including vast
+has hopefully benefited in a number of ways, including vast
 improvements in the speed of performance, a big reduction in size of the
 code and in the use of Emacs resources, and a much cleaner and flexible
 internal architecture.  The central construct of the info alist, and its

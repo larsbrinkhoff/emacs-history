@@ -1,6 +1,6 @@
 ;;; viper-macs.el --- functions implementing keyboard macros for Viper
 
-;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,11 +15,15 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
+;; Code
 
 (require 'viper-util)
+(require 'viper-keym)
+
 
 ;;; Variables
 
@@ -150,10 +154,11 @@ a key is a symbol, e.g., `a', `\\1', `f2', etc., or a list, e.g.,
 	     '(?\b ?\d '^? '^H (control h) (control \?) backspace delete))
 	    (setq key-seq (subseq key-seq 0 (- (length key-seq) 2))))
 	(setq message
-	      (format ":map%s %s"
-		 variant (if (> (length key-seq) 0)
-			     (prin1-to-string (vip-display-macro key-seq))
-			   "")))
+	      (format
+	       ":map%s %s"
+	       variant (if (> (length key-seq) 0)
+			   (prin1-to-string (vip-display-macro key-seq))
+			 "")))
 	(message message)
 	(setq event (vip-read-key))
 	;;(setq event (vip-read-event))
@@ -215,20 +220,22 @@ a key is a symbol, e.g., `a', `\\1', `f2', etc., or a list, e.g.,
 	      ((member key '(tab (control i) ?\t))
 	       (setq key-seq (subseq key-seq 0 (1- (length key-seq))))
 	       (setq message 
-		     (format ":unmap%s %s"
-			     variant (if (> (length key-seq) 0)
-					 (prin1-to-string
-					  (vip-display-macro key-seq))
-				       "")))
-	       (setq key-seq
-		     (vip-do-sequence-completion key-seq macro-alist message))
-	       ))
-	(setq message 
-	      (format ":unmap%s %s"
+		     (format
+		      ":unmap%s %s"
 		      variant (if (> (length key-seq) 0)
 				  (prin1-to-string
 				   (vip-display-macro key-seq))
 				"")))
+	       (setq key-seq
+		     (vip-do-sequence-completion key-seq macro-alist message))
+	       ))
+	(setq message 
+	      (format
+	       ":unmap%s %s"
+	       variant (if (> (length key-seq) 0)
+			   (prin1-to-string
+			    (vip-display-macro key-seq))
+			 "")))
 	(message message)
 	(setq event (vip-read-key))
 	;;(setq event (vip-read-event))
@@ -253,8 +260,11 @@ a key is a symbol, e.g., `a', `\\1', `f2', etc., or a list, e.g.,
     ))
     
     
+;; Terminate a Vi kbd macro.
+;; optional argument IGNORE, if t, indicates that we are dealing with an
+;; existing macro that needs to be registered, but there is no need to
+;; terminate a kbd macro.
 (defun vip-end-mapping-kbd-macro (&optional ignore)
-  "Terminate kbd macro."
   (interactive)
   (define-key vip-vi-intercept-map "\C-x)" nil)
   (define-key vip-insert-intercept-map "\C-x)" nil)
@@ -391,8 +401,9 @@ If SCOPE is nil, the user is asked to specify the scope."
 			  (if (stringp macro-body) "  ....\"" "  ....]"))
 			 state-name))
 		  t)))
-	  (if (y-or-n-p (format "Save this macro in %s? "
-				(abbreviate-file-name vip-custom-file-name)))
+	  (if (y-or-n-p
+	       (format "Save this macro in %s? "
+		       (vip-abbreviate-file-name vip-custom-file-name)))
 	      (vip-save-string-in-file 
 	       (format "\n(vip-record-kbd-macro %S '%S %s '%S)"
 		       (vip-display-macro macro-name)
@@ -640,9 +651,7 @@ there."
     (princ "  none\n"))
   (princ "\n   ** Global:")
   (if (vip-kbd-global-definition macro)
-      (princ 
-       (format "\n           %S" 
-	       (cdr (vip-kbd-global-pair macro))))
+      (princ (format "\n           %S" (cdr (vip-kbd-global-pair macro))))
     (princ "  none"))
   (princ "\n"))
   
@@ -770,15 +779,28 @@ there."
   
 ;; if seq of Viper key symbols (representing a macro) can be converted to a
 ;; string--do so. Otherwise, do nothing.
-(defun vip-display-macro (macro-name)
-  (cond ((vip-char-symbol-sequence-p macro-name)
-	 (mapconcat 'symbol-name macro-name ""))
-	((vip-char-array-p macro-name)
-	 (mapconcat 'char-to-string macro-name ""))
-	(t macro-name)))
+(defun vip-display-macro (macro-name-or-body)
+  (cond ((vip-char-symbol-sequence-p macro-name-or-body)
+	 (mapconcat 'symbol-name macro-name-or-body ""))
+	((vip-char-array-p macro-name-or-body)
+	 (mapconcat 'char-to-string macro-name-or-body ""))
+	(t macro-name-or-body)))
     
+;; convert sequence of events (that came presumably from emacs kbd macro) into
+;; Viper's macro, which is a vector of the form
+;; [ desc desc ... ]
+;; Each desc is either a symbol of (meta symb), (shift symb), etc.
+;; Here we purge events that happen to be lists. In most cases, these events
+;; got into a macro definition unintentionally; say, when the user moves mouse
+;; during a macro definition, then something like (switch-frame ...) might get
+;; in. Another reason for purging lists-events is that we can't store them in
+;; textual form (say, in .emacs) and then read them back.
 (defun vip-events-to-macro (event-seq)
-  (vconcat (mapcar 'vip-event-key event-seq)))
+  (vconcat (delq nil (mapcar (function (lambda (elt)
+					 (if (consp elt)
+					     nil
+					   (vip-event-key elt))))
+			     event-seq))))
   
 ;; convert strings or arrays of characters to Viper macro form
 (defun vip-char-array-to-macro (array)
@@ -789,10 +811,10 @@ there."
       (setq macro vec))
     (vconcat (mapcar 'vip-event-key macro))))
     
-;; For macros bodies and names, goes over and checks if all members are
+;; For macros bodies and names, goes over MACRO and checks if all members are
 ;; names of keys (actually, it only checks if they are symbols or lists
-;; if a digit is found, it is converted into a symbol (0 -> \0, etc).
-;; If not list or vector, doesn't change its argument
+;; if a digit is found, it is converted into a symbol (e.g., 0 -> \0, etc).
+;; If MACRO is not a list or vector -- doesn't change MACRO.
 (defun vip-fixup-macro (macro)
   (let ((len (length macro))
 	(idx 0)
@@ -811,7 +833,6 @@ there."
 			    (setcar (nthcdr idx macro)
 				    (intern (char-to-string (+ ?0 elt)))))
 			   )))
-		;;(setq break t)))
 		((listp elt)
 		 (vip-fixup-macro elt))
 		((symbolp elt) nil)
@@ -903,7 +924,7 @@ there."
 	       (setq vip-last-macro-reg reg)
 	       (vip-set-register-macro reg))))
 	  (t
-	   (error (format "`%c': Unknown register" reg))))))
+	   (error "`%c': Unknown register" reg)))))
 	   
 
 (defun vip-global-execute ()

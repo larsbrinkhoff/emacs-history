@@ -94,6 +94,7 @@ static int yylex ();
 static int yyerror ();
 
 #define EPOCH		1970
+#define DOOMSDAY	2038
 #define HOUR(x)		((time_t)(x) * 60)
 #define SECSPERDAY	(24L * 60L * 60L)
 
@@ -616,11 +617,13 @@ Convert (Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode)
 
   if (Year < 0)
     Year = -Year;
-  if (Year < 100)
+  if (Year < DOOMSDAY-2000)
+    Year += 2000;
+  else if (Year < 100)
     Year += 1900;
   DaysInMonth[1] = Year % 4 == 0 && (Year % 100 != 0 || Year % 400 == 0)
     ? 29 : 28;
-  if (Year < EPOCH || Year > 1999
+  if (Year < EPOCH || Year >= DOOMSDAY
       || Month < 1 || Month > 12
       /* Lint fluff:  "conversion from long may lose accuracy" */
       || Day < 1 || Day > DaysInMonth[(int)--Month])
@@ -685,7 +688,7 @@ RelativeMonth (Start, RelMonth)
   if (RelMonth == 0)
     return 0;
   tm = localtime (&Start);
-  Month = 12 * tm->tm_year + tm->tm_mon + RelMonth;
+  Month = 12 * (1900 + tm->tm_year) + tm->tm_mon + RelMonth;
   Year = Month / 12;
   Month = Month % 12 + 1;
   return DSTcorrect (Start,

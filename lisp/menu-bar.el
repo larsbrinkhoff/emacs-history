@@ -1,9 +1,9 @@
 ;;; menu-bar.el --- define a default menu bar.
 
+;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+
 ;; Author: RMS
 ;; Keywords: internal
-
-;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,12 +18,21 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;; Avishai Yacobi suggested some menu rearrangements.
 
 ;;; Code:
+
+;;; User options:
+
+(defvar buffers-menu-max-size 10
+  "*Maximum number of entries which may appear on the Buffers menu.
+If this is 10, then only the ten most-recently-selected buffers are shown.
+If this is nil, then all buffers are shown.
+A large number or nil slows down menu responsiveness.")
 
 ;; Don't clobber an existing menu-bar keymap, to preserve any menu-bar key
 ;; definitions made in loaddefs.el.
@@ -58,7 +67,7 @@
 (define-key menu-bar-tools-menu [separator-vc]
   '("--"))
 
-(define-key menu-bar-tools-menu [vc-menu]
+(define-key menu-bar-tools-menu [vc]
   (cons "Version Control" vc-menu-map))
 
 (define-key menu-bar-tools-menu [separator-compare]
@@ -189,25 +198,25 @@
 (define-key menu-bar-search-menu [separator-search]
   '("--"))
 
-(define-key menu-bar-search-menu [nonincremental-repeat-re-search-back]
+(define-key menu-bar-search-menu [repeat-regexp-back]
   '("Repeat Regexp Backwards" . nonincremental-repeat-re-search-backward))
-(define-key menu-bar-search-menu [nonincremental-repeat-search-back]
+(define-key menu-bar-search-menu [repeat-search-back]
   '("Repeat Backwards" . nonincremental-repeat-search-backward))
-(define-key menu-bar-search-menu [nonincremental-repeat-re-search-fwd]
+(define-key menu-bar-search-menu [repeat-regexp-fwd]
   '("Repeat Regexp" . nonincremental-repeat-re-search-forward))
-(define-key menu-bar-search-menu [nonincremental-repeat-search-fwd]
+(define-key menu-bar-search-menu [repeat-search-fwd]
   '("Repeat Search" . nonincremental-repeat-search-forward))
 
 (define-key menu-bar-search-menu [separator-repeat]
   '("--"))
 
-(define-key menu-bar-search-menu [re-search-back]
+(define-key menu-bar-search-menu [re-search-backward]
   '("Regexp Search Backwards..." . nonincremental-re-search-backward))
-(define-key menu-bar-search-menu [search-back]
+(define-key menu-bar-search-menu [search-backward]
   '("Search Backwards..." . nonincremental-search-backward))
-(define-key menu-bar-search-menu [re-search-fwd]
+(define-key menu-bar-search-menu [re-search-forward]
   '("Regexp Search..." . nonincremental-re-search-forward))
-(define-key menu-bar-search-menu [search-fwd]
+(define-key menu-bar-search-menu [search-forward]
   '("Search..." . nonincremental-search-forward))
 
 (if (fboundp 'start-process)
@@ -423,12 +432,6 @@ Do the same for the keys of the same name."
 ;; It gets overridden below when menu-bar-update-buffers is called.
 (define-key global-map [menu-bar buffer]
   (cons "Buffers" (make-sparse-keymap "Buffers")))
-
-(defvar buffers-menu-max-size 10
-  "*Maximum number of entries which may appear on the Buffers menu.
-If this is 10, then only the ten most-recently-selected buffers are shown.
-If this is nil, then all buffers are shown.
-A large number or nil slows down menu responsiveness.")
 
 (defvar list-buffers-directory nil)
 

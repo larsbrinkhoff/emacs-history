@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
 hacked on by jwz@lucid.com 17-jun-91
   o  added a compile-time switch to turn on simple sanity checking;
@@ -251,8 +252,9 @@ Lisp_Object Qbytecode;
 
 DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
   "Function used internally in byte-compiled code.\n\
-The first argument is a string of byte code; the second, a vector of constants;\n\
-the third, the maximum stack depth used in this function.\n\
+The first argument, BYTESTR, is a string of byte code;\n\
+the second, VECTOR, a vector of constants;\n\
+the third, MAXDEPTH, the maximum stack depth used in this function.\n\
 If the third argument is incorrect, Emacs may crash.")
   (bytestr, vector, maxdepth)
      Lisp_Object bytestr, vector, maxdepth;

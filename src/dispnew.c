@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <signal.h>
@@ -39,6 +40,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "disptab.h"
 #include "indent.h"
 #include "intervals.h"
+#include "blockinput.h"
 
 #include "systty.h"
 #include "syssignal.h"
@@ -298,7 +300,7 @@ make_frame_glyphs (frame, empty)
       bzero (new->total_contents, total_glyphs);
 
       new->total_charstarts = (int *) xmalloc (total_charstarts);
-      bzero (new->total_charstarts, total_glyphs);
+      bzero (new->total_charstarts, total_charstarts);
     }
   else
     {
@@ -1342,7 +1344,7 @@ update_frame (f, force, inhibit_hairy_id)
 	  /* These cases apply only to the frame that contains
 	     the active minibuffer window.  */
 	  && FRAME_HAS_MINIBUF_P (f)
-	  && EQ (FRAME_MINIBUF_WINDOW (f), minibuf_window))
+	  && EQ (FRAME_MINIBUF_WINDOW (f), echo_area_window))
 	{
 	  int top = XINT (XWINDOW (FRAME_MINIBUF_WINDOW (f))->top);
 	  int row, col;
@@ -2144,6 +2146,15 @@ change_frame_size_1 (frame, newheight, newwidth, pretend, delay)
       && newwidth == FRAME_WIDTH (frame))
     return;
 
+  BLOCK_INPUT;
+
+#ifdef MSDOS
+  /* We only can set screen dimensions to certain values supported
+     by our video hardware.  Try to find the smallest size greater
+     or equal to the requested dimensions.  */
+  dos_set_window_size (&newheight, &newwidth);
+#endif
+
   if (newheight != FRAME_HEIGHT (frame))
     {
       if (FRAME_HAS_MINIBUF_P (frame)
@@ -2202,21 +2213,23 @@ change_frame_size_1 (frame, newheight, newwidth, pretend, delay)
 
   remake_frame_glyphs (frame);
   calculate_costs (frame);
+
+  UNBLOCK_INPUT;
 }
 
 DEFUN ("send-string-to-terminal", Fsend_string_to_terminal,
   Ssend_string_to_terminal, 1, 1, 0,
   "Send STRING to the terminal without alteration.\n\
 Control characters in STRING will have terminal-dependent effects.")
-  (str)
-     Lisp_Object str;
+  (string)
+     Lisp_Object string;
 {
-  CHECK_STRING (str, 0);
-  fwrite (XSTRING (str)->data, 1, XSTRING (str)->size, stdout);
+  CHECK_STRING (string, 0);
+  fwrite (XSTRING (string)->data, 1, XSTRING (string)->size, stdout);
   fflush (stdout);
   if (termscript)
     {
-      fwrite (XSTRING (str)->data, 1, XSTRING (str)->size, termscript);
+      fwrite (XSTRING (string)->data, 1, XSTRING (string)->size, termscript);
       fflush (termscript);
     }
   return Qnil;
@@ -2300,7 +2313,7 @@ Emacs was built without floating point support.\n\
   else
     sec += usec / 1000000, usec %= 1000000;
 
-  if (sec <= 0)
+  if (sec < 0 || (sec == 0 && usec == 0))
     return Qnil;
 
   {
@@ -2359,7 +2372,9 @@ sit_for (sec, usec, reading, display)
 {
   Lisp_Object read_kbd;
 
-  if (detect_input_pending ())
+  swallow_events (display);
+
+  if (detect_input_pending_run_timers (display))
     return Qnil;
 
   if (display)
@@ -2411,7 +2426,7 @@ fraction of a second.  Optional second arg MILLISECONDS specifies an\n\
 additional wait period, in milliseconds; this may be useful if your\n\
 Emacs was built without floating point support.\n\
 \(Not all operating systems support waiting for a fraction of a second.)\n\
-Optional third arg non-nil means don't redisplay, just wait for input.\n\
+Optional third arg NODISP non-nil means don't redisplay, just wait for input.\n\
 Redisplay is preempted as always if input arrives, and does not happen\n\
 if input is available before it starts.\n\
 Value is t if waited the full time with no input arriving.")
@@ -2472,17 +2487,20 @@ init_display ()
      terminal is so dumb that emacs gives up before and doesn't bother
      using the window system.
 
-     If the DISPLAY environment variable is set, try to use X, and die
-     with an error message if that doesn't work.  */
+     If the DISPLAY environment variable is set and nonempty,
+     try to use X, and die with an error message if that doesn't work.  */
 
 #ifdef HAVE_X_WINDOWS
   if (! display_arg)
     {
+      char *display;
 #ifdef VMS
-      display_arg = (getenv ("DECW$DISPLAY") != 0);
+      display = getenv ("DECW$DISPLAY");
 #else
-      display_arg = (getenv ("DISPLAY") != 0);
+      display = getenv ("DISPLAY");
 #endif
+
+      display_arg = (display != 0 && *display != 0);
     }
 
   if (!inhibit_window_system && display_arg)
@@ -2492,6 +2510,12 @@ init_display ()
       Vwindow_system_version = make_number (11);
 #else
       Vwindow_system_version = make_number (10);
+#endif
+#if defined (LINUX) && defined (HAVE_LIBNCURSES)
+      /* In some versions of ncurses,
+	 tputs crashes if we have not called tgetent.
+	 So call tgetent.  */
+      { char b[2044]; tgetent (b, "xterm");}
 #endif
       return;
     }

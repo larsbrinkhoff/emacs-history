@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -47,7 +48,9 @@
 ;;;###autoload
 (defun display-table-slot (display-table slot)
   "Return the value of the extra slot in DISPLAY-TABLE named SLOT.
-SLOT may be a number from 0 to 5 inclusive, or a slot name (symbol)."
+SLOT may be a number from 0 to 5 inclusive, or a slot name (symbol).
+Valid symbols are `truncation', `wrap', `escape', `control',
+`selective-display', and `vertical-border'."
   (let ((slot-number
 	 (if (numberp slot) slot
 	   (or (get slot 'display-table-slot)
@@ -58,7 +61,8 @@ SLOT may be a number from 0 to 5 inclusive, or a slot name (symbol)."
 (defun set-display-table-slot (display-table slot value)
   "Set the value of the extra slot in DISPLAY-TABLE named SLOT to VALUE.
 SLOT may be a number from 0 to 5 inclusive, or a name (symbol).
-See `display-table-slot-name-alist' for the names and numbers."
+Valid symbols are `truncation', `wrap', `escape', `control',
+`selective-display', and `vertical-border'."
   (let ((slot-number
 	 (if (numberp slot) slot
 	   (or (get slot 'display-table-slot)
@@ -181,9 +185,13 @@ With prefix argument, enable European character display iff arg is positive."
   (if (or (<= (prefix-numeric-value arg) 0)
 	  (and (null arg)
 	       (char-table-p standard-display-table)
-	       (equal (aref standard-display-table 160) [160])))
+	       ;; Test 161, because 160 displays as a space.
+	       (equal (aref standard-display-table 161) [161])))
       (standard-display-default 160 255)
-    (standard-display-8bit 160 255)))
+    (standard-display-8bit 160 255)
+    ;; Make non-line-break space display as a plain space.
+    ;; Most X fonts do the wrong thing for code 160.
+    (aset standard-display-table 160 [32])))
 
 (provide 'disp-table)
 

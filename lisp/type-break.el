@@ -118,7 +118,7 @@ will occur; only scheduled ones will.
 Keys with bucky bits (shift, control, meta, etc) are counted as only one
 keystroke even though they really require multiple keys to generate them.
 
-The command `type-break-guestimate-keystroke-threshold' can be used to
+The command `type-break-guesstimate-keystroke-threshold' can be used to
 guess a reasonably good pair of values for this variable.")
 
 (defvar type-break-query-function 'yes-or-no-p
@@ -222,7 +222,45 @@ remove themselves after running.")
 (defvar type-break-current-keystroke-warning-interval nil)
 (defvar type-break-time-warning-count 0)
 (defvar type-break-keystroke-warning-count 0)
+
+;; This should return t if warnings were enabled, nil otherwise.
+(defsubst type-break-check-keystroke-warning ()
+  ;; This is safe because the caller should have checked that the cdr was
+  ;; non-nil already.
+  (let ((left (- (cdr type-break-keystroke-threshold)
+                 type-break-keystroke-count)))
+    (cond
+     ((null (car type-break-current-keystroke-warning-interval))
+      nil)
+     ((> left (car type-break-current-keystroke-warning-interval))
+      nil)
+     (t
+      (while (and (car type-break-current-keystroke-warning-interval)
+                  (< left (car type-break-current-keystroke-warning-interval)))
+        (setq type-break-current-keystroke-warning-interval
+              (cdr type-break-current-keystroke-warning-interval)))
+      (setq type-break-keystroke-warning-count type-break-warning-repeat)
+      (add-hook 'type-break-post-command-hook 'type-break-keystroke-warning)
+      (setq type-break-warning-countdown-string (number-to-string left))
+      (setq type-break-warning-countdown-string-type "keystrokes")
+      t))))
 
+;; Compute the difference, in seconds, between a and b, two structures
+;; similar to those returned by `current-time'.
+;; Use addition rather than logand since that is more robust; the low 16
+;; bits of the seconds might have been incremented, making it more than 16
+;; bits wide.
+(defsubst type-break-time-difference (a b)
+  (+ (lsh (- (car b) (car a)) 16)
+     (- (car (cdr b)) (car (cdr a)))))
+
+(defsubst type-break-format-time (secs)
+  (let ((mins (/ secs 60)))
+    (cond
+     ((= mins 1) (format "%d minute" mins))
+     ((> mins 0) (format "%d minutes" mins))
+     ((= secs 1) (format "%d second" secs))
+     (t (format "%d seconds" secs)))))
 
 ;;;###autoload
 (defun type-break-mode (&optional prefix)
@@ -263,7 +301,7 @@ or not to continue.
 
 The variable `type-break-keystroke-threshold' is used to determine the
 thresholds at which typing breaks should be considered.  You can use
-the command `type-break-guestimate-keystroke-threshold' to try to
+the command `type-break-guesstimate-keystroke-threshold' to try to
 approximate good values for this.
 
 There are several variables that affect how or when warning messages about
@@ -498,7 +536,7 @@ keystroke threshold has been exceeded."
         (type-break-schedule))
        (t
         ;; If keystroke count is within min-threshold of
-        ;; max-threshold, lower it to reduce the liklihood of an
+        ;; max-threshold, lower it to reduce the likelihood of an
         ;; immediate subsequent query.
         (and max-threshold
              min-threshold
@@ -556,7 +594,7 @@ keystroke threshold has been exceeded."
          ((let ((type-break-mode nil)
                 ;; yes-or-no-p sets this-command to exit-minibuffer,
                 ;; which hoses undo or yank-pop (if you happened to be
-                ;; yanking just when the query occured).
+                ;; yanking just when the query occurred).
                 (this-command this-command))
             (funcall type-break-query-function 
                      "Take a break from typing now? "))
@@ -646,7 +684,7 @@ Current keystroke count     : %s"
                    type-break-keystroke-count))))
 
 ;;;###autoload
-(defun type-break-guestimate-keystroke-threshold (wpm &optional wordlen frac)
+(defun type-break-guesstimate-keystroke-threshold (wpm &optional wordlen frac)
   "Guess values for the minimum/maximum keystroke threshold for typing breaks.
 
 If called interactively, the user is prompted for their guess as to how
@@ -781,7 +819,7 @@ FRAC should be the inverse of the fractional value; for example, a value of
             (read-char)
             (kill-buffer "*Life*"))
         (life-extinct
-         (message (get 'life-extinct 'error-message))
+         (message "%s" (get 'life-extinct 'error-message))
          (sit-for 3)
          ;; restart demo
          (setq continue t))

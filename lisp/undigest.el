@@ -1,6 +1,6 @@
 ;;; undigest.el --- digest-cracking support for the RMAIL mail reader
 
-;; Copyright (C) 1985, 1986, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1994, 1996 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -130,5 +131,43 @@ Leaves original message, deleted, before the undigestified messages."
 	     (narrow-to-region (point-min) (1+ (point-max)))
 	     (delete-region (point-min) (point-max))
 	     (rmail-show-message rmail-current-message))))))
+
+(defun unforward-rmail-message ()
+  "Extract a forwarded message from the containing message.
+This puts the forwarded message into a separate rmail message
+following the containing message."
+  (interactive)
+  (narrow-to-region (rmail-msgbeg rmail-current-message)
+		    (rmail-msgend rmail-current-message))
+  (goto-char (point-min))
+  (let (beg end (buffer-read-only nil) msg-string who-forwarded-it)
+    (setq who-forwarded-it (mail-fetch-field "From"))
+    (if (re-search-forward "^----" nil t)
+	nil
+      (error "No forwarded message"))
+    (forward-line 1)
+    (setq beg (point))
+    (if (re-search-forward "^----" nil t)
+	(setq end (match-beginning 0))
+      (error "No terminator for forwarded message"))
+    (widen)
+    (setq msg-string (buffer-substring beg end))
+    (goto-char (rmail-msgend rmail-current-message))
+    (narrow-to-region (point) (point))
+    (insert "\^_\^L\n0, unseen,,\n*** EOOH ***\n")
+    (narrow-to-region (point) (point))
+    (insert "Forwarded-by: " who-forwarded-it "\n")
+    (insert msg-string)
+    (goto-char (point-min))
+    (while (not (eobp))
+      (if (looking-at "- ")
+	  (delete-region (point) (+ 2 (point))))
+      (forward-line 1))
+    (let ((n rmail-current-message))
+      (rmail-forget-messages)
+      (rmail-show-message n)
+      (if (rmail-summary-exists)
+	  (rmail-select-summary
+	   (rmail-update-summary))))))
 
 ;;; undigest.el ends here

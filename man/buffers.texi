@@ -89,6 +89,11 @@ value of @code{default-major-mode} (@pxref{Major Modes}).
 can also be used to switch to an existing file-visiting buffer.
 @xref{Visiting}.
 
+  Emacs uses buffer names that start with a space for internal purposes.
+It treats these buffers specially in minor ways---for example, by
+default they do not record undo information.  It is best to avoid using
+such buffer names yourself.
+
 @node List Buffers
 @section Listing Existing Buffers
 

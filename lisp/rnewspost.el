@@ -18,10 +18,11 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
-;; Change Log:
+;;; Change Log:
 
 ;; moved posting and mail code from rnews.el
 ;;	tower@prep.ai.mit.edu Wed Oct 29 1986
@@ -46,7 +47,7 @@
 ;; imported from rmail and modified to work with rnews ...
 ;; Mon Mar 25,1985 at 03:07:04 ads@mit-hermes.
 ;; this is done so that rnews can operate independently from rmail.el and
-;; sendmail and dosen't have to autoload these functions.
+;; sendmail and doesn't have to autoload these functions.
 ;;
 ;;; >> Nuked by Mly to autoload those functions again, as the duplication of
 ;;; >>  code was making maintenance too difficult.
@@ -95,8 +96,6 @@
 	(cons "News" (make-sparse-keymap "News")))
       (define-key news-reply-mode-map [menu-bar news news-caesar-buffer-body]
 	'("Rot13" . news-caesar-buffer-body))
-      (define-key news-reply-mode-map [menu-bar news news-reply-signature]
-	'("Signature" . news-reply-signature))
       (define-key news-reply-mode-map [menu-bar news news-reply-yank-original]
 	'("Yank Original" . news-reply-yank-original))
       (define-key news-reply-mode-map [menu-bar news mail-fill-yanked-message]
@@ -139,13 +138,11 @@ C-c C-r  caesar rotate all letters by 13 places in the article's body (rot13)."
 		paragraph-separate))
   (run-hooks 'text-mode-hook 'news-reply-mode-hook))
 
-(defvar news-reply-yank-from
-  "Save `From:' field for `news-reply-yank-original'."
-  "")
+(defvar news-reply-yank-from ""
+  "Save `From:' field for `news-reply-yank-original'.")
 
-(defvar news-reply-yank-message-id
-  "Save `Message-Id:' field for `news-reply-yank-original'."
-  "")
+(defvar news-reply-yank-message-id ""
+  "Save `Message-Id:' field for `news-reply-yank-original'.")
 
 (defun news-reply-yank-original (arg)
   "Insert the message being replied to, if any (in Mail mode).
@@ -221,7 +218,7 @@ summary (abstract) of the message."
 (defun news-reply-signature ()
   "The inews program appends `~/.signature' automatically."
   (interactive)
-  (message "`~/.signature' will be appended automatically."))
+  (message "Posting news will append your signature automatically."))
 
 (defun news-setup (to subject in-reply-to newsgroups replybuffer)
   "Set up the news reply or posting buffer with the proper headers and mode."

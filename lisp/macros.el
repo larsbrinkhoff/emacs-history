@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -44,6 +45,8 @@ Such a \"function\" cannot be called from Lisp, but it is a valid editor command
        (not (vectorp (symbol-function symbol)))
        (error "Function %s is already defined and not a keyboard macro."
 	      symbol))
+  (if (string-equal symbol "")
+      (error "No command name given"))
   (fset symbol last-kbd-macro))
 
 ;;;###autoload
@@ -194,7 +197,7 @@ Your options are: \\<query-replace-map>
 	(while loop
 	  (let ((key (let ((executing-macro nil)
 			   (defining-kbd-macro nil))
-		       (message msg)
+		       (message "%s" msg)
 		       (read-event)))
 		def)
 	    (setq key (vector key))

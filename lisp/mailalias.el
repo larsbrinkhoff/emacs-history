@@ -1,6 +1,6 @@
-;;; mailalias.el --- expand mailing address aliases defined in ~/.mailrc.
+;;; mailalias.el --- expand and complete mailing address aliases
 
-;; Copyright (C) 1985, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1987, 1995, 1996 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -31,6 +32,76 @@
 
 (require 'sendmail)
 
+(defvar mail-names t
+  "Alist of local users, aliases and directory entries as available.
+When t this still needs to be initialized.
+This is the basis for `mail-complete'.")
+
+(defvar mail-local-names t
+  "Alist of local users.
+When t this still needs to be initialized.")
+
+(defvar mail-directory-names t
+  "Alist of mail address directory entries.
+When t this still needs to be initialized.")
+
+(defvar mail-address-field-regexp
+  "^\\(Resent-\\)?\\(To\\|From\\|CC\\|BCC\\|Reply-to\\):")
+
+(defvar mail-complete-alist
+  `((,mail-address-field-regexp mail-get-names pattern)
+    ("Newsgroups:" . (if (boundp 'gnus-active-hashtb)
+			 gnus-active-hashtb
+		       (if (boundp news-group-article-assoc)
+			   news-group-article-assoc)))
+    ("Followup-To:" . (mail-sentto-newsgroups))
+    ;;("Distribution:" ???)
+    )
+  "Alist of header field and expression to return alist for completion.
+Expression may reference variable `pattern' which is the string being completed.
+If not on matching header, `mail-complete-function' gets called instead.")
+
+(defvar mail-complete-function 'ispell-complete-word
+  "Function to call when completing outside `mail-complete-alist'-header.")
+
+
+(defvar mail-directory-function nil
+  "Function to get completions from directory service or `nil' for none.
+See `mail-directory-requery'.")
+
+
+;; This is for when the directory is huge, or changes frequently.
+(defvar mail-directory-requery nil
+  "When non-`nil' call `mail-directory-function' for each completion.
+In that case, one argument gets passed to the function, the partial string
+entered so far.")
+
+
+(defvar mail-directory-process nil
+  "Unix command when `mail-directory-function' is `mail-directory-process'.
+This is a list of the form (COMMAND ARG ...), where each of the list elements
+is evaluated.  When `mail-directory-requery' is non-`nil', during
+evaluation the variable `pattern' contains the partial input being completed.
+This might look like
+
+  '(remote-shell-program \"HOST\" \"-nl\" \"USER\" \"COMMAND\")
+
+or
+
+  '(remote-shell-program \"HOST\" \"-n\" \"COMMAND '^\" pattern \"'\")")
+
+(defvar mail-directory-stream ()
+  "List of (HOST SERVICE) for stream connection to mail directory.")
+
+(defvar mail-directory-parser nil
+  "How to interpret the output of `mail-directory-function'.
+Three types of values are possible:
+
+  - nil means to gather each line as one name
+  - regexp means first \\(grouping\\) in successive matches is name
+  - function called at beginning of buffer that returns an alist of names")
+
+
 ;; Called from sendmail-send-it, or similar functions,
 ;; only if some mail aliases are defined.
 (defun expand-mail-aliases (beg end &optional exclude)
@@ -40,14 +111,14 @@ their `Resent-' variants.
 
 Optional second arg EXCLUDE may be a regular expression defining text to be
 removed from alias expansions."
-  (sendmail-synch-aliases)
+  (sendmail-sync-aliases)
   (if (eq mail-aliases t)
       (progn (setq mail-aliases nil) (build-mail-aliases)))
   (goto-char beg)
   (setq end (set-marker (make-marker) end))
   (let ((case-fold-search nil))
     (while (let ((case-fold-search t))
-	     (re-search-forward "^\\(Resent-\\)?\\(To\\|From\\|CC\\|BCC\\|Reply-to\\):" end t))
+	     (re-search-forward mail-address-field-regexp end t))
       (skip-chars-forward " \t")
       (let ((beg1 (point))
 	    end1 pos epos seplen
@@ -113,14 +184,14 @@ By default, this is the file specified by `mail-personal-alias-file'."
 	(obuf (current-buffer)))
     (unwind-protect
 	(progn
-	  (setq buffer (generate-new-buffer "mailrc"))
-	  (buffer-disable-undo buffer)
+	  (setq buffer (generate-new-buffer " mailrc"))
 	  (set-buffer buffer)
 	  (while file
 	    (cond ((get-file-buffer file)
 		   (insert (save-excursion
 			     (set-buffer (get-file-buffer file))
-			     (buffer-substring (point-min) (point-max)))))
+			     (buffer-substring-no-properties
+			      (point-min) (point-max)))))
 		  ((file-exists-p file) (insert-file-contents file))
 		  ((file-exists-p (setq file (concat "~/" file)))
 		   (insert-file-contents file))
@@ -139,8 +210,8 @@ By default, this is the file specified by `mail-personal-alias-file'."
 	    ;; handle `source' directives -- Eddy/1994/May/25
 	    (cond ((re-search-forward "^source[ \t]+" nil t)
 		   (re-search-forward "\\S-+")
-		   (setq file
-			 (buffer-substring (match-beginning 0) (match-end 0)))
+		   (setq file (buffer-substring-no-properties
+			       (match-beginning 0) (match-end 0)))
 		   (beginning-of-line)
 		   (insert "# ") ; to ensure we don't re-process this file
 		   (beginning-of-line))
@@ -153,7 +224,7 @@ By default, this is the file specified by `mail-personal-alias-file'."
 	      (end-of-line)
 	      (define-mail-alias
 		name
-		(buffer-substring start (point))
+		(buffer-substring-no-properties start (point))
 		t)))
 	  mail-aliases)
       (if buffer (kill-buffer buffer))
@@ -173,7 +244,7 @@ if it is quoted with double-quotes."
 
   (interactive "sDefine mail alias: \nsDefine %s as mail alias for: ")
   ;; Read the defaults first, if we have not done so.
-  (sendmail-synch-aliases)
+  (sendmail-sync-aliases)
   (if (eq mail-aliases t)
       (progn
 	(setq mail-aliases nil)
@@ -209,7 +280,154 @@ if it is quoted with double-quotes."
     (setq tem (assoc name mail-aliases))
     (if tem
 	(rplacd tem definition)
-      (setq mail-aliases (cons (cons name definition) mail-aliases)))))
+      (setq mail-aliases (cons (cons name definition) mail-aliases)
+	    mail-names t))))
+
+;;;###autoload
+(defun mail-complete (arg)
+  "Perform completion on header field or word preceding point.
+Completable headers are according to `mail-complete-alist'.  If none matches
+current header, calls `mail-complete-function' and passes prefix arg if any."
+  (interactive "P")
+  (let ((list mail-complete-alist))
+    (if (and (save-excursion (search-forward
+			      (concat "\n" mail-header-separator "\n")
+			      nil t))
+	     (save-excursion
+	       (if (re-search-backward "^[^\t]" nil t)
+		   (while list
+		     (if (looking-at (car (car list)))
+			 (setq arg (cdr (car list))
+			       list ())
+		       (setq list (cdr list)))))
+	       arg))
+	(let* ((end (point))
+	       (beg (save-excursion
+		      (skip-chars-backward "^ \t<,:")
+		      (point)))
+	       (pattern (buffer-substring beg end))
+	       completion)
+	  (setq list (eval arg)
+		completion (try-completion pattern list))
+	  (cond ((eq completion t))
+		((null completion)
+		 (message "Can't find completion for \"%s\"" pattern)
+		 (ding))
+		((not (string= pattern completion))
+		 (delete-region beg end)
+		 (insert completion))
+		(t
+		 (message "Making completion list...")
+		 (with-output-to-temp-buffer "*Completions*"
+		   (display-completion-list
+		    (all-completions pattern list)))
+		 (message "Making completion list...%s" "done"))))
+      (funcall mail-complete-function arg))))
+
+(defun mail-get-names (pattern)
+  "Fetch local users and global mail adresses for completion.
+Consults `/etc/passwd' and a directory service if one is set up via
+`mail-directory-function'."
+  (if (eq mail-local-names t)
+      (save-excursion
+	(set-buffer (generate-new-buffer " passwd"))
+	(insert-file-contents "/etc/passwd" nil nil nil t)
+	(setq mail-local-names)
+	(while (not (eobp))
+	  ;;Recognize lines like
+	  ;;  nobody:*:65534:65534::/:
+	  ;;  +demo::::::/bin/csh
+	  ;;  +ethanb
+	  ;;while skipping
+	  ;;  +@SOFTWARE
+	  (if (looking-at "\\+?\\([^:@\n+]+\\)")
+	      (add-to-list 'mail-local-names (list (match-string 1))))
+	  (beginning-of-line 2))
+	(kill-buffer (current-buffer))))
+  (if (or (eq mail-names t)
+		(eq mail-directory-names t))
+      (let (directory)
+	(and mail-directory-function
+	     (eq mail-directory-names t)
+	     (setq directory
+		   (mail-directory (if mail-directory-requery pattern))))
+	(if (or directory
+		(eq mail-names t))
+	    (setq mail-names
+		  (sort (append (if (consp mail-aliases) mail-aliases)
+				(if (consp mail-local-names)
+				    mail-local-names)
+				directory)
+			(lambda (a b)
+			  ;; should cache downcased strings
+			  (string< (downcase (car a))
+				   (downcase (car b)))))))
+	(or mail-directory-requery
+	    (setq mail-directory-names directory))))
+  mail-names)
+
+
+(defun mail-directory (pattern)
+  "Call directory to get names matching PATTERN or all if `nil'.
+Calls `mail-directory-function' and applies `mail-directory-parser' to output."
+  (save-excursion
+    (message "Querying directory...")
+    (set-buffer (generate-new-buffer " *mail-directory*"))
+    (funcall mail-directory-function pattern)
+    (goto-char 1)
+    (let (directory)
+      (if (stringp mail-directory-parser)
+	  (while (re-search-forward mail-directory-parser nil t)
+	    (setq directory
+		  `((,(match-string 1))
+		    ,@directory)))
+	(if mail-directory-parser
+	    (setq directory (funcall mail-directory-parser))
+	  (while (not (eobp))
+	    (setq directory
+		  `((,(buffer-substring (point)
+					(progn
+					  (forward-line)
+					  (if (bolp)
+					    (1- (point))
+					    (point)))))
+		    ,@directory)))))
+      (kill-buffer (current-buffer))
+      (message "Querying directory...done")
+      directory)))
+
+
+(defun mail-directory-process (pattern)
+  "Call a Unix process to output names in directory.
+See `mail-directory-process'."
+  (apply 'call-process (eval (car mail-directory-process)) nil t nil
+	 (mapcar 'eval (cdr mail-directory-process))))
+
+;; This should handle a dialog.  Currently expects port to spit out names.
+(defun mail-directory-stream (pattern)
+  "Open a stream to retrieve names in directory.
+See `mail-directory-stream'."
+  (let (mailalias-done)
+    (set-process-sentinel
+     (apply 'open-network-stream "mailalias" (current-buffer)
+	    mail-directory-stream)
+     (lambda (x x)
+       (setq mailalias-done t)))
+    (while (not mailalias-done)
+      (sit-for .1))))
+
+(defun mail-sentto-newsgroups ()
+  "Return all entries from Newsgroups: header as completion alist."
+  (save-excursion
+    (if (mail-position-on-field "newsgroups" t)
+	(let ((point (point))
+	      list)
+	  (while (< (skip-chars-backward "^:, \t\n") 0)
+	    (setq list `((,(buffer-substring (point) point))
+			 ,@list))
+	    (skip-chars-backward ", \t\n")
+	    (setq point (point)))
+	  list))))
 
 (provide 'mailalias)
 

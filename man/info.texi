@@ -307,9 +307,12 @@ the two lines from the top and moves them to the bottom,
 @emph{usually}, but if there are not a full screen's worth of lines
 above them they may not make it all the way to the bottom.
 
-  If you type Space when there is no more to see, it rings the
-bell and otherwise does nothing.  The same goes for Delete when
-the header of the node is visible.
+  Space and Delete scroll through all the nodes in an Info file as a
+single logical sequence.  In this sequence, a node's subnodes appear
+following their parent.  If a node's menu is on the screen, Space takes
+you into the subnodes listed in the menu, one by one.  Once you reach
+the end of a node, Space takes you to the next node or back to the
+parent node.
 
   If your screen is ever garbaged, you can tell Info to print it out
 again by typing @kbd{C-l} (@kbd{Control-L}, that is---hold down ``Control'' and
@@ -456,14 +459,13 @@ the subtopic of the line you are on.
 
 Here is a menu to give you a chance to practice.
 
-* Menu:	   The menu starts here.
-
+@menu
 This menu gives you three ways of going to one place, Help-FOO.
 
-* Foo:  Help-FOO.       A node you can visit for fun.@*
-* Bar:  Help-FOO.       Strange!  two ways to get to the same place.@*
-* Help-FOO::            And yet another!@*
-
+* Foo:  Help-FOO.       A node you can visit for fun.
+* Bar:  Help-FOO.       Strange!  two ways to get to the same place.
+* Help-FOO::            And yet another!
+@end menu
 
 @format
 >>  Now type just an @kbd{m} and see what happens:
@@ -501,13 +503,6 @@ cancel one character at a time if you make a mistake.
 @c If a menu appears at the end of this node, remove it.
 @c It is an accident of the menu updating command.
 
-Here is another way to get to  Help-FOO, a menu.  You can ignore this
-if you want, or else try it (but then please come back to here).
-
-@menu
-* Help-FOO::
-@end menu
-
 @node Help-FOO,  ,  , Help-M
 @comment  node-name,  next,  previous,  up
 @subsection The @kbd{u} command
@@ -542,7 +537,7 @@ records the nodes where you have been in a special history list.  The
 @kbd{l} command revisits nodes in the history list; each successive
 @kbd{l} command moves one step back through the history.
 
-  If you have been following directions, ad @kbd{l} command now will get
+  If you have been following directions, an @kbd{l} command now will get
 you back to @samp{Help-M}.  Another @kbd{l} command would undo the
 @kbd{u} and get you back to @samp{Help-FOO}.  Another @kbd{l} would undo
 the @kbd{m} and get you back to @samp{Help-M}.

@@ -374,14 +374,14 @@ You can then give commands interactively.
 @kindex M-!
 @findex shell-command
   @kbd{M-!} (@code{shell-command}) reads a line of text using the
-minibuffer executes it as a shell command in a subshell made just for
-this command.  Standard input for the command comes from the null
+minibuffer and executes it as a shell command in a subshell made just
+for that command.  Standard input for the command comes from the null
 device.  If the shell command produces any output, the output goes into
 an Emacs buffer named @samp{*Shell Command Output*}, which is displayed
 in another window but not selected.  A numeric argument, as in @kbd{M-1
-M-!}, directs this command to insert any output into the current
-buffer.  In that case, point is left before the output and the mark is
-set after the output.
+M-!}, directs this command to insert any output into the current buffer.
+In that case, point is left before the output and the mark is set after
+the output.
 
   If the shell command line ends in @samp{&}, it runs asynchronously.
 
@@ -485,7 +485,7 @@ most common command syntax; it may not work for unusual shells.
 @cindex Shell mode
 @cindex mode, Shell
 
-  Shell buffer use Shell mode, which defines several special keys
+  Shell buffers use Shell mode, which defines several special keys
 attached to the @kbd{C-c} prefix.  They are chosen to resemble the usual
 editing and job control characters present in shells that are not under
 Emacs, except that you must type @kbd{C-c} first.  Here is a complete list
@@ -666,7 +666,7 @@ command plus the output that follows it in the buffer.
   Shell mode is a derivative of Comint mode, a general purpose mode for
 communicating with interactive subprocesses.  Most of the features of
 Shell mode actually come from Comint mode, as you can see from the
-command names listed above.  The specialization of Shell mode in
+command names listed above.  The special features of Shell mode in
 particular include the choice of regular expression for detecting
 prompts, the directory tracking feature, and a few user commands.
 
@@ -788,7 +788,7 @@ list if you edit the input text in the buffer after it has been sent.
 @cindex history reference
 
   Various shells including csh and bash support @dfn{history references}
-that begin with @samp{!} and @samp{^}.  Shell mode can understands these
+that begin with @samp{!} and @samp{^}.  Shell mode can understand these
 constructs and perform the history substitution for you.  If you insert
 a history reference and type @key{TAB}, this searches the input history
 for a matching command, performs substitution if necessary, and places
@@ -925,6 +925,16 @@ buffer to access the remote host via FTP (@pxref{File Names}), and it
 tracks the shell commands that change the current directory just like
 Shell mode.
 
+@findex rlogin-directory-tracking-mode
+  There are two ways of doing directory tracking in an Rlogin
+buffer---either with remote directory names
+@file{/@var{host}:@var{dir}/} or with local names (that works if the
+``remote'' machine shares file systems with your machine of origin).
+You can use the command @code{rlogin-directory-tracking-mode} to switch
+modes.  No argument means use remote directory names, a positive
+argument means use local names, and a negative argument means turn
+off directory tracking.
+
 @node Emacs Server, Hardcopy, Shell, Top
 @section Using Emacs as a Server
 @pindex emacsclient
@@ -1045,15 +1055,18 @@ an option starting with @samp{-}.  For example, to use a printer named
 (setq lpr-switches '("-Pnearme"))
 @end example
 
-@vindex lpr-header-switches
+@vindex lpr-headers-switches
 @vindex lpr-commands
 @vindex lpr-add-switches
-  The variable @code{lpr-header-switches} similarly specifies the extra
-switches to use to make page headers.  The variable
-@code{lpr-add-switches} controls whether to supply @samp{-T} and
-@samp{-J} options for the printer program: @code{nil} means don't do so.
-The variable @code{lpr-command} specifies the name of the printer
+  The variable @code{lpr-command} specifies the name of the printer
 program to run; the default value depends on your operating system type.
+On most systems, the default is @code{"lpr"}.  The variable
+@code{lpr-headers-switches} similarly specifies the extra switches to use
+to make page headers.  The variable @code{lpr-add-switches} controls
+whether to supply @samp{-T} and @samp{-J} options (suitable for
+@code{lpr}) to the printer program: @code{nil} means don't do
+so.@code{lpr-add-switches} should be @code{nil} if your printer program
+is not like @code{lpr}.
 
 @node Postscript, Sorting, Hardcopy, Top
 @section Postscript Hardcopy
@@ -1369,19 +1382,21 @@ and using buffer @var{buffer} as the right-hand buffer
 (@code{2C-associate-buffer}).
 @end table
 
-  @kbd{f2 s} or @kbd{C-x 6 s} looks for a column separator which is a string
-that appears on each line between the two columns.  You can specify the width
-of the separator with a numeric argument to @kbd{f2 s}; that many characters,
-before point, constitute the separator string.  By default, the width is 1, so
-the column separator is the character before point.
+  @kbd{f2 s} or @kbd{C-x 6 s} looks for a column separator which is a
+string that appears on each line between the two columns.  You can
+specify the width of the separator with a numeric argument to @kbd{f2
+s}; that many characters, before point, constitute the separator string.
+By default, the width is 1, so the column separator is the character
+before point.
 
-  When a line has the separator at the proper place, @kbd{f2 s} puts the text
-after the separator into the right-hand buffer, and deletes the separator.
-Lines that don't have the column separator at the proper place remain unsplit;
-they stay in the left-hand buffer, and the right-hand buffer gets an empty
-line to correspond.  (This is the way to write a line which ``spans both
-columns while in two-column mode'': write it in the left-hand buffer, and put
-an empty line in the right-hand buffer.)
+  When a line has the separator at the proper place, @kbd{f2 s} puts the
+text after the separator into the right-hand buffer, and deletes the
+separator.  Lines that don't have the column separator at the proper
+place remain unsplit; they stay in the left-hand buffer, and the
+right-hand buffer gets an empty line to correspond.  (This is the way to
+write a line which ``spans both columns while in two-column mode'':
+write it in the left-hand buffer, and put an empty line in the
+right-hand buffer.)
 
 @kindex f2 @key{RET}
 @kindex C-x 6 @key{RET}
@@ -1394,17 +1409,18 @@ the two-column text while editing it in split buffers.
 @kindex f2 1
 @kindex C-x 6 1
 @findex 2C-merge
-  When you have edited both buffers as you wish, merge them with @kbd{f2 1} or
-@kbd{C-x 6 1} (@code{2C-merge}).  This copies the text from the right-hand
-buffer as a second column in the other buffer.  To go back to two-column
-editing, use @kbd{f2 s}.
+  When you have edited both buffers as you wish, merge them with @kbd{f2
+1} or @kbd{C-x 6 1} (@code{2C-merge}).  This copies the text from the
+right-hand buffer as a second column in the other buffer.  To go back to
+two-column editing, use @kbd{f2 s}.
 
 @kindex f2 d
 @kindex C-x 6 d
 @findex 2C-dissociate
-  Use @kbd{f2 d} or @kbd{C-x 6 d} to disassociate the two buffers, leaving
-each as it stands (@code{2C-dissociate}).  If the other buffer, the one not
-current when you type @kbd{f2 d}, is empty, @kbd{f2 d} kills it.
+  Use @kbd{f2 d} or @kbd{C-x 6 d} to disassociate the two buffers,
+leaving each as it stands (@code{2C-dissociate}).  If the other buffer,
+the one not current when you type @kbd{f2 d}, is empty, @kbd{f2 d} kills
+it.
 
 @node Editing Binary Files, Saving Emacs Sessions, Two-Column, Top
 @section Editing Binary Files
@@ -1464,8 +1480,8 @@ session to another.  Saving the state means that Emacs starts up with
 the same set of buffers, major modes, buffer positions, and so on that
 the previous Emacs session had.
 
-  To use Desktop, you should first add these lines to your @file{.emacs}
-file, preferably at or near the end:
+  To use Desktop, you should first add these lines at the end of your
+@file{.emacs} file:
 
 @example
 (load "desktop")

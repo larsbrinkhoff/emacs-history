@@ -16,7 +16,7 @@
  *			A menu selection is shown to be current by placing
  *			a highlight box around the selection as the mouse
  *			cursor enters its active region.  Inactive selections
- *			will not be highlited.	As the mouse cursor moved
+ *			will not be highlighted.  As the mouse cursor moved
  *			from one menu pane to another menu pane the pane being
  *			entered is raised and made current and the pane being
  *			left is lowered.
@@ -62,7 +62,7 @@
  *				AEQ mode disables this mode temporarily.
  *
  *			3)	The application has enabled asynchronous event
- *				queueing mode.  In this mode all foreign events
+ *				queuing mode.  In this mode all foreign events
  *				will be	queued up untill XMenuActivate
  *				terminates; at which time they will be
  *				returned to the	X event queue.  As long as

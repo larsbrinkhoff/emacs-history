@@ -20,7 +20,7 @@ Jay K. Adams wrote @file{jka-compr.el}, providing automatic
 decompression and recompression for compressed files.
 
 @item
-Joe Arceneax wrote the original text property implementation, and
+Joe Arceneaux wrote the original text property implementation, and
 implemented support for X11.
 
 @item
@@ -103,7 +103,7 @@ code.
 
 @item
 Michael Ernst wrote @file{reposition.el}, a command for recentering a
-function's source code and preceeding comment on the screen.
+function's source code and preceding comment on the screen.
 
 @item
 Ata Etemadi wrote @file{cdl.el}, functions for working with Common Data
@@ -335,8 +335,9 @@ Simon Marshall wrote @file{fast-lock.el}, which caches the face
 data computed by Font-Lock mode.
 
 @item
-Bengt Martensson, Mark Shapiro, Mike Newton, and Aaron Larson wrote
-@file{bibtex.el}, a mode for editing Bib@TeX{} bibliography files.
+Bengt Martensson, Mark Shapiro, Mike Newton, Aaron Larson, and Stefan
+Schoef, wrote @file{bibtex.el}, a mode for editing Bib@TeX{}
+bibliography files.
  
 @item
 Charlie Martin wrote @file{autoinsert.el}, which provides automatic
@@ -445,7 +446,7 @@ Christian Plaunt wrote @file{soundex.el}, an implementation of the
 Soundex algorithm for comparing English words by their pronunciation.
 
 @item
-Franceso A. Potorti wrote @file{cmacexp.el}, providing a command which
+Francesco A. Potorti wrote @file{cmacexp.el}, providing a command which
 runs the C preprocessor on a region of a file and displays the results.
 
 @item

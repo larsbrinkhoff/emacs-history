@@ -14,7 +14,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /*
@@ -175,6 +176,9 @@ int need_coff_header = 1;
 #include <coff-encap/a.out.encap.h> /* The location might be a poor assumption */
 #else
 #ifdef MSDOS
+#if __DJGPP__ > 1
+#include <fcntl.h>  /* for O_RDONLY, O_RDWR */
+#endif
 #include <coff.h>
 #define filehdr external_filehdr
 #define scnhdr external_scnhdr
@@ -875,6 +879,14 @@ copy_text_and_data (new, a_out)
 
 #else /* COFF, but not USG_SHARED_LIBRARIES */
 
+#ifdef MSDOS
+#if __DJGPP__ >= 2
+  /* Dump the original table of exception handlers, not the one
+     where our exception hooks are registered.  */
+  __djgpp_exception_toggle ();
+#endif
+#endif
+
   lseek (new, (long) text_scnptr, 0);
   ptr = (char *) f_ohdr.text_start;
 #ifdef HEADER_INCL_IN_TEXT
@@ -888,6 +900,13 @@ copy_text_and_data (new, a_out)
   ptr = (char *) f_ohdr.data_start;
   end = ptr + f_ohdr.dsize;
   write_segment (new, ptr, end);
+
+#ifdef MSDOS
+#if __DJGPP__ >= 2
+  /* Restore our exception hooks.  */
+  __djgpp_exception_toggle ();
+#endif
+#endif
 
 #endif /* USG_SHARED_LIBRARIES */
 
@@ -915,8 +934,8 @@ copy_text_and_data (new, a_out)
    * runs, it copies the table to where these parameters live during
    * execution.  This data is in text space, so it cannot be modified here
    * before saving the executable, so the data is written manually.  In
-   * addition, the table does not have a label, and the nearest accessable
-   * label (mcount) is not prefixed with a '_', thus making it inaccessable
+   * addition, the table does not have a label, and the nearest accessible
+   * label (mcount) is not prefixed with a '_', thus making it inaccessible
    * from within C programs.  To overcome this, emacs's executable is passed
    * through the command 'nm %s | fgrep mcount' into a pipe, and the
    * resultant output is then used to find the address of 'mcount'.  As far as

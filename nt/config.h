@@ -3,20 +3,20 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* No code in Emacs #includes config.h twice, but some of the code
@@ -69,7 +69,6 @@ and this notice must be preserved on all copies.  */
 
 /* If we're using any sort of window system, define some consequences.  */
 #ifdef HAVE_X_WINDOWS
-#define HAVE_WINDOW_SYSTEM
 #define MULTI_KBOARD
 #define HAVE_FACES
 #define HAVE_MOUSE
@@ -119,13 +118,11 @@ and this notice must be preserved on all copies.  */
 #undef TIME_WITH_SYS_TIME
 
 #undef HAVE_LIBDNET
-#undef HAVE_LIBPTHREADS
 #undef HAVE_LIBRESOLV
 
 #undef HAVE_ALLOCA_H
 
 #undef HAVE_GETTIMEOFDAY
-#undef GETTIMEOFDAY_ONE_ARGUMENT
 #undef HAVE_GETHOSTNAME
 #undef HAVE_DUP2
 #undef HAVE_RENAME
@@ -205,7 +202,7 @@ and this notice must be preserved on all copies.  */
 
    See s/template.h for documentation on writing s/SYSTEM.h files.  */
 #undef config_opsysfile 
-#include "s/windows95.h"
+#include "s/windowsnt.h"
 
 /* The configuration script defines machfile to be the name of the
    m/MACHINE.h file that describes the machine you are using.  The file is
@@ -294,11 +291,6 @@ typedef unsigned long EMACS_UINT;
 #define SIGTYPE RETSIGTYPE
 #endif
 
-#ifdef emacs /* Don't do this for lib-src.  */
-/* Tell regex.c to use a type compatible with Emacs.  */
-#define RE_TRANSLATE_TYPE Lisp_Object *
-#endif
-
 /* The rest of the code currently tests the CPP symbol BSTRING.
    Override any claims made by the system-description files.
    Note that on some SCO version it is possible to have bcopy and not bcmp.  */
@@ -325,25 +317,3 @@ extern char *getenv ();
 #endif
 
 #endif /* EMACS_CONFIG_H */
-
-/* These default definitions are good for almost all machines.
-   The exceptions override them in m/*.h.  */
-
-#ifndef BITS_PER_CHAR
-#define BITS_PER_CHAR 8
-#endif
-
-#ifndef BITS_PER_SHORT
-#define BITS_PER_SHORT 16
-#endif
-
-/* Note that lisp.h uses this in a preprocessor conditional, so it
-   would not work to use sizeof.  That being so, we do all of them
-   without sizeof, for uniformity's sake.  */
-#ifndef BITS_PER_INT
-#define BITS_PER_INT 32
-#endif
-
-#ifndef BITS_PER_LONG
-#define BITS_PER_LONG 32
-#endif

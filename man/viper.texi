@@ -12,7 +12,7 @@
 @titlepage
 @title Viper Is a Package for Emacs Rebels
 @subtitle a Vi emulator for GNU Emacs 19 and XEmacs 19
-@subtitle July 1995, Viper Version 2.80
+@subtitle January 1996, Viper Version 2.85
 
 @author Masahiko Sato (VIP 3.5)
 @author Aamod Sane (VIP 4.4)
@@ -1606,15 +1606,35 @@ To get the full list of Vi variables, type @kbd{:se SPC TAB}.
 @table @code
 @item vip-auto-indent nil
 @itemx :se ai (:se autoindent)
-If @code{t} then enable auto indentation.
-by @kbd{o} or @kbd{O} command.
+@itemx :se gai (:se global-autoindent)
+If @code{t}, enable auto indentation.
+by @kbd{RET}, @kbd{o} or @kbd{O} command.
+
+@code{vip-auto-indent} is a local variable. To change the value globally, use
+@code{setq-default}. It may be useful for certain major modes to have their
+own values of @code{vip-auto-indent}. This can be achieved by using
+@code{setq} to change the local value of this variable in the hooks to the
+appropriate major modes.
+
+@kbd{:se ai} changes the value of @code{vip-auto-indent} in the current
+buffer only; @kbd{:se gai} does the same globally.
+@item vip-electric-mode t
+If @code{t}, auto-indentation becomes electric, which means that @kbd{RET},
+@kbd{O}, and @kbd{o} indent cursor according to the current major mode. In
+the future, this variable may control additional electric features.
+
+This is a local variable: @code{setq} changes the value of this variable
+in the current buffer only. Use @code{setq-default} to change the value in
+all buffers.
 @item vip-case-fold-search nil
 @itemx :se ic (:se ignorecase)
-If @code{t} search ignores cases.
+If @code{t}, search ignores cases.
+This can also be toggled by quickly hitting @kbd{/} twice.
 @item vip-re-search nil
 @itemx :se magic
 If @code{t} then search is reg-exp search, if @code{nil} then vanilla
 search.
+This behavior can also be toggled by quickly hitting @kbd{/} trice.
 @item buffer-read-only
 @itemx :se ro (:se readonly)
 Set current buffer to read only. To change globally put
@@ -1622,12 +1642,24 @@ Set current buffer to read only. To change globally put
 @item blink-matching-paren t
 @itemx :se sm (:se showmatch)
 Show matching parens by blinking cursor. 
-@item tab-width t (default setting, via @code{setq-default})
+@item tab-width t (default setting via @code{setq-default})
 @itemx :se ts=value (:se tabstop=value)
-Set tab width to value for all buffers where the tab is not yet set locally
-(see next), including the new buffers. Note that typing @kbd{TAB} normally
+@itemx :se gts=value (:se global-tabstop=value)
+@code{tab-width} is a local variable that controls the width of the tab stops.
+To change the value globally, use @code{setq-default}; for local settings,
+use @code{setq}.
+
+The command @kbd{:se ts}
+sets the tab width in the current
+buffer only; it has no effect on other buffers.
+
+The command @kbd{:se gts} sets tab width globally,
+for all buffers where the tab is not yet set locally,
+including the new buffers.
+
+Note that typing @kbd{TAB} normally
 doesn't insert the tab, since this key is usually bound to 
-text-formatting function, @code{indent-for-tab-command} (which facilitates
+a text-formatting function, @code{indent-for-tab-command} (which facilitates
 programming and document writing). Instead, the tab is inserted via the
 command @code{vip-insert-tab}, which is bound to @kbd{S-tab} (shift + tab).
 
@@ -1635,10 +1667,6 @@ On some non-windowing terminals, Shift doesn't modify the @kbd{TAB} key, so
 @kbd{S-tab} behaves as if it were @kbd{TAB}. In such a case, you will have
 to bind @code{vip-insert-tab} to some other convenient key.
 
-@item tab-width t (local setting via @code{setq})
-@itemx :se tab-stop-local=value
-Like @kbd{:se ts}, except that @code{tab-width} is set only for the current
-buffer; it will have no effect on other buffers.
 @item vip-shift-width 8
 @itemx :se sw=value  (:se shiftwidth=value)
 The number of columns shifted by @kbd{>} and @kbd{<} commands.
@@ -1818,6 +1846,7 @@ can include a line like this in your @file{.vip} file:
 (setq vip-case-fold-search t)
 @end example
 @vindex @code{vip-auto-indent}
+@vindex @code{vip-electric-mode}
 @vindex @code{vip-case-fold-search}
 @vindex @code{vip-re-search}
 @vindex @code{vip-shift-width}
@@ -2062,6 +2091,13 @@ symbols @code{'insert-state} and @code{'emacs-state}, respectively.
 As with global bindings, customized local bindings done to Emacs state
 are not inherited by Insert state.
 
+On rare occasions, local keys may be added by mistake. Usually this is done
+indirectly, by invoking a major mode that adds local keys (e.g.,
+@code{shell-mode} redefines @kbd{RET}). In such a case, exiting the wrong
+major mode won't rid you from unwanted local keys, since these keys are
+local to Viper state and the current buffer, not to the major mode.
+In such situations, the remedy is to type @kbd{M-x vip-zap-local-keys}.
+
 So much about Viper-specific bindings.
 @xref{Customization,,Customization,emacs,The GNU Emacs
 Manual}, and the Emacs quick reference card for the general info on key
@@ -2072,6 +2108,7 @@ bindings in Emacs.
 @vindex @code{vip-insert-global-user-map}
 @vindex @code{vip-emacs-global-user-map}
 @findex @code{vip-add-local-keys}
+@findex @code{vip-zap-local-keys}
 
 @node Packages that Change Keymaps,Viper Specials,Keybindings,Customization
 @subsection Packages that Change Keymaps
@@ -2229,7 +2266,7 @@ bind @kbd{//} to toggles case sensitivity and to @kbd{///} to toggles
 vanilla search. Thus, quickly hitting @kbd{/} twice will switch Viper from
 case sensitive search to case-insensitive. Repeating this once again will
 restore the original state. Likewise, quickly hitting @kbd{/} three times
-will switch you from vanila-style search to search via regular expressions.
+will switch you from vanilla-style search to search via regular expressions.
 If you hit something other than @kbd{/} after the first @kbd{/} or if the
 second @kbd{/} doesn't follow quickly enough, then Viper will issue the
 usual prompt @kbd{/} and will wait for input, as usual in Vi.
@@ -2412,16 +2449,17 @@ is available). Clicking the mouse when Emacs is invoked in an Xterm window
 
 @table @code
 @cindex mouse
-@item S-mouse-1 (Emacs)
+@item M-S-mouse-1 (Emacs)
 @item meta shift button1up (XEmacs)
-Holding Shift and clicking mouse button 1 (or holding Meta and Control keys
-while clicking, if in XEmacs) will initiate search for a region under the
+Holding Meta and Shift while clicking mouse button 1
+will initiate search for a region under the
 mouse pointer (defined below).  This command can take a prefix argument,
 which indicates the occurrence of the pattern to search for.
 
 Note: Viper binds this mouse action only if it is not already bound to
-something else. If you want to use this feature and @kbd{S-mouse-1}
-is already used for something else, you can rebind mouse-search as follows:
+something else. If you want to use this feature and @kbd{M-S-mouse-1}
+is already used for something else, you can rebind mouse-search as, for
+example, in the following example:
 @lisp
 (global-set-key [M-mouse-1] 'vip-mouse-click-search-word)
 (global-set-key [M-down-mouse-1] 'vip-mouse-catch-frame-switch)
@@ -2440,9 +2478,6 @@ In XEmacs, you can change bindings as follows:
                 'vip-mouse-catch-frame-switch)
 @end lisp
 if, say, you prefer to hold both meta and control while clicking.
-The reason why Viper uses different bindings for Emacs and XEmacs is
-because these two incarnations of Emacs have different default bindings for
-mouse actions.
 
 Like in Emacs, there are special rules for binding these functions: the
 first must be bound to a button-up event while the second must be bound to
@@ -2454,28 +2489,27 @@ should not be bound (or it should be bound to the same function,
 
 The region that is chosen as a pattern to search for is determined as
 follows. If search is invoked via a single click, Viper chooses the region
-that lies between the beginning of the ``word'' under the pointer (``word'' is
-understood in Vi sense) and the end of that word.
-The only difference with Vi's words is that in Lisp
-major modes `-' is considered an alphanumeric symbol. This is done for the
-convenience of working with Lisp symbols, which often have an `-' in them.
-Also, if you click on a non-alphanumeric character that is not a word
-separator (in Vi) then this character will also be considered alphanumeric,
-provided that it is adjacent (from either side) to an alphanumeric character.
-This useful feature gives added control over the patterns selected by the
-mouse click.
+that lies between the beginning of the ``word'' under the pointer (``word''
+is understood in Vi sense) and the end of that word.  The only difference
+with Vi's words is that in Lisp major modes `-' is considered an
+alphanumeric symbol. This is done for the convenience of working with Lisp
+symbols, which often have an `-' in them.  Also, if you click on a
+non-alphanumeric character that is not a word separator (in Vi sense) then
+this character will also be considered alphanumeric, provided that it is
+adjacent (from either side) to an alphanumeric character.  This useful
+feature gives added control over the patterns selected by the mouse click.
 
 On a double-click, the region is determined by the beginning of the current
 Vi's ``Word'' (i.e., the largest non-separator chunk of text) and the End
 of that ``Word'' (as determined by the @kbd{E} command).
 
-On a triple-click, the region consists of the line where the click occurred
-with all leading and trailing spaces and tabs removed.
+On a triple-click, the region consists of the entire line where the click
+occurred with all leading and trailing spaces and tabs removed.
 
-@item S-mouse-2 (Emacs)
+@item M-S-mouse-2 (Emacs)
 @item meta shift button2up (XEmacs)
-Holding Shift and clicking button 2 (or holding Meta and Shift keys while
-clicking, if in XEmacs) of the mouse will insert the region surrounding the
+Holding Meta and Shift while clicking mouse button 2
+will insert the region surrounding the
 mouse pointer.  The rules defining this region are the same as for
 mouse-search.  This command takes an optional prefix argument, which
 indicates how many such regions to snarf from the buffer and insert.  (In
@@ -2712,7 +2746,7 @@ during the execution will simply terminate the current execution
 (but the macro will remain mapped).
 
 A macro name can be a string of characters or a vector of keys.
-The latter makes it possible to define macros bound to, say, double-hitts
+The latter makes it possible to define macros bound to, say, double-hits
 on a function key, such as @kbd{up} or @kbd{f13}.
 This is very useful if you run out of function keys on your keyboard; it
 makes Viper macro facility a @emph{keyboard doubler}, so to speak.
@@ -2863,7 +2897,12 @@ Pfister),  amade@@diagram.fr (Paul-Bernard Amade),
 jackr@@dblues.engr.sgi.com (Jack Repenning),
 pogrell@@informatik.hu-berlin.de (Lutz Pogrell),
 csdayton@@midway.uchicago.edu (Soren Dayton),
-pradyut@@cs.uchicago.edu (Pradyut Shah)
+pradyut@@cs.uchicago.edu (Pradyut Shah),
+vrenjak@@sun1.racal.com (Milan Vrenjak),
+georger@@microcrafts.com (George V. Reilly),
+whicken@@dragon.parasoft.com (Wendell Hicken),
+terra@@diku.dk (Morten Welinder),
+James Kanze (kanze@@gabi-soft.fr)
 @end example
 
 

@@ -1,38 +1,39 @@
 ;;; map-ynp.el --- General-purpose boolean question-asker.
 
-;;; Copyright (C) 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Roland McGrath <roland@gnu.ai.mit.edu>
 ;; Keywords: lisp, extensions
 
-;;; This program is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
-;;;
-;;; This program is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; A copy of the GNU General Public License can be obtained from this
-;;; program's author (send electronic mail to roland@ai.mit.edu) or from
-;;; the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA
-;;; 02139, USA.
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; map-y-or-n-p is a general-purpose question-asking function.
-;;; It asks a series of y/n questions (a la y-or-n-p), and decides to
-;;; applies an action to each element of a list based on the answer.
-;;; The nice thing is that you also get some other possible answers
-;;; to use, reminiscent of query-replace: ! to answer y to all remaining
-;;; questions; ESC or q to answer n to all remaining questions; . to answer
-;;; y once and then n for the remainder; and you can get help with C-h.
+;; map-y-or-n-p is a general-purpose question-asking function.
+;; It asks a series of y/n questions (a la y-or-n-p), and decides to
+;; applies an action to each element of a list based on the answer.
+;; The nice thing is that you also get some other possible answers
+;; to use, reminiscent of query-replace: ! to answer y to all remaining
+;; questions; ESC or q to answer n to all remaining questions; . to answer
+;; y once and then n for the remainder; and you can get help with C-h.
 
 ;;; Code:
 
-;;;###autoload
 (defun map-y-or-n-p (prompter actor list &optional help action-alist
 			      no-cursor-in-echo-area)
   "Ask a series of boolean questions.
@@ -77,6 +78,8 @@ are meaningful here.
 Returns the number of actions taken."
   (let* ((actions 0)
 	 user-keys mouse-event map prompt char elt tail def
+	 ;; Non-nil means we should use mouse menus to ask.
+	 use-menus
 	 delayed-switch-frame
 	 (next (if (or (and list (symbolp list))
 		       (subrp list)
@@ -106,6 +109,7 @@ Returns the number of actions taken."
 				      (cons (capitalize (nth 2 elt))
 					    (vector (nth 1 elt))))
 				    action-alist))))
+		use-menus t
 		mouse-event last-nonmenu-event))			       
       (setq user-keys (if action-alist
 			  (concat (mapconcat (function
@@ -132,8 +136,8 @@ Returns the number of actions taken."
 	    (cond ((stringp prompt)
 		   ;; Prompt the user about this object.
 		   (setq quit-flag nil)
-		   (if mouse-event
-		       (setq def (or (x-popup-dialog mouse-event
+		   (if use-menus
+		       (setq def (or (x-popup-dialog (or mouse-event use-menus)
 						     (cons prompt map))
 				     'quit))
 		     ;; Prompt in the echo area.

@@ -1,6 +1,6 @@
 ;;; eval-reg.el --- Redefine eval-region, and subrs that use it, in Lisp
 
-;; Copyright (C) 1994 Daniel LaLiberte
+;; Copyright (C) 1994, 1996 Daniel LaLiberte
 
 ;; Author: Daniel LaLiberte <liberte@cs.uiuc.edu>
 ;; Keywords: lisp
@@ -19,28 +19,31 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
-;;;; Commentary:
+;;; Commentary:
 
-;;; eval-region, eval-buffer, and eval-current-buffer are redefined in
-;;; Lisp to allow customizations by Lisp code.  eval-region calls
-;;; `read', `eval', and `prin1', so Lisp replacements of these
-;;; functions will affect eval-region and anything else that calls it.
-;;; eval-buffer and eval-current-buffer are redefined in Lisp to call
-;;; eval-region on the buffer.  
+;; eval-region, eval-buffer, and eval-current-buffer are redefined in
+;; Lisp to allow customizations by Lisp code.  eval-region calls
+;; `read', `eval', and `prin1', so Lisp replacements of these
+;; functions will affect eval-region and anything else that calls it.
+;; eval-buffer and eval-current-buffer are redefined in Lisp to call
+;; eval-region on the buffer.  
 
-;;; Because of dynamic binding, all local variables are protected from
-;;; being seen by eval by giving them funky names.  But variables in
-;;; routines that call eval-region are similarly exposed.
+;; Because of dynamic binding, all local variables are protected from
+;; being seen by eval by giving them funky names.  But variables in
+;; routines that call eval-region are similarly exposed.
 
-;;; Perhaps this should be one of several files in an `elisp' package
-;;; that replaces Emacs Lisp subroutines with Lisp versions of the
-;;; same.
+;; Perhaps this should be one of several files in an `elisp' package
+;; that replaces Emacs Lisp subroutines with Lisp versions of the
+;; same.
 
-;;; Eval-region may be installed, after loading, by calling:
-;;; (elisp-eval-region-install).  Installation can be undone with:
-;;; (elisp-eval-region-uninstall).
+;; Eval-region may be installed, after loading, by calling:
+;; (elisp-eval-region-install).  Installation can be undone with:
+;; (elisp-eval-region-uninstall).
+
+;;; Code:
 
 '(defpackage "elisp-eval-region"
    (:nicknames "elisp")
@@ -130,7 +133,7 @@ nil means discard it; anything else is stream for print.
 This version, from `eval-reg.el', allows Lisp customization of read,
 eval, and the printer."
 
-  ;; Because this doesnt narrow to the region, one other difference 
+  ;; Because this doesn't narrow to the region, one other difference 
   ;; concerns inserting whitespace after the expression being evaluated.
 
   (interactive "r")
@@ -138,7 +141,7 @@ eval, and the printer."
       (original-eval-region elisp-start elisp-end elisp-output)
     (let ((elisp-pnt (point))
 	  (elisp-buf (current-buffer));; Outside buffer
-	  (elisp-inside-buf (current-buffer));; Buffer current while evaling
+	  (elisp-inside-buf (current-buffer));; Buffer current while evalling
 	  ;; Mark the end because it may move.
 	  (elisp-end-marker (set-marker (make-marker) elisp-end))
 	  elisp-form

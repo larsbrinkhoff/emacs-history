@@ -1,14 +1,14 @@
 ;;; reporter.el --- customizable bug reporting of lisp programs
 
+;; Copyright (C) 1993 1994 Barry A. Warsaw
+;; Copyright (C) 1993 1994 Free Software Foundation, Inc.
+
 ;; Author: 1993 Barry A. Warsaw <bwarsaw@cnri.reston.va.us>
 ;; Maintainer:      bwarsaw@cnri.reston.va.us
 ;; Created:         19-Apr-1993
 ;; Version:         2.21
 ;; Last Modified:   1994/11/29 16:13:50
 ;; Keywords: bug reports lisp
-
-;; Copyright (C) 1993 1994 Barry A. Warsaw
-;; Copyright (C) 1993 1994 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -23,11 +23,12 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-;;
+
 ;; Introduction
 ;; ============
 ;; This program is for lisp package authors and can be used to ease
@@ -61,7 +62,7 @@
 ;; I've set up a mailing list to report bugs or suggest enhancements,
 ;; etc. This list's intended audience is elisp package authors who are
 ;; using reporter and want to stay current with releases. Here are the
-;; relevent addresses:
+;; relevant addresses:
 ;;
 ;; Administrivia: reporter-request@anthem.nlm.nih.gov
 ;; Submissions:   reporter@anthem.nlm.nih.gov
@@ -101,7 +102,7 @@ prompt, you should `let' bind this variable to t before calling
 buffer-local so you should never just `setq' it.")
 
 (defvar reporter-dont-compact-list nil
-  "Interface variable controlling compating of list values.
+  "Interface variable controlling compacting of list values.
 When non-nil, this must be a list of variable symbols.  When a
 variable containing a list value is formatted in the bug report mail
 buffer, it normally is compacted so that its value fits one the fewest
@@ -216,7 +217,7 @@ composed.")
        (mail-position-on-field "X-Reporter-Void-Vars-Found")
        (end-of-line)
        (insert (symbol-name varsym) " ")))
-    (error (error))))
+    (error (error ""))))
 
 (defun reporter-dump-state (pkgname varlist pre-hooks post-hooks)
   ;; Dump the state of the mode specific variables.

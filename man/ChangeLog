@@ -1,3 +1,18 @@
+Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Version 19.31 released.
+
+Sun Jan  7 22:55:57 1996  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* Makefile.in (../info/ccmode): Renamed from ../info/cc-mode.
+	(INFO_TARGETS): Use new name.  This avoids name conflict on MSDOS.
+
+Wed Nov 29 20:09:48 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (../info/cc-mode, cc-mode.dvi): New targets.
+	(INFO_TARGETS): Add ../info/cc-mode.
+	(DVI_TARGETS): Add cc-mode.dvi.
+
 Fri Nov 24 23:41:30 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.30 released.

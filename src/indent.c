@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -353,23 +354,23 @@ string_display_width (string, beg, end)
 
 DEFUN ("indent-to", Findent_to, Sindent_to, 1, 2, "NIndent to column: ",
   "Indent from point with tabs and spaces until COLUMN is reached.\n\
-Optional second argument MIN says always do at least MIN spaces\n\
-even if that goes past COLUMN; by default, MIN is zero.")
-  (col, minimum)
-     Lisp_Object col, minimum;
+Optional second argument MININUM says always do at least MININUM spaces\n\
+even if that goes past COLUMN; by default, MININUM is zero.")
+  (column, minimum)
+     Lisp_Object column, minimum;
 {
   int mincol;
   register int fromcol;
   register int tab_width = XINT (current_buffer->tab_width);
 
-  CHECK_NUMBER (col, 0);
+  CHECK_NUMBER (column, 0);
   if (NILP (minimum))
     XSETFASTINT (minimum, 0);
   CHECK_NUMBER (minimum, 1);
 
   fromcol = current_column ();
   mincol = fromcol + XINT (minimum);
-  if (mincol < XINT (col)) mincol = XINT (col);
+  if (mincol < XINT (column)) mincol = XINT (column);
 
   if (fromcol == mincol)
     return make_number (mincol);
@@ -388,15 +389,15 @@ even if that goes past COLUMN; by default, MIN is zero.")
 	}
     }
 
-  XSETFASTINT (col, mincol - fromcol);
-  Finsert_char (make_number (' '), col, Qt);
+  XSETFASTINT (column, mincol - fromcol);
+  Finsert_char (make_number (' '), column, Qt);
 
   last_known_column = mincol;
   last_known_column_point = point;
   last_known_column_modified = MODIFF;
 
-  XSETINT (col, mincol);
-  return col;
+  XSETINT (column, mincol);
+  return column;
 }
 
 
@@ -675,8 +676,10 @@ compute_motion (from, fromvpos, fromhpos, did_motion, to, tovpos, tohpos, width,
 
   /* The next buffer pos where we should consult the width run cache. */
   int next_width_run = from;
+  Lisp_Object window;
 
   XSETBUFFER (buffer, current_buffer);
+  XSETWINDOW (window, win);
 
   width_run_cache_on_off ();
   if (dp == buffer_display_table ())
@@ -746,8 +749,10 @@ compute_motion (from, fromvpos, fromhpos, did_motion, to, tovpos, tohpos, width,
 	      }
 	    /* if the `invisible' property is set, we can skip to
 	       the next property change */
-	    prop = Fget_char_property (position, Qinvisible,
-				       Fcurrent_buffer ());
+	    if (EQ (win->buffer, buffer))
+	      prop = Fget_char_property (position, Qinvisible, window);
+	    else
+	      prop = Fget_char_property (position, Qinvisible, buffer);
 	    if (TEXT_PROP_MEANS_INVISIBLE (prop))
 	      pos = next_boundary;
 	  }
@@ -983,9 +988,10 @@ TAB-OFFSET is the number of columns of the first tab that aren't\n\
 being displayed, perhaps because the line was continued within it.\n\
 If OFFSETS is nil, HSCROLL and TAB-OFFSET are assumed to be zero.\n\
 \n\
-WINDOW is the window to operate on.  Currently this is used only to\n\
-find the display table.  It does not matter what buffer WINDOW displays;\n\
-`compute-motion' always operates on the current buffer.\n\
+WINDOW is the window to operate on.  It is used to choose the display table;\n\
+if it is showing the current buffer, it is used also for\n\
+deciding which overlay properties apply.\n\
+Note that `compute-motion' always operates on the current buffer.\n\
 \n\
 The value is a list of five elements:\n\
   (POS HPOS VPOS PREVHPOS CONTIN)\n\

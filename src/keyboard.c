@@ -1,5 +1,5 @@
 /* Keyboard and mouse input; editor command loop.
-   Copyright (C) 1985,86,87,88,89,93,94,95 Free Software Foundation, Inc.
+   Copyright (C) 1985,86,87,88,89,93,94,95,96 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Allow config.h to undefine symbols found here.  */
 #include <signal.h>
@@ -123,6 +124,10 @@ Lisp_Object recent_keys; /* A vector, holding the last 100 keystrokes */
    It's easier to staticpro a single Lisp_Object than an array.  */
 Lisp_Object this_command_keys;
 int this_command_key_count;
+
+/* Number of elements of this_command_keys
+   that precede this key sequence.  */
+int this_single_command_key_start;
 
 /* Record values of this_command_key_count and echo_length ()
    before this command was read.  */
@@ -434,6 +439,7 @@ Lisp_Object Qmake_frame_visible;
 /* Symbols to denote kinds of events.  */
 Lisp_Object Qfunction_key;
 Lisp_Object Qmouse_click;
+Lisp_Object Qtimer_event;
 /* Lisp_Object Qmouse_movement; - also an event header */
 
 /* Properties of event headers.  */
@@ -466,10 +472,20 @@ extern Lisp_Object Qmenu_enable;
 Lisp_Object recursive_edit_unwind (), command_loop ();
 Lisp_Object Fthis_command_keys ();
 Lisp_Object Qextended_command_history;
+EMACS_TIME timer_check ();
 
 extern char *x_get_keysym_name ();
 
 Lisp_Object Qpolling_period;
+
+/* List of absolute timers.  Appears in order of next scheduled event.  */
+Lisp_Object Vtimer_list;
+
+/* List of idle time timers.  Appears in order of next scheduled event.  */
+Lisp_Object Vtimer_idle_list;
+
+/* Incremented whenever a timer is run.  */
+int timers_run;
 
 extern Lisp_Object Vprint_level, Vprint_length;
 
@@ -484,7 +500,7 @@ int interrupt_input;
 /* Nonzero while interrupts are temporarily deferred during redisplay.  */
 int interrupts_deferred;
 
-/* nonzero means use ^S/^Q for flow control.  */
+/* Nonzero means use ^S/^Q for flow control.  */
 int flow_control;
 
 /* Allow m- file to inhibit use of FIONREAD.  */
@@ -554,7 +570,7 @@ echo_prompt (str)
 
   current_kboard->echo_after_prompt = len;
 
-  echo ();
+  echo_now ();
 }
 
 /* Add C to the echo string, if echoing is going on.
@@ -602,7 +618,7 @@ echo_char (c)
       *ptr = 0;
       current_kboard->echoptr = ptr;
 
-      echo ();
+      echo_now ();
     }
 }
 
@@ -627,13 +643,13 @@ echo_dash ()
   current_kboard->echoptr[0] = '-';
   current_kboard->echoptr[1] = 0;
 
-  echo ();
+  echo_now ();
 }
 
 /* Display the current echo string, and begin echoing if not already
    doing so.  */
 
-echo ()
+echo_now ()
 {
   if (!current_kboard->immediate_echo)
     {
@@ -703,6 +719,8 @@ add_command_key (key)
   if (before_command_restore_flag)
     {
       this_command_key_count = before_command_key_count_1;
+      if (this_command_key_count < this_single_command_key_start)
+	this_single_command_key_start = this_command_key_count;
       echo_truncate (before_command_echo_length_1);
       before_command_restore_flag = 0;
     }
@@ -900,10 +918,7 @@ cmd_error_internal (data, context)
      Lisp_Object data;
      char *context;
 {
-  Lisp_Object errmsg, tail, errname, file_error;
   Lisp_Object stream;
-  struct gcpro gcpro1;
-  int i;
 
   Vquit_flag = Qnil;
   Vinhibit_quit = Qt;
@@ -925,49 +940,7 @@ cmd_error_internal (data, context)
   if (context != 0)
     write_string_1 (context, -1, stream);
 
-  errname = Fcar (data);
-
-  if (EQ (errname, Qerror))
-    {
-      data = Fcdr (data);
-      if (!CONSP (data)) data = Qnil;
-      errmsg = Fcar (data);
-      file_error = Qnil;
-    }
-  else
-    {
-      errmsg = Fget (errname, Qerror_message);
-      file_error = Fmemq (Qfile_error,
-			  Fget (errname, Qerror_conditions));
-    }
-
-  /* Print an error message including the data items.
-     This is done by printing it into a scratch buffer
-     and then making a copy of the text in the buffer. */
-
-  if (!CONSP (data)) data = Qnil;
-  tail = Fcdr (data);
-  GCPRO1 (tail);
-
-  /* For file-error, make error message by concatenating
-     all the data items.  They are all strings.  */
-  if (!NILP (file_error) && !NILP (tail))
-    errmsg = XCONS (tail)->car, tail = XCONS (tail)->cdr;
-
-  if (STRINGP (errmsg))
-    Fprinc (errmsg, stream);
-  else
-    write_string_1 ("peculiar error", -1, stream);
-
-  for (i = 0; CONSP (tail); tail = Fcdr (tail), i++)
-    {
-      write_string_1 (i ? ", " : ": ", 2, stream);
-      if (!NILP (file_error))
-	Fprinc (Fcar (tail), stream);
-      else
-	Fprin1 (Fcar (tail), stream);
-    }
-  UNGCPRO;
+  print_error_message (data, stream);
 
   /* If the window system or terminal frame hasn't been initialized
      yet, or we're in -batch mode, this error should cause Emacs to exit.  */
@@ -1101,6 +1074,7 @@ command_loop_1 ()
   nonundocount = 0;
   no_redisplay = 0;
   this_command_key_count = 0;
+  this_single_command_key_start = 0;
 
   /* Make sure this hook runs after commands that get errors and
      throw to top level.  */
@@ -1149,11 +1123,14 @@ command_loop_1 ()
 	     rather than quitting back to the minibuffer.  */
 	  int count = specpdl_ptr - specpdl;
 	  specbind (Qinhibit_quit, Qt);
+
 	  Fsit_for (make_number (2), Qnil, Qnil);
+	  /* Clear the echo area.  */
+	  message2 (0);
+
 	  unbind_to (count, Qnil);
 
-	  echo_area_glyphs = 0;
-	  no_direct = 1;
+	  /* If a C-g came in before, treat it as input now.  */
 	  if (!NILP (Vquit_flag))
 	    {
 	      Vquit_flag = Qnil;
@@ -1205,6 +1182,7 @@ command_loop_1 ()
 	{
 	  cancel_echoing ();
 	  this_command_key_count = 0;
+	  this_single_command_key_start = 0;
 	  goto finalize;
 	}
 
@@ -1390,7 +1368,7 @@ command_loop_1 ()
 	  nonundocount = 0;
 	  if (NILP (current_kboard->Vprefix_arg))
 	    Fundo_boundary ();
-	  Fcommand_execute (this_command, Qnil, Qnil);
+	  Fcommand_execute (this_command, Qnil, Qnil, Qnil);
 
 	}
     directly_done: ;
@@ -1429,6 +1407,7 @@ command_loop_1 ()
 	  current_kboard->Vlast_command = this_command;
 	  cancel_echoing ();
 	  this_command_key_count = 0;
+	  this_single_command_key_start = 0;
 	}
 
       if (!NILP (current_buffer->mark_active) && !NILP (Vrun_hooks))
@@ -1486,7 +1465,7 @@ safe_run_hooks (hook)
   int count = specpdl_ptr - specpdl;
   specbind (Qinhibit_quit, hook);
 
-  internal_condition_case (safe_run_hooks_1, Qerror, safe_run_hooks_error);
+  internal_condition_case (safe_run_hooks_1, Qt, safe_run_hooks_error);
 
   unbind_to (count, Qnil);
 }
@@ -1509,11 +1488,15 @@ SIGTYPE
 input_poll_signal (signalnum)	/* If we don't have an argument, */
      int signalnum;		/* some compilers complain in signal calls. */
 {
+  /* This causes the call to start_polling at the end
+     to do its job.  It also arranges for a quit or error
+     from within read_avail_input to resume polling.  */
+  poll_suppress_count++;
   if (interrupt_input_blocked == 0
       && !waiting_for_input)
     read_avail_input (0);
-  signal (SIGALRM, input_poll_signal);
-  alarm (polling_period);
+  /* Turn on the SIGALRM handler and request another alarm.  */
+  start_polling ();
 }
 
 #endif
@@ -1774,7 +1757,8 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
       goto reread_first;
     }
 
-  if (commandflag >= 0 && !input_pending && !detect_input_pending ())
+  if (commandflag >= 0 && !input_pending
+      && !detect_input_pending_run_timers (0))
     redisplay ();
 
   /* Message turns off echoing unless more keystrokes turn it on again. */
@@ -1797,7 +1781,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
       /* Don't bring up a menu if we already have another event.  */
       && NILP (Vunread_command_events)
       && unread_command_char < 0
-      && !detect_input_pending ())
+      && !detect_input_pending_run_timers (0))
     {
       c = read_char_minibuf_menu_prompt (commandflag, nmaps, maps);
       if (! NILP (c))
@@ -1848,6 +1832,8 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
       goto non_reread;
     }
 
+  timer_start_idle ();
+
   /* If in middle of key sequence and minibuffer not active,
      start echoing if enough time elapses.  */
 
@@ -1864,7 +1850,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 	 This is because we are probably about to display a menu,
 	 and we don't want to delay before doing so.  */
       if (EVENT_HAS_PARAMETERS (prev_event))
-	echo ();
+	echo_now ();
       else
 	{
 	  save_getcjmp (save_jump);
@@ -1872,7 +1858,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 	  tem0 = sit_for (echo_keystrokes, 0, 1, 1);
 	  restore_getcjmp (save_jump);
 	  if (EQ (tem0, Qt))
-	    echo ();
+	    echo_now ();
 	}
     }
 
@@ -1881,7 +1867,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
   if (commandflag != 0
       && auto_save_interval > 0
       && num_nonmacro_input_chars - last_auto_save > max (auto_save_interval, 20)
-      && !detect_input_pending ())
+      && !detect_input_pending_run_timers (0))
     {
       Fdo_auto_save (Qnil, Qnil);
       /* Hooks can actually change some buffers in auto save.  */
@@ -1927,11 +1913,11 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 	  && XINT (Vauto_save_timeout) > 0)
 	{
 	  Lisp_Object tem0;
-	  int delay = delay_level * XFASTINT (Vauto_save_timeout) / 4;
 
 	  save_getcjmp (save_jump);
 	  restore_getcjmp (local_getcjmp);
-	  tem0 = sit_for (delay, 0, 1, 1);
+	  tem0 = sit_for (delay_level * XFASTINT (Vauto_save_timeout) / 4,
+			  0, 1, 1);
 	  restore_getcjmp (save_jump);
 
 	  if (EQ (tem0, Qt))
@@ -1941,7 +1927,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 	      /* If we have auto-saved and there is still no input
 		 available, garbage collect if there has been enough
 		 consing going on to make it worthwhile.  */
-	      if (!detect_input_pending ()
+	      if (!detect_input_pending_run_timers (0)
 		  && consing_since_gc > gc_cons_threshold / 2)
 		Fgarbage_collect ();
 
@@ -1963,7 +1949,7 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 	    = XCONS (current_kboard->kbd_queue)->cdr;
 	  if (NILP (current_kboard->kbd_queue))
 	    current_kboard->kbd_queue_has_data = 0;
-	  input_pending = readable_events ();
+	  input_pending = readable_events (0);
 #ifdef MULTI_FRAME
 	  if (EVENT_HAS_PARAMETERS (c)
 	      && EQ (EVENT_HEAD_KIND (EVENT_HEAD (c)), Qswitch_frame))
@@ -2051,12 +2037,17 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 
  non_reread:
 
+  /* Now that we have read an event, Emacs is not idle--
+     unless the event was a timer event (not used now).  */
+  if (! (CONSP (c) && EQ (XCONS (c)->car, Qtimer_event)))
+    timer_stop_idle ();
+
   start_polling ();
 
   if (NILP (c))
     {
       if (commandflag >= 0
-	  && !input_pending && !detect_input_pending ())
+	  && !input_pending && !detect_input_pending_run_timers (0))
 	redisplay ();
 
       goto wrong_kboard;
@@ -2082,8 +2073,15 @@ read_char (commandflag, nmaps, maps, prev_event, used_mouse_menu)
 
   if (!NILP (tem))
     {
+      int was_locked = single_kboard;
+
       last_input_char = c;
-      Fcommand_execute (tem, Qnil, Fvector (1, &last_input_char));
+      Fcommand_execute (tem, Qnil, Fvector (1, &last_input_char), Qt);
+
+      /* Resume allowing input from any kboard, if that was true before.  */
+      if (!was_locked)
+	any_kboard_state ();
+
       goto retry;
     }
 
@@ -2311,10 +2309,10 @@ tracking_off (old_value)
 	 input has been processed.  If the only input available was
 	 the sort that we have just disabled, then we need to call
 	 redisplay.  */
-      if (!readable_events ())
+      if (!readable_events (1))
 	{
 	  redisplay_preserve_echo_area ();
-	  get_input_pending (&input_pending);
+	  get_input_pending (&input_pending, 1);
 	}
     }
 }
@@ -2364,8 +2362,12 @@ some_mouse_moved ()
 /* Return true iff there are any events in the queue that read-char
    would return.  If this returns false, a read-char would block.  */
 static int
-readable_events ()
+readable_events (do_timers_now)
+     int do_timers_now;
 {
+  if (do_timers_now)
+    timer_check (do_timers_now);
+
   if (kbd_fetch_ptr != kbd_store_ptr)
     return 1;
 #ifdef HAVE_MOUSE
@@ -2545,6 +2547,7 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
 {
   register int c;
   Lisp_Object obj;
+  EMACS_TIME next_timer_delay;
 
   if (noninteractive)
     {
@@ -2634,7 +2637,7 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
 	     and process it again.  */
 	  copy = *event;
 	  kbd_fetch_ptr = event + 1;
-	  input_pending = readable_events ();
+	  input_pending = readable_events (0);
 	  x_handle_selection_request (&copy);
 #else
 	  /* We're getting selection request events, but we don't have
@@ -2651,7 +2654,7 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
 	  /* Remove it from the buffer before processing it.  */
 	  copy = *event;
 	  kbd_fetch_ptr = event + 1;
-	  input_pending = readable_events ();
+	  input_pending = readable_events (0);
 	  x_handle_selection_clear (&copy);
 #else
 	  /* We're getting selection request events, but we don't have
@@ -2692,7 +2695,7 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
       else if (event->kind == menu_bar_activate_event)
 	{
 	  kbd_fetch_ptr = event + 1;
-	  input_pending = readable_events ();
+	  input_pending = readable_events (0);
 	  x_activate_menubar (XFRAME (event->frame_or_window));
 	}
 #endif
@@ -2804,7 +2807,7 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
        something for us to read!  */
     abort ();
 
-  input_pending = readable_events ();
+  input_pending = readable_events (0);
 
 #ifdef MULTI_FRAME
   Vlast_event_frame = internal_last_event_frame;
@@ -2817,8 +2820,11 @@ kbd_buffer_get_event (kbp, used_mouse_menu)
    then return, without reading any user-visible events.  */
 
 void
-swallow_events ()
+swallow_events (do_display)
+     int do_display;
 {
+  int old_timers_run;
+
   while (kbd_fetch_ptr != kbd_store_ptr)
     {
       struct input_event *event;
@@ -2841,7 +2847,7 @@ swallow_events ()
 	     and process it again.  */
 	  copy = *event;
 	  kbd_fetch_ptr = event + 1;
-	  input_pending = readable_events ();
+	  input_pending = readable_events (0);
 	  x_handle_selection_request (&copy);
 #else
 	  /* We're getting selection request events, but we don't have
@@ -2859,7 +2865,7 @@ swallow_events ()
 	  copy = *event;
 
 	  kbd_fetch_ptr = event + 1;
-	  input_pending = readable_events ();
+	  input_pending = readable_events (0);
 	  x_handle_selection_clear (&copy);
 #else
 	  /* We're getting selection request events, but we don't have
@@ -2867,11 +2873,314 @@ swallow_events ()
 	  abort ();
 #endif
 	}
+      /* Note that timer_event is currently never used.  */
+      else if (event->kind == timer_event)
+	{
+	  Lisp_Object tem, lisp_event;
+	  int was_locked = single_kboard;
+
+	  tem = get_keymap_1 (Vspecial_event_map, 0, 0);
+	  tem = get_keyelt (access_keymap (tem, Qtimer_event, 0, 0),
+			    1);
+	  lisp_event = Fcons (Qtimer_event,
+			      Fcons (Fcdr (event->frame_or_window), Qnil));
+	  kbd_fetch_ptr = event + 1;
+	  if (kbd_fetch_ptr == kbd_store_ptr)
+	    input_pending = 0;
+	  Fcommand_execute (tem, Qnil, Fvector (1, &lisp_event), Qt);
+	  timers_run++;
+	  if (do_display)
+	    redisplay_preserve_echo_area ();
+
+	  /* Resume allowing input from any kboard, if that was true before.  */
+	  if (!was_locked)
+	    any_kboard_state ();
+	}
       else
 	break;
     }
 
-  get_input_pending (&input_pending);
+  old_timers_run = timers_run;
+  get_input_pending (&input_pending, 1);
+
+  if (timers_run != old_timers_run && do_display)
+    redisplay_preserve_echo_area ();
+}
+
+static EMACS_TIME timer_idleness_start_time;
+
+/* Record the start of when Emacs is idle,
+   for the sake of running idle-time timers.  */
+
+timer_start_idle ()
+{
+  Lisp_Object timers;
+
+  /* If we are already in the idle state, do nothing.  */
+  if (! EMACS_TIME_NEG_P (timer_idleness_start_time))
+    return;
+
+  EMACS_GET_TIME (timer_idleness_start_time);
+
+  /* Mark all idle-time timers as once again candidates for running.  */
+  for (timers = Vtimer_idle_list; CONSP (timers); timers = XCONS (timers)->cdr)
+    {
+      Lisp_Object timer;
+
+      timer = XCONS (timers)->car;
+
+      if (!VECTORP (timer) || XVECTOR (timer)->size != 8)
+	continue;
+      XVECTOR (timer)->contents[0] = Qnil;
+    }
+}
+
+/* Record that Emacs is no longer idle, so stop running idle-time timers.  */
+
+timer_stop_idle ()
+{
+  EMACS_SET_SECS_USECS (timer_idleness_start_time, -1, -1);
+}
+
+/* This is only for debugging.  */
+struct input_event last_timer_event;
+
+/* Check whether a timer has fired.  To prevent larger problems we simply
+   disregard elements that are not proper timers.  Do not make a circular
+   timer list for the time being.
+
+   Returns the number of seconds to wait until the next timer fires.  If a
+   timer is triggering now, return zero seconds.
+   If no timer is active, return -1 seconds.
+
+   If a timer is ripe, we run it, with quitting turned off.
+
+   DO_IT_NOW is now ignored.  It used to mean that we should
+   run the timer directly instead of queueing a timer-event.
+   Now we always run timers directly.  */
+
+EMACS_TIME
+timer_check (do_it_now)
+     int do_it_now;
+{
+  EMACS_TIME nexttime;
+  EMACS_TIME now, idleness_now;
+  Lisp_Object timers, idle_timers, chosen_timer;
+  /* Nonzero if we generate some events.  */
+  int events_generated = 0;
+  struct gcpro gcpro1, gcpro2, gcpro3;
+
+  EMACS_SET_SECS (nexttime, -1);
+  EMACS_SET_USECS (nexttime, -1);
+
+  /* Always consider the ordinary timers.  */
+  timers = Vtimer_list;
+  /* Consider the idle timers only if Emacs is idle.  */
+  if (! EMACS_TIME_NEG_P (timer_idleness_start_time))
+    idle_timers = Vtimer_idle_list;
+  else
+    idle_timers = Qnil;
+  chosen_timer = Qnil;
+  GCPRO3 (timers, idle_timers, chosen_timer);
+
+  if (CONSP (timers) || CONSP (idle_timers))
+    {
+      EMACS_GET_TIME (now);
+      if (! EMACS_TIME_NEG_P (timer_idleness_start_time))
+	EMACS_SUB_TIME (idleness_now, now, timer_idleness_start_time);
+    }
+
+  while (CONSP (timers) || CONSP (idle_timers))
+    {
+      int triggertime = EMACS_SECS (now);
+      Lisp_Object *vector;
+      Lisp_Object timer, idle_timer;
+      EMACS_TIME timer_time, idle_timer_time;
+      EMACS_TIME difference, timer_difference, idle_timer_difference;
+
+      /* Skip past invalid timers and timers already handled.  */
+      if (!NILP (timers))
+	{
+	  timer = XCONS (timers)->car;
+	  if (!VECTORP (timer) || XVECTOR (timer)->size != 8)
+	    {
+	      timers = XCONS (timers)->cdr;
+	      continue;
+	    }
+	  vector = XVECTOR (timer)->contents;
+
+	  if (!INTEGERP (vector[1]) || !INTEGERP (vector[2])
+	      || !INTEGERP (vector[3])
+	      || ! NILP (vector[0]))
+	    {
+	      timers = XCONS (timers)->cdr;
+	      continue;
+	    }
+	}
+      if (!NILP (idle_timers))
+	{
+	  timer = XCONS (idle_timers)->car;
+	  if (!VECTORP (timer) || XVECTOR (timer)->size != 8)
+	    {
+	      idle_timers = XCONS (idle_timers)->cdr;
+	      continue;
+	    }
+	  vector = XVECTOR (timer)->contents;
+
+	  if (!INTEGERP (vector[1]) || !INTEGERP (vector[2])
+	      || !INTEGERP (vector[3])
+	      || ! NILP (vector[0]))
+	    {
+	      idle_timers = XCONS (idle_timers)->cdr;
+	      continue;
+	    }
+	}
+
+      /* Set TIMER, TIMER_TIME and TIMER_DIFFERENCE
+	 based on the next ordinary timer.
+	 TIMER_DIFFERENCE is the distance in time from NOW to when
+	 this timer becomes ripe (negative if it's already ripe).  */
+      if (!NILP (timers))
+	{
+	  timer = XCONS (timers)->car;
+	  vector = XVECTOR (timer)->contents;
+	  EMACS_SET_SECS (timer_time,
+			  (XINT (vector[1]) << 16) | (XINT (vector[2])));
+	  EMACS_SET_USECS (timer_time, XINT (vector[3]));
+	  EMACS_SUB_TIME (timer_difference, timer_time, now);
+	}
+
+      /* Set IDLE_TIMER, IDLE_TIMER_TIME and IDLE_TIMER_DIFFERENCE
+	 based on the next idle timer.  */
+      if (!NILP (idle_timers))
+	{
+	  idle_timer = XCONS (idle_timers)->car;
+	  vector = XVECTOR (idle_timer)->contents;
+	  EMACS_SET_SECS (idle_timer_time,
+			  (XINT (vector[1]) << 16) | (XINT (vector[2])));
+	  EMACS_SET_USECS (idle_timer_time, XINT (vector[3]));
+	  EMACS_SUB_TIME (idle_timer_difference, idle_timer_time, idleness_now);
+	}
+
+      /* Decide which timer is the next timer,
+	 and set CHOSEN_TIMER, VECTOR and DIFFERENCE accordingly.
+	 Also step down the list where we found that timer.  */
+
+      if (! NILP (timers) && ! NILP (idle_timers))
+	{
+	  EMACS_TIME temp;
+	  EMACS_SUB_TIME (temp, timer_difference, idle_timer_difference);
+	  if (EMACS_TIME_NEG_P (temp))
+	    {
+	      chosen_timer = timer;
+	      timers = XCONS (timers)->cdr;
+	      difference = timer_difference;
+	    }
+	  else
+	    {
+	      chosen_timer = idle_timer;
+	      idle_timers = XCONS (idle_timers)->cdr;
+	      difference = idle_timer_difference;
+	    }
+	}
+      else if (! NILP (timers))
+	{
+	  chosen_timer = timer;
+	  timers = XCONS (timers)->cdr;
+	  difference = timer_difference;
+	}
+      else
+	{
+	  chosen_timer = idle_timer;
+	  idle_timers = XCONS (idle_timers)->cdr;
+	  difference = idle_timer_difference;
+	}
+      vector = XVECTOR (chosen_timer)->contents;
+	
+      /* If timer is rupe, run it if it hasn't been run.  */
+      if (EMACS_TIME_NEG_P (difference)
+	  || (EMACS_SECS (difference) == 0
+	      && EMACS_USECS (difference) == 0))
+	{
+	  if (NILP (vector[0]))
+	    {
+	      /* Mark the timer as triggered to prevent problems if the lisp
+		 code fails to reschedule it right.  */
+	      vector[0] = Qt;
+
+	      /* Run the timer or queue a timer event.  */
+	      if (1)
+		{
+		  Lisp_Object tem, event;
+		  int was_locked = single_kboard;
+		  int count = specpdl_ptr - specpdl;
+
+		  specbind (Qinhibit_quit, Qt);
+
+		  tem = get_keymap_1 (Vspecial_event_map, 0, 0);
+		  tem = get_keyelt (access_keymap (tem, Qtimer_event, 0, 0),
+				    1);
+		  event = Fcons (Qtimer_event, Fcons (chosen_timer, Qnil));
+		  Fcommand_execute (tem, Qnil, Fvector (1, &event), Qt);
+		  timers_run++;
+
+		  unbind_to (count, Qnil);
+
+		  /* Resume allowing input from any kboard, if that was true before.  */
+		  if (!was_locked)
+		    any_kboard_state ();
+
+		  /* Since we have handled the event,
+		     we don't need to tell the caller to wake up and do it.  */
+		}
+#if 0
+	      else
+		{
+		  /* Generate a timer event so the caller will handle it.  */
+		  struct input_event event;
+
+		  event.kind = timer_event;
+		  event.modifiers = 0;
+		  event.x = event.y = Qnil;
+		  event.timestamp = triggertime;
+		  /* Store the timer in the frame slot.  */
+		  event.frame_or_window
+		    = Fcons (Fselected_frame (), chosen_timer);
+		  kbd_buffer_store_event (&event);
+
+		  last_timer_event = event;
+
+		  /* Tell caller to handle this event right away.  */
+		  events_generated = 1;
+		  EMACS_SET_SECS (nexttime, 0);
+		  EMACS_SET_USECS (nexttime, 0);
+
+		  /* Don't queue more than one event at once.
+		     When Emacs is ready for another, it will
+		     queue the next one.  */
+		  UNGCPRO;
+		  return nexttime;
+		}
+#endif /* 0 */
+	    }
+	}
+      else
+	/* When we encounter a timer that is still waiting,
+	   return the amount of time to wait before it is ripe.  */
+	{
+	  UNGCPRO;
+	  /* But if we generated an event,
+	     tell the caller to handle it now.  */
+	  if (events_generated)
+	    return nexttime;
+	  return difference;
+	}
+    }
+
+  /* No timers are pending in the future.  */
+  /* Return 0 if we generated an event, and -1 if not.  */
+  UNGCPRO;
+  return nexttime;
 }
 
 /* Caches for modify_event_symbol.  */
@@ -3036,9 +3345,9 @@ char *lispy_function_keys[] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0,
     
-    0,               /* VK_LWIN           0x5B */
-    0,               /* VK_RWIN           0x5C */
-    0,               /* VK_APPS           0x5D */
+    "lwindow",       /* VK_LWIN           0x5B */
+    "rwindow",       /* VK_RWIN           0x5C */
+    "apps",          /* VK_APPS           0x5D */
     
     0, 0,            /*    0x5E .. 0x5F        */
     
@@ -3089,10 +3398,21 @@ char *lispy_function_keys[] =
     "kp-numlock",    /* VK_NUMLOCK        0x90 */
     "scroll",        /* VK_SCROLL         0x91 */
     
-    0, 0, 0, 0, 0,   /*    0x92 .. 0x96        */
-    0, 0, 0, 0, 0,   /*    0x97 .. 0x9B        */
-    0, 0, 0, 0,      /*    0x9C .. 0x9F        */
-    
+    "kp-space",	     /* VK_NUMPAD_CLEAR   0x92 */
+    "kp-enter",	     /* VK_NUMPAD_ENTER   0x93 */
+    "kp-prior",	     /* VK_NUMPAD_PRIOR   0x94 */
+    "kp-next",	     /* VK_NUMPAD_NEXT    0x95 */
+    "kp-end",	     /* VK_NUMPAD_END     0x96 */
+    "kp-home",	     /* VK_NUMPAD_HOME    0x97 */
+    "kp-left",	     /* VK_NUMPAD_LEFT    0x98 */
+    "kp-up",	     /* VK_NUMPAD_UP      0x99 */
+    "kp-right",	     /* VK_NUMPAD_RIGHT   0x9A */
+    "kp-down",	     /* VK_NUMPAD_DOWN    0x9B */
+    "kp-insert",     /* VK_NUMPAD_INSERT  0x9C */
+    "kp-delete",     /* VK_NUMPAD_DELETE  0x9D */
+
+    0, 0,	     /*    0x9E .. 0x9F        */
+
     /*
      * VK_L* & VK_R* - left and right Alt, Ctrl and Shift virtual keys.
      * Used only as parameters to GetAsyncKeyState() and GetKeyState().
@@ -3230,10 +3550,12 @@ static char *lispy_mouse_names[] =
 
 /* Scroll bar parts.  */
 Lisp_Object Qabove_handle, Qhandle, Qbelow_handle;
+Lisp_Object Qup, Qdown;
 
 /* An array of scroll bar parts, indexed by an enum scroll_bar_part value.  */
 Lisp_Object *scroll_bar_parts[] = {
-  &Qabove_handle, &Qhandle, &Qbelow_handle
+  &Qabove_handle, &Qhandle, &Qbelow_handle,
+  &Qup, &Qdown,
 };
 
 
@@ -3341,6 +3663,10 @@ make_lispy_event (event)
 				   / sizeof (lispy_function_keys[0])));
       break;
 
+      /* Note that timer_event is currently never used.  */
+    case timer_event:
+      return Fcons (Qtimer_event, Fcons (Fcdr (event->frame_or_window), Qnil));
+
 #ifdef HAVE_MOUSE
       /* A mouse click.  Figure out where it is, decide whether it's
          a press, click or drag, and build the appropriate structure.  */
@@ -3398,11 +3724,11 @@ make_lispy_event (event)
 
 		item = Qnil;
 		items = FRAME_MENU_BAR_ITEMS (f);
-		for (i = 0; i < XVECTOR (items)->size; i += 3)
+		for (i = 0; i < XVECTOR (items)->size; i += 4)
 		  {
 		    Lisp_Object pos, string;
 		    string = XVECTOR (items)->contents[i + 1];
-		    pos = XVECTOR (items)->contents[i + 2];
+		    pos = XVECTOR (items)->contents[i + 3];
 		    if (NILP (string))
 		      break;
 		    if (column >= XINT (pos)
@@ -3467,12 +3793,12 @@ make_lispy_event (event)
 	    portion_whole = Fcons (event->x, event->y);
 	    part = *scroll_bar_parts[(int) event->part];
 
-	    position =
-	      Fcons (window,
-		     Fcons (Qvertical_scroll_bar,
-			    Fcons (portion_whole,
-				   Fcons (make_number (event->timestamp),
-					  Fcons (part, Qnil)))));
+	    position
+	      = Fcons (window,
+		       Fcons (Qvertical_scroll_bar,
+			      Fcons (portion_whole,
+				     Fcons (make_number (event->timestamp),
+					    Fcons (part, Qnil)))));
 	  }
 
 	start_pos_ptr = &XVECTOR (button_down_location)->contents[button];
@@ -3584,6 +3910,56 @@ make_lispy_event (event)
 				 Qnil));
 	}
       }
+
+#ifdef WINDOWSNT
+    case win32_scroll_bar_click:
+      {
+	int button = event->code;
+	int is_double;
+	Lisp_Object position;
+	Lisp_Object *start_pos_ptr;
+	Lisp_Object start_pos;
+
+	if (button < 0 || button >= NUM_MOUSE_BUTTONS)
+	  abort ();
+
+	{
+	  Lisp_Object window;
+	  Lisp_Object portion_whole;
+	  Lisp_Object part;
+
+	  window = event->frame_or_window;
+	  portion_whole = Fcons (event->x, event->y);
+	  part = *scroll_bar_parts[(int) event->part];
+
+	  position =
+	    Fcons (window,
+		   Fcons (Qvertical_scroll_bar,
+			  Fcons (portion_whole,
+				 Fcons (make_number (event->timestamp),
+					Fcons (part, Qnil)))));
+	}
+
+	/* Always treat Win32 scroll bar events as clicks. */
+	event->modifiers |= click_modifier;
+
+	{
+	  /* Get the symbol we should use for the mouse click.  */
+	  Lisp_Object head;
+
+	  head = modify_event_symbol (button,
+				      event->modifiers,
+				      Qmouse_click, Qnil,
+				      lispy_mouse_names, &mouse_syms,
+				      (sizeof (lispy_mouse_names)
+				       / sizeof (lispy_mouse_names[0])));
+	  return Fcons (head,
+			Fcons (position,
+			       Qnil));
+	}
+      }
+#endif
+
 #endif /* HAVE_MOUSE */
 
 #if defined (USE_X_TOOLKIT) || defined (HAVE_NTGUI)
@@ -4127,30 +4503,31 @@ modify_event_symbol (symbol_num, modifiers, symbol_kind, name_alist,
    event type as a number or a symbol.  */
 
 DEFUN ("event-convert-list", Fevent_convert_list, Sevent_convert_list, 1, 1, 0,
-  "Convert the event description LIST to an event type.\n\
-LIST should contain one base event type (a character or symbol)\n\
+  "Convert the event description list EVENT-DESC to an event type.\n\
+EVENT-DESC should contain one base event type (a character or symbol)\n\
 and zero or more modifier names (control, meta, hyper, super, shift, alt,\n\
-drag, down, double or triple).\n\
+drag, down, double or triple).  The base must be last.\n\
 The return value is an event type (a character or symbol) which\n\
 has the same base event type and all the specified modifiers.")
-  (event)
-     Lisp_Object event;
+  (event_desc)
+     Lisp_Object event_desc;
 {
   Lisp_Object base;
   int modifiers = 0;
   Lisp_Object rest;
 
   base = Qnil;
-  rest = event;
+  rest = event_desc;
   while (CONSP (rest))
     {
       Lisp_Object elt;
       int this = 0;
 
       elt = XCONS (rest)->car;
+      rest = XCONS (rest)->cdr;
 
       /* Given a symbol, see if it is a modifier name.  */
-      if (SYMBOLP (elt))
+      if (SYMBOLP (elt) && CONSP (rest))
 	this = parse_solitary_modifier (elt);
 
       if (this != 0)
@@ -4160,7 +4537,6 @@ has the same base event type and all the specified modifiers.")
       else
 	base = elt;
 
-      rest = XCONS (rest)->cdr;
     }
 
   /* Let the symbol A refer to the character A.  */
@@ -4297,14 +4673,17 @@ lucid_event_type_list_p (object)
 /* Store into *addr a value nonzero if terminal input chars are available.
    Serves the purpose of ioctl (0, FIONREAD, addr)
    but works even if FIONREAD does not exist.
-   (In fact, this may actually read some input.)  */
+   (In fact, this may actually read some input.)
+
+   If DO_TIMERS_NOW is nonzero, actually run timer events that are ripe.  */
 
 static void
-get_input_pending (addr)
+get_input_pending (addr, do_timers_now)
      int *addr;
+     int do_timers_now;
 {
   /* First of all, have we already counted some input?  */
-  *addr = !NILP (Vquit_flag) || readable_events ();
+  *addr = !NILP (Vquit_flag) || readable_events (do_timers_now);
 
   /* If input is being read as it arrives, and we have none, there is none.  */
   if (*addr > 0 || (interrupt_input && ! interrupts_deferred))
@@ -4312,7 +4691,7 @@ get_input_pending (addr)
 
   /* Try to read some input and see how much we get.  */
   gobble_input (0);
-  *addr = !NILP (Vquit_flag) || readable_events ();
+  *addr = !NILP (Vquit_flag) || readable_events (do_timers_now);
 }
 
 /* Interface to read_avail_input, blocking SIGIO or SIGALRM if necessary.  */
@@ -4591,7 +4970,7 @@ void
 reinvoke_input_signal ()
 {
 #ifdef SIGIO
-  kill (0, SIGIO);
+  kill (getpid (), SIGIO);
 #endif
 }
 
@@ -4728,29 +5107,31 @@ menu_bar_items (old)
       int i;
       int end = menu_bar_items_index;
 
-      for (i = 0; i < end; i += 3)
+      for (i = 0; i < end; i += 4)
 	if (EQ (XCONS (tail)->car, XVECTOR (menu_bar_items_vector)->contents[i]))
 	  {
-	    Lisp_Object tem0, tem1, tem2;
+	    Lisp_Object tem0, tem1, tem2, tem3;
 	    /* Move the item at index I to the end,
 	       shifting all the others forward.  */
 	    tem0 = XVECTOR (menu_bar_items_vector)->contents[i + 0];
 	    tem1 = XVECTOR (menu_bar_items_vector)->contents[i + 1];
 	    tem2 = XVECTOR (menu_bar_items_vector)->contents[i + 2];
-	    if (end > i + 3)
-	      bcopy (&XVECTOR (menu_bar_items_vector)->contents[i + 3],
+	    tem3 = XVECTOR (menu_bar_items_vector)->contents[i + 3];
+	    if (end > i + 4)
+	      bcopy (&XVECTOR (menu_bar_items_vector)->contents[i + 4],
 		     &XVECTOR (menu_bar_items_vector)->contents[i],
-		     (end - i - 3) * sizeof (Lisp_Object));
-	    XVECTOR (menu_bar_items_vector)->contents[end - 3] = tem0;
-	    XVECTOR (menu_bar_items_vector)->contents[end - 2] = tem1;
-	    XVECTOR (menu_bar_items_vector)->contents[end - 1] = tem2;
+		     (end - i - 4) * sizeof (Lisp_Object));
+	    XVECTOR (menu_bar_items_vector)->contents[end - 4] = tem0;
+	    XVECTOR (menu_bar_items_vector)->contents[end - 3] = tem1;
+	    XVECTOR (menu_bar_items_vector)->contents[end - 2] = tem2;
+	    XVECTOR (menu_bar_items_vector)->contents[end - 1] = tem3;
 	    break;
 	  }
     }
 
-  /* Add nil, nil, nil at the end.  */
+  /* Add nil, nil, nil, nil at the end.  */
   i = menu_bar_items_index;
-  if (i + 3 > XVECTOR (menu_bar_items_vector)->size)
+  if (i + 4 > XVECTOR (menu_bar_items_vector)->size)
     {
       Lisp_Object tem;
       int newsize = 2 * i;
@@ -4760,6 +5141,7 @@ menu_bar_items (old)
       menu_bar_items_vector = tem;
     }
   /* Add this item.  */
+  XVECTOR (menu_bar_items_vector)->contents[i++] = Qnil;
   XVECTOR (menu_bar_items_vector)->contents[i++] = Qnil;
   XVECTOR (menu_bar_items_vector)->contents[i++] = Qnil;
   XVECTOR (menu_bar_items_vector)->contents[i++] = Qnil;
@@ -4844,14 +5226,14 @@ menu_bar_item (key, item_string, def)
       /* If a map has an explicit `undefined' as definition,
 	 discard any previously made menu bar item.  */
 
-      for (i = 0; i < menu_bar_items_index; i += 3)
+      for (i = 0; i < menu_bar_items_index; i += 4)
 	if (EQ (key, XVECTOR (menu_bar_items_vector)->contents[i]))
 	  {
-	    if (menu_bar_items_index > i + 3)
-	      bcopy (&XVECTOR (menu_bar_items_vector)->contents[i + 3],
+	    if (menu_bar_items_index > i + 4)
+	      bcopy (&XVECTOR (menu_bar_items_vector)->contents[i + 4],
 		     &XVECTOR (menu_bar_items_vector)->contents[i],
-		     (menu_bar_items_index - i - 3) * sizeof (Lisp_Object));
-	    menu_bar_items_index -= 3;
+		     (menu_bar_items_index - i - 4) * sizeof (Lisp_Object));
+	    menu_bar_items_index -= 4;
 	    return;
 	  }
 
@@ -4880,7 +5262,7 @@ menu_bar_item (key, item_string, def)
     return;
 
   /* Find any existing item for this KEY.  */
-  for (i = 0; i < menu_bar_items_index; i += 3)
+  for (i = 0; i < menu_bar_items_index; i += 4)
     if (EQ (key, XVECTOR (menu_bar_items_vector)->contents[i]))
       break;
 
@@ -4888,7 +5270,7 @@ menu_bar_item (key, item_string, def)
   if (i == menu_bar_items_index)
     {
       /* If vector is too small, get a bigger one.  */
-      if (i + 3 > XVECTOR (menu_bar_items_vector)->size)
+      if (i + 4 > XVECTOR (menu_bar_items_vector)->size)
 	{
 	  Lisp_Object tem;
 	  int newsize = 2 * i;
@@ -4901,6 +5283,7 @@ menu_bar_item (key, item_string, def)
       XVECTOR (menu_bar_items_vector)->contents[i++] = key;
       XVECTOR (menu_bar_items_vector)->contents[i++] = item_string;
       XVECTOR (menu_bar_items_vector)->contents[i++] = Fcons (def, Qnil);
+      XVECTOR (menu_bar_items_vector)->contents[i++] = make_number (0);
       menu_bar_items_index = i;
     }
   /* We did find an item for this KEY.  Add DEF to its list of maps.  */
@@ -4970,7 +5353,7 @@ read_char_x_menu_prompt (nmaps, maps, prev_event, used_mouse_menu)
   if (mapno >= nmaps)
     return Qnil;
 
-#if (defined (HAVE_X_WINDOWS) && defined (HAVE_X_MENU)) || defined (MSDOS) || defined (HAVE_NTGUI)
+#ifdef HAVE_MENUS
   /* If we got to this point via a mouse click,
      use a real menu for mouse selection.  */
   if (EVENT_HAS_PARAMETERS (prev_event)
@@ -5020,9 +5403,15 @@ read_char_x_menu_prompt (nmaps, maps, prev_event, used_mouse_menu)
 	*used_mouse_menu = 1;
       return value;
     }
-#endif /* (HAVE_X_WINDOWS && HAVE_X_MENU) || MSDOS || HAVE_NTGUI */
+#endif /* HAVE_MENUS */
   return Qnil ;
 }
+
+/* Buffer in use so far for the minibuf prompts for menu keymaps.
+   We make this bigger when necessary, and never free it.  */
+static char *read_char_minibuf_menu_text;
+/* Size of that buffer.  */
+static int read_char_minibuf_menu_width;
 
 static Lisp_Object
 read_char_minibuf_menu_prompt (commandflag, nmaps, maps)
@@ -5034,13 +5423,27 @@ read_char_minibuf_menu_prompt (commandflag, nmaps, maps)
   register Lisp_Object name;
   int nlength;
   int width = FRAME_WIDTH (selected_frame) - 4;
-  char *menu = (char *) alloca (width + 4);
   int idx = -1;
   int nobindings = 1;
   Lisp_Object rest, vector;
+  char *menu;
 
   if (! menu_prompting)
     return Qnil;
+
+  /* Make sure we have a big enough buffer for the menu text.  */
+  if (read_char_minibuf_menu_text == 0)
+    {
+      read_char_minibuf_menu_width = width + 4;
+      read_char_minibuf_menu_text = (char *) xmalloc (width + 4);
+    }
+  else if (width + 4 > read_char_minibuf_menu_width)
+    {
+      read_char_minibuf_menu_width = width + 4;
+      read_char_minibuf_menu_text
+	= (char *) xrealloc (read_char_minibuf_menu_text, width + 4);
+    }
+  menu = read_char_minibuf_menu_text;
 
   /* Get the menu name from the first map that has one (a prompt string).  */
   for (mapno = 0; mapno < nmaps; mapno++)
@@ -5478,6 +5881,7 @@ read_key_sequence (keybuf, bufsize, prompt, dont_downcase_last,
   if (INTERACTIVE)
     echo_start = echo_length ();
   keys_start = this_command_key_count;
+  this_single_command_key_start = keys_start;
 
 #if defined (GOBBLE_FIRST_EVENT)
   /* This doesn't quite work, because some of the things that read_char
@@ -5995,6 +6399,9 @@ read_key_sequence (keybuf, bufsize, prompt, dont_downcase_last,
       if (!used_mouse_menu)
 	last_nonmenu_event = key;
 
+      /* Record what part of this_command_keys is the current key sequence.  */
+      this_single_command_key_start = this_command_key_count - t;
+
       prev_fkey_map = fkey_map;
       prev_fkey_start = fkey_start;
       prev_fkey_end = fkey_end;
@@ -6063,7 +6470,7 @@ read_key_sequence (keybuf, bufsize, prompt, dont_downcase_last,
 		     (To ignore it safely, we would need to gcpro a bunch of
 		     other variables.)  */
 		  if (! (VECTORP (fkey_next) || STRINGP (fkey_next)))
-		    error ("Function in function-key-map returns invalid key sequence");
+		    error ("Function in key-translation-map returns invalid key sequence");
 		}
 
 	      function_key_possible = ! NILP (fkey_next);
@@ -6236,7 +6643,7 @@ read_key_sequence (keybuf, bufsize, prompt, dont_downcase_last,
 	  original_uppercase = key;
 	  original_uppercase_position = t - 1;
 
-	  if (XINT (new_key) & shift_modifier)
+	  if (XINT (key) & shift_modifier)
 	    XSETINT (new_key, XINT (key) & ~shift_modifier);
 	  else
 	    XSETINT (new_key, (DOWNCASE (XINT (key) & 0x3ffff)
@@ -6397,7 +6804,10 @@ DEFUN ("read-key-sequence", Fread_key_sequence, Sread_key_sequence, 1, 4, 0,
   gcpro1.nvars = (sizeof keybuf/sizeof (keybuf[0]));
 
   if (NILP (continue_echo))
-    this_command_key_count = 0;
+    {
+      this_command_key_count = 0;
+      this_single_command_key_start = 0;
+    }
 
   i = read_key_sequence (keybuf, (sizeof keybuf/sizeof (keybuf[0])),
 			 prompt, ! NILP (dont_downcase_last),
@@ -6412,16 +6822,18 @@ DEFUN ("read-key-sequence", Fread_key_sequence, Sread_key_sequence, 1, 4, 0,
   return make_event_array (i, keybuf);
 }
 
-DEFUN ("command-execute", Fcommand_execute, Scommand_execute, 1, 3, 0,
+DEFUN ("command-execute", Fcommand_execute, Scommand_execute, 1, 4, 0,
  "Execute CMD as an editor command.\n\
 CMD must be a symbol that satisfies the `commandp' predicate.\n\
 Optional second arg RECORD-FLAG non-nil\n\
 means unconditionally put this command in `command-history'.\n\
 Otherwise, that is done only if an arg is read using the minibuffer.\n\
 The argument KEYS specifies the value to use instead of (this-command-keys)\n\
-when reading the arguments; if it is nil, (this_command_key_count) is used.")
-     (cmd, record, keys)
-     Lisp_Object cmd, record, keys;
+when reading the arguments; if it is nil, (this-command-keys) is used.\n\
+The argument SPECIAL, if non-nil, means that this command is executing\n\
+a special event, so ignore the prefix argument and don't clear it.")
+     (cmd, record_flag, keys, special)
+     Lisp_Object cmd, record_flag, keys, special;
 {
   register Lisp_Object final;
   register Lisp_Object tem;
@@ -6429,10 +6841,16 @@ when reading the arguments; if it is nil, (this_command_key_count) is used.")
   struct backtrace backtrace;
   extern int debug_on_next_call;
 
-  prefixarg = current_kboard->Vprefix_arg;
-  current_kboard->Vprefix_arg = Qnil;
-  Vcurrent_prefix_arg = prefixarg;
   debug_on_next_call = 0;
+
+  if (NILP (special))
+    {
+      prefixarg = current_kboard->Vprefix_arg;
+      Vcurrent_prefix_arg = prefixarg;
+      current_kboard->Vprefix_arg = Qnil;
+    }
+  else
+    prefixarg = Qnil;
 
   if (SYMBOLP (cmd))
     {
@@ -6460,7 +6878,7 @@ when reading the arguments; if it is nil, (this_command_key_count) is used.")
       /* If requested, place the macro in the command history.  For
 	 other sorts of commands, call-interactively takes care of
 	 this.  */
-      if (!NILP (record))
+      if (!NILP (record_flag))
 	Vcommand_history
 	  = Fcons (Fcons (Qexecute_kbd_macro,
 			  Fcons (final, Fcons (prefixarg, Qnil))),
@@ -6477,7 +6895,7 @@ when reading the arguments; if it is nil, (this_command_key_count) is used.")
       backtrace.nargs = 1;
       backtrace.evalargs = 0;
 
-      tem = Fcall_interactively (cmd, record, keys);
+      tem = Fcall_interactively (cmd, record_flag, keys);
 
       backtrace_list = backtrace.next;
       return tem;
@@ -6537,6 +6955,9 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
 			       Vobarray, Qcommandp,
 			       Qt, Qnil, Qextended_command_history);
 
+  if (STRINGP (function) && XSTRING (function)->size == 0)
+    error ("No command name given");
+
   /* Set this_command_keys to the concatenation of saved_keys and
      function, followed by a RET.  */
   {
@@ -6546,6 +6967,7 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
     Lisp_Object tem;
 
     this_command_key_count = 0;
+    this_single_command_key_start = 0;
 
     keys = XVECTOR (saved_keys)->contents;
     for (i = 0; i < XVECTOR (saved_keys)->size; i++)
@@ -6570,6 +6992,7 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
 
   /* If enabled, show which key runs this command.  */
   if (!NILP (Vsuggest_key_bindings)
+      && NILP (Vexecuting_macro)
       && SYMBOLP (function))
     {
       Lisp_Object bindings;
@@ -6588,7 +7011,7 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
 	}
     }
 
-  return Fcommand_execute (function, Qt, Qnil);
+  return Fcommand_execute (function, Qt, Qnil, Qnil);
 }
 
 /* Find the set of keymaps now active.
@@ -6632,11 +7055,29 @@ current_active_maps (maps_p)
   return nmaps;
 }
 
+/* Return nonzero if input events are pending.  */
 
 detect_input_pending ()
 {
   if (!input_pending)
-    get_input_pending (&input_pending);
+    get_input_pending (&input_pending, 0);
+
+  return input_pending;
+}
+
+/* Return nonzero if input events are pending.
+   Execute timers immediately; don't make events for them.  */
+
+detect_input_pending_run_timers (do_display)
+     int do_display;
+{
+  int old_timers_run = timers_run;
+
+  if (!input_pending)
+    get_input_pending (&input_pending, 1);
+
+  if (old_timers_run != timers_run && do_display)
+    redisplay_preserve_echo_area ();
 
   return input_pending;
 }
@@ -6657,7 +7098,8 @@ Actually, the value is nil only if we can be sure that no input is available.")
   if (!NILP (Vunread_command_events) || unread_command_char != -1)
     return (Qt);
 
-  return detect_input_pending () ? Qt : Qnil;
+  get_input_pending (&input_pending, 1);
+  return input_pending > 0 ? Qt : Qnil;
 }
 
 DEFUN ("recent-keys", Frecent_keys, Srecent_keys, 0, 0, 0,
@@ -6689,6 +7131,20 @@ The value is a string or a vector.")
 {
   return make_event_array (this_command_key_count,
 			   XVECTOR (this_command_keys)->contents);
+}
+
+DEFUN ("this-single-command-keys", Fthis_single_command_keys,
+       Sthis_single_command_keys, 0, 0, 0,
+  "Return the key sequence that invoked this command.\n\
+Unlike `this-command-keys', this function's value\n\
+does not include prefix arguments.\n\
+The value is a string or a vector.")
+  ()
+{
+  return make_event_array (this_command_key_count
+			   - this_single_command_key_start,
+			   (XVECTOR (this_command_keys)->contents
+			    + this_single_command_key_start));
 }
 
 DEFUN ("reset-this-command-lengths", Freset_this_command_lengths,
@@ -6727,18 +7183,17 @@ If FILE is nil, close any open dribble file.")
   (file)
      Lisp_Object file;
 {
-  if (NILP (file))
+  if (dribble)
     {
-      if (dribble)
-	{
-	  fclose (dribble);
-	  dribble = 0;
-	}
+      fclose (dribble);
+      dribble = 0;
     }
-  else
+  if (!NILP (file))
     {
       file = Fexpand_file_name (file, Qnil);
       dribble = fopen (XSTRING (file)->data, "w");
+      if (dribble == 0)
+	report_file_error ("Opening dribble", Fcons (file, Qnil));
     }
   return Qnil;
 }
@@ -7180,7 +7635,7 @@ init_kboard (kb)
 
 /*
  * Destroy the contents of a kboard object, but not the object itself.
- * We use this just before deleteing it, or if we're going to initialize
+ * We use this just before deleting it, or if we're going to initialize
  * it a second time.
  */
 static void
@@ -7214,6 +7669,7 @@ init_keyboard ()
   quit_char = Ctl ('g');
   Vunread_command_events = Qnil;
   unread_command_char = -1;
+  EMACS_SET_SECS_USECS (timer_idleness_start_time, -1, -1);
   total_keys = 0;
   recent_keys_index = 0;
   kbd_fetch_ptr = kbd_buffer;
@@ -7340,6 +7796,8 @@ syms_of_keyboard ()
   staticpro (&Qfunction_key);
   Qmouse_click = intern ("mouse-click");
   staticpro (&Qmouse_click);
+  Qtimer_event = intern ("timer-event");
+  staticpro (&Qtimer_event);
 
   Qmenu_enable = intern ("menu-enable");
   staticpro (&Qmenu_enable);
@@ -7359,6 +7817,10 @@ syms_of_keyboard ()
   staticpro (&Qhandle);
   Qbelow_handle = intern ("below-handle");
   staticpro (&Qbelow_handle);
+  Qup = intern ("up");
+  staticpro (&Qup);
+  Qdown = intern ("down");
+  staticpro (&Qdown);
 
   Qevent_kind = intern ("event-kind");
   staticpro (&Qevent_kind);
@@ -7441,6 +7903,7 @@ syms_of_keyboard ()
   defsubr (&Scommand_execute);
   defsubr (&Srecent_keys);
   defsubr (&Sthis_command_keys);
+  defsubr (&Sthis_single_command_keys);
   defsubr (&Sreset_this_command_lengths);
   defsubr (&Ssuspend_emacs);
   defsubr (&Sabort_recursive_edit);
@@ -7637,11 +8100,12 @@ Errors running the hook are caught and ignored.");
 
   DEFVAR_LISP ("post-command-idle-hook", &Vpost_command_idle_hook,
     "Normal hook run after each command is executed, if idle.\n\
-Errors running the hook are caught and ignored.");
+Errors running the hook are caught and ignored.\n\
+This feature is obsolete; use idle timers instead.  See `etc/NEWS'.");
   Vpost_command_idle_hook = Qnil;
 
   DEFVAR_INT ("post-command-idle-delay", &post_command_idle_delay,
-    "Delay time before running `post-command-idle-delay'.\n\
+    "Delay time before running `post-command-idle-hook'.\n\
 This is measured in microseconds.");
   post_command_idle_delay = 100000;
 
@@ -7705,6 +8169,14 @@ If the value is non-nil and not a number, we wait 2 seconds.");
   DEFVAR_LISP ("column-number-mode", &Vcolumn_number_mode,
     "Non-nil enables display of the current column number in the mode line.");
   Vcolumn_number_mode = Qnil;
+
+  DEFVAR_LISP ("timer-list", &Vtimer_list,
+    "List of active absolute time timers in order of increasing time");
+  Vtimer_list = Qnil;
+
+  DEFVAR_LISP ("timer-idle-list", &Vtimer_idle_list,
+    "List of active idle-time timers in order of increasing time");
+  Vtimer_idle_list = Qnil;
 }
 
 keys_of_keyboard ()

@@ -229,6 +229,30 @@ configurations.
 
 Updated: 2Feb95
 
+Edgar Der-Danieliantz	<EDD@AIC.NET> <edd@ns.aic.net> <edd@arminco.com>
+P.O. Box 10			
+Yerevan 375009 AM	
+ARMENIA
+ 
+Support for GCC (C & Objective C), X Window System, 
+World Wide Web, x86-based embedded systems, logic programming, etc.
+ 
+Via Internet (mail, talk, irc, etc.)
+ 
+Experience:
+   OS's: 4.3 & 4.4 BSD, SVR3.2 & 4.2, FreeBSD, Linux,
+      NetBSD, SCO, Solaris, SunOS, Ultrix, NEXTSTEP, UnixWare.
+   Languages: C, C++, Objective C, Pascal, Tcl/Tk, Perl,
+      Bourne Shell, PostScript, HTML, Prolog.
+   Platforms: Intel, SPARC, Mac, VAX, NeXT.
+ 
+Rates: Depending on type of work, appx $20/hour. Contact for more information.
+   Negotiable for individuals and non-profit organizations.
+   FREE for individuals who can't pay. Your 'Thanks!' just enough! :-)
+   Payment by international wire transfer.
+
+Entered: 6Mar96
+
 Free Software Association of Germany
 Michaela Merz
 Heimatring 19
@@ -552,6 +576,31 @@ only jobs that either can be done entirely via the Internet and are
 short-term, or that are very interesting.
 
 Updated: 21Jan95
+
+Erik Naggum		<erik@naggum.no>
+P.O. Box 1570 Vika	http://www.naggum.no
+0118 OSLO		phone: +47 2295 0313
+NORWAY			NIC handle: EN9
+
+Have extensive experience with Unix and C (since 1983), Internet protocols
+(1987), International Standards for character sets (1988), SGML (1990),
+ANSI Common Lisp (1994); Emacs user and programmer from 1984 to 1987
+(TOPS-20) and 1991 to present (Unix).  Have worked on GNU Emacs development
+since early 1994, both in Emacs Lisp and C.  Have been tracking development
+code for Emacs since mid-1995, and know new versions intimately.
+
+Services offered: installation, support, customization, and development of
+new packages, plus courses and seminars from basic usage through Emacs Lisp
+programming to writing extensions in C.  General aid with all GNU software.
+
+Rates depend on duration of work: From $6/minute for <= 1 hour, to $500/day
+for >= 1 month.  Service agreements are encouraged.  Cover Scandinavia for
+on-site work.  Remote debugging and help by mail available for smaller
+fees, without limits to distance.
+
+Please call only about actual work, I prefer mail for all other questions.
+
+I accept VISA and Mastercard, preferred for remote jobs and small amounts.
 
 Wolfgang S. Rupprecht		<wolfgang@wsrcc.com>
 47 Esparito Ave.

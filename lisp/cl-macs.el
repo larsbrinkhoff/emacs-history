@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -1221,6 +1222,10 @@ go back to their previous definitions, or lack thereof)."
 	 (mapcar
 	  (function
 	   (lambda (x)
+	     (if (or (and (fboundp (car x))
+			  (eq (car-safe (symbol-function (car x))) 'macro))
+		     (cdr (assq (car x) cl-macro-environment)))
+		 (error "Use `labels', not `flet', to rebind macro names"))
 	     (let ((func (list 'function*
 			       (list 'lambda (cadr x)
 				     (list* 'block (car x) (cddr x))))))
@@ -1232,7 +1237,22 @@ go back to their previous definitions, or lack thereof)."
 	  bindings)
 	 body))
 
-(defmacro labels (&rest args) (cons 'flet args))
+(defmacro labels (bindings &rest body)
+  "(labels ((FUNC ARGLIST BODY...) ...) FORM...): make temporary func bindings.
+This is like `flet', except the bindings are lexical instead of dynamic.
+Unlike `flet', this macro is fully complaint with the Common Lisp standard."
+  (let ((vars nil) (sets nil) (cl-macro-environment cl-macro-environment))
+    (while bindings
+      (let ((var (gensym)))
+	(cl-push var vars)
+	(cl-push (list 'function* (cons 'lambda (cdar bindings))) sets)
+	(cl-push var sets)
+	(cl-push (list (car (cl-pop bindings)) 'lambda '(&rest cl-labels-args)
+		       (list 'list* '(quote funcall) (list 'quote var)
+			     'cl-labels-args))
+		 cl-macro-environment)))
+    (cl-macroexpand-all (list* 'lexical-let vars (cons (cons 'setq sets) body))
+			cl-macro-environment)))
 
 ;; The following ought to have a better definition for use with newer
 ;; byte compilers.
@@ -2016,7 +2036,6 @@ copier, a `NAME-p' predicate, and setf-able `NAME-SLOT' accessors."
 	 (tag (intern (format "cl-struct-%s" name)))
 	 (tag-symbol (intern (format "cl-struct-%s-tags" name)))
 	 (include-descs nil)
-	 (include-tag-symbol nil)
 	 (side-eff nil)
 	 (type nil)
 	 (named nil)
@@ -2048,9 +2067,7 @@ copier, a `NAME-p' predicate, and setf-able `NAME-SLOT' accessors."
 		     include-descs (mapcar (function
 					    (lambda (x)
 					      (if (consp x) x (list x))))
-					   (cdr args))
-		     include-tag-symbol (intern (format "cl-struct-%s-tags"
-							include))))
+					   (cdr args))))
 	      ((eq opt ':print-function)
 	       (setq print-func (car args)))
 	      ((eq opt ':type)
@@ -2088,8 +2105,12 @@ copier, a `NAME-p' predicate, and setf-able `NAME-SLOT' accessors."
 		type (car inc-type)
 		named (assq 'cl-tag-slot descs))
 	  (if (cadr inc-type) (setq tag name named t))
-	  (cl-push (list 'pushnew (list 'quote tag) include-tag-symbol)
-		   forms))
+	  (let ((incl include))
+	    (while incl
+	      (cl-push (list 'pushnew (list 'quote tag)
+			     (intern (format "cl-struct-%s-tags" incl)))
+		       forms)
+	      (setq incl (get incl 'cl-struct-include)))))
       (if type
 	  (progn
 	    (or (memq type '(vector list))
@@ -2196,6 +2217,8 @@ copier, a `NAME-p' predicate, and setf-able `NAME-SLOT' accessors."
 			  (list 'quote descs))
 		    (list 'put (list 'quote name) '(quote cl-struct-type)
 			  (list 'quote (list type (eq named t))))
+		    (list 'put (list 'quote name) '(quote cl-struct-include)
+			  (list 'quote include))
 		    (list 'put (list 'quote name) '(quote cl-struct-print)
 			  print-auto)
 		    (mapcar (function (lambda (x)

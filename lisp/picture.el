@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -479,6 +480,10 @@ Leaves the region surrounding the rectangle."
     (progn
       (setq picture-mode-map (list 'keymap (make-vector 256 nil)))
       (picture-substitute 'self-insert-command 'picture-self-insert)
+      (picture-substitute 'completion-separator-self-insert-command
+			  'picture-self-insert)
+      (picture-substitute 'completion-separator-self-insert-autofilling
+			  'picture-self-insert)
       (picture-substitute 'forward-char 'picture-forward-column)
       (picture-substitute 'backward-char 'picture-backward-column)
       (picture-substitute 'delete-char 'picture-clear-column)
@@ -607,10 +612,9 @@ they are not defaultly assigned to keys."
 
     ;; edit-picture-hook is what we used to run, picture-mode-hook is in doc.
     (run-hooks 'edit-picture-hook 'picture-mode-hook)
-    (message
-     (substitute-command-keys
-      "Type \\[picture-mode-exit] in this buffer to return it to %s mode.")
-     picture-mode-old-mode-name)))
+    (message "Type %s in this buffer to return it to %s mode."
+	     (substitute-command-keys "\\[picture-mode-exit]")
+	     picture-mode-old-mode-name)))
 
 ;;;###autoload
 (defalias 'edit-picture 'picture-mode)

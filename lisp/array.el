@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -102,9 +103,9 @@ to the optional arguments A-ROW and A-COLUMN."
   (interactive)
   (let ((buffer-line (current-line))
 	(buffer-column (current-column)))
-    (message (format "Array row: %s  Array column: %s" 
-		     (prin1-to-string (array-current-row))
-		     (prin1-to-string (array-current-column))))))
+    (message "Array row: %s  Array column: %s" 
+	     (prin1-to-string (array-current-row))
+	     (prin1-to-string (array-current-column)))))
 
 (defun array-display-local-variables ()
   "Display the current state of the local variables in the minibuffer."

@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -53,9 +54,9 @@
 ;;
 
 (defvar hexl-program "hexl"
-  "The program that will hexlify and de-hexlify its stdin.
+  "The program that will hexlify and dehexlify its stdin.
 `hexl-program' will always be concatenated with `hexl-options'
-and \"-de\" when dehexlfying a buffer.")
+and \"-de\" when dehexlifying a buffer.")
 
 (defvar hexl-iso ""
   "If your emacs can handle ISO characters, this should be set to
@@ -80,6 +81,9 @@ and \"-de\" when dehexlfying a buffer.")
 (defvar hexl-mode-old-local-map)
 (defvar hexl-mode-old-mode-name)
 (defvar hexl-mode-old-major-mode)
+(defvar hexl-mode-old-write-contents-hooks)
+(defvar hexl-mode-old-require-final-newline)
+(defvar hexl-mode-old-syntax-table)
 
 ;; routines
 
@@ -157,8 +161,10 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
 \\[describe-bindings] for advanced commands."
   (interactive "p")
   (if (eq major-mode 'hexl-mode)
-      (error "You are already in hexl mode.")
-    (kill-all-local-variables)
+      (error "You are already in hexl mode")
+
+    ;; We do not turn off the old major mode; instead we just
+    ;; override most of it.  That way, we can restore it perfectly.
     (make-local-variable 'hexl-mode-old-local-map)
     (setq hexl-mode-old-local-map (current-local-map))
     (use-local-map hexl-mode-map)
@@ -171,19 +177,28 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
     (setq hexl-mode-old-major-mode major-mode)
     (setq major-mode 'hexl-mode)
 
+    (make-local-variable 'hexl-mode-old-syntax-table)
+    (setq hexl-mode-old-syntax-table (syntax-table))
+    (set-syntax-table (standard-syntax-table))
+
+    (make-local-variable 'hexl-mode-old-write-contents-hooks)
+    (setq hexl-mode-old-write-contents-hooks write-contents-hooks)
     (make-local-variable 'write-contents-hooks)
     (add-hook 'write-contents-hooks 'hexl-save-buffer)
 
+    (make-local-variable 'hexl-mode-old-require-final-newline)
+    (setq hexl-mode-old-require-final-newline require-final-newline)
+    (make-local-variable 'require-final-newline)
+    (setq require-final-newline nil)
+
+    ;; Add hooks to rehexlify or dehexlify on various events.
     (make-local-hook 'after-revert-hook)
     (add-hook 'after-revert-hook 'hexl-after-revert-hook nil t)
 
+    (make-local-hook 'change-major-mode-hook)
+    (add-hook 'change-major-mode-hook 'hexl-maybe-dehexlify-buffer nil t)
+
     (make-local-variable 'hexl-max-address)
-
-    (make-local-variable 'change-major-mode-hook)
-    (add-hook 'change-major-mode-hook 'hexl-maybe-dehexlify-buffer)
-
-    (make-local-variable 'require-final-newline)
-    (setq require-final-newline nil)
 
     (let ((modified (buffer-modified-p))
 	  (inhibit-read-only t)
@@ -254,11 +269,18 @@ With arg, don't unhexlify buffer."
 	    (inhibit-read-only t)
 	    (original-point (1+ (hexl-current-address))))
 	(dehexlify-buffer)
-	(remove-hook 'write-contents-hook 'hexl-save-buffer)
+	(remove-hook 'write-contents-hooks 'hexl-save-buffer)
 	(set-buffer-modified-p modified)
 	(goto-char original-point)))
+
+  (remove-hook 'after-revert-hook 'hexl-after-revert-hook t)
+  (remove-hook 'change-major-mode-hook 'hexl-maybe-dehexlify-buffer t)
+
+  (setq write-contents-hooks hexl-mode-old-write-contents-hooks)
+  (setq require-final-newline hexl-mode-old-require-final-newline)
   (setq mode-name hexl-mode-old-mode-name)
   (use-local-map hexl-mode-old-local-map)
+  (set-syntax-table hexl-mode-old-syntax-table)
   (setq major-mode hexl-mode-old-major-mode)
   (force-mode-line-update))
 
@@ -270,7 +292,7 @@ Ask the user for confirmation."
 	    (inhibit-read-only t)
 	    (original-point (1+ (hexl-current-address))))
 	(dehexlify-buffer)
-	(remove-hook 'write-contents-hook 'hexl-save-buffer)
+	(remove-hook 'write-contents-hooks 'hexl-save-buffer)
 	(set-buffer-modified-p modified)
 	(goto-char original-point))))
 
@@ -496,12 +518,12 @@ With prefix arg N, puts point N bytes of the way from the true beginning."
       (recenter 0))))
 
 (defun hexl-beginning-of-1k-page ()
-  "Goto to beginning of 1k boundry."
+  "Go to beginning of 1k boundary."
   (interactive)
   (hexl-goto-address (logand (hexl-current-address) -1024)))
 
 (defun hexl-end-of-1k-page ()
-  "Goto to end of 1k boundry."
+  "Go to end of 1k boundary."
   (interactive)
   (hexl-goto-address (let ((address (logior (hexl-current-address) 1023)))
 		       (if (> address hexl-max-address)
@@ -509,12 +531,12 @@ With prefix arg N, puts point N bytes of the way from the true beginning."
 		       address)))
 
 (defun hexl-beginning-of-512b-page ()
-  "Goto to beginning of 512 byte boundry."
+  "Go to beginning of 512 byte boundary."
   (interactive)
   (hexl-goto-address (logand (hexl-current-address) -512)))
 
 (defun hexl-end-of-512b-page ()
-  "Goto to end of 512 byte boundry."
+  "Go to end of 512 byte boundary."
   (interactive)
   (hexl-goto-address (let ((address (logior (hexl-current-address) 511)))
 		       (if (> address hexl-max-address)
@@ -532,17 +554,29 @@ You may also type up to 3 octal digits, to insert a character with that code"
 
 ;;;###autoload
 (defun hexlify-buffer ()
-  "Convert a binary buffer to hexl format."
+  "Convert a binary buffer to hexl format.
+This discards the buffer's undo information."
   (interactive)
+  (and buffer-undo-list
+       (or (y-or-n-p "Converting to hexl format discards undo info; ok? ")
+	   (error "Aborted")))
+  (setq buffer-undo-list nil)
   (let ((binary-process-output nil) ; for Ms-Dos
-	(binary-process-input t))
+	(binary-process-input t)
+	(buffer-undo-list t))
     (shell-command-on-region (point-min) (point-max) hexlify-command t)))
 
 (defun dehexlify-buffer ()
-  "Convert a hexl format buffer to binary."
+  "Convert a hexl format buffer to binary.
+This discards the buffer's undo information."
   (interactive)
+  (and buffer-undo-list
+       (or (y-or-n-p "Converting from hexl format discards undo info; ok? ")
+	   (error "Aborted")))
+  (setq buffer-undo-list nil)
   (let ((binary-process-output t) ; for Ms-Dos
-	(binary-process-input nil))
+	(binary-process-input nil)
+	(buffer-undo-list t))
     (shell-command-on-region (point-min) (point-max) dehexlify-command t)))
 
 (defun hexl-char-after-point ()
@@ -562,13 +596,13 @@ You may also type up to 3 octal digits, to insert a character with that code"
     (let ((ch (logior character 32)))
       (if (and (>= ch ?a) (<= ch ?f))
 	  (- ch (- ?a 10))
-	(error (format "Invalid hex digit `%c'." ch))))))
+	(error "Invalid hex digit `%c'." ch)))))
 
 (defun hexl-oct-char-to-integer (character)
   "Take a char and return its value as if it was a octal digit."
   (if (and (>= character ?0) (<= character ?7))
       (- character ?0)
-    (error (format "Invalid octal digit `%c'." character))))
+    (error "Invalid octal digit `%c'." character)))
 
 (defun hexl-printable-character (ch)
   "Return a displayable string for character CH."

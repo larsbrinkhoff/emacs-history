@@ -1,9 +1,498 @@
-GNU Emacs NEWS -- history of user-visible changes.  24 Nov 1995
-Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+GNU Emacs NEWS -- history of user-visible changes.  15 May 1996
+Copyright (C) 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
+
+* Editing Changes in Emacs 19.31
+
+** Freedom of the press restricted in the United States.
+
+Emacs has been censored in accord with the Communications Decency Act.
+This includes removing some features of the doctor program.  That law
+was described by its supporters as a ban on pornography, but it bans
+far more than that.  The Emacs distribution has never contained any
+pornography, but parts of it were nonetheless prohibited.
+
+For information on US government censorship of the Internet, and what
+you can do to bring back freedom of the press, see the web site
+`http://www.vtw.org/'.
+
+** A note about C mode indentation customization.
+
+The old (Emacs 19.29) ways of specifying a C indentation style
+do not normally work in the new implementation of C mode.
+It has its own methods of customizing indentation, which are
+much more powerful than the old C mode.  See the Editing Programs
+chapter of the manual for details.
+
+However, you can load the library cc-compat to make the old
+customization variables take effect.
+
+** Marking with the mouse.
+
+When you mark a region with the mouse, the region now remains
+highlighted until the next input event, regardless of whether you are
+using M-x transient-mark-mode.
+
+** Improved Windows NT/95 support.
+
+*** Emacs now supports scroll bars on Windows NT and Windows 95.
+
+*** Emacs now supports subprocesses on Windows 95.  (Subprocesses used
+to work on NT only and not on 95.)
+
+*** There are difficulties with subprocesses, though, due to problems
+in Windows, beyond the control of Emacs.  They work fine as long as
+you run Windows applications.  The problems arise when you run a DOS
+application in a subprocesses.  Since current shells run as DOS
+applications, these problems are significant.
+
+If you run a DOS application in a subprocess, then the application is
+likely to busy-wait, which means that your machine will be 100% busy.
+However, if you don't mind the temporary heavy load, the subprocess
+will work ok as long as you tell it to terminate before you start any
+other DOS application as a subprocess.
+
+Emacs is unable to terminate or interrupt a DOS subprocess.
+You have to do this by providing input directly to the subprocess.
+
+If you run two DOS applications at the same time in two separate
+subprocesses, even if one of them is asynchronous, you will probably
+have to reboot your machine--until then, it will remain 100% busy.
+Windows simply does not cope when one Windows process tries to run two
+separate DOS subprocesses.  Typing CTL-ALT-DEL and then choosing
+Shutdown seems to work although it may take a few minutes.
+
+** M-x resize-minibuffer-mode.
+
+This command, not previously mentioned in NEWS, toggles a mode in
+which the minibuffer window expands to show as many lines as the
+minibuffer contains.
+
+** `title' frame parameter and resource.
+
+The `title' X resource now specifies just the frame title, nothing else.
+It does not affect the name used for looking up other X resources.
+It works by setting the new `title' frame paramaeter, which likewise
+affects just the displayed title of the frame.
+
+The `name' parameter continues to do what it used to do:
+it specifies the frame name for looking up X resources,
+and also serves as the default for the displayed title
+when the `title' parameter is unspecified or nil.
+
+** Emacs now uses the X toolkit by default, if you have a new
+enough version of X installed (X11R5 or newer).
+
+** When you compile Emacs with the Motif widget set, Motif handles the
+F10 key by activating the menu bar.  To avoid confusion, the usual
+Emacs binding of F10 is replaced with a no-op when using Motif.
+
+If you want to be able to use F10 in Emacs, you can rebind the Motif
+menubar to some other key which you don't use.  To do so, add
+something like this to your X resources file.  This example rebinds
+the Motif menu bar activation key to S-F12:
+
+   Emacs*defaultVirtualBindings:  osfMenuBar : Shift<Key>F12
+
+** In overwrite mode, DEL now inserts spaces in most cases
+to replace the characters it "deletes".
+
+** The Rmail summary now shows the number of lines in each message.
+
+** Rmail has a new command M-x unforward-rmail-message, which extracts
+a forwarded message from the message that forwarded it.  To use it,
+select a message which contains a forwarded message and then type the command.
+It inserts the forwarded message as a separate Rmail message
+immediately after the selected one.
+
+This command also undoes the textual modifications that are standardly
+made, as part of forwarding, by Rmail and other mail reader programs.
+
+** Turning off saving of .saves-... files in your home directory.
+
+Each Emacs session writes a file named .saves-... in your home
+directory to record which files M-x recover-session should recover.
+If you exit Emacs normally with C-x C-c, it deletes that file.  If
+Emacs or the operating system crashes, the file remains for M-x
+recover-session.
+
+You can turn off the writing of these files by setting
+auto-save-list-file-name to nil.  If you do this, M-x recover-session
+will not work.
+
+Some previous Emacs versions failed to delete these files even on
+normal exit.  This is fixed now.  If you are thinking of turning off
+this feature because of past experiences with versions that had this
+bug, it would make sense to check whether you still want to do so
+now that the bug is fixed.
+
+** Changes to Version Control (VC)
+
+There is a new variable, vc-follow-symlinks.  It indicates what to do
+when you visit a link to a file that is under version control.
+Editing the file through the link bypasses the version control system,
+which is dangerous and probably not what you want.
+
+If this variable is t, VC follows the link and visits the real file,
+telling you about it in the echo area.  If it is `ask' (the default),
+VC asks for confirmation whether it should follow the link.  If nil,
+the link is visited and a warning displayed.
+
+** iso-acc.el now lets you specify a choice of language.
+Languages include "latin-1" (the default) and "latin-2" (which
+is designed for entering ISO Latin-2 characters).
+
+There are also choices for specific human languages such as french and
+portuguese.  These are subsets of Latin-1, which differ in that they
+enable only the accent characters needed for particular language.
+The other accent characters, not needed for the chosen language,
+remain normal.
+
+** Posting articles and sending mail now has M-TAB completion on various
+header fields (Newsgroups, To, CC, ...).
+
+Completion in the Newsgroups header depends on the list of groups
+known to your news reader.  Completion in the Followup-To header
+offers those groups which are in the Newsgroups header, since
+Followup-To usually just holds one of those.
+
+Completion in fields that hold mail addresses works based on the list
+of local users plus your aliases.  Additionally, if your site provides
+a mail directory or a specific host to use for any unrecognized user
+name, you can arrange to query that host for completion also.  (See the
+documentation of variables `mail-directory-process' and
+`mail-directory-stream'.)
+
+** A greatly extended sgml-mode offers new features such as (to be configured)
+skeletons with completing read for tags and attributes, typing named
+characters including optionally all 8bit characters, making tags invisible
+with optional alternate display text, skipping and deleting tag(pair)s
+
+Note: since Emacs' syntax feature cannot limit the special meaning of ', " and
+- to inside <>, for some texts the result, especially of font locking, may be
+wrong (see `sgml-specials' if you get wrong results).
+
+The derived html-mode configures this with tags and attributes more or
+less HTML3ish.  It also offers optional quick keys like C-c 1 for
+headline or C-c u for unordered list (see `html-quick-keys').  Edit /
+Text Properties / Face or M-g combinations create tags as applicable.
+Outline minor mode is supported and level 1 font-locking tries to
+fontify tag contents (which only works when they fit on one line due
+to a limitation in font-lock).
+
+External viewing via browse-url can occur automatically upon saving.
+
+** M-x imenu-add-to-menubar now adds to the menu bar for the current
+buffer only.  If you want to put an Imenu item in the menu bar for all
+buffers that use a particular major mode, use the mode hook, as in
+this example:
+
+    (add-hook 'emacs-lisp-mode-hook
+	      '(lambda () (imenu-add-to-menubar "Index")))
+
+** Changes in BibTeX mode.
+
+*** Field names may now contain digits, hyphens, and underscores.
+
+*** Font Lock mode is now supported.
+
+*** bibtex-make-optional-field is no longer interactive.
+
+*** If bibtex-maintain-sorted-entries is non-nil, inserting new
+entries is now done with a faster algorithm.  However, inserting
+will fail in this case if the buffer contains invalid entries or
+isn't in sorted order, so you should finish each entry with C-c C-c
+(bibtex-close-entry) after you have inserted or modified it.
+The default value of bibtex-maintain-sorted-entries is nil.
+
+*** Function `show-all' is no longer bound to a key, since C-u C-c C-q
+does the same job.
+
+*** Entries with quotes inside quote-delimited fields (as `author =
+"Stefan Sch{\"o}f"') are now supported.
+
+*** Case in field names doesn't matter anymore when searching for help
+text.
+
+** Font Lock mode
+
+*** Global Font Lock mode
+
+Font Lock mode can be turned on globally, in buffers that support it, by the
+new command global-font-lock-mode.  You can use the new variable
+font-lock-global-modes to control which modes have Font Lock mode automagically
+turned on.  By default, this variable is set so that Font Lock mode is turned
+on globally where the buffer mode supports it.
+
+For example, to automagically turn on Font Lock mode where supported, put:
+
+ (global-font-lock-mode t)
+
+in your ~/.emacs.
+
+*** Local Refontification
+
+In Font Lock mode, editing a line automatically refontifies that line only.
+However, if your change alters the syntactic context for following lines,
+those lines remain incorrectly fontified.  To refontify them, use the new
+command M-g M-g (font-lock-fontify-block).
+
+In certain major modes, M-g M-g refontifies the entire current function.
+(The variable font-lock-mark-block-function controls how to find the
+current function.)  In other major modes, M-g M-g refontifies 16 lines
+above and below point.
+
+With a prefix argument N, M-g M-g refontifies N lines above and below point.
+
+** Follow mode
+
+Follow mode is a new minor mode combining windows showing the same
+buffer into one tall "virtual window".  The windows are typically two
+side-by-side windows.  Follow mode makes them scroll together as if
+they were a unit.  To use it, go to a frame with just one window,
+split it into two side-by-side windows using C-x 3, and then type M-x
+follow-mode.
+
+M-x follow-mode turns off Follow mode if it is already enabled.
+
+To display two side-by-side windows and activate Follow mode, use the
+command M-x follow-delete-other-windows-and-split.
+
+** hide-show changes.
+
+The hooks hs-hide-hooks and hs-show-hooks have been renamed
+to hs-hide-hook and hs-show-hook. to follow the convention for
+normal hooks.
+
+** Simula mode now has a menu containing the most important commands.
+The new command simula-indent-exp is bound to C-M-q.
+
+** etags can now handle programs written in Erlang.  Files are
+recognised by the extensions .erl and .hrl.  The tagged lines are
+those that begin a function, record, or macro.
+
+** MSDOS Changes
+
+*** It works now to compile Emacs with the version 2 of DJGPP.
+Compilation with DJGPP version 1 also still works.
+
+*** The documentation of DOS-specific aspects of Emacs was rewritten
+and expanded; see the ``MS-DOS'' node in the on-line docs.
+
+*** Emacs now uses ~ for backup file names, not .bak.
+
+*** You can simulate mouse-3 on two-button mice by simultaneously
+pressing both mouse buttons.
+
+*** A number of packages and commands which previously failed or had
+restricted functionality on MS-DOS, now work.  The most important ones
+are: 
+
+**** Printing (both with `M-x lpr-buffer' and with `ps-print' package)
+now works.
+
+**** `Ediff' works (in a single-frame mode).
+
+**** `M-x display-time' can be used on MS-DOS (due to the new
+implementation of Emacs timers, see below).
+
+**** `Dired' supports Unix-style shell wildcards.
+
+**** The `c-macro-expand' command now works as on other platforms.
+
+**** `M-x recover-session' works.
+
+**** `M-x list-colors-display' displays all the available colors.
+
+**** The `TPU-EDT' package works.
+
+* Lisp changes in Emacs 19.31.
+
+** The function using-unix-filesystems on Windows NT and Windows 95
+tells Emacs to read and write files assuming that they reside on a
+remote Unix filesystem.  No CR/LF translation is done on any files in
+this case.  Invoking using-unix-filesystems with t actives this
+behavior, and invoking it with any other value deactivates it.
+
+** Change in system-type and system-configuration values.
+
+The value of system-type on a Linux-based GNU system is now `lignux',
+not `linux'.  This means that some programs which use `system-type'
+need to be changed.  The value of `system-configuration' will also
+be different.
+
+It is generally recommended to use `system-configuration' rather
+than `system-type'.
+
+See the file LINUX-GNU in this directory for more about this.
+
+** The functions shell-command and dired-call-process
+now run file name handlers for default-directory, if it has them.
+
+** Undoing the deletion of text now restores the positions of markers
+that pointed into or next to the deleted text.
+
+** Timers created with run-at-time now work internally to Emacs, and
+no longer use a separate process.  Therefore, they now work more
+reliably and can be used for shorter time delays.
+
+The new function run-with-timer is a convenient way to set up a timer
+to run a specified amount of time after the present.  A call looks
+like this:
+
+  (run-with-timer SECS REPEAT FUNCTION ARGS...)
+
+SECS says how many seconds should elapse before the timer happens.
+It may be an integer or a floating point number.  When the timer
+becomes ripe, the action is to call FUNCTION with arguments ARGS.
+
+REPEAT gives the interval for repeating the timer (measured in
+seconds).  It may be an integer or a floating point number.  nil or 0
+means don't repeat at all--call FUNCTION just once.
+
+*** with-timeout provides an easy way to do something but give
+up if too much time passes.
+
+  (with-timeout (SECONDS TIMEOUT-FORMS...) BODY...)
+
+This executes BODY, but gives up after SECONDS seconds.
+If it gives up, it runs the TIMEOUT-FORMS and returns the value
+of the last one of them.  Normally it returns the value of the last
+form in BODY.
+
+*** You can now arrange to call a function whenever Emacs is idle for
+a certain length of time.  To do this, call run-with-idle-timer.  A
+call looks like this:
+
+  (run-with-idle-timer SECS REPEAT FUNCTION ARGS...)
+
+SECS says how many seconds of idleness should elapse before the timer
+happens.  It may be an integer or a floating point number.  When the
+timer becomes ripe, the action is to call FUNCTION with arguments
+ARGS.
+
+REPEAT, if non-nil, means this timer should be activated again each
+time Emacs becomes idle.  If REPEAT is nil, the timer runs just once,
+the first time Emacs is idle for SECS seconds.
+
+*** post-command-idle-hook is now obsolete; you shouldn't use it at
+all, because it interferes with the idle timer mechanism.  If your
+programs use post-command-idle-hook, convert them to use idle timers
+instead.
+
+*** y-or-n-p-with-timeout lets you ask a question but give up if
+there is no answer within a certain time.
+
+  (y-or-n-p-with-timeout PROMPT SECONDS DEFAULT-VALUE)
+
+asks the question PROMPT (just like y-or-n-p).  If the user answers
+within SECONDS seconds, it returns the answer that the user gave.
+Otherwise it gives up after SECONDS seconds, and returns DEFAULT-VALUE.
+
+** Minor change to `encode-time': you can now pass more than seven
+arguments.  If you do that, the first six arguments have the usual
+meaning, the last argument is interpreted as the time zone, and the
+arguments in between are ignored.
+
+This means that it works to use the list returned by `decode-time' as
+the list of arguments for `encode-time'.
+
+** The default value of load-path now includes the directory
+/usr/local/share/emacs/VERSION/site-lisp In addition to
+/usr/local/share/emacs/site-lisp.  You can use this new directory for
+site-specific Lisp packages that belong with a particular Emacs
+version.
+
+It is not unusual for a Lisp package that works well in one Emacs
+version to cause trouble in another.  Sometimes packages need updating
+for incompatible changes; sometimes they look at internal data that
+has changed; sometimes the package has been installed in Emacs itself
+and the installed version should be used.  Whatever the reason for the
+problem, this new feature makes it easier to solve.
+
+** When your program contains a fixed file name (like .completions or
+.abbrev.defs), the file name usually needs to be different on operating
+systems with limited file name syntax.
+
+Now you can avoid ad-hoc conditionals by using the function
+convert-standard-filename to convert the file name to a proper form
+for each operating system.  Here is an example of use, from the file
+completions.el:
+
+(defvar save-completions-file-name
+        (convert-standard-filename "~/.completions")
+  "*The filename to save completions to.")
+
+This sets the variable save-completions-file-name to a value that
+depends on the operating system, because the definition of
+convert-standard-filename depends on the operating system.  On
+Unix-like systems, it returns the specified file name unchanged.  On
+MS-DOS, it adapts the name to fit the limitations of that system.
+
+** The interactive spec N now returns the numeric prefix argument
+rather than the raw prefix argument.  (It still reads a number using the
+minibuffer if there is no prefix argument at all.)
+
+** When a process is deleted, this no longer disconnects the process
+marker from its buffer position.
+
+** The variable garbage-collection-messages now controls whether
+Emacs displays a message at the beginning and end of garbage collection.
+The default is nil, meaning there are no messages.
+
+** The variable debug-ignored-errors specifies certain kinds of errors
+that should not enter the debugger.  Its value is a list of error
+condition symbols and/or regular expressions.  If the error has any
+of the condition symbols listed, or if any of the regular expressions
+matches the error message, then that error does not enter the debugger,
+regardless of the value of debug-on-error.
+
+This variable is initialized to match certain common but uninteresting
+errors that happen often during editing.
+
+** The new function error-message-string converts an error datum
+into its error message.  The error datum is what condition-case
+puts into the variable, to describe the error that happened.
+
+** Anything that changes which buffer appears in a given window
+now runs the window-scroll-functions for that window.
+
+** The new function get-buffer-window-list returns a list of windows displaying
+a buffer.  The function is called with the buffer (a buffer object or a buffer
+name) and two optional arguments specifying the minibuffer windows and frames
+to search.  Therefore this function takes optional args like next-window etc.,
+and not get-buffer-window.
+
+** buffer-substring now runs the hook buffer-access-fontify-functions,
+calling each function with two arguments--the range of the buffer
+being accessed.  buffer-substring-no-properties does not call them.
+
+If you use this feature, you should set the variable
+buffer-access-fontified-property to a non-nil symbol, which is a
+property name.  Then, if all the characters in the buffer range have a
+non-nil value for that property, the buffer-access-fontify-functions
+are not called.  When called, these functions should put a non-nil
+property on the text that they fontify, so that they won't get called
+over and over for the same text.
+
+** Changes in lisp-mnt.el
+
+*** The lisp-mnt package can now recognize file headers that are written
+in the formats used by the `what' command and the RCS `ident' command:
+
+;; @(#) HEADER: text
+;; $HEADER: text $
+
+in addition to the normal
+
+;; HEADER: text
+
+*** The commands lm-verify and lm-synopsis are now interactive.  lm-verify
+checks that the library file has proper sections and headers, and
+lm-synopsis extracts first line "synopsis'"information.
 
 * Editing Changes in Emacs 19.30.
 
@@ -31,7 +520,8 @@ You can turn the feature off by setting suggest-key-bindings to nil.
 
 ** The menu bar is now visible on text-only terminals.  To choose a
 command from the menu bar when you have no mouse, type M-`
-(Meta-Backquote) or F10.
+(Meta-Backquote) or F10.  To turn off menu bar display,
+do (menu-bar-mode -1).
 
 ** Whenever you invoke a minibuffer, it appears in the minibuffer
 window that the current frame uses.
@@ -117,7 +607,7 @@ things that worked with the old version should still work with the new
 version.  Code that relies heavily on Gnus internals is likely to
 fail, though.
 
-*** Incompatabilities with the old GNUS.
+*** Incompatibilities with the old GNUS.
 
 **** All interactive commands have kept their names, but many internal
 functions have changed names.
@@ -441,7 +931,7 @@ at the corresponding position in the associated buffer.
 element < no longer exists, ' is a new element.
 
 ** The autoinsert insert facility for prefilling empty files as soon
-as they are found has been extended to accomodate skeletons or calling
+as they are found has been extended to accommodate skeletons or calling
 functions.  See the function auto-insert.
 
 ** TPU-edt Changes
@@ -491,10 +981,11 @@ room for more); to overcome this limitation, add this to autoexec.bat:
   
     set SUSPEND=%COMSPEC% /E:2000
 
-** The escape character can now be displayed (as a tiny left arrow)
-on X window frames.  Try this:
+** The escape character can now be displayed on X frames.  Try
+this:
     (aset standard-display-table 27 (vector 27))
-after first creating a display table.
+after first creating a display table (you can do that by loading
+the disp-table library).
 
 ** The new command-line option --eval specifies an expression to evaluate
 from the command line.
@@ -822,7 +1313,7 @@ If you position point with Mouse-1, then scroll with the scroll bar
 and use Mouse-3, Mouse-3 uses the position you specified with Mouse-1
 even if it has scrolled off the screen (and point is no longer there).
 This makes it easier to select a region with the mouse which is bigger
-than a screenfull.
+than a screenful.
 
 Any editing of the buffer, and any cursor motion or scrolling for any
 reason other than the scroll bar, cancels the special state set up by
@@ -1026,7 +1517,7 @@ variable symbols.  Also ++ and -- which mean 2* positive and negative
 c-basic-offset respectively.
 
 *** New variable, c-recognize-knr-p, which controls whether K&R C
-contructs will be recognized.  Trying to recognize K&R constructs is a
+constructs will be recognized.  Trying to recognize K&R constructs is a
 time hog so if you're programming strictly in ANSI C, set this
 variable to nil (it should already be nil in c++-mode).
 
@@ -1396,24 +1887,24 @@ mail-host-address to a string in the dumped Emacs, that string becomes
 the default host address for initializing user-mail-address.
 It is used instead of the value of (system-name).
 
-Lisp-Level Changes in Emacs 19.29
+* Lisp-Level Changes in Emacs 19.29
 
-* Basic Lisp
+** Basic Lisp
 
-** The range of integer values is now at least 2**28 on all machines.
+*** The range of integer values is now at least 2**28 on all machines.
 This means the maximum size of a buffer is at least 2**27-1,
 or 134,217,727.
 
-** You can now use Common Lisp syntax for the backquote and comma
+*** You can now use Common Lisp syntax for the backquote and comma
 macros.  Thus, you can now write `(x ,y z) instead of (` (x (, y) z)).
 
 The old syntax is still accepted.
 
-** The new function rassoc is like assoc, except that it compares the
+*** The new function rassoc is like assoc, except that it compares the
 key against the cdr of each alist element, where assoc would compare
 it against the car of each alist element.
 
-** The new function unintern deletes a symbol from an obarray.  The
+*** The new function unintern deletes a symbol from an obarray.  The
 first argument can be the symbol to delete, or a string giving its
 name.  The second argument specifies the obarray (nil means the
 current default obarray).
@@ -1422,37 +1913,37 @@ If the specified symbol is not in the obarray, or if there's no symbol
 in the obarray matching the specified string, unintern does nothing
 and returns nil.  If it does delete a symbol, it returns t.
 
-** You can specify an alternative read function for use by load and
+*** You can specify an alternative read function for use by load and
 eval-region by binding the variable load-read-function to some other
 function.  This function should accept one argument just like read.
 If load-read-function is nil, load and eval-region use ordinary read.
 
-** The new function `type-of' takes any object as argument, and
+*** The new function `type-of' takes any object as argument, and
 returns a symbol identifying the type of that object--one of `symbol',
 `integer', `float', `string', `cons', `vector', `marker', `overlay',
 `window', `buffer', `subr', `compiled-function',
 `window-configuration', `process'.
 
-** When you use eval-after-load for a file that is already loaded, it
+*** When you use eval-after-load for a file that is already loaded, it
 executes the FORM right away.  As before, if the file is not yet
 loaded, it arranges to execute FORM if and when the file is loaded
 later.  The result is: if you have called eval-after-load for a file,
 and if that file has been loaded, then regardless of the order of
 these two events, the specified form has been evaluated.
 
-** The Lisp construct #@NUMBER now skips the next NUMBER characters,
+*** The Lisp construct #@NUMBER now skips the next NUMBER characters,
 treating them as a comment.
 
 You would not want to use this in a file you edit by hand, but it is
 useful for commenting out parts of machine-generated files.
 
-** Two new functions, `plist-get' and `plist-put',
+*** Two new functions, `plist-get' and `plist-put',
 allow you to modify and retrieve values from lists formatted as property-lists.
 They work like `get' and `put', but operate on any list.
 `plist-put' returns the modified property-list; you must store it
 back where you got it.
 
-** The new function add-to-list is called with two elements,
+*** The new function add-to-list is called with two elements,
 a variable that holds a list and a new element.
 It adds the element to the list unless it is already present.
 It compares elements using `equal'.  Here is an example:
@@ -1465,7 +1956,7 @@ It compares elements using `equal'.  Here is an example:
 
 foo => (c a b)
 
-* Changes in compilation.
+** Changes in compilation.
 
 Functions and variables loaded from a byte-compiled file
 now refer to the file for their doc strings.
@@ -1516,16 +2007,16 @@ globally, or for one source file by adding this to the first line:
 
     -*-byte-compile-dynamic-docstrings: nil;-*-
 
-* Strings
+** Strings
 
-** Do not pass integer arguments to `concat' (or `vconcat' or
+*** Do not pass integer arguments to `concat' (or `vconcat' or
 `append').  We are phasing out the old unrecommended support for
 integers as arguments to these functions, in preparation for treating
 numbers as single characters in a future release.  To concatenate
 numbers in string form, use `number-to-string' first, or rewrite the
 call to use `format' instead of `concat'.
 
-** The new function match-string returns the string of text matched at
+*** The new function match-string returns the string of text matched at
 the given parenthesized expression by the last regexp search, or nil
 if there was no match.  If the last match was by `string-match' on a
 string, the string must be given.  Therefore, this function can be
@@ -1534,29 +2025,29 @@ used in place of `buffer-substring' and `substring', when using
 
    (match-string N)   or   (match-string N STRING)
 
-** The function replace-match now accepts an optional fourth argument,
+*** The function replace-match now accepts an optional fourth argument,
 STRING.  Use this after performing string-match on STRING, to replace
 the portion of STRING that was matched.  When used in this way,
 replace-match returns a newly created string which is the same as
 STRING except for the matched portion.
 
-** The new function buffer-substring-no-properties
+*** The new function buffer-substring-no-properties
 is like buffer-substring except that the string it returns
 has no text properties.
 
-** The function `equal' now considers two strings to be different
+*** The function `equal' now considers two strings to be different
 if they don't have the same text properties.
 
-* Completion
+** Completion
 
-** all-completions now takes an optional fourth argument.
+*** all-completions now takes an optional fourth argument.
 If that argument is non-nil, completions that start with a space
 are ignored unless the initial string also starts with a space.
 (This used to happen unconditionally.)
 
-* Local Variables
+** Local Variables
 
-** Local hook variables.
+*** Local hook variables.
 
 There is now a clean way to give a hook variable a buffer-local value.
 Call the function `make-local-hook' to do this.
@@ -1572,16 +2063,16 @@ function or a global one.
 Local hooks use t as an element of the (local) value of the hook
 variable as a flag meaning to use the global value also.
 
-** The new function local-variable-p tells you whether a particular
+*** The new function local-variable-p tells you whether a particular
 variable is buffer-local in the current buffer or a specified buffer.
 
-* Editing Facilities
+** Editing Facilities
 
-** The function copy-region-as-kill no longer sets this-command;
+*** The function copy-region-as-kill no longer sets this-command;
 as a result, a following kill command will not normally append
 to the text saved by copy-region-as-kill.
 
-** Regular expression searching and matching no longer performs full
+*** Regular expression searching and matching no longer performs full
 Posix backtracking by default.  They now stop with the first match found
 instead of looking for the longest match--just as they did in Emacs 18.
 The reason for this change is to get higher speed.
@@ -1592,9 +2083,9 @@ posix-search-backward, posix-looking-at, and posix-string-match.  Call
 these just like re-search-forward, re-search-backward, looking-at, and
 string-match.
 
-* Files
+** Files
 
-** The new variable `format-alist' defines file formats,
+*** The new variable `format-alist' defines file formats,
 which are ways of translating between the data in a file and things
 (text, text-properties, and possibly other information) in a buffer.
 
@@ -1634,45 +2125,45 @@ auto-save use a format different from the buffer's default by setting
 the variable `auto-save-file-format' to the desired format.  This will
 determine the format of all auto-save files.
 
-** The new function file-ownership-preserved-p tells you whether
+*** The new function file-ownership-preserved-p tells you whether
 deleting a file and recreating it would keep the file's owner
 unchanged.
 
-** The new function file-regular-p returns t if a file
+*** The new function file-regular-p returns t if a file
 is a "regular" file (not a directory, symlink, named pipe,
 terminal, or other I/O device).
 
-** The new function file-name-sans-extension discards the extension
+*** The new function file-name-sans-extension discards the extension
 of a file name.  You call it with a file name, and returns a string
 lacking the extension.
 
-** The variable path-separator is a string which says which
+*** The variable path-separator is a string which says which
 character separates directories in a search path.  It is ":"
 for Unix and GNU systems, ";" for MSDOG and Windows NT.
 
-* Commands and Key Sequences
+** Commands and Key Sequences
 
-** Key sequences consisting of C-c followed by {, }, <, >, : or ; are
+*** Key sequences consisting of C-c followed by {, }, <, >, : or ; are
 now reserved for major modes.  Sequences consisting of C-c followed by
 any other punctuation character are now meant for minor modes.  We don't
 plan to convert all existing major modes to stop using those sequences,
 but we hope to keep them to a minimum.
 
-** When the post-command-hook or the pre-command-hook gets an error, the error
+*** When the post-command-hook or the pre-command-hook gets an error, the error
 is silently ignored.  Emacs no longer sets the hook variable to nil when this
 happens.  Meanwhile, the hook functions can now alter the hook variable in
 a normal fashion; there is no need to do anything special.
 
-** define-key, lookup-key, and various other functions for changing or
+*** define-key, lookup-key, and various other functions for changing or
 looking up key bindings now let you write an event type with a list
 like (ctrl meta newline) or (meta ?d), as in XEmacs.  (ctrl meta newline)
 is equivalent to the event type symbol C-M-newline, and (meta ?d)
 is equivalent to the character ?\M-d.
 
-** The function event-convert-list converts a list such as
+*** The function event-convert-list converts a list such as
 (meta ?d) into the corresponding event type (a symbol or integer).
 
-** In an interactive spec, `k' means to read a key sequence.  In this
+*** In an interactive spec, `k' means to read a key sequence.  In this
 key sequence, upper case characters and shifted function keys which
 have no bindings are converted to lower case if that makes them
 defined.
@@ -1681,7 +2172,7 @@ The new interactive code `K' reads a key sequence similarly, but does
 not convert the last event.  `K' is useful for reading a key sequence
 to be given a binding.
 
-** The variable overriding-local-map now has no effect on the menu bar
+*** The variable overriding-local-map now has no effect on the menu bar
 display unless overriding-local-map-menu-flag is non-nil.  This is why
 incremental search no longer temporarily changes the menu bars.
 
@@ -1693,10 +2184,10 @@ looked up and executed.  But this is what you'd normally do anyway:
 programs that use overriding-local-map normally exit and "put back"
 any event such as menu-bar that they do not handle specially.
 
-** The new variable `overriding-terminal-local-map' is like
+*** The new variable `overriding-terminal-local-map' is like
 overriding-local-map, but is specific to a single terminal.
 
-** delete-frame events.
+*** delete-frame events.
 
 When you use the X window manager's "delete window" command, this now
 generates a delete-frame event.  The standard definition of this event
@@ -1704,14 +2195,14 @@ is a command that deletes the frame that received the event, and kills
 Emacs when the last visible or iconified frame is deleted.  You can
 rebind the event to some other command if you wish.
 
-** Two new types of events, iconify-frame and make-frame-visible,
+*** Two new types of events, iconify-frame and make-frame-visible,
 indicate that the user iconified or deiconified a frame with the
 window manager.  Since the window manager has already done the work,
 the default definition for both event types in Emacs is to do nothing.
 
-* Frames and X
+** Frames and X
 
-** Certain Lisp variables are now local to an X terminal (in other
+*** Certain Lisp variables are now local to an X terminal (in other
 words, all the screens of a single X server).  The value in effect, at
 any given time, is the one that belongs to the terminal of the
 selected frame.  The terminal-local variables are
@@ -1720,7 +2211,7 @@ last-kbd-macro.  There is no way for Lisp programs to create others.
 
 The terminal-local variables cannot be buffer-local.
 
-** When you create an X Window frame, for the `top' and `left' frame
+*** When you create an X frame, for the `top' and `left' frame
 parameters, you can now use values of the form (+ N) or (- N), where N
 is an integer.  (+ N) means N pixels to the right of the left edge of
 the screen and (- N) means N pixels to the left of the right edge.  In
@@ -1730,33 +2221,33 @@ the window partly off the screen).
 The function x-parse-geometry can return values of these forms
 for certain inputs.
 
-** The variable menu-bar-file-menu has been renamed to
+*** The variable menu-bar-file-menu has been renamed to
 menu-bar-files-menu to match the actual item that appears in the menu.
 (All the other such variable names do match.)
 
-** The new function active-minibuffer-window returns the minibuffer window
+*** The new function active-minibuffer-window returns the minibuffer window
 currently active, or nil if none is now active.
 
-** In the functions next-window, previous-window, next-frame,
+*** In the functions next-window, previous-window, next-frame,
 previous-frame, get-buffer-window, get-lru-window, get-largest-window
 and delete-windows-on, if you specify 0 for the last argument,
 it means to consider all visible and iconified frames.
 
-** When you set a frame's cursor type with modify-frame-parameters,
+*** When you set a frame's cursor type with modify-frame-parameters,
 you can now specify (bar . INTEGER) as the cursor type.  This stands
 for a bar cursor of width INTEGER.
 
-** The new function facep returns t if its argument is a face name
+*** The new function facep returns t if its argument is a face name
 (or if it is a vector such as is used internally by the Lisp code
 to represent a face).
 
-** Each frame can now have a buffer-predicate function,
+*** Each frame can now have a buffer-predicate function,
 which is the `buffer-predicate' frame parameter.
 When `other-buffer' looks for an alternative buffer, it considers
 only the buffers that fit the selected frame's buffer predicate (if it
 has one).  This is useful for applications that make their own frames.
 
-** When you create an X frame, you can now specify the frame parameter
+*** When you create an X frame, you can now specify the frame parameter
 `display'.  This says which display to put the frame on.  The value
 should be a display name--a string of the form
 "HOST:DPYNUMBER.SCREENNUMBER".
@@ -1774,25 +2265,25 @@ display.
 x-display-list returns a list indicating which displays Emacs has
 connections to.  Its elements are display names (strings).
 
-** The icon-type frame parameter may now be a file name.
+*** The icon-type frame parameter may now be a file name.
 Then the contents of that file specify the icon bitmap to use
 for that frame.
 
-** The title of an Emacs frame, displayed by most window managers, is
+*** The title of an Emacs frame, displayed by most window managers, is
 set from frame-title-format or icon-title-format.  These have the same
 structure as mode-line-format.
 
-** x-display-grayscale-p is a new function that returns non-nil if
+*** x-display-grayscale-p is a new function that returns non-nil if
 your X server can display shades of gray.  Currently it returns
 non-nil for color displays (because they can display shades of gray);
 we may change it in the next version to return nil for color displays.
 
-** The frame parameter scroll-bar-width specifies the width of the
+*** The frame parameter scroll-bar-width specifies the width of the
 scrollbar in pixels.
 
-* Buffers
+** Buffers
 
-** Creating a buffer with get-buffer-create does not obey
+*** Creating a buffer with get-buffer-create does not obey
 default-major-mode.  That variable is now handled in a separate
 function, set-buffer-major-mode.  get-buffer-create and generate-new-buffer
 always leave the newly created buffer in Fundamental mode.
@@ -1801,7 +2292,7 @@ Creating a new buffer by visiting a file or with switch-to-buffer,
 pop-to-buffer, and similar functions does call set-buffer-major-mode
 to select the default major mode specified with default-major-mode.
 
-** You can now create an "indirect buffer".  An indirect buffer shares
+*** You can now create an "indirect buffer".  An indirect buffer shares
 its text, including text properties, with another buffer (the "base
 buffer"), but has its own major mode, local variables, overlays, and
 narrowing.  An indirect buffer has a name of its own, distinct from
@@ -1824,9 +2315,9 @@ The library `noutline' has versions of Outline mode and Outline minor
 mode which let you display different parts of the outline in different
 indirect buffers.
 
-* Subprocesses
+** Subprocesses
 
-** The functions call-process and call-process-region now allow
+*** The functions call-process and call-process-region now allow
 you to direct error message output from the subprocess into a
 separate destination, instead of mixing it with ordinary output.
 To do this, specify for the third argument, BUFFER, a list of the form
@@ -1844,16 +2335,16 @@ easy to implement directly.  You can put the error output into a
 buffer by sending it to a temporary file and then inserting the file
 into a buffer.
 
-** Comint mode changes:
+*** Comint mode changes:
 
-*** The variable comint-completion-addsuffix can also be a cons pair
+**** The variable comint-completion-addsuffix can also be a cons pair
 of the form (DIRSUFFIX . FILESUFFIX), where DIRSUFFIX and FILESUFFIX are
 strings added on unambiguous or exact completion of directories and file
 names, respectively.
 
-* Text properties
+** Text properties
 
-** You can now specify which values of the `invisible' property
+*** You can now specify which values of the `invisible' property
 make text invisible in a given buffer.  The variable
 `buffer-invisibility-spec', which is always local in all buffers,
 controls this.
@@ -1862,7 +2353,7 @@ If its value is t, then any non-nil `invisible' property makes
 a character invisible.
 
 If its value is a list, then a character is invisible if its
-`invisible' propery value appears as a member of the list, or if it
+`invisible' property value appears as a member of the list, or if it
 appears as the car of a member of the list.
 
 When the `invisible' property value appears as the car of a member of
@@ -1876,10 +2367,10 @@ If a character's `invisible' property is a list, then Emacs checks each
 element of the list against `buffer-invisibility-spec'.  If any element
 matches, the character is invisible.
 
-** The command `list-text-properties-at' shows what text properties
+*** The command `list-text-properties-at' shows what text properties
 are in effect at point.
 
-** Frame objects now exist in Emacs even on systems that don't support
+*** Frame objects now exist in Emacs even on systems that don't support
 X Windows.  You can create multiple frames, and switch between them
 using select-frame.  The selected frame is actually displayed on your
 terminal; other frames are not displayed at all.  The selected frame
@@ -1888,13 +2379,13 @@ number appears in the mode line after `Emacs', except for frame 1.
 Switching frames on ASCII terminals is therefore more or less
 equivalent to switching between different window configurations.
 
-** The new variable window-size-change-functions holds a list of
+*** The new variable window-size-change-functions holds a list of
 functions to be called if window sizes change (or if windows are
 created or deleted).  The functions are called once for each frame on
 which changes have occurred, with the frame as the sole argument.
 This takes place shortly before redisplay.
 
-** The modification hook functions of overlays now work differently.
+*** The modification hook functions of overlays now work differently.
 They are called both before and after each change.  This makes it
 possible for the functions to determine exactly what the change was.
 
@@ -1918,55 +2409,55 @@ are the same arguments that the after-change-functions receive.
 
 This means the function must accept either four or five arguments.
 
-** You can set defaults for text-properties with the new variable
+*** You can set defaults for text-properties with the new variable
 `default-text-properties'.  Its value is a property list; the values
 specified there are used whenever a character (or its category) does
 not specify a value.
 
-** The `face' property of a character or an overlay can now be a list
+*** The `face' property of a character or an overlay can now be a list
 of face names.  Formerly it had to be just one face name.
 
-** Changes in handling the `intangible' text property.
+*** Changes in handling the `intangible' text property.
 
-*** If inhibit-point-motion-hooks is non-nil, then `intangible' properties
+**** If inhibit-point-motion-hooks is non-nil, then `intangible' properties
 are ignored.
 
-*** Moving to just before a stretch of intangible text
+**** Moving to just before a stretch of intangible text
 is no longer special in any way.  Point stays at that place.
 
-*** When you move point backwards into the midst of intangible text,
+**** When you move point backwards into the midst of intangible text,
 point moves back to the beginning of that text.  (It used to move
 forward to the end of that text, which was not very useful.)
 
-*** When moving across intangible text, Emacs stops wherever the
+**** When moving across intangible text, Emacs stops wherever the
 property value changes.  So if you have two stretches of intangible
 text, with different non-nil intangible properties, it is possible to
 place point between them.
 
-* Overlays
+** Overlays
 
-** Overlay changes.
+*** Overlay changes.
 
-*** The new function previous-overlay-change returns the position of
+**** The new function previous-overlay-change returns the position of
 the previous overlay start or end, before a specified position.  This
 is the backwards-moving counterpart of next-overlay-change.
 
-*** overlay-get now supports category properties on an overlay
+**** overlay-get now supports category properties on an overlay
 the same way get-text-property supports them as text properties.
 
 Specifically, if an overlay does not have the property PROP that you
 ask for, but it does have a `category' property which is a symbol,
 then that symbol's PROP property is used.
 
-*** If an overlay has a non-nil `evaporate' property, it will be
+**** If an overlay has a non-nil `evaporate' property, it will be
 deleted if it ever becomes empty (i.e., when it spans no characters).
 
-*** If an overlay has a `before-string' and/or `after-string' property,
+**** If an overlay has a `before-string' and/or `after-string' property,
 these strings are displayed at the overlay's endpoints.
 
-* Filling
+** Filling
 
-** The new variable fill-paragraph-function provides a way for major
+*** The new variable fill-paragraph-function provides a way for major
 modes to override the filling of paragraphs.  If this is non-nil,
 fill-paragraph calls it as a function, passing along its sole
 argument.  If the function returns non-nil, fill-paragraph assumes it
@@ -1975,103 +2466,103 @@ has done the job and simply passes on whatever value it returned.
 The usual use of this feature is to fill comments in programming
 language modes.
 
-** Text filling and justification changes:
+*** Text filling and justification changes:
 
-*** The new variable use-hard-newlines can be used to make a
+**** The new variable use-hard-newlines can be used to make a
 distinction between "hard" and "soft" newlines; the fill functions
 will then never remove a newline that was manually inserted.  Hard
 newlines are marked with a non-nil `hard' text-property.
 
-*** The fill-column and left-margin can now be modified by text-properties.
+**** The fill-column and left-margin can now be modified by text-properties.
 Most lisp programs should use the new functions (current-fill-column) and
 (current-left-margin), which return the proper values to use for the
 current line.
 
-*** There are new functions for dealing with margins: 
+**** There are new functions for dealing with margins: 
 
-**** Set-left-margin and set-right-margin (set the value for a region
+***** Set-left-margin and set-right-margin (set the value for a region
 and re-fill).  These functions take three arguments: two to specify
 a region, and the desired margin value.
 
-**** Increase-left-margin, decrease-left-margin, increase-right-margin, and
+***** Increase-left-margin, decrease-left-margin, increase-right-margin, and
 decrease-right-margin (change settings relative to current values, and
 re-fill).
 
-**** move-to-left-margin moves point there, optionally adding
+***** move-to-left-margin moves point there, optionally adding
 indentation or changing tabs to spaces in order to make that possible.
 beginning-of-line-text also moves past the fill-prefix and any
 indentation added to center or right-justify a line, to the beginning
 of the text that the user actually typed.
 
-**** delete-to-left-margin removes any left-margin indentation, but
+***** delete-to-left-margin removes any left-margin indentation, but
 does not change the property.
 
-*** The paragraph-movement functions look for the paragraph-start and
+**** The paragraph-movement functions look for the paragraph-start and
 paragraph-separate regexps at the current left margin, not at the
 beginning of the line.  This means that those regexps should NOT use ^
 to anchor the search.  However, for backwards compatibility, a ^ at
 the beginning of the regexp will be ignored, so most packages won't break.
 
-*** justify-current-line is now capable of doing left, center, or
+**** justify-current-line is now capable of doing left, center, or
 right justification as well as full justification.
 
-*** The fill functions can do any kind of justification based on the new
+**** The fill functions can do any kind of justification based on the new
 `justification' text-property and `default-justification' variable,
 or arguments to the functions.  They also have a new option which
 defeats the normal removal of extra whitespace.
 
-*** The new function `current-justification' returns the kind of
+**** The new function `current-justification' returns the kind of
 justification used for the current line.  The new function
 `set-justification' can be used to change it, including re-justifying
 the text of the region according to the new value.
 
-*** Filling and auto-fill are disabled if justification is `none'.
+**** Filling and auto-fill are disabled if justification is `none'.
 
-*** The auto-fill-function is now called regardless of whether 
+**** The auto-fill-function is now called regardless of whether 
 the fill-column has been exceeded; the function can determine on its
 own whether filling (or justification) is necessary.
 
-* Processes
+** Processes
 
-** process-tty-name is a new function that returns the name of the
+*** process-tty-name is a new function that returns the name of the
 terminal that the process itself reads and writes on (not the name of
 the pty that Emacs uses to talk with that terminal).
 
-** Errors in process filters and sentinels are now normally caught
+*** Errors in process filters and sentinels are now normally caught
 automatically, so that they don't abort other Lisp programs.
 
 Setting debug-on-error non-nil turns off this feature; then errors in
 filters and sentinels are not caught.  As a result, they can invoke
 the debugger, under the control of debug-on-error.
 
-** Emacs now preserves the match data around the execution of process
+*** Emacs now preserves the match data around the execution of process
 filters and sentinels.  You can use search and match functions freely
 in filters and sentinels without explicitly bothering to save the
 match data.
 
-* Display
+** Display
 
-** The variable message-log-max controls how messages are logged in the
+*** The variable message-log-max controls how messages are logged in the
 "*Messages*" buffer.  An integer value means to keep that many lines;
 t means to log with no limit; nil means disable message logging.  Lisp
 code that calls `message' excessively (e.g. isearch.el) should probably
 bind this variable to nil.
 
-** Display tables now have a new element, at index 261, specifying the
+*** Display tables now have a new element, at index 261, specifying the
 glyph to use for the separator between two side-by-side windows.  By
 default, this is the vertical bar character `|'.  Probably the only
 other useful character to store for this element is a space, to make
 less visual separation between two side-by-side windows displaying
 related information.
 
-** The new mode-line-format spec %c displays the current column number.
+*** The new mode-line-format spec %c displays the current column number.
 
-** The new variable blink-matching-delay specifies how long to keep
+*** The new variable blink-matching-delay specifies how long to keep
 the cursor at the matching open-paren, after you insert a close-paren.
 This is useful mainly on systems which can wait for a fraction of a
 second--you can then specify fractional values such as 0.5.
 
-** Faster processing of buffers with long lines
+*** Faster processing of buffers with long lines
 
 The new variable cache-long-line-scans determines whether Emacs
 should use caches to handle long lines more quickly.  This variable is
@@ -2102,32 +2593,32 @@ maintained internally by the Emacs primitives.  Enabling or disabling
 the cache should not affect the behavior of any of the motion functions;
 it should only affect their performance.
 
-* System Interface
+** System Interface
 
-** The function user-login-name now accepts an optional
+*** The function user-login-name now accepts an optional
 argument uid.  If the argument is non-nil, user-login-name
 returns the login name for that user id.
 
-** system-name, user-name, user-full-name and user-real-name are now
+*** system-name, user-name, user-full-name and user-real-name are now
 variables as well as functions.  The variables hold the same values
 that the functions would return.  The new variable multiple-frames
 is non-nil if at least two non-minibuffer frames are visible.  These
 variables may be useful in constructing the value of frame-title-format
 or icon-title-format.
 
-** Changes in time-conversion functions.
+*** Changes in time-conversion functions.
 
-*** The new function format-time-string takes a format string and a
+**** The new function format-time-string takes a format string and a
 time value.  It converts the time to a string, according to the format
 specified.  You can specify what kind of conversion to use with
 %-specifications.
 
-*** The new function decode-time converts a time value into a list of
+**** The new function decode-time converts a time value into a list of
 specific items of information: the year, month, day of week, day of
 month, hour, minute and second.  (A time value is a list of two or
 three integers.)
 
-*** The new function encode-time converts specific items of time
+**** The new function encode-time converts specific items of time
 information--the second, minute, hour, day, month, year, and time
 zone--into a time value.
 
@@ -2851,7 +3342,7 @@ exit the minibuffer.
 ** The variable x-cross-pointer-shape specifies the cursor shape to use
 when the mouse is over text that has a mouse-face property.
 
-** The new variable interpreter-mode-alist specifes major modes to use
+** The new variable interpreter-mode-alist specifies major modes to use
 for shell scripts that specify a command interpreter.  Its elements
 look like (INTERPRETER . MODE); for example, ("perl" . perl-mode) is
 one element present by default.  This feature applies only when the
@@ -3083,7 +3574,7 @@ to let it know that the size has changed.
 ** %P is a new way to display a percentage in the mode line.  It
 displays the percentage of the buffer text that is above the *bottom*
 of the window (which includes the text visible, in the window as well
-as the text above the top).  It dispays `Top' as well as the
+as the text above the top).  It displays `Top' as well as the
 percentage if the top of the buffer is visible on screen.
 
 ** %+ in the mode line specs displays `*' if the buffer is modified,
@@ -3092,8 +3583,8 @@ buffer is read-only has no effect on %+.
 
 ** The new functions ffloor, fceiling, fround and ftruncate take a
 floating point argument and return a floating point result whose value
-is a nearby integer.  ffloor returns the nearest integer below; fceil,
-the nearest integer above; ftrucate, the nearest integer in the
+is a nearby integer.  ffloor returns the nearest integer below; fceiling,
+the nearest integer above; ftruncate, the nearest integer in the
 direction towards zero; fround, the nearest integer.
 
 ** Setting `print-escape-newlines' to a non-nil value now also makes
@@ -3306,7 +3797,7 @@ menu in the menu bar.
 ** ISO Accents mode, a buffer-local minor mode, provides a convenient
 way to type certain non-ASCII characters.  It makes the characters `,
 ', ", ^, ~ and / serve as modifiers for the following letter.  ` and '
-add accents, " adds an umlaut or diaresis, ^ adds a circumflex, ~
+add accents, " adds an umlaut or dieresis, ^ adds a circumflex, ~
 adds a tilde, and / adds a slash to the following letter.
 
 If the following character is not a letter, or cannot be modified as
@@ -3323,8 +3814,8 @@ A few special combinations:
 
 ~c => c with cedilla
 ~d => d with stroke
-~< => left guillemet
-~> => right guillemet
+~< => left guillemot
+~> => right guillemot
 
 ** iso-transl.el is a new library that replaces iso-insert.el.
 It defines C-x 8 as an insertion prefix for the ISO characters
@@ -3639,7 +4130,7 @@ mode might want to set this to '("." "(" ")") or some such.
 There is now a hook, comint-output-filter-hook, that is run-hooks'ed by the
 output filter, comint-output-filter.  This is useful for scrolling (see
 below), but also things like processing output for specific text, output
-hilighting, etc.
+highlighting, etc.
 
 So that such output processing may be done efficiently, there is a new
 variable, comint-last-output-start, that records the position of the start of
@@ -3792,7 +4283,7 @@ to a non-nil value.
 
 ** Inserting a string with no text properties into the buffer normally
 inherits the properties of the preceding character.  You can now
-control this inheritence by setting the front-sticky and
+control this inheritance by setting the front-sticky and
 rear-nonsticky properties of a character.
 
 If you make a character's front-sticky property t, then insertion
@@ -4137,7 +4628,7 @@ position denoted, but the `read-key-sequence' function uses the
 presence or absence of the singleton list to tell whether or not it
 should prefix the event with its place symbol.
 
-Normally, `read-key-sequence' prefixes mouse events occuring over
+Normally, `read-key-sequence' prefixes mouse events occurring over
 non-textual areas with their PLACE-SYMBOLs, to select the sub-keymap
 appropriate for the event; for example, clicking on the mode line
 produces a sequence like
@@ -4330,7 +4821,7 @@ files, like executables and utility programs.  If specified,
   EXECDIR/lib/emacs/VERSION/CONFIGURATION.
 EXECDIR/bin should be a directory that is normally in users' PATHs.
 
-** When running under X Windows, the new lisp function `x-list-fonts'
+** When running under X, the new lisp function `x-list-fonts'
 allows code to find out which fonts are available from the X server.
 The first argument PATTERN is a string, perhaps with wildcard characters;
   the * character matches any substring, and
@@ -5078,7 +5569,7 @@ buffer.
 
 To start using version control for a file, use the command C-x v v.
 This works like C-x C-q (performing the next logical version-control
-operation needed to change the file's writeability) but it will also
+operation needed to change the file's writability) but it will also
 perform initial checkin on an unregistered file.
 
 By default, VC uses RCS if RCS is installed on your machine;

@@ -34,17 +34,21 @@ etags, ctags \- generate tag file for Emacs, vi
 .hy 1
 .SH DESCRIPTION
 The `\|\fBetags\fP\|' program is used to create a tag table file, in a format
-understood by 
+understood by
 .BR emacs ( 1 )\c
 \&; the `\|\fBctags\fP\|' program is used to create a similar table in a
 format understood by
 .BR vi ( 1 )\c
 \&.  Both forms of the program understand
-the syntax of C, C++, Fortran, Pascal, LaTeX, Scheme, Emacs Lisp/Common Lisp
-and most assembler\-like syntaxes. 
+the syntax of C, C++, Fortran, Pascal, LaTeX, Scheme,
+Emacs Lisp/Common Lisp, Erlang, Prolog and most assembler\-like syntaxes.
 Both forms read the files specified on the command line, and write a tag
 table (defaults: `\|TAGS\|' for \fBetags\fP, `\|tags\|' for
-\fBctags\fP) in the current working directory. 
+\fBctags\fP) in the current working directory.
+Files specified with relative file names will be recorded in the tag
+table with file names relative to the directory where the tag table
+resides.  Files specified with absolute file names will be recorded
+with absolute file names.
 The programs recognize the language used in an input file based on its
 file name and contents.  The --language switch can be used to force
 parsing of the file names following the switch according to the given
@@ -102,7 +106,7 @@ following this option, in addition to the tags made with the standard
 parsing based on language.  May be freely intermixed with filenames
 and the \fB\-R\fP option.  The regexps are cumulative, i.e. each
 option will add to the previous ones.  The regexps are of the form:
-.br 
+.br
 
 		\fB/\fP\fItagregexp\fP[\fB/\fP\fInameregexp\fP]\fB/\fP
 .br
@@ -111,7 +115,8 @@ where \fItagregexp\fP is used to match the lines that must be tagged.
 It should not match useless characters.  If the match is
 such that more characters than needed are unavoidably matched by
 \fItagregexp\fP, it may be useful to add a \fInameregexp\fP, to
-narrow down the tag scope.
+narrow down the tag scope.  \fBctags\fP ignores regexps without a
+\fInameregexp\fP. 
 .br
 Here are some examples.  All the regexps are quoted to protect them
 from shell interpretation.
@@ -194,7 +199,7 @@ emacs \fBetags\fP is shipped with).
 
 .SH "SEE ALSO"
 `\|\fBemacs\fP\|' entry in \fBinfo\fP; \fIGNU Emacs Manual\fP, Richard
-Stallman. 
+Stallman.
 .br
 .BR cxref ( 1 ),
 .BR emacs ( 1 ),

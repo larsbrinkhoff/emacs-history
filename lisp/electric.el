@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -66,8 +67,10 @@
             (setq prompt-string "->")))
       (setq cmd (read-key-sequence prompt-string))
       (setq last-command-char (aref cmd (1- (length cmd)))
-	    this-command (key-binding cmd)
+	    this-command (key-binding cmd t)
 	    cmd this-command)
+      ;; This makes universal-argument-other-key work.
+      (setq universal-argument-num-events 0)
       (if (or (prog1 quit-flag (setq quit-flag nil))
 	      (eq last-input-char ?\C-g))
 	  (progn (setq unread-command-events nil

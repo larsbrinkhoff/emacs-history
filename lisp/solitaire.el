@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -133,7 +134,7 @@ Move around the board using the cursor keys.
 Move stones using \\[solitaire-move] followed by a direction key.
 Undo moves using \\[solitaire-undo].
 Check for possible moves using \\[solitaire-do-check].
-(The variable solitaire-auto-eval controls whether to automatically
+\(The variable solitaire-auto-eval controls whether to automatically
 check after each move or undo)
 
 What is Solitaire?

@@ -15,9 +15,20 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Emacs 19 face widget ported by Fred Pierresteguy */
+
+/* This file has been censored by the Communications Decency Act.
+   That law was passed under the guise of a ban on pornography, but
+   it bans far more than that.  This file did not contain pornography,
+   but it was censored nonetheless.
+
+   For information on US government censorship of the Internet, and
+   what you can do to bring back freedom of the press, see the web
+   site http://www.vtw.org/
+   */
 
 #include <config.h>
 #include <stdio.h>
@@ -182,8 +193,8 @@ pixel_to_char_size (ew, pixel_width, pixel_height, char_width, char_height)
      int* char_height;
 {
   struct frame* f = ew->emacs_frame.frame;
-  *char_width = PIXEL_TO_CHAR_WIDTH (f, pixel_width);
-  *char_height = PIXEL_TO_CHAR_HEIGHT (f, pixel_height);
+  *char_width = PIXEL_TO_CHAR_WIDTH (f, (int) pixel_width);
+  *char_height = PIXEL_TO_CHAR_HEIGHT (f, (int) pixel_height);
 }
 
 static void
@@ -311,7 +322,7 @@ set_frame_size (ew)
   
   if (! XtIsSubclass (wmshell, shellWidgetClass)) abort ();
 
-  /* We don't need this for the momment. The geometry is computed in 
+  /* We don't need this for the moment. The geometry is computed in 
      xfns.c.  */
 #if 0
   /* If the EmacsFrame doesn't have a geometry but the shell does,
@@ -631,7 +642,7 @@ update_various_frame_slots (ew)
      EmacsFrame ew;
 {
   struct x_output *x = ew->emacs_frame.frame->output_data.x;
-  x->pixel_height = ew->core.height;
+  x->pixel_height = ew->core.height + x->menubar_height;
   x->pixel_width = ew->core.width;
   x->internal_border_width = ew->emacs_frame.internal_border_width;
 
@@ -642,7 +653,7 @@ update_from_various_frame_slots (ew)
      EmacsFrame ew;
 {
   struct x_output *x = ew->emacs_frame.frame->output_data.x;
-  ew->core.height = x->pixel_height;
+  ew->core.height = x->pixel_height - x->menubar_height;
   ew->core.width = x->pixel_width;
   ew->core.background_pixel = x->background_pixel;
   ew->emacs_frame.internal_border_width = x->internal_border_width;
@@ -721,13 +732,8 @@ EmacsFrameRealize (widget, mask, attrs)
 {
   EmacsFrame ew = (EmacsFrame)widget;
 
-  attrs->event_mask = (KeyPressMask | ExposureMask | ButtonPressMask |
-		       ButtonReleaseMask | StructureNotifyMask |
-		       FocusChangeMask | PointerMotionHintMask |
-		       PointerMotionMask | LeaveWindowMask | EnterWindowMask |
-		       VisibilityChangeMask | PropertyChangeMask |
-		       StructureNotifyMask | SubstructureNotifyMask |
-		       SubstructureRedirectMask);
+  attrs->event_mask = (STANDARD_EVENT_SET | PropertyChangeMask
+		       | SubstructureNotifyMask | SubstructureRedirectMask);
   *mask |= CWEventMask;
   XtCreateWindow (widget, InputOutput, (Visual *)CopyFromParent, *mask,
 		  attrs);
@@ -770,7 +776,7 @@ EmacsFrameResize (widget)
   int rows;
 
   pixel_to_char_size (ew, ew->core.width, ew->core.height, &columns, &rows);
-  change_frame_size (f, rows, columns, 1, 0);
+  change_frame_size (f, rows, columns, 0, 1);
   update_wm_hints (ew); 
   update_various_frame_slots (ew);
 }
@@ -840,7 +846,7 @@ EmacsFrameSetValues (cur_widget, req_widget, new_widget, dum1, dum2)
      to wm_shell's iconic slot have no effect after it has been realized,
      and calling XIconifyWindow doesn't work either (even thought the window
      has been created.)  Perhaps there is some property we could smash
-     directly, but I'm sick of this for now.  Xt is a steaming pile of shit!
+     directly, but I'm sick of this for now.
    */
   if (cur->emacs_frame.iconic != new->emacs_frame.iconic)
     {

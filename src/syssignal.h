@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #ifdef POSIX_SIGNALS
 
@@ -51,7 +52,9 @@ extern sigset_t sys_sigmask ();
 #define sigpause(SIG)    sys_sigpause (SIG)
 #define sigblock(SIG)    sys_sigblock (SIG)
 #define sigunblock(SIG)  sys_sigunblock (SIG)
+#ifndef sigsetmask
 #define sigsetmask(SIG)  sys_sigsetmask (SIG)
+#endif
 #define sighold(SIG)     ONLY_USED_IN_BSD_4_1
 #define sigrelse(SIG)    ONLY_USED_IN_BSD_4_1
 #undef signal
@@ -137,7 +140,7 @@ sigset_t sys_sigsetmask (/*sigset_t new_mask*/);
 #define EMACS_KILLPG(gid, signo) (killpg ( (gid), (signo)))
 #else
 #ifdef WINDOWSNT
-#define EMACS_KILLPG(gid, signo) (win32_kill_process (gid, signo))
+#define EMACS_KILLPG(gid, signo) (kill (gid, signo))
 #else
 #define EMACS_KILLPG(gid, signo) (kill   (-(gid), (signo)))
 #endif

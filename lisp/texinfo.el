@@ -1,7 +1,7 @@
 ;;; texinfo.el --- major mode for editing Texinfo files
 
-;; Copyright (C) 1985, '88, '89, 
-;;                '90, '91, '92, '93 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1988, 1989, 1990, 1991, 1992, 1993 Free Software
+;; Foundation, Inc.
 
 ;; Author: Robert J. Chassell          
 ;; Maintainer: FSF
@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 
 ;;; Autoloads:
@@ -92,7 +93,7 @@ menus in the buffer (incorporating descriptions from pre-existing
 menus) before it constructs the master menu.
 
 The function removes the detailed part of an already existing master
-menu.  This action depends on the pre-exisitng master menu using the
+menu.  This action depends on the pre-existing master menu using the
 standard `texinfo-master-menu-header'.
 
 The master menu has the following format, which is adapted from the
@@ -198,7 +199,7 @@ chapter."
   (modify-syntax-entry ?\' "w" texinfo-mode-syntax-table))
 
 ;; Written by Wolfgang Bangerth <zcg51122@rpool1.rus.uni-stuttgart.de>
-;; To overide this example, set either `imenu-generic-expression'
+;; To override this example, set either `imenu-generic-expression'
 ;; or `imenu-create-index-function'.
 (defvar texinfo-imenu-generic-expression
   '((nil "^@node[ \t]+\\([^,\n]*\\)" 1)
@@ -207,22 +208,55 @@ chapter."
   "Imenu generic expression for TexInfo mode.  See `imenu-generic-expression'.")
 
 (defvar texinfo-font-lock-keywords
-  (list
-   ;; All but the first 2 had an OVERRIDE of t.
-   ;; It didn't seem to be any better, and it's slower--simon.
-   '("^\\(@c\\|@comment\\)\\>.*" . font-lock-comment-face) 	;comments
-   ;; Robert J. Chassell <bob@gnu.ai.mit.edu> says remove this line.
-   ;'("\\$\\([^$]*\\)\\$" 1 font-lock-string-face t)
-   "@\\(@\\|[^}\t \n{]+\\)"					;commands
-   '("^\\(*.*\\)[\t ]*$" 1 font-lock-function-name-face t) 	;menu items
-   '("@\\(emph\\|strong\\|b\\|i\\){\\([^}]+\\)" 2 font-lock-comment-face)
-   '("@\\(file\\|kbd\\|key\\){\\([^}]+\\)" 2 font-lock-string-face)
-   '("@\\(samp\\|code\\|var\\|math\\){\\([^}]+\\)"
+  '(;; All but the first 2 had an OVERRIDE of t.
+    ;; It didn't seem to be any better, and it's slower--simon.
+    ("^\\(@c\\|@comment\\)\\>.*" . font-lock-comment-face) 	;comments
+    ;; Robert J. Chassell <bob@gnu.ai.mit.edu> says remove this line.
+    ;("\\$\\([^$]*\\)\\$" 1 font-lock-string-face t)
+    ("@\\([a-zA-Z]+\\|[^ \t\n]\\)" 1 font-lock-keyword-face)	;commands
+    ("^\\*\\(.*\\)[\t ]*$" 1 font-lock-function-name-face t) 	;menu items
+    ("@\\(emph\\|strong\\|b\\|i\\){\\([^}]+\\)" 2 font-lock-comment-face)
+    ("@\\(file\\|kbd\\|key\\){\\([^}]+\\)" 2 font-lock-string-face)
+    ("@\\(samp\\|code\\|var\\|math\\){\\([^}]+\\)"
      2 font-lock-variable-name-face)
-   '("@\\(cite\\|xref\\|pxref\\){\\([^}]+\\)" 2 font-lock-reference-face)
-   '("@\\(end\\|item\\) *\\(.+\\)" 2 font-lock-function-name-face keep)
-   )
+    ("@\\(cite\\|xref\\|pxref\\){\\([^}]+\\)" 2 font-lock-reference-face)
+    ("@\\(end\\|itemx?\\) +\\(.+\\)" 2 font-lock-function-name-face keep)
+    )
   "Additional expressions to highlight in TeXinfo mode.")
+
+(defvar texinfo-section-list
+  '(("top" 1)
+    ("majorheading" 1)
+    ("chapter" 2)
+    ("unnumbered" 2)
+    ("appendix" 2)
+    ("chapheading" 2)
+    ("section" 3)
+    ("unnumberedsec" 3)
+    ("appendixsec" 3)
+    ("heading" 3)
+    ("subsection" 4)
+    ("unnumberedsubsec" 4)
+    ("appendixsubsec" 4)
+    ("subheading" 4)
+    ("subsubsection" 5)
+    ("unnumberedsubsubsec" 5)
+    ("appendixsubsubsec" 5)
+    ("subsubheading" 5))
+  "Alist of sectioning commands and their relative level.")
+
+(defun texinfo-outline-level ()
+  ;; Calculate level of current texinfo outline heading.
+  (save-excursion
+    (if (bobp)
+	0
+      (forward-char 1)
+      (let* ((word (buffer-substring-no-properties 
+		    (point) (progn (forward-word 1) (point))))
+	     (entry (assoc word texinfo-section-list)))
+	(if entry
+	    (nth 1 entry)
+	  5)))))
 
 ;;; Keybindings
 (defvar texinfo-mode-map nil)
@@ -401,6 +435,13 @@ value of texinfo-mode-hook."
   (setq imenu-generic-expression texinfo-imenu-generic-expression)
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '(texinfo-font-lock-keywords t))
+  (make-local-variable 'outline-regexp)
+  (setq outline-regexp 
+	(concat "@\\("
+		(mapconcat 'car texinfo-section-list "\\>\\|")
+		"\\>\\)"))
+  (make-local-variable 'outline-level)
+  (setq outline-level 'texinfo-outline-level)
   (make-local-variable 'tex-start-of-header)
   (setq tex-start-of-header "%**start")
   (make-local-variable 'tex-end-of-header)
@@ -543,6 +584,12 @@ The default is not to surround any existing words with the braces."
   (texinfo-insert-@-with-arg "var" arg))
 
 ;;; Texinfo file structure
+
+;; These are defined in tenfo-upd.el.
+(defvar texinfo-section-types-regexp)
+(defvar texinfo-section-level-regexp)
+(defvar texinfo-subsection-level-regexp)
+(defvar texinfo-subsubsection-level-regexp)
 
 (defun texinfo-show-structure (&optional nodes-too) 
   "Show the structure of a Texinfo file.

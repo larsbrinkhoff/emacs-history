@@ -1,9 +1,9 @@
 ;;; cmacexp.el --- expand C macros in a region
 
-;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1994, 1996 Free Software Foundation, Inc.
 
 ;; Author: Francesco Potorti` <pot@cnuce.cnr.it>
-;; Version: $Id: cmacexp.el,v 1.20 1995/10/26 03:14:40 rms Exp $
+;; Version: $Id: cmacexp.el,v 1.25 1996/05/21 15:42:13 kwzh Exp $
 ;; Adapted-By: ESR
 ;; Keywords: c
 
@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;; USAGE =============================================================
 
@@ -95,7 +96,9 @@
 (defvar c-macro-prompt-flag nil
   "*Non-nil makes `c-macro-expand' prompt for preprocessor arguments.")
 
-(defvar c-macro-preprocessor "/lib/cpp -C"
+(defvar c-macro-preprocessor
+  ;; Cannot rely on standard directory on MS-DOS to find CPP.
+  (if (eq system-type 'ms-dos) "cpp -C" "/lib/cpp -C")
   "The preprocessor used by the cmacexp package.
 
 If you change this, be sure to preserve the `-C' (don't strip comments)
@@ -199,7 +202,7 @@ For use inside Lisp programs, see also `c-macro-expansion'."
 	    (setq minheight (if alreadythere
 				(window-height)
 			      window-min-height))
-	    (setq maxheight (/ (screen-height) 2))
+	    (setq maxheight (/ (frame-height) 2))
 	    (enlarge-window (- (min maxheight
 				    (max minheight
 					 (+ 2 (vertical-motion (point-max)))))
@@ -237,27 +240,31 @@ Optional arg DISPLAY non-nil means show messages in the echo area."
 		       c-macro-preprocessor
 		       (if (string= "" c-macro-cppflags) "" " ")
 		       c-macro-cppflags))
-	(uniquestring "???!!!???!!! start of c-macro expansion ???!!!???!!!")
+	(uniquestring "??? !!! ??? start of c-macro expansion ??? !!! ???")
 	(startlinenum 0)
 	(linenum 0)
 	(startstat ())
 	(startmarker "")
 	(exit-status 0)
-	(tempname (make-temp-name "/tmp/")))
+	(tempname (make-temp-name (concat
+				   (or (getenv "TMPDIR") (getenv "TEMP")
+				       (getenv "TMP") "/tmp")
+				   "/"))))
     (unwind-protect
 	(save-excursion
 	  (save-restriction
 	    (widen)
-	    (set-buffer outbuf)
-	    (setq buffer-read-only nil)
-	    (erase-buffer)
-	    (set-syntax-table c-mode-syntax-table)
+            (let ((in-syntax-table (syntax-table)))
+              (set-buffer outbuf)
+              (setq buffer-read-only nil)
+              (erase-buffer)
+              (set-syntax-table in-syntax-table))
 	    (insert-buffer-substring inbuf 1 end))
 
 	  ;; We have copied inbuf to outbuf.  Point is at end of
-	  ;; outbuf.  Insert a space at the end, so cpp can correctly
-	  ;; parse a token ending at END. 
-	  (insert " ")
+	  ;; outbuf.  Inset a newline at the end, so cpp can correctly
+	  ;; parse a token ending at END.
+          (insert "\n")
 
 	  ;; Save sexp status and line number at START.
 	  (setq startstat (parse-partial-sexp 1 start))
@@ -305,8 +312,10 @@ Optional arg DISPLAY non-nil means show messages in the echo area."
 	  ;; Call the preprocessor.
 	  (if display (message mymsg))
 	  (setq exit-status
-		(call-process-region 1 (point-max) "sh" t t nil "-c"
-				     (concat cppcommand " 2>" tempname)))
+		(call-process-region 1 (point-max)
+				     shell-file-name
+				     t (list t tempname) nil "-c"
+				     cppcommand))
 	  (if display (message (concat mymsg "done")))
 	  (if (= (buffer-size) 0)
 	      ;; Empty output is normal after a fatal error.
@@ -325,13 +334,25 @@ Optional arg DISPLAY non-nil means show messages in the echo area."
 	      (delete-region beg (point))))
 
 	  ;; If CPP got errors, show them at the beginning.
-	  (or (eq exit-status 0)
+	  ;; MS-DOS shells don't return the exit code of their children.
+	  ;; Look at the size of the error message file instead, but
+	  ;; don't punish those MS-DOS users who have a shell that does
+	  ;; return an error code.
+	  (or (and (or (not (boundp 'msdos-shells))
+		       (not (member (file-name-nondirectory shell-file-name)
+				    msdos-shells)))
+		   (eq exit-status 0))
+	      (zerop (nth 7 (file-attributes (expand-file-name tempname))))
 	      (progn
 		(goto-char (point-min))
-		(insert (format "Preprocessor terminated with status %s\n"
-				exit-status))
-		(insert-file-contents tempname)
-		(insert "\n")))
+		;; Put the messages inside a comment, so they won't get in
+		;; the way of font-lock, highlighting etc.
+		(insert
+		 (format "/* Preprocessor terminated with status %s\n\n   Messages from `%s\':\n\n"
+			 exit-status cppcommand))
+		(goto-char (+ (point)
+			      (nth 1 (insert-file-contents tempname))))
+		(insert "\n\n*/\n")))
 	  (delete-file tempname)
 
 	  ;; Compute the return value, keeping in account the space

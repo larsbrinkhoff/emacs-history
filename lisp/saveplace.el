@@ -5,7 +5,6 @@
 ;; Author: Karl Fogel <kfogel@cs.oberlin.edu>
 ;; Maintainer: FSF
 ;; Created: July, 1993
-;; Version: 1.2
 ;; Keywords: bookmarks, placeholders
 
 ;; This file is part of GNU Emacs.
@@ -21,8 +20,11 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
 
 ;; Automatically save place in files, so that visiting them later
 ;; (even during a different Emacs session) automatically moves point
@@ -32,6 +34,8 @@
 ;;
 ;; Thanks to Stefan Schoef, who sent a patch with the
 ;; `save-place-version-control' stuff in it.
+
+;;; Code:
 
 ;; this is what I was using during testing:
 ;; (define-key ctl-x-map "p" 'toggle-save-place)
@@ -56,7 +60,7 @@ simply put this in your `~/.emacs' file:
 
 (make-variable-buffer-local 'save-place)
 
-(defvar save-place-file "~/.emacs-places"
+(defvar save-place-file (convert-standard-filename "~/.emacs-places")
   "*Name of the file that records `save-place-alist' value.")
 
 (defvar save-place-version-control 'nospecial
@@ -68,6 +72,9 @@ value of `version-control'.")
 
 (defvar save-place-loaded nil
   "Non-nil means that the `save-place-file' has been loaded.")
+
+(defvar save-place-limit nil
+  "Maximum number of entries to retain in the list; nil means no limit.")
 
 (defun toggle-save-place (&optional parg)
   "Toggle whether to save your place in this file between sessions.
@@ -83,13 +90,12 @@ To save places automatically in all files, put this in your `.emacs' file:
 \(setq-default save-place t\)"
   (interactive "P")
   (if (not buffer-file-name)
-      (message 
-       (format "Buffer \"%s\" not visiting a file." (buffer-name)))
+      (message "Buffer `%s' not visiting a file" (buffer-name))
     (if (and save-place (or (not parg) (<= parg 0)))
 	(progn
-	  (message "No place will be saved in this file.")
+	  (message "No place will be saved in this file")
 	  (setq save-place nil))
-      (message "Place will be saved.")
+      (message "Place will be saved")
       (setq save-place t))))
 
 (defun save-place-to-alist ()
@@ -107,7 +113,7 @@ To save places automatically in all files, put this in your `.emacs' file:
               (setq save-place-alist (delq cell save-place-alist))))
         (if save-place
             (setq save-place-alist
-                  (cons (cons buffer-file-name
+		  (cons (cons buffer-file-name
 			      (if (not (eq major-mode 'hexl-mode))
 				  (point)
 				(1+ (hexl-current-address))))
@@ -116,7 +122,7 @@ To save places automatically in all files, put this in your `.emacs' file:
 (defun save-place-alist-to-file ()
   (let ((file (expand-file-name save-place-file)))
     (save-excursion
-      (message (format "Saving places to %s..." file))
+      (message "Saving places to %s..." file)
       (set-buffer (get-buffer-create " *Saved Places*"))
       (delete-region (point-min) (point-max))
       (if (file-readable-p file)
@@ -133,7 +139,7 @@ To save places automatically in all files, put this in your `.emacs' file:
                t))))
         (write-file file)
         (kill-buffer (current-buffer))
-        (message (format "Saving places to %s... done." file))))))
+        (message "Saving places to %s...done" file)))))
 
 (defun load-save-place-alist-from-file ()
   (if (not save-place-loaded)
@@ -144,8 +150,7 @@ To save places automatically in all files, put this in your `.emacs' file:
           ;; load it if it exists:
           (if (file-readable-p file)
               (save-excursion
-                (message (format "Loading places from %s..."
-                                 save-place-file))
+                (message "Loading places from %s..." save-place-file)
                 ;; don't want to use find-file because we have been
                 ;; adding hooks to it.
                 (set-buffer (get-buffer-create " *Saved Places*"))
@@ -155,8 +160,26 @@ To save places automatically in all files, put this in your `.emacs' file:
                 (setq save-place-alist 
                       (car (read-from-string
                             (buffer-substring (point-min) (point-max)))))
+
+                ;; If there is a limit, and we're over it, then we'll
+                ;; have to truncate the end of the list:
+                (if save-place-limit
+                    (if (<= save-place-limit 0)
+                        ;; Zero gets special cased.  I'm not thrilled
+                        ;; with this, but the loop for >= 1 is tight.
+                        (setq save-place-alist nil)
+                      ;; Else the limit is >= 1, so enforce it by
+                      ;; counting and then `setcdr'ing.
+                      (let ((s save-place-alist)
+                            (count 1))
+                        (while s
+                          (if (>= count save-place-limit)
+                              (setcdr s nil)
+                            (setq count (1+ count)))
+                          (setq s (cdr s))))))
+                  
                 (kill-buffer (current-buffer))
-                (message (format "Loading places from %s... done." file))
+                (message "Loading places from %s...done" file)
                 t)
             t)
           nil))))
@@ -180,15 +203,19 @@ To save places automatically in all files, put this in your `.emacs' file:
   (or save-place-loaded (load-save-place-alist-from-file))
   (let ((cell (assoc buffer-file-name save-place-alist)))
     (if cell
-        (progn
+	(progn
 	  (or after-find-file-from-revert-buffer
 	      (goto-char (cdr cell)))
           ;; and make sure it will be saved again for later
           (setq save-place t)))))
 
 (defun save-place-kill-emacs-hook ()
+  ;; First update the alist.  This loads the old save-place-file if nec.
   (save-places-to-alist)
-  (save-place-alist-to-file))
+  ;; Now save the alist in the file, if we have ever loaded the file
+  ;; (including just now).
+  (if save-place-loaded
+      (save-place-alist-to-file)))
 
 (add-hook 'find-file-hooks 'save-place-find-file-hook t)
 

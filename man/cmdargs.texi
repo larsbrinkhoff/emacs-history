@@ -61,6 +61,7 @@ the action arguments in the order they are written.
 * Colors X::	        Choosing colors, under X.
 * Window Size X::       Start-up window size, under X.
 * Borders X::	        Internal and external borders, under X.
+* Title X::             Specifying the initial frame's title.
 * Icons X::             Choosing what sort of icon to use, under X.
 * Resources X::         Advanced use of classes and resources, under X.
 * Lucid Resources::     X resources for Lucid menus.
@@ -204,6 +205,7 @@ a suspension.  To prepare for this, put the following code in your
 
 @example
 (add-hook 'suspend-hook 'resume-suspend-hook)
+(add-hook 'suspend-resume-hook 'resume-process-args)
 @end example
 
   As further preparation, you must execute the shell script
@@ -386,6 +388,19 @@ variable.
 @itemx TMP
 On MS-DOS, these specify the name of the directory for storing temporary
 files in.
+@item EMACSTEST
+On MS-DOS, this is the name of the file where Emacs writes a full log
+of the internal terminal emulator operation.  Useful when submitting
+bugs.
+@item EMACSCOLORS
+Used on MS-DOS systems to set screen colors early so that the screen
+won't momentarily flash the default colors at startup.  The value of
+this variable should be 2-character encoding of the foreground (the
+first character) and the background (the second character) colors of
+the default face.  Each character should be a hexadecimal code of the
+color on a standard PC text-mode display.  Only 3 lower bits of the
+background color are actually used, because PC display cannot use more
+than 8 background colors.
 @item WINDOW_GFX
 Used when initializing the Sun windows system.
 @end table
@@ -695,6 +710,28 @@ specify the width of the external border (though the window manager may
 not pay attention to what you specify).  The default width of the
 external border is 2.
 
+@node Title X
+@appendixsec Frame Titles
+
+  An Emacs frame may or may not have a specified title.  The frame
+title, if specified, appears in window decorations and icons as the name
+of the frame.  If an Emacs frame has no specified title, the default
+title is the name of the executable program (if there is only one frame)
+or the selected window's buffer name (if there is more than one frame).
+
+  You can specify a title for the initial Emacs frame with a command
+line option:
+
+@table @samp
+@item -title @var{title}
+@itemx --title=@var{title}
+@itemx -T @var{title}
+Specify @var{title} as the title for the initial Emacs frame.
+@end table
+
+  The @samp{--name} option (@pxref{Resources X}) also specifies the title
+for the initial Emacs frame.
+
 @node Icons X
 @appendixsec Icons
 @cindex icons (X Windows)
@@ -780,18 +817,15 @@ name.  It actually represents the name of the executable file that you
 invoke to run Emacs.  If Emacs is installed under a different name, it
 looks for resources under that name instead of @samp{emacs}.
 
-  When Emacs creates a new frame, it may or may not have a specified
-title.  The frame title, if specified, appears in window decorations and
-icons as the name of the frame.  It is also used (instead of the Emacs
-executable's name) to look up all the resources for that frame.  The
-option @samp{-name} specifies a frame title for the initial frame.
-Subsequent frames normally have no specified frame title, but Lisp
-programs can specify a title when they create frames.
-
 @table @samp
 @item -name @var{name}
 @itemx --name=@var{name}
-Use @var{name} as the title of the initial frame.
+Use @var{name} as the resource name (and the title) for the initial
+Emacs frame.  This option does not affect subsequent frames, but Lisp
+programs can specify frame names when they create frames.
+
+If you don't specify this option, the default is to use the Emacs
+executable's name as the resource name.
 
 @item -xrm @var{resource-values}
 @itemx --xrm=@var{resource-values}
@@ -903,6 +937,8 @@ yes.
 
 @node Lucid Resources
 @section Lucid Menu X Resources
+@cindex Menu X Resources (Lucid widgets)
+@cindex Lucid Widget X Resources
 
   If the Emacs installed at your site was built to use the X toolkit
 with the Lucid menu widgets, then the menu bar is a separate widget and
@@ -928,6 +964,12 @@ Emacs.pane.menubar.font:  8x16
 
 @example
 Emacs.menu*.font:	8x16
+@end example
+
+  For dialog boxes, use @samp{dialog} instead of @samp{menu}:
+
+@example
+Emacs.dialog*.font:	8x16
 @end example
 
   Experience shows that on some systems you may need to add
@@ -958,6 +1000,8 @@ Thickness of shadow line around the widget.
 
 @node Motif Resources
 @section Motif Menu X Resources
+@cindex Menu X Resources (Motif widgets)
+@cindex Motif Widget X Resources
 
   If the Emacs installed at your site was built to use the X toolkit
 with the Motif widgets, then the menu bar is a separate widget and has

@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -33,7 +34,7 @@
 ;; string will be replaced by another.  This can be used for mapping
 ;; keys on a US keyboard to generate characters according to the local
 ;; keyboard convention when pressed once, and according to US keyboard
-;; convetion when pressed twice. 
+;; convention when pressed twice. 
 ;;
 ;; To use this mode, you must define the variable `double-map' and
 ;; then enable double mode with `M-x double-mode'.  Read the
@@ -42,9 +43,9 @@
 ;; The default mapping is for getting Danish/Norwegian keyboard layout
 ;; using ISO Latin 1 on a US keyboard.
 ;;
-;; Imprtant node: While I would like to hear comments, bug reports,
+;; Important node: While I would like to hear comments, bug reports,
 ;; suggestions, please do @strong{not} expect me to put other mappings
-;; that the default into this file.  There are billions and billions
+;; than the default into this file.  There are billions and billions
 ;; of such mappings, and just supporting the most common would
 ;; increase the size of this nice small file manyfold.
 

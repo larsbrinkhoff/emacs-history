@@ -2,19 +2,22 @@
    Copyright (C) 1985, 1986, 1987, 1988, 1990, 1992, 1993, 1994, 1995
    Free Software Foundation, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2, or (at your option)
-    any later version.
+This file is part of GNU Emacs.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -458,7 +461,7 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
     fatal ("Can't find .bss in %s.\n", old_name, 0);
 
   if (old_sbss_index != (old_bss_index - 1))
-    fatal (".sbss should come immediatly before .bss in %s.\n", old_name, 0);
+    fatal (".sbss should come immediately before .bss in %s.\n", old_name, 0);
 
   /* Figure out parameters of the new data3 and data2 sections.
    * Change the sbss and bss sections.

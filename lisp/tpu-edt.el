@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;; TPU-edt is based on tpu.el by Jeff Kowalski and Bob Covey.
 
@@ -316,14 +317,14 @@ CSI is DEC's name for the sequence <ESC>[.")
 SS3 is DEC's name for the sequence <ESC>O.")
 
 (defvar GOLD-map (make-keymap)
-  "Maps the function keys on the VT100 keyboard preceeded by PF1.
+  "Maps the function keys on the VT100 keyboard preceded by PF1.
 GOLD is the ASCII 7-bit escape sequence <ESC>OP.")
 
 (defvar GOLD-CSI-map (make-sparse-keymap)
-  "Maps the function keys on the VT100 keyboard preceeded by GOLD-CSI.")
+  "Maps the function keys on the VT100 keyboard preceded by GOLD-CSI.")
 
 (defvar GOLD-SS3-map (make-sparse-keymap)
-  "Maps the function keys on the VT100 keyboard preceeded by GOLD-SS3.")
+  "Maps the function keys on the VT100 keyboard preceded by GOLD-SS3.")
 
 (defvar tpu-global-map nil "TPU-edt global keymap.")
 (defvar tpu-original-global-map (copy-keymap global-map)
@@ -543,7 +544,7 @@ version of Emacs."
 
 (defun tpu-set-mark (pos)
   "TPU-edt verion of the `set-mark' function.
-Sets the mark at POS and activates the region acording to the
+Sets the mark at POS and activates the region according to the
 current version of Emacs."
   (set-mark pos)
   (and tpu-lucid-emacs19-p pos (zmacs-activate-region)))
@@ -560,7 +561,7 @@ current version of Emacs."
   "Prompt for a y or n answer with positive default.
 Optional second argument NOT-YES changes default to negative.
 Like Emacs `y-or-n-p', but also accepts space as y and DEL as n."
-  (message (format "%s[%s]" prompt (if not-yes "n" "y")))
+  (message "%s[%s]" prompt (if not-yes "n" "y"))
   (let ((doit t))
     (while doit
       (setq doit nil)
@@ -572,8 +573,8 @@ Like Emacs `y-or-n-p', but also accepts space as y and DEL as n."
 	      ((= ans ?\r) (setq tpu-last-answer (not not-yes)))
 	      (t
 	       (setq doit t) (beep)
-	       (message (format "Please answer y or n.  %s[%s]"
-				prompt (if not-yes "n" "y"))))))))
+	       (message "Please answer y or n.  %s[%s]"
+			prompt (if not-yes "n" "y")))))))
   tpu-last-answer)
 
 (defun tpu-local-set-key (key func)
@@ -1203,7 +1204,7 @@ direction.  If an argument is specified, don't set the search direction."
 
 (defun tpu-check-search-case (string)
   "Returns t if string contains upper case."
-  ;; if using regexp, elimiate upper case forms (\B \W \S.)
+  ;; if using regexp, eliminate upper case forms (\B \W \S.)
   (if tpu-regexp-p
       (let ((pat (copy-sequence string)) (case-fold-search nil) (pos 0))
 	(while (setq pos (string-match "\\\\\\\\" pat)) (aset pat (+ 1 pos) ?.))
@@ -2366,12 +2367,18 @@ If FILE is nil, try to load a default file.  The default file names are
 	(tpu-xkeys-file
 	 (setq file (expand-file-name tpu-xkeys-file)))
 	(tpu-lucid-emacs19-p
-	 (setq file (expand-file-name "~/.tpu-lucid-keys")))
+	 (setq file (convert-standard-filename
+		     (expand-file-name "~/.tpu-lucid-keys"))))
 	(tpu-emacs19-p
-	 (setq file (expand-file-name "~/.tpu-keys"))
+	 (setq file (convert-standard-filename
+		     (expand-file-name "~/.tpu-keys")))
 	 (and (not (file-exists-p file))
-	      (file-exists-p (expand-file-name "~/.tpu-gnu-keys"))
-	      (tpu-copy-keyfile (expand-file-name "~/.tpu-gnu-keys") file))))
+	      (file-exists-p
+	       (convert-standard-filename
+		(expand-file-name "~/.tpu-gnu-keys")))
+	      (tpu-copy-keyfile
+	       (convert-standard-filename
+		(expand-file-name "~/.tpu-gnu-keys")) file))))
   (cond ((file-readable-p file)
 	 (load-file file))
 	(t

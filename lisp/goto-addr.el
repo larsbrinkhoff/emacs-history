@@ -1,4 +1,5 @@
 ;;; goto-addr.el --- click to browse URL or to send to e-mail address
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Eric Ding <ericding@mit.edu>
@@ -19,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -28,7 +30,7 @@
 ;; URL or e-mail address, and either load the URL into a browser of
 ;; your choice using the browse-url package, or if it's an e-mail
 ;; address, to send an e-mail to that address.  By default, we bind to
-;; the [S-mouse-2] and the [C-c return] key sequences.
+;; the [mouse-2] and the [C-c return] key sequences.
 
 ;; INSTALLATION
 ;;
@@ -40,22 +42,18 @@
 ;; By default, goto-address now sends using `mail' instead of `mh-send'.
 ;; To use mh-e to send mail, add the following to your .emacs file:
 ;;
-;; (setq goto-address-mail-method 'goto-address-send-using-mhe)
+;; (setq goto-address-mail-method 'goto-address-send-using-mh-e)
 ;;
-;; To rebind, for example, the mouse click method to [mouse-2] in
-;; mh-show-mode, add the following (instead of the first add-hook example
-;; above) to your .emacs file:
+;; The mouse click method is bound to [mouse-2] on highlighted URL's or
+;; e-mail addresses only; it functions normally everywhere else.  To bind
+;; another mouse click to the function, add the following to your .emacs
+;; (for example):
 ;;
-;; (defun my-goto-address ()
-;;   (goto-address)
-;;   (local-unset-key [S-mouse-2])
-;;   (local-set-key [mouse-2] 'goto-address-at-mouse))
+;; (setq goto-address-highlight-keymap
+;;   (let ((m (make-sparse-keymap)))
+;;     (define-key m [S-mouse-2] 'goto-address-at-mouse)
+;;     m))
 ;;
-;; (add-hook 'mh-show-mode-hook 'my-goto-address)
-;;
-;; [mouse-2] is not the default mouse binding because I use goto-address in
-;; some editable buffers, where [mouse-2] means mouse-yank-at-click, as well
-;; as in some modes where [mouse-2] is bound to other useful functions.
 
 ;; BUG REPORTS
 ;;
@@ -100,7 +98,13 @@ But only if `goto-address-highlight-p' is also non-nil.")
   'goto-address-send-using-mail
   "*Function to compose mail.
 Two pre-made functions are `goto-address-send-using-mail' (sendmail);
-and `goto-address-send-using-mhe' (MH-E).")
+and `goto-address-send-using-mh-e' (MH-E).")
+
+(defvar goto-address-highlight-keymap
+  (let ((m (make-sparse-keymap)))
+    (define-key m [mouse-2] 'goto-address-at-mouse)
+    m)
+  "keymap to hold goto-addr's mouse key defs under highlighted URLs.")
 
 (defun goto-address-fontify ()
   "Fontify the URL's and e-mail addresses in the current buffer.
@@ -114,22 +118,26 @@ and `goto-address-fontify-p'."
       (if (< (- (point-max) (point)) goto-address-fontify-maximum-size)
 	  (progn
 	    (while (re-search-forward goto-address-url-regexp nil t)
-	      (progn
-		(goto-char (match-end 0))
+              (let ((s (match-beginning 0))
+                    (e (match-end 0)))
+		(goto-char e)
 		(and goto-address-fontify-p
-		     (put-text-property (match-beginning 0) (match-end 0)
-					'face 'bold))
-		(put-text-property (match-beginning 0) (match-end 0)
-				   'mouse-face 'highlight)))
+		     (put-text-property s e 'face 'bold))
+		(put-text-property s e 'mouse-face 'highlight)
+		(put-text-property
+		 s e 'local-map goto-address-highlight-keymap)))
 	    (goto-char (point-min))
 	    (while (re-search-forward goto-address-mail-regexp nil t)
-	      (progn
+              (let ((s (match-beginning 0))
+                    (e (match-end 0)))
 		(goto-char (match-end 0))
 		(and goto-address-fontify-p
 		     (put-text-property (match-beginning 0) (match-end 0)
 					'face 'italic))
 		(put-text-property (match-beginning 0) (match-end 0)
-			       'mouse-face 'secondary-selection)))))
+				   'mouse-face 'secondary-selection)
+		(put-text-property
+		 s e 'local-map goto-address-highlight-keymap)))))
       (and (buffer-modified-p)
 	   (not modified)
 	   (set-buffer-modified-p nil)))))
@@ -137,6 +145,7 @@ and `goto-address-fontify-p'."
 ;;; code to find and goto addresses; much of this has been blatantly
 ;;; snarfed from browse-url.el
 
+;;;###autoload
 (defun goto-address-at-mouse (event)
   "Send to the e-mail address or load the URL clicked with the mouse.
 Send mail to address at position of mouse click.  See documentation for
@@ -156,6 +165,7 @@ there, then load the URL at or before the position of the mouse click."
 		(funcall browse-url-browser-function url)))
 	  (funcall goto-address-mail-method address))))))
 
+;;;###autoload
 (defun goto-address-at-point ()
   "Send to the e-mail address or load the URL at point.
 Send mail to address at point.  See documentation for
@@ -184,13 +194,16 @@ address.  If no e-mail address found, return the empty string."
 	(buffer-substring (match-beginning 0) (match-end 0))
       "")))
 
-(defun goto-address-send-using-mhe (to)
+(defun goto-address-send-using-mh-e (to)
+  (require 'mh-comp)
   (mh-find-path)
   (let ((cc (mh-read-address "Cc: "))
 	(subject (read-string "Subject: "))
 	(config (current-window-configuration)))
     (delete-other-windows)
     (mh-send-sub to cc subject config)))
+
+(fset 'goto-address-send-using-mhe 'goto-address-send-using-mh-e)
 
 (defun goto-address-send-using-mail (to)
   (mail-other-window nil to)
@@ -202,12 +215,11 @@ address.  If no e-mail address found, return the empty string."
   "Sets up goto-address functionality in the current buffer.
 Allows user to use mouse/keyboard command to click to go to a URL
 or to send e-mail.
-By default, goto-address binds to S-mouse-2 and C-c RET.
+By default, goto-address binds to mouse-2 and C-c RET.
 
 Also fontifies the buffer appropriately (see `goto-address-fontify-p' and
 `goto-address-highlight-p' for more information)."
   (interactive)
-  (local-set-key [S-mouse-2] 'goto-address-at-mouse)
   (local-set-key "\C-c\r" 'goto-address-at-point)
   (if goto-address-highlight-p
       (goto-address-fontify)))

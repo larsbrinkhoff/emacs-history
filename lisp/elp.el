@@ -22,8 +22,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 ;;
@@ -299,9 +300,9 @@ For example, to instrument all ELP functions, do the following:
 				    (function
 				     (lambda (sym)
 				       (and (fboundp sym)
-					    (not (eq (car-safe
-						      (symbol-function sym))
-						     'macro)))))))))
+					    (not (memq (car-safe
+							(symbol-function sym))
+						       '(macro keymap autoload))))))))))
 
 (defun elp-restore-list (&optional list)
   "Restore the original definitions for all functions in `elp-function-list'.

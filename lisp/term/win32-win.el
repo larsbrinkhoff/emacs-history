@@ -1,24 +1,26 @@
 ;;; win32-win.el --- parse switches controlling interface with win32
+
 ;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Kevin Gallo
 ;; Keywords: terminals
 
-;;; This file is part of GNU Emacs.
-;;;
-;;; GNU Emacs is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
-;;;
-;;; GNU Emacs is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; You should have received a copy of the GNU General Public License
-;;; along with GNU Emacs; see the file COPYING.  If not, write to
-;;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -74,6 +76,42 @@
 (require 'faces)
 (require 'select)
 (require 'menu-bar)
+
+;; Because Windows scrollbars look and act quite differently compared
+;; with the standard X scroll-bars, we don't try to use the normal
+;; scroll bar routines.
+
+(defun win32-handle-scroll-bar-event (event)
+  "Handle Win32 scroll bar events to do normal Window style scrolling."
+  (interactive "e")
+  (let ((old-window (selected-window)))
+    (unwind-protect
+	(let* ((position (event-start event))
+	       (window (nth 0 position))
+	       (portion-whole (nth 2 position))
+	       (bar-part (nth 4 position)))
+	  (save-excursion
+	    (select-window window)
+	    (cond
+	     ((eq bar-part 'up)
+	      (scroll-down 1))
+	     ((eq bar-part 'above-handle)
+	      (scroll-down))
+	     ((eq bar-part 'handle)
+	      (scroll-bar-maybe-set-window-start event))
+	     ((eq bar-part 'below-handle)
+	      (scroll-up))
+	     ((eq bar-part 'down)
+	      (scroll-up 1))
+	     )))
+      (select-window old-window))))
+
+;; The following definition is used for debugging.
+;(defun win32-handle-scroll-bar-event (event) (interactive "e") (princ event))
+
+(global-set-key [vertical-scroll-bar mouse-1] 'win32-handle-scroll-bar-event)
+
+;; (scroll-bar-mode nil)
 
 (defvar x-invocation-args)
 
@@ -436,30 +474,33 @@ The value may be different for frames on different X displays."
 
 ;; Map certain keypad keys into ASCII characters
 ;; that people usually expect.
-(define-key function-key-map [backspace] [127])
-(define-key function-key-map [delete] [127])
 (define-key function-key-map [tab] [?\t])
 (define-key function-key-map [linefeed] [?\n])
 (define-key function-key-map [clear] [11])
 (define-key function-key-map [return] [13])
 (define-key function-key-map [escape] [?\e])
-(define-key function-key-map [M-backspace] [?\M-\d])
-(define-key function-key-map [M-delete] [?\M-\d])
 (define-key function-key-map [M-tab] [?\M-\t])
 (define-key function-key-map [M-linefeed] [?\M-\n])
 (define-key function-key-map [M-clear] [?\M-\013])
 (define-key function-key-map [M-return] [?\M-\015])
 (define-key function-key-map [M-escape] [?\M-\e])
 
+;; These don't do the right thing (voelker)
+;(define-key function-key-map [backspace] [127])
+;(define-key function-key-map [delete] [127])
+;(define-key function-key-map [M-backspace] [?\M-\d])
+;(define-key function-key-map [M-delete] [?\M-\d])
+
 ;; These tell read-char how to convert
 ;; these special chars to ASCII.
-(put 'backspace 'ascii-character 127)
-(put 'delete 'ascii-character 127)
 (put 'tab 'ascii-character ?\t)
 (put 'linefeed 'ascii-character ?\n)
 (put 'clear 'ascii-character 12)
 (put 'return 'ascii-character 13)
 (put 'escape 'ascii-character ?\e)
+;; These don't seem to be necessary (voelker)
+;(put 'backspace 'ascii-character 127)
+;(put 'delete 'ascii-character 127)
 
 
 ;;;; Selections and cut buffers
@@ -480,7 +521,8 @@ This is in addition to the primary selection.")
 
 (defun x-select-text (text &optional push)
   (if x-select-enable-clipboard 
-      (win32-set-clipboard-data text)))
+      (win32-set-clipboard-data text))
+  (setq x-last-selected-text text))
     
 ;;; Return the value of the current selection.
 ;;; Consult the selection, then the cut buffer.  Treat empty strings
@@ -493,7 +535,15 @@ This is in addition to the primary selection.")
 	    (setq text (win32-get-clipboard-data))
 	  (error (message "win32-get-clipboard-data:%s" c)))
 	(if (string= text "") (setq text nil))
-	text)))
+	(cond
+	 ((not text) nil)
+	 ((eq text x-last-selected-text) nil)
+	 ((string= text x-last-selected-text)
+	  ;; Record the newer string, so subsequent calls can use the 'eq' test.
+	  (setq x-last-selected-text text)
+	  nil)
+	 (t
+	  (setq x-last-selected-text text))))))
 
 ;;; Do the actual Windows setup here; the above code just defines
 ;;; functions and variables that we use now.

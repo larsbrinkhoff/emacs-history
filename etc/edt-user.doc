@@ -356,9 +356,9 @@ VI.   SOME HIGHLIGHTS IN THIS EDT EMULATION, AND SOME COMPARISONS TO THE
     ever got along without it!  It is assigned to C-j in the sample
     edt-user.el customization files.
 
-14. TPU/EVE's Retangular Cut and Paste functions (originally from the EVE-Plus
+14. TPU/EVE's Rectangular Cut and Paste functions (originally from the EVE-Plus
     package) are supported.  But unlike the TPU/EVE versions, these here
-    support both insert and overwrite modes.  The seven retangular functions
+    support both insert and overwrite modes.  The seven rectangular functions
     are bound to F7, F8, GOLD-F8, F9, GOLD-F9, F10, and GOLD-F10 in the
     default EDT mode.
 

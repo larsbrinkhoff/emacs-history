@@ -1,28 +1,31 @@
 ;;; imenu.el --- Framework for mode-specific buffer indexes.
 
-;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; Author: Ake Stenhoff <etxaksf@aom.ericsson.se>
 ;;         Lars Lindberg <lli@sypro.cap.se>
 ;; Created: 8 Feb 1994
 ;; Keywords: tools
-;;
-;; This program is free software; you can redistribute it and/or modify
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
+
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;;
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-;;
+
 ;; Purpose of this package:
 ;;   To present a framework for mode-specific buffer indexes.
 ;;   A buffer index is an alist of names and buffer positions.
@@ -53,6 +56,7 @@
 ;;  [karl] - Karl Fogel kfogel@floss.life.uiuc.edu
 
 ;;; Code
+
 (eval-when-compile (require 'cl))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -94,7 +98,7 @@ element should come before the second.  The arguments are cons cells;
 \(NAME . POSITION).  Look at `imenu--sort-by-name' for an example.")
 
 (defvar imenu-max-items 25
-  "*Maximum number of elements in an index mouse-menu.")
+  "*Maximum number of elements in an mouse menu for Imenu.")
 
 (defvar imenu-scanning-message "Scanning buffer for index (%3d%%)"
   "*Progress message during the index scanning of the buffer.
@@ -112,9 +116,6 @@ names work as tokens.")
   "*The separator between index names of different levels.
 Used for making mouse-menu titles and for flattening nested indexes
 with name concatenation.")
-
-(defvar imenu-submenu-name-format "%s..."
-  "*The format for making a submenu name.")
 
 ;;;###autoload
 (defvar imenu-generic-expression nil
@@ -145,6 +146,7 @@ For emacs-lisp-mode for example PATTERN would look like:
 
 The variable is buffer-local.")
 
+;;;###autoload
 (make-variable-buffer-local 'imenu-generic-expression)
 
 ;;;; Hooks
@@ -278,13 +280,13 @@ This function is called after the function pointed out by
 		       index-unknown-alist)))))))
     (imenu-progress-message prev-pos 100)
     (and index-var-alist
-	 (push (cons (imenu-create-submenu-name "Variables") index-var-alist)
+	 (push (cons "Variables" index-var-alist)
 	       index-alist))
     (and index-type-alist
- 	 (push (cons (imenu-create-submenu-name "Types") index-type-alist)
+ 	 (push (cons "Types" index-type-alist)
   	       index-alist))
     (and index-unknown-alist
-	 (push (cons (imenu-create-submenu-name "Syntax-unknown") index-unknown-alist)
+	 (push (cons "Syntax-unknown" index-unknown-alist)
 	       index-alist))
     index-alist))
 
@@ -334,6 +336,10 @@ This function is called after the function pointed out by
 (defvar imenu--index-alist nil)
 (make-variable-buffer-local 'imenu--index-alist)
 
+;; The latest buffer index used to update the menu bar menu.
+(defvar imenu--last-menubar-index-alist nil)
+(make-variable-buffer-local 'imenu--last-menubar-index-alist)
+
 ;; History list for 'jump-to-function-in-buffer'.
 ;; Making this buffer local caused it not to work!
 (defvar imenu--history-list nil)
@@ -364,14 +370,6 @@ This function is called after the function pointed out by
 	(/ (1- pos) (max (/ total 100) 1))
       (/ (* 100 (1- pos)) (max total 1)))))
 
-;;;
-;;; Function for suporting general looking submenu names.
-;;; Uses `imenu-submenu-name-format' for creating the name.
-;;; NAME is the base of the new submenu name.
-;;;
-(defun imenu-create-submenu-name (name)
-   (format imenu-submenu-name-format name))
-
 ;; Split LIST into sublists of max length N.
 ;; Example (imenu--split '(1 2 3 4 5 6 7 8) 3)-> '((1 2 3) (4 5 6) (7 8))
 (defun imenu--split (list n)
@@ -393,16 +391,30 @@ This function is called after the function pointed out by
 	 (push (nreverse sublist) result))
     (nreverse result)))
 
-;;;
-;;; Split a menu in to several menus.
-;;;
+;;; Split the alist MENULIST into a nested alist, if it is long enough.
+;;; In any case, add TITLE to the front of the alist.
 (defun imenu--split-menu (menulist title)
-  (cons "Index menu"
-	(mapcar
-	 (function
-	  (lambda (menu)
-	    (cons (format "(%s)" title) menu)))
-	 (imenu--split menulist imenu-max-items))))
+  (if (> (length menulist) imenu-max-items)
+      (let ((count 0))
+	(cons title
+	      (mapcar
+	       (function
+		(lambda (menu)
+		  (cons (format "(%s-%d)" title (setq count (1+ count)))
+			menu)))
+	       (imenu--split menulist imenu-max-items))))
+    (cons title menulist)))
+
+;;; Split up each long alist that are nested within ALIST
+;;; into nested alists.
+(defun imenu--split-submenus (alist)
+  (mapcar (function (lambda (elt)
+		      (if (and (consp elt)
+			       (stringp (car elt))
+			       (listp (cdr elt)))
+			  (imenu--split-menu (cdr elt) (car elt))
+			elt)))
+	  alist))
 
 ;;;
 ;;; Find all items in this buffer that should be in the index.
@@ -410,7 +422,7 @@ This function is called after the function pointed out by
 ;;; ((NAME . POSITION) (NAME . POSITION) ...)
 ;;;
 
-(defun imenu--make-index-alist ()
+(defun imenu--make-index-alist (&optional noerror)
   ;; Create a list for this buffer only when needed.
   (or (and imenu--index-alist
 	   (or (not imenu-auto-rescan)
@@ -420,8 +432,10 @@ This function is called after the function pointed out by
       (setq imenu--index-alist
 	    (save-excursion
 	      (funcall imenu-create-index-function))))
-  (or imenu--index-alist
+  (or imenu--index-alist noerror
       (error "No items suitable for an index found in this buffer"))
+  (or imenu--index-alist
+      (setq imenu--index-alist (list nil)))
   ;; Add a rescan option to the index.
   (cons imenu--rescan-item imenu--index-alist))
 ;;;
@@ -446,24 +460,30 @@ This function is called after the function pointed out by
 	alist)
        t))
 
-(defun imenu--create-keymap-2 (alist counter)
+(defun imenu--create-keymap-2 (alist counter &optional commands)
   (let ((map nil))
     (mapcar
      (function
       (lambda (item)
 	(cond
 	 ((listp (cdr item))
-	  (append (list (incf counter) (car item) 'keymap (car item))
-		  (imenu--create-keymap-2 (cdr item) (+ counter 10))))
+	  (append (list (setq counter (1+ counter))
+			(car item) 'keymap (car item))
+		  (imenu--create-keymap-2 (cdr item) (+ counter 10) commands)))
 	 (t
-	  (let ((end (cons '(nil) t)))
+	  (let ((end (if commands `(lambda () (interactive)
+				     (imenu--menubar-select ',item))
+		       (cons '(nil) t))))
 	    (cons (car item)
 		  (cons (car item) end))))
 	 )))
      alist)))
 
-(defun imenu--create-keymap-1 (title alist)
-  (append (list 'keymap title) (imenu--create-keymap-2 alist 0)))
+;; If COMMANDS is non-nil, make a real keymap
+;; with a real command used as the definition.
+;; If it is nil, make something suitable for x-popup-menu.
+(defun imenu--create-keymap-1 (title alist &optional commands)
+  (append (list 'keymap title) (imenu--create-keymap-2 alist 0 commands)))
 
 
 (defun imenu--in-alist (str alist)
@@ -611,20 +631,16 @@ pattern.
 			      (end (match-end index)))
 			  (setq found t)
 			  (push 
-			   (cons (buffer-substring beg end) beg)
+			   (cons (buffer-substring-no-properties beg end) beg)
 			   (cdr 
-			    (or (if (not (stringp menu-title)) index-alist) 
-				(assoc 
-				 (imenu-create-submenu-name menu-title) 
-				 index-alist)
+			    (or (assoc menu-title index-alist)
 				(car (push 
-				      (cons 
-				       (imenu-create-submenu-name menu-title) 
-				       '()) 
+				      (cons menu-title '()) 
 				      index-alist))))))))))
-	    patterns))))
-      (imenu-progress-message prev-pos 100 t)
-      (delete 'dummy index-alist)))
+	   patterns))))
+    (imenu-progress-message prev-pos 100 t)
+    (let ((main-element (assq nil index-alist)))
+      (nconc (delq main-element (delq 'dummy index-alist)) main-element))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -680,6 +696,7 @@ Returns t for rescan and otherwise a position number."
 INDEX-ALIST is the buffer index and EVENT is a mouse event.
 
 Returns t for rescan and otherwise a position number."
+  (setq index-alist (imenu--split-submenus index-alist))
   (let* ((menu 	(imenu--split-menu
 		 (if imenu-sort-function
 		     (sort
@@ -697,6 +714,9 @@ Returns t for rescan and otherwise a position number."
 					    (if (< 1 (length (cdr menu)))
 						(cdr menu)
 					      (cdr (cadr menu))))))
+
+    (or imenu-use-keymap-menu
+	(setq menu (list "Imenu" (delq nil menu))))
     (setq position (x-popup-menu event menu))
     (if imenu-use-keymap-menu
 	(progn
@@ -769,13 +789,60 @@ The returned value is on the form (INDEX-NAME . INDEX-POSITION)."
 
 ;;;###autoload
 (defun imenu-add-to-menubar (name)
-  "Adds an \"imenu\" entry to the menubar for the current local keymap.
-NAME is the string naming the menu to be added.
-See 'imenu' for more information."
-  (interactive "sMenu name: ")
-  (and window-system
-       (define-key (current-local-map) [menu-bar index]
-	 (cons name 'imenu))))
+  "Adds an `imenu' entry to the menu bar for the current buffer.
+NAME is a string used to name the menu bar item.
+See the command `imenu' for more information."
+  (interactive "sImenu menu item name: ")
+  (let ((newmap (make-sparse-keymap))
+	(menu-bar (lookup-key (current-local-map) [menu-bar])))
+    (define-key newmap [menu-bar]
+      (append (make-sparse-keymap) menu-bar))
+    (define-key newmap [menu-bar index]
+      (cons name (nconc (make-sparse-keymap "Imenu")
+			(make-sparse-keymap))))
+    (use-local-map (append newmap (current-local-map))))
+  (add-hook 'menu-bar-update-hook 'imenu-update-menubar))
+
+(defvar imenu-buffer-menubar nil)
+
+(defun imenu-update-menubar ()
+  (and (current-local-map)
+       (keymapp (lookup-key (current-local-map) [menu-bar index]))
+       (let ((index-alist (imenu--make-index-alist t)))
+	 ;; Don't bother updating if the index-alist has not changed
+	 ;; since the last time we did it.
+	 (or (equal index-alist imenu--last-menubar-index-alist)
+	     (let (menu menu1 old)
+	       (setq imenu--last-menubar-index-alist index-alist)
+	       (setq index-alist (imenu--split-submenus index-alist))
+	       (setq menu (imenu--split-menu
+			   (if imenu-sort-function
+			       (sort
+				(let ((res nil)
+				      (oldlist index-alist))
+				  ;; Copy list method from the cl package `copy-list'
+				  (while (consp oldlist) (push (pop oldlist) res))
+				  (prog1 (nreverse res) (setcdr res oldlist)))
+				imenu-sort-function)
+			     index-alist)
+			   (buffer-name)))
+	       (setq menu1 (imenu--create-keymap-1 (car menu) 
+						   (if (< 1 (length (cdr menu)))
+						       (cdr menu)
+						     (cdr (car (cdr menu))))
+						   t))
+	       (setq old (lookup-key (current-local-map) [menu-bar index]))
+	       (if (keymapp old)
+		   (setcdr (nthcdr 2 old) menu1)))))))
+
+(defun imenu--menubar-select (item)
+  "Use Imenu to select the function or variable named in this menu item."
+  (if (equal item '("*Rescan*" . -99))
+      (progn
+	(imenu--cleanup)
+	(setq imenu--index-alist nil)
+	(imenu-update-menubar))
+    (imenu item)))
 
 ;;;###autoload
 (defun imenu (index-item)
@@ -784,7 +851,10 @@ See `imenu-choose-buffer-index' for more information."
   (interactive
    (list (save-restriction 
 	   (widen)
-	   (imenu-choose-buffer-index))))
+	   (car (imenu-choose-buffer-index)))))
+  ;; Convert a string to an alist element.
+  (if (stringp index-item)
+      (setq index-item (assoc index-item (imenu--make-index-alist))))
   (and index-item
        (progn
 	 (push-mark)

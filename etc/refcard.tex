@@ -1,5 +1,4 @@
 % Reference Card for GNU Emacs version 19 on Unix systems
-% Time-stamp: <93/05/21 12:52:26 gildea>
 %**start of header
 \newcount\columnsperpage
 
@@ -8,7 +7,7 @@
 
 \columnsperpage=1
 
-% Copyright (c) 1987, 1993 Free Software Foundation, Inc.
+% Copyright (c) 1987, 1993, 1996 Free Software Foundation, Inc.
 
 % This file is part of GNU Emacs.
 
@@ -24,7 +23,8 @@
 
 % You should have received a copy of the GNU General Public License
 % along with GNU Emacs; see the file COPYING.  If not, write to
-% the Free Software Foundation, 675 Mass Ave, Cambridge MA 02139, USA.
+% the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+% Boston, MA 02111-1307, USA.
 
 % This file is intended to be processed by plain TeX (TeX82).
 %
@@ -51,9 +51,9 @@
 
 % If there were room, it would be nice to see a section on Dired.
 
-\def\versionnumber{2.0}
-\def\year{1993}
-\def\version{May \year\ v\versionnumber}
+\def\versionnumber{2.1}
+\def\year{1996}
+\def\version{March \year\ v\versionnumber}
 
 \def\shortcopyrightnotice{\vskip 1ex plus 2 fill
   \centerline{\small \copyright\ \year\ Free Software Foundation, Inc.
@@ -70,7 +70,7 @@ this card provided the copyright notice and this permission notice
 are preserved on all copies.
 
 For copies of the GNU Emacs manual, write to the Free Software
-Foundation, Inc., 675 Massachusetts Ave, Cambridge MA 02139.
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 \endgroup}
 
@@ -273,14 +273,16 @@ To read in a file to edit, see Files, below.
 \key{{\bf insert} contents of another file into this buffer}{C-x i}
 \key{replace this file with the file you really want}{C-x C-v}
 \key{write buffer to a specified file}{C-x C-w}
+\key{version control checkin/checkout}{C-x C-q}
 
 \section{Getting Help}
 
-The Help system is simple.  Type \kbd{C-h} and follow the directions.
-If you are a first-time user, type \kbd{C-h t} for a {\bf tutorial}.
+The Help system is simple.  Type \kbd{C-h} (or \kbd{F1}) and follow
+the directions.  If you are a first-time user, type \kbd{C-h t} for a
+{\bf tutorial}.
 
 \key{remove Help window}{C-x 1}
-\key{scroll Help window}{ESC C-v}
+\key{scroll Help window}{C-M-v}
 
 \key{apropos: show commands matching a string}{C-h a}
 \key{show the function a key runs}{C-h c}
@@ -377,30 +379,39 @@ Valid responses in query-replace mode are
 \key{{\bf skip} to next without replacing}{DEL}
 \key{replace all remaining matches}{!}
 \key{{\bf back up} to the previous match}{^}
-\key{{\bf exit} query-replace}{ESC}
+\key{{\bf exit} query-replace}{RET}
 \key{enter recursive edit (\kbd{C-M-c} to exit)}{C-r}
 
 \section{Multiple Windows}
 
+When two commands are shown, the second is for ``other frame.''
+
 \key{delete all other windows}{C-x 1}
-\key{delete this window}{C-x 0}
-\key{split window in two vertically}{C-x 2}
+
+{\setbox0=\hbox{\kbd{0}}\advance\hsize by 0\wd0
+\paralign to \hsize{#\tabskip=10pt plus 1 fil&#\tabskip=0pt&#\cr
+\threecol{split window in two vertically}{C-x 2\ \ \ \ }{C-x 5 2}
+\threecol{delete this window}{C-x 0\ \ \ \ }{C-x 5 0}
+}}
 \key{split window in two horizontally}{C-x 3}
 
 \key{scroll other window}{C-M-v}
-\key{switch cursor to another window}{C-x o}
 
-\metax{shrink window shorter}{M-x shrink-window}
+{\setbox0=\hbox{\kbd{0}}\advance\hsize by 2\wd0
+\paralign to \hsize{#\tabskip=10pt plus 1 fil&#\tabskip=0pt&#\cr
+\threecol{switch cursor to another window}{C-x o}{C-x 5 o}
+
+\threecol{select buffer in other window}{C-x 4 b}{C-x 5 b}
+\threecol{display buffer in other window}{C-x 4 C-o}{C-x 5 C-o}
+\threecol{find file in other window}{C-x 4 f}{C-x 5 f}
+\threecol{find file read-only in other window}{C-x 4 r}{C-x 5 r}
+\threecol{run Dired in other window}{C-x 4 d}{C-x 5 d}
+\threecol{find tag in other window}{C-x 4 .}{C-x 5 .}
+}}
+
 \key{grow window taller}{C-x ^}
 \key{shrink window narrower}{C-x \{}
 \key{grow window wider}{C-x \}}
-
-\key{select buffer in other window}{C-x 4 b}
-\key{display buffer in other window}{C-x 4 C-o}
-\key{find file in other window}{C-x 4 f}
-\key{find file read-only in other window}{C-x 4 r}
-\key{run Dired in other window}{C-x 4 d}
-\key{find tag in other window}{C-x 4 .}
 
 \section{Formatting}
 
@@ -420,6 +431,8 @@ Valid responses in query-replace mode are
 \key{set fill column}{C-x f}
 \key{set prefix each line starts with}{C-x .}
 
+\key{set face}{M-g}
+
 \section{Case Change}
 
 \key{uppercase word}{M-u}
@@ -428,7 +441,6 @@ Valid responses in query-replace mode are
 
 \key{uppercase region}{C-x C-u}
 \key{lowercase region}{C-x C-l}
-\metax{capitalize region}{M-x capitalize-region}
 
 \section{The Minibuffer}
 
@@ -445,10 +457,7 @@ The following keys are defined in the minibuffer.
 \key{abort command}{C-g}
 
 Type \kbd{C-x ESC ESC} to edit and repeat the last command that used the
-minibuffer.  The following keys are then defined.
-
-\key{previous minibuffer command}{M-p}
-\key{next minibuffer command}{M-n}
+minibuffer.  Type \kbd{F10} to activate the menu bar using the minibuffer.
 
 \newcolumn
 \title{GNU Emacs Reference Card}
@@ -569,7 +578,7 @@ Other:
 \key{run Info {\bf tutorial}}{h}
 \key{list Info commands}{?}
 \key{{\bf quit} Info}{q}
-\key{search nodes for regexp}{s}
+\key{search nodes for regexp}{M-s}
 
 \endindentedkeys
 
@@ -588,7 +597,7 @@ Other:
 \key{eval current {\bf defun}}{C-M-x}
 \metax{eval {\bf region}}{M-x eval-region}
 \metax{eval entire {\bf buffer}}{M-x eval-current-buffer}
-\key{read and eval minibuffer}{M-ESC}
+\key{read and eval minibuffer}{M-:}
 \key{re-execute last minibuffer command}{C-x ESC ESC}
 \metax{read and eval Emacs Lisp file}{M-x load-file}
 \metax{load from standard system directory}{M-x load-library}
@@ -598,13 +607,12 @@ Other:
 % The intended audience here is the person who wants to make simple
 % customizations and knows Lisp syntax.
 
-Here are some examples of binding global keys in Emacs Lisp.  Note
-that you cannot say \kbd{"\\M-\#"}; you must say \kbd{"\\e\#"}.
+Here are some examples of binding global keys in Emacs Lisp.
 
 \beginexample%
 (global-set-key "\\C-cg" 'goto-line)
 (global-set-key "\\C-x\\C-k" 'kill-region)
-(global-set-key "\\e\#" 'query-replace-regexp)
+(global-set-key "\\M-\#" 'query-replace-regexp)
 \endexample
 
 An example of setting a variable in Emacs Lisp:

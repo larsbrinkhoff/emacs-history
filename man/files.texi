@@ -316,7 +316,7 @@ because it would have no effect.  Instead, @kbd{C-x C-s} displays a message
 like this in the echo area:
 
 @example
-(No changes need to be written)
+(No changes need to be saved)
 @end example
 
 @kindex C-x s
@@ -707,11 +707,11 @@ something different (the functions @code{make-auto-save-file-name} and
 in a buffer is calculated when auto-saving is turned on in that buffer.
 
   When you delete a substantial part of the text in a large buffer, auto
-save turns off temporarily in that buffer.  This is so that if you
-delete text accidentally, it is likely to remain present in the auto
-save file.  To reenable auto-saving after this happens, simply save the
-file explicitly with @kbd{C-x C-s}.  Using @kbd{C-u 1 M-x
-auto-save-mode} also cancels this particular state.
+save turns off temporarily in that buffer.  This is because if you
+deleted the text unintentionally, you might find the auto-save file more
+useful if it contains the deleted text.  To reenable auto-saving after
+this happens, save the buffer with @kbd{C-x C-s}, or use @kbd{C-u 1 M-x
+auto-save}.
 
 @vindex auto-save-visited-file-name
   If you want auto-saving to be done in the visited file, set the variable
@@ -724,12 +724,6 @@ visited file.  To inhibit this, set the variable @code{delete-auto-save-files}
 to @code{nil}.  Changing the visited file name with @kbd{C-x C-w} or
 @code{set-visited-file-name} renames any auto-save file to go with
 the new visited name.
-
-  When you delete a large amount of a buffer's text, auto-saving turns
-off in that buffer.  This is because if you deleted the text
-unintentionally, you might find the auto-save file more useful if it
-contains the deleted text.  To restart auto-saving in that buffer, save
-the buffer with @kbd{C-x C-s}, or use @kbd{M-x auto-save}.
 
 @node Auto Save Control
 @subsection Controlling Auto-Saving
@@ -811,9 +805,11 @@ recover are present in Emacs buffers.  You should then save them.  Only
 this---saving them---updates the files themselves.
 
   Interrupted sessions are recorded in files named
-@file{.save-@var{pid}-@var{hostname}} in your home directory.  You can
+@file{.saves-@var{pid}-@var{hostname}} in your home directory.  You can
 turn off the recording of sessions by setting the variable
-@code{auto-save-file-name-list} to @code{nil}.  You can store the
+@code{auto-save-list-file-name} to @code{nil}.  (Doing that in your
+@file{.emacs} file has no effect---instead, set
+@code{auto-save-list-file-prefix} to @code{nil}).  You can store the
 current session in a different place by setting the variable to a
 different file name, but you'll have to redefine @code{recover-session}
 separately to make it look for the new name.
@@ -860,9 +856,8 @@ such as the creation time of each version, who created it, and a
 description of what was changed in that version.
 
   The Emacs version control commands work with three version control
-systems---RCS, CVS and SCCS.  The GNU project recommends the version
-control system known as RCS, which is free software and available from
-the Free Software Foundation.
+systems---RCS, CVS and SCCS.  The GNU project recommends RCS and CVS,
+which are free software and available from the Free Software Foundation.
 
 @menu
 * Version Systems::             Supported version control back end systems.
@@ -1191,7 +1186,6 @@ sync with the repository anymore (@pxref{VC Mode Line}).  The file stays
 and visit the file again.
 
 @cindex @code{CVSREAD} environment variable
-@c ??? What value of CVSREAD
   If, instead, you would like to use explicit check-out with CVS, set
 the @code{CVSREAD} environment variable to some value.  (It does not
 matter what value you use.)  CVS then makes your work files read-only by
@@ -1809,7 +1803,20 @@ headers.
 
 @node Customizing VC
 @subsection Customizing VC
-@c There is no need to tell users about vc-master-templates.
+
+  There are many ways of customizing VC.  The variables that control its
+behaviour fall into three categories, described in the following
+sections.
+
+@menu
+* VC Workfile Handling::  Various options concerning working files.
+* VC Status Retrieval::   How VC finds the version control status of a file,
+                            and how to customize this.
+* VC Command Execution::  Which commands VC should run, and how.
+@end menu
+
+@node VC Workfile Handling
+@subsubsection VC Workfile Handling
 
 @vindex vc-make-backup-files
   Emacs normally does not save backup files for source files that are
@@ -1824,18 +1831,24 @@ in a new version with @kbd{C-x C-q} deletes the work file; but any
 attempt to visit the file with Emacs creates it again.  (With CVS, work
 files are always kept.)
 
-@vindex vc-suppress-confirm
-  If @code{vc-suppress-confirm} is non-@code{nil}, then @kbd{C-x C-q}
-and @kbd{C-x v i} can save the current buffer without asking, and
-@kbd{C-x v u} also operates without asking for confirmation.  (This
-variable does not affect @kbd{C-x v c}; that operation is so drastic
-that it should always ask for confirmation.)
+@vindex vc-follow-symlinks
+  Editing a version-controlled file through a symbolic link can be
+dangerous.  It bypasses the version control system--you can edit the
+file without checking it out, and fail to check your changes in.  Also,
+your changes might overwrite those of another user.  To protect against
+this, VC checks each symbolic link that you visit, to see if it points
+to a file under version control.
 
-@vindex vc-command-messages
-  VC mode does much of its work by running the shell commands for RCS,
-CVS and SCCS.  If @code{vc-command-messages} is non-@code{nil}, VC
-displays messages to indicate which shell commands it runs, and
-additional messages when the commands finish.
+  The variable @code{vc-follow-symlinks} controls what to do when a
+symbolic link points to a version-controlled file.  If it is @code{nil},
+VC only displays a warning message.  If it is @code{t}, VC automatically
+follows the link, and visits the real file instead, telling you about
+this in the echo area.  If the variable is @code{ask} (the default), VC
+asks you each time what to do.
+
+@node VC Status Retrieval
+@subsubsection VC Status Retrieval
+@c There is no need to tell users about vc-master-templates.
 
   When deducing the locked/unlocked state of a file, VC first looks for
 an RCS version header string in the file (@pxref{Version Headers}).  If
@@ -1847,6 +1860,7 @@ rather expensive.  Also the master file can only tell you @emph{if}
 there's any lock on the file, but not whether your work file really
 contains that locked version.
 
+@vindex vc-consult-headers
   You can tell VC not to use version headers to determine lock status by
 setting @code{vc-consult-headers} to @code{nil}.  VC then always uses
 the file permissions (if it can trust them), or else checks the master
@@ -1864,6 +1878,22 @@ the file permissions.  If you find that the file permissions of work
 files are changed erroneously, set @code{vc-mistrust-permissions} to
 @code{t}.  Then VC always checks the master file to determine the file's
 status.
+
+@node VC Command Execution
+@subsubsection VC Command Execution
+
+@vindex vc-suppress-confirm
+  If @code{vc-suppress-confirm} is non-@code{nil}, then @kbd{C-x C-q}
+and @kbd{C-x v i} can save the current buffer without asking, and
+@kbd{C-x v u} also operates without asking for confirmation.  (This
+variable does not affect @kbd{C-x v c}; that operation is so drastic
+that it should always ask for confirmation.)
+
+@vindex vc-command-messages
+  VC mode does much of its work by running the shell commands for RCS,
+CVS and SCCS.  If @code{vc-command-messages} is non-@code{nil}, VC
+displays messages to indicate which shell commands it runs, and
+additional messages when the commands finish.
 
 @vindex vc-path
   You can specify additional directories to search for version control
@@ -2056,7 +2086,7 @@ compressed files when you visit them, and automatically recompress them
 if you alter them and save them.  To enable this feature, type the
 command @kbd{M-x auto-compression-mode}.
 
-  When automatic compression (which implies automatic uncompresson as
+  When automatic compression (which implies automatic uncompression as
 well) is enabled, Emacs recognizes compressed files by their file names.
 File names ending in @samp{.gz} indicate a file compressed with
 @code{gzip}.  Other endings indicate other compression programs.

@@ -42,9 +42,9 @@ symbol.
 There are new escape sequences for use in character and string
 constants.  The escape sequence @samp{\a} is equivalent to @samp{\C-g},
 the @sc{ASCII} @sc{BEL} character (code 7).  The escape sequence
-@samp{\x} followed by a hexidecimal number represents the character
+@samp{\x} followed by a hexadecimal number represents the character
 whose @sc{ASCII} code is that number.  There is no limit on the number
-of digits in the hexidecimal value.
+of digits in the hexadecimal value.
 
 @item
 The function @code{read} when reading from a buffer now does not skip a
@@ -1863,8 +1863,7 @@ If you have a terminal that can handle the entire ISO Latin 1 character
 set, you can arrange to use that character set as follows:
 
 @example
-(require 'disp-table)
-(standard-display-8bit 0 255)
+(standard-display-european 1)
 @end example
 
 If you are editing buffers written in the ISO Latin 1 character set and
@@ -3044,7 +3043,7 @@ syntax.  You can set this flag with @code{modify-syntax-entry} by
 including the letter @samp{p} in the syntax specification.
 
 These characters are treated as whitespace when they appear between
-expressions.  When they appear withing an expression, they are handled
+expressions.  When they appear within an expression, they are handled
 according to their usual syntax codes.
 
 The function @code{backward-prefix-chars} moves back over these
@@ -3189,7 +3188,7 @@ The function @code{other-buffer} now takes an optional second argument
 currently being displayed in windows may be returned even if there are
 other buffers not visible.  Normally, @code{other-buffer} returns a
 currently visible buffer only as a last resort, if there are no suitable
-nonvisible buffers.
+invisible buffers.
 
 @item
 The hook @code{kill-buffer-hook} now runs whenever a buffer is killed.

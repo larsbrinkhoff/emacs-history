@@ -89,16 +89,24 @@ main (argc, argv)
 
 #ifdef MSDOS
   _fmode = O_BINARY;		/* all of files are treated as binary files */
+#if __DJGPP__ > 1
+  if (!isatty (fileno (stdout)))
+    setmode (fileno (stdout), O_BINARY);
+  if (!isatty (fileno (stdin)))
+    setmode (fileno (stdin), O_BINARY);
+#else /* not __DJGPP__ > 1 */
   (stdout)->_flag &= ~_IOTEXT;
   (stdin)->_flag &= ~_IOTEXT;
+#endif /* not __DJGPP__ > 1 */
 #endif
+  progname = argv[0];
+
   if (argc != 1)
     {
       fprintf (stderr, "Usage: %s <babylmailbox >unixmailbox\n", progname);
       exit (GOOD);
     }
   labels_saved = printing = header = FALSE;
-  progname = argv[0];
   ltoday = time (0);
   today = ctime (&ltoday);
   data.size = 200;
@@ -113,7 +121,7 @@ main (argc, argv)
       if (streq (data.buffer, "*** EOOH ***") && !printing)
 	{
 	  printing = header = TRUE;
-	  printf ("From Babyl to mail by %s %s", progname, today);
+	  printf ("From \"Babyl to mail by %s\" %s", progname, today);
 	  continue;
 	}
 

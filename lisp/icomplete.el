@@ -20,40 +20,41 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; Loading this package implements a more fine-grained minibuffer
-;;; completion feedback scheme.  Prospective completions are concisely
-;;; indicated within the minibuffer itself, with each successive
-;;; keystroke.
+;; Loading this package implements a more fine-grained minibuffer
+;; completion feedback scheme.  Prospective completions are concisely
+;; indicated within the minibuffer itself, with each successive
+;; keystroke.
 
-;;; See 'icomplete-completions' docstring for a description of the
-;;; icomplete display format.
+;; See 'icomplete-completions' docstring for a description of the
+;; icomplete display format.
 
-;;; See the `icomplete-minibuffer-setup-hook' docstring for a means to
-;;; customize icomplete setup for interoperation with other
-;;; minibuffer-oriented packages.
+;; See the `icomplete-minibuffer-setup-hook' docstring for a means to
+;; customize icomplete setup for interoperation with other
+;; minibuffer-oriented packages.
 
-;;; To activate icomplete mode, simply load the package.  You can
-;;; subsequently deactivate it by invoking the function icomplete-mode
-;;; with a negative prefix-arg (C-U -1 ESC-x icomplete-mode).  Also,
-;;; you can prevent activation of the mode during package load by
-;;; first setting the variable `icomplete-mode' to nil.  Icompletion
-;;; can be enabled any time after the package is loaded by invoking
-;;; icomplete-mode without a prefix arg.
+;; To activate icomplete mode, simply load the package.  You can
+;; subsequently deactivate it by invoking the function icomplete-mode
+;; with a negative prefix-arg (C-U -1 ESC-x icomplete-mode).  Also,
+;; you can prevent activation of the mode during package load by
+;; first setting the variable `icomplete-mode' to nil.  Icompletion
+;; can be enabled any time after the package is loaded by invoking
+;; icomplete-mode without a prefix arg.
 
-;;; Thanks to everyone for their suggestions for refinements of this
-;;; package.  I particularly have to credit Michael Cook, who
-;;; implemented an incremental completion style in his 'iswitch'
-;;; functions that served as a model for icomplete.  Some other
-;;; contributors: Noah Freidman (restructuring as minor mode), Colin
-;;; Rafferty (lemacs reconciliation), Lars Lindberg, RMS, and
-;;; others.
+;; Thanks to everyone for their suggestions for refinements of this
+;; package.  I particularly have to credit Michael Cook, who
+;; implemented an incremental completion style in his 'iswitch'
+;; functions that served as a model for icomplete.  Some other
+;; contributors: Noah Freidman (restructuring as minor mode), Colin
+;; Rafferty (lemacs reconciliation), Lars Lindberg, RMS, and
+;; others.
 
-;;; klm.
+;; klm.
 
 ;;; Code:
 
@@ -129,7 +130,7 @@ Conditions are:
    the selected window is a minibuffer,
    and not in the middle of macro execution,
    and minibuffer-completion-table is not a symbol (which would
-       indicate some non-standard, non-simple completion mechansm,
+       indicate some non-standard, non-simple completion mechanism,
        like file-name and other custom-func completions)."
 
   (and (window-minibuffer-p (selected-window))
@@ -214,9 +215,9 @@ one of \(), \[], or \{} pairs.  The choice of brackets is as follows:
   \(...) - a single prospect is identified and matching is enforced,
   \[...] - a single prospect is identified but matching is optional, or
   \{...} - multiple prospects, separated by commas, are indicated, and
-          further input is required to distingish a single one.
+          further input is required to distinguish a single one.
 
-The displays for disambiguous matches have ` [Matched]' appended
+The displays for unambiguous matches have ` [Matched]' appended
 \(whether complete or not), or ` \[No matches]', if no eligible
 matches exist."
 

@@ -1,4 +1,5 @@
 ;;; gnus-cache.el --- cache interface for Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Lars Magne Ingebrigtsen <larsi@ifi.uio.no>
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -173,8 +175,8 @@
 	t))))
 
 (defun gnus-cache-enter-remove-article (article)
-  (setq gnus-cache-removeable-articles
-	(cons article gnus-cache-removeable-articles)))
+  (setq gnus-cache-removable-articles
+	(cons article gnus-cache-removable-articles)))
 
 (defsubst gnus-cache-possibly-remove-article 
   (article ticked dormant unread)
@@ -194,7 +196,7 @@
 			   (progn (forward-line 1) (point))))))))
 
 (defun gnus-cache-possibly-remove-articles ()
-  (let ((articles gnus-cache-removeable-articles)
+  (let ((articles gnus-cache-removable-articles)
 	(cache-articles (gnus-cache-articles-in-group gnus-newsgroup-name))
 	article)
     (gnus-cache-change-buffer gnus-newsgroup-name)

@@ -19,12 +19,13 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-;;
-;; 	This file supplies the macro make-help-screen which constructs
+
+;; This file supplies the macro make-help-screen which constructs
 ;; single character dispatching with browsable help such as that provided
 ;; by help-for-help. This can be used to make many modes easier to use; for
 ;; example, the Gnu Emacs Empire Tool uses this for every "nested" mode map
@@ -90,7 +91,7 @@ and then returns."
 	   (let ((line-prompt
 		  (substitute-command-keys (, help-line))))
 	     (if three-step-help
-		 (message line-prompt))
+		 (message "%s" line-prompt))
 	     (let* ((help-screen (documentation (quote (, fname))))
 		    ;; We bind overriding-local-map for very small
 		    ;; sections, *excluding* where we switch buffers

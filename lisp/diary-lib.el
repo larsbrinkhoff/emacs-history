@@ -1,7 +1,7 @@
 ;;; diary-lib.el --- diary functions.
 
-;; Copyright (C) 1989, 1990, 1992, 1993, 1994, 1995 Free Software Foundation,
-;; Inc.
+;; Copyright (C) 1989, 1990, 1992, 1993, 1994, 1995 Free Software
+;; Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: calendar
@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -103,6 +104,10 @@ The holidays are those in the list `calendar-holidays'."
   "Mayan calendar equivalent of date diary entry."
   t)
 
+(autoload 'diary-iso-date "cal-iso"
+  "ISO calendar equivalent of date diary entry."
+  t)
+
 (autoload 'diary-julian-date "cal-julian"
   "Julian calendar equivalent of date diary entry."
   t)
@@ -111,23 +116,23 @@ The holidays are those in the list `calendar-holidays'."
   "Astronomical (Julian) day number diary entry."
   t)
 
-(autoload 'diary-chinese-date "cal-chinese"
+(autoload 'diary-chinese-date "cal-china"
   "Chinese calendar equivalent of date diary entry."
   t)
 
-(autoload 'diary-islamic-date "cal-islamic"
+(autoload 'diary-islamic-date "cal-islam"
   "Islamic calendar equivalent of date diary entry."
   t)
 
-(autoload 'list-islamic-diary-entries "cal-islamic"
+(autoload 'list-islamic-diary-entries "cal-islam"
   "Add any Islamic date entries from the diary file to `diary-entries-list'."
   t)
 
-(autoload 'mark-islamic-diary-entries "cal-islamic"
+(autoload 'mark-islamic-diary-entries "cal-islam"
   "Mark days in the calendar window that have Islamic date diary entries."
   t)
 
-(autoload 'mark-islamic-calendar-date-pattern "cal-islamic"
+(autoload 'mark-islamic-calendar-date-pattern "cal-islam"
    "Mark dates in calendar window that conform to Islamic date MONTH/DAY/YEAR."
   t)
 
@@ -169,6 +174,10 @@ The holidays are those in the list `calendar-holidays'."
 
 (autoload 'diary-ethiopic-date "cal-coptic"
   "Ethiopic calendar equivalent of date diary entry."
+  t)
+
+(autoload 'diary-persian-date "cal-persia"
+  "Persian calendar equivalent of date diary entry."
   t)
 
 (autoload 'diary-phases-of-moon "lunar" "Moon phases diary entry." t)
@@ -229,7 +238,7 @@ These hooks have the following distinct roles:
              (d-file (substitute-in-file-name diary-file)))
         (message "Preparing diary...")
         (save-excursion
-          (let ((diary-buffer (get-file-buffer d-file)))
+          (let ((diary-buffer (find-buffer-visiting d-file)))
             (set-buffer (if diary-buffer
                             diary-buffer
                          (find-file-noselect d-file t))))
@@ -307,7 +316,9 @@ These hooks have the following distinct roles:
                              (subst-char-in-region date-start
                                 (point) ?\^M ?\n t)
                              (add-to-diary-list
-                               date (buffer-substring entry-start (point)))))))
+                               date
+                               (buffer-substring-no-properties
+                                entry-start (point)))))))
                      (setq d (cdr d)))
                    (or entry-found
                        (not diary-list-include-blanks)
@@ -346,7 +357,8 @@ changing the variable `diary-include-string'."
            " \"\\([^\"]*\\)\"")
           nil t)
     (let ((diary-file (substitute-in-file-name
-                       (buffer-substring (match-beginning 2) (match-end 2))))
+                       (buffer-substring-no-properties
+                        (match-beginning 2) (match-end 2))))
           (diary-list-include-blanks nil)
           (list-diary-entries-hook 'include-other-diary-files)
           (diary-display-hook 'ignore)
@@ -357,7 +369,7 @@ changing the variable `diary-include-string'."
                   (setq diary-entries-list
                         (append diary-entries-list
                                 (list-diary-entries original-date number)))
-                (kill-buffer (get-file-buffer diary-file)))
+                (kill-buffer (find-buffer-visiting diary-file)))
             (beep)
             (message "Can't read included diary file %s" diary-file)
             (sleep-for 2))
@@ -377,7 +389,7 @@ changing the variable `diary-include-string'."
             (and (not (cdr diary-entries-list))
                  (string-equal (car (cdr (car diary-entries-list))) "")))
         (if (<= (length msg) (frame-width))
-            (message msg)
+            (message "%s" msg)
           (set-buffer (get-buffer-create holiday-buffer))
           (setq buffer-read-only nil)
           (calendar-set-mode-line date-string)
@@ -392,14 +404,14 @@ changing the variable `diary-include-string'."
        (concat "Diary for " date-string
                (if holiday-list ": " "")
                (mapconcat 'identity holiday-list "; ")))
-      (display-buffer (get-file-buffer d-file))
+      (display-buffer (find-buffer-visiting d-file))
       (message "Preparing diary...done"))))
 
 (defun fancy-diary-display ()
   "Prepare a diary buffer with relevant entries in a fancy, noneditable form.
 This function is provided for optional use as the `diary-display-hook'."
   (save-excursion;; Turn off selective-display in the diary file's buffer.
-    (set-buffer (get-file-buffer (substitute-in-file-name diary-file)))
+    (set-buffer (find-buffer-visiting (substitute-in-file-name diary-file)))
     (let ((diary-modified (buffer-modified-p)))
       (subst-char-in-region (point-min) (point-max) ?\^M ?\n t)
       (setq selective-display nil)
@@ -414,7 +426,7 @@ This function is provided for optional use as the `diary-display-hook'."
                           (concat date-string (if holiday-list ":" ""))
                           (mapconcat 'identity holiday-list "; "))))
         (if (<= (length msg) (frame-width))
-            (message msg)
+            (message "%s" msg)
           (set-buffer (get-buffer-create holiday-buffer))
           (setq buffer-read-only nil)
           (calendar-set-mode-line date-string)
@@ -470,11 +482,15 @@ This function is provided for optional use as the `diary-display-hook'."
                           d)))
                   (insert (if (= (point) (point-min)) "" ?\n) date-string)
                   (if date-holiday-list (insert ":  "))
-                  (let ((l (current-column)))
-                    (insert (mapconcat 'identity date-holiday-list
-                                       (concat "\n" (make-string l ? )))))
-                  (let ((l (current-column)))
-                    (insert ?\n (make-string l ?=) ?\n)))))
+                  (let* ((l (current-column))
+                         (longest 0))
+                    (insert (mapconcat '(lambda (x)
+                                          (if (< longest (length x))
+                                              (setq longest (length x)))
+                                          x)
+                                       date-holiday-list
+                                       (concat "\n" (make-string l ? ))))
+                    (insert ?\n (make-string (+ l longest) ?=) ?\n)))))
           (if (< 0 (length (car (cdr (car entry-list)))))
               (insert (car (cdr (car entry-list))) ?\n))
           (setq entry-list (cdr entry-list))))
@@ -513,7 +529,7 @@ the actual printing."
         (set-buffer (get-buffer fancy-diary-buffer))
         (run-hooks 'print-diary-entries-hook))
     (let ((diary-buffer
-           (get-file-buffer (substitute-in-file-name diary-file))))
+           (find-buffer-visiting (substitute-in-file-name diary-file))))
       (if diary-buffer
           (let ((temp-buffer (get-buffer-create "*Printable Diary Entries*"))
                 (heading))
@@ -546,7 +562,7 @@ is created."
     (if (and d-file (file-exists-p d-file))
         (if (file-readable-p d-file)
             (save-excursion
-              (let ((diary-buffer (get-file-buffer d-file)))
+              (let ((diary-buffer (find-buffer-visiting d-file)))
                 (set-buffer (if diary-buffer
                                 diary-buffer
                               (find-file-noselect d-file t)))
@@ -639,28 +655,28 @@ After the entries are marked, the hooks `nongregorian-diary-marking-hook' and
                     (while (re-search-forward regexp nil t)
                       (let* ((dd-name
                               (if d-name-pos
-                                  (buffer-substring
+                                  (buffer-substring-no-properties
                                    (match-beginning d-name-pos)
                                    (match-end d-name-pos))))
                              (mm-name
                               (if m-name-pos
-                                  (buffer-substring
+                                  (buffer-substring-no-properties
                                    (match-beginning m-name-pos)
                                    (match-end m-name-pos))))
                              (mm (string-to-int
                                   (if m-pos
-                                      (buffer-substring
+                                      (buffer-substring-no-properties
                                        (match-beginning m-pos)
                                        (match-end m-pos))
                                     "")))
                              (dd (string-to-int
                                   (if d-pos
-                                      (buffer-substring
+                                      (buffer-substring-no-properties
                                        (match-beginning d-pos)
                                        (match-end d-pos))
                                     "")))
                              (y-str (if y-pos
-                                        (buffer-substring
+                                        (buffer-substring-no-properties
                                          (match-beginning y-pos)
                                          (match-end y-pos))))
                              (yy (if (not y-str)
@@ -744,7 +760,7 @@ is marked.  See the documentation for the function `list-sexp-diary-entries'."
             (entry-start)
             (line-start))
         (forward-sexp)
-        (setq sexp (buffer-substring sexp-start (point)))
+        (setq sexp (buffer-substring-no-properties sexp-start (point)))
         (save-excursion
           (re-search-backward "\^M\\|\n\\|\\`")
           (setq line-start (point)))
@@ -760,7 +776,7 @@ is marked.  See the documentation for the function `list-sexp-diary-entries'."
           (while (looking-at " \\|\^I")
             (re-search-forward "\^M\\|\n" nil t))
           (backward-char 1)
-          (setq entry (buffer-substring entry-start (point)))
+          (setq entry (buffer-substring-no-properties entry-start (point)))
           (while (string-match "[\^M]" entry)
             (aset entry (match-beginning 0) ?\n )))
         (calendar-for-loop date from first-date to last-date do
@@ -786,13 +802,14 @@ changing the variable `diary-include-string'."
            " \"\\([^\"]*\\)\"")
           nil t)
     (let ((diary-file (substitute-in-file-name
-                       (buffer-substring (match-beginning 2) (match-end 2))))
+                       (buffer-substring-no-properties
+                        (match-beginning 2) (match-end 2))))
           (mark-diary-entries-hook 'mark-included-diary-files))
       (if (file-exists-p diary-file)
           (if (file-readable-p diary-file)
               (progn
                 (mark-diary-entries)
-                (kill-buffer (get-file-buffer diary-file)))
+                (kill-buffer (find-buffer-visiting diary-file)))
             (beep)
             (message "Can't read included diary file %s" diary-file)
             (sleep-for 2))
@@ -1033,7 +1050,7 @@ A number of built-in functions are available for this type of diary entry:
 
       %%(diary-omer)
                   Diary entries giving the omer count will be made every day
-                  from Passover to Shavuoth.  Note that since there is no text,
+                  from Passover to Shavuot.  Note that since there is no text,
                   it makes sense only if the fancy diary display is used.
 
 Marking these entries is *extremely* time consuming, so these entries are
@@ -1051,7 +1068,7 @@ best if they are nonmarking."
             (entry-start)
             (line-start))
         (forward-sexp)
-        (setq sexp (buffer-substring sexp-start (point)))
+        (setq sexp (buffer-substring-no-properties sexp-start (point)))
         (save-excursion
           (re-search-backward "\^M\\|\n\\|\\`")
           (setq line-start (point)))
@@ -1067,7 +1084,7 @@ best if they are nonmarking."
           (while (looking-at " \\|\^I")
             (re-search-forward "\^M\\|\n" nil t))
           (backward-char 1)
-          (setq entry (buffer-substring entry-start (point)))
+          (setq entry (buffer-substring-no-properties entry-start (point)))
           (while (string-match "[\^M]" entry)
             (aset entry (match-beginning 0) ?\n )))
         (let ((diary-entry (diary-sexp-entry sexp entry date)))

@@ -19,70 +19,71 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; The changelog is at the end of this file.
+;; The changelog is at the end of this file.
 
-;;; Please send me bug reports, bug fixes, and extensions, so that I can
-;;; merge them into the master source.
-;;;     - Per Bothner (bothner@cygnus.com)
+;; Please send me bug reports, bug fixes, and extensions, so that I can
+;; merge them into the master source.
+;;     - Per Bothner (bothner@cygnus.com)
 
-;;; This file defines a general command-interpreter-in-a-buffer package
-;;; (term mode). The idea is that you can build specific process-in-a-buffer
-;;; modes on top of term mode -- e.g., lisp, shell, scheme, T, soar, ....
-;;; This way, all these specific packages share a common base functionality, 
-;;; and a common set of bindings, which makes them easier to use (and
-;;; saves code, implementation time, etc., etc.).
+;; This file defines a general command-interpreter-in-a-buffer package
+;; (term mode). The idea is that you can build specific process-in-a-buffer
+;; modes on top of term mode -- e.g., lisp, shell, scheme, T, soar, ....
+;; This way, all these specific packages share a common base functionality, 
+;; and a common set of bindings, which makes them easier to use (and
+;; saves code, implementation time, etc., etc.).
 
-;;; For hints on converting existing process modes (e.g., tex-mode,
-;;; background, dbx, gdb, kermit, prolog, telnet) to use term-mode
-;;; instead of shell-mode, see the notes at the end of this file.
+;; For hints on converting existing process modes (e.g., tex-mode,
+;; background, dbx, gdb, kermit, prolog, telnet) to use term-mode
+;; instead of shell-mode, see the notes at the end of this file.
 
 
-;;; Brief Command Documentation:
-;;;============================================================================
-;;; Term Mode Commands: (common to all derived modes, like cmushell & cmulisp
-;;; mode)
-;;;
-;;; m-p	    term-previous-input    	  Cycle backwards in input history
-;;; m-n	    term-next-input  	    	  Cycle forwards
-;;; m-r     term-previous-matching-input  Previous input matching a regexp
-;;; m-s     comint-next-matching-input      Next input that matches
-;;; return  term-send-input
-;;; c-c c-a term-bol                      Beginning of line; skip prompt.
-;;; c-d	    term-delchar-or-maybe-eof     Delete char unless at end of buff.
-;;; c-c c-u term-kill-input	    	    ^u
-;;; c-c c-w backward-kill-word    	    ^w
-;;; c-c c-c term-interrupt-subjob 	    ^c
-;;; c-c c-z term-stop-subjob	    	    ^z
-;;; c-c c-\ term-quit-subjob	    	    ^\
-;;; c-c c-o term-kill-output		    Delete last batch of process output
-;;; c-c c-r term-show-output		    Show last batch of process output
-;;; c-c c-h term-dynamic-list-input-ring  List input history
-;;;
-;;; Not bound by default in term-mode
-;;; term-send-invisible			Read a line w/o echo, and send to proc
-;;; (These are bound in shell-mode)
-;;; term-dynamic-complete		Complete filename at point.
-;;; term-dynamic-list-completions	List completions in help buffer.
-;;; term-replace-by-expanded-filename	Expand and complete filename at point;
-;;;					replace with expanded/completed name.
-;;; term-kill-subjob			No mercy.
-;;; term-show-maximum-output            Show as much output as possible.
-;;; term-continue-subjob		Send CONT signal to buffer's process
-;;;					group. Useful if you accidentally
-;;;					suspend your process (with C-c C-z).
+;; Brief Command Documentation:
+;;============================================================================
+;; Term Mode Commands: (common to all derived modes, like cmushell & cmulisp
+;; mode)
+;;
+;; m-p	    term-previous-input    	  Cycle backwards in input history
+;; m-n	    term-next-input  	    	  Cycle forwards
+;; m-r     term-previous-matching-input  Previous input matching a regexp
+;; m-s     comint-next-matching-input      Next input that matches
+;; return  term-send-input
+;; c-c c-a term-bol                      Beginning of line; skip prompt.
+;; c-d	    term-delchar-or-maybe-eof     Delete char unless at end of buff.
+;; c-c c-u term-kill-input	    	    ^u
+;; c-c c-w backward-kill-word    	    ^w
+;; c-c c-c term-interrupt-subjob 	    ^c
+;; c-c c-z term-stop-subjob	    	    ^z
+;; c-c c-\ term-quit-subjob	    	    ^\
+;; c-c c-o term-kill-output		    Delete last batch of process output
+;; c-c c-r term-show-output		    Show last batch of process output
+;; c-c c-h term-dynamic-list-input-ring  List input history
+;;
+;; Not bound by default in term-mode
+;; term-send-invisible			Read a line w/o echo, and send to proc
+;; (These are bound in shell-mode)
+;; term-dynamic-complete		Complete filename at point.
+;; term-dynamic-list-completions	List completions in help buffer.
+;; term-replace-by-expanded-filename	Expand and complete filename at point;
+;;					replace with expanded/completed name.
+;; term-kill-subjob			No mercy.
+;; term-show-maximum-output            Show as much output as possible.
+;; term-continue-subjob		Send CONT signal to buffer's process
+;;					group. Useful if you accidentally
+;;					suspend your process (with C-c C-z).
 
-;;; term-mode-hook is the term mode hook. Basically for your keybindings.
-;;; term-load-hook is run after loading in this package.
+;; term-mode-hook is the term mode hook. Basically for your keybindings.
+;; term-load-hook is run after loading in this package.
 
-;;; Code:
+;; Code:
 
-;;; This is passed to the inferior in the EMACS environment variable,
-;;; so it is important to increase it if there are protocol-relevant changes.
+;; This is passed to the inferior in the EMACS environment variable,
+;; so it is important to increase it if there are protocol-relevant changes.
 (defconst term-protocol-version "0.95")
 
 (require 'ring)
@@ -278,7 +279,7 @@ This is run before the process is cranked up.")
   "Called each time a process is exec'd by term-exec.
 This is called after the process is cranked up.  It is useful for things that
 must be done each time a process is executed in a term-mode buffer (e.g.,
-(process-kill-without-query)). In contrast, the term-mode-hook is only
+\(process-kill-without-query)). In contrast, the term-mode-hook is only
 executed once when the buffer is created.")
 
 (defvar term-mode-map nil)
@@ -293,7 +294,7 @@ Do not change it directly;  use term-set-escape-char instead.")
 
 (defvar term-ptyp t
   "True if communications via pty; false if by pipe.  Buffer local.
-This is to work around a bug in emacs process signalling.")
+This is to work around a bug in emacs process signaling.")
 
 (defvar term-last-input-match ""
   "Last string searched for by term input history search, for defaulting.
@@ -641,7 +642,7 @@ Entry to this mode runs the hooks on term-mode-hook"
       (goto-char (process-mark proc))
       (if (term-pager-enabled)
 	  (setq term-pager-count (term-current-row)))
-      (send-string proc chars))))
+      (process-send-string proc chars))))
 
 (defun term-send-raw ()
   "Send the last character typed through the terminal-emulator
@@ -698,7 +699,7 @@ without any interpretation."
       (define-key term-raw-map term-escape-char 'term-send-raw))
   (setq c (make-string 1 c))
   (define-key term-raw-map c term-raw-escape-map)
-  ;; Define standard binings in term-raw-escape-map
+  ;; Define standard bindings in term-raw-escape-map
   (define-key term-raw-escape-map "\C-x"
     (lookup-key (current-global-map) "\C-x"))
   (define-key term-raw-escape-map "\C-v"
@@ -861,7 +862,7 @@ buffer. The hook term-exec-hook is run after each exec."
 :so=\\E[7m:se=\\E[m:us=\\E[4m:ue=\\E[m:md=\\E[1m:mr=\\E[7m:me=\\E[m\
 :UP=\\E[%%dA:DO=\\E[%%dB:LE=\\E[%%dD:RI=\\E[%%dC"
 ;;; : -undefine ic
-  "termcap capabilties supported")
+  "termcap capabilities supported")
 
 ;;; This auxiliary function cranks up the process for term-exec in
 ;;; the appropriate environment.
@@ -1375,7 +1376,7 @@ Argument 0 is the command name."
   (let ((argpart "[^ \n\t\"'`]+\\|\\(\"[^\"]*\"\\|'[^']*'\\|`[^`]*`\\)")
 	(args ()) (pos 0)
 	(count 0)
-	beg str value quotes)
+	beg str quotes)
     ;; Build a list of all the args until we have as many as we want.
     (while (and (or (null mth) (<= count mth))
 		(string-match argpart string pos))
@@ -1586,7 +1587,7 @@ applications."
     (while (not done)
       (if stars
           (message "%s%s" prompt (make-string (length ans) ?*))
-        (message prompt))
+        (message "%s" prompt))
       (setq c (read-char))
       (cond ((= c ?\C-g)
              ;; This function may get called from a process filter, where
@@ -1984,7 +1985,7 @@ See `term-prompt-regexp'."
 	 (let ((H)
 	       (todo (+ count (/ (current-column) term-width))))
 	   (end-of-line)
-	   ;; The loop interates over buffer lines;
+	   ;; The loop iterates over buffer lines;
 	   ;; H is the number of screen lines in the current line, i.e.
 	   ;; the ceiling of dividing the buffer line width by term-width.
 	   (while (and (<= (setq H (max (/ (+ (current-column) term-width -1)
@@ -2009,7 +2010,7 @@ See `term-prompt-regexp'."
 		       (progn (beginning-of-line)
 			      (not (bobp))))
 	     (setq todo (- todo H))
-	     (backward-char)) ;; Move to end of previos line
+	     (backward-char)) ;; Move to end of previous line.
 	   (if (and (>= todo H) (> todo 0))
 	       (+ count todo (- 1 H)) ;; Hit beginning of buffer.
 	     (move-to-column (* (- H todo 1) term-width))
@@ -2188,7 +2189,7 @@ See `term-prompt-regexp'."
 				   (setq i temp))
 				  (t ;; Not followed by LF or can't optimize:
 				   (term-vertical-motion 0)
-				   (setq term-current-column 0))))
+				   (setq term-current-column term-start-line-column))))
 			   ((eq char ?\n)
 			    (if (not (and term-kill-echo-list
 					  (term-check-kill-echo-list)))
@@ -2330,15 +2331,15 @@ See `term-prompt-regexp'."
 
 (defun term-handle-deferred-scroll ()
   (let ((count (- (term-current-row) term-height)))
-    (if (> count 0)
+    (if (>= count 0)
 	(save-excursion
 	  (goto-char term-home-marker)
-	  (term-vertical-motion count)
+	  (term-vertical-motion (1+ count))
 	  (set-marker term-home-marker (point))
 	  (setq term-current-row (1- term-height))))))
 
 ;;; Handle a character assuming (eq terminal-state 2) -
-;;; i.e. we have previousely seen Escape followed by ?[.
+;;; i.e. we have previously seen Escape followed by ?[.
 
 (defun term-handle-ansi-escape (proc char)
   (cond
@@ -2423,7 +2424,7 @@ See `term-prompt-regexp'."
 (defun term-scroll-region (top bottom)
   "Set scrolling region.
 TOP is the top-most line (inclusive) of the new scrolling region,
-while BOTTOM is the line folling the new scrolling region (e.g. exclusive).
+while BOTTOM is the line following the new scrolling region (e.g. exclusive).
 The top-most line is line 0."
   (setq term-scroll-start
 	(if (or (< top 0) (>= top term-height))
@@ -2569,7 +2570,7 @@ The top-most line is line 0."
 	  (setq tmp (make-sparse-keymap "More pages?"))
 	  (define-key tmp [help] '("Help" . term-pager-help))
 	  (define-key tmp [disable]
-	    '("Diable paging" . term-fake-pager-disable))
+	    '("Disable paging" . term-fake-pager-disable))
 	  (define-key tmp [discard]
 	    '("Discard remaining output" . term-pager-discard))
 	  (define-key tmp [eob] '("Goto to end" . term-pager-eob))
@@ -2939,7 +2940,7 @@ This is a good place to put keybindings.")
 ;;; want them present in specific modes.
 
 (defvar term-completion-autolist nil
-  "*If non-nil, automatically list possiblities on partial completion.
+  "*If non-nil, automatically list possibilities on partial completion.
 This mirrors the optional behavior of tcsh.")
 
 (defvar term-completion-addsuffix t

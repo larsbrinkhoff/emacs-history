@@ -1,6 +1,7 @@
 ;;; gnus-cus.el --- User friendly customization of Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
-;;
+
 ;; Author: Per Abrahamsen <abraham@iesd.auc.dk>
 ;; Keywords: help, news
 ;; Version: 0.1
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -32,7 +34,7 @@
 ;; by the user.
 (defun gnus-make-face (color)
   ;; Create entry for face with COLOR.
-  (custom-face-lookup color nil nil nil nil nil))
+  (custom-face-lookup color nil nil 'custom:asis 'custom:asis 'custom:asis))
 
 (defvar gnus-face-light-name-list
   '("light blue" "light cyan" "light yellow" "light pink"
@@ -49,7 +51,7 @@
 (custom-declare '()
   '((tag . "GNUS")
     (doc . "\
-The coffe-brewing, all singing, all dancing, kitchen sink newsreader.")
+The coffee-brewing, all singing, all dancing, kitchen sink newsreader.")
     (type . group)
     (data ((tag . "Visual")
 	   (doc . "\
@@ -125,7 +127,7 @@ single bold letter, while a letter followed by a backspace and an
 underscore will be displayed as a single underlined letter.  This
 technique was developed for old line printers (think about it), and is
 still in use on some newsgroups, in particular the ClariNet
-hierearchy.
+hierarchy.
 ")
 				      (type . const)
 				      (default . 
@@ -153,7 +155,7 @@ used for decoding and displaying the face.
 				      (default . gnus-article-display-x-face))
 				     ((tag . "Unquote Printable")
 				      (doc . "\
-Tranform MIME quoted printable into 8-bit characters.
+Transform MIME quoted printable into 8-bit characters.
 
 Quoted printable is often seen by strings like `=EF' where you would
 expect a non-English letter.
@@ -200,7 +202,7 @@ Highlight headers, signature, and buttons.
 				      (default . gnus-article-highlight-some))
 				     ((tag . "Highlight Headers")
 				      (doc . "\
-Highlight headers as specified by `Article Header Highligting'.
+Highlight headers as specified by `Article Header Highlighting'.
 ")
 				      (type . const)
 				      (default .
@@ -327,38 +329,39 @@ alone.")
 				     ((eq gnus-background-mode 'dark)
 				      (list (list "From" nil 
 						  (custom-face-lookup 
-						   "dark blue" nil nil t t nil))
+						   "dark blue" nil nil t t 
+						   'custom:asis))
 					    (list "Subject" nil 
 						  (custom-face-lookup
-						   "pink" nil nil t t nil))
+						   "pink" nil nil t t 'custom:asis))
 					    (list "Newsgroups:.*," nil
 						  (custom-face-lookup
-						   "yellow" nil nil t t nil))
+						   "yellow" nil nil t t 'custom:asis))
 					    (list "" 
 						  (custom-face-lookup
-						   "cyan" nil nil t nil nil)
+						   "cyan" nil nil t 'custom:asis 'custom:asis)
 						  (custom-face-lookup
 						   "forestgreen"
-						   nil nil nil t nil))))
+						   nil nil 'custom:asis t 'custom:asis))))
 				     (t
 				      (list (list "From" nil 
 						  (custom-face-lookup
 						   "RoyalBlue"
-						   nil nil t t nil))
+						   nil nil t t 'custom:asis))
 					    (list "Subject" nil 
 						  (custom-face-lookup
 						   "firebrick"
-						   nil nil t t nil))
+						   nil nil t t 'custom:asis))
 					    (list "Newsgroups:.*," nil
 						  (custom-face-lookup
-						   "indianred" nil nil t t nil))
+						   "indianred" nil nil t t 'custom:asis))
 					    (list ""
 						  (custom-face-lookup
 						   "DarkGreen"
-						   nil nil t nil nil)
+						   nil nil t 'custom:asis 'custom:asis)
 						  (custom-face-lookup
 						   "DarkGreen"
-						   nil nil nil t nil))))))
+						   nil nil nil t 'custom:asis))))))
 		  (data ((type . repeat)
 			 (header . nil)
 			 (data (type . list)
@@ -423,7 +426,7 @@ Face used for highlighting the current article in the summary buffer.")
 		  (type . face))
 		 ((tag . "Summary Line Highlighting")
 		  (doc . "\
-Controls the higlighting of summary buffer lines. 
+Controls the highlighting of summary buffer lines. 
 
 Below is a list of `Form'/`Face' pairs.  When deciding how a a
 particular summary line should be displayed, each form is
@@ -447,64 +450,63 @@ mark:    The article's mark.")
 					((< score default) . italic)))
 				     ((eq gnus-background-mode 'dark)
 				      (list (cons '(= mark gnus-canceled-mark)
-						  (custom-face-lookup "yellow" "black" nil nil nil nil))
+						  (custom-face-lookup "yellow" "black" nil 'custom:asis 'custom:asis 'custom:asis))
 					    (cons '(and (> score default) 
 							(or (= mark gnus-dormant-mark)
 							    (= mark gnus-ticked-mark)))
-						  (custom-face-lookup "pink" nil nil t nil nil))
+						  (custom-face-lookup "pink" nil nil t 'custom:asis 'custom:asis))
 					    (cons '(and (< score default) 
 							(or (= mark gnus-dormant-mark)
 							    (= mark gnus-ticked-mark)))
-						  (custom-face-lookup "pink" nil nil nil t nil))
+						  (custom-face-lookup "pink" nil nil 'custom:asis t 'custom:asis))
 					    (cons '(or (= mark gnus-dormant-mark)
 						       (= mark gnus-ticked-mark))
-						  (custom-face-lookup "pink" nil nil nil nil nil))
+						  (custom-face-lookup "pink" nil nil 'custom:asis 'custom:asis 'custom:asis))
 
 					    (cons '(and (> score default) (= mark gnus-ancient-mark))
-						  (custom-face-lookup "dark blue" nil nil t nil nil))
+						  (custom-face-lookup "dark blue" nil nil t 'custom:asis 'custom:asis))
 					    (cons '(and (< score default) (= mark gnus-ancient-mark))
-						  (custom-face-lookup "SkyBlue" nil nil nil t nil))
+						  (custom-face-lookup "SkyBlue" nil nil 'custom:asis t 'custom:asis))
 					    (cons '(= mark gnus-ancient-mark)
-						  (custom-face-lookup "SkyBlue" nil nil nil nil nil))
+						  (custom-face-lookup "SkyBlue" nil nil 'custom:asis 'custom:asis 'custom:asis))
 
 					    (cons '(and (> score default) (= mark gnus-unread-mark))
-						  (custom-face-lookup "white" nil nil t nil nil))
+						  (custom-face-lookup "white" nil nil t 'custom:asis 'custom:asis))
 					    (cons '(and (< score default) (= mark gnus-unread-mark))
-						  (custom-face-lookup "white" nil nil nil t nil))
+						  (custom-face-lookup "white" nil nil 'custom:asis t 'custom:asis))
 					    (cons '(= mark gnus-unread-mark)
-						  (custom-face-lookup "white" nil nil nil nil nil))
+						  (custom-face-lookup "white" nil nil 'custom:asis 'custom:asis 'custom:asis))
 
 					    (cons '(> score default) 'bold)
 					    (cons '(< score default) 'italic)))
 				     (t
 				      (list (cons '(= mark gnus-canceled-mark)
-						  (custom-face-lookup "yellow" "black" nil nil nil nil))
+						  (custom-face-lookup "yellow" "black" nil 'custom:asis 'custom:asis 'custom:asis))
 					    (cons '(and (> score default) 
 							(or (= mark gnus-dormant-mark)
 							    (= mark gnus-ticked-mark)))
-						  (custom-face-lookup "firebrick" nil nil t nil nil))
+						  (custom-face-lookup "firebrick" nil nil t 'custom:asis 'custom:asis))
 					    (cons '(and (< score default) 
 							(or (= mark gnus-dormant-mark)
 							    (= mark gnus-ticked-mark)))
-						  (custom-face-lookup "firebrick" nil nil nil t nil))
+						  (custom-face-lookup "firebrick" nil nil 'custom:asis t 'custom:asis))
 					    (cons '(or (= mark gnus-dormant-mark)
 						       (= mark gnus-ticked-mark))
-						  (custom-face-lookup "firebrick" nil nil nil nil nil))
+						  (custom-face-lookup "firebrick" nil nil 'custom:asis 'custom:asis 'custom:asis))
 
 					    (cons '(and (> score default) (= mark gnus-ancient-mark))
-						  (custom-face-lookup "RoyalBlue" nil nil t nil nil))
+						  (custom-face-lookup "RoyalBlue" nil nil t 'custom:asis 'custom:asis))
 					    (cons '(and (< score default) (= mark gnus-ancient-mark))
-						  (custom-face-lookup "RoyalBlue" nil nil nil t nil))
+						  (custom-face-lookup "RoyalBlue" nil nil 'custom:asis t 'custom:asis))
 					    (cons '(= mark gnus-ancient-mark)
-						  (custom-face-lookup "RoyalBlue" nil nil nil nil nil))
+						  (custom-face-lookup "RoyalBlue" nil nil 'custom:asis 'custom:asis 'custom:asis))
 
 					    (cons '(and (> score default) (/= mark gnus-unread-mark))
-						  (custom-face-lookup "DarkGreen" nil nil t nil nil))
+						  (custom-face-lookup "DarkGreen" nil nil t 'custom:asis 'custom:asis))
 					    (cons '(and (< score default) (/= mark gnus-unread-mark))
-						  (custom-face-lookup "DarkGreen" nil nil nil t nil))
+						  (custom-face-lookup "DarkGreen" nil nil 'custom:asis t 'custom:asis))
 					    (cons '(/= mark gnus-unread-mark)
-						  (custom-face-lookup "DarkGreen" nil nil nil nil nil))
-
+						  (custom-face-lookup "DarkGreen" nil nil 'custom:asis 'custom:asis 'custom:asis))
 					    (cons '(> score default) 'bold)
 					    (cons '(< score default) 'italic)))))
 		  (data ((type . repeat)
@@ -524,7 +526,7 @@ mark:    The article's mark.")
 		 )))))
 
 (defun gnus-custom-import-cite-face-list (custom alist)
-  ;; Backward compatible groking of light and dark.
+  ;; Backward compatible grokking of light and dark.
   (cond ((eq alist 'light)
 	 (setq alist (mapcar 'gnus-make-face gnus-face-light-name-list)))
 	((eq alist 'dark)

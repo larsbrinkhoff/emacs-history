@@ -17,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -42,17 +43,18 @@ Function to indent current line.")
   "Indent line in proper way for current major mode."
   (interactive "P")
   (if (eq indent-line-function 'indent-to-left-margin)
-      (insert-tab)
+      (insert-tab prefix-arg)
     (if prefix-arg
 	(funcall indent-line-function prefix-arg)
       (funcall indent-line-function))))
 
-(defun insert-tab ()
-  (if abbrev-mode
-      (expand-abbrev))
-  (if indent-tabs-mode
-      (insert ?\t)
-    (indent-to (* tab-width (1+ (/ (current-column) tab-width))))))
+(defun insert-tab (&optional prefix-arg)
+  (let ((count (prefix-numeric-value prefix-arg)))
+    (if abbrev-mode
+	(expand-abbrev))
+    (if indent-tabs-mode
+	(insert-char ?\t count)
+      (indent-to (* tab-width (+ count (/ (current-column) tab-width)))))))
 
 (defun indent-rigidly (start end arg)
   "Indent all lines starting in the region sideways by ARG columns.
@@ -263,7 +265,7 @@ line, but does not move past any whitespace that was explicitly inserted
 		 (buffer-substring 
 		  (point) (min (point-max) (+ (length fill-prefix) (point)))))
 	  (forward-char (length fill-prefix)))
-    (if (and adaptive-fill-mode 
+    (if (and adaptive-fill-mode adaptive-fill-regexp
 	     (looking-at adaptive-fill-regexp))
 	(goto-char (match-end 0))))
   ;; Skip centering or flushright indentation

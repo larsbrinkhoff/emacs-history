@@ -1,4 +1,4 @@
-;;; complete.el -- partial completion mechanism plus other goodies
+;;; complete.el --- partial completion mechanism plus other goodies
 
 ;; Copyright (C) 1990, 1991, 1992, 1993 Free Software Foundation, Inc.
 
@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -256,13 +257,21 @@ See `PC-complete' for details."
 (defvar PC-ndelims-regex nil)
 (defvar PC-delims-list nil)
 
+(defvar PC-completion-as-file-name-predicate
+  (function
+   (lambda ()
+     (memq minibuffer-completion-table
+	   '(read-file-name-internal read-directory-name-internal))))
+   "A function testing whether a minibuffer completion now will work filename-style.
+The function takes no arguments, and typically looks at the value
+of `minibuffer-completion-table' and the minibuffer contents.")
+
 (defun PC-do-completion (&optional mode beg end)
   (or beg (setq beg (point-min)))
   (or end (setq end (point-max)))
   (let* ((table minibuffer-completion-table)
 	 (pred minibuffer-completion-predicate)
-	 (filename (memq table '(read-file-name-internal
-				 read-directory-name-internal)))
+	 (filename (funcall PC-completion-as-file-name-predicate))
 	 (dirname nil)
 	 dirlength
 	 (str (buffer-substring beg end))

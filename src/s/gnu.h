@@ -1,5 +1,5 @@
 /* Definitions file for GNU Emacs running on the GNU Hurd.
-   Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* Get most of the stuff from bsd4.3 */
@@ -58,9 +59,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* GNU now always uses the ELF format.  */
 #define UNEXEC unexelf.o
-
-/* ptys are not done yet.  */
-#undef HAVE_PTYS
 
 /* Some losing code fails to include this and then assumes
    that because it is braindead that O_RDONLY==0.  */

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 #ifndef _MSDOS_H_
 #define _MSDOS_H_
@@ -26,6 +27,7 @@ int dos_ttraw ();
 int dos_ttcooked ();
 int dos_get_saved_screen (char **, int *, int *);
 int dos_set_keyboard (int, int);
+void dos_set_window_size (int *, int *);
 
 int getdefdir (int, char*);
 void unixtodos_filename (char *);

@@ -6,12 +6,6 @@
 ;;; Code:
 
 (setq finder-package-info '(
-    ("default.el"
-        nil
-        nil)
-    ("po-mode.el"
-        nil
-        nil)
     ("abbrev.el"
         "abbrev mode commands for Emacs"
         (abbrev))
@@ -19,7 +13,7 @@
         "list one abbrev table alphabetically ordered."
         (abbrev))
     ("ada-mode.el"
-        nil
+        "An Emacs major-mode for editing Ada source."
         nil)
     ("add-log.el"
         "change log maintenance commands for Emacs"
@@ -28,7 +22,7 @@
         "an overloading mechanism for Emacs Lisp functions"
         (extensions  lisp  tools))
     ("allout.el"
-        nil
+        "Extensive outline mode for use alone and with other modes."
         (outline mode))
     ("ange-ftp.el"
         "transparent FTP support for GNU Emacs"
@@ -37,7 +31,7 @@
         "appointment notification functions."
         (calendar))
     ("apropos.el"
-        "faster apropos commands."
+        "apropos commands for users and programmers."
         (help))
     ("arc-mode.el"
         "simple editing of archives"
@@ -52,8 +46,8 @@
         "insert/delete/sort functions on association lists"
         (extensions))
     ("auto-show.el"
-        nil
-        nil)
+        "perform automatic horizontal scrolling as point moves"
+        (scroll display minor-mode))
     ("autoinsert.el"
         "automatic mode-dependent insertion of text into new files"
         nil)
@@ -61,13 +55,13 @@
         "maintain autoloads in loaddefs.el."
         (maint))
     ("avoid.el"
-        nil
+        "make mouse pointer stay out of the way of editing"
         (mouse))
     ("awk-mode.el"
         "AWK code editing commands for Emacs"
         (unix  languages))
     ("backquote.el"
-        nil
+        "implement the ` Lisp construct"
         (extensions  internal))
     ("bib-mode.el"
         "bib-mode, major mode for editing bib files."
@@ -84,6 +78,9 @@
     ("bookmark.el"
         "set bookmarks, maybe annotate them, jump to them later."
         (bookmarks  placeholders  annotations))
+    ("browse-url.el"
+        "ask a WWW browser to load a URL"
+        (hypertext))
     ("buff-menu.el"
         "buffer menu main function and support functions."
         nil)
@@ -96,17 +93,32 @@
     ("bytecomp.el"
         "compilation of Lisp code into byte code."
         (internal))
-    ("bytecpat.el"
-        nil
-        nil)
     ("c-mode.el"
         "C code editing commands for Emacs"
         (c))
+    ("cal-china.el"
+        "calendar functions for the Chinese calendar."
+        (calendar))
+    ("cal-coptic.el"
+        "calendar functions for the Coptic/Ethiopic calendars."
+        (calendar))
     ("cal-dst.el"
         "calendar functions for daylight savings rules."
         (calendar))
     ("cal-french.el"
         "calendar functions for the French Revolutionary calendar."
+        (calendar))
+    ("cal-hebrew.el"
+        "calendar functions for the Hebrew calendar."
+        (calendar))
+    ("cal-islam.el"
+        "calendar functions for the Islamic calendar."
+        (calendar))
+    ("cal-iso.el"
+        "calendar functions for the ISO calendar."
+        (calendar))
+    ("cal-julian.el"
+        "calendar functions for the Julian calendar."
         (calendar))
     ("cal-mayan.el"
         "calendar functions for the Mayan calendars."
@@ -114,44 +126,56 @@
     ("cal-menu.el"
         "calendar functions for menu bar and popup menu support"
         (calendar))
+    ("cal-move.el"
+        "calendar functions for movement in the calendar"
+        (calendar))
+    ("cal-persia.el"
+        "calendar functions for the Persian calendar."
+        (calendar))
+    ("cal-tex.el"
+        "calendar functions for printing calendars with LaTeX."
+        (calendar))
     ("cal-x.el"
-        "calendar windows in dedicated frames in x-windows"
+        "calendar windows in dedicated frames in X"
         (calendar))
     ("calendar.el"
-        "Calendar functions.  -*-byte-compile-dynamic: t;-*-"
+        "Calendar functions."
         (calendar))
     ("case-table.el"
         "code to extend the character set and support case tables."
         (i18n))
+    ("cc-compat.el"
+        "cc-mode compatibility with c-mode.el confusion"
+        (c languages oop))
     ("cc-mode.el"
         "major mode for editing C, C++, and Objective-C code"
         (c languages oop))
     ("cdl.el"
-        nil
+        "Common Data Language (CDL) utility functions for Gnu Emacs"
         (data))
     ("chistory.el"
         "list command history"
         nil)
     ("cl-compat.el"
-        nil
+        "Common Lisp extensions for GNU Emacs Lisp (compatibility)"
         (extensions))
     ("cl-extra.el"
-        nil
+        "Common Lisp extensions for GNU Emacs Lisp (part two)"
         (extensions))
     ("cl-indent.el"
         "enhanced lisp-indent mode"
         (lisp  tools))
     ("cl-macs.el"
-        nil
+        "Common Lisp extensions for GNU Emacs Lisp (part four)"
         (extensions))
     ("cl-seq.el"
-        nil
+        "Common Lisp extensions for GNU Emacs Lisp (part three)"
         (extensions))
     ("cl-specs.el"
-        nil
+        "Edebug specs for cl.el"
         (lisp  tools  maint))
     ("cl.el"
-        nil
+        "Common Lisp extensions for GNU Emacs Lisp"
         (extensions))
     ("cmacexp.el"
         "expand C macros in a region"
@@ -169,7 +193,7 @@
         "run compiler as inferior of Emacs, parse error messages."
         (tools  processes))
     ("complete.el"
-        nil
+        "partial completion mechanism plus other goodies"
         (abbrev))
     ("completion.el"
         "dynamic word-completion code"
@@ -177,33 +201,42 @@
     ("cookie1.el"
         "retrieve random phrases from fortune cookie files"
         (games))
+    ("copyright.el"
+        "update the copyright notice in current buffer"
+        (maint  tools))
     ("cplus-md.el"
         "C++ code editing commands for Emacs"
-        (c languages oop))
+        (c))
     ("cpp.el"
         "Highlight or hide text according to cpp conditionals."
         (c  faces  tools))
     ("cust-print.el"
         "handles print-level and print-circle."
         (extensions))
+    ("custom.el"
+        "User friendly customization support."
+        (help))
     ("dabbrev.el"
         "dynamic abbreviation package"
         (abbrev expand completion))
     ("debug.el"
         "debuggers and related commands for Emacs"
         (lisp  tools  maint))
+    ("decipher.el"
+        "Cryptanalyze monoalphabetic substitution ciphers"
+        (games))
+    ("default.el"
+        nil
+        nil)
     ("delsel.el"
         "delete selection if you insert"
         nil)
     ("derived.el"
-        nil
+        "allow inheritance of major modes."
         nil)
     ("desktop.el"
         "save partial status of Emacs when killed"
         (customization))
-    ("diary-ins.el"
-        "calendar functions for adding diary entries."
-        (diary  calendar))
     ("diary-lib.el"
         "diary functions."
         (calendar))
@@ -229,7 +262,7 @@
         "scramble text amusingly for Emacs."
         (games))
     ("docref.el"
-        nil
+        "Simple cross references for Elisp documentation strings"
         (docs  help  lisp))
     ("doctor.el"
         "psychological help for frustrated users."
@@ -238,7 +271,7 @@
         "MS-Dos specific functions."
         (internal))
     ("double.el"
-        nil
+        "Support for keyboard remapping with double clicking"
         (i18n))
     ("dunnet.el"
         "Text adventure for Emacs"
@@ -258,14 +291,23 @@
     ("ediff-diff.el"
         "diff-related utilities"
         nil)
+    ("ediff-hook.el"
+        "setup for Ediff's menus and autoloads"
+        nil)
     ("ediff-init.el"
-        "Macros, variables and defsubsts used by Ediff"
+        "Macros, variables, and defsubsts used by Ediff"
         nil)
     ("ediff-merg.el"
         "merging utilities"
         nil)
+    ("ediff-mult.el"
+        "support for multi-file/multi-buffer processing in Ediff"
+        nil)
     ("ediff-util.el"
         "the core commands and utilities of ediff"
+        nil)
+    ("ediff-vers.el"
+        "version control interface to Ediff"
         nil)
     ("ediff-wind.el"
         "window manipulation utilities"
@@ -277,19 +319,19 @@
         "keyboard macro editor"
         (abbrev))
     ("edt-lk201.el"
-        nil
+        "Enhanced EDT Keypad Mode Emulation for LK-201 Keyboards"
         (emulations))
     ("edt-mapper.el"
-        nil
+        "Create an EDT LK-201 Map File for X-Windows Emacs"
         (emulations))
     ("edt-pc.el"
-        nil
+        "Enhanced EDT Keypad Mode Emulation for PC 101 Keyboards"
         (emulations))
     ("edt-vt100.el"
-        nil
+        "Enhanced EDT Keypad Mode Emulation for VT Series Terminals"
         (emulations))
     ("edt.el"
-        nil
+        "Enhanced EDT Keypad Mode Emulation for GNU Emacs 19"
         (emulations))
     ("ehelp.el"
         "bindings for electric-help mode"
@@ -299,10 +341,10 @@
         (extensions))
     ("elp.el"
         "Emacs Lisp Profiler"
-        (     emacs lisp profile timing))
+        (emacs lisp profile timing))
     ("emacs-lock.el"
-        nil
-        ())
+        "prevents you from exiting emacs if a buffer is locked"
+        nil)
     ("emacsbug.el"
         "command to report Emacs bugs to appropriate mailing list."
         (maint))
@@ -310,7 +352,7 @@
         "merge diffs under Emacs control"
         (unix  tools))
     ("enriched.el"
-        nil
+        "read and save files in text/enriched format"
         (wp  faces))
     ("env.el"
         "functions to manipulate environment variables."
@@ -321,11 +363,14 @@
     ("eval-reg.el"
         "Redefine eval-region, and subrs that use it, in Lisp"
         (lisp))
+    ("executable.el"
+        "base functionality for executable interpreter scripts"
+        (languages  unix))
     ("f90.el"
-        nil
+        "Fortran-90 mode (free format)"
         (fortran  f90  languages))
     ("facemenu.el"
-        nil
+        "create a face menu for interactively adding fonts to text"
         (faces))
     ("faces.el"
         "Lisp interface to the c \"face\" structure"
@@ -333,6 +378,9 @@
     ("fast-lock.el"
         "Automagic text properties caching for fast Font Lock mode."
         (faces files))
+    ("ffap.el"
+        "find file or url at point"
+        (files  hypermedia  matching  mouse))
     ("files.el"
         "file input and output commands for Emacs"
         nil)
@@ -366,20 +414,23 @@
     ("foldout.el"
         "Folding extensions for outline-mode and outline-minor-mode."
         (folding  outline))
+    ("follow.el"
+        "Minor mode, Synchronize windows showing the same buffer."
+        (display  window  minor-mode))
     ("font-lock.el"
-        nil
+        "Electric font lock mode"
         (languages  faces))
     ("format.el"
-        nil
+        "read and save files in multiple formats"
         nil)
     ("forms-d2.el"
-        nil
+        "demo forms-mode"
         nil)
     ("forms-pass.el"
-        nil
+        "passwd file demo for forms-mode"
         nil)
     ("forms.el"
-        nil
+        "Forms mode: edit a file as a form to fill in"
         nil)
     ("fortran.el"
         "Fortran mode for GNU Emacs"
@@ -387,27 +438,57 @@
     ("frame.el"
         "multi-frame management independent of window systems."
         (internal))
+    ("gnus-cache.el"
+        "cache interface for Gnus"
+        (news))
+    ("gnus-cite.el"
+        "parse citations in articles for Gnus"
+        (news  mail))
+    ("gnus-cus.el"
+        "User friendly customization of Gnus"
+        (help  news))
+    ("gnus-edit.el"
+        "Gnus SCORE file editing"
+        (news  help))
+    ("gnus-ems.el"
+        "functions for making Gnus work under different Emacsen"
+        (news))
+    ("gnus-kill.el"
+        "kill commands for Gnus"
+        (news))
+    ("gnus-mh.el"
+        "mh-e interface for Gnus"
+        (news))
+    ("gnus-msg.el"
+        "mail and post interface for Gnus"
+        (news))
+    ("gnus-score.el"
+        "scoring code for Gnus"
+        (news))
     ("gnus-uu.el"
-        "extract, view or save (uu)encoded files from gnus"
+        "extract (uu)encoded files in Gnus"
+        nil)
+    ("gnus-vis.el"
+        "display-oriented parts of Gnus"
         (news))
+    ("gnus-vm.el"
+        "vm interface for Gnus"
+        (news  mail))
     ("gnus.el"
-        "NNTP-based News Reader for GNU Emacs"
-        (news))
-    ("gnusmail.el"
-        "mail reply commands for GNUS newsreader"
-        (news))
-    ("gnusmisc.el"
-        "miscellaneous commands for GNUS newsreader"
-        (news))
-    ("gnuspost.el"
-        "post news commands for GNUS newsreader"
+        "a newsreader for GNU Emacs"
         (news))
     ("gomoku.el"
         "Gomoku game between you and Emacs"
         (games))
+    ("goto-addr.el"
+        "click to browse URL or to send to e-mail address"
+        (mh-e  www  mouse  mail))
     ("gud.el"
-        "Grand Unified Debugger mode for gdb, sdb, dbx, or xdb"
+        "Grand Unified Debugger mode for gdb, sdb, dbx, or xdb under Emacs"
         (unix  tools))
+    ("gulp.el"
+        "Ask for updates for Lisp packages"
+        (maintenance))
     ("hanoi.el"
         "towers of hanoi in GNUmacs"
         (games))
@@ -428,9 +509,9 @@
         (c  outlines))
     ("hideshow.el"
         "minor mode cmds to selectively display blocks of code"
-        nil)
+        (c c++ lisp tools editing))
     ("hilit19.el"
-        nil
+        "customizable highlighting for Emacs19"
         (faces))
     ("hippie-exp.el"
         "expand text trying various ways to find its expansion."
@@ -439,8 +520,8 @@
         "holiday functions for the calendar package"
         (holidays  calendar))
     ("icomplete.el"
-        nil
-        nil)
+        "minibuffer completion incremental feedback"
+        (help  abbrev))
     ("icon.el"
         "mode for editing Icon code"
         (languages))
@@ -466,13 +547,13 @@
         "incremental search minor mode."
         nil)
     ("iso-acc.el"
-        nil
+        "minor mode providing electric accent keys"
         (i18n))
     ("iso-ascii.el"
         "set up char tables for ISO 8859/1 on ASCII terminals."
         (i18n))
     ("iso-cvt.el"
-        nil
+        "translate to ISO 8859-1 from/to net/TeX conventions"
         (tex  iso  latin  i18n))
     ("iso-insert.el"
         "insert functions for ISO 8859/1."
@@ -486,14 +567,17 @@
     ("iso-transl.el"
         "keyboard input definitions for ISO 8859/1."
         (i18n))
+    ("iso02-syn.el"
+        "set up case-conversion and syntax tables for ISO 8859-2"
+        (i18n))
     ("ispell.el"
-        nil
+        "spell checking using Ispell"
         nil)
     ("ispell4.el"
         "this is the GNU EMACS interface to GNU ISPELL version 4."
         (wp))
     ("jka-compr.el"
-        nil
+        "reading/writing/loading compressed files"
         (data))
     ("kermit.el"
         "additions to shell mode for use with kermit, etc."
@@ -559,23 +643,23 @@
         "abbrev-expansion of mail aliases."
         (mail))
     ("mailalias.el"
-        "expand mailing address aliases defined in ~/.mailrc."
+        "expand and complete mailing address aliases"
         (mail))
     ("mailpost.el"
         "RMAIL coupler to /usr/uci/post mailer"
         (mail))
-    ("makefile.el"
+    ("make-mode.el"
         "makefile editing commands for Emacs"
         (unix  tools))
     ("makeinfo.el"
-        nil
+        "run makeinfo conveniently"
         nil)
     ("makesum.el"
         "generate key binding summary for Emacs"
         (help))
     ("man.el"
         "browse UNIX manual pages"
-        nil)
+        (help))
     ("map-ynp.el"
         "General-purpose boolean question-asker."
         (lisp  extensions))
@@ -609,9 +693,6 @@
     ("mh-utils.el"
         "mh-e code needed for both sending and reading"
         nil)
-    ("mhspool.el"
-        "MH folder access using NNTP for GNU Emacs"
-        (mail  news))
     ("misc.el"
         "basic editing commands for Emacs"
         nil)
@@ -619,7 +700,7 @@
         "convert buffer of Mocklisp code to real lisp."
         (emulations))
     ("mldrag.el"
-        nil
+        "mode line and vertical line dragging to resize windows"
         (mouse))
     ("mlsupport.el"
         "run-time support for mocklisp code."
@@ -627,11 +708,14 @@
     ("modula2.el"
         "Modula-2 editing support package"
         (languages))
+    ("morse.el"
+        "Convert text to morse code and back."
+        nil)
     ("mouse-sel.el"
         "Multi-click selection support for Emacs 19"
         (mouse))
     ("mouse.el"
-        "window system-independent mouse support."
+        "window system-independent mouse support"
         (hardware))
     ("mpuz.el"
         "multiplication puzzle for GNU Emacs"
@@ -639,11 +723,47 @@
     ("msb.el"
         "Customizable buffer-selection with multiple menus."
         (mouse buffer menu ))
+    ("nnbabyl.el"
+        "rmail mbox access for Gnus"
+        (news  mail))
+    ("nndir.el"
+        "single directory newsgroup access for Gnus"
+        (news))
+    ("nndoc.el"
+        "single file access for Gnus"
+        (news))
+    ("nneething.el"
+        "random file access for Gnus"
+        (news  mail))
+    ("nnfolder.el"
+        "mail folder access for Gnus"
+        (news  mail))
+    ("nnheader.el"
+        "header access macros for Gnus and its backends"
+        (news))
+    ("nnkiboze.el"
+        "select virtual news access for Gnus"
+        (news))
+    ("nnmail.el"
+        "mail support functions for the Gnus mail backends"
+        (news  mail))
+    ("nnmbox.el"
+        "mail mbox access for Gnus"
+        (news  mail))
+    ("nnmh.el"
+        "mhspool access for Gnus"
+        (news  mail))
+    ("nnml.el"
+        "mail spool access for Gnus"
+        (news  mail))
     ("nnspool.el"
-        "spool access using NNTP for GNU Emacs"
+        "spool access for GNU Emacs"
         (news))
     ("nntp.el"
-        "NNTP (RFC977) Interface for GNU Emacs"
+        "nntp access for Gnus"
+        (news))
+    ("nnvirtual.el"
+        "virtual newsgroups access for Gnus"
         (news))
     ("noutline.el"
         "outline mode commands for Emacs"
@@ -673,13 +793,19 @@
         "highlight matching paren."
         (languages  faces))
     ("pascal.el"
+        "major mode for editing pascal source in Emacs"
+        (languages))
+    ("patcomp.el"
         nil
         nil)
     ("paths.el"
         "define pathnames for use by various Emacs commands."
         (internal))
     ("pc-mode.el"
-        nil
+        "emulate certain key bindings used on PCs."
+        (emulations))
+    ("pc-select.el"
+        "emulate mark, cut, copy and paste from motif"
         nil)
     ("perl-mode.el"
         "Perl code editing commands for GNU Emacs"
@@ -688,7 +814,7 @@
         "\"Picture mode\" -- editing using quarter-plane screen model."
         nil)
     ("pp.el"
-        nil
+        "pretty printer for Emacs Lisp"
         nil)
     ("profile.el"
         "generate run time measurements of Emacs Lisp functions"
@@ -700,7 +826,7 @@
         "Jim's Pretty-Good PostScript Generator for Emacs 19."
         (print  postscript))
     ("rcompile.el"
-        nil
+        "run a compilation on a remote machine"
         (tools  processes))
     ("rect.el"
         "rectangle functions for GNU Emacs."
@@ -713,7 +839,7 @@
         (bib))
     ("regi.el"
         "REGular expression Interpreting engine"
-        (     extensions  matching))
+        (extensions  matching))
     ("register.el"
         "register commands for Emacs."
         (internal))
@@ -799,14 +925,17 @@
         "Lisp code for GNU Emacs running as server process."
         (processes))
     ("sgml-mode.el"
-        "SGML-editing mode"
-        (wp))
+        "SGML- and HTML-editing modes"
+        (wp  hypermedia  comm  languages))
     ("sh-script.el"
         "shell-script editing commands for Emacs"
-        (shell programming))
+        (languages  unix))
+    ("shadow.el"
+        "Locate Emacs Lisp file shadowings."
+        (lisp))
     ("shadowfile.el"
-        nil
-        nil)
+        "automatic file copying for Emacs 19"
+        (comm))
     ("shell.el"
         "specialized comint.el for running the shell."
         (processes))
@@ -816,17 +945,29 @@
     ("simula.el"
         "SIMULA 87 code editing commands for Emacs"
         (languages))
+    ("site-init.el"
+        nil
+        nil)
+    ("site-load.el"
+        nil
+        nil)
+    ("site-start.el"
+        nil
+        nil)
     ("skeleton.el"
-        "Metalanguage for writing statement skeletons"
-        (shell programming))
+        "Lisp language extension for writing statement skeletons"
+        (extensions  abbrev  languages  tools))
     ("solar.el"
         "calendar functions for solar events."
         (calendar))
+    ("solitaire.el"
+        "game of solitaire in Emacs Lisp"
+        (games))
     ("sort.el"
         "commands to sort text in an Emacs buffer."
         (unix))
     ("soundex.el"
-        nil
+        "implement Soundex algorithm"
         (matching))
     ("spell.el"
         "spelling correction interface for Emacs."
@@ -865,10 +1006,10 @@
         "simple editing of tar files from GNU emacs"
         (unix))
     ("tcl-mode.el"
-        nil
+        "a major-mode for editing tcl/tk scripts"
         (languages  processes  tools))
     ("tcp.el"
-        nil
+        "TCP/IP stream emulation for GNU Emacs"
         nil)
     ("telnet.el"
         "run a telnet session from within an Emacs buffer"
@@ -880,7 +1021,7 @@
         "Damned Things from terminfo.el"
         nil)
     ("term.el"
-        nil
+        "general command interpreter in a window stuff"
         nil)
     ("terminal.el"
         "terminal emulator for GNU Emacs."
@@ -889,13 +1030,13 @@
         "TeX, LaTeX, and SliTeX mode commands."
         (tex))
     ("texinfmt.el"
-        nil
+        "format Texinfo files into Info files."
         nil)
     ("texinfo.el"
-        nil
+        "major mode for editing Texinfo files"
         nil)
     ("texnfo-upd.el"
-        nil
+        "utilities for updating nodes and menus in Texinfo files"
         (maint  tex  docs))
     ("text-mode.el"
         "text mode, and its idiosyncratic commands."
@@ -910,13 +1051,13 @@
         "display time and load in mode line of Emacs."
         nil)
     ("timer.el"
-        "run a function with args at some time in future"
+        "run a function with args at some time in future."
         nil)
     ("timezone.el"
-        nil
-        nil)
+        "time zone package for GNU Emacs"
+        (news))
     ("tmm.el"
-        nil
+        "text mode access to menu-bar"
         nil)
     ("tpu-edt.el"
         "Emacs emulating TPU emulating EDT"
@@ -925,7 +1066,7 @@
         "Scroll margins and free cursor mode for TPU-edt"
         (emulations))
     ("tpu-mapper.el"
-        nil
+        "Create a TPU-edt X-windows keymap file"
         (emulations))
     ("tq.el"
         "utility to maintain a transaction queue"
@@ -948,15 +1089,15 @@
     ("undigest.el"
         "digest-cracking support for the RMAIL mail reader"
         (mail))
+    ("uniquify.el"
+        "unique buffer names dependent on file name"
+        nil)
     ("unrmail.el"
         "convert Rmail files to mailbox files."
         (mail))
     ("unused.el"
         "editing commands in GNU Emacs that turned out not to be used."
         (emulations))
-    ("upd-copyr.el"
-        "update the copyright notice in a GNU Emacs Lisp file"
-        (maint))
     ("userlock.el"
         "handle file access contention between multiple users"
         (internal))
@@ -979,23 +1120,23 @@
         "a VI Package for GNU Emacs"
         (emulations))
     ("viper-ex.el"
-        nil
+        "functions implementing the Ex commands for Viper"
         nil)
     ("viper-keym.el"
-        nil
+        "Viper keymaps"
         nil)
     ("viper-macs.el"
-        nil
+        "functions implementing keyboard macros for Viper"
         nil)
     ("viper-mous.el"
-        nil
+        "mouse support for Viper"
         nil)
     ("viper-util.el"
         "Utilities used by viper.el"
         nil)
     ("viper.el"
         "A full-featured Vi emulator for GNU Emacs 19 and XEmacs 19,"
-        nil)
+        (emulations))
     ("vms-patch.el"
         "override parts of files.el for VMS."
         (vms))
@@ -1003,9 +1144,6 @@
         "use Emacs as the editor within VMS mail."
         (vms))
     ("vmsproc.el"
-        "run asynchronous VMS subprocesses under Emacs"
-        (vms))
-    ("vmsx.el"
         "run asynchronous VMS subprocesses under Emacs"
         (vms))
     ("vt-control.el"
@@ -1018,7 +1156,7 @@
         "GNU Emacs window commands aside from those written in C."
         nil)
     ("winnt.el"
-        nil
+        "Lisp routines for Windows NT."
         nil)
     ("ws-mode.el"
         "WordStar emulation mode for GNU Emacs"
@@ -1032,87 +1170,12 @@
     ("xscheme.el"
         "run Scheme under Emacs"
         (languages  lisp))
-    ("yow.el"
-        "quote random zippyisms"
-        (games))
-    ("browse-url.el"
-        "ask a WWW browser to load a URL"
-        (hypertext))
-    ("cal-chinese.el"
-        "calendar functions for the Chinese calendar."
-        (calendar))
-    ("cal-coptic.el"
-        "calendar functions for the Coptic/Ethiopic calendars."
-        (calendar))
-    ("cal-hebrew.el"
-        "calendar functions for the Hebrew calendar."
-        (calendar))
-    ("cal-islamic.el"
-        "calendar functions for the Islamic calendar."
-        (calendar))
-    ("cal-iso.el"
-        "calendar functions for the ISO calendar."
-        (calendar))
-    ("cal-julian.el"
-        "calendar functions for the Julian calendar."
-        (calendar))
-    ("cal-move.el"
-        "calendar functions for movement in the calendar"
-        (calendar))
-    ("cal-tex.el"
-        "calendar functions for printing calendars with LaTeX."
-        (calendar))
-    ("cc-compat.el"
-        "cc-mode compatibility with c-mode.el confusion"
-        (c languages oop))
-    ("copyright.el"
-        "update the copyright notice in current buffer"
-        (maint  tools))
-    ("diary.el"
-        "diary functions."
-        (calendar))
-    ("ediff-hook.el"
-        "setup for Ediff's menus and autoloads"
-        nil)
-    ("ediff-meta.el"
-        "support for multi-file/multi-buffer processing in Ediff"
-        nil)
-    ("executable.el"
-        "base functionality for executable interpreter scripts"
-        (languages  unix))
-    ("goto-addr.el"
-        "click to browse URL or to send to e-mail address"
-        (mh-e  www  mouse  mail))
-    ("iso02-acc.el"
-        "electric accent keys for Eastern Europe (ISO latin2)"
-        nil)
-    ("iso02-syn.el"
-        "set up case-conversion and syntax tables for ISO 8859-2"
-        (i18n))
-    ("morse.el"
-        "Convert text to morse code and back."
-        nil)
-    ("pc-select.el"
-        "emulate mark, cut, copy and paste from motif"
-        nil)
-    ("site-load.el"
-        nil
-        nil)
-    ("site-start.el"
-        nil
-        nil)
-    ("solitaire.el"
-        "game of solitaire in Emacs Lisp"
-        (games))
-    ("subdirs.el"
-        nil
-        nil)
-    ("uniquify.el"
-        "unique buffer names dependent on pathname"
-        nil)
     ("xt-mouse.el"
         "Support the mouse when emacs run in an xterm."
         (mouse  terminals))
+    ("yow.el"
+        "quote random zippyisms"
+        (games))
 ))
 
 (provide 'finder-inf)

@@ -19,8 +19,20 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
+
+;;; This file has been censored by the Communications Decency Act.
+;;; That law was passed under the guise of a ban on pornography, but
+;;; it bans far more than that.  This file did not contain pornography,
+;;; but it was censored nonetheless.
+
+;;; For information on US government censorship of the Internet, and
+;;; what you can do to bring back freedom of the press, see the web
+;;; site http://www.vtw.org/
 
 ;;; Code:
 
@@ -160,7 +172,10 @@ performance.")
 (defvar te-pending-output-info nil)
 
 ;; Required to support terminfo systems
-(defconst te-terminal-name-prefix "emacs-virtual")
+(defconst te-terminal-name-prefix "emacs-em"
+  "Prefix used for terminal type names for Terminfo.")
+(defconst te-terminfo-directory "/tmp/emacs-terminfo/"
+  "Directory used for run-time terminal definition files for Terminfo.")
 (defvar te-terminal-name nil)
 
 ;;;;  escape map
@@ -513,7 +528,8 @@ together with a command \\<terminal-edit-map>to return to terminal emulation: \\
   ;; Make mode line update.
   (if (eq (key-binding "\C-c\C-c") 'terminal-cease-edit)
       (message "Editing: Type C-c C-c to return to Terminal")
-    (message (substitute-command-keys
+    (message "%s"
+	     (substitute-command-keys
 	       "Editing: Type \\[terminal-cease-edit] to return to Terminal"))))
 
 (defun terminal-cease-edit ()
@@ -796,7 +812,7 @@ move to start of new line, clear to end of line."
 
 
 
-;; disgusting unix-required shit
+;; disgusting unix-required excrement
 ;;  Are we living twenty years in the past yet?
 
 (defun te-losing-unix ()
@@ -865,9 +881,9 @@ move to start of new line, clear to end of line."
 ;; (A version of the following comment which might be distractingly offensive
 ;; to some readers has been moved to term-nasty.el.)
 ;; unix lacks ITS-style tty control...
-(defun te-process-output (preemptable)
+(defun te-process-output (preemptible)
   ;;>> There seems no good reason to ever disallow preemption
-  (setq preemptable t)
+  (setq preemptible t)
   (catch 'te-process-output
     (let ((buffer-read-only nil)
 	  (string nil) ostring start char (matchpos nil))
@@ -955,9 +971,9 @@ move to start of new line, clear to end of line."
 				 (?\C-i . te-output-tab))))
 		    'te-losing-unix)))
 	  (te-redisplay-if-necessary 1))
-	(and preemptable
+	(and preemptible
 	     (input-pending-p)
-	     ;; preemptable output!  Oh my!!
+	     ;; preemptible output!  Oh my!!
 	     (throw 'te-process-output t)))))
   ;; We must update window-point in every window displaying our buffer
   (let* ((s (selected-window))
@@ -1087,7 +1103,7 @@ subprocess started."
   (if (null height) (setq height (- (window-height (selected-window)) 1)))
   (terminal-mode)
   (setq te-width width te-height height)
-  (setq te-terminal-name (concat te-terminal-name-prefix "-" te-width
+  (setq te-terminal-name (concat te-terminal-name-prefix te-width
 				 te-height))
   (setq mode-line-buffer-identification
 	(list (format "Emacs terminal %dx%d: %%b  " te-width te-height)
@@ -1229,22 +1245,25 @@ of the terminal-emulator"
 
 (defun te-create-terminfo ()
   "Create and compile a terminfo entry for the virtual terminal. This is kept
-in the /tmp directory"
+in the directory specified by `te-terminfo-directory'."
   (if (and system-uses-terminfo
-	   (not (file-exists-p (concat  "/tmp/"
+	   (not (file-exists-p (concat  te-terminfo-directory
 					(substring te-terminal-name-prefix 0 1)
 					"/" te-terminal-name))))
     (let ( (terminfo
 	    (concat
-	     (format "%s,mir, xon,cols#%d, lines#%d,"
+	     ;; The first newline avoids trouble with ncurses.
+	     (format "%s,\n\tmir, xon,cols#%d, lines#%d,"
 		     te-terminal-name te-width te-height)
 	     "bel=^P^G, clear=^P\\f, cr=^P^A, cub1=^P^B, cud1=^P\\n,"
 	     "cuf1=^P^F, cup=^P=%p1%'\\s'%+%c%p2%'\\s'%+%c,"
 	     "dch=^Pd%p1%'\\s'%+%c, dch1=^Pd!, dl=^P^K%p1%'\\s'%+%c,"
 	     "dl1=^P^K!, ed=^PC, el=^Pc, home=^P=\\s\\s,"
 	     "ich=^P_%p1%'\\s'%+%c, ich1=^P_!, il=^P^O%p1%'\\s'%+%c,"
-	     "il1=^P^O!, ind=^P\\n, nel=\\n,"))
-	   (file-name (concat "/tmp/" te-terminal-name ".tif")) )
+	     "il1=^P^O!, ind=^P\\n, nel=\\n,\n"))
+	   ;; The last newline avoids trouble with ncurses.
+	   (file-name (concat te-terminfo-directory te-terminal-name ".tif")) )
+      (make-directory te-terminfo-directory t)
       (save-excursion
 	(set-buffer (create-file-buffer file-name))
 	(insert terminfo)
@@ -1252,11 +1271,12 @@ in the /tmp directory"
 	(kill-buffer nil)
 	)
       (let ( (process-environment
-	      (cons (concat "TERMINFO=" "/tmp")
+	      (cons (concat "TERMINFO="
+			    (directory-file-name te-terminfo-directory))
 		    process-environment)) )
 	(set-process-sentinel (start-process "tic" nil "tic" file-name)
 			      'te-tic-sentinel))))
-    "/tmp"
+    (directory-file-name te-terminfo-directory)
 )
 
 (defun te-create-termcap ()
@@ -1293,7 +1313,7 @@ in the /tmp directory"
   "If tic has finished, delete the .tif file"
   (if (equal state-change "finished
 ")
-      (delete-file (concat "/tmp/" te-terminal-name ".tif"))))
+      (delete-file (concat te-terminfo-directory te-terminal-name ".tif"))))
 
 (provide 'terminal)
 

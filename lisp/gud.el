@@ -1,5 +1,4 @@
-;;; gud.el --- Grand Unified Debugger mode for gdb, sdb, dbx, or xdb
-;;;            under Emacs
+;;; gud.el --- Grand Unified Debugger mode for gdb, sdb, dbx, or xdb under Emacs
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Maintainer: FSF
@@ -20,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -413,13 +413,13 @@ available with older versions of GDB."
     (while 
 	(cond 
 	 ;; System V Release 3.2 uses this format
-	 ((string-match "\\(^0x\\w* in \\|^\\|\n\\)\\([^:\n]*\\):\\([0-9]*\\):.*\n"
+	 ((string-match "\\(^\\|\n\\)\\*?\\(0x\\w* in \\)?\\([^:\n]*\\):\\([0-9]*\\):.*\n"
 			gud-marker-acc start)
 	  (setq gud-last-frame
 		(cons
-		 (substring gud-marker-acc (match-beginning 2) (match-end 2))
+		 (substring gud-marker-acc (match-beginning 3) (match-end 3))
 		 (string-to-int 
-		  (substring gud-marker-acc (match-beginning 3) (match-end 3))))))
+		  (substring gud-marker-acc (match-beginning 4) (match-end 4))))))
 	 ;; System V Release 4.0 quite often clumps two lines together
 	 ((string-match "^\\(BREAKPOINT\\|STEPPED\\) process [0-9]+ function [^ ]+ in \\(.+\\)\n\\([0-9]+\\):" 
 			gud-marker-acc start)
@@ -451,12 +451,7 @@ available with older versions of GDB."
       (setq start (match-end 0)))
 
     ;; If we have an incomplete line, store it in gud-marker-acc.
-    ;; Otherwise clear gud-marker-acc. to avoid an
-    ;; unnecessary concat when this function runs next.
-    (setq gud-marker-acc 
-	  (if (= start (length gud-marker-acc))
-	      (substring gud-marker-acc start)
-	    nil)))
+    (setq gud-marker-acc (substring gud-marker-acc (or start 0))))
   string)
 
 (defun gud-sdb-find-file (f)
@@ -726,7 +721,7 @@ This works in IRIX 4, 5 and 6.")
   (save-excursion
     (let ((realf (gud-dbx-file-name f)))
       (if realf
-	  (let ((buf (find-file-noselect f)))
+	  (let ((buf (find-file-noselect realf)))
 	    (set-buffer buf)
 	    (gud-make-debug-menu)
 	    (local-set-key [menu-bar debug up] '("Up Stack" . gud-up))
@@ -1060,8 +1055,9 @@ and source-file directory for your debugger."
   "Major mode for interacting with an inferior debugger process.
 
    You start it up with one of the commands M-x gdb, M-x sdb, M-x dbx,
-or M-x xdb.  Each entry point finishes by executing a hook; `gdb-mode-hook',
-`sdb-mode-hook', `dbx-mode-hook' or `xdb-mode-hook' respectively.
+M-x perldb, or M-x xdb.  Each entry point finishes by executing a
+hook; `gdb-mode-hook', `sdb-mode-hook', `dbx-mode-hook',
+`perldb-mode-hook', or `xdb-mode-hook' respectively.
 
 After startup, the following commands are available in both the GUD
 interaction buffer and any source buffer GUD visits due to a breakpoint stop
@@ -1229,15 +1225,16 @@ It is saved for when this flag is not set.")
 	    ;; save it for later.
 	    (setq gud-filter-pending-text
 		  (concat (or gud-filter-pending-text "") string))
-	  (save-excursion
-	    ;; If we have to ask a question during the processing,
-	    ;; defer any additional text that comes from the debugger
-	    ;; during that time.
-	    (let ((gud-filter-defer-flag t))
-	      ;; Process now any text we previously saved up.
-	      (if gud-filter-pending-text
-		  (setq string (concat gud-filter-pending-text string)
-			gud-filter-pending-text nil))
+
+	  ;; If we have to ask a question during the processing,
+	  ;; defer any additional text that comes from the debugger
+	  ;; during that time.
+	  (let ((gud-filter-defer-flag t))
+	    ;; Process now any text we previously saved up.
+	    (if gud-filter-pending-text
+		(setq string (concat gud-filter-pending-text string)
+		      gud-filter-pending-text nil))
+	    (save-excursion
 	      (set-buffer (process-buffer proc))
 	      ;; If we have been so requested, delete the debugger prompt.
 	      (if (marker-buffer gud-delete-prompt-marker)
@@ -1253,20 +1250,31 @@ It is saved for when this flag is not set.")
 	      (setq process-window
 		    (and gud-last-frame
 			 (>= (point) (process-mark proc))
-			 (get-buffer-window (current-buffer)))))
-	    (if process-window
-		(save-selected-window
-		  (select-window process-window)
-		  (gud-display-frame)))
+			 (get-buffer-window (current-buffer))))
 
-	    ;; Let the comint filter do the actual insertion.
-	    ;; That lets us inherit various comint features.
-	    (comint-output-filter proc output)
+	      ;; Let the comint filter do the actual insertion.
+	      ;; That lets us inherit various comint features.
+	      (comint-output-filter proc output)))
 
-	    ;; If we deferred text that arrived during this processing,
-	    ;; handle it now.
-	    (if gud-filter-pending-text
-		(gud-filter proc "")))))))
+	  ;; Put the arrow on the source line.
+	  ;; This must be outside of the save-excursion
+	  ;; in case the source file is our current buffer.
+	  (if process-window
+	      (save-selected-window
+		(select-window process-window)
+		(gud-display-frame))
+	    ;; We have to be in the proper buffer, (process-buffer proc),
+	    ;; but not in a save-excursion, because that would restore point.
+	    (let ((old-buf (current-buffer)))
+	      (set-buffer (process-buffer proc))
+	      (unwind-protect
+		  (gud-display-frame)
+		(set-buffer old-buf))))
+
+	  ;; If we deferred text that arrived during this processing,
+	  ;; handle it now.
+	  (if gud-filter-pending-text
+	      (gud-filter proc ""))))))
 
 (defun gud-sentinel (proc msg)
   (cond ((null (buffer-name (process-buffer proc)))
@@ -1322,14 +1330,14 @@ Obeying it means displaying in another window the specified file and line."
 
 (defun gud-display-line (true-file line)
   (let* ((last-nonmenu-event t)	 ; Prevent use of dialog box for questions.
-	 (buffer (gud-find-file true-file))
+	 (buffer
+	  (save-excursion
+	    (or (eq (current-buffer) gud-comint-buffer)
+		(set-buffer gud-comint-buffer))
+	    (gud-find-file true-file)))
 	 (window (display-buffer buffer))
 	 (pos))
-;;;    (if (equal buffer (current-buffer))
-;;;	nil
-;;;      (setq buffer-read-only nil))
     (save-excursion
-;;;      (setq buffer-read-only t)
       (set-buffer buffer)
       (save-restriction
 	(widen)

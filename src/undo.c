@@ -3,20 +3,20 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -125,6 +125,31 @@ record_delete (beg, length)
 
   current_buffer->undo_list
     = Fcons (Fcons (Fbuffer_substring (lbeg, lend), sbeg),
+	     current_buffer->undo_list);
+}
+
+/* Record the fact that MARKER is about to be adjusted by ADJUSTMENT.
+   This is done only when a marker points within text being deleted,
+   because that's the only case where an automatic marker adjustment
+   won't be inverted automatically by undoing the buffer modification.  */
+
+record_marker_adjustment (marker, adjustment)
+     Lisp_Object marker;
+     int adjustment;
+{
+  if (EQ (current_buffer->undo_list, Qt))
+    return;
+
+  /* Allocate a cons cell to be the undo boundary after this command.  */
+  if (NILP (pending_boundary))
+    pending_boundary = Fcons (Qnil, Qnil);
+
+  if (current_buffer != XBUFFER (last_undo_buffer))
+    Fundo_boundary ();
+  XSETBUFFER (last_undo_buffer, current_buffer);
+
+  current_buffer->undo_list
+    = Fcons (Fcons (marker, make_number (adjustment)),
 	     current_buffer->undo_list);
 }
 
@@ -462,6 +487,15 @@ Return what remains of the list.")
 		      Finsert_before_markers (1, &membuf);
 		      SET_PT (pos);
 		    }
+		}
+	      else if (MARKERP (car) && INTEGERP (cdr))
+		{
+		  /* (MARKER . INTEGER) means a marker MARKER
+		     was adjusted by INTEGER.  */
+		  if (XMARKER (car)->buffer)
+		    Fset_marker (car,
+				 make_number (marker_position (car) - XINT (cdr)),
+				 Fmarker_buffer (car));
 		}
 	    }
 	}

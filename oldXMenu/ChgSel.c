@@ -29,7 +29,7 @@ XMenuChangeSelection(display, menu, p_num, s_num, data, data_sw, label, label_sw
     register XMPane *p_ptr;	/* XMPane pointer. */
     register XMSelect *s_ptr;	/* XMSelect pointer. */
     
-    int label_length;		/* Label lenght in characters. */
+    int label_length;		/* Label length in characters. */
     int label_width;		/* Label width in pixels. */
 
     /*

@@ -3,7 +3,7 @@
    (Implements POSIX draft P10003.2/D11.2, except for
    internationalization features.)
 
-   Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+   USA.  */
 
 /* AIX requires this to be the first thing in the file. */
 #if defined (_AIX) && !defined (REGEX_MALLOC)
@@ -1003,7 +1004,7 @@ static const char *re_error_msgid[] =
 #endif
 
 /* Roughly the maximum number of failure points on the stack.  Would be
-   exactly that if always used MAX_FAILURE_SPACE each time we failed.
+   exactly that if always used MAX_FAILURE_ITEMS items each time we failed.
    This is a variable only so users of regex can assign to it; we never
    change it ourselves.  */
 #if defined (MATCH_MAY_ALLOCATE)
@@ -1220,7 +1221,10 @@ typedef struct
 #endif
 
 /* We push at most this many items on the stack.  */
-#define MAX_FAILURE_ITEMS ((num_regs - 1) * NUM_REG_ITEMS + NUM_NONREG_ITEMS)
+/* We used to use (num_regs - 1), which is the number of registers
+   this regexp will save; but that was changed to 5
+   to avoid stack overflow for a regexp with lots of parens.  */
+#define MAX_FAILURE_ITEMS (5 * NUM_REG_ITEMS + NUM_NONREG_ITEMS)
 
 /* We actually push this many items.  */
 #define NUM_FAILURE_ITEMS				\
@@ -3444,12 +3448,14 @@ static boolean alt_match_null_string_p (),
            : (d) == string2 - 1 ? *(end1 - 1) : *(d))			\
    == Sword)
 
+/* Disabled due to a compiler bug -- see comment at case wordbound */
+#if 0
 /* Test if the character before D and the one at D differ with respect
    to being word-constituent.  */
 #define AT_WORD_BOUNDARY(d)						\
   (AT_STRINGS_BEG (d) || AT_STRINGS_END (d)				\
    || WORDCHAR_P (d - 1) != WORDCHAR_P (d))
-
+#endif
 
 /* Free everything we malloc.  */
 #ifdef MATCH_MAY_ALLOCATE
@@ -4499,9 +4505,9 @@ re_match_2_internal (bufp, string1, size1, string2, size2, pos, regs, stop)
 #endif
 
                 if ((re_opcode_t) p1[3] == exactn
-		    && ! ((int) p2[1] * BYTEWIDTH > (int) p1[4]
-			  && (p2[1 + p1[4] / BYTEWIDTH]
-			      & (1 << (p1[4] % BYTEWIDTH)))))
+		    && ! ((int) p2[1] * BYTEWIDTH > (int) p1[5]
+			  && (p2[2 + p1[5] / BYTEWIDTH]
+			      & (1 << (p1[5] % BYTEWIDTH)))))
                   {
   		    p[-3] = (unsigned char) pop_failure_jump;
                     DEBUG_PRINT3 ("  %c != %c => pop_failure_jump.\n",
@@ -4673,17 +4679,54 @@ re_match_2_internal (bufp, string1, size1, string2, size2, pos, regs, stop)
             break;
           }
 
-        case wordbound:
-          DEBUG_PRINT1 ("EXECUTING wordbound.\n");
-          if (AT_WORD_BOUNDARY (d))
+#if 0
+	/* The DEC Alpha C compiler 3.x generates incorrect code for the
+	   test  WORDCHAR_P (d - 1) != WORDCHAR_P (d)  in the expansion of
+	   AT_WORD_BOUNDARY, so this code is disabled.  Expanding the
+	   macro and introducing temporary variables works around the bug.  */
+
+	case wordbound:
+	  DEBUG_PRINT1 ("EXECUTING wordbound.\n");
+	  if (AT_WORD_BOUNDARY (d))
 	    break;
-          goto fail;
+	  goto fail;
 
 	case notwordbound:
-          DEBUG_PRINT1 ("EXECUTING notwordbound.\n");
+	  DEBUG_PRINT1 ("EXECUTING notwordbound.\n");
 	  if (AT_WORD_BOUNDARY (d))
 	    goto fail;
-          break;
+	  break;
+#else
+	case wordbound:
+	{
+	  boolean prevchar, thischar;
+
+	  DEBUG_PRINT1 ("EXECUTING wordbound.\n");
+	  if (AT_STRINGS_BEG (d) || AT_STRINGS_END (d))
+	    break;
+
+	  prevchar = WORDCHAR_P (d - 1);
+	  thischar = WORDCHAR_P (d);
+	  if (prevchar != thischar)
+	    break;
+	  goto fail;
+	}
+
+      case notwordbound:
+	{
+	  boolean prevchar, thischar;
+
+	  DEBUG_PRINT1 ("EXECUTING notwordbound.\n");
+	  if (AT_STRINGS_BEG (d) || AT_STRINGS_END (d))
+	    goto fail;
+
+	  prevchar = WORDCHAR_P (d - 1);
+	  thischar = WORDCHAR_P (d);
+	  if (prevchar != thischar)
+	    goto fail;
+	  break;
+	}
+#endif
 
 	case wordbeg:
           DEBUG_PRINT1 ("EXECUTING wordbeg.\n");
@@ -5137,7 +5180,7 @@ re_compile_pattern (pattern, length, bufp)
 /* Entry points compatible with 4.2 BSD regex library.  We don't define
    them unless specifically requested.  */
 
-#ifdef _REGEX_RE_COMP
+#if defined (_REGEX_RE_COMP) || defined (_LIBC)
 
 /* BSD has one and only one pattern buffer.  */
 static struct re_pattern_buffer re_comp_buf;
@@ -5191,6 +5234,15 @@ re_exec (s)
   return
     0 <= re_search (&re_comp_buf, s, len, 0, len, (struct re_registers *) 0);
 }
+
+#ifdef _LIBC
+/* Make these definitions weak in libc, so POSIX programs can redefine
+   these names if they don't use our functions, and still use
+   regcomp/regexec below without link errors.  */
+weak_symbol (re_comp)
+weak_symbol (re_exec)
+#endif
+
 #endif /* _REGEX_RE_COMP */
 
 /* POSIX.2 functions.  Don't define these for Emacs.  */
@@ -5435,11 +5487,3 @@ regfree (preg)
 }
 
 #endif /* not emacs  */
-
-/*
-Local variables:
-make-backup-files: t
-version-control: t
-trim-versions-without-asking: nil
-End:
-*/

@@ -1,5 +1,5 @@
 /* X Communication module for terminals which understand the X protocol.
-   Copyright (C) 1989, 1993, 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1989, 93, 94, 95, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Xt features made by Fred Pierresteguy.  */
 
@@ -84,6 +85,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "intervals.h"
 
 #ifdef USE_X_TOOLKIT
+#include <X11/Shell.h>
+#endif
+
+#ifdef USE_X_TOOLKIT
 extern void free_frame_menubar ();
 extern FRAME_PTR x_menubar_window_to_frame ();
 #if (XtSpecificationRelease >= 5) && !defined(NO_EDITRES)
@@ -104,13 +109,28 @@ extern void _XEditResCheckMessages ();
 #endif
 #endif
 
-#ifdef HAVE_X11XTR6
+#ifdef HAVE_SETLOCALE
 /* So we can do setlocale.  */
 #include <locale.h>
 #endif
 
+#ifdef SOLARIS2
+/* memmove will be defined as a macro in Xfuncs.h unless
+   <string.h> is included beforehand.  The declaration for memmove in
+   <string.h> will cause a syntax error when Xfuncs.h later includes it.  */
+#include <string.h>
+#endif
+
+#ifdef SOLARIS2
+#define X_CONNECTION_LOCK_FLAG XlibDisplayWriting
+#endif
+
+#ifndef min
 #define min(a,b) ((a)<(b) ? (a) : (b))
+#endif
+#ifndef max
 #define max(a,b) ((a)>(b) ? (a) : (b))
+#endif
 
 /* This is a chain of structures for all the X displays currently in use.  */
 struct x_display_info *x_display_list;
@@ -157,6 +177,13 @@ static int curs_y;
 
 /* Mouse movement.
 
+   Formerly, we used PointerMotionHintMask (in STANDARD_EVENT_MASK)
+   so that we would have to call XQueryPointer after each MotionNotify
+   event to ask for another such event.  However, this made mouse tracking
+   slow, and there was a bug that made it eventually stop.
+
+   Simply asking for MotionNotify all the time seems to work better.
+
    In order to avoid asking for motion events and then throwing most
    of them away or busy-polling the server for mouse positions, we ask
    the server for pointer motion hints.  This means that we get only
@@ -166,13 +193,7 @@ static int curs_y;
    get another MotionNotify event the next time the mouse moves.  This
    is at least as efficient as getting motion events when mouse
    tracking is on, and I suspect only negligibly worse when tracking
-   is off.
-
-   The silly O'Reilly & Associates Nutshell guides barely document
-   pointer motion hints at all (I think you have to infer how they
-   work from an example), and the description of XQueryPointer doesn't
-   mention that calling it causes you to get another motion hint from
-   the server, which is very important.  */
+   is off.  */
 
 /* Where the mouse was last time we reported a mouse event.  */
 static FRAME_PTR last_mouse_frame;
@@ -215,9 +236,6 @@ extern Lisp_Object Vcommand_line_args, Vsystem_name;
 /* Tells if a window manager is present or not. */
 
 extern Lisp_Object Vx_no_window_manager;
-
-/* Nonzero enables some debugging for the X interface code. */
-extern int _Xdebug;
 
 extern Lisp_Object Qface, Qmouse_face;
 
@@ -1564,8 +1582,8 @@ x_find_modifier_meanings (dpyinfo)
 #ifdef HAVE_X11R4
   XDisplayKeycodes (dpyinfo->display, &min_code, &max_code);
 #else
-  min_code = display->min_keycode;
-  max_code = display->max_keycode;
+  min_code = dpyinfo->display->min_keycode;
+  max_code = dpyinfo->display->max_keycode;
 #endif
 
   syms = XGetKeyboardMapping (dpyinfo->display,
@@ -1831,17 +1849,6 @@ note_mouse_movement (frame, event)
       last_mouse_scroll_bar = Qnil;
 
       note_mouse_highlight (frame, -1, -1);
-
-      /* Ask for another mouse motion event.  */
-      {
-	int dummy;
-	Window dummy_window;
-
-	XQueryPointer (event->display, FRAME_X_WINDOW (frame),
-		       &dummy_window, &dummy_window,
-		       &dummy, &dummy, &dummy, &dummy,
-		       (unsigned int *) &dummy);
-      }
     }
 
   /* Has the mouse moved off the glyph it was on at the last sighting?  */
@@ -1854,30 +1861,6 @@ note_mouse_movement (frame, event)
       last_mouse_scroll_bar = Qnil;
 
       note_mouse_highlight (frame, event->x, event->y);
-
-      /* Ask for another mouse motion event.  */
-      {
-	int dummy;
-	Window dummy_window;
-
-	XQueryPointer (event->display, FRAME_X_WINDOW (frame),
-		       &dummy_window, &dummy_window,
-		       &dummy, &dummy, &dummy, &dummy,
-		       (unsigned int *) &dummy);
-      }
-    }
-  else
-    {
-      /* It's on the same glyph.  Call XQueryPointer so we'll get an
-	 event the next time the mouse moves and we can see if it's
-	 *still* on the same glyph.  */
-      int dummy;
-      Window dummy_window;
-
-      XQueryPointer (event->display, FRAME_X_WINDOW (frame),
-		     &dummy_window, &dummy_window,
-		     &dummy, &dummy, &dummy, &dummy,
-		     (unsigned int *) &dummy);
     }
 }
 
@@ -2252,9 +2235,7 @@ static void x_scroll_bar_report_motion ();
    Don't store anything if we don't have a valid set of values to report.
 
    This clears the mouse_moved flag, so we can wait for the next mouse
-   movement.  This also calls XQueryPointer, which will cause the
-   server to give us another MotionNotify when the mouse moves
-   again. */
+   movement.  */
 
 static void
 XTmouse_position (fp, insist, bar_window, part, x, y, time)
@@ -2995,18 +2976,6 @@ x_scroll_bar_note_movement (bar, event)
 	  x_scroll_bar_set_handle (bar, new_start, new_end, 0);
 	}
     }
-
-  /* Call XQueryPointer so we'll get an event the next time the mouse
-     moves and we can see *still* on the same position.  */
-  {
-    int dummy;
-    Window dummy_window;
-
-    XQueryPointer (event->xmotion.display, event->xmotion.window,
-		   &dummy_window, &dummy_window,
-		   &dummy, &dummy, &dummy, &dummy,
-		   (unsigned int *) &dummy);
-  }
 }
 
 /* Return information to the user about the current position of the mouse
@@ -3095,10 +3064,14 @@ x_scroll_bar_clear (f)
 {
   Lisp_Object bar;
 
-  for (bar = FRAME_SCROLL_BARS (f); VECTORP (bar);
-       bar = XSCROLL_BAR (bar)->next)
-    XClearArea (FRAME_X_DISPLAY (f), SCROLL_BAR_X_WINDOW (XSCROLL_BAR (bar)),
-		0, 0, 0, 0, True);
+  /* We can have scroll bars even if this is 0,
+     if we just turned off scroll bar mode.
+     But in that case we should not clear them.  */
+  if (FRAME_HAS_VERTICAL_SCROLL_BARS (f))
+    for (bar = FRAME_SCROLL_BARS (f); VECTORP (bar);
+	 bar = XSCROLL_BAR (bar)->next)
+      XClearArea (FRAME_X_DISPLAY (f), SCROLL_BAR_X_WINDOW (XSCROLL_BAR (bar)),
+		  0, 0, 0, 0, True);
 }
 
 /* This processes Expose events from the menubar specific X event
@@ -3297,7 +3270,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 #ifdef FIOSNBIO
       /* If available, Xlib uses FIOSNBIO to make the socket
 	 non-blocking, and then looks for EWOULDBLOCK.  If O_NDELAY is set,
-	 FIOSNBIO is ignored, and instead of signalling EWOULDBLOCK,
+	 FIOSNBIO is ignored, and instead of signaling EWOULDBLOCK,
 	 a read returns 0, which Xlib interprets as equivalent to EPIPE. */
       fcntl (dpyinfo->connection, F_SETFL, 0);
 #endif /* ! defined (FIOSNBIO) */
@@ -3461,6 +3434,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		SELECTION_EVENT_DISPLAY (bufp) = eventp->display;
 		SELECTION_EVENT_SELECTION (bufp) = eventp->selection;
 		SELECTION_EVENT_TIME (bufp) = eventp->time;
+		bufp->frame_or_window = Qnil;
 		bufp++;
 
 		count += 1;
@@ -3490,6 +3464,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		  SELECTION_EVENT_TARGET (bufp) = eventp->target;
 		  SELECTION_EVENT_PROPERTY (bufp) = eventp->property;
 		  SELECTION_EVENT_TIME (bufp) = eventp->time;
+		  bufp->frame_or_window = Qnil;
 		  bufp++;
 
 		  count += 1;
@@ -3591,10 +3566,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		  count++;
 		  numchars--;
 		}
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	    case MapNotify:
 	      /* We use x_top_window_to_frame because map events can come
@@ -3617,16 +3589,14 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		      count++;
 		      numchars--;
 		    }
-		  else
+		  else if (! NILP(Vframe_list)
+			   && ! NILP (XCONS (Vframe_list)->cdr))
 		    /* Force a redisplay sooner or later
 		       to update the frame titles
 		       in case this is the second frame.  */
 		    record_asynch_buffer_change ();
 		}
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	      /* Turn off processing if we become fully obscured. */
 	    case VisibilityNotify:
@@ -3790,7 +3760,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		  else
 		    abort ();
 		}
-	      break;
+	      goto OTHER;
 
 	      /* Here's a possible interpretation of the whole
 		 FocusIn-EnterNotify FocusOut-LeaveNotify mess.  If you get a
@@ -3818,10 +3788,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		 so update things that depend on mouse position.  */
 	      if (f)
 		note_mouse_movement (f, &event.xmotion);
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	    case FocusIn:
 	      f = x_any_window_to_frame (dpyinfo, event.xfocus.window);
@@ -3835,11 +3802,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		XSetICFocus (FRAME_XIC (f));
 #endif
 
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
-
 
 	    case LeaveNotify:
 	      f = x_top_window_to_frame (dpyinfo, event.xcrossing.window);
@@ -3860,10 +3823,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 			x_new_focus_frame (dpyinfo, 0);
 		    }
 		}
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	    case FocusOut:
 	      f = x_any_window_to_frame (dpyinfo, event.xfocus.window);
@@ -3878,10 +3838,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		XUnsetICFocus (FRAME_XIC (f));
 #endif
 
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	    case MotionNotify:
 	      {
@@ -3905,10 +3862,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		    clear_mouse_face (dpyinfo);
 		  }
 	      }
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	    case ConfigureNotify:
 	      f = x_any_window_to_frame (dpyinfo, event.xconfigure.window);
@@ -3997,11 +3951,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 /* #endif */
 		  }
 		}
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#else
-	      break;
-#endif
 
 	    case ButtonPress:
 	    case ButtonRelease:
@@ -4103,14 +4053,11 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		case MappingKeyboard:
 		  XRefreshKeyboardMapping (&event.xmapping);
 		}
-#ifdef USE_X_TOOLKIT
 	      goto OTHER;
-#endif /* USE_X_TOOLKIT */
-	      break;
 
 	    default:
-#ifdef USE_X_TOOLKIT
 	    OTHER:
+#ifdef USE_X_TOOLKIT
 	      BLOCK_INPUT;
 	      XtDispatchEvent (&event);
 	      UNBLOCK_INPUT;
@@ -4411,6 +4358,11 @@ x_update_cursor (f, on)
      struct frame *f;
      int on;
 {
+  /* If we don't have any previous cursor position to use,
+     leave the cursor off.  */
+  if (f->phys_cursor_x < 0)
+    return;
+
   BLOCK_INPUT;
 
   if (FRAME_DESIRED_CURSOR (f) == filled_box_cursor)
@@ -4528,13 +4480,9 @@ x_connection_closed (display, error_message)
   struct x_display_info *dpyinfo = x_display_info_for_display (display);
   Lisp_Object frame, tail;
 
-  /* Whatever we were in the middle of, we are going to throw out of it,
-     so reassure various things that have error checks about being
-     called with input blocked.  */
-  TOTALLY_UNBLOCK_INPUT;
+  /* Indicate that this display is dead.  */
 
-  if (_Xdebug)
-    abort ();
+  dpyinfo->display = 0;
 
   /* First delete frames whose minibuffers are on frames
      that are on the dead display.  */
@@ -4563,7 +4511,8 @@ x_connection_closed (display, error_message)
 	Fdelete_frame (frame, Qt);
       }
 
-  x_delete_display (dpyinfo);
+  if (dpyinfo)
+    x_delete_display (dpyinfo);
 
   if (x_display_list == 0)
     {
@@ -4597,7 +4546,7 @@ x_error_quitter (display, error)
      original error handler.  */
 
   XGetErrorText (display, error->error_code, buf, sizeof (buf));
-  sprintf (buf1, "X protocol error: %s on protocol request %d",
+  sprintf (buf1, "X protocol error: %s on protocol request %d\n",
 	   buf, error->request_code);
   x_connection_closed (display, buf1);
 }
@@ -4639,7 +4588,7 @@ x_connection_signal_1 (signalnum)	/* If we don't have an argument, */
      int signalnum;		/* some compilers complain in signal calls. */
 {
   signal (SIGPIPE, x_connection_signal);
-  x_connection_closed (x_connection_signal_dpyinfo,
+  x_connection_closed (x_connection_signal_dpyinfo->display,
 		       "connection was lost");
 }
 
@@ -4649,13 +4598,16 @@ x_connection_signal (signalnum)	/* If we don't have an argument, */
 {
   x_connection_signal_dpyinfo = x_display_list;
 
-  sigunblock (SIGPIPE);
+  sigunblock (sigmask (SIGPIPE));
 
   while (x_connection_signal_dpyinfo)
     {
       signal (SIGPIPE, x_connection_signal_1);
 
+      x_connection_close_if_hung (x_connection_signal_dpyinfo);
+
       XNoOp (x_connection_signal_dpyinfo->display);
+
       XSync (x_connection_signal_dpyinfo->display, False);
 
       /* Each time we get here, cycle through the displays now open.  */
@@ -4827,6 +4779,7 @@ x_new_font (f, fontname)
       char *full_name;
       XFontStruct *font;
       int n_fonts;
+      Atom FONT_atom;
 
       /* Try to find a character-cell font in the list.  */
 #if 0
@@ -4872,11 +4825,10 @@ x_new_font (f, fontname)
 
       /* Try to get the full name of FONT.  Put it in full_name.  */
       full_name = 0;
+      FONT_atom = XInternAtom (FRAME_X_DISPLAY (f), "FONT", False);
       for (i = 0; i < font->n_properties; i++)
 	{
-	  char *atom
-	    = XGetAtomName (FRAME_X_DISPLAY (f), font->properties[i].name);
-	  if (!strcmp (atom, "FONT"))
+	  if (FONT_atom == font->properties[i].name)
 	    {
 	      char *name = XGetAtomName (FRAME_X_DISPLAY (f),
 					 (Atom) (font->properties[i].card32));
@@ -4900,8 +4852,6 @@ x_new_font (f, fontname)
 
 	      break;
 	    }
-
-	  XFree (atom);
 	}
 
       n_fonts = FRAME_X_DISPLAY_INFO (f)->n_fonts;
@@ -4958,6 +4908,9 @@ x_new_font (f, fontname)
   }
 }
 
+/* Calculate the absolute position in frame F
+   from its current recorded position values and gravity.  */
+
 x_calc_absolute_position (f)
      struct frame *f;
 {
@@ -4995,17 +4948,18 @@ x_calc_absolute_position (f)
      position that fits on the screen.  */
   if (flags & XNegative)
     f->output_data.x->left_pos = (FRAME_X_DISPLAY_INFO (f)->width
-			      - 2 * f->output_data.x->border_width - win_x
-			      - PIXEL_WIDTH (f)
-			      + f->output_data.x->left_pos);
+				  - 2 * f->output_data.x->border_width - win_x
+				  - PIXEL_WIDTH (f)
+				  + f->output_data.x->left_pos);
 
   if (flags & YNegative)
+    /* We used to subtract f->output_data.x->menubar_height here
+       in the toolkit case, but PIXEL_HEIGHT already includes that.  */
     f->output_data.x->top_pos = (FRAME_X_DISPLAY_INFO (f)->height
-			     - 2 * f->output_data.x->border_width - win_y
-			     - PIXEL_HEIGHT (f)
-			     - (FRAME_EXTERNAL_MENU_BAR (f)
-				? f->output_data.x->menubar_height : 0)
-			     + f->output_data.x->top_pos);
+				 - 2 * f->output_data.x->border_width - win_y
+				 - PIXEL_HEIGHT (f)
+				 + f->output_data.x->top_pos);
+
   /* The left_pos and top_pos
      are now relative to the top and left screen edges,
      so the flags should correspond.  */
@@ -5073,9 +5027,12 @@ x_set_window_size (f, change_gravity, cols, rows)
 {
   int pixelwidth, pixelheight;
   int mask;
+  Lisp_Object window;
+  struct x_display_info *dpyinfo = FRAME_X_DISPLAY_INFO (f);
+
+  BLOCK_INPUT;
 
 #ifdef USE_X_TOOLKIT
-  BLOCK_INPUT;
   {
     /* The x and y position of the widget is clobbered by the
        call to XtSetValues within EmacsFrameSetCharSize.
@@ -5087,11 +5044,8 @@ x_set_window_size (f, change_gravity, cols, rows)
     f->output_data.x->widget->core.x = xpos;
     f->output_data.x->widget->core.y = ypos;
   }
-  UNBLOCK_INPUT;
 
 #else /* not USE_X_TOOLKIT */
-
-  BLOCK_INPUT;
 
   check_frame_size (f, &rows, &cols);
   f->output_data.x->vertical_scroll_bar_extra
@@ -5124,6 +5078,16 @@ x_set_window_size (f, change_gravity, cols, rows)
   PIXEL_WIDTH (f) = pixelwidth;
   PIXEL_HEIGHT (f) = pixelheight;
 
+  /* We've set {FRAME,PIXEL}_{WIDTH,HEIGHT} to the values we hope to
+     receive in the ConfigureNotify event; if we get what we asked
+     for, then the event won't cause the screen to become garbaged, so
+     we have to make sure to do it here.  */
+  SET_FRAME_GARBAGED (f);
+
+  XFlush (FRAME_X_DISPLAY (f));
+
+#endif /* not USE_X_TOOLKIT */
+
   /* If cursor was outside the new size, mark it as off.  */
   if (f->phys_cursor_y >= rows
       || f->phys_cursor_x >= cols)
@@ -5132,15 +5096,19 @@ x_set_window_size (f, change_gravity, cols, rows)
       f->phys_cursor_y = -1;
     }
 
-  /* We've set {FRAME,PIXEL}_{WIDTH,HEIGHT} to the values we hope to
-     receive in the ConfigureNotify event; if we get what we asked
-     for, then the event won't cause the screen to become garbaged, so
-     we have to make sure to do it here.  */
-  SET_FRAME_GARBAGED (f);
+  /* Clear out any recollection of where the mouse highlighting was,
+     since it might be in a place that's outside the new frame size. 
+     Actually checking whether it is outside is a pain in the neck,
+     so don't try--just let the highlighting be done afresh with new size.  */
+  window = dpyinfo->mouse_face_window;
+  if (! NILP (window) && XFRAME (window) == f)
+    {
+      dpyinfo->mouse_face_beg_row = dpyinfo->mouse_face_beg_col = -1;
+      dpyinfo->mouse_face_end_row = dpyinfo->mouse_face_end_col = -1;
+      dpyinfo->mouse_face_window = Qnil;
+    }
 
-  XFlush (FRAME_X_DISPLAY (f));
   UNBLOCK_INPUT;
-#endif /* not USE_X_TOOLKIT */
 }
 
 /* Mouse warping.  */
@@ -5247,11 +5215,11 @@ x_lower_frame (f)
 }
 
 static void
-XTframe_raise_lower (f, raise)
+XTframe_raise_lower (f, raise_flag)
      FRAME_PTR f;
-     int raise;
+     int raise_flag;
 {
-  if (raise)
+  if (raise_flag)
     x_raise_frame (f);
   else
     x_lower_frame (f);
@@ -5545,16 +5513,33 @@ x_destroy_window (f)
 
   BLOCK_INPUT;
 
-  if (f->output_data.x->icon_desc != 0)
-    XDestroyWindow (FRAME_X_DISPLAY (f), f->output_data.x->icon_desc);
-  XDestroyWindow (FRAME_X_DISPLAY (f), f->output_data.x->window_desc);
+  /* If a display connection is dead, don't try sending more
+     commands to the X server.  */
+  if (dpyinfo->display != 0)
+    {
+      if (f->output_data.x->icon_desc != 0)
+	XDestroyWindow (FRAME_X_DISPLAY (f), f->output_data.x->icon_desc);
+#ifdef HAVE_X_I18N
+      if (FRAME_XIM (f))
+	{
+	  XDestroyIC (FRAME_XIC (f));
+#if ! defined (SOLARIS2) || defined (HAVE_X11R6)
+	  /* This line causes crashes on Solaris with Openwin,
+	     due to an apparent bug in XCloseIM.
+	     X11R6 seems not to have the bug.  */
+	  XCloseIM (FRAME_XIM (f));
+#endif
+	}
+#endif
+      XDestroyWindow (FRAME_X_DISPLAY (f), f->output_data.x->window_desc);
 #ifdef USE_X_TOOLKIT
-  XtDestroyWidget (f->output_data.x->widget);
-  free_frame_menubar (f);
+      XtDestroyWidget (f->output_data.x->widget);
+      free_frame_menubar (f);
 #endif /* USE_X_TOOLKIT */
 
-  free_frame_faces (f);
-  XFlush (FRAME_X_DISPLAY (f));
+      free_frame_faces (f);
+      XFlush (FRAME_X_DISPLAY (f));
+    }
 
   xfree (f->output_data.x);
   f->output_data.x = 0;
@@ -5753,6 +5738,8 @@ x_wm_set_icon_pixmap (f, pixmap_id)
      struct frame *f;
      int pixmap_id;
 {
+  Pixmap icon_pixmap;
+
 #ifdef USE_X_TOOLKIT
   Window window = XtWindow (f->output_data.x->widget);
 #else
@@ -5761,7 +5748,7 @@ x_wm_set_icon_pixmap (f, pixmap_id)
 
   if (pixmap_id > 0)
     {
-      Pixmap icon_pixmap = x_bitmap_pixmap (f, pixmap_id);
+      icon_pixmap = x_bitmap_pixmap (f, pixmap_id);
       f->output_data.x->wm_hints.icon_pixmap = icon_pixmap;
     }
   else
@@ -5780,8 +5767,20 @@ x_wm_set_icon_pixmap (f, pixmap_id)
 #endif
     }
 
+#ifdef USE_X_TOOLKIT /* same as in x_wm_set_window_state.  */
+
+  {
+    Arg al[1];
+    XtSetArg (al[0], XtNiconPixmap, icon_pixmap);
+    XtSetValues (f->output_data.x->widget, al, 1);
+  }
+
+#else /* not USE_X_TOOLKIT */
+  
   f->output_data.x->wm_hints.flags |= IconPixmapHint;
   XSetWMHints (FRAME_X_DISPLAY (f), window, &f->output_data.x->wm_hints);
+
+#endif /* not USE_X_TOOLKIT */
 }
 
 x_wm_set_icon_position (f, icon_x, icon_y)
@@ -5868,7 +5867,10 @@ x_term_init (display_name, xrm_option, resource_name)
     }
 
 #ifdef HAVE_X_I18N
-  setlocale (LC_ALL, NULL);
+  setlocale (LC_ALL, "");
+  /* In case we just overrode what init_lread did, redo it.  */
+  setlocale (LC_NUMERIC, "C");
+  setlocale (LC_TIME, "C");
 #endif
 
 #ifdef USE_X_TOOLKIT
@@ -5898,6 +5900,7 @@ x_term_init (display_name, xrm_option, resource_name)
 			 &argc, argv);
 
 #ifdef HAVE_X11XTR6
+    /* I think this is to compensate for XtSetLanguageProc.  */
     setlocale (LC_NUMERIC, "C");
     setlocale (LC_TIME, "C");
 #endif
@@ -6223,4 +6226,49 @@ syms_of_xterm ()
   staticpro (&Qvendor_specific_keysyms);
   Qvendor_specific_keysyms = intern ("vendor-specific-keysyms");
 }
-#endif /* ! defined (HAVE_X_WINDOWS) */
+
+/* Avoid warnings or errors from including Xlibint.h.
+   We don't need these functions for the rest of this file.  */
+#undef bzero
+#undef bcopy
+#undef bcmp
+#undef min
+#undef max
+
+#ifdef X_CONNECTION_LOCK_FLAG
+#define free loserfree
+#define malloc losermalloc
+#define exit loserexit
+#define abort loserabort
+/* For XlibDisplayWriting */
+#include <X11/Xlibint.h>
+#endif
+
+/* Check whether display connection DPYINFO is hung
+   because its thread-interlock is locked.
+   If it is, close the connection.
+   Do nothing if this system does not have a thread interlock.  */
+
+x_connection_close_if_hung (dpyinfo)
+     struct x_display_info *dpyinfo;
+{      
+  /* This tests (1) whether X_CONNECTION_LOCK_FLAG is defined at all,
+     and (2) whether the name it is defined as is itself defined.
+     (It ought to have been defined by Xlibint.h.  */
+#if X_CONNECTION_LOCK_FLAG
+
+  if (dpyinfo->display->flags & X_CONNECTION_LOCK_FLAG)
+    {
+      /* If the thread-interlock is locked, assume this connection is dead.
+	 This assumes that the library does not make other threads
+	 that can be locking the display legitimately.  */
+
+      dpyinfo->display->flags &= ~X_CONNECTION_LOCK_FLAG;
+      x_connection_closed (dpyinfo->display, "connection was lost");
+    }
+#endif /* X_CONNECTION_LOCK_FLAG */
+}
+
+/* Don't put any additional functions here!  */
+
+#endif /* not HAVE_X_WINDOWS */

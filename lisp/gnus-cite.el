@@ -1,4 +1,5 @@
 ;;; gnus-cite.el --- parse citations in articles for Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Per Abrahamsen <abraham@iesd.auc.dk>
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -452,12 +454,12 @@ See also the documentation for `gnus-article-highlight-citation'."
   ;; loose attribution lines, otherwise the first prefix will be used.
   ;;
   ;; If AFTER is non-nil, only citations after the attribution line
-  ;; will be concidered.
+  ;; will be considered.
   ;;
   ;; If FUN is non-nil, it will be called with the arguments (WROTE
   ;; PREFIX TAG) and expected to return a regular expression.  Only
   ;; citations whose prefix matches the regular expression will be
-  ;; concidered. 
+  ;; considered. 
   ;; 
   ;; WROTE is the attribution line number.
   ;; PREFIX is the attribution line prefix.

@@ -1,4 +1,4 @@
-     GNU Project Electronic Mailing Lists.  Last Updated 15 Aug 95
+     GNU Project Electronic Mailing Lists.  Last Updated 4 Mar 96
 
 	   Please report improvements to: gnu@prep.ai.mit.edu
 
@@ -206,9 +206,9 @@ have been sent to another list.
 
 See section '* General Information about info-* lists'.
 
-* gnu-misc-discuss-request@cis.ohio-state.edu to subscribe to gnu-misc-discuss
+* gnu-misc-discuss-request@prep.ai.mit.edu to subscribe to gnu-misc-discuss
 ** gnUSENET newsgroup: gnu.misc.discuss
-** Send contributions to: gnu-misc-discuss@cis.ohio-state.edu
+** Send contributions to: gnu-misc-discuss@prep.ai.mit.edu
 
 This list is for serious discussion of freed software, the GNU
 Project, the GNU Manifesto and their implications.  It's THE place for
@@ -585,8 +585,8 @@ improvements in lib-g++.  User discussion of libg++ also occurs here.
 Announcements of new releases of libg++ are made on both info-g++ and
 bug-lib-g++.
 
-There are no other GNU mailing lists or gnUSENET newsgroups for the G++
-Library.
+There are no other GNU mailing lists or gnUSENET newsgroups for GNU's
+G++ Library.
 
 See section '* General Information about bug-* lists and reporting
 program bugs'.
@@ -619,6 +619,59 @@ spreadsheet), bug reports and fixes for, and suggestions for
 improvements to Oleo.  User discussion of Oleo also occurs here.
 
 There are no other GNU mailing lists or gnUSENET newsgroups for Oleo .
+
+See section '* General Information about bug-* lists and reporting
+program bugs'.
+
+* bug-gmp-request@prep.ai.mit.edu to subscribe to bug-gmp
+** gnUSENET newsgroup: NONE PLANNED
+** gmp bug reports to: bug-gmp@prep.ai.mit.edu
+
+This list distributes, to the active maintainers of gmp (the GNU
+Multiple Precision Library), bug reports and fixes for, and suggestions
+for improvements to gmp.  User discussion of gmp also occurs here.
+
+There are no other GNU mailing lists or gnUSENET newsgroups for gmp .
+
+See section '* General Information about bug-* lists and reporting
+program bugs'.
+
+* bug-pine-request@prep.ai.mit.edu to subscribe to bug-pine
+** gnUSENET newsgroup: NONE PLANNED
+** pine bug reports to: bug-pine@prep.ai.mit.edu
+
+This list distributes, to the active maintainers of pine (the GNU
+version of the pine mail reader), bug reports and fixes for, and suggestions
+for improvements to pine.  User discussion of pine also occurs here.
+
+There are no other GNU mailing lists or gnUSENET newsgroups for pine .
+
+See section '* General Information about bug-* lists and reporting
+program bugs'.
+
+* bug-cfengine-request@prep.ai.mit.edu to subscribe to bug-cfengine
+** gnUSENET newsgroup: NONE PLANNED
+** cfengine bug reports to: bug-cfengine@prep.ai.mit.edu
+
+This list distributes, to the active maintainers of cfengine (configure
+BSD and System-5-like operating systems attached to a TCP/IP network),
+bug reports and fixes for, and suggestions for improvements to cfengine.
+User discussion of cfengine also occurs here.
+
+There are no other GNU mailing lists or gnUSENET newsgroups for cfengine .
+
+See section '* General Information about bug-* lists and reporting
+program bugs'.
+
+* bug-guile-request@prep.ai.mit.edu to subscribe to bug-guile
+** gnUSENET newsgroup: NONE PLANNED
+** GUILE BUG reports to: bug-guile@prep.ai.mit.edu
+
+This list distributes, to the active maintainers of GUILE (GNU's
+Ubiquitous Extension Language), bug reports and fixes for, and suggestions for
+improvements to GUILE.  User discussion of GUILE also occurs here.
+
+There are no other GNU mailing lists or gnUSENET newsgroups for GUILE .
 
 See section '* General Information about bug-* lists and reporting
 program bugs'.
@@ -765,9 +818,9 @@ network news reader for GNU Emacs (which also works with a news spool).
 English and Japanese are the official languages of the list.  GNUS is
 quite different than gnews.
 
-* info-gnus-english-request@cis.ohio-state.edu  to subscribe
+* info-gnus-english-request@prep.ai.mit.edu  to subscribe
 ** gnUSENET newsgroup: gnu.emacs.gnus
-** Send contributions to: info-gnus-english@cis.ohio-state.edu
+** Send contributions to: info-gnus-english@prep.ai.mit.edu
 
 The list has the same charter as info-gnus.  The difference is that
 English is the only official language of the list.

@@ -469,7 +469,7 @@ ordinary ones if they are in contexts where their special meanings make no
 sense.  For example, @samp{*foo} treats @samp{*} as ordinary since there is
 no preceding expression on which the @samp{*} can act.  It is poor practice
 to depend on this behavior; better to quote the special character anyway,
-regardless of where is appears.@refill
+regardless of where it appears.@refill
 
 For the most part, @samp{\} followed by any character matches only that
 character.  However, there are several exceptions: two-character

@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* NOTE: DGUX5.4R3.00 will not build with the delivered gcc-2.4.5
    compiler.  You must upgraded to at least gcc-2.5.8.  If you are
@@ -27,7 +28,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "dgux5-4r2.h"
 
 /* DGUX 5.4R3.00 brought the definition of `struct inet_addr' into
-   compliance wiht the majority of Unix systems.  The workaround
+   compliance with the majority of Unix systems.  The workaround
    introduced in 5.4R2 is no longer necessary. */
 
 #ifdef HAVE_BROKEN_INET_ADDR

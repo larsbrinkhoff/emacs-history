@@ -1,4 +1,4 @@
-;;; viper.el --- A full-featured Vi emulator.
+;;; viper.el --- A full-featured Vi emulator for GNU Emacs 19 and XEmacs 19,
 ;;		 a VI Plan for Emacs Rescue,
 ;;		 and a venomous VI PERil.
 ;;		 Viper Is also a Package for Emacs Rebels.
@@ -6,10 +6,10 @@
 ;;  Keywords: emulations
 ;;  Author: Michael Kifer <kifer@cs.sunysb.edu>
 
-(defconst viper-version "2.82 of October 12, 1995"
-  "The current version of Viper")
+;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
-;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+(defconst viper-version "2.86 of March 14, 1996"
+  "The current version of Viper")
 
 ;; This file is part of GNU Emacs.
 
@@ -293,12 +293,22 @@
 ;;    much easier.
 ;;
 
+;; Code
 
 (require 'advice)
 (require 'cl)
 (require 'ring)
 
 (require 'viper-util)
+
+;; Compiler pacifier
+(defvar vip-minibuffer-current-face)
+(defvar vip-minibuffer-insert-face)
+(defvar vip-minibuffer-vi-face)
+(defvar vip-minibuffer-emacs-face)
+(defvar iso-accents-mode)
+(defvar zmacs-region-stays)
+;; end pacifier
 
 
 ;;; Variables
@@ -467,10 +477,10 @@ it better fits your working style.")
 (vip-deflocalvar vip-replace-overlay nil "")
 (put 'vip-replace-overlay 'permanent-local t)
 
-(if (vip-window-display-p)
+(if (vip-has-face-support-p)
     (progn
-      (add-to-list 'facemenu-unlisted-faces 'vip-replace-overlay-face)
       (make-face 'vip-replace-overlay-face)
+      (vip-hide-face 'vip-replace-overlay-face)
       (or (face-differs-from-default-p 'vip-replace-overlay-face)
 	  (progn
 	    (if (vip-can-use-colors "darkseagreen2" "Black")
@@ -493,7 +503,7 @@ is non-nil.")
 It is used only with TTYs or if `vip-use-replace-region-delimiters'
 is non-nil.")
 (defvar vip-use-replace-region-delimiters 
-  (or (not (vip-window-display-p)) (not (vip-color-display-p)))
+  (or (not (vip-has-face-support-p)) (not (vip-color-display-p)))
   "*If non-nil, Viper will always use `vip-replace-region-end-delimiter' and
 `vip-replace-region-start-delimiter' to delimit replacement regions, even on
 color displays. By default, the delimiters are used only on TTYs or
@@ -590,8 +600,11 @@ bound to delete-backward-char.")
 ;; Whether to preserve the indent, used by C-d in insert mode.
 (vip-deflocalvar vip-preserve-indent nil)
 
-(defconst vip-auto-indent nil
+(vip-deflocalvar vip-auto-indent nil
   "*Autoindent if t.")
+(vip-deflocalvar vip-electric-mode t
+  "*If t, enable electric behavior. 
+Currently only enables auto-indentation `according to mode'.")
 
 (defconst vip-shift-width 8
   "*The shiftwidth variable.")
@@ -807,7 +820,14 @@ These buffers can be cycled through via :R and :P commands.")
 (defvar vip-always t
   "t means, arrange that vi-state will be a default.")
 
-(defvar vip-custom-file-name "~/.vip"
+(defvar vip-custom-file-name (cond ((memq system-type '(vax-vms axp-vms))
+				    "sys$login:.vip")
+				   ((memq system-type '(emx ms-dos))
+				    "/_vip")
+				   ((memq system-type '(windows-nt windows-95))
+				    "~/_vip")
+				   (t ; Unix
+				    "~/.vip"))
   "Viper customisation file.
 This variable must be set _before_ loading Viper.")
 
@@ -929,7 +949,110 @@ Should be set in `~/.vip' file.")
 (require 'viper-keym)
 
 
-;;;; CODE
+;;; CODE
+
+;; sentinels
+
+;; Runs vip-after-change-functions inside after-change-functions
+(defun vip-after-change-sentinel (beg end len)
+  (let ((list vip-after-change-functions))
+    (while list
+      (funcall (car list) beg end len)
+      (setq list (cdr list)))))
+      
+;; Runs vip-before-change-functions inside before-change-functions
+(defun vip-before-change-sentinel (beg end)
+  (let ((list vip-before-change-functions))
+    (while list
+      (funcall (car list) beg end)
+      (setq list (cdr list)))))
+
+(defsubst vip-post-command-sentinel ()
+  (run-hooks 'vip-post-command-hooks))
+  
+(defsubst vip-pre-command-sentinel ()
+  (run-hooks 'vip-pre-command-hooks))
+  
+;; Needed so that Viper will be able to figure the last inserted
+;; chunk of text with reasonable accuracy.
+(defsubst vip-insert-state-post-command-sentinel ()
+  (if (and (memq vip-current-state '(insert-state replace-state))
+	   vip-insert-point
+	   (>= (point) vip-insert-point))
+      (setq vip-last-posn-while-in-insert-state (point-marker)))
+  (if (and (eq this-command 'dabbrev-expand)
+	   (integerp vip-pre-command-point)
+	   (> vip-insert-point vip-pre-command-point))
+      (move-marker vip-insert-point vip-pre-command-point))
+  )
+  
+(defsubst vip-insert-state-pre-command-sentinel ()
+  (if (and (eq this-command 'dabbrev-expand)
+	   (markerp vip-insert-point)
+	   (marker-position vip-insert-point))
+      (setq vip-pre-command-point (marker-position vip-insert-point))))
+	
+(defsubst vip-R-state-post-command-sentinel ()
+  ;; Restoring cursor color is needed despite
+  ;; vip-replace-state-pre-command-sentinel: When you jump to another buffer in
+  ;; another frame, the pre-command hook won't change cursor color to default
+  ;; in that other frame.  So, if the second frame cursor was red and we set
+  ;; the point outside the replacement region, then the cursor color will
+  ;; remain red. Restoring the default, below, prevents this.
+  (if (and (<= (vip-replace-start) (point))
+	   (<=  (point) (vip-replace-end)))
+      (vip-change-cursor-color vip-replace-overlay-cursor-color)
+    (vip-restore-cursor-color)
+    ))
+
+;; to speed up, don't change cursor color before self-insert
+;; and common move commands
+(defsubst vip-replace-state-pre-command-sentinel ()
+  (or (memq this-command '(self-insert-command))
+      (memq (vip-event-key last-command-event)
+	    '(up down left right (meta f) (meta b)
+		 (control n) (control p) (control f) (control b)))
+      (vip-restore-cursor-color)))
+  
+(defun vip-replace-state-post-command-sentinel ()
+  ;; Restoring cursor color is needed despite
+  ;; vip-replace-state-pre-command-sentinel: When one jumps to another buffer
+  ;; in another frame, the pre-command hook won't change cursor color to
+  ;; default in that other frame.  So, if the second frame cursor was red and
+  ;; we set the point outside the replacement region, then the cursor color
+  ;; will remain red. Restoring the default, below, fixes this problem.
+  ;;
+  ;; We optimize for self-insert-command's here, since they either don't change
+  ;; cursor color or, if they terminate replace mode, the color will be changed
+  ;; in vip-finish-change
+  (or (memq this-command '(self-insert-command))
+      (vip-restore-cursor-color))
+  (cond 
+   ((eq vip-current-state 'replace-state)
+    ;; delete characters to compensate for inserted chars.
+    (let ((replace-boundary (vip-replace-end)))
+      (save-excursion
+	(goto-char vip-last-posn-in-replace-region)
+	(delete-char vip-replace-chars-to-delete)
+	(setq vip-replace-chars-to-delete 0
+	      vip-replace-chars-deleted 0)
+	;; terminate replace mode if reached replace limit
+	(if (= vip-last-posn-in-replace-region 
+	       (vip-replace-end))
+	    (vip-finish-change vip-last-posn-in-replace-region)))
+      
+      (if (and (<= (vip-replace-start) (point))
+	       (<=  (point) replace-boundary))
+	  (progn
+	    ;; the state may have changed in vip-finish-change above
+	    (if (eq vip-current-state 'replace-state)
+		(vip-change-cursor-color vip-replace-overlay-cursor-color))
+	    (setq vip-last-posn-in-replace-region (point-marker))))
+      ))
+   
+   (t ;; terminate replace mode if changed Viper states.
+    (vip-finish-change vip-last-posn-in-replace-region))))
+
 
 ;; changing mode
 
@@ -937,16 +1060,17 @@ Should be set in `~/.vip' file.")
 (defun vip-change-state (new-state)
   ;; Keep vip-post/pre-command-hooks fresh.
   ;; We remove then add vip-post/pre-command-sentinel since it is very
-  ;; desirable that noone gets in-between
+  ;; desirable that vip-pre-command-sentinel is the last hook and
+  ;; vip-post-command-sentinel is the first hook.
   (remove-hook 'post-command-hook 'vip-post-command-sentinel)
   (add-hook 'post-command-hook 'vip-post-command-sentinel)
   (remove-hook 'pre-command-hook 'vip-pre-command-sentinel)
   (add-hook 'pre-command-hook 'vip-pre-command-sentinel t)
   ;; These hooks will be added back if switching to insert/replace mode
   (vip-remove-hook 'vip-post-command-hooks
-	       'vip-insert-state-post-command-sentinel)
+		   'vip-insert-state-post-command-sentinel)
   (vip-remove-hook 'vip-pre-command-hooks
-	       'vip-insert-state-pre-command-sentinel)
+		   'vip-insert-state-pre-command-sentinel)
   (cond ((eq new-state 'vi-state)
 	 (cond ((member vip-current-state '(insert-state replace-state))
 		    
@@ -987,9 +1111,9 @@ Should be set in `~/.vip' file.")
 	     (vip-move-marker-locally 'vip-insert-point (point)))
 	 (vip-move-marker-locally 'vip-last-posn-while-in-insert-state (point))
 	 (vip-add-hook 'vip-post-command-hooks
-		   'vip-insert-state-post-command-sentinel t)
+		       'vip-insert-state-post-command-sentinel t)
 	 (vip-add-hook 'vip-pre-command-hooks
-		   'vip-insert-state-pre-command-sentinel t))
+		       'vip-insert-state-pre-command-sentinel t))
 	) ; outermost cond
   
   ;; Nothing needs to be done to switch to emacs mode! Just set some
@@ -1265,7 +1389,7 @@ This startup message appears whenever you load Viper, unless you type `y' now."
        ))
        
   ;; minibuffer faces
-  (if (vip-window-display-p)
+  (if (vip-has-face-support-p)
       (setq vip-minibuffer-current-face
 	    (cond ((eq state 'emacs-state) vip-minibuffer-emacs-face)
 		  ((eq state 'vi-state) vip-minibuffer-vi-face)
@@ -1463,7 +1587,7 @@ Suffixes such as .el or .elc should be stripped."
   (vip-eval-after-load
    load-file '(setq-default minor-mode-map-alist minor-mode-map-alist))
   )
-  
+
 
 (defun vip-ESC (arg)
   "Emulate ESC key in Emacs.
@@ -1634,6 +1758,34 @@ behaves as in Emacs, any number of multiple escapes is allowed."
 ;; represents the numeric value of the prefix argument and COM represents
 ;; command prefix such as "c", "d", "m" and "y".
 
+;; Get value part of prefix-argument ARG.
+(defsubst vip-p-val (arg)
+  (cond ((null arg) 1)
+	((consp arg)
+	 (if (or (null (car arg)) (equal (car arg) '(nil)))
+	     1 (car arg)))
+	(t arg)))
+
+;; Get raw value part of prefix-argument ARG.
+(defsubst vip-P-val (arg)
+  (cond ((consp arg) (car arg))
+	(t arg)))
+
+;; Get com part of prefix-argument ARG.
+(defsubst vip-getcom (arg)
+  (cond ((null arg) nil)
+	((consp arg) (cdr arg))
+	(t nil)))
+
+;; Get com part of prefix-argument ARG and modify it.
+(defun vip-getCom (arg)
+  (let ((com (vip-getcom arg)))
+    (cond ((equal com ?c) ?C)
+	  ((equal com ?d) ?D)
+	  ((equal com ?y) ?Y)
+	  (t com))))
+
+
 ;; Compute numeric prefix arg value. 
 ;; Invoked by CHAR. COM is the command part obtained so far.
 (defun vip-prefix-arg-value (event com)
@@ -1690,7 +1842,9 @@ behaves as in Emacs, any number of multiple escapes is allowed."
   (if (atom com)
       ;; com is a single char, so we construct prefix-arg 
       ;; and if char is ?, describe prefix arg, otherwise exit by
-      ;; pushing the char back
+      ;; pushing the char back into vip-set-unread-command-events
+      ;; Since char is a command, the command will execute with the prefix
+      ;; argument that we just constructed.
       (progn
 	(setq prefix-arg (cons value com))
 	(while (= char ?U)
@@ -1757,33 +1911,6 @@ behaves as in Emacs, any number of multiple escapes is allowed."
 	  (signal 'quit nil)))
   (vip-deactivate-mark))
 
-;; Get value part of prefix-argument ARG.
-(defsubst vip-p-val (arg)
-  (cond ((null arg) 1)
-	((consp arg)
-	 (if (or (null (car arg)) (equal (car arg) '(nil)))
-	     1 (car arg)))
-	(t arg)))
-
-;; Get raw value part of prefix-argument ARG.
-(defsubst vip-P-val (arg)
-  (cond ((consp arg) (car arg))
-	(t arg)))
-
-;; Get com part of prefix-argument ARG.
-(defsubst vip-getcom (arg)
-  (cond ((null arg) nil)
-	((consp arg) (cdr arg))
-	(t nil)))
-
-;; Get com part of prefix-argument ARG and modify it.
-(defun vip-getCom (arg)
-  (let ((com (vip-getcom arg)))
-    (cond ((equal com ?c) ?C)
-	  ((equal com ?d) ?D)
-	  ((equal com ?y) ?Y)
-	  (t com))))
-
 
 ;; repeat last destructive command
 
@@ -1793,10 +1920,31 @@ behaves as in Emacs, any number of multiple escapes is allowed."
   (set-register reg (concat (if (stringp (get-register reg))
 				(get-register reg) "")
 			    (buffer-substring start end))))
+
+;; Saves last inserted text for possible use by vip-repeat command.
+(defun vip-save-last-insertion (beg end)
+  (setq vip-last-insertion (buffer-substring beg end))
+  (or (< (length vip-d-com) 5)
+      (setcar (nthcdr 4 vip-d-com) vip-last-insertion))
+  (or (null vip-command-ring)
+      (ring-empty-p vip-command-ring)
+      (progn
+	(setcar (nthcdr 4 (vip-current-ring-item vip-command-ring))
+		vip-last-insertion)
+	;; del most recent elt, if identical to the second most-recent
+	(vip-cleanup-ring vip-command-ring)))
+  )
+    
+(defsubst vip-yank-last-insertion ()
+  "Inserts the text saved by the previous vip-save-last-insertion command."
+  (condition-case nil
+      (insert vip-last-insertion)
+    (error nil)))
+  
 			    
 ;; define functions to be executed
 
-;; invoked by C command
+;; invoked by the `C' command
 (defun vip-exec-change (m-com com) 
   ;; handle C cmd at the eol and at eob.
   (if (or (and (eolp) (= vip-com-point (point)))
@@ -2066,10 +2214,11 @@ invokes the command before that, etc."
 	 (vip-d-com vip-d-com))
 
     (or (and (numberp num) (<= 0 num) (<= num 9))
-	(setq idx 0
-	      num 0)
-	(message
-	 "`vip-repeat-from-history' must be invoked as a Vi macro bound to `<key><digit>'"))
+	(progn
+	  (setq idx 0
+		num 0)
+	  (message
+	   "`vip-repeat-from-history' must be invoked as a Vi macro bound to `<key><digit>'")))
     (while (< 0 num)
       (setq vip-d-com (vip-special-ring-rotate1 vip-command-ring -1))
       (setq num (1- num)))
@@ -2278,11 +2427,11 @@ Undo previous insertion and inserts new."
       (end-of-line)
       ;; make sure all lines end with newline, unless in the minibuffer or
       ;; when requested otherwise (require-final-newline is nil)
-      (if (and
-	   (eobp)
-	   (not (bolp))
-	   require-final-newline
-	   (not (vip-is-in-minibuffer)))
+      (if (and (eobp)
+	       (not (bolp))
+	       require-final-newline
+	       (not (vip-is-in-minibuffer))
+	       (not buffer-read-only))
 	  (insert "\n"))))
 
 (defun vip-yank-defun ()
@@ -2368,10 +2517,6 @@ Undo previous insertion and inserts new."
 		  'vip-change-state-to-insert
 		'vip-change-state-to-emacs)))
     (funcall hook)
-
-    ;; Make sure the minibufer overlay is kept up-to-date. In XEmacs also
-    ;; guards against the possibility of detaching this overlay.
-    (vip-add-hook 'vip-post-command-hooks 'vip-move-minibuffer-overlay)
     ))
   
 ;; Interpret last event in the local map
@@ -2385,32 +2530,31 @@ Undo previous insertion and inserts new."
   
 
 (defun vip-set-search-face ()
-  (if (not (vip-window-display-p))
-      ()
-    (defvar vip-search-face
-      (progn
-	(add-to-list 'facemenu-unlisted-faces 'vip-search-face)
-	(make-face 'vip-search-face)
-	(or (face-differs-from-default-p 'vip-search-face)
-	    ;; face wasn't set in .vip or .Xdefaults
-	    (if (vip-can-use-colors "Black" "khaki")
-		(progn
-		  (set-face-background 'vip-search-face "khaki")
-		  (set-face-foreground 'vip-search-face "Black"))
-	      (copy-face 'italic 'vip-search-face)
-	      (set-face-underline-p 'vip-search-face t)))
-	'vip-search-face)
+  (if (vip-has-face-support-p)
+      (defvar vip-search-face
+	(progn
+	  (make-face 'vip-search-face)
+	  (vip-hide-face 'vip-search-face)
+	  (or (face-differs-from-default-p 'vip-search-face)
+	      ;; face wasn't set in .vip or .Xdefaults
+	      (if (vip-can-use-colors "Black" "khaki")
+		  (progn
+		    (set-face-background 'vip-search-face "khaki")
+		    (set-face-foreground 'vip-search-face "Black"))
+		(copy-face 'italic 'vip-search-face)
+		(set-face-underline-p 'vip-search-face t)))
+	  'vip-search-face)
         "*Face used to flash out the search pattern.")
     ))
   
   
 (defun vip-set-minibuffer-faces ()
-  (if (not (vip-window-display-p))
+  (if (not (vip-has-face-support-p))
       ()
     (defvar vip-minibuffer-emacs-face
       (progn
-	(add-to-list 'facemenu-unlisted-faces 'vip-minibuffer-emacs-face)
 	(make-face 'vip-minibuffer-emacs-face)
+	(vip-hide-face 'vip-minibuffer-emacs-face)
 	(or (face-differs-from-default-p 'vip-minibuffer-emacs-face)
 	    ;; face wasn't set in .vip or .Xdefaults
 	    (if vip-vi-style-in-minibuffer
@@ -2421,7 +2565,7 @@ Undo previous insertion and inserts new."
 		       'vip-minibuffer-emacs-face "darkseagreen2")
 		      (set-face-foreground
 		       'vip-minibuffer-emacs-face "Black"))
-		  (copy-face 'highlight 'vip-minibuffer-emacs-face))
+		  (copy-face 'modeline 'vip-minibuffer-emacs-face))
 	      ;; emacs state is the main state in the minibuffer
 	      (if (vip-can-use-colors "Black" "pink")
 		  (progn
@@ -2435,8 +2579,8 @@ Undo previous insertion and inserts new."
     
     (defvar vip-minibuffer-insert-face
       (progn
-	(add-to-list 'facemenu-unlisted-faces 'vip-minibuffer-insert-face)
 	(make-face 'vip-minibuffer-insert-face)
+	(vip-hide-face 'vip-minibuffer-insert-face)
 	(or (face-differs-from-default-p 'vip-minibuffer-insert-face)
 	    (if vip-vi-style-in-minibuffer
 		(if (vip-can-use-colors "Black" "pink")
@@ -2452,15 +2596,15 @@ Undo previous insertion and inserts new."
 		     'vip-minibuffer-insert-face "darkseagreen2")
 		    (set-face-foreground
 		     'vip-minibuffer-insert-face "Black"))
-		(copy-face 'highlight 'vip-minibuffer-insert-face))
+		(copy-face 'modeline 'vip-minibuffer-insert-face))
 	      (vip-italicize-face 'vip-minibuffer-insert-face)))
 	'vip-minibuffer-insert-face)
       "Face used in the Minibuffer when it is in Insert state.")
     
     (defvar vip-minibuffer-vi-face
       (progn
-	(add-to-list 'facemenu-unlisted-faces 'vip-minibuffer-vi-face)
 	(make-face 'vip-minibuffer-vi-face)
+	(vip-hide-face 'vip-minibuffer-vi-face)
 	(or (face-differs-from-default-p 'vip-minibuffer-vi-face)
 	    (if vip-vi-style-in-minibuffer
 		(if (vip-can-use-colors "Black" "grey")
@@ -2483,9 +2627,9 @@ Undo previous insertion and inserts new."
     
 (defun vip-read-string-with-history (prompt &optional initial 
 					    history-var default keymap)
-  ;; Reads string, prompting with PROMPT and inserting the INITIAL
+  ;; Read string, prompting with PROMPT and inserting the INITIAL
   ;; value. Uses HISTORY-VAR. DEFAULT is the default value to accept if the
-  ;; input is an empty string. Uses KEYMAP, if given, or the
+  ;; input is an empty string. Use KEYMAP, if given, or the
   ;; minibuffer-local-map.
   ;; Default value is displayed until the user types something in the
   ;; minibuffer. 
@@ -2523,13 +2667,17 @@ Undo previous insertion and inserts new."
     (if (or (string= (nth 0 (eval history-var)) (nth 1 (eval history-var)))
 	    (string= (nth 0 (eval history-var)) ""))
 	(set history-var (cdr (eval history-var))))
-    ;; if the user enters nothing but the prev cmd wasn't vip-ex or
-    ;; vip-command-argument, this means that the user typed something then
-    ;; erased. Return "" in this case, not the default---default is too
-    ;; confusing in this case
+    ;; If the user enters nothing but the prev cmd wasn't vip-ex,
+    ;; vip-command-argument, or `! shell-command', this probably means 
+    ;; that the user typed something then erased. Return "" in this case, not
+    ;; the default---the default is too confusing in this case.
     (cond ((and (string= val "")
+		(not (string= prompt "!")) ; was a `! shell-command'
 		(not (memq last-command
-			   (list 'vip-ex 'vip-command-argument t))))
+			   '(vip-ex
+			     vip-command-argument
+			     t)
+			   )))
 	   "")
 	  ((string= val "") (or default ""))
 	  (t val))
@@ -2614,11 +2762,22 @@ Undo previous insertion and inserts new."
 		      (end-of-line)
 		      (newline 1)
 		      (if vip-auto-indent 
-			  (progn (setq vip-cted t) (indent-to col)))
+			  (progn
+			    (setq vip-cted t)
+			    (if vip-electric-mode
+				(indent-according-to-mode)
+			      (indent-to col))
+			    ))
 		      (vip-yank-last-insertion)))
 	(end-of-line)
 	(newline 1)
-	(if vip-auto-indent (progn (setq vip-cted t) (indent-to col)))
+	(if vip-auto-indent
+	    (progn
+	      (setq vip-cted t)
+	      (if vip-electric-mode
+		  (indent-according-to-mode)
+		(indent-to col))
+	      ))
 	(vip-change-state-to-insert)
 	))))
 
@@ -2636,11 +2795,22 @@ Undo previous insertion and inserts new."
 		      (beginning-of-line)
 		      (open-line 1)
 		      (if vip-auto-indent 
-			  (progn (setq vip-cted t) (indent-to col)))
+			  (progn
+			    (setq vip-cted t)
+			    (if vip-electric-mode
+				(indent-according-to-mode)
+			      (indent-to col))
+			    ))
 		      (vip-yank-last-insertion)))
 	(beginning-of-line)
 	(open-line 1)
-	(if vip-auto-indent (progn (setq vip-cted t) (indent-to col)))
+	(if vip-auto-indent
+	    (progn
+	      (setq vip-cted t)
+	      (if vip-electric-mode
+		  (indent-according-to-mode)
+		(indent-to col))
+	      ))
 	(vip-change-state-to-insert)))))
 
 (defun vip-open-line-at-point (arg)
@@ -2697,106 +2867,6 @@ Undo previous insertion and inserts new."
    'vip-pre-command-hooks 'vip-replace-state-pre-command-sentinel t)
   )
   
-;; Runs vip-after-change-functions inside after-change-functions
-(defun vip-after-change-sentinel (beg end len)
-  (let ((list vip-after-change-functions))
-    (while list
-      (funcall (car list) beg end len)
-      (setq list (cdr list)))))
-      
-;; Runs vip-before-change-functions inside before-change-functions
-(defun vip-before-change-sentinel (beg end)
-  (let ((list vip-before-change-functions))
-    (while list
-      (funcall (car list) beg end)
-      (setq list (cdr list)))))
-
-(defsubst vip-post-command-sentinel ()
-  (run-hooks 'vip-post-command-hooks))
-  
-(defsubst vip-pre-command-sentinel ()
-  (run-hooks 'vip-pre-command-hooks))
-  
-;; Needed so that Viper will be able to figure the last inserted
-;; chunk of text with reasonable accuracy.
-(defsubst vip-insert-state-post-command-sentinel ()
-  (if (and (memq vip-current-state '(insert-state replace-state))
-	   vip-insert-point
-	   (>= (point) vip-insert-point))
-      (setq vip-last-posn-while-in-insert-state (point-marker)))
-  (if (and (eq this-command 'dabbrev-expand)
-	   (integerp vip-pre-command-point)
-	   (> vip-insert-point vip-pre-command-point))
-      (move-marker vip-insert-point vip-pre-command-point))
-  )
-  
-(defsubst vip-insert-state-pre-command-sentinel ()
-  (if (and (eq this-command 'dabbrev-expand)
-	   (markerp vip-insert-point)
-	   (marker-position vip-insert-point))
-      (setq vip-pre-command-point (marker-position vip-insert-point))))
-	
-(defsubst vip-R-state-post-command-sentinel ()
-  ;; Restoring cursor color is needed despite
-  ;; vip-replace-state-pre-command-sentinel: When you jump to another buffer in
-  ;; another frame, the pre-command hook won't change cursor color to default
-  ;; in that other frame.  So, if the second frame cursor was red and we set
-  ;; the point outside the replacement region, then the cursor color will
-  ;; remain red. Restoring the default, below, prevents this.
-  (if (and (<= (vip-replace-start) (point))
-	   (<=  (point) (vip-replace-end)))
-      (vip-change-cursor-color vip-replace-overlay-cursor-color)
-    (vip-restore-cursor-color)
-    ))
-
-;; to speed up, don't change cursor color before self-insert
-;; and common move commands
-(defsubst vip-replace-state-pre-command-sentinel ()
-  (or (memq this-command '(self-insert-command))
-      (memq (vip-event-key last-command-event)
-	    '(up down left right (meta f) (meta b)
-		 (control n) (control p) (control f) (control b)))
-      (vip-restore-cursor-color)))
-  
-(defun vip-replace-state-post-command-sentinel ()
-  ;; Restoring cursor color is needed despite
-  ;; vip-replace-state-pre-command-sentinel: When one jumps to another buffer
-  ;; in another frame, the pre-command hook won't change cursor color to
-  ;; default in that other frame.  So, if the second frame cursor was red and
-  ;; we set the point outside the replacement region, then the cursor color
-  ;; will remain red. Restoring the default, below, fixes this problem.
-  ;;
-  ;; We optimize for self-insert-command's here, since they either don't change
-  ;; cursor color or, if they terminate replace mode, the color will be changed
-  ;; in vip-finish-change
-  (or (memq this-command '(self-insert-command))
-      (vip-restore-cursor-color))
-  (cond 
-   ((eq vip-current-state 'replace-state)
-    ;; delete characters to compensate for inserted chars.
-    (let ((replace-boundary (vip-replace-end)))
-      (save-excursion
-	(goto-char vip-last-posn-in-replace-region)
-	(delete-char vip-replace-chars-to-delete)
-	(setq vip-replace-chars-to-delete 0
-	      vip-replace-chars-deleted 0)
-	;; terminate replace mode if reached replace limit
-	(if (= vip-last-posn-in-replace-region 
-	       (vip-replace-end))
-	    (vip-finish-change vip-last-posn-in-replace-region)))
-      
-      (if (and (<= (vip-replace-start) (point))
-	       (<=  (point) replace-boundary))
-	  (progn
-	    ;; the state may have changed in vip-finish-change above
-	    (if (eq vip-current-state 'replace-state)
-		(vip-change-cursor-color vip-replace-overlay-cursor-color))
-	    (setq vip-last-posn-in-replace-region (point-marker))))
-      ))
-   
-   (t ;; terminate replace mode if changed Viper states.
-    (vip-finish-change vip-last-posn-in-replace-region))))
-
 
 ;; checks how many chars were deleted by the last change
 (defun vip-replace-mode-spy-before (beg end)
@@ -2832,7 +2902,7 @@ Undo previous insertion and inserts new."
       ;;
       ;; The reason why new-dabbrev.el causes this are this:
       ;; if one dinamically completes a partial word that starts before the
-      ;; replacement region (but ends inside)then new-dabbrev.el first
+      ;; replacement region (but ends inside) then new-dabbrev.el first
       ;; moves cursor backwards, to the beginning of the word to be
       ;; completed (say, pt A). Then it inserts the 
       ;; completed word and then deletes the old, incomplete part.
@@ -2841,9 +2911,7 @@ Undo previous insertion and inserts new."
       ;; unless we check for the current command, which must be
       ;; dabbrev-expand.
       ;;
-      ;; We should be able deal with these problems in a better way
-      ;; when emacs will have overlays with sticky back ends.
-      ;; In fact, it would be also useful to add overlays for insert
+      ;; In fact, it might be also useful to have overlays for insert
       ;; regions as well, since this will let us capture the situation when
       ;; dabbrev-expand goes back past the insertion point to find the
       ;; beginning of the word to be expanded.
@@ -3769,7 +3837,10 @@ controlled by the sign of prefix numeric value."
 	(com (vip-getCom arg)))
     (if com (vip-move-marker-locally 'vip-com-point (point)))
     (forward-paragraph val)
-    (if com (vip-execute-com 'vip-forward-paragraph nil com))))
+    (if com
+	(progn
+	  (backward-char 1)
+	  (vip-execute-com 'vip-forward-paragraph nil com)))))
 
 (defun vip-backward-paragraph (arg)
   "Backward paragraph."
@@ -3779,7 +3850,11 @@ controlled by the sign of prefix numeric value."
 	(com (vip-getCom arg)))
     (if com (vip-move-marker-locally 'vip-com-point (point)))
     (backward-paragraph val)
-    (if com (vip-execute-com 'vip-backward-paragraph nil com))))
+    (if com
+	(progn
+	  (forward-char 1)
+	  (vip-execute-com 'vip-backward-paragraph nil com)
+	  (backward-char 1)))))
 
 ;; should be mode-specific etc.
 
@@ -4300,26 +4375,6 @@ To turn this feature off, set this variable to nil.")
       (copy-region-as-kill beg end)
     (error (copy-region-as-kill beg beg))))
     
-;; Saves last inserted text for possible use by vip-repeat command.
-(defun vip-save-last-insertion (beg end)
-  (setq vip-last-insertion (buffer-substring beg end))
-  (or (< (length vip-d-com) 5)
-      (setcar (nthcdr 4 vip-d-com) vip-last-insertion))
-  (or (null vip-command-ring)
-      (ring-empty-p vip-command-ring)
-      (progn
-	(setcar (nthcdr 4 (vip-current-ring-item vip-command-ring))
-		vip-last-insertion)
-	;; del most recent elt, if identical to the second most-recent
-	(vip-cleanup-ring vip-command-ring)))
-  )
-    
-(defsubst vip-yank-last-insertion ()
-  "Inserts the text saved by the previous vip-save-last-insertion command."
-  (condition-case nil
-      (insert vip-last-insertion)
-    (error nil)))
-  
 
 (defun vip-delete-char (arg)
   "Delete character."
@@ -4649,7 +4704,7 @@ One can use `` and '' to temporarily jump 1 step back."
 	        (text-marker (get-register reg)))
 	   (if com (vip-move-marker-locally 'vip-com-point (point)))
 	   (if (not (vip-valid-marker text-marker))
-	       (error (format vip-EmptyTextmarker char)))
+	       (error vip-EmptyTextmarker char))
 	   (if (and (vip-same-line (point) vip-last-jump)
 		    (= (point) vip-last-jump-ignore))
 	       (push-mark vip-last-jump t) 
@@ -4703,6 +4758,12 @@ One can use `` and '' to temporarily jump 1 step back."
 
 ;; Input Mode Indentation
 
+;; Returns t, if the string before point matches the regexp STR.
+(defsubst vip-looking-back (str)
+  (and (save-excursion (re-search-backward str nil t))
+       (= (point) (match-end 0))))
+
+
 (defun vip-forward-indent ()
   "Indent forward -- `C-t' in Vi."
   (interactive)
@@ -4716,7 +4777,8 @@ One can use `` and '' to temporarily jump 1 step back."
       (let ((p (point)) (c (current-column)) bol (indent t))
 	(if (vip-looking-back "[0^]")
 	    (progn
-	      (if (= ?^ (preceding-char)) (setq vip-preserve-indent t))
+	      (if (eq ?^ (preceding-char))
+		  (setq vip-preserve-indent t))
 	      (delete-backward-char 1)
 	      (setq p (point))
 	      (setq indent nil)))
@@ -4734,9 +4796,9 @@ One can use `` and '' to temporarily jump 1 step back."
   "Auto Indentation, Vi-style."
   (interactive)
   (let ((col (current-indentation)))
-    (if (not vip-preserve-indent)
-	(setq vip-current-indent col)
-      (setq vip-preserve-indent nil))
+    (if vip-preserve-indent
+	(setq vip-preserve-indent nil)
+      (setq vip-current-indent col))
     ;; don't leave whitespace lines around
     (if (memq last-command
 	      '(vip-autoindent
@@ -4747,7 +4809,11 @@ One can use `` and '' to temporarily jump 1 step back."
     (if vip-auto-indent
 	(progn
 	  (setq vip-cted t)
-	  (indent-to vip-current-indent)))))
+	  (if vip-electric-mode
+	      (indent-according-to-mode)
+	    (indent-to vip-current-indent))
+	  ))
+    ))
 
 	   
 ;; Viewing registers
@@ -4783,8 +4849,7 @@ One can use `` and '' to temporarily jump 1 step back."
 	  ((vip-valid-register reg '(letter))
 	   (let* ((val (get-register (1+ (- reg ?a))))
 		  (buf (if (not val) 
-			   (error 
-			    (format vip-EmptyTextmarker reg))
+			   (error vip-EmptyTextmarker reg)
 			 (marker-buffer val)))
 		  (pos (marker-position val))
 		  line-no text (s pos) (e pos))
@@ -4883,7 +4948,7 @@ sensitive for VI-style look-and-feel."
 	 (setq vip-no-multiple-ESC     (if (vip-window-display-p) t 'twice)
 	       vip-want-emacs-keys-in-vi     t
 	       vip-want-emacs-keys-in-insert (> vip-expert-level 2))
-	       
+
 	 (if (eq vip-expert-level 4) ; respect user's ex-style motions
 	     	    	    	     ; and vip-no-multiple-ESC
 	     (progn
@@ -5049,13 +5114,6 @@ Please, specify your level now: ")
   (interactive)
   (beep 1))
   
-
-;; Returns t, if the string before point matches the regexp STR.
-(defsubst vip-looking-back (str)
-  (and (save-excursion (re-search-backward str nil t))
-       (= (point) (match-end 0))))
-
-    
     
 ;; if ENFORCE-BUFFER is not nil, error if CHAR is a marker in another buffer
 (defun vip-register-to-point (char &optional enforce-buffer)
@@ -5107,13 +5165,13 @@ Please, specify your level now: ")
     (setq color-display-p (if (vip-window-display-p) 
 			      (vip-color-display-p)
 			    'non-x)
-	  minibuffer-vi-face (if (vip-window-display-p)
+	  minibuffer-vi-face (if (vip-has-face-support-p)
 				 (vip-get-face vip-minibuffer-vi-face)
 			       'non-x)
-	  minibuffer-insert-face (if (vip-window-display-p)
+	  minibuffer-insert-face (if (vip-has-face-support-p)
 				     (vip-get-face vip-minibuffer-insert-face)
 				   'non-x)
-	  minibuffer-emacs-face (if (vip-window-display-p)
+	  minibuffer-emacs-face (if (vip-has-face-support-p)
 				    (vip-get-face vip-minibuffer-emacs-face)
 				  'non-x)
 	  frame-parameters (if (fboundp 'frame-parameters)
@@ -5319,14 +5377,22 @@ Mail anyway (y or n)? ")
     "Run `vip-change-state-to-vi' on entry."
     (vip-change-state-to-vi))
 
+  (defvar makefile-mode-hook nil)
+  (add-hook 'makefile-mode-hook 'viper-mode)
+
   (defvar help-mode-hook nil)
   (add-hook 'help-mode-hook 'viper-mode)
-  
-  (defvar emacs-lisp-mode-hook nil)
-  (add-hook 'emacs-lisp-mode-hook 'viper-mode)
+
+  (defvar awk-mode-hook nil)
+  (add-hook 'awk-mode-hook 'viper-mode)
   
   (defvar html-mode-hook nil)
   (add-hook 'html-mode-hook 'viper-mode)
+  (defvar html-helper-mode-hook nil)
+  (add-hook 'html-helper-mode-hook 'viper-mode)
+  
+  (defvar emacs-lisp-mode-hook nil)
+  (add-hook 'emacs-lisp-mode-hook 'viper-mode)
 
   (defvar lisp-mode-hook nil)
   (add-hook 'lisp-mode-hook 'viper-mode)
@@ -5351,6 +5417,9 @@ Mail anyway (y or n)? ")
       
   (add-hook 'completion-list-mode-hook 'viper-mode)  
   (add-hook 'compilation-mode-hook     'viper-mode)  
+
+  (add-hook 'perl-mode-hook     'viper-mode)  
+  (add-hook 'tcl-mode-hook     'viper-mode)  
   
   (defvar emerge-startup-hook nil)
   (add-hook 'emerge-startup-hook 'vip-change-state-to-emacs)
@@ -5378,6 +5447,12 @@ Mail anyway (y or n)? ")
    '(defadvice read-passwd-1 (before vip-passwd-ad activate)
       "Switch to emacs state while reading password."
       (vip-change-state-to-emacs)))
+
+  (vip-eval-after-load
+   "prolog"
+   '(defadvice prolog-mode (after vip-prolog-ad activate)
+      "Switch to Vi state in Prolog mode."
+      (vip-change-state-to-vi)))
   
   ;; Emacs shell, ange-ftp, and comint-based modes
   (defvar comint-mode-hook nil)
@@ -5387,6 +5462,8 @@ Mail anyway (y or n)? ")
   ;; Shell scripts
   (defvar sh-mode-hook nil)
   (add-hook 'sh-mode-hook 'viper-mode)
+  (defvar ksh-mode-hook nil)
+  (add-hook 'ksh-mode-hook 'viper-mode)
   
   ;; Dired
   ;; This is only necessary when the user uses vip-modify-major-mode
@@ -5492,6 +5569,7 @@ Mail anyway (y or n)? ")
 (vip-harness-minor-mode "cyrillic")
 (vip-harness-minor-mode "russian")
 (vip-harness-minor-mode "view-less")
+(vip-harness-minor-mode "view")
 
 
 ;; Intercept maps could go in viper-keym.el

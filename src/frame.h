@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* Miscellanea.  */
@@ -48,13 +49,17 @@ struct frame
      Only EMACS_INT values can be intermixed with them.
      That ensures they are all aligned normally.  */
 
-  /* Name of this frame: a Lisp string.  See also `explicit_name'
-     and `namebuf'.  */
+  /* Name of this frame: a Lisp string.  It is used for looking up resources,
+     as well as for the title in some cases.  */
   Lisp_Object name;
 
   /* The name to use for the icon, the last time
      it was refreshed.  nil means not explicitly specified.  */
   Lisp_Object icon_name;
+
+  /* This is the frame title specified explicitly, if any.
+     Usually it is nil.  */
+  Lisp_Object title;
 
   /* The frame which should receive keystrokes that occur in this
      frame, or nil if they should go to the frame itself.  This is
@@ -101,9 +106,11 @@ struct frame
   Lisp_Object scroll_bars;
   Lisp_Object condemned_scroll_bars;
 
-  /* List of elements to display in the menu bar.
-     The elements have the form (KEY STRING . nil) to start;
-     when they are displayed, the hpos of the left edge goes in the cddr.  */
+  /* Vector describing the items to display in the menu bar.
+     Each item has four elements in this vector.
+     They are KEY, STRING, SUBMAP, and HPOS.
+     (HPOS is not used in when the X toolkit is in use.)
+     There are four additional elements of nil at the end, to terminate.  */
   Lisp_Object menu_bar_items;
 
   /* Alist of elements (FACE-NAME . FACE-VECTOR-DATA).  */

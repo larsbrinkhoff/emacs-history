@@ -19,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -84,6 +85,7 @@
 ;;            f89-kam@nada.kth.se (Klas Mellbourn)   for a mh-e tip.
 ;;            kifer@sbkifer.cs.sunysb.edu (M. Kifer) for a bug hunt.
 ;;            treese@lcs.mit.edu (Win Treese)        for ange-ftp tips.
+;;            pot@cnuce.cnr.it (Francesco Potorti`)  for misc. tips.
 ;; ---------------------------------------------------------------------------
 ;; TODO:
 ;;
@@ -144,7 +146,7 @@ The variables are saved only when they really are local.")
 (make-variable-buffer-local 'desktop-locals-to-save)
 
 ;; We skip .log files because they are normally temporary.
-;;         (ftp) files because they require passwords and whatsnot.
+;;         (ftp) files because they require passwords and whatnot.
 ;;         TAGS files to save time (tags-file-name is saved instead).
 (defvar desktop-buffers-not-to-save
  "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\)$"
@@ -155,6 +157,19 @@ The variables are saved only when they really are local.")
   "^/[^/:]*:"
   "Regexp identifying files whose buffers are to be excluded from saving.")
 
+(defvar desktop-buffer-major-mode nil
+  "When desktop creates a buffer, this holds the desired Major mode.")
+
+(defvar desktop-buffer-file-name nil
+  "When desktop creates a buffer, this holds the file name to visit.")
+
+(defvar desktop-buffer-name nil
+  "When desktop creates a buffer, this holds the desired buffer name.")
+
+(defvar desktop-buffer-misc nil
+  "When desktop creates a buffer, this holds a list of misc info.
+It is used by the `desktop-buffer-handlers' functions.")
+
 (defvar desktop-buffer-handlers
   '(desktop-buffer-dired
     desktop-buffer-rmail
@@ -162,11 +177,11 @@ The variables are saved only when they really are local.")
     desktop-buffer-info
     desktop-buffer-file)
   "*List of functions to call in order to create a buffer.
-The functions are called without explicit parameters but may access
-the the major mode as `mam', the file name as `fn', the buffer name as
-`bn', the default directory as `dd'.  If some function returns non-nil
-no further functions are called.  If the function returns t then the
-buffer is considered created.")
+The functions are called without explicit parameters but can use the
+variables `desktop-buffer-major-mode', `desktop-buffer-file-name',
+`desktop-buffer-name'.
+If one function returns non-nil, no further functions are called.
+If the function returns t then the buffer is considered created.")
 
 (defvar desktop-create-buffer-form "(desktop-create-buffer 205"
   "Opening of form for creation of new buffers.")
@@ -215,6 +230,17 @@ the like shorter.")
 	     nil
 	   (signal (car err) (cdr err)))))))
 ;; ----------------------------------------------------------------------------
+(defun desktop-list* (&rest args)
+  (if (null (cdr args))
+      (car args)
+    (setq args (nreverse args))
+    (let ((value (cons (nth 1 args) (car args))))
+      (setq args (cdr (cdr args)))
+      (while args
+	(setq value (cons (car args) value))
+	(setq args (cdr args)))
+      value)))
+
 (defun desktop-internal-v2s (val)
   "Convert VALUE to a pair (QUOTE . TXT); (eval (read TXT)) gives VALUE.
 TXT is a string that when read and evaluated yields value.
@@ -252,6 +278,7 @@ QUOTE may be `may' (value may be quoted),
    ((consp val)
     (let ((p val)
 	  newlist
+	  use-list*
 	  anynil)
       (while (consp p)
 	(let ((q.txt (desktop-internal-v2s (car p))))
@@ -261,22 +288,15 @@ QUOTE may be `may' (value may be quoted),
       (if p
 	  (let ((last (desktop-internal-v2s p))
 		(el (car newlist)))
-	    (setcar newlist
-		    (if (or anynil (setq anynil (null (car last))))
-			(cons nil
-			      (concat "(cons "
-				      (if (eq (car el) 'must) "'" "")
-				      (cdr el)
-				      " "
-				      (if (eq (car last) 'must) "'" "")
-				      (cdr last)
-				      ")"))
-		      (cons 'must
-			    (concat (cdr el) " . " (cdr last)))))))
+	    (or anynil (setq anynil (null (car last))))
+	    (or anynil
+		(setq newlist (cons '(must . ".") newlist)))
+	    (setq use-list* t)
+	    (setq newlist (cons last newlist))))
       (setq newlist (nreverse newlist))
       (if anynil
 	  (cons nil
-		(concat "(list "
+		(concat (if use-list* "(desktop-list* "  "(list ")
 			(mapconcat (lambda (el)
 				     (if (eq (car el) 'must)
 					 (concat "'" (cdr el))
@@ -437,20 +457,26 @@ MODE is the major mode."
 	    (delete-file filename)))))
 ;; ----------------------------------------------------------------------------
 (defun desktop-read ()
-  "Read the Desktop file and the files it specifies."
+  "Read the Desktop file and the files it specifies.
+This is a no-op when Emacs is running in batch mode."
   (interactive)
-  (let ((filename))
-    (if (file-exists-p (concat "./" desktop-basefilename))
-	(setq desktop-dirname (expand-file-name "./"))
-      (if (file-exists-p (concat "~/" desktop-basefilename))
-	  (setq desktop-dirname (expand-file-name "~/"))
-	(setq desktop-dirname nil)))
-    (if desktop-dirname
-	(progn
-	  (load (concat desktop-dirname desktop-basefilename) t t t)
-	  (run-hooks 'desktop-delay-hook)
-	  (message "Desktop loaded."))
-      (desktop-clear))))
+  (if noninteractive
+      nil
+    (let ((dirs '("./" "~/")))
+      (while (and dirs
+		  (not (file-exists-p (expand-file-name
+				       desktop-basefilename
+				       (car dirs)))))
+	(setq dirs (cdr dirs)))
+      (setq desktop-dirname (and dirs (expand-file-name (car dirs))))
+      (if desktop-dirname
+	  (progn
+	    (load (expand-file-name desktop-basefilename desktop-dirname)
+		  t t t)
+	    (run-hooks 'desktop-delay-hook)
+	    (setq desktop-delay-hook nil)
+	    (message "Desktop loaded."))
+	(desktop-clear)))))
 ;; ----------------------------------------------------------------------------
 (defun desktop-load-default ()
   "Load the `default' start-up library manually.
@@ -464,52 +490,54 @@ to provide correct modes for autoloaded files."
 ;; Note: the following functions use the dynamic variable binding in Lisp.
 ;;
 (defun desktop-buffer-info () "Load an info file."
-  (if (eq 'Info-mode mam)
+  (if (eq 'Info-mode desktop-buffer-major-mode)
       (progn
 	(require 'info)
-	(Info-find-node (nth 0 misc) (nth 1 misc))
+	(Info-find-node (nth 0 desktop-buffer-misc) (nth 1 desktop-buffer-misc))
 	t)))
 ;; ----------------------------------------------------------------------------
 (defun desktop-buffer-rmail () "Load an RMAIL file."
-  (if (eq 'rmail-mode mam)
+  (if (eq 'rmail-mode desktop-buffer-major-mode)
       (condition-case error
-	  (progn (rmail-input fn) t)
+	  (progn (rmail-input desktop-buffer-file-name) t)
 	(file-locked
 	 (kill-buffer (current-buffer))
 	 'ignored))))
 ;; ----------------------------------------------------------------------------
 (defun desktop-buffer-mh () "Load a folder in the mh system."
-  (if (eq 'mh-folder-mode mam)
+  (if (eq 'mh-folder-mode desktop-buffer-major-mode)
       (progn
 	(require 'mh-e)
 	(mh-find-path)
-	(mh-visit-folder bn)
+	(mh-visit-folder desktop-buffer-name)
 	t)))
 ;; ----------------------------------------------------------------------------
 (defun desktop-buffer-dired () "Load a directory using dired."
-  (if (eq 'dired-mode mam)
-      (if (file-directory-p (file-name-directory (car misc)))
+  (if (eq 'dired-mode desktop-buffer-major-mode)
+      (if (file-directory-p (file-name-directory (car desktop-buffer-misc)))
 	  (progn
-	    (dired (car misc))
-	    (mapcar 'dired-insert-subdir (cdr misc))
+	    (dired (car desktop-buffer-misc))
+	    (mapcar 'dired-insert-subdir (cdr desktop-buffer-misc))
 	    t)
-	(message "Directory %s no longer exists." (car misc))
+	(message "Directory %s no longer exists." (car desktop-buffer-misc))
 	(sit-for 1)
 	'ignored)))
 ;; ----------------------------------------------------------------------------
 (defun desktop-buffer-file () "Load a file."
-  (if fn
-      (if (or (file-exists-p fn)
+  (if desktop-buffer-file-name
+      (if (or (file-exists-p desktop-buffer-file-name)
 	      (and desktop-missing-file-warning
 		   (y-or-n-p (format
 			      "File \"%s\" no longer exists. Re-create? "
-			      fn))))
-	  (progn (find-file fn) t)
+			      desktop-buffer-file-name))))
+	  (progn (find-file desktop-buffer-file-name) t)
 	'ignored)))
 ;; ----------------------------------------------------------------------------
 ;; Create a buffer, load its file, set is mode, ...;  called from Desktop file
 ;; only.
-(defun desktop-create-buffer (ver fn bn mam mim pt mk ro misc &optional locals)
+(defun desktop-create-buffer (ver desktop-buffer-file-name desktop-buffer-name
+				  desktop-buffer-major-mode
+				  mim pt mk ro desktop-buffer-misc &optional locals)
   (let ((hlist desktop-buffer-handlers)
 	(result)
 	(handler))
@@ -519,8 +547,8 @@ to provide correct modes for autoloaded files."
       (setq hlist (cdr hlist)))
     (if (eq result t)
 	(progn
-	  (if (not (equal (buffer-name) bn))
-	      (rename-buffer bn))
+	  (if (not (equal (buffer-name) desktop-buffer-name))
+	      (rename-buffer desktop-buffer-name))
 	  (auto-fill-mode (if (nth 0 mim) 1 0))
 	  (goto-char pt)
 	  (if (consp mk)
@@ -544,8 +572,12 @@ to provide correct modes for autoloaded files."
 	  ))))
 
 ;; Backward compatibility -- update parameters to 205 standards.
-(defun desktop-buffer (fn bn mam mim pt mk ro tl fc cfs cr misc)
-  (desktop-create-buffer 205 fn bn mam (cdr mim) pt mk ro misc
+(defun desktop-buffer (desktop-buffer-file-name desktop-buffer-name
+		       desktop-buffer-major-mode
+		       mim pt mk ro tl fc cfs cr desktop-buffer-misc)
+  (desktop-create-buffer 205 desktop-buffer-file-name desktop-buffer-name
+			 desktop-buffer-major-mode (cdr mim) pt mk ro
+			 desktop-buffer-misc
 			 (list (cons 'truncate-lines tl)
 			       (cons 'fill-column fc)
 			       (cons 'case-fold-search cfs)

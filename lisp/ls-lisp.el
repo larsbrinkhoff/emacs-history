@@ -1,23 +1,28 @@
 ;;; ls-lisp.el --- emulate insert-directory completely in Emacs Lisp
 
+;; Copyright (C) 1992, 1994 by Sebastian Kremer <sk@thp.uni-koeln.de>
+
 ;; Author: Sebastian Kremer <sk@thp.uni-koeln.de>
 ;; Keywords: unix
 
-;; Copyright (C) 1992, 1994 by Sebastian Kremer <sk@thp.uni-koeln.de>
+;; This file is part of GNU Emacs.
 
-;; This program is free software; you can redistribute it and/or modify
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
+
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;;
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
 
 ;; INSTALLATION =======================================================
 ;; 
@@ -50,27 +55,48 @@
 
 ;;; Code:
 
+;;;###autoload
+(defvar ls-lisp-support-shell-wildcards t
+  "*Non-nil means file patterns are treated as shell wildcards.
+nil means they are treated as Emacs regexps (for backward compatibility).
+This variable is checked by \\[insert-directory] only when `ls-lisp.el'
+package is used.")
+
 (defun insert-directory (file &optional switches wildcard full-directory-p)
-  "Insert directory listing for of FILE, formatted according to SWITCHES.
+  "Insert directory listing for FILE, formatted according to SWITCHES.
 Leaves point after the inserted text.
 Optional third arg WILDCARD means treat FILE as shell wildcard.
 Optional fourth arg FULL-DIRECTORY-P means file is a directory and
 switches do not contain `d', so that a full listing is expected.
 
-This version of the function comes from `ls-lisp.el'.
-It does not support ordinary shell wildcards; instead, it allows
-regular expressions to match file names.
+This version of the function comes from `ls-lisp.el'.  It doesn not
+run any external programs or shells.  It supports ordinary shell
+wildcards if `ls-lisp-support-shell-wildcards' variable is non-nil;
+otherwise, it interprets wildcards as regular expressions to match
+file names.
 
-The switches that work are: A a c i r S s t u"
+Not all `ls' switches are supported.  The switches that work
+are: A a c i r S s t u"
   (let ((handler (find-file-name-handler file 'insert-directory)))
     (if handler
 	(funcall handler 'insert-directory file switches
 		 wildcard full-directory-p)
+      ;; Sometimes we get ".../foo*/" as FILE.  While the shell and
+      ;; `ls' don't mind, we certainly do, because it makes us think
+      ;; there is no wildcard, only a directory name.
+      (if (and ls-lisp-support-shell-wildcards
+	       (string-match "[[?*]" file))
+	  (progn
+	    (or (not (eq (aref file (1- (length file))) ?/))
+		(setq file (substring file 0 (1- (length file)))))
+	    (setq wildcard t)))
       ;; Convert SWITCHES to a list of characters.
       (setq switches (append switches nil))
       (if wildcard
-	  (setq wildcard (file-name-nondirectory file) ; actually emacs regexp
-		;; perhaps convert it from shell to emacs syntax?
+	  (setq wildcard
+		(if ls-lisp-support-shell-wildcards
+		    (wildcard-to-regexp (file-name-nondirectory file))
+		  (file-name-nondirectory file))
 		file (file-name-directory file)))
       (if (or wildcard
 	      full-directory-p)
@@ -100,7 +126,12 @@ The switches that work are: A a c i r S s t u"
 		   ;; seems to stimulate an Emacs bug
 		   ;; ILLEGAL DATATYPE (#o37777777727) or #o67
 		   file-list))
-	    (insert "total \007\n")	; filled in afterwards
+	    ;; ``Total'' line (filled in afterwards).
+	    (insert (if (car-safe file-alist)
+			"total \007\n"
+		      ;; Shell says ``No match'' if no files match
+		      ;; the wildcard; let's say something similar.
+		      "(No match)\ntotal \007\n"))
 	    (setq file-alist
 		  (ls-lisp-handle-switches file-alist switches))
 	    (while file-alist
@@ -116,7 +147,7 @@ The switches that work are: A a c i r S s t u"
 	      (search-backward "total \007")
 	      (goto-char (match-end 0))
 	      (delete-char -1)
-	      (insert (format "%d" (1+ (/ sum 1024))))))
+	      (insert (format "%d" (if (zerop sum) 0 (1+ (/ sum 1024)))))))
 	;; if not full-directory-p, FILE *must not* end in /, as
 	;; file-attributes will not recognize a symlink to a directory
 	;; must make it a relative filename as ls does:
@@ -185,7 +216,7 @@ The switches that work are: A a c i r S s t u"
 	    ;; Emacs should be able to make strings of them.
 	    ;; user-login-name and user-full-name could take an
 	    ;; optional arg.
-	    (format " %3d %8s %8s %8d "
+	    (format " %3d %-8s %-8s %8d "
 		    (nth 1 file-attr)	; no. of links
 		    (if (= (user-uid) (nth 2 file-attr))
 			(user-login-name)

@@ -56,7 +56,7 @@
 
 ;;; LEDIT-OUTPUT
 ;;; Egad, what a mess!  Doesn't work for XEMACS yet.
-;;; Here's an example from Moclisp:
+;;; Here's an example from Mocklisp:
 ;;; -> (defun bar (nothing) (bar nothing))
 ;;; bar
 ;;; -> (ledit bar)

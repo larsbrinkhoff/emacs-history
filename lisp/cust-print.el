@@ -9,7 +9,7 @@
 ;; LCD Archive Entry:
 ;; cust-print|Daniel LaLiberte|liberte@cs.uiuc.edu
 ;; |Handle print-level, print-circle and more.
-;; |$Date: 1995/03/16 04:36:01 $|$Revision: 2.1.1.2 $|
+;; |$Date: 1996/01/14 07:34:30 $|$Revision: 2.1.1.4 $|
 
 ;; This file is part of GNU Emacs.
 
@@ -24,66 +24,73 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
-;;; ===============================
-;;; $Header: /home/fsf/rms/e19/lisp/RCS/cust-print.el,v 2.1.1.2 1995/03/16 04:36:01 rms Exp $
-;;; $Log: cust-print.el,v $
-;;; Revision 2.1.1.2  1995/03/16  04:36:01  rms
-;;; Comment change.
-;;;
-;;; Revision 2.1.1.1  1994/04/09  22:24:43  liberte
-;;; Branch for FSF mods.
-;;;
-;;; Revision 2.1  1994/04/09  22:19:10  liberte
-;;; Jumping up to new revision.
-;;; Simplify definition of defalias for Emacs 18.
-;;;
-;;; Revision 2.1  1994/04/09  22:19:10  liberte
-;;; Jumping up to new revision.
-;;; Simplify definition of defalias for Emacs 18.
-;;;
-;;; Revision 1.14  1994/04/05  21:05:09  liberte
-;;; Change install- and uninstall- to -install and -uninstall.
-;;;
-;;; Revision 1.13  1994/03/24  20:26:05  liberte
-;;; Change "internal" to "original" throughout.
-;;;         (add-custom-printer, delete-custom-printer) replace customizers.
-;;;         (with-custom-print) new
-;;;         (custom-prin1-to-string) Made it more robust.
-;;;
-;;; Revision 1.4  1994/03/23  20:34:29  liberte
-;;; * Change "emacs" to "original" - I just can't decide. 
-;;;
-;;; Revision 1.3  1994/02/21  21:25:36  liberte
-;;; * Make custom-prin1-to-string more robust when errors occur.
-;;; * Change "internal" to "emacs".
-;;;
-;;; Revision 1.2  1993/11/22  22:36:36  liberte
-;;; * Simplified and generalized printer customization.
-;;;     custom-printers is an alist of (PREDICATE . PRINTER) pairs
-;;;     for any data types.  The PRINTER function should print to
-;;;     `standard-output'  add-custom-printer and delete-custom-printer
-;;;     change custom-printers.
-;;;
-;;; * Installation function now called install-custom-print.  The
-;;;     old name is still around for now.
-;;;
-;;; * New macro with-custom-print (added earlier) - executes like
-;;;     progn but with custom-print activated temporarily.
-;;;
-;;; * Cleaned up comments for replacements of standardard printers.
-;;;
-;;; * Changed custom-prin1-to-string to use a temporary buffer.
-;;;
-;;; * Option custom-print-vectors (added earlier) - controls whether
-;;;     vectors should be printed according to print-length and
-;;;     print-length.  Emacs doesnt do this, but cust-print would
-;;;     otherwise do it only if custom printing is required.
-;;;
-;;; * Uninterned symbols are treated as non-read-equivalent.
-;;;
+;; ===============================
+;; $Header: /home/gd/gnu/emacs/19.0/lisp/RCS/cust-print.el,v 2.1.1.4 1996/01/14 07:34:30 erik Exp $
+;; $Log: cust-print.el,v $
+;; Revision 2.1.1.4  1996/01/14 07:34:30  erik
+;; Update FSF's address.
+;;
+;; Revision 2.1.1.3  1996/01/05 00:08:36  kwzh
+;; Comment fixes.
+;;
+;; Revision 2.1.1.2  1995/03/16 04:36:01  rms
+;; Comment change.
+;;
+;; Revision 2.1.1.1  1994/04/09  22:24:43  liberte
+;; Branch for FSF mods.
+;;
+;; Revision 2.1  1994/04/09  22:19:10  liberte
+;; Jumping up to new revision.
+;; Simplify definition of defalias for Emacs 18.
+;;
+;; Revision 2.1  1994/04/09  22:19:10  liberte
+;; Jumping up to new revision.
+;; Simplify definition of defalias for Emacs 18.
+;;
+;; Revision 1.14  1994/04/05  21:05:09  liberte
+;; Change install- and uninstall- to -install and -uninstall.
+;;
+;; Revision 1.13  1994/03/24  20:26:05  liberte
+;; Change "internal" to "original" throughout.
+;;         (add-custom-printer, delete-custom-printer) replace customizers.
+;;         (with-custom-print) new
+;;         (custom-prin1-to-string) Made it more robust.
+;;
+;; Revision 1.4  1994/03/23  20:34:29  liberte
+;; * Change "emacs" to "original" - I just can't decide. 
+;;
+;; Revision 1.3  1994/02/21  21:25:36  liberte
+;; * Make custom-prin1-to-string more robust when errors occur.
+;; * Change "internal" to "emacs".
+;;
+;; Revision 1.2  1993/11/22  22:36:36  liberte
+;; * Simplified and generalized printer customization.
+;;     custom-printers is an alist of (PREDICATE . PRINTER) pairs
+;;     for any data types.  The PRINTER function should print to
+;;     `standard-output'  add-custom-printer and delete-custom-printer
+;;     change custom-printers.
+;;
+;; * Installation function now called install-custom-print.  The
+;;     old name is still around for now.
+;;
+;; * New macro with-custom-print (added earlier) - executes like
+;;     progn but with custom-print activated temporarily.
+;;
+;; * Cleaned up comments for replacements of standard printers.
+;;
+;; * Changed custom-prin1-to-string to use a temporary buffer.
+;;
+;; * Option custom-print-vectors (added earlier) - controls whether
+;;     vectors should be printed according to print-length and
+;;     print-length.  Emacs doesn't do this, but cust-print would
+;;     otherwise do it only if custom printing is required.
+;;
+;; * Uninterned symbols are treated as non-read-equivalent.
+;;
 
 
 ;;; Commentary:
@@ -141,7 +148,6 @@
 
 
 ;;; Code:
-;;=========================================================
 
 ;; If using cl-packages:
 
@@ -173,7 +179,7 @@
 
 (require 'backquote)
 
-;; Emacs 18 doesnt have defalias.
+;; Emacs 18 doesn't have defalias.
 ;; Provide def for byte compiler.
 (eval-and-compile
   (or (fboundp 'defalias) (fset 'defalias 'fset)))
@@ -266,7 +272,7 @@ Any pair that has the same PREDICATE is first removed."
 (defun cust-print-update-custom-printers ()
   ;; Modify the definition of cust-print-use-custom-printer
   (defalias 'cust-print-use-custom-printer
-    ;; We dont really want to require the byte-compiler.
+    ;; We don't really want to require the byte-compiler.
     ;; (byte-compile
      (` (lambda (object)
 	  (cond
@@ -385,7 +391,7 @@ that `read' can handle, whenever this is possible.
 This is the custom-print replacement for the standard `prin1-to-string'."
   (let ((buf (get-buffer-create " *custom-print-temp*")))
     ;; We must erase the buffer before printing in case an error 
-    ;; occured during the last prin1-to-string and we are in debugger.
+    ;; occurred during the last prin1-to-string and we are in debugger.
     (save-excursion
       (set-buffer buf)
       (erase-buffer))

@@ -276,7 +276,7 @@ necessary to spread GNU.  Why is it that free market advocates don't
 want to let the free market decide this?@footnote{The Free Software
 Foundation raises most of its funds from a distribution service,
 although it is a charity rather than a company.  If @emph{no one}
-chooses to obtain copies by ordering the from the FSF, it will be unable
+chooses to obtain copies by ordering from the FSF, it will be unable
 to do its work.  But this does not mean that proprietary restrictions
 are justified to force every user to pay.  If a small fraction of all
 the users order copies from the FSF, that is sufficient to keep the FSF

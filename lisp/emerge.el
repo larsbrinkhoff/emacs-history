@@ -2,7 +2,7 @@
 
 ;;; The author has placed this file in the public domain.
 
-;; Author: Dale R. Worley <drw@math.mit.edu>
+;; Author: Dale R. Worley <worley@world.std.com>
 ;; Version: 5fsf
 ;; Keywords: unix, tools
 
@@ -28,25 +28,25 @@
 
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-merge-directories]
-  '("Merge Directories ..." . emerge-merge-directories))
+  '("Merge Directories..." . emerge-merge-directories))
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-revisions-with-ancestor]
-  '("Revisions with Ancestor ..." . emerge-revisions-with-ancestor))
+  '("Revisions with Ancestor..." . emerge-revisions-with-ancestor))
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-revisions]
-  '("Revisions ..." . emerge-revisions))
+  '("Revisions..." . emerge-revisions))
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-files-with-ancestor]
-  '("Files with Ancestor ..." . emerge-files-with-ancestor))
+  '("Files with Ancestor..." . emerge-files-with-ancestor))
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-files]
-  '("Files ..." . emerge-files))
+  '("Files..." . emerge-files))
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-buffers-with-ancestor]
-  '("Buffers with Ancestor ..." . emerge-buffers-with-ancestor))
+  '("Buffers with Ancestor..." . emerge-buffers-with-ancestor))
 ;;;###autoload
 (define-key menu-bar-emerge-menu [emerge-buffers]
-  '("Buffers ..." . emerge-buffers))
+  '("Buffers..." . emerge-buffers))
 
 ;;; Macros
 
@@ -268,7 +268,7 @@ Do not start with `~/' or `~user-name/'.")
   "*Mode for Emerge temporary files.")
 
 (defvar emerge-combine-versions-template
-  "#ifdef NEW\n%b#else /* NEW */\n%a#endif /* NEW */\n"
+  "#ifdef NEW\n%b#else /* not NEW */\n%a#endif /* not NEW */\n"
   "*Template for `emerge-combine-versions' to combine the two versions.
 The template is inserted as a string, with the following interpolations:
 	%a	the A version of the difference
@@ -1741,7 +1741,7 @@ to the left margin, if they are in windows."
 ;; If there are min-lines lines above and below the region, then don't do
 ;; anything.
 ;; If not, recenter the region to make it so.
-;; If that isn't possible, remove context lines balancedly from top and botton
+;; If that isn't possible, remove context lines balancedly from top and bottom
 ;; so the entire region shows.
 ;; If that isn't possible, show the top of the region.
 ;; BEG must be at the beginning of a line.
@@ -2847,7 +2847,7 @@ keymap.  Leaves merge in fast mode."
 ;; a list of variables.  The argument is a list of symbols (the names of
 ;; the variables).  A list element can also be a list of two functions,
 ;; the first of which (when called with no arguments) gets the value, and
-;; the second (when called with a value as an argment) sets the value.
+;; the second (when called with a value as an argument) sets the value.
 ;; A "function" is anything that funcall can handle as an argument.
 
 (defun emerge-save-variables (vars)

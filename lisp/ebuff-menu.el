@@ -17,8 +17,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -238,7 +239,8 @@ Does not execute select, save, or delete commands."
 (defun Electric-buffer-menu-undefined ()
   (interactive)
   (ding)
-  (message (if (and (eq (key-binding "\C-c\C-c") 'Electric-buffer-menu-quit)
+  (message "%s"
+	   (if (and (eq (key-binding "\C-c\C-c") 'Electric-buffer-menu-quit)
 		    (eq (key-binding " ") 'Electric-buffer-menu-select)
 		    (eq (key-binding (char-to-string help-char)) 'Helper-help)
 		    (eq (key-binding "?") 'Helper-describe-bindings))

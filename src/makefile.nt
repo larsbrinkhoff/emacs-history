@@ -25,11 +25,7 @@
 #
 !include ..\nt\makefile.def
 
-!IFDEF NTGUI
-SUBSYSTEM=windows
-!ELSE
 SUBSYSTEM=console
-!ENDIF
 
 #
 # HAVE_CONFIG_H is required by some generic gnu sources stuck into
@@ -54,7 +50,9 @@ TRES		= $(BLD)\emacs.rbj
 !endif
 TLASTLIB	= $(BLD)\lastfile.lib
 
-LINK_FLAGS      = $(ARCH_LDFLAGS) -stack:0x1000000 -base:0xD00000 -debug:full -debugtype:cv -machine:$(ARCH) -subsystem:$(SUBSYSTEM) -entry:_start -map:$(BLD)\temacs.map
+# see comments in allocate_heap in ntheap.c before changing any of the
+# -stack, -heap, or -base settings.
+LINK_FLAGS      = $(ARCH_LDFLAGS) -stack:0x00800000 -heap:0x00100000 -base:0x01000000 -debug:full -debugtype:cv -machine:$(ARCH) -subsystem:$(SUBSYSTEM) -entry:_start -map:$(BLD)\temacs.map
 
 #
 # Split up the objects into two sets so that we don't run out of
@@ -139,9 +137,11 @@ LIBS =  $(TLIB1)	\
 	gdi32.lib       \
 	comdlg32.lib    \
 !ENDIF
+#	libcmt.lib      \
 	$(BASE_LIBS)	\
 	$(ADVAPI32)	\
-	user32.lib
+	user32.lib	\
+	mpr.lib
 
 #
 # Build the executable and dump it.
@@ -162,7 +162,7 @@ paths.h:	..\nt\paths.h
 #
 DOC		= obj\etc\DOC-X
 $(DOC):;	cd ..\lib-src 
-		- del DOC-X
+		- $(DEL) DOC-X
 		$(MAKE) -f makefile.nt all
 		cd ..\src
 
@@ -229,7 +229,7 @@ install:        all
 #
 # Maintenance
 # 
-clean:;         - del *~ *.pdb config.h paths.h
+clean:;         - $(DEL) *~ *.pdb config.h paths.h
 		- $(DEL_TREE) deleted
 		- $(DEL_TREE) obj
 
@@ -238,7 +238,7 @@ clean:;         - del *~ *.pdb config.h paths.h
 # this target is mostly used for debugging.
 #
 cleandump:;     cd $(BLD)
-		- del callproc.obj data.obj dispnew.obj doc.obj editfns.obj emacs.obj lread.obj process.obj sysdep.obj term.obj ntheap.obj unexnt.obj
+		- $(DEL) callproc.obj data.obj dispnew.obj doc.obj editfns.obj emacs.obj lread.obj process.obj sysdep.obj term.obj ntheap.obj unexnt.obj
 		cd ..\..
 
 
@@ -409,6 +409,7 @@ $(BLD)\dispnew.obj : \
 	$(EMACS_ROOT)\nt\inc\sys\ioctl.h \
 	$(EMACS_ROOT)\nt\inc\sys\file.h \
 	$(SRC)\systty.h \
+	$(SRC)\w32term.h \
 	$(SRC)\xterm.h \
 	$(SRC)\vmstime.h \
 	$(SRC)\systime.h
@@ -652,6 +653,7 @@ $(BLD)\keyboard.obj : \
 	$(EMACS_ROOT)\nt\inc\sys\ioctl.h \
 	$(EMACS_ROOT)\nt\inc\sys\file.h \
 	$(SRC)\systty.h \
+	$(SRC)\w32term.h \
 	$(SRC)\xterm.h \
 	$(SRC)\vmstime.h \
 	$(SRC)\systime.h
@@ -727,6 +729,7 @@ $(BLD)\mocklisp.obj : \
 
 $(BLD)\nt.obj : \
 	$(SRC)\nt.c \
+	$(SRC)\nt.h \
 	$(SRC)\s\windowsnt.h \
 	$(SRC)\m\intel386.h \
 	$(SRC)\config.h \
@@ -1036,62 +1039,80 @@ $(BLD)\w32faces.obj: \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\src\config.h \
 	$(SRC)\w32faces.c \
-	$(SRC)\dispextern.h \
-	$(SRC)\frame.h \
+	$(SRC)\lisp.h \
 	$(SRC)\w32term.h \
 	$(SRC)\win32.h \
 	$(SRC)\buffer.h \
+	$(SRC)\dispextern.h \
+	$(SRC)\frame.h \
 	$(SRC)\blockinput.h \
-  	$(SRC)\window.h
+  	$(SRC)\window.h \
+	$(SRC)\intervals.h
 
 $(BLD)\w32fns.obj: \
 	$(EMACS_ROOT)\src\s\windowsnt.h \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\src\config.h \
 	$(SRC)\w32fns.c \
-	$(SRC)\dispextern.h \
-	$(SRC)\frame.h \
+	$(SRC)\lisp.h \
 	$(SRC)\w32term.h \
 	$(SRC)\win32.h \
+	$(SRC)\frame.h \
+  	$(SRC)\window.h \
 	$(SRC)\buffer.h \
+	$(SRC)\dispextern.h \
+	$(SRC)\keyboard.h \
 	$(SRC)\blockinput.h \
-  	$(SRC)\window.h
+	$(SRC)\paths.h \
+	$(SRC)\ntheap.h \
+	$(SRC)\termhooks.h
 
 $(BLD)\w32menu.obj: \
 	$(EMACS_ROOT)\src\s\windowsnt.h \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\src\config.h \
 	$(SRC)\w32menu.c \
-	$(SRC)\dispextern.h \
+	$(SRC)\lisp.h \
+	$(SRC)\termhooks.h \
 	$(SRC)\frame.h \
-	$(SRC)\w32term.h \
-	$(SRC)\win32.h \
-	$(SRC)\buffer.h \
+  	$(SRC)\window.h \
+	$(SRC)\keyboard.h \
 	$(SRC)\blockinput.h \
-  	$(SRC)\window.h
+	$(SRC)\buffer.h
 
 $(BLD)\w32term.obj: \
 	$(EMACS_ROOT)\src\s\windowsnt.h \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\src\config.h \
 	$(SRC)\w32term.c \
-	$(SRC)\dispextern.h \
-	$(SRC)\frame.h \
+	$(SRC)\lisp.h \
+	$(SRC)\blockinput.h \
 	$(SRC)\w32term.h \
 	$(SRC)\win32.h \
+	$(SRC)\systty.h \
+	$(SRC)\systime.h \
+	$(SRC)\frame.h \
+	$(SRC)\dispextern.h \
+	$(SRC)\termhooks.h \
+	$(SRC)\termopts.h \
+	$(SRC)\termchar.h \
+	$(SRC)\gnu.h \
+	$(SRC)\disptab.h \
 	$(SRC)\buffer.h \
-	$(SRC)\blockinput.h \
-  	$(SRC)\window.h
+  	$(SRC)\window.h \
+	$(SRC)\keyboard.h \
+	$(SRC)\intervals.h
 
 $(BLD)\w32select.obj: \
 	$(EMACS_ROOT)\src\s\windowsnt.h \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\src\config.h \
 	$(SRC)\w32select.c \
-	$(SRC)\dispextern.h \
-	$(SRC)\frame.h \
+	$(SRC)\lisp.h \
 	$(SRC)\w32term.h \
 	$(SRC)\win32.h \
+	$(SRC)\dispextern.h \
+	$(SRC)\frame.h \
 	$(SRC)\blockinput.h
 
 $(BLD)\w32reg.obj: \
@@ -1099,8 +1120,7 @@ $(BLD)\w32reg.obj: \
 	$(EMACS_ROOT)\src\m\intel386.h \
 	$(EMACS_ROOT)\src\config.h \
 	$(SRC)\w32reg.c \
-	$(SRC)\dispextern.h \
-	$(SRC)\frame.h \
+	$(SRC)\lisp.h \
 	$(SRC)\w32term.h \
 	$(SRC)\win32.h \
 	$(SRC)\blockinput.h

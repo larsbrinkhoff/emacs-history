@@ -1,4 +1,4 @@
-.TH EMACS 1 "1994 April 19"
+.TH EMACS 1 "1995 December 7"
 .UC 4
 .SH NAME
 emacs \- GNU project Emacs
@@ -112,7 +112,7 @@ The following options are useful when running
 as a batch editor:
 .TP 8
 .BI \-batch
-Edit in batch mode.  The editor will send messages to stdout.  This
+Edit in batch mode.  The editor will send messages to stderr.  This
 option must be the first in the argument list.  You must use -l and -f
 options to specify files to execute and functions to call.
 .TP
@@ -136,15 +136,13 @@ so that you can continue using your original window.
 .I Emacs
 can be started with the following X switches:
 .TP 8
-.BI \-rn " name"
-Specifies the program name which should be used when looking up
-defaults in the user's X resources.  This must be the first option
-specified in the command line.
-.TP 8
 .BI \-name " name"
-Specifies the name which should be assigned to the
+Specifies the name which should be assigned to the initial
 .I Emacs
-window.
+window.  This controls looking up X resources as well as the window title.
+.TP 8
+.BI \-title " name"
+Specifies the title for the initial X window.
 .TP 8
 .B \-r
 Display the
@@ -399,30 +397,24 @@ manual is also included in the Emacs source distribution.
 is documented here, but the complete text of the Emacs reference
 manual is included in a convenient tree structured form.
 
-/usr/local/lib/emacs/$VERSION/src - C source files and object files
+/usr/local/share/emacs/$VERSION/src - C source files and object files
 
-/usr/local/lib/emacs/$VERSION/lisp - Lisp source files and compiled files
+/usr/local/share/emacs/$VERSION/lisp - Lisp source files and compiled files
 that define most editing commands.  Some are preloaded;
 others are autoloaded from this directory when used.
   
-/usr/local/lib/emacs/$VERSION/etc - various programs that are used with
+/usr/local/share/emacs/$VERSION/etc - various programs that are used with
 GNU Emacs, and some files of information.
 
-/usr/local/lib/emacs/$VERSION/etc/DOC.* - contains the documentation
+/usr/local/share/emacs/$VERSION/etc/DOC.* - contains the documentation
 strings for the Lisp primitives and preloaded Lisp functions
 of GNU Emacs.  They are stored here to reduce the size of
 Emacs proper.
 
-/usr/local/lib/emacs/$VERSION/etc/DIFF discusses GNU Emacs vs. Twenex
-Emacs;
+/usr/local/share/emacs/$VERSION/etc/OTHER.EMACSES discusses GNU Emacs
+vs. other versions of Emacs.
 .br
-/usr/local/lib/emacs/$VERSION/etc/CCADIFF discusses GNU Emacs vs. CCA
-Emacs;
-.br
-/usr/local/lib/emacs/$VERSION/etc/GOSDIFF discusses GNU Emacs
-vs. Gosling Emacs.
-.br
-/usr/local/lib/emacs/$VERSION/etc/SERVICE lists people offering
+/usr/local/share/emacs/$VERSION/etc/SERVICE lists people offering
 various services to assist users of GNU Emacs, including education,
 troubleshooting, porting and customization.
 .br
@@ -430,13 +422,9 @@ These files also have information useful to anyone wishing to write
 programs in the Emacs Lisp extension language, which has not yet been fully
 documented.
 
-/usr/local/lib/emacs/lock - holds lock files that are made for all
+/usr/local/com/emacs/lock - holds lock files that are made for all
 files being modified in Emacs, to prevent simultaneous modification
 of one file by two users.
-
-/usr/local/lib/emacs/$VERSION/$ARCHITECTURE/cpp - the GNU cpp, needed
-for building Emacs on certain versions of Unix where the standard cpp
-cannot handle long names for macros.
 
 .\" START DELETING HERE IF YOU'RE NOT USING X
 /usr/lib/X11/rgb.txt - list of valid X color names.

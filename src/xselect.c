@@ -1,5 +1,5 @@
 /* X Selection processing for Emacs.
-   Copyright (C) 1993, 1994, 1995 Free Software Foundation.
+   Copyright (C) 1993, 1994, 1995, 1996 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* Rewritten by jwz */
@@ -26,8 +27,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "dispextern.h"	/* frame.h seems to want this */
 #include "frame.h"	/* Need this to get the X window of selected_frame */
 #include "blockinput.h"
-
-#define xfree free
 
 #define CUT_BUFFER_SUPPORT
 
@@ -210,6 +209,7 @@ x_atom_to_symbol (dpyinfo, display, atom)
   if (! str) return Qnil;
   val = intern (str);
   BLOCK_INPUT;
+  /* This was allocated by Xlib, so use XFree.  */
   XFree (str);
   UNBLOCK_INPUT;
   return val;
@@ -412,7 +412,7 @@ x_decline_selection_request (event)
 static struct input_event *x_selection_current_request;
 
 /* Used as an unwind-protect clause so that, if a selection-converter signals
-   an error, we tell the requestor that we were unable to do what they wanted
+   an error, we tell the requester that we were unable to do what they wanted
    before we throw to top-level or go into the debugger or whatever.  */
 
 static Lisp_Object
@@ -558,7 +558,7 @@ x_reply_selection_request (event, format, data, size, type)
 	}
 
       if (x_window_to_frame (dpyinfo, window)) /* #### debug */
-	error ("attempt to transfer an INCR to ourself!");
+	error ("Attempt to transfer an INCR to ourself!");
 #if 0
       fprintf (stderr, "\nINCR %d\n", bytes_remaining);
 #endif
@@ -576,7 +576,7 @@ x_reply_selection_request (event, format, data, size, type)
       had_errors = x_had_errors_p (display);
       UNBLOCK_INPUT;
 
-      /* First, wait for the requestor to ack by deleting the property.
+      /* First, wait for the requester to ack by deleting the property.
 	 This can run random lisp code (process handlers) or signal.  */
       if (! had_errors)
 	wait_for_property_change (wait_object);
@@ -607,12 +607,12 @@ x_reply_selection_request (event, format, data, size, type)
 	  if (had_errors)
 	    break;
 
-	  /* Now wait for the requestor to ack this chunk by deleting the
+	  /* Now wait for the requester to ack this chunk by deleting the
 	     property.	 This can run random lisp code or signal.
 	   */
 	  wait_for_property_change (wait_object);
 	}
-      /* Now write a zero-length chunk to the property to tell the requestor
+      /* Now write a zero-length chunk to the property to tell the requester
 	 that we're done.  */
 #if 0
       fprintf (stderr,"  INCR done\n");
@@ -719,8 +719,10 @@ x_handle_selection_request (event)
       /* Indicate we have successfully processed this event.  */
       x_selection_current_request = 0;
 
+      /* Use free, not XFree, because lisp_data_to_selection_data
+	 calls xmalloc itself.  */
       if (!nofree)
-	xfree (data);
+	free (data);
     }
   unbind_to (count, Qnil);
 
@@ -917,7 +919,7 @@ unexpect_property_change (location)
 	    prev->next = rest->next;
 	  else
 	    property_change_wait_list = rest->next;
-	  xfree (rest);
+	  free (rest);
 	  return;
 	}
       prev = rest;
@@ -967,7 +969,7 @@ wait_for_property_change (location)
       wait_reading_process_input (secs, usecs, property_change_reply, 0);
 
       if (NILP (XCONS (property_change_reply)->car))
-	error ("timed out waiting for property-notify event");
+	error ("Timed out waiting for property-notify event");
     }
 
   unbind_to (count, Qnil);
@@ -1006,7 +1008,7 @@ x_handle_property_notify (event)
 	    prev->next = rest->next;
 	  else
 	    property_change_wait_list = rest->next;
-	  xfree (rest);
+	  free (rest);
 	  return;
 	}
       prev = rest;
@@ -1138,7 +1140,9 @@ x_get_foreign_selection (selection_symbol, target_type)
   UNBLOCK_INPUT;
 
   if (NILP (XCONS (reading_selection_reply)->car))
-    error ("timed out waiting for reply from selection owner");
+    error ("Timed out waiting for reply from selection owner");
+  if (EQ (XCONS (reading_selection_reply)->car, Qlambda))
+    error ("No `%s' selection", XSYMBOL (selection_symbol)->name->data);
 
   /* Otherwise, the selection is waiting for us on the requested property.  */
   return
@@ -1148,6 +1152,8 @@ x_get_foreign_selection (selection_symbol, target_type)
 }
 
 /* Subroutines of x_get_window_property_as_lisp_data */
+
+/* Use free, not XFree, to free the data obtained with this function.  */
 
 static void
 x_get_window_property (display, window, property, data_ret, bytes_ret,
@@ -1185,7 +1191,8 @@ x_get_window_property (display, window, property, data_ret, bytes_ret,
       *bytes_ret = 0;
       return;
     }
-  xfree ((char *) tmp_data);
+  /* This was allocated by Xlib, so use XFree.  */
+  XFree ((char *) tmp_data);
   
   if (*actual_type_ret == None || *actual_format_ret == 0)
     {
@@ -1196,7 +1203,7 @@ x_get_window_property (display, window, property, data_ret, bytes_ret,
   total_size = bytes_remaining + 1;
   *data_ret = (unsigned char *) xmalloc (total_size);
   
-  /* Now read, until weve gotten it all.  */
+  /* Now read, until we've gotten it all.  */
   while (bytes_remaining)
     {
 #if 0
@@ -1220,7 +1227,8 @@ x_get_window_property (display, window, property, data_ret, bytes_ret,
       *actual_size_ret *= *actual_format_ret / 8;
       bcopy (tmp_data, (*data_ret) + offset, *actual_size_ret);
       offset += *actual_size_ret;
-      xfree ((char *) tmp_data);
+      /* This was allocated by Xlib, so use XFree.  */
+      XFree ((char *) tmp_data);
     }
 
   XFlush (display);
@@ -1228,6 +1236,8 @@ x_get_window_property (display, window, property, data_ret, bytes_ret,
   *bytes_ret = offset;
 }
 
+/* Use free, not XFree, to free the data obtained with this function.  */
+
 static void
 receive_incremental_selection (display, window, property, target_type,
 			       min_size_bytes, data_ret, size_bytes_ret,
@@ -1273,7 +1283,7 @@ receive_incremental_selection (display, window, property, target_type,
       int tmp_size_bytes;
       wait_for_property_change (wait_object);
       /* expect it again immediately, because x_get_window_property may
-	 .. no it wont, I dont get it.
+	 .. no it won't, I don't get it.
 	 .. Ok, I get it now, the Xt code that implements INCR is broken.
        */
       x_get_window_property (display, window, property,
@@ -1288,7 +1298,9 @@ receive_incremental_selection (display, window, property, target_type,
 	  if (! waiting_for_other_props_on_window (display, window))
 	    XSelectInput (display, window, STANDARD_EVENT_SET);
 	  unexpect_property_change (wait_object);
-	  if (tmp_data) xfree (tmp_data);
+	  /* Use free, not XFree, because x_get_window_property
+	     calls xmalloc itself.  */
+	  if (tmp_data) free (tmp_data);
 	  break;
 	}
 
@@ -1313,7 +1325,9 @@ receive_incremental_selection (display, window, property, target_type,
 	}
       bcopy (tmp_data, (*data_ret) + offset, tmp_size_bytes);
       offset += tmp_size_bytes;
-      xfree (tmp_data);
+      /* Use free, not XFree, because x_get_window_property
+	 calls xmalloc itself.  */
+      free (tmp_data);
     }
 }
 
@@ -1369,7 +1383,9 @@ x_get_window_property_as_lisp_data (display, window, property, target_type,
 
       unsigned int min_size_bytes = * ((unsigned int *) data);
       BLOCK_INPUT;
-      XFree ((char *) data);
+      /* Use free, not XFree, because x_get_window_property
+	 calls xmalloc itself.  */
+      free ((char *) data);
       UNBLOCK_INPUT;
       receive_incremental_selection (display, window, property, target_type,
 				     min_size_bytes, &data, &bytes,
@@ -1387,7 +1403,9 @@ x_get_window_property_as_lisp_data (display, window, property, target_type,
   val = selection_data_to_lisp_data (display, data, bytes,
 				     actual_type, actual_format);
   
-  xfree ((char *) data);
+  /* Use free, not XFree, because x_get_window_property
+     calls xmalloc itself.  */
+  free ((char *) data);
   return val;
 }
 
@@ -1488,6 +1506,8 @@ selection_data_to_lisp_data (display, data, size, type, format)
     }
 }
 
+
+/* Use free, not XFree, to free the data obtained with this function.  */
 
 static void
 lisp_data_to_selection_data (display, obj,
@@ -1691,7 +1711,9 @@ clean_local_selection_data (obj)
 }
 
 /* Called from XTread_socket to handle SelectionNotify events.
-   If it's the selection we are waiting for, stop waiting.  */
+   If it's the selection we are waiting for, stop waiting
+   by setting the car of reading_selection_reply to non-nil.
+   We store t there if the reply is successful, lambda if not.  */
 
 void
 x_handle_selection_notify (event)
@@ -1702,7 +1724,8 @@ x_handle_selection_notify (event)
   if (event->selection != reading_which_selection)
     return;
 
-  XCONS (reading_selection_reply)->car = Qt;
+  XCONS (reading_selection_reply)->car
+    = (event->property != 0 ? Qt : Qlambda);
 }
 
 
@@ -1719,7 +1742,7 @@ anything that the functions on `selection-converter-alist' know about.")
 {
   check_x ();
   CHECK_SYMBOL (selection_name, 0);
-  if (NILP (selection_value)) error ("selection-value may not be nil.");
+  if (NILP (selection_value)) error ("selection-value may not be nil");
   x_own_selection (selection_name, selection_value);
   return selection_value;
 }
@@ -1971,7 +1994,9 @@ DEFUN ("x-get-cut-buffer-internal", Fx_get_cut_buffer_internal,
 			   Fcons (make_number (format), Qnil))));
 
   ret = (bytes ? make_string ((char *) data, bytes) : Qnil);
-  xfree (data);
+  /* Use free, not XFree, because x_get_window_property
+     calls xmalloc itself.  */
+  free (data);
   return ret;
 }
 
@@ -2142,7 +2167,7 @@ it merely informs you that they have happened.");
 
   DEFVAR_INT ("x-selection-timeout", &x_selection_timeout,
    "Number of milliseconds to wait for a selection reply.\n\
-If the selection owner doens't reply in this time, we give up.\n\
+If the selection owner doesn't reply in this time, we give up.\n\
 A value of 0 means wait as long as necessary.  This is initialized from the\n\
 \"*selectionTimeout\" resource.");
   x_selection_timeout = 0;

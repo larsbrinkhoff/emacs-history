@@ -579,10 +579,11 @@ indentation offset which you can customize.
 * Changing Indent Style::
 * Syntactic Symbols::
 * Variables for C Indent::
+* C Indent Styles::
 @end menu
 
 @node Syntactic Analysis
-@subsubsection Step 1 -- Syntactic Analysis
+@subsubsection Step 1---Syntactic Analysis
 @cindex Syntactic Analysis
 
   In the first step, the C indentation mechanism looks at the line you
@@ -591,7 +592,7 @@ construct on that line.  It builds a list of these syntactic components,
 where each component on the list contains a @dfn{syntactic symbol} and a
 relative buffer position.  Syntactic symbols describe grammatical
 elements such as @var{statement}, @var{substatement}, @var{class-open},
-@var{class-close}, @var{k&r-argdecl}, etc.
+@var{class-close}, @var{knr-argdecl}, etc.
 
   Conceptually, a line of C code is always indented relative to the
 indentation of some line higher up in the buffer.  This is represented
@@ -757,7 +758,9 @@ you can customize the handling of individual syntactic symbols.
 
 @table @kbd
 @item M-x c-set-style @key{RET} @var{style} @key{RET}
-Select predefined indentation style @var{style}.
+Select predefined indentation style @var{style}.  Type @kbd{?} when
+entering @var{style} to see a list of supported styles; to find out what
+a style looks like, select it and reindent some C code.
 
 @item C-c C-o @var{symbol} @key{RET} @var{offset} @key{RET}
 Set the indentation offset for syntactic symbol @var{symbol}
@@ -833,10 +836,10 @@ On a brace that closes an in-class inline method.
 In the nether region between an ANSI function declaration
 and the defun opening brace.
 
-@item k&r-argdecl-intro
+@item knr-argdecl-intro
 On the first line of a K&R C argument declaration.
 
-@item k&r-argdecl
+@item knr-argdecl
 In one of the subsequent lines in a K&R C argument declaration.
 
 @item topmost-intro
@@ -973,38 +976,13 @@ Indent Style}.
 @vindex c-style-alist
 Variable for specifying styles of indentation; see below.
 
-@item c-argdecl-indent
-@vindex c-argdecl-indent
-Indentation level of declarations of C function arguments.
-
 @item c-basic-offset
 @vindex c-basic-offset
 Amount of basic offset used by @code{+} and @code{-} symbols in
 @code{c-offsets-alist}.@refill 
 
-@item c-brace-imaginary-offset
-@vindex c-brace-imaginary-offset
-Imagined indentation of a C open brace that actually follows a statement.
-
-@item c-brace-offset
-@vindex c-brace-offset
-Extra indentation for braces, compared with other text in same context.
-
-@item c-continued-statement-offset
-@vindex c-continued-statement-offset
-Extra indentation for lines not starting new statements.
-
-@item c-continued-brace-offset
-@vindex c-continued-brace-offset
-Extra indentation for substatements that start with open-braces.  This
-is in addition to @code{c-continued-statement-offset}.@refill
-
-@item c-label-offset
-@vindex c-label-offset
-Offset of C label lines and case statements relative to usual indentation.
-
-@item c-recognize-k&r-p
-@vindex c-recognize-k&r-p
+@item c-recognize-knr-p
+@vindex c-recognize-knr-p
 If this variable is non-@code{nil}, C mode and Objective C mode
 recognize K&R constructs.  This variable is needed because of
 ambiguities in C syntax that make recognition of K&R constructs
@@ -1013,10 +991,6 @@ this variable to @code{nil} to speed up C indentation.
 
 This variable is @code{nil} by default in C++ mode, and @code{t} by
 default in C mode and Objective C mode.
-
-@item c-indent-level
-@vindex c-indent-level
-Level of indentation of C statements with respect to containing block.
 
 @item c-special-indent-hook
 @vindex c-special-indent-hook
@@ -1040,6 +1014,39 @@ for which the style differs from the default.
 
   The indentation of lines containing only comments is also affected by
 the variable @code{c-comment-only-line-offset} (@pxref{Comments in C}).
+
+@node C Indent Styles
+@subsubsection C Indentation Styles
+@cindex c indentation styles
+
+  A @dfn{C style} is a collection of indentation style customizations.
+Emacs comes with several predefined indentation styles for C code
+including @code{gnu}, @code{k&r}, @code{bsd}, @code{stroustrup}
+@code{whitesmith}, @code{ellemtel}, and @code{cc-mode}.  The default
+style is @code{gnu}.
+
+@findex c-set-style
+  To choose the style you want, use the command @kbd{M-x c-set-style}.
+Specify a style name as an argument (case is not significant in C style
+names).  The chosen style affects all buffers including those you will
+create later.
+
+@findex c-add-style
+  To define a new C indentation style, call the function
+@code{c-add-style}:
+
+@example
+(c-add-style @var{name} @var{values} @var{use-now})
+@end example
+
+@noindent
+Here @var{name} is the name of the new style (a string), and
+@var{values} is an alist whose elements have the form
+@code{(@var{variable} . @var{value})}.  The variables you specify should
+be among those documented in @ref{Variables for C Indent}.
+
+If @var{use-now} is non-@code{nil}, @code{c-add-style} switches to the
+new style after defining it.
 
 @node Matching
 @section Automatic Display Of Matching Parentheses
@@ -1446,7 +1453,7 @@ entry is considered a page.  This facilitates editing the entries.
 @key{LFD} and auto-fill indent each new line like the previous line;
 this is convenient for entering the contents of an entry.
 
-  Version control systems are another way keep track of changes in your
+  Version control systems are another way to keep track of changes in your
 program and keep a change log.  @xref{Log Entries}.
 
 @node Tags
@@ -1526,6 +1533,10 @@ keyword.
 In Prolog code, a tag name appears at the left margin.
 
 @item
+In Erlang code, the tags are the functions, records, and macros defined
+in the file.
+
+@item
 In assembler code, labels appearing at the beginning of a line,
 followed by a colon, are tags.
 
@@ -1602,6 +1613,19 @@ tags file name with the @samp{--include=@var{file}} option when creating
 the file that is to include it.  The latter file then acts as if it
 contained all the files specified in the included file, as well as the
 files it directly contains.
+
+  If you specify the source files with relative file names when you run
+@code{etags}, the tags file will contain file names relative to the
+directory where the tags file was initially written.  This way, you can
+move an entire directory tree containing both the tags file and the
+source files, and the tags file will still refer correctly to the source
+files.
+
+  If you specify absolute file names as arguments to @code{etags}, then
+the tags file will contain absolute file names.  This way, the tags file
+will still refer to the same files even if you move it, as long as the
+source files remain in the same place.  Absolute file names start with
+@samp{/}, or with @samp{@var{device}:/} on MS-DOS and Windows.
 
   When you want to make a tags table from a great number of files, you
 may have problems listing them on the command line, because some systems
@@ -2420,7 +2444,7 @@ With prefix argument @var{n}, move @var{n} times.
 @subsection Electric C Characters
 
   In C mode and related modes, certain printing characters are
-``electric''--in addition to inserting themselves, they also reindent
+``electric''---in addition to inserting themselves, they also reindent
 the current line and may insert newlines.  This feature is controlled by
 the variable @code{c-auto-newline}.  The ``electric'' characters are
 @kbd{@{}, @kbd{@}}, @kbd{:}, @kbd{#}, @kbd{;}, @kbd{,}, @kbd{/} and
@@ -2534,7 +2558,7 @@ To turn this feature on or off, use @kbd{C-c C-d}:
 @kindex C-c C-d
 @findex c-toggle-hungry-state
 Toggle the hungry-delete feature (@code{c-toggle-hungry-state}.  With a
-prefix argument, this command turns the auto-newline feature on if the
+prefix argument, this command turns the hungry-delete feature on if the
 argument is positive, and off if it is negative.
 
 @item C-c C-t
@@ -2638,14 +2662,14 @@ For the styles 1 through 4, @code{c-block-comments-indent-p} should be
 @code{c-block-comments-indent-p} to @code{t}.
 
 This variable has no effect on the indentation of the comment-start
-itself or on insertion of asteristks when auto-filling C comments.
+itself or on insertion of asterisks when auto-filling C comments.
 @c ???   In any case, you still have to insert the asterisks
 @c ???   manually.
 
 @item c-comment-only-line-offset
 @vindex c-comment-only-line-offset
 Extra offset for line which contains only the start of a comment.  It
-can contain be an integer or a cons cell of the form
+can be either an integer or a cons cell of the form
 @code{(@var{non-anchored-offset} . @var{anchored-offset})}, where
 @var{non-anchored-offset} is the amount of offset given to
 non-column-zero anchored comment-only lines, and @var{anchored-offset}

@@ -1,7 +1,7 @@
-;;; calendar.el --- Calendar functions.  -*-byte-compile-dynamic: t;-*-
+;;; calendar.el --- Calendar functions.
 
-;;; Copyright (C) 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995 Free Software
-;;; Foundation, Inc.
+;; Copyright (C) 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995 Free
+;; Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: calendar
@@ -20,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -50,16 +51,17 @@
 ;; The following files are part of the calendar/diary code:
 
 ;;       appt.el                       Appointment notification
-;;       cal-chinese.el                Chinese calendar
+;;       cal-china.el                  Chinese calendar
 ;;       cal-coptic.el                 Coptic/Ethiopic calendars
 ;;       cal-dst.el                    Daylight savings time rules
 ;;       cal-hebrew.el                 Hebrew calendar
-;;       cal-islamic.el                Islamic calendar
+;;       cal-islam.el                  Islamic calendar
 ;;       cal-iso.el                    ISO calendar
 ;;       cal-julian.el                 Julian/astronomical calendars
 ;;       cal-mayan.el                  Mayan calendars
 ;;       cal-menu.el                   Menu support
 ;;       cal-move.el                   Movement in the calendar
+;;       cal-persia.el                 Persian calendar
 ;;       cal-tex.el                    Calendars in LaTeX
 ;;       cal-x.el                      X-windows dedicated frame functions
 ;;       diary.el                      Diary functions
@@ -334,9 +336,9 @@ causes the diary entry \"Vacation\" to appear from November 1 through November
 `diary-cyclic', `diary-day-of-year', `diary-iso-date', `diary-french-date',
 `diary-hebrew-date', `diary-islamic-date', `diary-mayan-date',
 `diary-chinese-date', `diary-coptic-date', `diary-ethiopic-date',
-`diary-yahrzeit', `diary-sunrise-sunset', `diary-phases-of-moon',
-`diary-parasha', `diary-omer', `diary-rosh-hodesh', and
-`diary-sabbath-candles'.  See the documentation for the function
+`diary-persian-date', `diary-yahrzeit', `diary-sunrise-sunset',
+`diary-phases-of-moon', `diary-parasha', `diary-omer', `diary-rosh-hodesh',
+and `diary-sabbath-candles'.  See the documentation for the function
 `list-sexp-diary-entries' for more details.
 
 Diary entries based on the Hebrew and/or the Islamic calendar are also
@@ -611,7 +613,7 @@ somewhat; setting it to nil makes the diary display faster.")
     (holiday-fixed 2 14 "Valentine's Day")
     (holiday-float 2 1 3 "President's Day")
     (holiday-fixed 3 17 "St. Patrick's Day")
-    (holiday-fixed 4 1 "April Fool's Day")
+    (holiday-fixed 4 1 "April Fools' Day")
     (holiday-float 5 0 2 "Mother's Day")
     (holiday-float 5 1 -1 "Memorial Day")
     (holiday-fixed 6 14 "Flag Day")
@@ -1148,7 +1150,7 @@ The Gregorian date Sunday, December 31, 1 BC is imaginary."
 (defvar calendar-setup nil
   "The frame set up of the calendar.
 The choices are `one-frame' (calendar and diary together in one separate,
-dediciated frame) or `two-frames' (calendar and diary in separate, dedicated
+dedicated frame) or `two-frames' (calendar and diary in separate, dedicated
 frames); with any other value the current frame is used.")
 
 ;;;###autoload
@@ -1201,7 +1203,7 @@ After preparing the calendar window initially, the hooks given by the variable
 `initial-calendar-window-hook' are run.
 
 The hooks given by the variable `today-visible-calendar-hook' are run
-everytime the calendar window gets scrolled, if the current date is visible
+every time the calendar window gets scrolled, if the current date is visible
 in the window.  If it is not visible, the hooks given by the variable
 `today-invisible-calendar-hook' are run.  Thus, for example, setting
 `today-visible-calendar-hook' to 'calendar-star-date will cause today's date
@@ -1287,24 +1289,39 @@ calendar."
   t)
 
 (autoload 'calendar-next-calendar-round-date "cal-mayan"
-  "Move cursor to next instance of Mayan Haab/Tzoklin combination."
+  "Move cursor to next instance of Mayan Haab/Tzolkin combination."
   t)
 
 (autoload 'calendar-previous-calendar-round-date "cal-mayan"
-  "Move cursor to previous instance of Mayan Haab/Tzoklin combination."
+  "Move cursor to previous instance of Mayan Haab/Tzolkin combination."
   t)
 
-(autoload 'calendar-goto-chinese-date "cal-chinese"
-   "Move cursor to Chinese date date."
+(autoload 'calendar-goto-chinese-date "cal-china"
+   "Move cursor to Chinese date."
    t)
 
-(autoload 'calendar-print-chinese-date "cal-chinese"
+(autoload 'calendar-print-chinese-date "cal-china"
  "Show the Chinese date equivalents of date."
  t)
 
-(autoload 'calendar-chinese-date-string "cal-chinese"
+(autoload 'calendar-chinese-date-string "cal-china"
   "String of Chinese date of Gregorian date."
   t)
+
+(autoload 'calendar-absolute-from-astro
+  "Absolute date of astronomical (Julian) day number D."
+  "cal-julian")
+
+(autoload 'calendar-astro-from-absolute "cal-julian"
+  "Astronomical (Julian) day number of absolute date D.")
+
+(autoload 'calendar-astro-date-string "cal-julian"
+  "String of astronomical (Julian) day number of Gregorian date."
+  t)
+
+(autoload 'calendar-goto-astro-date "cal-julian"
+   "Move cursor to astronomical (Julian) day number."
+   t)
 
 (autoload 'calendar-julian-from-absolute "cal-julian"
   "Compute the Julian (month day year) corresponding to the absolute DATE.
@@ -1333,11 +1350,11 @@ Driven by the variable `calendar-date-display-form'."
   "String of ISO date of Gregorian date."
   t)
 
-(autoload 'calendar-print-islamic-date "cal-islamic"
+(autoload 'calendar-print-islamic-date "cal-islam"
   "Show the Islamic date equivalents of date."
   t)
 
-(autoload 'calendar-islamic-date-string "cal-islamic"
+(autoload 'calendar-islamic-date-string "cal-islam"
   "String of Islamic date of Gregorian date."
   t)
 
@@ -1375,6 +1392,18 @@ Driven by the variable `calendar-date-display-form'."
 
 (autoload 'calendar-ethiopic-date-string "cal-coptic"
   "String of Ethiopic date of Gregorian date."
+  t)
+
+(autoload 'calendar-goto-persian-date "cal-persia"
+   "Move cursor to Persian date date."
+   t)
+
+(autoload 'calendar-print-persian-date "cal-persia"
+ "Show the Persian date equivalents of date."
+ t)
+
+(autoload 'calendar-persian-date-string "cal-persia"
+  "String of Persian date of Gregorian date."
   t)
 
 (autoload 'show-all-diary-entries "diary-lib"
@@ -1437,17 +1466,17 @@ to the date indicated by point."
 to the date indicated by point."
   t)
 
-(autoload 'insert-islamic-diary-entry "cal-islamic"
+(autoload 'insert-islamic-diary-entry "cal-islam"
   "Insert a diary entry for the Islamic date corresponding to the date
 indicated by point."
   t)
 
-(autoload 'insert-monthly-islamic-diary-entry "cal-islamic"
+(autoload 'insert-monthly-islamic-diary-entry "cal-islam"
   "Insert a monthly diary entry for the day of the Islamic month corresponding
 to the date indicated by point."
   t)
 
-(autoload 'insert-yearly-islamic-diary-entry "cal-islamic"
+(autoload 'insert-yearly-islamic-diary-entry "cal-islam"
   "Insert an annual diary entry for the day of the Islamic year corresponding
 to the date indicated by point."
   t)
@@ -1509,7 +1538,7 @@ Holidays are included if `cal-tex-holidays' is t.")
 
 (autoload 'cal-tex-cursor-year "cal-tex"
   "Make a buffer with LaTeX commands for a year's calendar.
-Optional prefix argument specifies numeber of years.")
+Optional prefix argument specifies number of years.")
 
 (autoload 'cal-tex-cursor-year-landscape "cal-tex"
   "Make a buffer with LaTeX commands for a year's calendar (landscape).
@@ -1692,6 +1721,7 @@ the inserted text.  Value is always t."
   (define-key calendar-mode-map "gC"  'calendar-goto-chinese-date)
   (define-key calendar-mode-map "gk"  'calendar-goto-coptic-date)
   (define-key calendar-mode-map "ge"  'calendar-goto-ethiopic-date)
+  (define-key calendar-mode-map "gp"  'calendar-goto-persian-date)
   (define-key calendar-mode-map "gc"  'calendar-goto-iso-date)
   (define-key calendar-mode-map "gf"  'calendar-goto-french-date)
   (define-key calendar-mode-map "gml"  'calendar-goto-mayan-long-count-date)
@@ -1720,6 +1750,7 @@ the inserted text.  Value is always t."
   (define-key calendar-mode-map "pC"  'calendar-print-chinese-date)
   (define-key calendar-mode-map "pk"  'calendar-print-coptic-date)
   (define-key calendar-mode-map "pe"  'calendar-print-ethiopic-date)
+  (define-key calendar-mode-map "pp"  'calendar-print-persian-date)
   (define-key calendar-mode-map "pc"  'calendar-print-iso-date)
   (define-key calendar-mode-map "pj"  'calendar-print-julian-date)
   (define-key calendar-mode-map "pa"  'calendar-print-astro-day-number)
@@ -2301,5 +2332,9 @@ Defaults to today's date if DATE is not given."
 (run-hooks 'calendar-load-hook)
 
 (provide 'calendar)
+
+;;; Local variables:
+;;; byte-compile-dynamic: t
+;;; End:
 
 ;;; calendar.el ends here

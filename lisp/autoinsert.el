@@ -1,4 +1,5 @@
 ;;; autoinsert.el --- automatic mode-dependent insertion of text into new files
+
 ;; Copyright (C) 1985, 1986, 1987, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Charlie Martin <crm@cs.duke.edu>
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -86,15 +88,7 @@ If this contains a %s, that will be replaced by the matching rule.")
 
     ("[Mm]akefile\\'" . "makefile.inc")
 
-    ("\\.html\\'"
-     nil
-     "<html>\n"
-     "<head>\n"
-     "<title>" _ "</title>\n"
-     "</head>\n"
-     "<body>\n\n"
-     "</body>\n"
-     "</html>")
+    (html-mode . (lambda () (sgml-tag "html")))
     
     (plain-tex-mode . "tex-insert.tex")
     (bibtex-mode . "tex-insert.tex")
@@ -152,7 +146,8 @@ If this contains a %s, that will be replaced by the matching rule.")
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 

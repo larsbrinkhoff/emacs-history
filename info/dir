@@ -6,9 +6,10 @@ looking at that node, which is (dir)Top.
 File: dir	Node: Top	This is the top of the INFO tree
   This (the Directory node) gives a menu of major topics. 
   Typing "d" returns here, "q" exits, "?" lists all INFO commands, "h" 
-  gives a primer for first-timers, "mTexinfo<Return>" visits Texinfo topic,
+  gives a primer for first-timers, "mEmacs<Return>" visits the Emacs topic,
   etc.
-  Or click mouse button 2 on a menu item or cross reference to select it.
+  In Emacs, you can click mouse button 2 on a menu item or cross reference
+  to select it.
   --- PLEASE ADD DOCUMENTATION TO THIS TREE. (See INFO topic first.) ---
 
 * Menu: The list of major topics begins on the next line.
@@ -26,3 +27,5 @@ File: dir	Node: Top	This is the top of the INFO tree
 			  replying to, in hairy ways.
 * Dired-X: (dired-x).   Dired Extra Features.
 * Ediff: (ediff).	A comprehensive visual interface to diff & patch.
+* CC mode: (ccmode).	The GNU Emacs mode for editing C, C++, and
+			  Objective-C code.

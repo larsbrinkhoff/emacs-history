@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -34,63 +35,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "dosfns.h"
 #include "msdos.h"
 #include <go32.h>
-
-DEFUN ("mode25", Fmode25, Smode25, 0, 0, "", "\
-Changes the number of rows to 25.")
-  ()
-{
-  union REGS regs;
-
-#ifdef HAVE_X_WINDOWS
-  if (!inhibit_window_system)
-    return Qnil;
-#endif
-  mouse_off ();
-  regs.x.ax = 3;
-  int86 (0x10, &regs, &regs);
-  regs.x.ax = 0x1101;
-  regs.h.bl = 0;
-  int86 (0x10, &regs, &regs);
-  regs.x.ax = 0x1200;
-  regs.h.bl = 32;
-  int86 (0x10, &regs, &regs);
-  regs.x.ax = 3;
-  int86 (0x10, &regs, &regs);
-  Fset_frame_size (Fselected_frame (), ScreenCols (), ScreenRows ());
-  Frecenter (Qnil);
-  Fredraw_display ();
-  if (have_mouse) mouse_init ();
-  return Qnil;
-}
-
-DEFUN ("mode4350", Fmode4350, Smode4350, 0, 0, "", "\
-Changes the number of rows to 43 (EGA) or 50 (VGA).")
-  ()
-{
-  union REGS regs;
-
-#ifdef HAVE_X_WINDOWS
-  if (!inhibit_window_system)
-    return Qnil;
-#endif
-  mouse_off ();
-  regs.x.ax = 3;
-  int86 (0x10, &regs, &regs);
-  regs.x.ax = 0x1112;
-  regs.h.bl = 0;
-  int86 (0x10, &regs, &regs);
-  regs.x.ax = 0x1200;
-  regs.h.bl = 32;
-  int86 (0x10, &regs, &regs);
-  regs.x.ax = 0x0100;
-  regs.x.cx = 7;
-  int86 (0x10, &regs, &regs);
-  Fset_frame_size (Fselected_frame (), ScreenCols (), ScreenRows ());
-  Frecenter (Qnil);
-  Fredraw_display ();
-  if (have_mouse) mouse_init ();
-  return Qnil;
-}
+#include <dirent.h>
 
 DEFUN ("int86", Fint86, Sint86, 2, 2, 0,
   "Call specific MSDOS interrupt number INTERRUPT with REGISTERS.\n\
@@ -99,93 +44,93 @@ Return the updated REGISTER vector.\n\
 INTERRUPT should be an integer in the range 0 to 255.\n\
 REGISTERS should be a vector produced by `make-register' and\n\
 `set-register-value'.")
-  (intno, regs)
-  Lisp_Object intno, regs;
+  (interrupt, registers)
+  Lisp_Object interrupt, registers;
 {
   register int i;
   int no;
   union REGS inregs, outregs;
   Lisp_Object val;
 
-  CHECK_NUMBER (intno, 0);
-  no = (unsigned long) XINT (intno);
-  CHECK_VECTOR (regs, 1);
-  if (no < 0 || no > 0xff || XVECTOR (regs)-> size != 8) 
+  CHECK_NUMBER (interrupt, 0);
+  no = (unsigned long) XINT (interrupt);
+  CHECK_VECTOR (registers, 1);
+  if (no < 0 || no > 0xff || XVECTOR (registers)-> size != 8) 
     return Qnil;
   for (i = 0; i < 8; i++)
-    CHECK_NUMBER (XVECTOR (regs)->contents[i], 1);
+    CHECK_NUMBER (XVECTOR (registers)->contents[i], 1);
 
-  inregs.x.ax    = (unsigned long) XFASTINT (XVECTOR (regs)->contents[0]);
-  inregs.x.bx    = (unsigned long) XFASTINT (XVECTOR (regs)->contents[1]);
-  inregs.x.cx    = (unsigned long) XFASTINT (XVECTOR (regs)->contents[2]);
-  inregs.x.dx    = (unsigned long) XFASTINT (XVECTOR (regs)->contents[3]);
-  inregs.x.si    = (unsigned long) XFASTINT (XVECTOR (regs)->contents[4]);
-  inregs.x.di    = (unsigned long) XFASTINT (XVECTOR (regs)->contents[5]);
-  inregs.x.cflag = (unsigned long) XFASTINT (XVECTOR (regs)->contents[6]);
-  inregs.x.flags = (unsigned long) XFASTINT (XVECTOR (regs)->contents[7]);
+  inregs.x.ax    = (unsigned long) XFASTINT (XVECTOR (registers)->contents[0]);
+  inregs.x.bx    = (unsigned long) XFASTINT (XVECTOR (registers)->contents[1]);
+  inregs.x.cx    = (unsigned long) XFASTINT (XVECTOR (registers)->contents[2]);
+  inregs.x.dx    = (unsigned long) XFASTINT (XVECTOR (registers)->contents[3]);
+  inregs.x.si    = (unsigned long) XFASTINT (XVECTOR (registers)->contents[4]);
+  inregs.x.di    = (unsigned long) XFASTINT (XVECTOR (registers)->contents[5]);
+  inregs.x.cflag = (unsigned long) XFASTINT (XVECTOR (registers)->contents[6]);
+  inregs.x.flags = (unsigned long) XFASTINT (XVECTOR (registers)->contents[7]);
 
   int86 (no, &inregs, &outregs);
 
-  XVECTOR (regs)->contents[0] = make_number (outregs.x.ax);
-  XVECTOR (regs)->contents[1] = make_number (outregs.x.bx);
-  XVECTOR (regs)->contents[2] = make_number (outregs.x.cx);
-  XVECTOR (regs)->contents[3] = make_number (outregs.x.dx);
-  XVECTOR (regs)->contents[4] = make_number (outregs.x.si);
-  XVECTOR (regs)->contents[5] = make_number (outregs.x.di);
-  XVECTOR (regs)->contents[6] = make_number (outregs.x.cflag);
-  XVECTOR (regs)->contents[7] = make_number (outregs.x.flags);
+  XVECTOR (registers)->contents[0] = make_number (outregs.x.ax);
+  XVECTOR (registers)->contents[1] = make_number (outregs.x.bx);
+  XVECTOR (registers)->contents[2] = make_number (outregs.x.cx);
+  XVECTOR (registers)->contents[3] = make_number (outregs.x.dx);
+  XVECTOR (registers)->contents[4] = make_number (outregs.x.si);
+  XVECTOR (registers)->contents[5] = make_number (outregs.x.di);
+  XVECTOR (registers)->contents[6] = make_number (outregs.x.cflag);
+  XVECTOR (registers)->contents[7] = make_number (outregs.x.flags);
 
-  return regs;
+  return registers;
 }
 
 DEFUN ("msdos-memget", Fdos_memget, Sdos_memget, 2, 2, 0,
   "Read DOS memory at offset ADDRESS into VECTOR.\n\
 Return the updated VECTOR.")
-  (addr, v)
-  Lisp_Object addr, v;
+  (address, vector)
+  Lisp_Object address, vector;
 {
   register int i;
   int offs, len;
   char *buf;
   Lisp_Object val;
 
-  CHECK_NUMBER (addr, 0);
-  offs = (unsigned long) XINT (addr);
-  CHECK_VECTOR (v, 1);
-  len = XVECTOR (v)-> size;
-  if (len < 1 || len > 2048 || addr < 0 || addr > 0xfffff - len) 
+  CHECK_NUMBER (address, 0);
+  offs = (unsigned long) XINT (address);
+  CHECK_VECTOR (vector, 1);
+  len = XVECTOR (vector)-> size;
+  if (len < 1 || len > 2048 || address < 0 || address > 0xfffff - len) 
     return Qnil;
   buf = alloca (len);
   dosmemget (offs, len, buf);
   
   for (i = 0; i < len; i++)
-    XVECTOR (v)->contents[i] = make_number (buf[i]);
+    XVECTOR (vector)->contents[i] = make_number (buf[i]);
 
-  return v;
+  return vector;
 }
 
 DEFUN ("msdos-memput", Fdos_memput, Sdos_memput, 2, 2, 0,
   "Write DOS memory at offset ADDRESS from VECTOR.")
-  (addr, v)
-  Lisp_Object addr, v;
+  (address, vector)
+  Lisp_Object address, vector;
 {
   register int i;
   int offs, len;
   char *buf;
   Lisp_Object val;
 
-  CHECK_NUMBER (addr, 0);
-  offs = (unsigned long) XINT (addr);
-  CHECK_VECTOR (v, 1);
-  len = XVECTOR (v)-> size;
-  if (len < 1 || len > 2048 || addr < 0 || addr > 0xfffff - len) 
+  CHECK_NUMBER (address, 0);
+  offs = (unsigned long) XINT (address);
+  CHECK_VECTOR (vector, 1);
+  len = XVECTOR (vector)-> size;
+  if (len < 1 || len > 2048 || address < 0 || address > 0xfffff - len) 
     return Qnil;
   buf = alloca (len);
 
   for (i = 0; i < len; i++)
     {
-      CHECK_NUMBER (XVECTOR (v)->contents[i], 1);
-      buf[i] = (unsigned char) XFASTINT (XVECTOR (v)->contents[i]) & 0xFF;
+      CHECK_NUMBER (XVECTOR (vector)->contents[i], 1);
+      buf[i] = (unsigned char) XFASTINT (XVECTOR (vector)->contents[i]) & 0xFF;
     }
 
   dosmemput (buf, len, offs);
@@ -193,7 +138,7 @@ DEFUN ("msdos-memput", Fdos_memput, Sdos_memput, 2, 2, 0,
 }
 
 DEFUN ("msdos-set-keyboard", Fmsdos_set_keyboard, Smsdos_set_keyboard, 1, 2, 0,
-  "Set keyboard layout according to COUNTRY.\n\
+  "Set keyboard layout according to COUNTRY-CODE.\n\
 If the optional argument ALLKEYS is non-nil, the keyboard is mapped for\n\
 all keys; otherwise it is only used when the ALT key is pressed.\n\
 The current keyboard layout is available in dos-keyboard-code.")
@@ -296,7 +241,6 @@ Return nil if startup screen is not available.")
 
   return Qt;
 }
-
 
 /* country info */
 int dos_country_code;
@@ -312,8 +256,6 @@ int dos_keypad_mode;
 
 Lisp_Object Vdos_version;
 Lisp_Object Vdos_display_scancodes;
-Lisp_Object Vdos_menubar_clock;
-Lisp_Object Vdos_timer_hooks;
   
 void
 init_dosfns ()
@@ -363,6 +305,17 @@ init_dosfns ()
       }
   else
     dos_codepage = regs.x.bx & 0xffff;
+
+#if __DJGPP__ >= 2
+
+  /* Without this, we never see hidden files.  */
+  __opendir_flags |= __OPENDIR_FIND_HIDDEN;
+
+  /* Under LFN, preserve the case of files as recorded in the directory.  */
+  if (!NILP (Fmsdos_long_file_names ()))
+    __opendir_flags |= __OPENDIR_PRESERVE_CASE;
+
+#endif
 }
 
 /*
@@ -370,8 +323,6 @@ init_dosfns ()
  */
 syms_of_dosfns ()
 {
-  defsubr (&Smode25);
-  defsubr (&Smode4350);
   defsubr (&Sint86);
   defsubr (&Sdos_memget);
   defsubr (&Sdos_memput);
@@ -416,15 +367,6 @@ Implicitly modified when the TZ variable is changed.");
 corner of the display (typically at the end of the mode line).\n\
 The output format is: scan code:char code*modifiers.");
   Vdos_display_scancodes = Qnil;
-  
-  DEFVAR_LISP ("dos-menubar-clock", &Vdos_menubar_clock,
-    "*When non-nil, the current time is displayed in the upper right\n\
-corner of the screen (typically at the end of the menu bar).");
-  Vdos_menubar_clock = Qt;
-  
-  DEFVAR_LISP ("dos-timer-hooks", &Vdos_timer_hooks,
-    "List of hooks which are run every second.");
-  Vdos_timer_hooks = Qnil;
   
   DEFVAR_INT ("dos-hyper-key", &dos_hyper_key,
     "*If set to 1, use right ALT key as hyper key.\n\

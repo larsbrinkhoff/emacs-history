@@ -499,9 +499,9 @@ the appropriate window manager features.
 Specify font @var{font} as the default for the selected frame. 
 @xref{Font X}, for ways to list the available fonts on your system.
 
-@kindex C-Mouse-1
+@kindex S-Mouse-1
 You can also set a frame's default font through a pop-up menu.
-Press @kbd{C-Mouse-1} to activate this menu.
+Press @kbd{S-Mouse-1} to activate this menu.
 @end table
 
   In Emacs versions that use an X toolkit, the color-setting and
@@ -596,8 +596,9 @@ additional line available for text.
   When using Emacs with X, you can set up multiple styles of displaying
 characters.  The aspects of style that you can control are the type
 font, the foreground color, the background color, and whether to
-underline.  Emacs 19.29 does not support faces on MS-DOS, but future
-versions may support them partially (@pxref{MS-DOS}).
+underline.  Emacs on MS-DOS supports faces partially by letting you
+control the foreground and background colors of each face
+(@pxref{MS-DOS}).
 
   The way you control display style is by defining named @dfn{faces}.
 Each face can specify a type font, a foreground color, a background
@@ -662,6 +663,23 @@ recognize comments and strings in most languages; in several languages,
 it can also recognize and properly highlight various other important
 constructs---for example, names of functions being defined.
 
+@kindex C-M-g
+@findex font-lock-fontify-block
+  In Font-Lock mode, when you edit the text, the highlighting updates
+automatically in the line that you changed.  Most changes don't affect
+the highlighting of subsequent lines, but occasionally they do.  To
+rehighlight a range of lines, use the command @kbd{C-M-g}
+(@code{font-lock-fontify-block}).
+
+@vindex font-lock-mark-block-function
+  In certain major modes, @kbd{C-M-g} refontifies the entire current
+function.  (The variable @code{font-lock-mark-block-function} controls
+how to find the current function.)  In other major modes, @kbd{C-M-g}
+refontifies 16 lines above and below point.
+
+  With a prefix argument @var{n}, @kbd{C-M-g} refontifies @var{n} lines
+above and below point, regardless of the mode.
+
 @findex font-lock-mode
 @findex turn-on-font-lock
   Font-Lock mode is a minor mode.  The command @kbd{M-x font-lock-mode}
@@ -674,6 +692,14 @@ file, you can do this:
 (add-hook 'c-mode-hook 'turn-on-font-lock)
 @end example
 
+@findex global-font-lock-mode
+  To turn on Font-Lock mode automatically in all modes which support it,
+use the function @code{global-font-lock-mode}, like this:
+
+@example
+(global-font-lock-mode t)
+@end example
+
 @vindex font-lock-display-type
   To get the full benefit of Font-Lock mode, you need to choose a
 default font which has bold, italic, and bold-italic variants; or else
@@ -683,21 +709,47 @@ use font styles, colors, or shades of gray to distinguish the various
 kinds of text.  Emacs chooses the default value according to the
 characteristics of your display.
 
-@vindex font-lock-maximum-size
 @vindex font-lock-maximum-decoration
-  The variable @code{font-lock-maximum-size} specifies a buffer size
-beyond which Font-Lock mode is suppressed (lest it take too long).  The
-variable @code{font-lock-maximum-decoration} specifies the preferred
-level of fontification for modes that provide multiple levels.  The
-normal default is 1; larger numbers request more fontification, and some
-modes support levels as high as 3.  These variables can also specify
-different numbers for particular major modes; for example, to use level
-3 for C/C++ modes, and the default level otherwise, use this:
+  The variable @code{font-lock-maximum-decoration} specifies the
+preferred level of fontification for modes that provide multiple levels.
+The normal default is 1; larger numbers request more fontification, and
+some modes support levels as high as 3.  These variables can also
+specify different numbers for particular major modes; for example, to
+use level 3 for C/C++ modes, and the default level otherwise, use this:
 
 @example
 (setq font-lock-maximum-decoration
       '((c-mode . 3) (c++-mode . 3)))
 @end example
+
+@vindex font-lock-maximum-size
+  Fontification can be too slow for large buffers, so you can suppress
+it.  The variable `font-lock-maximum-size' specifies a buffer size,
+beyond which buffer fontification is suppressed.
+
+@cindex Fast Lock mode
+  To make Font Lock mode practical for large buffers, you can use Fast
+Lock mode to avoid repetitive buffer fontification.  Fast Lock mode
+saves the font information for a file in a separate cache file; each
+time you visit the file, it rereads the font information from the cache
+file instead of refontifying the text from scratch.
+
+@findex fast-lock-mode
+@findex turn-on-fast-lock
+  The command @kbd{M-x fast-lock-mode} turns Fast Lock mode on or off,
+according to the argument (with no argument, it toggles).  The function
+@code{turn-on-fast-lock} unconditionally enables Fast Lock mode.  Here
+is how you can arrange to enable Fast Lock mode whenever you use Font
+Lock mode:
+
+@example
+(add-hook 'font-lock-mode-hook 'turn-on-fast-lock)
+@end example
+
+@vindex fast-lock-minimum-size
+  It is not worth while writing a cache file for small buffers.
+Therefore, the variable @code{fast-lock-minimum-size} specifies a
+minimum buffer size for caching font information.
 
   You can print out the buffer with the highlighting that appears
 on your screen using the command @code{ps-print-buffer-with-faces}.

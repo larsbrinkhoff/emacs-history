@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
 
@@ -67,7 +68,7 @@ to return to regular RMAIL:
   (if (and (eq (key-binding "\C-c\C-c") 'rmail-cease-edit)
 	   (eq (key-binding "\C-c\C-]") 'rmail-abort-edit))
       (message "Editing: Type C-c C-c to return to Rmail, C-c C-] to abort")
-    (message (substitute-command-keys
+    (message "%s" (substitute-command-keys
 	       "Editing: Type \\[rmail-cease-edit] to return to Rmail, \\[rmail-abort-edit] to abort"))))
 
 (defun rmail-cease-edit ()

@@ -1,22 +1,22 @@
 /* Add entries to the GNU Emacs Program Manager folder.
    Copyright (C) 1995 Free Software Foundation, Inc.
 
-   This file is part of GNU Emacs.
+This file is part of GNU Emacs.
 
-   GNU Emacs is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
-   version.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   GNU Emacs is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-   more details.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with GNU Emacs; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /****************************************************************************
  *
@@ -44,7 +44,7 @@ DdeCallback (UINT uType, UINT uFmt, HCONV hconv,
 	DdeClientTransaction (str, strlen (str)+1, HConversation, (HSZ)NULL, \
 		              CF_TEXT, XTYP_EXECUTE, 30000, NULL)
 
-#define REG_ROOT "SOFTWARE\\GNU\\Emacs\\"
+#define REG_ROOT "SOFTWARE\\GNU\\Emacs"
 
 static struct entry
 {
@@ -53,14 +53,14 @@ static struct entry
 } 
 env_vars[] = 
 {
-  {"emacs_path", NULL},
-  {"EMACSLOADPATH", "%emacs_path%\\lisp"},
-  {"SHELL", "cmd"},
-  {"EMACSDATA", "%emacs_path%\\etc"},
-  {"EMACSPATH", "%emacs_path%\\bin"},
-  {"EMACSLOCKDIR", "%emacs_path%\\lock"},
-  {"INFOPATH", "%emacs_path%\\info"},
-  {"EMACSDOC", "%emacs_path%\\etc"},
+  {"emacs_dir", NULL},
+  {"EMACSLOADPATH", "%emacs_dir%\\lisp"},
+  {"SHELL", "%COMSPEC%"},
+  {"EMACSDATA", "%emacs_dir%\\etc"},
+  {"EMACSPATH", "%emacs_dir%\\bin"},
+  {"EMACSLOCKDIR", "%emacs_dir%\\lock"},
+  {"INFOPATH", "%emacs_dir%\\info"},
+  {"EMACSDOC", "%emacs_dir%\\etc"},
   {"TERM", "cmd"}
 };
 
@@ -128,7 +128,7 @@ main (argc, argv)
     {
       DdeCommand ("[CreateGroup (Gnu Emacs)]");
       DdeCommand ("[ReplaceItem (Emacs)]");
-      sprintf (additem, "[AddItem (%s\\bin\\emacs.%s, Emacs%c%s)]",
+      sprintf (additem, "[AddItem (%s\\bin\\runemacs.%s, Emacs%c%s)]",
 	       argv[1], lpext, (argc>2 ? ',' : ' '),
 	       (argc>2 ? argv[2] : ""));
       DdeCommand (additem);

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Written by Howard Gayle.  See chartab.c for details. */
 
@@ -30,21 +31,21 @@ Lisp_Object Vascii_canon_table, Vascii_eqv_table;
 static void compute_trt_inverse ();
 
 DEFUN ("case-table-p", Fcase_table_p, Scase_table_p, 1, 1, 0,
-  "Return t iff ARG is a case table.\n\
+  "Return t iff OBJECT is a case table.\n\
 See `set-case-table' for more information on these data structures.")
-  (table)
-     Lisp_Object table;
+  (object)
+     Lisp_Object object;
 {
   Lisp_Object up, canon, eqv;
 
-  if (! CHAR_TABLE_P (table))
+  if (! CHAR_TABLE_P (object))
     return Qnil;
-  if (! EQ (XCHAR_TABLE (table)->purpose, Qcase_table))
+  if (! EQ (XCHAR_TABLE (object)->purpose, Qcase_table))
     return Qnil;
 
-  up = XCHAR_TABLE (table)->extras[0];
-  canon = XCHAR_TABLE (table)->extras[1];
-  eqv = XCHAR_TABLE (table)->extras[2];
+  up = XCHAR_TABLE (object)->extras[0];
+  canon = XCHAR_TABLE (object)->extras[1];
+  eqv = XCHAR_TABLE (object)->extras[2];
 
   return ((NILP (up) || CHAR_TABLE_P (up))
 	  && ((NILP (canon) && NILP (eqv))
@@ -158,7 +159,12 @@ set_case_table (table, standard)
   if (standard)
     Vascii_downcase_table = table;
   else
-    current_buffer->downcase_table = table;
+    {
+      current_buffer->downcase_table = table;
+      current_buffer->upcase_table = up;
+      current_buffer->case_canon_table = canon;
+      current_buffer->case_eqv_table = eqv;
+    }
 
   return table;
 }

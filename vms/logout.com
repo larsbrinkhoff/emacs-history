@@ -21,7 +21,7 @@ $ ding[0,8] = 7
 $ err := write sys$error
 $ on control_y then goto abort
 $!
-$! Check for the existence of subprocecess before allowing logout.
+$! Check for the existence of subprocess before allowing logout.
 $! Loop through the process list to find out if the emacs process exists.
 $!
 $ ctx  = 0

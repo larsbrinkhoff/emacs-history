@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Change Log:
 
@@ -43,7 +44,7 @@
 ;; 	tower@prep Sep  3 1986
 ;; added news-rotate-buffer-body
 ;;	tower@prep Oct 17 1986
-;; made messages more user friendly, cleanuped news-inews
+;; made messages more user friendly, cleaned up news-inews
 ;; move posting and mail code to new file rnewpost.el
 ;;	tower@prep Oct 29 1986
 ;; added caesar-region, rename news-caesar-buffer-body, hacked accordingly
@@ -796,7 +797,7 @@ Using ls was found to be too slow in a previous version."
 	       (setq tem news-list-of-files)
 	       (while tem
 		 (if (or (not (string-match "^[0-9]*$" (car tem)))
-			 ;; dont get confused by directories that look like numbers
+			 ;; don't get confused by directories that look like numbers
 			 (file-directory-p
 			  (concat file-directory "/" (car tem)))
 			 (<= (string-to-int (car tem)) end-file-no))
@@ -858,7 +859,7 @@ Using ls was found to be too slow in a previous version."
 (defun news-add-news-group (gp)
   "Resubscribe to or add a USENET news group named GROUP (a string)."
 ; @@ (completing-read ...)
-; @@ could be based on news library file ../active (slightly facist)
+; @@ could be based on news library file ../active (slightly fascist)
 ; @@ or (expensive to compute) all directories under the news spool directory
   (interactive "sAdd news group: ")
   (let ((file-dir (concat news-path (string-subst-char ?/ ?. gp))))

@@ -1,12 +1,30 @@
 ;;; gnus-edit.el --- Gnus SCORE file editing
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
-;;
+
 ;; Author: Per Abrahamsen <abraham@iesd.auc.dk>
 ;; Keywords: news, help
 ;; Version: 0.2
 
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
 ;;; Commentary:
-;;
+
 ;; Type `M-x gnus-score-customize RET' to invoke.
 
 ;;; Code:
@@ -268,14 +286,14 @@ field."))
 
 When you have finished reading a group GNUS can automatically create
 new score entries based on which articles you read and which you
-skipped.  This is normally controled by the two global variables
+skipped.  This is normally controlled by the two global variables
 `gnus-use-adaptive-scoring' and `gnus-default-adaptive-score-alist',
 The first determines whether adaptive scoring should be enabled or
 not, while the second determines what score entries should be created.
 
 You can overwrite the setting of `gnus-use-adaptive-scoring' by
 selecting `Enable' or `Disable' by pressing the `Adapt' button.
-Selecting `Custom' will allow you to specify the exact adaption
+Selecting `Custom' will allow you to specify the exact adaptation
 rules (overwriting `gnus-default-adaptive-score-alist').")
 	   (type . choice)
 	   (data ((tag . "Default")

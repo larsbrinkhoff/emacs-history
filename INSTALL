@@ -16,14 +16,15 @@ Copyright (c) 1992, 1994 Free software Foundation, Inc.
 
 
 BUILDING AND INSTALLATION:
-(This is for a Unix or Unix-like system.  For MSDOS, see below;
-search for MSDOG.  For Windows NT, see the file nt/install.)
+
+(This is for a Unix or Unix-like system.  For MSDOS, see below; search
+for MSDOG.  For Windows NT or Windows 95, see the file nt/INSTALL.)
 
 1) Make sure your system has enough swapping space allocated to handle
 a program whose pure code is 900k bytes and whose data area is at
 least 400k and can reach 8Mb or more.  If the swapping space is
 insufficient, you will get an error in the command `temacs -batch -l
-loadup dump', found in `./src/Makefile.in.in', or possibly when
+loadup dump', found in `./src/Makefile.in', or possibly when
 running the final dumped Emacs.
  
 Building Emacs requires about 70 Mb of disk space (including the Emacs
@@ -145,7 +146,7 @@ doing, you'll make a mistake.
 Lisp code you want Emacs to load before it is dumped out.  Use
 site-load.el for additional libraries if you arrange for their
 documentation strings to be in the etc/DOC file (see
-src/Makefile.in.in if you wish to figure out how to do that).  For all
+src/Makefile.in if you wish to figure out how to do that).  For all
 else, use site-init.el.
 
 If you set load-path to a different value in site-init.el or
@@ -182,16 +183,22 @@ are installed in the following directories:
 `/usr/local/share/emacs/VERSION/lisp' holds the Emacs Lisp library;
 		`VERSION' stands for the number of the Emacs version
 		you are installing, like `18.59' or `19.27'.  Since the
-		lisp library changes from one version of Emacs to
+		Lisp library changes from one version of Emacs to
 		another, including the version number in the path
 		allows you to have several versions of Emacs installed
-		at the same time; this means that you don't have to
-		make Emacs unavailable while installing a new
-		version.
+		at the same time; in particular, you don't have to
+		make Emacs unavailable while installing a new version.
 
-		Emacs searches for its lisp files in
-		`/usr/local/share/emacs/site-lisp', then in this
-		directory.
+`/usr/local/share/emacs/VERSION/site-lisp' holds the local Emacs Lisp
+		files installed for Emacs version VERSION only.
+
+`/usr/local/share/emacs/site-lisp' holds the local Emacs Lisp
+		files installed for all Emacs versions.
+
+		When Emacs is installed, it searches for its Lisp files
+		in `/usr/local/share/emacs/VERSION/site-lisp', then in
+		`/usr/local/share/emacs/site-lisp', and finally in
+		`/usr/local/share/emacs/VERSION/lisp'.
 
 `/usr/local/share/emacs/VERSION/etc' holds the Emacs tutorial, the DOC
 		file, the `yow' database, and other
@@ -228,7 +235,7 @@ are installed in the following directories:
 
 If these directories are not what you want, you can specify where to
 install Emacs's libraries and data files or where Emacs should search
-for its lisp files by giving values for `make' variables as part of
+for its Lisp files by giving values for `make' variables as part of
 the command.  See the section below called `MAKE VARIABLES' for more
 information on this.
 
@@ -268,7 +275,7 @@ Here is a complete list of the variables you may want to set.
 	read-only data files that Emacs refers to while it runs; it
 	defaults to /usr/local/share.  We create the following
 	subdirectories under `datadir':
-	- `emacs/VERSION/lisp', containing the Emacs lisp library, and
+	- `emacs/VERSION/lisp', containing the Emacs Lisp library, and
 	- `emacs/VERSION/etc', containing the Emacs tutorial, the DOC
 		file, and the `yow' database.
 	`VERSION' is the number of the Emacs version you are installing,
@@ -339,20 +346,20 @@ Here is a complete list of the variables you may want to set.
 The above variables serve analogous purposes in the makefiles for all
 GNU software; here are some variables specific to Emacs.
 
-`lispdir' indicates where Emacs installs and expects its lisp library.
+`lispdir' indicates where Emacs installs and expects its Lisp library.
 	Its default value, based on `datadir' (see above), is
 	`/usr/local/share/emacs/VERSION/lisp' (where `VERSION' is as
 	described above).
 
-`locallisppath' indicates where Emacs should search for lisp files
+`locallisppath' indicates where Emacs should search for Lisp files
 	specific to your site.  It should be a colon-separated list of
 	directories; Emacs checks them in order before checking
-	`lispdir'.  Its default value, based on `datadir' (see above),
-	is `/usr/local/share/emacs/site-lisp'.
+	`lispdir'.  Its default value, based on `datadir' (see above), is
+	`/usr/local/share/emacs/VERSION/site-lisp:/usr/local/share/emacs/site-lisp'.
 
 `lisppath' is the complete list of directories Emacs should search for
-	its lisp files; its default value is the concatenation of
-	`lispdir' and `locallisppath'.  It should be a colon-separated
+	its Lisp files; its default value is the concatenation of
+	`locallisppath' and `lispdir'.  It should be a colon-separated
 	list of directories; Emacs checks them in the order they
 	appear.
 
@@ -389,7 +396,7 @@ CONFIGURATION BY HAND
 Instead of running the `configure' program, you have to perform the
 following steps.
 
-1) Copy `./src/config.h.in' to `./src/config.h'.
+1) Copy `./src/config.in' to `./src/config.h'.
 
 2) Consult `./etc/MACHINES' to see what configuration name you should
 use for your system.  Look at the code of the `configure' script to
@@ -405,8 +412,8 @@ changing the s/*.h and m/*.h files.  Occasionally you may need to
 redefine parameters used in `./lib-src/movemail.c'.
 
 3) Create src/Makefile and lib-src/Makefile from the corresponding
-`Makefile.in.in' files.  First copy `Makefile.in.in' to `Makefile.in',
-then edit in appropriate substituions for the @...@ constructs,
+`Makefile.in' files.  First copy `Makefile.in' to `Makefile.c',
+then edit in appropriate substitutions for the @...@ constructs,
 and then copy the shell commands near the end of `configure'
 that run cpp to construct `Makefile'.
 
@@ -423,7 +430,7 @@ Once Emacs is configured, running `make' in the top directory performs
 the following steps.
 
 1) Run `make src/paths.h' in the top directory.  This produces
-`./src/paths.h' from the template file `./src/paths.h.in', changing
+`./src/paths.h' from the template file `./src/paths.in', changing
 the paths to the values specified in `./Makefile'.
 
 2) Go to directory `./lib-src' and run `make'.  This creates
@@ -504,13 +511,28 @@ problems sometimes encountered, and what to do about them.
 Installation on MSDOG (a.k.a. MSDOS)
 
 To install on MSDOG, you need to have the GNU C compiler for MSDOG
-(also known as djgpp), GNU Make, rm, mv, chmod, and sed.
+(also known as djgpp), GNU Make, rm, mv, chmod, and sed.  See the
+remarks in config.bat for more information about locations and
+versions.
+
+If you are compiling on an MSDOG-like system which has long file
+names, you may need to do `SET LFN=y' for some of the commands,
+especially the compilation commands.  It might be more convenient to
+unpack the Emacs distribution with djtar, which comes with djgpp; if
+you do `SET LFN=n' before unpacking, djtar truncates file names to 8.3
+naming as it extracts files, even if the system allows long file
+names, and this ensures that build procedures designed for 8.3 file
+names still work.  Use djtar with the command `djtar -x foo.tar' or
+`djtar -x foo.tgz'.
 
 Some users report that running Emacs 19.29 requires dpmi memory
 management.  We do not know why this is so, since 19.28 did not need
-it.  If we find out what change introduced this requirement, we will
-try to eliminate it.  It is possible that this problem happens only
-when there is not enough physical memory on the machine.
+it.  If we find out what change introduced this requirement, we may
+try to eliminate it.  ("May" because perhaps djgpp version 2's
+improved dpmi handling means this is no longer a problem.)
+
+It is possible that this problem happens only when there is not enough
+physical memory on the machine.
 
 You can find out if you have a dpmi host by running go32 (part of
 djgpp) without arguments; it will tell you if it uses dpmi memory.
@@ -521,16 +543,19 @@ To build and install Emacs, type these commands:
     config msdos
     make install
 
-You may need to work around a type conflict between gmalloc.c and the
-header file djgppstd.h regarding declarations of memalign and valloc.
-Temporarily deleting those declarations from djgppstd.h while compiling
-Emacs or while compiling gmalloc.c should do it.  We found out about this
-problem too late to include a more convenient fix--sorry.
+Building Emacs creates executable files in the src and lib-src
+directories.  Installing Emacs on MSDOS moves these executables to a
+sibling directory called bin.  For example, if you build in directory
+/emacs, installing moves the executables from /emacs/src and
+/emacs/lib-src to the directory /emacs/bin, so you can then delete the
+subdirectories /emacs/src and /emacs/lib-src if you wish.  The only
+subdirectories you need to keep are bin, lisp, etc and info.
 
-To save disk space, Emacs is built with the idea that you will execute
-it from the same place in the file system where you built it.  As the
-/usr/local/ subtree does not exist on most MSDOG systems, the
-executables are placed in /emacs/bin/.
+Emacs on MSDOS finds the lisp, etc and info directories by looking in
+../lisp, ../etc and ../info, starting from the directory where the
+Emacs executable was run from.  You can override this by setting the
+environment variable HOME; if you do that, the directories lisp, etc
+and info are accessed as subdirectories of the HOME directory.
 
 MSDOG is a not a multitasking operating system, so Emacs features such
 as asynchronous subprocesses that depend on multitasking will not

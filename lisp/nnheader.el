@@ -1,4 +1,5 @@
 ;;; nnheader.el --- header access macros for Gnus and its backends
+
 ;; Copyright (C) 1987,88,89,90,93,94,95 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -186,14 +188,23 @@
     (set (car (car state)) (nth 1 (car state)))
     (setq state (cdr state))))
 
-;; Read the head of an article.
+(defvar nnheader-max-head-length 4096
+  "The maximum length of a HEAD.")
+
 (defun nnheader-insert-head (file)
-  (let ((beg 0)
-	(chop 1024))
-    (while (and (eq chop (nth 1 (nnheader-insert-file-contents-literally
-				 file nil beg (setq beg (+ chop beg)))))
-		(prog1 (not (search-backward "\n\n" nil t)) 
-		  (goto-char (point-max)))))))
+  "Insert the head of the article."
+  (if (eq nnheader-max-head-length t)
+      ;; Just read the entire file.
+      (insert-file-contents-literally file)
+    ;; Read 1K blocks until we find a separator.
+    (let ((beg 0)
+	  (chop 1024))
+      (while (and (eq chop (nth 1 (insert-file-contents-literally
+				   file nil beg (setq beg (+ beg chop)))))
+		  (prog1 (not (search-forward "\n\n" nil t)) 
+		    (goto-char (point-max)))
+		  (or (null nnheader-max-head-length)
+		      (< beg nnheader-max-head-length)))))))
 
 (defun nnheader-article-p ()
   (goto-char (point-min))

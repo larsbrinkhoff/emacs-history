@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Note that this declares bzero on OSF/1.  How dumb.  */
 #include <signal.h>
@@ -87,6 +88,9 @@ int gc_cons_threshold;
 /* Nonzero during gc */
 int gc_in_progress;
 
+/* Nonzero means display messages at beginning and end of GC.  */
+int garbage_collection_messages;
+
 #ifndef VIRT_ADDR_VARIES
 extern
 #endif /* VIRT_ADDR_VARIES */
@@ -151,7 +155,7 @@ Lisp_Object memory_signal_data;
 /* Define DONT_COPY_FLAG to be some bit which will always be zero in a
    pointer to a Lisp_Object, when that pointer is viewed as an integer.
    (On most machines, pointers are even, so we can use the low bit.
-   Word-addressible architectures may need to override this in the m-file.)
+   Word-addressable architectures may need to override this in the m-file.)
    When linking references to small strings through the size field, we
    use this slot to hold the bit that would otherwise be interpreted as
    the GC mark bit.  */
@@ -870,13 +874,13 @@ init_symbol ()
 DEFUN ("make-symbol", Fmake_symbol, Smake_symbol, 1, 1, 0,
   "Return a newly allocated uninterned symbol whose name is NAME.\n\
 Its value and function definition are void, and its property list is nil.")
-  (str)
-     Lisp_Object str;
+  (name)
+     Lisp_Object name;
 {
   register Lisp_Object val;
   register struct Lisp_Symbol *p;
 
-  CHECK_STRING (str, 0);
+  CHECK_STRING (name, 0);
 
   if (symbol_free_list)
     {
@@ -899,7 +903,7 @@ Its value and function definition are void, and its property list is nil.")
       XSETSYMBOL (val, &symbol_block->symbols[symbol_block_index++]);
     }
   p = XSYMBOL (val);
-  p->name = XSTRING (str);
+  p->name = XSTRING (name);
   p->plist = Qnil;
   p->value = Qunbound;
   p->function = Qunbound;
@@ -1013,7 +1017,7 @@ DEFUN ("make-marker", Fmake_marker, Smake_marker, 0, 0, 0,
 struct string_block_head
   {
     struct string_block *next, *prev;
-    int pos;
+    EMACS_INT pos;
   };
 
 struct string_block
@@ -1489,7 +1493,7 @@ Garbage collection happens automatically if you cons more than\n\
     }
 #endif /* MAX_SAVE_STACK > 0 */
 
-  if (!noninteractive)
+  if (garbage_collection_messages)
     message1_nolog ("Garbage collecting...");
 
   /* Don't keep command history around forever */
@@ -1605,10 +1609,13 @@ Garbage collection happens automatically if you cons more than\n\
   if (gc_cons_threshold < 10000)
     gc_cons_threshold = 10000;
 
-  if (omessage || minibuf_level > 0)
-    message2_nolog (omessage, omessage_length);
-  else if (!noninteractive)
-    message1_nolog ("Garbage collecting...done");
+  if (garbage_collection_messages)
+    {
+      if (omessage || minibuf_level > 0)
+	message2_nolog (omessage, omessage_length);
+      else
+	message1_nolog ("Garbage collecting...done");
+    }
 
   return Fcons (Fcons (make_number (total_conses),
 		       make_number (total_free_conses)),
@@ -1801,6 +1808,7 @@ mark_object (argptr)
 
 	  mark_object (&ptr->name);
 	  mark_object (&ptr->icon_name);
+	  mark_object (&ptr->title);
 	  mark_object (&ptr->focus_frame);
 	  mark_object (&ptr->selected_window);
 	  mark_object (&ptr->minibuffer_window);
@@ -2157,7 +2165,7 @@ gc_sweep ()
 
 #ifndef standalone
   /* Put all unmarked markers on free list.
-     Dechain each one first from the buffer it points into,
+     Unchain each one first from the buffer it points into,
      but only if it's a real marker.  */
   {
     register struct marker_block *mblk;
@@ -2608,6 +2616,10 @@ This limit is applied when garbage collection happens.\n\
 The size is counted as the number of bytes occupied,\n\
 which includes both saved text and other data.");
   undo_strong_limit = 30000;
+
+  DEFVAR_BOOL ("garbage-collection-messages", &garbage_collection_messages,
+    "Non-nil means display messages at start and end of garbage collection.");
+  garbage_collection_messages = 0;
 
   /* We build this in advance because if we wait until we need it, we might
      not be able to allocate the memory to hold it.  */

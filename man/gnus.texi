@@ -115,7 +115,7 @@ can point your (feh!) web browser to
 distribution point for the new and spiffy versions of Gnus, also know as
 The Site That Destroys Newsrcs And Drives People Mad.
 
-During the first extended alpha period of develpment, the new Gnus was
+During the first extended alpha period of development, the new Gnus was
 called "(ding) Gnus".  @dfn{(ding)}, is, of course, short for @dfn{ding
 is not Gnus}, which is a total and utter lie, but who cares? (Besides,
 the "Gnus" in this abbreviation should probably be pronounced "news" as
@@ -124,7 +124,7 @@ think?)
 
 In any case, after spending all that energy with coming up with a new
 and spiffy name, we decided that the name was @emph{too} spiffy, so we
-renamamed it back again to "Gnus".  But in mixed case.  "Gnus" vs.
+renamed it back again to "Gnus".  But in mixed case.  "Gnus" vs.
 @sc{gnus}.  New vs. old.
 
 Incidentally, the next Gnus generation will be called "September Gnus",
@@ -137,6 +137,7 @@ and won't be released until February.  Confused?  You will be.
 * Contributors::        Oodles of people.  
 * New Features::        Pointers to some of the new stuff in Gnus.
 * Newest Features::     Features so new that they haven't been written yet.
+* Censorship::          This manual has been censored.
 @end menu
 
 @node Why?
@@ -528,7 +529,7 @@ Hierarchal group buffers.
 @item
 Don't kill summary buffers upon exit from the groups.
 @item
-Allow adaption on secondary marks.
+Allow adaptation on secondary marks.
 @end itemize
 
 And much, much, much more.  There is more to come than has already been
@@ -536,6 +537,20 @@ implemented.  (But that's always true, isn't it?)
 
 You can probably sneak a look at the actual up-to-the-second todo list
 by snooping @code{<URL:http://www.ifi.uio.no/~larsi/sgnus/todo>}. 
+
+@node Censorship
+@section Censorship
+@cindex censorship
+
+This version of the Gnus manual (as well as Gnus itself) has been
+censored in accord with the Communications Decency Act.  This law was
+described by its proponents as a ban on pornography---which was a
+deception, since it prohibits far more than that.  This manual did not
+contain pornography, but part of it was prohibited nonetheless.
+
+For information on US government censorship of the Internet, and
+what you can do to bring back freedom of the press, see the web
+site @samp{http://www.vtw.org/}.
 
 @node Terminology
 @chapter Terminology
@@ -1037,7 +1052,7 @@ ticked articles, in @samp{alt.fan.andrea-dworkin} (see that little
 asterisk at the beginning of the line?)
 
 @vindex gnus-group-line-format
-You can fuck that up to your heart's delight by fiddling with the
+You can change that format to whatever you want by fiddling with the
 @code{gnus-group-line-format} variable.  This variable works along the
 lines of a @code{format} specification, which is pretty much the same as
 a @code{printf} specifications, for those of you who use (feh!) C.
@@ -1386,8 +1401,8 @@ All groups with a level less than or equal to
 @code{gnus-group-default-list-level} will be listed in the group buffer
 by default.
 
-@vindex gnus-group-use-permament-levels
-If @code{gnus-group-use-permament-levels} is non-@code{nil}, once you
+@vindex gnus-group-use-permanent-levels
+If @code{gnus-group-use-permanent-levels} is non-@code{nil}, once you
 give a level prefix to @kbd{g} or @kbd{l}, all subsequent commands will
 use this level as the "work" level.
 
@@ -2772,7 +2787,7 @@ Quit Gnus without saving any startup files (@code{gnus-group-quit}).
 @cindex unloading
 If you wish to completely unload Gnus and all its adherents, you can use
 the @code{gnus-unload} command.  This command is also very handy when
-trying to custoize meta-variables.
+trying to customize meta-variables.
 
 Note:
 
@@ -3425,7 +3440,7 @@ Three variables for customizing what to use when:
 
 @vindex gnus-mail-reply-method
 @item gnus-mail-reply-method
-This function is used to compose replies.  The three functions avaibale
+This function is used to compose replies.  The three functions available
 are:
 
 @findex gnus-mail-reply-using-vm
@@ -3442,7 +3457,7 @@ are:
 
 @vindex gnus-mail-forward-method
 @item gnus-mail-forward-method
-This function is used to forward messages.  The three functions avaibale
+This function is used to forward messages.  The three functions available
 are:
 
 @findex gnus-mail-forward-using-vm
@@ -3459,7 +3474,7 @@ are:
 
 @vindex gnus-mail-other-window-method
 @item gnus-mail-other-window-method
-This function is used to send mails.  The three functions avaibale are:
+This function is used to send mails.  The three functions available are:
 
 @findex gnus-mail-other-window-using-vm
 @findex gnus-mail-other-window-using-mhe
@@ -3633,8 +3648,8 @@ This function is called with the name of the current group after the
 post buffer has been initialized, and can be used for inserting a
 signature.  Nice if you use different signatures in different groups.
 
-@item gnus-post-prepapare-hook
-@vindex gnus-post-prepapare-hook
+@item gnus-post-prepare-hook
+@vindex gnus-post-prepare-hook
 This hook is called after a post buffer has been prepared. If you want
 to insert a signature at this point, you could put
 @code{gnus-inews-insert-signature} into this hook.
@@ -3692,7 +3707,7 @@ insert additional headers, or just change headers in some way or other.
 If non-@code{nil}, Gnus will attempt to check the legality of the
 headers, as well as some other stuff, before posting.  You can control
 the granularity of the check by adding or removing elements from this
-list.  Legal elemetents are:
+list.  Legal elements are:
 
 @table @code
 @item subject-cmsg 
@@ -5886,7 +5901,7 @@ in your @file{all.SCORE} file:
 @end lisp
 You may also consider doing something similar with @code{expunge}.  
 
-@item Negated charater classes
+@item Negated character classes
 If you say stuff like @code{[^abcd]*}, you may get unexpected results.
 That will match newlines, which might lead to, well, The Unknown.  Say
 @code{[^abcd\n]*} instead.
@@ -6062,7 +6077,7 @@ Expire all expirable articles in the group
 @findex gnus-summary-expire-articles-now
 Expunge all the expirable articles in the group
 (@code{gnus-summary-expire-articles-now}). This means that @strong{all}
-articles that are eligeble for expiry in the current group will
+articles that are eligible for expiry in the current group will
 disappear forever into that big @file{/dev/null} in the sky.
 
 @item B DEL
@@ -6578,7 +6593,7 @@ over.
 @menu
 * Interactive::                Making Gnus ask you many questions.
 * Windows Configuration::      Configuring the Gnus buffer windows.
-* Buttons::                    Get tendonitis in ten easy steps!
+* Buttons::                    Get tendinitis in ten easy steps!
 * Various Various::            Things that are really various.
 @end menu
 
@@ -6652,7 +6667,7 @@ and that it is placed over the article buffer.  As you may have noticed,
 100% + 25% is actually 125% (yup, I saw y'all reaching for that
 calculator there).  However, the special number @code{1.0} is used to
 signal that this buffer should soak up all the rest of the space
-avaiable after the rest of the buffers have taken whatever they need.  
+available after the rest of the buffers have taken whatever they need.  
 There should be only one buffer with the @code{1.0} size spec.
 
 Point will be put in the buffer that has the optional third element
@@ -6688,7 +6703,7 @@ Not complicated enough for you?  Well, try this on for size:
 @end lisp
 
 Whoops.  Two buffers with the mystery 100% tag.  And what's that
-@code{horizontal} thingie?  
+@code{horizontal} thingy?  
 
 If the first element in one of the rule lists is a list with
 @code{horizontal} as the first element, Gnus will split the window
@@ -7239,7 +7254,7 @@ number of articles may be less than one might think while just
 considering the highest and lowest article numbers, but some articles
 may have been cancelled.  Gnus just discards the total-number, so
 whether one should take the bother to generate it properly (if that is a
-problem) is left as an excercise to the reader.
+problem) is left as an exercise to the reader.
 
 @example
 group-status = [ error / info ] eol
@@ -7365,7 +7380,7 @@ This is a request to fetch articles asynchronously later.
 would generally expect that if one later fetches article number 4, for
 instance, some sort of asynchronous fetching of the articles after 4
 (which might be 5, 6, 7 or 11, 3, 909 depending on the order in that
-alist) would be fetched asynchronouly, but that is left up to the
+alist) would be fetched asynchronously, but that is left up to the
 backend.  Gnus doesn't care.
 
 There should be no result data from this function.
@@ -7464,7 +7479,7 @@ There should be no data returned.
 @section Score File Syntax
 
 Score files are meant to be easily parsable, but yet extremely
-mallable.   It was decided that something that had the same read syntax
+malleable.   It was decided that something that had the same read syntax
 as an Emacs Lisp list would fit that spec.
 
 Here's a typical score file:
@@ -7547,7 +7562,7 @@ just shamelessly @emph{stole} the entire thing, and one would be right.
 to talk about lines in the head of an article (eg., @code{From}).  It is
 used by many people as a synonym for "head" -- "the header and the
 body".  (That should be avoided, in my opinion.)  And Gnus uses a format
-interanally that it calls "header", which is what I'm talking about
+internally that it calls "header", which is what I'm talking about
 here.  This is a 9-element vector, basically, with each header (ouch)
 having one slot. 
 

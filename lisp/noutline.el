@@ -1,4 +1,5 @@
 ;;; outline.el --- outline mode commands for Emacs
+
 ;; Copyright (C) 1986, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -145,7 +147,7 @@ in the file it applies to.")
 			       (3 . font-lock-comment-face))))
 	      font-lock-variable-name-face))
 	nil t))
-    ;; Highight citations of the form [1] and [Mar94].
+    ;; Highlight citations of the form [1] and [Mar94].
     ("\\[\\([A-Z][A-Za-z]+\\)*[0-9]+\\]" . font-lock-type-face))
   "Additional expressions to highlight in Outline mode.")
 

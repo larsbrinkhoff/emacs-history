@@ -1,5 +1,5 @@
 /* MS-DOS specific C utilities.
-   Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Contributed by Morten Welinder */
 /* New display, keyboard, and mouse control by Kim F. Storm */
@@ -31,6 +32,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/param.h>
 #include <sys/time.h>
 #include <dos.h>
+#include <errno.h>
+#include <sys/stat.h>    /* for _fixpath */
+#if __DJGPP__ >= 2
+#include <fcntl.h>
+#include <libc/dosio.h>  /* for _USE_LFN */
+#endif
+
 #include "dosfns.h"
 #include "msdos.h"
 #include "systime.h"
@@ -46,6 +54,33 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Damn that local process.h!  Instead we can define P_WAIT ourselves.  */
 #define P_WAIT 1
 
+#ifndef _USE_LFN
+#define _USE_LFN 0
+#endif
+
+#if __DJGPP__ > 1
+
+#include <signal.h>
+
+#ifndef SYSTEM_MALLOC
+
+#ifdef GNU_MALLOC
+
+/* If other `malloc' than ours is used, force our `sbrk' behave like
+   Unix programs expect (resize memory blocks to keep them contiguous).
+   If `sbrk' from `ralloc.c' is NOT used, also zero-out sbrk'ed memory,
+   because that's what `gmalloc' expects to get.  */
+#include <crt0.h>
+
+#ifdef REL_ALLOC
+int _crt0_startup_flags = _CRT0_FLAG_UNIX_SBRK;
+#else  /* not REL_ALLOC */
+int _crt0_startup_flags = (_CRT0_FLAG_UNIX_SBRK | _CRT0_FLAG_FILL_SBRK_MEMORY);
+#endif /* not REL_ALLOC */
+#endif /* GNU_MALLOC */
+
+#endif /* not SYSTEM_MALLOC */
+#endif /* __DJGPP__ > 1 */
 
 static unsigned long
 event_timestamp ()
@@ -223,7 +258,7 @@ mouse_init ()
   mouse_moveto (0, 0);
   mouse_visible = 0;
 }
-
+
 /* ------------------------- Screen control ----------------------
  *
  */
@@ -249,6 +284,7 @@ static int startup_screen_size_X;
 static int startup_screen_size_Y;
 static int startup_pos_X;
 static int startup_pos_Y;
+static unsigned char startup_screen_attrib;
 
 static int term_setup_done;
 
@@ -329,10 +365,139 @@ ScreenVisualBell (void)
 
 #ifndef HAVE_X_WINDOWS
 
-/*
- * If we write a character in the position where the mouse is,
- * the mouse cursor may need to be refreshed.
- */
+/* Set the screen dimensions so that it can show no less than
+   ROWS x COLS frame.  */
+
+void
+dos_set_window_size (rows, cols)
+     int *rows, *cols;
+{
+  char video_name[30];
+  Lisp_Object video_mode;
+  int video_mode_value;
+  int have_vga = 0;
+  union REGS regs;
+  int current_rows = ScreenRows (), current_cols = ScreenCols ();
+
+  if (*rows == current_rows && *cols == current_cols)
+    return;
+
+  /* Do we have a VGA?  */
+  regs.x.ax = 0x1a00;
+  int86 (0x10, &regs, &regs);
+  if (regs.h.al == 0x1a && regs.h.bl > 5 && regs.h.bl < 13)
+    have_vga = 1;
+
+  mouse_off ();
+
+  /* If the user specified a special video mode for these dimensions,
+     use that mode.  */
+  sprintf (video_name, "screen-dimensions-%dx%d", *rows, *cols);
+  video_mode = XSYMBOL (Fintern_soft (build_string (video_name),
+				      Qnil))-> value;
+
+  if (INTEGERP (video_mode)
+      && (video_mode_value = XINT (video_mode)) > 0)
+    {
+      regs.x.ax = video_mode_value;
+      int86 (0x10, &regs, &regs);
+      regs.h.bl = 0;
+      regs.x.ax = 0x1003;
+      int86 (0x10, &regs, &regs);
+
+      if (have_mouse)
+	{
+	  /* Must hardware-reset the mouse, or else it won't update
+	     its notion of screen dimensions for some non-standard
+	     video modes.  This is *painfully* slow...  */
+	  regs.x.ax = 0;
+	  int86 (0x33, &regs, &regs);
+	}
+    }
+
+  /* Find one of the dimensions supported by standard EGA/VGA
+     which gives us at least the required dimensions.  */
+
+#if __DJGPP__ > 1
+
+  else
+    {
+      static struct {
+	int rows;
+	int need_vga;
+      }	std_dimension[] = {
+	  {25, 0},
+	  {28, 1},
+	  {35, 0},
+	  {40, 1},
+	  {43, 0},
+	  {50, 1}
+      };
+      int i = 0;
+
+      while (i < sizeof (std_dimension) / sizeof (std_dimension[0]))
+	{
+	 if (std_dimension[i].need_vga <= have_vga
+	     && std_dimension[i].rows >= *rows)
+	   {
+	     if (std_dimension[i].rows != current_rows
+		 || *cols != current_cols)
+	       _set_screen_lines (std_dimension[i].rows);
+	     break;
+	   }
+	 i++;
+	}
+    }
+
+#else /* not __DJGPP__ > 1 */
+
+  else if (*rows <= 25)
+    {
+      if (current_rows != 25 || current_cols != 80)
+	{
+	  regs.x.ax = 3;
+	  int86 (0x10, &regs, &regs);
+	  regs.x.ax = 0x1101;
+	  regs.h.bl = 0;
+	  int86 (0x10, &regs, &regs);
+	  regs.x.ax = 0x1200;
+	  regs.h.bl = 32;
+	  int86 (0x10, &regs, &regs);
+	  regs.x.ax = 3;
+	  int86 (0x10, &regs, &regs);
+	}
+    }
+  else if (*rows <= 50)
+    if (have_vga && (current_rows != 50 || current_cols != 80)
+	|| *rows <= 43 && (current_rows != 43 || current_cols != 80))
+      {
+	regs.x.ax = 3;
+	int86 (0x10, &regs, &regs);
+	regs.x.ax = 0x1112;
+	regs.h.bl = 0;
+	int86 (0x10, &regs, &regs);
+	regs.x.ax = 0x1200;
+	regs.h.bl = 32;
+	int86 (0x10, &regs, &regs);
+	regs.x.ax = 0x0100;
+	regs.x.cx = 7;
+	int86 (0x10, &regs, &regs);
+      }
+#endif /* not __DJGPP__ > 1 */
+
+  if (have_mouse)
+    {
+      mouse_init ();
+      mouse_on ();
+    }
+
+  /* Tell the caller what dimensions have been REALLY set.  */
+  *rows = ScreenRows ();
+  *cols = ScreenCols ();
+}
+
+/* If we write a character in the position where the mouse is,
+   the mouse cursor may need to be refreshed.  */
 
 static void
 mouse_off_maybe ()
@@ -502,10 +667,11 @@ IT_update_end ()
 }
 
 /* This was more or less copied from xterm.c */
+
 static void
 IT_set_menu_bar_lines (window, n)
-  Lisp_Object window;
-  int n;
+     Lisp_Object window;
+     int n;
 {
   struct window *w = XWINDOW (window);
 
@@ -525,10 +691,8 @@ IT_set_menu_bar_lines (window, n)
     }
 }
 
-/*
- * IT_set_terminal_modes is called when emacs is started,
- * resumed, and whenever the screen is redrawn!
- */
+/* IT_set_terminal_modes is called when emacs is started,
+   resumed, and whenever the screen is redrawn!  */
 
 static
 IT_set_terminal_modes (void)
@@ -554,22 +718,31 @@ IT_set_terminal_modes (void)
   
   startup_screen_size_X = screen_size_X;
   startup_screen_size_Y = screen_size_Y;
+  startup_screen_attrib = ScreenAttrib;
 
   ScreenGetCursor (&startup_pos_Y, &startup_pos_X);
   ScreenRetrieve (startup_screen_buffer = xmalloc (screen_size * 2));
 
   if (termscript)
-    fprintf (termscript, "<SCREEN SAVED>\n");
+    fprintf (termscript, "<SCREEN SAVED (dimensions=%dx%d)>\n",
+             screen_size_X, screen_size_Y);
 }
 
-/*
- * IT_reset_terminal_modes is called when emacs is
- * suspended or killed.
- */
+/* IT_reset_terminal_modes is called when emacs is
+   suspended or killed.  */
 
 static
 IT_reset_terminal_modes (void)
 {
+  int display_row_start = (int) ScreenPrimary;
+  int saved_row_len     = startup_screen_size_X * 2;
+  int update_row_len    = ScreenCols () * 2;
+  int current_rows      = ScreenRows ();
+  int to_next_row       = update_row_len;
+  unsigned char *saved_row = startup_screen_buffer;
+  int cursor_pos_X = ScreenCols () - 1;
+  int cursor_pos_Y = ScreenRows () - 1;
+
   if (termscript)
     fprintf (termscript, "\n<RESET_TERM>");
 
@@ -578,12 +751,45 @@ IT_reset_terminal_modes (void)
   if (!term_setup_done)
     return;
   
-  ScreenUpdate (startup_screen_buffer);
-  ScreenSetCursor (startup_pos_Y, startup_pos_X);
-  xfree (startup_screen_buffer);
+  mouse_off ();
+ 
+  /* We have a situation here.
+     We cannot just do ScreenUpdate(startup_screen_buffer) because
+     the luser could have changed screen dimensions inside Emacs
+     and failed (or didn't want) to restore them before killing
+     Emacs.  ScreenUpdate() uses the *current* screen dimensions and
+     thus will happily use memory outside what was allocated for
+     `startup_screen_buffer'.
+     Thus we only restore as much as the current screen dimensions
+     can hold, and clear the rest (if the saved screen is smaller than
+     the current) with the color attribute saved at startup.  The cursor
+     is also restored within the visible dimensions.  */
+
+  ScreenAttrib = startup_screen_attrib;
+  ScreenClear ();
+
+  if (update_row_len > saved_row_len)
+    update_row_len = saved_row_len;
+  if (current_rows > startup_screen_size_Y)
+    current_rows = startup_screen_size_Y;
 
   if (termscript)
-    fprintf (termscript, "<SCREEN RESTORED>\n");
+    fprintf (termscript, "<SCREEN RESTORED (dimensions=%dx%d)>\n",
+             update_row_len / 2, current_rows);
+
+  while (current_rows--)
+    {
+      dosmemput (saved_row, update_row_len, display_row_start);
+      saved_row         += saved_row_len;
+      display_row_start += to_next_row;
+    }
+  if (startup_pos_X < cursor_pos_X)
+    cursor_pos_X = startup_pos_X;
+  if (startup_pos_Y < cursor_pos_Y)
+    cursor_pos_Y = startup_pos_Y;
+
+  ScreenSetCursor (cursor_pos_Y, cursor_pos_X);
+  xfree (startup_screen_buffer);
 
   term_setup_done = 0;
 }
@@ -655,7 +861,8 @@ IT_set_frame_parameters (frame, alist)
 #endif /* !HAVE_X_WINDOWS */
 
 
-/* Do we need the internal terminal? */
+/* Do we need the internal terminal?  */
+
 void
 internal_terminal_init ()
 {
@@ -689,8 +896,13 @@ internal_terminal_init ()
   colors = getenv ("EMACSCOLORS");
   if (colors && strlen (colors) >= 2)
     {
-      the_only_x_display.foreground_pixel = colors[0] & 0x07;
-      the_only_x_display.background_pixel = colors[1] & 0x07;
+      /* Foreground colrs use 4 bits, background only 3.  */
+      if (isxdigit (colors[0]) && !isdigit (colors[0]))
+        colors[0] += 10 - (isupper (colors[0]) ? 'A' : 'a');
+      if (colors[0] >= 0 && colors[0] < 16)
+        the_only_x_display.foreground_pixel = colors[0];
+      if (colors[1] >= 0 && colors[1] < 8)
+        the_only_x_display.background_pixel = colors[1];
     }
   the_only_x_display.line_height = 1;
   the_only_frame.output_data.x = &the_only_x_display;
@@ -731,8 +943,6 @@ dos_get_saved_screen (screen, rows, cols)
   return 0;
 #endif  
 }
-
-
 
 /* ----------------------- Keyboard control ----------------------
  *
@@ -1113,7 +1323,7 @@ dos_get_modifiers (keymask)
 	    }
 	}
       
-      if (regs.h.ah & 1)		/* Left CTRL pressed
+      if (regs.h.ah & 1)		/* Left CTRL pressed ? */
 	mask |= CTRL_P;
 
       if (regs.h.ah & 4)	 	/* Right CTRL pressed ? */
@@ -1175,6 +1385,7 @@ and then the scan code.")
 }
 
 /* Get a char from keyboard.  Function keys are put into the event queue.  */
+
 static int
 dos_rawgetc ()
 {
@@ -1217,7 +1428,7 @@ dos_rawgetc ()
 #ifndef HAVE_X_WINDOWS
       if (!NILP (Vdos_display_scancodes))
 	{
-	  char buf[10];
+	  char buf[11];
 	  sprintf (buf, "%02x:%02x*%04x",
 		   (unsigned) (sc&0xff), (unsigned) c, mask);
 	  dos_direct_output (screen_size_Y - 2, screen_size_X - 12, buf, 10);
@@ -1379,14 +1590,37 @@ dos_rawgetc ()
       for (but = 0; but < NUM_MOUSE_BUTTONS; but++)
 	for (press = 0; press < 2; press++)
 	  {
+	    int button_num = but;
+
 	    if (press)
 	      ok = mouse_pressed (but, &x, &y);
 	    else
 	      ok = mouse_released (but, &x, &y);
 	    if (ok)
 	      {
+		/* Allow a simultaneous press/release of Mouse-1 and
+		   Mouse-2 to simulate Mouse-3 on two-button mice.  */
+		if (mouse_button_count == 2 && but < 2)
+		  {
+		    int x2, y2;	/* don't clobber original coordinates */
+
+		    /* If only one button is pressed, wait 100 msec and
+		       check again.  This way, Speedy Gonzales isn't
+		       punished, while the slow get their chance.  */
+		    if (press && mouse_pressed (1-but, &x2, &y2)
+			|| !press && mouse_released (1-but, &x2, &y2))
+		      button_num = 2;
+		    else
+		      {
+			delay (100);
+			if (press && mouse_pressed (1-but, &x2, &y2)
+			    || !press && mouse_released (1-but, &x2, &y2))
+			  button_num = 2;
+		      }
+		  }
+
 		event.kind = mouse_click;
-		event.code = but;
+		event.code = button_num;
 		event.modifiers = dos_get_modifiers (0)
 		  | (press ? down_modifier : up_modifier);
 		event.x = x;
@@ -1404,6 +1638,7 @@ dos_rawgetc ()
 static int prev_get_char = -1;
 
 /* Return 1 if a key is ready to be read without suspending execution.  */
+
 dos_keysns ()
 {
   if (prev_get_char != -1)
@@ -1413,6 +1648,7 @@ dos_keysns ()
 }
 
 /* Read a key.  Return -1 if no key is ready.  */
+
 dos_keyread ()
 {
   if (prev_get_char != -1)
@@ -1537,7 +1773,7 @@ IT_menu_calc_size (XMenu *menu, int *width, int *height)
   *height = maxheight;
 }
 
-/* Display MENU at (X,Y) using FACES. */
+/* Display MENU at (X,Y) using FACES.  */
 
 static void
 IT_menu_display (XMenu *menu, int y, int x, int *faces)
@@ -1574,8 +1810,16 @@ IT_menu_display (XMenu *menu, int y, int x, int *faces)
   IT_cursor_to (row, col);
   xfree (text);
 }
-
+
 /* --------------------------- X Menu emulation ---------------------- */
+
+/* Report availability of menus.  */
+
+int
+have_menus_p ()
+{
+  return 1;
+}
 
 /* Create a brand new menu structure.  */
 
@@ -1634,11 +1878,7 @@ void
 XMenuLocate (Display *foo0, XMenu *menu, int foo1, int foo2, int x, int y,
 	     int *ulx, int *uly, int *width, int *height)
 {
-  if (menu->count == 1 && menu->submenu[0])
-      /* Special case: the menu consists of only one pane.  */
-    IT_menu_calc_size (menu->submenu[0], width, height);
-  else
-    IT_menu_calc_size (menu, width, height);
+  IT_menu_calc_size (menu, width, height);
   *ulx = x + 1;
   *uly = y;
   *width += 2;
@@ -1665,6 +1905,7 @@ XMenuActivate (Display *foo, XMenu *menu, int *pane, int *selidx,
   int screensize;
   int faces[4], selectface;
   int leave, result, onepane;
+  int title_faces[4];		/* face to display the menu title */
 
   /* Just in case we got here without a mouse present...  */
   if (have_mouse <= 0)
@@ -1689,10 +1930,17 @@ XMenuActivate (Display *foo, XMenu *menu, int *pane, int *selidx,
   faces[2] = compute_glyph_face (&the_only_frame, selectface, faces[0]);
   faces[3] = compute_glyph_face (&the_only_frame, selectface, faces[1]);
 
+  /* Make sure the menu title is always displayed with
+     `msdos-menu-active-face', no matter where the mouse pointer is.  */
+  for (i = 0; i < 4; i++)
+    title_faces[i] = faces[3];
+
   statecount = 1;
   state[0].menu = menu;
   mouse_off ();
   ScreenRetrieve (state[0].screen_behind = xmalloc (screensize));
+
+  IT_menu_display (menu, y0 - 1, x0 - 1, title_faces); /* display menu title */
   if ((onepane = menu->count == 1 && menu->submenu[0]))
     {
       menu->width = menu->submenu[0]->width;
@@ -1730,7 +1978,7 @@ XMenuActivate (Display *foo, XMenu *menu, int *pane, int *selidx,
 			result = XM_IA_SELECT;
 		    *pane = state[i].pane - 1;
 		    *selidx = dy;
-		    /* We hit some part of a menu, so drop extra menues that
+		    /* We hit some part of a menu, so drop extra menus that
 		       have been opened.  That does not include an open and
 		       active submenu.  */
 		    if (i != statecount - 2
@@ -1810,8 +2058,7 @@ x_pixel_height (struct frame *f)
   return FRAME_HEIGHT (f);
 }
 #endif /* !HAVE_X_WINDOWS */
-
-
+
 /* ----------------------- DOS / UNIX conversion --------------------- */
 
 /* Destructively turn backslashes into slashes.  */
@@ -1843,20 +2090,34 @@ unixtodos_filename (p)
 }
 
 /* Get the default directory for a given drive.  0=def, 1=A, 2=B, ...  */
+void msdos_downcase_filename (unsigned char *);
 
 int
 getdefdir (drive, dst)
      int drive;
      char *dst;
 {
-  union REGS regs;
+  char in_path[4], *p = in_path;
+  int e = errno;
 
-  *dst++ = '/';
-  regs.h.dl = drive;
-  regs.x.si = (int) dst;
-  regs.h.ah = 0x47;
-  intdos (&regs, &regs);
-  return !regs.x.cflag;
+  /* Generate "X:." (when drive is X) or "." (when drive is 0).  */
+  if (drive != 0)
+    {
+      *p++ = drive + 'A' - 1;
+      *p++ = ':';
+    }
+
+  *p++ = '.';
+  *p = '\0';
+  errno = 0;
+  _fixpath (in_path, dst);
+  if (errno)
+    return 0;
+
+  msdos_downcase_filename (dst);
+
+  errno = e;
+  return 1;
 }
 
 /* Remove all CR's that are followed by a LF.  */
@@ -1886,6 +2147,120 @@ crlf_to_lf (n, buf)
   if (buf < endp)
     *np++ = *buf++;
   return np - startp;
+}
+
+#if defined(__DJGPP__) && __DJGPP__ == 2 && __DJGPP_MINOR__ == 0
+
+/* In DJGPP v2.0, library `write' can call `malloc', which might
+   cause relocation of the buffer whose address we get in ADDR.
+   Here is a version of `write' that avoids calling `malloc',
+   to serve us until such time as the library is fixed.
+   Actually, what we define here is called `__write', because
+   `write' is a stub that just jmp's to `__write' (to be
+   POSIXLY-correct with respect to the global name-space).  */
+
+#include <io.h>		      /* for _write */
+#include <libc/dosio.h>       /* for __file_handle_modes[] */
+
+static char xbuf[64 * 1024];  /* DOS cannot write more in one chunk */
+
+#define XBUF_END (xbuf + sizeof (xbuf) - 1)
+
+int
+__write (int handle, const void *buffer, size_t count)
+{
+  if (count == 0)
+    return 0;
+
+  if(__file_handle_modes[handle] & O_BINARY)
+    return _write (handle, buffer, count);
+  else
+    {
+      char *xbp = xbuf;
+      const char *bp = buffer;
+      int total_written = 0;
+      int nmoved = 0, ncr = 0;
+
+      while (count)
+	{
+	  /* The next test makes sure there's space for at least 2 more
+	     characters in xbuf[], so both CR and LF can be put there.  */
+	  if (xbp < XBUF_END)
+	    {
+	      if (*bp == '\n')
+		{
+		  ncr++;
+		  *xbp++ = '\r';
+		}
+	      *xbp++ = *bp++;
+	      nmoved++;
+	      count--;
+	    }
+	  if (xbp >= XBUF_END || !count)
+	    {
+	      size_t to_write = nmoved + ncr;
+	      int written = _write (handle, xbuf, to_write);
+
+	      if (written == -1)
+		return -1;
+	      else
+		total_written += nmoved;  /* CRs aren't counted in ret value */
+
+	      /* If some, but not all were written (disk full?), return
+		 an estimate of the total written bytes not counting CRs.  */
+	      if (written < to_write)
+		return total_written - (to_write - written) * nmoved/to_write;
+
+	      nmoved = 0;
+	      ncr = 0;
+	      xbp = xbuf;
+	    }
+	}
+      return total_written;
+    }
+}
+
+#endif /* __DJGPP__ == 2 && __DJGPP_MINOR__ == 0 */
+
+DEFUN ("msdos-long-file-names", Fmsdos_long_file_names, Smsdos_long_file_names,
+  0, 0, 0,
+  "Return non-nil if long file names are supported on MSDOS.")
+  ()
+{
+  return (_USE_LFN ? Qt : Qnil);
+}
+
+/* Convert alphabetic characters in a filename to lower-case.  */
+
+void
+msdos_downcase_filename (p)
+     register unsigned char *p;
+{
+  /* Under LFN we expect to get pathnames in their true case.  */
+  if (NILP (Fmsdos_long_file_names ()))
+    for ( ; *p; p++)
+      if (*p >= 'A' && *p <= 'Z')
+	*p += 'a' - 'A';
+}
+
+DEFUN ("msdos-downcase-filename", Fmsdos_downcase_filename, Smsdos_downcase_filename,
+       1, 1, 0,
+  "Convert alphabetic characters in FILENAME to lower case and return that.\n\
+When long filenames are supported, doesn't change FILENAME.\n\
+If FILENAME is not a string, returns nil.\n\
+The argument object is never altered--the value is a copy.")
+  (filename)
+     Lisp_Object filename;
+{
+  char *fname;
+  Lisp_Object tem;
+
+  if (! STRINGP (filename))
+    return Qnil;
+
+  tem = Fcopy_sequence (filename);
+  msdos_downcase_filename (XSTRING (tem)->data);
+  return tem;
 }
 
 /* The Emacs root directory as determined by init_environment.  */
@@ -2018,13 +2393,15 @@ init_environment (argc, argv, skip_args)
 	setenv ("TZ", "IST-02IDT-03,M4.1.6/00:00,M9.5.6/01:00", 0);
 	break;
       }
-  init_gettimeofday ();
+  tzset ();
 }
 
 
 
 static int break_stat;	 /* BREAK check mode status.	*/
 static int stdin_stat;	 /* stdin IOCTL status.		*/
+
+#if __DJGPP__ < 2
 
 /* These must be global.  */
 static _go32_dpmi_seginfo ctrl_break_vector;
@@ -2055,11 +2432,10 @@ install_ctrl_break_check ()
     }
 }
 
-/*
- * Turn off Dos' Ctrl-C checking and inhibit interpretation of
- * control chars by Dos.
- * Determine the keyboard type.
- */
+#endif /* __DJGPP__ < 2 */
+
+/* Turn off Dos' Ctrl-C checking and inhibit interpretation of
+   control chars by DOS.   Determine the keyboard type.  */
 
 int
 dos_ttraw ()
@@ -2069,7 +2445,9 @@ dos_ttraw ()
   
   break_stat = getcbrk ();
   setcbrk (0);
+#if __DJGPP__ < 2
   install_ctrl_break_check ();
+#endif
 
   if (first_time)
     {
@@ -2120,9 +2498,24 @@ dos_ttraw ()
 	      mouse_init ();
 	    }
 	}
-      
+
       first_time = 0;
+
+#if __DJGPP__ >= 2
+
+      stdin_stat = setmode (fileno (stdin), O_BINARY);
+      return (stdin_stat != -1);
     }
+  else
+    return (setmode (fileno (stdin), O_BINARY) != -1);
+
+#else /* __DJGPP__ < 2 */
+
+    }
+
+  /* I think it is wrong to overwrite `stdin_stat' every time
+     but the first one this function is called, but I don't
+     want to change the way it used to work in v1.x.--EZ  */
 
   inregs.x.ax = 0x4400;		/* Get IOCTL status. */
   inregs.x.bx = 0x00;		/* 0 = stdin. */
@@ -2133,9 +2526,12 @@ dos_ttraw ()
   inregs.x.ax = 0x4401;		/* Set IOCTL status */
   intdos (&inregs, &outregs);
   return !outregs.x.cflag;
+
+#endif /* __DJGPP__ < 2 */
 }
 
 /*  Restore status of standard input and Ctrl-C checking.  */
+
 int
 dos_ttcooked ()
 {
@@ -2144,21 +2540,31 @@ dos_ttcooked ()
   setcbrk (break_stat);
   mouse_off ();
 
+#if __DJGPP__ >= 2
+
+  return (setmode (fileno (stdin), stdin_stat) != -1);
+
+#else  /* not __DJGPP__ >= 2 */
+
   inregs.x.ax = 0x4401;	/* Set IOCTL status.	*/
   inregs.x.bx = 0x00;	/* 0 = stdin.		*/
   inregs.x.dx = stdin_stat;
   intdos (&inregs, &outregs);
   return !outregs.x.cflag;
+
+#endif /* not __DJGPP__ >= 2 */
 }
 
 
 /* Run command as specified by ARGV in directory DIR.
-   The command is run with input from TEMPIN and output to file TEMPOUT.  */
+   The command is run with input from TEMPIN, output to
+   file TEMPOUT and stderr to TEMPERR.  */
+
 int
-run_msdos_command (argv, dir, tempin, tempout)
+run_msdos_command (argv, dir, tempin, tempout, temperr)
      unsigned char **argv;
      Lisp_Object dir;
-     int tempin, tempout;
+     int tempin, tempout, temperr;
 {
   char *saveargv1, *saveargv2, **envv;
   char oldwd[MAXPATHLEN + 1]; /* Fixed size is safe on MSDOS.  */
@@ -2229,7 +2635,26 @@ run_msdos_command (argv, dir, tempin, tempout)
   
   dup2 (tempin, 0);
   dup2 (tempout, 1);
-  dup2 (tempout, 2);
+  dup2 (temperr, 2);
+
+#if __DJGPP__ > 1
+
+  if (msshell && !argv[3])
+    {
+      /* MS-DOS native shells are too restrictive.  For starters, they
+	 cannot grok commands longer than 126 characters.  In DJGPP v2
+	 and later, `system' is much smarter, so we'll call it instead.  */
+
+      extern char **environ;
+      environ = envv;
+
+      /* A shell gets a single argument--its full command
+	 line--whose original was saved in `saveargv2'.  */
+      result = system (saveargv2);
+    }
+  else
+
+#endif /* __DJGPP__ > 1 */
 
   result = spawnve (P_WAIT, argv[0], argv, envv);
   
@@ -2264,17 +2689,16 @@ croak (badfunc)
   reset_sys_modes ();
   exit (1);
 }
-
+
+#if __DJGPP__ < 2
 
 /* ------------------------- Compatibility functions -------------------
  *	gethostname
  *	gettimeofday
  */
 
-/*
- * Hostnames for a pc are not really funny,
- * but they are used in change log so we emulate the best we can.
- */
+/* Hostnames for a pc are not really funny,
+   but they are used in change log so we emulate the best we can.  */
 
 gethostname (p, size)
      char *p;
@@ -2327,85 +2751,41 @@ gettimeofday (struct timeval *tp, struct timezone *tzp)
   return 0;
 }
 
+#endif /* __DJGPP__ < 2 */
 
 /*
  * A list of unimplemented functions that we silently ignore.
  */
 
+#if __DJGPP__ < 2
 unsigned alarm (s) unsigned s; {}
 fork () { return 0; }
 int kill (x, y) int x, y; { return -1; }
 nice (p) int p; {}
 void volatile pause () {}
+sigsetmask (x) int x; { return 0; }
+#endif
+
 request_sigio () {}
 setpgrp () {return 0; }
 setpriority (x,y,z) int x,y,z; { return 0; }
-sigsetmask (x) int x; { return 0; }
+sigblock (mask) int mask; { return 0; } 
 unrequest_sigio () {}
-
-int run_dos_timer_hooks = 0;
 
 #ifndef HAVE_SELECT
 #include "sysselect.h"
 
-static int last_ti_sec = -1;
-static int dos_menubar_clock_displayed = 0;
+#ifndef EMACS_TIME_ZERO_OR_NEG_P
+#define EMACS_TIME_ZERO_OR_NEG_P(time)	\
+  ((long)(time).tv_sec < 0		\
+   || ((time).tv_sec == 0		\
+       && (long)(time).tv_usec <= 0))
+#endif
 
-static void
-check_timer (t)
-  struct time *t;
-{
-  gettime (t);
-  
-  if (t->ti_sec == last_ti_sec)
-    return;
-  last_ti_sec = t->ti_sec;
-
-  if (!NILP (Vdos_menubar_clock))
-    {
-      char clock_str[16];
-      int len;
-      int min = t->ti_min;
-      int hour = t->ti_hour;
-
-      if (dos_timezone_offset)
-	{
-	  int tz = dos_timezone_offset;
-	  min -= tz % 60;
-	  if (min < 0)
-	    min += 60, hour--;
-	  else
-	    if (min >= 60)
-	      min -= 60, hour++;
-	  
-	  if ((hour -= (tz / 60)) < 0)
-	    hour += 24;
-	  else
-	    hour %= 24;
-	}
-      
-      if ((dos_country_info[0x11] & 0x01) == 0) /* 12 hour clock */
-	{
-	  hour %= 12;
-	  if (hour == 0) hour = 12;
-	}
-
-      len = sprintf (clock_str, "%2d.%02d.%02d", hour, min, t->ti_sec);
-      dos_direct_output (0, screen_size_X - len - 1, clock_str, len);
-      dos_menubar_clock_displayed = 1;
-    }
-  else if (dos_menubar_clock_displayed)
-    {
-      /* Erase last displayed time.  */
-      dos_direct_output (0, screen_size_X - 9, "        ", 8);
-      dos_menubar_clock_displayed = 0;
-    }
-  
-  if (!NILP (Vdos_timer_hooks))
-    run_dos_timer_hooks++;
-}
 
 /* Only event queue is checked.  */
+/* We don't have to call timer_check here
+   because wait_reading_process_input takes care of that.  */
 int
 sys_select (nfds, rfds, wfds, efds, timeout)
      int nfds;
@@ -2413,7 +2793,6 @@ sys_select (nfds, rfds, wfds, efds, timeout)
      EMACS_TIME *timeout;
 {
   int check_input;
-  long timeoutval, clnow, cllast;
   struct time t;
 
   check_input = 0;
@@ -2434,26 +2813,39 @@ sys_select (nfds, rfds, wfds, efds, timeout)
      just read it and wait -- that's more efficient.  */
   if (!timeout)
     {
-      while (! detect_input_pending ())
-	check_timer (&t);
+      while (!detect_input_pending ())
+	{
+#if __DJGPP__ >= 2
+	  __dpmi_yield ();
+#endif	  
+	}
     }
   else
     {
-      timeoutval = EMACS_SECS (*timeout) * 100 + EMACS_USECS (*timeout) / 10000;
-      check_timer (&t);
-      cllast = t.ti_sec * 100 + t.ti_hund;
+      EMACS_TIME clnow, cllast, cldiff;
+
+      gettime (&t);
+      EMACS_SET_SECS_USECS (cllast, t.ti_sec, t.ti_hund * 10000L);
 
       while (!check_input || !detect_input_pending ())
 	{
-	  check_timer (&t);
-	  clnow = t.ti_sec * 100 + t.ti_hund;
-	  if (clnow < cllast) /* time wrap */
-	    timeoutval -= clnow + 6000 - cllast;
-	  else
-	    timeoutval -= clnow - cllast;
-	  if (timeoutval <= 0)  /* Stop on timer being cleared */
+	  gettime (&t);
+	  EMACS_SET_SECS_USECS (clnow, t.ti_sec, t.ti_hund * 10000L);
+	  EMACS_SUB_TIME (cldiff, clnow, cllast);
+
+	  /* When seconds wrap around, we assume that no more than
+	     1 minute passed since last `gettime'.  */
+	  if (EMACS_TIME_NEG_P (cldiff))
+	    EMACS_SET_SECS (cldiff, EMACS_SECS (cldiff) + 60);
+	  EMACS_SUB_TIME (*timeout, *timeout, cldiff);
+
+	  /* Stop when timeout value crosses zero.  */
+	  if (EMACS_TIME_ZERO_OR_NEG_P (*timeout))
 	    return 0;
 	  cllast = clnow;
+#if __DJGPP__ >= 2
+	  __dpmi_yield ();
+#endif	  
 	}
     }
   
@@ -2463,7 +2855,7 @@ sys_select (nfds, rfds, wfds, efds, timeout)
 #endif
 
 /*
- * Define overlayed functions:
+ * Define overlaid functions:
  *
  *	chdir -> sys_chdir
  *	tzset -> init_gettimeofday
@@ -2539,6 +2931,20 @@ dos_abort (file, line)
   ScreenSetCursor (2, 0);
   abort ();
 }
+#else
+void
+abort ()
+{
+  dos_ttcooked ();
+  ScreenSetCursor (10, 0);
+  cputs ("\r\n\nEmacs aborted!\r\n");
+#if __DJGPP__ > 1
+  /* Generate traceback, so we could tell whodunit.  */
+  signal (SIGINT, SIG_DFL);
+  __asm__ __volatile__ ("movb $0x1b,%al;call ___djgpp_hw_exception");
+#endif
+  exit (2);
+}
 #endif
 
 syms_of_msdos ()
@@ -2547,6 +2953,8 @@ syms_of_msdos ()
   staticpro (&recent_doskeys);
 
   defsubr (&Srecent_doskeys);
+  defsubr (&Smsdos_long_file_names);
+  defsubr (&Smsdos_downcase_filename);
 }
 
 #endif /* MSDOS */

@@ -149,12 +149,11 @@ these US sites: ftp.kpc.com:/pub/mirror/gnu (Silicon Valley, CA)
 ftp.hawaii.edu:/mirrors/gnu, f.ms.uky.edu:/pub3/gnu,
 ftp.digex.net:/pub/gnu (Internet address 164.109.10.23, nightly full
 mirror, ran by mcguire@digex.net), wuarchive.wustl.edu:/systems/gnu,
-col.hp.com:/mirrors/gnu, ftp.cs.columbia.edu:/archives/gnu/prep,
 uiarchive.cso.uiuc.edu:/pub/gnu (Internet address 128.174.5.14,
 nightly full mirror, ran by ftpadmin@uiuc.edu),
-jaguar.utah.edu:/gnustuff, gatekeeper.dec.com:/pub/GNU,
-labrea.stanford.edu, archive.cis.ohio-state.edu, and
-ftp.uu.net:/archive/systems/gnu.
+ftp.cs.columbia.edu:/archives/gnu/prep, jaguar.utah.edu:/gnustuff,
+gatekeeper.dec.com:/pub/GNU, labrea.stanford.edu,
+archive.cis.ohio-state.edu, and ftp.uu.net:/archive/systems/gnu.
 
 And these foreign sites: ftp.cs.ubc.ca:/mirror2/gnu (Western Canada,
 daily full mirror, ran by ftp-admin@cs.ubc.ca),
@@ -202,10 +201,11 @@ sources he has.  He can also write tapes in qic-21 and qic-24 formats.
 lmjm@doc.ic.ac.uk is willing to distribute those GNU sources he has
 along with comp.sources.unix, comp.sources.x, X windows et al.  The
 archive, on src.doc.ic.ac.uk in directory /gnu, is available via ftp
-over the Internet (on 146.169.3.7), niftp over janet (000005102000),
-ftam over IXI and uucp.  Due to communication costs this service is
-only available within the UK.  Mail to info-server@doc.ic.ac.uk for
-details.  He can also write sun cartridge or exabyte tapes.
+over the Internet (on 146.169.3.7), ftam over IXI, HTTP, FSP, Gopher,
+ftpmail, NFS, Lanmanger over IP, telnet, and uucp.  Due to
+communication costs this service is only available within the UK.
+Mail to info-server@doc.ic.ac.uk for details.  He can also write sun
+cartridge or exabyte tapes.
 
 UK sites with just anonymous FTP access are in the above list.
 

@@ -169,8 +169,8 @@ is derived from version 1.191 of Sebastian Kremer's @file{dired-x.el} and is
 GNU Emacs v19 compatible.
 
 In adopting this @file{dired-x.el} to GNU Emacs v19 some material that has
-been incorported into @file{dired.el} and @file{dired-aux.el} of the GNU Emacs
-19 distribution has been removed and some material was modifed for agreement
+been incorporated into @file{dired.el} and @file{dired-aux.el} of the GNU Emacs
+19 distribution has been removed and some material was modified for agreement
 with the functions in @file{dired.el} and @file{dired-aux.el}.  For example,
 the code using @code{gmhist} history functions was replaced with code using
 the mini-buffer history now built into GNU Emacs 19.  Finally, a few other

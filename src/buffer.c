@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <sys/types.h>
@@ -162,6 +163,16 @@ nsberror (spec)
   error ("Invalid buffer argument");
 }
 
+DEFUN ("buffer-live-p", Fbuffer_live_p, Sbuffer_live_p, 1, 1, 0,
+  "Return non-nil if OBJECT is a buffer which has not been killed.\n\
+Value is nil if OBJECT is not a buffer or if it has been killed.")
+  (object)
+     Lisp_Object object;
+{
+  return ((BUFFERP (object) && ! NILP (XBUFFER (object)->name))
+	  ? Qt : Qnil);
+}
+
 DEFUN ("buffer-list", Fbuffer_list, Sbuffer_list, 0, 0, 0,
   "Return a list of all existing live buffers.")
   ()
@@ -336,11 +347,10 @@ The value is never nil.")
   return buf;
 }
 
-DEFUN ("make-indirect-buffer",
-       Fmake_indirect_buffer, Smake_indirect_buffer, 2, 2,
+DEFUN ("make-indirect-buffer", Fmake_indirect_buffer, Smake_indirect_buffer, 2, 2,
        "bMake indirect buffer (to buffer): \nBName of indirect buffer: ",
-  "Create and return an indirect buffer for buffer BASE, named NAME.\n\
-BASE should be an existing buffer (or buffer name).\n\
+  "Create and return an indirect buffer for buffer BASE-BUFFER, named NAME.\n\
+BASE-BUFFER should be an existing buffer (or buffer name).\n\
 NAME should be a string which is not the name of an existing buffer.")
   (base_buffer, name)
      register Lisp_Object base_buffer, name;
@@ -456,7 +466,6 @@ reset_buffer (b)
   b->mark_active = Qnil;
   b->point_before_scroll = Qnil;
   b->file_format = Qnil;
-  b->redisplay_end_trigger = Qnil;
   b->extra1 = Qnil;
   b->extra2 = Qnil;
   b->extra3 = Qnil;
@@ -810,6 +819,7 @@ If BUFFER is omitted or nil, some interesting buffer is returned.")
   (buffer, visible_ok)
      register Lisp_Object buffer, visible_ok;
 {
+  Lisp_Object Fset_buffer_major_mode ();
   register Lisp_Object tail, buf, notsogood, tem;
   notsogood = Qnil;
 
@@ -843,7 +853,9 @@ If BUFFER is omitted or nil, some interesting buffer is returned.")
     }
   if (!NILP (notsogood))
     return notsogood;
-  return Fget_buffer_create (build_string ("*scratch*"));
+  buf = Fget_buffer_create (build_string ("*scratch*"));
+  Fset_buffer_major_mode (buf);
+  return buf;
 }
 
 DEFUN ("buffer-disable-undo", Fbuffer_disable_undo, Sbuffer_disable_undo,
@@ -910,8 +922,8 @@ before the buffer is actually killed.  The buffer to be killed is current\n\
 when the hook functions are called.\n\n\
 Any processes that have this buffer as the `process-buffer' are killed\n\
 with `delete-process'.")
-  (bufname)
-     Lisp_Object bufname;
+  (buffer)
+     Lisp_Object buffer;
 {
   Lisp_Object buf;
   register struct buffer *b;
@@ -919,12 +931,12 @@ with `delete-process'.")
   register struct Lisp_Marker *m;
   struct gcpro gcpro1, gcpro2;
 
-  if (NILP (bufname))
+  if (NILP (buffer))
     buf = Fcurrent_buffer ();
   else
-    buf = Fget_buffer (bufname);
+    buf = Fget_buffer (buffer);
   if (NILP (buf))
-    nsberror (bufname);
+    nsberror (buffer);
 
   b = XBUFFER (buf);
 
@@ -936,7 +948,7 @@ with `delete-process'.")
   if (INTERACTIVE && !NILP (b->filename)
       && BUF_MODIFF (b) > BUF_SAVE_MODIFF (b))
     {
-      GCPRO2 (buf, bufname);
+      GCPRO1 (buf);
       tem = do_yes_or_no_p (format1 ("Buffer %s modified; kill anyway? ",
 				     XSTRING (b->name)->data));
       UNGCPRO;
@@ -1023,8 +1035,8 @@ with `delete-process'.")
 
   tem = Vinhibit_quit;
   Vinhibit_quit = Qt;
+  replace_buffer_in_all_windows (buf);
   Vbuffer_alist = Fdelq (Frassq (buf, Vbuffer_alist), Vbuffer_alist);
-  Freplace_buffer_in_windows (buf);
   Vinhibit_quit = tem;
 
   /* Delete any auto-save file, if we saved it in this session.  */
@@ -1137,8 +1149,8 @@ DEFUN ("set-buffer-major-mode", Fset_buffer_major_mode, Sset_buffer_major_mode, 
   "Set an appropriate major mode for BUFFER, according to `default-major-mode'.\n\
 Use this function before selecting the buffer, since it may need to inspect\n\
 the current buffer's major mode.")
-  (buf)
-     Lisp_Object buf;
+  (buffer)
+     Lisp_Object buffer;
 {
   int count;
   Lisp_Object function;
@@ -1157,7 +1169,7 @@ the current buffer's major mode.")
 
   record_unwind_protect (save_excursion_restore, save_excursion_save ());
 
-  Fset_buffer (buf);
+  Fset_buffer (buffer);
   call0 (function);
 
   return unbind_to (count, Qnil);
@@ -1172,8 +1184,8 @@ do not put this buffer at the front of the list of recently selected ones.\n\
 WARNING: This is NOT the way to work on another buffer temporarily\n\
 within a Lisp program!  Use `set-buffer' instead.  That avoids messing with\n\
 the window-buffer correspondences.")
-  (bufname, norecord)
-     Lisp_Object bufname, norecord;
+  (buffer, norecord)
+     Lisp_Object buffer, norecord;
 {
   register Lisp_Object buf;
   Lisp_Object tem;
@@ -1184,14 +1196,14 @@ the window-buffer correspondences.")
   if (!NILP (tem))
     error ("Cannot switch buffers in a dedicated window");
 
-  if (NILP (bufname))
+  if (NILP (buffer))
     buf = Fother_buffer (Fcurrent_buffer (), Qnil);
   else
     {
-      buf = Fget_buffer (bufname);
+      buf = Fget_buffer (buffer);
       if (NILP (buf))
 	{
-	  buf = Fget_buffer_create (bufname);
+	  buf = Fget_buffer_create (buffer);
 	  Fset_buffer_major_mode (buf);
 	}
     }
@@ -1213,24 +1225,24 @@ If BUFFER is nil, then some other buffer is chosen.\n\
 If `pop-up-windows' is non-nil, windows can be split to do this.\n\
 If optional second arg OTHER-WINDOW is non-nil, insist on finding another\n\
 window even if BUFFER is already visible in the selected window.")
-  (bufname, other)
-     Lisp_Object bufname, other;
+  (buffer, other_window)
+     Lisp_Object buffer, other_window;
 {
   register Lisp_Object buf;
-  if (NILP (bufname))
+  if (NILP (buffer))
     buf = Fother_buffer (Fcurrent_buffer (), Qnil);
   else
     {
-      buf = Fget_buffer (bufname);
+      buf = Fget_buffer (buffer);
       if (NILP (buf))
 	{
-	  buf = Fget_buffer_create (bufname);
+	  buf = Fget_buffer_create (buffer);
 	  Fset_buffer_major_mode (buf);
 	}
     }
   Fset_buffer (buf);
   record_buffer (buf);
-  Fselect_window (Fdisplay_buffer (buf, other));
+  Fselect_window (Fdisplay_buffer (buf, other_window));
   return buf;
 }
 
@@ -1408,17 +1420,17 @@ See also `save-excursion' when you want to make a buffer current temporarily.\n\
 This function does not display the buffer, so its effect ends\n\
 when the current command terminates.\n\
 Use `switch-to-buffer' or `pop-to-buffer' to switch buffers permanently.")
-  (bufname)
-     register Lisp_Object bufname;
+  (buffer)
+     register Lisp_Object buffer;
 {
-  register Lisp_Object buffer;
-  buffer = Fget_buffer (bufname);
-  if (NILP (buffer))
-    nsberror (bufname);
-  if (NILP (XBUFFER (buffer)->name))
+  register Lisp_Object buf;
+  buf = Fget_buffer (buffer);
+  if (NILP (buf))
+    nsberror (buffer);
+  if (NILP (XBUFFER (buf)->name))
     error ("Selecting deleted buffer");
-  set_buffer_internal (XBUFFER (buffer));
-  return buffer;
+  set_buffer_internal (XBUFFER (buf));
+  return buf;
 }
 
 DEFUN ("barf-if-buffer-read-only", Fbarf_if_buffer_read_only,
@@ -1439,32 +1451,32 @@ thus, the least likely buffer for \\[switch-to-buffer] to select by default.\n\
 If BUFFER is nil or omitted, bury the current buffer.\n\
 Also, if BUFFER is nil or omitted, remove the current buffer from the\n\
 selected window if it is displayed there.")
-  (buf)
-     register Lisp_Object buf;
+  (buffer)
+     register Lisp_Object buffer;
 {
   /* Figure out what buffer we're going to bury.  */
-  if (NILP (buf))
+  if (NILP (buffer))
     {
-      XSETBUFFER (buf, current_buffer);
+      XSETBUFFER (buffer, current_buffer);
 
       /* If we're burying the current buffer, unshow it.  */
-      Fswitch_to_buffer (Fother_buffer (buf, Qnil), Qnil);
+      Fswitch_to_buffer (Fother_buffer (buffer, Qnil), Qnil);
     }
   else
     {
       Lisp_Object buf1;
       
-      buf1 = Fget_buffer (buf);
+      buf1 = Fget_buffer (buffer);
       if (NILP (buf1))
-	nsberror (buf);
-      buf = buf1;
+	nsberror (buffer);
+      buffer = buf1;
     }
 
-  /* Move buf to the end of the buffer list.  */
+  /* Move buffer to the end of the buffer list.  */
   {
     register Lisp_Object aelt, link;
 
-    aelt = Frassq (buf, Vbuffer_alist);
+    aelt = Frassq (buffer, Vbuffer_alist);
     link = Fmemq (aelt, Vbuffer_alist);
     Vbuffer_alist = Fdelq (aelt, Vbuffer_alist);
     XCONS (link)->cdr = Qnil;
@@ -2933,7 +2945,7 @@ DEFUN ("overlay-recenter", Foverlay_recenter, Soverlay_recenter, 1, 1, 0,
 }
 
 DEFUN ("overlay-get", Foverlay_get, Soverlay_get, 2, 2, 0,
-  "Get the property of overlay OVERLAY with property name NAME.")
+  "Get the property of overlay OVERLAY with property name PROP.")
   (overlay, prop)
      Lisp_Object overlay, prop;
 {
@@ -3032,8 +3044,8 @@ add_overlay_mod_hooklist (functionlist, overlay)
       old = last_overlay_modification_hooks;
       last_overlay_modification_hooks
 	= Fmake_vector (make_number (oldsize * 2), Qnil);
-      bcopy (XVECTOR (last_overlay_modification_hooks)->contents,
-	     XVECTOR (old)->contents,
+      bcopy (XVECTOR (old)->contents,
+	     XVECTOR (last_overlay_modification_hooks)->contents,
 	     sizeof (Lisp_Object) * oldsize);
     }
   XVECTOR (last_overlay_modification_hooks)->contents[last_overlay_modification_hooks_used++] = functionlist;
@@ -3375,7 +3387,6 @@ init_buffer_once ()
   XSETINT (buffer_local_flags.file_truename, -1);
   XSETINT (buffer_local_flags.invisibility_spec, -1);
   XSETINT (buffer_local_flags.file_format, -1);
-  XSETINT (buffer_local_flags.redisplay_end_trigger, -1);
 
   XSETFASTINT (buffer_local_flags.mode_line_format, 1);
   XSETFASTINT (buffer_local_flags.abbrev_mode, 2);
@@ -3417,6 +3428,7 @@ init_buffer_once ()
   Qkill_buffer_hook = intern ("kill-buffer-hook");
 
   Vprin1_to_string_buffer = Fget_buffer_create (build_string (" prin1"));
+
   /* super-magic invisible buffer */
   Vbuffer_alist = Qnil;
 
@@ -3591,6 +3603,7 @@ A string is printed verbatim in the mode line except for %-constructs:\n\
 	% means buffer is read-only and * means it is modified.\n\
 	For a modified read-only buffer, %* gives % and %+ gives *.\n\
   %s -- print process status.   %l -- print the current line number.\n\
+  %c -- print the current column number (this makes editing slower).\n\
   %p -- print percent of buffer above top of window, or Top, Bot or All.\n\
   %P -- print percent of buffer above bottom of window, perhaps plus Top,\n\
         or print Bottom or All.\n\
@@ -3861,6 +3874,9 @@ An entry (nil PROPERTY VALUE BEG . END) indicates that a text property\n\
 was modified between BEG and END.  PROPERTY is the property name,\n\
 and VALUE is the old value.\n\
 \n\
+An entry (MARKER . DISTANCE) indicates that the marker MARKER\n\
+was adjusted in position by the offset DISTANCE (an integer).\n\
+\n\
 An entry of the form POSITION indicates that point was at the buffer\n\
 location given by the integer.  Undoing an entry of this form places\n\
 point at POSITION.\n\
@@ -3941,6 +3957,7 @@ is a member of the list.");
     "List of functions called with no args to query before killing a buffer.");
   Vkill_buffer_query_functions = Qnil;
 
+  defsubr (&Sbuffer_live_p);
   defsubr (&Sbuffer_list);
   defsubr (&Sget_buffer);
   defsubr (&Sget_file_buffer);

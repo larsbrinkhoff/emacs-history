@@ -1,6 +1,6 @@
 ;;; rmailsum.el --- make summary buffers for the mail reader
 
-;; Copyright (C) 1985, 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -31,6 +32,10 @@
 
 ;; For rmail-select-summary
 (require 'rmail)
+
+;;;###autoload
+(defvar rmail-summary-scroll-between-messages t
+  "*Non-nil means Rmail summary scroll commands move between messages.")
 
 (defvar rmail-summary-font-lock-keywords
   '(("^....D.*" . font-lock-string-face)			; Deleted.
@@ -348,9 +353,11 @@ nil for FUNCTION means all messages."
 			       (skip-chars-backward " \t")
 			       (point)))))
                      len mch lo)
-		(if (string-match (concat "^"
+		(if (string-match (concat "^\\("
 					  (regexp-quote (user-login-name))
-					  "\\($\\|@\\)")
+					  "\\($\\|@\\)\\|"
+					  (regexp-quote user-mail-address)
+					  "\\>\\)")
 				  from)
 		    (save-excursion
 		      (goto-char (point-min))
@@ -375,7 +382,25 @@ nil for FUNCTION means all messages."
 						     (- len 25))
 						    (t (- mch 14))))
 				     (min len (+ lo 25))))))))
-	  "  #"
+	  (save-excursion
+	    (save-restriction
+	      (widen)
+	      (let ((beg (rmail-msgbeg msgnum))
+		    (end (rmail-msgend msgnum))
+		    lines)
+		(save-excursion
+		  (goto-char beg)
+		  ;; Count only lines in the reformatted header,
+		  ;; if we have reformatted it.
+		  (search-forward "\n*** EOOH ***\n" end t)
+		  (setq lines (count-lines (point) end)))
+		(format (cond
+			 ((<= lines     9) "   [%d]")
+			 ((<= lines    99) "  [%d]")
+			 ((<= lines   999) " [%3d]")
+			 (t		    "[%d]"))
+			lines))))
+	  " #"				;The # is part of the format.
 	  (if (re-search-forward "^Subject:" nil t)
 	      (progn (skip-chars-forward " \t")
 		     (buffer-substring (point)
@@ -527,6 +552,7 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
   (rmail-summary-delete-forward t))
 
 (defun rmail-summary-mark-deleted (&optional n undel)
+  ;; Since third arg is t, this only alters the summary, not the Rmail buf.
   (and n (rmail-summary-goto-msg n t t))
   (or (eobp)
       (not (overlay-get rmail-summary-overlay 'face))
@@ -633,7 +659,7 @@ Commands for sorting the summary:
   (make-local-variable 'rmail-summary-redo)
   (setq rmail-summary-redo nil)
   (make-local-variable 'revert-buffer-function)
-  (make-local-variable 'post-command-hook)
+  (make-local-hook 'post-command-hook)
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '(rmail-summary-font-lock-keywords t))
   (rmail-summary-enable)
@@ -642,12 +668,12 @@ Commands for sorting the summary:
 ;; Summary features need to be disabled during edit mode.
 (defun rmail-summary-disable ()
   (use-local-map text-mode-map)
-  (remove-hook 'post-command-hook 'rmail-summary-rmail-update)
+  (remove-hook 'post-command-hook 'rmail-summary-rmail-update t)
   (setq revert-buffer-function nil))
 
 (defun rmail-summary-enable ()
   (use-local-map rmail-summary-mode-map)
-  (add-hook 'post-command-hook 'rmail-summary-rmail-update)
+  (add-hook 'post-command-hook 'rmail-summary-rmail-update nil t)
   (setq revert-buffer-function 'rmail-update-summary))
 
 ;; Show in Rmail the message described by the summary line that point is on,
@@ -874,6 +900,14 @@ Commands for sorting the summary:
 (defvar rmail-summary-overlay nil)
 (put 'rmail-summary-overlay 'permanent-local t)
 
+;; Go to message N in the summary buffer which is current,
+;; and in the corresponding Rmail buffer.
+;; If N is nil, use the message corresponding to point in the summary
+;; and move to that message in the Rmail buffer.
+
+;; If NOWARN, don't say anything if N is out of range.
+;; If SKIP-RMAIL, don't do anything to the Rmail buffer.
+
 (defun rmail-summary-goto-msg (&optional n nowarn skip-rmail)
   (interactive "P")
   (if (consp n) (setq n (prefix-numeric-value n)))
@@ -899,7 +933,7 @@ Commands for sorting the summary:
       (if (> n total)
 	  (progn (message "No following message")
 		 (goto-char (point-max))
-		 (rmail-summary-goto-msg)))
+		 (rmail-summary-goto-msg nil nowarn skip-rmail)))
       (goto-char (point-min))
       (if (not (re-search-forward (format "^%4d[^0-9]" n) nil t))
 	  (progn (or nowarn (message "Message %d not found" n))
@@ -964,7 +998,9 @@ advance to the next message."
 			(end-of-line)
 			(eobp)))
 		  (select-window rmail-summary-window)))
-	      (rmail-summary-next-msg (or dist 1))
+	      (if (not rmail-summary-scroll-between-messages)
+		  (error "End of buffer")
+		(rmail-summary-next-msg (or dist 1)))
 	    (let ((other-window-scroll-buffer rmail-buffer))
 	      (scroll-other-window dist)))
 	;; This forces rmail-buffer to be sized correctly later.
@@ -989,7 +1025,9 @@ advance to the previous message."
 		      (beginning-of-line)
 		      (bobp))
 		  (select-window rmail-summary-window)))
-	      (rmail-summary-previous-msg (or dist 1))
+	      (if (not rmail-summary-scroll-between-messages)
+		  (error "Beginning of buffer")
+		(rmail-summary-previous-msg (or dist 1)))
 	    (let ((other-window-scroll-buffer rmail-buffer))
 	      (scroll-other-window-down dist)))
 	;; This forces rmail-buffer to be sized correctly later.
@@ -1051,7 +1089,8 @@ advance to the previous message."
       ;; Get the proper new message number.
       (setq msg rmail-current-message))
     ;; Make sure that message is displayed.
-    (rmail-summary-goto-msg msg)))
+    (or (zerop msg)
+	(rmail-summary-goto-msg msg))))
 
 (defun rmail-summary-input (filename)
   "Run Rmail on file FILENAME."

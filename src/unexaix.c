@@ -2,19 +2,22 @@
 
 /* Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2, or (at your option)
-    any later version.
+This file is part of GNU Emacs.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -29,6 +32,14 @@ what you give them.   Help stamp out software-hoarding!  */
  * 		University of Utah
  * Date:	Tue Mar  2 1982
  * Modified heavily since then.
+ *
+ * Updated for AIX 4.1.3 by Bill_Mann @ PraxisInt.com, Feb 1996
+ *   As of AIX 4.1, text, data, and bss are pre-relocated by the binder in
+ *   such a way that the file can be mapped with code in one segment and
+ *   data/bss in another segment, without reading or copying the file, by
+ *   the AIX exec loader.  Padding sections are omitted, nevertheless
+ *   small amounts of 'padding' still occurs between sections in the file.
+ *   As modified, this code handles both 3.2 and 4.1 conventions.
  *
  * Synopsis:
  *	unexec (new_name, a_name, data_start, bss_start, entry_address)
@@ -200,21 +211,20 @@ extern int _end;
 #endif /* not UMAX */
 #endif /* Not STRIDE */
 #endif /* not USG */
-static long block_copy_start;		/* Old executable start point */
 static struct filehdr f_hdr;		/* File header */
 static struct aouthdr f_ohdr;		/* Optional file header (a.out) */
 long bias;			/* Bias to add for growth */
 long lnnoptr;			/* Pointer to line-number info within file */
-#define SYMS_START block_copy_start
 
 static long text_scnptr;
 static long data_scnptr;
 #ifdef XCOFF
+#define ALIGN(val, pwr) (((val) + ((1L<<(pwr))-1)) & ~((1L<<(pwr))-1))
 static long load_scnptr;
 static long orig_load_scnptr;
 static long orig_data_scnptr;
 #endif
-static long data_st;
+static ulong data_st;                   /* start of data area written out */
 
 #ifndef MAX_SECTIONS
 #define MAX_SECTIONS	10
@@ -378,7 +388,6 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 
 #ifdef COFF
   /* Salvage as much info from the existing file as possible */
-  block_copy_start = 0;
   f_thdr = NULL; f_dhdr = NULL; f_bhdr = NULL;
   f_lhdr = NULL; f_tchdr = NULL; f_dbhdr = NULL; f_xhdr = NULL;
   if (a_out >= 0)
@@ -387,14 +396,12 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 	{
 	  PERROR (a_name);
 	}
-      block_copy_start += sizeof (f_hdr);
       if (f_hdr.f_opthdr > 0)
 	{
 	  if (read (a_out, &f_ohdr, sizeof (f_ohdr)) != sizeof (f_ohdr))
 	    {
 	      PERROR (a_name);
 	    }
-	  block_copy_start += sizeof (f_ohdr);
 	}
       if (f_hdr.f_nscns > MAX_SECTIONS)
 	{
@@ -406,11 +413,6 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 	if (read (a_out, s, sizeof (*s)) != sizeof (*s))
 	  {
 	    PERROR (a_name);
-	  }
-	if (s->s_scnptr > 0L)
-	  {
-            if (block_copy_start < s->s_scnptr + s->s_size)
-	      block_copy_start = s->s_scnptr + s->s_size;
 	  }
 
 #define CHECK_SCNHDR(ptr, name, flags) \
@@ -456,7 +458,11 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 
   /* Now we alter the contents of all the f_*hdr variables
      to correspond to what we want to dump.  */
-  f_hdr.f_flags |= (F_RELFLG | F_EXEC);		/* Why? */
+
+  /* Indicate that the reloc information is no longer valid for ld (bind);
+     we only update it enough to fake out the exec-time loader.  */
+  f_hdr.f_flags |= (F_RELFLG | F_EXEC);
+
 #ifdef EXEC_MAGIC
   f_ohdr.magic = EXEC_MAGIC;
 #endif
@@ -464,73 +470,77 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   f_ohdr.tsize = data_start - f_ohdr.text_start;
   f_ohdr.text_start = (long) start_of_text ();
 #endif
-  f_ohdr.dsize = bss_start - ((unsigned) &_data);
+  data_st = f_ohdr.data_start ? f_ohdr.data_start : (ulong) &_data;
+  f_ohdr.dsize = bss_start - data_st;
   f_ohdr.bsize = bss_end - bss_start;
 
   f_dhdr->s_size = f_ohdr.dsize;
   f_bhdr->s_size = f_ohdr.bsize;
-  f_bhdr->s_paddr = f_ohdr.dsize;
-  f_bhdr->s_vaddr = f_ohdr.dsize;
+  f_bhdr->s_paddr = f_ohdr.data_start + f_ohdr.dsize;
+  f_bhdr->s_vaddr = f_ohdr.data_start + f_ohdr.dsize;
 
   /* fix scnptr's */
   {
-    long ptr;
+    ulong ptr = section[0].s_scnptr;
 
-    for (scns = 0; scns < f_hdr.f_nscns; scns++) {
-      struct scnhdr *s = &section[scns];
-      if (scns == 0)
-	ptr = s->s_scnptr;
+    bias = -1;
+    for (scns = 0; scns < f_hdr.f_nscns; scns++)
+      {
+	struct scnhdr *s = &section[scns];
 
-      if (s->s_scnptr != 0)
-	{
+	if (s->s_flags & STYP_PAD)        /* .pad sections omitted in AIX 4.1 */
+	  {
+	    /*
+	     * the text_start should probably be o_algntext but that doesn't
+	     * seem to change
+	     */
+	    if (f_ohdr.text_start != 0) /* && scns != 0 */
+	      {
+		s->s_size = 512 - (ptr % 512);
+		if (s->s_size == 512)
+		  s->s_size = 0;
+	      }
+	    s->s_scnptr = ptr;
+	  }
+	else if (s->s_flags & STYP_DATA)
 	  s->s_scnptr = ptr;
-	}
+	else if (!(s->s_flags & (STYP_TEXT | STYP_BSS)))
+	  {
+	    if (bias == -1)                /* if first section after bss */
+	      bias = ptr - s->s_scnptr;
 
-      if ((s->s_flags & 0xffff) == STYP_PAD)
-	{
-	  /*
-	   * the text_start should probably be o_algntext but that doesn't
-	   * seem to change
-	   */
-	  if (f_ohdr.text_start != 0) /* && scns != 0 */
-	    {
-	      s->s_size = 512 - (s->s_scnptr % 512);
-	      if (s->s_size == 512)
-		s->s_size = 0;
-	    }
-	}
-
-      ptr = ptr + s->s_size;
-    }
-
-    bias = ptr - block_copy_start;
+	    s->s_scnptr += bias;
+	    ptr = s->s_scnptr;
+	  }
+  
+	ptr = ptr + s->s_size;
+      }
   }
 
   /* fix other pointers */
-  for (scns = 0; scns < f_hdr.f_nscns; scns++) {
-    struct scnhdr *s = &section[scns];
+  for (scns = 0; scns < f_hdr.f_nscns; scns++)
+    {
+      struct scnhdr *s = &section[scns];
 
-    if (s->s_relptr != 0)
-      {
-	s->s_relptr += bias;
-      }
-    if (s->s_lnnoptr != 0)
-      {
-	if (lnnoptr == 0) lnnoptr = s->s_lnnoptr;
-	s->s_lnnoptr += bias;
-      }
-  }
+      if (s->s_relptr != 0)
+	{
+	  s->s_relptr += bias;
+	}
+      if (s->s_lnnoptr != 0)
+	{
+	  if (lnnoptr == 0) lnnoptr = s->s_lnnoptr;
+	  s->s_lnnoptr += bias;
+	}
+    }
 
   if (f_hdr.f_symptr > 0L)
     {
       f_hdr.f_symptr += bias;
     }
 
-  data_st = data_start;
   text_scnptr = f_thdr->s_scnptr;
   data_scnptr = f_dhdr->s_scnptr;
   load_scnptr = f_lhdr ? f_lhdr->s_scnptr : 0;
-  block_copy_start = orig_load_scnptr;
 
 #ifdef ADJUST_EXEC_HEADER
   ADJUST_EXEC_HEADER
@@ -580,13 +590,14 @@ copy_text_and_data (new)
   write_segment (new, ptr, end);
 
   lseek (new, (long) data_scnptr, 0);
-  ptr = (char *) &_data;
+  ptr = (char *) data_st;
   end = ptr + f_ohdr.dsize;
   write_segment (new, ptr, end);
 
   return 0;
 }
 
+#define UnexBlockSz (1<<12)			/* read/write block size */
 write_segment (new, ptr, end)
      int new;
      register char *ptr, *end;
@@ -594,14 +605,12 @@ write_segment (new, ptr, end)
   register int i, nwrite, ret;
   char buf[80];
   extern int errno;
-  char zeros[128];
-
-  bzero (zeros, sizeof zeros);
+  char zeros[UnexBlockSz];
 
   for (i = 0; ptr < end;)
     {
-      /* distance to next multiple of 128.  */
-      nwrite = (((int) ptr + 128) & -128) - (int) ptr;
+      /* distance to next block.  */
+      nwrite = (((int) ptr + UnexBlockSz) & -UnexBlockSz) - (int) ptr;
       /* But not beyond specified end.  */
       if (nwrite > end - ptr) nwrite = end - ptr;
       ret = write (new, ptr, nwrite);
@@ -611,7 +620,8 @@ write_segment (new, ptr, end)
 	 So write zeros for it.  */
       if (ret == -1 && errno == EFAULT)
 	{
-	write (new, zeros, nwrite);
+	  bzero (zeros, nwrite);
+	  write (new, zeros, nwrite);
 	}
       else if (nwrite != ret)
 	{
@@ -635,19 +645,19 @@ copy_sym (new, a_out, a_name, new_name)
      int new, a_out;
      char *a_name, *new_name;
 {
-  char page[1024];
+  char page[UnexBlockSz];
   int n;
 
   if (a_out < 0)
     return 0;
 
-  if (SYMS_START == 0L)
+  if (orig_load_scnptr == 0L)
     return 0;
 
-  if (lnnoptr && lnnoptr < SYMS_START)	/* if there is line number info */
-    lseek (a_out, lnnoptr, 0);		/* start copying from there */
+  if (lnnoptr && lnnoptr < orig_load_scnptr) /* if there is line number info  */
+    lseek (a_out, lnnoptr, 0);  /* start copying from there */
   else
-    lseek (a_out, SYMS_START, 0);	/* Position a.out to symtab. */
+    lseek (a_out, orig_load_scnptr, 0); /* Position a.out to symtab. */
 
   while ((n = read (a_out, page, sizeof page)) > 0)
     {
@@ -700,6 +710,8 @@ mark_x (name)
  *	the auxiliary entries that need adjustment, this routine will
  *	be fixed.  As it is now, all such entries are wrong and sdb
  *	will complain.   Fred Fish, UniSoft Systems Inc.
+ *
+ *      I believe this is now fixed correctly.  Bill Mann
  */
 
 #ifdef COFF
@@ -740,15 +752,24 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
   for (nsyms = 0; nsyms < f_hdr.f_nsyms; nsyms++)
     {
       read (new, &symentry, SYMESZ);
-      for (naux = 0; naux < symentry.n_numaux; naux++)
+      if (symentry.n_sclass == C_BINCL || symentry.n_sclass == C_EINCL)
+	{
+	  symentry.n_value += bias;
+	  lseek (new, -SYMESZ, 1);
+	  write (new, &symentry, SYMESZ);
+	}
+
+      for (naux = symentry.n_numaux; naux-- != 0; )
 	{
 	  read (new, &auxentry, AUXESZ);
 	  nsyms++;
-	  if (ISFCN (symentry.n_type)) {
-	    auxentry.x_sym.x_fcnary.x_fcn.x_lnnoptr += bias;
-	    lseek (new, -AUXESZ, 1);
-	    write (new, &auxentry, AUXESZ);
-	  }
+	  if (naux != 0              /* skip csect auxentry (last entry) */
+              && (symentry.n_sclass == C_EXT || symentry.n_sclass == C_HIDEXT))
+            {
+              auxentry.x_sym.x_fcnary.x_fcn.x_lnnoptr += bias;
+              lseek (new, -AUXESZ, 1);
+              write (new, &auxentry, AUXESZ);
+            }
 	}
     }
   close (new);
@@ -771,10 +792,9 @@ unrelocate_symbols (new, a_out, a_name, new_name)
   register LDREL *ldrel;
   LDHDR ldhdr;
   LDREL ldrel_buf [20];
-  ulong t_start = (ulong) &_text;
-  ulong d_start = (ulong) &_data;
+  ulong t_reloc = (ulong) &_text - f_ohdr.text_start;
+  ulong d_reloc = (ulong) &_data - ALIGN(f_ohdr.data_start, 2);
   int * p;
-  int dirty;
 
   if (load_scnptr == 0)
     return 0;
@@ -806,20 +826,12 @@ unrelocate_symbols (new, a_out, a_name, new_name)
 	  }
 	ldrel = ldrel_buf;
       }
-      dirty = 0;
-
-      /* this code may not be necessary */
-      /* I originally had == in the "assignment" and it still unrelocated */
 
       /* move the BSS loader symbols to the DATA segment */
-      if (ldrel->l_rsecnm == f_ohdr.o_snbss)
-	ldrel->l_rsecnm = f_ohdr.o_sndata, dirty++;
-
       if (ldrel->l_symndx == SYMNDX_BSS)
-	ldrel->l_symndx = SYMNDX_DATA, dirty++;
-
-      if (dirty)
 	{
+	  ldrel->l_symndx = SYMNDX_DATA;
+
 	  lseek (new,
 		 load_scnptr + LDHDRSZ + LDSYMSZ*ldhdr.l_nsyms + LDRELSZ*i,
 		 0);
@@ -834,49 +846,37 @@ unrelocate_symbols (new, a_out, a_name, new_name)
 	{
 	  int orig_int;
 
-#ifdef AIX4_1
-	  lseek (a_out, orig_data_scnptr + (ldrel->l_vaddr - d_start), 0);
-#else
-	  lseek (a_out, orig_data_scnptr + ldrel->l_vaddr, 0);
-#endif
+	  lseek (a_out,
+                 orig_data_scnptr + (ldrel->l_vaddr - f_ohdr.data_start), 0);
 
 	  if (read (a_out, (void *) &orig_int, sizeof (orig_int)) != sizeof (orig_int))
 	    {
 	      PERROR (a_name);
 	    }
 
+          p = (int *) (ldrel->l_vaddr + d_reloc);
+
 	  switch (ldrel->l_symndx) {
 	  case SYMNDX_TEXT:
-#ifdef AIX4_1
-	    p = (int *) (ldrel->l_vaddr);
-	    orig_int = * p;
-#else
-	    p = (int *) (d_start + ldrel->l_vaddr);
-	    orig_int = * p - (t_start - f_ohdr.text_start);
-#endif
+	    orig_int = * p - t_reloc;
 	    break;
 
 	  case SYMNDX_DATA:
 	  case SYMNDX_BSS:
-#ifdef AIX4_1
-	    p = (int *) (ldrel->l_vaddr);
-	    orig_int = * p;
-#else
-	    p = (int *) (d_start + ldrel->l_vaddr);
-	    orig_int = * p - (d_start - f_ohdr.data_start);
-#endif
+	    orig_int = * p - d_reloc;
 	    break;
 	  }
 
-#ifdef AIX4_1
-	  lseek (new, data_scnptr + (ldrel->l_vaddr - d_start), 0);
-#else
-	  lseek (new, data_scnptr + ldrel->l_vaddr, 0);
-#endif
-	  if (write (new, (void *) &orig_int, sizeof (orig_int)) != sizeof (orig_int))
-	    {
-	      PERROR (new_name);
-	    }
+          if (orig_int != * p)
+            {
+              lseek (new,
+                     data_scnptr + (ldrel->l_vaddr - f_ohdr.data_start), 0);
+              if (write (new, (void *) &orig_int, sizeof (orig_int))
+                  != sizeof (orig_int))
+                {
+                  PERROR (new_name);
+                }
+            }
 	}
     }
 }

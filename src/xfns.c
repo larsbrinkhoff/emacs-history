@@ -1,5 +1,5 @@
 /* Functions for the X window system.
-   Copyright (C) 1989, 1992, 1993, 1994, 1995 Free Software Foundation.
+   Copyright (C) 1989, 1992, 1993, 1994, 1995, 1996 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Completely rewritten by Richard Stallman.  */
 
@@ -35,10 +36,17 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "dispextern.h"
 #include "keyboard.h"
 #include "blockinput.h"
-#include "paths.h"
+#include <paths.h>
 
 #ifdef HAVE_X_WINDOWS
 extern void abort ();
+
+/* On some systems, the character-composition stuff is broken in X11R5.  */
+#if defined (HAVE_X11R5) && ! defined (HAVE_X11R6)
+#ifdef X11R5_INHIBIT_I18N
+#define X_I18N_INHIBITED
+#endif
+#endif
 
 #ifndef VMS
 #if 1 /* Used to be #ifdef EMACS_BITMAP_FILES, but this should always work.  */
@@ -188,7 +196,7 @@ Lisp_Object Qdisplay;
 
 /* The below are defined in frame.c.  */
 extern Lisp_Object Qheight, Qminibuffer, Qname, Qonly, Qwidth;
-extern Lisp_Object Qunsplittable, Qmenu_bar_lines, Qbuffer_predicate;
+extern Lisp_Object Qunsplittable, Qmenu_bar_lines, Qbuffer_predicate, Qtitle;
 
 extern Lisp_Object Vwindow_system_version;
 
@@ -201,10 +209,11 @@ check_x ()
     error ("X windows are not in use or not initialized");
 }
 
-/* Nonzero if using X for display.  */
+/* Nonzero if we can use mouse menus.
+   You should not call this unless HAVE_MENUS is defined.  */
 
 int
-using_x_p ()
+have_menus_p ()
 {
   return x_in_use;
 }
@@ -226,7 +235,7 @@ check_x_frame (frame)
       f = XFRAME (frame);
     }
   if (! FRAME_X_P (f))
-    error ("non-X frame used");
+    error ("Non-X frame used");
   return f;
 }
 
@@ -256,7 +265,7 @@ check_x_display_info (frame)
       CHECK_LIVE_FRAME (frame, 0);
       f = XFRAME (frame);
       if (! FRAME_X_P (f))
-	error ("non-X frame used");
+	error ("Non-X frame used");
       return FRAME_X_DISPLAY_INFO (f);
     }
 }
@@ -635,27 +644,7 @@ x_destroy_all_bitmaps (dpyinfo)
 
    The name of a parameter, as a Lisp symbol,
    has an `x-frame-parameter' property which is an integer in Lisp
-   but can be interpreted as an `enum x_frame_parm' in C.  */
-
-enum x_frame_parm
-{
-  X_PARM_FOREGROUND_COLOR,
-  X_PARM_BACKGROUND_COLOR,
-  X_PARM_MOUSE_COLOR,
-  X_PARM_CURSOR_COLOR,
-  X_PARM_BORDER_COLOR,
-  X_PARM_ICON_TYPE,
-  X_PARM_FONT,
-  X_PARM_BORDER_WIDTH,
-  X_PARM_INTERNAL_BORDER_WIDTH,
-  X_PARM_NAME,
-  X_PARM_AUTORAISE,
-  X_PARM_AUTOLOWER,
-  X_PARM_VERT_SCROLL_BAR,
-  X_PARM_VISIBILITY,
-  X_PARM_MENU_BAR_LINES
-};
-
+   that is an index in this table.  */
 
 struct x_frame_parm_table
 {
@@ -681,29 +670,31 @@ void x_set_vertical_scroll_bars ();
 void x_set_visibility ();
 void x_set_menu_bar_lines ();
 void x_set_scroll_bar_width ();
+void x_set_title ();
 void x_set_unsplittable ();
 
 static struct x_frame_parm_table x_frame_parms[] =
 {
-  "foreground-color", x_set_foreground_color,
-  "background-color", x_set_background_color,
-  "mouse-color", x_set_mouse_color,
-  "cursor-color", x_set_cursor_color,
-  "border-color", x_set_border_color,
-  "cursor-type", x_set_cursor_type,
-  "icon-type", x_set_icon_type,
-  "icon-name", x_set_icon_name,
-  "font", x_set_font,
-  "border-width", x_set_border_width,
-  "internal-border-width", x_set_internal_border_width,
-  "name", x_explicitly_set_name,
   "auto-raise", x_set_autoraise,
   "auto-lower", x_set_autolower,
+  "background-color", x_set_background_color,
+  "border-color", x_set_border_color,
+  "border-width", x_set_border_width,
+  "cursor-color", x_set_cursor_color,
+  "cursor-type", x_set_cursor_type,
+  "font", x_set_font,
+  "foreground-color", x_set_foreground_color,
+  "icon-name", x_set_icon_name,
+  "icon-type", x_set_icon_type,
+  "internal-border-width", x_set_internal_border_width,
+  "menu-bar-lines", x_set_menu_bar_lines,
+  "mouse-color", x_set_mouse_color,
+  "name", x_explicitly_set_name,
+  "scroll-bar-width", x_set_scroll_bar_width,
+  "title", x_set_title,
+  "unsplittable", x_set_unsplittable,
   "vertical-scroll-bars", x_set_vertical_scroll_bars,
   "visibility", x_set_visibility,
-  "menu-bar-lines", x_set_menu_bar_lines,
-  "scroll-bar-width", x_set_scroll_bar_width,
-  "unsplittable", x_set_unsplittable,
 };
 
 /* Attach the `x-frame-parameter' properties to
@@ -840,9 +831,19 @@ x_set_frame_parameters (f, alist)
 
   /* Don't die if just one of these was set.  */
   if (EQ (width, Qunbound))
-    XSETINT (width, FRAME_WIDTH (f));
+    {
+      if (FRAME_NEW_WIDTH (f))
+	XSETINT (width, FRAME_NEW_WIDTH (f));
+      else
+	XSETINT (width, FRAME_WIDTH (f));
+    }
   if (EQ (height, Qunbound))
-    XSETINT (height, FRAME_HEIGHT (f));
+    {
+      if (FRAME_NEW_HEIGHT (f))
+	XSETINT (height, FRAME_NEW_HEIGHT (f));
+      else
+	XSETINT (height, FRAME_HEIGHT (f));
+    }
 
   /* Don't set these parameters unless they've been explicitly
      specified.  The window might be mapped or resized while we're in
@@ -860,7 +861,8 @@ x_set_frame_parameters (f, alist)
     XSETFRAME (frame, f);
 
     if ((NUMBERP (width) && XINT (width) != FRAME_WIDTH (f))
-	|| (NUMBERP (height) && XINT (height) != FRAME_HEIGHT (f)))
+	|| (NUMBERP (height) && XINT (height) != FRAME_HEIGHT (f))
+	|| FRAME_NEW_HEIGHT (f) || FRAME_NEW_WIDTH (f))
       Fset_frame_size (frame, width, height);
 
     if ((!NILP (left) || !NILP (top))
@@ -965,7 +967,7 @@ x_real_positions (f, xptr, yptr)
       XQueryTree (FRAME_X_DISPLAY (f), outer, &tmp_root_window,
 		  &f->output_data.x->parent_desc,
 		  &tmp_children, &tmp_nchildren);
-      xfree (tmp_children);
+      XFree ((char *) tmp_children);
 
       win_x = win_y = 0;
 
@@ -1120,8 +1122,16 @@ defined_color (f, color, color_def, alloc)
 			      * ((color_def->blue >> 8) - (cells[x].blue >> 8))));
 	      if (trial_delta < nearest_delta) 
 		{
-		  nearest = x;
-		  nearest_delta = trial_delta;
+		  XColor temp;
+		  temp.red = cells[x].red;
+		  temp.green = cells[x].green;
+		  temp.blue = cells[x].blue;
+		  status = XAllocColor (display, screen_colormap, &temp);
+		  if (status)
+		    {
+		      nearest = x;
+		      nearest_delta = trial_delta;
+		    }
 		}
 	    }
 	  color_def->red = cells[nearest].red;
@@ -1393,7 +1403,7 @@ x_set_cursor_color (f, arg, oldval)
 	}
     }
 }
-
+
 /* Set the border-color of frame F to value described by ARG.
    ARG can be a string naming a color.
    The border-color is used for the border that is drawn by the X server.
@@ -1472,7 +1482,7 @@ x_set_cursor_type (f, arg, oldval)
      often do people change cursor types?  */
   update_mode_lines++;
 }
-
+
 void
 x_set_icon_type (f, arg, oldval)
      struct frame *f;
@@ -1549,6 +1559,8 @@ x_set_icon_name (f, arg, oldval)
   result = x_text_icon (f,
 			(char *) XSTRING ((!NILP (f->icon_name)
 					   ? f->icon_name
+					   : !NILP (f->title)
+					   ? f->title
 					   : f->name))->data);
 
   if (result)
@@ -1560,7 +1572,7 @@ x_set_icon_name (f, arg, oldval)
   XFlush (FRAME_X_DISPLAY (f));
   UNBLOCK_INPUT;
 }
-
+
 extern Lisp_Object x_new_font ();
 
 void
@@ -1577,7 +1589,7 @@ x_set_font (f, arg, oldval)
   UNBLOCK_INPUT;
   
   if (EQ (result, Qnil))
-    error ("Font \"%s\" is not defined", XSTRING (arg)->data);
+    error ("Font `%s' is not defined", XSTRING (arg)->data);
   else if (EQ (result, Qt))
     error ("the characters of the given font have varying widths");
   else if (STRINGP (result))
@@ -1649,7 +1661,7 @@ x_set_visibility (f, value, oldval)
   else
     Fmake_frame_visible (frame);
 }
-
+
 static void
 x_set_menu_bar_lines_1 (window, n)
   Lisp_Object window;
@@ -1697,7 +1709,7 @@ x_set_menu_bar_lines (f, value, oldval)
   if (nlines)
     {
       FRAME_EXTERNAL_MENU_BAR (f) = 1;
-      if (f->output_data.x->menubar_widget == 0)
+      if (FRAME_X_P (f) && f->output_data.x->menubar_widget == 0)
 	/* Make sure next redisplay shows the menu bar.  */
 	XWINDOW (FRAME_SELECTED_WINDOW (f))->update_mode_line = Qt;
     }
@@ -1706,14 +1718,15 @@ x_set_menu_bar_lines (f, value, oldval)
       if (FRAME_EXTERNAL_MENU_BAR (f) == 1)
 	free_frame_menubar (f);
       FRAME_EXTERNAL_MENU_BAR (f) = 0;
-      f->output_data.x->menubar_widget = 0;
+      if (FRAME_X_P (f))
+	f->output_data.x->menubar_widget = 0;
     }
 #else /* not USE_X_TOOLKIT */
   FRAME_MENU_BAR_LINES (f) = nlines;
   x_set_menu_bar_lines_1 (f->root_window, nlines - olines);
 #endif /* not USE_X_TOOLKIT */
 }
-
+
 /* Change the name of frame F to NAME.  If NAME is nil, set F's name to
        x_id_name.
 
@@ -1762,6 +1775,13 @@ x_set_name (f, name, explicit)
   if (! NILP (Fstring_equal (name, f->name)))
     return;
 
+  f->name = name;
+
+  /* For setting the frame title, the title parameter should override
+     the name parameter.  */
+  if (! NILP (f->title))
+    name = f->title;
+
   if (FRAME_X_WINDOW (f))
     {
       BLOCK_INPUT;
@@ -1799,8 +1819,6 @@ x_set_name (f, name, explicit)
 #endif /* not HAVE_X11R4 */
       UNBLOCK_INPUT;
     }
-
-  f->name = name;
 }
 
 /* This function should be called when the user's lisp code has
@@ -1824,7 +1842,73 @@ x_implicitly_set_name (f, arg, oldval)
 {
   x_set_name (f, arg, 0);
 }
+
+/* Change the title of frame F to NAME.
+   If NAME is nil, use the frame name as the title.
 
+   If EXPLICIT is non-zero, that indicates that lisp code is setting the
+       name; if NAME is a string, set F's name to NAME and set
+       F->explicit_name; if NAME is Qnil, then clear F->explicit_name.
+
+   If EXPLICIT is zero, that indicates that Emacs redisplay code is
+       suggesting a new name, which lisp code should override; if
+       F->explicit_name is set, ignore the new name; otherwise, set it.  */
+
+void
+x_set_title (f, name)
+     struct frame *f;
+     Lisp_Object name;
+{
+  /* Don't change the title if it's already NAME.  */
+  if (EQ (name, f->title))
+    return;
+
+  update_mode_lines = 1;
+
+  f->title = name;
+
+  if (NILP (name))
+    name = f->name;
+
+  if (FRAME_X_WINDOW (f))
+    {
+      BLOCK_INPUT;
+#ifdef HAVE_X11R4
+      {
+	XTextProperty text, icon;
+	Lisp_Object icon_name;
+
+	text.value = XSTRING (name)->data;
+	text.encoding = XA_STRING;
+	text.format = 8;
+	text.nitems = XSTRING (name)->size;
+
+	icon_name = (!NILP (f->icon_name) ? f->icon_name : name);
+
+	icon.value = XSTRING (icon_name)->data;
+	icon.encoding = XA_STRING;
+	icon.format = 8;
+	icon.nitems = XSTRING (icon_name)->size;
+#ifdef USE_X_TOOLKIT
+	XSetWMName (FRAME_X_DISPLAY (f),
+		    XtWindow (f->output_data.x->widget), &text);
+	XSetWMIconName (FRAME_X_DISPLAY (f), XtWindow (f->output_data.x->widget),
+			&icon);
+#else /* not USE_X_TOOLKIT */
+	XSetWMName (FRAME_X_DISPLAY (f), FRAME_X_WINDOW (f), &text);
+	XSetWMIconName (FRAME_X_DISPLAY (f), FRAME_X_WINDOW (f), &icon);
+#endif /* not USE_X_TOOLKIT */
+      }
+#else /* not HAVE_X11R4 */
+      XSetIconName (FRAME_X_DISPLAY (f), FRAME_X_WINDOW (f),
+		    XSTRING (name)->data);
+      XStoreName (FRAME_X_DISPLAY (f), FRAME_X_WINDOW (f),
+		  XSTRING (name)->data);
+#endif /* not HAVE_X11R4 */
+      UNBLOCK_INPUT;
+    }
+}
+
 void
 x_set_autoraise (f, arg, oldval)
      struct frame *f;
@@ -2583,6 +2667,7 @@ x_window (f, window_prompting, minibuffer_only)
   XSetClassHint (FRAME_X_DISPLAY (f), XtWindow (shell_widget), &class_hints);
 
 #ifdef HAVE_X_I18N
+#ifndef X_I18N_INHIBITED
   { 
     XIM xim;
     XIC xic = NULL;
@@ -2598,11 +2683,19 @@ x_window (f, window_prompting, minibuffer_only)
 			 NULL);
 
 	if (xic == 0)
-	  XCloseIM (xim);
+	  {
+	    XCloseIM (xim);
+	    xim = NULL;
+	  }
       }
+    FRAME_XIM (f) = xim;
     FRAME_XIC (f) = xic;
   }
-#endif
+#else /* X_I18N_INHIBITED */
+  FRAME_XIM (f) = 0;
+  FRAME_XIC (f) = 0;
+#endif /* X_I18N_INHIBITED */
+#endif /* HAVE_X_I18N */
 
   f->output_data.x->wm_hints.input = True;
   f->output_data.x->wm_hints.flags |= InputHint;
@@ -2696,6 +2789,7 @@ x_window (f)
 		     FRAME_X_DISPLAY_INFO (f)->visual,
 		     attribute_mask, &attributes);
 #ifdef HAVE_X_I18N
+#ifndef X_I18N_INHIBITED
   { 
     XIM xim;
     XIC xic = NULL;
@@ -2711,12 +2805,20 @@ x_window (f)
 			 NULL);
 
 	if (!xic)
-	  XCloseIM (xim);
+	  {
+	    XCloseIM (xim);
+	    xim = NULL;
+	  }
       }
 
+    FRAME_XIM (f) = xim;
     FRAME_XIC (f) = xic;
   }
-#endif
+#else /* X_I18N_INHIBITED */
+  FRAME_XIM (f) = 0;
+  FRAME_XIC (f) = 0;
+#endif /* X_I18N_INHIBITED */
+#endif /* HAVE_X_I18N */
 
   validate_x_resource_name ();
 
@@ -2737,6 +2839,7 @@ x_window (f)
   f->output_data.x->wm_hints.flags |= InputHint;
   XSetWMHints (FRAME_X_DISPLAY (f), FRAME_X_WINDOW (f),
 	       &f->output_data.x->wm_hints);
+  f->output_data.x->wm_hints.icon_pixmap = None;
 
   /* Request "save yourself" and "delete window" commands from wm.  */
   {
@@ -2929,7 +3032,7 @@ This function is an internal primitive--use `make-frame' instead.")
   kb = &the_only_kboard;
 #endif
 
-  name = x_get_arg (parms, Qname, "title", "Title", string);
+  name = x_get_arg (parms, Qname, "name", "Name", string);
   if (!STRINGP (name)
       && ! EQ (name, Qunbound)
       && ! NILP (name))
@@ -3084,6 +3187,8 @@ This function is an internal primitive--use `make-frame' instead.")
 		       "scrollBarWidth", "ScrollBarWidth", number);
   x_default_parameter (f, parms, Qbuffer_predicate, Qnil,
 		       "bufferPredicate", "BufferPredicate", symbol);
+  x_default_parameter (f, parms, Qtitle, Qnil,
+		       "title", "Title", string);
 
   f->output_data.x->parent_desc = FRAME_X_DISPLAY_INFO (f)->root_window;
   window_prompting = x_figure_window_size (f, parms);
@@ -3254,7 +3359,7 @@ even if they match PATTERN and FACE.")
 
       /* Don't die if we get called with a terminal frame.  */
       if (! FRAME_X_P (f))
-	error ("non-X frame used in `x-list-fonts'");
+	error ("Non-X frame used in `x-list-fonts'");
 
       face_id = face_name_id_number (f, face);
 
@@ -3292,10 +3397,15 @@ even if they match PATTERN and FACE.")
 	{
 	  XFontStruct *thisinfo;
 
-          thisinfo = XLoadQueryFont (FRAME_X_DISPLAY (f),
+	  x_catch_errors (FRAME_X_DISPLAY (f));
+
+	  thisinfo = XLoadQueryFont (FRAME_X_DISPLAY (f),
 				     XSTRING (XCONS (tem)->car)->data);
 
-          if (thisinfo && same_size_fonts (thisinfo, size_ref))
+	  x_check_errors (FRAME_X_DISPLAY (f), "XLoadQueryFont failure: %s");
+	  x_uncatch_errors (FRAME_X_DISPLAY (f));
+
+	  if (thisinfo && same_size_fonts (thisinfo, size_ref))
 	    newlist = Fcons (XCONS (tem)->car, newlist);
 
 	  if (thisinfo != 0)
@@ -3308,6 +3418,8 @@ even if they match PATTERN and FACE.")
     }
 
   BLOCK_INPUT;
+
+  x_catch_errors (FRAME_X_DISPLAY (f));
 
   /* Solaris 2.3 has a bug in XListFontsWithInfo.  */
 #ifndef BROKEN_XLISTFONTSWITHINFO
@@ -3323,6 +3435,9 @@ even if they match PATTERN and FACE.")
 			XSTRING (pattern)->data,
 			2000, /* maxnames */
 			&num_fonts); /* count_return */
+
+  x_check_errors (FRAME_X_DISPLAY (f), "XListFonts failure: %s");
+  x_uncatch_errors (FRAME_X_DISPLAY (f));
 
   UNBLOCK_INPUT;
 
@@ -3356,10 +3471,22 @@ even if they match PATTERN and FACE.")
 	      XFontStruct *thisinfo;
 
 	      BLOCK_INPUT;
+
+	      x_catch_errors (FRAME_X_DISPLAY (f));
 	      thisinfo = XLoadQueryFont (FRAME_X_DISPLAY (f), names[i]);
+	      x_check_errors (FRAME_X_DISPLAY (f),
+			      "XLoadQueryFont failure: %s");
+	      x_uncatch_errors (FRAME_X_DISPLAY (f));
+
 	      UNBLOCK_INPUT;
 
 	      keeper = thisinfo && same_size_fonts (thisinfo, size_ref);
+	      BLOCK_INPUT;
+	      if (thisinfo && ! keeper)
+		XFreeFont (FRAME_X_DISPLAY (f), thisinfo);
+	      else if (thisinfo)
+		XFreeFontInfo (NULL, thisinfo, 1);
+	      UNBLOCK_INPUT;
 #else
 	      keeper = same_size_fonts (&info[i], size_ref);
 #endif

@@ -3,14 +3,14 @@
 @ifinfo
 @c The edition number appears in several places in this file
 This corresponds to the eleventh edition of the @cite{GNU Emacs Manual},
-for Emacs version 19.30.
+for Emacs version 19.31.
 @c Please REMEMBER to update edition number in *three* places in this file.
 
 Published by the Free Software Foundation
 59 Temple Place, Suite 330
 Boston, MA  02111-1307 USA
 
-Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
+Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -63,15 +63,15 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Eleventh Edition, Updated for Emacs Version 19.30
+@center Eleventh Edition, Updated for Emacs Version 19.31
 @sp 5
 @center Richard Stallman
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
+Copyright @copyright{} 1985, 1986, 1987, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 @sp 2
 Eleventh Edition @*
-Updated for Emacs Version 19.30, @*
+Updated for Emacs Version 19.31, @*
 November 1995
 
 ISBN 1-882114-83-3
@@ -110,7 +110,7 @@ Cover art by Etienne Suvasa.
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.30.
+corresponds to GNU Emacs version 19.31.
 
 @end ifinfo
 
@@ -227,6 +227,7 @@ Recovery from Problems.
 * Quitting::	      Quitting and aborting.
 * Lossage::	      What to do if Emacs is hung or malfunctioning.
 * Bugs::	      How and when to report a bug.
+* Contributing::      How to contribute improvements to Emacs.
 * Service::	      How to get help for your own Emacs needs.
 
 Here are some other nodes which are really inferiors of the ones
@@ -309,8 +310,9 @@ Controlling the Display
 * Scrolling::		   Moving text up and down in a window.
 * Horizontal Scrolling::   Moving text left and right in a window.
 * Selective Display::	   Hiding lines with lots of indentation.
-* Optional Mode Line::	   Optional mode line features.
 * European Display::	   Displaying (and entering) European characters.
+* Follow Mode::            Follow mode lets two windows scroll as one.
+* Optional Mode Line::	   Optional mode line features.
 * Display Vars::	   Information on variables for customizing display.
 
 Searching and Replacement
@@ -350,6 +352,7 @@ File Handling
 * Directories::	     Listing the contents of a file directory.
 * Comparing Files::  Finding where two files differ.
 * Misc File Ops::    Other things you can do on files.
+* Compressed Files:: Accessing compressed files.
 
 Saving Files
 
@@ -722,6 +725,7 @@ Command Line Options and Arguments
 * Colors X::	        Choosing colors, under X.
 * Window Size X::       Start-up window size, under X.
 * Borders X::	        Internal and external borders, under X.
+* Title X::             Specifying the initial frame's title.
 * Icons X::             Choosing what sort of icon to use, under X.
 * Resources X::         Advanced use of classes and resources, under X.
 * Lucid Resources::     X resources for Lucid menus.
@@ -731,6 +735,16 @@ Environment Variables
 
 * General Variables::	  Environment variables that all versions of Emacs use.
 * Misc Variables::	  Certain system specific variables.
+
+MS-DOS and Windows NT/95
+
+* Keyboard and Mouse on MS-DOS::
+* Display on MS-DOS::
+* File Names on MS-DOS::
+* Text and Binary::
+* Printing and MS-DOS::
+* Subprocesses on MS-DOS::
+* Windows 95 Subprocesses::
 @end menu
 
 @iftex
@@ -792,10 +806,10 @@ Cambridge, MA 02139, USA@.  The price today is $3.
 
 This edition of the manual is intended for use with GNU Emacs installed
 on GNU and Unix systems.  GNU Emacs can also be used on VMS, MS-DOS
-(aka.@: MS-DOG) and Windows NT systems, but those systems have different
-file name syntax and do not support all GNU Emacs features.  We don't
-try to describe VMS usage in this manual.  @xref{MS-DOS}, for
-information about using Emacs on MS-DOS.
+(aka.@: MS-DOG), Windows NT, and Windows 95 systems.  Those systems use
+different file name syntax; in addition, VMS and MS-DOS do not support
+all GNU Emacs features.  We don't try to describe VMS usage in this
+manual.  @xref{MS-DOS}, for information about using Emacs on MS-DOS.
 @end iftex
 
 @node Distrib, Copying, Top, Top
@@ -854,7 +868,7 @@ subscribing to periodic updates.
 
 @iftex
 Contributors to GNU Emacs include Per Abrahamsen, Jay K. Adams, Joe
-Arceneax, Boaz Ben-Zvi, Jim Blandy, Frank Bresz, Kevin Broadey, Vincent
+Arceneaux, Boaz Ben-Zvi, Jim Blandy, Frank Bresz, Kevin Broadey, Vincent
 Broman, David M. Brown, Hans Chalupsky, Bob Chassell, James Clark, Mike
 Clarkson, Doug Cutting, Michael DeCorte, Gary Delp, Matthieu Devin,
 Scott Draves, Viktor Dukhovni, Rolf Ebert, Torbj@"orn Einarsson, Hans
@@ -871,7 +885,7 @@ Ken Manheimer, Bill Mann, Brian Marick, Simon Marshall, Bengt
 Martensson, Charlie Martin, Thomas May, Roland McGrath, David Megginson,
 Richard Mlynarik, Keith Moore, Thomas Neumann, Mike Newton, Jurgen
 Nickelsen, Jeff Norden, Jeff Peck, Damon Anton Permezel, Tom Perrine,
-Daniel Pfeiffer, Fred Pierresteguy, Christian Plaunt, Franceso
+Daniel Pfeiffer, Fred Pierresteguy, Christian Plaunt, Francesco
 A. Potorti, Michael D. Prange, Mukesh Prasad, Ashwin Ram, Eric
 S. Raymond, Paul Reilly, Edward M. Reingold, Rob Riepel, Roland
 B. Roberts, John Robinson, William Rosenblatt, Guillermo J. Rozas,

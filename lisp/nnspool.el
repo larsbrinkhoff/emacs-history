@@ -1,4 +1,5 @@
 ;;; nnspool.el --- spool access for GNU Emacs
+
 ;; Copyright (C) 1988,89,90,93,94,95 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -366,7 +368,7 @@ Newsgroup must be selected before calling this function."
 		(nnspool-sift-nov-with-sed articles nov)
 	      (insert-file-contents nov)
 	      ;; First we find the first wanted line. We issue a number
-	      ;; of search-forwards - the first article we are lookign
+	      ;; of search-forwards - the first article we are looking
 	      ;; for may be expired, so we have to go on searching until
 	      ;; we find one of the articles we want.
 	      (while (and articles

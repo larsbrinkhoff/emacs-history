@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -149,7 +150,8 @@ Usenet paths ending in an element that matches are removed also."
     (while (setq pos (string-match match userids))
       (if (> pos 0) (setq pos (match-beginning 2)))
       (setq epos
-	    (if (string-match "[ \t\n,]+" userids (match-end 0))
+	    ;; Delete thru the next comma, plus whitespace after.
+	    (if (string-match ",[ \t\n]+" userids (match-end 0))
 		(match-end 0)
 	      (length userids)))
       (setq userids
@@ -181,8 +183,7 @@ If third arg ALL is non-nil, concatenate all such fields with commas between."
 			      (looking-at "[ \t]")))
 		;; Back up over newline, then trailing spaces or tabs
 		(forward-char -1)
-		(while (member (preceding-char) '(?  ?\t))
-		  (forward-char -1))
+		(skip-chars-backward " \t" opoint)
 		(setq value (concat value
 				    (if (string= value "") "" ", ")
 				    (buffer-substring-no-properties
@@ -196,8 +197,7 @@ If third arg ALL is non-nil, concatenate all such fields with commas between."
 			      (looking-at "[ \t]")))
 		;; Back up over newline, then trailing spaces or tabs
 		(forward-char -1)
-		(while (member (preceding-char) '(?  ?\t))
-		  (forward-char -1))
+		(skip-chars-backward " \t" opoint)
 		(buffer-substring-no-properties opoint (point)))))))))
 
 ;; Parse a list of tokens separated by commas.

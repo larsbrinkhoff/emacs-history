@@ -17,7 +17,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -136,7 +137,7 @@ doprnt1 (lispstrings, buffer, bufsize, format, format_end, nargs, args)
 	    size_bound = -size_bound;
 	  size_bound += 50;
 
-	  if (size_bound > (unsigned) (1 << (BITS_PER_INT - 1)))
+	  if (size_bound > (((unsigned) 1) << (BITS_PER_INT - 1)))
 	    error ("Format padding too large");
 
 	  /* Make sure we have that much.  */

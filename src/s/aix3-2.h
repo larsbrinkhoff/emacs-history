@@ -14,7 +14,15 @@
    additional optimization.  --nils@exp-math.uni-essen.de */
 #define C_SWITCH_SYSTEM -ma -qmaxmem=4000
 #endif
+
 #define HAVE_ALLOCA
+/* Adrian Colley <Adrian.Colley@three.serpentine.com> says this is needed.  */
+#ifndef NOT_C_CODE
+#ifndef AIX4
+ #pragma alloca
+#endif
+#endif
+
 #undef rindex
 #undef index
 
@@ -32,3 +40,10 @@
 #define C_SWITCH_DEBUG -g
 #define C_SWITCH_OPTIMIZE
 #endif
+
+/* The character-composition stuff is broken in X11R5.
+   Even with XIMStatusNothing aliased to XIMStatusNone,
+   tranle@intellicorp.com (Minh Tran-Le) reports that enabling
+   the internationalization code causes the modifier keys C, M and Shift
+   to beep after a mouse click.  */
+#define X11R5_INHIBIT_I18N

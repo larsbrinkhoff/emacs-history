@@ -1,5 +1,5 @@
 /* Simple built-in editing commands.
-   Copyright (C) 1985, 1993, 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1985, 93, 94, 95, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -40,7 +41,7 @@ Lisp_Object Vself_insert_face_command;
 extern Lisp_Object Qface;
 
 DEFUN ("forward-char", Fforward_char, Sforward_char, 0, 1, "p",
-  "Move point right ARG characters (left if ARG negative).\n\
+  "Move point right N characters (left if N is negative).\n\
 On reaching end of buffer, stop and signal error.")
   (n)
      Lisp_Object n;
@@ -76,7 +77,7 @@ On reaching end of buffer, stop and signal error.")
 }
 
 DEFUN ("backward-char", Fbackward_char, Sbackward_char, 0, 1, "p",
-  "Move point left ARG characters (right if ARG negative).\n\
+  "Move point left N characters (right if N is negative).\n\
 On attempt to pass beginning or end of buffer, stop and signal error.")
   (n)
      Lisp_Object n;
@@ -91,12 +92,12 @@ On attempt to pass beginning or end of buffer, stop and signal error.")
 }
 
 DEFUN ("forward-line", Fforward_line, Sforward_line, 0, 1, "p",
-  "Move ARG lines forward (backward if ARG is negative).\n\
-Precisely, if point is on line I, move to the start of line I + ARG.\n\
+  "Move N lines forward (backward if N is negative).\n\
+Precisely, if point is on line I, move to the start of line I + N.\n\
 If there isn't room, go as far as possible (no error).\n\
 Returns the count of lines left to move.  If moving forward,\n\
-that is ARG - number of lines moved; if backward, ARG + number moved.\n\
-With positive ARG, a non-empty line at the end counts as one line\n\
+that is N - number of lines moved; if backward, N + number moved.\n\
+With positive N, a non-empty line at the end counts as one line\n\
   successfully moved (for the return value).")
   (n)
      Lisp_Object n;
@@ -128,7 +129,7 @@ With positive ARG, a non-empty line at the end counts as one line\n\
 DEFUN ("beginning-of-line", Fbeginning_of_line, Sbeginning_of_line,
   0, 1, "p",
   "Move point to beginning of current line.\n\
-With argument ARG not nil or 1, move forward ARG - 1 lines first.\n\
+With argument N not nil or 1, move forward N - 1 lines first.\n\
 If scan reaches end of buffer, stop there without error.")
   (n)
      Lisp_Object n;
@@ -145,7 +146,7 @@ If scan reaches end of buffer, stop there without error.")
 DEFUN ("end-of-line", Fend_of_line, Send_of_line,
   0, 1, "p",
   "Move point to end of current line.\n\
-With argument ARG not nil or 1, move forward ARG - 1 lines first.\n\
+With argument N not nil or 1, move forward N - 1 lines first.\n\
 If scan reaches end of buffer, stop there without error.")
   (n)
      Lisp_Object n;
@@ -164,10 +165,10 @@ If scan reaches end of buffer, stop there without error.")
 }
 
 DEFUN ("delete-char", Fdelete_char, Sdelete_char, 1, 2, "p\nP",
-  "Delete the following ARG characters (previous, with negative arg).\n\
+  "Delete the following N characters (previous if N is negative).\n\
 Optional second arg KILLFLAG non-nil means kill instead (save in kill ring).\n\
-Interactively, ARG is the prefix arg, and KILLFLAG is set if\n\
-ARG was explicitly specified.")
+Interactively, N is the prefix arg, and KILLFLAG is set if\n\
+N was explicitly specified.")
   (n, killflag)
      Lisp_Object n, killflag;
 {
@@ -199,46 +200,76 @@ ARG was explicitly specified.")
 
 DEFUN ("delete-backward-char", Fdelete_backward_char, Sdelete_backward_char,
   1, 2, "p\nP",
-  "Delete the previous ARG characters (following, with negative ARG).\n\
+  "Delete the previous N characters (following if N is negative).\n\
 Optional second arg KILLFLAG non-nil means kill instead (save in kill ring).\n\
-Interactively, ARG is the prefix arg, and KILLFLAG is set if\n\
-ARG was explicitly specified.")
+Interactively, N is the prefix arg, and KILLFLAG is set if\n\
+N was explicitly specified.")
   (n, killflag)
      Lisp_Object n, killflag;
 {
+  Lisp_Object value;
+  int deleted_tab = 0;
+  int i;
+
   CHECK_NUMBER (n, 0);
-  return Fdelete_char (make_number (-XINT (n)), killflag);
+
+  /* See if we are about to delete a tab backwards.  */
+  for (i = 0; i < XINT (n); i++)
+    {
+      if (point - i < BEGV)
+	break;
+      if (FETCH_CHAR (point - i) == '\t')
+	{
+	  deleted_tab = 1;
+	  break;
+	}
+    }
+
+  value = Fdelete_char (make_number (-XINT (n)), killflag);
+
+  /* In overwrite mode, back over columns while clearing them out,
+     unless at end of line.  */
+  if (XINT (n) > 0
+      && ! NILP (current_buffer->overwrite_mode)
+      && ! deleted_tab
+      && ! (point == ZV || FETCH_CHAR (point) == '\n'))
+    {
+      Finsert_char (make_number (' '), XINT (n));
+      SET_PT (point - XINT (n));
+    }
+
+  return value;
 }
 
 DEFUN ("self-insert-command", Fself_insert_command, Sself_insert_command, 1, 1, "p",
   "Insert the character you type.\n\
 Whichever character you type to run this command is inserted.")
-  (arg)
-     Lisp_Object arg;
+  (n)
+     Lisp_Object n;
 {
-  CHECK_NUMBER (arg, 0);
+  CHECK_NUMBER (n, 0);
 
   /* Barf if the key that invoked this was not a character.  */
   if (!INTEGERP (last_command_char))
     bitch_at_user ();
-  else if (XINT (arg) >= 2 && NILP (current_buffer->overwrite_mode))
+  else if (XINT (n) >= 2 && NILP (current_buffer->overwrite_mode))
     {
-      XSETFASTINT (arg, XFASTINT (arg) - 2);
+      XSETFASTINT (n, XFASTINT (n) - 2);
       /* The first one might want to expand an abbrev.  */
       internal_self_insert (XINT (last_command_char), 1);
       /* The bulk of the copies of this char can be inserted simply.
 	 We don't have to handle a user-specified face specially
 	 because it will get inherited from the first char inserted.  */
-      Finsert_char (last_command_char, arg, Qt);
+      Finsert_char (last_command_char, n, Qt);
       /* The last one might want to auto-fill.  */
       internal_self_insert (XINT (last_command_char), 0);
     }
   else
-    while (XINT (arg) > 0)
+    while (XINT (n) > 0)
       {
 	/* Ok since old and new vals both nonneg */
-	XSETFASTINT (arg, XFASTINT (arg) - 1);
-	internal_self_insert (XINT (last_command_char), XFASTINT (arg) != 0);
+	XSETFASTINT (n, XFASTINT (n) - 1);
+	internal_self_insert (XINT (last_command_char), XFASTINT (n) != 0);
       }
 
   return Qnil;
@@ -252,7 +283,10 @@ Whichever character you type to run this command is inserted.")
    A value of 2 means this did things that call for an undo boundary.  */
 
 internal_self_insert (c1, noautofill)
-     char c1;
+     /* This has to be unsigned char; when it is char,
+	some compilers sign-extend it in SYNTAX_ENTRY, despite
+	the casts to unsigned char there.  */
+     unsigned char c1;
      int noautofill;
 {
   extern Lisp_Object Fexpand_abbrev ();
@@ -297,16 +331,19 @@ internal_self_insert (c1, noautofill)
       && !noautofill
       && !NILP (current_buffer->auto_fill_function))
     {
+      Lisp_Object tem;
+
       insert_and_inherit (&c1, 1);
       if (c1 == '\n')
 	/* After inserting a newline, move to previous line and fill */
 	/* that.  Must have the newline in place already so filling and */
 	/* justification, if any, know where the end is going to be. */
 	SET_PT (point - 1);
-      call0 (current_buffer->auto_fill_function);
+      tem = call0 (current_buffer->auto_fill_function);
       if (c1 == '\n')
 	SET_PT (point + 1);
-      hairy = 2;
+      if (!NILP (tem))
+	hairy = 2;
     }
   else
     insert_and_inherit (&c1, 1);

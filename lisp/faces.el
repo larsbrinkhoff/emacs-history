@@ -1,6 +1,6 @@
 ;;; faces.el --- Lisp interface to the c "face" structure
 
-;; Copyright (C) 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1993, 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,8 +15,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -138,7 +139,8 @@ FRAME specifies the frame and thus the display for interpreting COLOR."
 	 (r (nth 0 values))
 	 (g (nth 1 values))
 	 (b (nth 2 values)))
-    (and (< (abs (- r g)) (/ (max 1 (abs r) (abs g)) 20))
+    (and values
+	 (< (abs (- r g)) (/ (max 1 (abs r) (abs g)) 20))
 	 (< (abs (- g b)) (/ (max 1 (abs g) (abs b)) 20))
 	 (< (abs (- b r)) (/ (max 1 (abs b) (abs r)) 20)))))
 
@@ -150,7 +152,7 @@ in that frame; otherwise change each frame."
   ;; For a specific frame, use gray stipple instead of gray color
   ;; if the display does not support a gray color.
   (if (and frame (not (eq frame t)) color
-	   ;; Check for supportedness for foreground, not for background!
+	   ;; Check for support for foreground, not for background!
 	   ;; face-color-supported-p is smart enough to know
 	   ;; that grays are "supported" as background
 	   ;; because we are supposed to use stipple for them!
@@ -203,33 +205,40 @@ in that frame; otherwise change each frame."
 	  (t value))))
 
 (defun modify-face (face foreground background stipple
-			 bold-p italic-p underline-p)
+		    bold-p italic-p underline-p &optional frame)
   "Change the display attributes for face FACE.
-FOREGROUND and BACKGROUND should be color strings or nil.
-STIPPLE should be a stipple pattern name or nil.
+If the optional FRAME argument is provided, change only
+in that frame; otherwise change each frame.
+
+FOREGROUND and BACKGROUND should be a colour name string (or list of strings to
+try) or nil.  STIPPLE should be a stipple pattern name string or nil.
+If nil, means do not change the display attribute corresponding to that arg.
+
 BOLD-P, ITALIC-P, and UNDERLINE-P specify whether the face should be set bold,
-in italic, and underlined, respectively.  (Yes if non-nil.)
-If called interactively, prompts for a face and face attributes."
+in italic, and underlined, respectively.  If neither nil or t, means do not
+change the display attribute corresponding to that arg.
+
+If called interactively, prompts for a face name and face attributes."
   (interactive
    (let* ((completion-ignore-case t)
-	  (face	       (symbol-name (read-face-name "Modify face: ")))
-	  (colors      (mapcar 'list x-colors))
-	  (stipples    (mapcar 'list
-			       (apply 'nconc
-				      (mapcar 'directory-files
-					      x-bitmap-file-path))))
-	  (foreground  (modify-face-read-string
-			face (face-foreground (intern face))
-			"foreground" colors))
-	  (background  (modify-face-read-string
-			face (face-background (intern face))
-			"background" colors))
-	  (stipple     (modify-face-read-string
-			face (face-stipple (intern face))
-			"stipple" stipples))
-	  (bold-p      (y-or-n-p (concat "Set face " face " bold ")))
-	  (italic-p    (y-or-n-p (concat "Set face " face " italic ")))
-	  (underline-p (y-or-n-p (concat "Set face " face " underline "))))
+	  (face		(symbol-name (read-face-name "Modify face: ")))
+	  (colors	(mapcar 'list x-colors))
+	  (stipples	(mapcar 'list (apply 'nconc
+					    (mapcar 'directory-files
+						    x-bitmap-file-path))))
+	  (foreground	(modify-face-read-string
+			 face (face-foreground (intern face))
+			 "foreground" colors))
+	  (background	(modify-face-read-string
+			 face (face-background (intern face))
+			 "background" colors))
+	  (stipple	(modify-face-read-string
+			 face (face-stipple (intern face))
+			 "stipple" stipples))
+	  (bold-p	(y-or-n-p (concat "Set face " face " bold ")))
+	  (italic-p	(y-or-n-p (concat "Set face " face " italic ")))
+	  (underline-p	(y-or-n-p (concat "Set face " face " underline ")))
+	  (all-frames-p	(y-or-n-p (concat "Modify face " face " in all frames "))))
      (message "Face %s: %s" face
       (mapconcat 'identity
        (delq nil
@@ -239,13 +248,23 @@ If called interactively, prompts for a face and face attributes."
 	      (and bold-p "bold") (and italic-p "italic")
 	      (and underline-p "underline"))) ", "))
      (list (intern face) foreground background stipple
-	   bold-p italic-p underline-p)))
-  (condition-case nil (set-face-foreground face foreground) (error nil))
-  (condition-case nil (set-face-background face background) (error nil))
-  (condition-case nil (set-face-stipple face stipple) (error nil))
-  (funcall (if bold-p 'make-face-bold 'make-face-unbold) face nil t)
-  (funcall (if italic-p 'make-face-italic 'make-face-unitalic) face nil t)
-  (set-face-underline-p face underline-p)
+	   bold-p italic-p underline-p
+	   (if all-frames-p nil (selected-frame)))))
+  (condition-case nil
+      (face-try-color-list 'set-face-foreground face foreground frame)
+    (error nil))
+  (condition-case nil
+      (face-try-color-list 'set-face-background face background frame)
+    (error nil))
+  (condition-case nil
+      (set-face-stipple face stipple frame)
+    (error nil))
+  (cond ((eq bold-p nil) (make-face-unbold face frame t))
+	((eq bold-p t) (make-face-bold face frame t)))
+  (cond ((eq italic-p nil) (make-face-unitalic face frame t))
+	((eq italic-p t) (make-face-italic face frame t)))
+  (if (memq underline-p '(nil t))
+      (set-face-underline-p face underline-p frame))
   (and (interactive-p) (redraw-display)))
 
 ;;;; Associating face names (symbols) with their face vectors.
@@ -629,36 +648,44 @@ also the same size as FACE on FRAME, or fail."
     (cdr (assq 'font (frame-parameters (selected-frame))))))
 
 (defun x-frob-font-weight (font which)
-  (cond ((string-match x-font-regexp font)
-	 (concat (substring font 0 (match-beginning x-font-regexp-weight-subnum))
-		 which
-		 (substring font (match-end x-font-regexp-weight-subnum)
-			    (match-beginning x-font-regexp-adstyle-subnum))
-		 ;; Replace the ADD_STYLE_NAME field with *
-		 ;; because the info in it may not be the same
-		 ;; for related fonts.
-		 "*"
-		 (substring font (match-end x-font-regexp-adstyle-subnum))))
-	((or (string-match x-font-regexp-head font)
-	     (string-match x-font-regexp-weight font))
-	 (concat (substring font 0 (match-beginning 1)) which
-		 (substring font (match-end 1))))))
+  (let ((case-fold-search t))
+    (cond ((string-match x-font-regexp font)
+	   (concat (substring font 0
+			      (match-beginning x-font-regexp-weight-subnum))
+		   which
+		   (substring font (match-end x-font-regexp-weight-subnum)
+			      (match-beginning x-font-regexp-adstyle-subnum))
+		   ;; Replace the ADD_STYLE_NAME field with *
+		   ;; because the info in it may not be the same
+		   ;; for related fonts.
+		   "*"
+		   (substring font (match-end x-font-regexp-adstyle-subnum))))
+	  ((string-match x-font-regexp-head font)
+	   (concat (substring font 0 (match-beginning 1)) which
+		   (substring font (match-end 1))))
+	  ((string-match x-font-regexp-weight font)
+	   (concat (substring font 0 (match-beginning 1)) which
+		   (substring font (match-end 1)))))))
 
 (defun x-frob-font-slant (font which)
-  (cond ((string-match x-font-regexp font)
-	 (concat (substring font 0 (match-beginning x-font-regexp-slant-subnum))
-		 which
-		 (substring font (match-end x-font-regexp-slant-subnum)
-			    (match-beginning x-font-regexp-adstyle-subnum))
-		 ;; Replace the ADD_STYLE_NAME field with *
-		 ;; because the info in it may not be the same
-		 ;; for related fonts.
-		 "*"
-		 (substring font (match-end x-font-regexp-adstyle-subnum))))
-	((or (string-match x-font-regexp-head font)
-	     (string-match x-font-regexp-slant font))
-	 (concat (substring font 0 (match-beginning 1)) which
-		 (substring font (match-end 1))))))
+  (let ((case-fold-search t))
+    (cond ((string-match x-font-regexp font)
+	   (concat (substring font 0
+			      (match-beginning x-font-regexp-slant-subnum))
+		   which
+		   (substring font (match-end x-font-regexp-slant-subnum)
+			      (match-beginning x-font-regexp-adstyle-subnum))
+		   ;; Replace the ADD_STYLE_NAME field with *
+		   ;; because the info in it may not be the same
+		   ;; for related fonts.
+		   "*"
+		   (substring font (match-end x-font-regexp-adstyle-subnum))))
+	  ((string-match x-font-regexp-head font)
+	   (concat (substring font 0 (match-beginning 2)) which
+		   (substring font (match-end 2))))
+	  ((string-match x-font-regexp-slant font)
+	   (concat (substring font 0 (match-beginning 1)) which
+		   (substring font (match-end 1)))))))
 
 (defun x-make-font-bold (font)
   "Given an X font specification, make a bold version of it.

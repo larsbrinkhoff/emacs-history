@@ -7,7 +7,7 @@ subprocess currently do not work on VMS.
 
 These include Dired, listing a file directory, reading and sending mail,
 reading and posting netnews, spelling correction, displaying the time and
-load in the mode line, queueing output for printing, and the `sort-columns'
+load in the mode line, queuing output for printing, and the `sort-columns'
 command.  Naturally, the commands to view Unix manual pages and execute Unix
 shell commands also do not work.
 
@@ -42,7 +42,7 @@ in either Unix or VMS syntax, but not mixed.  This is NOT a VMS logical name
 with multiple equivalences.
 
 find-file prompts with the current directory.  You can then type a relative
-directory spec to get somewhere else in the hirearchy.  For instance:
+directory spec to get somewhere else in the hierarchy.  For instance:
 
 Find File: emacs_library:[src][-.lisp]startup.el
 

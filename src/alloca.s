@@ -12,9 +12,9 @@
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+   You should have received a copy of the GNU General Public License along
+   with this program; if not, write to the Free Software Foundation, Inc.,
+   59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. */
 
 /* Both 68000 systems I have run this on have had broken versions of alloca.
    Also, I am told that non-berkeley systems do not have it at all.
@@ -181,7 +181,7 @@ _alloca:
 	move.l	sp,d1		; get current SP value
 	sub.l	d0,d1		; adjust to reflect required size...
 	sub.l	#MAXREG*4,d1	; ...and space needed for registers
-	and.l	#-4,d1		; backup to longword boundry
+	and.l	#-4,d1		; backup to longword boundary
 	move.l	sp,a0		; save old SP value for register copy
 	move.l	d1,sp		; set the new SP value
 	tst.b	-4096(sp)	; grab an extra page (to cover caller)

@@ -5,21 +5,22 @@
 
 ;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
 
-;;; This file is part of GNU Emacs.
+;; This file is part of GNU Emacs.
 
-;;; GNU Emacs is free software; you can redistribute it and/or modify
-;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 2, or (at your option)
-;;; any later version.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;;; GNU Emacs is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;;; You should have received a copy of the GNU General Public License
-;;; along with GNU Emacs; see the file COPYING.  If not, write to
-;;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -516,8 +517,8 @@ Arguments: (search-dirs fname-stub &optional suffix-list in-other-window)
      ((not filename)
       nil)
 
-     ((bufferp (get-buffer filename))
-      (ff-switch-to-buffer filename other-window)
+     ((bufferp (get-file-buffer filename))
+      (ff-switch-to-buffer (get-file-buffer filename) other-window)
       filename)
                
      ((file-exists-p filename)
@@ -643,7 +644,7 @@ Arguments: (search-dirs fname-stub &optional suffix-list)
     found))
 
 (defun ff-string-match (regexp string &optional start)
-  "Like string-match (which see), but set `case-fold-search' temporarily.
+  "Like `string-match', but set `case-fold-search' temporarily.
 The value used comes from `ff-case-fold-search'."
   (let ((case-fold-search ff-case-fold-search))
     (if regexp
@@ -667,7 +668,7 @@ The value used comes from `ff-case-fold-search'."
 
 (defun ff-treat-as-special ()
   "Returns the file to look for if the construct was special, else nil.
-The construct is defined in the variable `ff-special-constructs' (which see)."
+The construct is defined in the variable `ff-special-constructs'."
   (let* (fname
          (list ff-special-constructs)
          (elem (car list))
@@ -735,17 +736,17 @@ called before `ff-post-load-hooks'."
       (run-hooks 'ff-post-load-hooks)))
 
 (defun ff-find-file (file &optional in-other-window new-file)
-  "Like `find-file' (which see), but may put the file in another window."
+  "Like `find-file', but may show the file in another window."
   (ff-switch-file 'find-file 
                   'find-file-other-window 
                   file in-other-window new-file))
 
-(defun ff-switch-to-buffer (file &optional in-other-window)
-  "Like `switch-to-buffer' (which see), but may put the buffer in another window."
+(defun ff-switch-to-buffer (buffer-or-name &optional in-other-window)
+  "Like `switch-to-buffer', but may show the buffer in another window."
 
   (ff-switch-file 'switch-to-buffer 
                   'switch-to-buffer-other-window 
-                  file in-other-window nil))
+                  buffer-or-name in-other-window nil))
 
 (cond 
  ((ff-emacs-19)

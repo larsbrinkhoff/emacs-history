@@ -1,4 +1,5 @@
 ;;; skeleton.el --- Lisp language extension for writing statement skeletons
+
 ;; Copyright (C) 1993, 1994, 1995 by Free Software Foundation, Inc.
 
 ;; Author: Daniel.Pfeiffer@Informatik.START.dbp.de, fax (+49 69) 7588-2389
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -200,7 +202,7 @@ strings with the subskeleton being repeated once for each string.
 
 Quoted lisp-expressions are evaluated evaluated for their side-effect.
 Other lisp-expressions are evaluated and the value treated as above.
-Note that expressions may not return `t' since this impplies an
+Note that expressions may not return `t' since this implies an
 endless loop.  Modes can define other symbols by locally setting them
 to any valid skeleton element.  The following local variables are
 available:
@@ -511,5 +513,7 @@ symmetrical ones, and the same character twice for the others."
 ;;;      (aset map i 'skeleton-pair-insert-maybe)
 ;;;      (setq i (1+ i))))
 ;;;  (run-hooks 'mirror-mode-hook))
+
+(provide 'skeleton)
 
 ;; skeleton.el ends here

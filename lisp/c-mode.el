@@ -1,4 +1,5 @@
 ;;; c-mode.el --- C code editing commands for Emacs
+
 ;; Copyright (C) 1985, 86, 87, 92, 94, 95 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -181,22 +183,22 @@ regardless of where in the line point is when the TAB command is used.")
 
 ;; This is actually the expression for C++ mode, but it's used for C too.
 (defvar c-imenu-generic-expression
-  (` 
+  (`
    ((nil
-     (, 
+     (,
       (concat
        "^"				  ; beginning of line is required
        "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
        "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; type specs; there can be no
        "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; more than 3 tokens, right?
-       
+
        "\\("				  ; last type spec including */&
        "[a-zA-Z0-9_:]+"
        "\\([ \t]*[*&]+[ \t]*\\|[ \t]+\\)"	  ; either pointer/ref sign or whitespace
        "\\)?"				  ; if there is a last type spec
        "\\("			      ; name; take that into the imenu entry
        "[a-zA-Z0-9_:~]+"		      ; member function, ctor or dtor...
-					; (may not contain * because then 
+					; (may not contain * because then
 					; "a::operator char*" would become "char*"!)
        "\\|"
        "\\([a-zA-Z0-9_:~]*::\\)?operator"
@@ -207,10 +209,10 @@ regardless of where in the line point is when the TAB command is used.")
 					; catch cases with () inside the parentheses
 					; surrounding the parameters
 					; (like "int foo(int a=bar()) {...}"
-       
-       )) 6)    
-    ("Class" 
-     (, (concat 
+
+       )) 6)
+    ("Class"
+     (, (concat
 	 "^"				   ; beginning of line is required
 	 "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
 	 "class[ \t]+"
@@ -221,20 +223,20 @@ regardless of where in the line point is when the TAB command is used.")
 ;; Uncomment if you want to find these too.  It will be a bit slower gathering
 ;; the indexes.
 ;    ("Prototypes"
-;     (, 
+;     (,
 ;      (concat
 ;       "^"				  ; beginning of line is required
 ;       "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
 ;       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; type specs; there can be no
 ;       "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	  ; more than 3 tokens, right?
-       
+
 ;       "\\("				  ; last type spec including */&
 ;       "[a-zA-Z0-9_:]+"
 ;       "\\([ \t]*[*&]+[ \t]*\\|[ \t]+\\)"	  ; either pointer/ref sign or whitespace
 ;       "\\)?"				  ; if there is a last type spec
 ;       "\\("			      ; name; take that into the imenu entry
 ;       "[a-zA-Z0-9_:~]+"		      ; member function, ctor or dtor...
-;					; (may not contain * because then 
+;					; (may not contain * because then
 ;					; "a::operator char*" would become "char*"!)
 ;       "\\|"
 ;       "\\([a-zA-Z0-9_:~]*::\\)?operator"
@@ -244,8 +246,8 @@ regardless of where in the line point is when the TAB command is used.")
 ;					; the (...) Can't
 ;					; catch cases with () inside the parentheses
 ;					; surrounding the parameters
-;					; (like "int foo(int a=bar());"       
-;       )) 6)    
+;					; (like "int foo(int a=bar());"
+;       )) 6)
 ;    ("Struct"
 ;     (, (concat
 ;	 "^"				; beginning of line is required
@@ -418,7 +420,7 @@ preserving the comment indentation or line-starting decorations."
 	      (paragraph-start
 	       ;; Lines containing just a comment start or just an end
 	       ;; should not be filled into paragraphs they are next to.
-	       (concat 
+	       (concat
 		paragraph-start
 		"\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
 	      (paragraph-separate
@@ -529,7 +531,7 @@ preserving the comment indentation or line-starting decorations."
 		(paragraph-start
 		 ;; Lines containing just a comment start or just an end
 		 ;; should not be filled into paragraphs they are next to.
-		 (concat 
+		 (concat
 		  paragraph-start
 		  "\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
 		(paragraph-separate
@@ -547,8 +549,8 @@ preserving the comment indentation or line-starting decorations."
 				  (if comment-start-place
 				      (goto-char comment-start-place)
 				    (search-backward "/*"))
-				  ;; Protect text before the comment start 
-				  ;; by excluding it.  Add spaces to bring back 
+				  ;; Protect text before the comment start
+				  ;; by excluding it.  Add spaces to bring back
 				  ;; proper indentation of that point.
 				  (let ((column (current-column)))
 				    (prog1 (point)
@@ -969,7 +971,7 @@ Returns nil if line starts inside a string, t if in a comment."
 		     ;; The first following code counts
 		     ;; if it is before the line we want to indent.
 		     (and (< (point) indent-point)
-			  (- 
+			  (-
 			   (if (> colon-line-end (point))
 			       (- (current-indentation) c-label-offset)
 			     (current-column))
@@ -1172,7 +1174,7 @@ If within a string or comment, move by sentences instead of statements."
 			  (not (re-search-forward "[;{}]" end t)))))))
 	(re-search-backward "[;}]")
 	(forward-char 1))
-    (error 
+    (error
      (let ((beg (point)))
        (backward-up-list -1)
        (let ((end (point)))
@@ -1509,7 +1511,7 @@ Available styles are GNU, K&R, BSD and Whitesmith."
 With no argument, inserts backslashes and aligns existing backslashes.
 With an argument, deletes the backslashes.
 
-This function does not modify the last line of the region if the region ends 
+This function does not modify the last line of the region if the region ends
 right at the start of the following line; it does not modify blank lines
 at the start of the region.  So you can put the region around an entire macro
 definition and conveniently use this command."
@@ -1642,5 +1644,7 @@ move backward across a preprocessor conditional."
 	(setq count (+ count increment))))
     (push-mark)
     (goto-char new)))
+
+(provide 'c-mode)
 
 ;;; c-mode.el ends here

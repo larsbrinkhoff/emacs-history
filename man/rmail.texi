@@ -561,7 +561,7 @@ repeat count.
 
   The command @kbd{C-M-l @var{labels} @key{RET}}
 (@code{rmail-summary-by-labels}) displays a summary containing only the
-messages that have at least one of a specified set of messages.  The
+messages that have at least one of a specified set of labels.  The
 argument @var{labels} is one or more label names, separated by commas.
 @xref{Rmail Summary}, for information on summaries.@refill
 
@@ -688,6 +688,18 @@ message as the text, and a subject designating a forwarded message.  All
 you have to do is fill in the recipients and send.  When you forward a
 message, recipients get a message which is ``from'' you, and which has
 the original message in its contents.
+
+@findex unforward-rmail-message
+  Forwarding a message encloses it between two delimiter lines.  It also
+modifies every line that starts with a dash, by inserting @w{@samp{- }}
+at the start of the line.  When you receive a forwarded message, if it
+contains something besides ordinary text---for example, program source
+code---you might find it useful to undo that transformation.  You can do
+this by selecting the forwarded message and typing @kbd{M-x
+unforward-rmail-message}.  This command extracts the original forwarded
+message, deleting the inserted @w{@samp{- }} strings, and inserts it
+into the Rmail file as a separate message immediately following the
+current one.
 
 @findex rmail-resend
   @dfn{Resending} is an alternative similar to forwarding; the

@@ -1,10 +1,11 @@
 ;;; dunnet.el --- Text adventure for Emacs
 
+;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
+
 ;; Author: Ron Schnell <ronnie@media.mit.edu>
 ;; Created: 25 Jul 1992
 ;; Version: 2.0
 ;; Keywords: games
-;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,8 +20,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -29,16 +31,17 @@
 
 ;;; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 ;;;  The log file should be set for your system, and it must
-;;;  be writeable by all.
+;;;  be writable by all.
 
 
-      (defvar dun-log-file "/usr/local/dunnet.score"
-	"Name of file to store score information for dunnet.")
+(defvar dun-log-file "/usr/local/dunnet.score"
+  "Name of file to store score information for dunnet.")
 
 (if nil
     (eval-and-compile (setq byte-compile-warnings nil)))
 
-(require 'cl)
+(eval-when-compile
+ (require 'cl))
 
 ;;;; Mode definitions for interactive mode
 
@@ -46,6 +49,8 @@
   "Major mode for running dunnet."
   (interactive)
   (text-mode)
+  (make-local-variable 'scroll-step)
+  (setq scroll-step 2)
   (use-local-map dungeon-mode-map)
   (setq major-mode 'dungeon-mode)
   (setq mode-name "Dungeon"))
@@ -85,6 +90,8 @@
   "Switch to *dungeon* buffer and start game."
   (interactive)
   (switch-to-buffer "*dungeon*")
+  (insert "This version of Dunnet has been censored for your protection
+in accord with the Communications Decency Act.\n\n")
   (dun-mode)
   (setq dun-dead nil)
   (setq room 0)
@@ -790,7 +797,7 @@ huge rocks sliding down from the ceiling, and blocking your way out.\n")
 (defun dun-sauna-heat ()
   (if (= dun-sauna-level 0)
       (dun-mprincl 
-       "The termperature has returned to normal room termperature."))
+       "The temperature has returned to normal room temperature."))
   (if (= dun-sauna-level 1)
       (dun-mprincl "It is now luke warm in here.  You begin to sweat."))
   (if (= dun-sauna-level 2)
@@ -927,7 +934,7 @@ If you have questions or comments, please contact ronnie@media.mit.edu."))
     (dun-put-objs-in-treas (nth urinal dun-room-objects))
     (dun-replace dun-room-objects urinal nil)))
 
-(defun dun-piss (args)
+(defun dun-urinate (args)
   (if (not (= dun-current-room bathroom))
       (dun-mprincl "You can't do that here, don't even bother trying.")
     (if (not dun-gottago)
@@ -1924,7 +1931,7 @@ A hole leads north."
 		     (type . dun-type)  (insert . dun-put)
 		     (score . dun-score) (help . dun-help) (quit . dun-quit) 
 		     (read . dun-examine) (verbose . dun-long) 
-		     (urinate . dun-piss) (piss . dun-piss)
+		     (urinate . dun-urinate)
 		     (flush . dun-flush) (sleep . dun-sleep) (lie . dun-sleep) 
 		     (x . dun-examine) (break . dun-break) (drive . dun-drive)
 		     (board . dun-in) (enter . dun-in) (turn . dun-turn)
@@ -2420,8 +2427,6 @@ nil
 		  nil nil nil nil nil nil nil nil nil nil      ;31-40
 		  nil (list obj-platinum) nil nil nil nil nil nil nil nil))
 
-(setq scroll-step 2)
-
 (setq dun-room-shorts nil)
 (dolist (x dun-rooms)
   (setq dun-room-shorts  
@@ -2587,7 +2592,7 @@ treasures for points?" "4" "four")
 	(dun-mprincl "
 Welcome to Unix\n
 Please clean up your directories.  The filesystem is getting full.
-Our tcp/ip link to gamma is a little flakey, but seems to work.
+Our tcp/ip link to gamma is a little flaky, but seems to work.
 The current version of ftp can only send files from the current
 directory, and deletes them after they are sent!  Be careful.
 
@@ -2875,7 +2880,7 @@ drwxr-xr-x  3 root     staff          2048 Jan 1 1970 ..")
 	      (dun-uexit nil))))))))
   
 (defun dun-cd (args)
-  (let (tcdpath tcdroom path-elemants room-check)
+  (let (tcdpath tcdroom path-elements room-check)
     (if (not (car args))
 	(dun-mprincl "Usage: cd <path>")
       (setq tcdpath dun-cdpath)

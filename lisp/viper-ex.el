@@ -1,6 +1,6 @@
 ;;; viper-ex.el --- functions implementing the Ex commands for Viper
 
-;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,11 +15,18 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
+
+;; Code
 
 (require 'viper-util)
+
+;; Compiler pacifier
+(defvar read-file-name-map)
+;; end compiler pacifier
 
 ;;; Variables
 
@@ -45,13 +52,15 @@
 ;; A-list of Ex variables that can be set using the :set command.
 (defconst ex-variable-alist 
   '(("wrapscan") ("ws") ("wrapmargin") ("wm")
-    ("tab-stop-local") ("tsl") ("tabstop") ("ts")
+    ("global-tabstop") ("gts") ("tabstop") ("ts")
     ("showmatch") ("sm") ("shiftwidth") ("sw") ("shell") ("sh")
     ("readonly") ("ro") 
     ("nowrapscan") ("nows") ("noshowmatch") ("nosm")
     ("noreadonly") ("noro") ("nomagic") ("noma")
-    ("noignorecase") ("noic") ("noautoindent") ("noai")
-    ("magic") ("ma") ("ignorecase") ("ic") ("autoindent") ("ai")
+    ("noignorecase") ("noic")
+    ("global-noautoindent") ("gnoai") ("noautoindent") ("noai")
+    ("magic") ("ma") ("ignorecase") ("ic")
+    ("global-autoindent") ("gai") ("autoindent") ("ai")
     ))
 
   
@@ -345,9 +354,11 @@ reversed.")
   (interactive)
   (setq vip-incomplete-ex-cmd t)
   (let ((quit-regex1 (concat
-		      "\\("
-		      "set[ \t]*" "\\|" "edit[ \t]*" "\\|" "[nN]ext[ \t]*"
-		      "\\|" "unm[ \t]*" "\\|" "^[ \t]*rep"
+		      "\\(" "set[ \t]*"
+		      "\\|" "edit[ \t]*"
+		      "\\|" "[nN]ext[ \t]*"
+		      "\\|" "unm[ \t]*"
+		      "\\|" "^[ \t]*rep"
 		      "\\)"))
 	(quit-regex2 (concat
 		      "[a-zA-Z][ \t]*"
@@ -356,13 +367,22 @@ reversed.")
 		      "\\)"
 		      "*[ \t]*$"))
 	(stay-regex (concat
-		     "\\("
-		     "^[ \t]*$" "\\|" "[ktgjmsz][ \t]*$" "\\|" "^[ \t]*ab.*"
-		     "\\|" "tr[ansfer \t]*" "\\|" "sr[ \t]*"
-		     "\\|" "mo.*" "\\|" "^[ \t]*k?ma[^p]*"
-		     "\\|" "^[ \t]*fi.*" "\\|" "v?gl.*" "\\|" "[vg][ \t]*$"
-		     "\\|" "jo.*" "\\|" "^[ \t]*ta.*" "\\|" "^[ \t]*una.*"
-		     "\\|" "^[ \t]*su.*" "\\|['`][a-z][ \t]*"
+		     "\\(" "^[ \t]*$"
+		     "\\|" "[?/].*[?/].*"
+		     "\\|" "[ktgjmsz][ \t]*$"
+		     "\\|" "^[ \t]*ab.*"
+		     "\\|" "tr[ansfer \t]*"
+		     "\\|" "sr[ \t]*"
+		     "\\|" "mo.*"
+		     "\\|" "^[ \t]*k?ma[^p]*"
+		     "\\|" "^[ \t]*fi.*"
+		     "\\|" "v?gl.*"
+		     "\\|" "[vg][ \t]*$"
+		     "\\|" "jo.*"
+		     "\\|" "^[ \t]*ta.*"
+		     "\\|" "^[ \t]*una.*"
+		     "\\|" "^[ \t]*su.*"
+		     "\\|['`][a-z][ \t]*"
 		     "\\|" "![ \t]*[a-zA-Z].*"
 		     "\\)"
 		     "!*")))
@@ -476,7 +496,7 @@ reversed.")
 		      ))
 		   ))
 	    ((eq ex-token-type 'non-command)
-	     (error (format "`%s': %s" ex-token vip-BadExCommand)))
+	     (error "`%s': %s" ex-token vip-BadExCommand))
 	    ((eq ex-token-type 'whole)
 	     (setq address nil)
 	     (setq ex-addresses
@@ -718,7 +738,7 @@ reversed.")
       (setq cf buffer-file-name)
       (setq pf (ex-next nil t))) ; this finds alternative file name
     (if (and (null cf) (string-match "[^\\]%\\|\\`%" cmd))
-	(error "No current file to substitute for `\%'"))
+	(error "No current file to substitute for `%%'"))
     (if (and (null pf) (string-match "[^\\]#\\|\\`#" cmd))
 	(error "No alternate file to substitute for `#'"))
     (save-excursion
@@ -826,9 +846,23 @@ reversed.")
   (setq vip-keep-reading-filename t) 
   ;; don't exit if directory---ex-commands don't 
   (cond ((ex-cmd-accepts-multiple-files-p ex-token) (exit-minibuffer))
-	(t (minibuffer-complete-word))))
-     
-	       
+	;; apparently the argument to an Ex command is
+	;; supposed to be a shell command
+	((vip-looking-back "^[ \t]*!.*")
+	 (setq ex-cmdfile t)
+	 (insert " "))
+	(t
+	 (setq ex-cmdfile nil)
+	 (minibuffer-complete-word))))
+
+(defun vip-handle-! ()
+  (interactive)
+  (if (and (string=
+	    (buffer-string) (vip-abbreviate-file-name default-directory))
+	   (member ex-token '("read" "write")))
+      (erase-buffer))
+  (insert "!"))
+
 (defun ex-cmd-accepts-multiple-files-p (token)
   (member token '("edit" "next" "Next")))
 
@@ -840,7 +874,10 @@ reversed.")
 	  (copy-keymap minibuffer-local-completion-map))
 	 beg end cont val)
     
-    (vip-add-keymap ex-read-filename-map minibuffer-local-completion-map) 
+    (vip-add-keymap ex-read-filename-map
+		    (if vip-emacs-p 
+			minibuffer-local-completion-map
+		      read-file-name-map)) 
 		    
     (setq cont (setq vip-keep-reading-filename t))
     (while cont
@@ -931,22 +968,18 @@ reversed.")
 	     (string= ex-token "change")
 	     (string= ex-token "insert")
 	     (string= ex-token "open"))
-	 (error
-	  (format "`%s': Obsolete command, not supported by Viper"
-		  ex-token)))
+	 (error "`%s': Obsolete command, not supported by Viper" ex-token))
 	((or (string= ex-token "abbreviate")
 	     (string= ex-token "unabbreviate"))
 	 (error
-	  (format
-	   "`%s': Vi-style abbrevs are obsolete. Use the more powerful Emacs abbrevs"
-	   ex-token)))
+	  "`%s': Vi abbrevs are obsolete. Use the more powerful Emacs abbrevs"
+	  ex-token))
 	((or (string= ex-token "list")
 	     (string= ex-token "print")
 	     (string= ex-token "z")
 	     (string= ex-token "#"))
-	 (error
-	  (format "`%s': Command not implemented in Viper" ex-token)))
-	(t (error (format "`%s': %s" ex-token vip-BadExCommand)))))
+	 (error "`%s': Command not implemented in Viper" ex-token))
+	(t (error "`%s': %s" ex-token vip-BadExCommand))))
 
 (defun vip-undisplayed-files ()
   (mapcar
@@ -1071,7 +1104,7 @@ reversed.")
   (if (not file)
       (vip-get-ex-file))
   (cond ((and (string= ex-file "") buffer-file-name)
-	 (setq ex-file  (abbreviate-file-name (buffer-file-name))))
+	 (setq ex-file  (vip-abbreviate-file-name (buffer-file-name))))
 	((string= ex-file "")
 	 (error vip-NoFileSpecified)))
       
@@ -1314,7 +1347,7 @@ reversed.")
 	    (setq l (cdr l))))
       (if find-alt-file (car l)
 	(progn
-	  (if (car l)
+	  (if (and (car l) (get-file-buffer (car l)))
 	      (let* ((w (if cycle-other-window
 			    (get-lru-window) (selected-window)))
 		     (b (window-buffer w)))
@@ -1351,13 +1384,15 @@ reversed.")
     (if (not (vip-buffer-live-p buf))
 	(error "Didn't find buffer %S or file %S"
 	       file-or-buffer-name
-	       (abbreviate-file-name (expand-file-name file-or-buffer-name))))
+	       (vip-abbreviate-file-name
+		(expand-file-name file-or-buffer-name))))
 	  
     (if (equal buf (current-buffer))
 	(or no-recursion
 	    ;; try again
-	    (setq skip-rest t)
-	    (ex-next-related-buffer direction 'norecursion)))
+	    (progn
+	      (setq skip-rest t)
+	      (ex-next-related-buffer direction 'norecursion))))
 	
     (if skip-rest
 	()
@@ -1414,7 +1449,8 @@ reversed.")
 ;; Ex read command
 (defun ex-read ()
   (vip-get-ex-file)
-  (let ((point (if (null ex-addresses) (point) (car ex-addresses))))
+  (let ((point (if (null ex-addresses) (point) (car ex-addresses)))
+	command)
     (goto-char point)
     (vip-add-newline-at-eob-if-necessary)
     (if (not (or (bobp) (eobp))) (forward-line 1))
@@ -1424,7 +1460,9 @@ reversed.")
 	      (error vip-NoFileSpecified))
 	  (setq ex-file buffer-file-name)))
     (if ex-cmdfile
-	(shell-command ex-file t)
+	(progn
+	  (setq command (ex-expand-filsyms ex-file (current-buffer)))
+	  (shell-command command t))
       (insert-file-contents ex-file)))
   (ex-fixup-history vip-last-ex-prompt ex-file))
   
@@ -1497,9 +1535,22 @@ reversed.")
     (setq orig-var var)
     (cond ((member var '("ai" "autoindent"))
 	   (setq var "vip-auto-indent"
+		 set-cmd "setq"
+		 ask-if-save nil
+		 val "t"))
+	  ((member var '("gai" "global-autoindent"))
+	   (kill-local-variable 'vip-auto-indent)
+	   (setq var "vip-auto-indent"
+		 set-cmd "setq-default"
 		 val "t"))
 	  ((member var '("noai" "noautoindent"))
 	   (setq var "vip-auto-indent"
+		 ask-if-save nil
+		 val "nil"))
+	  ((member var '("gnoai" "global-noautoindent"))
+	   (kill-local-variable 'vip-auto-indent)
+	   (setq var "vip-auto-indent"
+		 set-cmd "setq-default"
 		 val "nil"))
 	  ((member var '("ic" "ignorecase"))
 	   (setq var "vip-case-fold-search"
@@ -1533,7 +1584,7 @@ reversed.")
 		 val "nil")))
     (if (eq val 0) ; value must be set by the user
 	(let ((cursor-in-echo-area t))
-	  (message (format ":set %s = <Value>" var))
+	  (message ":set %s = <Value>" var)
 	  ;; if there are unread events, don't wait
 	  (or (vip-set-unread-command-events "") (sit-for 2))
 	  (setq val (read-string (format ":set %s = " var)))
@@ -1541,7 +1592,10 @@ reversed.")
 	  
 	  ;; check numerical values
 	  (if (member var
-		      '("sw" "shiftwidth" "ts" "tabstop" "wm" "wrapmargin"))
+		      '("sw" "shiftwidth"
+			"ts" "tabstop"
+			"gts" "global-tabstop"
+			"wm" "wrapmargin")) 
 	      (condition-case nil
 		  (or (numberp (setq val2 (car (read-from-string val))))
 		      (error "%s: Invalid value, numberp, %S" var val))
@@ -1553,13 +1607,13 @@ reversed.")
 	    (setq var "vip-shift-width"))
 	   ((member var '("ts" "tabstop"))
 	    ;; make it take effect in curr buff and new bufs
-	    (kill-local-variable 'tab-width)
-	    (setq var "tab-width"
-		  set-cmd "setq-default"))
-	   ((member var '("tsl" "tab-stop-local"))
 	    (setq var "tab-width"
 		  set-cmd "setq"
 		  ask-if-save nil))
+	   ((member var '("gts" "global-tabstop"))
+	    (kill-local-variable 'tab-width)
+	    (setq var "tab-width"
+		  set-cmd "setq-default"))
 	   ((member var '("wm" "wrapmargin"))
 	    ;; make it take effect in curr buff and new bufs
 	    (kill-local-variable 'fill-column) 
@@ -1602,9 +1656,9 @@ reversed.")
 		))
 	  ))
     
-    (message (format "%s %s %s" set-cmd var (if (string-match "^[ \t]*$" val)
-						(format "%S" val)
-					      val)))
+    (message "%s %s %s" set-cmd var (if (string-match "^[ \t]*$" val)
+					(format "%S" val)
+				      val))
     (eval (car (read-from-string actual-lisp-cmd)))
 	(if (string= var "fill-column")
 		(if (> val2 0)
@@ -1648,7 +1702,7 @@ reversed.")
   (condition-case nil
       (progn
 	(pop-to-buffer (get-buffer-create "*info*"))
-	(info "viper.info")
+	(info (if vip-xemacs-p "viper.info" "viper"))
 	(message "Type `i' to search for a specific topic"))
     (error (beep 1)
 	   (with-output-to-temp-buffer " *vip-info*"
@@ -1728,7 +1782,7 @@ Please contact your system administrator. "
 			  (setq matched-pos (point))
 			  (if (not (stringp repl))
 			      (error "Can't perform Ex substitution: No previous replacement pattern"))
-			  (replace-match repl t t))))
+			  (replace-match repl t))))
 		  (end-of-line)
 		  (vip-forward-char-carefully))
 	      (if (null pat)
@@ -1740,7 +1794,7 @@ Please contact your system administrator. "
 		    (setq matched-pos (point))
 		    (if (not (stringp repl))
 			(error "Can't perform Ex substitution: No previous replacement pattern"))
-		    (replace-match repl t t)))
+		    (replace-match repl t)))
 	      (end-of-line)
 	      (vip-forward-char-carefully))))))
     (if matched-pos (goto-char matched-pos))
@@ -1848,7 +1902,7 @@ Please contact your system administrator. "
 
 (defun ex-write-info (exists file-name beg end)
   (message "`%s'%s %d lines, %d characters"
-	   (abbreviate-file-name file-name)
+	   (vip-abbreviate-file-name file-name)
 	   (if exists "" " [New file]")
 	   (count-lines beg (min (1+ end) (point-max)))
 	   (- end beg)))
@@ -1915,12 +1969,17 @@ Please contact your system administrator. "
 ;; Give information on the file visited by the current buffer
 (defun vip-info-on-file ()
   (interactive)
-  (let (file info)
-    (setq file (if (buffer-file-name)
-		   (concat (abbreviate-file-name (buffer-file-name)) ":")
+  (let ((pos1 (vip-line-pos 'start))
+	(pos2 (vip-line-pos 'end))
+	lines file info)
+    (setq lines (count-lines (point-min) (vip-line-pos 'end))
+	  file (if (buffer-file-name)
+		   (concat (vip-abbreviate-file-name (buffer-file-name)) ":")
 		 (concat (buffer-name) " [Not visiting any file]:"))
 	  info (format "line=%d/%d pos=%d/%d col=%d %s"
-		       (count-lines (point-min) (vip-line-pos 'end))
+		       (if (= pos1 pos2)
+			   (1+ lines)
+			 lines)
 		       (count-lines (point-min) (point-max))
 		       (point) (1- (point-max))
 		       (1+ (current-column))
@@ -1933,7 +1992,8 @@ Please contact your system administrator. "
 	  (princ (concat "\n"
 			 file "\n\n\t" info
 			 "\n\n\nPress any key to continue...\n\n")))
-	(vip-read-event)))
+	(vip-read-event)
+	(kill-buffer " *vip-info*")))
     ))
 
 

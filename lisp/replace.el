@@ -1,6 +1,6 @@
 ;;; replace.el --- replace commands for Emacs.
 
-;; Copyright (C) 1985, 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1992, 1994, 1996 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,8 +15,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -329,20 +330,24 @@ Interactively it is the prefix arg.
 The lines are shown in a buffer named `*Occur*'.
 It serves as a menu to find any of the occurrences in this buffer.
 \\[describe-mode] in that buffer will explain how."
-  (interactive (list (let* ((default (car regexp-history))
-			    (input 
-			     (read-from-minibuffer
-			      (if default
-				  (format "List lines matching regexp (default `%s'): " default)
-				"List lines matching regexp: ")
-			      nil nil nil
-			      'regexp-history)))
-		       (if (> (length input) 0) input
-			 (setcar regexp-history default)))
-		     current-prefix-arg))
-  (setq nlines (if nlines (prefix-numeric-value nlines)
-		 list-matching-lines-default-context-lines))
-  (let ((first t)
+  (interactive
+   (list (let* ((default (car regexp-history))
+		(input
+		 (read-from-minibuffer
+		  (if default
+		      (format "List lines matching regexp (default `%s'): "
+			      default)
+		    "List lines matching regexp: ")
+		  nil nil nil 'regexp-history)))
+	   (if (string-equal input "")
+	       default
+	     (set-text-properties 0 (length input) nil input)
+	     input))
+	 current-prefix-arg))
+  (let ((nlines (if nlines
+		    (prefix-numeric-value nlines)
+		  list-matching-lines-default-context-lines))
+	(first t)
 	(buffer (current-buffer))
 	(dir default-directory)
 	(linenum 1)
@@ -352,96 +357,102 @@ It serves as a menu to find any of the occurrences in this buffer.
 ;;;	  (beginning-of-line)
 ;;;	  (setq linenum (1+ (count-lines (point-min) (point))))
 ;;;	  (setq prevpos (point)))
-    (with-output-to-temp-buffer "*Occur*"
-      (save-excursion
-	(set-buffer standard-output)
-	(setq default-directory dir)
-	;; We will insert the number of lines, and "lines", later.
-	(insert " matching ")
-	(let ((print-escape-newlines t))
-	  (prin1 regexp))
-	(insert " in buffer " (buffer-name buffer) ?. ?\n)
-	(occur-mode)
-	(setq occur-buffer buffer)
-	(setq occur-nlines nlines)
-	(setq occur-pos-list ()))
-      (if (eq buffer standard-output)
-	  (goto-char (point-max)))
-      (save-excursion
-	(beginning-of-buffer)
-	;; Find next match, but give up if prev match was at end of buffer.
-	(while (and (not (= prevpos (point-max)))
-		    (re-search-forward regexp nil t))
-	  (goto-char (match-beginning 0))
-	  (beginning-of-line)
-	  (save-match-data
-	    (setq linenum (+ linenum (count-lines prevpos (point)))))
-	  (setq prevpos (point))
-	  (goto-char (match-end 0))
-	  (let* ((start (save-excursion
-			  (goto-char (match-beginning 0))
-			  (forward-line (if (< nlines 0) nlines (- nlines)))
-			  (point)))
-		 (end (save-excursion
-			(goto-char (match-end 0))
-			(if (> nlines 0)
-			    (forward-line (1+ nlines))
-			    (forward-line 1))
-			(point)))
-		 (tag (format "%5d" linenum))
-		 (empty (make-string (length tag) ?\ ))
-		 tem)
-	    (save-excursion
-	      (setq tem (make-marker))
-	      (set-marker tem (point))
-	      (set-buffer standard-output)
-	      (setq occur-pos-list (cons tem occur-pos-list))
-	      (or first (zerop nlines)
-		  (insert "--------\n"))
-	      (setq first nil)
-	      (insert-buffer-substring buffer start end)
-	      (set-marker final-context-start 
-			  (- (point) (- end (match-end 0))))
-	      (backward-char (- end start))
-	      (setq tem nlines)
-	      (while (> tem 0)
-		(insert empty ?:)
-		(forward-line 1)
-		(setq tem (1- tem)))
-	      (let ((this-linenum linenum))
-		(while (< (point) final-context-start)
-		  (if (null tag)
-		      (setq tag (format "%5d" this-linenum)))
-		  (insert tag ?:)
-		  (put-text-property (save-excursion
-				       (beginning-of-line)
-				       (point))
-				     (save-excursion
-				       (end-of-line)
-				       (point))
-				     'mouse-face 'highlight)
-		  (forward-line 1)
-		  (setq tag nil)
-		  (setq this-linenum (1+ this-linenum)))
-		(while (<= (point) final-context-start)
-		  (insert empty ?:)
-		  (forward-line 1)
-		  (setq this-linenum (1+ this-linenum))))
-	      (while (< tem nlines)
-		(insert empty ?:)
-		(forward-line 1)
-		(setq tem (1+ tem)))
+    (save-excursion
+      (goto-char (point-min))
+      ;; Check first whether there are any matches at all.
+      (if (not (re-search-forward regexp nil t))
+	  (message "No matches for `%s'" regexp)
+	;; Back up, so the search loop below will find the first match.
+	(goto-char (match-beginning 0))
+	(with-output-to-temp-buffer "*Occur*"
+	  (save-excursion
+	    (set-buffer standard-output)
+	    (setq default-directory dir)
+	    ;; We will insert the number of lines, and "lines", later.
+	    (insert " matching ")
+	    (let ((print-escape-newlines t))
+	      (prin1 regexp))
+	    (insert " in buffer " (buffer-name buffer) ?. ?\n)
+	    (occur-mode)
+	    (setq occur-buffer buffer)
+	    (setq occur-nlines nlines)
+	    (setq occur-pos-list ()))
+	  (if (eq buffer standard-output)
 	      (goto-char (point-max)))
-	    (forward-line 1)))
-	(set-buffer standard-output)
-	;; Put positions in increasing order to go with buffer.
-	(setq occur-pos-list (nreverse occur-pos-list))
-	(goto-char (point-min))
-	(if (= (length occur-pos-list) 1)
-	    (insert "1 line")
-	  (insert (format "%d lines" (length occur-pos-list))))
-	(if (interactive-p)
-	    (message "%d matching lines." (length occur-pos-list)))))))
+	  (save-excursion
+	    ;; Find next match, but give up if prev match was at end of buffer.
+	    (while (and (not (= prevpos (point-max)))
+			(re-search-forward regexp nil t))
+	      (goto-char (match-beginning 0))
+	      (beginning-of-line)
+	      (save-match-data
+		(setq linenum (+ linenum (count-lines prevpos (point)))))
+	      (setq prevpos (point))
+	      (goto-char (match-end 0))
+	      (let* ((start (save-excursion
+			      (goto-char (match-beginning 0))
+			      (forward-line (if (< nlines 0) nlines (- nlines)))
+			      (point)))
+		     (end (save-excursion
+			    (goto-char (match-end 0))
+			    (if (> nlines 0)
+				(forward-line (1+ nlines))
+				(forward-line 1))
+			    (point)))
+		     (tag (format "%5d" linenum))
+		     (empty (make-string (length tag) ?\ ))
+		     tem)
+		(save-excursion
+		  (setq tem (make-marker))
+		  (set-marker tem (point))
+		  (set-buffer standard-output)
+		  (setq occur-pos-list (cons tem occur-pos-list))
+		  (or first (zerop nlines)
+		      (insert "--------\n"))
+		  (setq first nil)
+		  (insert-buffer-substring buffer start end)
+		  (set-marker final-context-start 
+			      (- (point) (- end (match-end 0))))
+		  (backward-char (- end start))
+		  (setq tem nlines)
+		  (while (> tem 0)
+		    (insert empty ?:)
+		    (forward-line 1)
+		    (setq tem (1- tem)))
+		  (let ((this-linenum linenum))
+		    (while (< (point) final-context-start)
+		      (if (null tag)
+			  (setq tag (format "%5d" this-linenum)))
+		      (insert tag ?:)
+		      (put-text-property (save-excursion
+					   (beginning-of-line)
+					   (point))
+					 (save-excursion
+					   (end-of-line)
+					   (point))
+					 'mouse-face 'highlight)
+		      (forward-line 1)
+		      (setq tag nil)
+		      (setq this-linenum (1+ this-linenum)))
+		    (while (<= (point) final-context-start)
+		      (insert empty ?:)
+		      (forward-line 1)
+		      (setq this-linenum (1+ this-linenum))))
+		  (while (< tem nlines)
+		    (insert empty ?:)
+		    (forward-line 1)
+		    (setq tem (1+ tem)))
+		  (goto-char (point-max)))
+		(forward-line 1)))
+	    (set-buffer standard-output)
+	    ;; Put positions in increasing order to go with buffer.
+	    (setq occur-pos-list (nreverse occur-pos-list))
+	    (goto-char (point-min))
+	    (if (= (length occur-pos-list) 1)
+		(insert "1 line")
+	      (insert (format "%d lines" (length occur-pos-list))))
+	    (if (interactive-p)
+		(message "%d matching lines." (length occur-pos-list)))))))))
 
 ;; It would be nice to use \\[...], but there is no reasonable way
 ;; to make that display both SPC and Y.

@@ -1,5 +1,6 @@
 ;;; s-region.el --- set region using shift key.
-;;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+
+;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Morten Welinder (terra@diku.dk)
 ;; Keywords: terminals
@@ -18,14 +19,15 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
 ;; Having loaded this code you can set the region by holding down the
 ;; shift key and move the cursor to the other end of the region.  The
-;; functionallity provided by this code is similar to that provided by
+;; functionality provided by this code is similar to that provided by
 ;; the editors of Borland International's compilers for ms-dos.
 
 ;; Currently, s-region-move may be bound only to events that are vectors

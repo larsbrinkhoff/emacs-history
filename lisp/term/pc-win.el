@@ -1,9 +1,9 @@
 ;; pc-win.el -- setup support for `PC windows' (whatever that is).
 
-;; Copyright (C) 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1996 Free Software Foundation, Inc.
 
 ;; Author: Morten Welinder <terra@diku.dk>
-;; Version: 1,00
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
@@ -18,9 +18,12 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
-;; ---------------------------------------------------------------------------
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Code:
+
 (load "term/internal" nil t)
 
 ;; Color translation -- doesn't really need to be fast
@@ -36,6 +39,8 @@
     ("darkgoldenrod"  . "brown")
     ("goldenrod"      . "yellow")
     ("grey40"         . "darkgray")
+    ("dark gray"      .	"darkgray")
+    ("light gray"     . "lightgray")
     ("rosybrown"      . "brown")
     ("blue"	      .	"lightblue")  ;; from here: for Enriched Text
     ("darkslategray"  .	"darkgray")
@@ -54,24 +59,10 @@
 (defun msdos-color-translate (name)
   (setq name (downcase name))
   (let* ((len (length name))
-	 (val (cdr (assoc name
-			 '(("black" . 0)
-			   ("blue" . 1)
-			   ("green" . 2)
-			   ("cyan" . 3)
-			   ("red" . 4)
-			   ("magenta" . 5)
-			   ("brown" . 6)
-			   ("lightgray" . 7) ("light gray" . 7)
-			   ("darkgray" . 8) ("dark gray" . 8)
-			   ("lightblue" . 9)
-			   ("lightgreen" . 10)
-			   ("lightcyan" . 11)
-			   ("lightred" . 12)
-			   ("lightmagenta" . 13)
-			   ("yellow" . 14)
-			   ("white" . 15)))))
+	 (val (- (length x-colors)
+		 (length (member name x-colors))))
 	 (try))
+    (if (or (< val 0) (>= val (length x-colors))) (setq val nil))
     (or val
 	(and (setq try (cdr (assoc name msdos-color-aliases)))
 	     (msdos-color-translate try))
@@ -114,7 +105,7 @@
 ;; We have only one font, so...
 (add-hook 'before-init-hook 'msdos-face-setup)
 ;; ---------------------------------------------------------------------------
-;; More or less useful immitations of certain X-functions.  A lot of the
+;; More or less useful imitations of certain X-functions.  A lot of the
 ;; values returned are questionable, but usually only the form of the
 ;; returned value matters.  Also, by the way, recall that `ignore' is
 ;; a useful function for returning 'nil regardless of argument.
@@ -125,8 +116,8 @@
 (fset 'unfocus-frame 'ignore)
 (defun x-list-fonts (pattern &optional face frame) (list "default"))
 (defun x-color-defined-p (color) (numberp (msdos-color-translate color)))
-(defun x-display-pixel-width (&optional frame) (* 8 (frame-width frame)))
-(defun x-display-pixel-height (&optional frame) (* 8 (frame-height frame)))
+(defun x-display-pixel-width (&optional frame) (frame-width frame))
+(defun x-display-pixel-height (&optional frame) (frame-height frame))
 (defun x-display-planes (&optional frame) 4) ; 3 for background, actually
 (defun x-display-color-cells (&optional frame) 16) ; ???
 (defun x-server-max-request-size (&optional frame) 1000000) ; ???
@@ -143,7 +134,29 @@
 ;; From lisp/term/x-win.el
 (setq x-display-name "pc")
 (setq split-window-keep-point t)
-
+(defvar x-colors '("black"
+		   "blue"
+		   "green"
+		   "cyan"
+		   "red"
+		   "magenta"
+		   "brown"
+		   "lightgray"
+		   "darkgray"
+		   "lightblue"
+		   "lightgreen"
+		   "lightcyan"
+		   "lightred"
+		   "lightmagenta"
+		   "yellow"
+		   "white")
+  "The list of colors available on a PC display under MS-DOS.")
+(defun x-defined-colors (&optional frame)
+  "Return a list of colors supported for a particular frame.
+The argument FRAME specifies which frame to try.
+The value may be different for frames on different X displays."
+  x-colors)
+;
 ;; From lisp/select.el
 (defun x-get-selection (&rest rest) "")
 (fset 'x-set-selection 'ignore)

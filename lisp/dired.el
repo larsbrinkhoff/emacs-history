@@ -1,6 +1,6 @@
 ;;; dired.el --- directory-browsing commands
 
-;; Copyright (C) 1985, 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 92, 93, 94, 95, 1996 Free Software Foundation, Inc.
 
 ;; Author: Sebastian Kremer <sk@thp.uni-koeln.de>
 ;; Maintainer: FSF
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -47,7 +48,7 @@ may contain even `F', `b', `i' and `s'.  See also the variable
 
 ;;;###autoload
 (defvar dired-chown-program
-  (if (memq system-type '(hpux dgux usg-unix-v irix linux))
+  (if (memq system-type '(hpux dgux usg-unix-v irix linux lignux))
       "chown" "/etc/chown")
   "Name of chown command (usually `chown' or `/etc/chown').")
 
@@ -59,7 +60,8 @@ may contain even `F', `b', `i' and `s'.  See also the variable
 ;;;###autoload
 (defvar dired-ls-F-marks-symlinks nil
   "*Informs dired about how `ls -lF' marks symbolic links.
-Set this to t if `insert-directory-program' with `-lF' marks the symbolic link
+Set this to t if `ls' (or whatever program is specified by
+`insert-directory-program') with `-lF' marks the symbolic link
 itself with a trailing @ (usually the case under Ultrix).
 
 Example: if `ln -s foo bar; ls -F bar' gives `bar -> foo', set it to
@@ -345,7 +347,7 @@ Optional second argument SWITCHES specifies the `ls' options used.
 \(Interactively, use a prefix argument to be able to specify SWITCHES.)
 Dired displays a list of files in DIRNAME (which may also have
 shell wildcards appended to select certain files).  If DIRNAME is a cons,
-its first element is taken as the directory name and the resr as an explicit
+its first element is taken as the directory name and the rest as an explicit
 list of files to make directory entries for.
 \\<dired-mode-map>\
 You can move around in it with the usual commands.
@@ -384,6 +386,8 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
       (setq dirname dir-or-list))
     (setq dirname (abbreviate-file-name
 		   (expand-file-name (directory-file-name dirname))))
+    (if find-file-visit-truename
+	(setq dirname (file-truename dirname)))
     (if (file-directory-p dirname)
 	(setq dirname (file-name-as-directory dirname)))
     (if (consp dir-or-list)
@@ -434,9 +438,9 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
 			 (and (= (car (nth 5 attributes)) (car modtime))
 			      (= (nth 1 (nth 5 attributes)) (cdr modtime)))))
 		   nil
-		 (message
-		  (substitute-command-keys
-		   "Directory has changed on disk; type \\[revert-buffer] to update Dired")))))
+		 (message "%s"
+			  (substitute-command-keys
+			   "Directory has changed on disk; type \\[revert-buffer] to update Dired")))))
       ;; Else a new buffer
       (setq default-directory
 	    (if (file-directory-p dirname)
@@ -562,7 +566,19 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   ;; inset all files listed in the cdr (the car is the passed-in directory
   ;; list).
   (let ((opoint (point))
+	(process-environment (copy-sequence process-environment))
 	end)
+    ;; This makes sure that month names come out in English
+    ;; so we can find the start of the file name.
+    ;; But if the user has customized the way of finding the file name,
+    ;; this is not necessary.
+    (if (and (equal dired-move-to-filename-regexp
+		    dired-standard-move-to-filename-regexp)
+	     ;; It also isn't necessary if we'd use the C locale anyway.
+	     (not (equal (or (getenv "LC_ALL") (getenv "LC_TIME")
+			     (getenv "LANGUAGE") "C")
+			 "C")))
+	(setq process-environment (cons "LC_ALL=C" process-environment)))
     (if (consp dir-or-list)
 	;; In this case, use the file names in the cdr
 	;; exactly as originally given to dired-noselect.
@@ -1185,7 +1201,7 @@ Optional arg NO-ERROR-IF-NOT-FILEP means return nil if no filename on
 			 ;; some ls -b don't escape quotes, argh!
 			 ;; This is not needed for GNU ls, though.
 			 (or (dired-string-replace-match
-			      "\\([^\\]\\)\"" file "\\1\\\\\"")
+			      "\\([^\\]\\|\\`\\)\"" file "\\1\\\\\"" nil t)
 			     file)
 			 "\"")))))
     (if (eq localp 'no-dir)
@@ -1239,6 +1255,10 @@ Optional arg GLOBAL means to replace all matches."
 ;;; Functions for finding the file name in a dired buffer line.
 
 (defvar dired-move-to-filename-regexp
+  "\\(Jan\\|Feb\\|Mar\\|Apr\\|May\\|Jun\\|Jul\\|Aug\\|Sep\\|Oct\\|Nov\\|Dec\\)[ ]+[0-9]+ [ 0-9][0-9][:0-9][0-9][ 0-9] "
+  "Regular expression to match a month abbreviation followed by a number.")
+
+(defconst dired-standard-move-to-filename-regexp
   "\\(Jan\\|Feb\\|Mar\\|Apr\\|May\\|Jun\\|Jul\\|Aug\\|Sep\\|Oct\\|Nov\\|Dec\\)[ ]+[0-9]+ [ 0-9][0-9][:0-9][0-9][ 0-9] "
   "Regular expression to match a month abbreviation followed by a number.")
 
@@ -2012,21 +2032,19 @@ A prefix argument says to unflag those files instead."
   "Flag all backup files (names ending with `~') for deletion.
 With prefix argument, unflag these files."
   (interactive "P")
-  (let ((dired-marker-char (if unflag-p ?\040 dired-del-marker)))
+  (let ((dired-marker-char (if unflag-p ?\  dired-del-marker)))
     (dired-mark-if
-     ;; It is less than general to check for ~ here,
+     ;; Don't call backup-file-name-p unless the last character looks like
+     ;; it might be the end of a backup file name.  This isn't very general,
      ;; but it's the only way this runs fast enough.
      (and (save-excursion (end-of-line)
-			  (or
-			   (eq (preceding-char) ?~)
-			   ;; Handle executables in case of -F option.
-			   ;; We need not worry about the other kinds
-			   ;; of markings that -F makes, since they won't
-			   ;; appear on real backup files.
-			   (if (eq (preceding-char) ?*)
-			       (progn
-				 (forward-char -1)
-				 (eq (preceding-char) ?~)))))
+			  ;; Handle executables in case of -F option.
+			  ;; We need not worry about the other kinds
+			  ;; of markings that -F makes, since they won't
+			  ;; appear on real backup files.
+			  (if (eq (preceding-char) ?*)
+			      (forward-char -1))
+			  (eq (preceding-char) ?~))
 	  (not (looking-at dired-re-dir))
 	  (let ((fn (dired-get-filename t t)))
 	    (if fn (backup-file-name-p fn))))

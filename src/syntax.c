@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 #include <config.h>
@@ -111,13 +112,13 @@ find_defun_start (pos)
 }
 
 DEFUN ("syntax-table-p", Fsyntax_table_p, Ssyntax_table_p, 1, 1, 0,
-  "Return t if ARG is a syntax table.\n\
+  "Return t if OBJECT is a syntax table.\n\
 Currently, any char-table counts as a syntax table.")
-  (obj)
-     Lisp_Object obj;
+  (object)
+     Lisp_Object object;
 {
-  if (CHAR_TABLE_P (obj)
-      && XCHAR_TABLE (obj)->purpose == Qsyntax_table)
+  if (CHAR_TABLE_P (object)
+      && XCHAR_TABLE (object)->purpose == Qsyntax_table)
     return Qt;
   return Qnil;
 }
@@ -162,7 +163,16 @@ It is a copy of the TABLE, which defaults to the standard syntax table.")
     table = Vstandard_syntax_table;
 
   copy = Fcopy_sequence (table);
-  Fset_char_table_parent (copy, Vstandard_syntax_table);
+
+  /* Only the standard syntax table should have a default element.
+     Other syntax tables should inherit from parents instead.  */
+  XCHAR_TABLE (copy)->defalt = Qnil;
+
+  /* Copied syntax tables should all have parents.
+     If we copied one with no parent, such as the standard syntax table,
+     use the standard syntax table as the copy's parent.  */
+  if (NILP (XCHAR_TABLE (copy)->parent))
+    Fset_char_table_parent (copy, Vstandard_syntax_table);
   return copy;
 }
 
@@ -237,27 +247,28 @@ syntax_parent_lookup (table, character)
 }
 
 DEFUN ("char-syntax", Fchar_syntax, Schar_syntax, 1, 1, 0,
-  "Return the syntax code of CHAR, described by a character.\n\
-For example, if CHAR is a word constituent, the character `?w' is returned.\n\
+  "Return the syntax code of CHARACTER, described by a character.\n\
+For example, if CHARACTER is a word constituent,\n\
+the character `w' is returned.\n\
 The characters that correspond to various syntax codes\n\
 are listed in the documentation of `modify-syntax-entry'.")
-  (ch)
-     Lisp_Object ch;
+  (character)
+     Lisp_Object character;
 {
   int char_int;
-  CHECK_NUMBER (ch, 0);
-  char_int = XINT (ch);
+  CHECK_NUMBER (character, 0);
+  char_int = XINT (character);
   return make_number (syntax_code_spec[(int) SYNTAX (char_int)]);
 }
 
 DEFUN ("matching-paren", Fmatching_paren, Smatching_paren, 1, 1, 0,
-  "Return the matching parenthesis of CHAR, or nil if none.")
-  (ch)
-     Lisp_Object ch;
+  "Return the matching parenthesis of CHARACTER, or nil if none.")
+  (character)
+     Lisp_Object character;
 {
   int char_int, code;
-  CHECK_NUMBER (ch, 0);
-  char_int = XINT (ch);
+  CHECK_NUMBER (character, 0);
+  char_int = XINT (character);
   code = SYNTAX (char_int);
   if (code == Sopen || code == Sclose)
     return make_number (SYNTAX_MATCH (char_int));
@@ -287,19 +298,19 @@ The second character of S is the matching parenthesis,\n\
  used only if the first character is `(' or `)'.\n\
 Any additional characters are flags.\n\
 Defined flags are the characters 1, 2, 3, 4, b, and p.\n\
- 1 means C is the start of a two-char comment start sequence.\n\
- 2 means C is the second character of such a sequence.\n\
- 3 means C is the start of a two-char comment end sequence.\n\
- 4 means C is the second character of such a sequence.\n\
+ 1 means CHAR is the start of a two-char comment start sequence.\n\
+ 2 means CHAR is the second character of such a sequence.\n\
+ 3 means CHAR is the start of a two-char comment end sequence.\n\
+ 4 means CHAR is the second character of such a sequence.\n\
 \n\
 There can be up to two orthogonal comment sequences. This is to support\n\
 language modes such as C++.  By default, all comment sequences are of style\n\
 a, but you can set the comment sequence style to b (on the second character\n\
 of a comment-start, or the first character of a comment-end sequence) using\n\
 this flag:\n\
- b means C is part of comment sequence b.\n\
+ b means CHAR is part of comment sequence b.\n\
 \n\
- p means C is a prefix character for `backward-prefix-chars';\n\
+ p means CHAR is a prefix character for `backward-prefix-chars';\n\
    such characters are treated as whitespace when they occur\n\
    between expressions.")
   (char, s, table)

@@ -20,7 +20,7 @@
  *			region.  Inactive selections will not be highlighted.
  *			As the mouse cursor moved from one menu pane
  *			to another menu pane the pane being entered is raised
- *			and activated and the pane being left is inactivated.
+ *			and activated and the pane being left is deactivated.
  *			If an error occurs NULL will be returned with the
  *			p_num set to POST_ERROR, s_num set to
  *			NO_SELECTION and _XMErrorCode set to an

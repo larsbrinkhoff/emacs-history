@@ -1,8 +1,11 @@
 ;;; cplus-md.el --- C++ code editing commands for Emacs
-;;; Copyright (C) 1985, 1992, 1994, 1995 Free Software Foundation, Inc.
+
+;; Copyright (C) 1985, 1992, 1994, 1995 Free Software Foundation, Inc.
+
+;; Maintainer: Dave Detlefs <dld@cs.cmu.edu>
+;; Keywords: c
 
 ;; This file is part of GNU Emacs.
-;; Keywords: c languages oop
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -15,10 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
-;; Maintainer: Dave Detlefs <dld@cs.cmu.edu>
-;; Keywords: c
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -123,7 +125,19 @@
 
 (if c++-mode-syntax-table
     ()
-  (setq c++-mode-syntax-table (copy-syntax-table c-mode-syntax-table))
+  (setq c++-mode-syntax-table (make-syntax-table))
+  (modify-syntax-entry ?\\ "\\" c++-mode-syntax-table)
+  (modify-syntax-entry ?/ ". 14" c++-mode-syntax-table)
+  (modify-syntax-entry ?* ". 23" c++-mode-syntax-table)
+  (modify-syntax-entry ?+ "." c++-mode-syntax-table)
+  (modify-syntax-entry ?- "." c++-mode-syntax-table)
+  (modify-syntax-entry ?= "." c++-mode-syntax-table)
+  (modify-syntax-entry ?% "." c++-mode-syntax-table)
+  (modify-syntax-entry ?< "." c++-mode-syntax-table)
+  (modify-syntax-entry ?> "." c++-mode-syntax-table)
+  (modify-syntax-entry ?& "." c++-mode-syntax-table)
+  (modify-syntax-entry ?| "." c++-mode-syntax-table)
+  (modify-syntax-entry ?\' "\"" c++-mode-syntax-table)
   (modify-syntax-entry ?* ". 23b" c++-mode-syntax-table)
   (modify-syntax-entry ?/ ". 124" c++-mode-syntax-table)
   (modify-syntax-entry ?\n ">" c++-mode-syntax-table)
@@ -276,7 +290,7 @@ Variables controlling indentation style:
     Extra indentation for line that is a label, or case or ``default:'', or
     ``public:'' or ``private:'', or ``protected:''.
  c++-electric-colon
-    If non-nil at invocation of c++-mode (t is the default) colon electricly
+    If non-nil at invocation of c++-mode (t is the default) colon electrically
     indents.
  c++-empty-arglist-indent
     If non-nil, a function declaration or invocation which ends a line with a
@@ -306,6 +320,8 @@ Turning on C++ mode calls the value of the variable `c++-mode-hook' with
 no args if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
+  ;; This code depends on the old C mode.
+  (require 'c-mode)
   (use-local-map c++-mode-map)
   (set-syntax-table c++-mode-syntax-table)
   (setq major-mode 'c++-mode
@@ -787,7 +803,7 @@ Returns nil if line starts inside a string, t if in a comment."
 		(if (= (char-after (car contain-stack)) ?{)
 		    (save-excursion
 		      (goto-char (car contain-stack))
-		      (setq val (+ c-indent-level (current-column))))
+		      (setq val (calculate-c-indent-after-brace)))
 		  (setq val (calculate-c++-indent
 			     (if (car indent-stack)
 				 (- (car indent-stack))))))

@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* ANSI C requires only these float functions:
@@ -37,7 +38,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    (What systems actually do this?  Please let us know.)
 
    Define FLOAT_CHECK_DOMAIN if the float library doesn't handle errors by
-   either setting errno, or signalling SIGFPE/SIGILL.  Otherwise, domain and
+   either setting errno, or signaling SIGFPE/SIGILL.  Otherwise, domain and
    range checking will happen before calling the float routines.  This has
    no effect if HAVE_MATHERR is defined (since matherr will be called when
    a domain error occurs.)
@@ -315,13 +316,13 @@ DEFUN ("bessel-j1", Fbessel_j1, Sbessel_j1, 1, 1, 0,
 DEFUN ("bessel-jn", Fbessel_jn, Sbessel_jn, 2, 2, 0,
   "Return the order N bessel function output jn of ARG.\n\
 The first arg (the order) is truncated to an integer.")
-  (arg1, arg2)
-     register Lisp_Object arg1, arg2;
+  (n, arg)
+     register Lisp_Object n, arg;
 {
-  int i1 = extract_float (arg1);
-  double f2 = extract_float (arg2);
+  int i1 = extract_float (n);
+  double f2 = extract_float (arg);
 
-  IN_FLOAT (f2 = jn (i1, f2), "bessel-jn", arg1);
+  IN_FLOAT (f2 = jn (i1, f2), "bessel-jn", n);
   return make_float (f2);
 }
 
@@ -348,13 +349,13 @@ DEFUN ("bessel-y1", Fbessel_y1, Sbessel_y1, 1, 1, 0,
 DEFUN ("bessel-yn", Fbessel_yn, Sbessel_yn, 2, 2, 0,
   "Return the order N bessel function output yn of ARG.\n\
 The first arg (the order) is truncated to an integer.")
-  (arg1, arg2)
-     register Lisp_Object arg1, arg2;
+  (n, arg)
+     register Lisp_Object n, arg;
 {
-  int i1 = extract_float (arg1);
-  double f2 = extract_float (arg2);
+  int i1 = extract_float (n);
+  double f2 = extract_float (arg);
 
-  IN_FLOAT (f2 = yn (i1, f2), "bessel-yn", arg1);
+  IN_FLOAT (f2 = yn (i1, f2), "bessel-yn", n);
   return make_float (f2);
 }
 

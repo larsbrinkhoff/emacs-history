@@ -1,8 +1,8 @@
-This is Info file LNEWS, produced by Makeinfo-1.54 from the input file
+This is Info file LNEWS, produced by Makeinfo-1.55 from the input file
 news.texi.
 
-This file describes the new Lisp features of Emacs version 19 as first
-released to the public.  For Lisp changes in subsequent Emacs 19
+   This file describes the new Lisp features of Emacs version 19 as
+first released to the public.  For Lisp changes in subsequent Emacs 19
 releases, see the file NEWS.
 
 New Features in the Lisp Language
@@ -805,8 +805,8 @@ New Features for Files
      Major modes should use this hook variable rather than
      `write-file-hooks'.
 
-   * The hook `after-save-hook' runs just after a buffer has been saved
-     in its visited file.
+   * The hook `after-save-buffer-hook' runs just after a buffer has been
+     saved in its visited file.
 
    * The new function `set-default-file-modes' sets the file protection
      for new files created with Emacs.  The argument must be an
@@ -1682,8 +1682,7 @@ ISO Latin 1
    If you have a terminal that can handle the entire ISO Latin 1
 character set, you can arrange to use that character set as follows:
 
-     (require 'disp-table)
-     (standard-display-8bit 0 255)
+     (standard-display-european 1)
 
    If you are editing buffers written in the ISO Latin 1 character set
 and your terminal doesn't handle anything but ASCII, you can load the

@@ -28,7 +28,7 @@ XMenuInsertPane(menu, p_num, label, active)
     register XMPane *pane;	/* Newly created pane. */
     register XMSelect *select;	/* Initial selection for the new pane. */
         
-    int label_length;		/* Label lenght in characters. */
+    int label_length;		/* Label length in characters. */
     int label_width;		/* Label width in pixels. */
 
     /*

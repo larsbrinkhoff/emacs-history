@@ -35,7 +35,7 @@ function edit ()
     esac
  else   
     if jobs %emacs 2> /dev/null ; then
-       echo "$(pwd)" "$@" > ${HOME}/.emacs_args && fg %emacs
+       echo "$(pwd)" "$@" >| ${HOME}/.emacs_args && fg %emacs
     else
        emacs "$@"
     fi

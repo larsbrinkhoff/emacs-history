@@ -1,6 +1,6 @@
 /* movemail foo bar -- move file foo to file bar,
    locking file foo the way /bin/mail respects.
-   Copyright (C) 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1992, 1993, 1994, 1996 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -16,7 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* Important notice: defining MAIL_USE_FLOCK or MAIL_USE_LOCKF *will
    cause loss of mail* if you do it on a system that does not normally
@@ -33,7 +34,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /*
  * Modified January, 1986 by Michael R. Gretzinger (Project Athena)
  *
- * Added POP (Post Office Protocol) service.  When compiled -DPOP
+ * Added POP (Post Office Protocol) service.  When compiled -DMAIL_USE_POP
  * movemail will accept input filename arguments of the form
  * "po:username".  This will cause movemail to open a connection to
  * a pop server running on $MAILHOST (environment variable).  Movemail
@@ -69,6 +70,26 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef access
 #endif /* MSDOS */
 
+#ifndef DIRECTORY_SEP
+#define DIRECTORY_SEP '/'
+#endif
+#ifndef IS_DIRECTORY_SEP
+#define IS_DIRECTORY_SEP(_c_) ((_c_) == DIRECTORY_SEP)
+#endif
+
+#ifdef WINDOWSNT
+#undef access
+#undef unlink
+#define fork() 0
+#define sys_wait(var) (*(var) = 0)
+/* Unfortunately, Samba doesn't seem to properly lock Unix files even
+   though the locking call succeeds (and indeed blocks local access from
+   other NT programs).  If you have direct file access using an NFS
+   client or something other than Samba, the locking call might work
+   properly - make sure it does before you enable this! */
+#define DISABLE_DIRECT_ACCESS
+#endif /* WINDOWSNT */
+
 #ifdef USG
 #include <fcntl.h>
 #include <unistd.h>
@@ -84,7 +105,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <unistd.h>
 #endif
 
-#ifdef XENIX
+#if defined (XENIX) || defined (WINDOWSNT)
 #include <sys/locking.h>
 #endif
 
@@ -149,7 +170,7 @@ main (argc, argv)
 
   if (argc < 3)
     {
-      fprintf (stderr, "Usage: movemail inbox destfile\n");
+      fprintf (stderr, "Usage: movemail inbox destfile [POP-password]\n");
       exit(1);
     }
 
@@ -167,13 +188,13 @@ main (argc, argv)
   if (access (outname, F_OK) == 0 && access (outname, W_OK) != 0)
     pfatal_with_name (outname);
 
-  /* Also check that outname's directory is writeable to the real uid.  */
+  /* Also check that outname's directory is writable to the real uid.  */
   {
     char *buf = (char *) xmalloc (strlen (outname) + 1);
     char *p;
     strcpy (buf, outname);
     p = buf + strlen (buf);
-    while (p > buf && p[-1] != '/')
+    while (p > buf && !IS_DIRECTORY_SEP (p[-1]))
       *--p = 0;
     if (p == buf)
       *p++ = '.';
@@ -187,12 +208,14 @@ main (argc, argv)
     {
       int status;
 
-      status = popmail (inname + 3, outname);
+      status = popmail (inname + 3, outname, argc > 3 ? argv[3] : NULL);
       exit (status);
     }
 
   setuid (getuid ());
 #endif /* MAIL_USE_POP */
+
+#ifndef DISABLE_DIRECT_ACCESS
 
   /* Check access to input file.  */
   if (access (inname, R_OK | W_OK) != 0)
@@ -227,7 +250,7 @@ main (argc, argv)
   tempname = (char *) xmalloc (strlen (inname) + strlen ("EXXXXXX") + 1);
   strcpy (tempname, inname);
   p = tempname + strlen (tempname);
-  while (p != tempname && p[-1] != '/')
+  while (p != tempname && !IS_DIRECTORY_SEP (p[-1]))
     p--;
   *p = 0;
   strcpy (p, "EXXXXXX");
@@ -304,7 +327,11 @@ main (argc, argv)
 #ifdef XENIX
       if (locking (indesc, LK_RLCK, 0L) < 0) pfatal_with_name (inname);
 #else
+#ifdef WINDOWSNT
+      if (locking (indesc, LK_RLCK, -1L) < 0) pfatal_with_name (inname);
+#else
       if (flock (indesc, LOCK_EX) < 0) pfatal_with_name (inname);
+#endif
 #endif
 #endif /* not MAIL_USE_LOCKF */
 #endif /* MAIL_USE_SYSTEM_LOCK */
@@ -337,7 +364,7 @@ main (argc, argv)
 	pfatal_and_delete (outname);
 
 #ifdef MAIL_USE_SYSTEM_LOCK
-#if defined (STRIDE) || defined (XENIX)
+#if defined (STRIDE) || defined (XENIX) || defined (WINDOWSNT)
       /* Stride, xenix have file locking, but no ftruncate.  This mess will do. */
       close (open (inname, O_CREAT | O_TRUNC | O_RDWR, 0666));
 #else
@@ -374,6 +401,9 @@ main (argc, argv)
 #if !defined (MAIL_USE_MMDF) && !defined (MAIL_USE_SYSTEM_LOCK)
   unlink (lockname);
 #endif /* not MAIL_USE_MMDF and not MAIL_USE_SYSTEM_LOCK */
+
+#endif /* ! DISABLE_DIRECT_ACCESS */
+
   return 0;
 }
 
@@ -450,9 +480,14 @@ xmalloc (size)
 
 #ifdef MAIL_USE_POP
 
+#ifndef WINDOWSNT
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#else
+#undef _WINSOCKAPI_
+#include <winsock.h>
+#endif
 #include <stdio.h>
 #include <pwd.h>
 
@@ -476,9 +511,10 @@ char ibuffer[BUFSIZ];
 char obuffer[BUFSIZ];
 char Errmsg[80];
 
-popmail (user, outfile)
+popmail (user, outfile, password)
      char *user;
      char *outfile;
+     char *password;
 {
   int nmsgs, nbytes;
   register int i;
@@ -489,7 +525,7 @@ popmail (user, outfile)
   popserver server;
   extern char *strerror ();
 
-  server = pop_open (0, user, 0, POP_NO_GETPASS);
+  server = pop_open (0, user, password, POP_NO_GETPASS);
   if (! server)
     {
       error (pop_error);
@@ -517,7 +553,7 @@ popmail (user, outfile)
     }
   fchown (mbfi, getuid (), -1);
 
-  if ((mbf = fdopen (mbfi, "w")) == NULL)
+  if ((mbf = fdopen (mbfi, "wb")) == NULL)
     {
       pop_close (server);
       error ("Error in fdopen: %s", strerror (errno));

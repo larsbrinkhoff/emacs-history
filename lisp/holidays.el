@@ -1,6 +1,6 @@
 ;;; holidays.el --- holiday functions for the calendar package
 
-;;; Copyright (C) 1989, 1990, 1992, 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1989, 1990, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: holidays, calendar
@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -72,11 +73,11 @@
   "List of dates around Tisha B'Av, as visible in calendar window."
   t)
 
-(autoload 'holiday-islamic "cal-islamic"
+(autoload 'holiday-islamic "cal-islam"
   "Holiday on MONTH, DAY (Islamic) called STRING."
   t)
 
-(autoload 'holiday-chinese-new-year "cal-chinese"
+(autoload 'holiday-chinese-new-year "cal-china"
   "Date of Chinese New Year."
   t)
 
@@ -126,7 +127,7 @@ The holidays are those in the list calendar-holidays."
     (if (not holiday-list)
         (message "No holidays known for %s" date-string)
       (if (<= (length msg) (frame-width))
-          (message msg)
+          (message "%s" msg)
         (set-buffer (get-buffer-create holiday-buffer))
         (setq buffer-read-only nil)
         (calendar-set-mode-line date-string)
@@ -330,7 +331,7 @@ date.  If date is nil, or if the date is not visible, there is no holiday."
             (list (calendar-gregorian-from-absolute (+ abs-easter 49))
                   "Pentecost (Whitsunday)")
             (list (calendar-gregorian-from-absolute (+ abs-easter 50))
-                  "Whitmunday")
+                  "Whitmonday")
             (list (calendar-gregorian-from-absolute (+ abs-easter 56))
                   "Trinity Sunday")
             (list (calendar-gregorian-from-absolute (+ abs-easter 60))

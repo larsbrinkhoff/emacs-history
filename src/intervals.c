@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* NOTES:
@@ -680,7 +681,7 @@ previous_interval (interval)
    Modifications are needed to handle the hungry bits -- after simply
    finding the interval at position (don't add length going down),
    if it's the beginning of the interval, get the previous interval
-   and check the hugry bits of both.  Then add the length going back up
+   and check the hungry bits of both.  Then add the length going back up
    to the root.  */
 
 static INTERVAL
@@ -793,7 +794,7 @@ adjust_intervals_for_insertion (tree, position, length)
 
       /* Even if we are positioned between intervals, we default
 	 to the left one if it exists.  We extend it now and split
-	 off a part later, if stickyness demands it.  */
+	 off a part later, if stickiness demands it.  */
       for (temp = prev ? prev : i;! NULL_INTERVAL_P (temp); temp = temp->parent)
 	{
 	  temp->total_length += length;
@@ -801,7 +802,7 @@ adjust_intervals_for_insertion (tree, position, length)
 	}
       
       /* If at least one interval has sticky properties,
-	 we check the stickyness property by property.  */
+	 we check the stickiness property by property.  */
       if (END_NONSTICKY_P (prev) || FRONT_STICKY_P (i))
 	{
 	  Lisp_Object pleft, pright;
@@ -1516,7 +1517,7 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
   /* The inserted text "sticks" to the interval `under',
      which means it gets those properties.
      The properties of under are the result of
-     adjust_intervals_for_insertion, so stickyness has
+     adjust_intervals_for_insertion, so stickiness has
      already been taken care of.  */
      
   while (! NULL_INTERVAL_P (over))

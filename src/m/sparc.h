@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 /* The following line tells the configuration script what sort of 
    operating system this machine is likely to run.
@@ -103,6 +104,7 @@ NOTE-END  */
 #endif
 
 #ifndef __NetBSD__
+#ifndef __linux__
 /* This really belongs in s/sun.h.  */
 
 /* Say that the text segment of a.out includes the header;
@@ -115,4 +117,5 @@ NOTE-END  */
 
 #define A_TEXT_SEEK(HDR) (N_TXTOFF (hdr) + sizeof (hdr))
 
+#endif /* __linux__ */
 #endif /* __NetBSD__ */

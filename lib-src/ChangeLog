@@ -1,3 +1,256 @@
+Sat May 25 15:30:10 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* Version 19.31 released.
+
+Fri May 17 18:27:20 1996  Francesco Potorti`  <F.Potorti@cnuce.cnr.it>
+
+	* etags.c (CNL_SAVE_DEFINEDEF): Set linecharno for use by readline.
+	(Pascal_functions): Increase linecharno by the correct number of
+	chars, inline the GET_NEW_LINE macro and delete its definition.
+
+Fri May  3 15:08:51 1996  Andrew Innes <andrewi@harlequin.co.uk>
+
+	* makefile.nt (OBJDIR, BLD): Remove macro definitions.
+
+Fri May  3 14:27:40 1996  Andrew Innes <andrewi@harlequin.co.uk>
+
+	* makefile.nt (LOCAL_FLAGS): Include path to NT shadow includes.
+	(movemail.exe, fakemail.exe): Now built under Win32.o
+
+	* ntlib.c: Include ntlib.h.
+	(nt_sleep): Rename to sleep.
+	(getwd): Return directory.
+	(getlogin, cuserid, getuid, setuid, getpwuid, getpass, fchown,
+	sys_ctime, sys_fopen): New functions.
+
+	* ntlib.h: New file.
+
+Mon Apr 29 11:43:54 1996  Richard Stallman  <rms@delasyd.gnu.ai.mit.edu>
+
+	* pop.c (SEND, RECV): Renamed from send, recv.
+	(pop_open, pop_trash): Make the trash_started code unconditional.
+	(socket_connection): Delete casts to void.
+
+Sun Apr 28 19:36:22 1996  Richard Stallman  <rms@delasyd.gnu.ai.mit.edu>
+
+	* movemail.c (DIRECTORY_SEP, IS_DIRECTORY_SEP): Definitions
+	copied from lisp.h.
+
+Mon Apr 22 22:50:57 1996  Andrew Innes  <andrewi@harlequin.co.uk>
+
+	* fakemail.c [WINDOWSNT]: Include ntlib.h.
+
+	* hexl.c [DOSNT]: Include fcntl.h.
+	[WINDOWSNT]: Include io.h.
+	(main) [MSDOS]: Change conditional to DOS_NT.
+
+	* movemail.c (access, unlink) [WINDOWSNT]: Macros undefined.
+	(fork, syswait, DISABLE_DIRECT_ACCESS) [WINDOWSNT]: Macros defined.
+	[WINDOWSNT]: Include locking.h.
+	(main): Update usage message.  Use IS_DIRECTORY_SEP.
+	(main) [DISABLE_DIRECT_ACCESS]: Don't check access if defined.
+	(main) [WINDOWSNT]: Invoke locking instead of flock.
+	(main) [MAIL_USE_SYSTEM_LOCK && WINDOWSNT]: Emulate ftruncate.
+	(main) [MAIL_USE_POP]: Pass password to popmail if used.
+	Include winsock.h; don't include unix inet headers.
+	(popmail): Add password argument and pass it to pop_open.
+	Open output file in binary mode.
+
+	* pop.c [WINDOWSNT]: Include winsock.h and ntlib.h.
+	Macro SOCKET_ERROR undefined.	
+	Don't declare h_errno.
+	[!WINDOWSNT]: Define macros recv and send.
+	[!WINDOWSNT] (POP_SERVICE): Change to pop3.
+	(pop_open) [WINDOWSNT]: Initialize trash_started.
+	(have_winsock) [WINDOWSNT]: New variable.
+	(socket_connection) [WINDOWSNT]: Initialize winsock.
+	(socket_connection): Use closesocket instead of close.
+	(getline): Use recv instead of read.
+	(fullwrite): Use send instead of write.
+	(pop_trash): Use closesocket instead of close.
+	(pop_trash) [WINDOWSNT]: Cleanup winsock.
+	Check if being called recursively by sendline.
+
+	* pop.h (struct _popserver): New field trash_started.
+
+	* wakeup.c [HAVE_CONFIG_H]: Only include config.h when defined.
+
+Sun Apr 14 13:07:39 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* hexl.c (main) [DJGPP v2]: Don't change to binary for a tty.
+
+Wed Apr 10 21:39:09 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* etags.c [WINDOWSNT]: Include io.h.
+
+Wed Apr 10 18:34:20 1996  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.nt (CTAGSOBJ): Compile with regexp support.
+
+Tue Apr  9 20:49:15 1996  Eli Zaretskii  <eliz@is.elta.co.il>
+
+	* hexl.c [DJGPP v2]: Include io.h.
+	(main) [DJGPP v2]: Switch standard streams to binary with setmode.
+
+	* b2m.c (main) [MSDOS]: Switch standard streams to binary under
+	DJGPP v2.
+
+Tue Apr  2 10:39:00 1996  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* etags.c (absolute_filename): Use absolutefn.
+
+Sun Mar 31 14:22:03 1996  Eli Zaretskii  <eliz@is.elta.co.il>
+
+	* etags.c (absolutefn) [DOS_NT]: Support Novell drives whose drive
+	letter isn't an alphabetic character.
+	(main) [DOS_NT]: Use binary mode on redirected `stdout'.
+	(process_file) [DOS_NT]: Convert all slashes to forward style.
+	(absolute_filename) [DOS_NT]: Emit error message for relative
+	paths with a drive letter.
+	(absolute_filename) [DOS_NT]: Handle absolute pathnames with
+	DOS/NT drive letters which try to reference the parent of the root.
+	(absolute_dirname) [DOS_NT]: Convert all slashes to forward style.
+
+Wed Mar 27 23:32:29 1996  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.nt: Change uses of del to $(DEL).
+
+Fri Mar 22 19:56:16 1996  Francesco Potorti`  <F.Potorti@cnuce.cnr.it>
+
+	* etags.c (just_read_file): Reset lineno and charno on entry.
+
+Fri Mar 15 07:39:17 1996  Anders Lindgren  <andersl@csd.uu.se>
+
+	* etags.c: Prolog language totaly rewritten.
+        (Prolog_functions): Rewritten from scratch.
+	(skip_comment, prolog_getit): Removed.
+        (prolog_skip_comment): New function, like old skip_comment.
+        (prolog_pred, prolog_atom, prolog_white): New functions.
+        (erlang_func, erlang_attributes): Forward declarations added.
+        (erlang_atom): Check if backslash ends line inside quoted atom.
+
+Thu Mar 14 12:11:04 1996  Francesco Potorti`  <F.Potorti@cnuce.cnr.it>
+
+	* etags.c (absolutefn): DOS_NT version corrected.
+	(main): Append "/" to the dir name only if not already there.
+	(print_help): Explain the absolute/relative file name issue.
+	
+Fri Mar  8 14:22:26 1996  Anders Lindgren  <andersl@csd.uu.se>
+
+	* etags.c: New Languange Erlang added.
+	(Erlang_functions, erlang_func, erlang_attribute, erlang_atom,
+	erlang_white): New functions.
+	(Erlang_suffixes): New suffix list.
+	(lang_names): Erlang entry added.
+	(prolog_getit): Accepts headers spanning several lines.
+	Always name tags.
+	(Prolog_functions): Removed incorrect compensation for
+	newline characters.
+	(readline_internal): Zero-terminate last line.
+
+Wed Mar 20 18:10:06 1996  Mike Long  <mike.long@analog.com>
+
+	* b2m.c (main): Initialize progname variable before using it.
+	Quote `username' in From_ header.
+
+Mon Mar 18 21:01:06 1996  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* ntlib.c (getpid): New function.
+
+Wed Feb 21 15:52:22 1996  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* emacsclient.c (main, both definitions):
+	Print a newline for normal termination.
+
+Wed Feb 21 12:10:44 1996  Noah Friedman  <friedman@prep.ai.mit.edu>
+
+	* tcp.c (main): Convert port to network byte order.
+
+Sat Jan 20 15:49:11 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* pop.c (pop_retrieve, getline): Avoid type clashes.
+
+Fri Jan 19 17:52:48 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* etags.c (enum sym_type, anonymous enum): Delete final comma.
+
+Mon Jan 15 01:17:56 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* rcs2log (initialize_fullname): Add support for NIS+.
+	(hostname): Fully qualify the default hostname with the domainname
+	if the hostname lacks a `.'.
+
+Mon Jan 15 01:17:56 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* rcs2log (initialize_fullname): Add support for NIS+.
+	(hostname): Fully qualify the default hostname with the domainname
+	if the hostname lacks a `.'.
+
+Wed Jan 10 14:44:16 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* etags.c (consider_token): Fix typo in expression.
+
+Thu Jan  4 19:50:31 1996  Paul Eggert  <eggert@twinsun.com>
+
+	* etags.c (substitute): Fix spelling in message.
+
+Wed Jan  3 22:01:28 1996  George V. Reilly  <georger@microcrafts.com>
+
+	* makefile.nt (etags, ctags): Compile with regexp support.
+	(make-docfile, wakeup, etags, ctags, hexl): Ensure build
+	subdirectory exists before compiling.
+	
+Tue Jan  2 23:19:56 1996  Karl Heuer  <kwzh@gnu.ai.mit.edu>
+
+	* emacsserver.c (main): Do chmod based on existing permission.
+
+Wed Dec 27 09:09:37 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (install): Turn on read/execute permission.
+
+Sun Dec  3 19:31:18 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* Makefile.in (LIB_STANDARD_LIBSRC): Use this instead of LIB_STANDARD.
+	(LOADLIBES): Use LIB_STANDARD_LIBSRC.
+
+Fri Dec  1 22:49:27 1995  Richard Stallman  <rms@whiz-bang.gnu.ai.mit.edu>
+
+	* Makefile.in (THIS_IS_MAKEFILE): Renamed from THIS_IS_YMAKEFILE.
+
+Wed Dec  7 10:39:09 1995  Francesco Potorti`  <pot@cnuce.cnr.it>
+
+	* etags.c (pfnote): Don't make a tag for ctags if there is no name.
+	(getit, Asm_labels, Perl_functions, Pascal_functions, L_getit,
+	get_scheme, prolog_getit): Name the tag in ctags mode.
+	(pfnote): Truncate ctags lines to 50 chars, like it worked once.
+	(Perl_interpreters): Accept "@PERL@" as an interpreter.
+	(suggest_asking_for_help): New function.
+	(main, get_language_from_name): Use suggest_asking_for_help.
+	(main): Let get_language_from_name make language existence check.
+	(streq, strneq): Check the arguments #if DEBUG.
+
+Wed Dec  6 14:39:09 1995  Francesco Potorti`  <pot@cnuce.cnr.it>
+
+	* etags.c (Cplusplus_suffixes): Add .M suffix for Objective C++.
+	(gperf): Added keywords for Objective C and GNU macros.
+	(sym_type): Added values to account for Objective C and GNU macros.
+	(begtk): The '@' character can start a token.
+	(objdef, methodlen, objtag): New variables for Objective C.
+	(consider_token, C_entries): Added code for Objective C.
+	(plain_C_suffixes): Add .m and .lm for Objective C.
+	(Yacc_suffixes): Add .ym for Objective yacc.
+	(GROW_LINEBUFFER): New macro.
+	(consider_token, C_entries, Pascal_functions): Use the new macro.
+	(consider_token): Take one more argument.  Caller changed.
+	(consider_token): Use the hashing function to spot GNU macros.
+	(C_entries): Consider // as a comment start even in plain C for
+	the sake of Objective C parsing.
+
+Mon Dec  4 19:18:59 1995  Francesco Potorti` <pot@cnuce.cnr.it>
+
+	* Makefile.in (ctags): depend on etags only for simplicity;
+ 	compile with regexp support enabled.
+
 Fri Nov 24 23:42:28 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.30 released.

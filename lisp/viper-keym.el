@@ -1,6 +1,6 @@
-;;; viper-keym.el --- main Viper keymaps
+;;; viper-keym.el --- Viper keymaps
 
-;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+;; Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -15,9 +15,11 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
+;; Code
 
 (require 'viper-util)
 
@@ -32,7 +34,7 @@
 (defvar vip-emacs-intercept-map (make-sparse-keymap))
 
 ;; keymap used to zap all keymaps other than function-key-map,
-;; devide-function-key-map, etc.
+;; device-function-key-map, etc.
 (defvar vip-overriding-map (make-sparse-keymap))
   
 (vip-deflocalvar vip-vi-local-user-map (make-sparse-keymap)
@@ -364,6 +366,7 @@ vip-insert-basic-map. Not recommended, except for novice users.")
 ;; Keymap for reading file names in Ex-style commands.
 (defvar ex-read-filename-map (make-sparse-keymap))
 (define-key ex-read-filename-map " " 'vip-complete-filename-or-exit)
+(define-key ex-read-filename-map "!" 'vip-handle-!)
 
 
 	  
@@ -404,6 +407,20 @@ Usage:
     (vip-modify-keymap map alist)
     (vip-normalize-minor-mode-map-alist)
     (vip-set-mode-vars-for vip-current-state)))
+
+(defun vip-zap-local-keys ()
+  "Unconditionally reset Viper vip-*-local-user-map's.
+Rarely useful, but if u made a mistake by switching to a mode that adds
+undesirable local keys, e.g., comint-mode, then this function can return
+you to sanity."
+  (interactive)
+  (setq vip-vi-local-user-map (make-sparse-keymap)
+	vip-need-new-vi-local-map nil
+	vip-insert-local-user-map (make-sparse-keymap)
+	vip-need-new-insert-local-map nil
+	vip-emacs-local-user-map (make-sparse-keymap)
+	vip-need-new-emacs-local-map nil)
+  (vip-normalize-minor-mode-map-alist))
     
 
 (defun vip-modify-major-mode (mode state keymap)

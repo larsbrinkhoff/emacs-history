@@ -15,7 +15,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  */
 
 
 /* These are default choices for the types to use.  */
@@ -306,6 +307,11 @@ extern int pure_size;
    ((var) = ((EMACS_INT)(type) << VALBITS) + ((EMACS_INT) (ptr) & VALMASK))
 #endif
 
+/* Convert a C integer into a Lisp_Object integer.  */
+
+#define make_number(N)		\
+  ((((EMACS_INT) (N)) & VALMASK) | ((EMACS_INT) Lisp_Int) << VALBITS)
+
 /* During garbage collection, XGCTYPE must be used for extracting types
  so that the mark bit is ignored.  XMARKBIT accesses the markbit.
  Markbits are used only in particular slots of particular structure types.
@@ -509,6 +515,21 @@ struct Lisp_Cons
     Lisp_Object car, cdr;
   };
 
+/* Take the car or cdr of something known to be a cons cell.  */
+#define XCAR(c) (XCONS ((c))->car)
+#define XCDR(c) (XCONS ((c))->cdr)
+
+/* Take the car or cdr of something whose type is not known.  */
+#define CAR(c)					\
+ (CONSP ((c)) ? XCAR ((c))			\
+  : NILP ((c)) ? Qnil				\
+  : wrong_type_argument (Qlistp, (c)))
+
+#define CDR(c)					\
+ (CONSP ((c)) ? XCDR ((c))			\
+  : NILP ((c)) ? Qnil				\
+  : wrong_type_argument (Qlistp, (c)))
+
 /* Like a cons, but records info on where the text lives that it was read from */
 /* This is not really in use now */
 
@@ -529,9 +550,10 @@ struct Lisp_String
   };
 
 /* If a struct is made to look like a vector, this macro returns the length
-   of that vector.  */
-#define VECSIZE(type) ((sizeof (type) - (sizeof (struct Lisp_Vector)	\
-					 - sizeof (Lisp_Object)))	\
+   of the shortest vector that would hold that struct.  */
+#define VECSIZE(type) ((sizeof (type) - (sizeof (struct Lisp_Vector)  \
+                                         - sizeof (Lisp_Object))      \
+                        + sizeof(Lisp_Object) - 1) /* round up */     \
 		       / sizeof (Lisp_Object))
 
 struct Lisp_Vector
@@ -1399,7 +1421,6 @@ extern Lisp_Object Flsh (), Fash ();
 
 extern Lisp_Object Fadd1 (), Fsub1 ();
 
-extern Lisp_Object make_number ();
 extern Lisp_Object   long_to_cons ();
 extern unsigned long cons_to_long ();
 extern void args_out_of_range ();
@@ -1743,6 +1764,7 @@ extern Lisp_Object Qexecute_kbd_macro;
 extern Lisp_Object Fexecute_kbd_macro ();
 
 /* defined in undo.c */
+extern Lisp_Object Qinhibit_read_only;
 extern Lisp_Object Fundo_boundary ();
 extern Lisp_Object truncate_undo_list ();
 
@@ -1780,6 +1802,10 @@ extern void init_system_name ();
 /* Some systems (e.g., NT) use a different path separator than Unix,
    in addition to a device separator.  Default the path separator
    to '/', and don't test for a device separator in IS_ANY_SEP.  */
+
+#ifdef WINDOWSNT
+extern Lisp_Object Vdirectory_sep_char;
+#endif
 
 #ifndef DIRECTORY_SEP
 #define DIRECTORY_SEP '/'

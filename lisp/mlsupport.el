@@ -18,15 +18,16 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
 ;; This package provides equivalents of certain primitives from Gosling
 ;; Emacs (including the commercial UniPress versions).  These have an
 ;; ml- prefix to distinguish them from native GNU Emacs functions with
-;; similar names.  The oackage mlconvert.el translates Mocklisp code
+;; similar names.  The package mlconvert.el translates Mocklisp code
 ;; to use these names.
 
 ;;; Code:

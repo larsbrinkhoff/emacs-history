@@ -5,7 +5,7 @@
 /* The malloc headers and source files from the C library follow here.  */
 
 /* Declarations for `malloc' and friends.
-   Copyright 1990, 1991, 1992, 1993, 1995 Free Software Foundation, Inc.
+   Copyright 1990, 91, 92, 93, 95, 96 Free Software Foundation, Inc.
 		  Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -106,11 +106,13 @@ extern __ptr_t calloc __P ((__malloc_size_t __nmemb, __malloc_size_t __size));
 extern void free __P ((__ptr_t __ptr));
 
 /* Allocate SIZE bytes allocated to ALIGNMENT bytes.  */
+#if ! (defined (_MALLOC_INTERNAL) && __DJGPP__ - 0 == 1) /* Avoid conflict.  */
 extern __ptr_t memalign __P ((__malloc_size_t __alignment,
 			      __malloc_size_t __size));
+#endif
 
 /* Allocate SIZE bytes on a page boundary.  */
-#if ! (defined (_MALLOC_INTERNAL) && defined (emacs)) /* Avoid conflict.  */
+#if ! (defined (_MALLOC_INTERNAL) && defined (GMALLOC_INHIBIT_VALLOC))
 extern __ptr_t valloc __P ((__malloc_size_t __size));
 #endif
 
@@ -238,6 +240,8 @@ extern __malloc_size_t __malloc_extra_blocks;
 
 /* Nonzero if `malloc' has been called and done its initialization.  */
 extern int __malloc_initialized;
+/* Function called to initialize malloc data structures.  */
+extern int __malloc_initialize __P ((void));
 
 /* Hooks for debugging versions.  */
 extern void (*__malloc_initialize_hook) __P ((void));
@@ -463,10 +467,12 @@ register_heapinfo ()
 }
 
 /* Set everything up and remember that we have.  */
-static int initialize __P ((void));
-static int
-initialize ()
+int
+__malloc_initialize ()
 {
+  if (__malloc_initialized)
+    return 0;
+
   if (__malloc_initialize_hook)
     (*__malloc_initialize_hook) ();
 
@@ -520,31 +526,37 @@ morecore (size)
 	newsize *= 2;
       while ((__malloc_size_t) BLOCK ((char *) result + size) > newsize);
 
-      /* First try to allocate the new info table in core we already have,
-	 in the usual way using realloc.  If realloc cannot extend it in
-	 place or relocate it to existing sufficient core, we will get
-	 called again, and the code above will notice the
-	 `morecore_recursing' flag and return null.  */
-      {
-	int save = errno;	/* Don't want to clobber errno with ENOMEM.  */
-	morecore_recursing = 1;
-	newinfo = (malloc_info *) _realloc_internal
-	  (_heapinfo, newsize * sizeof (malloc_info));
-	morecore_recursing = 0;
-	if (newinfo == NULL)
-	  errno = save;
-	else
-	  {
-	    /* We found some space in core, and realloc has put the old
-	       table's blocks on the free list.  Now zero the new part
-	       of the table and install the new table location.  */
-	    memset (&newinfo[heapsize], 0,
-		    (newsize - heapsize) * sizeof (malloc_info));
-	    _heapinfo = newinfo;
-	    heapsize = newsize;
-	    goto got_heap;
-	  }
-      }
+      /* We must not reuse existing core for the new info table when called
+	 from realloc in the case of growing a large block, because the
+	 block being grown is momentarily marked as free.  In this case
+	 _heaplimit is zero so we know not to reuse space for internal
+	 allocation.  */
+      if (_heaplimit != 0)
+	{
+	  /* First try to allocate the new info table in core we already
+	     have, in the usual way using realloc.  If realloc cannot
+	     extend it in place or relocate it to existing sufficient core,
+	     we will get called again, and the code above will notice the
+	     `morecore_recursing' flag and return null.  */
+	  int save = errno;	/* Don't want to clobber errno with ENOMEM.  */
+	  morecore_recursing = 1;
+	  newinfo = (malloc_info *) _realloc_internal
+	    (_heapinfo, newsize * sizeof (malloc_info));
+	  morecore_recursing = 0;
+	  if (newinfo == NULL)
+	    errno = save;
+	  else
+	    {
+	      /* We found some space in core, and realloc has put the old
+		 table's blocks on the free list.  Now zero the new part
+		 of the table and install the new table location.  */
+	      memset (&newinfo[heapsize], 0,
+		      (newsize - heapsize) * sizeof (malloc_info));
+	      _heapinfo = newinfo;
+	      heapsize = newsize;
+	      goto got_heap;
+	    }
+	}
 
       /* Allocate new space for the malloc info table.  */
       while (1)
@@ -617,10 +629,6 @@ _malloc_internal (size)
   if (size == 0)
     return NULL;
 #endif
-
-  if (!__malloc_initialized)
-    if (!initialize ())
-      return NULL;
 
   if (size < sizeof (struct list))
     size = sizeof (struct list);
@@ -796,6 +804,9 @@ __ptr_t
 malloc (size)
      __malloc_size_t size;
 {
+  if (!__malloc_initialized && !__malloc_initialize ())
+    return NULL;
+
   return (__malloc_hook != NULL ? *__malloc_hook : _malloc_internal) (size);
 }
 
@@ -1233,7 +1244,7 @@ __malloc_safe_bcopy (afrom, ato, size)
 	  bcopy (from, to, endt - from);
 	}
     }
-}     
+}
 #endif /* emacs */
 
 #ifndef memmove
@@ -1321,8 +1332,9 @@ _realloc_internal (ptr, size)
 	  oldlimit = _heaplimit;
 	  _heaplimit = 0;
 	  _free_internal (ptr);
-	  _heaplimit = oldlimit;
 	  result = _malloc_internal (size);
+	  if (_heaplimit == 0)
+	    _heaplimit = oldlimit;
 	  if (result == NULL)
 	    {
 	      /* Now we're really in trouble.  We have to unfree
@@ -1372,6 +1384,9 @@ realloc (ptr, size)
      __ptr_t ptr;
      __malloc_size_t size;
 {
+  if (!__malloc_initialized && !__malloc_initialize ())
+    return NULL;
+
   return (__realloc_hook != NULL ? *__realloc_hook : _realloc_internal)
     (ptr, size);
 }
@@ -1464,7 +1479,7 @@ __default_morecore (increment)
     return NULL;
   return result;
 }
-/* Copyright (C) 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 92, 93, 94, 95, 96 Free Software Foundation, Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public License as
@@ -1485,6 +1500,13 @@ Cambridge, MA 02139, USA.  */
 #define _MALLOC_INTERNAL
 #include <malloc.h>
 #endif
+
+#if __DJGPP__ - 0 == 1
+
+/* There is some problem with memalign in DJGPP v1 and we are supposed
+   to omit it.  Noone told me why, they just told me to do it.  */
+
+#else
 
 __ptr_t (*__memalign_hook) __P ((size_t __size, size_t __alignment));
 
@@ -1553,3 +1575,64 @@ memalign (alignment, size)
 
   return result;
 }
+
+#endif /* Not DJGPP v1 */
+/* Allocate memory on a page boundary.
+   Copyright (C) 1991, 92, 93, 94, 96 Free Software Foundation, Inc.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; see the file COPYING.LIB.  If
+not, write to the Free Software Foundation, Inc., 675 Mass Ave,
+Cambridge, MA 02139, USA.
+
+   The author may be reached (Email) at the address mike@ai.mit.edu,
+   or (US mail) as Mike Haertel c/o Free Software Foundation.  */
+
+#if defined (_MALLOC_INTERNAL) && defined (GMALLOC_INHIBIT_VALLOC)
+
+/* Emacs defines GMALLOC_INHIBIT_VALLOC to avoid this definition
+   on MSDOS, where it conflicts with a system header file.  */
+
+#define ELIDE_VALLOC
+
+#endif
+
+#ifndef	ELIDE_VALLOC
+
+#if defined (__GNU_LIBRARY__) || defined (_LIBC)
+#include <stddef.h>
+#include <sys/cdefs.h>
+extern size_t __getpagesize __P ((void));
+#else
+#include "getpagesize.h"
+#define	 __getpagesize()	getpagesize()
+#endif
+
+#ifndef	_MALLOC_INTERNAL
+#define	_MALLOC_INTERNAL
+#include <malloc.h>
+#endif
+
+static __malloc_size_t pagesize;
+
+__ptr_t
+valloc (size)
+     __malloc_size_t size;
+{
+  if (pagesize == 0)
+    pagesize = __getpagesize ();
+
+  return memalign (pagesize, size);
+}
+
+#endif	/* Not ELIDE_VALLOC.  */

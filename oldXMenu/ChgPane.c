@@ -23,7 +23,7 @@ XMenuChangePane(menu, p_num, label)
 {
     register XMPane *p_ptr;	/* XMPane pointer. */
 
-    int label_length;		/* Label lenght in characters. */
+    int label_length;		/* Label length in characters. */
     int label_width;		/* Label width in pixels. */
 
     /*

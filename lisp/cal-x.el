@@ -1,11 +1,11 @@
-;;; cal-x.el --- calendar windows in dedicated frames in x-windows
+;;; cal-x.el --- calendar windows in dedicated frames in X
 
 ;; Copyright (C) 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Michael Kifer <kifer@cs.sunysb.edu>
 ;;      Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: calendar
-;; Human-Keywords: calendar, dedicated frames, x-windows
+;; Human-Keywords: calendar, dedicated frames, X Window System
 
 ;; This file is part of GNU Emacs.
 
@@ -20,12 +20,13 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;; This collection of functions implements dedicated frames in x-windows for
+;; This collection of functions implements dedicated frames in X for
 ;; calendar.el.
 
 ;; Comments, corrections, and improvements should be sent to
@@ -42,22 +43,23 @@
 
 (defvar diary-frame nil "Frame in which to display the diary.")
   
+;; This should not specify the font.  That's up to the user.
+;; Certainly it should not specify auto-lower and auto-raise
+;; since most users won't like that.
 (defvar diary-frame-parameters
   '((name . "Diary") (height . 10) (width . 80) (unsplittable . t)
-    (font . "6x13") (auto-lower . t) (auto-raise . t) (minibuffer . nil))
+    (minibuffer . nil))
   "Parameters of the diary frame, if the diary is in its own frame.
 Location and color should be set in .Xdefaults.")
                                  
 (defvar calendar-frame-parameters
   '((name . "Calendar") (minibuffer . nil) (height . 10) (width . 80)
-    (auto-raise . t) (auto-lower . t) (font . "6x13") (unsplittable . t)
-    (vertical-scroll-bars . nil))
+    (unsplittable . t) (vertical-scroll-bars . nil))
   "Parameters of the calendar frame, if the calendar is in a separate frame.
 Location and color should be set in .Xdefaults.")
 
 (defvar calendar-and-diary-frame-parameters
-  '((name . "Calendar") (height . 28) (width . 80) (minibuffer . nil)
-    (font . "6x13") (auto-raise . t) (auto-lower . t))
+  '((name . "Calendar") (height . 28) (width . 80) (minibuffer . nil))
   "Parameters of the frame that displays both the calendar and the diary.
 Location and color should be set in .Xdefaults.")
   

@@ -14,7 +14,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+   USA.  */
 
 /* Compile-time symbols that this file uses:
 
@@ -42,6 +43,7 @@
    DGUX
    eunice			UNIX emulator under VMS.
    hpux
+   MSDOS			No-op for MSDOS.
    NeXT
    sgi
    sequent			Sequent Dynix 3.x.x (BSD)
@@ -50,6 +52,7 @@
    UMAX
    UMAX4_3
    VMS
+   WIN32			No-op for Windows95/NT.
    __linux__			Linux: assumes /proc filesystem mounted.
    				Support from Michael K. Johnson.
    __NetBSD__			NetBSD: assumes /kern filesystem mounted.
@@ -732,6 +735,16 @@ getloadavg (loadavg, nelem)
        : (load_ave.tl_avenrun.l[0] / (double) load_ave.tl_lscale));
 #endif	/* OSF_MIPS */
 
+#if !defined (LDAV_DONE) && (defined (MSDOS) || defined (WIN32))
+#define LDAV_DONE
+
+  /* A faithful emulation is going to have to be saved for a rainy day.  */
+  for ( ; elem < nelem; elem++)
+    {
+      loadavg[elem] = 0.0;
+    }
+#endif  /* MSDOS */
+
 #if !defined (LDAV_DONE) && defined (OSF_ALPHA)
 #define LDAV_DONE
 
@@ -855,7 +868,7 @@ getloadavg (loadavg, nelem)
       /* We pass 0 for the kernel, corefile, and swapfile names
 	 to use the currently running kernel.  */
       kd = kvm_open (0, 0, 0, O_RDONLY, 0);
-      if (kd != 0) 
+      if (kd != 0)
 	{
 	  /* nlist the currently running kernel.  */
 	  kvm_nlist (kd, nl);

@@ -8,20 +8,22 @@
    Copyright 1990, 1991, 1992, 1993 Free Software Foundation, Inc.
 		  Written May 1989 by Mike Haertel.
 
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
+This file is part of GNU Emacs.
 
-This library is distributed in the hope that it will be useful,
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
+
+GNU Emacs is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; see the file COPYING.LIB.  If
-not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
    The author may be reached (Email) at the address mike@ai.mit.edu,
    or (US mail) as Mike Haertel c/o Free Software Foundation.  */
@@ -1179,7 +1181,7 @@ VMS_present_buffer()
 #endif /* defined(emacs) && defined(VMS) */
 
 #ifdef VMS
-/* Unfortunatelly, the VAX C sbrk() is buggy. For example, it returns
+/* Unfortunately, the VAX C sbrk() is buggy. For example, it returns
    memory in 512 byte chunks (not a bug, but there's more), AND it
    adds an extra 512 byte chunk if you ask for a multiple of 512
    bytes (you ask for 512 bytes, you get 1024 bytes...). And also,

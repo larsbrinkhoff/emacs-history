@@ -6,7 +6,7 @@
 /*
  * XMenu:	MIT Project Athena, X Window system menu package
  *
- *	XMenuSetAEQ - Set Asynchronous event queueing mode.
+ *	XMenuSetAEQ - Set Asynchronous event queuing mode.
  *		      When enabled asynchronous events will be queue while
  *		      a menu is being displayed and restored to the X
  *		      event queue when the menu is taken down.

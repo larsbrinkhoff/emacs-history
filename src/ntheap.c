@@ -1,21 +1,22 @@
 /* Heap management routines for GNU Emacs on Windows NT.
    Copyright (C) 1994 Free Software Foundation, Inc.
 
-   This file is part of GNU Emacs.
+This file is part of GNU Emacs.
 
-   GNU Emacs is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
-   version.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   GNU Emacs is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-   more details.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with GNU Emacs; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
 
    Geoff Voelker (voelker@cs.washington.edu)			     7-29-94
 */
@@ -26,6 +27,7 @@
 #include <stdio.h>
 
 #include "ntheap.h"
+#include "lisp.h"  /* for VALMASK */
 
 /* This gives us the page size and the size of the allocation unit on NT.  */
 SYSTEM_INFO sysinfo_cache;
@@ -97,53 +99,70 @@ get_data_end (void)
   return data_region_end;
 }
 
-#ifndef WINDOWS95
 static char *
 allocate_heap (void)
 {
-  unsigned long base = 0x00030000;
-  unsigned long end  = 0x00D00000;
+  /* The base address for our GNU malloc heap is chosen in conjuction
+     with the link settings for temacs.exe which control the stack size,
+     the initial default process heap size and the executable image base
+     address.  The link settings and the malloc heap base below must all
+     correspond; the relationship between these values depends on how NT
+     and Win95 arrange the virtual address space for a process (and on
+     the size of the code and data segments in temacs.exe).
 
-  reserved_heap_size = end - base;
+     The most important thing is to make base address for the executable
+     image high enough to leave enough room between it and the 4MB floor
+     of the process address space on Win95 for the primary thread stack,
+     the process default heap, and other assorted odds and ends
+     (eg. environment strings, private system dll memory etc) that are
+     allocated before temacs has a chance to grab its malloc arena.  The
+     malloc heap base can then be set several MB higher than the
+     executable image base, leaving enough room for the code and data
+     segments.
 
-  return VirtualAlloc ((void *) base,
-		       get_reserved_heap_size (),
-		       MEM_RESERVE,
-		       PAGE_NOACCESS);
-}
-#else  
-static char *
-allocate_heap (void)
-{
-  unsigned long start     = 0x400000;
-  unsigned long stop      = 0xD00000;
-  unsigned long increment = 0x100000;
-  char *ptr, *begin = NULL, *end = NULL;
-  int i;
+     Because some parts of Emacs can use rather a lot of stack space
+     (for instance, the regular expression routines can potentially
+     allocate several MB of stack space) we allow 8MB for the stack.
 
-  for (i = start; i < stop; i += increment) 
+     Allowing 1MB for the default process heap, and 1MB for odds and
+     ends, we can base the executable at 16MB and still have a generous
+     safety margin.  At the moment, the executable has about 810KB of
+     code (for x86) and about 550KB of data - on RISC platforms the code
+     size could be roughly double, so if we allow 4MB for the executable
+     we will have plenty of room for expansion.
+
+     Thus we would like to set the malloc heap base to 20MB.  However,
+     Win95 refuses to allocate the heap starting at this address, so we
+     set the base to 27MB to make it happy.  Since Emacs now leaves
+     28 bits available for pointers, this lets us use the remainder of
+     the region below the 256MB line for our malloc arena - 229MB is
+     still a pretty decent arena to play in!  */
+
+  unsigned long base = 0x01B00000;   /*  27MB */
+  unsigned long end  = 1 << VALBITS; /* 256MB */
+  void *ptr = NULL;
+
+#if NTHEAP_PROBE_BASE /* This is never normally defined */
+  /* Try various addresses looking for one the kernel will let us have.  */
+  while (!ptr && (base < end))
     {
-      ptr = VirtualAlloc ((void *) i, increment, MEM_RESERVE, PAGE_NOACCESS);
-      if (ptr) 
-	begin = begin ? begin : ptr;
-      else if (begin)
-	{
-	  end = ptr;
-	  break;
-	}
+      reserved_heap_size = end - base;
+      ptr = VirtualAlloc ((void *) base,
+			  get_reserved_heap_size (),
+			  MEM_RESERVE,
+			  PAGE_NOACCESS);
+      base += 0x00100000;  /* 1MB increment */
     }
-
-  if (begin && !end)
-    end = (char *) i;
-  
-  if (!begin)
-    /* We couldn't allocate any memory for the heap.  Exit.  */
-    exit (-2);
-
-  reserved_heap_size = end - begin;
-  return begin;
-}
+#else
+  reserved_heap_size = end - base;
+  ptr = VirtualAlloc ((void *) base,
+		      get_reserved_heap_size (),
+		      MEM_RESERVE,
+		      PAGE_NOACCESS);
 #endif
+
+  return ptr;
+}
 
 
 /* Emulate Unix sbrk.  */
@@ -160,9 +179,9 @@ sbrk (unsigned long increment)
       if (!data_region_base)
 	return NULL;
 
-      /* Ensure that the addresses don't use the upper 8 bits since
-	 the Lisp type goes there (yucko).  */
-      if (((unsigned long) data_region_base & 0xFF000000) != 0) 
+      /* Ensure that the addresses don't use the upper tag bits since
+	 the Lisp type goes there.  */
+      if (((unsigned long) data_region_base & ~VALMASK) != 0) 
 	{
 	  printf ("Error: The heap was allocated in upper memory.\n");
 	  exit (1);

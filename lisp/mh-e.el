@@ -1,10 +1,6 @@
 ;;; mh-e.el --- GNU Emacs interface to the MH mail system
 
-;;; Copyright (C) 1985,86,87,88,90,92,93,94,95 Free Software Foundation, Inc.
-
-(defconst mh-e-time-stamp "Time-stamp: <95/10/30 19:14:06 gildea>")
-(defconst mh-e-version "5.0.2"
-  "Version numbers of this version of mh-e.")
+;; Copyright (C) 1985,86,87,88,90,92,93,94,95 Free Software Foundation, Inc.
 
 ;; Maintainer: Stephen Gildea <gildea@lcs.mit.edu>
 ;; Version: 5.0.2
@@ -24,46 +20,47 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
-;;; HOW TO USE:
-;;; M-x mh-rmail to read mail.  Type C-h m there for a list of commands.
-;;; C-u M-x mh-rmail to visit any folder.
-;;; M-x mh-smail to send mail.  From within the mail reader, "m" works, too.
+;; HOW TO USE:
+;; M-x mh-rmail to read mail.  Type C-h m there for a list of commands.
+;; C-u M-x mh-rmail to visit any folder.
+;; M-x mh-smail to send mail.  From within the mail reader, "m" works, too.
 
-;;; MH (Message Handler) is a powerful mail reader.  The MH newsgroup
-;;; is comp.mail.mh; the mailing list is mh-users@ics.uci.edu (send to
-;;; mh-users-request to be added).  See the monthly Frequently Asked
-;;; Questions posting there for information on getting MH and mh-e.
+;; MH (Message Handler) is a powerful mail reader.  The MH newsgroup
+;; is comp.mail.mh; the mailing list is mh-users@ics.uci.edu (send to
+;; mh-users-request to be added).  See the monthly Frequently Asked
+;; Questions posting there for information on getting MH and mh-e.
 
-;;; mh-e is an Emacs interface to the MH mail system.
-;;; The mailing list mh-e@x.org is for discussion of mh-e and
-;;; announcements of new versions.  Send a "subscribe" message to
-;;; mh-e-request@x.org to be added.  Do not report bugs here; mail
-;;; them directly to the author (see top of mh-e.el source).
-;;; Include the output of M-x mh-version in any bug report.
+;; mh-e is an Emacs interface to the MH mail system.
+;; The mailing list mh-e@x.org is for discussion of mh-e and
+;; announcements of new versions.  Send a "subscribe" message to
+;; mh-e-request@x.org to be added.  Do not report bugs here; mail
+;; them directly to the author (see top of mh-e.el source).
+;; Include the output of M-x mh-version in any bug report.
 
-;;; mh-e works with GNU Emacs 18 or 19, and MH 6.
+;; mh-e works with GNU Emacs 18 or 19, and MH 6.
 
-;;; NB.  MH must have been compiled with the MHE compiler flag or several
-;;; features necessary for mh-e will be missing from MH commands, specifically
-;;; the -build switch to repl and forw.
+;; NB.  MH must have been compiled with the MHE compiler flag or several
+;; features necessary for mh-e will be missing from MH commands, specifically
+;; the -build switch to repl and forw.
 
-;;; Your .emacs might benefit from these bindings:
-;;; (global-set-key "\C-cr" 'mh-rmail)
-;;; (global-set-key "\C-xm" 'mh-smail)
-;;; (global-set-key "\C-x4m" 'mh-smail-other-window)
+;; Your .emacs might benefit from these bindings:
+;; (global-set-key "\C-cr" 'mh-rmail)
+;; (global-set-key "\C-xm" 'mh-smail)
+;; (global-set-key "\C-x4m" 'mh-smail-other-window)
 
 ;;; Change Log:
 
-;;; Original version for Gosling emacs by Brian Reid, Stanford, 1982.
-;;; Modified by James Larus, BBN, July 1984 and UCB, 1984 & 1985.
-;;; Rewritten for GNU Emacs, James Larus 1985.  larus@ginger.berkeley.edu
-;;; Modified by Stephen Gildea 1988.  gildea@lcs.mit.edu
-(defconst mh-e-RCS-id "$Id: mh-e.el,v 1.9 1995/11/03 02:28:26 kwzh Exp $")
+;; Original version for Gosling emacs by Brian Reid, Stanford, 1982.
+;; Modified by James Larus, BBN, July 1984 and UCB, 1984 & 1985.
+;; Rewritten for GNU Emacs, James Larus 1985.  larus@ginger.berkeley.edu
+;; Modified by Stephen Gildea 1988.  gildea@lcs.mit.edu
+(defconst mh-e-RCS-id "$Id: mh-e.el,v 1.14 1996/05/21 17:26:31 kwzh Exp $")
 
 ;;; Code:
 
@@ -140,7 +137,7 @@ A directory name string, or nil to use current directory.")
 ;;; the line are the message number, followed by two places for notations.
 
 (defvar mh-good-msg-regexp  "^....[^D^]"
-  "Regexp specifiying the scan lines that are 'good' messages.")
+  "Regexp specifying the scan lines that are 'good' messages.")
 
 (defvar mh-deleted-msg-regexp "^....D"
   "Regexp matching scan lines of deleted messages.")
@@ -522,7 +519,7 @@ provided, then prompt for the message sequence."
   (mh-find-progs)
   (set-buffer (get-buffer-create mh-temp-buffer))
   (erase-buffer)
-  (insert "  mh-e info:\n\nversion: " mh-e-version "\n" mh-e-time-stamp
+  (insert "  mh-e info:\n\nversion: " mh-e-RCS-id
 	  "\nEmacs: " emacs-version " on " (symbol-name system-type) " ")
   (condition-case ()
       (call-process "uname" nil t nil "-a")
@@ -868,9 +865,9 @@ The value of mh-folder-mode-hook is called when a new folder is set up."
 	(folder mh-current-folder)
 	(new-mail-p nil))
     (with-mh-folder-updating (t)
-      (message (if maildrop-name
-		   (format "inc %s -file %s..." folder maildrop-name)
-		   (format "inc %s..." folder)))
+      (if maildrop-name
+	  (message "inc %s -file %s..." folder maildrop-name)
+	(message "inc %s..." folder))
       (setq mh-next-direction 'forward)
       (goto-char (point-max))
       (let ((start-of-inc (point)))
@@ -883,10 +880,9 @@ The value of mh-folder-mode-hook is called when a new folder is set up."
 				"-truncate")
 	    (mh-exec-cmd-output mh-inc-prog nil
 				"-width" (window-width)))
-	(message
-	 (if maildrop-name
-	     (format "inc %s -file %s...done" folder maildrop-name)
-	     (format "inc %s...done" folder)))
+	(if maildrop-name
+	    (message "inc %s -file %s...done" folder maildrop-name)
+	  (message "inc %s...done" folder))
 	(goto-char start-of-inc)
 	(cond ((save-excursion
 		 (re-search-forward "^inc: no mail" nil t))

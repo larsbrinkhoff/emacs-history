@@ -1,4 +1,5 @@
 ;;; nnmail.el --- mail support functions for the Gnus mail backends
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Lars Magne Ingebrigtsen <larsi@ifi.uio.no>
@@ -17,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -202,7 +204,7 @@ Example:
 (defvar nnmail-message-id-cache-length 1000
   "*The approximate number of Message-IDs nnmail will keep in its cache.
 If this variable is nil, no checking on duplicate messages will be
-perfomed.")
+performed.")
 
 (defvar nnmail-message-id-cache-file "~/.nnmail-cache"
   "*The file name of the nnmail Message-ID cache.")
@@ -411,9 +413,9 @@ perfomed.")
 		   (if (looking-at "movemail: ")
 		       (delete-region (point-min) (match-end 0)))
 		   (beep t)
-		   (message (concat "movemail: "
-				    (buffer-substring (point-min)
-						      (point-max))))
+		   (message "movemail: %s"
+			    (buffer-substring (point-min)
+					      (point-max)))
 		   (sit-for 3)
 		   nil)))))
     (and errors
@@ -570,7 +572,7 @@ FUNC will be called with the buffer narrowed to each mail."
 	  (current-buffer)
 	(kill-buffer (current-buffer))))))
 
-;; Mail crossposts syggested by Brian Edmonds <edmonds@cs.ubc.ca>. 
+;; Mail crossposts suggested by Brian Edmonds <edmonds@cs.ubc.ca>. 
 (defun nnmail-article-group (func)
   "Look at the headers and return an alist of groups that match.
 FUNC will be called with the group name to determine the article number."
@@ -610,7 +612,7 @@ FUNC will be called with the group name to determine the article number."
 Problems with `nnmail-split-methods', using `bogus' mail group")
 		      (sit-for 1)
 		      '("bogus")))))
-	  ;; Go throught the split methods to find a match.
+	  ;; Go through the split methods to find a match.
 	  (while (and methods (or nnmail-crosspost (not group-art)))
 	    (goto-char (point-max))
 	    (if (or (cdr methods)
@@ -688,7 +690,7 @@ See the documentation for the variable `nnmail-split-fancy' for documentation."
   (nnmail-split-it nnmail-split-fancy))
 
 (defvar nnmail-split-cache nil)
-;; Alist of split expresions their equivalent regexps.
+;; Alist of split expressions their equivalent regexps.
 
 (defun nnmail-split-it (split)
   ;; Return a list of groups matching SPLIT.
@@ -742,7 +744,7 @@ See the documentation for the variable `nnmail-split-fancy' for documentation."
 		t (concat (if group group "")
 			  nnmail-procmail-suffix "$") t)))
 	 (p procmails))
-    ;; Remove any directories that inadvertantly match the procmail
+    ;; Remove any directories that inadvertently match the procmail
     ;; suffix, which might happen if the suffix is "".
     (while p
       (and (or (file-directory-p (car p))

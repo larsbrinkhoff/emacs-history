@@ -18,8 +18,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -70,7 +71,9 @@ This is local in each buffer, once it is used.")
 (if view-mode-map
     nil
   (setq view-mode-map (make-keymap))
-  (suppress-keymap view-mode-map)
+  ;; We used to call suppress-keymap here, but that isn't good in a minor mode.
+  ;; Self-inserting characters will beep anyway, since the buffer is read-only,
+  ;; and we should not interfere with letters that serve as useful commands.
   (define-key view-mode-map "q" 'view-exit)
   (define-key view-mode-map "<" 'beginning-of-buffer)
   (define-key view-mode-map ">" 'end-of-buffer)
@@ -261,7 +264,7 @@ This function runs the normal hook `view-mode-hook'.
   (setq goal-column nil)
 
   (run-hooks 'view-mode-hook)
-  (message
+  (message "%s"
      (substitute-command-keys
       "Type \\[help-command] for help, \\[describe-mode] for commands, \\[view-exit] to quit.")))
 
@@ -342,7 +345,8 @@ Arg is number of lines to scroll."
 	(scroll-up lines)))
     (cond ((pos-visible-in-window-p (point-max))
 	   (goto-char (point-max))
-	   (message (substitute-command-keys
+	   (message "%s"
+		    (substitute-command-keys
 		     "End.  Type \\[view-exit] to quit viewing."))))
     (move-to-window-line -1)
     (beginning-of-line)))
@@ -407,7 +411,9 @@ and pushes mark ring.
 The variable `view-highlight-face' controls the face that is used
 for highlighting the match that is found."
   (interactive "p")
-  (View-search-regexp-forward n view-last-regexp))
+  (if view-last-regexp
+      (View-search-regexp-forward n view-last-regexp)
+    (error "No previous View-mode search")))
 
 (defun View-search-last-regexp-backward (n)
   "Search backward from window start for Nth instance of last regexp.
@@ -417,7 +423,9 @@ pushes mark ring.
 The variable `view-highlight-face' controls the face that is used
 for highlighting the match that is found."
   (interactive "p")
-  (View-search-regexp-backward n view-last-regexp))
+  (if view-last-regexp
+      (View-search-regexp-backward n view-last-regexp)
+    (error "No previous View-mode search")))
 
 (defun View-back-to-mark (&optional ignore)
   "Return to last mark set in View mode, else beginning of file.

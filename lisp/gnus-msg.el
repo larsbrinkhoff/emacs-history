@@ -1,4 +1,5 @@
 ;;; gnus-msg.el --- mail and post interface for Gnus
+
 ;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
@@ -18,8 +19,9 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
 
@@ -409,6 +411,7 @@ header line with the old Message-ID."
 	  (set-text-properties (point-min) (point-max) 
 			       nil gnus-article-copy)))))
 
+;;;###autoload
 (defun gnus-post-news (post &optional group header article-buffer yank subject)
   "Begin editing a new USENET news article to be posted.
 Type \\[describe-mode] in the buffer to get a list of commands."
@@ -579,7 +582,7 @@ will attempt to use the foreign server to post the article."
 	   (match-beginning 0)))
 
 	;; Correct newsgroups field: change sequence of spaces to comma and 
-	;; eliminate spaces around commas.  Eliminate imbedded line breaks.
+	;; eliminate spaces around commas.  Eliminate embedded line breaks.
 	(goto-char (point-min))
 	(if (re-search-forward "^Newsgroups: +" nil t)
 	    (save-restriction
@@ -1133,17 +1136,19 @@ Headers in `gnus-required-headers' will be generated."
     ;; Insert new Sender if the From is strange. 
     (let ((from (mail-fetch-field "from"))
 	  (sender (mail-fetch-field "sender")))
-      (if (and from 
+      (if (and from
 	       (not (string=
-		     (downcase (car (gnus-extract-address-components from)))
+		     (downcase
+		      (car (cdr (gnus-extract-address-components from))))
 		     (downcase (gnus-inews-real-user-address))))
 	       (or (null sender)
-		   (not 
+		   (not
 		    (string=
-		     (downcase (car (gnus-extract-address-components sender)))
+		     (downcase
+		      (car (cdr (gnus-extract-address-components sender))))
 		     (downcase (gnus-inews-real-user-address))))))
 	  (progn
-	    (goto-char (point-min))    
+	    (goto-char (point-min))
 	    (and (re-search-forward "^Sender:" nil t)
 		 (progn
 		   (beginning-of-line)
@@ -1352,7 +1357,7 @@ domain is undefined, the domain name is got from it."
 ;; You might for example insert a "." somewhere (not next to another dot
 ;; or string boundary), or modify the newsreader name to "Ding".
 (defun gnus-inews-unique-id ()
-  ;; Dont use microseconds from (current-time), they may be unsupported.
+  ;; Don't use microseconds from (current-time), they may be unsupported.
   ;; Instead we use this randomly inited counter.
   (setq gnus-unique-id-char
 	(% (1+ (or gnus-unique-id-char (logand (random t) (1- (lsh 1 20)))))
@@ -1557,7 +1562,7 @@ mailer."
 		    subject message-of nil gnus-article-copy nil)
 
 	(auto-save-mode auto-save-default)
-	(use-local-map (copy-keymap mail-mode-map))
+	(use-local-map (copy-keymap (current-local-map)))
 	(local-set-key "\C-c\C-c" 'gnus-mail-send-and-exit)
 
 	(if (and follow-to (listp follow-to))

@@ -1,27 +1,31 @@
 ;;; msb.el --- Customizable buffer-selection with multiple menus.
+
 ;; Copyright (C) 1993, 1994, 1995 Lars Lindberg <Lars.Lindberg@sypro.cap.se>
-;;
+
 ;; Author: Lars Lindberg <Lars.Lindberg@sypro.cap.se>
 ;; Created: 8 Oct 1993
 ;; Lindberg's last update version: 3.31
 ;; Keywords: mouse buffer menu 
-;;
-;; This program is free software; you can redistribute it and/or modify
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
-;; (at your option) any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;;
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-;;
+
 ;; Purpose of this package:
 ;;   1. Offer a function for letting the user choose buffer,
 ;;      not necessarily for switching to it.
@@ -222,7 +226,7 @@ Nil means no limit.")
   "*The maximum number of items from different directories.
 
 When the menu is of type `file by directory', this is the maximum
-number of buffers that are clumped togehter from different
+number of buffers that are clumped together from different
 directories.
 
 Set this to 1 if you want one menu per directory instead of clumping
@@ -278,13 +282,13 @@ Set this to nil or t if you don't want any sorting (faster).")
 the groups in msb-menu-cond.")
 
 (defvar msb-menu-cond msb--very-many-menus
-  "*List of criterias for splitting the mouse buffer menu.
+  "*List of criteria for splitting the mouse buffer menu.
 The elements in the list should be of this type:
  (CONDITION MENU-SORT-KEY MENU-TITLE ITEM-HANDLING-FN ITEM-SORT-FN).
 
 When making the split, the buffers are tested one by one against the
 CONDITION, just like a lisp cond: When hitting a true condition, the
-other criterias are *not* tested and the buffer name will appear in
+other criteria are *not* tested and the buffer name will appear in
 the menu with the menu-title corresponding to the true condition.
 
 If the condition returns the symbol `multi', then the buffer will be
@@ -439,7 +443,7 @@ If the argument is left out or nil, then the current buffer is considered."
   (and (> (length (buffer-name buffer)) 0)
        (eq ?\ (aref (buffer-name buffer) 0))))
 
-;; Strip one hierarcy level from the end of PATH.
+;; Strip one hierarchy level from the end of PATH.
 (defun msb--strip-path (path)
   (save-match-data
     (if (string-match "\\(.+\\)/[^/]+$" path)
@@ -659,7 +663,7 @@ If the argument is left out or nil, then the current buffer is considered."
 		     (format
 		      "In msb-menu-cond, error for buffer `%s'."
 		      (buffer-name buffer)))
-	       (error msb--error))))))
+	       (error "%s" msb--error))))))
 
 ;; Return (SORT-KEY TITLE . BUFFER-LIST) or nil if the
 ;; buffer-list is empty.
@@ -814,7 +818,7 @@ If the argument is left out or nil, then the current buffer is considered."
 (defun msb--toggle-menu-type ()
   (interactive)
   (setq msb-files-by-directory (not msb-files-by-directory))
-  (menu-bar-update-buffers t))
+  (menu-bar-update-buffers))
 
 (defun mouse-select-buffer (event)
   "Pop up several menus of buffers, for selection with the mouse.
@@ -840,7 +844,7 @@ variable `msb-menu-cond'."
 	(setq posX (- posX (funcall msb-horizontal-shift-function))
 	      position (list (list posX posY) posWind))))
     ;; This `sit-for' magically makes the menu stay up if the mouse
-    ;; button is released withing 0.1 second.
+    ;; button is released within 0.1 second.
     (sit-for 0 100)
     ;; Popup the menu
     (setq choice (x-popup-menu position msb--last-buffer-menu))
