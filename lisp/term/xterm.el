@@ -123,9 +123,9 @@ for these switches.  Example:
   (let (value)
     (if (not (string= (setq value (x-get-default "bodyfont")) ""))
 	(x-handle-switch-1 "-font"  value))
-    (if (string-match "On" (x-get-default "reversevideo"))
+    (if (string-match "on" (x-get-default "reversevideo"))
 	(x-handle-switch-1 "-r" t))
-    (if (string-match "On" (x-get-default "bitmapicon"))
+    (if (string-match "on" (x-get-default "bitmapicon"))
 	(x-handle-switch-1 "-i" t))
     (if (not (string= (setq value (x-get-default "borderwidth")) ""))
 	(x-handle-switch-1 "-b" value))
@@ -138,7 +138,9 @@ for these switches.  Example:
     (if (not (string= (setq value (x-get-default "cursor")) ""))
 	(x-handle-switch-1 "-cr" value))
     (if (not (string= (setq value (x-get-default "mouse")) ""))
-	(x-handle-switch-1 "-ms" value))))
+	(x-handle-switch-1 "-ms" value))
+    (if (string-match "on" (x-get-default "reversevideo"))
+	(x-handle-switch-1 "-r" t))))
 
 (defun x-new-display (display)
   "This function takes one argument, the display where you wish to

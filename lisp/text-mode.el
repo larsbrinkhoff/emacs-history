@@ -24,6 +24,7 @@
 
 (defvar text-mode-abbrev-table nil
   "Abbrev table used while in text mode.")
+(define-abbrev-table 'text-mode-abbrev-table ())
 
 (if (null text-mode-syntax-table)
     (let ((st (syntax-table)))
@@ -56,7 +57,6 @@ if that value is non-nil."
   (use-local-map text-mode-map)
   (setq mode-name "Text")
   (setq major-mode 'text-mode)
-  (define-abbrev-table 'text-mode-abbrev-table ())
   (setq local-abbrev-table text-mode-abbrev-table)
   (set-syntax-table text-mode-syntax-table)
   (run-hooks 'text-mode-hook))

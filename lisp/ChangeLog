@@ -1,3 +1,23 @@
+Wed Apr 16 19:03:56 1986  Richard M. Stallman  (rms at prep)
+
+	* term/xterm.el (x-get-default-args):
+	Handle `reversevideo' last.  Test switches with "on", not "On",
+	since that is what X uses.
+
+Mon Apr 14 16:47:07 1986  Richard M. Stallman  (rms at prep)
+
+	* compile.el (compile1): Try interrupt-process first
+	when getting rid of old compilation process.
+
+	* text-mode.el: Set up text-mode-abbrev-table at load time
+	since all text-related modes use it.
+
+	* loadup.el: Don't change the major mode.  Leave as fundamental.
+	* startup.el: After init file, use initial-major-mode
+	as major mode to select in *scratch*.
+	This avoids problems when .emacs wants to set variables globally
+	that are local in lisp-interaction-mode.
+
 Sat Apr 12 19:29:26 1986  Richard M. Stallman  (rms at prep)
 
 	* replace.el (perform-replace):

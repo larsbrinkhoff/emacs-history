@@ -56,6 +56,9 @@ remaining command-line args are in the variable `args'.")
 
 (defvar term-setup-hook nil)
 
+(defconst initial-major-mode 'lisp-interaction-mode
+  "Major mode command symbol to use for the initial *scratch* buffer.")
+
 (defun normal-top-level ()
   (if command-line-processed
       (message "Back to top level.")
@@ -100,12 +103,11 @@ remaining command-line args are in the variable `args'.")
 	  left-margin default-left-margin
 	  tab-width default-tab-width
 	  truncate-lines default-truncate-lines)
+    (funcall initial-major-mode)
     ;; Load library for our terminal type.
     ;; User init file can set term-file-prefix to nil to prevent this.
     (and term-file-prefix (not noninteractive)
 	 (load (concat term-file-prefix (getenv "TERM")) t t))
-    (and (eq major-mode 'lisp-interaction-mode)
-	 (run-hooks 'lisp-interaction-mode-hook))
     ;; init file sets inhibit-command-line to prevent normal processing.
     (if (not inhibit-command-line)
 	(command-line-1 args))))

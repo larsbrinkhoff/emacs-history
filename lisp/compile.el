@@ -69,7 +69,10 @@ to find the text that grep hits refer to."
       (if (or (not (eq (process-status compilation-process) 'run))
 	      (yes-or-no-p "A compilation process is running; kill it? "))
 	  (condition-case ()
-			  (delete-process compilation-process)
+	      (progn
+		(interrupt-process compilation-process)
+		(sit-for 1)
+		(delete-process compilation-process))
 	    (error nil))
 	(error "Cannot have two compilation processes")))
   (setq compilation-process nil)

@@ -18,39 +18,39 @@ write_abbrev 320,9318
 
 alloc.c,1049
 DEFUN ("cons", Fcons,148,3671
-DEFUN ("garbage-collect", Fgarbage_collect,685,17889
+DEFUN ("garbage-collect", Fgarbage_collect,685,17888
 DEFUN ("list", Flist,178,4443
 DEFUN ("make-list", Fmake_list,197,4868
-DEFUN ("make-marker", Fmake_marker,359,9127
-DEFUN ("make-string", Fmake_string,433,11208
+DEFUN ("make-marker", Fmake_marker,359,9126
+DEFUN ("make-string", Fmake_string,433,11207
 DEFUN ("make-symbol", Fmake_symbol,296,7475
 DEFUN ("make-vector", Fmake_vector,219,5380
-DEFUN ("purecopy", Fpurecopy,575,15133
+DEFUN ("purecopy", Fpurecopy,575,15132
 DEFUN ("vector", Fvector,247,6248
-build_string 457,11852
-clear_marks 793,20919
+build_string 457,11851
+clear_marks 793,20918
 free_cons 141,3559
-gc_sweep 1068,28405
-init_alloc 1243,32418
-init_alloc_once 1216,31802
+gc_sweep 1068,28404
+init_alloc 1243,32417
+init_alloc_once 1216,31801
 init_cons 131,3304
-init_marker 350,8888
-init_strings 423,10939
+init_marker 350,8887
+init_strings 423,10938
 init_symbol 287,7236
-make_pure_string 526,13986
-make_pure_vector 560,14809
-make_string 446,11646
-make_zero_string 464,11953
+make_pure_string 526,13985
+make_pure_vector 560,14808
+make_string 446,11645
+make_zero_string 464,11952
 malloc_warning 71,1996
 malloc_warning_1 64,1838
-mark_buffer 1025,26486
-mark_object 877,22975
+mark_buffer 1025,26485
+mark_object 877,22974
 memory_full 80,2197
-pure_cons 545,14453
+pure_cons 545,14452
 int pure[PURESIZE / sizeof 56,1639
-char staticvec1[NSTATICS * sizeof 630,16437
-staticpro 639,16652
-syms_of_alloc 1249,32459
+char staticvec1[NSTATICS * sizeof 630,16436
+staticpro 639,16651
+syms_of_alloc 1249,32458
 xmalloc 88,2314
 xrealloc 97,2436
 

@@ -70,7 +70,6 @@
     (Snarf-documentation "DOC"))
 (message "Finding pointers to doc strings...done")
 
-(lisp-interaction-mode)
 (load "site-init" t)
 (garbage-collect)
 

@@ -1,0 +1,286 @@
+
+
+
+
+        1.0  C Pre-Processor
+
+
+
+                                    *******
+                                    * cpp *
+                                    *******
+
+
+
+        NAME:   cpp -- C Pre-Processor
+
+        SYNOPSIS:
+
+                cpp [-options] [infile [outfile]]
+
+        DESCRIPTION:
+
+                CPP reads a C source file, expands  macros  and  include
+                files,  and writes an input file for the C compiler.  If
+                no file arguments are given, CPP reads  from  stdin  and
+                writes  to  stdout.   If  one file argument is given, it
+                will define the input file,  while  two  file  arguments
+                define  both  input and output files.  The file name "-"
+                is a synonym for stdin or stdout as appropriate.
+
+                The following options are  supported.   Options  may  be
+                given in either case.
+
+                -C              If set, source-file comments are written
+                                to  the  output  file.   This allows the
+                                output of CPP to be used as the input to
+                                a  program,  such  as lint, that expects
+                                commands embedded in specially-formatted
+                                comments.
+
+                -Dname=value    Define the name  as  if  the  programmer
+                                wrote
+
+                                    #define name value
+
+                                at the start  of  the  first  file.   If
+                                "=value"  is  not  given, a value of "1"
+                                will be used.
+
+                                On non-unix systems, all alphabetic text
+                                will be forced to upper-case.
+
+                -E              Always return "success" to the operating
+                                system,  even  if  errors were detected.
+                                Note that some fatal errors, such  as  a
+                                missing  #include  file,  will terminate
+                                CPP, returning "failure" even if the  -E
+                                option is given.
+                                                                          Page 2
+        cpp     C Pre-Processor
+
+
+                -Idirectory     Add  this  directory  to  the  list   of
+                                directories  searched for #include "..."
+                                and #include <...> commands.  Note  that
+                                there  is  no space between the "-I" and
+                                the directory string.  More than one  -I
+                                command   is   permitted.   On  non-Unix
+                                systems   "directory"   is   forced   to
+                                upper-case.
+
+                -N              CPP  normally  predefines  some  symbols
+                                defining   the   target   computer   and
+                                operating system.  If -N  is  specified,
+                                no symbols will be predefined.  If -N -N
+                                is  specified,  the   "always   present"
+                                symbols,    __LINE__,    __FILE__,   and
+                                __DATE__ are not defined.
+
+                -Stext          CPP normally assumes that  the  size  of
+                                the  target  computer's  basic  variable
+                                types is the same as the size  of  these
+                                types  of  the host computer.  (This can
+                                be  overridden  when  CPP  is  compiled,
+                                however.)  The  -S option allows dynamic
+                                respecification of these values.  "text"
+                                is  a  string  of  numbers, separated by
+                                commas, that  specifies  correct  sizes.
+                                The sizes must be specified in the exact
+                                order:
+
+                                    char short int long float double
+
+                                If you specify the option as  "-S*text",
+                                pointers   to   these   types   will  be
+                                specified.   -S*  takes  one  additional
+                                argument  for  pointer to function (e.g.
+                                int (*)())
+
+                                For   example,    to    specify    sizes
+                                appropriate  for  a  PDP-11,  you  would
+                                write:
+
+                                       c s i l f d func
+                                     -S1,2,2,2,4,8,
+                                    -S*2,2,2,2,2,2,2
+
+                                Note that all values must be specified.
+
+                -Uname          Undefine the name as if
+
+                                    #undef name
+
+                                were given.  On non-Unix systems, "name"
+                                will be forced to upper-case.
+                                                                          Page 3
+        cpp     C Pre-Processor
+
+
+                -Xnumber        Enable debugging code.  If no  value  is
+                                given,  a value of 1 will be used.  (For
+                                maintenence of CPP only.)
+
+
+        PRE-DEFINED VARIABLES:
+
+                When CPP begins processing, the following variables will
+                have been defined (unless the -N option is specified):
+
+                Target computer (as appropriate):
+
+                    pdp11, vax, M68000 m68000 m68k
+
+                Target operating system (as appropriate):
+
+                    rsx, rt11, vms, unix
+
+                Target compiler (as appropriate):
+
+                    decus, vax11c
+
+                The implementor may add definitions to this  list.   The
+                default  definitions  match  the  definition of the host
+                computer, operating system, and C compiler.
+
+                The following are always available unless undefined  (or
+                -N was specified twice):
+
+                    __FILE__    The  input  (or  #include)  file   being
+                                compiled (as a quoted string).
+
+                    __LINE__    The line number being compiled.
+
+                    __DATE__    The date and time of  compilation  as  a
+                                Unix  ctime  quoted string (the trailing
+                                newline is removed).  Thus,
+
+                                    printf("Bug at line %s,", __LINE__);
+                                    printf(" source file %s", __FILE__);
+                                    printf(" compiled on %s", __DATE__);
+
+
+        DRAFT PROPOSED ANSI STANDARD CONSIDERATIONS:
+
+                The current  version  of  the  Draft  Proposed  Standard
+                explicitly  states  that  "readers  are requested not to
+                specify or claim conformance to this draft." Readers and
+                users  of  Decus  CPP  should  not assume that Decus CPP
+                conforms to the standard, or that it will conform to the
+                actual C Language Standard.
+
+                When CPP is itself compiled, many features of the  Draft
+                Proposed  Standard  that  are incompatible with existing
+                                                                          Page 4
+        cpp     C Pre-Processor
+
+
+                preprocessors may be  disabled.   See  the  comments  in
+                CPP's source for details.
+
+                The latest version of the Draft  Proposed  Standard  (as
+                reflected in Decus CPP) is dated November 12, 1984.
+
+                Comments are removed from the input text.   The  comment
+                is  replaced by a single space character.  The -C option
+                preserves comments, writing them to the output file.
+
+                The '$' character is considered to be a letter.  This is
+                a permitted extension.
+
+                The following new features of C are processed by CPP:
+
+                    #elif expression (#else #if)
+                    '\xNNN' (Hexadecimal constant)
+                    '\a' (Ascii BELL)
+                    '\v' (Ascii Vertical Tab)
+                    #if defined NAME 1 if defined, 0 if not
+                    #if defined (NAME) 1 if defined, 0 if not
+                    #if sizeof (basic type)
+                    unary +
+                    123U, 123LU Unsigned ints and longs.
+                    12.3L Long double numbers
+                    token#token Token concatenation
+                    #include token Expands to filename
+
+                The Draft Proposed Standard has  extended  C,  adding  a
+                constant string concatenation operator, where
+
+                    "foo" "bar"
+
+                is regarded as the single string "foobar".   (This  does
+                not  affect  CPP's  processing but does permit a limited
+                form of macro argument substitution into strings as will
+                be discussed.)
+
+                The Standard Committee plans to add token  concatenation
+                to  #define command lines.  One suggested implementation
+                is as follows:  the sequence "Token1#Token2" is  treated
+                as  if  the programmer wrote "Token1Token2".  This could
+                be used as follows:
+
+                    #line 123
+                    #define ATLINE foo#__LINE__
+
+                ATLINE would be defined as foo123.
+
+                Note that "Token2" must either have  the  format  of  an
+                identifier or be a string of digits.  Thus, the string
+
+                    #define ATLINE foo#1x3
+                                                                          Page 5
+        cpp     C Pre-Processor
+
+
+                generates two tokens:  "foo1" and "x3".
+
+                If the tokens T1 and T2 are concatenated into  T3,  this
+                implementation operates as follows:
+
+                  1. Expand T1 if it is a macro.
+                  2. Expand T2 if it is a macro.
+                  3. Join the tokens, forming T3.
+                  4. Expand T3 if it is a macro.
+
+                A macro formal parameter  will  be  substituted  into  a
+                string or character constant if it is the only component
+                of that constant:
+
+                    #define VECSIZE 123
+                    #define vprint(name, size) \
+                      printf("name" "[" "size" "] = {\n")
+                      ... vprint(vector, VECSIZE);
+
+                expands (effectively) to
+
+                      vprint("vector[123] = {\n");
+
+                Note that  this  will  be  useful  if  your  C  compiler
+                supports  the  new  string concatenation operation noted
+                above.  As implemented here, if you write
+
+                    #define string(arg) "arg"
+                      ... string("foo") ...
+
+                This implementation generates  "foo",  rather  than  the
+                strictly  correct  ""foo"" (which will probably generate
+                an error message).  This is, strictly speaking, an error
+                in CPP and may be removed from future releases.
+
+        ERROR MESSAGES:
+
+                Many.  CPP prints warning or error messages if  you  try
+                to     use     multiple-byte     character     constants
+                (non-transportable) if you #undef a symbol that was  not
+                defined,  or  if  your  program  has  potentially nested
+                comments.
+
+        AUTHOR:
+
+                Martin Minow
+
+        BUGS:
+
+                The #if expression processor uses signed integers  only.
+                I.e, #if 0xFFFFu < 0 may be TRUE.
+

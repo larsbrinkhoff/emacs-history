@@ -60,6 +60,11 @@ int pure[PURESIZE / sizeof (int)] = {0,};   /* Force it into data space! */
 /* Index in pure at which next pure object will be allocated. */
 int pureptr;
 
+/* Nonzero => malloc has warned us during GC about running out of space,
+   and this is the C string it warned us with.  */
+
+char *malloc_warn_string;
+
 Lisp_Object
 malloc_warning_1 (str)
      Lisp_Object str;
@@ -72,6 +77,12 @@ malloc_warning (str)
      char *str;
 {
   Lisp_Object val;
+
+  if (gc_in_progress)
+    {
+      malloc_warn_string = str;
+      return;
+    }
   val = build_string (str);
   internal_with_output_to_temp_buffer (" *Danger*", malloc_warning_1, val);
 }
@@ -777,7 +788,14 @@ gc-cons-threshold  bytes of Lisp data since previous garbage collection.")
     message1 (omessage);
   else if (!noninteractive)
     message1 ("Garbage collecting...done");
-  
+
+  /* If a warning came in during GC and was buffered, show it now.  */
+  if (malloc_warn_string)
+    {
+      malloc_warning (malloc_warn_string);
+      malloc_warn_string = 0;
+    }
+
   return Fcons (Fcons (make_number (total_conses),
 		       make_number (total_free_conses)),
 		Fcons (Fcons (make_number (total_symbols),

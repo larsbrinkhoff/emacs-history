@@ -1,0 +1,291 @@
+.lm 8.rm 72.nhy
+
+.no autosubtitle .style headers 3,0,0
+.pg.uc.ps 58,80.lm 8.rm 72
+.hd
+.hd mixed
+.head mixed
+
+.st ########cpp#####C Pre-Processor
+.pg
+.hl 1 ^&C Pre-Processor\&
+.s 2
+.c ;*******
+.c ;* cpp *
+.c ;*******
+.s 2
+.lm +8
+.s.i -8;NAME:	cpp -- C Pre-Processor
+.s.f
+.i -8;SYNOPSIS:
+.s.nf
+cpp [-options] [infile [outfile]]
+.s.f
+.i -8;DESCRIPTION:
+.s
+CPP reads a C source file, expands macros and include
+files, and writes an input file for the C compiler.
+If no file arguments are given, CPP reads from stdin
+and writes to stdout.  If one file argument is given,
+it will define the input file, while two file arguments
+define both input and output files.  The file name "-"
+is a synonym for stdin or stdout as appropriate.
+.s
+The following options are supported.  Options may
+be given in either case.
+.lm +16
+.p -16
+-C		If set, source-file comments are written
+to the output file.  This allows the output of CPP to be
+used as the input to a program, such as lint, that expects
+commands embedded in specially-formatted comments.
+.p -16
+-Dname=value	Define the name as if the programmer wrote
+.s
+.nf
+    _#define name value
+.s
+.fill
+at the start of the first file.  If "=value" is not
+given, a value of "1" will be used.
+.s
+On non-unix systems, all alphabetic text will be forced
+to upper-case.
+.p -16
+-E		Always return "success" to the operating
+system, even if errors were detected.  Note that some fatal
+errors, such as a missing _#include file, will terminate
+CPP, returning "failure" even if the -E option is given.
+.p -16
+-Idirectory	Add this directory to the list of
+directories searched for _#include "..." and _#include <...>
+commands.  Note that there is no space between the
+"-I" and the directory string.  More than one -I command
+is permitted.  On non-Unix systems "directory" is forced
+to upper-case.
+.p -16
+-N		CPP normally predefines some symbols defining
+the target computer and operating system.  If -N is specified,
+no symbols will be predefined.  If -N -N is specified, the
+"always present" symbols, ____LINE____, ____FILE____, and ____DATE____
+are not defined.
+.p -16
+-Stext		CPP normally assumes that the size of
+the target computer's basic variable types is the same as the size
+of these types of the host computer.  (This can be overridden
+when CPP is compiled, however.)  The -S option allows dynamic
+respecification of these values.  "text" is a string of
+numbers, separated by commas, that specifies correct sizes.
+The sizes must be specified in the exact order:
+.s
+.nf
+    char short int long float double
+.s
+.fill
+If you specify the option as "-S*text", pointers to these
+types will be specified.  -S* takes one additional argument
+for pointer to function (e.g. int (*)())
+.s
+For example, to specify sizes appropriate for a PDP-11,
+you would write:
+.s
+.nf
+       c s i l f d func
+     -S1,2,2,2,4,8,
+    -S*2,2,2,2,2,2,2
+.s
+.fill
+Note that all values must be specified.
+.p -16
+-Uname		Undefine the name as if
+.s
+.nf
+    _#undef name
+.s
+.fill
+were given.  On non-Unix systems, "name" will be forced to
+upper-case.
+.p -16
+-Xnumber	Enable debugging code.  If no value is
+given, a value of 1 will be used.  (For maintenence of
+CPP only.)
+.s.lm -16
+.s
+.i -8;PRE-DEFINED VARIABLES:
+.s
+When CPP begins processing, the following variables will
+have been defined (unless the -N option is specified):
+.s
+Target computer (as appropriate):
+.s
+.nf
+    pdp11, vax, M68000 m68000 m68k
+.fill
+.s
+Target operating system (as appropriate):
+.s
+.nf
+    rsx, rt11, vms, unix
+.fill
+.s
+Target compiler (as appropriate):
+.s
+.nf
+    decus, vax11c
+.fill
+.s
+The implementor may add definitions to this list.
+The default definitions match the definition of the
+host computer, operating system, and C compiler.
+.s
+The following are always available unless undefined (or
+-N was specified twice):
+.lm +16
+.p -12
+____FILE____	The input (or _#include) file being compiled
+(as a quoted string).
+.p -12
+____LINE____	The line number being compiled.
+.p -12
+____DATE____	The date and time of compilation as
+a Unix ctime quoted string (the trailing newline is removed).
+Thus,
+.s
+.nf
+    printf("Bug at line _%s,", ____LINE____);
+    printf(" source file _%s", ____FILE____);
+    printf(" compiled on _%s", ____DATE____);
+.fill
+.s.lm -16
+.s
+.i -8;DRAFT PROPOSED ANSI STANDARD CONSIDERATIONS:
+.s
+The current version of the Draft Proposed Standard
+explicitly states that "readers are requested not to specify
+or claim conformance to this draft."  Readers and users
+of Decus CPP should not assume that Decus CPP conforms
+to the standard, or that it will conform to the actual
+C Language Standard.
+.s
+When CPP is itself compiled, many features of the Draft
+Proposed Standard that are incompatible with existing
+preprocessors may be disabled.  See the comments in CPP's
+source for details.
+.s
+The latest version of the Draft Proposed Standard (as reflected
+in Decus CPP) is dated November 12, 1984.
+.s
+Comments are removed from the input text.  The comment
+is replaced by a single space character.  The -C option
+preserves comments, writing them to the output file.
+.s
+The '$' character is considered to be a letter.  This is
+a permitted extension.
+.s
+The following new features of C are processed by CPP:
+.s.comment Note: significant spaces, not tabs, .br quotes #if, #elif
+.br;####_#elif expression    (_#else _#if)
+.br;####'_\xNNN'             (Hexadecimal constant)
+.br;####'_\a'                (Ascii BELL)
+.br;####'_\v'                (Ascii Vertical Tab)
+.br;####_#if defined NAME    1 if defined, 0 if not
+.br;####_#if defined (NAME)  1 if defined, 0 if not
+.br;####_#if sizeof (basic type)
+.br;####unary +
+.br;####123U, 123LU          Unsigned ints and longs.
+.br;####12.3L                Long double numbers
+.br;####token_#token         Token concatenation
+.br;####_#include token      Expands to filename
+.s
+The Draft Proposed Standard has extended C, adding a constant
+string concatenation operator, where
+.s
+.nf
+    "foo" "bar"
+.s
+.fill
+is regarded as the single string "foobar".  (This does not
+affect CPP's processing but does permit a limited form of
+macro argument substitution into strings as will be discussed.)
+.s
+The Standard Committee plans to add token concatenation
+to _#define command lines.  One suggested implementation
+is as follows:  the sequence "Token1_#Token2" is treated
+as if the programmer wrote "Token1Token2".  This could
+be used as follows:
+.s
+.nf
+    _#line 123
+    _#define ATLINE foo_#____LINE____
+.s
+.fill
+ATLINE would be defined as foo123.
+.s
+Note that "Token2" must either have the format of an
+identifier or be a string of digits.  Thus, the string
+.s
+.nf
+    _#define ATLINE foo_#1x3
+.s
+.fill
+generates two tokens: "foo1" and "x3".
+.s
+If the tokens T1 and T2 are concatenated into T3,
+this implementation operates as follows:
+.s
+.nf
+  1. Expand T1 if it is a macro.
+  2. Expand T2 if it is a macro.
+  3. Join the tokens, forming T3.
+  4. Expand T3 if it is a macro.
+.s
+.fill
+A macro formal parameter will be substituted into a string
+or character constant if it is the only component of that
+constant:
+.s
+.nf
+    _#define VECSIZE 123
+    _#define vprint(name, size) _\
+      printf("name" "[" "size" "] = {_\n")
+      ... vprint(vector, VECSIZE);
+.s
+.fill
+expands (effectively) to
+.s
+.nf
+      vprint("vector[123] = {_\n");
+.s
+.fill
+Note that this will be useful if your C compiler supports
+the new string concatenation operation noted above.
+As implemented here, if you write
+.s
+.nf
+    _#define string(arg) "arg"
+      ... string("foo") ...
+.s
+.fill
+This implementation generates "foo", rather than the strictly
+correct ""foo"" (which will probably generate an error message).
+This is, strictly speaking, an error in CPP and may be removed
+from future releases.
+.s
+.i -8;ERROR MESSAGES:
+.s
+Many.  CPP prints warning or error messages if you try to
+use multiple-byte character constants (non-transportable)
+if you _#undef a symbol that was not defined, or if your
+program has potentially nested comments.
+.s
+.i -8;AUTHOR:
+.s
+Martin Minow
+.s
+.i -8;BUGS:
+.s
+The _#if expression processor uses signed integers only.
+I.e, _#if 0xFFFFu < 0 may be TRUE.
+.s
+.lm 8.rm 72.nhy
+

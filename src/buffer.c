@@ -466,7 +466,7 @@ Fdelete_buffer_internal (buf)
 
 #ifdef CLASH_DETECTION
   /* Unlock this buffer's file, if it is locked.  */
-  Funlock_buffer ();
+  unlock_buffer (b);
 #endif /* CLASH_DETECTION */
 
   /* make this buffer not be current */

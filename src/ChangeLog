@@ -1,3 +1,15 @@
+Thu Apr 17 23:44:13 1986  Richard M. Stallman  (rms at prep)
+
+	* filelock.c (unlock_buffer): New function to unlock
+	a specified buffer.  Use in Fdelete_buffer_internal
+	to avoid lossage if buffer being killed is not current.
+
+Mon Apr 14 19:00:38 1986  Richard M. Stallman  (rms at prep)
+
+	* alloc.c (malloc_warning, Fgarbage_collect):
+	If malloc_warning is called during GC, just save warning
+	in malloc_warn_string.  Try again to warn when GC ends.
+
 Sat Apr 12 19:41:43 1986  Richard M. Stallman  (rms at prep)
 
 	* m-celerity.h: Remove spurious effectless #define BSTRINGS

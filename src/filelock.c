@@ -265,6 +265,17 @@ if it should normally be locked.")
   return Qnil;
 }
 
+/* Unlock the file visited in buffer BUFFER.  */
+
+unlock_buffer (buffer)
+     struct buffer *buffer;
+{
+  bf_cur->text.modified = bf_modified;
+  if (buffer->save_modified < buffer->text.modified
+      && !NULL (buffer->filename))
+    unlock_file (buffer->filename);
+}
+
 syms_of_filelock ()
 {
   defsubr (&Sunlock_buffer);

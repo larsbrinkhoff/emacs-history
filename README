@@ -3,9 +3,14 @@ This directory holds the latest distribution version of GNU Emacs.
  `lisp' holds the Lisp code for the editing commands,
  `etc' holds various associated documentation files
     and programs that Emacs runs,
-   See etc/DEBUG for info on how to debug.
  `info' holds the Info documentation tree.
  `man' holds the source of the Emacs manual.
+ `dbx' holds a version of dbx that can debug GNU Emacs.
+   It runs only on Vaxes.
+   See etc/DEBUG for info on how to debug.
+ `cpp' holds a C preprocessor for use instead of the installed one
+   when the installed one fails to distinguish more than 8 characters
+   in a symbol name.
  `shortnames' holds programs and data files for creating files of #define's
    used to convert long symbol names to distinct short ones
    for C compiles that cannot distinguish more than 8 characters.

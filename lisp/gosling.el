@@ -1,8 +1,5 @@
-;;; untested file to set unipress-like key bindings.  from netnews.
-
 (defun set-unipress-bindings ()
   (interactive)
-; (global-set-key "\^c"    'save-buffers-kill-emacs)
   (global-set-key "\^x\^e" 'compile)
   (global-set-key "\^x\^f" 'save-buffers-kill-emacs)
   (global-set-key "\^X\^I" 'insert-file)
@@ -33,7 +30,6 @@
 
 (defun set-gnu-bindings ()
   (interactive)
-  (global-set-key "\^c"    'exit-recursive-edit)
   (global-set-key "\^x\^e" 'eval-last-sexp)
   (global-set-key "\^x\^f" 'find-file)
   (global-set-key "\^X\^I" 'indent-rigidly)
