@@ -1102,7 +1102,7 @@ command_loop_1 ()
 		  SET_PT (PT - 1);
 		  lose = FETCH_CHAR (PT);
 		  if ((dp
-		       ? (XTYPE (DISP_CHAR_VECTOR (dp, lose)) != Lisp_Vector
+		       ? (VECTORP (DISP_CHAR_VECTOR (dp, lose))
 			  && XVECTOR (DISP_CHAR_VECTOR (dp, lose))->size == 1)
 		       : (lose >= 0x20 && lose < 0x7f))
 		      && (XFASTINT (XWINDOW (selected_window)->last_modified)
@@ -2357,7 +2357,7 @@ static char *lispy_function_keys[] =
     "help",
     "break",			/* 0xff6b */
 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, "backtab", 0,
     0,				/* 0xff76 */
     0, 0, 0, 0, 0, 0, 0, 0, "kp-numlock",	/* 0xff7f */
     "kp-space",			/* 0xff80 */	/* IsKeypadKey */
@@ -2370,8 +2370,19 @@ static char *lispy_function_keys[] =
     "kp-f2",
     "kp-f3",
     "kp-f4",
-    0,		/* 0xff95 */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    "kp-home",			/* 0xff95 */
+    "kp-left",
+    "kp-up",
+    "kp-right",
+    "kp-down",
+    "kp-prior",			/* kp-page-up */
+    "kp-next",			/* kp-page-down */
+    "kp-end",
+    "kp-begin",
+    "kp-insert",
+    "kp-delete",
+    0,				/* 0xffa0 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
     "kp-multiply",		/* 0xffaa */
     "kp-add",
     "kp-separator",
@@ -3747,7 +3758,7 @@ menu_bar_one_keymap (keymap)
 		menu_bar_item (key, item_string, Fcdr (binding));
 	    }
 	  else if (EQ (binding, Qundefined))
-	    menu_bar_item (key, item_string, binding);
+	    menu_bar_item (key, Qnil, binding);
 	}
       else if (XTYPE (item) == Lisp_Vector)
 	{
@@ -3766,7 +3777,7 @@ menu_bar_one_keymap (keymap)
 		    menu_bar_item (key, item_string, Fcdr (binding));
 		}
 	      else if (EQ (binding, Qundefined))
-		menu_bar_item (key, item_string, binding);
+		menu_bar_item (key, Qnil, binding);
 	    }
 	}
     }
@@ -3807,6 +3818,10 @@ menu_bar_item (key, item_string, def)
 	    menu_bar_items_index -= 3;
 	    return;
 	  }
+
+      /* If there's no definition for this key yet,
+	 just ignore `undefined'.  */
+      return;
     }
 
   /* See if this entry is enabled.  */
@@ -3962,7 +3977,7 @@ read_char_minibuf_menu_prompt (commandflag, nmaps, maps)
   int width = FRAME_WIDTH (selected_frame) - 4;
   char *menu = (char *) alloca (width + 4);
   int idx = -1;
-  int nobindings ;
+  int nobindings = 1;
   Lisp_Object rest, vector;
 
   if (! menu_prompting)

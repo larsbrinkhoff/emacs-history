@@ -670,6 +670,7 @@ frame doesn't appear until you de-iconify it.
 
 @node Resources X
 @appendixsec X Resources
+@cindex resources
 
   Programs running under the X Window System organize their user options
 under a hierarchy of classes and resources.  You can specify default

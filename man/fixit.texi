@@ -152,6 +152,9 @@ case-convert it and go on typing.  @xref{Case}.@refill
   This section describes the commands to check the spelling of a single
 word or of a portion of a buffer.  These commands work with the spelling
 checker program Ispell, which is not part of Emacs.
+@ifinfo
+@xref{Top, Ispell, Overview ispell, The Ispell Manual}.
+@end ifinfo
 
 @table @kbd
 @item M-$
@@ -160,13 +163,9 @@ Check and correct spelling of word at point (@code{ispell-word}).
 Check and correct spelling of each word in the buffer.
 @item M-x ispell-region
 Check and correct spelling of each word in the region.
-@item M-x ispell-string @key{RET} @var{word} @key{RET}
-Check spelling of @var{word}.
 @item M-x ispell-complete-word
 Complete the word before point based on the spelling dictionary.
-@item M-x reload-ispell
-Make the Ispell subprocess reread your private dictionary.
-@item M-x kill-ispell
+@item M-x ispell-kill-ispell
 Kill the Ispell subprocess.
 @end table
 
@@ -195,6 +194,10 @@ here.
 @item r @var{new} @key{RET}
 Replace the word (just this time) with @var{new}.
 
+@item R @var{new} @key{RET}
+Replace the word with @var{new}, and do a @code{query-replace} so you
+can replace it elsewhere in the buffer if you wish.
+
 @item @var{digit}
 Replace the word (just this time) with one of the displayed
 near-misses.  Each near-miss is listed with a digit; type that digit to
@@ -204,28 +207,46 @@ select it.
 Accept the incorrect word---treat it as correct, but only in this
 editing session.
 
+@item A
+Accept the incorrect word---treat it as correct, but only in this
+editing session and for this buffer.
+
 @item i
 Insert this word in your private dictionary file so that Ispell will
 consider it correct it from now on, even in future sessions.
 
-@item l @var{regexp} @key{RET}
-Look in the dictionary for words that match @var{regexp}.  These words
+@item m
+Like @kbd{i}, but you can also specify dictionary completion
+information.
+
+@item l @var{word} @key{RET}
+Look in the dictionary for words that match @var{word}.  These words
 become the new list of ``near-misses''; you can select one of them to
-replace with by typing a digit.
+replace with by typing a digit.  You can use @samp{*} in @var{word} as a
+wildcard.
 
 @item C-g
 Quit interactive spell checking.  You can restart it again afterward
 with @kbd{C-u M-$}.
+
+@item X
+Same as @kbd{C-g}.
+
+@item C-z
+This key has its normal command meaning (suspend Emacs or iconify this
+frame).
 @end table
 
 @findex ispell-complete-word
   The command @code{ispell-complete-word}, which is bound to the key
-@kbd{M-@key{TAB}} in Text mode and related modes, performs completion
-based on spelling correction.  Insert the beginning of a word, and then
-type @kbd{M-@key{TAB}}; the command inserts as many more letters as can
-be uniquely determined from the letters in the buffer, based on your
-currently loaded dictionaries.  @xref{Text Mode}.
+@kbd{M-@key{TAB}} in Text mode and related modes, shows a list of
+completions based on spelling correction.  Insert the beginning of a
+word, and then type @kbd{M-@key{TAB}}; the command displays a completion
+list window.  To choose one of the completions listed, click
+@kbd{Mouse-2} on it, or move the cursor there in the completions window
+and type @key{RET}.  @xref{Text Mode}.
 
+@ignore
 @findex reload-ispell
   The first time you use any of the spell checking commands, it starts
 an Ispell subprocess.  The first thing the subprocess does is read your
@@ -234,11 +255,12 @@ Words that you ``insert'' with the @kbd{i} command are added to that
 file, but not right away---only at the end of the interactive
 replacement procedure.  Use the @kbd{M-x reload-ispell} command to
 reload your private dictionary if you edit the file outside of Ispell.
+@end ignore
 
 @cindex @code{ispell} program
-@findex kill-ispell
+@findex ispell-kill-ispell
   Once started, the Ispell subprocess continues to run (waiting for
 something to do), so that subsequent spell checking commands complete
 more quickly.  If you want to get rid of the Ispell process, use
-@kbd{M-x kill-ispell}.  This is not usually necessary, since the process
-uses no time except when you do spelling correction.
+@kbd{M-x ispell-kill-ispell}.  This is not usually necessary, since the
+process uses no time except when you do spelling correction.

@@ -168,15 +168,22 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 	      (while (stringp (car-safe defn))
 		(setq skipped (cons (car defn) skipped))
 		(setq defn (cdr defn)))
+	      ;; Skip past cached key-equivalence data for menu items.
+	      (and (consp defn) (consp (car defn))
+		   (setq defn (cdr defn)))
 	      (setq inner-def defn)
+	      ;; Look past a symbol that names a keymap.
 	      (while (and (symbolp inner-def)
 			  (fboundp inner-def))
 		(setq inner-def (symbol-function inner-def)))
 	      (if (eq defn olddef)
 		  (define-key keymap prefix1 (nconc (nreverse skipped) newdef))
+		;; Avoid recursively rescanning a keymap being scanned.
 		(if (and (keymapp defn)
 			 (not (memq inner-def
 				    key-substitution-in-progress)))
+		    ;; If this one isn't being scanned already,
+		    ;; scan it now.
 		    (substitute-key-definition olddef newdef keymap
 					       inner-def
 					       prefix1)))))
@@ -195,6 +202,8 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 		    (while (stringp (car-safe defn))
 		      (setq skipped (cons (car defn) skipped))
 		      (setq defn (cdr defn)))
+		    (and (consp defn) (consp (car defn))
+			 (setq defn (cdr defn)))
 		    (setq inner-def defn)
 		    (while (and (symbolp inner-def)
 				(fboundp inner-def))
@@ -411,17 +420,27 @@ POSITION should be a list of the form
 as returned by the `event-start' and `event-end' functions."
   (nth 2 position))
 
-(defsubst posn-col-row (position)
+(defun posn-col-row (position)
   "Return the row and column in POSITION, measured in characters.
 POSITION should be a list of the form
    (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
-as returned by the `event-start' and `event-end' functions."
-  (let* ((pair (nth 2 position))
-	 (window (posn-window position))
-	 (frame (if (framep window) window (window-frame window)))
-	 (x (/ (car pair) (frame-char-width frame)))
-	 (y (/ (cdr pair) (frame-char-height frame))))
-    (cons x y)))
+as returned by the `event-start' and `event-end' functions.
+For a scroll-bar event, the result column is 0, and the row
+corresponds to the vertical position of the click in the scroll bar."
+  (let ((pair   (nth 2 position))
+	(window (posn-window position)))
+    (if (eq (if (symbolp (nth 1 position)) (nth 1 position)
+	      (car (nth 1 position)))
+	    'vertical-scroll-bar)
+	(cons 0 (scroll-bar-scale pair (1- (window-height window))))
+      (if (eq (if (symbolp (nth 1 position)) (nth 1 position)
+		(car (nth 1 position)))
+	      'horizontal-scroll-bar)
+	  (cons (scroll-bar-scale pair (window-width window)) 0)
+	(let* ((frame (if (framep window) window (window-frame window)))
+	       (x (/ (car pair) (frame-char-width frame)))
+	       (y (/ (cdr pair) (frame-char-height frame))))
+	  (cons x y))))))
 
 (defsubst posn-timestamp (position)
   "Return the timestamp of POSITION.

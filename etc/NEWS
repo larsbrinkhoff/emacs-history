@@ -5,7 +5,40 @@ See the end for copying conditions.
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.
 
+Changes in Emacs 19.24
+
+Here is a list of new Lisp packages introduced since 19.22.
+
+derived.el		Define new major modes based on old ones.
+dired-x.el		Extra Dired features.
+double.el		New mode for conveniently inputting non-beyond chars.
+easymenu.el		Create menus easily.
+ediff.el		Snazzy diff interface.
+foldout.el		A kind of outline mode designed for editing programs.
+gnus-uu.el		UUdecode in GNUS buffers.
+ielm.el			Interactively evaluate Lisp.
+iso-cvt.el		Conversion of beyond-ASCII characters between
+			 various different representations.
+jka-compr.el		Automatic compression/decompression.
+mldrag.el		Drag modeline to change heights of windows.
+mail-hist.el		Provides history for headers of outgoing mail.
+rsz-mini.el		Automatically resizing minibuffers.
+			 This is a replacement for Lisp Interaction Mode.
+s-region.el		Set region by holding shift.
+skeleton.el		Templates for statement insertion.
+soundex.el		Classifying words by how they sound.
+tempo.el		Template insertion with hotspots.
+
 User Editing Changes in 19.23.
+
+* Emacs 19.23 uses Ispell version 3.
+
+Previous Emacs 19 versions used Ispell version 4.  That version had
+improvements in storing the dictionary compactly, but these are not
+very important nowadays.  Meanwhile, in parallel to the work on Ispell
+4, many useful features were added to Ispell 3.  Until a few months
+ago, the terms on Ispell 3 did not let us use it; but they have now
+been changed, so now we are using it.  We are dropping Ispell 4.
 
 * Emacs 19.23 can run on MS-DOG.  See the file MSDOS in the same
 directory as this file.
@@ -82,12 +115,12 @@ auto-save (as has been possible in Emacs 19).
 
 * C-x r d now runs the command delete-rectangle.
 
-* The new command imenu-choose-buffer-index shows you a menu of
-interesting places in the current buffer and lets you select one; then
-it moves point there.  The definition of interesting places depends on
-the major mode, but typically this includes function definitions and
-such.  Normally, imenu displays the menu in a buffer; but if you bind
-it to a mouse event, it shows a mouse popup menu.
+* The new command imenu shows you a menu of interesting places in the
+current buffer and lets you select one; then it moves point there.
+The definition of interesting places depends on the major mode, but
+typically this includes function definitions and such.  Normally,
+imenu displays the menu in a buffer; but if you bind it to a mouse
+event, it shows a mouse popup menu.
 
 * You can make certain chosen buffers, that normally appear in a
 separate window, appear in special frames of their own.  To do this,

@@ -74,12 +74,18 @@ SHELL=/bin/sh
 /* On some systems we may not be able to use the system make command. */
 #ifdef MAKE_COMMAND
 MAKE = MAKE_COMMAND
-#else
-MAKE=make
 #endif
 
 #ifdef C_COMPILER
 CC = C_COMPILER
+#endif
+
+/* GNU libc requires ORDINARY_LINK so that its own crt0 is used.
+   Linux is an exception because it uses a funny variant of GNU libc.  */
+#ifdef __GNU_LIBRARY__
+#ifndef LINUX
+#define ORDINARY_LINK
+#endif
 #endif
 
 /* Some machines don't find the standard C libraries in the usual place.  */
@@ -309,7 +315,7 @@ LIBW= -lXol
 LIBXTR6 = -lSM -lICE
 #endif
 
-LIBXT= $(LIBW) -lXt $(LIBXTR6) -lXmu -lXext
+LIBXT= $(LIBW) -lXmu -lXt $(LIBXTR6) -lXext
 #else
 LIBXT=
 #endif
@@ -395,7 +401,7 @@ LD=ld
 #endif /* not COFF_ENCAPSULATE */
 #endif /* not ORDINARY_LINK */
 
-ALL_LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE LD_SWITCH_SITE
+ALL_LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE LD_SWITCH_SITE $(LDFLAGS)
 
 /* A macro which other sections of ymakefile can redefine to munge the
    flags before they're passed to LD.  This is helpful if you have
@@ -501,7 +507,8 @@ otherobj= $(termcapobj) lastfile.o $(mallocobj) $(allocaobj) $(widgetobj)
 #endif
 
 #ifdef MULTI_FRAME
-#define FRAME_SUPPORT ${lispdir}frame.elc ${lispdir}mouse.elc ${lispdir}select.elc ${lispdir}scroll-bar.elc
+#define FRAME_SUPPORT ${lispdir}frame.elc ${lispdir}menu-bar.elc \
+  ${lispdir}mouse.elc ${lispdir}select.elc ${lispdir}scroll-bar.elc
 #else
 #define FRAME_SUPPORT
 #endif
@@ -516,6 +523,12 @@ otherobj= $(termcapobj) lastfile.o $(mallocobj) $(allocaobj) $(widgetobj)
 #define VMS_SUPPORT ${lispdir}vmsproc.elc ${lispdir}vms-patch
 #else
 #define VMS_SUPPORT
+#endif
+
+#ifdef MSDOS
+#define MSDOS_SUPPORT ${lispdir}ls-lisp.elc ${lispdir}disp-tab.elc ${lispdir}dos-fns.elc ${lispdir}mouse.elc
+#else
+#define MSDOS_SUPPORT
 #endif
 
 /* List of Lisp files loaded into the dumped Emacs.  It's arranged
@@ -553,6 +566,7 @@ lisp= \
 	${lispdir}text-mode.elc \
 	${lispdir}vc-hooks.elc \
 	VMS_SUPPORT \
+	MSDOS_SUPPORT \
 	${lispdir}window.elc \
 	${lispdir}version.el
 
@@ -593,7 +607,7 @@ emacs: temacs ${etc}DOC ${lisp}
 #endif /* ! defined (CANNOT_DUMP) */
 
 ${etc}DOC: ${libsrc}make-docfile ${obj} ${lisp}
-	rm -f ${etc}DOC
+	-rm -f ${etc}DOC
 	${libsrc}make-docfile -d ${srcdir} ${obj} ${SOME_MACHINE_OBJECTS} \
 	  ${lisp} > ${etc}DOC
 
@@ -810,7 +824,10 @@ termcap.o : termcap.c $(config_h)
 terminfo.o : terminfo.c $(config_h)
 tparam.o : tparam.c $(config_h)
 undo.o : undo.c buffer.h commands.h $(config_h) 
-UNEXEC : UNEXEC_SRC $(config_h)
+/* This hack is to discard any space that cpp might put at the beginning
+   of UNEXEC when substituting it in.  */
+UNEXEC_ALIAS=UNEXEC
+$(UNEXEC_ALIAS) : UNEXEC_SRC $(config_h)
 widget.o : widget.c xterm.h frame.h dispextern.h widgetprv.h $(config_h)
 window.o : window.c indent.h commands.h frame.h window.h buffer.h termchar.h \
    termhooks.h disptab.h keyboard.h $(config_h)

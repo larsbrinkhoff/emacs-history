@@ -70,8 +70,8 @@ The GNU Emacs distribution includes:
 	- manual source in TeX format.
 	- an enhanced regex (regular expression) library.
 
-See `/pub/gnu/GNUinfo/MACHINES' for the status of porting Emacs to
-various machines and operating systems.
+See files `/pub/gnu/GNUinfo/MACHINES*' for the status of porting Emacs
+to various machines and operating systems.
 
 ** C Scheme - a block structured dialect of LISP.
 
@@ -89,7 +89,7 @@ two general mailing lists: <info-cscheme@martigny.ai.mit.edu>and
 ** Other GNU Software
 
 A full list of available software are in `/pub/gnu/GNUinfo/ORDERS' and
-`/pub/gnu/GNUinfo/DESCRIPTIONS'.
+`/pub/gnu/DESCRIPTIONS'.
 
 * No Warranties
 
@@ -107,7 +107,7 @@ Your donations will help to support the foundation and make our future
 efforts successful, including a complete development and operating
 system, called GNU (Gnu's Not Un*x), which will run Un*x user
 programs.  Please note that donations and funds raised by selling
-tapes, cd-roms, and floppy diskettes are the major source of funding
+tapes, CD-ROMs, and floppy diskettes are the major source of funding
 for our work.
 
 For more information on GNU and the Foundation, contact us at Internet

@@ -732,7 +732,7 @@ Otherwise, include all frames.")
    0 if all frames aside from F are invisible.
    (Exception: if F is the terminal frame, and we are using X, return 1.)  */
 
-static int
+int
 other_visible_frames (f)
      FRAME_PTR f;
 {
@@ -1723,6 +1723,7 @@ For values specific to the separate minibuffer frame, see\n\
   defsubr (&Sselected_frame);
   defsubr (&Swindow_frame);
   defsubr (&Sframe_root_window);
+  defsubr (&Sframe_first_window);
   defsubr (&Sframe_selected_window);
   defsubr (&Sset_frame_selected_window);
   defsubr (&Sframe_list);

@@ -113,11 +113,11 @@ a shell window is with the window manager.
   To kill Emacs, type @kbd{C-x C-c} (@code{save-buffers-kill-emacs}).  A
 two-character key is used for this to make it harder to type.  Unless a
 numeric argument is used, this command first offers to save any modified
-buffers.  If you do not save them all, it asks for reconfirmation with
-@kbd{yes} before killing Emacs, since any changes not saved will be lost
-forever.  Also, if any subprocesses are still running, @kbd{C-x C-c}
-asks for confirmation about them, since killing Emacs will kill the
-subprocesses immediately.
+file-visiting buffers.  If you do not save them all, it asks for
+reconfirmation with @kbd{yes} before killing Emacs, since any changes
+not saved will be lost forever.  Also, if any subprocesses are still
+running, @kbd{C-x C-c} asks for confirmation about them, since killing
+Emacs will kill the subprocesses immediately.
 
   The operating system usually listens for certain special characters
 whose meaning is to kill or suspend the program you are running.

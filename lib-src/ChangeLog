@@ -1,3 +1,20 @@
+Thu May 19 17:04:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-docfile.c (write_c_args): Put `default' in upper case.
+
+Tue May 17 21:15:20 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (etags_getcwd): Cast result of popen.
+	(popen): Declaration deleted.
+
+Tue May 17 19:42:44 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* etags.c [!MSDOS]: Declare popen.
+
+Tue May 17 15:12:17 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* b2m.c (main): Avoid crash if argc is 1.
+
 Mon May 16 03:25:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.23 released.

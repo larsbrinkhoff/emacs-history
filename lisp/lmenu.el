@@ -27,6 +27,8 @@
 
 ;; Arrange to use current-menubar to set up part of the menu bar.
 
+(defvar current-menubar)
+
 (setq recompute-lucid-menubar 'recompute-lucid-menubar)
 (defun recompute-lucid-menubar ()
   (define-key lucid-menubar-map [menu-bar]
@@ -134,8 +136,8 @@ The syntax, more precisely:
    menu		:=  '(' name [ menu-item | menu | text ]+ ')'
 "
   (let ((menu (make-lucid-menu-keymap (car menu-desc) (cdr menu-desc)))
-	(pos (mouse-position))
-	answer)
+	(pos (mouse-pixel-position))
+	answer cmd)
     (while menu
       (setq answer (x-popup-menu (list (list (nth 1 pos) (nthcdr 2 pos))
 				       (car pos))
@@ -179,7 +181,7 @@ The syntax, more precisely:
   (let ((name (car data))
 	(tail (cdr data))
 	converted
-	choice)
+	choice meaning)
     (while tail
       (if (null (car tail))
 	  (setq converted (cons nil converted))

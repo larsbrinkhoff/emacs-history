@@ -222,6 +222,8 @@ xaw_pop_instance (instance, up)
 	  {
 	    int x, y, w, h;
 	    Widget topmost = instance->parent;
+	    Arg args[2];
+
 	    w = shell->core.width;
 	    h = shell->core.height;
 	    while (topmost->core.parent && XtIsRealized (topmost->core.parent))
@@ -230,7 +232,12 @@ xaw_pop_instance (instance, up)
 	    else x = topmost->core.x + ((topmost->core.width - w) / 2);
 	    if (topmost->core.height < h) y = topmost->core.y;
 	    else y = topmost->core.y + ((topmost->core.height - h) / 2);
-	    XtMoveWidget (shell, x, y);
+	    /* Using XtMoveWidget caused the widget to come
+	       out in the wrong place with vtwm.
+	       Question of virtual vs real coords, perhaps.  */
+	    XtSetArg (args[0], XtNx, x);
+	    XtSetArg (args[1], XtNy, y);
+	    XtSetValues (shell, args, 2);
 	  }
 
 	  /* Finally, pop it up. */

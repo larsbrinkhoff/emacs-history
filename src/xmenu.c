@@ -1269,6 +1269,7 @@ other_menu_bar_item_p (f, x, y)
      int x, y;
 {
   return (y >= 0
+	  && f->display.x->menubar_widget != 0
 	  && y < f->display.x->menubar_widget->core.height
 	  && x >= 0
 	  && x < last_menu_bar_item_end
@@ -1427,9 +1428,10 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
     menubarp = 0;
 
   /* Offset the coordinates to root-relative.  */
+  if (f->display.x->menubar_widget != 0)
+    y += f->display.x->menubar_widget->core.height;
   XtTranslateCoords (f->display.x->widget,
-		     x, y + f->display.x->menubar_widget->core.height,
-		     &root_x, &root_y);
+		     x, y, &root_x, &root_y);
   x = root_x;
   y = root_y;
 

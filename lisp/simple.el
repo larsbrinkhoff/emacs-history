@@ -2438,8 +2438,16 @@ it were the arg to `interactive' (which see) to interactively read the value."
   (interactive)
   (let (beg end)
     (skip-chars-forward "^ \t\n")
+    (while (looking-at " [^ \n\t]")
+      (forward-char 1)
+      (skip-chars-forward "^ \t\n"))
     (setq end (point))
     (skip-chars-backward "^ \t\n")
+    (while (and (= (preceding-char) ?\ )
+		(not (and (> (point) (1+ (point-min)))
+			  (= (char-after (- (point) 2)) ?\ ))))
+      (backward-char 1)
+      (skip-chars-backward "^ \t\n"))
     (setq beg (point))
     (choose-completion-string (buffer-substring beg end))))
 
@@ -2450,9 +2458,13 @@ it were the arg to `interactive' (which see) to interactively read the value."
 	(len (min (length string)
 		  (- (point) (point-min)))))
     (goto-char (- (point) (length string)))
+    (if completion-ignore-case
+	(setq string (downcase string)))
     (while (and (> len 0)
 		(let ((tail (buffer-substring (point)
 					      (+ (point) len))))
+		  (if completion-ignore-case
+		      (setq tail (downcase tail)))
 		  (not (string= tail (substring string 0 len)))))
       (setq len (1- len))
       (forward-char 1))
@@ -2506,8 +2518,8 @@ Use \\<completion-list-mode-map>\\[mouse-choose-completion] to select one\
 select the completion near point.\n\n"))
       (forward-line 1)
       (if window-system
-	  (while (re-search-forward "[^ \t\n]+" nil t)
-	    (put-text-property (match-beginning 0) (match-end 0)
+	  (while (re-search-forward "[^ \t\n]+\\( [^\t\n]+\\)*" nil t)
+	    (put-text-property (match-beginning 0) (point)
 			       'mouse-face 'highlight))))))
 
 (add-hook 'completion-setup-hook 'completion-setup-function)

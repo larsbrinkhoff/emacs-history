@@ -89,10 +89,7 @@ This command must be bound to a mouse click."
   (mouse-minibuffer-check click)
   (let ((start (event-start click)))
     (select-window (posn-window start))
-    (let ((new-height (if (eq (posn-point start) 'vertical-scroll-bar)
-			  (scroll-bar-scale (posn-col-row start)
-					    (1- (window-height)))
-			(1+ (cdr (posn-col-row (event-end click))))))
+    (let ((new-height (1+ (cdr (posn-col-row (event-end click)))))
 	  (first-line window-min-height)
 	  (last-line (- (window-height) window-min-height)))
       (if (< last-line first-line)
@@ -629,32 +626,17 @@ This must be bound to a button-down mouse event."
 					      click-count)))
 		  (move-overlay mouse-secondary-overlay
 				(car range) (nth 1 range))))
-
-	       ;; Are we moving on a different window on the same frame?
-	       ((and (windowp (posn-window end))
-		     (eq (window-frame (posn-window end)) start-frame))
-		(let ((mouse-row
-		       (+ (nth 1 (window-edges (posn-window end)))
-			  (cdr (posn-col-row end)))))
-		  (cond
-		   ((< mouse-row top)
-		    (mouse-scroll-subr
-		     (- mouse-row top) mouse-secondary-overlay start-point))
-		   ((and (not (eobp))
-			 (>= mouse-row bottom))
-		    (mouse-scroll-subr (1+ (- mouse-row bottom))
-				       mouse-drag-overlay start-point)))))
-
-	       (t
-		(let ((mouse-y (cdr (cdr (mouse-position))))
-		      (menu-bar-lines (or (cdr (assq 'menu-bar-lines
-						     (frame-parameters)))
-					  0)))
-
-		  ;; Are we on the menu bar?
-		  (and (integerp mouse-y) (< mouse-y menu-bar-lines)
-		       (mouse-scroll-subr (- mouse-y menu-bar-lines)
-					  mouse-secondary-overlay start-point))))))))
+               (t
+                (let ((mouse-row (cdr (cdr (mouse-position)))))
+                  (cond
+                   ((null mouse-row))
+                   ((< mouse-row top)
+                    (mouse-scroll-subr
+                     (- mouse-row top) mouse-secondary-overlay start-point))
+                   ((and (not (eobp))
+                         (>= mouse-row bottom))
+                    (mouse-scroll-subr (1+ (- mouse-row bottom))
+                                       mouse-secondary-overlay start-point)))))))))
 
 	(if (and (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
 		 (eq (posn-window (event-end event)) start-window)
@@ -1204,10 +1186,20 @@ and selects that window."
 	  (setq buffer completion-reference-buffer))
       (save-excursion
 	(goto-char (posn-point (event-start event)))
-	(skip-chars-backward "^ \t\n")
-	(let ((beg (point)))
+	(let (beg end)
 	  (skip-chars-forward "^ \t\n")
-	  (setq choice (buffer-substring beg (point))))))
+	  (while (looking-at " [^ \n\t]")
+	    (forward-char 1)
+	    (skip-chars-forward "^ \t\n"))
+	  (setq end (point))
+	  (skip-chars-backward "^ \t\n")
+	  (while (and (= (preceding-char) ?\ )
+		      (not (and (> (point) (1+ (point-min)))
+				(= (char-after (- (point) 2)) ?\ ))))
+	    (backward-char 1)
+	    (skip-chars-backward "^ \t\n"))
+	  (setq beg (point))
+	  (setq choice (buffer-substring beg end)))))
     (let ((owindow (selected-window)))
       (select-window (posn-window (event-start event)))
       (bury-buffer)

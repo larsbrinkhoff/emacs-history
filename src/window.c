@@ -1252,10 +1252,10 @@ window_loop (type, obj, mini, frames)
 	    {
 	      struct window *best_window_ptr = XWINDOW (best_window);
 	      struct window *w_ptr = XWINDOW (w);
-	      if (NILP (best_window) ||
-		  (XFASTINT (w_ptr->height) * XFASTINT (w_ptr->width))
-		  > (XFASTINT (best_window_ptr->height)
-		     * XFASTINT (best_window_ptr->width)))
+	      if (NILP (best_window)
+		  || (XFASTINT (w_ptr->height) * XFASTINT (w_ptr->width)
+		      > (XFASTINT (best_window_ptr->height)
+			 * XFASTINT (best_window_ptr->width))))
 		best_window = w;
 	    }
 	    break;
@@ -1265,13 +1265,27 @@ window_loop (type, obj, mini, frames)
 	      {
 		/* Find another buffer to show in this window.  */
 		Lisp_Object another_buffer;
+		FRAME_PTR f = XFRAME (WINDOW_FRAME (XWINDOW (w)));
 		another_buffer = Fother_buffer (obj, Qnil);
 		if (NILP (another_buffer))
 		  another_buffer
 		    = Fget_buffer_create (build_string ("*scratch*"));
-		Fset_window_buffer (w, another_buffer);
-		if (EQ (w, selected_window))
-		  Fset_buffer (XWINDOW (w)->buffer);
+#ifdef MULTI_FRAME
+		/* If this window is dedicated, and in a frame of its own,
+		   kill the frame.  */
+		if (EQ (w, FRAME_ROOT_WINDOW (f))
+		    && !NILP (XWINDOW (w)->dedicated)
+		    && other_visible_frames (f))
+		  Fdelete_frame (WINDOW_FRAME (XWINDOW (w)), Qnil);
+		else
+#endif
+		  {
+		    /* Otherwise show a different buffer in the window.  */
+		    XWINDOW (w)->dedicated = Qnil;
+		    Fset_window_buffer (w, another_buffer);
+		    if (EQ (w, selected_window))
+		      Fset_buffer (XWINDOW (w)->buffer);
+		  }
 	      }
 	    break;
 	  }
@@ -1626,7 +1640,8 @@ BUFFER can be a buffer or buffer name.")
 				   is first being set up.  */
     {
       if (!NILP (w->dedicated) && !EQ (tem, buffer))
-	error ("Window is dedicated to %s\n", tem);
+	error ("Window is dedicated to `%s'",
+	       XSTRING (XBUFFER (tem)->name)->data);
 
       unshow_buffer (w);
     }
@@ -2070,12 +2085,6 @@ change_window_height (delta, widthflag)
 
   sizep = &CURSIZE (window);
 
-  if (*sizep + delta < MINSIZE (window))
-    {
-      Fdelete_window (window);
-      return;
-    }
-
   {
     register int maxdelta;
 
@@ -2091,13 +2100,19 @@ change_window_height (delta, widthflag)
 	 the full frame, or make the only window aside from the
 	 minibuffer the full frame.  */
       delta = maxdelta;
-
-    if (delta == 0)
-      return;
   }
 
-  if (!NILP (p->next) &&
-      (*sizefun) (p->next) - delta >= MINSIZE (p->next))
+  if (*sizep + delta < MINSIZE (window))
+    {
+      Fdelete_window (window);
+      return;
+    }
+
+  if (delta == 0)
+    return;
+
+  if (!NILP (p->next)
+      && (*sizefun) (p->next) - delta >= MINSIZE (p->next))
     {
       (*setsizefun) (p->next, (*sizefun) (p->next) - delta, 0);
       (*setsizefun) (window, *sizep + delta, 0);
@@ -2106,8 +2121,8 @@ change_window_height (delta, widthflag)
 	 but it propagates the new top edge to its children */
       (*setsizefun) (p->next, (*sizefun) (p->next), 0);
     }
-  else if (!NILP (p->prev) &&
-	   (*sizefun) (p->prev) - delta >= MINSIZE (p->prev))
+  else if (!NILP (p->prev)
+	   && (*sizefun) (p->prev) - delta >= MINSIZE (p->prev))
     {
       (*setsizefun) (p->prev, (*sizefun) (p->prev) - delta, 0);
       CURBEG (window) -= delta;
@@ -2711,8 +2726,8 @@ by `current-window-configuration' (which see).")
 		  /* As documented in Fcurrent_window_configuration, don't
 		     save the location of point in the buffer which was current
 		     when the window configuration was recorded.  */
-		  if (!EQ (p->buffer, new_current_buffer) &&
-		      XBUFFER (p->buffer) == current_buffer)
+		  if (!EQ (p->buffer, new_current_buffer)
+		      && XBUFFER (p->buffer) == current_buffer)
 		    Fgoto_char (w->pointm);
 		}
 	      else if (NILP (w->buffer) || NILP (XBUFFER (w->buffer)->name))

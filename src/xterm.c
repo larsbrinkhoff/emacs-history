@@ -96,6 +96,12 @@ extern void _XEditResCheckMessages ();
 #define x_top_window_to_frame x_window_to_frame
 #endif
 
+#ifdef USE_X_TOOLKIT
+#ifndef XtNinitialState
+#define XtNinitialState "initialState"
+#endif
+#endif
+
 #ifdef HAVE_X11
 #define XMapWindow XMapRaised		/* Raise them when mapping. */
 #else /* ! defined (HAVE_X11) */
@@ -278,6 +284,7 @@ static Time last_mouse_movement_time;
    redraw anything on its account.  */
 static int mouse_face_beg_row, mouse_face_beg_col;
 static int mouse_face_end_row, mouse_face_end_col;
+static int mouse_face_past_end;
 static Lisp_Object mouse_face_window;
 static int mouse_face_face_id;
 
@@ -2178,7 +2185,8 @@ note_mouse_highlight (f, x, y)
 		  && row >= mouse_face_beg_row
 		  && row <= mouse_face_end_row
 		  && (row > mouse_face_beg_row || column >= mouse_face_beg_col)
-		  && (row < mouse_face_end_row || column < mouse_face_end_col)))
+		  && (row < mouse_face_end_row || column < mouse_face_end_col
+		      || mouse_face_past_end)))
 	{
 	  Lisp_Object mouse_face, overlay, position;
 	  Lisp_Object *overlay_vec;
@@ -2240,10 +2248,11 @@ note_mouse_highlight (f, x, y)
 	      before = Foverlay_start (overlay);
 	      after = Foverlay_end (overlay);
 	      /* Record this as the current active region.  */
-	      fast_find_position (window, before,
-				  &mouse_face_beg_col, &mouse_face_beg_row);
-	      fast_find_position (window, after,
-				  &mouse_face_end_col, &mouse_face_end_row);
+	      fast_find_position (window, before, &mouse_face_beg_col,
+				  &mouse_face_beg_row);
+	      mouse_face_past_end
+		= !fast_find_position (window, after, &mouse_face_end_col,
+				       &mouse_face_end_row);
 	      mouse_face_window = window;
 	      mouse_face_face_id = compute_char_face (f, w, pos, 0, 0,
 						      &ignore, pos + 1, 1);
@@ -2271,10 +2280,11 @@ note_mouse_highlight (f, x, y)
 		= Fnext_single_property_change (position, Qmouse_face,
 						w->buffer, end);
 	      /* Record this as the current active region.  */
-	      fast_find_position (window, before,
-				  &mouse_face_beg_col, &mouse_face_beg_row);
-	      fast_find_position (window, after,
-				  &mouse_face_end_col, &mouse_face_end_row);
+	      fast_find_position (window, before, &mouse_face_beg_col,
+				  &mouse_face_beg_row);
+	      mouse_face_past_end
+		= !fast_find_position (window, after, &mouse_face_end_col,
+				       &mouse_face_end_row);
 	      mouse_face_window = window;
 	      mouse_face_face_id
 		= compute_char_face (f, w, pos, 0, 0,
@@ -2295,7 +2305,9 @@ note_mouse_highlight (f, x, y)
    This assumes display in WINDOW is up to date.
    If POS is above start of WINDOW, return coords
    of start of first screen line.
-   If POS is after end of WINDOW, return coords of end of last screen line.  */
+   If POS is after end of WINDOW, return coords of end of last screen line.
+
+   Value is 1 if POS is in range, 0 if it was off screen.  */
 
 static int
 fast_find_position (window, pos, columnp, rowp)
@@ -2306,7 +2318,7 @@ fast_find_position (window, pos, columnp, rowp)
   struct window *w = XWINDOW (window);
   FRAME_PTR f = XFRAME (WINDOW_FRAME (w));
   int i;
-  int row;
+  int row = 0;
   int left = w->left;
   int top = w->top;
   int height = XFASTINT (w->height) - ! MINI_WINDOW_P (w);
@@ -2314,6 +2326,7 @@ fast_find_position (window, pos, columnp, rowp)
   int *charstarts;
   int lastcol;
 
+  /* Find the right row.  */
   for (i = 0;
        i < height;
        i++)
@@ -2325,6 +2338,7 @@ fast_find_position (window, pos, columnp, rowp)
 	row = i;
     }
 
+  /* Find the right column with in it.  */
   charstarts = FRAME_CURRENT_GLYPHS (f)->charstarts[top + row];
   lastcol = left;
   for (i = 0; i < width; i++)
@@ -2336,6 +2350,8 @@ fast_find_position (window, pos, columnp, rowp)
 	  return 1;
 	}
       else if (charstarts[left + i] > pos)
+	break;
+      else if (charstarts[left + i] > 0)
 	lastcol = left + i;
     }
 
@@ -5313,6 +5329,14 @@ x_set_window_size (f, change_gravity, cols, rows)
   PIXEL_WIDTH (f) = pixelwidth;
   PIXEL_HEIGHT (f) = pixelheight;
 
+  /* If cursor was outside the new size, mark it as off.  */
+  if (f->phys_cursor_y >= rows
+      || f->phys_cursor_x >= cols)
+    {
+      f->phys_cursor_x = -1;
+      f->phys_cursor_y = -1;
+    }
+
   /* We've set {FRAME,PIXEL}_{WIDTH,HEIGHT} to the values we hope to
      receive in the ConfigureNotify event; if we get what we asked
      for, then the event won't cause the screen to become garbaged, so
@@ -5505,6 +5529,14 @@ x_make_frame_invisible (f)
      struct frame *f;
 {
   int mask;
+  Window window;
+
+#ifdef USE_X_TOOLKIT
+  /* Use the frame's outermost window, not the one we normally draw on.  */
+  window = XtWindow (f->display.x->widget);
+#else /* not USE_X_TOOLKIT */
+  window = FRAME_X_WINDOW (f);
+#endif /* not USE_X_TOOLKIT */
 
   /* Don't keep the highlight on an invisible frame.  */
   if (x_highlight_frame == f)
@@ -5526,18 +5558,12 @@ x_make_frame_invisible (f)
 
 #ifdef HAVE_X11R4
 
-#ifdef USE_X_TOOLKIT
-  if (! XWithdrawWindow (x_current_display, XtWindow (f->display.x->widget),
-			 DefaultScreen (x_current_display)))
-#else /* not USE_X_TOOLKIT */
-  if (! XWithdrawWindow (x_current_display, FRAME_X_WINDOW (f),
+  if (! XWithdrawWindow (x_current_display, window,
 			 DefaultScreen (x_current_display)))
     {
       UNBLOCK_INPUT_RESIGNAL;
-      error ("can't notify window manager of window withdrawal");
+      error ("Can't notify window manager of window withdrawal");
     }
-#endif /* not USE_X_TOOLKIT */
-
 #else /* ! defined (HAVE_X11R4) */
 #ifdef HAVE_X11
 
@@ -5547,11 +5573,7 @@ x_make_frame_invisible (f)
       XEvent unmap;
 
       unmap.xunmap.type = UnmapNotify;
-#ifdef USE_X_TOOLKIT
-      unmap.xunmap.window = XtWindow (f->display.x->widget);
-#else /* not USE_X_TOOLKIT */
-      unmap.xunmap.window = FRAME_X_WINDOW (f);
-#endif /* not USE_X_TOOLKIT */
+      unmap.xunmap.window = window;
       unmap.xunmap.event = DefaultRootWindow (x_current_display);
       unmap.xunmap.from_configure = False;
       if (! XSendEvent (x_current_display,
@@ -5561,16 +5583,12 @@ x_make_frame_invisible (f)
 			&unmap))
 	{
 	  UNBLOCK_INPUT_RESIGNAL;
-	  error ("can't notify window manager of withdrawal");
+	  error ("Can't notify window manager of withdrawal");
 	}
     }
 
   /* Unmap the window ourselves.  Cheeky!  */
-#ifdef USE_X_TOOLKIT
-  XUnmapWindow (x_current_display, XtWindow (f->display.x->widget));
-#else /* not USE_X_TOOLKIT */
-  XUnmapWindow (x_current_display, FRAME_X_WINDOW (f));
-#endif /* not USE_X_TOOLKIT */
+  XUnmapWindow (x_current_display, window);
 #else /* ! defined (HAVE_X11) */
 
   XUnmapWindow (FRAME_X_WINDOW (f));
@@ -5612,13 +5630,24 @@ x_iconify_frame (f)
 
 #ifdef USE_X_TOOLKIT
   BLOCK_INPUT;
+
+  if (! FRAME_VISIBLE_P (f))
+    {
+      if (! EQ (Vx_no_window_manager, Qt))
+	x_wm_set_window_state (f, IconicState);
+      /* This was XtPopup, but that did nothing for an iconified frame.  */
+      XtMapWidget (f->display.x->widget);
+      UNBLOCK_INPUT;
+      return;
+    }
+
   result = XIconifyWindow (x_current_display,
 			   XtWindow (f->display.x->widget),
 			   DefaultScreen (x_current_display));
   UNBLOCK_INPUT;
 
   if (!result)
-    error ("Can't notify window manager of iconification.");
+    error ("Can't notify window manager of iconification");
 
   f->async_iconified = 1;
 
@@ -5651,7 +5680,7 @@ x_iconify_frame (f)
 		      &message))
       {
 	UNBLOCK_INPUT_RESIGNAL;
-	error ("Can't notify window manager of iconification.");
+	error ("Can't notify window manager of iconification");
       }
   }
 
@@ -5927,15 +5956,18 @@ x_wm_set_window_state (f, state)
      int state;
 {
 #ifdef USE_X_TOOLKIT
-  Window window = XtWindow (f->display.x->widget);
+  Arg al[1];
+
+  XtSetArg (al[0], XtNinitialState, state);
+  XtSetValues (f->display.x->widget, al, 1);
 #else /* not USE_X_TOOLKIT */
   Window window = FRAME_X_WINDOW (f);
-#endif /* not USE_X_TOOLKIT */
 
   f->display.x->wm_hints.flags |= StateHint;
   f->display.x->wm_hints.initial_state = state;
 
   XSetWMHints (x_current_display, window, &f->display.x->wm_hints);
+#endif /* not USE_X_TOOLKIT */
 }
 
 x_wm_set_icon_pixmap (f, icon_pixmap)

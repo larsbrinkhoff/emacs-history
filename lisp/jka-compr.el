@@ -125,8 +125,8 @@ for `jka-compr-compression-info-list').")
 ;;; compress format; and .gz files, in gzip format.
 (defvar jka-compr-compression-info-list
   ;;[regexp
-  ;; compr-message  compr-prog  compr-discard  compr-args
-  ;; uncomp-message uncomp-prog uncomp-discard uncomp-args
+  ;; compr-message  compr-prog  compr-args
+  ;; uncomp-message uncomp-prog uncomp-args
   ;; can-append auto-mode-flag]
   '(["\\.Z~?\\'"
      "compressing"    "compress"     ("-c")
@@ -139,20 +139,22 @@ for `jka-compr-compression-info-list').")
 
   "List of vectors that describe available compression techniques.
 Each element, which describes a compression technique, is a vector of
-the form [regexp magic compress-name compress-program compress-discard-err
-compress-args uncompress-name uncompress-program uncompress-discard-err
-uncompress-args append-flag extension] where:
+the form [REGEXP COMPRESS-MSG COMPRESS-PROGRAM COMPRESS-ARGS
+UNCOMPRESS-MSG UNCOMPRESS-PROGRAM UNCOMPRESS-ARGS
+APPEND-FLAG EXTENSION], where:
 
    regexp                is a regexp that matches filenames that are
                          compressed with this format
+
+   compress-msg          is the message to issue to the user when doing this
+                         type of compression (nil means no message)
 
    compress-program      is a program that performs this compression
 
    compress-args         is a list of args to pass to the compress program
 
-   uncompress-message    is the message to issue to the user when this
-                         type of uncompression is taking place (nil
-                         means don't issue any message)
+   uncompress-msg        is the message to issue to the user when doing this
+                         type of uncompression (nil means no message)
 
    uncompress-program    is a program that performs this compression
 
@@ -169,6 +171,14 @@ a program adds the overhead of starting a shell each time the program is
 invoked.")
 
 
+(defvar jka-compr-file-name-handler-entry
+  nil
+  "The entry in `file-name-handler-alist' used by the jka-compr I/O functions.")
+  
+(defvar jka-compr-op-table
+  (make-vector 127 0)
+  "Hash table of operations supported by jka-compr.")
+
 ;;; Functions for accessing the return value of jka-get-compression-info
 (defun jka-compr-info-regexp               (info)  (aref info 0))
 (defun jka-compr-info-compress-message     (info)  (aref info 1))
@@ -654,11 +664,6 @@ There should be no more than seven characters after the final `/'")
     t))
 
 
-(defvar jka-compr-file-name-handler-entry
-  nil
-  "The entry in `file-name-handler-alist' used by the jka-compr I/O functions.")
-
-
 (defun jka-compr-handler (operation &rest args)
 
   (let ((jka-op (intern-soft (symbol-name operation) jka-compr-op-table))
@@ -689,11 +694,6 @@ There should be no more than seven characters after the final `/'")
 		    inhibit-file-name-handlers)))
 	(inhibit-file-name-operation operation))
     (apply operation args)))
-
-  
-(defvar jka-compr-op-table
-  (make-vector 127 0)
-  "Hash table of operations supported by jka-compr.")
 
 
 (defun jka-compr-intern-operation (op)

@@ -1,6 +1,203 @@
-Mon May 16 03:23:48 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+Mon May 23 03:32:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.24 released.
+
+	* ange-ftp.el (ange-ftp-gwp-start): Call internal-ange-ftp-mode.
+
+Mon May 23 00:50:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (interpreter-mode-alist): Add wishx, tclsh.
+	Delete form, scope, shell.
+	(set-auto-mode): Don't get confused by args after #! shell name.
+
+	* frame.el (frame-initialize): Record in frame-initial-frame-alist
+	the actual settings of vertical-scroll-bars.
+
+	* buff-menu.el (Buffer-menu-mouse-select): Handle dedicated window.
+
+	* lmenu.el (popup-menu): Bind cmd with let.
+	(popup-dialog-box): Bind meaning with let.
+	(current-menubar): Add defvar.
+
+	* etags.el (select-tags-table-mode): New function, a major mode.
+	(select-tags-table): Call that.
+	(select-tags-table-mode-map): New variable.
+
+	* mouse-sel.el (mouse-insert-selection): Test mouse-yank-at-point.
+	(mouse-sel-insert-at-point): Variable deleted.
+
+	* files.el (hack-one-local-variable): Check properly for `defun.
+
+	* sendmail.el (mail-mailer-swallows-blank-line): Don't die
+	if /etc/sendmail.cf does not exist.
+
+	* lmenu.el (popup-menu): Use mouse-pixel-position.
+
+Sun May 22 02:47:47 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* subr.el (posn-col-row): Use let*.
+
+	* allout.el, cal-french.el, complete.el, diary.el: Doc fix.
+	* edebug.el, ediff.el, forms.el, gnus.el, hippie-exp.el: Doc fix.
+	* holidays.el, imenu.el, inf-lisp.el, ispell.el, mail-hist.el: Doc fix.
+	* makefile.el, nntp.el, refbib.el, refer.el, simula.el: Doc fix.
+	* supercite.el, vip.el, ws-mode.el, term/x-win.el: Doc fix.
+
+	* mouse.el (mouse-split-window-vertically): Treat scroll bar
+	events just like others.
+
+	* subr.el (posn-col-row): Do something useful for scroll bar event.
+
+	* paths.el (rmail-spool-directory): Maybe use /var/mail.
+
+	* jka-compr.el (jka-compr-compression-info-list): Doc fix.
+	(jka-compr-op-table, jka-compr-file-name-handler-entry): Move defvars.
+
+	* subr.el (substitute-key-definition): Skip cached menu key-equivs.
+
+	* easymenu.el (easy-menu-create-keymaps):
+	Renamed from easy-menu-keymap.  Callers changed.
+
+Sat May 21 20:50:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* shell.el (shell-strip-ctrl-m): Strip multiple ^Ms.
+
+Sat May 21 11:38:20 1994  Michael D. Ernst  (mernst@research.microsoft.com)
+
+	* dired.el (dired-mark-pop-up): Clear mouse-face property.
+
+Sat May 21 09:26:47 1994  Kevin Broadey  (KevinB@mended_drum)
+
+	* foldout.el (foldout-exit-fold): Make numeric argument work;
+	before, it always exited one fold.  Replace the Common Lisp `loop'
+	construct with `while'.
+
+Sat May 21 01:28:13 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* startup.el (command-line-1): Precompute menu bar before startup msg.
+
+	* ispell.el: Doc fixes.
+
+	* ispell.el: Lucid menu added.
+	(ispell): New function.
+	(ispell-region): Assure choices and checked buffer selections correct.
+	reindented.
+	(ispell-highlight-spelling-errors): Prefix ispell- to highlght fns.
+	(ispell-complete-word): Heuristic to respect case of completed words.
+	(ispell-command-loop): Non-character events ignored.  Reindented.
+	(ispell-message): Various improvements.
+	(ispell-init-process): `ispell-extra-args' added to allow personal
+	customizations.
+
+Fri May 20 17:21:57 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* paren.el (show-paren-command-hook):
+	Always set show-paren-mismatch-face to symbol, not face vector.
+
+	* dired.el (dired-readin): Clear modified flag at the very end.
+
+	* server.el (server-done-hook): New hook.
+	(server-buffer-done): Run it.
+
+	* mouse.el (mouse-choose-completion): 
+	Include words separated by single spaces in the completion.
+
+	* simple.el (choose-completion):
+	Include words separated by single spaces in the completion.
+
+	* ispell.el: Lots of doc fixes and message syntax fixes.
+	(ispell-command-loop): For X, put point before
+	the word being considered, and mention C-u M-$ in message.
+
+	* bookmark.el (bookmark-file): Alternate default on ms-dos.
+
+Fri May 20 13:43:51 1994  Noah Friedman  (friedman@kropotkin.gnu.ai.mit.edu)
+
+        * rsz-mini.el: Enable resize-minibuffer-mode when this file is
+        loaded.
+
+Fri May 20 03:40:12 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-drag-secondary): Handle mouse motion out of window
+	as in mouse-drag-region.
+
+	* ispell.el (ispell-word): Implement C-u $ as in ispell4.el.
+	(ispell-command-loop): Make quit-char work like X.
+	For C-z, run whatever it's bound to.
+
+Thu May 19 16:39:23 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* cal-menu.el (calendar-mode-map): Use calendar-goto-astro-day-number.
+
+	* simple.el (completion-setup-function): Make highlight span
+	single spaces.
+	(choose-completion-delete-max-match): Handle completion-ignore-case.
+
+	* gnus.el (gnus-group-unsubscribe-current-group):
+	Fail nicely if no current group name.
+
+	* avoid.el (mouse-avoidance-nudge-dist): Doc fix.
+
+	* menu-bar.el (menu-bar-mode): Preserve window height.
+
+	* vc-hooks.el (vc-mode-line): Do nothing if FILE is nil.
+
+	* compile.el (compilation-goto-locus): Handle case where *compilation*
+	is in a dedicated window.
+
+	* ispell4.el (ispell-highlight): Do nothing unless window-system.
+
+	* rmail.el (rmail-variables): Don't add any permanent-local props.
+	Don't make rmail-last-file local.
+
+	* rmailedit.el (rmail-edit-current-message): Undo previous change.
+
+	* rmailout.el (rmail-output): Doc fix.
+
+	* gnus.el: rmail-default-file renamed from rmail-last-file,
+	rmail-default-rmail-file renamed from rmail-last-...
+
+Thu May 19 01:58:43 1994  Daniel Quinlan  (quinlan@bucknell.edu)
+
+ 	* info.el (info-insert-file-contents): Avoid conflict with jka-compr.
+
+Thu May 19 11:33:35 1994  Boris Goldowsky  (boris@mink.cs.rochester.edu)
+
+	* avoid.el: Doc fixes.
+	(mouse-avoidance-nudge-mouse): Removed redundant
+	bounds check on destination coordinates.
+
+Thu May 19 00:29:41 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* server.el (server-done): Never kill buffer here.
+	(server-buffer-done): Do it here, if temp file.
+
+	* menu-bar.el (menu-bar-update-buffers): Record buffers' mod and
+	read-only flags, and recompute if they change.
+
+	* subr.el (posn-col-row): Doc fix.
+
+Wed May 18 19:29:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* font-lock.el (font-lock-after-change-function): Fix typo in prev chg.
+	(font-lock-mode): Use after-change-functions not after-change-function.
+
+Tue May 17 21:11:29 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* tex-mode.el (tex-delete-last-temp-files): Don't fail on
+	non-existent directory.
+
+Tue May 17 18:54:29 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* soundex.el (soundex-alist): Put variable before fn that uses it.
+
+Tue May 17 05:05:03 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.23 released.
+
+	* gnus.el (gnus-group-mode-map): Fix typo in prev change.
+
+Mon May 16 03:23:48 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* man.el (Man-heading-regexp): Accept multiple whitespace chars.
 

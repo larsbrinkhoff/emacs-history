@@ -56,7 +56,6 @@ char pot_etags_version[] = "@(#) pot revision number is 10.32";
 
 extern char *getenv ();
 
-
 /* Define CTAGS to make the program "ctags" compatible with the usual one.
  Let it undefined to make the program "etags", which makes emacs-style
  tag tables and tags typedefs, #defines and struct/union/enum by default. */
@@ -3153,7 +3152,7 @@ etags_getcwd ()
     {
       buf = xnew (bufsize, char);
 
-      pipe = popen ("pwd 2>/dev/null", "r");
+      pipe = (FILE *) popen ("pwd 2>/dev/null", "r");
       if (pipe == NULL)
 	{
 	  perror ("pwd");

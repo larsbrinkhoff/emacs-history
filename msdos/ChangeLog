@@ -1,3 +1,13 @@
+Sun May 22 17:12:14 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed1.inp: Adding dos-fns.elc to the set of lisp files was moved
+	to src/makefile.in.in.
+
+Fri May 20 20:32:07 1994  Morten Welinder  (terra@tyr.diku.dk)
+
+	* sed2.inp: Reflect change from CONFIGURATION to EMACS_CONFIGURATION.
+	Also set it to correct three-part value.
+
 Mon May 16 19:47:53 1994  Morten Welinder  (terra@tyr.diku.dk)
 
 	* Version 19.23 released.

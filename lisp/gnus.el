@@ -142,7 +142,7 @@ given.  Instead, if the first character of the name is `|', the
 contents of the article is piped out to the named program. It is
 possible to save an article in an MH folder as follows:
 
-(setq gnus-author-copy \"|/usr/local/lib/mh/rcvstore +Article\")")
+\(setq gnus-author-copy \"|/usr/local/lib/mh/rcvstore +Article\")")
 
 (defvar gnus-author-copy-saver (function rmail-output)
   "*A function called with a file name to save an author copy to.
@@ -769,8 +769,8 @@ the hash tables.")
 (defvar gnus-article-mode-map nil)
 (defvar gnus-kill-file-mode-map nil)
 
-(defvar rmail-last-file (expand-file-name "~/XMBOX"))
-(defvar rmail-last-rmail-file (expand-file-name "~/XNEWS"))
+(defvar rmail-default-file (expand-file-name "~/XMBOX"))
+(defvar rmail-default-rmail-file (expand-file-name "~/XNEWS"))
 
 ;; Define GNUS Subsystems.
 (autoload 'gnus-group-post-news "gnuspost"
@@ -1532,8 +1532,12 @@ Cross references (Xref: field) of articles are ignored."
 (defun gnus-group-unsubscribe-current-group ()
   "Toggle subscribe from/to unsubscribe current group."
   (interactive)
-  (gnus-group-unsubscribe-group (gnus-group-group-name))
-  (gnus-group-next-group 1))
+  (let ((group (gnus-group-group-name)))
+    (if group
+	 (progn
+	   (gnus-group-unsubscribe-group group)
+	   (gnus-group-next-group 1))
+      (message "No Newsgroup found to \(un\)subscribe"))))
 
 (defun gnus-group-unsubscribe-group (group)
   "Toggle subscribe from/to unsubscribe GROUP.
@@ -3719,13 +3723,13 @@ is non-nil. The hook is intended to customize Rmail mode."
 			 (message "(No changes need to be saved)")
 			 'no-need-to-write-this-buffer))))
 	  ;; Default file name saving digest messages.
-	  (setq rmail-last-rmail-file
+	  (setq rmail-default-rmail-file
 		(funcall gnus-rmail-save-name
 			 gnus-newsgroup-name
 			 gnus-current-headers
 			 gnus-newsgroup-last-rmail
 			 ))
-	  (setq rmail-last-file
+	  (setq rmail-default-file
 		(funcall gnus-mail-save-name
 			 gnus-newsgroup-name
 			 gnus-current-headers
@@ -5259,7 +5263,7 @@ ROT47 will be performed for Japanese text in any case."
   (require 'rmail)
   ;; Most of these codes are borrowed from rmailout.el.
   (setq file-name (expand-file-name file-name))
-  (setq rmail-last-rmail-file file-name)
+  (setq rmail-default-rmail-file file-name)
   (let ((artbuf (current-buffer))
 	(tmpbuf (get-buffer-create " *GNUS-output*")))
     (save-excursion

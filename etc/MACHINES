@@ -353,12 +353,20 @@ HP 9000 series 500: not supported.
   which relocates data in memory during execution of a program,
   and support for it would be difficult to implement.
 
-HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux)
+HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux
+				      or ...hpux9shr)
 
   These files support HP's Precision Architecture machines
   running HP/UX.  It has been moderately tested on the Series
   840.  Use hppa1.1 for the 700 series and hppa1.0 for the 800
   series machines.  (Emacs may not actually care which one you use.)
+
+  Use hppa1.1-hp-hpux9shr to use shared libraries on HPUX version 9.
+  You may need to create the X libraries libXaw.a and libXmu.a from
+  the MIT X distribute, and you may need to edit src/Makefile's
+  definition of LIBXT to look like this:
+
+     LIBXT= $(LIBW) -lXmu -lXt $(LIBXTR6) -lXext
 
   As of version 19.16, Emacs is reported to build (using GCC) and run
   on HP 9000/700 series machines running HP/UX versions 8.07 and 9.01.
@@ -483,6 +491,19 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
   It may also be correct for Microport systems.
   Use i386-*-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.6.
 
+  On Linux, Emacs 19.23 is said to work properly with libc version 4.5.21,
+  but not with 4.5.19.
+
+  On Linux, configure may fail to put these definitions in config.h:
+
+    #define HAVE_GETTIMEOFDAY
+    #define HAVE_MKDIR
+    #define HAVE_RMDIR
+    #define HAVE_XSCREENNUMBEROFSCREEN
+
+  To work around the problem, add those definitions by hand.
+  It is possible that this problem happens only with X11R6.
+
   Use i386-*-bsd386 for BSDI BSD/386; Emacs runs as of version 19.23.
   Make on that system is broken; use GNU make instead.
   Shell bugs in version 1.0 of BSD/386 cause configure
@@ -604,7 +625,14 @@ Megatest (m68k-megatest-bsd)
 
 Mips (mips-mips-riscos, mips-mips-riscos4.0, or mips-mips-bsd)
 
-  Changes merged in 18.39.  Some fixes in 18.56.
+  The C compiler on Riscos 4.51 dumps core trying to optimize
+  parts of Emacs.  Try without optimization or try GCC.
+  
+  Meanwhile, the linker on that system returns success even if
+  there are undefined symbols; as a result, configure gets the
+  wrong answers to various questions.  No work-around is known
+  except to edit src/config.h by hand to indicate which functions
+  don't exist.
 
   Use mips-mips-riscos4.0 for RISCOS version 4.
   Use mips-mips-bsd with the BSD world.
@@ -865,7 +893,8 @@ Tektronix 16000 box (6130?) (ns16k-tektronix-bsd)
 
 Tektronix 4300 (m68k-tektronix-bsd)
 
-  Emacs 19.21 works.
+  Emacs 19.23 works.  However, for the toolkit version, you need to
+  fix sys/time.h so that it won't cause errors if included twice.
 
 Titan P2 or P3 (titan-titan-sysv)
 

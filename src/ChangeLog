@@ -1,3 +1,186 @@
+Mon May 23 00:38:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.24 released.
+
+	* s/hpux8.h (LD_SWITCH_SYSTEM): Put back -Xlinker for GCC.
+
+	* Makefile.in.in (LIBXT): Move -lXmu before -lXt.
+
+	* term.c (update_end): Undo previous change.
+
+	* frame.c (other_visible_frames): No longer static.
+
+	* window.c (window_loop): Fix test of dedicated flag in prev change.
+
+	* window.c (window_loop, UNSHOW_BUFFER case):
+	Put prev change in #ifdef MULTI_FRAME.
+
+	* keyboard.c (menu_bar_one_keymap):
+	When there's no item string, use Qnil.
+	Don't ever put `undefined' into the list of definitions.
+
+Sun May 22 16:16:32 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (window_loop, UNSHOW_BUFFER case): Kill a special frame.
+
+	* xterm.c (x_set_window_size): If cursor outside new size, mark it off.
+	* dispnew.c (change_frame_size): Keep cursor coords in range.
+
+	* s/linux.h (HAVE_GETTIMEOFDAY, HAVE_MKDIR, HAVE_RMDIR)
+	(HAVE_XSCREENNUMBEROFSCREEN): Define these if not already defined.
+
+Sun May 22 16:36:34 1994  Morten Welinder  (terra@diku.dk)
+
+	* unexec.c [MSDOS]: Don't include files from the dos extender
+	and debugger.  Use the <coff.h> that was put in the right place
+	a couple of djgpp versions ago.  Consequently, use `unsigned short'
+	for `word16' and `unsigned long' for `word32'.
+
+Sun May 22 04:22:16 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (note_mouse_highlight): Handle case of highlight extending
+	past end of window.
+	(fast_find_position): Fix bugs when no text on screen
+	and when the mouse is on an empty line.
+
+	* s/hpux9shr.h: New file.
+
+	* s/hpux8.h (LD_SWITCH_SYSTEM): Add conditionals for HPUX_USE_SHLIBS.
+	Delete explicit -Xlinker in GCC case.
+
+	* unexhp9k800.c: Include config.h.
+	[HPUX_USE_SHLIBS]: Include dl.h.
+	(brk_on_dump): New variable.
+	(unexec): Set brk_on_dump.
+	(copy_file): Change buffer size to 8192.
+
+	* window.c (change_window_height): Test for DELTA too small
+	only after making it smaller based on maxdelta.
+
+Sat May 21 19:16:03 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (Fdelete_directory): Allow dir names as well as file names.
+
+	* Makefile.in.in (${etc}DOC): Ignore error from rm.
+	(MSDOS_SUPPORT): New variable.
+	(lisp): Use MSDOS_SUPPORT.
+
+	* s/freebsd.h (A_TEXT_OFFSET, A_TEXT_SEEK): Commented out.
+
+Fri May 20 21:10:58 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* xfns.c (x_set_background_color): Set scroll bar backgrounds.
+
+Fri May 20 18:57:09 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (x_wm_set_window_state) [USE_X_TOOLKIT]: Use XtSetValues.
+	(x_iconify_frame) [USE_X_TOOLKIT]: New code for invisible window case.
+	(XtNinitialState) [USE_X_TOOLKIT]: New #define.
+	(x_make_frame_invisible): Mostly combine toolkit/non-toolkit cases,
+	in the process fixing a dumb bug.
+
+Fri May 20 12:16:00 1994  Michael I Bushnell  (mib@geech.gnu.ai.mit.edu)
+
+	* lread.c (openp): Only lusers assume that O_RDONLY == 0.
+
+Fri May 20 01:28:59 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (UNEXEC_ALIAS): New variable, used
+	to make the unex...o target.
+
+	* xfaces.c (Fset_face_attribute_internal): Always return valid data.
+
+	* textprop.c (syms_of_textprop): Set up Lisp fn get-char-property.
+
+Thu May 19 16:57:10 1994  Andreas Schwab  (schwab@issan.informatik.uni-dortmund.de)
+
+	* fileio.c (Finsert_file_contents): Declare buffer as unsigned
+	char.  When comparing with file size convert same_at_start to
+	distance to buffer start.  If the file matches the buffer
+	contents truncate the buffer to the size of the file.
+
+Thu May 19 18:03:26 1994  Jim Blandy  (jimb@totoro.bio.indiana.edu)
+
+        * keyboard.c (read_char_minibuf_menu_prompt): Don't forget to
+        initialize nobindings.
+
+Thu May 19 00:11:34 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (ORDINARY_LINK): Define by default
+	if __GNU_LIBRARY__ and not LINUX.
+
+	* s/isc4-0.h (EXTRA_INITIALIZE): Definition deleted.
+
+	* s/isc3-0.h (EXTRA_INITIALIZE): Define here.
+
+	* keyboard.c (lispy_function_keys): Add `backtab'.
+
+	* frame.c (syms_of_frame): Set up frame-first-window as Lisp fn.
+
+	* indent.c: Add "args" to dummy definition of compute-motion.
+
+	* sysdep.c [BROKEN_TIOCGWINSZ]: Undef TIOCSWINSZ too.
+
+	* Makefile.in.in (FRAME_SUPPORT): Add menu-bar.el.
+
+	* dispnew.c: Include errno.h.
+
+	* widget.c (EmacsFrameSetCharSize): Once again preserve x and y pos,
+	but not the same way as before.
+
+	* xmenu.c (other_menu_bar_item_p): Return 0 if no menu bar.
+
+	* fileio.c (Fwrite_region): Set update_mode_lines.
+
+	* xmenu.c (xmenu_show): Don't look in menubar for core.height
+	if no menu bar.
+
+	* xterm.c (x_iconify_frame): Fix error messages.
+
+Wed May 18 01:36:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dispnew.c (PENDING_OUTPUT_COUNT): If __GNU_LIBRARY__,
+	use GNU_LIBRARY_PENDING_OUTPUT_COUNT if defined.
+
+	* keyboard.c (lispy_function_keys): Add various kp- keys for X11R6.
+
+	* fileio.c (syms_of_fileio): Doc fix.
+
+	* s/linux.h (GNU_LIBRARY_PENDING_OUTPUT_COUNT): Both definitions
+	renamed from PENDING_OUTPUT_COUNT.
+
+	* process.c (create_process): Don't complain about error
+	from TIOCSETD.
+
+	* window.c (Fset_window_buffer): Fix dedicated window error call.
+	(window_loop, case UNSHOW_BUFFER): Clear dedicated flag.
+
+	* fileio.c (Finsert_file_contents): Declare `buffer' as unsigned char.
+
+	* dispnew.c: Include systime.h after xterm.h.
+
+	* m/tek4300.h (WORDS_BIG_ENDIAN): Define this, not BIG_ENDIAN.
+
+	* emacs.c (syms_of_emacs), config.h.in:
+	EMACS_CONFIGURATION renamed from CONFIGURATION.
+
+Tue May 17 18:57:20 1994  Andreas Schwab  (schwab@issan.informatik.uni-dortmund.de)
+
+	* eval.c (Fbacktrace): Properly nest parentheses.
+	(Fbacktrace_frame): Don't bomb on invalid frame number.
+
+Tue May 17 05:41:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (command_loop_1): Fix test for valid display table entry,
+	for backwards motion.
+
+	* Makefile.in.in (ALL_LDFLAGS): Add LDFLAGS.
+	(MAKE): Don't override a previous value of MAKE set by configure.
+
+	* dispnew.c (update_frame): Fix test of outq and baud_rate.
+
+	* emacs.c (shut_down_emacs): Don't call intern.
+
 Tue May 17 03:23:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.23 released.

@@ -16,6 +16,11 @@
 #define HAVE_TERMIOS
 #define NO_TERMIO
 
+/* XXX emacs should not expect TAB3 to be defined.  */
+#define TABDLY OXTABS
+#define TAB3 OXTABS
+
+
 #define SYSV_SYSTEM_DIR
 
 /* GNU has POSIX-style pgrp behavior.  */

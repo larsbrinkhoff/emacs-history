@@ -209,8 +209,8 @@ specify in the minibuffer.  The default, used if you type just @key{RET}
 in the minibuffer, is to kill the current buffer.  If you kill the
 current buffer, another buffer is selected; one that has been selected
 recently but does not appear in any window now.  If you ask to kill a
-buffer that is modified (has unsaved editing), then you must confirm
-with @kbd{yes} before the buffer is killed.
+file-visiting buffer that is modified (has unsaved editing), then you
+must confirm with @kbd{yes} before the buffer is killed.
 
   The command @kbd{M-x kill-some-buffers} asks about each buffer, one by
 one.  An answer of @kbd{y} means to kill the buffer.  Killing the current

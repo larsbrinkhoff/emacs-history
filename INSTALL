@@ -64,6 +64,9 @@ unusual places.
 You can specify toolkit operation when you configure Emacs; use the
 option --with-x-toolkit.
 
+Note: on some systems, it does not work to use the toolkit with shared
+libraries.
+
 The `--run-in-place' option sets up default values for the path
 variables in `./Makefile' so that Emacs will expect to find its data
 files (lisp libraries, runnable programs, and the like) in the same
@@ -159,8 +162,8 @@ not use expand-file-name or any other function which may look
 something up in the system's password and user information database.
 See `./PROBLEMS' for more details on which systems this affects.
 
-This file is nonexistent in the distribution.  You do not need to
-create it if you have nothing to put in it.
+The `site-*.el' files are nonexistent in the distribution.  You do not
+need to create them if you have nothing to put in them.
 
 6) Refer to the file `./etc/TERMS' for information on fields you may
 wish to add to various termcap entries.  The files `./etc/termcap.ucb'
@@ -459,7 +462,7 @@ distribution.
 in `./lib-src' to their final destinations, as selected in `./src/paths.h'.
 
 Strictly speaking, not all of the executables in `./lib-src' need be copied.
-- The programs `cvtmail', `emacsserver', `env', `fakemail', `hexl',
+- The programs `cvtmail', `emacsserver', `fakemail', `hexl',
     `movemail', `timer', `vcdiff', `wakeup', and `yow' are used by
     Emacs; they do need to be copied.
 - The programs `etags', `ctags', `emacsclient', `b2m', and `rcs2log'
@@ -507,16 +510,18 @@ problems sometimes encountered, and what to do about them.
 
 Installation on MSDOG (a.k.a. MSDOS)
 
-To install on MSDOG, you need to have the GNU C compiler (also known
-as djgpp), GNU Make, rm, mv, chmod, and sed.  Type these commands:
+To install on MSDOG, you need to have the GNU C compiler for MSDOG
+(also known as djgpp), GNU Make, rm, mv, chmod, and sed.  Type these
+commands:
 
 config msdos
 make install
 
-To save disk space, Emacs is built in-place.  As the /usr/local/
-subtree does not exist on most MSDOG systems, the executables are
-placed in /emacs/bin/.
+To save disk space, Emacs is built with the idea that you will execute
+it from the same place in the file system where you built it.  As the
+/usr/local/ subtree does not exist on most MSDOG systems, the
+executables are placed in /emacs/bin/.
 
-MSDOG is a not a multi-tasking operating system, so Emacs features
-that depend on multitasking will not work.  Synchronous subprocesses
-do work.
+MSDOG is a not a multitasking operating system, so Emacs features such
+as asynchronous subprocesses that depend on multitasking will not
+work.  Synchronous subprocesses do work.

@@ -95,7 +95,7 @@ each time it is needed.")
 The current buffer is expected to contain a line such as
 \\bibliography{file1,file2,file3}
 which is read to set up refer-bib-files.  The regexp must specify the command
-(such as \\bibliography) that is used to specify the list of bib files.  The
+\(such as \\bibliography) that is used to specify the list of bib files.  The
 command is expected to specify a file name, or a list of comma-separated file
 names, within curly braces.
 If a specified file doesn't exist and has no extension, a \\.bib extension

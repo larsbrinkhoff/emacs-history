@@ -1,3 +1,15 @@
+Mon May 23 03:32:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.24 released.
+
+Fri May 20 18:42:58 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xlwmenu.c (xlwMenuResources): Use XtRDimension for shadow thickness.
+
+Thu May 19 12:23:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lwlib-Xaw.c (xaw_pop_instance): Use XtSetValues, not XtMoveWidget.
+
 Mon May 16 03:25:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.23 released.

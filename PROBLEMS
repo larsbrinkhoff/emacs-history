@@ -1,6 +1,67 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Undefined symbols _dlopen, _dlsym and/or _dlclose on a Sun.
+
+If you see undefined symbols _dlopen, _dlsym, or _dlclose when linking
+with -lX11, compile and link against the file mit/util/misc/dlsym.c in
+the MIT X11R5 distribution.  Alternatively, link temacs using shared
+libraries with s/sunos4shr.h.  (This doesn't work if you use the X
+toolkit.)
+
+* Error messages `Wrong number of arguments: #<subr where-is-internal>, 5'
+
+This typically results from having the powerkey library loaded.
+Powerkey was designed for Emacs 19.22.  It is obsolete now because
+Emacs 19 now has this feature built in; and powerkey also calls
+where-is-internal in an obsolete way.
+
+So the fix is to arrange not to load powerkey.
+
+* In Shell mode, you get a ^M at the end of every line.
+
+This happens to people who use tcsh, because it is trying to be too
+smart.  It sees that the Shell uses terminal type `unknown' and turns
+on the flag to output ^M at the end of each line.  You can fix the
+problem by adding this to your .cshrc file:
+
+    if ($?EMACS) then
+        if ($EMACS == "t") then
+            unset edit 
+            stty  -icrnl -onlcr -echo susp ^Z
+        endif
+    endif
+
+* An error message such as `X protocol error: BadMatch (invalid
+parameter attributes) on protocol request 93'.
+
+This comes from having an invalid X resource, such as
+   emacs*Cursor:   black
+(which is invalid because it specifies a color name for something
+that isn't a color.)
+
+The fix is to correct your X resources.
+
+* Undefined symbols when linking on Sunos 4.1 using --with-x-toolkit.
+
+If you get the undefined symbols _atowc _wcslen, _iswprint, _iswspace,
+_iswcntrl, _wcscpy, and _wcsncpy, then you need to add -lXwchar after
+-lXaw in the command that links temacs.
+
+This problem seems to arise only when the international language
+extensions to X11R5 are installed.
+
+* Typing C-c C-c in Shell mode kills your X server.
+
+This happens on Linux 1.0 thru 1.04, approximately.  The workaround is
+to define SIGNALS_VIA_CHARACTERS in config.h and recompile Emacs.
+Newer Linux versions don't have this problem.
+
+* src/Makefile and lib-src/Makefile are truncated--most of the file missing.
+
+This can happen if configure uses GNU sed version 2.03.  That version
+had a bug.  GNU sed version 2.05 works properly.
+
 * Slow startup on X11R6 with X windows.
 
 If Emacs takes two minutes to start up on X11R6, see if your X

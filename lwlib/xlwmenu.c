@@ -55,7 +55,7 @@ xlwMenuResources[] =
   {XtNarrowSpacing, XtCMargin, XtRDimension,  sizeof(Dimension),
      offset(menu.arrow_spacing), XtRImmediate, (XtPointer)10},
 
-  {XmNshadowThickness, XmCShadowThickness, XmRHorizontalDimension,
+  {XmNshadowThickness, XmCShadowThickness, XtRDimension,
      sizeof (Dimension), offset (menu.shadow_thickness),
      XtRImmediate, (XtPointer) 2},
   {XmNtopShadowColor, XmCTopShadowColor, XtRPixel, sizeof (Pixel),

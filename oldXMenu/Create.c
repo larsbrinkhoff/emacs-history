@@ -426,7 +426,7 @@ XMenuCreate(display, parent, def_env)
    * Create and store the inactive pattern pixmap.
    */
   {
-    unsigned char *data = NULL;
+    char *data = NULL;
     int width, height;
 
     switch (inact_pnum) 

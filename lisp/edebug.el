@@ -8,7 +8,7 @@
 ;; LCD Archive Entry:
 ;; edebug|Daniel LaLiberte|liberte@cs.uiuc.edu
 ;; |A source level debugger for Emacs Lisp.
-;; |$Date: 1994/04/11 21:47:38 $|$Revision: 3.5.1.4 $|~/modes/edebug.el|
+;; |$Date: 1994/05/22 22:06:54 $|$Revision: 3.5.1.6 $|~/modes/edebug.el|
 
 ;; This file is part of GNU Emacs.
 
@@ -80,47 +80,10 @@
 ;;; liberte@cs.uiuc.edu
 
 ;;; ===============================
-;;; $Header: /gd/gnu/emacs/19.0/lisp/RCS/edebug.el,v 3.5.1.4 1994/04/11 21:47:38 rms Exp $
-;;; $Log: edebug.el,v $
-;;; Revision 3.5.1.4  1994/04/11  21:47:38  rms
-;;; (eval-reg): Fix the require call.
-;;;
-;;; Revision 3.5.1.3  1994/04/09  22:11:10  liberte
-;;; *** empty log message ***
-;;;
-;;; Revision 3.5.1.2  1994/04/09  22:07:30  liberte
-;;; Testing branch.  A change in log comments is not
-;;; enough to get by ci.
-;;;
-;;; Revision 3.5.1.1  1994/04/09  21:49:52  liberte
-;;; Create branch for FSF mods.
-;;;
-;;; Revision 3.5  1994/04/04  21:39:52  liberte
-;;; * Change "-emacs-" to "-original-" throughout.
-;;; * (edebug-last-sexp) Fix missing ";;"
-;;; * (edebug-read) Fix docstring, &optional arg,
-;;;         and the check that stream is current-buffer.
-;;; * (edebug-install-read-eval-functions) Use (elisp-eval-region-install).
-;;; * (edebug-uninstall-read-eval-functions) Restore to symbol-function values.
-;;; * (edebug-eval-defun) Repair check for edebug-all-defs.
-;;; * (edebug-top-level-form) Set edebug-all-defs to t.
-;;; * (edebug-read-and-maybe-wrap-form1) Call edebug-original-read
-;;;         instead of read.
-;;; * (edebug-enter) Bind pre-command-hook and post-command-hook to nil.
-;;;         Reset these variables and executing-macro to outside values.
-;;; * (edebug-display) Reset global variables to outside values.
-;;; * (edebug-recursive-edit) Reset global variables to outside values.
-;;; * (edebug-outside-excursion) Set outside values of global variables
-;;;         in case they were changed by side effect.
-;;; * (edebug-instrument-callee) Use edebug-original-read instaed of read.
-;;; * (edebug-eval-result-list) While evaluating evaluation list,
-;;;         bind edebug-execution-mode and edebug-trace to nil, to avoid loop.
-;;;
-;;;
-;;; For the rest of the revision history, see edebug-history.
+;;; For the early revision history, see edebug-history.
 
 (defconst edebug-version
-  (let ((raw-version "$Revision: 3.5.1.4 $"))
+  (let ((raw-version "$Revision: 3.5.1.6 $"))
     (substring raw-version (string-match "[0-9.]*" raw-version)
 	       (match-end 0))))
      
@@ -179,7 +142,7 @@ This applies to `eval-defun', `eval-region', `eval-buffer', and
 
 You can use the command `edebug-all-defs' to toggle the value of this
 variable.  You may wish to make it local to each buffer with
-(make-local-variable 'edebug-all-defs) in your
+\(make-local-variable 'edebug-all-defs) in your
 `emacs-lisp-mode-hook'.")
 
 (defvar edebug-all-forms nil
@@ -292,7 +255,7 @@ If the result is non-nil, then break.  Errors are ignored.")
 (defmacro def-edebug-spec (symbol spec)
   "Set the edebug-form-spec property of SYMBOL according to SPEC.
 Both SYMBOL and SPEC are unevaluated. The SPEC can be 0, t, a symbol
-(naming a function), or a list."
+\(naming a function), or a list."
   (` (put (quote (, symbol)) 'edebug-form-spec (quote (, spec)))))
 
 (defmacro def-edebug-form-spec (symbol spec-form)

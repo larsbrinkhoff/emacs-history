@@ -1856,7 +1856,7 @@ DEFUN ("make-directory-internal", Fmake_directory_internal,
 }
 
 DEFUN ("delete-directory", Fdelete_directory, Sdelete_directory, 1, 1, "FDelete directory: ",
-  "Delete a directory.  One argument, a file name string.")
+  "Delete a directory.  One argument, a file name or directory name string.")
   (dirname)
      Lisp_Object dirname;
 {
@@ -1864,7 +1864,7 @@ DEFUN ("delete-directory", Fdelete_directory, Sdelete_directory, 1, 1, "FDelete 
   Lisp_Object handler;
 
   CHECK_STRING (dirname, 0);
-  dirname = Fexpand_file_name (dirname, Qnil);
+  dirname = Fdirectory_file_name (Fexpand_file_name (dirname, Qnil));
   dir = XSTRING (dirname)->data;
 
   handler = Ffind_file_name_handler (dirname, Qdelete_directory);
@@ -2663,7 +2663,7 @@ and (2) it puts less data in the undo list.")
 #else /* MSDOS */
   if (!NILP (replace))
     {
-      char buffer[1 << 14];
+      unsigned char buffer[1 << 14];
       int same_at_start = BEGV;
       int same_at_end = ZV;
       int overlap;
@@ -2694,10 +2694,12 @@ and (2) it puts less data in the undo list.")
       immediate_quit = 0;
       /* If the file matches the buffer completely,
 	 there's no need to replace anything.  */
-      if (same_at_start == st.st_size)
+      if (same_at_start - BEGV == st.st_size)
 	{
 	  close (fd);
 	  specpdl_ptr--;
+	  /* Truncate the buffer to the size of the file.  */
+	  del_range_1 (same_at_start, same_at_end, 0);
 	  goto handled;
 	}
       immediate_quit = 1;
@@ -3219,6 +3221,7 @@ to the file, instead of any buffer contents, and END is ignored.")
       current_buffer->save_modified = MODIFF;
       XFASTINT (current_buffer->save_length) = Z - BEG;
       current_buffer->filename = visit_file;
+      update_mode_lines++;
     }
   else if (quietly)
     return Qnil;
@@ -4056,7 +4059,7 @@ lists are merged destructively.");
   Vwrite_region_annotate_functions = Qnil;
 
   DEFVAR_LISP ("inhibit-file-name-handlers", &Vinhibit_file_name_handlers,
-    "A list of file names for which handlers should not be used.\n\
+    "A list of file name handlers that temporarily should not be used.\n\
 This applies only to the operation `inhibit-file-name-operation'.");
   Vinhibit_file_name_handlers = Qnil;
 
