@@ -1735,7 +1735,16 @@ With prefix argument, unflag these files."
      ;; It is less than general to check for ~ here,
      ;; but it's the only way this runs fast enough.
      (and (save-excursion (end-of-line)
-			  (eq (preceding-char) ?~))
+                            (or
+                             (eq (preceding-char) ?~)
+			     ;; Handle executables in case of -F option.
+			     ;; We need not worry about the other kinds
+			     ;; of markings that -F makes, since they won't
+			     ;; appear on real backup files.
+                             (if (eq (preceding-char) ?*)
+                                 (progn
+                                   (forward-char -1)
+                                   (eq (preceding-char) ?~)))))
 	  (not (looking-at dired-re-dir))
 	  (let ((fn (dired-get-filename t t)))
 	    (if fn (backup-file-name-p fn))))
@@ -1750,36 +1759,43 @@ OLD and NEW are both characters used to mark files."
 	  (new (progn (message  "Change %c marks to (new mark): " old)
 		      (read-char))))
      (list old new)))
-  (let ((regexp (format "^%s" (regexp-quote old)))
-	(buffer-read-only))
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward regexp nil t)
-	(beginning-of-line)
-	(delete-region (point) (1+ (point)))
-	(insert-char new 1)))))
+  (if (or (eq old ?\r) (eq new ?\r))
+      (ding)
+    (let ((string (format "\n%c" old))
+	  (buffer-read-only))
+      (save-excursion
+	(goto-char (point-min))
+	(while (search-forward string nil t)
+	  (subst-char-in-region (match-beginning 0)
+				(match-end 0) old new))))))
 
 (defun dired-unmark-all-files (mark &optional arg)
-  "Remove a specific mark or any mark from every file.
+  "Remove a specific mark (or any mark) from every file.
+After this command, type the mark character to remove, 
+or type RET to remove all marks.
 With prefix arg, query for each marked file.
 Type \\[help-command] at that time for help."
-  (interactive "sRemove marks (RET means all): \nP")
-  (let ((count 0)
-	(re (if (zerop (length mark)) dired-re-mark
-	      (concat "^" (regexp-quote mark)))))
-    (save-excursion
-      (let (buffer-read-only case-fold-search query
-			     (help-form "\
+  (interactive "cRemove marks (RET means all): \nP")
+  (save-excursion
+    (let* ((count 0)
+	   buffer-read-only case-fold-search query
+	   (string (format "\n%c" mark))
+	   (help-form "\
 Type SPC or `y' to unmark one file, DEL or `n' to skip to next,
 `!' to unmark all remaining files with no more questions."))
-	(goto-char (point-min))
-	(while (re-search-forward re nil t)
-	  (if (or (not arg)
-		  (dired-query 'query "Unmark file `%s'? "
-			       (dired-get-filename t)))
-	      (progn (delete-char -1) (insert " ") (setq count (1+ count))))
-	  (forward-line 1))))
-    (message "%s" (format "Marks removed: %d %s" count mark))))
+      (goto-char (point-min))
+      (while (if (eq mark ?\r)
+		 (re-search-forward dired-re-mark nil t)
+	       (search-forward string nil t))
+	(if (or (not arg)
+		(dired-query 'query "Unmark file `%s'? "
+			     (dired-get-filename t)))
+	    (progn (subst-char-in-region (1- (point)) (point)
+					 (preceding-char) ?\ )
+		   (setq count (1+ count)))))
+      (message (if (= count 1) "1 mark removed"
+		 "%d marks removed")
+	       count))))
 
 ;; Logging failures operating on files, and showing the results.
 

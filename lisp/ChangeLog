@@ -1,3 +1,246 @@
+Tue Jun  8 00:40:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fortran.el (fortran-indent-new-line): Renamed from
+	fortran-reindent-then-newline-and-indent.
+
+	* mouse.el (mouse-drag-region-1): Un-comment-out this function.
+
+	* info.el (Info-follow-reference): Fix completion defaulting.
+
+Mon Jun  7 00:25:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* apropos.el (safe-documentation): Don't crash on byte-compiled macro.
+
+	* telnet.el (telnet-simple-send): New function.
+	(telnet): Arrange to use that.
+
+	* sun-keys.el: File deleted.
+
+	* texinfo.el (texinfo-section-types-regexp): Add @chapheading.
+
+	* gud.el: Doc fixes.  Delete local variable list at the end.
+	(expr-forward-sexp): Renamed from forw-expr.
+	(expr-backward-sexp): Renamed from back-expr.
+
+	* case-table.el (describe-buffer-case-table): Merge locals i and ch.
+	Make *Help* current buffer for describe-vector.
+
+	* bibtex.el: Fix typos in previous change.
+	Add a few menu items.
+
+	* compile.el (compilation-error-regexp-alist): Make sure each regexp
+	can only match a few characters at the front.  Split off the Mips
+	CC regexp from the Apollo regexp.
+
+	* rmail.el (rmail-variables): Default rmail-inbox-list here.
+	(rmail): Not here.
+
+	* ange-ftp.el (ange-ftp-real-load): New function.
+	(ange-ftp-load): New function--handles `load'.
+
+Sun Jun  6 18:29:36 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* term/sun-mouse.el (mouse-union-first-preferred): Renamed from
+	mouse-union-first-prefered.
+
+Sun Jun  6 17:46:25 1993  Paul Eggert  (eggert@twinsun.com)
+	
+	* sc.el (sc-consistent-cite-p): Renamed from sc-consistant-cite-p.
+
+	* etags.el (etags-recognize-tags-table): Fix misspelling of
+	find-tag-regexp-next-line-after-failure-p.
+
+	* bibtex.el (bibtex-name-alignment): Renamed from
+	bibtex-name-alignement.
+
+	* allout.el (outlinify-sticky): Renamed from outlineify-sticky.
+
+	* faces.el (x-create-frame-with-faces): Reversevideo -> ReverseVideo.
+	* frame.el (frame-initialize): Likewise.
+
+Sun Jun  6 01:27:16 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* outline.el (outline-minor-mode): Add autoload cookie.
+
+	* bibtex.el: Define 2 local menu-bar submaps.
+	(bibtex-x-help, bibtex-x-environment): Deleted.
+
+	* isearch.el (search-upper-case): Make `no-yanks' the default.
+	(isearch-no-upper-case-p): New arg REGEXP-FLAG.
+	(isearch-search): Pass new arg.
+	(isearch-member-equal): Deleted.
+	(isearch-overlay): New variable.
+	(isearch-highlight, isearch-dehighlight): Rewritten to use overlays.
+
+	* dired.el (dired-unmark-all-files): Read arg as just a character.
+	Use non-regexp search to find a specific mark.
+	Use subst-char-in-region to make the change.
+	Improve the message at the end.
+
+	* vip.el (vip-ctl-key-equivalent): Use vip-escape-to-emacs.
+	(vip-escape-to-emacs): Use read-key-sequence and key-binding.
+	Arg EVENTS replaces arg CHAR.  
+	(vip-ESC, vip-ctl-c, vip-ctl-x, vip-ctl-h): These callers changed.
+
+	* compile.el (compile-internal): Alter current buffer only temporarily.
+
+Sat Jun  5 13:08:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): Replace the code for appending to buffer.
+
+	* rmailsum.el (rmail-summary-next-msg): Fix number of dots in regexp.
+
+	* scroll-bar.el (scroll-bar-drag-1):
+	Calculate position relative to the accessible part of the buffer.
+
+	* menu-bar.el (menu-bar-help-menu): Add defvar.
+	(menu-bar-edit-menu, menu-bar-file-menu): Likewise.
+
+	* dired.el (dired-flag-backup-files): Handle `*' made by `ls -F'.
+
+	* ange-ftp.el (internal-ange-ftp-mode): Renamed from ange-ftp-mode.
+	Callers changed.
+
+	* menu-bar.el (window-system): Enable menu bars only if
+	window-system is non-nil.
+
+	* add-log.el (add-log-current-defun): Fix typos in last change.
+
+Sat Jun  5 04:39:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el (x-selection-timeout): Set it, using x-get-resource.
+
+Fri Jun  4 07:14:44 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* timezone.el: (timezone-make-date-arpa-standard,
+	timezone-make-date-sortable): Move common code into timezone-fix-time.
+	(timezone-fix-time): Merge common code from above two functions.
+	Yield time zone at end of result vector.
+	Set time zone offset correctly as of the given time,
+	instead of guessing from the current offset.
+	(timezone-make-arpa-date, timezone-zone-to-minute): Convert
+	current-time-zone style timezones into RFC-822 style timezones.
+
+	(timezone-time-from-absolute, timezone-time-zone-from-absolute,
+	timezone-day-number, timezone-absolute-from-gregorian):
+	More functions borrowed from Reingold's calendar package.
+
+	(timezone-make-arpa-date, timezone-make-sortable-date): Can safely
+	assume that year includes century, since timezone-fix-time guarantees
+	this.
+
+	* gnuspost.el (gnus-current-time-zone):	New function, which tries
+	current-time-zone, and if that fails falls back on gnus-local-timezone.
+	(gnus-inews-date): Use it.
+	(gnus-inews-valid-date): New optional args TIME (default now) and ZONE
+		(default GMT).
+	(gnus-inews-buggy-date): New optional arg TIME (default now).
+
+	* gnus.el (gnus-local-timezone): Now used only if current-time-zone
+	does not work.
+
+Fri Jun  4 01:16:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mh-e.el (mh-yank-cur-msg): Use (mark t).
+
+	* simple.el (mark): Doc fix.
+
+	* add-log.el (add-log-current-defun): Handle Fortran.
+
+	* rmail.el (rmail-resend): Require sendmail and mailalias.
+
+	* time.el (display-time-24hr-format): Make it a user option.
+
+	* edt.el (GOLD-prefix): Define *after* GOLD-map.
+
+	* dired.el (dired-change-marks): Just ding if one arg is RET.
+	Search for strings, not regexps.  Use subst-char-in-region.
+
+	* isearch.el (isearch-mode): Set isearch-window-configuration
+	only if in slow mode.
+	(isearch-done): Use isearch-window-configuration only if non-nil.
+	(isearch-other-control-char): For mouse event, call isearch-done
+	in the buffer whose keymap was used.
+
+	* flow-ctrl.el (enable-flow-control): Doc fix.
+
+Thu Jun  3 00:47:23 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-do-fcc): Omit first 2 lines when appending
+	to an RMAIL buffer.
+
+	* simple.el (kill-ring-save): Doc fix.
+
+	* rmailsum.el (rmail-summary-expunge-and-save): Do save-buffer last.
+	Use two separate save-excursion calls.
+	(rmail-summary-input): Use pop-to-buffer.
+	(rmail-summary-get-new-mail): Gobble rmail-current-message;
+	later go to that message.
+	(rmail-summary-next-msg): Start at end of line, if moving forward.
+	Move to beginning of line, after the loop.
+	(rmail-new-summary): Fix format of elt in minor-mode-alist.
+
+	* rmail.el (rmail-select-summary): Add a save-excursion.
+
+	* rmailsum.el (rmail-summary-expunge-and-save):
+	Call set-buffer again after rmail-only-expunge.
+	(rmail-summary-add-label, rmail-summary-kill-label):
+	Fix reading the label.
+	(rmail-summary-rmail-update): Bind window locally.
+	Use unwind-protect, not save-window-excursion.
+
+	* vc-hooks.el (vc-find-file-hook): Check buffer-file-name is non-nil.
+
+	* hideif.el (define-hide-ifdef-mode-map): Don't bind C-c LETTER.
+	Use C-c ESC LETTER instead.
+	Handle case where where-is-internal returns nil.
+
+	* texinfmt.el: Provide texinfmt.
+
+	* bytecomp.el (byte-compile-insert-header): Fix backwards test
+	of byte-compile-compatibility.
+
+	* info.el (Info-mode-map): Bind mouse-2, not mouse-3.
+
+	* view.el (View-scroll-lines-forward): If we exit, do nothing else.
+
+	* calendar.el (calendar-mode): Doc fix.
+	(calendar-mark-ring): New defvar.
+
+	* frame.el (frame-initialize): Set cursor-color last.
+
+	* vip.el (vip-escape-to-emacs): Temporarily restore local map
+	and use read-key-sequence.
+
+	* rmailsum.el (rmail-summary-by-senders): New function.
+	(rmail-message-senders-p): New function.
+
+Thu Jun  3 17:58:59 1993  Dave Gillespie  (daveg@synaptics.com)
+
+	* complete.el (PC-lisp-complete-symbol): Added.
+	(PC-look-for-include-file): Recognize some Lisp notations.
+	(PC-include-file-all-completions): Fixed uppercase variable names.
+
+Wed Jun  2 12:56:57 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* info.el (Info-suffix-list): Handle .gz suffix.
+	* ange-ftp.el (ange-ftp-binary-file-name-regexp): Handle .gz.
+
+	* ehelp.el (electric-help-command-loop): Use equal to compare
+	lists of events.
+
+	* electric.el (Electric-command-loop): Use eq to compare events.
+
+	* diff.el (diff): Really do use arg SWITCHES.
+
+	* frame.el (frame-initialize): Delete geometry parms
+	from initial-frame-alist.
+
+Tue Jun  1 17:40:30 1993  Ken  Manheimer  (klm@coil.nist.gov)
+
+	* allout.el (outlineify-sticky): Reconciled provisions for
+	non-standard and standard prefix leaders.
+
 Tue Jun  1 16:09:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.12 released.
@@ -83,6 +326,10 @@ Mon May 31 23:21:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	* outline.el (outline-flag-region): Pass t as NOUNDO arg
 	to subst-char-in-region.  No need to restore buffer-modified-p by hand.
 
+Mon May 31 20:29:00 1993  Richard Stallman  (rms@wookumz.gnu.ai.mit.edu)
+
+	* term/x-win.el (x-invocation-args): Add defvar.
+
 Mon May 31 19:59:12 1993  Junio Hamano  (junio@twinsun.com)
 
 	* lisp/window.el (count-windows): PROC argument of
@@ -152,6 +399,21 @@ Sun May 30 13:21:04 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.10 released.
+
+Sat May 29 00:40:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/bobcat.el: Just load term/keyswap.el.
+
+	* term/vt200.el: Just load term/vt100.el.
+	* term/apollo.el: Just load term/vt100.el.
+	* term/vt102.el, term/vt125.el, term/vt201.el, term/vt220.el,
+	term/vt240.el, term/vt300.el, term/vt320.el, term/vt400.el,
+	term/vt420.el: New files.  Just load vt100.el.
+
+	* term/lk201.el: New file.
+	* term/vt100.el: Use term/lk201.el.
+
+	* term/vt100.el (vt100-wide-mode): Add missing arg in set-frame-width.
 
 Sat May 29 00:33:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -257,6 +519,11 @@ Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.
 
+Thu May 27 01:37:30 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* term/x-win.el: Check for a geometry resource, and apply it to the
+	initial frame.
+
 Wed May 26 23:32:25 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* isearch.el (isearch-forward): Remove the claim that
@@ -355,6 +622,18 @@ Tue May 25 11:47:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* loaddefs.el: copy-to-register now on C-x r s.
 
+Tue May 25 11:06:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el: Pass x-command-line-resources to x-open-connection.
+	(x-command-line-resources): New variable.
+	(x-handle-rn-switch): New function.
+	(command-switch-alist): Add -rn.
+
+Tue May 25 06:26:51 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* term/x-win.el (command-switch-alist, x-switch-definitions): Treat
+	`-i' like `-itype', as in Emacs 18.
+
 Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* Version 19.8 released.
@@ -372,6 +651,11 @@ Tue May 25 05:15:14 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* disp-table.el (standard-display-european): Doc fix.  Make
 	it autoload.  Make it respond to prefix arg like a minor mode.
+
+Mon May 24 17:17:02 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el (x-select-text): New arg PUSH.
+	(x-switch-definitions): Represent -r as `reverse' option.
 
 Mon May 24 17:16:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -775,8 +1059,9 @@ Thu May 13 05:28:14 1993  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
 	(visit-tags-table-buffer): Call tags-table-including first with
 	CORE-ONLY set, and then afterwards with it clear.
 
-Wed May 12 10:51:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+Wed May 12 12:13:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
+	* term/x-win.el: Require menu-bar.el.
 	* menu-bar.el: Provide 'menu-bar.
 
 	* compile.el (Setting minor-mode-map-alist):
@@ -903,13 +1188,19 @@ Sat May  8 23:15:07 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 
 	* faces.el: Call internal-set-face-1, not internat-set-face-1.
 	
-	* faces.el: Don't set frame-creation-function here; x-win.el is
+	* faces.el: Don't set frame-creation-function here; term/x-win.el is
 	the appropriate place to set it.
 
 	* faces.el: Only apply x-initialize-frame-faces to X frames; pass
 	over terminal frames.
 
 	* faces.el: Provide 'faces.
+
+Sat May  8 22:42:26 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* term/x-win.el: Since we require faces.el, there's no point in setting
+	frame-creation-function to x-create-frame - just set it directly
+	to x-create-frame-with-faces.
 
 Sat May  8 12:45:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -943,6 +1234,11 @@ Fri May  7 12:50:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* rmail.el (rmail-resend): Add `resent' attribute.
 	(rmail-forward): With prefix arg, run rmail-resend.
+
+Fri May  7 03:02:55 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* term/x-win.el: (require 'faces), too.  Move (require 'select) to top,
+	with the other requires.
 
 Thu May  6 13:13:10 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 
@@ -1413,6 +1709,11 @@ Mon Apr 12 21:36:52 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 	* bytecomp.el: The `suspend-hooks' variable is obsolete now, and
 	`suspend-hook' is the right name.
 
+Mon Apr 12 21:36:20 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* term/sun-mouse.el (suspend-emacstool): Run suspend-hook, not
+	suspend-hooks.
+
 Mon Apr 12 07:54:16 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* rot13.el (rot13-display-table): Use `vector', not `make-rope'.
@@ -1864,6 +2165,12 @@ Thu Mar 25 01:57:43 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
 
 	* emacsbug.el: Added a (provide 'emacsbug); lisp-mnt.el needs this.
 
+Wed Mar 24 23:38:53 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* term/x-win.el (x-defined-colors): Use x-color-defined-p instead of
+	x-defined-color.
+	(x-handle-geometry): Use x-parse-geometry instead of x-geometry.
+
 Wed Mar 24 20:27:07 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* calendar.el (calendar-standard-time-zone-name,
@@ -1872,6 +2179,11 @@ Wed Mar 24 20:27:07 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* calendar.el (calendar-time-zone): Fix code which initializes
 	this.
+
+Wed Mar 24 02:59:21 1993  Richard Stallman  (rms@wookumz.gnu.ai.mit.edu)
+
+	* term/x-win.el: Bind M-next to an alias scroll-other-window-1
+	to get better doc string output.
 
 Tue Mar 23 18:27:03 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
 
@@ -1905,6 +2217,11 @@ Mon Mar 22 22:44:49 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
 	xscheme.el: Added or corrected Commentary section.  This finishes
 	my pass over the lisp libraries; I'll teach the finder about
 	these commentary sections soon.
+
+Mon Mar 22 17:35:29 1993  Richard Stallman  (rms@wookumz.gnu.ai.mit.edu)
+
+	* term/x-win.el (x-win-suspend-error):
+	suspend-hook renamed from suspend-hooks.
 
 Mon Mar 22 16:53:22 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
 
@@ -2038,6 +2355,18 @@ Thu Mar 18 11:34:34 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
         * tex-mode.el (tex-send-command): Fix the command sent so that no
         blank is inserted when replacing the asterisk with the file name.
 
+Thu Mar 18 03:38:31 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* term/wyse50.el: (function-key-map) Nuke code no longer bound to keys.
+
+	* term/tvi970.el: (function-key-map)
+	As many key cookies as possible renamed to fit the new conventions
+	documented in lisp/term/README.
+
+	* term/vt100.el, term/news.el: (function-key-map)
+	Fix things so that bindings are added to the keymap already created by
+	terminal initialization.
+
 Wed Mar 17 16:57:17 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
 
 	* help-screen.el: Installed, following release.  Now package
@@ -2163,6 +2492,10 @@ Sat Mar 13 16:45:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	(rmail-summary-rmail-update): Do nothing if rmail buffer not visible.
 	(rmail-summary-mode-map): Don't bind C-n, C-p.  Use ordinary move cmds.
 
+Fri Mar 12 19:53:22 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el: Added library headers.
+
 Fri Mar 12 14:53:51 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
 
 	* loaddefs.el (global-map): Fixed a typo in the binding of
@@ -2172,10 +2505,38 @@ Fri Mar 12 14:53:51 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
 	any key bindings or code, and won't without making sure there
 	won't be any repeat of the bad-patch brouhaha.
 
+Thu Mar 11 18:50:04 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el: Cancel previous change, since it discarded
+	earlier necessary changes.
+
 Thu Mar 11 13:45:58 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* term/x-win.el: Cancel previous change, since it discarded
 	earlier necessary changes.
+
+Thu Mar 11 09:00:25 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* term/vt100.el:
+	Added headers, commented out code the duplicates startup effects.
+
+	* term/x-win.el: Added headers, removed function bindings.
+
+	* term/wyse50.el: Added headers, changed some keycap names.
+
+	* term/tvi970.el: Added headers, changes some keycap names.
+
+	* term/sun.el: Added headers, removed function-key bindings.
+
+	* term/news.el: Added headers, changed a few cookie names.
+
+	* term/keyswap.el: Initial revision
+
+Thu Mar 11 07:01:17 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el: Disable suspending under X windows by setting
+	suspend-hooks, not suspend-hook.  The latter is an obsolete name.
+	Use add-hook instead of setting suspend-hooks directly.
 
 Thu Mar 11 03:00:19 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
 
@@ -2256,6 +2617,13 @@ Wed Mar 10 12:06:52 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 	* files.el (basic-save-buffer): If file-precious-flag is set, and
 	we write the buffer to a temp file and then rename it, don't
 	neglect to set the new file's modes properly.
+
+Wed Mar 10 06:31:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el (function-key-map):
+	Map key symbols backspace, return... into ASCII chars.
+	Likewise their Meta versions.
+	Also add `ascii-character' properties.
 
 Tue Mar  9 17:58:31 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
 
@@ -2353,6 +2721,11 @@ Sun Mar  7 18:20:54 1993  Paul Eggert  (eggert@twinsun.com)
 	(vc-version-diff): When recursively generating a difference
 	listing, don't append the latest output unless diff was actually run;
 	otherwise, you'll get the output from the previous file by mistake.
+
+Sun Mar  7 04:22:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el (function-key-map):
+	Map key symbols backspace, return... into ASCII chars.
 
 Sun Mar  7 02:34:45 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -2493,6 +2866,17 @@ Tue Mar  2 13:38:56 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	* cl.el (defsetf): Use eval-and-compile for self-update-fn.
 
 	* add-log.el (add-change-log-entry): Never move past second hdr line.
+
+Tue Mar  2 07:35:52 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el (x-switch-definitions): Use the proper names for
+	the scroll bar parameters.
+
+	Use the term `scroll bar', instead of `scrollbar'.
+	* term/x-win.el, frame.el, mouse.el: Terminology changed.
+	* scrollbar.el: Renamed to scroll-bar.el.
+
+	* term/x-win.el: Require `scroll-bar', not `scrollbar'.
 
 Tue Mar  2 00:25:09 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 
@@ -2830,6 +3214,18 @@ Thu Jan 28 01:14:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* simple.el: Don't use the completion-oriented history commands.
 	* paths.el (sendmail-program): Try /usr/ucblib/sendmail.
+
+Tue Jan 26 01:26:58 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el: x-selection-value has been renamed to x-selection.
+	x-own-selection has been renamed to x-set-selection, and the order
+	of its arguments has been reversed, for consistency with other
+	lisp functions like put and aset.
+	* term/x-win.el (x-select-text): Adjusted.
+	(x-cut-buffer-or-selection-value): Check the primary selection,
+	using x-selection, instead of checking the cut buffer again.
+
+	* term/x-win.el: Doc fix.
 
 Mon Jan 25 12:08:05 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
 
@@ -3424,6 +3820,11 @@ Thu Nov  5 09:58:13 1992  Stephen A. Wood  (saw@cebaf.gov)
 	(fortran-mode, calculate-fortran-indent,
 	fortran-setup-tab-format-style, fortran-setup-fixed-format-style):
 	`fortran-comment-line-column' meaning changed.  Now defaults to 0.
+
+Thu Nov  5 05:00:28 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* term/x-win.el: (command-switch-alist, x-switch-definitions):
+	-ib was used for two things.  Use -itype for icon type.
 
 Wed Nov  4 23:58:42 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -4304,7 +4705,7 @@ Fri Sep 11 03:06:55 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	* mouse.el (x-fixed-font-alist): New variable.
 	(mouse-set-font): New function, now on C-mouse-3.
 
-	* x-win.el (scroll-bar-mode): New function (and variable too).
+	* term/x-win.el (scroll-bar-mode): New function (and variable too).
 
 	* dired.el (dired-next-subdir, dired-subdir-index): Moved here
 	* dired-aux.el: From here.
@@ -5632,8 +6033,8 @@ Tue Jul 14 19:43:05 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 	loadup.el, ispell.el, isearch.el, holidays.el, fortran.el,
 	files.el, etags.el, emerge.el, electric.el, edebug.el, dired.el,
 	diary.el, csharp.el, compile.el, comint.el, calendar.el,
-	buff-mune.el, bg-mouse.el, appt.el, abbrevlist.el, x-win.el,
-	wyse50.el, vt200.el, vt100.el: All uses changed.
+	buff-mune.el, bg-mouse.el, appt.el, abbrevlist.el, term/x-win.el,
+	term/wyse50.el, term/vt200.el, term/vt100.el: All uses changed.
 	* screen.el (screen-height, screen-width, set-screen-height,
 	set-screen-width): Defined as aliases for frame-height,
 	frame-width, set-frame-height, and set-frame-width.
@@ -6127,7 +6528,7 @@ Fri Jun 12 06:09:19 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
 	the most recent string for interprogram pasting; the function
 	should never return the same string Emacs posted with
 	`interprogram-cut-function'.
-	* x-win.el (x-last-selected-text): New variable.
+	* term/x-win.el (x-last-selected-text): New variable.
 	(x-select-text): Set it, so we can check later against returning
 	it.
 	(x-cut-buffer-or-selection-value): Check it, to make sure we don't
@@ -7583,7 +7984,7 @@ Thu May 16 15:05:52 1991  Jim Blandy  (jimb at geech.gnu.ai.mit.edu)
 
 	* macros.el (apply-macro-to-region-lines): New function.
 
-	* x-win.el (x-handle-switch): The newline at the end of the
+	* term/x-win.el (x-handle-switch): The newline at the end of the
 	comment line at the top of this function was missing.
 
 Thu May 16 14:22:10 1991  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
@@ -10973,7 +11374,7 @@ Wed Aug 30 13:16:02 1989  Richard Stallman  (rms@mole.ai.mit.edu)
 
 	* rmail.el: `e' is now edit; only `x' for expunge.
 
-	* x-win.el: Fix error message.
+	* term/x-win.el: Fix error message.
 
 	* dired.el (dired-repeat-over-lines): FUNCTION returns t if it
 	deleted the line.  All callers changed to make it return nil.
@@ -12597,10 +12998,3 @@ Tue Sep  6 21:03:07 1988  Richard Stallman  (rms@mole.ai.mit.edu)
 	* loaddefs.el (shell-prompt-pattern): Allow prompt enclosed in parens.
 
 	* lisp-mode.el (calculate-lisp-indent): bug in lisp-indent-offset case.
-
-Local Variables:
-mode: indented-text
-left-margin: 8
-fill-column: 74
-version-control: never
-End:

@@ -1,3 +1,225 @@
+Tue Jun  8 00:38:15 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* ymakefile (C_DEBUG_SWITCH, C_OPTIMIZE_SWITCH): Remove these;
+	people shouldn't edit this file to choose optimization and
+	debugging switches anyway.  ../configure will set CFLAGS to an
+	appropriate default, which they will be able to override.
+	* Makefile.in (xmakefile): Don't try to turn -g and -O in
+	CFLAGS into C_DEBUG_SWITCH and C_OPTIMIZE_SWITCH.  CFLAGS should
+	be the sole source of such switches, so that setting CFLAGS
+	controls them completely.
+
+Mon Jun  7 23:54:46 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* config.h.in (HAVE_LIBDNET): New macro, to be defined by
+	../configure.
+	* m/pmax.h (LIBS_MACHINE): Only put "-ldnet" here if HAVE_LIBDNET
+	is #defined.
+
+Mon Jun  7 00:10:09 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (syms_of_fileio): Set up Qset_visited_file_modtime.
+	(Fset_visited_file_modtime): Use the proper operation.
+
+	* sysdep.c (init_baud_rate) [HAVE_TERMIOS]: Use cfgetospeed.
+
+	* systty.h: Add NO_TERMIO conditional.
+
+	* textprop.c (Fadd_text_properties): Don't treat the initial
+	interval specially, aside from splitting off the part starting
+	where we want to start changing things.
+	(Fremove_text_properties): Likewise.
+	For ending interval, split it left as in Fadd_text_properties.
+	(Fset_text_properties): Don't set starting interval if it goes
+	past END.  Instead, split it left and set the left part.
+
+	* keymap.c (Fdescribe_vector): Use current buf, not standard-output.
+	(describe_vector_princ): Add newline at end.
+
+	* keymap.c (store_in_keymap, access_keymap): Use CHAR_META
+	when clearing excess high bits.
+
+	* s/dgux.h (INTERRUPTIBLE_*): Fix spelling of macros.
+
+	* s/hpux9.h (SYSTEM_MALLOC, GNU_MALLOC, REL_ALLOC): Definition and
+	#undefs deleted.
+
+	* keymap.c: Doc fix.
+
+	* buffer.c (Fdelete_overlay): Do nothing if overlay already deleted.
+	Bind inhibit-quit to t.
+	(Fmove_overlay): Properly handle changing buffers, or no prev buffer.
+	Bind inhibit-quit to t.
+
+	* lread.c (syms_of_lread): Set up Qload.
+	(Fload): Handle magic file names.
+
+Mon Jun  7 17:07:28 1993  Shane Hartman  (shane@nugget.spr.com)
+
+        * xterm.c (x_caught_error_message): Change type to char* from char*[].
+        (X_CAUGHT_ERROR_MESSAGE_SIZE): New macro.
+        (x_error_catcher): Corresponding changes.
+        (x_catch_errors): Corresponding changes.
+        (x_check_errors): Do not free x_caught_error_message.
+        (x_uncatch_errors): Set x_caught_error_message to 0 after freeing it.
+
+Sun Jun  6 18:38:55 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* uaf.h (uaf$v_thursday): Fix misspelling of "thursday".
+
+	* floatfns.c (Fceiling): Fix spelling of "ceiling".
+
+Sun Jun  6 13:41:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ymakefile [__GNUC__ >= 2] (LIB_GCC): Delete spurious -L.
+
+	* m/tekXD88.h (HAVE_RENAME): Deleted.
+
+	* data.c (Ffset): Delete special check for t and nil.
+
+	* xfaces.c (same_size_fonts): Compare only the width.
+
+	* dispnew.c: Include lisp.h earlier (before termhooks.h).
+
+	* editfns.c (Fcurrent_time_zone): Add alternative for !HAVE_TM_ZONE.
+	* systime.h [HAVE_TZNAME]: Declare tzname if not macro.
+	* config.h.in (HAVE_TZNAME): Add #undef.
+
+Sun Jun  6 13:42:35 1993  Nobuyuki Hikichi  (hikichi@sra.co.jp)
+
+	* m/news-risc.h (NO_MODE_T): Defined.
+	(LINKER): Add #undef.
+
+Sun Jun  6 02:44:47 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keymap.c (access_keymap, store_in_keymap): Discard meaningless
+	high bits of a character event.
+
+Sat Jun  5 04:04:33 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lisp.h: Don't declare malloc or realloc.
+
+	* xfns.c [EMACS_BIT_MAPS]: Include gray.xbm from ./bitmaps.
+
+	* xterm.c (x_new_font): Don't give up right away if XListFontsWithInfo
+	finds no fonts--try XLoadQueryFont anyway.
+
+	* xfns.c (Fx_open_connection): Make `data' unsigned char.
+
+	* window.c (Fset_window_configuration): If a window is supposed
+	to have a buffer, always give it one.
+
+	* xmenu.c (Fx_popup_menu): Error if we don't get a window
+	or a frame somehow.
+
+	* puresize.h: Test MULTI_FRAME, not HAVE_X_WINDOWS.
+
+	* frame.c (Frubber_band_rectangle): Deleted.
+	(syms_of_frame): Don't defsubr it.
+
+	* xselect.c (x_get_foreign_selection): Handle x_selection_timeout
+	as milliseconds, not as seconds.
+	(syms_of_xselect): Doc fix to match.
+
+	* m/mips4.h (MIPS2): Comment out define.
+	(LIB_STANDARD): Delete -lisode.
+
+Fri Jun  4 03:06:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* syssignal.h [POSIX] [!__GNUC__] (sys_sigmask): Add declaration.
+
+	* alloc.c (make_event_array): Ignore bits above CHAR_META.
+
+	* frame.c [!MULTI_FRAME] (Fframep): New dummy definition.
+	(syms_of_frame): Defsubr that.
+
+	* buffer.c (syms_of_buffer): Set up Lisp var inhibit-read-only.
+	* lisp.h (Vinhibit_read_only): Declared.
+	* buffer.c (Fbarf_if_buffer_read_only): Check Vinhibit_read_only.
+	* cmds.c (Fnewline): Use Fbarf_if_buffer_read_only.
+
+	* intervals.h (INTERVAL_VISIBLE_P): Use textget.
+	(INTERVAL_WRITABLE_P): Use textget.
+	Check Vinhibit_read_only.
+
+	* window.c (syms_of_window): Always defvar pop-up-frames
+	and pop-up-frame-function.
+
+	* process.c (read_process_output): Deactivate the mark.
+	Save and restore Vdeactivate_mark.
+
+	* xfns.c (x_set_menu_bar_lines_1): Adjust just the uppermost child
+	in a vertical split.  Adjust the hight counter to the top.
+	(x_set_menu_bar_lines): Don't change overall frame height.
+
+Fri Jun  4 12:41:07 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* filelock.c (MAKE_LOCK_PATH): If SHORT_FILE_NAMES allocates
+	different space and calls fill_in_lock_short_file_name.
+	(fill_in_lock_short_file_name): New function for 14-chars hashed
+	file names. Replaces fill_in_lock_file_name if SHORT_FILE_NAMES.
+
+Thu Jun  3 00:07:07 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c (wait_for_termination): Fix sigpause in POSIX_SIGNALS case.
+
+	* xterm.c (x_catch_errors): Fill in missing array size in cast.
+
+	* Makefile.in (xmakefile): Depend on ../config.status.
+
+	* buffer.c (init_buffer): Init default-directory of minibuffer.
+
+	* m/iris4d.h (LIB_STANDARD): Delete -lbsd.
+
+	* keyboard.c (read_key_sequence): Reset fkey_map when we find
+	something at the end of Vfunction_key_map.
+
+	* m/ibmrt-aix.h (HAVE_FTIME): Defined.
+
+	* emacs.c (syms_of_emacs): Doc fix.
+
+	* keyboard.c (read_char_menu_prompt): Now static.  Add declaration.
+
+	* dispnew.c (Fredraw_display): Redraw all visible frames.
+	(redraw_garbaged_frames): New function.
+	* xdisp.c (redisplay, echo_area_display): Use redraw_garbaged_frames.
+
+	* dispnew.c (do_pending_window_change): No need to clear
+	FRAME_NEW_HEIGHT/WIDTH.  Do test width != 0.
+
+	* xterm.c (x_wm_set_size_hint): Handle XGetNormalHints returning 0.
+
+	* xfns.c (x_set_frame_parameters): Process all parms in reverse order.
+
+	* frame.h (FRAME_MINIBUF_WINDOW): Use minibuffer_window.
+
+Wed Jun  2 16:12:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes): Disable VLNEXT char.
+	Also VWERASE, VREPRINT, VDISCARD.
+
+	* xfaces.c: Test XOS_NEEDS_TIME_H, not HPUX, for including time.hj.
+	* s/sol2.h, s/hpux.h (XOS_NEEDS_TIME_H): Defined.
+
+Wed Jun 2 20:11:29 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* ymakefile (alloca.o): Use temp names allocax.o, allocax.s
+
+	* m/delta.h (MOTOROLA_DELTA): Defined.
+	(HAVE_SYSVIPC, BAT68K, BAT_ALLOCA): Deleted--obsolete.
+	(STACK_DIRECTION, HAVE_X_WINDOWS): Deleted--configure knows.
+	(C_SWITCH_MACHINE): Set to -ga if using the Green Hills compiler.
+	(LIB_STANDARD, LIB_MATH): Defined to the 68881 versions.
+	(LIBS_SYSTEM): -lbsd brings sigblock and sigsetmask.
+	(sigsetmask): Undefined--it is in -lbsd.
+	(LDAV_SYMBOL): Undefined--we have no such thing.
+	(KERNEL_FILE): Defined to "/sysV68".
+	(BSTRING, HAVE_SELECT, HAVE_UNISTD_H, HAVE_TIMEVAL): Defined.
+	(SIGNALS_VIA_CHARACTERS): Defined.
+	(memmove): Defined as memcpy--we have no memmove.
+	(SIGIO, INTERRUPT_INPUT): Undefined--not yet tested.
+	(SHORT_FILE_NAMES, CLASH_DETECTION): Defined.
+
 Wed Jun  2 02:06:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.12 released.
@@ -16771,10 +16993,3 @@ Tue Sep  6 20:43:10 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 	too-complex expression.
 
 	* fileio.c (Fdo_auto_save): No "file has shrunk" msg if < 5000 chars.
-
-Local Variables:
-mode: indented-text
-left-margin: 8
-fill-column: 74
-version-control: never
-End:

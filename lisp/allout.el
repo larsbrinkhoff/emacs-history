@@ -11,7 +11,7 @@
 ;;;_  - Author: Ken Manheimer <klm@nist.gov>
 ;;;_  - Maintainer: Ken Manheimer <klm@nist.gov>
 ;;;_  - Created: Dec 1991 - first release to usenet
-;;;_  - Version: $Id: allout.el,v 3.5 1993/06/01 19:55:25 klm Exp $||
+;;;_  - Version: $Id: allout.el,v 1.2 1993/06/07 18:48:08 rms Exp $||
 ;;;_  - Keywords: outline mode
 
 ;;;_  - LCD Archive Entry
@@ -19,7 +19,7 @@
 ;; LCD Archive Entry:
 ;; allout|Ken Manheimer|klm@nist.gov
 ;; |A more thorough outline-mode
-;; |27-May-1993|$Id: allout.el,v 3.4 1993/05/27 19:24:19 klm Exp $||
+;; |27-May-1993|$Id: allout.el,v 1.2 1993/06/07 18:48:08 rms Exp $||
 
 ;;;_  - Description
 ;; A full-fledged outline mode, based on the original rudimentary
@@ -579,7 +579,7 @@ C-c @   outline-resolve-xref    pop-to-buffer named by xref (cf
 C-c c	outline-copy-exposed	Copy outline sans all hidden stuff to
 				another buffer whose name is derived
 				from the current one - \"XXX exposed\"
-M-x outlineify-sticky           Activate outline mode for current buffer
+M-x outlinify-sticky            Activate outline mode for current buffer
                                 and establish -*- outline -*- mode specifier
                                 as well as file local vars to automatically
                                 set exposure.  Try it.
@@ -2469,8 +2469,8 @@ parameterized communication between the two, if suitable.")
     (goto-char (point-min))
     )
   )
-;;;_   > outlineify-sticky ()
-(defun outlineify-sticky (&optional arg)
+;;;_   > outlinify-sticky ()
+(defun outlinify-sticky (&optional arg)
   "   Activate outline mode and establish file eval to set initial exposure.
   
   Invoke with a string argument to designate a string to prepend to
@@ -2495,11 +2495,11 @@ parameterized communication between the two, if suitable.")
        ((eq major-mode 'c-mode)
         ;; User's will have to know to close off the comments:
         (setq arg (outline-lead-with-comment-string "/*_"))))
-  (let* ((lead-prefix (format "%s %s"
-                              outline-header-prefix
+  (let* ((lead-prefix (format "%s%s"
+                              (concat outline-header-prefix (if arg " " ""))
                               outline-primary-bullet))
          (lead-line (format "%s%s %s\n%s %s\n  %s %s %s"
-                            outline-header-prefix
+                            (if arg outline-header-prefix "")
                             outline-primary-bullet
                             "Local emacs vars."
                             "'(This topic sets initial outline exposure"

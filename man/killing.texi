@@ -385,13 +385,13 @@ Insert contents of specified buffer into current buffer at point.
 Append region to contents of specified file, at the end.
 @end table
 
-  To accumulate text into a buffer, use the command
-@kbd{M-x append-to-buffer}.  This reads a buffer name, them inserts a copy
-of the region into the buffer specified.  If you specify a nonexistent
-buffer, @code{append-to-buffer} creates the buffer.  The text is
-inserted wherever point is in that buffer.  If you have been using the
-buffer for editing, the copied text goes into the middle of the text of
-the buffer, wherever point happens to be in it.
+  To accumulate text into a buffer, use @kbd{M-x append-to-buffer}.
+This reads a buffer name, them inserts a copy of the region into the
+buffer specified.  If you specify a nonexistent buffer,
+@code{append-to-buffer} creates the buffer.  The text is inserted
+wherever point is in that buffer.  If you have been using the buffer for
+editing, the copied text goes into the middle of the text of the buffer,
+wherever point happens to be in it.
 
   Point in that buffer is left at the end of the copied text, so
 successive uses of @code{append-to-buffer} accumulate the text in the

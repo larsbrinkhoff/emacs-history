@@ -374,10 +374,11 @@ the way you entered the text.@refill
 @node Checklist
 @subsection Checklist for Bug Reports
 
-  The best way to send a bug report is by electronic mail to
-@samp{bug-gnu-emacs@@prep.ai.mit.edu}.  Do not post the bug report as
-netnews; mail is more reliable about reporting a correct address for how
-to reach you if we need more information.
+  The best way to send a bug report is to mail it electronically to the
+Emacs maintainers at @samp{bug-gnu-emacs@@prep.ai.mit.edu}.  Please do
+not post the bug report as netnews; mail is more reliable than netnews
+about reporting your correct address, which we may need in order to ask
+you for more information.
 
   If you can't send electronic mail, then mail the bug report on paper
 to this address:

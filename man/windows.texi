@@ -187,10 +187,9 @@ Get rid of the selected window (@code{kill-window}).  That is a zero.
 @item C-x 1
 Get rid of all windows except the selected one (@code{delete-other-windows}).
 @item C-x ^
-Make the selected window taller, at the expense of the other(s)
-(@code{enlarge-window}).
+Make selected window taller (@code{enlarge-window}).
 @item C-x @}
-Make the selected window wider (@code{enlarge-window-horizontally}).
+Make selected window wider (@code{enlarge-window-horizontally}).
 @end table
 
 @kindex C-x 0

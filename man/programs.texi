@@ -1893,7 +1893,7 @@ required for standard Fortran.
 Indent the current line (@code{fortran-indent-line}).
 @item @key{LFD}
 Indent the current and start a new indented line
-(@code{fortran-reindent-then-newline-and-indent}).
+(@code{fortran-indent-new-line}).
 @item M-@key{LFD}
 Break the current line and set up a continuation line.
 @item C-M-q
@@ -1908,12 +1908,11 @@ and continuation markers to their required columns, and independently
 indents the body of the statement based on its nesting in the program.
 
 @kindex LFD @r{(Fortran mode)}
-@findex fortran-reindent-then-newline-and-indent
-  The key @kbd{LFD} runs the command
-@code{fortran-reindent-then-newline-and-indent}, which reindents the
-current line then makes and indents a new line.  This command is useful
-to reindent the closing statement of @samp{do} loops and other blocks
-before starting a new line.
+@findex fortran-indent-new-line
+  The key @kbd{LFD} runs the command @code{fortran-indent-new-line},
+which reindents the current line then makes and indents a new line.
+This command is useful to reindent the closing statement of @samp{do}
+loops and other blocks before starting a new line.
 
 @kindex C-M-q @r{(Fortran mode)}
 @findex fortran-indent-subprogram
@@ -2033,9 +2032,8 @@ followed.
 @vindex fortran-if-indent
 @vindex fortran-structure-indent
 @vindex fortran-continuation-indent
-@vindex fortran-check-all-num-for-matching-do
-@vindex fortran-minimum-statement-indent-fixed
-@vindex fortran-minimum-statement-indent-tab
+@vindex fortran-check-all-num@dots{}
+@vindex fortran-minimum-statement-indent@dots{}
   Several additional variables control how Fortran indentation works:
 
 @table @code

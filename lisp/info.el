@@ -81,14 +81,16 @@ Marker points nowhere if file has no tag table.")
 (defvar Info-index-alternatives nil
   "List of possible matches for last Info-index command.")
 
-(defvar Info-suffix-list '( (""        . nil)
-			    (".info"   . nil)
-			    (".Z"      . "uncompress")
-			    (".Y"      . "unyabba")
-			    (".z"      . "gunzip")
-			    (".info.Z" . "uncompress")
-			    (".info.Y" . "unyabba")
-			    (".info.z" . "gunzip"))
+(defvar Info-suffix-list '( (""         . nil)
+			    (".info"    . nil)
+			    (".Z"       . "uncompress")
+			    (".Y"       . "unyabba")
+			    (".gz"      . "gunzip")
+			    (".z"       . "gunzip")
+			    (".info.Z"  . "uncompress")
+			    (".info.Y"  . "unyabba")
+			    (".info.gz" . "gunzip")
+			    (".info.z"  . "gunzip"))
   "List of file name suffixes and associated decoding commands.
 Each entry should be (SUFFIX . STRING); the file is given to
 the command as standard input.  If STRING is nil, no decoding is done.")
@@ -659,11 +661,13 @@ NAME may be an abbreviation of the reference name."
 	       (cons (cons str nil)
 		     completions))))
      (if completions
-	 (list (completing-read (if default
-				    (concat "Follow reference named: ("
-					    default ") ")
-				  "Follow reference named: ")
-				completions default t))
+	 (let ((input (completing-read (if default
+					   (concat "Follow reference named: ("
+						   default ") ")
+					 "Follow reference named: ")
+				       completions nil t)))
+	   (list (if (equal input "")
+		     default input)))
        (error "No cross-references in this node"))))
   (let (target beg i (str (concat "\\*note " footnotename)))
     (while (setq i (string-match " " str i))
@@ -1138,7 +1142,7 @@ At end of the node's text, moves to the next node."
   (define-key Info-mode-map "u" 'Info-up)
   (define-key Info-mode-map "," 'Info-index-next)
   (define-key Info-mode-map "\177" 'Info-scroll-down)
-  (define-key Info-mode-map [mouse-3] 'Info-follow-nearest-node)
+  (define-key Info-mode-map [mouse-2] 'Info-follow-nearest-node)
   )
 
 ;; Info mode is suitable only for specially formatted data.

@@ -112,6 +112,11 @@ Lisp_Object Vafter_change_function;
 
 Lisp_Object Vtransient_mark_mode;
 
+/* t means ignore all read-only text properties.
+   A list means ignore such a property if its value is a member of the list.
+   Any non-nil value means ignore buffer-read-only.  */
+Lisp_Object Vinhibit_read_only;
+
 /* List of functions to call before changing an unmodified buffer.  */
 Lisp_Object Vfirst_change_hook;
 Lisp_Object Qfirst_change_hook;
@@ -939,7 +944,8 @@ DEFUN ("barf-if-buffer-read-only", Fbarf_if_buffer_read_only,
   "Signal a `buffer-read-only' error if the current buffer is read-only.")
   ()
 {
-  while (!NILP (current_buffer->read_only))
+  if (!NILP (current_buffer->read_only)
+      && NILP (Vinhibit_read_only))
     Fsignal (Qbuffer_read_only, (Fcons (Fcurrent_buffer (), Qnil)));
   return Qnil;
 }
@@ -1545,7 +1551,9 @@ buffer.")
   (overlay, beg, end, buffer)
      Lisp_Object overlay, beg, end, buffer;
 {
-  struct buffer *b;
+  struct buffer *b, *ob;
+  Lisp_Object obuffer;
+  int count = specpdl_ptr - specpdl;
 
   CHECK_OVERLAY (overlay, 0);
   if (NILP (buffer))
@@ -1564,16 +1572,20 @@ buffer.")
   CHECK_NUMBER_COERCE_MARKER (beg, 1);
   CHECK_NUMBER_COERCE_MARKER (end, 1);
 
+  specbind (Qinhibit_quit, Qt);
+
   if (XINT (beg) > XINT (end))
     {
       Lisp_Object temp = beg;
       beg = end; end = temp;
     }
 
+  obuffer = Fmarker_buffer (OVERLAY_START (overlay));
   b = XBUFFER (buffer);
+  ob = XBUFFER (obuffer);
 
   /* If the overlay has changed buffers, do a thorough redisplay.  */
-  if (b != XMARKER (OVERLAY_START (overlay))->buffer)
+  if (!EQ (buffer, obuffer))
     windows_or_buffers_changed = 1;
   else
     /* Redisplay the area the overlay has just left, or just enclosed.  */
@@ -1597,8 +1609,11 @@ buffer.")
 	}
     }
 
-  b->overlays_before = Fdelq (overlay, b->overlays_before);
-  b->overlays_after  = Fdelq (overlay, b->overlays_after);
+  if (!NILP (obuffer))
+    {
+      ob->overlays_before = Fdelq (overlay, ob->overlays_before);
+      ob->overlays_after  = Fdelq (overlay, ob->overlays_after);
+    }
 
   Fset_marker (OVERLAY_START (overlay), beg, buffer);
   Fset_marker (OVERLAY_END   (overlay), end, buffer);
@@ -1613,7 +1628,7 @@ buffer.")
   /* This puts it in the right list, and in the right order.  */
   recenter_overlay_lists (b, XINT (b->overlay_center));
 
-  return overlay;
+  return unbind_to (count, overlay);
 }
 
 DEFUN ("delete-overlay", Fdelete_overlay, Sdelete_overlay, 1, 1, 0,
@@ -1621,11 +1636,19 @@ DEFUN ("delete-overlay", Fdelete_overlay, Sdelete_overlay, 1, 1, 0,
   (overlay)
      Lisp_Object overlay;
 {
+  Lisp_Object buffer;
   struct buffer *b;
+  int count = specpdl_ptr - specpdl;
 
   CHECK_OVERLAY (overlay, 0);
 
-  b = XBUFFER (Fmarker_buffer (OVERLAY_START (overlay)));
+  buffer = Fmarker_buffer (OVERLAY_START (overlay));
+  if (NILP (buffer))
+    return Qnil;
+
+  b = XBUFFER (buffer);
+
+  specbind (Qinhibit_quit, Qt);
 
   b->overlays_before = Fdelq (overlay, b->overlays_before);
   b->overlays_after  = Fdelq (overlay, b->overlays_after);
@@ -1637,7 +1660,7 @@ DEFUN ("delete-overlay", Fdelete_overlay, Sdelete_overlay, 1, 1, 0,
   Fset_marker (OVERLAY_START (overlay), Qnil, Qnil);
   Fset_marker (OVERLAY_END   (overlay), Qnil, Qnil);
 
-  return Qnil;
+  return unbind_to (count, Qnil);
 }
 
 /* Overlay dissection functions.  */
@@ -1972,6 +1995,7 @@ init_buffer ()
   char buf[MAXPATHLEN+1];
   char *pwd;
   struct stat dotstat, pwdstat;
+  Lisp_Object temp;
 
   Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
 
@@ -1994,6 +2018,9 @@ init_buffer ()
     strcat (buf, "/");
 #endif /* not VMS */
   current_buffer->directory = build_string (buf);
+
+  temp = get_minibuffer (0);
+  XBUFFER (temp)->directory = current_buffer->directory;
 }
 
 /* initialize the buffer routines */
@@ -2308,6 +2335,14 @@ Automatically local in all buffers.");
   DEFVAR_LISP ("transient-mark-mode", &Vtransient_mark_mode,
     "*Non-nil means deactivate the mark when the buffer contents change.");
   Vtransient_mark_mode = Qnil;
+
+  DEFVAR_LISP ("inhibit-read-only", &Vinhibit_read_only,
+    "*Non-nil means disregard read-only status of buffers or characters.\n\
+If the value is t, disregard `buffer-read-only' and all `read-only'\n\
+text properties.  If the value is a list, disregard `buffer-read-only'\n\
+and disregard a `read-only' text property if the property value\n\
+is a member of the list.");
+  Vinhibit_read_only = Qnil;
 
   defsubr (&Sbuffer_list);
   defsubr (&Sget_buffer);

@@ -272,6 +272,10 @@ access_keymap (map, idx, t_ok)
      be put in the canonical order.  */
   if (XTYPE (idx) == Lisp_Symbol)
     idx = reorder_modifiers (idx);
+  else if (INTEGERP (idx))
+    /* Clobber the high bits that can be present on a machine
+       with more than 24 bits of integer.  */
+    XFASTINT (idx) = XINT (idx) & (CHAR_META | (CHAR_META - 1));
 
   {
     Lisp_Object tail;
@@ -368,7 +372,10 @@ store_in_keymap (keymap, idx, def)
      be put in the canonical order.  */
   if (XTYPE (idx) == Lisp_Symbol)
     idx = reorder_modifiers (idx);
-
+  else if (INTEGERP (idx))
+    /* Clobber the high bits that can be present on a machine
+       with more than 24 bits of integer.  */
+    XFASTINT (idx) = XINT (idx) & (CHAR_META | (CHAR_META - 1));
 
   /* Scan the keymap for a binding of idx.  */
   {
@@ -847,7 +854,7 @@ DEFUN ("global-set-key", Fglobal_set_key, Sglobal_set_key, 2, 2,
   "kSet key globally: \nCSet key %s to command: ",
   "Give KEY a global binding as COMMAND.\n\
 COMMAND is a symbol naming an interactively-callable function.\n\
-KEY is a string representing a sequence of keystrokes.\n\
+KEY is a key sequence (a string or vector of characters or event types).\n\
 Note that if KEY has a local binding in the current buffer\n\
 that local binding will continue to shadow any global binding.")
   (keys, function)
@@ -865,7 +872,7 @@ DEFUN ("local-set-key", Flocal_set_key, Slocal_set_key, 2, 2,
   "kSet key locally: \nCSet key %s locally to command: ",
   "Give KEY a local binding as COMMAND.\n\
 COMMAND is a symbol naming an interactively-callable function.\n\
-KEY is a string representing a sequence of keystrokes.\n\
+KEY is a key sequence (a string or vector of characters or event types).\n\
 The binding goes in the current buffer's local map,\n\
 which is shared with other buffers in the same major mode.")
   (keys, function)
@@ -1854,16 +1861,22 @@ describe_vector_princ (elt)
      Lisp_Object elt;
 {
   Fprinc (elt, Qnil);
+  Fterpri (Qnil);
 }
 
 DEFUN ("describe-vector", Fdescribe_vector, Sdescribe_vector, 1, 1, 0,
-  "Print on `standard-output' a description of contents of VECTOR.\n\
+  "Insert a description of contents of VECTOR.\n\
 This is text showing the elements of vector matched against indices.")
   (vector)
      Lisp_Object vector;
 {
+  int count = specpdl_ptr - specpdl;
+
+  specbind (Qstandard_output, Fcurrent_buffer ());
   CHECK_VECTOR (vector, 0);
   describe_vector (vector, Qnil, describe_vector_princ, 0, Qnil);
+
+  return unbind_to (count, Qnil);
 }
 
 describe_vector (vector, elt_prefix, elt_describer, partial, shadow)

@@ -525,12 +525,13 @@ Conversely, the command @kbd{M-^} deletes the prefix (if it occurs)
 after the newline that it deletes (@pxref{Indentation}).
 
 @findex fill-individual-paragraphs
-  Another way to use fill prefixes is through @kbd{M-x
-fill-individual-paragraphs}.  This command divides the region into
-paragraphs, treating every change in the amount of indentation as the
-start of a new paragraph, and fills each of these paragraphs.  Thus, all
-the lines in one ``paragraph'' have the same amount of indentation.
-That indentation serves as the fill prefix for that paragraph.
+  You can use @kbd{M-x fill-individual-paragraphs} to set the fill
+prefix for each paragraph automatically.  This command divides the
+region into paragraphs, treating every change in the amount of
+indentation as the start of a new paragraph, and fills each of these
+paragraphs.  Thus, all the lines in one ``paragraph'' have the same
+amount of indentation.  That indentation serves as the fill prefix for
+that paragraph.
 
 @findex fill-nonuniform-paragraphs
   @kbd{M-x fill-nonuniform-paragraphs} is a similar command that divides
@@ -929,9 +930,10 @@ input; it then selects the appropriate mode.  If it can't tell which is
 right (e.g., the buffer is empty), the variable @code{tex-default-mode}
 controls which mode is used.
 
-  The commands @kbd{M-x plain-tex-mode}, @kbd{M-x latex-mode},and
-@kbd{M-x slitex-mode} explicitly select the variants of @TeX{} mode.
-Use these commands when @kbd{M-x tex-mode} does not guess right.@refill
+  When @kbd{M-x tex-mode} does not guess right, you can use the commands
+@kbd{M-x plain-tex-mode}, @kbd{M-x latex-mode}, and @kbd{M-x
+slitex-mode} to select explicitly the particular variants of @TeX{}
+mode.
 
 @menu
 * Editing: TeX Editing.   Special commands for editing in TeX mode.

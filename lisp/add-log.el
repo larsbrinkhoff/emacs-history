@@ -243,8 +243,8 @@ Runs `change-log-mode-hook'."
 (defun add-log-current-defun ()
   "Return name of function definition point is in, or nil.
 
-Understands Lisp, LaTeX (\"functions\" are chapters, sections, ...),
-Texinfo (@node titles), and C.
+Understands C, Lisp, LaTeX (\"functions\" are chapters, sections, ...),
+Texinfo (@node titles), and Fortran.
 
 Other modes are handled by a heuristic that looks in the 10K before
 point for uppercase headings starting in the first column or
@@ -373,6 +373,25 @@ Has a preference of looking backwards."
 		 (if (re-search-backward "^@node[ \t]+\\([^,]+\\)," nil t)
 		     (buffer-substring (match-beginning 1)
 				       (match-end 1))))
+                ((eq major-mode 'fortran-mode)
+                 ;; must be inside function body for this to work
+                 (beginning-of-fortran-subprogram)
+                 (let ((case-fold-search t)) ; case-insensitive
+                   ;; search for fortran subprogram start
+                   (if (re-search-forward
+			 "^[ \t]*\\(program\\|subroutine\\|function\
+\\|[ \ta-z0-9*]*[ \t]+function\\)"
+			 nil t)
+                       (progn
+                         ;; move to EOL or before first left paren
+                         (if (re-search-forward "[(\n]" nil t)
+			     (progn (forward-char -1)
+				    (skip-chars-backward " \t"))
+			   (end-of-line))
+			 ;; Use the name preceding that.
+                         (buffer-substring (point)
+                                           (progn (forward-sexp -1)
+                                                  (point)))))))
 		(t
 		 ;; If all else fails, try heuristics
 		 (let (case-fold-search)

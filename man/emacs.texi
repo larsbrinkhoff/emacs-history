@@ -27,6 +27,12 @@ except that the sections entitled ``The GNU Manifesto'',
 included in a translation approved by the Free Software Foundation
 instead of in the original English.
 @end ifinfo
+@c comment out this line if you do NOT want to have indication that
+@c an index entry appears in the texinfo file near this line of text.
+@c this line should definitely be commented out for printing a master
+@c and for making the version to go on the floppy disk.
+@c
+@c @include /gd/gnu/doc/margins-comment-format.texi
 @c
 @setchapternewpage odd
 @settitle GNU Emacs Manual
@@ -75,7 +81,7 @@ The Emacs Editor
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.12.
+corresponds to GNU Emacs version 19.13.
 
 @end ifinfo
 @menu
@@ -552,7 +558,7 @@ modification follow.
 @center TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 @end ifinfo
 
-@enumerate
+@enumerate 0
 @item
 This License applies to any program or other work which contains
 a notice placed by the copyright holder saying it may be distributed

@@ -6,6 +6,24 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.13.
+
+* Magic file names can now handle the `load' operation.
+
+* Bibtex mode now sets up special entries in the menu bar.
+
+* The incremental search commands C-w and C-y, which copy text from
+the buffer into the search string, now convert it to lower case
+if you are in a case-insensitive search.  This is to avoid making
+the search a case-sensitive one.
+
+* GNUS now knows your time zone automatically if Emacs does.
+
+* Hide-ifdef mode no longer defines keys of the form
+C-c LETTER, since those keys are reserved for users.
+Those commands have been moved to C-c M-LETTER.
+We may move them again for greater consistency with other modes.
+
 Changes in version 19.12.
 
 * You can now make many of the sort commands ignore case by setting

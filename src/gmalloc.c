@@ -31,11 +31,33 @@ Cambridge, MA 02139, USA.
 #define _MALLOC_H	1
 
 #ifdef _MALLOC_INTERNAL
-/* Harmless, gets __GNU_LIBRARY__ defined.
-   We must do this before #defining size_t and ptrdiff_t
-   because <stdio.h> tries to typedef them on some systems.  */
-#include <stdio.h>
+
+#ifdef	HAVE_CONFIG_H
+#include "config.h"
 #endif
+
+#if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
+#include <string.h>
+#else
+#ifndef memset
+#define	memset(s, zero, n)	bzero ((s), (n))
+#endif
+#ifndef memcpy
+#define	memcpy(d, s, n)		bcopy ((s), (d), (n))
+#endif
+#ifndef memmove
+#define	memmove(d, s, n)	bcopy ((s), (d), (n))
+#endif
+#endif
+
+#if	defined(__GNU_LIBRARY__) || defined(__STDC__)
+#include <limits.h>
+#else
+#define	CHAR_BIT	8
+#endif
+
+#endif	/* _MALLOC_INTERNAL.  */
+
 
 #ifdef	__cplusplus
 extern "C"
@@ -47,18 +69,14 @@ extern "C"
 #define	__P(args)	args
 #undef	__ptr_t
 #define	__ptr_t		void *
-#define CONST		const
 #else /* Not C++ or ANSI C.  */
 #undef	__P
 #define	__P(args)	()
-#define	CONST
+#undef	const
+#define	const
 #undef	__ptr_t
 #define	__ptr_t		char *
 #endif /* C++ or ANSI C.  */
-
-#ifndef	NULL
-#define	NULL	0
-#endif
 
 #ifdef	__STDC__
 #include <stddef.h>
@@ -67,6 +85,10 @@ extern "C"
 #define	size_t		unsigned int
 #undef	ptrdiff_t
 #define	ptrdiff_t	int
+#endif
+
+#ifndef	NULL
+#define	NULL	0
 #endif
 
 
@@ -88,31 +110,6 @@ extern __ptr_t valloc __P ((size_t __size));
 
 
 #ifdef _MALLOC_INTERNAL
-
-#ifdef	HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#if	defined(__GNU_LIBRARY__) || defined(STDC_HEADERS) || defined(USG)
-#include <string.h>
-#else
-#ifndef memset
-#define	memset(s, zero, n)	bzero ((s), (n))
-#endif
-#ifndef memcpy
-#define	memcpy(d, s, n)		bcopy ((s), (d), (n))
-#endif
-#ifndef memmove
-#define	memmove(d, s, n)	bcopy ((s), (d), (n))
-#endif
-#endif
-
-
-#if	defined(__GNU_LIBRARY__) || defined(__STDC__)
-#include <limits.h>
-#else
-#define	CHAR_BIT	8
-#endif
 
 /* The allocator divides the heap into blocks of fixed size; large
    requests receive one or more whole blocks, and small requests
@@ -248,7 +245,7 @@ extern struct mstats mstats __P ((void));
 
 /* Call WARNFUN with a warning message when memory usage is high.  */
 extern void memory_warnings __P ((__ptr_t __start,
-				  void (*__warnfun) __P ((CONST char *))));
+				  void (*__warnfun) __P ((__const char *))));
 
 
 /* Relocating allocator.  */
@@ -425,10 +422,14 @@ malloc (size)
   register size_t i;
   struct list *next;
 
-#ifdef emacs
-  if (size == 0)
-    size = 1;
-#else
+  /* ANSI C allows `malloc (0)' to either return NULL, or to return a
+     valid address you can realloc and free (though not dereference).
+
+     It turns out that some extant code (sunrpc, at least Ultrix's version)
+     expects `malloc (0)' to return non-NULL and breaks otherwise.
+     Be compatible.  */
+
+#if	0
   if (size == 0)
     return NULL;
 #endif

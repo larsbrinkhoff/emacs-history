@@ -558,17 +558,22 @@ case "${configuration}" in
   ;;
 
   ## HP 9000 series 700 and 800, running HP/UX
-  hppa1.0-hp-hpux* )
+  hppa*-hp-hpux7* )
     machine=hp9000s800 opsys=hpux
   ;;
-  hppa1.1-hp-hpux* )
+  hppa*-hp-hpux8* )
     machine=hp9000s800 opsys=hpux8
   ;;
+  hppa*-hp-hpux9* )
+    machine=hp9000s800 opsys=hpux9
+  ;;
+
+  ## HP 9000 series 700 and 800, running HP/UX
   hppa*-hp-hpux* )
     ## Cross-compilation?  Nah!
     case "`uname -r`" in
-      *.08.* ) machine=hp9000s800 opsys=hpux ;;
-      *.09.* ) machine=hp9000s800 opsys=hpux8 ;;
+      *.08.* ) machine=hp9000s800 opsys=hpux8 ;;
+      *.09.* ) machine=hp9000s800 opsys=hpux9 ;;
       *) machine=hp9000s800 opsys=hpux ;;
     esac
   ;;
@@ -629,7 +634,7 @@ case "${configuration}" in
     machine=is386 opsys=usg5-2-2
   ;;
   ## Intel 386 machines where we don't care about the manufacturer
-  i[34]86-unknown-* )
+  i[34]86-*-* )
     machine=intel386
     case "${configuration}" in
       *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
@@ -916,11 +921,6 @@ case ${with_gcc} in
     ] AC_PROG_CC [
 esac
 
-CFLAGS='-g'
-if test -n "${GCC}"; then
-  CFLAGS='-g -O'
-fi
-
 #### Some other nice autoconf tests.  If you add a test here which
 #### should make an entry in src/config.h, don't forget to add an
 #### #undef clause to src/config.h.in for autoconf to modify.
@@ -936,6 +936,9 @@ dnl checks for header files
 AC_HAVE_HEADERS(sys/timeb.h sys/time.h)
 AC_STDC_HEADERS
 AC_TIME_WITH_SYS_TIME
+
+dnl checks for library files
+AC_HAVE_LIBRARY(-ldnet)
 
 dnl checks for typedefs
 AC_RETSIGTYPE
@@ -982,7 +985,7 @@ esac
 case "${window_system}" in
   "none" | "x11" | "x10" ) ;;
   "" )
-    echo "  No window system specifed.  Looking for X11."
+    echo "  No window system specified.  Looking for X11."
     window_system=none
     if [ -r /usr/lib/libX11.a \
 	 -o -d /usr/include/X11 \
@@ -1079,6 +1082,20 @@ echo '
 @configure@ system_malloc=yes
 #else
 @configure@ system_malloc=no
+#endif
+
+#ifndef C_DEBUG_SWITCH
+#define C_DEBUG_SWITCH -g
+#endif
+
+#ifndef C_OPTIMIZE_SWITCH
+#define C_OPTIMIZE_SWITCH -O
+#endif
+
+#ifdef __GNUC__
+@configure@ CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH
+#else
+@configure@ CFLAGS=C_DEBUG_SWITCH
 #endif
 ' > ${tempcname}
 # The value of CPP is a quoted variable reference, so we need to do this

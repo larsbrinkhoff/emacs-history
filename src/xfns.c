@@ -39,7 +39,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 extern void abort ();
 
 #ifndef VMS
+#ifdef EMACS_BITMAP_FILES
+#include "bitmaps/gray.xbm"
+#else
 #include <X11/bitmaps/gray>
+#endif
 #else
 #include "[.bitmaps]gray.xbm"
 #endif
@@ -332,26 +336,51 @@ x_set_frame_parameters (f, alist)
   /* Same here.  */
   Lisp_Object left, top;
 
-  width = height = top = left = Qnil;
+  /* Record in these vectors all the parms specified.  */
+  Lisp_Object *parms;
+  Lisp_Object *values;
+  int i;
+  
+  i = 0;
+  for (tail = alist; CONSP (tail); tail = Fcdr (tail))
+    i++;
 
+  parms = (Lisp_Object *) alloca (i * sizeof (Lisp_Object));
+  values = (Lisp_Object *) alloca (i * sizeof (Lisp_Object));
+
+  /* Extract parm names and values into those vectors.  */
+
+  i = 0;
   for (tail = alist; CONSP (tail); tail = Fcdr (tail))
     {
       Lisp_Object elt, prop, val;
 
       elt = Fcar (tail);
-      prop = Fcar (elt);
-      val = Fcdr (elt);
+      parms[i] = Fcar (elt);
+      values[i] = Fcdr (elt);
+      i++;
+    }
 
-      /* Ignore all but the first set presented.  You're supposed to
-	 be able to append two parameter lists and have the first
-	 shadow the second.  */
-      if (EQ (prop, Qwidth) && NILP (width))
+  XSET (width,  Lisp_Int, FRAME_WIDTH  (f));
+  XSET (height, Lisp_Int, FRAME_HEIGHT (f));
+  XSET (top, Lisp_Int, f->display.x->top_pos);
+  XSET (left, Lisp_Int, f->display.x->left_pos);
+
+  /* Now process them in reverse of specified order.  */
+  for (i--; i >= 0; i--)
+    {
+      Lisp_Object prop, val;
+
+      prop = parms[i];
+      val = values[i];
+
+      if (EQ (prop, Qwidth))
 	width = val;
-      else if (EQ (prop, Qheight) && NILP (height))
+      else if (EQ (prop, Qheight))
 	height = val;
-      else if (EQ (prop, Qtop) && NILP (top))
+      else if (EQ (prop, Qtop))
 	top = val;
-      else if (EQ (prop, Qleft) && NILP (left))
+      else if (EQ (prop, Qleft))
 	left = val;
       else
 	{
@@ -371,12 +400,6 @@ x_set_frame_parameters (f, alist)
      exist yet.  */
   {
     Lisp_Object frame;
-
-    if (NILP (width))  XSET (width,  Lisp_Int, FRAME_WIDTH  (f));
-    if (NILP (height)) XSET (height, Lisp_Int, FRAME_HEIGHT (f));
-
-    if (NILP (top))    XSET (top, Lisp_Int, f->display.x->top_pos);
-    if (NILP (left))   XSET (left, Lisp_Int, f->display.x->left_pos);
 
     XSET (frame, Lisp_Frame, f);
     if (XINT (width) != FRAME_WIDTH (f)
@@ -910,17 +933,20 @@ x_set_menu_bar_lines_1 (window, n)
   Lisp_Object window;
   int n;
 {
-  for (; !NILP (window); window = XWINDOW (window)->next)
+  struct window *w = XWINDOW (window);
+
+  XFASTINT (w->top) += n;
+  XFASTINT (w->height) -= n;
+
+  /* Handle just the top child in a vertical split.  */
+  if (!NILP (w->vchild))
+    x_set_menu_bar_lines_1 (w->vchild, n);
+
+  /* Adjust all children in a horizontal split.  */
+  for (window = w->hchild; !NILP (window); window = w->next)
     {
-      struct window *w = XWINDOW (window);
-
-      XFASTINT (w->top) += n;
-
-      if (!NILP (w->vchild))
-	x_set_menu_bar_lines_1 (w->vchild, n);
-
-      if (!NILP (w->hchild))
-	x_set_menu_bar_lines_1 (w->hchild, n);
+      w = XWINDOW (window);
+      x_set_menu_bar_lines_1 (window, n);
     }
 }
 
@@ -946,16 +972,6 @@ x_set_menu_bar_lines (f, value, oldval)
 
   FRAME_MENU_BAR_LINES (f) = nlines;
   x_set_menu_bar_lines_1 (f->root_window, nlines - olines);
-  /* Use FRAME_NEW_WIDTH, HEIGHT so as not to override a size change
-     made by the user but not fully reflected in the Emacs frame object.  */
-  x_set_window_size (f,
-		     (FRAME_NEW_WIDTH (f)
-		      ? FRAME_NEW_WIDTH (f)
-		      : FRAME_WIDTH (f)),
-		     ((FRAME_NEW_HEIGHT (f)
-		       ? FRAME_NEW_HEIGHT (f)
-		       : FRAME_HEIGHT (f))
-		      + nlines - olines));
 }
 
 /* Change the name of frame F to ARG.  If ARG is nil, set F's name to
@@ -3471,7 +3487,7 @@ arg XRM_STRING is a string of resources in xrdb format.")
   {
     int i;
     int len = XSTRING (Vxrdb_name)->size;
-    char *data = XSTRING (Vxrdb_name)->data;
+    unsigned char *data = XSTRING (Vxrdb_name)->data;
     
     for (i = 0; i < len; i++)
       if (data[i] == '.' || data[i] == '*')

@@ -239,7 +239,7 @@ init_baud_rate ()
 
       sg.c_cflag = (sg.c_cflag & ~CBAUD) | B9600;
       tcgetattr (0, &sg);
-      ospeed = sg.c_cflag & CBAUD;
+      ospeed = cfgetospeed (&sg);
 #else /* neither VMS nor TERMIOS */
 #ifdef HAVE_TERMIO
       struct termio sg;
@@ -255,7 +255,8 @@ init_baud_rate ()
       struct sgttyb sg;
       
       sg.sg_ospeed = B9600;
-      ioctl (0, TIOCGETP, &sg);
+      if (ioctl (0, TIOCGETP, &sg) < 0)
+	abort ();
       ospeed = sg.sg_ospeed;
 #endif /* not HAVE_TERMIO */
 #endif /* not HAVE_TERMIOS */
@@ -346,7 +347,7 @@ wait_for_termination (pid)
 	  sigunblock (sigmask (SIGCHLD));
 	  break;
 	}
-      sigpause (sigmask (SIGCHLD));
+      sigpause (SIGEMPTYMASK);
 #else /* not POSIX_SIGNALS */
 #ifdef HAVE_SYSV_SIGPAUSE
       sighold (SIGCHLD);
@@ -1035,6 +1036,18 @@ init_sys_modes ()
 #ifdef VDSUSP /* Some systems have VDSUSP, some have V_DSUSP.  */
       tty.main.c_cc[VDSUSP] = CDISABLE;
 #endif /* VDSUSP */
+#ifdef VLNEXT
+      tty.main.c_cc[VLNEXT] = CDISABLE;
+#endif /* VLNEXT */
+#ifdef VREPRINT
+      tty.main.c_cc[VREPRINT] = CDISABLE;
+#endif /* VREPRINT */
+#ifdef VWERASE
+      tty.main.c_cc[VWERASE] = CDISABLE;
+#endif /* VWERASE */
+#ifdef VDISCARD
+      tty.main.c_cc[VDISCARD] = CDISABLE;
+#endif /* VDISCARD */
 #endif /* mips or HAVE_TCATTR */
 #ifdef AIX
 #ifndef IBMR2AIX

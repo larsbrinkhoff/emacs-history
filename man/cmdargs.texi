@@ -342,8 +342,7 @@ emacs -ms coral -cr 'slate blue' &
 @cindex geometry (X Windows)
 
   The @samp{-geometry} option controls the size and position of the
-initial Emacs frame.  The @samp{-w} option is a synonym for
-@samp{-geometry}.  Here is the format for specifying the window
+initial Emacs frame.  Here is the format for specifying the window
 geometry:
 
 @smallexample

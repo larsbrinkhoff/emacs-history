@@ -3801,7 +3801,8 @@ x_io_error_quitter (display)
 }
 
 /* A buffer for storing X error messages.  */
-static char (*x_caught_error_message)[200];
+static char *x_caught_error_message;
+#define X_CAUGHT_ERROR_MESSAGE_SIZE 200
 
 /* An X error handler which stores the error message in
    x_caught_error_message.  This is what's installed when
@@ -3812,7 +3813,7 @@ x_error_catcher (display, error)
      XErrorEvent *error;
 {
   XGetErrorText (display, error->error_code,
-		 *x_caught_error_message, sizeof (*x_caught_error_message));
+		 x_caught_error_message, X_CAUGHT_ERROR_MESSAGE_SIZE);
 }
 
 
@@ -3835,9 +3836,9 @@ x_catch_errors ()
   XSync (x_current_display, False);
 
   /* Set up the error buffer.  */
-  x_caught_error_message =
-    (char (*)[]) xmalloc (sizeof (*x_caught_error_message));
-  (*x_caught_error_message)[0] = '\0';
+  x_caught_error_message
+    = (char*) xmalloc (X_CAUGHT_ERROR_MESSAGE_SIZE);
+  x_caught_error_message[0] = '\0';
 
   /* Install our little error handler.  */
   XHandleError (x_error_catcher);
@@ -3853,13 +3854,11 @@ x_check_errors (format)
   /* Make sure to catch any errors incurred so far.  */
   XSync (x_current_display, False);
 
-  if ((*x_caught_error_message)[0])
+  if (x_caught_error_message[0])
     {
-      char buf[256];
+      char buf[X_CAUGHT_ERROR_MESSAGE_SIZE + 56];
 
-      sprintf (buf, format, *x_caught_error_message);
-      xfree (x_caught_error_message);
-
+      sprintf (buf, format, x_caught_error_message);
       x_uncatch_errors ();
       error (buf);
     }
@@ -3869,6 +3868,7 @@ void
 x_uncatch_errors ()
 {
   xfree (x_caught_error_message);
+  x_caught_error_message = 0;
   XHandleError (x_error_quitter);
 }
 
@@ -3916,30 +3916,29 @@ x_new_font (f, fontname)
   font_names = (char **) XListFontsWithInfo (x_current_display, fontname,
 					     1024, &n_matching_fonts,
 					     &font_info);
-
-  /* If the server couldn't find any fonts whose named matched fontname,
-     return an error code.  */
-  if (n_matching_fonts == 0)
-    return Qnil;
+  /* Don't just give up if n_matching_fonts is 0.
+     Apparently there's a bug on Suns: XListFontsWithInfo can
+     fail to find a font, but XLoadQueryFont may still find it.  */
 
   /* See if we've already loaded a matching font. */
-  {
-    int i, j;
+  already_loaded = -1;
+  if (n_matching_fonts != 0)
+    {
+      int i, j;
 
-    already_loaded = 0;
-    for (i = 0; i < n_fonts; i++)
-      for (j = 0; j < n_matching_fonts; j++)
-	if (x_font_table[i]->fid == font_info[j].fid)
-	  {
-	    already_loaded = i;
-	    fontname = font_names[j];
-	    goto found_font;
-	  }
-  }
+      for (i = 0; i < n_fonts; i++)
+	for (j = 0; j < n_matching_fonts; j++)
+	  if (x_font_table[i]->fid == font_info[j].fid)
+	    {
+	      already_loaded = i;
+	      fontname = font_names[j];
+	      goto found_font;
+	    }
+    }
  found_font:
   
   /* If we have, just return it from the table.  */
-  if (already_loaded)
+  if (already_loaded > 0)
     f->display.x->font = x_font_table[already_loaded];
   
   /* Otherwise, load the font and add it to the table.  */
@@ -3958,14 +3957,18 @@ x_new_font (f, fontname)
       i = 0;
 #endif
 
-      if (i >= n_matching_fonts)
-	return Qt;
-      else
+      /* See comment above.  */
+      if (n_matching_fonts != 0)
 	fontname = font_names[i];
 
       font = (XFontStruct *) XLoadQueryFont (x_current_display, fontname);
       if (! font)
-	return Qnil;
+	{
+	  /* Free the information from XListFontsWithInfo.  */
+	  if (n_matching_fonts)
+	    XFreeFontInfo (font_names, font_info, n_matching_fonts);
+	  return Qnil;
+	}
 
       /* Do we need to create the table?  */
       if (x_font_table_size == 0)
@@ -4559,7 +4562,8 @@ x_wm_set_size_hint (f, prompting)
     {
       XSizeHints hints;		/* Sometimes I hate X Windows... */
       
-      XGetNormalHints (x_current_display, window, &hints);
+      if (XGetNormalHints (x_current_display, window, &hints) == 0)
+	hints.flags = 0;
       if (hints.flags & PSize)
 	size_hints.flags |= PSize;
       if (hints.flags & PPosition)

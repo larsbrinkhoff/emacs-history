@@ -864,10 +864,10 @@ transmission is considerable.
 to @dfn{undigestify} it: to turn it back into many individual messages.
 Then you can read and delete the individual messages as it suits you.
 
-  To undigestify a message, select it and then type @kbd{M-x
-undigestify-rmail-message}.  This copies each submessage as a separate
-Rmail message and inserts them all following the digest.  The digest
-message itself is flagged as deleted.
+  To do this, type @kbd{M-x undigestify-rmail-message} after selecting
+the digest message.  This extracts the submessages as separate Rmail
+messages, and inserts them following the digest.  The digest message
+itself is flagged as deleted.
 
 @node Out of Rmail
 @section Converting an Rmail File to Mailbox Format

@@ -428,7 +428,7 @@ for \\[find-tag] (which see)."
 ;;;(sort-regexp-fields nil "\n*.*\n.*from \\(.*\\)[^]*" "\\1"
 ;;;		    (point-min) (point-max))
 
-;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11245 36989))
+;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11280 54002))
 ;;; Generated autoloads from add-log.el
 
 (defvar change-log-default-name nil "\
@@ -467,7 +467,7 @@ Runs `change-log-mode-hook'." t nil)
 
 ;;;***
 
-;;;### (autoloads (ad-start-advice defadvice ad-add-advice) "advice" "advice.el" (11256 21968))
+;;;### (autoloads (ad-start-advice defadvice ad-add-advice) "advice" "advice.el" (11266 60950))
 ;;; Generated autoloads from advice.el
 
 (defvar ad-start-advice-on-load nil "\
@@ -567,7 +567,7 @@ advice state that will be used during activation if appropriate. Only use
 this if the defadvice gets actually compiled (with a v18 byte-compiler put
 the defadvice into the body of a defun).
 
-Look at the file advice.el for comprehensive documentation." nil (quote macro))
+Look at the file advice.el for comprehensive documentation." nil t)
 
 (autoload (quote ad-start-advice) "advice" "\
 Redefines some primitives to start the advice magic.
@@ -583,7 +583,7 @@ a function gets defined or redefined." t nil)
 
 ;;;***
 
-;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11223 8902))
+;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11282 51548))
 ;;; Generated autoloads from ange-ftp.el
 
 (autoload (quote ange-ftp-hook-function) "ange-ftp" nil nil nil)
@@ -626,7 +626,7 @@ This will occur at midnight when the appointment list is updated.")
 
 ;;;***
 
-;;;### (autoloads (super-apropos apropos) "apropos" "apropos.el" (11261 43388))
+;;;### (autoloads (super-apropos apropos) "apropos" "apropos.el" (11283 60450))
 ;;; Generated autoloads from apropos.el
 
 (autoload (quote apropos) "apropos" "\
@@ -749,12 +749,12 @@ constants.
 BEWARE BEWARE BEWARE
 Inclusion of (,ATOM) rather than (, ATOM)
 or of (,@ATOM) rather than (,@ ATOM)
-will result in errors that will show up very late." nil (quote macro))
+will result in errors that will show up very late." nil t)
 
 ;;;***
 
-;;;### (autoloads (bibtex-mode) "bibtex" "/home/fsf/rms/e19/lisp/bibtex.el" (11274 32339))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/bibtex.el
+;;;### (autoloads (bibtex-mode) "bibtex" "bibtex.el" (11283 40874))
+;;; Generated autoloads from bibtex.el
 
 (autoload (quote bibtex-mode) "bibtex" "\
 Major mode for editing bibtex files.
@@ -777,11 +777,6 @@ checks that no non-optional fields are empty.
 
 Use \\[bibtex-find-text] to position the dot at the end of the current field.
 Use \\[bibtex-next-field] to move to end of the next field.
-
-\\[bibtex-x-environment] binds a mode-specific X menu to control+right
-mouse button.
-\\[bibtex-sun-environment] binds a mode-specific Sun menu to right
-mouse button.
 
 The following may be of interest as well:
 
@@ -978,7 +973,7 @@ a reflection." t nil)
 
 ;;;***
 
-;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11256 22583))
+;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11278 17482))
 ;;; Generated autoloads from bytecomp.el
 
 (autoload (quote byte-recompile-directory) "bytecomp" "\
@@ -1099,8 +1094,8 @@ no args if that value is non-nil." t nil)
 
 ;;;***
 
-;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "/home/fsf/rms/e19/lisp/calendar.el" (11264 3998))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/calendar.el
+;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11277 38463))
+;;; Generated autoloads from calendar.el
 
 (defvar view-diary-entries-initially nil "\
 *If t, the diary entries for the current date will be displayed on entry.
@@ -1748,7 +1743,7 @@ the date of death is taken from the cursor position." t nil)
 
 ;;;***
 
-;;;### (autoloads (set-case-syntax set-case-syntax-pair set-case-syntax-delims describe-buffer-case-table) "case-table" "case-table.el" (11187 62519))
+;;;### (autoloads (set-case-syntax set-case-syntax-pair set-case-syntax-delims describe-buffer-case-table) "case-table" "case-table.el" (11283 37570))
 ;;; Generated autoloads from case-table.el
 
 (autoload (quote describe-buffer-case-table) "case-table" "\
@@ -1816,7 +1811,7 @@ The Command History listing is recomputed each time this mode is invoked." t nil
 
 ;;;***
 
-;;;### (autoloads (make-comint) "comint" "comint.el" (11244 38605))
+;;;### (autoloads (make-comint) "comint" "comint.el" (11279 32694))
 ;;; Generated autoloads from comint.el
 
 (autoload (quote make-comint) "comint" "\
@@ -1842,7 +1837,7 @@ If `compare-ignore-case' is non-nil, changes in case are also ignored." t nil)
 
 ;;;***
 
-;;;### (autoloads (next-error grep compile) "compile" "compile.el" (11249 48260))
+;;;### (autoloads (next-error grep compile) "compile" "compile.el" (11282 63090))
 ;;; Generated autoloads from compile.el
 
 (defvar compilation-mode-hook nil "\
@@ -1994,7 +1989,7 @@ execution in a .emacs file." t nil)
 
 ;;;***
 
-;;;### (autoloads (diff-backup diff) "diff" "diff.el" (11245 5272))
+;;;### (autoloads (diff-backup diff) "diff" "diff.el" (11276 57004))
 ;;; Generated autoloads from diff.el
 
 (autoload (quote diff) "diff" "\
@@ -2011,7 +2006,7 @@ The backup file is the first file given to `diff'." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-hide-all dired-hide-subdir dired-tree-down dired-tree-up dired-kill-subdir dired-mark-subdir-files dired-goto-subdir dired-prev-subdir dired-maybe-insert-subdir dired-downcase dired-upcase dired-do-symlink-regexp dired-do-hardlink-regexp dired-do-copy-regexp dired-do-rename-regexp dired-do-rename dired-do-hardlink dired-do-symlink dired-do-copy dired-create-directory dired-string-replace-match dired-do-redisplay dired-do-load dired-do-byte-compile dired-do-compress dired-do-kill-lines dired-do-shell-command dired-do-print dired-do-chown dired-do-chgrp dired-do-chmod dired-backup-diff dired-diff) "dired-aux" "dired-aux.el" (11181 53267))
+;;;### (autoloads (dired-hide-all dired-hide-subdir dired-tree-down dired-tree-up dired-kill-subdir dired-mark-subdir-files dired-goto-subdir dired-prev-subdir dired-maybe-insert-subdir dired-downcase dired-upcase dired-do-symlink-regexp dired-do-hardlink-regexp dired-do-copy-regexp dired-do-rename-regexp dired-do-rename dired-do-hardlink dired-do-symlink dired-do-copy dired-create-directory dired-string-replace-match dired-do-redisplay dired-do-load dired-do-byte-compile dired-do-compress dired-do-kill-lines dired-do-shell-command dired-do-print dired-do-chown dired-do-chgrp dired-do-chmod dired-backup-diff dired-diff) "dired-aux" "dired-aux.el" (11275 39298))
 ;;; Generated autoloads from dired-aux.el
 
 (autoload (quote dired-diff) "dired-aux" "\
@@ -2187,8 +2182,8 @@ Use \\[dired-hide-subdir] to (un)hide a particular subdirectory." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "/home/fsf/rms/e19/lisp/dired.el" (11267 62528))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/dired.el
+;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "dired.el" (11282 24038))
+;;; Generated autoloads from dired.el
 
 (defvar dired-listing-switches "-al" "\
 *Switches passed to `ls' for dired.  MUST contain the `l' option.
@@ -2379,7 +2374,7 @@ With prefix arg NOCONFIRM, execute current line as-is without editing." t nil)
 
 ;;;***
 
-;;;### (autoloads (edebug-debug edebug-defun) "edebug" "edebug.el" (11236 36852))
+;;;### (autoloads (edebug-debug edebug-defun) "edebug" "edebug.el" (11274 16460))
 ;;; Generated autoloads from edebug.el
 
 (autoload (quote edebug-defun) "edebug" "\
@@ -2423,7 +2418,7 @@ Symbols:  RET, SPC, TAB, DEL, LFD, NUL; C-key; M-key.  (Must be uppercase.)
 
 ;;;***
 
-;;;### (autoloads (edt-emulation-on) "edt" "edt.el" (11223 36954))
+;;;### (autoloads (edt-emulation-on) "edt" "edt.el" (11279 33189))
 ;;; Generated autoloads from edt.el
 
 (autoload (quote edt-emulation-on) "edt" "\
@@ -2655,7 +2650,7 @@ for \\[find-tag] (which see)." t nil)
 
 ;;;***
 
-;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11249 56355))
+;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11283 35220))
 ;;; Generated autoloads from etags.el
 
 (defvar tags-file-name nil "\
@@ -2835,11 +2830,47 @@ for \\[find-tag] (which see)." t nil)
 
 ;;;***
 
-;;;### (autoloads (enable-flow-control-on enable-flow-control) "flow-ctrl" "flow-ctrl.el" (11130 57810))
+;;;### (autoloads (find-grep-dired find-name-dired find-dired) "find-dired" "find-dired.el" (11269 25506))
+;;; Generated autoloads from find-dired.el
+
+(defvar find-ls-option (if (eq system-type (quote berkeley-unix)) "-ls" "-exec ls -ldi {} \\;") "\
+*Option to `find' to produce an `ls -l'-type listing.")
+
+(defvar find-grep-options (if (eq system-type (quote berkeley-unix)) "-s" "-l") "\
+*Option to grep to be as silent as possible.
+On Berkeley systems, this is `-s', for others it seems impossible to
+suppress all output, so `-l' is used to print nothing more than the
+file name.")
+
+(autoload (quote find-dired) "find-dired" "\
+Run `find' and go into dired-mode on a buffer of the output.
+The command run (after changing into DIR) is
+
+    find . \\( ARGS \\) -ls" t nil)
+
+(autoload (quote find-name-dired) "find-dired" "\
+Search DIR recursively for files matching the globbing pattern PATTERN,
+and run dired on those files.
+PATTERN is a shell wildcard (not an Emacs regexp) and need not be quoted.
+The command run (after changing into DIR) is
+
+    find . -name 'PATTERN' -ls" t nil)
+
+(autoload (quote find-grep-dired) "find-dired" "\
+Find files in DIR containing a regexp ARG and start Dired on output.
+The command run (after changing into DIR) is
+
+    find . -exec grep -s ARG {} \\; -ls
+
+Thus ARG can also contain additional grep options." t nil)
+
+;;;***
+
+;;;### (autoloads (enable-flow-control-on enable-flow-control) "flow-ctrl" "flow-ctrl.el" (11278 55999))
 ;;; Generated autoloads from flow-ctrl.el
 
 (autoload (quote enable-flow-control) "flow-ctrl" "\
-Enable use of flow control; let user type C-s as C- and C-q as C-^." t nil)
+Enable use of flow control; let user type C-s as C-\\ and C-q as C-^." t nil)
 
 (autoload (quote enable-flow-control-on) "flow-ctrl" "\
 Enable flow control if using one of a specified set of terminal types.
@@ -2850,7 +2881,7 @@ to get the effect of a C-q." nil nil)
 
 ;;;***
 
-;;;### (autoloads (fortran-mode) "fortran" "fortran.el" (11181 53285))
+;;;### (autoloads (fortran-mode) "fortran" "fortran.el" (11284 8892))
 ;;; Generated autoloads from fortran.el
 
 (defvar fortran-tab-mode-default nil "\
@@ -2930,7 +2961,7 @@ with no args, if that value is non-nil." t nil)
 
 ;;;***
 
-;;;### (autoloads (gnus) "gnus" "gnus.el" (11254 64402))
+;;;### (autoloads (gnus) "gnus" "gnus.el" (11280 64452))
 ;;; Generated autoloads from gnus.el
 
 (autoload (quote gnus) "gnus" "\
@@ -2939,7 +2970,7 @@ If optional argument CONFIRM is non-nil, ask NNTP server." t nil)
 
 ;;;***
 
-;;;### (autoloads (gnus-post-news) "gnuspost" "gnuspost.el" (11254 50317))
+;;;### (autoloads (gnus-post-news) "gnuspost" "gnuspost.el" (11280 64406))
 ;;; Generated autoloads from gnuspost.el
 
 (fset (quote sendnews) (quote gnus-post-news))
@@ -2979,7 +3010,7 @@ Use \\[set-gnu-bindings] to restore previous global bindings." t nil)
 
 ;;;***
 
-;;;### (autoloads (dbx sdb gdb) "gud" "gud.el" (11229 44163))
+;;;### (autoloads (dbx sdb gdb) "gud" "gud.el" (11283 39089))
 ;;; Generated autoloads from gud.el
 
 (autoload (quote gdb) "gud" "\
@@ -3018,7 +3049,7 @@ Provide help for current mode." t nil)
 
 ;;;***
 
-;;;### (autoloads (hexl-find-file hexl-mode) "hexl" "hexl.el" (11181 53288))
+;;;### (autoloads (hexl-find-file hexl-mode) "hexl" "hexl.el" (11270 30440))
 ;;; Generated autoloads from hexl.el
 
 (autoload (quote hexl-mode) "hexl" "\
@@ -3099,7 +3130,7 @@ Switch to a buffer visiting file FILENAME, creating one in none exists." t nil)
 
 ;;;***
 
-;;;### (autoloads (hide-ifdef-mode) "hideif" "hideif.el" (11181 53289))
+;;;### (autoloads (hide-ifdef-mode) "hideif" "hideif.el" (11278 21089))
 ;;; Generated autoloads from hideif.el
 
 (autoload (quote hide-ifdef-mode) "hideif" "\
@@ -3196,7 +3227,7 @@ inferior-lisp-mode-hook (after the comint-mode-hook is run).
 
 ;;;***
 
-;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info) "info" "info.el" (11223 20964))
+;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info) "info" "info.el" (11284 6220))
 ;;; Generated autoloads from info.el
 
 (autoload (quote info) "info" "\
@@ -3247,7 +3278,7 @@ For example, invoke \"emacs -batch -f batch-info-validate $info/ ~/*.info\"" nil
 
 ;;;***
 
-;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11257 47868))
+;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11267 41222))
 ;;; Generated autoloads from ispell.el
 
 (autoload (quote ispell) "ispell" "\
@@ -3452,7 +3483,7 @@ and then select the region of un-tablified names and use
 
 ;;;***
 
-;;;### (autoloads nil "mail-utils" "mail-utils.el" (11181 53300))
+;;;### (autoloads nil "mail-utils" "mail-utils.el" (11267 45112))
 ;;; Generated autoloads from mail-utils.el
 
 (defvar mail-use-rfc822 nil "\
@@ -3580,7 +3611,7 @@ Previous contents of that buffer are killed first." t nil)
 
 ;;;***
 
-;;;### (autoloads (manual-entry) "man" "man.el" (11240 2282))
+;;;### (autoloads (manual-entry) "man" "man.el" (11273 1948))
 ;;; Generated autoloads from man.el
 
 (autoload (quote manual-entry) "man" "\
@@ -3638,7 +3669,7 @@ Returns the number of actions taken." nil nil)
 
 ;;;***
 
-;;;### (autoloads (mh-smail mh-rmail) "mh-e" "mh-e.el" (11185 3443))
+;;;### (autoloads (mh-smail mh-rmail) "mh-e" "mh-e.el" (11280 2606))
 ;;; Generated autoloads from mh-e.el
 
 (autoload (quote mh-rmail) "mh-e" "\
@@ -3715,7 +3746,7 @@ to future sessions." t nil)
 
 ;;;***
 
-;;;### (autoloads (nroff-mode) "nroff-mode" "nroff-mode.el" (11181 53307))
+;;;### (autoloads (nroff-mode) "nroff-mode" "nroff-mode.el" (11267 60509))
 ;;; Generated autoloads from nroff-mode.el
 
 (autoload (quote nroff-mode) "nroff-mode" "\
@@ -3741,7 +3772,7 @@ Type \\[describe-mode] in that buffer for a list of commands." t nil)
 
 ;;;***
 
-;;;### (autoloads (outline-mode) "outline" "outline.el" (11261 4198))
+;;;### (autoloads (outline-minor-mode outline-mode) "outline" "outline.el" (11282 47668))
 ;;; Generated autoloads from outline.el
 
 (autoload (quote outline-mode) "outline" "\
@@ -3783,6 +3814,11 @@ beginning of the line.  The longer the match, the deeper the level.
 
 Turning on outline mode calls the value of `text-mode-hook' and then of
 `outline-mode-hook', if they are non-nil." t nil)
+
+(autoload (quote outline-minor-mode) "outline" "\
+Toggle Outline minor mode.
+With arg, turn Outline minor mode on if arg is positive, off otherwise.
+See the command `outline-mode' for more information on this mode." t nil)
 
 ;;;***
 
@@ -4035,7 +4071,7 @@ buffer." t nil)
 
 ;;;***
 
-;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11244 23285))
+;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11282 59005))
 ;;; Generated autoloads from rmail.el
 
 (defvar rmail-dont-reply-to-names nil "\
@@ -4131,6 +4167,31 @@ Display current buffer in rot 13 in another window." t nil)
 
 ;;;***
 
+;;;### (autoloads (sc-cite-original) "sc" "sc.el" (11283 35088))
+;;; Generated autoloads from sc.el
+
+(autoload (quote sc-cite-original) "sc" "\
+Hook version of sc-cite.
+This is callable from the various mail and news readers' reply
+function according to the agreed upon standard. See \\[sc-describe]
+for more details.  Sc-cite-original does not do any yanking of the
+original message but it does require a few things:
+
+     1) The reply buffer is the current buffer.
+
+     2) The original message has been yanked and inserted into the
+        reply buffer.
+
+     3) Verbose mail headers from the original message have been
+        inserted into the reply buffer directly before the text of the
+        original message.
+
+     4) Point is at the beginning of the verbose headers.
+
+     5) Mark is at the end of the body of text to be cited." nil nil)
+
+;;;***
+
 ;;;### (autoloads (scheme-mode) "scheme" "scheme.el" (11181 53310))
 ;;; Generated autoloads from scheme.el
 
@@ -4176,7 +4237,7 @@ scribe-electric-parenthesis
 
 ;;;***
 
-;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11259 8757))
+;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11281 27134))
 ;;; Generated autoloads from sendmail.el
 
 (defvar mail-self-blind nil "\
@@ -4191,7 +4252,7 @@ nil means let mailer mail back a message to report errors.")
 (defvar mail-yank-ignored-headers "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^remailed\\|^received:\\|^message-id:\\|^summary-line:\\|^to:\\|^subject:\\|^in-reply-to:\\|^return-path:" "\
 Delete these headers from old message when it's inserted in a reply.")
 
-(defconst send-mail-function (quote sendmail-send-it) "\
+(defvar send-mail-function (quote sendmail-send-it) "\
 Function to call to send the current buffer as mail.
 The headers are be delimited by a line which is `mail-header-separator'.")
 
@@ -4284,8 +4345,8 @@ Prefix arg means just kill any existing server communications subprocess." t nil
 
 ;;;***
 
-;;;### (autoloads (sgml-mode) "sgml-mode" "/home/fsf/rms/e19/lisp/sgml-mode.el" (11274 32251))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/sgml-mode.el
+;;;### (autoloads (sgml-mode) "sgml-mode" "sgml-mode.el" (11274 32251))
+;;; Generated autoloads from sgml-mode.el
 
 (autoload (quote sgml-mode) "sgml-mode" "\
 Major mode for editing SGML.
@@ -4294,10 +4355,10 @@ Use \\[sgml-validate] to validate your document with an SGML parser." t nil)
 
 ;;;***
 
-;;;### (autoloads (shell) "shell" "shell.el" (11231 58570))
+;;;### (autoloads (shell) "shell" "shell.el" (11275 52454))
 ;;; Generated autoloads from shell.el
 
-(defconst shell-prompt-pattern "^[^#$%>]*[#$%>] *" "\
+(defvar shell-prompt-pattern "^[^#$%>]*[#$%>] *" "\
 Regexp to match prompts in the inferior shell.
 Defaults to \"^[^#$%>]*[#$%>] *\", which works pretty well.
 This variable is used to initialise `comint-prompt-regexp' in the 
@@ -4343,7 +4404,7 @@ This function is suitable for execution in a .emacs file." t nil)
 
 ;;;***
 
-;;;### (autoloads (reverse-region sort-columns sort-regexp-fields sort-fields sort-float-fields sort-numeric-fields sort-pages sort-paragraphs sort-lines) "sort" "sort.el" (11188 47959))
+;;;### (autoloads (reverse-region sort-columns sort-regexp-fields sort-fields sort-float-fields sort-numeric-fields sort-pages sort-paragraphs sort-lines) "sort" "sort.el" (11275 48526))
 ;;; Generated autoloads from sort.el
 
 (autoload (quote sort-lines) "sort" "\
@@ -4448,7 +4509,7 @@ Check spelling of string supplied as argument." t nil)
 
 ;;;***
 
-;;;### (autoloads (spook) "spook" "spook.el" (11185 16874))
+;;;### (autoloads (spook) "spook" "spook.el" (11274 56066))
 ;;; Generated autoloads from spook.el
 
 (autoload (quote spook) "spook" "\
@@ -4475,8 +4536,8 @@ The variable `tab-width' controls the spacing of tab stops." t nil)
 
 ;;;***
 
-;;;### (autoloads (tar-mode) "tar-mode" "/home/fsf/rms/e19/lisp/tar-mode.el" (11275 52507))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/tar-mode.el
+;;;### (autoloads (tar-mode) "tar-mode" "tar-mode.el" (11275 52507))
+;;; Generated autoloads from tar-mode.el
 
 (autoload (quote tar-mode) "tar-mode" "\
 Major mode for viewing a tar file as a dired-like listing of its contents.
@@ -4495,7 +4556,7 @@ See also: variables tar-update-datestamp and tar-anal-blocksize.
 
 ;;;***
 
-;;;### (autoloads (rsh telnet) "telnet" "telnet.el" (11223 20968))
+;;;### (autoloads (rsh telnet) "telnet" "telnet.el" (11283 60253))
 ;;; Generated autoloads from telnet.el
 
 (autoload (quote telnet) "telnet" "\
@@ -4510,7 +4571,7 @@ Normally input is edited in Emacs and sent a line at a time." t nil)
 
 ;;;***
 
-;;;### (autoloads (terminal-emulator) "terminal" "terminal.el" (11249 17507))
+;;;### (autoloads (terminal-emulator) "terminal" "terminal.el" (11274 60089))
 ;;; Generated autoloads from terminal.el
 
 (autoload (quote terminal-emulator) "terminal" "\
@@ -4741,7 +4802,7 @@ subshell is initiated, the value of tex-shell-hook is called." t nil)
 
 ;;;***
 
-;;;### (autoloads (batch-texinfo-format texinfo-format-region texinfo-format-buffer) "texinfmt" "texinfmt.el" (11175 22256))
+;;;### (autoloads (batch-texinfo-format texinfo-format-region texinfo-format-buffer) "texinfmt" "texinfmt.el" (11278 20710))
 ;;; Generated autoloads from texinfmt.el
 
 (autoload (quote texinfo-format-buffer) "texinfmt" "\
@@ -4768,7 +4829,7 @@ For example, invoke
 
 ;;;***
 
-;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11259 37262))
+;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11283 53395))
 ;;; Generated autoloads from texinfo.el
 
 (autoload (quote texinfo-mode) "texinfo" "\
@@ -4841,8 +4902,8 @@ value of texinfo-mode-hook." t nil)
 
 ;;;***
 
-;;;### (autoloads (display-time) "time" "/home/fsf/rms/e19/lisp/time.el" (11268 15748))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/time.el
+;;;### (autoloads (display-time) "time" "time.el" (11279 41068))
+;;; Generated autoloads from time.el
 
 (defvar display-time-day-and-date nil "\
 *Non-nil means \\[display-time] should display day and date as well as time.")
@@ -4856,7 +4917,7 @@ After each update, `display-time-hook' is run with `run-hooks'." t nil)
 
 ;;;***
 
-;;;### (autoloads (run-at-time) "timer" "timer.el" (11194 16467))
+;;;### (autoloads (run-at-time) "timer" "timer.el" (11274 18263))
 ;;; Generated autoloads from timer.el
 
 (autoload (quote run-at-time) "timer" "\
@@ -4878,6 +4939,17 @@ Relative times may be specified as a series of numbers followed by units:
   1 min 5 sec		denotes 65 seconds from now.
   1 min 2 sec 3 hour 4 day 5 week 6 fortnight 7 month 8 year
 			denotes the sum of all the given durations from now." t nil)
+
+;;;***
+
+;;;### (autoloads (tq-create) "tq" "tq.el" (10941 58296))
+;;; Generated autoloads from tq.el
+
+(autoload (quote tq-create) "tq" "\
+Create and return a transaction queue communicating with PROCESS.
+PROCESS should be a subprocess capable of sending and receiving
+streams of bytes.  It may be a local process, or it may be connected
+to a tcp server on another machine." nil nil)
 
 ;;;***
 
@@ -4903,17 +4975,6 @@ and return values will be inserted into BUFFER. This function generates the
 trace advice for FUNCTION and activates it together with any other advice
 there might be!! Trace output will quietly go to BUFFER without changing
 the window or buffer configuration at all." t nil)
-
-;;;***
-
-;;;### (autoloads (tq-create) "tq" "tq.el" (10941 58296))
-;;; Generated autoloads from tq.el
-
-(autoload (quote tq-create) "tq" "\
-Create and return a transaction queue communicating with PROCESS.
-PROCESS should be a subprocess capable of sending and receiving
-streams of bytes.  It may be a local process, or it may be connected
-to a tcp server on another machine." nil nil)
 
 ;;;***
 
@@ -5108,7 +5169,7 @@ The buffer in question is current when this function is called." nil nil)
 
 ;;;***
 
-;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11254 36487))
+;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11270 56393))
 ;;; Generated autoloads from vc.el
 
 (defvar vc-checkin-hook nil "\
@@ -5239,7 +5300,7 @@ Syntax table and abbrevs while in vi mode remain as they were in Emacs." t nil)
 
 ;;;***
 
-;;;### (autoloads (view-mode view-buffer-other-window view-buffer view-file-other-window view-file) "view" "view.el" (11194 9775))
+;;;### (autoloads (view-mode view-buffer-other-window view-buffer view-file-other-window view-file) "view" "view.el" (11277 39824))
 ;;; Generated autoloads from view.el
 
 (autoload (quote view-file) "view" "\
@@ -5325,7 +5386,7 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 
 ;;;***
 
-;;;### (autoloads (vip-mode) "vip" "vip.el" (11185 17045))
+;;;### (autoloads (vip-mode) "vip" "vip.el" (11281 39324))
 ;;; Generated autoloads from vip.el
 
 (autoload (quote vip-mode) "vip" "\
@@ -5343,7 +5404,7 @@ With argument, asks for a command line." t nil)
 
 ;;;***
 
-;;;### (autoloads (psychoanalyze-pinhead yow) "yow" "yow.el" (11236 36897))
+;;;### (autoloads (psychoanalyze-pinhead yow) "yow" "yow.el" (11274 55989))
 ;;; Generated autoloads from yow.el
 
 (autoload (quote yow) "yow" "\

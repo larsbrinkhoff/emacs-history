@@ -108,27 +108,29 @@ or when it is used with \\[next-error] or \\[compile-goto-error].")
     ;; We'll insist that the number be followed by a colon or closing
     ;; paren, because otherwise this matches just about anything
     ;; containing a number with spaces around it.
-    ("^\\([^:( \t\n]+\\)[ \t]*[:(][ \t]*\\([0-9]+\\)[:) \t]" 1 2)
+    ("\n\\([^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\)[:) \t]" 1 2)
 
     ;; 4.3BSD lint pass 2
     ;; 	strcmp: variable # of args. llib-lc(359)  ::  /usr/src/foo/foo.c(8)
-    ("[ \t:]+\\([^:( \t\n]+\\)[ \t]*[:(]*(+[ \t]*\\([0-9]+\\))[:) \t]*$" 1 2)
+    ("[ \t:]\\([^:( \t\n]+\\)[:(](+[ \t]*\\([0-9]+\\))[:) \t]*$" 1 2)
 
     ;; 4.3BSD lint pass 3
     ;; 	bloofle defined( /users/wolfgang/foo.c(4) ), but never used
     ;; This used to be
     ;; ("[ \t(]+\\([^:( \t\n]+\\)[:( \t]+\\([0-9]+\\)[:) \t]+" 1 2)
     ;; which is regexp Impressionism - it matches almost anything!
-    ("([ \t]*\\([^:( \t\n]+\\)[ \t]*[:(][ \t]*\\([0-9]+\\))" 1 2)
+    ("([ \t]*\\([^:( \t\n]+\\)[:(][ \t]*\\([0-9]+\\))" 1 2)
 
     ;; Line 45 of "foo.c": bloofel undefined (who does this?)
-    ("^[Ll]ine[ \t]+\\([0-9]+\\)[ \t]+of[ \t]+\"\\([^\"\n]+\\)\":" 2 1)
+    ("\n[Ll]ine[ \t]+\\([0-9]+\\)[ \t]+of[ \t]+\"\\([^\"\n]+\\)\":" 2 1)
 
     ;; Apollo cc, 4.3BSD fc:
     ;;	"foo.f", line 3: Error: syntax error near end of statement
-    ;; or MIPS RISC CC - the one distributed with Ultrix:
+    ("\"\\([^,\" \n\t]+\\)\", line \\([0-9]+\\):" 1 2)
+
+    ;; MIPS RISC CC - the one distributed with Ultrix:
     ;;	ccom: Error: foo.c, line 2: syntax error
-    ("\\b\"?\\([^,\" \n\t]+\\)\"?, line \\([0-9]+\\):" 1 2)
+    ("rror: \\([^,\" \n\t]+\\), line \\([0-9]+\\):" 1 2)
 
     ;; IBM AIX PS/2 C version 1.1:
     ;;	****** Error number 140 in line 8 of file errors.c ******
@@ -294,36 +296,37 @@ Returns the compilation buffer created."
 	  (goto-char (point-max)))
       ;; Pop up the compilation buffer.
       (setq outwin (display-buffer outbuf))
-      (set-buffer outbuf)
-      (compilation-mode)
-      (buffer-disable-undo (current-buffer))
-      (setq buffer-read-only t)
-      (set (make-local-variable 'compilation-parse-errors-function) parser)
-      (set (make-local-variable 'compilation-error-message) error-message)
-      (set (make-local-variable 'compilation-error-regexp-alist) regexp-alist)
-      (setq default-directory thisdir
-	    compilation-directory-stack (list default-directory))
-      (set-window-start outwin (point-min))
-      (setq mode-name name-of-mode)
-      (or (eq outwin (selected-window))
-	  (set-window-point outwin (point-min)))
-      (and compilation-window-height
-	   (= (window-width outwin) (frame-width))
-	   (let ((w (selected-window)))
-	     (unwind-protect
-		 (progn
-		   (select-window outwin)
-		   (enlarge-window (- compilation-window-height
-				      (window-height))))
-	       (select-window w))))
-      ;; Start the compilation.
-      (let ((proc (start-process-shell-command (downcase mode-name)
-					       outbuf
-					       command)))
-	(set-process-sentinel proc 'compilation-sentinel)
-	(set-process-filter proc 'compilation-filter)
-	(set-marker (process-mark proc) (point) outbuf)
-	(setq compilation-in-progress (cons proc compilation-in-progress))))
+      (save-excursion
+	(set-buffer outbuf)
+	(compilation-mode)
+	(buffer-disable-undo (current-buffer))
+	(setq buffer-read-only t)
+	(set (make-local-variable 'compilation-parse-errors-function) parser)
+	(set (make-local-variable 'compilation-error-message) error-message)
+	(set (make-local-variable 'compilation-error-regexp-alist) regexp-alist)
+	(setq default-directory thisdir
+	      compilation-directory-stack (list default-directory))
+	(set-window-start outwin (point-min))
+	(setq mode-name name-of-mode)
+	(or (eq outwin (selected-window))
+	    (set-window-point outwin (point-min)))
+	(and compilation-window-height
+	     (= (window-width outwin) (frame-width))
+	     (let ((w (selected-window)))
+	       (unwind-protect
+		   (progn
+		     (select-window outwin)
+		     (enlarge-window (- compilation-window-height
+					(window-height))))
+		 (select-window w))))
+	;; Start the compilation.
+	(let ((proc (start-process-shell-command (downcase mode-name)
+						 outbuf
+						 command)))
+	  (set-process-sentinel proc 'compilation-sentinel)
+	  (set-process-filter proc 'compilation-filter)
+	  (set-marker (process-mark proc) (point) outbuf)
+	  (setq compilation-in-progress (cons proc compilation-in-progress)))))
     ;; Make it so the next C-x ` will use this buffer.
     (setq compilation-last-buffer outbuf)))
 
@@ -993,9 +996,12 @@ See variable `compilation-parse-errors-function' for the interface it uses."
 	     ;; Extract the file name and line number from the error message.
 	     (let ((beginning-of-match (match-beginning 0)) ;looking-at nukes
 		   (filename
-		    (cons default-directory
-			  (buffer-substring (match-beginning (nth 1 alist))
-					    (match-end (nth 1 alist)))))
+		    (save-excursion
+		      (goto-char (match-end (nth 1 alist)))
+		      (skip-chars-backward " \t")
+		      (let ((name (buffer-substring (match-beginning (nth 1 alist))
+						    (point))))
+			(expand-file-name name default-directory))))
 		   (linenum (save-restriction
 			      (narrow-to-region
 			       (match-beginning (nth 2 alist))

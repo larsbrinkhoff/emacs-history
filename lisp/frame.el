@@ -98,18 +98,30 @@ These supercede the values given in `default-frame-alist'.")
 	      (setq default-minibuffer-frame
 		    (setq frame-initial-frame
 			  (new-frame initial-frame-alist)))
+	      ;; Delete any specifications for window geometry parameters
+	      ;; so that we won't reapply them in frame-notice-user-settings.
+	      ;; It would be wrong to reapply them then,
+	      ;; because that would override explicit user resizing.
+	      (setq initial-frame-alist
+		    (delq (assq 'height initial-frame-alist)
+			  (delq (assq 'width initial-frame-alist)
+				(delq (assq 'left initial-frame-alist)
+				      (delq (assq 'top initial-frame-alist)
+					    initial-frame-alist)))))
 	      ;; Handle `reverse' as a parameter.
 	      (if (cdr (or (assq 'reverse initial-frame-alist)
 			   (assq 'reverse default-frame-alist)
 			   (cons nil
-				 (x-get-resource "reverseVideo" "Reversevideo"))))
+				 (x-get-resource "reverseVideo" "ReverseVideo"))))
 		  (let ((params (frame-parameters frame-initial-frame)))
 		    (modify-frame-parameters
 		     frame-initial-frame
-		     (list (cons 'foreground-color (cdr (assq 'background-color params)))
+		     ;; Must set cursor-color after background color.
+		     ;; So put it first.
+		     (list (cons 'cursor-color (cdr (assq 'background-color params)))
+			   (cons 'foreground-color (cdr (assq 'background-color params)))
 			   (cons 'background-color (cdr (assq 'foreground-color params)))
 			   (cons 'mouse-color (cdr (assq 'background-color params)))
-			   (cons 'cursor-color (cdr (assq 'background-color params)))
 			   (cons 'border-color (cdr (assq 'background-color params)))))))))
 
 	;; At this point, we know that we have a frame open, so we 

@@ -109,6 +109,22 @@ SUBJECT is a string of regexps separated by commas."
     (goto-char (point-min))
     (if whole-message (re-search-forward subject nil t)
       (string-match subject (or (mail-fetch-field "Subject") "")) )))
+
+(defun rmail-summary-by-senders (senders)
+  "Display a summary of all messages with the given SENDERS.
+SENDERS is a string of names separated by commas."
+  (interactive "sSenders to summarize by: ")
+  (rmail-new-summary
+   (concat "senders " senders)
+   'rmail-message-senders-p
+   (mail-comma-list-regexp senders)))
+
+(defun rmail-message-senders-p (msg senders)
+  (save-restriction
+    (goto-char (rmail-msgbeg msg))
+    (search-forward "\n*** EOOH ***\n")
+    (narrow-to-region (point) (progn (search-forward "\n\n") (point)))
+    (string-match senders (or (mail-fetch-field "From") ""))))
 
 ;; General making of a summary buffer.
 
@@ -170,7 +186,7 @@ nil for FUNCTION means all messages."
 	    (setq buffer-read-only t)
 	    (rmail-summary-mode)
 	    (make-local-variable 'minor-mode-alist)
-	    (setq minor-mode-alist (list ": " description))
+	    (setq minor-mode-alist (list '(t (concat ": " description))))
 	    (setq rmail-buffer rbuf
 		  rmail-summary-redo redo-form
 		  rmail-total-messages total))))
@@ -346,14 +362,15 @@ With optional prefix argument NUMBER, moves forward this number of non-deleted
 messages, or backward if NUMBER is negative."
   (interactive "p")
   (forward-line 0)
-  (and (> number 0) (forward-line 1))
+  (and (> number 0) (end-of-line))
   (let ((count (if (< number 0) (- number) number))
 	(search (if (> number 0) 're-search-forward 're-search-backward))
 	(non-del-msg-found nil))
     (while (and (> count 0) (setq non-del-msg-found
-				  (or (funcall search "^.....[^D]" nil t)
+				  (or (funcall search "^....[^D]" nil t)
 				      non-del-msg-found)))
       (setq count (1- count))))
+  (beginning-of-line)
   (display-buffer rmail-buffer))
 
 (defun rmail-summary-previous-msg (&optional number)
@@ -506,16 +523,20 @@ Instead, all of the Rmail Mode commands are available, plus:
 	    (skip-chars-forward "0-9")
 	    (setq msg-num (string-to-int (buffer-substring beg (point))))
 	    (or (eq rmail-current-message msg-num)
-		(progn
+		(let (go-where window (owin (selected-window)))
 		  (setq rmail-current-message msg-num)
 		  (if (= (following-char) ?-)
 		      (progn
 			(delete-char 1)
 			(insert " ")))
 		  (setq window (display-buffer rmail-buffer))
-		  (save-window-excursion
-		    (select-window window)
-		    (rmail-show-message msg-num)))))))))
+		  ;; Using save-window-excursion caused the new value
+		  ;; of point to get lost.
+		  (unwind-protect
+		      (progn
+			(select-window window)
+			(rmail-show-message msg-num))
+		    (select-window owin)))))))))
 
 (defvar rmail-summary-mode-map nil)
 
@@ -657,24 +678,30 @@ Instead, all of the Rmail Mode commands are available, plus:
   (interactive)
   (save-excursion
     (set-buffer rmail-buffer)
-    (rmail-only-expunge)
-    (save-buffer))
-  (rmail-update-summary))
+    (rmail-only-expunge))
+  (rmail-update-summary)
+  (save-excursion
+    (set-buffer rmail-buffer)
+    (save-buffer)))
 
 (defun rmail-summary-get-new-mail ()
   "Get new mail and recompute summary headers."
   (interactive)
-  (save-excursion
-    (set-buffer rmail-buffer)
-    (rmail-get-new-mail))
-  (rmail-update-summary))
+  (let (msg)
+    (save-excursion
+      (set-buffer rmail-buffer)
+      (rmail-get-new-mail)
+      ;; Get the proper new message number.
+      (setq msg rmail-current-message))
+    ;; Make sure that message is displayed.
+    (rmail-summary-goto-msg msg)))
 
 (defun rmail-summary-input (filename)
   "Run Rmail on file FILENAME."
   (interactive "FRun rmail on RMAIL file: ")
-  (save-excursion
-    (set-buffer rmail-buffer)
-    (rmail filename)))
+  ;; We switch windows here, then display the other Rmail file there.
+  (pop-to-buffer rmail-buffer)
+  (rmail filename))
 
 (defun rmail-summary-first-message ()
   "Show first message in Rmail file from summary buffer."
@@ -751,7 +778,9 @@ Interactively, empty argument means use same regexp used last time."
 (defun rmail-summary-add-label (label)
   "Add LABEL to labels associated with current Rmail message.
 Completion is performed over known labels when reading."
-  (interactive (list (rmail-read-label "Add label")))
+  (interactive (list (save-excursion
+		       (set-buffer rmail-buffer)
+		       (rmail-read-label "Add label"))))
   (save-excursion
     (set-buffer rmail-buffer)
     (rmail-add-label label)))
@@ -759,7 +788,9 @@ Completion is performed over known labels when reading."
 (defun rmail-summary-kill-label (label)
   "Remove LABEL from labels associated with current Rmail message.
 Completion is performed over known labels when reading."
-  (interactive (list (rmail-read-label "Add label")))
+  (interactive (list (save-excursion
+		       (set-buffer rmail-buffer)
+		       (rmail-read-label "Kill label"))))
   (save-excursion
     (set-buffer rmail-buffer)
     (rmail-set-label label nil)))

@@ -1,3 +1,33 @@
+Tue Jun  8 02:42:18 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* configure.in (CFLAGS): Don't set this according to the value of
+	the GCC shell variable.  Instead, consult the machine and system
+	files for the values of C_OPTIMIZE_SWITCH and C_DEBUG_SWITCH, and
+	test __GNUC__ while we're at it.
+
+	* configure.in: Remove extra ;; from hpux cases.
+
+Mon Jun  7 23:55:41 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* configure.in: Check to see if the system has -ldnet.
+
+Tue Jun  8 00:22:46 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* make-dist: Add clauses to distribute lisp/forms-mode.
+
+Mon Jun  7 13:53:54 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (machine): Fix the versions in hpux version number test.
+	Do not guess based on cpu type.  Do check for explicit system version.
+
+Thu Jun  3 16:42:57 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Do NOT look for `unknown' as company name.
+
+Wed Jun  2 12:10:09 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Fix typo in message.
+
 Tue Jun  1 00:08:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.12 released.

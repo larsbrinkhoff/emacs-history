@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 struct tm *localtime ();
 

@@ -176,6 +176,10 @@ Cydra 5 (cydra-cydrome-sysv)
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
   Emacs runs under Ultrix and OSF/1 as of 19.7.
+  
+  If you are not using DECnet, then remove the definition of
+  LIBS_MACHINE from `src/m/pmax.h', in order to prevent linking with
+  the `libdnet.a' library.
 
   See under Ultrix for problems using X windows on Ultrix.
   Note that this is a MIPS machine.
@@ -343,9 +347,6 @@ IBM RS/6000 (rs6000-ibm-aix)
   persons say that the tty VMIN and VTIME settings have been
   corrupted; if you have a fix, please send it to us.
 
-  Reports are that the IBM supplied X libraries don't work with Emacs, 
-  but the MIT X libraries and include files do work.
-
   Compiling with -O using the IBM compiler has been known
   to make Emacs work incorrectly.
 
@@ -388,7 +389,8 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 	   i386-intsys-sysv,	i386-*-sysv3,
 	   i386-*-sysv4,	i386-*-sysv4.2,
 	   i386-*-sysv5.3,	i386-*-bsd4.2,
-	   i386-*-sco3.2v4,	i386-*-bsd386)
+	   i386-*-sco3.2v4,	i386-*-bsd386,
+	   i386-*-386bsd)
 
   In the above configurations, * means that the manufacturer's name
   you specify does not matter, and you can use any name you like
@@ -413,6 +415,9 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
   If you are using Xenix, see notes at end under Xenix.
   If you are using Esix, see notes at end under Esix.
   If you are using SCO Unix, see notes at end under SCO.
+
+  On 386bsd, you should use GNU make, not the system's make.
+  Assuming it's installed as gmake, do `gmake install MAKE=gmake'.
 
   If you are using System V release 4.2, you may find that `cc -E'
   puts spurious spaces in `src/xmakefile'.  If that happens,
@@ -558,17 +563,14 @@ NCR Tower 32 (m68k-ncr-sysv2 or m68k-ncr-sysv3)
 
 NeXT (m68k-next-bsd, m68k-next-mach2)
 
-  Emacs 18 worked in a terminal window.
-
   Emacs 19 has not been tested extensively yet, but it seems to work
-  in a NeXTStep 3.0 terminal window with the almost unchanged system
-  dependent code from version 18.  You may need to specify -traditional
+  in a NeXTStep 3.0 terminal window.  You may need to specify -traditional
   when src/Makefile builds xmakefile.
 
   Multiple frames (new with Emacs 19) might work with X, but this has
-  not not been tested yet.  A NeXTStep implementation of multiple
-  frames would be nice, but requires input from a NeXTStep- and
-  Emacs-literate volunteer.
+  not not been tested yet.  NeXT users might want to implement direct
+  operation with NeXTStep, but from the point of view of the GNU project,
+  that is a distraction.
 
   Thanks to Thorsten Ohl for working on the NeXT port of Emacs 19.
 
@@ -670,10 +672,10 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
   On Solaris 2, you need to install patch 100947-02 to fix a system bug.
   Presumably this patch comes from Sun.  You must alter the definition of
   LD_SWITCH_SYSTEM if your X11 libraries are not in /usr/openwin/lib.
+  You must make sure that /usr/ucblib is not in your path.
 
   On Solaris 2, Emacs 19.12 currently expects certain optional packages
-  to be installed.  You need libucb; you need termcap (which may be
-  part of libucb).  This may be changed in the future.
+  to be installed.  This may be changed in the future.
 
   There are three machine files for the different versions of SunOS
   that run on the Motorola 68000 processors.  All are derived from

@@ -98,6 +98,9 @@ The tape includes source code for:
 * Bison (a free, compatible replacement for yacc)
 * The Bison Manual, as Texinfo source
 * COFF support for GNU software tools
+* DejaGnu (a framework for testing other programs)
+* expect (runs scripts to conduct dialogs with programs)
+* tcl (an embeddable tool command language)
 * dld (a dynamic linker)
 * f2c  (a FORTRAN-77 to C translator)
 * Flex (Vern Paxson's fast rewrite of lex)
@@ -109,7 +112,7 @@ The tape includes source code for:
 * gmp library (arbitrary precision arithmetic on signed integers & rationals)
 * gperf (a perfect hash-table generator)
 * GNU indent
-* p2c
+* p2c (a Pascal-to-C translator)
 * Perl (a programming language interpreter)
 * GNU Smalltalk (the GNU implementation of this programming language system)
 * regexp library (GNU implementation of the regular expression library)
@@ -137,6 +140,7 @@ The tape includes source code for:
 * elvis (a clone of the vi/ex Unix editor)
 * es (extensible rc-like shell with lexical scope, first class functions, etc.)
 * Fax (a fax spooling system)
+* Gnats (a bug-tracking system)
 * GNU find & finger
 * GNU fontutils (create and support fonts for use with Ghostscript or TeX)
 * ms (MandelSpawn, a parallel Mandelbrot program for the X window system)

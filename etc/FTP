@@ -33,20 +33,21 @@ byte).
 If you are on the Internet (see also "** Alternative Internet FTP
 Sources" below), you can at present copy the latest distribution
 version of GNU Emacs from the file /pub/gnu/emacs-M.N.tar on host
-prep.ai.mit.edu (or the file /pub/gnu/emacs-M.N.tar.Z which has been
-run through compress after tar).  M and N stand for version numbers;
-look at a listing of the directory through ftp to see what version is
+prep.ai.mit.edu (or the file /pub/gnu/emacs-M.N.tar.gz which has been
+run through gzip after tar).  M and N stand for version numbers; look
+at a listing of the directory through ftp to see what version is
 available.  These files are about 11 and 4 megabytes long,
 respectively.  After you unpack the distribution, be sure to look at
 the files README and INSTALL.
 
 Because of difficulties in transferring large files, sometimes a split
-version of the tar file is created.  This is a directory named
-/pub/gnu/emacs-M.N.tar-split or perhaps
-/pub/gnu/emacs-M.N.tar.Z-split, containing files of 100000 characters
+version of the tar file is created.  This would be in a directory
+named /pub/gnu/emacs-M.N.tar-split or perhaps
+/pub/gnu/emacs-M.N.tar.gz-split, containing files of 100000 characters
 each.  There is generally no trouble in ftping files of this size.
 They can be combined with cat to make a tar file or compressed tar
-file.
+file.  If you can't find such files on prep.ai.mit.edu, have a look at
+archive.cis.ohio-state.edu.
 
 ALWAYS USE BINARY/IMAGE MODE TO TRANSFER THESE FILES!
 Text mode does not work for tar files or compressed files.
@@ -58,16 +59,16 @@ Some ftp'ers have found it necessary for successful file transfer:
 Files of differences from previous widely distributed GNU Emacs
 versions to the present version are also available on prep.ai.mit.edu
 under names of the form emacs.diff-OO.OO-NN.NN in directory /pub/gnu.
-These are made with diff -rc2.  Sometimes there are compressed
-versions of these difference files as well; their names have .Z
-appended.
+These are made with diff -rc2.  Sometimes there are versions
+compressed with gzip of these difference files as well; their names
+have .gz appended.
 
 The Emacs manual in source form is included in the distribution.  The
 dvi file produced by TeX is not included, but a copy may be available
 for ftp under the name /pub/gnu/emacs.dvi.
 
 The Emacs Lisp Reference Manual is in a separate file:
-	/pub/gnu/lispref.tar.Z
+	/pub/gnu/elisp-manual-NN.tar.gz
 
 ** VMS versions of GNU Emacs and How To FTP It.
 You can anonymously ftp a VMS version of GNU emacs from:
@@ -95,9 +96,9 @@ Other GNU software is available on prep.ai.mit.edu under directory
 GNU Emacs), exist for some of these programs.  Some programs have misc
 support files as well.  Have a look on prep to see which ones.
 Compressed versions of the tar or diff files are often available
-(indicated by a .z suffix).  Some of this software is in beta test
-(probably still buggy), and is being made available for use by hackers
-who like to test software.
+(indicated by a .gz suffix and made with the `gzip' program).  Some of
+this software is in beta test (probably still buggy), and is being
+made available for use by hackers who like to test software.
 
 The file /pub/gnu/DESCRIPTIONS has a list of the packages distributed
 on prep.ai.mit.edu with a brief description explaining what
@@ -142,8 +143,9 @@ ftp.cs.widener.edu, itstd.sri.com, a.cs.uiuc.edu, uxc.cso.uiuc.edu,
 scam.berkeley.edu, jaguar.utah.edu, gatekeeper.dec.com:/pub/gnu,
 archive.cis.ohio-state.edu, and ftp.uu.net:/archive/systems/gnu).  And
 these foreign sites: archie.oz.au:/gnu (Australia (archie.oz or
-archie.oz.au for ACSnet)), ftp.technion.al.il:/pub/unsupported/gnu
+archie.oz.au for ACSnet)), ftp.technion.ac.il:/pub/unsupported/gnu
 (Israel, automatic update daily, ran by ftp-admin),
+ftp.sun.ac.za:/pub/gnu (South Africa),
 ftp.informatik.tu-muenchen.de or ftp.informatik.rwth-aachen.de
 (Germany), isy.liu.se, ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu
 (Sweden), hp4nl.nluug.nl (Netherlands), ftp.win.tue.nl (Netherlands,

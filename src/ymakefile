@@ -170,23 +170,6 @@ STARTFILES = START_FILES
 #endif /* not ORDINARY_LINK */
 
 
-/* This macro says how to compile for debugging.
-   If you want to optimize, DON'T change this macro.
-   Instead, replace C_DEBUG_SWITCH with C_OPTIMIZE_SWITCH
-   where ALL_CFLAGS is set.  */
-#ifndef C_DEBUG_SWITCH
-#ifdef __GNUC__
-#define C_DEBUG_SWITCH -g -O
-#else /* ! defined (__GNUC__) */
-#define C_DEBUG_SWITCH -g
-#endif /* ! defined (__GNUC__) */
-#endif /* C_DEBUG_SWITCH */
-
-/* If user wants to optimize, this is how.  */
-#ifndef C_OPTIMIZE_SWITCH
-#define C_OPTIMIZE_SWITCH -O
-#endif
-
 /* cc switches needed to make `asm' keyword work.
    Nothing special needed on most machines.  */
 #ifndef C_SWITCH_ASM
@@ -304,7 +287,7 @@ LIBX= $(LIBXMENU) LD_SWITCH_X_SITE -lX10 LIBX10_MACHINE LIBX10_SYSTEM
 
 #ifndef LIB_GCC
 /* Ask GCC where to find libgcc.a.  */
-#define LIB_GCC -L`gcc -print-libgcc-file-name`
+#define LIB_GCC `gcc -print-libgcc-file-name`
 #endif /* LIB_GCC */
 
 GNULIB_VAR = LIB_GCC
@@ -637,16 +620,18 @@ alloca.o : alloca.s config.h
 /* $(CPP) is cc -E, which may get confused by filenames
    that do not end in .c.  So copy file to a safe name.  */
 	cp ${srcdir}/alloca.s allocatem.c
-/* remove any ^L, blank lines, and preprocessor comments,
-   since some assemblers barf on them */
+/* Remove any ^L, blank lines, and preprocessor comments,
+   since some assemblers barf on them.  Use a different basename for the
+   output file, since some stupid compilers (Green Hill's) use that
+   name for the intermediate assembler file. */
 	$(CPP) $(CPPFLAGS) $(ALL_CFLAGS) allocatem.c | \
 	sed -e 's///' -e 's/^#.*//' | \
-	sed -n -e '/^..*$$/p' > allocatem.s
+	sed -n -e '/^..*$$/p' > allocax.s
 	-rm -f alloca.o
 /* Xenix, in particular, needs to run assembler via cc.  */
-	$(CC) -c allocatem.s
-	mv allocatem.o alloca.o
-	rm allocatem.s allocatem.c
+	$(CC) -c allocax.s
+	mv allocax.o alloca.o
+	rm allocax.s allocax.c
 #endif /* HAVE_ALLOCA */
 #endif /* ! defined (C_ALLOCA) */
 

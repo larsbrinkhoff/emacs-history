@@ -703,7 +703,8 @@ date and moves point to the previous occurrence of that date.
 Similarly, type @kbd{g m n h} to go to the next occurrence of a haab
 date.
 
-@findex calendar-previous-calendar-round-date
+@c This is omitted because it is too long for smallbook format.
+@c @findex calendar-previous-calendar-round-date
 @findex calendar-next-calendar-round-date
 @cindex Mayan calendar round
   The Maya also used the combination of the tzolkin date and the haab

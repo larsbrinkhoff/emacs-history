@@ -513,6 +513,29 @@ about with @code{match-beginning} and @code{match-end}.  Also, these
 parenthetical groupings may now be nested to any degree.
 
 @item
+In a regular expression, when you use an asterisk after a parenthetical
+grouping, and then ask about what range was matched by the grouping,
+Emacs 19 reports just its last occurrence.  Emacs 18 used to report the
+range of all the repetitions put together.
+
+For example,
+
+@example
+(progn
+ (string-match "f\\(o\\)*" "foo")
+ (list (match-beginning 1)
+       (match-end 1)))
+@end example
+
+@noindent
+returns @code{(2 3)} in Emacs 19, corresponding to just the last
+repetition of @samp{\(o\)}.  In Emacs 18, that expression returns
+@code{(1 3)}, encompassing both repetitions.
+
+If you want the Emacs 18 behavior, use a grouping @emph{containing} the
+asterisk: @code{"f\\(o*\\)"}.
+
+@item
 The new special form @code{save-match-data} preserves the regular
 expression match status.  Usage: @code{(save-match-data
 @var{body}@dots{})}.
@@ -925,10 +948,11 @@ Here are the primitives that you can handle in this way:
 @code{file-name-directory}, @code{file-name-nondirectory},
 @code{file-name-sans-versions}, @code{file-newer-than-file-p},
 @code{file-readable-p}, @code{file-symlink-p}, @code{file-writable-p},
-@code{insert-directory}, @code{insert-file-contents},
+@code{insert-directory}, @code{insert-file-contents}, @code{load},
 @code{make-directory}, @code{make-symbolic-link}, @code{rename-file},
-@code{set-file-modes}, @code{verify-visited-file-modtime},
-@code{write-region}.
+@code{set-file-modes}, @code{set-visited-file-modtime},
+@code{unhandled-file-name-directory},
+@code{verify-visited-file-modtime}, @code{write-region}.
 @end quotation
 
 The handler function must handle all of the above operations, and

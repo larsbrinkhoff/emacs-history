@@ -71,13 +71,12 @@ relock:
 ### appropriate CPP symbols to use in ymakefile.
 ### If you have a problem with cc -E here, changing
 ### the definition of CPP above may fix it.
-xmakefile: ymakefile config.h
+
+# Remake xmakefile whenever we reconfigure even if config.h didn't change.
+xmakefile: ymakefile config.h ../config.status
 	-rm -f xmakefile xmakefile.new junk.c junk.cpp
 	cp ${srcdir}/ymakefile junk.c
-	${CPP} -I${srcdir} ${CFLAGS} junk.c > junk.cpp \
-	-DC_SWITCH_SITE="`echo ${CFLAGS}' ' \
-			  | sed -e 's/-g /C_DEBUG_SWITCH /' \
-				-e 's/-O[0-9]* /C_OPTIMIZE_SWITCH /'`"
+	${CPP} -I${srcdir} ${CFLAGS} junk.c > junk.cpp
 	< junk.cpp					\
 	sed	-e 's/^#.*//'				\
 		-e 's/^[ \f\t][ \f\t]*$$//'		\

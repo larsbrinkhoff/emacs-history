@@ -1,4 +1,13 @@
+Tue Jun  8 03:14:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* wakeup.c: Include sys/types.h, too; I think that's where time_t
+	comes from, not sys/time.h.
+
 Wed Jun  2 02:50:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* wakeup.c: Include sys/time.h.
+
+	* etags.c: #undef static.
 
 	* Version 19.12 released.
 
@@ -1142,10 +1151,3 @@ Sun Mar 20 13:17:13 1988  Richard M. Stallman  (rms at wilson)
 	* server.c [not BSD and not HAVE_SYSVIPC]: fix error message.
 
 	* loadst.c (main) [XENIX]: use /usr/spool/mail, not /usr/mail.
-
-Local Variables:
-mode: indented-text
-left-margin: 8
-fill-column: 74
-version-control: never
-End:
