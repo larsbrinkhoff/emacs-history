@@ -42,7 +42,7 @@ the next time the list of errors is wanted.")
   "Message to print when no more matches for compilation-error-regexp are found")
 
 (defvar compilation-error-regexp
-  "\\([^ \n]+\\(: *\\|, line \\|(\\)[0-9]+\\)\\|\\([0-9]+.*of *[^ \n]+\\)"
+  "\\([^ \n]+\\(: *\\|, line \\|(\\)[0-9]+\\)\\|\\([0-9]+ *of *[^ \n]+\\)"
   "Regular expression for filename/linenumber in error in compilation log.")
 
 (defun compile (command)
@@ -69,10 +69,10 @@ to find the text that grep hits refer to."
       (if (or (not (eq (process-status compilation-process) 'run))
 	      (yes-or-no-p "A compilation process is running; kill it? "))
 	  (condition-case ()
-	      (progn
-		(interrupt-process compilation-process)
+	      (let ((comp-proc compilation-process))
+		(interrupt-process comp-proc)
 		(sit-for 1)
-		(delete-process compilation-process))
+		(delete-process comp-proc))
 	    (error nil))
 	(error "Cannot have two compilation processes")))
   (setq compilation-process nil)

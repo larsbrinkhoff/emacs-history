@@ -18,12 +18,12 @@ file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  */
 
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "config.h"
 #include "lisp.h"
 #include "paths.h"
 #include "buffer.h"
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <pwd.h>
 #include <errno.h>
 #include <sys/file.h>
@@ -31,7 +31,16 @@ and this notice must be preserved on all copies.  */
 #include <fcntl.h>
 #endif /* USG */
 
+extern int errno;
+
 #ifdef CLASH_DETECTION
+  
+/* If system does not have symbolic links, it does not have lstat.
+   In that case, use ordinary stat instead.  */
+
+#ifndef S_IFLNK
+#define lstat stat
+#endif
 
 static Lisp_Object
 lock_file_owner_name (lfname)
@@ -159,7 +168,6 @@ lock_if_free (lfname)
      register char *lfname; 
 {
   register int clasher;
-  extern int errno;
 
   while (lock_file_1 (lfname, O_WRONLY | O_EXCL | O_CREAT) == 0)
     {
@@ -232,7 +240,6 @@ lock_superlock (lfname)
      char *lfname;
 {
   register int i, fd;
-  extern int errno;
 
   for (i = -20; i < 0 && (fd = open (PATH_SUPERLOCK,
 				     O_WRONLY | O_EXCL | O_CREAT, 0666)) < 0;

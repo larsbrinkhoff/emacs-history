@@ -307,7 +307,10 @@ DEFUN ("set-window-point", Fset_window_point, Sset_window_point, 2, 2, 0,
   register struct window *w = decode_window (window);
 
   CHECK_NUMBER_COERCE_MARKER (pos, 1);
-  Fset_marker (w->pointm, pos, w->buffer);
+  if (w == XWINDOW (selected_window))
+    Fgoto_char (pos);
+  else
+    Fset_marker (w->pointm, pos, w->buffer);
   return pos;
 }
 
@@ -782,6 +785,7 @@ set_window_width (window, width, nodelete)
     }
 
   XFASTINT (w->last_modified) = 0;
+  windows_or_buffers_changed++;
   XFASTINT (w->width) = width;
   if (!NULL (w->vchild))
     {
@@ -1708,9 +1712,22 @@ function for more information.")
 	      Fset_marker (w->pointm, make_number (0), w->buffer);
 	      w->start_at_line_beg = Qt;
 	    }
-	  unchain_marker (p->start);
-	  unchain_marker (p->pointm);
-	  unchain_marker (p->mark);
+	  else
+	    /* Keeping window's old buffer; make sure the markers are real.  */
+	    /* Else if window's old buffer is dead too, get a live one.  */
+	    {
+	      /* Set window markers at start of buffer.
+		 Rely on Fset_marker to put them within the restriction.  */
+	      if (XMARKER (w->start)->buffer == 0)
+		Fset_marker (w->start, make_number (0), w->buffer);
+	      if (XMARKER (w->pointm)->buffer == 0)
+		Fset_marker (w->pointm,
+			     make_number (XBUFFER (w->buffer) == bf_cur
+					  ? point
+					  : XBUFFER (w->buffer)->text.pointloc),
+			     w->buffer);
+	      w->start_at_line_beg = Qt;
+	    }
 	}
     }
 
@@ -1742,7 +1759,7 @@ DEFUN ("current-window-configuration",
 	Fcurrent_window_configuration, Scurrent_window_configuration, 0, 0, 0,
        "Return an object representing Emacs' current window configuration,\n\
 namely the number of windows, their sizes and current buffers, and for\n\
-each displayed buffer, where display starts, the and the positions of\n\
+each displayed buffer, where display starts, and the positions of\n\
 point and mark.  An exception is made for point in (current-buffer) --\n\
 its value is -not- saved.")
   ()

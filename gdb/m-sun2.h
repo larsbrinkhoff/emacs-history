@@ -18,10 +18,18 @@ In other words, go ahead and share GDB, but don't try to stop
 anyone else from sharing it farther.  Help stamp out software hoarding!
 */
 
+#ifndef sun2
+#define sun2
+#endif
+
 /* Define this if the C compiler puts an underscore at the front
    of external names before giving them to the linker.  */
 
 #define NAMES_HAVE_UNDERSCORE
+
+/* Debugger information will be in DBX format.  */
+
+#define READ_DBX_FORMAT
 
 /* Offset from address of function to start of its code.
    Zero on most machines.  */
@@ -72,11 +80,11 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 
 /* Nonzero if instruction at PC is a return instruction.  */
 
-#define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 2) == 0x4e76)
+#define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 2) == 0x4e75)
 
 /* Return 1 if P points to an invalid floating point value.  */
 
-#define INVALID_FLOAT(p) 0   /* Just a first guess; not checked */
+#define INVALID_FLOAT(p, len) 0   /* Just a first guess; not checked */
 
 /* Say how long registers are.  */
 
@@ -153,6 +161,25 @@ read_memory_integer (read_register (SP_REGNUM), 4)
    of data in register N.  */
 
 #define REGISTER_VIRTUAL_TYPE(N)  builtin_type_int
+
+/* Extract from an array REGBUF containing the (raw) register state
+   a function return value of type TYPE, and copy that, in virtual format,
+   into VALBUF.  */
+
+#define EXTRACT_RETURN_VALUE(TYPE,REGBUF,VALBUF) \
+  bcopy (REGBUF, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Write into appropriate registers a function return value
+   of type TYPE, given in virtual format.  */
+
+#define STORE_RETURN_VALUE(TYPE,VALBUF) \
+  write_register_bytes (0, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Extract from an array REGBUF containing the (raw) register state
+   the address in which a function should return its structure value,
+   as a CORE_ADDR (or an expression that can be used as one).  */
+
+#define EXTRACT_STRUCT_VALUE_ADDRESS(REGBUF) (*(int *)(REGBUF))
 
 /* This is a piece of magic that is given a register number REGNO
    and as BLOCKEND the address in the system of the end of the user structure

@@ -39,6 +39,11 @@ FRAME selected_frame;
 
 int selected_frame_level;
 
+/* Nonzero means print the full filename and linenumber
+   when a frame is printed, and do so in a format programs can parse.  */
+
+int frame_file_full_name = 0;
+
 static void select_calling_frame ();
 
 void print_frame_info ();
@@ -114,9 +119,16 @@ print_frame_info (fi, level, source, args)
 
   if (source != 0 && sal.symtab)
     {
-      if (source < 0 && fi->pc != sal.pc)
-	printf ("0x%x\t", fi->pc);
-      print_source_lines (sal.symtab, sal.line, sal.line + 1);
+      int done = 0;
+      int mid_statement = source < 0 && fi->pc != sal.pc;
+      if (frame_file_full_name)
+	done = identify_source_line (sal.symtab, sal.line, mid_statement);
+      if (!done)
+	{
+	  if (mid_statement)
+	    printf ("0x%x\t", fi->pc);
+	  print_source_lines (sal.symtab, sal.line, sal.line + 1);
+	}
       current_source_line = max (sal.line - 5, 1);
     }
   if (source != 0)
@@ -269,7 +281,8 @@ print_block_frame_locals (b, frame, stream)
     {
       sym = BLOCK_SYM (b, i);
       if (SYMBOL_CLASS (sym) == LOC_LOCAL
-	  || SYMBOL_CLASS (sym) == LOC_REGISTER)
+	  || SYMBOL_CLASS (sym) == LOC_REGISTER
+	  || SYMBOL_CLASS (sym) == LOC_STATIC)
 	{
 	  fprintf (stream, "%s = ", SYMBOL_NAME (sym));
 	  print_variable_value (sym, frame, stream);
@@ -364,6 +377,17 @@ select_frame (frame, level)
   selected_frame_level = level;
 }
 
+/* Store the selected frame and its level into *FRAMEP and *LEVELP.  */
+
+void
+record_selected_frame (framep, levelp)
+     FRAME *framep;
+     int *levelp;
+{
+  *framep = selected_frame;
+  *levelp = selected_frame_level;
+}
+
 /* Return the symbol-block in which the selected frame is executing.
    Can return zero under various legitimate circumstances.  */
 
@@ -447,7 +471,7 @@ frame_command (level_exp, from_tty)
 {
   register int i;
   register FRAME frame;
-  int level, level1;
+  unsigned int level, level1;
 
   if (level_exp)
     {
@@ -513,29 +537,45 @@ down_command (count_exp)
 }
 
 static void
-return_command (retval_exp)
+return_command (retval_exp, from_tty)
      char *retval_exp;
+     int from_tty;
 {
   struct symbol *thisfun = get_frame_function (selected_frame);
 
-  if (thisfun != 0)
+  /* If interactive, require confirmation.  */
+
+  if (from_tty)
     {
-      if (!query ("Make %s return now? ", SYMBOL_NAME (thisfun)))
-	error ("Not confirmed.");
+      if (thisfun != 0)
+	{
+	  if (!query ("Make %s return now? ", SYMBOL_NAME (thisfun)))
+	    error ("Not confirmed.");
+	}
+      else
+	if (!query ("Make selected stack frame return now? "))
+	  error ("Not confirmed.");
     }
-  else
-    if (!query ("Make selected stack frame return now? "))
-      error ("Not confirmed.");
+
+  /* Do the real work.  Pop until the specified frame is current.  */
 
   while (selected_frame != get_current_frame ())
     POP_FRAME;
 
+  /* Then pop that frame.  */
+
   POP_FRAME;
+
+  /* Compute the return value (if any) and store in the place
+     for return values.  */
 
   if (retval_exp)
     set_return_value (parse_and_eval (retval_exp));
 
-  frame_command ("0", 1);
+  /* If interactive, print the frame that is now current.  */
+
+  if (from_tty)
+    frame_command ("0", 1);
 }
 
 static

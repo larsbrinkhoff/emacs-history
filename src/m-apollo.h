@@ -50,7 +50,7 @@ and this notice must be preserved on all copies.  */
 /* Do not define LOAD_AVE_TYPE or LOAD_AVE_CVT
    since there is no /dev/kmem */
 
-/* Define CANNOT_DUMP because it is impossible to do unexec.  */
+/* Define CANNOT_DUMP because it is impossible to dump.  */
 
 #define CANNOT_DUMP
 
@@ -84,3 +84,7 @@ and this notice must be preserved on all copies.  */
 /* No crt0 is needed, but control where environ is allocated.  */
 
 #define START_FILES pre-crt0.o
+
+/* Apollo's bcopy said to lose on more than 16k bytes in SR9.5.  */
+
+#undef BSTRING

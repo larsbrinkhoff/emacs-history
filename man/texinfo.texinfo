@@ -441,6 +441,9 @@ slanted font is used by @TeX{}), @code{@@b} requests bold face, and
 All three commands apply to an argument that follows, surrounded by
 braces.@refill
 
+Use of these commands should be avoided if possible.  If you find a
+need to use one, it probably indicates a lack in the Texinfo language.
+
 @subsection @@w
 
 In a printed manual, @code{@@w@{@var{text}@}} outputs @var{text} and prohibits
@@ -903,7 +906,7 @@ may omit the @samp{@{@}} after the command if you use just one command
 and nothing else.
 
 The text of the indented paragraphs themselves come after the @code{@@itemize},
-up to another line that says @code{@@end @@itemize}.
+up to another line that says @code{@@end itemize}.
 
 Before each paragraph for which a mark in the margin is desired, place a
 line that says just @code{@@item}.

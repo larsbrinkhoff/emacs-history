@@ -62,22 +62,19 @@
 
 ;;; a raft of general-purpose macros follows.  See the nearest
  ;;; Commonlisp manual.
-(defmacro push (v l)
+(defmacro bq-push (v l)
   "Pushes evaluated first form onto second unevaluated object
 a list-value atom"
   (list 'setq l (list 'cons v l)))
 
-(defmacro caar (l)
+(defmacro bq-caar (l)
   (list 'car (list 'car l)))
 
-(defmacro cadr (l)
+(defmacro bq-cadr (l)
   (list 'car (list 'cdr l)))
 
-(defmacro cdar (l)
+(defmacro bq-cdar (l)
   (list 'cdr (list 'car l)))
-
-(defmacro cddr (l)
-  (list 'cdr (list 'cdr l)))
 
 
 ;;; These two advertised variables control what characters are used to
@@ -121,7 +118,7 @@ See backquote.el for details"
 	 (cond ((eq state 'quote)
 		(list state tailmaker))
 	       ((= (length tailmaker) 1)
-		(funcall (cadr (assq state bq-singles)) tailmaker))
+		(funcall (bq-cadr (assq state bq-singles)) tailmaker))
 	       (t (cons state tailmaker))))))
 
 ;;; There are exceptions - we wouldn't want to call append of one
@@ -163,16 +160,16 @@ See backquote.el for details"
 changing state if need be, so tailmaker and state constitute a recipie
 for making the list so far."
   (cond ((atom form)
-	 (funcall (cadr (assq state bq-quotefns)) form))
+	 (funcall (bq-cadr (assq state bq-quotefns)) form))
 	((memq (car form) backquote-unquote)
-	 (funcall (cadr (assq state bq-evalfns)) (cadr form)))
+	 (funcall (bq-cadr (assq state bq-evalfns)) (bq-cadr form)))
 	((memq (car form) backquote-splice)
-	 (funcall (cadr (assq state bq-splicefns)) (cadr form)))
+	 (funcall (bq-cadr (assq state bq-splicefns)) (bq-cadr form)))
 	(t
 	 (let ((newform (bq-make-maker form)))
 	   (if (and (listp newform) (eq (car newform) 'quote))
-	       (funcall (cadr (assq state bq-quotefns)) (cadr newform))
-	     (funcall (cadr (assq state bq-evalfns)) newform))))
+	       (funcall (bq-cadr (assq state bq-quotefns)) (bq-cadr newform))
+	     (funcall (bq-cadr (assq state bq-evalfns)) newform))))
 	))
 
 ;;; We do a 2-d branch on the form of splicing and the old state.
@@ -212,25 +209,25 @@ for making the list so far."
  ;;;  (setq state 'append)
 (defun bq-quotecons (form)
   (if (and (listp (car tailmaker))
-	   (eq (caar tailmaker) 'quote))
+	   (eq (bq-caar tailmaker) 'quote))
       (setq tailmaker
-	    (list (list 'quote (list form (cadr (car tailmaker))))
-		  (cadr tailmaker))) 
+	    (list (list 'quote (list form (bq-cadr (car tailmaker))))
+		  (bq-cadr tailmaker))) 
     (setq tailmaker
 	  (list (list 'list
 		      (list 'quote form)
 		      (car tailmaker))
-		(cadr tailmaker))))
+		(bq-cadr tailmaker))))
   (setq state 'append))
 
 (defun bq-quotequote (form)
-  (push form tailmaker))
+  (bq-push form tailmaker))
 
 ;;; Could be improved to convert (list 'a 'b 'c .. 'w x) 
  ;;;                          to (append '(a b c .. w) x)
  ;;; when there are enough elements
 (defun bq-quotelist (form)
-  (push (list 'quote form) tailmaker))
+  (bq-push (list 'quote form) tailmaker))
 
 ;;; (setq tailmaker
  ;;;  (if (matches ((quote X) (,@ Y)))
@@ -238,10 +235,10 @@ for making the list so far."
 (defun bq-quoteappend (form)
   (cond ((and (listp tailmaker)
 	   (listp (car tailmaker))
-	   (eq (caar tailmaker) 'quote))
-	 (rplaca (cdar tailmaker)
-		 (cons form (car (cdar tailmaker)))))
-	(t (push (list 'quote (list form)) tailmaker))))
+	   (eq (bq-caar tailmaker) 'quote))
+	 (rplaca (bq-cdar tailmaker)
+		 (cons form (car (bq-cdar tailmaker)))))
+	(t (bq-push (list 'quote (list form)) tailmaker))))
 
 (defun bq-quotenil (form)
   (setq tailmaker (list form))
@@ -252,7 +249,7 @@ for making the list so far."
 (defun bq-evalcons (form)
   (setq tailmaker
 	(list (list 'list form (car tailmaker))
-	      (cadr tailmaker)))
+	      (bq-cadr tailmaker)))
   (setq state 'append))
 
 ;;;  (if (matches (X Y Z (,@ W)))
@@ -275,7 +272,7 @@ for making the list so far."
 	 (setq state 'append))))
 
 (defun bq-evallist (form)
-  (push form tailmaker))
+  (bq-push form tailmaker))
 
 ;;;  (cond ((matches ((list (,@ X)) (,@ Y)))
  ;;;        (` ((list form  (,@ X)) (,@ Y))))
@@ -286,13 +283,13 @@ for making the list so far."
 (defun bq-evalappend (form)
   (cond ((and (listp tailmaker)
 	   (listp (car tailmaker))
-	   (eq (caar tailmaker) 'list))
+	   (eq (bq-caar tailmaker) 'list))
 	 (rplacd (car tailmaker)
-		 (cons form (cdar tailmaker))))
+		 (cons form (bq-cdar tailmaker))))
 	((= (length tailmaker) 1)
 	 (setq tailmaker (cons form tailmaker))
 	 (setq state 'cons))
-	(t (push (list 'list form) tailmaker))))
+	(t (bq-push (list 'list form) tailmaker))))
 
 (defun bq-evalnil (form)
   (setq tailmaker (list form))
@@ -304,7 +301,7 @@ for making the list so far."
 (defun bq-splicecons (form)
   (setq tailmaker
 	(list form
-	      (list 'cons (car tailmaker) (cadr tailmaker))))
+	      (list 'cons (car tailmaker) (bq-cadr tailmaker))))
   (setq state 'append))
 
 (defun bq-splicequote (form)
@@ -316,7 +313,7 @@ for making the list so far."
   (setq state 'append))
 
 (defun bq-spliceappend (form)
-  (push form tailmaker))
+  (bq-push form tailmaker))
 
 (defun bq-splicenil (form)
   (setq state 'append)

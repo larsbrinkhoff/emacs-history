@@ -189,8 +189,10 @@ matched by parenthesis constructs in the pattern.")
 
   compile_pattern (regexp, &searchbuf,
 		   !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0);
+  immediate_quit = 1;
   val = re_search (&searchbuf, XSTRING (string)->data, XSTRING (string)->size,
 			       s, XSTRING (string)->size - s, &search_regs);
+  immediate_quit = 0;
   if (val < 0) return Qnil;
   return make_number (val);
 }
@@ -205,8 +207,10 @@ scan_buffer (target, pos, cnt, shortage)
   unsigned char *base;
   register unsigned char *cursor, *limit;
 
-  if ((int) shortage)
+  if (shortage != 0)
     *shortage = 0;
+
+  immediate_quit = 1;
 
   if (cnt > 0)
     while (pos != lim + 1)
@@ -222,7 +226,10 @@ scan_buffer (target, pos, cnt, shortage)
 	    if (cursor != limit)
 	      {
 		if (--cnt == 0)
-		  return (pos + cursor - base + 1);
+		  {
+		    immediate_quit = 0;
+		    return (pos + cursor - base + 1);
+		  }
 		else
 		  if (++cursor == limit)
 		    break;
@@ -249,7 +256,10 @@ scan_buffer (target, pos, cnt, shortage)
 	      if (cursor != limit)
 		{
 		  if (++cnt == 0)
-		    return (pos + cursor - base + 1);
+		    {
+		      immediate_quit = 0;
+		      return (pos + cursor - base + 1);
+		    }
 		}
 	      else
 		break;
@@ -257,7 +267,8 @@ scan_buffer (target, pos, cnt, shortage)
 	  pos += cursor - base;
 	}
     }
-  if ((int) shortage)
+  immediate_quit = 0;
+  if (shortage != 0)
     *shortage = cnt * direction;
   return (pos + ((direction == 1 ? 0 : 1)));
 }
@@ -349,6 +360,7 @@ skip_chars (forwardp, string, lim)
     for (i = 0; i < sizeof fastmap; i++)
       fastmap[i] ^= 1;
 
+  immediate_quit = 1;
   if (forwardp)
     {
       while (point < XINT (lim) && fastmap[CharAt (point)])
@@ -359,6 +371,7 @@ skip_chars (forwardp, string, lim)
       while (point > XINT (lim) && fastmap[CharAt (point - 1)])
 	PointLeft (1);
     }
+  immediate_quit = 0;
 }
 
 /* Subroutines of Lisp buffer search functions. */
@@ -558,7 +571,7 @@ search_buffer (string, pos, lim, n, RE, trt)
   else				/* non-RE case */
     {
 #ifdef C_ALLOCA
-      BM_tab = &static_BM_tab;
+      BM_tab = &static_BM_tab[0];
 #else
       BM_tab = (int *) alloca (0400 * sizeof (int));
 #endif
@@ -1073,7 +1086,7 @@ match_limit (num, beginningp)
   if (n < 0 || n >= RE_NREGS)
     args_out_of_range (num, make_number (RE_NREGS));
   if (search_regs.start[n] < 0)
-    error ("No match for \\(...\\) register %d", n);
+    return Qnil;
   return (make_number ((beginningp) ? search_regs.start[n]
 		                    : search_regs.end[n]));
 }
@@ -1081,6 +1094,7 @@ match_limit (num, beginningp)
 DEFUN ("match-beginning", Fmatch_beginning, Smatch_beginning, 1, 1, 0,
   "Return the character number of start of text matched by last regexp searched for.\n\
 ARG, a number, specifies which parenthesized expression in the last regexp.\n\
+ Value is nil if ARGth pair didn't match, or there were less than ARG pairs.\n\
 Zero means the entire text matched by the whole regexp.")
   (num)
      Lisp_Object num;
@@ -1091,6 +1105,7 @@ Zero means the entire text matched by the whole regexp.")
 DEFUN ("match-end", Fmatch_end, Smatch_end, 1, 1, 0,
   "Return the character number of end of text matched by last regexp searched for.\n\
 ARG, a number, specifies which parenthesized expression in the last regexp.\n\
+ Value is nil if ARGth pair didn't match, or there were less than ARG pairs.\n\
 Zero means the entire text matched by the whole regexp.")
   (num)
      Lisp_Object num;

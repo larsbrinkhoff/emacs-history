@@ -1,5 +1,5 @@
 ;; Tags facility for Emacs.
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -37,7 +37,8 @@ A directory name is ok too; it means file TAGS in that directory."
   (setq file (expand-file-name file))
   (if (file-directory-p file)
       (setq file (concat file "TAGS")))
-  (setq tags-file-name file))
+  (setq tag-table-files nil
+	tags-file-name file))
 
 (defun visit-tags-table-buffer ()
   "Select the buffer containing the current tag table.
@@ -102,15 +103,29 @@ File names returned are absolute."
 	  (forward-char size))
 	(setq tag-table-files (nreverse files))))))
 
-(defun find-tag-tag (tagname &optional interactive)
-  (if interactive (setq tagname (read-string interactive)))
-  (if (equal tagname "")
-      (setq tagname (save-excursion
-		      (buffer-substring
-		        (progn (backward-sexp 1) (point))
-			(progn (forward-sexp 1) (point))))))
-  (if interactive (list tagname) tagname))
+;; Return a default tag to search for, based on the text at point.
+(defun find-tag-default ()
+  (save-excursion
+    (while (looking-at "\\sw\\|\\s_")
+      (forward-char 1))
+    (if (re-search-backward "\\sw\\|\\s_" nil t)
+	(progn (forward-char 1)
+	       (buffer-substring (point)
+				 (progn (forward-sexp -1)
+					(while (looking-at "\\s'")
+					  (forward-char 1))
+					(point))))
+      nil)))
 
+(defun find-tag-tag (string)
+  (let* ((default (find-tag-default))
+	 (spec (read-string
+		(if default
+		    (format "%s(default %s) " string default)
+		  string))))
+    (list (if (equal spec "")
+	      default
+	    spec))))
 
 (defun find-tag (tagname &optional next other-window)
   "Find tag (in current tag table) whose name contains TAGNAME.
@@ -125,8 +140,7 @@ that matches the tagname used in the previous find-tag.
 See documentation of variable tags-file-name."
   (interactive (if current-prefix-arg
 		   '(nil t)
-		   (find-tag-tag nil "Find tag: ")))
-  (setq tagname (find-tag-tag tagname))
+		 (find-tag-tag "Find tag: ")))
   (let (buffer file linebeg startpos)
     (save-excursion
      (visit-tags-table-buffer)
@@ -135,8 +149,10 @@ See documentation of variable tags-file-name."
        (setq tagname last-tag))
      (setq last-tag tagname)
      (while (progn
-	     (search-forward tagname)
-	     (not (looking-at "[^\n\177]*\177"))))
+	      (if (not (search-forward tagname nil t))
+		  (error "No %sentries containing %s"
+			 (if next "more " "") tagname))
+	      (not (looking-at "[^\n\177]*\177"))))
      (search-forward "\177")
      (setq file (expand-file-name (file-of-tag)
 				  (file-name-directory tags-file-name)))
@@ -162,7 +178,8 @@ See documentation of variable tags-file-name."
 	      (re-search-forward pat (+ startpos offset) t))
 	(setq offset (* 3 offset)))
       (or found
-	  (re-search-forward pat)))
+	  (re-search-forward pat nil t)
+	  (error "%s not found in %s" pat file)))
     (beginning-of-line))
   (setq tags-loop-form '(find-tag nil t))
   ;; Return t in case used as the tags-loop-form.
@@ -181,7 +198,7 @@ that matches the tagname used in the previous find-tag.
 See documentation of variable tags-file-name."
   (interactive (if current-prefix-arg
 		   '(nil t)
-		   (find-tag-tag nil "Find tag other window: ")))
+		   (find-tag-tag "Find tag other window: ")))
   (find-tag tagname next t))
 
 (defvar next-file-list nil
@@ -230,17 +247,19 @@ See documentation of variable tags-file-name."
 	  (list 're-search-forward regexp nil t))
     (tags-loop-continue t)))
 
-(defun tags-query-replace (from to)
+(defun tags-query-replace (from to &optional delimited)
   "Query-replace-regexp FROM with TO through all files listed in tag table.
+Third arg DELIMITED (prefix arg) means replace only word-delimited matches.
 If you exit (C-G or ESC), you can resume the query-replace
 with the command \\[tags-loop-continue].
 
 See documentation of variable tags-file-name."
-  (interactive "sTags query replace (regexp): \nsTags query replace %s by: ")
+  (interactive "sTags query replace (regexp): \nsTags query replace %s by: \nP")
   (setq tags-loop-form
 	(list 'and (list 'save-excursion
 			 (list 're-search-forward from nil t))
-	      (list 'not (list 'perform-replace from to t t nil))))
+	      (list 'not (list 'perform-replace from to t t 
+			       (not (null delimited))))))
   (tags-loop-continue t))
 
 (defun list-tags (string)

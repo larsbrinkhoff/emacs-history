@@ -33,6 +33,8 @@
 ;;
 ;;  The code for finding matching $ needs to be fixed.
 
+(provide 'tex-mode)
+
 (defvar TeX-directory "/tmp/"
   "*Directory in which to run TeX subjob.  Temporary files are
 created in this directory.")
@@ -64,8 +66,6 @@ Should be a simple file name with no extension or directory specification.")
 (defvar TeX-mode-syntax-table nil
   "Syntax table used while in TeX mode.")
 
-(defvar TeX-mode-map nil)
-
 (defun TeX-define-common-keys (keymap)
   "Define the keys that we want defined both in TeX-mode
 and in the TeX-shell."
@@ -74,6 +74,8 @@ and in the TeX-shell."
   (define-key keymap "\C-c\C-q" 'TeX-show-print-queue)
   (define-key keymap "\C-c\C-p" 'TeX-print)
   )
+
+(defvar TeX-mode-map nil "Keymap for TeX mode")
 
 (if TeX-mode-map 
     nil
@@ -88,24 +90,32 @@ and in the TeX-shell."
   (define-key TeX-mode-map "\C-c\C-f" 'TeX-close-LaTeX-block)
   )
 
-;(fset 'TeX-mode 'tex-mode) in loaddefs.
+(defvar TeX-shell-map nil
+  "Keymap for the TeX shell.  A shell-mode-map with a few additions")
+
+;(fset 'TeX-mode 'tex-mode) 		;in loaddefs.
+
+;;; This would be a lot simpler if we just used a regexp search,
+;;; but then it would be too slow.
 (defun tex-mode ()
   "Major mode for editing files of input for TeX or LaTeX.
 Trys to intuit whether this file is for plain TeX or LaTeX and
 calls plain-tex-mode or latex-mode.  If it cannot be determined
-\(e.g., the file is empty), the value of TeX-default-mode is used."
+\(e.g., there are no commands in the file), the value of
+TeX-default-mode is used."
   (interactive)
-  (let ((mode
-	 (save-excursion
-	   (goto-char (point-min))
-	   (while (and (search-forward "\\" nil t)
-		       (let ((search-end (point)))
-			 (save-excursion (beginning-of-line)
-					 (search-forward "%" search-end t)))))
-	   (if (not (eobp))
-	       (if (looking-at "documentstyle")
-		   'latex-mode
-		 'plain-tex-mode)))))
+  (let (mode slash comment)
+    (save-excursion
+      (goto-char (point-min))
+      (while (and (setq slash (search-forward "\\" nil t))
+		  (setq comment (let ((search-end (point)))
+				  (save-excursion
+				    (beginning-of-line)
+				    (search-forward "%" search-end t))))))
+      (if (and slash (not comment))
+	  (setq mode (if (looking-at "documentstyle")
+			 'latex-mode
+		       'plain-tex-mode))))
     (if mode (funcall mode)
       (funcall TeX-default-mode))))
 
@@ -146,13 +156,9 @@ of plain-TeX-mode-hook."
   (TeX-common-initialization)
   (setq mode-name "TeX")
   (setq major-mode 'plain-TeX-mode)
-  (make-local-variable 'TeX-command)
   (setq TeX-command "tex")
-  (make-local-variable 'TeX-start-of-header)
   (setq TeX-start-of-header "%**start of header")
-  (make-local-variable 'TeX-end-of-header)
   (setq TeX-end-of-header "%**end of header")
-  (make-local-variable 'TeX-trailer)
   (setq TeX-trailer "\\bye\n")
   (run-hooks 'text-mode-hook 'TeX-mode-hook 'plain-TeX-mode-hook))
 
@@ -190,13 +196,9 @@ of LaTeX-mode-hook."
   (TeX-common-initialization)
   (setq mode-name "LaTeX")
   (setq major-mode 'LaTeX-mode)
-  (make-local-variable 'TeX-command)
   (setq TeX-command "latex")
-  (make-local-variable 'TeX-start-of-header)
   (setq TeX-start-of-header "\\documentstyle")
-  (make-local-variable 'TeX-end-of-header)
   (setq TeX-end-of-header "\\begin{document}")
-  (make-local-variable 'TeX-trailer)
   (setq TeX-trailer "\\end{document}\n")
   (run-hooks 'text-mode-hook 'TeX-mode-hook 'LaTeX-mode-hook))
 
@@ -208,12 +210,12 @@ of LaTeX-mode-hook."
       (progn
 	(setq TeX-mode-syntax-table (make-syntax-table))
 	(set-syntax-table TeX-mode-syntax-table)
-	(modify-syntax-entry ?\\ "/")
+	(modify-syntax-entry ?\\ ".")
 	(modify-syntax-entry ?\f ">")
 	(modify-syntax-entry ?\n ">")
 	(modify-syntax-entry ?$ "$$")
 	(modify-syntax-entry ?% "<")
-	(modify-syntax-entry ?" ".")
+	(modify-syntax-entry ?\" ".")
 	(modify-syntax-entry ?& ".")
 	(modify-syntax-entry ?_ ".")
 	(modify-syntax-entry ?@ "_")
@@ -227,9 +229,13 @@ of LaTeX-mode-hook."
   (make-local-variable 'comment-start)
   (setq comment-start "%")
   (make-local-variable 'comment-start-skip)
-  (setq comment-start-skip "[^\\]\\(\\\\\\\\\\)*%+ *")
+  (setq comment-start-skip "[^\\]\\(\\(\\\\\\\\\\)*\\)%+ *")
   (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'TeX-comment-indent))
+  (setq comment-indent-hook 'TeX-comment-indent)
+  (make-local-variable 'TeX-command)
+  (make-local-variable 'TeX-start-of-header)
+  (make-local-variable 'TeX-end-of-header)
+  (make-local-variable 'TeX-trailer))
 
 (defun TeX-comment-indent ()
   (if (looking-at "%%%")
@@ -310,7 +316,6 @@ A prefix arg inhibits the checking."
     (insert ?})))
 
 ;;; Like TeX-insert-braces, but for LaTeX.
-;;; By Michael Prange and Stephen Gildea.
 (defun TeX-close-LaTeX-block ()
   "Creates an \\end{...} to match \\begin{...} on the current line and
 puts point on the blank line between them."
@@ -335,7 +340,28 @@ puts point on the blank line between them."
 ;;; Why use a shell instead of running TeX directly?  Because if TeX
 ;;; gets stuck, the user can switch to the shell window and type at it.
 
-;;; It's kludge that we have to create a special buffer just 
+;;; The utility functions:
+
+(defun TeX-start-shell ()
+  (require 'shell)
+  (save-excursion
+    (set-buffer (make-shell "TeX-shell" nil 'nostartfile "-v"))
+    (setq TeX-shell-map (copy-keymap shell-mode-map))
+    (TeX-define-common-keys TeX-shell-map)
+    (use-local-map TeX-shell-map)))
+
+(defun set-buffer-directory (buffer directory)
+  "Set BUFFER's default directory to be DIRECTORY."
+  (setq directory (file-name-as-directory (expand-file-name directory)))
+  (if (not (file-directory-p directory))
+      (error "%s is not a directory" directory)
+    (save-excursion
+      (set-buffer buffer)
+      (setq default-directory directory))))
+
+;;; The commands:
+
+;;; It's a kludge that we have to create a special buffer just 
 ;;; to write out the TeX-trailer.  It would nice if there were a
 ;;; function like write-region that would write literal strings.
 
@@ -390,31 +416,8 @@ of TeX-trailer is appended to the temporary file after the region."
 				     tex-out-file "\"\n")))
   (TeX-recenter-output-buffer 0))
 
-(defun TeX-start-shell ()
-  (require 'shell)
-  (save-excursion
-    (set-buffer (make-shell "TeX-shell" "sh" "/dev/null" "-v"))
-    (TeX-define-common-keys (current-local-map))))
-
-(defun set-buffer-directory (buffer directory)
-  "Set BUFFER's default directory to be DIRECTORY."
-  (setq directory (expand-directory-name directory))
-  (if (not (file-directory-p directory))
-      (error "%s is not a directory" directory)
-    (save-excursion
-      (set-buffer buffer)
-      (setq default-directory directory))))
-
-;;; On Emacs version 18, this should use file-name-as-directory.
-(defun expand-directory-name (name)
-  "Like expand-file-name, but returns a directory name."
-  (let ((dir-name (expand-file-name name)))
-    (or (string-match "/$" dir-name)
-	(setq dir-name (concat dir-name "/")))
-    dir-name))
-
 (defun TeX-buffer ()
-  "Run TeX on current buffer.  See  TeX-region  for more information."
+  "Run TeX on current buffer.  See \\[TeX-region] for more information."
   (interactive)
   (TeX-region (point-min) (point-max)))
 
@@ -424,8 +427,8 @@ of TeX-trailer is appended to the temporary file after the region."
   (quit-process "TeX-shell" t))
 
 (defun TeX-recenter-output-buffer (linenum)
-  "Redisplay buffer showing current TeX job so that most recent
-output can be seen.  The last line of the buffer is displayed on
+  "Redisplay buffer of TeX job output so that most recent output can be seen.
+The last line of the buffer is displayed on
 line LINE of the window, or centered if LINE is nil."
   (interactive "P")
   (let ((tex-shell (get-buffer "*TeX-shell*"))

@@ -1,5 +1,5 @@
 (defun protect-innocence-hook ()
-  (if (and (equal (file-name-nondirectory buffer-file-name) "sex.1")
+  (if (and (equal (file-name-nondirectory buffer-file-name) "sex.6")
 	   (not (y-or-n-p "Are you over 18? ")))
       (progn
 	(clear-visited-file-modtime)

@@ -54,41 +54,41 @@ and this notice must be preserved on all copies.  */
 #define	DIR$S_DIRDEF2	1
 #define	DIR$T_LINKNAME	0
 
-typedef
-struct dir$_name {
-/*short   dir$w_size;		/* if you read with RMS, RMS eats this */
-  short   dir$w_verlimit;
+typedef struct dir$_name {
+/*  short dir$w_size;		/* if you read with RMS, it eats this... */
+  short dir$w_verlimit;			/* maximum number of versions */
   union {
-    unsigned char    dir_b_flags;
+    unsigned char dir_b_flags;
 #define dir$b_flags dir__b_flags.dir_b_flags
-    unsigned char   
-      dir_v_type : DIR$S_TYPE,
-#define dir$v_type dir__b_flags.dir_v_type
-      : 3,
-      dir_v_nextrec : 1,
-#define dir$v_nextrec dir__b_flags.dir_v_nextrec
-      dir_v_prevrec : 1;
-#define dir$v_prevrec dir__b_flags.dir_v_prevrec
+    struct {
+      unsigned char dir_v_type: DIR$S_TYPE;
+#define dir$v_type dir__b_flags.dir___b_flags.dir_v_type
+      unsigned char: 3;
+      unsigned char dir_v_nextrec: 1;
+#define dir$v_nextrec dir__b_flags.dir___b_flags.dir_v_nextrec
+      unsigned char dir_v_prevrec: 1;
+#define dir$v_prevrec dir__b_flags.dir___b_flags.dir_v_prevrec
+    } dir___b_flags;
   } dir__b_flags;
-  char    dir$b_namecount;
-  char    dir$t_name[];
-} dir$_dirdef;      /* only the fixed first part */
+  unsigned char dir$b_namecount;
+  char dir$t_name[];
+} dir$_dirdef;		/* only the fixed first part */
 
-typedef
-struct dir$_version {
+typedef struct dir$_version {
   short dir$w_version;
-  short	dir$w_fid_num;
+  short dir$w_fid_num;
   short dir$w_fid_seq;
   union {
     short dir_w_fid_rvn;
-#define dir$w_fid_rvn dir_w_fid_rvnmx.dir_w_fid_rvn
-    short
-      dir_b_fid_rvn : 8,
-#define dir$b_fid_rvn dir_w_fid_rvnmx.dir_b_fid_rvn
-      dir_b_fid_nmx : 8;
-#define dir$b_fid_nmx dir_w_fid_rvnmx.dir_b_fid_nmx
-  } dir_w_fid_rvnmx;
-} dir$_dirdef1;      /* one for each version of the file */
+#define dir$w_fid_rvn dir__w_fid_rvn.dir_w_fid_rvn
+    struct {
+      char dir_b_fid_rvn;
+#define dir$b_fid_rvn dir__w_fid_rvn.dir___w_fid_rvn.dir_b_fid_rvn
+      char dir_b_fid_nmx;
+#define dir$b_fid_nmx dir__w_fid_rvn.dir___w_fid_rvn.dir_b_fid_nmx
+    } dir___w_fid_rvn;
+  } dir__w_fid_rvn;
+} dir$_dirdef1;		/* one for each version of the file */
 
 typedef
 struct dir$_linkname {

@@ -1,6 +1,6 @@
 ;; Major mode for editing Prolog, and for running Prolog under Emacs
-;; Copyright (C) 1986 Free Software Foundation, Inc.
-;; Author Masanobu UMEDA (umerin@flab.fujitsu.junet)
+;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+;; Author Masanobu UMEDA (umerin@flab.flab.fujitsu.junet)
 
 ;; This file is part of GNU Emacs.
 
@@ -60,6 +60,8 @@ nil means send actual operaing system end of file.")
   (setq paragraph-start (concat "^%%\\|^$\\|" page-delimiter)) ;'%%..'
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
+  (make-local-variable 'paragraph-ignore-fill-prefix)
+  (setq paragraph-ignore-fill-prefix t)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'prolog-indent-line)
   (make-local-variable 'comment-start)
@@ -131,11 +133,14 @@ rigidly along with this one (not yet)."
 	(while empty
 	  (forward-line -1)
 	  (beginning-of-line)
-	  (if (bobp) (setq empty nil))
-	  (skip-chars-forward " \t")
-	  (if (not (or (looking-at "%[^%]") (looking-at "\n")))
-	      (setq empty nil)))
-	(setq ind (current-column))	;Beginning of clause
+ 	  (if (bobp)
+ 	      (setq empty nil)
+ 	    (skip-chars-forward " \t")
+ 	    (if (not (or (looking-at "%[^%]") (looking-at "\n")))
+ 		(setq empty nil))))
+ 	(if (bobp)
+ 	    (setq ind 0)		;Beginning of buffer
+	  (setq ind (current-column)))	;Beginning of clause
 	;; See its beginning
 	(if (looking-at "%%[^%]")
 	    ind

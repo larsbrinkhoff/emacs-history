@@ -123,14 +123,14 @@ print_subexp (exp, pos, stream, prec)
       (*pos) += 3;
       value_print (value_from_long (exp->elts[pc + 1].type,
 				    exp->elts[pc + 2].longconst),
-		   stream);
+		   stream, 0);
       return;
 
     case OP_DOUBLE:
       (*pos) += 3;
       value_print (value_from_double (exp->elts[pc + 1].type,
 				      exp->elts[pc + 2].doubleconst),
-		   stream);
+		   stream, 0);
       return;
 
     case OP_VAR_VALUE:

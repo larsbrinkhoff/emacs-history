@@ -37,6 +37,11 @@
   (define-key c-mode-map "\177" 'backward-delete-char-untabify)
   (define-key c-mode-map "\t" 'c-indent-command))
 
+(autoload 'c-macro-expand "cmacexp"
+  "Display the result of expanding all C macros occurring in the region.
+The expansion is entirely correct because it uses the C preprocessor."
+  t)
+
 (defvar c-mode-syntax-table nil
   "Syntax table in use in C-mode buffers.")
 
@@ -68,6 +73,9 @@
   "*Offset of C label lines and case statements relative to usual indentation.")
 (defconst c-continued-statement-offset 2
   "*Extra indent for lines not starting new statements.")
+(defconst c-continued-brace-offset 0
+  "*Extra indent for substatements that start with open-braces.
+This is in addition to c-continued-statement-offset.")
 
 (defconst c-auto-newline nil
   "*Non-nil means automatically newline before and after braces,
@@ -99,6 +107,9 @@ Variables controlling indentation style:
  c-continued-statement-offset
     Extra indentation given to a substatement, such as the
     then-clause of an if or body of a while.
+ c-continued-brace-offset
+    Extra indentation given to a brace that starts a substatement.
+    This is in addition to c-continued-statement-offset.
  c-brace-offset
     Extra indentation for line if it starts with an open brace.
  c-brace-imaginary-offset
@@ -129,6 +140,8 @@ if that value is non-nil."
   (setq paragraph-start (concat "^$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
+  (make-local-variable 'paragraph-ignore-fill-prefix)
+  (setq paragraph-ignore-fill-prefix t)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'c-indent-line)
   (make-local-variable 'require-final-newline)
@@ -173,8 +186,9 @@ if that value is non-nil."
 	  (c-indent-line)
 	  (if c-auto-newline
 	      (progn
-		(setq insertpos (1- (point)))
 		(newline)
+		;; (newline) may have done auto-fill
+		(setq insertpos (- (point) 2))
 		(c-indent-line)))
 	  (save-excursion
 	    (if insertpos (goto-char (1+ insertpos)))
@@ -205,7 +219,7 @@ if that value is non-nil."
 			;; So quickly rule out most other uses of colon
 			;; and do no indentation for them.
 			(and (eq last-command-char ?:)
-			     (not (looking-at "case"))
+			     (not (looking-at "case[ \t]"))
 			     (save-excursion
 			       (forward-word 2)
 			       (<= (point) end)))
@@ -219,8 +233,8 @@ if that value is non-nil."
 	  (and c-auto-newline
 	       (not (c-inside-parens-p))
 	       (progn
-		 (setq insertpos (1- (point)))
 		 (newline)
+		 (setq insertpos (- (point) 2))
 		 (c-indent-line)))
 	  (save-excursion
 	    (if insertpos (goto-char (1+ insertpos)))
@@ -293,7 +307,7 @@ Return the amount the indentation changed by."
 	  (t
 	   (skip-chars-forward " \t")
 	   (if (listp indent) (setq indent (car indent)))
-	   (cond ((or (looking-at "case\\b")
+	   (cond ((or (looking-at "case[ \t]")
 		      (and (looking-at "[A-Za-z]")
 			   (save-excursion
 			     (forward-sexp 1)
@@ -399,7 +413,11 @@ Returns nil if line starts inside a string, t if in a comment."
 		 ;; previous line of the statement.
 		 (progn
 		   (c-backward-to-start-of-continued-exp containing-sexp)
-		   (+ c-continued-statement-offset (current-column)))
+		   (+ c-continued-statement-offset (current-column)
+		      (if (save-excursion (goto-char indent-point)
+					  (skip-chars-forward " \t")
+					  (eq (following-char) ?{))
+			  c-continued-brace-offset 0)))
 	       ;; This line starts a new statement.
 	       ;; Position following last unclosed open.
 	       (goto-char containing-sexp)
@@ -431,7 +449,7 @@ Returns nil if line starts inside a string, t if in a comment."
 		 ;; If no previous statement,
 		 ;; indent it relative to line brace is on.
 		 ;; For open brace in column zero, don't let statement
-		 ;; start there too.  If c-indent-offset is zero,
+		 ;; start there too.  If c-indent-level is zero,
 		 ;; use c-brace-offset + c-continued-statement-offset instead.
 		 ;; For open-braces not the first thing in a line,
 		 ;; add in c-brace-imaginary-offset.
@@ -482,10 +500,9 @@ the current line is to be regarded as part of a block comment."
 	  (search-backward "/*" lim 'move)
 	(beginning-of-line)
 	(skip-chars-forward " \t")
-	(if (looking-at "#")
-	    (setq stop (<= (point) lim))
-	  (setq stop t)
-	  (goto-char opoint))))))   
+	(setq stop (or (not (looking-at "#")) (<= (point) lim)))
+	(if stop (goto-char opoint)
+	  (beginning-of-line))))))
 
 (defun c-backward-to-start-of-continued-exp (lim)
   (if (= (preceding-char) ?\))
@@ -528,7 +545,7 @@ the current line is to be regarded as part of a block comment."
 	(case-fold-search nil)
 	restart outer-loop-done inner-loop-done state ostate
 	this-indent last-sexp
-	at-else
+	at-else at-brace
 	(opoint (point))
 	(next-depth 0))
     (save-excursion
@@ -560,12 +577,16 @@ the current line is to be regarded as part of a block comment."
 	    (setq outer-loop-done t))
 	(if outer-loop-done
 	    nil
-	  (if (/= last-depth next-depth)
-	      (setq last-sexp nil))
-	  (while (> last-depth next-depth)
+	  ;; If this line had ..))) (((.. in it, pop out of the levels
+	  ;; that ended anywhere in this line, even if the final depth
+	  ;; doesn't indicate that they ended.
+	  (while (> last-depth (nth 6 state))
 	    (setq indent-stack (cdr indent-stack)
 		  contain-stack (cdr contain-stack)
 		  last-depth (1- last-depth)))
+	  (if (/= last-depth next-depth)
+	      (setq last-sexp nil))
+	  ;; Add levels for any parens that were started in this line.
 	  (while (< last-depth next-depth)
 	    (setq indent-stack (cons nil indent-stack)
 		  contain-stack (cons nil contain-stack)
@@ -589,6 +610,7 @@ the current line is to be regarded as part of a block comment."
 		  ;; Find last non-comment character before this line
 		  (save-excursion
 		    (setq at-else (looking-at "else\\W"))
+		    (setq at-brace (= (following-char) ?{))
 		    (c-backward-to-noncomment opoint)
 		    (if (not (memq (preceding-char) '(nil ?\, ?\; ?} ?: ?{)))
 			;; Preceding line did not end in comma or semi;
@@ -597,7 +619,8 @@ the current line is to be regarded as part of a block comment."
 			(progn
 			  (c-backward-to-start-of-continued-exp (car contain-stack))
 			  (setq this-indent
-				(+ c-continued-statement-offset (current-column))))
+				(+ c-continued-statement-offset (current-column)
+				   (if at-brace c-continued-brace-offset 0))))
 		      ;; Preceding line ended in comma or semi;
 		      ;; use the standard indent for this level.
 		      (if at-else

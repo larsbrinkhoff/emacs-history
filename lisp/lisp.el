@@ -160,11 +160,18 @@ An end of a defun is found by moving forward from the beginning of one."
   "Put parentheses around next ARG sexps.  Leave point after open-paren.
 No argument is equivalent to zero: just insert () and leave point between."
   (interactive "P")
+;Install these commented-out lines for version 19.
+;  (if arg (skip-chars-forward " \t")
+;    (or (memq (char-syntax (preceding-char)) '(?\  ?> ?\( ))
+;	(insert " ")))
   (insert ?\()
   (save-excursion
     (if arg
 	(forward-sexp (prefix-numeric-value arg)))
-    (insert ?\))))
+    (insert ?\))
+;    (or (memq (char-syntax (following-char)) '(?\  ?> ?\( ))
+;	(insert " "))
+    ))
 
 (defun move-past-close-and-reindent ()
   "Move past next ), delete indentation before it, then indent after it."
@@ -190,7 +197,11 @@ Otherwise, all symbols with function definitions, values
 or properties are considered."
   (interactive)
   (let* ((end (point))
-	 (beg (save-excursion (backward-sexp 1) (point)))
+	 (beg (save-excursion
+		(backward-sexp 1)
+		(while (= (char-syntax (following-char)) ?\')
+		  (forward-char 1))
+		(point)))
 	 (pattern (buffer-substring beg end))
 	 (predicate
 	  (if (eq (char-after (1- beg)) ?\()
@@ -201,12 +212,13 @@ or properties are considered."
 	 (completion (try-completion pattern obarray predicate)))
     (cond ((eq completion t))
 	  ((null completion)
+	   (message "Can't find completion for \"%s\"" pattern)
 	   (ding))
 	  ((not (string= pattern completion))
 	   (delete-region beg end)
 	   (insert completion))
 	  (t
-	   (message "Making completion list...%s" "")
+	   (message "Making completion list...")
 	   (let ((list (all-completions pattern obarray predicate)))
 	     (or (eq predicate 'fboundp)
 		 (let (new)

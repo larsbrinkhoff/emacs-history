@@ -411,16 +411,16 @@ block	:	name
 
 block	:	block COLONCOLON name
 			{ struct symbol *tem
-			    = lookup_symbol ($3, copy_name ($1), VAR_NAMESPACE);
+			    = lookup_symbol (copy_name ($3), $1, VAR_NAMESPACE);
 			  if (!tem || SYMBOL_CLASS (tem) != LOC_BLOCK)
 			    error ("No function \"%s\" in specified context.",
-				   copy_name ($1));
+				   copy_name ($3));
 			  $$ = SYMBOL_BLOCK_VALUE (tem); }
 	;
 
 variable:	block COLONCOLON name
 			{ struct symbol *sym;
-			  sym = lookup_symbol ($3, copy_name ($1), VAR_NAMESPACE);
+			  sym = lookup_symbol (copy_name ($3), $1, VAR_NAMESPACE);
 			  if (sym == 0)
 			    error ("No symbol \"%s\" in specified context.",
 				   copy_name ($3));
@@ -598,6 +598,14 @@ static char *lexptr;
 
 static char *namecopy;
 
+/* Current depth in parentheses within the expression.  */
+
+static int paren_depth;
+
+/* Nonzero means stop parsing on first comma (if not within parentheses).  */
+
+static int comma_terminates;
+
 /* Take care of parsing a number (anything that starts with a digit).
    Set yylval and return the token type; update lexptr.
    LEN is the number of characters in it.  */
@@ -612,7 +620,7 @@ parse_number (olen)
   register long n = 0;
   register int c;
   register int base = 10;
-  register len = olen;
+  register int len = olen;
   char *err_copy;
 
   extern double atof ();
@@ -753,6 +761,24 @@ yylex ()
 	error ("Invalid character constant.");
       return CHAR;
 
+    case '(':
+      paren_depth++;
+      lexptr++;
+      return c;
+
+    case ')':
+      if (paren_depth == 0)
+	return 0;
+      paren_depth--;
+      lexptr++;
+      return c;
+
+    case ',':
+      if (comma_terminates && paren_depth == 0)
+	return 0;
+      lexptr++;
+      return c;
+
     case '+':
     case '-':
     case '*':
@@ -766,8 +792,6 @@ yylex ()
     case '@':
     case '<':
     case '>':
-    case '(':
-    case ')':
     case '[':
     case ']':
     case '.':
@@ -776,7 +800,6 @@ yylex ()
     case '=':
     case '{':
     case '}':
-    case ',':
       lexptr++;
       return c;
 
@@ -945,9 +968,10 @@ prefixify_expression (expr)
 {
   register int len = sizeof (struct expression) +
 				    expr->nelts * sizeof (union exp_element);
-  register struct expression *temp
-    = (struct expression *) alloca (len);
+  register struct expression *temp;
   register int inpos = expr->nelts, outpos = 0;
+
+  temp = (struct expression *) alloca (len);
 
   /* Copy the original expression into temp.  */
   bcopy (expr, temp, len);
@@ -1135,16 +1159,20 @@ prefixify_subexp (inexpr, outexpr, inend, outbeg)
    if BLOCK is zero, use the block of the selected stack frame.
    Meanwhile, advance *STRINGPTR to point after the expression,
    at the first nonwhite character that is not part of the expression
-   (possibly a null character).  */
+   (possibly a null character).
+
+   If COMMA is nonzero, stop if a comma is reached.  */
 
 struct expression *
-parse_c_1 (stringptr, block)
+parse_c_1 (stringptr, block, comma)
      char **stringptr;
      struct block *block;
 {
   struct cleanup *old_chain;
 
   lexptr = *stringptr;
+
+  comma_terminates = comma;
 
   if (lexptr == 0 || *lexptr == 0)
     error_no_arg ("expression to compute");
@@ -1181,7 +1209,7 @@ parse_c_expression (string)
      char *string;
 {
   register struct expression *exp;
-  exp = parse_c_1 (&string, 0);
+  exp = parse_c_1 (&string, 0, 0);
   if (*string)
     error ("Junk after end of expression.");
   return exp;

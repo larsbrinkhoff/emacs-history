@@ -24,8 +24,7 @@
 Optional arg NOMINI non-nil means don't count the minibuffer
 even if it is active."
   (eq (selected-window)
-      (if (and arg (zerop (minibuffer-depth)))
-	  (next-window) (next-window (next-window)))))
+      (next-window (selected-window) (if arg 'arg))))
 
 (defun read-quoted-char (&optional prompt)
   "Like `read-char', except that if the first character read is an octal

@@ -18,7 +18,13 @@ This directory holds the latest distribution version of GNU Emacs.
 
 The file INSTALL in this directory says how to bring up
  GNU Emacs on Unix, once you have loaded the entire subtree of this
- directory.  It also contains information on many common
+ directory.
+
+The files `build-install' and `Makefile' help automate the process of
+ building and installing emacs.  The former is a shell script.  See
+ INSTALL for more info.
+
+The file PROBLEMS contains information on many common
  problems that occur in building, installing and running Emacs.
 
 The `etc' subdirectory contains several other files,
@@ -32,16 +38,9 @@ The file 'emacs.com' in this directory is for VMS.  It defines
  the installed Emacs.  It should be executed by your `login.com' file,
  or else perhaps it can be executed once at system boot time.
 
-The file `kept_editor.com' in this directory is also for VMS.
+The file `kepteditor.com' in this directory is also for VMS.
  When a user says to run Emacs, it really runs this command file.
 
-To convert a Unix distribution into a VMS distribution,
-you must change the file names.  `-' must be changed to `_`.
-To convert a VMS distribution into a Unix distribution,
-the reverse change must me made.  Can someone supply procedures
-to automate this?  It is hard because they must be set up
-to work with particular means of transferring the files from
-one kind of system to the other, and I'm not sure what means
-are generally available.
+See the files VMSINSTALL and VMSNOTES for more information on VMS use.
 
 

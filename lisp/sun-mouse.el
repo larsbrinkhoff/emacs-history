@@ -170,7 +170,7 @@ Just like the Common Lisp function of the same name."
 
 (put 'eval-in-buffer 'lisp-indent-hook 1)
 
-;;; this is used extensively by sun-mouse-fns.el
+;;; this is used extensively by sun-fns.el
 ;;;
 (defmacro eval-in-window (window &rest forms)
   "Switch to WINDOW, evaluate FORMS, return to original window."
@@ -350,7 +350,7 @@ Returns list (window x y) where x and y are relative to window."
 		   (>= y te) (< y be))
 	      (throw 'found 
 		     (list (selected-window) (- x le) (- y te))))))
-      'include-minibuffer-in-eval-in-windows))
+      t))				; include minibuffer in eval-in-windows
    ;;If x,y from a real mouse click, we shouldn't get here.
    (list nil x y)
    ))

@@ -48,6 +48,9 @@
   "Alias of mail address aliases,
 or t meaning should be initialized from .mailrc.")
 
+(defvar mail-default-reply-to nil
+  "*Address to insert as default Reply-to field of outgoing messages.")
+
 (defvar mail-abbrevs-loaded nil)
 (defvar mail-mode-map nil)
 
@@ -87,6 +90,8 @@ Suitable header fields are To, CC and BCC."
     (if in-reply-to
 	(insert "In-reply-to: " in-reply-to "\n"))
     (insert "Subject: " (or subject "") "\n")
+    (if mail-default-reply-to
+	(insert "Reply-to: " mail-default-reply-to "\n"))
     (if mail-self-blind
 	(insert "BCC: " (user-login-name) "\n"))
     (if mail-archive-file-name
@@ -142,19 +147,18 @@ C-c C-q  mail-fill-yanked-message (fill what was yanked)."
   (define-key mail-mode-map "\C-c\C-s" 'mail-send))
 
 (defun mail-send-and-exit (arg)
-  "Send message like mail-send, then, if no errors, exit from mail buffer."
+  "Send message like mail-send, then, if no errors, exit from mail buffer.
+Prefix arg means don't delete this window."
   (interactive "P")
   (mail-send)
   (bury-buffer (current-buffer))
-  (if (or arg (one-window-p t))
-      (switch-to-buffer (other-buffer (current-buffer)))
-    (delete-window)))
-
-;; Avoid error in Emacs versions before 18.37.
-(defun one-window-p (&optional nomini)
-  (eq (selected-window)
-      (if (and nomini (zerop (minibuffer-depth)))
-	  (next-window) (next-window (next-window)))))
+  (if (and (not arg)
+	   (not (one-window-p))
+	   (save-excursion
+	     (set-buffer (window-buffer (next-window (selected-window) 'not)))
+	     (eq major-mode 'rmail-mode)))
+      (delete-window)
+    (switch-to-buffer (other-buffer (current-buffer)))))
 
 (defun mail-send ()
   "Send the message in the current buffer.
@@ -392,20 +396,27 @@ Returns with message buffer seleted; value t if message freshly initialized.
 While editing message, type C-c C-c to send the message and exit.
 
 Various special commands starting with C-c are available in sendmail mode
-to move to message header fields.  Type C-c? for a list of them.
+to move to message header fields:
+\\{mail-mode-map}
 
 If mail-self-blind is non-nil, a BCC to yourself is inserted
 when the message is initialized.
+
+If mail-default-reply-to is non-nil, it should be an address (a string);
+a Reply-to: field with that address is inserted.
+
+If mail-archive-file-name is non-nil, an FCC field with that file name
+is inserted.
 
 If mail-setup-hook is bound, its value is called with no arguments
 after the message is initialized.  It can add more default fields.
 
 When calling from a program, the second through fifth arguments
- TO, SUBJECT, CC and IN-REPLY-TO specify if non-nil
+ TO, SUBJECT, IN-REPLY-TO and CC specify if non-nil
  the initial contents of those header fields.
  These arguments should not have final newlines.
 The sixth argument REPLYBUFFER is a buffer whose contents
- should be yanked if the user types C-c y."
+ should be yanked if the user types C-c C-y."
   (interactive "P")
   (switch-to-buffer "*mail*")
   (setq default-directory (expand-file-name "~/"))

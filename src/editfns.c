@@ -43,6 +43,23 @@ init_editfns ()
   struct passwd *pw;	/* password entry for the current user */
   extern char *index ();
 
+  /* Set up system_name even when dumping.  */
+
+  p = (char *) get_system_name ();
+  if (p == 0 || *p == 0)
+    p = "Bogus System Name";
+  strncpy (system_name, p, sizeof system_name);
+  p = system_name;
+  while (*p)
+    {
+      if (*p < ' ')
+	*p = 0;
+      else
+	if (*p == ' ')
+	  *p = '-';
+      p++;
+    }
+
 #ifndef CANNOT_DUMP
   /* Don't bother with this on initial start when just dumping out */
   if (!initialized)
@@ -50,7 +67,10 @@ init_editfns ()
 #endif /* not CANNOT_DUMP */
 
   pw = (struct passwd *) getpwuid (getuid ());
-  strncpy (user_real_name, pw->pw_name, sizeof user_real_name);
+  if (pw == 0)
+    strcpy (user_real_name, "unknown");
+  else
+    strncpy (user_real_name, pw->pw_name, sizeof user_real_name);
 
   user_name = (char *) getenv ("USER");
   if (!user_name)
@@ -103,21 +123,6 @@ init_editfns ()
     *q = 0;
   }
 #endif /* AMPERSAND_FULL_NAME */
-
-  p = (char *) get_system_name ();
-  if (p == 0 || *p == 0)
-    p = "Bogus System Name";
-  strncpy (system_name, p, sizeof system_name);
-  p = system_name;
-  while (*p)
-    {
-      if (*p < ' ')
-	*p = 0;
-      else
-	if (*p == ' ')
-	  *p = '-';
-      p++;
-    }
 }
 
 DEFUN ("char-to-string", Fchar_to_string, Schar_to_string, 1, 1, 0,
@@ -855,7 +860,9 @@ the argument used by %d, %b, %o, %x or %c must be a number.")
   while (format = (unsigned char *) index (format, '%'))
     {
       format++;
-      while (*format >= '0' && *format <= '9') format++;
+      while ((*format >= '0' && *format <= '9')
+	     || *format == '-' || *format == ' ')
+	format++;
       if (*format == '%')
 	format++;
       else if (++n >= nargs)
@@ -901,7 +908,7 @@ the argument used by %d, %b, %o, %x or %c must be a number.")
       buf = (char *) alloca (total + 1);
       buf[total - 1] = 0;
 
-      doprnt (buf, total + 1, strings[0], strings + 1);
+      doprnt (buf, total + 1, strings[0], nargs, strings + 1);
       if (buf[total - 1] == 0)
 	break;
 
@@ -930,9 +937,9 @@ format1 (string1)
   args[2] = arg2;
   args[3] = arg3;
   args[4] = arg4;
-  doprnt (buf, sizeof buf, string1, args);
+  doprnt (buf, sizeof buf, string1, 5, args);
 #else
-  doprnt (buf, sizeof buf, string1, &string1 + 1);
+  doprnt (buf, sizeof buf, string1, 5, &string1 + 1);
 #endif
   return build_string (buf);
 }

@@ -1,6 +1,6 @@
-/* `alloca' standard 4.2 subroutine for 68000's and 16000's and pyramids.
+/* `alloca' standard 4.2 subroutine for 68000's and 16000's and others.
    Also has _setjmp and _longjmp for pyramids.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -29,7 +29,7 @@ and this notice must be preserved on all copies.  */
 
 #ifndef HAVE_ALLOCA  /* define this to use system's alloca */
 
-#ifndef hp9000
+#ifndef hp9000s300
 #ifndef m68k
 #ifndef m68000
 #ifndef WICAT
@@ -37,8 +37,10 @@ and this notice must be preserved on all copies.  */
 #ifndef sequent
 #ifndef pyramid
 #ifndef ATT3B5
+#ifndef XENIX
 you
 lose!!
+#endif /* XENIX */
 #endif /* ATT3B5 */
 #endif /* pyramid */
 #endif /* sequent */
@@ -46,10 +48,10 @@ lose!!
 #endif /* WICAT */
 #endif /* m68000 */
 #endif /* m68k */
-#endif /* hp9000 */
+#endif /* hp9000s300 */
 
 
-#ifdef hp9000
+#ifdef hp9000s300
 #ifdef OLD_HP_ASSEMBLER
 	data
 	text
@@ -90,7 +92,7 @@ _alloca:
 	mov.l	%d1,%sp		# save new value of sp
 	tst.b	PROBE(%sp)	# create pages (sigh)
 	move.w	&MAXREG-1,%d0
-copy_regs_loop:			# save caller's saved registers
+copy_regs_loop:			/* save caller's saved registers */
 	mov.l	(%a1)+,(%sp)+
 	dbra	%d0,copy_regs_loop
 	mov.l	%sp,%d0		# return value
@@ -139,22 +141,25 @@ MAXREG:	.const	10
 	.sect	text
 	.global	_alloca
 _alloca:
-	move.l	(sp)+,a0	; pop return address
+	move.l	(sp)+,a1	; pop return address
 	move.l	(sp)+,d0	; pop allocation size
 	move.l	sp,d1		; get current SP value
 	sub.l	d0,d1		; adjust to reflect required size...
 	sub.l	#MAXREG*4,d1	; ...and space needed for registers
 	and.l	#-4,d1		; backup to longword boundry
-	move.l	sp,a1		; save old SP value for register copy
+	move.l	sp,a0		; save old SP value for register copy
 	move.l	d1,sp		; set the new SP value
 	tst.b	-4096(sp)	; grab an extra page (to cover caller)
+	move.l	a2,d1		; save caller's register
+	move.l	sp,a2
 	move.w	#MAXREG-1,d0	; # of longwords to copy
-loop:	move.l	(a1)+,(sp)+	; copy registers...
+loop:	move.l	(a0)+,(a2)+	; copy registers...
 	dbra	d0,loop		; ...til there are no more
-	move.l	sp,d0		; end of register area is addr for new space
-	move.l	d1,sp		; reset the SP
-	subq.l	#4,sp		; adjust to account for caller argument pop
-	jmp	(a0)		; return
+	move.l	a2,d0		; end of register area is addr for new space
+	move.l	d1,a2		; restore saved a2.
+	addq.l	#4,sp		; caller will increment sp by 4 after return.
+	move.l	d0,a0		; return value in both a0 and d0.
+	jmp	(a1)
 	.end	_alloca
 #else
 
@@ -177,7 +182,7 @@ alloca:
 #endif /* not WICAT */
 #endif /* m68000 */
 #endif /* not m68k */
-#endif /* not hp9000 */
+#endif /* not hp9000s300 */
 
 #ifdef ns16000
 
@@ -235,6 +240,7 @@ alloca:
 _alloca: addw $3,pr0	# add 3 (dec) to first argument
 	bicw $3,pr0	# then clear its last 2 bits
 	subw pr0,sp	# subtract from SP the val in PR0
+	andw $-32,sp	# keep sp aligned on multiple of 32.
 	movw sp,pr0	# ret. current SP
 	ret
 
@@ -264,5 +270,39 @@ alloca:
 	jmp (%r1) /* continue... */
 
 #endif /* ATT3B5 */
+
+#ifdef XENIX
+
+.386
+
+_TEXT segment dword use32 public 'CODE'
+assume   cs:_TEXT
+
+;-------------------------------------------------------------------------
+
+public _alloca
+_alloca proc near
+
+	pop	ecx		; return address
+	pop	eax		; amount to alloc
+	add	eax,3		; round it to 32-bit boundary
+	and	al,11111100B	;
+	mov	edx,esp		; current sp in edx
+	sub	edx,eax		; lower the stack
+	xchg	esp,edx		; start of allocation in esp, old sp in edx
+	mov	eax,esp		; return ptr to base in eax
+	push	[edx+8]		; save poss. stored reg. values (esi,edi,ebx)
+	push	[edx+4]		;  on lowered stack
+	push	[edx]		;
+	sub	esp,4		; allow for 'add esp, 4'
+	jmp	ecx		; jump to return address
+
+_alloca endp
+
+_TEXT	ends
+
+end
+
+#endif /* XENIX */
 
 #endif /* not HAVE_ALLOCA */

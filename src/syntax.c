@@ -535,7 +535,11 @@ scan_lists (from, count, depth, sexpflag)
 		break;
 	      if (from != stop && c == CharAt (from))
 		from++;
-	      if (mathexit) goto close1;
+	      if (mathexit)
+		{
+		  mathexit = 0;
+		  goto close1;
+		}
 	      mathexit = 1;
 
 	    case Sopen:
@@ -626,7 +630,11 @@ scan_lists (from, count, depth, sexpflag)
 		break;
 	      if (from != stop && c == CharAt (from - 1))
 		from--;
-	      if (mathexit) goto open2;
+	      if (mathexit)
+		{
+		  mathexit = 0;
+		  goto open2;
+		}
 	      mathexit = 1;
 
 	    case Sclose:
@@ -774,10 +782,12 @@ struct lisp_parse_state
     int thislevelstart;	/* Char number of most recent start-of-expression at current level */
     int prevlevelstart; /* Char number of start of containing expression */
     int location;	/* Char number at which parsing stopped. */
+    int mindepth;	/* Minimum depth seen while scanning.  */
   };
 
-/* Parse forward from `from' to `end', assuming that `from'
-is the start of a function, and return a description of the state of the parse at `end'. */
+/* Parse forward from FROM to END,
+   assuming that FROM is the start of a function, 
+   and return a description of the state of the parse at END. */
 
 struct lisp_parse_state val_scan_sexps_forward;
 
@@ -798,6 +808,7 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
   register int depth;	/* Paren depth of current scanning location.
 			   level - levelstart equals this except
 			   when the depth becomes negative.  */
+  int mindepth;		/* Lowest DEPTH value seen.  */
   int start_quoted = 0;		/* Nonzero means starting after a char quote */
   Lisp_Object tem;
 
@@ -833,6 +844,7 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
       start_quoted = !NULL (tem);
     }
   state.quoted = 0;
+  mindepth = depth;
 
   curlevel->prev = -1;
 
@@ -928,6 +940,8 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
 
 	case Sclose:
 	  depth--;
+	  if (depth < mindepth)
+	    mindepth = depth;
 	  if (curlevel != levelstart)
 	    curlevel--;
 	  curlevel->prev = curlevel->last;
@@ -976,6 +990,7 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
   state.quoted = 1;
  done:
   state.depth = depth;
+  state.mindepth = mindepth;
   state.thislevelstart = curlevel->prev;
   state.prevlevelstart
     = (curlevel == levelstart) ? -1 : (curlevel - 1)->last;
@@ -996,7 +1011,7 @@ Parsing stops at TO or when certain criteria are met;\n\
  point is set to where parsing stops.\n\
 If fifth arg STATE is omitted or nil,\n\
  parsing assumes that FROM is the beginning of a function.\n\
-Value is a list of six elements describing final state of parsing:\n\
+Value is a list of seven elements describing final state of parsing:\n\
  1. depth in parens.\n\
  2. character address of start of innermost containing list; nil if none.\n\
  3. character address of start of last complete sexp terminated.\n\
@@ -1004,11 +1019,12 @@ Value is a list of six elements describing final state of parsing:\n\
     (it is the character that will terminate the string.)\n\
  5. t if inside a comment.\n\
  6. t if following a quote character.\n\
+ 7. the minimum paren-depth encountered during this scan.\n\
 If third arg TARGETDEPTH is non-nil, parsing stops if the depth\n\
 in parentheses becomes equal to TARGETDEPTH.\n\
 Fourth arg STOPBEFORE non-nil means stop when come to\n\
  any character that starts a sexp.\n\
-Fifth arg STATE is a six-list like what this function returns.\n\
+Fifth arg STATE is a seven-list like what this function returns.\n\
 It is used to initialize the state of the parse.")
 
 */
@@ -1040,7 +1056,8 @@ DEFUN ("parse-partial-sexp", Fparse_partial_sexp, Sparse_partial_sexp, 2, 5, 0,
 	     Fcons (state.thislevelstart < 0 ? Qnil : make_number (state.thislevelstart),
 	       Fcons (state.instring >= 0 ? make_number (state.instring) : Qnil,
 		 Fcons (state.incomment ? Qt : Qnil,
-		   Fcons (state.quoted ? Qt : Qnil, Qnil))))));
+		   Fcons (state.quoted ? Qt : Qnil,
+			  Fcons (make_number (state.mindepth), Qnil)))))));
 }
 
 init_syntax_once ()
@@ -1087,8 +1104,8 @@ syms_of_syntax ()
   staticpro (&Qsyntax_table_p);
 
 /* Mustn't let user clobber this!
-  DEFVAR_LISP ("standard-syntax-table", &Vstandard_syntax_table,
-    "The syntax table used by buffers that don't specify another.");
+  DEFVAR_LISP ("standard-syntax-table", &Vstandard_syntax_table,  */
+/*  "The syntax table used by buffers that don't specify another.");
  */
   staticpro (&Vstandard_syntax_table);
 

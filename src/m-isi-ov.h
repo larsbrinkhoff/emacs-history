@@ -61,10 +61,16 @@ and this notice must be preserved on all copies.  */
 
 /* Mask for address bits within a memory segment */
 
-#define SEGMENT_MASK 0x3ffff
+#define SEGMENT_MASK 0x1ffff
 
 /* use the -20 switch to get the 68020 code */
 /* #define C_SWITCH_MACHINE -20 */
+
+/* Use the version of the library for the 68020
+   because the standard library requires some special hacks in crt0
+   which the GNU crt0 does not have.  */
+
+#define LIB_STANDARD -lmc
 
 /* macros to make unexec work right */
 

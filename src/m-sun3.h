@@ -1,3 +1,6 @@
+/* m- file for Sun 68000's OPERATING SYSTEM version 3
+   (for either 68000 or 68020 systems).  */
+
 #include "m-sun2.h"
 #undef sun2
 #ifndef sun3
@@ -9,3 +12,7 @@
    and is counted in hdr.a_text.  */
 
 #define A_TEXT_OFFSET(HDR) sizeof (HDR)
+
+/* Use dk.h, not dkstat.h, in loadst.c.  */
+
+#define DK_HEADER_FILE

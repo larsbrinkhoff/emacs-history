@@ -8,11 +8,11 @@ $ set default emacs_library:[etc]
 $ on error then goto done
 $ if f$search("emacs_library:[etc]make-docfile.exe") .nes. "" then goto version44
 $ doit := $emacs_library:[etc]make_docfile
-$ rest = "[lisp]lisp_mode.elc [lisp]text_mode.elc [lisp]c_mode.elc [lisp]buff_menu.elc"
+$ rest = "[lisp]lisp_mode.elc [lisp]text_mode.elc [lisp]c_mode.elc [lisp]buff_menu.elc [lisp]vms_patch.elc"
 $ goto doit
 $version44:
 $ doit := $emacs_library:[etc]make-docfile
-$ rest = "[lisp]lisp-mode.elc [lisp]text-mode.elc [lisp]c-mode.elc [lisp]buff-menu.elc"
+$ rest = "[lisp]lisp-mode.elc [lisp]text-mode.elc [lisp]c-mode.elc [lisp]buff-menu.elc [lisp]vms-patch.elc"
 $
 $doit:
 $ set default emacs_library:[000000]

@@ -1,5 +1,5 @@
 ;; Run subshell under Emacs
-;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -21,16 +21,10 @@
 
 (provide 'shell)
 
-;; For old Emacs versions.
-(or (fboundp 'process-send-string)
-    (progn
-      (fset 'process-send-string 'send-string)
-      (fset 'process-send-region 'send-region)))
-
 (defvar last-input-start nil
   "In a shell-mode buffer, marker for start of last unit of input.")
 (defvar last-input-end nil
-  "In a shell-mode buffer, marker for start of last unit of input.")
+  "In a shell-mode buffer, marker for end of last unit of input.")
 
 (defvar shell-mode-map nil)
 
@@ -195,18 +189,20 @@ trying to change Emacs's default directory.")
   "Send input to subshell.
 At end of buffer, sends all text after last output
  as input to the subshell, including a newline inserted at the end.
-Not at end, copies current line to the end of the buffer and sends it,
+When not at end, copies current line to the end of the buffer and sends it,
 after first attempting to discard any prompt at the beginning of the line
 by matching the regexp that is the value of shell-prompt-pattern if possible.
 This regexp should start with \"^\"."
   (interactive)
+  (or (get-buffer-process (current-buffer))
+      (error "Current buffer has no process"))
   (end-of-line)
-    (if (eobp)
-	(progn
-	  (move-marker last-input-start
-		       (process-mark (get-buffer-process (current-buffer))))
-	  (insert ?\n)
-	  (move-marker last-input-end (point)))
+  (if (eobp)
+      (progn
+	(move-marker last-input-start
+		     (process-mark (get-buffer-process (current-buffer))))
+	(insert ?\n)
+	(move-marker last-input-end (point)))
     (beginning-of-line)
     (re-search-forward shell-prompt-pattern nil t)
     (let ((copy (buffer-substring (point)
@@ -215,13 +211,13 @@ This regexp should start with \"^\"."
       (move-marker last-input-start (point))
       (insert copy)
       (move-marker last-input-end (point))))
-    ;; Even if we get an error trying to hack the working directory,
-    ;; still send the input to the subshell.
-    (condition-case ()
-	(save-excursion
-	  (goto-char last-input-start)
-	  (shell-set-directory))
-      (error (funcall shell-set-directory-error-hook)))
+  ;; Even if we get an error trying to hack the working directory,
+  ;; still send the input to the subshell.
+  (condition-case ()
+      (save-excursion
+	(goto-char last-input-start)
+	(shell-set-directory))
+    (error (funcall shell-set-directory-error-hook)))
   (let ((process (get-buffer-process (current-buffer))))
     (process-send-region process last-input-start last-input-end)
     (set-marker (process-mark process) (point))))
@@ -290,8 +286,10 @@ This regexp should start with \"^\"."
   "Kill all output from shell since last input."
   (interactive)
   (goto-char (point-max))
+  (beginning-of-line)
   (kill-region last-input-end (point))
-  (insert "> output flushed ***\n"))
+  (insert "*** output flushed ***\n")
+  (goto-char (point-max)))
 
 (defun show-output-from-shell ()
   "Display start of this batch of shell output at top of window.
@@ -357,9 +355,25 @@ Default is right for Franz Lisp and kcl.")
 
 (defun inferior-lisp-mode ()
   "Major mode for interacting with an inferior Lisp process.
+Runs a Lisp interpreter as a subprocess of Emacs, with Lisp I/O
+through an Emacs buffer.  Variable inferior-lisp-program controls
+which Lisp interpreter is run.  Variables inferior-lisp-prompt
+and inferior-lisp-load-command can customize this mode for different
+Lisp interpreters.
 
-The following commands are available:
-\\{inferior-lisp-mode-map}
+Commands:
+DELETE converts tabs to spaces as it moves back.
+TAB indents for Lisp; with argument, shifts rest
+ of expression rigidly with the current line.
+Meta-Control-Q does TAB on each line starting within following expression.
+Paragraphs are separated only by blank lines.  Semicolons start comments.
+
+Return at end of buffer sends line as input.
+Return not at end copies rest of line to end and sends it.
+
+The following commands imitate the usual Unix interrupt and
+editing control characters:
+\\{shell-mode-map}
 
 Entry to this mode calls the value of lisp-mode-hook with no arguments,
 if that value is non-nil.  Likewise with the value of shell-mode-hook.
@@ -367,31 +381,13 @@ lisp-mode-hook is called after shell-mode-hook.
 
 You can send text to the inferior Lisp from other buffers
 using the commands process-send-region, process-send-string
-and \\[lisp-send-defun].
-
-Commands:
-Delete converts tabs to spaces as it moves back.
-Tab indents for Lisp; with argument, shifts rest
- of expression rigidly with the current line.
-Meta-Control-Q does Tab on each line starting within following expression.
-Paragraphs are separated only by blank lines.  Semicolons start comments.
-
-Return at end of buffer sends line as input.
-Return not at end copies rest of line to end and sends it.
-C-d at end of buffer sends end-of-file as input.
-C-d not at end or with arg deletes or kills characters.
-C-u and C-w are kill commands, imitating normal Unix input editing.
-C-c interrupts the shell or its current subjob if any.
-C-z stops, likewise.  C-\\ sends quit signal, likewise.
-
-C-x C-k deletes last batch of output from shell.
-C-x C-v puts top of last batch of output at top of window."
+and \\[lisp-send-defun]."
   (interactive)
   (kill-all-local-variables)
   (setq major-mode 'inferior-lisp-mode)
   (setq mode-name "Inferior Lisp")
   (setq mode-line-process '(": %s"))
-  (lisp-mode-variables)
+  (lisp-mode-variables t)
   (use-local-map inferior-lisp-mode-map)
   (make-local-variable 'last-input-start)
   (setq last-input-start (make-marker))
@@ -411,6 +407,8 @@ With argument, force redisplay and scrolling of the *lisp* buffer.
 Variable `inferior-lisp-load-command' controls formatting of
 the `load' form that is set to the Lisp process."
   (interactive "P")
+  (or (get-buffer-process (current-buffer))
+      (error "Current buffer has no process"))
   (save-excursion
    (end-of-defun)
    (let ((end (point))
@@ -441,5 +439,5 @@ the `load' form that is set to the Lisp process."
 (defun lisp-send-defun-and-go ()
   "Send the current defun to the inferior Lisp, and switch to *lisp* buffer."
   (interactive)
-  (lisp-send-defun)
+  (lisp-send-defun nil)
   (switch-to-buffer "*lisp*"))

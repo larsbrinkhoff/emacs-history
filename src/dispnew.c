@@ -39,7 +39,9 @@ and this notice must be preserved on all copies.  */
 #define TIOCOUTQ TCOUTQ
 #endif /* TCOUTQ defined */
 #else
+#ifndef VMS
 #include <sys/ioctl.h>
+#endif /* not VMS */
 #endif /* not HAVE_TERMIO */
 
 #undef NULL
@@ -55,6 +57,13 @@ and this notice must be preserved on all copies.  */
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
+
+#ifndef PENDING_OUTPUT_COUNT
+/* Get number of chars of output now in the buffer of a stdio stream.
+   This ought to be built in in stdio, but it isn't.
+   Some s- files override this because their stdio internals differ.  */
+#define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_ptr - (FILE)->_base)
+#endif
 
 /* Nonzero means do not assume anything about current
  contents of actual terminal screen */
@@ -540,7 +549,6 @@ update_screen (force, inhibit_hairy_id)
     register int i;
     int pause;
     int preempt_count;
-    int outq;
     extern input_pending;
 
     if (screen_height == 0) abort (); /* Some bug zeros some core */
@@ -579,10 +587,10 @@ update_screen (force, inhibit_hairy_id)
 	if (lnew && lnew != l)
 	  {
 	    /* Flush out every so many lines.
-	       Also flush out if likely to have more than 1k buffered otherwise.
-	       I'm told that telnet connections get really screwed by more
-	       than 1k output at once.  */
-	    outq = stdout->_ptr - stdout->_base;
+	       Also flush out if likely to have more than 1k buffered
+	       otherwise.   I'm told that telnet connections get really
+	       screwed by more than 1k output at once.  */
+	    int outq = PENDING_OUTPUT_COUNT (stdout);
 	    if (outq > ((--preempt_count < 0) ? 20 : 900))
 	      {
 		fflush (stdout);
@@ -592,7 +600,7 @@ update_screen (force, inhibit_hairy_id)
 		    if (ioctl (0, TIOCOUTQ, &outq) < 0)
 		      /* Probably not a tty.  Ignore the error and reset
 		       * the outq count. */
-		      outq = stdout->_ptr - stdout->_base;
+		      outq = PENDING_OUTPUT_COUNT (stdout);
 #endif
 		    outq *= 10;
 		    outq /= baud_rate;	/* outq is now in seconds */
@@ -612,9 +620,13 @@ update_screen (force, inhibit_hairy_id)
     /* Now just clean up termcap drivers and set cursor, etc.  */
     if (!pause)
       {
-	if (cursor_in_echo_area)
+	if (cursor_in_echo_area < 0)
+	  topos (screen_height - 1, 0);
+	else if (cursor_in_echo_area)
 	  topos (screen_height - 1,
-		 min (screen_width - 1, PhysScreen[screen_height]->length));
+		 (PhysScreen[screen_height] == 0 ? 0
+		  : min (screen_width - 1,
+			 PhysScreen[screen_height]->length)));
 	else
 	  topos (cursY, max (min (cursX, screen_width - 1), 0));
       }
@@ -1282,6 +1294,12 @@ char *terminal_type;
 
 init_display ()
 {
+#ifdef HAVE_X_WINDOWS
+  extern Lisp_Object Vxterm;
+  Vxterm = Qnil;
+#endif
+
+  Vwindow_system = Qnil;
   MetaFlag = 0;
   inverse_video = 0;
   cursor_in_echo_area = 0;
@@ -1291,9 +1309,13 @@ init_display ()
     {
 #ifdef HAVE_X_WINDOWS
       extern char *alternate_display;
-      if (alternate_display || egetenv ("DISPLAY"))
+      char *disp = egetenv ("DISPLAY");
+
+      /* Note KSH likes to provide an empty string as an envvar value.  */
+      if (alternate_display || (disp && *disp))
 	{
 	  x_term_init ();
+	  Vxterm = Qt;
 	  Vwindow_system = intern ("x");
 	  goto term_init_done;
 	}
@@ -1353,8 +1375,13 @@ syms_of_display ()
 It is up to you to set this variable to inform Emacs.");
   DEFVAR_LISP ("window-system", &Vwindow_system,
     "A symbol naming the window-system under which emacs is running,\n\
-\(such as `x') or nil if emacs is running on an ordinary terminal.");
-  Vwindow_system = Qnil;
+\(such as `x' or `x11') or nil if emacs is running on an ordinary terminal.");
   DEFVAR_BOOL ("cursor-in-echo-area", &cursor_in_echo_area,
     "Non-nil means put cursor in minibuffer after any message displayed there.");
+
+  /* Initialize `window-system', unless init_display already decided it.  */
+#ifdef CANNOT_DUMP
+  if (noninteractive)
+#endif
+    Vwindow_system = Qnil;
 }

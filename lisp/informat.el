@@ -35,7 +35,7 @@
 	(progn
 	  (widen)
 	  (goto-char (point-min))
-	  (if (search-forward "\^_\f\nTag table:\n" nil t)
+	  (if (search-forward "\^_\nIndirect:\n" nil t)
 	      (message "Cannot tagify split info file")
 	    (let ((regexp "Node:[ \t]*\\([^,\n\t]\\)*[,\t\n]")
 		  (case-fold-search t)
@@ -75,7 +75,7 @@
 
 (defun Info-split ()
   "Split an info file into an indirect file plus bounded-size subfiles.
-Each subfile will be up 50000 characters plus one node.
+Each subfile will be up to 50000 characters plus one node.
 
 To use this command, first visit a large Info file that has a tag table.
 The buffer is modified into a (small) indirect info file
@@ -95,15 +95,17 @@ just the tag table and a directory of subfiles."
   (let ((start (point))
 	(chars-deleted 0)
 	subfiles
-	(subfile-number 1))
+	(subfile-number 1)
+	(case-fold-search t)
+	(filename (file-name-sans-versions buffer-file-name)))
     (goto-char (point-max))
     (forward-line -8)
     (setq buffer-read-only nil)
     (or (search-forward "\^_\nEnd tag table\n" nil t)
-	(error "Tag table required in order to split an Info file."))
+	(error "Tag table required; use M-x Info-tagify"))
     (search-backward "\nTag table:\n")
     (if (looking-at "\nTag table:\n\^_")
-	(error "Tag table is just a skeleton; use M-x Info-tagify."))
+	(error "Tag table is just a skeleton; use M-x Info-tagify"))
     (beginning-of-line)
     (forward-char 1)
     (save-restriction
@@ -114,12 +116,14 @@ just the tag table and a directory of subfiles."
 	(search-forward "\^_" nil 'move)
 	(setq subfiles
 	      (cons (list (+ start chars-deleted)
-			  (concat (file-name-nondirectory buffer-file-name)
+			  (concat (file-name-nondirectory filename)
 				  (format "-%d" subfile-number)))
 		    subfiles))
+	;; Put a newline at end of split file, to make Unix happier.
+	(insert "\n")
 	(write-region (point-min) (point)
-		      (concat buffer-file-name
-			      (format "-%d" subfile-number)))
+		      (concat filename (format "-%d" subfile-number)))
+	(delete-region (1- (point)) (point))
 	;; Back up over the final ^_.
 	(forward-char -1)
 	(setq chars-deleted (+ chars-deleted (- (point) start)))
@@ -200,33 +204,34 @@ Check that every node pointer points to an existing node."
 				       (point)))))
 		  (end-of-line)
 		  (and (search-backward "next:" nil t)
-		       (setq next (Info-validate-node-name "Next"))
+		       (setq next (Info-validate-node-name "invalid Next"))
+		       (assoc next allnodes)
 		       (if (equal (car (cdr (assoc next allnodes)))
 				  thisnode)
 			   ;; allow multiple `next' pointers to one node
 			   (let ((tem lossages))
 			     (while tem
 			       (if (and (equal (car (cdr (car tem)))
-					       "Previous-pointer in Next")
-					(equal (car (cdr (cdr (car tem))))
+					       "should have Previous")
+					(equal (car (car tem))
 					       next))
 				   (setq lossages (delq (car tem) lossages)))
 			       (setq tem (cdr tem))))
 			 (setq lossages
-			       (cons (list thisnode
-					   "Previous-pointer in Next"
-					   next)
+			       (cons (list next
+					   "should have Previous"
+					   thisnode)
 				     lossages))))
 		  (end-of-line)
 		  (if (re-search-backward "prev[ious]*:" nil t)
-		      (Info-validate-node-name "Previous"))
+		      (Info-validate-node-name "invalid Previous"))
 		  (end-of-line)
 		  (if (search-backward "up:" nil t)
-		      (Info-validate-node-name "Up"))
+		      (Info-validate-node-name "invalid Up"))
 		  (if (re-search-forward "\n* Menu:" nil t)
 		      (while (re-search-forward "\n\\* " nil t)
 			(Info-validate-node-name
-			  (concat "menu item "
+			  (concat "invalid menu item "
 				  (buffer-substring (point)
 						    (save-excursion
 						      (skip-chars-forward "^:")
@@ -237,7 +242,7 @@ Check that every node pointer points to an existing node."
 		    (goto-char (+ (match-beginning 0) 5))
 		    (skip-chars-forward " \n")
 		    (Info-validate-node-name
-		     (concat "reference "
+		     (concat "invalid reference "
 			     (buffer-substring (point)
 					       (save-excursion
 						 (skip-chars-forward "^:")
@@ -249,7 +254,7 @@ Check that every node pointer points to an existing node."
 	      (while lossages
 		(princ "In node \"")
 		(princ (car (car lossages)))
-		(princ "\", invalid ")
+		(princ "\", ")
 		(let ((tem (nth 1 (car lossages))))
 		  (cond ((string-match "\n" tem)
 			 (princ (substring tem 0 (match-beginning 0)))

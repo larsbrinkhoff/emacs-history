@@ -49,10 +49,11 @@
 		  (prog1 (read-char)
 		    (setq quit-flag nil))))))
 
-(if telnet-mode-map
-    nil
-  (setq telnet-mode-map (make-sparse-keymap))
+(setq telnet-mode-map (make-sparse-keymap))
+
+(progn
   (define-key telnet-mode-map "\C-m" 'telnet-send-input)
+  (define-key telnet-mode-map "\C-j" 'telnet-send-input)
   (define-key telnet-mode-map "\C-c\C-d" 'shell-send-eof)
   (define-key telnet-mode-map "\C-c\C-q" 'send-process-next-char)
   (define-key telnet-mode-map "\C-c\C-c" 'telnet-interrupt-subjob) 
@@ -84,7 +85,8 @@
 	 (error "No such host."))
 	((string-match "passw" string)
 	 (telnet-filter proc string)
-	 (setq password (read-password))
+	 (let ((echo-keystrokes 0))
+	   (setq password (read-password)))
 	 (setq telnet-count 0)
 	 (send-string proc (concat password  telnet-new-line)))
 	(t (telnet-check-software-type-initialize string)
@@ -164,7 +166,8 @@ Normally input is edited in Emacs and sent a line at a time."
 
 (defun read-password ()
   (let ((answ "") tem)
-    (while (not (= (setq tem (read-char)) ?\^m))
+    (while (not(or  (= (setq tem (read-char)) ?\^m)
+		    (= tem ?\n)))
       (setq answ (concat answ (char-to-string tem))))
     answ))
 

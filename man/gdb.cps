@@ -7,6 +7,7 @@
 \entry {arguments (to your program)}{13}
 \entry {artificial array}{36}
 \entry {assignment}{47}
+\entry {attach}{15}
 \initial {B}
 \entry {breakpoint commands}{23}
 \entry {breakpoints}{18}
@@ -19,7 +20,7 @@
 \entry {core dump file}{9}
 \initial {D}
 \entry {delete breakpoints}{20}
-\entry {directories for source files}{32}
+\entry {directories for source files}{33}
 \entry {disabled breakpoints}{20}
 \initial {E}
 \entry {enabled breakpoints}{20}
@@ -45,13 +46,15 @@
 \initial {P}
 \entry {printing data}{35}
 \initial {R}
+\entry {redirection}{15}
 \entry {registers}{43}
 \entry {returning from a function}{48}
 \entry {running}{13}
 \initial {S}
+\entry {searching}{33}
 \entry {selected frame}{28}
 \entry {setting variables}{47}
-\entry {source path}{32}
+\entry {source path}{33}
 \entry {stepping}{26}
 \entry {symbol table}{9}
 \initial {U}

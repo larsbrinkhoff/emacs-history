@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -96,15 +96,15 @@ Completion is performed over known labels when reading."
 			(setq bound (1+ (point)))
 		      (setq start (1+ (point))))
 		    (goto-char start)
-		    (while (re-search-forward "[ \t]*,[ \t]*" nil t)
-		      (replace-match ","))
-		    (goto-char start)
+;		    (while (re-search-forward "[ \t]*,[ \t]*" nil t)
+;		      (replace-match ","))
+;		    (goto-char start)
 		    (if (re-search-forward
-			   (concat "," (rmail-quote-label-name label) ",")
+			   (concat ", " (rmail-quote-label-name label) ",")
 			   bound
 			   'move)
 			(if (not state) (replace-match ","))
-		      (if state (insert (symbol-name label) ",")))
+		      (if state (insert " " (symbol-name label) ",")))
 		    (if (eq label rmail-deleted-label)
 			(rmail-set-message-deleted-p n state)))))
 	    (narrow-to-region (- (buffer-size) omin) (- (buffer-size) omax))
@@ -190,7 +190,7 @@ With prefix argument N moves forward N messages with these labels."
   (rmail-maybe-set-message-counters)
   (let ((lastwin rmail-current-message)
 	(current rmail-current-message)
-	(regexp (concat ",\\("
+	(regexp (concat ", ?\\("
 			(mail-comma-list-regexp labels)
 			"\\),")))
     (save-restriction

@@ -64,16 +64,30 @@ thus showing a page other than the one point was originally in."
   (interactive "P")
   (setq arg (if arg (prefix-numeric-value arg) 0))
   (save-excursion
-   (if (> arg 0)
-       (forward-page arg)
-     (if (< arg 0)
-	 (forward-page (1- arg))))
-   (forward-page)
-   (beginning-of-line)
-   (narrow-to-region (point)
-		     (progn
-		      (forward-page -1)
-		      (point)))))
+    (widen)
+    (if (> arg 0)
+	(forward-page arg)
+      (if (< arg 0)
+	  (forward-page (1- arg))))
+    ;; Find the end of the page.
+    (forward-page)
+    ;; If we stopped due to end of buffer, stay there.
+    ;; If we stopped after a page delimiter, put end of restriction
+    ;; at the beginning of that line.
+    (if (save-excursion (beginning-of-line)
+			(looking-at page-delimiter))
+	(beginning-of-line))
+    (narrow-to-region (point)
+		      (progn
+			;; Find the top of the page.
+			(forward-page -1)
+			;; If we found beginning of buffer, stay there.
+			;; If extra text follows page delimiter on same line,
+			;; include it.
+			;; Otherwise, show text starting with following line.
+			(if (and (eolp) (not (bobp)))
+			    (forward-line 1))
+			(point)))))
 
 (defun count-lines-page ()
   "Report number of lines on current page, and how many are before or after point."

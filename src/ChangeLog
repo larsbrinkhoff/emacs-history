@@ -1,3 +1,1244 @@
+Fri May  6 10:41:46 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* Version 18.51 released.
+
+	* process.c (Fdelete_process): Change status of proc to `signaled'.
+	Then call change_msgs to run the sentinel.
+
+	* m-sequent.h, m-sun3.h, s-sunos4.h, s-bsd4-3.h: Define DK_HEADER_FILE.
+
+	* m-7300.h: Take out the Feb 11 change; umix!sendai!rich@rutgers.edu
+	says it doesn't work.
+
+Fri Apr 29 10:05:02 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* xdisp.c (DoDsp): Set clip_changed if Voverlay_... has changed.
+
+Thu Apr 28 17:55:45 1988  Chris Hanson  (cph at kleph)
+
+	* s-hpux.h: Define HAVE_PTYS.  HP-UX has them and they work fine
+	almost all of the time.  The one case where they would fail
+	regularly (inferior Scheme) has been bypassed by using pipes.
+
+Thu Apr 28 09:27:41 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* keyboard.c (Fsuspend_emacs): Do init_sys_modes via unwind protect.
+
+	* fileio.c [VMS] (Fdefine_logical_name): Empty string value
+	means delete the name.
+
+Wed Apr 27 01:29:04 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* sysdep.c [VMS]: RAB's never a macro; let RAB$C_BID control rab.h.
+
+	* sysdep.c [VMS] (sys_getenv): only if value of lib$sys_trnlog
+	is exactly 1 does it mean it found something.
+
+	* sysdep.c (creat_copy_attrs): Downcase remaining SYS$OPEN, SSY$CLOSE.
+
+Mon Apr 25 16:06:49 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* fileio.c (Fdo_auto_save): Ignore shrinkage if not visiting file.
+	Wait only 1 second after shrinkage message.
+	(Fset_buffer_auto_saved): Update the buffer's save_length.
+	(auto_save_error): Mention buffer name in message.
+
+	* buffer.c (Fswitch_buffer): Error if in minibuffer window.
+
+Sun Apr 24 18:56:54 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* sysdep.c (sys_close): Define this only if INTERRUPTABLE_CLOSE.
+	* s-usg5-3.h: Define INTERRUPTABLE_CLOSE.
+
+Fri Apr 22 17:43:03 1988  Richard Stallman  (rms at rice-krispies.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes) [VMS]: Undef _IOFBF so don't use setvbuf.
+
+Wed Apr 20 05:44:19 1988  Richard Stallman  (rms at rice-krispies.ai.mit.edu)
+
+	* m-sun386.h: New file, for Roadrunner.
+
+Tue Apr 19 13:54:37 1988  Chris Hanson  (cph at kleph)
+
+	* x11term.h, x11term.c, x11fns.c: Again (for the third time)
+	abstract input blocking so these files compile on systems without
+	SIGIO.
+
+	* x11term.c (x_term_init): Comment out fatal error which prevents
+	X11 interface from being used if interrupt_input is false.  This
+	is unnecessary and untrue -- the interface works, but
+	suboptimally.
+
+Tue Apr 19 04:18:42 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* sysdep.c (sys_access) [VMS]: If arg is dirname, cvt to name as file.
+	(sys_getenv): If arg is TERM, also look for TERM as logical name.
+
+	* unexconvex.c: New file.
+
+Mon Apr 18 15:23:37 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* emacs.c (main) [APOLLO]: Eliminate call to set_sbrk_size.
+
+	* search.c (match_limit): Return nil for a paren-pair with no match.
+
+Sun Apr 17 02:43:15 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* vmsfns.c (Fvms_system_info, Fshrink_to_icon): New functions.
+	Former comes with many subroutines.
+
+Sat Apr 16 00:39:12 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* x11term.c (updateline, write_chars): Restore sigmask at every return.
+	(stufflines): Restore signal mask only once, at the end.
+
+	* sysdep.c ({un,}request_sigio): SIGWINCH mask actions were backwards.
+	Never change any other mask bit.
+
+	* x11term.c (internal_socket_read): Initialize COUNT.
+
+	* ymakefile (LIBX): /usr/X11/lib/oldX/liboldX.a becomes -loldX.
+
+Thu Apr 14 22:29:28 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* fileio.c (auto_save_error): Print msg that there was an error.
+	(Fdo_auto_save): If don't save a bfr because it has shrunk, print msg.
+
+Wed Apr 13 23:58:10 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* s-umax.h: Define MAIL_USE_FLOCK (LaLiberte says so).
+
+Sun Apr 10 07:23:58 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* fileio.c (Fdefine_dcl_symbol): Deleted.
+	(Fdefine_logical_name): New function created.
+	* sysdep.c (define_dcl_symbol): Deleted.
+	(define_logical_name, delete_logical_name): New fns to make
+	job-wide logical names.  "This is more useful for communicating with
+	other processes, since when Emacs is run in a subprocess (as it
+	usually is), the others see job-wide logical names, not DCL symbols)."
+
+Sat Apr  9 00:32:25 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* ymakefile: If UNEXEC is defined, it specifies object file for unexec.
+	* unexmips.c: New file contains MIPS unexec code, moved from unexec.c.
+	* m-mips.h, m-iris4d.h: Define UNEXEC as unexmips.o.
+	No longer need to define COFF.
+	* unexenix.c, s-xenix.h: Likewise.
+	* unexhp9ks800.h: New file; m-hp9000s800.h says to use.
+	* unexec.c: Delete MIPS and Xenix code.
+
+	* dired.c (file_name_completion) [VMS]: specbind completion-ignore-case
+	to non-nil.
+
+	* m-sequent.h: Define PTY_ITERATION, etc., for Dynix 3.0 pty names.
+
+Fri Apr  8 05:37:20 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* unexec.c (EXEC_HDR_TYPE): New macro overrides `struct exec' if def.
+
+	* unexec.c (DEFAULT_ENTRY_ADDRESS): Allow config to define this.
+	* m-iris4d.h: Define it here, instead of IRIS4D conditional in unexec.
+
+	* m-tek4300.h: New file.
+
+	* fileio.c: doc fix.
+
+Tue Mar 29 17:25:58 1988  Richard M. Stallman  (rms at wilson)
+
+	* ymakefile: Default LIBX10_MACHINE and LIBX11_MACHINE to null.
+	Use them when defining LIBX.
+
+	* xterm.c: On all USG, include sys/time.h.
+	* xterm.c (XtFlash, flashback): Bodies conditional on ITIMER_REAL.
+	* xterm.c (x_term_init): Call gethostname only if BSD or HPUX.
+	* xterm.c (x_init_1): Don't mess with SIGIO if USG.
+
+	* sysdep.c: Fix typo, USG_SYSTEM_DIR => SYSV_SYSTEM_DIR.
+	Externally define sys_errlist, except on VMS.
+	Don't include rab.h if RAB is already defined.
+
+	* sysdep.c ({request,unrequest}_sigio) BSD4.2 version:
+	Also block and unblock SIGWINCH if that's defined.
+
+	* m-mips.h (XSETMARKBIT): New, test 2nd arg for only zero or nonzero.
+
+	* s-usg5-3.h: #define close sys_close (like open, read, write).
+	* sysdep.c: Undef `close', like `open'.
+	* sysdep.c (sys_close): New function.
+	All refs to close in sysdep.c renamed to sys_close.
+
+	* sysdep.c (read_input_waiting): Call `read_socket_hook'.
+	Define BUFFER_SIZE_FACTOR as in keyboard.c.
+
+	* sysdep.c (dup2): Alternate defn #ifdef F_DUPFD.
+
+Sun Mar 27 14:49:09 1988  Richard M. Stallman  (rms at wilson)
+
+	* process.c [CYDRIX]: Include sys/tiuser.h; don't include pty.h.
+
+	* process.c (pty): Don't do ioctl FIONBIO if not defined.
+	New macros PTY_ITERATION, PTY_NAME_SPRINTF and
+	PTY_TTY_NAME_SPRINTF customize how to test all pty names.
+
+	* unexec.c (make_hdr): DATA_SECTION_ALIGNMENT, new, acts like
+	SECTION_ALIGMENT, but for data section only.
+
+	* callproc.c (init_callproc): Cvt dirname to filename for `access'.
+	* lread.c (init_read): Likewise.  These used to lose on VMS.
+
+	* dired.c (file_name_completion) [VMS]: READFUNC is a ptr, not a fcn.
+
+Thu Mar 24 00:26:26 1988  Richard M. Stallman  (rms at wilson)
+
+	* sink.h, sinkmask.h: Don't declare the array static.
+	* xfns.c: Make sink_bits and sink_mask_bits extern;
+	don't include sink.h and sinkmask.h here.
+	Define macros sign_width, etc.
+
+	* xterm.c (writechars, dumprectangle): Flush `if (PhysScreen)', etc.,
+	since an array is always nonzero as a pointer.
+
+	* filelock.c: Include config.h after sys/stat.h so can undef S_IFLNK.
+
+	* sysdep.c (sys_suspend): Use BSD, not SIGTSTP, as cond. for killpg.
+
+	* dispnew.c (init_display): Set Vwindow_system to `x' for X11.
+	* xterm.c, x11term.c (x_term_init): Set `window-system-version'
+	to 10 or 11.
+
+	* dispnew.c (update_screen): If cursor_in_echo_area is negative,
+	put cursor at left margin in echo area.
+
+	* fns.c (Fy_or_n_p): Make cursor_in_echo_area -1 when echoing response.
+	Don't alter cursX.
+
+Wed Mar 23 16:34:27 1988  Richard M. Stallman  (rms at wilson)
+
+	* x11term.h: Use X11/ not X/ for dir of include files.
+	* xmenu.c: Likewise, in the X11 case.
+
+	* m-7300.h: Fix unterminated comment near end.
+
+	* s-xenix.h: Define n_zeroes so usage of struct nlist in fns.c works.
+
+	* term.c (fatal): Do fflush(stderr).
+
+	* sink11.h, sink11msk.h: New files.
+
+	* x11term.h: Define CLASS here.
+	Don't define X11 since this is included only if X11.
+
+	* x11term.c: Use sink11.h and sink11msk.h, not sink.h and sinkmask.h.
+	Don't define CLASS.  Delete everything about BIGDEBUG.
+	Delete everything pertaining to read_events_block.
+	(XXidentity): now global.
+	(CursorOutline): New var; nonzero means cursor is hollow.
+	(XXicon_usebitmap): New var; nonzero means use bitmap icon.
+	(XTset_terminal_modes, ClearCursor): Set CursorOutline.
+	(XTflash, flashback): Combine into one function; use `select' to wait.
+	(CursorToggle): Handle CursorOutline.
+	(internal_socket_read): Delete 3rd arg, and code that handles it.
+	Handle MappingNotify events.
+	Handle EnterNotify and LeaveNotify (change solid to outline cursor).
+	(XT_GetDefaults): If asked for .BodyFont, look for .Font also.
+	(x_term_init): Init XXicon_usebitmap; strip dirs from `progname'.
+	Handle -i switch.  Handle -geometry like -w.
+	(XT_Set_WM_Hints): Obey XXicon_usebitmap.
+	(XInitWindow): Use `fatal' for fatal error messages.
+	Init CursorOutline.  Ask for EnterNotify and LeaveNotify events.
+
+	* x11fns.c (Fx_get_default): Use XXidentity.  Clean up docstring.
+
+	* sysdep.c [VMS] (input_wait_timeout, wait_for_kbd_input):
+	Use detect_input_pending, not get_input_pending.
+
+	* process.c (wait_reading_process_input):
+	Use only detect_input_pending to check for pending kbd input.
+	(That `select' saw something on channel 0 doesn't mean it is
+	kbd input; it could be an expose event.)
+
+	* keyboard.c (read_avail_input) [FIONREAD]:  Now static.
+	New arg specifies value of NREAD;
+	if it is nonzero, don't call get_input_pending to get it.
+	Use kbd_buffer_store_char to put chars into kbd_buffer.
+	Always abort if kbd_count is nonzero at start.
+	Don't call {set,clear}_waiting_for_input.
+
+	(get_input_pending): Now static.
+	Return immediately if kbd_count > 0 or if Vquit_flag is non-nil.
+	If FIONREAD and not interrupt_input and read_socket_hook,
+	call read_avail_input to see how much pending input is really
+	kbd characters; don't say we have some if an expose event is pending.
+
+	* dispnew.c (init_display): Check result of egetenv for emptiness
+	as well as nullness.
+
+Mon Mar 21 00:24:51 1988  Richard M. Stallman  (rms at wilson)
+
+	* alloca.s [WICAT]: Don't clobber a2.  Return value in a0 and in d0.
+
+Sun Mar 20 13:33:54 1988  Richard M. Stallman  (rms at wilson)
+
+	* crt0.c (errno): Don't initialize it -- put it in bss space.
+	[M68K]: Define splevel% with `comm' -- put it in bss space.
+
+	* sysdep.c [MISSING_UTIMES]: Define `utimes' as a no-op.
+	* s-hpux.h: Define MISSING_UTIMES.
+
+	* buffer.c (Fbuffer_local_variables): The buffer's alist can be out
+	of date for a non-current buffer, so call Fsymbol_value to make
+	the alist up to date.
+
+	* sysdep.c [VMS] (end_kbd_input): If ast_active, don't clobber
+	any global variables.
+
+	* ymakefile (alloca.o): Copy sed output to a .s file and use cc
+	to run the assembler.  I hear Xenix can't run it directly.
+
+	* sysdep.c [XENIX]: Undefine TIOCGETC.
+
+	* s-xenix.h: Undefine NLIST_STRUCT.  Put `_' in defn of LDAV_SYMBOL.
+	Define HAVE_SYSVIPC.
+
+	* m-intel386.h [XENIX] (LIB_STANDARD): Add /lib/386/Slibcfp.a.
+	[XENIX] (FSCALE): Define it.
+	[XENIX] (C_ALLOCA): Undefine it.
+
+	* alloca.s: Define alloca for Xenix.
+
+Sat Mar 19 00:20:10 1988  Richard M. Stallman  (rms at wilson)
+
+	* keyboard.c (read_avail_input): If `read' gives EAGAIN,
+	kbd_count should be 0.  Can happen on V.3.
+
+	* x11fns.c (Vxterm1): Delete this variable, and lisp var `xterm'.
+	(syms_of_xfns): If CANNOT_DUMP and not `noninteractive',
+	init_display has already set up Vxterm, so don't init it here.
+	* display.c (syms_of_display): Likewise for Vwindow_system.
+	(init_display): Always set Vwindow_system.
+
+Fri Mar 18 13:37:35 1988  Chris Hanson  (cph at kleph)
+
+	* m-hp9000s300.h: Add a definition for C_SWITCH_MACHINE which is
+	needed to compile the X11 interface files.
+
+	* s-hpux.h, m-hp9000s300.h, m-hp9000s800.h: Version 6.01 of HP-UX
+	(on 300 machines only) implements symbolic links and supplies BSD
+	procedures like `bcopy' and `index' as part of the BSD library.
+	Move definitions which depend on these features from the s- file
+	to the m- files, and conditionalize the features based on a flag.
+
+Fri Mar 18 16:03:27 1988  Richard M. Stallman  (rms at wilson)
+
+	* scroll.c (calculate_scrolling): Abort if ->insertcount
+	is out of range.
+
+	* sysdep.c (getwd for USG): Don't define it if HAVE_GETWD.
+	* m-stride.h: Define HAVE_GETWD.
+
+	* buffer.c (init_buffer): If `getwd' fails, it's a fatal error.
+
+	* ymakefile (MAKE_PARALLEL): New name for PARALLEL, and now
+	a cpp macro, not a Make variable.  Defaults to empty.
+	* m-sequent.h: Define MAKE_PARALLEL.
+
+	* xdisp.c (display_text_line): Handle the overlay arrow last of all,
+	and update line->length for the space it uses.
+
+	* xmenu.c: Conditionals for X11, using new macro X11ONLY.
+	Currently named x11menu.c until someone tests it.
+	* ymakefile: Handle HAVE_X_MENU and use xmenu.o, even if X11.
+	* x11term.h: Define BLOCK_INPUT, UNBLOCK_INPUT, BLOCK_INPUT_DECLARE.
+
+	* Makefile: Set $(MAKE), since some Make versions don't have it.
+	(xmakefile): Delete lines that are just one OR MORE whitespace
+	chars.  Use \t to represent the tab in the `sed' command.
+
+	* fileio.c (Finsert_file_contents) [APOLLO]: Do another `stat'
+	after closing the file.  Gets around kernel bug (in `fstat'?).
+
+	* fileio.c (Fwrite_region) [ALLIANT]: Don't do `fsync'; kernel bug.
+
+	* sysdep.c (sys_suspend): If forking shell, call close_process_descs.
+
+Sat Feb 13 03:43:55 1988  Richard Stallman  (rms at sugar-smacks.ai.mit.edu)
+
+	* Version 18.50 released.
+
+	* sysdep.c [VMS]: Remove VMS4_6 conditional on execvp & rename
+	since s-vms.h is set to make us use our own definitions of these.
+	Make execvp call `error' instead of `croak'.
+
+	* s-vms.h: PURESIZE 132000.
+	* m-sun2.h: Likewise (for HAVE_SUN_WINDOWS).
+
+Thu Feb 11 01:01:27 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* callproc.c (child_setup): Call close_process_descs
+	if can have subprocesses.  Close the argument-descriptors
+	after copying them to 0, 1 and 2.
+
+	* callproc.c (Fcall_process): After fork, in subprocess,
+	explicitly close Emacs's end of the pipe.  Don't bother calling
+	set_exclusive_use.
+
+	* process.c (close_process_descs): Close all descriptors
+	that are talking to subprocesses.  Called from a new subprocess.
+
+	* process.c (create_process): Don't bother calling set_exclusive_use
+	since close_process_descs now closes Emacs's side of a pipe or pty.
+
+	* x11term.c, x11fns.c, x11term.h: New files from rfrench@athena.mit.edu
+	In x11term.c, the function `read_events_block' has been `if 0'd
+	and so have all calls to it.  A call in wait_reading_process_output
+	was not added, and a call to internal_read_socket in
+	get_input_pending was not added.
+
+	* emacs.c (main) [HAVE_X_WINDOWS]: Set xargv, xargc for xterm.c.
+
+	* dispnew.c (init_display) [X11]: Set Vwindow_system to `x11'.
+
+	* s-hupx.h: Define HAVE_SYSVIPC.
+	Should s-usg*.h define this too?
+
+	* dir.h: Some union types were missing levels of struct inside them.
+
+	* alloc.c (Fpurecopy): If not purifying, do nothing.
+
+	* editfns.c (init_editfns): Record system name even if dumping.
+
+	* eval.c (Fcondition_case): Inverted endtest in handler validate loop.
+
+	* m-7300.h: Define SEGMENT_MASK, SECTION_ALIGNMENT
+	and pass the -z switch to ld.  kenobi!ford@bass.nosc.mil says so.
+
+Tue Feb  9 14:12:59 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* unexec.c: Merge gb's code for Xenix.
+
+	* m-intel386.h: Add conditionals for Xenix.
+	* s-xenix.h: New file.
+
+	* cm.h: Make the bit-fields unsigned.
+
+Mon Feb  8 22:43:18 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes) [USG]: Set C-g for VQUIT as well as VINTR.
+	This was formerly done only on HPUX, and worked there.
+	It appears that all sysV is like HPUX in that CDEL does not
+	really turn off the signal--it makes Meta-DEL cause the signal!
+
+	* process.c (wait_reading_process_output): Change the test on
+	read_kbd to avoid losing on 80386 Xenix.
+
+Sat Feb  6 16:56:50 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* xdisp.c (Voverlay_arrow_string, Voverlay_arrow_position):
+	New variables specifying a string to overlay on the buffer text
+	and a place to put it.
+	* xdisp.c (display_text_line, redisplay_window, DoDsp):
+	Handle these variables.
+
+Thu Feb  4 12:00:23 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* insdel.c (prepare_to_modify_buffer):
+	If CLASH_DETECTION is disabled, verify the modtime here
+	since it won't be done via lock_file.
+
+Sun Jan 31 14:34:24 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* fileio.c (Fcopy_file): Report error in `write'.
+
+Fri Jan 29 08:49:32 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* eval.c (unbind_to): Recompute loop end-test from `count' each time
+	since an unwind-protect function can use realloc to grow the specpdl.
+
+Tue Jan 26 08:35:55 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* sysdep.c (vms_truncate) [VMS]: New fn to truncate a file.
+
+	* fileio.c (Fwrite_region) [VMS]: If writing auto-save file,
+	truncate any existing file.
+
+	* s-vms.h: Rename `rename', `execvp' and `system' so we don't
+	use the VMS-library versions of it.
+
+Fri Jan 22 04:27:48 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* m-ibmrt.h: Add some AIX conditionals; output on BSD should
+	be unchnged.  Perhaps will now run on AIX.
+
+Thu Jan 21 07:46:20 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* keyboard.c (command_loop): Exit here for noninteractive eof.
+	* keyboard.c (kbd_buffer_get_char): Don't exit here.
+
+Wed Jan 20 08:16:27 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* lread.c (openp): Reject directories even if !exec_only.
+
+	* window.c (Fset_window_configuration): When keeping window's
+	old buffer, make sure its start and pointm are valid.
+
+Tue Jan 19 00:15:37 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* sysdep.c (sys_suspend) [SIGTSTP]: Use killpg and getpgrp to stop
+	all processes in same pgrp with Emacs.
+
+	* syntax.c (Fparse_partial_sexp): Add 7th elt to STATE arg and value,
+	describing minimum depth encountered during the scan.
+
+Mon Jan 18 00:24:13 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* alloca.s: Change some as-style comments to C-style comments
+	so cccp won't be confused by stray singlequotes.
+
+	* s-iris3-{5,6}.h: Move the #defines of long-named functions
+	into m-irist.h.
+
+	* lread.c (init_read): Warn if dirs in PATH_LOADSEARCH don't exist.
+	* callproc.c (init_callproc): Warn if Vexec_directory doesn't exist.
+	* emacs.c (main): Call init_callproc before changing terminal modes.
+
+	* xdisp.c (try_window_id): When computing ep, watch out for
+	invisible lines that follow the newline after the last change.
+
+	* window.c (Fset_window_point): Now works ok on selected window.
+
+Sun Jan 17 06:41:54 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* eval.c (Fdefconst, Fdefvar) doc fix.
+
+	* keymap.c (Fcopy_keymap): Several stupid errors.
+
+	* dired.c (file_name_completion): Wasn't calling readdir
+	for Unix; was doing so (instead of readfunc) on VMS.
+	* dired.c (Fdirectory_files): Don't call NAMLEN if dp is 0.
+
+Sat Jan 16 02:54:48 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* alloc.c (syms_of_alloc): Eliminate vars data-bytes-{free,used}.
+	They lose because values are over 24 bits.
+
+	* lread.c (read_list): delete `register' for val and tail.
+	* buffer.c (Fkill_buffer): delete `register' for buf and bufname.
+	* fns.c (Fy_or_n_p): delete `register' for xprompt.
+	* keymap.c (Fcopy_keymap): missing paren.
+
+Fri Jan 15 17:46:24 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* m-iris4d.h: Changes to support dumping.
+	* m-*.h: Doc fix for VIRT_ADDR_VARIES.
+
+	* unexec.c: Minor changes to mips code for IRIS_4D.
+
+Mon Jan 11 20:17:21 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* s-iris3-{5,6}.h: Don't #undef SIGIO.  BROKEN_FIONREAD makes it unnec.
+	* process.c [IRIS]: Find sysmacros.h in sys/.
+
+Sat Jan  9 18:15:49 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* doprnt.c: New arg NARGS says how many args there are in ARGS.
+	Give an error if the string tries to use more than that many.
+
+	* callint.c (Fcall_interactively): Pass new arg to `doprnt'
+	* editfns.c (Fformat, format1):
+	* xdisp.c (message):
+
+Thu Jan  7 00:57:24 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* lreadc (init_obarray): Split the stmt `hash =' to avoid
+	a VACX bug.
+
+	* alloca.s [pyramid]: Keep sp a multiple of 32.
+	This preserves cache-block alignment.
+
+Wed Jan  6 17:26:28 1988  Richard Stallman  (rms at frosted-flakes)
+
+	* s-hpux.h: Don't define nomultiplejobs, LDAV_SYMBOL, LIBS_DEBUG
+	 or BROKEN_FIONREAD.
+	* m-hp9000s300.h: Define those four.
+	* s-hpux.h: Define BSTRING, and define bcopy, etc., as macros.
+
+	* sysdep.c [NEED_BSDTTY]: Include bsdtty.h.
+	(Flag is defined in m-hp9000s800.h)
+
+	* m-hp9000s800.h: New file.
+	* m-hp9000s300.h: New name for m-hp9000.h.
+
+	* sysdep.c: Split TIOCGLTC conditional into two, one on TIOCGETC.
+
+	* search.c (search_buffer): Avoid & of array static_BM_tab.
+
+	* alloca.s, crt0.c: Change hp9000 conditionals to hp9000s300.
+
+Tue Dec 22 21:27:44 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* alloca.s [WICAT]: Keep sp pointing at lowest word in use.
+
+Thu Dec 17 07:25:05 1987  Richard Stallman  (rms at lucky-charms)
+
+	* unexec.c (make_hdr): Don't add A_TEXT_OFFSET to a_text
+	in the NO_REMAP case (when a_text comes from the old header).
+
+	* filelock.c: If no symlinks, use `stat' instead of `lstat'.
+
+Mon Dec 14 15:22:04 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* fileio.c (Fsubstitute_in_file_name): Allow underscore
+	in an env var name.
+
+Wed Dec  9 18:12:58 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* indent.c (Findent-to): Interactive code `N' instead of `n'.
+
+	* sysdep.c (execvp, rename): Omit these fns if VMS4_6.
+
+	* lread.c (oblookup): Split a statement to avoid VMS compiler bug.
+
+Fri Dec  4 04:41:09 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* data.c (sign_extend_temp): Moved from sysdep.c.
+	* data.c (sign_extend_lisp_int): Function to do sign-extend;
+	needed on some machines.
+
+	* keymap.c (Fcopy_keymap): Copy subkeymaps recursively.
+
+	* fileio.c (Fread_file_name): Don't crash if no env var HOME.
+
+Thu Dec  3 11:39:46 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* m-convex.h: New file.
+
+Wed Dec  2 01:05:38 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* process.c (wait_reading_process_input):
+	Don't set time_limit to -2; leave it as -1.
+
+	* s-usg5-3.h, m-intel386.h: New files.
+
+Tue Dec  1 00:41:30 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* process.c: Support for SYSV_PTYS.
+
+	* dired.c: New macros DIRENTRY and NAMLEN; support for sysV.3.
+	* sysdep.c: `closedir' function for sysV.3.
+
+	* crt0.c: Add code for Sun 4.
+	* m-sparc.h: New file.
+
+	* lread.c (read_list): Fix error message for ] in a list.
+
+	* fileio.c (Ffile_symlink_p): Call Fexpand_file_name.
+
+Sat Nov 21 15:20:39 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* print.c: Clean up doc string syntax and fix doc error for `print'.
+
+Sat Oct 31 23:23:38 1987  Richard Stallman  (rms at sugar-smacks)
+
+	* editfns.c (Fformat): Realize doprint %-specs can contain - and space.
+
+Fri Oct 30 19:50:38 1987  Richard Stallman  (rms at sugar-smacks)
+
+	* fns.c (Fy_or_n_p): Don't try to DOWNCASE -1.
+
+Thu Oct 29 20:11:29 1987  Richard Stallman  (rms at frosted-flakes)
+
+	* fns.c (Fy_or_n_p): Protect `prompt' and `xprompt' from gc.
+	* fns.c (Fyes_or_no_p): Protect `prompt' from gc.
+	* lread.c (read_list): Protect `val' and `tail' from gc.
+	* buffer.c (Fkill_buffer): Protect `buf' and `bufname' from gc.
+	* fileio.c (barf_or_query_if_file_exists): Protect `absname'.
+
+Thu Sep 17 01:13:55 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.49 released.
+
+	* window.c (set_window_width):
+	Set windows_or_buffers_changed.
+
+	* scroll.c (calculate_scrolling): Initialize insertcount
+	of top edge cells to zero.
+
+	* dired.c (file_name_completion): Rearrange VMS conditionals
+	so that `readfunc' exists only on VMS.  Apollo compiler
+	couldn't deal with it.
+
+Wed Sep 16 14:38:35 1987  Richard M. Stallman  (rms at prep)
+
+	* m-sun[23].h: Doc fix.
+
+	* sysdep.c (reset_sys_modes): Don't output anything
+	if have a read_socket_hook (i.e. under X).
+
+Thu Sep 10 18:33:50 1987  Richard M. Stallman  (rms at prep)
+
+	* buffer.c (Fget_buffer_create): Test of mode-class property
+	of buffer's major mode was backwards.
+
+Mon Sep  7 20:03:02 1987  Richard Mlynarik  (mly at prep)
+
+	* dired.c (file_name_completion):
+	Only filter `leaves' of filesystem structure with
+	completion_ignored_extensions -- don't eliminate directories.
+	If Vcompletion_ignored_extensions isn't a proper list, don't
+	eliminate all filenames.
+
+	* xterm.h (UNBLOCK_INPUT_RESIGNAL):
+	RESIGNAL_INPUT, not INPUT_RESIGNAL
+
+Sun Aug 30 02:03:10 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.48 released.
+
+	* xmenu.c (XEmacsMenu): Rename `sel' to `selidx'.
+
+	* unexec.c: Remove the CANNOT_UNEXEC code.
+	* m-apollo.h: Switch back to CANNOT_DUMP.
+
+	* emacs.c (Fdump_emacs): Don't call malloc_init if SYSTEM_MALLOC.
+	* emacs.c (main): ditto.
+
+Thu Aug 20 20:25:42 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c (Fwrite_region) [VMS]: Move gap to the closest place
+	(first newline after old gap).
+
+Sat Aug 15 20:33:21 1987  Richard M. Stallman  (rms at prep)
+
+	* editfns.c (init_editfns): Handle getpwuid returning 0.
+
+Fri Aug 14 19:03:58 1987  Richard M. Stallman  (rms at prep)
+
+	* casefiddle.c (casify_region): Use prepare_to_modify_buffer.
+	Don't call modify_region until the end.
+
+	* sysdep.c (reset_sys_modes): Output a bare CR
+	so kernel can track the cursor hpos.
+
+Thu Jul 30 15:56:12 1987  Richard M. Stallman  (rms at prep)
+
+	* vmsfns.c (Fsetprv): Correct spelling SS$NORMAL => SS$_NORMAL.
+	Include <ssdef.h>.
+
+Wed Jul 29 22:43:13 1987  Richard Mlynarik  (mly at prep)
+
+	* lread.c (init_read): Initialise load_in_progress.
+
+Tue Jul 28 17:40:22 1987  Richard M. Stallman  (rms at prep)
+
+	* vmsfns.c (Fsetprv): Detect error from sys$setprv properly.
+	Add some privileges missing from the table.
+
+Mon Jul 27 15:56:35 1987  Richard M. Stallman  (rms at prep)
+
+	* sysdep.c (creat_copy_attrs): Flush duplicate `else'.
+
+Sat Jul 25 15:30:30 1987  Richard M. Stallman  (rms at prep)
+
+	* dispnew.c (update_screen): Use PENDING_OUTPUT_COUNT
+	in all appropriate places.
+	Fix a comment delimiter typo.
+
+Fri Jul 24 20:19:42 1987  Richard M. Stallman  (rms at prep)
+
+	* keyboard.c (command_loop_1): Don't do direct output
+	if DoDsp is needed to erase a minibuffer message.
+
+	* keymap.c (describe_alist, describe_vector):
+	1. Output only one blank line in a row if multiple empty keymaps.
+	2. Chase through indirect keymap elements.
+
+	* keymap.c (describe_map_tree): Handle Flookup_key returning int
+	so C-x 4 bindings appear in the output.
+
+	* sysdep.c (sys_creat for VMS): Get all args via varargs,
+	no named args, to avoid incompatible change in VMS C.
+
+Sat Jul 18 19:10:52 1987  Richard M. Stallman  (rms at prep)
+
+	* unexec.c (make-hdr): Split the stmts that use ADDR_CORRECT
+	into two stmts.  Some compilers mysteriously barf on them.
+
+	* m-7300.h: Remove ADD_CORRECT (s-usg5-2.h does it).
+	Add LD_SWITCH_MACHINE and SWITCH_ENUM_BUG.
+
+	* m-amdahl.h: define STACK_DIRECTION.
+
+	* sysdep.c (random for VMS): subtract 1<<30, not 1<<14.
+
+	* fns.c (Fvconcat): Doc fix.
+
+	* window.c (Fcurrent_window_configuration): Doc fix.
+
+	* sysdep.c [VMS]: include file.h.
+	* sysdep.c (creat_copy_attrs) [VMS]: Minor fixes to prevent
+	invalid acL if there was no old version.
+
+	* dispnew.c (PENDING_OUTPUT_COUNT): New macro to get # chars
+	buffered in a stdio output stream.
+	* dispnew.c (update_screen): Use that macro.
+	Remove #ifndef VMS around the sleep when buffer is full.
+	* s-vms.h: Define nonstandard PENDING_OUTPUT_COUNT for VMS use.
+
+	* fileio.c (file_name_as_directory) [VMS]:  Fix 3rd arg to strncmp.
+
+Fri Jul 17 19:28:46 1987  Paul Rubin  (phr at prep)
+
+	* m-sun2.h: Add comment explaining that filename refers to
+	the OS version, not the CPU model number.  People running
+	SunOS 3.2 on Sun 2 computers have been erroneously trying to
+	use this file, and losing.
+
+Fri Jul 10 15:51:18 1987  Chris Hanson  (cph at prep)
+
+	* xterm.h: Define macros to abstract control of input signals.
+	Alternate set of macros for hp-ux does no signalling.
+
+	* xterm.c:
+	* xfns.c:
+	* xmenu.c:
+	Rewrite to use new input signal macros.  Add conditionalizations
+	for hp-ux, mostly to eliminate references to `ButtonReleased' (I
+	don't know why, this is from wizards at HP Labs).  Change
+	"xmenu.c" to eliminate unused include files, and reorder the
+	include files so that it compiles under hp-ux.
+
+Mon Jun 29 00:59:41 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c (Fwrite_region) [VMS]: Use creat_copy_attrs.
+
+	* sysdep.c (creat_copy_attrs) [VMS]: New function: open a file
+	for writing, copying attributes from another file.
+
+	* fileio.c (Ffile_writable_p): Exchange with Ffile_symlink_p.
+	Avoids mysterious cpp lossage on RT/PC.
+
+	* syntax.c: Disguise doc string of non-existent Lisp variable
+	`standard-syntax-table'.
+
+Thu Jun 25 22:12:56 1987  Richard M. Stallman  (rms at prep)
+
+	* callproc.c (Fcall_process): On VMS, use NLA0: instead of /dev/null.
+
+	* term.c (term-init):
+	Don't use "nl" cap on VMS if it's a linefeed.
+
+Tue Jun 23 01:44:38 1987  Richard M. Stallman  (rms at prep)
+
+	* sysdep.c (sys_creat) [VMS]: Use va_start, not va_start_1.
+
+	* sysdep.c (rename) [VMS]: Use SYS$RENAME not LIB$RENAME_FILE.
+
+Thu Jun 18 00:20:53 1987  Richard M. Stallman  (rms at prep)
+
+	* sysdep.c (readdirver) [VMS]: Don't return bogus version number.
+	Don't lose stepping off end of directory entry.
+	Eliminate superfluous loop.
+
+	* fileio.c (file-name-as-directory) [VMS]:
+	Never append a slash.  Fix erroneous return-with-no-value.
+
+	* dired.c (file_name_completion): For VMS, upcase the input.
+
+	* fns.c (Frandom): Doc fix.
+
+	* sysdep.c (random) [USG]: Subtract 1<<14 from value of rand()
+	so value range is centered on zero.
+	* sysdep.c (random) [VMS]: Likewise, and remove the code to
+	initialize the seed.  Higher levels call srandom if seed should be set.
+
+Mon Jun 15 04:02:51 1987  Richard M. Stallman  (rms at prep)
+
+
+	* fileio.c (Fwrite_region) [VMS]: Use `creat' to create
+	an auto-save file.
+	* Version 18.47 released.
+
+	* fileio.c (Fwrite_region): Check result from fsync.
+
+Fri Jun 12 21:41:36 1987  Chris Hanson  (cph at prep)
+
+	* terminfo.c (tparam): Handle the outstring == 0 case by
+	allocating a result of the correct size.
+
+Fri Jun 12 11:50:21 1987  Richard M. Stallman  (rms at prep)
+
+	* terminfo.c (tparam): Kludge the outstring == 0 case.
+	Accept (and ignore) the buffer-length argument.
+
+	* s-iris3-5.h: Remove defines of IRIS35 and PURESIZE.
+
+	* fileio.c (Fwrite_region) [VMS]:
+	Write under temp name and rename, to avoid auto-deletion
+	if writing fails.  When moving gap to avoid extra newline,
+	move it only to the next newline.
+
+Wed Jun 10 02:33:27 1987  Richard M. Stallman  (rms at prep)
+
+	* minibuf.c (Ftry_completion, Fall_completions):
+	GCPRO some strings when calling predicate.
+
+	* fileio.c (file_name_as_directory) [VMS]:
+	Recognize .dir in uc or lc and followed by either .1 or ;1.
+	* fileio.c (directory_file_name) [VMS]:
+	Append .DIR.1 in upper case.
+	* fileio.c: Delete calls to lower_case.
+	* fileio.c: #ifndef VMS around decls or errno, sys_errlist, etc.
+
+	* sysdep.c (getwd for VMS): Upcase the filename.
+	* sysdep.c (lower_case): Delete this function and all calls.
+
+	* dired.c (file_name_completion): Obey completion-ignore-case
+	by using scmp instead of bcmp.
+
+Tue Jun  9 13:27:06 1987  Richard M. Stallman  (rms at prep)
+
+	* syntax.c: (scan_lists): Clear mathexit on 2nd math-char in a pair.
+
+Mon Jun  8 17:11:26 1987  Richard M. Stallman  (rms at prep)
+
+	* Version 18.46 released.
+
+	* m-apollo.h: Define CANNOT_UNEXEC instead of CANNOT_DUMP.
+
+	* keyboard.c (get_char): Delete DEBUG-conditional code.
+	* process.c: Delete the IRIS ignore-SIGIOT kludge.
+
+	* sysdep.c: Declare sign_extend_temp regardless of machine type.
+
+	* sysdep.c (sys_access) [VMS pre 4.4]: Don't zero uic.
+	* sysdep.c (sys_access_reinit): New fn, called from
+	init_sys_modes, to clear uic.
+
+	* eval.c (grow_specpdl): Don't subtract old specpdl address
+	from new one; they are in different arrays.
+	Use correct args to Fsignal when reporting overflow.
+
+	* process.c (Fopen_network_stream): Don't create process object
+	until opens, etc. have succeeded.
+
+Mon Jun  8 11:38:38 1987  Chris Hanson  (cph at prep)
+
+	* keyboard.c (read_avail_input): use `read_socket_hook' if it has
+	a value.  This is required in hp-ux if `HAVE_X_WINDOWS' is
+	defined.
+
+	* process.c (wait_reading_process_input): conditionalize `select'
+	call for hp-ux.
+
+Mon Jun  8 04:31:28 1987  Richard M. Stallman  (rms at prep)
+
+	* m-isi-ov.h: Cut SEGMENT_MAST in half.  crl@purdue says so.
+
+Sat Jun  6 02:25:47 1987  Richard M. Stallman  (rms at prep)
+
+	* tparam.c: Ifdef emacs, include config.h.
+
+Fri Jun  5 13:05:23 1987  Richard M. Stallman  (rms at prep)
+
+	* m-apollo.h: Add #undef BSTRING.
+
+	* dispnew.c, keyboard.c: On VMS, don't include sys/ioctl.h.
+
+	* process.c (create_process): On IRIS, set forkin, forkout to -1
+	instead of opening them.  Then don't use them later if they are -1.
+
+	* process.c (Fopen_network_stream): Allow integer as 4th arg
+	to specify foreign port number.
+
+Wed Jun  3 20:35:01 1987  Richard M. Stallman  (rms at prep)
+
+	* m-amdahl.h: Add definitions of LD_SWITCH_MACHINE, EXEC_MAGIC,
+	SEGSIZ and SEGMENT_MASK.  Turn on C_ALLOCA.  From Jishnu Mukeji.
+
+	* eval.c (Fapply): Add missing parens in args to alloca;
+	args were too small.  From Jishnu Mukeji.
+
+Mon Jun  1 18:26:46 1987  Richard M. Stallman  (rms at prep)
+
+	* version 18.45.
+
+	* fileio.c (Finsert_file_contents): Always initialize fd.
+
+Sun May 31 17:47:43 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c: Move declarations of errno and friends to top of file.
+	* filelock.c: Likewise.
+
+Fri May 29 02:55:27 1987  Richard M. Stallman  (rms at prep)
+
+	* process.c: #end => #endif.
+
+Wed May 27 03:21:19 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c (Fexpand_file_name) [VMS]:
+	Upcase all file names, not just absolute ones.  Use Fupcase.
+
+Tue May 26 16:50:05 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c (Fdirectory_file_name) [VMS]:
+	Fix to expansion of VMS logical names.
+
+	* crt0.c [ISI68K]: Define asm sym isi68020.
+
+	* xdisp.c (display_string): Use current buffer's tab_width.
+	(display_text_line): Simplify XBUFFER (w->buffer) to bf_cur.
+
+Sat May 23 18:41:19 1987  Richard M. Stallman  (rms at prep)
+
+	* alloc.c (init_alloc-once): Don't set Vpurify_flag.
+	* lread.c (init_obarray): Do it here, now that Qt is valid.
+
+Fri May 22 00:02:56 1987  Richard M. Stallman  (rms at prep)
+
+	* m-targon31.h: Undefine VIRT_ADDR_VARIES.
+
+	* vmspaths.h: Convert to VMS syntax and upper case.
+
+	* lread.c (absolute_filename_p) [VMS]: '[' and '<' don't
+	make a pathname absolute.
+
+Thu May 21 15:19:48 1987  Richard M. Stallman  (rms at prep)
+
+	* xterm.c (x_term_init): Don't set Vxterm and Vxterm1.
+	* xfns.c (syms_of_xfns): Don't set Vxterm and Vxterm1.
+	Delete Lisp variable `xterm'.
+	* dispnew.c (init_display): Initialize Vxterm to t or nil.
+
+	* keyboard.c (interrupt_signal): Check Vwindow_system
+	instead of Vxterm.
+
+	* sysdep.c (sys_access for VMS pre 4.4):
+	Turn on call to vmserrstr.
+	* sysdep.c (vmserrstr) [VMS]: Define this function.
+
+	* process.c (create_process) [IRIS]:  Don't open the pty's tty
+	in the parent process.  Open only once, in the child.
+
+	* xdisp.c (redisplay_window): If window-start points nowhere,
+	recenter the window to avoid a crash.
+
+	* fileio.c (Fwrite_region): Check for error from the close.
+	NFS reportedly can report out-of-space there.
+
+Mon May 18 02:31:15 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c (Fwrite_region): Always stat after the close.
+
+	* term.c (term_init): Spurious ' in error msg.
+	* cmds.c (SelfInsert): For newline, must auto-fill
+	before inserting it.
+
+	* keyboard.c (BROKEN_FIONREAD): config.h can #define this
+	to cause FIONREAD to be #undef'd.
+	* s-iris3-5.h, s-hpux.h: Define BROKEN_FIONREAD.
+
+	* indent.c (compute_motion): Typo in defn of HPOS.
+
+Sun May 17 11:05:59 1987  Richard M. Stallman  (rms at prep)
+
+	* term.c: Pass 0 for buffer and length to tparam,
+	record the value returned as buffer to use, and free it later.
+	Each caller was changed.
+
+	* tparam.c (tparam): Take buffer length additional arg.
+	Malloc a buffer if that buffer is too small.
+	Return address of buffer actually used.
+	Add * and / as arithmetic operators.
+
+	* xdisp.c (message): Handle NO_ARG_ARRAY for call to doprnt.
+
+Sat May 16 02:03:02 1987  Richard M. Stallman  (rms at prep)
+
+	* m-isi-ov.h: Define LIB_STANDARD to avoid bad interaction with
+	crt0 in ISI system 3.07.
+
+	* fileio.c (Ffile_name_as_directory) [VMS]: Special handling
+	for foo:[000000] where foo is a logical name.
+
+Wed May 13 02:06:49 1987  Richard M. Stallman  (rms at prep)
+
+	* fileio.c (Fread_file_name) [VMS]: Bind completion-ignore-case to t.
+	* fileio.c (Fexpand_file_name) [VMS]: Upcase letters in filenames.
+
+	* sysdep.c (sys_access for VMS < 4.4):
+	Always get `uic' from the system.
+
+	* sysdep.c: New macro SETOSPEED to set the ospeed value
+	in a terminal-info structure.  Definitions for USG and BSD.
+	Used in init_baud_rate.
+
+Tue May 12 16:40:36 1987  Richard M. Stallman  (rms at prep)
+
+	* search.c (skip_chars, Fstring_match, scan_buffer):
+	Set immediate_quit over the scanning loops.
+
+	* vmspaths.h: Remove the comma from the load path.
+	Search only the standard directory.
+
+	* sysdep.c (sys_suspend): Delete spurious `*' from
+	declaration of `sigio'.
+
+Tue May 12 16:35:44 1987  Chris Hanson  (cph at prep)
+
+	* regex.c (re_compile_fastmap):
+	Fix typo where `notsyntaxspec' neglected to look at its argument
+	byte, comparing with randomness.
+
+Tue May 12 14:35:09 1987  Richard M. Stallman  (rms at prep)
+
+	* sysdep.c (sys_access for VMS pre 4.4):
+	Fix typo of `file' where `filename' was meant.
+	Avoid using `vmserrstr' since it's not defined.
+
+	* fileio.c (Finsert_file_contents):
+	On VMS, st.st_size > num_chars_read.
+	Use num_chars_read for the return value.
+
+	* cmds.c (SelfInsert): New 2nd arg, nonzero says don't
+	do auto fill.
+	* cmds.c (Fself_insert_command, Fnewline):
+	Pass nonzero to SelfInsert if have prefix arg.
+
+	* minibuf.c (Fself_insert_and_exit): 0 as 2nd arg to SelfInsert.
+	* keyboard.c (command_loop_1): likewise.
+
+Mon May 11 18:32:21 1987  Richard M. Stallman  (rms at prep)
+
+	* keyboard.c, s-hpux.h, s-iris3-5.h:
+	Eliminate the hpux/iris conditional from keyboard.c.
+	Now the s- files do #undef FIONREAD.
+
+	* buffer.c (Fkill_buffer): Do nothing rather than kill
+	the sole remaining buffer.  Prevent quits during actual killing.
+
+Tue May  5 10:11:45 1987  Richard Mlynarik  (mly at prep)
+
+	* m-irist.h:  New version from raible@orville.arpa
+	* s-iris3-5.h:  New file.  (s-usg5-2 with additions)
+
+	* keyboard.c:
+	IRIS, like HPUX, #defines but does not implement FIONREAD.
+
+	* window.c, keyboard.c, sysdep.c:
+	Remove some unused local variables.
+
+Mon May  4 17:45:31 1987  Richard M. Stallman  (rms at prep)
+
+	* dired.c (Ffile_attributes): Doc fix.
+
+	* term.c (term_init): Mention `unsetenv TERMCAP' in
+	error message for invalid TERM variable.
+
+Mon Apr 27 09:30:55 1987  Richard Mlynarik  (mly at prep)
+
+	* fileio.c (APOLLO from lnz):
+	Fcopy_file, Fset_file_modes: Don't use un*x modes if
+	env var USE_DOMAIN_ACLS is set.
+	Fset_file_modes: utimes fix.
+	Finsert_file_contents:  Must do fstat after open for Apollo.
+
+	* emacs.c (main): (APOLLO from lnz):
+	Don't use un*x modes if env var USE_DOMAIN_ACLS set.
+
+Sat Apr 25 11:54:45 1987  Richard Mlynarik  (mly at prep)
+
+	* unexec.c:
+	CANNOT_UNEXEC Code from lnz (from rps@apollo).
+	Similar to vmsmap.c.
+
+	* sysdep.c: (APOLLO from lnz)
+	init_baud_rate: Make sure ospeed is initialized even if ioctl fails.
+	wait_for_termination: can sigpause.
+	init_sys_modes: moved static structures out.
+
+Thu Apr 23 11:32:21 1987  Richard Mlynarik  (mly at prep)
+
+	* malloc.c, vmsmap.c: (VMS)
+	Define and use our own `sbrk' since malloc and the RTL sbrk don't
+	interact very well.
+	(sasaki@harvard.harvard.edu <8704220244.AA02324@prep>)
+
+Sun Apr 15 12:43:55 1987  Richard Mlynarik  (mly at prep)
+
+	* dispnew.c: (VMS) Flush TIOCOUTQ stuff (meaningless on VMS)
+
+	* fileio.c, sysdep.c: (VMS)
+	Rename "define-logical-name" => "define-dcl-symbol"
+
+	* m-irist.h:
+	New file from raible@orville.arpa for iris machine
+	(`3.5 turbo'). (<8704150216.AA21012@orville.arpa>)
+
+	* unexec.c: iris code (is USG, but has struct exec)
+	* sysdep.c: iris utimes emulatation. (HAVE_TIMEVAL)
+
+	* process.c: (IRIS)
+	#include <sysmacros.h>
+	pty: Unusual iris pty-finding code.
+	IRIS_ignore_SIGIOT_kludge, init_process:
+	Iris pty's have some unknown bug which seems to cause spurious
+	SIGIOTs.  Can somebody please delve into the reasons behind
+	this lossage?
+
+Wed Apr 15 01:29:16 1987  Paul Rubin  (phr at prep)
+
+	* version 18.44 released.
+
+Tue Apr 14 18:05:24 1987  Paul Rubin  (phr at prep)
+
+	* config.h:
+	Increase PURESIZE to 115800 from 115600.
+
+Tue Apr 14 10:14:13 1987  Richard Mlynarik  (mly at prep)
+
+	* termcap.c (tgetent) (VMS):
+	File is in emacs_library:[etc]termcap.dat
+	(TUNG@WAIF.MIT.EDU <8704130324.AA10879@prep.ai.mit.edu>)
+
+Fri Apr 10 14:30:54 1987  Richard Mlynarik  (mly at prep)
+
+	* window.c (Fset_window_configuration):
+	Don't unchain markers -- this window configuation may be used
+	again.  Let normal GC unchain them.
+
+Wed Apr  8 13:48:45 1987  Richard Mlynarik  (mly at prep)
+
+	* m-vax.h: (USG 5.2)
+	define NO_REMAP to kludgily bypass unexec bug.
+	(We don't have such a machine here, so -we- can't find the bug!)
+	(Karl.Kleinpaste <205@cbstr1.att.com>)
+
+Tue Apr  7 09:32:08 1987  Richard Mlynarik  (mly at prep)
+
+	* indent.c (compute_motion):
+	Use special code for HPOS if SHORT_CAST_BUG.
+
+	* m-celerity.h, m-att3b.h, m-ibmrt.h, m-sequent.h:
+	Define SHORT_CAST_BUG.
+
+Mon Apr  6 12:48:54 1987  Richard Mlynarik  (mly at prep)
+
+	* malloc.c (morecore):
+	Don't assume sbrk clears memory to 0's.
+
+	* indent.c (compute_motion): Special-case HPOS for sequent.
+	(iglesias@ICS.UCI.EDU <8704061703.AA26816@prep.ai.mit.edu>)
+
+	* regex.c:
+	Fix bug in which "t\(.*\) .*\1" didn't match
+	"tom hates tomatoes" from Tom May @ Washington.
+	(<8703241000.AA21146@beaver.cs.washington.edu>)
+
+	* sysdep.c (getwd): (USG)
+	Change first arg (0) to getcwd to (char *) 0
+	Also, call `free' on value returned (after we save it)
+
 Sun Mar 22 09:23:24 1987  Richard M. Stallman  (rms at prep)
 
 	* Version 18.41 released.
@@ -96,7 +1337,7 @@ Tue Mar 17 09:57:26 1987  Richard M. Stallman  (rms at prep)
 	* m-vax.h [VMS]: Define LOAD_AVE_TYPE and C_ALLOCA.
 
 	* keyboard.c: Undefine SIGIO only if it's defined.
-	* keyboard.c (interrupt_signal) [VMS:
+	* keyboard.c (interrupt_signal) [VMS]:
 	Try suspending in case it works.
 
 	* fns.c (Fload_average): Make eunice code work on native VMS also.

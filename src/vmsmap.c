@@ -1,5 +1,5 @@
 /* VMS mapping of data and alloc arena for GNU Emacs.
-   Copyright (C) 1986 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
    
    This file is part of GNU Emacs.
    
@@ -37,9 +37,7 @@
  */
 #define	MAXWRITE	(BLOCKSIZE * 30)
 
-extern char * _malloc_base;
-
-/* This funniness is to insure that sdata occurs alphabetically BEFORE the
+/* This funniness is to ensure that sdata occurs alphabetically BEFORE the
    $DATA psect and that edata occurs after ALL Emacs psects.  This is
    because the VMS linker sorts all psects in a cluster alphabetically
    during the linking, unless you use the cluster_psect command.  Emacs
@@ -56,16 +54,14 @@ struct map_data
 {
   char * sdata;			/* Start of data area */
   char * edata;			/* End of data area */
-  char * smalloc;		/* Start of malloc area */
-  char * emalloc;		/* End of malloc area */
   int  datablk;			/* Block in file to map data area from/to */
-  int  mblk;			/* Block in file to map malloc area from/to */
 };
 
 static void fill_fab (), fill_rab ();
 static int write_data ();
 
 extern char *start_of_data ();
+extern int vms_out_initial;	/* Defined in malloc.c */
 
 /* Maps in the data and alloc area from the map file.
  */
@@ -80,8 +76,7 @@ mapin_data (name)
   int inadr[2];
   struct map_data map_data;
   
-  /* Open map file.
-   */
+  /* Open map file. */
   fab = cc$rms_fab;
   fab.fab$b_fac = FAB$M_BIO|FAB$M_GET;
   fab.fab$l_fna = name;
@@ -120,44 +115,21 @@ mapin_data (name)
       printf ("End of data area has moved: cannot map in data.\n");
       return 0;
     }
-  /* Extend virtual address space to end of previous malloc area.
-   */
-  brk (map_data.emalloc);
-  /* Open the file for mapping now.
-   */
   fab.fab$l_fop |= FAB$M_UFO;
   status = sys$open (&fab);
   if (status != RMS$_NORMAL)
     lib$stop (status);
-  /* Map data area.
-   */
+  /* Map data area. */
   inadr[0] = map_data.sdata;
   inadr[1] = map_data.edata;
   status = sys$crmpsc (inadr, 0, 0, SEC$M_CRF | SEC$M_WRT, 0, 0, 0,
 		       fab.fab$l_stv, 0, map_data.datablk, 0, 0);
   if (! (status & 1))
     lib$stop (status);
-  /* Check mapping.
-   */
-  if (_malloc_base != map_data.smalloc)
-    {
-      printf ("Data area mapping invalid.\n");
-      exit (1);
-    }
-  /* Map malloc area.
-   */
-  inadr[0] = map_data.smalloc;
-  inadr[1] = map_data.emalloc;
-  status = sys$crmpsc (inadr, 0, 0, SEC$M_CRF | SEC$M_WRT, 0, 0, 0,
-		       fab.fab$l_stv, 0, map_data.mblk, 0, 0);
-  if (! (status & 1))
-    lib$stop (status);
-  return 1;
 }
 
 /* Writes the data and alloc area to the map file.
  */
-
 mapout_data (into)
      char * into;
 {
@@ -166,19 +138,17 @@ mapout_data (into)
   int status;
   struct map_data map_data;
   int datasize, msize;
-  char * sbrk ();
-  
+ 
+  if (vms_out_initial)
+    {
+      error ("Out of initial allocation. Must rebuild emacs with more memory (VMS_ALLOCATION_SIZE).");
+      return 0;
+    }
   map_data.sdata = start_of_data ();
   map_data.edata = edata;
-  map_data.smalloc = _malloc_base;
-  map_data.emalloc = sbrk (0) - 1;
   datasize = map_data.edata - map_data.sdata + 1;
-  msize = map_data.emalloc - map_data.smalloc + 1;
   map_data.datablk = 2 + (sizeof (map_data) + BLOCKSIZE - 1) / BLOCKSIZE;
-  map_data.mblk = 1 + map_data.datablk +
-    ((datasize + BLOCKSIZE - 1) / BLOCKSIZE);
-  /* Create map file.
-   */
+  /* Create map file. */
   fab = cc$rms_fab;
   fab.fab$b_fac = FAB$M_BIO|FAB$M_PUT;
   fab.fab$l_fna = into;
@@ -187,8 +157,8 @@ mapout_data (into)
   fab.fab$b_org = FAB$C_SEQ;
   fab.fab$b_rat = 0;
   fab.fab$b_rfm = FAB$C_VAR;
-  fab.fab$l_alq = 1 + map_data.mblk +
-    ((msize + BLOCKSIZE - 1) / BLOCKSIZE);
+  fab.fab$l_alq = 1 + map_data.datablk +
+		      ((datasize + BLOCKSIZE - 1) / BLOCKSIZE);
   status = sys$create (&fab);
   if (status != RMS$_NORMAL)
     {
@@ -216,8 +186,6 @@ mapout_data (into)
       return 0;
     }
   if (! write_data (&rab, map_data.datablk, map_data.sdata, datasize))
-    return 0;
-  if (! write_data (&rab, map_data.mblk, map_data.smalloc, msize))
     return 0;
   status = sys$close (&fab);
   if (status != RMS$_NORMAL)

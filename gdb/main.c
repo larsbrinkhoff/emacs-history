@@ -1,5 +1,5 @@
 /* Top level for GDB, the GNU debugger.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -25,6 +25,12 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 #include <sys/param.h>
 #include "defs.h"
 #include "command.h"
+#include "param.h"
+
+#ifdef SET_STACK_LIMIT_HUGE
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
 
 /* Version number of GDB, as a string.  */
 
@@ -41,6 +47,25 @@ struct cmd_list_element *infolist;
 /* stdio stream that command input is being read from.  */
 
 FILE *instream;
+
+/* Current working directory.  */
+
+char *current_directory;
+
+/* The directory name is actually stored here (usually).  */
+static char dirbuf[MAXPATHLEN];
+
+/* Nonzero if we should refrain from using an X window.  */
+
+int inhibit_windows = 0;
+
+/* Function to call before reading a command, if nonzero.
+   The function receives two args: an input stream,
+   and a prompt string.  */
+   
+void (*window_hook) ();
+
+extern int frame_file_full_name;
 
 void free_command_lines ();
 char *read_line ();
@@ -68,8 +93,37 @@ return_to_top_level ()
   immediate_quit = 0;
   clear_breakpoint_commands ();
   clear_momentary_breakpoints ();
+  delete_current_display ();
   do_cleanups (0);
   longjmp (to_top_level, 1);
+}
+
+/* Call FUNC with arg ARG, catching any errors.
+   If there is no error, return the value returned by FUNC.
+   If there is an error, return zero after printing ERRSTRING
+    (which is in addition to the specific error message already printed).  */
+
+int
+catch_errors (func, arg, errstring)
+     int (*func) ();
+     int arg;
+     char *errstring;
+{
+  jmp_buf saved;
+  int val;
+
+  bcopy (to_top_level, saved, sizeof (jmp_buf));
+
+  if (setjmp (to_top_level) == 0)
+    val = (*func) (arg);
+  else
+    {
+      fprintf (stderr, "%s\n", errstring);
+      val = 0;
+    }
+
+  bcopy (saved, to_top_level, sizeof (jmp_buf));
+  return val;
 }
 
 main (argc, argv, envp)
@@ -89,13 +143,20 @@ main (argc, argv, envp)
   line = (char *) xmalloc (linesize);
   instream = stdin;
 
-  /* Run the init function of each source file */
+  getwd (dirbuf);
+  current_directory = dirbuf;
 
-  initialize_all_files ();
-  initialize_main ();		/* But that omits this file!  Do it now */
+#ifdef SET_STACK_LIMIT_HUGE
+  {
+    struct rlimit rlim;
 
-  signal (SIGINT, request_quit);
-  signal (SIGQUIT, SIG_IGN);
+    /* Set the stack limit huge so that alloca (particularly stringtab
+     * in dbxread.c) does not fail. */
+    getrlimit (RLIMIT_STACK, &rlim);
+    rlim.rlim_cur = rlim.rlim_max;
+    setrlimit (RLIMIT_STACK, &rlim);
+  }
+#endif /* SET_STACK_LIMIT_HUGE */
 
   /* Look for flag arguments.  */
 
@@ -105,11 +166,23 @@ main (argc, argv, envp)
 	quiet = 1;
       else if (!strcmp (argv[i], "-nx"))
 	inhibit_gdbinit = 1;
+      else if (!strcmp (argv[i], "-nw"))
+	inhibit_windows = 1;
       else if (!strcmp (argv[i], "-batch"))
 	batch = 1, quiet = 1;
+      else if (!strcmp (argv[i], "-fullname"))
+	frame_file_full_name = 1;
       else if (argv[i][0] == '-')
 	i++;
     }
+
+  /* Run the init function of each source file */
+
+  initialize_all_files ();
+  initialize_main ();		/* But that omits this file!  Do it now */
+
+  signal (SIGINT, request_quit);
+  signal (SIGQUIT, SIG_IGN);
 
   if (!quiet)
     print_gdb_version ();
@@ -126,9 +199,11 @@ main (argc, argv, envp)
 	{
 	  extern void exec_file_command (), symbol_file_command ();
 	  extern void core_file_command (), directory_command ();
+	  extern void tty_command ();
 
 	  if (!strcmp (arg, "-q") || !strcmp (arg, "-nx")
-	      || !strcmp (arg, "quiet") || !strcmp (arg, "-batch"))
+	      || !strcmp (arg, "-quiet") || !strcmp (arg, "-batch")
+	      || !strcmp (arg, "-fullname"))
 	    /* Already processed above */
 	    continue;
 
@@ -158,6 +233,20 @@ main (argc, argv, envp)
 	      else if (!strcmp (arg, "-d") || !strcmp (arg, "-dir")
 		       || !strcmp (arg, "-directory"))
 		directory_command (argv[i], 0);
+	      /* -cd FOO: specify current directory as FOO.
+		 GDB remembers the precise string FOO as the dirname.  */
+	      else if (!strcmp (arg, "-cd"))
+		{
+		  int len = strlen (argv[i]);
+		  current_directory = argv[i];
+		  if (len > 1 && current_directory[len - 1] == '/')
+		    current_directory = savestring (current_directory, len-1);
+		  chdir (current_directory);
+		  init_source_path ();
+		}
+	      /* -t /def/ttyp1: use /dev/ttyp1 for inferior I/O.  */
+	      else if (!strcmp (arg, "-t") || !strcmp (arg, "-tty"))
+		tty_command (argv[i], 0);
 	      else
 		error ("Unknown command-line switch: \"%s\"\n", arg);
 	    }
@@ -236,11 +325,12 @@ execute_command (p, from_tty)
   if (*p)
     {
       c = lookup_cmd (&p, cmdlist, "", 0);
-      if (c->class == (int) class_user)
+      if (c->function == 0)
+	error ("That is not a command, just a help topic.");
+      else if (c->class == (int) class_user)
 	{
 	  if (*p)
-	    error ("User-defined commands cannot take command-line arguments: \"%s\"",
-		   p);
+	    error ("User-defined commands cannot take arguments.");
 	  cmdlines = (struct command_line *) c->function;
 	  if (cmdlines == (struct command_line *) 0)
 	    /* Null command */
@@ -251,12 +341,15 @@ execute_command (p, from_tty)
 	      cmdlines = cmdlines->next;
 	    }
 	}
-      else if (c->function == 0)
-	error ("That is not a command, just a help topic.");
       else
 	/* Pass null arg rather than an empty one.  */
 	(*c->function) (*p ? p : 0, from_tty);
     }
+}
+
+static void
+do_nothing ()
+{
 }
 
 /* Read commands from `instream' and execute them
@@ -264,19 +357,26 @@ execute_command (p, from_tty)
 void
 command_loop ()
 {
+  struct cleanup *old_chain;
   while (!feof (instream))
     {
       if (instream == stdin)
 	printf ("%s", prompt);
       fflush (stdout);
 
+      if (window_hook && instream == stdin)
+	(*window_hook) (instream, prompt);
+
       quit_flag = 0;
+      old_chain = make_cleanup (do_nothing, 0);
       execute_command (read_line (instream == stdin), instream == stdin);
       /* Do any commands attached to breakpoint we stopped at.  */
       do_breakpoint_commands ();
+      do_cleanups (old_chain);
     }
 }
 
+#ifdef SIGTSTP
 static void
 stop_sig ()
 {
@@ -290,6 +390,7 @@ stop_sig ()
   /* Forget about any previous command -- null line now will do nothing.  */
   *line = 0;
 }
+#endif /* SIGTSTP */
 
 /* Commands call this if they do not want to be repeated by null lines.  */
 
@@ -316,13 +417,25 @@ read_line (repeat)
   /* Control-C quits instantly if typed while in this loop
      since it should not wait until the user types a newline.  */
   immediate_quit++;
+#ifdef SIGTSTP
   signal (SIGTSTP, stop_sig);
+#endif
 
   while (1)
     {
       c = fgetc (instream);
       if (c == -1 || c == '\n')
 	break;
+      /* Ignore backslash-newline; keep adding to the same line.  */
+      else if (c == '\\')
+	{
+	  int c1 = fgetc (instream);
+	  if (c1 == '\n')
+	    continue;
+	  else
+	    ungetc (c1, instream);
+	}
+
       if (p - line == linesize - 1)
 	{
 	  linesize *= 2;
@@ -333,7 +446,9 @@ read_line (repeat)
       *p++ = c;
     }
 
+#ifdef SIGTSTP
   signal (SIGTSTP, SIG_DFL);
+#endif
   immediate_quit--;
 
   /* If we just got an empty line, and that is supposed
@@ -508,7 +623,7 @@ validate_comname (comname)
     {
       if (!(*p >= 'A' && *p <= 'Z')
 	  && !(*p >= 'a' && *p <= 'z')
-	  && !(*p >= '1' && *p <= '9')
+	  && !(*p >= '0' && *p <= '9')
 	  && *p != '-')
 	error ("Junk in argument list: \"%s\"", p);
       p++;
@@ -603,10 +718,12 @@ copying_info ()
 {
   immediate_quit++;
   printf ("		    GDB GENERAL PUBLIC LICENSE\n\
+		    (Clarified 11 Feb 1988)\n\
 \n\
- Copyright (C) 1986 Richard M. Stallman\n\
+ Copyright (C) 1988 Richard M. Stallman\n\
  Everyone is permitted to copy and distribute verbatim copies\n\
  of this license, but changing it is not allowed.\n\
+ You can also use this wording to make the terms for other programs.\n\
 \n\
   The license agreements of most software companies keep you at the\n\
 mercy of those companies.  By contrast, our general public license is\n\
@@ -649,8 +766,8 @@ allowed to distribute or change GDB.\n\
   1. You may copy and distribute verbatim copies of GDB source code as\n\
 you receive it, in any medium, provided that you conspicuously and\n\
 appropriately publish on each copy a valid copyright notice \"Copyright\n\
-\(C) 1987 Free Software Foundation, Inc.\" (or with the year updated if\n\
-that is appropriate); keep intact the notices on all files that refer\n\
+\(C) 1988 Free Software Foundation, Inc.\" (or with whatever year is\n\
+appropriate); keep intact the notices on all files that refer\n\
 to this License Agreement and to the absence of any warranty; and give\n\
 any other recipients of the GDB program a copy of this License\n\
 Agreement along with the program.  You may charge a distribution fee\n\
@@ -671,47 +788,55 @@ Paragraph 1 above, provided that you also do the following:\n\
     that in whole or in part contains or is a derivative of GDB\n\
     or any part thereof, to be licensed to all third parties on terms\n\
     identical to those contained in this License Agreement (except that\n\
-    you may choose to grant more extensive warranty protection to third\n\
-    parties, at your option).\n\
-\n\
+    you may choose to grant more extensive warranty protection to some\n\
+    or all third parties, at your option).\n\
+\n");
+  printf ("\
     c) if the modified program serves as a debugger, cause it\n\
     when started running in the simplest and usual way, to print\n\
     an announcement including a valid copyright notice\n\
-    \"Copyright (C) 1987 Free Software Foundation, Inc.\" (or with\n\
-    the year updated if appropriate), saying that there\n\
-    is no warranty (or else, saying that you provide\n\
-    a warranty) and that users may redistribute the program under\n\
-    these conditions, and telling the user how to view a copy of\n\
-    this License Agreement.\n\
+    \"Copyright (C) 1988 Free Software Foundation, Inc.\" (or with\n\
+    the year that is appropriate), saying that there is no warranty\n\
+    (or else, saying that you provide a warranty) and that users may\n\
+    redistribute the program under these conditions, and telling the user\n\
+    how to view a copy of this License Agreement.\n\
 \n\
     d) You may charge a distribution fee for the physical act of\n\
     transferring a copy, and you may at your option offer warranty\n\
     protection in exchange for a fee.\n\
+\n\
+Mere aggregation of another unrelated program with this program (or its\n\
+derivative) on a volume of a storage or distribution medium does not bring\n\
+the other program under the scope of these terms.\n\
 --Type Return to print more--");
   fflush (stdout);
   read_line ();
 
   printf ("\
-  3. You may copy and distribute GDB or any portion of it in\n\
-compiled, executable or object code form under the terms of Paragraphs\n\
-1 and 2 above provided that you do the following:\n\
+  3. You may copy and distribute GDB (or a portion or derivative of it,\n\
+under Paragraph 2) in object code or executable form under the terms of\n\
+Paragraphs 1 and 2 above provided that you also do one of the following:\n\
 \n\
-    a) cause each such copy to be accompanied by the\n\
-    corresponding machine-readable source code, which must\n\
-    be distributed under the terms of Paragraphs 1 and 2 above; or,\n\
+    a) accompany it with the complete corresponding machine-readable\n\
+    source code, which must be distributed under the terms of\n\
+    Paragraphs 1 and 2 above; or,\n\
 \n\
-    b) cause each such copy to be accompanied by a\n\
-    written offer, with no time limit, to give any third party\n\
-    free (except for a nominal shipping charge) a machine readable\n\
-    copy of the corresponding source code, to be distributed\n\
-    under the terms of Paragraphs 1 and 2 above; or,\n\n");
+    b) accompany it with a written offer, valid for at least three\n\
+    years, to give any third party free (except for a nominal\n\
+    shipping charge) a complete machine-readable copy of the\n\
+    corresponding source code, to be distributed under the terms of\n\
+    Paragraphs 1 and 2 above; or,\n\n");
 
   printf ("\
-    c) in the case of a recipient of GDB in compiled, executable\n\
-    or object code form (without the corresponding source code) you\n\
-    shall cause copies you distribute to be accompanied by a copy\n\
-    of the written offer of source code which you received along\n\
-    with the copy you received.\n\
+    c) accompany it with the information you received as to where the\n\
+    corresponding source code may be obtained.  (This alternative is\n\
+    allowed only for noncommercial distribution and only if you\n\
+    received the program in object code or executable form alone.)\n\
+\n\
+For an executable file, complete source code means all the source code for\n\
+all modules it contains; but, as a special exception, it need not include\n\
+source code for modules which are standard libraries that accompany the\n\
+operating system on which the executable file runs.\n\
 --Type Return to print more--");
   fflush (stdout);
   read_line ();
@@ -727,11 +852,11 @@ their licenses terminated so long as such parties remain in full compliance.\n\
 \n\
   5. If you wish to incorporate parts of GDB into other free\n\
 programs whose distribution conditions are different, write to the Free\n\
-Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet\n\
+Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet\n\
 worked out a simple rule that can be stated here, but we will often permit\n\
 this.  We will be guided by the two goals of preserving the free status of\n\
-all derivatives our free software and of promoting the sharing and reuse of\n\
-software.\n\
+all derivatives of our free software and of promoting the sharing and reuse\n\
+of software.\n\
 \n\
 In other words, go ahead and share GDB, but don't try to stop\n\
 anyone else from sharing it farther.  Help stamp out software hoarding!\n\
@@ -772,7 +897,7 @@ ANY CLAIM BY ANY OTHER PARTY.\n");
 static void
 print_gdb_version ()
 {
-  printf ("GDB %s, Copyright (C) 1987 Free Software Foundation, Inc.\n\
+  printf ("GDB %s, Copyright (C) 1988 Free Software Foundation, Inc.\n\
 There is ABSOLUTELY NO WARRANTY for GDB; type \"info warranty\" for details.\n\
 GDB is free software and you are welcome to distribute copies of it\n\
  under certain conditions; type \"info copying\" to see the conditions.\n",
@@ -787,6 +912,17 @@ version_info ()
   immediate_quit--;
 }
 
+/* xgdb calls this to reprint the usual GDB prompt.  */
+
+void
+print_prompt ()
+{
+  printf ("%s", prompt);
+  fflush (stdout);
+}
+
+/* Command to specify a prompt string instead of "(gdb) ".  */
+
 static void
 set_prompt_command (text)
      char *text;
@@ -831,7 +967,12 @@ quit_command ()
   if (have_inferior_p ())
     {
       if (query ("The program is running.  Quit anyway? "))
-	kill_inferior ();
+	{
+	  /* Prevent any warning message from reopen_exec_file, in case
+	     we have a core file that's inconsistent with the exec file.  */
+	  exec_file_command (0, 0);
+	  kill_inferior ();
+	}
       else
 	error ("Not confirmed.");
     }
@@ -841,18 +982,22 @@ quit_command ()
 int
 input_from_terminal_p ()
 {
-  instream == stdin;
+  return instream == stdin;
 }
-
 
 static void
 pwd_command (arg, from_tty)
      char *arg;
      int from_tty;
 {
-  char buf[MAXPATHLEN];
   if (arg) error ("The \"pwd\" command does not take an argument: %s", arg);
-  printf ("Working directory %s.\n", getwd (buf));
+  getwd (dirbuf);
+
+  if (strcmp (dirbuf, current_directory))
+    printf ("Working directory %s\n (canonically %s).\n",
+	    current_directory, dirbuf);
+  else
+    printf ("Working directory %s.\n", current_directory);
 }
 
 static void
@@ -860,15 +1005,57 @@ cd_command (dir, from_tty)
      char *dir;
      int from_tty;
 {
+  int len;
+  int change;
+
   if (dir == 0)
     error_no_arg ("new working directory");
 
+  len = strlen (dir);
+  dir = savestring (dir, len - (len > 1 && dir[len-1] == '/'));
+  if (dir[0] == '/')
+    current_directory = dir;
+  else
+    {
+      current_directory = concat (current_directory, "/", dir);
+      free (dir);
+    }
+
+  /* Now simplify any occurrences of `.' and `..' in the pathname.  */
+
+  change = 1;
+  while (change)
+    {
+      char *p;
+      change = 0;
+
+      for (p = current_directory; *p;)
+	{
+	  if (!strncmp (p, "/./", 2)
+	      && (p[2] == 0 || p[2] == '/'))
+	    strcpy (p, p + 2);
+	  else if (!strncmp (p, "/..", 3)
+		   && (p[3] == 0 || p[3] == '/')
+		   && p != current_directory)
+	    {
+	      char *q = p;
+	      while (q != current_directory && q[-1] != '/') q--;
+	      if (q != current_directory)
+		{
+		  strcpy (q-1, p+3);
+		  p = q-1;
+		}
+	    }
+	  else p++;
+	}
+    }
+
   if (chdir (dir) < 0)
     perror_with_name (dir);
+
   if (from_tty)
     pwd_command ((char *) 0, 1);
 }
-
 
 /* Clean up on error during a "source" command.
    Close the file opened by the command
@@ -940,7 +1127,6 @@ dump_me_command ()
       kill (getpid (), SIGQUIT);
     }
 }
-
 
 static void
 initialize_main ()

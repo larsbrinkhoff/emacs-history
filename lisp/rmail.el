@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -100,50 +100,70 @@ but does not copy any new mail into the file."
 		   (list (read-file-name "Run rmail on RMAIL file: "
 					 nil nil t))))
   (or rmail-last-file
-      (setq rmail-last-file (expand-file-name "~/XMAIL")
-	    rmail-last-rmail-file rmail-last-file))
+      (setq rmail-last-file (expand-file-name "~/xmail")))
+  (or rmail-last-rmail-file
+      (setq rmail-last-rmail-file (expand-file-name "~/XMAIL")))
   (let* ((file-name (expand-file-name (or file-name-arg rmail-file-name)))
-	 (existed (get-file-buffer file-name))
-	 (convert))
-    (find-file file-name)
+	 (existed (get-file-buffer file-name)))
+    ;; Like find-file, but in the case where a buffer existed
+    ;; and the file was reverted, recompute the message-data.
+    (if (and existed (not (verify-visited-file-modtime existed)))
+	(progn
+	  (find-file file-name)
+	  (if (verify-visited-file-modtime existed)
+	      (progn (rmail-forget-messages)
+		     (rmail-set-message-counters))))
+      (find-file file-name))
     (if existed
 	nil
       (rmail-mode)
-      ;; If file just read in for first time, and not valid babyl file,
-      ;; convert it to one, by adding a header and converting each message.
-      (cond ((looking-at "BABYL OPTIONS:"))
-	    ((looking-at "Version: 5\n")
-	     ;; Losing babyl file made by old version of Rmail.
-	     ;; Just fix the babyl file header; don't make a new one,
-	     ;; so we don't lose the Labels: file attribute, etc.
-	     (let ((buffer-read-only nil))
-	       (insert "BABYL OPTIONS:\n")))
-	    (t
-	     (setq convert t)
-	     (rmail-insert-rmail-file-header)))
-      ;; If file was not a Babyl file or if there are
-      ;; Unix format messages added at the end,
-      ;; convert file as necessary.
-      (if (or convert
-	      (progn (goto-char (point-max))
-		     (search-backward "\^_")
-		     (forward-char 1)
-		     (looking-at "\n*From ")))
-	  (let ((buffer-read-only nil))
-	    (message "Converting to Babyl format...")
-	    (narrow-to-region (point) (point-max))
-	    (rmail-convert-to-babyl-format)
-	    (message "Converting to Babyl format...done")))
       ;; Provide default set of inboxes for primary mail file ~/RMAIL.
       (and (null rmail-inbox-list)
 	   (null file-name-arg)
-	   (setq rmail-inbox-list rmail-primary-inbox-list))
+	   (setq rmail-inbox-list
+		 (or rmail-primary-inbox-list
+		     (list "~/mbox"
+			   (concat rmail-spool-directory
+				   (if (getenv "LOGNAME")
+				       "$LOGNAME" "$USER"))))))
+      ;; Convert all or part to Babyl file if possible.
+      (rmail-convert-file)
       (goto-char (point-max))
       (if (null rmail-inbox-list)
 	  (progn
 	    (rmail-set-message-counters)
 	    (rmail-show-message))))
     (rmail-get-new-mail)))
+
+(defun rmail-convert-file ()
+  (let (convert)
+    (widen)
+    (goto-char (point-min))
+    ;; If file doesn't start like a Babyl file,
+    ;; convert it to one, by adding a header and converting each message.
+    (cond ((looking-at "BABYL OPTIONS:"))
+	  ((looking-at "Version: 5\n")
+	   ;; Losing babyl file made by old version of Rmail.
+	   ;; Just fix the babyl file header; don't make a new one,
+	   ;; so we don't lose the Labels: file attribute, etc.
+	   (let ((buffer-read-only nil))
+	     (insert "BABYL OPTIONS:\n")))
+	  (t
+	   (setq convert t)
+	   (rmail-insert-rmail-file-header)))
+    ;; If file was not a Babyl file or if there are
+    ;; Unix format messages added at the end,
+    ;; convert file as necessary.
+    (if (or convert
+	    (progn (goto-char (point-max))
+		   (search-backward "\^_")
+		   (forward-char 1)
+		   (looking-at "\n*From ")))
+	(let ((buffer-read-only nil))
+	  (message "Converting to Babyl format...")
+	  (narrow-to-region (point) (point-max))
+	  (rmail-convert-to-babyl-format)
+	  (message "Converting to Babyl format...done")))))
 
 (defun rmail-insert-rmail-file-header ()
   (let ((buffer-read-only nil))
@@ -263,6 +283,8 @@ w	Edit the current message.  C-c C-c to return to Rmail."
   (setq local-abbrev-table text-mode-abbrev-table))
 
 (defun rmail-variables ()
+  (make-local-variable 'revert-buffer-function)
+  (setq revert-buffer-function 'rmail-revert)
   (make-local-variable 'rmail-last-label)
   (make-local-variable 'rmail-deleted-vector)
   (make-local-variable 'rmail-keywords)
@@ -283,6 +305,19 @@ w	Edit the current message.  C-c C-c to return to Rmail."
   (make-local-variable 'rmail-keywords)
   ;; this gets generated as needed
   (setq rmail-keywords nil))
+
+;; Handle M-x revert-buffer done in an rmail-mode buffer.
+(defun rmail-revert (arg noconfirm)
+  (let (revert-buffer-function)
+    ;; Call our caller again, but this time it does the default thing.
+    (if (revert-buffer arg noconfirm)
+	;; If the user said "yes", and we changed something,
+	;; reparse the messages.
+	(progn
+	  (rmail-convert-file)
+	  (goto-char (point-max))
+	  (rmail-set-message-counters)
+	  (rmail-show-message)))))
 
 ;; Return a list of files from this buffer's Mail: option.
 ;; Does not assume that messages have been parsed.
@@ -345,82 +380,119 @@ and use that file as the inbox."
   (interactive
    (list (if current-prefix-arg
 	     (read-file-name "Get new mail from file: "))))
-  (rmail-maybe-set-message-counters)
   (or (verify-visited-file-modtime (current-buffer))
-      (find-file (buffer-file-name)))
+      (progn
+	(find-file (buffer-file-name))
+	(if (verify-visited-file-modtime (current-buffer))
+	    (rmail-forget-messages))))
+  (rmail-maybe-set-message-counters)
   (widen)
-  (let ((opoint (point))
-	(new-messages 0)
-	(delete-files ())
-	;; If buffer has not changed yet, and has not been saved yet,
-	;; don't replace the old backup file now.
-	(make-backup-files (and make-backup-files (buffer-modified-p)))
-	(buffer-read-only nil))
-    (goto-char (point-max))
-    (skip-chars-backward " \t\n")	; just in case of brain damage
-    (delete-region (point) (point-max))	; caused by require-final-newline
-    (unwind-protect
-	(save-restriction
-	  (narrow-to-region (point) (point))
-	  ;; Read in the contents of the inbox files,
-	  ;; renaming them as necessary,
-	  ;; and adding to the list of files to delete eventually.
-	  (if file-name
-	      (rmail-insert-inbox-text (list file-name) nil)
-	    (setq delete-files (rmail-insert-inbox-text rmail-inbox-list t)))
-	  ;; Scan the new text and convert each message to babyl format.
-	  (goto-char (point-min))
-	  (save-excursion
-	    (setq new-messages (rmail-convert-to-babyl-format)))
-	  (or (zerop new-messages)
-	      (progn
-		(widen)
-		(search-backward "\^_")
-		(narrow-to-region (point) (point-max))
-		(goto-char (1+ (point-min)))
-		(rmail-count-new-messages)))
-	  (save-buffer)
-	  ;; Delete the old files, now that babyl file is saved.
-	  (while delete-files
-	    (condition-case ()
-		(delete-file (car delete-files))
-	      (file-error nil))
-	    (setq delete-files (cdr delete-files))))
-      (if (= new-messages 0)
-	  (progn (goto-char opoint)
-		 (message "(No new mail has arrived)"))
-	(message "%d new message%s read"
-		 new-messages (if (= 1 new-messages) "" "s")))
-      (rmail-show-message))))
+  (unwind-protect
+      (let ((opoint (point))
+	    (new-messages 0)
+	    (delete-files ())
+	    ;; If buffer has not changed yet, and has not been saved yet,
+	    ;; don't replace the old backup file now.
+	    (make-backup-files (and make-backup-files (buffer-modified-p)))
+	    (buffer-read-only nil))
+	(goto-char (point-max))
+	(skip-chars-backward " \t\n")	; just in case of brain damage
+	(delete-region (point) (point-max))	; caused by require-final-newline
+	(save-excursion
+	  (save-restriction
+	    (narrow-to-region (point) (point))
+	    ;; Read in the contents of the inbox files,
+	    ;; renaming them as necessary,
+	    ;; and adding to the list of files to delete eventually.
+	    (if file-name
+		(rmail-insert-inbox-text (list file-name) nil)
+	      (setq delete-files (rmail-insert-inbox-text rmail-inbox-list t)))
+	    ;; Scan the new text and convert each message to babyl format.
+	    (goto-char (point-min))
+	    (save-excursion
+	      (setq new-messages (rmail-convert-to-babyl-format)))
+	    (or (zerop new-messages)
+		(let (success)
+		  (widen)
+		  (search-backward "\^_")
+		  (narrow-to-region (point) (point-max))
+		  (goto-char (1+ (point-min)))
+		  (rmail-count-new-messages)
+		  (save-buffer)))
+	    ;; Delete the old files, now that babyl file is saved.
+	    (while delete-files
+	      (condition-case ()
+		  (delete-file (car delete-files))
+		(file-error nil))
+	      (setq delete-files (cdr delete-files)))))
+	(if (= new-messages 0)
+	    (progn (goto-char opoint)
+		   (if (or file-name rmail-inbox-list)
+		       (message "(No new mail has arrived)")))
+	    (message "%d new message%s read"
+		     new-messages (if (= 1 new-messages) "" "s"))))
+    ;; Don't leave the buffer screwed up if we get a disk-full error.
+    (rmail-show-message)))
 
 (defun rmail-insert-inbox-text (files renamep)
   (let (file tofile delete-files movemail)
     (while files
       (setq file (expand-file-name (substitute-in-file-name (car files)))
+	    ;;>> un*x specific <<
 	    tofile (concat file "~"))
       ;; If getting from mail spool directory,
       ;; use movemail to move rather than renaming.
       (setq movemail (equal (file-name-directory file) rmail-spool-directory))
       (if movemail
 	  (progn
-	    (setq tofile (expand-file-name "~/.newmail"))
+	    (setq tofile (expand-file-name
+			   ".newmail"
+			   (file-name-directory
+			     (expand-file-name rmail-file-name))))
 	    ;; On some systems, /usr/spool/mail/foo is a directory
 	    ;; and the actual inbox is /usr/spool/mail/foo/foo.
 	    (if (file-directory-p file)
 		(setq file (substitute-in-file-name
-			     (concat file "/$USER"))))))
-      ;; If not renaming, get straight out of the actual inbox.
-      ;; If renaming, get out of the alternate name if that exists,
-      ;; otherwise rename the inbox to the alternate name and get from it.
-      (if renamep
-	  (if (and (not (file-exists-p tofile)) (file-exists-p file))
-	      (if movemail
-		  (call-process
-		    (expand-file-name "movemail" exec-directory)
-		    nil nil nil file tofile)
-		(rename-file file tofile nil)))
-	(setq tofile file))
-      ;; At this point, tofile contains the name to read.
+			     (expand-file-name "$USER" file))))))
+      (if (or (file-exists-p tofile) (file-exists-p file))
+	  (message "Getting mail from %s..." file))
+      ;; Set TOFILE if have not already done so, and
+      ;; rename or copy the file FILE to TOFILE if and as appropriate.
+      (cond ((not renamep)
+	     (setq tofile file))
+	    ((or (file-exists-p tofile) (not (file-exists-p file)))
+	     nil)
+	    ((not movemail)
+	     (rename-file file tofile nil))
+	    (t
+	     (let ((errors nil))
+	       (unwind-protect
+		   (save-excursion
+		     (setq errors (generate-new-buffer " *rmail loss*"))
+		     (buffer-flush-undo errors)
+		     (call-process
+		       (expand-file-name "movemail" exec-directory)
+		       nil errors nil file tofile)
+		     (if (not (buffer-modified-p errors))
+			 ;; No output => movemail won
+			 nil
+		       (set-buffer errors)
+		       (subst-char-in-region (point-min) (point-max)
+					     ?\n ?\  )
+		       (goto-char (point-max))
+		       (skip-chars-backward " \t")
+		       (delete-region (point) (point-max))
+		       (goto-char (point-min))
+		       (if (looking-at "movemail: ")
+			   (delete-region (point-min) (match-end 0)))
+		       (signal 'file-error
+			       (list "movemail"
+				     (buffer-substring (point-min)
+						       (point-max))
+				     ;file tofile
+				     ))))
+		 (if errors (kill-buffer errors))))))
+      ;; At this point, TOFILE contains the name to read:
       ;; Either the alternate name (if we renamed)
       ;; or the actual inbox (if not renaming).
       (if (file-exists-p tofile)
@@ -430,6 +502,7 @@ and use that file as the inbox."
 		 (or (= (preceding-char) ?\n)
 		     (insert ?\n))
 		 (setq delete-files (cons tofile delete-files))))
+      (message "")
       (setq files (cdr files)))
     delete-files))
 
@@ -455,7 +528,7 @@ and use that file as the inbox."
 	       (narrow-to-region (point) (point-max)))
 	      ;;*** MMDF format
 	      ((looking-at mmdf-delim1)
-	       (replace-match "\^L\n0,unseen,,\n*** EOOH ***\n")
+	       (replace-match "\^L\n0, unseen,,\n*** EOOH ***\n")
 	       (setq start (point))
 	       (re-search-forward mmdf-delim2 nil t)
 	       (replace-match "\^_")
@@ -470,7 +543,7 @@ and use that file as the inbox."
 	      ;;*** Mail format
 	      ((looking-at "^From ")
 	       (setq start (point))
-	       (insert "\^L\n0,unseen,,\n*** EOOH ***\n")
+	       (insert "\^L\n0, unseen,,\n*** EOOH ***\n")
 	       (rmail-nuke-pinhead-header)
 	       (if (re-search-forward
 		    (concat "^[\^_]?\\("
@@ -608,25 +681,43 @@ and use that file as the inbox."
 ;; and set it up as the name of a minor mode
 ;; so it will appear in the mode line.
 (defun rmail-display-labels ()
-  (let ((blurb ""))
+  (let ((blurb "") (beg (point-min-marker)) (end (point-max-marker)))
     (save-excursion
-      (save-restriction
-	(widen)
-	(goto-char (rmail-msgbeg rmail-current-message))
-	(forward-line 1)
-	(if (looking-at "[01],")
-	    (progn
-	      (narrow-to-region (point) (progn (end-of-line) (point)))
-	      (if (search-backward ",," nil 'move)
-		  (progn
-		    (if (> (point) (1+ (point-min)))
-			(setq blurb (buffer-substring (1+ (point-min)) (point))))
-		    (if (> (- (point-max) (point)) 2)
-			(setq blurb
-			      (concat blurb
-				      ";"
-				      (buffer-substring (+ (point) 2)
-							(1- (point-max))))))))))))
+      (unwind-protect
+	  (progn
+	    (widen)
+	    (goto-char (rmail-msgbeg rmail-current-message))
+	    (forward-line 1)
+	    (if (looking-at "[01],")
+		(progn
+		  (narrow-to-region (point) (progn (end-of-line) (point)))
+		  ;; Truly valid BABYL format requires a space before each
+		  ;; attribute or keyword name.  Put them in if missing.
+		  (let (buffer-read-only)
+		    (goto-char (point-min))
+		    (while (search-forward "," nil t)
+		      (or (looking-at "[ ,]") (eobp)
+			  (insert " "))))
+		  (goto-char (point-max))
+		  (if (search-backward ",," nil 'move)
+		      (progn
+			(if (> (point) (1+ (point-min)))
+			    (setq blurb (buffer-substring (+ 1 (point-min)) (point))))
+			(if (> (- (point-max) (point)) 2)
+			    (setq blurb
+				  (concat blurb
+					  ";"
+					  (buffer-substring (+ (point) 3)
+							    (1- (point-max)))))))))))
+	(narrow-to-region beg end)
+	(set-marker beg nil)
+	(set-marker end nil)))
+    (while (string-match " +," blurb)
+      (setq blurb (concat (substring blurb 0 (match-beginning 0)) ","
+			  (substring blurb (match-end 0)))))
+    (while (string-match ", +" blurb)
+      (setq blurb (concat (substring blurb 0 (match-beginning 0)) ","
+			  (substring blurb (match-end 0)))))
     (setq mode-line-process
 	  (concat " " rmail-current-message "/" rmail-total-messages
 		  blurb))))
@@ -641,14 +732,14 @@ and use that file as the inbox."
 	(save-excursion
 	  (widen)
 	  (goto-char (+ 3 (rmail-msgbeg rmail-current-message)))
-	  (let ((curstate (search-backward (concat "," attr ",")
+	  (let ((curstate (search-backward (concat ", " attr ",")
 					   (prog1 (point) (end-of-line)) t)))
 	    (or (eq curstate (not (not state)))
 		(if curstate
 		    (delete-region (point) (1- (match-end 0)))
 		  (beginning-of-line)
 		  (forward-char 2)
-		  (insert attr ","))))
+		  (insert " " attr ","))))
 	  (if (string= attr "deleted")
 	      (rmail-set-message-deleted-p rmail-current-message state)))
       (narrow-to-region (max 1 (- (buffer-size) omin))
@@ -768,7 +859,7 @@ Assumes that the visible text of the message is not changed by FUNCTION."
     (setq messages-head (cons (point-marker) messages-head))
     (save-excursion
       (setq deleted-head
-	    (cons (if (search-backward ",deleted,"
+	    (cons (if (search-backward ", deleted,"
 				       (prog1 (point)
 					 (forward-line 2))
 				       t)
@@ -850,7 +941,8 @@ or backward if N is negative."
       (setq current (1- current))
       (if (not (rmail-message-deleted-p current))
 	  (setq lastwin current n (1+ n))))
-    (rmail-show-message lastwin)
+    (if (/= lastwin rmail-current-message)
+	(rmail-show-message lastwin))
     (if (< n 0)
 	(message "No previous nondeleted message"))
     (if (> n 0)
@@ -965,7 +1057,8 @@ and reverse search is specified by a negative numeric arg."
       (setq msg (1- msg)))
     (if (= msg 0)
 	(error "No previous deleted message")
-      (rmail-show-message msg)
+      (if (/= msg rmail-current-message)
+	  (rmail-show-message msg))
       (rmail-set-attribute "deleted" nil))))
 
 (defun rmail-delete-forward (&optional backward)
@@ -1183,13 +1276,6 @@ original message into it."
 	  (goto-char (point-max))
 	  (forward-line 1)
 	  (insert-buffer forward-buffer)))))
-
-;; Avoid error in Emacs versions before 18.37.
-(defun one-window-p (&optional nomini)
-  (eq (selected-window)
-      (if (and nomini (zerop (minibuffer-depth)))
-	  (next-window) (next-window (next-window)))))
-
 
 ;;;; *** Rmail Specify Inbox Files ***
 

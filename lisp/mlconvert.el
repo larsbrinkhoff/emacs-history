@@ -131,6 +131,7 @@
 (ml-expansion 'mark "mark-marker")
 (ml-expansion 'beginning-of-file "beginning-of-buffer")
 (ml-expansion 'end-of-file "end-of-buffer")
+(ml-expansion 'exchange-dot-and-mark "exchange-point-and-mark")
 (ml-expansion 'set-mark "set-mark-command")
 (ml-expansion 'argument-prefix "universal-arg")
 
@@ -149,6 +150,7 @@
 (ml-expansion 'newline-and-indent "ml-newline-and-indent")
 (ml-expansion 'yank-from-killbuffer "yank")
 (ml-expansion 'yank-buffer "insert-buffer")
+(ml-expansion 'copy-region "copy-region-as-kill")
 (ml-expansion 'delete-white-space "delete-horizontal-space")
 (ml-expansion 'widen-region "widen")
 
@@ -194,6 +196,7 @@
 (ml-expansion 'write-named-file "write-file")
 (ml-expansion 'change-file-name "set-visited-file-name")
 (ml-expansion 'change-buffer-name "rename-buffer")
+(ml-expansion 'buffer-exists "get-buffer")
 (ml-expansion 'delete-buffer "kill-buffer")
 (ml-expansion 'unlink-file "delete-file")
 (ml-expansion 'unlink-checkpoint-files "delete-auto-save-files")
@@ -201,6 +204,7 @@
 (ml-expansion 'write-current-file "save-buffer")
 (ml-expansion 'change-directory "cd")
 (ml-expansion 'temp-use-buffer "set-buffer")
+(ml-expansion 'fast-filter-region "filter-region")
 
 (ml-expansion 'pending-input "input-pending-p")
 (ml-expansion 'execute-keyboard-macro "call-last-kbd-macro")
@@ -216,6 +220,7 @@
 (ml-expansion 'users-login-name "user-login-name")
 (ml-expansion 'users-full-name "user-full-name")
 (ml-expansion 'current-time "current-time-string")
+(ml-expansion 'current-numeric-time "current-numeric-time-you-lose")
 (ml-expansion 'current-buffer-name "buffer-name")
 (ml-expansion 'current-file-name "buffer-file-name")
 

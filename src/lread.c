@@ -247,7 +247,7 @@ absolute_filename_p (pathname)
   register unsigned char *s = XSTRING (pathname)->data;
   return (*s == '~' || *s == '/'
 #ifdef VMS
-	  || index (s, ':') || index (s, '[') || index (s, '<')
+	  || index (s, ':')
 #endif /* VMS */
 	  );
 }
@@ -299,42 +299,49 @@ openp (path, str, suffix, storeptr, exec_only)
 	{
 	  filename = Fexpand_file_name (filename, bf_cur->directory);
 	  if (!absolute_filename_p (filename))
-	    /* Give up! */
-	    break;
+	    /* Give up on this path element! */
+	    continue;
 	}
 
+      /* Calculate maximum size of any filename made from
+	 this path element/specified file name and any possible suffix.  */
       want_size = strlen (suffix) + XSTRING (filename)->size + 1;
       if (fn_size < want_size)
 	fn = (char *) alloca (fn_size = 100 + want_size);
 
       nsuffix = suffix;
+
+      /* Loop over suffixes.  */
       while (1)
 	{
 	  char *esuffix = (char *) index (nsuffix, ':');
 	  int lsuffix = esuffix ? esuffix - nsuffix : strlen (nsuffix);
+
+	  /* Concatenate path element/specified name with the suffix.  */
 	  strncpy (fn, XSTRING (filename)->data, XSTRING (filename)->size);
 	  fn[XSTRING (filename)->size] = 0;
 	  strncat (fn, nsuffix, lsuffix);
-	  if (exec_only)
+
+	  /* Ignore file if it's a directory.  */
+	  if (stat (fn, &st) >= 0
+	      && (st.st_mode & S_IFMT) != S_IFDIR)
 	    {
-	      if (!access (fn, X_OK) && stat (fn, &st) >= 0
-		  && (st.st_mode & S_IFMT) != S_IFDIR)
-		{
-		  if (storeptr)
-		    *storeptr = build_string (fn);
-		  return 1;
-		}
-	    }
-	  else
-	    {
-	      fd = open (fn, 0, 0);
+	      /* Check that we can access or open it.  */
+	      if (exec_only)
+		fd = !access (fn, X_OK);
+	      else
+		fd = open (fn, 0, 0);
+
 	      if (fd >= 0)
 		{
+		  /* We succeeded; return this descriptor and filename.  */
 		  if (storeptr)
 		    *storeptr = build_string (fn);
 		  return fd;
 		}
 	    }
+
+	  /* Advance to next suffix.  */
 	  if (esuffix == 0)
 	    break;
 	  nsuffix += lsuffix + 1;
@@ -751,14 +758,18 @@ read_list (flag, readcharfun)
      0 means don't check,
      1 means already checked and found defun. */
   int defunflag = flag < 0 ? -1 : 0;
-  register Lisp_Object elt, val, tail, tem;
+  Lisp_Object val, tail;
+  register Lisp_Object elt, tem;
+  struct gcpro gcpro1, gcpro2;
 
   val = Qnil;
   tail = Qnil;
 
   while (1)
     {
+      GCPRO2 (val, tail);
       elt = read1 (readcharfun);
+      UNGCPRO;
       if (XTYPE (elt) == Lisp_Internal)
 	{
 	  if (flag > 0)
@@ -771,16 +782,18 @@ read_list (flag, readcharfun)
 	    return val;
 	  if (XINT (elt) == '.')
 	    {
+	      GCPRO2 (val, tail);
 	      if (!NULL (tail))
 		XCONS (tail)->cdr = read0 (readcharfun);
 	      else
 		val = read0 (readcharfun);
 	      elt = read1 (readcharfun);
+	      UNGCPRO;
 	      if (XTYPE (elt) == Lisp_Internal && XINT (elt) == ')')
 		return val;
 	      return Fsignal (Qinvalid_read_syntax, Fcons (make_string (". in wrong context", 18), Qnil));
 	    }
-	  return Fsignal (Qinvalid_read_syntax, Fcons (make_string ("] in a vector", 13), Qnil));
+	  return Fsignal (Qinvalid_read_syntax, Fcons (make_string ("] in a list", 13), Qnil));
 	}
       tem = (read_pure && flag <= 0
 	     ? pure_cons (elt, Qnil)
@@ -980,7 +993,9 @@ oblookup (obarray, ptr, size)
       obarray = check_obarray (obarray);
       obsize = XVECTOR (obarray)->size;
     }
-  hash = hash_string (ptr, size) % obsize;
+  /* Combining next two lines breaks VMS C 2.3.  */
+  hash = hash_string (ptr, size);
+  hash %= obsize;
   bucket = XVECTOR (obarray)->contents[hash];
   if (XFASTINT (bucket) == 0)
     ;
@@ -1079,7 +1094,9 @@ init_obarray ()
   staticpro (&initial_obarray);
   /* Intern nil in the obarray */
   /* These locals are to kludge around a pyramid compiler bug. */
-  hash = hash_string ("nil", 3) % OBARRAY_SIZE;
+  hash = hash_string ("nil", 3);
+  /* Separate statement here to avoid VAXC bug. */
+  hash %= OBARRAY_SIZE;
   tem = &XVECTOR (Vobarray)->contents[hash];
   *tem = Qnil;
 
@@ -1092,6 +1109,9 @@ init_obarray ()
   XSYMBOL (Qnil)->value = Qnil;
   XSYMBOL (Qnil)->plist = Qnil;
   XSYMBOL (Qt)->value = Qt;
+
+  /* Qt is correct even if CANNOT_DUMP.  loadup.el will set to nil at end.  */
+  Vpurify_flag = Qt;
 
   Qvariable_documentation = intern ("variable-documentation");
 
@@ -1211,13 +1231,28 @@ defvar_per_buffer (namestring, address, doc)
 
 init_read ()
 {
+  char *normal = PATH_LOADSEARCH;
+  Lisp_Object normal_path;
+
+  /* Warn if dirs in the *standard* path don't exist.  */
+  normal_path = decode_env_path ("", normal);
+  for (; !NULL (normal_path); normal_path = XCONS (normal_path)->cdr)
+    {
+      Lisp_Object dirfile;
+      dirfile = Fdirectory_file_name (Fcar (normal_path));
+      if (access (XSTRING (dirfile)->data, 0) < 0)
+	printf ("Warning: lisp library (%s) does not exist.\n",
+		XSTRING (Fcar (normal_path))->data);
+    }
+
   Vvalues = Qnil;
 
-  Vload_path = decode_env_path ("EMACSLOADPATH", PATH_LOADSEARCH);
+  Vload_path = decode_env_path ("EMACSLOADPATH", normal);
 #ifndef CANNOT_DUMP
   if (!NULL (Vpurify_flag))
     Vload_path = Fcons (build_string ("../lisp"), Vload_path);
 #endif /* not CANNOT_DUMP */
+  load_in_progress = 0;
 }
 
 void

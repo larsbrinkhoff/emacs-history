@@ -1,5 +1,5 @@
 ;; Print Emacs buffer on line printer.
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -47,20 +47,22 @@
   (print-region-1 start end (cons "-p" lpr-switches)))
 
 (defun print-region-1 (start end switches)
-  (save-excursion
-   (message "Spooling...")
-   (if (/= tab-width 8)
-       (let ((oldbuf (current-buffer)))
-	(set-buffer (get-buffer-create " *spool temp*"))
-	(widen) (erase-buffer)
-	(insert-buffer-substring oldbuf)
-	(call-process-region start end "expand"
-			     t t nil
-			     (format "-%d" tab-width))))
-   (apply 'call-process-region
-	  (nconc (list start end "lpr"
-		       nil nil nil
-		       "-J" (concat (buffer-name) " Emacs buffer")
-		       "-T" (concat (buffer-name) " Emacs buffer"))
-		 switches))
-   (message "Spooling...done")))
+  (let ((name (concat (buffer-name) " Emacs buffer"))
+	(width tab-width))
+    (save-excursion
+     (message "Spooling...")
+     (if (/= tab-width 8)
+	 (let ((oldbuf (current-buffer)))
+	  (set-buffer (get-buffer-create " *spool temp*"))
+	  (widen) (erase-buffer)
+	  (insert-buffer-substring oldbuf)
+	  (setq tab-width width)
+	  (untabify (point-min) (point-max))
+	  (setq start (point-min) end (point-max))))
+     (apply 'call-process-region
+	    (nconc (list start end (if (eq system-type 'usg-unix-v)
+				       "lp" "lpr")
+			 nil nil nil
+			 "-J" name "-T" name)
+		   switches))
+     (message "Spooling...done"))))

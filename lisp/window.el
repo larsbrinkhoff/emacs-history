@@ -19,14 +19,14 @@
 ;; and this notice must be preserved on all copies.
 
 
-(defun split-window-vertically (arg)
+(defun split-window-vertically (&optional arg)
   "Split current window into two windows, one above the other.
 This window becomes the uppermost of the two, and gets
 ARG lines.  No arg means split equally."
   (interactive "P")
   (split-window nil (and arg (prefix-numeric-value arg))))
 
-(defun split-window-horizontally (arg)
+(defun split-window-horizontally (&optional arg)
   "Split current window into two windows side by side.
 This window becomes the leftmost of the two, and gets
 ARG columns.  No arg means split equally."

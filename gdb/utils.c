@@ -19,8 +19,13 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 */
 
 #include <stdio.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include "defs.h"
+#include "param.h"
+#ifdef HAVE_TERMIO
+#include <termio.h>
+#endif
 
 void error ();
 void fatal ();
@@ -111,10 +116,11 @@ free_current_contents (location)
 
 /* Like malloc but get error if no storage available.  */
 
+char *
 xmalloc (size)
-     int size;
+     long size;
 {
-  register val = malloc (size);
+  register char *val = (char *) malloc (size);
   if (!val)
     fatal ("virtual memory exhausted.", 0);
   return val;
@@ -122,11 +128,12 @@ xmalloc (size)
 
 /* Like realloc but get error if no storage available.  */
 
+char *
 xrealloc (ptr, size)
      char *ptr;
-     int size;
+     long size;
 {
-  register val = realloc (ptr, size);
+  register char *val = (char *) realloc (ptr, size);
   if (!val)
     fatal ("virtual memory exhausted.", 0);
   return val;
@@ -159,12 +166,46 @@ perror_with_name (string)
   error ("%s.", combined);
 }
 
+/* Print the system error message for ERRCODE, and also mention STRING
+   as the file name for which the error was encountered.  */
+
+void
+print_sys_errmsg (string, errcode)
+     char *string;
+     int errcode;
+{
+  extern int sys_nerr;
+  extern char *sys_errlist[];
+  char *err;
+  char *combined;
+
+  if (errcode < sys_nerr)
+    err = sys_errlist[errcode];
+  else
+    err = "unknown error";
+
+  combined = (char *) alloca (strlen (err) + strlen (string) + 3);
+  strcpy (combined, string);
+  strcat (combined, ": ");
+  strcat (combined, err);
+
+  printf ("%s.\n", combined);
+}
+
 void
 quit ()
 {
   fflush (stdout);
+#ifdef HAVE_TERMIO
+  ioctl (fileno (stdout), TCFLSH, 1);
+#else /* not HAVE_TERMIO */
   ioctl (fileno (stdout), TIOCFLUSH, 0);
+#endif /* not HAVE_TERMIO */
+#ifdef TIOCGPGRP
   error ("Quit");
+#else
+  error ("Quit (expect signal %d when inferior is resumed)", SIGINT);
+#endif /* TIOCGPGRP */
 }
 
 /* Control C comes here */
@@ -264,8 +305,9 @@ query (ctlstr, arg1, arg2)
       printf ("(y or n) ");
       fflush (stdout);
       answer = fgetc (stdin);
+      clearerr (stdin);		/* in case of C-d */
       if (answer != '\n')
-	while (fgetc (stdin) != '\n');
+	while (fgetc (stdin) != '\n') clearerr (stdin);
       if (answer >= 'a')
 	answer -= 040;
       if (answer == 'Y')

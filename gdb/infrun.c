@@ -1,5 +1,5 @@
 /* Start and stop the inferior process, for GDB.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -28,6 +28,12 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 
 #include <stdio.h>
 #include <signal.h>
+#include <a.out.h>
+
+#ifdef UMAX_PTRACE
+#include <sys/param.h>
+#include <sys/ptrace.h>
+#endif UMAX_PTRACE
 
 extern char *sys_siglist[];
 extern int errno;
@@ -38,7 +44,7 @@ static char signal_stop[NSIG];
 static char signal_print[NSIG];
 static char signal_program[NSIG];
 
-/* Nonzero if nreakpoints are now inserted in the inferior.  */
+/* Nonzero if breakpoints are now inserted in the inferior.  */
 
 static int breakpoints_inserted;
 
@@ -58,7 +64,7 @@ static CORE_ADDR step_resume_break_address;
 
 static char step_resume_break_shadow[sizeof break_insn];
 
-/* Nonzero means the special breakpoint is a dupliaite
+/* Nonzero means the special breakpoint is a duplicate
    so it has not itself been inserted.  */
 
 static int step_resume_break_duplicate;
@@ -70,20 +76,33 @@ static int step_resume_break_duplicate;
 
 static int trap_expected;
 
+/* Nonzero if the next time we try to continue the inferior, it will
+   step one instruction and generate a spurious trace trap.
+   This is used to compensate for a bug in HP-UX.  */
+
+static int trap_expected_after_continue;
+
 /* Nonzero means expecting a trace trap
    and should stop the inferior and return silently when it happens.  */
 
 static int stop_after_trap;
+
+/* Nonzero means expecting a trace trap due to attaching to a process.  */
+
+static int stop_after_attach;
 
 /* Nonzero if pc has been changed by the debugger
    since the inferior stopped.  */
 
 int pc_changed;
 
-/* Store registers 0 and 1 here when about to pop a stack dummy frame.  */
+/* Nonzero if debugging a remote machine via a serial link or ethernet.  */
 
-REGISTER_TYPE stop_r0;
-REGISTER_TYPE stop_r1;
+int remote_debugging;
+
+/* Save register contents here when about to pop a stack dummy frame.  */
+
+char stop_registers[REGISTER_BYTES];
 
 /* Nonzero if program stopped due to error trying to insert breakpoints.  */
 
@@ -117,6 +136,7 @@ clear_proceed_status ()
   step_over_calls = -1;
   step_resume_break_address = 0;
   stop_after_trap = 0;
+  stop_after_attach = 0;
 
   /* Discard any remaining commands left by breakpoint we had stopped at.  */
   clear_breakpoint_commands ();
@@ -154,20 +174,34 @@ proceed (addr, signal, step)
 	 so that we do not stop right away.  */
 
       if (!pc_changed && breakpoint_here_p (read_pc ()))
-	{
-	  oneproc = 1;
-	  /* We will get a trace trap after one instruction.
-	     Continue it automatically and insert breakpoints then.  */
-	  trap_expected = 1;
-	}
+	oneproc = 1;
     }
   else
     write_register (PC_REGNUM, addr);
 
-  if (!oneproc)
+  if (trap_expected_after_continue)
     {
-      if (insert_breakpoints ())
-	error ("Cannot insert breakpoints; program is running in another process.");
+      /* If (step == 0), a trap will be automatically generated after
+	 the first instruction is executed.  Force step one
+	 instruction to clear this condition.  This should not occur
+	 if step is nonzero, but it is harmless in that case.  */
+      oneproc = 1;
+      trap_expected_after_continue = 0;
+    }
+
+  if (oneproc)
+    /* We will get a trace trap after one instruction.
+       Continue it automatically and insert breakpoints then.  */
+    trap_expected = 1;
+  else
+    {
+      int temp = insert_breakpoints ();
+      if (temp)
+	{
+	  print_sys_errmsg ("ptrace", temp);
+	  error ("Cannot insert breakpoints.\n\
+The same program may be running in another process.");
+	}
       breakpoints_inserted = 1;
     }
 
@@ -213,6 +247,7 @@ start_inferior ()
      it will get another trace trap.  Then insert breakpoints and continue.  */
   trap_expected = 2;
   running_in_shell = 0;		/* Set to 1 at first SIGTRAP, 0 at second.  */
+  trap_expected_after_continue = 0;
   breakpoints_inserted = 0;
   mark_breakpoints_out ();
 
@@ -223,9 +258,61 @@ start_inferior ()
   /* Install inferior's terminal modes.  */
   terminal_inferior ();
 
+  if (remote_debugging)
+    {
+      trap_expected = 0;
+      fetch_inferior_registers();
+      set_current_frame (read_register(FP_REGNUM));
+      stop_frame = get_current_frame();
+      inferior_pid = 3;
+      if (insert_breakpoints())
+	fatal("Can't insert breakpoints");
+      breakpoints_inserted = 1;
+      proceed(-1, -1, 0);
+    }
+  else
+    {
+      wait_for_inferior ();
+      normal_stop ();
+    }
+}
+
+/* Start remote-debugging of a machine over a serial link.  */
+
+void
+start_remote ()
+{
+  clear_proceed_status ();
+  running_in_shell = 0;
+  trap_expected = 0;
+  inferior_pid = 3;
+  breakpoints_inserted = 0;
+  mark_breakpoints_out ();
+  wait_for_inferior ();
+  normal_stop();
+}
+
+#ifdef ATTACH_DETACH
+
+/* Attach to process PID, then initialize for debugging it
+   and wait for the trace-trap that results from attaching.  */
+
+void
+attach_program (pid)
+     int pid;
+{
+  attach (pid);
+  inferior_pid = pid;
+
+  mark_breakpoints_out ();
+  terminal_init_inferior ();
+  clear_proceed_status ();
+  stop_after_attach = 1;
+  /*proceed (-1, 0, -2);*/
   wait_for_inferior ();
   normal_stop ();
 }
+#endif /* ATTACH_DETACH */
 
 /* Wait for control to return from inferior to debugger.
    If inferior gets a signal, we may decide to start it up again
@@ -250,10 +337,19 @@ wait_for_inferior ()
   struct symtab_and_line sal;
   int prev_pc;
 
+  prev_pc = read_pc ();
+
   while (1)
     {
-      prev_pc = read_pc ();
-      pid = wait (&w);
+      if (remote_debugging)
+	remote_wait (&w);
+      else
+	{
+	  pid = wait (&w);
+	  if (pid != inferior_pid)
+	    continue;
+	}
+
       pc_changed = 0;
       fetch_inferior_registers ();
       stop_pc = read_pc ();
@@ -285,9 +381,8 @@ wait_for_inferior ()
 	  else
 	    printf ("\nProgram exited normally.\n");
 	  fflush (stdout);
-	  inferior_pid = 0;
+	  inferior_died ();
 	  stop_print_frame = 0;
-	  mark_breakpoints_out ();
 	  break;
 	}
       else if (!WIFSTOPPED (w))
@@ -319,13 +414,16 @@ wait_for_inferior ()
 	  if (stop_signal == SIGTRAP
 	      || (breakpoints_inserted &&
 		  (stop_signal == SIGILL
-		   || stop_signal == SIGEMT)))
+		   || stop_signal == SIGEMT))
+	      || stop_after_attach)
 	    {
 	      if (stop_signal == SIGTRAP && stop_after_trap)
 		{
 		  stop_print_frame = 0;
 		  break;
 		}
+	      if (stop_after_attach)
+		break;
 	      /* Don't even think about breakpoints
 		 if still running the shell that will exec the program
 		 or if just proceeded over a breakpoint.  */
@@ -463,6 +561,9 @@ wait_for_inferior ()
 	    {
 	      stop_print_frame = 0;
 	      stop_stack_dummy = 1;
+#ifdef HP9K320
+	      trap_expected_after_continue = 1;
+#endif
 	      break;
 	    }
 
@@ -491,6 +592,7 @@ wait_for_inferior ()
 	  else if (!random_signal && step_range_end)
 	    {
 	      newfun = find_pc_function (stop_pc);
+	      newmisc = -1;
 	      if (newfun)
 		{
 		  newfun_pc = BLOCK_START (SYMBOL_BLOCK_VALUE (newfun))
@@ -528,20 +630,27 @@ wait_for_inferior ()
 		     continue to the end of that source line.
 		     Otherwise, just go to end of prologue.  */
 		  if (sal.end && sal.pc != newfun_pc)
-		    step_resume_break_address = sal.end;
-		  else
-		    step_resume_break_address = newfun_pc;
+		    newfun_pc = sal.end;
 
-		  step_resume_break_duplicate
-		    = breakpoint_here_p (step_resume_break_address);
-		  if (breakpoints_inserted)
-		    insert_step_breakpoint ();
-		  /* Do not specify what the fp should be when we stop
-		     since on some machines the prologue
-		     is where the new fp value is established.  */
-		  step_frame = 0;
-		  /* And make sure stepping stops right away then.  */
-		  step_range_end = step_range_start;
+		  if (newfun_pc == stop_pc)
+		    /* We are already there: stop now.  */
+		    stop_step = 1;
+		  else
+		    /* Put the step-breakpoint there and go until there.  */
+		    {
+		      step_resume_break_address = newfun_pc;
+
+		      step_resume_break_duplicate
+			= breakpoint_here_p (step_resume_break_address);
+		      if (breakpoints_inserted)
+			insert_step_breakpoint ();
+		      /* Do not specify what the fp should be when we stop
+			 since on some machines the prologue
+			 is where the new fp value is established.  */
+		      step_frame = 0;
+		      /* And make sure stepping stops right away then.  */
+		      step_range_end = step_range_start;
+		    }
 		}
 	      /* No subroutince call; stop now.  */
 	      else
@@ -551,6 +660,9 @@ wait_for_inferior ()
 		}
 	    }
 	}
+
+      /* Save the pc before execution, to compare with pc after stop.  */
+      prev_pc = read_pc ();
 
       /* If we did not do break;, it means we should keep
 	 running the inferior and not return to debugger.  */
@@ -582,11 +694,9 @@ wait_for_inferior ()
 	  if (!breakpoints_inserted && !another_trap)
 	    {
 	      insert_step_breakpoint ();
-	      if (insert_breakpoints ())
-		{
-		  breakpoints_failed = 1;
-		  break;
-		}
+	      breakpoints_failed = insert_breakpoints ();
+	      if (breakpoints_failed)
+		break;
 	      breakpoints_inserted = 1;
 	    }
 
@@ -618,8 +728,9 @@ normal_stop ()
   if (breakpoints_failed)
     {
       terminal_ours_for_output ();
+      print_sys_errmsg ("ptrace", breakpoints_failed);
       printf ("Stopped; cannot insert breakpoints.\n\
-The same program must be running in another process.\n");
+The same program may be running in another process.\n");
     }
 
   if (inferior_pid)
@@ -640,6 +751,11 @@ Further execution is probably impossible.\n");
      Delete any breakpoint that is to be deleted at the next stop.  */
 
   breakpoint_auto_delete (stop_breakpoint);
+
+  /* If an auto-display called a function and that got a signal,
+     delete that auto-display to avoid an infinite recursion.  */
+
+  delete_current_display ();
 
   if (step_multi && stop_step)
     return;
@@ -688,8 +804,7 @@ into a \".gdbinit\" file in this directory so they will happen every time.\n");
 
   /* Save the function value return registers
      We might be about to restore their previous contents.  */
-  stop_r0 = read_register (0);
-  stop_r1 = read_register (1);
+  read_register_bytes (0, stop_registers, REGISTER_BYTES);
 
   if (stop_stack_dummy)
     {

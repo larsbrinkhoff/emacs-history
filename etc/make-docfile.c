@@ -213,7 +213,7 @@ scan_c_file (filename)
       c = getc (infile);
       if (c != '"')
 	continue;
-      c = read_c_string (infile, -1, 0);
+      c = read_c_string (infile, -1);
 
       if (defunflag)
 	commas = 5;
@@ -232,7 +232,7 @@ scan_c_file (filename)
       while (c == ' ' || c == '\n' || c == '\t')
 	c = getc (infile);
       if (c == '"')
-	c = read_c_string (infile, 0, 0);
+	c = read_c_string (infile, 0);
       while (c != ',')
 	c = getc (infile);
       c = getc (infile);
@@ -244,7 +244,7 @@ scan_c_file (filename)
 	  putc (037, outfile);
 	  putc (defvarflag ? 'V' : 'F', outfile);
 	  fprintf (outfile, "%s\n", buf);
-	  read_c_string (infile, 1, 0);
+	  read_c_string (infile, 1);
 	}
     }
   fclose (infile);
@@ -377,7 +377,7 @@ scan_lisp_file (filename)
 		return 1;
 	      c = getc (infile);
 	    }
-	  c = read_c_string (infile, 0, 0);
+	  c = read_c_string (infile, 0);
 	}
       else if (c == 'd')
 	{
@@ -487,7 +487,7 @@ scan_lisp_file (filename)
 		  putc (037, outfile);
 		  putc ('V', outfile);
 		  fprintf (outfile, "%s\n", buf);
-		  read_c_string (infile, 1, 0);
+		  read_c_string (infile, 1);
 		}
 	      continue;
 	    }
@@ -518,7 +518,7 @@ scan_lisp_file (filename)
       putc (037, outfile);
       putc ('F', outfile);
       fprintf (outfile, "%s\n", buf);
-      read_c_string (infile, 1, 0);
+      read_c_string (infile, 1);
     }
   fclose (infile);
   return 0;

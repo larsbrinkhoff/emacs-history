@@ -323,6 +323,7 @@ Lisp_Object;
 /* In version 19, try 
 #if VALBITS + GCTYPEBITS == INTBITS - 1
 #define XMARKBIT(a) ((a) < 0)
+#define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
 */
 
 #ifndef XMARKBIT

@@ -19,7 +19,9 @@
 ;; and this notice must be preserved on all copies.
 
 (defun manual-entry (topic &optional section)
-  "Display the Unix manual entry for TOPIC."
+  "Display the Unix manual entry for TOPIC.
+TOPIC is either the title of the entry, or has the form TITLE(SECTION)
+where SECTION is the desired section of the manual, as in `tty(4)'."
   (interactive "sManual entry (topic): ")
   (if (and (null section)
 	   (string-match "\\`[ \t]*\\([^( \t]+\\)[ \t]*(\\(.+\\))[ \t]*\\'" topic))
@@ -75,58 +77,62 @@
 		  (error (buffer-substring 1 (point)))))))
 
       (message "Cleaning manual entry for %s..." topic)
-
-      ;; Nuke underlining and overstriking (only by the same letter)
-      (goto-char (point-min))
-      (while (search-forward "\b" nil t)
-	(let* ((preceding (char-after (- (point) 2)))
-	       (following (following-char)))
-	  (cond ((= preceding following)
-		 ;; x\bx
-		 (delete-char -2))
-		((= preceding ?\_)
-		 ;; _\b
-		 (delete-char -2))
-		((= following ?\_)
-		 ;; \b_
-		 (delete-region (1- (point)) (1+ (point)))))))
-
-      ;; Nuke headers: "MORE(1) UNIX Programmer's Manual MORE(1)"
-      (goto-char (point-min))
-      (while (re-search-forward "^ *\\([A-Za-z][-_A-Za-z0-9]*([0-9A-Z]+)\\).*\\1$" nil t)
-	(replace-match ""))
-
-      ;; Nuke footers: "Printed 12/3/85	27 April 1981	1"
-      ;;    Sun appear to be on drugz:
-      ;;     "Sun Release 3.0B  Last change: 1 February 1985     1"
-      ;;    HP are even worse!
-      ;;     "     Hewlett-Packard   -1- (printed 12/31/99)"  FMHWA12ID!!
-      ;;    System V (well WICATs anyway):
-      ;;     "Page 1			  (printed 7/24/85)"
-      ;;    Who is administering PCP to these corporate bozos?
-      (goto-char (point-min))
-      (while (re-search-forward
-	       (if (eq system-type 'hpux)
-		   "^ *Hewlett-Packard.*(printed [0-9/]*)$"
-		 (if (eq system-type 'usg-unix-v)
-		     "^ *Page [0-9]*.*(printed [0-9/]*)$"
-		   "^\\(Printed\\|Sun Release\\) [0-9].*[0-9]$"))
-	       nil t)
-	(replace-match ""))
-
-      ;; Crunch blank lines
-      (goto-char (point-min))
-      (while (re-search-forward "\n\n\n\n*" nil t)
-	(replace-match "\n\n"))
-
-      ;; Nuke blanks lines at start.
-      (goto-char (point-min))
-      (skip-chars-forward "\n")
-      (delete-region (point-min) (point))
-
+      (nuke-nroff-bs)
       (set-buffer-modified-p nil)
-
       (message ""))))
+
+;; Hint: BS stands form more things than "back space"
+(defun nuke-nroff-bs ()
+  (interactive "*")
+  ;; Nuke underlining and overstriking (only by the same letter)
+  (goto-char (point-min))
+  (while (search-forward "\b" nil t)
+    (let* ((preceding (char-after (- (point) 2)))
+	   (following (following-char)))
+      (cond ((= preceding following)
+	     ;; x\bx
+	     (delete-char -2))
+	    ((= preceding ?\_)
+	     ;; _\b
+	     (delete-char -2))
+	    ((= following ?\_)
+	     ;; \b_
+	     (delete-region (1- (point)) (1+ (point)))))))
+
+  ;; Nuke headers: "MORE(1) UNIX Programmer's Manual MORE(1)"
+  (goto-char (point-min))
+  (while (re-search-forward "^ *\\([A-Za-z][-_A-Za-z0-9]*([0-9A-Z]+)\\).*\\1$" nil t)
+    (replace-match ""))
+  
+  ;; Nuke footers: "Printed 12/3/85	27 April 1981	1"
+  ;;    Sun appear to be on drugz:
+  ;;     "Sun Release 3.0B  Last change: 1 February 1985     1"
+  ;;    HP are even worse!
+  ;;     "     Hewlett-Packard   -1- (printed 12/31/99)"  FMHWA12ID!!
+  ;;    System V (well WICATs anyway):
+  ;;     "Page 1			  (printed 7/24/85)"
+  ;;    Who is administering PCP to these corporate bozos?
+  (goto-char (point-min))
+  (while (re-search-forward
+	   (cond ((eq system-type 'hpux)
+		  "^[ \t]*Hewlett-Packard\\(\\| Company\\)[ \t]*- [0-9]* -.*$")
+		 ((eq system-type 'usg-unix-v)
+		  "^ *Page [0-9]*.*(printed [0-9/]*)$")
+		 (t
+		  "^\\(Printed\\|Sun Release\\) [0-9].*[0-9]$"))
+	   nil t)
+    (replace-match ""))
+
+  ;; Crunch blank lines
+  (goto-char (point-min))
+  (while (re-search-forward "\n\n\n\n*" nil t)
+    (replace-match "\n\n"))
+
+  ;; Nuke blanks lines at start.
+  (goto-char (point-min))
+  (skip-chars-forward "\n")
+  (delete-region (point-min) (point)))
+
 
 (defun insert-man-file (name)
   ;; Insert manual file (unpacked as necessary) into buffer

@@ -76,6 +76,14 @@ and this notice must be preserved on all copies.  */
 
 /* #define LOAD_AVE_CVT(x) (int) (((double) (x)) * 100.0) */
 
-/* Avoid compiler bug */
+#define SWITCH_ENUM_BUG
 
-#define ADDR_CORRECT (c) (c)
+#if 0
+/* These three lines were new in 18.50.  They were said to permit
+   a demand-paged executable, but someone else says they don't work.  */
+#define SECTION_ALIGNMENT 0x03ff
+#define SEGMENT_MASK 0xffff
+#define LD_SWITCH_MACHINE  -z
+#else
+#define LD_SWITCH_MACHINE -s -N
+#endif

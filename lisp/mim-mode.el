@@ -230,6 +230,8 @@ Entry to this mode calls the value of mim-mode-hook if non-nil."
   (setq paragraph-start (concat "^$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
+  (make-local-variable 'paragraph-ignore-fill-prefix)
+  (setq paragraph-ignore-fill-prefix t)
   ;; Most people use string comments.
   (make-local-variable 'comment-start)
   (setq comment-start ";\"")

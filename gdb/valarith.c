@@ -119,6 +119,9 @@ value_binop (arg1, arg2, op)
 {
   register value val;
 
+  COERCE_ENUM (arg1);
+  COERCE_ENUM (arg2);
+
   if ((TYPE_CODE (VALUE_TYPE (arg1)) != TYPE_CODE_FLT
        &&
        TYPE_CODE (VALUE_TYPE (arg1)) != TYPE_CODE_INT)
@@ -328,7 +331,11 @@ value
 value_neg (arg1)
      register value arg1;
 {
-  register struct type *type = VALUE_TYPE (arg1);
+  register struct type *type;
+
+  COERCE_ENUM (arg1);
+
+  type = VALUE_TYPE (arg1);
 
   if (TYPE_CODE (type) == TYPE_CODE_FLT)
     return value_from_double (type, - value_as_double (arg1));
@@ -342,6 +349,8 @@ value
 value_lognot (arg1)
      register value arg1;
 {
+  COERCE_ENUM (arg1);
+
   if (TYPE_CODE (VALUE_TYPE (arg1)) != TYPE_CODE_INT)
     error ("Argument to complement operation not an integer.");
 

@@ -26,7 +26,7 @@
 
 (defun x-menu-mode ()
   "Major mode for creating permanent menus for use with X.
-These menus are iimplemented entirely in Lisp; popup menus, implemented
+These menus are implemented entirely in Lisp; popup menus, implemented
 with x-popup-menu, are implemented using XMenu primitives."
   (make-local-variable 'x-menu-items-per-line)
   (make-local-variable 'x-menu-item-width)

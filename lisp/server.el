@@ -53,10 +53,10 @@
 ;;; 2. When the program that wants to use "the editor" is running
 ;;; as a subprocess of Emacs.
 
-;;; The buffer local variable "client-list" lists the clients who are waiting
-;;; for this buffer to be edited.  The global variable "server-clients" lists
-;;; all the waiting clients, and which files are yet to be edited for each.
-
+;;; The buffer local variable "server-buffer-clients" lists 
+;;; the clients who are waiting for this buffer to be edited.  
+;;; The global variable "server-clients" lists all the waiting clients,
+;;; and which files are yet to be edited for each.
 
 (defvar server-program "server"
   "*The program to use as the edit server")
@@ -94,9 +94,14 @@ When a buffer is marked as \"done\", it is removed from this list.")
 	((eq (process-status proc) 'signal)
 	 (server-log (message "Server subprocess killed")))))
 
-(defun server-start (leave-dead)
-  "Start a server process, killing any existing server first.
-Prefix arg means just kill any existing server."
+(defun server-start (&optional leave-dead)
+  "Allow this Emacs process to be a server for client processes.
+This starts a server communications subprocess through which
+client \"editors\" can send your editing commands to this Emacs job.
+To use the server, set up the program `etc/emacsclient' in the
+Emacs distribution as your standard \"editor\".
+
+Prefix arg means just kill any existing server communications subprocess."
   (interactive "P")
   ;; kill it dead!
   (if server-process
@@ -108,12 +113,14 @@ Prefix arg means just kill any existing server."
   (while server-clients
     (let ((buffer (nth 1 (car server-clients))))
       (server-buffer-done buffer)))
-  (if leave-dead nil
+  (if leave-dead
+      nil
+    (if server-process
+	(server-log (message "Restarting server")))
     (setq server-process (start-process "server" nil server-program))
     (set-process-sentinel server-process 'server-sentinel)
     (set-process-filter server-process 'server-process-filter)
-    (process-kill-without-query server-process)
-    (server-log "Starting server")))
+    (process-kill-without-query server-process)))
 
 ;Process a request from the server to edit some files.
 ;Format of STRING is "Client: CLIENTID PATH PATH PATH... \n"
@@ -142,18 +149,23 @@ Prefix arg means just kill any existing server."
   (let (client-record)
     (while filenames
       (save-excursion
-	(let ((obuf (get-file-buffer (car filenames))))
-	  ;; If there is an existing buffer that's not modified,
-	  ;; revert it--don't ask for confirmation as usually would.
-	  (if (and obuf (not (buffer-modified-p obuf))
-		   (file-exists-p (buffer-file-name obuf)))
-	      (progn
-		(set-buffer obuf)
-		(revert-buffer t t))
-	    (set-buffer (find-file-noselect (car filenames)))))
-	(setq server-buffer-clients (cons (car client) server-buffer-clients))
-	(setq client-record (cons (current-buffer) client-record)))
-      (setq filenames (cdr filenames)))
+	;; If there is an existing buffer that's not modified, revert it.
+	;; If there is an existing buffer with deleted file, offer to write it.
+ 	(let* ((filen (car filenames))
+	       (obuf (get-file-buffer filen)))
+ 	  (if (and obuf (set-buffer obuf))
+ 	      (if (file-exists-p filen)
+ 		  (if (buffer-modified-p obuf) nil
+ 		    (revert-buffer t nil))
+ 		(if (y-or-n-p
+ 		     (concat "File no longer exists: "
+ 			     filen
+ 			     ", write buffer to file? "))
+ 		    (write-file filen)))
+ 	    (set-buffer (find-file-noselect filen))))
+  	(setq server-buffer-clients (cons (car client) server-buffer-clients))
+  	(setq client-record (cons (current-buffer) client-record)))
+        (setq filenames (cdr filenames)))
     (nconc client client-record)))
 
 (defun server-buffer-done (buffer)
@@ -185,14 +197,20 @@ as a suggestion for what to select next."
     (bury-buffer buffer)
     next-buffer))
 
+(defun mh-draft-p (buffer)
+  "Return non-nil if this BUFFER is an mh <draft> file.
+Since MH deletes draft *BEFORE* it is edited, the server treats them specially."
+ ;; This may not be appropriately robust for all cases.
+  (string= (buffer-name buffer) "draft"))
+
 (defun server-done ()
   "Offer to save current buffer, mark it as \"done\" for clients,
 bury it, and return a suggested buffer to select next."
   (let ((buffer (current-buffer)))
     (if server-buffer-clients
 	(progn
-	  (if (string= (buffer-name) "draft")
-	      (progn (save-buffer buffer)
+ 	  (if (mh-draft-p buffer)
+ 	      (progn (save-buffer)
 		     (write-region (point-min) (point-max)
 				   (concat buffer-file-name "~"))
 		     (kill-buffer buffer))
@@ -207,8 +225,9 @@ If a server buffer is current, it is marked \"done\" and optionally saved.
 MH <draft> files are always saved and backed up, no questions asked.
 When all of a client's buffers are marked as \"done\", the client is notified.
 
-If there is no server process running, one is started and that's all."
-  (interactive)
+If invoked with a prefix argument, or if there is no server process running, 
+starts server process and that is all.  Invoked by \\[server-edit]."
+  (interactive "P")
   (if (or arg
 	  (not server-process)
 	  (memq (process-status server-process) '(signal exit)))

@@ -87,14 +87,15 @@ If the cursor has not moved from the end of the previous expansion and
 no argument is given, replace the previously-made expansion
 with the next possible expansion not yet tried."
   (interactive "*P")
-  (message "Searching for dynamic expansion...")
-  (let (abbrev expansion old which loc n pattern)
+  (let (abbrev expansion old which loc n pattern
+	(nocase (and case-fold-search case-replace)))
     ;; abbrev -- the abbrev to expand
     ;; expansion -- the expansion found (eventually) or nil until then
     ;; old -- the text currently in the buffer
     ;;    (the abbrev, or the previously-made expansion)
     ;; loc -- place where expansion is found
     ;;    (to start search there for next expansion if requested later)
+    ;; nocase -- non-nil if should consider case significant.
     (save-excursion
       (if (and (null arg)
 	       (eq last-command this-command)
@@ -122,7 +123,7 @@ with the next possible expansion not yet tried."
 	    (if last-dabbrevs-expansion-location
 		(goto-char last-dabbrevs-expansion-location))
 	    (while (and (> n 0)
-			(setq expansion (dabbrevs-search pattern t)))
+			(setq expansion (dabbrevs-search pattern t nocase)))
 	      (setq loc (point-marker))
 	      (setq last-dabbrev-table (cons expansion last-dabbrev-table))
 	      (setq n (1- n)))
@@ -136,13 +137,12 @@ with the next possible expansion not yet tried."
 	    (if last-dabbrevs-expansion-location
 		(goto-char last-dabbrevs-expansion-location))
 	    (while (and (> n 0)
-			(setq expansion (dabbrevs-search pattern nil)))
+			(setq expansion (dabbrevs-search pattern nil nocase)))
 	      (setq loc (point-marker))
 	      (setq last-dabbrev-table (cons expansion last-dabbrev-table))
 	      (setq n (1- n)))
 	    (setq last-dabbrevs-direction -1))))
 
-    (message "")
     (if (not expansion)
 	(let ((first (string= abbrev old)))
 	  (setq last-dabbrevs-abbrev-location nil)
@@ -156,8 +156,18 @@ with the next possible expansion not yet tried."
 		 abbrev))
       ;; Success: stick it in and return.
       (undo-boundary)
-      (delete-backward-char (length old))
-      (insert expansion)  
+      (search-backward old)
+      ;; Make case of replacement conform to case of abbreviation
+      ;; provided (1) that kind of thing is enabled in this buffer
+      ;; and (2) the replacement itself is all lower case
+      ;; except perhaps for the first character.
+      (let ((nocase (and nocase
+			 (string= expansion
+				  (concat (substring expansion 0 1)
+					  (downcase (substring expansion 1)))))))
+	(replace-match (if nocase (downcase expansion) expansion)
+		       (not nocase)
+		       'literal))
       ;; Save state for re-expand.
       (setq last-dabbrevs-abbreviation abbrev)
       (setq last-dabbrevs-expansion expansion)
@@ -176,7 +186,7 @@ with the next possible expansion not yet tried."
 ;; Value is the expansion, or nil if not found.  After a successful
 ;; search, point is left right after the expansion found.
 
-(defun dabbrevs-search (pattern reverse)
+(defun dabbrevs-search (pattern reverse nocase)
   (let (missing result)
     (save-restriction 	    ; Uses restriction for limited searches.
       (if dabbrevs-limit
@@ -198,7 +208,11 @@ with the next possible expansion not yet tried."
 	      (setq result (buffer-substring (match-beginning 0)
 					     (match-end 0)))
 	      (let* ((test last-dabbrev-table))
-		(while (and test (not (string= (car test) result)))
+		(while (and test
+			    (not
+			     (if nocase
+				 (string= (downcase (car test)) (downcase result))
+			       (string= (car test) result))))
 		  (setq test (cdr test)))
 		(if test (setq result nil))))))	; if already in table, ignore
       result)))

@@ -1,25 +1,38 @@
-# make all        to compile and build Emacs
-# make install    to intall it
-# make tags	  to update tags tables
+# make all	to compile and build Emacs
+# make install	to install it
+# make install.sysv  to install on system V.
+# make install.xenix  to install on Xenix
+# make tags	to update tags tables
+#
+# make distclean	to delete everything that wasn't in the distribution
+#	This is a very dangerous thing to do!
 
-# make clean	  to delete everything that wasn't in the distribution
-#      This is a very dangerous thing to do!
+SHELL = /bin/sh
 
 # Where to install things
-LIBDIR= /usr/local/emacs
-BINDIR= /usr/local/bin
+# Note that on system V you must change MANDIR to /use/local/man/man1.
+LIBDIR= /usr/new/lib/emacs
+BINDIR= /usr/new
 MANDIR= /usr/man/man1
 
+# Flags passed down to subdirectory makefiles.
+MFLAGS=
+
 # Subdirectories to make recursively.  `lisp' is not included
-#   because the compiled lisp files are part of the distribution
-#   and you cannot remake them without installing Emacs first.
+# because the compiled lisp files are part of the distribution
+# and you cannot remake them without installing Emacs first.
 SUBDIR= etc src
+
 # Subdirectories to install
 COPYDIR= etc info lisp
+
 # Subdirectories to clean
 CLEANDIR= ${COPYDIR} lisp/term
 
-all:	${SUBDIR} lock
+all:	src/paths.h ${SUBDIR} lock
+
+src/paths.h: Makefile src/paths.h-dist
+	/bin/sed 's;/usr/local/emacs;${LIBDIR};' < src/paths.h-dist > src/paths.h
 
 src:	etc
 
@@ -28,31 +41,72 @@ src:	etc
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS} all
 
-install: all
-	-mkdir ${LIBDIR}
-	-chmod 777 ${LIBDIR}
-	tar cf  - ${COPYDIR} | (cd ${LIBDIR}; tar xpBvf - )
-	for i in ${CLEANDIR}; do \
-		(rm -rf ${LIBDIR}/$$i/RCS; \
-		 rm -f ${LIBDIR}/$$i/\#*; \
-		 rm -f ${LIBDIR}/$$i/*~); \
-	done
+install: all mkdir
+	-if [ `/bin/pwd` != `(cd ${LIBDIR}; /bin/pwd)` ] ; then \
+		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xBf - ) ;\
+		for i in ${CLEANDIR}; do \
+			(rm -rf ${LIBDIR}/$$i/RCS; \
+			 rm -f ${LIBDIR}/$$i/\#*; \
+			 rm -f ${LIBDIR}/$$i/*~); \
+		done \
+	fi
 	install -c -s -g kmem -m 2755 etc/loadst ${LIBDIR}/etc/loadst
 	install -c -s etc/etags ${BINDIR}/etags
 	install -c -s etc/ctags ${BINDIR}/ctags
 	install -c -s -m 1755 src/xemacs ${BINDIR}/xemacs
-	install -c -m 777 etc/emacs.1 ${MANDIR}/emacs.1
+	install -c -m 444 etc/emacs.1 ${MANDIR}/emacs.1
 	-rm -f ${BINDIR}/emacs
 	mv ${BINDIR}/xemacs ${BINDIR}/emacs
 
-clean:
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean; cd ..); done
+install.sysv: all mkdir
+	tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpvf - )
+	for i in ${CLEANDIR}; do \
+		 rm -rf ${LIBDIR}/$$i/RCS; \
+		 rm -f ${LIBDIR}/$$i/\#*; \
+		 rm -f ${LIBDIR}/$$i/*~; \
+	done
+	-cpset etc/loadst ${BINDIR}/loadst 2755 bin sys
+	-cpset etc/etags ${BINDIR}/etags 755 bin bin
+	-cpset etc/ctags ${BINDIR}/ctags 755 bin bin
+	-cpset etc/emacs.1 ${MANDIR}/emacs.1 444 bin bin
+	-/bin/rm -f ${BINDIR}/emacs
+	-cpset src/xemacs ${BINDIR}/emacs 1755 bin bin
+  
+install.xenix: all mkdir
+	if [ `pwd` != `(cd ${LIBDIR}; pwd)` ] ; then \
+		tar cf - ${COPYDIR} | (cd ${LIBDIR}; umask 0; tar xpvf - ) ;\
+		for i in ${CLEANDIR}; do \
+			(rm -rf ${LIBDIR}/$$i/RCS; \
+			 rm -f ${LIBDIR}/$$i/\#*; \
+			 rm -f ${LIBDIR}/$$i/*~); \
+		done \
+	fi
+	-mv -f ${LIBDIR}/etc/loadst ${LIBDIR}/etc/loadst.old
+	cp etc/loadst ${LIBDIR}/etc/loadst
+	chown sysinfo ${LIBDIR}/etc/loadst
+	chmod 4755 ${LIBDIR}/etc/loadst
+	-rm -f ${LIBDIR}/etc/loadst.old
+	cp etc/etags etc/ctags ${BINDIR}
+	chmod 755 ${BINDIR}/etags ${BINDIR}/ctags
+	cp etc/emacs.1 ${MANDIR}/emacs.1
+	chmod 444 ${MANDIR}/emacs.1
+	-mv -f ${BINDIR}/emacs ${BINDIR}/emacs.old
+	cp src/xemacs ${BINDIR}/emacs
+	chmod 1755 ${BINDIR}/emacs
+	-rm -f ${BINDIR}/emacs.old
+
+mkdir: FRC
+	-mkdir ${LIBDIR}
+	-chmod 777 ${LIBDIR}
+
+distclean:
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} distclean); done
 
 lock:
 	-mkdir ${LIBDIR}/lock
-	chmod 777 ${LIBDIR}/lock
+	-chmod 777 ${LIBDIR}/lock
 
 FRC:
 
 tags:	etc
-	cd src; ../etc/etags *.{c,h} ../lisp/*.el ../lisp/term/*.el
+	cd src; ../etc/etags *.[ch] ../lisp/*.el ../lisp/term/*.el

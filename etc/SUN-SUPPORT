@@ -7,6 +7,7 @@ To enable use of these files and programs, define the configuration
 switch HAVE_SUN_WINDOWS in src/config.h before compiling Emacs.
 The definition of HAVE_SUN_WINDOWS must precede the #include m-sun2.h
 or #include m-sun3.h.
+If you must change PURESIZE, do so after the #include m-sun2.h
 
 This software is based on SunView for Sun UNIX 4.2 Release 3.2,
 and will not work "as is" on previous releases, eg 3.0 or 3.1.
@@ -21,7 +22,11 @@ automatically load the file lisp/term/sun.el.  This, in turn, will
 ensure that sun-mouse.el is autoloaded when any mouse events are
 detected.  It is suggested that sun-mouse and sun-mouse-fns be
 included in your site-init.el file, so that they will always be loaded
-when running on a Sun workstation.  
+when running on a Sun workstation.  [Increase PURESIZE to 153000].
+
+   Support for the Sun function keys requires disconnecting the standard
+Emacs command Meta-[.  Therefore, the function keys are supported only
+if you do (setq sun-esc-bracket t) in your .emacs file.
 
    The file src/sunfns.c defines several useful functions for emacs on
 the Sun.  Among these are procedures to pop-up SunView menus, put and
@@ -50,6 +55,21 @@ other way, the main right button menu contains a "Stuff Selection"
 command that works just like in shelltool.  [The Get and Put function
 keys are also assigned to these functions, so you don't need the mouse
 or even emacstool to make this work.]
+
+   Until someone write code to read the textsw "Selection Shelf", it is
+not possible to copy directly from a textsw to emacs, you must go through
+the textsw "STUFF" selection.
+
+   The Scroll-bar region is not a SunView scrollbar.  It really should
+be called the "Right-Margin" region.  The scroll bar region is basically
+the rightmost five columns (see documentation on variable scrollbar-width).
+Mouse hits in this region can have special bindings, currently those binding
+effect scrolling of the window, and so are refered to as the "Scroll-bar"
+region.
+
+   For information on what mouse bindings are in effect, use the command
+M-x Describe-mouse-bindings, or the quick pop-up menu item "Mouse-Help".
+
 
 GNU Emacs EXAMPLES:
    See definitions in lisp/sun-mouse-fns.el for examples.
@@ -140,3 +160,42 @@ Add this patch to your /etc/termcap file:
 
 If you don't have the program "patch", just add the line:
         :AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:\
+
+casetek@crvax.sri.com says:
+
+Those of you using GNU Emacs on Sun workstations under
+3.2 may be interested in reducing memory utilization in
+the emacstool via the Sun toolmerge facility.  The technique
+is described in the Release 3.2 Manual starting on page
+71.  The following is a summary of how it would apply
+to merging emacstool into the basetools.
+
+1) Change the main procedure declaration in emacstool.c to:
+
+   #ifdef SUN_TOOLMERGE
+   emacstool_main (argc, argv);
+   #else
+   main (argc, argv)
+   #endif
+
+   This will allow creation of either standard or toolmerge
+   versions.
+
+2) Copy emacstool.o into directory /usr/src/sun/suntool.
+3) make CFLAGS="-g -DSUN_TOOLMERGE" emacstool.o
+4) Add the following line to basetools.h
+
+  "emacstool",emacstool_main,
+
+5) Add the following line to toolmerge.c.
+
+   extern emacstool_main();
+
+6) make basetools MOREOBJS="emacstool.o"
+7) make install_bins
+
+To invoke the toolmerged version, you must exit suntools and
+re-start it.  Make sure that /usr/bin occurs before the directory
+in which you installed the standard (non-toolmerged) version.
+
+

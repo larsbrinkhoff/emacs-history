@@ -7,6 +7,9 @@
 # This program causes everyone to get a bigger CDLIMIT value
 # so that the dumped Emacs can be written out.
 #
+# Users of V.3.1 and later should not use this; see etc/MACHINES
+# and reconfig your kernel's CDLIMIT parameter instead.
+#
 # Caveat: Heaven help you if you screw this up.  This puts
 # a new program in as /etc/init, which then execs the real init.
 #

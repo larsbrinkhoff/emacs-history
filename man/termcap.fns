@@ -1,0 +1,16 @@
+\initial {B}
+\entry {BC}{16}
+\initial {O}
+\entry {ospeed}{10}
+\initial {P}
+\entry {PC}{10}
+\initial {T}
+\entry {tgetent}{3}
+\entry {tgetflag}{5}
+\entry {tgetnum}{5}
+\entry {tgetstr}{5}
+\entry {tgoto}{15}
+\entry {tparam}{14}
+\entry {tputs}{10}
+\initial {U}
+\entry {UP}{16}

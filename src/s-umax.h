@@ -123,7 +123,7 @@ and this notice must be preserved on all copies.  */
    The alternative is that a lock file named
    /usr/spool/mail/$USER.lock.  */
 
-/* #define MAIL_USE_FLOCK */
+#define MAIL_USE_FLOCK
 
 /* Define CLASH_DETECTION if you want lock files to be written
    so that Emacs can tell instantly when you try to modify
@@ -143,7 +143,7 @@ and this notice must be preserved on all copies.  */
    is named _avenrun.  */
 
 #define LDAV_SYMBOL "_avenrun"
-
+
 /* Here, on a separate page, add any special hacks needed
    to make Emacs work on this system.  For example,
    you might define certain system call names that don't
@@ -163,3 +163,13 @@ and this notice must be preserved on all copies.  */
 /* crt0.c needs this for compilation because it uses asm.  */  
 
 #define C_SWITCH_ASM -q nodirect_code
+
+/* Encore machines with APC processor boards align sections on 4M
+   boundaries, so it is not easy to remap the start of the text segment
+   in the unexec() routine.  For them you need the following two lines.
+   For DPC processors you can enable these or not, as you wish, but
+   you will get better performance without them.  */
+
+/* #define NO_REMAP
+   #define TEXT_START 0
+*/

@@ -46,32 +46,40 @@ the terms of Paragraph 1 above, provided that you also do the following:
     that in whole or in part contains or is a derivative of this
     program or any part thereof, to be licensed at no charge to all
     third parties on terms identical to those contained in this
-    License Agreement (except that you may choose to grant more
-    extensive warranty protection to third parties, at your option).
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
 
     c) You may charge a distribution fee for the physical act of
     transferring a copy, and you may at your option offer warranty
     protection in exchange for a fee.
 
-  3. You may copy and distribute this program or any portion of it in
-compiled, executable or object code form under the terms of Paragraphs
-1 and 2 above provided that you do the following:
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
 
-    a) cause each such copy to be accompanied by the
-    corresponding machine-readable source code, which must
-    be distributed under the terms of Paragraphs 1 and 2 above; or,
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
 
-    b) cause each such copy to be accompanied by a
-    written offer, with no time limit, to give any third party
-    free (except for a nominal shipping charge) a machine readable
-    copy of the corresponding source code, to be distributed
-    under the terms of Paragraphs 1 and 2 above; or,
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
 
-    c) in the case of a recipient of this program in compiled, executable
-    or object code form (without the corresponding source code) you
-    shall cause copies you distribute to be accompanied by a copy
-    of the written offer of source code which you received along
-    with the copy you received.
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
 
   4. You may not copy, sublicense, distribute or transfer this program
 except as expressly provided under this License Agreement.  Any attempt
@@ -83,10 +91,10 @@ their licenses terminated so long as such parties remain in full compliance.
 
   5. If you wish to incorporate parts of this program into other free
 programs whose distribution conditions are different, write to the Free
-Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet
+Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet
 worked out a simple rule that can be stated here, but we will often permit
 this.  We will be guided by the two goals of preserving the free status of
-all derivatives our free software and of promoting the sharing and reuse of
+all derivatives of our free software and of promoting the sharing and reuse of
 software.
 
 
@@ -775,6 +783,7 @@ re_compile_fastmap (bufp)
 	  break;
 
 	case notsyntaxspec:
+	  k = *p++;
 	  for (j = 0; j < (1 << BYTEWIDTH); j++)
 	    if (SYNTAX (j) != (enum syntaxcode) k)
 	      fastmap[j] = 1;
@@ -833,16 +842,17 @@ re_search (pbufp, string, size, startpos, range, regs)
   return re_search_2 (pbufp, 0, 0, string, size, startpos, range, regs, size);
 }
 
-/* Like re_match_2 but tries first a match starting at index `startpos',
- then at startpos + 1, and so on.
- `range' is the number of places to try before giving up.
- If `range' is negative, the starting positions tried are
-  startpos, startpos - 1, etc.
- It is up to the caller to make sure that range is not so large
-  as to take the starting position outside of the input strings.
+/* Like re_match_2 but tries first a match starting at index STARTPOS,
+   then at STARTPOS + 1, and so on.
+   RANGE is the number of places to try before giving up.
+   If RANGE is negative, the starting positions tried are
+    STARTPOS, STARTPOS - 1, etc.
+   It is up to the caller to make sure that range is not so large
+   as to take the starting position outside of the input strings.
 
 The value returned is the position at which the match was found,
- or -1 if no match was found. */
+ or -1 if no match was found,
+ or -2 if error (such as failure stack overflow).  */
 
 int
 re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop)
@@ -855,12 +865,24 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
      int mstop;
 {
   register char *fastmap = pbufp->fastmap;
-  register char *translate = pbufp->translate;
+  register unsigned char *translate = (unsigned char *) pbufp->translate;
   int total = size1 + size2;
+  int val;
 
   /* Update the fastmap now if not correct already */
   if (fastmap && !pbufp->fastmap_accurate)
     re_compile_fastmap (pbufp);
+  
+  /* Don't waste time in a long search for a pattern
+     that says it is anchored.  */
+  if (pbufp->used > 0 && (enum regexpcode) pbufp->buffer[0] == begbuf
+      && range > 0)
+    {
+      if (startpos > 0)
+	return -1;
+      else
+	range = 1;
+    }
 
   while (1)
     {
@@ -875,12 +897,13 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 	  if (range > 0)
 	    {
 	      register int lim = 0;
-	      register char *p;
+	      register unsigned char *p;
 	      int irange = range;
 	      if (startpos < size1 && startpos + range >= size1)
 		lim = range - (size1 - startpos);
 
-	      p = &(startpos >= size1 ? string2 - size1 : string1)[startpos];
+	      p = ((unsigned char *)
+		   &(startpos >= size1 ? string2 - size1 : string1)[startpos]);
 
 	      if (translate)
 		{
@@ -896,9 +919,10 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 	    }
 	  else
 	    {
-	      register char c;
+	      register unsigned char c;
 	      if (startpos >= size1) c = string2[startpos - size1];
 	      else c = string1[startpos];
+	      c &= 0xff;
 	      if (translate ? !fastmap[translate[c]] : !fastmap[c])
 		goto advance;
 	    }
@@ -908,8 +932,13 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 	  && fastmap && pbufp->can_be_null == 0)
 	return -1;
 
-      if (0 <= re_match_2 (pbufp, string1, size1, string2, size2, startpos, regs, mstop))
-	return startpos;
+      val = re_match_2 (pbufp, string1, size1, string2, size2, startpos, regs, mstop);
+      if (0 <= val)
+	{
+	  if (val == -2)
+	    return -2;
+	  return startpos;
+	}
 
 #ifdef C_ALLOCA
       alloca (0);
@@ -934,21 +963,25 @@ re_match (pbufp, string, size, pos, regs)
 }
 #endif /* emacs */
 
-/* Match the pattern described by `pbufp'
-  against data which is the virtual concatenation of `string1' and `string2'.
-  `size1' and `size2' are the sizes of the two data strings.
-  Start the match at position `pos'.
-  Do not consider matching past the position `mstop'.
+/* Maximum size of failure stack.  Beyond this, overflow is an error.  */
 
-  If pbufp->fastmap is nonzero, then it had better be up to date.
+int re_max_failures = 2000;
 
-  The reason that the data to match is specified as two components
-  which are to be regarded as concatenated
-  is so that this function can be used directly on the contents of an Emacs buffer.
+/* Match the pattern described by PBUFP
+   against data which is the virtual concatenation of STRING1 and STRING2.
+   SIZE1 and SIZE2 are the sizes of the two data strings.
+   Start the match at position POS.
+   Do not consider matching past the position MSTOP.
 
-  -1 is returned if there is no match.  Otherwise the value is the length
-  of the substring which was matched.
-*/
+   If pbufp->fastmap is nonzero, then it had better be up to date.
+
+   The reason that the data to match are specified as two components
+   which are to be regarded as concatenated
+   is so this function can be used directly on the contents of an Emacs buffer.
+
+   -1 is returned if there is no match.  -2 is returned if there is
+   an error (such as match stack overflow).  Otherwise the value is the length
+   of the substring which was matched.  */
 
 int
 re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
@@ -969,7 +1002,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
   char *end_match_1, *end_match_2;
   register char *d, *dend;
   register int mcnt;
-  char *translate = pbufp->translate;
+  unsigned char *translate = (unsigned char *) pbufp->translate;
 
  /* Failure point stack.  Each place that can handle a failure further down the line
     pushes a failure point on this stack.  It consists of two char *'s.
@@ -990,14 +1023,12 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 
      At that point, regstart[regnum] points to the first character in the register,
      regend[regnum] points to the first character beyond the end of the register,
-     and regstart_segend[regnum] is either the same as regend[regnum]
-     or else points to the end of the input string into which regstart[regnum] points.
-     The latter case happens when regstart[regnum] is in string1 and
-     regend[regnum] is in string2.  */
+     regstart_seg1[regnum] is true iff regstart[regnum] points into string1,
+     and regend_seg1[regnum] is true iff regend[regnum] points into string1.  */
 
   char *regstart[RE_NREGS];
-  char *regstart_segend[RE_NREGS];
   char *regend[RE_NREGS];
+  char regstart_seg1[RE_NREGS], regend_seg1[RE_NREGS];
 
   /* Set up pointers to ends of strings.
      Don't allow the second string to be empty unless both are empty.  */
@@ -1023,11 +1054,11 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
       end_match_2 = string2 + mstop - size1;
     }
 
-  /* Initialize \( and \) text positions to -1
+  /* Initialize \) text positions to -1
      to mark ones that no \( or \) has been seen for.  */
 
-  for (mcnt = 0; mcnt < sizeof (regstart) / sizeof (*regstart); mcnt++)
-    regstart[mcnt] = (char *) -1;
+  for (mcnt = 0; mcnt < sizeof (regend) / sizeof (*regend); mcnt++)
+    regend[mcnt] = (char *) -1;
 
   /* `p' scans through the pattern as `d' scans through the data.
      `dend' is the end of the input string that `d' points within.
@@ -1061,31 +1092,31 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	  /* If caller wants register contents data back, convert it to indices */
 	  if (regs)
 	    {
-	      regend[0] = d;
-	      regstart[0] = string1;
-	      for (mcnt = 0; mcnt < RE_NREGS; mcnt++)
+ 	      regs->start[0] = pos;
+ 	      if (dend == end_match_1)
+ 		regs->end[0] = d - string1;
+ 	      else
+ 		regs->end[0] = d - string2 + size1;
+ 	      for (mcnt = 1; mcnt < RE_NREGS; mcnt++)
 		{
-		  if ((mcnt != 0) && regstart[mcnt] == (char *) -1)
+		  if (regend[mcnt] == (char *) -1)
 		    {
 		      regs->start[mcnt] = -1;
 		      regs->end[mcnt] = -1;
 		      continue;
 		    }
-		  if (regstart[mcnt] - string1 < 0 ||
-		      regstart[mcnt] - string1 > size1)
-		    regs->start[mcnt] = regstart[mcnt] - string2 + size1;
-		  else
+ 		  if (regstart_seg1[mcnt])
 		    regs->start[mcnt] = regstart[mcnt] - string1;
-		  if (regend[mcnt] - string1 < 0 ||
-		      regend[mcnt] - string1 > size1)
-		    regs->end[mcnt] = regend[mcnt] - string2 + size1;
 		  else
+		    regs->start[mcnt] = regstart[mcnt] - string2 + size1;
+ 		  if (regend_seg1[mcnt])
 		    regs->end[mcnt] = regend[mcnt] - string1;
+		  else
+		    regs->end[mcnt] = regend[mcnt] - string2 + size1;
 		}
-	      regs->start[0] = pos;
 	    }
-	  if (d - string1 >= 0 && d - string1 <= size1)
-	    return d - string1 - pos;
+ 	  if (dend == end_match_1)
+	    return (d - string1 - pos);
 	  else
 	    return d - string2 + size1 - pos;
 	}
@@ -1106,14 +1137,12 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 
 	case start_memory:
 	  regstart[*p] = d;
-	  regstart_segend[*p++] = dend;
+ 	  regstart_seg1[*p++] = (dend == end_match_1);
 	  break;
 
 	case stop_memory:
 	  regend[*p] = d;
-	  if (regstart_segend[*p] == dend)
-	    regstart_segend[*p] = d;
-	  p++;
+ 	  regend_seg1[*p++] = (dend == end_match_1);
 	  break;
 
 	case duplicate:
@@ -1122,7 +1151,9 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	    register char *d2, *dend2;
 
 	    d2 = regstart[regno];
-	    dend2 = regstart_segend[regno];
+ 	    dend2 = (regstart_seg1[regno] == regend_seg1[regno])
+	            ? regend[regno]
+		    : end_match_1;
 	    while (1)
 	      {
 		/* Advance to next segment in register contents, if necessary */
@@ -1154,7 +1185,7 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	  /* fetch a data character */
 	  PREFETCH;
 	  /* Match anything but a newline.  */
-	  if ((translate ? translate[*d++] : *d++) == '\n')
+	  if ((translate ? translate[*(unsigned char *)d++] : *d++) == '\n')
 	    goto fail;
 	  break;
 
@@ -1215,7 +1246,10 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	case on_failure_jump:
 	  if (stackp == stacke)
 	    {
-	      char **stackx = (char **) alloca (2 * (stacke - stackb) * sizeof (char *));
+	      char **stackx;
+	      if (stacke - stackb > re_max_failures)
+		return -2;
+	      stackx = (char **) alloca (2 * (stacke - stackb) * sizeof (char *));
 	      bcopy (stackb, stackx, (stacke - stackb) * sizeof (char *));
 	      stackp += stackx - stackb;
 	      stacke = stackx + 2 * (stacke - stackb);
@@ -1447,11 +1481,11 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 
 static int
 bcmp_translate (s1, s2, len, translate)
-     char *s1, *s2;
+     unsigned char *s1, *s2;
      register int len;
-     char *translate;
+     unsigned char *translate;
 {
-  register char *p1 = s1, *p2 = s2;
+  register unsigned char *p1 = s1, *p2 = s2;
   while (len)
     {
       if (translate [*p1++] != translate [*p2++]) return 1;

@@ -77,7 +77,7 @@ x -- toggle variable, t -> nil, nil -> t.
 Each variable description is a paragraph.
 For convenience, the characters p and n move back and forward by paragraphs."
   (kill-all-local-variables)
-  (set-syntax-table lisp-mode-syntax-table)
+  (set-syntax-table emacs-lisp-mode-syntax-table)
   (use-local-map Edit-options-mode-map)
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate "[^\^@-\^?]")

@@ -1,5 +1,5 @@
 ;; Scheme mode, and its idiosyncratic commands.
-;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
 ;; Adapted from Lisp mode by Bill Rozas, jinx@prep.
 
 ;; This file is part of GNU Emacs.
@@ -24,47 +24,66 @@
 ;; of special forms.  Probably the code should be merged at some point 
 ;; so that there is sharing between both libraries.
 
-(provide 'scheme)
+;;; $Header: scheme.el,v 1.6 88/04/25 12:53:38 GMT cph Exp $
 
+(provide 'scheme)
+
+(defvar scheme-mode-syntax-table nil "")
+(if (not scheme-mode-syntax-table)
+    (let ((i 0))
+      (setq scheme-mode-syntax-table (make-syntax-table))
+      (set-syntax-table scheme-mode-syntax-table)
+
+      ;; Default is atom-constituent.
+      (while (< i 256)
+	(modify-syntax-entry i "_   ")
+	(setq i (1+ i)))
+
+      ;; Word components.
+      (setq i ?0)
+      (while (<= i ?9)
+	(modify-syntax-entry i "w   ")
+	(setq i (1+ i)))
+      (setq i ?A)
+      (while (<= i ?Z)
+	(modify-syntax-entry i "w   ")
+	(setq i (1+ i)))
+      (setq i ?a)
+      (while (<= i ?z)
+	(modify-syntax-entry i "w   ")
+	(setq i (1+ i)))
+
+      ;; Whitespace
+      (modify-syntax-entry ?\t "    ")
+      (modify-syntax-entry ?\n ">   ")
+      (modify-syntax-entry ?\f "    ")
+      (modify-syntax-entry ?\r "    ")
+      (modify-syntax-entry ?  "    ")
+
+      ;; These characters are delimiters but otherwise undefined.
+      ;; Brackets and braces balance for editing convenience.
+      (modify-syntax-entry ?[ "(]  ")
+      (modify-syntax-entry ?] ")[  ")
+      (modify-syntax-entry ?{ "(}  ")
+      (modify-syntax-entry ?} "){  ")
+      (modify-syntax-entry ?\| "  23")
+
+      ;; Other atom delimiters
+      (modify-syntax-entry ?\( "()  ")
+      (modify-syntax-entry ?\) ")(  ")
+      (modify-syntax-entry ?\; "<   ")
+      (modify-syntax-entry ?\" "\"    ")
+      (modify-syntax-entry ?' "'   ")
+      (modify-syntax-entry ?` "'   ")
+
+      ;; Special characters
+      (modify-syntax-entry ?, "'   ")
+      (modify-syntax-entry ?@ "'   ")
+      (modify-syntax-entry ?# "' 14")
+      (modify-syntax-entry ?\\ "\\   ")))
+
 (defvar scheme-mode-abbrev-table nil "")
 (define-abbrev-table 'scheme-mode-abbrev-table ())
-
-(defvar scheme-mode-syntax-table nil "")
-
-(if scheme-mode-syntax-table
-    ()
-  (let ((i 0))
-    (setq scheme-mode-syntax-table (make-syntax-table))
-    (set-syntax-table scheme-mode-syntax-table)
-    (while (< i ?0)
-      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
-      (setq i (1+ i)))
-    (setq i (1+ ?9))
-    (while (< i ?A)
-      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
-      (setq i (1+ i)))
-    (setq i (1+ ?Z))
-    (while (< i ?a)
-      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
-      (setq i (1+ i)))
-    (setq i (1+ ?z))
-    (while (< i 128)
-      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
-      (setq i (1+ i)))
-    (modify-syntax-entry ?  "    " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\t "    " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\n ">   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\f ">   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\; "<   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?` "'   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?' "'   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?, "'   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?. "'   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?# "'   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\" "\"    " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\\ "\\   " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\( "()  " scheme-mode-syntax-table)
-    (modify-syntax-entry ?\) ")(  " scheme-mode-syntax-table)))
 
 (defun scheme-mode-variables ()
   (set-syntax-table scheme-mode-syntax-table)
@@ -73,36 +92,44 @@
   (setq paragraph-start (concat "^$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
+  (make-local-variable 'paragraph-ignore-fill-prefix)
+  (setq paragraph-ignore-fill-prefix t)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'scheme-indent-line)
   (make-local-variable 'comment-start)
   (setq comment-start ";")
   (make-local-variable 'comment-start-skip)
-  (setq comment-start-skip ";+ *")
+  (setq comment-start-skip ";+[ \t]*")
   (make-local-variable 'comment-column)
   (setq comment-column 40)
   (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'scheme-comment-indent))
+  (setq comment-indent-hook 'scheme-comment-indent)
+  (setq mode-line-process '("" scheme-mode-line-process)))
+
+(defvar scheme-mode-line-process "")
 
 (defun scheme-mode-commands (map)
   (define-key map "\t" 'scheme-indent-line)
   (define-key map "\177" 'backward-delete-char-untabify)
-  (define-key map "\eo" 'scheme-send-buffer)
-  (define-key map "\ez" 'scheme-zap-define)
-  (define-key map "\e\C-q" 'scheme-indent-sexp)
-  (define-key map "\e\C-s" 'find-scheme-definition)
-  (define-key map "\e\C-y" 'scheme-zap-define-and-resume)
-  (define-key map "\e\C-z" 'resume-scheme))
-
-(defvar scheme-mode-map ())
-(if scheme-mode-map
-    ()
-  (setq scheme-mode-map (make-sparse-keymap))
-  ;; (define-key scheme-mode-map "\e\C-x" 'scheme-send-definition)
-  (scheme-mode-commands scheme-mode-map))
+  (define-key map "\e\C-q" 'scheme-indent-sexp))
 
+(defvar scheme-mode-map nil)
+(if (not scheme-mode-map)
+    (progn
+      (setq scheme-mode-map (make-sparse-keymap))
+      (scheme-mode-commands scheme-mode-map)))
+
 (defun scheme-mode ()
   "Major mode for editing Scheme code.
+Editing commands are similar to those of lisp-mode.
+
+In addition, if an inferior Scheme process is running, some additional
+commands will be defined, for evaluating expressions and controlling
+the interpreter, and the state of the process will be displayed in the
+modeline of all Scheme buffers.  The names of commands that interact
+with the Scheme process start with \"xscheme-\".  For more information
+see the documentation for xscheme-interaction-mode.
+
 Commands:
 Delete converts tabs to spaces as it moves back.
 Blank lines separate paragraphs.  Semicolons start comments.
@@ -111,27 +138,36 @@ Entry to this mode calls the value of scheme-mode-hook
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
-  (use-local-map scheme-mode-map)
-  (setq major-mode 'scheme-mode)
-  (setq mode-name "Scheme")
+  (scheme-mode-initialize)
   (scheme-mode-variables)
   (run-hooks 'scheme-mode-hook))
 
-;; This will do unless shell.el is loaded.
-(defun scheme-send-definition ()
-  "Send the current definition to the Scheme process made by M-x run-scheme."
-  (interactive)
-  (error "Process scheme does not exist"))
+(defun scheme-mode-initialize ()
+  (use-local-map scheme-mode-map)
+  (setq major-mode 'scheme-mode)
+  (setq mode-name "Scheme"))
+
+(autoload 'run-scheme "xscheme"
+  "Run an inferior Scheme process.
+Output goes to the buffer `*scheme*'.
+With argument, asks for a command line."
+  t)
+
+(defvar scheme-mit-dialect t
+  "If non-nil, scheme mode is specialized for MIT Scheme.
+Set this to nil if you normally use another dialect.")
 
 (defun scheme-comment-indent (&optional pos)
   (save-excursion
     (if pos (goto-char pos))
-    (if (looking-at ";;;")
-	(current-column)
-      (if (looking-at ";;")
-	  (let ((tem (calculate-scheme-indent)))
-	    (if (listp tem) (car tem) tem))
-	comment-column))))
+    (cond ((looking-at ";;;") (current-column))
+	  ((looking-at ";;")
+	   (let ((tem (calculate-scheme-indent)))
+	     (if (listp tem) (car tem) tem)))
+	  (t
+	   (skip-chars-backward " \t")
+	   (max (if (bolp) 0 (1+ (current-column)))
+		comment-column)))))
 
 (defvar scheme-indent-offset nil "")
 (defvar scheme-indent-hook 'scheme-indent-hook "")
@@ -170,7 +206,7 @@ rigidly along with this one."
 	     (setq beg (point))
 	     (> end beg))
 	   (indent-code-rigidly beg end shift-amt)))))
-
+
 (defun calculate-scheme-indent (&optional parse-start)
   "Return appropriate indentation for current line as scheme code.
 In usual case returns an integer: the column to indent to.
@@ -182,7 +218,7 @@ of the start of the containing expression."
   (save-excursion
     (beginning-of-line)
     (let ((indent-point (point)) state paren-depth desired-indent (retry t)
-	  last-sexp containing-sexp)
+	  last-sexp containing-sexp first-sexp-list-p)
       (if parse-start
 	  (goto-char parse-start)
 	(beginning-of-defun))
@@ -211,19 +247,8 @@ of the start of the containing expression."
 		  (setq desired-indent (current-column))
 		;; Move to first sexp after containing open paren
 		(parse-partial-sexp (point) last-sexp 0 t)
+		(setq first-sexp-list-p (looking-at "\\s("))
 		(cond
-		 ((looking-at "\\s(")
-		  ;; Looking at a list.  Don't call hook.
-		  (if (not (> (save-excursion (forward-line 1) (point)) last-sexp))
-		      (progn (goto-char last-sexp)
-			     (beginning-of-line)
-			     (parse-partial-sexp (point) last-sexp 0 t)))
-		  ;; Indent under the list or under the first sexp on the
-		  ;; same line as last-sexp.  Note that first thing on that
-		  ;; line has to be complete sexp since we are inside the
-		  ;; innermost containing sexp.
-		  (backward-prefix-chars)
-		  (setq desired-indent (current-column)))
 		 ((> (save-excursion (forward-line 1) (point))
 		     last-sexp)
 		  ;; Last sexp is on same line as containing sexp.
@@ -242,6 +267,9 @@ of the start of the containing expression."
 		  (beginning-of-line)
 		  (parse-partial-sexp (point) last-sexp 0 t)
 		  (backward-prefix-chars)))))))
+      ;; If looking at a list, don't call hook.
+      (if first-sexp-list-p
+	  (setq desired-indent (current-column)))
       ;; Point is at the point to indent under unless we are inside a string.
       ;; Call indentation hook except when overriden by scheme-indent-offset
       ;; or if the desired indentation has already been computed.
@@ -264,7 +292,7 @@ of the start of the containing expression."
 	     ;; Use default indentation if not computed yet
 	     (setq desired-indent (current-column))))
       desired-indent)))
-
+
 (defun scheme-indent-hook (indent-point state)
   (let ((normal-indent (current-column)))
     (save-excursion
@@ -287,7 +315,7 @@ of the start of the containing expression."
 		   (scheme-indent-defform state indent-point))))))))
 
 (defvar scheme-body-indent 2 "")
-
+
 (defun scheme-indent-specform (count state indent-point)
   (let ((containing-form-start (car (cdr state))) (i count)
 	body-indent containing-form-column)
@@ -311,28 +339,21 @@ of the start of the containing expression."
 		      (parse-partial-sexp (point) indent-point 1 t))
 		  (error nil))))
     ;; Point is sitting on first character of last (or count) sexp.
-    (if (> count 0)
-	;; A distinguished form. If it is the first or second form
-	;; use double scheme-body-indent, else normal indent. With
-	;; scheme-body-indent bound to 2 (the default), this just
-	;; happens to work the same with if as the older code, but it
-	;; makes unwind-protect, condition-case,
-	;; with-output-to-temp-buffer, et. al. much more tasteful.
-	;; The older, less hacked, behavior can be obtained by
-	;; replacing below with (list normal-indent containing-form-start).
-	(if (<= (- i count) 1)
-	    (list (+ containing-form-column (* 2 scheme-body-indent))
-		  containing-form-start)
-	  (list normal-indent containing-form-start))
-      ;; A non-distinguished form. Use body-indent if there are no
-      ;; distinguished forms and this is the first undistinguished
-      ;; form, or if this is the first undistinguished form and
-      ;; the preceding distinguished form has indentation at
-      ;; least as great as body-indent.
-      (if (or (and (= i 0) (= count 0))
-	      (and (= count 0) (<= body-indent normal-indent)))
-	  body-indent
-	normal-indent))))
+    (cond ((> count 0)
+	   ;; A distinguished form.  Use double scheme-body-indent.
+	   (list (+ containing-form-column (* 2 scheme-body-indent))
+		 containing-form-start))
+	  ;; A non-distinguished form. Use body-indent if there are no
+	  ;; distinguished forms and this is the first undistinguished
+	  ;; form, or if this is the first undistinguished form and
+	  ;; the preceding distinguished form has indentation at least
+	  ;; as great as body-indent.
+	  ((and (= count 0)
+		(or (= i 0)
+		    (<= body-indent normal-indent)))
+	   body-indent)
+	  (t
+	   normal-indent))))
 
 (defun scheme-indent-defform (state indent-point)
   (goto-char (car (cdr state)))
@@ -341,11 +362,11 @@ of the start of the containing expression."
       (progn
 	(goto-char (car (cdr state)))
 	(+ scheme-body-indent (current-column)))))
-
+
 ;;; Let is different in Scheme
 
 (defun would-be-symbol (string)
-  (not (char-equal (aref string 0) ?\()))
+  (not (string-equal (substring string 0 1) "(")))
 
 (defun next-sexp-as-string ()
   ;; Assumes that protected by a save-excursion
@@ -374,23 +395,63 @@ of the start of the containing expression."
 (put 'begin 'scheme-indent-hook 0)
 (put 'case 'scheme-indent-hook 1)
 (put 'do 'scheme-indent-hook 2)
-(put 'fluid-let 'scheme-indent-hook 1)
-(put 'if 'scheme-indent-hook 3)
-(put 'in-package 'scheme-indent-hook 1)
 (put 'lambda 'scheme-indent-hook 1)
 (put 'let 'scheme-indent-hook 'scheme-let-indent)
 (put 'let* 'scheme-indent-hook 1)
-(put 'let-syntax 'scheme-indent-hook 1)
 (put 'letrec 'scheme-indent-hook 1)
-(put 'local-declare 'scheme-indent-hook 1)
-(put 'macro 'scheme-indent-hook 1)
-(put 'make-environment 'scheme-indent-hook 0)
-(put 'make-package 'scheme-indent-hook 2)
-(put 'named-lambda 'scheme-indent-hook 1)
 (put 'sequence 'scheme-indent-hook 0)
-(put 'using-syntax 'scheme-indent-hook 1)
 
+(put 'call-with-input-file 'scheme-indent-hook 1)
+(put 'with-input-from-file 'scheme-indent-hook 1)
+(put 'with-input-from-port 'scheme-indent-hook 1)
+(put 'call-with-output-file 'scheme-indent-hook 1)
+(put 'with-output-to-file 'scheme-indent-hook 1)
+(put 'with-output-to-port 'scheme-indent-hook 1)
+
+;;;; MIT Scheme specific indentation.
 
+(if scheme-mit-dialect
+    (progn
+      (put 'fluid-let 'scheme-indent-hook 1)
+      (put 'in-package 'scheme-indent-hook 1)
+      (put 'let-syntax 'scheme-indent-hook 1)
+      (put 'local-declare 'scheme-indent-hook 1)
+      (put 'macro 'scheme-indent-hook 1)
+      (put 'make-environment 'scheme-indent-hook 0)
+      (put 'named-lambda 'scheme-indent-hook 1)
+      (put 'using-syntax 'scheme-indent-hook 1)
+
+      (put 'with-input-from-string 'scheme-indent-hook 1)
+      (put 'with-output-to-string 'scheme-indent-hook 0)
+      (put 'with-values 'scheme-indent-hook 1)
+
+      (put 'syntax-table-define 'scheme-indent-hook 2)
+      (put 'list-transform-positive 'scheme-indent-hook 1)
+      (put 'list-transform-negative 'scheme-indent-hook 1)
+      (put 'list-search-positive 'scheme-indent-hook 1)
+      (put 'list-search-negative 'scheme-indent-hook 1)
+
+      (put 'access-components 'scheme-indent-hook 1)
+      (put 'assignment-components 'scheme-indent-hook 1)
+      (put 'combination-components 'scheme-indent-hook 1)
+      (put 'comment-components 'scheme-indent-hook 1)
+      (put 'conditional-components 'scheme-indent-hook 1)
+      (put 'disjunction-components 'scheme-indent-hook 1)
+      (put 'declaration-components 'scheme-indent-hook 1)
+      (put 'definition-components 'scheme-indent-hook 1)
+      (put 'delay-components 'scheme-indent-hook 1)
+      (put 'in-package-components 'scheme-indent-hook 1)
+      (put 'lambda-components 'scheme-indent-hook 1)
+      (put 'lambda-components* 'scheme-indent-hook 1)
+      (put 'lambda-components** 'scheme-indent-hook 1)
+      (put 'open-block-components 'scheme-indent-hook 1)
+      (put 'pathname-components 'scheme-indent-hook 1)
+      (put 'procedure-components 'scheme-indent-hook 1)
+      (put 'sequence-components 'scheme-indent-hook 1)
+      (put 'unassigned\?-components 'scheme-indent-hook 1)
+      (put 'unbound\?-components 'scheme-indent-hook 1)
+      (put 'variable-components 'scheme-indent-hook 1)))
+
 (defun scheme-indent-sexp ()
   "Indent each line of the list starting just after point."
   (interactive)
@@ -442,140 +503,3 @@ of the start of the containing expression."
 	    (if (/= (current-column) this-indent)
 		(progn (delete-region bol (point))
 		       (indent-to this-indent)))))))))
-
-;;; Schedit commands (old scheme interface)
-
-(defvar scheme-zap-name (expand-file-name "fromedit.zap" nil)
-  "Name of transfer file between Scheme and Emacs")
-
-(defvar scheme-invocation-string "%scheme"
-  "*String to give to the Cshell to proceed a sibling Scheme")
-
-(defun goto-parallel-scheme-fork ()
-  (suspend-emacs scheme-invocation-string))
-
-;; This currently assumes that Emacs runs as an inferior to Scheme
-
-(fset 'goto-scheme 'suspend-emacs)
-
-;; if not, do (fset 'goto-scheme 'goto-parallel-scheme-fork)
-
-(defun resume-scheme ()
-  "Suspend Emacs and resume Scheme"
-  (interactive)
-  (let ((zap-buffer (get-buffer scheme-zap-name))
-	(this-buffer (current-buffer)))
-    (if zap-buffer
-	(save-excursion
-	  (unwind-protect
-	      (progn (set-buffer zap-buffer)
-		     (or buffer-file-name
-			 (setq buffer-file-name scheme-zap-name))
-		     (save-buffer)
-		     (erase-buffer)
-		     (setq buffer-modified-p nil))
-	    (set-buffer this-buffer)))))
-  (goto-scheme))
-
-(defun scheme-do-zap-region (start end buffer &optional separate)
-  "Internal routine which zaps a region of text for Scheme."
-  (let ((the-text (buffer-substring start end)))
-    (save-excursion
-      (unwind-protect
-	  (progn (set-buffer (get-buffer-create scheme-zap-name))
-		 (insert-string the-text)
-		 (if separate (newline 2)))
-	(set-buffer buffer)))))
-
-(defun scheme-zap-region (start end)
-  "Zap region between point and mark into Scheme."
-  (interactive "r")
-  (scheme-do-zap-region start end (current-buffer)))
-
-(defun scheme-zap-expression (arg)
-  "Zap sexp before point into Scheme."
-  (interactive "P")
-  (scheme-do-zap-region
-   (let ((stab (syntax-table)))
-     (unwind-protect
-	 (save-excursion
-	   (set-syntax-table lisp-mode-syntax-table)
-	   (forward-sexp -1)
-	   (point))
-       (set-syntax-table stab)))
-   (point)
-   (current-buffer)
-   t))
-
-(defun scheme-zap-define (arg)
-  "Zap current definition into Scheme."
-  (interactive "P")
-  (let ((stab (syntax-table)))
-    (unwind-protect
-	(save-excursion
-	  (set-syntax-table scheme-mode-syntax-table)
-	  (if (not (= (point) (point-max))) (forward-char 1))
-	  (beginning-of-defun 1)
-	  (let ((start (point)))
-	    (forward-sexp 1)
-	    (scheme-do-zap-region start
-				  (point)
-				  (current-buffer)
-				  t)))
-      (set-syntax-table stab))))
-
-(defun scheme-send-buffer (arg)
-  "Zap whole buffer and resume Scheme"
-  (interactive "P")
-  (scheme-do-zap-region (point-min)
-			(point-max)
-			(current-buffer))
-  (resume-scheme))
-
-(defun scheme-zap-define-and-resume (arg)
-  "Zap current definition and resume Scheme"
-  (interactive "P")
-  (scheme-zap-define arg)
-  (resume-scheme))
-
-(defun defining-p ()
-  (save-excursion
-    (let* ((here (point))
-	   (name (buffer-substring (progn (backward-sexp 1) (point)) here)))
-      (beginning-of-defun 1)
-      (if (char-equal (char-after (point)) ?\()
-	  (progn (forward-char 1)
-		 (let ((sub (substring (next-sexp-as-string) 0 3)))
-		   (if (or (string-equal sub "def") (string-equal sub "DEF"))
-		       (progn (forward-sexp 1)
-			      (forward-word 1)
-			      (backward-word 1)
-			      (string-equal name
-					    (next-sexp-as-string))))))))))
-
-(defun find-scheme-definition (name)
-  "Find the definition of its argument in the current buffer"
-  (interactive "sFind Scheme definition of: ")
-  (beginning-of-buffer)
-  (let ((stop nil))
-    (while (not stop)
-      (search-forward name)
-      (setq stop (defining-p)))))
-	  
-;;; Autoloads from xscheme:
-
-(autoload 'scheme "xscheme"
-	  "Run an inferior Scheme process reading a command line from the terminal."
-	  t)
-
-(autoload 'run-scheme "xscheme"
-	  "Run an inferior Scheme process."
-	  t)
-
-(autoload 'scheme-send-definition "xscheme"
-	  "Send the current definition to the Scheme process made by M-x run-scheme."
-	  t)
-
-(autoload 'scheme-send-definition-and-go "xscheme"
-	  "Send the current definition to the inferior Scheme, and switch to *scheme* buffer."
-	  t)

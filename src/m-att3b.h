@@ -86,7 +86,7 @@ and this notice must be preserved on all copies.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 /* #define VIRT_ADDR_VARIES */  /* Karl Kleinpaste says this isn't needed.  */
@@ -153,3 +153,6 @@ extern int sign_extend_temp;
 
 /* For alloca.c (not actually used, since HAVE_ALLOCA) */
 #define STACK_DIRECTION 1
+
+/* (short) negative-int doesn't sign-extend correctly */
+#define SHORT_CAST_BUG

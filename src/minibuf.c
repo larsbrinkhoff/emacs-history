@@ -200,6 +200,8 @@ get_minibuffer (depth)
 void
 read_minibuf_unwind ()
 {
+  /* Erase the minibuffer we were using at this level.  */
+  Fset_buffer (XWINDOW (minibuf_window)->buffer);
   Ferase_buffer ();
 
   /* If this was a recursive minibuffer,
@@ -371,6 +373,7 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
   int index, obsize;
   int matchcount = 0;
   Lisp_Object bucket, zero, end, tem;
+  struct gcpro gcpro1, gcpro2, gcpro3;
 
   CHECK_STRING (string, 0);
   if (!list && XTYPE (alist) != Lisp_Vector)
@@ -439,7 +442,9 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
 		tem = Fcommandp (elt);
 	      else
 		{
+		  GCPRO3 (string, eltstring, bestmatch);
 		  tem = call1 (pred, elt);
+		  UNGCPRO;
 		}
 	      if (NULL (tem)) continue;
 	    }
@@ -515,6 +520,7 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
   int list = CONSP (alist);
   int index, obsize;
   Lisp_Object bucket, tem;
+  struct gcpro gcpro1, gcpro2;
 
   CHECK_STRING (string, 0);
   if (!list && XTYPE (alist) != Lisp_Vector)
@@ -584,7 +590,11 @@ The argument given to PREDICATE is the alist element or the symbol from the obar
 	      if (EQ (pred, Qcommandp))
 		tem = Fcommandp (elt);
 	      else
-		tem = call1 (pred, elt);
+		{
+		  GCPRO2 (string, eltstring);
+		  tem = call1 (pred, elt);
+		  UNGCPRO;
+		}
 	      if (NULL (tem)) continue;
 	    }
 	  /* Ok => put it on the list. */
@@ -960,7 +970,7 @@ DEFUN ("self-insert-and-exit", Fself_insert_and_exit, Sself_insert_and_exit, 0, 
   "Terminate minibuffer input.")
   ()
 {
-  SelfInsert (last_command_char);
+  SelfInsert (last_command_char, 0);
   Fthrow (Qexit, Qnil);
 }
 

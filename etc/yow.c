@@ -24,7 +24,11 @@ main (argc, argv)
   if (argc > 2 && !strcmp (argv[1], "-f"))
     strcpy (file, argv[2]);
   else
+#ifdef vms
+    sprintf (file, "%s%s", PATH_EXEC, YOW_FILE);
+#else
     sprintf (file, "%s/%s", PATH_EXEC, YOW_FILE);
+#endif
 
   if ((fp = fopen(file, "r")) == NULL) {
     perror(file);

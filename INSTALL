@@ -1,5 +1,5 @@
 GNU Emacs Installation Guide
-Copyright (c) 1985 Richard M. Stallman
+Copyright (c) 1988 Free software Foundation, Inc.
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the
@@ -11,8 +11,8 @@ Copyright (c) 1985 Richard M. Stallman
    of this document, or of portions of it,
    under the above conditions, provided also that they
    carry prominent notices stating who last changed them,
-   and that any new or changed statements about me (Richard Stallman)
-   or my activities are approved by me.
+   and that any new or changed statements about the activities
+   of the Free Software Foundation are approved by the Foundation.
 
 
 PREPARATION
@@ -30,18 +30,29 @@ PREPARATION
  subdirectories named src, lisp, etc, etc.  Call this name
  $EMACS.  Let $BUILD stand for the name the directory has now.
 
-2) Copy $BUILD/src/config.h-dist to config.h, and edit it to
- set the right options for your system.  The file
+2) Copy $BUILD/src/config.h-dist to $BUILD/src/config.h,
+ and edit it to set the right options for your system.  The file
  $BUILD/etc/MACHINES may help you decide what to put there.
  If you need to override any of the definitions in the s- and m-
  files for your system and machine, do so by editing config.h,
  not by changing the s- and m- files.  Occasionally you may
  need to redefine parameters used in etc/movemail.c.
 
-3) Copy $BUILD/src/paths.h-dist to paths.h, and edit it to
- contain the correct directory names: $EMACS/lisp for the
- directory for Lisp libraries, and $EMACS/etc for the
- directory for executables and text files.
+3) Declare the place in the file system where Emacs will
+ be once installed.  This is done in the file `src/paths.h'.
+
+ If you are using the shell-script `build-install'
+ edit the `set' command that sets the variable `EMACS'.
+ If you are using `make' in the main Emacs directory to do
+ the installation, edit the definition of `LIBDIR' in `Makefile'
+ in that directory.  `build-install' and `make' edit `src/paths.h'
+ automatically.
+
+ If you are doing the building by hand (not using `build-install' or
+ `make') then you yourself must copy $BUILD/src/paths.h-dist to
+ paths.h, and edit it to contain the correct directory names:
+ $EMACS/lisp for the directory for Lisp libraries, and $EMACS/etc for
+ the directory for executables and text files.
 
  Emacs will use these names once it has been built.
  During building, Emacs searches the directory ../lisp for
@@ -80,8 +91,14 @@ PREPARATION
 7) Refer to the file $BUILD/etc/TERMS for information on
  fields you may wish to add to various termcap entries.
 
+8) Run `make' in the main directory of the Emacs distribution
+ to finish building and installing Emacs in the standard way.
+ You are done!
+
+
 BUILDING GNU EMACS
-The steps below are done by the shell script `build-install'.
+The steps below are done by the shell script `build-install'
+or by running `make' in the main directory of the Emacs distribution.
 
 1) Cd to $BUILD/etc and run `make'.
  This creates files named `ctags' and `etags' and `loadst'
@@ -105,7 +122,8 @@ The steps below are done by the shell script `build-install'.
 
 
 INSTALLATION
-The steps below are done by the shell script `build-install'.
+The steps below are done by the shell script `build-install'
+or by running `make' in the main directory of the Emacs distribution.
 
 0) mv $BUILD $EMACS   if $BUILD and $EMACS are not the same.
  This moves the main Emacs directory to the name you have told
@@ -200,19 +218,28 @@ This means that the Lisp code loaded from the .elc and .el
 files during  temacs -l loadup inc dump  took up more
 space than was allocated.
 
-This could be caused by
+This could be happen if you did any of these things
  1) adding code to the preloaded Lisp files
  2) adding more preloaded files in loadup.el
- 3) having a site-init.el which loads files.
-   Note that ANY site-init.el is nonstandard;
+ 3) having a site-init.el or site-load.el which loads files.
+   Note that ANY site-init.el or site-load.el is nonstandard;
    if you have received Emacs from some other site
-   and it contains a site-init.el file, consider
-   deleting that file.
+   and it contains such a file, consider deleting it
+   as a fix for this problem.
  4) getting the wrong .el or .elc files
    (not from the directory you expected).
  5) deleting some .elc files that are supposed to exist.
    This would cause the source files (.el files) to be
    loaded instead.  They take up more room, so you lose.
+ 6) a bug in the Emacs distribution which underestimates
+   the space required.
+
+If the need for more space is legitimate, change the definition
+of PURESIZE in config.h.
+
+But in some of the cases listed above, this problem is a consequence
+of something else that is wrong.  Be sure to check and fix the real
+problem.
 
 * Changes made to .el files do not take effect.
 

@@ -39,7 +39,7 @@ main ()
   if (fd < 0)
     {
       perror ("opening `testfile'");
-      exit (1);
+      exit (2);
     }
   if (cool_read (fd, buf, sizeof string1) != sizeof string1 ||
       strcmp (buf, string1) ||
@@ -49,8 +49,12 @@ main ()
       fprintf (stderr, "Data in file `testfile' has been damaged.\n\
 Most likely this means that many nonprinting characters\n\
 have been corrupted in the files of Emacs, and it will not work.\n");
-      exit (1);
+      exit (2);
     }
   close (fd);
+#ifdef VMS
+  exit (1);			/* On VMS, success is 1.  */
+#else
   exit (0);
+#endif
 }

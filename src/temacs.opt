@@ -54,5 +54,6 @@ stderr,-
 errno,-
 vaxc$errno,-
 sys_errlist,-
-sys_nerr
+sys_nerr,-
+environ
 sys$library:vaxcrtl/library

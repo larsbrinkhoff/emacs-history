@@ -65,7 +65,12 @@ Elements look like (SWITCH-STRING . HANDLER-FUNCTION).
 HANDLER-FUNCTION receives switch name as sole arg;
 remaining command-line args are in the variable `args'.")
 
-(defvar term-setup-hook nil)
+(defvar term-setup-hook nil
+  "Function to be called after loading terminal-specific lisp code.
+It is called with no arguments.  You can use this to override the
+definitions made by the terminal-specific file.")
+
+(defvar window-setup-hook nil)
 
 (defconst initial-major-mode 'lisp-interaction-mode
   "Major mode command symbol to use for the initial *scratch* buffer.")
@@ -77,36 +82,38 @@ remaining command-line args are in the variable `args'.")
     (unwind-protect
 	(command-line)
       (and term-setup-hook
-	   (funcall term-setup-hook)))))
+	   (funcall term-setup-hook))
+      (and window-setup-hook
+	   (funcall window-setup-hook)))))
 
 (defun command-line ()
   (let ((args (cdr command-line-args))
-	(user (if noninteractive
-		  nil
-		(or (getenv "USER")
-		    (getenv "LOGNAME")))) ;USG bletcherousness.
-	done)
+	(init (if noninteractive nil (user-login-name)))
+	(done nil))
+    ;; If user has not done su, use current $HOME to find .emacs.
+    (and init (string= init (user-real-login-name))
+	 (setq init ""))
     (while (and (not done) args)
       (let ((argi (car args)))
 	(if (or (string-equal argi "-q")
 		(string-equal argi "-no-init-file"))
-	    (setq user nil
+	    (setq init nil
 		  args (cdr args))
 	  (if (or (string-equal argi "-u")
 		  (string-equal argi "-user"))
 	      (setq args (cdr args)
-		    user (car args)
+		    init (car args)
 		    args (cdr args))
 	    (setq done t)))))
     ;; Load user's init file, or load default one.
     (condition-case error
-	(if user
+	(if init
 	    (progn (load (if (eq system-type 'vax-vms)
 			     "sys$login:.emacs"
-			     (concat "~" user "/.emacs"))
+			     (concat "~" init "/.emacs"))
 			 t t t)
 		   (or inhibit-default-init
-		       (let (inhibit-startup-message)
+		       (let ((inhibit-startup-message nil))
 			 ;; Users are supposed to be told their rights.
 			 ;; (Plus how to get help and how to undo.)
 			 ;; Don't you dare turn this off for anyone
@@ -126,7 +133,7 @@ remaining command-line args are in the variable `args'.")
 			   "-win")
 		   (concat term-file-prefix
 			   (substring (getenv "TERM") 0
-				      (string-match "-" (getenv "TERM")))))
+				      (string-match "[-_]" (getenv "TERM")))))
 	       t t))
     (command-line-1 args)
     (if noninteractive (kill-emacs t))))
@@ -134,6 +141,9 @@ remaining command-line args are in the variable `args'.")
 (defun command-line-1 (command-line-args-left)
   (if (null command-line-args-left)
       (cond ((and (not inhibit-startup-message) (not noninteractive)
+		  ;; Don't clobber a non-scratch buffer if init file
+		  ;; has selected it.
+		  (string= (buffer-name) "*scratch*")
 		  (not (input-pending-p)))
 	     ;; If there are no switches to procss, we might as well
 	     ;; run this hook now, and there may be some need to do it
@@ -142,11 +152,14 @@ remaining command-line args are in the variable `args'.")
 		  (funcall term-setup-hook))
 	     ;; Don't let the hook be run twice.
 	     (setq term-setup-hook nil)
+	     (and window-setup-hook
+		  (funcall window-setup-hook))
+	     (setq window-setup-hook nil)
 	     (unwind-protect
 		 (progn
 		   (insert (emacs-version)
 			   "
-Copyright (C) 1987 Free Software Foundation, Inc.\n")
+Copyright (C) 1988 Free Software Foundation, Inc.\n")
 		   ;; If keys have their default meanings,
 		   ;; use precomputed string to save lots of time.
 		   (if (and (eq (key-binding "\C-h") 'help-command)
@@ -202,5 +215,6 @@ Type \\[help-with-tutorial] for a tutorial on using Emacs.")))
 		 (setq line (string-to-int argi)))
 		(t
 		 (find-file (expand-file-name argi dir))
-		 (goto-line line)
+		 (or (zerop line)
+		     (goto-line line))
 		 (setq line 0))))))))

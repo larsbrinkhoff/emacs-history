@@ -1,5 +1,5 @@
 /* Symbol table lookup for the GNU debugger, GDB.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -324,7 +324,7 @@ lookup_symbol (name, block, namespace)
   return 0;
 }
 
-/* Look for a symbol in block BLOCK using binary search.  */
+/* Look for a symbol in block BLOCK.  */
 
 static struct symbol *
 lookup_block_symbol (block, name, namespace)
@@ -338,39 +338,67 @@ lookup_block_symbol (block, name, namespace)
   top = BLOCK_NSYMS (block);
   bot = 0;
 
-  /* First, advance BOT to not far before
-     the first symbol whose name is NAME.  */
+  /* If the blocks's symbols were sorted, start with a binary search.  */
 
-  while (1)
+  if (BLOCK_SHOULD_SORT (block))
     {
-      inc = (top - bot + 1);
-      /* No need to keep binary searching for the last few bits worth.  */
-      if (inc < 7)
-	break;
-      inc >>= 1;
-      sym = BLOCK_SYM (block, bot + inc);
-      if (strcmp (SYMBOL_NAME (sym), name) < 0)
-	bot += inc;
-      else
-	top = bot + inc;
+      /* First, advance BOT to not far before
+	 the first symbol whose name is NAME.  */
+
+      while (1)
+	{
+	  inc = (top - bot + 1);
+	  /* No need to keep binary searching for the last few bits worth.  */
+	  if (inc < 4)
+	    break;
+	  inc = (inc >> 1) + bot;
+	  sym = BLOCK_SYM (block, inc);
+	  if (SYMBOL_NAME (sym)[0] < name[0])
+	    bot = inc;
+	  else if (SYMBOL_NAME (sym)[0] > name[0])
+	    top = inc;
+	  else if (strcmp (SYMBOL_NAME (sym), name) < 0)
+	    bot = inc;
+	  else
+	    top = inc;
+	}
+
+      /* Now scan forward until we run out of symbols,
+	 find one whose name is greater than NAME,
+	 or find one we want.
+	 If there is more than one symbol with the right name and namespace,
+	 we return the first one.  dbxread.c is careful to make sure
+	 that if one is a register then it comes first.  */
+
+      top = BLOCK_NSYMS (block);
+      while (bot < top)
+	{
+	  sym = BLOCK_SYM (block, bot);
+	  inc = SYMBOL_NAME (sym)[0] - name[0];
+	  if (inc == 0)
+	    inc = strcmp (SYMBOL_NAME (sym), name);
+	  if (inc == 0 && SYMBOL_NAMESPACE (sym) == namespace)
+	    return sym;
+	  if (inc > 0)
+	    return 0;
+	  bot++;
+	}
+      return 0;
     }
 
-  /* Now scan forward until we run out of symbols,
-     find one whose name is greater than NAME,
-     or find one we want.
-     If there is more than one symbol with the right name and namespace,
-     we return the first one.  dbxread.c is careful to make sure
-     that if one is a register then it comes first.  */
+  /* Here if block isn't sorted.
+     This loop is equivalent to the loop above,
+     but hacked greatly for speed.  */
 
   top = BLOCK_NSYMS (block);
+  inc = name[0];
   while (bot < top)
     {
       sym = BLOCK_SYM (block, bot);
-      inc = strcmp (SYMBOL_NAME (sym), name);
-      if (inc == 0 && SYMBOL_NAMESPACE (sym) == namespace)
+      if (SYMBOL_NAME (sym)[0] == inc
+	  && !strcmp (SYMBOL_NAME (sym), name)
+	  && SYMBOL_NAMESPACE (sym) == namespace)
 	return sym;
-      if (inc > 0)
-	return 0;
       bot++;
     }
   return 0;
@@ -554,6 +582,26 @@ find_pc_line (pc, notcurrent)
     }
   return value;
 }
+
+/* Find the PC value for a given source file and line number.
+   Returns zero for invalid line number.
+   The source file is specified with a struct symtab.  */
+
+CORE_ADDR
+find_line_pc (symtab, line)
+     struct symtab *symtab;
+     int line;
+{
+  register struct linetable *l;
+  register int index;
+  int dummy;
+
+  if (symtab == 0)
+    return 0;
+  l = LINETABLE (symtab);
+  index = find_line_common(l, line, &dummy);
+  return index ? l->item[index] : 0;
+}
 
 /* Find the range of pc values in a line.
    Store the starting pc of the line into *STARTPTR
@@ -568,9 +616,8 @@ find_line_pc_range (symtab, thisline, startptr, endptr)
      CORE_ADDR *startptr, *endptr;
 {
   register struct linetable *l;
-  register int i, line, item;
-  int len;
-  int return_next = 0;
+  register int index;
+  int exact_match;		/* did we get an exact linenumber match */
   register CORE_ADDR prev_pc;
   CORE_ADDR last_pc;
 
@@ -578,77 +625,82 @@ find_line_pc_range (symtab, thisline, startptr, endptr)
     return 0;
 
   l = LINETABLE (symtab);
-  len = l->nitems;
-  prev_pc = -1;
-  for (i = 0; i < len; i++)
+  index = find_line_common (l, thisline, &exact_match);
+  if (index)
     {
-      item = l->item[i];
-      if (item < 0)
-	line = - item - 1;
+      *startptr = l->item[index];
+      /* If we have not seen an entry for the specified line,
+	 assume that means the specified line has zero bytes.  */
+      if (!exact_match || index == l->nitems-1)
+	*endptr = *startptr;
       else
-	{
-	  line++;
-	  /* As soon as we find a line following the specified one
-	     we know the end pc and can return.  */
-	  if (line > thisline)
-	    {
-	      /* If we have not seen an entry for the specified line,
-		 assume that means the specified line has zero bytes.  */
-	      *startptr = prev_pc == -1 ? item : prev_pc;
-	      *endptr = item;
-	      return 1;
-	    }
-	  /* If we see an entry for the specified line,
-	     it gives the beginning.  */
-	  if (line == thisline)
-	    prev_pc = item;
-	  last_pc = item;
-	}
-    }
-  if (return_next)
-    {
-      /* Range of file's last line is from line's pc to file's end pc.  */
-      *startptr = last_pc;
-      *endptr = BLOCK_END (BLOCKVECTOR_BLOCK (BLOCKVECTOR (symtab), 0));
+	/* Perhaps the following entry is for the following line.
+	   It's worth a try.  */
+	if (l->item[index+1] > 0)
+	  *endptr = l->item[index+1];
+	else
+	  *endptr = find_line_pc (symtab, thisline+1);
       return 1;
     }
 
   return 0;
 }
 
-/* Find the PC value for a given source file and line number.
-   Returns zero for invalid line number.
-   The source file is specified with a struct symtab.  */
+/* Given a line table and a line number, return the index into the line
+   table for the pc of the nearest line whose number is >= the specified one.
+   Return 0 if none is found.  The value is never zero is it is an index.
 
-CORE_ADDR
-find_line_pc (symtab, line)
-     struct symtab *symtab;
-     int line;
+   Set *EXACT_MATCH nonzero if the value returned is an exact match.  */
+
+static int
+find_line_common (l, lineno, exact_match)
+     register struct linetable *l;
+     register int lineno;
+     int *exact_match;
 {
-  register struct linetable *l;
-  register int len;
   register int i;
-  register int item;
-  register int nextline = -1;
+  register int len;
 
-  if (line <= 0)
+  /* BEST is the smallest linenumber > LINENO so far seen,
+     or 0 if none has been seen so far.
+     BEST_INDEX identifies the item for it.  */
+
+  int best_index = 0;
+  int best = 0;
+
+  int nextline = -1;
+
+  if (lineno <= 0)
     return 0;
 
-  l = LINETABLE (symtab);
   len = l->nitems;
   for (i = 0; i < len; i++)
     {
-      item = l->item[i];
+      register int item = l->item[i];
+
       if (item < 0)
 	nextline = - item - 1;
       else
 	{
 	  nextline++;
-	  if (line <= nextline)
-	    return item;
+	  if (nextline == lineno)
+	    {
+	      *exact_match = 1;
+	      return i;
+	    }
+
+	  if (nextline > lineno && (best == 0 || nextline < best))
+	    {
+	      best = lineno;
+	      best_index = i;
+	    }
 	}
     }
-  return 0;
+
+  /* If we got here, we didn't get an exact match.  */
+
+  *exact_match = 0;
+  return best_index;
 }
 
 int
@@ -726,9 +778,6 @@ decode_line_1 (argptr, funfirstline, default_symtab, default_line)
 
   /* Maybe arg is FILE : LINENUM or FILE : FUNCTION */
 
-  if (symtab_list == 0)
-    error ("No symbol table is loaded.  Use the \"symbol-file\" command.");
-
   s = 0;
 
   for (p = *argptr; *p; p++)
@@ -750,7 +799,11 @@ decode_line_1 (argptr, funfirstline, default_symtab, default_line)
       /* Find that file's data.  */
       s = lookup_symtab (copy);
       if (s == 0)
-	error ("No source file named %s.", copy);
+	{
+	  if (symtab_list == 0)
+	    error ("No symbol table is loaded.  Use the \"symbol-file\" command.");
+	  error ("No source file named %s.", copy);
+	}
 
       /* Discard the file name from the arg.  */
       p = p1 + 1;
@@ -758,7 +811,7 @@ decode_line_1 (argptr, funfirstline, default_symtab, default_line)
       *argptr = p;
     }
 
-  /* s is specified file's symtab, or 0 if no file specified.
+  /* S is specified file's symtab, or 0 if no file specified.
      arg no longer contains the file name.  */
 
   /* Check whether arg is all digits (and sign) */
@@ -835,17 +888,20 @@ decode_line_1 (argptr, funfirstline, default_symtab, default_line)
   if (sym)
     error ("%s is not a function.", copy);
 
-  for (i = 0; i < misc_function_count; i++)
-    if (!strcmp (misc_function_vector[i].name, copy))
-      {
-	value.symtab = 0;
-	value.line = 0;
-	value.pc = misc_function_vector[i].address + FUNCTION_START_OFFSET;
-	if (funfirstline)
-	  SKIP_PROLOGUE (value.pc);
-	return value;
-      }
+  if ((i = lookup_misc_func (copy)) < 0)
+    error ("Function %s not defined.", copy);
+  else
+    {
+      value.symtab = 0;
+      value.line = 0;
+      value.pc = misc_function_vector[i].address + FUNCTION_START_OFFSET;
+      if (funfirstline)
+	SKIP_PROLOGUE (value.pc);
+      return value;
+    }
 
+  if (symtab_list == 0)
+    error ("No symbol table is loaded.  Use the \"symbol-file\" command.");
   error ("Function %s not defined.", copy);
 }
 
@@ -862,6 +918,20 @@ decode_line_spec (string, funfirstline)
   if (*string)
     error ("Junk at end of line specification: %s", string);
   return sal;
+}
+
+/* Return the index of misc function named NAME.  */
+
+static
+lookup_misc_func (name)
+     register char *name;
+{
+  register int i;
+
+  for (i = 0; i < misc_function_count; i++)
+    if (!strcmp (misc_function_vector[i].name, name))
+      return i;
+  return -1;		/* not found */
 }
 
 static void
@@ -912,6 +982,8 @@ sources_info ()
       fflush (stdout);		\
       read_line (); } }
 
+static void sort_block_syms ();
+
 static void
 list_symbols (regexp, class)
      char *regexp;
@@ -952,6 +1024,9 @@ list_symbols (regexp, class)
 	for (i = 0; i < 2; i++)
 	  {
 	    b = BLOCKVECTOR_BLOCK (bv, i);
+	    /* Skip the sort if this block is always sorted.  */
+	    if (!BLOCK_SHOULD_SORT (b))
+	      sort_block_syms (b);
 	    for (j = 0; j < BLOCK_NSYMS (b); j++)
 	      {
 		QUIT;
@@ -969,13 +1044,22 @@ list_symbols (regexp, class)
 		      }
 		    found_in_file = 1;
 		    MORE;
-		    if (i == 1)
+		    if (class != 2 && i == 1)
 		      printf ("static ");
+		    if (class == 2
+			&& SYMBOL_NAMESPACE (sym) != STRUCT_NAMESPACE)
+		      printf ("typedef ");
 
 		    type_print (SYMBOL_TYPE (sym),
 				(SYMBOL_CLASS (sym) == LOC_TYPEDEF
 				 ? "" : SYMBOL_NAME (sym)),
 				stdout, 0);
+		    if (class == 2
+			&& SYMBOL_NAMESPACE (sym) != STRUCT_NAMESPACE
+			&& (TYPE_NAME ((SYMBOL_TYPE (sym))) == 0
+			    || 0 != strcmp (TYPE_NAME ((SYMBOL_TYPE (sym))),
+					    SYMBOL_NAME (sym))))
+		      printf (" %s", SYMBOL_NAME (sym));
 		    printf (";\n");
 		  }
 	      }
@@ -1003,6 +1087,28 @@ types_info (regexp)
      char *regexp;
 {
   list_symbols (regexp, 2);
+}
+
+/* Call sort_block_syms to sort alphabetically the symbols of one block.  */
+
+static int
+compare_symbols (s1, s2)
+     struct symbol **s1, **s2;
+{
+  /* Names that are less should come first.  */
+  register int namediff = strcmp (SYMBOL_NAME (*s1), SYMBOL_NAME (*s2));
+  if (namediff != 0) return namediff;
+  /* For symbols of the same name, registers should come first.  */
+  return ((SYMBOL_CLASS (*s2) == LOC_REGISTER)
+	  - (SYMBOL_CLASS (*s1) == LOC_REGISTER));
+}
+
+static void
+sort_block_syms (b)
+     register struct block *b;
+{
+  qsort (&BLOCK_SYM (b, 0), BLOCK_NSYMS (b),
+	 sizeof (struct symbol *), compare_symbols);
 }
 
 /* Initialize the standard C scalar types.  */

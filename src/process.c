@@ -47,16 +47,32 @@ and this notice must be preserved on all copies.  */
 #include <fcntl.h>
 #endif /* USG */
 
-#ifdef HAVE_TIMEVAL
-#if defined (USG) && !defined (UNIPLUS)
-#include <time.h>
-#else
+#ifdef IRIS
+#include <sys/sysmacros.h>	/* for "minor" */
 #include <sys/time.h>
-#endif
+#else
+#ifdef UNIPLUS
+#include <sys/time.h>
+
+#else /* not IRIS, not UNIPLUS */
+#ifdef HAVE_TIMEVAL
+#ifdef USG
+#include <time.h>
+#else /* HAVE_TIMEVAL, not USG */
+#include <sys/time.h>
+#endif /* USG */
 #endif /* HAVE_TIMEVAL */
+
+#endif /* not UNIPLUS */
+#endif /* not IRIS */
 
 #if defined (HPUX) && defined (HAVE_PTYS)
 #include <sys/ptyio.h>
+#endif
+
+#ifdef SYSV_PTYS
+#include <sys/tty.h>
+#include <sys/pty.h>
 #endif
 
 #undef NULL
@@ -208,9 +224,16 @@ pty (ptyv)
   struct stat stb;
   register c, i;
 
+#ifdef PTY_ITERATION
+  PTY_ITERATION
+#else
   for (c = FIRST_PTY_LETTER; c <= 'z'; c++)
     for (i = 0; i < 16; i++)
+#endif
       {
+#ifdef PTY_NAME_SPRINTF
+	PTY_NAME_SPRINTF
+#else
 #ifdef HPUX
 	sprintf (ptyname, "/dev/ptym/pty%c%x", c, i);
 #else
@@ -220,28 +243,51 @@ pty (ptyv)
 	sprintf (ptyname, "/dev/pty%c%x", c, i);
 #endif /* not MASSCOMP */
 #endif /* not HPUX */
+#endif /* no PTY_NAME_SPRINTF */
+
+#ifndef IRIS
 	if (stat (ptyname, &stb) < 0)
 	  return 0;
-
 	*ptyv = open (ptyname, O_RDWR | O_NDELAY, 0);
+#else /* Unusual IRIS code */
+ 	*ptyv = open ("/dev/ptc", O_RDWR | O_NDELAY, 0);
+ 	if (*ptyv < 0)
+ 	  return 0;
+	if (fstat (*ptyv, &stb) < 0)
+	  return 0;
+#endif /* IRIS */
+
 	if (*ptyv >= 0)
 	  {
 	    /* check to make certain that both sides are available
 	       this avoids a nasty yet stupid bug in rlogins */
+#ifdef PTY_TTY_NAME_SPRINTF
+	    PTY_TTY_NAME_SPRINTF
+#else
+	    /* In version 19, make these special cases use the macro above.  */
 #ifdef HPUX
             sprintf (ptyname, "/dev/pty/tty%c%x", c, i);
 #else
 #ifdef RTU
             sprintf (ptyname, "/dev/ttyp%x", i);
 #else
+#ifdef IRIS
+ 	    sprintf (ptyname, "/dev/ttyq%d", minor (stb.st_rdev));
+#else
             sprintf (ptyname, "/dev/tty%c%x", c, i);
+#endif /* not IRIS */
 #endif /* not RTU */
 #endif /* not HPUX */
+#endif /* no PTY_TTY_NAME_SPRINTF */
 #ifndef UNIPLUS
 	    if (access (ptyname, 6) != 0)
 	      {
 		close (*ptyv);
+#ifndef IRIS
 		continue;
+#else
+		return (0);
+#endif /* IRIS */
 	      }
 #endif /* not UNIPLUS */
 	    /*
@@ -295,6 +341,14 @@ pty (ptyv)
 #endif /* not HPUX */
 /* this is said to be unecessary, and to be harmful in 4.3.  */
 /*	    ioctl (*ptyv, FIONBIO, &on);  */
+#ifdef FIONBIO
+#ifdef SYSV_PTYS
+	    {
+	      int on = 1;
+	      ioctl (*ptyv, FIONBIO, &on);
+	    }
+#endif
+#endif
 	    return ptyname;
 	  }
       }
@@ -434,7 +488,12 @@ PROCESS may be a process or the name of one, or a buffer name.")
   if (NETCONN_P (proc))
     XFASTINT (XPROCESS (proc)->flags) = EXITED | CHANGED;
   else if (XFASTINT (XPROCESS (proc)->infd))
-    Fkill_process (proc, Qnil);
+    {
+      Fkill_process (proc, Qnil);
+      /* Do this now, since remove_process will make child_sig do nothing.  */
+      XFASTINT (XPROCESS (proc)->flags) = SIGNALED | CHANGED;
+      change_msgs ();
+    }
   remove_process (proc);
   return Qnil;
 }
@@ -847,9 +906,15 @@ create_process (process, new_argv)
   outchannel = inchannel;
   if (ptyname)
     {
+#ifndef IRIS
+      /* On the IRIS system it does not work to open
+	 the pty's tty here and then close and reopen it in the child.  */
       forkout = forkin = open (ptyname, O_RDWR, 0);
       if (forkin < 0)
 	report_file_error ("Opening pty", Qnil);
+#else
+      forkin = forkout = -1;
+#endif
     }
   else
 #endif /* HAVE_PTYS */
@@ -871,8 +936,11 @@ create_process (process, new_argv)
     }
 #endif /* not SKTPAIR */
 
+#if 0
+  /* Replaced by close_process_descs */
   set_exclusive_use (inchannel);
   set_exclusive_use (outchannel);
+#endif
 
 /* Stride people say it's a mystery why this is needed
    as well as the O_NDELAY, but that it fails without this.  */
@@ -887,12 +955,12 @@ create_process (process, new_argv)
   fcntl (inchannel, F_SETFL, O_NDELAY);
 #endif
 
+  /* Record this as an active process, with its channels.
+     As a result, child_setup will close Emacs's side of the pipes.  */
   chan_process[inchannel] = process;
   XFASTINT (XPROCESS (process)->infd) = inchannel;
   XFASTINT (XPROCESS (process)->outfd) = outchannel;
   XFASTINT (XPROCESS (process)->flags) = RUNNING;
-
-  input_wait_mask |= ChannelMask (inchannel);
 
   /* Delay interrupts until we have a chance to store
      the new fork's pid in its process structure */
@@ -936,7 +1004,8 @@ create_process (process, new_argv)
 	    setpgrp ();
 #endif
 	    /* I wonder if close (open (ptyname, ...)) would work?  */
-	    close (xforkin);
+	    if (xforkin >= 0)
+	      close (xforkin);
 	    xforkout = xforkin = open (ptyname, O_RDWR, 0);
 
 	    if (xforkin < 0)
@@ -951,14 +1020,17 @@ create_process (process, new_argv)
     environ = save_environ;
   }
 
+  input_wait_mask |= ChannelMask (inchannel);
+
   /* If the subfork execv fails, and it exits,
      this close hangs.  I don't know why.
      So have an interrupt jar it loose.  */
   signal (SIGALRM, create_process_1);
   alarm (1);
-  close (forkin);
+  if (forkin >= 0)
+    close (forkin);
   alarm (0);
-  if (forkin != forkout)
+  if (forkin != forkout && forkout >= 0)
     close (forkout);
 
   if (pid < 0)
@@ -1003,7 +1075,8 @@ BUFFER is the buffer (or buffer-name) to associate with the process.\n\
  BUFFER may be also nil, meaning that this process is not associated\n\
  with any buffer\n\
 Third arg is name of the host to connect to.\n\
-Fourth arg is name of the service desired.")
+Fourth arg SERVICE is name of the service desired, or an integer\n\
+ specifying a port number to connect to.")
    (name, buffer, host, service)
       Lisp_Object name, buffer, host, service;
 {
@@ -1014,18 +1087,21 @@ Fourth arg is name of the service desired.")
   struct hostent *host_info;
   int s, outch, inch;
   char errstring[80];
+  int port;
 
   CHECK_STRING (name, 0);
   CHECK_STRING (host, 0);
-  CHECK_STRING (service, 0);
-   
-  if (!NULL (buffer))
-    buffer = Fget_buffer_create (buffer);
-  proc = make_process (name);
+  if (XTYPE(service) == Lisp_Int)
+    port = htons ((unsigned short) XINT (service));
+  else
+    {
+      CHECK_STRING (service, 0);
+      svc_info = getservbyname (XSTRING (service)->data, "tcp");
+      if (svc_info == 0)
+	error ("Unknown service \"%s\"", XSTRING (service)->data);
+      port = svc_info->s_port;
+    }
 
-  svc_info = getservbyname (XSTRING (service)->data, "tcp");
-  if (svc_info == 0)
-    error ("Unknown service \"%s\"", XSTRING(service)->data);
   host_info = gethostbyname (XSTRING (host)->data);
   if (host_info == 0)
     error ("Unknown host \"%s\"", XSTRING(host)->data);
@@ -1033,11 +1109,11 @@ Fourth arg is name of the service desired.")
   bzero (&address, sizeof address);
   bcopy (host_info->h_addr, (char *) &address.sin_addr, host_info->h_length);
   address.sin_family = host_info->h_addrtype;
-  address.sin_port = svc_info->s_port;
+  address.sin_port = port;
 
   s = socket (host_info->h_addrtype, SOCK_STREAM, 0);
   if (s < 0) 
-    report_file_error ("error creating socket", Fcons (proc, Qnil));
+    report_file_error ("error creating socket", Fcons (name, Qnil));
 
   if (connect (s, &address, sizeof address) == -1)
     error ("Host \"%s\" not responding", XSTRING (host)->data);
@@ -1045,8 +1121,17 @@ Fourth arg is name of the service desired.")
   inch = s;
   outch = dup (s);
   if (outch < 0) 
-    report_file_error ("error duplicating socket", Fcons(proc, Qnil));
+    report_file_error ("error duplicating socket", Fcons (name, Qnil));
+
+  if (!NULL (buffer))
+    buffer = Fget_buffer_create (buffer);
+  proc = make_process (name);
+
   chan_process[inch] = proc;
+
+#ifdef O_NDELAY
+  fcntl (inch, F_SETFL, O_NDELAY);
+#endif
 
   XPROCESS (proc)->childp = host;
   XPROCESS (proc)->command_channel_p = Qnil;
@@ -1085,6 +1170,28 @@ deactivate_process (proc)
       XFASTINT (p->outfd) = 0;
       chan_process[inchannel] = Qnil;
       input_wait_mask &= ~ChannelMask (inchannel);
+    }
+}
+
+/* Close all descriptors currently in use for communication
+   with subprocess.  This is used in a newly-forked subprocess
+   to get rid of irrelevant descriptors.  */
+
+close_process_descs ()
+{
+  int i;
+  for (i = 0; i < MAXDESC; i++)
+    {
+      Lisp_Object process;
+      process = chan_process[i];
+      if (!NULL (process))
+	{
+	  int in = XFASTINT (XPROCESS (process)->infd);
+	  int out = XFASTINT (XPROCESS (process)->outfd);
+	  close (in);
+	  if (in != out)
+	    close (out);
+	}
     }
 }
 
@@ -1147,7 +1254,8 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
   struct Lisp_Process *wait_proc = 0;
   extern kbd_count;
 
-  if (((unsigned) read_kbd + 1) > 10)
+  /* Detect when read_kbd is really the address of a Lisp_Process.  */
+  if (read_kbd > 10 || read_kbd < -1)
     {
       wait_proc = (struct Lisp_Process *) read_kbd;
       wait_channel = XFASTINT (wait_proc->infd);
@@ -1205,7 +1313,6 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	  /* -1 specified for timeout means
 	     gobble output available now
 	     but don't wait at all. */
-	  time_limit = -2;
 #ifdef HAVE_TIMEVAL
 	  timeout.tv_sec = 0;
 	  timeout.tv_usec = 0;
@@ -1257,7 +1364,11 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
       if (read_kbd && kbd_count)
 	nfds = 0;
       else
+#ifndef HPUX
 	nfds = select (MAXDESC, &Available, 0, &Exception, &timeout);
+#else
+	nfds = select (MAXDESC, &Available, 0, 0, &timeout);
+#endif
       xerrno = errno;
 
       if (fix_screen_hook)
@@ -1281,17 +1392,14 @@ wait_reading_process_input (time_limit, read_kbd, do_display)
 	  else if (xerrno == EBADF)
 	    abort ();
 	  else
-	    error("select error: %s", sys_errlist[errno]);
+	    error("select error: %s", sys_errlist[xerrno]);
 	}
 
       /* Check for keyboard input */
       /* If there is any, return immediately
 	 to give it higher priority than subprocesses */
 
-      if (read_kbd && (kbd_count || !NULL (Vquit_flag)))
-	break;
-
-      if (read_kbd && (Available & ChannelMask (0)))
+      if (read_kbd && detect_input_pending ())
 	break;
 
 #ifdef vipc
@@ -2001,13 +2109,9 @@ init_process ()
   register int i;
 
 #ifdef SIGCHLD
-  if (
 #ifndef CANNOT_DUMP
-      ! noninteractive || initialized
-#else
-      1
+  if (! noninteractive || initialized)
 #endif
-      )
     signal (SIGCHLD, child_sig);
 #endif
 

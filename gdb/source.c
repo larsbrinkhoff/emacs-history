@@ -1,5 +1,5 @@
 /* List lines of source files for GDB, the GNU debugger.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -39,30 +39,66 @@ struct symtab *current_source_symtab;
 
 int current_source_line;
 
-/* Line for "info line" to work on if no line specified.  */
+/* Line number of last line printed.  Default for various commands.
+   current_source_line is usually, but not always, the same as this.  */
 
-static int line_info_default_line;
+static int last_line_listed;
 
 /* First line number listed by last listing command.  */
 
 static int first_line_listed;
 
 START_FILE
+
+/* Set the source file default for the "list" command,
+   specifying a symtab.  */
 
+void
+select_source_symtab (s)
+     register struct symtab *s;
+{
+  if (s)
+    {
+      struct symtab_and_line sal;
+
+      /* Make the default place to list be the function `main'
+	 if one exists.  */
+      if (lookup_symbol ("main", 0, VAR_NAMESPACE))
+	{
+	  sal = decode_line_spec ("main", 1);
+	  current_source_symtab = sal.symtab;
+	  current_source_line = sal.line - 9;
+	  return;
+	}
+
+      /* If there is no `main', use the last symtab in the list,
+	 which is actually the first found in the file's symbol table.
+	 But ignore .h files.  */
+      do
+	{
+	  char *name = s->filename;
+	  int len = strlen (name);
+	  if (! (len > 2 && !strcmp (&name[len - 2], ".h")))
+	    current_source_symtab = s;
+	  s = s->next;
+	}
+      while (s);
+      current_source_line = 1;
+    }
+}
+
 static void
 directories_info ()
 {
   printf ("Source directories searched: %s\n", source_path);
 }
 
-static void
+void
 init_source_path ()
 {
   register struct symtab *s;
-  char wd[MAXPATHLEN];
-  getwd (wd);
 
-  source_path = savestring (wd, strlen (wd));
+  source_path = savestring (current_directory, strlen (current_directory));
 
   /* Forget what we learned about line positions in source files;
      must check again now since files may be found in
@@ -82,12 +118,9 @@ directory_command (dirname, from_tty)
 {
   char *old = source_path;
 
-  char wd[MAXPATHLEN];
-  getwd (wd);
-
   if (dirname == 0)
     {
-      if (query ("Reinitialize source path to %s? ", wd))
+      if (query ("Reinitialize source path to %s? ", current_directory))
 	{
 	  init_source_path ();
 	  free (old);
@@ -111,7 +144,7 @@ directory_command (dirname, from_tty)
 	  if (len == 1)
 	    {
 	      /* "." => getwd () */
-	      dirname = wd;
+	      dirname = current_directory;
 	      goto append;
 	    }
 	  else if (dirname[len - 2] == '/')
@@ -133,10 +166,10 @@ directory_command (dirname, from_tty)
 	}
 
       if (dirname[0] != '/')
-	dirname = concat (wd, "/", dirname);
+	dirname = concat (current_directory, "/", dirname);
       else
 	dirname = savestring (dirname, len);
-      make_cleanup (free_current_contents, &dirname);
+      make_cleanup (free, dirname);
 
       if (stat (dirname, &st) < 0)
 	perror_with_name (dirname);
@@ -235,31 +268,17 @@ openp (path, try_cwd_first, string, mode, prot, filename_opened)
       *filename_opened = savestring (filename, strlen (filename));
     else
       {
-	char dirname[MAXPATHLEN];
-	getwd (dirname);
-	*filename_opened = concat (dirname, "/", filename);
+	*filename_opened = concat (current_directory, "/", filename);
       }
 
   return fd;
 }
-
-/* Set the source file default for the "list" command,
-   specifying a symtab.  */
-
-void
-select_source_symtab (s)
-     register struct symtab *s;
-{
-  /* Use the last symtab in the list
-     which is actually the first found in the file's symbol table.  */
-  if (s)
-    {
-      while (s->next) s = s->next;
-      current_source_symtab = s;
-      current_source_line = 1;
-    }
-}
 
+/* Create and initialize the table S->line_charpos that records
+   the positions of the lines in the source file, which is assumed
+   to be open on descriptor DESC.
+   All set S->nlines to the number of such lines.  */
+
 static void
 find_source_lines (s, desc)
      struct symtab *s;
@@ -273,11 +292,11 @@ find_source_lines (s, desc)
   extern int exec_mtime;
 
   fstat (desc, &st);
-  if (get_exec_file () != 0 && exec_mtime < st.st_mtime)
+  if (get_exec_file (0) != 0 && exec_mtime < st.st_mtime)
     printf ("Source file is more recent than executable.\n");
 
   data = (char *) alloca (st.st_size);
-  myread (desc, data, st.st_size, s->filename);
+  myread (desc, data, st.st_size);
   end = data + st.st_size;
   p = data;
   line_charpos[0] = 0;
@@ -295,6 +314,97 @@ find_source_lines (s, desc)
   s->nlines = nlines;
   s->line_charpos = (int *) xrealloc (line_charpos, nlines * sizeof (int));
 }
+
+/* Return the character position of a line LINE in symtab S.
+   Return 0 if anything is invalid.  */
+
+int
+source_line_charpos (s, line)
+     struct symtab *s;
+     int line;
+{
+  if (!s) return 0;
+  if (!s->line_charpos || line <= 0) return 0;
+  if (line > s->nlines)
+    line = s->nlines;
+  return s->line_charpos[line - 1];
+}
+
+/* Return the line number of character position POS in symtab S.  */
+
+int
+source_charpos_line (s, chr)
+    register struct symtab *s;
+    register int chr;
+{
+  register int line = 0;
+  register int *lnp;
+    
+  if (s == 0 || s->line_charpos == 0) return 0;
+  lnp = s->line_charpos;
+  /* Files are usually short, so sequential search is Ok */
+  while (line < s->nlines  && *lnp <= chr)
+    {
+      line++;
+      lnp++;
+    }
+  if (line >= s->nlines)
+    line = s->nlines;
+  return line;
+}
+
+/* Get full pathname and line number positions for a symtab.
+   Return nonzero if line numbers may have changed.
+   Set *FULLNAME to actual name of the file as found by `openp',
+   or to 0 if the file is not found.  */
+
+int
+get_filename_and_charpos (s, line, fullname)
+     struct symtab *s;
+     int line;
+     char **fullname;
+{
+  register int desc, linenums_changed = 0;
+  
+  desc = openp (source_path, 0, s->filename, O_RDONLY, 0, &s->fullname);
+  if (desc < 0)
+    {
+      if (fullname)
+	*fullname = NULL;
+      return 0;
+    }  
+  if (fullname)
+    *fullname = s->fullname;
+  if (s->line_charpos == 0) linenums_changed = 1;
+  if (linenums_changed) find_source_lines (s, desc);
+  close (desc);
+  return linenums_changed;
+}
+
+/* Print text describing the full name of the source file S
+   and the line number LINE and its corresponding character position.
+   The text starts with two Ctrl-z so that the Emacs-GDB interface
+   can easily find it.
+
+   MID_STATEMENT is nonzero if the PC is not at the beginning of that line.
+
+   Return 1 if successful, 0 if could not find the file.  */
+
+int
+identify_source_line (s, line, mid_statement)
+     struct symtab *s;
+     int line;
+     int mid_statement;
+{
+  if (s->line_charpos == 0)
+    get_filename_and_charpos (s, line, 0);
+  if (s->fullname == 0)
+    return 0;
+  printf ("\032\032%s:%d:%d:%s\n", s->fullname,
+	  line, s->line_charpos[line - 1],
+	  mid_statement ? "middle" : "beg");
+  return 1;
+}
 
 /* Print source lines from the file of symtab S,
    starting with line number LINE and stopping before line number STOPLINE.  */
@@ -309,7 +419,7 @@ print_source_lines (s, line, stopline)
   register FILE *stream;
   int nlines = stopline - line;
 
-  desc = openp (source_path, 0, s->filename, O_RDONLY, 0, (char **) 0);
+  desc = openp (source_path, 0, s->filename, O_RDONLY, 0, &s->fullname);
   if (desc < 0)
     perror_with_name (s->filename);
 
@@ -340,7 +450,7 @@ print_source_lines (s, line, stopline)
     {
       c = fgetc (stream);
       if (c == EOF) break;
-      line_info_default_line = current_source_line;
+      last_line_listed = current_source_line;
       printf ("%d\t", current_source_line++);
       do
 	{
@@ -497,11 +607,11 @@ line_info (arg, from_tty)
   if (arg == 0)
     {
       sal.symtab = current_source_symtab;
-      sal.line = line_info_default_line;
+      sal.line = last_line_listed;
     }
   else
     {
-      sal = decode_line_spec (arg);
+      sal = decode_line_spec (arg, 0);
 
       /* If this command is repeated with RET,
 	 turn it into the no-arg variant.  */
@@ -524,13 +634,162 @@ line_info (arg, from_tty)
       /* x/i should display this line's code.  */
       set_next_address (start_pc);
       /* Repeating "info line" should do the following line.  */
-      line_info_default_line = sal.line + 1;
+      last_line_listed = sal.line + 1;
     }
   else
     printf ("Line number %d is out of range for \"%s\".\n",
 	    sal.line, sal.symtab->filename);
 }
+
+/* Commands to search the source file for a regexp.  */
 
+static void
+forward_search_command (regex, from_tty)
+     char *regex;
+{
+  register int c;
+  register int desc;
+  register FILE *stream;
+  int line = last_line_listed + 1;
+  char *msg;
+
+  msg = (char *) re_comp (regex);
+  if (msg)
+    error (msg);
+
+  if (current_source_symtab == 0) 
+    error ("No default source file yet.  Do \"help list\".");
+
+  /* Search from last_line_listed+1 in current_source_symtab */
+
+  desc = openp (source_path, 0, current_source_symtab->filename,
+		O_RDONLY, 0, &current_source_symtab->fullname);
+  if (desc < 0)
+    perror_with_name (current_source_symtab->filename);
+
+  if (current_source_symtab->line_charpos == 0)
+    find_source_lines (current_source_symtab, desc);
+
+  if (line < 1 || line >= current_source_symtab->nlines)
+    {
+      close (desc);
+      error ("Expression not found");
+    }
+
+  if (lseek (desc, current_source_symtab->line_charpos[line - 1], 0) < 0)
+    {
+      close (desc);
+      perror_with_name (current_source_symtab->filename);
+    }
+
+  stream = fdopen (desc, "r");
+  clearerr (stream);
+  while (1) {
+    char buf[4096];		/* Should be reasonable??? */
+    register char *p = buf;
+
+    c = fgetc (stream);
+    if (c == EOF)
+      break;
+    do {
+      *p++ = c;
+    } while (c != '\n' && (c = fgetc (stream)) >= 0);
+
+    /* we now have a source line in buf, null terminate and match */
+    *p = 0;
+    if (re_exec (buf) > 0)
+      {
+	/* Match! */
+	fclose (stream);
+	print_source_lines (current_source_symtab,
+			   line, line+1);
+	current_source_line = max (line - 5, 1);
+	return;
+      }
+    line++;
+  }
+
+  printf ("Expression not found\n");
+  fclose (stream);
+}
+
+static void
+reverse_search_command (regex, from_tty)
+     char *regex;
+{
+  register int c;
+  register int desc;
+  register FILE *stream;
+  int line = last_line_listed - 1;
+  char *msg;
+
+  msg = (char *) re_comp (regex);
+  if (msg)
+    error (msg);
+
+  if (current_source_symtab == 0) 
+    error ("No default source file yet.  Do \"help list\".");
+
+  /* Search from last_line_listed-1 in current_source_symtab */
+
+  desc = openp (source_path, 0, current_source_symtab->filename,
+		O_RDONLY, 0, &current_source_symtab->fullname);
+  if (desc < 0)
+    perror_with_name (current_source_symtab->filename);
+
+  if (current_source_symtab->line_charpos == 0)
+    find_source_lines (current_source_symtab, desc);
+
+  if (line < 1 || line >= current_source_symtab->nlines)
+    {
+      close (desc);
+      error ("Expression not found");
+    }
+
+  if (lseek (desc, current_source_symtab->line_charpos[line - 1], 0) < 0)
+    {
+      close (desc);
+      perror_with_name (current_source_symtab->filename);
+    }
+
+  stream = fdopen (desc, "r");
+  clearerr (stream);
+  while (1)
+    {
+      char buf[4096];		/* Should be reasonable??? */
+      register char *p = buf;
+
+      c = fgetc (stream);
+      if (c == EOF)
+	break;
+      do {
+	*p++ = c;
+      } while (c != '\n' && (c = fgetc (stream)) >= 0);
+
+      /* We now have a source line in buf; null terminate and match.  */
+      *p = 0;
+      if (re_exec (buf) > 0)
+	{
+	  /* Match! */
+	  fclose (stream);
+	  print_source_lines (current_source_symtab,
+			      line, line+1);
+	  current_source_line = max (line - 5, 1);
+	  return;
+	}
+      line--;
+      if (fseek (stream, current_source_symtab->line_charpos[line - 1], 0) < 0)
+	{
+	  fclose (stream);
+	  perror_with_name (current_source_symtab->filename);
+	}
+    }
+
+  printf ("Expression not found\n");
+  fclose (stream);
+  return;
+}
+
 static
 initialize ()
 {
@@ -556,6 +815,13 @@ Default is to describe the last source line that was listed.\n\n\
 This sets the default address for \"x\" to the line's first instruction\n\
 so that \"x/i\" suffices to start examining the machine code.\n\
 The address is also stored as the value of \"$_\".");
+
+  add_com ("forward-search", class_files, forward_search_command,
+	   "Search for regular expression (see regex(3)) from last line listed.");
+  add_com_alias ("search", "forward-search", class_files, 0);
+
+  add_com ("reverse-search", class_files, reverse_search_command,
+	   "Search backward for regular expression (see regex(3)) from last line listed.");
 
   add_com ("list", class_files, list_command,
 	   "List specified function or line.\n\

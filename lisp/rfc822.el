@@ -1,5 +1,5 @@
 ;; Hairy rfc822 parser for mail and news and suchlike
-;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
 ;; Author Richard Mlynarik.
 
 ;; This file is part of GNU Emacs.
@@ -257,30 +257,20 @@
 
 			   
 (defun rfc822-addresses (header-text)
-  (let ((buf (generate-new-buffer " rfc822"))
-	(case-fold-search nil)) ; for speed
-    (unwind-protect
+  (if (string-match "\\`[ \t]*\\([^][\000-\037\177-\377 ()<>@,;:\\\".]+\\)[ \t]*\\'"
+                    header-text)
+      ;; Make very simple case moderately fast.
+      (list (substring header-text (match-beginning 1) (match-end 1)))
+    (let ((buf (generate-new-buffer " rfc822")))
+      (unwind-protect
 	(save-excursion
 	  (set-buffer buf)
+	  (make-local-variable 'case-fold-search)
+	  (setq case-fold-search nil)	;For speed(?)
 	  (insert header-text)
 	  ;; unfold continuation lines
 	  (goto-char (point-min))
-;	  (while (not (eobp))
-;	    (end-of-line 0)
-;	    (cond ((/= (following-char) ?\n)
-;		   (goto-char (point-max)))
-;		  ((not (memq (char-after (1+ (point))) '(?\ ?\t))))
-;		  ((or (bobp)
-;		       (/= (preceding-char) ?\\))
-;		   (delete-char 1))
-;		  (t
-;		   (let ((tem (point)))
-;		     (skip-chars-backward "\\\\")
-;		     (if (prog1 (= (logand (- (point) tem) 1) 0)
-;			        (goto-char tem))
-;			 ;; an even number of preceding backslashes
-;			 (delete-char 1)
-;		       (forward-char 1))))))
+
 	  (while (re-search-forward "\\([^\\]\\(\\\\\\\\\\)*\\)\n[ \t]" nil t)
 	    (replace-match "\\1 " t))
 
@@ -296,9 +286,10 @@
 		      (cond ((rfc822-looking-at ?\,)
 			     nil)
 			    ((looking-at "[][\000-\037\177-\377@;:\\.]")
+			     (forward-char)
 			     (rfc822-bad-address
 			       (format "Strange character \\%c found"
-				       (following-char))))
+				       (preceding-char))))
 			    (t
 			     (rfc822-addresses-1 t)))))
 	      (cond ((null tem))
@@ -307,4 +298,5 @@
 		    (t
 		     (setq list (nconc (nreverse tem) list)))))
 	    (nreverse list)))
-      (and buf (kill-buffer buf)))))
+      (and buf (kill-buffer buf))))))
+

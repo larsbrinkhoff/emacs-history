@@ -30,6 +30,7 @@
 
 (defun dired-readin (dirname buffer)
   (save-excursion
+    (message "Reading directory %s..." dirname)
     (set-buffer buffer)
     (let ((buffer-read-only nil))
       (widen)
@@ -46,7 +47,8 @@
       (while (not (eobp))
 	(insert "  ")
 	(forward-line 1))
-      (goto-char (point-min)))))
+      (goto-char (point-min)))
+    (message "Reading directory %s...done" dirname)))
 
 (defun dired-find-buffer (dirname)
   (let ((blist (buffer-list))
@@ -65,7 +67,7 @@
 	       (create-file-buffer (file-name-nondirectory dirname))))))
 
 (defun dired (dirname)
-  "\"Edit\" directory DIRNAME.  Delete some files in it.
+  "\"Edit\" directory DIRNAME--delete, rename, print, etc. some files in it.
 Dired displays a list of files in DIRNAME.
 You can move around in it with the usual commands.
 You can flag files for deletion with C-d
@@ -147,7 +149,7 @@ Type `h' after entering dired for more info."
 ;; Dired mode is suitable only for specially formatted data.
 (put 'dired-mode 'mode-class 'special)
 
-(defun dired-mode (dirname)
+(defun dired-mode (&optional dirname)
   "Mode for \"editing\" directory listings.
 In dired, you are \"editing\" a list of the files in a directory.
 You can move using the usual cursor motion commands.
@@ -172,16 +174,18 @@ Also: C -- compress this file.  U -- uncompress this file.
       B -- byte compile this file.
  M, G, O -- change file's mode, group or owner.
 \\{dired-mode-map}"
+  (interactive)
   (kill-all-local-variables)    
   (make-local-variable 'revert-buffer-function)
   (setq revert-buffer-function 'dired-revert)
   (setq major-mode 'dired-mode)
   (setq mode-name "Dired")
   (make-local-variable 'dired-directory)
-  (setq dired-directory dirname)
-  (setq default-directory 
-	(if (file-directory-p dirname)
-	    dirname (file-name-directory dirname)))
+  (setq dired-directory (or dirname default-directory))
+  (if dirname
+      (setq default-directory 
+	    (if (file-directory-p dirname)
+		dirname (file-name-directory dirname))))
   (setq mode-line-buffer-identification '("Dired: %17b"))
   (setq case-fold-search nil)
   (setq buffer-read-only t)
@@ -226,7 +230,7 @@ With arg, repeat over several lines."
    "d-elete, u-ndelete, x-ecute, f-ind, o-ther window, r-ename, c-opy, v-iew"))
 
 (defun dired-unflag (arg)
-  "In dired, flag the current line's file for deletion."
+  "In dired, remove the current line's delete flag then move to next line."
   (interactive "p")
   (dired-repeat-over-lines arg
     '(lambda ()
@@ -253,31 +257,21 @@ With arg, repeat over several lines."
   (dired-move-to-filename))
 
 (defun dired-find-file ()
-  "In dired, visit the file named on this line."
+  "In dired, visit the file or directory named on this line."
   (interactive)
-  (if (save-excursion
-	(beginning-of-line)
-	(looking-at "  d"))
-      (dired (dired-get-filename))
-    (find-file (dired-get-filename))))
+  (find-file (dired-get-filename)))
 
 (defun dired-view-file ()
   "In dired, examine a file in view mode, returning to dired when done."
   (interactive)
-  (if (save-excursion
-	(beginning-of-line)
-	(looking-at "  d"))
+  (if (file-directory-p (dired-get-filename))
       (dired (dired-get-filename))
     (view-file (dired-get-filename))))
 	    
 (defun dired-find-file-other-window ()
-  "In dired, visit this file in another window."
+  "In dired, visit this file or directory in another window."
   (interactive)
-  (if (save-excursion
-	(beginning-of-line)
-	(looking-at "  d"))
-      (dired-other-window (dired-get-filename))
-    (find-file-other-window (dired-get-filename))))
+  (find-file-other-window (dired-get-filename)))
 
 (defun dired-get-filename (&optional localp no-error-if-not-filep)
   "In dired, return name of file mentioned on this line.
@@ -445,7 +439,10 @@ start with #."
 
 (defun dired-rename-file (to-file)
   "Rename this file to TO-FILE."
-  (interactive "FRename to: ")
+  (interactive
+   (list (read-file-name (format "Rename %s to: "
+				 (file-name-nondirectory (dired-get-filename)))
+			 nil (dired-get-filename))))
   (setq to-file (expand-file-name to-file))
   (rename-file (dired-get-filename) to-file)
   (let ((buffer-read-only nil))
@@ -493,7 +490,9 @@ start with #."
 	 (to-file (concat from-file ".Z")))
     (if (string-match "\\.Z$" from-file)
 	(error "%s is already compressed!" from-file))
+    (message "Compressing %s..." from-file)
     (call-process "compress" nil nil nil "-f" from-file)
+    (message "Compressing %s... done" from-file)
     (dired-redisplay to-file)))
 
 (defun dired-uncompress ()
@@ -504,7 +503,9 @@ start with #."
 	 (to-file (substring from-file 0 -2)))
     (if (string-match "\\.Z$" from-file) nil
 	(error "%s is not compressed!" from-file))
+    (message "Uncompressing %s..." from-file)
     (call-process "uncompress" nil nil nil from-file)
+    (message "Uncompressing %s... done" from-file)
     (dired-redisplay to-file)))
 
 (defun dired-byte-recompile ()

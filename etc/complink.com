@@ -14,9 +14,9 @@ $ link digest_doc.obj,vmslink.opt/opt
 $ cc /debug sorted_doc.c
 $ cc /debug qsort.c
 $ link sorted_doc.obj,qsort.obj,vmslink.opt/opt
-$ cc /debug etags_vms_lib.c
+$ cc /debug etags_vmslib.c
 $ cc /debug /obj=etags.obj /define=ETAGS etags_vms.c
-$ link etags.obj,etags_vms_lib.obj,vmslink.opt/opt
+$ link etags.obj,etags_vmslib.obj,vmslink.opt/opt
 $ goto finish
 $
 $version44:
@@ -30,9 +30,9 @@ $ link digest-doc.obj,vmslink.opt/opt
 $ cc /debug sorted-doc.c
 $ cc /debug qsort.c
 $ link sorted-doc.obj,qsort.obj,vmslink.opt/opt
-$ cc /debug etags-vms-lib.c
+$ cc /debug etags-vmslib.c
 $ cc /debug /obj=etags.obj /define=ETAGS etags-vms.c
-$ link etags.obj,etags-vms-lib.obj,vmslink.opt/opt
+$ link etags.obj,etags-vmslib.obj,vmslink.opt/opt
 $
 $finish:
 $ cc /debug yow.c

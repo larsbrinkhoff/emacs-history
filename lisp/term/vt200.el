@@ -4,7 +4,7 @@
 (require 'keypad)
 
 (defvar CSI-map nil
-  "The CSI-map maps the CSI function keys on the VT201 keyboard.
+  "The CSI-map maps the CSI function keys on the VT200 keyboard.
 The CSI keys are the dark function keys, and are only active in
 VT200-mode, except for the arrow keys.")
 
@@ -19,17 +19,16 @@ but only if you give this command."
 ;; I suggest that someone establish standard mappings for all of
 ;; the VT200 CSI function keys into the function-keymap.
 
-(if (not CSI-map)
-    (progn
-     (setq CSI-map (make-keymap))  ;; <ESC>[ commands
-
-     (setup-terminal-keymap CSI-map
+(if CSI-map
+    nil
+  (setq CSI-map (make-keymap))		; <ESC>[ commands
+  (setup-terminal-keymap CSI-map
 	    '(("A" . ?u)	   ; up arrow
 	      ("B" . ?d)	   ; down-arrow
 	      ("C" . ?r)	   ; right-arrow
 	      ("D" . ?l)	   ; left-arrow
 	      ("1~" . ?f)	   ; Find
-	      ("2~" . ?e)	   ; Insert Here
+	      ("2~" . ?I)	   ; Insert Here
 	      ("3~" . ?k)	   ; Re-move
 	      ("4~" . ?s)	   ; Select
 	      ("5~" . ?P)	   ; Prev Screen
@@ -39,7 +38,7 @@ but only if you give this command."
 	      ("19~" . ?\C-h)	   ; F8
 	      ("20~" . ?\C-i)	   ; F9
 	      ("21~" . ?\C-j)	   ; F10
-	      ("23~" . 'ESC-prefix) ; F11 (ESC)
+	      ("23~" . ESC-prefix) ; F11 (ESC)
 	      ("24~" . ?\C-l)	   ; F12
 	      ("25~" . ?\C-m)	   ; F13
 	      ("26~" . ?\C-n)	   ; F14
@@ -48,7 +47,7 @@ but only if you give this command."
 	      ("33~" . ?\C-s)	   ; F19
 	      ("34~" . ?\C-t)	   ; F20
 	      ("28~" . ??)	   ; Help
-	      ("29~" . ?x)))))	   ; Do
+	      ("29~" . ?x))))	   ; Do
 
 (defvar SS3-map nil
   "SS3-map maps the SS3 function keys on the VT200 keyboard.
@@ -56,11 +55,10 @@ The SS3 keys are the numeric keypad keys in keypad application mode
 \(DECKPAM).  SS3 is DEC's name for the sequence <ESC>O which is
 the common prefix of what these keys transmit.")
 
-(if (not SS3-map)
-    (progn
-
-     (setq SS3-map (make-keymap))  ;; <ESC>O commands
-     (setup-terminal-keymap SS3-map
+(if SS3-map
+    nil
+  (setq SS3-map (make-keymap))		; <ESC>O commands
+  (setup-terminal-keymap SS3-map
 	    '(("A" . ?u)	   ; up arrow
 	      ("B" . ?d)	   ; down-arrow
 	      ("C" . ?r)	   ; right-arrow
@@ -84,11 +82,4 @@ the common prefix of what these keys transmit.")
 	      ("x" . ?8)	   ; 8
 	      ("y" . ?9)))	   ; 9
 
-     (define-key global-map "\eO" SS3-map)))
-
-(defun vt200-enable-arrows ()
-  "Redefine Emacs so that VT200 arrow keys and function keys work.
-This is not done automatically because it inescapably causes the
-standard Emacs command ESC [ to stop working normally."
-  (interactive)
-  (define-key global-map "\e[" CSI-map))
+     (define-key global-map "\eO" SS3-map))

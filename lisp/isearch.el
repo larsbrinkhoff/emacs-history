@@ -96,7 +96,13 @@
 					     (1+ (- search-slow-window-lines))
 					   (- (window-height)
 					      (1+ search-slow-window-lines)))))
-		     (or (< search-slow-window-lines 0) (other-window 1))
+		     (if (< search-slow-window-lines 0)
+			 (progn (vertical-motion (- 1 search-slow-window-lines))
+				(set-window-start (next-window) (point))
+				(set-window-hscroll (next-window)
+						    (window-hscroll))
+				(set-window-hscroll (selected-window) 0))
+		       (other-window 1))
 		     (goto-char found-point)))))
 	 (let ((char (if quit-flag
 			 ?\C-g
@@ -210,7 +216,7 @@
 				(setq adjusted t)
 				(let ((cs (nth (if forward
 						   5 ; other-end
-						 3) ; saved (point)
+						 2) ; saved (point)
 					       (car (cdr cmds)))))
 				  ;; (car cmds) is after last search;
 				  ;; (car (cdr cmds)) is from before it.
@@ -329,11 +335,16 @@
 
 ;; This is called from incremental-search
 ;; if the first input character is the exit character.
-;; We store the search string in  search-string
-;; which has been bound already by incremental-search
-;; so that, when we exit, it is copied into search-last-string.
+;; The interactive-arg-reader uses free variables `forward' and `regexp'
+;; which are bound by `incremental-search'.
+
+;; We store the search string in `search-string'
+;; which has been bound already by `incremental-search'
+;; so that, when we exit, it is copied into `search-last-string'.
+
 (defun nonincremental-search (forward regexp)
-  (let (message char (inhibit-quit nil))
+  (let (message char function string inhibit-quit
+		(cursor-in-echo-area t))
     ;; Prompt assuming not word search,
     (setq message (if regexp 
 		      (if forward "Regexp search: "
@@ -346,17 +357,20 @@
 	(setq message (if forward "Word search: " "Word search backward: "))
       ;; Otherwise let that 1 char be part of the search string.
       (setq unread-command-char char))
+    (setq function
+	  (if (eq char search-yank-word-char)
+	      (if forward 'word-search-forward 'word-search-backward)
+	    (if regexp
+		(if forward 're-search-forward 're-search-backward)
+	      (if forward 'search-forward 'search-backward))))
     ;; Read the search string with corrected prompt.
-    (setq search-string (read-string message))
+    (setq string (read-string message))
     ;; Empty means use default.
-    (if (= 0 (length search-string))
-	(setq search-string search-last-string)
+    (if (= 0 (length string))
+	(setq string search-last-string)
       ;; Set last search string now so it is set even if we fail.
-      (setq search-last-string search-string))
+      (setq search-last-string string))
+    ;; Since we used the minibuffer, we should be available for redo.
+    (setq command-history (cons (list function string) command-history))
     ;; Go ahead and search.
-    (funcall (if (eq char search-yank-word-char)
-		 (if forward 'word-search-forward 'word-search-backward)
-	       (if regexp
-		   (if forward 're-search-forward 're-search-backward)
-		 (if forward 'search-forward 'search-backward)))
-	     search-string)))
+    (funcall function string)))

@@ -135,7 +135,7 @@
   (let ((continue t) c)
     (while continue
       (message "Help (Type ? for further options)")
-      (setq c (char-to-string (upcase (read-char))))
+      (setq c (char-to-string (downcase (read-char))))
       (setq c (lookup-key Helper-help-map c))
       (cond ((eq c 'Helper-help-options)
 	     (Helper-help-options))

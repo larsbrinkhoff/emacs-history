@@ -47,10 +47,15 @@ copyright notice and this notice must be preserved on all copies.  */
 #include <fcntl.h>
 #endif /* USG */
 
+#ifdef XENIX
+#include <sys/locking.h>
+#endif
+
 /* Cancel substitutions made by config.h for Emacs.  */
 #undef open
 #undef read
 #undef write
+#undef close
 
 char *concat ();
 extern int errno;
@@ -137,18 +142,22 @@ main (argc, argv)
 #endif /* not MAIL_USE_FLOCK */
   if (indesc < 0)
     pfatal_with_name (inname);
-#ifdef BSD
+#if defined(BSD) || defined(XENIX)
   /* In case movemail is setuid to root, make sure the user can
      read the output file.  */
   /* This is desirable for all systems
      but I don't want to assume all have the umask system call */
   umask (umask (0) & 0333);
-#endif /* BSD */
+#endif /* BSD or Xenix */
   outdesc = open (outname, O_WRONLY | O_CREAT | O_EXCL, 0666);
   if (outdesc < 0)
     pfatal_with_name (outname);
 #ifdef MAIL_USE_FLOCK
-  (void) flock (indesc, LOCK_EX);
+#ifdef XENIX
+  if (locking (indesc, LK_RLCK, 0L) < 0) pfatal_with_name (inname);
+#else
+  flock (indesc, LOCK_EX);
+#endif
 #endif /* MAIL_USE_FLOCK */
 
   while (1)
@@ -156,7 +165,12 @@ main (argc, argv)
       nread = read (indesc, buf, sizeof buf);
       if (nread != write (outdesc, buf, nread))
 	{
-	  unlink (outname);
+	  int saved_errno = errno;
+	  (void) unlink (outname);
+#ifndef MAIL_USE_FLOCK
+	  (void) unlink (lockname);
+#endif /* not MAIL_USE_FLOCK */ 
+	  errno = saved_errno;
 	  pfatal_with_name (outname);
 	}
       if (nread < sizeof buf)
@@ -164,12 +178,12 @@ main (argc, argv)
     }
 
 #ifdef MAIL_USE_FLOCK
-#ifdef STRIDE
-   /* Stride has flock(), but no ftruncate().  This mess will do. */
+#if defined(STRIDE) || defined(XENIX)
+  /* Stride, xenix have file locking, but no ftruncate.  This mess will do. */
   (void) close (open (inname, O_CREAT | O_TRUNC | O_RDWR, 0666));
 #else
   (void) ftruncate (indesc, 0L);
-#endif /* STRIDE */
+#endif /* STRIDE or XENIX */
 #endif /* MAIL_USE_FLOCK */
   close (indesc);
   close (outdesc);
@@ -260,6 +274,7 @@ xmalloc (size)
 #undef open
 #undef read
 #undef write
+#undef close
 #endif /* USG */
 
 #define NOTOK (-1)

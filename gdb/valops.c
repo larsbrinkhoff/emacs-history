@@ -39,7 +39,10 @@ value_cast (type, arg2)
   register enum type_code code2;
   register int scalar;
 
-  COERCE_ARRAY (arg2);
+  /* Coerce arrays but not enums.  Enums will work as-is
+     and coercing them would cause an infinite recursion.  */
+  if (TYPE_CODE (VALUE_TYPE (arg2)) != TYPE_CODE_ENUM)
+    COERCE_ARRAY (arg2);
 
   code1 = TYPE_CODE (type);
   code2 = TYPE_CODE (VALUE_TYPE (arg2));
@@ -91,7 +94,6 @@ value_assign (toval, fromval)
   char virtual_buffer[MAX_REGISTER_VIRTUAL_SIZE];
   int use_buffer = 0;
 
-  COERCE_ARRAY (toval);
   COERCE_ARRAY (fromval);
 
   if (VALUE_LVAL (toval) != lval_internalvar)
@@ -354,7 +356,11 @@ value
 value_arg_coerce (arg)
      value arg;
 {
-  register struct type *type = VALUE_TYPE (arg);
+  register struct type *type;
+
+  COERCE_ENUM (arg);
+
+  type = VALUE_TYPE (arg);
 
   if (TYPE_CODE (type) == TYPE_CODE_INT
       && TYPE_LENGTH (type) < sizeof (int))
@@ -461,14 +467,11 @@ call_function (function, nargs, args)
 
   /* Figure out the value returned by the function.  */
   {
-    REGISTER_TYPE retbuf[2];
+    char retbuf[REGISTER_BYTES];
 
     /* Execute the stack dummy routine, calling FUNCTION.
        When it is done, discard the empty frame
-       after storing the contents of r0 and r1 into retbuf.  */
-#ifndef CALL_DUMMY_START_OFFSET
-#define CALL_DUMMY_START_OFFSET 0
-#endif
+       after storing the contents of all regs into retbuf.  */
     run_stack_dummy (start_sp + CALL_DUMMY_START_OFFSET, retbuf);
 
     return value_being_returned (value_type, retbuf);

@@ -1,5 +1,5 @@
 /* Print values for GNU debugger gdb.
-   Copyright (C) 1986 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -40,12 +40,14 @@ char **signed_type_table;
 char **float_type_table;
 
 /* Print the value VAL in C-ish syntax on stream STREAM.
+   FORMAT is a format-letter, or 0 for print in natural format of data type.
    If the object printed is a string pointer, returns
    the number of string bytes printed.  */
 
-value_print (val, stream)
+value_print (val, stream, format)
      value val;
      FILE *stream;
+     char format;
 {
   register int i, n, typelen;
 
@@ -59,8 +61,8 @@ value_print (val, stream)
       typelen = TYPE_LENGTH (VALUE_TYPE (val));
       fputc ('{', stream);
       /* Print arrays of characters using string syntax.  */
-      if (VALUE_TYPE (val) == builtin_type_char
-	  || VALUE_TYPE (val) == builtin_type_unsigned_char)
+      if (typelen == 1 && TYPE_CODE (VALUE_TYPE (val)) == TYPE_CODE_INT
+	  && format == 0)
 	{
 	  fputc ('"', stream);
 	  for (i = 0; i < n && i < print_max; i++)
@@ -79,7 +81,7 @@ value_print (val, stream)
 	      if (i)
 		fprintf (stream, ", ");
 	      val_print (VALUE_TYPE (val), VALUE_CONTENTS (val) + typelen * i,
-			 VALUE_ADDRESS (val) + typelen * i, stream);
+			 VALUE_ADDRESS (val) + typelen * i, stream, format);
 	    }
 	  if (i < n)
 	    fprintf (stream, "...");
@@ -97,24 +99,25 @@ value_print (val, stream)
 	  fprintf (stream, ") ");
 	}
       return val_print (VALUE_TYPE (val), VALUE_CONTENTS (val),
-			VALUE_ADDRESS (val), stream);
+			VALUE_ADDRESS (val), stream, format);
     }
 }
 
-/* Print on STREAM data stored in debugger at address VALADDR
-   according to the format of type TYPE.
-   ADDRESS is the location in the inferior that the data
-   is supposed to have come from.
+/* Print data of type TYPE located at VALADDR (within GDB),
+   which came from the inferior at address ADDRESS,
+   onto stdio stream STREAM according to FORMAT
+   (a letter or 0 for natural format).
 
    If the data are a string pointer, returns the number of
    sting characters printed.  */
 
 int
-val_print (type, valaddr, address, stream)
+val_print (type, valaddr, address, stream, format)
      struct type *type;
      char *valaddr;
      CORE_ADDR address;
      FILE *stream;
+     char format;
 {
   register int i;
   int len;
@@ -135,8 +138,8 @@ val_print (type, valaddr, address, stream)
 	  len = TYPE_LENGTH (type) / eltlen;
 	  fprintf (stream, "{");
 	  /* For an array of chars, print with string syntax.  */
-	  if (elttype == builtin_type_char
-	      || elttype == builtin_type_unsigned_char)
+	  if (eltlen == 1 && TYPE_CODE (elttype) == TYPE_CODE_INT
+	      && format == 0)
 	    {
 	      fputc ('"', stream);
 	      for (i = 0; i < len && i < print_max; i++)
@@ -154,7 +157,7 @@ val_print (type, valaddr, address, stream)
 		{
 		  if (i) fprintf (stream, ", ");
 		  val_print (elttype, valaddr + i * eltlen,
-			     0, stream);
+			     0, stream, format);
 		}
 	      if (i < len)
 		fprintf (stream, "...");
@@ -165,11 +168,19 @@ val_print (type, valaddr, address, stream)
       /* Array of unspecified length: treat like pointer.  */
 
     case TYPE_CODE_PTR:
+      if (format)
+	{
+	  print_scalar_formatted (valaddr, type, format, 0, stream);
+	  break;
+	}
       fprintf (stream, "0x%x", * (int *) valaddr);
       /* For a pointer to char or unsigned char,
 	 also print the string pointed to, unless pointer is null.  */
-      if ((TYPE_TARGET_TYPE (type) == builtin_type_char
-	   || TYPE_TARGET_TYPE (type) == builtin_type_unsigned_char)
+
+      /* For an array of chars, print with string syntax.  */
+      elttype = TYPE_TARGET_TYPE (type);
+      if (TYPE_LENGTH (elttype) == 1 && TYPE_CODE (elttype) == TYPE_CODE_INT
+	  && format == 0
 	  && unpack_long (type, valaddr) != 0)
 	{
 	  fputc (' ', stream);
@@ -203,17 +214,22 @@ val_print (type, valaddr, address, stream)
 	  if (TYPE_FIELD_PACKED (type, i))
 	    {
 	      val = unpack_field_as_long (type, valaddr, i);
-	      val_print (TYPE_FIELD_TYPE (type, i), &val, 0, stream);
+	      val_print (TYPE_FIELD_TYPE (type, i), &val, 0, stream, format);
 	    }
 	  else
 	    val_print (TYPE_FIELD_TYPE (type, i), 
 		       valaddr + TYPE_FIELD_BITPOS (type, i) / 8,
-		       0, stream);
+		       0, stream, format);
 	}
       fprintf (stream, "}");
       break;
 
     case TYPE_CODE_ENUM:
+      if (format)
+	{
+	  print_scalar_formatted (valaddr, type, format, 0, stream);
+	  break;
+	}
       len = TYPE_NFIELDS (type);
       val = unpack_long (builtin_type_int, valaddr);
       for (i = 0; i < len; i++)
@@ -229,6 +245,11 @@ val_print (type, valaddr, address, stream)
       break;
 
     case TYPE_CODE_FUNC:
+      if (format)
+	{
+	  print_scalar_formatted (valaddr, type, format, 0, stream);
+	  break;
+	}
       fprintf (stream, "{");
       type_print (type, "", stream, -1);
       fprintf (stream, "} ");
@@ -236,11 +257,15 @@ val_print (type, valaddr, address, stream)
       break;
 
     case TYPE_CODE_INT:
+      if (format)
+	{
+	  print_scalar_formatted (valaddr, type, format, 0, stream);
+	  break;
+	}
       fprintf (stream,
 	       TYPE_UNSIGNED (type) ? "%u" : "%d",
 	       unpack_long (type, valaddr));
-      if (type == builtin_type_char
-	  || type == builtin_type_unsigned_char)
+      if (TYPE_LENGTH (type) == 1)
 	{
 	  fprintf (stream, " '");
 	  printchar (unpack_long (type, valaddr), stream);
@@ -249,6 +274,18 @@ val_print (type, valaddr, address, stream)
       break;
 
     case TYPE_CODE_FLT:
+      if (format)
+	{
+	  print_scalar_formatted (valaddr, type, format, 0, stream);
+	  break;
+	}
+#ifdef IEEE_FLOAT
+      if (is_nan (unpack_double (type, valaddr)))
+	{
+	  fprintf (stream, "Nan");
+	  break;
+	}
+#endif
       fprintf (stream, "%g", unpack_double (type, valaddr));
       break;
 
@@ -261,6 +298,38 @@ val_print (type, valaddr, address, stream)
     }
   fflush (stream);
 }
+
+#ifdef IEEE_FLOAT
+
+union ieee {
+  int i[2];
+  double d;
+};
+
+/* Nonzero if ARG (a double) is a NAN.  */
+
+int
+is_nan (arg)
+     union ieee arg;
+{
+  int lowhalf, highhalf;
+  union { int i; char c; } test;
+
+  /* Separate the high and low words of the double.
+     Distinguish big and little-endian machines.  */
+  test.i = 1;
+  if (test.c != 1)
+    /* Big-endian machine */
+    lowhalf = arg.i[1], highhalf = arg.i[0];
+  else
+    lowhalf = arg.i[0], highhalf = arg.i[1];
+
+  /* Nan: exponent is the maximum possible, and fraction is nonzero.  */
+  return (((highhalf>>20) & 0x7ff) == 0x7ff
+	  &&
+	  ! ((highhalf & 0xfffff == 0) && (lowhalf == 0)));
+}
+#endif
 
 /* Print a description of a type TYPE
    in the form of a declaration of a variable named VARSTRING.
@@ -319,6 +388,9 @@ type_print_varspec_prefix (type, stream, show, passed_a_ptr)
      int show;
      int passed_a_ptr;
 {
+  if (type == 0)
+    return;
+
   if (TYPE_NAME (type) && show <= 0)
     return;
 
@@ -332,15 +404,11 @@ type_print_varspec_prefix (type, stream, show, passed_a_ptr)
       break;
 
     case TYPE_CODE_FUNC:
-      type_print_varspec_prefix (TYPE_TARGET_TYPE (type), stream, 0,
-				 passed_a_ptr);
+    case TYPE_CODE_ARRAY:
+      type_print_varspec_prefix (TYPE_TARGET_TYPE (type), stream, 0, 0);
       if (passed_a_ptr)
 	fputc ('(', stream);
       break;
-
-    case TYPE_CODE_ARRAY:
-      type_print_varspec_prefix (TYPE_TARGET_TYPE (type), stream, 0,
-				 passed_a_ptr);
     }
 }
 
@@ -355,6 +423,9 @@ type_print_varspec_suffix (type, stream, show, passed_a_ptr)
      int show;
      int passed_a_ptr;
 {
+  if (type == 0)
+    return;
+
   if (TYPE_NAME (type) && show <= 0)
     return;
 
@@ -363,8 +434,9 @@ type_print_varspec_suffix (type, stream, show, passed_a_ptr)
   switch (TYPE_CODE (type))
     {
     case TYPE_CODE_ARRAY:
-      type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0,
-				 passed_a_ptr);
+      type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0, 0);
+      if (passed_a_ptr)
+	fprintf (stream, ")");
       fprintf (stream, "[");
       if (TYPE_LENGTH (type) >= 0)
 	fprintf (stream, "%d",
@@ -377,8 +449,7 @@ type_print_varspec_suffix (type, stream, show, passed_a_ptr)
       break;
 
     case TYPE_CODE_FUNC:
-      type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0,
-				 passed_a_ptr);
+      type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0, 0);
       if (passed_a_ptr)
 	fprintf (stream, ")");
       fprintf (stream, "()");
@@ -412,6 +483,12 @@ type_print_base (type, stream, show, level)
   register int lastval;
 
   QUIT;
+
+  if (type == 0)
+    {
+      fprintf (stream, "type unknown");
+      return;
+    }
 
   if (TYPE_NAME (type) && show <= 0)
     {
@@ -450,13 +527,37 @@ type_print_base (type, stream, show, level)
 	    {
 	      QUIT;
 	      print_spaces (level + 4, stream);
+
+	      /* If this is a bit-field and there is a gap before it,
+		 print a nameless field to account for the gap.  */
+
+	      if (TYPE_FIELD_PACKED (type, i))
+		{
+		  int gap = (TYPE_FIELD_BITPOS (type, i)
+			     - (i > 0
+				? (TYPE_FIELD_BITPOS (type, i - 1)
+				   + (TYPE_FIELD_PACKED (type, i - 1)
+				      ? TYPE_FIELD_BITSIZE (type, i - 1)
+				      : TYPE_LENGTH (TYPE_FIELD_TYPE (type, i - 1)) * 8))
+				: 0));
+		  if (gap != 0)
+		    {
+		      fprintf (stream, "int : %d;\n", gap);
+		      print_spaces (level + 4, stream);
+		    }
+		}
+
+	      /* Print the declaration of this field.  */
+
 	      type_print_1 (TYPE_FIELD_TYPE (type, i),
 			    TYPE_FIELD_NAME (type, i),
 			    stream, show - 1, level + 4);
+
+	      /* Print the field width.  */
+
 	      if (TYPE_FIELD_PACKED (type, i))
-		{
-		  /* ??? don't know what to put here ??? */;
-		}
+		fprintf (stream, " : %d", TYPE_FIELD_BITSIZE (type, i));
+
 	      fprintf (stream, ";\n");
 	    }
 	  print_spaces (level, stream);

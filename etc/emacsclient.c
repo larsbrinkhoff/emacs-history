@@ -23,18 +23,24 @@ copyright notice and this notice must be preserved on all copies.  */
 #undef read
 #undef write
 #undef open
+#ifdef close
+#undef close
+#endif
 
 
-#ifndef BSD
+#if !defined(BSD) && !defined(HAVE_SYSVIPC)
 #include <stdio.h>
 
 main ()
 {
-  fprintf (stderr, "Sorry, the Emacs server is supported only on Berkeley Unix.\n");
+  fprintf (stderr, "Sorry, the Emacs server is supported only on Berkeley Unix\n");
+  fprintf (stderr, "or System V systems with IPC\n");
   exit (1);
 }
 
-#else /* BSD */
+#else /* BSD && IPC */
+
+#ifdef BSD /* BSD code is very different from SYSV IPC code */
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -114,5 +120,94 @@ main (argc, argv)
   exit (0);
 }
 
-#endif /* BSD */
+#else /* This is the SYSV IPC section */
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdio.h>
+
+main (argc, argv)
+     int argc;
+     char **argv;
+{
+  int s;
+  key_t key;
+  struct msgbuf * msgp =
+      (struct msgbuf *) malloc (sizeof *msgp + BUFSIZ);
+  struct msqid_ds * msg_st;
+  char *homedir, *getenv (), buf[BUFSIZ];
+  FILE *out;
+  char *getwd (), gwdirb[BUFSIZ], *cwd;
+  if (argc < 2)
+    {
+      printf ("Usage: %s [filename]\n", argv[0]);
+      exit (1);
+    }
+
+  /*
+   * Create a message queue using ~/.emacs_server as the path for ftok
+   */
+  if ((homedir = getenv ("HOME")) == NULL)
+    {
+      fprintf (stderr,"No home directory\n");
+      exit (1);
+    }
+  strcpy (buf, homedir);
+  strcat (buf, "/.emacs_server");
+  creat (buf, 0600);
+  key = ftok (buf, 1);	/* unlikely to be anyone else using it */
+  s = msgget (key, 0600);
+  if (s == -1)
+    {
+      perror ("msgget");
+      exit (1);
+    }
+
+  msgp->mtext[0] = 0;
+  argc--; argv++;
+  while (argc)
+    {
+      if (*argv[0] != '/')
+	{
+	  cwd = gwdirb; *cwd = '\0';
+	  if (getcwd (gwdirb, sizeof gwdirb))
+	    {
+	      strcat (cwd, "/");
+	    }
+	  else
+	    {
+	      fprintf (stderr, cwd);
+	      *cwd = '\0';
+	    }
+	}
+	
+      strcat (msgp->mtext, cwd);
+      strcat (msgp->mtext, argv[0]);
+      strcat (msgp->mtext, " ");
+      argv++; argc--;
+    }
+  strcat (msgp->mtext, "\n");
+  msgp->mtype = 1;
+  if (msgsnd (s, msgp, strlen (msgp->mtext)+1, 1, 0) < 0)
+    {
+      perror ("msgsnd");
+      exit (1);
+    }
+  /*
+   * Now, wait for an answer
+   */
+  printf ("Waiting\n");
+
+  msgrcv (s, msgp, BUFSIZ, getpid (), 0);	/* wait for anything back */
+  strcpy (buf, msgp->mtext);
+
+  printf ("Got back: %s\n", buf);
+  fclose (out);
+  exit (0);
+}
+
+#endif /* IPC */
+
+#endif /* BSD && IPC */
 

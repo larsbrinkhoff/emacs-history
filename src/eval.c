@@ -510,6 +510,7 @@ DEFUN ("defvar", Fdefvar, Sdefvar, 1, UNEVALLED, 0,
 INITVALUE is evaluated, and used to set SYMBOL, only if SYMBOL's value is void.\n\
 INITVALUE and DOCSTRING are optional.\n\
 If DOCSTRING starts with *, this variable is identified as a user option.\n\
+ This means that M-x set-variable and M-x edit-options recognize it.\n\
 If INITVALUE is missing, SYMBOL's value is not set.")
   (args)
      Lisp_Object args;
@@ -535,11 +536,12 @@ If INITVALUE is missing, SYMBOL's value is not set.")
 }
 
 DEFUN ("defconst", Fdefconst, Sdefconst, 2, UNEVALLED, 0,
-  "(defconst SYMBOL INITVALUE DOCSTRING) defines SYMBOL as an advertised constant.\n\
+  "(defconst SYMBOL INITVALUE DOCSTRING) defines SYMBOL as a constant variable.\n\
 The intent is that programs do not change this value (but users may).\n\
 Always sets the value of SYMBOL to the result of evalling INITVALUE.\n\
 DOCSTRING is optional.\n\
-If DOCSTRING starts with *, this variable is identified as a user option.")
+If DOCSTRING starts with *, this variable is identified as a user option.\n\
+ This means that M-x set-variable and M-x edit-options recognize it.")
   (args)
      Lisp_Object args;
 {
@@ -945,12 +947,12 @@ See SIGNAL for more info.")
   h.var = Fcar (args);
   h.handler = Fcdr (Fcdr (args));
   
-  for (val = h.handler; NULL (val); val = Fcdr (val))
+  for (val = h.handler; ! NULL (val); val = Fcdr (val))
     {
       tem = Fcar (val);
       if ((!NULL (tem)) &&
 	  (!CONSP (tem) || (XTYPE (XCONS (tem)->car) != Lisp_Symbol)))
-	error ("Illegal condition handler", tem);
+	error ("Invalid condition handler", tem);
     }
   
   h.next = handlerlist;
@@ -1488,16 +1490,20 @@ Thus, (apply '+ 1 2 '(3 4)) returns 10.")
       {
         /* Avoid making funcall cons up a yet another new vector of arguments
 	   by explicitly supplying nil's for optional values */
-	funcall_args = (Lisp_Object *) alloca (1 + XSUBR (fun)->max_args *
-						   sizeof (Lisp_Object));
+	funcall_args = (Lisp_Object *) alloca ((1 + XSUBR (fun)->max_args)
+					       * sizeof (Lisp_Object));
 	for (i = numargs; i < XSUBR (fun)->max_args;)
 	  funcall_args[++i] = Qnil;
       }
  funcall:
+  /* We add 1 to numargs because funcall_args includes the
+     function itself as well as its arguments.  */
   if (!funcall_args)
-    funcall_args = (Lisp_Object *) alloca (1 + numargs * 
-					       sizeof (Lisp_Object));
+    funcall_args = (Lisp_Object *) alloca ((1 + numargs)
+					   * sizeof (Lisp_Object));
   bcopy (args, funcall_args, nargs * sizeof (Lisp_Object));
+  /* Spread the last arg we got.  Its first element goes in
+     the slot that it used to occupy, hence this value of I.  */
   i = nargs - 1;
   while (!NULL (spread_arg))
     {
@@ -1821,7 +1827,7 @@ funcall_lambda (fun, nargs, arg_vector)
 void
 grow_specpdl ()
 {
-  register struct specbinding *old = specpdl;
+  register int count = specpdl_ptr - specpdl;
   if (specpdl_size >= max_specpdl_size)
     {
       if (max_specpdl_size < 400)
@@ -1829,7 +1835,7 @@ grow_specpdl ()
       if (specpdl_size >= max_specpdl_size)
 	{
 	  Fsignal (Qerror,
-		   build_string ("Variable binding depth exceeds max-specpdl-size"));
+		   Fcons (build_string ("Variable binding depth exceeds max-specpdl-size"), Qnil));
 	  max_specpdl_size *= 2;
 	}
     }
@@ -1837,7 +1843,7 @@ grow_specpdl ()
   if (specpdl_size > max_specpdl_size)
     specpdl_size = max_specpdl_size;
   specpdl = (struct specbinding *) xrealloc (specpdl, specpdl_size * sizeof (struct specbinding));
-  specpdl_ptr += specpdl - old;
+  specpdl_ptr = specpdl + count;
 }
 
 void
@@ -1877,12 +1883,11 @@ void
 unbind_to (count)
      int count;
 {
-  register struct specbinding *downto = specpdl + count;
   int quitf = !NULL (Vquit_flag);
 
   Vquit_flag = Qnil;
 
-  while (specpdl_ptr != downto)
+  while (specpdl_ptr != specpdl + count)
     {
       --specpdl_ptr;
       if (specpdl_ptr->func != 0)

@@ -76,6 +76,7 @@ DEFUN ("random", Frandom, Srandom, 0, 1, 0,
   "Return a pseudo-random number.\n\
 On most systems all integers representable in Lisp are equally likely.\n\
   This is 24 bits' worth.\n\
+On some systems, absolute value of result never exceeds 2 to the 14.\n\
 If optional argument is supplied as  t,\n\
  the random number seed is set based on the current time and pid.")
   (arg)
@@ -217,7 +218,7 @@ Each argument may be a string, a list of numbers, or a vector of numbers.")
 
 DEFUN ("vconcat", Fvconcat, Svconcat, 0, MANY, 0,
   "Concatenate arguments and make the result a vector.\n\
-The result is a list whose elements are the elements of all the arguments.\n\
+The result is a vector whose elements are the elements of all the arguments.\n\
 Each argument may be a list, vector or string.")
   (nargs, args)
      int nargs;
@@ -1019,6 +1020,8 @@ The result is a list just as long as LIST.")
   return Flist (leni, args);
 }
 
+/* Anything that calls this function must protect from GC!  */
+
 DEFUN ("y-or-n-p", Fy_or_n_p, Sy_or_n_p, 1, 1, 0,
   "Ask user a \"y or n\" question.  Return t if answer is \"y\".\n\
 No confirmation of the answer is requested; a single character is enough.\n\
@@ -1027,21 +1030,26 @@ Also accepts Space to mean yes, or Delete to mean no.")
      Lisp_Object prompt;
 {
   register int ans;
-  register Lisp_Object xprompt;
+  Lisp_Object xprompt;
   Lisp_Object args[2];
   int ocech = cursor_in_echo_area;
+  struct gcpro gcpro1, gcpro2;
 
   CHECK_STRING (prompt, 0);
   xprompt = prompt;
+  GCPRO2 (prompt, xprompt);
+
   while (1)
     {
       message ("%s(y or n) ", XSTRING (xprompt)->data);
       cursor_in_echo_area = 1;
       ans = get_char (0);
-      cursor_in_echo_area = ocech;
+      cursor_in_echo_area = -1;
       message ("%s(y or n) %c", XSTRING (xprompt)->data, ans);
+      cursor_in_echo_area = ocech;
       QUIT;
-      ans = DOWNCASE (ans);
+      if (ans >= 0)
+	ans = DOWNCASE (ans);
       if (ans == 'y' || ans == ' ')
 	{ ans = 'y'; break; }
       if (ans == 'n' || ans == 127)
@@ -1056,15 +1064,11 @@ Also accepts Space to mean yes, or Delete to mean no.")
 	  xprompt = Fconcat (2, args);
 	}
     }
-  if (!noninteractive)
-    {
-      extern int cursX; /* defined in dispnew.c */
-      /* Move cursor to start of line to indicate that we have proceeded */
-      cursX = 0;
-      update_screen (1, 1);
-    }
+  UNGCPRO;
   return (ans == 'y' ? Qt : Qnil);
 }
+
+/* Anything that calls this function must protect from GC!  */
 
 DEFUN ("yes-or-no-p", Fyes_or_no_p, Syes_or_no_p, 1, 1, 0,
   "Ask user a yes or no question.  Return t if answer is yes.\n\
@@ -1074,15 +1078,20 @@ The user must confirm the answer with a newline, and can rub it out if not confi
 {
   register Lisp_Object ans;
   Lisp_Object args[2];
+  struct gcpro gcpro1;
+
   CHECK_STRING (prompt, 0);
 
   args[0] = prompt;
   args[1] = build_string ("(yes or no) ");
   prompt = Fconcat (2, args);
+
   while (1)
     {
+      GCPRO1 (prompt);
       ans = Fdowncase (read_minibuf (Vminibuffer_local_map,
 				     Qnil, prompt, 0));
+      UNGCPRO;
       if (XSTRING (ans)->size == 3 && !strcmp (XSTRING (ans)->data, "yes"))
 	return Qt;
       if (XSTRING (ans)->size == 2 && !strcmp (XSTRING (ans)->data, "no"))

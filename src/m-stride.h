@@ -53,7 +53,9 @@ and this notice must be preserved on all copies.  */
    are the ones defined so far.  */
 
 #define m68000			/* because the SGS compiler defines "m68k" */
+#ifndef STRIDE
 #define STRIDE
+#endif
 
 /* Use type int rather than a union, to represent Lisp_Object */
 /* This is desirable for most machines.  */
@@ -86,7 +88,7 @@ and this notice must be preserved on all copies.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 #undef VIRT_ADDR_VARIES
@@ -121,3 +123,9 @@ and this notice must be preserved on all copies.  */
  * UniStride has this in /lib/libc.a.
  */
 #undef NONSYSTEM_DIR_LIBRARY
+
+/* UniStride defines getwd.  */
+
+#define HAVE_GETWD
+
+

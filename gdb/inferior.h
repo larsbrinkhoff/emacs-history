@@ -19,9 +19,17 @@ In other words, go ahead and share GDB, but don't try to stop
 anyone else from sharing it farther.  Help stamp out software hoarding!
 */
 
+/* File name for default use for standard in/out in the inferior.  */
+
+extern char *inferior_io_terminal;
+
 /* Pid of our debugged inferior, or 0 if no inferior now.  */
 
 extern int inferior_pid;
+
+/* Nonzero if debugging a remote machine via a serial link or ethernet.  */
+
+extern int remote_debugging;
 
 /* Last signal that the inferior received (why it stopped).  */
 
@@ -71,10 +79,9 @@ extern int step_over_calls;
 
 extern int step_multi;
 
-/* Store registers 0 and 1 here when about to pop a stack dummy frame.  */
+/* Save register contents here when about to pop a stack dummy frame.  */
 
-extern REGISTER_TYPE stop_r0;
-extern REGISTER_TYPE stop_r1;
+extern char stop_registers[REGISTER_BYTES];
 
 /* Nonzero if pc has been changed by the debugger
    since the inferior stopped.  */

@@ -4,7 +4,7 @@
 @ifinfo
 This file documents the GNU debugger GDB.
 
-Copyright (C) 1987 Richard M. Stallman.
+Copyright (C) 1988 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -39,14 +39,14 @@ of in the original English.
 @sp 1
 @center The GNU Source-Level Debugger
 @sp 4
-@center First Edition, GDB version 2.0
+@center Second Edition, GDB version 2.5
 @sp 1
-@center January 1987
+@center February 1988
 @sp 5
 @center Richard M. Stallman
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1987 Richard M. Stallman.
+Copyright @copyright{} 1988 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -98,8 +98,9 @@ and go on to learn about another without having to recompile first.
 	       explains that there is no warranty.
 * Input::      GDB command syntax and input conventions.
 * Files::      Specifying files for GDB to operate on.
-* Switches::   GDB arguments and switches.
-* running::    Running your program under GDB.
+* Options::    GDB arguments and options.
+* Compilation::Compiling your program so you can debug it.
+* Running::    Running your program under GDB.
 * Stopping::   Making your program stop.  Why it may stop.  What to do then.
 * Stack::      Examining your program's stack.
 * Source::     Examining your program's source files.
@@ -107,13 +108,15 @@ and go on to learn about another without having to recompile first.
 * Symbols::    Examining the debugger's symbol table.
 * Altering::   Altering things in your program.
 * Sequences::  Canned command sequences for repeated use.
+* Emacs::      Using GDB through GNU Emacs.
+* Remote::     Remote kernel debugging across a serial line.
 * Commands::   Index of GDB commands.
 * Concepts::   Index of GDB concepts.
 @end menu
 
 @node License, Input, Top, Top
 @unnumbered GDB General Public License
-@center (Clarified 20 March 1987)
+@center (Clarified 11 Feb 1988)
 
   The license agreements of most software companies keep you at the mercy
 of those companies.  By contrast, our general public license is intended to
@@ -150,8 +153,8 @@ allowed to distribute or change GDB.
 You may copy and distribute verbatim copies of GDB source code as you
 receive it, in any medium, provided that you conspicuously and
 appropriately publish on each file a valid copyright notice ``Copyright
-@copyright{} 1986 Free Software Foundation, Inc.'' (or with the year
-updated if that is appropriate); keep intact the notices on all files that
+@copyright{} 1988 Free Software Foundation, Inc.'' (or with whatever year
+is appropriate); keep intact the notices on all files that
 refer to this License Agreement and to the absence of any warranty; and
 give any other recipients of the GDB program a copy of this License
 Agreement along with the program.  You may charge a distribution fee
@@ -164,25 +167,26 @@ Paragraph 1 above, provided that you also do the following:
 
 @itemize @bullet
 @item
-cause the modified files to carry prominent notices stating who
-last changed such files and the date of any change; and
+cause the modified files to carry prominent notices stating
+that you changed the files and the date of any change; and
 
 @item
 cause the whole of any work that you distribute or publish, that
 in whole or in part contains or is a derivative of GDB or any
-part thereof, to be licensed at no charge to all third
-parties on terms identical to those contained in this License
-Agreement (except that you may choose to grant more extensive
-warranty protection to third parties, at your option).
+part thereof, to be licensed at no charge to all third parties on
+terms identical to those contained in this License Agreement
+(except that you may choose to grant more extensive warranty
+protection to some or all third parties, at your option).
 
 @item
-if the modified program serves as a debugger, cause it when started running
-in the simplest and usual way, to print an announcement including a valid
-copyright notice ``Copyright @copyright{} 1986 Free Software Foundation,
-Inc.'' (or with the year updated if appropriate), saying that there is no
-warranty (or else, saying that you provide a warranty) and that users may
-redistribute the program under these conditions, and telling the user how
-to view a copy of this License Agreement.
+if the modified program serves as a debugger, cause it, when
+started running in the simplest and usual way, to print an
+announcement including a valid copyright notice ``Copyright
+@copyright{} 1988 Free Software Foundation, Inc.'' (or with the
+year that is appropriate), saying that there is no warranty (or
+else, saying that you provide a warranty) and that users may
+redistribute the program under these conditions, and telling the
+user how to view a copy of this License Agreement.
 
 @item
 You may charge a distribution fee for the physical act of
@@ -190,29 +194,40 @@ transferring a copy, and you may at your option offer warranty
 protection in exchange for a fee.
 @end itemize
 
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
+
 @item
-You may copy and distribute GDB or any portion of it in compiled,
-executable or object code form under the terms of Paragraphs 1 and 2
-above provided that you do the following:
+You may copy and distribute GDB (or a portion or derivative of it,
+under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the
+following:
 
 @itemize @bullet
 @item
-cause each such copy of GDB to be accompanied by the
-corresponding machine-readable source code; or
+accompany it with the complete corresponding machine-readable
+source code, which must be distributed under the terms of
+Paragraphs 1 and 2 above; or,
 
 @item
-cause each such copy of GDB to be accompanied by a written offer,
-with no time limit, to give any third party free (except for a
-nominal shipping charge) machine readable copy of the
-corresponding source code; or
+accompany it with a written offer, valid for at least three
+years, to give any third party free (except for a nominal
+shipping charge) a complete machine-readable copy of the
+corresponding source code, to be distributed under the terms of
+Paragraphs 1 and 2 above; or,
 
 @item
-in the case of a recipient of GDB in compiled, executable or
-object code form (without the corresponding source code) you
-shall cause copies you distribute to be accompanied by a copy of
-the written offer of source code which you received along with
-the copy of GDB.
+accompany it with the information you received as to where the
+corresponding source code may be obtained.  (This alternative is
+allowed only for noncommercial distribution and only if you
+received the program in object code or executable form alone.)
 @end itemize
+
+For an executable file, complete source code means all the source code
+for all modules it contains; but, as a special exception, it need not
+include source code for modules which are standard libraries that
+accompany the operating system on which the executable file runs.
 
 @item
 You may not copy, sublicense, distribute or transfer GDB except as
@@ -225,12 +240,12 @@ their licenses terminated so long as such parties remain in full
 compliance.
 
 @item
-If you wish to incorporate parts of GNU Emacs into other free programs
-whose distribution conditions are different, write to the Free Software
-Foundation.  We have not yet worked out a simple rule that can be stated
-here, but we will often permit this.  We will be guided by the two goals of
-preserving the free status of all derivatives our free software and of
-promoting the sharing and reuse of software.
+If you wish to incorporate parts of GDB into other free programs whose
+distribution conditions are different, write to the Free Software
+Foundation.  We have not yet worked out a simple rule that can be
+stated here, but we will often permit this.  We will be guided by the
+two goals of preserving the free status of all derivatives our free
+software and of promoting the sharing and reuse of software.
 @end enumerate
 
 @iftex
@@ -308,7 +323,7 @@ of any GDB command that is in progress and return to GDB command level.
 It is safe to type @kbd{Ctrl-c} at any time because GDB does not allow
 it to take effect until a time when it is safe.
 
-@node Files, Switches, Input, Top
+@node Files, Options, Input, Top
 @chapter Specifying GDB's Files
 
 @cindex core dump file
@@ -341,7 +356,7 @@ specifies @file{progm} as the executable program and @file{core} as a core
 dump file to examine.  (You do not need to have a core dump file if what
 you plan to do is debug the program interactively.)
 
-@xref{Switches}, for full information on command switches and arguments for
+@xref{Options}, for full information on command options and arguments for
 GDB.
 
 @node File Commands,, File Arguments, Files
@@ -403,19 +418,27 @@ auto-display expressions.  This is because they may contain pointers to the
 internal data recording symbols and data types, which are part of the old
 symbol table data being discarded inside GDB.
 
-@node Switches, Running, Files, Top
-@chapter Switches and Arguments for GDB
+@node Options, Compilation, Files, Top
+@chapter Options and Arguments for GDB
 
 When you invoke GDB, you can pass commands telling it what files to
 operate on and what other things to do.
 
-@section Mode Switches
+@menu
+* Mode Options::     Options controlling modes of operation.
+* File Options::     Options to specify files (executable, coredump, commands)
+* Other Arguments::  Any other arguments without options
+			also specify files.
+@end menu
+
+@node Mode Options, File Options, Options, Options
+@section Mode Options
 
 @table @samp
 @item -nx
 Do not execute commands from the init files @file{.gdbinit}.
 Normally, the commands in these files are executed after all the
-command switches and arguments have been processed.  @xref{Command
+command options and arguments have been processed.  @xref{Command
 Files}.
 
 @item -q
@@ -423,14 +446,25 @@ Files}.
 
 @item -batch
 Run in batch mode.  Exit with code 1 after processing all the command
-files specified with @samp{-x} (and @file{./.gdbinit}, if not inhibited).
-Exit also if, due to an error, GDB would otherwise attempt to read a
-command from the terminal.
+files specified with @samp{-x} (and @file{.gdbinit}, if not
+inhibited).  Exit also if, due to an error, GDB would otherwise
+attempt to read a command from the terminal.
+
+@item -fullname
+This option is used when Emacs runs GDB as a subprocess.  It tells GDB
+to output the full file name and line number in a standard,
+recognizable fashion each time a stack frame is displayed (which
+includes each time the program stops).  This recognizable format looks
+like two @samp{\032} characters, followed by the filename, line number
+and character position separated by colons, and a newline.  The
+Emacs-to-GDB interface program uses the two @samp{\032} characters as
+a signal to display the source code for the frame.
 @end table
 
-@section File-specifying Switches
+@node File Options, Other Arguments, Mode Options, Options
+@section File-specifying Options
 
-All the switches and command line arguments given are processed
+All the options and command line arguments given are processed
 in sequential order.  The order makes a difference when the
 @samp{-x} command is used.
 
@@ -457,14 +491,57 @@ Execute GDB commands from file @var{file}.
 Add @var{directory} to the path to search for source files.
 @end table
 
+@node Other Arguments,, File Options, Options
 @section Other Arguments
 
-If there are arguments to GDB that are not switches or associated with
-switches, the first one specifies the symbol table and executable file name
+If there are arguments to GDB that are not options or associated with
+options, the first one specifies the symbol table and executable file name
 (as if it were preceded by @samp{-se}) and the second one specifies a core
 dump file name (as if it were preceded by @samp{-c}).
 
-@node Running, Stopping, Switches, Top
+@node Compilation, Running, Options, Top
+@chapter Compiling Your Program for Debugging
+
+In order to debug a program effectively, you need to ask for debugging
+information when you compile it.  This information in the object file
+describes the data type of each variable or function and the correspondence
+between source line numbers and addresses in the executable code.
+
+To request debugging information, specify the @samp{-g} option when you run
+the compiler.
+
+The Unix C compiler is unable to handle the @samp{-g} and @samp{-O} options
+together.  This means that you cannot ask for optimization if you ask for
+debugger information.
+
+The GNU C compiler supports @samp{-g} with or without @samp{-O}, making it
+possible to debug optimized code.  We recommend that you @emph{always} use
+@samp{-g} whenever you compile a program.  You may think the program is
+correct, but there's no sense in pushing your luck.
+
+If you are using the GNU C compiler, the GNU assembler and the GNU linker,
+you can choose between two formats of debugging information: the standard
+Unix format, which is what you get with @samp{-g}, and GDB's own format,
+which you request by using @samp{-gg} instead of @samp{-g}.  This stores
+debugging information in the executable file in a format much like that
+which is used inside GDB.  This has these advantages and disadvantages:
+
+@itemize @bullet
+@item
+GDB can read @samp{-gg} format more than twice as fast as Unix
+@samp{-g} format.
+
+@item
+The @samp{-gg} format uses much more disk space than Unix format.
+
+@item
+The Unix debuggers can understand only Unix format, so you cannot use
+Unix source-level debuggers if you compile with @samp{-gg}.  (The
+@code{adb} debugger works with either format; it does not use this
+information in any case.)
+@end itemize
+
+@node Running, Stopping, Compilation, Top
 @chapter Running Your Program Under GDB
 
 @cindex running
@@ -504,6 +581,8 @@ program to stop.  @xref{Stopping}.
 * Environment::        Specifying the environment for your program.
 * Working Directory::  Specifying the working directory for giving
                        to your program when it is run.
+* Input/Output::       Specifying the program's standard input and output.
+* Attach::             Debugging a process started outside GDB.
 @end menu
 
 @node Arguments, Environment, Running, Running
@@ -565,7 +644,7 @@ all, which is distinguishable from an empty value.  This command can
 be abbreviated @samp{unset}.
 @end table
 
-@node Working Directory,, Environment, Running
+@node Working Directory, Input/Output, Environment, Running
 @section Your Program's Working Directory
 
 @cindex working directory (of your program)
@@ -586,6 +665,77 @@ Set GDB's working directory to @var{directory}.
 @kindex pwd
 Print GDB's working directory.
 @end table
+
+@node Input/Output, Attach, Working Directory, Running
+@section Your Program's Input and Output
+
+@cindex redirection
+By default, the program you run under GDB does input and output to the same
+terminal that GDB uses.
+
+You can redirect the program's input and/or output using @samp{sh}-style
+redirection commands in the @samp{run} command.  For example,
+
+@example
+run > outfile
+@end example
+
+@noindent
+starts the program, diverting its output to the file @file{outfile}.
+
+@kindex tty
+Another way to specify where the program should do input and output is with
+the @samp{tty} command.  This command accepts a file name as argument, and
+causes this file to be the default for future @samp{run} commands.  For
+example,
+
+@example
+tty /dev/ttyb
+@end example
+
+@noindent
+directs that processes started with subsequent @samp{run} commands default
+to do input and output on the terminal @file{/dev/ttyb}.  An explicit
+redirection in @samp{run} overrides the @samp{tty} command.
+
+When you use the @samp{tty} command or redirect input in the @samp{run}
+command, the @emph{input for your program} comes from the specified file,
+but the input for GDB still comes from your terminal.  The program's
+controlling terminal is your (GDB's) terminal, not the terminal that the
+program is reading from; so if you want to type @kbd{C-c} to stop the
+program, you must type it on your (GDB's) terminal.  A @kbd{C-c} typed on
+the program's terminal is available to the program as ordinary input.
+
+@node Attach,, Input/Output, Running
+@section Debugging an Already-Running Process
+@kindex detach
+@kindex attach
+@cindex attach
+
+Some operating systems (in particular, Sun) allow GDB to begin debugging an
+already-running process that was started outside of GDB.  To do this you
+must use the @samp{attach} command instead of the @samp{run} command.
+
+The @samp{attach} command requires one argument, which is the process-id of
+the process you want to debug.  (The usual way to find out the process-id
+of the process is with the @samp{ps} utility.)
+
+The first thing GDB after arranging to debug the process is to stop it.
+You can examine and modify an attached process with all the GDB commands
+that ordinarily available when you start processes with @samp{run}.  You
+can insert breakpoints; you can step and continue; you can modify storage.
+If you would rather the process continue running, use the @samp{continue}
+command after attaching.
+
+When you are finished debugging the attached process, you can use the
+@samp{detach} command to release it from GDB's control.  Detaching
+the process continues its execution.  After the @samp{detach} command,
+that process and GDB become completely independent once more, and you
+are ready to @samp{attach} another process or start one with @samp{run}.
+
+If you exit GDB or use the @samp{run} command while you have an attached
+process, you kill that process.  You will be asked for confirmation if you
+try to do either of these things.
 
 @node Stopping, Stack, Running, Top
 @chapter Stopping and Continuing
@@ -778,9 +928,9 @@ way, but the breakpoint is automatically @dfn{disabled} the first time it
 is hit.
 @end table
 
-There is no problem with setting more than one breakpoint at the same
-place, but this only becomes useful when the breakpoints are conditional
-(@pxref{Conditions}).
+GDB allows you to set any number of breakpoints at the same place in the
+program.  There is nothing silly or meaningless about this.  When the
+breakpoints are conditional, this is even useful (@pxref{Conditions}).
 
 @node Clear Breaks, Disabling, Set Breaks, Breakpoints
 @subsection Clearing Breakpoints
@@ -1273,7 +1423,7 @@ Similar, but stop after @var{n} frames.
 
 Each line in a backtrace shows the frame number, the program counter, the
 function and its arguments, and the source file name and line number (if
-known).  The program counter may be omitted if it as it the beginning of
+known).  The program counter is omitted if is the beginning of the code for
 the source line.  This is the same as the first of the two lines printed
 when you select a frame.
 
@@ -1380,10 +1530,11 @@ print parts of source files by explicit command.
 
 @menu
 * List::        Using the @samp{list} command to print source files.
+* Search::      Commands for searching source files.
 * Source Path:: Specifying the directories to search for source files.
 @end menu
 
-@node List, Source Path, Source, Source
+@node List, Search, Source, Source
 @section Printing Source Lines
 
 @kindex list
@@ -1500,7 +1651,26 @@ is saved as the value of the convenience variable @samp{$_}
 (@pxref{Convenience Vars}).
 @end table
 
-@node Source Path,, List, Source
+@node Search, Source Path, List, Source
+@section Searching Source Files
+@cindex searching
+@kindex forward-search
+@kindex reverse-search
+
+There are two commands for searching through the current source file for a
+regular expression.
+
+The command @samp{forward-search @var{regexp}} checks each line, starting
+with the one following the last line listed, for a match for @var{regexp}.
+It lists the line that is found.  You can abbreviate the command name
+as @samp{fo}.
+
+The command @samp{reverse-search @var{regexp}} checks each line, starting
+with the one before the last line listed and going backward, for a match
+for @var{regexp}.  It lists the line that is found.  You can abbreviate
+this command with as little as @samp{rev}.
+
+@node Source Path,, Search, Source
 @section Specifying Source Directories
 
 @cindex source path
@@ -1602,7 +1772,7 @@ language you are using is legal in an expression in GDB.  This includes
 conditional expressions, function calls, casts and string constants.
 
 Casts are supported in all languages, not just in C, because it is so
-useful to cast a number into pointer so as to examine a structure
+useful to cast a number into a pointer so as to examine a structure
 at that address in memory.
 
 GDB supports three kinds of operator in addition to those of programming
@@ -1654,6 +1824,20 @@ within the function @code{foo}, but the variable @code{b} is visible
 only while the program is executing inside the block in which @code{b}
 is declared.
 
+As a special exception, you can refer to a variable or function whose
+scope is a single source file even if the current execution point is not
+in this file.  But it is possible to have more than one such variable
+or function with the same name (if they are in different source files).
+In such a case, it is not defined which one you will get.  If you wish,
+you can specify any one of them using the colon-colon construct:
+
+@example
+@var{block}::@var{variable}
+@end example
+
+@noindent
+Here @var{block} is the name of the source file whose variable you want.
+
 @node Arrays, Formats, Variables, Data
 @section Artificial Arrays
 
@@ -1669,7 +1853,7 @@ the first element of the desired array, as an individual object.
 The right operand should be the length of the array.  The result is
 an array value whose elements are all of the type of the left argument.
 The first element is actually the left argument; the second element
-comes from bytes memory immediately following those that hold the
+comes from bytes of memory immediately following those that hold the
 first element, and so on.  Here is an example.  If a program says
 
 @example
@@ -1909,7 +2093,7 @@ each time the program stops.
 @item display/@var{fmt} @var{exp}
 For @var{fmt} specifying only a display format and not a size or
 count, add the expression @var{exp} to the auto-display list but
-arranges to display it each time in the specified format @var{fmt},
+arranges to display it each time in the specified format @var{fmt}.
 
 @item display/@var{fmt} @var{addr}
 For @var{fmt} @samp{i} or @samp{s}, or including a unit-size or a
@@ -2068,15 +2252,11 @@ the program counter register and the stack pointer.  Often @samp{$fp} is
 used for a register that contains a pointer to the current stack frame.
 
 GDB always considers the contents of an ordinary register as an integer
-when the register is examined in this way.  Programs can store floating
-point values in registers also, but there is currently no GDB command
-to examine a specified register in floating point.  (However, if the
-variable in your program which is stored in the register is a floating
-point variable, you can see the floating point value by examining
-the variable.)
-
-Some machines have special floating point registers.  GDB considers these
-registers' values as floating point when you examine them explicitly.
+when the register is examined in this way.  Some machines have special
+registers which can hold nothing but floating point; these registers are
+considered floating point.  There is no way to refer to the contents of an
+ordinary register as floating point value (although you can @emph{print}
+it as a floating point value with @samp{print/f $@var{regname}}).
 
 Some registers have distinct ``raw'' and ``virtual'' data formats.  This
 means that the data format in which the register contents are saved by the
@@ -2335,7 +2515,7 @@ stopped in the state that would exist if the function had just returned.
 Contrast this with the @samp{finish} command (@pxref{Stepping}), which
 resumes execution @i{until} the selected stack frame returns naturally.
 
-@node Sequences, Concepts, Altering, Top
+@node Sequences, Emacs, Altering, Top
 @chapter Canned Sequences of Commands
 
 GDB provides two ways to store sequences of commands for execution as a
@@ -2403,9 +2583,9 @@ it would from the terminal.
 When GDB starts, it automatically executes its @dfn{init files}, command
 files named @file{.gdbinit}.  GDB reads the init file (if any) in your home
 directory and then the init file (if any) in the current working
-directory.  (The init files are not executed if the @samp{-nx} switch
+directory.  (The init files are not executed if the @samp{-nx} option
 is given.)  You can also request the execution of a command file with the
-@samp{source} command.
+@samp{source} command:
 
 @table @code
 @item source @var{filename}
@@ -2427,7 +2607,7 @@ when used in a command file.
 
 During the execution of a command file or a user-defined command, the only
 output that appears is what is explicitly printed by the commands of the
-definition.  This section describes two commands useful for generating
+definition.  This section describes three commands useful for generating
 exactly the output you want.
 
 @table @code
@@ -2456,9 +2636,143 @@ value history either.
 @item output/@var{fmt} @var{expression}
 Print the value of @var{expression} in format @var{fmt}.
 @xref{Formats}, for more information.
+
+@item printf @var{string}, @var{expressions}@dots{}
+@kindex printf
+Print the values of the @var{expressions} under the control of
+@var{string}.  The @var{expressions} are separated by commas and may
+be either numbers or pointers.  Their values are printed as specified
+by @var{string}, exactly as if the program were to execute
+
+@example
+printf (@var{string}, @var{expressions}@dots{});
+@end example
+
+For example, you can print two values in hex like this:
+
+@example
+printf "foo, bar-foo = 0x%x, 0x%x\n", foo, bar-foo
+@end example
+
+The only backslash-escape sequences that you can use in the string are
+the simple ones that consist of backslash followed by a letter.
 @end table
 
-@node Commands, Concepts, Sequences, Top
+@node Emacs, Remote, Sequences, Top
+@chapter Using GDB under GNU Emacs
+
+A special interface allows you to use GNU Emacs to view (and
+edit) the source files for the program you are debugging with
+GDB.
+
+To use this interface, use the command @kbd{M-x gdb} in Emacs.
+Give the executable file you want to debug as an argument.  This
+command starts a GDB process as a subprocess of Emacs, with input
+and output through a newly created Emacs buffer.
+
+Using this GDB process is just like using GDB normally except for two things:
+
+@itemize @bullet
+@item
+All ``terminal'' input and output goes through the Emacs buffer.  This
+applies both to GDB commands and their output, and to the input and
+output done by the program you are debugging.
+
+This is useful because it means that you can copy the text of previous
+commands and input them again; you can even use parts of the output
+in this way.
+
+All the facilities of Emacs's Shell mode are available for this purpose.
+
+@item
+GDB displays source code through Emacs.  Each time GDB displays a
+stack frame, Emacs automatically finds the source file for that frame
+and puts an arrow (@samp{=>}) at the left margin of the current line.
+
+Explicit GDB @samp{list} or search commands still produce output as
+usual, but you probably will have no reason to use them.
+@end itemize
+
+In the GDB I/O buffer, you can use these special Emacs commands:
+
+@table @kbd
+@item M-s
+Execute to another source line, like the GDB @samp{step} command.
+
+@item M-n
+Execute to next source line in this function, skipping all function
+calls, like the GDB @samp{next} command.
+
+@item M-i
+Execute one instruction, like the GDB @samp{stepi} command.
+
+@item M-u
+Move up one stack frame (and display that frame's source file in
+Emacs), like the GDB @samp{up} command.
+
+@item M-d
+Move down one stack frame (and display that frame's source file in
+Emacs), like the GDB @samp{down} command.  (This means that you cannot
+delete words in the usual fashion in the GDB buffer; I am guessing you
+won't often want to do that.)
+
+@item C-c C-f
+Execute until exit from the selected stack frame, like the GDB
+@samp{finish} command.
+@end table
+
+In any source file, the Emacs command @kbd{C-x SPC} (@code{gdb-break})
+tells GDB to set a breakpoint on the source line point is on.
+
+The source files displayed in Emacs are in ordinary Emacs buffers
+which are visiting the source files in the usual way.  You can edit
+the files with these buffers if you wish; but keep in mind that GDB
+communicates with Emacs in terms of line numbers.  If you add or
+delete lines from the text, the line numbers that GDB knows will cease
+to correspond properly to the code.
+
+@node Remote, Commands, Emacs, Top
+@chapter Remote Kernel Debugging
+
+GDB has a special facility for debugging a remote machine via a serial
+connection.  This can be used for kernel debugging.
+
+The program to be debugged on the remote machine needs to contain a
+debugging device driver which talks to GDB over the serial line using the
+protocol described below.  The same version of GDB that is used ordinarily
+can be used for this.
+
+@menu
+* Remote Commands::       Commands used to start and finish remote debugging.
+@end menu
+
+For details of the communication protocol, see the comments in the GDB
+source file @file{remote.c}.
+
+@node Remote Commands,, Remote, Remote
+@section Commands for Remote Debugging
+
+To start remote debugging, first run GDB and specify as an executable file
+the program that is running in the remote machine.  This tells GDB how
+to find the program's symbols and the contents of its pure text.  Then
+establish communication using the @samp{attach} command with a device
+name rather than a pid as an argument.  For example:
+
+@example
+attach /dev/ttyd
+@end example
+
+@noindent
+if the serial line is connected to the device named @file{/dev/ttyd}.  This
+will stop the remote machine if it is not already stopped.
+
+Now you can use all the usual commands to examine and change data and to
+step and continue the remote program.
+
+To resume the remote program and stop debugging it, use the @samp{detach}
+command.
+
+@node Commands, Concepts, Remote, Top
 @unnumbered Command Index
 
 @printindex ky

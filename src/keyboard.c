@@ -18,6 +18,8 @@ can know your rights and responsibilities.  It should be in a
 file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  */
 
+/*** For version 19, can simplify this by making interrupt_input 1 on VMS.  */
+
 /* Allow config.h to undefine symbols found here.  */
 #include <signal.h>
 
@@ -33,19 +35,22 @@ and this notice must be preserved on all copies.  */
 #include "commands.h"
 #include "buffer.h"
 #include <setjmp.h>
+#include <errno.h>
 
 /* Get FIONREAD, if it is available.  */
 #ifdef USG
 #include <termio.h>
 #include <fcntl.h>
 #else /* not USG */
+#ifndef VMS
 #include <sys/ioctl.h>
+#endif /* not VMS */
 #endif /* not USG */
 
-#ifdef HPUX /* ioctl (0, FIONREAD, addr) always seems to return -1
-	       with errno 22 EINVAL.  I don't know what's wrong */
+/* Allow m- file to inhibit use of FIONREAD.  */
+#ifdef BROKEN_FIONREAD
 #undef FIONREAD
-#endif HPUX
+#endif
 
 /* Make all keyboard buffers much bigger when using X windows.  */
 #ifdef HAVE_X_WINDOWS
@@ -194,6 +199,9 @@ int flow_control;
 #endif
 #endif
 
+static void read_avail_input ();
+static void get_input_pending ();
+
 static char KeyBuf[40];		/* Buffer for keys from get_char () */
 static NextK;			/* Next index into KeyBuf */
 static echo_keystrokes;		/* > 0 if we are to echo keystrokes */
@@ -390,6 +398,9 @@ command_loop ()
       {
 	internal_catch (Qtop_level, top_level_1, Qnil);
 	internal_catch (Qtop_level, command_loop_2, Qnil);
+	/* End of file in -batch run causes exit here.  */
+	if (noninteractive)
+	  Fkill_emacs (Qt);
       }
 }
 
@@ -467,6 +478,7 @@ command_loop_1 ()
   char keybuf[30];
   int i;
   int no_redisplay;
+  int no_direct;
 
   Vprefix_arg = Qnil;
   waiting_for_input = 0;
@@ -487,6 +499,8 @@ command_loop_1 ()
       if (XBUFFER (XWINDOW (selected_window)->buffer) != bf_cur)
 	SetBfp (XBUFFER (XWINDOW (selected_window)->buffer));
 
+      no_direct = 0;
+
       /* If minibuffer on and echo area in use,
 	 wait 2 sec and redraw minibufer.  */
 
@@ -494,6 +508,7 @@ command_loop_1 ()
 	{
 	  Fsit_for (make_number (2), Qnil);
 	  minibuf_message = 0;
+	  no_direct = 1;
 	  if (!NULL (Vquit_flag))
 	    {
 	      Vquit_flag = Qnil;
@@ -559,7 +574,7 @@ command_loop_1 ()
       else
 	{
 	  this_command = cmd;
-	  if (NULL (Vprefix_arg))
+	  if (NULL (Vprefix_arg) && ! no_direct)
 	    {
 	      if (EQ (cmd, Qforward_char) && point <= NumCharacters)
 		{
@@ -611,7 +626,7 @@ command_loop_1 ()
 		    || windows_or_buffers_changed
 		    || detect_input_pending ()
 		    || !NULL (Vexecuting_macro);
-		  if (SelfInsert (last_command_char))
+		  if (SelfInsert (last_command_char, 0))
 		    {
 		      lose = 1;
 		      nonundocount = 0;
@@ -761,21 +776,9 @@ get_char (commandflag)
       alarm ((unsigned) alarmtime);
     }
 
-#ifdef DEBUG
-  /* This should be impossible, but I suspect it happens.  */
-  if (getcjmp[0] == 0)
-    abort ();
-#endif /* DEBUG */
-
   c = kbd_buffer_get_char ();
 
  non_reread:
-
-#ifdef DEBUG
-  /* Cause immediate crash if anyone tries to throw back to this frame
-     beyond here.  */
-  getcjmp[0] = 0;
-#endif /* DEBUG */
 
   /* Cancel alarm if it was set and has not already gone off. */
   if (alarmtime > 0) alarm (0);
@@ -902,8 +905,6 @@ kbd_buffer_get_char ()
   if (noninteractive)
     {
       c = getchar ();
-      if (c < 0)		/* In batch mode, die at input eof */
-	Fkill_emacs (Qt);
       return c;
     }
 
@@ -912,6 +913,9 @@ kbd_buffer_get_char ()
     {
       if (!NULL (Vquit_flag))
 	quit_throw_to_get_char ();
+
+      /* One way or another, wait until input is available; then, if
+	 interrupt handlers have not read it, read it now.  */
 
 #ifdef VMS
       set_waiting_for_input (0);
@@ -945,7 +949,7 @@ kbd_buffer_get_char ()
 
 	  if (!interrupt_input && !kbd_count)
 	    {
-	      read_avail_input ();
+	      read_avail_input (0);
 	    }
 	}
 #endif /* not VMS */
@@ -961,60 +965,101 @@ kbd_buffer_get_char ()
    Equivalent to ioctl (0, FIONREAD, addr) but works
    even if FIONREAD does not exist.  */
 
+static void
 get_input_pending (addr)
      int *addr;
 {
 #ifdef VMS
   /* On VMS, we always have something in the buffer
      if any input is available.  */
+  /*** It might be simpler to make interrupt_input 1 on VMS ***/
   *addr = kbd_count | !NULL (Vquit_flag);
 #else
+  /* First of all, have we already counted some input?  */
+  *addr = kbd_count | !NULL (Vquit_flag);
+  /* If input is being read as it arrives, and we have none, there is none.  */
+  if (*addr > 0 || (interrupt_input && ! interrupts_deferred))
+    return;
 #ifdef FIONREAD
-  if (interrupt_input && ! interrupts_deferred)
-    *addr = kbd_count;
-  else if (ioctl (0, FIONREAD, addr) < 0)
+  /* If we can count the input without reading it, do so.  */
+  if (ioctl (0, FIONREAD, addr) < 0)
     *addr = 0;
-#else /* no FIONREAD */
-  read_avail_input ();
+  if (*addr == 0 || read_socket_hook == 0)
+    return;
+  /* If the input consists of window-events, not all of them
+     are necessarily kbd chars.  So process all the input
+     and see how many kbd chars we got.  */
+#endif
+  /* If we can't count the input, read it (if any) and see what we got.  */
+  read_avail_input (*addr);
   *addr = kbd_count;
-#endif /* no FIONREAD */
 #endif
 }
 
 /* Read any terminal input already buffered up by the system
    into the kbd_buffer, assuming the buffer is currently empty.
-   Never waits.
+   Never waits.  We assume that kbd_buffer is empty before you call.
+
+   If NREAD is nonzero, assume it contains # chars of raw data waiting.
+   If it is zero, we determine that datum.
 
    Input gets into the kbd_buffer either through this function
    (at main program level) or at interrupt level if input
    is interrupt-driven.  */
 
-read_avail_input ()
+static void
+read_avail_input (nread)
+     int nread;
 {
-/* There is no need to do anything on VMS, since input will
-   automatically come in asynchronously.  */
+  /* This function is not used on VMS.  */
 #ifndef VMS
 #ifdef FIONREAD
-  int nread;
-  get_input_pending (&nread);
-  if (nread > sizeof kbd_buffer)
-    nread = sizeof kbd_buffer;
-  if (!nread)
+  char buf[64 * BUFFER_SIZE_FACTOR];
+  register char *p;
+  register int i;
+
+  if (kbd_count)
+    abort ();
+
+  if (nread == 0)
+    get_input_pending (&nread);
+  if (nread == 0)
     return;
-  set_waiting_for_input (0);
-  kbd_count = read (0, kbd_buffer, nread);
-  clear_waiting_for_input ();
+  if (nread > sizeof buf)
+    nread = sizeof buf;
+
+  /* Read what is waiting.  */
+  if (read_socket_hook)
+    nread = (*read_socket_hook) (0, buf, nread);
+  else
+    nread = read (0, buf, nread);
+
+  /* Scan the chars for C-g and store them in kbd_buffer.  */
   kbd_ptr = kbd_buffer;
+  for (i = 0; i < nread; i++)
+    {
+      kbd_buffer_store_char (buf[i]);
+      /* Don't look at input that follows a C-g too closely.
+	 This reduces lossage due to autorepeat on C-g.  */
+      if (buf[i] == Ctl ('G'))
+	break;
+    }
+
 #else /* no FIONREAD */
 #ifdef USG
-  /* Assume this is only done when the buffer is empty.
-     It's stupid to call this function without checking kbd_count.  */
   if (kbd_count)
     abort ();
 
   fcntl (fileno (stdin), F_SETFL, O_NDELAY);
   kbd_ptr = kbd_buffer;
-  kbd_count = read (fileno (stdin), kbd_buffer, sizeof kbd_buffer);
+  if (read_socket_hook)
+    {
+      kbd_count = (*read_socket_hook) (0, kbd_buffer, sizeof kbd_buffer);
+    }
+  else
+    kbd_count = read (fileno (stdin), kbd_buffer, sizeof kbd_buffer);
+  if (kbd_count == -1 && errno == EAGAIN)
+    kbd_count = 0;
   fcntl (fileno (stdin), F_SETFL, 0);
 #else /* not USG */
   you lose
@@ -1026,17 +1071,16 @@ read_avail_input ()
 #ifdef SIGIO   /* for entire page */
 /* Note SIGIO has been undef'd if FIONREAD is missing.  */
 
+/* If using interrupt input and some input chars snuck into the
+   buffer before we enabled interrupts, fake an interrupt for them.  */
+
 gobble_input ()
 {
   int nread;
   if (interrupt_input)
     {
-#ifdef FIONREAD
       if (ioctl (0, FIONREAD, &nread) < 0)
 	nread = 0;
-#else /* no FIONREAD */
-      lossage
-#endif /* no FIONREAD */
       if (nread)
 	{
 	  sigholdx (SIGIO);
@@ -1071,12 +1115,8 @@ input_available_signal (signo)
 
   while (1)
     {
-#ifdef FIONREAD
       if (ioctl (0, FIONREAD, &nread) < 0)
 	nread = 0;
-#else /* no FIONREAD */
-      lossage
-#endif /* no FIONREAD */
       if (nread <= 0)
 	break;
 #ifdef BSD4_1
@@ -1448,12 +1488,8 @@ DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_
 detect_input_pending ()
 {
   if (!input_pending)
-    {
-      if (kbd_count)
-	input_pending = kbd_count;
-      else
-	get_input_pending (&input_pending);
-    }
+    get_input_pending (&input_pending);
+
   return input_pending;
 }
 
@@ -1536,6 +1572,8 @@ Otherwise, suspend normally and after resumption call\n\
      Lisp_Object stuffstring;
 {
   register Lisp_Object tem;
+  int count = specpdl_ptr - specpdl;
+  extern init_sys_modes ();
 
   if (!NULL (stuffstring))
     CHECK_STRING (stuffstring, 0);
@@ -1551,9 +1589,12 @@ Otherwise, suspend normally and after resumption call\n\
     }
 
   reset_sys_modes ();
+  /* sys_suspend can get an error if it tries to fork a subshell
+     and the system resources aren't available for that.  */
+  record_unwind_protect (init_sys_modes, 0);
   stuff_buffered_input (stuffstring);
   sys_suspend ();
-  init_sys_modes ();
+  unbind_to (count);
 
   /* Call value of suspend-resume-hook
      if it is bound and value is non-nil.  */
@@ -1571,13 +1612,14 @@ stuff_buffered_input (stuffstring)
      Lisp_Object stuffstring;
 {
   register unsigned char *p;
-  register int count;
 
 /* stuff_char works only in BSD, versions 4.2 and up.  */
 #ifdef BSD
 #ifndef BSD4_1
   if (XTYPE (stuffstring) == Lisp_String)
     {
+      register int count;
+
       p = XSTRING (stuffstring)->data;
       count = XSTRING (stuffstring)->size;
       while (count-- > 0)
@@ -1642,9 +1684,7 @@ clear_waiting_for_input ()
 interrupt_signal ()
 {
   char c;
-#ifdef HAVE_X_WINDOWS
-  extern Lisp_Object Vxterm;
-#endif /* HAVE_X_WINDOWS */  
+  extern Lisp_Object Vwindow_system;
 
 #ifdef USG
   /* USG systems forget handlers when they are used;
@@ -1655,11 +1695,7 @@ interrupt_signal ()
 
   Echo1 = 0;
 
-  if (!NULL (Vquit_flag)
-#ifdef HAVE_X_WINDOWS
-      && NULL (Vxterm)
-#endif /* HAVE_X_WINDOWS */
-      )
+  if (!NULL (Vquit_flag) && NULL (Vwindow_system))
     {
       fflush (stdout);
       reset_sys_modes ();
@@ -1864,7 +1900,8 @@ will be in  last-command  during the following command.");
   this_command = Qnil;
 
   DEFVAR_INT ("auto-save-interval", &auto_save_interval,
-    "*Number of keyboard input characters between auto-saves.");
+    "*Number of keyboard input characters between auto-saves.\n\
+Zero means disable autosaving.");
   auto_save_interval = 300;
 
   DEFVAR_INT ("echo-keystrokes", &echo_keystrokes,

@@ -1,5 +1,5 @@
 /* dynamic memory allocation for GNU.
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
 		       NO WARRANTY
 
@@ -46,32 +46,40 @@ the terms of Paragraph 1 above, provided that you also do the following:
     that in whole or in part contains or is a derivative of this
     program or any part thereof, to be licensed at no charge to all
     third parties on terms identical to those contained in this
-    License Agreement (except that you may choose to grant more
-    extensive warranty protection to third parties, at your option).
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
 
     c) You may charge a distribution fee for the physical act of
     transferring a copy, and you may at your option offer warranty
     protection in exchange for a fee.
 
-  3. You may copy and distribute this program or any portion of it in
-compiled, executable or object code form under the terms of Paragraphs
-1 and 2 above provided that you do the following:
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
 
-    a) cause each such copy to be accompanied by the
-    corresponding machine-readable source code, which must
-    be distributed under the terms of Paragraphs 1 and 2 above; or,
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
 
-    b) cause each such copy to be accompanied by a
-    written offer, with no time limit, to give any third party
-    free (except for a nominal shipping charge) a machine readable
-    copy of the corresponding source code, to be distributed
-    under the terms of Paragraphs 1 and 2 above; or,
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
 
-    c) in the case of a recipient of this program in compiled, executable
-    or object code form (without the corresponding source code) you
-    shall cause copies you distribute to be accompanied by a copy
-    of the written offer of source code which you received along
-    with the copy you received.
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
 
   4. You may not copy, sublicense, distribute or transfer this program
 except as expressly provided under this License Agreement.  Any attempt
@@ -83,10 +91,10 @@ their licenses terminated so long as such parties remain in full compliance.
 
   5. If you wish to incorporate parts of this program into other free
 programs whose distribution conditions are different, write to the Free
-Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet
+Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet
 worked out a simple rule that can be stated here, but we will often permit
 this.  We will be guided by the two goals of preserving the free status of
-all derivatives our free software and of promoting the sharing and reuse of
+all derivatives of our free software and of promoting the sharing and reuse of
 software.
 
 
@@ -186,8 +194,8 @@ extern char etext;
 
 /* These two are for user programs to look at, when they are interested.  */
 
-int malloc_sbrk_used;       /* amount of data space used now */
-int malloc_sbrk_unused;     /* amount more we can have */
+unsigned int malloc_sbrk_used;       /* amount of data space used now */
+unsigned int malloc_sbrk_unused;     /* amount more we can have */
 
 /* start of data space; can be changed by calling init_malloc */
 static char *data_space_start;
@@ -251,7 +259,7 @@ static struct mhead *nextf[30];
 static char busy[30];
 
 /* Number of bytes of writable memory we can expect to be able to get */
-static int lim_data;
+static unsigned int lim_data;
 
 /* Level number of warnings already issued.
   0 -- no warnings issued.
@@ -289,7 +297,7 @@ morecore (nu)			/* ask system for more memory */
   char *sbrk ();
   register char *cp;
   register int nblks;
-  register int siz;
+  register unsigned int siz;
   int oldmask;
 
 #ifdef BSD
@@ -310,8 +318,14 @@ morecore (nu)			/* ask system for more memory */
   if (!gotpool)
     { getpool (); getpool (); gotpool = 1; }
 
- /* Find current end of memory and issue warning if getting near max */
+  /* Find current end of memory and issue warning if getting near max */
 
+#ifndef VMS
+  /* Maximum virtual memory on VMS is difficult to calculate since it
+   * depends on several dynmacially changing things. Also, alignment
+   * isn't that important. That is why much of the code here is ifdef'ed
+   * out for VMS systems.
+   */
   cp = sbrk (0);
   siz = cp - data_space_start;
   malloc_sbrk_used = siz;
@@ -345,6 +359,7 @@ morecore (nu)			/* ask system for more memory */
 
   if ((int) cp & 0x3ff)	/* land on 1K boundaries */
     sbrk (1024 - ((int) cp & 0x3ff));
+#endif /* not VMS */
 
  /* Take at least 2k, and figure out how many blocks of the desired size
     we're about to get */
@@ -354,11 +369,13 @@ morecore (nu)			/* ask system for more memory */
 
   if ((cp = sbrk (1 << (siz + 3))) == (char *) -1)
     return;			/* no more room! */
+#ifndef VMS
   if ((int) cp & 7)
     {		/* shouldn't happen, but just in case */
       cp = (char *) (((int) cp + 8) & ~7);
       nblks--;
     }
+#endif /* not VMS */
 
  /* save new header and link the nblks blocks together */
   nextf[nu] = (struct mhead *) cp;
@@ -371,8 +388,7 @@ morecore (nu)			/* ask system for more memory */
       CHAIN ((struct mhead *) cp) = (struct mhead *) (cp + siz);
       cp += siz;
     }
- /* CHAIN ((struct mhead *) cp) = 0; */
- /* since sbrk() returns cleared core, this is already set */
+  CHAIN ((struct mhead *) cp) = 0;
 
 #ifdef BSD
 #ifndef BSD4_1
@@ -521,8 +537,14 @@ free (mem)
 
     ASSERT (nunits <= 29);
     p -> mh_alloc = ISFREE;
+
+    /* Protect against signal handlers calling malloc.  */
+    busy[nunits] = 1;
+    /* Put this block on the free list.  */
     CHAIN (p) = nextf[nunits];
     nextf[nunits] = p;
+    busy[nunits] = 0;
+
 #ifdef MSTATS
     nmalloc[nunits]--;
     nfre++;
@@ -537,7 +559,7 @@ realloc (mem, n)
 {
   register struct mhead *p;
   register unsigned int tocopy;
-  register int nbytes;
+  register unsigned int nbytes;
   register int nunits;
 
   if ((p = (struct mhead *) mem) == 0)
@@ -590,6 +612,8 @@ realloc (mem, n)
   }
 }
 
+#ifndef VMS
+
 char *
 memalign (alignment, size)
      unsigned alignment, size;
@@ -623,6 +647,7 @@ valloc (size)
   return memalign (getpagesize (), size);
 }
 #endif /* not HPUX */
+#endif /* not VMS */
 
 #ifdef MSTATS
 /* Return statistics describing allocation of blocks of size 2**n. */
@@ -693,8 +718,84 @@ get_lim_data ()
   struct rlimit XXrlimit;
 
   getrlimit (RLIMIT_DATA, &XXrlimit);
-  lim_data = XXrlimit.rlim_cur;		/* soft limit */
+#ifdef RLIM_INFINITY
+  lim_data = XXrlimit.rlim_cur & RLIM_INFINITY; /* soft limit */
+#else
+  lim_data = XXrlimit.rlim_cur;	/* soft limit */
+#endif
 }
 
 #endif /* BSD42 */
 #endif /* not USG */
+
+#ifdef VMS
+/* There is a problem when dumping and restoring things on VMS. Calls
+ * to SBRK don't necessarily result in contiguous allocation. Dumping
+ * doesn't work when it isn't. Therefore, we make the initial
+ * allocation contiguous by allocating a big chunk, and do SBRKs from
+ * there. Once Emacs has dumped there is no reason to continue
+ * contiguous allocation, malloc doesn't depend on it.
+ *
+ * There is a further problem of using brk and sbrk while using VMS C
+ * run time library routines malloc, calloc, etc. The documentation
+ * says that this is a no-no, although I'm not sure why this would be
+ * a problem. In any case, we remove the necessity to call brk and
+ * sbrk, by calling calloc (to assure zero filled data) rather than
+ * sbrk.
+ *
+ * VMS_ALLOCATION_SIZE is the size of the allocation array. This
+ * should be larger than the malloc size before dumping. Making this
+ * too large will result in the startup procedure slowing down since
+ * it will require more space and time to map it in.
+ *
+ * The value for VMS_ALLOCATION_SIZE in the following define was determined
+ * by running emacs linked (and a large allocation) with the debugger and
+ * looking to see how much storage was used. The allocation was 201 pages,
+ * so I rounded it up to a power of two.
+ */
+#ifndef VMS_ALLOCATION_SIZE
+#define VMS_ALLOCATION_SIZE	(512*256)
+#endif
+
+/* Use VMS RTL definitions */
+#undef sbrk
+#undef brk
+#undef malloc
+int vms_out_initial = 0;
+char vms_initial_buffer[VMS_ALLOCATION_SIZE];
+static char *vms_current_brk = &vms_initial_buffer;
+static char *vms_end_brk = &vms_initial_buffer[VMS_ALLOCATION_SIZE-1];
+
+#include <stdio.h>
+
+char *
+sys_sbrk (incr)
+     int incr;
+{
+  char *sbrk(), *temp, *ptr;
+
+  if (vms_out_initial)
+    {
+      /* out of initial allocation... */
+      if (!(temp = malloc (incr)))
+	temp = (char *) -1;
+    }
+  else
+    {
+      /* otherwise, go out of our area */
+      ptr = vms_current_brk + incr; /* new current_brk */
+      if (ptr <= vms_end_brk)
+	{
+	  temp = vms_current_brk;
+	  vms_current_brk = ptr;
+	}
+      else
+	{
+	  vms_out_initial = 1;	/* mark as out of initial allocation */
+	  if (!(temp = malloc (incr)))
+	    temp = (char *) -1;
+	}
+    }
+  return temp;
+}
+#endif /* VMS */

@@ -177,9 +177,3 @@
 		 (enlarge-window (- target-height (window-height win)))))
       (goto-char (point-min))
       win)))
-
-;; Avoid error in Emacs versions before 18.37.
-(defun one-window-p (&optional nomini)
-  (eq (selected-window)
-      (if (and nomini (zerop (minibuffer-depth)))
-	  (next-window) (next-window (next-window)))))

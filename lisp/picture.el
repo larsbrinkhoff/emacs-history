@@ -20,6 +20,8 @@
 ;; and this notice must be preserved on all copies.
 
 
+(provide 'picture)
+
 (defun move-to-column-force (column)
   "Move to column COLUMN in current line.
 Differs from move-to-column in that it creates or modifies whitespace
@@ -343,7 +345,7 @@ See also documentation for variable  picture-tab-chars."
   "Rectangle killed or copied by \\[picture-clear-rectangle] in Picture mode.
 The contents can be retrieved by \\[picture-yank-rectangle]")
 
-(defun picture-clear-rectangle (start end register &optional killp)
+(defun picture-clear-rectangle (start end &optional killp)
   "Clear and save rectangle delineated by point and mark.
 The rectangle is saved for yanking by \\[picture-yank-rectangle] and replaced
 with whitespace.  The previously saved rectangle, if any, is lost.

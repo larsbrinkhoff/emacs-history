@@ -155,7 +155,7 @@ write_register_bytes (regbyte, myaddr, len)
 {
   bcopy (myaddr, &registers[regbyte], len);
   if (have_inferior_p ())
-    store_inferior_registers (0);
+    store_inferior_registers (-1);
 }
 
 /* Return the contents of register REGNO,
@@ -165,30 +165,33 @@ CORE_ADDR
 read_register (regno)
      int regno;
 {
+  /* This loses when REGISTER_RAW_SIZE (regno) != sizeof (int) */
   return *(int *) &registers[REGISTER_BYTE (regno)];
 }
 
 /* Store VALUE in the register number REGNO, regarded as an integer.  */
 
 void
-write_register (regno, value)
-     int regno, value;
+write_register (regno, val)
+     int regno, val;
 {
-  *(int *) &registers[REGISTER_BYTE (regno)] = value;
+  /* This loses when REGISTER_RAW_SIZE (regno) != sizeof (int) */
+  *(int *) &registers[REGISTER_BYTE (regno)] = val;
 
   if (have_inferior_p ())
     store_inferior_registers (regno);
 }
 
-/* Record that register REGNO contains VALUE.
+/* Record that register REGNO contains VAL.
    This is used when the value is obtained from the inferior or core dump,
    so there is no need to store the value there.  */
 
 void
-supply_register (regno, value)
-     int regno, value;
+supply_register (regno, val)
+     int regno;
+     char *val;
 {
-  *(int *) &registers[REGISTER_BYTE (regno)] = value;
+  bcopy (val, &registers[REGISTER_BYTE (regno)], REGISTER_RAW_SIZE (regno));
 }
 
 /* Given a struct symbol for a variable,
@@ -226,6 +229,11 @@ read_var_value (var, frame)
       VALUE_LVAL (v) = not_lval;
       return v;
 
+    case LOC_CONST_BYTES:
+      bcopy (val, VALUE_CONTENTS (v), len);
+      VALUE_LVAL (v) = not_lval;
+      return v;
+
     case LOC_STATIC:
       addr = val;
       break;
@@ -252,47 +260,73 @@ read_var_value (var, frame)
 	char raw_buffer[MAX_REGISTER_RAW_SIZE];
 	char virtual_buffer[MAX_REGISTER_VIRTUAL_SIZE];
 
+	VALUE_REGNO (v) = val;
+
+	/* Locate the register's contents in a real register or in core;
+	   read the data in raw format.  */
+
 	addr = find_saved_register (frame, val);
 	if (addr == 0)
 	  {
+	    /* Value is really in a register.  */
+
 	    VALUE_LVAL (v) = lval_register;
 	    VALUE_ADDRESS (v) = REGISTER_BYTE (val);
-	    if (REGISTER_CONVERTIBLE (val))
+
+	    read_register_bytes (REGISTER_BYTE (val),
+				 raw_buffer, REGISTER_RAW_SIZE (val));
+	  }
+	else
+	  {
+	    /* Value was in a register that has been saved in memory.  */
+
+	    read_memory (addr, raw_buffer, REGISTER_RAW_SIZE (val));
+	    VALUE_ADDRESS (v) = addr;
+	  }
+
+	/* Convert the raw contents to virtual contents.
+	   (Just copy them if the formats are the same.)  */
+
+	REGISTER_CONVERT_TO_VIRTUAL (val, raw_buffer, virtual_buffer);
+
+	if (REGISTER_CONVERTIBLE (val))
+	  {
+	    /* When the raw and virtual formats differ, the virtual format
+	       corresponds to a specific data type.  If we want that type,
+	       copy the data into the value.
+	       Otherwise, do a type-conversion.  */
+
+	    if (type != REGISTER_VIRTUAL_TYPE (val))
 	      {
-		read_register_bytes (REGISTER_BYTE (val),
-				     raw_buffer, REGISTER_RAW_SIZE (val));
-		REGISTER_CONVERT_TO_VIRTUAL (val, raw_buffer, virtual_buffer);
+		/* eg a variable of type `float' in a 68881 register
+		   with raw type `extended' and virtual type `double'.
+		   Fetch it as a `double' and then convert to `float'.  */
+		v = allocate_value (REGISTER_VIRTUAL_TYPE (val));
 		bcopy (virtual_buffer, VALUE_CONTENTS (v), len);
+		v = value_cast (type, v);
 	      }
 	    else
+	      bcopy (virtual_buffer, VALUE_CONTENTS (v), len);
+	  }
+	else
+	  {
+	    /* Raw and virtual formats are the same for this register.  */
+
+	    union { int i; char c; } test;
+	    /* If we want less than the full size, we need to
+	       test for a big-endian or little-endian machine.  */
+	    test.i = 1;
+	    if (test.c != 1 && len < REGISTER_RAW_SIZE (val))
 	      {
-		union { int i; char c; } test;
-		/* If we want less than the full size, we need to
-		   test for a big-endian or little-endian machine.  */
-		test.i = 1;
-		if (test.c != 1 && len < REGISTER_RAW_SIZE (val))
-		  /* Big-endian, and we want less than full size.  */
-		  read_register_bytes (REGISTER_BYTE (val)
-				       + REGISTER_RAW_SIZE (val) - len,
-				       VALUE_CONTENTS (v), 
-				       len);
-		else
-		  read_register_bytes (REGISTER_BYTE (val),
-				       VALUE_CONTENTS (v), len);
+		/* Big-endian, and we want less than full size.  */
+		VALUE_OFFSET (v) = REGISTER_RAW_SIZE (val) - len;
 	      }
 
-	    VALUE_REGNO (v) = val;
-	    return v;
+	    bcopy (virtual_buffer + VALUE_OFFSET (v),
+		   VALUE_CONTENTS (v), len);
 	  }
-	else if (REGISTER_CONVERTIBLE (val))
-	  {
-	    read_memory (addr, raw_buffer, REGISTER_RAW_SIZE (val));
-	    REGISTER_CONVERT_TO_VIRTUAL (val, raw_buffer, virtual_buffer);
-	    bcopy (virtual_buffer, VALUE_CONTENTS (v), len);
-	    VALUE_ADDRESS (v) = addr;
-	    VALUE_REGNO (v) = val;
-	    return v;
-	  }
+
+	return v;
       }
     }
 
@@ -313,19 +347,34 @@ locate_var_value (var, frame)
   register CORE_ADDR addr = 0;
   int val = SYMBOL_VALUE (var);
   struct frame_info fi;
+  struct type *type = SYMBOL_TYPE (var);
 
   if (frame == 0) frame = selected_frame;
+
+  if (SYMBOL_CLASS (var) == LOC_BLOCK)
+    type = lookup_function_type (type);
 
   switch (SYMBOL_CLASS (var))
     {
     case LOC_CONST:
+    case LOC_CONST_BYTES:
       error ("Address requested for identifier \"%s\" which is a constant.",
 	     SYMBOL_NAME (var));
 
     case LOC_REGISTER:
       addr = find_saved_register (frame, val);
       if (addr != 0)
-	break;
+	{
+	  union { int i; char c; } test;
+	  int len = TYPE_LENGTH (type);
+	  /* If var is less than the full size of register, we need to
+	     test for a big-endian or little-endian machine.  */
+	  test.i = 1;
+	  if (test.c != 1 && len < REGISTER_RAW_SIZE (val))
+	    /* Big-endian, and we want less than full size.  */
+	    addr += REGISTER_RAW_SIZE (val) - len;
+	  break;
+	}
       error ("Address requested for identifier \"%s\" which is in a register.",
 	     SYMBOL_NAME (var));
 
@@ -353,7 +402,7 @@ locate_var_value (var, frame)
       break;
     }
 
-  return value_cast (lookup_pointer_type (SYMBOL_TYPE (var)),
+  return value_cast (lookup_pointer_type (type),
 		     value_from_long (builtin_type_long, addr));
 }
 

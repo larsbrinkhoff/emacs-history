@@ -1,4 +1,4 @@
-/* Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+/* Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 		       NO WARRANTY
 
@@ -45,32 +45,40 @@ the terms of Paragraph 1 above, provided that you also do the following:
     that in whole or in part contains or is a derivative of this
     program or any part thereof, to be licensed at no charge to all
     third parties on terms identical to those contained in this
-    License Agreement (except that you may choose to grant more
-    extensive warranty protection to third parties, at your option).
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
 
     c) You may charge a distribution fee for the physical act of
     transferring a copy, and you may at your option offer warranty
     protection in exchange for a fee.
 
-  3. You may copy and distribute this program or any portion of it in
-compiled, executable or object code form under the terms of Paragraphs
-1 and 2 above provided that you do the following:
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
 
-    a) cause each such copy to be accompanied by the
-    corresponding machine-readable source code, which must
-    be distributed under the terms of Paragraphs 1 and 2 above; or,
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
 
-    b) cause each such copy to be accompanied by a
-    written offer, with no time limit, to give any third party
-    free (except for a nominal shipping charge) a machine readable
-    copy of the corresponding source code, to be distributed
-    under the terms of Paragraphs 1 and 2 above; or,
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
 
-    c) in the case of a recipient of this program in compiled, executable
-    or object code form (without the corresponding source code) you
-    shall cause copies you distribute to be accompanied by a copy
-    of the written offer of source code which you received along
-    with the copy you received.
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
 
   4. You may not copy, sublicense, distribute or transfer this program
 except as expressly provided under this License Agreement.  Any attempt
@@ -82,10 +90,10 @@ their licenses terminated so long as such parties remain in full compliance.
 
   5. If you wish to incorporate parts of this program into other free
 programs whose distribution conditions are different, write to the Free
-Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet
+Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet
 worked out a simple rule that can be stated here, but we will often permit
 this.  We will be guided by the two goals of preserving the free status of
-all derivatives our free software and of promoting the sharing and reuse of
+all derivatives of our free software and of promoting the sharing and reuse of
 software.
 
 
@@ -226,8 +234,6 @@ pointer looks like an int) but not on all machines.
 
 */
 
-#ifndef mips  /* mips machine requires completely separate code.  */
-
 #ifndef emacs
 #define PERROR(arg) perror (arg); return -1
 #else
@@ -236,6 +242,8 @@ pointer looks like an int) but not on all machines.
 #endif
 
 #ifndef CANNOT_DUMP  /* all rest of file!  */
+
+#ifndef CANNOT_UNEXEC /* most of rest of file */
 
 #include <a.out.h>
 /* Define getpagesize () if the system does not.
@@ -282,6 +290,11 @@ extern char *sbrk ();
 
 #define SYMS_START ((long) N_SYMOFF (ohdr))
 
+/* Some machines override the structure name for an a.out header.  */
+#ifndef EXEC_HDR_TYPE
+#define EXEC_HDR_TYPE struct exec
+#endif
+
 #ifdef HPUX
 #ifdef HP9000S200_ID
 #define MY_ID HP9000S200_ID
@@ -293,11 +306,11 @@ static MAGIC OLDMAGIC = {MY_ID, SHARE_MAGIC};
 static MAGIC NEWMAGIC = {MY_ID, DEMAND_MAGIC};
 #define N_TXTOFF(x) TEXT_OFFSET(x)
 #define N_SYMOFF(x) LESYM_OFFSET(x)
-static struct exec hdr, ohdr;
+static EXEC_HDR_TYPE hdr, ohdr;
 
 #else /* not HPUX */
 
-#ifdef USG
+#if defined (USG) && !defined (IRIS)
 static struct bhdr hdr, ohdr;
 #define a_magic fmagic
 #define a_text tsize
@@ -311,10 +324,10 @@ static struct bhdr hdr, ohdr;
     (((x).fmagic)!=OMAGIC && ((x).fmagic)!=NMAGIC &&\
      ((x).fmagic)!=FMAGIC && ((x).fmagic)!=IMAGIC)
 #define NEWMAGIC FMAGIC
-#else /* not USG */
-static struct exec hdr, ohdr;
+#else /* IRIS or not USG */
+static EXEC_HDR_TYPE hdr, ohdr;
 #define NEWMAGIC ZMAGIC
-#endif /* not USG */
+#endif /* IRIS or not USG */
 #endif /* not HPUX */
 
 static int unexec_text_start;
@@ -444,12 +457,15 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   data_start = data_start & ~pagemask; /* (Down) to page boundary. */
 #endif
 
-  bss_end = (ADDR_CORRECT (sbrk (0)) + pagemask) & ~pagemask;
+  bss_end = ADDR_CORRECT (sbrk (0)) + pagemask;
+  bss_end &= ~ pagemask;
 
   /* Adjust data/bss boundary. */
   if (bss_start != 0)
     {
-      bss_start = (ADDR_CORRECT (bss_start) + pagemask) & ~pagemask;	      /* (Up) to page bdry. */
+      bss_start = (ADDR_CORRECT (bss_start) + pagemask);
+      /* (Up) to page bdry. */
+      bss_start &= ~ pagemask;
       if (bss_start > bss_end)
 	{
 	  ERROR1 ("unexec: Specified bss_start (%u) is past end of program",
@@ -547,6 +563,12 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   f_dhdr.s_scnptr
     = (f_dhdr.s_scnptr + SECTION_ALIGNMENT) & ~SECTION_ALIGNMENT;
 #endif /* SECTION_ALIGNMENT */
+#ifdef DATA_SECTION_ALIGNMENT
+  /* Some systems require special alignment
+     of the data section only.  */
+  f_dhdr.s_scnptr
+    = (f_dhdr.s_scnptr + DATA_SECTION_ALIGNMENT) & ~DATA_SECTION_ALIGNMENT;
+#endif /* DATA_SECTION_ALIGNMENT */
   data_scnptr = f_dhdr.s_scnptr;
   f_bhdr.s_paddr = f_ohdr.data_start + f_ohdr.dsize;
   f_bhdr.s_vaddr = f_ohdr.data_start + f_ohdr.dsize;
@@ -604,7 +626,7 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 	  PERROR (a_name);
 	}
 
-      if N_BADMAG (ohdr)
+      if (N_BADMAG (ohdr))
 	{
 	  ERROR1 ("invalid magic number in %s", a_name);
 	}
@@ -634,11 +656,12 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   hdr.a_text = ohdr.a_text;
 #else /* not NO_REMAP */
   hdr.a_text = data_start - unexec_text_start;
-#endif /* not NO_REMAP */
 
 #ifdef A_TEXT_OFFSET
   hdr.a_text += A_TEXT_OFFSET (ohdr);
 #endif
+
+#endif /* not NO_REMAP */
 
   if (write (new, &hdr, sizeof hdr) != sizeof hdr)
     {
@@ -888,241 +911,6 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
 
 #endif /* COFF */
 
+#endif /* not CANNOT_UNEXEC */
+
 #endif /* not CANNOT_DUMP */
-
-#else /* mips */
-
-/* Unexec for mips machines.
-   Note that I regard it as the responsibility of people at Mips
-   to tell me about any changes that need to be made in this code.
-   I won't take responsibility to think about it even if a change
-   I make elsewhere causes it to break.  -- RMS.  */
-
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <varargs.h>
-#include <filehdr.h>
-#include <aouthdr.h>
-#include <scnhdr.h>
-#include <sym.h>
-
-#include "m-mips.h"
-
-#define private static
-
-extern int errno;
-extern int sys_nerr;
-extern char *sys_errlist[];
-#define EEOF -1
-
-private void
-fatal(s, va_alist)
-    va_dcl
-{
-    va_list ap;
-    if (errno == EEOF) {
-	fputs("unexec: unexpected end of file, ", stderr);
-    }
-    else if (errno < sys_nerr) {
-	fprintf(stderr, "unexec: %s, ", sys_errlist[errno]);
-    }
-    else {
-	fprintf(stderr, "unexec: error code %d, ", errno);
-    }
-    va_start(ap);
-    _doprnt(s, ap, stderr);
-    fputs(".\n", stderr);
-    exit(1);
-}
-
-#define READ(_fd, _buffer, _size, _error_message, _error_arg) \
-	errno = EEOF; \
-	if (read(_fd, _buffer, _size) != _size) \
-	  fatal(_error_message, _error_arg);
-
-#define WRITE(_fd, _buffer, _size, _error_message, _error_arg) \
-	if (write(_fd, _buffer, _size) != _size) \
-	  fatal(_error_message, _error_arg);
-
-#define SEEK(_fd, _position, _error_message, _error_arg) \
-	errno = EEOF; \
-	if (lseek(_fd, _position, L_SET) != _position) \
-	  fatal(_error_message, _error_arg);
-
-struct headers {
-    struct filehdr fhdr;
-    struct aouthdr aout;
-    struct scnhdr text_section;
-    struct scnhdr rdata_section;
-    struct scnhdr data_section;
-    struct scnhdr sdata_section;
-    struct scnhdr sbss_section;
-    struct scnhdr bss_section;
-};
-
-unexec (new_name, a_name, data_start, bss_start, entry_address)
-     char *new_name, *a_name;
-     unsigned data_start, bss_start, entry_address;
-{
-  int new, old;
-  int pagesize, brk;
-  int newsyms, symrel;
-  int nread;
-  struct headers hdr;
-#define BUFSIZE 8192
-  char buffer[BUFSIZE];
-
-  old = open (a_name, O_RDONLY, 0);
-  if (old < 0) fatal("openning %s", a_name);
-
-  new = creat (new_name, 0666);
-  if (new < 0) fatal("creating %s", new_name);
-
-  hdr = *((struct headers *)TEXT_START);
-  if (hdr.fhdr.f_magic != MIPSELMAGIC
-      && hdr.fhdr.f_magic != MIPSEBMAGIC) {
-      fprintf(stderr, "unexec: input file magic number is %x, not %x or %x.\n",
-	      hdr.fhdr.f_magic, MIPSELMAGIC, MIPSEBMAGIC);
-      exit(1);
-  }
-  if (hdr.fhdr.f_opthdr != sizeof(hdr.aout)) {
-      fprintf(stderr, "unexec: input a.out header is %d bytes, not %d.\n",
-	      hdr.fhdr.f_opthdr, sizeof(hdr.aout));
-      exit(1);
-  }
-#if 0
-  if (hdr.aout.magic != ZMAGIC
-      && hdr.aout.magic != NMAGIC
-      && hdr.aout.magic != OMAGIC) {
-      fprintf(stderr, "unexec: input file a.out magic number is %o, not %o, %o, or %o.\n",
-	      hdr.aout.magic, ZMAGIC, NMAGIC, OMAGIC);
-      exit(1);
-  }
-#else
-  if (hdr.aout.magic != ZMAGIC) {
-      fprintf(stderr, "unexec: input file a.out magic number is %o, not %o.\n",
-	      hdr.aout.magic, ZMAGIC);
-      exit(1);
-  }
-#endif
-  if (hdr.fhdr.f_nscns != 6) {
-      fprintf(stderr, "unexec: %d sections instead of 6.\n", hdr.fhdr.f_nscns);
-  }
-#define CHECK_SCNHDR(field, name, flags) \
-  if (strcmp(hdr.field.s_name, name) != 0) { \
-      fprintf(stderr, "unexec: %s section where %s expected.\n", \
-	      hdr.field.s_name, name); \
-      exit(1); \
-  } \
-  else if (hdr.field.s_flags != flags) { \
-      fprintf(stderr, "unexec: %x flags where %x expected in %s section.\n", \
-	      hdr.field.s_flags, flags, name); \
-  }
-  CHECK_SCNHDR(text_section,  _TEXT,  STYP_TEXT);
-  CHECK_SCNHDR(rdata_section, _RDATA, STYP_RDATA);
-  CHECK_SCNHDR(data_section,  _DATA,  STYP_DATA);
-  CHECK_SCNHDR(sdata_section, _SDATA, STYP_SDATA);
-  CHECK_SCNHDR(sbss_section,  _SBSS,  STYP_SBSS);
-  CHECK_SCNHDR(bss_section,   _BSS,   STYP_BSS);
-
-  pagesize = getpagesize();
-  brk = (sbrk(0) + pagesize - 1) & (-pagesize);
-  hdr.aout.dsize = brk - DATA_START;
-  hdr.aout.bsize = 0;
-  if (entry_address == 0) {
-    extern __start();
-    hdr.aout.entry = (unsigned)__start;
-  }
-  else {
-    hdr.aout.entry = entry_address;
-  }
-  hdr.aout.bss_start = hdr.aout.data_start + hdr.aout.dsize;
-  hdr.rdata_section.s_size = data_start - DATA_START;
-  hdr.data_section.s_vaddr = data_start;
-  hdr.data_section.s_paddr = data_start;
-  hdr.data_section.s_size = brk - DATA_START;
-  hdr.data_section.s_scnptr = hdr.rdata_section.s_scnptr
-				+ hdr.rdata_section.s_size;
-  hdr.sdata_section.s_vaddr = hdr.data_section.s_vaddr
-				+ hdr.data_section.s_size;
-  hdr.sdata_section.s_paddr = hdr.sdata_section.s_paddr;
-  hdr.sdata_section.s_size = 0;
-  hdr.sdata_section.s_scnptr = hdr.data_section.s_scnptr
-				+ hdr.data_section.s_size;
-  hdr.sbss_section.s_vaddr = hdr.sdata_section.s_vaddr
-				+ hdr.sdata_section.s_size;
-  hdr.sbss_section.s_paddr = hdr.sbss_section.s_vaddr;
-  hdr.sbss_section.s_size = 0;
-  hdr.sbss_section.s_scnptr = hdr.sdata_section.s_scnptr
-				+ hdr.sdata_section.s_size;
-  hdr.bss_section.s_vaddr = hdr.sbss_section.s_vaddr
-				+ hdr.sbss_section.s_size;
-  hdr.bss_section.s_paddr = hdr.bss_section.s_vaddr;
-  hdr.bss_section.s_size = 0;
-  hdr.bss_section.s_scnptr = hdr.sbss_section.s_scnptr
-				+ hdr.sbss_section.s_size;
-
-  WRITE(new, TEXT_START, hdr.aout.tsize,
-	"writing text section to %s", new_name);
-  WRITE(new, DATA_START, hdr.aout.dsize,
-	"writing text section to %s", new_name);
-
-  SEEK(old, hdr.fhdr.f_symptr, "seeking to start of symbols in %s", a_name);
-  errno = EEOF;
-  nread = read(old, buffer, BUFSIZE);
-  if (nread < sizeof(HDRR)) fatal("reading symbols from %s", a_name);
-#define symhdr ((pHDRR)buffer)
-  newsyms = hdr.aout.tsize + hdr.aout.dsize;
-  symrel = newsyms - hdr.fhdr.f_symptr;
-  hdr.fhdr.f_symptr = newsyms;
-  symhdr->cbLineOffset += symrel;
-  symhdr->cbDnOffset += symrel;
-  symhdr->cbPdOffset += symrel;
-  symhdr->cbSymOffset += symrel;
-  symhdr->cbOptOffset += symrel;
-  symhdr->cbAuxOffset += symrel;
-  symhdr->cbSsOffset += symrel;
-  symhdr->cbSsExtOffset += symrel;
-  symhdr->cbFdOffset += symrel;
-  symhdr->cbRfdOffset += symrel;
-  symhdr->cbExtOffset += symrel;
-#undef symhdr
-  do {
-      if (write(new, buffer, nread) != nread)
-	fatal("writing symbols to %s", new_name);
-      nread = read(old, buffer, BUFSIZE);
-      if (nread < 0) fatal("reading symbols from %s", a_name);
-#undef BUFSIZE
-  } while (nread != 0);
-
-  SEEK(new, 0, "seeking to start of header in %s", new_name);
-  WRITE(new, &hdr, sizeof(hdr),
-	"writing header of %s", new_name);
-
-  close(old);
-  close(new);
-  mark_x(new_name);
-}
-
-/*
- * mark_x
- *
- * After succesfully building the new a.out, mark it executable
- */
-static
-mark_x (name)
-     char *name;
-{
-  struct stat sbuf;
-  int um = umask (777);
-  umask (um);
-  if (stat(name, &sbuf) < 0)
-    fatal("getting protection on %s", name);
-  sbuf.st_mode |= 0111 & ~um;
-  if (chmod(name, sbuf.st_mode) < 0)
-    fatal("setting protection on %s", name);
-}
-
-#endif /* mips */

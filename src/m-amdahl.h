@@ -99,7 +99,7 @@ compiler is so brain damaged that it is not even worth trying to use it.
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 /* #define VIRT_ADDR_VARIES*/
@@ -111,8 +111,8 @@ compiler is so brain damaged that it is not even worth trying to use it.
    Define neither one if an assembler-language alloca
    in the file alloca.s should be used.  */
 
-/*#define C_ALLOCA*/
-#define HAVE_ALLOCA
+#define C_ALLOCA
+/*#define HAVE_ALLOCA */
 
 #ifdef HAVE_ALLOCA
 #define LIB_STANDARD -lPW -lc
@@ -148,3 +148,17 @@ extern int sign_extend_temp;
 /* Perhaps this means that the optimizer isn't safe to use.  */
 
 #define C_OPTIMIZE_SWITCH
+
+/* Put text and data on non-segment boundary; makes image smaller */
+
+#define LD_SWITCH_MACHINE	-N 
+
+/* When writing the 'xemacs' file, make text segment ro */
+#define EXEC_MAGIC	0410
+
+/* Mask for address bits within a memory segment */
+#define SEGSIZ 0x10000		/* Should this not be defined elsewhere ? */
+#define SEGMENT_MASK (SEGSIZ - 1)
+
+/* Tell alloca.c which direction stack grows.  */
+#define STACK_DIRECTION -1

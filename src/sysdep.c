@@ -1,5 +1,5 @@
 /* Interfaces to system-dependent kernel and library entries.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -39,6 +39,12 @@ and this notice must be preserved on all copies.  */
 #undef read
 #undef write
 
+#ifndef close
+#define sys_close close
+#else 
+#undef close
+#endif
+
 #ifndef open
 #define sys_open open
 #else /* `open' is a macro */
@@ -51,6 +57,9 @@ and this notice must be preserved on all copies.  */
 #include <errno.h>
 
 extern int errno;
+#ifndef VMS
+extern char *sys_errlist[];
+#endif
 
 #ifdef VMS
 #include <rms.h>
@@ -60,6 +69,10 @@ extern int errno;
 #include <ssdef.h>
 #include <descrip.h>
 #include <ctype.h>
+#include <file.h>
+#ifndef RAB$C_BID
+#include <rab.h>
+#endif
 #define	MAXIOSIZE ( 32 * PAGESIZE )	/* Don't I/O more than 32 blocks at a time */
 #endif /* VMS */
 
@@ -102,14 +115,20 @@ extern int errno;
 #define TIOCSETP TCSETAF
 #define TERMINAL struct termio
 #define OSPEED(str) (str.c_cflag & CBAUD)
+#define SETOSPEED(str,new) (str.c_cflag = (str.c_cflag & ~CBAUD) | (new))
 #define TABS_OK(str) ((str.c_oflag & TABDLY) != TAB3)
 #endif /* HAVE_TERMIO */
+
+#ifdef XENIX
+#undef TIOCGETC  /* Avoid confusing some conditionals that test this.  */
+#endif
 
 #ifndef HAVE_TERMIO
 #ifndef VMS
 #include <sgtty.h>
 #define TERMINAL struct sgttyb
 #define OSPEED(str) str.sg_ospeed
+#define SETOSPEED(str,new) (str.sg_ospeed = (new))
 #define TABS_OK(str) ((str.sg_flags & XTABS) != XTABS)
 #undef TCSETAW
 #define TCSETAW TIOCSETN
@@ -132,6 +151,10 @@ extern int errno;
 #ifdef VMS
 #include "window.h"
 #endif
+  
+#ifdef NEED_BSDTTY
+#include <sys/bsdtty.h>
+#endif 
 
 #include "termhooks.h"
 #include "termchar.h"
@@ -252,6 +275,7 @@ init_baud_rate ()
       SYS$QIOW (0, input_chan, IO$_SENSEMODE, &sg, 0, 0,
 		&sg.class, 12, 0, 0, 0, 0 );
 #else
+      SETOSPEED (sg, B9600);
       ioctl (0, TIOCGETP, &sg);
 #endif /* not VMS */
       ospeed = OSPEED (sg);
@@ -261,6 +285,7 @@ init_baud_rate ()
       ? baud_convert[ospeed] : 9600;
 }
 
+/*ARGSUSED*/
 set_exclusive_use (fd)
      int fd;
 {
@@ -323,14 +348,10 @@ wait_for_termination (pid)
 	  kill (getpid (), SIGCHLD);
 	  break;
 	}
-#ifdef APOLLO
-      sleep (1);
-#else /* not APOLLO */
       if (wait_debugging)
 	sleep (1);
       else
 	sigpause (0);
-#endif /* not APOLLO */
 #endif /* not BSD4_1 */
 #else /* not BSD */
 #ifdef UNIPLUS
@@ -432,6 +453,7 @@ child_setup_tty (out)
 
 #endif /* subprocesses */
 
+/*ARGSUSED*/
 setpgrp_of_tty (pid)
      int pid;
 {
@@ -454,8 +476,8 @@ sys_suspend ()
     return LIB$ATTACH (&parent_id) & 1;
   return -1;
 #else
-#ifdef SIGTSTP
-  kill (0, SIGTSTP);
+#ifdef BSD
+  killpg (getpgrp (0), SIGTSTP);
 
 #else
 #ifdef USG_JOBCTRL /* If you don't know what this is don't mess with it */
@@ -468,13 +490,11 @@ sys_suspend ()
    instead fork a subshell and let it talk directly to the terminal
    while we wait.  */
   int pid = fork ();
-  int spid;
-  int status;
   int (*interrupt) ();
   int (*quit) ();
   int (*term) ();
 #ifdef SIGIO
-  int (*sigio*) ();
+  int (*sigio) ();
 #endif SIGIO
 
   if (pid == -1)
@@ -511,6 +531,9 @@ sys_suspend ()
 	chdir (str);
       }
     xyzzy:
+#ifdef subprocesses
+      close_process_descs ();	/* Close Emacs's pipes/ptys */
+#endif
       execlp (sh, sh, 0);
       write (1, "Can't execute subshell", 22);
       _exit (1);
@@ -554,6 +577,10 @@ reset_sigio ()
 
 request_sigio ()
 {
+#ifdef SIGWINCH
+  int omask = sigblock (0);
+  sigsetmask (omask & ~sigmask (SIGWINCH));
+#endif
   fcntl (0, F_SETFL, old_fcntl_flags | FASYNC);
 
   interrupts_deferred = 0;
@@ -561,6 +588,9 @@ request_sigio ()
 
 unrequest_sigio ()
 {
+#ifdef SIGWINCH
+  sigblock (sigmask (SIGWINCH));
+#endif
   fcntl (0, F_SETFL, old_fcntl_flags);
   interrupts_deferred = 1;
 }
@@ -608,13 +638,16 @@ int old_fcntl_owner;
 #endif /* F_SETOWN */
 
 #ifdef TIOCGLTC
-struct tchars old_tchars;
 struct ltchars old_ltchars;
+#endif /* TIOCGLTC */
+
+#ifdef TIOCGETC
+struct tchars old_tchars;
 int old_lmode;
 
 int lmode;			/* Current lmode value. */
 				/* Needed as global for 4.1 */
-#endif /* TIOCGLTC */
+#endif /* TIOCGETC */
 
 /* This may also be defined in stdio,
    but if so, this does no harm,
@@ -626,13 +659,18 @@ unsigned char _sobuf[BUFSIZ+8];
 char _sobuf[BUFSIZ];
 #endif
  
+#ifdef TIOCGLTC
+static struct ltchars new_ltchars = {-1,-1,-1,-1,-1,-1};
+#endif
+#ifdef TIOCGETC
+  static struct tchars new_tchars = {-1,-1,-1,-1,-1,-1};
+#endif 
+
 init_sys_modes ()
 {
   TERMINAL sg;
-#ifdef TIOCGLTC
+#ifdef TIOCGETC
   struct tchars tchars;
-  static struct tchars new_tchars = {-1,-1,-1,-1,-1,-1};
-  static struct ltchars new_ltchars = {-1,-1,-1,-1,-1,-1};
 #endif
 #ifdef VMS
 #if 0
@@ -665,6 +703,9 @@ init_sys_modes ()
     ((unsigned) 1 << (timer_ef % 32));
   SYS$QIOW (0, input_chan, IO$_SENSEMODE, &old_gtty, 0, 0,
 	    &old_gtty.class, 12, 0, 0, 0, 0);
+#ifndef VMS4_4
+  sys_access_reinit ();
+#endif
 #else /* not VMS */
   ioctl (0, TIOCGETP, &old_gtty);
 #endif /* not VMS */
@@ -697,14 +738,10 @@ init_sys_modes ()
       sg.c_cflag &= ~PARENB;	/* Don't check parity */
 #endif
       sg.c_cc[VINTR] = '\007';	/* ^G gives SIGINT */
-#ifdef HPUX
-      /* Can't use CDEL as that makes Meta-DEL do SIGQUIT.
-	 Instead set up C-g for both; we handle both alike
+      /* Set up C-g for both SIGQUIT and SIGINT.
+	 We don't know which we will get, but we handle both alike
 	 so which one it really gives us does not matter.  */
       sg.c_cc[VQUIT] = '\007';
-#else /* not HPUX */
-      sg.c_cc[VQUIT] = CDEL;	/* Turn off SIGQUIT */
-#endif /* not HPUX */
       sg.c_cc[VMIN] = 1;	/* Input should wait for at least 1 char */
       sg.c_cc[VTIME] = 0;	/* no matter how long that takes.  */
 #ifdef VSWTCH
@@ -749,8 +786,10 @@ init_sys_modes ()
 	   so as to turn off local flow control for user coming over
 	   network on 4.2; in this case, only t_stopc and t_startc really matter.  */
 #ifdef TIOCGLTC
-      ioctl (0, TIOCGETC, &old_tchars);
       ioctl (0, TIOCGLTC, &old_ltchars);
+#endif /* TIOCGLTC */
+#ifdef TIOCGETC
+      ioctl (0, TIOCGETC, &old_tchars);
       ioctl (0, TIOCLGET, &old_lmode);
 
       /* Note: if not using CBREAK mode, it makes no difference how we set this */
@@ -773,9 +812,12 @@ init_sys_modes ()
       lmode = LDECCTQ | LLITOUT | LPASS8 | LNOFLSH | old_lmode;
 
       ioctl (0, TIOCSETC, &tchars);
-      ioctl (0, TIOCSLTC, &new_ltchars);
       ioctl (0, TIOCLSET, &lmode);
-#endif TIOCGLTC
+#endif /* TIOCGETC */
+#ifdef TIOCGLTC
+      ioctl (0, TIOCSLTC, &new_ltchars);
+#endif /* TIOCGLTC */
+
 #ifdef BSD4_1
       if (interrupt_input)
 	init_sigio ();
@@ -788,6 +830,9 @@ init_sys_modes ()
       queue_kbd_input (0);
 #endif /* VMS */
     }
+#ifdef VMS  /* VMS sometimes has this symbol but lacks setvbuf.  */
+#undef _IOFBF
+#endif
 #ifdef _IOFBF
   /* This symbol is defined on recent USG systems.
      Someone says without this call USG won't really buffer the file
@@ -877,10 +922,14 @@ reset_sys_modes ()
     }
   if (!term_initted)
     return;
+  if (read_socket_hook)
+    return;
   topos (screen_height - 1, 0);
   clear_end_of_line (screen_width);
   /* clear_end_of_line may move the cursor */
   topos (screen_height - 1, 0);
+  /* Output raw CR so kernel can track the cursor hpos.  */
+  cmputc ('\r');
   reset_terminal_modes ();
   fflush (stdout);
 #ifdef BSD
@@ -889,13 +938,13 @@ reset_sys_modes ()
   fsync (fileno (stdout));
 #endif
 #endif
-  if (read_socket_hook)
-    return;
 #ifdef TIOCGLTC
-  ioctl (0, TIOCSETC, &old_tchars);
   ioctl (0, TIOCSLTC, &old_ltchars);
-  ioctl (0, TIOCLSET, &old_lmode);
 #endif /* TIOCGLTC */
+#ifdef TIOCGETC
+  ioctl (0, TIOCSETC, &old_tchars);
+  ioctl (0, TIOCLSET, &old_lmode);
+#endif /* TIOCGETC */
 #ifdef F_SETFL
 #ifdef F_SETOWN		/* F_SETFL does not imply existance of F_SETOWN */
   if (interrupt_input)
@@ -995,23 +1044,21 @@ kbd_input_ast ()
   if (! stop_input)
     queue_kbd_input ();
   if (c >= 0)
-  {
-    ast_active = 1;
-    kbd_buffer_store_char (c);
-    ast_active = 0;
-  }
+    {
+      ast_active = 1;
+      kbd_buffer_store_char (c);
+      ast_active = 0;
+    }
 }
 
 /* Wait until there is something in kbd_buffer.  */
 
 wait_for_kbd_input ()
 {
-  int have_input;
   extern int have_process_input, process_exited;
 
   /* If already something, avoid doing system calls.  */
-  get_input_pending (&have_input);
-  if (have_input)
+  if (detect_input_pending ())
     {
       return;
     }
@@ -1019,13 +1066,12 @@ wait_for_kbd_input ()
   SYS$CLREF (input_ef);
   waiting_for_ast = 1;
   /* Check for timing error: ast happened while we were doing that.  */
-  get_input_pending (&have_input);
-  if (!have_input)
+  if (!detect_input_pending ())
     {
       /* No timing error: wait for flag to be set.  */
       SYS$WFLOR (input_ef, input_eflist);
-      get_input_pending (&have_input);
-      if (!have_input)	/* Check for subprocess input availability */
+      if (!detect_input_pending ())
+	/* Check for subprocess input availability */
 	{
 	  int dsp = have_process_input || process_exited;
 
@@ -1056,6 +1102,12 @@ end_kbd_input()
   fflush (stdout);
   sleep (1);
 #endif
+  if (ast_active)  /* Don't wait if suspending from kbd_buffer_store_char! */
+    {
+      SYS$CANCEL (input_chan);
+      return;
+    }
+
   SYS$SETAST (0);
   /* Clear a flag, and tell ast routine above to set it.  */
   SYS$CLREF (input_ef);
@@ -1063,9 +1115,8 @@ end_kbd_input()
   stop_input = 1;
   SYS$CANCEL (input_chan);
   SYS$SETAST (1);
-  if (!ast_active)
-    SYS$WAITFR (input_ef);
-    waiting_for_ast = 0;
+  SYS$WAITFR (input_ef);
+  waiting_for_ast = 0;
 }
 
 /* Wait for either input available or time interval expiry.  */
@@ -1074,13 +1125,11 @@ input_wait_timeout (timeval)
      int timeval;		/* Time to wait, in seconds */
 {
   int time [2];
-  int have_input;
   
   LIB$EMUL (&timeval, &-10000000, &0, time); 	  /* Convert to VMS format */
 
   /* If already something, avoid doing system calls.  */
-  get_input_pending (&have_input);
-  if (have_input)
+  if (detect_input_pending ())
     {
       return;
     }
@@ -1088,8 +1137,7 @@ input_wait_timeout (timeval)
   SYS$CLREF (input_ef);
   waiting_for_ast = 1;
   /* Check for timing error: ast happened while we were doing that.  */
-  get_input_pending (&have_input);
-  if (!have_input)
+  if (!detect_input_pending ())
     {
       /* No timing error: wait for flag to be set.  */
       SYS$CANTIM (1, 0);
@@ -1158,6 +1206,7 @@ unrequest_sigio ()
  *
  */
 
+#ifndef CANNOT_UNEXEC
 char *
 start_of_text ()
 {
@@ -1173,6 +1222,7 @@ start_of_text ()
 #endif /* GOULD */
 #endif /* TEXT_START */
 }
+#endif /* not CANNOT_UNEXEC */
 
 /*
  *	Return the address of the start of the data segment prior to
@@ -1317,7 +1367,7 @@ select (nfds, rfds, wfds, efds, timeout)
      int nfds;
      int *rfds, *wfds, *efds, *timeout;
 {
-  int ravail = 0, orfds = 0, old_alarm, val;
+  int ravail = 0, orfds = 0, old_alarm;
   extern int kbd_count;
   extern int proc_buffered_char[];
 #ifndef subprocesses
@@ -1434,12 +1484,25 @@ select (nfds, rfds, wfds, efds, timeout)
 /* Read keyboard input into the standard buffer,
    waiting for at least one character.  */
 
+/* Make all keyboard buffers much bigger when using X windows.  */
+#ifdef HAVE_X_WINDOWS
+#define BUFFER_SIZE_FACTOR 16
+#else
+#define BUFFER_SIZE_FACTOR 1
+#endif
+
 read_input_waiting ()
 {
   extern int kbd_count;
   extern unsigned char kbd_buffer[];
   extern unsigned char *kbd_ptr;
-  int val = read (fileno(stdin), kbd_buffer, 1);
+  int val;
+
+  if (read_socket_hook)
+    val = (*read_socket_hook) (0, kbd_buffer, 256 * BUFFER_SIZE_FACTOR);
+  else
+    val = read (fileno (stdin), kbd_buffer, 1);
+
   if (val > 0)
     {
       kbd_ptr = kbd_buffer;
@@ -1479,7 +1542,7 @@ init_sigio ()
 {
   if (noninteractive)
     return;
-  lmode =  LINTRUP | lmode;
+  lmode = LINTRUP | lmode;
   ioctl (0, TIOCLSET, &lmode);
 }
 
@@ -1637,7 +1700,8 @@ srandom (arg)
 long
 random ()
 {
-  return (rand ());
+  /* Arrange to return a range centered on zero.  */
+  return rand () - (1 << 14);
 }
 
 srandom (arg)
@@ -1654,19 +1718,34 @@ srandom (arg)
 #ifdef getenv
 /* If any place else asks for the TERM variable,
    allow it to be overridden with the EMACS_TERM variable
-   before getting VMS's special idea of the TERM variable.  */
+   before attempting to translate the logical name TERM.  As a last
+   resort, ask for VAX C's special idea of the TERM variable.  */
 #undef getenv
 char *
 sys_getenv (name)
      char *name;
 {
   register char *val;
+  static char buf[256];
+  static struct dsc$descriptor_s equiv
+    = {sizeof(buf), DSC$K_DTYPE_T, DSC$K_CLASS_S, buf};
+  static struct dsc$descriptor_s d_name
+    = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+  short eqlen;
 
   if (!strcmp (name, "TERM"))
     {
       val = (char *) getenv ("EMACS_TERM");
       if (val)
 	return val;
+    }
+
+  d_name.dsc$w_length = strlen (name);
+  d_name.dsc$a_pointer = name;
+  if (lib$sys_trnlog(&d_name, &eqlen, &equiv) == 1)
+    {
+      buf[eqlen] = '\0';
+      return buf;
     }
   return (char *) getenv (name);
 }
@@ -1752,6 +1831,19 @@ sys_open (path, oflag, mode)
 
 #endif /* INTERRUPTABLE_OPEN */
 
+#ifdef INTERRUPTABLE_CLOSE
+
+sys_close (fd)
+     int fd;
+{
+  register int rtnval;
+
+  while ((rtnval = close(fd)) == -1 && errno == EINTR);
+  return rtnval;
+}
+
+#endif /* INTERRUPTABLE_CLOSE */
+
 #ifdef INTERRUPTABLE_IO
 
 int
@@ -1831,6 +1923,8 @@ char *sys_siglist[NSIG + 1] =
 #define MAXPATHLEN 1024
 #endif
 
+#ifndef HAVE_GETWD
+
 char *
 getwd (pathname)
      char *pathname;
@@ -1838,14 +1932,17 @@ getwd (pathname)
   char *npath;
   extern char *getcwd ();
 
-  npath = getcwd (0, MAXPATHLEN);
+  npath = getcwd ((char *) 0, MAXPATHLEN);
   /* On Altos 3068, getcwd can return @hostname/dir, so discard
      up to first slash.  Should be harmless on other systems.  */
   while (*npath && *npath != '/')
     npath++;
   strcpy (pathname, npath);
+  free (npath);			/* getcwd uses malloc */
   return pathname;
 }
+
+#endif HAVE_GETWD
 
 /*
  *	Emulate rename using unlink/link.  Note that this is
@@ -1886,13 +1983,39 @@ vfork ()
 
 #endif /* not HAVE_VFORK */
 
-#ifdef HPUX
+#ifdef MISSING_UTIMES
 
-/* HPUX sets HAVE_TIMEVAL but does not implement utimes.  */
+/* HPUX (among others) sets HAVE_TIMEVAL but does not implement utimes.  */
 
 utimes ()
 {
 }
+#endif
+
+#ifdef IRIS
+
+/* The IRIS (3.5) has timevals, but uses sys V utime, and doesn't have the
+   utimbuf structure defined anywhere but in the man page. */
+
+struct utimbuf
+ {
+   long actime;
+   long modtime;
+ };
+
+utimes (name, tvp)
+     char *name;
+     struct timeval tvp[];
+{
+  struct utimbuf utb;
+  utb.actime  = tvp[0].tv_sec;
+  utb.modtime = tvp[1].tv_sec;
+  utime (name, &utb);
+}
+#endif /* IRIS */
+
+
+#ifdef HPUX
 
 /* HPUX curses library references perror, but as far as we know
    it won't be called.  Anyway this definition will do for now.  */
@@ -1917,11 +2040,19 @@ dup2 (oldd, newd)
 {
   register int fd;
   
-  close (newd);
-  while ((fd = dup (oldd)) != newd) {
-    dup2 (oldd, newd);
-    close (fd);
-  }
+  sys_close (newd);
+
+#ifdef F_DUPFD
+  fd = fcntl (oldd, F_DUPFD, newd);
+  if (fd != newd)
+    error ("cant dup2(%i,%i) : %s", oldd, newd, sys_errlist[errno]);
+#else
+  while ((fd = dup (oldd)) != newd)
+    {
+      dup2 (oldd, newd);
+      sys_close (fd);
+    }
+#endif
 }
 
 #endif /* not HAVE_DUP2 */
@@ -1967,6 +2098,21 @@ croak (badfunc)
 
 /* Directory routines for systems that don't have them. */
 
+#ifdef SYSV_SYSTEM_DIR
+
+#include <dirent.h>
+
+int
+closedir (dirp)
+     register DIR *dirp;              /* stream from opendir() */
+{
+  sys_close (dirp->dd_fd);
+  free ((char *) dirp->dd_buf);       /* directory block defined in <dirent.h> */
+  free ((char *) dirp);
+}
+
+#endif /* SYSV_SYSTEM_DIR */
+
 #ifdef NONSYSTEM_DIR_LIBRARY
 
 DIR *
@@ -1985,7 +2131,7 @@ opendir (filename)
       || (sbuf.st_mode & S_IFMT) != S_IFDIR
       || (dirp = (DIR *) malloc (sizeof (DIR))) == 0)
     {
-      close (fd);
+      sys_close (fd);
       return 0;		/* bad luck today */
     }
 
@@ -1999,7 +2145,7 @@ void
 closedir (dirp)
      register DIR *dirp;		/* stream from opendir() */
 {
-  close (dirp->dd_fd);
+  sys_close (dirp->dd_fd);
   free ((char *) dirp);
 }
 
@@ -2011,7 +2157,7 @@ struct olddir
     ino_t od_ino; 		/* inode */
     char od_name[DIRSIZ];	/* filename */
   };
-#endif /* VMS */
+#endif /* not VMS */
 
 struct direct dir_static;	/* simulated directory contents */
 
@@ -2025,7 +2171,6 @@ readdir (dirp)
 #else /* VMS */
   register struct dir$_name *dp; /* -> directory data */
   register struct dir$_version *dv; /* -> version data */
-  char * lower_case ();
 #endif /* VMS */
 
   for (; ;)
@@ -2065,7 +2210,6 @@ readdir (dirp)
 	  + dir_static.d_namlen - dir_static.d_namlen % 4;
       strncpy (dir_static.d_name, dp->dir$t_name, dp->dir$b_namecount);
       dir_static.d_name[dir_static.d_namlen] = '\0';
-      (void) lower_case (dir_static.d_name);
       dirp->dd_loc = dirp->dd_size; /* only one record at a time */
       return &dir_static;
 #endif /* VMS */
@@ -2083,37 +2227,27 @@ readdirver (dirp)
 {
   register struct dir$_name *dp; /* -> directory data */
   register struct dir$_version *dv; /* -> version data */
-  char version[7];
-  char *lower_case ();
 
-  while (1)
-    {
-      if (dirp->dd_loc >= dirp->dd_size)
-	dirp->dd_loc = dirp->dd_size = 0;
+  if (dirp->dd_loc >= dirp->dd_size - sizeof (struct dir$_name))
+    dirp->dd_loc = dirp->dd_size = 0;
 
-      if (dirp->dd_size == 0 	/* refill buffer */
-	  && (dirp->dd_size = sys_read (dirp->dd_fd, dirp->dd_buf, DIRBLKSIZ)) <= 0)
-	return 0;
+  if (dirp->dd_size == 0 	/* refill buffer */
+      && (dirp->dd_size = sys_read (dirp->dd_fd, dirp->dd_buf, DIRBLKSIZ)) <= 0)
+    return 0;
 
-      dp = (struct dir$_name *) dirp->dd_buf;
-      if (dirp->dd_loc == 0)
-	dirp->dd_loc = (dp->dir$b_namecount&1) ? dp->dir$b_namecount + 1
-	  : dp->dir$b_namecount;
-      dv = (struct dir$_version *)&dp->dir$t_name[dirp->dd_loc];
-      dir_static.d_ino = dv->dir$w_fid_num;
-      dir_static.d_namlen = dp->dir$b_namecount;
-      dir_static.d_reclen = sizeof (struct direct)
-	- MAXNAMLEN + 3
-	  + dir_static.d_namlen - dir_static.d_namlen % 4;
-      strncpy (dir_static.d_name, dp->dir$t_name, dp->dir$b_namecount);
-      dir_static.d_name[dir_static.d_namlen] = '\0';
-      sprintf (&dir_static.d_name[dir_static.d_namlen], ";%d",
-	       dv->dir$w_version);
-      dir_static.d_namlen = strlen (dir_static.d_name);
-      (void) lower_case (dir_static.d_name);
-      dirp->dd_loc = ((char *)(++dv) - dp->dir$t_name);
-      return &dir_static;
-    }
+  dp = (struct dir$_name *) dirp->dd_buf;
+  if (dirp->dd_loc == 0)
+    dirp->dd_loc = (dp->dir$b_namecount & 1) ? dp->dir$b_namecount + 1
+		   : dp->dir$b_namecount;
+  dv = (struct dir$_version *) &dp->dir$t_name[dirp->dd_loc];
+  strncpy (dir_static.d_name, dp->dir$t_name, dp->dir$b_namecount);
+  sprintf (&dir_static.d_name[dp->dir$b_namecount], ";%d", dv->dir$w_version);
+  dir_static.d_namlen = strlen (dir_static.d_name);
+  dir_static.d_ino = dv->dir$w_fid_num;
+  dir_static.d_reclen = sizeof (struct direct) - MAXNAMLEN + 3
+			+ dir_static.d_namlen - dir_static.d_namlen % 4;
+  dirp->dd_loc = ((char *) (++dv) - dp->dir$t_name);
+  return &dir_static;
 }
 
 #endif /* VMS */
@@ -2127,11 +2261,30 @@ readdirver (dirp)
 #include <chpdef.h>
 #include <jpidef.h>
 
+/* Return as a string the VMS error string pertaining to STATUS.
+   Reuses the same static buffer each time it is called.  */
+
+char *
+vmserrstr (status)
+     int status;		/* VMS status code */
+{
+  int bufadr[2];
+  short len;
+  static char buf[257];
+
+  bufadr[0] = sizeof buf - 1;
+  bufadr[1] = buf;
+  if (! (SYS$GETMSG (status, &len, bufadr, 0x1, 0) & 1))
+    return "untranslatable VMS error status";
+  buf[len] = '\0';
+  return buf;
+}
+
 #ifdef access
 #undef access
   
 /* The following is necessary because 'access' emulation by VMS C (2.0) does
- * not work correctly.
+ * not work correctly.  (It also doesn't work well in version 2.3.)
  */
 
 #ifdef VMS4_4
@@ -2164,10 +2317,16 @@ sys_access (path, mode)
      int mode;
 {
   static char *user = NULL;
+  char dir_fn[512];
+
+  /* translate possible directory spec into .DIR file name, so brain-dead
+   * access() can treat the directory like a file.  */
+  if (directory_file_name (path, dir_fn))
+    path = dir_fn;
   
   if (mode == F_OK)
     return access (path, mode);
-  if (user == NULL && (user = getenv("USER")) == NULL)
+  if (user == NULL && (user = getenv ("USER")) == NULL)
     return -1;
   {
 	int stat;
@@ -2209,9 +2368,16 @@ sys_access (path, mode)
 static unsigned short memid, grpid;
 static unsigned int uic;
 
+/* Called from init_sys_modes, so it happens not very often
+   but at least each time Emacs is loaded.  */
+sys_access_reinit ()
+{
+  uic = 0;
+}
+
 int
-sys_access (file, type)
-     char * file;
+sys_access (filename, type)
+     char * filename;
      int type;
 {
   struct FAB fab;
@@ -2240,7 +2406,7 @@ sys_access (file, type)
   /* Find privilege bits */
   status = sys$setprv (0, 0, 0, prvmask);
   if (! (status & 1))
-    error ("Unable to find privileges: %s", vmserrstr(status ));
+    error ("Unable to find privileges: %s", vmserrstr (status));
   if (CHECKPRIV (PRV$V_BYPASS))
     return 0;			/* BYPASS enabled */
   fab = cc$rms_fab;
@@ -2434,25 +2600,20 @@ sys_translate_unix (ufile)
 }
 
 char *
-lower_case (pathname)
-     char * pathname;
-{
-  char * ptr = pathname;
-
-  if (ptr)
-    while (*ptr) {
-      if ('A' <= *ptr && *ptr <= 'Z')
-	*ptr += 040;
-      ptr++;
-    }
-  return pathname;
-}
-
-char *
 getwd (pathname)
      char *pathname;
 {
-  return strcpy (pathname, egetenv ("PATH"));
+  char *ptr;
+  strcpy (pathname, egetenv ("PATH"));
+
+  ptr = pathname;
+  while (*ptr)
+    {
+      if ('a' <= *ptr && *ptr <= 'z')
+	*ptr -= 040;
+      ptr++;
+    }
+  return pathname;
 }
 
 getppid ()
@@ -2542,15 +2703,82 @@ sys_write (fildes, buf, nbytes)
   return sum;
 }
 
+/* Create file NEW copying its attributes from file OLD.  If
+   OLD is 0 or does not exist, create based on the value of
+   vms_stmlf_recfm. */
+
+int
+creat_copy_attrs (old, new)
+     char *old, *new;
+{
+  struct FAB fab = cc$rms_fab;
+  struct XABPRO xabpro;
+  char aclbuf[256];	/* Choice of size is arbitrary.  See below. */
+  extern int vms_stmlf_recfm;
+
+  if (old)
+    {
+      fab.fab$b_fac = FAB$M_GET;
+      fab.fab$l_fna = old;
+      fab.fab$b_fns = strlen (old);
+      fab.fab$l_xab = &xabpro;
+      xabpro = cc$rms_xabpro;
+      xabpro.xab$l_aclbuf = aclbuf;
+      xabpro.xab$w_aclsiz = sizeof aclbuf;
+      /* Call $OPEN to fill in the fab & xabpro fields. */
+      if (sys$open (&fab, 0, 0) & 1)
+	{
+	  sys$close (&fab, 0, 0);
+	  fab.fab$l_alq = 0;	/* zero the allocation quantity */
+	  if (xabpro.xab$w_acllen > 0)
+	    {
+	      if (xabpro.xab$w_acllen > sizeof aclbuf)
+		/* If the acl buffer was too short, redo open with longer one.
+		   Wouldn't need to do this if there were some system imposed
+		   limit on the size of an ACL, but I can't find any such. */
+		{
+		  xabpro.xab$l_aclbuf = alloca (xabpro.xab$w_acllen);
+		  xabpro.xab$w_aclsiz = xabpro.xab$w_acllen;
+		  if (sys$open (&fab, 0, 0) & 1)
+		    sys$close (&fab, 0, 0);
+		  else
+		    old = 0;
+		}
+	    }
+	  else
+	    xabpro.xab$l_aclbuf = 0;
+	}
+      else
+	old = 0;
+    }
+  fab.fab$l_fna = new;
+  fab.fab$b_fns = strlen (new);
+  if (!old)
+    {
+      fab.fab$l_xab = 0;
+      fab.fab$b_rfm = vms_stmlf_recfm ? FAB$C_STMLF : FAB$C_VAR;
+      fab.fab$b_rat = FAB$M_CR;
+    }
+  /* Create the new file with either default attrs or attrs copied
+     from old file. */
+  if (!(SYS$CREATE (&fab, 0, 0) & 1))
+    return -1;
+  sys$close (&fab, 0, 0);
+  /* As this is a "replacement" for creat, return a file descriptor
+     opened for writing. */
+  return open (new, O_WRONLY);
+}
+
 #ifdef creat
 #undef creat
 #include <varargs.h>
 
-sys_creat (name, mode, va_alist)
-     char * name;
+sys_creat (va_alist)
      va_dcl
 {
   va_list list_incrementor;
+  char *name;
+  int mode;
   int rfd;			/* related file descriptor */
   int fd;			/* Our new file descriptor */
   int count;
@@ -2562,13 +2790,16 @@ sys_creat (name, mode, va_alist)
   extern int vms_stmlf_recfm;
 
   va_count (count);
+  va_start (list_incrementor);
+  name = va_arg (list_incrementor, char *);
+  mode = va_arg (list_incrementor, int);
+  if (count > 2)
+    rfd = va_arg (list_incrementor, int);
+  va_end (list_incrementor);
   if (count > 2)
     {
       /* Use information from the related file descriptor to set record
 	 format of the newly created file. */
-      va_start_1 (list_incrementor, 8);
-      rfd = va_arg (list_incrementor, int);
-      va_end (list_incrementor);
       fstat (rfd, &st_buf);
       switch (st_buf.st_fab_rfm)
 	{
@@ -2666,6 +2897,49 @@ sys_fwrite (ptr, size, num, fp)
 
   while (tot--)
     fputc (*ptr++, fp);
+}
+
+/*
+ * The VMS C library routine creat() actually creates a new version of an
+ * existing file rather than truncating the old version.  There are times
+ * when this is not the desired behavior, for instance, when writing an
+ * auto save file (you only want one version), or when you don't have
+ * write permission in the directory containing the file (but the file
+ * itself is writable).  Hence this routine, which is equivalent to 
+ * "close (creat (fn, 0));" on Unix if fn already exists.
+ */
+int
+vms_truncate (fn)
+     char *fn;
+{
+  struct FAB xfab = cc$rms_fab;
+  struct RAB xrab = cc$rms_rab;
+  int status;
+
+  xfab.fab$l_fop = FAB$M_TEF;	/* free allocated but unused blocks on close */
+  xfab.fab$b_fac = FAB$M_TRN | FAB$M_GET; /* allow truncate and get access */
+  xfab.fab$b_shr = FAB$M_NIL;	/* allow no sharing - file must be locked */
+  xfab.fab$l_fna = fn;
+  xfab.fab$b_fns = strlen (fn);
+  xfab.fab$l_dna = ";0";	/* default to latest version of the file */
+  xfab.fab$b_dns = 2;
+  xrab.rab$l_fab = &xfab;
+
+  /* This gibberish opens the file, positions to the first record, and
+     deletes all records from there until the end of file. */
+  if ((sys$open (&xfab) & 01) == 01)
+    {
+      if ((sys$connect (&xrab) & 01) == 01 &&
+	  (sys$find (&xrab) & 01) == 01 &&
+	  (sys$truncate (&xrab) & 01) == 01)
+	status = 0;
+      else
+	status = -1;
+    }
+  else
+    status = -1;
+  sys$close (&xfab);
+  return status;
 }
 
 /* Define this symbol to actually read SYSUAF.DAT.  This requires either
@@ -2830,7 +3104,6 @@ cnv_uaf_pw (up)
     ptr--;
   *ptr = '\0';
   strcpy (retpw.pw_name, up->uaf$t_username);
-  lower_case (retpw.pw_name);
 
   /* the rest of these are counted ascii strings */
   strncpy (retpw.pw_gecos, &up->uaf$t_owner[1], up->uaf$t_owner[0]);
@@ -2839,7 +3112,6 @@ cnv_uaf_pw (up)
   retpw.pw_dir[up->uaf$t_defdev[0]] = '\0';
   strncat (retpw.pw_dir, &up->uaf$t_defdir[1], up->uaf$t_defdir[0]);
   retpw.pw_dir[up->uaf$t_defdev[0] + up->uaf$t_defdir[0]] = '\0';
-  lower_case (retpw.pw_dir);
   strncpy (retpw.pw_shell, &up->uaf$t_defcli[1], up->uaf$t_defcli[0]);
   retpw.pw_shell[up->uaf$t_defcli[0]] = '\0';
 
@@ -2951,18 +3223,25 @@ define_logical_name (varname, string)
      char *varname;
      char *string;
 {
-  int global_sym = 2;
   struct dsc$descriptor_s strdsc =
     {strlen (string), DSC$K_DTYPE_T, DSC$K_CLASS_S, string};
   struct dsc$descriptor_s envdsc =
     {strlen (varname), DSC$K_DTYPE_T, DSC$K_CLASS_S, varname};
+  struct dsc$descriptor_s lnmdsc =
+    {7, DSC$K_DTYPE_T, DSC$K_CLASS_S, "LNM$JOB"};
 
-  return LIB$SET_SYMBOL (&envdsc, &strdsc, &global_sym);
+  return LIB$SET_LOGICAL (&envdsc, &strdsc, &lnmdsc, 0, 0);
 }
 
-execvp()
+delete_logical_name (varname)
+     char *varname;
 {
-  croak ("execvp");
+  struct dsc$descriptor_s envdsc =
+    {strlen (varname), DSC$K_DTYPE_T, DSC$K_CLASS_S, varname};
+  struct dsc$descriptor_s lnmdsc =
+    {7, DSC$K_DTYPE_T, DSC$K_CLASS_S, "LNM$JOB"};
+
+  return LIB$DELETE_LOGICAL (&envdsc, &lnmdsc);
 }
 
 ulimit()
@@ -2974,16 +3253,39 @@ setpriority()
 setpgrp()
 {}
 
+execvp()
+{
+  error ("execvp system call not implemented");
+}
+
+int
 rename (from, to)
-     char * from, * to;
+     char *from, *to;
 {
   int status;
-  struct dsc$descriptor_s from_dsc = {
-    strlen (from), DSC$K_DTYPE_T, DSC$K_CLASS_S, from},
-  to_dsc = {
-    strlen (to), DSC$K_DTYPE_T, DSC$K_CLASS_S, to};
+  struct FAB from_fab = cc$rms_fab, to_fab = cc$rms_fab;
+  struct NAM from_nam = cc$rms_nam, to_nam = cc$rms_nam;
+  char from_esn[NAM$C_MAXRSS];
+  char to_esn[NAM$C_MAXRSS];
 
-  status = LIB$RENAME_FILE (&from_dsc, &to_dsc);
+  from_fab.fab$l_fna = from;
+  from_fab.fab$b_fns = strlen (from);
+  from_fab.fab$l_nam = &from_nam;
+  from_fab.fab$l_fop = FAB$M_NAM;
+
+  from_nam.nam$l_esa = from_esn;
+  from_nam.nam$b_ess = sizeof from_esn;
+
+  to_fab.fab$l_fna = to;
+  to_fab.fab$b_fns = strlen (to);
+  to_fab.fab$l_nam = &to_nam;
+  to_fab.fab$l_fop = FAB$M_NAM;
+
+  to_nam.nam$l_esa = to_esn;
+  to_nam.nam$b_ess = sizeof to_esn;
+
+  status = SYS$RENAME (&from_fab, 0, 0, &to_fab);
+
   if (status & 1)
     return 0;
   else
@@ -3075,16 +3377,8 @@ croak (badfunc)
 long
 random ()
 {
-  static int initted = 0;
-  int bintim;
-
-  if (! initted)
-    {
-      initted = 1;
-      time (&bintim);
-      srand (getpid() + bintim);
-    }
-  return (rand ());
+  /* Arrange to return a range centered on zero.  */
+  return rand () - (1 << 30);
 }
 
 srandom (seed)
@@ -3092,16 +3386,3 @@ srandom (seed)
   srand (seed);
 }
 #endif /* VMS */
-
-#ifdef ATT3B
-
-int sign_extend_temp;
-
-#endif /* ATT3B */
-
-#ifdef amdahl_uts
-
-int sign_extend_temp;
-
-#endif /* amdahl_uts */
-

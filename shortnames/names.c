@@ -26,7 +26,7 @@ main (argc, argv)
   register int spitout;
   register int eating_comment;
 
-  if (argc = 2)
+  if (argc == 2)
     {
       size = atoi (argv[1]);
     }

@@ -250,13 +250,35 @@ store_in_keymap (keymap, idx, def)
 DEFUN ("copy-keymap", Fcopy_keymap, Scopy_keymap, 1, 1, 0,
   "Return a copy of the keymap KEYMAP.\n\
 The copy starts out with the same definitions of KEYMAP,\n\
-but changing either the copy or KEYMAP does not affect the other.")
+but changing either the copy or KEYMAP does not affect the other.\n\
+Any key definitions that are subkeymaps are recursively copied.")
   (keymap)
      Lisp_Object keymap;
 {
+  register Lisp_Object copy, tem;
+
   keymap = get_keymap (keymap);
-  return (XTYPE (keymap) == Lisp_Vector ? Fcopy_sequence (keymap)
-	  : Fcopy_alist (keymap));
+  if (XTYPE (keymap) == Lisp_Vector)
+    {
+      register int i;
+      copy = Fcopy_sequence (keymap);
+      for (i = 0; i < XVECTOR (copy)->size; i++)
+	if (tem = Fkeymapp (XVECTOR (copy)->contents[i]), !NULL (tem))
+	  XVECTOR (copy)->contents[i] = Fcopy_keymap (XVECTOR (copy)->contents[i]);
+    }
+  else
+    {
+      register Lisp_Object tail;
+      copy = Fcopy_alist (keymap); 
+      for (tail = copy; CONSP (tail); tail = XCONS (tail)->cdr)
+	{
+	  register Lisp_Object elt;
+	  elt = XCONS (tail)->car;
+	  if (CONSP (elt) && (tem = Fkeymapp (XCONS (elt)->cdr), !NULL (tem)))
+	    XCONS (elt)->cdr = Fcopy_keymap (XCONS (elt)->cdr);
+	}
+    }
+  return copy;
 }
 
 DEFUN ("define-key", Fdefine_key, Sdefine_key, 3, 3, 0,
@@ -264,9 +286,7 @@ DEFUN ("define-key", Fdefine_key, Sdefine_key, 3, 3, 0,
 KEYMAP is a keymap.  KEYS is a string meaning a sequence of keystrokes.\n\
 DEF is anything that can be a key's definition:\n\
  nil (means key is undefined in this keymap),\n\
- a Lisp function suitable for interactive calling\n\
-   (either a lambda-function that uses  interactive ,\n\
-    or built-in functions that are marked as interactive),\n\
+ a command (a Lisp function suitable for interactive calling)\n\
  a string (treated as a keyboard macro),\n\
  a keymap (to define a prefix key),\n\
  a list (KEYMAP . CHAR), meaning use definition of CHAR in map KEYMAP,\n\
@@ -325,7 +345,7 @@ definition, and may be any of the above (including another symbol).")
     }
 }
 
-/* Value is T if `keys' is too long; NIL if valid but has no definition. */
+/* Value is number if `keys' is too long; NIL if valid but has no definition. */
 
 DEFUN ("lookup-key", Flookup_key, Slookup_key, 2, 2, 0,
   "In keymap KEYMAP, look up key sequence KEYS.  Return the definition.\n\
@@ -925,7 +945,11 @@ describe_map_tree (startmap, partial, shadow)
 	       XSTRING (sh)->size == 0)
 	sh = shadow;
       else
-	sh = Flookup_key (shadow, Fcar (elt));
+	{
+	  sh = Flookup_key (shadow, Fcar (elt));
+	  if (XTYPE (sh) == Lisp_Int)
+	    sh = Qnil;
+	}
       if (NULL (sh) || !NULL (Fkeymapp (sh)))
 	describe_map (Fcdr (elt), Fcar (elt), partial, sh);
     }
@@ -962,8 +986,6 @@ describe_map (map, keys, partial, shadow)
 {
   register Lisp_Object keysdesc;
 
-  InsStr ("\n");
-
   if (!NULL (keys) && XSTRING (keys)->size > 0)
     keysdesc = Fkey_description (keys);
   else
@@ -989,6 +1011,7 @@ describe_alist (alist, elt_prefix, elt_describer, partial, shadow)
   int indent;
   Lisp_Object suppress;
   Lisp_Object kludge = Qnil;
+  int first = 1;
 
   if (partial)
     suppress = intern ("suppress-keymap");
@@ -997,7 +1020,7 @@ describe_alist (alist, elt_prefix, elt_describer, partial, shadow)
     {
       QUIT;
       tem1 = Fcar (Fcar (alist));
-      tem2 = Fcdr (Fcar (alist));
+      tem2 = get_keyelt (Fcdr (Fcar (alist)));
       if (NULL (tem2)) continue;
       if (XTYPE (tem2) == Lisp_Symbol && partial)
 	{
@@ -1016,6 +1039,12 @@ describe_alist (alist, elt_prefix, elt_describer, partial, shadow)
 	}
 
       indent = 0;
+
+      if (first)
+	{
+	  InsCStr ("\n", 1);
+	  first = 0;
+	}
 
       if (!NULL (elt_prefix))
 	{
@@ -1049,6 +1078,7 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
   int indent;
   Lisp_Object suppress;
   Lisp_Object kludge = Qnil;
+  int first = 1;
 
   if (partial)
     suppress = intern ("suppress-keymap");
@@ -1056,7 +1086,7 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
   for (i = 0; i < size; i++)
     {
       QUIT;
-      tem1 = XVECTOR (vector)->contents[i];
+      tem1 = get_keyelt (XVECTOR (vector)->contents[i]);
       if (NULL (tem1)) continue;      
       if (XTYPE (tem1) == Lisp_Symbol && partial)
 	{
@@ -1076,6 +1106,12 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 
       indent = 0;
 
+      if (first)
+	{
+	  InsCStr ("\n", 1);
+	  first = 0;
+	}
+
       if (!NULL (elt_prefix))
 	{
 	  InsCStr (XSTRING (elt_prefix)->data, XSTRING (elt_prefix)->size);
@@ -1087,7 +1123,9 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
       InsCStr (XSTRING (this)->data, XSTRING (this)->size);
       indent += XSTRING (this)->size;
 
-      while (i + 1 < size && (tem2 = XVECTOR (vector)->contents[i+1], EQ(tem2, tem1)))
+      while (i + 1 < size
+	     && (tem2 = get_keyelt (XVECTOR (vector)->contents[i+1]),
+		 EQ (tem2, tem1)))
 	i++;
 
       if (i != XINT (dummy))
@@ -1108,7 +1146,6 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 
       InsCStr ("                    ", indent<16 ? 16-indent : 1);
 
-      tem1 = XVECTOR (vector)->contents[i];
       (*elt_describer) (tem1);
       InsCStr ("\n", 1);
     }

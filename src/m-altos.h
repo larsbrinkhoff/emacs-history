@@ -1,5 +1,5 @@
 /* m-altos	Altos 3068 Unix System V Release 2
-   Copyright (C) 1985, 1986 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 

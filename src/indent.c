@@ -157,7 +157,7 @@ ToCol (col)
   last_known_column_modified = bf_modified;
 }
 
-DEFUN ("indent-to", Findent_to, Sindent_to, 1, 2, "nIndent to column: ",
+DEFUN ("indent-to", Findent_to, Sindent_to, 1, 2, "NIndent to column: ",
   "Indent from point with tabs and spaces until COLUMN is reached.\n\
 Always do at least MIN spaces even if that goes past COLUMN;\n\
 by default, MIN is zero.")
@@ -277,28 +277,21 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
      register int width;
      int hscroll, tab_offset;
 {
-  /* Note that cpos is CURRENT_VPOS << SHORTBITS + CURRENT_HPOS,
-     and the CURRENT_HPOS may be negative.  Use these macros
-     to extract the hpos or the vpos from cpos or anything like it.  */
-#ifdef celerity
-/* On the Celerity, the usual definition fails to work.
-   This definition (which ought to be equivalent) does work.  */
-#define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff))
-#endif
-#ifdef ATT3B
-/* 3b machines have the same problem.  */
-#define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff))
-#endif
-#ifdef ibmrt
-/* RT has the same problem.  */
-#define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff))
-#endif
-
-#ifndef HPOS
+/* Note that `cpos' is CURRENT_VPOS << SHORTBITS + CURRENT_HPOS,
+   and that CURRENT_HPOS may be negative.  Use these macros
+   to extract the hpos or the vpos from cpos or anything like it.
+ */
+#ifndef SHORT_CAST_BUG
 #define HPOS(VAR) (short) (VAR)
-#endif
+#else
+#define HPOS(VAR) (((VAR) & (1 << (SHORTBITS - 1)) \
+		    ? ~((1 << SHORTBITS) - 1) : 0) \
+		   | (VAR) & ((1 << SHORTBITS) - 1))
+/* #define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff)) */
+#endif /* SHORT_CAST_BUG */
 
 #define VPOS(VAR) (((VAR) >> SHORTBITS) + (HPOS (VAR) < 0))
+
 
 #ifndef TAHOE_REGISTER_BUG
   register
@@ -411,6 +404,9 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 
   return &val_compute_motion;
 }
+#undef HPOS
+#undef VPOS
+
 
 pos_tab_offset (w, pos)
      struct window *w;

@@ -50,7 +50,7 @@ CORE_ADDR
 parse_and_eval_address_1 (expptr)
      char **expptr;
 {
-  struct expression *expr = parse_c_1 (expptr, 0);
+  struct expression *expr = parse_c_1 (expptr, 0, 0);
   register CORE_ADDR addr;
   register struct cleanup *old_chain
     = make_cleanup (free_current_contents, &expr);
@@ -65,6 +65,24 @@ parse_and_eval (exp)
      char *exp;
 {
   struct expression *expr = parse_c_expression (exp);
+  register value val;
+  register struct cleanup *old_chain
+    = make_cleanup (free_current_contents, &expr);
+
+  val = evaluate_expression (expr);
+  do_cleanups (old_chain);
+  return val;
+}
+
+/* Parse up to a comma (or to a closeparen)
+   in the string EXPP as an expression, evaluate it, and return the value.
+   EXPP is advanced to point to the comma.  */
+
+value
+parse_to_comma_and_eval (expp)
+     char **expp;
+{
+  struct expression *expr = parse_c_1 (expp, 0, 1);
   register value val;
   register struct cleanup *old_chain
     = make_cleanup (free_current_contents, &expr);
@@ -161,7 +179,10 @@ evaluate_subexp (exp, pos, noside)
       nargs = exp->elts[pc + 1].longconst;
       argvec = (value *) alloca (sizeof (value) * (nargs + 1));
       for (tem = 0; tem <= nargs; tem++)
-	argvec[tem] = evaluate_subexp (exp, pos, noside);
+
+	/* Ensure that array expressions are coerced into pointer objects. */
+	argvec[tem] = evaluate_subexp_with_coercion (exp, pos, noside);
+
       if (noside == EVAL_SKIP)
 	goto nosideret;
       if (noside == EVAL_AVOID_SIDE_EFFECTS)
@@ -238,8 +259,8 @@ evaluate_subexp (exp, pos, noside)
       return value_add (arg1, arg2);
 
     case BINOP_SUB:
-      arg1 = evaluate_subexp (exp, pos, noside);
-      arg2 = evaluate_subexp (exp, pos, noside);
+      arg1 = evaluate_subexp_with_coercion (exp, pos, noside);
+      arg2 = evaluate_subexp_with_coercion (exp, pos, noside);
       if (noside == EVAL_SKIP)
 	goto nosideret;
       return value_sub (arg1, arg2);

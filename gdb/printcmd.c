@@ -1,5 +1,5 @@
-/* Print values for GNU debugger gdb.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+/* Print values for GNU debugger GDB.
+   Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -54,8 +54,17 @@ static CORE_ADDR last_examine_address;
 
 static value last_examine_value;
 
+/* Number of auto-display expression currently being displayed.
+   So that we can deleted it if we get an error or a signal within it.
+   -1 when not doing one.  */
+
+int current_display_number;
+
+static void do_one_display ();
+
 void do_displays ();
 void print_address ();
+void print_scalar_formatted ();
 
 START_FILE
 
@@ -95,6 +104,10 @@ decode_format (string_ptr, oformat, osize)
 	break;
     }
 
+  /* Make sure 'g' size is not used on integer types.  */
+  if (val.size == 'g' && val.format != 'f')
+    val.size = 'w';
+
   while (*p == ' ' || *p == '\t') p++;
   *string_ptr = p;
 
@@ -103,12 +116,15 @@ decode_format (string_ptr, oformat, osize)
 
 /* Print value VAL on stdout according to FORMAT, a letter or 0.
    Do not end with a newline.
-   0 means print VAL according to its own type.  */
+   0 means print VAL according to its own type.
+   SIZE is the letter for the size of datum being printed.
+   This is used to pad hex numbers so they line up.  */
 
 static void
-print_formatted (val, format)
+print_formatted (val, format, size)
      register value val;
      register char format;
+     char size;
 {
   register CORE_ADDR val_long;
   int len = TYPE_LENGTH (VALUE_TYPE (val));
@@ -116,25 +132,11 @@ print_formatted (val, format)
   if (VALUE_LVAL (val) == lval_memory)
     next_address = VALUE_ADDRESS (val) + len;
 
-  if (format && format != 's')
-    {
-      val_long = value_as_long (val);
-
-      /* If value is unsigned, truncate it in case negative.  */
-      if (format != 'd')
-	{
-	  if (len == sizeof (char))
-	    val_long &= (1 << 8 * sizeof(char)) - 1;
-	  else if (len == sizeof (short))
-	    val_long &= (1 << 8 * sizeof(short)) - 1;
-	}
-    }
-
   switch (format)
     {
     case 's':
       next_address = VALUE_ADDRESS (val)
-	+ value_print (value_addr (val), stdout);
+	+ value_print (value_addr (val), stdout, 0);
       break;
 
     case 'i':
@@ -142,8 +144,68 @@ print_formatted (val, format)
 	+ print_insn (VALUE_ADDRESS (val), stdout);
       break;
 
+    default:
+      if (format == 0
+	  || TYPE_CODE (VALUE_TYPE (val)) == TYPE_CODE_ARRAY
+	  || TYPE_CODE (VALUE_TYPE (val)) == TYPE_CODE_STRUCT
+	  || TYPE_CODE (VALUE_TYPE (val)) == TYPE_CODE_UNION)
+	value_print (val, stdout, format);
+      else
+	print_scalar_formatted (VALUE_CONTENTS (val), VALUE_TYPE (val),
+				format, size, stdout);
+    }
+}
+
+/* Print a scalar of data of type TYPE, pointed to in GDB by VALADDR,
+   according to letters FORMAT and SIZE on STREAM.
+   FORMAT may not be zero.  Formats s and i are not supported at this level.
+
+   This is how the elements of an array or structure are printed
+   with a format.  */
+
+void
+print_scalar_formatted (valaddr, type, format, size, stream)
+     char *valaddr;
+     struct type *type;
+     char format;
+     int size;
+     FILE *stream;
+{
+  long val_long;
+  int len = TYPE_LENGTH (type);
+
+  val_long = unpack_long (type, valaddr);
+
+  /* If value is unsigned, truncate it in case negative.  */
+  if (format != 'd')
+    {
+      if (len == sizeof (char))
+	val_long &= (1 << 8 * sizeof(char)) - 1;
+      else if (len == sizeof (short))
+	val_long &= (1 << 8 * sizeof(short)) - 1;
+    }
+
+  switch (format)
+    {
     case 'x':
-      printf ("0x%x", val_long);
+      switch (size)
+	{
+	case 'b':
+	  printf ("0x%02x", val_long);
+	  break;
+	case 'h':
+	  printf ("0x%04x", val_long);
+	  break;
+	case 0:		/* no size specified, like in print */
+	case 'w':
+	  printf ("0x%08x", val_long);
+	  break;
+	case 'g':
+	  printf ("0x%16x", val_long);
+	  break;
+	default:
+	  error ("Undefined output size \"%c\".", size);
+	}
       break;
 
     case 'd':
@@ -162,24 +224,30 @@ print_formatted (val, format)
       break;
 
     case 'a':
-      print_address (val_long, stdout);
+      print_address (val_long, stream);
       break;
 
     case 'c':
-      value_print (value_cast (builtin_type_char, val), stdout);
+      value_print (value_from_long (builtin_type_char, val_long), stream, 0);
       break;
 
     case 'f':
-      if (TYPE_LENGTH (VALUE_TYPE (val)) == sizeof (float))
-	VALUE_TYPE (val) = builtin_type_float;
-      if (TYPE_LENGTH (VALUE_TYPE (val)) == sizeof (double))
-	VALUE_TYPE (val) = builtin_type_double;
-      printf ("%g", value_as_double (val));
+      if (len == sizeof (float))
+	type = builtin_type_float;
+      if (len == sizeof (double))
+	type = builtin_type_double;
+#ifdef IEEE_FLOAT
+      if (is_nan (unpack_double (type, valaddr)))
+	{
+	  printf ("Nan");
+	  break;
+	}
+#endif
+      printf ("%g", unpack_double (type, valaddr));
       break;
 
     case 0:
-      value_print (val, stdout);
-      break;
+      abort ();
 
     default:
       error ("Undefined output format \"%c\".", format);
@@ -272,6 +340,7 @@ do_examine (fmt, addr)
   while (count > 0)
     {
       print_address (next_address, stdout);
+      fputc (':', stdout);
       for (i = maxelts;
 	   i > 0 && count > 0;
 	   i--, count--)
@@ -280,7 +349,7 @@ do_examine (fmt, addr)
 	  /* Note that this sets next_address for the next object.  */
 	  last_examine_address = next_address;
 	  last_examine_value = value_at (val_type, next_address);
-	  print_formatted (last_examine_value, format);
+	  print_formatted (last_examine_value, format, size);
 	}
       fputc ('\n', stdout);
       fflush (stdout);
@@ -335,7 +404,7 @@ print_command (exp)
   histindex = record_latest_value (val);
   printf ("$%d = ", histindex);
 
-  print_formatted (val, format);
+  print_formatted (val, format, fmt.size);
   printf ("\n");
 
   if (cleanup)
@@ -365,7 +434,7 @@ output_command (exp)
 
   val = evaluate_expression (expr);
 
-  print_formatted (val, format);
+  print_formatted (val, format, fmt.size);
 
   do_cleanups (old_chain);
 }
@@ -414,6 +483,7 @@ address_info (exp)
   switch (SYMBOL_CLASS (sym))
     {
     case LOC_CONST:
+    case LOC_CONST_BYTES:
       printf ("constant");
       break;
 
@@ -442,7 +512,8 @@ address_info (exp)
       break;
 
     case LOC_BLOCK:
-      printf ("a function at address 0x%x", val);
+      printf ("a function at address 0x%x",
+	      BLOCK_START (SYMBOL_BLOCK_VALUE (sym)));
       break;
     }
   printf (".\n");
@@ -603,8 +674,9 @@ static int display_number;
    Specify the expression.  */
 
 static void
-display_command (exp)
+display_command (exp, from_tty)
      char *exp;
+     int from_tty;
 {
   struct format_data fmt;
   register struct expression *expr;
@@ -642,6 +714,9 @@ display_command (exp)
   new->format = fmt;
   display_chain = new;
 
+  if (from_tty)
+    do_one_display (new);
+
   dont_repeat ();
 }
 
@@ -668,6 +743,35 @@ clear_displays ()
       display_chain = d->next;
       free (d);
     }
+}
+
+/* Delete the auto-display number NUM.  */
+
+void
+delete_display (num)
+     int num;
+{
+  register struct display *d1, *d;
+
+  if (display_chain->number == num)
+    {
+      d1 = display_chain;
+      display_chain = d1->next;
+      free_display (d1);
+    }
+  else
+    for (d = display_chain; ; d = d->next)
+      {
+	if (d->next == 0)
+	  error ("No display number %d.", num);
+	if (d->next->number == num)
+	  {
+	    d1 = d->next;
+	    d->next = d1->next;
+	    free_display (d1);
+	    break;
+	  }
+      }
 }
 
 /* Delete some values from the auto-display chain.
@@ -699,30 +803,53 @@ undisplay_command (args)
 
       num = atoi (p);
 
-      if (display_chain->number == num)
-	{
-	  d1 = display_chain;
-	  display_chain = d1->next;
-	  free_display (d1);
-	}
-      else
-	for (d = display_chain; ; d = d->next)
-	  {
-	    if (d->next == 0)
-	      error ("No display number %d.", num);
-	    if (d->next->number == num)
-	      {
-		d1 = d->next;
-		d->next = d1->next;
-		free_display (d1);
-		break;
-	      }
-	  }
+      delete_display (num);
 
       p = p1;
       while (*p == ' ' || *p == '\t') p++;
     }
   dont_repeat ();
+}
+
+/* Display a single auto-display.  */
+
+static void
+do_one_display (d)
+     struct display *d;
+{
+  current_display_number = d->number;
+
+  printf ("%d: ", d->number);
+  if (d->format.size)
+    {
+      printf ("x/");
+      if (d->format.count != 1)
+	printf ("%d", d->format.count);
+      printf ("%c", d->format.format);
+      if (d->format.format != 'i' && d->format.format != 's')
+	printf ("%c", d->format.size);
+      printf (" ");
+      print_expression (d->exp, stdout);
+      if (d->format.count != 1)
+	printf ("\n");
+      else
+	printf ("  ");
+      do_examine (d->format,
+		  value_as_long (evaluate_expression (d->exp)));
+    }
+  else
+    {
+      if (d->format.format)
+	printf ("/%c ", d->format.format);
+      print_expression (d->exp, stdout);
+      printf (" = ");
+      print_formatted (evaluate_expression (d->exp),
+		       d->format.format, d->format.size);
+      printf ("\n");
+    }
+
+  fflush (stdout);
+  current_display_number = -1;
 }
 
 /* Display all of the values on the auto-display chain.  */
@@ -733,36 +860,22 @@ do_displays ()
   register struct display *d;
 
   for (d = display_chain; d; d = d->next)
+    do_one_display (d);
+}
+
+/* Delete the auto-display which we were in the process of displaying.
+   This is done when there is an error or a signal.  */
+
+void
+delete_current_display ()
+{
+  if (current_display_number >= 0)
     {
-      printf ("%d: ", d->number);
-      if (d->format.size)
-	{
-	  printf ("x/");
-	  if (d->format.count != 1)
-	    printf ("%d", d->format.count);
-	  printf ("%c", d->format.format);
-	  if (d->format.format != 'i' && d->format.format != 's')
-	    printf ("%c", d->format.size);
-	  printf (" ");
-	  print_expression (d->exp, stdout);
-	  if (d->format.count != 1)
-	    printf ("\n");
-	  else
-	    printf ("  ");
-	  do_examine (d->format,
-		      value_as_long (evaluate_expression (d->exp)));
-	}
-      else
-	{
-	  if (d->format.format)
-	    printf ("/%c ", d->format.format);
-	  print_expression (d->exp, stdout);
-	  printf (" = ");
-	  print_formatted (evaluate_expression (d->exp), d->format.format);
-	  printf ("\n");
-	}
-      fflush (stdout);
+      delete_display (current_display_number);
+      fprintf (stderr, "Deleting display %d to avoid infinite recursion.\n",
+	       current_display_number);
     }
+  current_display_number = -1;
 }
 
 static void
@@ -797,9 +910,8 @@ print_variable_value (var, frame, stream)
      CORE_ADDR frame;
      FILE *stream;
 {
-  char *space = (char *) alloca (TYPE_LENGTH (SYMBOL_TYPE (var)));
   value val = read_var_value (var, frame);
-  value_print (val, stream);
+  value_print (val, stream, 0);
 }
 
 /* Print the arguments of a stack frame, given the function FUNC
@@ -816,6 +928,7 @@ print_frame_args (func, addr, num, stream)
 {
   struct block *b;
   int nsyms = 0;
+  int first = 1;
   register int i;
   register int last_offset = FRAME_ARGS_SKIP;
   register struct symbol *sym, *nextsym;
@@ -847,14 +960,18 @@ print_frame_args (func, addr, num, stream)
       /* Print any nameless args between the last arg printed
 	 and the next arg.  */
       if (last_offset != (SYMBOL_VALUE (sym) / sizeof (int)) * sizeof (int))
-	print_frame_nameless_args (addr, last_offset, SYMBOL_VALUE (sym),
-				   stream);
+	{
+	  print_frame_nameless_args (addr, last_offset, SYMBOL_VALUE (sym),
+				     stream);
+	  first = 0;
+	}
       /* Print the next arg.  */
       val = value_at (SYMBOL_TYPE (sym), addr + SYMBOL_VALUE (sym));
-      if (SYMBOL_VALUE (sym) > FRAME_ARGS_SKIP)
+      if (! first)
 	fprintf (stream, ", ");
       fprintf (stream, "%s=", SYMBOL_NAME (sym));
-      value_print (val, stream);
+      value_print (val, stream, 0);
+      first = 0;
       last_offset = SYMBOL_VALUE (sym) + TYPE_LENGTH (SYMBOL_TYPE (sym));
       /* Round up address of next arg to multiple of size of int.  */
       last_offset
@@ -883,9 +1000,176 @@ print_frame_nameless_args (argsaddr, start, end, stream)
     }
 }
 
+static void
+printf_command (arg)
+     char *arg;
+{
+  register char *f;
+  register char *s = arg;
+  char *string;
+  value *val_args;
+  int nargs = 0;
+  int allocated_args = 20;
+  char *arg_bytes;
+  char *argclass;
+  int i;
+  int argindex;
+  int nargs_wanted;
+
+  val_args = (value *) xmalloc (allocated_args * sizeof (value));
+
+  if (s == 0)
+    error_no_arg ("format-control string and values to print");
+
+  /* Skip white space before format string */
+  while (*s == ' ' || *s == '\t') s++;
+
+  /* A format string should follow, enveloped in double quotes */
+  if (*s++ != '"')
+    error ("Bad format string, missing '\"'.");
+
+  /* Parse the format-control string and copy it into the string STRING,
+     processing some kinds of escape sequence.  */
+
+  f = string = (char *) alloca (strlen (s) + 1);
+  while (*s != '"')
+    {
+      int c = *s++;
+      switch (c)
+	{
+	case '\0':
+	  error ("Bad format string, non-terminated '\"'.");
+	  /* doesn't return */
+
+	case '\\':
+	  switch (c = *s++)
+	    {
+	    case '\\':
+	      *f++ = '\\';
+	      break;
+	    case 'n':
+	      *f++ = '\n';
+	      break;
+	    case 't':
+	      *f++ = '\t';
+	      break;
+	    case 'r':
+	      *f++ = '\r';
+	      break;
+	    case '"':
+	      *f++ = '"';
+	      break;
+	    default:
+	      /* ??? TODO: handle other escape sequences */
+	      error ("Unrecognized \\ escape character in format string.");
+	    }
+	  break;
+
+	default:
+	  *f++ = c;
+	}
+    }
+
+  /* Skip over " and following space and comma.  */
+  s++;
+  *f++ = '\0';
+  while (*s == ' ' || *s == '\t') s++;
+
+  if (*s != ',' && *s != 0)
+    error ("Invalid argument syntax");
+
+  if (*s == ',') s++;
+  while (*s == ' ' || *s == '\t') s++;
+
+  /* Now scan the string for %-specs and see what kinds of args they want.
+     argclass[I] is set to 1 if the Ith arg should be a string.  */
+
+  argclass = (char *) alloca (strlen (s));
+  nargs_wanted = 0;
+  f = string;
+  while (*f)
+    if (*f++ == '%')
+      {
+	while (index ("0123456789.hlL-+ #", *f)) f++;
+	if (*f == 's')
+	  argclass[nargs_wanted++] = 1;
+	else if (*f != '%')
+	  argclass[nargs_wanted++] = 0;
+	f++;
+      }
+
+  /* Now, parse all arguments and evaluate them.
+     Store the VALUEs in VAL_ARGS.  */
+
+  while (*s != '\0')
+    {
+      char *s1;
+      if (nargs == allocated_args)
+	val_args = (value *) xrealloc (val_args,
+				       (allocated_args *= 2)
+				       * sizeof (value));
+      s1 = s;
+      val_args[nargs++] = parse_to_comma_and_eval (&s1);
+      s = s1;
+      if (*s == ',')
+	s++;
+    }
+
+  if (nargs != nargs_wanted)
+    error ("Wrong number of arguments for specified format-string");
+
+  /* Now lay out an argument-list containing the arguments
+     as doubles, integers and C pointers.  */
+
+  arg_bytes = (char *) alloca (sizeof (double) * nargs);
+  argindex = 0;
+  for (i = 0; i < nargs; i++)
+    {
+      if (argclass[i])
+	{
+	  char *str;
+	  int tem, j;
+	  tem = value_as_long (val_args[i]);
+
+	  /* This is a %s argument.  Find the length of the string.  */
+	  for (j = 0; ; j++)
+	    {
+	      char c;
+	      QUIT;
+	      read_memory (tem + j, &c, 1);
+	      if (c == 0)
+		break;
+	    }
+
+	  /* Copy the string contents into a string inside GDB.  */
+	  str = (char *) alloca (j + 1);
+	  read_memory (tem, str, j);
+	  str[j] = 0;
+
+	  /* Pass address of internal copy as the arg to vprintf.  */
+	  *((int *) &arg_bytes[argindex]) = (int) str;
+	  argindex += sizeof (int);
+	}
+      else if (VALUE_TYPE (val_args[i])->code == TYPE_CODE_FLT)
+	{
+	  *((double *) &arg_bytes[argindex]) = value_as_double (val_args[i]);
+	  argindex += sizeof (double);
+	}
+      else
+	{
+	  *((int *) &arg_bytes[argindex]) = value_as_long (val_args[i]);
+	  argindex += sizeof (int);
+	}
+    }
+
+  vprintf (string, arg_bytes);
+}
+
 static
 initialize ()
 {
+  current_display_number = -1;
+
   add_info ("address", address_info,
 	   "Describe where variable VAR is stored.");
 
@@ -928,6 +1212,9 @@ and examining is done as in the \"x\" command.\n\n\
 With no argument, display all currently requested auto-display expressions.\n\
 Use \"undisplay\" to cancel display requests previously made.");
 
+  add_com ("printf", class_vars, printf_command,
+	"printf \"printf format string\", arg1, arg2, arg3, ..., argn\n\
+This is useful for formatted output in user-defined commands.");
   add_com ("output", class_vars, output_command,
 	   "Like \"print\" but don't put in value history and don't print newline.\n\
 This is useful in user-defined commands.");

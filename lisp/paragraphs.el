@@ -19,6 +19,10 @@
 ;; and this notice must be preserved on all copies.
 
 
+(defvar paragraph-ignore-fill-prefix nil
+  "Non-nil means the paragraph commands are not affected by fill-prefix.
+This is desirable in modes where blank lines are the paragraph delimiters.")
+
 (defun forward-paragraph (&optional arg)
   "Move forward to end of paragraph.  With arg, do it arg times.
 A line which  paragraph-start  matches either separates paragraphs
@@ -29,6 +33,7 @@ to which the end of the previous line belongs, or the end of the buffer."
   (or arg (setq arg 1))
   (let* ((fill-prefix-regexp
 	  (and fill-prefix (not (equal fill-prefix ""))
+	       (not paragraph-ignore-fill-prefix)
 	       (regexp-quote fill-prefix)))
 	 (paragraph-separate
 	  (if fill-prefix-regexp
@@ -43,8 +48,8 @@ to which the end of the previous line belongs, or the end of the buffer."
 	(while (and (not (bobp)) (looking-at paragraph-separate))
 	  (forward-line -1))
 	(end-of-line)
-	;; Saerch back for line that starts or separates paragraphs.
-	(if (if (and fill-prefix (not (equal fill-prefix "")))
+	;; Search back for line that starts or separates paragraphs.
+	(if (if fill-prefix-regexp
 		;; There is a fill prefix; it overrides paragraph-start.
 		(progn
 		 (while (progn (beginning-of-line)
@@ -68,7 +73,7 @@ to which the end of the previous line belongs, or the end of the buffer."
       (while (prog1 (and (not (eobp))
 			 (looking-at paragraph-separate))
 		    (forward-line 1)))
-      (if (and fill-prefix (not (equal fill-prefix "")))
+      (if fill-prefix-regexp
 	  ;; There is a fill prefix; it overrides paragraph-start.
 	  (while (and (not (eobp))
 		      (not (looking-at paragraph-separate))

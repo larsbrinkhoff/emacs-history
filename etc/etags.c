@@ -43,31 +43,42 @@ the terms of Paragraph 1 above, provided that you also do the following:
 
     b) cause the whole of any work that you distribute or publish,
     that in whole or in part contains or is a derivative of this
-    program or any part thereof, to be freely distributed
-    and licensed to all third parties on terms identical to those
-    contained in this License Agreement (except that you may choose
-    to grant more extensive warranty protection to third parties,
-    at your option).
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
 
-  3. You may copy and distribute this program or any portion of it in
-compiled, executable or object code form under the terms of Paragraphs
-1 and 2 above provided that you do the following:
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
 
-    a) cause each such copy to be accompanied by the
-    corresponding machine-readable source code, which must
-    be distributed under the terms of Paragraphs 1 and 2 above; or,
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
 
-    b) cause each such copy to be accompanied by a
-    written offer, with no time limit, to give any third party
-    free (except for a nominal shipping charge) a machine readable
-    copy of the corresponding source code, to be distributed
-    under the terms of Paragraphs 1 and 2 above; or,
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
 
-    c) in the case of a recipient of this program in compiled, executable
-    or object code form (without the corresponding source code) you
-    shall cause copies you distribute to be accompanied by a copy
-    of the written offer of source code which you received along
-    with the copy you received.
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
 
   4. You may not copy, sublicense, distribute or transfer this program
 except as expressly provided under this License Agreement.  Any attempt
@@ -87,13 +98,9 @@ what you give them.   Help stamp out software-hoarding!  */
 /* Define the symbol ETAGS to make the program "etags",
  which makes emacs-style tag tables by default.
  Define CTAGS to make the program "ctags" compatible with the usual one.
- Default is ETAGS.  */
-
-#ifndef CTAGS
-#ifndef ETAGS
-#define ETAGS 1
-#endif
-#endif
+ Define neither one to get behavior that depends
+ on the name with which the program is invoked
+ (but we don't normally compile it that way).  */
 
 #define	reg	register
 #define	logical	char
@@ -142,7 +149,7 @@ long	charno;			/* current character number */
 long	linecharno;		/* character number of start of line */
 
 char    *curfile,		/* current input file name		*/
-	*outfile= "tags",	/* output file				*/
+	*outfile= 0,		/* output file				*/
 	*white	= " \f\t\n",	/* white chars				*/
 	*endtk	= " \t\n\"'#()[]{}=-+%*/&|^~!<>;,.:?",
 				/* token ending chars			*/
@@ -160,6 +167,9 @@ int	wflag;			/* -w: suppress warnings */
 int	vflag;			/* -v: create vgrind style index output */
 int	xflag;			/* -x: create cxref style output */
 int	eflag;			/* -e: emacs style output */
+
+/* Name this program was invoked with.  */
+char *progname;
 
 FILE	*inf,			/* ioptr for current input file		*/
 	*outf;			/* ioptr for tags file			*/
@@ -188,7 +198,7 @@ struct linebuffer lb, lb1;
 
 #ifdef VMS
 
-#include descrip
+#include <descrip.h>
 
 void
 system (buf)
@@ -210,23 +220,38 @@ main(ac,av)
 {
   char cmd[100];
   int i;
+  int fflag = 0;
+
+  progname = av[0];
 
 #ifdef ETAGS
   eflag = 1;
+#else
+#ifdef CTAGS
+  eflag = 0;
+#else
+  {
+    char *subname = rindex (progname, '/');
+    if (subname++ == NULL)
+      subname = progname;
+    eflag = ! strcmp(subname, "ctags");
+  }
+#endif
 #endif
 
   while (ac > 1 && av[1][0] == '-')
     {
-      eflag = 0;
       for (i=1; av[1][i]; i++)
 	{
 	  switch(av[1][i])
 	    {
 	    case 'B':
 	      searchar='?';
+	      eflag = 0;
 	      break;
 	    case 'F':
 	      searchar='/';
+	      eflag = 0;
 	      break;
 	    case 'a':
 	      aflag++;
@@ -234,11 +259,29 @@ main(ac,av)
 	    case 'e':
 	      eflag++;
 	      break;
+	    case 'f':
+	      if (fflag > 0)
+		{
+		  fprintf(stderr,
+			  "%s: -f flag may only be given once\n", progname);
+		  goto usage;
+		}
+	      fflag++, ac--; av++;
+	      if (ac <= 1 || av[1][0] == '\0')
+		{
+		  fprintf(stderr,
+			  "%s: -f flag must be followed by a filename\n",
+			  progname);
+		  goto usage;
+		}
+	      outfile = av[1];
+	      goto end_loop;
 	    case 't':
 	      tflag++;
 	      break;
 	    case 'u':
 	      uflag++;
+	      eflag = 0;
 	      break;
 	    case 'w':
 	      wflag++;
@@ -246,26 +289,31 @@ main(ac,av)
 	    case 'v':
 	      vflag++;
 	      xflag++;
+	      eflag = 0;
 	      break;
 	    case 'x':
 	      xflag++;
+	      eflag = 0;
 	      break;
 	    default:
 	      goto usage;
 	    }
 	}
+    end_loop: ;
       ac--; av++;
     }
 
   if (ac <= 1)
     {
     usage:
-      printf("Usage: ctags [-BFaetuwvx] file ...\n");
+      fprintf (stderr, "Usage: %s [-BFaetuwvx] [-f outfile] file ...\n", progname);
       exit(1);
     }
 
-  if (eflag)
-    outfile = "TAGS";
+  if (outfile == 0)
+    {
+      outfile = eflag ? "TAGS" : "tags";
+    }
 
   init();			/* set up boolean "functions"		*/
 
@@ -279,6 +327,7 @@ main(ac,av)
       outf = fopen (outfile, aflag ? "a" : "w");
       if (!outf)
 	{
+	  fprintf (stderr, "%s: ", progname);
 	  perror (outfile);
 	  exit (1);
 	}
@@ -322,6 +371,7 @@ main(ac,av)
   outf = fopen(outfile, aflag ? "a" : "w");
   if (outf == NULL)
     {
+      fprintf (stderr, "%s: ", outfile);
       perror(outfile);
       exit(1);
     }
@@ -382,6 +432,7 @@ find_entries (file)
 
   if ((inf=fopen(file,"r")) == NULL)
     {
+      fprintf (stderr, "%s: ", progname);
       perror(file);
       return;
     }
@@ -408,14 +459,16 @@ find_entries (file)
       return;
     }
   /* .scm or .sm or .scheme implies scheme source code */
-  if (cp && (!strcmp (cp + 1, "sm") ||
-	     !strcmp (cp + 1, "scm") ||
-	     !strcmp (cp + 1, "scheme") ||
-	     !strcmp (cp + 1, "SM") ||
-	     !strcmp (cp + 1, "SCM") ||
+  if (cp && (!strcmp (cp + 1, "sm")
+	     || !strcmp (cp + 1, "scm")
+	     || !strcmp (cp + 1, "scheme")
+	     || !strcmp (cp + 1, "t")
+	     || !strcmp (cp + 1, "sch")
+	     || !strcmp (cp + 1, "SM")
+	     || !strcmp (cp + 1, "SCM")
              /* The `SCM' or `scm' prefix with a version number */
-             (cp[-1] == 'm' && cp[-2] == 'c' && cp[-3] == 's') ||
-             (cp[-1] == 'M' && cp[-2] == 'C' && cp[-3] == 'S')))
+             || (cp[-1] == 'm' && cp[-2] == 'c' && cp[-3] == 's')
+             || (cp[-1] == 'M' && cp[-2] == 'C' && cp[-3] == 'S')))
     {
       Scheme_funcs(inf);
       fclose(inf);
@@ -455,7 +508,7 @@ pfnote (name, f, linestart, linelen, lno, cno)
 
   if ((np = (NODE *) malloc (sizeof (NODE))) == NULL)
     {
-      fprintf(stderr, "ctags: too many entries to sort\n");
+      fprintf(stderr, "%s: too many entries to sort\n", progname);
       put_entries(head);
       free_tree(head);
       head = NULL;
@@ -523,16 +576,16 @@ add_node(node, cur_node)
 	{
 	  if (!wflag)
 	    {
-	      fprintf(stderr,"Duplicate entry in file %s, line %d: %s\n",
-		      node->file,lineno,node->name);
+	      fprintf(stderr,"%s: Duplicate entry in file %s, line %d: %s\n",
+		      progname, node->file,lineno,node->name);
 	      fprintf(stderr,"Second entry ignored\n");
 	    }
 	  return;
 	}
       if (!cur_node->been_warned)
 	if (!wflag)
-	  fprintf(stderr,"Duplicate entry in files %s and %s: %s (Warning only)\n",
-		  node->file, cur_node->file, node->name);
+	  fprintf(stderr,"%s: Duplicate entry in files %s and %s: %s (Warning only)\n",
+		  progname, node->file, cur_node->file, node->name);
       cur_node->been_warned = TRUE;
       return;
     } 
@@ -1125,6 +1178,7 @@ L_getit()
  * look for (set! xyzzy
  */
 
+static get_scheme ();
 Scheme_funcs (fi)
      FILE *fi;
 {
@@ -1146,7 +1200,7 @@ Scheme_funcs (fi)
 	  while (!isspace(*dbp)) dbp++;
           /* Skip over open parens and white space */
           while (*dbp && (isspace(*dbp) || *dbp == '(')) dbp++;
-	  Scheme_getit();
+	  get_scheme ();
 	}
       if (dbp[0] == '(' && 
 	  (dbp[1] == 'S' || dbp[1] == 's') &&
@@ -1158,11 +1212,13 @@ Scheme_funcs (fi)
 	  while (!isspace(*dbp)) dbp++;
           /* Skip over white space */
           while (isspace(*dbp)) dbp++;
-	  Scheme_getit();
+	  get_scheme ();
 	}
     }
 }
-Scheme_getit()
+
+static
+get_scheme()
 {
   register char *cp;
   char c;
@@ -1206,8 +1262,8 @@ static char *TEX_defenv =
 struct TEX_tabent *TEX_decode_env (); 
 
 static char TEX_esc = '\\';
-static char TEX_opgrp = '\{';
-static char TEX_clgrp = '\}';
+static char TEX_opgrp = '{';
+static char TEX_clgrp = '}';
 
 /*
  * TeX/LaTeX scanning loop.
@@ -1264,7 +1320,7 @@ TEX_funcs (fi)
 }
 
 #define TEX_LESC '\\'
-#define TEX_SESC '\!'
+#define TEX_SESC '!'
 
 /* Figure out whether TeX's escapechar is '\\' or '!' and set grouping */
 /* chars accordingly. */
@@ -1281,14 +1337,14 @@ TEX_mode (f)
   if (c == TEX_LESC)
     {
       TEX_esc = TEX_LESC;
-      TEX_opgrp = '\{';
-      TEX_clgrp = '\}';
+      TEX_opgrp = '{';
+      TEX_clgrp = '}';
     } 
   else
     {
       TEX_esc = TEX_SESC;
-      TEX_opgrp = '\<';
-      TEX_clgrp = '\>';
+      TEX_opgrp = '<';
+      TEX_clgrp = '>';
     }
   rewind (f);
 }
@@ -1503,13 +1559,9 @@ fatal (s1, s2)
 error (s1, s2)
      char *s1, *s2;
 {
-#ifdef CTAGS
-  printf ("ctags: ");
-#else
-  printf ("etags: ");
-#endif
-  printf (s1, s2);
-  printf ("\n");
+  fprintf (stderr, "%s: ", progname);
+  fprintf (stderr, s1, s2);
+  fprintf (stderr, "\n");
 }
 
 /* Return a newly-allocated string whose contents concatenate those of s1, s2, s3.  */

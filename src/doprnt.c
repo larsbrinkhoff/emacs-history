@@ -24,10 +24,11 @@ and this notice must be preserved on all copies.  */
 #include <stdio.h>
 #include <ctype.h>
 
-doprnt (buffer, bufsize, format, args)
+doprnt (buffer, bufsize, format, nargs, args)
      char *buffer;
      register int bufsize;
      char *format;
+     int nargs;
      char **args;
 {
   int cnt = 0;			/* Number of arg to gobble next */
@@ -66,12 +67,16 @@ doprnt (buffer, bufsize, format, args)
 	    case 'd':
 	    case 'o':
 	    case 'x':
+	      if (cnt == nargs)
+		error ("Format string wants too many arguments");
 	      sprintf (tembuf, fmtcpy, args[cnt++]);
 	      /* Now copy tembuf into final output, truncating as nec.  */
 	      string = tembuf;
 	      goto doit;
 
 	    case 's':
+	      if (cnt == nargs)
+		error ("Format string wants too many arguments");
 	      string = args[cnt++];
 	      if (fmtcpy[1] != 's')
 		minlen = atoi (&fmtcpy[1]);
@@ -93,6 +98,8 @@ doprnt (buffer, bufsize, format, args)
 	      continue;
 
 	    case 'c':
+	      if (cnt == nargs)
+		error ("Format string wants too many arguments");
 	      *bufptr++ = (int) args[cnt++];
 	      bufsize--;
 	      continue;

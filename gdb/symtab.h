@@ -28,7 +28,7 @@ extern struct obstack *symbol_obstack;
 /* Some definitions and declarations to go with use of obstacks.  */
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free
-extern int xmalloc ();
+extern char *xmalloc ();
 extern void free ();
 
 /* gdb can know one or several symbol tables at the same time;
@@ -70,13 +70,12 @@ struct symtab
     char *filename;
     /* This component says how to free the data we point to:
        free_contents => do a tree walk and free each object.
-       free_explicit => free what free_ptr points at.
        free_nothing => do nothing; some other symtab will free
          the data this one uses.
        free_linetable => free just the linetable.  */
-    enum free_code {free_nothing, free_contents, free_explicit, free_linetable}
+    enum free_code {free_nothing, free_contents, free_linetable}
       free_code;
-    /* Pointer to storage to be freed, in case of free_explicit.  */
+    /* Pointer to one block storage to be freed, if nonzero.  */
     char *free_ptr;
     /* Total number of lines found in source file.  */
     int nlines;
@@ -91,6 +90,9 @@ struct symtab
     /* Offset within loader symbol table
        of first local symbol for this file.  */
     int ldsymoff;
+    /* Full name of file as found by searching the source path.
+       0 if not yet known.  */
+    char *fullname;
   };
 
 /* This is the list of struct symtab's that gdb considers current.  */
@@ -113,24 +115,6 @@ int current_source_line;
 #define LINELIST(symtab) (symtab)->linetable
 #define LINETABLE(symtab) (symtab)->linetable
 
-/* Recording the code addresses of source lines.  */
-
-struct linetable
-  {
-    int nitems;
-    int item[1];
-  };
-
-/* Each item is either minus a line number, or a program counter.
-   If it represents a line number, that is the line described by the next
-   program counter value.  If it is positive, it is the program
-   counter at which the code for the next line starts.
-
-   Consecutive lines can be recorded by program counter entries
-   with no line number entries between them.  Line number entries
-   are used when there are lines to skip with no code on them.
-   This is to make the table shorter.  */
-
 /* Macros normally used to access components of symbol table structures.  */
 
 #define BLOCKLIST_NBLOCKS(blocklist) (blocklist)->nblocks
@@ -148,10 +132,14 @@ struct linetable
 #define BLOCK_FUNCTION(bl) (bl)->function
 #define BLOCK_SUPERBLOCK(bl) (bl)->superblock
 
+/* Nonzero if symbols of block BL should be sorted alphabetically.  */
+#define BLOCK_SHOULD_SORT(bl) ((bl)->nsyms >= 40)
+
 #define SYMBOL_NAME(symbol) (symbol)->name
 #define SYMBOL_NAMESPACE(symbol) (symbol)->namespace
 #define SYMBOL_CLASS(symbol) (symbol)->class
 #define SYMBOL_VALUE(symbol) (symbol)->value.value
+#define SYMBOL_VALUE_BYTES(symbol) (symbol)->value.bytes
 #define SYMBOL_BLOCK_VALUE(symbol) (symbol)->value.block
 #define SYMBOL_TYPE(symbol) (symbol)->type
 

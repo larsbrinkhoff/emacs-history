@@ -167,7 +167,7 @@
   "*Keymap for Emacstool bindings.")
 
 (define-key suntool-map "gr" 'beginning-of-buffer)	; r7
-(define-key suntool-map "gR" 'backward-page)		; R9
+(define-key suntool-map "iR" 'backward-page)		; R9
 (define-key suntool-map "ir" 'scroll-down)		; r9
 (define-key suntool-map "kr" 'recenter)			; r11
 (define-key suntool-map "mr" 'end-of-buffer)		; r13
@@ -230,8 +230,8 @@
 
 (defun emacstool-init ()
   "Set up Emacstool window, if you know you are in an emacstool."
-  ;; Make sure sun-mouse and sun-mouse-fns are loaded.
-  (require 'sun-mouse-fns)
+  ;; Make sure sun-mouse and sun-fns are loaded.
+  (require 'sun-fns)
   (define-key ctl-x-map "\C-@" 'sun-mouse-handler)
 
   (if (< (sun-window-init) 0)

@@ -214,7 +214,7 @@ access_value_history (num)
 {
   register struct value_history_chunk *chunk;
   register int i;
-  register absnum = num;
+  register int absnum = num;
 
   if (absnum <= 0)
     absnum += value_history_count;
@@ -286,7 +286,7 @@ history_info (num_exp)
     {
       val = access_value_history (i);
       printf ("$%d = ", i);
-      value_print (val, stdout);
+      value_print (val, stdout, 0);
       printf ("\n");
     }
 }
@@ -397,7 +397,7 @@ use \"set\" as in \"set $foo = 5\" to define them.\n");
   for (var = internalvars; var; var = var->next)
     {
       printf ("$%s: ", var->name);
-      value_print (var->value, stdout);
+      value_print (var->value, stdout, 0);
       printf ("\n");
     }
 }
@@ -493,14 +493,20 @@ unpack_double (type, valaddr)
 
   if (code == TYPE_CODE_FLT)
     {
-      if (INVALID_FLOAT (valaddr))
+      if (INVALID_FLOAT (valaddr, len))
 	error ("Invalid floating value found in program.");
 
       if (len == sizeof (float))
 	return * (float *) valaddr;
 
       if (len == sizeof (double))
-	return * (double *) valaddr;
+	{
+	  /* Some machines require doubleword alignment for doubles.
+	     This code works on them, and on other machines.  */
+	  double temp;
+	  bcopy ((char *) valaddr, (char *) &temp, sizeof (double));
+	  return temp;
+	}
     }
   else if (code == TYPE_CODE_INT && nosign)
     {
@@ -679,7 +685,7 @@ value_from_double (type, num)
 /* Return the value that a function returning now
    would be returning to its caller, assuming its type is VALTYPE.
    RETBUF is where we look for what ought to be the contents
-   of registers 0 and 1.  This is because it is often
+   of the registers (in raw form).  This is because it is often
    desirable to restore old values to those registers
    after saving the contents of interest, and then call
    this function using the saved values.  */
@@ -687,17 +693,17 @@ value_from_double (type, num)
 value
 value_being_returned (valtype, retbuf)
      register struct type *valtype;
-     REGISTER_TYPE retbuf[];
+     char retbuf[REGISTER_BYTES];
 {
   register value val;
 
   if (TYPE_CODE (valtype) == TYPE_CODE_STRUCT
       || TYPE_CODE (valtype) == TYPE_CODE_UNION)
-    return value_at (valtype, retbuf[0]);
+    return value_at (valtype, EXTRACT_STRUCT_VALUE_ADDRESS (retbuf));
 
   val = allocate_value (valtype);
-  bcopy (retbuf, VALUE_CONTENTS (val),
-	 TYPE_LENGTH (valtype));
+  EXTRACT_RETURN_VALUE (valtype, retbuf, VALUE_CONTENTS (val));
+
   return val;
 }
 
@@ -710,7 +716,7 @@ set_return_value (val)
      value val;
 {
   register enum type_code code = TYPE_CODE (VALUE_TYPE (val));
-  REGISTER_TYPE retbuf[2];
+  char regbuf[REGISTER_BYTES];
   double dbuf;
   long lbuf;
 
@@ -721,16 +727,14 @@ set_return_value (val)
   if (code == TYPE_CODE_FLT)
     {
       dbuf = value_as_double (val);
-      bcopy (&dbuf, retbuf, sizeof dbuf);
+
+      STORE_RETURN_VALUE (VALUE_TYPE (val), &dbuf);
     }
   else
     {
       lbuf = value_as_long (val);
-      bcopy (&lbuf, retbuf, sizeof lbuf);
+      STORE_RETURN_VALUE (VALUE_TYPE (val), &lbuf);
     }
-
-  write_register (0, retbuf[0]);
-  write_register (1, retbuf[1]);
 }
 
 static

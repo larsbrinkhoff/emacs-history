@@ -28,7 +28,7 @@ and this notice must be preserved on all copies.  */
 #define	BIG	9999		/* 9999 good on VAXen.  For 16 bit machines
 				   use about 2000.... */
 
-char	*malloc (), *tgoto (), *getenv ();
+char *tgoto ();
 
 extern char *BC, *UP;
 

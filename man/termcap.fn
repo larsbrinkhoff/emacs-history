@@ -1,0 +1,11 @@
+\entry {tgetent}{3}{tgetent}
+\entry {tgetnum}{5}{tgetnum}
+\entry {tgetflag}{5}{tgetflag}
+\entry {tgetstr}{5}{tgetstr}
+\entry {tputs}{10}{tputs}
+\entry {ospeed}{10}{ospeed}
+\entry {PC}{10}{PC}
+\entry {tparam}{14}{tparam}
+\entry {tgoto}{15}{tgoto}
+\entry {UP}{16}{UP}
+\entry {BC}{16}{BC}

@@ -77,15 +77,16 @@ struct symbol_root
   int textrel;			/* Relocation for text addresses */
   int datarel;			/* Relocation for data addresses */
   int bssrel;			/* Relocation for bss addresses */
-  char *filename;		/* Name of source file compiled */
+  char *filename;		/* Name of main source file compiled */
   char *filedir;		/* Name of directory it was reached from */
-  struct blockvector *blockvector; /* Vector of all symbol naming blocks */
+  struct blockvector *blockvector; /* Vector of all symbol-naming blocks */
   struct typevector *typevector; /* Vector of all data types */
   enum language language;	/* Code identifying the language used */
   char *version;		/* Version info.  Not fully specified */
   char *compilation;		/* Compilation info.  Not fully specified */
   int databeg;			/* Address within the file of data start */
   int bssbeg;			/* Address within the file of bss start */
+  struct sourcevector *sourcevector; /* Vector of line-number info */
 };
 
 /* All data types of symbols in the compiled program
@@ -95,7 +96,7 @@ struct symbol_root
 
 struct typevector
 {
-  int length;
+  int length;			/* Number of types described */
   struct type *type[1];
 };
 
@@ -282,7 +283,7 @@ enum namespace
 enum address_class
 {
   LOC_UNDEF,		/* Not used; catches errors */
-  LOC_CONST,		/* Value is constant (enum type value name) */
+  LOC_CONST,		/* Value is constant int */
   LOC_STATIC,		/* Value is at fixed address */
   LOC_REGISTER,		/* Value is in register */
   LOC_ARG,		/* Value is at spec'd position in arglist */
@@ -293,11 +294,12 @@ enum address_class
   LOC_LABEL,		/* Value is address in the code */
   LOC_BLOCK,		/* Value is address of a `struct block'.
 			   Function names have this class.  */
-  LOC_EXTERNAL		/* Value is at address not in this compilation.
+  LOC_EXTERNAL,		/* Value is at address not in this compilation.
 			   This is used for .comm symbols
 			   and for extern symbols within functions.
 			   Inside GDB, this is changed to LOC_STATIC once the
 			   real address is obtained from a loader symbol.  */
+  LOC_CONST_BYTES	/* Value is a constant byte-sequence.   */
 };
 
 struct symbol
@@ -315,7 +317,42 @@ struct symbol
   union
     {
       long value;
-      struct block *block;
+      struct block *block;      /* for LOC_BLOCK */
+      char *bytes;		/* for LOC_CONST_BYTES */
     }
   value;
+};
+
+/* Source-file information.
+   This describes the relation between source files and line numbers
+   and addresses in the program text.  */
+
+struct sourcevector
+{
+  int length;			/* Number of source files described */
+  struct source *source[1];	/* Descriptions of the files */
+};
+
+/* Each item is either minus a line number, or a program counter.
+   If it represents a line number, that is the line described by the next
+   program counter value.  If it is positive, it is the program
+   counter at which the code for the next line starts.
+
+   Consecutive lines can be recorded by program counter entries
+   with no line number entries between them.  Line number entries
+   are used when there are lines to skip with no code on them.
+   This is to make the table shorter.  */
+
+struct linetable
+  {
+    int nitems;
+    int item[1];
+  };
+
+/* All the information on one source file.  */
+
+struct source
+{
+  char *name;			/* Name of file */
+  struct linetable contents;
 };

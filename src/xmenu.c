@@ -1,5 +1,5 @@
 /* X Communication module for terminals which understand the X protocol.
-   Copyright (C) 1986 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1988 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -36,14 +36,19 @@ and this notice must be preserved on all copies.
 static char *rcsid_GXMenu_c = "$Header: xmenu.c,v 1.6 86/08/26 17:23:26 rlk Exp $";
 #endif	lint
 
-#include "config.h"
-
 /* On 4.3 this loses if it comes after xterm.h.  */
 #include <signal.h>
+#include "config.h"
+#include "lisp.h"
+#include "window.h"
 
 /* This may include sys/types.h, and that somehow loses
    if this is not done before the other system files.  */
+#ifdef X11
+#include "x11term.h"
+#else
 #include "xterm.h"
+#endif
 
 /* Load sys/types.h if not already loaded.
    In some systems loading it twice is suicidal.  */
@@ -51,15 +56,15 @@ static char *rcsid_GXMenu_c = "$Header: xmenu.c,v 1.6 86/08/26 17:23:26 rlk Exp 
 #include <sys/types.h>
 #endif
 
-#include <stdio.h>
-#undef NULL
 #include "dispextern.h"
-#include <signal.h>
-#include <sys/time.h>
-#include <fcntl.h>
-#include "lisp.h"
-#include "window.h"
+
+#ifdef X11
+#include <X11/XMenu.h>
+#define X11ONLY(arg) arg,
+#else
 #include <X/XMenu.h>
+#define X11ONLY(arg)
+#endif
 
 #define min(x,y) (((x) < (y)) ? (x) : (y))
 #define max(x,y) (((x) > (y)) ? (x) : (y))
@@ -70,13 +75,25 @@ static char *rcsid_GXMenu_c = "$Header: xmenu.c,v 1.6 86/08/26 17:23:26 rlk Exp 
 #define TRUE 1
 #define FALSE 0
 #endif TRUE
+
+#ifdef X11
+extern XFontStruct *fontinfo;
+extern Display *XXdisplay;
+extern Window	XXwindow;
+extern int	XXfontw;
+extern int	XXfonth;
+int	XXscreen;
+#else
 extern int XXxoffset,XXyoffset;
 extern FontInfo *fontinfo;
+#define	ButtonRelease ButtonReleased
+#endif /* not X11 */
+
 extern int (*handler)();
-extern int request_sigio(), unrequest_sigio();
 
 /*************************************************************/
 
+/* Ignoring the args is easiest.  */
 XMenuQuit ()
 {
   error("Unknown XMenu error");
@@ -110,18 +127,21 @@ be the return value for that line (i. e. if it is selected.")
   Lisp_Object ltitle, selection;
   Lisp_Object XEmacsMenu();
   int i, j;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   check_xterm();
+#ifdef X11
+  XMenu_xpos = XXfontw * XINT(Fcar(arg));
+  XMenu_ypos = XXfonth * XINT(Fcar(Fcdr (arg)));
+#else
   XMenu_xpos = fontinfo->width * XINT(Fcar(arg));
   XMenu_ypos = fontinfo->height * XINT(Fcar(Fcdr (arg)));
   XMenu_xpos += XXxoffset;
   XMenu_ypos += XXyoffset;
+#endif
   ltitle = Fcar(menu);
   CHECK_STRING(ltitle,1);
   title = (char *) XSTRING(ltitle)->data;
-  /* title = (char *) xmalloc ((XSTRING(ltitle)->size + 1) * sizeof(char));
-     bcopy (XSTRING(ltitle)->data, title, XSTRING(ltitle)->size); */
   number_of_panes=list_of_panes(&obj_list, &menus, &names, &items, Fcdr(menu));
 #ifdef XDEBUG
   fprintf(stderr,"Panes= %d\n", number_of_panes);
@@ -134,12 +154,19 @@ be the return value for that line (i. e. if it is selected.")
 	}
     }
 #endif
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
+#ifdef X11
+  XSetErrorHandler(XMenuQuit);
+  selection = XEmacsMenu(XXwindow, XMenu_xpos, XMenu_ypos, names, menus,
+			 items, number_of_panes, obj_list ,title, &error_name);
+  XSetErrorHandler(handler);
+#else
   XErrorHandler(XMenuQuit);
   selection = XEmacsMenu(RootWindow, XMenu_xpos, XMenu_ypos, names, menus,
 			 items, number_of_panes, obj_list ,title, &error_name);
   XErrorHandler(handler);
-  sigsetmask (mask);
+#endif
+  UNBLOCK_INPUT ();
   /** fprintf(stderr,"selection = %x\n",selection);  **/
   if (selection != NUL)
     {				/* selected something */
@@ -183,15 +210,16 @@ XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
      char **error;		/* Error returned */
 {
   XMenu *GXMenu;
-  int last, panes, sel, lpane, status;
+  int last, panes, selidx, lpane, status;
   int lines, sofar;
   Lisp_Object entry;
   /* struct indices *datap, *datap_save; */
   char *datap;
   int ulx, uly, width, height;
+  int dispwidth, dispheight;
   
   *error = (char *) 0;		/* Initialize error pointer to null */
-  if ((GXMenu = XMenuCreate( parent, "emacs" )) == NUL )
+  if ((GXMenu = XMenuCreate( X11ONLY (XXdisplay) parent, "emacs" )) == NUL )
     {
       *error = "Can't create menu";
       /* error("Can't create menu"); */
@@ -207,24 +235,24 @@ XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
   for (panes = 0, sofar=0;panes < pane_cnt;sofar +=line_cnt[panes], panes++ )
     {
       /* create all the necessary panes */
-      if ((lpane= XMenuAddPane( GXMenu, pane_list[panes] , TRUE ))
+      if ((lpane= XMenuAddPane( X11ONLY (XXdisplay) GXMenu, pane_list[panes] , TRUE ))
 	  == XM_FAILURE)
 	{
-	  XMenuDestroy(GXMenu);
+	  XMenuDestroy(X11ONLY (XXdisplay) GXMenu);
 	  *error = "Can't create pane";
 	  /* error("Can't create pane"); */
 	  /* free(datap); */
 	  return(0);
 	}
-      for ( sel = 0; sel < line_cnt[panes] ; sel++ )
+      for ( selidx = 0; selidx < line_cnt[panes] ; selidx++ )
 	{
 	  /* add the selection stuff to the menus */
-	  /* datap[sel+sofar].pane = panes;
-	     datap[sel+sofar].line = sel; */
-	  if (XMenuAddSelection(GXMenu, lpane, 0, line_list[panes][sel], TRUE)
+	  /* datap[selidx+sofar].pane = panes;
+	     datap[selidx+sofar].line = selidx; */
+	  if (XMenuAddSelection(X11ONLY (XXdisplay) GXMenu, lpane, 0, line_list[panes][selidx], TRUE)
 	      == XM_FAILURE)
 	    {
-	      XMenuDestroy(GXMenu);
+	      XMenuDestroy(X11ONLY (XXdisplay) GXMenu);
 	      /* free(datap); */
 	      *error = "Can't add selection to menu";
 	      /* error ("Can't add selection to menu"); */
@@ -233,40 +261,48 @@ XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
 	}
     }
   /* all set and ready to fly */
-  XMenuRecompute(GXMenu);
-  startx = min(startx, DisplayWidth());
-  starty = min(starty, DisplayHeight());
+  XMenuRecompute(X11ONLY (XXdisplay) GXMenu);
+#ifdef X11
+  XXscreen = DefaultScreen(XXdisplay);
+  width = DisplayWidth(XXdisplay, XXscreen);
+  height = DisplayHeight(XXdisplay, XXscreen);
+#else
+  dispwidth = DisplayWidth();
+  dispheight = DisplayHeight();
+#endif
+  startx = min(startx, dispwidth);
+  starty = min(starty, dispheight);
   startx = max(startx, 1);
   starty = max(starty, 1);
-  XMenuLocate(GXMenu, 0, 0, startx, starty, &ulx, &uly, &width, &height);
-  if (ulx+width > DisplayWidth())
+  XMenuLocate(X11ONLY (XXdisplay) GXMenu, 0, 0, startx, starty, &ulx, &uly, &width, &height);
+  if (ulx+width > dispwidth)
     {
-      startx -= (ulx + width) - DisplayWidth();
-      ulx = DisplayWidth() - width;
+      startx -= (ulx + width) - dispwidth;
+      ulx = dispwidth - width;
     }
-  if (uly+height > DisplayHeight())
+  if (uly+height > dispheight)
     {
-      starty -= (uly + height) - DisplayHeight();
-      uly = DisplayHeight() - height;
+      starty -= (uly + height) - dispheight;
+      uly = dispheight - height;
     }
   if (ulx < 0) startx -= ulx;
   if (uly < 0) starty -= uly;
     
   XMenuSetFreeze(GXMenu, TRUE);
-  panes = sel = 0;
+  panes = selidx = 0;
   
-  status = XMenuActivate(GXMenu, &panes, &sel, startx, starty,
-			 ButtonReleased, &datap);
+  status = XMenuActivate(X11ONLY (XXdisplay) GXMenu, &panes, &selidx,
+			 startx, starty, ButtonRelease, &datap);
   switch (status ) {
   case XM_SUCCESS:
 #ifdef XDEBUG
-    fprintf (stderr, "pane= %d line = %d\n", panes, sel);
+    fprintf (stderr, "pane= %d line = %d\n", panes, selidx);
 #endif
-    entry = item_list[panes][sel];
+    entry = item_list[panes][selidx];
     break;
   case XM_FAILURE:
     /*free (datap_save); */
-    XMenuDestroy(GXMenu);
+    XMenuDestroy(X11ONLY (XXdisplay) GXMenu);
     *error = "Can't activate menu";
     /* error("Can't activate menu"); */
   case XM_IA_SELECT:
@@ -274,7 +310,7 @@ XEmacsMenu(parent, startx, starty, line_list, pane_list, line_cnt,
     entry = Qnil;
     break;
   }
-  XMenuDestroy(GXMenu);
+  XMenuDestroy(X11ONLY (XXdisplay) GXMenu);
   /*free(datap_save);*/
   return(entry);
 }
@@ -361,3 +397,4 @@ list_of_items (vector,names,pane)  /* get list from emacs and put to vector */
     }
   return i;
 }
+

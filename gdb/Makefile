@@ -1,3 +1,8 @@
+# On HPUX, you need to add -Ihpux to CFLAGS.
+# The headers in the subdir hpux override system headers
+# and tell GDB to use BSD executable file format.
+# You also need to add -lGNU to CLIBS, and perhaps CC = gcc.
+
 # -I. for "#include <obstack.h>"
 CFLAGS = -g -I.
 # NOTE!!! -O  may FAIL TO WORK!  See initialize.h for some weird hacks.
@@ -5,14 +10,16 @@ CFLAGS = -g -I.
 # define this to be "obstack.o" if you don't have the obstack library installed
 # you must at the same time define OBSTACK1 as "obstack.o" 
 # so that the dependencies work right.
-OBSTACK = -lobstack
-OBSTACK1 =
+OBSTACK = obstack.o
+OBSTACK1 = obstack.o
+
+CLIBS = $(OBSTACK)
 
 STARTOBS = main.o firstfile.o
 
 OBS = blockframe.o breakpoint.o findvar.o stack.o source.o \
     values.o eval.o valops.o valarith.o valprint.o printcmd.o \
-    symtab.o symmisc.o dbxread.o infcmd.o infrun.o
+    symtab.o symmisc.o coffread.o dbxread.o infcmd.o infrun.o remote.o
 
 TSOBS = core.o inflow.o
 
@@ -26,14 +33,19 @@ TSSTART = /lib/crt0.o
 NTSSTART = kdb-start.o
 
 gdb : $(STARTOBS) $(OBS) $(TSOBS) $(ENDOBS) $(OBSTACK1)
-	ld -o gdb $(TSSTART) $(STARTOBS) $(OBS) $(TSOBS) $(ENDOBS) -lc -lg $(OBSTACK)
+	$(CC) $(LDFLAGS) -o gdb $(STARTOBS) $(OBS) $(TSOBS) $(ENDOBS) $(CLIBS)
+
+xgdb : $(STARTOBS) $(OBS) $(TSOBS) xgdb.o $(ENDOBS) $(OBSTACK1)
+	$(CC) $(LDFLAGS) -o xgdb $(STARTOBS) $(OBS) $(TSOBS) xgdb.o $(ENDOBS) \
+           -lXaw -lXt -lX11 $(CLIBS)
 
 kdb : $(NTSSTART) $(STARTOBS) $(OBS) $(NTSOBS) $(ENDOBS) $(OBSTACK1)
-	ld -o kdb $(NTSSTART) $(STARTOBS) $(OBS) $(NTSOBS) $(ENDOBS) -lc -lg $(OBSTACK)
+	ld -o kdb $(NTSSTART) $(STARTOBS) $(OBS) $(NTSOBS) $(ENDOBS) -lc $(CLIBS)
 
 blockframe.o : blockframe.c defs.h initialize.h param.h symtab.h frame.h
 breakpoint.o : breakpoint.c defs.h initialize.h param.h symtab.h frame.h
 command.o : command.c command.h
+coffread.o : coffread.c defs.h initialize.h param.h symtab.h
 core.o : core.c defs.h initialize.h param.h
 dbxread.o : dbxread.c defs.h initialize.h param.h symtab.h
 environ.o : environ.c environ.h
@@ -43,7 +55,7 @@ expread.tab.c : expread.y
 	yacc expread.y
 	mv y.tab.c expread.tab.c
 expread.o : expread.tab.c defs.h param.h symtab.h frame.h expression.h
-	cc -c ${CFLAGS} expread.tab.c
+	$(CC) -c ${CFLAGS} expread.tab.c
 	mv expread.tab.o expread.o
 eval.o : eval.c defs.h initialize.h symtab.h value.h expression.h
 findvar.o : findvar.c defs.h initialize.h param.h symtab.h frame.h value.h
@@ -59,6 +71,7 @@ main.o : main.c defs.h command.h
 pinsn.o : pinsn.c defs.h param.h symtab.h \
     vax-opcode.h vax-pinsn.c m68k-opcode.h m68k-pinsn.c
 printcmd.o : printcmd.c defs.h initialize.h param.h symtab.h value.h expression.h
+remote.o : remote.c defs.h initialize.h param.h frame.h inferior.h
 source.o : source.c defs.h initialize.h symtab.h
 stack.o : stack.c defs.h initialize.h param.h symtab.h frame.h
 standalone.o : standalone.c defs.h initialize.h param.h symtab.h frame.h inferior.h wait.h
@@ -70,5 +83,7 @@ valops.o : valops.c defs.h initialize.h param.h symtab.h value.h
 valprint.o : valprint.c defs.h initialize.h symtab.h value.h
 values.o : values.c defs.h initialize.h param.h symtab.h value.h
 version.o : version.c
+xgdb.o : xgdb.c defs.h initialize.h param.h symtab.h frame.h
+	$(CC) -c $(CFLAGS) xgdb.c -o $@
 
 obstack.o : obstack.c

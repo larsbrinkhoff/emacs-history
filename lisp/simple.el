@@ -57,7 +57,7 @@ With argument, join this line to following line."
   (interactive "*P")
   (beginning-of-line)
   (if arg (forward-line 1))
-  (if (not (bobp))
+  (if (eq (preceding-char) ?\n)
       (progn
 	(delete-region (point) (1- (point)))
 	(fixup-whitespace))))
@@ -175,7 +175,7 @@ and KILLP is t if prefix arg is was specified."
 	    (let ((col (current-column)))
 	      (forward-char -1)
 	      (setq col (- col (current-column)))
-	      (insert (substring "        " 0 col))
+	      (insert-char ?\ col)
 	      (delete-char 1)))
 	(forward-char -1)
 	(setq count (1- count)))))
@@ -271,25 +271,21 @@ Don't use this in Lisp programs!
 	 (col (current-column)))
     (if (= pos end)
 	(if (or (/= beg 1) (/= end (1+ total)))
-	    (message "point=%d of %d(%d%%) <%d - %d>  x=%d %s"
+	    (message "point=%d of %d(%d%%) <%d - %d>  column %d %s"
 		     pos total percent beg end col hscroll)
-	  (message "point=%d of %d(%d%%)  x=%d %s"
+	  (message "point=%d of %d(%d%%)  column %d %s"
 		   pos total percent col hscroll))
       (if (or (/= beg 1) (/= end (1+ total)))
-	  (message "Char: %s (0%o)  point=%d of %d(%d%%) <%d - %d>  x=%d %s"
+	  (message "Char: %s (0%o)  point=%d of %d(%d%%) <%d - %d>  column %d %s"
 		   (single-key-description char) char pos total percent beg end col hscroll)
-	(message "Char: %s (0%o)  point=%d of %d(%d%%)  x=%d %s"
+	(message "Char: %s (0%o)  point=%d of %d(%d%%)  column %d %s"
 		 (single-key-description char) char pos total percent col hscroll)))))
-
-(defconst fundamental-mode-map (make-sparse-keymap)
-  "Local keymap for fundamental mode.  Empty unless changed by the user.")
 
 (defun fundamental-mode ()
   "Major mode not specialized for anything in particular.
 Other major modes are defined by comparison with this one."
   (interactive)
-  (kill-all-local-variables)
-  (use-local-map fundamental-mode-map))
+  (kill-all-local-variables))
 
 (put 'eval-expression 'disabled t)
 
@@ -312,7 +308,7 @@ the minibuffer, then read and evaluate the result."
 (defvar repeat-complex-command-map (copy-alist minibuffer-local-map))
 (define-key repeat-complex-command-map "\ep" 'previous-complex-command)
 (define-key repeat-complex-command-map "\en" 'next-complex-command)
-(defun repeat-complex-command (arg)
+(defun repeat-complex-command (repeat-complex-command-arg)
   "Edit and re-evaluate last complex command, or ARGth from last.
 A complex command is one which used the minibuffer.
 The command is placed in the minibuffer as a Lisp form for editing.
@@ -322,7 +318,7 @@ it is added to the front of the command history.
 Whilst editing the command, the following commands are available:
 \\{repeat-complex-command-map}"
   (interactive "p")
-  (let ((elt (nth (1- arg) command-history))
+  (let ((elt (nth (1- repeat-complex-command-arg) command-history))
 	newcmd)
     (if elt
 	(progn
@@ -340,14 +336,16 @@ Whilst editing the command, the following commands are available:
 (defun next-complex-command (n)
   "Inserts the next element of `command-history' into the minibuffer."
   (interactive "p")
-  (let ((narg (min (max 1 (- arg n)) (length command-history))))
-    (if (= arg narg)
-	(error (if (= arg 1)
+  (let ((narg (min (max 1 (- repeat-complex-command-arg n))
+		   (length command-history))))
+    (if (= repeat-complex-command-arg narg)
+	(error (if (= repeat-complex-command-arg 1)
 		   "No following item in command history"
 		 "No preceeding item command history"))
       (erase-buffer)
-      (setq arg narg)
-      (insert (prin1-to-string (nth (1- arg) command-history)))
+      (setq repeat-complex-command-arg narg)
+      (insert (prin1-to-string (nth (1- repeat-complex-command-arg)
+				    command-history)))
       (goto-char (point-min)))))
 
 (defun previous-complex-command (n)
@@ -479,7 +477,7 @@ Used more than once, this command multiplies the argument by 4 each time."
 (defun negative-argument (arg)
   "Begin a negative numeric argument for the next command."
   (interactive "P")
-  (digit-argument arg))
+  (prefix-arg-internal ?- nil arg))
 
 (defun forward-to-indentation (arg)
   "Move forward ARG lines and position at first nonblank character."
@@ -494,7 +492,7 @@ Used more than once, this command multiplies the argument by 4 each time."
   (skip-chars-forward " \t"))
 
 (defun kill-line (&optional arg)
-  "Kill the rest of the current line; before a newline, kill the newline.
+  "Kill the rest of the current line; if no nonblanks there, kill thru newline.
 With prefix argument, kill that many lines from point.
 Negative arguments kill lines backward.
 
@@ -533,7 +531,7 @@ a number counts as a prefix arg."
   "Kill between point and mark.
 The text is deleted but saved in the kill ring.
 The command \\[yank] can retrieve it from there.
-/(If you want to kill and then yank immediately, use \\[copy-region-as-kill].)
+\(If you want to kill and then yank immediately, use \\[copy-region-as-kill].)
 
 This is the primitive for programs to kill text (as opposed to deleting it).
 Supply two arguments, character numbers indicating the stretch of text
@@ -793,7 +791,7 @@ and more reliable (no dependence on goal column, etc.)."
 
 (defun previous-line (arg)
   "Move cursor vertically up ARG lines.
-If there is no character in the target line exactly under the current column,
+If there is no character in the target line exactly over the current column,
 the cursor is positioned after the character in that line which spans this
 column, or at the end of the line if it is not long enough.
 
@@ -962,7 +960,9 @@ Setting this variable automatically makes it local to the current buffer.")
   "*String to insert to start a new comment, or nil if no comment syntax defined.")
 
 (defconst comment-start-skip nil
-  "*Regexp to match the start of a comment plus everything up to its body.")
+  "*Regexp to match the start of a comment plus everything up to its body.
+If there are any \\(...\\) pairs, the comment delimiter text is held to begin
+at the place matched by the close of the first pair.")
 
 (defconst comment-end ""
   "*String to insert to end a new comment.
@@ -983,15 +983,31 @@ given the character number it starts at.")
 	   cpos indent begpos)
       (if (re-search-forward comment-start-skip eolpos 'move)
 	  (progn (setq cpos (point-marker))
-		 (goto-char (match-beginning 0))))
+		 ;; Find the start of the comment delimiter.
+		 ;; If there were paren-pairs in comment-start-skip,
+		 ;; position at the end of the first pair.
+		 (if (match-end 1)
+		     (goto-char (match-end 1))
+		   ;; If comment-start-skip matched a string with internal
+		   ;; whitespace (not final whitespace) then the delimiter
+		   ;; start at the end of that whitespace.
+		   ;; Otherwise, it starts at the beginning of what was matched.
+		   (skip-chars-backward " \t" (match-beginning 0))
+		   (skip-chars-backward "^ \t" (match-beginning 0)))))
       (setq begpos (point))
-      (setq indent (funcall comment-indent-hook))
-      (skip-chars-backward " \t")
-      (delete-region (point) begpos)
-      (indent-to indent)
+      ;; Compute desired indent.
+      (if (= (current-column)
+	     (setq indent (funcall comment-indent-hook)))
+	  (goto-char begpos)
+	;; If that's different from current, change it.
+	(skip-chars-backward " \t")
+	(delete-region (point) begpos)
+	(indent-to indent))
+      ;; An existing comment?
       (if cpos 
 	  (progn (goto-char cpos)
 		 (set-marker cpos nil))
+	;; No, insert one.
 	(insert comment-start)
 	(save-excursion
 	  (insert comment-end))))))
@@ -1102,21 +1118,34 @@ Setting this variable automatically makes it local to the current buffer.")
 on new line, with no new terminator or starter.")
 
 (defun indent-new-comment-line ()
-  "Break line at point and indent, continuing comment if presently within one."
+  "Break line at point and indent, continuing comment if presently within one.
+The body of the continued comment is indented under the previous comment line."
   (interactive "*")
   (let (comcol comstart)
     (skip-chars-backward " \t")
-    (insert ?\n)
     (delete-region (point)
 		   (progn (skip-chars-forward " \t")
 			  (point)))
+    (insert ?\n)
     (save-excursion
-      (if (and comment-start
+      (if (and comment-start-skip
 	       (let ((opoint (point)))
 		 (forward-line -1)
 		 (re-search-forward comment-start-skip opoint t)))
-	  (progn
-	    (goto-char (match-beginning 0))
+	  ;; The old line is a comment.
+	  ;; Set WIN to the pos of the comment-start.
+	  ;; But if the comment is empty, look at preceding lines
+	  ;; to find one that has a nonempty comment.
+	  (let ((win (match-beginning 0)))
+	    (while (and (eolp) (not (bobp))
+			(let (opoint)
+			  (beginning-of-line)
+			  (setq opoint (point))
+			  (forward-line -1)
+			  (re-search-forward comment-start-skip opoint t)))
+	      (setq win (match-beginning 0)))
+	    ;; Indent this line like what we found.
+	    (goto-char win)
 	    (setq comcol (current-column))
 	    (setq comstart (buffer-substring (point) (match-end 0))))))
     (if comcol
@@ -1220,11 +1249,11 @@ when close-paren is inserted.")
 	   (and blinkpos (/= (char-syntax (char-after blinkpos))
 			     ?\$)
 		(setq mismatch
-		      (/= last-input-char
+		      (/= (char-after (1- oldpos))
 			  (logand (lsh (aref (syntax-table)
 					     (char-after blinkpos))
 				       -8)
-				  ?\177))))
+				  255))))
 	   (if mismatch (setq blinkpos nil))
 	   (if blinkpos
 	       (progn

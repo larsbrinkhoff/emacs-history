@@ -19,6 +19,8 @@ file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  */
 
 
+dot = .
+/* on Xenix, replace double-dot below with $(dot)$(dot) */
 lispdir = ../lisp/
 etcdir = ../etc/
 shortnamesdir = ../shortnames/
@@ -66,6 +68,10 @@ cppdir = ../cpp/
 #define C_SWITCH_MACHINE
 #endif
 
+#ifndef C_SWITCH_SYSTEM
+#define C_SWITCH_SYSTEM
+#endif
+
 #ifndef START_FILES
 #ifdef NO_REMAP
 #define START_FILES pre-crt0.o /lib/crt0.o
@@ -98,6 +104,7 @@ STARTFILES = START_FILES
 STARTFLAGS = -T LD_TEXT_START_ADDR -e LD_TEXT_START_ADDR
 #endif
 
+LD=ld
 LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE
 
 /* Figure out whether the system cpp can handle long names.
@@ -121,7 +128,7 @@ LOCALCPP= localcpp
 SHORT= shortnames
 #endif /* SHORTNAMES */
 
-CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE
+CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
 /* DO NOT use -R.  There is a special hack described in lastfile.c
    which is used instead.  Some initialized data areas are modified
    at initial startup, then labeled as part of the text area when
@@ -133,20 +140,42 @@ CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE
 /* -Demacs is needed to make some files produce the
    correct version for use in Emacs.  */
 
+#ifndef LIBX10_MACHINE
+#define LIBX10_MACHINE
+#endif
+
+#ifndef LIBX11_MACHINE
+#define LIBX11_MACHINE
+#endif
 
 #ifdef HAVE_X_WINDOWS
+#ifdef X11
+#ifdef HAVE_X_MENU
+XOBJ = x11term.o x11fns.o xmenu.o
+LIBX = -lXMenu -loldX -lX11 LIBX11_MACHINE
+#else
+XOBJ = x11term.o x11fns.o
+LIBX = -lX11 LIBX11_MACHINE
+#endif
+#else /* not X11 */
 #ifdef HAVE_X_MENU
 XOBJ= xterm.o xfns.o xmenu.o
-LIBX= -lXMenu -lX
+LIBX= -lXMenu -lX LIBX10_MACHINE
 #else
 XOBJ= xterm.o xfns.o
-LIBX= -lX
-#endif
+LIBX= -lX LIBX10_MACHINE
+#endif /* not HAVE_X_MENU */
+#endif /* not X11 */
 #endif /* HAVE_X_WINDOWS */
 
 #ifdef MAINTAIN_ENVIRONMENT
 environobj = environ.o
 #endif MAINTAIN_ENVIRONMENT
+
+/* Allow config.h to specify a replacement file for unexec.c.  */
+#ifndef UNEXEC
+#define UNEXEC unexec.o
+#endif
 
 /* lastfile must follow all files
    whose initialized data areas should be dumped as pure by dump-emacs. */
@@ -158,7 +187,7 @@ obj=    dispnew.o scroll.o xdisp.o window.o \
 	cmds.o casefiddle.o indent.o search.o regex.o undo.o \
 	alloc.o data.o doc.o editfns.o callint.o \
 	eval.o fns.o print.o lread.o \
-	abbrev.o syntax.o unexec.o mocklisp.o bytecode.o \
+	abbrev.o syntax.o UNEXEC mocklisp.o bytecode.o \
 	process.o callproc.o $(environobj) \
 	doprnt.o
 
@@ -240,12 +269,13 @@ ${etcdir}DOC: ${etcdir}make-docfile ${obj} ${lisp}
 ${etcdir}make-docfile:
 	cd ${etcdir}; make ${MFLAGS} make-docfile
 
-#if defined(sequent)	/* for parallel make */
-PARALLEL=&
-#endif /* sequent */
+/* Some systems define this to cause parallel Make-ing.  */
+#ifndef MAKE_PARALLEL
+#define MAKE_PARALLEL
+#endif
 
-temacs: $(PARALLEL) $(LOCALCPP) $(SHORT) $(STARTFILES) ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE
-	ld ${STARTFLAGS} ${LDFLAGS} -o temacs ${STARTFILES} ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE ${LIBES}
+temacs: MAKE_PARALLEL $(LOCALCPP) $(SHORT) $(STARTFILES) ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE
+	$(LD) ${STARTFLAGS} ${LDFLAGS} -o temacs ${STARTFILES} ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE ${LIBES}
 
 /* These are needed for C compilation, on the systems that need them */
 #ifdef NEED_CPP
@@ -263,7 +293,7 @@ localcpp:
 	-cp /lib/c2 localc2
 	cp /bin/as localas
 #else /* not NEED_CPP */
-CPP = cc -E
+CPP = $(CC) -E
 #endif /* need NEED_CPP */
 
 #ifdef SHORTNAMES
@@ -300,9 +330,12 @@ alloca.o : alloca.s config.h
 /* remove any ^L, blank lines, and preprocessor comments,
    since some assemblers barf on them */
 	sed -e 's///' -e 's/^#.*//' | \
-	sed -n -e '/^..*$$/p' > alloca.t
-	as -o alloca.o alloca.t
-	rm alloca.t allocatem.c
+	sed -n -e '/^..*$$/p' > allocatem.s
+	-rm -f alloca.o
+/* Xenix, in particular, needs to run assembler via cc.  */
+	cc -c allocatem.s
+	mv allocatem.o alloca.o
+	rm allocatem.s allocatem.c
 #endif /* HAVE_ALLOCA */
 #endif /* not C_ALLOCA */
 
@@ -353,12 +386,17 @@ termcap.o : termcap.c
 terminfo.o : terminfo.c config.h
 tparam.o : tparam.c
 undo.o : undo.c buffer.h commands.h undo.h config.h 
-unexec.o : unexec.c config.h
+UNEXEC : config.h
 window.o : window.c indent.h commands.h window.h buffer.h config.h termchar.h
 xdisp.o : xdisp.c macros.h commands.h indent.h buffer.h dispextern.h termchar.h window.h config.h 
-xfns.o : xfns.c window.h config.h
-xmenu.o : xmenu.c window.h config.h
-xterm.o : xterm.c xterm.h dispextern.h config.h
+xfns.o : xfns.c xterm.h window.h config.h
+xmenu.o : xmenu.c xterm.h window.h config.h
+xterm.o : xterm.c xterm.h termhooks.h termopts.h termchar.h \
+ dispextern.h config.h sink.h sinkmask.h
+
+x11fns.o : x11fns.c window.h x11term.h dispextern.h termchar.h config.h
+x11term.o : x11term.c x11term.h termhooks.h termopts.h termchar.h \
+ dispextern.h config.h sink.h sinkmask.h
 
 /* The files of Lisp proper */
 

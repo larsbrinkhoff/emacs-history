@@ -1,4 +1,7 @@
-main (argc)
+typedef struct aa { int b;} *hack;
+
+static int
+foo (argc)
 {
   register int a = 0x1234;
   register int b = 0x56788765;
@@ -9,4 +12,9 @@ main (argc)
   printf ("Address of loser is 0x%x.\n", &loser);
   printf ("Address of argc is 0x%x.\n", &argc);
   abort ();
+}
+
+main (argc)
+{
+  foo (argc);
 }

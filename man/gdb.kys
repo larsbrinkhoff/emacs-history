@@ -1,6 +1,8 @@
 \initial {$}
 \entry {${\fam \ttfam \tentt \char '137}}{18, 32, 39}
 \entry {${\fam \ttfam \tentt \char '137}{\fam \ttfam \tentt \char '137}}{39}
+\initial {A}
+\entry {attach}{15}
 \initial {B}
 \entry {break}{19}
 \initial {C}
@@ -11,6 +13,7 @@
 \initial {D}
 \entry {define}{51}
 \entry {delete}{20}
+\entry {detach}{15}
 \entry {directory}{33}
 \entry {disable}{21}
 \entry {display}{40}
@@ -22,6 +25,7 @@
 \entry {exec-file}{9}
 \initial {F}
 \entry {finish}{26}
+\entry {forward-search}{33}
 \entry {frame}{29}
 \initial {H}
 \entry {handle}{17}
@@ -59,13 +63,15 @@
 \entry {output}{52}
 \initial {P}
 \entry {print}{35}
+\entry {printf}{53}
 \entry {printsyms}{46}
 \entry {ptype}{45}
-\entry {pwd}{15}
+\entry {pwd}{14}
 \initial {Q}
 \entry {quit}{7}
 \initial {R}
 \entry {return}{48}
+\entry {reverse-search}{33}
 \entry {run}{13}
 \initial {S}
 \entry {set}{47}
@@ -81,6 +87,7 @@
 \entry {symbol-file}{9}
 \initial {T}
 \entry {tbreak}{19}
+\entry {tty}{15}
 \initial {U}
 \entry {undisplay}{40}
 \entry {unset-environment}{14}

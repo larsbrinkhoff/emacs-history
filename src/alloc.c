@@ -622,6 +622,9 @@ Does not copy symbols.")
   register Lisp_Object new, tem;
   register int i;
 
+  if (NULL (Vpurify_flag))
+    return obj;
+
   if ((PNTR_COMPARISON_TYPE) XPNTR (obj) < (PNTR_COMPARISON_TYPE) ((char *) pure + PURESIZE)
       && (PNTR_COMPARISON_TYPE) XPNTR (obj) >= (PNTR_COMPARISON_TYPE) pure)
     return obj;
@@ -1404,8 +1407,7 @@ compact_strings ()
 
 init_alloc_once ()
 {
-  Vpurify_flag = Qt;
-
+  /* Used to do Vpurify_flag = Qt here, but Qt isn't set up yet!  */
   pureptr = 0;
   all_vectors = 0;
   init_strings ();
@@ -1436,14 +1438,16 @@ syms_of_alloc ()
   DEFVAR_INT ("pure-bytes-used", &pureptr,
     "Number of bytes of sharable Lisp data allocated so far.");
 
+#if 0
   DEFVAR_INT ("data-bytes-used", &malloc_sbrk_used,
     "Number of bytes of unshared memory allocated in this session.");
 
   DEFVAR_INT ("data-bytes-free", &malloc_sbrk_unused,
     "Number of bytes of unshared memory remaining available in this session.");
+#endif
 
   DEFVAR_LISP ("purify-flag", &Vpurify_flag,
-    "Non-nil means defun should purecopy the function definition.");
+    "Non-nil means loading Lisp code in order to dump an executable.");
 
   defsubr (&Scons);
   defsubr (&Slist);

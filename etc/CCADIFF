@@ -149,8 +149,7 @@ GNU Emacs uses ESC to terminate searches, instead of
 the C-d uses by CCA Emacs.  (Actually, this character is controlled
 by a parameter in GNU Emacs.)  C-M-s in GNU Emacs is an interactive
 regular expression search, but you can get to a noninteractive
-one by typing ESC right after the C-M-s.  GNU Emacs searches
-never wrap around at beginning or end of buffer.
+one by typing ESC right after the C-M-s.
 
 In GNU Emacs, C-x s asks, for each modified file buffer, whether
 to save it.

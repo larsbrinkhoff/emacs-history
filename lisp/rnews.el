@@ -1,5 +1,5 @@
 ;;; USENET news reader for gnu emacs
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -43,7 +43,8 @@
 ;;	tower@prep Oct 29 1986
 ;; added caesar-region, rename news-caesar-buffer-body, hacked accordingly
 ;;	tower@prep Nov 21 1986
-
+;; added (provide 'rnews)	tower@prep 22 Apr 87
+(provide 'rnews)
 (require 'mail-utils)
 
 (autoload 'rmail-output "rmailout"
@@ -125,13 +126,15 @@ Not currently used.")
 (defvar news-no-jumps-p t)
 (defvar news-buffer () "Buffer into which news files are read.")
 
-(defmacro caar (x) (list 'car (list 'car x)))
-(defmacro cadr (x) (list 'car (list 'cdr x)))
-(defmacro cdar (x) (list 'cdr (list 'car x)))
-(defmacro caddr (x) (list 'car (list 'cdr (list 'cdr x))))
-(defmacro cadar (x) (list 'car (list 'cdr (list 'car x))))
-(defmacro caadr (x) (list 'car (list 'car (list 'cdr x))))
-(defmacro cdadr (x) (list 'cdr (list 'car (list 'cdr x))))
+(defmacro news-push (item ref)
+  (list 'setq ref (list 'cons item ref)))
+
+(defmacro news-cadr (x) (list 'car (list 'cdr x)))
+(defmacro news-cdar (x) (list 'cdr (list 'car x)))
+(defmacro news-caddr (x) (list 'car (list 'cdr (list 'cdr x))))
+(defmacro news-cadar (x) (list 'car (list 'cdr (list 'car x))))
+(defmacro news-caadr (x) (list 'car (list 'car (list 'cdr x))))
+(defmacro news-cdadr (x) (list 'cdr (list 'car (list 'cdr x))))
 
 (defmacro news-wins (pfx index)
   (` (file-exists-p (concat (, pfx) "/" (int-to-string (, index))))))
@@ -146,7 +149,7 @@ An empty file does not contribute to a gap -- it ends one.")
        (cons (news-find-first-or-last prefix base -1)
 	     (news-find-first-or-last prefix base 1))))
 
-(defmacro // (a1 a2)
+(defmacro news-/ (a1 a2)
 ;; a form of / that guarantees that (/ -1 2) = 0
   (if (zerop (/ -1 2))
       (` (/ (, a1) (, a2)))
@@ -155,17 +158,17 @@ An empty file does not contribute to a gap -- it ends one.")
 	 (/ (, a1) (, a2))))))
 
 (defun news-find-first-or-last (pfx base dirn)
-  ;; first use powers of two to find a plausible cieling
+  ;; first use powers of two to find a plausible ceiling
   (let ((original-dir dirn))
     (while (news-wins pfx (+ base dirn))
       (setq dirn (* dirn 2)))
-    (setq dirn (// dirn 2))
+    (setq dirn (news-/ dirn 2))
     ;; Then use a binary search to find the high water mark
-    (let ((offset (// dirn 2)))
+    (let ((offset (news-/ dirn 2)))
       (while (/= offset 0)
 	(if (news-wins pfx (+ base dirn offset))
 	    (setq dirn (+ dirn offset)))
-	(setq offset (// offset 2))))
+	(setq offset (news-/ offset 2))))
     ;; If this high-water mark is bogus, recurse.
     (let ((offset (* news-max-plausible-gap original-dir)))
       (while (and (/= offset 0) (not (news-wins pfx (+ base dirn offset))))
@@ -175,11 +178,11 @@ An empty file does not contribute to a gap -- it ends one.")
 	(news-find-first-or-last pfx (+ base dirn offset) original-dir)))))
 
 (defun rnews ()
-  "Read USENET news for groups for which you are a member (one can add or
+"Read USENET news for groups for which you are a member and add or
 delete groups.
 You can reply to articles posted and send articles to any group.
 
-Type C-h m once reading news to get a list of rnews commands."
+Type \\[describe-mode] once reading news to get a list of rnews commands."
   (interactive)
   (let ((last-buffer (buffer-name)))
     (make-local-variable 'rmail-last-file)
@@ -243,8 +246,8 @@ Type C-h m once reading news to get a list of rnews commands."
 (defun news-set-current-group-certification ()
   (let ((cgc (assoc news-current-news-group news-current-certifications)))
     (if cgc (setcdr cgc news-current-certifiable)
-      (push (cons news-current-news-group news-current-certifiable)
-	    news-current-certifications))))
+      (news-push (cons news-current-news-group news-current-certifiable)
+		 news-current-certifications))))
 
 (defun news-set-minor-modes ()
   "Creates a minor mode list that has group name, total articles,
@@ -372,7 +375,7 @@ U       unsubscribe from specified newsgroup."
 ;; update read message number
 (defmacro news-update-message-read (ngroup nno)
   (list 'setcar
-	(list 'cdadr
+	(list 'news-cdadr
 	      (list 'assoc ngroup 'news-group-article-assoc))
 	nno))
 
@@ -455,7 +458,7 @@ to a list (a . b)"
 	  (let ((item (assoc (car temp) news-group-article-assoc)))
 	    (insert (car item))
 	    (indent-to (if flag 52 20))
-	    (insert (int-to-string (cadr (cadr item))))
+	    (insert (int-to-string (news-cadr (news-cadr item))))
 	    (if flag
 		(insert "\n")
 	      (indent-to 33))
@@ -496,7 +499,7 @@ to a list (a . b)"
  	(error "Group not subscribed to in file %s." news-startup-file)
       (progn
 	(news-update-message-read news-current-news-group
-				  (cdar news-point-pdl))
+				  (news-cdar news-point-pdl))
 	(news-read-files-into-buffer  (car grp) nil)
 	(news-set-mode-line)))))
 
@@ -515,7 +518,7 @@ to a list (a . b)"
     (if (file-exists-p file)
 	(let ((buffer-read-only ()))
 	  (if (= arg 
-		 (or (cadr (memq (cdar news-point-pdl) news-list-of-files))
+		 (or (news-cadr (memq (news-cdar news-point-pdl) news-list-of-files))
 		     0))
 	      (setcdr (car news-point-pdl) arg))
 	  (setq news-current-message-number arg)
@@ -564,7 +567,7 @@ A negative ARG means move forward."
     (let ((plist (news-get-motion-lists cg news-user-group-list))
 	  ngrp)
       (if (< arg 0)
-	  (or (setq ngrp (nth (1- (- arg)) (cadr plist)))
+	  (or (setq ngrp (nth (1- (- arg)) (news-cadr plist)))
 	      (error "No previous news groups"))
 	(or (setq ngrp (nth arg (car plist)))
 	    (error "No more news groups")))
@@ -677,19 +680,19 @@ one for moving forward and one for moving backward."
     (save-excursion
       (if (not (null news-current-news-group))
 	  (news-update-message-read news-current-news-group
-				(cdar news-point-pdl)))
+				(news-cdar news-point-pdl)))
       (switch-to-buffer newsrcbuf)
       (while tem
 	(setq group (assoc (car tem)
 			   news-group-article-assoc))
-	(if (= (cadr (cadr group)) (caddr (cadr group)))
+	(if (= (news-cadr (news-cadr group)) (news-caddr (news-cadr group)))
 	    nil
 	  (goto-char 0)
 	  (if (search-forward (concat (car group) ": ") nil t)
 	      (kill-line nil)
 	    (insert (car group) ": \n") (backward-char 1))
-	  (insert (int-to-string (car (cadr group))) "-"
-		  (int-to-string (cadr (cadr group)))))
+	  (insert (int-to-string (car (news-cadr group))) "-"
+		  (int-to-string (news-cadr (news-cadr group)))))
 	(setq tem (cdr tem)))
      (while news-unsubscribe-groups
        (setq group (assoc (car news-unsubscribe-groups)
@@ -699,8 +702,8 @@ one for moving forward and one for moving backward."
 	   (progn
 	      (backward-char 2)
 	      (kill-line nil)
-	      (insert "! " (int-to-string (car (cadr group)))
-		      "-" (int-to-string (cadr (cadr group))))))
+	      (insert "! " (int-to-string (car (news-cadr group)))
+		      "-" (int-to-string (news-cadr (news-cadr group))))))
        (setq news-unsubscribe-groups (cdr news-unsubscribe-groups)))
      (save-buffer)
      (kill-buffer (current-buffer)))))
@@ -723,7 +726,7 @@ one for moving forward and one for moving backward."
     (if tem
 	(progn
 	  (setq news-unsubscribe-groups (cons group news-unsubscribe-groups))
-	  (news-update-message-read group (cdar news-point-pdl))
+	  (news-update-message-read group (news-cdar news-point-pdl))
 	  (if (equal group news-current-news-group)
 	      (news-next-group))
 	  (message ""))
@@ -735,8 +738,9 @@ one for moving forward and one for moving backward."
   (append-to-file (point-min) (point-max) file))
 
 (defun news-get-pruned-list-of-files (gp-list end-file-no)
-  "Given a news group it does an ls to give all files in the news group.
-The arg must be in slashified format."
+  "Given a news group it finds all files in the news group.
+The arg must be in slashified format.
+Using ls was found to be too slow in a previous version."
   (let
       ((answer
 	(and
@@ -758,16 +762,17 @@ The arg must be in slashified format."
 		 (setq news-list-of-files-possibly-bogus t
 		       news-current-group-end last-winner)
 		 (while (> last-winner end-file-no)
-		   (push last-winner news-list-of-files)
+		   (news-push last-winner news-list-of-files)
 		   (setq last-winner (1- last-winner)))
 		 news-list-of-files)
-	     (if (not (file-directory-p file-directory))
+	     (if (or (not (file-directory-p file-directory))
+		     (not (file-readable-p file-directory)))
 		 nil
 	       (setq news-list-of-files
 		     (setq tem (directory-files file-directory)))
 	       (while tem
 		 (if (or (not (string-match "^[0-9]*$" (car tem)))
-					; dont get confused by directories that look like numbers
+			 ;; dont get confused by directories that look like numbers
 			 (file-directory-p
 			  (concat file-directory "/" (car tem)))
 			 (<= (string-to-int (car tem)) end-file-no))
@@ -787,9 +792,9 @@ The arg must be in slashified format."
     (or answer (progn (news-set-current-group-certification) nil))))
 
 (defun news-read-files-into-buffer (group reversep)
-  (let* ((files-start-end (cadr (assoc group news-group-article-assoc)))
+  (let* ((files-start-end (news-cadr (assoc group news-group-article-assoc)))
 	 (start-file-no (car files-start-end))
-	 (end-file-no (cadr files-start-end))
+	 (end-file-no (news-cadr files-start-end))
 	 (buffer-read-only nil))
     (setq news-current-news-group group)
     (setq news-current-message-number nil)
@@ -800,7 +805,7 @@ The arg must be in slashified format."
     ;; @@ should be a lot smarter than this if we have to move
     ;; @@ around correctly.
     (setq news-point-pdl (list (cons (car files-start-end)
-				     (cadr files-start-end))))
+				     (news-cadr files-start-end))))
     (if (null news-list-of-files)
 	(progn (erase-buffer)
 	       (setq news-current-group-end end-file-no)

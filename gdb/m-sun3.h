@@ -18,10 +18,22 @@ In other words, go ahead and share GDB, but don't try to stop
 anyone else from sharing it farther.  Help stamp out software hoarding!
 */
 
+#ifndef sun3
+#define sun3
+#endif
+
+/* Get rid of any system-imposed stack limit if possible.  */
+
+#define SET_STACK_LIMIT_HUGE
+
 /* Define this if the C compiler puts an underscore at the front
    of external names before giving them to the linker.  */
 
 #define NAMES_HAVE_UNDERSCORE
+
+/* Debugger information will be in DBX format.  */
+
+#define READ_DBX_FORMAT
 
 /* Offset from address of function to start of its code.
    Zero on most machines.  */
@@ -67,11 +79,11 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 
 /* Nonzero if instruction at PC is a return instruction.  */
 
-#define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 2) == 0x4e76)
+#define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 2) == 0x4e75)
 
 /* Return 1 if P points to an invalid floating point value.  */
 
-#define INVALID_FLOAT(p) 0   /* Just a first guess; not checked */
+#define INVALID_FLOAT(p, len) 0   /* Just a first guess; not checked */
 
 /* Say how long (ordinary) registers are.  */
 
@@ -166,9 +178,36 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 #define REGISTER_VIRTUAL_TYPE(N) \
  (((unsigned)(N) - FP0_REGNUM) < 8 ? builtin_type_double : builtin_type_int)
 
+/* Extract from an array REGBUF containing the (raw) register state
+   a function return value of type TYPE, and copy that, in virtual format,
+   into VALBUF.  */
+
+#define EXTRACT_RETURN_VALUE(TYPE,REGBUF,VALBUF) \
+  bcopy (REGBUF, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Write into appropriate registers a function return value
+   of type TYPE, given in virtual format.  */
+
+#define STORE_RETURN_VALUE(TYPE,VALBUF) \
+  write_register_bytes (0, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Extract from an array REGBUF containing the (raw) register state
+   the address in which a function should return its structure value,
+   as a CORE_ADDR (or an expression that can be used as one).  */
+
+#define EXTRACT_STRUCT_VALUE_ADDRESS(REGBUF) (*(int *)(REGBUF))
+
+/* Enable use of alternate code to read and write registers.  */
+
 #define NEW_SUN_PTRACE
 
+/* Enable use of alternate code for Sun's format of core dump file.  */
+
 #define NEW_SUN_CORE
+
+/* Do implement the attach and detach commands.  */
+
+#define ATTACH_DETACH
 
 /* It is safe to look for symsegs on a Sun, because Sun's ld
    does not screw up with random garbage at end of file.  */
@@ -361,7 +400,7 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 	the following jsr instruction.  *../
      jsr @#32323232
      addl #69696969,sp
-     bpt
+     trap #15
      nop
 Note this is 28 bytes.
 We actually start executing at the jsr, since the pushing of the
@@ -407,16 +446,16 @@ taken for the arguments.  */
 
 #define INIT_STACK(beg, end)  \
 { asm (".globl end");         \
-  asm ("movel $ end, sp");      \
-  asm ("clrl fp"); }
+  asm ("movel #end, sp");      \
+  asm ("movel #0,a6"); }
 
 /* Push the frame pointer register on the stack.  */
 #define PUSH_FRAME_PTR        \
-  asm ("movel fp, -(sp)");
+  asm ("movel a6,sp@-");
 
 /* Copy the top-of-stack to the frame pointer register.  */
 #define POP_FRAME_PTR  \
-  asm ("movl (sp), fp");
+  asm ("movl sp@,a6");
 
 /* After KDB is entered by a fault, push all registers
    that GDB thinks about (all NUM_REGS of them),
@@ -425,14 +464,14 @@ taken for the arguments.  */
 
 #define PUSH_REGISTERS        \
 { asm ("clrw -(sp)");	      \
-  asm ("pea 10(sp)");	      \
-  asm ("movem $ 0xfffe,-(sp)"); }
+  asm ("pea sp@(10)");	      \
+  asm ("movem #0xfffe,sp@-"); }
 
 /* Assuming the registers (including processor status) have been
    pushed on the stack in order of ascending GDB register number,
    restore them and return to the address in the saved PC register.  */
 
 #define POP_REGISTERS          \
-{ asm ("subil $8,28(sp)");     \
-  asm ("movem (sp),$ 0xffff"); \
+{ asm ("subil #8,sp@(28)");     \
+  asm ("movem sp@,#0xffff"); \
   asm ("rte"); }

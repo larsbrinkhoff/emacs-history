@@ -77,15 +77,18 @@ and this notice must be preserved on all copies.  */
 
 /* Define CANNOT_DUMP on machines where unexec does not work.
    Then the function dump-emacs will not be defined
-   and temacs will do (load "loadup") automatically unless told otherwise.  */
+   and temacs will do (load "loadup") automatically unless told otherwise.
+   Dumping currently does not work on AIX.  */
 
-#undef CANNOT_DUMP
+#ifdef USG
+#define CANNOT_DUMP
+#endif
 
 /* Define VIRT_ADDR_VARIES if the virtual addresses of
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 #undef VIRT_ADDR_VARIES
@@ -97,18 +100,34 @@ and this notice must be preserved on all copies.  */
    Define neither one if an assembler-language alloca
    in the file alloca.s should be used.  */
 
+#ifdef USG
+#define C_ALLOCA
+#else
 #define HAVE_ALLOCA
+#endif
 
-/* The data segment in this machine always starts at address 0x10000000.
+/* The data segment in this machine starts at a fixed address.
    An address of data cannot be stored correctly in a Lisp object;
    we always lose the high bits.  We must tell XPNTR to add them back.  */
 
+#ifdef USG
+#define DATA_SEG_BITS 0x20000000
+#define DATA_START    0x20000000
+#else
 #define DATA_SEG_BITS 0x10000000
 #define DATA_START    0x10000000
+#endif
 
-/* The text segment always starts at 0.
+/* The text segment always starts at a fixed address.
    This way we don't need to have a label _start defined.  */
+#ifdef USG
+#define TEXT_START 0x10000000
+#else
 #define TEXT_START 0
+#endif
+
+#define VALBITS 26
+#define GCTYPEBITS 5
 
 /* Taking a pointer to a char casting it as int pointer */
 /* and then taking the int which the int pointer points to */
@@ -116,12 +135,13 @@ and this notice must be preserved on all copies.  */
 
 #define NEED_ERRNO
 
-#define VALBITS 26
-#define GCTYPEBITS 5
-
 #ifdef BSD  /* Reports are that SKTPAIR should not be set on AIX.  */
 #define SKTPAIR
 #endif
+
+/* Both AIX and BSD have BSTRING on this machine.  */
+
+#define BSTRING
 
 /* Special switches to give the C compiler.  */
 
@@ -136,3 +156,6 @@ and this notice must be preserved on all copies.  */
 /* Turn off some `register' declarations.  */
 
 #define RTPC_REGISTER_BUG
+
+/* (short) negative-int doesn't sign-extend correctly */
+#define SHORT_CAST_BUG

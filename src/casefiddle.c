@@ -107,10 +107,8 @@ casify_region (flag, b, e)
   register int inword = flag == CASE_DOWN;
 
   validate_region (&b, &e);
-  if (!NULL (bf_cur->read_only))
-    Fbarf_if_buffer_read_only();
+  prepare_to_modify_buffer ();
   record_change (XFASTINT (b), XFASTINT (e) - XFASTINT (b));
-  modify_region (XFASTINT (b), XFASTINT (e));
 
   for (i = XFASTINT (b); i < XFASTINT (e); i++)
     {
@@ -124,6 +122,8 @@ casify_region (flag, b, e)
       if ((int) flag >= (int) CASE_CAPITALIZE)
 	inword = SYNTAX (c) == Sword;
     }
+
+  modify_region (XFASTINT (b), XFASTINT (e));
 }
 
 DEFUN ("upcase-region", Fupcase_region, Supcase_region, 2, 2, "r",

@@ -25,6 +25,7 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 
 extern char *savestring ();
 extern char *concat ();
+extern char *xmalloc (), *xrealloc ();
 extern int parse_escape ();
 extern char *reg_names[];
 
@@ -72,3 +73,7 @@ struct command_line
 };
 
 struct command_line *read_command_lines ();
+
+/* String containing the current directory (what getwd would return).  */
+
+char *current_directory;

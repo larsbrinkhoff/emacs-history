@@ -142,7 +142,7 @@ calculate_scrolling (matrix, window_size, lines_below,
       matrix[j].writecost = INFINITY;
       matrix[j].insertcost = INFINITY;
       matrix[j].deletecount = j;
-      matrix[j].insertcount = j;
+      matrix[j].insertcount = 0;
     }
 
   /* `i' represents the vpos among new screen contents.
@@ -187,10 +187,14 @@ calculate_scrolling (matrix, window_size, lines_below,
 	else
 	  {
 	    cost = p1->writecost + first_insert_cost[i];
+	    if (p1->insertcount > i)
+	      abort ();
 	    cost1 = p1->insertcost + next_insert_cost[i - p1->insertcount];
 	  }
 	p->insertcost = min (cost, cost1) + draw_cost[i];
 	p->insertcount = (cost < cost1) ? 1 : p1->insertcount + 1;
+	if (p->insertcount > i)
+	  abort ();
 
 	/* Calculate the cost if we do a delete line after
 	   outputting this line.

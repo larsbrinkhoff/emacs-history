@@ -1,4 +1,4 @@
-How to get GNU Software by Internet FTP or by UUCP.  Last updated 30 Jan 1987
+How to get GNU Software by Internet FTP or by UUCP.  Last updated 9 Apr 1988
 
 * No Warranties
 
@@ -19,7 +19,7 @@ which is `/u2/emacs/etc/FTP'.
 
 ** GNU Emacs and How To FTP It
 
-If you are on the Internet (note also "** Alternative Internet FTP
+If you are on the Internet (see also "** Alternative Internet FTP
 Sources" below), you can at present copy the latest distribution
 version of GNU Emacs from the file /u2/emacs/edist.tar on host
 prep.ai.mit.edu (or the file /u2/emacs/edist.tar.Z which has been run
@@ -29,8 +29,8 @@ look at the files README and INSTALL.
 
 Because of difficulties in transferring large files, often a split
 version of the tar file is created.  This is a directory named
-/u2/emacs/edist.tar-MM.NN-split or perhaps
-/u2/emacs/edist.tar-MM.NN.Z-split, containing files of 100000
+/u2/emacs/edist.tar-M.N-split or perhaps
+/u2/emacs/edist.tar-M.N.Z-split, containing files of 100000
 characters each.  There is generally no trouble in ftping files of
 this size.  They can be combined with cat to make a tar file or
 compressed tar file.
@@ -73,38 +73,82 @@ help]).
 
 Read the files INSTALL and README in the top level C Scheme directory.
 
-** GDB and how to FTP it.
+** GDB and How To FTP It.
 
 GDB, the GNU source-level C debugger, is part of the Emacs distribution.
 It can be found separately in the directory /u2/emacs/dist/gdb as
 65 separate files.  If there is a demand, separate tar files of
 GDB can be made available.
 
-** Bison and how to FTP it.
+** Other GNU Software and How To FTP It.
 
-Bison can be found in the directory /u2/emacs/bison, as 30 small to
-medium size files.  It should be easy enough to FTP all of these
-with the mget command.
+This software is available on prep.ai.mit.edu under directory
+/u2/emacs.  Files containing diff from previous versions are often
+available.  Compressed versions of the tar or diff files are often
+available (indicated by a .Z suffix).  Much of this software is in
+beta test (probably still buggy), and is being made available for use
+by hackers who like to test software.  M.N indicates a version number.
+
+Bison			bison.tar
+GNU Assembler (gas)	gas-dist.tar	BETA TEST
+GNU C Compiler (gcc)	gcc.tar-M.N	BETA TEST
+GNU C++ Compiler (g++)	g++.tar-M.N	BETA TEST
+GNU C++ Library		dist-libg++.tar.Z	BETA TEST
+GNU C++ Debugger (gdb+)	gdb+.tar-M.N.Z	BETA TEST
+GNU AWK (gawk)		awk.tar		BETA TEST
+GNU versions of ld, make, size, nm and strip
+			binutils.tar	BETA TEST
+GNU Chess		gnuchess.tar.Z
+A GNU Button		button88.02.ps
 
 ** Alternative Internet FTP Sources
 
-The administrators of simtel20.arpa also maintains copies of GNU
+The administrators of simtel20.arpa maintains copies of GNU
 distributed software for MILNET/DDN hosts.  It is available via
-anonymous ftp from PD:<UNIX.GNU> in the original tar format.
+anonymous ftp from PD:<UNIX-C.GNU> in the original tar or tar.Z
+format.
 
-The administrators of louie.udel.edu also maintains copies of GNU
-Emacs and the compress program.  The files are available via anonymous
-ftp under directory ~ftp/gnu.  louie's addresses are (as of 21 Feb
-1987):
+The administrators of louie.udel.edu maintains copies of GNU Emacs and
+the compress program.  The files are available via anonymous ftp under
+directory ~ftp/gnu.  louie's addresses are (as of 21 Feb 1987):
 
 10.0.0.96	louie udel-louie eecis3 udel-relay udel
 192.5.39.3      louie.udel.edu udel-louie.arpa udel-louie louie udel-relay udel udel.edu
 
-* Getting GNU Emacs via UUCP
+Emacs and other GNU programs may be available on nic.nyser.net, in
+/usb/gnu/emacs-dist.tar{,.Z}.  Anonymous ftp starts you in directory
+/usb.
 
-OSU is distributing GNU Emacs via uucp.  Current details from Karl
-Kleinpaste <..!cbosgd!osu-eddie!karl> or <karl@ohio-state.arap> or
-<karl%ohio-state@csnet-relay.arpa>.
+Emacs and other GNU programs may be available on uunet.uu.net,
+spam.istc.sri.com, scam.berkeley.edu and bu-it.bu.edu via anonymous ftp.
+
+* Getting GNU software in England
+
+jpo@cs.nott.ac.uk is willing to distribute those GNU sources he has
+available.  The smaller items are available from the info-server (send
+to info-server@cs.nott.ac.uk) the larger items by negotiation.  Due to
+communication costs this service is only available within the UK.
+
+BattenIG@computer-science.birmingham.ac.uk is also willing to
+distribute those GNU sources he has available.  He can also write
+tapes in qic-21, qic-24 and VMS TK50s formats.
+
+* Getting GNU software via UUCP
+
+OSU is distributing via UUCP: GNU Emacs, GNU Bison, GNU Debugger
+(gdb), GNU C Compiler (gcc) (& G++ & GDB+), MIT C Scheme, GNU Chess,
+GNU Assembler (gas), GNU Awk (gawk), Compress, News, RN, NNTP, Patch,
+some Appletalk stuff, and some of the Internet Requests For Comment
+(RFC).  See their periodic postings on the Usenet newsgroup
+comp.sources.d for informational updates.  Current details from Karl
+Kleinpaste <karl@tut.cis.ohio-state.edu> or <karl@ohio-state.arpa> or
+<...!cbosgd!osu-cis!karl>; or Bob Sutterfield <bob@the-same-places>.
+
+Information on how to uucp some GNU programs is available via
+electronic mail from: arnold@skeeve.UUCP, ihnp4!hutch!barber,
+hqda-ai!merlin, hao!scicom!qetzal!upba!ugn!nepa!denny,
+gatech!uflorida!codas!killer!wisner, mit-eddie!bloom-beacon!ht!spt!gz,
+and postmaster@uunet.uu.net.
 
 * If You Like The Software
 

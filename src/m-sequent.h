@@ -101,7 +101,7 @@ and this notice must be preserved on all copies.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 /* #define VIRT_ADDR_VARIES */
@@ -132,3 +132,27 @@ and this notice must be preserved on all copies.  */
    in the a_text in the file must have N_ADDRADJ added to it.  */
 
 #define A_TEXT_OFFSET(HDR) (sizeof (HDR) + N_ADDRADJ (HDR))
+
+/* (short) negative-int doesn't sign-extend correctly */
+#define SHORT_CAST_BUG
+
+/* Cause compilations to be done in parallel in ymakefile.  */
+#define MAKE_PARALLEL &
+
+/* Define how to search all pty names.
+   This is for Dynix 3.0; delete next 5 definitions for older systems.  */
+
+#define PTY_MAJOR "pqrstuvwPQRSTUVW"
+#define PTY_MINOR "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define PTY_ITERATION					\
+  register int ma, mi;					\
+  for (ma = 0; ma < sizeof(PTY_MAJOR) - 1; ma++)	\
+    for (mi = 0; mi < sizeof(PTY_MINOR) - 1; mi++)
+#define PTY_NAME_SPRINTF \
+  sprintf (ptyname, "/dev/pty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
+#define PTY_TTY_NAME_SPRINTF \
+  sprintf (ptyname, "/dev/tty%c%c", PTY_MAJOR[ma], PTY_MINOR[mi]);
+
+/* Use dk.h, not dkstat.h, in loadst.c.  */
+
+#define DK_HEADER_FILE

@@ -461,18 +461,26 @@ ZN|aaa60|ambas60|ambassador60|ann arbor ambassador/60 lines:\
 	:li#60:mi:tc=aaax:
 # vt100 -- this has been changed to delete the "pt" ("real tabs")
 # option, which was losing. -- walter 10/84
-d0|vt100|vt100-am|dec vt100:\
-	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:ho=\E[H:\
-	:co#80:li#24:cl=50\E[;H\E[2J:bs:am:cm=5\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
+d0|vt100-132|vt125-132|dec vt100 with 132 columns:\
+	:co#132:tc=vt100:
+d0|vt100|vt100-am|vt100-80|vt125|vt125-80|dec vt100:\
+	:cr=^M:bl=^G:le=^H:do=\ED:ho=\E[H:\
+	:co#80:li#24:cl=45\E[H\E[2J:bs:am:cm=5\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:ce=2\E[K:cd=2*\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
 	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:\
 	:is=\E<\E[m\E>\E[?7h\E[?3;4;6l\200\200\200\200\200\200\200\200:\
 	:rs=\E<\E[m\E>\E[?7h\E[?3;4;6l\200\200\200\200\200\200\200\200:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:cs=\E[%i%d;%dr:ks=\E[?1h\E=:ke=\E[?1l\E>:\
-	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:sf=11\n:sr=11\EM:xn:\
+	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:sf=5\ED:sr=5\EM:xn:\
 	:dN#4:vt#3:sc=\E7:rc=\E8:
-dw|vt52|dec vt52:\
+d0|vt132-132|dec vt132 with 132 columns:\
+	:al=99\E[L:dl=99\E[M:ip=7:dc=7\E[P:ei=\E[4l:im=\E[4h:xn:dN#30:\
+	:co#132:tc=vt100:
+d0|vt132|vt132-80|dec vt132 with 80 columns:\
+	:al=99\E[L:dl=99\E[M:ip=7:dc=7\E[P:ei=\E[4l:im=\E[4h:xn:dN#30:tc=vt100:
+
+dw|vt52|vt52-80|dec vt52:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:nd=\EC:\
 	:ta=^I:pt:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
@@ -506,22 +514,25 @@ nunix-30|nu-telnet-30|nu-half: Half nu screen thru telnet:\
 nunix-61|nu-telnet-61|nu-full| Full nu screen thru telnet:\
 	:co#78:li#61:tc=nunix-30:
 
-## For VMS, make sure not to use \n for nl or anything else.
-## The entry for vt200-80 disables sr and sf, they don't
-## seem for work right.l
-d0|vt200-80|vt100-80|vt125-80|VT 200/100/125 with 80 columns:\
-	:co#80:li#24:am:bs:pt:xn:cl=45\E[H\E[2J:\
-	:cm=%i\E[%d;%dH:nd=\E[C:up=\EM:ho=\E[H:ce=2\E[K:cd=2*\E[J:\
-	:nl=\E[B:cr=\r:s-r=10\EM:s-f=10\ED:\
-	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:LC:\
-	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:ks=\E=:ke=\E>:
-d0|vt200-132|vt100-132|vt125-132|VT 200/100/125 with 132 columns:\
-	:co#132:li#24:am:bs:pt:xn:cl=45\E[H\E[2J:\
-	:cm=%i\E[%d;%dH:nd=\E[C:up=\EM:ho=\E[H:ce=2\E[K:cd=2*\E[J:\
-	:nl=\E[B:cr=\r:sr=5\EM:sf=30\E7\E[200H\ED\E8:\
-	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:LC:\
-	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:
+## VT200 entry for VMS.  Make sure not to use \n for nl or anything else.
+# It is bad form to use ^J,^L,^K to scroll the screen.
+# If the VT2xx doesn't have newline mode set those characters
+# donot move the cursor down a line.  Use \ED instead.
+d0|vt200-80|vt200|VT 200 with 80 columns, on VMS:\
+	:AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:IC=\E[%d@:\
+	:LE=\E[%dD:RI=\E[%dC:SR=1*\E[%dM:UP=\E[%dA:al=\E[L:\
+	:am:bl=^G:bs:cd=2*\E[J:ce=2\E[K:cl=45\E[H\E[2J:\
+	:cm=%i\E[%d;%dH:co#80:cr=\r:cs=\E[%i%d;%dr:ct=\E[3g:\
+	:dc=\E[P:dl=\E[M:dm=:do=\ED:ec=\E[%dX:ed=:ei=\E[4l:\
+	:ho=\E[H:ic:im=\E[4h:it#8:k1=\EOP:k2=\EOQ:k3=\EOR:\
+	:k4=\EOS:kd=\E[B:ke=\E>:kl=\E[D:kn#4:kr=\E[C:ks=\E=:\
+	:ku=\E[A:le=^H:li#24:mb=\E[5m:md=\E[1m:me=\E[0m:mi:\
+	:mr=\E[7m:ms:nd=\E[C:nl=\ED:nw=\EE:pf=\E[?4i:po=\E[?5i:\
+	:ps=\E[i:rc=\E8:sc=\E7:se=\E[27m:sf=1*\ED:so=\E[7m:\
+	:sr=1*\EM:st=\EH:ue=\E[24m:up=\EM:us=\E[4m:xn:
+d0|vt200-132|VT 200 with 132 columns, on VMS:\
+	:co#132:tc=vt200-80:
+
 aP|apollo_15P|apollo 15 inch display:\
 	:dN@:tc=vt132:
 aQ|apollo_19L|apollo 19 inch display:\

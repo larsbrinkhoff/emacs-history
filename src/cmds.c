@@ -197,16 +197,10 @@ DEFUN ("self-insert-command", Fself_insert_command, Sself_insert_command, 1, 1, 
      Lisp_Object arg;
 {
   CHECK_NUMBER (arg, 0);
-  if (XINT (arg) == 0
-      && last_command_char == ' '
-      && !NULL (bf_cur->auto_fill_hook)
-      && !NULL (bf_cur->read_only)
-      && current_column () > XFASTINT (bf_cur->fill_column))
-    call0 (bf_cur->auto_fill_hook);
 
   while (XINT (arg) > 0)
     {
-      SelfInsert (last_command_char);
+      SelfInsert (last_command_char, XINT (arg) != 0);
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
     }
   return Qnil;
@@ -220,23 +214,30 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
 {
   int flag;
   Lisp_Object arg;
+  char c1 = '\n';
 
   arg = Fprefix_numeric_value (arg1);
 
   if (!NULL (bf_cur->read_only))
     Fsignal (Qbuffer_read_only, Qnil);
 
-  if (NULL (arg1)
-      && !NULL (bf_cur->auto_fill_hook)
-      && current_column () > XFASTINT (bf_cur->fill_column))
-    call0 (bf_cur->auto_fill_hook);
+  /* Inserting a newline at the end of a line
+     produces better redisplay in try_window_id
+     than inserting at the ebginning fo a line,
+     And the textual result is the same.
+     So if at beginning, pretend to be at the end.
+     Must avoid SelfInsert in that case since point is wrong.
+     Luckily SelfInsert's special features all do nothing in that case.  */
 
   flag = point > FirstCharacter && CharAt (point - 1) == '\n';
   if (flag) PointLeft (1);
 
   while (XINT (arg) > 0)
     {
-      SelfInsert ('\n');
+      if (flag)
+	InsCStr (&c1, 1);
+      else
+	SelfInsert ('\n', !NULL (arg1));
       XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
     }
 
@@ -245,8 +246,9 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
   return Qnil;
 }
 
-SelfInsert (c1)
+SelfInsert (c1, noautofill)
      char c1;
+     int noautofill;
 {
   extern Lisp_Object Fexpand_abbrev ();
   int hairy = 0;
@@ -274,11 +276,15 @@ SelfInsert (c1)
 	hairy = 1;
     }
   if ((c == ' ' || c == '\n')
+      && !noautofill
       && !NULL (bf_cur->auto_fill_hook)
       && current_column () > XFASTINT (bf_cur->fill_column))
     {
-      InsCStr (&c1, 1);
+      if (c1 != '\n')
+	InsCStr (&c1, 1);
       call0 (bf_cur->auto_fill_hook);
+      if (c1 == '\n')
+	InsCStr (&c1, 1);
       hairy = 1;
     }
   else

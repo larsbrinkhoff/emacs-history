@@ -189,6 +189,25 @@ print_insn_arg (d, buffer, p, addr, stream)
       fprintf (stream, "usp");
       break;
 
+    case 'J':
+      {
+	static struct { char *name; int value; } names[]
+	  = {{"sfc", 0x000}, {"dfc", 0x001}, {"cacr", 0x002},
+	     {"usp", 0x800}, {"vbr", 0x801}, {"caar", 0x802},
+	     {"msp", 0x803}, {"isp", 0x804}};
+
+	val = fetch_arg (buffer, place, 12);
+	for (regno = sizeof names / sizeof names[0] - 1; regno >= 0; regno--)
+	  if (names[regno].value == val)
+	    {
+	      fprintf (stream, names[regno].name);
+	      break;
+	    }
+	if (regno < 0)
+	  fprintf (stream, "%d", val);
+      }
+      break;
+
     case 'Q':
       val = fetch_arg (buffer, place, 3);
       if (val == 0) val = 8;
@@ -262,6 +281,8 @@ print_insn_arg (d, buffer, p, addr, stream)
 	val = fetch_arg (buffer, place, 7);
       else if (place == '8')
 	val = fetch_arg (buffer, place, 3);
+      else if (place == '3')
+	val = fetch_arg (buffer, place, 8);
       else if (place == 'b')
 	val = NEXTBYTE (p1);
       else if (place == 'w')
@@ -324,7 +345,7 @@ print_insn_arg (d, buffer, p, addr, stream)
 
     case 'd':
       val = NEXTWORD (p);
-      fprintf (stream, "%d(%s)", val, fetch_arg (buffer, place, 3));
+      fprintf (stream, "%d(%s)", val, reg_names[fetch_arg (buffer, place, 3)]);
       break;
 
     case 's':
@@ -521,6 +542,7 @@ fetch_arg (buffer, code, bits)
       break;
 
     case '3':
+    case 'j':
       val = (buffer[2] << 8) + buffer[3];
       break;
 
@@ -566,6 +588,8 @@ fetch_arg (buffer, code, bits)
       return val & 0177;
     case 8:
       return val & 0377;
+    case 12:
+      return val & 07777;
     default:
       abort ();
     }
@@ -690,10 +714,28 @@ convert_from_68881 (from, to)
      char *from;
      double *to;
 {
+#ifdef HPUX_ASM
+  asm ("mov.l 8(%a6),%a0");
+  asm ("mov.l 12(%a6),%a1");
+  asm ("fmove.x (%a0),%fp0");
+  asm ("fmove.d %fp0,(%a1)");
+#else /* not HPUX_ASM */
+#if 0
   asm ("movl a6@(8),a0");
-  asm ("fmovex a0@,fp0");
   asm ("movl a6@(12),a1");
+  asm ("fmovex a0@,fp0");
   asm ("fmoved fp0,a1@");
+#else
+  /* Hand-assemble those insns since some assemblers lose
+     and some have different syntax.  */
+  asm (".word 020156");
+  asm (".word 8");
+  asm (".word 021156");
+  asm (".word 12");
+  asm (".long 0xf2104800");
+  asm (".long 0xf2117400");
+#endif
+#endif /* not HPUX_ASM */
 }
 
 /* The converse: convert the double *FROM to an extended float
@@ -703,8 +745,25 @@ convert_to_68881 (from, to)
      double *from;
      char *to;
 {
+#ifdef HPUX_ASM
+  asm ("mov.l 8(%a6),%a0");
+  asm ("mov.l 12(%a6),%a1");
+  asm ("fmove.d (%a0),%fp0");
+  asm ("fmove.x %fp0,(%a1)");
+#else /* not HPUX_ASM */
+#if 0
   asm ("movl a6@(8),a0");
-  asm ("fmoved a0@,fp0");
   asm ("movl a6@(12),a1");
+  asm ("fmoved a0@,fp0");
   asm ("fmovex fp0,a1@");
+#else
+  /* Hand-assemble those insns since some assemblers lose.  */
+  asm (".word 020156");
+  asm (".word 8");
+  asm (".word 021156");
+  asm (".word 12");
+  asm (".long 0xf2105400");
+  asm (".long 0xf2116800");
+#endif
+#endif /* not HPUX_ASM */
 }

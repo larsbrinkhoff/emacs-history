@@ -72,6 +72,15 @@ int truncate_partial_width_windows;
 
 Lisp_Object Vglobal_mode_string;
 
+/* Marker for where to display an arrow on top of the buffer text.  */
+Lisp_Object Voverlay_arrow_position;
+
+/* String to display for the arrow.  */
+Lisp_Object Voverlay_arrow_string;
+
+/* Values of those variables at last redisplay.  */
+Lisp_Object last_arrow_position, last_arrow_string;
+
 /* The number of lines to try scrolling a
   window by when point leaves the window; if
   it is <=0 then point is centered in the window */
@@ -178,7 +187,16 @@ message (m, a1, a2, a3)
     }
   else if (INTERACTIVE)
     {
-      doprnt (message_buf, sizeof message_buf - 1, m, &a1);
+#ifdef NO_ARG_ARRAY
+      int a[3];
+      a[0] = a1;
+      a[1] = a2;
+      a[2] = a3;
+
+      doprnt (message_buf, sizeof message_buf - 1, m, 3, a);
+#else
+      doprnt (message_buf, sizeof message_buf - 1, m, 3, &a1);
+#endif /* NO_ARG_ARRAY */
       minibuf_message = message_buf;
       display_minibuf_message ();
       update_screen (1, 1);
@@ -293,6 +311,12 @@ DoDsp (SaveMiniBuf)
 
   all_windows = RedoModes || buffer_shared > 1;
 
+  /* If specs for an arrow have changed, do thorough redisplay
+     to ensure we remove any arrow that should no longer exist.  */
+  if (Voverlay_arrow_position != last_arrow_position
+      || Voverlay_arrow_string != last_arrow_string)
+    all_windows = 1, clip_changed = 1;
+
   tlbufpos = this_line_bufpos;
   tlendpos = this_line_endpos;
   if (!all_windows && tlbufpos > 0 && NULL (w->redo_mode_line)
@@ -383,9 +407,17 @@ update:
 
   pause = update_screen (0, inhibit_hairy_id);
 
-  /* If screen does not match, prevent doing single-line-update next time */
+  /* If screen does not match, prevent doing single-line-update next time.
+     Also, don't forget to check every line to update the arrow.  */
   if (pause)
-    this_line_bufpos = 0;
+    {
+      this_line_bufpos = 0;
+      if (!NULL (last_arrow_position))
+	{
+	  last_arrow_position = Qt;
+	  last_arrow_string = Qt;
+	}
+    }
 
   /* Now text on screen agrees with windows, so
      put info into the windows for partial redisplay to follow */
@@ -412,6 +444,8 @@ update:
 	  w->redo_mode_line = Qnil;
 	  XFASTINT (w->last_modified) = t->modified;
 	  w->window_end_valid = Qt;
+	  last_arrow_position = Voverlay_arrow_position;
+	  last_arrow_string = Voverlay_arrow_string;
 	}
       RedoModes = 0;
       windows_or_buffers_changed = 0;
@@ -449,6 +483,18 @@ mark_window_display_accurate (window, flag)
 	mark_window_display_accurate (w->vchild, flag);
       if (!NULL (w->hchild))
 	mark_window_display_accurate (w->hchild, flag);
+    }
+
+  if (flag)
+    {
+      last_arrow_position = Voverlay_arrow_position;
+      last_arrow_string = Voverlay_arrow_string;
+    }
+  else
+    {
+      /* t is unequal to any useful value of Voverlay_arrow_... */
+      last_arrow_position = Qt;
+      last_arrow_string = Qt;
     }
 }
 
@@ -508,7 +554,6 @@ redisplay_window (window, just_this_one)
   if (NULL (w->buffer))
     abort ();
 
-  startp = marker_position (w->start);
   if (RedoModes)
     w->redo_mode_line = Qt;
 
@@ -535,6 +580,13 @@ redisplay_window (window, just_this_one)
       else if (point > NumCharacters)
 	point = NumCharacters + 1;
     }
+
+  /* If window-start is screwed up, choose a new one.  */
+
+  if (XMARKER (w->start)->buffer != bf_cur)
+    goto recenter;
+
+  startp = marker_position (w->start);
 
   /* Handle case where place to start displaying has been specified */
 
@@ -623,6 +675,8 @@ redisplay_window (window, just_this_one)
 	   && do_id && !clip_changed
 	   && !blank_end_of_window
 	   && XFASTINT (w->width) == screen_width
+	   && EQ (last_arrow_position, Voverlay_arrow_position)
+	   && EQ (last_arrow_string, Voverlay_arrow_string)
 	   && (tem = try_window_id (selected_window))
 	   && tem != -2)
     {
@@ -788,8 +842,8 @@ try_window_id (window)
 
   /* Find position before which nothing is changed.  */
   bp = *compute_motion (start, 0, lmargin,
-		       beg_unchanged + 1, 10000, 10000, width, hscroll,
-		       pos_tab_offset (w, start));
+			beg_unchanged + 1, 10000, 10000, width, hscroll,
+			pos_tab_offset (w, start));
   if (bp.vpos >= height)
     return point < bp.bufpos && !bp.contin;
 
@@ -821,13 +875,21 @@ try_window_id (window)
 
   bp.vpos = vpos;
 
-  /* Find first newline after which no more is changed */
-  ep = *compute_motion (pos, vpos, val.hpos,
-		       find_next_newline (bf_s1 + bf_s2 + 1
-					  - max (end_unchanged, bf_tail_clip),
-					  1),
-		       height, - (1 << (SHORTBITS - 1)),
-		       width, hscroll, pos_tab_offset (w, bp.bufpos));
+  /* Find first visible newline after which no more is changed.  */
+  tem = find_next_newline (bf_s1 + bf_s2 + 1
+			   - max (end_unchanged, bf_tail_clip),
+			   1);
+  if (XTYPE (bf_cur->selective_display) == Lisp_Int
+      && XINT (bf_cur->selective_display) > 0)
+    while (tem < NumCharacters
+	   && (position_indentation (tem)
+	       >= XINT (bf_cur->selective_display)))
+      tem = find_next_newline (tem, 1);
+
+  /* Compute the cursor position after that newline.  */
+  ep = *compute_motion (pos, vpos, val.hpos, tem,
+			height, - (1 << (SHORTBITS - 1)),
+			width, hscroll, pos_tab_offset (w, bp.bufpos));
 
   /* If changes reach past the text available on the screen,
      just display rest of screen.  */
@@ -856,8 +918,8 @@ try_window_id (window)
       /* Now determine how far up or down the rest of the window has moved */
       epto = pos_tab_offset (w, ep.bufpos);
       xp = *compute_motion (ep.bufpos, ep.vpos, ep.hpos,
-			   bf_s1 + bf_s2 + 1 - XFASTINT (w->window_end_pos),
-			   10000, 0, width, hscroll, epto);
+			    bf_s1 + bf_s2 + 1 - XFASTINT (w->window_end_pos),
+			    10000, 0, width, hscroll, epto);
       scroll_amount = xp.vpos - XFASTINT (w->window_end_vpos);
 
       /* Is everything on screen below the changes whitespace?
@@ -879,14 +941,14 @@ try_window_id (window)
 	  if (point <= xp.bufpos)
 	    {
 	      pp = *compute_motion (ep.bufpos, ep.vpos, ep.hpos,
-				   point, height, - (1 << (SHORTBITS - 1)),
-				   width, hscroll, epto);
+				    point, height, - (1 << (SHORTBITS - 1)),
+				    width, hscroll, epto);
 	    }
 	  else
 	    {
 	      pp = *compute_motion (xp.bufpos, xp.vpos, xp.hpos,
-				   point, height, - (1 << (SHORTBITS - 1)),
-				   width, hscroll, pos_tab_offset (w, xp.bufpos));
+				    point, height, - (1 << (SHORTBITS - 1)),
+				    width, hscroll, pos_tab_offset (w, xp.bufpos));
 	    }
 	  if (pp.bufpos < point || pp.vpos == height)
 	    return 0;
@@ -1050,7 +1112,7 @@ try_window_id (window)
   if (point_vpos < 0)
     {
       val = *compute_motion (start, 0, lmargin, point, 10000, 10000,
-			    width, hscroll, pos_tab_offset (w, start));
+			     width, hscroll, pos_tab_offset (w, start));
       /* Admit failure if point is off screen now */
       if (val.vpos >= height)
 	{
@@ -1068,8 +1130,8 @@ try_window_id (window)
   if (debug_end_pos)
     {
       val = *compute_motion (start, 0, lmargin, NumCharacters + 1,
-			    height, - (1 << (SHORTBITS - 1)),
-			    width, hscroll, pos_tab_offset (w, start));
+			     height, - (1 << (SHORTBITS - 1)),
+			     width, hscroll, pos_tab_offset (w, start));
       if (val.vpos != XFASTINT (w->window_end_vpos))
 	abort ();
       if (XFASTINT (w->window_end_pos)
@@ -1115,8 +1177,8 @@ display_text_line (w, start, vpos, hpos, taboffset)
   register char *startp;
   register char *p1prev;
   register struct display_line *line;
-  int tab_width = XINT (XBUFFER (w->buffer)->tab_width);
-  int ctl_arrow = !NULL (XBUFFER (w->buffer)->ctl_arrow);
+  int tab_width = XINT (bf_cur->tab_width);
+  int ctl_arrow = !NULL (bf_cur->ctl_arrow);
   int width = XFASTINT (w->width) - 1
     - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
   struct position val;
@@ -1126,7 +1188,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
   int truncate = hscroll
     || (truncate_partial_width_windows
 	&& XFASTINT (w->width) < screen_width)
-    || !NULL (XBUFFER (w->buffer)->truncate_lines);
+    || !NULL (bf_cur->truncate_lines);
   int selective
     = XTYPE (bf_cur->selective_display) == Lisp_Int
       ? XINT (bf_cur->selective_display)
@@ -1363,6 +1425,23 @@ display_text_line (w, start, vpos, hpos, taboffset)
     }
   line->length = max (line->length, p1 - line->body);
   line->body[line->length] = 0;
+
+  /* If the start of this line is the overlay arrow-position,
+     then put the arrow string into the display-line.  */
+
+  if (XTYPE (Voverlay_arrow_position) == Lisp_Marker
+      && bf_cur == XMARKER (Voverlay_arrow_position)->buffer
+      && start == marker_position (Voverlay_arrow_position)
+      && XTYPE (Voverlay_arrow_string) == Lisp_String)
+    {
+      unsigned char *p = XSTRING (Voverlay_arrow_string)->data;
+      int len = XSTRING (Voverlay_arrow_string)->size;
+      if (len > XFASTINT (w->width) - 1)
+	len = XFASTINT (w->width) - 1;
+      bcopy (p, startp, len);
+      if (line->length < len + startp - line->body)
+	line->length = len + startp - line->body;
+    }
 
   val.bufpos = pos;
   val_display_text_line = val;
@@ -1771,11 +1850,13 @@ display_string (w, line, string, hpos, truncate, mincol, maxcol)
   register int c;
   register unsigned char *p1;
   int hscroll = XINT (w->hscroll);
-  int tab_width = 8; /* why isn't this taken from the window's buffer? */
+  int tab_width = XINT (bf_cur->tab_width);
   register unsigned char *start;
   register unsigned char *end;
   unsigned char *p1start = (unsigned char *) line->body + hpos;
   int window_width = XFASTINT (w->width);
+
+  if (tab_width <= 0 || tab_width > 20) tab_width = 8;
 
   p1 = p1start;
   start = (unsigned char *) line->body + XFASTINT (w->left);
@@ -1858,9 +1939,24 @@ display_string (w, line, string, hpos, truncate, mincol, maxcol)
 
 syms_of_xdisp ()
 {
+  staticpro (&last_arrow_position);
+  staticpro (&last_arrow_string);
+  last_arrow_position = Qnil;
+  last_arrow_string = Qnil;
+
   DEFVAR_LISP ("global-mode-string", &Vglobal_mode_string,
     "String displayed by mode-line-format's \"%m\" specifiation.");
   Vglobal_mode_string = Qnil;
+
+  DEFVAR_LISP ("overlay-arrow-position", &Voverlay_arrow_position,
+    "Marker for where to display an arrow on top of the buffer text.\n\
+This must be the beginning of a line in order to work.\n\
+See also overlay-arrow-string.");
+  Voverlay_arrow_position = Qnil;
+
+  DEFVAR_LISP ("overlay-arrow-string", &Voverlay_arrow_string,
+    "String to display as an arrow.  See also overlay-arrow-position.");
+  Voverlay_arrow_string = Qnil;
 
   DEFVAR_INT ("scroll-step", &scroll_step,
     "*The number of lines to try scrolling a window by when point moves out.\n\
@@ -1870,7 +1966,7 @@ If this is zero, point is always centered after it moves off screen.");
   DEFVAR_INT ("debug-end-pos", &debug_end_pos, "Don't ask");
 
   DEFVAR_BOOL ("truncate-partial-width-windows",
-	     &truncate_partial_width_windows,
+	       &truncate_partial_width_windows,
     "*Non-nil means truncate lines in all windows less than full screen wide.");
   truncate_partial_width_windows = 1;
 

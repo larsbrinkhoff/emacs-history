@@ -57,12 +57,6 @@ through a buffer in electric-help-mode")
   ;(run-hooks 'electric-help-mode-hook)
   )
 
-;; Avoid error in Emacs versions before 18.37.
-(defun one-window-p (&optional nomini)
-  (eq (selected-window)
-      (if (and nomini (zerop (minibuffer-depth)))
-	  (next-window) (next-window (next-window)))))
-
 (defun with-electric-help (thunk &optional buffer noerase)
   "Arguments are THUNK &optional BUFFER NOERASE.
 BUFFER defaults to \"*Help*\"

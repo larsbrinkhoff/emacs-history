@@ -1,6 +1,116 @@
-GNU Emacs NEWS -- history of user-visible changes.  21-Mar-1987
-Copyright (C) 1987 Richard M. Stallman.
+GNU Emacs NEWS -- history of user-visible changes.  12-Feb-1988
+Copyright (C) 1988 Free Software Foundation, Inc.
 See the end for copying conditions.
+
+Changes in version 18.50.
+
+* X windows version 11 is supported.
+
+Define X11 in config.h if you want X version 11 instead of version 10.
+
+* The command M-x gdb runs the GDB debugger as an inferior.
+It asks for the filename of the executable you want to debug.
+
+GDB runs as an inferior with I/O through an Emacs buffer.  All the
+facilities of Shell mode are available.  In addition, each time your
+program stops, and each time you select a new stack frame, the source
+code is displayed in another window with an arrow added to the line
+where the program is executing.
+
+Special GDB-mode commands include M-s, M-n, M-i, M-u, M-d, and C-c C-f
+which send the GDB commands `step', `next', `stepi', `up', `down'
+and `finish'.
+
+In any source file, the commands C-x SPC tells GDB to set a breakpoint
+on the current line.
+
+* M-x calendar displays a three-month calendar.
+
+* C-u 0 C-x C-s never makes a backup file.
+
+This is a way you can explicitly request not to make a backup.
+
+* `term-setup-hook' is for users only.
+
+Emacs never uses this variable for internal purposes, so you can freely
+set it in your `.emacs' file to make Emacs do something special after
+loading any terminal-specific setup file from `lisp/term'.
+
+* `copy-keymap' now copies recursive submaps.
+
+* New overlay-arrow feature.
+
+If you set the variable `overlay-arrow-string' to a string
+and `overlay-arrow-position' to a marker, that string is displayed on
+the screen at the position of that marker, hiding whatever text would
+have appeared there.  If that position isn't on the screen, or if
+the buffer the marker points into isn't displayed, there is no effect.
+
+* -batch mode can read from the terminal.
+
+It now works to use `read-char' to do terminal input in a noninteractive
+Emacs run.  End of file causes Emacs to exit.
+
+* Variables `data-bytes-used' and `data-bytes-free' removed.
+
+These variables cannot really work because the 24-bit range of an
+integer in (most ports of) GNU Emacs is not large enough to hold their
+values on many systems.
+
+Changes in version 18.45, since version 18.41.
+
+* C indentation parameter `c-continued-brace-offset'.
+
+This parameter's value is added to the indentation of any
+line that is in a continuation context and starts with an open-brace.
+For example, it applies to the open brace shown here:
+
+     if (x)
+       {
+
+The default value is zero.
+
+* Dabbrev expansion (Meta-/) preserves case.
+
+When you use Meta-/ to search the buffer for an expansion of an
+abbreviation, if the expansion found is all lower case except perhaps
+for its first letter, then the case pattern of the abbreviation
+is carried over to the expansion that replaces it.
+
+* TeX-mode syntax.
+
+\ is no longer given "escape character" syntax in TeX mode.  It now
+has the syntax of an ordinary punctuation character.  As a result,
+\[...\] and such like are considered to balance each other.
+
+* Mail-mode automatic Reply-to field.
+
+If the variable `mail-default-reply-to' is non-`nil', then each time
+you start to compose a message, a Reply-to field is inserted with
+its contents taken from the value of `mail-default-reply-to'.
+
+* Where is your .emacs file?
+
+If you run Emacs under `su', so your real and effective uids are
+different, Emacs uses the home directory associated with the real uid
+(the name you actually logged in under) to find the .emacs file.
+
+Otherwise, Emacs uses the environment variable HOME to find the .emacs
+file.
+
+The .emacs file is not loaded at all if -batch is specified.
+
+* Prolog mode is the default for ".pl" files.
+
+* File names are not case-sensitive on VMS.
+
+On VMS systems, all file names that you specify are converted to upper
+case.  You can use either upper or lower case indiscriminately.
+
+* VMS-only function 'define-dcl-symbol'.
+
+This is a new name for the function formerly called
+`define-logical-name'.
 
 Editing Changes in Emacs 18
 
@@ -1372,7 +1482,7 @@ For older news, see the file ONEWS.
 ----------------------------------------------------------------------
 Copyright information:
 
-Copyright (C) 1987 Richard M. Stallman
+Copyright (C) 1988 Free Software Foundation, Inc.
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the

@@ -43,6 +43,10 @@ and this notice must be preserved on all copies.  */
 #include <sys/ioctl.h>
 #endif
 
+#ifdef APOLLO
+#include <default_acl.h>
+#endif
+
 #ifndef O_RDWR
 #define O_RDWR 2
 #endif
@@ -68,6 +72,8 @@ int inhibit_window_system;
 /* If -d option is used, this variable points to the name of
    the display to use.  */
 char *alternate_display;
+char **xargv;
+int xargc;
 #endif /* HAVE_X_WINDOWS */
 
 /* Nonzero means running Emacs without interactive terminal.  */
@@ -194,12 +200,17 @@ main (argc, argv, envp)
 
   clearerr (stdin);
 
-#ifdef APOLLO			/* Reserve memory space for sbrk to get */
-  set_sbrk_size (4000000);
-#else /* not APOLLO */
+#ifdef APOLLO
+  /* If USE_DOMAIN_ACLS environment variable exists,
+     use ACLs rather than UNIX modes. */
+  if (egetenv ("USE_DOMAIN_ACLS"))
+    default_acl (USE_DEFACL);
+#endif /* APOLLO */
+
+#ifndef SYSTEM_MALLOC
   /* Arrange for warnings when nearly out of space.  */
   malloc_init (0, malloc_warning);
-#endif /* not APOLLO */
+#endif
 
 #ifdef HIGHPRI
   setpriority (PRIO_PROCESS, getpid (), HIGHPRI);
@@ -207,6 +218,11 @@ main (argc, argv, envp)
 #endif HIGHPRI
 
   inhibit_window_system = 0;
+
+#ifdef HAVE_X_WINDOWS
+  xargv = argv;
+  xargc = argc;
+#endif
 
 /* Handle the -t switch, which specifies filename to use as terminal */
   if (skip_args + 2 < argc && !strcmp (argv[skip_args + 1], "-t"))
@@ -315,11 +331,11 @@ main (argc, argv, envp)
       init_display ();	/* Determine terminal type.  init_sys_modes uses results */
     }
   init_keyboard ();	/* This too must precede init_sys_modes */
+  init_callproc ();	/* And this too. */
   init_sys_modes ();	/* Init system terminal modes (RAW or CBREAK, etc.) */
   init_xdisp ();
   init_macros ();
   init_editfns ();
-  init_callproc ();
 #ifdef VMS
   init_vmsfns ();
 #endif /* VMS */
@@ -522,7 +538,9 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
 #else
   /* Tell malloc where start of impure now is */
   /* Also arrange for warnings when nearly out of space.  */
+#ifndef SYSTEM_MALLOC
   malloc_init (&my_edata, malloc_warning);
+#endif
   unexec (XSTRING (intoname)->data, a_name, &my_edata, 0, 0);
 #endif /* not VMS */
 

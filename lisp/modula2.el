@@ -10,6 +10,16 @@
 (defvar m2-mode-syntax-table nil
   "Syntax table in use in Modula-2-mode buffers.")
 
+(defvar m2-compile-command "m2c"
+  "Command to compile Modula-2 programs")
+
+(defvar m2-link-command "m2l"
+  "Command to link Modula-2 programs")
+
+(defvar m2-link-name nil
+  "Name of the executable.")
+
+
 (if m2-mode-syntax-table
     ()
   (let ((table (make-syntax-table)))
@@ -68,7 +78,7 @@
 "This is a mode intended to support program development in Modula-2.
 All control constructs of Modula-2 can be reached by typing
 Control-C followed by the first character of the construct.
-\\{m2-mode-map}
+
   Control-c b begin         Control-c c case
   Control-c d definition    Control-c e else
   Control-c f for           Control-c h header
@@ -84,7 +94,9 @@ Control-C followed by the first character of the construct.
   Control-c Control-c compile           Control-x ` next-error
   Control-c Control-l link
 
-   m2-indent controls the number of spaces for each indentation."
+   m2-indent controls the number of spaces for each indentation.
+   m2-compile-command holds the command to compile a Modula-2 program.
+   m2-link-command holds the command to link a Modula-2 program."
   (interactive)
   (kill-all-local-variables)
   (use-local-map m2-mode-map)
@@ -99,6 +111,8 @@ Control-C followed by the first character of the construct.
   (setq paragraph-start (concat "^$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
+  (make-local-variable 'paragraph-ignore-fill-prefix)
+  (setq paragraph-ignore-fill-prefix t)
 ;  (make-local-variable 'indent-line-function)
 ;  (setq indent-line-function 'c-indent-line)
   (make-local-variable 'require-final-newline)
@@ -116,6 +130,13 @@ Control-C followed by the first character of the construct.
   (make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
   (run-hooks 'm2-mode-hook))
+
+(defun m2-newline ()
+  "Insert a newline and indent following line like previous line."
+  (interactive)
+  (let ((hpos (current-indentation)))
+    (newline)
+    (indent-to hpos)))
 
 (defun m2-tab ()
   "Indent to next tab stop."
@@ -159,8 +180,8 @@ Control-C followed by the first character of the construct.
 (defun m2-for ()
   "Build skeleton FOR loop statment, prompting for the loop parameters."
   (interactive)
-  (insert "FOR " (read-string ": ") " TO " ": ")
-  (let ((by (read-string ": ")))
+  (insert "FOR " (read-string "init: ") " TO " (read-string "end: "))
+  (let ((by (read-string "by: ")))
     (if (not (string-equal by ""))
 	(insert " BY " by)))
   (insert " DO")
@@ -332,12 +353,16 @@ Control-C followed by the first character of the construct.
 (defun m2-compile ()
   (interactive)
   (setq modulename (buffer-name))
-  (compile (concat "m2c " modulename)))
+  (compile (concat m2-compile-command " " modulename)))
 
 (defun m2-link ()
   (interactive)
   (setq modulename (buffer-name))
-  (compile (concat "m2l " (substring modulename 0 -4))))
+  (if m2-link-name
+      (compile (concat m2-link-command " " m2-link-name))
+    (compile (concat m2-link-command " "
+		     (setq m2-link-name (read-string "Name of executable: "
+						     modulename))))))
 
 (defun execute-monitor-command (command)
   (let* ((shell shell-file-name)
@@ -381,8 +406,13 @@ Control-C followed by the first character of the construct.
   (interactive)
   (cond ((string-equal (substring (buffer-name) -4) ".def")
 	 (find-file-other-window
-	   (concat (substring (buffer-name) 0 -4) ".mod")))
+	  (concat (substring (buffer-name) 0 -4) ".mod")))
 	((string-equal (substring (buffer-name) -4) ".mod")
 	 (find-file-other-window
-	   (concat (substring (buffer-name) 0 -4)  ".def")))))
-
+	  (concat (substring (buffer-name) 0 -4)  ".def")))
+	((string-equal (substring (buffer-name) -3) ".mi")
+	 (find-file-other-window
+	  (concat (substring (buffer-name) 0 -3)  ".md")))
+	((string-equal (substring (buffer-name) -3) ".md")
+	 (find-file-other-window
+	  (concat (substring (buffer-name) 0 -3)  ".mi")))))

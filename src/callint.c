@@ -269,7 +269,7 @@ retry:
 	    ? (unsigned char *) ""
 	    : XSTRING (visargs[j])->data;
 
-      doprnt (prompt, sizeof prompt, prompt1, argstrings + 1);
+      doprnt (prompt, sizeof prompt, prompt1, j - 1, argstrings + 1);
 
       switch (*tem)
 	{

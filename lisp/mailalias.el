@@ -1,5 +1,5 @@
 ;; Expand mailing address aliases defined in ~/.mailrc.
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -79,32 +79,68 @@ Suitable header fields are To, Cc and Bcc."
     (set-marker end nil)))
 
 ;; Called by mail-setup, or similar functions, only if ~/.mailrc exists.
-(defun build-mail-aliases ()
+(defun build-mail-aliases (&optional file)
   "Read mail aliases from ~/.mailrc and set mail-aliases."
-  (let (buffer exists name (file "~/.mailrc"))
-    (setq exists (get-file-buffer file))
+  (setq file (expand-file-name (or file "~/.mailrc")))
+  (let ((buffer nil)
+	(obuf (current-buffer)))
     (unwind-protect
-	(if (not (file-exists-p file))
-	    (setq buffer nil)
-	  (save-excursion
-	    (set-buffer (setq buffer (find-file-noselect file)))
-	    (goto-char (point-min))
-	    (while (re-search-forward "^alias[ \t]*\\|^a[ \t]*" nil t)
-	      (re-search-forward "[^ \t]+")
-	      (setq name (buffer-substring (match-beginning 0) (match-end 0)))
-	      (skip-chars-forward " \t")
+	(progn
+	  (setq buffer (generate-new-buffer "mailrc"))
+	  (buffer-flush-undo buffer)
+	  (set-buffer buffer)
+	  (cond ((get-file-buffer file)
+		 (insert (save-excursion
+			   (set-buffer (get-file-buffer file))
+			   (buffer-substring (point-min) (point-max)))))
+		((not (file-exists-p file)))
+		(t (insert-file-contents file)))
+	  ;; Don't lose if no final newline.
+	  (goto-char (point-max))
+	  (or (eq (preceding-char) ?\n) (newline))
+	  (goto-char (point-min))
+	  ;; handle "\\\n" continuation lines
+	  (while (not (eobp))
+	    (end-of-line)
+	    (if (= (preceding-char) ?\\)
+		(progn (delete-char -1) (delete-char 1) (insert ?\ ))
+	        (forward-char 1)))
+	  (goto-char (point-min))
+	  (while (re-search-forward "^a\\(lias\\|\\)[ \t]+" nil t)
+	    (re-search-forward "[^ \t]+")
+	    (let* ((name (buffer-substring (match-beginning 0) (match-end 0)))
+		   (start (progn (skip-chars-forward " \t") (point))))
+	      (end-of-line)
 	      (define-mail-alias
 		name
-		(buffer-substring (point) (progn (end-of-line) (point)))))
-	    mail-aliases))
-      (or exists (null buffer) (kill-buffer buffer)))))
+		(buffer-substring start (point)))))
+	  mail-aliases)
+      (if buffer (kill-buffer buffer))
+      (set-buffer obuf))))
 
 ;; Always autoloadable in case the user wants to define aliases
 ;; interactively or in .emacs.
 (defun define-mail-alias (name definition)
   "Define NAME as a mail-alias that translates to DEFINITION."
   (interactive "sDefine mail alias: \nsDefine %s as mail alias for: ")
-  (let ((aelt (assoc name mail-aliases)))
-    (if aelt
-	(rplacd aelt definition)
+  ;; Read the defaults first, if we have not done so.
+  (if (eq mail-aliases t)
+      (progn
+	(setq mail-aliases nil)
+	(if (file-exists-p "~/.mailrc")
+	    (build-mail-aliases))))
+  (let (tem)
+    ;; ~/.mailrc contains addresses separated by spaces.
+    ;; mailers should expect addresses separated by commas.
+    (while (setq tem (string-match "[^ \t,][ \t,]+" definition tem))
+      (if (= (match-end 0) (length definition))
+	  (setq definition (substring definition 0 (1+ tem)))
+	(setq definition (concat (substring definition
+					    0 (1+ tem))
+				 ", "
+				 (substring definition (match-end 0))))
+	(setq tem (+ 3 tem))))
+    (setq tem (assoc name mail-aliases))
+    (if tem
+	(rplacd tem definition)
       (setq mail-aliases (cons (cons name definition) mail-aliases)))))

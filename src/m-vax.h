@@ -82,9 +82,13 @@ and this notice must be preserved on all copies.  */
 #ifdef USG
 #define LIB_STANDARD -lPW -lc
 #define HAVE_ALLOCA
-/* I believe NO_REMAP is not needed any more in 18.29
-   due to fixes in unexec.  It wasn't needed in 17 either. -- RMS.  */
-/* #define NO_REMAP  */
+
+/* There is some bug in unexec in for usg 5.2 on a vax
+   which nobody who runs such a system has yet tracked down. */
+#ifndef USG5_0
+#define NO_REMAP
+#endif /* USG 5_0 */
+
 #define TEXT_START 0
 #endif /* USG */
 

@@ -56,6 +56,9 @@ nonprinting characters, you can fix them:
  4) Remake xemacs.  It should work now.
  5) Running xemacs, do Meta-x byte-compile-file repeatedly
   to recreate all the .elc files that used to exist.
+  You may need to increase the value of the variable
+  max-lisp-eval-depth to succeed in running the compiler interpreted
+  on certain .el files.  400 was sufficient as of last report.
  6) Reinstall the old alloc.o (undoing changes to alloc.c if any)
   and remake temacs.
  7) Remake xemacs.  It should work now, with valid .elc files.
@@ -182,9 +185,24 @@ One drastic measure to ignore C-s and C-q, while sending enough
 padding that the terminal will not really lose any output.
 Ignoring C-s and C-q can be done by using keyboard-translate-table
 to map them into an undefined character such as C-^ or C-\.  Sending
-lots of padding is done by changing the termcap entry.
+lots of padding is done by changing the termcap entry.  Here is how
+to make such a keyboard-translate-table:
 
-An even more drastic measure is to make Emacs understand flow control.
+    (let ((the-table (make-string 128 0)))
+      ;; Default is to translate each character into itself.
+      (let ((i 0))
+	(while (< i 128)
+	  (aset the-table i i)
+	  (setq i (1+ i))))
+      ;; Swap C-s with C-\
+      (aset the-table ?\C-\\ ?\C-s)
+      (aset the-table ?\C-s ?\C-\\)
+      ;; Swap C-q with C-^
+      (aset the-table ?\C-^ ?\C-q)
+      (aset the-table ?\C-q ?\C-^)
+      (setq keyboard-translate-table the-table))
+
+An even more drastic measure is to make Emacs use flow control.
 To do this, evaluate the Lisp expression (set-input-mode nil t).
 Emacs will then interpret C-s and C-q as flow control commands.  (More
 precisely, it will allow the kernel to do so as it usually does.)  You
@@ -193,9 +211,9 @@ consequence of using CBREAK mode, the terminal's Meta-key, if any,
 will not work, and C-g will be liable to cause a loss of output which
 will produce garbage on the screen.  (These problems apply to 4.2BSD;
 they may not happen in 4.3 or VMS, and I don't know what would happen
-in sysV.)  You can use keyboard-translate-table to map two other input
-characters (such as C-^ and C-\) into C-s and C-q, so that you can
-still search and quote.
+in sysV.)  You can use keyboard-translate-table, as shown above,
+to map two other input characters (such as C-^ and C-\) into C-s and
+C-q, so that you can still search and quote.
 
 I have no intention of ever redisigning the Emacs command set for
 the assumption that terminals use C-s/C-q flow control.  This
@@ -207,7 +225,7 @@ for the sake of inferior systems.
 
 * Control-S and Control-Q commands are ignored completely.
 
-For some reason, your system is using brain-damaged ^S/^Q flow
+For some reason, your system is using brain-damaged C-s/C-q flow
 control despite Emacs's attempts to turn it off.  Perhaps your
 terminal is connected to the computer through a concentrator
 that wants to use flow control.
@@ -217,8 +235,8 @@ If you succeed in this, try making the terminal work without
 flow control, as described in the preceding section.
 
 If that line of approach is not successful, map some other characters
-into C-s and C-q using keyboard-translate-table.  I suggest C-^ and
-C-\.
+into C-s and C-q using keyboard-translate-table.  The example above
+shows how to do this with C-^ and C-\.
 
 * Screen is updated wrong, but only on one kind of terminal.
 

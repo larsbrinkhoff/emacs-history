@@ -112,9 +112,9 @@ See center-line for more info."
       (forward-line 1))))
 
 (defun center-line ()
-  "Center the line point is on.
-This means adjusting its indentation to match
-the distance between the end of the text and fill-column."
+  "Center the line point is on, within the width specified by `fill-column'.
+This means adjusting the indentation to match
+the distance between the end of the text and `fill-column'."
   (interactive)
   (save-excursion
     (let (line-length)

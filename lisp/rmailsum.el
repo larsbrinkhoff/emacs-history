@@ -36,7 +36,7 @@ LABELS should be a string containing the desired labels, separated by commas."
   (setq rmail-last-multi-labels labels)
   (rmail-new-summary (concat "labels " labels)
 		     'rmail-message-labels-p
-		     (concat ",\\(" (mail-comma-list-regexp labels) "\\),")))
+		     (concat ", \\(" (mail-comma-list-regexp labels) "\\),")))
 
 (defun rmail-summary-by-recipients (recipients &optional primary-only)
   "Display a summary of all messages with the given RECIPIENTS.
@@ -71,9 +71,9 @@ nil for FUNCTION means all messages."
 	   (buffer-name rmail-summary-buffer))
       (setq rmail-summary-buffer
 	    (generate-new-buffer (concat (buffer-name) "-summary"))))
-  (let ((summary-msgs ()))
+  (let ((summary-msgs ())
+	(new-summary-line-count 0))
     (let ((msgnum 1)
-	  (new-summary-line-count 0)
 	  (buffer-read-only nil))
       (save-restriction
 	(save-excursion
@@ -104,7 +104,7 @@ nil for FUNCTION means all messages."
       (setq minor-mode-alist (list ": " description))
       (setq rmail-buffer rbuf
 	    rmail-total-messages total)
-      (if (> total 0)
+      (if (> new-summary-line-count 0)
 	  (rmail-summary-goto-msg mesg t))))
   (message "Computing summary lines...done"))
 
@@ -186,7 +186,7 @@ nil for FUNCTION means all messages."
 (defun rmail-make-basic-summary-line ()
   (goto-char (point-min))
   (concat (save-excursion
-	    (if (not (search-forward "Date:" nil t))
+	    (if (not (re-search-forward "^Date:" nil t))
 		"      "
 	      (cond ((re-search-forward "\\([^0-9:]\\)\\([0-3]?[0-9]\\)\\([- \t_]+\\)\\([adfjmnos][aceopu][bcglnprtvy]\\)"
 		      (save-excursion (end-of-line) (point)) t)
@@ -207,7 +207,7 @@ nil for FUNCTION means all messages."
 		    (t "??????"))))
 	  "  "
 	  (save-excursion
-	    (if (not (search-forward "From:" nil t))
+	    (if (not (re-search-forward "^From:" nil t))
 		"                         "
 	      (progn (skip-chars-forward " \t")
 		     (let* ((from (mail-strip-quoted-names
@@ -229,7 +229,7 @@ nil for FUNCTION means all messages."
 							   (t (- mch 9))))
 					    (min len (+ lo 25)))))))))
 	  "  #"
-	  (if (search-forward "Subject:" nil t)
+	  (if (re-search-forward "^Subject:" nil t)
 	      (progn (skip-chars-forward " \t")
 		     (buffer-substring (point)
 				       (progn (end-of-line)
@@ -332,7 +332,9 @@ Entering this mode calls value of hook variable rmail-summary-mode-hook."
   (beginning-of-line)
   (let ((buf rmail-buffer)
 	(cur (point))
-	(curmsg (string-to-int (buffer-substring (point) (+ 5 (point))))))
+	(curmsg (string-to-int
+		 (buffer-substring (point)
+				   (min (point-max) (+ 5 (point)))))))
     (if (not n)
 	(setq n curmsg)
       (if (< n 1)
@@ -378,23 +380,20 @@ Entering this mode calls value of hook variable rmail-summary-mode-hook."
   (define-key rmail-summary-mode-map "d" 'rmail-summary-delete-forward))
 
 (defun rmail-summary-scroll-msg-up (&optional dist)
-  "Scroll message in top window forward"
+  "Scroll other window forward."
   (interactive "P")
-  (scroll-other-window (if (null dist)
-			   nil
-			 (prefix-numeric-value dist))))
+  (scroll-other-window dist))
 
 (defun rmail-summary-scroll-msg-down (&optional dist)
-  "Scroll message in top window backward"
+  "Scroll other window backward."
   (interactive "P")
-  (other-window 1)
-  (scroll-down (if (null dist)
-		   nil
-		 (prefix-numeric-value dist)))
-  (other-window 1))
+  (scroll-other-window
+   (cond ((eq dist '-) nil)
+	 ((null dist) '-)
+	 (t (- (prefix-numeric-value dist))))))
 
 (defun rmail-summary-quit ()
-  "Quit out of rmail and rmail summary"
+  "Quit out of rmail and rmail summary."
   (interactive)
   (rmail-summary-exit)
   (rmail-quit))

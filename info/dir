@@ -20,7 +20,13 @@ File: dir	Node: Top	This is the top of the INFO tree
 
 * GDB: (gdb).   The source-level C debugger.
 
-* texinfo: (texinfo).
+* Texinfo: (texinfo).
 		With one source file, make either a printed manual
 		(through TeX) or an Info file (through texinfo).
 		Full documentation in this menu item.
+
+* Termcap: (termcap).
+		The termcap library, which enables application programs
+		to handle all types of character-display terminals.
+
+		

@@ -19,6 +19,9 @@
 ;; and this notice must be preserved on all copies.
 
 
+(defvar spell-command "spell"
+  "*Command to run the spell program.")
+
 (defun spell-buffer ()
   "Check spelling of every word in the buffer.
 For each incorrect word, you are asked for the correct spelling
@@ -53,15 +56,19 @@ From program, applies from START to END."
      (erase-buffer))
     (message "Checking spelling of %s..." (or description "region"))
     (if (= ?\n (char-after (1- end)))
-	(call-process-region start end "spell"
-			     nil buf)
+	(if (string= "spell" spell-command)
+	    (call-process-region start end "spell" nil buf)
+	  (call-process-region start end shell-file-name
+			       nil buf nil "-c" spell-cmd))
       (let ((oldbuf (current-buffer)))
 	(save-excursion
 	 (set-buffer buf)
 	 (insert-buffer-substring oldbuf start end)
 	 (insert ?\n)
-	 (call-process-region (point-min) (point-max) "spell"
-			      t buf))))
+	 (if (string= "spell" spell-command)
+	     (call-process-region (point-min) (point-max) "spell" t buf)
+	   (call-process-region (point-min) (point-max) shell-file-name
+				t buf nil "-c" spell-cmd)))))
     (message "Checking spelling of %s...%s"
 	     (or description "region")
 	     (if (save-excursion
@@ -101,8 +108,11 @@ From program, applies from START to END."
      (widen)
      (erase-buffer)
      (insert string "\n")
-     (call-process-region (point-min) (point-max) "spell"
-			  t t)
+     (if (string= "spell" spell-command)
+	 (call-process-region (point-min) (point-max) "spell"
+			      t t)
+       (call-process-region (point-min) (point-max) shell-file-name
+			    t t nil "-c" spell-cmd))
      (if (= 0 (buffer-size))
 	 (message "%s is correct" string)
        (goto-char (point-min))

@@ -40,7 +40,7 @@ Leaves original message, deleted, before the undigestified messages."
 	    (delete-region (point-min)
 			   (progn (search-forward "\n*** EOOH ***\n")
 				  (point)))
-	    (insert "\^_\^L\n0,unseen,,\n*** EOOH ***\n")
+	    (insert "\^_\^L\n0, unseen,,\n*** EOOH ***\n")
 	    (narrow-to-region (point)
 			      (point-max))
 	    (let* ((fill-prefix "")
@@ -52,7 +52,8 @@ Leaves original message, deleted, before the undigestified messages."
 			   (narrow-to-region (point-min) (point))
 			   (goto-char (point-max))
 			   (or (mail-fetch-field "Reply-To")
-			       (mail-fetch-field "To")))
+			       (mail-fetch-field "To")
+			       (mail-fetch-field "Apparently-To")))
 			 (error "Message is not a digest")))))
 	      (save-excursion
 		(goto-char (point-max))
@@ -68,7 +69,7 @@ Leaves original message, deleted, before the undigestified messages."
 			(setq found t)))
 		  (if (not found) (error "Message is not a digest"))))
 	      (re-search-forward (concat "^" (make-string 55 ?-) "-*\n*"))
-	      (replace-match "\^_\^L\n0,unseen,,\n*** EOOH ***\n")
+	      (replace-match "\^_\^L\n0, unseen,,\n*** EOOH ***\n")
 	      (save-restriction
 		(narrow-to-region (point)
 				  (progn (search-forward "\n\n")
@@ -79,7 +80,7 @@ Leaves original message, deleted, before the undigestified messages."
 	      (while (re-search-forward
 		      (concat "\n\n" (make-string 27 ?-) "-*\n*")
 		      nil t)
-		(replace-match "\n\n\^_\^L\n0,unseen,,\n*** EOOH ***\n")
+		(replace-match "\n\n\^_\^L\n0, unseen,,\n*** EOOH ***\n")
 		(save-restriction
 		  (if (looking-at "End ")
 		      (insert "To: " digest-name "\n\n")
@@ -97,6 +98,7 @@ Leaves original message, deleted, before the undigestified messages."
 	    (rmail-show-message n)
 	    (rmail-delete-forward)))
       (cond (error
+	     (narrow-to-region (point-min) (1+ (point-max)))
 	     (delete-region (point-min) (point-max))
 	     (rmail-show-message rmail-current-message))))))
 

@@ -1,5 +1,5 @@
 /* m- file for Whitechapel Computer Works MG1 (ns16000 based).
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
    MG-1 version by L.M.McLoughlin
 
 This file is part of GNU Emacs.
@@ -88,7 +88,7 @@ and this notice must be preserved on all copies.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 /* hmmmm... not sure.  copied m-sequent.h */
 #undef VIRT_ADDR_VARIES

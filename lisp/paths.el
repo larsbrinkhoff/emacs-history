@@ -1,5 +1,5 @@
 ;; Define pathnames for use by various Emacs commands.
-;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -39,11 +39,14 @@
 
 (defvar mh-progs
   (cond ((file-exists-p "/usr/new/mh") "/usr/new/mh/")
+	((file-exists-p "/usr/local/bin/mh") "/usr/local/bin/mh/")
 	(t "/usr/local/mh/"))
   "Directory containing MH commands")
+
 (defvar mh-lib
   (cond ((file-exists-p "/usr/new/lib/mh") "/usr/new/lib/mh/")
-	(t "/usr/local/lib/mh/"))
+	((file-exists-p "/usr/local/lib/mh") "/usr/local/lib/mh/")
+	(t "/usr/local/bin/mh/"))
   "Directory of MH library")
 
 (defconst rmail-file-name "~/RMAIL"
@@ -56,19 +59,13 @@
   "Name of directory used by system mailer for delivering new mail.
 Its name should end with a slash.")
 
-(defconst rmail-primary-inbox-list 
-  (if (memq system-type '(hpux usg-unix-v))
-      '("~/mbox" "/usr/mail/$LOGNAME")
-    '("~/mbox" "/usr/spool/mail/$USER"))
- "List of files which are inboxes for user's primary mail file ~/RMAIL.")
-
 (defconst sendmail-program
   (if (file-exists-p "/usr/lib/sendmail")
       "/usr/lib/sendmail"
     "fakemail")			;In ../etc, to interface to /bin/mail.
   "Program used to send messages.")
 
-(defconst term-file-prefix "term/"
+(defconst term-file-prefix (if (eq system-type 'vax-vms) "[.term]" "term/")
   "If non-nil, Emacs startup does (load (concat term-file-prefix (getenv \"TERM\")))
 You may set this variable to nil in your `.emacs' file if you do not wish
 the terminal-initialization file to be loaded.")
@@ -86,15 +83,28 @@ the terminal-initialization file to be loaded.")
 Append a section-number or letter to get a directory name.")
 
 (defconst manual-formatted-dirlist
- (if (file-exists-p "/usr/man/cat1")
-     '("/usr/man/cat1" "/usr/man/cat2" "/usr/man/cat3"
-       "/usr/man/cat4" "/usr/man/cat5" "/usr/man/cat6"
-       "/usr/man/cat7" "/usr/man/cat8" "/usr/man/catl" "/usr/man/catn")
-     '("/usr/catman/u_man/man1" "/usr/catman/u_man/man6"
-       "/usr/catman/p_man/man2" "/usr/catman/p_man/man3"
-       "/usr/catman/p_man/man4" "/usr/catman/p_man/man5"
-       "/usr/catman/a_man/man1" "/usr/catman/a_man/man7"
-       "/usr/catman/a_man/man8" "/usr/catman/local"))
+  (cond ((eq system-type 'hpux)
+	 '("/usr/man/cat1" "/usr/man/cat2" "/usr/man/cat3"
+	   "/usr/man/cat4" "/usr/man/cat5" "/usr/man/cat6"
+	   "/usr/man/cat7" "/usr/man/cat1m" "/usr/man/cat8"
+	   "/usr/local/man/cat1" "/usr/local/man/cat2" "/usr/local/man/cat3"
+	   "/usr/local/man/cat4" "/usr/local/man/cat5" "/usr/local/man/cat6"
+	   "/usr/local/man/cat7" "/usr/local/man/cat1m" "/usr/local/man/cat8"
+	   "/usr/contrib/man/cat1" "/usr/contrib/man/cat2"
+	   "/usr/contrib/man/cat3" "/usr/contrib/man/cat4"
+	   "/usr/contrib/man/cat5" "/usr/contrib/man/cat6"
+	   "/usr/contrib/man/cat7" "/usr/contrib/man/cat1m"
+	   "/usr/contrib/man/cat8"))
+	 ((file-exists-p "/usr/man/cat1")
+	  '("/usr/man/cat1" "/usr/man/cat2" "/usr/man/cat3"
+	    "/usr/man/cat4" "/usr/man/cat5" "/usr/man/cat6"
+	    "/usr/man/cat7" "/usr/man/cat8" "/usr/man/catl" "/usr/man/catn"))
+	 (t
+	   '("/usr/catman/u_man/man1" "/usr/catman/u_man/man6"
+	     "/usr/catman/p_man/man2" "/usr/catman/p_man/man3"
+	     "/usr/catman/p_man/man4" "/usr/catman/p_man/man5"
+	     "/usr/catman/a_man/man1" "/usr/catman/a_man/man7"
+	     "/usr/catman/a_man/man8" "/usr/catman/local")))
   "List of directories containing formatted manual pages.")
 
 (defconst abbrev-file-name 

@@ -47,227 +47,227 @@
 \entry {completion}{35}{completion}
 \entry {command history}{37}{command history}
 \entry {history of commands}{37}{history of commands}
-\entry {minibuffer}{39}{minibuffer}
-\entry {help}{41}{help}
-\entry {self-documentation}{41}{self-documentation}
-\entry {apropos}{43}{apropos}
-\entry {mark}{45}{mark}
-\entry {region}{45}{region}
-\entry {mark ring}{47}{mark ring}
-\entry {killing}{49}{killing}
-\entry {cutting}{49}{cutting}
-\entry {deletion}{49}{deletion}
-\entry {moving text}{51}{moving text}
-\entry {copying text}{51}{copying text}
-\entry {kill ring}{51}{kill ring}
-\entry {yanking}{51}{yanking}
-\entry {pasting}{51}{pasting}
-\entry {television}{52}{television}
-\entry {rectangles}{55}{rectangles}
-\entry {registers}{59}{registers}
-\entry {rectangle}{60}{rectangle}
-\entry {scrolling}{61}{scrolling}
-\entry {horizontal scrolling}{62}{horizontal scrolling}
-\entry {searching}{65}{searching}
-\entry {quitting (in search)}{66}{quitting (in search)}
-\entry {nonincremental search}{68}{nonincremental search}
-\entry {word search}{69}{word search}
-\entry {regular expression}{69}{regular expression}
-\entry {regexp}{69}{regexp}
-\entry {replacement}{74}{replacement}
-\entry {string substitution}{74}{string substitution}
-\entry {global substitution}{74}{global substitution}
-\entry {query replace}{76}{query replace}
-\entry {typos}{79}{typos}
-\entry {mistakes, correcting}{79}{mistakes, correcting}
-\entry {transposition}{79}{transposition}
-\entry {case conversion}{80}{case conversion}
-\entry {words}{80}{words}
-\entry {spelling}{81}{spelling}
-\entry {files}{83}{files}
-\entry {file names}{83}{file names}
-\entry {visiting files}{84}{visiting files}
-\entry {files}{84}{files}
-\entry {visiting}{84}{visiting}
-\entry {saving}{84}{saving}
-\entry {modified (buffer)}{84}{modified (buffer)}
-\entry {creating files}{85}{creating files}
-\entry {backup file}{87}{backup file}
-\entry {file dates}{90}{file dates}
-\entry {simultaneous editing}{90}{simultaneous editing}
-\entry {drastic changes}{91}{drastic changes}
-\entry {Auto-Save mode}{92}{Auto-Save mode}
-\entry {crashes}{92}{crashes}
-\entry {file directory}{94}{file directory}
-\entry {directory listing}{94}{directory listing}
-\entry {Dired}{95}{Dired}
-\entry {deletion (of files)}{95}{deletion (of files)}
-\entry {viewing}{98}{viewing}
-\entry {deletion (of files)}{98}{deletion (of files)}
-\entry {copying files}{98}{copying files}
-\entry {buffers}{101}{buffers}
-\entry {selected buffer}{101}{selected buffer}
-\entry {current buffer}{101}{current buffer}
-\entry {change buffers}{101}{change buffers}
-\entry {switch buffers}{101}{switch buffers}
-\entry {read-only buffer}{103}{read-only buffer}
-\entry {buffer menu}{104}{buffer menu}
-\entry {windows}{107}{windows}
-\entry {selected window}{107}{selected window}
-\entry {major modes}{111}{major modes}
-\entry {indentation}{113}{indentation}
-\entry {indentation}{113}{indentation}
-\entry {text}{117}{text}
-\entry {Text mode}{117}{Text mode}
-\entry {nroff}{118}{nroff}
-\entry {TeX}{118}{TeX}
-\entry {LaTeX}{118}{LaTeX}
-\entry {header (TeX mode)}{121}{header (TeX mode)}
-\entry {outlines}{122}{outlines}
-\entry {selective display}{122}{selective display}
-\entry {invisible lines}{122}{invisible lines}
-\entry {heading lines (Outline mode)}{122}{heading lines (Outline mode)}
-\entry {body lines (Outline mode)}{122}{body lines (Outline mode)}
-\entry {subtree (Outline mode)}{125}{subtree (Outline mode)}
-\entry {words}{125}{words}
-\entry {Meta}{125}{Meta}
-\entry {transposition}{126}{transposition}
-\entry {syntax table}{126}{syntax table}
-\entry {sentences}{127}{sentences}
-\entry {paragraphs}{128}{paragraphs}
-\entry {pages}{129}{pages}
-\entry {formfeed}{129}{formfeed}
-\entry {filling}{130}{filling}
-\entry {Auto Fill mode}{130}{Auto Fill mode}
-\entry {justification}{131}{justification}
-\entry {centering}{131}{centering}
-\entry {fill prefix}{132}{fill prefix}
-\entry {case conversion}{133}{case conversion}
-\entry {words}{133}{words}
-\entry {region}{133}{region}
-\entry {Lisp}{135}{Lisp}
-\entry {C}{135}{C}
-\entry {Lisp mode}{135}{Lisp mode}
-\entry {C mode}{135}{C mode}
-\entry {Scheme mode}{135}{Scheme mode}
-\entry {mode hook}{136}{mode hook}
-\entry {Control-Meta}{136}{Control-Meta}
-\entry {list}{136}{list}
-\entry {sexp}{136}{sexp}
-\entry {expression}{136}{expression}
-\entry {transposition}{138}{transposition}
-\entry {defuns}{138}{defuns}
-\entry {indentation}{139}{indentation}
-\entry {grinding}{139}{grinding}
-\entry {customization}{141}{customization}
-\entry {matching parentheses}{145}{matching parentheses}
-\entry {parentheses}{145}{parentheses}
-\entry {comments}{146}{comments}
-\entry {indentation}{146}{indentation}
-\entry {blank lines}{147}{blank lines}
-\entry {Auto Fill mode}{147}{Auto Fill mode}
-\entry {completion (symbol names)}{149}{completion (symbol names)}
-\entry {change log}{150}{change log}
-\entry {tag table}{151}{tag table}
-\entry {etags program}{152}{etags program}
-\entry {Fortran mode}{155}{Fortran mode}
-\entry {inferior process}{161}{inferior process}
-\entry {make}{161}{make}
-\entry {compilation errors}{161}{compilation errors}
-\entry {error log}{161}{error log}
-\entry {libraries}{163}{libraries}
-\entry {loading Lisp code}{163}{loading Lisp code}
-\entry {autoload}{164}{autoload}
-\entry {byte code}{164}{byte code}
-\entry {mocklisp}{165}{mocklisp}
-\entry {Emacs-Lisp mode}{166}{Emacs-Lisp mode}
-\entry {debugger}{167}{debugger}
-\entry {current stack frame}{168}{current stack frame}
-\entry {abbrevs}{171}{abbrevs}
-\entry {expansion (of abbrevs)}{171}{expansion (of abbrevs)}
-\entry {pictures}{177}{pictures}
-\entry {rectangle}{179}{rectangle}
-\entry {mail}{181}{mail}
-\entry {message}{181}{message}
-\entry {headers (of mail message)}{182}{headers (of mail message)}
-\entry {Rmail}{187}{Rmail}
-\entry {message}{187}{message}
-\entry {primary mail file}{187}{primary mail file}
-\entry {message number}{187}{message number}
-\entry {deletion (Rmail)}{189}{deletion (Rmail)}
-\entry {expunging (Rmail)}{189}{expunging (Rmail)}
-\entry {undeletion (Rmail)}{190}{undeletion (Rmail)}
-\entry {inbox file}{191}{inbox file}
-\entry {label (Rmail)}{193}{label (Rmail)}
-\entry {attribute (Rmail)}{193}{attribute (Rmail)}
-\entry {summary (Rmail)}{195}{summary (Rmail)}
-\entry {reply to a message}{198}{reply to a message}
-\entry {forward a message}{198}{forward a message}
-\entry {digest message}{200}{digest message}
-\entry {undigestify}{200}{undigestify}
-\entry {recursive editing level}{201}{recursive editing level}
-\entry {editing level, recursive}{201}{editing level, recursive}
-\entry {exiting}{201}{exiting}
-\entry {widening}{202}{widening}
-\entry {restriction}{202}{restriction}
-\entry {narrowing}{202}{narrowing}
-\entry {sorting}{203}{sorting}
-\entry {subshell}{205}{subshell}
-\entry {shell commands}{205}{shell commands}
-\entry {environment}{205}{environment}
-\entry {Shell mode}{207}{Shell mode}
-\entry {hardcopy}{207}{hardcopy}
-\entry {presidentagon}{208}{presidentagon}
-\entry {againformation}{208}{againformation}
-\entry {Markov chain}{209}{Markov chain}
-\entry {ignoriginal}{209}{ignoriginal}
-\entry {techniquitous}{209}{techniquitous}
-\entry {outragedy}{209}{outragedy}
-\entry {buggestion}{209}{buggestion}
-\entry {properbose}{209}{properbose}
-\entry {boredom}{209}{boredom}
-\entry {other editors}{209}{other editors}
-\entry {EDT}{209}{EDT}
-\entry {vi}{209}{vi}
-\entry {customization}{211}{customization}
-\entry {minor modes}{211}{minor modes}
-\entry {mode line}{211}{mode line}
-\entry {Auto Fill mode}{211}{Auto Fill mode}
-\entry {Overwrite mode}{211}{Overwrite mode}
-\entry {Abbrev mode}{211}{Abbrev mode}
-\entry {variable}{212}{variable}
-\entry {option}{212}{option}
-\entry {setting variables}{212}{setting variables}
-\entry {option}{213}{option}
-\entry {local variables}{214}{local variables}
-\entry {per-buffer variables}{215}{per-buffer variables}
-\entry {local variables in files}{215}{local variables in files}
-\entry {keyboard macros}{217}{keyboard macros}
-\entry {command}{220}{command}
-\entry {function}{220}{function}
-\entry {command name}{220}{command name}
-\entry {keymap}{220}{keymap}
-\entry {global keymap}{220}{global keymap}
-\entry {local keymap}{220}{local keymap}
-\entry {minibuffer}{220}{minibuffer}
-\entry {sparse keymap}{221}{sparse keymap}
-\entry {key rebinding, this session}{222}{key rebinding, this session}
-\entry {rebinding keys, this session}{222}{rebinding keys, this session}
-\entry {rebinding keys, this session}{222}{rebinding keys, this session}
-\entry {disabled command}{223}{disabled command}
-\entry {syntax table}{224}{syntax table}
-\entry {init file}{226}{init file}
-\entry {Emacs initialization file}{226}{Emacs initialization file}
-\entry {key rebinding, permanent}{226}{key rebinding, permanent}
-\entry {rebinding keys, pernamently}{226}{rebinding keys, pernamently}
-\entry {quitting}{231}{quitting}
-\entry {quitting}{231}{quitting}
-\entry {C-g}{231}{C-g}
-\entry {recursive editing level}{231}{recursive editing level}
-\entry {editing level, recursive}{231}{editing level, recursive}
-\entry {aborting}{231}{aborting}
-\entry {Eliza}{234}{Eliza}
-\entry {doctor}{234}{doctor}
-\entry {bugs}{235}{bugs}
-\entry {dribble file}{237}{dribble file}
-\entry {termscript file}{238}{termscript file}
+\entry {minibuffer}{41}{minibuffer}
+\entry {help}{43}{help}
+\entry {self-documentation}{43}{self-documentation}
+\entry {apropos}{45}{apropos}
+\entry {mark}{47}{mark}
+\entry {region}{47}{region}
+\entry {mark ring}{49}{mark ring}
+\entry {killing}{51}{killing}
+\entry {cutting}{51}{cutting}
+\entry {deletion}{51}{deletion}
+\entry {moving text}{53}{moving text}
+\entry {copying text}{53}{copying text}
+\entry {kill ring}{53}{kill ring}
+\entry {yanking}{53}{yanking}
+\entry {pasting}{53}{pasting}
+\entry {television}{54}{television}
+\entry {rectangles}{57}{rectangles}
+\entry {registers}{61}{registers}
+\entry {rectangle}{62}{rectangle}
+\entry {scrolling}{63}{scrolling}
+\entry {horizontal scrolling}{64}{horizontal scrolling}
+\entry {searching}{67}{searching}
+\entry {quitting (in search)}{68}{quitting (in search)}
+\entry {nonincremental search}{70}{nonincremental search}
+\entry {word search}{71}{word search}
+\entry {regular expression}{71}{regular expression}
+\entry {regexp}{71}{regexp}
+\entry {replacement}{76}{replacement}
+\entry {string substitution}{76}{string substitution}
+\entry {global substitution}{76}{global substitution}
+\entry {query replace}{78}{query replace}
+\entry {typos}{81}{typos}
+\entry {mistakes, correcting}{81}{mistakes, correcting}
+\entry {transposition}{81}{transposition}
+\entry {case conversion}{82}{case conversion}
+\entry {words}{82}{words}
+\entry {spelling}{83}{spelling}
+\entry {files}{85}{files}
+\entry {file names}{85}{file names}
+\entry {visiting files}{86}{visiting files}
+\entry {files}{86}{files}
+\entry {visiting}{86}{visiting}
+\entry {saving}{86}{saving}
+\entry {modified (buffer)}{87}{modified (buffer)}
+\entry {creating files}{87}{creating files}
+\entry {backup file}{90}{backup file}
+\entry {file dates}{92}{file dates}
+\entry {simultaneous editing}{92}{simultaneous editing}
+\entry {drastic changes}{94}{drastic changes}
+\entry {Auto-Save mode}{94}{Auto-Save mode}
+\entry {crashes}{94}{crashes}
+\entry {file directory}{96}{file directory}
+\entry {directory listing}{96}{directory listing}
+\entry {Dired}{97}{Dired}
+\entry {deletion (of files)}{97}{deletion (of files)}
+\entry {viewing}{100}{viewing}
+\entry {deletion (of files)}{100}{deletion (of files)}
+\entry {copying files}{101}{copying files}
+\entry {buffers}{103}{buffers}
+\entry {selected buffer}{103}{selected buffer}
+\entry {current buffer}{103}{current buffer}
+\entry {change buffers}{103}{change buffers}
+\entry {switch buffers}{103}{switch buffers}
+\entry {read-only buffer}{105}{read-only buffer}
+\entry {buffer menu}{106}{buffer menu}
+\entry {windows}{109}{windows}
+\entry {selected window}{109}{selected window}
+\entry {major modes}{113}{major modes}
+\entry {indentation}{115}{indentation}
+\entry {indentation}{115}{indentation}
+\entry {text}{119}{text}
+\entry {Text mode}{119}{Text mode}
+\entry {nroff}{120}{nroff}
+\entry {TeX}{120}{TeX}
+\entry {LaTeX}{120}{LaTeX}
+\entry {header (TeX mode)}{123}{header (TeX mode)}
+\entry {outlines}{124}{outlines}
+\entry {selective display}{124}{selective display}
+\entry {invisible lines}{124}{invisible lines}
+\entry {heading lines (Outline mode)}{124}{heading lines (Outline mode)}
+\entry {body lines (Outline mode)}{124}{body lines (Outline mode)}
+\entry {subtree (Outline mode)}{127}{subtree (Outline mode)}
+\entry {words}{127}{words}
+\entry {Meta}{127}{Meta}
+\entry {transposition}{128}{transposition}
+\entry {syntax table}{128}{syntax table}
+\entry {sentences}{129}{sentences}
+\entry {paragraphs}{130}{paragraphs}
+\entry {pages}{131}{pages}
+\entry {formfeed}{131}{formfeed}
+\entry {filling}{132}{filling}
+\entry {Auto Fill mode}{132}{Auto Fill mode}
+\entry {justification}{133}{justification}
+\entry {centering}{133}{centering}
+\entry {fill prefix}{134}{fill prefix}
+\entry {case conversion}{135}{case conversion}
+\entry {words}{135}{words}
+\entry {region}{135}{region}
+\entry {Lisp}{137}{Lisp}
+\entry {C}{137}{C}
+\entry {Lisp mode}{137}{Lisp mode}
+\entry {C mode}{137}{C mode}
+\entry {Scheme mode}{137}{Scheme mode}
+\entry {mode hook}{138}{mode hook}
+\entry {Control-Meta}{138}{Control-Meta}
+\entry {list}{138}{list}
+\entry {sexp}{138}{sexp}
+\entry {expression}{138}{expression}
+\entry {transposition}{140}{transposition}
+\entry {defuns}{140}{defuns}
+\entry {indentation}{141}{indentation}
+\entry {grinding}{141}{grinding}
+\entry {customization}{143}{customization}
+\entry {matching parentheses}{147}{matching parentheses}
+\entry {parentheses}{147}{parentheses}
+\entry {comments}{148}{comments}
+\entry {indentation}{148}{indentation}
+\entry {blank lines}{149}{blank lines}
+\entry {Auto Fill mode}{149}{Auto Fill mode}
+\entry {completion (symbol names)}{151}{completion (symbol names)}
+\entry {change log}{152}{change log}
+\entry {tag table}{153}{tag table}
+\entry {etags program}{154}{etags program}
+\entry {Fortran mode}{157}{Fortran mode}
+\entry {inferior process}{165}{inferior process}
+\entry {make}{165}{make}
+\entry {compilation errors}{165}{compilation errors}
+\entry {error log}{165}{error log}
+\entry {libraries}{167}{libraries}
+\entry {loading Lisp code}{167}{loading Lisp code}
+\entry {autoload}{168}{autoload}
+\entry {byte code}{168}{byte code}
+\entry {mocklisp}{169}{mocklisp}
+\entry {Emacs-Lisp mode}{170}{Emacs-Lisp mode}
+\entry {debugger}{171}{debugger}
+\entry {current stack frame}{172}{current stack frame}
+\entry {abbrevs}{175}{abbrevs}
+\entry {expansion (of abbrevs)}{175}{expansion (of abbrevs)}
+\entry {pictures}{181}{pictures}
+\entry {rectangle}{183}{rectangle}
+\entry {mail}{185}{mail}
+\entry {message}{185}{message}
+\entry {headers (of mail message)}{186}{headers (of mail message)}
+\entry {Rmail}{191}{Rmail}
+\entry {message}{191}{message}
+\entry {primary mail file}{191}{primary mail file}
+\entry {message number}{191}{message number}
+\entry {deletion (Rmail)}{193}{deletion (Rmail)}
+\entry {expunging (Rmail)}{193}{expunging (Rmail)}
+\entry {undeletion (Rmail)}{194}{undeletion (Rmail)}
+\entry {inbox file}{195}{inbox file}
+\entry {label (Rmail)}{197}{label (Rmail)}
+\entry {attribute (Rmail)}{197}{attribute (Rmail)}
+\entry {summary (Rmail)}{199}{summary (Rmail)}
+\entry {reply to a message}{202}{reply to a message}
+\entry {forward a message}{202}{forward a message}
+\entry {digest message}{204}{digest message}
+\entry {undigestify}{204}{undigestify}
+\entry {recursive editing level}{205}{recursive editing level}
+\entry {editing level, recursive}{205}{editing level, recursive}
+\entry {exiting}{205}{exiting}
+\entry {widening}{206}{widening}
+\entry {restriction}{206}{restriction}
+\entry {narrowing}{206}{narrowing}
+\entry {sorting}{207}{sorting}
+\entry {subshell}{209}{subshell}
+\entry {shell commands}{209}{shell commands}
+\entry {environment}{209}{environment}
+\entry {Shell mode}{211}{Shell mode}
+\entry {hardcopy}{211}{hardcopy}
+\entry {presidentagon}{212}{presidentagon}
+\entry {againformation}{212}{againformation}
+\entry {Markov chain}{213}{Markov chain}
+\entry {ignoriginal}{213}{ignoriginal}
+\entry {techniquitous}{213}{techniquitous}
+\entry {outragedy}{213}{outragedy}
+\entry {buggestion}{213}{buggestion}
+\entry {properbose}{213}{properbose}
+\entry {boredom}{213}{boredom}
+\entry {other editors}{213}{other editors}
+\entry {EDT}{213}{EDT}
+\entry {vi}{213}{vi}
+\entry {customization}{215}{customization}
+\entry {minor modes}{215}{minor modes}
+\entry {mode line}{215}{mode line}
+\entry {Auto Fill mode}{215}{Auto Fill mode}
+\entry {Overwrite mode}{215}{Overwrite mode}
+\entry {Abbrev mode}{215}{Abbrev mode}
+\entry {variable}{216}{variable}
+\entry {option}{216}{option}
+\entry {setting variables}{216}{setting variables}
+\entry {option}{217}{option}
+\entry {local variables}{218}{local variables}
+\entry {per-buffer variables}{219}{per-buffer variables}
+\entry {local variables in files}{219}{local variables in files}
+\entry {keyboard macros}{221}{keyboard macros}
+\entry {command}{224}{command}
+\entry {function}{224}{function}
+\entry {command name}{224}{command name}
+\entry {keymap}{224}{keymap}
+\entry {global keymap}{224}{global keymap}
+\entry {local keymap}{224}{local keymap}
+\entry {minibuffer}{224}{minibuffer}
+\entry {sparse keymap}{225}{sparse keymap}
+\entry {key rebinding, this session}{226}{key rebinding, this session}
+\entry {rebinding keys, this session}{226}{rebinding keys, this session}
+\entry {rebinding keys, this session}{226}{rebinding keys, this session}
+\entry {disabled command}{227}{disabled command}
+\entry {syntax table}{228}{syntax table}
+\entry {init file}{230}{init file}
+\entry {Emacs initialization file}{230}{Emacs initialization file}
+\entry {key rebinding, permanent}{230}{key rebinding, permanent}
+\entry {rebinding keys, permanently}{230}{rebinding keys, permanently}
+\entry {quitting}{235}{quitting}
+\entry {quitting}{235}{quitting}
+\entry {C-g}{235}{C-g}
+\entry {recursive editing level}{235}{recursive editing level}
+\entry {editing level, recursive}{235}{editing level, recursive}
+\entry {aborting}{235}{aborting}
+\entry {Eliza}{238}{Eliza}
+\entry {doctor}{238}{doctor}
+\entry {bugs}{239}{bugs}
+\entry {dribble file}{241}{dribble file}
+\entry {termscript file}{242}{termscript file}

@@ -21,29 +21,38 @@
 
 (fset 'delete-non-matching-lines 'keep-lines)
 (defun keep-lines (regexp)
-  "Delete lines not containing matches for REGEXP.
-Applies to lines after point."
+  "Delete all lines except those containing matches for REGEXP.
+A match split across lines preserves all the lines it lies in.
+Applies to all lines after point."
   (interactive "sKeep lines (containing match for regexp): ")
   (save-excursion
-    (while (not (eobp))
-      (let ((end (save-excursion (forward-line 1) (point))))
-	(if (re-search-forward regexp end t)
-	    (goto-char end)
-	  (delete-region (point)
-			 (if (re-search-forward regexp nil t)
-			     (progn (beginning-of-line) (point))
-			   (point-max))))))))
+    (or (bolp) (forward-line 1))
+    (let ((start (point)))
+      (while (not (eobp))
+	;; Start is first char not preserved by previous match.
+	(if (not (re-search-forward regexp nil 'move))
+	    (delete-region start (point-max))
+	  (let ((end (save-excursion (goto-char (match-beginning 0))
+				     (beginning-of-line)
+				     (point))))
+	    ;; Now end is first char preserved by the new match.
+	    (if (< start end)
+		(delete-region start end))))
+	(setq start (save-excursion (forward-line 1)
+				    (point)))))))
 
 (fset 'delete-matching-lines 'flush-lines)
 (defun flush-lines (regexp)
   "Delete lines containing matches for REGEXP.
+If a match is split across lines, all the lines it lies in are deleted.
 Applies to lines after point."
   (interactive "sFlush lines (containing match for regexp): ")
   (save-excursion
     (while (and (not (eobp))
 		(re-search-forward regexp nil t))
-      (beginning-of-line)
-      (delete-region (point)
+      (delete-region (save-excursion (goto-char (match-beginning 0))
+				     (beginning-of-line)
+				     (point))
 		     (progn (forward-line 1) (point))))))
 
 (fset 'count-matches 'how-many)
@@ -73,7 +82,7 @@ Applies to lines after point."
 (defun occur-mode ()
   "Major mode for output from \\[occur].
 Move point to one of the occurrences in this buffer,
-then use occur-mode-goto-occurrence to go to the same occurrence
+then use \\[occur-mode-goto-occurrence] to go to the same occurrence
 in the buffer that the occurrences were found in.
 \\{occur-mode-map}"
   (kill-all-local-variables)
@@ -139,6 +148,8 @@ It serves as a menu to find any of the occurrences in this buffer.
 	(setq occur-buffer buffer)
 	(setq occur-nlines nlines)
 	(setq occur-pos-list ()))
+      (if (eq buffer standard-output)
+	  (goto-char (point-max)))
       (save-excursion
 	(while (re-search-forward regexp nil t)
 	  (beginning-of-line 1)
@@ -185,8 +196,8 @@ It serves as a menu to find any of the occurrences in this buffer.
 	    (message "%d matching lines." (length occur-pos-list)))))))
 
 (defconst query-replace-help
-  "Type Space to replace one match, Delete to skip to next,
-ESC to exit, Period to replace one match and exit,
+  "Type Space or `y' to replace one match, Delete or `n' to skip to next,
+ESC or `q' to exit, Period to replace one match and exit,
 Comma to replace but not move point immediately,
 C-r to enter recursive edit (\\[exit-recursive-edit] to get out again),
 C-w to delete match and recursive edit,
@@ -242,13 +253,15 @@ C-l to clear the screen, redisplay, and offer same replacement again,
 		  (if (= char ??)
 		      (setq unread-command-char help-char char help-char)))
 		(store-match-data data))
-	      (cond ((= char ?\e)
+	      (cond ((or (= char ?\e)
+			 (= char ?q))
 		     (setq keep-going nil)
 		     (setq done t))
 		    ((= char ?^)
 		     (goto-char (mark))
 		     (setq replaced t))
-		    ((= char ?\ )
+		    ((or (= char ?\ )
+			 (= char ?y))
 		     (or replaced
 			 (replace-match to-string nocasify literal))
 		     (setq done t))
@@ -257,14 +270,17 @@ C-l to clear the screen, redisplay, and offer same replacement again,
 			 (replace-match to-string nocasify literal))
 		     (setq keep-going nil)
 		     (setq done t))
-		    ((and (not replaced) (= char ?\,))
-		     (replace-match to-string nocasify literal)
-		     (setq replaced t))
+		    ((= char ?\,)
+		     (if (not replaced)
+			 (progn
+			   (replace-match to-string nocasify literal)
+			   (setq replaced t))))
 		    ((= char ?!)
 		     (or replaced
 			 (replace-match to-string nocasify literal))
 		     (setq done t query-flag nil))
-		    ((= char ?\177)
+		    ((or (= char ?\177)
+			 (= char ?n))
 		     (setq done t))
 		    ((= char ?\C-l)
 		     (recenter nil))
@@ -285,3 +301,4 @@ C-l to clear the screen, redisplay, and offer same replacement again,
 	(setq lastrepl (point))))
     (pop-mark)
     keep-going))
+

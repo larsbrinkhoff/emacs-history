@@ -96,7 +96,7 @@ Keymap containing definitions of keypad and function keys.")
 *Regexp for beginning of a line that separates paragraphs.
 If you change this, you may have to change paragraph-start also.")
 
-(defconst sentence-end   (purecopy "[.?!][]\"')]*\\($\\|\t\\|  \\)[ \t\n]*") "\
+(defconst sentence-end   (purecopy "[.?!][]\"')}]*\\($\\|\t\\|  \\)[ \t\n]*") "\
 *Regexp describing the end of a sentence.
 All paragraph boundaries also end sentences, regardless.")
 
@@ -124,7 +124,7 @@ Makes the commands to define mode-specific abbrevs define global ones instead.")
 	    ".dvi" ".toc" ".log" ".aux"
 	    ".lof" ".brn" ".rnt" ".mem" ".lni" ".lis"
 	    ".olb" ".tlb" ".mlb" ".hlb" ".glo" ".idx" ".lot")
-	'(".o" ".elc" "~" ".bin" ".lbin"
+	'(".o" ".elc" "~" ".bin" ".lbin" ".fasl"
 	  ".dvi" ".toc" ".log" ".aux"
 	  ".lof" ".blg" ".bbl" ".glo" ".idx" ".lot")))
 
@@ -175,6 +175,7 @@ Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
 				("\\.lisp$" . lisp-mode)
 				("\\.f$" . fortran-mode)
 				("\\.mss$" . scribe-mode)
+				("\\.pl$" . prolog-mode)
 ;;; Less common extensions come here
 ;;; so more common ones above are found faster.
 				("\\.TeX$" . TeX-mode)
@@ -185,6 +186,7 @@ Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
 				("\\.letter$" . text-mode)
 				("\\.texinfo$" . texinfo-mode)
 				("\\.lsp$" . lisp-mode)
+				("\\.prolog$" . prolog-mode)
 				;; Mailer puts message to be edited in /tmp/Re.... or Message
 				("^/tmp/Re" . text-mode)
 				;; some news reader is reported to use this
@@ -192,7 +194,9 @@ Visiting a file whose name matches REGEXP causes FUNCTION to be called.")
 				("/Message[0-9]*$" . text-mode)
 				("\\.y$" . c-mode)
 				("\\.scm.[0-9]*$" . scheme-mode)
-				("/\\..*emacs" . emacs-lisp-mode)
+				;; .emacs following a directory delimiter
+				;; in either Unix or VMS syntax.
+				("[]>:/]\\..*emacs" . emacs-lisp-mode)
 				("\\.ml$" . lisp-mode))))
 
 (make-variable-buffer-local 'indent-tabs-mode)
@@ -241,6 +245,25 @@ Each file will be processed even if an error occurred previously.
 For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\""
   nil)
 
+(autoload 'calendar "cal"
+  "\
+Display three-month calendar in another window.
+The three months appear side by side, with the current month in the middle
+surrounded by the previous and next months.  The cursor is put on today's date.
+
+An optional prefix argument ARG causes the calendar displayed to be
+ARG months in the future if ARG is positive or in the past if ARG is
+negative; in this case the cursor goes on the first day of the month.
+
+The Gregorian calendar is assumed.
+
+After preparing the calendar window, the hooks calendar-hook are run
+when the calendar is for the current month--that is, the was no prefix
+argument.  If the calendar is for a future or past month--that is, there
+was a prefix argument--the hooks offset-calendar-hook are run.  Thus, for
+example, setting calendar-hooks to 'star-date will cause today's date to be
+replaced by asterisks to highlight it in the window."
+  t)
 
 (autoload 'list-command-history "chistory"
   "\
@@ -278,6 +301,8 @@ in the command history is offered.  The form is placed in the minibuffer
 for editing and the result is evaluated.  Prefix args don't count."
   t)
 
+
+(autoload 'common-lisp-indent-hook "cl-indent")
 
 (autoload 'compare-windows "compare-w"
   "\
@@ -539,6 +564,11 @@ USER and PASSWORD are defaulted from the values used when
  (interactively, this is done by giving a prefix arg)"
   t)
 
+(autoload 'gdb "gdb"
+  "\
+Run gdb on program FILE in buffer *gdb-FILE*."
+  t)
+
 (autoload 'set-gosmacs-bindings "gosmacs"
   "\
 Rebind some keys globally to make GNU Emacs resemble Gosling Emacs.
@@ -692,7 +722,9 @@ Define NAME as a mail-alias that translates to DEFINITION."
 
 (autoload 'manual-entry "man"
   "\
-Display Unix manual entry for TOPIC."
+Display the Unix manual entry for TOPIC.
+TOPIC is either the title of the entry, or has the form TITLE(SECTION)
+where SECTION is the desired section of the manual, as in `tty(4)'."
   t)
 
 (autoload 'mh-rmail "mh-e"
@@ -845,6 +877,12 @@ Entry to this mode calls the value of prolog-mode-hook
 if that value is non-nil."
   t)
 
+(autoload 'run-prolog "prolog"
+  "\
+Run an inferior Prolog process, input and output via buffer *prolog*."
+  t)
+
+
 (autoload 'clear-rectangle "rect"
   "\
 Blank out rectangle with corners at point and mark.
@@ -897,10 +935,21 @@ Yank the last killed rectangle with upper left corner at point."
 
 (autoload 'rnews "rnews"
   "\
-Read netnews for groups for which you are a member and add or delete groups.
+Read USENET news for groups for which you are a member and add or
+delete groups.
 You can reply to articles posted and send articles to any group.
+
 Type \\[describe-mode] once reading news to get a list of rnews commands."
   t)
+
+(autoload 'news-post-news "rnewspost"
+  "\
+Edit a new USENET news article to be posted.
+
+Type \\[describe-mode] once editing the article to get a list of commands."
+  t)
+(fset 'sendnews 'news-post-news)
+(fset 'postnews 'news-post-news)
 
 (autoload 'rmail "rmail"
   "\
@@ -923,6 +972,18 @@ Run Rmail on file FILENAME."
 *A regular expression specifying names to prune in replying to messages.
 nil means don't reply to yourself.")
 
+(defvar rmail-default-dont-reply-to-names "info-" "\
+A regular expression specifying part of the value of the default value of
+the variable   rmail-dont-reply-to-names   for when the user does not set
+rmail-dont-reply-to-names explicitly.  (The other part of the default
+value is the user's name.)
+It is useful to set this variable in the site customisation file.")
+
+(defconst rmail-primary-inbox-list  nil "\
+List of files which are inboxes for user's primary mail file ~/RMAIL.
+`nil' means the default, which is ("~/mbox" "/usr/spool/mail/$USER")
+(the second name varies depending on the operating system).")
+
 (defconst rmail-ignored-headers "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^received:\\|^[a-z-]*message-id:\\|^summary-line:\\|^errors-to:" "\
 *Gubbish header fields one would rather not see.")
 
@@ -931,6 +992,12 @@ nil means don't reply to yourself.")
 
 ;;; Others are in paths.el.
 
+(autoload 'run-scheme "xscheme"
+  "\
+Run an inferior Scheme process.
+Output goes to the buffer `*scheme*'.
+With argument, asks for a command line."
+  t)
 
 (autoload 'scheme-mode "scheme"
   "\
@@ -999,8 +1066,14 @@ While editing message, type C-c C-c to send the message and exit.
 Various special commands starting with C-c are available in sendmail mode
 to move to message header fields.  Type C-c ? for a list of them.
 
-If mail-self-blind is non-nil, a bcc to yourself is inserted
+If mail-self-blind is non-nil, a BCC to yourself is inserted
 when the message is initialized.
+
+If mail-default-reply-to is non-nil, it should be an address (a string);
+a Reply-to: field with that address is inserted.
+
+If mail-archive-file-name is non-nil, an FCC field with that file name
+is inserted.
 
 If mail-setup-hook is bound, its value is called with no arguments
 after the message is initialized.  It can add more default fields.
@@ -1010,7 +1083,7 @@ When calling from a program, the second through fifth arguments
  the initial contents of those header fields.
  These arguments should not have final newlines.
 The sixth argument REPLYBUFFER is a buffer whose contents
- should be yanked if the user types C-c y."
+ should be yanked if the user types C-c C-y."
   t)
 
 (define-key ctl-x-4-map "m" 'mail-other-window)
@@ -1252,15 +1325,16 @@ Normally input is edited in Emacs and sent a line at a time."
 (autoload 'terminal-emulator "terminal"
   "\
 Under a display-terminal emulator in BUFFER, run PROGRAM on arguments ARGS.
+ARGS is a list of argument-strings.  Remaining arguments are WIDTH and HEIGHT.
 BUFFER's contents are made an image of the display generated by that program,
 and any input typed when BUFFER is the current Emacs buffer is sent to that
 program an keyboard input.
+
 Interactively, BUFFER defaults to \"*terminal*\" and PROGRAM and ARGS
 are parsed from an input-string using `sh' (which means that the ~user
-filename-naming convention doesn't work.  Isn't un*x wonderful?)
-
-The emulated display terminal will have height the same as that of the
-the selected window, and width one less than that window's.
+filename-naming convention doesn't work.  Isn't un*x wonderful?).
+WIDTH and HEIGHT are determined from the size of the current window
+-- WIDTH will be one less than the window's width, HEIGHT will be its height.
 
 To switch buffers and leave the emulator, or to give commands
 to the emulator itself (as opposed to the program running under it),
@@ -1268,7 +1342,7 @@ type Control-^.  The following character is an emulator command.
 Type Control-^ twice to send it to the subprogram.
 This escape character may be changed using the variable `terminal-escape-char'.
 
-Meta characters may not currently be sent through the terminal emulator.
+`Meta' characters may not currently be sent through the terminal emulator.
 
 Here is a list of some of the variables which control the behaviour
 of the emulator -- see their documentation for more information:
@@ -1602,21 +1676,21 @@ This does not include direct calls to the primitive search functions,
 and does not include searches that are aborted.")
 
 (defconst search-repeat-char ?\C-s "\
-Character to repeat incremental search forwards.")
+*Character to repeat incremental search forwards.")
 (defconst search-reverse-char ?\C-r "\
-Character to repeat incremental search backwards.")
+*Character to repeat incremental search backwards.")
 (defconst search-exit-char ?\e "\
-Character to exit incremental search.")
+*Character to exit incremental search.")
 (defconst search-delete-char ?\177 "\
-Character to delete from incremental search string.")
+*Character to delete from incremental search string.")
 (defconst search-quote-char ?\C-q "\
-Character to quote special characters for incremental search.")
+*Character to quote special characters for incremental search.")
 (defconst search-yank-word-char ?\C-w "\
-Character to pull next word from buffer into search string.")
+*Character to pull next word from buffer into search string.")
 (defconst search-yank-line-char ?\C-y "\
-Character to pull rest of line from buffer into search string.")
+*Character to pull rest of line from buffer into search string.")
 (defconst search-exit-option t "\
-Non-nil means random control characters terminate incremental search.")
+*Non-nil means random control characters terminate incremental search.")
 
 (defvar search-slow-window-lines 1 "\
 *Number of lines in slow search display windows.
@@ -1660,7 +1734,7 @@ are non-nil and REGEXP has no uppercase letters.
 Third arg DELIMITED (prefix arg if interactive) non-nil means replace
 only matches surrounded by word boundaries.
 In TO-STRING, \\& means insert what matched REGEXP,
-and \\<n> means insert what matched <n>th \\(...\\) in REGEXP."
+and \\=\\<n> means insert what matched <n>th \\(...\\) in REGEXP."
   (interactive "sQuery replace regexp: \nsQuery replace regexp %s with: \nP")
   (perform-replace regexp to-string t t arg)
   (message "Done"))
@@ -1684,7 +1758,7 @@ are non-nil and REGEXP has no uppercase letters.
 Third arg DELIMITED (prefix arg if interactive) non-nil means replace
 only matches surrounded by word boundaries.
 In TO-STRING, \\& means insert what matched REGEXP,
-and \\<n> means insert what matched <n>th \\(...\\) in REGEXP."
+and \\=\\<n> means insert what matched <n>th \\(...\\) in REGEXP."
   (interactive "sReplace regexp: \nsReplace regexp %s with: \nP")
   (perform-replace regexp to-string nil t delimited)
   (message "Done"))

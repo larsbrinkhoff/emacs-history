@@ -103,7 +103,11 @@ if you quit, the process is killed.")
   CHECK_STRING (args[0], 0);
 
   if (nargs <= 1 || NULL (args[1]))
+#ifdef VMS
+    args[1] = build_string ("NLA0:");
+#else
     args[1] = build_string ("/dev/null");
+#endif /* not VMS */
   else
     args[1] = Fexpand_file_name (args[1], bf_cur->directory);
 
@@ -151,11 +155,18 @@ if you quit, the process is killed.")
   new_argv[0] = XSTRING (path)->data;
 
   if (XTYPE (buffer) == Lisp_Int)
+#ifdef VMS
+    fd[1] = open ("NLA0:", 0), fd[0] = -1;
+#else
     fd[1] = open ("/dev/null", 0), fd[0] = -1;
+#endif /* not VMS */
   else
     {
       pipe (fd);
+#if 0
+      /* Replaced by close_process_descs */
       set_exclusive_use (fd[0]);
+#endif
     }
 
   {
@@ -179,7 +190,11 @@ if you quit, the process is killed.")
 #endif /* BSD4_1 */
 
     if (pid == 0)
-      child_setup (filefd, fd1, fd1, new_argv, env);
+      {
+	if (fd[0] >= 0)
+	  close (fd[0]);
+	child_setup (filefd, fd1, fd1, new_argv, env);
+      }
 
     environ = save_environ;
 
@@ -292,6 +307,11 @@ child_setup (in, out, err, new_argv, env)
 
   setpriority (PRIO_PROCESS, pid, 0);
 
+#ifdef subprocesses
+  /* Close Emacs's descriptors that this process should not have.  */
+  close_process_descs ();
+#endif
+
   /* Note that use of alloca is always safe here.  It's obvious for systems
      that do not have true vfork or that have true (stack) alloca.
      If using vfork and C_ALLOCA it is safe because that changes
@@ -345,6 +365,9 @@ child_setup (in, out, err, new_argv, env)
   dup2 (in, 0);
   dup2 (out, 1);
   dup2 (err, 2);
+  close (in);
+  close (out);
+  close (err);
 
 #ifdef USG
   setpgrp ();			/* No arguments but equivalent in this case */
@@ -373,10 +396,21 @@ init_callproc ()
   register char * sh;
   extern char **environ;
   register char **envp;
+  Lisp_Object execdir;
 
+  /* Turn PATH_EXEC into a path.  `==' is just a string which we know
+     will not be the name of an environment variable.  */
   Vexec_path = decode_env_path ("==", PATH_EXEC);
   Vexec_directory = Ffile_name_as_directory (Fcar (Vexec_path));
   Vexec_path = nconc2 (decode_env_path ("PATH", ""), Vexec_path);
+
+  execdir = Fdirectory_file_name (Vexec_directory);
+  if (access (XSTRING (execdir)->data, 0) < 0)
+    {
+      printf ("Warning: executable/documentation dir (%s) does not exist.\n",
+	      XSTRING (Vexec_directory)->data);
+      sleep (2);
+    }
 
   sh = (char *) egetenv ("SHELL");
   Vshell_file_name = build_string (sh ? sh : "/bin/sh");

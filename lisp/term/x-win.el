@@ -1,5 +1,5 @@
 ;; Parse switches controlling how Emacs interfaces with X window system.
-;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,6 +18,9 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+(defconst window-system-version window-system-version
+  "*Window system version number now in use.")
+
 (defvar x-processed-defaults nil
   "Non-NIL means that user's X defaults have already been processed.")
 
@@ -25,21 +28,45 @@
   "Alist of command switches and values for X window system interface.
 You can set this in your init file, if you want some defaults
 for these switches.  Example:
-  (setq x-switches '((\"-r\" . t) (\"-font\" . \"foo\") (\"-b\" . \"8\")))")
+  (setq x-switches '((\"-r\" . t) (\"-font\" . \"foo\") (\"-b\" . \"8\")))
+This feature is currently broken for X11.")
 
-(setq command-switch-alist
-      (append '(("-r" . x-handle-switch)
-		("-i" . x-handle-switch)
-		("-font" . x-handle-switch)
-		("-w" . x-handle-switch)
-		("-b" . x-handle-switch)
-		("-ib" . x-handle-switch)
-		("-fg" . x-handle-switch)
-		("-bg" . x-handle-switch)
-		("-bd" . x-handle-switch)
-		("-cr" . x-handle-switch)
-		("-ms" . x-handle-switch))
-	      command-switch-alist))
+(if (= window-system-version 10)
+    (setq command-switch-alist
+	  (append '(("-r" . x-handle-switch)
+		    ("-i" . x-handle-switch)
+		    ("-font" . x-handle-switch)
+		    ("-w" . x-handle-switch)
+		    ("-b" . x-handle-switch)
+		    ("-ib" . x-handle-switch)
+		    ("-fg" . x-handle-switch)
+		    ("-bg" . x-handle-switch)
+		    ("-bd" . x-handle-switch)
+		    ("-cr" . x-handle-switch)
+		    ("-ms" . x-handle-switch))
+		  command-switch-alist))
+  (setq command-switch-alist
+	(append '(("-rn" . x-ignore-arg)
+		  ("-r" . ignore)
+		  ("-i" . ignore)
+		  ("-rn" . x-ignore-arg)
+		  ("-font" . x-ignore-arg)
+		  ("-fn" . x-ignore-arg)
+		  ("-wn" . x-ignore-arg)
+		  ("-in" . x-ignore-arg)
+		  ("-w" . x-ignore-arg)
+		  ("-geometry" . x-ignore-arg)
+		  ("-b" . x-ignore-arg)
+		  ("-ib" . x-ignore-arg)
+		  ("-fg" . x-ignore-arg)
+		  ("-bg" . x-ignore-arg)
+		  ("-bd" . x-ignore-arg)
+		  ("-cr" . x-ignore-arg)
+		  ("-ms" . x-ignore-arg))
+		command-switch-alist)))
+
+(defun x-ignore-arg (&rest ignore)
+  (setq command-line-args-left (cdr command-line-args-left)))
 
 ;; This is run after the command args are parsed.
 (defun x-handle-switch (switch)
@@ -159,16 +186,22 @@ the rubber-band outline of the new window will appear on the new X display."
 ;; and redefining commands and variables,
 ;; only if Emacs has been compiled to support direct interface to X.
 
-(if (fboundp 'x-change-display)
+(if (eq window-system 'x)
     (progn
-      ;; xterm.c depends on using interrupt-driven input.
-      (set-input-mode t nil)
-
-      ;; Not defvar!  This is not DEFINING this variable, just specifying
-      ;; a value for it.
-      (setq term-setup-hook 'x-pop-up-window)
-
       (require 'x-mouse)
+      (if (= window-system-version 10)
+	  (progn
+	    ;; xterm.c depends on using interrupt-driven input.
+	    (set-input-mode t nil)
+
+	    ;; Not defvar!  This is not DEFINING this variable, just specifying
+	    ;; a value for it.
+	    (setq term-setup-hook 'x-pop-up-window)
+
+	    ;; Process switch settings made by .emacs file.
+	    (while x-switches
+	      (x-handle-switch-1 (car (car x-switches)) (cdr (car x-switches)))
+	      (setq x-switches (cdr x-switches)))))
 
       (put 'suspend-emacs 'disabled
 	   "Suspending a program running in an X window is silly
@@ -179,7 +212,4 @@ and you would not be able to start it again.  Just switch windows instead.\n")
       (substitute-key-definition 'suspend-emacs nil ctl-x-map)
       ;; Not needed any more -- done in C.
       ;; (if (not x-processed-defaults) (x-get-default-args))
-      ;; Process switch settings made by .emacs file.
-      (while x-switches
-	(x-handle-switch-1 (car (car x-switches)) (cdr (car x-switches)))
-	(setq x-switches (cdr x-switches)))))
+))

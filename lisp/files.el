@@ -399,7 +399,8 @@ for current buffer."
 	  (if suffix (setq suffix (regexp-quote suffix)))
 	  (while continue
 	    ;; Look at next local variable spec.
-	    (forward-line 1)
+	    (if selective-display (re-search-forward "[\n\C-m]")
+	      (forward-line 1))
 	    ;; Skip the prefix, if any.
 	    (if prefix
 		(if (looking-at prefix)
@@ -453,10 +454,11 @@ if you wish to pass an empty string as the argument."
 	(unlock-buffer)))
   (setq buffer-file-name filename)
   (if filename
-      (progn
-       (setq default-directory (file-name-directory buffer-file-name))
-       (or (get-buffer (file-name-nondirectory buffer-file-name))
-	   (rename-buffer (file-name-nondirectory buffer-file-name)))))
+      (let ((new-name (file-name-nondirectory buffer-file-name)))
+	(if (eq system-type 'vax-vms)
+	    (setq new-name (downcase new-name)))
+	(setq default-directory (file-name-directory buffer-file-name))
+	(or (get-buffer new-name) (rename-buffer new-name))))
   (setq buffer-backed-up nil)
   (clear-visited-file-modtime)
   (kill-local-variable 'write-file-hooks)
@@ -598,27 +600,33 @@ Value is a list whose car is the name for the backup file
 (defun save-buffer (&optional args)
   "Save current buffer in visited file if modified.  Versions described below.
 
-With no arg, only backs up if first save or previously motivated.
-With 1 or 3 \\[universal-argument]'s, marks this version to be backed up.
-With 2 or 3 \\[universal-argument]'s, unconditionally backs up previous \
-version.
+By default, makes the previous version into a backup file
+ if previously requested or if this is the first save.
+With 1 or 3 \\[universal-argument]'s, marks this version
+ to become a backup when the next save is done.
+With 2 or 3 \\[universal-argument]'s,
+ unconditionally makes the previous version into a backup file.
+With argument of 0, never makes the previous version into a backup file.
 
 If a file's name is FOO, the names of its numbered backup versions are
  FOO.~i~ for various integers i.  A non-numbered backup file is called FOO~.
 Numeric backups (rather than FOO~) will be made if value of
- version-control  is not the atom never and either there are already
- numeric versions of the file being backed up, or  version-control  is
+ `version-control' is not the atom `never' and either there are already
+ numeric versions of the file being backed up, or `version-control' is
  non-nil.
-dired-kept-versions  controls dired's clean-directory (.) command.
-We don't want excessive versions piling up, so variables
- kept-old-versions , which tells system how many oldest versions to
- keep, and  kept-new-versions , which tells how many new versions to
- keep, are provided.  Defaults are 2 old versions and 2 new.
-If  trim-versions-without-asking  is nil, system will query user
+We don't want excessive versions piling up, so there are variables
+ `kept-old-versions', which tells Emacs how many oldest versions to keep,
+ and `kept-new-versions', which tells how many newest versions to keep.
+ Defaults are 2 old versions and 2 new.
+`dired-kept-versions' controls dired's clean-directory (.) command.
+If `trim-versions-without-asking' is nil, system will query user
  before trimming versions.  Otherwise it does it silently."
   (interactive "p")
-  (let ((modp (buffer-modified-p)))
+  (let ((modp (buffer-modified-p))
+	(large (> (buffer-size) 50000))
+	(make-backup-files (and make-backup-files (not (eq args 0)))))
     (and modp (memq args '(16 64)) (setq buffer-backed-up nil))
+    (if (and modp large) (message "Saving file %s..." (buffer-file-name)))
     (basic-save-buffer)
     (and modp (memq args '(4 64)) (setq buffer-backed-up nil))))
 
@@ -800,6 +808,7 @@ If revert-buffer-function's value is non-nil, it is called to do the work."
       (funcall revert-buffer-function arg noconfirm)
     (let* ((opoint (point))
 	   (auto-save-p (and (null arg) (recent-auto-save-p)
+			     buffer-auto-save-file-name
 			     (file-readable-p buffer-auto-save-file-name)
 			     (y-or-n-p
    "Buffer has been auto-saved recently.  Revert from auto-save file? ")))
@@ -822,7 +831,8 @@ If revert-buffer-function's value is non-nil, it is called to do the work."
 		 (erase-buffer))
 	       (insert-file-contents file-name (not auto-save-p)))
 	     (goto-char (min opoint (point-max)))
-	     (after-find-file nil))))))
+	     (after-find-file nil)
+	     t)))))
 
 (defun recover-file (file)
   "Visit file FILE, but get contents from its last auto-save file."

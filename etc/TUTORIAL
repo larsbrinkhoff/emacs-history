@@ -1,4 +1,4 @@
-Copyright (c) 1985 Richard M. Stallman.  See end for copying conditions.
+Copyright (c) 1985 Free Software Foundation, Inc;  See end for conditions.
 
 You are looking at the Emacs tutorial.
 
@@ -17,7 +17,7 @@ we'll use the following abbreviations:
 Important note: if you must exit at some point, type C-z.
 The characters ">>" at the left margin indicate directions for you to
 try using a command.  For instance:
-<<Blank lines inserted here by startup of teach-emacs>>
+<<Blank lines inserted here by startup of help-with-tutorial>>
 >>  Now type C-v (View next screen) to move to the next screen.
 	(go ahead, do it by depressing the control key and v together).
 	From now on, you'll be expected to do this whenever you finish
@@ -428,6 +428,7 @@ work if the system should crash.
 
 >> Type C-x C-s, saving your copy of the tutorial.
    This should print "Wrote .../TUTORIAL" at the bottom of the screen.
+   On VMS it will print "Wrote ...[...]TUTORIAL."
 
 To make a new file, just find it "as if" it already existed.  Then
 start typing in the text.  When you ask to "save" the file, Emacs
@@ -493,15 +494,16 @@ editing and get rid of Emacs.  The command to do this is C-x C-c.
 (Don't worry; it offers to save each changed file before it kills the
 Emacs.)
 
-C-z is the usual way to exit Emacs, because it is always better
-not to kill the Emacs if you are going to do any more editing.
-On systems which allow it, C-z exits from Emacs to the shell but
-does not destroy the Emacs; if you use the C shell, you can resume
-Emacs with the command.  On systems where suspending is not possible,
-C-z creates a subshell running under Emacs to give you the chance to
-run other programs and return to Emacs afterward, but it does not
-truly "exit" from Emacs.  In this case, you must ask an expert on your
-computer how to get back to Emacs from the subshell.
+C-z is the usual way to exit Emacs, because it is always better not to
+kill the Emacs if you are going to do any more editing.  On systems
+which allow it, C-z exits from Emacs to the shell but does not destroy
+the Emacs; if you use the C shell, you can resume Emacs with the `fg'
+command (or, more generally, with `%emacs', which works even if your
+most recent job was some other).  On systems where suspending is not
+possible, C-z creates a subshell running under Emacs to give you the
+chance to run other programs and return to Emacs afterward, but it
+does not truly "exit" from Emacs.  In this case, you must ask an
+expert on your computer how to get back to Emacs from the subshell.
 
 You would use C-x C-c if you were about to log out.  You would
 also use it to exit an Emacs invoked under mail handling programs
@@ -707,19 +709,19 @@ to learn more about Emacs since it has numerous desirable features
 that you don't know about yet.  Emacs has a great deal of internal
 documentation.  All of these commands can be accessed through
 the character Control-h, which we call "the Help character"
-or <HELP> because of the function it serves.
+because of the function it serves.
 
-To use the HELP features, type the <HELP> character, and then a
+To use the HELP features, type the C-h character, and then a
 character saying what kind of help you want.  If you are REALLY lost,
-type <HELP> ? and Emacs will tell you what kinds of help it can give.
-If you have typed <HELP> and decide you don't want any help, just
+type C-h ? and Emacs will tell you what kinds of help it can give.
+If you have typed C-h and decide you don't want any help, just
 type C-G to cancel it.
 
-The most basic HELP feature is <HELP> c.  Type <HELP>, a c, and a
+The most basic HELP feature is C-h c.  Type C-h, a c, and a
 command character or sequence, and Emacs displays a very brief
 description of the command.
 
->> Type <HELP> c Control-p.
+>> Type C-h c Control-p.
   The message should be something like
 
 	C-p runs the command previous-line
@@ -730,11 +732,11 @@ you of what the command does if you have seen it before but did
 not remember.
 
 Multi-character commands such as C-x C-s and (if you have no META or
-EDIT key) <ESC>v are also allowed after <HELP> c.
+EDIT key) <ESC>v are also allowed after C-h c.
 
-To get more information on the command, use <HELP> k instead of <HELP> c.
+To get more information on the command, use C-h k instead of C-h c.
 
->> Type <HELP> k Control-p.
+>> Type C-h k Control-p.
 
 This displays the documentation of the function, as well as its name,
 in an Emacs window.  When you are finished reading the output, type
@@ -742,25 +744,25 @@ C-x 1 to get rid of the help text.  You do not have to do this right
 away.  You can do some editing based on the help text before you type
 C-x 1.
 
-Here are some other useful <HELP> options:
+Here are some other useful C-h options:
 
-   <HELP> f	Describe a function.  You type in the name of the
+   C-h f	Describe a function.  You type in the name of the
 		function.
 
->> Try typing <HELP> f previous-line<Return>.
+>> Try typing C-h f previous-line<Return>.
    This prints all the information Emacs has about the
    function which implements the C-P command.
 
-   <HELP> a	Apropos.  Type in a keyword and Emacs will list
+   C-h a	Command Apropos.  Type in a keyword and Emacs will list
 		all the commands whose names contain that keyword.
 		These commands can all be invoked with Meta-x.
-		For some commands, Apropos will also list a one
+		For some commands, Command Apropos will also list a one
 		or two character sequence which has the same effect.
 
->> Type <HELP> a file<Return>.  You will see a list of all M-x commands
+>> Type C-h a file<Return>.  You will see a list of all M-x commands
 with "file" in their names.  You will also see commands
 like C-x C-f and C-x C-w, listed beside the command names
-find-file and write_file.
+find-file and write-file.
 
 
 CONCLUSION
@@ -776,10 +778,13 @@ you found something unclear, don't sit and blame yourself - complain!
 COPYING
 -------
 
-This tutorial, like all of GNU Emacs, is copyrighted, and comes with
-permission to distribute copies on certain conditions:
+This tutorial descends from a long line of Emacs tutorials
+starting with the one written by Stuart Cracraft for the original Emacs.
 
-Copyright (c) 1985 Richard M. Stallman
+This version of the tutorial, like GNU Emacs, is copyrighted, and
+comes with permission to distribute copies on certain conditions:
+
+Copyright (c) 1985 Free Software Foundation
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the
@@ -795,5 +800,5 @@ Copyright (c) 1985 Richard M. Stallman
 The conditions for copying Emacs itself are slightly different
 but in the same spirit.  Please read the file COPYING and then
 do give copies of GNU Emacs to your friends.
-Help stamp out ownership of software by using, writing,
-and sharing free software!
+Help stamp out software obstructionism ("ownership") by using,
+writing, and sharing free software!

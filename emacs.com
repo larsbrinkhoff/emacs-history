@@ -9,9 +9,11 @@ $ ! in the file system you install Emacs.
 $
 $ define 'p1' /translation=concealed emacs_library	sys$sysdevice:[emacs.]
 $
-$ define 'p1' emacs_lisplib  emacs_library:[lisp]
-$ define 'p1' emacs_etc      emacs_library:[etc]
-$ define 'p1' emacs_lock     emacs_library:[lock]
-$ define 'p1' termcap	emacs_library:[etc]termcap.dat
+$ ! These should no longer be needed, because everything
+$ ! is now written to use emacs_library.
+$ ! define 'p1' emacs_lisplib  emacs_library:[lisp]
+$ ! define 'p1' emacs_etc      emacs_library:[etc]
+$ ! define 'p1' emacs_lock     emacs_library:[lock]
+$ ! define 'p1' termcap	emacs_library:[etc]termcap.dat
 $ runemacs :== $emacs_library:[000000]emacs -map emacs_library:[000000]emacs.dump
-$ emacs :== @emacs_library:[000000]kept_editor emacs
+$ emacs :== @emacs_library:[000000]kepteditor emacs

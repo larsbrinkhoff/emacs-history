@@ -28,9 +28,9 @@ DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
 		GENERAL PUBLIC LICENSE TO COPY
 
   1. You may copy and distribute verbatim copies of this source file
-as you receive it, in any medium, provided that you conspicuously
-and appropriately publish on each copy a valid copyright notice
-"Copyright (C) 1986 Richard M. Stallman"; and include following the
+as you receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy a valid copyright notice "Copyright
+(C) 1986 Free Software Foundation, Inc."; and include following the
 copyright notice a verbatim copy of the above disclaimer of warranty
 and of this License.
 
@@ -43,31 +43,42 @@ the terms of Paragraph 1 above, provided that you also do the following:
 
     b) cause the whole of any work that you distribute or publish,
     that in whole or in part contains or is a derivative of this
-    program or any part thereof, to be freely distributed
-    and licensed to all third parties on terms identical to those
-    contained in this License Agreement (except that you may choose
-    to grant more extensive warranty protection to third parties,
-    at your option).
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
 
-  3. You may copy and distribute this program or any portion of it in
-compiled, executable or object code form under the terms of Paragraphs
-1 and 2 above provided that you do the following:
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
 
-    a) cause each such copy to be accompanied by the
-    corresponding machine-readable source code, which must
-    be distributed under the terms of Paragraphs 1 and 2 above; or,
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
 
-    b) cause each such copy to be accompanied by a
-    written offer, with no time limit, to give any third party
-    free (except for a nominal shipping charge) a machine readable
-    copy of the corresponding source code, to be distributed
-    under the terms of Paragraphs 1 and 2 above; or,
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
 
-    c) in the case of a recipient of this program in compiled, executable
-    or object code form (without the corresponding source code) you
-    shall cause copies you distribute to be accompanied by a copy
-    of the written offer of source code which you received along
-    with the copy you received.
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
 
   4. You may not copy, sublicense, distribute or transfer this program
 except as expressly provided under this License Agreement.  Any attempt
@@ -76,6 +87,15 @@ your rights to use the program under this License agreement shall be
 automatically terminated.  However, parties who have received computer
 software programs from you with this License Agreement will not have
 their licenses terminated so long as such parties remain in full compliance.
+
+  5. If you wish to incorporate parts of this program into other free
+programs whose distribution conditions are different, write to the Free
+Software Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet
+worked out a simple rule that can be stated here, but we will often permit
+this.  We will be guided by the two goals of preserving the free status of
+all derivatives of our free software and of promoting the sharing and reuse of
+software.
+
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -129,7 +149,7 @@ And always:
 int data_start = 0;
    
 #ifdef NEED_ERRNO
-int errno = 0;
+int errno;
 #endif
 
 #ifndef DONT_NEED_ENVIRON 
@@ -298,11 +318,7 @@ start1 (CRT0_DUMMIES argc, xargv)
 #ifdef STRIDE
 	asm ("	comm	havefpu%,2");
 #else /* m68k, not STRIDE */
-	asm ("	data");
-	asm ("	even");
-	asm ("	global	splimit%");
-	asm ("splimit%:");
-	asm ("	space 4");
+	asm ("  comm	splimit%,4");
 #endif /* STRIDE */
 	asm ("	global	exit");
 	asm ("	text");
@@ -323,6 +339,12 @@ start1 (CRT0_DUMMIES argc, xargv)
 #ifdef m68000
   
 #ifdef ISI68K
+/* Added by ESM Sun May 24 12:44:02 1987 to get new ISI library to work */
+	asm ("	.globl  is68020");
+	asm ("is68020:");
+	asm ("	.long   0x00000000");
+	asm ("	.long   0xffffffff");
+/* End of stuff added by ESM */
 	asm ("	.text");
 	asm ("	.globl	__start");
 	asm ("__start:");
@@ -365,7 +387,7 @@ start1 (ignore, argc, xargv)
 
 #endif /* not CRT0_DUMMIES */
 
-#ifdef hp9000
+#ifdef hp9000s300
 int argc_value;
 char **argv_value;
 #ifdef OLD_HP_ASSEMBLER
@@ -420,8 +442,10 @@ char **argv_value;
 	asm("	subq.w	&1,%d0");
 	asm("	mov.w	%d0,float_soft");
 	asm("	mov.w	%d1,flag_68881");
+#ifndef HPUX_68010
 	asm("	beq.b	skip_float"); 
 	asm("	fmov.l	&0x7480,%fpcr");
+#endif /* HPUX_68010 */
 	asm("skip_float:");
 	asm("	mov.l	4(%a7),%d0");
 	asm("	beq.b	skip_1");
@@ -455,7 +479,7 @@ char **argv_value;
 	asm("	comm	flag_68881, 4");
 	
 #endif /* new hp assembler */
-#endif /* hp9000 */
+#endif /* hp9000s300 */
 
 #ifdef GOULD
 
@@ -531,3 +555,22 @@ _start()
 #endif /* elxsi */
 
   
+#ifdef sparc
+asm (".global __start");
+asm (".text");
+asm ("__start:");
+asm ("	mov	0, %fp");
+asm ("	ld	[%sp + 64], %o0");
+asm ("	add	%sp, 68, %o1");
+asm ("	sll	%o0, 2,	%o2");
+asm ("	add	%o2, 4,	%o2");
+asm ("	add	%o1, %o2, %o2");
+asm ("	sethi	%hi(_environ), %o3");
+asm ("	st	%o2, [%o3+%lo(_environ)]");
+asm ("	andn	%sp, 7,	%sp");
+asm ("	call	_main");
+asm ("	sub	%sp, 24, %sp");
+asm ("	call	__exit");
+asm ("	nop");
+
+#endif /* sparc */

@@ -1,4 +1,4 @@
-/* m-targon31 file template.  Not tested in Emacs 18.
+/* m-targon31 file template.
    Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -87,10 +87,10 @@ and this notice must be preserved on all copies.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
-#define VIRT_ADDR_VARIES
+/* #define VIRT_ADDR_VARIES */
 
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.

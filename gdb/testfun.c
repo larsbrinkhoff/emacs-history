@@ -1,7 +1,12 @@
 main ()
 {
   register double a = 1.5;
-  printf ("%f\n", a);
+  foo (a);
+}
+
+foo (x)
+{
+  printf ("%f\n", x);
 }
 
 do_add (x, y)

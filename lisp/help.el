@@ -65,7 +65,7 @@
     (delete-other-windows)
     (if (get-file-buffer file)
 	(switch-to-buffer (get-file-buffer file))
-      (switch-to-buffer (create-file-buffer "~/TUTORIAL"))
+      (switch-to-buffer (create-file-buffer file))
       (setq buffer-file-name file)
       (setq default-directory (expand-file-name "~/"))
       (setq auto-save-file-name nil)

@@ -1,5 +1,6 @@
 ;; Terminal emulator for GNU Emacs.
 ;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+;; Written by Richard Mlynarik, November 1986.
 
 ;; This file is part of GNU Emacs.
 
@@ -21,7 +22,7 @@
 ;;>>TODO
 ;;>> terminfo?
 ;;>> ** Nothing can be done about emacs' meta-lossage **
-;;>>  (without redoing keymaps `sanely' -- ask mly for details)
+;;>>  (without redoing keymaps `sanely' -- ask Mly for details)
 
 ;;>> One probably wants to do setenv MORE -c when running with
 ;;>>   more-processing enabled.
@@ -37,7 +38,7 @@ it through the emulator.  Type ? after typing it for a list of
 possible commands.
 This variable is local to each terminal-emulator buffer.")
 
-(defvar terminal-scrolling nil
+(defvar terminal-scrolling t
   "*If non-nil, the terminal-emulator will `scroll' when output occurs
 past the bottom of the screen.  If nil, output will `wrap' to the top
 of the screen.
@@ -179,7 +180,8 @@ Other chars following \"%s\" are interpreted as follows:\n"
 		      (sortcar (copy-sequence te-escape-command-alist)
 			       'string<)
 		      (sort (copy-sequence te-escape-command-alist)
-			    '(lambda (a b) (string< (car a) (car b)))))))
+			    (function (lambda (a b)
+                              (string< (car a) (car b))))))))
 	   (while l
 	     (let ((doc (or (documentation (cdr (car l)))
 			    "Not documented")))
@@ -401,8 +403,9 @@ without any interpretation"
 
 (defun te-set-window-start ()
   (let* ((w (get-buffer-window (current-buffer)))
-	 (h (window-height w)))
-    (cond ((>= h (/ (- (point) (point-min)) (1+ te-width)))
+	 (h (if w (window-height w))))
+    (cond ((not w)) ; buffer not displayed
+	  ((>= h (/ (- (point) (point-min)) (1+ te-width)))
 	   ;; this is the normal case
 	   (set-window-start w (point-min)))
 	  ;; this happens if some vandal shrinks our window.
@@ -494,8 +497,9 @@ without any interpretation"
 
 ;;;; More or less straight-forward terminal escapes
 
-; ^j (Yeah, even though the civilized world uses a different character
-;     for newline from that used by The Operating System of the Future)
+;; ^j, meaning `newline' to non-display programs.
+;; (Who would think of ever writing a system which doesn't understand
+;;  display terminals natively?  Un*x:  The Operating System of the Future.)
 (defun te-newline ()
   "Move down a line, optionally do more processing, perhaps wrap/scroll,
 move to start of new line, clear to end of line."
@@ -518,10 +522,29 @@ move to start of new line, clear to end of line."
     (delete-region (point) (+ (point) te-width)))
   (insert-char ?\  te-width)
   (beginning-of-line)
-  (if (bobp)
-      (set-window-start (get-buffer-window (current-buffer))
-			(point-min) t)
-    (te-set-window-start)))
+  (te-set-window-start))
+
+;; ^p ^j
+;; Handle the `do' or `nl' termcap capability.
+;;>> I am not sure why this broken, obsolete, capability is here.
+;;>> Perhaps it is for VIle.  No comment was made about why it
+;;>> was added (in "Sun Dec  6 01:22:27 1987  Richard Stallman")
+(defun te-down-vertically-or-scroll ()
+  "Move down a line vertically, or scroll at bottom."
+  (let ((column (current-column)))
+    (end-of-line)
+    (if (eobp)
+	(progn
+	  (delete-region (point-min) (+ (point-min) te-width))
+	  (goto-char (point-min))
+	  (delete-char 1)
+	  (goto-char (point-max))
+	  (insert ?\n)
+	  (insert-char ?\  te-width)
+	  (beginning-of-line))
+      (forward-line 1))
+    (move-to-column column))
+  (te-set-window-start))
 
 ; ^p = x+32 y+32
 (defun te-move-to-position ()
@@ -574,15 +597,16 @@ move to start of new line, clear to end of line."
 (defun te-insert-lines ()
   (if (not (bolp))
       ();(error "fooI")
-    (let* ((line (- te-height (/ (- (point) (point-min)) (1+ te-width)) -1))
-	   (n (min (- (te-get-char) ?\ ) line))
-	   (i 0))
-      (delete-region (- (point-max) (* n (1+ te-width))) (point-max))
-      (if (eql (point) (point-max)) (insert ?\n))
-      (while (< i n)
-	(setq i (1+ i))
-	(insert-char ?\  te-width)
-	(or (eql i line) (insert ?\n)))))
+    (save-excursion
+      (let* ((line (- te-height (/ (- (point) (point-min)) (1+ te-width)) -1))
+	     (n (min (- (te-get-char) ?\ ) line))
+	     (i 0))
+	(delete-region (- (point-max) (* n (1+ te-width))) (point-max))
+	(if (eql (point) (point-max)) (insert ?\n))
+	(while (< i n)
+	  (setq i (1+ i))
+	  (insert-char ?\  te-width)
+	  (or (eql i line) (insert ?\n))))))
   (setq te-more-count -1))
 
 
@@ -611,6 +635,11 @@ move to start of new line, clear to end of line."
 (defun te-backward-char ()
   (if (not (bolp))
       (backward-char 1)))
+
+;; ^p ^f
+(defun te-forward-char ()
+  (if (not (eolp))
+      (forward-char 1)))
 
 
 ;; 0177
@@ -661,14 +690,12 @@ move to start of new line, clear to end of line."
   )
 
 ;; ^i
-(defun te-losing-tab ()
+(defun te-output-tab ()
   (let* ((p (point))
 	 (x (- p (progn (beginning-of-line) (point))))
 	 (l (min (- 8 (logand x 7))
 		 (progn (end-of-line) (- (point) p)))))
-    (goto-char p)
-    (delete-region p (+ p l))
-    (insert-char ?\  l)))
+    (goto-char (+ p l))))
 
 ;; Also:
 ;;  ^m => beginning-of-line (for which it -should- be using ^p ^a, right?!!)
@@ -712,7 +739,7 @@ move to start of new line, clear to end of line."
   (setq preemptable t)
   (catch 'te-process-output
     (let ((buffer-read-only nil)
-	  start string (ostring nil) (matchpos nil) (char nil))
+	  (string nil) ostring start char (matchpos nil))
       (while (cdr te-pending-output)
 	(setq ostring string
 	      start (car te-pending-output)
@@ -760,7 +787,7 @@ move to start of new line, clear to end of line."
 		     (te-redisplay-if-necessary (1+ (- end start))))))
 	  ;; I suppose if I split the guts of this out into a separate
 	  ;;  function we could trivially emulate different terminals
-	  ;; Who cares in any case?  (Apart from losers without supdup)
+	  ;; Who cares in any case?  (Apart from stupid losers using rlogin)
 	  (funcall
 	    (if (eql char ?\^p)
 	        (or (cdr (assq (te-get-char)
@@ -772,28 +799,29 @@ move to start of new line, clear to end of line."
 				 ;; not necessary, but help sometimes.
 				 (?\C-a . te-beginning-of-line)
 				 (?\C-b . te-backward-char)
-				 ;; should be C-d, but bloody useless
-				 ;;  cretin-designed-and-implemented un*x
+				 ;; should be C-d, but un*x
 				 ;;  pty's won't send \004 through!
-				 ;; Can you believe this?
+                                 ;; Can you believe this?
 				 (?d . te-delete-char)
 				 (?_ . te-insert-spaces)
 				 ;; random
+				 (?\C-f . te-forward-char)
 				 (?\C-g . te-beep)
+				 (?\C-j . te-down-vertically-or-scroll)
 				 (?\C-l . te-clear-screen)
 				 )))
 		    'te-losing-unix)
 	        (or (cdr (assq char
-			       '((?\n . te-newline)
+			       '((?\C-j . te-newline)
 				 (?\177 . te-delete)
 				 ;; Did I ask to be sent these characters?
 				 ;; I don't remember doing so, either.
 				 ;; (Perhaps some operating system or
 				 ;; other is completely incompetent...)
-				 (?\r . te-beginning-of-line) ;fuck me harder
-				 (?\^g . te-beep)             ;again and again!
-				 (?\b . te-backward-char)     ;wa12id!!
-				 (?\t . te-losing-tab))))     ;(spiked)
+				 (?\C-m . te-beginning-of-line) ;fuck me harder
+				 (?\C-g . te-beep)             ;again and again!
+				 (?\C-h . te-backward-char)     ;wa12id!!
+				 (?\C-i . te-output-tab))))     ;(spiked)
 		    'te-losing-unix)))		      ;That feels better
 	  (te-redisplay-if-necessary 1))
 	(and preemptable
@@ -820,10 +848,10 @@ move to start of new line, clear to end of line."
 	(unwind-protect
 	    (progn
 	      (set-process-filter te-process
-				  '(lambda (p s)
-				     (or (eql (length s) 1)
-					 (setq te-pending-output (list 1 s)))
-				     (throw 'char (aref s 0))))
+				  (function (lambda (p s)
+                                    (or (eql (length s) 1)
+                                        (setq te-pending-output (list 1 s)))
+                                    (throw 'char (aref s 0)))))
 	      (accept-process-output te-process))
 	  (set-process-filter te-process filter))))))
 
@@ -857,23 +885,32 @@ move to start of new line, clear to end of line."
 	       (setq buffer-read-only nil)
 	       (fundamental-mode)
 	       (goto-char (point-max))
-	       (insert "\n*******\n" message "*******"))
+	       (delete-blank-lines)
+	       (delete-horizontal-space)
+	       (insert "\n*******\n" message "*******\n"))
 	     (if (and (eq b (process-buffer process))
 		      (waiting-for-user-input-p))
 		 (progn (goto-char (point-max))
 			(recenter -1)))))))
 
-(defun terminal-emulator (buffer program args)
+(defvar te-stty-string "stty -nl new dec echo"
+  "Command string (to be interpreted by \"sh\") which sets the modes
+of the virtual terminal to be appropriate for interactive use.")
+
+(defvar explicit-shell-file-name nil
+  "*If non-nil, is file name to use for explicitly requested inferior shell.")
+
+(defun terminal-emulator (buffer program args &optional width height)
   "Under a display-terminal emulator in BUFFER, run PROGRAM on arguments ARGS.
+ARGS is a list of argument-strings.  Remaining arguments are WIDTH and HEIGHT.
 BUFFER's contents are made an image of the display generated by that program,
 and any input typed when BUFFER is the current Emacs buffer is sent to that
 program an keyboard input.
-Interactively, BUFFER defaults to \"*terminal*\" and PROGRAM and ARGS
-are parsed from an input-string using `sh' (which means that the ~user
-filename-naming convention doesn't work.  Isn't un*x wonderful?)
 
-The emulated display terminal will have height the same as that of the
-the selected window, and width one less than that window's.
+Interactively, BUFFER defaults to \"*terminal*\" and PROGRAM and ARGS
+are parsed from an input-string using your usual shell.
+WIDTH and HEIGHT are determined from the size of the current window
+-- WIDTH will be one less than the window's width, HEIGHT will be its height.
 
 To switch buffers and leave the emulator, or to give commands
 to the emulator itself (as opposed to the program running under it),
@@ -881,7 +918,7 @@ type Control-^.  The following character is an emulator command.
 Type Control-^ twice to send it to the subprogram.
 This escape character may be changed using the variable `terminal-escape-char'.
 
-Meta characters may not currently be sent through the terminal emulator.
+`Meta' characters may not currently be sent through the terminal emulator.
 
 Here is a list of some of the variables which control the behaviour
 of the emulator -- see their documentation for more information:
@@ -902,17 +939,25 @@ work with `terminfo' we will try to use it."
 				 (not (eq (process-status te-process)
 					  'run)))
 			     (current-buffer)
-			     (generate-new-buffer "*terminal*"))))
-	  (let ((s (read-string
-		     (format "Run program in emulator: (default %s) "
-			     (getenv "SHELL")))))
-	    (if (equal s "")
-		(list (getenv "SHELL") ())
-	      (te-parse-program-and-args s)))))
+			   (generate-new-buffer "*terminal*"))))
+	  (append
+	    (let* ((default-s
+		     ;; Default shell is same thing M-x shell uses.
+		     (or explicit-shell-file-name
+			 (getenv "ESHELL")
+			 (getenv "SHELL")
+			 "/bin/sh"))
+		   (s (read-string
+		       (format "Run program in emulator: (default %s) "
+			       default-s))))
+	      (if (equal s "")
+		  (list default-s '())
+		(te-parse-program-and-args s))))))
   (switch-to-buffer buffer)
+  (if (null width) (setq width (- (window-width (selected-window)) 1)))
+  (if (null height) (setq height (- (window-height (selected-window)) 1)))
   (terminal-mode)
-  (setq te-width (- (window-width (selected-window)) 2)
-	te-height (1- (window-height (selected-window))))
+  (setq te-width width te-height height)
   (setq mode-line-buffer-identification
 	(list (format "Emacs terminal %dx%d: %%b  " te-width te-height)
 	      'te-pending-output-info))
@@ -924,8 +969,33 @@ work with `terminfo' we will try to use it."
 	  (delete-process process)
 	(error "Process %s not killed" (process-name process)))))
   (condition-case err
-      (let ((termcap (format "emacs-virtual:co#%d:li#%d:cm=^p=%%+ %%+ :cr=^p^a:le=^p^b:nw=^j:ce=^pc:cd=^pC:cl=^p^l:IC=^p_%%+ :DC=^pd%%+ :AL=^p^o%%+ :DL=^p^k%%+ :ic=^p_!:dc=^pd!:al=^p^o!:dl=^p^k!:bl=^p^g"
-			     te-width te-height)))
+      (let ((termcap
+             ;; Because of Unix Brain Death(tm), we can't change
+             ;;  the terminal type of a running process, and so
+             ;;  terminal size and scrollability are wired-down
+             ;;  at this point.  ("Detach?  What's that?")
+             (concat (format "emacs-virtual:co#%d:li#%d:%s"
+                             ;; Sigh.  These can't be dynamically changed.
+                             te-width te-height (if terminal-scrolling
+                                                    "" "ns:"))
+                     ;;-- Basic things
+                     ;; cursor-motion, bol, forward/backward char
+                     "cm=^p=%+ %+ :cr=^p^a:le=^p^b:nd=^p^f:"
+                     ;; newline, clear eof/eof, audible bell
+                     "nw=^j:ce=^pc:cd=^pC:cl=^p^l:bl=^p^g:"
+                     ;; insert/delete char/line
+                     "IC=^p_%+ :DC=^pd%+ :AL=^p^o%+ :DL=^p^k%+ :"
+                     ;;-- Not-widely-known (ie nonstandard) flags, which mean
+                     ;; o writing in the last column of the last line
+                     ;;   doesn't cause idiotic scrolling, and
+                     ;; o don't use idiotische c-s/c-q sogenannte
+                     ;;   ``flow control'' auf keinen Fall.
+                     "LP:NF:"
+                     ;;-- For stupid or obsolete programs
+                     "ic=^p_!:dc=^pd!:al=^p^o!:dl=^p^k!:ho=^p=  :"
+                     ;;-- For disgusting programs.
+                     ;; (VI? What losers need these, I wonder?)
+                     "im=:ei=:dm=:ed=:mi:do=^p^j:nl=^p^j:bs:")))
 	(if (fboundp 'start-subprocess)
 	    ;; this winning function would do everything, except that
 	    ;;  rms doesn't want it.
@@ -938,14 +1008,15 @@ work with `terminfo' we will try to use it."
 			       'modify-environment
 			         (list (cons "TERM" "emacs-virtual")
 				       (cons "TERMCAP" termcap))))
-	  ;; so instead we resort to this...  I want to throw up.
+	  ;; so instead we resort to this...
 	  (setq te-process (start-process "terminal-emulator" (current-buffer)
-			     "sh" "-c"
-			     ;;  Yuck!!! Start a shell to set some terminal
-			     ;;  control characteristics.  Then start the
-			     ;;  "env" program to setup the terminal type
-			     ;;  Then finally start the program we wanted.
-			     (format "stty -nl echo; exec %s TERM=emacs-virtual %s %s"
+			     "/bin/sh" "-c"
+			     ;; Yuck!!! Start a shell to set some terminal
+			     ;; control characteristics.  Then start the
+			     ;; "env" program to setup the terminal type
+			     ;; Then finally start the program we wanted.
+			     (format "%s; exec %s TERM=emacs-virtual %s %s"
+                                     te-stty-string
 				     (te-quote-arg-for-sh
 				       (concat exec-directory "env"))
 				     (te-quote-arg-for-sh
@@ -988,7 +1059,7 @@ work with `terminfo' we will try to use it."
 	   (setq l (nreverse l))
 	   (list (car l) (cdr l))))
 	((and (string-match "[ \t]" s) (not (file-exists-p s)))
-	 (list "sh" (list "-c" (concat "exec " s))))
+	 (list shell-file-name (list "-c" (concat "exec " s))))
 	(t (list s ()))))
 
 (put 'terminal-mode 'mode-class 'special)
@@ -1002,10 +1073,11 @@ of the terminal-emulator"
   (buffer-flush-undo (current-buffer))
   (setq major-mode 'terminal-mode)
   (setq mode-name "terminal")
-;  (make-local-variable 'Helper-return-blurb)
-;  (setq Helper-return-blurb "return to terminal simulator")
+; (make-local-variable 'Helper-return-blurb)
+; (setq Helper-return-blurb "return to terminal simulator")
   (setq mode-line-process '(": %s"))
   (setq buffer-read-only t)
+  (setq truncate-lines t)
   (make-local-variable 'terminal-escape-char)
   (setq terminal-escape-char (default-value 'terminal-escape-char))
   (make-local-variable 'terminal-scrolling)
@@ -1062,17 +1134,12 @@ of the terminal-emulator"
 						(substring fuckme cretin)))
 			   nil))
 	     (setq harder (concat harder (substring fuckme cretin stupid)
-				  ;; can't use ?\\, since bloody idiotic
-				  ;;  `concat' does prin1-to-string on fixna.
-				  ;;  Can you believe this????
+                                  ;; Can't use ?\\ since `concat'
+                                  ;; unfortunately does prin1-to-string
+                                  ;; on fixna.  Amazing.
 				  "\\"
-				  ;; can't use aref for the same reason
 				  (substring fuckme
 					     stupid
 					     (1+ stupid)))
 		   cretin (1+ stupid)))
 	   (concat "\"" harder "\"")))))
-
-;; local variables:
-;; eval: (put 'te-install-escape-command 'lisp-indent-hook 'defun)
-;; end:

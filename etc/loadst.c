@@ -1,10 +1,7 @@
-/* $Header:   RCS/loadst.v  Revision 1.1  83/02/09  17:16:53  fen  Rel$ */
 /*
  * loadst -- print current time and load statistics.
  *				-- James Gosling @ CMU, May 1981
  *  loadst [ -n ] [ interval ]
- *	07/29/81 jag -- also print info on presence of mail.
- *	05/05/82 jag -- add disk drive utilization statistics.
  */
 
 #define NO_SHORTNAMES  /* Do not want config to try to include remap.h */
@@ -17,7 +14,7 @@
    Also define NLIST_STRUCT if the type `nlist' is a structure we
    can get from nlist.h; otherwise must use a.out.h and initialize
    with strcpy.  Note that config.h may define NLIST_STRUCT
-   for more modrern USG systems.  */
+   for more modern USG systems.  */
 
 
 #ifdef LOAD_AVE_TYPE
@@ -37,7 +34,11 @@
 #ifdef LOAD_AVE_TYPE
 #ifndef RTU
 #ifndef UMAX
+#ifdef DK_HEADER_FILE
 #include <sys/dk.h>
+#else
+#include <sys/dkstat.h>
+#endif /* not DK_HEADER_FILE */
 #endif /* UMAX */
 #endif /* not RTU */
 #endif /* LOAD_AVE_TYPE */
@@ -53,8 +54,16 @@
 
 #undef open
 #undef read
+#undef close
 
 struct tm *localtime ();
+
+#ifndef DKXFER_SYMBOL
+#define DKXFER_SYMBOL "_dk_xfer"
+#endif
+#ifndef CPTIME_SYMBOL
+#define CPTIME_SYMBOL "_cp_time"
+#endif
 
 #ifdef LOAD_AVE_TYPE
 #ifndef NLIST_STRUCT
@@ -65,9 +74,9 @@ struct nlist nl[] =
     { LDAV_SYMBOL },
 #if defined (CPUSTATES) && defined (DK_NDRIVE)
 #define	X_CPTIME	1
-    { "_cp_time" },
+    { CPTIME_SYMBOL },
 #define	X_DKXFER	2
-    { "_dk_xfer" },
+    { DKXFER_SYMBOL },
 #endif /* have CPUSTATES and DK_NDRIVE */
     { 0 },
   };
@@ -139,11 +148,11 @@ char  **argv;
     {
       mail = (char *) malloc (strlen (user_name) + 30);
 
-#ifdef USG
+#if defined (USG) && ! defined (XENIX)
       sprintf (mail, "/usr/mail/%s", user_name);
-#else /* not USG */
+#else /* Xenix, or not USG */
       sprintf (mail, "/usr/spool/mail/%s", user_name);
-#endif /* not USG */
+#endif /* Xenix, or not USG */
     }
 
   if (stat (mail, &st) >= 0
@@ -177,7 +186,10 @@ char  **argv;
 	}
 #endif /* LOAD_AVE_TYPE */
 
-      printf ("%s", (stat (mail, &st) >= 0 && st.st_size) ? " Mail" : "");
+      printf ("%s",
+	      ((stat (mail, &st) >= 0 && st.st_size > 0)
+	       ? " Mail"
+	       : ""));
 
 #if defined (CPUSTATES) && defined (DK_NDRIVE)
       if (kmem >= 0)

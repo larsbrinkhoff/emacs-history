@@ -1,8 +1,42 @@
-/* Definitions to make GDB run on a ISI Optimum V (3.05) under 4.2bsd.
-   WARNING: This is preliminary and it was for GDB version 1.
-   It certainly requires additional macros and changes for GDB version 2.
+/*
+Date: Thu, 2 Apr 87 00:02:42 EST
+From: crl@maxwell.physics.purdue.edu (Charles R. LaBrec)
+Message-Id: <8704020502.AA01744@maxwell.physics.purdue.edu>
+To: bug-gdb@prep.ai.mit.edu
+Subject: gdb for ISI Optimum V
 
-   Copyright (C) 1986 Free Software Foundation, Inc.
+Here is an m-isi-ov.h file for gdb version 2.1.  It supports the 68881
+registers, and tracks down the function prologue (since the ISI cc
+puts it at the end of the function and branches to it if not
+optimizing).  Also included are diffs to core.c, findvar.c, and
+inflow.c, since the original code assumed that registers are an int in
+the user struct, which isn't the case for 68020's with 68881's (and
+not using the NEW_SUN_PTRACE).  I have not fixed the bugs associated
+with the other direction (writing registers back to the user struct).
+I have also included a diff that turns m68k-pinsn.c into isi-pinsn.c,
+which is needed since the 3.05 release of as does not understand
+floating point ops, and it compiles incorrectly under "cc -20"
+
+I have used gdb for a while now, and it seems to work relatively well,
+but I do not guarantee that it is perfect.  The more that use it, the
+faster the bugs will get shaken out.  One bug I know of is not in gdb,
+but in the assembler.  It seems to screw up the .stabs of variables.
+For externs, this is not important since gdb uses the global symbol
+value, but for statics, this makes gdb unable to find them.  I am
+currently trying to track it down.
+
+As an aside, I notice that only global functions are used as symbols
+to print as relative addresses, i.e. "<function + offset>", and not
+static functions, which end up printing as large offsets from the last
+global one.  Would there be a problem if static functions were also
+recorded as misc functions in read_dbx_symtab?
+
+Charles LaBrec
+crl @ maxwell.physics.purdue.edu
+
+  Definitions to make GDB run on a ISI Optimum V (3.05) under 4.2bsd.
+
+   Copyright (C) 1987 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -22,10 +56,19 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 */
 
 
+/* Identify this machine */
+#ifndef ISI68K
+#define ISI68K
+#endif
+
 /* Define this if the C compiler puts an underscore at the front
    of external names before giving them to the linker.  */
 
 #define NAMES_HAVE_UNDERSCORE
+
+/* Debugger information will be in DBX format.  */
+
+#define READ_DBX_FORMAT
 
 /* Offset from address of function to start of its code.
    Zero on most machines.  */
@@ -37,15 +80,15 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 
 #define SKIP_PROLOGUE(pc)   \
 { register int op = read_memory_integer (pc, 2);	\
-  if (op == 0047126)				\
+  if (op == 0047126)					\
     pc += 4;   /* Skip link #word */			\
-  else if (op == 0044016)			\
+  else if (op == 0044016)				\
     pc += 6;   /* Skip link #long */			\
-  else if (op == 0x6000)			\
+  else if (op == 0060000)				\
     pc += 4;   /* Skip bra #word */			\
-  else if (op == 0x60ff)			\
+  else if (op == 00600377)				\
     pc += 6;   /* skip bra #long */			\
-  else if (op & 0xff00 == 0x6000)			\
+  else if ((op & 0177400) == 0060000)			\
     pc += 2;   /* skip bra #char */			\
 }
 
@@ -75,19 +118,30 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 
 #define BREAKPOINT {0x4e, 0x4f}
 
+/* Data segment starts at etext rounded up to DATAROUND in {N,Z}MAGIC files */
+
+#define DATAROUND	0x20000
+#define N_DATADDR(hdr)	(hdr.a_magic != OMAGIC ? \
+	(hdr.a_text + DATAROUND) & ~(DATAROUND-1) : hdr.a_text)
+
+/* Text segment starts at sizeof (struct exec) in {N,Z}MAGIC files */
+
+#define N_TXTADDR(hdr)	(hdr.a_magic != OMAGIC ? sizeof (struct exec) : 0)
+
 /* Amount PC must be decremented by after a breakpoint.
    This is often the number of bytes in BREAKPOINT
-   but not always.  */
+   but not always.  
+   On the ISI, the kernel resets the pc to the trap instr */
 
-#define DECR_PC_AFTER_BREAK 2
+#define DECR_PC_AFTER_BREAK 0
 
 /* Nonzero if instruction at PC is a return instruction.  */
 
-#define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 2) == 0x4e76)
+#define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 2) == 0x4e75)
 
 /* Return 1 if P points to an invalid floating point value.  */
 
-#define INVALID_FLOAT(p) 0
+#define INVALID_FLOAT(p, len) 0   /* Just a first guess; not checked */
 
 /* Say how long registers are.  */
 
@@ -95,16 +149,17 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 
 /* Number of machine registers */
 
-#define NUM_REGS 18
-
-/* Number that are really general registers */
-
-#define NUM_GENERAL_REGS 16
+#define NUM_REGS 29
 
 /* Initializer for an array of names of registers.
    There should be NUM_REGS strings in this initializer.  */
 
-#define REGISTER_NAMES {"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "a0", "a1", "a2", "a3", "a4", "a5", "fp", "sp", "ps", "pc"}
+#define REGISTER_NAMES  \
+ {"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", \
+  "a0", "a1", "a2", "a3", "a4", "a5", "fp", "sp", \
+  "ps", "pc",  \
+  "fp0", "fp1", "fp2", "fp3", "fp4", "fp5", "fp6", "fp7", \
+  "fpcontrol", "fpstatus", "fpiaddr" }
 
 /* Register numbers of various important registers.
    Note that some of these values are "real" register numbers,
@@ -117,14 +172,107 @@ read_memory_integer (read_register (SP_REGNUM), 4)
 #define SP_REGNUM 15		/* Contains address of top of stack */
 #define PS_REGNUM 16		/* Contains processor status */
 #define PC_REGNUM 17		/* Contains program counter */
+#define FP0_REGNUM 18		/* Floating point register 0 */
+#define FPC_REGNUM 26		/* 68881 control register */
 
-#define REGISTER_U_ADDR(addr, blockend, regno)		\
-{ if (regno < 2) addr = blockend - 0x18 + regno * 4;	\
-else if (regno < 8) addr = blockend - 0x54 + regno * 4;	\
-else if (regno < 10) addr = blockend - 0x30 + regno * 4;\
-else if (regno < 15) addr = blockend - 0x5c + regno * 4;\
-else if (regno < 16) addr = blockend - 0x1c;		\
-else addr = blockend - 0x44 + regno * 4;	}	\
+#ifdef BSD43_ISI40D
+#define BLOCKFUDGE	0x400000
+#else
+#define BLOCKFUDGE	0
+#endif
+#define REGISTER_U_ADDR(addr, blockend, regno)			\
+{	blockend -= BLOCKFUDGE;					\
+	if (regno < 2) addr = blockend - 0x18 + regno * 4;	\
+	else if (regno < 8) addr = blockend - 0x54 + regno * 4;	\
+	else if (regno < 10) addr = blockend - 0x30 + regno * 4;\
+	else if (regno < 15) addr = blockend - 0x5c + regno * 4;\
+	else if (regno < 16) addr = blockend - 0x1c;		\
+	else if (regno < 18) addr = blockend - 0x44 + regno * 4;\
+	else if (regno < 26) addr = (int) ((struct user *)0)->u_68881_regs \
+	    + (regno - 18) * 12;				\
+	else if (regno < 29) addr = (int) ((struct user *)0)->u_68881_regs \
+	    + 8 * 12 + (regno - 26) * 4;			\
+}
+
+/* Total amount of space needed to store our copies of the machine's
+   register state, the array `registers'.  */
+#define REGISTER_BYTES (16*4+8*12+8+20)
+
+/* Index within `registers' of the first byte of the space for
+   register N.  */
+
+#define REGISTER_BYTE(N)  \
+ ((N) >= FPC_REGNUM ? (((N) - FPC_REGNUM) * 4) + 168	\
+  : (N) >= FP0_REGNUM ? (((N) - FP0_REGNUM) * 12) + 72	\
+  : (N) * 4)
+
+/* Number of bytes of storage in the actual machine representation
+   for register N.  On the 68000, all regs are 4 bytes
+   except the floating point regs which are 12 bytes.  */
+
+#define REGISTER_RAW_SIZE(N) (((unsigned)(N) - FP0_REGNUM) < 8 ? 12 : 4)
+
+/* Number of bytes of storage in the program's representation
+   for register N.  On the 68000, all regs are 4 bytes
+   except the floating point regs which are 8-byte doubles.  */
+
+#define REGISTER_VIRTUAL_SIZE(N) (((unsigned)(N) - FP0_REGNUM) < 8 ? 8 : 4)
+
+/* Largest value REGISTER_RAW_SIZE can have.  */
+
+#define MAX_REGISTER_RAW_SIZE 12
+
+/* Largest value REGISTER_VIRTUAL_SIZE can have.  */
+
+#define MAX_REGISTER_VIRTUAL_SIZE 8
+
+/* Nonzero if register N requires conversion
+   from raw format to virtual format.  */
+
+#define REGISTER_CONVERTIBLE(N) (((unsigned)(N) - FP0_REGNUM) < 8)
+
+/* Convert data from raw format for register REGNUM
+   to virtual format for register REGNUM.  */
+
+#define REGISTER_CONVERT_TO_VIRTUAL(REGNUM,FROM,TO)	\
+{ if ((REGNUM) >= FP0_REGNUM && (REGNUM) < FPC_REGNUM)	\
+    convert_from_68881 ((FROM), (TO));	\
+  else					\
+    bcopy ((FROM), (TO), 4); }
+
+/* Convert data from virtual format for register REGNUM
+   to raw format for register REGNUM.  */
+
+#define REGISTER_CONVERT_TO_RAW(REGNUM,FROM,TO)	\
+{ if ((REGNUM) >= FP0_REGNUM && (REGNUM) < FPC_REGNUM)	\
+    convert_to_68881 ((FROM), (TO));	\
+  else					\
+    bcopy ((FROM), (TO), 4); }
+
+/* Return the GDB type object for the "standard" data type
+   of data in register N.  */
+
+#define REGISTER_VIRTUAL_TYPE(N) \
+ (((unsigned)(N) - FP0_REGNUM) < 8 ? builtin_type_double : builtin_type_int)
+
+/* Extract from an array REGBUF containing the (raw) register state
+   a function return value of type TYPE, and copy that, in virtual format,
+   into VALBUF.  */
+
+#define EXTRACT_RETURN_VALUE(TYPE,REGBUF,VALBUF) \
+  bcopy (REGBUF, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Write into appropriate registers a function return value
+   of type TYPE, given in virtual format.  */
+
+#define STORE_RETURN_VALUE(TYPE,VALBUF) \
+  write_register_bytes (0, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Extract from an array REGBUF containing the (raw) register state
+   the address in which a function should return its structure value,
+   as a CORE_ADDR (or an expression that can be used as one).  */
+
+#define EXTRACT_STRUCT_VALUE_ADDRESS(REGBUF) (*(int *)(REGBUF))
 
 /* Describe the pointer in each stack frame to the previous stack frame
    (its caller).  */
@@ -175,7 +323,7 @@ else addr = blockend - 0x44 + regno * 4;	}	\
 
 /* Return number of bytes at start of arglist that are not really args.  */
 
-#define FRAME_ARGS_SKIP 4
+#define FRAME_ARGS_SKIP 8
 
 /* Put here the code to store, into a struct frame_saved_regs,
    the addresses of the saved registers of frame described by FRAME_INFO.
@@ -188,84 +336,117 @@ else addr = blockend - 0x44 + regno * 4;	}	\
   register int regmask;							\
   register CORE_ADDR next_addr;						\
   register CORE_ADDR pc;						\
+  register int insn;							\
+  register int offset;							\
   bzero (&frame_saved_regs, sizeof frame_saved_regs);			\
-  if ((frame_info).pc >= (frame_info).frame - CALL_DUMMY_LENGTH - FP_REGNUM*4 - 4 \
+  if ((frame_info).pc >= (frame_info).frame - CALL_DUMMY_LENGTH - FP_REGNUM*4 - 8*12 - 4 \
       && (frame_info).pc <= (frame_info).frame)				\
     { next_addr = (frame_info).frame;					\
-      pc = (frame_info).frame - CALL_DUMMY_LENGTH - FP_REGNUM * 4 - 4; }\
+      pc = (frame_info).frame - CALL_DUMMY_LENGTH - FP_REGNUM * 4 - 8*12 - 4; }\
   else   								\
     { pc = get_pc_function_start ((frame_info).pc); 			\
-      /* Verify we have a link a6 instruction next;			\
+      /* Verify we have a link a6 instruction next,			\
+	 or a branch followed by a link a6 instruction;			\
 	 if not we lose.  If we win, find the address above the saved   \
 	 regs using the amount of storage from the link instruction.  */\
-      if (044016 == read_memory_integer (pc, 2))			\
+retry:									\
+      insn = read_memory_integer (pc, 2);				\
+      if (insn == 044016)						\
 	next_addr = (frame_info).frame - read_memory_integer (pc += 2, 4), pc+=4; \
-      else if (047126 == read_memory_integer (pc, 2))			\
+      else if (insn == 047126)						\
 	next_addr = (frame_info).frame - read_memory_integer (pc += 2, 2), pc+=2; \
-      else goto lose;							\
+      else if ((insn & 0177400) == 060000)	/* bra insn */		\
+	{ offset = insn & 0377;						\
+          pc += 2;				/* advance past bra */	\
+	  if (offset == 0)			/* bra #word */		\
+	    offset = read_memory_integer (pc, 2), pc += 2;		\
+	  else if (offset == 0377)		/* bra #long */		\
+	    offset = read_memory_integer (pc, 4), pc += 4;		\
+	  pc += offset;							\
+	  goto retry;							\
+      } else goto lose;							\
       /* If have an addal #-n, sp next, adjust next_addr.  */		\
       if ((0177777 & read_memory_integer (pc, 2)) == 0157774)		\
 	next_addr += read_memory_integer (pc += 2, 4), pc += 4;		\
     }									\
   /* next should be a moveml to (sp) or -(sp) or a movl r,-(sp) */	\
-  regmask = read_memory_integer (pc + 2, 2);				\
-  if (0044327 == read_memory_integer (pc, 2))				\
-    { pc += 4; /* Regmask's low bit is for register 0, the first written */ \
+  insn = read_memory_integer (pc, 2), pc += 2;				\
+  regmask = read_memory_integer (pc, 2);				\
+  if ((insn & 0177760) == 022700)	/* movl rn, (sp) */		\
+    (frame_saved_regs).regs[(insn&7) + ((insn&010)?8:0)] = next_addr;	\
+  else if ((insn & 0177760) == 024700)	/* movl rn, -(sp) */		\
+    (frame_saved_regs).regs[(insn&7) + ((insn&010)?8:0)] = next_addr-=4; \
+  else if (insn == 0044327)		/* moveml mask, (sp) */		\
+    { pc += 2;								\
+      /* Regmask's low bit is for register 0, the first written */	\
+      next_addr -= 4;							\
       for (regnum = 0; regnum < 16; regnum++, regmask >>= 1)		\
 	if (regmask & 1)						\
-          (frame_saved_regs).regs[regnum] = (next_addr += 4) - 4; }	\
-  else if (0044347 == read_memory_integer (pc, 2))			\
-    { pc += 4; /* Regmask's low bit is for register 15, the first pushed */ \
+          (frame_saved_regs).regs[regnum] = (next_addr += 4);		\
+  } else if (insn == 0044347)		/* moveml mask, -(sp) */	\
+    { pc += 2;								\
+      /* Regmask's low bit is for register 15, the first pushed */	\
       for (regnum = 15; regnum >= 0; regnum--, regmask >>= 1)		\
 	if (regmask & 1)						\
           (frame_saved_regs).regs[regnum] = (next_addr -= 4); }		\
-  else if (0x2f00 == 0xfff0 & read_memory_integer (pc, 2))		\
-    { regnum = 0xf & read_memory_integer (pc, 2); pc += 2;		\
-      (frame_saved_regs).regs[regnum] = (next_addr -= 4); }		\
   /* clrw -(sp); movw ccr,-(sp) may follow.  */				\
-  if (0x426742e7 == read_memory_integer (pc, 4))			\
+  if (read_memory_integer (pc, 2) == 041147 				\
+      && read_memory_integer (pc+2, 2) == 042347)			\
     (frame_saved_regs).regs[PS_REGNUM] = (next_addr -= 4);		\
   lose: ;								\
   (frame_saved_regs).regs[SP_REGNUM] = (frame_info).frame + 8;		\
   (frame_saved_regs).regs[FP_REGNUM] = (frame_info).frame;		\
   (frame_saved_regs).regs[PC_REGNUM] = (frame_info).frame + 4;		\
 }
+
+/* Compensate for lack of `vprintf' function.  */ 
+#define vprintf(format, ap) _doprnt (format, ap, stdout) 
 
 /* Things needed for making the inferior call functions.  */
 
 /* Push an empty stack frame, to record the current PC, etc.  */
 
 #define PUSH_DUMMY_FRAME \
-{ register CORE_ADDR sp = read_register (SP_REGNUM);\
-  register int regnum;				    \
-  sp = push_word (sp, read_register (PC_REGNUM));   \
-  sp = push_word (sp, read_register (FP_REGNUM));   \
-  write_register (FP_REGNUM, sp);		    \
-  for (regnum = FP_REGNUM - 1; regnum >= 0; regnum--)  \
-    sp = push_word (sp, read_register (regnum));    \
-  sp = push_word (sp, read_register (PS_REGNUM));   \
+{ register CORE_ADDR sp = read_register (SP_REGNUM);			\
+  register int regnum;							\
+  char raw_buffer[12];							\
+  sp = push_word (sp, read_register (PC_REGNUM));			\
+  sp = push_word (sp, read_register (FP_REGNUM));			\
+  write_register (FP_REGNUM, sp);					\
+  for (regnum = FP0_REGNUM + 7; regnum >= FP0_REGNUM; regnum--)		\
+    { read_register_bytes (REGISTER_BYTE (regnum), raw_buffer, 12);	\
+      sp = push_bytes (sp, raw_buffer, 12); }				\
+  for (regnum = FP_REGNUM - 1; regnum >= 0; regnum--)			\
+    sp = push_word (sp, read_register (regnum));			\
+  sp = push_word (sp, read_register (PS_REGNUM));			\
   write_register (SP_REGNUM, sp);  }
 
 /* Discard from the stack the innermost frame, restoring all registers.  */
 
 #define POP_FRAME  \
-{ register CORE_ADDR fp = read_register (FP_REGNUM);		 \
-  register int regnum;						 \
-  struct frame_saved_regs fsr;					 \
-  struct frame_info fi;						 \
-  fi = get_frame_info (fp);					 \
-  get_frame_saved_regs (&fi, &fsr);				 \
-  for (regnum = FP_REGNUM - 1; regnum >= 0; regnum--)		 \
-    if (fsr.regs[regnum])					 \
+{ register CORE_ADDR fp = read_register (FP_REGNUM);			\
+  register int regnum;							\
+  struct frame_saved_regs fsr;						\
+  struct frame_info fi;							\
+  char raw_buffer[12];							\
+  fi = get_frame_info (fp);						\
+  get_frame_saved_regs (&fi, &fsr);					\
+  for (regnum = FP0_REGNUM + 7; regnum >= FP0_REGNUM; regnum--)		\
+    if (fsr.regs[regnum])						\
+      { read_memory (fsr.regs[regnum], raw_buffer, 12);			\
+        write_register_bytes (REGISTER_BYTE (regnum), raw_buffer, 12); }\
+  for (regnum = FP_REGNUM - 1; regnum >= 0; regnum--)			\
+    if (fsr.regs[regnum])						\
       write_register (regnum, read_memory_integer (fsr.regs[regnum], 4)); \
-  if (fsr.regs[PS_REGNUM])					 \
+  if (fsr.regs[PS_REGNUM])						\
     write_register (PS_REGNUM, read_memory_integer (fsr.regs[PS_REGNUM], 4)); \
-  write_register (FP_REGNUM, read_memory_integer (fp, 4));	 \
-  write_register (PC_REGNUM, read_memory_integer (fp + 4, 4));   \
-  write_register (SP_REGNUM, fp + 8);				 \
+  write_register (FP_REGNUM, read_memory_integer (fp, 4));		\
+  write_register (PC_REGNUM, read_memory_integer (fp + 4, 4));  	\
+  write_register (SP_REGNUM, fp + 8);					\
 }
 
 /* This sequence of words is the instructions
+     fmovem #<f0-f7>,-(sp)
      moveml 0xfffc,-(sp)
      clrw -(sp)
      movew ccr,-(sp)
@@ -286,18 +467,18 @@ But the arguments have to be pushed by GDB after the PUSH_DUMMY_FRAME is done,
 and we cannot allow the moveml to push the registers again lest they be
 taken for the arguments.  */
 
-#define CALL_DUMMY {0x48e7fffc, 0x426742e7, 0x4eb93232, 0x3232dffc, 0x69696969, 0x4e4f4e71}
+#define CALL_DUMMY {0xf227e0ff, 0x48e7fffc, 0x426742e7, 0x4eb93232, 0x3232dffc, 0x69696969, 0x4e4f4e71}
 
-#define CALL_DUMMY_LENGTH 24
+#define CALL_DUMMY_LENGTH 28
 
-#define CALL_DUMMY_START_OFFSET 8
+#define CALL_DUMMY_START_OFFSET 12
 
 /* Insert the specified number of args and function address
    into a call sequence of the above form stored at DUMMYNAME.  */
 
 #define FIX_CALL_DUMMY(dummyname, fun, nargs)     \
-{ *(int *)((char *) dummyname + 16) = nargs * 4;  \
-  *(int *)((char *) dummyname + 10) = fun; }
+{ *(int *)((char *) dummyname + 20) = nargs * 4;  \
+  *(int *)((char *) dummyname + 14) = fun; }
 
 /* Interface definitions for kernel debugger KDB.  */
 
@@ -350,13 +531,3 @@ taken for the arguments.  */
 { asm ("subil $8,28(sp)");     \
   asm ("movem (sp),$ 0xffff"); \
   asm ("rte"); }
-============================================================m-isi-ovinit.h
-
-/* This is how the size of an individual .o file's text segment
-   is rounded on a vax.  */
-
-#define FILEADDR_ROUND(addr) (addr)
-
-============================================================
-
-

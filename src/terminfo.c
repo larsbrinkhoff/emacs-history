@@ -25,6 +25,8 @@ and this notice must be preserved on all copies.  */
 char *UP, *BC, PC;
 short ospeed;
 
+static buffer[512];
+
 /* Interface to curses/terminfo library.
    Turns out that all of the terminfo-level routines look
    like their termcap counterparts except for tparm, which replaces
@@ -32,14 +34,18 @@ short ospeed;
    format is different too.
 */
 
-tparam (string, outstring, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+char *
+tparam (string, outstring, len, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
      char *string;
      char *outstring;
      int arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9;
 {
-  strcpy (outstring,
-	  tparm (string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-	  );
+  char *temp;
+  extern char *tparm();
+
+  temp = tparm (string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+  if (outstring == 0)
+    outstring = ((char *) (malloc ((strlen (temp)) + 1)));
+  strcpy (outstring, temp);
+  return outstring;
 }
-
-

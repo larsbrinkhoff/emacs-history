@@ -43,7 +43,8 @@ extern struct cm {
 		*cm_tab;	/* tab (ta) */
 	int	cm_tabwidth,	/* tab width (tw) */
 		cm_cols,	/* Number of cols on screen (co) */
-		cm_rows,	/* Number of rows on screen (li) */
+		cm_rows;	/* Number of rows on screen (li) */
+	unsigned int
 		cm_autowrap:1,	/* autowrap flag (am) */
 		cm_magicwrap:1,	/* vt100s: cursor stays in last col but
 				   will wrap if next char is printing (xn) */

@@ -87,7 +87,7 @@ and this notice must be preserved on all copies.  */
    pure and impure space as loaded can vary, and even their
    relative order cannot be relied on.
 
-   Otherwise Emacs assumes that data space precedes text space,
+   Otherwise Emacs assumes that text space precedes data space,
    numerically.  */
 
 #define VIRT_ADDR_VARIES
@@ -109,16 +109,21 @@ and this notice must be preserved on all copies.  */
 
 #define NO_REMAP
 
+/* This machine requires completely different unexec code
+   which lives in a separate file.  Specify the file name.  */
 
+#define UNEXEC unexmips.o
+
+/* Describe layout of the address space in an executing process.  */
 
 #define TEXT_START 0x400000
 #define DATA_START 0x800000
 
+/* Alter some of the options used when linking.  */
+
 #define LIBS_MACHINE -lmld
 #define LD_SWITCH_MACHINE -D 800000
-#define COFF
 #define LIBS_DEBUG
-
 
 /* The standard definitions of these macros would work ok,
    but these are faster because the constants are short.  */
@@ -133,5 +138,5 @@ and this notice must be preserved on all copies.  */
 #define XSETPNTR(a, b) XSET(a, XTYPE(a), b)
 
 #define XMARKBIT(a) ((a) < 0)
+#define XSETMARKBIT(a,b) ((a) = ((a) & ~MARKBIT) | ((b) ? MARKBIT : 0))
 #define XUNMARK(a) ((a) = (((a) << INTBITS-GCTYPEBITS-VALBITS) >> INTBITS-GCTYPEBITS-VALBITS))
-

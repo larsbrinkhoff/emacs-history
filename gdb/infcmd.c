@@ -1,5 +1,5 @@
 /* Memory-access and commands for inferior process, for GDB.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
 
 GDB is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone
@@ -40,6 +40,10 @@ extern char *sys_siglist[];
    with a space added at the front.  Just a space means no args.  */
 
 static char *inferior_args;
+
+/* File name for default use for standard in/out in the inferior.  */
+
+char *inferior_io_terminal;
 
 /* Pid of our debugged inferior, or 0 if no inferior now.  */
 
@@ -99,6 +103,7 @@ int step_multi;
 struct environ *inferior_environ;
 
 CORE_ADDR read_pc ();
+struct command_line *get_breakpoint_commands ();
 
 START_FILE
 
@@ -117,12 +122,21 @@ set_args_command (args)
   inferior_args = concat (" ", args, "");
 }
 
+void
+tty_command (file)
+     char *file;
+{
+  if (file == 0)
+    error_no_arg ("terminal name for running target process");
+
+  inferior_io_terminal = savestring (file, strlen (file));
+}
+
 static void
 run_command (args, from_tty)
      char *args;
      int from_tty;
 {
-  register int pid;
   extern char **environ;
   register int i;
   char *exec_file;
@@ -143,52 +157,39 @@ Start it from the beginning? "))
 	error ("Program already started.");
     }
 
-  if (args)
-    set_args_command (args);
-
-  exec_file = (char *) get_exec_file ();
-  if (from_tty)
+  if (remote_debugging)
     {
-      printf ("Starting program: %s%s\n",
-	      exec_file, inferior_args);
-      fflush (stdout);
+      free (allargs);
+      if (from_tty)
+	{
+	  printf ("Starting program: %s%s\n",
+		  exec_file, inferior_args);
+	  fflush (stdout);
+	}
     }
-
-  allargs = concat ("exec ", exec_file, inferior_args);
-
-  pid = vfork ();
-  if (pid < 0)
-    perror_with_name ("vfork");
-
-  if (pid == 0)
+  else
     {
-      /* Run inferior in a separate process group.  */
-      setpgrp (getpid (), getpid ());
+      if (args)
+	set_args_command (args);
 
-/* Not needed on Sun, at least, and loses there
-   because it clobbers the superior.  */
-/*???      signal (SIGQUIT, SIG_DFL);
-      signal (SIGINT, SIG_DFL);  */
+      exec_file = (char *) get_exec_file (1);
+      if (from_tty)
+	{
+	  printf ("Starting program: %s%s\n",
+		  exec_file, inferior_args);
+	  fflush (stdout);
+	}
 
-      ptrace (0);
-      execle ("/bin/sh", "sh", "-c", allargs, 0,
-	      environ_vector (inferior_environ));
-
-      fprintf (stderr, "Cannot exec /bin/sh: %s.\n",
-	       errno < sys_nerr ? sys_errlist[errno] : "unknown error");
-      fflush (stderr);
-      _exit (0177);
+      allargs = concat ("exec ", exec_file, inferior_args);
+      inferior_pid = create_inferior (allargs, environ_vector (inferior_environ));
     }
-
-  inferior_pid = pid;
-  free (allargs);
 
   clear_proceed_status ();
 
   start_inferior ();
 }
 
-static void
+void
 cont_command (proc_count_exp, from_tty)
      char *proc_count_exp;
      int from_tty;
@@ -213,10 +214,10 @@ cont_command (proc_count_exp, from_tty)
 
   proceed (-1, -1, 0);
 }
-
+
 /* Step until outside of current statement.  */
 static void step_1 ();
-
+
 static void
 step_command (count_string)
 {
@@ -317,7 +318,7 @@ jump_command (arg, from_tty)
     struct symbol *fn = get_frame_function (get_current_frame ());
     struct symbol *sfn = find_pc_function (sal.pc);
     if (fn != 0 && sfn != fn
-	&& ! query ("That is not in function %s.  Continue there? ",
+	&& ! query ("Line %d is not in `%s'.  Jump anyway? ",
 		    sal.line, SYMBOL_NAME (fn)))
       error ("Not confirmed.");
   }
@@ -366,8 +367,9 @@ signal_command (signum_exp, from_tty)
    To call: first, do PUSH_DUMMY_FRAME.
    Then push the contents of the dummy.  It should end with a breakpoint insn.
    Then call here, passing address at which to start the dummy.
-   We store the contents of r0 and r1 at the time of the completion
-   of the stack dummy into the buffer at BUFFER.
+
+   The contents of all registers are saved before the dummy frame is popped
+   and copied into the buffer BUFFER.
 
    The dummy's frame is automatically popped whenever that break is hit.
    If that is the first time the program stops, run_stack_dummy
@@ -390,6 +392,12 @@ run_stack_dummy (addr, buffer)
   int saved_stop_breakpoint = stop_breakpoint;
   int saved_stop_step = stop_step;
   int saved_stop_stack_dummy = stop_stack_dummy;
+  FRAME saved_selected_frame;
+  int saved_selected_level;
+  struct command_line *saved_breakpoint_commands
+    = get_breakpoint_commands ();
+
+  record_selected_frame (&saved_selected_frame, &saved_selected_level);
 
   /* Now proceed, having reached the desired place.  */
   clear_proceed_status ();
@@ -403,6 +411,8 @@ run_stack_dummy (addr, buffer)
   if (!stop_stack_dummy)
     error ("Cannot continue previously requested operation.");
 
+  set_breakpoint_commands (saved_breakpoint_commands);
+  select_frame (saved_selected_frame, saved_selected_level);
   stop_signal = saved_stop_signal;
   stop_pc = saved_stop_pc;
   stop_frame = saved_stop_frame;
@@ -413,8 +423,7 @@ run_stack_dummy (addr, buffer)
 
   /* On return, the stack dummy has been popped already.  */
 
-  buffer[0] = stop_r0;
-  buffer[1] = stop_r1;
+  bcopy (stop_registers, buffer, sizeof stop_registers);
 }
 
 /* "finish": Set a temporary breakpoint at the place
@@ -463,7 +472,6 @@ finish_command (arg, from_tty)
   if (stop_breakpoint == -3 && function != 0)
     {
       struct type *value_type;
-      REGISTER_TYPE retbuf[2];
       register value val;
 
       if (TYPE_CODE (SYMBOL_TYPE (function)) != TYPE_CODE_VOID)
@@ -471,11 +479,9 @@ finish_command (arg, from_tty)
       else
 	return;
 
-      retbuf[0] = stop_r0;
-      retbuf[1] = stop_r1;
-      val = value_being_returned (value_type, retbuf);
+      val = value_being_returned (value_type, stop_registers);
       printf ("Value returned is $%d = ", record_latest_value (val));
-      value_print (val, stdout);
+      value_print (val, stdout, 0);
       putchar ('\n');
     }
 }
@@ -604,10 +610,10 @@ read_pc ()
   return (CORE_ADDR) read_register (PC_REGNUM);
 }
 
-write_pc (value)
-     CORE_ADDR value;
+write_pc (val)
+     CORE_ADDR val;
 {
-  write_register (PC_REGNUM, (long) value);
+  write_register (PC_REGNUM, (long) val);
 }
 
 char *reg_names[] = REGISTER_NAMES;
@@ -664,8 +670,8 @@ registers_info (addr_exp)
 
       /* If virtual format is floating, print it that way.  */
       if (TYPE_CODE (REGISTER_VIRTUAL_TYPE (i)) == TYPE_CODE_FLT
-	  && ! INVALID_FLOAT (virtual_buffer))
-	val_print (REGISTER_VIRTUAL_TYPE (i), virtual_buffer, 0, stdout);
+	  && ! INVALID_FLOAT (virtual_buffer, REGISTER_VIRTUAL_SIZE (i)))
+	val_print (REGISTER_VIRTUAL_TYPE (i), virtual_buffer, 0, stdout, 0);
       /* Else if virtual format is too long for printf,
 	 print in hex a byte at a time.  */
       else if (REGISTER_VIRTUAL_SIZE (i) > sizeof (long))
@@ -705,9 +711,116 @@ registers_info (addr_exp)
   printf ("Contents are relative to selected stack frame.\n");
 }
 
+#ifdef ATTACH_DETACH
+/*
+ * TODO:
+ * Should save/restore the tty state since it might be that the
+ * program to be debugged was started on this tty and it wants
+ * the tty in some state other than what we want.  If it's running
+ * on another terminal or without a terminal, then saving and
+ * restoring the tty state is a harmless no-op.
+ */
+
+/*
+ * attach_command --
+ * takes a program started up outside of gdb and ``attaches'' to it.
+ * This stops it cold in its tracks and allows us to start tracing it.
+ * For this to work, we must be able to send the process a
+ * signal and we must have the same effective uid as the program.
+ */
+static void
+attach_command (args, from_tty)
+     char *args;
+     int from_tty;
+{
+  char *exec_file;
+  int pid;
+  int remote = 0;
+
+  dont_repeat();
+
+  if (!args)
+    error_no_arg ("process-id to attach");
+
+  while (*args == ' ' || *args == '\t') args++;
+
+  if (args[0] == '/')
+    remote = 1;
+  else
+    pid = atoi (args);
+
+  if (inferior_pid)
+    {
+      if (query ("A program is being debugged already.  Kill it? "))
+	kill_inferior ();
+      else
+	error ("Inferior not killed.");
+    }
+
+  exec_file = (char *) get_exec_file (1);
+
+  if (from_tty)
+    {
+      if (remote)
+	printf ("Attaching remote machine\n");
+      else
+	printf ("Attaching program: %s pid %d\n",
+		exec_file, pid);
+      fflush (stdout);
+    }
+
+  if (remote)
+    {
+      remote_open (args, from_tty);
+      start_remote ();
+    }
+  else
+    attach_program (pid);
+}
+
+/*
+ * detach_command --
+ * takes a program previously attached to and detaches it.
+ * The program resumes execution and will no longer stop
+ * on signals, etc.  We better not have left any breakpoints
+ * in the program or it'll die when it hits one.  For this
+ * to work, it may be necessary for the process to have been
+ * previously attached.  It *might* work if the program was
+ * started via the normal ptrace (PTRACE_TRACEME).
+ */
+
+static void
+detach_command (args, from_tty)
+     char *args;
+     int from_tty;
+{
+  int signal = 0;
+
+  if (!inferior_pid)
+    error ("Not currently tracing a program\n");
+  if (from_tty)
+    {
+      char *exec_file = (char *)get_exec_file (0);
+      if (exec_file == 0)
+	exec_file = "";
+      printf ("Detaching program: %s pid %d\n",
+	      exec_file, inferior_pid);
+      fflush (stdout);
+    }
+  if (args)
+    signal = atoi (args);
+
+  detach (signal);
+  inferior_pid = 0;
+}
+#endif /* ATTACH_DETACH */
+
 static
 initialize ()
 {
+  add_com ("tty", class_run, tty_command,
+	   "Set terminal for future runs of program being debugged.");
+
   add_com ("set-args", class_run, set_args_command,
 	   "Specify arguments to give program being debugged when it is started.\n\
 Follow this command with any number of args, to be passed to the program.");
@@ -726,6 +839,19 @@ This does not affect the program until the next \"run\" command.");
 Arguments are VAR VALUE where VAR is variable name and VALUE is value.\n\
 VALUES of environment variables are uninterpreted strings.\n\
 This does not affect the program until the next \"run\" command.");
+ 
+#ifdef ATTACH_DETACH
+ add_com ("attach", class_run, attach_command,
+ 	   "Attach to a process that was started up outside of GDB.\n\
+To do this, you must have permission to send the process a signal.\n\
+And it must have the same effective uid as the debugger.\n\n\
+Before using \"attach\", you must use the \"exec-file\" command\n\
+to specify the program running in the process,\n\
+and the \"symbol-file\" command to load its symbol table.");
+  add_com ("detach", class_run, detach_command,
+	   "Detach the process previously attached.\n\
+The process is no longer traced and continues its execution.");
+#endif /* ATTACH_DETACH */
 
   add_com ("signal", class_run, signal_command,
 	   "Continue program giving it signal number SIGNUMBER.");

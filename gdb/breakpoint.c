@@ -142,7 +142,9 @@ condition_command (arg, from_tty)
 	    while (*p == ' ' || *p == '\t') p++;
 
 	    arg = p;
-	    b->cond = (struct expression *) parse_c_1 (&arg, block_for_pc (b->address));
+	    b->cond = (struct expression *) parse_c_1 (&arg, block_for_pc (b->address), 0);
+	    if (*arg)
+	      error ("Junk at end of expression");
 	  }
 	return;
       }
@@ -183,8 +185,11 @@ commands_command (arg)
     if (b->number == bnum)
       {
 	if (input_from_terminal_p ())
-	  printf ("Type commands for when breakpoint %d is hit, one per line.\n\
+	  {
+	    printf ("Type commands for when breakpoint %d is hit, one per line.\n\
 End with a line saying just \"end\".\n", bnum);
+	    fflush (stdout);
+	  }
 	l = read_command_lines ();
 	free_command_lines (&b->commands);
 	b->commands = l;
@@ -201,10 +206,12 @@ do_breakpoint_commands ()
 {
   while (breakpoint_commands)
     {
-      execute_command (breakpoint_commands->line, 0);
-      /* If command was "cont", breakpoint_commands is 0 now.  */
-      if (breakpoint_commands)
-	breakpoint_commands = breakpoint_commands->next;
+      char *line = breakpoint_commands->line;
+      breakpoint_commands = breakpoint_commands->next;
+      execute_command (line, 0);
+      /* If command was "cont", breakpoint_commands is now 0,
+	 of if we stopped at yet another breakpoint which has commands,
+	 it is now the commands for the new breakpoint.  */
     }
   clear_momentary_breakpoints ();
 }
@@ -218,23 +225,43 @@ clear_breakpoint_commands ()
   breakpoint_commands = 0;
   breakpoint_auto_delete (0);
 }
+
+/* Functions to get and set the current list of pending
+   breakpoint commands.  These are used by run_stack_dummy
+   to preserve the commands around a function call.  */
+
+struct command_line *
+get_breakpoint_commands ()
+{
+  return breakpoint_commands;
+}
+
+void
+set_breakpoint_commands (cmds)
+     struct command_line *cmds;
+{
+  breakpoint_commands = cmds;
+}
 
 /* insert_breakpoints is used when starting or continuing the program.
    remove_breakpoints is used when the program stops.
-   Both return zero if successful, 1 if could not write the inferior.  */
+   Both return zero if successful,
+   or an `errno' value if could not write the inferior.  */
 
 int
 insert_breakpoints ()
 {
   register struct breakpoint *b;
+  int val;
 
 /*   printf ("Inserting breakpoints.\n"); */
   ALL_BREAKPOINTS (b)
     if (b->enable != disabled && ! b->inserted && ! b->duplicate)
       {
 	read_memory (b->address, b->shadow_contents, sizeof break_insn);
-	if (write_memory (b->address, break_insn, sizeof break_insn))
-	  return 1;
+	val = write_memory (b->address, break_insn, sizeof break_insn);
+	if (val)
+	  return val;
 /*	printf ("Inserted breakpoint at 0x%x, shadow 0x%x, 0x%x.\n",
 		b->address, b->shadow_contents[0], b->shadow_contents[1]); */
 	b->inserted = 1;
@@ -246,13 +273,15 @@ int
 remove_breakpoints ()
 {
   register struct breakpoint *b;
+  int val;
 
 /*   printf ("Removing breakpoints.\n"); */
   ALL_BREAKPOINTS (b)
     if (b->inserted)
       {
-	if (write_memory (b->address, b->shadow_contents, sizeof break_insn))
-	  return 1;
+	val = write_memory (b->address, b->shadow_contents, sizeof break_insn);
+	if (val)
+	  return val;
 	b->inserted = 0;
 /*	printf ("Removed breakpoint at 0x%x, shadow 0x%x, 0x%x.\n",
 		b->address, b->shadow_contents[0], b->shadow_contents[1]); */
@@ -290,6 +319,16 @@ breakpoint_here_p (pc)
   return 0;
 }
 
+/* Evaluate the expression EXP and return 1 if value is zero.
+   This is used inside a catch_errors to evaluate the breakpoint condition.  */
+
+int
+breakpoint_cond_eval (exp)
+     struct expression *exp;
+{
+  return value_zerop (evaluate_expression (exp));
+}
+
 /* Return 0 if PC is not the address just after a breakpoint,
    or -1 if breakpoint says do not stop now,
    or -2 if breakpoint says it has deleted itself and don't stop,
@@ -318,7 +357,9 @@ breakpoint_stop_status (pc, frame)
 	    int value_zero;
 	    if (b->cond)
 	      {
-		value_zero = value_zerop (evaluate_expression (b->cond));
+		value_zero
+		  = catch_errors (breakpoint_cond_eval, b->cond,
+				  "Error occurred in testing breakpoint condition.");
 		free_all_values ();
 	      }
 	    if (b->cond && value_zero)
@@ -414,7 +455,38 @@ Num Enb   Address    Where\n");
 
   breakpoint_1 (bnum);
 }
+
+/* Print a message describing any breakpoints set at PC.  */
+
+static void
+describe_other_breakpoints (pc)
+     register CORE_ADDR pc;
+{
+  register int others = 0;
+  register struct breakpoint *b;
+
+  ALL_BREAKPOINTS (b)
+    if (b->address == pc)
+      others++;
+  if (others > 0)
+    {
+      printf ("Note: breakpoint%s ", (others > 1) ? "s" : "");
+      ALL_BREAKPOINTS (b)
+	if (b->address == pc)
+	  {
+	    others--;
+	    printf ("%d%s%s ",
+		    b->number,
+		    (b->enable == disabled) ? " (disabled)" : "",
+		    (others > 1) ? "," : ((others == 1) ? " and" : ""));
+	  }
+      printf (" also set at pc 0x%x\n", pc);
+    }
+}
 
+/* Set the default place to put a breakpoint
+   for the `break' command with no arguments.  */
+
 void
 set_default_breakpoint (valid, addr, symtab, line)
      int valid;
@@ -514,6 +586,41 @@ clear_momentary_breakpoints ()
       }
 }
 
+/* Set a breakpoint from a symtab and line.
+   If TEMPFLAG is nonzero, it is a temporary breakpoint.
+   Print the same confirmation messages that the breakpoint command prints.  */
+
+void
+set_breakpoint (s, line, tempflag)
+     struct symtab *s;
+     int line;
+     int tempflag;
+{
+  register struct breakpoint *b;
+  struct symtab_and_line sal;
+  
+  sal.symtab = s;
+  sal.line = line;
+  sal.pc = find_line_pc (sal.symtab, sal.line);
+  if (sal.pc == 0)
+    error ("No line %d in file \"%s\".\n", sal.line, sal.symtab->filename);
+  else
+    {
+      describe_other_breakpoints (sal.pc);
+
+      b = set_raw_breakpoint (sal);
+      b->number = ++breakpoint_count;
+      b->cond = 0;
+      if (tempflag)
+	b->enable = temporary;
+
+      printf ("Breakpoint %d at 0x%x", b->number, b->address);
+      if (b->symtab)
+	printf (": file %s, line %d.", b->symtab->filename, b->line_number);
+      printf ("\n");
+    }
+}
+
 /* Set a breakpoint according to ARG (function, linenum or *address)
    and make it temporary if TEMPFLAG is nonzero.  */
 
@@ -545,7 +652,7 @@ break_command_1 (arg, tempflag, from_tty)
 	  if (arg[0] == 'i' && arg[1] == 'f'
 	      && (arg[2] == ' ' || arg[2] == '\t'))
 	    cond = (struct expression *) parse_c_1 ((arg += 2, &arg),
-						    block_for_pc (sal.pc));
+						    block_for_pc (sal.pc), 0);
 	  else
 	    error ("Junk at end of arguments.");
 	}
@@ -559,6 +666,9 @@ break_command_1 (arg, tempflag, from_tty)
   else
     error ("No default breakpoint address now.");
 
+  if (from_tty)
+    describe_other_breakpoints (sal.pc);
+
   b = set_raw_breakpoint (sal);
   b->number = ++breakpoint_count;
   b->cond = cond;
@@ -569,28 +679,6 @@ break_command_1 (arg, tempflag, from_tty)
   if (b->symtab)
     printf (": file %s, line %d.", b->symtab->filename, b->line_number);
   printf ("\n");
-
-  if (from_tty)
-    {
-      int others = 0;
-      ALL_BREAKPOINTS (b)
-	if (b->address == sal.pc && b->number != breakpoint_count)
-	  others++;
-      if (others > 0)
-	{
-	  printf ("Note: breakpoint%s ", (others > 1) ? "s" : "");
-	  ALL_BREAKPOINTS (b)
-	    if (b->address == sal.pc && b->number != breakpoint_count)
-	      {
-		others--;
-		printf ("%d%s%s ",
-			b->number,
-			(b->enable == disabled) ? " (disabled)" : "",
-			(others > 1) ? "," : ((others == 1) ? " and" : ""));
-	      }
-	  printf (" also set at pc 0x%x\n", sal.pc);
-	}
-    }
 }
 
 static void
@@ -793,6 +881,9 @@ ignore_command (args, from_tty)
 {
   register char *p;
   register int num;
+
+  if (p == 0)
+    error_no_arg ("a breakpoint number");
   
   p = args;
   while (*p >= '0' && *p <= '9') p++;
@@ -1012,7 +1103,7 @@ Do \"help breakpoints\" for info on other commands dealing with breakpoints.");
 
   add_info ("breakpoints", breakpoints_info,
 	    "Status of all breakpoints, or breakpoint number NUMBER.\n\
-Second column is \"y\" for enabled breakpoint, \"d\" for disabled,\n\
+Second column is \"y\" for enabled breakpoint, \"n\" for disabled,\n\
 \"o\" for enabled once (disable when hit), \"d\" for enable but delete when hit.\n\
 Then come the address and the file/line number.\n\n\
 Convenience variable \"$_\" and default examine address for \"x\"\n\

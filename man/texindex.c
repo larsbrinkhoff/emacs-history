@@ -29,22 +29,25 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/file.h>
-
-#ifndef L_XTND
-#define L_XTND 2
-#endif
 
 #ifdef VMS
+#include <file.h>
+
 #define EXIT_SUCCESS ((1 << 28) | 1)
 #define EXIT_FATAL ((1 << 28) | 4)
 #define unlink delete
 #define tell(fd) lseek(fd, 0L, 1)
 #else
+#include <sys/file.h>
+
 #define EXIT_SUCCESS 0
 #define EXIT_FATAL 1
 #endif
 
+
+#ifndef L_XTND
+#define L_XTND 2
+#endif
 
 /* When sorting in core, this structure describes one line
  and the position and length of its first keyfield.  */
@@ -342,11 +345,7 @@ tempcopy (idesc)
   int odesc;
   char buffer[BUFSIZE];
 
-#ifdef VMS
-  odesc = open (outfile, O_WRONLY | O_CREAT, 0666, "rfm=var", "rat=cr");
-#else
   odesc = open (outfile, O_WRONLY | O_CREAT, 0666);
-#endif
 
   if (odesc < 0) pfatal_with_name (outfile);
 
@@ -635,6 +634,26 @@ find_value (start, length)
   return 0l;
 }
 
+/* Vector used to translate characters for comparison.
+   This is how we make all alphanumerics follow all else,
+   and ignore case in the first sorting.  */
+int char_order[256];
+
+init_char_order ()
+{
+  int i;
+  for (i = 1; i < 256; i++)
+    char_order[i] = i;
+
+  for (i = '0'; i <= '9'; i++)
+    char_order[i] += 512;
+
+  for (i = 'a'; i <= 'z'; i++) {
+    char_order[i] = 512 + i;
+    char_order[i + 'A' - 'a'] = 512 + i;
+  }
+}
+
 /* Compare two fields (each specified as a start pointer and a character count)
  according to `keyfield'.  The sign of the value reports the relation between the fields */
 
@@ -673,29 +692,36 @@ compare_field (keyfield, start1, length1, pos1, start2, length2, pos2)
 
       while (1)
 	{
-	  char c1, c2;
+	  int c1, c2;
 
 	  if (p1 == e1) c1 = 0;
 	  else c1 = *p1++;
 	  if (p2 == e2) c2 = 0;
 	  else c2 = *p2++;
 
-	  /* Ignore case of both if desired */
-
-	  if (fold_case)
-	    {
-	      if (c1 >= 'A' && c1 <= 'Z') c1 = c1 + 040;
-	      if (c2 >= 'A' && c2 <= 'Z') c2 = c2 + 040;
-	    }
-
-	  /* Actually compare */
-
-	  /* Anything but a letter or digit is less than any letter or digit */
-	  if (isalnum (c1) != isalnum (c2))
-	    return (isalnum (c1)) ? 1 : -1;
-	  if (c1 != c2) return c1 - c2;
+	  if (char_order[c1] != char_order[c2])
+	    return char_order[c1] - char_order[c2];
 	  if (!c1) break;
 	}
+
+      /* Strings are equal except possibly for case.  */
+      p1 = start1;
+      p2 = start2;
+      while (1)
+	{
+	  int c1, c2;
+
+	  if (p1 == e1) c1 = 0;
+	  else c1 = *p1++;
+	  if (p2 == e2) c2 = 0;
+	  else c2 = *p2++;
+
+	  if (c1 != c2)
+	    /* Reverse sign here so upper case comes out last.  */
+	    return c2 - c1;
+	  if (!c1) break;
+	}
+
       return 0;
     }
 }
@@ -780,11 +806,7 @@ sort_offline (infile, nfiles, total, outfile)
   for (i = 0; i < ntemps; i++)
     {
       char *outname = maketempname (++tempcount);
-#ifdef VMS
-      FILE *ostream = fopen (outname, "w", "rfm=var", "rat=cr");
-#else
       FILE *ostream = fopen (outname, "w");
-#endif
       long tempsize = 0;
 
       if (!ostream) pfatal_with_name (outname);
@@ -866,6 +888,8 @@ sort_in_core (infile, total, outfile)
 
   close (desc);
 
+  init_char_order ();
+
   /* Sort routines want to know this address */
 
   text_base = data;
@@ -920,11 +944,7 @@ sort_in_core (infile, total, outfile)
 
   if (outfile)
     {
-#ifdef VMS
-      ostream = fopen (outfile, "w", "rfm=var", "rat=cr");
-#else
       ostream = fopen (outfile, "w");
-#endif
       if (!ostream)
 	pfatal_with_name (outfile);
     }
@@ -1306,11 +1326,7 @@ merge_direct (infiles, nfiles, outfile)
 
   if (outfile)
     {
-#ifdef VMS
-      ostream = fopen (outfile, "w", "rfm=var", "rat=cr");
-#else
       ostream = fopen (outfile, "w");
-#endif
     }
   if (!ostream) pfatal_with_name (outfile);
 
@@ -1529,4 +1545,24 @@ xrealloc (ptr, size)
   if (!result)
     fatal ("virtual memory exhausted");
   return result;
+}
+
+bzero (b, length)
+     register char *b;
+     register int length;
+{
+#ifdef VMS
+  short zero = 0;
+  long max_str = 65535;
+
+  while (length > max_str) {
+    (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
+    length -= max_str;
+    b += max_str;
+  }
+  (void) LIB$MOVC5 (&zero, &zero, &zero, &length, b);
+#else
+  while (length-- > 0)
+    *b++ = 0;
+#endif /* not VMS */
 }

@@ -1,4 +1,4 @@
-Mailing lists for GNU Emacs:
+Mailing lists for GNU Emacs:		Last updated 20 Dec 87
 
 Bug reports, fixes for bugs, and suggestions for improvements in GNU
 Emacs should be sent to bug-gnu-emacs@prep.ai.mit.edu (Internet
@@ -24,8 +24,8 @@ for the entire community.  If you want help for yourself in
 particular, you may have to hire someone.  You might find one by
 looking in the the service list (file SERVICE in this directory).
 
-Anything addressed to the implementers and maintainers of GNU Emacs
-should be sent to those addresses also, NOT to info-gnu-emacs.
+Anything addressed to the implementors and maintainers of GNU Emacs
+should be sent only to bug-gnu-emacs, NOT to info-gnu-emacs.
 
 Information and questions addressed to the general user community are
 sent to info-gnu-emacs@prep.ai.mit.edu (Internet address) or
@@ -47,12 +47,18 @@ Another list, info-gnu@prep.ai.mit.edu, is used for progress reports
 for the GNU project in general, and for requests for people to do
 work.
 
+The list, gnu-manual@a.cs.uiuc.edu, is a working group whose
+volunteers write, proofread and comment on the developing GNU Emacs
+Lisp programmers' manual.
+
+There are also mailing lists for other GNU programs.  Specific
+information about these mailing lists. obtaining GNU software, or GNU
+activities in Cambridge and elsewhere can be directed to:
+gnu@prep.ai.mit.edu
+
 Send messages ABOUT these lists, such as reports of mail problems, or
 requests to be added or removed, to info-gnu-emacs-request (or
-info-gnu-request, bug-gnu-emacs-request, or bug-gdb-request), NOT to
-info-gnu-emacs or bug-gnu-emacs.  *-request goes only to the people
-who can do something about these things, and thus avoids disturbing
+info-gnu-request, bug-gnu-emacs-request, bug-gdb-request, etc), NOT to
+info-gnu-emacs, etc.  *-request goes only to the people who can do
+something about your requests and problems, and thus avoids disturbing
 everyone else.
-
-Some internet hosts (due to out-of-date software) will not recognize
-prep.ai.mit.edu as a valid host name.  Substitute mit-prep.arpa .

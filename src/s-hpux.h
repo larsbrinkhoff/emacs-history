@@ -36,11 +36,12 @@ and this notice must be preserved on all copies.  */
 
 #define SYSTEM_TYPE "hpux"
 
-/* nomultiplejobs should be defined if your system's shell
+/* `nomultiplejobs' should be defined if your system's shell
  does not have "job control" (the ability to stop a program,
- run some other program, then continue the first one).  */
+ run some other program, then continue the first one).
 
-#define NOMULTIPLEJOBS
+ On hpux this depends on the precise kind of machine in use,
+ so the m- file defines this symbol if appropriate.  */
 
 /* Default is to set interrupt_input to 0: don't do input buffering within Emacs */
 
@@ -64,7 +65,12 @@ and this notice must be preserved on all copies.  */
  */
 
 #define HAVE_TIMEVAL
- 
+
+/* With HAVE_TIMEVAL define, Emacs expects to use `utimes'.
+   But HPUX does not have one.  */
+
+#define MISSING_UTIMES
+
 /*
  *	Define HAVE_SELECT if the system supports the `select' system call.
  */
@@ -73,10 +79,9 @@ and this notice must be preserved on all copies.  */
 
 /*
  *	Define HAVE_PTYS if the system supports pty devices.
- *      HPUX has them, but csh and some other things work badly with them.
  */
 
-#undef HAVE_PTYS
+#define HAVE_PTYS
 
 /* Define HAVE_SOCKETS if system supports 4.2-compatible sockets.  */
 
@@ -89,9 +94,13 @@ and this notice must be preserved on all copies.  */
 
 /* #define NONSYSTEM_DIR_LIBRARY */
 
-/* Define this symbol if your system has the functions bcopy, etc. */
+/* Define this symbol if your system has the functions bcopy, etc.
+ * s800 and later versions of s300 (s200) kernels have equivilents
+ * of the BSTRING functions of BSD.  If your s200 kernel doesn't have
+ * em comment out this section.
+ */
 
-/* #define BSTRING */
+#define BSTRING
 
 /* subprocesses should be defined if you want to
  have code for asynchronous subprocesses
@@ -112,6 +121,10 @@ and this notice must be preserved on all copies.  */
    /usr/spool/mail/$USER.lock.  */
 
 /* #define MAIL_USE_FLOCK */
+
+/* Say we have the SYSV style of interprocess communication.  */
+
+#define HAVE_SYSVIPC
 
 /* Define CLASH_DETECTION if you want lock files to be written
    so that Emacs can tell instantly when you try to modify
@@ -138,10 +151,8 @@ and this notice must be preserved on all copies.  */
 #define KERNEL_FILE "/hp-ux"
 
 /* The symbol in the kernel where the load average is found
-   is named _avenrun.  */
+   depends on the cpu type, so we let the m- files define LDAV_SYMBOL.  */
 
-#define LDAV_SYMBOL "_avenrun"
-
 /* Special hacks needed to make Emacs run on this system.  */
 
 /*
@@ -179,31 +190,17 @@ and this notice must be preserved on all copies.  */
 /* Use the system provided termcap(3) library */
 #define TERMINFO
 
-/* On USG systems these have different names */
-
-#define index strchr
-#define rindex strrchr
-
 /* The 48-bit versions are more winning for Emacs.  */
 
 #define rand lrand48
 #define srand srand48
-
-/* In hpux, for unknown reasons, S_IFLNK is defined
-   even though symbolic links do not exist.
-   Make sure our conditionals based on S_IFLNK are not confused.
-
-   Here we assume that stat.h is included before config.h
-   so that we can override it here.  */
-
-#undef S_IFLNK
 
 /* In hpux, the symbol SIGIO is defined, but the feature
    does not really exist.
 
    Here we assume that signal.h is included before config.h
    so that we can override it here.  */
-  
+
 #undef SIGIO
 
 /* USG systems tend to put everything declared static
@@ -219,8 +216,6 @@ and this notice must be preserved on all copies.  */
 #else
 #define LIBS_SYSTEM -lBSD
 #endif
-
-#define LIBS_DEBUG /usr/lib/end.o
 
 /* Some additional system facilities exist.  */
 
@@ -239,4 +234,3 @@ and this notice must be preserved on all copies.  */
 #define BAUD_CONVERT  \
 { 0, 50, 75, 110, 135, 150, 200, 300, 600, 900, 1200,  \
   1800, 2400, 3600, 4800, 7200, 9600, 19200, 38400 }
-

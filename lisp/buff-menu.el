@@ -47,7 +47,7 @@
   (define-key Buffer-menu-mode-map "m" 'Buffer-menu-mark))
 
 ;; Buffer Menu mode is suitable only for specially formatted data.
-(put 'buffer-menu-mode 'mode-class 'special)
+(put 'Buffer-menu-mode 'mode-class 'special)
 
 (defun Buffer-menu-mode ()
   "Major mode for editing a list of buffers.
@@ -76,8 +76,8 @@ Precisely,\\{Buffer-menu-mode-map}"
   (setq truncate-lines t)
   (setq buffer-read-only t)
   (setq major-mode 'Buffer-menu-mode)
-  (setq mode-name "Buffer Menu"))
-
+  (setq mode-name "Buffer Menu")
+  (run-hooks 'buffer-menu-mode-hook))
 
 (defvar Buffer-menu-buffer-column nil)
 

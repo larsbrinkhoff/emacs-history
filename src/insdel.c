@@ -361,5 +361,13 @@ prepare_to_modify_buffer ()
   if (!NULL (bf_cur->filename)
       && bf_cur->save_modified >= bf_modified)
     lock_file (bf_cur->filename);
-#endif /* CLASH_DETECTION */
+#else
+  /* At least warn if this file has changed on disk since it was visited.  */
+  if (!NULL (bf_cur->filename)
+      && bf_cur->save_modified >= bf_modified
+      && NULL (Fverify_visited_file_modtime (Fcurrent_buffer ()))
+      && !NULL (Ffile_exists_p (bf_cur->filename)))
+    call1 (intern ("ask-user-about-supersession-threat"),
+	   bf_cur->filename);
+#endif /* not CLASH_DETECTION */
 }

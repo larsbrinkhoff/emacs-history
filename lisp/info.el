@@ -64,7 +64,11 @@ Marker points nowhere if file has no tag table.")
   (if filename
       (let (temp)
 	(setq filename (substitute-in-file-name filename))
-	(setq temp (expand-file-name filename Info-directory))
+	(setq temp (expand-file-name filename
+				     ;; Use Info's default dir
+				     ;; unless the filename starts with `./'.
+				     (if (not (string-match "^./" filename))
+					 Info-directory)))
 	(if (file-exists-p temp)
 	    (setq filename temp)
 	  (setq temp (expand-file-name (downcase filename) Info-directory))
@@ -119,7 +123,8 @@ Marker points nowhere if file has no tag table.")
 			    (set-marker Info-tag-table-marker
 					(match-end 0))))
 		     (set-marker Info-tag-table-marker pos))))
-	      (setq Info-current-file buffer-file-name)))
+	      (setq Info-current-file
+		    (file-name-sans-versions buffer-file-name))))
 	(if (equal nodename "*")
 	    (progn (setq Info-current-node nodename)
 		   (Info-set-mode-line))
@@ -225,7 +230,7 @@ Marker points nowhere if file has no tag table.")
 
 (defun Info-set-mode-line ()
   (setq mode-line-buffer-identification
-	(concat 
+	(concat
 	 "Info:  ("
 	 (if Info-current-file
 	     (file-name-nondirectory Info-current-file)
@@ -265,7 +270,8 @@ Marker points nowhere if file has no tag table.")
   (let ((found ()) current
 	(onode Info-current-node)
 	(ofile Info-current-file)
-	(opoint (point)))
+	(opoint (point))
+	(osubfile Info-current-subfile))
     (save-excursion
       (save-restriction
 	(widen)
@@ -285,7 +291,7 @@ Marker points nowhere if file has no tag table.")
 				  (progn (search-forward "\n\^_")
 					 (1- (point))))
 		(goto-char (point-min))
-		(search-forward (concat "\n" Info-current-subfile ": "))
+		(search-forward (concat "\n" osubfile ": "))
 		(beginning-of-line)
 		(while (not (eobp))
 		  (re-search-forward "\\(^.*\\): [0-9]+$")
@@ -309,8 +315,9 @@ Marker points nowhere if file has no tag table.")
 		  (message "")
 		(signal 'search-failed (list regexp))))
 	  (if (not found)
-	      (progn (Info-read-subfile current)
-		     (goto-char opoint)))))
+	      (progn (Info-read-subfile opoint)
+		     (goto-char opoint)
+		     (Info-select-node)))))
     (widen)
     (goto-char found)
     (Info-select-node)
@@ -430,21 +437,48 @@ NAME may be an abbreviation of the reference name."
 (defun Info-menu (menu-item)
   "Go to node for menu item named (or abbreviated) NAME."
   (interactive
-   (let (completions
-	 (completion-ignore-case t))
+   (let ((completions '())
+	 ;; If point is within a menu item, use that item as the default
+	 (default nil)
+	 (p (point))
+	 (last nil))
      (save-excursion
        (goto-char (point-min))
        (if (not (search-forward "\n* menu:" nil t))
 	   (error "No menu in this node"))
        (while (re-search-forward
 		"\n\\* \\([^:\t\n]*\\):" nil t)
-	 (setq completions
-	       (cons (cons (buffer-substring
-			     (match-beginning 1)
-			     (match-end 1))
-			   (match-beginning 1))
-		     completions))))
-     (list (completing-read "Menu item: " completions nil t))))
+	 (if (and (null default)
+		  (prog1 (if last (< last p) nil)
+		    (setq last (match-beginning 0)))
+		  (<= p last))
+	     (setq default (car (car completions))))
+	 (setq completions (cons (cons (buffer-substring
+					 (match-beginning 1)
+					 (match-end 1))
+				       (match-beginning 1))
+				 completions)))
+       (if (and (null default) last
+		(< last p)
+		(<= p (progn (end-of-line) (point))))
+	   (setq default (car (car completions)))))
+     (let ((item nil))
+       (while (null item)
+	 (setq item (let ((completion-ignore-case t))
+		      (completing-read (if default
+					   (format "Menu item (default %s): "
+						   default)
+					   "Menu item: ")
+				       completions nil t)))
+	 ;; we rely on the bug (which RMS won't change for his own reasons)
+	 ;; that ;; completing-read accepts an input of "" even when the
+	 ;; require-match argument is true and "" is not a valid possibility
+	 (if (string= item "")
+	     (if default
+		 (setq item default)
+	         ;; ask again
+	         (setq item nil))))
+       (list item))))
   (Info-goto-node (Info-extract-menu-item menu-item)))
   
 (defun Info-extract-menu-item (menu-item)

@@ -29,10 +29,10 @@
       (let ((abbrev-list nil) (first-column 0))
 	(set-buffer standard-output)
 	(mapatoms 
-	 (function (lambda (abbrev)
-		     (setq abbrev-list (cons abbrev abbrev-list))))
-	 abbrev-table)
-	(sort abbrev-list 'string-lessp)
+	  (function (lambda (abbrev)
+		      (setq abbrev-list (cons abbrev abbrev-list))))
+	  abbrev-table)
+	(setq abbrev-list (sort abbrev-list 'string-lessp))
 	(while abbrev-list
 	  (if (> (+ first-column 40) (screen-width))
 	      (progn

@@ -93,6 +93,23 @@ make_number (num)
   XSET (val, Lisp_Int, num);
   return val;
 }
+
+/* On some machines, XINT needs a temporary location.
+   Here it is, in case it is needed.  */
+
+int sign_extend_temp;
+
+/* On a few machines, XINT can only be done by calling this.  */
+
+int
+sign_extend_lisp_int (num)
+     int num;
+{
+  if (num & (1 << (VALBITS - 1)))
+    return num | ((-1) << VALBITS);
+  else
+    return num & ((1 << VALBITS) - 1);
+}
 
 /* Data type predicates */
 

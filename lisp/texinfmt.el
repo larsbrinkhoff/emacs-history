@@ -1,5 +1,5 @@
 ;; Convert texinfo files to info files.
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -103,52 +103,134 @@ Info-split to do these manually."
     (search-forward "@setfilename")
     (beginning-of-line)
     (delete-region (point-min) (point))
+    ;; Remove @bye at end of file, if it is there.
     (goto-char (point-max))
     (if (search-backward "@bye" nil t)
 	(delete-region (point) (point-max)))
-    (goto-char (point-min))
-    (while (search-forward "``" nil t)
-      (replace-match "\""))
-    (goto-char (point-min))
-    (while (search-forward "''" nil t)
-      (replace-match "\""))
-    (goto-char (point-min))
-    (while (search-forward "@" nil t)
-      ;; If the @ is preceded by an odd number of ^Q's, do nothing,
-      (if (and (eq (char-after (- (point) 2)) ?\^Q)
-	       (save-excursion
-		 (forward-char -1)
-		 (let ((opoint (point)))
-		   (skip-chars-backward "\^Q")
-		   (= (logand 1 (- opoint (point))) 1))))
-	  nil
-	(if (looking-at "[@{}'` *]")
-	    (if (= (following-char) ?*)
-		(delete-region (1- (point)) (1+ (point)))
-	      (delete-char -1)
-	      (forward-char 1))
-	  (setq texinfo-command-start (1- (point)))
-	  (if (= (char-syntax (following-char)) ?w)
-	      (forward-word 1)
-	    (forward-char 1))
-	  (setq texinfo-command-end (point))
-	  (setq texinfo-command-name
-		(intern (buffer-substring (1+ texinfo-command-start)
-					  texinfo-command-end)))
-	  (let ((cmd (get texinfo-command-name 'texinfo-format)))
-	    (if cmd (funcall cmd)
-	      (texinfo-unsupported))))))
-    (cond (texinfo-stack
-	   (goto-char (nth 2 (car texinfo-stack)))
-	   (error "Unterminated @%s" (car (car texinfo-stack)))))
-    (goto-char (point-min))
-    (while (search-forward "\^q" nil t)
-      (delete-char -1)
-      (forward-char 1))
+    ;; Scan the whole buffer, converting to Info format.
+    (texinfo-format-scan)
+    ;; Return data for indices.
     (goto-char (point-min))
     (list outfile
 	  texinfo-vindex texinfo-findex texinfo-cindex
 	  texinfo-pindex texinfo-tindex texinfo-kindex)))
+
+(defvar texinfo-region-buffer-name "*Info Region*"
+  "*Name of the temporary buffer used by \\[texinfo-info-format-region].")
+
+(defun texinfo-format-region (region-beginning region-ending)
+  "Run Info on the current region of the texinfo file.
+This lets you see what that part of the file will look like in Info.
+The infoized text is stored in a temporary buffer."
+  (interactive "r")
+  (message "Infoizing region...")
+  (let (texinfo-command-start
+	texinfo-command-end
+	texinfo-command-name
+	texinfo-vindex
+	texinfo-findex
+	texinfo-cindex
+	texinfo-pindex
+	texinfo-tindex
+	texinfo-kindex
+	texinfo-stack
+	texinfo-format-filename
+	texinfo-example-start
+	texinfo-last-node
+	texinfo-node-names
+	(fill-column fill-column)
+	(input-buffer (current-buffer))
+	(input-directory default-directory)
+	filename-beginning
+	filename-ending)
+
+;;; Find a buffer to use.
+
+    (switch-to-buffer (get-buffer-create texinfo-region-buffer-name))
+
+    ;; Insert the region into the buffer.
+    (erase-buffer)
+
+    (save-excursion
+      (set-buffer input-buffer)
+      (save-excursion
+	(save-restriction
+	  (widen)
+	  (goto-char (point-min))
+	  ;; Initialize the buffer with the filename
+	  ;; or else explain that a filename is needed.
+	  (or (search-forward "@setfilename"
+			      (save-excursion (forward-line 100) (point)) t)
+	      (error "The texinfo file needs a line saying: @setfilename <name>"))
+	  (beginning-of-line)
+	  (setq filename-beginning (point))
+	  (forward-line 1)
+	  (setq filename-ending (point)))))
+
+    ;; Insert the @setfilename line into the buffer.
+    (insert-buffer-substring input-buffer
+			     (min filename-beginning region-beginning)  
+			     filename-ending)
+    
+    ;; Insert the region into the buffer.
+    (insert-buffer-substring input-buffer
+			     (max region-beginning filename-ending)
+			     region-ending)
+
+    (texinfo-mode)
+
+    ;; Install a syntax table useful for scanning command operands.
+    (set-syntax-table texinfo-format-syntax-table)
+    
+    ;; If the region includes the effective end of the data,
+    ;; discard everything after that.
+    (goto-char (point-max))
+    (if (re-search-backward "^@bye" nil t)
+	(delete-region (point) (point-max)))
+
+    ;; Now convert for real.
+    (texinfo-format-scan)
+    (goto-char (point-min)))
+
+  (message "Done."))
+
+;; Perform those texinfo-to-info conversions that apply to the whole input
+;; uniformly.
+(defun texinfo-format-scan ()
+  ;; Convert left and right quotes to typewriter font quotes.
+  (goto-char (point-min))
+  (while (search-forward "``" nil t)
+    (replace-match "\""))
+  (goto-char (point-min))
+  (while (search-forward "''" nil t)
+    (replace-match "\""))
+  ;; Scan for @-commands.
+  (goto-char (point-min))
+  (while (search-forward "@" nil t)
+    (if (looking-at "[@{}'` *]")
+	;; Handle a few special @-followed-by-one-char commands.
+	(if (= (following-char) ?*)
+	    ;; @* has no effect, since we are not filling.
+	    (delete-region (1- (point)) (1+ (point)))
+	  ;; The other characters are simply quoted.  Delete the @.
+	  (delete-char -1)
+	  (forward-char 1))
+      ;; @ is followed by a command-word; find the end of the word.
+      (setq texinfo-command-start (1- (point)))
+      (if (= (char-syntax (following-char)) ?w)
+	  (forward-word 1)
+	(forward-char 1))
+      (setq texinfo-command-end (point))
+      ;; Call the handler for this command.
+      (setq texinfo-command-name
+	    (intern (buffer-substring (1+ texinfo-command-start)
+				      texinfo-command-end)))
+      (let ((cmd (get texinfo-command-name 'texinfo-format)))
+	(if cmd (funcall cmd)
+	  (texinfo-unsupported)))))
+  (cond (texinfo-stack
+	 (goto-char (nth 2 (car texinfo-stack)))
+	 (error "Unterminated @%s" (car (car texinfo-stack))))))
 
 (put 'begin 'texinfo-format 'texinfo-format-begin)
 (defun texinfo-format-begin ()
@@ -237,15 +319,18 @@ Info-split to do these manually."
 (put 'setfilename 'texinfo-format 'texinfo-format-setfilename)
 (defun texinfo-format-setfilename ()
   (let ((arg (texinfo-parse-arg-discard)))
-    (setq texinfo-format-filename (file-name-nondirectory arg))
-    (insert "Info file "
-	    texinfo-format-filename
-	    ", produced by texinfo-format-buffer   -*-Text-*-\nfrom "
+    (setq texinfo-format-filename
+	  (file-name-nondirectory (expand-file-name arg)))
+    (insert "Info file: "
+	    texinfo-format-filename ",    -*-Text-*-\n"
+	    "produced by texinfo-format-buffer\nfrom "
 	    (if (buffer-file-name input-buffer)
-		(concat "file "
-			(file-name-nondirectory (buffer-file-name input-buffer)))
+		(concat "file: "
+			(file-name-sans-versions
+			 (file-name-nondirectory
+			  (buffer-file-name input-buffer))))
 	      (concat "buffer " (buffer-name input-buffer)))
-	    ?\n)))
+	    "\n\n")))
 
 (put 'node 'texinfo-format 'texinfo-format-node)
 (defun texinfo-format-node ()
@@ -494,7 +579,8 @@ Info-split to do these manually."
 	   (delete-char 1)
 	   (end-of-line)
 	   (delete-char 6))
-       (save-excursion (insert "     "))))))
+       (if (not (looking-at "[ \t]*$"))
+	   (save-excursion (insert "     ")))))))
 
 (put 'item 'texinfo-format 'texinfo-item)
 (put 'itemx 'texinfo-format 'texinfo-item)
@@ -713,7 +799,9 @@ Info-split to do these manually."
     (insert "\n* Menu:\n\n")
     (setq opoint (point))
     (texinfo-print-index nil indexelts)
-    (shell-command-on-region opoint (point) "sort -f" 1)))
+    (if (eq system-type 'vax-vms) 
+	(texinfo-sort-region opoint (point))
+      (shell-command-on-region opoint (point) "sort -fd" 1))))
 
 (defun texinfo-print-index (file indexelts)
   (while indexelts
@@ -785,6 +873,26 @@ Info-split to do these manually."
 (defun texinfo-discard-line-with-args ()
   (goto-char texinfo-command-start)
   (delete-region (point) (progn (forward-line 1) (point))))
+
+;; Sort an index which is in the current buffer between START and END.
+;; Used on VMS, where the `sort' utility is not available.
+(defun texinfo-sort-region (start end)
+  (require 'sort)
+  (save-restriction
+    (narrow-to-region start end)
+    (sort-subr nil 'forward-line 'end-of-line 'texinfo-sort-startkeyfun)))
+
+;; Subroutine for sorting an index.
+;; At start of a line, return a string to sort the line under.
+(defun texinfo-sort-startkeyfun ()
+  (let ((line
+	 (buffer-substring (point) (save-excursion (end-of-line) (point)))))
+    ;; Canonicalize whitespace and eliminate funny chars.
+    (while (string-match "[ \t][ \t]+\\|[^a-z0-9 ]+" line)
+      (setq line (concat (substring line 0 (match-beginning 0))
+			 " "
+			 (substring line (match-end 0) (length line)))))
+    line))
 
 ;; Some cannot be handled
 

@@ -79,6 +79,10 @@ Return a modified address list."
 	 (setq address (mail-string-delete address junk-beg junk-end))))
      address)))
   
+(or (and (boundp 'rmail-default-dont-reply-to-names)
+	 (not (null rmail-default-dont-reply-to-names)))
+    (setq rmail-default-dont-reply-to-names "info-"))
+
 ; rmail-dont-reply-to-names is defined in loaddefs
 (defun rmail-dont-reply-to (userids)
   "Returns string of mail addresses USERIDS sans any recipients
@@ -86,10 +90,12 @@ that start with matches for  rmail-dont-reply-to-names.
 Usenet paths ending in an element that matches are removed also."
   (if (null rmail-dont-reply-to-names)
       (setq rmail-dont-reply-to-names
-	    (concat "info-\\|"
-		    (regexp-quote (or (getenv "USER")
-				      (getenv "LOGNAME")))
-		    "\\>")))
+	    (concat (if rmail-default-dont-reply-to-names
+			(concat rmail-default-dont-reply-to-names "\\|")
+		        "")
+		    (concat (regexp-quote
+			      (or (getenv "USER") (getenv "LOGNAME")))
+			    "\\>"))))
   (let ((match (concat "\\(^\\|,\\)[ \t\n]*\\([^,\n]*!\\|\\)\\("
 		       rmail-dont-reply-to-names
 		       "\\)"))

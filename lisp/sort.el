@@ -18,6 +18,8 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+(provide 'sort)
+
 ;; Original version of most of this contributed by Howie Kaye
 
 (defun sort-subr (reverse nextrecfun endrecfun &optional startkeyfun endkeyfun)

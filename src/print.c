@@ -183,7 +183,7 @@ strout (ptr, size, printcharfun)
 
 DEFUN ("write-char", Fwrite_char, Swrite_char, 1, 2, 0,
   "Output character CHAR to stream STREAM.\n\
-STREAM defaults to the value of standard-output (which see).")
+STREAM defaults to the value of `standard-output' (which see).")
   (ch, printcharfun)
      Lisp_Object ch, printcharfun;
 {
@@ -275,7 +275,7 @@ internal_with_output_to_temp_buffer (bufname, function, args)
 
 DEFUN ("with-output-to-temp-buffer", Fwith_output_to_temp_buffer, Swith_output_to_temp_buffer,
        1, UNEVALLED, 0,
-  "Binding  standard-output  to buffer named BUFNAME, execute BODY then display the buffer.\n\
+  "Binding `standard-output' to buffer named BUFNAME, execute BODY then display that buffer.\n\
 The buffer is cleared out initially, and marked as unmodified when done.\n\
 All output done by BODY is inserted in that buffer by default.\n\
 It is displayed in another window, but not selected.\n\
@@ -328,9 +328,9 @@ DEFUN ("terpri", Fterpri, Sterpri, 0, 1, 0,
 
 DEFUN ("prin1", Fprin1, Sprin1, 1, 2, 0,
   "Output the printed representation of OBJECT, any Lisp object.\n\
-Quoting characters are used, to make output that  read  can handle\n\
-whenever this is possible.\n\
-Output stream is STREAM, or value of standard-output (which see).")
+Quoting characters are printed when needed to make output that `read'\n\
+can handle, whenever this is possible.\n\
+Output stream is STREAM, or value of `standard-output' (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
@@ -356,8 +356,8 @@ Lisp_Object Vprin1_to_string_buffer;
 
 DEFUN ("prin1-to-string", Fprin1_to_string, Sprin1_to_string, 1, 1, 0,
   "Return a string containing the printed representation of OBJECT,\n\
-any Lisp object.  Quoting characters are used, to make output that  read\n\
-can handle whenever this is possible.")
+any Lisp object.  Quoting characters are used when needed to make output\n\
+that `read' can handle, whenever this is possible.")
   (obj)
      Lisp_Object obj;
 {
@@ -402,10 +402,10 @@ Output stream is STREAM, or value of standard-output (which see).")
 }
 
 DEFUN ("print", Fprint, Sprint, 1, 2, 0,
-  "Output the printed representation of OBJECT, with newline before and\n\
-space after.  Quoting characters are used, to make output that  read\n\
-can handle whenever this is possible.\n\
-Output stream is STREAM, or value of  standard-output  (which see).")
+  "Output the printed representation of OBJECT, with newlines around it.\n\
+Quoting characters are printed when needed to make output that `read'\n\
+can handle, whenever this is possible.\n\
+Output stream is STREAM, or value of `standard-output' (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {

@@ -267,9 +267,13 @@ and mark-paragraph for other modes."
 (defun edt-emulation-on ()
   "Begin emulating DEC's EDT editor.
 Certain keys are rebound; including nearly all keypad keys.
-Use \\[edt-emulation-off] to undo all rebindings except the keypad keys."
+Use \\[edt-emulation-off] to undo all rebindings except the keypad keys.
+Note that this function does not work if called directly from the .emacs file.
+Instead, the .emacs file should do (setq term-setup-hook 'edt-emulation-on)
+Then this function will be called at the time when it will work."
   (interactive)
   (advance-direction)
+  (edt-bind-gold-keypad)	;Must do this *after* $TERM.el is loaded
   (setq edt-mode-old-c-\\ (lookup-key global-map "\C-\\"))
   (global-set-key "\C-\\" 'quoted-insert)
   (setq edt-mode-old-delete (lookup-key global-map "\177"))
@@ -322,12 +326,12 @@ by the PF1 key.  GOLD is the ASCII the 7-bit escape sequence <ESC>OP.")
 	(define-key keymap function-key-sequence definition))))
 
 ;;Bind GOLD/Keyboard keys
+
 (define-key GOLD-map "\C-g"  'keyboard-quit)            ; just for safety
 (define-key GOLD-map "\177" 'delete-window)             ;"Delete"
 (define-key GOLD-map "\C-h" 'delete-other-windows)      ;"BackSpace"
 (define-key GOLD-map "\C-m" 'newline-and-indent)        ;"Return"
 (define-key GOLD-map " " 'undo)				;"Spacebar"
-
 (define-key GOLD-map "%" 'goto-percent)                 ; "%"
 (define-key GOLD-map "=" 'goto-line)                    ; "="
 (define-key GOLD-map "`" 'what-line)                    ; "`"
@@ -362,28 +366,29 @@ by the PF1 key.  GOLD is the ASCII the 7-bit escape sequence <ESC>OP.")
 ;(define-key GOLD-map "Z" 'shrink-window)                 ; "z"
 
 ;Bind GOLD/Keypad keys
-(define-keypad-key GOLD-map ?u 'line-to-top-of-window)	    ;"up-arrow"
-(define-keypad-key GOLD-map ?d 'line-to-bottom-of-window)   ;"down-arrow"
-(define-keypad-key GOLD-map ?l 'backward-sentence)	    ;"left-arrow"
-(define-keypad-key GOLD-map ?r 'forward-sentence)	    ;"right-arrow"
-(define-keypad-key GOLD-map ?\C-a 'mark-section-wisely)	    ;Gold     "PF1"
-(define-keypad-key GOLD-map ?\C-b 'describe-function)	    ;Help     "PF2"
-(define-keypad-key GOLD-map ?\C-c 'occur)		    ;Find     "PF3"
-(define-keypad-key GOLD-map ?\C-d 'undelete-lines)	    ;Und Line "PF4"
-(define-keypad-key GOLD-map ?0 'open-line)		    ;Open L   "0"
-(define-keypad-key GOLD-map ?1 'case-flip-character)	    ;Chgcase  "1"
-(define-keypad-key GOLD-map ?2 'delete-to-eol)		    ;Del EOL  "2"
-(define-keypad-key GOLD-map ?3 'copy-region-as-kill)	    ;Copy     "3"
-(define-keypad-key GOLD-map ?4 'move-to-end)		    ;Bottom   "4"
-(define-keypad-key GOLD-map ?5 'move-to-beginning)	    ;Top      "5"
-(define-keypad-key GOLD-map ?6 'yank)			    ;Paste    "6"
-(define-keypad-key GOLD-map ?7 'execute-extended-command)   ;Command  "7"
-(define-keypad-key GOLD-map ?8 'indent-or-fill-region)	    ;Fill     "8"
-(define-keypad-key GOLD-map ?9 'replace-regexp)		    ;Replace  "9"
-(define-keypad-key GOLD-map ?- 'undelete-words)		    ;UND word "-"
-(define-keypad-key GOLD-map ?, 'undelete-chars)		    ;UND Char ","
-(define-keypad-key GOLD-map ?. 'redraw-display)		    ;Reset Window "."
-(define-keypad-key GOLD-map ?.e 'shell-command)             ;"ENTER"
+(defun edt-bind-gold-keypad ()
+  (define-keypad-key GOLD-map ?u 'line-to-top-of-window) ;"up-arrow"
+  (define-keypad-key GOLD-map ?d 'line-to-bottom-of-window) ;"down-arrow"
+  (define-keypad-key GOLD-map ?l 'backward-sentence) ;"left-arrow"
+  (define-keypad-key GOLD-map ?r 'forward-sentence) ;"right-arrow"
+  (define-keypad-key GOLD-map ?\C-a 'mark-section-wisely) ;Gold     "PF1"
+  (define-keypad-key GOLD-map ?\C-b 'describe-function)	;Help     "PF2"
+  (define-keypad-key GOLD-map ?\C-c 'occur) ;Find     "PF3"
+  (define-keypad-key GOLD-map ?\C-d 'undelete-lines) ;Und Line "PF4"
+  (define-keypad-key GOLD-map ?0 'open-line) ;Open L   "0"
+  (define-keypad-key GOLD-map ?1 'case-flip-character) ;Chgcase  "1"
+  (define-keypad-key GOLD-map ?2 'delete-to-eol) ;Del EOL  "2"
+  (define-keypad-key GOLD-map ?3 'copy-region-as-kill) ;Copy     "3"
+  (define-keypad-key GOLD-map ?4 'move-to-end) ;Bottom   "4"
+  (define-keypad-key GOLD-map ?5 'move-to-beginning) ;Top      "5"
+  (define-keypad-key GOLD-map ?6 'yank)	;Paste    "6"
+  (define-keypad-key GOLD-map ?7 'execute-extended-command) ;Command  "7"
+  (define-keypad-key GOLD-map ?8 'indent-or-fill-region) ;Fill     "8"
+  (define-keypad-key GOLD-map ?9 'replace-regexp) ;Replace  "9"
+  (define-keypad-key GOLD-map ?- 'undelete-words) ;UND word "-"
+  (define-keypad-key GOLD-map ?, 'undelete-chars) ;UND Char ","
+  (define-keypad-key GOLD-map ?. 'redraw-display) ;Reset Window "."
+  (define-keypad-key GOLD-map ?e 'shell-command)) ;"ENTER"
 
 ;; Make direction of motion show in mode line
 ;; while EDT emulation is turned on.

@@ -211,15 +211,18 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 	 (format "continue viewing %s"
 		 (if (buffer-file-name)
 		     (file-name-nondirectory (buffer-file-name))
-		   (buffer-name))))
-	(goal-column 0))
+		     (buffer-name))))
+	(goal-column 0)
+	(view-buffer (buffer-name)))
     (unwind-protect
 	(progn
 	  (use-local-map view-mode-map)
 	  (run-hooks 'view-hook)
 	  (view-helpful-message)
 	  (recursive-edit))
-      (use-local-map old-local-map)))
+      (save-excursion
+	(set-buffer view-buffer)
+	(use-local-map old-local-map))))
   (pop-mark))
 
 ;(defun view-last-command (&optional who what)
@@ -245,10 +248,12 @@ mark ring."
   (recenter (/ (view-window-size) 2)))
 
 (defun View-scroll-lines-forward (&optional lines)
-  "Scroll forward in View mode.
+  "Scroll forward in View mode, or exit if end of text is visible.
 No arg means whole window full, or number of lines set by \\[View-scroll-lines-forward-set-scroll-size].
 Arg is number of lines to scroll."
   (interactive "P")
+  (if (pos-visible-in-window-p (point-max))
+      (exit-recursive-edit))
   (setq lines
 	(if lines (prefix-numeric-value lines)
 	  (view-scroll-size)))

@@ -44,31 +44,42 @@ the terms of Paragraph 1 above, provided that you also do the following:
 
     b) cause the whole of any work that you distribute or publish,
     that in whole or in part contains or is a derivative of this
-    program or any part thereof, to be freely distributed
-    and licensed to all third parties on terms identical to those
-    contained in this License Agreement (except that you may choose
-    to grant more extensive warranty protection to third parties,
-    at your option).
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more extensive
+    warranty protection to some or all third parties, at your option).
 
-  3. You may copy and distribute this program or any portion of it in
-compiled, executable or object code form under the terms of Paragraphs
-1 and 2 above provided that you do the following:
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
 
-    a) cause each such copy to be accompanied by the
-    corresponding machine-readable source code, which must
-    be distributed under the terms of Paragraphs 1 and 2 above; or,
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
 
-    b) cause each such copy to be accompanied by a
-    written offer, with no time limit, to give any third party
-    free (except for a nominal shipping charge) a machine readable
-    copy of the corresponding source code, to be distributed
-    under the terms of Paragraphs 1 and 2 above; or,
+  3. You may copy and distribute this program (or a portion or derivative
+of it, under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the following:
 
-    c) in the case of a recipient of this program in compiled, executable
-    or object code form (without the corresponding source code) you
-    shall cause copies you distribute to be accompanied by a copy
-    of the written offer of source code which you received along
-    with the copy you received.
+    a) accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    b) accompany it with a written offer, valid for at least three
+    years, to give any third party free (except for a nominal
+    shipping charge) a complete machine-readable copy of the
+    corresponding source code, to be distributed under the terms of
+    Paragraphs 1 and 2 above; or,
+
+    c) accompany it with the information you received as to where the
+    corresponding source code may be obtained.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form alone.)
+
+For an executable file, complete source code means all the source code for
+all modules it contains; but, as a special exception, it need not include
+source code for modules which are standard libraries that accompany the
+operating system on which the executable file runs.
 
   4. You may not copy, sublicense, distribute or transfer this program
 except as expressly provided under this License Agreement.  Any attempt
@@ -456,7 +467,7 @@ OP is the place to put input. */
 rescan (ip, op)
      FILE_BUF *ip, *op;
 {
-  register U_CHAR c;
+  register int c;
   register int ident_length = 0, hash = 0;
   register U_CHAR *limit;
   U_CHAR *check_expand ();
@@ -637,7 +648,7 @@ randomchar:
 	    register U_CHAR *p = hp->name;
 	    register U_CHAR *q = op->bufp - i;
 
-	    if (c != -1)
+	    if (c != (U_CHAR) -1)
 	      q--;
 
 	    do {		/* all this to avoid a strncmp() */
@@ -648,14 +659,14 @@ randomchar:
 	    save_ibufp = ip->bufp;
 	    /* back up over identifier, then expand token */
 	    op->bufp -= ident_length;
-	    if (c != -1) op->bufp--;
+	    if (c != (U_CHAR) -1) op->bufp--;
 	    macroexpand (hp, ip, op, &excess_newlines);
 
 	    check_expand(op, ip->length - (ip->bufp - ip->buf));
 	    
 	    /* If we just processed an identifier at end of input,
 	       return right away.  */
-	    if (c == -1)
+	    if (c == (U_CHAR) -1)
 	      return;
 
 	    /* if the expansion routine has not moved the input
@@ -675,7 +686,7 @@ hashcollision:
 	    
       /* If we just processed an identifier at end of input,
 	 return right away.  */
-      if (c == -1)
+      if (c == (U_CHAR) -1)
 	return;
 
       /* count the newline, if it was one.  The reason this is

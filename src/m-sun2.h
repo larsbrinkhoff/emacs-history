@@ -1,4 +1,6 @@
-/* m- file for Sun 68000's version 2.
+/* m- file for Sun 68000's OPERATING SYSTEM version 2.
+  Note that "m-sun2.h" refers to the operating system version, not the
+  CPU model number.  See the MACHINES file for details.
    Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -84,5 +86,5 @@ and this notice must be preserved on all copies.  */
 #define LIBS_MACHINE -lsuntool -lsunwindow -lpixrect
 #define OBJECTS_MACHINE sunfns.o
 #define SYMS_MACHINE syms_of_sunfns ()
-#define PURESIZE 130000
+#define PURESIZE 132000
 #endif

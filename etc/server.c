@@ -29,17 +29,22 @@ copyright notice and this notice must be preserved on all copies.  */
 #undef read
 #undef write
 #undef open
+#undef close
 
-#ifndef BSD
+
+#if !defined(BSD) && !defined(HAVE_SYSVIPC)
 #include <stdio.h>
 
 main ()
 {
-  fprintf (stderr, "Sorry, the Emacs server is supported only on Berkeley Unix.\n");
+  fprintf (stderr, "Sorry, the Emacs server is supported only on Berkeley Unix\n");
+  fprintf (stderr, "or System V systems with IPC\n");
   exit (1);
 }
 
-#else /* BSD */
+#else /* BSD or IPC */
+
+#ifdef BSD   /* BSD code is very different from SYSV IPC code */
 
 #include <sys/file.h>
 #include <sys/types.h>
@@ -187,6 +192,111 @@ main ()
 	} 
     }
 }
-#endif /* BSD */
+
+#else  /* This is the SYSV IPC section */
+
+#include <sys/types.h>
+#include <sys/signal.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <setjmp.h>
+
+jmp_buf msgenv;
+
+msgcatch ()
+{
+  longjmp (msgenv, 1);
+}
+
+
+/* "THIS has to be fixed.  Remember, stderr may not exist...-rlk."
+   Incorrect.  This program runs as an inferior of Emacs.
+   Its stderr always exists--rms.  */
+#include <stdio.h>
+
+main ()
+{
+  int s, infd, fromlen;
+  key_t key;
+  struct msgbuf * msgp =
+    (struct msgbuf *) malloc (sizeof *msgp + BUFSIZ);
+  struct msqid_ds msg_st;
+  int p;
+  char *homedir, *getenv ();
+  char string[BUFSIZ];
+  FILE *infile;
+
+  /*
+   * Create a message queue using ~/.emacs_server as the path for ftok
+   */
+  if ((homedir = getenv ("HOME")) == NULL)
+    {
+      fprintf (stderr,"No home directory\n");
+      exit (1);
+    }
+  strcpy (string, homedir);
+  strcat (string, "/.emacs_server");
+  creat (string, 0600);
+  key = ftok (string, 1);	/* unlikely to be anyone else using it */
+  s = msgget (key, 0600 | IPC_CREAT);
+  if (s == -1)
+    {
+      perror ("msgget");
+      exit (1);
+    }
+
+  /* Fork so we can close connection even if parent dies */
+  p = fork ();
+  if (setjmp (msgenv))
+    {
+      msgctl (s, IPC_RMID, 0);
+      kill (p, SIGKILL);
+      exit (0);
+    }
+  signal (SIGTERM, msgcatch);
+  signal (SIGINT, msgcatch);
+  /* If parent goes away, remove message box and exit */
+  if (p == 0)
+    {
+      p = getppid ();
+      setpgrp ();		/* Gnu kills process group on exit */
+      while (1)
+	{
+	  if (kill (p, 0) < 0)
+	    {
+	      msgctl (s, IPC_RMID, 0);
+	      exit (0);
+	    }
+	  sleep (10);
+	}
+    }
+
+  while (1)
+    {
+      if ((fromlen = msgrcv (s, msgp, BUFSIZ - 1, 1, 0)) < 0)
+        {
+	  perror ("msgrcv");
+        }
+      else
+        {
+	  msgctl (s, IPC_STAT, &msg_st);
+	  strncpy (string, msgp->mtext, fromlen);
+	  string[fromlen] = 0;	/* make sure */
+	  /* Newline is part of string.. */
+	  printf ("Client: %d %s", s, string); 
+	  fflush (stdout);
+	  /* Now, wait for a wakeup */
+	  fgets (msgp->mtext, BUFSIZ, stdin);
+	  msgp->mtext[strlen (msgp->mtext)-1] = 0;
+	  /*	  strcpy (msgp->mtext, "done");*/
+	  msgp->mtype = msg_st.msg_lspid;
+	  msgsnd (s, msgp, strlen (msgp->mtext)+1, 0);
+	}
+    }
+}
+
+#endif /* SYSV IPC */
+
+#endif /* BSD && IPC */
 
 

@@ -1,1 +1,1 @@
-#include "vax-pinsn.c"
+#include "m68k-pinsn.c"

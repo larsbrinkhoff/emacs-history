@@ -29,9 +29,11 @@ and this notice must be preserved on all copies.  */
 #include "xterm.h"
 #include "dispextern.h"
 #include "termchar.h"
-#include "sink.h"
-#include "sinkmask.h"
+#ifndef HPUX
 #include <sys/time.h>
+#else
+#include <time.h>
+#endif /* HPUX */
 #include <fcntl.h>
 #include <setjmp.h>
 
@@ -69,17 +71,20 @@ static short cross_mask_bits[] =
     0x03c0, 0x03c0, 0x03c0, 0x03c0,
   };
 
+extern short sink_bits[];
+extern short sink_mask_bits[];
+#define sink_width 48
+#define sink_height 48
+#define sink_mask_width 48
+#define sink_mask_height 48
+
 extern XREPBUFFER Xxrepbuffer;
 
 /* Non-nil if Emacs is running with an X window for display.
-   Nil if Emacs is run on an ordinary terminal.  */
+   Nil if Emacs is run on an ordinary terminal.
+   Initialized in dispnew.c.  */
 
 Lisp_Object Vxterm;
-
-/* Vxterm1 is what the Lisp variable xterm actually refers to.
-   This prevents the user from altering Vxterm.  */
-
-Lisp_Object Vxterm1;
 
 Lisp_Object Vx_mouse_pos;
 
@@ -159,15 +164,15 @@ With non-nil argument (prefix arg), use visible bell; otherwise, audible bell.")
   (arg)
      Lisp_Object arg;
 {
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   check_xterm ();
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   if (!NULL (arg))
     XSetFlash ();
   else
     XSetFeep ();
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return arg;
 }
 
@@ -187,14 +192,14 @@ DEFUN ("x-set-foreground-color", Fx_set_foreground_color,
      Lisp_Object arg;
 {
   Color cdef;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
   char *save_color;
 
   save_color = fore_color;
   check_xterm ();
   CHECK_STRING (arg,1);
   fore_color = (char *) xmalloc (XSTRING (arg)->size + 1);
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   bcopy (XSTRING (arg)->data, fore_color, XSTRING (arg)->size + 1);
   if (fore_color && DisplayCells () > 2 &&
       XParseColor (fore_color, &cdef) && XGetHardwareColor (&cdef))
@@ -221,7 +226,7 @@ DEFUN ("x-set-foreground-color", Fx_set_foreground_color,
 	screen_width * fontinfo -> width);*/
   /*    PendingExposure = 1;
 	xfixscreen ();*/
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   XFlush ();
   return Qt;
 }
@@ -234,7 +239,7 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
 {
   Color cdef;
   Pixmap temp;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
   char *save_color;
 
   check_xterm ();
@@ -242,7 +247,7 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
   save_color = back_color;
   back_color = (char *) xmalloc (XSTRING (arg)->size + 1);
   bcopy (XSTRING (arg)->data, back_color, XSTRING (arg)->size + 1);
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   if (back_color && DisplayCells () > 2 &&
       XParseColor (back_color, &cdef) && XGetHardwareColor (&cdef))
     {
@@ -265,7 +270,7 @@ DEFUN ("x-set-background-color", Fx_set_background_color,
   /*    XPixFill (XXwindow, 0, 0, screen_width * fontinfo->width,
 	screen_height * fontinfo->height, back, ClipModeClipped,
 	GXcopy, AllPlanes);*/
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   Fredraw_display ();
   /*    dumprectangle (0, 0, screen_height * fontinfo->height,
 	screen_width * fontinfo -> width);*/
@@ -284,13 +289,13 @@ DEFUN ("x-set-border-color", Fx_set_border_color, Sx_set_border_color, 1, 1,
 {
   Color cdef;
   Pixmap temp;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   check_xterm ();
   CHECK_STRING (arg,1);
   brdr_color= (char *) xmalloc (XSTRING (arg)->size + 1);
   bcopy (XSTRING (arg)->data, brdr_color, XSTRING (arg)->size + 1);
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   if (brdr_color && DisplayCells () > 2 &&
       XParseColor (brdr_color, &cdef) && XGetHardwareColor (&cdef))
     {
@@ -316,7 +321,7 @@ DEFUN ("x-set-border-color", Fx_set_border_color, Sx_set_border_color, 1, 1,
     }
   if (XXborder)
     XChangeBorder (XXwindow, temp);
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   XFreePixmap (temp);
   return Qt;
 }
@@ -328,14 +333,14 @@ DEFUN ("x-set-cursor-color", Fx_set_cursor_color, Sx_set_cursor_color, 1, 1,
      Lisp_Object arg;
 {
   Color cdef;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
   char *save_color;
 
   check_xterm ();
   CHECK_STRING (arg,1);
   save_color = curs_color;
   curs_color = (char *) xmalloc (XSTRING (arg)->size + 1);
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   bcopy (XSTRING (arg)->data, curs_color, XSTRING (arg)->size + 1);
   if (curs_color && DisplayCells () > 2 &&
       XParseColor (curs_color, &cdef) && XGetHardwareColor (&cdef))
@@ -356,7 +361,7 @@ DEFUN ("x-set-cursor-color", Fx_set_cursor_color, Sx_set_cursor_color, 1, 1,
     }
   CursorToggle ();
   CursorToggle ();
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return Qt;
 }
 
@@ -367,7 +372,7 @@ DEFUN ("x-set-mouse-color", Fx_set_mouse_color, Sx_set_mouse_color, 1, 1,
      Lisp_Object arg;
 {
   Cursor temp;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
   Color cdef;
   char *save_color;
 
@@ -375,7 +380,7 @@ DEFUN ("x-set-mouse-color", Fx_set_mouse_color, Sx_set_mouse_color, 1, 1,
   CHECK_STRING (arg,1);
   save_color = mous_color;
   mous_color = (char *) xmalloc (XSTRING (arg)->size + 1);
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   bcopy (XSTRING (arg)->data, mous_color, XSTRING (arg)->size + 1);
 
   if (mous_color && DisplayCells () > 2
@@ -399,7 +404,7 @@ DEFUN ("x-set-mouse-color", Fx_set_mouse_color, Sx_set_mouse_color, 1, 1,
 			mous, back, GXcopy);
   XDefineCursor (XXwindow, temp);
   XFreeCursor (EmacsCursor);
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   bcopy (&temp, &EmacsCursor, sizeof (Cursor));
   return Qt;
 }   
@@ -544,7 +549,7 @@ To get \"minus zero\" for XOFF or YOFF, supply -1.")
   (cols, rows, xoffset, yoffset)
      Lisp_Object rows, cols, xoffset, yoffset;
 {
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   CHECK_NUMBER (rows, 1);
   CHECK_NUMBER (cols, 2);
@@ -552,7 +557,7 @@ To get \"minus zero\" for XOFF or YOFF, supply -1.")
   CHECK_NUMBER (yoffset, 4);
   check_xterm ();
 
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   x_edges_specified = 1;
   if (XINT (rows) != screen_width || XINT (cols) != screen_height) 
     {
@@ -560,7 +565,7 @@ To get \"minus zero\" for XOFF or YOFF, supply -1.")
     }
   XSetOffset (XINT (xoffset), XINT (yoffset));
   XFlush ();
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return Qt;
 }
 
@@ -642,7 +647,9 @@ the appropriate function to act upon this event.")
       com_letter = xrep.detail & 3;
       key_mask = (xrep.detail >> 8) & 0xf0;
       com_letter |= key_mask;
+#ifndef HPUX
       if (xrep.type == ButtonReleased) com_letter |= 0x04;
+#endif
       XSET (tempx, Lisp_Int, min (screen_width-1, max (0, (xrep.x - XXInternalBorder)/fontinfo->width)));
       XSET (tempy, Lisp_Int, min (screen_height-1, max (0, (xrep.y - XXInternalBorder)/fontinfo->height)));
       Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
@@ -650,8 +657,10 @@ the appropriate function to act upon this event.")
       Mouse_Cmd = get_keyelt (access_keymap (MouseMap, com_letter));
       if (NULL (Mouse_Cmd)) 
 	{
+#ifndef HPUX
 	  if (xrep.type != ButtonReleased)
 	    Ding ();
+#endif
 	  Vx_mouse_pos = Qnil;
 	}
       else
@@ -691,7 +700,9 @@ otherwise, wait for an event.")
       key_mask = *((char *)&xrep.detail + 1);
       key_mask &= 0xf0;
       com_letter |= key_mask;
+#ifndef HPUX
       if (xrep.type == ButtonReleased) com_letter |= 0x04;
+#endif
       XSET (tempx, Lisp_Int, min (screen_width, max (0, (xrep.x - XXInternalBorder)/fontinfo->width)));
       XSET (tempy, Lisp_Int, min (screen_height, max (0, (xrep.y - XXInternalBorder)/fontinfo->height)));
       Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
@@ -707,15 +718,18 @@ Permit input if ARG is non-nil.")
   (arg)
      Lisp_Object arg;
 {
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   check_xterm ();
 
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   XSelectInput (XXwindow,
-		ExposeWindow | ButtonPressed | ButtonReleased
+		ExposeWindow | ButtonPressed
+#ifndef HPUX
+		| ButtonReleased
+#endif
 		| ExposeRegion | ExposeCopy | (!NULL (arg) ? KeyPressed : 0));
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return arg;
 }
 
@@ -735,14 +749,14 @@ DEFUN ("x-store-cut-buffer", Fx_store_cut_buffer, Sx_store_cut_buffer,
   (string)
      register Lisp_Object string;
 {
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   CHECK_STRING (string, 1);
   check_xterm ();
 
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   XStoreBytes (XSTRING (string)->data, XSTRING (string)->size);
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
 
   return Qnil;
 }
@@ -753,13 +767,13 @@ DEFUN ("x-get-cut-buffer", Fx_get_cut_buffer, Sx_get_cut_buffer, 0, 0, 0,
 {
   int len;
   register Lisp_Object string;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
   register char *d;
 
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   d = XFetchBytes (&len);
   string = make_string (d, len);
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return string;
 }
 
@@ -770,19 +784,19 @@ when Emacs needs the window to be displayed.")
   ()
 {
   int x, y, width, height;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   x_edges_specified = 1;
 
   check_xterm ();
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   window_fetch (fontinfo->id, &x, &y, &width, &height, "", default_window,
 		XXborder, "GNU Emacs");
   XSetWindowSize (height, width);
   XSetOffset (x, y);
   XFlush ();
   ++screen_garbaged;
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return Qnil;
 }
 
@@ -794,7 +808,7 @@ DEFUN ("x-create-x-window", Fx_create_x_window, Sx_create_x_window,
 {
   int x, y, width, height;
   char *geometry;
-  int mask;
+  BLOCK_INPUT_DECLARE ()
 
   x_edges_specified = 1;
 
@@ -802,7 +816,7 @@ DEFUN ("x-create-x-window", Fx_create_x_window, Sx_create_x_window,
   CHECK_STRING (arg, 1);
   geometry= (char *) xmalloc (XSTRING (arg)->size + 1);
   bcopy (XSTRING (arg)->data, geometry, XSTRING (arg)->size + 1);
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   window_fetch (fontinfo->id, &x, &y, &width, &height, geometry,
 		default_window,	XXborder, "GNU Emacs");
   XSetWindowSize (height, width);
@@ -811,7 +825,7 @@ DEFUN ("x-create-x-window", Fx_create_x_window, Sx_create_x_window,
   XSetOffset (x, y);
   XMapWindow (XXwindow);
   XFlush ();
-  sigsetmask (mask);
+  UNBLOCK_INPUT ();
   return Qnil;
 }
 
@@ -831,7 +845,7 @@ DEFUN ("x-set-border-width", Fx_set_border_width, Sx_set_border_width,
      register Lisp_Object borderwidth;
 {
   WindowInfo WinInfo;
-  register int mask;
+  BLOCK_INPUT_DECLARE ()
   Window tempwindow;
   register int temppixelwidth;
   register int temppixelheight;
@@ -847,7 +861,7 @@ DEFUN ("x-set-border-width", Fx_set_border_width, Sx_set_border_width,
   
   temppixelwidth = screen_width * fontinfo->width + 2 * XXInternalBorder;
   temppixelheight = screen_height * fontinfo->height + 2 * XXInternalBorder;
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   XQueryWindow (XXwindow, &WinInfo);
   tempx = WinInfo.x;
   tempy = WinInfo.y;
@@ -878,17 +892,15 @@ DEFUN ("x-set-border-width", Fx_set_border_width, Sx_set_border_width,
       XDefineCursor (XXwindow, EmacsCursor);
       XFreePixmap (temp_brdr);
       XFreePixmap (temp_back);
-      sigsetmask (mask);
-      if (QLength () > 0)
-	{
-	  kill (XXpid, SIGIO);
-	}
+      UNBLOCK_INPUT_RESIGNAL ();
       if (WindowMapped)
 	{
 	  XMapWindow (XXwindow);
-	  XSelectInput (XXwindow, KeyPressed | ExposeWindow
-			| ButtonPressed | ButtonReleased | ExposeRegion
-			| ExposeCopy);
+	  XSelectInput (XXwindow, KeyPressed | ExposeWindow | ButtonPressed
+#ifndef HPUX
+			| ButtonReleased
+#endif
+			| ExposeRegion | ExposeCopy);
 	  ++screen_garbaged;
 	  XFlush ();
 	}
@@ -896,11 +908,7 @@ DEFUN ("x-set-border-width", Fx_set_border_width, Sx_set_border_width,
     }
   else
     {
-      sigsetmask (mask);
-      if (QLength () > 0)
-	{
-	  kill (XXpid, SIGIO);
-	}
+      UNBLOCK_INPUT_RESIGNAL ();
       message ("Could not recreate window.");
       return Qnil;
     }
@@ -914,7 +922,7 @@ DEFUN ("x-set-internal-border-width", Fx_set_internal_border_width,
      register Lisp_Object internalborderwidth;
 {
   WindowInfo WinInfo;
-  register int mask;
+  BLOCK_INPUT_DECLARE ()
   Window tempwindow;
   register int temppixelwidth;
   register int temppixelheight;
@@ -931,7 +939,7 @@ DEFUN ("x-set-internal-border-width", Fx_set_internal_border_width,
   intbord = XINT (internalborderwidth);
   temppixelwidth = screen_width * fontinfo->width + 2 * intbord;
   temppixelheight = screen_height * fontinfo->height + 2 * intbord;
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   XQueryWindow (XXwindow, &WinInfo);
   tempx = WinInfo.x;
   tempy = WinInfo.y;
@@ -962,17 +970,15 @@ DEFUN ("x-set-internal-border-width", Fx_set_internal_border_width,
       XDefineCursor (XXwindow, EmacsCursor);
       XFreePixmap (temp_brdr);
       XFreePixmap (temp_back);
-      sigsetmask (mask);
-      if (QLength () > 0)
-	{
-	  kill (XXpid, SIGIO);
-	}
+      UNBLOCK_INPUT_RESIGNAL ();
       if (WindowMapped)
 	{
 	  XMapWindow (XXwindow);
-	  XSelectInput (XXwindow, KeyPressed | ExposeWindow
-			| ButtonPressed | ButtonReleased | ExposeRegion
-			| ExposeCopy);
+	  XSelectInput (XXwindow, KeyPressed | ExposeWindow | ButtonPressed
+#ifndef HPUX
+			| ButtonReleased
+#endif
+			| ExposeRegion | ExposeCopy);
 	  ++screen_garbaged;
 	  XFlush ();
 	}
@@ -980,11 +986,7 @@ DEFUN ("x-set-internal-border-width", Fx_set_internal_border_width,
     }
   else
     {
-      sigsetmask (mask);
-      if (QLength () > 0)
-	{
-	  kill (XXpid, SIGIO);
-	}
+      UNBLOCK_INPUT_RESIGNAL ();
       message ("Could not recreate window.");
       return Qnil;
     }
@@ -1012,7 +1014,8 @@ function x-new-display instead.")
      register Lisp_Object new_display;
 {
   Cursor OldEmacsCursor;
-  register int mask, (*pipefunc) ();
+  BLOCK_INPUT_DECLARE ()
+  register int (*pipefunc) ();
   register char *newdisplayname = 0;
   int x, y, width, height;
   int temp_icon;
@@ -1028,7 +1031,7 @@ function x-new-display instead.")
 /*	 XSTRING (new_display)->size + 1);  */
   /* Since this was freed at the end, why not just use the original? */
   newdisplayname = (char *) XSTRING (new_display)->data;
-  mask = sigblock (sigmask (SIGIO));
+  BLOCK_INPUT ();
   XIOErrorHandler (XRestoreDisplay);
    if (XXerrorcode = (char *) setjmp (dispenv))
      {
@@ -1045,11 +1048,7 @@ function x-new-display instead.")
        EmacsCursor = OldEmacsCursor;
        XIOErrorHandler (handler);
        XSetDisplay (XXdisplay);
-       sigsetmask (mask);
-       if (QLength () > 0)
-	 {
-	   kill (XXpid, SIGIO);
-	 }
+       UNBLOCK_INPUT_RESIGNAL ();
        error ("Display change problem: %s", XXerrorcode);
      }
    else
@@ -1128,11 +1127,7 @@ function x-new-display instead.")
   XCloseDisplay (OldDisplay);
 
   x_init_1 (0);
-  sigsetmask (mask);
-  if (QLength () > 0)
-    {
-      kill (XXpid, SIGIO);
-    }
+  UNBLOCK_INPUT_RESIGNAL ();
 /*  free (newdisplayname); */
 /*  x_edges_specified = 0;*/
   ++screen_garbaged;
@@ -1203,16 +1198,15 @@ window_fetch (font, x, y, width, height, geo, deflt, border, str)
       *y = WinInfo.y;
       XFreePixmap (temp_brdr);
       XFreePixmap (temp_back);
-      if (QLength () > 0)
-	{
-	  kill (XXpid, SIGIO);
-	}
+      RESIGNAL_INPUT ();
       if (WindowMapped)
 	{
 	  XMapWindow (XXwindow);
-	  XSelectInput (XXwindow, KeyPressed | ExposeWindow
-			| ButtonPressed | ButtonReleased | ExposeRegion
-			| ExposeCopy);
+	  XSelectInput (XXwindow, KeyPressed | ExposeWindow | ButtonPressed
+#ifndef HPUX
+			| ButtonReleased
+#endif
+			| ExposeRegion | ExposeCopy);
 	  ++screen_garbaged;
 	  XFlush ();
 	}
@@ -1220,10 +1214,7 @@ window_fetch (font, x, y, width, height, geo, deflt, border, str)
     }
   else
     {
-      if (QLength () > 0)
-	{
-	  kill (XXpid, SIGIO);
-	}
+      RESIGNAL_INPUT ();
       message ("Could not recreate window.");
       return Qnil;
     }
@@ -1349,11 +1340,6 @@ syms_of_xfns ()
 {
   x_edges_specified = 0;
 
-  DEFVAR_LISP ("xterm", &Vxterm1,
-	     "t if using xterm, nil otherwise.\n\
-This variable is obsolete; you should use (eq window-system 'x).");
-  Vxterm1 = Qnil;
-  Vxterm = Qnil;
   DEFVAR_LISP ("x-mouse-item", &Vx_mouse_item,
      "Encoded representation of last mouse click, corresponding to\n\
 numerical entries in x-mouse-map.");

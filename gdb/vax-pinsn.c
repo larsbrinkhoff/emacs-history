@@ -175,7 +175,7 @@ print_insn_arg (d, p, addr, stream)
 		break;
 
 	      case 'f':
-		if (INVALID_FLOAT (p))
+		if (INVALID_FLOAT (p, 4))
 		  fprintf (stream, "<<invalid float 0x%x>>", *(int *) p);
 		else
 		  fprintf (stream, "%f", *(float *) p);
@@ -183,7 +183,7 @@ print_insn_arg (d, p, addr, stream)
 		break;
 
 	      case 'd':
-		if (INVALID_FLOAT (p))
+		if (INVALID_FLOAT (p, 8))
 		  fprintf (stream, "<<invalid float 0x%x%08x>>",
 			   ((long *)p)[1], ((long *)p)[0]);
 		else

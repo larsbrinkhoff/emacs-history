@@ -177,6 +177,8 @@ int standout_mode;			/* Nonzero when in standout mode.  */
    lines from those operations.  */
 
 int specified_window;
+
+char *tparam ();
 
 ring_bell ()
 {
@@ -254,21 +256,19 @@ set_scroll_region (start, stop)
   char *buf;
   if (TS_set_scroll_region)
     {
-      buf = (char *) alloca (strlen (TS_set_scroll_region) + 10);
-      tparam (TS_set_scroll_region, buf, start, stop - 1);
+      buf = tparam (TS_set_scroll_region, 0, 0, start, stop - 1);
     }
   else if (TS_set_scroll_region_1)
     {
-      buf = (char *) alloca (strlen (TS_set_scroll_region_1) + 20);
-      tparam (TS_set_scroll_region_1, buf,
-	      screen_height, start, screen_height - stop, screen_height);
+      buf = tparam (TS_set_scroll_region_1, 0, 0,
+		    screen_height, start, screen_height - stop, screen_height);
     }
   else
     {
-      buf = (char *) alloca (strlen (TS_set_window) + 20);
-      tparam (TS_set_window, buf, start, 0, stop, screen_width);
+      buf = tparam (TS_set_window, 0, 0, start, 0, stop, screen_width);
     }
   OUTPUT (buf);
+  free (buf);
   losecursor ();
 }
 
@@ -614,9 +614,9 @@ write_chars (start, len)
 	    n = p - start;
 	    if (n > RPov)
 	      {
-		buf = (char *) alloca (strlen (TS_repeat) + 10);
-		tparam (TS_repeat, buf, *start, n);
+		buf = tparam (TS_repeat, 0, 0, *start, n);
 		tputs (buf, n, cmputc);
+		free (buf);
 		start = p;
 		len -= n - 1;
 		continue;
@@ -660,9 +660,9 @@ insert_chars (start, len)
 
   if (TS_ins_multi_chars)
     {
-      buf = (char *) alloca (strlen (TS_ins_multi_chars) + 10);
-      tparam (TS_ins_multi_chars, buf, len);
+      buf = tparam (TS_ins_multi_chars, 0, 0, len);
       OUTPUT1 (buf);
+      free (buf);
       if (start)
 	write_chars (start, len);
       return;
@@ -721,9 +721,9 @@ delete_chars (n)
 
   if (TS_del_multi_chars)
     {
-      buf = (char *) alloca (strlen (TS_del_multi_chars) + 10);
-      tparam (TS_del_multi_chars, buf, n);
+      buf = tparam (TS_del_multi_chars, 0, 0, n);
       OUTPUT1 (buf);
+      free (buf);
     }
   else
     for (i = 0; i < n; i++)
@@ -767,9 +767,9 @@ ins_del_lines (vpos, n)
     {
       raw_topos (vpos, 0);
       background_highlight ();
-      buf = (char *) alloca (strlen (multi) + 10);
-      tparam (multi, buf, i);
+      buf = tparam (multi, 0, 0, i);
       OUTPUT (buf);
+      free (buf);
     }
   else if (single)
     {
@@ -998,12 +998,14 @@ term_init (terminal_type)
   LastLine = tgetstr ("ll", &fill);
   Right = tgetstr ("nd", &fill);
   Down = tgetstr ("do", &fill);
+  if (!Down)
+    Down = tgetstr ("nl", &fill); /* Obsolete name for "do" */
 #ifdef VMS
+  /* VMS puts a carriage return before each linefeed,
+     so it is not safe to use linefeeds.  */
   if (Down && Down[0] == '\n' && Down[1] == '\0')
     Down = 0;
 #endif /* VMS */
-  if (!Down)
-    Down = tgetstr ("nl", &fill); /* Obsolete name for "do" */
   if (tgetflag ("bs"))
     Left = "\b";		  /* can't possibly be longer! */
   else				  /* (Actually, "bs" is obsolete...) */
@@ -1037,7 +1039,7 @@ term_init (terminal_type)
   TF_xs = tgetflag ("xs");
   TF_teleray = tgetflag ("xt");
 
-  /* Get screen size fro system, or else from termcap.  */
+  /* Get screen size from system, or else from termcap.  */
   get_screen_size (&screen_width, &screen_height);
   if (screen_width <= 0)
     screen_width = tgetnum ("co");
@@ -1163,7 +1165,8 @@ or `define EMACS_TERM \"terminal type\"' for non-DEC terminals.\n",
     fatal ("Terminal type \"%s\" is not powerful enough to run Emacs.\n\
 It lacks the ability to position the cursor.\n\
 If that is not the actual type of terminal you have,\n\
-use the C-shell command `setenv TERM ...' to specify the correct type.\n",
+use the C-shell command `setenv TERM ...' to specify the correct type.\n\
+It may be necessary to do `unsetenv TERMCAP' as well.\n",
 	   terminal_type);
 #endif
 
@@ -1207,5 +1210,6 @@ fatal (str, arg1, arg2)
 {
   fprintf (stderr, "emacs: ");
   fprintf (stderr, str, arg1, arg2);
+  fflush (stderr);
   exit (1);
 }

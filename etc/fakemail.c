@@ -40,6 +40,7 @@ main ()
 #undef read
 #undef write
 #undef open
+#undef close
 #endif
 
 #include <stdio.h>
@@ -105,11 +106,14 @@ struct linebuffer lb;
 
 #define BUFLEN 1024
 #define KEYWORD_SIZE 256
-#define PROGRAM_NAME "/bin/mail"
 #define FROM_PREFIX "From"
 #define MY_NAME "fakemail"
 #define NIL ((line_list) NULL)
 #define INITIAL_LINE_SIZE 200
+
+#ifndef MAIL_PROGRAM_NAME
+#define MAIL_PROGRAM_NAME "/bin/mail"
+#endif
 
 static char *my_name;
 static char *the_date;
@@ -332,7 +336,7 @@ close_the_streams ()
        rem != ((stream_list) NULL);
        rem = rem->rest_streams)
     no_problems = (no_problems &&
-		   (rem->action (rem->handle) == 0));
+		   ((*rem->action) (rem->handle) == 0));
   the_streams = ((stream_list) NULL);
   return (no_problems ? 0 : 1);
 }
@@ -568,7 +572,7 @@ main (argc, argv)
 {
   char *command_line;
   header the_header;
-  long name_length = strlen (PROGRAM_NAME);
+  long name_length = strlen (MAIL_PROGRAM_NAME);
   char buf[BUFLEN + 1];
   register int size;
   FILE *the_pipe;
@@ -580,7 +584,7 @@ main (argc, argv)
 
   the_header = read_header ();
   command_line = alloc_string (name_length + args_size (the_header));
-  strcpy (command_line, PROGRAM_NAME);
+  strcpy (command_line, MAIL_PROGRAM_NAME);
   parse_header (the_header, &command_line[name_length]);
   
   the_pipe = popen (command_line, "w");

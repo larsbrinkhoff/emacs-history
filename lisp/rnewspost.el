@@ -1,5 +1,5 @@
 ;;; USENET news poster/mailer for GNU Emacs
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -26,9 +26,14 @@
 ;;   Subject: replaced) and Article-I.D.: (which Message-ID: replaced)
 ;;	tower@prep Nov 86
 ;; changed C-c C-r key-binding due to rename of news-caesar-buffer-body
-;;	tower@prep Nov 21 1986
-
+;;	tower@prep 21 Nov 86
+;; added (require 'rnews)	tower@prep 22 Apr 87
+;; restricted call of news-show-all-headers in news-post-news & news-reply
+;;	tower@prep 28 Apr 87
+;; commented out Posting-Front-End to save USENET bytes tower@prep Jul 31 87
+;; commented out -n and -t args in news-inews     tower@prep 15 Oct 87
 (require 'sendmail)
+(require 'rnews)
 
 ;Now in paths.el.
 ;(defvar news-inews-program "inews"
@@ -188,8 +193,8 @@ news-reply-mode."
 	  (kill-line 1)
 	  (goto-char (point-max)))
       (mail-setup to subject in-reply-to nil replybuffer))
-    (mail-position-on-field "Posting-Front-End")
-    (insert (emacs-version))
+    ;;;(mail-position-on-field "Posting-Front-End")
+    ;;;(insert (emacs-version))
     (goto-char (point-max))
     (if (let ((case-fold-search t))
 	  (re-search-backward "^Subject:" (point-min) t))
@@ -223,9 +228,10 @@ news-reply-mode."
       (message "Posting to USENET...")
       (call-process-region (point-min) (point-max) 
 			   news-inews-program nil 0 nil
-			   "-h"		; take all header lines!
-			   "-t" subject
-			   "-n" newsgroups)
+			   "-h")	; take all header lines!
+			   ;@@ setting of subject and newsgroups still needed?
+			   ;"-t" subject
+			   ;"-n" newsgroups
       (message "Posting to USENET... done")
       (goto-char (point-min))		;restore internal header separator
       (search-forward "\n\n")
@@ -233,6 +239,7 @@ news-reply-mode."
       (set-buffer-modified-p nil))
     (and (fboundp 'bury-buffer) (bury-buffer))))
 
+;@@ shares some code with news-reply and news-post-news
 (defun news-mail-reply ()
   "Mail a reply to the author of the current article.
 While composing the reply, use \\[news-reply-yank-original] to yank the
@@ -260,21 +267,27 @@ original message into it."
 	    nil
 	   buffer))))
 
+;@@ the guts of news-reply and news-post-news should be combined. -tower
 (defun news-reply ()
   "Compose and post a reply (aka a followup) to the current article on USENET.
 While composing the followup, use \\[news-reply-yank-original] to yank the
 original message into it."
   (interactive)
   (if (y-or-n-p "Are you sure you want to followup to all of USENET? ")
-      (let (from cc subject date to followup-to newsgroups
+      (let (from cc subject date to followup-to newsgroups message-of
 		 references distribution message-id
 		 (buffer (current-buffer)))
 	(save-restriction
-	  ;@@ should save header state and restore, but rnews.el lacks support
-	  (news-show-all-headers)
-	  (narrow-to-region (point-min) (progn (goto-char (point-min))
-					       (search-forward "\n\n")
-					       (- (point) 2)))
+	  (and (not (= 0 (buffer-size))) ;@@real problem is non-existence of
+					;@@	of article file
+	       (equal major-mode 'news-mode) ;@@ if rmail-mode,
+					;@@	should show full headers
+	       (progn
+		 (news-show-all-headers) ;@@ should save/restore header state,
+					;@@	but rnews.el lacks support
+		 (narrow-to-region (point-min) (progn (goto-char (point-min))
+						      (search-forward "\n\n")
+						      (- (point) 2)))))
 	  (setq from (mail-fetch-field "from")
 		news-reply-yank-from from
 		;; @@ not handling old Title: field
@@ -290,54 +303,78 @@ original message into it."
 		news-reply-yank-message-id message-id)
 	  (pop-to-buffer "*post-news*")
 	  (news-reply-mode)
-	  (erase-buffer)
-	  (and subject
-	       (progn (if (string-match "\\`Re: " subject)
-			  (while (string-match "\\`Re: " subject)
-			    (setq subject (substring subject 4))))
-		      (setq subject (concat "Re: " subject))))
-	  (news-setup
-	   nil
-	   subject
-	   (let ((stop-pos (string-match "  *at \\|  *@ \\| *(\\| *<" from)))
-	     (concat (if stop-pos (substring from 0 stop-pos) from)
-		     "'s message of "
-		     date))
-	   newsgroups
-	   buffer)
-	  (if followup-to
-	      (progn (news-reply-followup-to)
-		     (insert followup-to)))
-	  (if distribution
-	      (progn
-		(mail-position-on-field "Distribution")
-		(insert distribution)))
-	  (mail-position-on-field "References")
-	  (if references
-	      (insert references " " message-id)
-	    (insert message-id))
-	  (goto-char (point-max))))
+	  (if (and (buffer-modified-p)
+		   (not
+		    (y-or-n-p "Unsent article being composed; erase it? ")))
+	      ()
+	    (progn
+	      (erase-buffer)
+	      (and subject
+		   (progn (if (string-match "\\`Re: " subject)
+			      (while (string-match "\\`Re: " subject)
+				(setq subject (substring subject 4))))
+			  (setq subject (concat "Re: " subject))))
+	      (and from
+		   (progn
+		     (let ((stop-pos
+			    (string-match "  *at \\|  *@ \\| *(\\| *<" from)))
+		       (setq message-of
+			     (concat
+			      (if stop-pos (substring from 0 stop-pos) from)
+			      "'s message of "
+			      date)))))
+	      (news-setup
+	       nil
+	       subject
+	       message-of
+	       newsgroups
+	       buffer)
+	      (if followup-to
+		  (progn (news-reply-followup-to)
+			 (insert followup-to)))
+	      (if distribution
+		  (progn
+		    (mail-position-on-field "Distribution")
+		    (insert distribution)))
+	      (mail-position-on-field "References")
+	      (if references
+		  (insert references))
+	      (if (and references message-id)
+		  (insert " "))
+	      (if message-id
+		  (insert message-id))
+	      (goto-char (point-max))))))
     (message "")))
 
+;@@ the guts of news-reply and news-post-news should be combined. -tower
 (defun news-post-news ()
-  "Begin editing a new USENET news article to be posted."
+  "Begin editing a new USENET news article to be posted.
+Type \\[describe-mode] once editing the article to get a list of commands."
   (interactive)
   (if (y-or-n-p "Are you sure you want to post to all of USENET? ")
       (let ((buffer (current-buffer)))
 	(save-restriction
-	  ;@@ should save header state and restore, but rnews.el lacks support
-	  (news-show-all-headers)
-	  (narrow-to-region (point-min) (progn (goto-char (point-min))
-					       (search-forward "\n\n")
-					       (- (point) 2)))
+	  (and (not (= 0 (buffer-size))) ;@@real problem is non-existence of
+					;@@	of article file
+	       (equal major-mode 'news-mode) ;@@ if rmail-mode,
+					;@@	should show full headers
+	       (progn
+		 (news-show-all-headers) ;@@ should save/restore header state,
+					;@@	but rnews.el lacks support
+		 (narrow-to-region (point-min) (progn (goto-char (point-min))
+						      (search-forward "\n\n")
+						      (- (point) 2)))))
 	  (setq news-reply-yank-from (mail-fetch-field "from")
 		;; @@ not handling old Article-I.D.: field
 		news-reply-yank-message-id (mail-fetch-field "message-id")))
 	(pop-to-buffer "*post-news*")
 	(news-reply-mode)
-	(erase-buffer)
-	(news-setup () () () () buffer))
-    (message "")))
+	(if (and (buffer-modified-p)
+		 (not (y-or-n-p "Unsent article being composed; erase it? ")))
+	    ()				;@@ not saving point from last time
+	  (progn (erase-buffer)
+		 (news-setup () () () () buffer))))
+  (message "")))
 
 (defun news-mail-other-window ()
   "Send mail in another window.

@@ -110,14 +110,12 @@ You can rewrite this to use any criterion you like to choose which one to do."
 
 (defun ask-user-about-supersession-help ()
   (with-output-to-temp-buffer "*Help*"
-    (princ "It has been detected that you want to modify a buffer
-that is obsolete because changes in the file on disk have happened
-since you read it or wrote it with this buffer.
+    (princ "You want to modify a buffer whose disk file has changed
+since you last read it in or saved it with this buffer.
 
 If you say `y' to go ahead and modify this buffer,
 you risk ruining the work of whoever rewrote the file.
-If you say `n', whatever change you started to make in the buffer
-will not take place.
+If you say `n', the change you started to make will be aborted.
 
 You might consider answering `n', running `M-x revert-buffer' to
 bring the text in Emacs into accord with what is on disk, and then

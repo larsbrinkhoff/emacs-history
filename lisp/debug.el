@@ -34,9 +34,12 @@ You may call with no args, or you may
 	(debugger-match-data (match-data))
 	(debug-on-error nil)
 	(debug-on-quit nil)
-	(debugger-buffer (generate-new-buffer "*Backtrace*"))
+	(debugger-buffer (let ((default-major-mode 'fundamental-mode))
+			   (generate-new-buffer "*Backtrace*")))
 	(debugger-old-buffer (current-buffer))
 	(debugger-step-after-exit nil)
+	;; Don't keep reading from an executing kbd macro!
+	(executing-macro nil)
 	(cursor-in-echo-area nil))
     (unwind-protect
 	(save-excursion
@@ -210,6 +213,8 @@ Applies to the frame whose line point is on in the backtrace."
     (define-key debugger-mode-map "e" 'debugger-eval-expression)
     (define-key debugger-mode-map " " 'next-line)))
 
+(put 'debugger-mode 'mode-class 'special)
+
 (defun debugger-mode ()
   "Mode for backtrace buffers, selected in debugger.
 \\{debugger-mode-map}
@@ -222,7 +227,7 @@ Note lines starting with * are frames that will
   (setq major-mode 'debugger-mode)
   (setq mode-name "Debugger")
   (setq truncate-lines t)
-  (set-syntax-table lisp-mode-syntax-table)
+  (set-syntax-table emacs-lisp-mode-syntax-table)
   (use-local-map debugger-mode-map))
 
 (defun debug-on-entry (function)

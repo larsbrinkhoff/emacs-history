@@ -18,11 +18,22 @@ In other words, go ahead and share GDB, but don't try to stop
 anyone else from sharing it farther.  Help stamp out software hoarding!
 */
 
+#ifndef vax
+#define vax
+#endif
+
+/* Get rid of any system-imposed stack limit if possible.  */
+
+#define SET_STACK_LIMIT_HUGE
 
 /* Define this if the C compiler puts an underscore at the front
    of external names before giving them to the linker.  */
 
 #define NAMES_HAVE_UNDERSCORE
+
+/* Debugger information will be in DBX format.  */
+
+#define READ_DBX_FORMAT
 
 /* Offset from address of function to start of its code.
    Zero on most machines.  */
@@ -72,9 +83,10 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 
 #define ABOUT_TO_RETURN(pc) (read_memory_integer (pc, 1) == 04)
 
-/* Return 1 if P points to an invalid floating point value.  */
+/* Return 1 if P points to an invalid floating point value.
+   LEN is the length in bytes -- not relevant on the Vax.  */
 
-#define INVALID_FLOAT(p) ((*(short *) p & 0xff80) == 0x8000)
+#define INVALID_FLOAT(p, len) ((*(short *) p & 0xff80) == 0x8000)
 
 /* Say how long (ordinary) registers are.  */
 
@@ -158,6 +170,28 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
    of data in register N.  */
 
 #define REGISTER_VIRTUAL_TYPE(N) builtin_type_int
+
+/* Extract from an array REGBUF containing the (raw) register state
+   a function return value of type TYPE, and copy that, in virtual format,
+   into VALBUF.  */
+
+#define EXTRACT_RETURN_VALUE(TYPE,REGBUF,VALBUF) \
+  bcopy (REGBUF, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Write into appropriate registers a function return value
+   of type TYPE, given in virtual format.  */
+
+#define STORE_RETURN_VALUE(TYPE,VALBUF) \
+  write_register_bytes (0, VALBUF, TYPE_LENGTH (TYPE))
+
+/* Extract from an array REGBUF containing the (raw) register state
+   the address in which a function should return its structure value,
+   as a CORE_ADDR (or an expression that can be used as one).  */
+
+#define EXTRACT_STRUCT_VALUE_ADDRESS(REGBUF) (*(int *)(REGBUF))
+
+/* Compensate for lack of `vprintf' function.  */ 
+#define vprintf(format, ap) _doprnt (format, ap, stdout) 
 
 /* Describe the pointer in each stack frame to the previous stack frame
    (its caller).  */
@@ -280,6 +314,8 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
    Note this is 8 bytes.  */
 
 #define CALL_DUMMY {0x329f69fb, 0x03323232}
+
+#define CALL_DUMMY_START_OFFSET 0  /* Start execution at beginning of dummy */
 
 /* Insert the specified number of args and function address
    into a call sequence of the above form stored at DUMMYNAME.  */

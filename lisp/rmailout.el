@@ -59,6 +59,8 @@ buffer visiting that file."
 	    (end (1+ (rmail-msgend rmail-current-message))))
 	(if (not buf)
 	    (append-to-file beg end file-name)
+	  (if (eq buf (current-buffer))
+	      (error "Can't output message to same file it's already in"))
 	  ;; File has been visited, in buffer BUF.
 	  (set-buffer buf)
 	  (let ((buffer-read-only nil)
@@ -86,10 +88,13 @@ buffer visiting that file."
   (interactive
    (list
     (read-file-name
-     (concat "Output message to Unix mail file: (default "
-	     (file-name-nondirectory rmail-last-file)
-	     ") ")
-     (file-name-directory rmail-last-file)
+     (concat "Output message to Unix mail file"
+	     (if rmail-last-file
+		 (concat " (default "
+			 (file-name-nondirectory rmail-last-file)
+			 "): " )
+	       ": "))			
+     (and rmail-last-file (file-name-directory rmail-last-file))
      rmail-last-file)))
   (setq file-name (expand-file-name file-name))
   (setq rmail-last-file file-name)
@@ -103,8 +108,9 @@ buffer visiting that file."
       (insert "\n")
       (goto-char (point-min))
       (insert "From "
-	      (mail-strip-quoted-names (mail-fetch-field "from")) " "
-	      (current-time-string) "\n")
+	      (or (mail-strip-quoted-names (mail-fetch-field "from"))
+		  "unknown")
+	      " " (current-time-string) "\n")
       ;; ``Quote'' "\nFrom " as "\n>From "
       ;;  (note that this isn't really quoting, as there is no requirement
       ;;   that "\n[>]+From " be quoted in the same transparent way.)

@@ -72,7 +72,7 @@ static Lisp_Object Vbuffer_defaults;
    be a DEFVAR_PER_BUFFER for the slot, there is no default value for it;
    and the corresponding slot in buffer_defaults is not used.
 
-   It a slot in this structure corresponding to a DEFVAR_PER_BUFFER is
+   If a slot in this structure corresponding to a DEFVAR_PER_BUFFER is
    zero, that is a bug */
 
 struct buffer buffer_local_flags;
@@ -208,7 +208,7 @@ DEFUN ("get-buffer-create", Fget_buffer_create, Sget_buffer_create, 1, 1, 0,
   if (NULL (function))
     {
       tem = Fget (bf_cur->major_mode, Qmode_class);
-      if (!EQ (tem, Qnil))
+      if (EQ (tem, Qnil))
 	function = bf_cur->major_mode;
     }
 
@@ -363,15 +363,25 @@ does not change the local values.")
       buf = XBUFFER (buffer);
     }
 
+  {
+    /* Reference each variable in the alist in our current buffer.
+       If inquiring about the current buffer, this gets the current values,
+       so store them into the alist so the alist is up to date.
+       If inquiring about some other buffer, this swaps out any values
+       for that buffer, making the alist up to date automatically.  */
+    register Lisp_Object tem;
+    for (tem = buf->local_var_alist; CONSP (tem); tem = XCONS (tem)->cdr)
+      {
+	Lisp_Object v1 = Fsymbol_value (XCONS (XCONS (tem)->car)->car);
+	if (buf == bf_cur)
+	  XCONS (XCONS (tem)->car)->cdr = v1;
+      }
+  }
+
+  /* Make a copy of the alist, to return it.  */
   val = Fcopy_alist (buf->local_var_alist);
-  if (buf == bf_cur)
-    {
-      /* get latest values from `cache'  (would be updated on setbuffer) */
-      register Lisp_Object tem;
-      for (tem = val; CONSP (tem); tem = XCONS (tem)->cdr)
-	XCONS (XCONS (tem)->car)->cdr =
-			Fsymbol_value (XCONS (XCONS (tem)->car)->car);
-    }
+
+  /* Add on all the variables stored in special slots.  */
   {
     register int offset, mask;
 
@@ -548,12 +558,13 @@ DEFUN ("buffer-enable-undo", Fbuffer_enable_undo, Sbuffer_enable_undo,
 DEFUN ("kill-buffer", Fkill_buffer, Skill_buffer, 1, 1, "bKill buffer: ",
   "One arg, a string or a buffer.  Get rid of the specified buffer.")
   (bufname)
-     register Lisp_Object bufname;
+     Lisp_Object bufname;
 {
-  register Lisp_Object buf;
+  Lisp_Object buf;
   register struct buffer *b;
   register Lisp_Object tem;
   register struct Lisp_Marker *m;
+  struct gcpro gcpro1, gcpro2;
 
   if (NULL (bufname))
     buf = Fcurrent_buffer ();
@@ -571,8 +582,10 @@ DEFUN ("kill-buffer", Fkill_buffer, Skill_buffer, 1, 1, "bKill buffer: ",
   if (INTERACTIVE && !NULL (b->filename)
       && b->text.modified > b->save_modified)
     {
+      GCPRO2 (buf, bufname);
       tem = Fyes_or_no_p (format1 ("Buffer %s modified; kill anyway? ",
 				   XSTRING (b->name)->data));
+      UNGCPRO;
       if (NULL (tem))
 	return Qnil;
     }
@@ -588,6 +601,17 @@ DEFUN ("kill-buffer", Fkill_buffer, Skill_buffer, 1, 1, "bKill buffer: ",
   if (NULL (b->name))
     return Qnil;
 
+  /* Make this buffer not be current.
+     In the process, notice if this is the sole visible buffer
+     and give up if so.  */
+  if (b == bf_cur)
+    {
+      tem = Fother_buffer (buf);
+      Fset_buffer (tem);
+      if (b == bf_cur)
+	return Qnil;
+    }
+
   /* Now there is no question: we can kill the buffer.  */
 
 #ifdef CLASH_DETECTION
@@ -595,21 +619,15 @@ DEFUN ("kill-buffer", Fkill_buffer, Skill_buffer, 1, 1, "bKill buffer: ",
   unlock_buffer (b);
 #endif /* CLASH_DETECTION */
 
-  /* make this buffer not be current */
-  if (b == bf_cur)
-    {
-      tem = Fother_buffer (buf);
-      if (NULL (tem))
-	tem = Fget_buffer_create (build_string ("*scratch*"));
-      Fset_buffer (tem);
-    }
-
 #ifdef subprocesses
   kill_buffer_processes (buf);
 #endif subprocesses
 
+  tem = Vinhibit_quit;
+  Vinhibit_quit = Qt;
   Vbuffer_alist = Fdelq (Frassq (buf, Vbuffer_alist), Vbuffer_alist);
   Freplace_buffer_in_windows (buf);
+  Vinhibit_quit = tem;
 
   /* Unchain all markers of this buffer
      and leave them pointing nowhere.  */
@@ -673,6 +691,10 @@ the window-buffer correspondances.")
      Lisp_Object bufname, norecord;
 {
   register Lisp_Object buf;
+
+  if (EQ (minibuf_window, selected_window))
+    error ("Cannot switch buffers in minibuffer window");
+
   if (NULL (bufname))
     buf = Fother_buffer (Fcurrent_buffer ());
   else
@@ -1141,7 +1163,9 @@ init_buffer ()
   char buf[MAXPATHLEN+1];
 
   Fset_buffer (Fget_buffer_create (build_string ("*scratch*")));
-  getwd (buf);
+  if (getwd (buf) == 0)
+    fatal ("`getwd' failed: %s.\n", buf);
+
 #ifndef VMS
   /* Maybe this should really use some standard subroutine
      whose definition is filename syntax dependent.  */

@@ -37,13 +37,13 @@ struct value
     short repeated;
     short repetitions;
     short regno;
-    char contents[1];
+    long contents[1];
   };
 
 typedef struct value *value;
 
 #define VALUE_TYPE(val) (val)->type
-#define VALUE_CONTENTS(val) (val)->contents
+#define VALUE_CONTENTS(val) ((char *) (val)->contents)
 #define VALUE_LVAL(val) (val)->lval
 #define VALUE_ADDRESS(val) (val)->location.address
 #define VALUE_INTERNALVAR(val) (val)->location.internalvar
@@ -55,9 +55,23 @@ typedef struct value *value;
 #define VALUE_REPETITIONS(val) (val)->repetitions
 #define VALUE_REGNO(val) (val)->regno
 
+/* If ARG is an array, convert it to a pointer.
+   If ARG is an enum, convert it to an integer.  */
+
 #define COERCE_ARRAY(arg)    \
-  if (VALUE_REPEATED (arg) || TYPE_CODE (VALUE_TYPE (arg)) == TYPE_CODE_ARRAY)\
-    arg = value_coerce_array (arg);
+{ if (VALUE_REPEATED (arg)						\
+      || TYPE_CODE (VALUE_TYPE (arg)) == TYPE_CODE_ARRAY)		\
+    arg = value_coerce_array (arg);					\
+  if (TYPE_CODE (VALUE_TYPE (arg)) == TYPE_CODE_ENUM)			\
+    arg = value_cast (builtin_type_unsigned_int, arg);			\
+}
+
+/* If ARG is an enum, convert it to an integer.  */
+
+#define COERCE_ENUM(arg)    \
+{ if (TYPE_CODE (VALUE_TYPE (arg)) == TYPE_CODE_ENUM)			\
+    arg = value_cast (builtin_type_unsigned_int, arg);			\
+}
 
 /* Internal variables (variables for convenience of use of debugger)
    are recorded as a chain of these structures.  */
@@ -106,6 +120,7 @@ value value_being_returned ();
 value evaluate_expression ();
 value evaluate_type ();
 value parse_and_eval ();
+value parse_to_comma_and_eval ();
 
 value access_value_history ();
 value value_of_internalvar ();

@@ -23,15 +23,6 @@ and this notice must be preserved on all copies.  */
  *	Define all the symbols that apply correctly.
  */
 
-/* #define UNIPLUS */
-/* #define USG5 */
-/* #define USG */
-/* #define BSD4_1 */
-/* #define BSD4_2 */
-/* #define BSD4_3 */
-/* #define BSD */
-/* #define UMAX4_2 */
-/* #define UMAX */
 #ifndef VMS		    /* Decus cpp doesn't define this but VAX C does */
 #define VMS
 #endif /* VMS */
@@ -49,23 +40,8 @@ and this notice must be preserved on all copies.  */
 
 /* #define NOMULTIPLEJOBS */
 
-/* Emacs can read input using SIGIO and buffering characters itself,
-   or using CBREAK mode and making C-g cause SIGINT.
-   The choice is controlled by the variable interrupt_input.
-   Define INTERRUPT_INPUT to make interrupt_input = 1 the default (use SIGIO)
-
-   SIGIO can be used only on systems that implement it (4.2 and 4.3).
-   CBREAK mode has two disadvatages
-     1) At least in 4.2, it is impossible to handle the Meta key properly.
-        I hear that in system V this problem does not exist.
-     2) Control-G causes output to be discarded.
-        I do not know whether this can be fixed in system V.
-
-   Another method of doing input is planned but not implemented.
-   It would have Emacs fork off a separate process
-   to read the input and send it to the true Emacs process
-   through a pipe.
-*/
+/* INTERRUPT_INPUT controls a default for Unix systems.
+   VMS uses a separate mechanism.  */
 
 /* #define INTERRUPT_INPUT */
 
@@ -160,7 +136,7 @@ and this notice must be preserved on all copies.  */
 
 /* Partially due to the above mentioned bug and also so that we don't need
    to require that people have a shareable C library, the default for Emacs
-   is to link with the non-shared library.  If you wan tto link with the
+   is to link with the non-shared library.  If you want to link with the
    shared library, define this and remake xmakefile and fileio.c. This allows
    us to ship a guaranteed executable image. */
 
@@ -177,11 +153,22 @@ and this notice must be preserved on all copies.  */
 #define index strchr
 #define rindex strrchr
 #define unlink delete
+  
+/* On later versions of VMS these exist in the C run time library, but
+   we are using our own implementations.  Hide their names to avoid
+   linker errors */
+#define rename sys_rename
+#define execvp sys_execvp
+#define system sys_system
 
 /* Hide these names so that we don't get linker errors */
 #define malloc sys_malloc
 #define free sys_free
 #define realloc sys_realloc
+
+/* Don't use the standard brk and sbrk */
+#define sbrk sys_sbrk
+#define brk sys_brk
 
 /* On VMS we want to avoid reading and writing very large amounts of
    data at once, so we redefine read and write here. */
@@ -236,4 +223,8 @@ globalref char sdata[];
 { 0, 50, 75, 110, 134, 150, 300, 600, 1200, 1800, \
   2000, 2400, 3600, 4800, 7200, 9600, 19200 }
 
-#define PURESIZE 130000
+#define PURESIZE 132000
+
+/* Stdio FILE type has extra indirect on VMS, so must alter this macro.  */
+
+#define PENDING_OUTPUT_COUNT(FILE) ((*(FILE))->_ptr - (*(FILE))->_base)

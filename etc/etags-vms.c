@@ -139,7 +139,7 @@ char    *curfile,        /* current input file name        */
  "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789",
                 /* valid in-token chars            */
 #endif /* VMS */
-    *notgd    = ",;";        /* non-valid after-function chars    */
+    *notgd    = ",;)";        /* non-valid after-function chars    */
      
 int    file_num;        /* current file number            */
 int    aflag;            /* -a: append to tags */
@@ -389,23 +389,6 @@ find_entries (file)
       perror(file);
       return;
     }
-#ifdef VMS
-  else switch(is_stream_file(inf))
-    {
-  case -1:
-    fprintf(stderr, "File %s is empty\n", file);
-    fclose(inf);
-    return;
-    break;
-  case 0:
-    fprintf(stderr, "File %s is not a stream file\n", file);
-    fclose(inf);
-    return;
-    break;
-  default:
-    break;
-    }
-#endif /* VMS */
   curfile = savestr(file);
   cp = rindex(file, '.');
   /* .tex, .aux or .bbl implies LaTeX source code */
@@ -416,9 +399,9 @@ find_entries (file)
       fclose(inf);
       return;
     }
-  /* .l or .el or .lisp implies lisp source code */
+  /* .l or .el or .lisp or .lsp implies lisp source code */
   if (cp && (!strcmp (cp + 1, "l") || !strcmp (cp + 1, "el")
-         || !strcmp (cp + 1, "lisp")))
+         || !strcmp (cp + 1, "lisp") || !strcmp (cp + 1, "lsp")))
     {
       L_funcs(inf);
       fclose(inf);
@@ -652,12 +635,15 @@ total_size_of_entries(node)
  * This routine finds functions and typedefs in C syntax and adds them
  * to the list.
  */
+
 #define CNL_SAVE_NUMBER \
 { \
   linecharno = charno; lineno++; \
   charno += 1 + readline (&lb, inf); \
+  vmsfpos = ftell(inf); \
   lp = lb.buffer; \
 }
+int vmsfpos;
      
 #define CNL \
 { \
@@ -775,12 +761,20 @@ C_entries ()
           int line = lineno;
           long linestart = linecharno;
           int tem = consider_token (&lp1, token, &f);
+#ifdef VMS
+	  long vmslinestart = vmsfpos;
+#endif
+
           lp = lp1;
           if (tem)
             {
               if (linestart != linecharno)
             {
+#ifdef VMS
+              getline (vmslinestart);
+#else
               getline (linestart);
+#endif
               strncpy (tok, token + (lb1.buffer - buf),
                    tp-token+1);
               tok[tp-token+1] = 0;
@@ -930,8 +924,15 @@ ret:
 getline (atchar)
      long atchar;
 {
-  long saveftell = ftell (inf);
+  long saveftell;
      
+#ifdef VMS
+  /* Force VMS to read the next record or it will seek back to the
+     beginning of it instead of the end.  */
+  getc (inf);
+#endif
+  saveftell = ftell (inf);
+
   fseek (inf, atchar, 0);
   readline (&lb1, inf);
   fseek (inf, saveftell, 0);

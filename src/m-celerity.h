@@ -65,3 +65,6 @@ and this notice must be preserved on all copies.  */
 /* alloca is provided by the system.  */
 
 #define HAVE_ALLOCA
+
+/* (short) negative-int doesn't sign-extend correctly */
+#define SHORT_CAST_BUG
