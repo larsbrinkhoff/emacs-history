@@ -25,6 +25,7 @@ lispdir = ../lisp/
 etcdir = ../etc/
 shortnamesdir = ../shortnames/
 cppdir = ../cpp/
+oldXMenudir = ../oldXMenu/
 
 #define NO_SHORTNAMES
 #include "config.h"
@@ -172,8 +173,9 @@ CFLAGS= C_DEBUG_SWITCH -Demacs $(MYCPPFLAG) C_SWITCH_MACHINE C_SWITCH_SYSTEM
 #ifdef HAVE_X_WINDOWS
 #ifdef HAVE_X11
 #ifdef HAVE_X_MENU
+OLDXMENU = libXMenu11.a
 XOBJ = x11term.o x11fns.o xmenu.o
-LIBX = -lXMenu -loldX -lX11 LIBX11_MACHINE LIBX11_SYSTEM
+LIBX = $(OLDXMENU) -loldX -lX11 LIBX11_MACHINE LIBX11_SYSTEM
 #else
 XOBJ = x11term.o x11fns.o
 LIBX = -lX11 LIBX11_MACHINE LIBX11_SYSTEM
@@ -295,7 +297,7 @@ ${etcdir}make-docfile:
 #define MAKE_PARALLEL
 #endif
 
-temacs: MAKE_PARALLEL $(LOCALCPP) $(SHORT) $(STARTFILES) ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE
+temacs: MAKE_PARALLEL $(LOCALCPP) $(SHORT) $(STARTFILES) $(OLDXMENU) ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE
 	$(LD) ${STARTFLAGS} ${LDFLAGS} -o temacs ${STARTFILES} ${obj} ${otherobj} OBJECTS_SYSTEM OBJECTS_MACHINE ${LIBES}
 
 /* These are needed for C compilation, on the systems that need them */
@@ -321,6 +323,16 @@ CPP = $(CC) -E
 shortnames:
 	cd ${shortnamesdir}; make ${MFLAGS}
 #endif /* SHORTNAMES */
+
+#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_X_MENU
+#ifdef HAVE_X11
+$(OLDXMENU):
+	cd ${oldXMenudir}; make ${MFLAGS}
+	ln ${oldXMenudir}libXMenu11.a $(OLDXMENU)
+#endif /* HAVE_X11 */
+#endif /* HAVE_X_MENU */
+#endif /* HAVE_X_WINDOWS */
 
 paths.h: paths.h-dist
 	@sh -c "if test -r $@; then echo $? is newer than $@; exit 1;\

@@ -44,6 +44,12 @@ and this notice must be preserved on all copies.  */
 #endif /* not VMS */
 #endif /* not HAVE_TERMIO */
 
+/* Allow m- file to inhibit use of FIONREAD.  */
+#ifdef BROKEN_FIONREAD
+#undef FIONREAD
+#undef SIGIO
+#endif
+
 #undef NULL
 
 #include "termchar.h"

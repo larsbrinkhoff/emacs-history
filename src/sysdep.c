@@ -145,7 +145,14 @@ extern char *sys_errlist[];
 #include <memory.h>
 #include <string.h>
 #ifdef TIOCGWINSZ
+#ifndef IRIS_4D
+#ifndef mips
+/* Some USG systems with TIOCGWINSZ need this file; some don't have it.
+   We don't know how to distinguish them.
+   If this #include gets an error, just delete it.  */
 #include <sys/sioctl.h>
+#endif
+#endif
 #endif
 #ifdef HAVE_TIMEVAL
 #ifdef HPUX
@@ -332,7 +339,7 @@ wait_for_termination (pid)
   while (1)
     {
 #ifdef subprocesses
-#ifdef BSD
+#if defined(BSD) || (defined(HPUX) && !defined(HPUX_5))
       /* Note that kill returns -1 even if the process is just a zombie now.
 	 But inevitably a SIGCHLD interrupt should be generated
 	 and child_sig will do wait3 and make the process go away. */
@@ -365,7 +372,7 @@ wait_for_termination (pid)
       else
 	sigpause (0);
 #endif /* not BSD4_1 */
-#else /* not BSD */
+#else /* not BSD, and not HPUX version >= 6 */
 #ifdef UNIPLUS
       if (0 > kill (pid, 0))
 	break;
@@ -375,7 +382,7 @@ wait_for_termination (pid)
 	break;
       pause ();
 #endif /* not UNIPLUS */
-#endif /* not BSD */
+#endif /* not BSD, and not HPUX version >= 6 */
 #else /* not subprocesses */
 #ifndef BSD4_1
       if (0 > kill (pid, 0))
@@ -445,7 +452,7 @@ child_setup_tty (out)
   s.c_cflag = (s.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
 #endif HPUX
 #ifdef IBMRTAIX
-/* AIX enhanced edit looses NULs, so disable it */
+/* AIX enhanced edit loses NULs, so disable it */
   s.c_line = 0;
   s.c_iflag &= ~ASCEDIT;
   /* Also, PTY overloads NUL and BREAK.
@@ -791,8 +798,8 @@ init_sys_modes ()
 	 don't ignore break, but don't signal either, so it looks like NUL.
 	 This really serves a purpose only if running in an XTERM window
 	 or via TELNET or the like, but does no harm elsewhere.  */
-      s.c_iflag &= ~IGNBRK;
-      s.c_iflag &= ~BRKINT;
+      sg.c_iflag &= ~IGNBRK;
+      sg.c_iflag &= ~BRKINT;
 #endif
 #else /* if not HAVE_TERMIO */
 #ifdef VMS
@@ -825,7 +832,7 @@ init_sys_modes ()
       if (!flow_control) ioctl (0, TIOCSTART, 0);
 #endif
 
-#ifdef IBMRTAIX
+#ifdef AIX
       hft_init ();
 #endif
 
@@ -845,10 +852,10 @@ init_sys_modes ()
 	   If not going to use CBREAK mode, do this anyway
 	   so as to turn off local flow control for user coming over
 	   network on 4.2; in this case, only t_stopc and t_startc really matter.  */
-#ifndef HAVE_TERMIO
 #ifdef TIOCGLTC
       ioctl (0, TIOCGLTC, &old_ltchars);
 #endif /* TIOCGLTC */
+#ifndef HAVE_TERMIO
 #ifdef TIOCGETC
       ioctl (0, TIOCGETC, &old_tchars);
       ioctl (0, TIOCLGET, &old_lmode);
@@ -875,10 +882,10 @@ init_sys_modes ()
       ioctl (0, TIOCSETC, &tchars);
       ioctl (0, TIOCLSET, &lmode);
 #endif /* TIOCGETC */
+#endif /* not HAVE_TERMIO */
 #ifdef TIOCGLTC
       ioctl (0, TIOCSLTC, &new_ltchars);
 #endif /* TIOCGLTC */
-#endif /* not HAVE_TERMIO */
 
 #ifdef BSD4_1
       if (interrupt_input)
@@ -1000,10 +1007,10 @@ reset_sys_modes ()
   fsync (fileno (stdout));
 #endif
 #endif
-#ifndef HAVE_TERMIO
 #ifdef TIOCGLTC
   ioctl (0, TIOCSLTC, &old_ltchars);
 #endif /* TIOCGLTC */
+#ifndef HAVE_TERMIO
 #ifdef TIOCGETC
   ioctl (0, TIOCSETC, &old_tchars);
   ioctl (0, TIOCLSET, &old_lmode);
@@ -1030,7 +1037,7 @@ reset_sys_modes ()
   while (ioctl (0, TCSETAW, &old_gtty) < 0 && errno == EINTR);
 #endif /* not VMS */
 
-#ifdef IBMRTAIX
+#ifdef AIX
   hft_reset ();
 #endif
 }
@@ -2225,6 +2232,7 @@ croak (badfunc)
 
 #include <dirent.h>
 
+#ifndef HAVE_CLOSEDIR
 int
 closedir (dirp)
      register DIR *dirp;              /* stream from opendir() */
@@ -2233,6 +2241,7 @@ closedir (dirp)
   free ((char *) dirp->dd_buf);       /* directory block defined in <dirent.h> */
   free ((char *) dirp);
 }
+#endif /* not HAVE_CLOSEDIR */
 
 #endif /* SYSV_SYSTEM_DIR */
 
@@ -3510,7 +3519,7 @@ srandom (seed)
 }
 #endif /* VMS */
 
-#ifdef IBMRTAIX
+#ifdef AIX
 
 /* Get files for keyboard remapping */
 #define HFNKEYS 2
@@ -3571,4 +3580,4 @@ hft_reset ()
   hftctl (0, HFSKBD, &buf);
 }
 
-#endif IBMRTAIX
+#endif /* AIX */

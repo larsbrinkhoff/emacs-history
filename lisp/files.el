@@ -695,12 +695,12 @@ if variable  delete-auto-save-files  is non-nil."
 		   (if file-precious-flag
 		       ;; If file is precious, rename it away before
 		       ;; overwriting it.
-		       (let ((rename t)
+		       (let ((rename t) nodelete
 			     (file (concat buffer-file-name "#")))
 			 (condition-case ()
 			     (progn (rename-file buffer-file-name file t)
 				    (setq setmodes (file-modes file)))
-			   (file-error (setq rename nil)))
+			   (file-error (setq rename nil nodelete t)))
 			 (unwind-protect
 			     (progn (clear-visited-file-modtime)
 				    (write-region (point-min) (point-max)
@@ -713,10 +713,11 @@ if variable  delete-auto-save-files  is non-nil."
 				 (rename-file file buffer-file-name t)
 				 (clear-visited-file-modtime))
 			     ;; Otherwise we don't need the original file,
-			     ;; so flush it.
-			     (condition-case ()
-				 (delete-file file)
-			       (error nil)))))
+			     ;; so flush it.  Unless we already lost it.
+			     (or nodelete
+				 (condition-case ()
+				     (delete-file file)
+				   (error nil))))))
 		     ;; If file not writable, see if we can make it writable
 		     ;; temporarily while we write it.
 		     ;; But no need to do so if we have just backed it up

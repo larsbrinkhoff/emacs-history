@@ -210,7 +210,7 @@ main ()
 
     for (i = 0; i < cnt; i++)
       {
-	printf ("@item %s @code{%s}\n",
+	printf ("\n@item %s @code{%s}\n@display\n",
 		array[i]->type == 'F' ? "Function" : "Variable",
 		array[i]->name);
 
@@ -227,6 +227,7 @@ main ()
 	      }
 	    putchar ('\n');
 	  }
+	printf("@end display\n");
       }
 
     printf ("@end table\n");

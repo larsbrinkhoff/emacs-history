@@ -213,8 +213,10 @@ ftypelet(s)
       return 's';
 #endif
 #ifdef S_IFIFO
+#if S_IFIFO != S_IFSOCK
     case S_IFIFO:
       return 'p';
+#endif
 #endif
 #ifdef S_IFNWK /* hp-ux hack */
     case S_IFNWK:

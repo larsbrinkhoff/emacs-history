@@ -21,6 +21,11 @@ For VMS versions 4.4 and up, make sure the file
 SYS$SYSTEM:RIGHTSLIST.DAT has WORLD:R access.  Emacs reads this file
 to check file access.
 
+In order to compile Emacs with the VMS C compiler, you will need a
+pagefile quota of around 22000 pages, plus enough swap space to handle
+that.  (This was in VMS 5.1-1, with 5 meg of physical memory.)  See
+HELP SYSGEN CREATE and HELP SYSGEN INSTALL for more information.
+
 Choose a directory to restore to, say DEV:[LIB].  Do:
 
 	$ mount/foreign mta0:

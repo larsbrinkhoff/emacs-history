@@ -1,6 +1,31 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Error compiling sysdep.c, "sioctl.h: no such file or directory".
+
+Among USG systems with TIOCGWINSZ, some require sysdep.c to include
+the file sioctl.h; on others, sioctl.h does not exist.  We don't know
+how to distinguish these two kind of systems, so currently we try to
+include sioctl.h on all of them.  If this #include gets an error, just
+delete it.
+
+* X Windows doesn't work if DISPLAY uses a hostname.
+
+People have reported kernel bugs in certain systems that cause Emacs
+not to work with X Windows if DISPLAY is set using a host name.  But
+the problem does not occur if DISPLAY is set to `unix:0.0'.  I think
+the bug has to do with SIGIO or FIONREAD.
+
+You may be able to compensate for the bug by doing (set-input-mode nil nil).
+However, that has the disadvantage of turning off interrupts, so that
+you are unable to quit out of a Lisp program by typing C-g.
+
+The easy way to do this is to put 
+
+  (setq x-sigio-bug t)
+
+in your site-init.el file.
+
 * Watch out for .emacs files and EMACSLOADPATH environment vars
 
 These control the actions of Emacs.

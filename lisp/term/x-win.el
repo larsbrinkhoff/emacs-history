@@ -21,6 +21,9 @@
 (defconst window-system-version window-system-version
   "*Window system version number now in use.")
 
+(defvar x-sigio-bug nil
+  "Non-NIL means don't use interrupts for input when using X.")
+
 (defvar x-processed-defaults nil
   "Non-NIL means that user's X defaults have already been processed.")
 
@@ -202,6 +205,10 @@ the rubber-band outline of the new window will appear on the new X display."
 	    (while x-switches
 	      (x-handle-switch-1 (car (car x-switches)) (cdr (car x-switches)))
 	      (setq x-switches (cdr x-switches)))))
+
+      ;; On certain systems, turn off use of sigio, because it's broken.
+      (if x-sigio-bug
+	  (set-input-mode nil nil))
 
       (put 'suspend-emacs 'disabled
 	   "Suspending a program running in an X window is silly

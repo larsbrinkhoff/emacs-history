@@ -47,8 +47,8 @@
 \entry {default-directory}{85}
 \entry {default-major-mode}{114}
 \entry {delete-auto-save-files}{95}
+\entry {dired-kept-versions}{99}
 \entry {dired-listing-switches}{97}
-\entry {dired-new-versions}{99}
 \initial {E}
 \entry {echo-keystrokes}{66}
 \entry {emacs-lisp-mode-hook}{138}
@@ -56,8 +56,8 @@
 \entry {esc-map}{225}
 \entry {explicit-shell-file-name}{210}
 \initial {F}
-\entry {fill-column}{133}
-\entry {fill-prefix}{134}
+\entry {fill-column}{134}
+\entry {fill-prefix}{135}
 \entry {find-file-hooks}{88}
 \entry {find-file-not-found-hooks}{88}
 \entry {find-file-run-dired}{87}
@@ -88,7 +88,7 @@
 \entry {kept-old-versions}{91}
 \entry {kill-ring-max}{56}
 \initial {L}
-\entry {LaTeX-mode-hook}{123}
+\entry {LaTeX-mode-hook}{124}
 \entry {lisp-body-indention}{143}
 \entry {lisp-indent-offset}{143}
 \entry {lisp-interaction-mode-hook}{138}
@@ -120,13 +120,13 @@
 \entry {outline-mode-hook}{124}
 \entry {outline-regexp}{125}
 \initial {P}
-\entry {page-delimiter}{131}
-\entry {paragraph-separate}{130}
-\entry {paragraph-start}{130}
+\entry {page-delimiter}{132}
+\entry {paragraph-separate}{131}
+\entry {paragraph-start}{131}
 \entry {parse-sexp-ignore-comments}{229}
 \entry {picture-mode-hook}{181}
 \entry {picture-tab-chars}{183}
-\entry {plain-TeX-mode-hook}{123}
+\entry {plain-TeX-mode-hook}{124}
 \initial {R}
 \entry {repeat-complex-command-map}{224}
 \entry {require-final-newline}{89}
@@ -147,7 +147,7 @@
 \entry {search-yank-line-char}{69}
 \entry {search-yank-word-char}{69}
 \entry {selective-display-ellipses}{66, 127}
-\entry {sentence-end}{129}
+\entry {sentence-end}{130}
 \entry {shell-cd-regexp}{210}
 \entry {shell-file-name}{209}
 \entry {shell-popd-regexp}{210}
@@ -160,7 +160,7 @@
 \entry {tags-file-name}{154}
 \entry {term-file-prefix}{233}
 \entry {term-setup-hook}{234}
-\entry {TeX-mode-hook}{123}
+\entry {TeX-mode-hook}{124}
 \entry {text-mode-hook}{119}
 \entry {track-eol}{25}
 \entry {trim-versions-without-asking}{91}

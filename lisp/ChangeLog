@@ -1,3 +1,85 @@
+Tue Aug 15 21:41:10 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
+
+	* Version 18.55 released.
+
+	* files.el (basic-save-buffer): If rename of precious file fails,
+	don't try to delete it after new version is written.
+
+Wed Aug  9 19:26:25 1989  Chris Hanson  (cph at kleph)
+
+	* xscheme.el: From the RCS change log:
+
+	(1.23) Guarantee that the process-filter's state is correctly
+	updated before calling any code that can possibly allow more input
+	to be read from the process.
+
+	(1.22) Remove filter queuing mechanism.  Rewrite filter state
+	machine to be iterative instead of tail-recursive.  Move all C-c
+	commands to control characters.
+
+	(1.21) Force control-g synchronization always.  Turns out BSD had
+	the same problem as hp-ux.
+
+	(1.20) Don't use second argument to `interrupt-process' and
+	`quit-process'.  Apparently that causes difficulties under Ultrix.
+
+Thu Jul 20 02:02:33 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* info.el (Info-follow-reference): Handle newline and indentation
+	immediately after *note.
+
+	* hideif.el (hif-tokenize): Recognize `defined', not `hif-defined',
+	in the input.
+
+Tue Jul  4 20:27:28 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* mailalias.el (build-mail-aliases): Accept `group' as synonym.
+
+	* nroff-mode.el (electric-nroff-mode): Arg now optional.
+
+	* man.el (insert-man-file): Handle HP's directories with .Z in
+	their names.
+
+Sun Jun 25 12:45:05 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail, rmail-insert-inbox-text): For login name,
+	try LOGNAME, USER, and user-login-name.
+	* mail-utils.el (rmail-dont-reply-to): Likewise.
+
+Tue Jun 20 14:03:54 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* term/x-win.el: If x-sigio-bug is non-nil, don't use interrupts.
+
+Thu Jun  8 12:09:14 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* spell.el (spell-region): Downcase misspelled word.
+
+Tue Jun  6 19:58:01 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* chistory.el (list-command-history): Go to history buffer
+	before examining its text.
+
+Fri Jun  2 16:04:14 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-convert-to-babyl-format): Generalize time zone fmt.
+	(rmail-nuke-pinhead-header): Likewise.
+
+Wed May 31 18:05:20 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* cmacexp.el (c-macro-expand): Handle \-continuation of macros.
+
+Wed May 17 14:27:38 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* rmail.el (rmail-nuke-pinhead-header): Accept space before
+	numeric time zone in From line.
+
+	* sendmail.el (sendmail-send-it): Always pass -f option.
+
+Fri May 12 22:19:37 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* term/s4.el: Don't define M-9, M-0.
+	Typo in defn of M-N I.
+
 Wed Apr 26 16:17:02 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* Version 18.54 released.

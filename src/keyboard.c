@@ -211,6 +211,10 @@ void (*keyboard_init_hook) ();
 static void read_avail_input ();
 static void get_input_pending ();
 
+/* Non-zero tells input_available_signal to call read_socket_hook
+   even if FIONREAD returns zero.  */
+static int force_input;
+
 static char KeyBuf[40];		/* Buffer for keys from get_char () */
 static int NextK;		/* Next index into KeyBuf */
 static int echo_keystrokes;	/* > 0 if we are to echo keystrokes */
@@ -500,7 +504,7 @@ command_loop_1 ()
   while (1)
     {
       /* Install chars successfully executed in kbd macro */
-      if (defining_kbd_macro)
+      if (defining_kbd_macro && NULL (Vprefix_arg))
 	finalize_kbd_macro_chars ();
 
       /* Make sure current window's buffer is selected.  */
@@ -977,6 +981,15 @@ kbd_buffer_get_char ()
   return (c & (MetaFlag ? 0377 : 0177)); /* Clean up if sign was extended. */
 }
 
+/* Force an attempt to read input regardless of what FIONREAD says.  */
+
+force_input_read ()
+{
+  force_input = 1;
+  detect_input_pending ();
+  force_input = 0;
+}
+
 /* Store into *addr the number of terminal input chars available.
    Equivalent to ioctl (0, FIONREAD, addr) but works
    even if FIONREAD does not exist.  */
@@ -994,17 +1007,20 @@ get_input_pending (addr)
   /* First of all, have we already counted some input?  */
   *addr = kbd_count | !NULL (Vquit_flag);
   /* If input is being read as it arrives, and we have none, there is none.  */
-  if (*addr > 0 || (interrupt_input && ! interrupts_deferred))
+  if (*addr > 0 || (interrupt_input && ! interrupts_deferred && ! force_input))
     return;
 #ifdef FIONREAD
-  /* If we can count the input without reading it, do so.  */
-  if (ioctl (0, FIONREAD, addr) < 0)
-    *addr = 0;
-  if (*addr == 0 || read_socket_hook == 0)
-    return;
-  /* If the input consists of window-events, not all of them
-     are necessarily kbd chars.  So process all the input
-     and see how many kbd chars we got.  */
+  if (! force_input)
+    {
+      /* If we can count the input without reading it, do so.  */
+      if (ioctl (0, FIONREAD, addr) < 0)
+	*addr = 0;
+      if (*addr == 0 || read_socket_hook == 0)
+	return;
+      /* If the input consists of window-events, not all of them
+	 are necessarily kbd chars.  So process all the input
+	 and see how many kbd chars we got.  */
+    }
 #endif
 #ifdef SIGIO
   {
@@ -1049,10 +1065,13 @@ read_avail_input (nread)
   if (kbd_count)
     abort ();
 
-  if (nread == 0)
-    get_input_pending (&nread);
-  if (nread == 0)
-    return;
+  if (! force_input)
+    {
+      if (nread == 0)
+	get_input_pending (&nread);
+      if (nread == 0)
+	return;
+    }
   if (nread > sizeof buf)
     nread = sizeof buf;
 
@@ -1847,6 +1866,7 @@ init_keyboard ()
   kbd_count = 0;
   kbd_ptr = kbd_buffer;
   input_pending = 0;
+  force_input = 0;
   if (!noninteractive)
     {
       signal (SIGINT, interrupt_signal);

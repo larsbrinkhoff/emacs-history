@@ -6,7 +6,7 @@
 \entry {. (query-replace)}{78}
 \entry {. (Rmail)}{192}
 \initial {{\fam \ttfam \tentt \char '042}}
-\entry {{\fam \ttfam \tentt \char '042} (TeX mode)}{121}
+\entry {{\fam \ttfam \tentt \char '042} (TeX mode)}{122}
 \initial {{\fam \ttfam \tentt \gtr }}
 \entry {{\fam \ttfam \tentt \gtr } (Rmail)}{193}
 \initial {{\fam \ttfam \tentt \hat }}
@@ -185,13 +185,13 @@
 \entry {C-x C-e}{170}
 \entry {C-x C-f}{87}
 \entry {C-x C-h}{176}
-\entry {C-x C-l}{135}
+\entry {C-x C-l}{136}
 \entry {C-x C-o}{27, 52}
 \entry {C-x C-p}{49, 131}
 \entry {C-x C-q}{105}
 \entry {C-x C-s}{88}
 \entry {C-x C-t}{82}
-\entry {C-x C-u}{135}
+\entry {C-x C-u}{136}
 \entry {C-x C-v}{87}
 \entry {C-x C-w}{89}
 \entry {C-x C-x}{48}
@@ -204,7 +204,7 @@
 \entry {C-x h}{49}
 \entry {C-x j}{61}
 \entry {C-x k}{105}
-\entry {C-x l}{131}
+\entry {C-x l}{132}
 \entry {C-x m}{185}
 \entry {C-x n}{206}
 \entry {C-x o}{110}
@@ -243,7 +243,7 @@
 \entry {k (rmail)}{198}
 \initial {L}
 \entry {l (Rmail)}{200}
-\entry {LFD}{113, 115, 142}
+\entry {LFD}{113, 142}
 \entry {LFD (TeX mode)}{122}
 \initial {M}
 \entry {m (Rmail)}{202}
@@ -273,7 +273,7 @@
 \entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {} M-c}{82}
 \entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {} M-l}{82}
 \entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {} M-u}{82}
-\entry {M-{\sf @}}{49, 128}
+\entry {M-{\sf @}}{49, 129}
 \entry {M-1}{29}
 \entry {M-a}{129}
 \entry {M-b}{128}
@@ -297,7 +297,7 @@
 \entry {M-p (Rmail)}{193}
 \entry {M-q}{133}
 \entry {M-r}{24}
-\entry {M-s}{133}
+\entry {M-s}{134}
 \entry {M-s (Rmail)}{193}
 \entry {M-SPC}{52}
 \entry {M-t}{82, 128}

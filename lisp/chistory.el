@@ -102,10 +102,12 @@ The buffer is left in Command History mode."
 	  (prin1 (car history))
 	  (terpri))
 	(setq history (cdr history))))
-    (goto-char (point-min))
-    (if (eobp)
-	(error "No command history.")
-      (Command-history-setup))))
+    (save-excursion
+      (set-buffer "*Command History*")
+      (goto-char (point-min))
+      (if (eobp)
+	  (error "No command history.")
+	(Command-history-setup)))))
 
 (defun Command-history-setup (&optional majormode modename keymap)
   (set-buffer "*Command History*")

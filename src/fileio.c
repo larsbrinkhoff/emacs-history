@@ -1503,6 +1503,10 @@ before the error is signaled.")
 
   record_unwind_protect (close_file_unwind, make_number (fd));
 
+  /* Supposedly happens on VMS.  */
+  if (st.st_size < 0)
+    error ("File size is negative");
+
   if (NULL (visit))
     prepare_to_modify_buffer ();
 

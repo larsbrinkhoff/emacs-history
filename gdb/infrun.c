@@ -29,6 +29,7 @@ anyone else from sharing it farther.  Help stamp out software hoarding!
 #include <stdio.h>
 #include <signal.h>
 #include <a.out.h>
+#include <sys/file.h>
 
 #ifdef UMAX_PTRACE
 #include <sys/param.h>
@@ -765,7 +766,13 @@ Further execution is probably impossible.\n");
   if (running_in_shell)
     {
       if (stop_signal == SIGSEGV)
-	printf ("\
+	{
+	  char *exec_file = (char *) get_exec_file (1);
+
+	  if (access (exec_file, X_OK) != 0)
+	    printf ("The file \"%s\" is not executable.\n", exec_file);
+	  else
+	    printf ("\
 You have just encountered a bug in \"sh\".  GDB starts your program\n\
 by running \"sh\" with a command to exec your program.\n\
 This is so that \"sh\" will process wildcards and I/O redirection.\n\
@@ -777,6 +784,7 @@ some variables whose values are large; then do \"run\" again.\n\
 \n\
 If that works, you might want to put those \"unset-env\" commands\n\
 into a \".gdbinit\" file in this directory so they will happen every time.\n");
+	}
       /* Don't confuse user with his program's symbols on sh's data.  */
       stop_print_frame = 0;
     }

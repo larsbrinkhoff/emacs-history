@@ -341,9 +341,24 @@ x_set_cursor_colors ()
 {
   XColor forec, backc;
 
+  char	 *useback;
+
+  /* USEBACK is the background color, but on monochrome screens
+     changed if necessary not to match the mouse.  */
+
+  useback = back_color;
+
+  if (!XXisColor && !strcmp (mous_color, back_color))
+    {
+      if (strcmp (back_color, "white"))
+	useback = "white";
+      else
+	useback = "black";
+    }
+
   if (XXisColor && mous_color
       && XParseColor (XXdisplay, XXColorMap, mous_color, &forec)
-      && XParseColor (XXdisplay, XXColorMap, back_color, &backc))
+      && XParseColor (XXdisplay, XXColorMap, useback, &backc))
     {
       XRecolorCursor (XXdisplay, EmacsCursor, &forec, &backc);
       return 1;
@@ -559,8 +574,8 @@ the appropriate function to act upon this event.")
 			   max (0, (event.xbutton.y-XXInternalBorder)/
 				XXfonth)));
 		Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
-/*		XSET (tempx, Lisp_Int, event.xbutton.x+XXxoffset);
-		XSET (tempy, Lisp_Int, event.xbutton.y+XXyoffset);*/
+		XSET (tempx, Lisp_Int, event.xbutton.x_root);
+		XSET (tempy, Lisp_Int, event.xbutton.y_root);
 		Vx_mouse_abs_pos = Fcons (tempx, Fcons (tempy, Qnil));
 		Vx_mouse_item = make_number (com_letter);
 		mouse_cmd
@@ -617,8 +632,8 @@ otherwise, wait for an event.")
 			   max (0, (event.xbutton.y-XXInternalBorder)/
 				XXfonth)));
 		Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
-/*		XSET (tempx, Lisp_Int, event.xbutton.x+XXxoffset);
-		XSET (tempy, Lisp_Int, event.xbutton.y+XXyoffset);*/
+		XSET (tempx, Lisp_Int, event.xbutton.x_root);
+		XSET (tempy, Lisp_Int, event.xbutton.y_root);
 		Vx_mouse_abs_pos = Fcond (tempx, Fcons (tempy, Qnil));
 		return Fcons (com_letter, Fcons (Vx_mouse_pos, Qnil));
 	}
@@ -844,6 +859,7 @@ numerical entries in x-mouse-map.");
   Vx_mouse_pos = Qnil;
   DEFVAR_LISP ("x-mouse-abs-pos", &Vx_mouse_abs_pos,
 	       "Current x-y position of mouse relative to root window.");
+  Vx_mouse_abs_pos = Qnil;
 
   defsubr (&Sx_set_bell);
   defsubr (&Sx_flip_color);

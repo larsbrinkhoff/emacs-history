@@ -129,9 +129,9 @@ but only if you give this command in your .emacs."
 
 ;; Now do terminal-specific mappings of keys with no standard-keycap equivalent
 
-(define-key esc-map "9" 'beginning-of-buffer)		;'Begin'
-(define-key esc-map "0" 'end-of-buffer)			;'End'
-(define-key META-N-map "I" 'narrow-region)		;'Select'
+;;;(define-key esc-map "9" 'beginning-of-buffer)		;'Begin'
+;;;(define-key esc-map "0" 'end-of-buffer)			;'End'
+(define-key META-N-map "I" 'narrow-to-region)		;'Select'
 (define-key META-O-map "k" 'save-buffers-kill-emacs)	;'Exit'
 (define-key META-O-map "o" 'save-buffer)		;'Save'
 (define-key META-O-map "s" 'undo)			;'Undo'

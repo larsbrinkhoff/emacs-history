@@ -124,8 +124,9 @@ but does not copy any new mail into the file."
 		 (or rmail-primary-inbox-list
 		     (list "~/mbox"
 			   (concat rmail-spool-directory
-				   (if (getenv "LOGNAME")
-				       "$LOGNAME" "$USER"))))))
+				   (or (getenv "LOGNAME")
+				       (getenv "USER")
+				       (user-login-name)))))))
       ;; Convert all or part to Babyl file if possible.
       (rmail-convert-file)
       (goto-char (point-max))
@@ -452,8 +453,10 @@ and use that file as the inbox."
 	    ;; On some systems, /usr/spool/mail/foo is a directory
 	    ;; and the actual inbox is /usr/spool/mail/foo/foo.
 	    (if (file-directory-p file)
-		(setq file (substitute-in-file-name
-			     (expand-file-name "$USER" file))))))
+		(setq file (expand-file-name (or (getenv "LOGNAME")
+						 (getenv "USER")
+						 (user-login-name))
+					     file)))))
       (if (or (file-exists-p tofile) (file-exists-p file))
 	  (message "Getting mail from %s..." file))
       ;; Set TOFILE if have not already done so, and
@@ -550,7 +553,7 @@ and use that file as the inbox."
 	       (if (re-search-forward
 		    (concat "^[\^_]?\\("
 			    "From [^ \n]*\\(\\|\".*\"[^ \n]*\\)  ?[^ \n]* [^ \n]* *"
-			    "[0-9]* [0-9:]* \\([A-Z]?[A-Z][A-Z]T \\|[-+][0-9][0-9][0-9][0-9] \\|\\)" ; EDT, -0500
+			    "[0-9]* [0-9:]*\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) " ; EDT, -0500
 			    "19[0-9]* *$\\|"
 			    mmdf-delim1 "\\|"
 			    "^Babyl Options:\\|"
@@ -594,7 +597,7 @@ and use that file as the inbox."
 	  (goto-char start))
 	(let ((case-fold-search nil))
 	  (if (re-search-forward
-	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( [A-Z]?[A-Z][A-Z]T\\|[-+][0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\n" nil t)
+	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( ?[A-Z]?[A-Z][A-Z]T\\| ?[-+]?[0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\) *\n" nil t)
 	      (replace-match
 		(concat
 		  ;; Keep and reformat the date if we don't

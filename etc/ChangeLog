@@ -1,3 +1,11 @@
+Thu Jun 15 12:53:43 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c [USG]: Define F_OK, etc., if not in header.
+
+Fri May 12 22:08:09 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (readline): Split call to xrealloc for 3b1 cc bug.
+
 Tue Apr 18 21:31:25 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* loadst.c: on bsd4.3, use gettimeofday instead of CPUSTATES.

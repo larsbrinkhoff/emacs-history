@@ -330,7 +330,7 @@ skip_chars (forwardp, string, lim)
   while (p != pend)
     {
       c = *p++;
-      if (*p == '\\')
+      if (c == '\\')
         {
 	  if (p == pend) break;
 	  c = *p++;
@@ -1034,10 +1034,12 @@ Leaves point at end of replacement text.")
 	      if (c == '&')
 		place (search_regs.start[0],
 		       search_regs.end[0]);
-	      else if (c >= '1' && c <= RE_NREGS + '0' &&
-		       search_regs.start[c - '0'] >= 1)
-		place (search_regs.start[c - '0'],
-		       search_regs.end[c - '0']);
+	      else if (c >= '1' && c <= RE_NREGS + '0')
+		{
+		  if (search_regs.start[c - '0'] >= 1)
+		    place (search_regs.start[c - '0'],
+			   search_regs.end[c - '0']);
+		}
 	      else
 		insert_char (c);
 	    }

@@ -1,749 +1,800 @@
-.:
-total 180
--rw-rw-rw-  3 rms       wheel         481 Aug 30 13:43 ChangeLog
--rw-rw-rw-  3 rms       wheel       26479 Jun 27 22:18 INSTALL
--rw-rw-rw-  3 rms       wheel        3306 Aug 30 13:43 Makefile
--rw-rw-rw-  3 rms       wheel       19264 Jul 24 04:48 PROBLEMS
--rw-rw-rw-  4 rms       wheel        2030 Jul 18  1987 README
--rw-rw-rw-  4 rms       wheel        4896 Jan 26 11:04 VMSINSTALL
--rw-rw-rw-  4 rms       wheel        2826 Feb 13 01:22 VMSNOTES
--rw-rw-rw-  4 rms       wheel        1412 Jun 15  1987 allrename.com
--rw-rw-rw-  4 rms       wheel         665 Mar 18 22:39 build-install
--rw-rw-rw-  1 rms       wheel           0 Sep  3 21:24 dir.list
--rw-rw-rw-  4 rms       wheel         962 Jun 10  1987 emacs.com
--rw-rw-rw-  4 rms       wheel        2489 May  6 13:55 kepteditor.com
--rw-rw-rw-  3 rms       wheel        2176 May 16 21:31 vmsdist.com
+total 158
+-rw-rw-rw-  1 rms           481 Aug 30  1988 ChangeLog
+-rw-rw-rw-  1 rms          6656 Apr  7 20:37 INSTALL
+-rw-rw-rw-  1 rms          3306 Aug 30  1988 Makefile
+-rw-rw-rw-  1 rms         24041 Aug  7 21:54 PROBLEMS
+-rw-rw-rw-  1 rms          2030 Jul 18  1987 README
+-rw-rw-rw-  1 rms          5168 Aug 21 18:04 VMSINSTALL
+-rw-rw-rw-  1 rms          2826 Feb 13  1988 VMSNOTES
+-rw-rw-rw-  1 rms          1412 Jun 15  1987 allrename.com
+-rw-rw-rw-  1 rms           665 Mar 18  1988 build-install
+drwxrwxrwx  2 rms           512 Aug  5 16:03 cpp
+-rw-rw-rw-  1 rms             0 Aug 21 18:07 dir.list
+-rw-rw-rw-  1 rms           962 Jun 10  1987 emacs.com
+drwxrwxrwx  2 rms          2048 Aug 16 23:21 etc
+drwxrwxrwx  2 rms          2048 Aug  5 16:03 gdb
+drwxrwxrwx  2 rms          1024 Aug  5 16:01 info
+-rw-rw-rw-  1 rms          2489 May  6  1988 kepteditor.com
+drwxrwxrwx  3 rms          5632 Aug 16 23:21 lisp
+drwxrwxrwx  2 rms          1024 Aug  5 16:02 man
+drwxrwxrwx  3 rms          1536 Aug 11 00:00 oldXMenu
+drwxrwxrwx  2 rms           512 Aug  5 16:03 shortnames
+drwxrwxrwx  2 rms          5632 Aug 21 18:05 src
+-rw-rw-rw-  1 rms          2176 May 16  1988 vmsdist.com
 
-./cpp:
+cpp:
 total 160
--rw-rw-rw-  4 rms       wheel         539 Mar  2  1987 Makefile
--rw-rw-rw-  4 rms       wheel       65119 Feb 12 17:07 cccp.c
--rw-rw-rw-  4 rms       wheel       14492 Feb 12 17:07 cexp.y
+-rw-rw-rw-  1 rms           539 Mar  2  1987 Makefile
+-rw-rw-rw-  1 rms         65154 Dec 28 23:06 cccp.c
+-rw-rw-rw-  1 rms         14492 Feb 12  1988 cexp.y
 
-./etc:
-total 1862
--rw-rw-rw-  4 rms       wheel        1913 Mar 18 22:40 3B-MAXMEM
--rw-rw-rw-  4 rms       wheel        1836 Jul 16  1986 APOLLO
--rw-rw-rw-  3 rms       wheel        3102 Aug 31 19:27 APPLE
--rw-rw-rw-  3 rms       wheel        6938 Aug 15 19:21 CCADIFF
--rw-rw-rw-  4 rms       wheel        4975 Nov 10  1986 COOKIES
--rw-rw-rw- 16 rms       wheel        7742 Feb 11 19:46 COPYING
--rw-rw-rw-  3 rms       wheel        2844 Aug  4 19:43 ChangeLog
--rw-rw-rw-  4 rms       wheel        4286 Sep 29  1986 DEBUG
--rw-rw-rw-  3 rms       wheel       30529 Aug 17 10:05 DIFF
--rw-rw-rw-  3 rms       wheel        7854 Aug 17 10:07 DISTRIB
--rw-rw-rw-  3 tower     wheel        8333 Jul 18 16:11 FTP
--rw-rw-rw-  4 rms       wheel       23947 Feb 22  1987 GNU
--rw-rw-rw-  4 rms       wheel       23788 Nov 10  1986 GOSDIFF
--rw-rw-rw-  4 rms       wheel       24529 Sep 16  1987 INTERVIEW
--rw-rw-rw-  4 rms       wheel        3048 Apr 17  1985 LEDIT
--rw-rw-rw-  3 rms       wheel       17483 Aug 31 19:42 MACHINES
--rw-rw-rw-  3 tower     wheel       10252 Aug 16 20:13 MAILINGLISTS
--rw-rw-rw-  4 rms       wheel        8791 Jun 28  1987 MOTIVATION
--rw-rw-rw-  3 rms       wheel        2028 Jun 16 08:00 Makefile
--rw-rw-rw-  3 rms       wheel       63433 Aug 22 13:38 NEWS
--rw-rw-rw-  4 rms       wheel       51193 May  6  1986 ONEWS
--rw-rw-rw-  4 rms       wheel       47927 Jan 28  1986 OONEWS
--rw-rw-rw-  4 rms       wheel        1538 Jun  4  1985 RCP
--rw-rw-rw-  4 rms       wheel         272 Sep 14  1986 README
--rw-rw-rw-  2 rms       wheel       16033 Sep  3 11:18 SERVICE
--rw-rw-rw-  4 rms       wheel        8191 May 25  1987 SUN-SUPPORT
--rw-rw-rw-  3 rms       wheel        1900 Aug 31 18:39 SUNBUG
--rw-rw-rw-  4 rms       wheel        6359 Apr 13 07:28 TERMS
--rw-rw-rw-  4 rms       wheel         976 May  6 14:41 TO-DO
--rw-rw-rw-  3 rms       wheel       33852 May 19 13:16 TUTORIAL
--rw-rw-rw-  4 rms       wheel       17843 Oct 10  1986 XDOC
--rw-rw-rw-  3 rms       wheel        7042 Aug  5 17:48 XENIX
--rw-rw-rw-  4 rms       wheel        9943 Jan 31 18:53 Xkeymap.txt
--rw-rw-rw-  4 rms       wheel         184 Mar  4  1987 celibacy.1
--rw-rw-rw-  3 rms       wheel        1117 Aug 17 10:14 complink.com
--rw-rw-rw-  4 rms       wheel        3440 Nov 25  1985 cvtmail.c
--rw-rw-rw-  4 rms       wheel         930 Mar 21  1987 digest-doc.c
--rw-rw-rw-  4 rms       wheel        3392 Nov 10  1986 echo.msg
--rw-rw-rw-  4 rms       wheel       13944 Sep 17  1987 emacs.1
--rw-rw-rw-  4 rms       wheel        1933 Mar 13  1987 emacs.icon
--rw-rw-rw-  4 rms       wheel        6901 Mar  7  1986 emacs.names
--rw-rw-rw-  3 rms       wheel        4870 Aug  4 19:41 emacsclient.c
--rw-rw-rw-  4 rms       wheel        4349 Mar 19  1987 emacstool.1
--rw-rw-rw-  4 rms       wheel        9900 May 17  1987 emacstool.c
--rw-rw-rw-  4 rms       wheel       11999 Feb 11 19:54 env.c
--rw-rw-rw-  3 rms       wheel        5687 Jun 14 04:25 etags-vmslib.c
--rw-rw-rw-  3 rms       wheel       36944 Jun 23 08:45 etags.c
--rw-rw-rw-  3 rms       wheel         599 Jun 14 22:23 etags.vms
--rw-rw-rw-  4 rms       wheel       13370 Apr 28 08:59 fakemail.c
--rw-rw-rw-  4 rms       wheel        4842 Apr 17  1985 ledit.l
--rw-rw-rw-  4 rms       wheel         427 Apr 17  1985 leditcfns.c
--rw-rw-rw-  3 rms       wheel        7474 Jun  8 08:19 loadst.c
--rw-rw-rw-  4 rms       wheel       11485 Aug 14  1987 make-docfile.c
--rw-rw-rw-  4 rms       wheel        1998 Mar 15  1987 makedoc.com
--rw-rw-rw-  4 rms       wheel       12403 Apr 28 08:57 movemail.c
--rw-rw-rw-  4 rms       wheel        5623 Sep 17  1987 qsort.c
--rw-rw-rw-  4 rms       wheel       18065 Sep 17  1987 refcard.tex
--rw-rw-rw-  3 rms       wheel        7362 Jul 12 22:07 server.c
--rw-rw-rw-  4 rms       wheel        2290 Nov 18 19:05 sex.6
--rw-rw-rw-  4 rms       wheel        4930 Jun  4 00:22 sorted-doc.c
--rw-rw-rw-  4 rms       wheel         733 Mar 25 01:57 spook.lines
--rw-rw-rw-  3 rms       wheel       56891 Jun 18 09:15 termcap.dat
--rw-rw-rw-  4 rms       wheel      130198 Oct 27  1986 termcap.ucb
--rw-rw-rw-  4 rms       wheel        1427 May 22  1987 test-distrib.c
--rw-rw-rw-  4 rms       wheel         222 Apr 23  1985 testfile
--rw-rw-rw-  4 rms       wheel        1221 Mar 18 22:41 ulimit.hack
--rw-rw-rw-  4 rms       wheel       21647 Feb 11 02:04 vipcard.tex
--rw-rw-rw-  4 rms       wheel          53 Mar 20  1987 vmslink.opt
--rw-rw-rw-  4 rms       wheel         497 Aug 14  1987 xmouse.doc
--rw-rw-rw-  4 rms       wheel        1830 Apr 13 02:13 yow.c
--rw-rw-rw-  4 rms       wheel       38353 Mar  3  1987 yow.lines
+etc:
+total 1910
+-rw-rw-rw-  1 rms          1913 Mar 18  1988 3B-MAXMEM
+-rw-rw-rw-  1 rms          1836 Jul 16  1986 APOLLO
+-rw-rw-rw-  1 rms          3102 Aug 31  1988 APPLE
+-rw-rw-rw-  1 rms          6938 Aug 15  1988 CCADIFF
+-rw-rw-rw-  1 rms          4975 Nov 10  1986 COOKIES
+-rw-rw-rw-  5 rms          7742 Feb 11  1988 COPYING
+-rw-rw-rw-  1 rms          4642 Jun 15 12:53 ChangeLog
+-rw-rw-rw-  1 rms          4286 Sep 29  1986 DEBUG
+-rw-rw-rw-  1 rms         30529 Aug 17  1988 DIFF
+-rw-rw-rw-  1 rms          8763 Feb 24 10:06 DISTRIB
+-rw-rw-rw-  1 rms          8350 Sep  7  1988 FTP
+-rw-rw-rw-  1 rms         23947 Feb 22  1987 GNU
+-rw-rw-rw-  1 rms         23788 Nov 10  1986 GOSDIFF
+-rw-rw-rw-  1 rms         24529 Sep 16  1987 INTERVIEW
+-rw-rw-rw-  1 rms          3048 Apr 17  1985 LEDIT
+-rw-rw-rw-  1 rms         19098 Jul 20 01:23 MACHINES
+-rw-rw-rw-  1 rms         13817 Feb 24 10:07 MAILINGLISTS
+-rw-rw-rw-  1 rms          8791 Jun 28  1987 MOTIVATION
+-rw-rw-rw-  1 rms          2099 Jul 30 20:54 Makefile
+-rw-rw-rw-  1 rms         63433 Aug 22  1988 NEWS
+-rw-rw-rw-  1 rms         51193 May  6  1986 ONEWS
+-rw-rw-rw-  1 rms         47927 Jan 28  1986 OONEWS
+-rw-rw-rw-  1 rms          1538 Jun  4  1985 RCP
+-rw-rw-rw-  1 rms           272 Sep 14  1986 README
+-rw-rw-rw-  1 rms         30060 Jul  4 21:01 SERVICE
+-rw-rw-rw-  1 rms          8155 Mar 15 23:45 SUN-SUPPORT
+-rw-rw-rw-  1 rms          1900 Aug 31  1988 SUNBUG
+-rw-rw-rw-  1 rms          6518 Jul 20 00:32 TERMS
+-rw-rw-rw-  1 rms           976 May  6  1988 TO-DO
+-rw-rw-rw-  1 rms         33852 May 19  1988 TUTORIAL
+-rw-rw-rw-  1 rms         17843 Oct 10  1986 XDOC
+-rw-rw-rw-  1 rms          7042 Aug  5  1988 XENIX
+-rw-rw-rw-  1 rms          9943 Jan 31  1988 Xkeymap.txt
+-rw-rw-rw-  1 rms           184 Mar  4  1987 celibacy.1
+-rw-rw-rw-  1 rms          1117 Aug 17  1988 complink.com
+-rw-rw-rw-  1 rms          3440 Nov 25  1985 cvtmail.c
+-rw-rw-rw-  1 rms           930 Mar 21  1987 digest-doc.c
+-rw-rw-rw-  1 rms          3392 Nov 10  1986 echo.msg
+-rw-rw-rw-  1 rms         13944 Sep 17  1987 emacs.1
+-rw-rw-rw-  1 rms          1933 Mar 16 17:46 emacs.icon
+-rw-rw-rw-  1 rms          6901 Mar  7  1986 emacs.names
+-rw-rw-rw-  1 rms          4867 Dec 28 23:16 emacsclient.c
+-rw-rw-rw-  1 rms          4944 Mar 15 23:43 emacstool.1
+-rw-rw-rw-  1 rms         10807 Mar 15 23:34 emacstool.c
+-rw-rw-rw-  1 rms         11999 Feb 11  1988 env.c
+-rw-rw-rw-  1 rms          5687 Jun 14  1988 etags-vmslib.c
+-rw-rw-rw-  1 rms         36965 May 12 22:08 etags.c
+-rw-rw-rw-  1 rms           599 Jun 14  1988 etags.vms
+-rw-rw-rw-  1 rms         13370 Apr 28  1988 fakemail.c
+-rw-rw-rw-  1 rms          4842 Apr 17  1985 ledit.l
+-rw-rw-rw-  1 rms           427 Apr 17  1985 leditcfns.c
+-rw-rw-rw-  1 rms          7669 Apr 18 21:24 loadst.c
+-rw-rw-rw-  1 rms         11485 Aug 14  1987 make-docfile.c
+-rw-rw-rw-  1 rms          1998 Mar 15  1987 makedoc.com
+-rw-rw-rw-  1 rms         13532 Jun 15 12:53 movemail.c
+-rw-rw-rw-  1 rms          5623 Sep 17  1987 qsort.c
+-rw-rw-rw-  1 rms         18065 Sep 17  1987 refcard.tex
+-rw-rw-rw-  1 rms          7362 Jul 12  1988 server.c
+-rw-rw-rw-  1 rms          2290 Nov 18  1987 sex.6
+-rw-rw-rw-  1 rms          4930 Jun  4  1988 sorted-doc.c
+-rw-rw-rw-  1 rms           733 Mar 25  1988 spook.lines
+-rw-rw-rw-  1 rms         56890 Aug 12 12:51 termcap.dat
+-rw-rw-rw-  1 rms        130198 Feb 21 05:51 termcap.ucb
+-rw-rw-rw-  1 rms          1427 May 22  1987 test-distrib.c
+-rw-rw-rw-  1 rms           222 Apr 23  1985 testfile
+-rw-rw-rw-  1 rms          1221 Mar 18  1988 ulimit.hack
+-rw-rw-rw-  1 rms         21647 Feb 11  1988 vipcard.tex
+-rw-rw-rw-  1 rms            53 Mar 20  1987 vmslink.opt
+-rw-rw-rw-  1 rms           497 Aug 14  1987 xmouse.doc
+-rw-rw-rw-  1 rms          1830 Apr 13  1988 yow.c
+-rw-rw-rw-  1 rms         38353 Mar  3  1987 yow.lines
 
-./gdb:
+gdb:
 total 2670
--rw-rw-rw-  5 rms       wheel        7517 Feb 11 16:58 COPYING
--rw-rw-rw-  2 rms       wheel       58620 Sep  3 12:05 ChangeLog
--rw-rw-rw-  2 rms       wheel        4698 Sep  3 12:06 Makefile
--rw-rw-rw-  4 pete      wheel        1168 Jul  8 23:54 README
--rw-rw-rw-  5 rms       wheel       30273 May  6 10:37 TAGS
--rw-rw-rw-  5 rms       wheel        8285 Mar 25 02:01 blockframe.c
--rw-rw-rw-  4 rms       wheel       28258 Jun  9 05:43 breakpoint.c
--rw-rw-rw-  4 pete      wheel       46897 Jul 13 00:12 coffread.c
--rw-rw-rw-  5 rms       wheel       14515 Mar 25 19:12 command.c
--rw-rw-rw-  5 rms       wheel        7397 Feb 11 19:24 command.h
--rwxrwxrwx  3 rms       wheel        2273 Sep  1 13:21 config.gdb
--rw-rw-rw-  5 rms       wheel       19678 May  3 11:20 core.c
--rw-rw-rw-  4 pete      wheel       69156 Jul  7 02:02 dbxread.c
--rw-rw-rw-  4 rms       wheel        2499 May 22 14:22 defs.h
--rw-rw-rw-  5 rms       wheel        8436 Feb 11 19:24 environ.c
--rw-rw-rw-  5 rms       wheel         615 Jul 15  1986 environ.h
--rw-rw-rw-  5 rms       wheel       16501 Feb  3 13:33 eval.c
--rw-rw-rw-  4 rms       wheel        9484 May 30 22:57 expprint.c
--rw-rw-rw-  5 rms       wheel       27745 Apr 30 10:18 expread.y
--rw-rw-rw-  5 rms       wheel        6455 Nov 22  1986 expression.h
--rw-rw-rw-  4 pete      wheel       10805 Jun 27 23:23 findvar.c
--rw-rw-rw-  5 rms       wheel        7052 Feb 11 19:24 firstfile.c
--rw-rw-rw-  5 rms       wheel        2287 Sep 30  1986 frame.h
--rw-rw-rw-  5 rms       wheel        4006 Apr 13  1987 gdb.1
--rw-rw-rw-  5 rms       wheel       41892 Sep  2 13:12 gdb.ideas
--rw-rw-rw-  4 pete      wheel        6759 Jun 21 23:14 gld-pinsn.c
--rw-rw-rw-  4 pete      wheel       23615 Jun 27 23:26 infcmd.c
--rw-rw-rw-  5 rms       wheel        2820 Feb  3 17:04 inferior.h
--rw-rw-rw-  2 rms       wheel       23111 Sep  3 11:40 inflow.c
--rw-rw-rw-  5 rms       wheel       29393 Jun 25 04:23 infrun.c
--rw-rw-rw-  4 pete      wheel        6545 Jun 21 23:09 initialize.h
--rw-rw-rw-  5 rms       wheel         409 Jul 15  1986 kdb-start.c
--rw-rw-rw-  5 rms       wheel         172 Jul 15  1986 lastfile.c
--rw-rw-rw-  5 cph       wheel       20054 Apr 11 17:24 m-hp9k320.h
--rw-rw-rw-  3 rms       wheel       19325 Sep  1 13:17 m-hp9k320bsd.h
--rw-rw-rw-  8 rms       wheel         141 Feb  7 00:38 m-init.h
--rw-rw-rw-  5 rms       wheel       20411 Apr  7 01:26 m-isi.h
--rw-rw-rw-  5 rms       wheel         348 Mar 20 20:51 m-isiinit.h
--rw-rw-rw-  5 rms       wheel       15011 Mar 25 02:32 m-merlin.h
--rw-rw-rw-  3 rms       wheel       19335 Aug 30 17:54 m-news.h
--rw-rw-rw-  5 rms       wheel         146 Jan 15 04:52 m-newsinit.h
--rw-rw-rw-  4 pete      wheel       18267 Jun 17 21:31 m-npl.h
--rw-rw-rw-  4 pete      wheel         189 Jun 16 03:27 m-nplinit.h
--rw-rw-rw-  4 pete      wheel       17503 Jun 17 21:42 m-pn.h
--rw-rw-rw-  4 pete      wheel         191 Jun 16 03:27 m-pninit.h
--rw-rw-rw-  5 rms       wheel       15507 Apr  7 01:26 m-sun2.h
--rw-rw-rw-  5 rms       wheel         130 Jul 15  1986 m-sun2init.h
--rw-rw-rw-  8 rms       wheel       18051 Apr  7 01:26 m-sun3.h
--rw-rw-rw-  8 rms       wheel         141 Feb  7 00:38 m-sun3init.h
--rw-rw-rw-  4 pete      wheel       14711 Jun 17 23:20 m-umax.h
--rw-rw-rw-  5 rms       wheel         147 Apr  9 07:40 m-umaxinit.h
--rw-rw-rw-  5 rms       wheel       13590 Mar 25 02:31 m-vax.h
--rw-rw-rw-  5 rms       wheel         141 Sep 24  1986 m-vaxinit.h
--rw-rw-rw-  8 rms       wheel       68314 Apr  8 16:53 m68k-opcode.h
--rw-rw-rw-  7 pete      wheel       17695 Jun 21 23:14 m68k-pinsn.c
--rw-rw-rw-  4 rms       wheel       34227 Jul 20 15:21 main.c
--rw-rw-rw-  4 pete      wheel       18362 Jun 16 03:27 npl-opcode.h
--rw-rw-rw-  5 rms       wheel       10621 Nov 25 22:31 ns32k-opcode.h
--rw-rw-rw-  4 pete      wheel       10662 Jun 21 23:15 ns32k-pinsn.c
--rw-rw-rw-  7 rms       wheel       12230 Jun 17 11:43 obstack.c
--rw-rw-rw-  7 rms       wheel       18478 Jul 25 02:22 obstack.h
--rw-rw-rw-  8 rms       wheel       68314 Apr  8 16:53 opcode.h
--rw-rw-rw-  8 rms       wheel       18051 Apr  7 01:26 param.h
--rw-rw-rw-  7 pete      wheel       17695 Jun 21 23:14 pinsn.c
--rw-rw-rw-  4 pete      wheel       12573 Jun 16 03:27 pn-opcode.h
--rw-rw-rw-  4 pete      wheel       31150 Jul 22 23:43 printcmd.c
--rw-rw-rw-  5 rms       wheel       13024 Apr  7 21:06 remote.c
--rw-rw-rw-  4 rms       wheel       22485 May 23 14:54 source.c
--rw-rw-rw-  4 rms       wheel       16743 May 23 14:54 stack.c
--rw-rw-rw-  5 rms       wheel       12067 May  3 10:51 standalone.c
--rw-rw-rw-  5 rms       wheel        5366 Sep 30  1986 stuff.c
--rw-rw-rw-  4 pete      wheel       15537 Jul 26 03:03 symmisc.c
--rw-rw-rw-  5 rms       wheel       13976 Feb 17 18:57 symseg.h
--rw-rw-rw-  5 rms       wheel       30879 Apr  8 04:19 symtab.c
--rw-rw-rw-  5 rms       wheel        8030 Apr  8 04:17 symtab.h
--rw-rw-rw-  5 rms       wheel         303 Jul 16  1986 test2.c
--rw-rw-rw-  5 rms       wheel         602 Apr  9 07:35 testbpt.c
--rw-rw-rw-  5 rms       wheel         205 Jan  2 12:43 testfun.c
--rw-rw-rw-  5 rms       wheel          79 Jul 15  1986 testrec.c
--rw-rw-rw-  5 rms       wheel         365 Jul 15  1986 testreg.c
--rw-rw-rw-  5 rms       wheel         387 Dec  3 18:11 testregs.c
--rw-rw-rw-  4 rms       wheel        9872 May 30 22:57 utils.c
--rw-rw-rw-  5 rms       wheel        8374 Dec 17 11:55 valarith.c
--rw-rw-rw-  5 rms       wheel       16436 Jan  7 22:20 valops.c
--rw-rw-rw-  2 rms       wheel       17003 Sep  3 12:04 valprint.c
--rw-rw-rw-  5 rms       wheel        3799 Feb  6 20:16 value.h
--rw-rw-rw-  4 rms       wheel       19062 May 20 15:02 values.c
--rw-rw-rw-  5 rms       wheel       12750 Jul 15  1986 vax-opcode.h
--rw-rw-rw-  4 pete      wheel        5681 Jun 21 23:16 vax-pinsn.c
--rw-rw-rw-  4 rms       wheel          73 Aug  1 03:56 version.c
--rw-rw-rw-  5 rms       wheel         961 May  1 12:12 wait.h
--rw-rw-rw-  4 rms       wheel       19446 Jul 20 18:15 xgdb.c
+-rw-rw-rw-  1 rms          7517 Feb 11  1988 COPYING
+-rw-rw-rw-  1 rms         58620 Sep  3  1988 ChangeLog
+-rw-rw-rw-  1 rms          4698 Sep  3  1988 Makefile
+-rw-rw-rw-  1 rms          1168 Jul  8  1988 README
+-rw-rw-rw-  1 rms         30273 May  6  1988 TAGS
+-rw-rw-rw-  1 rms          8285 Mar 25  1988 blockframe.c
+-rw-rw-rw-  1 rms         28258 Jun  9  1988 breakpoint.c
+-rw-rw-rw-  1 rms         46897 Jul 13  1988 coffread.c
+-rw-rw-rw-  1 rms         14515 Mar 25  1988 command.c
+-rw-rw-rw-  1 rms          7397 Feb 11  1988 command.h
+-rwxrwxrwx  1 rms          2273 Sep  1  1988 config.gdb
+-rw-rw-rw-  1 rms         19678 May  3  1988 core.c
+-rw-rw-rw-  1 rms         69156 Jul  7  1988 dbxread.c
+-rw-rw-rw-  1 rms          2499 May 22  1988 defs.h
+-rw-rw-rw-  1 rms          8436 Feb 11  1988 environ.c
+-rw-rw-rw-  1 rms           615 Jul 15  1986 environ.h
+-rw-rw-rw-  1 rms         16501 Feb  3  1988 eval.c
+-rw-rw-rw-  1 rms          9484 May 30  1988 expprint.c
+-rw-rw-rw-  1 rms         27745 Apr 30  1988 expread.y
+-rw-rw-rw-  1 rms          6455 Nov 22  1986 expression.h
+-rw-rw-rw-  1 rms         10805 Jun 27  1988 findvar.c
+-rw-rw-rw-  1 rms          7052 Feb 11  1988 firstfile.c
+-rw-rw-rw-  1 rms          2287 Sep 30  1986 frame.h
+-rw-rw-rw-  1 rms          4006 Apr 13  1987 gdb.1
+-rw-rw-rw-  1 rms         41892 Sep  2  1988 gdb.ideas
+-rw-rw-rw-  1 rms          6759 Jun 21  1988 gld-pinsn.c
+-rw-rw-rw-  1 rms         23615 Jun 27  1988 infcmd.c
+-rw-rw-rw-  1 rms          2820 Feb  3  1988 inferior.h
+-rw-rw-rw-  1 rms         23111 Sep  3  1988 inflow.c
+-rw-rw-rw-  1 rms         29393 Jun 25  1988 infrun.c
+-rw-rw-rw-  1 rms          6545 Jun 21  1988 initialize.h
+-rw-rw-rw-  1 rms           409 Jul 15  1986 kdb-start.c
+-rw-rw-rw-  1 rms           172 Jul 15  1986 lastfile.c
+-rw-rw-rw-  1 rms         20054 Apr 11  1988 m-hp9k320.h
+-rw-rw-rw-  1 rms         19325 Sep  1  1988 m-hp9k320bsd.h
+-rw-rw-rw-  2 rms           141 Feb  7  1988 m-init.h
+-rw-rw-rw-  1 rms         20411 Apr  7  1988 m-isi.h
+-rw-rw-rw-  1 rms           348 Mar 20  1988 m-isiinit.h
+-rw-rw-rw-  1 rms         15011 Mar 25  1988 m-merlin.h
+-rw-rw-rw-  1 rms         19335 Aug 30  1988 m-news.h
+-rw-rw-rw-  1 rms           146 Jan 15  1988 m-newsinit.h
+-rw-rw-rw-  1 rms         18267 Jun 17  1988 m-npl.h
+-rw-rw-rw-  1 rms           189 Jun 16  1988 m-nplinit.h
+-rw-rw-rw-  1 rms         17503 Jun 17  1988 m-pn.h
+-rw-rw-rw-  1 rms           191 Jun 16  1988 m-pninit.h
+-rw-rw-rw-  1 rms         15507 Apr  7  1988 m-sun2.h
+-rw-rw-rw-  1 rms           130 Jul 15  1986 m-sun2init.h
+-rw-rw-rw-  2 rms         18051 Apr  7  1988 m-sun3.h
+-rw-rw-rw-  2 rms           141 Feb  7  1988 m-sun3init.h
+-rw-rw-rw-  1 rms         14711 Jun 17  1988 m-umax.h
+-rw-rw-rw-  1 rms           147 Apr  9  1988 m-umaxinit.h
+-rw-rw-rw-  1 rms         13590 Mar 25  1988 m-vax.h
+-rw-rw-rw-  1 rms           141 Sep 24  1986 m-vaxinit.h
+-rw-rw-rw-  2 rms         68314 Apr  8  1988 m68k-opcode.h
+-rw-rw-rw-  2 rms         17695 Jun 21  1988 m68k-pinsn.c
+-rw-rw-rw-  1 rms         34227 Jul 20  1988 main.c
+-rw-rw-rw-  1 rms         18362 Jun 16  1988 npl-opcode.h
+-rw-rw-rw-  1 rms         10621 Nov 25  1987 ns32k-opcode.h
+-rw-rw-rw-  1 rms         10662 Jun 21  1988 ns32k-pinsn.c
+-rw-rw-rw-  1 rms         12230 Jun 17  1988 obstack.c
+-rw-rw-rw-  1 rms         18478 Jul 25  1988 obstack.h
+-rw-rw-rw-  2 rms         68314 Apr  8  1988 opcode.h
+-rw-rw-rw-  2 rms         18051 Apr  7  1988 param.h
+-rw-rw-rw-  2 rms         17695 Jun 21  1988 pinsn.c
+-rw-rw-rw-  1 rms         12573 Jun 16  1988 pn-opcode.h
+-rw-rw-rw-  1 rms         31150 Jul 22  1988 printcmd.c
+-rw-rw-rw-  1 rms         13024 Apr  7  1988 remote.c
+-rw-rw-rw-  1 rms         22485 May 23  1988 source.c
+-rw-rw-rw-  1 rms         16743 May 23  1988 stack.c
+-rw-rw-rw-  1 rms         12067 May  3  1988 standalone.c
+-rw-rw-rw-  1 rms          5366 Sep 30  1986 stuff.c
+-rw-rw-rw-  1 rms         15537 Jul 26  1988 symmisc.c
+-rw-rw-rw-  1 rms         13976 Feb 17  1988 symseg.h
+-rw-rw-rw-  1 rms         30879 Apr  8  1988 symtab.c
+-rw-rw-rw-  1 rms          8030 Apr  8  1988 symtab.h
+-rw-rw-rw-  1 rms           303 Jul 16  1986 test2.c
+-rw-rw-rw-  1 rms           602 Apr  9  1988 testbpt.c
+-rw-rw-rw-  1 rms           205 Jan  2  1988 testfun.c
+-rw-rw-rw-  1 rms            79 Jul 15  1986 testrec.c
+-rw-rw-rw-  1 rms           365 Jul 15  1986 testreg.c
+-rw-rw-rw-  1 rms           387 Dec  3  1987 testregs.c
+-rw-rw-rw-  1 rms          9872 May 30  1988 utils.c
+-rw-rw-rw-  1 rms          8374 Dec 17  1987 valarith.c
+-rw-rw-rw-  1 rms         16436 Jan  7  1988 valops.c
+-rw-rw-rw-  1 rms         17003 Sep  3  1988 valprint.c
+-rw-rw-rw-  1 rms          3799 Feb  6  1988 value.h
+-rw-rw-rw-  1 rms         19062 May 20  1988 values.c
+-rw-rw-rw-  1 rms         12750 Jul 15  1986 vax-opcode.h
+-rw-rw-rw-  1 rms          5681 Jun 21  1988 vax-pinsn.c
+-rw-rw-rw-  1 rms            73 Sep  8  1988 version.c
+-rw-rw-rw-  1 rms           961 May  1  1988 wait.h
+-rw-rw-rw-  1 rms         19446 Jul 20  1988 xgdb.c
 
-./info:
-total 2400
--rw-rw-rw- 16 rms       wheel        7742 Feb 11 19:46 COPYING
--rw-rw-rw-  4 rms       wheel        1094 Apr 29 16:24 dir
--rw-rw-rw-  4 rms       wheel        7487 Feb 13 02:55 emacs
--rw-rw-rw-  4 rms       wheel       54793 Feb 13 02:55 emacs-1
--rw-rw-rw-  4 rms       wheel       51718 Feb 13 02:55 emacs-10
--rw-rw-rw-  4 rms       wheel       53921 Feb 13 02:55 emacs-11
--rw-rw-rw-  4 rms       wheel       59859 Feb 13 02:55 emacs-12
--rw-rw-rw-  4 rms       wheel       14445 Feb 13 02:55 emacs-13
--rw-rw-rw-  4 rms       wheel       53071 Feb 13 02:55 emacs-2
--rw-rw-rw-  4 rms       wheel       51380 Feb 13 02:55 emacs-3
--rw-rw-rw-  4 rms       wheel       51289 Feb 13 02:55 emacs-4
--rw-rw-rw-  4 rms       wheel       51739 Feb 13 02:55 emacs-5
--rw-rw-rw-  4 rms       wheel       54399 Feb 13 02:55 emacs-6
--rw-rw-rw-  4 rms       wheel       51598 Feb 13 02:55 emacs-7
--rw-rw-rw-  4 rms       wheel       52877 Feb 13 02:55 emacs-8
--rw-rw-rw-  4 rms       wheel       51850 Feb 13 02:55 emacs-9
--rw-rw-rw-  4 rms       wheel        2515 Feb 12 16:41 gdb
--rw-rw-rw-  4 rms       wheel       51754 Feb 12 16:40 gdb-1
--rw-rw-rw-  4 rms       wheel       51547 Feb 12 16:40 gdb-2
--rw-rw-rw-  4 rms       wheel        4451 Feb 12 16:40 gdb-3
--rw-rw-rw-  4 rms       wheel       27227 Apr  9 03:04 info
--rw-rw-rw-  4 rms       wheel        1996 Jul 21 17:29 termcap
--rw-rw-rw-  4 rms       wheel       48787 Jul 21 17:29 termcap-1
--rw-rw-rw-  4 rms       wheel       44052 Jul 21 17:29 termcap-2
--rw-rw-rw-  4 rms       wheel       43548 Jul 21 17:29 termcap-3
--rw-rw-rw-  4 rms       wheel        4027 Jul 19 17:36 texinfo
--rw-rw-rw-  4 rms       wheel       48668 Jul 19 17:36 texinfo-1
--rw-rw-rw-  4 rms       wheel       49577 Jul 19 17:36 texinfo-2
--rw-rw-rw-  4 rms       wheel       49106 Jul 19 17:36 texinfo-3
--rw-rw-rw-  4 rms       wheel       37388 Jul 19 17:36 texinfo-4
--rw-rw-rw-  4 rms       wheel       78372 Feb 13 03:13 vip
+info:
+total 2390
+-rw-rw-rw-  5 rms          7742 Feb 11  1988 COPYING
+-rw-rw-rw-  1 rms          1094 Apr 29  1988 dir
+-rw-rw-rw-  1 rms          7487 Feb 13  1988 emacs
+-rw-rw-rw-  1 rms         54793 Feb 13  1988 emacs-1
+-rw-rw-rw-  1 rms         51718 Feb 13  1988 emacs-10
+-rw-rw-rw-  1 rms         53921 Feb 13  1988 emacs-11
+-rw-rw-rw-  1 rms         59859 Feb 13  1988 emacs-12
+-rw-rw-rw-  1 rms         14445 Feb 13  1988 emacs-13
+-rw-rw-rw-  1 rms         53071 Feb 13  1988 emacs-2
+-rw-rw-rw-  1 rms         51380 Feb 13  1988 emacs-3
+-rw-rw-rw-  1 rms         51289 Feb 13  1988 emacs-4
+-rw-rw-rw-  1 rms         51739 Feb 13  1988 emacs-5
+-rw-rw-rw-  1 rms         54399 Feb 13  1988 emacs-6
+-rw-rw-rw-  1 rms         51598 Feb 13  1988 emacs-7
+-rw-rw-rw-  1 rms         52877 Feb 13  1988 emacs-8
+-rw-rw-rw-  1 rms         51850 Feb 13  1988 emacs-9
+-rw-rw-rw-  1 rms          2515 Feb 12  1988 gdb
+-rw-rw-rw-  1 rms         51754 Feb 12  1988 gdb-1
+-rw-rw-rw-  1 rms         51547 Feb 12  1988 gdb-2
+-rw-rw-rw-  1 rms          4451 Feb 12  1988 gdb-3
+-rw-rw-rw-  1 rms         27227 Apr  9  1988 info
+-rw-rw-rw-  1 rms          2001 Mar 10 14:20 termcap
+-rw-rw-rw-  1 rms         51296 Mar 10 14:20 termcap-1
+-rw-rw-rw-  1 rms         52436 Mar 10 14:20 termcap-2
+-rw-rw-rw-  1 rms         26958 Mar 10 14:20 termcap-3
+-rw-rw-rw-  1 rms          4027 Dec 29 01:20 texinfo
+-rw-rw-rw-  1 rms         48677 Dec 29 01:20 texinfo-1
+-rw-rw-rw-  1 rms         49589 Dec 29 01:20 texinfo-2
+-rw-rw-rw-  1 rms         49143 Dec 29 01:20 texinfo-3
+-rw-rw-rw-  1 rms         37399 Dec 29 01:20 texinfo-4
+-rw-rw-rw-  1 rms         78372 Feb 13  1988 vip
 
-./lisp:
-total 6718
--rw-rw-rw- 16 rms       wheel        7742 Feb 11 19:46 COPYING
--rw-rw-rw-  3 rms       wheel      131591 Sep  1 14:23 ChangeLog
--rw-rw-rw-  3 rms       wheel        9549 Aug  4 15:26 abbrev.el
--rw-rw-rw-  4 rms       wheel        7437 Aug 10 20:43 abbrev.elc
--rw-rw-rw-  4 rms       wheel        1804 Apr 29  1987 abbrevlist.el
--rw-rw-rw-  4 rms       wheel         457 May 13  1987 abbrevlist.elc
--rw-rw-rw-  4 rms       wheel       19512 Apr  9 03:20 ada.el
--rw-rw-rw-  4 rms       wheel       16382 Apr 11 20:43 ada.elc
--rw-rw-rw-  3 rms       wheel        3282 Aug 15 19:50 add-log.el
--rw-rw-rw-  3 rms       wheel        1536 Aug 15 19:50 add-log.elc
--rw-rw-rw-  3 rms       wheel        3656 Aug 17 21:27 autoinsert.el
--rw-rw-rw-  4 rms       wheel       11876 Mar 19 20:26 backquote.el
--rw-rw-rw-  4 rms       wheel        3718 Apr 11 20:44 backquote.elc
--rw-rw-rw-  3 rms       wheel       14328 May 16 21:20 bibtex.el
--rw-rw-rw-  4 rms       wheel       11087 May 22 18:12 bibtex.elc
--rw-rw-rw-  4 rms       wheel        5820 Jun 30  1987 blackbox.el
--rw-rw-rw-  4 rms       wheel        4404 Jun 30  1987 blackbox.elc
--rw-rw-rw-  4 rms       wheel        9853 Sep 16  1987 buff-menu.el
--rw-rw-rw-  4 rms       wheel        7452 Sep 16  1987 buff-menu.elc
--rw-rw-rw-  4 rms       wheel       40642 Mar 19 20:29 bytecomp.el
--rw-rw-rw-  4 rms       wheel       28944 Apr 11 20:44 bytecomp.elc
--rw-rw-rw-  3 rms       wheel        8836 Jul 18 00:36 c-fill.el
--rw-rw-rw-  4 rms       wheel        3309 Jul 19 16:53 c-fill.elc
--rw-rw-rw-  3 rms       wheel       24177 May 27 21:28 c-mode.el
--rw-rw-rw-  4 rms       wheel       12457 Jun  1 05:24 c-mode.elc
--rw-rw-rw-  4 rms       wheel       10097 Apr 20 05:25 cal.el
--rw-rw-rw-  4 rms       wheel        5944 Mar 18 18:44 chistory.el
--rw-rw-rw-  4 rms       wheel        4180 Apr 11 20:44 chistory.elc
--rw-rw-rw-  4 rms       wheel       19184 Apr 19 05:40 cl-indent.el
--rw-rw-rw-  4 rms       wheel        5841 Apr 20 04:47 cl-indent.elc
--rw-rw-rw-  4 rms       wheel       90670 Apr 10 00:03 cl.el
--rw-rw-rw-  4 rms       wheel       53720 Apr 11 20:48 cl.elc
--rw-rw-rw-  4 rms       wheel        1378 Apr 10 03:19 cmacexp.el
--rw-rw-rw-  4 rms       wheel        2121 Sep 30  1986 compare-w.el
--rw-rw-rw-  4 rms       wheel         659 Sep 30  1986 compare-w.elc
--rw-rw-rw-  3 rms       wheel       11794 Jul 18 00:26 compile.el
--rw-rw-rw-  4 rms       wheel        6533 Jul 19 16:32 compile.elc
--rw-rw-rw-  4 rms       wheel        8603 Dec  8 18:18 dabbrev.el
--rw-rw-rw-  4 rms       wheel        3347 Dec 23 17:41 dabbrev.elc
--rw-rw-rw-  4 rms       wheel        6178 Feb 12 02:14 dbx.el
--rw-rw-rw-  4 rms       wheel        4308 Feb 13 03:13 dbx.elc
--rw-rw-rw-  4 rms       wheel        9233 Apr 14 19:16 debug.el
--rw-rw-rw-  4 rms       wheel        6197 Apr 15 02:38 debug.elc
--rw-rw-rw-  3 rms       wheel       21346 Aug  8 08:14 dired.el
--rw-rw-rw-  4 rms       wheel       15602 Aug 10 20:43 dired.elc
--rw-rw-rw-  4 rms       wheel       12361 Mar 19  1987 disass.el
--rw-rw-rw-  4 rms       wheel        6599 Mar 19  1987 disass.elc
--rw-rw-rw-  4 rms       wheel        3105 Sep 30  1986 dissociate.el
--rw-rw-rw-  4 rms       wheel        1198 Sep 30  1986 dissociate.elc
--rw-rw-rw-  3 rms       wheel        6636 Jul  8 05:41 doctex.el
--rw-rw-rw-  4 rms       wheel       50878 Jan 21  1987 doctor.el
--rw-rw-rw-  4 rms       wheel       43447 Jan 31  1987 doctor.elc
--rw-rw-rw-  4 rms       wheel        9140 Jan 11  1987 ebuff-menu.el
--rw-rw-rw-  4 rms       wheel        7038 Jan 11  1987 ebuff-menu.elc
--rw-rw-rw-  4 rms       wheel        6741 Nov 20  1986 echistory.el
--rw-rw-rw-  4 rms       wheel        5590 Nov 20  1986 echistory.elc
--rw-rw-rw-  4 rms       wheel        5879 May 29  1987 edt-doc.el
--rw-rw-rw-  4 rms       wheel       16023 Jan 22 23:16 edt.el
--rw-rw-rw-  4 rms       wheel       12296 Feb  5 15:05 edt.elc
--rw-rw-rw-  4 rms       wheel       11858 May 16  1987 ehelp.el
--rw-rw-rw-  4 rms       wheel        7393 May 16  1987 ehelp.elc
--rw-rw-rw-  4 rms       wheel        6709 May 16  1987 electric.el
--rw-rw-rw-  4 rms       wheel        2376 May 16  1987 electric.elc
--rw-rw-rw-  4 rms       wheel        1681 Nov 11  1986 emacsbug.el
--rw-rw-rw-  3 rms       wheel       38242 Aug  8 08:16 files.el
--rw-rw-rw-  4 rms       wheel       29426 Aug 10 20:44 files.elc
--rw-rw-rw-  3 rms       wheel        6809 Aug 18 22:37 fill.el
--rw-rw-rw-  4 rms       wheel        3371 Aug 22 13:39 fill.elc
--rw-rw-rw-  4 rms       wheel       10420 Jan 21  1987 flame.el
--rw-rw-rw-  4 rms       wheel        9125 Jan 31  1987 flame.elc
--rw-rw-rw-  4 rms       wheel       15113 Dec  2  1986 float.el
--rw-rw-rw-  4 rms       wheel        8042 Dec  4  1986 float.elc
--rw-rw-rw-  3 rms       wheel       27452 Sep  1 14:24 fortran.el
--rw-rw-rw-  4 rms       wheel       20920 Sep  1 14:24 fortran.elc
--rw-rw-rw-  3 rms       wheel       13318 Jul 19 02:21 ftp.el
--rw-rw-rw-  4 rms       wheel        8658 Jul 19 16:32 ftp.elc
--rw-rw-rw-  3 rms       wheel       14177 May 22 18:10 gdb.el
--rw-rw-rw-  4 rms       wheel        7626 May 22 18:12 gdb.elc
--rw-rw-rw-  4 rms       wheel        3693 Dec  7  1986 gosmacs.el
--rw-rw-rw-  4 rms       wheel        1303 Sep 30  1986 grow-vers.el
--rw-rw-rw-  3 rms       wheel        5453 May 30 17:40 hanoi.el
--rw-rw-rw-  4 rms       wheel        2236 Jun  1 05:24 hanoi.elc
--rw-rw-rw-  3 rms       wheel       10253 May 28 19:18 help.el
--rw-rw-rw-  4 rms       wheel        8438 Jun  1 05:25 help.elc
--rw-rw-rw-  3 rms       wheel        5093 May 30 17:41 helper.el
--rw-rw-rw-  4 rms       wheel        3044 Jun  1 05:25 helper.elc
--rw-rw-rw-  4 rms       wheel       32352 Mar 19 20:17 hideif.el
--rw-rw-rw-  4 rms       wheel       17888 May  6 14:38 hideif.elc
--rw-rw-rw-  4 rms       wheel       19740 May  3 08:29 icon.el
--rw-rw-rw-  4 rms       wheel       10882 May  3 08:32 icon.elc
--rw-rw-rw-  4 rms       wheel        1641 Sep 30  1986 inc-vers.el
--rw-rw-rw-  4 rms       wheel        7491 Nov 19  1986 indent.el
--rw-rw-rw-  4 rms       wheel        4961 Jan 31  1987 indent.elc
--rw-rw-rw-  3 rms       wheel       23778 Jul 26 23:44 info.el
--rw-rw-rw-  4 rms       wheel       15930 Aug 10 20:44 info.elc
--rw-rw-rw-  4 rms       wheel       13722 Apr 21 00:39 informat.el
--rw-rw-rw-  4 rms       wheel        6734 Apr 21 01:30 informat.elc
--rw-rw-rw-  4 rms       wheel       13884 Dec  8 18:11 isearch.el
--rw-rw-rw-  4 rms       wheel        4713 Dec 23 17:42 isearch.elc
--rw-rw-rw-  4 rms       wheel        8593 Apr 22 07:09 kermit.el
--rw-rw-rw-  3 rms       wheel        5912 Jun 12 11:04 keypad.el
--rw-rw-rw-  4 rms       wheel        2451 Jun 21 13:07 keypad.elc
--rw-rw-rw-  4 rms       wheel        4773 Sep 30  1986 ledit.el
--rw-rw-rw-  3 rms       wheel       10281 Aug 23 16:56 life.el
--rw-rw-rw-  4 rms       wheel        5223 Aug 23 16:56 life.elc
--rw-rw-rw-  4 rms       wheel       22269 Apr  9 03:20 lisp-mode.el
--rw-rw-rw-  4 rms       wheel       11883 Apr 11 20:49 lisp-mode.elc
--rw-rw-rw-  4 rms       wheel        7524 Jun  1  1987 lisp.el
--rw-rw-rw-  4 rms       wheel        5131 Jun  1  1987 lisp.elc
--rw-rw-rw-  3 rms       wheel       72380 Aug 15 19:50 loaddefs.el
--rw-rw-rw-  3 rms       wheel        4523 Jul  5 14:00 loadup.el
--rw-rw-rw-  3 rms       wheel        2673 Jun 19 18:35 lpr.el
--rw-rw-rw-  4 rms       wheel        1478 Jun 21 13:07 lpr.elc
--rw-rw-rw-  4 rms       wheel        3991 Jan 21  1987 macros.el
--rw-rw-rw-  4 rms       wheel        2356 Jan 21  1987 macros.elc
--rw-rw-rw-  4 rms       wheel        6767 Sep 12  1987 mail-utils.el
--rw-rw-rw-  4 rms       wheel        3056 Sep 12  1987 mail-utils.elc
--rw-rw-rw-  4 rms       wheel        5736 Oct 31  1987 mailalias.el
--rw-rw-rw-  4 rms       wheel        2006 Dec 23 17:42 mailalias.elc
--rw-rw-rw-  4 rms       wheel        2918 Sep 18  1986 mailpost.el
--rw-rw-rw-  4 rms       wheel        3602 Sep 30  1986 makesum.el
--rw-rw-rw-  4 rms       wheel        1285 Sep 30  1986 makesum.elc
--rw-rw-rw-  3 rms       wheel        5310 May  8 15:23 man.el
--rw-rw-rw-  4 rms       wheel        2099 May 22 18:12 man.elc
--rw-rw-rw-  4 rms       wheel        4035 Sep 30  1986 medit.el
--rw-rw-rw-  4 rms       wheel        2763 Sep 30  1986 medit.elc
--rw-rw-rw-  3 rms       wheel         599 May 20 17:55 meese.el
--rw-rw-rw-  3 rms       wheel       87833 Sep  1 14:21 mh-e.el
--rw-rw-rw-  4 rms       wheel       63007 Sep  1 14:25 mh-e.elc
--rw-rw-rw-  4 rms       wheel       35989 Apr  9 03:20 mim-mode.el
--rw-rw-rw-  4 rms       wheel       20097 Apr 11 20:50 mim-mode.elc
--rw-rw-rw-  4 rms       wheel        3196 Sep 30  1986 mim-syntax.el
--rw-rw-rw-  4 rms       wheel        1276 Sep 30  1986 mim-syntax.elc
--rw-rw-rw-  3 rms       wheel       10005 May 30 17:44 mlconvert.el
--rw-rw-rw-  4 rms       wheel        9065 Jun  1 05:25 mlconvert.elc
--rw-rw-rw-  4 rms       wheel       11601 Sep 30  1986 mlsupport.el
--rw-rw-rw-  4 rms       wheel       10191 Sep 30  1986 mlsupport.elc
--rw-rw-rw-  3 rms       wheel       11820 May 30 17:45 modula2.el
--rw-rw-rw-  4 rms       wheel        9910 Jun  1 05:25 modula2.elc
--rw-rw-rw-  4 rms       wheel        4097 Jan 21  1987 novice.el
--rw-rw-rw-  3 rms       wheel        7000 Jun 22 10:33 nroff-mode.el
--rw-rw-rw-  4 rms       wheel        4621 Jul 19 16:33 nroff-mode.elc
--rw-rw-rw-  4 rms       wheel        4102 Dec  4 19:33 options.el
--rw-rw-rw-  4 rms       wheel        2742 Dec 23 17:43 options.elc
--rw-rw-rw-  3 rms       wheel       11919 Jul 26 19:30 outline.el
--rw-rw-rw-  4 rms       wheel        9516 Aug 10 20:44 outline.elc
--rw-rw-rw-  4 rms       wheel        4224 Nov 22 00:57 page.el
--rw-rw-rw-  4 rms       wheel        2165 Dec 23 17:43 page.elc
--rw-rw-rw-  4 rms       wheel        6926 Apr 15 03:47 paragraphs.el
--rw-rw-rw-  4 rms       wheel        4405 Apr 19 01:21 paragraphs.elc
--rw-rw-rw-  3 rms       wheel        5142 Jul 12 21:58 paths.el
--rw-rw-rw-  4 rms       wheel       22635 Dec  9 18:32 picture.el
--rw-rw-rw-  4 rms       wheel       19554 Dec 23 17:43 picture.elc
--rw-rw-rw-  4 rms       wheel        9333 Apr  9 03:20 prolog.el
--rw-rw-rw-  4 rms       wheel        6261 Apr 11 20:50 prolog.elc
--rw-rw-rw-  4 rms       wheel        7465 Sep 30  1986 rect.el
--rw-rw-rw-  4 rms       wheel        4981 Sep 30  1986 rect.elc
--rw-rw-rw-  4 rms       wheel        6512 Sep 30  1986 register.el
--rw-rw-rw-  4 rms       wheel        4144 Sep 30  1986 register.elc
--rw-rw-rw-  4 bfox      wheel       10422 May  2 17:50 replace.el
--rw-rw-rw-  4 rms       wheel        5995 May  3 08:31 replace.elc
--rw-rw-rw-  4 rms       wheel        9851 Sep  2  1987 rfc822.el
--rw-rw-rw-  4 rms       wheel        4213 Sep  2  1987 rfc822.elc
--rw-rw-rw-  3 rms       wheel       48139 Jul  4 12:29 rmail.el
--rw-rw-rw-  4 rms       wheel       29271 Jul 19 16:33 rmail.elc
--rw-rw-rw-  4 rms       wheel        3948 Feb 28  1987 rmailedit.el
--rw-rw-rw-  4 rms       wheel        2258 Feb 28  1987 rmailedit.elc
--rw-rw-rw-  4 rms       wheel        9331 Mar 21 02:10 rmailkwd.el
--rw-rw-rw-  4 rms       wheel        4576 Apr 11 20:51 rmailkwd.elc
--rw-rw-rw-  4 rms       wheel        1827 Jan  6  1987 rmailmsc.el
--rw-rw-rw-  4 rms       wheel         728 Jan  8  1987 rmailmsc.elc
--rw-rw-rw-  4 rms       wheel        4735 Apr 14 06:36 rmailout.el
--rw-rw-rw-  4 rms       wheel        2287 Apr 15 02:39 rmailout.elc
--rw-rw-rw-  3 rms       wheel       14633 Jul 31 06:46 rmailsum.el
--rw-rw-rw-  4 rms       wheel        9446 Aug 10 20:44 rmailsum.elc
--rw-rw-rw-  3 rms       wheel       35567 May 22 18:13 rnews.el
--rw-rw-rw-  4 rms       wheel       23720 May 22 18:15 rnews.elc
--rw-rw-rw-  3 rms       wheel       15115 Jun 15 10:16 rnewspost.el
--rw-rw-rw-  4 rms       wheel        8920 Jun 21 13:07 rnewspost.elc
--rw-rw-rw-  3 rms       wheel        8684 Aug 15 17:02 saveconf.el
--rw-rw-rw-  3 cph       wheel       18886 Jul 15 16:19 scheme.el
--rw-rw-rw-  4 cph       wheel       10904 Jul 19 16:34 scheme.elc
--rw-rw-rw-  4 rms       wheel       10735 Jan 22  1987 scribe.el
--rw-rw-rw-  4 rms       wheel        7839 Jan 27  1987 scribe.elc
--rw-rw-rw-  3 rms       wheel       15726 Jun  2 06:37 sendmail.el
--rw-rw-rw-  4 rms       wheel        9619 Jun 21 13:07 sendmail.elc
--rw-rw-rw-  3 rms       wheel       10435 Aug  4 19:38 server.el
--rw-rw-rw-  4 rms       wheel        5251 Aug 10 20:44 server.elc
--rw-rw-rw-  3 rms       wheel       16352 Jul  3 10:37 shell.el
--rw-rw-rw-  4 rms       wheel       12030 Jul 19 16:34 shell.elc
--rw-rw-rw-  3 rms       wheel       48206 Jul 22 06:14 simple.el
--rw-rw-rw-  4 rms       wheel       37662 Jul 22 06:43 simple.elc
--rw-rw-rw-  3 rms       wheel        5320 Aug 14 23:53 simula.defns
--rw-rw-rw-  3 rms       wheel       29268 Aug 15 19:17 simula.el
--rw-rw-rw-  4 rms       wheel       17293 Aug 15 19:20 simula.elc
--rw-rw-rw-  3 rms       wheel       13035 May 30 17:53 sort.el
--rw-rw-rw-  4 rms       wheel        8815 Jun  1 05:26 sort.elc
--rw-rw-rw-  3 rms       wheel        4694 Aug 18 14:21 spell.el
--rw-rw-rw-  4 rms       wheel        2593 Aug 22 13:39 spell.elc
--rw-rw-rw-  4 rms       wheel        3741 Apr  9 07:34 spook.el
--rw-rw-rw-  3 rms       wheel        8570 Jul 10 14:43 startup.el
--rw-rw-rw-  4 rms       wheel        4097 Jul 19 16:34 startup.elc
--rw-rw-rw-  4 rms       wheel        1320 Sep 12  1986 studly.el
--rw-rw-rw-  4 rms       wheel         774 Sep 12  1986 studly.elc
--rw-rw-rw-  4 rms       wheel        7821 May 16  1987 subr.el
--rw-rw-rw-  4 rms       wheel        5042 May 16  1987 subr.elc
--rw-rw-rw-  4 rms       wheel        6875 Mar 13  1987 sun-cursors.el
--rw-rw-rw-  4 rms       wheel       22873 Aug 14  1987 sun-fns.el
--rw-rw-rw-  4 rms       wheel       20146 Aug 15  1987 sun-fns.elc
--rw-rw-rw-  4 rms       wheel        2631 Jan  3  1987 sun-keys.el
--rw-rw-rw-  4 rms       wheel       24535 Aug 14  1987 sun-mouse.el
--rw-rw-rw-  4 rms       wheel       17075 Aug 15  1987 sun-mouse.elc
--rw-rw-rw-  4 rms       wheel        6408 Nov 22  1986 sup-mouse.el
--rw-rw-rw-  4 rms       wheel        3036 Dec 12  1986 sup-mouse.elc
--rw-rw-rw-  4 rms       wheel        1988 Sep 30  1986 tabify.el
--rw-rw-rw-  4 rms       wheel         786 Sep 30  1986 tabify.elc
--rw-rw-rw-  3 rms       wheel       10338 Jul 29 13:45 tags.el
--rw-rw-rw-  4 rms       wheel        7354 Aug 10 20:45 tags.elc
--rw-rw-rw-  4 rms       wheel        8150 Apr 10 02:55 telnet.el
--rw-rw-rw-  4 rms       wheel        5442 Apr 11 20:53 telnet.elc
--rw-rw-rw-  4 rms       wheel       39305 Apr 15 03:19 terminal.el
--rw-rw-rw-  4 rms       wheel       23792 Apr 19 01:22 terminal.elc
--rw-rw-rw-  3 rms       wheel       16706 May 19 16:57 tex-mode.el
--rw-rw-rw-  4 rms       wheel       12063 May 22 18:16 tex-mode.elc
--rw-rw-rw-  4 rms       wheel         467 Aug 11  1986 tex-start.el
--rw-rw-rw-  3 bob       wheel       42348 Jul 21 11:48 texinfmt.el
--rw-rw-rw-  4 rms       wheel       37282 Jul 22 06:44 texinfmt.elc
--rw-rw-rw-  3 bob       wheel        6826 Aug  3 12:27 texinfo.el
--rw-rw-rw-  4 rms       wheel        5590 Aug 10 20:45 texinfo.elc
--rw-rw-rw-  3 rms       wheel        4519 Jul  2 00:24 text-mode.el
--rw-rw-rw-  4 rms       wheel        3041 Jul 19 16:35 text-mode.elc
--rw-rw-rw-  4 rms       wheel        3467 Jan 21  1987 time.el
--rw-rw-rw-  4 rms       wheel        1412 Jan 21  1987 time.elc
--rw-rw-rw-  3 rms       wheel        1154 Jul 20 14:23 uncompress.el
--rw-rw-rw-  3 rms       wheel        1838 May 30 17:59 underline.el
--rw-rw-rw-  4 rms       wheel         739 Jun  1 05:27 underline.elc
--rw-rw-rw-  3 tower     wheel        3829 Aug  4 10:50 undigest.el
--rw-rw-rw-  4 rms       wheel        1380 Aug 10 20:45 undigest.elc
--rw-rw-rw-  4 rms       wheel        1083 Dec 14  1985 unused.el
--rw-rw-rw-  4 rms       wheel        4690 May 26  1987 userlock.el
--rw-rw-rw-  4 rms       wheel        3234 May 27  1987 userlock.elc
--rw-rw-rw-  1 rms       wheel        1743 Sep  3 21:24 version.el
--rw-rw-rw-  4 rms       wheel       57531 Jan  7  1987 vi.el
--rw-rw-rw-  4 rms       wheel       48538 Jan  8  1987 vi.elc
--rw-rw-rw-  3 rms       wheel       14636 Aug 21 21:04 view.el
--rw-rw-rw-  4 rms       wheel       12520 Aug 22 13:39 view.elc
--rw-rw-rw-  4 rms       wheel       97412 Feb 11 01:40 vip.el
--rw-rw-rw-  4 rms       wheel       69110 Feb 12 01:53 vip.elc
--rw-rw-rw-  4 rms       wheel        3396 May  6 18:19 vms-patch.el
--rw-rw-rw-  4 rms       wheel        1946 May  6 22:01 vms-patch.elc
--rw-rw-rw-  4 rms       wheel        4131 Sep 29  1986 vmsproc.el
--rw-rw-rw-  4 rms       wheel        2255 Mar 22  1987 vmsproc.elc
--rw-rw-rw-  4 rms       wheel        2000 Dec 21 19:52 window.el
--rw-rw-rw-  4 rms       wheel        1161 Dec 23 17:45 window.elc
--rw-rw-rw-  4 rms       wheel        5259 Sep 15  1987 x-menu.el
--rw-rw-rw-  4 rms       wheel        3126 Sep 16  1987 x-menu.elc
--rw-rw-rw-  4 rms       wheel       10679 Mar 24 04:04 x-mouse.el
--rw-rw-rw-  4 rms       wheel        9024 Apr 11 20:54 x-mouse.elc
--rw-rw-rw-  3 rms       wheel       32399 Aug 11 22:38 xscheme.el
--rw-rw-rw-  4 rms       wheel       27400 Aug 11 22:39 xscheme.elc
--rw-rw-rw-  4 rms       wheel        3002 Jan 21  1987 yow.el
--rw-rw-rw-  4 rms       wheel        1233 Jan 31  1987 yow.elc
+lisp:
+total 6738
+-rw-rw-rw-  5 rms          7742 Feb 11  1988 COPYING
+-rw-rw-rw-  1 rms        136873 Aug 15 22:43 ChangeLog
+-rw-rw-rw-  1 rms          9549 Aug  4  1988 abbrev.el
+-rw-rw-rw-  1 rms          7437 Aug 10  1988 abbrev.elc
+-rw-rw-rw-  1 rms          1804 Apr 29  1987 abbrevlist.el
+-rw-rw-rw-  1 rms           457 May 13  1987 abbrevlist.elc
+-rw-rw-rw-  1 rms         19512 Apr  9  1988 ada.el
+-rw-rw-rw-  1 rms         16382 Apr 11  1988 ada.elc
+-rw-rw-rw-  1 rms          3282 Aug 15  1988 add-log.el
+-rw-rw-rw-  1 rms          1536 Aug 15  1988 add-log.elc
+-rw-rw-rw-  1 rms          3640 Feb 23 06:47 autoinsert.el
+-rw-rw-rw-  1 rms         11876 Mar 19  1988 backquote.el
+-rw-rw-rw-  1 rms          3718 Apr 11  1988 backquote.elc
+-rw-rw-rw-  1 rms         11073 Apr  1 00:59 bg-mouse.el
+-rw-rw-rw-  1 rms         14328 May 16  1988 bibtex.el
+-rw-rw-rw-  1 rms         11087 May 22  1988 bibtex.elc
+-rw-rw-rw-  1 rms          5820 Jun 30  1987 blackbox.el
+-rw-rw-rw-  1 rms          4404 Jun 30  1987 blackbox.elc
+-rw-rw-rw-  1 rms          9853 Sep 16  1987 buff-menu.el
+-rw-rw-rw-  1 rms          7452 Sep 16  1987 buff-menu.elc
+-rw-rw-rw-  1 rms         40642 Mar 19  1988 bytecomp.el
+-rw-rw-rw-  1 rms         28944 Apr 11  1988 bytecomp.elc
+-rw-rw-rw-  1 rms          8836 Jul 18  1988 c-fill.el
+-rw-rw-rw-  1 rms          3309 Jul 19  1988 c-fill.elc
+-rw-rw-rw-  1 rms         24177 May 27  1988 c-mode.el
+-rw-rw-rw-  1 rms         12457 Jun  1  1988 c-mode.elc
+-rw-rw-rw-  1 rms         10097 Apr 20  1988 cal.el
+-rw-rw-rw-  1 rms          6005 Jun  6 20:04 chistory.el
+-rw-rw-rw-  1 rms          4185 Jun  9 18:11 chistory.elc
+-rw-rw-rw-  1 rms         19184 Apr 19  1988 cl-indent.el
+-rw-rw-rw-  1 rms          5841 Apr 20  1988 cl-indent.elc
+-rw-rw-rw-  1 rms         90670 Apr 10  1988 cl.el
+-rw-rw-rw-  1 rms         53720 Apr 11  1988 cl.elc
+-rw-rw-rw-  1 rms          1563 May 31 18:27 cmacexp.el
+-rw-rw-rw-  1 rms          2121 Sep 30  1986 compare-w.el
+-rw-rw-rw-  1 rms           659 Sep 30  1986 compare-w.elc
+-rw-rw-rw-  1 rms         11823 Dec 29 14:25 compile.el
+-rw-rw-rw-  1 rms          6543 Feb 16 13:32 compile.elc
+-rw-rw-rw-  1 rms          8603 Dec  8  1987 dabbrev.el
+-rw-rw-rw-  1 rms          3347 Dec 23  1987 dabbrev.elc
+-rw-rw-rw-  1 rms          6284 Feb 15 03:57 dbx.el
+-rw-rw-rw-  1 rms          4397 Feb 16 13:32 dbx.elc
+-rw-rw-rw-  1 rms          9240 Dec 28 23:22 debug.el
+-rw-rw-rw-  1 rms          6190 Dec 28 23:22 debug.elc
+-rw-rw-rw-  1 rms         21346 Aug  8  1988 dired.el
+-rw-rw-rw-  1 rms         15602 Aug 10  1988 dired.elc
+-rw-rw-rw-  1 rms         12361 Mar 19  1987 disass.el
+-rw-rw-rw-  1 rms          6599 Mar 19  1987 disass.elc
+-rw-rw-rw-  1 rms          3105 Sep 30  1986 dissociate.el
+-rw-rw-rw-  1 rms          1198 Sep 30  1986 dissociate.elc
+-rw-rw-rw-  1 rms          6636 Jul  8  1988 doctex.el
+-rw-rw-rw-  1 rms         50878 Jan 21  1987 doctor.el
+-rw-rw-rw-  1 rms         43447 Jan 31  1987 doctor.elc
+-rw-rw-rw-  1 rms          9140 Jan 11  1987 ebuff-menu.el
+-rw-rw-rw-  1 rms          7038 Jan 11  1987 ebuff-menu.elc
+-rw-rw-rw-  1 rms          6741 Nov 20  1986 echistory.el
+-rw-rw-rw-  1 rms          5590 Nov 20  1986 echistory.elc
+-rw-rw-rw-  1 rms          5879 May 29  1987 edt-doc.el
+-rw-rw-rw-  1 rms         16023 Jan 22  1988 edt.el
+-rw-rw-rw-  1 rms         12296 Feb  5  1988 edt.elc
+-rw-rw-rw-  1 rms         11858 May 16  1987 ehelp.el
+-rw-rw-rw-  1 rms          7393 May 16  1987 ehelp.elc
+-rw-rw-rw-  1 rms          6709 May 16  1987 electric.el
+-rw-rw-rw-  1 rms          2376 May 16  1987 electric.elc
+-rw-rw-rw-  1 rms          1681 Nov 11  1986 emacsbug.el
+-rw-rw-rw-  1 rms         38310 Aug 15 22:31 files.el
+-rw-rw-rw-  1 rms         29464 Aug 15 22:45 files.elc
+-rw-rw-rw-  1 rms          6809 Aug 18  1988 fill.el
+-rw-rw-rw-  1 rms          3371 Aug 22  1988 fill.elc
+-rw-rw-rw-  1 rms         10420 Jan 21  1987 flame.el
+-rw-rw-rw-  1 rms          9125 Jan 31  1987 flame.elc
+-rw-rw-rw-  1 rms         15113 Dec  2  1986 float.el
+-rw-rw-rw-  1 rms          8042 Dec  4  1986 float.elc
+-rw-rw-rw-  1 rms         27452 Sep  1  1988 fortran.el
+-rw-rw-rw-  1 rms         20920 Sep  1  1988 fortran.elc
+-rw-rw-rw-  1 rms         13318 Jul 19  1988 ftp.el
+-rw-rw-rw-  1 rms          8658 Jul 19  1988 ftp.elc
+-rw-rw-rw-  1 rms         14177 May 22  1988 gdb.el
+-rw-rw-rw-  1 rms          7626 May 22  1988 gdb.elc
+-rw-rw-rw-  1 rms          3693 Dec  7  1986 gosmacs.el
+-rw-rw-rw-  1 rms          1303 Sep 30  1986 grow-vers.el
+-rw-rw-rw-  1 rms          5453 May 30  1988 hanoi.el
+-rw-rw-rw-  1 rms          2236 Jun  1  1988 hanoi.elc
+-rw-rw-rw-  1 rms         10253 May 28  1988 help.el
+-rw-rw-rw-  1 rms          8438 Jun  1  1988 help.elc
+-rw-rw-rw-  1 rms          5093 May 30  1988 helper.el
+-rw-rw-rw-  1 rms          3044 Jun  1  1988 helper.elc
+-rw-rw-rw-  1 rms         32348 Jul 20 02:01 hideif.el
+-rw-rw-rw-  1 rms         17884 Jul 20 02:49 hideif.elc
+-rw-rw-rw-  1 rms         19740 May  3  1988 icon.el
+-rw-rw-rw-  1 rms         10882 May  3  1988 icon.elc
+-rw-rw-rw-  1 rms          1641 Sep 30  1986 inc-vers.el
+-rw-rw-rw-  1 rms          7491 Nov 19  1986 indent.el
+-rw-rw-rw-  1 rms          4961 Jan 31  1987 indent.elc
+-rw-rw-rw-  1 rms         23780 Jul 20 02:24 info.el
+-rw-rw-rw-  1 rms         15935 Jul 20 02:50 info.elc
+-rw-rw-rw-  1 rms         13722 Apr 21  1988 informat.el
+-rw-rw-rw-  1 rms          6734 Apr 21  1988 informat.elc
+-rw-rw-rw-  1 rms         13884 Dec  8  1987 isearch.el
+-rw-rw-rw-  1 rms          4713 Dec 23  1987 isearch.elc
+-rw-rw-rw-  1 rms          8593 Apr 22  1988 kermit.el
+-rw-rw-rw-  1 rms          5912 Jun 12  1988 keypad.el
+-rw-rw-rw-  1 rms          2451 Jun 21  1988 keypad.elc
+-rw-rw-rw-  1 rms          4773 Sep 30  1986 ledit.el
+-rw-rw-rw-  1 rms         10281 Aug 23  1988 life.el
+-rw-rw-rw-  1 rms          5219 Jul 20 18:23 life.elc
+-rw-rw-rw-  1 rms         22269 Apr  9  1988 lisp-mode.el
+-rw-rw-rw-  1 rms         11883 Apr 11  1988 lisp-mode.elc
+-rw-rw-rw-  1 rms          7524 Jun  1  1987 lisp.el
+-rw-rw-rw-  1 rms          5131 Jun  1  1987 lisp.elc
+-rw-rw-rw-  1 rms         72380 Aug 15  1988 loaddefs.el
+-rw-rw-rw-  1 rms          4523 Jul  5  1988 loadup.el
+-rw-rw-rw-  1 rms          2747 Apr 11 01:05 lpr.el
+-rw-rw-rw-  1 rms          1517 Apr 13 17:43 lpr.elc
+-rw-rw-rw-  1 rms          3991 Jan 21  1987 macros.el
+-rw-rw-rw-  1 rms          2356 Jan 21  1987 macros.elc
+-rw-rw-rw-  1 rms          6791 Jun 25 13:06 mail-utils.el
+-rw-rw-rw-  1 rms          3077 Jun 25 13:07 mail-utils.elc
+-rw-rw-rw-  1 rms          5798 Jul  4 20:38 mailalias.el
+-rw-rw-rw-  1 rms          2037 Jul  4 21:08 mailalias.elc
+-rw-rw-rw-  1 rms          2918 Sep 18  1986 mailpost.el
+-rw-rw-rw-  1 rms          3602 Sep 30  1986 makesum.el
+-rw-rw-rw-  1 rms          1285 Sep 30  1986 makesum.elc
+-rw-rw-rw-  1 rms          5357 Jul  4 20:27 man.el
+-rw-rw-rw-  1 rms          2143 Jul  4 21:08 man.elc
+-rw-rw-rw-  1 rms          4035 Sep 30  1986 medit.el
+-rw-rw-rw-  1 rms          2763 Sep 30  1986 medit.elc
+-rw-rw-rw-  1 rms           599 May 20  1988 meese.el
+-rw-rw-rw-  1 rms         87833 Sep  1  1988 mh-e.el
+-rw-rw-rw-  1 rms         63007 Sep  1  1988 mh-e.elc
+-rw-rw-rw-  1 rms         35989 Apr  9  1988 mim-mode.el
+-rw-rw-rw-  1 rms         20097 Apr 11  1988 mim-mode.elc
+-rw-rw-rw-  1 rms          3196 Sep 30  1986 mim-syntax.el
+-rw-rw-rw-  1 rms          1276 Sep 30  1986 mim-syntax.elc
+-rw-rw-rw-  1 rms         10005 May 30  1988 mlconvert.el
+-rw-rw-rw-  1 rms          9065 Jun  1  1988 mlconvert.elc
+-rw-rw-rw-  1 rms         11601 Sep 30  1986 mlsupport.el
+-rw-rw-rw-  1 rms         10191 Sep 30  1986 mlsupport.elc
+-rw-rw-rw-  1 rms         11820 May 30  1988 modula2.el
+-rw-rw-rw-  1 rms          9910 Jun  1  1988 modula2.elc
+-rw-rw-rw-  1 rms          4097 Jan 21  1987 novice.el
+-rw-rw-rw-  1 rms          7010 Jul  4 20:32 nroff-mode.el
+-rw-rw-rw-  1 rms          4631 Jul  4 21:08 nroff-mode.elc
+-rw-rw-rw-  1 rms          4102 Dec  4  1987 options.el
+-rw-rw-rw-  1 rms          2742 Dec 23  1987 options.elc
+-rw-rw-rw-  1 rms         11919 Jul 26  1988 outline.el
+-rw-rw-rw-  1 rms          9516 Aug 10  1988 outline.elc
+-rw-rw-rw-  1 rms          4224 Nov 22  1987 page.el
+-rw-rw-rw-  1 rms          2165 Dec 23  1987 page.elc
+-rw-rw-rw-  1 rms          6926 Apr 15  1988 paragraphs.el
+-rw-rw-rw-  1 rms          4405 Apr 19  1988 paragraphs.elc
+-rw-rw-rw-  1 rms          5174 Apr  2 00:25 paths.el
+-rw-rw-rw-  1 rms         22636 Apr 12 10:45 picture.el
+-rw-rw-rw-  1 rms         19548 Apr 13 17:43 picture.elc
+-rw-rw-rw-  1 rms          9333 Apr  9  1988 prolog.el
+-rw-rw-rw-  1 rms          6261 Apr 11  1988 prolog.elc
+-rw-rw-rw-  1 rms          7465 Sep 30  1986 rect.el
+-rw-rw-rw-  1 rms          4981 Sep 30  1986 rect.elc
+-rw-rw-rw-  1 rms          6512 Sep 30  1986 register.el
+-rw-rw-rw-  1 rms          4144 Sep 30  1986 register.elc
+-rw-rw-rw-  1 rms         10422 May  2  1988 replace.el
+-rw-rw-rw-  1 rms          5995 May  3  1988 replace.elc
+-rw-rw-rw-  1 rms          9851 Sep  2  1987 rfc822.el
+-rw-rw-rw-  1 rms          4213 Sep  2  1987 rfc822.elc
+-rw-rw-rw-  1 rms         48269 Jun 25 12:50 rmail.el
+-rw-rw-rw-  1 rms         29339 Jun 25 12:52 rmail.elc
+-rw-rw-rw-  1 rms          3948 Feb 28  1987 rmailedit.el
+-rw-rw-rw-  1 rms          2258 Feb 28  1987 rmailedit.elc
+-rw-rw-rw-  1 rms          9331 Mar 21  1988 rmailkwd.el
+-rw-rw-rw-  1 rms          4576 Apr 11  1988 rmailkwd.elc
+-rw-rw-rw-  1 rms          1827 Jan  6  1987 rmailmsc.el
+-rw-rw-rw-  1 rms           728 Jan  8  1987 rmailmsc.elc
+-rw-rw-rw-  1 rms          4735 Apr 14  1988 rmailout.el
+-rw-rw-rw-  1 rms          2287 Apr 15  1988 rmailout.elc
+-rw-rw-rw-  1 rms         14633 Jul 31  1988 rmailsum.el
+-rw-rw-rw-  1 rms          9446 Aug 10  1988 rmailsum.elc
+-rw-rw-rw-  1 rms         35567 May 22  1988 rnews.el
+-rw-rw-rw-  1 rms         23720 May 22  1988 rnews.elc
+-rw-rw-rw-  1 rms         15115 Jun 15  1988 rnewspost.el
+-rw-rw-rw-  1 rms          8920 Jun 21  1988 rnewspost.elc
+-rw-rw-rw-  1 rms          8684 Aug 15  1988 saveconf.el
+-rw-rw-rw-  1 rms         18886 Jul 15  1988 scheme.el
+-rw-rw-rw-  1 rms         10904 Jul 19  1988 scheme.elc
+-rw-rw-rw-  1 rms         10735 Jan 22  1987 scribe.el
+-rw-rw-rw-  1 rms          7839 Jan 27  1987 scribe.elc
+-rw-rw-rw-  1 rms         15850 May 17 14:27 sendmail.el
+-rw-rw-rw-  1 rms          9576 Jun  4 18:06 sendmail.elc
+-rw-rw-rw-  1 rms         10435 Aug  4  1988 server.el
+-rw-rw-rw-  1 rms          5251 Aug 10  1988 server.elc
+-rw-rw-rw-  1 rms         16352 Jul  3  1988 shell.el
+-rw-rw-rw-  1 rms         12030 Jul 19  1988 shell.elc
+-rw-rw-rw-  1 rms         48206 Jul 22  1988 simple.el
+-rw-rw-rw-  1 rms         37662 Jul 22  1988 simple.elc
+-rw-rw-rw-  1 rms          5320 Aug 14  1988 simula.defns
+-rw-rw-rw-  1 rms         29268 Aug 15  1988 simula.el
+-rw-rw-rw-  1 rms         17293 Aug 15  1988 simula.elc
+-rw-rw-rw-  1 rms         13035 May 30  1988 sort.el
+-rw-rw-rw-  1 rms          8815 Jun  1  1988 sort.elc
+-rw-rw-rw-  1 rms          4718 Jun  8 12:09 spell.el
+-rw-rw-rw-  1 rms          2616 Jun  9 18:11 spell.elc
+-rw-rw-rw-  1 rms          3741 Apr  9  1988 spook.el
+-rw-rw-rw-  1 rms          8755 Apr  7 22:03 startup.el
+-rw-rw-rw-  1 rms          4183 Apr  7 22:03 startup.elc
+-rw-rw-rw-  1 rms          1320 Sep 12  1986 studly.el
+-rw-rw-rw-  1 rms           774 Sep 12  1986 studly.elc
+-rw-rw-rw-  1 rms          7821 May 16  1987 subr.el
+-rw-rw-rw-  1 rms          5042 May 16  1987 subr.elc
+-rw-rw-rw-  1 rms          6875 Mar 13  1987 sun-cursors.el
+-rw-rw-rw-  1 rms         22873 Aug 14  1987 sun-fns.el
+-rw-rw-rw-  1 rms         20146 Aug 15  1987 sun-fns.elc
+-rw-rw-rw-  1 rms          2631 Jan  3  1987 sun-keys.el
+-rw-rw-rw-  1 rms         24535 Aug 14  1987 sun-mouse.el
+-rw-rw-rw-  1 rms         17075 Aug 15  1987 sun-mouse.elc
+-rw-rw-rw-  1 rms          6408 Nov 22  1986 sup-mouse.el
+-rw-rw-rw-  1 rms          3036 Dec 12  1986 sup-mouse.elc
+-rw-rw-rw-  1 rms          1988 Sep 30  1986 tabify.el
+-rw-rw-rw-  1 rms           786 Sep 30  1986 tabify.elc
+-rw-rw-rw-  1 rms         10338 Jul 29  1988 tags.el
+-rw-rw-rw-  1 rms          7354 Aug 10  1988 tags.elc
+-rw-rw-rw-  1 rms          8150 Apr 10  1988 telnet.el
+-rw-rw-rw-  1 rms          5442 Apr 11  1988 telnet.elc
+drwxrwxrwx  2 rms           512 Aug  5 16:00 term
+-rw-rw-rw-  1 rms         39305 Apr 15  1988 terminal.el
+-rw-rw-rw-  1 rms         23792 Apr 19  1988 terminal.elc
+-rw-rw-rw-  1 rms         16771 Mar 13 16:55 tex-mode.el
+-rw-rw-rw-  1 rms         12135 Mar 13 16:56 tex-mode.elc
+-rw-rw-rw-  1 rms           467 Aug 11  1986 tex-start.el
+-rw-rw-rw-  1 rms         42439 Dec 28 23:11 texinfmt.el
+-rw-rw-rw-  1 rms         37326 Dec 28 23:24 texinfmt.elc
+-rw-rw-rw-  1 rms          6826 Aug  3  1988 texinfo.el
+-rw-rw-rw-  1 rms          5590 Aug 10  1988 texinfo.elc
+-rw-rw-rw-  1 rms          4519 Jul  2  1988 text-mode.el
+-rw-rw-rw-  1 rms          3041 Jul 19  1988 text-mode.elc
+-rw-rw-rw-  1 rms          3467 Jan 21  1987 time.el
+-rw-rw-rw-  1 rms          1412 Jan 21  1987 time.elc
+-rw-rw-rw-  1 rms          1154 Jul 20  1988 uncompress.el
+-rw-rw-rw-  1 rms          1838 May 30  1988 underline.el
+-rw-rw-rw-  1 rms           739 Jun  1  1988 underline.elc
+-rw-rw-rw-  1 rms          3829 Aug  4  1988 undigest.el
+-rw-rw-rw-  1 rms          1380 Aug 10  1988 undigest.elc
+-rw-rw-rw-  1 rms          1083 Dec 14  1985 unused.el
+-rw-rw-rw-  1 rms          4690 May 26  1987 userlock.el
+-rw-rw-rw-  1 rms          3234 May 27  1987 userlock.elc
+-rw-rw-rw-  1 rms          1743 Jun 10 00:34 version.el
+-rw-rw-rw-  1 rms         57531 Jan  7  1987 vi.el
+-rw-rw-rw-  1 rms         48538 Jan  8  1987 vi.elc
+-rw-rw-rw-  1 rms         14636 Aug 21  1988 view.el
+-rw-rw-rw-  1 rms         12520 Aug 22  1988 view.elc
+-rw-rw-rw-  1 rms         97412 Feb 11  1988 vip.el
+-rw-rw-rw-  1 rms         69110 Feb 12  1988 vip.elc
+-rw-rw-rw-  1 rms          3396 May  6  1988 vms-patch.el
+-rw-rw-rw-  1 rms          1946 May  6  1988 vms-patch.elc
+-rw-rw-rw-  1 rms          4131 Sep 29  1986 vmsproc.el
+-rw-rw-rw-  1 rms          2255 Mar 22  1987 vmsproc.elc
+-rw-rw-rw-  1 rms          2000 Dec 21  1987 window.el
+-rw-rw-rw-  1 rms          1161 Dec 23  1987 window.elc
+-rw-rw-rw-  1 rms          5259 Sep 15  1987 x-menu.el
+-rw-rw-rw-  1 rms          3126 Sep 16  1987 x-menu.elc
+-rw-rw-rw-  1 rms         10679 Mar 24  1988 x-mouse.el
+-rw-rw-rw-  1 rms          9024 Apr 11  1988 x-mouse.elc
+-rw-rw-rw-  1 cph         30906 Apr 28 18:59 xscheme.el
+-rw-rw-rw-  1 cph         25651 Aug  9 19:23 xscheme.elc
+-rw-rw-rw-  1 rms          3002 Jan 21  1987 yow.el
+-rw-rw-rw-  1 rms          1233 Jan 31  1987 yow.elc
 
-./lisp/term:
-total 100
--rw-rw-rw- 16 rms       wheel        7742 Feb 11 19:46 COPYING
--rw-rw-rw-  4 rms       wheel          20 Apr 18 17:35 apollo.el
--rw-rw-rw-  4 rms       wheel         321 Jan 31  1986 bobcat.el
--rw-rw-rw-  4 rms       wheel        4996 Jul 18  1987 s4.el
--rw-rw-rw-  4 rms       wheel        9471 Aug 14  1987 sun.el
--rw-rw-rw-  4 rms       wheel        2852 Jan 21  1987 supdup.el
--rw-rw-rw-  4 rms       wheel        5497 Aug 30  1987 unixpc.el
--rw-rw-rw-  4 rms       wheel        2008 Feb 18  1987 vt100.el
--rw-rw-rw-  4 rms       wheel          47 Jan 31 18:54 vt125.el
--rw-rw-rw-  4 rms       wheel        2647 Feb 11 02:14 vt200.el
--rw-rw-rw-  4 rms       wheel          47 Dec 14  1985 vt220.el
--rw-rw-rw-  4 rms       wheel          47 Jan 31 18:54 vt240.el
+lisp/term:
+total 114
+-rw-rw-rw-  5 rms          7742 Feb 11  1988 COPYING
+-rw-rw-rw-  1 rms            20 Apr 18  1988 apollo.el
+-rw-rw-rw-  1 rms            44 Apr  6 23:27 bbn.el
+-rw-rw-rw-  1 rms           237 Apr  6 23:25 bg.el
+-rw-rw-rw-  1 rms            44 Apr  6 23:27 bgnv.el
+-rw-rw-rw-  1 rms            44 Apr  6 23:27 bgrv.el
+-rw-rw-rw-  1 rms           321 Jan 31  1986 bobcat.el
+-rw-rw-rw-  1 rms          5005 May 12 22:19 s4.el
+-rw-rw-rw-  1 rms         11494 Mar 15 23:33 sun.el
+-rw-rw-rw-  1 rms          2852 Jan 21  1987 supdup.el
+-rw-rw-rw-  1 rms          5497 Aug 30  1987 unixpc.el
+-rw-rw-rw-  1 rms          2008 Feb 18  1987 vt100.el
+-rw-rw-rw-  1 rms            47 Jan 31  1988 vt125.el
+-rw-rw-rw-  1 rms          2647 Feb 11  1988 vt200.el
+-rw-rw-rw-  1 rms            47 Dec 14  1985 vt220.el
+-rw-rw-rw-  1 rms            47 Jan 31  1988 vt240.el
+-rw-rw-rw-  1 rms          7889 Jun 20 14:03 x-win.el
 -rw-rw-rw-  1 rms            89 Apr 26 21:52 xterm.el
--rw-rw-rw-  3 rms       wheel        7675 Aug 11 22:19 x-win.el
 
-./man:
-total 2782
--rw-rw-rw-  3 bob       wheel        1301 Aug 16 17:37 ChangeLog
--rw-rw-rw-  4 rms       wheel         639 Oct 16  1986 README
--rw-rw-rw-  3 bob       wheel       31712 Aug 16 13:07 cl.texinfo
--rw-rw-rw-  3 anand     wheel       17310 Jun 15 13:07 emacs.aux
--rw-rw-rw-  4 rms       wheel        6643 Jun 15 13:02 emacs.cps
--rw-rw-rw-  4 rms       wheel       14795 Jun 15 13:02 emacs.fns
--rw-rw-rw-  4 rms       wheel        8961 Jun 15 13:02 emacs.kys
--rw-rw-rw-  4 rms       wheel           0 Jun 15 13:02 emacs.pgs
--rw-rw-rw-  3 bob       wheel      652958 Aug 16 17:37 emacs.tex
--rw-rw-rw-  4 rms       wheel           0 Jun 15 13:02 emacs.tps
--rw-rw-rw-  4 rms       wheel        5389 Jun 15 13:02 emacs.vrs
--rw-rw-rw-  4 rms       wheel        3991 Feb 12 16:34 gdb.aux
--rw-rw-rw-  4 rms       wheel        1618 Feb  9 00:46 gdb.cps
--rw-rw-rw-  4 rms       wheel           0 Feb  9 00:46 gdb.fns
--rw-rw-rw-  4 rms       wheel        2016 Feb  9 00:46 gdb.kys
--rw-rw-rw-  4 rms       wheel           0 Feb  9 00:46 gdb.pgs
--rw-rw-rw-  3 rms       wheel      105859 May 17 12:09 gdb.texinfo
--rw-rw-rw-  4 rms       wheel           0 Feb  9 00:46 gdb.tps
--rw-rw-rw-  4 rms       wheel           0 Feb  9 00:46 gdb.vrs
--rwxrwxrwx  4 rms       wheel         635 Feb 22  1986 split-man
--rw-rw-rw-  4 rms       wheel        2931 Apr 11 05:27 termcap.aux
--rw-rw-rw-  4 rms       wheel        1311 Apr 11 04:24 termcap.cps
--rw-rw-rw-  4 rms       wheel         272 Apr 11 04:24 termcap.fns
--rw-rw-rw-  4 rms       wheel        2440 Apr 11 04:24 termcap.kys
--rw-rw-rw-  4 rms       wheel           0 Apr 11 04:24 termcap.pgs
--rw-rw-rw-  3 rms       wheel      133148 May 11 11:21 termcap.texinfo
--rw-rw-rw-  4 rms       wheel           0 Apr 11 04:24 termcap.tps
--rw-rw-rw-  4 rms       wheel           0 Apr 11 04:24 termcap.vrs
--rw-rw-rw-  3 cph       wheel       42774 Jul 11 18:04 texindex.c
--rw-rw-rw-  4 rms       wheel         292 Jun 30 15:15 texinfo.aux
--rw-rw-rw-  4 rms       wheel           0 Jun 30 15:15 texinfo.cps
--rw-rw-rw-  4 rms       wheel           0 Jun 30 15:15 texinfo.fns
--rw-rw-rw-  4 rms       wheel           0 Jun 30 15:15 texinfo.kys
--rw-rw-rw-  4 rms       wheel           0 Jun 30 15:15 texinfo.pgs
--rw-rw-rw-  4 rms       wheel       63235 Aug 18 17:07 texinfo.tex
--rw-rw-rw-  3 bob       wheel      188739 Jul 25 17:47 texinfo.texinfo
--rw-rw-rw-  4 rms       wheel           0 Jun 30 15:15 texinfo.tps
--rw-rw-rw-  4 rms       wheel           0 Jun 30 15:15 texinfo.vrs
--rw-rw-rw-  3 bob       wheel       77510 Aug 16 13:37 vip.texinfo
+man:
+total 2794
+-rw-rw-rw-  1 rms          1301 Aug 16  1988 ChangeLog
+-rw-rw-rw-  1 rms           639 Oct 16  1986 README
+-rw-rw-rw-  1 rms         31712 Aug 16  1988 cl.texinfo
+-rw-rw-rw-  1 rms         17310 Jun 15  1988 emacs.aux
+-rw-rw-rw-  1 rms          6643 Jun 15  1988 emacs.cps
+-rw-rw-rw-  1 rms         14795 Jun 15  1988 emacs.fns
+-rw-rw-rw-  1 rms          8961 Jun 15  1988 emacs.kys
+-rw-rw-rw-  1 rms             0 Jun 15  1988 emacs.pgs
+-rw-rw-rw-  1 rms        652958 Aug 16  1988 emacs.tex
+-rw-rw-rw-  1 rms             0 Jun 15  1988 emacs.tps
+-rw-rw-rw-  1 rms          5389 Jun 15  1988 emacs.vrs
+-rw-rw-rw-  1 rms          3991 Feb 12  1988 gdb.aux
+-rw-rw-rw-  1 rms          1618 Feb  9  1988 gdb.cps
+-rw-rw-rw-  1 rms             0 Feb  9  1988 gdb.fns
+-rw-rw-rw-  1 rms          2016 Feb  9  1988 gdb.kys
+-rw-rw-rw-  1 rms             0 Feb  9  1988 gdb.pgs
+-rw-rw-rw-  1 rms        105859 May 17  1988 gdb.texinfo
+-rw-rw-rw-  1 rms             0 Feb  9  1988 gdb.tps
+-rw-rw-rw-  1 rms             0 Feb  9  1988 gdb.vrs
+-rwxrwxrwx  1 rms           635 Feb 22  1986 split-man
+-rw-rw-rw-  1 rms          2931 Apr 11  1988 termcap.aux
+-rw-rw-rw-  1 rms          1311 Apr 11  1988 termcap.cps
+-rw-rw-rw-  1 rms           272 Apr 11  1988 termcap.fns
+-rw-rw-rw-  1 rms          2440 Apr 11  1988 termcap.kys
+-rw-rw-rw-  1 rms             0 Apr 11  1988 termcap.pgs
+-rw-rw-rw-  1 rms        133148 May 11  1988 termcap.texinfo
+-rw-rw-rw-  1 rms             0 Apr 11  1988 termcap.tps
+-rw-rw-rw-  1 rms             0 Apr 11  1988 termcap.vrs
+-rw-rw-rw-  1 rms         42774 Jul 11  1988 texindex.c
+-rw-rw-rw-  1 rms           292 Jun 30  1988 texinfo.aux
+-rw-rw-rw-  1 rms             0 Jun 30  1988 texinfo.cps
+-rw-rw-rw-  1 rms             0 Jun 30  1988 texinfo.fns
+-rw-rw-rw-  1 rms             0 Jun 30  1988 texinfo.kys
+-rw-rw-rw-  1 rms             0 Jun 30  1988 texinfo.pgs
+-rw-rw-rw-  1 rms         68925 Jul  4 21:49 texinfo.tex
+-rw-rw-rw-  1 rms        188739 Jul 25  1988 texinfo.texinfo
+-rw-rw-rw-  1 rms             0 Jun 30  1988 texinfo.tps
+-rw-rw-rw-  1 rms             0 Jun 30  1988 texinfo.vrs
+-rw-rw-rw-  1 rms         77510 Aug 16  1988 vip.texinfo
 
-./shortnames:
+oldXMenu:
+total 248
+-rw-rw-rw-  1 rms         14801 Feb 26  1988 Activate.c
+-rw-rw-rw-  1 rms          2413 Feb 26  1988 AddPane.c
+-rw-rw-rw-  1 rms          2227 Feb 26  1988 AddSel.c
+-rw-rw-rw-  1 rms          1464 Feb 26  1988 ChgPane.c
+-rw-rw-rw-  1 rms          2035 Feb 26  1988 ChgSel.c
+-rw-rw-rw-  1 rms         21882 Feb 26  1988 Create.c
+-rw-rw-rw-  1 rms          2013 Feb 26  1988 DelPane.c
+-rw-rw-rw-  1 rms          1769 Feb 26  1988 DelSel.c
+-rw-rw-rw-  1 rms          3336 Feb 26  1988 Destroy.c
+-rw-rw-rw-  1 rms           664 Feb 26  1988 Error.c
+-rw-rw-rw-  1 rms           519 Feb 26  1988 EvHand.c
+-rw-rw-rw-  1 rms          1232 Feb 26  1988 FindPane.c
+-rw-rw-rw-  1 rms          1410 Feb 26  1988 FindSel.c
+-rw-rw-rw-  1 rms          1404 Sep  1  1988 Imakefile
+-rw-rw-rw-  1 rms          2709 Feb 26  1988 InsPane.c
+-rw-rw-rw-  1 rms          2603 Feb 26  1988 InsSel.c
+-rw-rw-rw-  1 rms         26320 Feb 26  1988 Internal.c
+-rw-rw-rw-  1 rms          2208 Feb 26  1988 Locate.c
+-rw-rw-rw-  1 rms          1217 Aug 10 23:53 Makefile
+-rw-rw-rw-  1 rms          2701 Feb 26  1988 Post.c
+-rw-rw-rw-  1 rms           181 Feb 26  1988 README
+-rw-rw-rw-  1 rms          2284 Feb 26  1988 Recomp.c
+-rw-rw-rw-  1 rms           725 Feb 26  1988 SetAEQ.c
+-rw-rw-rw-  1 rms           665 Feb 26  1988 SetFrz.c
+-rw-rw-rw-  1 rms           995 Feb 26  1988 SetPane.c
+-rw-rw-rw-  1 rms          1213 Feb 26  1988 SetSel.c
+-rw-rw-rw-  1 rms          9077 Feb 26  1988 XMenu.h
+-rw-rw-rw-  1 rms          1474 Feb 26  1988 XMenuInt.h
+drwxrwxrwx  2 rms            24 Mar  7  1988 debugger
+
+oldXMenu/debugger:
+total 0
+
+shortnames:
 total 34
--rw-rw-rw-  1 rms       wheel        7742 Sep  3 21:24 COPYING
--rw-rw-rw-  1 rms       wheel        1519 Sep  3 21:24 Makefile
--rw-rw-rw-  1 rms       wheel         178 Sep  3 21:24 defines.c
--rw-rw-rw-  1 rms       wheel         857 Sep  3 21:24 dups.c
--rw-rw-rw-  1 rms       wheel         674 Sep  3 21:24 header.h
--rw-rw-rw-  1 rms       wheel        1637 Sep  3 21:24 names.c
--rw-rw-rw-  1 rms       wheel         220 Sep  3 21:24 reserved
--rw-rw-rw-  1 rms       wheel         192 Sep  3 21:24 special
+-rw-rw-rw-  1 rms          7742 Sep  3  1988 COPYING
+-rw-rw-rw-  1 rms          1519 Sep  3  1988 Makefile
+-rw-rw-rw-  1 rms           178 Sep  3  1988 defines.c
+-rw-rw-rw-  1 rms           857 Sep  3  1988 dups.c
+-rw-rw-rw-  1 rms           674 Sep  3  1988 header.h
+-rw-rw-rw-  1 rms          1637 Sep  3  1988 names.c
+-rw-rw-rw-  1 rms           220 Sep  3  1988 reserved
+-rw-rw-rw-  1 rms           192 Sep  3  1988 special
 
-./src:
-total 4768
--rw-rw-rw- 16 rms       wheel        7742 Feb 11 19:46 COPYING
--rw-rw-rw-  3 rms       wheel      162222 Aug 31 19:22 ChangeLog
--rw-rw-rw-  3 rms       wheel         936 Aug 17 10:34 Makefile
--rw-rw-rw-  5 rms       wheel        1273 Sep 14  1986 README
--rw-rw-rw-  4 rms       wheel      213750 Sep  3 21:23 TAGS
--rw-rw-rw-  4 rms       wheel        2774 Dec 18 09:39 VMSBUILD
--rw-rw-rw-  6 rms       wheel       15845 Dec  5  1986 abbrev.c
--rw-rw-rw-  5 rms       wheel        1059 Jun  1  1986 acldef.h
--rw-rw-rw-  4 rms       wheel       38094 Feb 11 02:09 alloc.c
--rw-rw-rw-  5 rms       wheel        5214 Oct 16  1986 alloca.c
--rw-rw-rw-  3 rms       wheel        8399 Jul 15 03:16 alloca.s
--rw-rw-rw-  3 rms       wheel       43854 Aug 15 23:07 buffer.c
--rw-rw-rw-  5 rms       wheel        8360 Feb  8  1987 buffer.h
--rw-rw-rw-  4 rms       wheel         239 Mar 20  1987 build.com
--rw-rw-rw-  6 rms       wheel       13912 Mar 17  1987 bytecode.c
--rw-rw-rw-  3 rms       wheel       15316 Jun 28 19:57 callint.c
--rw-rw-rw-  3 rms       wheel       12021 Aug 15 23:07 callproc.c
--rw-rw-rw-  5 rms       wheel        6923 Aug 14  1987 casefiddle.c
--rw-rw-rw-  4 rms       wheel          90 Mar 17  1987 ccom.com
--rw-rw-rw-  5 rms       wheel         885 Jun  1  1986 chpdef.h
--rw-rw-rw-  5 rms       wheel       10006 May 21  1987 cm.c
--rw-rw-rw-  5 rms       wheel        3331 Feb  9 14:12 cm.h
--rw-rw-rw-  3 rms       wheel        9028 Jul 19 19:43 cmds.c
--rw-rw-rw-  5 rms       wheel        2595 Dec 10  1986 commands.h
--rw-rw-rw-  4 rms       wheel        1607 Mar 17  1987 compile.com
--rw-rw-rw-  6 rms       wheel        3695 Apr 21 04:18 config.h-dist
--rw-rw-rw-  3 rms       wheel       17039 Aug 31 02:48 crt0.c
--rw-rw-rw-  3 rms       wheel       43143 Aug 26 20:36 data.c
--rw-rw-rw-  5 rms       wheel        2925 Feb 11 02:18 dir.h
--rw-rw-rw-  4 rms       wheel       12717 Apr 10 07:17 dired.c
--rw-rw-rw-  4 rms       wheel        2595 Dec 10  1986 dispextern.h
--rw-rw-rw-  3 rms       wheel       39195 Aug 24 12:01 dispnew.c
--rw-rw-rw-  5 rms       wheel       11827 Mar 17  1987 doc.c
--rw-rw-rw-  5 rms       wheel        3310 Jan  9 18:00 doprnt.c
--rw-rw-rw-  4 rms       wheel       27990 Feb 11 01:47 editfns.c
--rw-rw-rw-  3 rms       wheel       15635 Aug 26 18:31 emacs.c
--rw-rw-rw-  5 rms       wheel        7978 Nov  7  1986 environ.c
--rw-rw-rw-  3 rms       wheel       55716 Aug  8 07:50 eval.c
--rw-rw-rw-  3 rms       wheel       57559 Aug 20 12:14 fileio.c
--rw-rw-rw-  5 rms       wheel        8667 Mar 24 04:31 filelock.c
--rw-rw-rw-  5 rms       wheel        9269 Aug 26 17:49 filemode.c
--rw-rw-rw-  3 rms       wheel       33428 May 22 16:08 fns.c
--rw-rw-rw-  5 rms       wheel         416 Jun  1  1986 getpagesize.h
--rw-rw-rw-  3 rms       wheel       15163 Aug 15 22:51 indent.c
--rw-rw-rw-  5 rms       wheel        1069 Sep 29  1986 indent.h
--rw-rw-rw-  5 rms       wheel        8594 Feb  4 11:59 insdel.c
--rw-rw-rw-  5 rms       wheel          36 Jun  1  1986 ioctl.h
--rw-rw-rw-  3 rms       wheel       51414 Aug 22 20:10 keyboard.c
--rw-rw-rw-  3 rms       wheel       34497 Aug 15 23:08 keymap.c
--rw-rw-rw-  5 rms       wheel        1571 Sep 29  1986 lastfile.c
--rw-rw-rw-  4 rms       wheel         123 Sep 14  1986 link.com
--rw-rw-rw-  4 rms       wheel       33503 Mar 30 01:42 lisp.h
--rw-rw-rw-  3 rms       wheel       32579 Aug  1 21:43 lread.c
--rw-rw-rw-  3 mike      wheel        2714 Aug 12 14:41 m-7300.h
--rw-rw-rw-  4 rms       wheel        4618 May 22 16:11 m-alliant.h
--rw-rw-rw-  5 rms       wheel         131 Nov 21  1986 m-alliant1.h
--rw-rw-rw-  3 rms       wheel         616 Aug 26 12:24 m-alliant4.h
--rw-rw-rw-  5 rms       wheel        1786 Dec  4 21:58 m-altos.h
--rw-rw-rw-  3 rms       wheel        5377 Aug 29 19:06 m-amdahl.h
--rw-rw-rw-  3 rms       wheel        2686 Aug 26 18:37 m-apollo.h
--rw-rw-rw-  5 rms       wheel        5179 Jan 15 19:05 m-att3b.h
--rw-rw-rw-  5 rms       wheel        2134 Apr  7  1987 m-celerity.h
--rw-rw-rw-  5 rms       wheel        4088 Apr 19 04:20 m-convex.h
--rw-rw-rw-  5 rms       wheel        4565 Apr  6 19:15 m-cydra5.h
--rw-rw-rw-  5 rms       wheel        2143 Oct  1  1986 m-dual.h
--rw-rw-rw-  5 rms       wheel        4453 Jan 15 19:05 m-elxsi.h
--rw-rw-rw-  5 rms       wheel        2398 Oct  1  1986 m-gec63.h
--rw-rw-rw-  5 rms       wheel        4073 Jan 15 19:05 m-gould.h
--rw-rw-rw-  3 rms       wheel        5000 Jun 10 08:09 m-hp9000s300.h
--rw-rw-rw-  5 rms       wheel        5768 Apr  9 01:54 m-hp9000s800.h
--rw-rw-rw-  3 rms       wheel        5374 Aug 25 15:36 m-ibmrt-aix.h
--rw-rw-rw-  3 rms       wheel        4542 Aug 29 15:59 m-ibmrt.h
--rw-rw-rw-  5 rms       wheel        4197 Mar 23 21:56 m-intel386.h
--rw-rw-rw-  3 rms       wheel        6502 Aug 30 15:23 m-iris4d.h
--rw-rw-rw-  5 rms       wheel        5204 Jan 19 01:27 m-irist.h
--rw-rw-rw-  5 rms       wheel         220 Mar 29 21:46 m-is386.h
--rw-rw-rw-  3 rms       wheel        2643 Aug 30 17:25 m-isi-ov.h
--rw-rw-rw-  5 rms       wheel        4750 Jan 15 19:06 m-masscomp.h
--rw-rw-rw-  5 rms       wheel        1780 Oct  1  1986 m-mega68.h
--rw-rw-rw-  5 rms       wheel        4336 Jan 15 19:06 m-mg1.h
--rw-rw-rw-  4 rms       wheel        4781 May 19 18:37 m-mips.h
--rw-rw-rw-  3 rms       wheel        2296 Aug 23 06:32 m-news800.h
--rw-rw-rw-  5 rms       wheel        1756 Mar 14  1987 m-ns16000.h
--rw-rw-rw-  5 rms       wheel        2392 Nov  7  1986 m-nu.h
--rw-rw-rw-  5 rms       wheel        2486 Oct  1  1986 m-orion.h
--rw-rw-rw-  3 rms       wheel        2669 Jul 17 15:01 m-orion105.h
--rw-rw-rw-  5 rms       wheel        3939 Jan 15 19:06 m-plexus.h
--rw-rw-rw-  3 rms       wheel        2045 Aug 30 16:24 m-pyramid.h
--rw-rw-rw-  4 rms       wheel        5147 May 19 16:38 m-sequent.h
--rw-rw-rw-  5 rms       wheel          21 Mar 18 21:13 m-sgi3000.h
--rw-rw-rw-  5 rms       wheel        3234 Dec  2 10:31 m-sparc.h
--rw-rw-rw-  5 rms       wheel        3925 Mar 21 02:00 m-stride.h
--rw-rw-rw-  5 rms       wheel        2053 Nov  7  1986 m-sun1.h
--rw-rw-rw-  5 rms       wheel        2741 Feb 13 03:42 m-sun2.h
--rw-rw-rw-  4 rms       wheel         374 May 14 01:23 m-sun3.h
--rw-rw-rw-  3 rms       wheel        2117 Aug  3 19:25 m-sun386.h
--rw-rw-rw-  3 rms       wheel        2335 Aug 31 19:32 m-tahoe.h
--rw-rw-rw-  5 rms       wheel        3767 Jan 15 19:07 m-targon31.h
--rw-rw-rw-  5 rms       wheel        2954 Apr  8 23:55 m-tek4300.h
--rw-rw-rw-  5 rms       wheel        3646 Jan 15 19:07 m-template.h
--rw-rw-rw-  5 rms       wheel        3922 Jan 15 19:07 m-tower32.h
--rw-rw-rw-  3 rms       wheel        4101 Jun 27 22:37 m-ustation.h
--rw-rw-rw-  5 rms       wheel        2715 Apr  8  1987 m-vax.h
--rw-rw-rw-  5 rms       wheel        4708 Jan 15 19:07 m-wicat.h
--rw-rw-rw-  5 rms       wheel        6730 Sep 29  1986 macros.c
--rw-rw-rw-  5 rms       wheel        1171 Sep 29  1986 macros.h
--rw-rw-rw-  3 rms       wheel       23517 Jun  9 23:41 malloc.c
--rw-rw-rw-  5 rms       wheel        6275 Oct  1  1986 marker.c
--rw-rw-rw-  3 rms       wheel       33043 May 23 15:04 minibuf.c
--rw-rw-rw-  5 rms       wheel        6160 Sep 29  1986 mocklisp.c
--rw-rw-rw-  5 rms       wheel        1262 Jun 19  1986 ndir.h
--rw-rw-rw-  5 rms       wheel          72 Jun  1  1986 param.h
--rw-rw-rw-  6 rms       wheel         819 Oct  1  1986 paths.h-dist
--rw-rw-rw-  5 rms       wheel         398 Jun  9  1986 pre-crt0.c
--rw-rw-rw-  4 rms       wheel         215 Mar 17  1987 precomp.com
--rw-rw-rw-  3 rms       wheel       17295 Jul 28 11:12 print.c
--rw-rw-rw-  3 rms       wheel       58392 Aug 20 13:27 process.c
--rw-rw-rw-  5 rms       wheel        2894 Sep 29  1986 process.h
--rw-rw-rw-  5 rms       wheel        1245 Sep 29  1986 pwd.h
--rw-rw-rw-  4 rms       wheel         757 Mar 17  1987 recomp.com
--rw-rw-rw-  3 rms       wheel       48673 Aug 18 14:24 regex.c
--rw-rw-rw-  3 mike      wheel       12504 Aug 13 14:15 regex.h
--rw-rw-rw-  5 rms       wheel        3898 Mar  5  1987 s-bsd4-1.h
--rw-rw-rw-  5 rms       wheel        3409 Mar  5  1987 s-bsd4-2.h
--rw-rw-rw-  4 rms       wheel        3436 May 14 01:23 s-bsd4-3.h
--rw-rw-rw-  3 cph       wheel        6878 Aug 10 00:24 s-hpux.h
--rw-rw-rw-  4 rms       wheel        5279 May 28 02:29 s-iris3-5.h
--rw-rw-rw-  4 rms       wheel        5191 May 28 02:29 s-iris3-6.h
--rw-rw-rw-  3 rms       wheel        5045 Jul 12 22:05 s-rtu.h
--rw-rw-rw-  3 rms       wheel         304 Aug  5 20:02 s-sunos4.h
--rw-rw-rw-  5 rms       wheel        4612 Oct 31  1986 s-template.h
--rw-rw-rw-  5 rms       wheel        5298 Apr 13 23:56 s-umax.h
--rw-rw-rw-  5 rms       wheel        5357 Mar  5  1987 s-unipl5-0.h
--rw-rw-rw-  5 rms       wheel        5024 Mar  5  1987 s-unipl5-2.h
--rw-rw-rw-  5 rms       wheel        5212 Mar  5  1987 s-usg5-0.h
--rw-rw-rw-  5 rms       wheel        5259 Mar  5  1987 s-usg5-2-2.h
--rw-rw-rw-  5 rms       wheel        5272 Mar  5  1987 s-usg5-2.h
--rw-rw-rw-  3 rms       wheel        5679 Jul 24 18:12 s-usg5-3.h
--rw-rw-rw-  5 rms       wheel        7359 Feb 13 03:42 s-vms.h
--rw-rw-rw-  5 rms       wheel          34 Feb  8  1987 s-vms4-0.h
--rw-rw-rw-  5 rms       wheel          35 Feb  8  1987 s-vms4-2.h
--rw-rw-rw-  5 rms       wheel          35 Feb  8  1987 s-vms4-4.h
--rw-rw-rw-  5 rms       wheel        6612 Apr  9 01:48 s-xenix.h
--rw-rw-rw-  4 rms       wheel       14646 Mar 19 02:55 scroll.c
--rw-rw-rw-  3 rms       wheel       38374 Aug 19 11:30 search.c
--rw-rw-rw-  5 rms       wheel        1328 Mar 24 04:35 sink.h
--rw-rw-rw-  5 rms       wheel        1993 Mar 23 21:43 sink11.h
--rw-rw-rw-  5 rms       wheel        1962 Mar 23 21:45 sink11mask.h
--rw-rw-rw-  5 rms       wheel        1343 Mar 24 04:35 sinkmask.h
--rw-rw-rw-  4 rms       wheel       13954 May 21 13:28 sunfns.c
--rw-rw-rw-  5 rms       wheel       29886 Jan 19 06:49 syntax.c
--rw-rw-rw-  5 rms       wheel        3423 Sep 29  1986 syntax.h
--rw-rw-rw-  3 rms       wheel       81261 Aug 21 16:02 sysdep.c
--rw-rw-rw-  4 rms       wheel         770 Jun 29  1987 temacs.opt
--rw-rw-rw-  3 rms       wheel       32474 Jul 18 01:51 term.c
--rw-rw-rw-  3 rms       wheel       18406 Jun 18 09:19 termcap.c
--rw-rw-rw-  5 rms       wheel        2330 Sep 29  1986 termchar.h
--rw-rw-rw-  4 rms       wheel        1769 Sep 29  1986 termhooks.h
--rw-rw-rw-  5 rms       wheel        1824 Jun 12  1987 terminfo.c
--rw-rw-rw-  5 rms       wheel        1644 Sep 29  1986 termopts.h
--rw-rw-rw-  4 rms       wheel         177 Feb 26  1987 testemacs.com
--rw-rw-rw-  5 rms       wheel       11344 Apr 11 19:32 tparam.c
--rw-rw-rw-  5 rms       wheel        9119 Sep 29  1986 uaf.h
--rw-rw-rw-  3 cph       wheel       10717 Aug  9 19:08 undo.c
--rw-rw-rw-  5 rms       wheel        2694 Sep 29  1986 undo.h
--rw-rw-rw-  4 rms       wheel       26713 May 10 21:58 unexconvex.c
--rw-rw-rw-  3 rms       wheel       27554 Aug 20 12:22 unexec.c
--rw-rw-rw-  5 rms       wheel       12344 Apr 24 18:51 unexenix.c
--rw-rw-rw-  3 rms       wheel        9003 Aug 31 11:36 unexhp9k800.c
--rw-rw-rw-  5 rms       wheel       12775 Apr 24 18:51 unexmips.c
--rw-rw-rw-  5 rms       wheel          70 Jun  1  1986 vlimit.h
--rw-rw-rw-  5 rms       wheel        7265 Jan 10  1987 vms-pp.c
--rw-rw-rw-  4 rms       wheel         549 Nov  5  1986 vms-pp.trans
--rw-rw-rw-  3 rms       wheel       24787 Aug 15 23:05 vmsfns.c
--rw-rw-rw-  5 rms       wheel        6165 Apr 25  1987 vmsmap.c
--rw-rw-rw-  5 rms       wheel         649 May 22  1987 vmspaths.h
--rw-rw-rw-  3 rms       wheel       55077 Jun 10 09:07 window.c
--rw-rw-rw-  4 rms       wheel        8552 Feb 19  1987 window.h
--rw-rw-rw-  3 rms       wheel       22112 Aug 27 14:48 x11fns.c
--rw-rw-rw-  3 rms       wheel       52438 Aug 31 16:26 x11term.c
--rw-rw-rw-  5 cph       wheel         583 Apr 19 13:07 x11term.h
--rw-rw-rw-  3 rms       wheel       57031 Aug 15 23:04 xdisp.c
--rw-rw-rw-  3 cph       wheel       37663 Aug 10 00:28 xfns.c
--rw-rw-rw-  4 rms       wheel       11566 May 31 03:23 xmenu.c
--rw-rw-rw-  3 rms       wheel       46381 Aug 24 17:19 xterm.c
--rw-rw-rw-  4 rms       wheel        1186 Sep  7  1987 xterm.h
--rw-rw-rw-  3 rms       wheel       13353 Aug 15 23:03 ymakefile
+src:
+total 4828
+-rw-rw-rw-  5 rms          7742 Feb 11  1988 COPYING
+-rw-rw-rw-  1 rms        177587 Aug 18 18:02 ChangeLog
+-rw-rw-rw-  1 rms           972 Aug  7 21:12 Makefile
+-rw-rw-rw-  1 rms          1273 Sep 14  1986 README
+-rw-rw-rw-  1 rms        214625 Aug 21 18:07 TAGS
+-rw-rw-rw-  1 rms          2957 Jun  4 15:35 VMSBUILD
+-rw-rw-rw-  1 rms         15845 Dec  5  1986 abbrev.c
+-rw-rw-rw-  1 rms          1059 Jun  1  1986 acldef.h
+-rw-rw-rw-  1 rms         38094 Feb 13 05:23 alloc.c
+-rw-rw-rw-  1 rms          5214 Oct 16  1986 alloca.c
+-rw-rw-rw-  1 rms          8427 Aug  6 17:56 alloca.s
+-rw-rw-rw-  1 rms         43855 Jul 20 18:36 buffer.c
+-rw-rw-rw-  1 rms          8360 Feb  8  1987 buffer.h
+-rw-rw-rw-  1 rms           239 Mar 20  1987 build.com
+-rw-rw-rw-  1 rms         13912 Mar 17  1987 bytecode.c
+-rw-rw-rw-  1 rms         15316 Jun 28  1988 callint.c
+-rw-rw-rw-  1 rms         12152 Jul 20 01:15 callproc.c
+-rw-rw-rw-  1 rms          6923 Aug 14  1987 casefiddle.c
+-rw-rw-rw-  1 rms            90 Mar 17  1987 ccom.com
+-rw-rw-rw-  1 rms           885 Jun  1  1986 chpdef.h
+-rw-rw-rw-  1 rms         10033 Apr  6 22:02 cm.c
+-rw-rw-rw-  1 rms          3331 Feb  9  1988 cm.h
+-rw-rw-rw-  1 rms          9021 Dec 28 23:09 cmds.c
+-rw-rw-rw-  1 rms          2595 Dec 10  1986 commands.h
+-rw-rw-rw-  1 rms          1607 Mar 17  1987 compile.com
+-rw-rw-rw-  1 rms          3695 Apr 21  1988 config.h-dist
+-rw-rw-rw-  1 rms         17357 Jul 20 01:49 crt0.c
+-rw-rw-rw-  1 rms         43287 Feb 11 01:15 data.c
+-rw-rw-rw-  1 rms          2925 Feb 11  1988 dir.h
+-rw-rw-rw-  1 rms         12717 Apr 10  1988 dired.c
+-rw-rw-rw-  1 rms          2595 Dec 10  1986 dispextern.h
+-rw-rw-rw-  1 rms         39886 Aug 12 12:30 dispnew.c
+-rw-rw-rw-  1 rms         11827 Mar 17  1987 doc.c
+-rw-rw-rw-  1 rms          3310 Jan  9  1988 doprnt.c
+-rw-rw-rw-  1 rms         28152 Jul 21 14:21 editfns.c
+-rw-rw-rw-  1 rms         15635 Mar 13 16:41 emacs.c
+-rw-rw-rw-  1 rms          7978 Nov  7  1986 environ.c
+-rw-rw-rw-  1 rms         55716 Aug  8  1988 eval.c
+-rw-rw-rw-  1 rms         57889 Jul  4 21:00 fileio.c
+-rw-rw-rw-  1 rms          8667 Mar 24  1988 filelock.c
+-rw-rw-rw-  1 rms          9269 Aug 26  1988 filemode.c
+-rw-rw-rw-  1 rms         33628 Apr  6 22:25 fns.c
+-rw-rw-rw-  1 rms           416 Jun  1  1986 getpagesize.h
+-rw-rw-rw-  1 rms         15163 Aug 15  1988 indent.c
+-rw-rw-rw-  1 rms          1069 Sep 29  1986 indent.h
+-rw-rw-rw-  1 rms          8594 Feb  4  1988 insdel.c
+-rw-rw-rw-  1 rms            36 Jun  1  1986 ioctl.h
+-rw-rw-rw-  1 rms         51928 Jul 20 01:32 keyboard.c
+-rw-rw-rw-  1 rms         34522 Feb 24 06:36 keymap.c
+-rw-rw-rw-  1 rms          1571 Sep 29  1986 lastfile.c
+-rw-rw-rw-  1 rms           123 Sep 14  1986 link.com
+-rw-rw-rw-  1 rms         33503 Mar 30  1988 lisp.h
+-rw-rw-rw-  1 rms         32579 Aug  1  1988 lread.c
+-rw-rw-rw-  1 rms          2720 May 12 22:09 m-7300.h
+-rw-rw-rw-  1 rms          4780 Apr 18 00:17 m-alliant.h
+-rw-rw-rw-  1 rms           131 Nov 21  1986 m-alliant1.h
+-rw-rw-rw-  1 rms           616 Aug 26  1988 m-alliant4.h
+-rw-rw-rw-  1 rms          1786 Dec  4  1987 m-altos.h
+-rw-rw-rw-  1 rms          5377 Aug 29  1988 m-amdahl.h
+-rw-rw-rw-  1 rms          2686 Aug 26  1988 m-apollo.h
+-rw-rw-rw-  1 rms          5179 Jan 15  1988 m-att3b.h
+-rw-rw-rw-  1 rms          2134 Apr  7  1987 m-celerity.h
+-rw-rw-rw-  1 rms          4016 Feb 23 07:05 m-convex.h
+-rw-rw-rw-  1 rms          4565 Apr  6  1988 m-cydra5.h
+-rw-rw-rw-  1 rms          2143 Oct  1  1986 m-dual.h
+-rw-rw-rw-  1 rms          4453 Jan 15  1988 m-elxsi.h
+-rw-rw-rw-  1 rms          2398 Oct  1  1986 m-gec63.h
+-rw-rw-rw-  1 rms          4073 Jan 15  1988 m-gould.h
+-rw-rw-rw-  1 rms          5241 Aug  6 17:59 m-hp9000s300.h
+-rw-rw-rw-  1 rms          5849 Jun  7 13:54 m-hp9000s800.h
+-rw-rw-rw-  1 rms          5002 Aug  5 16:24 m-ibmps2-aix.h
+-rw-rw-rw-  1 rms          5709 Aug  3 03:02 m-ibmrt-aix.h
+-rw-rw-rw-  1 rms          4542 Aug 29  1988 m-ibmrt.h
+-rw-rw-rw-  1 rms          4189 Jul 26 01:40 m-intel386.h
+-rw-rw-rw-  1 rms          6771 Apr 17 20:13 m-iris4d.h
+-rw-rw-rw-  1 rms          5204 Jan 19  1988 m-irist.h
+-rw-rw-rw-  1 rms           220 Mar 29  1988 m-is386.h
+-rw-rw-rw-  1 rms          2643 Aug 30  1988 m-isi-ov.h
+-rw-rw-rw-  1 rms          4750 Jan 15  1988 m-masscomp.h
+-rw-rw-rw-  1 rms          1780 Oct  1  1986 m-mega68.h
+-rw-rw-rw-  1 rms          4336 Jan 15  1988 m-mg1.h
+-rw-rw-rw-  1 rms          5763 Jun 22 19:35 m-mips.h
+-rw-rw-rw-  1 rms          1983 Apr 25 22:02 m-news.h
+-rw-rw-rw-  1 rms          1756 Mar 14  1987 m-ns16000.h
+-rw-rw-rw-  1 rms          2392 Nov  7  1986 m-nu.h
+-rw-rw-rw-  1 rms          2486 Oct  1  1986 m-orion.h
+-rw-rw-rw-  1 rms          2669 Jul 17  1988 m-orion105.h
+-rw-rw-rw-  1 rms          3939 Jan 15  1988 m-plexus.h
+-rw-rw-rw-  1 rms            58 Jun  8 12:53 m-pmax.h
+-rw-rw-rw-  1 rms          2045 Aug 30  1988 m-pyramid.h
+-rw-rw-rw-  1 rms          5141 Mar 16 13:40 m-sequent.h
+-rw-rw-rw-  1 rms            21 Mar 18  1988 m-sgi3000.h
+-rw-rw-rw-  1 rms          3234 Dec  2  1987 m-sparc.h
+-rw-rw-rw-  1 rms          3925 Mar 21  1988 m-stride.h
+-rw-rw-rw-  1 rms          2053 Nov  7  1986 m-sun1.h
+-rw-rw-rw-  1 rms          2741 Feb 13  1988 m-sun2.h
+-rw-rw-rw-  1 rms           374 May 14  1988 m-sun3.h
+-rw-rw-rw-  1 rms          2235 Dec 28 23:48 m-sun386.h
+-rw-rw-rw-  1 rms          2335 Aug 31  1988 m-tahoe.h
+-rw-rw-rw-  1 rms          3767 Jan 15  1988 m-targon31.h
+-rw-rw-rw-  1 rms          2954 Apr  8  1988 m-tek4300.h
+-rw-rw-rw-  1 rms          3646 Jan 15  1988 m-template.h
+-rw-rw-rw-  1 rms          3922 Jan 15  1988 m-tower32.h
+-rw-rw-rw-  1 rms          4101 Jun 27  1988 m-ustation.h
+-rw-rw-rw-  1 rms          2715 Apr  8  1987 m-vax.h
+-rw-rw-rw-  1 rms          4708 Jan 15  1988 m-wicat.h
+-rw-rw-rw-  1 rms          6730 Sep 29  1986 macros.c
+-rw-rw-rw-  1 rms          1171 Sep 29  1986 macros.h
+-rw-rw-rw-  1 rms         24913 Apr  7 22:12 malloc.c
+-rw-rw-rw-  1 rms          6275 Oct  1  1986 marker.c
+-rw-rw-rw-  1 rms         33061 Mar 31 18:50 minibuf.c
+-rw-rw-rw-  1 rms          6160 Sep 29  1986 mocklisp.c
+-rw-rw-rw-  1 rms          1262 Jun 19  1986 ndir.h
+-rw-rw-rw-  1 rms            72 Jun  1  1986 param.h
+-rw-rw-rw-  1 rms           819 Oct  1  1986 paths.h-dist
+-rw-rw-rw-  1 rms           398 Jun  9  1986 pre-crt0.c
+-rw-rw-rw-  1 rms           215 Mar 17  1987 precomp.com
+-rw-rw-rw-  1 rms         17295 Jul 28  1988 print.c
+-rw-rw-rw-  1 rms         60299 Aug  6 18:01 process.c
+-rw-rw-rw-  1 rms          2894 Sep 29  1986 process.h
+-rw-rw-rw-  1 rms          1245 Sep 29  1986 pwd.h
+-rw-rw-rw-  1 rms           757 Mar 17  1987 recomp.com
+-rw-rw-rw-  1 rms         48673 Aug 18  1988 regex.c
+-rw-rw-rw-  1 rms         12504 Aug 13  1988 regex.h
+-rw-rw-rw-  1 rms          3898 Mar  5  1987 s-bsd4-1.h
+-rw-rw-rw-  1 rms          3409 Mar  5  1987 s-bsd4-2.h
+-rw-rw-rw-  1 rms          3436 May 14  1988 s-bsd4-3.h
+-rw-rw-rw-  1 rms          7102 Jun  7 13:54 s-hpux.h
+-rw-rw-rw-  1 rms          5279 May 28  1988 s-iris3-5.h
+-rw-rw-rw-  1 rms          5290 Dec 28 23:46 s-iris3-6.h
+-rw-rw-rw-  1 rms          5045 Jul 12  1988 s-rtu.h
+-rw-rw-rw-  1 rms           304 Aug  5  1988 s-sunos4.h
+-rw-rw-rw-  1 rms          4612 Oct 31  1986 s-template.h
+-rw-rw-rw-  1 rms          5298 Apr 13  1988 s-umax.h
+-rw-rw-rw-  1 rms          5357 Mar  5  1987 s-unipl5-0.h
+-rw-rw-rw-  1 rms          5024 Mar  5  1987 s-unipl5-2.h
+-rw-rw-rw-  1 rms          5212 Mar  5  1987 s-usg5-0.h
+-rw-rw-rw-  1 rms          5259 Mar  5  1987 s-usg5-2-2.h
+-rw-rw-rw-  1 rms          5272 Mar  5  1987 s-usg5-2.h
+-rw-rw-rw-  1 rms          5751 May 12 22:14 s-usg5-3.h
+-rw-rw-rw-  1 rms          7359 Feb 13  1988 s-vms.h
+-rw-rw-rw-  1 rms            34 Feb  8  1987 s-vms4-0.h
+-rw-rw-rw-  1 rms            35 Feb  8  1987 s-vms4-2.h
+-rw-rw-rw-  1 rms            35 Feb  8  1987 s-vms4-4.h
+-rw-rw-rw-  1 rms          6612 Apr  9  1988 s-xenix.h
+-rw-rw-rw-  1 rms         14646 Mar 19  1988 scroll.c
+-rw-rw-rw-  1 rms         38395 Aug  3 02:05 search.c
+-rw-rw-rw-  1 rms          1328 Mar 24  1988 sink.h
+-rw-rw-rw-  1 rms          1993 Mar 23  1988 sink11.h
+-rw-rw-rw-  1 rms          1962 Mar 23  1988 sink11mask.h
+-rw-rw-rw-  1 rms          1343 Mar 24  1988 sinkmask.h
+-rw-rw-rw-  1 rms         13967 Jan 13 01:21 sunfns.c
+-rw-rw-rw-  1 rms         29886 Jan 19  1988 syntax.c
+-rw-rw-rw-  1 rms          3423 Sep 29  1986 syntax.h
+-rw-rw-rw-  1 rms         82586 Aug  7 21:50 sysdep.c
+-rw-rw-rw-  1 rms           770 Jun 29  1987 temacs.opt
+-rw-rw-rw-  1 rms         32524 Mar 29 10:49 term.c
+-rw-rw-rw-  1 rms         18406 Jun 18  1988 termcap.c
+-rw-rw-rw-  1 rms          2330 Sep 29  1986 termchar.h
+-rw-rw-rw-  1 rms          1769 Sep 29  1986 termhooks.h
+-rw-rw-rw-  1 rms          1824 Jun 12  1987 terminfo.c
+-rw-rw-rw-  1 rms          1644 Sep 29  1986 termopts.h
+-rw-rw-rw-  1 rms           177 Feb 26  1987 testemacs.com
+-rw-rw-rw-  1 rms         11391 Apr  6 23:55 tparam.c
+-rw-rw-rw-  1 rms          9119 Sep 29  1986 uaf.h
+-rw-rw-rw-  1 rms         10717 Aug  9  1988 undo.c
+-rw-rw-rw-  1 rms          2694 Sep 29  1986 undo.h
+-rw-rw-rw-  1 rms         26713 May 10  1988 unexconvex.c
+-rw-rw-rw-  1 rms         27554 Aug 20  1988 unexec.c
+-rw-rw-rw-  1 rms         12344 Apr 24  1988 unexenix.c
+-rw-rw-rw-  1 rms          9003 Aug 31  1988 unexhp9k800.c
+-rw-rw-rw-  1 rms         13145 Jan 12 19:14 unexmips.c
+-rw-rw-rw-  1 rms            70 Jun  1  1986 vlimit.h
+-rw-rw-rw-  1 rms          7265 Jan 10  1987 vms-pp.c
+-rw-rw-rw-  1 rms           549 Nov  5  1986 vms-pp.trans
+-rw-rw-rw-  1 rms         26187 Aug 18 18:01 vmsfns.c
+-rw-rw-rw-  1 rms          6165 Apr 25  1987 vmsmap.c
+-rw-rw-rw-  1 rms           649 May 22  1987 vmspaths.h
+-rw-rw-rw-  1 rms         55077 Jun 10  1988 window.c
+-rw-rw-rw-  1 rms          8552 Feb 19  1987 window.h
+-rw-rw-rw-  1 rms         22421 Aug 13 15:54 x11fns.c
+-rw-rw-rw-  1 rms         53218 Aug  2 22:56 x11term.c
+-rw-rw-rw-  1 rms           583 Apr 19  1988 x11term.h
+-rw-rw-rw-  1 rms         57449 Apr 26 16:13 xdisp.c
+-rw-rw-rw-  1 rms         38193 Aug 13 15:53 xfns.c
+-rw-rw-rw-  1 rms         11952 Aug 11 22:24 xmenu.c
+-rw-rw-rw-  1 rms         46341 Dec 28 23:09 xterm.c
+-rw-rw-rw-  1 rms          1186 Sep  7  1987 xterm.h
+-rw-rw-rw-  1 rms         13885 Jun 16 22:17 ymakefile

@@ -126,7 +126,8 @@ GNU C++ Compiler (g++)	g++.tar-M.N	BETA TEST
 GNU C++ Library		dist-libg++.tar.Z	BETA TEST
 GNU C++ Debugger (gdb+)	gdb+.tar-M.N.Z	BETA TEST
 GNU AWK (gawk)		awk.tar		BETA TEST
-GNU versions of ld, make, gprof, size, nm and strip
+GNU Make		make.tar-M.N.Z	BETA TEST
+GNU ld, gprof, size, nm and strip
 			binutils.tar	BETA TEST
 GNU Chess		gnuchess.tar.Z
 GNU Buttons and Designs	button.M.N.ps

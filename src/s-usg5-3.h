@@ -141,6 +141,10 @@ and this notice must be preserved on all copies.  */
    is named avenrun.  */
 
 #define LDAV_SYMBOL "avenrun"
+
+/* Define this if system V IPC is available.  */
+
+#define HAVE_SYSVIPC
 
 /* Special hacks needed to make Emacs run on this system.  */
 

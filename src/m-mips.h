@@ -123,7 +123,9 @@ and this notice must be preserved on all copies.  */
 
 #ifdef BSD
 
-#define LIBS_MACHINE -lmld
+/* Supposedly the dec machine doesn't have this library.
+   #define LIBS_MACHINE -lmld  */
+
 #define LD_SWITCH_MACHINE -D 800000
 #define LIBS_DEBUG
 

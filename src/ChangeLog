@@ -1,3 +1,180 @@
+Fri Aug 18 17:00:47 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
+
+	* Version 18.55 released.
+
+	* vmsfns.c: Define PRV$V_... syms if prvdef.h does not.
+
+Sun Aug 13 14:50:28 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
+
+	* xfns.c (Fx_proc_mouse_event, Fx_get_mouse_event):
+	Set new var Vx_mouse_abs_pos, for sake of xmenu.c.
+	(syms_of_xfns): Make this a Lisp variable.
+
+	* x11fns.c (Fx_get_mouse_event): Fix like Fx_proc_mouse_event.
+	(syms_of_xfns): Initialize the variable.
+
+Fri Aug 11 21:24:19 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
+
+	* dispnew.c: Handle BROKEN_FIONREAD as in other files.
+
+	* x11fns.c (Fx_proc_mouse_event): Set Vx_mouse_abs_pos right.
+	* xmenu.c (XEmacsMenu): Use that rather than XQueryPointer
+	to decide where to put the menu.
+
+Sun Aug  6 17:57:54 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* process.c [HPUX, !NOMULTIPLEJOBS, !WAITTYPE]:
+	Treat this case like BSD, regarding sys/wait.h.
+
+	* m-hp9000s300.h: Don't include sys/wait.h if NOT_C_CODE.
+	If we do include it, also define WRETCODE.
+	* alloca.s: Define NOT_C_CODE.
+
+Sat Aug  5 16:25:04 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-ibmps2-aix.h (HAVE_CLOSEDIR): Define this.
+	* sysdep.c (closedir): Don't define if HAVE_CLOSEDIR.
+
+	* m-hp9000s300.h: Include sys/wait.h and define WAITTYPE, 
+	unless NO_SHORTNAMES.
+
+	* process.c [BSD]: If O_NDELAY missing in file.h, include fcntl.h.
+
+Wed Aug  2 20:31:13 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-ibmrt-aix.h (LIBS_MACHINE): Delete X libraries--redundant.
+
+	* x11term.c [AIX]: Include sys/time.h as well as time.h.
+
+	* search.c (Freplace_match): Bug in substituting \N if match was empty.
+
+Wed Jul 26 01:41:25 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c (wait_for_termination): Treat HPUX version 6 like BSD.
+
+	* process.c: If NEED_BSDTTY, include bsdtty.h.
+	If WAITTYPE already defined, don't include wait.h
+	and don't alter the related macros.
+	(child_sig): On HPUX, if have WNOHANG, loop around as on BSD.
+	(create_process): On HPUX, frob the signal mask as on BSD.
+
+	* m-intel386.h (LOAD_AVE_*): Expect different type and encoding.
+
+Thu Jul 20 00:53:05 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c: Don't include sioctl.h on mips.
+
+	* buffer.c  (Flist_buffers): Pass prefix as arg.
+
+	* editfns.c (Finsert_char): Insert at most 256 chars at a whack.
+
+	* x11term.c (internal_socket_read): Pass 0 as fifth arg
+	to XLookupString.
+
+	* keyboard.c (command_loop_1): Finalize keyboard macro storage
+	only when there is no prefix argument.
+
+	* callproc.c (Fcall_process) [USG,HAVE_PTYS]:
+	With these parameters, do setpgrp here.
+	(child_setup): Instead of here.
+	Note that process.c already did setpgrp before calling
+	child_setup, with these parameters.
+
+	* m-ibmps2-aix.h: New file.
+	* m-ibmrt-aix.h: Define AIX.
+	* sysdep.c: Change IBMRTAIX to AIX in certain conditionals.
+	(Those pertaining to the hf library or system calls.)
+
+Tue Jul  4 21:00:30 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fileio.c (Finsert_file_contents): Check for negative file length.
+
+Fri Jun 23 15:48:21 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (clean, distclean): Delete libXMenu11.a.
+
+Thu Jun 22 18:51:06 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-mips.h (LIBS_MACHINE): Don't define if BSD.
+	* keyboard.c (force_input_signal): New function: raise SIGIO and force
+	read_socket_hook to be called.
+	* xmenu.c (Fx_popup_menu): Call that after menu disappears.
+
+Fri Jun 16 22:17:12 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ymakefile: New var OLDXMENU for filename of libXMenu.a.
+	Put it in LIBX, not XOBJ.  Make temacs depend on it.
+
+Thu Jun 15 20:15:29 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* ymakefile [HAVE_X11, HAVE_X_MENU]: Assume Xmenu came with Emacs
+	and must be built.
+
+	* xmenu.c: Load "../oldXMenu/XMenu.h" instead of <X11/XMenu.h>.
+
+	* x11term.c (xfixscreen): Really act only every 100th time.
+
+Thu Jun  8 12:54:03 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* m-pmax.h: New file.
+
+Wed Jun  7 13:54:22 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* alloca.s [hp9000s300]: Increase MAXREG for fpregs.
+
+	* sysdep.c (init_sys_modes, reset_sys_modes): Take TIOCGLTC code
+	outside of HAVE_TERMIO conditionals.
+
+	* m-hp9000s300.h: Undefine NOMULTIPLEJOBS.
+	Define NEED_BSDTTY if not NOMULTIPLEJOBS.
+
+	* crt0.c [hp9000s300]: Set flag_fpa.  Define float_loc.
+
+	* m-hp9000s800.h: Define NEED_BSDTTY here.
+	* s-hpux.h: Not here.
+
+Tue Jun  6 19:25:17 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* s-hpux.h: Define NEED_BSDTTY.
+
+Tue May 30 18:45:21 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11fns.c (x_set_cursor_colors): Don't let the background match
+	the mouse.
+	* x11term.c (XFlipColor): Change mous_color earlier.
+
+Tue May 23 22:18:53 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* search.c (skip_chars): Dumb error checking for \.
+
+Sun May 21 00:43:24 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* callproc.c (child_setup): Undo previous change.
+	setpgrp is needed on USG.
+
+	* xmenu.c (Fx_popup_menu): Prevent sigio int during XQueryPointer.
+
+Mon May 15 21:59:38 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* editfns.c (Fsubst_char_in_region): If NOUNDO, do increment tick,
+	but maybe also increment save-tick.
+
+Sat May 13 14:17:57 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes) [IBMRTAIX]: Typo; had s for sg.
+
+Fri May 12 22:09:26 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* s-usg5-3.h: Define HAVE_SYSVIPC.
+
+	* m-7300.h: Undefine SHORTNAMES.
+
+Mon May  1 02:10:04 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* x11term.c [USG]: Use sys/time.h, not time.h, if IRIS_4D.
+
+	* sysdep.c [USG]: Don't include sioctl.h if IRIS_4D.
+
 Wed Apr 26 16:14:12 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
 
 	* Version 18.54 released.
@@ -5037,7 +5214,6 @@ Sun Jun  1 04:33:34 1986  Richard M. Stallman  (rms at prep)
 
 Local Variables:
 mode: indented-text
-eval: (auto-fill-mode 1)
 left-margin: 8
 fill-column: 74
 version-control: never

@@ -71,9 +71,17 @@ static char *rcsid_xterm_c = "$Header: x11term.c,v 1.12 88/02/29 14:11:07 rfrenc
 #include "x11term.h"
 
 #ifdef USG
+#ifdef IRIS_4D
+#include <sys/time.h>
+#else
 #include <time.h>
+#endif
 #else
 #include <sys/time.h>
+#endif
+
+#ifdef AIX
+#include <sys/time.h>   /* In addition to time.h.  */
 #endif
 
 #include <fcntl.h>
@@ -1321,7 +1329,7 @@ internal_socket_read(bufp, numchars)
     case KeyPress:
       nbytes = XLookupString (&event,
 			      mapping_buf, 20, &keysym,
-			      &status);
+			      0);
       /* Someday this will be unnecessary as we will
 	 be able to use XRebindKeysym so XLookupString
 	 will have already given us the string we want. */
@@ -1409,22 +1417,30 @@ XIgnoreError ()
 
 xfixscreen ()
 {
+	static int server_ping_timer;
 	BLOCK_INPUT_DECLARE ();
 
-	/* Yes, this is really what I mean -- Check to see if we've
-	 * lost our connection */
-	
-	BLOCK_INPUT ();
-	XSetErrorHandler(0);
-	XSetIOErrorHandler(0);
-	XNoOp (XXdisplay);
-	XFlush (XXdisplay);
-	XSetErrorHandler(handler);
-	XSetIOErrorHandler(handler);
-	if (!InUpdate && !CursorExists)
-		CursorToggle ();
+	if (server_ping_timer > 0)
+	  server_ping_timer--;
+	else
+	  {
+	    server_ping_timer = 100;
 
-	UNBLOCK_INPUT ();
+	    /* Yes, this is really what I mean -- Check to see if we've
+	     * lost our connection */
+
+	    BLOCK_INPUT ();
+	    XSetErrorHandler(0);
+	    XSetIOErrorHandler(0);
+	    XNoOp (XXdisplay);
+	    XFlush (XXdisplay);
+	    XSetErrorHandler(handler);
+	    XSetIOErrorHandler(handler);
+	    if (!InUpdate && !CursorExists)
+		    CursorToggle ();
+
+	    UNBLOCK_INPUT ();
+	  }
 }
 	
 
@@ -2006,6 +2022,11 @@ XFlipColor ()
 	XXgc_norm = XXgc_rev;
 	XXgc_rev = XXgc_temp;
 
+	if (!strcmp (mous_color, "white"))
+	  mous_color = "black";
+	else if (!strcmp (mous_color, "black"))
+	  mous_color = "white";
+
 	x_set_cursor_colors ();
 
 	XRedrawDisplay ();
@@ -2019,11 +2040,6 @@ XFlipColor ()
 			curs_color = "white";
 		}
 	XSetState (XXdisplay, XXgc_curs, back, curs, GXinvert, AllPlanes);
-
-	if (!strcmp (mous_color, "white"))
-	  mous_color = "black";
-	else if (!strcmp (mous_color, "black"))
-	  mous_color = "white";
 
 	CursorToggle ();
 	XFlush (XXdisplay);

@@ -22,7 +22,7 @@ and this notice must be preserved on all copies.  */
 
 /* This machine does not have flexnames.  Yuk */
 
-# define SHORTNAMES
+/* # define SHORTNAMES */
 
 
 /* The following three symbols give information on

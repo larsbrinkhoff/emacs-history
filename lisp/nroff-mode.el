@@ -185,7 +185,7 @@ automatically inserts the matching closing request after point."
 	(if needs-nl (insert "\n")))
       (forward-char 1))))
 
-(defun electric-nroff-mode (arg)
+(defun electric-nroff-mode (&optional arg)
   "Toggle nroff-electric-newline minor mode
 Nroff-electric-newline forces emacs to check for an nroff
 request at the beginning of the line, and insert the

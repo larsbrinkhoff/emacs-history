@@ -10,10 +10,11 @@ doall:
 #This is used in making a distribution.
 #Do not use it on development directories!
 distclean:
-	-rm -f paths.h config.h emacs-* temacs xemacs xmakefile core *~ \#* *.o
+	-rm -f paths.h config.h emacs-* temacs xemacs xmakefile core \
+   *~ \#* *.o libXMenu11.a log*
 
 clean:
-	-rm -f temacs xemacs xmakefile core \#* *.o
+	-rm -f temacs xemacs xmakefile core \#* *.o libXMenu11.a
 
 xemacs: xmakefile doxemacs
 

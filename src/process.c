@@ -41,11 +41,18 @@ and this notice must be preserved on all copies.  */
 
 #if defined(BSD) || defined(STRIDE)
 #include <sys/ioctl.h>
+#if !defined (O_NDELAY) && defined (HAVE_PTYS)
+#include <fcntl.h>
+#endif /* HAVE_PTYS and no O_NDELAY */
 #endif /* BSD or STRIDE */
 #ifdef USG
 #include <termio.h>
 #include <fcntl.h>
 #endif /* USG */
+
+#ifdef NEED_BSDTTY
+#include <sys/bsdtty.h>
+#endif
 
 #ifdef IRIS
 #include <sys/sysmacros.h>	/* for "minor" */
@@ -105,7 +112,8 @@ and this notice must be preserved on all copies.  */
    On many systems, there is a structure defined for this.
    But on vanilla-ish USG systems there is not.  */
 
-#if !defined (BSD) && !defined (UNIPLUS) && !defined (STRIDE)
+#ifndef WAITTYPE
+#if !defined (BSD) && !defined (UNIPLUS) && !defined (STRIDE) && !(defined (HPUX) && !defined (NOMULTIPLEJOBS))
 #define WAITTYPE int
 #define WIFSTOPPED(w) ((w&0377) == 0177)
 #define WIFSIGNALED(w) ((w&0377) != 0177 && (w&~0377) == 0)
@@ -130,6 +138,7 @@ and this notice must be preserved on all copies.  */
 #define WSTOPSIG(w) w.w_stopsig
 #endif
 #endif /* BSD or UNIPLUS or STRIDE */
+#endif /* no WAITTYPE */
 
 extern errno;
 extern sys_nerr;
@@ -981,6 +990,9 @@ create_process (process, new_argv)
 #ifdef BSD4_1
   sighold (SIGCHLD);
 #else /* not BSD4_1 */
+#ifdef HPUX
+  sigsetmask (1 << (SIGCHLD - 1));
+#endif /* HPUX */
 #if defined (BSD) || defined (UNIPLUS)
   sigsetmask (1 << (SIGCHLD - 1));
 #else /* ordinary USG */
@@ -1076,6 +1088,9 @@ create_process (process, new_argv)
 #ifdef BSD4_1
   sigrelse (SIGCHLD);
 #else /* not BSD4_1 */
+#ifdef HPUX
+  sigsetmask (0);
+#endif /* HPUX */
 #if defined (BSD) || defined (UNIPLUS)
   sigsetmask (0);
 #else /* ordinary USG */
@@ -2008,7 +2023,7 @@ loop:
     }
 
   if (XSYMBOL (tail) == XSYMBOL (Qnil))
-#ifdef USG
+#if defined (USG) && ! (defined (HPUX) && defined (WNOHANG))
     goto ignore;
 #else
     goto loop;		/* We don't know who this is */
@@ -2034,13 +2049,15 @@ loop:
 	XFASTINT (p->flags) |= COREDUMPED;
       XFASTINT (p->reason) = WTERMSIG (w);
     }
-#ifndef USG
+#if !defined (USG) || (defined (HPUX) && defined (WNOHANG))
   goto loop;
 #else
  ignore:
+#ifdef USG
   signal (signo, child_sig);
+#endif
   errno = old_errno;
-#endif /* not USG */
+#endif /* not USG, or HPUX with WNOHANG */
 }
 
 /* Find all process marked as "changed"

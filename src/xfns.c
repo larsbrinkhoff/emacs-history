@@ -89,7 +89,7 @@ extern XREPBUFFER Xxrepbuffer;
 
 Lisp_Object Vxterm;
 
-Lisp_Object Vx_mouse_pos;
+Lisp_Object Vx_mouse_pos, Vx_mouse_abs_pos;
 
 Lisp_Object Vx_mouse_item;
 
@@ -656,6 +656,9 @@ the appropriate function to act upon this event.")
       XSET (tempx, Lisp_Int, min (screen_width-1, max (0, (xrep.x - XXInternalBorder)/fontinfo->width)));
       XSET (tempy, Lisp_Int, min (screen_height-1, max (0, (xrep.y - XXInternalBorder)/fontinfo->height)));
       Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
+      XSET (tempx, Lisp_Int, xrep.x + XXxoffset);
+      XSET (tempy, Lisp_Int, xrep.y + XXyoffset);
+      Vx_mouse_abs_pos = Fcons (tempx, Fcons (tempy, Qnil));
       Vx_mouse_item = make_number (com_letter);
       Mouse_Cmd = get_keyelt (access_keymap (MouseMap, com_letter));
       if (NULL (Mouse_Cmd)) 
@@ -665,6 +668,7 @@ the appropriate function to act upon this event.")
 	    Ding ();
 #endif
 	  Vx_mouse_pos = Qnil;
+	  Vx_mouse_abs_pos = Qnil;
 	}
       else
 	{
@@ -709,6 +713,9 @@ otherwise, wait for an event.")
       XSET (tempx, Lisp_Int, min (screen_width, max (0, (xrep.x - XXInternalBorder)/fontinfo->width)));
       XSET (tempy, Lisp_Int, min (screen_height, max (0, (xrep.y - XXInternalBorder)/fontinfo->height)));
       Vx_mouse_pos = Fcons (tempx, Fcons (tempy, Qnil));
+      XSET (tempx, Lisp_Int, xrep.x + XXxoffset);
+      XSET (tempy, Lisp_Int, xrep.y + XXyoffset);
+      Vx_mouse_abs_pos = Fcons (tempx, Fcons (tempy, Qnil));
       return Fcons (com_letter, Fcons (Vx_mouse_pos, Qnil));
     }
   return Qnil;
@@ -1350,6 +1357,9 @@ numerical entries in x-mouse-map.");
   DEFVAR_LISP ("x-mouse-pos", &Vx_mouse_pos,
      "Current x-y position of mouse by row, column as specified by font.");
   Vx_mouse_pos = Qnil;
+  DEFVAR_LISP ("x-mouse-abs-pos", &Vx_mouse_abs_pos,
+     "Current x-y position of mouse by row, column in pixels, wrt root window.");
+  Vx_mouse_abs_pos = Qnil;
 
   defsubr (&Sx_pop_up_window);
   defsubr (&Sx_set_bell);

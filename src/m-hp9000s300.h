@@ -96,9 +96,9 @@ and this notice must be preserved on all copies.  */
 
 /* #define VIRT_ADDR_VARIES */
 
-/* This series of hp machine does not have job control.  */
+/* Define NOMULTIPLEJOBS on versions of HPUX before 6.5.  */
 
-#define NOMULTIPLEJOBS
+/* #define NOMULTIPLEJOBS */
 
 /* The symbol in the kernel where the load average is found
    is named _avenrun on this machine.  */
@@ -165,4 +165,18 @@ and this notice must be preserved on all copies.  */
 #ifndef __GNUC__
 #define C_SWITCH_MACHINE -Wc,-Nd4000,-Ns3000
 #endif
+#endif
+
+/* Define NEED_BSDTTY if you have such. */
+
+#ifndef NOMULTIPLEJOBS
+#define NEED_BSDTTY
+#endif
+
+#ifndef NOT_C_CODE
+#ifndef NO_SHORTNAMES
+#include <sys/wait.h>
+#define WAITTYPE int
+#endif
+#define WRETCODE(w) (((w) >> 8) & 0377)
 #endif

@@ -180,3 +180,6 @@ and this notice must be preserved on all copies.  */
 
 #define index strchr
 #define rindex strrchr
+
+/* Include the file bsdtty.h, since job control exists.  */
+#define NEED_BSDTTY

@@ -197,6 +197,11 @@ if you quit, the process is killed.")
       {
 	if (fd[0] >= 0)
 	  close (fd[0]);
+#ifdef USG
+#ifdef HAVE_PTYS
+	setpgrp ();
+#endif
+#endif
 	child_setup (filefd, fd1, fd1, new_argv, env);
       }
 
@@ -373,10 +378,14 @@ child_setup (in, out, err, new_argv, env)
   close (out);
   close (err);
 
-#ifndef USG
+#ifdef USG
+#ifndef HAVE_PTYS
+  setpgrp ();			/* No arguments but equivalent in this case */
+#endif
+#else
   setpgrp (pid, pid);
-  setpgrp_of_tty (pid);
 #endif /* USG */
+  setpgrp_of_tty (pid);
 
 #ifdef vipc
   something missing here;

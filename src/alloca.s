@@ -25,6 +25,7 @@ and this notice must be preserved on all copies.  */
    So replace whatever system-provided alloca there may be
    on all 68000 systems.  */
 
+#define NOT_C_CODE
 #include "config.h"
 
 #ifndef HAVE_ALLOCA  /* define this to use system's alloca */
@@ -79,7 +80,7 @@ PROBE	equ	-128		; safety buffer for C compiler scratch
  */
 	text
 	set	PROBE,-128	# safety for C frame temporaries
-	set	MAXREG,10	# d2-d7, a2-a5 may have been saved
+	set	MAXREG,22	# d2-d7, a2-a5, fp2-fp7 may have been saved
 	global	_alloca
 _alloca:
 	mov.l	(%sp)+,%a0	# return addess

@@ -391,9 +391,9 @@ NAME may be an abbreviation of the reference name."
 	 completions str i)
      (save-excursion
        (goto-char (point-min))
-       (while (re-search-forward "\\*note[ \n]*[^:]*:" nil t)
+       (while (re-search-forward "\\*note[ \n\t]*\\([^:]*\\):" nil t)
 	 (setq str (buffer-substring
-		    (+ (match-beginning 0) 6)
+		    (match-beginning 1)
 		    (1- (point))))
 	 (setq i 0)
 	 (while (setq i (string-match "[ \n\t]+" str i))

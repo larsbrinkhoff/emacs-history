@@ -48,6 +48,10 @@ and this notice must be preserved on all copies.  */
 
 #define IBMRTAIX
 
+#ifndef AIX
+#define AIX
+#endif
+
 /* Use type int rather than a union, to represent Lisp_Object */
 /* This is desirable for most machines.  */
 
@@ -124,15 +128,17 @@ and this notice must be preserved on all copies.  */
 
 /* On AIX 2.2.1, use these definitions instead
 #define C_SWITCH_MACHINE -I/usr/include -Nn2000
-#define LIBS_MACHINE -lX -lrts
+#define LIBS_MACHINE -lrts
 #define LIBX10_MACHINE -lrts
+#define LIBX11_MACHINE -lrts
 */
 
 #define C_SWITCH_MACHINE -I/usr/include -I/usr/include/bsd -Nn2000
 /* need to duplicate -lsock -lbsd -lrts so refs in libX can be resolved   */
 /* order of lib specs in ymakefile should probably be changed.            */
-#define LIBS_MACHINE -lXMenu -lX -lsock -lbsd -lrts
+#define LIBS_MACHINE -lsock -lbsd -lrts
 #define LIBX10_MACHINE -lsock -lbsd -lrts
+#define LIBX11_MACHINE -lsock -lbsd -lrts
 
 #define OBJECTS_MACHINE hftctl.o
 #define START_FILES /lib/crt0.o

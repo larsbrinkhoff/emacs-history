@@ -19,8 +19,13 @@ The expansion is entirely correct because it uses the C preprocessor."
 	(beginning-of-line)
 	(setq last-needed (point))
 	(if (re-search-backward "^[ \t]*#" nil t)
-	    (progn (forward-line 1)
-		   (setq last-needed (point)))))
+	    (progn
+	      ;; Skip continued lines.
+	      (while (progn (end-of-line) (= (preceding-char) ?\\))
+		(forward-line 1))
+	      ;; Skip the last line of the macro definition we found.
+	      (forward-line 1)
+	      (setq last-needed (point)))))
       (write-region (point-min) last-needed tempfile nil 'nomsg)
       (process-send-string process (concat "#include \"" tempfile "\"\n"))
       (process-send-string process "\n")

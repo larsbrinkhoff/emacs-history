@@ -532,7 +532,7 @@ Both arguments are required.")
   CHECK_NUMBER (count, 1);
 
   n = XINT (count);
-  if (n < 0)
+  if (n <= 0)
     return Qnil;
   strlen = max (n, 256);
   string = (unsigned char *) alloca (strlen);
@@ -659,7 +659,12 @@ and don't mark the buffer as really changed.")
 
   modify_region (pos, stop);
   if (! NULL (noundo))
-    bf_modified--;
+    {
+      if (bf_modified - 1 == bf_cur->save_modified)
+	bf_cur->save_modified++;
+      if (bf_modified - 1 == bf_cur->auto_save_modified)
+	bf_cur->auto_save_modified++;
+    }
 
   while (pos < stop)
     {

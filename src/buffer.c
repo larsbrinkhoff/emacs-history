@@ -1025,7 +1025,7 @@ list_buffers_1 (files)
   return Qnil;
 }
 
-DEFUN ("list-buffers", Flist_buffers, Slist_buffers, 0, 1, "",
+DEFUN ("list-buffers", Flist_buffers, Slist_buffers, 0, 1, "P",
   "Display a list of names of existing buffers.\n\
 Inserts it in buffer *Buffer List* and displays that.\n\
 Note that buffers with names starting with spaces are omitted.\n\

@@ -26,6 +26,10 @@ Execute `compile.com' to recompile all files that need recompilation.
  can be used to recompile individual files.  `ccom' works by executing
  `ccom.com'.
 
+ If you compile with optimization, note that in compiler version
+ 3.0 there is a bug affecting inline functions.  So you must specify
+ /OPTIMIZE=NOINLINE when compiling `dispnew.c'.
+
 Compilation will give you lots of warnings about symbols longer than 30
  characters.  You must just ignore them.  Alternatively, you can
  compile the C program `vms-pp.c' and run all the .c and .h files

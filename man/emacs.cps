@@ -28,7 +28,7 @@
 \entry {C-}{15}
 \entry {C-g}{235}
 \entry {case conversion}{82, 135}
-\entry {centering}{133}
+\entry {centering}{134}
 \entry {change buffers}{103}
 \entry {change log}{152}
 \entry {character set}{15}
@@ -115,7 +115,7 @@
 \entry {insertion}{23}
 \entry {invisible lines}{124}
 \initial {J}
-\entry {justification}{133}
+\entry {justification}{134}
 \initial {K}
 \entry {key}{16}
 \entry {key rebinding, permanent}{230}
@@ -148,7 +148,7 @@
 \entry {matching parentheses}{147}
 \entry {message}{185, 191}
 \entry {message number}{191}
-\entry {Meta}{15, 127}
+\entry {Meta}{15, 128}
 \entry {minibuffer}{33, 41, 224}
 \entry {minor modes}{215}
 \entry {mistakes, correcting}{31, 81}
@@ -195,7 +195,7 @@
 \entry {rectangles}{57}
 \entry {recursive editing level}{205, 235}
 \entry {regexp}{71}
-\entry {region}{47, 135}
+\entry {region}{47, 136}
 \entry {registers}{61}
 \entry {regular expression}{71}
 \entry {replacement}{76}
@@ -227,7 +227,7 @@
 \entry {summary (Rmail)}{199}
 \entry {suspending}{19}
 \entry {switch buffers}{103}
-\entry {syntax table}{128, 228}
+\entry {syntax table}{129, 228}
 \initial {T}
 \entry {tag table}{153}
 \entry {techniquitous}{213}
@@ -255,6 +255,6 @@
 \entry {widening}{206}
 \entry {windows}{109}
 \entry {word search}{71}
-\entry {words}{82, 127, 135}
+\entry {words}{82, 128, 135}
 \initial {Y}
 \entry {yanking}{53}

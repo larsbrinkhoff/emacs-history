@@ -73,12 +73,12 @@ so disable it for them.  */
 
 #ifdef XENIX
 /* Data type of load average, as read out of kmem.  */
-#define LOAD_AVE_TYPE long
+#define LOAD_AVE_TYPE short
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
-#define LOAD_AVE_CVT(x) (int) (((double) (x)) * 100.0 / FSCALE)
+#define LOAD_AVE_CVT(x) (((double) (x)) * 100.0 / FSCALE)
   
-#define FSCALE 400000.0         /* determined by experimentation...  */
+#define FSCALE 256.0         /* determined by experimentation...  */
 #endif
 
 /* Define CANNOT_DUMP on machines where unexec does not work.

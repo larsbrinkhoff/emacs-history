@@ -145,14 +145,14 @@ And always:
     in the order encountered, a reasonable model for most Unix systems.
     Similarly, note that the address of _start() should be the start
     of text space.   Fred Fish, UniSoft Systems Inc.  */
- 
+
 int data_start = 0;
-   
+
 #ifdef NEED_ERRNO
 int errno;
 #endif
 
-#ifndef DONT_NEED_ENVIRON 
+#ifndef DONT_NEED_ENVIRON
 char **environ;
 #endif
 
@@ -341,7 +341,7 @@ start1 (CRT0_DUMMIES argc, xargv)
 #else /* m68000, not m68k */
 
 #ifdef m68000
-  
+
 #ifdef ISI68K
 /* Added by ESM Sun May 24 12:44:02 1987 to get new ISI library to work */
 #ifdef BSD4_3
@@ -441,11 +441,15 @@ char **argv_value;
 	asm("	trap	#0x0");
 	asm("	comm	float_soft,4");
 /* float_soft is allocated in this way because C would
-   put an underscore character in its name otherwise. */ 
+   put an underscore character in its name otherwise. */
 
 #else /* new hp assembler */
 
 	asm("	text");
+        asm("   global  float_loc");
+        asm("   set     float_loc,0xFFFFB000");
+ 	asm("	global	fpa_loc");
+	asm("	set	fpa_loc,0xfff08000");
 	asm("	global	__start");
 	asm("	global	_exit");
 	asm("	global	_main");
@@ -455,12 +459,18 @@ char **argv_value;
 	asm("	mov.w	%d0,float_soft");
 	asm("	mov.w	%d1,flag_68881");
 #ifndef HPUX_68010
-	asm("	beq.b	skip_float"); 
-	asm("	fmov.l	&0x7480,%fpcr");
+	asm("	beq.b	skip_float");
+	asm("	fmov.l	&0x7400,%fpcr");
+/*	asm("	fmov.l	&0x7480,%fpcr"); */
 #endif /* HPUX_68010 */
 	asm("skip_float:");
+	asm("	mov.l	%a0,%d0");
+	asm("	add.l	%d0,%d0");
 	asm("	subx.w	%d1,%d1");
 	asm("	mov.w	%d1,flag_68010");
+	asm("	add.l	%d0,%d0");
+	asm("	subx.w	%d1,%d1");
+	asm("	mov.w	%d1,flag_fpa");
 	asm("	mov.l	4(%a7),%d0");
 	asm("	beq.b	skip_1");
 	asm("	mov.l	%d0,%a0");
@@ -492,7 +502,8 @@ char **argv_value;
 	asm("	comm	float_soft, 4");
 	asm("	comm	flag_68881, 4");
 	asm("	comm	flag_68010, 4");
-	
+	asm("	comm	flag_fpa, 4");
+
 #endif /* new hp assembler */
 #endif /* hp9000s300 */
 
@@ -519,7 +530,7 @@ char **argv_value;
 	asm("	movw	r4,b2");
 /* allocate stack frame to do some work. */
 	asm("	subea	16w,b2");
-/* initialize signal catching for UTX/32 1.2; this is 
+/* initialize signal catching for UTX/32 1.2; this is
    necessary to make restart from saved image work. */
 	asm("	movea	sigcatch,r1");
 	asm("	movw	r1,8w[b2]");
@@ -559,7 +570,7 @@ extern char **environ;
 _start()
 {
   register int r;
-  
+
   errno = 0;
   environ = *(&environ + 8);
   _stdinit();
@@ -569,7 +580,7 @@ _start()
 }
 #endif /* elxsi */
 
-  
+
 #ifdef sparc
 asm (".global __start");
 asm (".text");

@@ -145,8 +145,9 @@ where SECTION is the desired section of the manual, as in `tty(4)'."
 
 (defun insert-man-file (name)
   ;; Insert manual file (unpacked as necessary) into buffer
-  (if (equal (substring name -2) ".Z")
-      (call-process "zcat" nil t nil name)
+  (if (or (equal (substring name -2) ".Z")
+	  (string-match "/cat[0-9][a-z]?\\.Z/" name))
+      (call-process "zcat" name t nil)
     (if (equal (substring name -2) ".z")
 	(call-process "pcat" nil t nil name)
       (insert-file-contents name))))

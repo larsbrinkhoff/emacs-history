@@ -1,5 +1,5 @@
 This is a list of the status of GNU Emacs on various machines and systems.
-Last updated 25 April 1989
+Last updated 20 July 1989
 
 Systems:
   For each type of system, the name of the appropriate s- header file
@@ -54,6 +54,9 @@ System V rel 3 (s-usg5-3.h)
 
   Some versions of this system support ptys and BSD-style sockets.
   On such systems, you should define HAVE_PTYS and HAVE_SOCKETS in config.h.
+
+  Sorry, shared libraries do not work with Emacs currently (in 18.55).
+  They will be supported in the future.
 
 Ultrix
 
@@ -281,6 +284,12 @@ High Level Hardware Orion 1/05 (m-orion105.h; s-bsd4-2.h)
   C compiler has a bug; it loops compiling eval.c.
   Compile it by hand without optimization.
 
+IBM PS2 (m-ibmps2-aix.h; s-usg5-2-2.h)
+
+  Changes mostly merged in 18.55.
+  You may need to put an #ifndef AIX conditional
+  around the definition of closedir in sysdep.c.
+
 IBM RT/PC (m-ibmrt.h or m-ibmrt-aix.h; s-bsd4-2.h or s-usg5-2-2.h)
 
   18.52 works on both operating systems.
@@ -398,6 +407,10 @@ Nu (TI or LMI) (m-nu.h; s-usg5-2.h)
 Plexus (m-plexus.h; s-usg5-2.h)
 
   Works as of 17.56.
+
+Pmax, Mips from DEC (m-pmax.h; s-bsd4-3.h)
+
+  Minor changes merged in 18.55.
 
 Prime EXL (m-intel386.h, s-usg5-3.h)
 

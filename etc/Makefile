@@ -49,7 +49,7 @@ cvtmail: cvtmail.c
 fakemail: fakemail.c ../src/config.h
 	$(CC) -o fakemail ${CFLAGS} fakemail.c $(LOADLIBES)
 
-yow: yow.c
+yow: yow.c ../src/paths.h
 	$(CC) -o yow ${CFLAGS} yow.c $(LOADLIBES)
 
 # this is silly -- just use emacs to edit this file!

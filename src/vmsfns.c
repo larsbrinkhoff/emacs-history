@@ -84,6 +84,55 @@ and this notice must be preserved on all copies.  */
 
 #define	MSGSIZE	160		/* Maximum size for mailbox operations */
 
+#ifndef PRV$V_ACNT
+
+/* these defines added as hack for VMS 5.1-1.   SJones, 8-17-89 */
+/* this is _really_ nasty and needs to be changed ASAP - should see about
+   using the union defined in SYS$LIBRARY:PRVDEF.H under v5 */
+
+#define PRV$V_ACNT	0x09
+#define PRV$V_ALLSPOOL  0x04
+#define PRV$V_ALTPRI	0x0D
+#define PRV$V_BUGCHK    0x17
+#define PRV$V_BYPASS    0x1D
+#define PRV$V_CMEXEC    0x01
+#define PRV$V_CMKRNL    0x00
+#define PRV$V_DETACH    0x05
+#define PRV$V_DIAGNOSE  0x06
+#define PRV$V_DOWNGRADE 0x21
+#define PRV$V_EXQUOTA   0x13
+#define PRV$V_GROUP     0x08
+#define PRV$V_GRPNAM    0x03
+#define PRV$V_GRPPRV 	0x22
+#define PRV$V_LOG_IO    0x07
+#define PRV$V_MOUNT     0x11
+#define PRV$V_NETMBX    0x14
+#define PRV$V_NOACNT    0x09
+#define PRV$V_OPER      0x12
+#define PRV$V_PFNMAP    0x1A
+#define PRV$V_PHY_IO    0x16
+#define PRV$V_PRMCEB    0x0A
+#define PRV$V_PRMGBL    0x18
+#define PRV$V_PRMJNL 	0x25
+#define PRV$V_PRMMBX    0x0B
+#define PRV$V_PSWAPM    0x0C
+#define PRV$V_READALL 	0x23
+#define PRV$V_SECURITY 	0x26
+#define PRV$V_SETPRI    0x0D
+#define PRV$V_SETPRV    0x0E
+#define PRV$V_SHARE 	0x1F
+#define PRV$V_SHMEM     0x1B
+#define PRV$V_SYSGBL    0x19
+#define PRV$V_SYSLCK	0x1E
+#define PRV$V_SYSNAM    0x02
+#define PRV$V_SYSPRV    0x1C
+#define PRV$V_TMPJNL 	0x24
+#define PRV$V_TMPMBX    0x0F
+#define PRV$V_UPGRADE 	0x20
+#define PRV$V_VOLPRO    0x15
+#define PRV$V_WORLD     0x10
+#endif
+
 /* IO status block for mailbox operations.  */
 struct mbx_iosb
 {

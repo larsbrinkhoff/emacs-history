@@ -94,8 +94,9 @@ for example, \"word\"."
 	(save-excursion
 	 (set-buffer buf)
 	 (goto-char (point-min))
-	 (setq word (buffer-substring (point)
-				      (progn (end-of-line) (point))))
+	 (setq word (downcase
+		     (buffer-substring (point)
+				       (progn (end-of-line) (point)))))
 	 (forward-char 1)
 	 (delete-region (point-min) (point))
 	 (setq newword

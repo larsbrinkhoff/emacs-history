@@ -224,7 +224,7 @@ main (argc, argv, envp)
   setuid (getuid ());
 #endif HIGHPRI
 
-
+  inhibit_window_system = 0;
 
 #ifdef HAVE_X_WINDOWS
   xargv = argv;

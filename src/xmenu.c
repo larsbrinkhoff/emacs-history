@@ -59,12 +59,14 @@ static char *rcsid_GXMenu_c = "$Header: xmenu.c,v 1.6 86/08/26 17:23:26 rlk Exp 
 #include "dispextern.h"
 
 #ifdef X11
-#include <X11/XMenu.h>
+#include "../oldXMenu/XMenu.h"
 #define X11ONLY(arg) arg,
 #else
 #include <X/XMenu.h>
 #define X11ONLY(arg)
 #endif
+
+#include "termopts.h"
 
 #define min(x,y) (((x) < (y)) ? (x) : (y))
 #define max(x,y) (((x) > (y)) ? (x) : (y))
@@ -130,14 +132,25 @@ be the return value for that line (i. e. if it is selected.")
 #ifdef X11
   Window root_window, wjunk;
   int ijunk;
+  extern Lisp_Object Vx_mouse_abs_pos;
 #endif
   BLOCK_INPUT_DECLARE ();
 
   check_xterm();
 #ifdef X11
+#if 0
+  if (interrupt_input)
+    unrequest_sigio ();
+#endif
+  BLOCK_INPUT ();
   root_window = RootWindow (XXdisplay, DefaultScreen(XXdisplay));
-  XQueryPointer (XXdisplay, root_window, &wjunk, &wjunk, &XMenu_xpos,
-		 &XMenu_ypos, &ijunk, &ijunk, &ijunk);
+  UNBLOCK_INPUT ();
+  XMenu_xpos = Fcar (Vx_mouse_abs_pos);
+  XMenu_ypos = Fcar (Fcdr (Vx_mouse_abs_pos));
+#if 0
+  if (interrupt_input)
+    request_sigio ();
+#endif
 #else
   XMenu_xpos = fontinfo->width * XINT(Fcar(arg));
   XMenu_ypos = fontinfo->height * XINT(Fcar(Fcdr (arg)));
@@ -172,6 +185,7 @@ be the return value for that line (i. e. if it is selected.")
   XErrorHandler(handler);
 #endif
   UNBLOCK_INPUT ();
+  force_input_read ();
   /** fprintf(stderr,"selection = %x\n",selection);  **/
   if (selection != NUL)
     {				/* selected something */

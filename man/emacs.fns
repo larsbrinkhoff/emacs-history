@@ -40,7 +40,7 @@
 \entry {call-last-kbd-macro}{222}
 \entry {cancel-debug-on-entry}{171}
 \entry {capitalize-word}{82, 135}
-\entry {center-line}{133}
+\entry {center-line}{134}
 \entry {clear-rectangle}{58}
 \entry {command-apropos}{45}
 \entry {compare-windows}{111}
@@ -51,7 +51,7 @@
 \entry {copy-region-as-kill}{54}
 \entry {copy-to-buffer}{56}
 \entry {copy-to-register}{62}
-\entry {count-lines-page}{131}
+\entry {count-lines-page}{132}
 \entry {count-lines-region}{28}
 \entry {count-matches}{79}
 \entry {count-text-lines}{120}
@@ -93,7 +93,7 @@
 \entry {do-auto-save}{95}
 \entry {doctor}{238}
 \entry {down-list}{140}
-\entry {downcase-region}{135}
+\entry {downcase-region}{136}
 \entry {downcase-word}{82, 135}
 \initial {E}
 \entry {edit-abbrevs}{178}
@@ -126,10 +126,10 @@
 \entry {expand-abbrev}{177}
 \entry {expand-region-abbrevs}{177}
 \initial {F}
-\entry {fill-individual-paragraphs}{134}
+\entry {fill-individual-paragraphs}{135}
 \entry {fill-paragraph}{133}
 \entry {fill-region}{133}
-\entry {fill-region-as-paragraph}{133}
+\entry {fill-region-as-paragraph}{134}
 \entry {find-alternate-file}{87}
 \entry {find-file}{87}
 \entry {find-file-other-window}{88, 111}
@@ -137,13 +137,13 @@
 \entry {find-tag-other-window}{111, 155}
 \entry {fortran-column-ruler}{162}
 \entry {fortran-comment-region}{161}
-\entry {fortran-create-window}{162}
 \entry {fortran-indent-line}{159}
 \entry {fortran-indent-subprogram}{159}
 \entry {fortran-mode}{158}
 \entry {fortran-next-statement}{158}
 \entry {fortran-previous-statement}{158}
 \entry {fortran-split-line}{159}
+\entry {fortran-window-create}{162}
 \entry {forward-char}{24}
 \entry {forward-list}{140}
 \entry {forward-page}{131}
@@ -167,7 +167,6 @@
 \entry {indent-c-exp}{142}
 \entry {indent-for-comment}{148}
 \entry {indent-new-comment-line}{149}
-\entry {indent-new-line}{115}
 \entry {indent-region}{116, 143}
 \entry {indent-relative}{116}
 \entry {indent-rigidly}{116}
@@ -245,7 +244,7 @@
 \entry {mark-paragraph}{49, 130}
 \entry {mark-sexp}{49, 140}
 \entry {mark-whole-buffer}{49}
-\entry {mark-word}{49, 128}
+\entry {mark-word}{49, 129}
 \entry {minibuffer-complete}{36}
 \entry {minibuffer-complete-word}{36}
 \entry {modify-syntax-entry}{229}
@@ -368,8 +367,8 @@
 \entry {rmail-summary-previous-all}{201}
 \entry {rmail-summary-previous-msg}{201}
 \entry {rmail-summary-quit}{201}
-\entry {rmail-summary-scroll-down}{201}
-\entry {rmail-summary-scroll-up}{201}
+\entry {rmail-summary-scroll-msg-down}{201}
+\entry {rmail-summary-scroll-msg-up}{201}
 \entry {rmail-summary-undelete}{201}
 \entry {rmail-toggle-header}{203}
 \entry {rmail-undelete-previous-message}{194}
@@ -438,7 +437,7 @@
 \entry {TeX-buffer}{123}
 \entry {TeX-close-LaTeX-block}{122}
 \entry {TeX-insert-braces}{122}
-\entry {TeX-insert-quote}{121}
+\entry {TeX-insert-quote}{122}
 \entry {TeX-kill-job}{123}
 \entry {tex-mode}{120}
 \entry {TeX-mode}{120}
@@ -461,7 +460,7 @@
 \entry {universal-argument}{30}
 \entry {untabify}{117}
 \entry {up-list}{122}
-\entry {upcase-region}{135}
+\entry {upcase-region}{136}
 \entry {upcase-word}{82, 135}
 \initial {V}
 \entry {validate-TeX-buffer}{122}

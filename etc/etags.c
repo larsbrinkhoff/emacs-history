@@ -1552,7 +1552,8 @@ readline (linebuffer, stream)
       int c = getc (stream);
       if (p == pend)
 	{
-	  buffer = (char *) xrealloc (buffer, linebuffer->size *= 2);
+	  linebuffer->size *= 2;
+	  buffer = (char *) xrealloc (buffer, linebuffer->size);
 	  p += buffer - linebuffer->buffer;
 	  pend = buffer + linebuffer->size;
 	  linebuffer->buffer = buffer;

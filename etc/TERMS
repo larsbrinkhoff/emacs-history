@@ -149,3 +149,6 @@ commands to turn off flow control:
 
     set port flow control disable
     define port flow control disable
+
+On a PC, with terminal type AT386 or AT386-M, rumor has it that the termcap file 
+that comes with the system has the `xt' capability, but should not have it.
