@@ -1,13 +1,12 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Killing and Moving Text
 
   @dfn{Killing} means erasing text and copying it into the @dfn{kill
-ring}, from which it can be retrieved by @dfn{yanking} it.  Some more
-recent systems use the terms ``cutting'' and ``pasting'' for these
-operations.
+ring}, from which it can be retrieved by @dfn{yanking} it.  Some systems
+use the terms ``cutting'' and ``pasting'' for these operations.
 
   The commonest way of moving or copying text within Emacs is to kill it
 and later yank elsewhere it in one or more places.  This is very safe
@@ -23,15 +22,10 @@ one buffer and yank it in another buffer.
 
 @node Killing, Yanking, Mark, Top
 @section Deletion and Killing
-@findex delete-char
-@c ??? Should be backward-delete-char
-@findex delete-backward-char
 
 @cindex killing text
 @cindex cutting text
 @cindex deletion
-@kindex C-d
-@kindex DEL
   Most commands which erase text from the buffer save it in the kill
 ring so that you can move or copy it to other parts of the buffer.
 These commands are known as @dfn{kill} commands.  The rest of the
@@ -58,6 +52,11 @@ and @samp{delete} to say which they do.
 
 @node Deletion
 @subsection Deletion
+@c ??? Should be backward-delete-char
+@findex delete-backward-char
+@findex delete-char
+@kindex DEL
+@kindex C-d
 
 @table @kbd
 @item C-d
@@ -146,8 +145,6 @@ following newline.  This variable is normally @code{nil}.
 @node Other Kill Commands
 @subsection Other Kill Commands
 @findex kill-region
-@findex kill-sentence
-@kindex M-k
 @kindex C-w
 
 @c DoubleWideCommands
@@ -191,9 +188,8 @@ sentences, with @kbd{C-x @key{DEL}} and @kbd{M-k}
 change the buffer, and they beep to warn you of that, but they do copy
 the text you tried to kill into the kill ring, so you can yank it into
 other buffers.  Most of the kill commands move point across the text
-they copy in this way, so that successive kill commands add text to the
-most recent kill-ring entry just as they would if they were really
-killing the text.
+they copy in this way, so that successive kill commands build up a
+single kill ring entry as usual.
 
 @node Yanking, Accumulating Text, Killing, Top
 @section Yanking
@@ -230,7 +226,7 @@ Append next kill to last batch of killed text (@code{append-next-kill}).
 @subsection The Kill Ring
 
   All killed text is recorded in the @dfn{kill ring}, a list of blocks of
-text that have been killed.  There is only one kill ring, used in all
+text that have been killed.  There is only one kill ring, shared by all
 buffers, so you can kill text in one buffer and yank it in another buffer.
 This is the usual way to move text from one file to another.
 (@xref{Accumulating Text}, for some other ways.)
@@ -241,14 +237,14 @@ This is the usual way to move text from one file to another.
 kill.  It leaves the cursor at the end of the text.  It sets the mark at
 the beginning of the text.  @xref{Mark}.
 
-  @kbd{C-u C-y} leaves the cursor in front of the text, and sets the mark
-after it.  This is only if the argument is specified with just a @kbd{C-u},
-precisely.  Any other sort of argument, including @kbd{C-u} and digits,
-specifies an earlier kill to yank (@pxref{Earlier Kills}).
+  @kbd{C-u C-y} leaves the cursor in front of the text, and sets the
+mark after it.  This happens only if the argument is specified with just
+a @kbd{C-u}, precisely.  Any other sort of argument, including @kbd{C-u}
+and digits, specifies an earlier kill to yank (@pxref{Earlier Kills}).
 
 @kindex M-w
 @findex kill-ring-save
-  If you wish to copy a block of text, you might want to use @kbd{M-w}
+  To copy a block of text, you can use @kbd{M-w}
 (@code{kill-ring-save}), which copies the region into the kill ring
 without removing it from the buffer.  This is approximately equivalent
 to @kbd{C-w} followed by @kbd{C-x u}, except that @kbd{M-w} does not
@@ -261,8 +257,8 @@ alter the undo history and does not temporarily change the screen.
 @cindex television
   Normally, each kill command pushes a new entry onto the kill ring.
 However, two or more kill commands in a row combine their text into a
-single entry, so that a single @kbd{C-y} gets it all back as it was before
-it was killed.
+single entry, so that a single @kbd{C-y} yanks all the text as a unit,
+just as it was before it was killed.
 
   Thus, if you want to yank text as a unit, you need not kill all of it
 with one command; you can keep killing line after line, or word after
@@ -274,18 +270,18 @@ killed text.  Commands that kill backward from point add text onto the
 beginning.  This way, any sequence of mixed forward and backward kill
 commands puts all the killed text into one entry without rearrangement.
 Numeric arguments do not break the sequence of appending kills.  For
-example, suppose the buffer contains
+example, suppose the buffer contains this text:
 
 @example
 This is a line @point{}of sample text.
 @end example
 
 @noindent
-with point as shown.  If you type @kbd{M-d M-@key{DEL} M-d M-@key{DEL}},
-killing alternately forward and backward, you end up with @samp{a line
-of sample} as one entry in the kill ring, and @samp{This is@ @ text.} in
-the buffer.  (Note the double space, which you can clean up with
-@kbd{M-@key{SPC}} or @kbd{M-q}.)
+with point shown by @point{}.  If you type @kbd{M-d M-@key{DEL} M-d
+M-@key{DEL}}, killing alternately forward and backward, you end up with
+@samp{a line of sample} as one entry in the kill ring, and @samp{This
+is@ @ text.} in the buffer.  (Note the double space, which you can clean
+up with @kbd{M-@key{SPC}} or @kbd{M-q}.)
 
   Another way to kill the same text is to move back two words with
 @kbd{M-b M-b}, then kill all four words forward with @kbd{C-u M-d}.
@@ -473,9 +469,6 @@ Yank the last killed rectangle with its upper left corner at point
 Insert blank space to fill the space of the region-rectangle
 (@code{open-rectangle}).  This pushes the previous contents of the
 region-rectangle rightward.
-@item M-x delete-rectangle
-Delete the text of the region-rectangle without saving it in any special
-way.
 @item M-x clear-rectangle
 Clear the region-rectangle by replacing its contents with spaces.
 @item M-x string-rectangle @key{RET} @var{string} @key{RET}
@@ -503,32 +496,24 @@ can only record the most recent rectangle killed.  This is because yanking
 a rectangle is so different from yanking linear text that different yank
 commands have to be used and yank-popping is hard to make sense of.
 
-  Yanking a rectangle is the opposite of killing one.  Point specifies
-where to put the rectangle's upper left corner.  The rectangle's first
-line is inserted there, the rectangle's second line is inserted at a
-point one line vertically down, and so on.  The number of lines affected
-is determined by the height of the saved rectangle.
-
 @kindex C-x r y
 @findex yank-rectangle
   To yank the last killed rectangle, type @kbd{C-x r y}
-(@code{yank-rectangle}).  This can be used to convert single-column
-lists into double-column lists; kill the second half of the list as a
+(@code{yank-rectangle}).  Yanking a rectangle is the opposite of killing
+one.  Point specifies where to put the rectangle's upper left corner.
+The rectangle's first line is inserted there, the rectangle's second
+line is inserted at a position one line vertically down, and so on.  The
+number of lines affected is determined by the height of the saved
+rectangle.
+
+  You can convert single-column lists into double-column lists using
+rectangle killing and yanking; kill the second half of the list as a
 rectangle and then yank it beside the first line of the list.
+@xref{Two-Column}, for another way to edit multi-column text.
 
   You can also copy rectangles into and out of registers with @kbd{C-x r
 r @var{r}} and @kbd{C-x r i @var{r}}.  @xref{RegRect,,Rectangle
 Registers}.
-
-@findex string-rectangle
-  The command @kbd{M-x string-rectangle} is similar to @kbd{C-x r o},
-but it inserts a specified string instead of blanks.  You specify the
-string with the minibuffer.  Since the length of the string specifies
-how many columns to insert, the width of the region-rectangle does not
-matter for this command.  What does matter is the position of the left
-edge (which specifies the column position for the insertion in each
-line) and the range of lines that the rectangle occupies.  The previous
-contents of the text after the insertion column are pushed rightward.
 
 @kindex C-x r o
 @findex open-rectangle
@@ -538,3 +523,13 @@ clear-rectangle} to blank out existing text, and @kbd{C-x r o}
 (@code{open-rectangle}) to insert a blank rectangle.  Clearing a
 rectangle is equivalent to deleting it and then inserting a blank
 rectangle of the same size.
+
+@findex string-rectangle
+  The command @kbd{M-x string-rectangle} is similar to @kbd{C-x r o},
+but it inserts a specified string instead of blanks.  You specify the
+string with the minibuffer.  Since the length of the string specifies
+how many columns to insert, the width of the region-rectangle does not
+matter for this command.  What does matter is the position of the left
+edge (which specifies the column position for the insertion in each
+line) and the range of lines that the rectangle occupies.  The previous
+contents of the text beyond the insertion column are pushed rightward.

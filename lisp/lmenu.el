@@ -135,11 +135,12 @@ The syntax, more precisely:
   (let ((menu (make-lucid-menu-keymap (car menu-desc) (cdr menu-desc)))
 	(pos (mouse-pixel-position))
 	answer cmd)
-    (while menu
-      (setq answer (x-popup-menu (list (list (nth 1 pos) (nthcdr 2 pos))
-				       (car pos))
-				 menu))
-      (setq cmd (lookup-key menu (vector answer)))
+    (while (and menu
+		(setq answer (x-popup-menu (list (list (nth 1 pos)
+						       (nthcdr 2 pos))
+						 (car pos))
+					   menu)))
+      (setq cmd (lookup-key menu (apply 'vector answer)))
       (setq menu nil)
       (and cmd
 	   (if (keymapp cmd)

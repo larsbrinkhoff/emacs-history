@@ -67,7 +67,8 @@
 (define-key help-map "n" 'view-emacs-news)
 
 (define-key help-map "p" 'finder-by-keyword)
-(autoload 'finder-by-keyword "finder")
+(autoload 'finder-by-keyword "finder"
+  "Find packages matching a given keyword." t)
 
 (define-key help-map "s" 'describe-syntax)
 
@@ -135,16 +136,40 @@
 Computes a message and applies the optional argument FUNCTION to it.
 If FUNCTION is nil, applies `message' to it, thus printing it."
   (and (not (get-buffer-window standard-output))
-       (funcall (or function 'message)
-		(concat
-		 (substitute-command-keys
-		  (if (one-window-p t)
-		      (if pop-up-windows
-			  "Type \\[delete-other-windows] to remove help window."
-			"Type \\[switch-to-buffer] RET to remove help window.")
-		    "Type \\[switch-to-buffer-other-window] RET to restore the other window."))
-		 (substitute-command-keys
-		  "  \\[scroll-other-window] to scroll the help.")))))
+       (let ((first-message
+	      (cond ((or (member (buffer-name standard-output)
+				 special-display-buffer-names)
+			 (let (found
+			       (tail special-display-regexps)
+			       (name (buffer-name standard-output)))
+			   (while (and tail (not found))
+			     (if (string-match (car tail) name)
+				 (setq found t))
+			     (setq tail (cdr tail)))
+			   found))
+		     ;; If the help output buffer is a special display buffer,
+		     ;; don't say anything about how to get rid of it.
+		     ;; First of all, the user will do that with the window
+		     ;; manager, not with Emacs.
+		     ;; Secondly, the buffer has not been displayed yet,
+		     ;; so we don't know whether its frame will be selected.
+		     ;; Even the message about scrolling the help
+		     ;; might be wrong, but it seems worth showing it anyway.
+		     nil)
+		    ((not (one-window-p t))
+		     "Type \\[switch-to-buffer-other-window] RET to restore the other window.")
+		    (pop-up-windows
+		     "Type \\[delete-other-windows] to remove help window.")
+		    (t
+		     "Type \\[switch-to-buffer] RET to remove help window."))))
+	 (funcall (or function 'message)
+		  (concat
+		   (if first-message
+		       (substitute-command-keys first-message)
+		     "")
+		   (if first-message "  " "")
+		   (substitute-command-keys
+		    "\\[scroll-other-window] to scroll the help."))))))
 
 (defun describe-key (key)
   "Display documentation of the function invoked by KEY.  KEY is a string."
@@ -262,7 +287,14 @@ of the key sequence that ran this command."
   "Display last 100 input keystrokes."
   (interactive)
   (with-output-to-temp-buffer "*Help*"
-    (princ (key-description (recent-keys)))
+    (princ (mapconcat (function (lambda (key)
+				  (if (or (integerp key)
+					  (symbolp key)
+					  (listp key))
+				      (single-key-description key)
+				    (prin1-to-string key nil))))
+		      (recent-keys)
+		      " "))
     (save-excursion
       (set-buffer standard-output)
       (goto-char (point-min))

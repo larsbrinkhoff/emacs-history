@@ -12,12 +12,20 @@ emacs \- GNU project Emacs
 .br
 .SH DESCRIPTION
 .I GNU Emacs
-is a new version of 
+is a version of 
 .I Emacs,
 written by the author of the original (PDP-10) 
 .I Emacs,
-Richard Stallman.  
-Its user functionality encompasses
+Richard Stallman.
+.br
+The primary documentation of GNU Emacs is in the GNU Emacs Manual,
+which you can read on line using Info, a subsystem of Emacs.  Please
+look there for complete and up-to-date documentation.  This man page
+is updated only when someone volunteers to do so; the Emacs
+maintainers' priority goal is to minimize the amount of time this man
+page takes away from other more useful projects.
+.br
+The user functionality of GNU Emacs encompasses
 everything other 
 .I Emacs 
 editors do, and it is easily extensible since its
@@ -103,11 +111,10 @@ The following options are useful when running
 .I Emacs
 as a batch editor:
 .TP 8
-.BI \-batch " commandfile"
-Edit in batch mode using the commands found in
-.I commandfile.
-The editor will send messages to stdout.
-This option must be the first in the argument list.
+.BI \-batch
+Edit in batch mode.  The editor will send messages to stdout.  This
+option must be the first in the argument list.  You must use -l and -f
+options to specify files to execute and functions to call.
 .TP
 .B \-kill
 Exit 
@@ -377,14 +384,10 @@ other windows.  Same as typing CTRL-x 1.
 .\" STOP DELETING HERE IF YOU'RE NOT USING X
 .PP
 .SH MANUALS
-You can order printed copies of the GNU Emacs Manual for $20.00/copy
-postpaid from the Free Software Foundation, which develops GNU software
-(contact them for quantity prices on the manual).  Their address is:
-.nf
-    Free Software Foundation
-    675 Mass Ave.
-    Cambridge, MA 02139
-.fi
+You can order printed copies of the GNU Emacs Manual from the Free
+Software Foundation, which develops GNU software.  See the file ORDERS
+for ordering information.
+.br
 Your local Emacs maintainer might also have copies available.  As
 with all software and publications from FSF, everyone is permitted to
 make and distribute copies of the Emacs manual.  The TeX source to the
@@ -494,7 +497,7 @@ and urges that
 you contribute your extensions to the GNU library.  Eventually GNU
 (Gnu's Not Unix) will be a complete replacement for Berkeley
 Unix.
-Everyone will be able to use the GNU system for free.
+Everyone will be free to use, copy, study and change the GNU system.
 .SH SEE ALSO
 X(1), xlsfonts(1), xterm(1), xrdb(1)
 .SH AUTHORS

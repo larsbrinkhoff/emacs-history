@@ -43,7 +43,7 @@
   "*Shell command for printing a file")
 
 (defvar lpr-headers-switches
-  (if (memq system-type '(usg-unix-v hpux)) nil "-p")
+  (if (memq system-type '(usg-unix-v dgux hpux irix)) nil "-p")
   "*List of strings to use as options for `lpr' to request page headings.")
 
 (defvar print-region-function nil
@@ -79,7 +79,11 @@ See definition of `print-region-1' for calling conventions.")
   (print-region-1 start end lpr-switches t))
 
 (defun print-region-1 (start end switches page-headers)
+  ;; On some MIPS system, having a space in the job name
+  ;; crashes the printer demon.  But using dashes looks ugly
+  ;; and it seems to annoying to do for that MIPS system.
   (let ((name (concat (buffer-name) " Emacs buffer"))
+	(title (concat (buffer-name) " Emacs buffer"))
 	(width tab-width))
     (save-excursion
       (message "Spooling...")
@@ -105,7 +109,7 @@ See definition of `print-region-1' for calling conventions.")
 	     (nconc (list start end lpr-command
 			  nil nil nil)
 		    (nconc (and lpr-add-options
-				(list "-J" name "-T" name))
+				(list "-J" name "-T" title))
 			   switches)))
       (if (markerp end)
 	  (set-marker end nil))

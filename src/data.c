@@ -74,6 +74,7 @@ Lisp_Object Qchar_or_string_p, Qmarkerp, Qinteger_or_marker_p, Qvectorp;
 Lisp_Object Qbuffer_or_string_p;
 Lisp_Object Qboundp, Qfboundp;
 Lisp_Object Qcdr;
+Lisp_Object Qad_advice_info, Qad_activate;
 
 Lisp_Object Qrange_error, Qdomain_error, Qsingularity_error;
 Lisp_Object Qoverflow_error, Qunderflow_error;
@@ -554,6 +555,12 @@ DEFUN ("fset", Ffset, Sfset, 2, 2, 0,
     Vautoload_queue = Fcons (Fcons (sym, XSYMBOL (sym)->function),
 			     Vautoload_queue);
   XSYMBOL (sym)->function = newdef;
+  /* Handle automatic advice activation */
+  if (CONSP (XSYMBOL (sym)->plist) && !NILP (Fget (sym, Qad_advice_info)))
+    {
+      call2 (Qad_activate, sym, Qnil);
+      newdef = XSYMBOL (sym)->function;
+    }
   return newdef;
 }
 
@@ -570,6 +577,12 @@ Associates the function with the current load file, if any.")
     Vautoload_queue = Fcons (Fcons (sym, XSYMBOL (sym)->function),
 			     Vautoload_queue);
   XSYMBOL (sym)->function = newdef;
+  /* Handle automatic advice activation */
+  if (CONSP (XSYMBOL (sym)->plist) && !NILP (Fget (sym, Qad_advice_info)))
+    {
+      call2 (Qad_activate, sym, Qnil);
+      newdef = XSYMBOL (sym)->function;
+    }
   LOADHIST_ATTACH (sym);
   return newdef;
 }
@@ -585,6 +598,12 @@ Associates the function with the current load file, if any.")
     Vautoload_queue = Fcons (Fcons (sym, XSYMBOL (sym)->function),
 			     Vautoload_queue);
   XSYMBOL (sym)->function = newdef;
+  /* Handle automatic advice activation */
+  if (CONSP (XSYMBOL (sym)->plist) && !NILP (Fget (sym, Qad_advice_info)))
+    {
+      call2 (Qad_activate, sym, Qnil);
+      newdef = XSYMBOL (sym)->function;
+    }
   LOADHIST_ATTACH (sym);
   return newdef;
 }
@@ -2050,6 +2069,10 @@ syms_of_data ()
 
   Qcdr = intern ("cdr");
 
+  /* Handle automatic advice activation */
+  Qad_advice_info = intern ("ad-advice-info");
+  Qad_activate = intern ("ad-activate");
+
   error_tail = Fcons (Qerror, Qnil);
 
   /* ERROR is used as a signaler for random errors for which nothing else is right */
@@ -2232,6 +2255,8 @@ syms_of_data ()
   staticpro (&Qboundp);
   staticpro (&Qfboundp);
   staticpro (&Qcdr);
+  staticpro (&Qad_advice_info);
+  staticpro (&Qad_activate);
 
   defsubr (&Seq);
   defsubr (&Snull);

@@ -22,10 +22,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* On 4.3 these lose if they come after xterm.h.  */
 /* On HP-UX 8.0 signal.h loses if it comes after config.h.  */
 /* Putting these at the beginning seems to be standard for other .c files.  */
-#include <stdio.h>
 #include <signal.h>
 
 #include <config.h>
+
+#include <stdio.h>
 
 /* Need syssignal.h for various externs and definitions that may be required
    by some configurations for calls to signal later in this source file.  */
@@ -51,11 +52,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef BSD
 #include <sys/ioctl.h>
-#include <strings.h>
-#else /* ! defined (BSD) */
-#ifndef VMS
-#include <string.h>
-#endif
 #endif /* ! defined (BSD) */
 
 #include "systty.h"
@@ -83,6 +79,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "disptab.h"
 #include "buffer.h"
 #include "window.h"
+#include "keyboard.h"
 
 #ifdef USE_X_TOOLKIT
 extern XtAppContext Xt_app_con;
@@ -175,8 +172,12 @@ static FONT_TYPE *icon_font_info;
 
 /* Stuff for dealing with the main icon title. */
 
-extern Lisp_Object Vcommand_line_args;
-char *hostname, *x_id_name;
+extern Lisp_Object Vcommand_line_args, Vsystem_name;
+char *x_id_name;
+
+/* Initial values of argv and argc.  */
+extern char **initial_argv;
+extern int initial_argc;
 
 /* This is the X connection that we are using.  */
 
@@ -233,6 +234,9 @@ static int highlight;
 
 static int curs_x;
 static int curs_y;
+
+/* Reusable Graphics Context for drawing a cursor in a non-default face. */
+static GC scratch_cursor_gc;
 
 /* Mouse movement.
 
@@ -341,6 +345,9 @@ static short grey_bits[] = {
 
 static Pixmap GreyPixmap = 0;
 #endif /* ! defined (HAVE_X11) */
+
+static int x_noop_count;
+
 
 /* From time to time we get info on an Emacs window, here.  */
 
@@ -620,7 +627,6 @@ dumpglyphs (f, left, top, gp, n, hl, just_foreground)
 	struct face *face = FRAME_DEFAULT_FACE (f);
 	FONT_TYPE *font = FACE_FONT (face);
 	GC gc = FACE_GC (face);
-	int gc_temporary = 0;
 
 	/* HL = 3 means use a mouse face previously chosen.  */
 	if (hl == 3)
@@ -658,8 +664,11 @@ dumpglyphs (f, left, top, gp, n, hl, just_foreground)
 	/* Now override that if the cursor's on this character.  */
 	if (hl == 2)
 	  {
-	    if (!face->font
-		|| (int) face->font == FACE_DEFAULT)
+	    if ((!face->font
+		 || (int) face->font == FACE_DEFAULT
+		 || face->font == f->display.x->font)
+		&& face->background == f->display.x->background_pixel
+		&& face->foreground == f->display.x->foreground_pixel)
 	      {
 		gc = f->display.x->cursor_gc;
 	      }
@@ -670,10 +679,7 @@ dumpglyphs (f, left, top, gp, n, hl, just_foreground)
 		unsigned long mask;
 
 		xgcv.background = f->display.x->cursor_pixel;
-		if (face == FRAME_DEFAULT_FACE (f))
-		  xgcv.foreground = f->display.x->cursor_foreground_pixel;
-		else
-		  xgcv.foreground = face->background;
+		xgcv.foreground = face->background;
 		/* If the glyph would be invisible,
 		   try a different foreground.  */
 		if (xgcv.foreground == xgcv.background)
@@ -692,13 +698,18 @@ dumpglyphs (f, left, top, gp, n, hl, just_foreground)
 		xgcv.font = face->font->fid;
 		xgcv.graphics_exposures = 0;
 		mask = GCForeground | GCBackground | GCFont | GCGraphicsExposures;
-		gc = XCreateGC (x_current_display, FRAME_X_WINDOW (f),
-				mask, &xgcv);
+		if (scratch_cursor_gc)
+		  XChangeGC (x_current_display, scratch_cursor_gc, mask, &xgcv);
+		else
+		  scratch_cursor_gc =
+		    XCreateGC (x_current_display, window, mask, &xgcv);
+		gc = scratch_cursor_gc;
 #if 0
+/* If this code is restored, it must also reset to the default stipple
+   if necessary. */
 		if (face->stipple && face->stipple != FACE_DEFAULT)
 		  XSetStipple (x_current_display, gc, face->stipple);
 #endif
-		gc_temporary = 1;
 	      }
 	  }
 
@@ -735,9 +746,6 @@ dumpglyphs (f, left, top, gp, n, hl, just_foreground)
 				     PIXEL_TO_CHAR_ROW (f, top), hl == 1);
 	  }
 #endif
-
-	if (gc_temporary)
-	  XFreeGC (x_current_display, gc);
 
 	/* We should probably check for XA_UNDERLINE_POSITION and
 	   XA_UNDERLINE_THICKNESS properties on the font, but let's
@@ -2002,21 +2010,6 @@ construct_mouse_click (result, event, f)
 			  ? up_modifier 
 			  : down_modifier));
 
-  /* Notice if the mouse is still grabbed.  */
-  if (event->type == ButtonPress)
-    {
-      if (! x_mouse_grabbed)
-	Vmouse_depressed = Qt;
-      x_mouse_grabbed |= (1 << event->button);
-      last_mouse_frame = f;
-    }
-  else if (event->type == ButtonRelease)
-    {
-      x_mouse_grabbed &= ~(1 << event->button);
-      if (!x_mouse_grabbed)
-	Vmouse_depressed = Qnil;
-    }
-
   {
     int row, column;
 
@@ -2080,9 +2073,10 @@ note_mouse_movement (frame, event)
       /* Ask for another mouse motion event.  */
       {
 	int dummy;
+	Window dummy_window;
 
 	XQueryPointer (event->display, FRAME_X_WINDOW (frame),
-		       (Window *) &dummy, (Window *) &dummy,
+		       &dummy_window, &dummy_window,
 		       &dummy, &dummy, &dummy, &dummy,
 		       (unsigned int *) &dummy);
       }
@@ -2102,9 +2096,10 @@ note_mouse_movement (frame, event)
       /* Ask for another mouse motion event.  */
       {
 	int dummy;
+	Window dummy_window;
 
 	XQueryPointer (event->display, FRAME_X_WINDOW (frame),
-		       (Window *) &dummy, (Window *) &dummy,
+		       &dummy_window, &dummy_window,
 		       &dummy, &dummy, &dummy, &dummy,
 		       (unsigned int *) &dummy);
       }
@@ -2115,9 +2110,10 @@ note_mouse_movement (frame, event)
 	 event the next time the mouse moves and we can see if it's
 	 *still* on the same glyph.  */
       int dummy;
+      Window dummy_window;
       
       XQueryPointer (event->display, FRAME_X_WINDOW (frame),
-		     (Window *) &dummy, (Window *) &dummy,
+		     &dummy_window, &dummy_window,
 		     &dummy, &dummy, &dummy, &dummy,
 		     (unsigned int *) &dummy);
     }
@@ -2376,15 +2372,21 @@ show_mouse_face (hl)
   int width = window_internal_width (w);
   FRAME_PTR f = XFRAME (WINDOW_FRAME (w));
   int i;
-  int curs_x = f->phys_cursor_x;
-  int curs_y = f->phys_cursor_y;
   int cursor_off = 0;
+  int old_curs_x = curs_x;
+  int old_curs_y = curs_y;
+
+  /* Set these variables temporarily
+     so that if we have to turn the cursor off and on again
+     we will put it back at the same place.  */
+  curs_x = f->phys_cursor_x;
+  curs_y = f->phys_cursor_y;
 
   for (i = mouse_face_beg_row; i <= mouse_face_end_row; i++)
     {
       int column = (i == mouse_face_beg_row ? mouse_face_beg_col : w->left);
       int endcolumn = (i == mouse_face_end_row ? mouse_face_end_col : w->left + width);
-      endcolumn = min (endcolumn, FRAME_CURRENT_GLYPHS (f)->used[i] - w->left);
+      endcolumn = min (endcolumn, FRAME_CURRENT_GLYPHS (f)->used[i]);
 
       /* If the cursor's in the text we are about to rewrite,
 	 turn the cursor off.  */
@@ -2407,6 +2409,9 @@ show_mouse_face (hl)
   /* If we turned the cursor off, turn it back on.  */
   if (cursor_off)
     x_display_cursor (f, 1);
+
+  curs_x = old_curs_x;
+  curs_y = old_curs_y;
 
   /* Change the mouse cursor according to the value of HL.  */
   if (hl > 0)
@@ -2508,7 +2513,8 @@ XTmouse_position (f, bar_window, part, x, y, time)
 
 	win = root;
 
-	if (x_mouse_grabbed && FRAME_LIVE_P (last_mouse_frame))
+	if (x_mouse_grabbed && last_mouse_frame
+	    && FRAME_LIVE_P (last_mouse_frame))
 	  {
 	    /* If mouse was grabbed on a frame, give coords for that frame
 	       even if the mouse is now outside it.  */
@@ -3163,9 +3169,10 @@ x_scroll_bar_note_movement (bar, event)
      moves and we can see *still* on the same position.  */
   {
     int dummy;
+    Window dummy_window;
       
     XQueryPointer (event->xmotion.display, event->xmotion.window,
-		   (Window *) &dummy, (Window *) &dummy,
+		   &dummy_window, &dummy_window,
 		   &dummy, &dummy, &dummy, &dummy,
 		   (unsigned int *) &dummy);
   }
@@ -3302,7 +3309,68 @@ process_expose_from_menu (event)
 
   UNBLOCK_INPUT;
 }
+
+/* Define a queue to save up SelectionRequest events for later handling.  */
 
+struct selection_event_queue
+  {
+    XEvent event;
+    struct selection_event_queue *next;
+  };
+
+static struct selection_event_queue *queue;
+
+/* Nonzero means queue up certain events--don't process them yet.  */
+static int x_queue_selection_requests;
+
+/* Queue up an X event *EVENT, to be processed later.  */
+
+static void
+x_queue_event (event)
+     XEvent *event;
+{
+  struct selection_event_queue *queue_tmp
+    = (struct selection_event_queue *) malloc (sizeof (struct selection_event_queue));
+
+  if (queue_tmp != NULL) 
+    {
+      queue_tmp->event = *event;
+      queue_tmp->next = queue;
+      queue = queue_tmp;
+    }
+}
+
+/* Take all the queued events and put them back
+   so that they get processed afresh.  */
+
+static void
+x_unqueue_events ()
+{
+  while (queue != NULL) 
+    {
+      struct selection_event_queue *queue_tmp = queue;
+      XPutBackEvent (XDISPLAY &queue_tmp->event);
+      queue = queue_tmp->next;
+      free ((char *)queue_tmp);
+    }
+}
+
+/* Start queuing SelectionRequest events.  */
+
+void
+x_start_queuing_selection_requests ()
+{
+  x_queue_selection_requests++;
+}
+
+/* Stop queuing SelectionRequest events.  */
+
+void
+x_stop_queuing_selection_requests ()
+{
+  x_queue_selection_requests--;
+  x_unqueue_events ();
+}
 
 /* The main X event-reading loop - XTread_socket.  */
 
@@ -3440,6 +3508,17 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		       a keyboard or mouse event arrives. */
 		    if (numchars > 0)
 		      {
+			/* This is just so we only give real data once
+			   for a single Emacs process.  */
+			if (x_top_window_to_frame (event.xclient.window)
+			    == selected_frame)
+			  XSetCommand (x_current_display,
+				       event.xclient.window,
+				       initial_argv, initial_argc);
+			else
+			  XSetCommand (x_current_display,
+				       event.xclient.window,
+				       0, 0);
 		      }
 		  }
 		else if (event.xclient.data.l[0] == Xatom_wm_delete_window)
@@ -3522,24 +3601,27 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 	  if (!x_window_to_frame (event.xselectionrequest.owner))
 	    goto OTHER;
 #endif /* USE_X_TOOLKIT */
-	  {
-	    XSelectionRequestEvent *eventp = (XSelectionRequestEvent *) &event;
+	  if (x_queue_selection_requests)
+	    x_queue_event (&event);
+	  else
+	    {
+	      XSelectionRequestEvent *eventp = (XSelectionRequestEvent *) &event;
 
-	    if (numchars == 0)
-	      abort ();
+	      if (numchars == 0)
+		abort ();
 
-	    bufp->kind = selection_request_event;
-	    SELECTION_EVENT_DISPLAY (bufp) = eventp->display;
-	    SELECTION_EVENT_REQUESTOR (bufp) = eventp->requestor;
-	    SELECTION_EVENT_SELECTION (bufp) = eventp->selection;
-	    SELECTION_EVENT_TARGET (bufp) = eventp->target;
-	    SELECTION_EVENT_PROPERTY (bufp) = eventp->property;
-	    SELECTION_EVENT_TIME (bufp) = eventp->time;
-	    bufp++;
+	      bufp->kind = selection_request_event;
+	      SELECTION_EVENT_DISPLAY (bufp) = eventp->display;
+	      SELECTION_EVENT_REQUESTOR (bufp) = eventp->requestor;
+	      SELECTION_EVENT_SELECTION (bufp) = eventp->selection;
+	      SELECTION_EVENT_TARGET (bufp) = eventp->target;
+	      SELECTION_EVENT_PROPERTY (bufp) = eventp->property;
+	      SELECTION_EVENT_TIME (bufp) = eventp->time;
+	      bufp++;
 
-	    count += 1;
-	    numchars -= 1;
-	  }
+	      count += 1;
+	      numchars -= 1;
+	    }
 	  break;
 
 	case PropertyNotify:
@@ -4022,7 +4104,8 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 #ifdef HAVE_X11
 	case MotionNotify:
 	  {
-	    if (x_mouse_grabbed && FRAME_LIVE_P (last_mouse_frame))
+	    if (x_mouse_grabbed && last_mouse_frame
+		&& FRAME_LIVE_P (last_mouse_frame))
 	      f = last_mouse_frame;
 	    else
 	      f = x_window_to_frame (event.xmotion.window);
@@ -4186,8 +4269,8 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 	      }
 	    else
 	      {
-		struct scroll_bar *bar =
-		  x_window_to_scroll_bar (event.xbutton.window);
+		struct scroll_bar *bar
+		  = x_window_to_scroll_bar (event.xbutton.window);
 
 		if (bar)
 		  x_scroll_bar_handle_click (bar, &event, &emacs_event);
@@ -4200,6 +4283,19 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 					    &event, f);
 		  }
 #endif /* USE_X_TOOLKIT */
+	      }
+
+	    if (event.type == ButtonPress)
+	      {
+		x_mouse_grabbed |= (1 << event.xbutton.button);
+		Vmouse_depressed = Qt;
+		last_mouse_frame = f;
+	      }
+	    else
+	      {
+		x_mouse_grabbed &= ~(1 << event.xbutton.button);
+		if (!x_mouse_grabbed)
+		  Vmouse_depressed = Qnil;
 	      }
 
 	    if (numchars >= 1 && emacs_event.kind != no_event)
@@ -4293,12 +4389,20 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 	}
     }
 
-#ifdef X_IO_BUG
-  if (! event_found)
-    /* On some systems, an X bug causes Emacs to get no more events
-       when the window is destroyed.  Detect that.  (1994.)  */
-    XNoOp (x_current_display);
-#endif /* X_IO_BUG */
+  /* On some systems, an X bug causes Emacs to get no more events
+     when the window is destroyed.  Detect that.  (1994.)  */
+  if (! event_found) 
+    {
+      /* Emacs and the X Server eats up CPU time if XNoOp is done every time.
+	 One XNOOP in 100 loops will make Emacs terminate.
+	 B. Bretthauer, 1994 */
+      x_noop_count++;
+      if (x_noop_count >= 100) 
+	{
+	  x_noop_count=0;
+	  XNoOp (x_current_display);
+	}
+    }
 
 #if 0 /* This fails for serial-line connections to the X server, 
 	 because the characters arrive one by one, and a partial
@@ -4421,8 +4525,8 @@ static void
 x_draw_box (f)
      struct frame *f;
 {
-  int left = CHAR_TO_PIXEL_COL (f, f->cursor_x);
-  int top  = CHAR_TO_PIXEL_ROW (f, f->cursor_y);
+  int left = CHAR_TO_PIXEL_COL (f, curs_x);
+  int top  = CHAR_TO_PIXEL_ROW (f, curs_y);
   int width = FONT_WIDTH (f->display.x->font);
   int height = f->display.x->line_height;
 
@@ -5018,6 +5122,7 @@ struct font_info
 {
   XFontStruct *font;
   char *name;
+  char *full_name;
 };
 
 /* A table of all the fonts we have already loaded.  */
@@ -5030,6 +5135,11 @@ static int x_font_table_size;
    x_font_table[n] is used and valid iff 0 <= n < n_fonts.
    0 <= n_fonts <= x_font_table_size.  */
 static int n_fonts;
+
+/* Give frame F the font named FONTNAME as its default font, and
+   return the full name of that font.  FONTNAME may be a wildcard
+   pattern; in that case, we choose some font that fits the pattern.
+   The return value shows which font we chose.  */
 
 Lisp_Object
 x_new_font (f, fontname)
@@ -5063,10 +5173,11 @@ x_new_font (f, fontname)
 
       for (i = 0; i < n_fonts; i++)
 	for (j = 0; j < n_matching_fonts; j++)
-	  if (!strcmp (x_font_table[i].name, font_names[j]))
+	  if (!strcmp (x_font_table[i].name, font_names[j])
+	      || !strcmp (x_font_table[i].full_name, font_names[j]))
 	    {
 	      already_loaded = i;
-	      fontname = font_names[j];
+	      fontname = x_font_table[i].full_name;
 	      goto found_font;
 	    }
     }
@@ -5080,6 +5191,7 @@ x_new_font (f, fontname)
   else
     {
       int i;
+      char *full_name;
       XFontStruct *font;
 
       /* Try to find a character-cell font in the list.  */
@@ -5123,9 +5235,28 @@ x_new_font (f, fontname)
 					      * sizeof (x_font_table[0])));
 	}
 
+      /* Try to get the full name of FONT.  Put it in full_name.  */
+      full_name = 0;
+      for (i = 0; i < font->n_properties; i++)
+	{
+	  char *atom
+	    = XGetAtomName (x_current_display, font->properties[i].name);
+	  if (!strcmp (atom, "FONT"))
+	    full_name = XGetAtomName (x_current_display,
+				      (Atom) (font->properties[i].card32));
+	  XFree (atom);
+	}
+
       x_font_table[n_fonts].name = (char *) xmalloc (strlen (fontname) + 1);
       bcopy (fontname, x_font_table[n_fonts].name, strlen (fontname) + 1);
+      if (full_name != 0)
+	x_font_table[n_fonts].full_name = full_name;
+      else
+	x_font_table[n_fonts].full_name = x_font_table[n_fonts].name;
       f->display.x->font = x_font_table[n_fonts++].font = font;
+
+      if (full_name)
+	fontname = full_name;
     }
 
   /* Now make the frame display the given font.  */
@@ -5532,6 +5663,31 @@ x_make_frame_visible (f)
   XFlushQueue ();
 
   UNBLOCK_INPUT;
+
+  /* Synchronize to ensure Emacs knows the frame is visible
+     before we do anything else.  We do this loop with input not blocked
+     so that incoming events are handled.  */
+  {
+    Lisp_Object frame;
+    XSET (frame, Lisp_Frame, f);
+    while (! f->async_visible)
+      {
+	x_sync (frame);
+	/* Machines that do polling rather than SIGIO have been observed
+	   to go into a busy-wait here.  So we'll fake an alarm signal
+	   to let the handler know that there's something to be read.
+	   We used to raise a real alarm, but it seems that the handler
+	   isn't always enabled here.  This is probably a bug.  */
+	if (input_polling_used ())
+	  {
+	    /* It could be confusing if a real alarm arrives while processing
+	       the fake one.  Turn it off and let the handler reset it.  */
+	    alarm (0);
+	    input_poll_signal ();
+	  }
+      }
+    FRAME_SAMPLE_VISIBILITY (f);
+  }
 }
 
 /* Change from mapped state to withdrawn state. */
@@ -5990,7 +6146,11 @@ x_wm_set_icon_pixmap (f, icon_pixmap)
      struct frame *f;
      Pixmap icon_pixmap;
 {
+#ifdef USE_X_TOOLKIT
+  Window window = XtWindow (f->display.x->widget);
+#else
   Window window = FRAME_X_WINDOW (f);
+#endif
 
   if (icon_pixmap)
     {
@@ -6007,7 +6167,11 @@ x_wm_set_icon_position (f, icon_x, icon_y)
      struct frame *f;
      int icon_x, icon_y;
 {
+#ifdef USE_X_TOOLKIT
+  Window window = XtWindow (f->display.x->widget);
+#else
   Window window = FRAME_X_WINDOW (f);
+#endif
 
   f->display.x->wm_hints.flags |= IconPositionHint;
   f->display.x->wm_hints.icon_x = icon_x;
@@ -6039,8 +6203,10 @@ static XrmOptionDescRec emacs_options[] = {
 #endif /* USE_X_TOOLKIT */
 
 void
-x_term_init (display_name)
+x_term_init (display_name, xrm_option, resource_name)
      char *display_name;
+     char *xrm_option;
+     char *resource_name;
 {
   Lisp_Object frame;
   char *defaultvalue;
@@ -6052,16 +6218,24 @@ x_term_init (display_name)
 #endif /* ! defined (F_SETOWN) */
 #endif /* F_SETOWN_BUG */
   
+  x_noop_count = 0;
+
   x_focus_frame = x_highlight_frame = 0;
 
 #ifdef USE_X_TOOLKIT
-  argv = (char **) XtMalloc (5 * sizeof (char *));
-  argv [0] = "";
-  argv [1] = "-display";
-  argv [2] = display_name;
-  argv [3] = "-name";
-  argv [4] = "emacs";
+  argv = (char **) XtMalloc (7 * sizeof (char *));
+  argv[0] = "";
+  argv[1] = "-display";
+  argv[2] = display_name;
+  argv[3] = "-name";
+  /* Usually `emacs', but not always.  */
+  argv[4] = resource_name;
   argc = 5;
+  if (xrm_option)
+    {
+      argv[argc++] = "-xrm";
+      argv[argc++] = xrm_option;
+    }
   Xt_app_shell = XtAppInitialize (&Xt_app_con, "Emacs",
 				  emacs_options, XtNumber (emacs_options),
 				  &argc, argv,
@@ -6082,11 +6256,11 @@ Check the DISPLAY environment variable or use \"-d\"\n",
 #if 0
     XSetAfterFunction (x_current_display, x_trace_wire);
 #endif /* ! 0 */
-    hostname = get_system_name ();
     x_id_name = (char *) xmalloc (XSTRING (Vinvocation_name)->size
-				+ strlen (hostname)
+				+ XSTRING (Vsystem_name)->size
 				+ 2);
-    sprintf (x_id_name, "%s@%s", XSTRING (Vinvocation_name)->data, hostname);
+    sprintf (x_id_name, "%s@%s",
+	     XSTRING (Vinvocation_name)->data, XSTRING (Vsystem_name)->data);
   }
 
   /* Figure out which modifier bits mean what.  */

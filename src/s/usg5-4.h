@@ -28,6 +28,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define USG5_4
 
+/* On most SVR4 systems, gettimeofday takes one arg
+   and the compiler might crash.  */
+#define GETTIMEOFDAY_ONE_ARGUMENT
+
 /* We do have multiple jobs.  Handle ^Z. */
 
 #undef NOMULTIPLEJOBS
@@ -67,6 +71,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define UNEXEC unexelf.o
 
+/* <sys/stat.h> *defines* stat(2) as a static function.  If "static"
+ * is blank, then many files will have a public definition for stat(2).
+ */
+
+#undef static
+
 /* Get FIONREAD from <sys/filio.h>.  Get <sys/ttold.h> to get struct
  * tchars. But get <termio.h> first to make sure ttold.h doesn't
  * interfere.  And don't try to use SIGIO yet.
@@ -98,12 +108,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_SELECT
 #define HAVE_TIMEVAL
 
-/* <sys/stat.h> *defines* stat(2) as a static function.  If "static"
- * is blank, then many files will have a public definition for stat(2).
- */
-
-#undef static
-
 /* We need bss_end from emacs.c for undumping */
 
 #ifndef USG_SHARED_LIBRARIES
@@ -127,7 +131,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_WAIT_HEADER
 #define WAITTYPE int
 #define wait3(status, options, rusage) \
-  waitpid((pid_t) -1, (status), (options))
+  waitpid ((pid_t) -1, (status), (options))
 #define WRETCODE(w) (w >> 8)
 
 /* TIOCGPGRP is broken in SysVr4, so we can't send signals to PTY
@@ -151,20 +155,20 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    intercepting that death.  If any child but grantpt's should die
    within, it should be caught after sigrelse(2). */
 
-#define PTY_TTY_NAME_SPRINTF			\
-  {						\
-    char *ptsname(), *ptyname;			\
-						\
-    sighold(SIGCLD);				\
-    if (grantpt(fd) == -1)			\
-      fatal("could not grant slave pty");	\
-    sigrelse(SIGCLD);				\
-    if (unlockpt(fd) == -1)			\
-      fatal("could not unlock slave pty");	\
-    if (!(ptyname = ptsname(fd)))		\
-      fatal ("could not enable slave pty");	\
-    strncpy(pty_name, ptyname, sizeof(pty_name)); \
-    pty_name[sizeof(pty_name) - 1] = 0;		\
+#define PTY_TTY_NAME_SPRINTF				\
+  {							\
+    char *ptsname (), *ptyname;				\
+							\
+    sighold (SIGCLD);					\
+    if (grantpt (fd) == -1)				\
+      { close (fd); return -1; }			\
+    sigrelse (SIGCLD);					\
+    if (unlockpt (fd) == -1)				\
+      { close (fd); return -1; }			\
+    if (!(ptyname = ptsname (fd)))			\
+      { close (fd); return -1; }			\
+    strncpy (pty_name, ptyname, sizeof (pty_name));	\
+    pty_name[sizeof (pty_name) - 1] = 0;		\
   }
 
 /* Push various streams modules onto a PTY channel. */
@@ -195,6 +199,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    So give it a try.  */
 #define HAVE_SOCKETS
 
-#define bcopy(src,dst,n)	memmove(dst,src,n)
-#define bcmp(src,dst,n)		memcmp(src,dst,n)
-#define bzero(s,n)		memset(s,0,n)
+#define bcopy(src,dst,n)	memmove (dst,src,n)
+#define bcmp(src,dst,n)		memcmp (src,dst,n)
+#define bzero(s,n)		memset (s,0,n)

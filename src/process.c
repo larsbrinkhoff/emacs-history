@@ -96,6 +96,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 Lisp_Object Qprocessp;
 Lisp_Object Qrun, Qstop, Qsignal, Qopen, Qclosed;
+Lisp_Object Qlast_nonmenu_event;
 /* Qexit is declared and initialized in eval.c.  */
 
 /* a process object is a network connection when its childp field is neither
@@ -132,6 +133,10 @@ extern int errno;
 extern char *strerror ();
 #ifdef VMS
 extern char *sys_errlist[];
+#endif
+
+#ifndef HAVE_H_ERRNO
+extern int h_errno;
 #endif
 
 #ifndef SYS_SIGLIST_DECLARED
@@ -626,9 +631,15 @@ nil, indicating the current buffer's process.")
 {
   register struct Lisp_Process *p;
   register Lisp_Object status;
-  proc = get_process (proc);
+
+  if (STRINGP (proc))
+    proc = Fget_process (proc);
+  else
+    proc = get_process (proc);
+
   if (NILP (proc))
     return proc;
+
   p = XPROCESS (proc);
   if (!NILP (p->raw_status_low))
     update_status (p);
@@ -1254,6 +1265,10 @@ create_process (process, new_argv, current_dir)
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
 
+  FD_SET (inchannel, &input_wait_mask);
+  if (inchannel > max_process_desc)
+    max_process_desc = inchannel;
+
   /* Until we store the proper pid, enable sigchld_handler
      to recognize an unknown pid as standing for this process.
      It is very important not to let this `marker' value stay
@@ -1394,6 +1409,9 @@ create_process (process, new_argv, current_dir)
 #endif /* not BSD4_1 */
 #endif /* SIGCHLD */
 
+	signal (SIGINT, SIG_DFL);
+	signal (SIGQUIT, SIG_DFL);
+
 	if (pty_flag)
 	  child_setup_tty (xforkout);
 	child_setup (xforkin, xforkout, xforkout,
@@ -1412,10 +1430,6 @@ create_process (process, new_argv, current_dir)
     }
   
   XFASTINT (XPROCESS (process)->pid) = pid;
-
-  FD_SET (inchannel, &input_wait_mask);
-  if (inchannel > max_process_desc)
-    max_process_desc = inchannel;
 
   /* If the subfork execv fails, and it exits,
      this close hangs.  I don't know why.
@@ -1507,7 +1521,18 @@ Fourth arg SERVICE is name of the service desired, or an integer\n\
     }
 
 #ifndef TERM
-  host_info_ptr = gethostbyname (XSTRING (host)->data);
+  while (1)
+    {
+#ifdef TRY_AGAIN
+      h_errno = 0;
+#endif
+      host_info_ptr = gethostbyname (XSTRING (host)->data);
+#ifdef TRY_AGAIN
+      if (! (host_info_ptr == 0 && h_errno == TRY_AGAIN))
+#endif
+	break;
+      Fsleep_for (make_number (1), Qnil);
+    }
   if (host_info_ptr == 0)
     /* Attempt to interpret host as numeric inet address */
     {
@@ -1770,7 +1795,10 @@ Return non-nil iff we received any output before the timeout expired.")
    function Fwaiting_for_user_input_p below) whether emacs was waiting
    for user-input when that process-filter was called.
    waiting_for_input cannot be used as that is by definition 0 when
-   lisp code is being evalled */
+   lisp code is being evalled.
+   This is also used in record_asynch_buffer_change.
+   For that purpose, this must be 0
+   when not inside wait_reading_process_input.  */
 static int waiting_for_user_input_p;
 
 /* Read and dispose of subprocess output while waiting for timeout to
@@ -1928,10 +1956,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
       /* Wait till there is something to do */
 
       Available = input_wait_mask;
-      /* We used to have  && wait_for_cell == 0
-	 but that led to lossage handling selection_request events:
-	 within one, we would start to handle another.  */
-      if (! XINT (read_kbd))
+      if (! XINT (read_kbd) && wait_for_cell == 0)
 	FD_CLR (keyboard_descriptor, &Available);
 
       /* If frame size has changed or the window is newly mapped,
@@ -2016,7 +2041,7 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 
       /* We used to do this if wait_for_cell,
 	 but that caused infinite recursion in selection request events.  */
-      if ((XINT (read_kbd))
+      if ((XINT (read_kbd) || wait_for_cell)
 	  && detect_input_pending ())
 	{
 	  swallow_events ();
@@ -2137,6 +2162,8 @@ wait_reading_process_input (time_limit, microsecs, read_kbd, do_display)
 	}			/* end for each file descriptor */
     }				/* end while exit conditions not met */
 
+  waiting_for_user_input_p = 0;
+
   /* If calling from keyboard input, do not quit
      since we want to return C-g as an input character.
      Otherwise, do pending quit if requested.  */
@@ -2225,6 +2252,7 @@ read_process_output (proc, channel)
       obuffer = Fcurrent_buffer ();
 
       specbind (Qinhibit_quit, Qt);
+      specbind (Qlast_nonmenu_event, Qt);
       call2 (outstream, proc, make_string (chars, nchars));
 
       /* Handling the process output should not deactivate the mark.  */
@@ -2331,15 +2359,19 @@ send_process_trap ()
   longjmp (send_process_frame, 1);
 }
 
-send_process (proc, buf, len)
+/* Send some data to process PROC.
+   BUF is the beginning of the data; LEN is the number of characters.
+   OBJECT is the Lisp object that the data comes from.  */
+
+send_process (proc, buf, len, object)
      Lisp_Object proc;
      char *buf;
      int len;
+     Lisp_Object object;
 {
   /* Don't use register vars; longjmp can lose them.  */
   int rv;
   unsigned char *procname = XSTRING (XPROCESS (proc)->name)->data;
-
 
 #ifdef VMS
   struct Lisp_Process *p = XPROCESS (proc);
@@ -2358,6 +2390,21 @@ send_process (proc, buf, len)
   else if (write_to_vms_process (vs, buf, len))
     ;
 #else
+
+  if (pty_max_bytes == 0)
+    {
+#if defined (HAVE_FPATHCONF) && defined (_PC_MAX_CANON)
+      pty_max_bytes = fpathconf (XFASTINT (XPROCESS (proc)->outfd),
+				 _PC_MAX_CANON);
+      if (pty_max_bytes < 0)
+	pty_max_bytes = 250;
+#else
+      pty_max_bytes = 250;
+#endif
+      /* Deduct one, to leave space for the eof.  */
+      pty_max_bytes--;
+    }
+
   if (!setjmp (send_process_frame))
     while (len > 0)
       {
@@ -2365,65 +2412,89 @@ send_process (proc, buf, len)
 	SIGTYPE (*old_sigpipe)();
 	int flush_pty = 0;
 
-	if (pty_max_bytes == 0)
+	/* Decide how much data we can send in one batch.
+	   Long lines need to be split into multiple batches.  */
+	if (!NILP (XPROCESS (proc)->pty_flag))
 	  {
-#if defined (HAVE_FPATHCONF) && defined (_PC_MAX_CANON)
-	    pty_max_bytes = fpathconf (XFASTINT (XPROCESS (proc)->outfd),
-				       _PC_MAX_CANON);
-	    if (pty_max_bytes < 0)
-	      pty_max_bytes = 250;
-#else
-	    pty_max_bytes = 250;
-#endif
+	    /* Starting this at zero is always correct when not the first iteration
+	       because the previous iteration ended by sending C-d.
+	       It may not be correct for the first iteration
+	       if a partial line was sent in a separate send_process call.
+	       If that proves worth handling, we need to save linepos
+	       in the process object.  */
+	    int linepos = 0;
+	    char *ptr = buf;
+	    char *end = buf + len;
+
+	    /* Scan through this text for a line that is too long.  */
+	    while (ptr != end && linepos < pty_max_bytes)
+	      {
+		if (*ptr == '\n')
+		  linepos = 0;
+		else
+		  linepos++;
+		ptr++;
+	      }
+	    /* If we found one, break the line there
+	       and put in a C-d to force the buffer through.  */
+	    this = ptr - buf;
 	  }
 
-	/* Don't send more than pty_max_bytes bytes at a time.  */
-	/* Subtract 1 to leave room for the EOF.  */
-	if (this >= pty_max_bytes && !NILP (XPROCESS (proc)->pty_flag))
-	  this = pty_max_bytes - 1;
+	/* Send this batch, using one or more write calls.  */
+	while (this > 0)
+	  {
+	    old_sigpipe = (SIGTYPE (*) ()) signal (SIGPIPE, send_process_trap);
+	    rv = write (XINT (XPROCESS (proc)->outfd), buf, this);
+	    signal (SIGPIPE, old_sigpipe);
 
-	old_sigpipe = (SIGTYPE (*) ()) signal (SIGPIPE, send_process_trap);
-	rv = write (XINT (XPROCESS (proc)->outfd), buf, this);
+	    if (rv < 0)
+	      {
+		if (0
+#ifdef EWOULDBLOCK
+		    || errno == EWOULDBLOCK
+#endif
+#ifdef EAGAIN
+		    || errno == EAGAIN
+#endif
+		    )
+		  /* Buffer is full.  Wait, accepting input; 
+		     that may allow the program
+		     to finish doing output and read more.  */
+		  {
+		    Lisp_Object zero;
+		    int offset;
+
+		    /* Running filters might relocate buffers or strings.
+		       Arrange to relocate BUF.  */
+		    if (BUFFERP (object))
+		      offset = BUF_PTR_CHAR_POS (XBUFFER (object),
+						 (unsigned char *) buf);
+		    else if (STRINGP (object))
+		      offset = buf - (char *) XSTRING (object)->data;
+
+		    XFASTINT (zero) = 0;
+		    wait_reading_process_input (1, 0, zero, 0);
+
+		    if (BUFFERP (object))
+		      buf = (char *) BUF_CHAR_ADDRESS (XBUFFER (object), offset);
+		    else if (STRINGP (object))
+		      buf = offset + (char *) XSTRING (object)->data;
+
+		    rv = 0;
+		  }
+		else
+		  /* This is a real error.  */
+		  report_file_error ("writing to process", Fcons (proc, Qnil));
+	      }
+	    buf += rv;
+	    len -= rv;
+	    this -= rv;
+	  }
 
 	/* If we sent just part of the string, put in an EOF
 	   to force it through, before we send the rest.  */
-	if (this < len)
-	  Fprocess_send_eof (proc);
-
-	signal (SIGPIPE, old_sigpipe);
-	if (rv < 0)
-	  {
-	    if (0
-#ifdef EWOULDBLOCK
-		|| errno == EWOULDBLOCK
-#endif
-#ifdef EAGAIN
-		|| errno == EAGAIN
-#endif
-		)
-	      {
-		/* It would be nice to accept process output here,
-		   but that is difficult.  For example, it could
-		   garbage what we are sending if that is from a buffer.  */
-		immediate_quit = 1;
-		QUIT;
-		sleep (1);
-		immediate_quit = 0;
-		continue;
-	      }
-	    report_file_error ("writing to process", Fcons (proc, Qnil));
-	  }
-	buf += rv;
-	len -= rv;
-	/* Allow input from processes between bursts of sending.
-	   Otherwise things may get stopped up.  */
 	if (len > 0)
-	  {
-	    Lisp_Object zero;
-
-	    XFASTINT (zero) = 0;
-	    wait_reading_process_input (-1, 0, zero, 0);
-	  }
+	  Fprocess_send_eof (proc);
       }
 #endif
   else
@@ -2463,7 +2534,8 @@ Output from processes can arrive in between bunches.")
     move_gap (start);
 
   start1 = XINT (start);
-  send_process (proc, &FETCH_CHAR (start1), XINT (end) - XINT (start));
+  send_process (proc, &FETCH_CHAR (start1), XINT (end) - XINT (start),
+		Fcurrent_buffer ());
 
   return Qnil;
 }
@@ -2482,7 +2554,7 @@ Output from processes can arrive in between bunches.")
   Lisp_Object proc;
   CHECK_STRING (string, 1);
   proc = get_process (process);
-  send_process (proc, XSTRING (string)->data, XSTRING (string)->size);
+  send_process (proc, XSTRING (string)->data, XSTRING (string)->size, string);
   return Qnil;
 }
 
@@ -2538,20 +2610,20 @@ process_send_signal (process, signo, current_group, nomsg)
 	{
 	case SIGINT:
 	  tcgetattr (XINT (p->infd), &t);
-	  send_process (proc, &t.c_cc[VINTR], 1);
+	  send_process (proc, &t.c_cc[VINTR], 1, Qnil);
 	  return;
 
 	case SIGQUIT:
 	  tcgetattr (XINT (p->infd), &t);
-  	  send_process (proc, &t.c_cc[VQUIT], 1);
+  	  send_process (proc, &t.c_cc[VQUIT], 1, Qnil);
   	  return;
 
   	case SIGTSTP:
 	  tcgetattr (XINT (p->infd), &t);
 #if defined (VSWTCH) && !defined (PREFER_VSUSP)
-  	  send_process (proc, &t.c_cc[VSWTCH], 1);
+  	  send_process (proc, &t.c_cc[VSWTCH], 1, Qnil);
 #else
-	  send_process (proc, &t.c_cc[VSUSP], 1);
+	  send_process (proc, &t.c_cc[VSUSP], 1, Qnil);
 #endif
   	  return;
 	}
@@ -2569,16 +2641,16 @@ process_send_signal (process, signo, current_group, nomsg)
 	{
 	case SIGINT:
 	  ioctl (XINT (p->infd), TIOCGETC, &c);
-	  send_process (proc, &c.t_intrc, 1);
+	  send_process (proc, &c.t_intrc, 1, Qnil);
 	  return;
 	case SIGQUIT:
 	  ioctl (XINT (p->infd), TIOCGETC, &c);
-	  send_process (proc, &c.t_quitc, 1);
+	  send_process (proc, &c.t_quitc, 1, Qnil);
 	  return;
 #ifdef SIGTSTP
 	case SIGTSTP:
 	  ioctl (XINT (p->infd), TIOCGLTC, &lc);
-	  send_process (proc, &lc.t_suspc, 1);
+	  send_process (proc, &lc.t_suspc, 1, Qnil);
 	  return;
 #endif /* ! defined (SIGTSTP) */
 	}
@@ -2593,16 +2665,16 @@ process_send_signal (process, signo, current_group, nomsg)
 	{
 	case SIGINT:
 	  ioctl (XINT (p->infd), TCGETA, &t);
-	  send_process (proc, &t.c_cc[VINTR], 1);
+	  send_process (proc, &t.c_cc[VINTR], 1, Qnil);
 	  return;
 	case SIGQUIT:
 	  ioctl (XINT (p->infd), TCGETA, &t);
-	  send_process (proc, &t.c_cc[VQUIT], 1);
+	  send_process (proc, &t.c_cc[VQUIT], 1, Qnil);
 	  return;
 #ifdef SIGTSTP
 	case SIGTSTP:
 	  ioctl (XINT (p->infd), TCGETA, &t);
-	  send_process (proc, &t.c_cc[VSWTCH], 1);
+	  send_process (proc, &t.c_cc[VSWTCH], 1, Qnil);
 	  return;
 #endif /* ! defined (SIGTSTP) */
 	}
@@ -2663,12 +2735,12 @@ process_send_signal (process, signo, current_group, nomsg)
 #endif /* ! defined (SIGCONT) */
     case SIGINT:
 #ifdef VMS
-      send_process (proc, "\003", 1);	/* ^C */
+      send_process (proc, "\003", 1, Qnil);	/* ^C */
       goto whoosh;
 #endif
     case SIGQUIT:
 #ifdef VMS
-      send_process (proc, "\031", 1);	/* ^Y */
+      send_process (proc, "\031", 1, Qnil);	/* ^Y */
       goto whoosh;
 #endif
     case SIGKILL:
@@ -2783,7 +2855,10 @@ DEFUN ("process-send-eof", Fprocess_send_eof, Sprocess_send_eof, 0, 1, 0,
   "Make PROCESS see end-of-file in its input.\n\
 Eof comes after any text already sent to it.\n\
 PROCESS may be a process, a buffer, the name of a process or buffer, or\n\
-nil, indicating the current buffer's process.")
+nil, indicating the current buffer's process.\n\
+If PROCESS is a network connection, or is a process communicating\n\
+through a pipe (as opposed to a pty), then you cannot send any more\n\
+text to PROCESS after you call this function.")
   (process)
      Lisp_Object process;
 {
@@ -2806,10 +2881,10 @@ nil, indicating the current buffer's process.")
   }
 #else /* did not do TOICREMOTE */
 #ifdef VMS
-  send_process (proc, "\032", 1); 	/* ^z */
+  send_process (proc, "\032", 1, Qnil); 	/* ^z */
 #else
   if (!NILP (XPROCESS (proc)->pty_flag))
-    send_process (proc, "\004", 1);
+    send_process (proc, "\004", 1, Qnil);
   else
     {
       close (XINT (XPROCESS (proc)->outfd));
@@ -2836,7 +2911,7 @@ kill_buffer_processes (buffer)
 	  && (NILP (buffer) || EQ (XPROCESS (proc)->buffer, buffer)))
 	{
 	  if (NETCONN_P (proc))
-	    deactivate_process (proc);
+	    Fdelete_process (proc);
 	  else if (XINT (XPROCESS (proc)->infd) >= 0)
 	    process_send_signal (proc, SIGHUP, Qnil, 1);
 	}
@@ -3039,6 +3114,7 @@ exec_sentinel (proc, reason)
   record_unwind_protect (exec_sentinel_unwind, Fcons (proc, sentinel));
   /* Inhibit quit so that random quits don't screw up a running filter.  */
   specbind (Qinhibit_quit, Qt);
+  specbind (Qlast_nonmenu_event, Qt);
   call2 (sentinel, proc, reason);
 
   Vdeactivate_mark = odeactivate;
@@ -3218,6 +3294,9 @@ syms_of_process ()
   staticpro (&Qopen);
   Qclosed = intern ("closed");
   staticpro (&Qclosed);
+
+  Qlast_nonmenu_event = intern ("last-nonmenu-event");
+  staticpro (&Qlast_nonmenu_event);
 
   staticpro (&Vprocess_alist);
 

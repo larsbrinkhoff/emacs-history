@@ -109,6 +109,12 @@ SOURCES = COPYING ChangeLog Makefile.in README aixcc.lex emacs.csh \
 #define NOT_C_CODE
 #include "../src/config.h"
 
+/* We won't really call alloca;
+   don't let the file name alloca.c get messed up.  */
+#ifdef alloca
+#undef alloca
+#endif
+
 /* Some s/*.h files define this to request special libraries.  */
 #ifndef LIBS_SYSTEM
 #define LIBS_SYSTEM
@@ -152,6 +158,8 @@ LINK_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -Demacs -DHAVE_CONFIG_H \
    -I. -I../src -I${srcdir} -I${srcdir}/../src ${LDFLAGS} ${CFLAGS}
 CPP_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -Demacs -DHAVE_CONFIG_H \
    -I. -I../src -I${srcdir} -I${srcdir}/../src ${CPPFLAGS} ${CFLAGS}
+ALLOCA_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -DHAVE_CONFIG_H \
+   -I. -I../src -I${srcdir} -I${srcdir}/../src ${CPPFLAGS} ${CFLAGS}
 
 /* This is the default compilation command.
    But we should never rely on it, because some make version
@@ -191,6 +199,9 @@ ${archlibdir}: all
 	  for file in ${UTILITIES}; do \
 	    (cd ..; $(INSTALL_PROGRAM) lib-src/$$file ${archlibdir}/$$file) ; \
 	  done ; \
+        fi
+        if [ `(cd ${archlibdir} && /bin/pwd)` \
+             != `(cd ${srcdir} && /bin/pwd)` ]; then \
 	  for file in ${SCRIPTS}; do \
 	    (cd ..; $(INSTALL_PROGRAM) ${srcdir}/$$file ${archlibdir}/$$file); \
 	  done ; \
@@ -248,7 +259,7 @@ TAGS: etags
    distribute Emacs.  If they were clobbered, all the .elc files were
    clobbered too.  */
 test-distrib: ${srcdir}/test-distrib.c
-	$(CC) -o test-distrib ${srcdir}/test-distrib.c
+	$(CC) ${ALL_CFLAGS} -o test-distrib ${srcdir}/test-distrib.c
 	./test-distrib ${srcdir}/testfile
 
 GETOPTOBJS = getopt.o getopt1.o $(ALLOCA)
@@ -257,6 +268,8 @@ getopt.o: ${srcdir}/getopt.c ${srcdir}/getopt.h
 	${CC} -c ${CPP_CFLAGS} ${srcdir}/getopt.c
 getopt1.o: ${srcdir}/getopt1.c ${srcdir}/getopt.h
 	${CC} -c ${CPP_CFLAGS} ${srcdir}/getopt1.c
+alloca.o: ${srcdir}/alloca.c
+	${CC} -c ${ALLOCA_CFLAGS} ${srcdir}/alloca.c
 
 etags: ${srcdir}/etags.c $(GETOPTDEPS) ../src/config.h
 	$(CC) ${ALL_CFLAGS} -DVERSION="\"${version}\"" ${srcdir}/etags.c $(GETOPTOBJS) $(LOADLIBES) -o etags

@@ -248,7 +248,10 @@ get_cached_face (f, face)
   for (i = 0; i < nfaces; i++)
     {
       if (face_eql (face_vector[i], face))
-	return face_vector[i];
+	{
+	  face->cached_index = i;
+	  return face_vector[i];
+	}
       if (face_vector[i] == 0)
 	empty = i;
     }
@@ -273,6 +276,7 @@ get_cached_face (f, face)
   /* Make a graphics context for it.  */
   build_face (f, result);
 
+  face->cached_index = empty;
   return result;
 }
 
@@ -736,6 +740,31 @@ compute_glyph_face (f, face_code, current_face)
   if (face_code >= 0 && face_code < FRAME_N_PARAM_FACES (f)
       && FRAME_PARAM_FACES (f) [face_code] != 0)
     merge_faces (FRAME_PARAM_FACES (f) [face_code], &face);
+
+  return intern_computed_face (f, &face);
+}
+
+/* Return the face ID to use to display a special glyph which selects
+   FACE_CODE as the face ID, assuming that ordinarily the face would
+   be CURRENT_FACE.  F is the frame.  */
+
+int
+compute_glyph_face_1 (f, face_name, current_face)
+     struct frame *f;
+     Lisp_Object face_name;
+     int current_face;
+{
+  struct face face;
+
+  face = *FRAME_COMPUTED_FACES (f)[current_face];
+
+  if (!NILP (face_name))
+    {
+      int facecode = face_name_id_number (f, face_name);
+      if (facecode >= 0 && facecode < FRAME_N_PARAM_FACES (f)
+	  && FRAME_PARAM_FACES (f) [facecode] != 0)
+	merge_faces (FRAME_PARAM_FACES (f) [facecode], &face);
+    }
 
   return intern_computed_face (f, &face);
 }

@@ -137,8 +137,8 @@ mirror, ran by mcguire@digex.net), wuarchive.wustl.edu:/systems/gnu,
 col.hp.com:/mirrors/gnu, ftp.cs.columbia.edu:/archives/gnu/prep,
 vixen.cso.uiuc.edu:/gnu, mrcnext.cso.uiuc.edu:/pub/gnu,
 jaguar.utah.edu:/gnustuff, gatekeeper.dec.com:/pub/GNU,
-labrea.stanford.edu, ftp.cs.widener.edu, archive.cis.ohio-state.edu,
-and ftp.uu.net:/archive/systems/gnu.  And these foreign sites:
+labrea.stanford.edu, archive.cis.ohio-state.edu, and
+ftp.uu.net:/archive/systems/gnu.  And these foreign sites:
 ftp.cs.ubc.ca:/mirror2/gnu (Western Canada, daily full mirror, ran by
 ftp-admin@cs.ubc.ca), ftp.unicamp.br:/pub/gnu (Brazil manual mirror,
 ran by oliva@dcc.unicamp.br), archie.au:/gnu (Australia (archie.oz or
@@ -146,7 +146,7 @@ archie.oz.au for ACSnet)), ftp.technion.ac.il:/pub/unsupported/gnu
 (Israel, daily full mirror, ran by ftp-admin), ftp.sun.ac.za:/pub/gnu
 (South Africa), ftp.informatik.tu-muenchen.de,
 ftp.informatik.rwth-aachen.de or germany.eu.net (mirror ran by
-archive-admin@germany.eu.net) (Germany), isy.liu.se,
+archive-admin@germany.eu.net) (Germany), isy.liu.se (Sweden),
 ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
 ftp.sunet.se:/pub/gnu (Sweden 130.238.127.3 daily mirror, ran by
 archive@ftp.sunet.se (also mirros the Mailing List Archives)
@@ -156,10 +156,11 @@ ftp.funet.fi:/pub/gnu (Finland 128.214.6.100, ran by gnu-adm),
 ftp.denet.dk (Denmark), ugle.unit.no (Norway 129.241.1.97),
 ftp.eunet.ch or nic.switch.ch:/mirror/gnu (Switzerland),
 irisa.irisa.fr:/pub/gnu or ftp.univ-lyon1.fr:pub/gnu (ran by
-ftpmaint@ftp.univ-lyon1.fr) (France), archive.eu.net (Europe
-192.16.202.1), cair.kaist.ac.kr:/pub/gnu (Korea 143.248.11.170),
-ftp.nectec.or.th:/pub/mirrors/gnu (Thailand 192.150.251.32 daily
-mirror, ran by ftp@nwg.nectec.or.th),
+ftpmaint@ftp.univ-lyon1.fr) (France), ftp.ieunet.ie:pub/gnu (Ireland
+192.111.39.1 weekly mirror, ran by archive@ieunet.ie), archive.eu.net
+(Europe 192.16.202.1), cair.kaist.ac.kr:/pub/gnu (Korea
+143.248.11.170), ftp.nectec.or.th:/pub/mirrors/gnu (Thailand
+192.150.251.32 daily mirror, ran by ftp@nwg.nectec.or.th),
 utsun.s.u-tokyo.ac.jp:/ftpsync/prep or ftp.cs.titech.ac.jp (Japan,
 nemacs, the japanese port of GNU Emacs, is under ~ftp/JAPAN).  Please
 do NOT use a site outside your country, until you have checked all

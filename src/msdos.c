@@ -265,7 +265,11 @@ dos_rawgetc ()
      characters like { and } if their positions are overlaid.  */
   alt_p = ((extended_kbd ? (regs.h.ah & 2) : (regs.h.al & 8)) != 0);
 
-  while (kbhit ())
+  /* The following condition is equivalent to `kbhit ()', except that
+     it uses the bios to do its job.  This pleases DESQview/X.  */
+  while ((regs.h.ah = extended_kbd ? 0x11 : 0x01),
+	 int86 (0x16, &regs, &regs),
+	 (regs.x.flags & 0x40) == 0)
     {
       union REGS regs;
       register unsigned char c;
@@ -527,11 +531,20 @@ run_msdos_command (argv, dir, tempin, tempout)
   if (msshell)
     {
       saveargv1 = argv[1];
+      saveargv2 = argv[2];
       argv[1] = "/c";
       if (argv[2])
 	{
-	  saveargv2 = argv[2];
-	  unixtodos_filename (argv[2] = strdup (argv[2]));
+	  char *p = alloca (strlen (argv[2]) + 1);
+
+	  strcpy (argv[2] = p, saveargv2);
+	  while (*p && isspace (*p))
+	    p++;
+	  while (*p && !isspace (*p))
+	    if (*p == '/')
+	      *p++ = '\\';
+	    else
+	      p++;
 	}
     }
 
@@ -578,11 +591,7 @@ run_msdos_command (argv, dir, tempin, tempout)
   if (msshell)
     {
       argv[1] = saveargv1;
-      if (argv[2])
-	{
-	  free (argv[2]);
-	  argv[2] = saveargv2;
-	}
+      argv[2] = saveargv2;
     }
   return result;
 }
@@ -652,6 +661,21 @@ sleep_or_kbd_hit (secs, kbdok)
   while (clnow < clthen);
 }
 
+/* The Emacs root directory as determined by init_environment.  */
+static char emacsroot[MAXPATHLEN];
+
+char *
+rootrelativepath (rel)
+     char *rel;
+{
+  static char result[MAXPATHLEN + 10];
+
+  strcpy (result, emacsroot);
+  strcat (result, "/");
+  strcat (result, rel);
+  return result;
+}
+
 /* Define a lot of environment variables if not already defined.  Don't
    remove anything unless you know what you're doing -- lots of code will
    break if one or more of these are missing.  */
@@ -661,32 +685,30 @@ init_environment (argc, argv, skip_args)
      char **argv;
      int skip_args;
 {
-  char *s, *t;
+  char *s, *t, *root;
+  int len;
 
-  /* We default HOME to the directory from which Emacs was started, but with
-     a "/bin" suffix removed.  */
-  s = argv[0];
-  t = alloca (strlen (s) + 1);
-  strcpy (t, s);
-  s = t + strlen (t);
-  while (s != t && *s != '/' && *s != ':') s--;
-  if (s == t)
-    t = "c:/emacs"; /* When run under debug32.  */
+  /* Find our root from argv[0].  Assuming argv[0] is, say,
+     "c:/emacs/bin/emacs.exe" our root will be "c:/emacs".  */
+  len = strlen (argv[0]);
+  root = alloca (len + 10);  /* A little extra space for the stuff below.  */
+  strcpy (root, argv[0]);
+  while (len > 0 && root[len] != '/' && root[len] != ':')
+    len--;
+  root[len] = '\0';
+  if (len > 4 && strcmp (root + len - 4, "/bin") == 0)
+    root[len - 4] = '\0';
   else
-    {
-      if (*s == ':') s++;
-      *s = 0;
-      if (s - 4 >= t && strcmp (s - 4, "/bin") == 0)
-	s[strlen (s) - 4] = 0;
-    }
-  setenv ("HOME", t, 0);
+    strcpy (root, "c:/emacs");  /* Only under debuggers, I think.  */
+  len = strlen (root);
+  strcpy (emacsroot, root);
 
-  /* We set EMACSPATH to ~/bin (expanded) */
-  s = getenv ("HOME");
-  t = strcpy (alloca (strlen (s) + 6), s);
-  if (s[strlen (s) - 1] != '/') strcat (t, "/");
-  strcat (t, "bin");
-  setenv ("EMACSPATH", t, 0);
+  /* We default HOME to our root.  */
+  setenv ("HOME", root, 0);
+
+  /* We default EMACSPATH to root + "/bin".  */
+  strcpy (root + len, "/bin");
+  setenv ("EMACSPATH", root, 0);
 
   /* I don't expect anybody to ever use other terminals so the internal
      terminal is the default.  */
@@ -761,52 +783,38 @@ init_environment (argc, argv, skip_args)
 
 /* Flash the screen as a substitute for BEEPs.  */
 
-static unsigned char _xorattr;
-
 static void
 do_visible_bell (xorattr)
      unsigned char xorattr;
 {
-  _xorattr = xorattr;
   asm volatile
-    ("  pushl  %eax
-	pushl  %ebx
-	pushl  %ecx
-	pushl  %edx
-	movl   $1,%edx
+    ("  movb   $1,%%dl
 visible_bell_0:
-	call   _ScreenRows
-	pushl  %eax
-	call   _ScreenCols
-	pushl  %eax
-	movl   _ScreenPrimary,%eax
+	movl   _ScreenPrimary,%%eax
 	call   dosmemsetup
-	movl   %eax,%ebx
-	popl   %ecx
-	popl   %eax
-	imull  %eax,%ecx
-	movb   (__xorattr),%al
-	incl   %ebx
+	movl   %%eax,%%ebx
+	movl   %1,%%ecx
+	movb   %0,%%al
+	incl   %%ebx
 visible_bell_1:
-	xorb   %al,%gs:(%ebx)
-	addl   $2,%ebx
-	decl   %ecx
+	xorb   %%al,%%gs:(%%ebx)
+	addl   $2,%%ebx
+	decl   %%ecx
 	jne    visible_bell_1
-	decl   %edx
+	decb   %%dl
 	jne    visible_bell_3
 visible_bell_2:
-	movzwl %ax,%eax
-        movzwl %ax,%eax
-	movzwl %ax,%eax
-	movzwl %ax,%eax
-	decw   %cx
+	movzwl %%ax,%%eax
+        movzwl %%ax,%%eax
+	movzwl %%ax,%%eax
+	movzwl %%ax,%%eax
+	decw   %%cx
 	jne    visible_bell_2
 	jmp    visible_bell_0
-visible_bell_3:
-	popl  %edx
-	popl  %ecx
-	popl  %ebx
-	popl  %eax");
+visible_bell_3:"
+     : /* no output */
+     : "m" (xorattr), "g" (ScreenCols () * ScreenRows ())
+     : "%eax", "%ebx", /* "%gs",*/ "%ecx", "%edx");
 }
 
 /* At screen position (X,Y), output C characters from string S with
@@ -1026,7 +1034,7 @@ install_ctrl_break_check ()
   if (!ctrlbreakinstalled)
     {
       /* Don't press Ctrl-Break if you don't have either DPMI or Emacs
-	 was compiler with Djgpp 1.11 maintenance level 2 or later!  */
+	 was compiler with Djgpp 1.11 maintenance level 5 or later!  */
       ctrlbreakinstalled = 1;
       ctrl_break_vector.pm_offset = (int) ctrl_break_func;
       _go32_dpmi_allocate_real_mode_callback_iret (&ctrl_break_vector,
@@ -1104,7 +1112,7 @@ mouse_pressed (b, xp, yp)
   regs.x.bx = mouse_button_translate[b];
   int86 (0x33, &regs, &regs);
   if (regs.x.bx)
-    *xp = regs.x.cx / 8, *yp = regs.x.dx /8;
+    *xp = regs.x.cx / 8, *yp = regs.x.dx / 8;
   return (regs.x.bx != 0);
 }
 
@@ -1139,8 +1147,8 @@ mouse_get_pos (f, bar_window, part, x, y, time)
   *f = selected_frame;
   *bar_window = Qnil;
   gettimeofday (&tv, NULL);
-  *x = make_number (regs.x.cx);
-  *y = make_number (regs.x.dx);
+  *x = make_number (regs.x.cx / 8);
+  *y = make_number (regs.x.dx / 8);
   *time = tv.tv_usec;
   mouse_moved = 0;
 }
@@ -1166,9 +1174,22 @@ mouse_init1 ()
   union REGS regs;
   int present;
 
+  if (!internal_terminal)
+    return 0;
+
   regs.x.ax = 0x0021;
   int86 (0x33, &regs, &regs);
-  present = internal_terminal && (regs.x.ax & 0xffff) == 0xffff;
+  present = (regs.x.ax & 0xffff) == 0xffff;
+  if (!present)
+    {
+      /* Reportedly, the above doesn't work for some mouse drivers.  There
+	 is an additional detection method that should work, but might be
+	 a little slower.  Use that as an alternative.  */
+      regs.x.ax = 0x0000;
+      int86 (0x33, &regs, &regs);
+      present = (regs.x.ax & 0xffff) == 0xffff;
+    }
+
   if (present)
     {
       if (regs.x.bx == 3)

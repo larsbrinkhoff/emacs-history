@@ -33,7 +33,7 @@ Paragraphs per se don't exist in code, but the paragraph commands are
 useful anyway, because programming language major modes define
 paragraphs to begin and end at blank lines (@pxref{Paragraphs}).
 Judicious use of blank lines to make the program clearer will also
-provide interesting chunks of text for the paragraph commands to work
+provide useful chunks of text for the paragraph commands to work
 on.
 
   The selective display feature is useful for looking at the overall
@@ -93,7 +93,7 @@ example, in C mode @key{TAB} is bound to @code{c-indent-line}.  @key{LFD}
 is normally defined to do @key{RET} followed by @key{TAB}; thus, it too
 indents in a mode-specific fashion.
 
-@kindex DEL
+@kindex DEL @r{(programming modes)}
 @findex backward-delete-char-untabify
   In most programming languages, indentation is likely to vary from line to
 line.  So the major modes for those languages rebind @key{DEL} to treat a
@@ -119,10 +119,8 @@ which it creates.
 which is the value of a Lisp variable.  Each major mode has a mode hook,
 and the hook's name is always made from the mode command's name by
 adding @samp{-hook}.  For example, turning on C mode runs the hook
-@code{c-mode-hook}.  Mode hook variables for other programming language
-modes include @code{lisp-mode-hook}, @code{emacs-lisp-mode-hook},
-@code{lisp-interaction-mode-hook}, @code{scheme-mode-hook} and
-@code{muddle-mode-hook}.  @xref{Hooks}.
+@code{c-mode-hook}, while turning on Lisp mode runs the hook
+@code{lisp-mode-hook}.  @xref{Hooks}.
 
 @node Lists
 @section Lists and Sexps
@@ -162,7 +160,7 @@ both @samp{foo + bar} and @samp{foo} are legitimate choices for the sexp to
 move over if point is at the @samp{f}.  Note that @samp{(foo + bar)} is a
 single sexp in C mode.
 
-  Some languages have obscure forms of syntax for expressions that nobody
+  Some languages have obscure forms of expression syntax that nobody
 has bothered to make Emacs understand properly.
 
 @node List Commands
@@ -176,6 +174,8 @@ Move forward over a sexp (@code{forward-sexp}).
 Move backward over a sexp (@code{backward-sexp}).
 @item C-M-k
 Kill sexp forward (@code{kill-sexp}).
+@item C-M-@key{DEL}
+Kill sexp backward (@code{backward-kill-sexp}).
 @item C-M-u
 Move up and backward in list structure (@code{backward-up-list}).
 @item C-M-d
@@ -213,8 +213,13 @@ opposite direction.
 
 @kindex C-M-k
 @findex kill-sexp
-  Killing a sexp at a time can be done with @kbd{C-M-k} (@code{kill-sexp}).
-@kbd{C-M-k} kills the characters that @kbd{C-M-f} would move over.
+@kindex C-M-@key{DEL}
+@findex backward-kill-sexp
+  Killing a sexp at a time can be done with @kbd{C-M-k}
+(@code{kill-sexp}) or @kbd{C-M-@key{DEL}} (@code{backward-kill-sexp}).
+@kbd{C-M-k} kills the characters that @kbd{C-M-f} would move over, and
+@kbd{C-M-@key{DEL}} kills the characters that @kbd{C-M-b} would move
+over.
 
 @kindex C-M-n
 @kindex C-M-p
@@ -256,11 +261,11 @@ doing nothing, transposes the sexps ending after point and the mark.
 
 @kindex C-M-@@
 @findex mark-sexp
-  To make the region be the next sexp in the buffer, use @kbd{C-M-@@}
-(@code{mark-sexp}) which sets mark at the same place that @kbd{C-M-f} would
-move to.  @kbd{C-M-@@} takes arguments like @kbd{C-M-f}.  In particular, a
-negative argument is useful for putting the mark at the beginning of the
-previous sexp.
+  To set the region around the next sexp in the buffer, use @kbd{C-M-@@}
+(@code{mark-sexp}), which sets mark at the same place that @kbd{C-M-f}
+would move to.  @kbd{C-M-@@} takes arguments like @kbd{C-M-f}.  In
+particular, a negative argument is useful for putting the mark at the
+beginning of the previous sexp.
 
   The list and sexp commands' understanding of syntax is completely
 controlled by the syntax table.  Any character can, for example, be
@@ -377,15 +382,16 @@ the characters around it.
 
 @kindex LFD
 @findex newline-and-indent
-  When entering a large amount of new code, use @key{LFD} (@code{newline-and-indent}),
+  When entering lines of new code, use @key{LFD} (@code{newline-and-indent}),
 which is equivalent to a @key{RET} followed by a @key{TAB}.  @key{LFD} creates
 a blank line, and then gives it the appropriate indentation.
 
   @key{TAB} indents the second and following lines of the body of a
 parenthetical grouping each under the preceding one; therefore, if you
-alter one line's indentation to be nonstandard, the lines below will tend
-to follow it.  This is the right behavior in cases where the standard
-result of @key{TAB} is unaesthetic.
+alter one line's indentation to be nonstandard, the lines below will
+tend to follow it.  This behavior is convenient in cases where you have
+overridden the standard result of @key{TAB} because you find it
+unaesthetic for a particular line.
 
   Remember that an open-parenthesis, open-brace or other opening delimiter
 at the left margin is assumed by Emacs (including the indentation routines)
@@ -424,20 +430,22 @@ and not its position, is changed.  To correct the position as well, type a
 @key{TAB} before the @kbd{C-M-q}.
 
 @kindex C-u TAB
-  If the relative indentation within a list is correct but the indentation
-of its beginning is not, go to the line the list begins on and type
-@kbd{C-u @key{TAB}}.  When @key{TAB} is given a numeric argument, it moves all the
-lines in the grouping starting on the current line sideways the same amount
-that the current line moves.  It is clever, though, and does not move lines
-that start inside strings, or C preprocessor lines when in C mode.
+  If the relative indentation within a list is correct but the
+indentation of its first line is not, go to that line and type @kbd{C-u
+@key{TAB}}.  @key{TAB} with a numeric argument reindents the current
+line as usual, then reindents by the same amount all the lines in the
+grouping starting on the current line.  In other words, it reindents the
+whole grouping rigidly as a unit.  It is clever, though, and does not
+alter lines that start inside strings, or C preprocessor lines when in C
+mode.
 
-  Another way to specify the range to be re-indented is with point and
-mark.  The command @kbd{C-M-\} (@code{indent-region}) applies @key{TAB}
-to every line whose first character is between point and mark.
+  Another way to specify the range to be re-indented is with the region.
+The command @kbd{C-M-\} (@code{indent-region}) applies @key{TAB} to
+every line whose first character is between point and mark.
 
 @node Lisp Indent
 @subsection Customizing Lisp Indentation
-@cindex customization
+@cindex customizing Lisp indentation
 
   The indentation pattern for a Lisp expression can depend on the function
 called by the expression.  For each Lisp function, you can choose among
@@ -734,8 +742,21 @@ top of that character.)
 @node Comments
 @section Manipulating Comments
 @cindex comments
+
+  Because comments are such an important part of programming, Emacs
+provides special commands for editing and inserting comments.
+
+@menu
+* Comment Commands::
+* Multi-Line Comments::
+* Options for Comments::
+@end menu
+
+@node Comment Commands
+@subsection Comment Commands
+
 @kindex M-;
-@cindex indentation
+@cindex indentation for comments
 @findex indent-for-comment
 
   The comment commands insert, kill and align comments.
@@ -806,30 +827,15 @@ receives a negative argument it calls @code{kill-comment}.  However,
 @code{kill-comment} is a valid command which you could bind directly to a
 key if you wanted to.
 
-@findex comment-region
-  The @kbd{M-x comment-region} command adds comment delimiters to the
-lines that start in the region, thus commenting them out.  With a
-negative argument, it does the opposite---it deletes comment delimiters
-from the lines in the region.
-
-  With a positive argument, @code{comment-region} adds comment delimiters
-and duplicates the last character of the comment start sequence as many
-times as the argument specifies.  Thus, in Lisp mode, @kbd{C-u 2 M-x
-comment-region} adds @samp{;;} to each line.
-
-  Duplicating the comment delimiter is a way of calling attention to the
-comment.  It can also affect how the comment is indented.  In Lisp, for
-proper indentation, you should use an argument of two, if between
-defuns, and three, if within a defun.
-
+@node Multi-Line Comments
 @subsection Multiple Lines of Comments
 
 @kindex M-LFD
-@cindex blank lines
+@cindex blank lines in programs
 @findex indent-new-comment-line
-  If you are typing a comment and find that you wish to continue it on
-another line, you can use the command @kbd{M-@key{LFD}}
-(@code{indent-new-comment-line}), which terminates the comment you are
+  If you are typing a comment and wish to continue it on another line,
+you can use the command @kbd{M-@key{LFD}}
+(@code{indent-new-comment-line}).  This terminates the comment you are
 typing, creates a new blank line afterward, and begins a new comment
 indented under the old one.  When Auto Fill mode is on, going past the
 fill column while typing a comment causes the comment to be continued in
@@ -837,6 +843,23 @@ just this fashion.  If point is not at the end of the line when
 @kbd{M-@key{LFD}} is typed, the text on the rest of the line becomes
 part of the new comment line.
 
+@findex comment-region
+  To turn existing lines into comment lines, use the @kbd{M-x
+comment-region} command.  It adds comment delimiters to the lines that start
+in the region, thus commenting them out.  With a negative argument, it
+does the opposite---it deletes comment delimiters from the lines in the
+region.
+
+  With a positive argument, @code{comment-region} duplicates the last
+character of the comment start sequence it adds; the argument specifies
+how many copies of the character to insert.  Thus, in Lisp mode,
+@kbd{C-u 2 M-x comment-region} adds @samp{;;} to each line.  Duplicating
+the comment delimiter is a way of calling attention to the comment.  It
+can also affect how the comment is indented.  In Lisp, for proper
+indentation, you should use an argument of two, if between defuns, and
+three, if within a defun.
+
+@node Options for Comments
 @subsection Options Controlling Comments
 
 @vindex comment-column
@@ -857,14 +880,15 @@ default value which you can change with @code{setq-default}.
 current buffer.
 
 @vindex comment-start-skip
-  The comment commands recognize comments based on the regular expression
-that is the value of the variable @code{comment-start-skip}.  This regexp
-should not match the null string.  It may match more than the comment
-starting delimiter in the strictest sense of the word; for example, in C
-mode the value of the variable is @code{@t{"/\\*+ *"}}, which matches extra
-stars and spaces after the @samp{/*} itself.  (Note that @samp{\\} is
-needed in Lisp syntax to include a @samp{\} in the string, which is needed
-to deny the first star its special meaning in regexp syntax.  @xref{Regexps}.)
+  The comment commands recognize comments based on the regular
+expression that is the value of the variable @code{comment-start-skip}.
+Make sure this regexp does not match the null string.  It may match more
+than the comment starting delimiter in the strictest sense of the word;
+for example, in C mode the value of the variable is @code{@t{"/\\*+
+*"}}, which matches extra stars and spaces after the @samp{/*} itself.
+(Note that @samp{\\} is needed in Lisp syntax to include a @samp{\} in
+the string, which is needed to deny the first star its special meaning
+in regexp syntax.  @xref{Regexps}.)
 
 @vindex comment-start
 @vindex comment-end
@@ -913,19 +937,21 @@ Move past next close parenthesis and re-indent
 @findex insert-parentheses
 @findex move-over-close-and-reindent
   The commands @kbd{M-(} (@code{insert-parentheses}) and @kbd{M-)}
-(@code{move-over-close-and-reindent}) are designed to facilitate a style of
-editing which keeps parentheses balanced at all times.  @kbd{M-(} inserts a
-pair of parentheses, either together as in @samp{()}, or, if given an
-argument, around the next several sexps, and leaves point after the open
-parenthesis.  Instead of typing @kbd{( F O O )}, you can type @kbd{M-( F O
-O}, which has the same effect except for leaving the cursor before the
-close parenthesis.  Then you can type @kbd{M-)}, which moves past the
-close parenthesis, deleting any indentation preceding it (in this example
+(@code{move-over-close-and-reindent}) are designed to facilitate a style
+of editing which keeps parentheses balanced at all times.  @kbd{M-(}
+inserts a pair of parentheses, either together as in @samp{()}, or, if
+given an argument, around the next several sexps.  It leaves point after
+the open parenthesis.  The command @kbd{M-)} moves past the close
+parenthesis, deleting any indentation preceding it (in this example
 there is none), and indenting with @key{LFD} after it.
+
+  For example, instead of typing @kbd{( F O O )}, you can type @kbd{M-(
+F O O}, which has the same effect except for leaving the cursor before
+the close parenthesis.
 
 @vindex parens-dont-require-spaces
   @kbd{M-(} may insert a space before the open parenthesis, depending on
-the syntax class or the preceding character.  Set
+the syntax class of the preceding character.  Set
 @code{parens-dont-require-spaces} to a non-@code{nil} value if you wish
 to inhibit this.
 
@@ -950,9 +976,9 @@ completions is displayed in another window.
 @cindex tags completion
 @findex complete-tag
   There are two ways of determining the set of legitimate symbol names
-to complete against.  In most major modes, this uses a tag table
+to complete against.  In most major modes, this uses a tags table
 (@pxref{Tags}); the legitimate symbol names are the tag names listed in
-the tag table file.  The command which implements this is
+the tags table file.  The command which implements this is
 @code{complete-tag}.
 
 @cindex Lisp symbol completion
@@ -964,6 +990,9 @@ definitions, values or properties.  However, if there is an
 open-parenthesis immediately before the beginning of the partial symbol,
 only symbols with function definitions are considered as completions.
 The command which implements this is @code{lisp-complete-symbol}.
+
+  In text mode and related modes, @kbd{M-@key{TAB}} completes words
+based on the spell-checker's dictionary.  @xref{Spelling}.
 
 @node Documentation
 @section Documentation Commands
@@ -980,13 +1009,14 @@ function called in the innermost list containing point.  @kbd{C-h v} uses
 the symbol name around or adjacent to point as its default.
 
 @findex manual-entry
-  Documentation on Unix commands, system calls and libraries can be
-obtained with the @kbd{M-x manual-entry} command.  This reads a topic as
-an argument, and displays the text on that topic from the Unix manual.
-@code{manual-entry} starts a background process that formats the manual
-page, by running the @code{man} program.  The result goes in a buffer
-named @samp{*man @var{topic}*}.  These buffers have a special major mode
-that facilitates scrolling and examining other manual pages.
+  Documentation on operating system commands, library functions and
+system calls can be obtained with the @kbd{M-x manual-entry} command.
+This reads a topic as an argument, and displays the ``man page'' on that
+topic.  @code{manual-entry} starts a background process that formats the
+manual page, by running the @code{man} program.  The result goes in a
+buffer named @samp{*man @var{topic}*}.  These buffers use a special
+major mode, Man mode, that facilitates scrolling and examining other
+manual pages.  For details, type @kbd{C-h m} while in a man page buffer.
 
   Eventually the GNU project hopes to replace most man pages with
 better-organized manuals that you can browse with Info.  @xref{Misc
@@ -1017,18 +1047,22 @@ change log starts with a space or a tab.  The bulk of the entry consists
 of @dfn{items}, each of which starts with a line starting with
 whitespace and a star.  Here are two entries, each with two items:
 
+@iftex
+@medbreak
+@end iftex
 @smallexample
-Wed May  5 14:11:45 1993  Richard Stallman  (rms@@mole.gnu.ai.mit.edu)
+Wed May  5 14:11:45 1993  Richard Stallman  <rms@@gnu.ai.mit.edu>
 
-	* man.el: Rename functions and variables `man-*' to `Man-*'.
-	(manual-entry): Make prompt string clearer.
+        * man.el: Rename symbols `man-*' to `Man-*'.
+        (manual-entry): Make prompt string clearer.
 
-	* simple.el (blink-matching-paren-distance): Change default to 12,000.
+        * simple.el (blink-matching-paren-distance):
+        Change default to 12,000.
 
-Tue May  4 12:42:19 1993  Richard Stallman  (rms@@mole.gnu.ai.mit.edu)
+Tue May  4 12:42:19 1993  Richard Stallman  <rms@@gnu.ai.mit.edu>
 
-	* vc.el (minor-mode-map-alist): Don't use it if it's void.
-	(vc-cancel-version): Doc fix.
+        * vc.el (minor-mode-map-alist): Don't use it if it's void.
+        (vc-cancel-version): Doc fix.
 @end smallexample
 
   One entry can describe several changes; each change should have its
@@ -1044,33 +1078,32 @@ even guess the name of the function or other object that was changed.
 
 @cindex Change Log mode
 @findex change-log-mode
-  The change log file is visited in Change Log mode.  Each bunch of
-grouped items counts as one paragraph, and each entry is considered a
-page.  This facilitates editing the entries.  @key{LFD} and
-auto-fill indent each new line like the previous line; this is
-convenient for entering the contents of an entry.
+  The change log file is visited in Change Log mode.  In this major
+mode, each bunch of grouped items counts as one paragraph, and each
+entry is considered a page.  This facilitates editing the entries.
+@key{LFD} and auto-fill indent each new line like the previous line;
+this is convenient for entering the contents of an entry.
 
 @node Tags
-@section Tag Tables
-@cindex tag table
+@section Tags Tables
+@cindex tags table
 
-  A @dfn{tag table} is a description of how a multi-file program is
+  A @dfn{tags table} is a description of how a multi-file program is
 broken up into files.  It lists the names of the component files and the
 names and positions of the functions (or other named subunits) in each
 file.  Grouping the related files makes it possible to search or replace
 through all the files with one command.  Recording the function names
-and positions makes possible the @kbd{M-.}  command which you can use to
-find the definition of a function without having to know which of the
-files it is in.
+and positions makes possible the @kbd{M-.}  command which finds the
+definition of a function by looking up which of the files it is in.
 
-  Tag tables are stored in files called @dfn{tag table files}.  The
-conventional name for a tag table file is @file{TAGS}.
+  Tags tables are stored in files called @dfn{tags table files}.  The
+conventional name for a tags table file is @file{TAGS}.
 
-  Each entry in the tag table records the name of one tag, the name of the
+  Each entry in the tags table records the name of one tag, the name of the
 file that the tag is defined in (implicitly), and the position in that file
 of the tag's definition.
 
-  Just what names from the described files are recorded in the tag table
+  Just what names from the described files are recorded in the tags table
 depends on the programming language of the described file.  They
 normally include all functions and subroutines, and may also include
 global variables, data types, and anything else convenient.  Each name
@@ -1078,50 +1111,65 @@ recorded is called a @dfn{tag}.
 
 @menu
 * Tag Syntax::		Tag syntax for various types of code and text files.  
-* Create Tag Table::	Creating a tag table with @code{etags}.
-* Select Tag Table::	How to visit a tag table.
+* Create Tags Table::	Creating a tags table with @code{etags}.
+* Select Tags Table::	How to visit a tags table.
 * Find Tag::		Commands to find the definition of a specific tag. 
-* Tags Search::		Using a tag table for searching and replacing.
-* Tags Stepping::	Visiting files in a tag table, one by one.
+* Tags Search::		Using a tags table for searching and replacing.
+* Tags Stepping::	Visiting files in a tags table, one by one.
 * List Tags::		Listing and finding tags defined in a file.
 @end menu
 
 @node Tag Syntax
 @subsection Source File Tag Syntax
 
-  In Lisp code, any function defined with @code{defun}, any variable
+@itemize @bullet
+@item
+In Lisp code, any function defined with @code{defun}, any variable
 defined with @code{defvar} or @code{defconst}, and in general the first
 argument of any expression that starts with @samp{(def} in column zero, is
 a tag.
 
-  In Scheme code, tags include anything defined with @code{def} or with a
+@item
+In Scheme code, tags include anything defined with @code{def} or with a
 construct whose name starts with @samp{def}.  They also include variables
 set with @code{set!} at top level in the file.
 
-  In C code, any C function is a tag, and so is any typedef if @code{-t} is
-specified when the tag table is constructed.
+@item
+In C code, any C function or macro is a tag, and so is any typedef if
+@code{-t} is specified when the tags table is constructed.  In C++ code,
+member functions are also recognized.
 
-  In Yacc or Bison input files, each rule defines as a tag the
+@item
+In Yacc or Bison input files, each rule defines as a tag the
 nonterminal it constructs.  The portions of the file that contain C code
 are parsed as C code.
 
-  In Fortran code, functions and subroutines are tags.
+@item
+In Fortran code, functions and subroutines are tags.
 
-  In Prolog code, a tag name appears at the left margin.
+@item
+In Pascal code, the tags are the functions and procedures defined in
+the file.
 
-  In assembler code, labels appearing at the beginning of a line,
+@item
+In Prolog code, a tag name appears at the left margin.
+
+@item
+In assembler code, labels appearing at the beginning of a line,
 followed by a colon, are tags.
 
-  In La@TeX{} text, the argument of any of the commands @code{\chapter},
+@item
+In La@TeX{} text, the argument of any of the commands @code{\chapter},
 @code{\section}, @code{\subsection}, @code{\subsubsection}, @code{\eqno},
 @code{\label}, @code{\ref}, @code{\cite}, @code{\bibitem} and
 @code{\typeout} is a tag.@refill
+@end itemize
 
-@node Create Tag Table
-@subsection Creating Tag Tables
+@node Create Tags Table
+@subsection Creating Tags Tables
 @cindex @code{etags} program
 
-  The @code{etags} program is used to create a tag table file.  It knows
+  The @code{etags} program is used to create a tags table file.  It knows
 the syntax of several languages, as described in
 @iftex
 the previous section.
@@ -1136,54 +1184,68 @@ etags @var{inputfiles}@dots{}
 @end example
 
 @noindent
-The @code{etags} program reads the specified files, and writes a tag table
+The @code{etags} program reads the specified files, and writes a tags table
 named @file{TAGS} in the current working directory.  @code{etags}
 recognizes the language used in an input file based on its file name and
 contents; there are no switches for specifying the language.
 
-  If the tag table data become outdated due to changes in the files
-described in the table, the way to update the tag table is the same way it
+  If the tags table data become outdated due to changes in the files
+described in the table, the way to update the tags table is the same way it
 was made in the first place.  It is not necessary to do this often.
 
-  If the tag table fails to record a tag, or records it for the wrong
+  If the tags table fails to record a tag, or records it for the wrong
 file, then Emacs cannot possibly find its definition.  However, if the
-position recorded in the tag table becomes a little bit wrong (due to
+position recorded in the tags table becomes a little bit wrong (due to
 some editing in the file that the tag definition is in), the only
 consequence is a slight delay in finding the tag.  Even if the stored
 position is very wrong, Emacs will still find the tag, but it must
 search the entire file for it.
 
-  So you should update a tag table when you define new tags that you want
+  So you should update a tags table when you define new tags that you want
 to have listed, or when you move tag definitions from one file to another,
 or when changes become substantial.  Normally there is no need to update
-the tag table after each edit, or even every day.
+the tags table after each edit, or even every day.
+
+  One tags table can effectively include another.  Specify the included
+tags file name with the @samp{-include=@var{file}} option when creating
+the file that is to include it.  The latter file then acts as if it
+contained all the files specified in the included file, as well as the
+files it directly contains.
 
   For a list of available @code{etags} options, type @samp{etags --help}.
 
-@node Select Tag Table
-@subsection Selecting a Tag Table
+@node Select Tags Table
+@subsection Selecting a Tags Table
 
 @vindex tags-file-name
 @findex visit-tags-table
-  Emacs has at any time one @dfn{selected} tag table, and all the commands
-for working with tag tables use the selected one.  To select a tag table,
-type @kbd{M-x visit-tags-table}, which reads the tag table file name as an
+  Emacs has at any time one @dfn{selected} tags table, and all the commands
+for working with tags tables use the selected one.  To select a tags table,
+type @kbd{M-x visit-tags-table}, which reads the tags table file name as an
 argument.  The name @file{TAGS} in the default directory is used as the
 default file name.
 
   All this command does is store the file name in the variable
-@code{tags-file-name}.  Emacs does not actually read in the tag table
+@code{tags-file-name}.  Emacs does not actually read in the tags table
 contents until you try to use them.  Setting this variable yourself is just
 as good as using @code{visit-tags-table}.  The variable's initial value is
-@code{nil}; that value tells all the commands for working with tag tables
-that they must ask for a tag table file name to use.
+@code{nil}; that value tells all the commands for working with tags tables
+that they must ask for a tags table file name to use.
 
-  Using @code{visit-tags-table} to load a new tag table does not
-discard the other tables previously loaded.  The other tags commands use
-all the tag tables that are loaded; the first one they use is the one
-that mentions the current visited file.
+  Using @code{visit-tags-table} when a tags table is already loaded
+gives you a choice: you can add the new tags table to the current list
+of tags tables, or start a new list.  The tags commands use all the tags
+tables in the current list.  If you start a new list, the new tags table
+is used @emph{instead} of others.  If you add the new table to the
+current list, it is used @emph{as well as} the others.  When the tags
+commands scan the list of tags tables, they don't always start at the
+beginning of the list; they start with the first tags table (if any)
+that describes the current file, proceed from there to the end of the
+list, and then scan from the beginning of the list until they have
+covered all the tables in the list.
 
-  You can specify a precise list of tag tables by setting the variable
+@vindex tags-table-list
+  You can specify a precise list of tags tables by setting the variable
 @code{tags-table-list} to a list of strings, like this:
 
 @c keep this on two lines for formatting in smallbook
@@ -1200,10 +1262,12 @@ This tells the tags commands to look at the @file{TAGS} files in your
 directory.  The order depends on which file you are in and which tags
 table mentions that file, as explained above.
 
+  Do not set both @code{tags-file-name} and @code{tags-table-list}.
+
 @node Find Tag
 @subsection Finding a Tag
 
-  The most important thing that a tag table enables you to do is to find
+  The most important thing that a tags table enables you to do is to find
 the definition of a specific tag.
 
 @table @kbd
@@ -1213,9 +1277,9 @@ Find first definition of @var{tag} (@code{find-tag}).
 Find next alternate definition of last tag specified.
 @item C-u - M-.
 Go back to previous tag found.
-@item M-x find-tag-regexp @key{RET} @var{pattern} @key{RET}
-Find a tag whose name matches @var{pattern}.
-@item C-u M-x find-tag-regexp
+@item C-M-. @var{pattern} @key{RET}
+Find a tag whose name matches @var{pattern} (@code{find-tag-regexp}).
+@item C-u C-M-.
 Find the next tag whose name matches the last pattern used.
 @item C-x 4 .@: @var{tag} @key{RET}
 Find first definition of @var{tag}, but display it in another window
@@ -1228,8 +1292,8 @@ buffer (@code{find-tag-other-frame}).
 @kindex M-.
 @findex find-tag
   @kbd{M-.}@: (@code{find-tag}) is the command to find the definition of
-a specified tag.  It searches through the tag table for that tag, as a
-string, and then uses the tag table info to determine the file that the
+a specified tag.  It searches through the tags table for that tag, as a
+string, and then uses the tags table info to determine the file that the
 definition is in and the approximate character position in the file of
 the definition.  Then @code{find-tag} visits that file, moves point to
 the approximate character position, and searches ever-increasing
@@ -1239,19 +1303,20 @@ distances away to find the tag definition.
 buffer before or around point is used as the @var{tag} argument.
 @xref{Lists}, for info on sexps.
 
-  You don't need to give @kbd{M-.} the full name of the tag; a part will
-do.  This is because @kbd{M-.} finds tags in the table which contain
-@var{tag} as a substring.  However, it prefers an exact match to a
-substring match.
-
-  To find other tags that match the same substring, give @code{find-tag}
-a numeric argument, as in @kbd{C-u M-.}; this does not read a tag name,
-but continues searching the tag table's text for another tag containing
-the same substring last used.  If you have a real @key{META} key,
-@kbd{M-0 M-.}@: is an easier alternative to @kbd{C-u M-.}.
+  You don't need to give @kbd{M-.} the full name of the tag; a part
+will do.  This is because @kbd{M-.} finds tags in the table which
+contain @var{tag} as a substring.  However, it prefers an exact match
+to a substring match.  To find other tags that match the same
+substring, give @code{find-tag} a numeric argument, as in @kbd{C-u
+M-.}; this does not read a tag name, but continues searching the tags
+table's text for another tag containing the same substring last used.
+If you have a real @key{META} key, @kbd{M-0 M-.}@: is an easier
+alternative to @kbd{C-u M-.}.
 
 @kindex C-x 4 .
 @findex find-tag-other-window
+@kindex C-x 5 .
+@findex find-tag-other-frame
   Like most commands that can switch buffers, @code{find-tag} has a
 variant that displays the new buffer in another window, and one that
 makes a new frame for it.  The former is @kbd{C-x 4 .}, which invokes
@@ -1264,31 +1329,24 @@ command can take you to another buffer.  @kbd{C-x 4 .} with a negative
 argument finds the previous tag location in another window.
 
 @findex find-tag-regexp
-  The new command @kbd{M-x find-tag-regexp} visits the tags
-that match a specified regular expression.  It is just like @kbd{M-.}
-except that it does regexp matching instead of substring matching.
-
-@ignore
-  Emacs comes with a tag table file @file{src/TAGS} that includes all
-the Lisp libraries and all the C sources of Emacs.  By specifying this
-file with @code{visit-tags-table} and then using @kbd{M-.}@: you can
-quickly find the source for any Emacs function.
-@end ignore
+@kindex C-M-.
+  The command @kbd{C-M-.} (@code{find-tag-regexp}) visits the tags that
+match a specified regular expression.  It is just like @kbd{M-.}  except
+that it does regexp matching instead of substring matching.
 
 @node Tags Search
-@subsection Searching and Replacing with Tag Tables
+@subsection Searching and Replacing with Tags Tables
 
   The commands in this section visit and search all the files listed in the
-selected tag table, one by one.  For these commands, the tag table serves
-only to specify a sequence of files to search.  A related command is
-@kbd{M-x grep} (@pxref{Compilation}).
+selected tags table, one by one.  For these commands, the tags table serves
+only to specify a sequence of files to search.
 
 @table @kbd
-@item M-x tags-search
-Search for the specified regexp through the files in the selected tag
+@item M-x tags-search @key{RET} @var{regexp} @key{RET}
+Search for @var{regexp} through the files in the selected tags
 table.
-@item M-x tags-query-replace
-Perform a @code{query-replace} on each file in the selected tag table.
+@item M-x tags-query-replace @key{RET} @var{regexp} @key{RET} @var{replacement} @key{RET}
+Perform a @code{query-replace-regexp} on each file in the selected tags table.
 @item M-,
 Restart one of the commands above, from the current location of point
 (@code{tags-loop-continue}).
@@ -1296,7 +1354,7 @@ Restart one of the commands above, from the current location of point
 
 @findex tags-search
   @kbd{M-x tags-search} reads a regexp using the minibuffer, then
-searches for matches in all the files in the selected tag table, one
+searches for matches in all the files in the selected tags table, one
 file at a time.  It displays the name of the file being searched so you
 can follow its progress.  As soon as it finds an occurrence,
 @code{tags-search} returns.
@@ -1306,21 +1364,22 @@ can follow its progress.  As soon as it finds an occurrence,
   Having found one match, you probably want to find all the rest.  To find
 one more match, type @kbd{M-,} (@code{tags-loop-continue}) to resume the
 @code{tags-search}.  This searches the rest of the current buffer, followed
-by the remaining files of the tag table.@refill
+by the remaining files of the tags table.@refill
 
 @findex tags-query-replace
-  @kbd{M-x tags-query-replace} performs a single @code{query-replace}
-through all the files in the tag table.  It reads a regexp to search for
-and a string to replace with, just like ordinary @kbd{M-x
-query-replace-regexp}.  It searches much like @kbd{M-x tags-search} but
-repeatedly, processing matches according to your input.  @xref{Replace},
-for more information on query replace.
+  @kbd{M-x tags-query-replace} performs a single
+@code{query-replace-regexp} through all the files in the tags table.  It
+reads a regexp to search for and a string to replace with, just like
+ordinary @kbd{M-x query-replace-regexp}.  It searches much like @kbd{M-x
+tags-search}, but repeatedly, processing matches according to your
+input.  @xref{Replace}, for more information on query replace.
 
-  It is possible to get through all the files in the tag table with a
-single invocation of @kbd{M-x tags-query-replace}.  But since any
-unrecognized character causes the command to exit, you may need to continue
-where you left off.  @kbd{M-,} can be used for this.  It resumes the last
-tags search or replace command that you did.
+  It is possible to get through all the files in the tags table with a
+single invocation of @kbd{M-x tags-query-replace}.  But often it is
+useful to exit temporarily, which you can do with any input event that
+has no special query replace meaning.  You can resume the query replace
+subsequently by typing @kbd{M-,}; this command resumes the last tags
+search or replace command that you did.
 
   The commands in this section carry out much broader searches than the
 @code{find-tags} family.  The @code{find-tags} commands search only for
@@ -1334,60 +1393,58 @@ have to search (those which are not already visited in Emacs buffers).
 Buffers in which no match is found are quickly killed; the others
 continue to exist.
 
-  It may have struck you that @code{tags-search} is a lot like @code{grep}.
-You can also run @code{grep} itself as an inferior of Emacs and have Emacs
-show you the matching lines one by one.  This works mostly the same as
-running a compilation and having Emacs show you where the errors were.
+  It may have struck you that @code{tags-search} is a lot like
+@code{grep}.  You can also run @code{grep} itself as an inferior of
+Emacs and have Emacs show you the matching lines one by one.  This works
+much like running a compilation; finding the source locations of the
+@code{grep} matches works like finding the compilation errors.
 @xref{Compilation}.
 
 @node Tags Stepping
-@subsection Stepping Through a Tag Table
+@subsection Stepping Through a Tags Table
 @findex next-file
 
-  If you wish to process all the files in the selected tag table, but
+  If you wish to process all the files in the selected tags table, but
 not in the specific ways that @kbd{M-x tags-search} and @kbd{M-x
 tags-query-replace} do, you can use @kbd{M-x next-file} to visit the
 files one by one.
 
 @table @kbd
 @item C-u M-x next-file
-Visit the first file in the tag table, and prepare to advance
+Visit the first file in the tags table, and prepare to advance
 sequentially by files.
 @item M-x next-file
-Visit the next file in the selected tag table.
+Visit the next file in the selected tags table.
 @end table
-
-@iftex
-@break
-@end iftex
-
+        
 @node List Tags
-@subsection Tag Table Inquiries
+@subsection Tags Table Inquiries
 
 @table @kbd
-@item M-x list-tags
-Display a list of the tags defined in a specific program file.
-@item M-x tags-apropos
-Display a list of all tags matching a specified regexp.
+@item M-x list-tags @key{RET} @var{file} @key{RET}
+Display a list of the tags defined in the program file @file{file}.
+@item M-x tags-apropos @key{RET} @var{regexp} @key{RET}
+Display a list of all tags matching @var{regexp}.
 @end table
 
 @findex list-tags
   @kbd{M-x list-tags} reads the name of one of the files described by the
-selected tag table, and displays a list of all the tags defined in that
+selected tags table, and displays a list of all the tags defined in that
 file.  The ``file name'' argument is really just a string to compare
-against the names recorded in the tag table; it is read as a string rather
+against the names recorded in the tags table; it is read as a string rather
 than as a file name.  Therefore, completion and defaulting are not
-available, and you must enter the string the same way it appears in the tag
+available, and you must enter the string the same way it appears in the tags
 table.  Do not include a directory as part of the file name unless the file
-name recorded in the tag table includes a directory.
+name recorded in the tags table includes a directory.
 
 @findex tags-apropos
-  @kbd{M-x tags-apropos} is like @code{apropos} for tags.  It reads a regexp,
-then finds all the tags in the selected tag table whose entries match that
-regexp, and displays the tag names found.
+  @kbd{M-x tags-apropos} is like @code{apropos} for tags
+(@pxref{Apropos}).  It reads a regexp, then finds all the tags in the
+selected tags table whose entries match that regexp, and displays the
+tag names found.
 
   You can also perform completion in the buffer on the name space of tag
-names in the current tag tables.  @xref{Symbol Completion}.
+names in the current tags tables.  @xref{Symbol Completion}.
 
 @node Emerge
 @section Merging Files with Emerge
@@ -1460,10 +1517,10 @@ variant B, and the common ancestor.
 
   After the comparison is done and the buffers are prepared, the
 interactive merging starts.  You control the merging by typing special
-commands in the merge buffer.  The merge buffer shows you a full merged
-text, not just differences.  For each run of differences between the
-input texts, you can choose which one of them to keep, or edit them both
-together.
+@dfn{merge commands} in the merge buffer.  The merge buffer shows you a
+full merged text, not just differences.  For each run of differences
+between the input texts, you can choose which one of them to keep, or
+edit them both together.
 
   The merge buffer uses a special major mode, Emerge mode, with commands
 for making these choices.  But you can also edit the buffer with
@@ -1484,29 +1541,30 @@ Emerge numbers all the differences sequentially and the mode
 line always shows the number of the selected difference.
 
   Normally, the merge buffer starts out with the A version of the text.
-But when the A version of a part of the buffer agrees with the common
-ancestor, then the B version is preferred for that part.
+But when the A version of a difference agrees with the common ancestor,
+then the B version is initially preferred for that difference.
 
   Emerge leaves the merged text in the merge buffer when you exit.  At
 that point, you can save it in a file with @kbd{C-x C-w}.  If you give a
-prefix argument to @code{emerge-files} or
+numeric argument to @code{emerge-files} or
 @code{emerge-files-with-ancestor}, it reads the name of the output file
 using the minibuffer.  (This is the last file name those commands read.)
 Then exiting from Emerge saves the merged text in the output file.
 
-  If you abort Emerge with @kbd{C-]}, the output is not saved.
+  Normally, Emerge commands save the output buffer in its file when you
+exit.  If you abort Emerge with @kbd{C-]}, the Emerge command does not
+save the output buffer, but you can save it yourself if you wish.
 
 @node Submodes of Emerge
 @subsection Submodes of Emerge
 
   You can choose between two modes for giving merge commands: Fast mode
-and Edit mode.  In Fast mode, basic Emerge commands are single
+and Edit mode.  In Fast mode, basic merge commands are single
 characters, but ordinary Emacs commands are disabled.  This is
-convenient if you use only Emerge commands.
-
-  In Edit mode, all Emerge commands start with the prefix key @kbd{C-c
-C-c}, and the normal Emacs commands are also available.  This allows
-editing the merge buffer, but slows down Emerge operations.
+convenient if you use only merge commands.  In Edit mode, all merge
+commands start with the prefix key @kbd{C-c C-c}, and the normal Emacs
+commands are also available.  This allows editing the merge buffer, but
+slows down Emerge operations.
 
   Use @kbd{e} to switch to Edit mode, and @kbd{C-c C-c f} to switch to
 Fast mode.  The mode line indicates Edit and Fast modes with @samp{E}
@@ -1520,10 +1578,11 @@ advance to the next difference.  This lets you go through the merge
 faster as long as you simply choose one of the alternatives from the
 input.  The mode line indicates Auto Advance mode with @samp{A}.
 
-  If Skip Prefers mode is in effect, the @kbd{n} and @kbd{p} commands skip
-over differences in states prefer-A and prefer-B.  Thus you see only
-differences for which neither version is presumed ``correct''.  The mode
-line indicates Skip Prefers mode with @samp{S}.
+  If Skip Prefers mode is in effect, the @kbd{n} and @kbd{p} commands
+skip over differences in states prefer-A and prefer-B (@pxref{State of
+Difference}).  Thus you see only differences for which neither version
+is presumed ``correct''.  The mode line indicates Skip Prefers mode with
+@samp{S}.
 
 @findex emerge-auto-advance-mode
 @findex emerge-skip-prefers-mode
@@ -1562,12 +1621,12 @@ the mode line.
 
 The command @kbd{d a} chooses default-A as the default state, and @kbd{d
 b} chooses default-B.  This chosen default applies to all differences
-which you haven't selected and for which no alternative is preferred.
+which you haven't ever selected and for which no alternative is preferred.
 If you are moving through the merge sequentially, the differences you
 haven't selected are those following the selected one.  Thus, while
 moving sequentially, you can effectively make the A version the default
 for some sections of the merge buffer and the B version the default for
-others by using @kbd{d a} and @kbd{d b} at the end of each section.
+others by using @kbd{d a} and @kbd{d b} between sections.
 
 @item prefer-A
 @itemx prefer-B
@@ -1585,7 +1644,7 @@ The difference is showing a combination of the A and B states, as a
 result of the @kbd{x c} or @kbd{x C} commands.
 
 Once a difference is in this state, the @kbd{a} and @kbd{b} commands
-don't do anything to it unless you give them a prefix argument.
+don't do anything to it unless you give them a numeric argument.
 
 The mode line displays this state as @samp{comb}.
 @end table
@@ -1609,9 +1668,8 @@ Choose the A version of this difference.
 @item b
 Choose the B version of this difference.
 
-@item j
-Select a particular difference; specify the sequence number of that
-difference as a prefix argument.
+@item C-u @var{n} j
+Select difference number @var{n}.
 
 @item .
 Select the difference containing point.  You can use this command in the
@@ -1653,13 +1711,13 @@ Copy the A version of this difference into the kill ring.
 Copy the B version of this difference into the kill ring.
 
 @item i a
-Insert the A version of this difference at the point.
+Insert the A version of this difference at point.
 
 @item i b
-Insert the B version of this difference at the point.
+Insert the B version of this difference at point.
 
 @item m
-Put the point and mark around the difference region.
+Put point and mark around the difference.
 
 @item ^
 Scroll all three windows down (like @kbd{M-v}).
@@ -1681,11 +1739,12 @@ Shrink the merge window to one line.  (Use @kbd{C-u l} to restore it
 to full size.)
 
 @item x c
-Combine the two versions of this difference.
+Combine the two versions of this difference (@pxref{Combining in
+Emerge}).
 
 @item x f
-Show the files/buffers Emerge is operating on in Help window.
-(Use @kbd{C-u l} to restore windows.)
+Show the names of the files/buffers Emerge is operating on, in a Help
+window.  (Use @kbd{C-u l} to restore windows.)
 
 @item x j
 Join this difference with the following one.
@@ -1693,7 +1752,7 @@ Join this difference with the following one.
 
 @item x s
 Split this difference into two differences.  Before you use this
-command, position point in each of the three buffers to the place where
+command, position point in each of the three buffers at the place where
 you want to split the difference.
 
 @item x t
@@ -1716,21 +1775,23 @@ damage the contents of the various buffers.
 output file.  If you didn't specify an output file, then there is no
 real difference between aborting and finishing the merge.
 
-  If Emerge was called from another Lisp program, then its return value
-is @code{t} for successful completion, or @code{nil} if you abort.
+  If the Emerge command was called from another Lisp program, then its
+return value is @code{t} for successful completion, or @code{nil} if you
+abort.
 
 @node Combining in Emerge
 @subsection Combining the Two Versions
 
-  Sometimes you want to keep @emph{both} alternatives for a particular 
-locus.  To do this, use @kbd{x c}, which edits the merge buffer like this:
+  Sometimes you want to keep @emph{both} alternatives for a particular
+difference.  To do this, use @kbd{x c}, which edits the merge buffer
+like this:
 
 @example
 @group
 #ifdef NEW
-@var{version from A file}
+@var{version from A buffer}
 #else /* NEW */
-@var{version from B file}
+@var{version from B buffer}
 #endif /* NEW */
 @end group
 @end example
@@ -1738,7 +1799,7 @@ locus.  To do this, use @kbd{x c}, which edits the merge buffer like this:
 @noindent
 @vindex emerge-combine-versions-template
 While this example shows C preprocessor conditionals delimiting the two
-alternative versions, you can specify the strings you want by setting
+alternative versions, you can specify the strings to use by setting
 the variable @code{emerge-combine-versions-template} to a string of your
 choice.  In the string, @samp{%a} says where to put version A, and
 @samp{%b} says where to put version B.  The default setting, which
@@ -1787,7 +1848,7 @@ modes (@pxref{Program Modes}), C mode has various special facilities.
 @kindex M-e @r{(C mode)}
 @findex c-beginning-of-statement
 @findex c-end-of-statement
-In C mode, @kbd{M-a} and @kbd{M-e} now move by complete C statements
+In C mode, @kbd{M-a} and @kbd{M-e} move by complete C statements
 (@code{c-beginning-of-statement} and @code{c-end-of-statement}).  These
 commands do ordinary, textual sentence motion when in or next to a
 comment.
@@ -1805,7 +1866,7 @@ in a C program.)
 Move back to the containing preprocessor conditional, setting the mark
 at the starting point (@code{c-up-conditional}).
 
-A prefix argument acts as a repeat count.  With a negative argument,
+A numeric argument acts as a repeat count.  With a negative argument,
 this command moves forward to the end of the containing preprocessor
 conditional.  When going backwards, @samp{#elif} acts like @samp{#else}
 followed by @samp{#if}.  When going forwards, @samp{#elif} is ignored.
@@ -1865,10 +1926,9 @@ of nesting, line numbers and continuation statements.  Fortran mode has
 it's own Auto Fill mode that breaks long lines into proper Fortran
 continuation lines.
 
-  Special commands for comments are provided because Fortran comments are
-unlike those of other languages.
-
-  Built-in abbrevs optionally save typing when you insert Fortran keywords.
+  Special commands for comments are provided because Fortran comments
+are unlike those of other languages.  Built-in abbrevs optionally save
+typing when you insert Fortran keywords.
 
 @findex fortran-mode
   Use @kbd{M-x fortran-mode} to switch to this major mode.  This command
@@ -2132,7 +2192,7 @@ default is 8.
 @end table
 
 @node Fortran Comments
-@subsection Comments
+@subsection Fortran Comments
 
   The usual Emacs comment commands assume that a comment can follow a line
 of code.  In Fortran, the standard comment syntax requires an entire line
@@ -2263,7 +2323,7 @@ feature turned on permanently, add a hook function to
 @xref{Hooks}.
 
 @node Fortran Columns
-@subsection Columns
+@subsection Checking Columns in Fortran
 
 @table @kbd
 @item C-c C-r
@@ -2296,7 +2356,7 @@ the variable @code{indent-tabs-mode}.  If @code{indent-tabs-mode} is
 @code{nil}, then the value of the variable
 @code{fortran-column-ruler-fixed} is used as the column ruler.
 Otherwise, the variable @code{fortran-column-ruler-tab} is displayed.
-By changing this variables, you can change the column ruler display.
+By changing these variables, you can change the column ruler display.
 
 @kindex C-c C-w @r{(Fortran mode)}
 @findex fortran-window-create

@@ -104,10 +104,30 @@ NOTE-END */
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 #define LOAD_AVE_CVT(x) (((double) (x)) * 100.0 / FSCALE)
-  
+
 #define FSCALE 256.0         /* determined by experimentation...  */
 #endif
 
+
+#ifdef SOLARIS2
+/* Data type of load average, as read out of kmem.  */
+#define LOAD_AVE_TYPE long
+
+/* Convert that into an integer that is 100 for a load average of 1.0  */
+/* This is totally uncalibrated. */
+#define LOAD_AVE_CVT(x) ((int) (((double) (x)) * 100.0 / FSCALE))
+
+#ifndef SOLARIS2_4
+/* j.w.hawtin@lut.ac.uk says Solaris 2.1 on the X86 needs -lkvm, and it 
+   already has FSCALE defined in a system header.  */
+#define LIBS_MACHINE -lkvm
+#endif
+
+/* configure thinks solaris X86 has gethostname, but it does not work,
+   so undefine it.  */
+#undef HAVE_GETHOSTNAME
+
+#else /* not SOLARIS2 */
 #ifdef USG5_4 /* Older USG systems do not support the load average.  */
 /* Data type of load average, as read out of kmem.  */
 
@@ -119,6 +139,7 @@ NOTE-END */
 #define LOAD_AVE_CVT(x) ((int) (((double) (x)) * 100.0 / FSCALE))
 #define FSCALE 256.0
 #endif
+#endif /* not SOLARIS2 */
 
 /* Define CANNOT_DUMP on machines where unexec does not work.
    Then the function dump-emacs will not be defined
@@ -162,6 +183,11 @@ NOTE-END */
 #define LIB_STANDARD /lib/386/Slibcfp.a /lib/386/Slibc.a
 #else /* not XENIX */
 
+#ifdef SOLARIS2
+#define VALBITS 26
+#define GCTYPEBITS 5
+#endif
+
 /* this brings in alloca() if we're using cc */
 #ifdef USG
 #ifndef LIB_STANDARD
@@ -175,7 +201,7 @@ NOTE-END */
 #define HAVE_ALLOCA
 #define NO_REMAP 
 #define TEXT_START 0
-#endif /* not USG */
+#endif /* USG */
 #endif /* not XENIX */
 
 #ifdef BSD
@@ -190,4 +216,8 @@ NOTE-END */
 
 #ifdef USG5_4
 #define DATA_SEG_BITS 0x08000000
+#endif
+
+#ifdef MSDOS
+#define NO_REMAP
 #endif

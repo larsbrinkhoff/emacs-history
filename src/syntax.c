@@ -223,7 +223,20 @@ are listed in the documentation of `modify-syntax-entry'.")
      Lisp_Object ch;
 {
   CHECK_NUMBER (ch, 0);
-  return make_number (syntax_code_spec[(int) SYNTAX (0xFF & XINT (ch))]);
+  return make_number (syntax_code_spec[(int) SYNTAX (XINT (ch))]);
+}
+
+DEFUN ("matching-paren", Fmatching_paren, Smatching_paren, 1, 1, 0,
+  "Return the matching parenthesis of CHAR, or nil if none.")
+  (ch)
+     Lisp_Object ch;
+{
+  int code;
+  CHECK_NUMBER (ch, 0);
+  code = SYNTAX (XINT (ch));
+  if (code == Sopen || code == Sclose)
+    return make_number (SYNTAX_MATCH (XINT (ch)));
+  return Qnil;
 }
 
 /* This comment supplies the doc string for modify-syntax-entry,
@@ -733,6 +746,7 @@ between them, return t; otherwise return nil.")
 		int comment_end = from;
 		int comstart_pos = 0;
 		int comstart_parity = 0;
+		int scanstart = from - 1;
 
 		/* At beginning of range to scan, we're outside of strings;
 		   that determines quote parity to the comment-end.  */
@@ -751,15 +765,15 @@ between them, return t; otherwise return nil.")
 		      {
 			code = Sendcomment;
 			from--;
+		        c = FETCH_CHAR (from);
 		      }
 			
-		    else if (from > stop && SYNTAX_COMSTART_SECOND (c)
-			     && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from - 1))
-			     && comstyle == SYNTAX_COMMENT_STYLE (c))
-		      {
-			code = Scomment;
-			from--;
-		      }
+		    /* If this char starts a 2-char comment start sequence,
+		       treat it like a 1-char comment starter.  */
+		    if (from < scanstart && SYNTAX_COMSTART_FIRST (c)
+			&& SYNTAX_COMSTART_SECOND (FETCH_CHAR (from + 1))
+			&& comstyle == SYNTAX_COMMENT_STYLE (FETCH_CHAR (from + 1)))
+		      code = Scomment;
 
 		    /* Ignore escaped characters.  */
 		    if (char_quoted (from))
@@ -933,7 +947,12 @@ scan_lists (from, count, depth, sexpflag)
 	      if (!parse_sexp_ignore_comments) break;
 	      while (1)
 		{
-		  if (from == stop) goto done;
+		  if (from == stop)
+		    {
+		      if (depth == 0)
+			goto done;
+		      goto lose;
+		    }
 		  c = FETCH_CHAR (from);
 		  if (SYNTAX (c) == Sendcomment
 		      && SYNTAX_COMMENT_STYLE (c) == comstyle)
@@ -1099,7 +1118,12 @@ scan_lists (from, count, depth, sexpflag)
 		      if (SYNTAX (c = FETCH_CHAR (from)) == Scomment
 			  && SYNTAX_COMMENT_STYLE (c) == comstyle)
 			break;
-		      if (from == stop) goto done;
+		      if (from == stop)
+			{
+			  if (depth == 0)
+			    goto done2;
+			  goto lose;
+			}
 		      from--;
 		      if (SYNTAX_COMSTART_SECOND (c)
 			  && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from))
@@ -1127,6 +1151,7 @@ scan_lists (from, count, depth, sexpflag)
 		int comment_end = from;
 		int comstart_pos = 0;
 		int comstart_parity = 0;
+		int scanstart = from - 1;
 
 		/* At beginning of range to scan, we're outside of strings;
 		   that determines quote parity to the comment-end.  */
@@ -1145,15 +1170,15 @@ scan_lists (from, count, depth, sexpflag)
 		      {
 			code = Sendcomment;
 			from--;
+		        c = FETCH_CHAR (from);
 		      }
 			
-		    else if (from > stop && SYNTAX_COMSTART_SECOND (c)
-			     && SYNTAX_COMSTART_FIRST (FETCH_CHAR (from - 1))
-			     && comstyle == SYNTAX_COMMENT_STYLE (c))
-		      {
-			code = Scomment;
-			from--;
-		      }
+		    /* If this char starts a 2-char comment start sequence,
+		       treat it like a 1-char comment starter.  */
+		    if (from < scanstart && SYNTAX_COMSTART_FIRST (c)
+			&& SYNTAX_COMSTART_SECOND (FETCH_CHAR (from + 1))
+			&& comstyle == SYNTAX_COMMENT_STYLE (FETCH_CHAR (from + 1)))
+		      code = Scomment;
 
 		    /* Ignore escaped characters.  */
 		    if (char_quoted (from))
@@ -1709,6 +1734,7 @@ syms_of_syntax ()
   defsubr (&Scopy_syntax_table);
   defsubr (&Sset_syntax_table);
   defsubr (&Schar_syntax);
+  defsubr (&Smatching_paren);
   defsubr (&Smodify_syntax_entry);
   defsubr (&Sdescribe_syntax);
 

@@ -1,4 +1,4 @@
-This directory tree holds version 19.25 of GNU Emacs, the extensible,
+This directory tree holds version 19.26 of GNU Emacs, the extensible,
 customizable, self-documenting real-time display editor.
 
 Please note that version 19 of Emacs is still in beta-test.  Although
@@ -26,8 +26,10 @@ The file PROBLEMS contains information on many common problems that
 occur in building, installing and running Emacs.
 
 Reports of bugs in Emacs should be sent to the mailing list
-bug-gnu-emacs@prep.ai.mit.edu.  See the "Bugs" node of the info tree
-for more information on how to report bugs.  See `etc/MAILINGLISTS'
+bug-gnu-emacs@prep.ai.mit.edu.  See the "Bugs" section of the Emacs
+manual for more information on how to report bugs.  (The file `BUGS'
+in this directory explains how you can find and read that section
+using the Info files that come with Emacs.)  See `etc/MAILINGLISTS'
 for more information on mailing lists relating to GNU products.
 
 The `etc' subdirectory contains several other files, named in

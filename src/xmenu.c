@@ -29,11 +29,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Rewritten for clarity and GC protection by rms in Feb 94.  */
 
-#include <stdio.h>
-
 /* On 4.3 this loses if it comes after xterm.h.  */
 #include <signal.h>
 #include <config.h>
+
+#include <stdio.h>
 #include "lisp.h"
 #include "termhooks.h"
 #include "frame.h"
@@ -64,6 +64,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <X11/IntrinsicP.h>
 #include <X11/CoreP.h>
 #include <X11/StringDefs.h>
+#include <X11/Shell.h>
 #include <X11/Xaw/Paned.h>
 #include "../lwlib/lwlib.h"
 #include "../lwlib/xlwmenuP.h"
@@ -298,6 +299,7 @@ menu_item_equiv_key (item_string, item1, descrip_ptr)
   Lisp_Object savedkey, descrip;
   Lisp_Object def1;
   int changed = 0;
+  struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
 
   /* If a help string follows the item string, skip it.  */
   if (CONSP (XCONS (item1)->cdr)
@@ -318,12 +320,19 @@ menu_item_equiv_key (item_string, item1, descrip_ptr)
       descrip = XCONS (cachelist)->cdr;
     }
 
+  GCPRO4 (def, def1, savedkey, descrip);
+
   /* Is it still valid?  */
   def1 = Qnil;
   if (!NILP (savedkey))
     def1 = Fkey_binding (savedkey, Qnil);
   /* If not, update it.  */
   if (! EQ (def1, def)
+      /* If the command is an alias for another
+         (such as easymenu.el and lmenu.el set it up),
+         check if the original command matches the cached command. */
+      && !(SYMBOLP (def) && SYMBOLP (XSYMBOL (def)->function)
+           && EQ (def1, XSYMBOL (def)->function))
       /* If something had no key binding before, don't recheck it--
 	 doing that takes too much time and makes menus too slow.  */
       && !(!NILP (cachelist) && NILP (savedkey)))
@@ -358,6 +367,7 @@ menu_item_equiv_key (item_string, item1, descrip_ptr)
       XCONS (cachelist)->cdr = descrip;
     }
 
+  UNGCPRO;
   *descrip_ptr = descrip;
   return def;
 }
@@ -464,14 +474,16 @@ single_keymap_panes (keymap, pane_name, prefix, notreal)
 		  Lisp_Object descrip;
 		  Lisp_Object tem, enabled;
 
-		  def = menu_item_equiv_key (item_string, item1, &descrip);
-
-		  /* GCPRO because we will call eval.
+		  /* GCPRO because ...enabled_p will call eval
+		     and ..._equiv_key may autoload something.
 		     Protecting KEYMAP preserves everything we use;
 		     aside from that, must protect whatever might be
 		     a string.  Since there's no GCPRO5, we refetch
 		     item_string instead of protecting it.  */
+		  descrip = def = Qnil;
 		  GCPRO4 (keymap, pending_maps, def, descrip);
+
+		  def = menu_item_equiv_key (item_string, item1, &descrip);
 		  enabled = menu_item_enabled_p (def, notreal);
 
 		  UNGCPRO;
@@ -485,7 +497,9 @@ single_keymap_panes (keymap, pane_name, prefix, notreal)
 		  else
 		    {
 		      Lisp_Object submap;
+		      GCPRO4 (keymap, pending_maps, descrip, item_string);
 		      submap = get_keymap_1 (def, 0, 1);
+		      UNGCPRO;
 #ifndef USE_X_TOOLKIT
 		      /* Indicate visually that this is a submenu.  */
 		      if (!NILP (submap))
@@ -530,15 +544,18 @@ single_keymap_panes (keymap, pane_name, prefix, notreal)
 		      Lisp_Object descrip;
 		      Lisp_Object tem, enabled;
 
-		      def = menu_item_equiv_key (item_string, item1, &descrip);
-
-		      /* GCPRO because we will call eval.
+		      /* GCPRO because ...enabled_p will call eval
+			 and ..._equiv_key may autoload something.
 			 Protecting KEYMAP preserves everything we use;
 			 aside from that, must protect whatever might be
 			 a string.  Since there's no GCPRO5, we refetch
 			 item_string instead of protecting it.  */
 		      GCPRO4 (keymap, pending_maps, def, descrip);
+		      descrip = def = Qnil;
+
+		      def = menu_item_equiv_key (item_string, item1, &descrip);
 		      enabled = menu_item_enabled_p (def, notreal);
+
 		      UNGCPRO;
 
 		      item_string = XCONS (item1)->car;
@@ -550,7 +567,9 @@ single_keymap_panes (keymap, pane_name, prefix, notreal)
 		      else
 			{
 			  Lisp_Object submap;
+			  GCPRO4 (keymap, pending_maps, descrip, item_string);
 			  submap = get_keymap_1 (def, 0, 1);
+			  UNGCPRO;
 #ifndef USE_X_TOOLKIT
 			  if (!NILP (submap))
 			    item_string = concat2 (item_string,
@@ -1046,7 +1065,11 @@ map_event_to_object (event, f)
   return Qnil;
 }
 
+#ifdef __STDC__
+static Lisp_Object *volatile menu_item_selection;
+#else
 static Lisp_Object *menu_item_selection;
+#endif
 
 static void
 popup_selection_callback (widget, id, client_data)
@@ -1349,6 +1372,9 @@ check_mouse_other_menu_bar (f)
 
 #ifdef USE_X_TOOLKIT
 
+extern unsigned last_event_timestamp;
+extern Lisp_Object Vdouble_click_time;
+
 extern unsigned int x_mouse_grabbed;
 extern Lisp_Object Vmouse_depressed;
 
@@ -1366,6 +1392,8 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
   int menu_id;
   Widget menu;
   XlwMenuWidget menubar = (XlwMenuWidget) f->display.x->menubar_widget;
+  Arg av [2];
+  int ac = 0;
 
   /* This is the menu bar item (if any) that led to this menu.  */
   widget_value *menubar_item = 0;
@@ -1391,6 +1419,7 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
   Position root_x, root_y;
 
   int first_pane;
+  int next_release_must_exit = 0;
 
   *error = NULL;
 
@@ -1548,6 +1577,11 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
   menu = lw_create_widget ("popup", first_wv->name, menu_id, first_wv,
 			   f->display.x->widget, 1, 0,
 			   popup_selection_callback, popup_down_callback);
+
+  /* Don't allow any geometry request from the user.  */
+  XtSetArg (av[ac], XtNgeometry, 0); ac++;
+  XtSetValues (menu, av, ac);
+
   /* Free the widget_value objects we used to specify the contents.  */
   free_menubar_widget_value_tree (first_wv);
 
@@ -1593,17 +1627,19 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
 
   /* No need to check a second time since this is done in the XEvent loop.
      This slows done the execution.  */
-#if 0
+#ifdef XMENU_FOO
   /* Check again whether the mouse has moved to another menu bar item.  */
   if (check_mouse_other_menu_bar (f))
     {
       /* The mouse moved into a different menu bar item. 
 	 We should bring up that item's menu instead.
 	 First pop down this menu.  */
+#if 0 /* xlwmenu.c now does this.  */
       XtUngrabPointer ((Widget)
 		       ((XlwMenuWidget)
 			((CompositeWidget)menu)->composite.children[0]),
 		       CurrentTime);
+#endif
       lw_destroy_all_widgets (menu_id); 
       goto pop_down;
     }
@@ -1613,26 +1649,66 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
   while (1)
     {
       XEvent event;
+      int queue_and_exit = 0;
+      int in_this_menu = 0, in_menu_bar = 0;
+      Widget widget;
 
       XtAppNextEvent (Xt_app_con, &event);
+
+      /* Check whether the event happened in the menu
+	 or any child of it.  */
+      widget = XtWindowToWidget (XDISPLAY event.xany.window);
+
+      while (widget)
+	{
+	  if (widget == menu)
+	    {
+	      in_this_menu = 1;
+	      break;
+	    }
+	  if (widget == f->display.x->menubar_widget)
+	    {
+	      in_menu_bar = 1;
+	      break;
+	    }
+	  widget = XtParent (widget);
+	}
+
       if (event.type == ButtonRelease)
 	{
-	  XtDispatchEvent (&event);
-	  if (! menubarp)
-	    {
-	      /* Do the work of construct_mouse_click since it can't
-		 be called. Initially, the popup menu has been called
-		 from a ButtonPress in the edit_widget. Then the mouse
-		 has been set to grabbed. Reset it now.  */
-	      x_mouse_grabbed &= ~(1 << event.xbutton.button);
-	      if (!x_mouse_grabbed)
-		Vmouse_depressed = Qnil;
-	    }
-	  break;
+	  /* Do the work of construct_mouse_click since it can't
+	     be called. Initially, the popup menu has been called
+	     from a ButtonPress in the edit_widget. Then the mouse
+	     has been set to grabbed. Reset it now.  */
+	  x_mouse_grabbed &= ~(1 << event.xbutton.button);
+	  if (!x_mouse_grabbed)
+	    Vmouse_depressed = Qnil;
+
+	  /* If we release the button soon without selecting anything,
+	     stay in the loop--that is, leave the menu posted.
+	     Otherwise, exit this loop and thus pop down the menu.  */
+	  if (! in_this_menu
+	      && (next_release_must_exit
+		  || !(((XButtonEvent *) (&event))->time - last_event_timestamp
+		       < XINT (Vdouble_click_time))))
+	    break;
+	}
+      /* A button press outside the menu => pop it down.  */
+      else if (event.type == ButtonPress && !in_this_menu)
+	break;
+      else if (event.type == ButtonPress)
+	next_release_must_exit = 1;
+      else if (event.type == KeyPress)
+	{
+	  /* Exit the loop, but first queue this event for reuse.  */
+	  queue_and_exit = 1;
 	}
       else if (event.type == Expose)
 	process_expose_from_menu (event);
-      else if (event.type == MotionNotify)
+      /* If the mouse moves to a different menu bar item, switch to
+	 that item's menu.  But only if the button is still held down.  */
+      else if (event.type == MotionNotify
+	       && x_mouse_grabbed)
 	{
 	  int event_x = (event.xmotion.x_root
 			 - (f->display.x->widget->core.x
@@ -1646,10 +1722,12 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
 	      /* The mouse moved into a different menu bar item. 
 		 We should bring up that item's menu instead.
 		 First pop down this menu.  */
+#if 0 /* xlwmenu.c now does this.  */
 	      XtUngrabPointer ((Widget)
 			       ((XlwMenuWidget)
 				((CompositeWidget)menu)->composite.children[0]),
 			       event.xbutton.time);
+#endif
 	      lw_destroy_all_widgets (menu_id); 
 
 	      /* Put back an event that will bring up the other item's menu.  */
@@ -1659,9 +1737,17 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
 	      break;
 	    }
 	}
+      else if (event.type == UnmapNotify)
+	{
+	  /* If the menu disappears, there is no need to stay in the
+             loop.  */
+	  if (event.xunmap.window == menu->core.window)
+	    break;
+	}
 
       XtDispatchEvent (&event);
-      if (XtWindowToWidget(XDISPLAY event.xany.window) != menu)
+
+      if (queue_and_exit || (!in_this_menu && !in_menu_bar))
 	{
 	  queue_tmp
 	    = (struct event_queue *) malloc (sizeof (struct event_queue));
@@ -1673,6 +1759,8 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
 	      queue = queue_tmp;
 	    }
 	}
+      if (queue_and_exit)
+	break;
     }
 
  pop_down:
@@ -1901,7 +1989,7 @@ xdialog_show (f, menubarp, keymaps, title, error)
 #if 0 /* This causes crashes, and seems to be redundant -- rms.  */
   lw_modify_all_widgets (dialog_id, first_wv, True);
 #endif
-  lw_modify_all_widgets (dialog_id, first_wv->contents->next, True);
+  lw_modify_all_widgets (dialog_id, first_wv->contents, True);
   /* Free the widget_value objects we used to specify the contents.  */
   free_menubar_widget_value_tree (first_wv);
 
@@ -2246,7 +2334,6 @@ xmenu_show (f, x, y, menubarp, keymaps, title, error)
       break;
 
     case XM_FAILURE:
-      XMenuDestroy (XDISPLAY menu);
       *error = "Can't activate menu";
     case XM_IA_SELECT:
     case XM_NO_SELECT:

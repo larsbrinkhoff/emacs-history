@@ -71,8 +71,8 @@
 ;;; m-S     comint-next-matching-input-from-input     -"- matching input
 ;;; m-c-l   comint-show-output		    Show last batch of process output
 ;;; return  comint-send-input
-;;; c-a     comint-bol                      Beginning of line; skip prompt
 ;;; c-d	    comint-delchar-or-maybe-eof	    Delete char unless at end of buff.
+;;; c-c c-a comint-bol                      Beginning of line; skip prompt
 ;;; c-c c-u comint-kill-input	    	    ^u
 ;;; c-c c-w backward-kill-word    	    ^w
 ;;; c-c c-c comint-interrupt-subjob 	    ^c
@@ -182,10 +182,9 @@ shell buffer.
 
 This is a fine thing to set in your `.emacs' file.")
 
-(defvar shell-command-regexp "\\((.*)\\|[^;&|]\\)+"
-  "*Regexp to match shell commands.
-Elements of pipes are considered as separate commands, forks and redirections
-as part of one command.")
+(defvar shell-command-regexp "[^;&|\n]+"
+  "*Regexp to match a single command within a pipeline.
+This is used for directory tracking and does not do a perfect job.")
 
 (defvar shell-completion-execonly t
   "*If non-nil, use executable files only for completion candidates.
@@ -346,6 +345,8 @@ buffer."
 	      (cond ((string-equal shell "bash") "~/.bash_history")
 		    ((string-equal shell "ksh") "~/.sh_history")
 		    (t "~/.history"))))
+    (if (equal comint-input-ring-file-name "/dev/null")
+	(setq comint-input-ring-file-name nil))
     (setq shell-dirstack-query
 	  (if (string-match "^k?sh$" shell) "pwd" "dirs")))
   (run-hooks 'shell-mode-hook)
@@ -480,12 +481,14 @@ Environment variables are expanded, see function `substitute-in-file-name'."
 	   (error "Couldn't popd")))))
 
 ;; Return DIR prefixed with comint-file-name-prefix as appropriate.
-(defsubst shell-prefixed-directory-name (dir)
-  (if (file-name-absolute-p dir)
-      ;; The name is absolute, so prepend the prefix.
-      (concat comint-file-name-prefix dir)
-    ;; For a relative name we assume default-directory already has the prefix.
-    (expand-file-name dir)))
+(defun shell-prefixed-directory-name (dir)
+  (if (= (length comint-file-name-prefix) 0)
+      dir
+    (if (file-name-absolute-p dir)
+	;; The name is absolute, so prepend the prefix.
+	(concat comint-file-name-prefix dir)
+      ;; For a relative name we assume default-directory already has the prefix.
+      (expand-file-name dir))))
 
 ;;; cd [dir]
 (defun shell-process-cd (arg)

@@ -365,11 +365,8 @@ U       unsubscribe from specified newsgroup."
 ;  This breaks it.  I don't have time to figure out why. -- RMS
 ;  (make-local-variable 'news-group-article-assoc)
   (setq major-mode 'news-mode)
-  (if (boundp 'minor-mode-alist)
-      ;; Emacs versions 18.16 and up.
-      (setq mode-name '("NEWS" news-minor-modes))
-    ;; Earlier versions display minor-modes via a special mechanism.
-    (setq mode-name "NEWS"))
+  (setq mode-line-process '(news-minor-modes))
+  (setq mode-name "NEWS")
   (news-set-mode-line)
   (set-syntax-table text-mode-syntax-table)
   (use-local-map news-mode-map)
@@ -527,15 +524,16 @@ to a list (a . b)"
   (let ((file (concat news-path
 		      (string-subst-char ?/ ?. news-current-news-group)
 		      "/" arg)))
+    (if (= arg 
+	   (or (news-cadr (memq (news-cdar news-point-pdl) news-list-of-files))
+	       0))
+	(setcdr (car news-point-pdl) arg))
+    (setq news-current-message-number arg)
     (if (file-exists-p file)
-	(let ((buffer-read-only ()))
-	  (if (= arg 
-		 (or (news-cadr (memq (news-cdar news-point-pdl) news-list-of-files))
-		     0))
-	      (setcdr (car news-point-pdl) arg))
-	  (setq news-current-message-number arg)
-	  (news-read-in-file file)
-	  (news-set-mode-line))
+  	(let ((buffer-read-only nil))
+  	  (news-read-in-file file)
+  	  (news-set-mode-line))
+      (news-set-mode-line)
       (error "Article %d nonexistent" arg))))
 
 (defun news-force-update ()

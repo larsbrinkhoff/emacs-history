@@ -134,7 +134,7 @@ Leave one space or none, according to the context."
 (defun delete-blank-lines ()
   "On blank line, delete all surrounding blank lines, leaving just one.
 On isolated blank line, delete that one.
-On nonblank line, delete all blank lines that follow it."
+On nonblank line, delete any immediately following blank lines."
   (interactive "*")
   (let (thisblank singleblank)
     (save-excursion
@@ -218,7 +218,7 @@ column specified by the variable `left-margin'."
   "Delete characters backward, changing tabs into spaces.
 Delete ARG chars, and kill (save in kill ring) if KILLP is non-nil.
 Interactively, ARG is the prefix arg (default 1)
-and KILLP is t if prefix arg is was specified."
+and KILLP is t if a prefix arg was specified."
   (interactive "*p\nP")
   (let ((count arg))
     (save-excursion
@@ -289,7 +289,9 @@ Don't use this command in Lisp programs!
 		    (goto-char (window-start))
 		    (vertical-motion (window-height))
 		    (< (point) old-point)))
-	(recenter -3))))
+	(progn
+	  (overlay-recenter (point))
+	  (recenter -3)))))
 
 (defun mark-whole-buffer ()
   "Put point at beginning and mark at end of buffer.
@@ -769,8 +771,9 @@ deleted."
 	(and interactive (push-mark))
 	(call-process-region start end shell-file-name t t nil
 			     "-c" command)
-	(if (get-buffer "*Shell Command Output*")
-	    (kill-buffer "*Shell Command Output*"))
+	(let ((shell-buffer (get-buffer "*Shell Command Output*")))
+	  (and shell-buffer (not (eq shell-buffer (current-buffer)))
+	       (kill-buffer shell-buffer)))
 	(and interactive swap (exchange-point-and-mark)))
     ;; No prefix argument: put the output in a temp buffer,
     ;; replacing its entire contents.
@@ -1332,13 +1335,17 @@ store it in a Lisp variable.  Example:
 	(setq mark-active t)
 	(run-hooks 'activate-mark-hook)
 	(set-marker (mark-marker) pos (current-buffer)))
-    (deactivate-mark)
-    (set-marker (mark-marker) pos (current-buffer))))
+    ;; Normally we never clear mark-active except in Transient Mark mode.
+    ;; But when we actually clear out the mark value too,
+    ;; we must clear mark-active in any mode.
+    (setq mark-active nil)
+    (run-hooks 'deactivate-mark-hook)
+    (set-marker (mark-marker) nil)))
 
 (defvar mark-ring nil
-  "The list of saved former marks of the current buffer,
-most recent first.")
+  "The list of former marks of the current buffer, most recent first.")
 (make-variable-buffer-local 'mark-ring)
+(put 'mark-ring 'permanent-local t)
 
 (defconst mark-ring-max 16
   "*Maximum size of mark ring.  Start discarding off end if gets this big.")
@@ -1448,6 +1455,9 @@ incremental search, \\[beginning-of-buffer], and \\[end-of-buffer]."
 (defun pop-global-mark ()
   "Pop off global mark ring and jump to the top location."
   (interactive)
+  ;; Pop entries which refer to non-existent buffers.
+  (while (and global-mark-ring (not (marker-buffer (car global-mark-ring))))
+    (setq global-mark-ring (cdr global-mark-ring)))
   (or global-mark-ring
       (error "No global mark set"))
   (let* ((marker (car global-mark-ring))
@@ -1486,8 +1496,8 @@ and more reliable (no dependence on goal column, etc.)."
   (interactive "p")
   (if (and next-line-add-newlines (= arg 1))
       (let ((opoint (point)))
-	(forward-line 1)
-	(if (or (= opoint (point)) (not (eq (preceding-char) ?\n)))
+	(end-of-line)
+	(if (eobp)
 	    (insert ?\n)
 	  (goto-char opoint)
 	  (line-move arg)))
@@ -1527,43 +1537,42 @@ at the start of current run of vertical motion commands.
 When the `track-eol' feature is doing its job, the value is 9999.")
 
 (defun line-move (arg)
-  (let ((signal
-	 (catch 'exit
-	   (if (not (or (eq last-command 'next-line)
-			(eq last-command 'previous-line)))
-	       (setq temporary-goal-column
-		     (if (and track-eol (eolp)
-			      ;; Don't count beg of empty line as end of line
-			      ;; unless we just did explicit end-of-line.
-			      (or (not (bolp)) (eq last-command 'end-of-line)))
-			 9999
-		       (current-column))))
-	   (if (not (integerp selective-display))
-	       (or (and (zerop (forward-line arg))
-			(bolp))
-		   (throw 'exit (if (bobp)
-				    'beginning-of-buffer
-				  'end-of-buffer)))
-	     ;; Move by arg lines, but ignore invisible ones.
-	     (while (> arg 0)
-	       (end-of-line)
-	       (and (zerop (vertical-motion 1))
-		    (throw 'exit 'end-of-buffer))
-	       (setq arg (1- arg)))
-	     (while (< arg 0)
-	       (beginning-of-line)
-	       (and (zerop (vertical-motion -1))
-		    (throw 'exit 'beginning-of-buffer))
-	       (setq arg (1+ arg))))
-	   (move-to-column (or goal-column temporary-goal-column))
-	   nil)))
-    (cond
-     ((eq signal 'beginning-of-buffer)
-      (message "Beginning of buffer")
-      (ding))
-     ((eq signal 'end-of-buffer)
-      (message "End of buffer")
-      (ding)))))
+  (if (not (or (eq last-command 'next-line)
+	       (eq last-command 'previous-line)))
+      (setq temporary-goal-column
+	    (if (and track-eol (eolp)
+		     ;; Don't count beg of empty line as end of line
+		     ;; unless we just did explicit end-of-line.
+		     (or (not (bolp)) (eq last-command 'end-of-line)))
+		9999
+	      (current-column))))
+  (if (not (integerp selective-display))
+      (or (if (> arg 0)
+	      (progn (if (> arg 1) (forward-line (1- arg)))
+		     ;; This way of moving forward ARG lines
+		     ;; verifies that we have a newline after the last one.
+		     ;; It doesn't get confused by intangible text.
+		     (end-of-line)
+		     (zerop (forward-line 1)))
+	    (and (zerop (forward-line arg))
+		 (bolp)))
+	  (signal (if (bobp)
+		      'beginning-of-buffer
+		    'end-of-buffer)
+		  nil))
+    ;; Move by arg lines, but ignore invisible ones.
+    (while (> arg 0)
+      (end-of-line)
+      (and (zerop (vertical-motion 1))
+	   (signal 'end-of-buffer nil))
+      (setq arg (1- arg)))
+    (while (< arg 0)
+      (beginning-of-line)
+      (and (zerop (vertical-motion -1))
+	   (signal 'beginning-of-buffer nil))
+      (setq arg (1+ arg))))
+  (move-to-column (or goal-column temporary-goal-column))
+  nil)
 
 ;;; Many people have said they rarely use this feature, and often type
 ;;; it by accident.  Maybe it shouldn't even be on a key.
@@ -1690,6 +1699,49 @@ If this is zero, point is always centered after it moves off frame.")
 ;;  (interactive "P")
 ;;  (backward-char arg)
 ;;  (hscroll-point-visible))
+
+(defun scroll-other-window-down (lines)
+  "Scroll the \"other window\" down."
+  (interactive "P")
+  (scroll-other-window
+   ;; Just invert the argument's meaning.
+   ;; We can do that without knowing which window it will be.
+   (if (eq lines '-) nil
+     (if (null lines) '-
+       (- (prefix-numeric-value lines))))))
+
+(defun beginning-of-buffer-other-window (arg)
+  "Move point to the beginning of the buffer in the other window.
+Leave mark at previous position.
+With arg N, put point N/10 of the way from the true beginning."
+  (interactive "P")
+  (let ((orig-window (selected-window))
+	(window (other-window-for-scrolling)))
+    ;; We use unwind-protect rather than save-window-excursion
+    ;; because the latter would preserve the things we want to change.
+    (unwind-protect
+	(progn
+	  (select-window window)
+	  ;; Set point and mark in that window's buffer.
+	  (beginning-of-buffer arg)
+	  ;; Set point accordingly.
+	  (recenter '(t)))
+      (select-window orig-window))))
+
+(defun end-of-buffer-other-window (arg)
+  "Move point to the end of the buffer in the other window.
+Leave mark at previous position.
+With arg N, put point N/10 of the way from the true end."
+  (interactive "P")
+  ;; See beginning-of-buffer-other-window for comments.
+  (let ((orig-window (selected-window))
+	(window (other-window-for-scrolling)))
+    (unwind-protect
+	(progn
+	  (select-window window)
+	  (end-of-buffer arg)
+	  (recenter '(t)))
+      (select-window orig-window))))
 
 (defun transpose-chars (arg)
   "Interchange characters around point, moving forward one character.
@@ -2324,10 +2376,7 @@ in the mode line."
 			     ?\$)
 		(setq mismatch
 		      (/= (char-after (1- oldpos))
-			  (logand (lsh (aref (syntax-table)
-					     (char-after blinkpos))
-				       -8)
-				  255))))
+			  (matching-paren (char-after blinkpos)))))
 	   (if mismatch (setq blinkpos nil))
 	   (if blinkpos
 	       (progn
@@ -2436,23 +2485,33 @@ it were the arg to `interactive' (which see) to interactively read the value."
 ;; Record the buffer that was current when the completion list was requested.
 (defvar completion-reference-buffer)
 
+;; This records the length of the text at the beginning of the buffer
+;; which was not included in the completion.
+(defvar completion-base-size nil)
+
 (defun choose-completion ()
   "Choose the completion that point is in or next to."
   (interactive)
-  (let (beg end)
-    (skip-chars-forward "^ \t\n")
-    (while (looking-at " [^ \n\t]")
-      (forward-char 1)
-      (skip-chars-forward "^ \t\n"))
-    (setq end (point))
-    (skip-chars-backward "^ \t\n")
-    (while (and (= (preceding-char) ?\ )
-		(not (and (> (point) (1+ (point-min)))
-			  (= (char-after (- (point) 2)) ?\ ))))
-      (backward-char 1)
-      (skip-chars-backward "^ \t\n"))
-    (setq beg (point))
-    (choose-completion-string (buffer-substring beg end))))
+  (let (beg end completion (buffer completion-reference-buffer)
+	(base-size completion-base-size))
+    (if (and (not (eobp)) (get-text-property (point) 'mouse-face))
+	(setq end (point) beg (1+ (point))))
+    (if (and (not (bobp)) (get-text-property (1- (point)) 'mouse-face))
+	(setq end (1- (point)) beg(point)))
+    (if (null beg)
+	(error "No completion here"))
+    (setq beg (previous-single-property-change beg 'mouse-face))
+    (setq end (or (next-single-property-change end 'mouse-face) (point-max)))
+    (setq completion (buffer-substring beg end))
+    (let ((owindow (selected-window)))
+      (if (and (one-window-p t 'selected-frame)
+	       (window-dedicated-p (selected-window)))
+	  ;; This is a special buffer's frame
+	  (iconify-frame (selected-frame))
+	(or (window-dedicated-p (selected-window))
+	    (bury-buffer)))
+      (select-window owindow))
+    (choose-completion-string completion buffer base-size)))
 
 ;; Delete the longest partial match for STRING
 ;; that can be found before POINT.
@@ -2473,7 +2532,7 @@ it were the arg to `interactive' (which see) to interactively read the value."
       (forward-char 1))
     (delete-char len)))
 
-(defun choose-completion-string (choice &optional buffer)
+(defun choose-completion-string (choice &optional buffer base-size)
   (let ((buffer (or buffer completion-reference-buffer)))
     ;; If BUFFER is a minibuffer, barf unless it's the currently
     ;; active minibuffer.
@@ -2483,7 +2542,9 @@ it were the arg to `interactive' (which see) to interactively read the value."
 	(error "Minibuffer is not active for completion")
       ;; Insert the completion into the buffer where completion was requested.
       (set-buffer buffer)
-      (choose-completion-delete-max-match choice)
+      (if base-size
+	  (delete-region (+ base-size (point-min)) (point))
+	(choose-completion-delete-max-match choice))
       (insert choice)
       (remove-text-properties (- (point) (length choice)) (point)
 			      '(mouse-face nil))
@@ -2492,7 +2553,8 @@ it were the arg to `interactive' (which see) to interactively read the value."
 	(set-window-point window (point)))
       ;; If completing for the minibuffer, exit it with this choice.
       (and (equal buffer (window-buffer (minibuffer-window)))
-	   (minibuffer-complete-and-exit)))))
+	   minibuffer-completion-table
+	   (exit-minibuffer)))))
 
 (defun completion-list-mode ()
   "Major mode for buffers showing lists of possible completions.
@@ -2505,7 +2567,11 @@ Use \\<completion-list-mode-map>\\[mouse-choose-completion] to select one\
   (use-local-map completion-list-mode-map)
   (setq mode-name "Completion List")
   (setq major-mode 'completion-list-mode)
+  (make-local-variable 'completion-base-size)
+  (setq completion-base-size nil)
   (run-hooks 'completion-list-mode-hook))
+
+(defvar completion-fixup-function nil)
 
 (defun completion-setup-function ()
   (save-excursion
@@ -2522,10 +2588,13 @@ Use \\<completion-list-mode-map>\\[mouse-choose-completion] to select one\
 	       "In this buffer, type \\[choose-completion] to \
 select the completion near point.\n\n"))
       (forward-line 1)
-      (if window-system
-	  (while (re-search-forward "[^ \t\n]+\\( [^ \t\n]+\\)*" nil t)
-	    (put-text-property (match-beginning 0) (point)
-			       'mouse-face 'highlight))))))
+      (while (re-search-forward "[^ \t\n]+\\( [^ \t\n]+\\)*" nil t)
+	(let ((beg (match-beginning 0))
+	      (end (point)))
+	  (if completion-fixup-function
+	      (funcall completion-fixup-function))
+	  (put-text-property beg (point) 'mouse-face 'highlight)
+	  (goto-char end))))))
 
 (add-hook 'completion-setup-hook 'completion-setup-function)
 

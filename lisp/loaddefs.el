@@ -83,7 +83,7 @@ Normally nil in most modes, since there is no process to display.")
 
 (make-variable-buffer-local 'mode-line-process)
 
-(defconst mode-line-modified (purecopy '("--%1*%1*-"))
+(defconst mode-line-modified (purecopy '("--%1*%1+-"))
   "Mode-line control for displaying whether current buffer is modified.")
 
 (make-variable-buffer-local 'mode-line-modified)
@@ -243,6 +243,7 @@ for \\[find-tag] (which see)."
 
 ;; natural bindings for terminal keycaps --- defined in X keysym order
 (define-key global-map [home]		'beginning-of-buffer)
+(define-key global-map [M-home]		'beginning-of-buffer-other-window)
 (define-key global-map [left]		'backward-char)
 (define-key global-map [up]		'previous-line)
 (define-key global-map [right]		'forward-char)
@@ -250,7 +251,9 @@ for \\[find-tag] (which see)."
 (define-key global-map [prior]		'scroll-down)
 (define-key global-map [next]		'scroll-up)
 (define-key global-map [M-next]		'scroll-other-window)
+(define-key global-map [M-prior]	'scroll-other-window-down)
 (define-key global-map [end]		'end-of-buffer)
+(define-key global-map [M-end]		'end-of-buffer-other-window)
 (define-key global-map [begin]		'beginning-of-buffer)
 ;; (define-key global-map [select]		'function-key-error)
 ;; (define-key global-map [print]		'function-key-error)
@@ -521,14 +524,14 @@ Has a preference of looking backwards." nil nil)
 
 ;;;***
 
-;;;### (autoloads (ad-start-advice defadvice ad-add-advice) "advice" "advice.el" (11629 19669))
+;;;### (autoloads (ad-start-advice defadvice ad-add-advice) "advice" "advice.el" (11821 7551))
 ;;; Generated autoloads from advice.el
 
 (defvar ad-start-advice-on-load t "\
 *Non-nil will start Advice magic when this file gets loaded.
 Also see function `ad-start-advice'.")
 
-(defvar ad-activate-on-definition nil "\
+(defvar ad-activate-on-definition t "\
 *Non-nil means automatic advice activation at function definition.
 Set this variable to t if you want to enable forward advice (which is
 automatic advice activation of a previously undefined function at the
@@ -1293,7 +1296,7 @@ For example, invoke `emacs -batch -f batch-byte-recompile-directory .'." nil nil
 
 ;;;***
 
-;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11706 57072))
+;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11759 36218))
 ;;; Generated autoloads from calendar.el
 
 (defvar calendar-week-start-day 0 "\
@@ -1372,7 +1375,7 @@ and reentering it will cause these functions to be called again.")
 This can be used, for example, to replace today's date with asterisks; a
 function `calendar-star-date' is included for this purpose:
     (setq today-visible-calendar-hook 'calendar-star-date)
-It can also be used to mark the current date with calendar-today-marker;
+It can also be used to mark the current date with `calendar-today-marker';
 a function is also provided for this:
     (setq today-visible-calendar-hook 'calendar-mark-today)
 
@@ -1429,9 +1432,10 @@ instead, if you execute `european-calendar' when in the calendar, or set
 To revert to the default American style from the European style, execute
 `american-calendar' in the calendar.
 
-A diary entry can be preceded by a diary-nonmarking-symbol (ordinarily `&')
-to make that entry nonmarking--that is, it will not be marked on dates in
-the calendar window but will appear in a diary window.
+A diary entry can be preceded by the character
+`diary-nonmarking-symbol' (ordinarily `&') to make that entry
+nonmarking--that is, it will not be marked on dates in the calendar
+window but will appear in a diary window.
 
 Multiline diary entries are made by indenting lines after the first with
 either a TAB or one or more spaces.
@@ -1528,11 +1532,11 @@ characters with or without a period.")
 
 (defvar american-date-diary-pattern (quote ((month "/" day "[^/0-9]") (month "/" day "/" year "[^0-9]") (monthname " *" day "[^,0-9]") (monthname " *" day ", *" year "[^0-9]") (dayname "\\W"))) "\
 *List of pseudo-patterns describing the American patterns of date used.
-See the documentation of diary-date-forms for an explanation.")
+See the documentation of `diary-date-forms' for an explanation.")
 
 (defvar european-date-diary-pattern (quote ((day "/" month "[^/0-9]") (day "/" month "/" year "[^0-9]") (backup day " *" monthname "\\W+\\<[^*0-9]") (day " *" monthname " *" year "[^0-9]") (dayname "\\W"))) "\
 *List of pseudo-patterns describing the European patterns of date used.
-See the documentation of diary-date-forms for an explanation.")
+See the documentation of `diary-date-forms' for an explanation.")
 
 (defvar european-calendar-display-form (quote ((if dayname (concat dayname ", ")) day " " monthname " " year)) "\
 *Pseudo-pattern governing the way a date appears in the European style.
@@ -1540,7 +1544,7 @@ See the documentation of calendar-date-display-form for an explanation.")
 
 (defvar american-calendar-display-form (quote ((if dayname (concat dayname ", ")) monthname " " day ", " year)) "\
 *Pseudo-pattern governing the way a date appears in the American style.
-See the documentation of calendar-date-display-form for an explanation.")
+See the documentation of `calendar-date-display-form' for an explanation.")
 
 (defvar print-diary-entries-hook (quote lpr-buffer) "\
 *List of functions called after a temporary diary buffer is prepared.
@@ -1555,7 +1559,7 @@ It is to be used for diary entries that are not found in the diary file.
 
 A function `include-other-diary-files' is provided for use as the value of
 this hook.  This function enables you to use shared diary files together
-with your own.  The files included are specified in the diary-file by lines
+with your own.  The files included are specified in the diary file by lines
 of the form
 
         #include \"filename\"
@@ -1564,7 +1568,7 @@ This is recursive; that is, #include directives in files thus included are
 obeyed.  You can change the \"#include\" to some other string by changing
 the variable `diary-include-string'.  When you use `include-other-diary-files'
 as part of the list-diary-entries-hook, you will probably also want to use the
-function `mark-included-diary-files' as part of the mark-diary-entries-hook.
+function `mark-included-diary-files' as part of `mark-diary-entries-hook'.
 
 For example, you could use
 
@@ -1572,7 +1576,7 @@ For example, you could use
        '(include-other-diary-files sort-diary-entries))
      (setq diary-display-hook 'fancy-diary-display)
 
-in your .emacs file to cause the fancy diary buffer to be displayed with
+in your `.emacs' file to cause the fancy diary buffer to be displayed with
 diary entries from various included files, each day's entries sorted into
 lexicographic order.")
 
@@ -1614,14 +1618,14 @@ describes the style of such diary entries.")
 
 A function `mark-included-diary-files' is also provided for use as the
 mark-diary-entries-hook; it enables you to use shared diary files together
-with your own.  The files included are specified in the diary-file by lines
+with your own.  The files included are specified in the diary file by lines
 of the form
         #include \"filename\"
 This is recursive; that is, #include directives in files thus included are
 obeyed.  You can change the \"#include\" to some other string by changing the
 variable `diary-include-string'.  When you use `mark-included-diary-files' as
 part of the mark-diary-entries-hook, you will probably also want to use the
-function `include-other-diary-files' as part of the list-diary-entries-hook.")
+function `include-other-diary-files' as part of `list-diary-entries-hook'.")
 
 (defvar nongregorian-diary-marking-hook nil "\
 *List of functions called for marking diary file and included files.
@@ -1695,7 +1699,7 @@ See the documentation for `calendar-holidays' for details.")
 
 (put (quote solar-holidays) (quote risky-local-variable) t)
 
-(defvar solar-holidays (quote ((if (fboundp (quote atan)) (solar-equinoxes-solstices)) (if (progn (require (quote cal-dst)) t) (funcall (quote holiday-sexp) calendar-daylight-savings-starts (quote (format "Daylight Savings Time Begins %s" (if (fboundp (quote atan)) (solar-time-string (/ calendar-daylight-savings-starts-time (float 60)) date (quote standard)) ""))))) (funcall (quote holiday-sexp) calendar-daylight-savings-ends (quote (format "Daylight Savings Time Ends %s" (if (fboundp (quote atan)) (solar-time-string (/ (- calendar-daylight-savings-ends-time calendar-daylight-time-offset) (float 60)) date (quote daylight)) "")))))) "\
+(defvar solar-holidays (quote ((if (fboundp (quote atan)) (solar-equinoxes-solstices)) (if (progn (require (quote cal-dst)) t) (funcall (quote holiday-sexp) calendar-daylight-savings-starts (quote (format "Daylight Savings Time Begins %s" (if (fboundp (quote atan)) (solar-time-string (/ calendar-daylight-savings-starts-time (float 60)) calendar-standard-time-zone-name) ""))))) (funcall (quote holiday-sexp) calendar-daylight-savings-ends (quote (format "Daylight Savings Time Ends %s" (if (fboundp (quote atan)) (solar-time-string (/ calendar-daylight-savings-ends-time (float 60)) calendar-daylight-time-zone-name) "")))))) "\
 *Sun-related holidays.
 See the documentation for `calendar-holidays' for details.")
 
@@ -2134,10 +2138,10 @@ the first time the mode is used." nil nil)
 
 ;;;***
 
-;;;### (autoloads (diary) "diary" "diary.el" (11684 27639))
-;;; Generated autoloads from diary.el
+;;;### (autoloads (diary) "diary-lib" "diary-lib.el" (11743 54256))
+;;; Generated autoloads from diary-lib.el
 
-(autoload (quote diary) "diary" "\
+(autoload (quote diary) "diary-lib" "\
 Generate the diary window for ARG days starting with the current date.
 If no argument is provided, the number of days of diary entries is governed
 by the variable `number-of-diary-entries'.  This function is suitable for
@@ -2637,14 +2641,14 @@ point." t nil)
 
 ;;;***
 
-;;;### (autoloads (ediff-files-remote rcs-ediff vc-ediff ediff-patch-buffer ediff-buffers ediff-files ediff-patch-file) "ediff" "ediff.el" (11750 42354))
+;;;### (autoloads (rcs-ediff vc-ediff ediff-patch-buffer ediff-buffers ediff-files ediff-patch-file) "ediff" "ediff.el" (11848 20075))
 ;;; Generated autoloads from ediff.el
 
-(progn (defvar menu-bar-epatch-menu (make-sparse-keymap "menu-bar-epatch-map")) (fset (quote menu-bar-epatch-menu) (symbol-value (quote menu-bar-epatch-menu))) (defvar menu-bar-ediff-menu (make-sparse-keymap "menu-bar-ediff-map")) (fset (quote menu-bar-ediff-menu) (symbol-value (quote menu-bar-ediff-menu))))
+(if purify-flag (progn (defvar menu-bar-epatch-menu (make-sparse-keymap "Epatch")) (fset (quote menu-bar-epatch-menu) (symbol-value (quote menu-bar-epatch-menu))) (defvar menu-bar-ediff-menu (make-sparse-keymap "Ediff")) (fset (quote menu-bar-ediff-menu) (symbol-value (quote menu-bar-ediff-menu)))))
 
-(progn (define-key menu-bar-ediff-menu [rcs-ediff] (quote ("With a Revision via RCS ..." . rcs-ediff))) (define-key menu-bar-ediff-menu [vc-ediff] (quote ("With a Revision via VC ..." . vc-ediff))) (define-key menu-bar-ediff-menu [ediff-buffers] (quote ("Between Buffers ..." . ediff-buffers))) (define-key menu-bar-ediff-menu [ediff-files] (quote ("Between Files ..." . ediff-files))))
+(if purify-flag (progn (define-key menu-bar-ediff-menu [rcs-ediff] (quote ("File with a version via RCS ..." . rcs-ediff))) (define-key menu-bar-ediff-menu [vc-ediff] (quote ("File with a version via VC ..." . vc-ediff))) (define-key menu-bar-ediff-menu [ediff-buffers] (quote ("Buffers ..." . ediff-buffers))) (define-key menu-bar-ediff-menu [ediff-files] (quote ("Files ..." . ediff-files)))))
 
-(progn (define-key menu-bar-epatch-menu [ediff-patch-buffer] (quote ("To a Buffer ..." . ediff-patch-buffer))) (define-key menu-bar-epatch-menu [ediff-patch-file] (quote ("To a File ..." . ediff-patch-file))))
+(if purify-flag (progn (define-key menu-bar-epatch-menu [ediff-patch-buffer] (quote ("To a Buffer ..." . ediff-patch-buffer))) (define-key menu-bar-epatch-menu [ediff-patch-file] (quote ("To a File ..." . ediff-patch-file)))))
 
 (autoload (quote ediff-patch-file) "ediff" "\
 Run Ediff by patching FILE-TP-PATCH." t nil)
@@ -2666,9 +2670,6 @@ If `F.~REV~' already exists, it is used instead of being re-created." t nil)
 (autoload (quote rcs-ediff) "ediff" "\
 Run Ediff on the current buffer, comparing it with previous RCS revision.  
 With prefix argument, prompts for revision name." t nil)
-
-(autoload (quote ediff-files-remote) "ediff" "\
-Run Ediff on remote files, FILE-A and FILE-B." nil nil)
 
 ;;;***
 
@@ -2810,7 +2811,7 @@ This function works by modifying `process-environment'." t nil)
 
 ;;;***
 
-;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11717 39220))
+;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11777 7940))
 ;;; Generated autoloads from etags.el
 
 (defvar tags-file-name nil "\
@@ -3631,19 +3632,22 @@ and a negative argument disables it." t nil)
 
 ;;;***
 
-;;;### (autoloads (ispell-message ispell-complete-word-interior-frag ispell-complete-word ispell-continue ispell-buffer ispell-region ispell-change-dictionary ispell-kill-ispell ispell-help ispell-pdict-save ispell-word) "ispell" "ispell.el" (11702 56136))
+;;;### (autoloads (ispell-message ispell-complete-word-interior-frag ispell-complete-word ispell-continue ispell-buffer ispell-region ispell-change-dictionary ispell-kill-ispell ispell-help ispell-word) "ispell" "ispell.el" (11874 60400))
 ;;; Generated autoloads from ispell.el
 
-(defvar ispell-dictionary-alist (quote ((nil "[A-Za-z]" "[^A-Za-z]" "[-']" nil ("-B") nil) ("english" "[A-Za-z]" "[^A-Za-z]" "[-']" nil ("-B") nil) ("deutsch" "[a-zA-Z\"]" "[^a-zA-Z\"]" "[-']" t ("-C") nil) ("deutsch8" "[a-zA-ZÄÖÜäößü]" "[^a-zA-ZÄÖÜäößü]" "[-']" t ("-C" "-d" "deutsch") "~latin1") ("nederlands8" "[A-Za-zÀ-ÅÇÈ-ÏÒ-ÖÙ-Üà-åçè-ïñò-öù-ü]" "[^A-Za-zÀ-ÅÇÈ-ÏÒ-ÖÙ-Üà-åçè-ïñò-öù-ü]" "[-']" t ("-C") nil) ("svenska" "[A-Za-z}{|\\133\\135\\\\]" "[^A-Za-z}{|\\133\\135\\\\]" "[-']" nil ("-C") nil) ("svenska8" "[A-Za-zåäöÅÄö]" "[^A-Za-zåäöÅÄö]" "[-']" nil ("-C" "-d" "svenska") "~list") ("francais" "[A-Za-z]" "[^A-Za-z]" "[-`'" nil nil nil) ("danish" "[A-ZÆØÅa-zæøå]" "[^A-ZÆØÅa-zæøå]" "[-]" nil ("-C") nil))) "\
+(defvar ispell-dictionary-alist-1 (quote ((nil "[A-Za-z]" "[^A-Za-z]" "[']" nil ("-B") nil) ("english" "[A-Za-z]" "[^A-Za-z]" "[']" nil ("-B") nil) ("deutsch" "[a-zA-Z\"]" "[^a-zA-Z\"]" "[---']" t ("-C") nil) ("deutsch8" "[a-zA-ZÄÖÜäößü]" "[^a-zA-ZÄÖÜäößü]" "[---']" t ("-C" "-d" "deutsch") "~latin1") ("nederlands8" "[A-Za-zÀ-ÅÇÈ-ÏÒ-ÖÙ-Üà-åçè-ïñò-öù-ü]" "[^A-Za-zÀ-ÅÇÈ-ÏÒ-ÖÙ-Üà-åçè-ïñò-öù-ü]" "[---']" t ("-C") nil))))
+
+(defvar ispell-dictionary-alist-2 (quote (("svenska" "[A-Za-z}{|\\133\\135\\\\]" "[^A-Za-z}{|\\133\\135\\\\]" "[---']" nil ("-C") nil) ("svenska8" "[A-Za-zåäöÅÄö]" "[^A-Za-zåäöÅÄö]" "[---']" nil ("-C" "-d" "svenska") "~list") ("francais" "[A-Za-z]" "[^A-Za-z]" "[`'^-]" t nil nil) ("francais8" "[A-Za-zÀÂÆÇÈÉÊËÎÏÔÙÛÜàâæçèéêëîïôùûü]" "[^A-Za-zÀÂÄÆÇÈÉÊËÎÏÔÖÙÛÜàâäæçèéêëîïôöùûü]" "[---']" t nil "~list") ("dansk" "[A-ZÆØÅa-zæøå]" "[^A-ZÆØÅa-zæøå]" "[---]" nil ("-C") nil))))
+
+(defvar ispell-dictionary-alist (append ispell-dictionary-alist-1 ispell-dictionary-alist-2) "\
 An alist of dictionaries and their associated parameters.
 
 Each element of this list is also a list:
 
-    (DICTIONARY-NAME
-        CASECHARS NOT-CASECHARS OTHERCHARS MANY-OTHERCHARS-P
+\(DICTIONARY-NAME CASECHARS NOT-CASECHARS OTHERCHARS MANY-OTHERCHARS-P
         ISPELL-ARGS EXTENDED-CHARACTER-MODE)
 
-DICTIONARY-NAME is a possible value of variable ispell-dictionary, nil
+DICTIONARY-NAME is a possible value of variable `ispell-dictionary', nil
 means the default dictionary.
 
 CASECHARS is a regular expression of valid characters that comprise a
@@ -3665,13 +3669,13 @@ ISPELL-ARGS is a list of additional arguments passed to the ispell
 subprocess.
 
 EXTENDED-CHARACTER-MODE should be used when dictionaries are used which
-have been configured in ispell's parse.y.  (For example, umlauts
+have been configured in Ispell's parse.y.  (For example, umlauts
 can be encoded as \\\"a, a\\\", \"a, ...)  Defaults are ~tex and ~nroff
-in english.  This has the same effect as the command-line `-T' option.
-The buffer Major Mode controls ispell's parsing in tex or nroff mode,
+in English.  This has the same effect as the command-line `-T' option.
+The buffer Major Mode controls Ispell's parsing in tex or nroff mode,
 but the dictionary can control the extended character mode.
 Both defaults can be overruled in a buffer-local fashion. See
-ispell-parsing-keyword for details on this.
+`ispell-parsing-keyword' for details on this.
 
 Note that the CASECHARS and OTHERCHARS slots of the alist should
 contain the same character set as casechars and otherchars in the
@@ -3679,58 +3683,66 @@ language.aff file (e.g., english.aff).")
 
 (defvar ispell-menu-map nil)
 
-(if (null ispell-menu-map) (let ((dicts (reverse (cons (cons "default" nil) ispell-dictionary-alist))) name) (setq ispell-menu-map (make-sparse-keymap "Spell")) (while dicts (setq name (car (car dicts)) dicts (cdr dicts)) (if (stringp name) (define-key ispell-menu-map (vector (intern name)) (cons (concat "Select " (capitalize name)) (list (quote lambda) nil (quote (interactive)) (list (quote ispell-change-dictionary) name)))))) (defalias (quote ispell-menu-map) ispell-menu-map) (define-key ispell-menu-map [ispell-change-dictionary] (quote ("Change Dictionary" . ispell-change-dictionary))) (define-key ispell-menu-map [ispell-kill-ispell] (quote ("Kill Process" . ispell-kill-ispell))) (define-key ispell-menu-map [ispell-pdict-save] (quote ("Save Dictionary" lambda nil (interactive) (ispell-pdict-save t)))) (define-key ispell-menu-map [ispell-complete-word] (quote ("Complete Word" . ispell-complete-word))) (define-key ispell-menu-map [ispell-complete-word-interior-frag] (quote ("Complete Word Frag" . ispell-complete-word-interior-frag))) (define-key ispell-menu-map [ispell-continue] (quote ("Continue Check" . ispell-continue))) (define-key ispell-menu-map [ispell-region] (quote ("Check Region" . ispell-region))) (define-key ispell-menu-map [ispell-word] (quote ("Check Word" . ispell-word))) (define-key ispell-menu-map [ispell-buffer] (quote ("Check Buffer" . ispell-buffer))) (define-key ispell-menu-map [ispell-message] (quote ("Check Message" . ispell-message))) (define-key ispell-menu-map [ispell-help] (quote ("Help" lambda nil (interactive) (describe-function (quote ispell-help)))))))
+(defconst ispell-menu-map-needed (and (not ispell-menu-map) (boundp (quote system-key-alist))))
+
+(if ispell-menu-map-needed (let ((dicts (reverse (cons (cons "default" nil) ispell-dictionary-alist))) name) (setq ispell-menu-map (make-sparse-keymap "Spell")) (while dicts (setq name (car (car dicts)) dicts (cdr dicts)) (if (stringp name) (define-key ispell-menu-map (vector (intern name)) (cons (concat "Select " (capitalize name)) (list (quote lambda) nil (quote (interactive)) (list (quote ispell-change-dictionary) name))))))))
+
+(if ispell-menu-map-needed (progn (define-key ispell-menu-map [ispell-change-dictionary] (quote ("Change Dictionary" . ispell-change-dictionary))) (define-key ispell-menu-map [ispell-kill-ispell] (quote ("Kill Process" . ispell-kill-ispell))) (define-key ispell-menu-map [ispell-pdict-save] (quote ("Save Dictionary" lambda nil (interactive) (ispell-pdict-save t)))) (define-key ispell-menu-map [ispell-complete-word] (quote ("Complete Word" . ispell-complete-word))) (define-key ispell-menu-map [ispell-complete-word-interior-frag] (quote ("Complete Word Frag" . ispell-complete-word-interior-frag)))))
+
+(if ispell-menu-map-needed (progn (define-key ispell-menu-map [ispell-continue] (quote ("Continue Check" . ispell-continue))) (define-key ispell-menu-map [ispell-region] (quote ("Check Region" . ispell-region))) (define-key ispell-menu-map [ispell-word] (quote ("Check Word" . ispell-word))) (define-key ispell-menu-map [ispell-buffer] (quote ("Check Buffer" . ispell-buffer))) (define-key ispell-menu-map [ispell-message] (quote ("Check Message" . ispell-message))) (define-key ispell-menu-map [ispell-help] (quote ("Help" lambda nil (interactive) (describe-function (quote ispell-help))))) (put (quote ispell-region) (quote menu-enable) (quote mark-active))))
+
+(fset (quote ispell-menu-map) (symbol-value (quote ispell-menu-map)))
 (define-key global-map "\M-$" 'ispell-word)
 
 (autoload (quote ispell-word) "ispell" "\
 Check spelling of word under or before the cursor.
-If word not found in dictionary, display possible corrections in a window
-and let user select.
-  If optional argument FOLLOWING is non-nil or if ispell-following-word
+If the word is not found in dictionary, display possible corrections
+in a window and so you can choose one.
+
+With a prefix argument (or if CONTINUE is non-nil),
+resume interrupted spell-checking of a buffer or region.
+
+If optional argument FOLLOWING is non-nil or if `ispell-following-word'
 is non-nil when called interactively, then the following word
-\(rather than preceding) will be checked when the cursor is not over a word.
-  When the optional argument QUIETLY is non-nil or ispell-quietly is non-nil
+\(rather than preceding) is checked when the cursor is not over a word.
+When the optional argument QUIETLY is non-nil or `ispell-quietly' is non-nil
 when called interactively, non-corrective messages are suppressed.
 
-  Word syntax described by ispell-dictionary-alist (which see).
+Word syntax described by `ispell-dictionary-alist' (which see).
 
 This will check or reload the dictionary.  Use \\[ispell-change-dictionary]
-or \\[ispell-region] to update the ispell process." t nil)
-
-(autoload (quote ispell-pdict-save) "ispell" "\
-Check to see if the personal dictionary has been modified.
-  If so, ask if it needs to be saved." t nil)
+or \\[ispell-region] to update the Ispell process." t nil)
 
 (autoload (quote ispell-help) "ispell" "\
-This gives a list of the options available when a misspelling is encountered.
+Display a list of the options available when a misspelling is encountered.
 
 Selections are:
 
 DIGIT: Replace the word with a digit offered in the *Choices* buffer.
-' ':   Accept word this time.
-'i':   Accept word and insert into private dictionary.
-'a':   Accept word for this session.
-'A':   Accept word and place in `buffer-local dictionary'.
-'r':   Replace word with typed-in value.  Rechecked.
-'R':   Replace word with typed-in value. Query-replaced in buffer. Rechecked.
-'?':   Show these commands.
-'x':   Exit spelling buffer.  Move cursor to original point.
-'X':   Exit spelling buffer.  Leaves cursor at the current point, and permits
+SPC:   Accept word this time.
+`i':   Accept word and insert into private dictionary.
+`a':   Accept word for this session.
+`A':   Accept word and place in `buffer-local dictionary'.
+`r':   Replace word with typed-in value.  Rechecked.
+`R':   Replace word with typed-in value. Query-replaced in buffer. Rechecked.
+`?':   Show these commands.
+`x':   Exit spelling buffer.  Move cursor to original point.
+`X':   Exit spelling buffer.  Leaves cursor at the current point, and permits
         the aborted check to be completed later.
-'q':   Quit spelling session (Kills ispell process).
-'l':   Look up typed-in replacement in alternate dictionary.  Wildcards okay.
-'u':   Like 'i', but the word is lower-cased first.
-'m':   Like 'i', but allows one to include dictionary completion information.
-'C-l':  redraws screen
-'C-r':  recursive edit
-'C-z':  suspend emacs" nil nil)
+`q':   Quit spelling session (Kills ispell process).
+`l':   Look up typed-in replacement in alternate dictionary.  Wildcards okay.
+`u':   Like `i', but the word is lower-cased first.
+`m':   Like `i', but allows one to include dictionary completion information.
+`C-l':  redraws screen
+`C-r':  recursive edit
+`C-z':  suspend emacs or iconify frame" nil nil)
 
 (autoload (quote ispell-kill-ispell) "ispell" "\
-Kill current ispell process (so that you may start a fresh one).
-With NO-ERROR, just return non-nil if there was no ispell running." t nil)
+Kill current Ispell process (so that you may start a fresh one).
+With NO-ERROR, just return non-nil if there was no Ispell running." t nil)
 
 (autoload (quote ispell-change-dictionary) "ispell" "\
-Change ispell-dictionary (q.v.) and kill old ispell process.
+Change `ispell-dictionary' (q.v.) and kill old Ispell process.
 A new one will be started as soon as necessary.
 
 By just answering RET you can find out what the current dictionary is.
@@ -3753,8 +3765,7 @@ may be a character sequence inside of a word.
 Standard ispell choices are then available." t nil)
 
 (autoload (quote ispell-complete-word-interior-frag) "ispell" "\
-Runs `ispell-complete-word' assuming that the word is a character sequence
-inside of a word." t nil)
+Completes word matching character sequence inside a word." t nil)
 
 (autoload (quote ispell-message) "ispell" "\
 Check the spelling of a mail message or news post.
@@ -3762,8 +3773,8 @@ Don't check spelling of message headers except the Subject field.
 Don't check included messages.
 
 To abort spell checking of a message REGION and send the message anyway,
-use the 'x' or 'q' command.  (Any subsequent regions will be checked.)
-The 'X' command aborts the message send so that you can edit the buffer.
+use the `x' or `q' command.  (Any subsequent regions will be checked.)
+The `X' command aborts the message send so that you can edit the buffer.
 
 To spell-check whenever a message is sent, include the appropriate lines
 in your .emacs file:
@@ -3771,8 +3782,8 @@ in your .emacs file:
    (add-hook 'mail-send-hook  'ispell-message)
    (add-hook 'mh-before-send-letter-hook 'ispell-message)
 
-Or you can bind the function C-c i in gnus or mail by setting
-news-reply-mode-hook or mail-mode-hook to the following lambda expression:
+you can bind this to the key C-c i in GNUS or mail by adding to
+`news-reply-mode-hook' or `mail-mode-hook' the following lambda expression:
    (function (lambda () (local-set-key \"\\C-ci\" 'ispell-message)))" t nil)
 
 ;;;***
@@ -3854,7 +3865,7 @@ Print region contents as with Unix command `lpr -p'.
 
 ;;;***
 
-;;;### (autoloads (phases-of-moon) "lunar" "lunar.el" (11684 27677))
+;;;### (autoloads (phases-of-moon) "lunar" "lunar.el" (11759 36944))
 ;;; Generated autoloads from lunar.el
 
 (autoload (quote phases-of-moon) "lunar" "\
@@ -4682,7 +4693,7 @@ the rlogin when starting.  They are added after any arguments given in ARGS." t 
 
 ;;;***
 
-;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11706 47809))
+;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11882 25060))
 ;;; Generated autoloads from rmail.el
 
 (defvar rmail-dont-reply-to-names nil "\
@@ -4697,10 +4708,15 @@ value is the user's name.)
 It is useful to set this variable in the site customization file.")
 
 (defvar rmail-ignored-headers "^via:\\|^mail-from:\\|^origin:\\|^status:\\|^received:\\|^x400-originator:\\|^x400-recipients:\\|^x400-received:\\|^x400-mts-identifier:\\|^x400-content-type:\\|^message-id:\\|^summary-line:" "\
-*Regexp to match Header fields that rmail should normally hide.")
+*Regexp to match Header fields that Rmail should normally hide.")
 
 (defvar rmail-highlighted-headers "^From:\\|^Subject:" "\
-*Regexp to match Header fields that rmail should normally highlight.")
+*Regexp to match Header fields that Rmail should normally highlight.
+A value of nil means don't highlight.
+See also `rmail-highlight-face'.")
+
+(defvar rmail-highlight-face nil "\
+*Face used by Rmail for highlighting headers.")
 
 (defvar rmail-delete-after-output nil "\
 *Non-nil means automatically delete a message that is copied to a file.")
@@ -4732,7 +4748,9 @@ Type \\[describe-mode] once editing that file, for a list of RMAIL commands.
 May be called with file name as argument; then performs rmail editing on
 that file, but does not copy any new mail into the file.
 Interactively, if you supply a prefix argument, then you
-have a chance to specify a file name with the minibuffer." t nil)
+have a chance to specify a file name with the minibuffer.
+
+If `rmail-display-summary' is non-nil, make a summary for this RMAIL file." t nil)
 
 (autoload (quote rmail-mode) "rmail" "\
 Rmail Mode is used by \\<rmail-mode-map>\\[rmail] for editing Rmail files.
@@ -4794,11 +4812,15 @@ Run Rmail on file FILENAME." t nil)
 
 ;;;***
 
-;;;### (autoloads (rot13-other-window) "rot13" "rot13.el" (11295 37709))
+;;;### (autoloads (toggle-rot13-mode rot13-other-window) "rot13" "rot13.el" (11869 10108))
 ;;; Generated autoloads from rot13.el
 
 (autoload (quote rot13-other-window) "rot13" "\
-Display current buffer in rot 13 in another window." t nil)
+Display current buffer in rot 13 in another window.
+To terminate the rot13 display, delete that window." t nil)
+
+(autoload (quote toggle-rot13-mode) "rot13" "\
+Toggle the use of rot 13 encoding for the current window." t nil)
 
 ;;;***
 
@@ -4903,7 +4925,7 @@ scribe-electric-parenthesis
 
 ;;;***
 
-;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11660 55999))
+;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11846 48695))
 ;;; Generated autoloads from sendmail.el
 
 (defvar mail-self-blind nil "\
@@ -4931,6 +4953,12 @@ Do not use an rmail file here!  Instead, use its inbox file.")
 
 (defvar mail-default-reply-to nil "\
 *Address to insert as default Reply-to field of outgoing messages.")
+
+(defvar mail-alias-file nil "\
+*If non-nil, the name of a file to use instead of `/usr/lib/aliases'.
+This file defines aliases to be expanded by the mailer; this is a different
+feature from that of defining aliases in `.mailrc' to be expanded in Emacs.
+This variable has no effect unless your system uses sendmail as its mailer.")
 
 (defvar mail-signature nil "\
 *Text inserted at end of mail buffer when a message is initialized.
@@ -5171,7 +5199,7 @@ symmetrical ones, and the same character twice for the others." t nil)
 
 ;;;***
 
-;;;### (autoloads (solar-equinoxes-solstices sunrise-sunset) "solar" "solar.el" (11716 3713))
+;;;### (autoloads (solar-equinoxes-solstices sunrise-sunset) "solar" "solar.el" (11759 36780))
 ;;; Generated autoloads from solar.el
 
 (defvar calendar-time-display-form (quote (12-hours ":" minutes am-pm (if time-zone " (") time-zone (if time-zone ")"))) "\
@@ -5497,7 +5525,7 @@ work with `terminfo' we will try to use it." t nil)
 
 ;;;***
 
-;;;### (autoloads (slitex-mode latex-mode plain-tex-mode tex-mode) "tex-mode" "tex-mode.el" (11718 48776))
+;;;### (autoloads (tex-start-shell slitex-mode latex-mode plain-tex-mode tex-mode) "tex-mode" "tex-mode.el" (11768 52209))
 ;;; Generated autoloads from tex-mode.el
 
 (defvar tex-shell-file-name nil "\
@@ -5723,6 +5751,8 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
 `tex-mode-hook', then the hook `latex-mode-hook', and finally the hook
 `slitex-mode-hook'.  When the special subshell is initiated, the hook
 `tex-shell-hook' is run." t nil)
+
+(autoload (quote tex-start-shell) "tex-mode" nil nil nil)
 
 ;;;***
 

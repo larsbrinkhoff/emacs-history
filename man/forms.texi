@@ -1,7 +1,7 @@
 \input texinfo			@c -*-texinfo-*-
 @c documentation for forms-mode
 @c Written by Johan Vromans, and edited by Richard Stallman
-@c $Id: forms.texi,v 1.4 1993/09/30 10:03:34 jv Exp $
+@c $Id: forms.texi,v 1.5 1994/07/25 20:45:20 jv Exp $
 
 @comment %**start of header (This is for running Texinfo on a region.)
 @setfilename ../info/forms
@@ -37,9 +37,9 @@ paragraph not being relevant to the printed manual).
 @sp 6
 @center @titlefont{Forms Mode User's Manual}
 @sp 4
-@center Forms-Mode version 2.3
+@center Forms-Mode version 2
 @sp 1
-@center September 1993
+@center July 1994
 @sp 5
 @center Johan Vromans
 @center @i{jv@@nl.net}
@@ -58,7 +58,6 @@ are preserved on all copies.
 @ifinfo
 @node Top
 @top Forms Mode
-@end ifinfo
 
 Forms mode is an Emacs major mode for working with simple textual data
 bases in a forms-oriented manner.  In Forms mode, the information in
@@ -86,6 +85,7 @@ how to present it.
 * Credits::                     Thanks everyone.
 * Index::                       Index to this manual.
 @end menu
+@end ifinfo
 
 @node Forms Example
 @chapter Forms Example
@@ -110,7 +110,7 @@ are all there, but instead of being colon-separated on one single line,
 they make up a forms.
 
 The contents of the forms consists of the contents of the fields of the
-record (e.g. @samp{root}, @samp{0}, @samp{1}, @samp{Super User})
+record (e.g., @samp{root}, @samp{0}, @samp{1}, @samp{Super User})
 interspersed with normal text (e.g @samp{User : }, @samp{Uid: }).
 
 If you modify the contents of the fields, Forms mode will analyze your
@@ -168,10 +168,10 @@ Entering Forms mode runs the normal hook @code{forms-mode-hooks} to
 perform user-defined customization.
 
 To save any modified data, you can use @kbd{C-x C-s}
-(@code{save-buffer}).  This does not save the forms buffer (which would
+(@code{forms-save-buffer}).  This does not save the forms buffer (which would
 be rather useless), but instead saves the buffer visiting the data file.
 
-To terminate Forms mode, you can use @kbd{C-x C-s} (@code{save-buffer})
+To terminate Forms mode, you can use @kbd{C-x C-s} (@code{forms-save-buffer})
 and then kill the forms buffer.  However, the data buffer will still
 remain.  If this is not desired, you have to kill this buffer too.
 
@@ -189,20 +189,20 @@ characters; for example, type @kbd{n} instead of @kbd{C-c C-n}.
 @findex forms-next-record
 @kindex C-c C-n
 @item C-c C-n
-Show the next record (@code{forms-next-record}).  With a prefix
+Show the next record (@code{forms-next-record}).  With a numeric
 argument @var{n}, show the @var{n}th next record.
 
 @findex forms-prev-record
 @kindex C-c C-p
 @item C-c C-p
-Show the previous record (@code{forms-prev-record}).  With a prefix
+Show the previous record (@code{forms-prev-record}).  With a numeric
 argument @var{n}, show the @var{n}th previous record.
 
 @findex forms-jump-record
 @kindex C-c C-l
 @item C-c C-l
 Jump to a record by number (@code{forms-jump-record}).   Specify
-the record number with a prefix argument.
+the record number with a numeric argument.
 
 @findex forms-first-record
 @kindex C-c <
@@ -240,7 +240,7 @@ to edit mode is allowed only if you have write access to the data file.
 @item C-c C-o
 Create a new record and insert it before the current record
 (@code{forms-insert-record}).  It starts out with empty (or default)
-contents for its fields; you can then edit the fields.  With a prefix
+contents for its fields; you can then edit the fields.  With a numeric
 argument, the new record is created @emph{after} the current one.
 See also @code{forms-modified-record-filter} in @ref{Modifying Forms
 Contents}. 
@@ -249,7 +249,7 @@ Contents}.
 @kindex C-c C-k
 @item C-c C-k
 Delete the current record (@code{forms-delete-record}).  You are
-prompted for confirmation before the record is deleted unless a prefix
+prompted for confirmation before the record is deleted unless a numeric
 argument has been provided.
 
 @findex forms-search
@@ -274,10 +274,19 @@ Terminates forms mode processing without saving modified data first.
 @findex forms-prev-field
 @item M-x forms-prev-field
 Similar to @code{forms-next-field} but moves backwards.
+
+@findex forms-save-buffer
+@item M-x forms-save-buffer
+@kindex C-x C-s
+@item C-x C-s
+Forms mode replacement for @code{save-buffer}. When executed in the
+forms buffer it will save the contents of the (modified) data buffer
+instead. In Forms mode this function will be bound to @kbd{C-x C-s}.
+
 @end table
 
-In addition, commands such as @kbd{C-x C-s} (@code{save-buffer}) and
-@kbd{M-x revert-buffer} are useful in Forms mode just as in other modes.
+In addition the command @kbd{M-x revert-buffer} is useful in Forms mode
+just as in other modes.
 
 @ignore
 @vindex forms-forms-scroll
@@ -334,15 +343,30 @@ forms-prev-field
 Files for use with Forms mode are very simple---each @dfn{record}
 (usually one line) forms the contents of one form.  Each record consists
 of a number of @dfn{fields}, which are separated by the value of the
-string @code{forms-field-sep}, which is @code{"\t"} (a tab) by default.
+string @code{forms-field-sep}, which is @code{"\t"} (a Tab) by default.
+
+@vindex forms-read-file-filter
+@vindex forms-write-file-filter
+If the format of the data file is not suitable enough you can define the
+filter functions @code{forms-read-file-filter} and
+@code{forms-write-file-filter}. @code{forms-read-file-filter} is called
+when the data file is read from disk into the data buffer. It operates
+on the data buffer, ignoring read-only protections. When the data file
+is saved to disk @code{forms-write-file-filter} is called to cancel the
+effects of @code{forms-read-file-filter}. After being saved,
+@code{forms-read-file-filter} is called again to prepare the data buffer
+for further processing.
 
 @cindex pseudo-newline
 @vindex forms-multi-line
 Fields may contain text which shows up in the forms in multiple lines.
 These lines are separated in the field using a ``pseudo-newline''
 character which is defined by the value of the string
-@code{forms-multi-line}.  Its default value is @code{"\^k"}.  If it is
+@code{forms-multi-line}.  Its default value is @code{"\^k"} (a Control-K
+character).  If it is
 set to @code{nil}, multiple line fields are prohibited.
+
+If the data file does not exist, it is automatically created.
 
 @node Control File Format
 @chapter Control File Format
@@ -364,6 +388,9 @@ This variable specifies the name of the data file.  Example:
 (setq forms-file "my/data-file")
 @end example
 
+If the control file doesn't set @code{forms-file}, Forms mode
+reports an error.
+
 @vindex forms-format-list
 @item forms-format-list
 This variable describes the way the fields of the record are formatted on
@@ -379,8 +406,10 @@ file.  Example:
 @end example
 @end table
 
-If the control file doesn't set all of these variables, Forms mode
-reports an error.
+If the control file does not set @code{forms-format-list} a default
+format is used.  In this situation, Forms mode will deduce the number of
+fields from the data file providing this file exists and
+@code{forms-number-of-records} has not been set in the control file.
 
 The control file can optionally set the following additional Forms mode
 variables.  Most of them have default values that are good for most
@@ -391,7 +420,7 @@ applications.
 @item forms-field-sep
 This variable may be used to designate the string which separates the
 fields in the records of the data file.  If not set, it defaults to the
-string @code{"\t"} (a tab character).  Example:
+string @code{"\t"} (a Tab character).  Example:
 
 @example
 (setq forms-field-sep "\t")
@@ -416,8 +445,7 @@ appears that way when displayed in Forms mode.  If the value is
 @code{nil}, multi-line text fields are prohibited.  The pseudo newline
 must not be a character contained in @code{forms-field-sep}.
 
-The default value is @code{"\^k"}, so the default pseudo newline is the
-character control-k.  Example:
+The default value is @code{"\^k"}, the character Control-K.  Example:
 
 @example
 (setq forms-multi-line "\^k")
@@ -432,6 +460,20 @@ character control-k.  Example:
 @item forms-forms-jump
 @xref{Forms Mode Commands}, for details.
 @end ignore
+
+@findex forms-read-file-filter
+@item forms-read-file-filter
+This variable holds the name of a function to be called after the data
+file has been read in. This can be used to transform the contents of the
+data file into a format more suitable for forms processing.
+If it is @code{nil}, no function is called.
+
+@findex forms-write-file-filter
+@item forms-write-file-filter
+This variable holds the name of a function to be called before writing
+out the contents of the data file.
+This can be used to undo the effects of @code{forms-read-file-filter}.
+If it is @code{nil}, no function is called.
 
 @findex forms-new-record-filter
 @item forms-new-record-filter
@@ -549,6 +591,10 @@ visit a database.  If there are errors, processing is aborted with an
 error message which includes a descriptive text.  @xref{Error Messages},
 for a detailed list of error messages.
 
+If no @code{forms-format-list} is specified, Forms mode will supply a
+default format list.  This list contains the name of the file being
+visited, and a simple label for each field indicating the field number.
+
 @node Modifying Forms Contents
 @chapter Modifying The Forms Contents
 
@@ -642,7 +688,7 @@ so you'd better think twice before using this.
 
 The default format for the data file, using @code{"\t"} to separate
 fields and @code{"\^k"} to separate lines within a field, matches the
-file format of some popular database programss, e.g. FileMaker.  So
+file format of some popular database programs, such as FileMaker.  So
 @code{forms-mode} can decrease the need to use proprietary software.
 
 @node Error Messages
@@ -680,8 +726,7 @@ fields and the lines in the fields.
 @itemx Forms control file error: 'forms-modified-record-filter' is not a function
 The variable has been set to something else than a function.
 
-@item Forms control file error: 'forms-format-list' has not been set
-@itemx Forms control file error: 'forms-format-list' is not a list
+@item Forms control file error: 'forms-format-list' is not a list
 The variable @code{forms-format-list} was not set to a Lisp list
 by the control file.
 
@@ -723,6 +768,11 @@ The number of fields in this record in the data file did not match
 The current record contains newline characters, hence can not be written
 back to the data file, for it would corrupt it.  Probably you inserted a
 newline in a field, while @code{forms-multi-line} was @code{nil}.
+
+@item Field separator occurs in record - update refused!
+The current record contains the field separator string inside one of the
+fields. It can not be written back to the data file, for it would
+corrupt it. Probably you inserted the field separator string in a field.
 
 @item Record number @var{xx} out of range 1..@var{yy}
 A jump was made to non-existing record @var{xx}.  @var{yy} denotes the
@@ -848,16 +898,15 @@ used to fill to the column."
 @node Credits
 @chapter Credits
 
-Forms mode was developed by Johan Vromans while working at Multihouse
-Research in the Netherlands. 
-
 Bug fixes and other useful suggestions were supplied by
-Richard Stallman (@code{rms@@gnu.ai.mit.edu}),
 Harald Hanche-Olsen (@code{hanche@@imf.unit.no}),
 @code{cwitty@@portia.stanford.edu},
 Jonathan I. Kamens,
 Per Cederqvist  (@code{ceder@@signum.se}),
-and Ignatios Souvatzis.
+Michael Lipka (@code{lipka@@lip.hanse.de}),
+Andy Piper (@code{ajp@@eng.cam.ac.uk}),
+Ignatios Souvatzis
+and Richard Stallman (@code{rms@@gnu.ai.mit.edu}).
 
 This documentation was slightly inspired by the documentation of ``rolo
 mode'' by Paul Davis at Schlumberger Cambridge Research

@@ -101,6 +101,10 @@ extern char *strerror ();
 #define O_WRONLY 1
 #endif
 
+#ifndef O_RDONLY
+#define O_RDONLY 0
+#endif
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -120,6 +124,10 @@ Lisp_Object Vafter_insert_file_functions;
 
 /* Functions to be called to create text property annotations for file.  */
 Lisp_Object Vwrite_region_annotate_functions;
+
+/* During build_annotations, each time an annotation function is called,
+   this holds the annotations made by the previous functions.  */
+Lisp_Object Vwrite_region_annotations_so_far;
 
 /* File name in which we write a list of all our auto save files.  */
 Lisp_Object Vauto_save_list_file_name;
@@ -188,7 +196,7 @@ Lisp_Object Qfile_name_nondirectory;
 Lisp_Object Qunhandled_file_name_directory;
 Lisp_Object Qfile_name_as_directory;
 Lisp_Object Qcopy_file;
-Lisp_Object Qmake_directory;
+Lisp_Object Qmake_directory_internal;
 Lisp_Object Qdelete_directory;
 Lisp_Object Qdelete_file;
 Lisp_Object Qrename_file;
@@ -290,7 +298,7 @@ on VMS, perhaps instead a string ending in `:', `]' or `>'.")
 	 && p[-1] != ':' && p[-1] != ']' && p[-1] != '>'
 #endif /* VMS */
 #ifdef MSDOS
-	 && p[-1] != ':'
+	 && p[-1] != ':' && p[-1] != '\\'
 #endif
 	 ) p--;
 
@@ -345,7 +353,7 @@ or the entire name if it contains no slash.")
 	 && p[-1] != ':' && p[-1] != ']' && p[-1] != '>'
 #endif /* VMS */
 #ifdef MSDOS
-	 && p[-1] != ':'
+	 && p[-1] != ':' && p[-1] != '\\'
 #endif
 	 ) p--;
 
@@ -443,7 +451,7 @@ file_name_as_directory (out, in)
 #else /* not VMS */
   /* For Unix syntax, Append a slash if necessary */
 #ifdef MSDOS
-  if (out[size] != ':' && out[size] != '/')
+  if (out[size] != ':' && out[size] != '/' && out[size] != '\\')
 #else
   if (out[size] != '/')
 #endif
@@ -623,9 +631,11 @@ directory_file_name (src, dst)
      But leave "/" unchanged; do not change it to "".  */
   strcpy (dst, src);
   if (slen > 1 
-      && dst[slen - 1] == '/'
 #ifdef MSDOS
+      && (dst[slen - 1] == '/' || dst[slen - 1] == '/')
       && dst[slen - 2] != ':'
+#else
+      && dst[slen - 1] == '/'
 #endif
       )
     dst[slen - 1] = 0;
@@ -764,7 +774,10 @@ See also the function `substitute-in-file-name'.")
   nm = XSTRING (name)->data;
   
 #ifdef MSDOS
-  /* firstly, strip drive name. */
+  /* First map all backslashes to slashes.  */
+  dostounix_filename (nm = strcpy (alloca (strlen (nm) + 1), nm));
+
+  /* Now strip drive name. */
   {
     unsigned char *colon = rindex (nm, ':');
     if (colon)
@@ -1487,6 +1500,10 @@ duplicates what `expand-file-name' does.")
   CHECK_STRING (string, 0);
 
   nm = XSTRING (string)->data;
+#ifdef MSDOS
+  dostounix_filename (nm = strcpy (alloca (strlen (nm) + 1), nm));
+  substituted = !strcmp (nm, XSTRING (string)->data);
+#endif
   endp = nm + XSTRING (string)->size;
 
   /* If /~ or // appears, discard everything through first slash. */
@@ -1693,9 +1710,12 @@ barf_or_query_if_file_exists (absname, querystring, interactive)
      int interactive;
 {
   register Lisp_Object tem;
+  struct stat statbuf;
   struct gcpro gcpro1;
 
-  if (access (XSTRING (absname)->data, 4) >= 0)
+  /* stat is a good way to tell whether the file exists,
+     regardless of what access permissions it has.  */
+  if (stat (XSTRING (absname)->data, &statbuf) >= 0)
     {
       if (! interactive)
 	Fsignal (Qfile_already_exists,
@@ -1732,7 +1752,6 @@ A prefix arg makes KEEP-TIME non-nil.")
   Lisp_Object handler;
   struct gcpro gcpro1, gcpro2;
   int count = specpdl_ptr - specpdl;
-  Lisp_Object args[6];
   int input_file_statable_p;
 
   GCPRO2 (filename, newname);
@@ -1756,7 +1775,7 @@ A prefix arg makes KEEP-TIME non-nil.")
     barf_or_query_if_file_exists (newname, "copy to it",
 				  XTYPE (ok_if_already_exists) == Lisp_Int);
 
-  ifd = open (XSTRING (filename)->data, 0);
+  ifd = open (XSTRING (filename)->data, O_RDONLY);
   if (ifd < 0)
     report_file_error ("Opening input file", Fcons (filename, Qnil));
 
@@ -1843,9 +1862,9 @@ DEFUN ("make-directory-internal", Fmake_directory_internal,
   CHECK_STRING (dirname, 0);
   dirname = Fexpand_file_name (dirname, Qnil);
 
-  handler = Ffind_file_name_handler (dirname, Qmake_directory);
+  handler = Ffind_file_name_handler (dirname, Qmake_directory_internal);
   if (!NILP (handler))
-    return call3 (handler, Qmake_directory, dirname, Qnil);
+    return call2 (handler, Qmake_directory_internal, dirname);
 
   dir = XSTRING (dirname)->data;
 
@@ -2056,7 +2075,10 @@ This happens for interactive use with M-x.")
 	{
 	  unlink (XSTRING (linkname)->data);
 	  if (0 <= symlink (XSTRING (filename)->data, XSTRING (linkname)->data))
-	    return Qnil;
+	    {
+	      UNGCPRO;
+	      return Qnil;
+	    }
 	}
 
 #ifdef NO_ARG_ARRAY
@@ -2139,7 +2161,7 @@ On Unix, this is a name starting with a `/' or a `~'.")
 	  && ptr[1] != '.')
 #endif /* VMS */
 #ifdef MSDOS
-      || (*ptr != 0 && ptr[1] == ':' && ptr[2] == '/')
+      || (*ptr != 0 && ptr[1] == ':' && (ptr[2] == '/' || ptr[2] == '\\'))
 #endif
       )
     return Qt;
@@ -2155,6 +2177,7 @@ See also `file-readable-p' and `file-attributes'.")
 {
   Lisp_Object abspath;
   Lisp_Object handler;
+  struct stat statbuf;
 
   CHECK_STRING (filename, 0);
   abspath = Fexpand_file_name (filename, Qnil);
@@ -2165,7 +2188,7 @@ See also `file-readable-p' and `file-attributes'.")
   if (!NILP (handler))
     return call2 (handler, Qfile_exists_p, abspath);
 
-  return (access (XSTRING (abspath)->data, 0) >= 0) ? Qt : Qnil;
+  return (stat (XSTRING (abspath)->data, &statbuf) >= 0) ? Qt : Qnil;
 }
 
 DEFUN ("file-executable-p", Ffile_executable_p, Sfile_executable_p, 1, 1, 0,
@@ -2198,6 +2221,7 @@ See also `file-exists-p' and `file-attributes'.")
 {
   Lisp_Object abspath;
   Lisp_Object handler;
+  int desc;
 
   CHECK_STRING (filename, 0);
   abspath = Fexpand_file_name (filename, Qnil);
@@ -2208,7 +2232,11 @@ See also `file-exists-p' and `file-attributes'.")
   if (!NILP (handler))
     return call2 (handler, Qfile_readable_p, abspath);
 
-  return (access (XSTRING (abspath)->data, 4) >= 0) ? Qt : Qnil;
+  desc = open (XSTRING (abspath)->data, O_RDONLY);
+  if (desc < 0)
+    return Qnil;
+  close (desc);
+  return Qt;
 }
 
 DEFUN ("file-symlink-p", Ffile_symlink_p, Sfile_symlink_p, 1, 1, 0,
@@ -2354,6 +2382,8 @@ searchable directory.")
      Lisp_Object filename;
 {
   Lisp_Object handler;
+  int tem;
+  struct gcpro gcpro1;
 
   /* If the file name has special constructs in it,
      call the corresponding file handler.  */
@@ -2361,11 +2391,17 @@ searchable directory.")
   if (!NILP (handler))
     return call2 (handler, Qfile_accessible_directory_p, filename);
 
-  if (NILP (Ffile_directory_p (filename))
-      || NILP (Ffile_executable_p (filename)))
-    return Qnil;
-  else
-    return Qt;
+  /* It's an unlikely combination, but yes we really do need to gcpro:
+     Suppose that file-accessible-directory-p has no handler, but
+     file-directory-p does have a handler; this handler causes a GC which
+     relocates the string in `filename'; and finally file-directory-p
+     returns non-nil.  Then we would end up passing a garbaged string
+     to file-executable-p.  */
+  GCPRO1 (filename);
+  tem = (NILP (Ffile_directory_p (filename))
+	 || NILP (Ffile_executable_p (filename)));
+  UNGCPRO;
+  return tem ? Qnil : Qt;
 }
 
 DEFUN ("file-modes", Ffile_modes, Sfile_modes, 1, 1, 0,
@@ -2565,7 +2601,7 @@ and (2) it puts less data in the undo list.")
   register int inserted = 0;
   register int how_much;
   int count = specpdl_ptr - specpdl;
-  struct gcpro gcpro1, gcpro2;
+  struct gcpro gcpro1, gcpro2, gcpro3;
   Lisp_Object handler, val, insval;
   Lisp_Object p;
   int total;
@@ -2573,7 +2609,7 @@ and (2) it puts less data in the undo list.")
   val = Qnil;
   p = Qnil;
 
-  GCPRO2 (filename, p);
+  GCPRO3 (filename, val, p);
   if (!NILP (current_buffer->read_only))
     Fbarf_if_buffer_read_only();
 
@@ -2593,14 +2629,14 @@ and (2) it puts less data in the undo list.")
   fd = -1;
 
 #ifndef APOLLO
-  if (stat (XSTRING (filename)->data, &st) < 0
-      || (fd = open (XSTRING (filename)->data, 0)) < 0)
+  if (stat (XSTRING (filename)->data, &st) < 0)
 #else
-  if ((fd = open (XSTRING (filename)->data, 0)) < 0
+  if ((fd = open (XSTRING (filename)->data, O_RDONLY)) < 0
       || fstat (fd, &st) < 0)
 #endif /* not APOLLO */
     {
       if (fd >= 0) close (fd);
+    badopen:
       if (NILP (visit))
 	report_file_error ("Opening input file", Fcons (filename, Qnil));
       st.st_mtime = -1;
@@ -2608,21 +2644,25 @@ and (2) it puts less data in the undo list.")
       goto notfound;
     }
 
+#ifdef S_IFREG
+  /* This code will need to be changed in order to work on named
+     pipes, and it's probably just not worth it.  So we should at
+     least signal an error.  */
+  if (!S_ISREG (st.st_mode))
+    Fsignal (Qfile_error,
+	     Fcons (build_string ("not a regular file"),
+		    Fcons (filename, Qnil)));
+#endif
+
+  if (fd < 0)
+    if ((fd = open (XSTRING (filename)->data, O_RDONLY)) < 0)
+      goto badopen;
+
   /* Replacement should preserve point as it preserves markers.  */
   if (!NILP (replace))
     record_unwind_protect (restore_point_unwind, Fpoint_marker ());
 
   record_unwind_protect (close_file_unwind, make_number (fd));
-
-#ifdef S_IFSOCK
-  /* This code will need to be changed in order to work on named
-     pipes, and it's probably just not worth it.  So we should at
-     least signal an error.  */
-  if ((st.st_mode & S_IFMT) == S_IFSOCK)
-    Fsignal (Qfile_error,
-	     Fcons (build_string ("reading from named pipe"),
-		    Fcons (filename, Qnil)));
-#endif
 
   /* Supposedly happens on VMS.  */
   if (st.st_size < 0)
@@ -2914,6 +2954,23 @@ and (2) it puts less data in the undo list.")
 
 static Lisp_Object build_annotations ();
 
+/* If build_annotations switched buffers, switch back to BUF.
+   Kill the temporary buffer that was selected in the meantime.  */
+
+static Lisp_Object 
+build_annotations_unwind (buf)
+     Lisp_Object buf;
+{
+  Lisp_Object tembuf;
+
+  if (XBUFFER (buf) == current_buffer)
+    return Qnil;
+  tembuf = Fcurrent_buffer ();
+  Fset_buffer (buf);
+  Fkill_buffer (tembuf);
+  return Qnil;
+}
+
 DEFUN ("write-region", Fwrite_region, Swrite_region, 3, 5,
   "r\nFWrite region to file: ",
   "Write current region into specified file.\n\
@@ -2941,6 +2998,7 @@ to the file, instead of any buffer contents, and END is ignored.")
   struct stat st;
   int tem;
   int count = specpdl_ptr - specpdl;
+  int count1;
 #ifdef VMS
   unsigned char *fname = 0;	/* If non-0, original filename (must rename) */
 #endif /* VMS */
@@ -2949,6 +3007,7 @@ to the file, instead of any buffer contents, and END is ignored.")
   Lisp_Object annotations;
   int visiting, quietly;
   struct gcpro gcpro1, gcpro2, gcpro3, gcpro4;
+  struct buffer *given_buffer;
 #ifdef MSDOS
   int buffer_file_type
     = NILP (current_buffer->buffer_file_type) ? O_TEXT : O_BINARY;
@@ -2957,11 +3016,13 @@ to the file, instead of any buffer contents, and END is ignored.")
   if (!NILP (start) && !STRINGP (start))
     validate_region (&start, &end);
 
+  GCPRO2 (filename, visit);
   filename = Fexpand_file_name (filename, Qnil);
   if (STRINGP (visit))
     visit_file = Fexpand_file_name (visit, Qnil);
   else
     visit_file = filename;
+  UNGCPRO;
 
   visiting = (EQ (visit, Qt) || STRINGP (visit));
   quietly = !NILP (visit);
@@ -3000,7 +3061,16 @@ to the file, instead of any buffer contents, and END is ignored.")
       XFASTINT (end) = Z;
     }
 
+  record_unwind_protect (build_annotations_unwind, Fcurrent_buffer ());
+  count1 = specpdl_ptr - specpdl;
+
+  given_buffer = current_buffer;
   annotations = build_annotations (start, end);
+  if (current_buffer != given_buffer)
+    {
+      start = BEGV;
+      end = ZV;
+    }
 
 #ifdef CLASH_DETECTION
   if (!auto_saving)
@@ -3202,8 +3272,10 @@ to the file, instead of any buffer contents, and END is ignored.")
 #ifndef FOO
   stat (fn, &st);
 #endif
-  /* Discard the unwind protect */
-  specpdl_ptr = specpdl + count;
+  /* Discard the unwind protect for close_file_unwind.  */
+  specpdl_ptr = specpdl + count1;
+  /* Restore the original current buffer.  */
+  visit_file = unbind_to (count, visit_file);
 
 #ifdef CLASH_DETECTION
   if (!auto_saving)
@@ -3247,7 +3319,11 @@ DEFUN ("car-less-than-car", Fcar_less_than_car, Scar_less_than_car, 2, 2, 0,
 
 /* Build the complete list of annotations appropriate for writing out
    the text between START and END, by calling all the functions in
-   write-region-annotate-functions and merging the lists they return.  */
+   write-region-annotate-functions and merging the lists they return.
+   If one of these functions switches to a different buffer, we assume
+   that buffer contains altered text.  Therefore, the caller must
+   make sure to restore the current buffer in all cases,
+   as save-excursion would do.  */
 
 static Lisp_Object
 build_annotations (start, end)
@@ -3262,7 +3338,20 @@ build_annotations (start, end)
   GCPRO2 (annotations, p);
   while (!NILP (p))
     {
+      struct buffer *given_buffer = current_buffer;
+      Vwrite_region_annotations_so_far = annotations;
       res = call2 (Fcar (p), start, end);
+      /* If the function makes a different buffer current,
+	 assume that means this buffer contains altered text to be output.
+	 Reset START and END from the buffer bounds
+	 and discard all previous annotations because they should have
+	 been dealt with by this function.  */
+      if (current_buffer != given_buffer)
+	{
+	  start = BEGV;
+	  end = ZV;
+	  annotations = Qnil;
+	}
       Flength (res);   /* Check basic validity of return value */
       annotations = merge (annotations, res, Qcar_less_than_car);
       p = Fcdr (p);
@@ -3292,7 +3381,7 @@ a_write (desc, addr, len, pos, annot)
   int nextpos;
   int lastpos = pos + len;
 
-  while (1)
+  while (NILP (*annot) || CONSP (*annot))
     {
       tem = Fcar_safe (Fcar (*annot));
       if (INTEGERP (tem) && XINT (tem) >= pos && XFASTINT (tem) <= lastpos)
@@ -3449,14 +3538,12 @@ An argument specifies the modification time value to use\n\
 Lisp_Object
 auto_save_error ()
 {
-  unsigned char *name = XSTRING (current_buffer->name)->data;
-
   ring_bell ();
-  message ("Autosaving...error for %s", name);
+  message ("Autosaving...error for %s", XSTRING (current_buffer->name)->data);
   Fsleep_for (make_number (1), Qnil);
-  message ("Autosaving...error!for %s", name);
+  message ("Autosaving...error!for %s", XSTRING (current_buffer->name)->data);
   Fsleep_for (make_number (1), Qnil);
-  message ("Autosaving...error for %s", name);
+  message ("Autosaving...error for %s", XSTRING (current_buffer->name)->data);
   Fsleep_for (make_number (1), Qnil);
   return Qnil;
 }
@@ -3510,7 +3597,6 @@ Non-nil second argument means save only current buffer.")
   int do_handled_files;
   Lisp_Object oquit;
   int listdesc;
-  Lisp_Object lispstream;
   int count = specpdl_ptr - specpdl;
   int *ptr;
 
@@ -3758,7 +3844,7 @@ DEFUN ("read-file-name-internal", Fread_file_name_internal, Sread_file_name_inte
       if (XTYPE (val) != Lisp_String)
 	{
 	  if (changed)
-	    return string;
+	    return double_dollars (string);
 	  return val;
 	}
 
@@ -3943,7 +4029,7 @@ syms_of_fileio ()
   Qunhandled_file_name_directory = intern ("unhandled-file-name-directory");
   Qfile_name_as_directory = intern ("file-name-as-directory");
   Qcopy_file = intern ("copy-file");
-  Qmake_directory = intern ("make-directory");
+  Qmake_directory_internal = intern ("make-directory-internal");
   Qdelete_directory = intern ("delete-directory");
   Qdelete_file = intern ("delete-file");
   Qrename_file = intern ("rename-file");
@@ -3971,7 +4057,7 @@ syms_of_fileio ()
   staticpro (&Qunhandled_file_name_directory);
   staticpro (&Qfile_name_as_directory);
   staticpro (&Qcopy_file);
-  staticpro (&Qmake_directory);
+  staticpro (&Qmake_directory_internal);
   staticpro (&Qdelete_directory);
   staticpro (&Qdelete_file);
   staticpro (&Qrename_file);
@@ -4060,6 +4146,13 @@ insert before the first byte written).  The POSITIONs must be sorted into\n\
 increasing order.  If there are several functions in the list, the several\n\
 lists are merged destructively.");
   Vwrite_region_annotate_functions = Qnil;
+
+  DEFVAR_LISP ("write-region-annotations-so-far",
+	       &Vwrite_region_annotations_so_far,
+    "When an annotation function is called, this holds the previous annotations.\n\
+These are the annotations made by other annotation functions\n\
+that were already called.  See also `write-region-annotate-functions'.");
+  Vwrite_region_annotations_so_far = Qnil;
 
   DEFVAR_LISP ("inhibit-file-name-handlers", &Vinhibit_file_name_handlers,
     "A list of file name handlers that temporarily should not be used.\n\

@@ -13,5 +13,12 @@
 #undef REL_ALLOC
 #endif
 
+#ifndef __GNUC__
 /* Make room for enough symbols, so dispnew.c does not fail.  */
-#define C_SWITCH_SYSTEM -Wp,-H200000
+#define C_SWITCH_SYSTEM -Wp,-H200000 -D_BSD
+#endif
+
+/* neal@ctd.comsat.com */
+#undef HAVE_TERMIO
+#define HAVE_TERMIOS
+#define NO_TERMIO

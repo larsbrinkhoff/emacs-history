@@ -45,8 +45,8 @@ NAME is a string--the menu item name.
 CALLBACK is a command to run when the item is chosen,
 or a list to evaluate when the item is chosen.
 
-ENABLE is a symbol; if its value is non-nil, the item is enabled
-for selection.
+ENABLE is an expression; the item is enabled for selection
+whenever this expression's value is non-nil.
 
 A menu item can be a string.  Then that string appears in the menu as
 unselectable text.  A string consisting solely of hyphens is displayed
@@ -103,6 +103,20 @@ is a list of menu items, as above."
 	      (define-key menu (vector (intern name)) (cons name command)))))
       (setq menu-items (cdr menu-items)))
     menu))
+
+(defun easy-menu-change (path name items)
+  "Change menu found at PATH as item NAME to contain ITEMS.
+PATH is a list of strings for locating the menu containing NAME in the
+menu bar.  ITEMS is a list of menu items, as in `easy-menu-define'.
+These items entirely replace the previous items in that map.
+
+Call this from `activate-menubar-hook' to implement dynamic menus."
+  (let ((map (key-binding (apply 'vector
+				 'menu-bar
+				 (mapcar 'intern (append path (list name)))))))
+    (if (keymapp map)
+	(setcdr map (cdr (easy-menu-create-keymaps name items)))
+      (error "Malformed menu in `easy-menu-change'"))))
 
 (defmacro easy-menu-remove (menu))
 

@@ -50,20 +50,33 @@ in paths.el.")
 (defvar Info-fontify t
   "*Non-nil enables highlighting and fonts in Info nodes.")
 
+(defvar Info-fontify-maximum-menu-size 30000
+  "*Maximum size of menu to fontify if `Info-fontify' is non-nil.")
+
 (defvar Info-directory-list
   (let ((path (getenv "INFOPATH"))
+	(sep (if (eq system-type 'ms-dos) ";" ":"))
 	(sibling (expand-file-name "../info/" (invocation-directory))))
     (if path
 	(let ((list nil)
 	      idx)
 	  (while (> (length path) 0)
-	    (setq idx (or (string-match ":" path) (length path))
+	    (setq idx (or (string-match sep path) (length path))
 		  list (cons (substring path 0 idx) list)
 		  path (substring path (min (1+ idx)
 					    (length path)))))
 	  (nreverse list))
       (if (or (member sibling Info-default-directory-list)
-	      (not (file-exists-p sibling)))
+	      (not (file-exists-p sibling))
+	      ;; On MS-DOS, we use movable executables always,
+	      ;; and we must always find the Info dir at run time.
+	      (if (eq system-type 'ms-dos)
+		  nil
+		;; Use invocation-directory for Info only if we used it for
+		;; exec-directory also.
+		(not (string= exec-directory
+			      (expand-file-name "../lib-src/"
+						(invocation-directory))))))
 	  Info-default-directory-list
 	(reverse (cons sibling (cdr (reverse Info-default-directory-list)))))))
   "List of directories to search for Info documentation files.
@@ -72,8 +85,15 @@ variable INFOPATH to initialize it, or `Info-default-directory-list'
 if there is no INFOPATH variable in the environment.
 The last element of `Info-default-directory-list' is the directory
 where Emacs installs the Info files that come with it.
-If Emacs finds it has been installed elsewhere, or not yet installed,
-it replaces that element with the directory that its Info files are in.")
+
+If you run the Emacs executable from the `src' directory in the Emacs
+source tree, the `info' directory in the source tree is used as the last
+element, in place of the installation Info directory.  This is useful
+when you run a version of Emacs without installing it.")
+
+(defvar Info-additional-directory-list nil
+  "List of additional directories to search for Info documentation files.
+These directories are not searched for merging the `dir' file.")
 
 (defvar Info-current-file nil
   "Info file that Info is now looking at, or nil.")
@@ -195,26 +215,25 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 			  ;; If specified name starts with `./'
 			  ;; then just try current directory.
 			  '("./")
-			Info-directory-list)))
+			(if Info-additional-directory-list
+			    (append Info-directory-list
+				    Info-additional-directory-list)
+			  Info-directory-list))))
 	    ;; Search the directory list for file FILENAME.
 	    (while (and dirs (not found))
 	      (setq temp (expand-file-name filename (car dirs)))
 	      (setq temp-downcase
 		    (expand-file-name (downcase filename) (car dirs)))
 	      ;; Try several variants of specified name.
-	      (catch 'foundit
-		(mapcar
-		 (function
-		  (lambda (x)
-		    (if (file-exists-p (concat temp (car x)))
-			(progn
-			  (setq found temp)
-			  (throw 'foundit nil)))
-		    (if (file-exists-p (concat temp-downcase (car x)))
-			(progn
-			  (setq found temp-downcase)
-			  (throw 'foundit nil)))))
-		 Info-suffix-list))
+	      (let ((suffix-list Info-suffix-list))
+		(while (and suffix-list (not found))
+		  (cond ((file-exists-p
+			  (concat temp (car (car suffix-list))))
+			 (setq found temp))
+			((file-exists-p
+			  (concat temp-downcase (car (car suffix-list))))
+			 (setq found temp-downcase)))
+		  (setq suffix-list (cdr suffix-list))))
 	      (setq dirs (cdr dirs)))))
 	(if found
 	    (setq filename found)
@@ -343,12 +362,17 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 	   ;; since we used it.
 	   (eval (cons 'and
 		       (mapcar '(lambda (elt)
-				  (equal (cdr elt)
-					 (file-attributes (car elt))))
+				  (let ((curr (file-attributes (car elt))))
+				    ;; Don't compare the access time.
+				    (if curr (setcar (nthcdr 4 curr) 0))
+				    (setcar (nthcdr 4 (cdr elt)) 0)
+				    (equal (cdr elt) curr)))
 			       Info-dir-file-attributes))))
       (insert Info-dir-contents)
     (let ((dirs Info-directory-list)
 	  buffers buffer others nodes dirs-done)
+
+      (setq Info-dir-file-attributes nil)
 
       ;; Search the directory list for the directory file.
       (while dirs
@@ -357,32 +381,33 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 	      (member (directory-file-name truename) dirs-done)
 	      ;; Try several variants of specified name.
 	      ;; Try upcasing, appending `.info', or both.
-	      (let* (temp
-		     (buffer
-		      (cond
-		       ((progn (setq temp (expand-file-name "DIR" (car dirs)))
-			       (file-exists-p temp))
-			(find-file-noselect temp))
-		       ((progn (setq temp (expand-file-name "dir" (car dirs)))
-			       (file-exists-p temp))
-			(find-file-noselect temp))
-		       ((progn (setq temp (expand-file-name "DIR.INFO" (car dirs)))
-			       (file-exists-p temp))
-			(find-file-noselect temp))
-		       ((progn (setq temp (expand-file-name "dir.info" (car dirs)))
-			       (file-exists-p temp))
-			(find-file-noselect temp)))))
+	      (let* (file
+		     (attrs
+		      (or
+		       (progn (setq file (expand-file-name "dir" truename))
+			      (file-attributes file))
+		       (progn (setq file (expand-file-name "DIR" truename))
+			      (file-attributes file))
+		       (progn (setq file (expand-file-name "dir.info" truename))
+			      (file-attributes file))
+		       (progn (setq file (expand-file-name "DIR.INFO" truename))
+			      (file-attributes file)))))
 		(setq dirs-done
 		      (cons truename
 			    (cons (directory-file-name truename)
 				  dirs-done)))
-		(if buffer (setq buffers (cons buffer buffers)
-				 Info-dir-file-attributes
-				 (cons (cons (buffer-file-name buffer)
-					     (file-attributes (buffer-file-name buffer)))
-				       Info-dir-file-attributes))))))
-	(setq dirs (cdr dirs)))
-
+		(if attrs
+		    (save-excursion
+		      (or buffers
+			  (message "Composing main Info directory..."))
+		      (set-buffer (generate-new-buffer "info dir"))
+		      (insert-file-contents file)
+		      (setq buffers (cons (current-buffer) buffers)
+			    Info-dir-file-attributes
+			    (cons (cons file attrs)
+				  Info-dir-file-attributes))))))
+	  (setq dirs (cdr dirs))))
+      
       (or buffers
 	  (error "Can't find the info directory node"))
       ;; Distinguish the dir file that comes with Emacs from all the
@@ -453,7 +478,7 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 		(beginning-of-line))
 	    ;; If none exists, add one.
 	    (goto-char (point-max))
-	    (insert "\^_\nFile: dir\tnode: " nodename "\n\n* Menu:\n\n"))
+	    (insert "\^_\nFile: dir\tNode: " nodename "\n\n* Menu:\n\n"))
 	  ;; Merge the text from the other buffer's menu
 	  ;; into the menu in the like-named node in the main buffer.
 	  (apply 'insert-buffer-substring (cdr (car nodes)))
@@ -462,7 +487,8 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
       ;; Kill all the buffers we just made.
       (while buffers
 	(kill-buffer (car buffers))
-	(setq buffers (cdr buffers))))
+	(setq buffers (cdr buffers)))
+      (message "Composing main Info directory...done"))
     (setq Info-dir-contents (buffer-string)))
   (setq default-directory Info-dir-contents-directory))
 
@@ -660,7 +686,7 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 		(message "Searching subfile %s..." (cdr (car list)))
 		(Info-read-subfile (car (car list)))
 		(setq list (cdr list))
-		(goto-char (point-min))
+;;		(goto-char (point-min))
 		(if (re-search-forward regexp nil t)
 		    (setq found (point) list ())))
 	      (if found
@@ -829,11 +855,55 @@ NAME may be an abbreviation of the reference name."
       (aset str i ?\ ))
     str))
 
-;; No one calls this and Info-menu-item doesn't exist.
+;; No one calls this.
 ;;(defun Info-menu-item-sequence (list)
 ;;  (while list
-;;    (Info-menu-item (car list))
+;;    (Info-menu (car list))
 ;;    (setq list (cdr list))))
+
+(defun Info-complete-menu-item (string predicate action)
+  (let ((case-fold-search t))
+    (cond ((eq action nil)
+	   (let (completions
+		 (pattern (concat "\n\\* \\("
+				  (regexp-quote string)
+				  "[^:\t\n]*\\):")))
+	     (save-excursion
+	       (set-buffer Info-complete-menu-buffer)
+	       (goto-char (point-min))
+	       (while (re-search-forward pattern nil t)
+		 (setq completions (cons (cons (format "%s"
+						       (buffer-substring
+							(match-beginning 1)
+							(match-end 1)))
+					       (match-beginning 1))
+					 completions))))
+	     (try-completion string completions predicate)))
+	  ((eq action t)
+	   (let (completions
+		 (pattern (concat "\n\\* \\("
+				  (regexp-quote string)
+				  "[^:\t\n]*\\):")))
+	     (save-excursion
+	       (set-buffer Info-complete-menu-buffer)
+	       (goto-char (point-min))
+	       (while (re-search-forward pattern nil t)
+		 (setq completions (cons (cons (format "%s"
+						       (buffer-substring
+							(match-beginning 1)
+							(match-end 1)))
+					       (match-beginning 1))
+					 completions))))
+	     (all-completions string completions predicate)))
+	  (t
+	   (save-excursion
+	     (set-buffer Info-complete-menu-buffer)
+	     (goto-char (point-min))
+	     (re-search-forward (concat "\n\\* "
+					(regexp-quote string)
+					":")
+				nil t))))))
+
 
 (defun Info-menu (menu-item)
   "Go to node for menu item named (or abbreviated) NAME.
@@ -848,30 +918,24 @@ Completion is allowed, and the menu item point is on is the default."
        (goto-char (point-min))
        (if (not (search-forward "\n* menu:" nil t))
 	   (error "No menu in this node"))
-       (while (re-search-forward
-		"\n\\* \\([^:\t\n]*\\):" nil t)
-	 (if (and (null default)
-		  (prog1 (if last (< last p) nil)
-		    (setq last (match-beginning 0)))
-		  (<= p last))
-	     (setq default (car (car completions))))
-	 (setq completions (cons (cons (buffer-substring
-					 (match-beginning 1)
-					 (match-end 1))
-				       (match-beginning 1))
-				 completions)))
-       (if (and (null default) last
-		(< last p)
-		(<= p (progn (end-of-line) (point))))
-	   (setq default (car (car completions)))))
+       (setq beg (point))
+       (and (< (point) p)
+	    (save-excursion
+	      (goto-char p)
+	      (end-of-line)
+	      (re-search-backward "\n\\* \\([^:\t\n]*\\):" beg t)
+	      (setq default (format "%s" (buffer-substring
+					  (match-beginning 1)
+					  (match-end 1)))))))
      (let ((item nil))
        (while (null item)
-	 (setq item (let ((completion-ignore-case t))
+	 (setq item (let ((completion-ignore-case t)
+			  (Info-complete-menu-buffer (current-buffer)))
 		      (completing-read (if default
 					   (format "Menu item (default %s): "
 						   default)
 					   "Menu item: ")
-				       completions nil t)))
+				       'Info-complete-menu-item nil t)))
 	 ;; we rely on the fact that completing-read accepts an input
 	 ;; of "" even when the require-match argument is true and ""
 	 ;; is not a valid possibility
@@ -1009,41 +1073,76 @@ N is the digit argument used to invoke this command."
   (interactive)
   (save-excursion
     (forward-line 1)
-    (search-backward "\n* menu:" nil t)
-    (or (search-backward "\n* " nil t)
-	(error "No previous items in menu"))
-    (Info-goto-node (Info-extract-menu-node-name))))
+    (let ((beg (save-excursion
+		 (and (search-backward "\n* menu:" nil t)
+		      (point)))))
+      (or (and beg (search-backward "\n* " beg t))
+	  (error "No previous items in menu")))
+    (Info-goto-node (save-excursion
+		      (goto-char (match-end 0))
+		      (Info-extract-menu-node-name)))))
 
 (defmacro Info-no-error (&rest body)
   (list 'condition-case nil (cons 'progn (append body '(t))) '(error nil)))
 
 (defun Info-next-preorder ()
-  "Go to the next node, popping up a level if there is none."
+  "Go to the next subnode, popping up a level if there is none."
   (interactive)
-  (cond ((Info-no-error (Info-next-menu-item))	)
-	((Info-no-error (Info-up))		(forward-line 1))
-	(t 					(error "No more nodes"))))
+  (cond ((Info-no-error (Info-next-menu-item)))
+	((Info-no-error (Info-up))
+	 (forward-line 1))
+	(t
+	 (error "No more nodes"))))
+
+(defun Info-next-preorder-1 ()
+  "Go to the next subnode or the next node, or go up a level."
+  (interactive)
+  (cond ((Info-no-error (Info-next-menu-item)))
+	((Info-no-error (Info-next)))
+	((Info-no-error (Info-up))
+	 (forward-line 1))
+	(t
+	 (error "No more nodes"))))
 
 (defun Info-last-preorder ()
   "Go to the last node, popping up a level if there is none."
   (interactive)
-  (cond ((Info-no-error (Info-last-menu-item))	)
+  (cond ((Info-no-error
+	  (Info-last-menu-item)
+	  ;; If we go down a menu item, go to the end of the node
+	  ;; so we can scroll back through it.
+	  (goto-char (point-max))))
 	((Info-no-error (Info-up))		(forward-line -1))
 	(t 					(error "No previous nodes"))))
 
 (defun Info-scroll-up ()
   "Read the next screen.  If end of buffer is visible, go to next entry."
   (interactive)
-  (if (pos-visible-in-window-p (point-max))
-      (Info-next-preorder)
-    (scroll-up)))
+  (if (or (< (window-start) (point-min))
+	  (> (window-start) (point-max)))
+      (set-window-start (selected-window) (point)))
+  (let ((virtual-end (save-excursion
+		       (goto-char (point-min))
+		       (if (search-forward "\n* Menu:" nil t)
+			   (point)
+			 (point-max)))))
+    (if (or (< virtual-end (window-start))
+	    (pos-visible-in-window-p virtual-end))
+	(Info-next-preorder)
+      (scroll-up))))
 
 (defun Info-scroll-down ()
   "Read the previous screen.  If start of buffer is visible, go to last entry."
   (interactive)
-  (if (pos-visible-in-window-p (point-min))
-      (Info-last-preorder)
-    (scroll-down)))
+  (if (or (< (window-start) (point-min))
+	  (> (window-start) (point-max)))
+      (set-window-start (selected-window) (point)))
+  (let ((virtual-end (save-excursion
+		       (goto-char (point-min))
+		       (search-forward "\n* Menu:" nil t))))
+    (if (or virtual-end (pos-visible-in-window-p (point-min)))
+	(Info-last-preorder)
+      (scroll-down))))
 
 (defun Info-next-reference ()
   "Move cursor to the next cross-reference or menu item in the node."
@@ -1090,7 +1189,7 @@ Give a blank topic name to go to the Index node itself."
   (interactive "sIndex topic: ")
   (let ((orignode Info-current-node)
 	(rnode nil)
-	(pattern (format "\n\\* \\([^\n:]*%s[^\n:]*\\):[ \t]*\\([^.\n]*\\)\\.[ t]*\\([0-9]*\\)"
+	(pattern (format "\n\\* \\([^\n:]*%s[^\n:]*\\):[ \t]*\\([^.\n]*\\)\\.[ \t]*\\([0-9]*\\)"
 			 (regexp-quote topic)))
 	node)
     (Info-goto-node "Top")
@@ -1245,7 +1344,7 @@ At end of the node's text, moves to the next node, or up if none."
     (goto-char pos))
   (and (not (Info-try-follow-nearest-node))
        (save-excursion (forward-line 1) (eobp))
-       (Info-next-preorder)))
+       (Info-next-preorder-1)))
 
 (defun Info-follow-nearest-node ()
   "\\<Info-mode-map>Follow a node reference near point.
@@ -1253,7 +1352,7 @@ Like \\[Info-menu], \\[Info-follow-reference], \\[Info-next], \\[Info-prev] or \
 If no reference to follow, moves to the next node, or up if none."
   (interactive)
   (or (Info-try-follow-nearest-node)
-      (Info-next-preorder)))
+      (Info-next-preorder-1)))
 
 ;; Common subroutine.
 (defun Info-try-follow-nearest-node ()
@@ -1336,6 +1435,10 @@ topics.  Info has commands to follow the references and show you other nodes.
 \\[Info-help]	Invoke the Info tutorial.
 
 Selecting other nodes:
+\\[Info-mouse-follow-nearest-node]
+	Follow a node reference you click on.
+	  This works with menu items, cross references, and
+	  the \"next\", \"previous\" and \"up\", depending on where you click.
 \\[Info-next]	Move to the \"next\" node of this node.
 \\[Info-prev]	Move to the \"previous\" node of this node.
 \\[Info-up]	Move \"up\" from this node.
@@ -1383,7 +1486,7 @@ Advanced commands:
   (make-local-variable 'Info-tag-table-marker)
   (make-local-variable 'Info-history)
   (make-local-variable 'Info-index-alternatives)
-  (if (fboundp 'make-face)
+  (if (eq (framep (selected-frame)) 'x)
       (progn
 	(make-face 'info-node)
 	(make-face 'info-menu-5)
@@ -1533,7 +1636,7 @@ The command is found by looking up in Emacs manual's Command Index."
 	      (put-text-property (match-beginning 1) (match-end 1)
 				 'mouse-face 'highlight))))
       (goto-char (point-min))
-      (while (re-search-forward "\\*Note[ \n\t]*\\([^:]*\\):" nil t)
+      (while (re-search-forward "\\*Note[ \n\t]+\\([^:]*\\):" nil t)
 	(if (= (char-after (1- (match-beginning 0))) ?\") ; hack
 	    nil
 	  (put-text-property (match-beginning 1) (match-end 1)
@@ -1544,7 +1647,7 @@ The command is found by looking up in Emacs manual's Command Index."
       (if (and (search-forward "\n* Menu:" nil t)
 	       (not (string-match "\\<Index\\>" Info-current-node))
 	       ;; Don't take time to annotate huge menus
-	       (< (- (point-max) (point)) 30000))
+	       (< (- (point-max) (point)) Info-fontify-maximum-menu-size))
 	  (let ((n 0))
 	    (while (re-search-forward "^\\* \\([^:\t\n]*\\):" nil t)
 	      (setq n (1+ n))

@@ -36,7 +36,7 @@ Alliant (fx80-alliant-bsd):
 
 Alliant FX/2800 (i860-alliant-bsd)
 
-  Known to work with 18.58 and OS version 2.2, compiler version 1.3.
+  Known to work with 19.26 and OS version 2.2, compiler version 1.3.
 
 Altos 3068 (m68k-altos-sysv)
 
@@ -183,7 +183,7 @@ Clipper (clipper-???)
 Convex (c1-convex-bsd, c2-convex-bsd, c32-convex-bsd, c34-convex-bsd,
         c38-convex-bsd)
 
-  18.53 supposedly to work.
+  Support updated and residual bugs fixed in 19.26.
 
 Cubix QBx/386 (i386-cubix-sysv)
 
@@ -199,12 +199,20 @@ Data General Aviion (m88k-dg-dgux)
 
   19.23 works; however, the GCC provided with DGUX 5.4R3.00 fails to
   compile src/emacs.c.  GCC 2.5.8 does work.
+  The 19.26 pretest was reported to work; no word on which compiler.
 
   System versions other than DGUX 5.4R3.00 have not been tested.
 
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
-  19.22 is believed to work on Ultrix 4.2.
+  This machine is the older Mips-based DECstation.
+  Emacs does not support the Alpha CPU.  We hope to support that in 19.27.
+
+  19.25 works on Ultrix 4.2.  The 19.26 pretest was reported to work
+  on Ultrix 4.2a and on 4.4.
+
+  One user reported 19.25 did not work at all with --with-x-toolkit
+  using X11R5 patch level 10, but worked ok with X11R5 pl26.
 
   See under Ultrix for problems using X windows on Ultrix.
   Note that this is a MIPS machine.
@@ -218,28 +226,26 @@ DECstation (mips-dec-ultrix or mips-dec-osf)
 
 Motorola Delta 147 (m68k-motorola-sysv)
 
-  Emacs runs as of version 19.23.
+  The EMacs 19.26 pretest was reported to work.
 
   Motorola Delta boxes running System V/68 release 3.
   Tested on 147 board with SVR3V7, no X and gcc.
   Tested on 167 board with SVR3V7, no X, cc, gnucc and gcc.
+  Reports say it works with X too.
 
   The installation script chooses the compiler itself.  gnucc is
   preferred.
-
-  There is still a bug, probably a memory allocation error of some
-  kind.  Emacs 19.23 bombs reproducibly when byte-compiling large
-  elisp files.  If compiled with SYSTEM_MALLOC, it manages to
-  byte-compile, but bombs more often on common tasks, usually those
-  implying an enlargement of a buffer.
 
 Motorola Delta 187 (m88k-motorola-sysv,
 		    m88k-motorola-sysvr4, or
 		    m88k-motorola-m88kbcs)
 
-  As of version 19.13, Emacs is reported to run under SYSVr3 and SYSVr4.
-  Machine support added in version 19.
-  HAVE_X_MENU does not work due to lack of insque.
+  The 19.26 pretest was reported to run on SVR3.  However, if you
+  use --with-x-toolkit on svr3, you will have problems compiling some
+  files because time.h and sys/time.h get included twice.
+  One fix is to edit those files to protect against multiple inclusion.
+
+  As of version 19.13, Emacs was reported to run under SYSVr3 and SYSVr4.
  
 Dual running System V (m68k-dual-sysv)
 
@@ -313,7 +319,8 @@ Honeywell XPS100 (xps100-honeywell-sysv)
 
 Hewlett-Packard 9000 series 200 or 300 (m68k-hp-bsd or m68k-hp-hpux7.)
 
-  Version 19 works under BSD.
+  Version 19 works under BSD.  The 19.26 pretest was reported
+  to work on HPUX 9.
 
   These machines are 68000-series CPUs running HP/UX
   (a derivative of sysV with some BSD features) or BSD 4.3 ported by Utah.
@@ -356,9 +363,11 @@ HP 9000 series 500: not supported.
 HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux
 				      or ...hpux9shr)
 
-  These files support HP's Precision Architecture machines
-  running HP/UX.  It has been moderately tested on the Series
-  840.  Use hppa1.1 for the 700 series and hppa1.0 for the 800
+  19.26 is believed to work on HPUX 9 provided you compile with GCC.
+  As of version 19.16, Emacs was reported to build (using GCC) and run
+  on HP 9000/700 series machines running HP/UX versions 8.07 and 9.01.
+
+  Use hppa1.1 for the 700 series and hppa1.0 for the 800
   series machines.  (Emacs may not actually care which one you use.)
 
   Use hppa1.1-hp-hpux9shr to use shared libraries on HPUX version 9.
@@ -367,9 +376,6 @@ HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux
   definition of LIBXT to look like this:
 
      LIBXT= $(LIBW) -lXmu -lXt $(LIBXTR6) -lXext
-
-  As of version 19.16, Emacs is reported to build (using GCC) and run
-  on HP 9000/700 series machines running HP/UX versions 8.07 and 9.01.
 
   Some people report trouble using the GNU memory allocator under
   HP/UX version 9.  We are told that these problems go away if you
@@ -390,6 +396,15 @@ HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux
   the instructions there.  Do not ask FSF for further support on
   this.  If you have any trouble obtaining the patch, contact HP
   Software Support.
+
+  If your buffer fills up with nulls (^@) at some point, it could well
+  be that problem.  That problem does not happen when people use GCC
+  to compile Emacs.  On the other hand, the HP compiler version 9.34
+  was reported to work for the 19.26 pretest.  9.65 was also reported to work.
+
+  If you turn on the DSUSP character (delayed suspend),
+  Emacs 19.26 does not know how to turn it off on HPUX.
+  You need to turn it off manually.
 
   If you are running HP/UX release 8.0 or later, you need the optional
   "C/ANSI C" software in order to build Emacs (older releases of HP/UX
@@ -419,7 +434,7 @@ IBM PS/2 (i386-ibm-aix1.1 or i386-ibm-aix1.2)
 
 IBM RS/6000 (rs6000-ibm-aix)
 
-  Emacs 19.7 runs.
+  Emacs 19.26 is believed to work; its pretest was tested.
 
   At last report, Emacs didn't run well on terminals.  Informed
   persons say that the tty VMIN and VTIME settings have been
@@ -431,6 +446,9 @@ IBM RS/6000 (rs6000-ibm-aix)
   cc -O fails for some files.  You need to install any
   PTF containing APAR #IX42810 to bring the compiler to
   the 1.03.00.14 level to allow optimized compiles.
+
+  There are reports that IBM compiler versions earlier than 1.03.00.02
+  fail even without -O.
 
   As of 19.11, if you strip the Emacs executable, it ceases to work.
 
@@ -471,12 +489,12 @@ Integrated Solutions `Optimum V' (m68k-isi-bsd4.2 or -bsd4.3)
   indicates the Umax operating system).
 
 Intel 386 (i386-*-isc, 		i386-*-esix,
-	   i386-*-xenix,	i386-*-linux,
+	   i386-*-xenix,	i386-*-linux,    i386-*-freebsd,
 	   i386-intsys-sysv,	i386-*-sysv3,
 	   i386-*-sysv4,	i386-*-sysv4.2,
 	   i386-*-sysv5.3,	i386-*-bsd4.2,
-	   i386-*-sco3.2v4,	i386-*-bsd386,
-	   i386-*-386bsd)
+	   i386-*-sco3.2v4,	i386-*-bsd386,   i386-*-386bsd
+	   or i486... or i586...)
 
   In the above configurations, * means that the manufacturer's name
   you specify does not matter, and you can use any name you like
@@ -486,15 +504,15 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 	version number - for example, if you're running ISC 3.0, use
 	i386-unknown-isc3.0 as your configuration name.
   Use i386-*-esix for Esix; Emacs runs as of version 19.6.
-  Use i386-*-linux for Linux; Emacs runs as of version 19.7.
+  Use i386-*-linux for GNU/Linux systems; Emacs runs as of version 19.26.
   Use i386-intsys-sysv for Integrated Solutions 386 machines.
   It may also be correct for Microport systems.
-  Use i386-*-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.6.
+  Use i386-*-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.26.
 
-  On Linux, Emacs 19.23 is said to work properly with libc version 4.5.21,
-  but not with 4.5.19.
+  On GNU/Linux systems, Emacs 19.23 was said to work properly with libc
+  version 4.5.21, but not with 4.5.19.
 
-  On Linux, configure may fail to put these definitions in config.h:
+  On GNU/Linux, configure may fail to put these definitions in config.h:
 
     #define HAVE_GETTIMEOFDAY
     #define HAVE_MKDIR
@@ -503,6 +521,8 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 
   To work around the problem, add those definitions by hand.
   It is possible that this problem happens only with X11R6.
+
+  The 19.26 pretest was reported to work on SVR4.3 and on Freebsd.
 
   Use i386-*-bsd386 for BSDI BSD/386; Emacs runs as of version 19.23.
   Make on that system is broken; use GNU make instead.
@@ -572,8 +592,11 @@ Iris 2500 and Iris 2500 Turbo (m68k-sgi-iris3.5 or m68k-sgi-iris3.6)
 
 Iris 4D (mips-sgi-irix[45].*)
 
-  19.22 is known to work on all Silicon Graphics machines running
-  IRIX 4.0.5 or IRIX 5.1.  Emacs 18.58 works with IRIX 3.3.
+  The 19.26 pretest was reported to work on IRIX 4.0.5 and 5.2.
+  19.23 was reported to work on IRIX 5.2, but you may need to install
+  the "compiler_dev.hdr.internal" subsystem in order to compile Emacs.
+  19.22 was known to work on all Silicon Graphics machines running
+  IRIX 4.0.5 or IRIX 5.1.
 
   Compiling with GCC on IRIX 5 is said to fail, perhaps because GCC
   produces something src/unexelfsgi.c doesn't understand.
@@ -627,7 +650,7 @@ Mips (mips-mips-riscos, mips-mips-riscos4.0, or mips-mips-bsd)
 
   The C compiler on Riscos 4.51 dumps core trying to optimize
   parts of Emacs.  Try without optimization or try GCC.
-  
+
   Meanwhile, the linker on that system returns success even if
   there are undefined symbols; as a result, configure gets the
   wrong answers to various questions.  No work-around is known
@@ -680,7 +703,7 @@ NCR Tower 32 (m68k-ncr-sysv2 or m68k-ncr-sysv3)
   There is a report that compilation with -O did not work with 18.54
   under System V release 2.
 
-NeXT (m68k-next-bsd, m68k-next-mach2)
+NeXT (m68k-next-nextstep)
 
   Emacs 19 has not been tested extensively yet, but it seems to work
   in a NeXTStep 3.0 terminal window, and under the X server called
@@ -717,6 +740,10 @@ Prime EXL (i386-prime-sysv)
   Minor changes merged in 19.1.
 
 Pyramid (pyramid-pyramid-bsd)
+
+  The 19.26 pretest was observed to work on OSx 5.0, but it is necessary
+  to edit gmalloc.c.  You must add #include <sys/types.h> at the top,
+  and delete the #define for size_t.
 
   You need to build Emacs in the Berkeley universe with
   the `ucb' command, as in `ucb make' or `ucb build-install'.
@@ -757,7 +784,7 @@ SONY News (m68k-sony-bsd4.2 or m68k-sony-bsd4.3)
 
 SONY News 3000 series (RISC NEWS) (mips-sony-bsd)
 
-  Worked, as of 18.56.  Note that this is a MIPS architecture machine.
+  The 19.26 pretest is reported to work.
 
   Some versions of the operating system give SIGTRAP for division by zero
   instead of the usual signals.  This causes division by zero
@@ -765,6 +792,10 @@ SONY News 3000 series (RISC NEWS) (mips-sony-bsd)
   Changing Emacs is not a proper solution, because it would prevent
   Emacs from working under any debugger.  But you can change init_data
   in data.c if you wish.
+
+Stardent i860 (i860-stardent-sysv4.0)
+
+  19.26 pretest reported to work.
 
 Stardent 1500 or 3000
 
@@ -778,18 +809,34 @@ Stride (m68k-stride-sysv)
   in the s- file would be needed.
 
 Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
-			       sparc-sun-solaris2.*)
+			       sparc-sun-sunos4shr, sparc-sun-solaris2.*)
 
-  19.22 is believed to work on Sparcs and Sun 3's.  Some people report
+  19.26 is believed to work on Sparcs and Sun 3's.  Some people report
   that Emacs crashes immediately on startup when used with a non-X
   terminal, but we think this is due to compiling with GCC and failing
   to use GCC's "fixed" system header files.
+
+  Some Sun versions of X windows use the clipboard, not the selections,
+  for transferring text between clients.  The Cut, Paste and Copy items
+  in the menu bar Edit menu work with the clipboard.
 
   It's important to include the SunOS version number in the
   configuration name.  For example, for SunOS release 4.0 on a Sun 3,
   use `m68k-sun-sunos4.0'; for SunOS release 4.1 on a Sparc, use
   `sparc-sun-sunos4.1'.  For SunOS release 4.1.3 on a Sparc, use
-  `sparc-sun-sunos4.1.3'.
+  `sparc-sun-sunos4.1.3'.  Use sunos4shr to link with shared libraries
+  on Sunos 4.1.
+
+  Use of shared libraries does not work with X11R5 or X11R6 on Sunos 4
+  as of 19.26.  unexsunos4.c needs to be changed.  Can someone
+  please write the necessary changes?
+
+  X11R6 is set up to make shared libraries only, on Sunos 4.
+  Therefore, in order to link Emacs, you need to create static X libraries.
+  To do this, rebuild X11 after setting
+    #define ForceNormalLib YES
+    #define SeparateSharedCompile YES
+  in site.def (after #ifdef AfterVendorCF).
 
   Use `m68k' for the 68000-based Sun boxes, `sparc' for Sparcstations,
   and `i386' for Sun Roadrunners.  i386 calls for Sunos4.0.
@@ -892,7 +939,8 @@ Tandem Integrity S2 (mips-tandem-sysv)
 
 Tektronix XD88 (m88k-tektronix-sysv3*)
 
-  Minor changes merged in 19.19, which should work.
+  The 19.26 pretest was reported to work.
+  Minor changes merged in 19.19.
 
 Tektronix 16000 box (6130?) (ns16k-tektronix-bsd)
 
@@ -900,8 +948,7 @@ Tektronix 16000 box (6130?) (ns16k-tektronix-bsd)
 
 Tektronix 4300 (m68k-tektronix-bsd)
 
-  Emacs 19.23 works.  However, for the toolkit version, you need to
-  fix sys/time.h so that it won't cause errors if included twice.
+  Emacs 19.26 pretest reported to work.
 
 Titan P2 or P3 (titan-titan-sysv)
 

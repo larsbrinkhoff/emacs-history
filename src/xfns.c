@@ -21,11 +21,16 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Rewritten for X11 by Joseph Arceneaux */
 
+#include <signal.h>
+#include <config.h>
+
 #if 0
 #include <stdio.h>
 #endif
-#include <signal.h>
-#include <config.h>
+
+/* This makes the fields of a Display accessible, in Xlib header files.  */
+#define XLIB_ILLEGAL_ACCESS
+
 #include "lisp.h"
 #include "xterm.h"
 #include "frame.h"
@@ -247,6 +252,14 @@ check_x ()
 {
   if (x_current_display == 0)
     error ("X windows are not in use or not initialized");
+}
+
+/* Nonzero if using X for display.  */
+
+int
+using_x_p ()
+{
+  return x_current_display != 0;
 }
 
 /* Return the Emacs frame-object corresponding to an X window.
@@ -542,9 +555,29 @@ x_set_frame_parameters (f, alist)
     if ((NUMBERP (width) && XINT (width) != FRAME_WIDTH (f))
 	|| (NUMBERP (height) && XINT (height) != FRAME_HEIGHT (f)))
       Fset_frame_size (frame, width, height);
-    if ((NUMBERP (left) && XINT (left) != f->display.x->left_pos)
-	|| (NUMBERP (top) && XINT (top) != f->display.x->top_pos))
-      Fset_frame_position (frame, left, top);
+
+    if ((!NILP (left) || !NILP (top))
+	&& ! (NUMBERP (left) && XINT (left) == f->display.x->left_pos
+	      && NUMBERP (top) && XINT (top) == f->display.x->top_pos))
+      {
+	int leftpos = (NUMBERP (left) ? XINT (left) : 0);
+	int toppos = (NUMBERP (top) ? XINT (top) : 0);
+
+	/* Store the numeric value of the position.  */
+	f->display.x->top_pos = toppos;
+	f->display.x->left_pos = leftpos;
+
+	/* Record the signs.  */
+	f->display.x->size_hint_flags &= ~ (XNegative | YNegative);
+	if (EQ (left, Qminus) || (NUMBERP (left) && XINT (left) < 0))
+	  f->display.x->size_hint_flags |= XNegative;
+	if (EQ (top, Qminus) || (NUMBERP (top) && XINT (top) < 0))
+	  f->display.x->size_hint_flags |= YNegative;
+	f->display.x->win_gravity = NorthWestGravity;
+
+	/* Actually set that position, and convert to absolute.  */
+	x_set_offset (f, leftpos, toppos, 0);
+      }
   }
 }
 
@@ -559,6 +592,23 @@ x_real_positions (f, xptr, yptr)
 {
   int win_x = 0, win_y = 0;
   Window child;
+
+  /* This is pretty gross, but seems to be the easiest way out of
+     the problem that arises when restarting window-managers.  */
+
+#ifdef USE_X_TOOLKIT
+  Window outer = XtWindow (f->display.x->widget);
+#else
+  Window outer = f->display.x->window_desc;
+#endif
+  Window tmp_root_window;
+  Window *tmp_children;
+  int tmp_nchildren;
+
+  XQueryTree (x_current_display, outer, &tmp_root_window,
+	      &f->display.x->parent_desc,
+	      &tmp_children, &tmp_nchildren);
+  xfree (tmp_children);
 
   /* Find the position of the outside upper-left corner of
      the inner window, with respect to the outer window.  */
@@ -616,12 +666,15 @@ x_report_frame_params (f, alistptr)
 		   : FRAME_ICONIFIED_P (f) ? Qicon : Qnil));
 }
 
-/* Decide if color named COLOR is valid for the display
-   associated with the selected frame. */
+/* Decide if color named COLOR is valid for the display associated with
+   the selected frame; if so, return the rgb values in COLOR_DEF.
+   If ALLOC is nonzero, allocate a new colormap cell.  */
+
 int
-defined_color (color, color_def)
+defined_color (color, color_def, alloc)
      char *color;
      Color *color_def;
+     int alloc;
 {
   register int foo;
   Colormap screen_colormap;
@@ -631,11 +684,13 @@ defined_color (color, color_def)
   screen_colormap
     = DefaultColormap (x_current_display, XDefaultScreen (x_current_display));
 
-  foo = XParseColor (x_current_display, screen_colormap,
-       	      color, color_def)
-    && XAllocColor (x_current_display, screen_colormap, color_def);
+  foo = XParseColor (x_current_display, screen_colormap, color, color_def);
+  if (foo && alloc)
+    foo = XAllocColor (x_current_display, screen_colormap, color_def);
 #else
-  foo = XParseColor (color, color_def) && XGetHardwareColor (color_def);
+  foo = XParseColor (color, color_def);
+  if (foo && alloc)
+    foo = XGetHardwareColor (color_def);
 #endif /* not HAVE_X11 */
   UNBLOCK_INPUT;
 
@@ -672,7 +727,7 @@ x_decode_color (arg, def)
     return def;
 #endif
 
-  if (defined_color (XSTRING (arg)->data, &cdef))
+  if (defined_color (XSTRING (arg)->data, &cdef, 1))
     return cdef.pixel;
   else
     Fsignal (Qundefined_color, Fcons (arg, Qnil));
@@ -1228,7 +1283,13 @@ x_set_name (f, name, explicit)
 
   /* If NAME is nil, set the name to the x_id_name.  */
   if (NILP (name))
-    name = build_string (x_id_name);
+    {
+      /* Check for no change needed in this very common case
+	 before we do any consing.  */
+      if (!strcmp (x_id_name, XSTRING (f->name)->data))
+	return;
+      name = build_string (x_id_name);
+    }
   else
     CHECK_STRING (name, 0);
 
@@ -1360,14 +1421,14 @@ extern XrmDatabase x_load_resources ();
 
 DEFUN ("x-get-resource", Fx_get_resource, Sx_get_resource, 2, 4, 0,
   "Return the value of ATTRIBUTE, of class CLASS, from the X defaults database.\n\
-This uses `NAME.ATTRIBUTE' as the key and `Emacs.CLASS' as the\n\
+This uses `NAME.ATTRIBUTE' as the key and `Emacs.INSTANCE' as the\n\
 class, where INSTANCE is the name under which Emacs was invoked, or\n\
 the name specified by the `-name' or `-rn' command-line arguments.\n\
 \n\
 The optional arguments COMPONENT and SUBCLASS add to the key and the\n\
 class, respectively.  You must specify both of them or neither.\n\
 If you specify them, the key is `NAME.COMPONENT.ATTRIBUTE'\n\
-and the class is `Emacs.CLASS.SUBCLASS'.")
+and the class is `Emacs.INSTANCE.SUBCLASS'.")
   (attribute, class, component, subclass)
      Lisp_Object attribute, class, component, subclass;
 {
@@ -1906,6 +1967,13 @@ x_window (f, window_prompting, minibuffer_only)
 	    + f->display.x->menubar_widget->core.border_width)
 	 : 0);
 
+    if (FRAME_EXTERNAL_MENU_BAR (f))
+      {
+        Dimension ibw;
+        XtVaGetValues (pane_widget, XtNinternalBorderWidth, &ibw, NULL);
+        menubar_size += ibw;
+      }
+
     if (window_prompting & USPosition)
       {
 	int left = f->display.x->left_pos;
@@ -2037,9 +2105,14 @@ x_window (f)
   f->display.x->wm_hints.input = True;
   f->display.x->wm_hints.flags |= InputHint;
   XSetWMHints (x_current_display, FRAME_X_WINDOW (f), &f->display.x->wm_hints);
-  XSetWMProtocols (x_current_display, FRAME_X_WINDOW (f),
-		   &Xatom_wm_delete_window, 1);
 
+  /* Request "save yourself" and "delete window" commands from wm.  */
+  {
+    Atom protocols[2];
+    protocols[0] = Xatom_wm_delete_window;
+    protocols[1] = Xatom_wm_save_yourself;
+    XSetWMProtocols (x_current_display, FRAME_X_WINDOW (f), protocols, 2);
+  }
 
   /* x_set_name normally ignores requests to set the name if the
      requested name is the same as the current name.  This is the one
@@ -2196,6 +2269,7 @@ be shared by the new frame.")
   long window_prompting = 0;
   int width, height;
   int count = specpdl_ptr - specpdl;
+  struct gcpro gcpro1;
 
   check_x ();
 
@@ -2237,6 +2311,8 @@ be shared by the new frame.")
     }
 
   XSET (frame, Lisp_Frame, f);
+  GCPRO1 (frame);
+
   f->output_method = output_x_window;
   f->display.x = (struct x_display *) xmalloc (sizeof (struct x_display));
   bzero (f->display.x, sizeof (struct x_display));
@@ -2256,16 +2332,16 @@ be shared by the new frame.")
       font = x_new_font (f, XSTRING (font)->data);
     /* Try out a font which we hope has bold and italic variations.  */
     if (!STRINGP (font))
-      font = x_new_font (f, "-misc-fixed-medium-r-normal-*-*-120-*-*-c-*-iso8859-1");
+      font = x_new_font (f, "-misc-fixed-medium-r-normal-*-*-140-*-*-c-*-iso8859-1");
     if (! STRINGP (font))
-      font = x_new_font (f, "-*-*-medium-r-normal-*-*-120-*-*-c-*-iso8859-1");
+      font = x_new_font (f, "-*-*-medium-r-normal-*-*-140-*-*-c-*-iso8859-1");
     if (! STRINGP (font))
       /* This was formerly the first thing tried, but it finds too many fonts
 	 and takes too long.  */
       font = x_new_font (f, "-*-*-medium-r-*-*-*-*-*-*-c-*-iso8859-1");
     /* If those didn't work, look for something which will at least work.  */
     if (! STRINGP (font))
-      font = x_new_font (f, "-*-fixed-*-*-*-*-*-120-*-*-c-*-iso8859-1");
+      font = x_new_font (f, "-*-fixed-*-*-*-*-*-140-*-*-c-*-iso8859-1");
     UNBLOCK_INPUT;
     if (! STRINGP (font))
       font = build_string ("fixed");
@@ -2367,6 +2443,8 @@ be shared by the new frame.")
 
   tem = x_get_arg (parms, Qunsplittable, 0, 0, boolean);
   f->no_split = minibuffer_only || EQ (tem, Qt);
+
+  UNGCPRO;
 
   /* It is now ok to make the frame official
      even if we get an error below.
@@ -2871,7 +2949,7 @@ even if they match PATTERN and FACE.")
 
 
 DEFUN ("x-color-defined-p", Fx_color_defined_p, Sx_color_defined_p, 1, 1, 0,
-  "Return t if the current X display supports the color named COLOR.")
+  "Return non-nil if the X display supports the color named COLOR.")
   (color)
      Lisp_Object color;
 {
@@ -2880,8 +2958,33 @@ DEFUN ("x-color-defined-p", Fx_color_defined_p, Sx_color_defined_p, 1, 1, 0,
   check_x ();
   CHECK_STRING (color, 0);
 
-  if (defined_color (XSTRING (color)->data, &foo))
+  if (defined_color (XSTRING (color)->data, &foo, 0))
     return Qt;
+  else
+    return Qnil;
+}
+
+DEFUN ("x-color-values", Fx_color_values, Sx_color_values, 1, 1, 0,
+  "Return a description of the color named COLOR.\n\
+The value is a list of integer RGB values--(RED GREEN BLUE).\n\
+These values appear to range from 0 to 65280; white is (65280 65280 65280).")
+  (color)
+     Lisp_Object color;
+{
+  Color foo;
+  
+  check_x ();
+  CHECK_STRING (color, 0);
+
+  if (defined_color (XSTRING (color)->data, &foo, 0))
+    {
+      Lisp_Object rgb[3];
+
+      rgb[0] = make_number (foo.red);
+      rgb[1] = make_number (foo.green);
+      rgb[2] = make_number (foo.blue);
+      return Flist (3, rgb);
+    }
   else
     return Qnil;
 }
@@ -4128,19 +4231,20 @@ Optional second arg XRM_STRING is a string of resources in xrdb format.")
   if (! NILP (xrm_string))
     CHECK_STRING (xrm_string, 1);
 
-  /* This is what opens the connection and sets x_current_display.
-     This also initializes many symbols, such as those used for input. */
-  x_term_init (XSTRING (display)->data);
-
-#ifdef HAVE_X11
-  XFASTINT (Vwindow_system_version) = 11;
-
   if (! NILP (xrm_string))
     xrm_option = (unsigned char *) XSTRING (xrm_string)->data;
   else
     xrm_option = (unsigned char *) 0;
 
   validate_x_resource_name ();
+
+  /* This is what opens the connection and sets x_current_display.
+     This also initializes many symbols, such as those used for input. */
+  x_term_init (XSTRING (display)->data, xrm_option,
+	       XSTRING (Vx_resource_name)->data);
+
+#ifdef HAVE_X11
+  XFASTINT (Vwindow_system_version) = 11;
 
   BLOCK_INPUT;
   xrdb = x_load_resources (x_current_display, xrm_option,
@@ -4368,7 +4472,11 @@ or when you set the mouse color.");
   Vmouse_depressed = Qnil;
 
   DEFVAR_LISP ("x-no-window-manager", &Vx_no_window_manager,
-	       "t if no X window manager is in use.");
+	       "Non-nil if no X window manager is in use.");
+
+#ifdef USE_X_TOOLKIT
+  Fprovide (intern ("x-toolkit"));
+#endif
 
 #ifdef HAVE_X11
   defsubr (&Sx_get_resource);
@@ -4381,6 +4489,7 @@ or when you set the mouse color.");
   defsubr (&Sx_display_color_p);
   defsubr (&Sx_list_fonts);
   defsubr (&Sx_color_defined_p);
+  defsubr (&Sx_color_values);
   defsubr (&Sx_server_max_request_size);
   defsubr (&Sx_server_vendor);
   defsubr (&Sx_server_version);

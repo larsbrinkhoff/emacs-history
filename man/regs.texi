@@ -1,18 +1,18 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Registers, Display, Rectangles, Top
 @chapter Registers
 @cindex registers
 
   Emacs @dfn{registers} are places you can save text or positions for
-later use.  Text and rectangles saved in registers can be copied into
-the buffer once or many times; you can move point to a position saved in
-a register.
+later use.  Once you save text or a rectangle in a register, you can
+copy it into the buffer once or many times; you can move point to a
+position saved in a register once or many times.
 
 @findex view-register
   Each register has a name which is a single character.  A register can
-store a piece of text, a rectangle, a position, a window configuration
+store a piece of text, a rectangle, a position, a window configuration,
 or a file name, but only one thing at any given time.  Whatever you
 store in a register remains there until you store something else in that
 register.  To see what a register @var{r} contains, use @kbd{M-x
@@ -35,9 +35,9 @@ Display a description of what register @var{r} contains.
 @node RegPos
 @section Saving Positions in Registers
 
-  Saving a position records a spot in a buffer so that you can move back
-there later.  Moving to a saved position reselects that buffer and moves
-point to that spot.
+  Saving a position records a place in a buffer so that you can move
+back there later.  Moving to a saved position switches to that buffer
+and moves point to that place in it.
 
 @table @kbd
 @item C-x r @key{SPC} @var{r}
@@ -57,8 +57,8 @@ register.
 @findex jump-to-register
   The command @kbd{C-x r j @var{r}} moves point to the position recorded
 in register @var{r}.  The register is not affected; it continues to
-record the same position.  You can jump to the same position using the
-same register any number of times.
+record the same position.  You can jump to the saved position any number
+of times.
 
 @node RegText
 @section Saving Text in Registers
@@ -109,6 +109,9 @@ rectangle) (@code{insert-register}).
 register contains one, and inserts a rectangle if the register contains
 one.
 
+  See also the command @code{sort-columns}, which you can think of
+as sorting a rectangle.  @xref{Sorting}.
+
 @node RegConfig
 @section Saving Window Configurations in Registers
 
@@ -117,16 +120,16 @@ one.
 @kindex C-x r w
 @kindex C-x r f
   You can save the window configuration of the selected frame in a
-register, or even the configuration of all frames, and restore the
-configuration later.
+register, or even the configuration of all windows in all frames, and
+restore the configuration later.
 
 @table @kbd
 @item C-x r w @var{r}
 Save the state of the selected frame's windows in register @var{r}
 (@code{window-configuration-to-register}).
 @item C-x r f @var{r}
-Save the state of all windows in all frames in register @var{r}
-(@code{frame-configuration-to-register}).
+Save the state of all frames, including all their windows, in register
+@var{r} (@code{frame-configuration-to-register}).
 @end table
 
   Use @kbd{C-x r j @var{r}} to restore a window or frame configuration.
@@ -184,7 +187,7 @@ Jump to the bookmark named @var{bookmark} (@code{bookmark-jump}).
 
 @item C-x r l
 @findex list-bookmarks
-List all bookmarks (@code{list-bookmarks}.
+List all bookmarks (@code{list-bookmarks}).
 
 @item M-x bookmark-save
 @findex bookmark-save
@@ -218,7 +221,9 @@ bookmarks persist from one Emacs session to the next.
 @vindex bookmark-save-flag
   If you set the variable @code{bookmark-save-flag} to 1, then each
 command that sets a bookmark will also save your bookmarks; this way,
-you don't lose any bookmark values even if Emacs crashes.
+you don't lose any bookmark values even if Emacs crashes.  (The value,
+if a number, says how many bookmark modifications should go by between
+saving.)
 
 @vindex bookmark-search-size
   Bookmark position values are saved with surrounding context, so that

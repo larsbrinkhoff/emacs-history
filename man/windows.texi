@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Windows, Frames, Buffers, Top
 @chapter Multiple Windows
@@ -9,7 +9,8 @@
   Emacs can split a frame into two or many windows.  Multiple windows
 can display parts of different buffers, or different parts of one
 buffer.  Multiple frames always imply multiple windows, because each
-window belongs to one and only one frame.
+frame has its own set of windows.  Each window belongs to one and only
+one frame.
 
 @menu
 * Basic Window::       Introduction to Emacs windows.
@@ -19,22 +20,24 @@ window belongs to one and only one frame.
 * Change Window::      Deleting windows and changing their sizes.
 @end menu
 
-@node Basic Window, Split Window, Windows, Windows
+@node Basic Window
 @section Concepts of Emacs Windows
 
-  When multiple windows are being displayed, each window has an Emacs
-buffer designated for display in it.  The same buffer may appear in more
-than one window; if it does, any changes in its text are displayed in all
-the windows where it appears.  But the windows showing the same buffer can
-show different parts of it, because each window has its own value of point.
+  Each Emacs window displays one Emacs buffer at any time.  A single
+buffer may appear in more than one window; if it does, any changes in
+its text are displayed in all the windows where it appears.  But the
+windows showing the same buffer can show different parts of it, because
+each window has its own value of point.
 
 @cindex selected window
-  At any time, one of the windows is the @dfn{selected window}; the buffer
-this window is displaying is the current buffer.  The terminal's cursor
-shows the location of point in this window.  Each other window has a
-location of point as well, but since the terminal has only one cursor there
-is no way to show where those locations are.  When you make multiple frames,
-each frame has a cursor which appears in the frame's selected window.
+  At any time, one of the windows is the @dfn{selected window}; the
+buffer this window is displaying is the current buffer.  The terminal's
+cursor shows the location of point in this window.  Each other window
+has a location of point as well, but since the terminal has only one
+cursor there is no way to show where those locations are.  When you make
+multiple frames, each frame has a cursor which appears in the frame's
+selected window.  The cursor in the selected frame is solid; the cursor
+in other frames is a hollow box.
 
   Commands to move point affect the value of point for the selected Emacs
 window only.  They do not change the value of point in any other Emacs
@@ -62,7 +65,7 @@ line.
 @break
 @end iftex
 
-@node Split Window, Other Window, Basic Window, Windows
+@node Split Window
 @section Splitting Windows
 
 @table @kbd
@@ -72,6 +75,8 @@ Split the selected window into two windows, one above the other
 @item C-x 3
 Split the selected window into two windows positioned side by side
 (@code{split-window-horizontally}).
+@item C-Mouse-2
+In the mode line or scroll bar of a window, split that window.
 @end table
 
 @kindex C-x 2
@@ -93,6 +98,14 @@ always appear in inverse video, because the Emacs display routines
 have not been taught how to display a region of inverse video that is
 only part of a line on the screen.
 
+@kindex C-Mouse-2
+  You can split a window horizontally or vertically by clicking
+@kbd{C-Mouse-2} in the mode line or the scroll bar.  The line of
+splitting goes through the place where you click: if you click on the
+mode line, the new scroll bar goes above the spot; if you click in the
+scroll bar, the mode line of the split window is side by side with your
+click.
+
 @vindex truncate-partial-width-windows
   When a window is less than the full width, text lines too long to fit are
 frequent.  Continuing all those lines might be confusing.  The variable
@@ -111,7 +124,7 @@ window happens to contain the screen line the cursor is already on.  The
 default is that @code{split-window-keep-point} is non-nil on slow
 terminals.
 
-@node Other Window, Pop Up Window, Split Window, Windows
+@node Other Window
 @section Using Other Windows
 
 @table @kbd
@@ -122,21 +135,26 @@ Scroll the next window (@code{scroll-other-window}).
 @item M-x compare-windows
 Find next place where the text in the selected window does not match
 the text in the next window.
+@item Mouse-1
+@kbd{Mouse-1}, in a window's mode line, selects that window
+but does not move point in it (@code{mouse-select-region}).
 @end table
 
 @kindex C-x o
 @findex other-window
-  To select a different window, use @kbd{C-x o} (@code{other-window}).
-That is an @kbd{o}, for `other', not a zero.  When there are more than two
-windows, this command moves through all the windows in a cyclic order,
-generally top to bottom and left to right.  After the rightmost and
-bottommost window, it goes back to the one at the upper left corner.  A
-numeric argument means to move several steps in the cyclic order of
-windows.  A negative argument moves around the cycle in the opposite order.
-When the minibuffer is active, the minibuffer is the last window in the
-cycle; you can switch from the minibuffer window to one of the other
-windows, and later switch back and finish supplying the minibuffer argument
-that is requested.  @xref{Minibuffer Edit}.
+  To select a different window, click with @kbd{Mouse-1} on its mode
+line.  With the keyboard, you can switch windows by typing @kbd{C-x o}
+(@code{other-window}).  That is an @kbd{o}, for `other', not a zero.
+When there are more than two windows, this command moves through all the
+windows in a cyclic order, generally top to bottom and left to right.
+After the rightmost and bottommost window, it goes back to the one at
+the upper left corner.  A numeric argument means to move several steps
+in the cyclic order of windows.  A negative argument moves around the
+cycle in the opposite order.  When the minibuffer is active, the
+minibuffer is the last window in the cycle; you can switch from the
+minibuffer window to one of the other windows, and later switch back and
+finish supplying the minibuffer argument that is requested.
+@xref{Minibuffer Edit}.
 
 @kindex C-M-v
 @findex scroll-other-window
@@ -150,9 +168,9 @@ next window in the standard cyclic order.)
 
   The command @code{M-x compare-windows} lets you compare two files or
 buffers visible in two windows, by moving through them to the next
-mismatch.  @xref{Comparing Files}.
+mismatch.  @xref{Comparing Files}, for details.
 
-@node Pop Up Window, Change Window, Other Window, Windows
+@node Pop Up Window
 @section Displaying in Another Window
 
 @cindex selecting buffers in other windows
@@ -181,7 +199,7 @@ Start composing a mail message in another window.  This runs
 @code{mail-other-window}; its same-window analogue is @kbd{C-x m}
 (@pxref{Sending Mail}).
 @item C-x 4 .
-Find a tag in the current tag table in another window.  This runs
+Find a tag in the current tags table, in another window.  This runs
 @code{find-tag-other-window}, the multiple-window variant of @kbd{M-.}
 (@pxref{Tags}).
 @item C-x 4 r @var{filename} @key{RET}
@@ -190,18 +208,25 @@ window.  This runs @code{find-file-read-only-other-window}.
 @xref{Visiting}.
 @end table
 
-@node Change Window,, Pop Up Window, Windows
+@node Change Window
 @section Deleting and Rearranging Windows
 
 @table @kbd
 @item C-x 0
-Get rid of the selected window (@code{delete-window}).  That is a zero.
+Delete the selected window (@code{delete-window}).  That is a zero.
 @item C-x 1
-Get rid of all windows except the selected one (@code{delete-other-windows}).
+Delete all windows in the selected frame except the selected window
+(@code{delete-other-windows}).
 @item C-x ^
 Make selected window taller (@code{enlarge-window}).
 @item C-x @}
 Make selected window wider (@code{enlarge-window-horizontally}).
+@item Mouse-2
+@kbd{Mouse-2} in a window's mode line deletes all other windows in the frame
+(@code{mouse-delete-other-windows}).
+@item Mouse-3
+@kbd{Mouse-3} in a window's mode line deletes that window
+(@code{mouse-delete-window}).
 @end table
 
 @kindex C-x 0
@@ -222,6 +247,10 @@ b}.
 minibuffer); the selected window expands to use the whole frame except
 for the echo area.
 
+  You can also delete a window by clicking on its mode line with
+@kbd{Mouse-2}, and expand a window to full screen by clicking on its
+mode line with @kbd{Mouse-3}.
+
 @kindex C-x ^
 @findex enlarge-window
 @kindex C-x @}
@@ -239,3 +268,7 @@ window comes from one of its neighbors, if that is possible.  If this
 makes any window too small, it is deleted and its space is given to an
 adjacent window.  The minimum size is specified by the variables
 @code{window-min-height} and @code{window-min-width}.
+
+  @xref{Minibuffer Edit}, for information about the Resize-Minibuffer
+mode, which automatically changes the size of the minibuffer window to
+fit the text in the minibuffer.

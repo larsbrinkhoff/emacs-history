@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1990, 1993 Free Software Foundation, Inc.
 
-;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
+;; Author: Masanobu UMEDA <umerin@mse.kyutech.ac.jp>
 ;; Keywords: news
 
 ;; This file is part of GNU Emacs.
@@ -152,7 +152,8 @@ The command \\[mh-yank-cur-msg] yank the original message into current buffer."
     (save-restriction
       (gnus-article-show-all-headers)	;I don't think this is really needed.
       (setq from (gnus-fetch-field "from")
-	    subject (let ((subject (gnus-fetch-field "subject")))
+	    subject (let ((subject (or (gnus-fetch-field "subject")
+				       "(None)")))
 		      (if (and subject
 			       (not (string-match "^[Rr][Ee]:.+$" subject)))
 			  (concat "Re: " subject) subject))

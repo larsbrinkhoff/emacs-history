@@ -21,7 +21,7 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;; Commentary:
+;;; Commentary:
 
 ;; The single entry point, `rot13-other-window', performs a Caesar cipher
 ;; encrypt/decrypt on the current buffer and displays the result in another 
@@ -46,10 +46,20 @@
 
 ;;;###autoload
 (defun rot13-other-window ()
-  "Display current buffer in rot 13 in another window."
+  "Display current buffer in rot 13 in another window.
+To terminate the rot13 display, delete that window."
   (interactive)
   (let ((w (display-buffer (current-buffer) t)))
     (set-window-display-table w rot13-display-table)))
+
+;;;###autoload
+(defun toggle-rot13-mode ()
+  "Toggle the use of rot 13 encoding for the current window."
+  (interactive)
+  (if (eq (window-display-table (selected-window)) rot13-display-table)
+      (set-window-display-table (selected-window) nil)
+    (if (null (window-display-table (selected-window)))
+	(set-window-display-table (selected-window) rot13-display-table))))
 
 (provide 'rot13)
 

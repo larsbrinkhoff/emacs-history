@@ -59,10 +59,14 @@ Called from a program, takes three arguments, START, END and ARG."
     (goto-char start)
     (or (bolp) (forward-line 1))
     (while (< (point) end)
-      (let ((indent (current-indentation)))
-	(delete-region (point) (progn (skip-chars-forward " \t") (point)))
-	(or (eolp)
-	    (indent-to (max 0 (+ indent arg)) 0)))
+      (let ((indent (current-indentation))
+	    eol-flag)
+	(save-excursion
+	  (skip-chars-forward " \t")
+	  (setq eol-flag (eolp)))
+	(or eol-flag
+	    (indent-to (max 0 (+ indent arg)) 0))
+	(delete-region (point) (progn (skip-chars-forward " \t") (point))))
       (forward-line 1))
     (move-marker end nil)))
 
@@ -168,7 +172,8 @@ column point starts at, `tab-to-tab-stop' is done instead."
 
 (defvar tab-stop-list
   '(8 16 24 32 40 48 56 64 72 80 88 96 104 112 120)
-  "*List of tab stop positions used by `tab-to-tab-stops'.")
+  "*List of tab stop positions used by `tab-to-tab-stops'.
+This should be a list of integers, ordered from smallest to largest.")
 
 (defvar edit-tab-stops-map nil "Keymap used in `edit-tab-stops'.")
 (if edit-tab-stops-map
@@ -237,7 +242,10 @@ Use \\[edit-tab-stops] to edit them interactively."
     (while (and tabs (>= (current-column) (car tabs)))
       (setq tabs (cdr tabs)))
     (if tabs
-	(indent-to (car tabs))
+	(let ((opoint (point)))
+	  (skip-chars-backward " \t")
+	  (delete-region (point) opoint)
+	  (indent-to (car tabs)))
       (insert ?\ ))))
 
 (defun move-to-tab-stop ()
@@ -249,7 +257,19 @@ Use \\[edit-tab-stops] to edit them interactively."
     (while (and tabs (>= (current-column) (car tabs)))
       (setq tabs (cdr tabs)))
     (if tabs
-	(move-to-column (car tabs) t))))
+	(let ((before (point)))
+	  (move-to-column (car tabs) t)
+	  (save-excursion
+	    (goto-char before)
+	    ;; If we just added a tab, or moved over one,
+	    ;; delete any superfluous spaces before the old point.
+	    (if (and (eq (preceding-char) ?\ )
+		     (eq (following-char) ?\t))
+		(let ((tabend (* (/ (current-column) tab-width) tab-width)))
+		  (while (and (> (current-column) tabend)
+			      (eq (preceding-char) ?\ ))
+		    (forward-char -1))
+		  (delete-region (point) before))))))))
 
 (define-key global-map "\t" 'indent-for-tab-command)
 (define-key esc-map "\034" 'indent-region)

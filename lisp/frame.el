@@ -35,11 +35,22 @@ function, which should take an alist of parameters as its argument.")
   "Alist of frame parameters for creating the initial X window frame.
 You can set this in your `.emacs' file; for example,
  (setq initial-frame-alist '((top . 1) (left . 1) (width . 80) (height . 55)))
-If the value calls for a frame without a minibuffer, and you do not create a
-minibuffer frame on your own, one is created according to
+Parameters specified here supersede the values given in `default-frame-alist'.
+
+If the value calls for a frame without a minibuffer, and you have not created
+a minibuffer frame on your own, one is created according to
 `minibuffer-frame-alist'.
-Parameters specified here supersede the values given in
-`default-frame-alist'.")
+
+You can specify geometry-related options for just the initial frame
+by setting this variable in your `.emacs' file; however, they won't
+take affect until Emacs reads `.emacs', which happens after first creating
+the frame.  If you want the frame to have the proper geometry as soon
+as it appears, you need to use this three-step process:
+* Specify X resources to give the geometry you want.
+* Set `default-frame-alist' to override these options so that they
+  don't affect subsequent frames.
+* Set `initial-frame-alist' in a way that matches the X resources,
+  to override what you put in `default-frame-alist'.")
 
 (defvar minibuffer-frame-alist '((width . 80) (height . 2))
   "Alist of frame parameters for initially creating a minibuffer frame.
@@ -166,6 +177,14 @@ These supersede the values given in `default-frame-alist'.")
 ;;; information to which we must react; do what needs to be done.
 (defun frame-notice-user-settings ()
 
+  ;; Make menu-bar-mode and default-frame-alist consistent.
+  (let ((default (assq 'menu-bar-lines default-frame-alist)))
+    (if default
+	(setq menu-bar-mode (not (eq (cdr default) 0)))
+      (setq default-frame-alist
+	    (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
+		  default-frame-alist))))
+
   ;; Creating and deleting frames may shift the selected frame around,
   ;; and thus the current buffer.  Protect against that.  We don't
   ;; want to use save-excursion here, because that may also try to set
@@ -209,13 +228,13 @@ These supersede the values given in `default-frame-alist'.")
 	      ;; when we first made the frame.
 	      (setq parms (cons '(reverse) (delq (assq 'reverse parms) parms)))
 	      (if (assq 'height frame-initial-geometry-arguments)
-		  (setq parms (delq (assq 'height parms) parms)))
+		  (setq parms (frame-delete-all 'height parms)))
 	      (if (assq 'width frame-initial-geometry-arguments)
-		  (setq parms (delq (assq 'width parms) parms)))
+		  (setq parms (frame-delete-all 'width parms)))
 	      (if (assq 'left frame-initial-geometry-arguments)
-		  (setq parms (delq (assq 'left parms) parms)))
+		  (setq parms (frame-delete-all 'left parms)))
 	      (if (assq 'top frame-initial-geometry-arguments)
-		  (setq parms (delq (assq 'top parms) parms)))
+		  (setq parms (frame-delete-all 'top parms)))
 	      (setq new
 		    (make-frame
 		     ;; Use the geometry args that created the existing
@@ -279,6 +298,14 @@ These supersede the values given in `default-frame-alist'.")
 	  (let (newparms allparms tail)
 	    (setq allparms (append initial-frame-alist
 				   default-frame-alist))
+	    (if (assq 'height frame-initial-geometry-arguments)
+		(setq allparms (frame-delete-all 'height allparms)))
+	    (if (assq 'width frame-initial-geometry-arguments)
+		(setq allparms (frame-delete-all 'width allparms)))
+	    (if (assq 'left frame-initial-geometry-arguments)
+		(setq allparms (frame-delete-all 'left allparms)))
+	    (if (assq 'top frame-initial-geometry-arguments)
+		(setq allparms (frame-delete-all 'top allparms)))
 	    (setq tail allparms)
 	    ;; Find just the parms that have changed since we first
 	    ;; made this frame.  Those are the ones actually set by
@@ -296,8 +323,11 @@ These supersede the values given in `default-frame-alist'.")
 		    (setq newparms
 			  (cons (cons (car (car tail)) newval) newparms))))
 	      (setq tail (cdr tail)))
+	    (setq newparms (nreverse newparms))
 	    (modify-frame-parameters frame-initial-frame
-				     (nreverse newparms)))))
+				     newparms)
+	    (if (assq 'font newparms)
+		(frame-update-faces frame-initial-frame)))))
 
     ;; Restore the original buffer.
     (set-buffer old-buffer)
@@ -306,6 +336,16 @@ These supersede the values given in `default-frame-alist'.")
     ;; Make sure frame-notice-user-settings does nothing if called twice.
     (setq frame-initial-frame nil)))
 
+;; Delete from ALIST all elements whose car is KEY.
+;; Return the modified alist.
+(defun frame-delete-all (key alist)
+  (setq alist (copy-sequence alist))
+  (let ((tail alist))
+    (while tail
+      (if (eq (car (car tail)) key)
+	  (setq alist (delq (car tail) alist)))
+      (setq tail (cdr tail)))
+    alist))
 
 ;;;; Creation of additional frames, and other frame miscellanea
 
@@ -543,7 +583,11 @@ When called interactively, prompt for the name of the color to use."
 
 (defun auto-raise-mode (arg)
   "Toggle whether or not the selected frame should auto-raise.
-With arg, turn auto-raise mode on if and only if arg is positive."
+With arg, turn auto-raise mode on if and only if arg is positive.
+Note that this controls Emacs's own auto-raise feature.
+Some window managers allow you to enable auto-raise for certain windows.
+You can use that for Emacs windows if you wish, but if you do,
+that is beyond the control of Emacs and this command has no effect on it."
   (interactive "P")
   (if (null arg)
       (setq arg
@@ -554,7 +598,11 @@ With arg, turn auto-raise mode on if and only if arg is positive."
 
 (defun auto-lower-mode (arg)
   "Toggle whether or not the selected frame should auto-lower.
-With arg, turn auto-lower mode on if and only if arg is positive."
+With arg, turn auto-lower mode on if and only if arg is positive.
+Note that this controls Emacs's own auto-lower feature.
+Some window managers allow you to enable auto-lower for certain windows.
+You can use that for Emacs windows if you wish, but if you do,
+that is beyond the control of Emacs and this command has no effect on it."
   (interactive "P")
   (if (null arg)
       (setq arg

@@ -48,7 +48,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Now define a symbol for the cpu type, if your compiler
    does not define it automatically.  */
 
+#ifndef tek4300
 #define tek4300
+#endif
 
 /* Use type int rather than a union, to represent Lisp_Object */
 
@@ -105,3 +107,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* eirik@elf.ithaca.ny.us said this was needed in 19.22.  */
 #define NO_MODE_T
+
+/* Process groups work in the traditional BSD manner.  */
+
+#define BSD_PGRPS

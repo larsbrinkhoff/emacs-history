@@ -501,25 +501,9 @@ OBJECT is optional and defaults to the current buffer.\n\
 If POSITION is at the end of OBJECT, the value is nil.")
   (pos, prop, object)
      Lisp_Object pos, object;
-     register Lisp_Object prop;
+     Lisp_Object prop;
 {
-  register INTERVAL i;
-  register Lisp_Object tail;
-
-  if (NILP (object))
-    XSET (object, Lisp_Buffer, current_buffer);
-  i = validate_interval_range (object, &pos, &pos, soft);
-  if (NULL_INTERVAL_P (i))
-    return Qnil;
-
-  /* If POS is at the end of the interval,
-     it means it's the end of OBJECT.
-     There are no properties at the very end,
-     since no character follows.  */
-  if (XINT (pos) == LENGTH (i) + i->position)
-    return Qnil;
-
-  return textget (i->plist, prop);
+  return textget (Ftext_properties_at (pos, object), prop);
 }
 
 DEFUN ("get-char-property", Fget_char_property, Sget_char_property, 2, 3, 0,
@@ -763,12 +747,13 @@ back past position LIMIT; return LIMIT if nothing is found until LIMIT.")
     CHECK_NUMBER_COERCE_MARKER (limit, 0);
 
   i = validate_interval_range (object, &pos, &pos, soft);
-  if (NULL_INTERVAL_P (i))
-    return limit;
 
   /* Start with the interval containing the char before point.  */
-  if (i->position == XFASTINT (pos))
+  if (! NULL_INTERVAL_P (i) && i->position == XFASTINT (pos))
     i = previous_interval (i);
+
+  if (NULL_INTERVAL_P (i))
+    return limit;
 
   here_val = textget (i->plist, prop);
   previous = previous_interval (i);
@@ -902,9 +887,18 @@ is the string or buffer containing the text.")
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);
 
-  i = validate_interval_range (object, &start, &end, hard);
+  i = validate_interval_range (object, &start, &end, soft);
   if (NULL_INTERVAL_P (i))
-    return Qnil;
+    {
+      /* If buffer has no props, and we want none, return now.  */
+      if (NILP (props))
+	return Qnil;
+
+      i = validate_interval_range (object, &start, &end, hard);
+      /* This can return if start == end.  */
+      if (NULL_INTERVAL_P (i))
+	return Qnil;
+    }
 
   s = XINT (start);
   len = XINT (end) - s;

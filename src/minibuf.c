@@ -32,23 +32,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 extern int quit_char;
 
 /* List of buffers for use as minibuffers.
-  The first element of the list is used for the outermost minibuffer invocation,
-  the next element is used for a recursive minibuffer invocation, etc.
-  The list is extended at the end as deeped minibuffer recursions are encountered. */
+   The first element of the list is used for the outermost minibuffer
+   invocation, the next element is used for a recursive minibuffer
+   invocation, etc.  The list is extended at the end as deeper
+   minibuffer recursions are encountered.  */
 Lisp_Object Vminibuffer_list;
 
-struct minibuf_save_data
-  {
-    char *prompt;
-    int prompt_width;
-    Lisp_Object help_form;
-    Lisp_Object current_prefix_arg;
-    Lisp_Object history_position;
-    Lisp_Object history_variable;
-  };
-
-int minibuf_save_vector_size;
-struct minibuf_save_data *minibuf_save_vector;
+/* Data to remember during recursive minibuffer invocations  */
+Lisp_Object minibuf_save_list;
 
 /* Depth in minibuffer invocations.  */
 int minibuf_level;
@@ -139,7 +130,6 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
   register Lisp_Object val;
   int count = specpdl_ptr - specpdl;
   Lisp_Object mini_frame;
-  struct gcpro gcpro1, gcpro2;
 
   if (XTYPE (prompt) != Lisp_String)
     prompt = build_string ("");
@@ -156,22 +146,16 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
 #endif
     error ("Command attempted to use minibuffer while in minibuffer");
 
-  if (minibuf_level == minibuf_save_vector_size)
-    minibuf_save_vector =
-     (struct minibuf_save_data *)
-       xrealloc (minibuf_save_vector,
-		 (minibuf_save_vector_size *= 2)
-		 * sizeof (struct minibuf_save_data)); 
-  minibuf_save_vector[minibuf_level].prompt = minibuf_prompt;
-  minibuf_save_vector[minibuf_level].prompt_width = minibuf_prompt_width;
+  /* Could we simply bind these variables instead?  */
+  minibuf_save_list
+    = Fcons (minibuf_prompt,
+	     Fcons (make_number (minibuf_prompt_width),
+		    Fcons (Vhelp_form,
+			   Fcons (Vcurrent_prefix_arg,
+				  Fcons (Vminibuffer_history_position,
+					 Fcons (Vminibuffer_history_variable,
+						minibuf_save_list))))));
   minibuf_prompt_width = 0;
-  /* >> Why is this done this way rather than binding these variables? */
-  minibuf_save_vector[minibuf_level].help_form = Vhelp_form;
-  minibuf_save_vector[minibuf_level].current_prefix_arg = Vcurrent_prefix_arg;
-  minibuf_save_vector[minibuf_level].history_position = Vminibuffer_history_position;
-  minibuf_save_vector[minibuf_level].history_variable = Vminibuffer_history_variable;
-  GCPRO2 (minibuf_save_vector[minibuf_level].help_form,
-	  minibuf_save_vector[minibuf_level].current_prefix_arg);
 
   record_unwind_protect (Fset_window_configuration,
 			 Fcurrent_window_configuration (Qnil));
@@ -248,8 +232,7 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
 	Fforward_char (backup_n);
     }
 
-  minibuf_prompt = (char *) alloca (XSTRING (prompt)->size + 1);
-  bcopy (XSTRING (prompt)->data, minibuf_prompt, XSTRING (prompt)->size + 1);
+  minibuf_prompt = Fcopy_sequence (prompt);
   echo_area_glyphs = 0;
   /* This is in case the minibuffer-setup-hook calls Fsit_for.  */
   previous_echo_glyphs = 0;
@@ -268,10 +251,6 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
 
 /* ??? MCC did redraw_screen here if switching screens.  */
   recursive_edit_1 ();
-
-  if (!NILP (Vminibuffer_exit_hook) && !EQ (Vminibuffer_exit_hook, Qunbound)
-      && !NILP (Vrun_hooks))
-    call1 (Vrun_hooks, Qminibuffer_exit_hook);
 
   /* If cursor is on the minibuffer line,
      show the user we have exited by putting it in column 0.  */
@@ -322,7 +301,6 @@ read_minibuf (map, initial, prompt, backup_n, expflag, histvar, histpos)
       val = Fcar (expr_and_pos);
     }
 
-  UNGCPRO;
   return unbind_to (count, val); /* The appropriate frame will get selected
 				    in set-window-configuration.  */
 }
@@ -371,6 +349,12 @@ void
 read_minibuf_unwind (data)
      Lisp_Object data;
 {
+  /* We are exiting the minibuffer one way or the other,
+     so run the hook.  */
+  if (!NILP (Vminibuffer_exit_hook) && !EQ (Vminibuffer_exit_hook, Qunbound)
+      && !NILP (Vrun_hooks))
+    call1 (Vrun_hooks, Qminibuffer_exit_hook);
+
   /* Erase the minibuffer we were using at this level.  */
   Fset_buffer (XWINDOW (minibuf_window)->buffer);
 
@@ -385,15 +369,19 @@ read_minibuf_unwind (data)
   windows_or_buffers_changed++;
   XFASTINT (XWINDOW (minibuf_window)->last_modified) = 0;
 
-  /* Restore prompt from outer minibuffer */
-  minibuf_prompt = minibuf_save_vector[minibuf_level].prompt;
-  minibuf_prompt_width = minibuf_save_vector[minibuf_level].prompt_width;
-  Vhelp_form = minibuf_save_vector[minibuf_level].help_form;
-  Vcurrent_prefix_arg = minibuf_save_vector[minibuf_level].current_prefix_arg;
-  Vminibuffer_history_position
-    = minibuf_save_vector[minibuf_level].history_position;
-  Vminibuffer_history_variable
-    = minibuf_save_vector[minibuf_level].history_variable;
+  /* Restore prompt, etc from outer minibuffer */
+  minibuf_prompt = Fcar (minibuf_save_list);
+  minibuf_save_list = Fcdr (minibuf_save_list);
+  minibuf_prompt_width = XFASTINT (Fcar (minibuf_save_list));
+  minibuf_save_list = Fcdr (minibuf_save_list);
+  Vhelp_form = Fcar (minibuf_save_list);
+  minibuf_save_list = Fcdr (minibuf_save_list);
+  Vcurrent_prefix_arg = Fcar (minibuf_save_list);
+  minibuf_save_list = Fcdr (minibuf_save_list);
+  Vminibuffer_history_position = Fcar (minibuf_save_list);
+  minibuf_save_list = Fcdr (minibuf_save_list);
+  Vminibuffer_history_variable = Fcar (minibuf_save_list);
+  minibuf_save_list = Fcdr (minibuf_save_list);
 }
 
 
@@ -935,7 +923,7 @@ TABLE is an alist whose elements' cars are strings, or an obarray.\n\
 PREDICATE limits completion to a subset of TABLE.\n\
 See `try-completion' for more details on completion, TABLE, and PREDICATE.\n\
 If REQUIRE-MATCH is non-nil, the user is not allowed to exit unless\n\
- the input is (or completes to) an element of TABLE.\n\
+ the input is (or completes to) an element of TABLE or is null.\n\
  If it is also not t, Return does not exit if it does non-null completion.\n\
 If INITIAL-INPUT is non-nil, insert it in the minibuffer initially.\n\
   If it is (STRING . POSITION), the initial input\n\
@@ -1415,9 +1403,13 @@ It can find the completion buffer in `standard-output'.")
   register Lisp_Object tail, elt;
   register int i;
   int column = 0;
-  /* No GCPRO needed, since (when it matters) every variable
-     points to a non-string that is pointed to by COMPLETIONS.  */
+  struct gcpro gcpro1;
   struct buffer *old = current_buffer;
+
+  /* Note that (when it matters) every variable
+     points to a non-string that is pointed to by COMPLETIONS.  */
+  GCPRO1 (completions);
+
   if (XTYPE (Vstandard_output) == Lisp_Buffer)
     set_buffer_internal (XBUFFER (Vstandard_output));
 
@@ -1436,7 +1428,7 @@ It can find the completion buffer in `standard-output'.")
 	  if (i & 1)
 	    {
 	      if (XTYPE (Vstandard_output) == Lisp_Buffer)
-		Findent_to (make_number (35), make_number (1));
+		Findent_to (make_number (35), make_number (2));
 	      else
 		{
 		  do
@@ -1478,6 +1470,8 @@ It can find the completion buffer in `standard-output'.")
 	    }
 	}
     }
+
+  UNGCPRO;
 
   if (XTYPE (Vstandard_output) == Lisp_Buffer)
     set_buffer_internal (old);
@@ -1544,9 +1538,7 @@ DEFUN ("minibuffer-prompt", Fminibuffer_prompt, Sminibuffer_prompt, 0, 0, 0,
 If no minibuffer is active, return nil.")
   ()
 {
-  if (!minibuf_prompt)
-    return Qnil;
-  return build_string (minibuf_prompt);
+  return Fcopy_sequence (minibuf_prompt);
 }
 
 DEFUN ("minibuffer-prompt-width", Fminibuffer_prompt_width,
@@ -1568,9 +1560,11 @@ init_minibuf_once ()
 syms_of_minibuf ()
 {
   minibuf_level = 0;
-  minibuf_prompt = 0;
-  minibuf_save_vector_size = 5;
-  minibuf_save_vector = (struct minibuf_save_data *) malloc (5 * sizeof (struct minibuf_save_data));
+  minibuf_prompt = Qnil;
+  staticpro (&minibuf_prompt);
+
+  minibuf_save_list = Qnil;
+  staticpro (&minibuf_save_list);
 
   Qread_file_name_internal = intern ("read-file-name-internal");
   staticpro (&Qread_file_name_internal);

@@ -475,7 +475,6 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
      char *new_name, *old_name;
      unsigned data_start, bss_start, entry_address;
 {
-  extern unsigned int bss_end;
   int new_file, old_file, new_file_size;
 
   /* Pointers to the base of the image of the two files. */
@@ -548,8 +547,7 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
   old_bss_addr = OLD_SECTION_H (old_bss_index).sh_addr;
   old_bss_size = OLD_SECTION_H (old_bss_index).sh_size;
 #if defined(emacs) || !defined(DEBUG)
-  bss_end = (unsigned int) sbrk (0);
-  new_bss_addr = (Elf32_Addr) bss_end;
+  new_bss_addr = (Elf32_Addr) sbrk (0);
 #else
   new_bss_addr = old_bss_addr + old_bss_size + 0x1234;
 #endif
@@ -727,20 +725,23 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
       
       /* If any section hdr refers to the section after the new .data
 	 section, make it refer to next one because we have inserted 
-	 a new section in between. */
+	 a new section in between.  */
       
       PATCH_INDEX (NEW_SECTION_H (nn).sh_link);
-      PATCH_INDEX (NEW_SECTION_H (nn).sh_info);
-      
-      /* Now, start to copy the content of sections. */
+      /* For symbol tables, info is a symbol table index,
+	 so don't change it.  */
+      if (NEW_SECTION_H (nn).sh_type != SHT_SYMTAB
+	  && NEW_SECTION_H (nn).sh_type != SHT_DYNSYM)
+	PATCH_INDEX (NEW_SECTION_H (nn).sh_info);
+
+      /* Now, start to copy the content of sections.  */
       if (NEW_SECTION_H (nn).sh_type == SHT_NULL
 	  || NEW_SECTION_H (nn).sh_type == SHT_NOBITS)
 	continue;
       
       /* Write out the sections. .data and .data1 (and data2, called
-       * ".data" in the strings table) get copied from the current process
-       * instead of the old file.
-       */
+	 ".data" in the strings table) get copied from the current process
+	 instead of the old file.  */
       if (!strcmp (old_section_names + NEW_SECTION_H (n).sh_name, ".data")
 	  || !strcmp ((old_section_names + NEW_SECTION_H (n).sh_name),
 		      ".data1"))
@@ -751,7 +752,7 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
       memcpy (NEW_SECTION_H (nn).sh_offset + new_base, src,
 	      NEW_SECTION_H (nn).sh_size);
 
-      /* If it is the symbol table, its st_shndx field needs to be patched. */
+      /* If it is the symbol table, its st_shndx field needs to be patched.  */
       if (NEW_SECTION_H (nn).sh_type == SHT_SYMTAB
 	  || NEW_SECTION_H (nn).sh_type == SHT_DYNSYM)
 	{
@@ -771,7 +772,27 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
 	}
     }
 
-  /* Close the files and make the new file executable */
+  /* Update the symbol values of _edata and _end.  */
+  for (n = new_file_h->e_shnum - 1; n; n--)
+    {
+      byte *symnames;
+      Elf32_Sym *symp, *symendp;
+
+      if (NEW_SECTION_H (n).sh_type != SHT_DYNSYM
+	  && NEW_SECTION_H (n).sh_type != SHT_SYMTAB)
+	continue;
+
+      symnames = NEW_SECTION_H (NEW_SECTION_H (n).sh_link).sh_offset + new_base;
+      symp = (Elf32_Sym *) (NEW_SECTION_H (n).sh_offset + new_base);
+      symendp = (Elf32_Sym *) ((byte *)symp + NEW_SECTION_H (n).sh_size);
+
+      for (; symp < symendp; symp ++)
+	if (strcmp ((char *) (symnames + symp->st_name), "_end") == 0
+	    || strcmp ((char *) (symnames + symp->st_name), "_edata") == 0)
+	  memcpy (&symp->st_value, &new_bss_addr, sizeof (new_bss_addr));
+    }
+
+  /* Close the files and make the new file executable.  */
 
   if (close (old_file))
     fatal ("Can't close (%s): errno %d\n", old_name, errno);

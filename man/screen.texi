@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Screen, User Input, Concept Index, Top
 @chapter The Organization of the Screen
@@ -25,11 +25,14 @@ the subdivisions of a frame within Emacs.
 
   The window that the cursor is in is the @dfn{selected window}, in
 which editing takes place.  Most Emacs commands implicitly apply to the
-text in the selected window.  The other windows display text for
-reference only, unless/until you select them.
+text in the selected window (though mouse commands generally operate on
+whatever window you click them in, whether selected or not).  The other
+windows display text for reference only, unless/until you select them.
+If you use multiple frames under the X Window System, then giving the
+input focus to a particular frame selects a window in that frame.
 
   Each window's last line is a @dfn{mode line} which describes what is
-going on in that window.  It is in inverse video if the terminal
+going on in that window.  It appears in inverse video if the terminal
 supports that, and contains text that starts like @samp{-----Emacs:@:
 @var{something}}.  Its purpose is to indicate what buffer is being
 displayed above it in the window; what major and minor modes are in use;
@@ -48,9 +51,10 @@ and whether the buffer contains unsaved changes.
 @c
 
   Within Emacs, the terminal's cursor shows the location at which
-editing commands will take effect.  This location is called
-@dfn{point}.  Other commands move point through the text, so that you
-can edit at different places in it.
+editing commands will take effect.  This location is called @dfn{point}.
+Many Emacs commands move point through the text, so that you can edit at
+different places in it.  You can also place point by clicking mouse
+button 1.
 
   While the cursor appears to point @var{at} a character, you should
 think of point as @var{between} two characters; it points @var{before}
@@ -73,11 +77,16 @@ except when the terminal is idle.
 each buffer has its own point location.  A buffer that is not currently
 displayed remembers where point is in case you display it again later.
 
-  When there are multiple windows, each window has its own point
-location.  The cursor shows the location of point in the selected
+  When there are multiple windows in a frame, each window has its own
+point location.  The cursor shows the location of point in the selected
 window.  This also is how you can tell which window is selected.  If the
 same buffer appears in more than one window, each window has its own
 position for point in that buffer.
+
+  When there are multiple frames, each frame can display one cursor.
+The cursor in the selected frame is solid; the cursor in other frames is
+a hollow box, and appears in the window that would be selected if you
+give the input focus to that frame.
 
   The term `point' comes from the character @samp{.}, which was the
 command in TECO (the language in which the original Emacs was written)
@@ -88,13 +97,13 @@ for accessing the value now called `point'.
 @cindex echo area
 @c 
 
-  The line at the bottom of the screen (below the mode line) is the
-@dfn{echo area}.  It is used to display small amounts of text for several
-purposes.
+  The line at the bottom of the frame (below the mode line) is the
+@dfn{echo area}.  It is used to display small amounts of text for
+several purposes.
 
-  @dfn{Echoing} means printing out the characters that you type.
-Outside Emacs, the operating system normally echoes all your input.
-Emacs handles echoing differently.
+  @dfn{Echoing} means displaying the characters that you type.  Outside
+Emacs, the operating system normally echoes all your input.  Emacs
+handles echoing differently.
 
   Single-character commands do not echo in Emacs, and multi-character
 commands echo only if you pause while typing them.  As soon as you pause
@@ -136,15 +145,15 @@ minibuffer by typing @kbd{C-g}.  @xref{Minibuffer}.
 @cindex top level
 @c
 
-  Each text window's last line is a @dfn{mode line} which describes what is
-going on in that window.  When there is only one text window, the mode line
-appears right above the echo area.  The mode line is in inverse video if
-the terminal supports that, starts and ends with dashes, and contains text
-like @samp{Emacs:@: @var{something}}.
+  Each text window's last line is a @dfn{mode line} which describes what
+is going on in that window.  When there is only one text window, the
+mode line appears right above the echo area.  The mode line is in
+inverse video if the terminal supports that, it starts and ends with
+dashes, and it contains text like @samp{Emacs:@: @var{something}}.
 
-  If a mode line has something else in place of @samp{Emacs:@: @var{something}},
-then the window above it is in a special subsystem such as Dired.  The mode
-line then indicates the status of the subsystem.
+  A few special editing modes, such as Dired and Rmail, display
+something else in place of @samp{Emacs:@: @var{something}}.  The rest of
+the mode line still has the usual meaning.
 
   Normally, the mode line looks like this:
 
@@ -158,9 +167,10 @@ buffer's name, what major and minor modes are in use, whether the buffer's
 text has been changed, and how far down the buffer you are currently
 looking.
 
-  @var{ch} contains two stars @samp{**} if the text in the buffer has been
-edited (the buffer is ``modified''), or @samp{--} if the buffer has not been
-edited.  Exception: for a read-only buffer, it is @samp{%%}.
+  @var{ch} contains two stars @samp{**} if the text in the buffer has
+been edited (the buffer is ``modified''), or @samp{--} if the buffer has
+not been edited.  For a read-only buffer, it is @samp{%*} if the buffer
+is modified, and @samp{%%} otherwise.
 
   @var{buf} is the name of the window's @dfn{buffer}.  In most cases
 this is the same as the name of a file you are editing.  @xref{Buffers}.
@@ -178,34 +188,36 @@ if you are looking at the end of the buffer, or @samp{@var{nn}%}, where
 @var{nn} is the percentage of the buffer above the top of the
 window.@refill
 
-  @var{major} is the name of the @dfn{major mode} in effect in the buffer.  At
-any time, each buffer is in one and only one of the possible major modes.
-The major modes available include Fundamental mode (the least specialized),
-Text mode, Lisp mode, and C mode.  @xref{Major Modes}, for details
-of how the modes differ and how to select one.@refill
+  @var{major} is the name of the @dfn{major mode} in effect in the
+buffer.  At any time, each buffer is in one and only one of the possible
+major modes.  The major modes available include Fundamental mode (the
+least specialized), Text mode, Lisp mode, C mode, Texinfo mode, and many
+others.  @xref{Major Modes}, for details of how the modes differ and how
+to select one.@refill
 
-  @var{minor} is a list of some of the @dfn{minor modes} that are turned on
-at the moment in the window's chosen buffer.  @samp{Fill} means that Auto
-Fill mode is on.  @samp{Abbrev} means that Word Abbrev mode is on.
-@samp{Ovwrt} means that Overwrite mode is on.  @xref{Minor Modes}, for more
-information.  @samp{Narrow} means that the buffer being displayed has
-editing restricted to only a portion of its text.  This is not really a
-minor mode, but is like one.  @xref{Narrowing}.  @samp{Def} means that a
-keyboard macro is being defined.  @xref{Keyboard Macros}.
+  Some major modes display additional information after the major mode
+name.  For example, Rmail buffers display the current message number and
+the total number of messages.  Compilation buffers and Shell buffers
+display the status of the subprocess.
 
-  Some buffers display additional information after the minor modes.  For
-example, Rmail buffers display the current message number and the total
-number of messages.  Compilation buffers and Shell mode display the status
-of the subprocess.
+  @var{minor} is a list of some of the @dfn{minor modes} that are turned
+on at the moment in the window's chosen buffer.  For example,
+@samp{Fill} means that Auto Fill mode is on.  @samp{Abbrev} means that
+Word Abbrev mode is on.  @samp{Ovwrt} means that Overwrite mode is on.
+@xref{Minor Modes}, for more information.  @samp{Narrow} means that the
+buffer being displayed has editing restricted to only a portion of its
+text.  This is not really a minor mode, but is like one.
+@xref{Narrowing}.  @samp{Def} means that a keyboard macro is being
+defined.  @xref{Keyboard Macros}.
 
   In addition, if Emacs is currently inside a recursive editing level,
 square brackets (@samp{[@dots{}]}) appear around the parentheses that
 surround the modes.  If Emacs is in one recursive editing level within
 another, double square brackets appear, and so on.  Since recursive
-editing levels affect Emacs globally and not any one buffer, the square
+editing levels affect Emacs globally, not just one buffer, the square
 brackets appear in every window's mode line or not in any of them.
 @xref{Recursive Edit}.@refill
 
-  @xref{Optional Display}, for features that add other handy information
+  @xref{Optional Mode Line}, for features that add other handy information
 to the mode line, such as the current line number of point, the current
-time, and whether mail has arrived for you.
+time, and whether new mail for you has arrived.

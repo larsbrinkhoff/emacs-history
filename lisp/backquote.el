@@ -90,7 +90,7 @@ For example (backquote-list* 'a 'b 'c) => (a b . c)"
   "*Symbol used to represent an unquote (e.g. `,') inside a backquote.")
 
 (defvar backquote-splice-symbol ',@
-  "*Symbol used to represent a splice (e.g. `,'@) inside a backquote.")
+  "*Symbol used to represent a splice (e.g. `,@') inside a backquote.")
 
 ;;;###autoload
 (defmacro backquote (arg)
@@ -160,9 +160,12 @@ Vectors work just like lists.  Nested backquotes are permitted."
 	(setq item (backquote-process (car rest)))
 	(cond
 	 ((= (car item) 2)
-	  (if (null firstlist)
+	  ;; Put the nonspliced items before the first spliced item
+	  ;; into FIRSTLIST.
+	  (if (null lists)
 	      (setq firstlist list
 		    list nil))
+	  ;; Otherwise, put any preceding nonspliced items into LISTS.
 	  (if list
 	      (setq lists (cons (backquote-listify list '(0 . nil)) lists)))
 	  (setq lists (cons (cdr item) lists))

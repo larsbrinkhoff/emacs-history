@@ -57,10 +57,6 @@
 (or window-system
     (error "Can't fontify on an ASCII terminal"))
 
-(or (internal-find-face 'underline)
-    (copy-face 'default 'underline))
-(set-face-underline-p 'underline t)
-
 (defvar font-lock-comment-face
   'italic
   "Face to use for comments.")
@@ -115,6 +111,10 @@ slow things down!")
 
 (defvar font-lock-keywords-case-fold-search nil
   "*Non-nil means the patterns in `font-lock-keywords' are case-insensitive.")
+
+(defvar font-lock-syntax-table nil
+  "*Non-nil means use this syntax table for fontifying.
+If this is nil, the major mode's syntax table is used.")
 
 (defvar font-lock-verbose t
   "*Non-nil means `font-lock-fontify-buffer' should print status messages.")
@@ -215,7 +215,9 @@ slow things down!")
 	(setq prev nil))
       (and prev
 	   (remove-text-properties prev end '(face nil)))
-      (set-buffer-modified-p modified))))
+      (and (buffer-modified-p)
+	   (not modified)
+	   (set-buffer-modified-p nil)))))
 
 ;; This code used to be used to show a string on reaching the end of it.
 ;; It is probably not needed due to later changes to handle strings
@@ -284,50 +286,57 @@ slow things down!")
 	(count 0)
 	(buffer-read-only nil)
 	(modified (buffer-modified-p))
-	first str match face s e allow-overlap-p)
-    (while rest
-      (setq first (car rest) rest (cdr rest))
-      (goto-char start)
-      (cond ((consp first)
-	     (setq str (car first))
-	     (cond ((consp (cdr first))
-		    (setq match (nth 1 first)
-			  face (eval (nth 2 first))
-			  allow-overlap-p (nth 3 first)))
-		   ((symbolp (cdr first))
-		    (setq match 0 allow-overlap-p nil
-			  face (eval (cdr first))))
-		   (t
-		    (setq match (cdr first)
-			  allow-overlap-p nil
-			  face font-lock-keyword-face))))
-	    (t
-	     (setq str first match 0 allow-overlap-p nil
-		   face font-lock-keyword-face)))
-      ;(message "regexp: %s" str)
-      (while (re-search-forward str end t)
-	(setq s (match-beginning match)
-	      e (match-end match))
-	(or s (error "expression did not match subexpression %d" match))
-	;; don't fontify this keyword if we're already in some other context.
-	(or (if allow-overlap-p nil (font-lock-any-properties-p s e))
-	    (if (not (memq allow-overlap-p '(t nil)))
-		(save-excursion
-		  (goto-char s)
-		  (save-restriction
-		    (narrow-to-region s e)
-		    (while (not (eobp))
-		      (let ((next (next-single-property-change (point) 'face)))
-			(if (or (null next) (> next (point-max)))
-			    (setq next (point-max)))
-			(if (not (get-text-property (point) 'face))
-			    (put-text-property (point) next 'face face))
-			(goto-char next)))))
-	      (put-text-property s e 'face face))))
-      (if loudly (message "Fontifying %s... (regexps...%s)"
-			  (buffer-name)
-			  (make-string (setq count (1+ count)) ?.))))
-    (set-buffer-modified-p modified)))
+	first str match face s e allow-overlap-p
+	(old-syntax (syntax-table)))
+    (unwind-protect
+	(progn
+	  (if font-lock-syntax-table
+	      (set-syntax-table font-lock-syntax-table))
+	  (while rest
+	    (setq first (car rest) rest (cdr rest))
+	    (goto-char start)
+	    (cond ((consp first)
+		   (setq str (car first))
+		   (cond ((consp (cdr first))
+			  (setq match (nth 1 first)
+				face (eval (nth 2 first))
+				allow-overlap-p (nth 3 first)))
+			 ((symbolp (cdr first))
+			  (setq match 0 allow-overlap-p nil
+				face (eval (cdr first))))
+			 (t
+			  (setq match (cdr first)
+				allow-overlap-p nil
+				face font-lock-keyword-face))))
+		  (t
+		   (setq str first match 0 allow-overlap-p nil
+			 face font-lock-keyword-face)))
+	    ;(message "regexp: %s" str)
+	    (while (re-search-forward str end t)
+	      (setq s (match-beginning match)
+		    e (match-end match))
+	      (or s (error "expression did not match subexpression %d" match))
+	      ;; don't fontify this keyword if we're already in some other context.
+	      (or (if allow-overlap-p nil (font-lock-any-properties-p s e))
+		  (if (not (memq allow-overlap-p '(t nil)))
+		      (save-excursion
+			(goto-char s)
+			(while (< (point) e)
+			  (let ((next (next-single-property-change (point) 'face
+								   nil e)))
+			    (if (or (null next) (> next e))
+				(setq next e))
+			    (if (not (get-text-property (point) 'face))
+				(put-text-property (point) next 'face face))
+			    (goto-char next))))
+		    (put-text-property s e 'face face))))
+	    (if loudly (message "Fontifying %s... (regexps...%s)"
+				(buffer-name)
+				(make-string (setq count (1+ count)) ?.)))))
+      (set-syntax-table old-syntax))
+    (and (buffer-modified-p)
+	 (not modified)
+	 (set-buffer-modified-p nil))))
 
 ;; The user level functions
 
@@ -585,7 +594,7 @@ This does a lot more highlighting.")
     ;;
     ;; fontify case targets and goto-tags.  This is slow because the
     ;; expression is anchored on the right.
-    "\\(\\(\\sw\\|\\s_\\)+\\):"
+    '("[ \t\n]\\(\\(\\sw\\|\\s_\\)+\\):" . 1)
     ;;
     ;; Fontify variables declared with structures, or typedef names.
     '("}[ \t*]*\\(\\(\\sw\\|\\s_\\)+\\)[ \t]*[,;]"
@@ -634,7 +643,7 @@ This does a lot more highlighting.")
 
 (defvar tex-font-lock-keywords
   (list
-   '("\\(\\\\\\w+\\)" 1 font-lock-keyword-face t)
+   '("\\(\\\\\\([a-zA-Z@]+\\|.\\)\\)" 1 font-lock-keyword-face t)
    '("{\\\\em\\([^}]+\\)}" 1 font-lock-comment-face t)
    '("{\\\\bf\\([^}]+\\)}" 1 font-lock-keyword-face t)
    '("^[ \t\n]*\\\\def[\\\\@]\\(\\w+\\)" 1 font-lock-function-name-face t)
@@ -703,11 +712,23 @@ This does a lot more highlighting.")
       (setq font-lock-keywords
 	    (cond ((eq major-mode 'lisp-mode)	    lisp-font-lock-keywords)
 		  ((eq major-mode 'emacs-lisp-mode) lisp-font-lock-keywords)
-		  ((eq major-mode 'c-mode)	    c-font-lock-keywords)
-		  ((eq major-mode 'c++-c-mode)	    c-font-lock-keywords)
+		  ((eq major-mode 'c-mode)
+		   (make-local-variable 'font-lock-syntax-table)
+		   (setq font-lock-syntax-table
+			 (copy-syntax-table (syntax-table)))
+		   (modify-syntax-entry ?_ "w" font-lock-syntax-table)
+		   c-font-lock-keywords)
+		  ((eq major-mode 'c++-c-mode)
+		   (make-local-variable 'font-lock-syntax-table)
+		   (setq font-lock-syntax-table
+			 (copy-syntax-table (syntax-table)))
+		   (modify-syntax-entry ?_ "w" font-lock-syntax-table)
+		   c-font-lock-keywords)
 		  ((eq major-mode 'c++-mode)	    c++-font-lock-keywords)
 		  ((eq major-mode 'perl-mode) 	    perl-font-lock-keywords)
-		  ((eq major-mode 'tex-mode)        tex-font-lock-keywords)
+		  ((eq major-mode 'plain-tex-mode)  tex-font-lock-keywords)
+		  ((eq major-mode 'latex-mode)      tex-font-lock-keywords)
+		  ((eq major-mode 'slitex-mode)     tex-font-lock-keywords)
 		  ((eq major-mode 'texinfo-mode)    texi-font-lock-keywords)
 		  ((eq major-mode 'shell-mode)      shell-font-lock-keywords)
 		  ((eq major-mode 'dired-mode)      dired-font-lock-keywords)

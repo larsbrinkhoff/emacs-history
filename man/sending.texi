@@ -74,7 +74,7 @@ you in order to send the message properly.
 
   Mail mode provides a few commands to help you edit some header fields,
 and some are preinitialized in the buffer automatically at times.  You can
-insert or edit any header fields using ordinary editing commands.
+insert and edit header fields using ordinary editing commands.
 
   The line in the buffer that says
 
@@ -105,11 +105,14 @@ Please ignore this message.
 @section Mail Header Fields
 @cindex headers (of mail message)
 
-  There are several header fields you can use in the @samp{*mail*}
-buffer.  Each header field starts with a field name at the beginning of
-a line, terminated by a colon.  Upper and lower case are equivalent in
-field names (and in mailing addresses also).  After the colon and
-optional whitespace comes the contents of the field.
+  A header field in the @samp{*mail*} buffer starts with a field name at
+the beginning of a line, terminated by a colon.  Upper and lower case
+are equivalent in field names (and in mailing addresses also).  After
+the colon and optional whitespace comes the contents of the field.
+
+  You can use any name you like for a header field, but normally people
+use only standard field names with accepted meanings.  Here is a table
+of fields commonly used in outgoing messages.
 
 @table @samp
 @item To
@@ -139,9 +142,16 @@ the variable @code{mail-self-blind} to @code{t}.
 @item FCC
 This field contains the name of one file (in system mail file format) to
 which a copy of the message should be appended when the message is
-sent.  Do not output directly into an Rmail file with FCC; instead,
+sent.  Do not output directly into an Rmail file with @samp{FCC}; instead,
 output to an inbox file and ``get new mail'' from that inbox file into
 the Rmail file.  @xref{Rmail Inbox}.
+
+@vindex mail-archive-file-name
+To put a fixed file name as in @samp{FCC} field each time you start
+editing an outgoing message, set the variable
+@code{mail-archive-file-name} to that file name.  Unless you remove the
+@samp{FCC} field before sending, the message will be written into that
+file when it is sent.
 
 @item From
 Use the @samp{From} field to say who you are, when the account you are
@@ -157,27 +167,25 @@ By adding a @samp{Reply-to} field to your header, you can work around
 any problems your @samp{From} address may cause for replies.
 
 @vindex mail-default-reply-to
-If you want to put the same @samp{Reply-to} address into every outgoing
-message, set the variable @code{mail-default-reply-to} to that address
-(as a string).
+To put a fixed @samp{Reply-to} address into every outgoing message, set
+the variable @code{mail-default-reply-to} to that address (as a string).
+Then @code{mail} initializes the message with a @samp{Reply-to} field as
+specified.  You can delete or alter that header field before you send
+the message, if you wish.
 
 @item In-reply-to
 This field contains a piece of text describing a message you are
 replying to.  Some mail systems can use this information to correlate
 related pieces of mail.  Normally this field is filled in by Rmail
-when you are replying to a message in Rmail, and you never need to
+when you reply to a message in Rmail, and you never need to
 think about it (@pxref{Rmail}).
 @end table
 
-@noindent
-The @samp{To}, @samp{CC}, @samp{BCC} and @samp{FCC} fields can appear
-any number of times, to specify many places to send the message.
-
-@noindent
-The @samp{To}, @samp{CC}, and @samp{BCC} fields can have continuation
-lines.  All the lines starting with whitespace, following the line on
-which the field starts, are considered part of the field.  For
-example,@refill
+  The @samp{To}, @samp{CC}, @samp{BCC} and @samp{FCC} fields can appear
+any number of times, to specify many places to send the message.  The
+@samp{To}, @samp{CC}, and @samp{BCC} fields can have continuation lines.
+All the lines starting with whitespace, following the line on which the
+field starts, are considered part of the field.  For example,@refill
 
 @example
 @group
@@ -185,13 +193,6 @@ To: foo@@here.net, this@@there.net,
   me@@gnu.cambridge.mass.usa.earth.spiral3281
 @end group
 @end example
-
-@vindex mail-archive-file-name
-  If the variable @code{mail-archive-file-name} is non-@code{nil}, it
-should be a string naming a file; every time you start to edit a message
-to send, the message starts out with an @samp{FCC} field specifying that
-file.  Unless you remove the @samp{FCC} field before sending, the
-message will be written into that file when it is sent.
 
 @node Mail Aliases
 @section Mail Aliases
@@ -208,21 +209,34 @@ when they occur in the @samp{To}, @samp{CC}, and @samp{BCC} fields.
 format:
 
 @example
-alias @var{shortaddress} @var{fulladdress}
+alias @var{shortaddress} @var{fulladdresses}
 @end example
 
 @noindent
-For instance, if you want to use @code{maingnu} as a short form of the
-address @code{gnu@@prep.ai.mit.edu}, put in the line:@refill
+Here @var{fulladdresses} stands for one or more mail addresses for
+@var{shortaddress} to expand into.  Separate multiple addresses with
+spaces; if an address contains a space, quote the whole address with a
+pair of double-quotes.
+
+For instance, to make @code{maingnu} stand for
+@code{gnu@@prep.ai.mit.edu} plus a local address of your own, put in
+this line:@refill
 
 @example
-alias maingnu gnu@@prep.ai.mit.edu
+alias maingnu gnu@@prep.ai.mit.edu local-gnu
+@end example
+
+Emacs also recognizes include commands in @samp{.mailrc} files.
+They look like this:
+
+@example
+source @var{filename}
 @end example
 
 @noindent
 The file @file{~/.mailrc} is used primarily by other mail-reading
 programs; it can contain various other commands.  Emacs ignores
-everything in it except for alias definitions.
+everything in it except for alias definitions and include commands.
 
 @findex define-mail-alias
   Another way to define a mail alias, within Emacs alone, is with the
@@ -297,6 +311,9 @@ message was issued with Rmail.
 @item C-c C-q
 Fill all paragraphs of yanked old messages, each individually
 (@code{mail-fill-yanked-message}).
+@item M-x ispell-message
+Do spelling correction on the message text, but not on citations from
+other messages.
 @end table
 
 @kindex C-c C-s @r{(Mail mode)}
@@ -318,28 +335,28 @@ using it.  This is the usual way to send the message.
 @findex mail-subject
 @kindex C-c C-f C-c @r{(Mail mode)}
 @findex mail-cc
-  Mail mode provides some other special commands that are useful for
-editing the headers and text of the message before you send it.  There are
-three commands defined to move point to particular header fields, all based
-on the prefix @kbd{C-c C-f} (@samp{C-f} is for ``field'').  They are
-@kbd{C-c C-f C-t} (@code{mail-to}) to move to the @samp{To} field, @kbd{C-c
-C-f C-s} (@code{mail-subject}) for the @samp{Subject} field, and @kbd{C-c
-C-f C-c} (@code{mail-cc}) for the @samp{CC} field.  These fields have
-special motion commands because they are the most common fields for the
-user to want to edit.
+  Mail mode provides special commands for editing the headers and text
+of the message before you send it.  There are three commands defined to
+move point to particular header fields, all based on the prefix @kbd{C-c
+C-f} (@samp{C-f} is for ``field'').  They are @kbd{C-c C-f C-t}
+(@code{mail-to}) to move to the @samp{To} field, @kbd{C-c C-f C-s}
+(@code{mail-subject}) for the @samp{Subject} field, and @kbd{C-c C-f
+C-c} (@code{mail-cc}) for the @samp{CC} field.  If the field in question
+does not exist, these commands create one.  We provide special motion
+commands for these particular fields because they are the fields users
+most often want to edit.
 
 @kindex C-c C-w @r{(Mail mode)}
 @findex mail-signature
+@vindex mail-signature
   @kbd{C-c C-w} (@code{mail-signature}) adds a standard piece text at
 the end of the message to say more about who you are.  The text comes
-from the file @file{.signature} in your home directory.
-
-@vindex mail-signature
-  To insert signatures automatically, set the variable
-@code{mail-signature} non-@code{nil}; then starting a mail message
-automatically inserts the contents of your @file{.signature} file.  If
-you want to omit your signature from a particular message, delete it
-from the buffer before you send the message.
+from the file @file{.signature} in your home directory.  To insert
+signatures automatically, set the variable @code{mail-signature}
+non-@code{nil}; then starting a mail message automatically inserts the
+contents of your @file{.signature} file.  If you want to omit your
+signature from a particular message, delete it from the buffer before
+you send the message.
 
 @kindex C-c C-y @r{(Mail mode)}
 @findex mail-yank-original
@@ -349,10 +366,10 @@ the text of the message you are replying to.  Normally it indents each line
 of that message four spaces and eliminates most header fields.  A numeric
 argument specifies the number of spaces to indent.  An argument of just
 @kbd{C-u} says not to indent at all and not to eliminate anything.
-@kbd{C-c C-y} always uses the current message from the @samp{RMAIL} buffer,
-so you can insert several old messages by selecting one in @samp{RMAIL},
+@kbd{C-c C-y} always uses the current message from the Rmail buffer,
+so you can insert several old messages by selecting one in Rmail,
 switching to @samp{*mail*} and yanking it, then switching back to
-@samp{RMAIL} to select another.@refill
+Rmail to select another.
 
 @vindex mail-yank-prefix
   You can specify the text for @kbd{C-c C-y} to insert at the beginning
@@ -366,10 +383,26 @@ inserted lines, regardless of the value of @code{mail-yank-prefix}.
   After using @kbd{C-c C-y}, you can use the command @kbd{C-c C-q}
 (@code{mail-fill-yanked-message}) to fill the paragraphs of the yanked
 old message or messages.  One use of @kbd{C-c C-q} fills all such
-paragraphs, each one individually.
+paragraphs, each one individually.  @xref{Filling}.
 
-  Mail mode defines the character @samp{%} as part of a word; this is
+@findex ispell-message
+  You can do spelling correction on the message text you have written
+with the command @kbd{M-x ispell-message}.  If you have yanked an
+incoming message into the outgoing draft, this command skips what was
+yanked, but it checks the text that you yourself inserted.  (It looks
+for indentation or @code{mail-yank-prefix} to distinguish the cited
+lines from your input.)  @xref{Spelling}.
+
+  Mail mode defines the character @samp{%} as a word separator; this is
 helpful for using the word commands to edit mail addresses.
+
+  Mail mode is normally used in buffers set up automatically by the
+@code{mail} command and related commands.  However, you can also switch
+to Mail mode in a file-visiting buffer.  That is a useful thing to do if
+you have saved draft message text in a file.  In a file-visiting buffer,
+@kbd{C-c C-c} does not clear the modified flag, because only saving the
+file should do that.  As a result, you don't get a warning about trying
+to send the same message twice.
 
 @vindex mail-mode-hook
 @vindex mail-setup-hook
@@ -397,9 +430,16 @@ you are discussing something subversive.
 
   The idea behind this feature is that the suspicion that the NSA snoops
 on all electronic mail messages that contain keywords suggesting they
-might be interested.  (The NSA says they don't, but there is no way to
-be certain.)  The idea is that if lots of people add suspicious words to
-their messages, the NSA will get so busy with spurious input that they
-will have to give up reading it all.
+might be interested.  (The NSA says they don't, but we can't take their
+word for it.)  The idea is that if lots of people add suspicious words
+to their messages, the NSA will get so busy with spurious input that
+they will have to give up reading it all.
+
+  Here's how to insert spook keywords automatically whenever you start
+entering an outgoing message:
+
+@example
+(add-hook 'mail-setup-hook 'spook)
+@end example
 
   Whether or not this confuses the NSA, it at least amuses people.

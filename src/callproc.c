@@ -20,9 +20,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <signal.h>
 #include <errno.h>
-#include <stdio.h>
 
 #include <config.h>
+#include <stdio.h>
 
 extern int errno;
 extern char *strerror ();
@@ -42,6 +42,7 @@ extern char *strerror ();
 #endif
 
 #ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
+#include "msdos.h"
 #define INCLUDED_FCNTL
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -485,7 +486,9 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
      int nargs;
      register Lisp_Object *args;
 {
-  register Lisp_Object filename_string, start, end;
+  struct gcpro gcpro1;
+  Lisp_Object filename_string;
+  register Lisp_Object start, end;
 #ifdef MSDOS
   char *tempfile;
 #else
@@ -518,6 +521,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   mktemp (tempfile);
 
   filename_string = build_string (tempfile);
+  GCPRO1 (filename_string);
   start = args[0];
   end = args[1];
 #ifdef MSDOS
@@ -535,7 +539,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 
   args[3] = filename_string;
 
-  return unbind_to (count, Fcall_process (nargs - 2, args + 2));
+  RETURN_UNGCPRO (unbind_to (count, Fcall_process (nargs - 2, args + 2)));
 }
 
 #ifndef VMS /* VMS version is in vmsproc.c.  */
@@ -846,7 +850,6 @@ init_callproc ()
   register char * sh;
   Lisp_Object tempdir;
 
-#ifndef MSDOS
   if (initialized && !NILP (Vinstallation_directory))
     {
       /* Add to the path the lib-src subdir of the installation dir.  */
@@ -855,8 +858,11 @@ init_callproc ()
 			       Vinstallation_directory);
       if (NILP (Fmember (tem, Vexec_path)))
 	{
+#ifndef MSDOS
+	  /* MSDOS uses wrapped binaries, so don't do this.  */
 	  Vexec_path = nconc2 (Vexec_path, Fcons (tem, Qnil));
 	  Vexec_directory = Ffile_name_as_directory (tem);
+#endif
 
 	  /* If we use ../lib-src, maybe use ../etc as well.
 	     Do so if ../etc exists and has our DOC-... file in it.  */
@@ -892,7 +898,6 @@ init_callproc ()
 	    Vdata_directory = newdir;
 	}
     }
-#endif
 
   tempdir = Fdirectory_file_name (Vexec_directory);
   if (access (XSTRING (tempdir)->data, 0) < 0)

@@ -445,7 +445,7 @@ done
 #### names of the m/*.h and s/*.h files we should use.
 
 ### Canonicalize the configuration name.
-echo "Checking the configuration name."
+echo "Checking the configuration name"
 if canonical=`${srcdir}/config.sub "${configuration}"` ; then : ; else
   exit $?
 fi
@@ -475,6 +475,20 @@ fi
 
 machine='' opsys='' unported='false'
 case "${canonical}" in
+
+  ## NetBSD ports
+  *-*-netbsd* )
+    opsys=netbsd
+    case "${canonical}" in
+      i[345]86-*-netbsd*) machine=intel386 ;;
+      m68k-*-netbsd*)
+			# This is somewhat bogus.
+			machine=hp9000s300 ;;
+      mips-*-netbsd*)	machine=pmax ;;
+      ns32k-*-netbsd*)	machine=ns32000 ;;
+      sparc-*-netbsd*)	machine=sparc ;;
+    esac
+  ;;
 
   ## Alliant machines
   ## Strictly speaking, we need the version of the alliant operating
@@ -549,12 +563,14 @@ case "${canonical}" in
   ;;
 
   ## Convex
-  *-convex-bsd* )
+  *-convex-bsd* | *-convex-convexos* )
     machine=convex opsys=bsd4-3
+    ## Prevents suprious white space in makefiles - d.m.cooke@larc.nasa.gov
+    NON_GNU_CPP="cc -E -P"
   ;;
 
   ## Cubix QBx/386
-  i386-cubix-sysv* )
+  i[345]86-cubix-sysv* )
     machine=intel386 opsys=usg5-3
   ;;
 
@@ -658,9 +674,6 @@ case "${canonical}" in
   m68*-hp-bsd* )
     machine=hp9000s300 opsys=bsd4-3
   ;;
-  m68*-hp-netbsd* )
-    machine=hp9000s300 opsys=netbsd
-  ;;
   ## HP/UX 7, 8 and 9 are supported on these machines.
   m68*-hp-hpux* )
     case "`uname -r`" in
@@ -709,22 +722,22 @@ case "${canonical}" in
   ;;
 
   ## IBM machines
-  i386-ibm-aix1.1* )
+  i[345]86-ibm-aix1.1* )
     machine=ibmps2-aix opsys=usg5-2-2
   ;;
-  i386-ibm-aix1.[23]* | i386-ibm-aix* )
+  i[345]86-ibm-aix1.[23]* | i[345]86-ibm-aix* )
     machine=ibmps2-aix opsys=usg5-3
   ;;
   i370-ibm-aix*)
     machine=ibm370aix opsys=usg5-3
   ;;
-  rs6000-ibm-aix3.1* )
+  rs6000-ibm-aix3.1* | powerpc-ibm-aix3.1*  )
     machine=ibmrs6000 opsys=aix3-1
   ;;
-  rs6000-ibm-aix3.2.5)
+  rs6000-ibm-aix3.2.5 | powerpc-ibm-aix3.2.5 )
     machine=ibmrs6000 opsys=aix3-2-5
   ;;
-  rs6000-ibm-aix3.2* | rs6000-ibm-aix* )
+  rs6000-ibm-aix* | powerpc-ibm-aix* )
     machine=ibmrs6000 opsys=aix3-2
   ;;
   romp-ibm-bsd4.3* )
@@ -758,29 +771,31 @@ case "${canonical}" in
   ;;
 
   ## Intel 386 machines where we do care about the manufacturer
-  i[34]86-intsys-sysv* )
+  i[345]86-intsys-sysv* )
     machine=is386 opsys=usg5-2-2
   ;;
 
   ## Prime EXL
-  i386-prime-sysv* )
+  i[345]86-prime-sysv* )
     machine=i386 opsys=usg5-3
   ;;
 
   ## Sequent Symmetry
-  i386-sequent-bsd* )
+  i[345]86-sequent-bsd* )
     machine=symmetry opsys=bsd4-3
   ;;
 
   ## Unspecified sysv on an ncr machine defaults to svr4.2.
   ## (Plain usg5-4 doesn't turn on POSIX signals, which we need.)
-  i[34]86-ncr-sysv* )
+  i[345]86-ncr-sysv* )
     machine=intel386 opsys=usg5-4-2
   ;;
 
   ## Intel 860
   i860-*-sysv4* )
     machine=i860 opsys=usg5-4
+    NON_GNU_CC="/bin/cc" # Ie, not the one in /usr/ucb/cc.
+    NON_GNU_CPP="/usr/ccs/lib/cpp" # cc -E tokenizes macro expansion.
   ;;
 
   ## Masscomp machines
@@ -821,7 +836,7 @@ case "${canonical}" in
   ;;
 
   ## NeXT
-  m68*-next-* | i[34]86-next-* )
+  m68*-next-* | i[345]86-next-* )
     machine=next opsys=mach2
   ;;
 
@@ -872,7 +887,7 @@ case "${canonical}" in
   mips-siemens-sysv* )
     machine=mips-siemens opsys=usg5-4
     NON_GNU_CC=/usr/ccs/bin/cc
-    NON_GNU_CPP="/usr/ccs/bin/cc -E"
+    NON_GNU_CPP=/usr/ccs/lib/cpp
   ;;
 
   ## Silicon Graphics machines
@@ -904,11 +919,11 @@ case "${canonical}" in
   m68*-sony-newsos3*)
     machine=news opsys=bsd4-3
   ;;
-  mips-sony-bsd* )
+  mips-sony-bsd* | mips-sony-newsos4* )
     machine=news-risc opsys=bsd4-3
   ;;
   mips-sony-newsos* )
-    machine=mips opsys=newsos5
+    machine=news-risc opsys=newsos5
   ;;
 
   ## Stride
@@ -917,18 +932,19 @@ case "${canonical}" in
   ;;
 
   ## Suns
-  *-sun-sunos* | *-sun-bsd* | *-sun-solaris* )
+  *-sun-sunos* | *-sun-bsd* | *-sun-solaris* | i[345]86-*-solaris2* | i[345]86-*-sunos5* )
     case "${canonical}" in
       m68*-sunos1* )	machine=sun1 ;;
       m68*-sunos2* )	machine=sun2 ;;
       m68* )		machine=sun3 ;;
-      i[34]86* )	machine=sun386 ;;
+      i[345]86-sun-sunos[34]* )	machine=sun386 ;;
+      i[345]86-*-* )     machine=intel386 ;;
       sparc* )		machine=sparc ;;
       * )		unported=true ;;
     esac
     case "${canonical}" in
       ## The Sun386 didn't get past 4.0.
-      i386-*-sunos4	  ) opsys=sunos4-0 ;;
+      i[345]86-*-sunos4	  ) opsys=sunos4-0 ;;
       *-sunos4.0*	  ) opsys=sunos4-0 ;;
       *-sunos4.1.3*	  ) opsys=sunos4-1-3
 		NON_GCC_TEST_OPTIONS=-Bstatic
@@ -941,6 +957,10 @@ case "${canonical}" in
 		;;
       *-sunos5.3* | *-solaris2.3* )
 		opsys=sol2-3
+		NON_GNU_CPP=/usr/ccs/lib/cpp
+		;;
+      *-sunos5.4* | *-solaris2.4* )
+		opsys=sol2-4
 		NON_GNU_CPP=/usr/ccs/lib/cpp
 		;;
       *-sunos5* | *-solaris* )
@@ -1002,7 +1022,7 @@ case "${canonical}" in
       *-bsd4.1* ) 					opsys=bsd4-1 ;;
       *-bsd4.2* | *-ultrix[0-3].* | *-ultrix4.0* )	opsys=bsd4-2 ;;
       *-bsd4.3* | *-ultrix* ) 				opsys=bsd4-3 ;;
-      *-bsd386* )					opsys=bsd386 ;;
+      *-bsd386* | *-bsdi* )				opsys=bsd386 ;;
       *-sysv[01]* | *-sysvr[01]* ) 			opsys=usg5-0 ;;
       *-sysv2* | *-sysvr2* )				opsys=usg5-2 ;;
       *-vms* ) 						opsys=vms ;;
@@ -1023,7 +1043,7 @@ case "${canonical}" in
   ;;
 
   ## Intel 386 machines where we don't care about the manufacturer
-  i[34]86-*-* )
+  i[345]86-*-* )
     machine=intel386
     case "${canonical}" in
       *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
@@ -1034,11 +1054,10 @@ case "${canonical}" in
       *-esix* )			opsys=esix ;;
       *-xenix* )		opsys=xenix ;;
       *-linux* )		opsys=linux ;;
-      *-sco3.2v4* )		opsys=sco4 ;;
-      *-bsd386* )		opsys=bsd386 ;;
+      *-sco3.2v4* )		opsys=sco4 ; NON_GNU_CPP=/lib/cpp  ;;
+      *-bsd386* | *-bsdi* )	opsys=bsd386 ;;
       *-386bsd* )	        opsys=386bsd ;;
       *-freebsd* )	        opsys=freebsd ;;
-      *-netbsd* )	        opsys=netbsd ;;
       *-nextstep* )             opsys=mach2 ;;
       ## Otherwise, we'll fall through to the generic opsys code at the bottom.
     esac
@@ -1772,7 +1791,7 @@ ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_LONG_FILE_NAMES\${ac_dB}HAVE_LONG_FILE_
 
 
 #### Choose a window system.
-echo "Checking window system."
+echo "checking for specified window system"
 
 window_system=''
 case "${with_x}" in
@@ -2078,9 +2097,19 @@ esac
 
 #### Extract some information from the operating system and machine files.
 
-echo "Examining the machine- and system-dependent files to find out"
+echo "examining the machine- and system-dependent files to find out"
 echo " - which libraries the lib-src programs will want, and"
-echo " - whether the GNU malloc routines are usable."
+echo " - whether the GNU malloc routines are usable"
+
+### First figure out CFLAGS (which we use for running the compiler here)
+### and REAL_CFLAGS (which we use for real compilation).
+### The two are the same except on a few systems, where they are made
+### different to work around various lossages.  For example,
+### GCC 2.5 on Linux needs them to be different because it treats -g
+### as implying static linking.
+
+### If the CFLAGS env var is specified, we use that value
+### instead of the default.
 
 ### It's not important that this name contain the PID; you can't run
 ### two configures in the same directory and have anything work
@@ -2139,11 +2168,25 @@ configure___ system_malloc=no
 #define C_OPTIMIZE_SWITCH -O
 #endif
 
+#ifdef THIS_IS_CONFIGURE
+
+/* Get the CFLAGS for tests in configure.  */
 #ifdef __GNUC__
 configure___ CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH '${CFLAGS}'
 #else
 configure___ CFLAGS=C_DEBUG_SWITCH '${CFLAGS}'
 #endif
+
+#else /* not THIS_IS_CONFIGURE */
+
+/* Get the CFLAGS for real compilation.  */
+#ifdef __GNUC__
+configure___ REAL_CFLAGS=C_DEBUG_SWITCH C_OPTIMIZE_SWITCH '${CFLAGS}'
+#else
+configure___ REAL_CFLAGS=C_DEBUG_SWITCH '${CFLAGS}'
+#endif
+
+#endif /* not THIS_IS_CONFIGURE */
 ' > ${tempcname}
 # The value of CPP is a quoted variable reference, so we need to do this
 # to get its actual value...
@@ -2151,6 +2194,13 @@ CPP=`eval "echo $CPP"`
 eval `${CPP} -Isrc ${tempcname} \
        | grep 'configure___' \
        | sed -e 's/^configure___ \([^=]*=\)\(.*\)$/\1"\2"/'`
+if [ "x$CFLAGS" = x ]; then
+  eval `${CPP} -Isrc -DTHIS_IS_CONFIGURE ${tempcname} \
+	 | grep 'configure___' \
+	 | sed -e 's/^configure___ \([^=]*=\)\(.*\)$/\1"\2"/'`
+else
+  REAL_CFLAGS="$CFLAGS"
+fi
 rm ${tempcname}
 
 ### Compute the unexec source name from the object name.
@@ -2244,7 +2294,6 @@ fi
 
 # We change CFLAGS temporarily so that C_SWITCH_X_SITE gets used
 # for the tests that follow.
-orig_cflags="$CFLAGS"
 
 if test "${HAVE_X11}" = "yes"; then
   DEFS="$C_SWITCH_X_SITE $DEFS"
@@ -2322,6 +2371,39 @@ fi
 rm -f conftest*
 
 fi
+
+# If netdb.h doesn't declare h_errno, we must declare it by hand.
+test -n "$silent" || echo "checking for declaration of h_errno in netdb.h"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+#include <netdb.h>
+int main() { return 0; }
+int t() { 
+int
+foo ()
+{
+  return h_errno;
+}
+; return 0; }
+EOF
+if eval $ac_compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_H_ERRNO"
+echo "#define" HAVE_H_ERRNO "1" >> confdefs.h
+DEFS="$DEFS -DHAVE_H_ERRNO=1"
+ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_H_ERRNO\${ac_dB}HAVE_H_ERRNO\${ac_dC}1\${ac_dD}
+\${ac_uA}HAVE_H_ERRNO\${ac_uB}HAVE_H_ERRNO\${ac_uC}1\${ac_uD}
+\${ac_eA}HAVE_H_ERRNO\${ac_eB}HAVE_H_ERRNO\${ac_eC}1\${ac_eD}
+"
+}
+
+
+fi
+rm -f conftest*
+
 
 # The Ultrix 4.2 mips builtin alloca declared by alloca.h only works
 # for constant arguments.  Useless!
@@ -2653,8 +2735,8 @@ ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_LIBM\${ac_dB}HAVE_LIBM\${ac_dC}1\${ac_d
 fi
 
 for ac_func in gettimeofday gethostname dup2 rename closedir mkdir rmdir \
-random bcopy bcmp logb frexp fmod drem ftime res_init setsid strerror \
-fpathconf
+random lrand48 bcopy bcmp logb frexp fmod drem ftime res_init setsid \
+strerror fpathconf
 do
 ac_tr_func=HAVE_`echo $ac_func | tr '[a-z]' '[A-Z]'`
 test -n "$silent" || echo "checking for ${ac_func}"
@@ -2770,8 +2852,8 @@ ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_INET_SOCKETS\${ac_dB}HAVE_INET_SOCKETS\
 
 fi
 
-# Restore the original CFLAGS value.
-CFLAGS="$orig_cflags"
+# Set up the CFLAGS for real compilation, so we can substitute it.
+CFLAGS="$REAL_CFLAGS"
 
 
 #### Find out which version of Emacs this is.

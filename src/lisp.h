@@ -861,7 +861,7 @@ typedef unsigned char UCHAR;
  `doc' is documentation for the user.
 */
 
-#ifndef __STDC__
+#if !defined (__STDC__) || defined (USE_NONANSI_DEFUN)
 #define DEFUN(lname, fnname, sname, minargs, maxargs, prompt, doc) \
   Lisp_Object fnname (); \
   struct Lisp_Subr sname = {fnname, minargs, maxargs, lname, prompt, 0}; \
@@ -1069,23 +1069,30 @@ struct gcpro
   gcpro4.next = &gcpro3; gcpro4.var = &varname4; gcpro4.nvars = 1; \
   gcprolist = &gcpro4; }
 
+#define GCPRO5(varname1, varname2, varname3, varname4, varname5) \
+ {gcpro1.next = gcprolist; gcpro1.var = &varname1; gcpro1.nvars = 1; \
+  gcpro2.next = &gcpro1; gcpro2.var = &varname2; gcpro2.nvars = 1; \
+  gcpro3.next = &gcpro2; gcpro3.var = &varname3; gcpro3.nvars = 1; \
+  gcpro4.next = &gcpro3; gcpro4.var = &varname4; gcpro4.nvars = 1; \
+  gcpro5.next = &gcpro4; gcpro5.var = &varname5; gcpro5.nvars = 1; \
+  gcprolist = &gcpro5; }
+
 /* Call staticpro (&var) to protect static variable `var'. */
 
 void staticpro();
   
 #define UNGCPRO (gcprolist = gcpro1.next)
 
-/* Evaluate expr, UNGCPRO, and then return the value of expr.  I used
-   to have a `do ... while' clause around this to make it interact
-   with semicolons correctly, but this makes some compilers complain
-   that the while is never reached.  */
-#define RETURN_UNGCPRO(expr)		\
-    {					\
-      Lisp_Object ret_ungc_val;		\
-      ret_ungc_val = (expr);		\
-      UNGCPRO;				\
-      return ret_ungc_val;		\
-    }
+/* Evaluate expr, UNGCPRO, and then return the value of expr.  */
+#define RETURN_UNGCPRO(expr)			\
+do						\
+    {						\
+      Lisp_Object ret_ungc_val;			\
+      ret_ungc_val = (expr);			\
+      UNGCPRO;					\
+      return ret_ungc_val;			\
+    }						\
+while (1)
 
 /* Defined in data.c */
 extern Lisp_Object Qnil, Qt, Qquote, Qlambda, Qsubr, Qunbound;
@@ -1435,5 +1442,5 @@ extern void xfree ();
 
 extern char *egetenv ();
  
-/* Return the name of the machine we're running on.  */
-extern char *get_system_name ();
+/* Set up the name of the machine we're running on.  */
+extern void init_system_name ();

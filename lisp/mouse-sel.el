@@ -18,7 +18,7 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;;; Commentary: ===========================================================
+;;; Commentary:
 ;;
 ;; This module provides multi-click mouse support for GNU Emacs versions
 ;; 19.18 and later.  I've tried to make it behave more like standard X
@@ -165,15 +165,15 @@
 
 (defvar mouse-sel-leave-point-near-mouse t
   "*Leave point near last mouse position.
-If non-nil, \\[mouse-select] and \\[mouse-extend] will leave point at the end
+If non-nil, \\[mouse-select] and \\[mouse-extend] leave point at the end
 of the region nearest to where the mouse last was.
-If nil, point will always be placed at the beginning of the region.")
+If nil, point is always placed at the beginning of the region.")
 
 (defvar mouse-sel-retain-highlight nil
-  "*Retain highlight on mouse-drag-overlay.
+  "*Retain highlight after dragging is finished.
 If non-nil, regions selected using \\[mouse-select] and \\[mouse-extend] will
 remain highlighted.
-If nil, highlighting will be turned off when the mouse is lifted.")
+If nil, highlighting turns off when you release the mouse button.")
 
 (defvar mouse-sel-cycle-clicks t
   "*If non-nil, \\[mouse-select] cycles the click-counts after 3 clicks.
@@ -208,12 +208,12 @@ Called with no argument.")
   (if (fboundp 'x-selection-owner-p)
       'x-selection-owner-p 
     nil)
-  "Function to check whether emacs still owns the selection.
+  "Function to check whether Emacs still owns the selection.
 Called with no arguments.")
 
 (defun mouse-sel-determine-selection-type (NCLICKS)
-  "Determine what `thing' `mouse-sel' should operate on.
-The first argument is NCLICKS, is the number of consecutive
+  "Determine what \"thing\" `mouse-sel' should operate on.
+The first argument, NCLICKS, is the number of consecutive
 mouse clicks at the same position."
   (let* ((next-char (char-after (point)))
 	 (char-syntax (if next-char (char-syntax next-char)))
@@ -229,7 +229,8 @@ mouse clicks at the same position."
 (defun mouse-select (EVENT)
   "Set region/selection using the mouse.
 
-On click, point & mark are set to click position, and mark is disabled.
+Clicking sets point to click position, and deactivates the mark
+if you are in Transient Mark mode.
 Dragging extends region/selection.
 
 Double-clicking on word constituents selects words.
@@ -263,8 +264,9 @@ See documentation for mouse-select for more details.
 This should be bound to a down-mouse event."
   (interactive "e")
   (if EVENT (select-window (posn-window (event-end EVENT))))
-  (let* ((min (if mark-active (region-beginning) (point)))
-	 (max (if mark-active (region-end) (point)))
+  (let* ((use-region (and (or EVENT transient-mark-mode) mark-active))
+	 (min (if use-region (region-beginning) (point)))
+	 (max (if use-region (region-end) (point)))
 	 (orig-window (selected-window))
 	 (orig-window-frame (window-frame orig-window))
 	 (top (nth 1 (window-edges orig-window)))
@@ -317,22 +319,21 @@ This should be bound to a down-mouse event."
 		  (let ((end-row (cdr (cdr (mouse-position)))))
 		    (cond
 		     ((and end-row (not (bobp)) (< end-row top))
-		      (mouse-scroll-subr (- end-row top)
+		      (mouse-scroll-subr orig-window (- end-row top)
 					 mouse-drag-overlay max))
 		     ((and end-row (not (eobp)) (>= end-row bottom))
-		      (mouse-scroll-subr (1+ (- end-row bottom))
+		      (mouse-scroll-subr orig-window (1+ (- end-row bottom))
 					 mouse-drag-overlay min))
 		     )))
 
 		 ;; On the mode line
 		 ((eq (posn-point end) 'mode-line)
-		  (mouse-scroll-subr 1 mouse-drag-overlay min))
+		  (mouse-scroll-subr orig-window 1 mouse-drag-overlay min))
 
 		 ;; In original window
 		 (t (goto-char (posn-point end)))
 
 		 )
-
 		;; Determine direction of drag
 		(cond
 		 ((and (not direction) (not (eq min max)))

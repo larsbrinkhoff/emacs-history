@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Indentation, Text, Major Modes, Top
 @chapter Indentation
@@ -35,12 +35,11 @@ Indent from point to the next prespecified tab stop column
 Indent from point to under an indentation point in the previous line.
 @end table
 
-@kindex TAB
-@cindex indentation for programs
   Most programming languages have some indentation convention.  For Lisp
 code, lines are indented according to their nesting in parentheses.  The
 same general idea is used for C code, though many details are different.
 
+@kindex TAB
   Whatever the language, to indent a line, use the @key{TAB} command.  Each
 major mode defines this command to perform the sort of indentation
 appropriate for the particular language.  In Lisp mode, @key{TAB} aligns
@@ -62,10 +61,6 @@ indents to the next tab stop column.  You can set the tab stops with
 
 @node Indentation Commands, Tab Stops, Indentation, Indentation
 @section Indentation Commands and Techniques
-@c ??? Explain what Emacs has instead of space-indent-flag.
-
-  If you just want to insert a tab character in the buffer, you can type
-@kbd{C-q @key{TAB}}.
 
 @kindex M-m
 @findex back-to-indentation
@@ -76,6 +71,9 @@ positions point at the first nonblank character on the line.
   To insert an indented line before the current line, do @kbd{C-a C-o
 @key{TAB}}.  To make an indented line after the current line, use @kbd{C-e
 @key{LFD}}.
+
+  If you just want to insert a tab character in the buffer, you can type
+@kbd{C-q @key{TAB}}.
 
 @kindex C-M-o
 @findex split-line
@@ -106,15 +104,16 @@ appears after the newline that is deleted.  @xref{Fill Prefix}.
 @kindex C-x TAB
 @findex indent-region
 @findex indent-rigidly
-  There are also commands for changing the indentation of several lines at
-once.  @kbd{C-M-\} (@code{indent-region}) gives each line which begins in
-the region the ``usual'' indentation by invoking @key{TAB} at the beginning
-of the line.  A numeric argument specifies the column to indent to, and
-each line is shifted left or right so that its first nonblank character
-appears in that column.  @kbd{C-x @key{TAB}} (@code{indent-rigidly}) moves
-all of the lines in the region right by its argument (left, for negative
-arguments).  The whole group of lines moves rigidly sideways, which is how
-the command gets its name.@refill
+  There are also commands for changing the indentation of several lines
+at once.  @kbd{C-M-\} (@code{indent-region}) applies to all the lines
+that begin in the region; it indents each line in the ``usual'' way, as
+if you had typed @key{TAB} at the beginning of the line.  A numeric
+argument specifies the column to indent to, and each line is shifted
+left or right so that its first nonblank character appears in that
+column.  @kbd{C-x @key{TAB}} (@code{indent-rigidly}) moves all of the
+lines in the region right by its argument (left, for negative
+arguments).  The whole group of lines moves rigidly sideways, which is
+how the command gets its name.@refill
 
 @findex indent-relative
   @kbd{M-x indent-relative} indents at point based on the previous line

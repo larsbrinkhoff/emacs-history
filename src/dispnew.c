@@ -19,9 +19,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <signal.h>
-#include <stdio.h>
 
 #include <config.h>
+
+#include <stdio.h>
 #include <ctype.h>
 
 #include "lisp.h"
@@ -39,11 +40,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "intervals.h"
 
 #include "systty.h"
-#include "systime.h"
 
 #ifdef HAVE_X_WINDOWS
 #include "xterm.h"
 #endif	/* HAVE_X_WINDOWS */
+
+/* Include systime.h after xterm.h to avoid double inclusion of time.h. */
+#include "systime.h"
 
 #include <errno.h>
 
@@ -315,7 +318,7 @@ make_frame_glyphs (frame, empty)
   return new;
 }
 
-static void
+void
 free_frame_glyphs (frame, glyphs)
      FRAME_PTR frame;
      struct frame_glyphs *glyphs;
@@ -1082,9 +1085,12 @@ direct_output_for_insert (g)
     return 0;
 
   {
+    int face = 0;
 #ifdef HAVE_X_WINDOWS
     int dummy;
-    int face = compute_char_face (frame, w, point - 1, -1, -1, &dummy, point);
+
+    if (FRAME_X_P (frame))
+      face = compute_char_face (frame, w, point - 1, -1, -1, &dummy, point, 0);
 #endif
     current_frame->glyphs[vpos][hpos] = MAKE_GLYPH (frame, g, face);
     current_frame->charstarts[vpos][hpos] = point - 1;
@@ -1856,6 +1862,65 @@ update_line (frame, vpos)
   current_frame->charstarts[vpos] = temp1;
 }
 
+/* A vector of size >= NFRAMES + 3 * NBUFFERS + 1, containing the session's
+   frames, buffers, buffer-read-only flags, and buffer-modified-flags,
+   and a trailing sentinel (so we don't need to add length checks).  */
+static Lisp_Object frame_and_buffer_state;
+
+DEFUN ("frame-or-buffer-changed-p", Fframe_or_buffer_changed_p,
+  Sframe_or_buffer_changed_p, 0, 0, 0,
+  "Return non-nil if the frame and buffer state appears to have changed.\n\
+The state variable is an internal vector containing all frames and buffers,\n\
+along with the buffers' read-only and modified flags, which allows a fast\n\
+check to see whether the menu bars might need to be recomputed.\n\
+If this function returns non-nil, it updates the internal vector to reflect\n\
+the current state.\n")
+  ()
+{
+  Lisp_Object tail, frame, buf;
+  Lisp_Object *vecp;
+  int n;
+  vecp = XVECTOR (frame_and_buffer_state)->contents;
+  FOR_EACH_FRAME (tail, frame)
+    if (!EQ (*vecp++, frame))
+      goto changed;
+  for (tail = Vbuffer_alist; CONSP (tail); tail = XCONS (tail)->cdr)
+    {
+      buf = XCONS (XCONS (tail)->car)->cdr;
+      if (!EQ (*vecp++, buf))
+	goto changed;
+      if (!EQ (*vecp++, XBUFFER (buf)->read_only))
+	goto changed;
+      if (!EQ (*vecp++, Fbuffer_modified_p (buf)))
+	goto changed;
+    }
+  return Qnil;
+ changed:
+  n = 1;
+  FOR_EACH_FRAME (tail, frame)
+    n++;
+  for (tail = Vbuffer_alist; CONSP (tail); tail = XCONS (tail)->cdr)
+    n += 3;
+  /* Reallocate the vector if it's grown, or if it's shrunk a lot.  */
+  if (n > XVECTOR (frame_and_buffer_state)->size
+      || n < XVECTOR (frame_and_buffer_state)->size / 2)
+    frame_and_buffer_state = Fmake_vector (make_number (n), Qlambda);
+  vecp = XVECTOR (frame_and_buffer_state)->contents;
+  FOR_EACH_FRAME (tail, frame)
+    *vecp++ = frame;
+  for (tail = Vbuffer_alist; CONSP (tail); tail = XCONS (tail)->cdr)
+    {
+      buf = XCONS (XCONS (tail)->car)->cdr;
+      *vecp++ = buf;
+      *vecp++ = XBUFFER (buf)->read_only;
+      *vecp++ = Fbuffer_modified_p (buf);
+    }
+  /* If we left any slack in the vector, fill it up now.  */
+  for (; n < XVECTOR (frame_and_buffer_state)->size; ++n)
+    *vecp++ = Qlambda;
+  return Qt;
+}
+
 DEFUN ("open-termscript", Fopen_termscript, Sopen_termscript,
   1, 1, "FOpen termscript file: ",
   "Start writing all terminal output to FILE as well as the terminal.\n\
@@ -2393,14 +2458,18 @@ syms_of_display ()
   defsubr (&Sredraw_frame);
 #endif
   defsubr (&Sredraw_display);
+  defsubr (&Sframe_or_buffer_changed_p);
   defsubr (&Sopen_termscript);
   defsubr (&Sding);
   defsubr (&Ssit_for);
   defsubr (&Ssleep_for);
   defsubr (&Ssend_string_to_terminal);
 
+  frame_and_buffer_state = Fmake_vector (make_number (1), Qlambda);
+  staticpro (&frame_and_buffer_state);
+
   DEFVAR_INT ("baud-rate", &baud_rate,
-    "The output baud rate of the terminal.\n\
+    "*The output baud rate of the terminal.\n\
 On most systems, changing this value will affect the amount of padding\n\
 and the other strategic decisions made during redisplay.");
   DEFVAR_BOOL ("inverse-video", &inverse_video,

@@ -69,8 +69,8 @@
 ;;; m-s     comint-next-matching-input      Next input that matches
 ;;; m-c-l   comint-show-output		    Show last batch of process output
 ;;; return  comint-send-input
-;;; c-a     comint-bol                      Beginning of line; skip prompt
 ;;; c-d	    comint-delchar-or-maybe-eof     Delete char unless at end of buff
+;;; c-c c-a comint-bol                      Beginning of line; skip prompt
 ;;; c-c c-u comint-kill-input	    	    ^u
 ;;; c-c c-w backward-kill-word    	    ^w
 ;;; c-c c-c comint-interrupt-subjob 	    ^c
@@ -218,6 +218,11 @@ If so, delete one copy of the input so that only one copy eventually
 appears in the buffer.
 
 This variable is buffer-local.")
+
+(defvar comint-password-prompt-regexp
+  "\\(^[Pp]assword\\|pass phrase\\):\\s *\\'"
+  "*Regexp matching prompts for passwords in the inferior process.
+This is used by `comint-watch-for-password-prompt'.")
 
 ;;; Here are the per-interpreter hooks.
 (defvar comint-get-old-input (function comint-get-old-input-default)
@@ -396,7 +401,7 @@ Entry to this mode runs the hooks on `comint-mode-hook'."
   (define-key comint-mode-map "\e\C-l" 'comint-show-output)
   (define-key comint-mode-map "\C-m" 'comint-send-input)
   (define-key comint-mode-map "\C-d" 'comint-delchar-or-maybe-eof)
-  (define-key comint-mode-map "\C-a" 'comint-bol)
+  (define-key comint-mode-map "\C-c\C-a" 'comint-bol)
   (define-key comint-mode-map "\C-c\C-u" 'comint-kill-input)
   (define-key comint-mode-map "\C-c\C-w" 'backward-kill-word)
   (define-key comint-mode-map "\C-c\C-c" 'comint-interrupt-subjob)
@@ -616,27 +621,30 @@ See also `comint-input-ignoredups' and `comint-write-input-ring'."
 	     (message "Cannot read history file %s"
 		      comint-input-ring-file-name)))
 	(t
-	 (let ((history-buf (get-file-buffer comint-input-ring-file-name))
+	 (let ((history-buf (get-buffer-create " *temp*"))
+	       (file comint-input-ring-file-name)
+	       (count 0)
 	       (ring (make-ring comint-input-ring-size)))
-	   (save-excursion
-	     (set-buffer (or history-buf
-			     (find-file-noselect comint-input-ring-file-name)))
-	     ;; Save restriction in case file is already visited...
-	     ;; Watch for those date stamps in history files!
-	     (save-excursion
-	       (save-restriction
+	   (unwind-protect
+	       (save-excursion
+		 (set-buffer history-buf)
 		 (widen)
-		 (goto-char (point-min))
-		 (while (re-search-forward "^[ \t]*\\([^#\n].*\\)[ \t]*$" nil t)
+		 (erase-buffer)
+		 (insert-file-contents file)
+		 ;; Save restriction in case file is already visited...
+		 ;; Watch for those date stamps in history files!
+		 (goto-char (point-max))
+		 (while (and (< count comint-input-ring-size)
+			     (re-search-backward "^[ \t]*\\([^#\n].*\\)[ \t]*$"
+						 nil t))
 		   (let ((history (buffer-substring (match-beginning 1)
 						    (match-end 1))))
 		     (if (or (null comint-input-ignoredups)
 			     (ring-empty-p ring)
 			     (not (string-equal (ring-ref ring 0) history)))
-			 (ring-insert ring history)))))
-	       ;; Kill buffer unless already visited.
-	       (if (null history-buf)
-		   (kill-buffer nil))))
+			 (ring-insert-at-beginning ring history)))
+		   (setq count (1+ count))))
+	     (kill-buffer history-buf))
 	   (setq comint-input-ring ring
 		 comint-input-ring-index nil)))))
 
@@ -1035,18 +1043,34 @@ We assume whitespace separates arguments, except within quotes.
 Also, a run of one or more of a single character
 in `comint-delimiter-argument-list' is a separate argument.
 Argument 0 is the command name."
-  (let ((arg "\\(\\(\"[^\"]*\"\\|\'[^\']*\'\\|\`[^\`]*\`\\)\\|\\S \\)+")
-	(args ()) (pos 0) (str nil))
-    ;; We build a list of all the args.  Unnecessary, but more efficient, when
-    ;; ranges of args are required, than picking out one by one and recursing.
-    (while (string-match arg string pos)
-      (setq pos (match-end 0)
-	    str (substring string (match-beginning 0) pos)
-	    ;; (match-end 2) is non-nil if we found quotes.
-	    args (if (match-end 2) (cons str args)
-		   (nconc (comint-delim-arg str) args))))
-    (let ((n (or nth (1- (length args))))
-	  (m (if mth (1- (- (length args) mth)) 0)))
+  (let ((argpart "[^ \n\t\"'`]+\\|\\(\"[^\"]*\"\\|'[^']*'\\|`[^`]*`\\)")
+	(args ()) (pos 0)
+	(count 0)
+	beg str value quotes)
+    ;; Build a list of all the args until we have as many as we want.
+    (while (and (or (null mth) (<= count mth))
+		(string-match argpart string pos))
+      (if (and beg (= pos (match-beginning 0)))
+	  ;; It's contiguous, part of the same arg.
+	  (setq pos (match-end 0)
+		quotes (or quotes (match-beginning 1)))
+	;; It's a new separate arg.
+	(if beg
+	    ;; Put the previous arg, if there was one, onto ARGS.
+	    (setq str (substring string beg pos)
+		  args (if quotes (cons str args)
+			 (nconc (comint-delim-arg str) args))
+		  count (1+ count)))
+	(setq quotes (match-beginning 1))
+	(setq beg (match-beginning 0))
+	(setq pos (match-end 0))))
+    (if beg
+	(setq str (substring string beg pos)
+	      args (if quotes (cons str args)
+		     (nconc (comint-delim-arg str) args))
+	      count (1+ count)))
+    (let ((n (or nth (1- count)))
+	  (m (if mth (1- (- count mth)) 0)))
       (mapconcat
        (function (lambda (a) a)) (nthcdr n (nreverse (nthcdr m args))) " "))))
 
@@ -1134,11 +1158,13 @@ Similarly for Soar, Scheme, etc."
 	    (while functions
 	      (funcall (car functions) (concat input "\n"))
 	      (setq functions (cdr functions))))
-	  (funcall comint-input-sender proc input)
 	  (setq comint-input-ring-index nil)
+	  ;; Update the markers before we send the input
+	  ;; in case we get output amidst sending the input.
 	  (set-marker comint-last-input-start pmark)
 	  (set-marker comint-last-input-end (point))
 	  (set-marker (process-mark proc) (point))
+	  (funcall comint-input-sender proc input)
 	  (comint-output-filter proc "")))))
 
 ;; The purpose of using this filter for comint processes
@@ -1306,10 +1332,7 @@ set the hook `comint-input-sender'."
 If prefix argument is given (\\[universal-argument]) the prompt is not skipped. 
 
 The prompt skip is done by skipping text matching the regular expression
-`comint-prompt-regexp', a buffer local variable.
-
-If you don't like this command, bind C-a to `beginning-of-line' 
-in your hook, `comint-mode-hook'."
+`comint-prompt-regexp', a buffer local variable."
   (interactive "P")
   (beginning-of-line)
   (if (null arg) (comint-skip-prompt)))
@@ -1384,10 +1407,11 @@ Security bug: your string can still be temporarily recovered with
 (defun comint-watch-for-password-prompt (string) 
   "Prompt in the minibuffer for password and send without echoing.
 This function uses `send-invisible' to read and send a password to the buffer's
-process if STRING contains a password prompt (matches \"^[Pp]assword:\\\\s *\\\\'\").
+process if STRING contains a password prompt defined by 
+`comint-password-prompt-regexp'.
 
 This function could be in the list `comint-output-filter-functions'."
-  (if (string-match "^[Pp]assword:\\s *\\'" string)
+  (if (string-match comint-password-prompt-regexp string)
       (send-invisible nil)))
 
 ;;; Low-level process communication
@@ -1837,7 +1861,8 @@ completions listing is dependent on the value of `comint-completion-autolist'.
 Returns t if successful."
   (interactive)
   (if (comint-match-partial-filename)
-      (prog2 (message "Completing file name...")
+      (prog2 (or (eq (selected-window) (minibuffer-window))
+		 (message "Completing file name..."))
 	  (comint-dynamic-complete-as-filename))))
 
 
@@ -1851,13 +1876,14 @@ See `comint-dynamic-complete-filename'.  Returns t if successful."
 	 (pathdir (file-name-directory filename))
 	 (pathnondir (file-name-nondirectory filename))
 	 (directory (if pathdir (comint-directory pathdir) default-directory))
-	 (completion (file-name-completion pathnondir directory)))
+	 (completion (file-name-completion pathnondir directory))
+	 (mini-flag (eq (selected-window) (minibuffer-window))))
     (cond ((null completion)
            (message "No completions of %s" filename)
 	   (setq success nil))
           ((eq completion t)            ; Means already completed "file".
            (if comint-completion-addsuffix (insert " "))
-           (message "Sole completion"))
+           (or mini-flag (message "Sole completion")))
           ((string-equal completion "") ; Means completion on "directory/".
            (comint-dynamic-list-filename-completions))
           (t                            ; Completion string returned.
@@ -1868,19 +1894,19 @@ See `comint-dynamic-complete-filename'.  Returns t if successful."
                     ;; We inserted a unique completion.
                     (if comint-completion-addsuffix
                         (insert (if (file-directory-p file) "/" " ")))
-                    (message "Completed"))
+                    (or mini-flag (message "Completed")))
                    ((and comint-completion-recexact comint-completion-addsuffix
                          (string-equal pathnondir completion)
                          (file-exists-p file))
                     ;; It's not unique, but user wants shortest match.
                     (insert (if (file-directory-p file) "/" " "))
-                    (message "Completed shortest"))
+                    (or mini-flag (message "Completed shortest")))
                    ((or comint-completion-autolist
                         (string-equal pathnondir completion))
                     ;; It's not unique, list possible completions.
                     (comint-dynamic-list-filename-completions))
                    (t
-                    (message "Partially completed"))))))
+                    (or mini-flag (message "Partially completed")))))))
     success))
 
 
@@ -1963,17 +1989,17 @@ See also `comint-dynamic-complete-filename'."
   "List in help buffer sorted COMPLETIONS.
 Typing SPC flushes the help buffer."
   (let ((conf (current-window-configuration)))
-    (with-output-to-temp-buffer " *Completions*"
+    (with-output-to-temp-buffer "*Completions*"
       (display-completion-list (sort completions 'string-lessp)))
     (message "Hit space to flush")
     (let (key first)
       (if (save-excursion
-	    (set-buffer (get-buffer " *Completions*"))
+	    (set-buffer (get-buffer "*Completions*"))
 	    (setq key (read-key-sequence nil)
 		  first (aref key 0))
 	    (and (consp first)
 		 (eq (window-buffer (posn-window (event-start first)))
-		     (get-buffer " *Completions*"))
+		     (get-buffer "*Completions*"))
 		 (eq (key-binding key) 'mouse-choose-completion)))
 	  ;; If the user does mouse-choose-completion with the mouse,
 	  ;; execute the command, then delete the completion window.
@@ -1982,7 +2008,7 @@ Typing SPC flushes the help buffer."
 	    (set-window-configuration conf))
 	(if (eq first ?\ )
 	    (set-window-configuration conf)
-	  (setq unread-command-events (append key nil)))))))
+	  (setq unread-command-events (listify-key-sequence key)))))))
 
 ;;; Converting process modes to use comint mode
 ;;; ===========================================================================

@@ -198,7 +198,17 @@ nil for FUNCTION means all messages."
       (setq rmail-summary-buffer sumbuf))
     ;; Now display the summary buffer and go to the right place in it.
     (or was-in-summary
-	(pop-to-buffer sumbuf))
+	(if (one-window-p)
+	    ;; If there is just one window, put the summary on the top.
+	    (progn
+	      (split-window)
+	      (select-window (next-window (frame-first-window)))
+	      (pop-to-buffer sumbuf)
+	      ;; If pop-to-buffer did not use that window, delete that
+	      ;; window.  (This can happen if it uses another frame.)
+	      (if (not (eq sumbuf (window-buffer (frame-first-window))))
+		  (delete-other-windows)))
+	  (pop-to-buffer sumbuf)))
     (rmail-summary-goto-msg mesg t t)
     (message "Computing summary lines...done")))
 
@@ -582,9 +592,10 @@ Commands for sorting the summary:
 			(select-window window)
 			(rmail-show-message msg-num))
 		    (select-window owin))
-		(save-excursion
-		  (set-buffer rmail-buffer)
-		  (rmail-show-message msg-num)))))))))
+		(if (buffer-name rmail-buffer)
+		    (save-excursion
+		      (set-buffer rmail-buffer)
+		      (rmail-show-message msg-num))))))))))
 
 (defvar rmail-summary-mode-map nil)
 
@@ -657,32 +668,38 @@ Commands for sorting the summary:
 (define-key rmail-summary-mode-map [menu-bar classify]
   (cons "Classify" (make-sparse-keymap "Classify")))
 
+(define-key rmail-summary-mode-map [menu-bar classify output-menu]
+  '("Output (Rmail Menu)..." . rmail-summary-output-menu))
+
+(define-key rmail-summary-mode-map [menu-bar classify input-menu]
+  '("Input Rmail file (menu)..." . rmail-input-menu))
+
 (define-key rmail-summary-mode-map [menu-bar classify output-inbox]
-  '("Output (inbox)" . rmail-summary-output))
+  '("Output (inbox)..." . rmail-summary-output))
 
 (define-key rmail-summary-mode-map [menu-bar classify output]
-  '("Output (Rmail)" . rmail-summary-output-to-rmail-file))
+  '("Output (Rmail)..." . rmail-summary-output-to-rmail-file))
 
 (define-key rmail-summary-mode-map [menu-bar classify kill-label]
-  '("Kill Label" . rmail-summary-kill-label))
+  '("Kill Label..." . rmail-summary-kill-label))
 
 (define-key rmail-summary-mode-map [menu-bar classify add-label]
-  '("Add Label" . rmail-summary-add-label))
+  '("Add Label..." . rmail-summary-add-label))
 
 (define-key rmail-summary-mode-map [menu-bar summary]
   (cons "Summary" (make-sparse-keymap "Summary")))
 
 (define-key rmail-summary-mode-map [menu-bar summary labels]
-  '("By Labels" . rmail-summary-by-labels))
+  '("By Labels..." . rmail-summary-by-labels))
 
 (define-key rmail-summary-mode-map [menu-bar summary recipients]
-  '("By Recipients" . rmail-summary-by-recipients))
+  '("By Recipients..." . rmail-summary-by-recipients))
 
 (define-key rmail-summary-mode-map [menu-bar summary topic]
-  '("By Topic" . rmail-summary-by-topic))
+  '("By Topic..." . rmail-summary-by-topic))
 
 (define-key rmail-summary-mode-map [menu-bar summary regexp]
-  '("By Regexp" . rmail-summary-by-regexp))
+  '("By Regexp..." . rmail-summary-by-regexp))
 
 (define-key rmail-summary-mode-map [menu-bar summary all]
   '("All" . rmail-summary))
@@ -690,8 +707,17 @@ Commands for sorting the summary:
 (define-key rmail-summary-mode-map [menu-bar mail]
   (cons "Mail" (make-sparse-keymap "Mail")))
 
+(define-key rmail-summary-mode-map [menu-bar mail rmail-summary-get-new-mail]
+  '("Get New Mail" . rmail-summary-get-new-mail))
+
+(define-key rmail-summary-mode-map [menu-bar mail lambda]
+  '("----"))
+
 (define-key rmail-summary-mode-map [menu-bar mail continue]
   '("Continue" . rmail-summary-continue))
+
+(define-key rmail-summary-mode-map [menu-bar mail resend]
+  '("Re-send..." . rmail-resend))
 
 (define-key rmail-summary-mode-map [menu-bar mail forward]
   '("Forward" . rmail-summary-forward))
@@ -724,10 +750,10 @@ Commands for sorting the summary:
   (cons "Move" (make-sparse-keymap "Move")))
 
 (define-key rmail-summary-mode-map [menu-bar move search-back]
-  '("Search Back" . rmail-summary-search-backward))
+  '("Search Back..." . rmail-summary-search-backward))
 
 (define-key rmail-summary-mode-map [menu-bar move search]
-  '("Search" . rmail-summary-search))
+  '("Search..." . rmail-summary-search))
 
 (define-key rmail-summary-mode-map [menu-bar move previous]
   '("Previous Nondeleted" . rmail-summary-previous-msg))
@@ -812,7 +838,11 @@ Commands for sorting the summary:
   "Scroll the Rmail window forward."
   (interactive "P")
   (let ((other-window-scroll-buffer rmail-buffer))
-    (scroll-other-window dist)))
+    (if (get-buffer-window rmail-buffer)
+	(scroll-other-window dist)
+      ;; This forces rmail-buffer to be sized correctly later.
+      (display-buffer rmail-buffer)
+      (setq rmail-current-message nil))))
 
 (defun rmail-summary-scroll-msg-down (&optional dist)
   "Scroll the Rmail window backward."
@@ -1083,6 +1113,19 @@ buffer visiting that file."
     (set-buffer rmail-buffer)
     (let ((rmail-delete-after-output nil))
       (call-interactively 'rmail-output-to-rmail-file)))
+  (if rmail-delete-after-output
+      (rmail-summary-delete-forward nil)))
+
+(defun rmail-summary-output-menu ()
+  "Output current message to another Rmail file, chosen with a menu.
+Also set the default for subsequent \\[rmail-output-to-rmail-file] commands.
+The variables `rmail-secondary-file-directory' and
+`rmail-secondary-file-regexp' control which files are offered in the menu."
+  (interactive)
+  (save-excursion
+    (set-buffer rmail-buffer)
+    (let ((rmail-delete-after-output nil))
+      (call-interactively 'rmail-output-menu)))
   (if rmail-delete-after-output
       (rmail-summary-delete-forward nil)))
 

@@ -1,15 +1,28 @@
-Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+Thu Aug 25 17:21:52 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
-	* Version 19.25 released.
+	* xlwmenu.c (pop_up_menu): Clear next_release_must_exit.
+	(Start): Clear next_release_must_exit when popping up the menu.
+
+Wed Aug 24 22:19:46 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (Start): Set menu_post_event or next_release_must_exit.
+	(Select): Do nothing if the menu should be left posted.
+
+Thu Jul 28 17:12:31 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (make_windows_if_needed, pop_up_menu):
+	Enable mouse motion events even when no button down.
+
+Mon Jul 11 21:38:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xlwmenu.c (pointer_grabbed): New variable.
+	(pop_up_menu): Set the variable.
+	(XlwMenuDestroy): Maybe call XtUngrabPointer.
 
 Wed May 25 04:19:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* lwlib.c (max): Function deleted.  Define as macro instead,
 	but only if not already defined.
-
-Mon May 23 03:32:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
-
-	* Version 19.24 released.
 
 Fri May 20 18:42:58 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
@@ -20,8 +33,6 @@ Thu May 19 12:23:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	* lwlib-Xaw.c (xaw_pop_instance): Use XtSetValues, not XtMoveWidget.
 
 Mon May 16 03:25:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
-
-	* Version 19.23 released.
 
 	* lwlib.c (lwlib_memset: New function, used instead of memset.
 	All callers changed.

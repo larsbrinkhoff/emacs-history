@@ -64,7 +64,7 @@ case $os in
 		;;
 	-dec* | -mips* | -sequent* | -encore* | -pc532* | -sgi* | -sony* | \
 	-att* | -7300* | -3300* | -delta* | -motorola* | -sun[234]* | \
-	-unicom* | -ibm* | -next* | -hp | -isi* | -apollo | -altos* | \
+	-unicom* | -ibm* | -next | -hp | -isi* | -apollo | -altos* | \
 	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi* |\
 	-c[123]* | -convex* | -sun | -crds | -omron* | -dg | -ultra | -tti* | \
 	-harris | -dolphin | -highlevel | -gould | -cbm | -ns | -masscomp )
@@ -112,7 +112,7 @@ case $basic_machine in
 	tahoe | i[34]86 | i860 | m68k | m68000 | m88k | ns32k | arm | pyramid \
 		| tron | a29k | 580 | i960 | h8300 | hppa1.0 | hppa1.1 \
 		| alpha | we32k | ns16k | clipper | sparclite | i370 | sh \
-		| powerpc)
+		| powerpc | sparc64 | 1750a)
 		basic_machine=$basic_machine-unknown
 		;;
 	# Object if more than one company name word.
@@ -127,7 +127,7 @@ case $basic_machine in
 	      | none-* | 580-* | cray2-* | h8300-* | i960-* | xmp-* | ymp-* \
 	      | hppa1.0-* | hppa1.1-* | alpha-* | we32k-* | cydra-* | ns16k-* \
 	      | pn-* | np1-* | xps100-* | clipper-* | orion-* | sparclite-* \
-	      | sh-* | powerpc-*)
+	      | sh-* | powerpc-* | sparc64-*)
 		;;
 	# Recognize the various machine names and aliases which stand
 	# for a CPU type and a company and sometimes even an OS.
@@ -151,7 +151,7 @@ case $basic_machine in
 		basic_machine=580-amdahl
 		os=-sysv
 		;;
-	amiga)
+	amiga | amiga-*)
 		basic_machine=m68k-cbm
 		;;
 	amigados)
@@ -201,7 +201,10 @@ case $basic_machine in
 	crds | unos)
 		basic_machine=m68k-crds
 		;;
-	decstation | decstation-3100 | pmax | pmin | dec3100 | decstatn)
+	da30 | da30-*)
+		basic_machine=m68k-da30
+		;;
+	decstation | decstation-3100 | pmax | pmax-* | pmin | dec3100 | decstatn)
 		basic_machine=mips-dec
 		;;
 	delta | 3300 | motorola-3300 | motorola-delta \
@@ -252,6 +255,9 @@ case $basic_machine in
 	harris)
 		basic_machine=m88k-harris
 		os=-sysv3
+		;;
+	hp300-*)
+		basic_machine=m68k-hp
 		;;
 	hp300bsd)
 		basic_machine=m68k-hp
@@ -338,13 +344,16 @@ case $basic_machine in
 		basic_machine=mips-sony
 		os=-newsos
 		;;
-	next)
+	next | m*-next )
 		basic_machine=m68k-next
 		case $os in
+		    -nextstep* )
+			;;
 		    -ns2*)
+		      os=-nextstep2
 			;;
 		    *)
-		      os=-ns3
+		      os=-nextstep3
 			;;
 		esac
 		;;
@@ -377,8 +386,13 @@ case $basic_machine in
 	pbb)
 		basic_machine=m68k-tti
 		;;
-        pc532)
+        pc532 | pc532-*)
 		basic_machine=ns32k-pc532
+		;;
+	pentium-*)
+		# We will change tis to say i586 once there has been
+		# time for various packages to start to recognize that.
+		basic_machine=i486-`echo $basic_machine | sed 's/^[^-]*-//'`
 		;;
 	pn)
 		basic_machine=pn-gould
@@ -427,7 +441,7 @@ case $basic_machine in
 		basic_machine=sparc-sun
 		os=-sunos4
 		;;
-	sun3)
+	sun3 | sun3-*)
 		basic_machine=m68k-sun
 		;;
 	sun4)
@@ -545,7 +559,7 @@ case $os in
 	      | -nindy* | -vxworks* | -ebmon* | -hms* | -mvs* | -clix* \
 	      | -riscos* | -linux* | -uniplus* | -iris* | -rtu* | -xenix* \
 	      | -hiux* | -386bsd* | -netbsd* | -freebsd* | -riscix* \
-	      | -lynxos* | -bosx* | -ns* | -cxux*)
+	      | -lynxos* | -bosx* | -nextstep* | -cxux* | -aout* | -elf*)
 		;;
 	-sunos5*)
 		os=`echo $os | sed -e 's|sunos5|solaris2|'`
@@ -656,6 +670,9 @@ case $basic_machine in
 	*-dolphin)
 		os=-sysv3
 		;;
+	m68k-ccur)
+		os=-rtu
+		;;
 	m88k-omron*)
 		os=-luna
 		;;
@@ -672,7 +689,7 @@ case $basic_machine in
 		os=-mvs
 		;;
 	*-next)
-		os=-bsd
+		os=-nextstep3
 		;;
 	i[34]86-*)
 		os=-sco3.2v2

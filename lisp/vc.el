@@ -61,6 +61,7 @@
 
 (require 'vc-hooks)
 (require 'ring)
+(eval-when-compile (require 'dired))	; for dired-map-over-marks macro
 
 (if (not (assoc 'vc-parent-buffer minor-mode-alist))
     (setq minor-mode-alist
@@ -130,6 +131,9 @@ and that its contents match what the master file says.")
 (defvar vc-log-operation nil)
 (defvar vc-log-after-operation-hook nil)
 (defvar vc-checkout-writable-buffer-hook 'vc-checkout-writable-buffer)
+;; In a log entry buffer, this is a local variable
+;; that points to the buffer for which it was made
+;; (either a file, or a VC dired buffer).
 (defvar vc-parent-buffer nil)
 (defvar vc-parent-buffer-name nil)
 
@@ -363,11 +367,7 @@ the master name of FILE; this is appended to an optional list of FLAGS."
 
      ;; if there is no master file corresponding, create one
      ((not vc-file)
-      (vc-register verbose comment)
-      (if vc-initial-comment
-	  (setq vc-log-after-operation-hook
-		'vc-checkout-writable-buffer-hook)
-	(vc-checkout-writable-buffer file)))
+      (vc-register verbose comment))
 
      ;; if there is no lock on the file, assert one and get it
      ((not (setq owner (vc-locking-user file)))
@@ -473,7 +473,7 @@ lock steals will raise an error.
     (if vc-dired-mode
 	(let ((files (dired-get-marked-files)))
 	  (if (= (length files) 1)
-	      (find-file-other-window (dired-get-filename))
+	      (find-file-other-window (car files))
 	    (vc-start-entry nil nil nil
 			    "Enter a change comment for the marked files."
 			    'vc-next-action-dired)
@@ -527,11 +527,12 @@ lock steals will raise an error.
 	   (delete-window)
 	   (kill-buffer (current-buffer))))))
 
-(defun vc-start-entry (file rev comment msg action)
+(defun vc-start-entry (file rev comment msg action &optional after-hook)
   ;; Accept a comment for an operation on FILE revision REV.  If COMMENT
   ;; is nil, pop up a VC-log buffer, emit MSG, and set the
   ;; action on close to ACTION; otherwise, do action immediately.
-  ;; Remember the file's buffer in parent-buffer (current one if no file).
+  ;; Remember the file's buffer in vc-parent-buffer (current one if no file).
+  ;; AFTER-HOOK specifies the local value for vc-log-operation-hook.
   (let ((parent (if file (find-file-noselect file) (current-buffer))))
     (if comment
 	(set-buffer (get-buffer-create "*VC-log*"))
@@ -541,6 +542,9 @@ lock steals will raise an error.
 	 (concat " from " (buffer-name vc-parent-buffer)))
     (vc-mode-line (or file " (no file)"))
     (vc-log-mode)
+    (make-local-variable 'vc-log-after-operation-hook)
+    (if after-hook
+	(setq vc-log-after-operation-hook after-hook))
     (setq vc-log-operation action)
     (setq vc-log-file file)
     (setq vc-log-version rev)
@@ -557,9 +561,10 @@ lock steals will raise an error.
   "Check a file into your version-control system.
 FILE is the unmodified name of the file.  REV should be the base version
 level to check it in under.  COMMENT, if specified, is the checkin comment."
-      (vc-start-entry file rev
-		      (or comment (not vc-initial-comment))
-		      "Enter initial comment." 'vc-backend-admin))
+  (vc-start-entry file rev
+		  (or comment (not vc-initial-comment))
+		  "Enter initial comment." 'vc-backend-admin
+		  nil))
 
 (defun vc-checkout (file &optional writable)
   "Retrieve a copy of the latest version of the given file."
@@ -605,9 +610,9 @@ The optional argument REV may be a string specifying the new version level
 permissions zeroed, or deleted (according to the value of `vc-keep-workfiles').
 COMMENT is a comment string; if omitted, a buffer is
 popped up to accept a comment."
-  (setq vc-log-after-operation-hook 'vc-checkin-hook)
   (vc-start-entry file rev comment
-		  "Enter a change comment." 'vc-backend-checkin))
+		  "Enter a change comment." 'vc-backend-checkin
+		  'vc-checkin-hook))
 
 ;;; Here is a checkin hook that may prove useful to sites using the
 ;;; ChangeLog facility supported by Emacs.
@@ -674,9 +679,11 @@ If nil, uses `change-log-default-name'."
 	(ring-insert vc-comment-ring (buffer-string))
 	))
   ;; Sync parent buffer in case the user modified it while editing the comment.
+  ;; But not if it is a vc-dired buffer.
   (save-excursion
     (set-buffer vc-parent-buffer)
-    (vc-buffer-sync))
+    (or vc-dired-mode
+	(vc-buffer-sync)))
   ;; OK, do it to it
   (if vc-log-operation
       (save-excursion
@@ -685,15 +692,17 @@ If nil, uses `change-log-default-name'."
 		 vc-log-version
 		 (buffer-string)))
     (error "No log operation is pending"))
-  ;; Return to "parent" buffer of this checkin and remove checkin window
-  (pop-to-buffer vc-parent-buffer)
-  (let ((logbuf (get-buffer "*VC-log*")))
-    (delete-windows-on logbuf)
-    (kill-buffer logbuf))
-  ;; Now make sure we see the expanded headers
-  (if buffer-file-name
+  ;; save the vc-log-after-operation-hook of log buffer
+  (let ((after-hook vc-log-after-operation-hook))
+    ;; Return to "parent" buffer of this checkin and remove checkin window
+    (pop-to-buffer vc-parent-buffer)
+    (let ((logbuf (get-buffer "*VC-log*")))
+      (delete-windows-on logbuf)
+      (kill-buffer logbuf))
+    ;; Now make sure we see the expanded headers
+    (if buffer-file-name
 	(vc-resynch-window buffer-file-name vc-keep-workfiles t))
-  (run-hooks vc-log-after-operation-hook))
+    (run-hooks after-hook)))
 
 ;; Code for access to the comment ring
 
@@ -1262,6 +1271,10 @@ From a program, any arguments are passed to the `rcs2log' script."
     (message "Computing change log entries... %s"
 	     (if (or (null args)
 		     (eq 0 (apply 'call-process "rcs2log" nil t nil
+				  "-n"
+				  (user-login-name)
+				  (user-full-name)
+				  user-mail-address
 				  (mapcar (function
 					   (lambda (f)
 					     (file-relative-name
@@ -1511,10 +1524,30 @@ Return nil if there is no such person."
   (let ((filename (or workfile file)))
     (message "Checking out %s..." filename)
     (vc-backend-dispatch file
-     (vc-do-command 0 "get" file	;; SCCS
-		    (if writable "-e")
-		    (if workfile  (concat "-G" workfile))
-		    (and rev (concat "-r" (vc-lookup-triple file rev))))
+     (if workfile ;; SCCS
+	 ;; Some SCCS implementations allow checking out directly to a
+	 ;; file using the -G option, but then some don't so use the
+	 ;; least common denominator approach and use the -p option
+	 ;; ala RCS.
+	 (let ((vc-modes (logior (file-modes (vc-name file))
+				 (if writable 128 0)))
+	       (failed t))
+	   (unwind-protect
+	       (progn
+		   (vc-do-command
+		      0 "/bin/sh" file "-c"
+		      (format "umask %o; exec >\"$1\" || exit; shift; umask %o; exec get \"$@\""
+			      (logand 511 (lognot vc-modes))
+			      (logand 511 (lognot (default-file-modes))))
+		      "" ; dummy argument for shell's $0
+		      filename 
+		      (if writable "-e")
+		      "-p" (and rev (concat "-r" (vc-lookup-triple file rev))))
+		   (setq failed nil))
+	     (and failed (file-exists-p filename) (delete-file filename))))
+       (vc-do-command 0 "get" file	;; SCCS
+		      (if writable "-e")
+		      (and rev (concat "-r" (vc-lookup-triple file rev)))))
      (if workfile ;; RCS
 	 ;; RCS doesn't let us check out into arbitrary file names directly.
 	 ;; Use `co -p' and make stdout point to the correct file.

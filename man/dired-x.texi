@@ -5,17 +5,19 @@
 @c Author: Sebastian Kremer <sk@thp.uni-koeln.de>
 @c	Lawrence R. Dodd <dodd@roebling.poly.edu>
 @c Maintainer: Lawrence R. Dodd <dodd@roebling.poly.edu>
-@c Version: 2.36
-@c Date: 1994/04/05 12:49:11
+@c Version: 2.52
+@c Date: 1994/08/09 16:51:31
 @c Keywords: dired extensions
+@c dired-x.el REVISION NUMBER: 2
 
 @c State: Released
-@c Ident: dired-x.texi,v 2.36 1994/04/05 12:49:11 dodd Released
+@c Ident: dired-x.texi,v 2.52 1994/08/09 16:51:31 dodd Released
 
 @comment %**start of header (This is for running Texinfo on a region.)
 @c FOR GNU EMACS USE ../info/dired-x BELOW
 @setfilename ../info/dired-x
-@settitle Dired Extra Version 2.27 User's Manual
+@c dired-x.el REVISION NUMBER
+@settitle Dired Extra Version 2 User's Manual
 @iftex
 @finalout
 @end iftex
@@ -26,15 +28,32 @@
 \overfullrule=0pt
 %\global\baselineskip 30pt      % For printing in double spaces
 @end tex
+
 @ifinfo
+@node Copyright, Top, (dir), (dir)
+@comment  node-name,  next,  previous,  up
 This documents the ``extra'' features for Dired Mode for GNU Emacs 19 found in
 the file @file{dired-x.el}.
 
 Copyright @copyright{} 1993, 1994 Free Software Foundation
 
-Permission is granted to make and distribute verbatim copies of
-this manual provided the copyright notice and this permission notice
-are preserved on all copies.
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of
+a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for
+modified versions, except that this permission notice may be stated
+in a translation approved by the Free Software Foundation.
+
+The file used to create this is called @file{dired-x.texi}, but the
+original work that was altered to make that file was called
+@file{dired.texi} written by Sebastian Kremer.
 
 @ignore
 Permission is granted to process this file through TeX and print the
@@ -44,22 +63,24 @@ notice identical to this one except for the removal of this paragraph
 
 @end ignore
 @end ifinfo
+
 @c
 @titlepage
 @sp 6
-@center @titlefont{Dired Extra Version 2.27}
+@c dired-x.el REVISION NUMBER
+@center @titlefont{Dired Extra Version 2}
 @sp 2
 @center @titlefont{For The GNU Emacs 19}
 @sp 1
 @center @titlefont{Directory Editor}
 @sp 4
-@center Manual Revision: 2.36
-@center 1994/04/05 12:49:11
+@center Manual Revision: 2.52
+@center 1994/08/09 16:51:31
 @sp 5
 @center Lawrence R@. Dodd
 @center @t{dodd@@roebling.poly.edu}
 @sp 5
-@center (Based on original by Sebastian Kremer <sk@@thp.uni-koeln.de>)
+@center (Based on @file{dired.texi} by Sebastian Kremer <sk@@thp.uni-koeln.de>)
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 1993, 1994 Free Software Foundation
@@ -68,11 +89,27 @@ Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
 are preserved on all copies.
 
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of
+a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for
+modified versions, except that this permission notice may be stated
+in a translation approved by the Free Software Foundation.
+
+The file used to create this is called @file{dired-x.texi}, but the
+original work that was altered to make that file was called
+@file{dired.texi} written by Sebastian Kremer.
+
 @end titlepage
+
 @page
+
 @ifinfo
 
-@node Top, Introduction, (dir), (dir)
+@node Top, Introduction, Copyright, (dir)
 @comment  node-name,  next,  previous,  up
 
 @noindent
@@ -82,13 +119,14 @@ provided by the file @file{dired-x.el}.
 @itemize @bullet
 
 @item
-Based on original by Sebastian Kremer <sk@@thp.uni-koeln.de>
+Based on @file{dired.texi} by Sebastian Kremer <sk@@thp.uni-koeln.de>
+
+@c dired-x.el REVISION NUMBER
+@item 
+For @file{dired-x.el} revision 2
 
 @item 
-Revision of this manual: 2.36
-
-@item 
-Released on: 1994/04/05 12:49:11
+Revision of this manual: 2.52 (1994/08/09 16:51:31)
 
 @item
 Bugs to Lawrence R. Dodd <dodd@@roebling.poly.edu>.  @emph{Please} type
@@ -109,6 +147,7 @@ You can obtain a copy of this package via anonymous ftp in
 * Virtual Dired::
 * Advanced Mark Commands::
 * Multiple Dired Directories::
+* Find File At Point::
 * Miscellaneous Commands::
 * Bugs::
 
@@ -137,6 +176,9 @@ the code using @code{gmhist} history functions was replaced with code using
 the mini-buffer history now built into GNU Emacs 19.  Finally, a few other
 features have been added and a few more functions have been bound to keys.
 
+Please note that @file{dired-x.el} and this texinfo file @file{dired-x.texi}
+are bundled with GNU Emacs versions 19.23 and later.
+
 @ifinfo
 @menu
 * Features::
@@ -152,23 +194,33 @@ features have been added and a few more functions have been bound to keys.
 Some features provided by Dired Extra
 
 @enumerate
-@item Omitting of uninteresting files from dired listing. 
+@item
+Omitting of uninteresting files from dired listing. 
 @itemize
 @xref{Omitting Files in Dired}
 @end itemize
-@item Local variables for dired directories.
+@item
+Local variables for dired directories.
 @itemize
 @xref{Local Variables}
 @end itemize
-@item Guessing shell commands in dired buffers.
+@item
+Guessing shell commands in dired buffers.
 @itemize
 @xref{Shell Command Guessing}
 @end itemize
-@item Running dired command in non-dired buffers.
+@item
+Running dired command in non-dired buffers.
 @itemize
 @xref{Virtual Dired}
 @end itemize
-@item Commands using file marking.
+@item
+Finding a file mentioned in a buffer
+@itemize
+@xref{Find File At Point}
+@end itemize
+@item
+Commands using file marking.
 @itemize
 @xref{Advanced Mark Commands}
 @end itemize
@@ -177,7 +229,10 @@ Some features provided by Dired Extra
 @noindent
 @file{dired-x.el} binds some functions to keys in Dired Mode (@xref{Key
 Index}) and also binds @kbd{C-x C-j} and @kbd{C-x 4 C-j} @emph{globally} to
-@code{dired-jump} (@xref{Miscellaneous Commands}).
+@code{dired-jump} (@xref{Miscellaneous Commands}).  It may also bind @kbd{C-x
+C-f} and @kbd{C-x 4 C-f} to @code{dired-x-find-file} and
+@code{dired-x-find-file-other-window}, respectively (@xref{Find File At
+Point}).
 
 @node Technical Details, Installation, Features, Introduction
 @comment  node-name,  next,  previous,  up
@@ -189,18 +244,24 @@ When loaded this code @emph{redefines} the following functions of GNU Emacs
 from @file{dired.el}
 
 @itemize @bullet
-@item @code{dired-clean-up-after-deletion}
-@item @code{dired-find-buffer-nocreate}
-@item @code{dired-initial-position}
-@item @code{dired-up-directory}
+@item
+@code{dired-clean-up-after-deletion}
+@item
+@code{dired-find-buffer-nocreate}
+@item
+@code{dired-initial-position}
+@item
+@code{dired-up-directory}
 @end itemize
 
 @noindent
 and the following functions from @file{dired-aux.el}
 
 @itemize @bullet
-@item @code{dired-add-entry}
-@item @code{dired-read-shell-command}
+@item
+@code{dired-add-entry}
+@item
+@code{dired-read-shell-command}
 @end itemize
 
 One drawback is that @file{dired-x.el} will load @file{dired-aux.el} as soon
@@ -208,7 +269,7 @@ as dired is loaded.  Thus, the advantage of separating out non-essential dired
 stuff into @file{dired-aux.el} and only loading when necessary will be lost
 when @file{dired-x.el} is used.
 
-@node Installation, Optional Installation, Technical Details, Top
+@node Installation, Optional Installation Dired Jump, Technical Details, Top
 @comment  node-name,  next,  previous,  up
 @chapter Installation
 
@@ -228,6 +289,7 @@ initialization file @file{default.el} in the @file{site-lisp} directory, put
                       ;; Set dired-x variables here.  For example:
                       ;; (setq dired-guess-shell-gnutar "gtar")
                       ;; (setq dired-omit-files-p t)
+                      ;; (setq dired-x-hands-off-my-keys nil)
                       )))
 @end example
 
@@ -237,14 +299,15 @@ when you first do @kbd{C-x d}).
 
 @ifinfo
 @menu
-* Optional Installation::
+* Optional Installation Dired Jump::
+* Optional Installation File At Point::
 * Special Notes::
 @end menu
 @end ifinfo
 
-@node Optional Installation, Special Notes, Installation, Installation
+@node Optional Installation Dired Jump, Optional Installation File At Point, Installation, Installation
 @comment  node-name,  next,  previous,  up
-@section Optional
+@section Optional Installation Dired Jump
 
 @cindex Autoloading @code{dired-jump} and @code{dired-jump-other-window}
 
@@ -271,7 +334,51 @@ buffer and try again." t nil)
 Like \\[dired-jump] (dired-jump) but in other window." t nil)
 @end example
 
-@node Special Notes, Omitting Files in Dired, Optional Installation, Installation
+Note that in recent releases of GNU Emacs 19 (i.e., 19.25 or later) the file
+@file{../lisp/loaddefs.el} of the Emacs distribution already contains the
+proper auto-loading for @code{dired-jump} so you need only put
+
+@example
+(define-key global-map "\C-x\C-j" 'dired-jump)
+@end example
+
+@noindent in your @file{.emacs} file in order to have @kbd{C-x C-j} work
+before @code{dired} is loaded.
+
+@node Optional Installation File At Point, Special Notes, Optional Installation Dired Jump, Installation
+@comment  node-name,  next,  previous,  up
+@section Optional Installation File At Point
+
+@cindex Binding @code{dired-x-find-file}
+If you choose to have @file{dired-x.el} bind @code{dired-x-find-file} over
+@code{find-file} (@xref{Find File At Point}), then you will need to set
+@code{dired-x-hands-off-my-keys} and make a call to the function
+@code{dired-x-bind-find-file} in the @code{dired-load-hook}:
+
+@example
+(add-hook 'dired-load-hook 
+          (function (lambda ()
+                      (load "dired-x")
+                      ;; Bind dired-x-find-file.
+                      (setq dired-x-hands-off-my-keys nil)
+                      ;; Make sure our binding preference is invoked.
+                      (dired-x-bind-find-file)
+                      )))
+@end example
+
+Alternatively, you can set the variable @emph{before} @file{dired-x.el} is
+loaded
+
+@example
+(add-hook 'dired-load-hook 
+          (function (lambda ()
+                      ;; Bind dired-x-find-file.
+                      (setq dired-x-hands-off-my-keys nil)
+                      (load "dired-x")
+                      )))
+@end example
+
+@node Special Notes, Omitting Files in Dired, Optional Installation File At Point, Installation
 @comment  node-name,  next,  previous,  up
 @section Special Notes
 
@@ -287,7 +394,7 @@ like this in your @file{.emacs} file
 (setq load-path (append
                  load-path ; default at top
                  (list 
-                  "/the/directory/where/you/put/dired-x/")))
+                  "/the/directory/where/you/put/dired-x")))
 @end example
 
 @noindent If you wish to put the new directory at the head of the list (where
@@ -297,7 +404,7 @@ it will be found first) then you should use instead
 ;;; LOAD PATH
 (setq load-path (append
                  (list 
-                  "/the/directory/where/you/put/dired-x/")
+                  "/the/directory/where/you/put/dired-x")
                  load-path)) ; default at bottom
 @end example
 
@@ -306,6 +413,24 @@ You must also byte compile the file (for example, hitting @kbd{B} in
 messages about functions @code{vm-visit-folder}, @code{Man-notify-when-ready},
 and @code{reporter-submit-bug-report} not being defined.  These are warnings
 and should be ignored.
+
+@noindent CAUTION: If you are using a version of GNU Emacs earlier than 19.20
+than you may have to edit @file{dired.el}.  The copy of @file{dired.el} in GNU
+Emacs versions earlier than 19.20 incorrectly had the call to @code{run-hooks}
+@emph{before} the call to @code{provide}.  In such a case, it is possible that
+byte-compiling and/or loading dired can cause an infinite loop.  To prevent
+this, make sure the line of code
+
+@example
+        (run-hooks 'dired-load-hook)
+@end example
+
+@noindent is the @emph{last} executable line in the file @file{dired.el}.
+That is, make sure it comes @emph{after} the line
+
+@example
+        (provide 'dired)
+@end example
 
 @node Omitting Files in Dired, Omitting Variables, Special Notes, Top
 @comment  node-name,  next,  previous,  up
@@ -339,7 +464,6 @@ Marked files are never omitted.
 @end itemize
 
 @table @kbd
-
 @item M-o
 @kindex M-o
 @findex dired-omit-toggle
@@ -376,9 +500,9 @@ The following variables can be used to customize omitting.
 Default: @code{nil}
 
 @cindex How to make omitting the default in Dired
-If non-nil, ``uninteresting'' files are not listed.  Uninteresting files
-are those whose filenames match regexp @code{dired-omit-files}, plus those
-ending with extensions in @code{dired-omit-extensions}.  @kbd{M-o}
+If non-@code{nil}, ``uninteresting'' files are not listed.  Uninteresting
+files are those whose filenames match regexp @code{dired-omit-files}, plus
+those ending with extensions in @code{dired-omit-extensions}.  @kbd{M-o}
 (@code{dired-omit-toggle}) toggles its value, which is buffer-local.  Put
 
 @example
@@ -431,8 +555,8 @@ the file @file{loaddefs.el} of the GNU Emacs distribution),
 @code{dired-latex-unclean-extensions}, @code{dired-bibtex-unclean-extensions}
 and @code{dired-texinfo-unclean-extensions}.
 
-If non-nil, a list of extensions (strings) to omit from Dired listings.  Its
-format is the same as that of @code{completion-ignored-extensions}.
+If non-@code{nil}, a list of extensions (strings) to omit from Dired listings.
+Its format is the same as that of @code{completion-ignored-extensions}.
 
 @vindex dired-omit-localp
 @item dired-omit-localp
@@ -556,8 +680,10 @@ into a file called @file{.dired} in a directory then when that directory is
 viewed it will be
 
 @enumerate
-@item sorted by date 
-@item omitted automatically
+@item
+sorted by date 
+@item
+omitted automatically
 @end enumerate
 
 @noindent
@@ -575,27 +701,24 @@ Files,emacs,The GNU Emacs Manual}.
 The following variables affect Dired Local Variables
 
 @table @code
-
 @vindex dired-local-variables-file
 @item dired-local-variables-file
-
 Default: @code{".dired"}
 
-If non-nil, filename for local variables for Dired.  If Dired finds a file
-with that name in the current directory, it will temporarily insert it into
-the dired buffer and run `hack-local-variables'.
+If non-@code{nil}, filename for local variables for Dired.  If Dired finds a
+file with that name in the current directory, it will temporarily insert it
+into the dired buffer and run `hack-local-variables'.
 
 @vindex dired-enable-local-variables
 @item dired-enable-local-variables
-
 Default: @code{t}
 
-Controls use of local-variables lists in dired.  The value can be t, nil or
-something else.  A value of t means local-variables lists are obeyed in the
-@code{dired-local-variables-file}; nil means they are ignored; anything else
-means query.  This variable temporarily overrides the value of
-@code{enable-local-variables} when the Dired Local Variables are hacked.
-
+Controls use of local-variables lists in dired.  The value can be @code{t},
+@code{nil}, or something else.  A value of @code{t} means local-variables
+lists are obeyed in the @code{dired-local-variables-file}; @code{nil} means
+they are ignored; anything else means query.  This variable temporarily
+overrides the value of @code{enable-local-variables} when the Dired Local
+Variables are hacked.
 @end table
 
 @node Shell Command Guessing, Virtual Dired, Local Variables, Top
@@ -619,20 +742,17 @@ Dired only tries to guess a command for a single file, never for a list
 of marked files.
 
 @table @code
-
 @item dired-guess-shell-alist-default
 @vindex dired-guess-shell-alist-default
-
-Predefined rules for shell commands.  Set this to nil to turn guessing off.
+Predefined rules for shell commands.  Set this to @code{nil} to turn guessing off.
 The elements of @code{dired-guess-shell-alist-user} (defined by the
 user) will override these rules.@refill
 
 @item dired-guess-shell-alist-user
 @vindex dired-guess-shell-alist-user
-
-If non-nil, a user-defined alist of file regexps and their suggested commands.
-These rules take precedence over the predefined rules in the variable
-@code{dired-guess-shell-alist-default} (to which they are prepended)
+If non-@code{nil}, a user-defined alist of file regexps and their suggested
+commands.  These rules take precedence over the predefined rules in the
+variable @code{dired-guess-shell-alist-default} (to which they are prepended)
 when @code{dired-do-shell-command} is run).
 @refill
 
@@ -666,27 +786,24 @@ This will override any predefined rules for the same extensions.
 @item dired-guess-shell-gnutar
 @vindex dired-guess-shell-gnutar
 @cindex Passing GNU tar its `z' switch.
-
 Default: @code{nil}
 
-If non-nil, name of the GNU tar executable (e.g., @samp{"tar"} or
-@samp{"gnutar"}).  GNU tar's @samp{z} switch is used for compressed tar
-files.  If you don't have GNU tar, set this to nil: a pipe using
-@samp{zcat} is then used.
+If non-@code{nil}, name of the GNU tar executable (e.g., @samp{"tar"} or
+@samp{"gnutar"}).  GNU tar's @samp{z} switch is used for compressed tar files.
+If you don't have GNU tar, set this to @code{nil}: a pipe using @samp{zcat} is
+then used.
 
 @item dired-guess-shell-gzip-quiet
 @vindex dired-guess-shell-gzip-quiet
 @cindex GNU zip.
-
 Default: @code{t}
 
-A non-nil value means that @code{-q} is passed to gzip overriding a verbose
-GNU zip's @samp{GZIP} environment variable.
+A non-@code{nil} value means that @code{-q} is passed to gzip overriding a
+verbose GNU zip's @samp{GZIP} environment variable.
 
 @item dired-guess-shell-znew-switches nil
 @vindex dired-guess-shell-znew-switches nil
 @cindex GNU zip.
-
 Default: @code{nil}
 
 A string of switches passed to GNU zip's @file{znew}.  An example is
@@ -751,20 +868,18 @@ local variable files.
 @cindex Simultaneous visiting of several files
 @findex dired-do-find-marked-files
 (@code{dired-do-find-marked-files}) Find all marked files at once displaying
-simultaneously.  If optional NOSELECT is non-nil then just find the files but
-do not select.  If you want to keep the dired buffer displayed, type @kbd{C-x
-2} first.  If you want just the marked files displayed and nothing else, type
-@kbd{C-x 1} first.
+simultaneously.  If optional NOSELECT is non-@code{nil} then just find the
+files but do not select.  If you want to keep the dired buffer displayed, type
+@kbd{C-x 2} first.  If you want just the marked files displayed and nothing
+else, type @kbd{C-x 1} first.
 
 The current window is split across all files marked, as evenly as possible.
 Remaining lines go to the bottom-most window.  The number of files that can be
 displayed this way is restricted by the height of the current window and the
 variable @code{window-min-height}.
-
 @end table
 
 @table @code
-
 @item dired-mark-extension
 @findex dired-mark-extension
 Mark all files with a certain extension for use in later commands.  A @samp{.}
@@ -777,7 +892,6 @@ and an optional argument @var{marker-char} specifies the marker used.
 @findex dired-flag-extension
 Flag all files with a certain extension for deletion.  A @samp{.} is
 @emph{not} automatically prepended to the string entered.
-
 @end table
 
 @ifinfo
@@ -794,7 +908,6 @@ Flag all files with a certain extension for deletion.  A @samp{.} is
 @section Advanced Cleaning Functions
 
 @table @code
-
 @item dired-clean-patch
 @findex dired-clean-patch
 Flag dispensable files created by the @samp{patch} program for deletion.  See
@@ -806,17 +919,20 @@ Flag dispensable files created by @TeX{}, La@TeX{}, and @samp{texinfo} for
 deletion.  See the following variables (@xref{Advanced Cleaning Variables})
 
 @itemize @bullet
- @item @code{dired-tex-unclean-extensions}
- @item @code{dired-texinfo-unclean-extensions}
- @item @code{dired-latex-unclean-extensions}
- @item @code{dired-bibtex-unclean-extensions}
+@item
+@code{dired-tex-unclean-extensions}
+@item
+@code{dired-texinfo-unclean-extensions}
+@item
+@code{dired-latex-unclean-extensions}
+@item
+@code{dired-bibtex-unclean-extensions}
 @end itemize
 
 @item dired-very-clean-tex
 @findex dired-very-clean-tex
 Flag dispensable files created by @TeX{}, La@TeX{}, @samp{texinfo}, and ".dvi"
 files for deletion.
-
 @end table
 
 @node Advanced Cleaning Variables, Special Marking Function, Advanced Cleaning Functions, Advanced Mark Commands
@@ -828,7 +944,6 @@ files for deletion.
 variable @code{dired-omit-extensions}, @xref{Omitting Variables})
 
 @table @code
-
 @item dired-patch-unclean-extensions
 @vindex dired-patch-unclean-extensions
 Default: @code{'(".rej" ".orig")}
@@ -859,7 +974,6 @@ List of extensions of dispensable files created by La@TeX{}.
 Default:  @code{'(".blg" ".bbl")}
 
 List of extensions of dispensable files created by Bib@TeX{}.
-
 @end table
 
 @node Special Marking Function, Multiple Dired Directories, Advanced Cleaning Variables, Advanced Mark Commands
@@ -868,14 +982,13 @@ List of extensions of dispensable files created by Bib@TeX{}.
 @section Special Marking Function
 
 @table @kbd
-
 @item M-(
 @kindex M-(
 @findex dired-mark-sexp
 @cindex Lisp expression, marking files with in Dired
 @cindex Mark file by lisp expression
-(@code{dired-mark-sexp}) Mark files for which @var{predicate} returns non-nil.
-With a prefix argument, unflag those files instead.
+(@code{dired-mark-sexp}) Mark files for which @var{predicate} returns
+non-@code{nil}.  With a prefix argument, unflag those files instead.
 
 The @var{predicate} is a lisp expression that can refer to the following
 symbols:
@@ -921,7 +1034,7 @@ to mark all @file{.el} files without a corresponding @file{.elc} file.
 
 @end table
 
-@node Multiple Dired Directories, Miscellaneous Commands, Special Marking Function, Top
+@node Multiple Dired Directories, Find File At Point, Special Marking Function, Top
 @comment  node-name,  next,  previous,  up
 @chapter Multiple Dired Directories and Non-Dired Commands
 
@@ -953,20 +1066,95 @@ Function with usage like variable @code{default-directory}, but knows about the
 special cases in variable @code{default-directory-alist}.
 @end table
 
-@node Miscellaneous Commands, Bugs, Multiple Dired Directories, Top
+@node Find File At Point, Miscellaneous Commands, Multiple Dired Directories, Top
+@comment  node-name,  next,  previous,  up
+
+@section Find File At Point
+@cindex Visiting a file mentioned in a buffer
+@cindex Finding a file at point
+
+@file{dired-x} provides a method of visiting or editing a file mentioned in
+the buffer you are viewing (e.g., a mail buffer, a news article, a README
+file, etc.) or to test if that file exists.  You can then modify this in the
+minibuffer after snatching the filename.
+
+When installed @file{dired-x} will substitute @code{dired-x-find-file} for
+@code{find-file} (normally bound to @kbd{C-x C-f}) and
+@code{dired-x-find-file-other-window} for @code{find-file-other-window}
+(normally bound to @kbd{C-x 4 C-f}).
+
+In order to use this feature, you will need to set
+@code{dired-x-hands-off-my-keys} to @code{nil} inside @code{dired-load-hook}
+(@xref{Optional Installation File At Point}).
+
+@table @code
+@item dired-x-find-file
+@findex dired-x-find-file
+@kindex C-x C-f
+
+@code{dired-x-find-file} behaves exactly like @code{find-file} (normally bound
+to @kbd{C-x C-f}) unless a prefix argument is passed to the function in which
+case it will use the filename at point as a guess for the file to visit.
+
+For example, if the buffer you were reading contained the words
+
+@example
+Available via anonymous ftp in
+
+   /roebling.poly.edu:/pub/lisp/crypt++.el.gz
+@end example
+
+then you could move your cursor to the line containing the ftp address and
+type @kbd{C-u C-x C-f} (the @kbd{C-u} is a universal argument).  The
+minibuffer would read
+
+@example
+Find file: /roebling.poly.edu:/pub/lisp/crypt++.el.gz
+@end example
+
+with the point after the last @code{/}.  If you hit return emacs will visit
+the file at that address.  This also works with files on your own computer.
+
+@item dired-x-find-file-other-window
+@findex dired-x-find-file-other-window
+@kindex C-x 4 C-f
+
+@code{dired-x-find-file-other-window} behaves exactly like
+@code{find-file-other-window} (normally bound to @kbd{C-x 4 C-f}) unless a
+prefix argument is used.  See @code{dired-x-find-file} for more information.
+
+@item dired-x-hands-off-my-keys
+@vindex dired-x-hands-off-my-keys
+If set to @code{t}, then it means that @file{dired-x} should @emph{not} bind
+@code{dired-x-find-file} over @code{find-file} on keyboard.  Similarly, it
+should not bind @code{dired-x-find-file-other-window} over
+@code{find-file-other-window}.  If you change this variable after
+@file{dired-x.el} is loaded then do @kbd{M-x dired-x-bind-find-file}.  The
+default value of this variable is @kbd{t}; by default, the binding is not
+done.  See @xref{Optional Installation File At Point}.
+
+@item dired-x-bind-find-file
+@findex dired-x-bind-find-file
+A function, which can be called interactively or in your @file{~/.emacs} file,
+that uses the value of @code{dired-x-hands-off-my-keys} to determine if
+@code{dired-x-find-file} should be bound over @code{find-file} and
+@code{dired-x-find-file-other-window} bound over
+@code{find-file-other-window}.  See @xref{Optional Installation File At Point}.
+@end table
+
+@node Miscellaneous Commands, Bugs, Find File At Point, Top
 @comment  node-name,  next,  previous,  up
 @chapter Miscellaneous Commands
 
 Miscellaneous features not fitting anywhere else:
 
 @table @code
-
 @item dired-find-subdir
 @vindex dired-find-subdir
 Default: @code{nil}
 
-If non-nil, Dired does not make a new buffer for a directory if it
-can be found (perhaps as subdirectory) in some existing Dired buffer.
+If non-@code{nil}, Dired does not make a new buffer for a directory if it can
+be found (perhaps as subdirectory) in some existing Dired buffer.
 
 If there are several Dired buffers for a directory, the most recently
 used is chosen.
@@ -974,11 +1162,9 @@ used is chosen.
 Dired avoids switching to the current buffer, so that if you have a
 normal and a wildcard buffer for the same directory, @kbd{C-x d RET}
 will toggle between those two.
-
 @end table
 
 @table @kbd
-
 @findex dired-goto-file
 @kindex M-g
 @item M-g
@@ -993,7 +1179,6 @@ inserted subdirectories.
 @end table
 
 @table @kbd
-
 @item w
 @cindex Adding to the kill ring in dired.
 @kindex w
@@ -1028,11 +1213,9 @@ minibuffer prompt to insert the old name at a convenient place.
 files become unmarked and vice versa.  Files marked with other flags
 (such as `D') are not affected.  The special directories `.' and `..'
 are never toggled.
-
 @end table
 
 @table @code
-
 @item dired-smart-shell-command
 @findex dired-smart-shell-command
 @findex shell-command
@@ -1055,10 +1238,10 @@ found, refresh the Dired buffer and try again.
 Bound to @kbd{C-x 4 C-j}. Like @code{dired-jump}, but to other window.
 
 These functions can be autoloaded so they work even though @file{dired-x.el}
-has not been loaded yet (@xref{Optional Installation}).
+has not been loaded yet (@xref{Optional Installation Dired Jump}).
 
 @vindex dired-bind-jump
-If the variable @code{dired-bind-jump} is nil, @code{dired-jump} will not be
+If the variable @code{dired-bind-jump} is @code{nil}, @code{dired-jump} will not be
 bound to @kbd{C-x C-j} and @code{dired-jump-other-window} will not be bound to
 @kbd{C-x 4 C-j}.
 
@@ -1073,21 +1256,20 @@ to be a UNIX mail folder).
 If you give this command a prefix argument, it will visit the folder
 read-only.  This only works in VM~5, not VM~4.
 
-If the variable @code{dired-vm-read-only-folders} is t, @code{dired-vm}
-will visit all folders read-only.  If it is neither @code{nil} nor
-@code{t}, e.g., the symbol @code{'if-file-read-only}, only files not
-writable by you are visited read-only.  This is the recommended value if
-you run VM 5.
+If the variable @code{dired-vm-read-only-folders} is t, @code{dired-vm} will
+visit all folders read-only.  If it is neither @code{nil} nor @code{t}, e.g.,
+the symbol @code{'if-file-read-only}, only files not writable by you are
+visited read-only.  This is the recommended value if you run VM 5.
 
 @vindex dired-bind-vm
-If the variable @code{dired-bind-vm} is t, @code{dired-vm} will be bound to @kbd{V}.
-Otherwise, @code{dired-bind-rmail} will be bound.
+If the variable @code{dired-bind-vm} is t, @code{dired-vm} will be bound to
+@kbd{V}.  Otherwise, @code{dired-bind-rmail} will be bound.
 
 @item dired-rmail
 @cindex Reading mail.
 @findex dired-rmail
-Bound to @kbd{V} if @code{dired-bind-vm} is nil.  Run Rmail on this file
-(assumed to be mail folder in Rmail/BABYL format).
+Bound to @kbd{V} if @code{dired-bind-vm} is @code{nil}.  Run Rmail on this
+file (assumed to be mail folder in Rmail/BABYL format).
 
 @item dired-info
 @kindex I
@@ -1097,8 +1279,8 @@ Bound to @kbd{I}.  Run Info on this file (assumed to be a file in Info
 format).
 
 @vindex dired-bind-info
-If the variable @code{dired-bind-info} is nil, @code{dired-info} will not be bound
-to I.
+If the variable @code{dired-bind-info} is @code{nil}, @code{dired-info} will
+not be bound to I.
 
 @item dired-man
 @cindex Running man.
@@ -1108,8 +1290,8 @@ Bound to @kbd{N}.  Run man on this file (assumed to be a file in nroff
 format).
 
 @vindex dired-bind-man
-If the variable @code{dired-bind-man} is nil, @code{dired-man} will not be bound
-to N.
+If the variable @code{dired-bind-man} is @code{nil}, @code{dired-man} will not
+be bound to N.
 
 @item dired-do-relative-symlink
 @cindex Relative symbolic links.
@@ -1131,18 +1313,6 @@ not absolute ones like
 Bound to @kbd{%Y}.  Relative symlink all marked files containing REGEXP to
 NEWNAME.  See functions `dired-do-rename-regexp' and `dired-do-relsymlink' for
 more info.
-
-@item dired-find-this-file
-@findex dired-find-this-file
-@findex find-this-file
-(and @code{find-this-file}) Edit filename or directory at point.  Switch to a
-buffer visiting filename, creating one if none already exists.  With non-nil
-prefix argument OTHER-WINDOW do so in the other window.
-
-This is useful for editing the file mentioned in the buffer you are viewing,
-or to test if that file exists.  You can then modify this in the minibuffer
-after snatching the filename.
-
 @end table
 
 @node Bugs, Concept Index, Miscellaneous Commands, Top
@@ -1152,8 +1322,8 @@ after snatching the filename.
 @findex dired-x-submit-report
 
 @noindent
-If you encounter a bug in this document or code, or wish to suggest an
-enhancement, type
+If you encounter a bug in this package, wish to suggest an
+enhancement, or want to make a smart remark, then type
 
 @example
 @kbd{M-x dired-x-submit-report} 
@@ -1161,9 +1331,10 @@ enhancement, type
 
 @noindent
 to set up an outgoing mail buffer, with the proper address to the
-@file{dired-x.el} maintainer automatically inserted in the @samp{To:@:}
-field.  This command also inserts information that the Dired X maintainer
-can use to recreate your exact setup, making it easier to verify your bug.
+@file{dired-x.el} maintainer automatically inserted in the @samp{To:@:} field.
+This command also inserts information that the Dired X maintainer can use to
+recreate your exact setup, making it easier to verify your bug or social
+maladjustment.
 
 Lawrence R. Dodd <dodd@@roebling.poly.edu>
 
@@ -1191,3 +1362,4 @@ Lawrence R. Dodd <dodd@@roebling.poly.edu>
 @contents
 
 @bye
+@c dired-x.texi ends here.

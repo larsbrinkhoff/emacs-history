@@ -2,7 +2,7 @@
 @c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
-@chapter Correcting Mistakes (Yours or Emacs's)
+@chapter Dealing with Common Problems
 
   If you type an Emacs command you did not intend, the results are often
 mysterious.  This chapter tells what you can do to cancel your mistake or
@@ -23,10 +23,10 @@ invoked it (@code{abort-recursive-edit}).
 @item M-x top-level
 Abort all recursive editing levels that are currently executing.
 @item C-x u
-Cancel an already-executed command, usually (@code{undo}).
+Cancel a previously made change in the buffer contents (@code{undo}).
 @end table
 
-  There are two ways of cancelling commands which are not finished
+  There are two ways of canceling commands which are not finished
 executing: @dfn{quitting} with @kbd{C-g}, and @dfn{aborting} with
 @kbd{C-]} or @kbd{M-x top-level}.  Quitting cancels a partially typed
 command or one which is already running.  Aborting exits a recursive
@@ -43,7 +43,8 @@ particular, it is safe to quit out of killing; either your text will
 @emph{all} still be in the buffer, or it will @emph{all} be in the kill
 ring (or maybe both).  Quitting an incremental search does special
 things documented under searching; in general, it may take two
-successive @kbd{C-g} characters to get out of a search.
+successive @kbd{C-g} characters to get out of a search
+(@pxref{Incremental Search}).
 
   @kbd{C-g} works by setting the variable @code{quit-flag} to @code{t}
 the instant @kbd{C-g} is typed; Emacs Lisp checks this variable
@@ -80,17 +81,17 @@ recursive edit.
 
 @findex top-level
   The command @kbd{M-x top-level} is equivalent to ``enough'' @kbd{C-]}
-commands to get you out of all the levels of recursive edits that you are
-in.  @kbd{C-]} gets you out one level at a time, but @kbd{M-x top-level}
-goes out all levels at once.  Both @kbd{C-]} and @kbd{M-x top-level} are
-like all other commands, and unlike @kbd{C-g}, in that they are effective
-only when Emacs is ready for a command.  @kbd{C-]} is an ordinary key and
-has its meaning only because of its binding in the keymap.
-@xref{Recursive Edit}.
+commands to get you out of all the levels of recursive edits that you
+are in.  @kbd{C-]} gets you out one level at a time, but @kbd{M-x
+top-level} goes out all levels at once.  Both @kbd{C-]} and @kbd{M-x
+top-level} are like all other commands, and unlike @kbd{C-g}, in that
+they take effect only when Emacs is ready for a command.  @kbd{C-]} is
+an ordinary key and has its meaning only because of its binding in the
+keymap.  @xref{Recursive Edit}.
 
-  @kbd{C-x u} (@code{undo}) is not strictly speaking a way of cancelling a
-command, but you can think of it as cancelling a command already finished
-executing.  @xref{Undo}.
+  @kbd{C-x u} (@code{undo}) is not strictly speaking a way of canceling
+a command, but you can think of it as canceling a command that already
+finished executing.  @xref{Undo}.
 
 @node Lossage, Bugs, Quitting, Top
 @section Dealing with Emacs Trouble
@@ -161,8 +162,9 @@ results.
 
   If a large portion of text appears to be missing at the beginning or
 end of the buffer, check for the word @samp{Narrow} in the mode line.
-If it appears, the text is still present, but temporarily off-limits.
-To make it accessible again, type @kbd{C-x n w}.  @xref{Narrowing}.
+If it appears, the text you don't see is probably still present, but
+temporarily off-limits.  To make it accessible again, type @kbd{C-x n
+w}.  @xref{Narrowing}.
 
 @node Unasked-for Search
 @subsection Spontaneous Entry to Incremental Search
@@ -192,7 +194,6 @@ terminal types only, using @code{enable-flow-control-on}.  For example,
 if you find you must use flow control on VT-100 and H19 terminals, put
 the following in your @file{.emacs} file:
 
-@findex enable-flow-control-on
 @example
 (enable-flow-control-on "vt100" "h19")
 @end example
@@ -265,9 +266,10 @@ the doctor know you are finished.
 @section Reporting Bugs
 
 @cindex bugs
-  Sometimes you will encounter a bug in Emacs.  Although we cannot promise
-we can or will fix the bug, and we might not even agree that it is a bug,
-we want to hear about bugs you encounter in case we do want to fix them.
+  Sometimes you will encounter a bug in Emacs.  Although we cannot
+promise we can or will fix the bug, and we might not even agree that it
+is a bug, we want to hear about problems you encounter.  Often we agree
+they are bugs and want to fix them.
 
   To make it possible for us to fix a bug, you must report it.  In order
 to do so effectively, you must know when and how to do it.
@@ -319,9 +321,10 @@ you want is not available.  If you are not sure what the command is
 supposed to do after a careful reading of the manual, check the index and
 glossary for any terms that may be unclear.
 
-  If you still do not understand, that indicates a bug in the manual,
-which you should report.  The manual's job is to make everything clear
-to people who are not Emacs experts---including you.  It is just as
+  If after careful rereading of the manual you still do not understand
+what the command should do, that indicates a bug in the manual, which
+you should report.  The manual's job is to make everything clear to
+people who are not Emacs experts---including you.  It is just as
 important to report documentation bugs as program bugs.
 
   If the on-line documentation string of a function or variable disagrees
@@ -364,7 +367,7 @@ with exactly 25 spaces.  For this reason, you should make sure that you
 inform us of the exact contents of any file that is needed to reproduce the
 bug.  What if the problem only occurs when you have typed the @kbd{C-x C-a}
 command previously?  This is why we ask you to give the exact sequence of
-characters you typed since starting to use Emacs.
+characters you typed since starting the Emacs session.
 
   You should not even say ``visit a file'' instead of @kbd{C-x C-f} unless
 you @emph{know} that it makes no difference which visiting command is used.
@@ -430,8 +433,8 @@ Emacs.
 @item
 A complete list of any modifications you have made to the Emacs source.
 (We may not have time to investigate the bug unless it happens in an
-unmodified Emacs.  But if you've made modifications and don't tell us,
-then you are sending us on a wild goose chase.)
+unmodified Emacs.  But if you've made modifications and you don't tell
+us, you are sending us on a wild goose chase.)
 
 Be precise about these changes.  A description in English is not
 enough---send a context diff for them.
@@ -510,10 +513,10 @@ Even if the problem you experience is a fatal signal, you should still
 say so explicitly.  Suppose something strange is going on, such as, your
 copy of the source is out of sync, or you have encountered a bug in the
 C library on your system.  (This has happened!)  Your copy might crash
-and the copy here would not.  If you @emph{said} to expect a crash, then
+and the copy here might not.  If you @emph{said} to expect a crash, then
 when Emacs here fails to crash, we would know that the bug was not
 happening.  If you don't say to expect a crash, then we would not know
-whether the bug was happening.  We would not be able to draw any
+whether the bug was happening---we would not be able to draw any
 conclusion from our observations.
 
 If the manifestation of the bug is an Emacs error message, it is
@@ -614,7 +617,7 @@ these include the Lisp function itself and the arguments for that
 function.
 @end itemize
 
-Here are some things that are not necessary:
+Here are some things that are not necessary in a bug report:
 
 @itemize @bullet
 @item
@@ -628,14 +631,14 @@ changes will not affect it.
 This is often time consuming and not very useful, because the way we
 will find the bug is by running a single example under the debugger with
 breakpoints, not by pure deduction from a series of examples.  You might
-as well save time by not doing this.
+as well save time by not searching for additional examples.
 
 Of course, if you can find a simpler example to report @emph{instead} of
 the original one, that is a convenience.  Errors in the output will be
 easier to spot, running under the debugger will take less time, etc.
 
-However, simplification is not vital; if you don't want to do this,
-please report the bug with your original test case.
+However, simplification is not vital; if you can't do this or don't have
+time to try, please report the bug with your original test case.
 
 @item
 A system call trace of Emacs execution.
@@ -655,13 +658,12 @@ objects with @code{pr} (see above).
 A patch for the bug.
 
 A patch for the bug is useful if it is a good one.  But don't omit the
-necessary information, such as the test case, on the assumption that a
-patch is all we need.  We might see problems with your patch and decide
-to fix the problem another way, or we might not understand it at all.
-
-And if we can't understand what bug you are trying to fix, or why your
-patch should be an improvement, we mustn't install it.  A test case will
-help us to understand.
+other information that a bug report needs, such as the test case, on the
+assumption that a patch is sufficient.  We might see problems with your
+patch and decide to fix the problem another way, or we might not
+understand it at all.  And if we can't understand what bug you are
+trying to fix, or why your patch should be an improvement, we mustn't
+install it.
 
 @ifinfo
 @xref{Sending Patches}, for guidelines on how to make it easy for us to
@@ -680,14 +682,13 @@ such things without first using the debugger to find the facts.
 
 @cindex sending patches for GNU Emacs
 @cindex patches, sending
-  If you would like to write bug fixes or improvements for GNU Emacs, that
-is very helpful.  When you send your changes, please follow these
-guidelines to make it easy for the maintainers to use them.
-
-  If you don't follow these guidelines, your information might still be
-useful, but using it will take extra work.  Maintaining GNU Emacs is a
-lot of work in the best of circumstances, and we can't keep up unless
-you do your best to help.
+  If you would like to write bug fixes or improvements for GNU Emacs,
+that is very helpful.  When you send your changes, please follow these
+guidelines to make it easy for the maintainers to use them.  If you
+don't follow these guidelines, your information might still be useful,
+but using it will take extra work.  Maintaining GNU Emacs is a lot of
+work in the best of circumstances, and we can't keep up unless you do
+your best to help.
 
 @itemize @bullet
 @item
@@ -741,8 +742,9 @@ always study a patch to decide whether we want to install it.  Unidiff
 format is better than contextless diffs, but not as easy to read as
 @samp{-c} format.
 
-If you have GNU diff, use @samp{diff -c -F'^[_a-zA-Z0-9$]+ *('}, which
-shows the name of the function that each change occurs in.
+If you have GNU diff, use @samp{diff -c -F'^[_a-zA-Z0-9$]+ *('} when
+making diffs of C code.  This shows the name of the function that each
+change occurs in.
 
 @item
 Write the change log entries for your changes.  This is both to save us
@@ -760,10 +762,11 @@ new function, all you need to say about it is that it is new.  If you
 feel that the purpose needs explaining, it probably does---but put the
 explanation in comments in the code.  It will be more useful there.
 
-Please read the @file{ChangeLog} file to see what sorts of information
-to put in, and to learn the style that we use.  If you would like your
-name to appear in the header line showing who made the change, send us
-the header line.
+Please read the @file{ChangeLog} files in the @file{src} and @file{lisp}
+directories to see what sorts of information to put in, and to learn the
+style that we use.  If you would like your name to appear in the header
+line, showing who made the change, send us the header line.
+@xref{Change Log}.
 
 @item
 When you write the fix, keep in mind that we can't install a change that

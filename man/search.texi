@@ -48,9 +48,7 @@ Incremental search backward (@code{isearch-backward}).
 @end table
 
 @kindex C-s
-@kindex C-r
 @findex isearch-forward
-@findex isearch-backward
   @kbd{C-s} starts an incremental search.  @kbd{C-s} reads characters from
 the keyboard and positions the cursor at the first occurrence of the
 characters that you have typed.  If you type @kbd{C-s} and then @kbd{F},
@@ -147,13 +145,14 @@ digits.
   You can change to searching backwards with @kbd{C-r}.  If a search fails
 because the place you started was too late in the file, you should do this.
 Repeated @kbd{C-r} keeps looking for more occurrences backwards.  A
-@kbd{C-s} starts going forwards again.  @kbd{C-r} in a search can be cancelled
+@kbd{C-s} starts going forwards again.  @kbd{C-r} in a search can be canceled
 with @key{DEL}.
 
-  If you know initially that you want to search backwards, you can
-use @kbd{C-r} instead of @kbd{C-s} to start the search, because @kbd{C-r}
-is also a key running a command (@code{isearch-backward}) to search
-backward.
+@kindex C-r
+@findex isearch-backward
+  If you know initially that you want to search backwards, you can use
+@kbd{C-r} instead of @kbd{C-s} to start the search, because @kbd{C-r} as
+a key runs a command (@code{isearch-backward}) to search backward.
 
   The characters @kbd{C-y} and @kbd{C-w} can be used in incremental
 search to grab text from the buffer into the search string.  This makes
@@ -166,8 +165,9 @@ string.  Both @kbd{C-y} and @kbd{C-w} convert the text they copy to
 lower case if the search is current not case-sensitive; this is so the
 search remains case-insensitive.
 
-  The character @kbd{M-y} copies the most recent killed text into the
-search string.
+  The character @kbd{M-y} copies text from the kill ring into the search
+string.  It uses the same text that @kbd{C-y} as a command would yank.
+@xref{Yanking}.
 
 @vindex isearch-mode-map
   To customize the special characters that incremental search understands,
@@ -396,27 +396,30 @@ preceding expression either once or not at all.  For example,
 
 @item [ @dots{} ]
 is a @dfn{character set}, which begins with @samp{[} and is terminated
-by a @samp{]}.  In the simplest case, the characters between the two
+by @samp{]}.  In the simplest case, the characters between the two
 brackets are what this set can match.
 
 Thus, @samp{[ad]} matches either one @samp{a} or one @samp{d}, and
 @samp{[ad]*} matches any string composed of just @samp{a}s and @samp{d}s
 (including the empty string), from which it follows that @samp{c[ad]*r}
-matches @samp{cr}, @samp{car}, @samp{cdr}, @samp{caddaar}, etc.@refill
+matches @samp{cr}, @samp{car}, @samp{cdr}, @samp{caddaar}, etc.
 
 You can also include character ranges a character set, by writing two
 characters with a @samp{-} between them.  Thus, @samp{[a-z]} matches any
 lower-case letter.  Ranges may be intermixed freely with individual
 characters, as in @samp{[a-z$%.]}, which matches any lower case letter
-or @samp{$}, @samp{%} or period.@refill
+or @samp{$}, @samp{%} or period.
 
-Note that the usual special characters are not special any more inside
-a character set.  A completely different set of special characters
-exists inside character sets: @samp{]}, @samp{-} and @samp{^}.@refill
+Note that the usual regexp special characters are not special inside a
+character set.  A completely different set of special characters exists
+inside character sets: @samp{]}, @samp{-} and @samp{^}.
 
 To include a @samp{]} in a character set, you must make it the first
 character.  For example, @samp{[]a]} matches @samp{]} or @samp{a}.  To
-include a @samp{-}, write @samp{-} at the beginning or end of a range.
+include a @samp{-}, write @samp{-} as the first or last character of the
+set, or put it after a range.  Thus, @samp{[]-]} matches both @samp{]}
+and @samp{-}.
+
 To include @samp{^}, make it other than the first character in the
 set.@refill
 
@@ -552,7 +555,7 @@ matches the empty string, provided it is at the end of a word.
 
 @item \w
 matches any word-constituent character.  The syntax table
-determines which characters these are.
+determines which characters these are.  @xref{Syntax}.
 
 @item \W
 matches any character that is not a word-constituent.
@@ -609,8 +612,8 @@ character sets, are included: @samp{[ab]} would match @samp{a} or
   An upper-case letter in the incremental search string makes the search
 case-sensitive.  Thus, searching for @samp{Foo} does not find @samp{foo}
 or @samp{FOO}.  This applies to regular expression search as well as to
-string search.  If you delete the upper-case character from the search
-string, it ceases to have this effect.
+string search.  The effect ceases if you delete the upper-case letter
+from the search string.
 
   If you set the variable @code{case-fold-search} to @code{nil}, then
 all letters must match exactly, including case.  This is a per-buffer
@@ -672,7 +675,7 @@ was issued is remembered on the mark ring; use @kbd{C-u C-@key{SPC}} to
 move back there.
 
   A numeric argument restricts replacement to matches that are surrounded
-by word boundaries.
+by word boundaries.  The argument's value doesn't matter.
 
 @node Regexp Replace, Replacement and Case, Unconditional Replace, Replace
 @subsection Regexp Replacement
@@ -683,10 +686,10 @@ any match for a specified pattern.
 
   In @code{replace-regexp}, the @var{newstring} need not be constant: it
 can refer to all or part of what is matched by the @var{regexp}.
-@samp{\&} in @var{newstring} stands for the entire text being replaced.
+@samp{\&} in @var{newstring} stands for the entire match being replaced.
 @samp{\@var{d}} in @var{newstring}, where @var{d} is a digit, stands for
 whatever matched the @var{d}th parenthesized grouping in @var{regexp}.
-To include a @samp{\} in the text to replace with, you must give
+To include a @samp{\} in the text to replace with, you must enter
 @samp{\\}.  For example,
 
 @example
@@ -783,12 +786,15 @@ to skip to the next occurrence without replacing this one.
 
 @item , @r{(Comma)}
 to replace this occurrence and display the result.  You are then asked
-for another input character, except that since the replacement has
-already been made, @key{DEL} and @key{SPC} are equivalent.  You could
-type @kbd{C-r} at this point (see below) to alter the replaced text.  You
-could also type @kbd{C-x u} to undo the replacement; this exits the
-@code{query-replace}, so if you want to do further replacement you must use
-@kbd{C-x @key{ESC} @key{ESC} @key{RET}} to restart (@pxref{Repetition}).
+for another input character to say what to do next.  Since the
+replacement has already been made, @key{DEL} and @key{SPC} are
+equivalent in this situation; both move to the next occurrence.
+
+You could type @kbd{C-r} at this point (see below) to alter the replaced
+text.  You could also type @kbd{C-x u} to undo the replacement; this
+exits the @code{query-replace}, so if you want to do further replacement
+you must use @kbd{C-x @key{ESC} @key{ESC} @key{RET}} to restart
+(@pxref{Repetition}).
 
 @item @key{RET}
 to exit without doing any more replacements.
@@ -803,7 +809,7 @@ to replace all remaining occurrences without asking again.
 @item ^
 to go back to the position of the previous occurrence (or what used to
 be an occurrence), in case you changed it by mistake.  This works by
-popping the mark ring.  Only one @kbd{^} in a row is allowed, because
+popping the mark ring.  Only one @kbd{^} in a row is meaningful, because
 only one previous replacement position is kept during @code{query-replace}.
 
 @item C-r
@@ -864,10 +870,10 @@ to print before and after each matching line; the default is none.
 
 @kindex C-c C-c @r{(Occur mode)}
 The buffer @samp{*Occur*} containing the output serves as a menu for
-finding the occurrences in their original context.  Find an occurrence
-as listed in @samp{*Occur*}, position point there and type @kbd{C-c
-C-c}; this switches to the buffer that was searched and moves point to
-the original of the same occurrence.
+finding the occurrences in their original context.  Click @kbd{Mouse-2}
+on an occurrence listed in @samp{*Occur*}, or position point there and
+type @kbd{C-c C-c}; this switches to the buffer that was searched and
+moves point to the original of the chosen occurrence.
 
 @item M-x list-matching-lines
 Synonym for @kbd{M-x occur}.
@@ -880,6 +886,6 @@ Delete each line that follows point and contains a match for
 @var{regexp}.
 
 @item M-x keep-lines @key{RET} @var{regexp} @key{RET}
-Delete each line that follows point and does not contain a match for
-@var{regexp}.
+Delete each line that follows point and @emph{does not} contain a match
+for @var{regexp}.
 @end table

@@ -52,7 +52,7 @@
 ;; The following files are part of the calendar/diary code:
 
 ;;       cal-menu.el                   Menu support
-;;       diary.el, diary-ins.el        Diary functions
+;;       diary-lib.el, diary-ins.el    Diary functions
 ;;       holidays.el                   Holiday functions
 ;;       cal-french.el                 French Revolutionary calendar
 ;;       cal-mayan.el                  Mayan calendars
@@ -807,10 +807,8 @@ See the documentation for `calendar-holidays' for details.")
         '(format "Daylight Savings Time Begins %s"
                   (if (fboundp 'atan)
                       (solar-time-string
-                       (/ calendar-daylight-savings-starts-time
-                          (float 60))
-                       date
-                       'standard)
+                       (/ calendar-daylight-savings-starts-time (float 60))
+                       calendar-standard-time-zone-name)
                     ""))))
     (funcall
      'holiday-sexp
@@ -818,11 +816,8 @@ See the documentation for `calendar-holidays' for details.")
      '(format "Daylight Savings Time Ends %s"
               (if (fboundp 'atan)
                   (solar-time-string
-                   (/ (- calendar-daylight-savings-ends-time
-                         calendar-daylight-time-offset)
-                      (float 60))
-                   date
-                   'daylight)
+                   (/ calendar-daylight-savings-ends-time (float 60))
+                   calendar-daylight-time-zone-name)
                 ""))))
   "*Sun-related holidays.
 See the documentation for `calendar-holidays' for details.")
@@ -1148,7 +1143,7 @@ to be replaced by asterisks to highlight it whenever it is in the window."
   (interactive "P")
   (set-buffer (get-buffer-create calendar-buffer))
   (calendar-mode)
-  (setq calendar-window-configuration (current-window-configuration))
+;;;  (setq calendar-window-configuration (current-window-configuration))
   (let* ((completion-ignore-case t)
          (pop-up-windows t)
          (split-height-threshold 1000)
@@ -1184,7 +1179,7 @@ to be replaced by asterisks to highlight it whenever it is in the window."
         (list-calendar-holidays)))
   (run-hooks 'initial-calendar-window-hook))
 
-(autoload 'view-diary-entries "diary"
+(autoload 'view-diary-entries "diary-lib"
   "Prepare and display a buffer with diary entries.
 Searches your diary file for entries that match ARG days starting with
 the date indicated by the cursor position in the displayed three-month
@@ -1247,14 +1242,14 @@ calendar."
   "Move cursor to previous instance of Mayan Haab/Tzoklin combination."
   t)
 
-(autoload 'show-all-diary-entries "diary"
+(autoload 'show-all-diary-entries "diary-lib"
   "Show all of the diary entries in the diary file.
 This function gets rid of the selective display of the diary file so that
 all entries, not just some, are visible.  If there is no diary buffer, one
 is created."
   t)
 
-(autoload 'mark-diary-entries "diary"
+(autoload 'mark-diary-entries "diary-lib"
   "Mark days in the calendar window that have diary entries.
 Each entry in diary file visible in the calendar window is marked."
   t)
@@ -1384,7 +1379,7 @@ is currently located, but indented INDENT spaces.  The indentation is done
 from the first character on the line and does not disturb the first INDENT
 characters on the line."
   (let* ((blank-days;; at start of month
-          (calendar-mod
+          (mod
            (- (calendar-day-of-week (list month 1 year))
               calendar-week-start-day)
            7))
@@ -1397,7 +1392,7 @@ characters on the line."
    (calendar-insert-indented "" indent);; Go to proper spot
    (calendar-for-loop i from 0 to 6 do
       (insert (substring (aref calendar-day-name-array 
-                               (calendar-mod (+ calendar-week-start-day i) 7))
+                               (mod (+ calendar-week-start-day i) 7))
                          0 2))
       (insert " "))
    (calendar-insert-indented "" 0 t);; Force onto following line
@@ -1409,7 +1404,7 @@ characters on the line."
       (insert (format "%2d " i))
       (put-text-property (- (point) (if (< i 10) 2 3)) (1- (point))
 			 'mouse-face 'highlight)
-      (and (zerop (calendar-mod (+ i blank-days) 7))
+      (and (zerop (mod (+ i blank-days) 7))
            (/= i last)
            (calendar-insert-indented "" 0 t)    ;; Force onto following line
            (calendar-insert-indented "" indent)))));; Go to proper spot
@@ -1510,7 +1505,7 @@ the inserted text.  Value is always t."
   (define-key calendar-mode-map "M"   'calendar-phases-of-moon)
   (define-key calendar-mode-map " "   'scroll-other-window)
   (define-key calendar-mode-map "\C-c\C-l" 'redraw-calendar)
-  (define-key calendar-mode-map "."   'calendar-current-month)
+  (define-key calendar-mode-map "."   'calendar-goto-today)
   (define-key calendar-mode-map "o"   'calendar-other-month)
   (define-key calendar-mode-map "q"   'exit-calendar)
   (define-key calendar-mode-map "a"   'list-calendar-holidays)
@@ -1562,7 +1557,7 @@ the inserted text.  Value is always t."
   (list
    (substitute-command-keys "\\<calendar-mode-map>\\[scroll-calendar-left]")
    "Calendar"
-   (substitute-command-keys "\\<calendar-mode-map>\\[describe-calendar-mode] help/\\[calendar-other-month] other/\\[calendar-current-month] today")
+   (substitute-command-keys "\\<calendar-mode-map>\\[describe-calendar-mode] help/\\[calendar-other-month] other/\\[calendar-goto-today] today")
    '(calendar-date-string (calendar-current-date) t)
    (substitute-command-keys "\\<calendar-mode-map>\\[scroll-calendar-right]"))
   "The mode line of the calendar buffer.")
@@ -1606,7 +1601,7 @@ The commands for calendar movement are:
 
        \\[scroll-calendar-right]  scroll one month right \\[scroll-calendar-left]  scroll one month left
        \\[scroll-calendar-right-three-months]  scroll 3 months right    \\[scroll-calendar-left-three-months]  scroll 3 months left
-       \\[calendar-current-month]  display current month      \\[calendar-other-month]  display another month
+       \\[calendar-goto-today]  display current month      \\[calendar-other-month]  display another month
 
 Whenever it makes sense, the above commands take prefix arguments that
 multiply their affect.  For convenience, the digit keys and the minus sign
@@ -1837,21 +1832,27 @@ concatenated and the result truncated."
                calendar-mode-line-format ?  (frame-width))))))
 
 (defun exit-calendar ()
-  "Get out of the calendar window and bury it and related buffers."
+  "Delete the calendar window, and bury the calendar and related buffers."
   (interactive)
   (let ((diary-buffer (get-file-buffer diary-file))
         (d-buffer (get-buffer fancy-diary-buffer))
         (h-buffer (get-buffer holiday-buffer)))
     (if (not diary-buffer)
         (progn
-          (set-window-configuration calendar-window-configuration)
+	  ;; Restoring the configuration is undesirable because
+	  ;; it restores the value of point in other windows.
+;;;          (set-window-configuration calendar-window-configuration)
+	  (or (one-window-p t)
+	      (delete-window))
           (bury-buffer calendar-buffer)
           (if d-buffer (bury-buffer d-buffer))
           (if h-buffer (bury-buffer h-buffer)))
       (if (or (not (buffer-modified-p diary-buffer))
               (yes-or-no-p "Diary modified; do you really want to exit the calendar? "))
           (progn
-            (set-window-configuration calendar-window-configuration)
+;;;            (set-window-configuration calendar-window-configuration)
+	    (or (one-window-p t)
+		(delete-window))
             (bury-buffer calendar-buffer)
             (if d-buffer (bury-buffer d-buffer))
             (if h-buffer (bury-buffer h-buffer))
@@ -1859,7 +1860,7 @@ concatenated and the result truncated."
             (set-buffer-modified-p nil)
             (bury-buffer diary-buffer))))))
 
-(defun calendar-current-month ()
+(defun calendar-goto-today ()
   "Reposition the calendar window so the current date is visible."
   (interactive)
   (let ((today (calendar-current-date)));; The date might have changed.
@@ -2063,7 +2064,7 @@ Moves forward if ARG is negative."
     (calendar-backward-day
      (if (= day calendar-week-start-day)
          (* 7 arg)
-       (+ (calendar-mod (- day calendar-week-start-day) 7)
+       (+ (mod (- day calendar-week-start-day) 7)
           (* 7 (1- arg)))))))
 
 (defun calendar-end-of-week (arg)
@@ -2072,9 +2073,9 @@ Moves forward if ARG is negative."
   (calendar-cursor-to-nearest-date)
   (let ((day (calendar-day-of-week (calendar-cursor-to-date))))
     (calendar-forward-day
-     (if (= day (calendar-mod (1- calendar-week-start-day) 7))
+     (if (= day (mod (1- calendar-week-start-day) 7))
          (* 7 arg)
-       (+ (- 6 (calendar-mod (- day calendar-week-start-day) 7))
+       (+ (- 6 (mod (- day calendar-week-start-day) 7))
           (* 7 (1- arg)))))))
 
 (defun calendar-beginning-of-month (arg)
@@ -2197,13 +2198,6 @@ Gregorian date Sunday, December 31, 1 BC."
           (setq month (1+ month)))
         (list month day year)))))
 
-(defun calendar-mod (x y)
-  "Returns X % Y; value is *always* non-negative."
-  (let ((v (mod x y)))
-    (if (> 0 v)
-	(+ v y)
-      v)))
-
 (defun calendar-cursor-to-visible-date (date)
   "Move the cursor to DATE that is on the screen."
   (let* ((month (extract-calendar-month date))
@@ -2212,7 +2206,7 @@ Gregorian date Sunday, December 31, 1 BC."
 	 (first-of-month-weekday (calendar-day-of-week (list month 1 year))))
     (goto-line (+ 3
 		  (/ (+ day  -1
-                        (calendar-mod
+                        (mod
                          (- (calendar-day-of-week (list month 1 year))
                             calendar-week-start-day)
                          7))
@@ -2221,7 +2215,7 @@ Gregorian date Sunday, December 31, 1 BC."
 		       (* 25
 			  (1+ (calendar-interval
 			       displayed-month displayed-year month year)))
-		       (* 3 (calendar-mod
+		       (* 3 (mod
                              (- (calendar-day-of-week date)
                                 calendar-week-start-day)
                              7))))))

@@ -35,23 +35,43 @@
 (define-key global-map [menu-bar edit] (cons "Edit" menu-bar-edit-menu))
 (defvar menu-bar-file-menu (make-sparse-keymap "File"))
 (define-key global-map [menu-bar file] (cons "File" menu-bar-file-menu))
-
+
 (define-key menu-bar-file-menu [exit-emacs]
   '("Exit Emacs" . save-buffers-kill-emacs))
-(define-key menu-bar-file-menu [kill-buffer]
-  '("Kill Buffer" . kill-this-buffer))
-(define-key menu-bar-file-menu [delete-frame] '("Delete Frame" . delete-frame))
+
+(define-key menu-bar-file-menu [separator-compare]
+  '("--"))
+
 (define-key menu-bar-file-menu [epatch]
   '("Apply Patch" . menu-bar-epatch-menu))
 (define-key menu-bar-file-menu [ediff]
-  '("Compare Files" . menu-bar-ediff-menu))
+  '("Compare" . menu-bar-ediff-menu))
 (define-key menu-bar-file-menu [emerge] '("Emerge" . menu-bar-emerge-menu))
+
+(define-key menu-bar-file-menu [separator-misc]
+  '("--"))
+
 (define-key menu-bar-file-menu [calendar] '("Calendar" . calendar))
 (define-key menu-bar-file-menu [rmail] '("Read Mail" . rmail))
 (define-key menu-bar-file-menu [gnus] '("Read Net News" . gnus))
+
+(define-key menu-bar-file-menu [separator-frames]
+  '("--"))
+
+(define-key menu-bar-file-menu [delete-frame] '("Delete Frame" . delete-frame))
+(define-key menu-bar-file-menu [make-frame] '("Make New Frame" . make-frame))
+
+(define-key menu-bar-file-menu [separator-buffers]
+  '("--"))
+
 (define-key menu-bar-file-menu [bookmark]
   '("Bookmarks" . menu-bar-bookmark-map))
-(define-key menu-bar-file-menu [print-buffer] '("Print Buffer" . print-buffer))
+(define-key menu-bar-file-menu [print-buffer]
+  '("Print Buffer" . print-buffer))
+(define-key menu-bar-file-menu [kill-buffer]
+  '("Kill Buffer" . kill-this-buffer))
+(define-key menu-bar-file-menu [insert-file]
+  '("Insert File" . insert-file))
 (define-key menu-bar-file-menu [revert-buffer]
   '("Revert Buffer" . revert-buffer))
 (define-key menu-bar-file-menu [write-file]
@@ -59,11 +79,11 @@
 (define-key menu-bar-file-menu [save-buffer] '("Save Buffer" . save-buffer))
 (define-key menu-bar-file-menu [dired] '("Open Directory..." . dired))
 (define-key menu-bar-file-menu [open-file] '("Open File..." . find-file))
-(define-key menu-bar-file-menu [make-frame] '("Make New Frame" . make-frame))
 
-(define-key menu-bar-edit-menu [spell] '("Spell" . ispell-menu-map))
-(define-key menu-bar-edit-menu [fill] '("Fill" . fill-region))
-(define-key menu-bar-edit-menu [clear] '("Clear" . delete-region))
+;; This is just one element of the ediff menu--the first.
+(define-key menu-bar-ediff-menu [window]
+  '("This Window And Next Window" . compare-windows))
+
 (define-key menu-bar-edit-menu [query-replace]
   '("Query Replace" . query-replace))
 (define-key menu-bar-edit-menu [re-search-back]
@@ -74,6 +94,17 @@
   '("Regexp Search" . re-search-forward))
 (define-key menu-bar-edit-menu [search-fwd]
   '("Search" . search-forward))
+
+(define-key menu-bar-edit-menu [separator-misc]
+  '("--"))
+
+(define-key menu-bar-edit-menu [spell] '("Spell" . ispell-menu-map))
+(define-key menu-bar-edit-menu [fill] '("Fill" . fill-region))
+
+(define-key menu-bar-edit-menu [separator-edit]
+  '("--"))
+
+(define-key menu-bar-edit-menu [clear] '("Clear" . delete-region))
 (define-key menu-bar-edit-menu [choose-next-paste]
   '("Choose Next Paste >" . mouse-menu-choose-yank))
 (define-key menu-bar-edit-menu [paste] '("Paste" . yank))
@@ -120,7 +151,8 @@
     (kill-region beg end)))
 
 (defun menu-bar-enable-clipboard ()
-  "Make the menu bar CUT, PASTE and COPY items use the clipboard."
+  "Make CUT, PASTE and COPY (keys and menu bar items) use the clipboard.
+Do the same for the keys of the same name."
   (interactive)
   ;; We can't use constant list structure here because it becomes pure,
   ;; and because it gets modified with cache data.
@@ -129,12 +161,15 @@
   (define-key menu-bar-edit-menu [copy]
     (cons "Copy" 'clipboard-kill-ring-save))
   (define-key menu-bar-edit-menu [cut]
-    (cons "Cut" 'clipboard-kill-region)))
+    (cons "Cut" 'clipboard-kill-region))
 
-;; Sun expects these commands on these keys, so why not?
-(define-key global-map [f20] 'clipboard-kill-region)
-(define-key global-map [f16] 'clipboard-kill-ring-save)
-(define-key global-map [f18] 'clipboard-yank)
+  (define-key global-map [f20] 'clipboard-kill-region)
+  (define-key global-map [f16] 'clipboard-kill-ring-save)
+  (define-key global-map [f18] 'clipboard-yank)
+  ;; X11R6 versions
+  (define-key global-map [cut] 'clipboard-kill-region)
+  (define-key global-map [copy] 'clipboard-kill-ring-save)
+  (define-key global-map [paste] 'clipboard-yank))
 
 (define-key menu-bar-help-menu [emacs-version]
   '("Show Version" . emacs-version))
@@ -258,116 +293,103 @@ A large number or nil slows down menu responsiveness.")
   (raise-frame last-command-event)
   (select-frame last-command-event))
 
-(defvar menu-bar-update-buffers-last-buffers nil)
-(defvar menu-bar-update-buffers-last-frames nil)
-
 (defun menu-bar-update-buffers ()
-  (let ((buffers (buffer-list))
-	(frames (frame-list))
-	buffers-info
-	buffers-menu frames-menu)
-    (setq buffers-info
-	  (mapcar (function (lambda (buffer)
-			      (list buffer (buffer-modified-p buffer)
-				    (save-excursion
-				      (set-buffer buffer)
-				      buffer-read-only))))
-		  buffers))
-    (if (and (equal buffers-info menu-bar-update-buffers-last-buffers)
-	     (equal frames menu-bar-update-buffers-last-frames))
-	nil
-      (setq menu-bar-update-buffers-last-buffers buffers-info)
-      (setq menu-bar-update-buffers-last-frames frames)
-      ;; If requested, list only the N most recently selected buffers.
-      (if (and (integerp buffers-menu-max-size)
-	       (> buffers-menu-max-size 1))
-	  (if (> (length buffers) buffers-menu-max-size)
-	      (setcdr (nthcdr buffers-menu-max-size buffers) nil)))
+  ;; If user discards the Buffers item, play along.
+  (and (lookup-key (current-global-map) [menu-bar buffer])
+       (frame-or-buffer-changed-p)
+       (let ((buffers (buffer-list))
+	     (frames (frame-list))
+	     buffers-menu frames-menu)
+	 ;; If requested, list only the N most recently selected buffers.
+	 (if (and (integerp buffers-menu-max-size)
+		  (> buffers-menu-max-size 1))
+	     (if (> (length buffers) buffers-menu-max-size)
+		 (setcdr (nthcdr buffers-menu-max-size buffers) nil)))
 
-      ;; Make the menu of buffers proper.
-      (setq buffers-menu
-	    (cons "Select Buffer"
-		  (let ((tail buffers)
-			(maxbuf 0)
-			(maxlen 0)
-			alist
-			head)
-		    (while tail
-		      (or (eq ?\ (aref (buffer-name (car tail)) 0))
-			  (setq maxbuf
-				(max maxbuf
-				     (length (buffer-name (car tail))))))
-		      (setq tail (cdr tail)))
-		    (setq tail buffers)
-		    (while tail
-		      (let ((elt (car tail)))
-			(or (eq ?\ (aref (buffer-name elt) 0))
-			    (setq alist (cons
-					 (cons
-					  (format
-					   (format "%%%ds  %%s%%s  %%s"
-						   maxbuf)
-					   (buffer-name elt)
-					   (if (buffer-modified-p elt)
-					       "*" " ")
-					   (save-excursion
-					     (set-buffer elt)
-					     (if buffer-read-only "%" " "))
-					   (or (buffer-file-name elt)
-					       (save-excursion
-						 (set-buffer elt)
-						 list-buffers-directory)
-					       ""))
-					  elt)
-					 alist)))
-			(and alist (> (length (car (car alist))) maxlen)
-			     (setq maxlen (length (car (car alist))))))
-		      (setq tail (cdr tail)))
-		    (setq alist (nreverse alist))
-		    (nconc (mapcar '(lambda (pair)
-				      ;; This is somewhat risque, to use
-				      ;; the buffer name itself as the event type
-				      ;; to define, but it works.
-				      ;; It would not work to use the buffer
-				      ;; since a buffer as an event has its
-				      ;; own meaning.
-				      (nconc (list (buffer-name (cdr pair))
-						   (car pair)
-						   (cons nil nil))
-					     'menu-bar-select-buffer))
-				   alist)
-			   (list (cons 'list-buffers
-				       (cons
-					(concat (make-string (max (- (/ maxlen
-									2)
-								     8)
-								  0) ?\ )
-						"List All Buffers")
-					'list-buffers)))))))
+	 ;; Make the menu of buffers proper.
+	 (setq buffers-menu
+	       (cons "Select Buffer"
+		     (let ((tail buffers)
+			   (maxbuf 0)
+			   (maxlen 0)
+			   alist
+			   head)
+		       (while tail
+			 (or (eq ?\ (aref (buffer-name (car tail)) 0))
+			     (setq maxbuf
+				   (max maxbuf
+					(length (buffer-name (car tail))))))
+			 (setq tail (cdr tail)))
+		       (setq tail buffers)
+		       (while tail
+			 (let ((elt (car tail)))
+			   (or (eq ?\ (aref (buffer-name elt) 0))
+			       (setq alist (cons
+					    (cons
+					     (format
+					      (format "%%%ds  %%s%%s  %%s"
+						      maxbuf)
+					      (buffer-name elt)
+					      (if (buffer-modified-p elt)
+						  "*" " ")
+					      (save-excursion
+						(set-buffer elt)
+						(if buffer-read-only "%" " "))
+					      (or (buffer-file-name elt)
+						  (save-excursion
+						    (set-buffer elt)
+						    list-buffers-directory)
+						  ""))
+					     elt)
+					    alist)))
+			   (and alist (> (length (car (car alist))) maxlen)
+				(setq maxlen (length (car (car alist))))))
+			 (setq tail (cdr tail)))
+		       (setq alist (nreverse alist))
+		       (nconc (mapcar '(lambda (pair)
+					 ;; This is somewhat risque, to use
+					 ;; the buffer name itself as the event
+					 ;; type to define, but it works.
+					 ;; It would not work to use the buffer
+					 ;; since a buffer as an event has its
+					 ;; own meaning.
+					 (nconc (list (buffer-name (cdr pair))
+						      (car pair)
+						      (cons nil nil))
+						'menu-bar-select-buffer))
+				      alist)
+			      (list
+			       (cons
+				'list-buffers
+				(cons
+				 (concat (make-string (max (- (/ maxlen 2) 8) 0)
+						      ?\ )
+					 "List All Buffers")
+				 'list-buffers)))))))
 
 
-      ;; Make a Frames menu if we have more than one frame.
-      (if (cdr frames)
-	  (setq frames-menu
-		(cons "Select Frame"
-		      (mapcar '(lambda (frame)
-				 (nconc (list frame
-					      (cdr (assq 'name
-							 (frame-parameters frame)))
-					      (cons nil nil))
-					'menu-bar-select-frame))
-			      frames))))
-      (if buffers-menu
-	  (setq buffers-menu (cons 'keymap buffers-menu)))
-      (if frames-menu
-	  (setq frames-menu (cons 'keymap frames-menu)))
-      (define-key global-map [menu-bar buffer]
-	(cons "Buffers"
-	      (if (and buffers-menu frames-menu)
-		  (list 'keymap "Buffers and Frames"
-			(cons 'buffers (cons "Buffers" buffers-menu))
-			(cons 'frames (cons "Frames" frames-menu)))
-		(or buffers-menu frames-menu 'undefined)))))))
+	 ;; Make a Frames menu if we have more than one frame.
+	 (if (cdr frames)
+	     (setq frames-menu
+		   (cons "Select Frame"
+			 (mapcar '(lambda (frame)
+				    (nconc (list frame
+						 (cdr (assq 'name
+							    (frame-parameters frame)))
+						 (cons nil nil))
+					   'menu-bar-select-frame))
+				 frames))))
+	 (if buffers-menu
+	     (setq buffers-menu (cons 'keymap buffers-menu)))
+	 (if frames-menu
+	     (setq frames-menu (cons 'keymap frames-menu)))
+	 (define-key (current-global-map) [menu-bar buffer]
+	   (cons "Buffers"
+		 (if (and buffers-menu frames-menu)
+		     (list 'keymap "Buffers and Frames"
+			   (cons 'buffers (cons "Buffers" buffers-menu))
+			   (cons 'frames (cons "Frames" frames-menu)))
+		   (or buffers-menu frames-menu 'undefined)))))))
 
 (add-hook 'menu-bar-update-hook 'menu-bar-update-buffers)
 
@@ -388,6 +410,8 @@ A large number or nil slows down menu responsiveness.")
 ;;;	       mode-name
 ;;;	       (or (buffer-file-name) ""))))))
 
+(defvar menu-bar-mode nil)
+
 (defun menu-bar-mode (flag)
   "Toggle display of a menu bar on each frame.
 This command applies to all frames that exist and frames to be
@@ -396,33 +420,36 @@ With a numeric argument, if the argument is negative,
 turn off menu bars; otherwise, turn on menu bars."
  (interactive "P")
 
- ;; Obtain the current setting by looking at default-frame-alist.
- (let ((menu-bar-mode
-	(not (zerop (let ((assq (assq 'menu-bar-lines default-frame-alist)))
-		      (if assq (cdr assq) 0))))))
+  ;; Make menu-bar-mode and default-frame-alist consistent.
+  (let ((default (assq 'menu-bar-lines default-frame-alist)))
+    (if default
+	(setq menu-bar-mode (not (eq (cdr default) 0)))
+      (setq default-frame-alist
+	    (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
+		  default-frame-alist))))
 
-   ;; Tweedle it according to the argument.
-   (setq menu-bar-mode (if (null flag) (not menu-bar-mode)
-			 (> (prefix-numeric-value flag) 0)))
+  ;; Toggle or set the mode, according to FLAG.
+ (setq menu-bar-mode (if (null flag) (not menu-bar-mode)
+		       (> (prefix-numeric-value flag) 0)))
 
-   ;; Apply it to default-frame-alist.
-   (let ((parameter (assq 'menu-bar-lines default-frame-alist)))
-     (if (consp parameter)
-	 (setcdr parameter (if menu-bar-mode 1 0))
-       (setq default-frame-alist
-	     (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
-		   default-frame-alist))))
+ ;; Apply it to default-frame-alist.
+ (let ((parameter (assq 'menu-bar-lines default-frame-alist)))
+   (if (consp parameter)
+       (setcdr parameter (if menu-bar-mode 1 0))
+     (setq default-frame-alist
+	   (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
+		 default-frame-alist))))
 
-   ;; Apply it to existing frames.
-   (let ((frames (frame-list)))
-     (while frames
-       (let ((height (cdr (assq 'height (frame-parameters (car frames))))))
-	 (modify-frame-parameters (car frames)
-				  (list (cons 'menu-bar-lines
-					    (if menu-bar-mode 1 0))))
-	 (modify-frame-parameters (car frames)
-				  (list (cons 'height height))))
-       (setq frames (cdr frames))))))
+ ;; Apply it to existing frames.
+ (let ((frames (frame-list)))
+   (while frames
+     (let ((height (cdr (assq 'height (frame-parameters (car frames))))))
+       (modify-frame-parameters (car frames)
+				(list (cons 'menu-bar-lines
+					  (if menu-bar-mode 1 0))))
+       (modify-frame-parameters (car frames)
+				(list (cons 'height height))))
+     (setq frames (cdr frames)))))
 
 (provide 'menu-bar)
 

@@ -230,7 +230,8 @@ If the face already exists, it is unmodified."
 	;; when making a face after frames already exist
 	(if (eq window-system 'x)
 	    (make-face-x-resource-internal face))
-	face)))
+	face))
+  name)
 
 ;; Fill in a face by default based on X resources, for all existing frames.
 ;; This has to be done when a new face is made.
@@ -269,9 +270,12 @@ If the face already exists, it is unmodified."
 ;;		(bgp (or (x-get-resource (concat name ".attributeBackgroundPixmap")
 ;;					 "Face.AttributeBackgroundPixmap")
 ;;			 (and set-anyway (face-background-pixmap face))))
-		(ulp (or (x-get-resource (concat name ".attributeUnderline")
-					 "Face.AttributeUnderline")
-			 (and set-anyway (face-underline-p face))))
+		(ulp (let ((resource (x-get-resource
+				      (concat name ".attributeUnderline")
+				      "Face.AttributeUnderline")))
+		       (if resource
+			   (member (downcase resource) '("on" "true"))
+			 (and set-anyway (face-underline-p face)))))
 		)
 	   (if fn
 	       (condition-case ()
@@ -319,7 +323,13 @@ to NEW-FACE on frame NEW-FRAME."
       (setq old-face (internal-get-face old-face frame))
       (setq new-face (or (internal-find-face new-face new-frame)
 			 (make-face new-face)))
-      (set-face-font new-face (face-font old-face frame) new-frame)
+      (condition-case nil
+	  ;; A face that has a global symbolic font modifier such as `bold'
+	  ;; might legitimately get an error here.
+	  ;; Use the frame's default font in that case.
+	  (set-face-font new-face (face-font old-face frame) new-frame)
+	(error
+	 (set-face-font new-face nil new-frame)))
       (set-face-foreground new-face (face-foreground old-face frame) new-frame)
       (set-face-background new-face (face-background old-face frame) new-frame)
 ;;;      (set-face-background-pixmap
@@ -335,6 +345,7 @@ to NEW-FACE on frame NEW-FRAME."
   (and (equal (face-foreground face1 frame) (face-foreground face2 frame))
        (equal (face-background face1 frame) (face-background face2 frame))
        (equal (face-font face1 frame) (face-font face2 frame))
+       (eq (face-underline-p face1 frame) (face-underline-p face2 frame))
 ;;       (equal (face-background-pixmap face1 frame)
 ;;	      (face-background-pixmap face2 frame))
        ))
@@ -516,7 +527,7 @@ If NOERROR is non-nil, return nil on failure."
 			      '(bold italic) '(bold))
 		     t)
     (let ((ofont (face-font face frame))
-	  font f2)
+	  font)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face bold in global-face-data.
@@ -533,16 +544,17 @@ If NOERROR is non-nil, return nil on failure."
 	(setq font (or font
 		       (face-font 'default frame)
 		       (cdr (assq 'font (frame-parameters frame)))))
-	(make-face-bold-internal face frame))
+	(make-face-bold-internal face frame font))
       (or (not (equal ofont (face-font face)))
 	  (and (not noerror)
 	       (error "No bold version of %S" font))))))
 
-(defun make-face-bold-internal (face frame)
-  (or (and (setq f2 (x-make-font-bold font))
-	   (internal-try-face-font face f2 frame))
-      (and (setq f2 (x-make-font-demibold font))
-	   (internal-try-face-font face f2 frame))))
+(defun make-face-bold-internal (face frame font)
+  (let (f2)
+    (or (and (setq f2 (x-make-font-bold font))
+	     (internal-try-face-font face f2 frame))
+	(and (setq f2 (x-make-font-demibold font))
+	     (internal-try-face-font face f2 frame)))))
 
 (defun make-face-italic (face &optional frame noerror)
   "Make the font of the given face be italic, if possible.  
@@ -553,7 +565,7 @@ If NOERROR is non-nil, return nil on failure."
 			      '(bold italic) '(italic))
 		     t)
     (let ((ofont (face-font face frame))
-	  font f2)
+	  font)
       (if (null frame)
 	  (let ((frames (frame-list)))
 	    ;; Make this face italic in global-face-data.
@@ -570,16 +582,17 @@ If NOERROR is non-nil, return nil on failure."
 	(setq font (or font
 		       (face-font 'default frame)
 		       (cdr (assq 'font (frame-parameters frame)))))
-	(make-face-italic-internal face frame))
+	(make-face-italic-internal face frame font))
       (or (not (equal ofont (face-font face)))
 	  (and (not noerror)
 	       (error "No italic version of %S" font))))))
 
-(defun make-face-italic-internal (face frame)
-  (or (and (setq f2 (x-make-font-italic font))
-	   (internal-try-face-font face f2 frame))
-      (and (setq f2 (x-make-font-oblique font))
-	   (internal-try-face-font face f2 frame))))
+(defun make-face-italic-internal (face frame font)
+  (let (f2)
+    (or (and (setq f2 (x-make-font-italic font))
+	     (internal-try-face-font face f2 frame))
+	(and (setq f2 (x-make-font-oblique font))
+	     (internal-try-face-font face f2 frame)))))
 
 (defun make-face-bold-italic (face &optional frame noerror)
   "Make the font of the given face be bold and italic, if possible.  
@@ -605,12 +618,12 @@ If NOERROR is non-nil, return nil on failure."
 	(setq font (or font
 		       (face-font 'default frame)
 		       (cdr (assq 'font (frame-parameters frame)))))
-	(make-face-bold-italic-internal face frame))
+	(make-face-bold-italic-internal face frame font))
       (or (not (equal ofont (face-font face)))
 	  (and (not noerror)
 	       (error "No bold italic version of %S" font))))))
 
-(defun make-face-bold-italic-internal (face frame)
+(defun make-face-bold-italic-internal (face frame font)
   (let (f2 f3)
     (or (and (setq f2 (x-make-font-italic font))
 	     (not (equal font f2))
@@ -727,7 +740,13 @@ selected frame."
 	  (let ((beg (point)))
 	    (insert list-faces-sample-text)
 	    (insert "\n")
-	    (put-text-property beg (1- (point)) 'face face)))
+	    (put-text-property beg (1- (point)) 'face face)
+	    ;; If the sample text has multiple lines, line up all of them.
+	    (goto-char beg)
+	    (forward-line 1)
+	    (while (not (eobp))
+	      (insert "                          ")
+	      (forward-line 1))))
 	(goto-char (point-min))))
     ;; If the *Faces* buffer appears in a different frame,
     ;; copy all the face definitions from FRAME,
@@ -768,7 +787,7 @@ selected frame."
   (make-face-bold-italic 'bold-italic t)
 
   (set-face-background 'highlight '("darkseagreen2" "green" t) t)
-  (set-face-background 'region '("gray" t) t)
+  (set-face-background 'region '("gray" underline) t)
   (set-face-background 'secondary-selection '("paleturquoise" "green" t) t)
   (set-face-background 'modeline '(t) t)
   (set-face-underline-p 'underline t t)
@@ -802,17 +821,21 @@ selected frame."
 
       (if (cdr (or (assq 'reverse parameters)
 		   (assq 'reverse default-frame-alist)
-		   (cons nil
-			 (member (x-get-resource "reverseVideo" "ReverseVideo")
-				 '("on" "true")))))
+		   (let ((resource (x-get-resource "reverseVideo"
+						   "ReverseVideo")))
+		     (if resource
+			 (cons nil (member (downcase resource)
+					   '("on" "true")))))))
 	  (let ((params (frame-parameters frame)))
 	    (modify-frame-parameters
 	     frame
 	     (list (cons 'foreground-color (cdr (assq 'background-color params)))
 		   (cons 'background-color (cdr (assq 'foreground-color params)))
 		   (cons 'mouse-color (cdr (assq 'background-color params)))
-		   (cons 'cursor-color (cdr (assq 'background-color params)))
-		   (cons 'border-color (cdr (assq 'background-color params)))))))
+		   (cons 'border-color (cdr (assq 'background-color params)))))
+	    (modify-frame-parameters
+	     frame
+	     (list (cons 'cursor-color (cdr (assq 'background-color params)))))))
 
       ;; Copy the vectors that represent the faces.
       ;; Also fill them in from X resources.
@@ -907,16 +930,22 @@ selected frame."
 		;; and set `done' if we succeed.
 		(condition-case nil
 		    (progn
-		      (if (eq (car colors) t)
-			  (invert-face face frame)
-			(funcall function face (car colors) frame))
+		      (cond ((eq (car colors) t)
+			     (invert-face face frame))
+			    ((eq (car colors) 'underline)
+			     (set-face-underline-p face t frame))
+			    (t
+			     (funcall function face (car colors) frame)))
 		      (setq done t))
 		  (error nil))
 	      ;; If this is the last color, let the error get out if it fails.
 	      ;; If it succeeds, we will exit anyway after this iteration.
-	      (if (eq (car colors) t)
-		  (invert-face face frame)
-		(funcall function face (car colors) frame))))
+	      (cond ((eq (car colors) t)
+		     (invert-face face frame))
+		    ((eq (car colors) 'underline)
+		     (set-face-underline-p face t frame))
+		    (t
+		     (funcall function face (car colors) frame)))))
 	  (setq colors (cdr colors)))))))
 
 ;; If we are already using x-window frames, initialize faces for them.

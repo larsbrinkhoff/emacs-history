@@ -8,6 +8,7 @@ File: dir	Node: Top	This is the top of the INFO tree
   Typing "d" returns here, "q" exits, "?" lists all INFO commands, "h" 
   gives a primer for first-timers, "mTexinfo<Return>" visits Texinfo topic,
   etc.
+  Or click mouse button 2 on a menu item or cross reference to select it.
   --- PLEASE ADD DOCUMENTATION TO THIS TREE. (See INFO topic first.) ---
 
 * Menu: The list of major topics begins on the next line.

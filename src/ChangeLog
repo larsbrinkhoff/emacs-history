@@ -1,3 +1,1223 @@
+Wed Sep  7 03:54:08 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.26 released.
+
+Mon Sep  5 21:33:48 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* s/sol2.h [USE_X_TOOLKIT && HAVE_X11XTR6] (REL_ALLOC): Undefine it.
+
+Sun Sep  4 23:20:51 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacs.c (init_cmdargs): After chasing link, use only the
+	expanded name.
+
+Sun Sep  4 20:12:07 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* fileio.c (Ffile_accessible_directory_p): Put back the gcpro.
+
+	* sysdep.c (srandom): Pass arg to srand48; no return value.
+
+Sun Sep  4 00:35:24 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacs.c (init_cmdargs): When setting dir, expand the dir name.
+
+	* sysdep.c (random, srandom): Check HAVE_LRAND48, not HAVE_RAND48.
+	Call lrand48, nor rand48.
+
+	* config.h.in (HAVE_LRAND48): Replaces HAVE_RAND48.
+
+Sat Sep  3 14:44:42 1994  Kaveh R. Ghazi  (ghazi@noc.rutgers.edu)
+
+	* m/delta88k.h [__GNUC__] (HAVE_ALLOCA): Defined.
+	[__GNUC__] (C_ALLOCA): Add #undef
+	(LIB_X11_LIB): Add #undef.
+	(HAVE_TERMIOS): Defined.
+	(HAVE_TERMIO): Add #undef.
+	(NO_TERMIO): Defined.
+	(sigsetmask): Add #undef.
+	(USE_GETOBAUD): Defined.
+
+Sat Sep  3 00:33:58 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* sysdep.c (init_baud_rate): Test that getobaud is actually defined.
+
+	* sysdep.c (init_baud_rate) [USE_GETOBAUD]: Use getobaud.
+
+Fri Sep  2 17:57:36 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* insdel.c (prepare_to_modify_buffer): Don't call
+	verify_overlay_modification if no overlays or
+	verify_interval_modification no intervals.
+
+	* textprop.c (Fset_text_properties):
+	Return early if buffer has no intervals and PROPS is nil.
+
+Fri Sep  2 03:01:48 1994  Lennart Staflin  (lenst@rudolf)
+
+	* xdisp.c (display_text_line): Don't overrun the charstart area.
+
+Fri Sep  2 01:31:58 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* insdel.c (insert_1): Don't call interval fns if buffer has none.
+
+	* textprop.c (Fset_text_properties): Don't create or split an interval
+	if we trivially do not need to change anything.
+
+Wed Aug 31 16:39:57 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xfns.c (defined_color): New arg ALLOC--optionally don't allocate
+	the color.
+	(x_decode_color, Fx_color_defined_p): Pass new arg.
+	(Fx_color_values): New function.
+
+Tue Aug 30 04:24:59 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* frame.c (Fdelete_frame): Fix previous change.
+
+Tue Aug 30 11:11:59 1994  enami tsugutomo  <enami@sys.ptg.sony.co.jp>
+
+	* fileio.c (Fwrite_region): unbind_to should take two args.
+
+Tue Aug 30 00:21:51 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fileio.c (Ffile_accessible_directory_p): No need for gcpro.
+
+	* keyboard.c (input_polling_used): New function.
+	* xterm.c (x_make_frame_visible): Call input_polling_used.
+
+Sun Aug 28 01:53:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* frame.c (Fdelete_frame): Free the frame's glyphs arrays.
+	Free the line insert/delete cost vectors.
+
+	* dispnew.c (free_frame_glyphs): No longer static.
+
+	* m/next.h (HAVE_MACH_MACH_H): Defined.
+
+	* editfns.c (Finsert_and_inherit_before_markers):
+	Use insert_before_markers_and_inherit for character args.
+	(Finsert_and_inherit): Use insert_and_inherit for character args.
+
+	* insdel.c (insert_before_markers_and_inherit): New function.
+
+	* cmds.c (internal_self_insert): Use insert_and_inherit.
+
+Sat Aug 27 18:45:24 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* indent.c (Findent_to): Pass new arg to Finsert_char.
+
+	* editfns.c (Finsert_char): New arg INHERIT.
+	Use insert_and_inherit if requested.
+
+	* insdel.c (insert_1): New arg INHERIT.
+	(insert_and_inherit): New function.
+
+Fri Aug 26 17:19:52 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keyboard.c (polling_for_input): Define var unconditionally.
+	* keyboard.h (polling_for_input): Declared.
+	* xterm.c: Include keyboard.h.
+	(x_make_frame_visible): Fix previous change: test polling_for_input
+	instead of whether SIGIO is defined.
+	* Makefile.in.in (xterm.o): Depend on keyboard.h.
+
+Fri Aug 26 16:35:06 1994  Kevin Rodgers <kevinr@ihs.com>
+
+	* xfns.c (Fx_color_defined_p): Return list of RGB values, not just t.
+
+Fri Aug 26 01:17:17 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* xterm.c (x_make_frame_visible): Call signal handler directly.
+
+Thu Aug 25 18:18:50 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* s/linux.h: Add LINUX_QMAGIC conditional.
+
+	* m/alliant-2800.h (USE_NONANSI_DEFUN): Defined.
+
+	* lisp.h (DEFUN): Check USE_NONANSI_DEFUN.
+
+	* Makefile.in.in (obj): Put cm.o before term.o.
+	(Avoids mysterious lossage on Irix.)
+
+	* xmenu.c (xmenu_show): Don't queue events that are in the menu bar.
+
+Wed Aug 24 15:40:04 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xmenu.c (xmenu_show): Do nothing special for ButtonPress in the menu.
+	Call XtDispatchEvent for all ButtonRelease events.
+	xlwmenu.c now deals with posting the menu.
+	Check for events in subwidgets of the menu
+	when deciding whether to queue them for later handling.
+
+	* unexelfsgi.c (unexec): Copy previous change in unexelf.c.
+
+	* s/irix5-0.h [__GNUC__] (LD_SWITCH_SYSTEM): Defined.
+
+Wed Aug 24 17:40:38 1994  Simon Leinen  <simon@lia.di.epfl.ch>
+
+	* term.c (term_init): Added missing argument to tgetstr.
+	(tgetstr): Move declarations to top level.
+
+Wed Aug 24 02:26:54 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* xterm.c (x_make_frame_visible): Raise a signal to cause the
+	pending X I/O to be read.
+
+Wed Aug 24 01:16:45 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xdisp.c (display_scan_buffer): New function.
+	(display_count_lines): Use that.
+
+	* intervals.c (textget): Ignore category prop if not a symbol.
+
+Tue Aug 23 22:04:05 1994  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* s/gnu.h: New file.
+
+Tue Aug 23 18:56:19 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* indent.c (pos_tab_offset): Don't trigger point-motion hooks.
+
+	* buffer.c (Frename_buffer): Fix gcpro problems.
+	* fileio.c (Fmake_symbolic_link, Ffile_accessible_directory_p,
+	Finsert_file_contents, auto_save_error, Fwrite_region): Likewise.
+	(Fcopy_file, build_annotations, Fdo_auto_save): Delete unused
+	 variables.
+
+Tue Aug 23 03:04:51 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* fileio.c (O_RDONLY): Defined.
+	(Finsert_file_contents, Fcopy_file): use it.
+	(barf_or_query_if_file_exists, Ffile_exists_p): Use stat, not access.
+	(Ffile_readable_p): Use open, not access.
+
+	* lread.c (O_RDONLY): Defined.
+	(openp): Use it.
+
+	* unexelf.c (unexec): Don't alter the info field
+	of SHT_SYMTAB and SHT_DYNSYM sections.
+
+	* xdisp.c (redisplay_window): Don't access text before BEGV.
+
+	* keyboard.c (read_char): After read_char_minibuf_menu_prompt,
+	don't just return; jump to non_reread.
+
+	* fileio.c (Fmake_directory_internal): Pass just 2 args to handler.
+
+Tue Aug 23 00:46:27 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* frame.c (Fmake_frame_invisible, Ficonify_frame): Don't switch frames.
+
+Mon Aug 22 19:17:08 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* search.c (Fstring_match): Fix sign error.
+
+	* m/ibmrs6000.h (LD_SWITCH_MACHINE): Use full path to ibmrs6000.inp.
+
+Sun Aug 21 14:03:32 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* m/ibmrs6000.h (LD_SWITCH_MACHINE): Supply m/ibmrs6000.inp as input.
+
+	* m/ibmrs6000.inp: New file.
+
+Fri Aug 19 20:47:38 1994  Hiroshi NAKANO  <nakano@whale.math.ryukoku.ac.jp>
+
+	* unexelf.c: Eliminate local var bss_end.
+	Update the symbol values of _edata and _end.
+
+Fri Aug 19 01:37:54 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* process.c (wait_reading_process_input):
+	Clear waiting_for_user_input_p before returning.
+
+	* xterm.c (x_make_frame_visible): Quit if requested, in loop at end.
+
+Wed Aug 17 22:07:20 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keyboard.c (read_char): Don't show buffer-events to the user.
+	Handle chars over 255 in dribble files.
+
+Wed Aug 17 17:43:22 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* callproc.c (Fcall_process_region): gcpro filename_string.
+
+Wed Aug 17 16:05:56 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* doc.c (store_function_docstring): Do nothing for bytecode object
+	which has no slot for doc string.
+
+Tue Aug 16 19:51:36 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* buffer.c (list_buffers_1): Update header line layout.
+
+Sat Aug 13 19:11:21 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* s/sol2-4.h (pid_t): New definition.
+	(vfork): Definition deleted.
+
+	* xmenu.c (xmenu_show): Unconditionally update x_mouse_grabbed
+	and Vmouse_depressed.
+
+	* window.c (window_loop, case UNSHOW_BUFFER):
+	When we delete a frame, skip all the windows on that frame.
+
+Fri Aug 12 19:11:43 1994  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* s/isc4-0.h (NEED_SIOCTL): moved to isc-3.0.h.
+	* s/isc3-0.h (NEED_SIOCTL): moved from isc-4.0.h, and disabled
+	BROKEN_TIOCGWINSZ since it works fine when you use <sioctl.h>.
+	(C_SWITCH_SYSTEM): Add -D_SYSV3 to ensure availability of
+	traditional non-standard functions.
+	(memmove): Delete this macro; it screws up <string.h> if you
+	use the native cc.  (Emacs already does the right thing anyway.)
+
+Fri Aug 12 01:22:45 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* indent.c (compute_motion): Use WIN's frame, not selected one.
+
+	* xterm.c (x_new_font): Don't set filename = full_name if that's null.
+
+Thu Aug 11 15:45:00 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in.in (FRAME_SUPPORT): Add faces.elc.
+
+	* search.c (Freplace_match): Treat caseless initial like a
+        lowercase initial.
+
+	* keymap.c (Fdefine_key): Fix error message.
+	(Fsingle_key_description): Likewise.
+
+Wed Aug 10 16:28:47 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* s/sol2-3.h (POSIX_SIGNALS): Define it.
+	(PTY_TTY_NAME_SPRINTF): New overriding definition.
+	(sigsetmask): Add #undefs.
+
+	* s/sol2-4.h (POSIX_SIGNALS, PTY_TTY_NAME_SPRINTF, sigsetmask):
+	Delete those things (moved to sol2-3.h).
+
+	* s/sol2-4.h (HAVE_VFORK): Deleted.
+	(vfork): Define as emacs_vfork.
+
+	* window.c (Fwindow_end): Undo previous change.
+
+Tue Aug  9 13:39:31 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keyboard.c (record_asynch_buffer_change): Do nothing
+	except when waiting_for_user_input_p.
+
+	* m/i860.h [USG5_4] (SVR4): Defined.
+
+	* xdisp.c (display_text_line):
+	Make previous change #ifdef HAVE_X_WINDOWS.
+
+Mon Aug  8 05:03:18 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* puresize.h [MULTI_FRAME] (PURESIZE): Increased.
+
+	* window.c (Fwindow_end): If window_end_valid is nil, return nil.
+
+	* window.c (Fpos_visible_in_window_p): Do something reasonable
+	if w->start is outside the buffer bounds.
+
+Sun Aug  7 02:40:34 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* s/sol2-4.h (PTY_TTY_NAME_SPRINTF): New definition.
+	(sigsetmask): Add #undef.
+
+	* keymap.c (Faccessible_keymaps): Fix previous change.
+
+Sat Aug  6 20:58:03 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xdisp.c (display_text_line): Use the face properties
+	of the overlay arrow, if any.
+
+	* xfaces.c (compute_glyph_face_1): New function.
+
+	* m/intel386.h (LIBS_MACHINE): If SOLARIS2_4, don't define this. 
+	* s/sol2-4.h (SOLARIS2_4): Defined.
+
+Fri Aug  5 23:06:16 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keymap.c (Fuse_global_map, Fuse_local_map):
+	Call record_asynch_buffer_change.
+
+	* xterm.c (XTread_socket):
+	Don't test X_IO_BUG; make that code unconditional.
+	(x_noop_count, x_term_init): Likewise.
+
+Thu Aug  4 17:00:11 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* data.c (Fdefine_function, Fdefalias): Handle advice as in Ffset.
+	(Qad_advice_info): Lisp and C names renamed from Qadvice_info.
+	(Qad_activate): C name renamed from Qactivate_advice.
+
+	* fileio.c (Fread_file_name_internal): Call double_dollars
+	when `changed' is set.
+
+Wed Aug  3 21:53:58 PDT 1994  Caveh Jalali  (caveh@eng.sun.com)
+
+	* m/intel386.h [SOLARIS2] (VALBITS, GCTYPEBITS): New definitions.
+
+	* s/sol2-4.h: New file.
+
+Wed Aug  3 00:38:43 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* buffer.c (list_buffers_1): Add one column to size column.
+
+	* xterm.c (x_make_frame_visible): Start one_in_four at 1.
+
+	* window.c (Fwindow_end): Doc fix.
+
+	* xterm.c (construct_mouse_click, construct_menu_click):
+	Don't update x_mouse_grabbed, Vmouse_depressed, last_mouse_frame here.
+	(XTread_socket): Update them here, so we do it without fail.
+	(XTmouse_position, XTread_socket case MotionNotify):
+	Check last_mouse_frame is nonzero before using it.
+
+	* Makefile.in.in (alloca.o): Use -f in all rm's.
+
+Tue Aug  2 18:08:18 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keymap.c (Faccessible_keymaps): Use PREFIX to set loop starting
+	point; don't even consider maps except those reached via prefix.
+
+	* keyboard.c (make_lispy_event): If the position is not in a window,
+	at least pass along the frame it is in.
+
+Mon Aug  1 18:28:32 1994  Roland McGrath  <roland@churchy.gnu.ai.mit.edu>
+
+	* data.c (Ffset): Don't call Fget unless SYM's plist is consp.
+
+Mon Aug  1 14:58:58 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* eval.c (Fprog2): Doc fix.
+
+	* window.c (Fmove_to_window_line): Doc fix.
+
+Mon Aug  1 11:10:40 1994  Frederic Pierresteguy  (F.Pierresteguy@frcl.bull.fr)
+
+	* xmenu.c (xmenu_show): Ignore any geometry resource from the user.
+
+Sun Jul 31 02:37:25 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xfns.c (Fx_get_resource): Doc fix.
+
+	* data.c (syms_of_data): Set up Qadvice_info, Qactivate_advice.
+	(Ffset): Activate advice if symbol has advice-info property.
+
+	* xdisp.c (redisplay_window): Avoid using SET_PT to change point
+	temporarily.
+
+	* dispnew.c (sit_for): Undo previous change.
+
+Sat Jul 30 14:26:59 1994  enami tsugutomo  <enami@sys.ptg.sony.co.jp>
+
+	* dispnew.c (direct_output_for_insert): Pass missing 8th
+	argument to compute_char_face.
+
+Sat Jul 30 16:36:38 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* keyboard.c (follow_key): Don't downcase letters here.
+	Delete arg `case_converted'.
+	(read_key_sequence): Do it here; but not if in middle of fcn key.
+
+	* fns.c (Frandom): Handle LIMIT >= 40000000.
+
+	* xdisp.c (decode_mode_spec): Handle %&.
+
+Fri Jul 29 21:21:09 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* process.c (create_process): Set default handling for SIGINT, etc.
+
+Thu Jul 28 08:46:00 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* process.c (wait_reading_process_input): Fix previous change.
+
+	* s/hpux9.h (HAVE_TERMIOS, NO_TERMIO): Defined.
+	(HAVE_TERMIO): Add #undef.
+
+	* sysdep.c (random): Use rand differently, and distinguish BSD/USG.
+
+	* fns.c (Frandom): Fix previous change.
+
+Wed Jul 27 13:29:53 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* syssignal.h [POSIX_SIGNALS] (signal): New definition.
+
+	* config.h.in (HAVE_RAND48): Add #undef.
+
+Tue Jul 26 11:25:58 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xterm.c (x_queue_event, x_unqueue_events): New functions.
+	(x_start_queuing_selection_requests): New function.
+	(x_stop_queuing_selection_requests): New function.
+	(XTread_socket): Queue up SelectionRequest events sometimes.
+	* xselect.c (x_get_foreign_selection): Use the new feature
+	to queue up SelectionRequest events.
+
+	* process.c (wait_reading_process_input): If wait_for_cell,
+	do check for keyboard input and handle it.
+
+	* fns.c (Frandom): Use just the low 30 bits of random's value.
+
+	* sysdep.c (random, srandom): Obey HAVE_RAND48 flag.
+	Test that random is not a macro.  Don't test USG or BSD4_1.
+
+	* m/tek4300.h (tek4300): Don't define if already defined.
+
+Mon Jul 25 14:39:34 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* m/tek4300.h (BSD_PGRPS): Defined.
+
+	* puresize.h (PURESIZE): Increase non-MULTI_FRAME value.
+
+	* editfns.c (get_system_name): Add a cast.
+
+	* config.h.in: Add #undef HAVE_H_ERRNO.
+	* process.c, sysdep.c [!HAVE_H_ERRNO]: Declare h_errno.
+	* sysdep.c (init_system_name): Set h_errno to 0 initially.
+	* process.c (Fopen_network_stream): Set h_errno to 0 initially.
+
+	* window.c (Fdisplay_buffer): Add MULTI_FRAME cond in last change.
+
+	* Makefile.in.in: Add #undef alloca.
+
+Sat Jul 23 21:20:05 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* minibuf.c (Fdisplay_completion_list): gcpro `completions'.
+
+	* print.c (internal_with_output_to_temp_buffer): gcpro things.
+
+	* puresize.h (PURESIZE): Incremented to 252000.
+
+Sat Jul 23 12:26:36 1994  Jim Blandy  (jimb@totoro.bio.indiana.edu)
+
+        * .gdbinit: Set the breakpoint in x_error_quitter instead of
+        _XPrintDefaultError.
+
+Wed Jul 20 00:56:24 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (Fnext_window, Fprevious_window): Don't get stuck in a loop
+	in the minibuffer frame.
+
+	* dispnew.c (direct_output_for_insert): Dpn't call compute_char_face
+	for a non-X frame.
+
+	* s/usg5-4.h: Move #undef static before the includes.
+
+	* xrdb.c [USG5] (SYSV): Don't define if already defined.
+
+	* fileio.c (Fwrite_region): Do unwind the new unwind protect.
+
+Tue Jul 19 12:05:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (struct font_info): New field full_name.
+	(x_new_font): Record, and return, the full name of the font.
+
+	* widget.c (EmacsFrameSetCharSize): Delete the code to make rows at
+	least 3.
+
+	* fileio.c (Vwrite_region_annotations_so_far): New variable.
+	(syms_of_fileio): Set up Lisp var.
+	(build_annotations): Handle annotate functions that switch buffers.
+	Set Vwrite_region_annotations_so_far.
+	(Fwrite_region): Handle change of buffer in build_annotations.
+	Add an unwind protect to restore original buffer and kill the temp.
+
+	* sysdep.c (init_system_name): Retry gethostbyname after TRY_AGAIN
+        failure.
+
+	* process.c (Fopen_network_stream):
+	Retry gethostbyname after TRY_AGAIN failure.
+
+	* s/isc4-0.h [__GNUC__] (LIBX11_SYSTEM): Add -lcposix.
+
+	* s/usg5-4.h (PTY_TTY_NAME_SPRINTF): Fail smoothly if cannot get pty.
+
+	* sysdep.c (sys_subshell): Expand ~ in dir.
+	Do the processing of dir before calling fork.
+	Use vfork.
+
+Mon Jul 18 02:09:30 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (note_mouse_movement): Use proper data type for window
+	args to XQueryPointer.
+	(x_scroll_bar_note_movement): Likewise.
+
+	* keyboard.c (Vdeferred_action_list, Vdeferred_action_function):
+	New variables.
+	(command_loop_1): Handle them.
+	(syms_of_keyboard): Set up Lisp variables.
+
+	* s/linux.h [emacs]: Include stdio.h.
+
+	* commands.h (unread_command_char): Declared.
+	* dispnew.c (sit_for): Return immediately if unread events exist.
+
+Sun Jul 17 19:52:42 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* textprop.c (Fget_text_property): Simplify using Ftext_properties_at.
+
+Sun Jul 17 02:41:19 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xfns.c (Fx_create_frame): Use 140 as default font size.
+
+	* xmenu.c [USE_X_TOOLKIT] (xmenu_show): Handle UnmapNotify events.
+
+Sat Jul 16 14:31:34 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (Fdisplay_buffer): Cope with unsplittable frames
+	and dedicated windows.
+
+	* frame.c [!MULTI_FRAME] (Fframe_first_window): Defined.
+	(syms_of_frame): Defvar it.
+
+Thu Jul 14 19:56:33 1994  Morten Welinder  (terra@diku.dk)
+
+	* s/msdos.h (HAVE_VOLATILE): Define.
+
+Thu Jul 14 00:59:50 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (safe_run_hooks): Use local var to restore hook's value.
+
+Wed Jul 13 20:55:47 1994  Morten Welinder  (terra@diku.dk)
+
+	* keyboard.c (kbd_buffer_get_event) [HAVE_MOUSE]: Include code
+	to check for mouse dragging.
+	(make_lispy_movement) [HAVE_MOUSE]: Define also in this case,
+	but only include the non-multiframe stuff.
+
+	* msdos.c (mouse_init1): Use alternate mouse detection for old
+	mouse drivers.
+	(mouse_get_pos): Downscale coordinates by 8.
+
+Wed Jul 13 00:11:17 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (Fselect_window): Fix bug checking new_point is in range.
+
+	* fileio.c (syms_of_fileio): Finish previous change.
+
+	* keyboard.c (command_loop_1): Do direct output for cursor motion
+	over text chars when disp tab exists but says nothing for them.
+
+	* frame.h (FRAME_EXTERNAL_MENU_BAR) [!USE_X_TOOLKIT]: Give zero.
+
+	* xdisp.c [!HAVE_X_WINDOWS] (compute_char_face, compute_glyph_face):
+	Add simple alternate definitions for non-X case.
+
+Tue Jul 12 15:09:25 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (Qlast_nonmenu_event): New variable.
+	(syms_of_process): Set it up.
+	(read_process_output, exec_sentinel): Bind it to t around filter.
+
+	* fileio.c (Fmake_directory_internal): Use Qmake_directory_internal.
+	(syms_of_fileio): Set up Qmake_directory_internal, not Qmake_directory.
+
+	* frame.c [MULTI_FRAME] (Fframe_parameters): For non-X frames,
+	fill in menu-bar-lines value.
+
+Mon Jul 11 20:46:53 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xmenu.c (xmenu_show): Don't call XtUngrabPointer here.
+
+	* Makefile.in.in (ctagsfiles): Rewrite to avoid compiler bug.
+
+Sun Jul 10 20:37:09 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* window.c (Fdisplay_buffer): Add MULTI_FRAME conditional
+	in previous change.
+
+Sun Jul 10 19:11:24 1994  Morten Welinder  (terra@diku.dk)
+
+	* m/intel386.h [MSDOS] (NO_REMAP): Defined.
+	* s/msdos.h (HAVE_MOUSE, PURESIZE): Definitions moved here.
+	* m/dos386.h: File obsolete and deleted.
+
+	* msdos.c (dos_rawgetc): Use bios, not kbhit ().
+
+Sat Jul  9 14:20:11 1994  Morten Welinder  (terra@diku.dk)
+
+	* fileio.c (Ffile_name_directory, Ffile_name_nondirectory,
+	file_name_as_directory, directory_file_name, Fexpand_file_name,
+	Ffile_name_absolute_p, Fsubstitute_in_file_name) [MSDOS]:
+	Allow backslashed file names.
+
+Sat Jul  9 00:43:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* puresize.h (PURESIZE) [MULTI_FRAME]: Increased to 250000.
+
+	* lread.c (readevalloop): Correctly unbind the unwind protect.
+
+Fri Jul  8 16:24:59 1994  Morten Welinder  (terra@diku.dk)
+
+	* msdos.c (do_visible_bell): Clean-up using GNU assembly extension.
+
+Thu Jul  7 00:52:10 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m/sparc.h (BIG_ENDIAN): Don't redefine if defined.
+
+	* Makefile.in.in (alloca.o): Delete allocatem.c first thing.
+
+	* xmenu.c (xmenu_show) {USE_X_TOOLKIT}: ButtonPress no longer pops
+	down; instead it forces the next ButtonRelease to exit.  Don't
+	dispatch on ButtonPress events.
+
+	* xfns.c (syms_of_xfns): Provide x-toolkit in toolkit version.
+	Undo previous change.
+	(x_toolkit): Variable deleted.
+
+	* xfns.c (x_toolkit): New variable.
+	(syms_of_xfns): Set up Lisp var x-toolkit.
+
+	* window.c (Fnext_window, Fprevious_window): ALL_FRAMES = 0 means
+	try both visible frames and iconified frames.
+	(window_loop): Likewise, for FRAMES = 0.
+	(Fget_buffer_window): Likewise, for FRAME = 0.
+	(Fdisplay_buffer): Pass 0 to Fget_buffer_window;
+	if the frame is iconified, make it visible.
+
+	* frame.c (next_frame, prev_frame):
+	MINIBUF = 0 means try visible frames and iconified frames.
+
+Wed Jul  6 15:30:48 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xmenu.c (xmenu_show) [USE_X_TOOLKIT]: Keyboard input exits the menu.
+	ButtonRelease does so if within Vdouble_click_time.
+	Ignore mouse motion if button was already released.
+	(menu_item_selection): Declare volatile, if __STDC__.
+
+	* keyboard.c (make_lispy_event): Ignore menu bar up events.
+
+Tue Jul  5 02:18:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* doprnt.c (doprnt): Handle padding on %c.
+
+	* frame.c (next_frame, prev_frame): Change which frames to use
+	when MINIBUF is a window.
+	(Fnext_frame, Fprevious_frame): Doc fixes.
+
+	* window.c: Doc fixes.
+
+Mon Jul  4 23:54:05 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (XTread_socket, construct_menu_click) [USE_X_TOOLKIT]:
+	Update x_mouse_grabbed and Vmouse_depressed.
+
+Sat Jul  2 00:23:23 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
+
+	* xdisp.c (decode_mode_spec): %+ makes % for unmodified RO buffer.
+
+	* buffer.c (syms_of_buffer): Doc fix.
+
+	* xfaces.c (get_cached_face): Set the cached_index field.
+
+Fri Jul  1 11:34:08 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
+
+	* sysdep.c (init_sys_modes): Turn off VSTART and VSTOP chars.
+	On DGUX, turn off INPCK.
+
+Fri Jul  1 03:13:06 1994  Paul Reilly  (pmr@churchy.gnu.ai.mit.edu)
+
+	* xfns.c (Fx_create_frame): Add GC protection for frame being made.
+
+Thu Jun 30 00:27:11 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
+
+	* xterm.c (x_make_frame_visible): In x_sync loop at the end,
+	every fourth time, sleep for 1/4 second.
+
+	* xselect.c (x_own_selection, x_get_foreign_selection):
+	Get rid of spurious X_TOOLKIT conditional.
+
+	* frame.c (Fdelete_frame): Call x_clear_frame_selections.
+
+	* xselect.c (x_own_selection): Put the frame in Vselection_alist.
+	(x_clear_frame_selections): New function.
+
+	* xterm.c (x_draw_box): Use curs_x and curs_y, not f->cursor_[xy].
+
+	* xfns.c (XLIB_ILLEGAL_ACCESS): Defined.
+
+Wed Jun 29 14:57:27 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
+
+	* s/hpux.h (random, srandom): Defined.
+
+	* cmds.c (internal_self_insert): Now can return 2.
+	* keyboard.c (command_loop_1): Don't clear nonundocount
+	when internal_self_insert returns 1.
+
+Tue Jun 28 18:21:08 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (x_set_frame_parameters): Call x_set_offset directly.
+	Handle `-' for position parameters.
+
+Tue Jun 28 17:50:22 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* lread.c (readchar): Restart interrupted I/O.
+
+Tue Jun 28 15:00:45 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* fileio.c (a_write): Loop while *ANNOT is listp, not consp.
+	Previous code omitted all data from output files when *ANNOT was
+	nil.
+
+Tue Jun 28 05:25:06 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (x_set_name): If no change needed, avoid consing.
+
+	* xdisp.c (prepare_menu_bars): Call x_consider_frame_title
+	only if windows_or_buffers_changed.
+
+	* keyboard.c (safe_run_hooks): Take symbol as arg.
+	Use Fsymbol_value and Fset.
+	(command_loop_1): Pass symbol to safe_run_hooks.
+	Look in the value cell to check for trivial case (no hooks).
+
+	* xdisp.c (redisplay_region): For special treatment, BUF most be
+	both current and displayed in selected window.
+
+	* buffer.c (Foverlay_put): Pass redisplay_region a struct buffer *.
+
+Mon Jun 27 16:43:46 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fileio.c (a_write): Verify that *annot is a cons.
+
+Sun Jun 26 12:28:23 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (echo_dash): Fix backwards conditional.
+	(read_key_sequence): Don't echo if echo_keystrokes is 0.
+
+	* m/news-risc.h (C_DEBUG_SWITCH) [not NEWSOS5]:
+	Don't define if __GNUC__.
+	(KERNEL_FILE) [not NEWSOS5]: New override definition.
+
+Sat Jun 25 12:28:24 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (send_process): Major rewrite.
+	Don't put in a C-d unless a single line is too long.
+	Read process input whenever output gets stuck.
+	Relocate BUF if we read input.  New arg OBJECT.
+	(Fprocess_send_region, Fprocess_send_string, process_send_signal)
+	(Fprocess_send_eof): Pass new arg OBJECT.
+
+	* buffer.h (BUF_PTR_CHAR_POS): New macro.
+
+	* window.c (Fsave_window_excursion): Doc fix.
+
+	* s/hpux9.h (C_SWITCH_SYSTEM): Add -D_BSD.
+
+	* frame.c (Fframe_parameters): Don't handle menu-bar-lines explicitly.
+
+	* window.c (Fother_window_for_scrolling): New function.
+	(Fscroll_other_window): Use that.
+	(syms_of_window): defsubr it.
+
+Fri Jun 24 20:13:01 1994  Karl Heuer  (kwzh@nutrimat.gnu.ai.mit.edu)
+
+	* fileio.c (Finsert_file_contents): Fix check for non-regular files.
+
+Fri Jun 24 10:09:46 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* syntax.c (scan_lists, Fforward_comment): When moving backward over
+	a comment, ignore a comment-starter that overlaps the comment-ender.
+
+	* minibuf.c (Fcompleting_read): Doc fix.
+
+Thu Jun 23 20:33:17 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* keyboard.c (syms_of_keyboard): Don't staticpro the same var twice.
+
+Thu Jun 23 15:15:09 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/convexos.h: File deleted.
+
+	* xterm.c: Don't include string.h or strings.h.
+
+	* term.c (term_get_fkeys): Don't redeclare term_get_fkeys_1 here.
+
+	* m/convex.h (LIBS_MACHINE, GETPGRP_NO_ARG): Defined.
+	(NLIST_NAME_UNION, DECLARE_GETPWUID_WITH_UID_T): Defined.
+	(CRT0_DUMMIES): Conditionalize according to __GNUC__.
+	(convex): Define if necessary.
+	(C_SWITCH_MACHINE): Definition deleted.
+
+Wed Jun 22 00:15:49 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* buffer.c (Fmove_overlay): Fix typo in previous change.
+
+	* s/sunos4shr.h (X_IO_BUG): Defined.
+
+Tue Jun 21 13:51:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* minibuf.c (read_minibuf_unwind): Run Qminibuffer_exit_hook here.
+	(read_minibuf): Not here.
+
+	* buffer.c (Fkill_buffer): Don't delete auto save file
+	if it didn't come from this Emacs session.
+	(Fmove_overlay): Add missing XINT calls in previous change.
+
+Mon Jun 20 20:40:37 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* xfns.c (x_window): Delete duplicate computation.
+	Change type of reference argument from int to Dimension.
+
+Mon Jun 20 10:50:29 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* config.h.in: Move #undef HAVE_STRERROR before the #includes.
+
+	* m/mips4.h (HAVE_STRERROR, HAVE_XRMSETDATABASE)
+	(HAVE_XSCREENRESOURCESTRING, HAVE_SETSID): Add #undefs.
+
+	* buffer.c (Fmove_overlay): Call redisplay_region even when
+	changing to a different buffer.
+
+	* syntax.c (Fmatching_paren): Fix typo.
+
+	* xterm.c (show_mouse_face): Set endcolumn ok in side-by-side windows.
+
+Sun Jun 19 01:01:42 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/linux.h (SEGMENT_MASK): Defined.
+
+	* xfns.c (x_window): Take account of pane widget internal border width.
+
+	* s/linux.h (C_OPTIMIZE_SWITCH): Definition deleted.
+
+	* lisp.h (RETURN_UNGCPRO): Swallow semicolon.
+	(GCPRO5): New macro.
+
+	* xmenu.c (single_keymap_panes): Put menu_item_equiv_key in the gcpro.
+	(menu_item_equiv_key): GCPRO things.
+
+	* keymap.c (Flookup_key): Add gcpro.
+	(Fkey_binding, Fminor_mode_key_binding): Likewise.
+	(Fwhere_is_internal): Likewise.
+
+	* keyboard.c (apply_modifiers): Use assq_no_quit.
+
+Sun Jun 19 03:54:02 1994  Erik Naggum  (erik@naggum.no)
+
+	* syntax.h (SYNTAX_MATCH): Fix typo (syntax -> matcher).
+
+	* syntax.c (Fmatching_paren): New function.
+	(Fchar_syntax): Pass arg directly to SYNTAX, no masking.
+
+Sat Jun 18 15:20:10 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* .gdbinit: Doc fixes.
+	(xsymbol): Cast $ to int.
+	(xvector, xstring): Don't use a string constant.
+	Reduce size limit for printing contents.
+
+	* s/sol2.h (GETTIMEOFDAY_ONE_ARGUMENT): Undo previous change.
+
+Sat Jun 18 19:52:15 1994  Francesco Potorti`  (pot@fly.cnuce.cnr.it)
+
+	* m/delta.h (memmove): switch the first two args.
+
+Sat Jun 18 09:00:50 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (x_make_frame_visible): At end, wait till Emacs sees
+	frame is visible.
+
+	* keyboard.c (echo_after_prompt): New variable.
+	(echo_prompt, cancel_echoing): Set it.
+	(echo_dash): Test it.
+
+	* s/linux.h (C_DEBUG_SWITCH): Define, if THIS_IS_CONFIGURE.
+	(HAVE_GETTIMEOFDAY, HAVE_MKDIR, HAVE_RMDIR): 
+	(HAVE_XSCREENNUMBEROFSCREEN, HAVE_XRMSETDATABASE):
+	Comment out these definitions.
+
+	* Makefile.in.in (doprnt.o): Depend on config_h.
+
+Fri Jun 17 19:30:46 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* systime.h (EMACS_GET_TIME): Test GETTIMEOFDAY_ONE_ARGUMENT,
+	not USG5_4.
+	* s/usg5-4.h (GETTIMEOFDAY_ONE_ARGUMENT): Define it.
+	* s/sol2.h (GETTIMEOFDAY_ONE_ARGUMENT): Undef it.
+
+	* xfns.c (x_real_positions): Make sure we know the parent window.
+
+Fri Jun 17 16:01:55 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* window.h (minibuf_prompt): Now a Lisp_Object.  All uses changed.
+
+	* minibuf.c (minibuf_save_list): New variable, replaces
+	minibuf_save_vector.
+	(read_minibuf): Cons it up.
+	(read_minibuf_unwind): Pop back the saved values.
+	(syms_of_minibuf): staticpro it.
+
+	* indent.c (compute_motion): Recenter overlays, for speed.
+
+Fri Jun 17 09:33:21 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (scratch_cursor_gc): New variable.
+	(dumpglyphs): Rework handling of GCs for cursor display
+	to use scratch_cursor_gc, and reuse the GC more.
+
+Thu Jun 16 14:50:43 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* unexec.c (make_hdr): Handle case of no "additional header".
+
+	* xdisp.c (redisplay_region): Treat selected window's buffer
+	specially, not current buffer.
+
+	* syssignal.h [USG5_4] (sigblock): Use |, not &.
+
+Thu Jun 16 11:36:35 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* xdisp.c (redisplay_window): Don't use shortcut if window_end_vpos
+	is out of date.
+
+Thu Jun 16 11:01:33 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (Fprocess_status): Return nil for process name
+	that has no process.
+
+	* dispnew.c (syms_of_display): Make baud-rate a user var.
+
+	* syntax.c (scan_lists): Get error if eob within comment with depth!=0.
+
+Thu Jun 16 02:55:51 1994  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
+
+	* unexec.c: Include <sys/file.h> and [USG5] <fcntl.h> to define
+        O_* macros.
+	(O_RDONLY, O_RDWR): Define if undefined.
+	[emacs] (report_error): Use report_file_error so the user can tell
+	what the errno code was.
+	(unexec): Use O_RDONLY instead of explicit 0.
+	(make_hdr): Don't undo A_TEXT_OFFSET adjustment #ifndef NO_REMAP,
+	since it was never adjusted earlier #ifndef NO_REMAP.
+	(adjust_lnnoptrs): Use O_RDWR instead of explicit 2.
+
+Wed Jun 15 16:11:16 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (x_noop_count): New variable.
+	(x_term_init) [X_IO_BUG]: Init it.
+	(XTread_socket) [X_IO_BUG]: Don't do XNoOp every time, just 1 in 100.
+
+Wed Jun 15 00:03:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* syssignal.h (sigblock) [USG5_4]: Define if not defined.
+
+Tue Jun 14 23:40:29 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lread.c: Put config.h first.
+
+	* hftctl.c: Put sys/signal.h and errno.h first, then config.h.
+
+	* dired.c: Put stdio.h, sys/types.h and sys/stat.h after config.h.
+
+	* callproc.c, dispnew.c, frame.c, term.h: Put stdio.h after config.h.
+	* widget.c, xmenu.c, xterm.c: Put stdio.h after config.h.
+
+Tue Jun 14 20:17:16 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* sysdep.c (init_system_name): New function, replaces get_system_name.
+	* lisp.h: declare it.
+	* editfns.c (init_editfns): Call it.
+	(get_system_name): New function, now just uses Vsystem_name.
+	* xterm.c (x_term_init): Use Vsystem_name instead of calling
+	get_system_name.
+
+	* keymap.c (Fsingle_key_description): Allow strings as keys.
+
+	* process.c (create_process): Set input_wait_mask before forking.
+
+Tue Jun 14 15:45:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* indent.c (vmotion): Use find_next_newline_no_quit.
+	(indented_beyond_p): Likewise.
+
+	* search.c (find_next_newline_no_quit): New function.
+
+	* sysdep.c (init_sys_modes): Don't set up sigio here if window system.
+
+	* keyboard.c (read_key_sequence): Verify event has a POSN_BUFFER_POSN
+	before trying to extract it.
+
+	* eval.c (init_eval_once): Call xmalloc, not malloc.
+
+	* process.c (Fprocess_send_eof): Doc fix.
+
+Mon Jun 13 17:07:59 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (interrupt_signal, init_keyboard): 
+	Don't handle SIGINT and SIGQUIT if using window system directly.
+
+	* sysdep.c (init_sys_modes): Don't call set_terminal_modes
+	if using a window system.
+
+	* xterm.c (XTread_socket): Use x_top_window_to_frame in prev change.
+
+	* s/sol2.h (SOLARIS2): Defined.
+
+	* m/intel386.h: Add conditional for SOLARIS2.
+
+Mon Jun 13 16:55:30 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* xmenu.c (single_keymap_panes): gcpro some things.
+
+Mon Jun 13 15:44:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (XTread_socket): Handle Xatom_wm_save_yourself
+	by calling XSetCommand.
+
+	* emacs.c (init_cmdargs): Set up initial_argv, initial_argc.
+
+	* keyboard.c (syms_of_keyboard): Properly init Vsystem_key_alist.
+
+	* unexaix.c (adjust_lnnoptrs): Handle multiple aux symbols.
+
+Sun Jun 12 15:57:02 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* editfns.c (transpose_markers): Allow for gap at start of region.
+	(Ftranspose_regions): Don't precompute pointers into buffer text.
+
+Sun Jun 12 08:42:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (x_window): Request "save yourself" commands.
+
+	* callint.c (Fcall_interactively): Ignore `-' in string.
+	(Fcall_interactively): Don't call minibuffer-window-active-p;
+	determine directly whether a minibuf window is active.
+
+	* keyboard.c (read_char): When we loop and call redisplay,
+	do prepare_menu_bars first.
+
+Sat Jun 11 08:12:46 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* search.c (Freplace_match): Be sure not to treat non-digit like digit.
+
+	* xmenu.c (xmenu_show): Don't call XMenuDestroy twice
+	in XM_FAILURE case.
+
+	* Makefile.in.in (xterm.o): Depend on dispextern.h.
+
+	* s/sunos4-1-3.h (X_IO_BUG): Defined.
+
+Fri Jun 10 16:31:19 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/linux.h (CLASH_DETECTION): Defined.
+
+	* minibuf.c (Fdisplay_completion_list):
+	Require at least two spaces between items.
+
+Tue Jun  7 13:33:23 1994  Richard Stallman  (rms@geech.gnu.ai.mit.edu)
+
+	* keyboard.c (command_loop_1):
+	Treat nil in display tab like no display tab.
+
+Tue Jun  7 11:50:49 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mips-siemens.h:  Include pyramid.h, not mips.h.
+	(LOAD_AVE_TYPE, LOAD_AVE_CVT): Definitions deleted.
+	(NO_ARG_ARRAY, HAVE_ALLOCA): Defined.
+	(BROKEN_FIONREAD): Add #undef.
+
+Tue Jun  7 19:19:04 1994  Morten Welinder  (terra@diku.dk)
+
+	* msdos.c (init_environment): Clean up code and make the default
+	EMACSPATH equal to the directory from which Emacs was started.
+	(emacsroot): New variable.
+	(rootrelativepath): New function.
+	* msdos.h: Add template for rootrelativepath.
+	* lread.c [MSDOS]: #include "msdos.h".
+	* callproc.c (init_callproc) [MSDOS]: Exclude less code, so ../etc
+	is still tested for doc file.
+
+Mon Jun  6 21:11:13 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* fns.c (Fy_or_n_p, Fyes_or_no_p) [HAVE_X_MENU]: Redisplay before
+	popping up a menu.
+
+	* dispnew.c (Fframe_or_buffer_changed_p): Reuse the state vector.
+
+Mon Jun  6 08:37:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* frame.c (Ficonify_frame, Fmake_frame_invisible, Fmake_frame_visible):
+	Increment windows_or_buffers_changed.
+
+	* xdisp.c (redisplay): Don't call x_consider_frame_title.
+	(display_mode_line): Likewise.
+	(prepare_menu_bars): Call it here.
+
+Mon Jun  6 01:02:32 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* dispnew.c (Fframe_or_buffer_changed_p): New function.
+
+Sun Jun  5 07:13:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (x_wm_set_icon_position, x_wm_set_icon_pixmap):
+	[USE_X_TOOLKIT]: Use top-level widget's window.
+
+	* s/bsd386.h (BSD): Redefine.
+	(WAITTYPE, WRETCODE, WCOREDUMP): New definitions.
+	Include wait.h.
+
+	* m/sun386.h (LIBS_MACHINE) [USG]: New #define.
+
+	* xterm.c (x_term_init): New args xrm_option and resource_string.
+	Pass an -xrm option to XtAppInitialize if appropriate.
+
+	* xfns.c (Fx_open_connection): Set up Vx_resource_name and xrm_option
+	before calling x_term_init.  Pass new args.
+
+	* keyboard.c (modify_event_symbol): Return nil if out of range.
+
+	* keymap.c (Fkey_description): Avoid using Fmapconcat--do it directly.
+
+	* keyboard.c, dispnew.c: Include systime.h after xterm.h.
+
+	* xfns.c (x_window): Take account of internal border of paned widget.
+
+	* m/dos386.h (PURESIZE): Increased to 240000.
+
+	* xfns.c (using_x_p): New function.
+	* fns.c (Fy_or_n_p): Don't use dialog box if not an X frame.
+	(Fyes_or_no_p): Likewise.
+
+Sat Jun  4 14:35:09 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/hpux9shr.h (C_DEBUG_SWITCH): Define as empty.
+
+Fri Jun  3 20:14:30 1994  Morten Welinder  (terra@diku.dk)
+
+	* callproc.c [MSDOS]: #include "msdos.h" for rootrelativepath
+	template.
+
+	* msdos.c (run_msdos_command): Make local copy of argv[2] on stack,
+	not on heap.
+	(run_msdos_command): When changing argv[2] from using slashes to
+	using backslashes, only do so on the first white-space delimited
+	part.
+
+Thu Jun  2 19:41:08 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* textprop.c (Fprevious_single_property_change): Check for null
+	interval after correcting for edge effects.
+
+	* xdisp.c (display_text_line): Make sure pointer is in range.
+
+	* xmenu.c (xdialog_show): Fix problem with message in dialog box.
+
+Thu Jun  2 15:11:57 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* emacs.c (main): Do the setpgrp after checking for -batch.
+
+	* keyboard.c (command_loop_1): Properly handle nil in display table.
+
+	* s/hpux9.h (C_SWITCH_SYSTEM): Put inside __GNUC__ conditional.
+
+Wed Jun  1 14:55:45 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* process.c (kill_buffer_processes): For net conn, use Fdelete_process.
+
 Mon May 30 06:16:48 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.25 released.

@@ -652,7 +652,7 @@ Texinfo, texinfo, Texinfo: The GNU Documentation Format}.)
                            Also tells what nodes look like.
 * Menus::                How to add to or create menus in Info nodes.
 * Cross-refs::           How to add cross-references to Info nodes.
-* Tags::                 How to make tag tables for Info files.
+* Tags::                 How to make tags tables for Info files.
 * Checking::             Checking an Info File
 * Emacs Info Variables:: Variables modifying the behavior of Emacs Info.
 @end menu
@@ -698,9 +698,9 @@ might like to use the commands @kbd{1}, @kbd{2}, @kbd{3}, @kbd{4}, ...
 argument.  @kbd{1} goes through the first item in the current node's
 menu; @kbd{2} goes through the second item, etc.
 
-If you display supports multiple fonts, and you are using Emacs' Info
+If your display supports multiple fonts, and you are using Emacs' Info
 mode to read Info files, the @samp{*} for the fifth menu item is
-underlines, and so is the @samp{*} for the ninth item; these underlines
+underlined, and so is the @samp{*} for the ninth item; these underlines
 make it easy to see at a glance which number to use for an item.
 
 On ordinary terminals, you won't have underlining.  If you need to
@@ -727,7 +727,7 @@ Put that topic in the menu in the directory.  @xref{Menus, Menu}.
 Usually, the way to create the nodes is with Texinfo @pxref{Top,, Overview of
 Texinfo, texinfo, Texinfo: The GNU Documentation Format}); this has the
 advantage that you can also make a printed manual from them.  However,
-if hyou want to edit an Info file, here is how.
+if you want to edit an Info file, here is how.
 
   The new node can live in an existing documentation file, or in a new
 one.  It must have a @key{^_} character before it (invisible to the
@@ -858,24 +858,24 @@ They are just examples.  The places they ``lead to'' do not really exist!
 
 @node Tags, Checking, Cross-refs, Advanced Info
 @comment  node-name,  next,  previous,  up
-@section Tag Tables for Info Files
+@section Tags Tables for Info Files
 
   You can speed up the access to nodes of a large Info file by giving
-it a tag table.  Unlike the tag table for a program, the tag table for
+it a tags table.  Unlike the tags table for a program, the tags table for
 an Info file lives inside the file itself and is used 
 automatically whenever Info reads in the file.
 
-  To make a tag table, go to a node in the file using Emacs Info mode and type
+  To make a tags table, go to a node in the file using Emacs Info mode and type
 @kbd{M-x Info-tagify}.  Then you must use @kbd{C-x C-s} to save the
 file.
 
-  Once the Info file has a tag table, you must make certain it is up
+  Once the Info file has a tags table, you must make certain it is up
 to date.  If, as a result of deletion of text, any node moves back
 more than a thousand characters in the file from the position
-recorded in the tag table, Info will no longer be able to find that
-node.  To update the tag table, use the @code{Info-tagify} command again.
+recorded in the tags table, Info will no longer be able to find that
+node.  To update the tags table, use the @code{Info-tagify} command again.
 
-  An Info file tag table appears at the end of the file and looks like
+  An Info file tags table appears at the end of the file and looks like
 this:
 
 @example

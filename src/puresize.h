@@ -29,9 +29,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifndef PURESIZE
 #ifdef MULTI_FRAME
-#define PURESIZE 235000
+#define PURESIZE 255000
 #else
-#define PURESIZE 205000
+#define PURESIZE 208000
 #endif
 #endif
 

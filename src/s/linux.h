@@ -122,7 +122,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    so that Emacs can tell instantly when you try to modify
    a file that someone else has modified in his Emacs.  */
 
-/* #define CLASH_DETECTION */
+#define CLASH_DETECTION
 
 /* Here, on a separate page, add any special hacks needed
    to make Emacs work on this system.  For example,
@@ -153,9 +153,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* #define LINUX_LDAV_FILE "/proc/loadavg" */
 
-/* This is needed for disknew.c:update_frame() */
+/* This is needed for disknew.c:update_frame */
 
 #ifdef emacs
+#include <stdio.h>  /* Get the definition of _IO_STDIO_H.  */
 #ifdef _IO_STDIO_H
 /* new C libio names */
 #define GNU_LIBRARY_PENDING_OUTPUT_COUNT(FILE) \
@@ -186,10 +187,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define NO_SIOCTL_H           /* don't have sioctl.h */
 
-#if 0 /* autoconf should take care of this.  */
-#define HAVE_UNISTD_H	      /* for getpagesize.h */
-#define HAVE_RANDOM           /* is builtin */
-#endif
 #define HAVE_GETPAGESIZE
 #define HAVE_VFORK
 #define HAVE_SYS_SIGLIST
@@ -206,13 +203,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* we cannot get the maximum address for brk */
 #define ULIMIT_BREAK_VALUE (32*1024*1024)
 
+#define SEGMENT_MASK ((SEGMENT_SIZE)-1)
+
 /* Best not to include -lg, unless it is last on the command line */
 #define LIBS_DEBUG
 #define LIBS_TERMCAP -ltermcap -lcurses /* save some space with shared libs*/
 #define LIB_STANDARD -lc /* avoid -lPW */
-#define C_OPTIMIZE_SWITCH /* configure can guess this just fine */
 #ifdef HAVE_X11
 #define LD_SWITCH_SYSTEM -L/usr/X386/lib
+#endif
+
+/* Don't use -g in test compiles in configure.
+   This is so we will use the same shared libs for that linking
+   that are used when linking temacs.  */
+#ifdef THIS_IS_CONFIGURE
+#define C_DEBUG_SWITCH
 #endif
 
 /* Let's try this out, just in case.
@@ -235,11 +240,22 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define HAVE_SYSVIPC
 
+#ifdef LINUX_QMAGIC
+
+#define HAVE_TEXT_START
+#define UNEXEC unexsunos4.o
+#define N_PAGSIZ(x) PAGE_SIZE
+
+#else /* not LINUX_QMAGIC */
+
 #define A_TEXT_OFFSET(hdr) (N_MAGIC(hdr) == QMAGIC ? sizeof (struct exec) : 0)
 #define A_TEXT_SEEK(hdr) (N_TXTOFF(hdr) + A_TEXT_OFFSET(hdr))
 #define ADJUST_EXEC_HEADER \
   unexec_text_start = N_TXTADDR(ohdr) + A_TEXT_OFFSET(ohdr)
 
+#endif /* not LINUX_QMAGIC */
+
+#if 0
 /* In 19.23 and 19.24, configure sometimes fails to define these.
    It has to do with the fact that configure uses CFLAGS when linking
    while Makefile.in.in (erroneously) fails to do so when linking temacs.  */
@@ -258,3 +274,4 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifndef HAVE_XRMSETDATABASE
 #define HAVE_XRMSETDATABASE
 #endif
+#endif /* 0 */

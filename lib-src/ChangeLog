@@ -1,3 +1,93 @@
+Wed Sep  7 03:53:50 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.26 released.
+
+Mon Aug 15 15:49:19 1994  Paul Eggert  <eggert@twinsun.com>
+
+	* rcs2log: Add support for CVS.
+	Work with `rlog's that output ISO 8601 dates.
+
+Tue Aug  9 15:21:01 1994  Lawrence R. Dodd  <dodd@roebling.poly.edu>
+
+	* rcs2log: Use <> to delimit email address.
+
+Sat Aug  6 18:12:14 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacsserver.c [SYSV_IPC] (main): Make a separate process
+	so we can listen for multiple requests.
+
+Thu Aug  4 19:15:25 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* movemail.c: Include config.h first thing.
+
+Mon Aug  1 03:43:20 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacsserver.c (main): Add casts to avoid warnings.
+
+Fri Jul 29 16:32:15 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in.in (${archlibdir}): Compare the proper dir
+	before installing the scripts.
+
+Wed Jul 27 13:58:25 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacsclient.c (main): New local var progname saves argv[0].
+
+Tue Jul 26 11:34:15 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* emacsclient.c (main): Don't actually modify argv[0].
+	Modify a copy instead.
+
+Mon Jul 25 19:21:02 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* profile.c (reset_watch, get_time): Use EMACS_GET_TIME.
+	(tzp): Var deleted.
+
+	* Makefile.in.in: Add #undef alloca.
+
+Tue Jul 12 18:28:18 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* timer.c (xmalloc): New function.
+
+Mon Jul 11 21:15:55 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (ALLOCA_CFLAGS): New variable.
+	(alloca.o): New target.
+
+Tue Jul  8 15:57:28 1994  Dave Love  (d.love@dl.ac.uk)
+
+        * etags.c (takeprec): recognise `character*(*) function'
+
+Fri Jul  8 12:19:17 1994  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+        * etags.c (main): Don't barf on obsolete -t and -T switches.
+        (main): Print an explicative message when a switch is not known.
+
+Thu Jun 23 15:25:21 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* hexl.c: Don't declare exit or perror.
+
+	* emacsserver.c (main): Don't declare geteuid.
+	Don't declare getenv if convex.
+
+Tue Jun  7 03:30:14 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in.in (test-distrib): Use ALL_CFLAGS.
+
+Fri Jun  3 13:32:04 1994  Francesco Potorti`  (pot@fly.cnuce.cnr.it)
+
+	* etags.c (absolute_filename): Remove infinite loop bug when
+	accessing files in directories whose name begins with a dot.
+
+Fri Jun  3 13:32:04 1994  Francesco Potorti`  (pot@fly.cnuce.cnr.it)
+
+	* etags.c (etags_getcwd): Delete the trailing newline from cwd.
+
+Wed Jun  1 20:39:18 1994  Morten Welinder  (terra@diku.dk)
+
+	* yow.c (rootrelativepath) [MSDOS]: Define, expanding to dynamic
+	location of data directory.
+
 Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.25 released.

@@ -228,6 +228,10 @@ POS defaults to point; WINDOW, to the selected window.")
       if (posint > BUF_ZV (buf))
 	return Qnil;
 
+      /* w->start can be out of range.  If it is, do something reasonable.  */
+      if (top < BUF_BEGV (buf) || top > BUF_ZV (buf))
+	return Qnil;
+
       /* If that info is not correct, calculate afresh */
       posval = *compute_motion (top, 0, (hscroll ? 1 - hscroll : 0),
 				posint, height, 0,
@@ -485,8 +489,22 @@ DEFUN ("window-start", Fwindow_start, Swindow_start, 0, 1, 0,
   return Fmarker_position (decode_window (window)->start);
 }
 
+/* This is text temporarily removed from the doc string below.
+
+This function returns nil if the position is not currently known.\n\
+That happens when redisplay is preempted and doesn't finish.\n\
+If in that case you want to compute where the end of the window would\n\
+have been if redisplay had finished, do this:\n\
+    (save-excursion\n\
+      (goto-char (window-start window))\n\
+      (vertical-motion (1- (window-height window)) window)\n\
+      (point))")  */
+
 DEFUN ("window-end", Fwindow_end, Swindow_end, 0, 1, 0,
-  "Return position at which display currently ends in WINDOW.")
+  "Return position at which display currently ends in WINDOW.\n\
+This is updated by redisplay, when it runs to completion.\n\
+Simply changing the buffer text or setting `window-start'\n\
+does not update this value.")
   (window)
      Lisp_Object window;
 {
@@ -496,6 +514,15 @@ DEFUN ("window-end", Fwindow_end, Swindow_end, 0, 1, 0,
 
   buf = w->buffer;
   CHECK_BUFFER (buf, 0);
+
+#if 0 /* This change broke some things.  We should make it later.  */
+  /* If we don't know the end position, return nil.
+     The user can compute it with vertical-motion if he wants to.
+     It would be nicer to do it automatically,
+     but that's so slow that it would probably bother people.  */
+  if (NILP (w->window_end_valid))
+    return Qnil;
+#endif
 
   XSET (value, Lisp_Int,
 	BUF_Z (XBUFFER (buf)) - XFASTINT (w->window_end_pos));
@@ -843,13 +870,14 @@ minibuffer even if it is active.\n\
 \n\
 Several frames may share a single minibuffer; if the minibuffer\n\
 counts, all windows on all frames that share that minibuffer count\n\
-too.  This means that next-window may be used to iterate through the\n\
+too.  Therefore, `next-window' can be used to iterate through the\n\
 set of windows even when the minibuffer is on another frame.  If the\n\
 minibuffer does not count, only windows from WINDOW's frame count.\n\
 \n\
 Optional third arg ALL-FRAMES t means include windows on all frames.\n\
 ALL-FRAMES nil or omitted means cycle within the frames as specified\n\
 above.  ALL-FRAMES = `visible' means include windows on all visible frames.\n\
+ALL-FRAMES = 0 means include windows on all visible and iconified frames.\n\
 Anything else means restrict to WINDOW's frame.\n\
 \n\
 If you use consistent values for MINIBUF and ALL-FRAMES, you can use\n\
@@ -879,21 +907,24 @@ DEFUN ("next-window", Fnext_window, Snext_window, 0, 3, 0,
     minibuf = (minibuf_level ? Qt : Qlambda);
 
 #ifdef MULTI_FRAME
-  /* all_frames == nil doesn't specify which frames to include.
-     Decide which frames it includes.  */
+  /* all_frames == nil doesn't specify which frames to include.  */
   if (NILP (all_frames))
     all_frames = (EQ (minibuf, Qt)
-		   ? (FRAME_MINIBUF_WINDOW
-		      (XFRAME
-		       (WINDOW_FRAME
-			(XWINDOW (window)))))
-		   : Qnil);
+		  ? (FRAME_MINIBUF_WINDOW
+		     (XFRAME
+		      (WINDOW_FRAME
+		       (XWINDOW (window)))))
+		  : Qnil);
   else if (EQ (all_frames, Qvisible))
+    ;
+  else if (XFASTINT (all_frames) == 0)
     ;
   else if (! EQ (all_frames, Qt))
     all_frames = Qnil;
   /* Now all_frames is t meaning search all frames,
      nil meaning search just current frame,
+     visible meaning search just visible frames,
+     0 meaning search visible and iconified frames,
      or a window, meaning search the frame that window belongs to.  */
 #endif
 
@@ -913,7 +944,19 @@ DEFUN ("next-window", Fnext_window, Snext_window, 0, 3, 0,
 	    tem = WINDOW_FRAME (XWINDOW (window));
 #ifdef MULTI_FRAME
 	    if (! NILP (all_frames))
-	      tem = next_frame (tem, all_frames);
+	      {
+		Lisp_Object tem1;
+
+		tem1 = tem;
+		tem = next_frame (tem, all_frames);
+		/* In the case where the minibuffer is active,
+		   and we include its frame as well as the selected one,
+		   next_frame may get stuck in that frame.
+		   If that happens, go back to the selected frame
+		   so we can complete the cycle.  */
+		if (EQ (tem, tem1))
+		  XSET (tem, Lisp_Frame, selected_frame);
+	      }
 #endif
 	    tem = FRAME_ROOT_WINDOW (XFRAME (tem));
 
@@ -960,14 +1003,14 @@ minibuffer even if it is active.\n\
 \n\
 Several frames may share a single minibuffer; if the minibuffer\n\
 counts, all windows on all frames that share that minibuffer count\n\
-too.  This means that previous-window may be used to iterate through\n\
+too.  Therefore, `previous-window' can be used to iterate through\n\
 the set of windows even when the minibuffer is on another frame.  If\n\
-the minibuffer does not count, only windows from WINDOW's frame\n\
-count.\n\
+the minibuffer does not count, only windows from WINDOW's frame count\n\
 \n\
 Optional third arg ALL-FRAMES t means include windows on all frames.\n\
 ALL-FRAMES nil or omitted means cycle within the frames as specified\n\
 above.  ALL-FRAMES = `visible' means include windows on all visible frames.\n\
+ALL-FRAMES = 0 means include windows on all visible and iconified frames.\n\
 Anything else means restrict to WINDOW's frame.\n\
 \n\
 If you use consistent values for MINIBUF and ALL-FRAMES, you can use\n\
@@ -1009,10 +1052,14 @@ DEFUN ("previous-window", Fprevious_window, Sprevious_window, 0, 3, 0,
 		   : Qnil);
   else if (EQ (all_frames, Qvisible))
     ;
+  else if (XFASTINT (all_frames) == 0)
+    ;
   else if (! EQ (all_frames, Qt))
     all_frames = Qnil;
   /* Now all_frames is t meaning search all frames,
      nil meaning search just current frame,
+     visible meaning search just visible frames,
+     0 meaning search visible and iconified frames,
      or a window, meaning search the frame that window belongs to.  */
 #endif
 
@@ -1041,7 +1088,19 @@ DEFUN ("previous-window", Fprevious_window, Sprevious_window, 0, 3, 0,
 		 paths through the set of acceptable windows.
 		 window_loop assumes that these `ring' requirement are
 		 met.  */
-	      tem = prev_frame (tem, all_frames);
+	      {
+		Lisp_Object tem1;
+
+		tem1 = tem;
+		tem = prev_frame (tem, all_frames);
+		/* In the case where the minibuffer is active,
+		   and we include its frame as well as the selected one,
+		   next_frame may get stuck in that frame.
+		   If that happens, go back to the selected frame
+		   so we can complete the cycle.  */
+		if (EQ (tem, tem1))
+		  XSET (tem, Lisp_Frame, selected_frame);
+	      }
 #endif
 	    /* If this frame has a minibuffer, find that window first,
 	       because it is conceptually the last window in that frame.  */
@@ -1155,6 +1214,8 @@ window_loop (type, obj, mini, frames)
     frame = 0;
   if (frame)
     frame_arg = Qlambda;
+  else if (XFASTINT (frames) == 0)
+    frame_arg = frames;
   else if (EQ (frames, Qvisible))
     frame_arg = frames;
 #else
@@ -1276,7 +1337,26 @@ window_loop (type, obj, mini, frames)
 		if (EQ (w, FRAME_ROOT_WINDOW (f))
 		    && !NILP (XWINDOW (w)->dedicated)
 		    && other_visible_frames (f))
-		  Fdelete_frame (WINDOW_FRAME (XWINDOW (w)), Qnil);
+		  {
+		    /* Skip the other windows on this frame.
+		       There might be one, the minibuffer!  */
+		    if (! EQ (w, last_window))
+		      while (f == XFRAME (WINDOW_FRAME (XWINDOW (next_window))))
+			{
+			  /* As we go, check for the end of the loop.
+			     We mustn't start going around a second time.  */
+			  if (EQ (next_window, last_window))
+			    {
+			      last_window = w;
+			      break;
+			    }
+			  next_window = Fnext_window (next_window,
+						      mini ? Qt : Qnil,
+						      frame_arg);
+			}
+		    /* Now we can safely delete the frame.  */
+		    Fdelete_frame (WINDOW_FRAME (XWINDOW (w)), Qnil);
+		  }
 		else
 #endif
 		  {
@@ -1302,6 +1382,7 @@ window_loop (type, obj, mini, frames)
 DEFUN ("get-lru-window", Fget_lru_window, Sget_lru_window, 0, 1, 0,
   "Return the window least recently selected or used for display.\n\
 If optional argument FRAME is `visible', search all visible frames.\n\
+If FRAME is 0, search all visible and iconified frames.\n\
 If FRAME is t, search all frames.\n\
 If FRAME is nil, search only the selected frame.\n\
 If FRAME is a frame, search only that frame.")
@@ -1320,6 +1401,7 @@ If FRAME is a frame, search only that frame.")
 DEFUN ("get-largest-window", Fget_largest_window, Sget_largest_window, 0, 1, 0,
   "Return the largest window in area.\n\
 If optional argument FRAME is `visible', search all visible frames.\n\
+If FRAME is 0, search all visible and iconified frames.\n\
 If FRAME is t, search all frames.\n\
 If FRAME is nil, search only the selected frame.\n\
 If FRAME is a frame, search only that frame.")
@@ -1333,6 +1415,7 @@ If FRAME is a frame, search only that frame.")
 DEFUN ("get-buffer-window", Fget_buffer_window, Sget_buffer_window, 1, 2, 0,
   "Return a window currently displaying BUFFER, or nil if none.\n\
 If optional argument FRAME is `visible', search all visible frames.\n\
+If optional argument FRAME is 0, search all visible and iconified frames.\n\
 If FRAME is t, search all frames.\n\
 If FRAME is nil, search only the selected frame.\n\
 If FRAME is a frame, search only that frame.")
@@ -1717,7 +1800,7 @@ before each command.")
     register int new_point = marker_position (w->pointm);
     if (new_point < BEGV)
       SET_PT (BEGV);
-    if (new_point > ZV)
+    else if (new_point > ZV)
       SET_PT (ZV);
     else
       SET_PT (new_point);
@@ -1753,14 +1836,20 @@ Returns the window displaying BUFFER.")
 
 #ifdef MULTI_FRAME
   /* If pop_up_frames,
-     look for a window showing BUFFER on any visible frame.  */
-  window = Fget_buffer_window (buffer, pop_up_frames ? Qvisible : Qnil);
+     look for a window showing BUFFER on any visible or iconified frame.  */
+  window = Fget_buffer_window (buffer, pop_up_frames ? make_number (0) : Qnil);
 #else
   window = Fget_buffer_window (buffer, Qnil);
 #endif
   if (!NILP (window)
       && (NILP (not_this_window) || !EQ (window, selected_window)))
-    return window;
+    {
+#ifdef MULTI_FRAME
+      if (FRAME_ICONIFIED_P (XFRAME (WINDOW_FRAME (XWINDOW (window)))))
+	Fmake_frame_visible (WINDOW_FRAME (XWINDOW (window)));
+#endif
+      return window;
+    }
 
   /* Certain buffer names get special handling.  */
   if (! NILP (Vspecial_display_function))
@@ -1788,6 +1877,9 @@ Returns the window displaying BUFFER.")
   if (pop_up_windows
 #ifdef MULTI_FRAME
       || FRAME_MINIBUF_ONLY_P (selected_frame)
+      /* If the current frame is a special display frame,
+	 don't try to reuse its windows.  */
+      || !NILP (XWINDOW (FRAME_ROOT_WINDOW (selected_frame))->dedicated)
 #endif
       )
     {
@@ -1802,8 +1894,29 @@ Returns the window displaying BUFFER.")
       if (split_height_threshold < window_min_height << 1)
 	split_height_threshold = window_min_height << 1;
 
-      window = Fget_largest_window (frames);
+      /* Note that both Fget_largest_window and Fget_lru_window
+	 ignore minibuffers and dedicated windows.
+	 This means they can return nil.  */
 
+#ifdef MULTI_FRAME
+      /* If the frame we would try to split cannot be split,
+	 try other frames.  */
+      if (FRAME_NO_SPLIT_P (NILP (frames) ? selected_frame
+			    : last_nonminibuf_frame))
+	{
+	  /* Try visible frames first.  */
+	  window = Fget_largest_window (Qvisible);
+	  /* If that didn't work, try iconified frames.  */
+	  if (NILP (window))
+	    window = Fget_largest_window (make_number (0));
+	  if (NILP (window))
+	    window = Fget_largest_window (Qt);
+	}
+      else
+#endif
+	window = Fget_largest_window (frames);
+
+      /* If we got a tall enough full-width window, split it.  */
       if (!NILP (window)
 	  && window_height (window) >= split_height_threshold
 	  && (XFASTINT (XWINDOW (window)->width)
@@ -1812,10 +1925,31 @@ Returns the window displaying BUFFER.")
       else
 	{
 	  window = Fget_lru_window (frames);
-	  if ((EQ (window, selected_window)
-	       || EQ (XWINDOW (window)->parent, Qnil))
+	  /* If the LRU window is selected, and big enough, split it.  */
+	  if (!NILP (window)
+	      && (EQ (window, selected_window)
+		  || EQ (XWINDOW (window)->parent, Qnil))
 	      && window_height (window) >= window_min_height << 1)
 	    window = Fsplit_window (window, Qnil, Qnil);
+#ifdef MULTI_FRAME
+	  /* If Fget_lru_window returned nil, try other approaches.  */
+	  /* Try visible frames first.  */
+	  if (NILP (window))
+	    window = Fget_largest_window (Qvisible);
+	  /* If that didn't work, try iconified frames.  */
+	  if (NILP (window))
+	    window = Fget_largest_window (make_number (0));
+	  /* Try invisible frames.  */
+	  if (NILP (window))
+	    window = Fget_largest_window (Qt);
+	  /* As a last resort, make a new frame.  */
+	  if (NILP (window))
+	    window = Fframe_selected_window (call0 (Vpop_up_frame_function));
+#else
+	  /* As a last resort, use a non minibuffer window.  */
+	  if (NILP (window))
+	    window = Fframe_first_window (Fselected_frame ());
+#endif
 	}
     }
   else
@@ -2341,24 +2475,16 @@ When calling from a program, supply a number as argument or nil.")
   scroll_command (n, -1);
   return Qnil;
 }
-
-DEFUN ("scroll-other-window", Fscroll_other_window, Sscroll_other_window, 0, 1, "P",
-  "Scroll next window upward ARG lines; or near full screen if no ARG.\n\
-The next window is the one below the current one; or the one at the top\n\
-if the current one is at the bottom.  Negative ARG means scroll downward.\n\
-When calling from a program, supply a number as argument or nil.\n\
-\n\
+
+DEFUN ("other-window-for-scrolling", Fother_window_for_scrolling, Sother_window_for_scrolling, 0, 0, 0,
+  "Return the other window for \"other window scroll\" commands.\n\
 If in the minibuffer, `minibuffer-scroll-window' if non-nil\n\
-specifies the window to scroll.\n\
-If `other-window-scroll-buffer' is non-nil, scroll the window\n\
-showing that buffer, popping the buffer up if necessary.")
-  (n)
-     register Lisp_Object n;
+specifies the window.\n\
+If `other-window-scroll-buffer' is non-nil, a window\n\
+showing that buffer is used.")
+  ()
 {
-  register Lisp_Object window;
-  register int ht;
-  register struct window *w;
-  register int count = specpdl_ptr - specpdl;
+  Lisp_Object window;
 
   if (MINI_WINDOW_P (XWINDOW (selected_window))
       && !NILP (Vminibuf_scroll_window))
@@ -2389,6 +2515,29 @@ showing that buffer, popping the buffer up if necessary.")
 
   if (EQ (window, selected_window))
     error ("There is no other window");
+
+  return window;
+}
+
+DEFUN ("scroll-other-window", Fscroll_other_window, Sscroll_other_window, 0, 1, "P",
+  "Scroll next window upward ARG lines; or near full screen if no ARG.\n\
+The next window is the one below the current one; or the one at the top\n\
+if the current one is at the bottom.  Negative ARG means scroll downward.\n\
+When calling from a program, supply a number as argument or nil.\n\
+\n\
+If in the minibuffer, `minibuffer-scroll-window' if non-nil\n\
+specifies the window to scroll.\n\
+If `other-window-scroll-buffer' is non-nil, scroll the window\n\
+showing that buffer, popping the buffer up if necessary.")
+  (n)
+     register Lisp_Object n;
+{
+  register Lisp_Object window;
+  register int ht;
+  register struct window *w;
+  register int count = specpdl_ptr - specpdl;
+
+  window = Fother_window_for_scrolling ();
 
   w = XWINDOW (window);
   ht = window_internal_height (w);
@@ -2502,7 +2651,7 @@ redraws with point in the center of the current window.")
 DEFUN ("move-to-window-line", Fmove_to_window_line, Smove_to_window_line,
   1, 1, "P",
   "Position point relative to window.\n\
-With no argument, position text at center of window.\n\
+With no argument, position point at center of window.\n\
 An argument specifies frame line; zero means top of window,\n\
 negative means relative to bottom of window.")
   (arg)
@@ -2970,8 +3119,10 @@ redirection (see `redirect-frame-focus').")
 DEFUN ("save-window-excursion", Fsave_window_excursion, Ssave_window_excursion,
   0, UNEVALLED, 0,
   "Execute body, preserving window sizes and contents.\n\
-Restores which buffer appears in which window, where display starts,\n\
-as well as the current buffer.\n\
+Restore which buffer appears in which window, where display starts,\n\
+and the value of point and mark for each window.\n\
+Also restore which buffer is current.\n\
+But do not preserve point in the current buffer.\n\
 Does not restore the value of point in current buffer.")
   (args)
      Lisp_Object args;
@@ -3165,6 +3316,7 @@ If there is only one window, it is split regardless of this value.");
   defsubr (&Sscroll_down);
   defsubr (&Sscroll_left);
   defsubr (&Sscroll_right);
+  defsubr (&Sother_window_for_scrolling);
   defsubr (&Sscroll_other_window);
   defsubr (&Srecenter);
   defsubr (&Smove_to_window_line);

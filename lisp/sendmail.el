@@ -62,6 +62,7 @@ Do not use an rmail file here!  Instead, use its inbox file.")
 (defvar mail-default-reply-to nil
   "*Address to insert as default Reply-to field of outgoing messages.")
 
+;;;###autoload
 (defvar mail-alias-file nil
   "*If non-nil, the name of a file to use instead of `/usr/lib/aliases'.
 This file defines aliases to be expanded by the mailer; this is a different
@@ -130,7 +131,7 @@ so you can edit or delete these lines.")
 ;; options -t, and -v if not interactive.
 (defvar mail-mailer-swallows-blank-line
   (if (and (string-match "sparc-sun-sunos\\(\\'\\|[^5]\\)" system-configuration)
-	   (file-exists-p "/etc/sendmail.cf")
+	   (file-readable-p "/etc/sendmail.cf")
 	   (let ((buffer (get-buffer-create " *temp*")))
 	     (unwind-protect
 		 (save-excursion
@@ -153,6 +154,9 @@ actually occur.")
     (progn
      (setq mail-mode-syntax-table (copy-syntax-table text-mode-syntax-table))
      (modify-syntax-entry ?% ". " mail-mode-syntax-table)))
+
+(defvar mail-send-hook nil
+  "Normal hook run before sending mail, in Mail mode.")
 
 (defun mail-setup (to subject in-reply-to cc replybuffer actions)
   (if (eq mail-aliases t)
@@ -195,7 +199,9 @@ actually occur.")
     (if to (setq to (point)))
     (cond ((eq mail-signature t)
 	   (if (file-exists-p "~/.signature")
-	       (insert-file-contents "~/.signature")))
+	       (progn
+		 (insert "\n\n-- \n")
+		 (insert-file-contents "~/.signature"))))
 	  (mail-signature
 	   (insert mail-signature)))
     (goto-char (point-max))
@@ -324,13 +330,23 @@ Prefix arg means don't delete this window."
 	     (cdr (assq 'dedicated (frame-parameters)))
 	     (not (null (delq (selected-frame) (visible-frame-list)))))
 	(delete-frame (selected-frame))
-      (if (and (not arg)
-	       (not (one-window-p))
-	       (save-excursion
-		 (set-buffer (window-buffer (next-window (selected-window) 'not)))
-		 (eq major-mode 'rmail-mode)))
-	  (delete-window)
-	(switch-to-buffer newbuf)))))
+      (let (rmail-flag summary-buffer)
+	(and (not arg)
+	     (not (one-window-p))
+	     (save-excursion
+	       (set-buffer (window-buffer (next-window (selected-window) 'not)))
+	       (setq rmail-flag (eq major-mode 'rmail-mode))
+	       (setq summary-buffer
+		     (and (boundp 'rmail-summary-buffer)
+			  rmail-summary-buffer
+			  (buffer-name rmail-summary-buffer)
+			  (not (get-buffer-window rmail-summary-buffer))
+			  rmail-summary-buffer))))
+	(if rmail-flag
+	    ;; If the Rmail buffer has a summary, show that.
+	    (if summary-buffer (switch-to-buffer summary-buffer)
+	      (delete-window))
+	  (switch-to-buffer newbuf))))))
 
 (defun mail-send ()
   "Send the message in the current buffer.
@@ -344,8 +360,8 @@ the user from the mailer."
 	(or (buffer-modified-p)
 	    (y-or-n-p "Message already sent; resend? ")))
       (progn
-	(message "Sending...")
 	(run-hooks 'mail-send-hook)
+	(message "Sending...")
 	(funcall send-mail-function)
 	;; Now perform actions on successful sending.
 	(while mail-send-actions
@@ -367,6 +383,7 @@ the user from the mailer."
 		  0))
 	(tembuf (generate-new-buffer " sendmail temp"))
 	(case-fold-search nil)
+	resend-to-addresses
 	delimline
 	(mailbuf (current-buffer)))
     (unwind-protect
@@ -394,12 +411,21 @@ the user from the mailer."
 	    (replace-match "\n"))
 	  (let ((case-fold-search t))
 	    (goto-char (point-min))
-	    (if (re-search-forward "^Sender:" delimline t)
-		(error "Sender may not be specified."))
 	    ;; Find and handle any FCC fields.
 	    (goto-char (point-min))
 	    (if (re-search-forward "^FCC:" delimline t)
 		(mail-do-fcc delimline))
+	    (goto-char (point-min))
+	    (require 'mail-utils)
+	    (while (re-search-forward "^Resent-to:" delimline t)
+	      (setq resend-to-addresses
+		    (save-restriction
+		      (narrow-to-region (point)
+					(save-excursion
+					  (end-of-line)
+					  (point)))
+		      (append (mail-parse-comma-list)
+			      resend-to-addresses))))
 ;;; Apparently this causes a duplicate Sender.
 ;;;	    ;; If the From is different than current user, insert Sender.
 ;;;	    (goto-char (point-min))
@@ -437,8 +463,7 @@ the user from the mailer."
 			       (if (boundp 'sendmail-program)
 				   sendmail-program
 				 "/usr/lib/sendmail")
-			       nil errbuf nil
-			       "-oi" "-t")
+			       nil errbuf nil "-oi")
 			 ;; Always specify who from,
 			 ;; since some systems have broken sendmails.
 			 (list "-f" (user-login-name))
@@ -449,7 +474,14 @@ the user from the mailer."
 			      (list (concat "-oA" mail-alias-file)))
 			 ;; These mean "report errors by mail"
 			 ;; and "deliver in background".
-			 (if (null mail-interactive) '("-oem" "-odb"))))
+			 (if (null mail-interactive) '("-oem" "-odb"))
+			 ;; Get the addresses from the message
+			 ;; unless this is a resend.
+			 ;; We must not do that for a resend
+			 ;; because we would find the original addresses.
+			 ;; For a resend, include the specific addresses.
+			 (or resend-to-addresses
+			     '("-t"))))
 	  (if mail-interactive
 	      (save-excursion
 		(set-buffer errbuf)
@@ -816,9 +848,13 @@ The seventh argument ACTIONS is a list of actions to take
 ;;;	      (message "Auto save file for draft message exists; consider M-x mail-recover"))
 ;;;          t))
   (switch-to-buffer "*mail*")
-  (setq default-directory (expand-file-name "~/"))
+  (if (file-exists-p (expand-file-name "~/"))
+      (setq default-directory (expand-file-name "~/")))
   (auto-save-mode auto-save-default)
   (mail-mode)
+  ;; Disconnect the buffer from its visited file
+  ;; (in case the user has actually visited a file *mail*).
+;  (set-visited-file-name nil)
   (let (initialized)
     (and (not noerase)
 	 (or (not (buffer-modified-p))
@@ -844,7 +880,7 @@ The seventh argument ACTIONS is a list of actions to take
 	   (let ((buffer-read-only nil))
 	     (erase-buffer)
 	     (insert-file-contents file-name nil)))
-	  (t (error "mail-recover cancelled.")))))
+	  (t (error "mail-recover cancelled")))))
 
 ;;;###autoload
 (defun mail-other-window (&optional noerase to subject in-reply-to cc replybuffer sendactions)

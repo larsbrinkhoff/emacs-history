@@ -1083,6 +1083,8 @@
 ;;; This de-compiler is used for inline expansion of compiled functions,
 ;;; and by the disassembler.
 ;;;
+;;; This list contains numbers, which are pc values,
+;;; before each instruction.
 (defun byte-decompile-bytecode (bytes constvec)
   "Turns BYTECODE into lapcode, referring to CONSTVEC."
   (let ((byte-compile-constants nil)
@@ -1092,15 +1094,21 @@
 
 ;; As byte-decompile-bytecode, but updates
 ;; byte-compile-{constants, variables, tag-number}.
-;; If the optional 3rd arg is true, then `return' opcodes are replaced
+;; If MAKE-SPLICEABLE is true, then `return' opcodes are replaced
 ;; with `goto's destined for the end of the code.
-(defun byte-decompile-bytecode-1 (bytes constvec &optional make-splicable)
+;; That is for use by the compiler.
+;; If MAKE-SPLICEABLE is nil, we are being called for the disassembler.
+;; In that case, we put a pc value into the list
+;; before each insn (or its label).
+(defun byte-decompile-bytecode-1 (bytes constvec &optional make-spliceable)
   (let ((length (length bytes))
 	(ptr 0) optr tag tags op offset
 	lap tmp
 	endtag
 	(retcount 0))
     (while (not (= ptr length))
+      (or make-spliceable
+	  (setq lap (cons ptr lap)))
       (setq op (aref bytes ptr)
 	    optr ptr
 	    offset (disassemble-offset)) ; this does dynamic-scope magic
@@ -1122,7 +1130,7 @@
 				(car (setq byte-compile-variables
 					   (cons (list tmp)
 						 byte-compile-variables)))))))
-	    ((and make-splicable
+	    ((and make-spliceable
 		  (eq op 'byte-return))
 	     (if (= ptr (1- length))
 		 (setq op nil)
@@ -1135,7 +1143,8 @@
     ;; take off the dummy nil op that we replaced a trailing "return" with.
     (let ((rest lap))
       (while rest
-	(cond ((setq tmp (assq (car (car rest)) tags))
+	(cond ((numberp (car rest)))
+	      ((setq tmp (assq (car (car rest)) tags))
 	       ;; this addr is jumped to
 	       (setcdr rest (cons (cons nil (cdr tmp))
 				  (cdr rest)))
@@ -1148,7 +1157,11 @@
     (if endtag
 	(setq lap (cons (cons nil endtag) lap)))
     ;; remove addrs, lap = ( [ (op . arg) | (TAG tagno) ]* )
-    (mapcar 'cdr (nreverse lap))))
+    (mapcar (function (lambda (elt)
+			(if (numberp elt)
+			    elt
+			  (cdr elt))))
+	    (nreverse lap))))
 
 
 ;;; peephole optimizer
@@ -1164,10 +1177,10 @@
      byte-symbolp byte-consp byte-stringp byte-listp byte-numberp byte-integerp
      byte-eq byte-equal byte-not
      byte-cons byte-list1 byte-list2	; byte-list3 byte-list4
-     byte-interactive-p
-     ;; How about other side-effect-free-ops?  Is it safe to move an
-     ;; error invocation (such as from nth) out of an unwind-protect?
-     "Byte-codes that can be moved past an unbind."))
+     byte-interactive-p)
+   ;; How about other side-effect-free-ops?  Is it safe to move an
+   ;; error invocation (such as from nth) out of an unwind-protect?
+   "Byte-codes that can be moved past an unbind.")
 
 (defconst byte-compile-side-effect-and-error-free-ops
   '(byte-constant byte-dup byte-symbolp byte-consp byte-stringp byte-listp

@@ -79,6 +79,7 @@
   (define-key Buffer-menu-mode-map "m" 'Buffer-menu-mark)
   (define-key Buffer-menu-mode-map "t" 'Buffer-menu-visit-tags-table)
   (define-key Buffer-menu-mode-map "%" 'Buffer-menu-toggle-read-only)
+  (define-key Buffer-menu-mode-map "g" 'revert-buffer)
   (define-key Buffer-menu-mode-map [mouse-2] 'Buffer-menu-mouse-select)
 )
 
@@ -125,9 +126,14 @@ Letters do not insert themselves; instead, they are commands.
       (let ((where (Buffer-menu-buffer-name-position)))
 	(put-text-property (car where) (cdr where) 'mouse-face 'highlight))
       (forward-line 1)))
+  (make-local-variable 'revert-buffer-function)
+  (setq revert-buffer-function 'Buffer-menu-revert-function)
   (setq truncate-lines t)
   (setq buffer-read-only t)
   (run-hooks 'buffer-menu-mode-hook))
+
+(defun Buffer-menu-revert-function (ignore1 ignore2)
+  (list-buffers))
 
 (defun Buffer-menu-buffer (error-if-non-existent-p)
   "Return buffer described by this line of buffer menu."
@@ -158,8 +164,10 @@ previous window configuration."
   (interactive "P")
 ;;;  (setq Buffer-menu-window-config (current-window-configuration))
   (list-buffers arg)
-  (pop-to-buffer "*Buffer List*")
-  (forward-line 2)
+  (let ((newpoint (save-excursion (set-buffer "*Buffer List*")
+				  (point))))
+    (pop-to-buffer "*Buffer List*")
+    (goto-char newpoint))
   (message
    "Commands: d, s, x, u; f, o, 1, 2, m, v; ~, %%; q to quit; ? for help."))
 
@@ -236,19 +244,19 @@ and then move up one line"
       (insert ?S)
       (forward-line 1))))
 
-(defun Buffer-menu-not-modified ()
+(defun Buffer-menu-not-modified (&optional arg)
   "Mark buffer on this line as unmodified (no changes to save)."
-  (interactive)
+  (interactive "P")
   (save-excursion
     (set-buffer (Buffer-menu-buffer t))
-    (set-buffer-modified-p nil))
+    (set-buffer-modified-p arg))
   (save-excursion
    (beginning-of-line)
    (forward-char 1)
-   (if (looking-at "\\*")
+   (if (= (char-after (point)) (if arg ?  ?*))
        (let ((buffer-read-only nil))
 	 (delete-char 1)
-	 (insert ? )))))
+	 (insert (if arg ?* ? ))))))
 
 (defun Buffer-menu-execute ()
   "Save and/or delete buffers marked with \\<Buffer-menu-mode-map>\\[Buffer-menu-save] or \\<Buffer-menu-mode-map>\\[Buffer-menu-delete] commands."

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Mark, Killing, Help, Top
 @chapter The Mark and the Region
@@ -7,13 +7,13 @@
 @cindex setting a mark
 @cindex region
 
-  There are many Emacs commands which operate on an arbitrary contiguous
-part of the current buffer.  To specify the text for such a command to
-operate on, you set @dfn{the mark} at one end of it, and move point to the
-other end.  The text between point and the mark is called @dfn{the region}.
-You can move point or the mark to adjust the boundaries of the region.  It
-doesn't matter which one is set first chronologically, or which one comes
-earlier in the text.
+  Many Emacs commands operate on an arbitrary contiguous part of the
+current buffer.  To specify the text for such a command to operate on,
+you set @dfn{the mark} at one end of it, and move point to the other
+end.  The text between point and the mark is called @dfn{the region}.
+You can move point or the mark to adjust the boundaries of the region.
+It doesn't matter which one is set first chronologically, or which one
+comes earlier in the text.
 
   Once the mark has been set, it remains where you put it until it is
 set again at another place.  The mark remains fixed with respect to the
@@ -53,6 +53,10 @@ Set the mark where point is (@code{set-mark-command}).
 The same.
 @item C-x C-x
 Interchange mark and point (@code{exchange-point-and-mark}).
+@item Drag-Mouse-1
+Set point and the mark around the text you drag across.
+@item Mouse-3
+Set mark where you click (@code{mouse-save-then-kill}).
 @end table
 
   For example, suppose you wish to convert part of the buffer to all
@@ -69,6 +73,16 @@ type @kbd{C-x C-u}.
 (@code{set-mark-command}).  This sets the mark where point is.  Then you
 can move point away, leaving the mark behind.
 
+  There are two ways to set the mark with the mouse.  You can drag mouse
+button one across a range of text; that puts point where you release the
+mouse button, and sets the mark at the other end of that range.  Or you
+can click mouse button three, which simply sets the mark, leaving point
+unchanged.  Both of these methods copy the region into the kill ring in
+addition to setting the mark; that gives behavior consistent with other
+window-driven applications, but if you don't want to modify the kill
+ring, you must use keyboard commands to set the mark.  @xref{Mouse
+Commands}.
+
 @kindex C-x C-x
 @findex exchange-point-and-mark
   Ordinary terminals have only one cursor, so there is no way for Emacs
@@ -78,7 +92,8 @@ you forget where it is.  Alternatively, you can see where the mark is
 with the command @kbd{C-x C-x} (@code{exchange-point-and-mark}) which
 puts the mark where point was and point where the mark was.  The extent
 of the region is unchanged, but the cursor and point are now at the
-previous position of the mark.
+previous position of the mark.  In Transient Mark mode, this command
+reactivates the mark.
 
   @kbd{C-x C-x} is also useful when you are satisfied with the position
 of point but want to move the mark; do @kbd{C-x C-x} to put point at
@@ -114,8 +129,8 @@ can highlight the region when it is active.
 
 @findex transient-mark-mode
   To enable Transient Mark mode, type @kbd{M-x transient-mark-mode}.
-This command toggles the mode, so you can issue it again to return to
-the normal Emacs way of handling the mark and the region.
+This command toggles the mode, so you can repeat the command to turn off
+the mode.
 
   Here are the details of Transient Mark mode:
 
@@ -125,13 +140,14 @@ To set the mark, type @kbd{C-@key{SPC}} (@code{set-mark-command}).
 This makes the mark active; as you move point, you will see the region
 highlighting change in extent.
 
-@item
-On a window system, an easy way to select a region is to press the
-button @key{Mouse-1} (normally the left button) at one end of it, drag
-the mouse to the other end, and then release the button.
+@item 
+The mouse commands for specifying the mark also make it active.  So do
+keyboard commands whose purpose is to specify a region, including
+@kbd{M-@@}, @kbd{C-M-@@}, @kbd{M-h}, @kbd{C-M-h}, @kbd{C-x C-p}, and
+@kbd{C-x h}.
 
 @item
-When the mark is active, you can execute any commands you want on the
+When the mark is active, you can execute commands that operate on the
 region, such as killing, indentation, or writing to a file.
 
 @item
@@ -141,12 +157,17 @@ on a region will get an error and refuse to operate.  You can make the
 region active again by typing @kbd{C-x C-x}.
 
 @item
-Commands like @kbd{M->} that ``leave the mark behind'' do not activate
-the new mark.  You can activate the new region by executing @kbd{C-x
-C-x} (@code{exchange-point-and-mark}).
+Commands like @kbd{M->} and @kbd{C-s} that ``leave the mark behind'' in
+addition to some other primary purpose do not activate the new mark.
+You can activate the new region by executing @kbd{C-x C-x}
+(@code{exchange-point-and-mark}).
 
 @item
 Quitting with @kbd{C-g} deactivates the mark.
+
+@item
+When Transient Mark mode is not enabled, every command that sets the
+mark also activates it, and nothing ever deactivates it.
 @end itemize
 
   Transient Mark mode is also sometimes known as ``Zmacs mode''
@@ -154,17 +175,18 @@ because the Zmacs editor on the MIT Lisp Machine handled the mark in a
 similar way.
 
   When multiple windows show the same buffer, they can have different
-regions, because they can have different values of point.  In Transient
-Mark mode, each window highlights its own region.  The part that is
-highlighted in the selected window is the region that editing commands
-use.  @xref{Windows}.
+regions, because they can have different values of point (though they
+all share common one mark position).  In Transient Mark mode, each
+window highlights its own region.  The part that is highlighted in the
+selected window is the region that editing commands use.
+@xref{Windows}.
 
 @node Using Region
 @section Operating on the Region
 
 @cindex operations on a marked region
-  Once you have set up a region and the mark is active, you can do many
-things to the text in it:
+  Once you have a region and the mark is active, here are some of the
+ways you can operate on the region:
 
 @itemize @bullet
 @item
@@ -237,6 +259,8 @@ page.
 buffer as the region, by putting point at the beginning and the mark at
 the end.
 
+  In Transient Mark mode, all of these commands activate the mark.
+
 @node Mark Ring
 @section The Mark Ring
 
@@ -286,16 +310,16 @@ in every buffer.
 @section The Global Mark Ring
 @cindex global mark ring
 
-  Each Emacs buffer has its own mark ring.  In addition, Emacs has a
-single @dfn{global mark ring}.
+  In addition to the ordinary mark ring that belongs to each buffer,
+Emacs has a single @dfn{global mark ring}.  It records a sequence of
+buffers in which you have recently set the mark, so you can go back
+to those buffers.
 
-  The global mark ring stores positions in various Emacs buffers.
-Setting the mark always makes an entry on the current buffer's mark
+  Setting the mark always makes an entry on the current buffer's mark
 ring.  If you have switched buffers since the previous mark setting, the
 new mark position makes an entry on the global mark ring also.  The
-result is that the global mark ring holds a sequence of buffers that you
-have been in, and for each buffer, it records a place where you set the
-mark.
+result is that the global mark ring records a sequence of buffers that
+you have been in, and, for each buffer, a place where you set the mark.
 
   The command @kbd{C-x C-@key{SPC}} (@code{pop-global-mark}) jumps to
 the buffer and position of the latest entry in the global ring.  It also

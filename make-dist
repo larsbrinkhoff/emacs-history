@@ -121,6 +121,15 @@ fi
 ### Update getdate.c.
 (cd lib-src; make -f Makefile getdate.c YACC="bison -y")
 
+echo "Updating Info files."
+
+(cd man; make info)
+
+echo "Updating finder-inf.el."
+
+### update finder-inf.el.
+(cd src; emacs -batch -l finder -f finder-compile-keywords)
+
 echo "Creating staging directory: \`${tempparent}'"
 
 mkdir ${tempparent}
@@ -140,7 +149,7 @@ mkdir ${tempdir}
 ### tar file; this means that people can start reading the INSTALL and
 ### README while the rest of the tar file is still unpacking.  Whoopee.
 echo "Making links to top-level files." 
-ln GETTING.GNU.SOFTWARE INSTALL PROBLEMS README move-if-change ${tempdir}
+ln GETTING.GNU.SOFTWARE INSTALL PROBLEMS README BUGS move-if-change ${tempdir}
 ln ChangeLog Makefile.in build-ins.in configure configure.in ${tempdir}
 ln config.bat make-dist vpath.sed ${tempdir}
 ### Copy these files; they're cross-filesystem symlinks.
@@ -231,11 +240,12 @@ echo "Making links to \`src/bitmaps'."
 
 echo "Making links to \`src/m'."
 (cd src/m
- ln README [a-zA-Z0-9]*.h ../../${tempdir}/src/m)
+ # We call files for miscellaneous input (to linker etc) .inp.
+ ln README [a-zA-Z0-9]*.h *.inp ../../${tempdir}/src/m)
 
 echo "Making links to \`src/s'."
 (cd src/s
- ln README [a-zA-Z0-9]*.h ../../${tempdir}/src/s)
+ ln README [a-zA-Z0-9]*.h *.inp ../../${tempdir}/src/s)
 
 echo "Making links to \`lib-src'."
 (cd lib-src
@@ -249,7 +259,7 @@ echo "Making links to \`lib-src'."
 echo "Making links to \`msdos'."
 (cd msdos
  ln  ChangeLog emacs.ico emacs.pif ../${tempdir}/msdos
- ln mainmake sed[123].inp ../${tempdir}/msdos
+ ln mainmake sed[1234].inp ../${tempdir}/msdos
  cd ../${tempdir}/msdos
  rm -f =*)
 

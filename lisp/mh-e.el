@@ -52,7 +52,7 @@
 ;;; Modified by James Larus, BBN, July 1984 and UCB, 1984 & 1985.
 ;;; Rewritten for GNU Emacs, James Larus 1985.  larus@ginger.berkeley.edu
 ;;; Modified by Stephen Gildea 1988.  gildea@lcs.mit.edu
-(defconst mh-e-RCS-id "$Header: /home/fsf/rms/e19/lisp/RCS/mh-e.el,v 1.2 1994/04/13 20:42:10 rms Exp $")
+(defconst mh-e-RCS-id "$Header: /home/fsf/rms/e19/lisp/RCS/mh-e.el,v 1.4 1994/09/03 08:43:52 rms Exp $")
 
 ;;; Code:
 
@@ -280,7 +280,7 @@ provided, then prompt for the message sequence."
   (mh-set-scan-mode)
   (mh-goto-cur-msg)			; after mh-set-scan-mode for efficiency
   (mh-make-folder-mode-line)
-  t)					; return t for write-file-hooks
+  t)					; return t for local-write-file-hooks
 
 
 (defun mh-first-msg ()
@@ -772,8 +772,8 @@ The value of mh-folder-mode-hook is called when a new folder is set up."
   (setq truncate-lines t)
   (auto-save-mode -1)
   (setq buffer-offer-save t)
-  (make-local-variable 'write-file-hooks)
-  (setq write-file-hooks '(mh-execute-commands))
+  (make-local-variable 'local-write-file-hooks)
+  (setq local-write-file-hooks '(mh-execute-commands))
   (make-local-variable 'revert-buffer-function)
   (setq revert-buffer-function 'mh-undo-folder)
   (or (assq 'mh-showing minor-mode-alist)
@@ -850,8 +850,8 @@ The value of mh-folder-mode-hook is called when a new folder is set up."
 				"-file" (expand-file-name maildrop-name)
 				"-width" (window-width)
 				"-truncate")
-	    (mh-exec-cmd-output "inc" nil
-				"-width" (window-width)))
+	  (mh-exec-cmd-output mh-inc-prog nil
+			      "-width" (window-width)))
 	(message
 	 (if maildrop-name
 	     (format "inc %s -file %s...done" folder maildrop-name)

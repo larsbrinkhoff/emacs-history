@@ -1,3 +1,15 @@
+Thu Jul 14 19:53:46 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed2.inp (HAVE_STRERROR): Define.
+
+Fri Jul  8 16:19:02 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed1.inp, sed2.inp: Use "m/intel386" instead of "m/dos386.h".
+
+Wed Jun  1 20:02:54 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed4.inp: New file for configuring src/paths.h.
+
 Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.25 released.

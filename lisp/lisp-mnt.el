@@ -5,7 +5,7 @@
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Maintainer: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Created: 14 Jul 1992
-;; Version: $Id: lisp-mnt.el,v 1.8 1994/05/03 23:21:00 kwzh Exp $
+;; Version: $Id: lisp-mnt.el,v 1.9 1994/06/17 19:59:09 rms Exp $
 ;; Keywords: docs
 ;; X-Bogus-Bureaucratic-Cruft: Gruad will get you if you don't watch out!
 
@@ -123,7 +123,7 @@
   (save-excursion
     (let ((case-fold-search t))
       (goto-char (point-min))
-      (if (re-search-forward (concat "^;;; " hd ":$") nil t)
+      (if (re-search-forward (concat "^;;;;* " hd ":[ \t]*$") nil t)
 	  (progn
 	    (beginning-of-line)
 	    (if after (forward-line 1))

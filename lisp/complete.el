@@ -22,7 +22,7 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;; Commentary:
+;;; Commentary:
 
 ;; Extended completion for the Emacs minibuffer.
 ;;
@@ -94,7 +94,7 @@
 ;; is supported in include file names.
 
 
-;; Code:
+;;; Code:
 
 (defvar PC-meta-flag t
   "*If nil, TAB does normal Emacs completion and M-TAB does Partial Completion.
@@ -263,6 +263,7 @@ See `PC-complete' for details."
 	 (filename (memq table '(read-file-name-internal
 				 read-directory-name-internal)))
 	 (dirname nil)
+	 dirlength
 	 (str (buffer-substring beg end))
 	 (incname (and filename (string-match "<\\([^\"<>]*\\)>?$" str)))
 	 (ambig nil)
@@ -277,6 +278,13 @@ See `PC-complete' for details."
     (if (and (eq mode 'exit)
 	     (PC-is-complete-p str table pred))
 	'complete
+
+      ;; Record how many characters at the beginning are not included
+      ;; in completion.
+      (setq dirlength
+	    (if filename
+		(length (file-name-directory str))
+	      0))
 
       ;; Do substitutions in directory names
       (and filename
@@ -475,7 +483,8 @@ See `PC-complete' for details."
 					     (delete-char 1)
 					     (setq end (1- end))))
 				      (setq improved t))
-				    (insert (substring prefix i (1+ i)))
+				    ;; Use format to discard text properties.
+				    (insert (format "%s" (substring prefix i (1+ i))))
 				    (setq end (1+ end)))
 				  (setq i (1+ i)))
 				(or pt (equal (point) beg)
@@ -522,8 +531,14 @@ See `PC-complete' for details."
 		;; If totally ambiguous, display a list of completions
 		(if (or completion-auto-help
 			(eq mode 'help))
-		    (with-output-to-temp-buffer " *Completions*"
-		      (display-completion-list (sort helpposs 'string-lessp)))
+		    (with-output-to-temp-buffer "*Completions*"
+		      (display-completion-list (sort helpposs 'string-lessp))
+		      (save-excursion
+			(set-buffer standard-output)
+			;; Record which part of the buffer we are completing
+			;; so that choosing a completion from the list
+			;; knows how much old text to replace.
+			(setq completion-base-size dirlength)))
 		  (PC-temp-minibuffer-message " (Next char not unique)"))
 		nil)))))
 
@@ -533,9 +548,10 @@ See `PC-complete' for details."
 	    (if (null mode)
 		(PC-temp-minibuffer-message " (Sole completion)"))
 	  (delete-region beg end)
-	  (insert (if filename
-		      (substitute-in-file-name (concat dirname (car poss)))
-		    (car poss))))
+	  (insert (format "%s"
+			  (if filename
+			      (substitute-in-file-name (concat dirname (car poss)))
+			    (car poss)))))
 	t)))))
 
 

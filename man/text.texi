@@ -22,12 +22,14 @@ paragraph to be approximately equal in length.  The commands for moving
 over and killing words, sentences and paragraphs, while intended
 primarily for editing text, are also often useful for editing programs.
 
-  Emacs has several major modes for editing human language text.
-If the file contains text pure and simple, use Text mode, which customizes
-Emacs in small ways for the syntactic conventions of text.  For text which
-contains embedded commands for text formatters, Emacs has other major modes,
-each for a particular text formatter.  Thus, for input to @TeX{}, you would
-use @TeX{} mode; for input to nroff, Nroff mode.
+  Emacs has several major modes for editing human language text.  If the
+file contains text pure and simple, use Text mode, which customizes
+Emacs in small ways for the syntactic conventions of text.  For text
+which contains embedded commands for text formatters, Emacs has other
+major modes, each for a particular text formatter.  Thus, for input to
+@TeX{}, you would use @TeX{} mode; for input to nroff, Nroff mode.
+Outline mode provides special commands for operating on text with an
+outline structure.
 
 @menu
 * Words::         Moving over and killing words.
@@ -69,8 +71,8 @@ Transpose two words or drag a word across other words
 
   Notice how these keys form a series that parallels the
 character-based @kbd{C-f}, @kbd{C-b}, @kbd{C-d}, @kbd{C-t} and
-@key{DEL}.  @kbd{M-@@} is related to @kbd{C-@@}, which is an alias for
-@kbd{C-@key{SPC}}.@refill
+@key{DEL}.  @kbd{M-@@} is cognate to @kbd{C-@@}, which is an alias for
+@kbd{C-@key{SPC}}.
 
 @kindex M-f
 @kindex M-b
@@ -120,7 +122,8 @@ between point and mark, you can either set the mark at point and then move
 over the words, or you can use the command @kbd{M-@@} (@code{mark-word})
 which does not move point, but sets the mark where @kbd{M-f} would move
 to.  @kbd{M-@@} accepts a numeric argument that says how many words to
-scan for the place to put the mark.
+scan for the place to put the mark.  In Transient Mark mode, this command
+activates the mark.
 
   The word commands' understanding of syntax is completely controlled by
 the syntax table.  Any character can, for example, be declared to be a word
@@ -154,16 +157,12 @@ Kill back to the beginning of the sentence (@code{backward-kill-sentence}).
 sentence, respectively.  They were chosen to resemble @kbd{C-a} and
 @kbd{C-e}, which move to the beginning and end of a line.  Unlike them,
 @kbd{M-a} and @kbd{M-e} if repeated or given numeric arguments move over
-successive sentences.  Emacs assumes that you have followed the typist's
-convention of putting two spaces at the end of a sentence; it considers
-a sentence to end wherever there is a @samp{.}, @samp{?} or @samp{!}
-followed by the end of a line or two spaces, with any number of
-@samp{)}, @samp{]}, @samp{'}, or @samp{"} characters allowed in between.
-A sentence also begins or ends wherever a paragraph begins or
-ends.@refill
+successive sentences.
 
-  Neither @kbd{M-a} nor @kbd{M-e} moves past the newline or spaces beyond
-the sentence edge at which it is stopping.
+  Moving backward over a sentence places point just before the first
+character of the sentence; moving forward places point right after the
+punctuation that ends the sentence.  Neither one moves over the
+whitespace at the sentence boundary.
 
 @kindex M-k
 @kindex C-x DEL
@@ -171,14 +170,20 @@ the sentence edge at which it is stopping.
 @findex backward-kill-sentence
   Just as @kbd{C-a} and @kbd{C-e} have a kill command, @kbd{C-k}, to go
 with them, so @kbd{M-a} and @kbd{M-e} have a corresponding kill command
-@kbd{M-k} (@code{kill-sentence}) which kills from point to the end of the
-sentence.  With minus one as an argument it kills back to the beginning of
-the sentence.  Larger arguments serve as a repeat count.@refill
+@kbd{M-k} (@code{kill-sentence}) which kills from point to the end of
+the sentence.  With minus one as an argument it kills back to the
+beginning of the sentence.  Larger arguments serve as a repeat count.
+There is also a command, @kbd{C-x @key{DEL}}
+(@code{backward-kill-sentence}), for killing back to the beginning of a
+sentence.  This command is useful when you change your mind in the
+middle of composing text.@refill
 
-  There is a special command, @kbd{C-x @key{DEL}}
-(@code{backward-kill-sentence}) for killing back to the beginning of a
-sentence, because this is useful when you change your mind in the middle of
-composing text.@refill
+  The sentence commands assume that you follow the American typist's
+convention of putting two spaces at the end of a sentence; they consider
+a sentence to end wherever there is a @samp{.}, @samp{?} or @samp{!}
+followed by the end of a line or two spaces, with any number of
+@samp{)}, @samp{]}, @samp{'}, or @samp{"} characters allowed in between.
+A sentence also begins or ends wherever a paragraph begins or ends.
 
 @vindex sentence-end
   The variable @code{sentence-end} controls recognition of the end of a
@@ -203,7 +208,9 @@ set @code{sentence-end} to this value:
 @noindent
 You should also set the variable @code{sentence-end-double-space} to
 @code{nil} so that the fill commands expect and leave just one space at
-the end of a sentence.
+the end of a sentence.  Note that this makes it impossible to
+distinguish between periods that end sentences and those that indicate
+abbreviations.
 
 @node Paragraphs
 @section Paragraphs
@@ -225,11 +232,11 @@ Move forward to next paragraph end (@code{forward-paragraph}).
 Put point and mark around this or next paragraph (@code{mark-paragraph}).
 @end table
 
-  @kbd{M-@{} moves to the beginning of the current or previous paragraph,
-while @kbd{M-@}} moves to the end of the current or next paragraph.
-Blank lines and text formatter command lines separate paragraphs and are
-not part of any paragraph.  Also, an indented line starts a new
-paragraph.
+  @kbd{M-@{} moves to the beginning of the current or previous
+paragraph, while @kbd{M-@}} moves to the end of the current or next
+paragraph.  Blank lines and text formatter command lines separate
+paragraphs and are not considered part of any paragraph.  Also, an
+indented line starts a new paragraph.
 
   In major modes for programs (as opposed to Text mode), paragraphs begin
 and end only at blank lines.  This makes the paragraph commands continue to
@@ -241,13 +248,14 @@ which don't start with the fill prefix.  @xref{Filling}.
 @kindex M-h
 @findex mark-paragraph
   When you wish to operate on a paragraph, you can use the command
-@kbd{M-h} (@code{mark-paragraph}) to set the region around it.  This
-command puts point at the beginning and mark at the end of the paragraph
-point was in.  If point is between paragraphs (in a run of blank lines, or
-at a boundary), the paragraph following point is surrounded by point and
-mark.  If there are blank lines preceding the first line of the paragraph,
-one of these blank lines is included in the region.  Thus, for example,
-@kbd{M-h C-w} kills the paragraph around or after point.
+@kbd{M-h} (@code{mark-paragraph}) to set the region around it.  Thus,
+for example, @kbd{M-h C-w} kills the paragraph around or after point.
+The @kbd{M-h} command puts point at the beginning and mark at the end of
+the paragraph point was in.  In Transient Mark mode, it activates the
+mark.  If point is between paragraphs (in a run of blank lines, or at a
+boundary), the paragraph following point is surrounded by point and
+mark.  If there are blank lines preceding the first line of the
+paragraph, one of these blank lines is included in the region.
 
 @vindex paragraph-start
 @vindex paragraph-separate
@@ -272,13 +280,14 @@ pages.
 @cindex pages
 @cindex formfeed
   Files are often thought of as divided into @dfn{pages} by the
-@dfn{formfeed} character (ASCII control-L, octal code 014).  For example,
-if a file is printed on a line printer, each page of the file, in this
-sense, will start on a new page of paper.  Emacs treats a page-separator
-character just like any other character.  You can insert it with @kbd{C-q
-C-l}, or delete it with @key{DEL}.  Thus, you are free to paginate your file
-or not.  However, since pages are often meaningful divisions of the file,
-Emacs provides commands to move over them and operate on them.
+@dfn{formfeed} character (ASCII control-L, octal code 014).  When you
+print hardcopy for a file, this character forces a page break; thus,
+each page of the file goes on a separate page on paper.  Most Emacs
+commands treat the page-separator character just like any other
+character: you can insert it with @kbd{C-q C-l}, and delete it with
+@key{DEL}.  Thus, you are free to paginate your file or not.  However,
+since pages are often meaningful divisions of the file, Emacs provides
+commands to move over them and operate on them.
 
 @c WideCommands
 @table @kbd
@@ -304,13 +313,15 @@ command moves forward past the next page delimiter.
 
 @kindex C-x C-p
 @findex mark-page
-  The @kbd{C-x C-p} command (@code{mark-page}) puts point at the beginning
-of the current page and the mark at the end.  The page delimiter at the end
-is included (the mark follows it).  The page delimiter at the front is
-excluded (point follows it).  This command can be followed by @kbd{C-w} to
-kill a page which is to be moved elsewhere.  If it is inserted after a page
-delimiter, at a place where @kbd{C-x ]} or @kbd{C-x [} would take you, then
-the page will be properly delimited before and after once again.
+  The @kbd{C-x C-p} command (@code{mark-page}) puts point at the
+beginning of the current page and the mark at the end.  The page
+delimiter at the end is included (the mark follows it).  The page
+delimiter at the front is excluded (point follows it).  @kbd{C-x C-p
+C-w} is a handy way to kill a page to move it elsewhere.  If you move to
+another page delimiter with @kbd{C-x [} and @kbd{C-x ]}, then yank the
+killed page, all the pages will be properly delimited once again.  The
+reason @kbd{C-x C-p} includes only the following page delimiter in the
+region is to ensure that.
 
   A numeric argument to @kbd{C-x C-p} is used to specify which page to go
 to, relative to the current one.  Zero means the current page.  One means
@@ -341,10 +352,11 @@ matches a formfeed character at the beginning of a line.
 @section Filling Text
 @cindex filling text
 
-  With Auto Fill mode, text can be @dfn{filled} (broken up into lines
-that fit in a specified width) as you insert it.  If you alter existing
-text it may no longer be properly filled; then you can use the explicit
-fill commands to fill the paragraph again.
+  @dfn{Filling} text means breaking it up into lines that fit a
+specified width.  Emacs does filling in two ways.  In Auto Fill mode,
+inserting text with self-inserting characters also automatically fills
+it.  There are also explicit fill commands that you can use when editing
+text leaves it unfilled.
 
 @menu
 * Auto Fill::	  Auto Fill mode breaks long lines automatically.
@@ -370,12 +382,13 @@ In Auto Fill mode, break lines when appropriate.
 @end table
 
 @findex auto-fill-mode
-  @kbd{M-x auto-fill-mode} turns Auto Fill mode on if it was off, or off if
-it was on.  With a positive numeric argument it always turns Auto Fill mode
-on, and with a negative argument always turns it off.  You can see when
-Auto Fill mode is in effect by the presence of the word @samp{Fill} in the
-mode line, inside the parentheses.  Auto Fill mode is a minor mode, turned
-on or off for each buffer individually.  @xref{Minor Modes}.
+  @kbd{M-x auto-fill-mode} turns Auto Fill mode on if it was off, or off
+if it was on.  With a positive numeric argument it always turns Auto
+Fill mode on, and with a negative argument always turns it off.  You can
+see when Auto Fill mode is in effect by the presence of the word
+@samp{Fill} in the mode line, inside the parentheses.  Auto Fill mode is
+a minor mode which is enabled or disabled for each buffer individually.
+@xref{Minor Modes}.
 
   In Auto Fill mode, lines are broken automatically at spaces when they get
 longer than the desired width.  Line breaking and rearrangement takes place
@@ -392,7 +405,7 @@ the first line and the beginning of the second so that each line is
 a separate comment; the variable @code{comment-multi-line} controls the
 choice (@pxref{Comments}).
 
-  Auto Fill mode does not refill entire paragraphs.  It can break lines but
+  Auto Fill mode does not refill entire paragraphs; it can break lines but
 cannot merge lines.  So editing in the middle of a paragraph can result in
 a paragraph that is not correctly filled.  The easiest way to make the
 paragraph properly filled again is usually with the explicit fill commands.
@@ -428,24 +441,10 @@ inside, or the one after point if point is between paragraphs.
 Refilling works by removing all the line-breaks, then inserting new ones
 where necessary.
 
-  Emacs commands consider a period followed by two spaces or by a
-newline as the end of a sentence; a period followed by just one space
-indicates an abbreviation and not the end of a sentence.  To preserve
-the distinction between these two ways of using a period, the fill
-commands do not break a line after a period followed by just one space.
-
-@kindex M-s @r{(Text mode)}
-@cindex centering
-@findex center-line
-  The command @kbd{M-s} (@code{center-line}) centers the current line
-within the current fill column.  With an argument, it centers several lines
-individually and moves past them.
-
 @findex fill-region
   To refill many paragraphs, use @kbd{M-x fill-region}, which
 divides the region into paragraphs and fills each of them.
 
-@findex fill-region-as-paragraph
   @kbd{M-q} and @code{fill-region} use the same criteria as @kbd{M-h}
 for finding paragraph boundaries (@pxref{Paragraphs}).  For more
 control, you can use @kbd{M-x fill-region-as-paragraph}, which refills
@@ -471,25 +470,36 @@ line counts as a paragraph starter and thus each line of an indented
 paragraph is considered a paragraph of its own.  But you do notice the
 effect in Indented Text mode and some other major modes.
 
-@vindex fill-column
-  The maximum line width for filling is in the variable @code{fill-column}.
-Altering the value of @code{fill-column} makes it local to the current
-buffer; until that time, the default value is in effect.  The default is
-initially 70.  @xref{Locals}.
+@kindex M-s @r{(Text mode)}
+@cindex centering
+@findex center-line
+  The command @kbd{M-s} (@code{center-line}) centers the current line
+within the current fill column.  With an argument @var{n}, it centers
+@var{n} lines individually and moves past them.
 
+@vindex fill-column
 @kindex C-x f
 @findex set-fill-column
-  The easiest way to set @code{fill-column} is to use the command @kbd{C-x
-f} (@code{set-fill-column}).  With no argument, it sets @code{fill-column}
-to the current horizontal position of point.  With a numeric argument, it
-uses that as the new fill column.
+  The maximum line width for filling is in the variable
+@code{fill-column}.  Altering the value of @code{fill-column} makes it
+local to the current buffer; until that time, the default value is in
+effect.  The default is initially 70.  @xref{Locals}.  The easiest way
+to set @code{fill-column} is to use the command @kbd{C-x f}
+(@code{set-fill-column}).  With no argument, it sets @code{fill-column}
+to the current horizontal position of point.  With a numeric argument,
+it uses that as the new fill column.
+
+  Emacs commands normally consider a period followed by two spaces or by
+a newline as the end of a sentence; a period followed by just one space
+indicates an abbreviation and not the end of a sentence.  To preserve
+the distinction between these two ways of using a period, the fill
+commands do not break a line after a period followed by just one space.
 
 @vindex sentence-end-double-space
   If the variable @code{sentence-end-double-space} is @code{nil}, the
 fill commands expect and leave just one space at the end of a sentence.
-Ordinarily this variable is @code{t}, and the fill commands insist on
-two spaces for the end of a sentence; they are also careful not to turn
-a single space into two spaces.
+Ordinarily this variable is @code{t}, so the fill commands insist on
+two spaces for the end of a sentence, as explained above.  @xref{Sentences}.
 
 @node Fill Prefix
 @subsection The Fill Prefix
@@ -521,16 +531,14 @@ prefix, put point at the end of the prefix, and give the command
 @kbd{C-x}.  To turn off the fill prefix, specify an empty prefix: type
 @w{@kbd{C-x .}}@: with point at the beginning of a line.@refill
 
-  When a fill prefix is in effect, the fill commands remove the fill prefix
-from each line before filling and insert it on each line after filling.
-The fill prefix is also inserted on new lines made automatically by Auto
-Fill mode.  Lines that do not start with the fill prefix are considered to
-start paragraphs, both in @kbd{M-q} and the paragraph commands; this is
-just right if you are using paragraphs with hanging indentation (every line
-indented except the first one).  Lines which are blank or indented once the
-prefix is removed also separate or start paragraphs; this is what you want
-if you are writing multi-paragraph comments with a comment delimiter on
-each line.
+  When a fill prefix is in effect, the fill commands remove the fill
+prefix from each line before filling and insert it on each line after
+filling.  Auto Fill mode also inserts the fill prefix automatically when
+it makes a new line.  The @kbd{C-o} command inserts the fill prefix on
+new lines it creates, when you use it at the beginning of a line
+(@pxref{Blank Lines}).  Conversely, the command @kbd{M-^} deletes the
+prefix (if it occurs) after the newline that it deletes
+(@pxref{Indentation}).
 
   For example, if @code{fill-column} is 40 and you set the fill prefix
 to @samp{;; }, then @kbd{M-q} in the following text
@@ -549,10 +557,13 @@ produces this:
 ;; inside a Lisp-style comment.
 @end example
 
-  The @kbd{C-o} command inserts the fill prefix on new lines it creates,
-when you use it at the beginning of a line (@pxref{Blank Lines}).
-Conversely, the command @kbd{M-^} deletes the prefix (if it occurs)
-after the newline that it deletes (@pxref{Indentation}).
+  Lines that do not start with the fill prefix are considered to start
+paragraphs, both in @kbd{M-q} and the paragraph commands; this is gives
+good results for paragraphs with hanging indentation (every line
+indented except the first one).  Lines which are blank or indented once
+the prefix is removed also separate or start paragraphs; this is what
+you want if you are writing multi-paragraph comments with a comment
+delimiter on each line.
 
 @findex fill-individual-paragraphs
   You can use @kbd{M-x fill-individual-paragraphs} to set the fill
@@ -570,7 +581,8 @@ paragraph-separating lines (as defined by @code{paragraph-separate}) as
 starting a new paragraph.  Since this means that the lines of one
 paragraph may have different amounts of indentation, the fill prefix
 used is the smallest amount of indentation of any of the lines of the
-paragraph.
+paragraph.  This gives good results with styles that indent a paragraph's
+first line more or less that the rest of the paragraph.
 
 @vindex fill-prefix
   The fill prefix is stored in the variable @code{fill-prefix}.  Its value
@@ -602,7 +614,7 @@ Convert region to upper case (@code{upcase-region}).
 @kindex M-l
 @kindex M-u
 @kindex M-c
-@cindex words
+@cindex words, case conversion
 @cindex converting text to upper or lower case
 @cindex capitalizing words
 @findex downcase-word
@@ -656,10 +668,10 @@ to use Text mode rather than Fundamental mode.  Invoke @kbd{M-x
 text-mode} to enter Text mode.  In Text mode, @key{TAB} runs the
 function @code{tab-to-tab-stop}, which allows you to use arbitrary tab
 stops set with @kbd{M-x edit-tab-stops} (@pxref{Tab Stops}).  Features
-concerned with comments in programs are turned off except when
-explicitly invoked.  The syntax table is changed so that periods are not
-considered part of a word, while apostrophes, backspaces and underlines
-are.
+concerned with comments in programs are turned off in Text mode except
+when explicitly invoked.  The syntax table is changed so that periods
+are not considered part of a word, while apostrophes, backspaces and
+underlines are part of words.
 
 @cindex Indented Text mode
 @cindex mode, Indented Text
@@ -716,20 +728,24 @@ visible.
 @vindex outline-minor-mode-prefix
   Outline mode is a major mode much like Text mode but intended for
 editing outlines.  It allows you to make parts of the text temporarily
-invisible so that you can see just the overall structure of the outline.
-Type @kbd{M-x outline-mode} to switch to Outline mode as the major mode
-of the current buffer.  Type @kbd{M-x outline-minor-mode} to enable
-Outline mode as a minor mode in the current buffer.  When Outline minor
-mode is enabled, the @kbd{C-c} commands of Outline mode are found
-instead under the prefix @kbd{C-c C-o}; this is to reduce the conflicts
-with the special commands of your chosen major mode.  (The variable
+invisible so that you can see the outline structure.  Type @kbd{M-x
+outline-mode} to switch to Outline mode as the major mode of the current
+buffer.  Type @kbd{M-x outline-minor-mode} to enable Outline mode as a
+minor mode in the current buffer.  Outline minor mode provides the same
+commands as the major mode, Outline mode, but you can use it in
+conjunction with other major modes.
+
+  The major mode, Outline mode, provides special key bindings on the
+@kbd{C-c} prefix.  Outline minor mode provides similar bindings with
+@kbd{C-c C-o} as the prefix; this is to reduce the conflicts with the
+major mode's special commands.  (The variable
 @code{outline-minor-mode-prefix} controls the prefix used.)
 
-  When a line is invisible in outline mode, it does not appear on the
-screen.  The screen appears exactly as if the invisible line
-were deleted, except that an ellipsis (three periods in a row) appears
-at the end of the previous visible line (only one ellipsis no matter
-how many invisible lines follow).
+  When Outline mode makes a line invisible, the line does not appear on
+the screen.  The screen appears exactly as if the invisible line were
+deleted, except that an ellipsis (three periods in a row) appears at the
+end of the previous visible line (only one ellipsis no matter how many
+invisible lines follow).
 
   All editing commands treat the text of the invisible line as part of the
 previous visible line.  For example, @kbd{C-n} moves onto the next visible
@@ -754,13 +770,14 @@ the hook @code{outline-mode-hook} (@pxref{Hooks}).
 @cindex heading lines (Outline mode)
 @cindex body lines (Outline mode)
   Outline mode assumes that the lines in the buffer are of two types:
-@dfn{heading lines} and @dfn{body lines}.  A heading line represents a topic in the
-outline.  Heading lines start with one or more stars; the number of stars
-determines the depth of the heading in the outline structure.  Thus, a
-heading line with one star is a major topic; all the heading lines with
-two stars between it and the next one-star heading are its subtopics; and
-so on.  Any line that is not a heading line is a body line.  Body lines
-belong with the preceding heading line.  Here is an example:
+@dfn{heading lines} and @dfn{body lines}.  A heading line represents a
+topic in the outline.  Heading lines start with one or more stars; the
+number of stars determines the depth of the heading in the outline
+structure.  Thus, a heading line with one star is a major topic; all the
+heading lines with two stars between it and the next one-star heading
+are its subtopics; and so on.  Any line that is not a heading line is a
+body line.  Body lines belong with the preceding heading line.  Here is
+an example:
 
 @example
 * Food
@@ -782,7 +799,7 @@ several lines.
 
 * Shelter
 
-A second first-level topic with its header line.
+Another first-level topic with its header line.
 @end example
 
   A heading line together with all following body lines is called
@@ -793,7 +810,7 @@ deeper heading lines and their body lines is called a @dfn{subtree}.
   You can customize the criterion for distinguishing heading lines
 by setting the variable @code{outline-regexp}.  Any line whose
 beginning has a match for this regexp is considered a heading line.
-Matches that start within a line (not at the beginning) do not count.
+Matches that start within a line (not at the left margin) do not count.
 The length of the matching text determines the level of the heading;
 longer matches make a more deeply nested level.  Thus, for example,
 if a text formatter has commands @samp{@@chapter}, @samp{@@section}
@@ -807,8 +824,8 @@ so that Outline mode will know that sections are contained in chapters.
 This works as long as no other command starts with @samp{@@chap}.
 
 @vindex outline-level
-  It is possible to change the way the level of a heading line is
-calculated by setting the variable @code{outline-level}.  The value of
+  It is possible to change the rule for calculating the level of a
+heading line by setting the variable @code{outline-level}.  The value of
 @code{outline-level} should be a function that takes no arguments and
 returns the level of the current heading.  Some major modes such as C,
 Nroff, and Emacs Lisp mode set this variable in order to work with
@@ -834,7 +851,7 @@ backward and forward to heading lines.
 Move point to the next visible heading line
 (@code{outline-next-visible-heading}).
 @item C-c C-p
-Move point to the previous visible heading line @*
+Move point to the previous visible heading line
 (@code{outline-previous-visible-heading}).
 @item C-c C-f
 Move point to the next visible heading line at the same level
@@ -920,7 +937,7 @@ the headings leading up from there to the top level of the outline
   Two commands that are exact opposites are @kbd{C-c C-c}
 (@code{hide-entry}) and @kbd{C-c C-e} (@code{show-entry}).  They are
 used with point on a heading line, and apply only to the body lines of
-that heading.  The subtopics and their bodies are not affected.
+that heading.  Subheadings and their bodies are not affected.
 
 @findex hide-subtree
 @findex show-subtree
@@ -965,7 +982,7 @@ though @kbd{C-c C-a} applies to more than just body lines.
 @findex hide-sublevels
 @kindex C-c C-q @r{(Outline mode)}
   The command @kbd{C-c C-q} (@code{hide-sublevels}) hides all but the
-top level headings.  With a prefix argument @var{n}, it hides everything
+top level headings.  With a numeric argument @var{n}, it hides everything
 except the top @var{n} levels of heading lines.
 
 @findex hide-other
@@ -1003,9 +1020,10 @@ Sli@TeX{} mode (these three distinct major modes differ only slightly).
 They are designed for editing the three different formats.  The command
 @kbd{M-x tex-mode} looks at the contents of the buffer to determine
 whether the contents appear to be either La@TeX{} input or Sli@TeX{}
-input; it then selects the appropriate mode.  If it can't tell which is
-right (e.g., the buffer is empty), the variable @code{tex-default-mode}
-controls which mode is used.
+input; if so, it selects the appropriate mode.  If the file contents do
+not appear to be La@TeX{} or Sli@TeX{}, it selects Plain @TeX{} mode.
+If the contents are insufficient to determine this, the variable
+@code{tex-default-mode} controls which mode is used.
 
   When @kbd{M-x tex-mode} does not guess right, you can use the commands
 @kbd{M-x plain-tex-mode}, @kbd{M-x latex-mode}, and @kbd{M-x
@@ -1082,14 +1100,14 @@ text that belongs inside.  Afterward, use the command @kbd{C-c @}}
 @kindex LFD @r{(@TeX{} mode)}
   There are two commands for checking the matching of braces.  @key{LFD}
 (@code{tex-terminate-paragraph}) checks the paragraph before point, and
-inserts two newlines to start a new paragraph.  It prints a message in the
-echo area if any mismatch is found.  @kbd{M-x validate-tex-region} checks
-a region, paragraph by paragraph.  When it finds a paragraph that
+inserts two newlines to start a new paragraph.  It prints a message in
+the echo area if any mismatch is found.  @kbd{M-x validate-tex-region}
+checks a region, paragraph by paragraph.  When it finds a paragraph that
 contains a mismatch, it displays point at the beginning of the paragraph
-for a few seconds and pushes a mark at that spot.  Scanning continues
+for a few seconds and sets the mark at that spot.  Scanning continues
 until the whole buffer has been checked or until you type another key.
-The positions of the last several paragraphs with mismatches can be
-found in the mark ring (@pxref{Mark Ring}).
+Afterward, you can use the mark ring to find the last several paragraphs
+that had mismatches (@pxref{Mark Ring}).
 
   Note that Emacs commands count square brackets and parentheses in
 @TeX{} mode, not just braces.  This is not strictly correct for the
@@ -1101,8 +1119,8 @@ work with them.
 @node LaTeX Editing
 @subsection La@TeX{} Editing Commands
 
-  La@TeX{} mode provides a few extra features not applicable to plain
-@TeX{}.
+  La@TeX{} mode, and its variant, Sli@TeX{} mode, provide a few extra
+features not applicable to plain @TeX{}.
 
 @table @kbd
 @item C-c C-o
@@ -1114,34 +1132,28 @@ Close the last unended block for La@TeX{} (@code{tex-close-latex-block}).
 
 @findex tex-latex-block
 @kindex C-c C-o @r{(La@TeX{} mode)}
+@vindex latex-block-names
   In La@TeX{} input, @samp{\begin} and @samp{\end} commands are used to
 group blocks of text.  To insert a @samp{\begin} and a matching
 @samp{\end} (on a new line following the @samp{\begin}), use @kbd{C-c
 C-o} (@code{tex-latex-block}).  A blank line is inserted between the
-two, and point is left there.@refill
-
-@vindex latex-block-names
-  Emacs knows all of the standard La@TeX{} block names and will
-permissively complete a partially entered block name
-(@pxref{Completion}).  You can add your own list of block names to those
-known by Emacs with the variable @code{latex-block-names}.  For example,
-to add @samp{theorem}, @samp{corollary}, and @samp{proof}, include the line
+two, and point is left there.  You can use completion when you enter the
+block type; to specify additional block type names beyond the standard
+list, set the variable @code{latex-block-names}.  For example, here's
+how to add @samp{theorem}, @samp{corollary}, and @samp{proof}:
 
 @example
 (setq latex-block-names '("theorem" "corollary" "proof"))
 @end example
 
-@noindent
-to your @file{.emacs} file.
-
 @findex tex-close-latex-block
 @kindex C-c C-e @r{(La@TeX{} mode)}
-  In La@TeX{} input, @samp{\begin} and @samp{\end} commands must balance.
-You can use @kbd{C-c C-e} (@code{tex-close-latex-block}) to insert
-automatically a matching @samp{\end} to match the last unmatched @samp{\begin}.
-The @samp{\end} will be indented to match the corresponding @samp{\begin}.
-The @samp{\end} will be followed by a newline if point is at the beginning
-of a line.@refill
+  In La@TeX{} input, @samp{\begin} and @samp{\end} commands must
+balance.  You can use @kbd{C-c C-e} (@code{tex-close-latex-block}) to
+insert automatically a matching @samp{\end} to match the last unmatched
+@samp{\begin}.  It indents the @samp{\end} to match the corresponding
+@samp{\begin}.  It inserts a newline after @samp{\end} if point is at
+the beginning of a line.
 
 @node TeX Print
 @subsection @TeX{} Printing Commands
@@ -1186,11 +1198,11 @@ Show the printer queue (@code{tex-show-print-queue}).
 @kindex C-c C-q @r{(@TeX{} mode)}
   You can pass the current buffer through an inferior @TeX{} by means of
 @kbd{C-c C-b} (@code{tex-buffer}).  The formatted output appears in a
-temporary; to print it, type @kbd{C-c C-p} (@code{tex-print}).
-Afterward use @kbd{C-c C-q} (@code{tex-show-print-queue}) to view the
-progress of your output towards being printed. If your terminal has the
-ability to display @TeX{} output files, you can preview the output on
-the terminal with @kbd{C-c C-v} (@code{tex-view}).
+temporary file; to print it, type @kbd{C-c C-p} (@code{tex-print}).
+Afterward, you can use @kbd{C-c C-q} (@code{tex-show-print-queue}) to
+view the progress of your output towards being printed.  If your terminal
+has the ability to display @TeX{} output files, you can preview the
+output on the terminal with @kbd{C-c C-v} (@code{tex-view}).
 
 @cindex @code{TEXINPUTS} environment variable
 @vindex tex-directory
@@ -1200,7 +1212,7 @@ your environment variable @code{TEXINPUTS} contains relative directory
 names, or if your files contains @samp{\input} commands with relative
 file names, then @code{tex-directory} @emph{must} be @code{"."} or you
 will get the wrong results.  Otherwise, it is safe to specify some other
-directory, such as @file{/tmp}.
+directory, such as @code{"/tmp"}.
 
 @vindex tex-run-command
 @vindex latex-run-command
@@ -1310,20 +1322,24 @@ Starting the @TeX{} shell runs the hook @code{tex-shell-hook}.
 @subsection Unix @TeX{} Distribution
 
 @c !!! Here is information about obtaining TeX.  Update it whenever.
-@c     Last updated by Noah Friedman on 18 Apr 1993
+@c     Last updated by rms in July 1994
 
 @TeX{} for Unix systems can be obtained from the University of Washington
 for a distribution fee.
 
-To order a full distribution, send $200.00 for a 1/2-inch 9-track 1600
-bpi (tar or cpio) tape reel, or $210.00 for a 1/4-inch 4-track QIC-24
-(tar or cpio) cartridge, payable to the University of Washington to:
+To order a full distribution, specify whether you prefer 1/4 inch QIC-24
+or 4mm DAT tape (9-track reel-to-reel is no longer available) and send
+$210.00 for a (tar or cpio) cartridge, payable to the University of
+Washington to:
 
 @display
-Northwest Computing Support Center
-DR-10, Thomson Hall 35
+@group
+Pierre MacKay
+Department of Classics
+Denny Hall, Mail Stop DH-10
 University of Washington
 Seattle, Washington 98195
+@end group
 @end display
 
 @noindent
@@ -1335,10 +1351,9 @@ For overseas orders please add $20.00 to the base cost for shipment via
 air parcel post, or $30.00 for shipment via courier.
 
   The normal distribution is a tar tape, blocked 20, 1600 bpi, on an
-industry standard 2400 foot half-inch reel.  The physical format for
-the 1/4 inch streamer cartridges uses QIC-11, 8000 bpi, 4-track
-serpentine recording for the SUN.  Also, System V tapes can be written
-in cpio format, blocked 5120 bytes, ASCII headers.
+industry standard 2400 foot half-inch reel.  The physical format for the
+1/4 inch streamer cartridges is QIC-24.  System V tapes can be written
+in cpio format, blocked 5120 bytes, with ASCII headers.
 
 @node Nroff Mode
 @section Nroff Mode

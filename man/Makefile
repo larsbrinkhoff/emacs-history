@@ -21,7 +21,6 @@ EMACSSOURCES= \
 	commands.texi \
 	entering.texi \
 	basic.texi \
-	undo.texi \
 	mini.texi \
 	m-x.texi \
 	help.texi \

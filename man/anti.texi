@@ -1,8 +1,8 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 
-@node Antinews, Manifesto, Command Arguments, Top
+@node Antinews, MS-DOS, Command Arguments, Top
 @appendix Emacs 18 Antinews
 
 For those users who live backwards in time, here is information about
@@ -40,7 +40,8 @@ in your head, and you don't need line numbers because you can search
 for precisely the text you want.
 
 There are no menu bars or scroll bars; no faces, text properties or
-overlays.
+overlays.  You can't use @kbd{Mouse-2} to select files or objects
+referred to in the buffer.
 
 There are no minibuffer history commands.
 
@@ -55,6 +56,7 @@ is responsible for defining them.  Mouse buttons are defined by a
 special keymap, @code{mouse-map}.  See the file @file{x-mouse.el} for
 how to bind mouse clicks.
 
+There is no support for European character sets such as ISO Latin-1.
 Character codes 128 and above always display using @samp{\@var{nnn}}
 notation.  For codes 0 through 31, you can choose between
 @samp{\@var{nnn}} and @samp{^@var{c}} by setting the variable
@@ -64,7 +66,8 @@ character codes should display.
 You can't refer to files on other machines using special ``magic''
 file names.  Instead, you must use the @code{ftp} library with
 commands such as @kbd{M-x ftp-find-file} and @kbd{M-x
-ftp-write-file}.
+ftp-write-file}.  Since automatic uncompression also uses magic file
+names, that too is gone.
 
 The character for terminating an incremental search is now @key{ESC},
 not @key{RET} as in Emacs 19.  If you type @key{RET}, that searches
@@ -199,6 +202,12 @@ subsequent changes in even earlier Emacs versions (such as version
 
 @heading Other Brief Notes
 
+The mode line displays @samp{%%} for all read-only buffers, whether
+modified or not.
+
+The command @code{resize-minibuffer-mode} has been removed.  If you want
+to change the size of the minibuffer, do it by hand.
+
 Outline mode exists only as a major mode, not as a minor mode.
 
 @kbd{M-!} (@code{shell-command}) always runs the command synchronously,
@@ -256,7 +265,7 @@ special ``magic'' file names.  Instead, you must use the @code{ftp}
 library with commands such as @kbd{M-x ftp-find-file} and @kbd{M-x
 ftp-write-file}.
 
-When you run @kbd{M-x revert-buffer} with no prefix argument, if the
+When you run @kbd{M-x revert-buffer} with no numeric argument, if the
 buffer has an auto save file more recent that the visited file,
 @code{revert-buffer} asks whether to revert from the auto save file
 instead.
@@ -279,7 +288,7 @@ when you visit a file, so as to edit it in the directory where it is
 actually stored.  This way you can make sure that backup files and
 change log entries go in the proper directory.
 
-@kbd{M-x compare-windows} ignores any prefix argument and always
+@kbd{M-x compare-windows} ignores any numeric argument and always
 considers case and whitespace differences significant.  As for the
 other ways of comparing files, @kbd{M-x diff} and @kbd{M-x
 diff-backup}, they don't exist at all.
@@ -301,6 +310,11 @@ occasionally check your newest mail with the @code{mail} program;
 whatever you have looked at and saved with @code{mail} will be brought
 into Rmail the next time you run Rmail.
 
+The @kbd{e} command is now ``expunge'', just like @kbd{x}.  To edit
+the current message, type @kbd{w}, which works in Emacs 19 as well.
+If you type @kbd{e} meaning to edit, and it expunges instead---well,
+you shouldn't have deleted those messages if you still wanted them.
+
 The Rmail summary buffer is now much simpler.  Only a few special
 commands are available there: @kbd{n}, @kbd{p}, and @kbd{j} for motion,
 @kbd{d} and @kbd{u} for deletion, and @key{SPC} and @key{DEL} for
@@ -309,13 +323,11 @@ buffer.  Also, changes in the Rmail buffer don't update the summary;
 to do that, you must make a new summary.
 
 The Rmail command @code{rmail-resend} (accessible via @kbd{f} with a
-prefix argument in Emacs 19) does not exist in Emacs 18.  Neither does
+numeric argument in Emacs 19) does not exist in Emacs 18.  Neither does
 @code{rmail-retry-failure} (@kbd{M-m} in Emacs 19).
 
-The @kbd{e} command is now ``expunge'', just like @kbd{x}.  To edit
-the current message, type @kbd{w}, which works in Emacs 19 as well.
-If you type @kbd{e} meaning to edit, and it expunges instead---well,
-you shouldn't have deleted those messages if you still wanted them.
+The Rmail sorting features have been removed, so you can be sure the
+order you see is the order that the messages arrived.
 
 The @kbd{<} and @kbd{b} commands have been removed in Emacs 18.
 Likewise @kbd{C-M-t} (@code{rmail-summarize-by-topic}) and 
@@ -323,9 +335,11 @@ Likewise @kbd{C-M-t} (@code{rmail-summarize-by-topic}) and
 imagine anyone who has tried it would ever wish to use another mail
 reader.
 
-The default output file for @kbd{o} is now always the last file that
-you used with @kbd{o}.  The variable @code{rmail-output-file-alist}
-has no special meaning.
+You must use the @kbd{o} command for output to a Rmail file, and the
+@kbd{C-o} for output to a file in system mailbox format.  The default
+output file for @kbd{o} is now always the last file that you used with
+@kbd{o}.  The variable @code{rmail-output-file-alist} has no special
+meaning.
 
 Emacs 18 Rmail does not know anything about Content Length fields in
 messages.
@@ -354,11 +368,11 @@ from time to time to see whether the compilation has finished, because
 Emacs 18 does not display @samp{Compiling} in the mode line to tell
 you the compilation is still going.
 
-@heading Shell Mode
+@heading Shell Mode Changes
 
-Shell mode in Emacs 18 does nothing special for the keys @key{TAB}, 
-@kbd{M-?}, @kbd{C-a}, @kbd{C-d}.  The commands @kbd{M-x dirs} and
-@kbd{M-x send-invisible} are also gone.
+Shell mode in Emacs 18 does nothing special for the keys @key{TAB},
+@kbd{M-?}, @kbd{C-d}.  The commands @kbd{M-x dirs} and @kbd{M-x
+send-invisible} are also gone.
 
 The history commands @kbd{M-p} and so on are not available either;
 instead, use @kbd{C-c C-y} (@code{copy-last-shell-input}).  This
@@ -371,7 +385,7 @@ Use @kbd{C-c C-d} to send an ``end of file'' to the shell process.
 @heading Dired Changes
 
 For simplicity, Dired in Emacs 18 supports just one kind of mark: the
-deletion flag, @samp{*}.  The Emacs 19 Dired commands for flagging
+deletion flag, @samp{D}.  The Emacs 19 Dired commands for flagging
 files do work in Emacs 18, but all the other mark-related commands do
 not.
 

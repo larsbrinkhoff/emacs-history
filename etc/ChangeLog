@@ -1,3 +1,11 @@
+Wed Sep  7 03:53:50 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.26 released.
+
+Sun Jul  3 15:30:51 1994  Richard Stallman  (rms@gnu.ai.mit.edu)
+
+	* TUTORIAL: Talk about flow control along with C-x C-s and C-s.
+
 Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.25 released.

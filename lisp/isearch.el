@@ -4,7 +4,7 @@
 
 ;; Author: Daniel LaLiberte <liberte@cs.uiuc.edu>
 
-;; |$Date: 1994/05/14 09:50:26 $|$Revision: 1.69 $
+;; |$Date: 1994/08/30 21:20:09 $|$Revision: 1.73 $
 
 ;; This file is part of GNU Emacs.
 
@@ -232,39 +232,37 @@ Default value, nil, means edit the string instead.")
     
       (define-key map "\C-w" 'isearch-yank-word)
       (define-key map "\C-y" 'isearch-yank-line)
-      (define-key map [mouse-2] 'isearch-yank-kill)
-      ;; This overrides the default binding for t.
-      (define-key map [down-mouse-2] 'nil)
 
-      ;; Bind the ASCII-equivalent "function keys" explicitly
-      ;; if we bind their equivalents, 
-      ;; since otherwise the default binding would override.
+      ;; Bind the ASCII-equivalent "function keys" explicitly to nil
+      ;; so that the default binding does not apply.
+      ;; As a result, these keys translate thru function-key-map
+      ;; as normal, and they have the effect of the equivalent ASCII char.
       ;; We bind [escape] below.
-      (define-key map [tab] 'isearch-printing-char)
-      (define-key map [kp-0] 'isearch-printing-char)
-      (define-key map [kp-1] 'isearch-printing-char)
-      (define-key map [kp-2] 'isearch-printing-char)
-      (define-key map [kp-3] 'isearch-printing-char)
-      (define-key map [kp-4] 'isearch-printing-char)
-      (define-key map [kp-5] 'isearch-printing-char)
-      (define-key map [kp-6] 'isearch-printing-char)
-      (define-key map [kp-7] 'isearch-printing-char)
-      (define-key map [kp-8] 'isearch-printing-char)
-      (define-key map [kp-9] 'isearch-printing-char)
-      (define-key map [kp-add] 'isearch-printing-char)
-      (define-key map [kp-subtract] 'isearch-printing-char)
-      (define-key map [kp-multiply] 'isearch-printing-char)
-      (define-key map [kp-divide] 'isearch-printing-char)
-      (define-key map [kp-decimal] 'isearch-printing-char)
-      (define-key map [kp-separator] 'isearch-printing-char)
-      (define-key map [kp-equal] 'isearch-printing-char)
-      (define-key map [kp-tab] 'isearch-printing-char)
-      (define-key map [kp-space] 'isearch-printing-char)
-      (define-key map [kp-enter] 'isearch-exit)
-      (define-key map [delete] 'isearch-delete-char)
-      (define-key map [backspace] 'isearch-delete-char)
-      (define-key map [return] 'isearch-exit)
-      (define-key map [newline] 'isearch-printing-char)
+      (define-key map [tab] 'nil)
+      (define-key map [kp-0] 'nil)
+      (define-key map [kp-1] 'nil)
+      (define-key map [kp-2] 'nil)
+      (define-key map [kp-3] 'nil)
+      (define-key map [kp-4] 'nil)
+      (define-key map [kp-5] 'nil)
+      (define-key map [kp-6] 'nil)
+      (define-key map [kp-7] 'nil)
+      (define-key map [kp-8] 'nil)
+      (define-key map [kp-9] 'nil)
+      (define-key map [kp-add] 'nil)
+      (define-key map [kp-subtract] 'nil)
+      (define-key map [kp-multiply] 'nil)
+      (define-key map [kp-divide] 'nil)
+      (define-key map [kp-decimal] 'nil)
+      (define-key map [kp-separator] 'nil)
+      (define-key map [kp-equal] 'nil)
+      (define-key map [kp-tab] 'nil)
+      (define-key map [kp-space] 'nil)
+      (define-key map [kp-enter] 'nil)
+      (define-key map [delete] 'nil)
+      (define-key map [backspace] 'nil)
+      (define-key map [return] 'nil)
+      (define-key map [newline] 'nil)
 
       ;; Define keys for regexp chars * ? |.
       ;; Nothing special for + because it matches at least once.
@@ -533,7 +531,7 @@ is treated as a regexp.  See \\[isearch-forward] for more info."
   (if recursive-edit
       (let ((isearch-recursive-edit t))
 	(recursive-edit)))
-  )
+  isearch-success)
 
 
 ;;;====================================================
@@ -580,7 +578,7 @@ is treated as a regexp.  See \\[isearch-forward] for more info."
   )
 
 
-(defun isearch-done (&optional nopush)
+(defun isearch-done (&optional nopush edit)
   ;; Called by all commands that terminate isearch-mode.
   ;; If NOPUSH is non-nil, we don't push the string on the search ring.
   (setq overriding-local-map nil)
@@ -628,7 +626,7 @@ is treated as a regexp.  See \\[isearch-forward] for more info."
 		  (setcdr (nthcdr (1- search-ring-max) search-ring) nil))))))
 
   (run-hooks 'isearch-mode-end-hook)
-  (if isearch-recursive-edit (exit-recursive-edit)))
+  (and (not edit) isearch-recursive-edit (exit-recursive-edit)))
 
 ;;;=======================================================
 ;;; Switching buffers should first terminate isearch-mode.
@@ -716,7 +714,7 @@ If first char entered is \\[isearch-yank-word], then do word search instead."
 	;; This is so that the user can do anything without failure, 
 	;; like switch buffers and start another isearch, and return.
 	(condition-case err
-	    (isearch-done t)
+	    (isearch-done t t)
 	  (exit nil))			; was recursive editing
 
 	(isearch-message) ;; for read-char
@@ -747,13 +745,14 @@ If first char entered is \\[isearch-yank-word], then do word search instead."
 					    isearch-string
 					    minibuffer-local-isearch-map nil
 					    'junk-ring))
-		    isearch-new-message (mapconcat 'text-char-description
-						   isearch-new-string "")))
+		    isearch-new-message
+		    (mapconcat 'isearch-text-char-description
+			       isearch-new-string "")))
 	  ;; Always resume isearching by restarting it.
 	  (isearch-mode isearch-forward 
 			isearch-regexp 
 			isearch-op-fun 
-			isearch-recursive-edit
+			nil
 			isearch-word)
 
 	  ;; Copy new local values to isearch globals

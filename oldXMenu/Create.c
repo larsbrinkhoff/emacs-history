@@ -95,6 +95,22 @@ int atoi();
 double atof();
 char *x_get_resource_string ();
 
+
+
+static Status 
+XAllocDisplayColor(display, map, colorName, color, junk)
+    Display *display;
+    Colormap map;
+    char *colorName;
+    XColor *color;
+    XColor *junk;
+{
+  return (colorName!=0 &&
+	  XParseColor(display, map, colorName, color) &&
+	  XAllocColor(display, map, color));
+}
+
+
 XMenu *
 XMenuCreate(display, parent, def_env)
     Display *display;           /* ID of previously opened display */
@@ -254,22 +270,22 @@ XMenuCreate(display, parent, def_env)
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
-      XAllocNamedColor(display, 
-		       DefaultColormap(display, DefaultScreen(display)), 
-		       def_val, 
-		       &mouse_color, &color_def)
+      XAllocDisplayColor(display, 
+			 DefaultColormap(display, DefaultScreen(display)), 
+			 def_val, 
+			 &mouse_color, &color_def)
       );
   else if (reverse &&
-	   XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "white",
-			    &mouse_color, &color_def)
+	   XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "white",
+			      &mouse_color, &color_def)
 	   );
     
-  else if (XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "black", 
-			    &mouse_color, &color_def)
+  else if (XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "black", 
+			      &mouse_color, &color_def)
 	   );
     
   else ;
@@ -278,21 +294,21 @@ XMenuCreate(display, parent, def_env)
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
-      XAllocNamedColor(display,
-		       DefaultColormap(display, DefaultScreen(display)),
-		       def_val,
-		       &bkgnd_color, &color_def)
+      XAllocDisplayColor(display,
+			 DefaultColormap(display, DefaultScreen(display)),
+			 def_val,
+			 &bkgnd_color, &color_def)
       );
   else if (reverse &&
-	   XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "black",
-			    &bkgnd_color, &color_def)
+	   XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "black",
+			      &bkgnd_color, &color_def)
 	   );
-  else if (XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "white",
-			    &bkgnd_color, &color_def)
+  else if (XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "white",
+			      &bkgnd_color, &color_def)
 	   );
   else;
 
@@ -320,40 +336,40 @@ XMenuCreate(display, parent, def_env)
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 
       )
-    XAllocNamedColor(display, DefaultColormap(display,
-					      DefaultScreen(display)),
-		     def_val,
-		     &p_frg_color, &color_def);
+    XAllocDisplayColor(display, DefaultColormap(display,
+						DefaultScreen(display)),
+		       def_val,
+		       &p_frg_color, &color_def);
 	  
-  else if (reverse) XAllocNamedColor(display,
-				     DefaultColormap(display, 
-						     DefaultScreen(display)),
-				     "white",
-				     &p_frg_color, &color_def);
-  else XAllocNamedColor(display,
-			DefaultColormap(display, DefaultScreen(display)),
-			"black",
-			&p_frg_color, &color_def);
+  else if (reverse) XAllocDisplayColor(display,
+				       DefaultColormap(display, 
+						       DefaultScreen(display)),
+				       "white",
+				       &p_frg_color, &color_def);
+  else XAllocDisplayColor(display,
+			  DefaultColormap(display, DefaultScreen(display)),
+			  "black",
+			  &p_frg_color, &color_def);
 
   def_val = x_get_resource_string ("paneBorder", "PaneBorder");
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
-      XAllocNamedColor(display,
-		       DefaultColormap(display, DefaultScreen(display)),
-		       def_val,
-		       &p_bdr_color, &color_def)
+      XAllocDisplayColor(display,
+			 DefaultColormap(display, DefaultScreen(display)),
+			 def_val,
+			 &p_bdr_color, &color_def)
       );
   else if (reverse &&
-	   XAllocNamedColor(display, 
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "white",
-			    &p_bdr_color, &color_def)
+	   XAllocDisplayColor(display, 
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "white",
+			      &p_bdr_color, &color_def)
 	   );
-  else XAllocNamedColor(display, 
-			DefaultColormap(display, DefaultScreen(display)),
-			"black",
-			&p_bdr_color, &color_def);
+  else XAllocDisplayColor(display, 
+			  DefaultColormap(display, DefaultScreen(display)),
+			  "black",
+			  &p_bdr_color, &color_def);
     
   def_val = x_get_resource_string ("paneBorderWidth", "PaneBorderWidth");
   if (def_val != NULL) p_bdr_width = atoi(def_val);
@@ -375,21 +391,21 @@ XMenuCreate(display, parent, def_env)
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
-      XAllocNamedColor(display,
-		       DefaultColormap(display, DefaultScreen(display)),
-		       def_val,
-		       &s_frg_color, &color_def)
+      XAllocDisplayColor(display,
+			 DefaultColormap(display, DefaultScreen(display)),
+			 def_val,
+			 &s_frg_color, &color_def)
       ); 
   else if (reverse &&
-	   XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "white",
-			    &s_frg_color, &color_def)
+	   XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "white",
+			      &s_frg_color, &color_def)
 	   ) ;
-  else if (XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "black",
-			    &s_frg_color, &color_def)
+  else if (XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "black",
+			      &s_frg_color, &color_def)
 	   ) ;
   else ;
     
@@ -398,21 +414,21 @@ XMenuCreate(display, parent, def_env)
   if (
       def_val != NULL &&
       DisplayCells(display, DefaultScreen(display)) > 2 &&
-      XAllocNamedColor(display,
-		       DefaultColormap(display, DefaultScreen(display)),
-		       def_val,
-		       &s_bdr_color, &color_def)
+      XAllocDisplayColor(display,
+			 DefaultColormap(display, DefaultScreen(display)),
+			 def_val,
+			 &s_bdr_color, &color_def)
       ) ;
   else if (reverse &&
-	   XAllocNamedColor(display, 
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "white",
-			    &s_bdr_color, &color_def)
+	   XAllocDisplayColor(display, 
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "white",
+			      &s_bdr_color, &color_def)
 	   ) ;
-  else if (XAllocNamedColor(display,
-			    DefaultColormap(display, DefaultScreen(display)),
-			    "black",
-			    &s_bdr_color, &color_def)
+  else if (XAllocDisplayColor(display,
+			      DefaultColormap(display, DefaultScreen(display)),
+			      "black",
+			      &s_bdr_color, &color_def)
 	   ) ;
   else ;
 

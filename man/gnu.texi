@@ -1,8 +1,7 @@
 @c This is part of the Emacs manual.
 @c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
-@c See file emacs.texi for copying conditions.
 @ifclear justgnu
-@node Manifesto,, Antinews, Top
+@node Manifesto,, MS-DOS, Top
 @unnumbered The GNU Manifesto
 @end ifclear
 @ifset justgnu

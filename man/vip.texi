@@ -1592,7 +1592,7 @@ Insert a newline, then indent according to mode (@code{newline-and-indent}).
 @item C-k
 @kindex 013 @kbd{C-k} (@code{kill-line})
 Kill the rest of the current line; before a newline, kill the newline.
-With prefix argument, kill that many lines from point.  Negative arguments
+With a numeric argument, kill that many lines from point.  Negative arguments
 kill lines backward (@code{kill-line}).
 @item C-l
 @kindex 014 @kbd{C-l} (@code{recenter})
@@ -1828,11 +1828,11 @@ missing, the last substitution is repeated.
 Suspend Emacs.
 @item ta[g] @var{tag}
 @cindex tag
-@cindex selected tag table
+@cindex selected tags table
 Find first definition of @var{tag}.  If no @var{tag} is given, previously
 given @var{tag} is used and next alternate definition is find.  By default,
-the file @file{TAGS} in the current directory becomes the @dfn{selected tag
-table}.  You can select another tag table by @kbd{set} command.
+the file @file{TAGS} in the current directory becomes the @dfn{selected tags
+table}.  You can select another tags table by @kbd{set} command.
 @xref{Customizing Constants}, for details.
 @item und[o]
 Undo the last change.
@@ -1915,7 +1915,7 @@ If @code{t} then do reg-exp replace in query replace.
 If @code{t} then indent to the previous current line when open a new line
 by @kbd{o} or @kbd{O} command.
 @item vip-tags-file-name "TAGS"
-The name of the file used as the tag table.
+The name of the file used as the tags table.
 @item vip-help-in-insert-mode nil
 If @code{t} then @key{C-h} is bound to @code{help-command} in insert mode,
 if @code{nil} then it sis bound to @code{delete-backward-char}.

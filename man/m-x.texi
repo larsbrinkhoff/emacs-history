@@ -29,15 +29,18 @@ command @code{forward-char} can be invoked by name by typing
 
 @example
 M-x forward-char @key{RET}
+@end example
 
-@exdent or
+@noindent
+or
 
-M-x fo @key{TAB} c @key{RET}
+@example
+M-x forw @key{TAB} c @key{RET}
 @end example
 
 @noindent
 Note that @code{forward-char} is the same command that you invoke with
-the key @kbd{C-f}.  You can run any Emacs command by its name using
+the key @kbd{C-f}.  You can run any Emacs command by name using
 @kbd{M-x}, whether or not any keys are bound to it.
 
   If you type @kbd{C-g} while the command name is being read, you cancel
@@ -56,6 +59,6 @@ emphasize its presence, such as when we show the command together with
 following arguments.
 
 @findex execute-extended-command
-  @kbd{M-x} is defined to run the command @code{execute-extended-command},
-which is responsible for reading the name of another command and invoking
-it.
+  @kbd{M-x} works by running the command
+@code{execute-extended-command}, which is responsible for reading the
+name of another command and invoking it.

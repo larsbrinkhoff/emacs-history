@@ -82,7 +82,7 @@ A value of nil means skip the middle step, so that
 (defmacro make-help-screen (fname help-line help-text helped-map)
   "Construct help-menu function name FNAME.
 When invoked, FNAME shows HELP-LINE and reads a command using HELPED-MAP.
-If the command is the help character is requested, FNAME displays HELP-TEXT
+If the command is the help character, FNAME displays HELP-TEXT
 and continues trying to read a command using HELPED-MAP.
 When FNAME finally does get a command, it executes that command
 and then returns."
@@ -94,35 +94,49 @@ and then returns."
 	     (if three-step-help
 		 (message line-prompt))
 	     (let* ((help-screen (documentation (quote (, fname))))
-		    (overriding-local-map (make-sparse-keymap))
+		    ;; We bind overriding-local-map for very small
+		    ;; sections, *excluding* where we switch buffers
+		    ;; and where we execute the chosen help command.
+		    (local-map (make-sparse-keymap))
 		    (minor-mode-map-alist nil)
-		    config key char)
+		    (prev-frame (selected-frame))
+		    config new-frame key char)
 	       (unwind-protect
 		   (progn
-		     (setcdr overriding-local-map (, helped-map))
-		     (define-key overriding-local-map [t] 'undefined)
+		     (setcdr local-map (, helped-map))
+		     (define-key local-map [t] 'undefined)
 		     (if three-step-help
-			 (setq key (read-key-sequence nil)
+			 (setq key (let ((overriding-local-map local-map))
+				     (read-key-sequence nil))
 			       char (aref key 0))
 		       (setq char ??))
 		     (if (or (eq char ??) (eq char help-char))
 			 (progn
 			   (setq config (current-window-configuration))
 			   (switch-to-buffer-other-window "*Help*")
+			   (and (fboundp 'make-frame)
+				(not (eq (window-frame (selected-window))
+					 prev-frame))
+				(setq new-frame (window-frame (selected-window))
+				      config nil))
 			   (erase-buffer)
 			   (insert help-screen)
 			   (goto-char (point-min))
 			   (while (or (memq char (cons help-char '(?? ?\C-v ?\ ?\177 delete ?\M-v)))
+				      (eq (car-safe char) 'switch-frame)
 				      (equal key "\M-v"))
 			     (condition-case nil
 				 (progn
+				   (if (eq (car-safe char) 'switch-frame)
+				       (handle-switch-frame char))
 				   (if (memq char '(?\C-v ?\ ))
 				       (scroll-up))
 				   (if (or (memq char '(?\177 ?\M-v delete))
 					   (equal key "\M-v"))
 				       (scroll-down)))
 			       (error nil))
-			     (let ((cursor-in-echo-area t))
+			     (let ((cursor-in-echo-area t)
+				   (overriding-local-map local-map))
 			       (setq key (read-key-sequence
 					  (format "Type one of the options listed%s: "
 						  (if (pos-visible-in-window-p
@@ -135,16 +149,21 @@ and then returns."
 			 (setq unread-command-events
 			       (cons char unread-command-events)
 			       config nil)
-		       (let ((defn (key-binding key)))
+		       (let ((defn
+			       (let ((overriding-local-map local-map))
+				 (key-binding key))))
 			 (if defn
 			     (progn
 			       (if config
 				   (progn
 				     (set-window-configuration config)
 				     (setq config nil)))
-			       (setq overriding-local-map nil)
+			       (if new-frame
+				   (progn (iconify-frame new-frame)
+					  (setq new-frame nil)))
 			       (call-interactively defn))
 			   (ding)))))
+		 (if new-frame (iconify-frame new-frame))
 		 (if config
 		     (set-window-configuration config))))))
      ))

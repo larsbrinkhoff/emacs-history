@@ -1,13 +1,13 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Major Modes, Indentation, Frames, Top
 @chapter Major Modes
 @cindex major modes
 @cindex mode, major
-@kindex TAB
-@kindex DEL
-@kindex LFD
+@kindex TAB @r{(and major modes)}
+@kindex DEL @r{(and major modes)}
+@kindex LFD @r{(and major modes)}
 
   Emacs provides many alternative @dfn{major modes}, each of which
 customizes Emacs for editing text of a particular sort.  The major modes
@@ -15,19 +15,21 @@ are mutually exclusive, and each buffer has one major mode at any time.
 The mode line normally shows the name of the current major mode, in
 parentheses (@pxref{Mode Line}).
 
-  The least specialized major mode is called @dfn{Fundamental mode}.  This
-mode has no mode-specific redefinitions or variable settings, so that each
-Emacs command behaves in its most general manner, and each option is in its
-default state.  For editing any specific type of text, such as Lisp code or
-English text, you should switch to the appropriate major mode, such as Lisp
-mode or Text mode.
+  The least specialized major mode is called @dfn{Fundamental mode}.
+This mode has no mode-specific redefinitions or variable settings, so
+that each Emacs command behaves in its most general manner, and each
+option is in its default state.  For editing text of a specific type
+that Emacs knows about, such as Lisp code or English text, you should
+switch to the appropriate major mode, such as Lisp mode or Text mode.
 
-  Selecting a major mode changes the meanings of a few keys to become more
-specifically adapted to the language being edited.  The ones which are
-changed frequently are @key{TAB}, @key{DEL}, and @key{LFD}.  In addition,
-the commands which handle comments use the mode to determine how comments
-are to be delimited.  Many major modes redefine the syntactical properties
-of characters appearing in the buffer.  @xref{Syntax}.
+  Selecting a major mode changes the meanings of a few keys to become
+more specifically adapted to the language being edited.  The ones which
+are changed frequently are @key{TAB}, @key{DEL}, and @key{LFD}.  The
+prefix key @kbd{C-c} normally contains mode-specific commands.  In
+addition, the commands which handle comments use the mode to determine
+how comments are to be delimited.  Many major modes redefine the
+syntactical properties of characters appearing in the buffer.
+@xref{Syntax}.
 
   The major modes fall into three major groups.  Lisp mode (which has
 several variants), C mode, Fortran mode and others are for specific
@@ -41,10 +43,11 @@ communicating with an inferior shell process (@pxref{Interactive
 Shell}).
 
   Most programming language major modes specify that only blank lines
-separate paragraphs.  This is so that the paragraph commands remain useful.
-(@xref{Paragraphs}.)  They also cause Auto Fill mode to use the definition of
-@key{TAB} to indent the new lines it creates.  This is because most lines
-in a program are usually indented.  (@xref{Indentation}.)
+separate paragraphs.  This is to make the paragraph commands useful.
+(@xref{Paragraphs}.)  They also cause Auto Fill mode to use the
+definition of @key{TAB} to indent the new lines it creates.  This is
+because most lines in a program are usually indented.
+(@xref{Indentation}.)
 
 @menu
 * Choosing Modes::     How major modes are specified or chosen.
@@ -76,7 +79,7 @@ which each element has the form
 
 @noindent
 For example, one element normally found in the list has the form
-@code{(@t{"\\.c$"} . c-mode)}, and it is responsible for selecting C mode
+@code{(@t{"\\.c\\'"} . c-mode)}, and it is responsible for selecting C mode
 for files whose names end in @file{.c}.  (Note that @samp{\\} is needed in
 Lisp syntax to include a @samp{\} in the string, which is needed to
 suppress the special meaning of @samp{.} in regexps.)  The only practical

@@ -41,9 +41,12 @@
 
 (defvar calendar-mouse-3-map (make-sparse-keymap "Calendar"))
 (define-key calendar-mode-map [down-mouse-3] calendar-mouse-3-map)
-  
+
 (define-key calendar-mode-map [menu-bar moon]
-  '("Moon" . calendar-phases-of-moon))
+  (cons "Moon" (make-sparse-keymap "Moon")))
+
+(define-key calendar-mode-map [menu-bar moon moon]
+  '("Lunar phases" . calendar-phases-of-moon))
 
 (define-key calendar-mode-map [menu-bar diary]
   (cons "Diary" (make-sparse-keymap "Diary")))
@@ -117,7 +120,7 @@
 (define-key calendar-mode-map [menu-bar goto beginning-of-week]
   '("Beginning of week" . calendar-beginning-of-week))
 (define-key calendar-mode-map [menu-bar goto today]
-  '("Today" . calendar-current-month))
+  '("Today" . calendar-goto-today))
 
 
 (define-key calendar-mode-map [menu-bar goto mayan prev-rnd]

@@ -185,6 +185,7 @@ directory name and the cdr is the actual files to list.")
 	       "-[-r][-w].[-r][-w][xs][-r][-w]."
 	       "-[-r][-w].[-r][-w].[-r][-w][xst]")
 	     "\\|"))
+(defvar dired-re-perms "-[-r][-w].[-r][-w].[-r][-w].")
 (defvar dired-re-dot "^.* \\.\\.?$")
 
 (defvar dired-subdir-alist nil
@@ -364,7 +365,8 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
     (if (consp dir-or-list)
 	(setq dirname (car dir-or-list))
       (setq dirname dir-or-list))
-    (setq dirname (expand-file-name (directory-file-name dirname)))
+    (setq dirname (abbreviate-file-name
+		   (expand-file-name (directory-file-name dirname))))
     (if (file-directory-p dirname)
 	(setq dirname (file-name-as-directory dirname)))
     (if (consp dir-or-list)
@@ -397,13 +399,21 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
     (set-buffer buffer)
     (if (not new-buffer-p)		; existing buffer ...
 	(if switches			; ... but new switches
-	    (dired-sort-other switches))	; this calls dired-revert
+	    (dired-sort-other switches)	; this calls dired-revert
+	  ;; If directory has changed on disk, offer to revert.
+	  (if (let ((attributes (file-attributes dirname))
+		    (modtime (visited-file-modtime)))
+		(or (eq modtime 0)
+		    (not (eq (car attributes) t))
+		    (and (= (car (nth 5 attributes)) (car modtime))
+			 (= (nth 1 (nth 5 attributes)) (cdr modtime)))))
+	      nil
+	    (message "Directory has changed on disk; type `g' to update Dired")))
       ;; Else a new buffer
       (setq default-directory
-	    (abbreviate-file-name
-	     (if (file-directory-p dirname)
-		 dirname
-	       (file-name-directory dirname))))
+	    (if (file-directory-p dirname)
+		dirname
+	      (file-name-directory dirname)))
       (or switches (setq switches dired-listing-switches))
       (dired-mode dirname switches)
       ;; default-directory and dired-actual-switches are set now
@@ -481,6 +491,9 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
       ;; dired-build-subdir-alist will call dired-clear-alist first
       (set (make-local-variable 'dired-subdir-alist) nil)
       (dired-build-subdir-alist)
+      (let ((attributes (file-attributes dirname)))
+	(if (eq (car attributes) t)
+	    (set-visited-file-modtime (nth 5 attributes))))
       (set-buffer-modified-p nil))))
 
 ;; Subroutines of dired-readin
@@ -513,13 +526,16 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   ;; Do the right thing whether dir-or-list is atomic or not.  If it is,
   ;; inset all files listed in the cdr (the car is the passed-in directory
   ;; list).
+  ;; We expand the file names here because the may have been abbreviated
+  ;; in dired-noselect.
   (let ((opoint (point)))
     (if (consp dir-or-list)
 	(progn
 	  (mapcar
-	   (function (lambda (x) (insert-directory x switches wildcard full-p)))
+	   (function (lambda (x) (insert-directory (expand-file-name x)
+						   switches wildcard full-p)))
 	   (cdr dir-or-list)))
-      (insert-directory dir-or-list switches wildcard full-p))
+      (insert-directory (expand-file-name dir-or-list) switches wildcard full-p))
     (dired-insert-set-properties opoint (point)))
   (setq dired-directory dir-or-list))
 
@@ -960,7 +976,7 @@ Keybindings:
        (or dirname default-directory))
   ;; list-buffers uses this to display the dir being edited in this buffer.
   (set (make-local-variable 'list-buffers-directory)
-       dired-directory)
+       (expand-file-name dired-directory))
   (set (make-local-variable 'dired-actual-switches)
        (or switches dired-listing-switches))
   (dired-sort-other dired-actual-switches t)
@@ -1360,7 +1376,14 @@ Returns the new value of the alist."
 	  new-dir-name)
       (goto-char (point-min))
       (setq dired-subdir-alist nil)
-      (while (re-search-forward dired-subdir-regexp nil t)
+      (while (and (re-search-forward dired-subdir-regexp nil t)
+		  ;; Avoid taking a file name ending in a colon
+		  ;; as a subdir name.
+		  (not (save-excursion
+			 (goto-char (match-beginning 0))
+			 (beginning-of-line)
+			 (forward-char 2)
+			 (save-match-data (looking-at dired-re-perms)))))
 	(save-excursion
 	  (goto-char (match-beginning 1))
 	  (setq new-dir-name
@@ -1732,7 +1755,8 @@ Optional argument means return a file name relative to `default-directory'."
   ;; Should be equivalent to (save-excursion (not (dired-move-to-filename)))
   ;; but is about 1.5..2.0 times as fast. (Actually that's not worth it)
   (or (looking-at "^$\\|^. *$\\|^. total\\|^. wildcard")
-      (looking-at dired-subdir-regexp)))
+      (and (looking-at dired-subdir-regexp)
+	   (save-excursion (not (dired-move-to-filename))))))
 
 (defun dired-next-marked-file (arg &optional wrap opoint)
   "Move to the next marked file, wrapping around the end of the buffer."

@@ -608,9 +608,11 @@ This does not change the name of the visited file (if any).")
 
   XSET (buf, Lisp_Buffer, current_buffer);
   Fsetcar (Frassq (buf, Vbuffer_alist), name);
-  if (NILP (current_buffer->filename) && !NILP (current_buffer->auto_save_file_name))
+  if (NILP (current_buffer->filename)
+      && !NILP (current_buffer->auto_save_file_name))
     call0 (intern ("rename-auto-save-file"));
-  return name;
+  /* refetch since that last call may have done GC */
+  return current_buffer->name;
 }
 
 DEFUN ("other-buffer", Fother_buffer, Sother_buffer, 0, 2, 0,
@@ -801,8 +803,9 @@ with `delete-process'.")
   Freplace_buffer_in_windows (buf);
   Vinhibit_quit = tem;
 
-  /* Delete any auto-save file.  */
-  if (XTYPE (b->auto_save_file_name) == Lisp_String)
+  /* Delete any auto-save file, if we saved it in this session.  */
+  if (XTYPE (b->auto_save_file_name) == Lisp_String
+      && b->auto_save_modified != 0)
     {
       Lisp_Object tem;
       tem = Fsymbol_value (intern ("delete-auto-save-files"));
@@ -1104,7 +1107,7 @@ list_buffers_1 (files)
   other_file_symbol = intern ("list-buffers-directory");
 
   XFASTINT (col1) = 19;
-  XFASTINT (col2) = 25;
+  XFASTINT (col2) = 26;
   XFASTINT (col3) = 40;
   XFASTINT (minspace) = 1;
 
@@ -1113,8 +1116,8 @@ list_buffers_1 (files)
   current_buffer->read_only = Qnil;
 
   write_string ("\
- MR Buffer         Size  Mode           File\n\
- -- ------         ----  ----           ----\n", -1);
+ MR Buffer         Size   Mode           File\n\
+ -- ------         ----   ----           ----\n", -1);
 
   for (tail = Vbuffer_alist; !NILP (tail); tail = Fcdr (tail))
     {
@@ -1844,7 +1847,27 @@ buffer.")
 
   /* If the overlay has changed buffers, do a thorough redisplay.  */
   if (!EQ (buffer, obuffer))
-    windows_or_buffers_changed = 1;
+    {
+      /* Redisplay where the overlay was.  */
+      if (!NILP (obuffer))
+	{
+	  Lisp_Object o_beg;
+	  Lisp_Object o_end;
+
+	  o_beg = OVERLAY_START (overlay);
+	  o_end = OVERLAY_END   (overlay);
+	  o_beg = OVERLAY_POSITION (o_beg);
+	  o_end = OVERLAY_POSITION (o_end);
+
+	  redisplay_region (ob, XINT (o_beg), XINT (o_end));
+	}
+
+      /* Redisplay where the overlay is going to be.  */
+      redisplay_region (b, XINT (beg), XINT (end));
+
+      /* Don't limit redisplay to the selected window.  */
+      windows_or_buffers_changed = 1;
+    }
   else
     /* Redisplay the area the overlay has just left, or just enclosed.  */
     {
@@ -2094,25 +2117,33 @@ DEFUN ("overlay-put", Foverlay_put, Soverlay_put, 3, 3, 0,
   (overlay, prop, value)
      Lisp_Object overlay, prop, value;
 {
-  Lisp_Object plist, tail;
+  Lisp_Object plist, tail, buffer;
 
   CHECK_OVERLAY (overlay, 0);
 
-  tail = Fmarker_buffer (OVERLAY_START (overlay));
-  if (! NILP (tail))
-    redisplay_region (XMARKER (OVERLAY_START (overlay))->buffer,
-		      marker_position (OVERLAY_START (overlay)),
-		      marker_position (OVERLAY_END   (overlay)));
-  
+  buffer = Fmarker_buffer (OVERLAY_START (overlay));
+
   plist = Fcdr_safe (XCONS (overlay)->cdr);
 
   for (tail = plist;
        CONSP (tail) && CONSP (XCONS (tail)->cdr);
        tail = XCONS (XCONS (tail)->cdr)->cdr)
-    {
-      if (EQ (XCONS (tail)->car, prop))
+    if (EQ (XCONS (tail)->car, prop))
+      {
+	/* If actually changing the property, mark redisplay needed.  */
+	if (! NILP (buffer) && !EQ (XCONS (XCONS (tail)->cdr)->car, value))
+	  redisplay_region (XBUFFER (buffer),
+			    marker_position (OVERLAY_START (overlay)),
+			    marker_position (OVERLAY_END   (overlay)));
+
 	return XCONS (XCONS (tail)->cdr)->car = value;
-    }
+      }
+
+  /* Actually changing the property; mark redisplay needed.  */
+  if (! NILP (buffer))
+    redisplay_region (XBUFFER (buffer),
+		      marker_position (OVERLAY_START (overlay)),
+		      marker_position (OVERLAY_END   (overlay)));
 
   if (! CONSP (XCONS (overlay)->cdr))
     XCONS (overlay)->cdr = Fcons (Qnil, Qnil);
@@ -2545,7 +2576,9 @@ A string is printed verbatim in the mode line except for %-constructs:\n\
   (%-constructs are allowed when the string is the entire mode-line-format\n\
    or when it is found in a cons-cell or a list)\n\
   %b -- print buffer name.      %f -- print visited file name.\n\
-  %* -- print *, % or hyphen.   %m -- print value of mode-name (obsolete).\n\
+  %* -- print %, * or hyphen.   %+ -- print *, % or hyphen.\n\
+	% means buffer is read-only and * means it is modified.\n\
+	For a modified read-only buffer, %* gives % and %+ gives *.\n\
   %s -- print process status.   %l -- print the current line number.\n\
   %p -- print percent of buffer above top of window, or Top, Bot or All.\n\
   %P -- print percent of buffer above bottom of window, perhaps plus Top,\n\

@@ -8,7 +8,7 @@
 ;; LCD Archive Entry:
 ;; edebug|Daniel LaLiberte|liberte@cs.uiuc.edu
 ;; |A source level debugger for Emacs Lisp.
-;; |$Date: 1994/05/27 00:38:54 $|$Revision: 3.5.1.7 $|~/modes/edebug.el|
+;; |$Date: 1994/08/23 21:52:41 $|$Revision: 3.5.1.10 $|~/modes/edebug.el|
 
 ;; This file is part of GNU Emacs.
 
@@ -83,7 +83,7 @@
 ;;; For the early revision history, see edebug-history.
 
 (defconst edebug-version
-  (let ((raw-version "$Revision: 3.5.1.7 $"))
+  (let ((raw-version "$Revision: 3.5.1.10 $"))
     (substring raw-version (string-match "[0-9.]*" raw-version)
 	       (match-end 0))))
      
@@ -604,7 +604,7 @@ point."
 (defun edebug-install-read-eval-functions ()
   (interactive)
   ;; Don't install if already installed.
-  (if (eq 'read 'edebug-read) nil
+  (if (eq (symbol-function 'read) 'edebug-read) nil
     (elisp-eval-region-install)
     (defalias 'read 'edebug-read)
     (defalias 'eval-defun 'edebug-eval-defun)))
@@ -1078,7 +1078,7 @@ point."
 	no-match
 	;; Do this once here instead of several times.
 	(max-lisp-eval-depth (+ 800 max-lisp-eval-depth))
-	(max-specpdl-size (+ 1200 max-specpdl-size)))
+	(max-specpdl-size (+ 2000 max-specpdl-size)))
     (setq no-match
 	  (catch 'no-match
 	    (setq result (edebug-read-and-maybe-wrap-form1))
@@ -4379,7 +4379,8 @@ Print result in minibuffer."
       (edebug-safe-prin1-to-string (car values)))))
 
   (easy-menu-define 'edebug edebug-mode-map "Edebug menus" edebug-mode-menus)
-  (x-popup-menu nil (lookup-key edebug-mode-map [menu-bar Edebug]))
+  (if window-system
+      (x-popup-menu nil (lookup-key edebug-mode-map [menu-bar Edebug])))
   )
 
 

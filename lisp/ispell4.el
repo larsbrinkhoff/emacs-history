@@ -214,7 +214,7 @@ that have not already been dumped will be lost."
       (read (current-buffer)))))
 
 (defun ispell-tex-buffer-p ()
-  (memq major-mode '(plain-TeX-mode LaTeX-mode)))
+  (memq major-mode '(plain-tex-mode latex-mode slitex-mode)))
 
 (defvar ispell-menu-map (make-sparse-keymap "Spell"))
 (defalias 'ispell-menu-map ispell-menu-map)
@@ -370,10 +370,12 @@ With a prefix argument, resume handling of the previous Ispell command."
   (if resume
       (ispell-next)
     (condition-case err
-	(catch 'ispell-quit
-	  (save-window-excursion
-	    (ispell-point (point) "at point."))
-	  (ispell-dump))
+	(unwind-protect
+	    (catch 'ispell-quit
+	      (save-window-excursion
+		(ispell-point (point) "at point."))
+	      (ispell-dump))
+	  (ispell-dehighlight))
       (ispell-startup-error
        (cond ((y-or-n-p "Problem starting ispell, use old-style spell instead? ")
 	      (load-library "spell")
@@ -896,7 +898,7 @@ See also `ispell-look-dictionary' and `ispell-gnu-look-still-broken-p'."
       (message "Making completion list...")
       (if (string-equal completion "") (delete-region bow (point)))
       (let ((list (all-completions prefix ispell-lookup-completions-alist)))
-        (with-output-to-temp-buffer " *Completions*"
+        (with-output-to-temp-buffer "*Completions*"
           (display-completion-list list)))
       (message "Making completion list...done")))))
 

@@ -2,8 +2,8 @@
 
 @ifinfo
 @c The edition number appears in several places in this file
-This corresponds to the ninth edition of the @cite{GNU Emacs Manual},
-for Emacs Version 19; but it has been updated for Emacs 19.25.
+This corresponds to the tenth edition of the @cite{GNU Emacs Manual},
+for Emacs version 19.26.
 @c Please REMEMBER to update edition number in *three* places in this file.
 
 Published by the Free Software Foundation
@@ -54,7 +54,7 @@ original English.
 @c copy of this manual that will be published.  the manual should go
 @c onto the distribution in the full, 8.5 x 11" size.  
 @c 
-@c @smallbook
+@smallbook
 @c
 @iftex
 @shorttitlepage GNU Emacs Manual
@@ -63,20 +63,18 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Ninth Edition, Updated for Emacs version 19.25
-@sp 1
-@center for Unix Users
+@center Tenth Edition, Updated for Emacs version 19.26
 @sp 5
 @center Richard Stallman
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @sp 2
-Ninth Edition @*
-Updated for Emacs Version 19.25, @*
-May 1994
+Tenth Edition @*
+Updated for Emacs Version 19.26, @*
+July 1994
 
-ISBN 1-882114-03-5
+ISBN 1-882114-04-3.
 @sp 1
 Published by the Free Software Foundation @*
 675 Massachusetts Avenue @*
@@ -112,9 +110,29 @@ Cover art by Etienne Suvasa.
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.25.
+corresponds to GNU Emacs version 19.26.
 
 @end ifinfo
+
+@ignore
+These subcategories have been deleted for simplicity
+and to avoid conflicts.
+Completion
+Backup Files
+Auto-Saving: Protection Against Disasters
+Snapshots
+Text Mode
+Outline Mode
+@TeX{} Mode
+Fortran Mode
+Fortran Indentation
+Shell Command History
+
+The ones for Dired and Rmail have had the items turned into :: items
+to avoid conflicts.
+Also Running Shell Commands from Emacs
+and Sending Mail and Registers and Minibuffer.
+@end ignore
 
 @menu
 * Distrib::	      How to get the latest Emacs distribution.
@@ -123,8 +141,9 @@ corresponds to GNU Emacs version 19.25.
 			it also explains that there is no warranty.
 * Intro::	      An introduction to Emacs concepts.
 * Glossary::	      The glossary.
-* Manifesto::	      What's GNU?  Gnu's Not Unix!
 * Antinews::	      Information about Emacs version 18.
+* MS-DOS::            Using Emacs on MS-DOS (otherwise known as "MS-DOG").
+* Manifesto::	      What's GNU?  Gnu's Not Unix!
 
 Indexes, nodes containing large menus
 * Key Index::	      An item for each standard Emacs key sequence.
@@ -147,7 +166,6 @@ Important General Concepts
 
 Fundamental Editing Commands
 * Basic::	      The most basic editing commands.
-* Undo::	      Undoing recently made changes in the text.
 * Minibuffer::	      Entering arguments that are prompted for.
 * M-x::		      Invoking commands by their names.
 * Help::	      Commands for asking Emacs about its commands.
@@ -184,22 +202,22 @@ Advanced Features
 * Dired::	      You can ``edit'' a directory to manage files in it.
 * Calendar/Diary::    The calendar and diary facilities.
 * GNUS::	      How to read netnews with Emacs.
-* Sorting::	      Sorting lines, paragraphs or pages within Emacs.
 * Shell::	      Executing shell commands from Emacs.
+* Emacs Server::      Using Emacs as an editing server for @code{mail}, etc.
+* Hardcopy::	      Printing buffers or regions.
+* Sorting::	      Sorting lines, paragraphs or pages within Emacs.
 * Narrowing::	      Restricting display and editing to a portion
 			of the buffer.
-* Hardcopy::	      Printing buffers or regions.
 * Two-Column::	      Splitting apart columns to edit them
 			 in side-by-side windows.
 * Editing Binary Files:: Using Hexl mode to edit binary files.
-* Emacs Server::      Using Emacs as an editing server for @code{mail}, etc.
 * Saving Emacs Sessions:: Saving Emacs state from one session to the next.
 * Recursive Edit::    A command can allow you to do editing
 			"within the command".  This is called a
 			`recursive editing level'.
+* Emulation::	      Emulating some other editors with Emacs.
 * Dissociated Press:: Dissociating text for fun.
 * Amusements::	      Various games and hacks.
-* Emulation::	      Emulating some other editors with Emacs.
 * Customization::     Modifying the behavior of Emacs.
 
 Recovery from Problems.
@@ -225,6 +243,7 @@ Basic Editing Commands
 * Moving Point::       How to move the cursor to the place where you want to
 			 change something.
 * Erasing::	       Deleting and killing text.
+* Undo::	       Undoing recently made changes in the text.
 * Files: Basic Files.  Visiting, creating, and saving files.
 * Help: Basic Help.    Asking what a character does.
 * Blank Lines::	       Commands to make or delete blank lines.
@@ -234,18 +253,11 @@ Basic Editing Commands
 
 The Minibuffer
 
-* File: Minibuffer File.  Entering file names with the minibuffer.
-* Edit: Minibuffer Edit.  How to edit in the minibuffer.
+* Minibuffer File::       Entering file names with the minibuffer.
+* Minibuffer Edit::       How to edit in the minibuffer.
 * Completion::		  An abbreviation facility for minibuffer input.
 * Minibuffer History::	  Reusing recent minibuffer arguments.
 * Repetition::		  Re-executing commands that used the minibuffer.
-
-Completion
-
-* Example: Completion Example.
-* Commands: Completion Commands.
-* Strict Completion::
-* Options: Completion Options.
 
 Help
 
@@ -282,20 +294,20 @@ Yanking
 
 Registers
 
-* Position: RegPos.	      Saving positions in registers.
-* Text: RegText.	      Saving text in registers.
-* Rectangle: RegRect.	      Saving rectangles in registers.
-* Configurations: RegConfig.  Saving window configurations in registers.
-* Files: RegFiles.	      File names in registers.
-* Bookmarks::                 Bookmarks are like registers, but persistent.
+* RegPos::      	   Saving positions in registers.
+* RegText::     	   Saving text in registers.
+* RegRect::     	   Saving rectangles in registers.
+* RegConfig::              Saving window configurations in registers.
+* RegFiles::    	   File names in registers.
+* Bookmarks::              Bookmarks are like registers, but persistent.
 
 Controlling the Display
 
 * Scrolling::		   Moving text up and down in a window.
 * Horizontal Scrolling::   Moving text left and right in a window.
 * Selective Display::	   Hiding lines with lots of indentation.
-* Optional Display::	   Optional display features.
-* European Display::	   Displaying (and inputing) European characters.
+* Optional Mode Line::	   Optional mode line features.
+* European Display::	   Displaying (and entering) European characters.
 * Display Vars::	   Information on variables for customizing display.
 
 Searching and Replacement
@@ -342,20 +354,6 @@ Saving Files
 * Interlocking::  How Emacs protects against simultaneous editing
 		    of one file by two users.
 
-Backup Files
-
-* Names: Backup Names.		How backup files are named;
-				  choosing single or numbered backup files.
-* Deletion: Backup Deletion.	Emacs deletes excess numbered backups.
-* Copying: Backup Copying.	Backups can be made by copying or renaming.
-
-Auto-Saving: Protection Against Disasters
-
-* Files: Auto Save Files.	The file where auto-saved changes are
-				  actually made until you save the file.
-* Control: Auto Save Control.	Controlling when and how often to auto-save.
-* Recover::			Recovering text from auto-save files.
-
 Version Control
 
 * Concepts of VC::		Basic version control information;
@@ -376,11 +374,6 @@ Version Control
 				  file versions that can be treated as a unit.
 * Version Headers::		Inserting version control headers into
 				  working files.
-
-Snapshots
-
-* Making Snapshots::		The snapshot facilities.
-* Snapshot Caveats::		Things to be careful of when using snapshots.
 
 Using Multiple Buffers
 
@@ -403,7 +396,7 @@ Frames and X Windows
 
 * Mouse Commands::     Moving, cutting, and pasting, with the mouse.
 * Secondary Selection::Cutting without altering point and mark.
-* Selecting Mouse::    Using the mouse to select an item from a list.
+* Mouse References::   Using the mouse to select an item from a list.
 * Mode Line Mouse::    Mouse clicks on the mode line.
 * Creating Frames::    Creating additional Emacs frames with various contents.
 * Special Buffer Frames::  You can make certain buffers have their own frames.
@@ -444,26 +437,6 @@ Filling Text
 * Fill Commands:: Commands to refill paragraphs and center lines.
 * Fill Prefix::	  Filling when every line is indented or in a comment, etc.
 
-Text Mode
-
-* Nroff Mode::	  The major mode for editing input to the formatter nroff.
-* TeX Mode::	  The major modes for editing input to the formatter TeX.
-* Outline Mode::  The major mode for editing outlines.
-
-Outline Mode
-
-* Format: Outline Format.	   What the text of an outline looks like.
-* Motion: Outline Motion.	   Special commands for moving through
-				     outlines. 
-* Visibility: Outline Visibility.  Commands to control what is visible.
-
-@TeX{} Mode
-
-* Editing: TeX Editing.	  Special commands for editing in TeX mode.
-* LaTeX: LaTeX Editing.	  Additional commands for LaTeX input files.
-* Printing: TeX Print.	  Commands for printing part of a file with TeX.
-* Getting: TeX Distrib.	  Getting the latest Unix TeX distribution.
-
 Editing Programs
 
 * Program Modes::     Major modes for editing programs.
@@ -492,14 +465,14 @@ Indentation for Programs
 * Lisp Indent::		Specifying how each Lisp function should be indented.
 * C Indent::		Choosing an indentation style for C code.
 
-Tag Tables
+Tags Tables
 
 * Tag Syntax::		Tag syntax for various types of code and text files.  
-* Create Tag Table::	Creating a tag table with @code{etags}.
-* Select Tag Table::	How to visit a tag table.
+* Create Tags Table::	Creating a tags table with @code{etags}.
+* Select Tags Table::	How to visit a tags table.
 * Find Tag::		Commands to find the definition of a specific tag. 
-* Tags Search::		Using a tag table for searching and replacing.
-* Tags Stepping::	Visiting files in a tag table, one by one.
+* Tags Search::		Using a tags table for searching and replacing.
+* Tags Stepping::	Visiting files in a tags table, one by one.
 * List Tags::		Listing and finding tags defined in a file.
 
 Merging Files with Emerge
@@ -514,23 +487,6 @@ Merging Files with Emerge
 * Exiting Emerge::	    What to do when you've finished the merge.
 * Combining in Emerge::	    How to keep both alternatives for a difference.
 * Fine Points of Emerge::   Misc.
-
-Fortran Mode
-
-* Motion: Fortran Motion.	 Moving point by statements or subprograms.
-* Indent: Fortran Indent.	 Indentation commands for Fortran.
-* Comments: Fortran Comments.	 Inserting and aligning comments.
-* Autofill: Fortran Autofill.	 Auto fill minor mode for Fortran.
-* Columns: Fortran Columns.	 Measuring columns for valid Fortran.
-* Abbrev: Fortran Abbrev.	 Built-in abbrevs for Fortran keywords.
-
-Fortran Indentation
-
-* Commands: ForIndent Commands.	 Commands for indenting Fortran.
-* Contline: ForIndent Cont.	 How continuation lines indent.
-* Numbers:  ForIndent Num.	 How line numbers auto-indent.
-* Conv:	    ForIndent Conv.	 Conventions you must obey to avoid trouble.
-* Vars:	    ForIndent Vars.	 Variables controlling Fortran indent style.
 
 Compiling and Testing Programs
 
@@ -551,21 +507,12 @@ Running Debuggers Under Emacs
 
 * Starting GUD::	How to start a debugger subprocess.
 * Debugger Operation::	Connection between the debugger and source buffers.
-* Commands of GUD::	Keybindings for common commands.
+* Commands of GUD::	Key bindings for common commands.
 * GUD Customization::	Defining your own commands for GUD.
-
-Editing Programs
-
-* Lists::	      Expressions with balanced parentheses.
-* List Commands::     The commands for working with list and sexps.
-* Defuns::	      Each program is made up of separate functions.
-			There are editing commands to operate on them.
-* Program Indent::    Adjusting indentation to show the nesting.
-* Matching::	      Insertion of a close-delimiter flashes matching open.
-* Comments::	      Inserting, killing, and aligning comments.
 
 Abbrevs
 
+* Abbrev Concepts::   Fundamentals of defined abbrevs.
 * Defining Abbrevs::  Defining an abbrev, so it will expand when typed.
 * Expanding Abbrevs:: Controlling expansion: prefixes, canceling expansion.
 * Editing Abbrevs::   Viewing or editing the entire list of defined abbrevs.
@@ -582,51 +529,49 @@ Editing Pictures
 
 Sending Mail
 
-* Format: Mail Format.	     Format of the mail being composed.
-* Headers: Mail Headers.     Details of permitted mail header fields.
-* Aliases: Mail Aliases.     Abbreviating and grouping mail addresses.
-* Mode: Mail Mode.	     Special commands for editing mail being composed.
-* Spook: Distracting NSA.    How to distract the NSA's attention.
+* Mail Format:: 	     Format of the mail being composed.
+* Mail Headers::             Details of permitted mail header fields.
+* Mail Aliases::             Abbreviating and grouping mail addresses.
+* Mail Mode::   	     Special commands for editing mail being composed.
+* Distracting NSA::          How to distract the NSA's attention.
 
 Reading Mail with Rmail
 
-* Scroll: Rmail Scrolling.   Scrolling through a message.
-* Motion: Rmail Motion.	     Moving to another message.
-* Deletion: Rmail Deletion.  Deleting and expunging messages.
-* Inbox: Rmail Inbox.	     How mail gets into the Rmail file.
-* Files: Rmail Files.	     Using multiple Rmail files.
-* Output: Rmail Output.	     Copying message out to files.
-* Labels: Rmail Labels.	     Classifying messages by labeling them.
-* Reply: Rmail Reply.	     Sending replies to messages you are viewing.
-* Summary: Rmail Summary.    Summaries show brief info on many messages.
-* Display: Rmail Display.    How Rmail displays a message; customization.
-* Editing: Rmail Editing.    Editing message text and headers in Rmail.
-* Digest: Rmail Digest.	     Extracting the messages from a digest message.
+* Rmail Basics.              Basic concepts of Rmail, and simple use.
+* Rmail Scrolling::          Scrolling through a message.
+* Rmail Motion::             Moving to another message.
+* Rmail Deletion::           Deleting and expunging messages.
+* Rmail Inbox::              How mail gets into the Rmail file.
+* Rmail Files::              Using multiple Rmail files.
+* Rmail Output::             Copying message out to files.
+* Rmail Labels::             Classifying messages by labeling them.
+* Rmail Reply::              Sending replies to messages you are viewing.
+* Rmail Summary::            Summaries show brief info on many messages.
+* Rmail Sorting::            Sorting messages in Rmail.
+* Rmail Display::            How Rmail displays a message; customization.
+* Rmail Editing::            Editing message text and headers in Rmail.
+* Rmail Digest::             Extracting the messages from a digest message.
 * Out of Rmail::	     Converting an Rmail file to mailbox format.
-* Rot13: Rmail Rot13.	     Reading messages encoded in the rot13 code.
-
-Summaries
-
-* Rmail Make Summary::	     Making various sorts of summaries.
-* Rmail Summary Edit::	     Manipulating messages from the summary.
+* Rmail Rot13::              Reading messages encoded in the rot13 code.
 
 Dired, the Directory Editor
 
-* Enter: Dired Enter.	      How to invoke Dired.
-* Commands: Dired Commands.   Commands in the Dired buffer.
-* Deletion: Dired Deletion.   Deleting files with Dired.
-* Visit: Dired Visiting.      Other file operations through Dired.
-* Marks vs Flags::	      Flagging for deletion vs marking.
-* Operating on Files::	      How to copy, rename, print, compress, etc.
-				either one file or several files.
-* Shell Commands in Dired::   Running a shell command on the marked files.
-* Transforming File Names::   Using patterns to rename multiple files.
-* Comparison in Dired::	      Running `diff' by way of Dired.
-* Subdirectories in Dired::   Adding subdirectories to the Dired buffer.
-* Subdirectory Motion::	      Moving across subdirectories, and up and down.
-* Hiding Subdirectories::     Making subdirectories visible or invisible.
-* Updating: Dired Updating.   Discarding lines for files of no interest.
-* Find: Dired and Find.	      Using `find' to choose the files for Dired.
+* Dired Enter:: 	     How to invoke Dired.
+* Dired Commands::           Commands in the Dired buffer.
+* Dired Deletion::           Deleting files with Dired.
+* Flagging Many Files::      Flagging files based on their names.
+* Dired Visiting::           Other file operations through Dired.
+* Marks vs Flags::	     Flagging for deletion vs marking.
+* Operating on Files::	     How to copy, rename, print, compress, etc.
+			       either one file or several files.
+* Shell Commands in Dired::  Running a shell command on the marked files.
+* Transforming File Names::  Using patterns to rename multiple files.
+* Comparison in Dired::	     Running `diff' by way of Dired.
+* Subdirectories in Dired::  Adding subdirectories to the Dired buffer.
+* Subdirectory Motion::	     Moving across subdirectories, and up and down.
+* Hiding Subdirectories::    Making subdirectories visible or invisible.
+* Dired Updating::           Discarding lines for files of no interest.
+* Dired and Find::	     Using `find' to choose the files for Dired.
 
 The Calendar and the Diary
 
@@ -676,15 +621,9 @@ Running Shell Commands from Emacs
 * Single Shell::	   How to run one shell command and return.
 * Interactive Shell::	   Permanent shell taking input via Emacs.
 * Shell Mode::		   Special Emacs commands used with permanent shell.
-* History: Shell History.  Repeating previous commands in a shell buffer.
-* Options: Shell Options.  Options for customizing Shell mode.
+* Shell History::          Repeating previous commands in a shell buffer.
+* Shell Options::          Options for customizing Shell mode.
 * Remote Host::		   Connecting to another computer.
-
-Shell Command History
-
-* Ring: Shell Ring.		Fetching commands from the history list.
-* Copy: Shell History Copying.	Moving to a command and then copying it.
-* History References::		Expanding @samp{!}-style history references.
 
 Customization
 
@@ -781,52 +720,54 @@ Command Line Options and Arguments
 Environment Variables
 
 * General Variables::	  Environment variables that all versions of Emacs use.
-* MSDOG Variables::	  Variables specific to the MsDos operating system. 
 * Misc Variables::	  Certain system specific variables.
 @end menu
 
 @iftex
 @unnumbered Preface
 
-  This manual documents the use and simple customization of the
-Emacs editor.  The reader is not expected to be a programmer.  Even simple
-customizations do not require programming skill, but the user who is not
+  This manual documents the use and simple customization of the Emacs
+editor.  The reader is not expected to be a programmer; simple
+customizations do not require programming skill.  But the user who is not
 interested in customizing can ignore the scattered customization hints.
 
   This is primarily a reference manual, but can also be used as a
-primer.  However, I recommend that the newcomer first use the on-line,
-learn-by-doing tutorial, which you get by running Emacs and typing
-@kbd{C-h t}.  With it, you learn Emacs by using Emacs on a specially
-designed file which describes commands, tells you when to try them,
-and then explains the results you see.  This gives a more vivid
-introduction than a printed manual.
+primer.  For complete beginners, it is a good idea to start with the
+on-line, learn-by-doing tutorial, before reading the manual.  To run the
+tutorial, start Emacs and type @kbd{C-h t}.  This way you can learn
+Emacs by using Emacs on a specially designed file which describes
+commands, tells you when to try them, and then explains the results you
+see.
 
   On first reading, just skim chapters one and two, which describe the
 notational conventions of the manual and the general appearance of the
-Emacs display screen.  Note which questions are answered in these chapters,
-so you can refer back later.  After reading chapter four you should
-practice the commands there.  The next few chapters describe fundamental
-techniques and concepts that are used constantly.  You need to understand
-them thoroughly, experimenting with them if necessary.
+Emacs display screen.  Note which questions are answered in these
+chapters, so you can refer back later.  After reading chapter four you
+should practice the commands there.  The next few chapters describe
+fundamental techniques and concepts that are used constantly.  You need
+to understand them thoroughly, experimenting with them if necessary.
 
+  Chapters 14 through 18 describe intermediate-level features that are
+useful for all kinds of editing.  Chapter 19 and following chapters
+describe features that you may or may not want to use; read those
+chapters when you need them
+
+  Read the Trouble chapter if Emacs does not seem to be working
+properly.  It explains how to cope with some common problems
+(@pxref{Lossage}), as well as when and how to report Emacs bugs
+(@pxref{Bugs}).
+ 
   To find the documentation on a particular command, look in the index.
 Keys (character commands) and command names have separate indexes.  There
 is also a glossary, with a cross reference for each term.
 
-@ignore
-  If you know vaguely what the command
-does, look in the command summary.  The command summary contains a line or
-two about each command, and a cross reference to the section of the
-manual that describes the command in more detail; related commands
-are grouped together.
-@end ignore
-
-  This manual comes in two forms: the published form and the Info form.
-The Info form is for on-line perusal with the Info program; this form of
-the manual and the Info program itself are distributed along with GNU
-Emacs.  Both forms contain substantially the same text and are generated
-from a common source file, which is also distributed along with GNU
-Emacs.
+  This manual is available as a printed book and also as an Info file.
+The Info file is for on-line perusal with the Info program, which will
+be the principle way of viewing documentation on-line in the GNU system.
+Both the Info file and the Info program itself are distributed along
+with GNU Emacs.  The Info file and the printed book contain
+substantially the same text and are generated from the same source
+files, which are also distributed along with GNU Emacs.
 
   GNU Emacs is a member of the Emacs editor family.  There are many Emacs
 editors, all sharing common principles of organization.  For information on
@@ -839,27 +780,29 @@ TM-165, ``A Cookbook for an Emacs'', by Craig Finseth, available from
 Publications Department, Laboratory for Computer Science, 545 Tech Square,
 Cambridge, MA 02139, USA@.  The price today is $3.
 
-This edition of the manual is intended for use with GNU Emacs installed on
-Unix systems.  GNU Emacs can also be used on VMS systems, which have
-different file name syntax and do not support all GNU Emacs features.  A
-VMS edition of this manual may appear in the future.
+This edition of the manual is intended for use with GNU Emacs installed
+on GNU and Unix systems.  GNU Emacs can also be used on VMS and MS-DOS
+(aka.@: MS-DOG) systems, but those systems have different file name syntax
+and do not support all GNU Emacs features.  We don't try to describe VMS
+usage in this manual.  @xref{MS-DOS}, for information about using Emacs
+on MS-DOS.
 @end iftex
 
 @node Distrib, Copying, Top, Top
 @unnumbered Distribution
 
-GNU Emacs is @dfn{free}; this means that everyone is free to use it and
-free to redistribute it on certain conditions.  GNU Emacs is not in the
-public domain; it is copyrighted and there are restrictions on its
-distribution, but these restrictions are designed to permit everything
-that a good cooperating citizen would want to do.  What is not allowed
-is to try to prevent others from further sharing any version of GNU
-Emacs that they might get from you.  The precise conditions are found in
-the GNU General Public License that comes with Emacs and also
+GNU Emacs is @dfn{free software}; this means that everyone is free to
+use it and free to redistribute it on certain conditions.  GNU Emacs is
+not in the public domain; it is copyrighted and there are restrictions
+on its distribution, but these restrictions are designed to permit
+everything that a good cooperating citizen would want to do.  What is
+not allowed is to try to prevent others from further sharing any version
+of GNU Emacs that they might get from you.  The precise conditions are
+found in the GNU General Public License that comes with Emacs and also
 appears following this section.
 
 The easiest way to get a copy of GNU Emacs is from someone else who has
-it.  You need not ask for permission to do so, or tell any one else;
+it.  You need not ask for our permission to do so, or tell any one else;
 just copy it.  If you have access to the Internet, you can get the
 latest distribution version of GNU Emacs from host
 @file{prep.ai.mit.edu} using anonymous login.  See the file
@@ -896,9 +839,10 @@ existing programs including GNU Emacs.
 If you find GNU Emacs useful, please @strong{send a donation} to the
 Free Software Foundation to support our work.  Donations to the Free
 Software Foundation are tax deductible.  If you use GNU Emacs at your
-workplace, suggest that the company make a donation.  If the management
-of your office opposes the idea of donations, you might instead suggest
-ordering a CD-ROM from the Foundation occasionally.
+workplace, suggest that the company make a donation.  If company policy
+is unsympathetic to the idea of donating to charity, you might instead
+suggest ordering a CD-ROM from the Foundation occasionally, or
+subscribing to periodic updates.
 
 @node Copying, Intro, Distrib, Top
 @unnumbered GNU GENERAL PUBLIC LICENSE
@@ -1313,10 +1257,11 @@ type.  This minimizes the amount of information you must keep in your
 head as you edit.  @xref{Basic,Real-time,Basic Editing}.
 
   We call Emacs advanced because it provides facilities that go beyond
-simple insertion and deletion: filling of text; automatic indentation of
-programs; viewing two or more files at once; and dealing in terms of
-characters, words, lines, sentences, paragraphs, and pages, as well as
-expressions and comments in several different programming languages.
+simple insertion and deletion: controlling subprocesses; automatic
+indentation of programs; viewing two or more files at once; and dealing
+in terms of characters, words, lines, sentences, paragraphs, and pages,
+as well as expressions and comments in several different programming
+languages.
 
   @dfn{Self-documenting} means that at any time you can type a special
 character, @kbd{Control-h}, to find out what your options are.  You can
@@ -1330,18 +1275,18 @@ the Emacs comment manipulation commands to use those strings
 (@pxref{Comments}).  Another sort of customization is rearrangement of the
 command set.  For example, if you prefer the four basic cursor motion
 commands (up, down, left and right) on keys in a diamond pattern on the
-keyboard, you can have it.  @xref{Customization}.
+keyboard, you can rebind the keys that way.  @xref{Customization}.
 
   @dfn{Extensible} means that you can go beyond simple customization and
 write entirely new commands, programs in the Lisp language to be run by
-Emacs's own Lisp interpreter.  Emacs is an ``on-line extensible'' system,
-which means that it is divided into many functions that call each other,
-any of which can be redefined in the middle of an editing session.  Any
-part of Emacs can be replaced without making a separate copy of all of
-Emacs.  Most of the editing commands of Emacs are written in Lisp already;
-the few exceptions could have been written in Lisp but are written in C for
-efficiency.  Although only a programmer can write an extension, anybody can
-use it afterward.
+Emacs's own Lisp interpreter.  Emacs is an ``on-line extensible''
+system, which means that it is divided into many functions that call
+each other, any of which can be redefined in the middle of an editing
+session.  Almost any part of Emacs can be replaced without making a
+separate copy of all of Emacs.  Most of the editing commands of Emacs
+are written in Lisp already; the few exceptions could have been written
+in Lisp but are written in C for efficiency.  Although only a programmer
+can write an extension, anybody can use it afterward.
 
    When run under the X Window System, Emacs provides its own menus and
 convenient bindings to mouse buttons.  But Emacs can provide many of the
@@ -1353,7 +1298,6 @@ edit files at the same time as you run shell commands.
 @include commands.texi
 @include entering.texi
 @include basic.texi
-@include undo.texi
 @include mini.texi
 @include m-x.texi
 @include help.texi
@@ -1384,6 +1328,7 @@ edit files at the same time as you run shell commands.
 @include cmdargs.texi
 
 @include anti.texi
+@include msdog.texi
 @include gnu.texi
 @include glossary.texi
 

@@ -59,6 +59,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef fwrite
 #endif
 
+#ifndef HAVE_H_ERRNO
+extern int h_errno;
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -275,6 +279,11 @@ init_baud_rate ()
       sg.c_cflag = B9600;
       tcgetattr (input_fd, &sg);
       ospeed = cfgetospeed (&sg);
+#if defined (USE_GETOBAUD) && defined (getobaud)
+      /* m88k-motorola-sysv3 needs this (ghazi@noc.rutgers.edu) 9/1/94. */
+      if (ospeed == 0)
+        ospeed = getobaud (sg.c_cflag);
+#endif
 #else /* neither VMS nor TERMIOS */
 #ifdef HAVE_TERMIO
       struct termio sg;
@@ -643,8 +652,11 @@ sys_subshell ()
   int st;
   char oldwd[MAXPATHLEN+1]; /* Fixed length is safe on MSDOS.  */
 #endif
-  int pid = fork ();
+  int pid;
   struct save_signal saved_handlers[5];
+  Lisp_Object dir;
+  unsigned char *str = 0;
+  int len;
 
   saved_handlers[0].code = SIGINT;
   saved_handlers[1].code = SIGQUIT;
@@ -655,6 +667,27 @@ sys_subshell ()
 #else
   saved_handlers[3].code = 0;
 #endif
+
+  /* Mentioning current_buffer->buffer would mean including buffer.h,
+     which somehow wedges the hp compiler.  So instead...  */
+
+  dir = intern ("default-directory");
+  /* Can't use NILP */
+  if (XFASTINT (Fboundp (dir)) == XFASTINT (Qnil))
+    goto xyzzy;
+  dir = Fsymbol_value (dir);
+  if (XTYPE (dir) != Lisp_String)
+    goto xyzzy;
+
+  dir = expand_and_dir_to_file (Funhandled_file_name_directory (dir), Qnil);
+  str = (unsigned char *) alloca (XSTRING (dir)->size + 2);
+  len = XSTRING (dir)->size;
+  bcopy (XSTRING (dir)->data, str, len);
+  if (str[len - 1] != '/') str[len++] = '/';
+  str[len] = 0;
+ xyzzy:
+
+  pid = vfork ();
 
   if (pid == -1)
     error ("Can't spawn subshell");
@@ -670,30 +703,9 @@ sys_subshell ()
 	sh = "sh";
 
       /* Use our buffer's default directory for the subshell.  */
-      {
-	Lisp_Object dir;
-	unsigned char *str;
-	int len;
-
-	/* mentioning current_buffer->buffer would mean including buffer.h,
-	   which somehow wedges the hp compiler.  So instead... */
-
-	dir = intern ("default-directory");
-	/* Can't use NILP */
-	if (XFASTINT (Fboundp (dir)) == XFASTINT (Qnil))
-	  goto xyzzy;
-	dir = Fsymbol_value (dir);
-	if (XTYPE (dir) != Lisp_String)
-	  goto xyzzy;
-
-	str = (unsigned char *) alloca (XSTRING (dir)->size + 2);
-	len = XSTRING (dir)->size;
-	bcopy (XSTRING (dir)->data, str, len);
-	if (str[len - 1] != '/') str[len++] = '/';
-	str[len] = 0;
+      if (str)
 	chdir (str);
-      }
-    xyzzy:
+
 #ifdef subprocesses
       close_process_descs ();	/* Close Emacs's pipes/ptys */
 #endif
@@ -1137,6 +1149,10 @@ init_sys_modes ()
       tty = old_tty;
 
 #if defined (HAVE_TERMIO) || defined (HAVE_TERMIOS)
+#ifdef DGUX
+      /* This allows meta to be sent on 8th bit.  */
+      tty.main.c_iflag &= ~INPCK;	/* don't check input for parity */
+#endif
       tty.main.c_iflag |= (IGNBRK);	/* Ignore break condition */
       tty.main.c_iflag &= ~ICRNL;	/* Disable map of CR to NL on input */
 #ifdef ISTRIP
@@ -1200,6 +1216,12 @@ init_sys_modes ()
 #ifdef VDISCARD
       tty.main.c_cc[VDISCARD] = CDISABLE;
 #endif /* VDISCARD */
+#ifdef VSTART
+      tty.main.c_cc[VSTART] = CDISABLE;
+#endif /* VSTART */
+#ifdef VSTOP
+      tty.main.c_cc[VSTOP] = CDISABLE;
+#endif /* VSTOP */
 #endif /* mips or HAVE_TCATTR */
 #ifdef AIX
 #ifndef IBMR2AIX
@@ -1318,7 +1340,8 @@ init_sys_modes ()
 #ifdef F_SETFL
 #ifndef F_SETOWN_BUG
 #ifdef F_GETOWN		/* F_SETFL does not imply existence of F_GETOWN */
-  if (interrupt_input)
+  if (interrupt_input
+      && ! read_socket_hook && EQ (Vwindow_system, Qnil))
     {
       old_fcntl_owner = fcntl (input_fd, F_GETOWN, 0);
       fcntl (input_fd, F_SETOWN, getpid ());
@@ -1344,7 +1367,9 @@ init_sys_modes ()
 #else
   setbuf (stdout, _sobuf);
 #endif
-  set_terminal_modes ();
+  if (! read_socket_hook && EQ (Vwindow_system, Qnil))
+    set_terminal_modes ();
+
   if (term_initted && no_redraw_on_reenter)
     {
       if (display_completed)
@@ -1955,17 +1980,14 @@ end_of_data ()
 
 #endif /* not CANNOT_DUMP */
 
-/* get_system_name returns as its value
- a string for the Lisp function system-name to return. */
+/* init_system_name sets up the string for the Lisp function
+   system-name to return. */
 
 #ifdef BSD4_1
 #include <whoami.h>
 #endif
 
-/* Can't have this within the function since `static' is #defined to 
-   nothing for some USG systems.  */
-static char *get_system_name_cache;
-static int get_system_name_predump_p;
+extern Lisp_Object Vsystem_name;
 
 #ifndef BSD4_1
 #ifndef VMS
@@ -1976,116 +1998,108 @@ static int get_system_name_predump_p;
 #endif /* not VMS */
 #endif /* not BSD4_1 */
 
-char *
-get_system_name ()
+void
+init_system_name ()
 {
 #ifdef BSD4_1
-  return sysname;
+  Vsystem_name = build_string (sysname);
 #else
-#ifndef CANNOT_DUMP
-  /* If the cached value is from before the dump, and we've dumped
-     since then, then the cached value is no good. */
-  if (get_system_name_predump_p && initialized && get_system_name_cache)
-    {
-      xfree (get_system_name_cache);
-      get_system_name_cache = 0;
-    }
-#endif
-  if (!get_system_name_cache)
-    {
-      /* No cached value, so get the name from the system.  */
 #ifdef VMS
-      char *sp;
-      if ((sp = egetenv ("SYS$NODE")) == 0)
-	sp = "vax-vms";
-      else
-	{
-	  char *end;
-
-	  if ((end = index (sp, ':')) != 0)
-	    *end = '\0';
-	}
-      get_system_name_cache = (char *) xmalloc (strlen (sp) + 1);
-      strcpy (get_system_name_cache, sp);
+  char *sp, *end;
+  if ((sp = egetenv ("SYS$NODE")) == 0)
+    Vsystem_name = build_string ("vax-vms");
+  else if ((end = index (sp, ':')) == 0)
+    Vsystem_name = build_string (sp);
+  else
+    Vsystem_name = make_string (sp, end - sp);
 #else
 #ifndef HAVE_GETHOSTNAME
-      struct utsname uts;
-      uname (&uts);
-      get_system_name_cache = (char *) xmalloc (strlen (uts.nodename) + 1);
-      strcpy (get_system_name_cache, uts.nodename);
+  struct utsname uts;
+  uname (&uts);
+  Vsystem_name = build_string (uts.nodename);
 #else /* HAVE_GETHOSTNAME */
-      {
-	int hostname_size = 256;
-	char *hostname = (char *) xmalloc (hostname_size);
+  int hostname_size = 256;
+  char *hostname = (char *) alloca (hostname_size);
 
-	/* Try to get the host name; if the buffer is too short, try
-	   again.  Apparently, the only indication gethostname gives of
-	   whether the buffer was large enough is the presence or absence
-	   of a '\0' in the string.  Eech.  */
-	for (;;)
-	  {
-	    gethostname (hostname, hostname_size - 1);
-	    hostname[hostname_size - 1] = '\0';
+  /* Try to get the host name; if the buffer is too short, try
+     again.  Apparently, the only indication gethostname gives of
+     whether the buffer was large enough is the presence or absence
+     of a '\0' in the string.  Eech.  */
+  for (;;)
+    {
+      gethostname (hostname, hostname_size - 1);
+      hostname[hostname_size - 1] = '\0';
 
-	    /* Was the buffer large enough for the '\0'?  */
-	    if (strlen (hostname) < hostname_size - 1)
-	      break;
+      /* Was the buffer large enough for the '\0'?  */
+      if (strlen (hostname) < hostname_size - 1)
+	break;
 
-	    hostname_size <<= 1;
-	    hostname = (char *) xrealloc (hostname, hostname_size);
-	  }
-	get_system_name_cache = hostname;
+      hostname_size <<= 1;
+      hostname = (char *) alloca (hostname_size);
+    }
 #ifdef HAVE_SOCKETS
-	/* Turn the hostname into the official, fully-qualified hostname.
-	   Don't do this if we're going to dump; this can confuse system
-	   libraries on some machines and make the dumped emacs core dump. */
+  /* Turn the hostname into the official, fully-qualified hostname.
+     Don't do this if we're going to dump; this can confuse system
+     libraries on some machines and make the dumped emacs core dump. */
 #ifndef CANNOT_DUMP
-	if (initialized)
+  if (initialized)
 #endif /* not CANNOT_DUMP */
-	  {
-	    struct hostent *hp = gethostbyname (hostname);
-	    if (hp)
-	      {
-		char *fqdn = hp->h_name;
-		char *p;
-
-		if (!index (fqdn, '.'))
-		  {
-		    /* We still don't have a fully qualified domain name.
-		       Try to find one in the list of alternate names */
-		    char **alias = hp->h_aliases;
-		    while (*alias && !index (*alias, '.'))
-		      alias++;
-		    if (*alias)
-		      fqdn = *alias;
-		  }
-		hostname = (char *) xrealloc (hostname, strlen (fqdn) + 1);
-		strcpy (hostname, fqdn);
-#if 0
-		/* Convert the host name to lower case.  */
-		/* Using ctype.h here would introduce a possible locale
-		   dependence that is probably wrong for hostnames.  */
-		p = hostname
-		while (*p)
-		  {
-		    if (*p >= 'A' && *p <= 'Z')
-		      *p += 'a' - 'A';
-		    p++;
-		  }
+    {
+      struct hostent *hp;
+      int count;
+      for (count = 0; count < 10; count++)
+	{
+#ifdef TRY_AGAIN
+	  h_errno = 0;
 #endif
-	      }
-	  }
+	  hp = gethostbyname (hostname);
+#ifdef TRY_AGAIN
+	  if (! (hp == 0 && h_errno == TRY_AGAIN))
+#endif
+	    break;
+	  Fsleep_for (make_number (1), Qnil);
+	}
+      if (hp)
+	{
+	  char *fqdn = hp->h_name;
+	  char *p;
+
+	  if (!index (fqdn, '.'))
+	    {
+	      /* We still don't have a fully qualified domain name.
+		 Try to find one in the list of alternate names */
+	      char **alias = hp->h_aliases;
+	      while (*alias && !index (*alias, '.'))
+		alias++;
+	      if (*alias)
+		fqdn = *alias;
+	    }
+	  hostname = fqdn;
+#if 0
+	  /* Convert the host name to lower case.  */
+	  /* Using ctype.h here would introduce a possible locale
+	     dependence that is probably wrong for hostnames.  */
+	  p = hostname;
+	  while (*p)
+	    {
+	      if (*p >= 'A' && *p <= 'Z')
+		*p += 'a' - 'A';
+	      p++;
+	    }
+#endif
+	}
+    }
 #endif /* HAVE_SOCKETS */
-	get_system_name_cache = hostname;
-      }
+  Vsystem_name = build_string (hostname);
 #endif /* HAVE_GETHOSTNAME */
 #endif /* VMS */
-#ifndef CANNOT_DUMP
-      get_system_name_predump_p = !initialized;
-#endif
-    }
-  return (get_system_name_cache);
 #endif /* BSD4_1 */
+  {
+    unsigned char *p;
+    for (p = XSTRING (Vsystem_name)->data; *p; p++)
+      if (*p == ' ' || *p == '\t')
+	*p = '-';
+  }
 }
 
 #ifndef VMS
@@ -2588,7 +2602,8 @@ bcmp (b1, b2, length)	/* This could be a macro! */
 #endif /* not BSTRING */
 
 #ifndef HAVE_RANDOM
-#ifdef USG
+#ifndef random 
+
 /*
  *	The BSD random returns numbers in the range of
  *	0 to 2e31 - 1.  The USG rand returns numbers in the
@@ -2599,32 +2614,33 @@ bcmp (b1, b2, length)	/* This could be a macro! */
 long
 random ()
 {
-  /* Arrange to return a range centered on zero.  */
-  return (rand () << 15) + rand () - (1 << 29);
-}
-
-srandom (arg)
-     int arg;
-{
-  srand (arg);
-}
-
-#endif /* USG */
-
-#ifdef BSD4_1
-long random ()
-{
-  /* Arrange to return a range centered on zero.  */
-  return (rand () << 15) + rand () - (1 << 29);
-}
-
-srandom (arg)
-     int arg;
-{
-  srand (arg);
-}
-#endif /* BSD4_1 */
+#ifdef HAVE_LRAND48
+  return lrand48 ();
+#else
+/* The BSD rand returns numbers in the range of 0 to 2e31 - 1,
+   with unusable least significant bits.  The USG rand returns
+   numbers in the range of 0 to 2e15 - 1, all usable.  Let us
+   build a usable 30 bit number from either.  */
+#ifdef USG
+  return (rand () << 15) + rand ();
+#else
+  return (rand () & 0x3fff8000) + (rand () >> 16);
 #endif
+#endif
+}
+
+srandom (arg)
+     int arg;
+{
+#ifdef HAVE_LRAND48
+  srand48 (arg);
+#else
+  srand (arg);
+#endif
+}
+
+#endif /* no random */
+#endif /* not HAVE_RANDOM */
 
 #ifdef WRONG_NAME_INSQUE
 

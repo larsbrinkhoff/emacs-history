@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Frames, Major Modes, Windows, Top
 @chapter Frames and X Windows
@@ -14,9 +14,9 @@ frame normally contains its own echo area and minibuffer, but you can
 make frames that don't have these---they use the echo area and
 minibuffer of another frame.
 
-  Anything you do in one frame also affects the other frames.  For
+  Editing you do in one frame also affects the other frames.  For
 instance, if you put text in the kill ring in one frame, you can yank it
-in another frame.  If you exit emacs through @kbd{C-x C-c} in one frame,
+in another frame.  If you exit Emacs through @kbd{C-x C-c} in one frame,
 it terminates all the frames.  To delete just one frame, use @kbd{C-x 5
 0}.
 
@@ -27,7 +27,7 @@ frame.
 @menu
 * Mouse Commands::     Moving, cutting, and pasting, with the mouse.
 * Secondary Selection::Cutting without altering point and mark.
-* Selecting Mouse::    Using the mouse to select an item from a list.
+* Mouse References::   Using the mouse to select an item from a list.
 * Mode Line Mouse::    Mouse clicks on the mode line.
 * Creating Frames::    Creating additional Emacs frames with various contents.
 * Special Buffer Frames::  You can make certain buffers have their own frames.
@@ -43,91 +43,93 @@ frame.
 @section Mouse Commands
 @cindex mouse buttons (what they do)
 
+  The mouse commands for selecting and copying a region are mostly
+compatible with the @code{xterm} program.  You can use the same mouse
+commands for copying between Emacs and other X client programs.
+
 @findex mouse-set-region
 @findex mouse-set-point
 @findex mouse-yank-at-click
 @findex mouse-save-then-click
-@kindex MOUSE
+@kindex Mouse-1
 @table @kbd
-@item mouse-1
+@item Mouse-1
 Move point to where you click (@code{mouse-set-point}).
 This is normally the left button.
 
-@item drag-mouse-1
+@item Drag-Mouse-1
 Set the region to the text you select by dragging, and copy it to the
-kill ring (@code{mouse-set-region}). Thus, you can specify both ends of
-the region.
+kill ring (@code{mouse-set-region}).  You can specify both ends of
+the region with this single command.
 
 If you move the mouse off the top or bottom of the window while
 dragging, the window scrolls at a steady rate until you move the mouse
-back into the window.  This way, you can mark regions that don't fit
+back into the window.  This way, you can select regions that don't fit
 entirely on the screen.
 
-@item mouse-2
+@item Mouse-2
 Yank the last killed text, where you click (@code{mouse-yank-at-click}).
 This is normally the middle button.
 
-@item mouse-3
+@item Mouse-3
 This command, @code{mouse-save-then-kill}, has several functions
 depending on where you click and the status of the region.
 
 If you have a highlighted region, or if the region was set just before
-by dragging button 1, @code{mouse-save-then-kill} adjusts the nearer
-end of the region by moving it to where you click.  The adjusted
-region's text also replaces the old region's text in the kill ring.
+by dragging button 1, @kbd{Mouse-3} adjusts the nearer end of the region
+by moving it to where you click.  The adjusted region's text also
+replaces the old region's text in the kill ring.
 
-Otherwise, @code{mouse-save-then-kill} sets mark where you click,
-without changing point.  It copies the new region to the kill ring.
+Otherwise, @kbd{Mouse-3} sets mark where you click, without changing
+point.  It copies the new region to the kill ring.
 
 If you originally specified the region using a double or triple
-@key{Mouse-1}, so that the region is defined to consist of entire words
+@kbd{Mouse-1}, so that the region is defined to consist of entire words
 or lines, then adjusting the region also proceeds by entire words or
 lines.
 
-If you use @code{mouse-save-then-kill} twice in a row at the same place,
+If you use @kbd{Mouse-3} twice in a row at the same place,
 that kills the region already selected.
 
-@item double-mouse-1
+@item Double-Mouse-1
 This key sets the region around the word which you click on.
 
-@item double-drag-mouse-1
+@item Double-Drag-Mouse-1
 This key selects a region made up of the words that you drag across.
 
-@item triple-mouse-1
+@item Triple-Mouse-1
 This key sets the region around the line which you click on.
 
-@item triple-drag-mouse-1
+@item Triple-Drag-Mouse-1
 This key selects a region made up of the lines that you drag across.
 @end table
 
-The simplest way to kill some text is to press @key{Mouse-1} at one end,
-then press @key{Mouse-3} twice at the other end.  @xref{Killing}.  To
-copy the text into the kill ring without deleting it from the buffer,
-press @key{Mouse-3} just once---or just drag across the text with
-@key{Mouse-1}.  Then you can copy it elsewhere by yanking it.
+  The simplest way to kill text with the mouse is to press @kbd{Mouse-1}
+at one end, then press @kbd{Mouse-3} twice at the other end.
+@xref{Killing}.  To copy the text into the kill ring without deleting it
+from the buffer, press @kbd{Mouse-3} just once---or just drag across the
+text with @kbd{Mouse-1}.  Then you can copy it elsewhere by yanking it.
 
 @vindex mouse-yank-at-point
-To yank the killed or copied text somewhere else, move the mouse there
-and press @key{Mouse-2}.  @xref{Yanking}.  If @code{mouse-yank-at-point}
-is non-@code{nil}, @key{Mouse-2} yanks at point.  Then it does not
-matter precisely where you click; all that matters is which window you
-click on.
-
-The mouse commands for selecting a region are mostly compatible with the
-@code{xterm} program.
+  To yank the killed or copied text somewhere else, move the mouse there
+and press @kbd{Mouse-2}.  @xref{Yanking}.  However, if
+@code{mouse-yank-at-point} is non-@code{nil}, @kbd{Mouse-2} yanks at
+point.  Then it does not matter precisely where you click; all that
+matters is which window you click on.  The default value is @code{nil}.
+This variable also effects yanking the secondary selection.
 
 @cindex cutting and X
 @cindex pasting and X
 @cindex X cutting and pasting
 @cindex X pasting and cutting
-To copy text to another X window, kill it or save it in the kill ring.
+  To copy text to another X window, kill it or save it in the kill ring.
 Under X, this also sets the @dfn{primary selection}.  Then use the
 ``paste'' or ``yank'' command of the program operating the other window
 to insert the text from the selection.
 
   To copy text from another X window, use the ``cut'' or ``copy'' command
 of the program operating the other window, to select the text you want.
-Then yank it in Emacs with @kbd{C-y} or @key{Mouse-2}.
+Then yank it in Emacs with @kbd{C-y} or @kbd{Mouse-2}.
 
 @cindex primary selection
 @cindex cut buffer
@@ -135,12 +137,14 @@ Then yank it in Emacs with @kbd{C-y} or @key{Mouse-2}.
   When Emacs puts text into the kill ring, or rotates text to the front
 of the kill ring, it sets the @dfn{primary selection} in the X server.
 This is how other X clients can access the text.  Emacs also stores the
-text in the cut buffer, if the text is short enough
+text in the cut buffer, but only if the text is short enough
 (@code{x-cut-buffer-max} specifies the maximum number of characters);
 putting long strings in the cut buffer can be slow.
 
-  When you yank in Emacs, Emacs checks for a primary selection in
-another program; after that, it checks for text in the cut buffer.  
+  The commands to yank the first entry in the kill ring actually check
+first for a primary selection in another program; after that, they check
+for text in the cut buffer.  If neither of those sources provides text
+to yank, the kill ring contents are used.
 
 @node Secondary Selection
 @section Secondary Selection
@@ -152,12 +156,12 @@ without setting point or the mark.
 
 @table @kbd
 @findex mouse-set-secondary
-@kindex drag-M-mouse-1
-@item drag-M-mouse-1
+@kindex M-Drag-Mouse-1
+@item M-Drag-Mouse-1
 Set the secondary selection, with one end at the place where you press
 down the button, and the other end at the place where you release it
-(@code{mouse-set-secondary}).  In Transient Mark mode, highlighting
-appears and changes as you drag.
+(@code{mouse-set-secondary}).  The highlighting appears and changes as
+you drag.
 
 If you move the mouse off the top or bottom of the window while
 dragging, the window scrolls at a steady rate until you move the mouse
@@ -165,52 +169,51 @@ back into the window.  This way, you can mark regions that don't fit
 entirely on the screen.
 
 @findex mouse-start-secondary
-@kindex M-mouse-1
-@item M-mouse-1
+@kindex M-Mouse-1
+@item M-Mouse-1
 Set one endpoint for the @dfn{secondary selection}
 (@code{mouse-start-secondary}).
 
 @findex mouse-secondary-save-then-kill
-@kindex M-mouse-3
-@item M-mouse-3
-Make a secondary selection, using the place specified with @kbd{M-mouse-1}
+@kindex M-Mouse-3
+@item M-Mouse-3
+Make a secondary selection, using the place specified with @kbd{M-Mouse-1}
 as the other end (@code{mouse-secondary-save-then-kill}).  A second click
 at the same place kills the secondary selection just made.
 
 @findex mouse-yank-secondary
-@kindex M-mouse-2
-@item M-mouse-2
+@kindex M-Mouse-2
+@item M-Mouse-2
 Insert the secondary selection where you click
-(@code{mouse-kill-secondary}).  This places point to the end of the
+(@code{mouse-kill-secondary}).  This places point at the end of the
 yanked text.
 @end table
 
-Double or triple clicking of @kbd{M-@key{Mouse-1}} operates on words and
-lines, much like @key{Mouse-1}.
+Double or triple clicking of @kbd{M-Mouse-1} operates on words and
+lines, much like @kbd{Mouse-1}.
 
-@vindex mouse-yank-at-point
-If @code{mouse-yank-at-point} is non-@code{nil}, @kbd{M-@key{Mouse-2}}
+If @code{mouse-yank-at-point} is non-@code{nil}, @kbd{M-Mouse-2}
 yanks at point.  Then it does not matter precisely where you click; all
-that matters is which window you click on.
+that matters is which window you click on.  @xref{Mouse Commands}.
 
-@node Selecting Mouse
-@section Selecting with the Mouse
+@node Mouse References
+@section Following References with the Mouse
 
   Some Emacs buffers display lists of various sorts.  These include
 lists of files, of buffers, of possible completions, of matches for
 a pattern, and so on.
 
-  Since modifying the text in these buffers is not often useful,
-most of them define @key{Mouse-2} specially, as a command to use or
-view the item you click on.
+  Since yanking text into these buffers is not very useful, most of them
+define @kbd{Mouse-2} specially, as a command to use or view the item you
+click on.
 
-  For example, if you click @key{Mouse-2} on a file name in a Dired
-buffer, you visit the that file.  If you click @key{Mouse-2} on an error
+  For example, if you click @kbd{Mouse-2} on a file name in a Dired
+buffer, you visit the that file.  If you click @kbd{Mouse-2} on an error
 message in the @samp{*Compilation*} buffer, you go to the source code
-for that error message.  If you click @key{Mouse-2} on a completion in
+for that error message.  If you click @kbd{Mouse-2} on a completion in
 the @samp{*Completions*} buffer, you choose that completion.
 
-  You can usually tell when @key{Mouse-2} has this special sort of
+  You can usually tell when @kbd{Mouse-2} has this special sort of
 meaning because the sensitive text highlights when you move the mouse
 over it.
 
@@ -221,19 +224,24 @@ over it.
 windows.
 
 @table @kbd
-@item @key{Mouse-1}
-@key{Mouse-1} on a mode line selects the window above.
+@item Mouse-1
+@kbd{Mouse-1} on a mode line selects the window above.  By dragging
+@kbd{Mouse-1} on the mode line, you can move it, thus changing the
+height of the windows above and below.
 
-@item @key{Mouse-2}
-@key{Mouse-2} on a mode line expands that window to fill its frame.
+@item Mouse-2
+@kbd{Mouse-2} on a mode line expands that window to fill its frame.
 
-@item @key{Mouse-3}
-@key{Mouse-3} on a mode line deletes the window above.
+@item Mouse-3
+@kbd{Mouse-3} on a mode line deletes the window above.
 
-@item C-@key{Mouse-2}
-@kbd{C-@key{Mouse-2}} on a mode line splits the window above
-horizontally, above the point in the mode line where you click.
+@item C-Mouse-2
+@kbd{C-Mouse-2} on a mode line splits the window above
+horizontally, above the place in the mode line where you click.
 @end table
+
+  @kbd{C-Mouse-2} on a scroll bar splits the corresponding window
+vertically.  @xref{Split Window}.
 
 @node Creating Frames
 @section Creating Frames
@@ -242,13 +250,21 @@ horizontally, above the point in the mode line where you click.
 @kindex C-x 5
   The prefix key @kbd{C-x 5} is analogous to @kbd{C-x 4}, with parallel
 subcommands.  The difference is that @kbd{C-x 5} commands create a new
-frame rather than just a new window in the selected frame.  (@xref{Pop
-Up Window}.)  Different @kbd{C-x 5} commands have different ways of
-finding the buffer to select.
+frame rather than just a new window in the selected frame  (@xref{Pop
+Up Window}).  If an existing visible or iconified frame already displays
+the requested material, these commands use the existing frame, after
+raising or deiconifying as necessary. 
+
+  The various @kbd{C-x 5} commands differ in how they find or create the
+buffer to select:
 
 @table @kbd
+@item C-x 5 2
+@kindex C-x 5 2
+@findex make-frame
+Create a new frame (@code{make-frame}).
 @item C-x 5 b @var{bufname} @key{RET}
-Select buffer @var{bufname} in another window.  This runs @*
+Select buffer @var{bufname} in another window.  This runs
 @code{switch-to-buffer-other-frame}.
 @item C-x 5 f @var{filename} @key{RET}
 Visit file @var{filename} and select its buffer in another frame.  This
@@ -258,33 +274,44 @@ Select a Dired buffer for directory @var{directory} in another frame.
 This runs @code{dired-other-frame}.  @xref{Dired}.
 @item C-x 5 m
 Start composing a mail message in another frame.  This runs
-@code{mail-other-frame}, and its same-frame version is @kbd{C-x m}.
+@code{mail-other-frame}.  It is the other-frame variant of @kbd{C-x m}.
 @xref{Sending Mail}.
 @item C-x 5 .
 Find a tag in the current tag table in another frame.  This runs
 @code{find-tag-other-frame}, the multiple-frame variant of @kbd{M-.}.
 @xref{Tags}.
 @item C-x 5 r @var{filename} @key{RET}
+@kindex C-x 5 r
+@findex find-file-read-only-other-frame
 Visit file @var{filename} read-only, and select its buffer in another
 frame.  This runs @code{find-file-read-only-other-frame}.
 @xref{Visiting}.
 @end table
 
+@cindex default-frame-alist
+@cindex initial-frame-alist
+  You can control the appearance of new frames you create by setting the
+frame parameters in @code{default-frame-alist}.  You can use the
+variable @code{initial-frame-alist} to specify parameters that affect
+only the initial frame.  @xref{Initial Parameters,,, elisp, The Emacs
+Lisp Manual}, for more information.
+
 @node Special Buffer Frames
 @section Special Buffer Frames
 
 @vindex special-display-buffer-names
-  You can make certain chosen buffers, that normally appear in a
-separate window, appear in special frames of their own.  To do this, set
-the variable @code{special-display-buffer-names} to a list of buffer
-names; any buffer whose name is in that list automatically gets a
-special frame when it is to be displayed in another window.
+  You can make certain chosen buffers, for which Emacs normally creates
+a second window when you have just one window, appear in special frames
+of their own.  To do this, set the variable
+@code{special-display-buffer-names} to a list of buffer names; any
+buffer whose name is in that list automatically gets a special frame
+when it is to be displayed in another window.
 
   For example, if you set the variable this way,
 
 @example
 (setq special-display-buffer-names
-      '("*compilation*" "*grep*" "*TeX Shell*"))
+      '("*Completions*" "*grep*" "*tex-shell*"))
 @end example
 
 @noindent
@@ -292,12 +319,14 @@ then completion lists, @code{grep} output and the @TeX{} mode shell
 buffer get individual frames of their own.  These frames, and the
 windows in them, are never automatically split or reused for any other
 buffers.  They continue to show the buffers they were created for,
-unless you alter them by hand.
+unless you alter them by hand.  Killing the special buffer deletes its
+frame automatically.
 
 @vindex special-display-regexps
   More generally, you can set @code{special-display-regexps} to a list
-of regular expressions; then each buffer whose name matches any of those
-regular expressions gets its own frame.
+of regular expressions; then a buffer gets its own frame if its name
+matches any of those regular expressions. (Once again, this applies only
+to buffers that normally get displayed for you in a separate window.)
 
 @vindex special-display-frame-alist
   The variable @code{special-display-frame-alist} specifies the frame
@@ -338,14 +367,24 @@ selected frame.
 Specify color @var{color} for the border of the selected frame.
 
 @item M-x auto-raise-mode
-Toggle whether or not the selected frame should auto-raise.
-Auto-raise means that every time you move the mouse onto the frame,
-it raises the frame.
+Toggle whether or not the selected frame should auto-raise.  Auto-raise
+means that every time you move the mouse onto the frame, it raises the
+frame.
+
+Note that this auto-raise feature is implemented by Emacs itself.  Some
+window managers also implement auto-raise.  If you enable auto-raise for
+Emacs frames in your X window manager, it should work, but it is beyond
+Emacs's control and therefore @code{auto-raise-mode} has no effect on
+it.
 
 @item M-x auto-lower-mode
 Toggle whether or not the selected frame should auto-lower.
 Auto-lower means that every time you move the mouse off of the frame,
 the frame moves to the bottom of the stack of X windows.
+
+The command @code{auto-lower-mode} has no effect on auto-lower
+implemented by the X window manager.  To control that, you must use
+the appropriate window manager features.
 
 @findex set-default-font
 @item M-x set-default-font @key{RET} @var{font} @key{RET}
@@ -353,14 +392,18 @@ Specify font @var{font} as the default for the selected frame.
 @xref{Font X}, for ways to list the available fonts on your system.
 
 You can also set a frame's default font through a pop-up menu.
-Press @kbd{C-@key{Mouse-3}} to activate this menu.
+Press @kbd{C-Mouse-3} to activate this menu.
 @end table
 
   In Emacs versions that use an X toolkit, the color-setting and
 font-setting functions don't affect menus and the menu bar, since they
 are displayed by their own widget classes.  To change the appearance of
-the menus and menu bar, you must use X resources.  @xref{Colors X},
-regarding colors.  @xref{Font X}, regarding choice of font.
+the menus and menu bar, you must use X resources (@pxref{Resources X}).
+@xref{Colors X}, regarding colors.  @xref{Font X}, regarding choice of
+font.
+
+  For information on frame parameters and customization, see @ref{Frame
+Parameters,,, elisp, The Emacs Lisp Manual}.
 
 @node Scroll Bars
 @section Scroll Bars
@@ -373,17 +416,21 @@ shows a moving rectangular inner box which represents the portion of the
 buffer currently displayed.  The entire height of the scroll bar
 represents the entire length of the buffer.
 
-  You can use @key{Mouse-2} (normally, the middle button) in the scroll
+  You can use @kbd{Mouse-2} (normally, the middle button) in the scroll
 bar to move or drag the inner box up and down.  If you move it to the
 top of the scroll bar, you see the top of the buffer.  If you move it to
 the bottom of the scroll bar, you see the bottom of the buffer.
 
   The left and right buttons in the scroll bar scroll by controlled
-increments.  @key{Mouse-1} (normally, the left button) moves the line at
-the level where you click up to the top of the window.  @key{Mouse-3}
+increments.  @kbd{Mouse-1} (normally, the left button) moves the line at
+the level where you click up to the top of the window.  @kbd{Mouse-3}
 (normally, the right button) moves the line at the top of the window
 down to the level where you click.  By clicking repeatedly in the same
 place, you can scroll by the same distance over and over.
+
+  Aside from scrolling, you can also click @kbd{C-Mouse-2} in the scroll
+bar to split a window vertically.  The split occurs on the line where
+you click.
 
 @findex scroll-bar-mode
   You can enable or disable Scroll Bar mode with the command @kbd{M-x
@@ -425,7 +472,8 @@ is positive, off if the argument is not positive.
   When using Emacs with X, you can set up multiple styles of displaying
 characters.  The aspects of style that you can control are the type
 font, the foreground color, the background color, and whether to
-underline.
+underline.  Emacs 19.26 does not support faces on MS-DOS, but future
+versions will support them partially (@pxref{MS-DOS}).
 
   The way you control display style is by defining named @dfn{faces}.
 Each face can specify a type font, a foreground color, a background
@@ -448,7 +496,7 @@ faces:
 @table @code
 @item default
 This face is used for ordinary text that doesn't specify any other face.
-@item mode-line
+@item modeline
 This face is used for mode lines.  By default, it's set up as the
 inverse of the default face.  @xref{Display Vars}.
 @item highlight
@@ -473,8 +521,8 @@ This face underlines text.
   When Transient Mark mode is enabled, the text of the region is
 highlighted when the mark is active.  This uses the face named
 @code{region}; you can control the style of highlighting by changing the
-style of this face with the commands below.  @xref{Transient Mark}, for
-more information about Transient Mark mode and activation and
+style of this face (@pxref{Modifying Faces}).  @xref{Transient Mark},
+for more information about Transient Mark mode and activation and
 deactivation of the mark.
 
   One easy way to use faces is to turn on Font-Lock mode.
@@ -489,7 +537,7 @@ variants.
 @node Modifying Faces
 @section Modifying Faces
 
-  Here are the commands for users to change the font of a face.
+  Here are the commands users can use to change the font of a face:
 
 @cindex bold font
 @cindex italic font
@@ -502,7 +550,8 @@ variants.
 @findex make-face-unitalic
 @table @kbd
 @item M-x set-face-font @key{RET} @var{face} @key{RET} @var{font} @key{RET}
-Use font @var{font} in face @var{face}.
+Change face @var{face} to use font @var{font}.  @xref{Font X}, for more
+information about font naming under X.
 
 @item M-x make-face-bold @key{RET} @var{face} @key{RET}
 Convert face @var{face} to use a bold version of its current font.
@@ -520,8 +569,8 @@ Convert face @var{face} to use a non-bold version of its current font.
 Convert face @var{face} to use a non-italic version of its current font.
 @end table
 
-  Here are the commands for users to set the colors and underline flag
-of a face:
+  Here are the commands for setting the colors and underline flag of a
+face:
 
 @cindex underlining and faces
 @cindex inverse video and faces
@@ -550,30 +599,29 @@ faces.  @xref{Resources X}.
 @node Misc X
 @section Miscellaneous X Window Features
 
-The following commands do user-level mangement of frames under a window
+The following commands do user-level management of frames under a window
 system:
 
 @table @kbd
 @item C-z
-@kindex C-z
+@kindex C-z @r{(X windows)}
 @findex iconify-or-deiconify-frame
 To iconify the selected Emacs frame, type @kbd{C-z}
 (@code{iconify-or-deiconify-frame}).  The normal meaning of @kbd{C-z},
 to suspend Emacs, is not useful under a window system, so it has a
 different binding in that case.
 
-If you type this command on an Emacs icon, it deiconifies the frame.
+If you type this command on an Emacs frame's icon, it deiconifies the frame.
 
 @item C-x 5 0
 @kindex C-x 5 0
 @findex delete-frame
 To delete the selected frame, type @kbd{C-x 5 0} (@code{delete-frame}).
-If there is more than one frame in this invocation of Emacs, the current
-frame is deleted.
+This is not allowed if there is only one frame.
 
 @item M-x transient-mark-mode
 Under X Windows, when Transient Mark mode is enabled, Emacs highlights
-the region when the mark is active.  This is the main motive for using
-Transient Mark mode.  To toggle the state of this mode, use the command
-@kbd{M-x transient-mark-mode}.  @xref{Mark}.
+the region when the mark is active.  This feature is the main motive for
+using Transient Mark mode.  To toggle the state of this mode, use the
+command @kbd{M-x transient-mark-mode}.  @xref{Mark}.
 @end table

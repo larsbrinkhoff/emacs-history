@@ -55,15 +55,7 @@ init_editfns ()
   Lisp_Object tem;
 
   /* Set up system_name even when dumping.  */
-
-  Vsystem_name = build_string (get_system_name ());
-  p = XSTRING (Vsystem_name)->data;
-  while (*p)
-    {
-      if (*p == ' ' || *p == '\t')
-	*p = '-';
-      p++;
-    }
+  init_system_name ();
 
 #ifndef CANNOT_DUMP
   /* Don't bother with this on initial start when just dumping out */
@@ -539,6 +531,13 @@ DEFUN ("system-name", Fsystem_name, Ssystem_name, 0, 0, 0,
   return Vsystem_name;
 }
 
+/* For the benefit of callers who don't want to include lisp.h */
+char *
+get_system_name ()
+{
+  return (char *) XSTRING (Vsystem_name)->data;
+}
+
 DEFUN ("emacs-pid", Femacs_pid, Semacs_pid, 0, 0, 0,
   "Return the process ID of Emacs, as an integer.")
   ()
@@ -769,7 +768,7 @@ Any other markers at the point of insertion remain before the text.")
       if (XTYPE (tem) == Lisp_Int)
 	{
 	  str[0] = XINT (tem);
-	  insert (str, 1);
+	  insert_and_inherit (str, 1);
 	}
       else if (XTYPE (tem) == Lisp_String)
 	{
@@ -841,7 +840,7 @@ Any other markers at the point of insertion also end up after the text.")
       if (XTYPE (tem) == Lisp_Int)
 	{
 	  str[0] = XINT (tem);
-	  insert_before_markers (str, 1);
+	  insert_before_markers_and_inherit (str, 1);
 	}
       else if (XTYPE (tem) == Lisp_String)
 	{
@@ -857,12 +856,14 @@ Any other markers at the point of insertion also end up after the text.")
   return Qnil;
 }
 
-DEFUN ("insert-char", Finsert_char, Sinsert_char, 2, 2, 0,
+DEFUN ("insert-char", Finsert_char, Sinsert_char, 2, 3, 0,
   "Insert COUNT (second arg) copies of CHAR (first arg).\n\
 Point and all markers are affected as in the function `insert'.\n\
-Both arguments are required.")
-  (chr, count)
-       Lisp_Object chr, count;
+Both arguments are required.\n\
+The optional third arg INHERIT, if non-nil, says to inherit text properties\n\
+from adjoining text, if those properties are sticky.")
+  (chr, count, inherit)
+       Lisp_Object chr, count, inherit;
 {
   register unsigned char *string;
   register int strlen;
@@ -880,7 +881,10 @@ Both arguments are required.")
     string[i] = XFASTINT (chr);
   while (n >= strlen)
     {
-      insert (string, strlen);
+      if (!NILP (inherit))
+	insert_and_inherit (string, strlen);
+      else
+	insert (string, strlen);
       n -= strlen;
     }
   if (n > 0)
@@ -1626,11 +1630,7 @@ Case is ignored if `case-fold-search' is non-nil in the current buffer.")
    appropriate amount to some, subtracting from some, and leaving the
    rest untouched.  Most of this is copied from adjust_markers in insdel.c.
   
-   It's caller's job to see that (start1 <= end1 <= start2 <= end2),
-   and that the buffer gap will not conflict with the markers.  This
-   last requirement is odd and maybe should be taken out, but it works
-   for now because Ftranspose_regions does in fact guarantee that, in
-   addition to providing universal health-care coverage.  */
+   It's the caller's job to see that (start1 <= end1 <= start2 <= end2).  */
 
 void
 transpose_markers (start1, end1, start2, end2)
@@ -1638,10 +1638,8 @@ transpose_markers (start1, end1, start2, end2)
 {
   register int amt1, amt2, diff, mpos;
   register Lisp_Object marker;
-  register struct Lisp_Marker *m;
 
-  /* Update point as if it were a marker.
-     Do this before adjusting the start/end values for the gap.  */
+  /* Update point as if it were a marker.  */
   if (PT < start1)
     ;
   else if (PT < end1)
@@ -1651,25 +1649,13 @@ transpose_markers (start1, end1, start2, end2)
   else if (PT < end2)
     TEMP_SET_PT (PT - (start2 - start1));
 
-  /* Internally, marker positions take the gap into account, so if the
-   * gap is before one or both of the regions, the region's limits
-   * must be adjusted to compensate.  The caller guaranteed that the
-   * gap is not inside any of the regions, however, so this is fairly
-   * simple.
-   */
-  if (GPT < start1)
-    {
-      register int gs = GAP_SIZE;
-      start1 += gs; end1 += gs;
-      start2 += gs; end2 += gs;
-    }
-  else if (GPT < start2)
-    {
-      /* If the regions are of equal size, the gap could, in theory,
-       * be somewhere between them. */
-      register int gs = GAP_SIZE;
-      start2 += gs; end2 += gs;
-    }
+  /* We used to adjust the endpoints here to account for the gap, but that
+     isn't good enough.  Even if we assume the caller has tried to move the
+     gap out of our way, it might still be at start1 exactly, for example;
+     and that places it `inside' the interval, for our purposes.  The amount
+     of adjustment is nontrivial if there's a `denormalized' marker whose
+     position is between GPT and GPT + GAP_SIZE, so it's simpler to leave
+     the dirty work to Fmarker_position, below.  */
 
   /* The difference between the region's lengths */
   diff = (end2 - start2) - (end1 - start1);
@@ -1680,25 +1666,21 @@ transpose_markers (start1, end1, start2, end2)
   amt1 = (end2 - start2) + (start2 - end1);
   amt2 = (end1 - start1) + (start2 - end1);
 
-  marker = current_buffer->markers;
-
-  while (!NILP (marker))
+  for (marker = current_buffer->markers; !NILP (marker);
+       marker = XMARKER (marker)->chain)
     {
-      m = XMARKER (marker);
-      mpos = m->bufpos;
-      if (mpos >= start1 && mpos < end1)       /* in region 1 */
-        {
-          m->bufpos += amt1;
-        }
-      else if (mpos >= start2 && mpos < end2)  /* in region 2 */
-        {
-          m->bufpos -= amt2;
-        }
-      else if (mpos >= end1 && mpos < start2)  /* between the regions */
-        {
-          m->bufpos += diff;
-        }
-      marker = m->chain;
+      mpos = Fmarker_position (marker);
+      if (mpos >= start1 && mpos < end2)
+	{
+	  if (mpos < end1)
+	    mpos += amt1;
+	  else if (mpos < start2)
+	    mpos += diff;
+	  else
+	    mpos -= amt2;
+	  if (mpos > GPT) mpos += GAP_SIZE;
+	  XMARKER (marker)->bufpos = mpos;
+	}
     }
 }
 
@@ -1782,9 +1764,6 @@ Transposing beyond buffer boundaries is an error.")
       else
 	move_gap (end2);
     }
-
-  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
-  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
       
   /* Hmmm... how about checking to see if the gap is large
      enough to use as the temporary storage?  That would avoid an
@@ -1813,6 +1792,13 @@ Transposing beyond buffer boundaries is an error.")
 	    temp = (unsigned char *) xmalloc (len2);
 	  else
 	    temp = (unsigned char *) alloca (len2);
+
+	  /* Don't precompute these addresses.  We have to compute them
+	     at the last minute, because the relocating allocator might
+	     have moved the buffer around during the xmalloc.  */
+	  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
+	  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
+
           bcopy (start2_addr, temp, len2);
           bcopy (start1_addr, start1_addr + len2, len1);
           bcopy (temp, start1_addr, len2);
@@ -1826,6 +1812,8 @@ Transposing beyond buffer boundaries is an error.")
 	    temp = (unsigned char *) xmalloc (len1);
 	  else
 	    temp = (unsigned char *) alloca (len1);
+	  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
+	  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
           bcopy (start1_addr, temp, len1);
           bcopy (start2_addr, start1_addr, len2);
           bcopy (temp, start1_addr + len2, len1);
@@ -1860,6 +1848,8 @@ Transposing beyond buffer boundaries is an error.")
 	    temp = (unsigned char *) xmalloc (len1);
 	  else
 	    temp = (unsigned char *) alloca (len1);
+	  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
+	  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
           bcopy (start1_addr, temp, len1);
           bcopy (start2_addr, start1_addr, len2);
           bcopy (temp, start2_addr, len1);
@@ -1891,6 +1881,8 @@ Transposing beyond buffer boundaries is an error.")
 	    temp = (unsigned char *) xmalloc (len2);
 	  else
 	    temp = (unsigned char *) alloca (len2);
+	  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
+	  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
           bcopy (start2_addr, temp, len2);
           bcopy (start1_addr, start1_addr + len_mid + len2, len1);
           safe_bcopy (start1_addr + len1, start1_addr + len2, len_mid);
@@ -1925,6 +1917,8 @@ Transposing beyond buffer boundaries is an error.")
 	    temp = (unsigned char *) xmalloc (len1);
 	  else
 	    temp = (unsigned char *) alloca (len1);
+	  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
+	  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
           bcopy (start1_addr, temp, len1);
           bcopy (start2_addr, start1_addr, len2);
           bcopy (start1_addr + len1, start1_addr + len2, len_mid);

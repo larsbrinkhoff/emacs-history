@@ -29,10 +29,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <X11/bitmaps/gray>
 #include "xlwmenuP.h"
 
+static int pointer_grabbed;
+static XEvent menu_post_event;
+
 static char 
 xlwMenuTranslations [] = 
 "<BtnDown>:	start()\n\
-<BtnMotion>:	drag()\n\
+<Motion>:	drag()\n\
 <BtnUp>:	select()\n\
 ";
 
@@ -146,6 +149,8 @@ XlwMenuClassRec xlwMenuClassRec =
 WidgetClass xlwMenuWidgetClass = (WidgetClass) &xlwMenuClassRec;
 
 int submenu_destroyed;
+
+static int next_release_must_exit;
 
 /* Utilities */
 static void
@@ -681,7 +686,7 @@ make_windows_if_needed (mw, n)
   xswa.background_pixel = mw->core.background_pixel;
   xswa.border_pixel = mw->core.border_pixel;
   xswa.event_mask =
-    ExposureMask | ButtonMotionMask | PointerMotionHintMask
+    ExposureMask | PointerMotionMask | PointerMotionHintMask
       | ButtonReleaseMask | ButtonPressMask;
   xswa.cursor = mw->menu.cursor_shape;
   mask = CWSaveUnder | CWOverrideRedirect | CWBackPixel | CWBorderPixel
@@ -1163,6 +1168,10 @@ XlwMenuDestroy (w)
   int i;
   XlwMenuWidget mw = (XlwMenuWidget) w;
 
+  if (pointer_grabbed)
+    XtUngrabPointer ((Widget)w, CurrentTime);
+  pointer_grabbed = 0;
+
   submenu_destroyed = 1;
 
   release_drawing_gcs (mw);
@@ -1277,8 +1286,10 @@ handle_single_motion_event (mw, ev)
     set_new_state (mw, val, level);
   remap_menubar (mw);
   
+#if 0
   /* Sync with the display.  Makes it feel better on X terms. */
   XSync (XtDisplay (mw), False);
+#endif
 }
 
 static void
@@ -1313,6 +1324,16 @@ Start (w, ev, params, num_params)
 {
   XlwMenuWidget mw = (XlwMenuWidget)w;
 
+  if (!mw->menu.popped_up)
+    {
+      menu_post_event = *ev;
+      next_release_must_exit = 0;
+    }
+  else
+    /* If we push a button while the menu is posted semipermanently,
+       releasing the button should always pop the menu down.  */
+    next_release_must_exit = 1;
+
   XtCallCallbackList ((Widget)mw, mw->menu.open, NULL);
   
   /* notes the absolute position of the menubar window */
@@ -1344,7 +1365,17 @@ Select (w, ev, params, num_params)
   XlwMenuWidget mw = (XlwMenuWidget)w;
   widget_value* selected_item = mw->menu.old_stack [mw->menu.old_depth - 1];
   
-  /* pop down everything */
+  /* If user releases the button quickly, without selecting anything,
+     after the initial down-click that brought the menu up,
+     do nothing.  */
+  if ((selected_item == 0
+       || ((widget_value *) selected_item)->call_data == 0)
+      && !next_release_must_exit
+      && (ev->xbutton.time - menu_post_event.xbutton.time
+	  < XtGetMultiClickTime (XtDisplay (w))))
+    return;
+
+  /* pop down everything.  */
   mw->menu.new_depth = 1;
   remap_menubar (mw);
 
@@ -1374,6 +1405,8 @@ pop_up_menu (mw, event)
   int		borderwidth = mw->menu.shadow_thickness;
   Screen*	screen = XtScreen (mw);
 
+  next_release_must_exit = 0;
+
   XtCallCallbackList ((Widget)mw, mw->menu.open, NULL);
 
   size_menu (mw, 0);
@@ -1401,13 +1434,17 @@ pop_up_menu (mw, event)
   x_catch_errors ();
 #endif
   XtGrabPointer ((Widget)mw, False,
-		 (ButtonMotionMask | PointerMotionHintMask | ButtonReleaseMask
+		 (PointerMotionMask | PointerMotionHintMask | ButtonReleaseMask
 		  | ButtonPressMask),
 		 GrabModeAsync, GrabModeAsync, None, mw->menu.cursor_shape,
 		 event->time);
+  pointer_grabbed = 1;
 #ifdef emacs
   if (x_had_errors_p ())
-    XtUngrabPointer ((Widget)mw, event->time);
+    {
+      pointer_grabbed = 0;
+      XtUngrabPointer ((Widget)mw, event->time);
+    }
   x_uncatch_errors ();
 #endif
 

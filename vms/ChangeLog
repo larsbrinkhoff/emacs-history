@@ -1,3 +1,7 @@
+Please note that Jim Blandy knows nothing about Emacs' VMS support, even
+though his name appears here.  A better person to ask might be Richard
+Levitte <LEVITTE@e.kth.se>.
+
 Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.16 released.

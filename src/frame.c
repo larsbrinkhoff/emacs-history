@@ -17,9 +17,9 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#include <stdio.h>
-
 #include <config.h>
+
+#include <stdio.h>
 #include "lisp.h"
 #include "frame.h"
 #include "termhooks.h"
@@ -556,9 +556,10 @@ DEFUN ("frame-list", Fframe_list, Sframe_list,
 
 /* Return the next frame in the frame list after FRAME.
    If MINIBUF is nil, exclude minibuffer-only frames.
-   If MINIBUF is a window, include only frames using that window for
-   their minibuffer.
+   If MINIBUF is a window, include only its own frame
+   and any frame now using that window as the minibuffer.
    If MINIBUF is `visible', include all visible frames.
+   If MINIBUF is 0, include all visible and iconified frames.
    Otherwise, include all frames.  */
 
 Lisp_Object
@@ -604,9 +605,21 @@ next_frame (frame, minibuf)
 		if (FRAME_VISIBLE_P (XFRAME (f)))
 		  return f;
 	      }
+	    else if (XFASTINT (minibuf) == 0)
+	      {
+		FRAME_SAMPLE_VISIBILITY (XFRAME (f));
+		if (FRAME_VISIBLE_P (XFRAME (f))
+		    || FRAME_ICONIFIED_P (XFRAME (f)))
+		  return f;
+	      }
 	    else if (WINDOWP (minibuf))
 	      {
-		if (EQ (FRAME_MINIBUF_WINDOW (XFRAME (f)), minibuf))
+		if (EQ (FRAME_MINIBUF_WINDOW (XFRAME (f)), minibuf)
+		    /* Check that F either is, or has forwarded its focus to,
+		       MINIBUF's frame.  */
+		    && (EQ (WINDOW_FRAME (XWINDOW (minibuf)), f)
+			|| EQ (WINDOW_FRAME (XWINDOW (minibuf)),
+			       FRAME_FOCUS_FRAME (XFRAME (f)))))
 		  return f;
 	      }
 	    else
@@ -620,9 +633,10 @@ next_frame (frame, minibuf)
 
 /* Return the previous frame in the frame list before FRAME.
    If MINIBUF is nil, exclude minibuffer-only frames.
-   If MINIBUF is a window, include only frames using that window for
-   their minibuffer.
+   If MINIBUF is a window, include only its own frame
+   and any frame now using that window as the minibuffer.
    If MINIBUF is `visible', include all visible frames.
+   If MINIBUF is 0, include all visible and iconified frames.
    Otherwise, include all frames.  */
 
 Lisp_Object
@@ -658,13 +672,25 @@ prev_frame (frame, minibuf)
 	}
       else if (XTYPE (minibuf) == Lisp_Window)
 	{
-	  if (EQ (FRAME_MINIBUF_WINDOW (XFRAME (f)), minibuf))
+	  if (EQ (FRAME_MINIBUF_WINDOW (XFRAME (f)), minibuf)
+	      /* Check that F either is, or has forwarded its focus to,
+		 MINIBUF's frame.  */
+	      && (EQ (WINDOW_FRAME (XWINDOW (minibuf)), f)
+		  || EQ (WINDOW_FRAME (XWINDOW (minibuf)),
+			 FRAME_FOCUS_FRAME (XFRAME (f)))))
 	    prev = f;
 	}
       else if (EQ (minibuf, Qvisible))
 	{
 	  FRAME_SAMPLE_VISIBILITY (XFRAME (f));
 	  if (FRAME_VISIBLE_P (XFRAME (f)))
+	    prev = f;
+	}
+      else if (XFASTINT (f) == 0)
+	{
+	  FRAME_SAMPLE_VISIBILITY (XFRAME (f));
+	  if (FRAME_VISIBLE_P (XFRAME (f))
+	      || FRAME_ICONIFIED_P (XFRAME (f)))
 	    prev = f;
 	}
       else
@@ -689,9 +715,10 @@ DEFUN ("next-frame", Fnext_frame, Snext_frame, 0, 2, 0,
 By default, skip minibuffer-only frames.\n\
 If omitted, FRAME defaults to the selected frame.\n\
 If optional argument MINIFRAME is nil, exclude minibuffer-only frames.\n\
-If MINIFRAME is a window, include only frames using that window for their\n\
-minibuffer.\n\
+If MINIBUF is a window, include only its own frame\n\
+and any frame now using that window as the minibuffer.\n\
 If MINIFRAME is `visible', include all visible frames.\n\
+If MINIBUF is 0, include all visible and iconified frames.\n\
 Otherwise, include all frames.")
   (frame, miniframe)
      Lisp_Object frame, miniframe;
@@ -711,9 +738,10 @@ DEFUN ("previous-frame", Fprevious_frame, Sprevious_frame, 0, 2, 0,
 By default, skip minibuffer-only frames.\n\
 If omitted, FRAME defaults to the selected frame.\n\
 If optional argument MINIFRAME is nil, exclude minibuffer-only frames.\n\
-If MINIFRAME is a window, include only frames using that window for their\n\
-minibuffer.\n\
+If MINIBUF is a window, include only its own frame\n\
+and any frame now using that window as the minibuffer.\n\
 If MINIFRAME is `visible', include all visible frames.\n\
+If MINIBUF is 0, include all visible and iconified frames.\n\
 Otherwise, include all frames.")
   (frame, miniframe)
      Lisp_Object frame, miniframe;
@@ -834,6 +862,12 @@ but if the second optional argument FORCE is non-nil, you may do so.")
       minibuf_window = selected_frame->minibuffer_window;
     }
 
+  /* Clear any X selections for this frame.  */
+#ifdef HAVE_X_WINDOWS
+  if (FRAME_X_P (f))
+    x_clear_frame_selections (f);
+#endif
+
   /* Mark all the windows that used to be on FRAME as deleted, and then
      remove the reference to them.  */
   delete_all_subwindows (XWINDOW (f->root_window));
@@ -841,6 +875,21 @@ but if the second optional argument FORCE is non-nil, you may do so.")
 
   Vframe_list = Fdelq (frame, Vframe_list);
   FRAME_SET_VISIBLE (f, 0);
+
+  if (FRAME_CURRENT_GLYPHS (f))
+    free_frame_glyphs (f, FRAME_CURRENT_GLYPHS (f));
+  if (FRAME_DESIRED_GLYPHS (f))
+    free_frame_glyphs (f, FRAME_DESIRED_GLYPHS (f));
+  if (FRAME_TEMP_GLYPHS (f))
+    free_frame_glyphs (f, FRAME_TEMP_GLYPHS (f));
+  if (FRAME_INSERT_COST (f))
+    free (FRAME_INSERT_COST (f));
+  if (FRAME_DELETEN_COST (f))
+    free (FRAME_DELETEN_COST (f));
+  if (FRAME_INSERTN_COST (f))
+    free (FRAME_INSERTN_COST (f));
+  if (FRAME_DELETE_COST (f))
+    free (FRAME_DELETE_COST (f));
 
   /* Since some events are handled at the interrupt level, we may get
      an event for f at any time; if we zero out the frame's display
@@ -1055,6 +1104,9 @@ If omitted, FRAME defaults to the currently selected frame.")
     }
 #endif
 
+  /* Make menu bar update for the Buffers and Frams menus.  */
+  windows_or_buffers_changed++;
+
   return frame;
 }
 
@@ -1075,9 +1127,11 @@ but if the second optional argument FORCE is non-nil, you may do so.")
   if (NILP (force) && !other_visible_frames (XFRAME (frame)))
     error ("Attempt to make invisible the sole visible or iconified frame");
 
+#if 0 /* This isn't logically necessary, and it can do GC.  */
   /* Don't let the frame remain selected.  */
   if (XFRAME (frame) == selected_frame)
     Fhandle_switch_frame (next_frame (frame, Qt), Qnil);
+#endif
 
   /* Don't allow minibuf_window to remain on a deleted frame.  */
   if (EQ (XFRAME (frame)->minibuffer_window, minibuf_window))
@@ -1092,6 +1146,9 @@ but if the second optional argument FORCE is non-nil, you may do so.")
   if (FRAME_X_P (XFRAME (frame)))
     x_make_frame_invisible (XFRAME (frame));
 #endif
+
+  /* Make menu bar update for the Buffers and Frams menus.  */
+  windows_or_buffers_changed++;
 
   return Qnil;
 }
@@ -1108,9 +1165,11 @@ If omitted, FRAME defaults to the currently selected frame.")
   
   CHECK_LIVE_FRAME (frame, 0);
 
+#if 0 /* This isn't logically necessary, and it can do GC.  */
   /* Don't let the frame remain selected.  */
   if (XFRAME (frame) == selected_frame)
     Fhandle_switch_frame (next_frame (frame, Qt), Qnil);
+#endif
 
   /* Don't allow minibuf_window to remain on a deleted frame.  */
   if (EQ (XFRAME (frame)->minibuffer_window, minibuf_window))
@@ -1125,6 +1184,9 @@ If omitted, FRAME defaults to the currently selected frame.")
   if (FRAME_X_P (XFRAME (frame)))
       x_iconify_frame (XFRAME (frame));
 #endif
+
+  /* Make menu bar update for the Buffers and Frams menus.  */
+  windows_or_buffers_changed++;
 
   return Qnil;
 }
@@ -1360,13 +1422,15 @@ If FRAME is omitted, return information on the currently selected frame.")
 		   : FRAME_MINIBUF_ONLY_P (f) ? Qonly
 		   : FRAME_MINIBUF_WINDOW (f)));
   store_in_alist (&alist, Qunsplittable, (FRAME_NO_SPLIT_P (f) ? Qt : Qnil));
-  store_in_alist (&alist, Qmenu_bar_lines, (FRAME_MENU_BAR_LINES (f)));
 
   /* I think this should be done with a hook.  */
 #ifdef HAVE_X_WINDOWS
   if (FRAME_X_P (f))
     x_report_frame_params (f, &alist);
+  else
 #endif
+    /* This ought to be correct in f->param_alist for an X frame.  */
+    store_in_alist (&alist, Qmenu_bar_lines, FRAME_MENU_BAR_LINES (f));
   return alist;
 }
 
@@ -1792,6 +1856,28 @@ DEFUN ("selected-frame", Fselected_frame, Sselected_frame, 0, 0, 0,
   XFASTINT (tem) = 0;
   return tem;
 }
+
+DEFUN ("frame-first-window", Fframe_first_window, Sframe_first_window, 0, 1, 0,
+  0)
+  (frame)
+     Lisp_Object frame;
+{
+  Lisp_Object w;
+
+  w = FRAME_ROOT_WINDOW (selected_frame);
+
+  while (NILP (XWINDOW (w)->buffer))
+    {
+      if (! NILP (XWINDOW (w)->hchild))
+	w = XWINDOW (w)->hchild;
+      else if (! NILP (XWINDOW (w)->vchild))
+	w = XWINDOW (w)->vchild;
+      else
+	abort ();
+    }
+  return w;
+}
+
 DEFUN ("framep", Fframep, Sframep, 1, 1, 0,
   /* Don't confuse make-docfile by having two doc strings for this function.
      make-docfile does not pay attention to #if, for good reason!  */
@@ -2033,6 +2119,7 @@ syms_of_frame ()
   XFASTINT (Vterminal_frame) = 0;
 
   defsubr (&Sselected_frame);
+  defsubr (&Sframe_first_window);
   defsubr (&Sframep);
   defsubr (&Sframe_char_height);
   defsubr (&Sframe_char_width);

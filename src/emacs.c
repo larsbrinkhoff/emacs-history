@@ -128,6 +128,10 @@ int noninteractive;
    but nothing terrible happens if user sets this one.  */
 
 int noninteractive1;
+
+/* Save argv and argc.  */
+char **initial_argv;
+int initial_argc;
 
 /* Signal code for the fatal signal that was received */
 int fatal_error_code;
@@ -192,6 +196,9 @@ init_cmdargs (argc, argv, skip_args)
   register int i;
   Lisp_Object name, dir;
 
+  initial_argv = argv;
+  initial_argc = argc;
+
   Vinvocation_name = Ffile_name_nondirectory (build_string (argv[0]));
   Vinvocation_directory = Ffile_name_directory (build_string (argv[0]));
   /* If we got no directory in argv[0], search PATH to find where
@@ -254,7 +261,7 @@ init_cmdargs (argc, argv, skip_args)
 	  tem = Ffile_symlink_p (name);
 	  if (!NILP (tem))
 	    {
-	      name = tem;
+	      name = Fexpand_file_name (tem, dir);
 	      dir = Ffile_name_directory (name);
 	    }
 	  else
@@ -409,21 +416,6 @@ main (argc, argv, envp)
 
   clearerr (stdin);
 
-  if (! noninteractive1)
-    {
-#ifdef BSD_PGRPS
-      if (initialized)
-	{
-	  inherited_pgroup = EMACS_GETPGRP (0);
-	  setpgrp (0, getpid ());
-	}
-#else
-#if defined (USG5) && defined (INTERRUPT_INPUT)
-      setpgrp ();
-#endif
-#endif
-    }
-
 #ifdef APOLLO
 #ifndef APOLLO_SR10
   /* If USE_DOMAIN_ACLS environment variable exists,
@@ -505,6 +497,21 @@ main (argc, argv, envp)
     {
       skip_args += 1;
       noninteractive = 1;
+    }
+
+  if (! noninteractive)
+    {
+#ifdef BSD_PGRPS
+      if (initialized)
+	{
+	  inherited_pgroup = EMACS_GETPGRP (0);
+	  setpgrp (0, getpid ());
+	}
+#else
+#if defined (USG5) && defined (INTERRUPT_INPUT)
+      setpgrp ();
+#endif
+#endif
     }
 
 #ifdef POSIX_SIGNALS

@@ -154,7 +154,7 @@ The following keys are bound:
     ;; look for a #!.../wish -f line at bob
     (save-excursion
       (goto-char (point-min))
-      (if (looking-at "#![ \t]*\\([^ \t]*\\)[ \t]\\(.*[ \t]\\)*-f")
+      (if (looking-at "#![ \t]*\\([^ \t]*\\)[ \t]\\(.*[ \t]\\)-f")
 	  (progn
 	    (set (make-local-variable 'tcl-default-application)
 		 (buffer-substring (match-beginning 1)
@@ -618,6 +618,8 @@ If `tcl-process' is nil or dead, start a new process first."
 ;;{{{ Emacs local variables
 
 
+(provide 'tcl-mode)
+
 ;; Local Variables:
 ;; folded-file: t
 ;; End:

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Help, Mark, M-x, Top
 @chapter Help
@@ -11,23 +11,18 @@
 character, @kbd{C-h}.  @kbd{C-h} is a prefix key that is used only for
 documentation-printing commands.  The characters that you can type after
 @kbd{C-h} are called @dfn{help options}.  One help option is @kbd{C-h};
-that is how you ask for help about using @kbd{C-h}.
+that is how you ask for help about using @kbd{C-h}.  To cancel, type
+@kbd{C-g}.
 
-  @kbd{C-h C-h} prints a list of the possible help options, and then asks
-you to go ahead and type the option.  It prompts with this string:
+  @kbd{C-h C-h} displays a list of the possible help options, each with
+a brief description.  Before you type a help option, you can use
+@key{SPC} or @key{DEL} to scroll through the list.
 
-@smallexample
-a b c f i k l m n p s t v w C-c C-d C-n C-w.  Type C-h for more help:
-@end smallexample
-
-@noindent
-You should then type one of those characters.
-
-  Typing a third @kbd{C-h} displays a description of what the options mean;
-it still waits for you to type an option.  To cancel, type @kbd{C-g}.
-
-  @kbd{C-h} means ``help'' in various other contexts as well.  For example,
-in @code{query-replace}, it describes the options available.
+  @kbd{C-h} means ``help'' in various other contexts as well.  For
+example, in @code{query-replace}, it describes the options available.
+After a prefix key, it displays a list of the alternatives that can
+follow the prefix key.  (A few prefix keys don't support this because
+they define other meanings for @kbd{C-h}.)
 
 @menu
 * Help Summary::	Brief list of all Help commands.
@@ -58,7 +53,7 @@ mode bindings, major mode bindings, and global bindings
 (@code{describe-bindings}).
 @item C-h c @var{key}
 Print the name of the command that @var{key} runs
-(@code{describe-key-briefly}).  @kbd{c} is for `character'.  For more
+(@code{describe-key-briefly}).  Here @kbd{c} stands for `character'.  For more
 extensive information on @var{key}, use @kbd{C-h k}.
 @item C-h f @var{function} @key{RET}
 Display documentation on the Lisp function named @var{function}
@@ -96,6 +91,12 @@ Enter Info and go to the node documenting the Emacs function @var{function}
 @item C-h C-k @var{key}
 Enter Info and go to the node where the key sequence @var{key} is
 documented (@code{info-goto-emacs-key-command-node}).
+@item C-h C-c
+Display the copying conditions for GNU Emacs.
+@item C-h C-d
+Display information about getting new versions of GNU Emacs.
+@item C-h C-p
+Display information about the GNU Project.
 @end table
 
 @node Key Help
@@ -128,7 +129,7 @@ including function keys and mouse events.
   @kbd{C-h f} (@code{describe-function}) reads the name of a Lisp function
 using the minibuffer, then displays that function's documentation string
 in a window.  Since commands are Lisp functions, you can use this to get
-the documentation of a command that is known by name.  For example,
+the documentation of a command that you know by name.  For example,
 
 @example
 C-h f auto-fill-mode @key{RET}
@@ -169,6 +170,7 @@ command, then go on editing.
   @kbd{C-h w @var{command} @key{RET}} tells you what keys are bound to
 @var{command}.  It prints a list of the keys in the echo area.  If it
 says the command is not on any key, you must use @kbd{M-x} to run it.
+@kbd{C-h w} runs the command @code{where-is}.
 
   @kbd{C-h v} (@code{describe-variable}) is like @kbd{C-h f} but describes
 Lisp variables instead of Lisp functions.  Its default is the Lisp symbol
@@ -358,14 +360,18 @@ actually @kbd{C-M-h}, which marks a defun.)
 @findex describe-distribution
 @kindex C-h C-w
 @findex describe-no-warranty
-  The other @kbd{C-h} options display various files of useful information.
-@kbd{C-h C-w} displays the full details on the complete absence of warranty
-for GNU Emacs.  @kbd{C-h n} (@code{view-emacs-news}) displays the file
-@file{emacs/etc/NEWS}, which contains documentation on Emacs changes
-arranged chronologically.  @kbd{C-h t} (@code{help-with-tutorial}) displays
-the learn-by-doing Emacs tutorial.  @kbd{C-h C-c} (@code{describe-copying})
-displays the file @file{emacs/etc/COPYING}, which tells you the conditions
-you must obey in distributing copies of Emacs.  @kbd{C-h C-d}
-(@code{describe-distribution}) displays the file @file{emacs/etc/DISTRIB},
-which tells you how you can order a copy of the latest version of
-Emacs.@refill
+@cindex C-h C-p
+@findex describe-project
+  The other @kbd{C-h} options display various files of useful
+information.  @kbd{C-h C-w} displays the full details on the complete
+absence of warranty for GNU Emacs.  @kbd{C-h n} (@code{view-emacs-news})
+displays the file @file{emacs/etc/NEWS}, which contains documentation on
+Emacs changes arranged chronologically.  @kbd{C-h t}
+(@code{help-with-tutorial}) displays the learn-by-doing Emacs tutorial.
+@kbd{C-h C-c} (@code{describe-copying}) displays the file
+@file{emacs/etc/COPYING}, which tells you the conditions you must obey
+in distributing copies of Emacs.  @kbd{C-h C-d}
+(@code{describe-distribution}) displays the file
+@file{emacs/etc/DISTRIB}, which tells you how you can order a copy of
+the latest version of Emacs.  @kbd{C-h C-p} (@code{describe-project})
+displays general information about the GNU Project.

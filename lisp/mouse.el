@@ -39,6 +39,8 @@
 (defvar mouse-yank-at-point nil
   "*If non-nil, mouse yank commands yank at point instead of at click.")
 
+;; Commands that operate on windows.
+
 (defun mouse-minibuffer-check (event)
   (let ((w (posn-window (event-start event))))
     (and (window-minibuffer-p w)
@@ -93,7 +95,7 @@ This command must be bound to a mouse click."
 	  (first-line window-min-height)
 	  (last-line (- (window-height) window-min-height)))
       (if (< last-line first-line)
-	  (error "window too short to split")
+	  (error "Window too short to split")
 	(split-window-vertically
 	 (min (max new-height first-line) last-line))))))
 
@@ -109,10 +111,114 @@ This command must be bound to a mouse click."
 	  (first-col window-min-width)
 	  (last-col (- (window-width) window-min-width)))
       (if (< last-col first-col)
-	  (error "window too narrow to split")
+	  (error "Window too narrow to split")
 	(split-window-horizontally
 	 (min (max new-width first-col) last-col))))))
 
+(defun mouse-drag-mode-line (start-event)
+  "Change the height of a window by dragging on the mode line."
+  (interactive "e")
+  (let ((done nil)
+	(echo-keystrokes 0)
+	(start-event-frame (window-frame (car (car (cdr start-event)))))
+	(start-event-window (car (car (cdr start-event))))
+	(start-nwindows (count-windows t))
+	(old-selected-window (selected-window))
+	should-enlarge-minibuffer
+	event mouse minibuffer y top bot edges wconfig params growth)
+    (setq params (frame-parameters))
+    (if (and (not (setq minibuffer (cdr (assq 'minibuffer params))))
+	     (one-window-p t))
+	(error "Attempt to resize sole window"))
+    (track-mouse
+      (progn
+	;; enlarge-window only works on the selected window, so
+	;; we must select the window where the start event originated.
+	;; unwind-protect will restore the old selected window later.
+	(select-window start-event-window)
+	;; if this is the bottommost ordinary window, then to
+	;; move its modeline the minibuffer must be enlarged.
+	(setq should-enlarge-minibuffer
+	      (and minibuffer
+		   (not (one-window-p t))
+		   (= (nth 1 (window-edges minibuffer))
+		      (nth 3 (window-edges)))))
+	;; loop reading events and sampling the position of
+	;; the mouse.
+	(while (not done)
+	  (setq event (read-event)
+		mouse (mouse-position))
+	  ;; do nothing if
+	  ;;   - there is a switch-frame event.
+	  ;;   - the mouse isn't in the frame that we started in
+	  ;;   - the mouse isn't in any Emacs frame
+	  ;; drag if
+	  ;;   - there is a mouse-movement event
+	  ;;   - there is a scroll-bar-movement event
+	  ;;     (same as mouse movement for our purposes)
+	  ;; quit if
+	  ;;   - there is a keyboard event or some other unknown event
+	  ;;     unknown event.
+	  (cond ((integerp event)
+		 (setq done t))
+		((eq (car event) 'switch-frame)
+		 nil)
+		((not (memq (car event)
+			    '(mouse-movement scroll-bar-movement)))
+		 (if (consp event)
+		     (setq unread-command-events
+			   (cons event unread-command-events)))
+		 (setq done t))
+		((not (eq (car mouse) start-event-frame))
+		 nil)
+		((null (car (cdr mouse)))
+		 nil)
+		(t
+		 (setq y (cdr (cdr mouse))
+		       edges (window-edges)
+		       top (nth 1 edges)
+		       bot (nth 3 edges))
+		 ;; scale back a move that would make the
+		 ;; window too short.
+		 (cond ((< (- y top -1) window-min-height)
+			(setq y (+ top window-min-height -1))))
+		 ;; compute size change needed
+		 (setq growth (- y bot -1)
+		       wconfig (current-window-configuration))
+		 ;; grow/shrink minibuffer?
+		 (if should-enlarge-minibuffer
+		     (progn
+		       ;; yes.  briefly select minibuffer so
+		       ;; enlarge-window will affect the
+		       ;; correct window.
+		       (select-window minibuffer)
+		       ;; scale back shrinkage if it would
+		       ;; make the minibuffer less than 1
+		       ;; line tall.
+		       (if (and (> growth 0)
+				(< (- (window-height minibuffer)
+				      growth)
+				   1))
+			   (setq growth (1- (window-height minibuffer))))
+		       (enlarge-window (- growth))
+		       (select-window start-event-window))
+		   ;; no.  grow/shrink the selected window
+		   (enlarge-window growth))
+		 ;; if this window's growth caused another
+		 ;; window to be deleted because it was too
+		 ;; short, rescind the change.
+		 ;;
+		 ;; if size change caused space to be stolen
+		 ;; from a window above this one, rescind the
+		 ;; change, but only if we didn't grow/srhink
+		 ;; the minibuffer.  minibuffer size changes
+		 ;; can cause all windows to shrink... no way
+		 ;; around it.
+		 (if (or (/= start-nwindows (count-windows t))
+			 (and (not should-enlarge-minibuffer)
+			      (/= top (nth 1 (window-edges)))))
+		     (set-window-configuration wconfig)))))))))
+
 (defun mouse-set-point (event)
   "Move point to the position clicked on with the mouse.
 This should be bound to a mouse click event type."
@@ -121,6 +227,8 @@ This should be bound to a mouse click event type."
   ;; Use event-end in case called from mouse-drag-region.
   ;; If EVENT is a click, event-end and event-start give same value.
   (let ((posn (event-end event)))
+    (if (not (windowp (posn-window posn)))
+	(error "Cursor not in text area of window"))
     (select-window (posn-window posn))
     (if (numberp (posn-point posn))
 	(goto-char (posn-point posn)))))
@@ -157,28 +265,34 @@ the mouse back into the window, or release the button.
 This variable's value may be non-integral.
 Setting this to zero causes Emacs to scroll as fast as it can.")
 
-(defun mouse-scroll-subr (jump &optional overlay start)
-  "Scroll the selected window JUMP lines at a time, until new input arrives.
+(defun mouse-scroll-subr (window jump &optional overlay start)
+  "Scroll the window WINDOW, JUMP lines at a time, until new input arrives.
 If OVERLAY is an overlay, let it stretch from START to the far edge of
 the newly visible text.
 Upon exit, point is at the far edge of the newly visible text."
-  (while (progn
-	   (goto-char (window-start))
-	   (if (not (zerop (vertical-motion jump)))
-	       (progn
-		 (set-window-start (selected-window) (point))
-		 (if (natnump jump)
-		     (progn
-		       (goto-char (window-end (selected-window)))
-		       ;; window-end doesn't reflect the window's new
-		       ;; start position until the next redisplay.  Hurrah.
-		       (vertical-motion (1- jump)))
-		   (goto-char (window-start (selected-window))))
-		 (if overlay
-		     (move-overlay overlay start (point)))
-		 (if (not (eobp))
-		     (sit-for mouse-scroll-delay))))))
-  (point))
+  (let ((opoint (point)))
+    (while (progn
+	     (goto-char (window-start window))
+	     (if (not (zerop (vertical-motion jump window)))
+		 (progn
+		   (set-window-start window (point))
+		   (if (natnump jump)
+		       (progn
+			 (goto-char (window-end window))
+			 ;; window-end doesn't reflect the window's new
+			 ;; start position until the next redisplay.  Hurrah.
+			 (vertical-motion (1- jump) window))
+		     (goto-char (window-start window)))
+		   (if overlay
+		       (move-overlay overlay start (point)))
+		   ;; Now that we have scrolled WINDOW properly,
+		   ;; put point back where it was for the redisplay
+		   ;; so that we don't mess up the selected window.
+		   (or (eq window (selected-window))
+		       (goto-char opoint))
+		   (sit-for mouse-scroll-delay)))))
+    (or (eq window (selected-window))
+	(goto-char opoint))))
 
 (defvar mouse-drag-overlay (make-overlay 1 1))
 (overlay-put mouse-drag-overlay 'face 'region)
@@ -222,10 +336,6 @@ release the mouse button.  Otherwise, it does not."
 		  end-point (posn-point end))
 
 	    (cond
-
-	     ;; Ignore switch-frame events.
-	     ((eq (car-safe event) 'switch-frame))
-
 	     ;; Are we moving within the original window?
 	     ((and (eq (posn-window end) start-window)
 		   (integer-or-marker-p end-point))
@@ -238,28 +348,26 @@ release the mouse button.  Otherwise, it does not."
 		(cond
 		 ((null mouse-row))
 		 ((< mouse-row top)
-		  (mouse-scroll-subr
-		   (- mouse-row top) mouse-drag-overlay start-point))
-		 ((and (not (eobp))
-		       (>= mouse-row bottom))
-		  (mouse-scroll-subr (1+ (- mouse-row bottom))
+		  (mouse-scroll-subr start-window (- mouse-row top)
+				     mouse-drag-overlay start-point))
+		 ((>= mouse-row bottom)
+		  (mouse-scroll-subr start-window (1+ (- mouse-row bottom))
 				     mouse-drag-overlay start-point)))))))))
-
-      (if (and (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
-	       (eq (posn-window (event-end event)) start-window)
-	       (numberp (posn-point (event-end event))))
+      (if (consp event)
+;;; When we scroll into the mode line or menu bar, or out of the window,
+;;; we get events that don't fit these criteria.
+;;;	       (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
+;;;	       (eq (posn-window (event-end event)) start-window)
+;;;	       (numberp (posn-point (event-end event)))
 	  (let ((fun (key-binding (vector (car event)))))
-	    (if (memq fun '(mouse-set-region mouse-set-point))
-		(if (not (= (overlay-start mouse-drag-overlay)
-			    (overlay-end mouse-drag-overlay)))
-		    (let (this-command)
-		      (push-mark (overlay-start mouse-drag-overlay) t t)
-		      (goto-char (overlay-end mouse-drag-overlay))
-		      (copy-region-as-kill (point) (mark t)))
+	    (if (not (= (overlay-start mouse-drag-overlay)
+			(overlay-end mouse-drag-overlay)))
+		(let (last-command this-command)
+		  (push-mark (overlay-start mouse-drag-overlay) t t)
 		  (goto-char (overlay-end mouse-drag-overlay))
-		  (setq this-command 'mouse-set-point))
-	      (if (fboundp fun)
-		  (funcall fun event)))))
+		  (copy-region-as-kill (point) (mark t)))
+	      (goto-char (overlay-end mouse-drag-overlay))
+	      (setq this-command 'mouse-set-point))))
       (delete-overlay mouse-drag-overlay))))
 
 ;; Commands to handle xterm-style multiple clicks.
@@ -350,6 +458,9 @@ If DIR is positive skip forward; if negative, skip backward."
 Display cursor at that position for a second.
 This must be bound to a mouse click."
   (interactive "e")
+  (mouse-minibuffer-check click)
+  (select-window (posn-window (event-start click)))
+  ;; We don't use save-excursion because that preserves the mark too.
   (let ((point-save (point)))
     (unwind-protect
 	(progn (mouse-set-point click)
@@ -386,7 +497,8 @@ regardless of where you click."
 This does not delete the region; it acts like \\[kill-ring-save]."
   (interactive "e")
   (mouse-set-mark-fast click)
-  (kill-ring-save (point) (mark t))
+  (let (this-command last-command)
+    (kill-ring-save (point) (mark t)))
   (mouse-show-mark))
 
 ;;; This function used to delete the text between point and the mouse
@@ -408,11 +520,15 @@ This does not delete the region; it acts like \\[kill-ring-save]."
     ;; Delete, but make the undo-list entry share with the kill ring.
     ;; First, delete just one char, so in case buffer is being modified
     ;; for the first time, the undo list records that fact.
-    (delete-region beg
-		   (+ beg (if (> end beg) 1 -1)))
+    (let (before-change-function after-change-function
+	  before-change-functions after-change-functions)
+      (delete-region beg
+		     (+ beg (if (> end beg) 1 -1))))
     (let ((buffer-undo-list buffer-undo-list))
       ;; Undo that deletion--but don't change the undo list!
-      (primitive-undo 1 buffer-undo-list)
+      (let (before-change-function after-change-function
+	    before-change-functions after-change-functions)
+	(primitive-undo 1 buffer-undo-list))
       ;; Now delete the rest of the specified region,
       ;; but don't record it.
       (setq buffer-undo-list t)
@@ -613,34 +729,32 @@ This must be bound to a button-down mouse event."
 	      (setq end (event-end event)
 		    end-point (posn-point end))
 	      (cond
-
-	       ;; Ignore switch-frame events.
-	       ((eq (car-safe event) 'switch-frame))
-
 	       ;; Are we moving within the original window?
 	       ((and (eq (posn-window end) start-window)
 		     (integer-or-marker-p end-point))
-		(if (/= start-point end-point)
-		    (set-marker mouse-secondary-start nil))
 		(let ((range (mouse-start-end start-point end-point
 					      click-count)))
-		  (move-overlay mouse-secondary-overlay
-				(car range) (nth 1 range))))
+		  (if (or (/= start-point end-point)
+			  (null (marker-position mouse-secondary-start)))
+		      (progn
+			(set-marker mouse-secondary-start nil)
+			(move-overlay mouse-secondary-overlay
+				      (car range) (nth 1 range))))))
                (t
                 (let ((mouse-row (cdr (cdr (mouse-position)))))
                   (cond
                    ((null mouse-row))
                    ((< mouse-row top)
-                    (mouse-scroll-subr
-                     (- mouse-row top) mouse-secondary-overlay start-point))
-                   ((and (not (eobp))
-                         (>= mouse-row bottom))
-                    (mouse-scroll-subr (1+ (- mouse-row bottom))
+                    (mouse-scroll-subr start-window (- mouse-row top)
+				       mouse-secondary-overlay start-point))
+                   ((>= mouse-row bottom)
+                    (mouse-scroll-subr start-window (1+ (- mouse-row bottom))
                                        mouse-secondary-overlay start-point)))))))))
 
-	(if (and (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
-		 (eq (posn-window (event-end event)) start-window)
-		 (numberp (posn-point (event-end event))))
+	(if (consp event)
+;;;		 (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
+;;;		 (eq (posn-window (event-end event)) start-window)
+;;;		 (numberp (posn-point (event-end event)))
 	    (if (marker-position mouse-secondary-start)
 		(save-window-excursion
 		  (delete-overlay mouse-secondary-overlay)
@@ -779,11 +893,20 @@ again.  If you do this twice in the same position, it kills the selection."
 				      (overlay-start mouse-secondary-overlay)
 				      click-posn))
 		      (setq deactivate-mark nil)))
-		(setcar kill-ring (buffer-substring
-				   (overlay-start mouse-secondary-overlay)
-				   (overlay-end mouse-secondary-overlay)))
-		(if interprogram-cut-function
-		    (funcall interprogram-cut-function (car kill-ring))))
+		(if (eq last-command 'mouse-secondary-save-then-kill)
+		    (progn
+		      ;; If the front of the kill ring comes from 
+		      ;; an immediately previous use of this command,
+		      ;; replace it with the extended region.
+		      ;; (It would be annoying to make a separate entry.)
+		      (setcar kill-ring
+			      (buffer-substring
+			       (overlay-start mouse-secondary-overlay)
+			       (overlay-end mouse-secondary-overlay)))
+		      (if interprogram-cut-function
+			  (funcall interprogram-cut-function (car kill-ring))))
+		  (copy-region-as-kill (overlay-start mouse-secondary-overlay)
+				       (overlay-end mouse-secondary-overlay))))
 	    (if mouse-secondary-start
 		;; All we have is one end of a selection,
 		;; so put the other end here.
@@ -1179,32 +1302,34 @@ and selects that window."
   "Click on an alternative in the `*Completions*' buffer to choose it."
   (interactive "e")
   (let ((buffer (window-buffer))
-        choice)
+        choice
+	base-size)
     (save-excursion
       (set-buffer (window-buffer (posn-window (event-start event))))
       (if completion-reference-buffer
 	  (setq buffer completion-reference-buffer))
+      (setq base-size completion-base-size)
       (save-excursion
 	(goto-char (posn-point (event-start event)))
 	(let (beg end)
-	  (skip-chars-forward "^ \t\n")
-	  (while (looking-at " [^ \n\t]")
-	    (forward-char 1)
-	    (skip-chars-forward "^ \t\n"))
-	  (setq end (point))
-	  (skip-chars-backward "^ \t\n")
-	  (while (and (= (preceding-char) ?\ )
-		      (not (and (> (point) (1+ (point-min)))
-				(= (char-after (- (point) 2)) ?\ ))))
-	    (backward-char 1)
-	    (skip-chars-backward "^ \t\n"))
-	  (setq beg (point))
+	  (if (and (not (eobp)) (get-text-property (point) 'mouse-face))
+	      (setq end (point) beg (1+ (point))))
+	  (if (null beg)
+	      (error "No completion here"))
+	  (setq beg (previous-single-property-change beg 'mouse-face))
+	  (setq end (or (next-single-property-change end 'mouse-face)
+			(point-max)))
 	  (setq choice (buffer-substring beg end)))))
     (let ((owindow (selected-window)))
       (select-window (posn-window (event-start event)))
-      (bury-buffer)
+      (if (and (one-window-p t 'selected-frame)
+	       (window-dedicated-p (selected-window)))
+	  ;; This is a special buffer's frame
+	  (iconify-frame (selected-frame))
+	(or (window-dedicated-p (selected-window))
+	    (bury-buffer)))
       (select-window owindow))
-    (choose-completion-string choice buffer)))
+    (choose-completion-string choice buffer base-size)))
 
 ;; Font selection.
 
@@ -1222,26 +1347,35 @@ and selects that window."
 (defvar x-fixed-font-alist
   '("Font menu"
     ("Misc"
-     ("6x10" "-misc-fixed-medium-r-normal--10-100-75-75-c-60-*-1" "6x10")
-     ("6x12" "-misc-fixed-medium-r-semicondensed--12-110-75-75-c-60-*-1" "6x12")
-     ("6x13" "-misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-*-1" "6x13")
-     ("lucida 13"
-      "-b&h-lucidatypewriter-medium-r-normal-sans-0-0-0-0-m-0-*-1")
-     ("7x13" "-misc-fixed-medium-r-normal--13-120-75-75-c-70-*-1" "7x13")
-     ("7x14" "-misc-fixed-medium-r-normal--14-130-75-75-c-70-*-1" "7x14")
-     ("9x15" "-misc-fixed-medium-r-normal--15-140-*-*-c-*-*-1" "9x15")
-     ("")
-     ("clean 8x8" "-schumacher-clean-medium-r-normal--*-80-*-*-c-*-*-1")
-     ("clean 8x14" "-schumacher-clean-medium-r-normal--*-140-*-*-c-*-*-1")
-     ("clean 8x10" "-schumacher-clean-medium-r-normal--*-100-*-*-c-*-*-1")
-     ("clean 8x16" "-schumacher-clean-medium-r-normal--*-160-*-*-c-*-*-1")
-     ("")
-     ("sony 8x16" "-sony-fixed-medium-r-normal--16-120-100-100-c-80-*-1")
-     ("")
+     ;; For these, we specify the pixel height and width.
      ("fixed" "fixed")
-     ("10x20" "10x20")
-     ("11x18" "11x18")
-     ("12x24" "12x24"))
+     ("6x10" "-misc-fixed-medium-r-normal--10-*-*-*-c-60-iso8859-1" "6x10")
+     ("6x12"
+      "-misc-fixed-medium-r-semicondensed--12-*-*-*-c-60-iso8859-1" "6x12")
+     ("6x13"
+      "-misc-fixed-medium-r-semicondensed--13-*-*-*-c-60-iso8859-1" "6x13")
+     ("7x13" "-misc-fixed-medium-r-normal--13-*-*-*-c-70-iso8859-1" "7x13")
+     ("7x14" "-misc-fixed-medium-r-normal--14-*-*-*-c-70-iso8859-1" "7x14")
+     ("8x13" "-misc-fixed-medium-r-normal--13-*-*-*-c-80-iso8859-1" "8x13")
+     ("9x15" "-misc-fixed-medium-r-normal--15-*-*-*-c-90-iso8859-1" "9x15")
+     ("10x20" "-misc-fixed-medium-r-normal--20-*-*-*-c-100-iso8859-1" "10x20")
+     ("11x18" "-misc-fixed-medium-r-normal--18-*-*-*-c-110-iso8859-1" "11x18")
+     ("12x24" "-misc-fixed-medium-r-normal--24-*-*-*-c-120-iso8859-1" "12x24")
+     ("")
+     ("clean 5x8"
+      "-schumacher-clean-medium-r-normal--8-*-*-*-c-50-iso8859-1")
+     ("clean 6x8"
+      "-schumacher-clean-medium-r-normal--8-*-*-*-c-60-iso8859-1")
+     ("clean 8x8"
+      "-schumacher-clean-medium-r-normal--8-*-*-*-c-80-iso8859-1")
+     ("clean 8x10"
+      "-schumacher-clean-medium-r-normal--10-*-*-*-c-80-iso8859-1")
+     ("clean 8x14"
+      "-schumacher-clean-medium-r-normal--14-*-*-*-c-80-iso8859-1")
+     ("clean 8x16"
+      "-schumacher-clean-medium-r-normal--16-*-*-*-c-80-iso8859-1")
+     ("")
+     ("sony 8x16" "-sony-fixed-medium-r-normal--16-*-*-*-c-80-iso8859-1"))
 ;;; We don't seem to have these; who knows what they are.
 ;;;    ("fg-18" "fg-18")
 ;;;    ("fg-25" "fg-25")
@@ -1251,6 +1385,7 @@ and selects that window."
 ;;;    ("lucidatypewriter-bold-r-24" "-b&h-lucidatypewriter-bold-r-normal-sans-24-240-75-75-m-140-iso8859-1")
 ;;;    ("fixed-medium-20" "-misc-fixed-medium-*-*-*-20-*-*-*-*-*-*-*")
     ("Courier"
+     ;; For these, we specify the point height.
      ("8" "-adobe-courier-medium-r-normal--*-80-*-*-m-*-iso8859-1")
      ("10" "-adobe-courier-medium-r-normal--*-100-*-*-m-*-iso8859-1")
      ("12" "-adobe-courier-medium-r-normal--*-120-*-*-m-*-iso8859-1")
@@ -1317,9 +1452,13 @@ and selects that window."
 ;; (global-set-key [S-mouse-1]	'mouse-set-mark)
 
 (global-set-key [mode-line mouse-1] 'mouse-select-window)
+(global-set-key [mode-line drag-mouse-1] 'mouse-select-window)
+(global-set-key [mode-line down-mouse-1] 'mouse-drag-mode-line)
 (global-set-key [mode-line mouse-2] 'mouse-delete-other-windows)
 (global-set-key [mode-line mouse-3] 'mouse-delete-window)
 (global-set-key [mode-line C-mouse-2] 'mouse-split-window-horizontally)
+(global-set-key [vertical-scroll-bar C-mouse-2] 'mouse-split-window-vertically)
+(global-set-key [vertical-line C-mouse-2] 'mouse-split-window-vertically)
 
 (provide 'mouse)
 

@@ -1,7 +1,7 @@
 @c This is part of the Emacs manual.
 @c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
-@node Customization, Quitting, Emulation, Top
+@node Customization, Quitting, Amusements, Top
 @chapter Customization
 @cindex customization
 
@@ -9,13 +9,14 @@
 behavior of Emacs in minor ways.  See @cite{The Emacs Lisp Reference
 Manual} for how to make more far-reaching changes.
 
-  All kinds of customization affect only the particular Emacs job that you
-do them in.  They are completely lost when you kill the Emacs job, and have
-no effect on other Emacs jobs you may run at the same time or later.  The
-only way an Emacs job can affect anything outside of it is by writing a
-file; in particular, the only way to make a customization `permanent' is to
-put something in your @file{.emacs} file or other appropriate file to do the
-customization in each session.  @xref{Init File}.
+  All kinds of customization affect only the particular Emacs session
+that you do them in.  They are completely lost when you kill the Emacs
+session, and have no effect on other Emacs sessions you may run at the
+same time or later.  The only way an Emacs session can affect anything
+outside of it is by writing a file; in particular, the only way to make
+a customization `permanent' is to put something in your @file{.emacs}
+file or other appropriate file to do the customization in each session.
+@xref{Init File}.
 
 @menu
 * Minor Modes::		   Each minor mode is one feature you can turn on
@@ -60,7 +61,9 @@ negative argument always turns it off.
 
   Enabling or disabling some minor modes applies only to the current
 buffer; each buffer is independent of the other buffers.  Therefore, you
-can enable the mode in particular buffers and disable it in others.
+can enable the mode in particular buffers and disable it in others.  The
+per-buffer minor modes include Auto Fill mode, Outline minor mode, Auto
+Save mode, Font-Lock mode, and ISO Accents mode.
 
   Auto Fill mode allows you to enter filled text without breaking lines
 explicitly.  Emacs inserts newlines as necessary to prevent lines from
@@ -74,18 +77,23 @@ combine it with any major mode.  @xref{Outline Mode}.
 @cindex mode, Overwrite
 @findex overwrite-mode
   Overwrite mode causes ordinary printing characters to replace existing
-text instead of shoving it over.  For example, if the point is in front of
-the @samp{B} in @samp{FOOBAR}, then in Overwrite mode typing a @kbd{G}
-changes it to @samp{FOOGAR}, instead of making it @samp{FOOGBAR} as
-usual.@refill
+text instead of shoving it to the right.  For example, if point is in
+front of the @samp{B} in @samp{FOOBAR}, then in Overwrite mode typing a
+@kbd{G} changes it to @samp{FOOGAR}, instead of producing it
+@samp{FOOGBAR} as usual.
 
   Auto Save mode causes the contents of a buffer to be saved
-periodically to reduce the amount you will lose in case of a system
-crash.  @xref{Auto Save}.
+periodically to reduce the amount of work you can lose in case of a
+system crash.  @xref{Auto Save}.
+
+  Font-Lock mode automatically highlights certain textual units found in
+programs, such as comments, strings, and function names being defined.
+This requires a window system that can display multiple fonts.
+@xref{Faces}.
 
   ISO Accents mode makes the characters @samp{`}, @samp{'}, @samp{"},
-@samp{^}, @samp{/} and @samp{~} combined with the following letter, to
-produce an accented letter in the ISO Latin-1 character set.  
+@samp{^}, @samp{/} and @samp{~} combine with the following letter, to
+produce an accented letter in the ISO Latin-1 character set.
 @xref{European Display}.
 
   The following minor modes normally apply to all buffers at once.
@@ -101,16 +109,19 @@ mode}.  @xref{Abbrevs}, for full information.
   Line Number mode enables continuous display in the mode line of the
 line number of point.  @xref{Mode Line}.
 
+  Resize-Minibuffer mode makes the minibuffer expand as necessary to
+hold the text that you put in it.  @xref{Minibuffer Edit}.
+
   Scroll Bar mode gives each window a scroll bar (@pxref{Scroll Bars}).
 Menu Bar mode gives each frame a menu bar (@pxref{Menu Bars}).  Both of
 these modes are enabled by default when you use the X Window System.
 
-  In Transient Mark mode, every change in the buffer ``deactivates'' the
-mark, so that commands that operate on the region will get an error.
-This means you must either set the mark, or explicitly ``reactivate''
-it, before each command that uses the region.  The advantage of
-Transient Mark mode is that Emacs can display the region highlighted
-(currently only when using X).  @xref{Setting Mark}.
+  In Transient Mark mode, every change in the buffer contents
+``deactivates'' the mark, so that commands that operate on the region
+will get an error.  This means you must either set the mark, or
+explicitly ``reactivate'' it, before each command that uses the region.
+The advantage of Transient Mark mode is that Emacs can display the
+region highlighted (currently only when using X).  @xref{Setting Mark}.
 
 @node Variables
 @section Variables
@@ -133,7 +144,7 @@ feature is on for @emph{any} other value.  The conventional value to use to
 turn on the feature---since you have to pick one particular value when you
 set the variable---is @code{t}.
 
-  Emacs uses many Lisp variables for internal recordkeeping, as any Lisp
+  Emacs uses many Lisp variables for internal record keeping, as any Lisp
 program must, but the most interesting variables for you are the ones that
 exist for the sake of customization.  Emacs does not (usually) change the
 values of these variables; instead, you set the values, and thereby alter
@@ -160,7 +171,7 @@ the left margin) to be used by the fill commands (@pxref{Filling}).
 
 @table @kbd
 @item C-h v @var{var} @key{RET}
-Print the value and documentation of variable @var{var}
+Display the value and documentation of variable @var{var}
 (@code{describe-variable}).
 @item M-x set-variable @key{RET} @var{var} @key{RET} @var{value} @key{RET}
 Change the value of variable @var{var} to @var{value}.
@@ -168,15 +179,15 @@ Change the value of variable @var{var} to @var{value}.
 
   To examine the value of a single variable, use @kbd{C-h v}
 (@code{describe-variable}), which reads a variable name using the
-minibuffer, with completion.  It prints both the value and the
-documentation of the variable.  For example, 
+minibuffer, with completion.  It displays both the value and the
+documentation of the variable.  For example,
 
 @example
 C-h v fill-column @key{RET}
 @end example
 
 @noindent
-prints something like this:
+displays something like this:
 
 @smallexample
 fill-column's value is 75
@@ -212,13 +223,13 @@ sets @code{fill-column} to 75.
 @end example
 
   Setting variables, like all means of customizing Emacs except where
-explicitly stated, affects only the current Emacs session.
+otherwise stated, affects only the current Emacs session.
 
 @node Edit Options
 @subsection Editing Variable Values
 
-These two functions make it easy to display all the user edit options
-and change some of them.
+These two functions make it easy to display all the Emacs option
+variables, and to change some of them if you wish.
 
 @table @kbd
 @item M-x list-options
@@ -364,37 +375,38 @@ marked in this way, the usual ways of setting the variable automatically
 do @code{make-local-variable} first.  We call such variables
 @dfn{per-buffer} variables.
 
-  Major modes (@pxref{Major Modes}) always make the variables they set
-local to the buffer.  This is why changing major modes in one buffer has
-no effect on other buffers.  Minor modes also work by setting
-variables---normally, each minor mode has one controlling variable which
-is non-@code{nil} when the mode is enabled (@pxref{Minor Modes}).
-For most minor modes, the controlling variable is per buffer.
+  Major modes (@pxref{Major Modes}) always make variables local to the
+buffer before setting the variables.  This is why changing major modes
+in one buffer has no effect on other buffers.  Minor modes also work by
+setting variables---normally, each minor mode has one controlling
+variable which is non-@code{nil} when the mode is enabled (@pxref{Minor
+Modes}).  For most minor modes, the controlling variable is per buffer.
 
   Emacs contains a number of variables that are always per-buffer.
 These include @code{abbrev-mode}, @code{auto-fill-function},
 @code{case-fold-search}, @code{comment-column}, @code{ctl-arrow},
 @code{fill-column}, @code{fill-prefix}, @code{indent-tabs-mode},
-@code{left-margin}, @code{mode-line-format}, @code{overwrite-mode},@*
+@code{left-margin}, @code{mode-line-format}, @code{overwrite-mode},
 @code{selective-display-ellipses}, @code{selective-display},
 @code{tab-width}, and @code{truncate-lines}.  Some other variables are
 always local in every buffer, but they are used for internal
 purposes.@refill
 
 @findex kill-local-variable
-  @kbd{M-x kill-local-variable} reads the name of a variable and makes it
-cease to be local to the current buffer.  The global value of the variable
-henceforth is in effect in this buffer.  Setting the major mode kills all
-the local variables of the buffer except for a few specially marked
-variables that are @dfn{permanent locals}.
+  @kbd{M-x kill-local-variable} reads the name of a variable and makes
+it cease to be local to the current buffer.  The global value of the
+variable henceforth is in effect in this buffer.  Setting the major mode
+kills all the local variables of the buffer except for a few variables
+specially marked as @dfn{permanent locals}.
 
 @findex setq-default
   To set the global value of a variable, regardless of whether the
-variable has a local value in the current buffer, you can use the
-Lisp function @code{setq-default}.  It works like @code{setq}.
-If there is a local value in the current buffer, the local value is
-not affected by @code{setq-default}; thus, the new global value may
-not be visible until you switch to another buffer.  For example,
+variable has a local value in the current buffer, you can use the Lisp
+construct @code{setq-default}.  This construct is used just like
+@code{setq}, but it sets variables' global values instead of their local
+values (if any).  When the current buffer does have a local value, the
+new global value may not be visible until you switch to another buffer.
+Here is an example:
 
 @example
 (setq-default fill-column 75)
@@ -405,10 +417,11 @@ not be visible until you switch to another buffer.  For example,
 that has been marked with @code{make-variable-buffer-local}.
 
 @findex default-value
-  Lisp programs can look at a variable's default value with
-@code{default-value}.  This function takes a symbol as argument and
-returns its default value.  The argument is evaluated; usually you must
-quote it explicitly.  For example,
+  Lisp programs can use @code{default-value} to look at a variable's
+default value.  This function takes a symbol as argument and returns its
+default value.  The argument is evaluated; usually you must quote it
+explicitly.  For example, here's how to obtain the default value of
+@code{fill-column}:
 
 @example
 (default-value 'fill-column)
@@ -423,9 +436,9 @@ file with Emacs.  Visiting the file checks for local variables
 specifications; it automatically makes these variables local to the
 buffer, and sets them to the values specified in the file.
 
-  There are two ways to specify local variable values: in the first line,
-or with a local variables list.  Here's how to do this with the first
-line:
+  There are two ways to specify local variable values: in the first
+line, or with a local variables list.  Here's how to specify them in the
+first line:
 
 @example
 -*- mode: @var{modename}; @var{var}: @var{value}; @dots{} -*-
@@ -433,9 +446,11 @@ line:
 
 @noindent
 You can specify any number of variables/value pairs in this way, each
-pair with a colon and semicolon as shown above.  The major mode should
-come first, if it is mentioned at all.  Here is an example that 
-specifies Lisp mode and sets two variables with numeric values:
+pair with a colon and semicolon as shown above.  @code{mode:
+@var{modename};} specifies the major mode; this should come first in the
+line.  The @var{value}s are not evaluated; they are used literally.
+Here is an example that specifies Lisp mode and sets two variables with
+numeric values:
 
 @smallexample
 ;; -*-Mode: Lisp; fill-column: 75; comment-column: 50; -*-
@@ -463,7 +478,7 @@ Here is an example of a local variables list:
   As you see, each line starts with the prefix @samp{;;; } and each line
 ends with the suffix @samp{ ***}.  Emacs recognizes these as the prefix
 and suffix based on the first line of the list, by finding them
-surrounding the magic string @samp{Local Variables:}; so it
+surrounding the magic string @samp{Local Variables:}; then it
 automatically discards them from the other lines of the list.
 
   The usual reason for using a prefix and/or suffix is to embed the
@@ -478,17 +493,17 @@ Don't use a prefix (or a suffix) if you don't need one.
 list: a value for the variable @code{mode} really sets the major mode,
 and a value for the variable @code{eval} is simply evaluated as an
 expression and the value is ignored.  @code{mode} and @code{eval} are
-not real variables; setting such variables in any other context has no
-such effect.  If @code{mode} is used in a local variables list, it
-should be the first entry in the list.
+not real variables; setting variables named @code{mode} and @code{eval}
+in any other context has no special meaning.  If @code{mode} is used in
+a local variables list, it should be the first entry in the list.
 
   The start of the local variables list must be no more than 3000
 characters from the end of the file, and must be in the last page if the
-file is divided into pages.  Otherwise, Emacs will not notice it is there.
-The purpose of this is so that a stray @samp{Local Variables:}@: not in the
-last page does not confuse Emacs, and so that visiting a long file that is
-all one page and has no local variables list need not take the time to
-search the whole file.
+file is divided into pages.  Otherwise, Emacs will not notice it is
+there.  The purpose of this rule is so that a stray @samp{Local
+Variables:}@: not in the last page does not confuse Emacs, and so that
+visiting a long file that is all one page and has no local variables
+list need not take the time to search the whole file.
 
   You may be tempted to try to turn on Auto Fill mode with a local variable
 list.  That is a mistake.  The choice of Auto Fill mode or not is a matter
@@ -496,25 +511,28 @@ of individual taste, not a matter of the contents of particular files.
 If you want to use Auto Fill, set up major mode hooks with your @file{.emacs}
 file to turn it on (when appropriate) for you alone (@pxref{Init File}).
 Don't try to use a local variable list that would impose your taste on
-everyone.@refill
+everyone.
 
 @findex enable-local-variables
   The variable @code{enable-local-variables} controls whether to process
 local variables lists, and thus gives you a chance to override them.
-Its default value is @code{t}, which means to process local variables
+Its default value is @code{t}, which means do process local variables
 lists.  If you set the value to @code{nil}, Emacs simply ignores local
 variables lists.  Any other value says to query you about each local
 variables list, showing you the local variables list to consider.
 
 @findex enable-local-eval
-  The @code{eval} ``variable'' creates special risks, so there is a
-separate variable @code{enable-local-eval} to control whether Emacs
+  The @code{eval} ``variable'', and certain actual variables, create a
+special risk; when you visit someone else's file, local variable
+specifications for these could affect your Emacs in arbitrary ways.
+Therefore, the option @code{enable-local-eval} controls whether Emacs
 processes @code{eval} variables, as well variables with names that end
-in @samp{-hook}, @samp{-hooks}, @samp{-function} or @samp{-functions}.
-The three possibilities for the value are @code{t}, @code{nil}, and
-anything else, just as for @code{enable-local-variables}.  The default
-is @code{maybe}, which is neither @code{t} nor @code{nil}, so normally
-Emacs queries about @code{eval} variable settings.
+in @samp{-hook}, @samp{-hooks}, @samp{-function} or @samp{-functions},
+and certain other variables.  The three possibilities for the option's
+value are @code{t}, @code{nil}, and anything else, just as for
+@code{enable-local-variables}.  The default is @code{maybe}, which is
+neither @code{t} nor @code{nil}, so normally Emacs does ask for
+confirmation about file settings for these variables.
 
   Use the command @code{normal-mode} to reset the local variables and
 major mode of a buffer according to the file name and contents,
@@ -525,10 +543,11 @@ including the local variables list if any.  @xref{Choosing Modes}.
 
 @cindex defining keyboard macros
 @cindex keyboard macro
-  A @dfn{keyboard macro} is a command defined by the user to abbreviate a
-sequence of keys.  For example, if you discover that you are about to type
-@kbd{C-n C-d} forty times, you can speed your work by defining a keyboard
-macro to do @kbd{C-n C-d} and calling it with a repeat count of forty.
+  A @dfn{keyboard macro} is a command defined by the user to stand for
+another sequence of keys.  For example, if you discover that you are
+about to type @kbd{C-n C-d} forty times, you can speed your work by
+defining a keyboard macro to do @kbd{C-n C-d} and calling it with a
+repeat count of forty.
 
 @c widecommands
 @table @kbd
@@ -587,7 +606,7 @@ whole thing over again by invoking the macro.
 executed, but also become part of the definition of the macro.  @samp{Def}
 appears in the mode line to remind you of what is going on.  When you are
 finished, the @kbd{C-x )} command (@code{end-kbd-macro}) terminates the
-definition (without becoming part of it!).  For example
+definition (without becoming part of it!).  For example,
 
 @example
 C-x ( M-f foo C-x )
@@ -596,15 +615,16 @@ C-x ( M-f foo C-x )
 @noindent
 defines a macro to move forward a word and then insert @samp{foo}.
 
-  The macro thus defined can be invoked again with the @kbd{C-x e} command
-(@code{call-last-kbd-macro}), which may be given a repeat count as a
-numeric argument to execute the macro many times.  @kbd{C-x )} can also be
-given a repeat count as an argument, in which case it repeats the macro
-that many times right after defining it, but defining the macro counts as
-the first repetition (since it is executed as you define it).  So, giving
-@kbd{C-x )} an argument of 4 executes the macro immediately 3 additional
-times.  An argument of zero to @kbd{C-x e} or @kbd{C-x )} means repeat the
-macro indefinitely (until it gets an error or you type @kbd{C-g}).
+  The macro thus defined can be invoked again with the @kbd{C-x e}
+command (@code{call-last-kbd-macro}), which may be given a repeat count
+as a numeric argument to execute the macro many times.  @kbd{C-x )} can
+also be given a repeat count as an argument, in which case it repeats
+the macro that many times right after defining it, but defining the
+macro counts as the first repetition (since it is executed as you define
+it).  Therefore, giving @kbd{C-x )} an argument of 4 executes the macro
+immediately 3 additional times.  An argument of zero to @kbd{C-x e} or
+@kbd{C-x )} means repeat the macro indefinitely (until it gets an error
+or you type @kbd{C-g}).
 
   If you wish to repeat an operation at regularly spaced places in the
 text, define a macro and include as part of the macro the commands to move
@@ -674,7 +694,7 @@ later with @code{load-file} (@pxref{Lisp Libraries}).  If the file you
 save in is your init file @file{~/.emacs} (@pxref{Init File}) then the
 macro will be defined each time you run Emacs.
 
-  If you give @code{insert-kbd-macro} a prefix argument, it makes
+  If you give @code{insert-kbd-macro} a numeric argument, it makes
 additional Lisp code to record the keys (if any) that you have bound to the
 keyboard macro, so that the macro will be reassigned the same keys when you
 load the file.
@@ -686,20 +706,20 @@ load the file.
 @findex kbd-macro-query
   Using @kbd{C-x q} (@code{kbd-macro-query}), you can get an effect
 similar to that of @code{query-replace}, where the macro asks you each
-time around whether to make a change.  When you are defining the macro,
+time around whether to make a change.  While defining the macro,
 type @kbd{C-x q} at the point where you want the query to occur.  During
 macro definition, the @kbd{C-x q} does nothing, but when you run the
 macro later, @kbd{C-x q} asks you interactively whether to continue.
 
   The valid responses when @kbd{C-x q} asks are @key{SPC} (or @kbd{y}),
-@key{DEL} (or @kbd{n}), @key{ESC} (or @kbd{q}), @kbd{C-l} and
-@kbd{C-r}.  The answers are the same as in query replace, though not all
-of the query-replace options are meaningful.
+@key{DEL} (or @kbd{n}), @key{ESC} (or @kbd{q}), @kbd{C-l} and @kbd{C-r}.
+The answers are the same as in @code{query-replace}, though not all of
+the @code{query-replace} options are meaningful.
 
-  Specifically, @key{SPC} means to continue.  @key{DEL} means to skip
+  These responses include @key{SPC} to continue, and @key{DEL} to skip
 the remainder of this repetition of the macro and start right away with
 the next repetition.  @key{ESC} means to skip the remainder of this
-repetition and cancel further repetition.  @kbd{C-l} redraws the screen
+repetition and cancel further repetitions.  @kbd{C-l} redraws the screen
 and asks you again for a character to say what to do.
 
   @kbd{C-r} enters a recursive editing level, in which you can perform
@@ -710,13 +730,14 @@ macro definition is executed.  It is up to you to leave point and the
 text in a state such that the rest of the macro will do what you
 want.@refill
 
-  @kbd{C-u C-x q}, which is @kbd{C-x q} with a numeric argument, performs a
-different function.  It enters a recursive edit reading input from the
-keyboard, both when you type it during the definition of the macro, and
-when it is executed from the macro.  During definition, the editing you do
-inside the recursive edit does not become part of the macro.  During macro
-execution, the recursive edit gives you a chance to do some particularized
-editing.  @xref{Recursive Edit}.
+  @kbd{C-u C-x q}, which is @kbd{C-x q} with a numeric argument,
+performs a completely different function.  It enters a recursive edit
+reading input from the keyboard, both when you type it during the
+definition of the macro, and when it is executed from the macro.  During
+definition, the editing you do inside the recursive edit does not become
+part of the macro.  During macro execution, the recursive edit gives you
+a chance to do some particularized editing on each repetition.
+@xref{Recursive Edit}.
 
 @node Key Bindings
 @section Customizing Key Bindings
@@ -753,7 +774,6 @@ name which usually consists of lower case letters and hyphens.
 in data structures called @dfn{keymaps}.  Emacs has many of these, each
 used on particular occasions.
 
-@cindex touch
   Recall that a @dfn{key sequence} (@dfn{key}, for short) is a sequence
 of @dfn{input events} that have a meaning as a unit.  Input events
 include characters, function keys and mouse buttons---all the inputs
@@ -764,8 +784,8 @@ runs.  The function of keymaps is to record these bindings.
 @cindex global keymap
   The @dfn{global} keymap is the most important keymap because it is
 always in effect.  The global keymap defines keys for Fundamental mode;
-most of these definitions are common to all (or most) major modes.  Each
-major or minor mode can have its own keymap which overrides the
+most of these definitions are common to most or all major modes.  Each
+major or minor mode can have its own keymap which overrides the global
 definitions of some keys.
 
   For example, a self-inserting character such as @kbd{g} is
@@ -800,7 +820,7 @@ reach Emacs directly and ignore their encoding as character sequences.
 @cindex mouse
   Mouse buttons also produce input events.  These events come with other
 data---the window and position where you pressed or released the button,
-and a timestamp.  But only the choice of button matters for key
+and a time stamp.  But only the choice of button matters for key
 bindings; the other data matters only if a command looks at it.
 (Commands designed for mouse invocation usually do look at the other
 data.)
@@ -824,15 +844,15 @@ sequences are inconvenient to type in.
 which holds the definition for the event that immediately follows
 that prefix.
 
-  The definition of a prefix key is the keymap to use for looking up the
-following event.  The definition can also be a Lisp symbol whose
-function definition is the following keymap; the effect is the same, but
-it provides a command name for the prefix key that can be used as a
-description of what the prefix key is for.  Thus, the binding of
-@kbd{C-x} is the symbol @code{Ctl-X-Prefix}, whose function definition
-is the keymap for @kbd{C-x} commands.  The definitions of @kbd{C-c},
-@kbd{C-x}, @kbd{C-h} and @key{ESC} as prefix keys appear in the global
-map, so these prefix keys are always available.
+  The definition of a prefix key is usually the keymap to use for
+looking up the following event.  The definition can also be a Lisp
+symbol whose function definition is the following keymap; the effect is
+the same, but it provides a command name for the prefix key that can be
+used as a description of what the prefix key is for.  Thus, the binding
+of @kbd{C-x} is the symbol @code{Ctl-X-Prefix}, whose function
+definition is the keymap for @kbd{C-x} commands.  The definitions of
+@kbd{C-c}, @kbd{C-x}, @kbd{C-h} and @key{ESC} as prefix keys appear in
+the global map, so these prefix keys are always available.
 
   Some prefix keymaps are stored in variables with names:
 
@@ -881,7 +901,7 @@ less often used, the local keymap is normally constructed only when the
 mode is used for the first time in a session.  This is to save space.
 
   All minor mode keymaps are created in advance.  There is no way to
-defer their creation until the minor mode is enabled.
+defer their creation until the first time the minor mode is enabled.
 
   A local keymap can locally redefine a key as a prefix key by defining
 it as a prefix keymap.  If the key is also defined globally as a prefix,
@@ -890,7 +910,7 @@ combine: both of them are used to look up the event that follows the
 prefix key.  Thus, if the mode's local keymap defines @kbd{C-c} as
 another keymap, and that keymap defines @kbd{C-z} as a command, this
 provides a local meaning for @kbd{C-c C-z}.  This does not affect other
-sequences that start with @kbd{C-c}; If those sequences don't have their
+sequences that start with @kbd{C-c}; if those sequences don't have their
 own local bindings, their global bindings remain in effect.
 
   Another way to think of this is that Emacs handles a multi-event key
@@ -955,9 +975,9 @@ Make @var{key} undefined locally (in the major mode now in effect).
   For example, suppose you like to execute commands in a subshell within
 an Emacs buffer, instead of suspending Emacs and executing commands in
 your login shell.  Normally, @kbd{C-z} is bound to the function
-@code{suspend-emacs}, but you can change @kbd{C-z} to invoke an
-interactive subshell within Emacs, by binding it to @code{shell} as
-follows: @refill
+@code{suspend-emacs} (when not using the X Window System), but you can
+change @kbd{C-z} to invoke an interactive subshell within Emacs, by
+binding it to @code{shell} as follows:
 
 @example
 M-x global-set-key @key{RET} C-z shell @key{RET}
@@ -989,8 +1009,13 @@ M-x global-set-key @key{RET} C-x 4 $ spell-other-window @key{RET}
 @end example
 
 @noindent
-would redefine @kbd{C-x 4 $} to run the (fictitious) command
+redefines @kbd{C-x 4 $} to run the (fictitious) command
 @code{spell-other-window}.
+
+  The two-character keys consisting of @kbd{C-c} followed by a letter
+are reserved for user customizations.  Lisp programs are not supposed to
+define these keys, so the bindings you make for them will be available
+in all major modes and will never get in the way of anything.
 
   You can remove the global definition of a key with
 @code{global-unset-key}.  This makes the key @dfn{undefined}; if you
@@ -1015,31 +1040,33 @@ command is less work to invoke when you really want to.
 
 @findex define-key
 @findex substitute-key-definition
-  If you have a set of default definitions that you like to use all the time,
-you can put commands in your @file{.emacs} file by using their Lisp syntax.
-Thus, the first @code{global-set-key} command in this section could be put in
-an @file{.emacs} file in either of the two following formats:
+  If you have a set of key bindings that you like to use all the time,
+you can specify them in your @file{.emacs} file by using their Lisp
+syntax.  Thus, the first @code{global-set-key} command in this section
+could be put in an @file{.emacs} file in either of the two following
+formats:
 
 @example
 (global-set-key "\C-z" 'shell)
 @end example
 
-or as:
+@noindent
+or:
 
 @example
 (global-set-key [?\C-z] 'shell)
 @end example
 
 @noindent
-When the key sequence consists of ASCII characters and Meta characters,
-like this one, you can write it as a string or as a vector.
-The first format specifies the key sequence as a string, @code{"\C-z"}.
-The second format uses a vector to specify the key sequence.  The square
-brackets (@samp{[@dots{}]}) delimit the contents of the vector.  The
-vector in this example contains just one element, which is the integer
-code corresponding to @kbd{C-z}.  The question mark is the Lisp syntax
-for a character constant; the character must follow with no intervening
-spaces.
+When the key sequence consists of ASCII characters and Meta-modified
+ASCII characters, like this one, you can write it as a string or as a
+vector.  The first format specifies the key sequence as a string,
+@code{"\C-z"}.  The second format uses a vector to specify the key
+sequence.  The square brackets (@samp{[@dots{}]}) delimit the contents
+of the vector.  The vector in this example contains just one element,
+which is the integer code corresponding to @kbd{C-z}.  The question mark
+is the Lisp syntax for a character constant; the character must follow
+with no intervening spaces.
 
   The single-quote before @code{shell} marks it as a constant symbol
 rather than a variable.  If you omit the quote, Emacs tries to evaluate
@@ -1052,6 +1079,7 @@ it certainly isn't what you want.
 (global-set-key "\C-xl" 'make-symbolic-link)
 @end example
 
+@noindent
 or:
 
 @example
@@ -1060,7 +1088,7 @@ or:
 
   When the key sequence includes function keys or mouse button events,
 or non-ASCII characters such as @code{C-=} or @code{H-a}, you must use a
-vector.
+vector:
 
 @example
 (global-set-key [?\C-=] 'make-symbolic-link)
@@ -1076,7 +1104,7 @@ characters.  Just as Lisp characters (actually integers) represent
 keyboard characters, Lisp symbols represent function keys.  If the
 function key has a word as its label, then that word is also the name of
 the corresponding Lisp symbol.  Here are the conventional Lisp names for
-other function keys:
+common function keys:
 
 @table @asis
 @item @code{left}, @code{up}, @code{right}, @code{down}
@@ -1090,7 +1118,7 @@ Other cursor repositioning keys.
 @itemx @code{insertline}, @code{deleteline}, @code{insertchar}, @code{deletechar},
 Miscellaneous function keys.
 
-@item @code{f1} @dots{} @code{f35}
+@item @code{f1}, @code{f2}, @dots{} @code{f35}
 Numbered function keys (across the top of the keyboard).
 
 @item @code{kp-add}, @code{kp-subtract}, @code{kp-multiply}, @code{kp-divide}
@@ -1125,16 +1153,17 @@ the following:
 (global-set-key [f1] 'rmail)
 @end example
 
-  To bind the right-arrow key to the command @code{forward-char},
-you can use this expression:
+@noindent
+To bind the right-arrow key to the command @code{forward-char}, you can
+use this expression:
 
 @example
 (global-set-key [right] 'forward-char)
 @end example
 
 @noindent
-using the Lisp syntax for a vector containing the symbol @code{right}.
-(This binding is present in Emacs by default.)
+This uses the Lisp syntax for a vector containing the symbol
+@code{right}.  (This binding is present in Emacs by default.)
 
   You can mix function keys and characters in a key sequence.  This
 example binds @kbd{C-x @key{RIGHT}} to the command @code{forward-page}.
@@ -1150,9 +1179,10 @@ does not take a question mark.
 
   You can use the modifier keys @key{CTRL}, @key{META}, @key{HYPER},
 @key{SUPER}, @key{ALT} and @key{SHIFT} with function keys.  To represent
-these modifiers, prepend the strings @samp{C-}, @samp{M-}, @samp{H-},
-@samp{s-}, @samp{A-} and @samp{S-} to the symbol name.  Thus, here is
-how to make @kbd{Hyper-Meta-@key{RIGHT}} move forward a word:
+these modifiers, add the strings @samp{C-}, @samp{M-}, @samp{H-},
+@samp{s-}, @samp{A-} and @samp{S-} at the front of the symbol name.
+Thus, here is how to make @kbd{Hyper-Meta-@key{RIGHT}} move forward a
+word:
 
 @example
 (global-set-key [H-M-right] 'forward-word)
@@ -1175,15 +1205,14 @@ automatically into the corresponding ASCII characters @emph{if} they
 have no bindings of their own.  As a result, neither users nor Lisp
 programs need to pay attention to the distinction unless they care to.
 
-  If you do not want to distinguish between (for example) @key{TAB}
-and @kbd{C-i}, then make a binding for the ASCII character @key{TAB}
-(octal code 011).  If you do want to distinguish, make one binding
-for this ASCII character, and another for the ``function key''
-@code{tab}.
+  If you do not want to distinguish between (for example) @key{TAB} and
+@kbd{C-i}, make just one binding, for the ASCII character @key{TAB}
+(octal code 011).  If you do want to distinguish, make one binding for
+this ASCII character, and another for the ``function key'' @code{tab}.
 
   With an ordinary ASCII terminal, there is no way to distinguish
-between @key{TAB} and @kbd{C-i} (and so on), because the terminal sends
-the same character in both cases.
+between @key{TAB} and @kbd{C-i} (and likewise for other such pairs),
+because the terminal sends the same character in both cases.
 
 @node Mouse Buttons
 @subsection Rebinding Mouse Buttons
@@ -1208,15 +1237,15 @@ redefine the second mouse button to split the current window:
 (global-set-key [mouse-2] 'split-window-vertically)
 @end example
 
-  The symbols for drag events are similar, but have the prefix @samp{drag-}
-before the word @samp{mouse}.  For example, dragging the left button
-generates a @code{drag-mouse-1} event.
+  The symbols for drag events are similar, but have the prefix
+@samp{drag-} before the word @samp{mouse}.  For example, dragging the
+first button generates a @code{drag-mouse-1} event.
 
-  You can also define events that occur when a mouse button is pressed
-down.  These events start with @samp{down-} instead of @samp{drag-}.
-Such events are generated only if they have key bindings.  When you get
-a button-down event, a corresponding click or drag event will always
-follow.
+  You can also define bindings for events that occur when a mouse button
+is pressed down.  These events start with @samp{down-} instead of
+@samp{drag-}.  Such events are generated only if they have key bindings.
+When you get a button-down event, a corresponding click or drag event
+will always follow.
 
 @cindex double clicks
 @cindex triple clicks
@@ -1225,7 +1254,7 @@ double click means clicking a mouse button twice in approximately the
 same place.  The first click generates an ordinary click event.  The
 second click, if it comes soon enough, generates a double-click event
 instead.  The event type for a double click event starts with
-@samp{double-}: for example, @samp{double-mouse-3}.
+@samp{double-}: for example, @code{double-mouse-3}.
 
   This means that you can give a special meaning to the second click at
 the same place, but it must act on the assumption that the ordinary
@@ -1275,9 +1304,9 @@ or @samp{triple-}, which always precede @samp{drag-} or @samp{down-}.
 the mode line and the scroll bar.  You can tell whether a mouse button
 comes from a special area of the screen by means of dummy ``prefix
 keys.''  For example, if you click the mouse in the mode line, you get
-the prefix key @code{mode-line} before the ordinary mouse-button
-symbol.  Thus, here is how to define the command for clicking the left
-button in a mode line to run @code{scroll-up}:
+the prefix key @code{mode-line} before the ordinary mouse-button symbol.
+Thus, here is how to define the command for clicking the first button in
+a mode line to run @code{scroll-up}:
 
 @example
 (global-set-key [mode-line mouse-1] 'scroll-up)
@@ -1290,13 +1319,16 @@ meanings:
 @item mode-line
 The mouse was in the mode line of a window.
 @item vertical-line
-The mouse was in the vertical line separating side-by-side windows.
+The mouse was in the vertical line separating side-by-side windows.  (If
+you use scroll bars, they appear in place of these vertical lines.)
 @item vertical-scroll-bar
-The mouse was in a vertical scroll bar.  This is the kind of scroll
-bar people normally use.
+The mouse was in a vertical scroll bar.  (This is the only kind of
+scroll bar Emacs currently supports.)
+@ignore
 @item horizontal-scroll-bar
 The mouse was in a horizontal scroll bar.  Horizontal scroll bars do
 horizontal scrolling, and people don't use them often.
+@end ignore
 @end table
 
   You can put more than one mouse button in a key sequence, but it isn't
@@ -1310,15 +1342,16 @@ usual to do so.
 can be executed.  The purpose of disabling a command is to prevent
 beginning users from executing it by accident and being confused.
 
-  Attempting to invoke a disabled command interactively in Emacs causes the
-display of a window containing the command's name, its documentation, and
+  An attempt to invoke a disabled command interactively in Emacs
+displays a window containing the command's name, its documentation, and
 some instructions on what to do immediately; then Emacs asks for input
-saying whether to execute the command as requested, enable it and execute,
-or cancel it.  If you decide to enable the command, you are asked whether to
-do this permanently or just for the current session.  Enabling permanently
-works by automatically editing your @file{.emacs} file.
+saying whether to execute the command as requested, enable it and
+execute it, or cancel.  If you decide to enable the command, you are
+asked whether to do this permanently or just for the current session.
+Enabling permanently works by automatically editing your @file{.emacs}
+file.
 
-  The direct mechanism for disabling a command is to have a
+  The direct mechanism for disabling a command is to put a
 non-@code{nil} @code{disabled} property on the Lisp symbol for the
 command.  Here is the Lisp program to do this:
 
@@ -1331,7 +1364,7 @@ is included in the message printed when the command is used:
 
 @example
 (put 'delete-region 'disabled
-     "Text deleted this way cannot be yanked back!\n")
+     "It's better to use `kill-region' instead.\n")
 @end example
 
 @findex disable-command
@@ -1342,9 +1375,9 @@ the @file{.emacs} file for you.  Likewise, @kbd{M-x enable-command}
 edits @file{.emacs} to enable a command permanently.  @xref{Init File}.
 
   Whether a command is disabled is independent of what key is used to
-invoke it; it also applies if the command is invoked using @kbd{M-x}.
-Disabling a command has no effect on calling it as a function from Lisp
-programs.
+invoke it; disabling also applies if the command is invoked using
+@kbd{M-x}.  Disabling a command has no effect on calling it as a
+function from Lisp programs.
 
 @node Keyboard Translations
 @section Keyboard Translations
@@ -1378,6 +1411,13 @@ translations, and it applies to every character that Emacs reads from
 the terminal.  Keyboard translations take place at the lowest level of
 input processing; the keys that are looked up in keymaps contain the
 characters that result from keyboard translation.
+
+  Under X, the keyboard key named @key{DEL} acts like a function key and
+is distinct from the ASCII character named @key{DEL}.  @xref{Named ASCII
+Chars}.  Keyboard translations affect only ASCII character input, not
+function keys; thus, the above example used under X will not do what you
+probably want.  However, you can remap the keyboard keys using
+@code{xmodmap} when using X.
 
   For full information about how to use keyboard translations, see
 @ref{Translating Input,,,elisp, The Emacs Lisp Reference Manual}.
@@ -1429,6 +1469,11 @@ loaded whenever you start Emacs (except when you specify @samp{-q}).
 But your init file, if any, is loaded first; if it sets
 @code{inhibit-default-init} non-@code{nil}, then @file{default} is not
 loaded.
+
+  Your site may also have a @dfn{site startup file}; this is named
+@file{site-start.el}, if it exists.  Emacs loads this library before it
+loads your init file.  To inhibit loading of this library, use the
+option @samp{-no-site-file}.
 
   If you have a large amount of code in your @file{.emacs} file, you
 should move it into another file such as @file{~/@var{something}.el},
@@ -1556,9 +1601,9 @@ constant rather than an expression.
 
 It's beyond the scope of this manual to explain Lisp functions, but for
 this example it is enough to know that the effect is to execute
-@code{(auto-fill-mode 1)} when Text mode is entered.  You can replace it
-with any other expression that you like, or with several expressions in
-a row.
+@code{(auto-fill-mode 1)} when Text mode is entered.  You can replace
+that with any other expression that you like, or with several
+expressions in a row.
 
 Emacs comes with a function named @code{turn-on-auto-fill} whose
 definition is @code{(lambda () (auto-fill-mode 1))}.  Thus, a simpler
@@ -1663,7 +1708,10 @@ kept.@refill
   The usual purpose of the terminal-specific library is to map the
 escape sequences used by the terminal's function keys onto more
 meaningful names, using @code{function-key-map}.  See the file
-@file{term/lk201.el} for an example of how this is done.@refill
+@file{term/lk201.el} for an example of how this is done.  Many function
+keys are mapped automatically according to the information in the
+Termcap data base; the terminal-specific library needs to map only the
+function keys that Termcap does not specify.
 
   When the terminal type contains a hyphen, only the part of the name
 before the first hyphen is significant in choosing the library name.
@@ -1701,3 +1749,4 @@ It gets the user name from the environment variables @code{LOGNAME} and
 If that user name matches the real user-ID, then Emacs uses @code{HOME};
 otherwise, it looks up the home directory corresponding to that user
 name in the system's data base of users.
+@c  LocalWords:  backtab

@@ -136,7 +136,7 @@ by the programs that invoke the emacs server.")
   "Allow this Emacs process to be a server for client processes.
 This starts a server communications subprocess through which
 client \"editors\" can send your editing commands to this Emacs job.
-To use the server, set up the program `etc/emacsclient' in the
+To use the server, set up the program `emacsclient' in the
 Emacs distribution as your standard \"editor\".
 
 Prefix arg means just kill any existing server communications subprocess."
@@ -147,6 +147,9 @@ Prefix arg means just kill any existing server communications subprocess."
 	(set-process-sentinel server-process nil)
 	(condition-case () (delete-process server-process) (error nil))))
   (condition-case () (delete-file "~/.emacs_server") (error nil))
+  (condition-case ()
+      (delete-file (format "/tmp/esrv%d-%s" (user-uid) (system-name)))
+    (error nil))
   ;; If we already had a server, clear out associated status.
   (while server-clients
     (let ((buffer (nth 1 (car server-clients))))

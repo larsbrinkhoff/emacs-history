@@ -149,7 +149,7 @@ extern Lisp_Object ml_apply (); /* Apply a mocklisp function to unevaluated argu
 init_eval_once ()
 {
   specpdl_size = 50;
-  specpdl = (struct specbinding *) malloc (specpdl_size * sizeof (struct specbinding));
+  specpdl = (struct specbinding *) xmalloc (specpdl_size * sizeof (struct specbinding));
   max_specpdl_size = 600;
   max_lisp_eval_depth = 200;
 }
@@ -378,7 +378,7 @@ whose values are discarded.")
 }
 
 DEFUN ("prog2", Fprog2, Sprog2, 2, UNEVALLED, 0,
-  "(prog1 X Y BODY...): eval X, Y and BODY sequentially; value from Y.\n\
+  "(prog2 X Y BODY...): eval X, Y and BODY sequentially; value from Y.\n\
 The value of Y is saved during the evaluation of the remaining args,\n\
 whose values are discarded.")
   (args)

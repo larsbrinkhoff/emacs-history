@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Buffers, Windows, Files, Top
 @chapter Using Multiple Buffers
@@ -58,10 +58,15 @@ Select or create a buffer named @var{buffer} (@code{switch-to-buffer}).
 @item C-x 4 b @var{buffer} @key{RET}
 Similar, but select @var{buffer} in another window
 (@code{switch-to-buffer-other-window}).
+@item C-x 5 b @var{buffer} @key{RET}
+Similar, but select @var{buffer} in a separate frame
+(@code{switch-to-buffer-other-frame}).
 @end table
 
 @kindex C-x 4 b
 @findex switch-to-buffer-other-window
+@kindex C-x 5 b
+@findex switch-to-buffer-other-frame
 @kindex C-x b
 @findex switch-to-buffer
   To select the buffer named @var{bufname}, type @kbd{C-x b @var{bufname}
@@ -79,8 +84,9 @@ used for making notes to yourself.  If you try to save one, you are asked
 for the file name to use.  The new buffer's major mode is determined by the
 value of @code{default-major-mode} (@pxref{Major Modes}).
 
-  Note that @kbd{C-x C-f}, and any other command for visiting a file, can
-also be used to switch buffers.  @xref{Visiting}.
+  Note that @kbd{C-x C-f}, and any other command for visiting a file,
+can also be used to switch to an existing file-visiting buffer.
+@xref{Visiting}.
 
 @node List Buffers
 @section Listing Existing Buffers
@@ -121,12 +127,13 @@ Note that the buffer @samp{*Help*} was made by a help request; it is not
 visiting any file.  The buffer @code{man} was made by Dired on the
 directory @file{/u2/emacs/man/}.
 
+@need 2000
 @node Misc Buffer
 @section Miscellaneous Buffer Operations
 
 @table @kbd
 @item C-x C-q
-Toggle read-only status of buffer (@code{toggle-read-only}).
+Toggle read-only status of buffer (@code{vc-toggle-read-only}).
 @item M-x rename-buffer @key{RET} @var{name} @key{RET}
 Change the name of the current buffer.
 @item M-x rename-uniquely
@@ -135,26 +142,25 @@ Rename the current buffer by adding @samp{<@var{number}>} to the end.
 Scroll through buffer @var{buffer}.
 @end table
 
-@cindex read-only buffer
-  A buffer can be @dfn{read-only}, which means that commands to change its
-contents are not allowed.  The mode line indicates read-only buffers with
-@samp{%%} near the left margin.
-
 @kindex C-x C-q
 @findex vc-toggle-read-only
 @vindex buffer-read-only
-  Read-only buffers are made by subsystems such as Dired and Rmail that
-have special commands to operate on the text; also if you visit a file
-that is protected so you cannot write it.  If you wish to make changes
-in a read-only buffer, use the command @kbd{C-x C-q}
-(@code{vc-toggle-read-only}).  It makes a read-only buffer writable, and
-makes a writable buffer read-only.  This works by setting the variable
-@code{buffer-read-only}, which has a local value in each buffer and
-makes the buffer read-only if its value is non-@code{nil}.
+@cindex read-only buffer
+  A buffer can be @dfn{read-only}, which means that commands to change
+its contents are not allowed.  The mode line indicates read-only buffers
+with @samp{%%} or @samp{%*} near the left margin.  Read-only buffers are
+usually made by subsystems such as Dired and Rmail that have special
+commands to operate on the text; also by visiting a file whose access
+control says you cannot write it.
 
-  If the file is maintained with version control, @kbd{C-x C-q} works
-through the version control system to change the read-only status of
-the buffer.
+  If you wish to make changes in a read-only buffer, use the command
+@kbd{C-x C-q} (@code{vc-toggle-read-only}).  It makes a read-only buffer
+writable, and makes a writable buffer read-only.  In most cases, this
+works by setting the variable @code{buffer-read-only}, which has a local
+value in each buffer and makes the buffer read-only if its value is
+non-@code{nil}.  If the file is maintained with version control,
+@kbd{C-x C-q} works through the version control system to change the
+read-only status of the file as well as the buffer.
 
 @findex rename-buffer
   @kbd{M-x rename-buffer} changes the name of the current buffer.  Specify
@@ -165,11 +171,11 @@ no renaming is done.
   @kbd{M-x rename-uniquely} renames the current buffer to a similar name
 with a numeric suffix added to make it both different and unique.  This
 command does not need an argument.  It is useful for creating multiple
-shell buffers: if you rename the @samp{*Shell*}, then do @kbd{M-x shell}
-again, it makes a new shell buffer named @samp{*Shell*}; meanwhile, the
-old shell buffer continues to exist under its altered name.  This method
-is also good for mail buffers, compilation buffers, and any Emacs
-feature which creates a special buffer with a particular name.
+shell buffers: if you rename the @samp{*Shell*} buffer, then do @kbd{M-x
+shell} again, it makes a new shell buffer named @samp{*Shell*};
+meanwhile, the old shell buffer continues to exist under its new name.
+This method is also good for mail buffers, compilation buffers, and most
+Emacs features that create special buffers with particular names.
 
 @findex view-buffer
   @kbd{M-x view-buffer} is much like @kbd{M-x view-file} (@pxref{Misc
@@ -190,7 +196,7 @@ Text}.@refill
 large number of buffers.  You may then find it convenient to @dfn{kill}
 the buffers you no longer need.  On most operating systems, killing a
 buffer releases its space back to the operating system so that other
-programs can use it.  There are several commands for killing buffers:
+programs can use it.  Here are some commands for killing buffers:
 
 @c WideCommands
 @table @kbd
@@ -216,6 +222,9 @@ must confirm with @kbd{yes} before the buffer is killed.
 one.  An answer of @kbd{y} means to kill the buffer.  Killing the current
 buffer or a buffer containing unsaved changes selects a new buffer or asks
 for confirmation just like @code{kill-buffer}.
+
+  The buffer menu feature (@pxref{Several Buffers}) is also convenient
+for killing various buffers.
 
 @vindex kill-buffer-hook
   If you want to do something special every time a buffer is killed, you
@@ -277,7 +286,7 @@ immediately when you type it.
 Toggle the buffer's read-only flag.  The command @kbd{%} does
 this immediately when you type it.
 @item t
-Visit the buffer as a tag table.
+Visit the buffer as a tags table.  @xref{Select Tags Table}.
 @end table
 
   There are also commands to select another buffer or buffers:
@@ -304,8 +313,8 @@ in the other.
 @item m
 Mark this line's buffer to be displayed in another window if the @kbd{q}
 command is used.  The request shows as a @samp{>} at the beginning of
-the line.  The same buffer may not have both a delete request and a
-display request.
+the line.  (A single buffer may not have both a delete request and a
+display request.)
 @item v
 Immediately select this line's buffer, and also display in other windows
 any buffers previously marked with the @kbd{m} command.  If you have not
@@ -326,7 +335,8 @@ that @code{buffer-menu} selects the @samp{*Buffer List*} buffer and
 type @kbd{C-x C-b}) and select the buffer list manually, you can use all of
 the commands described here.
 
-  The buffer @samp{*Buffer List*} is not updated automatically; its
-contents are just text.  If you have created, deleted or renamed buffers,
-the way to update @samp{*Buffer List*} to show what you have done is to
-repeat the @code{buffer-menu} command.
+  The buffer @samp{*Buffer List*} is not updated automatically when
+buffers are created and killed; its contents are just text.  If you have
+created, deleted or renamed buffers, the way to update @samp{*Buffer
+List*} to show what you have done is to type @kbd{g}
+(@code{revert-buffer}) or repeat the @code{buffer-menu} command.

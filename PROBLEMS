@@ -1,6 +1,114 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* On HPUX 9.05 and 9.06, C-c and C-z are not turned off in the terminal driver.
+
+This seems to be due to a bug in HPUX.  A workaround is to start Emacs
+after first setting the "susp" (suspend job) and "dsusp" (delayed
+suspend job) control characters temporarily to a character that you
+are not likely to type (such as C-_), and set them back after Emacs
+exits.  The following script should do it:
+
+	#!/bin/sh
+	stty susp '^_' dsusp '^_'
+	emacs ${1+"$@"}
+	stty susp '^Z' dsusp '^Z'
+
+* Unusable default font on SCO 3.2v4.
+
+The Open Desktop environment comes with default X resource settings
+that tell Emacs to use a variable-width font.  Emacs cannot use such
+fonts, so it does not work.
+
+This is caused by the file /usr/lib/X11/app-defaults/ScoTerm, which is
+the application-specific resource file for the `scoterm' terminal
+emulator program.  It contains several extremely general X resources
+that affect other programs besides `scoterm'.  In particular, these
+resources affect Emacs also:
+
+	*Font: -*-helvetica-medium-r-*--12-*-p-*
+	*Background:			scoBackground
+	*Foreground:			scoForeground
+
+The best solution is to create an application-specific resource file for
+Emacs, /usr/lib/X11/app-defaults/Emacs, with the following contents:
+
+	Emacs*Font:	-*-courier-medium-r-*-*-*-120-*-*-*-*-iso8859-1
+	Emacs*Background:	white
+	Emacs*Foreground:	black
+
+(or whatever other defaults you prefer).
+
+These resource files are not normally shared across a network of SCO
+machines; you must create the file on each machine individually.
+
+* rcs2log gives you the awk error message "too many fields".
+
+This is due to an arbitrary limit in certain versions of awk.
+The solution is to use gawk (GNU awk).
+
+* Emacs is slow using X11R5 on HP/UX.
+
+This happens if you use the MIT versions of the X libraries--it
+doesn't run as fast as HP's version.  People sometimes use the version
+because they see the HP version doesn't have the libraries libXaw.a,
+libXmu.a, libXext.a and others.  HP/UX normally doesn't come with
+those libraries installed.  To get good performance, you need to
+install them and rebuild Emacs.
+
+* Loading fonts is very slow.
+
+You might be getting scalable fonts instead of precomputed bitmaps.
+Known scalable font directories are "Type1" and "Speedo".  A font
+directory contains scalable fonts if it contains the file
+"fonts.scale".
+
+If this is so, re-order your X windows font path to put the scalable
+font directories last.  See the documentatoin of `xset' for details.
+
+With some X servers, it may be necessary to take the scalable font
+directories out of your path entirely, at least for Emacs 19.26.
+Changes in the future may make this unnecessary.
+
+* On AIX 3.2.4, releasing Ctrl/Act key has no effect, if Shift is down.
+
+Due to a feature of AIX, pressing or releasing the Ctrl/Act key is
+ignored when the Shift, Alt or AltGr keys are held down.  This can
+lead to the keyboard being "control-locked"--ordinary letters are
+treated as control characters.
+
+You can get out of this "control-locked" state by pressing and
+releasing Ctrl/Act while not pressing or holding any other keys.
+
+* display-time causes kernel problems on ISC systems.
+
+Under Interactive Unix versions 3.0.1 and 4.0 (and probably other
+versions), display-time causes the loss of large numbers of STREVENT 
+cells.  Eventually the kernel's supply of these cells is exhausted.
+This makes emacs and the whole system run slow, and can make other 
+processes die, in particular pcnfsd.
+	
+Other emacs functions that communicate with remote processes may have 
+the same problem.  Display-time seems to be far the worst.
+
+The only known fix: Don't run display-time.
+
+* On Solaris, C-x doesn't get through to Emacs when you use the console.
+
+This is a Solaris feature (at least on Intel x86 cpus).  Type C-r
+C-r C-t, to toggle whether C-x gets through to Emacs.
+
+* Error message `Symbol's value as variable is void: x', followed by
+  segmentation fault and core dump.
+
+This has been tracked to a bug in tar!  People report that tar erroneously
+added a line like this at the beginning of files of Lisp code:
+
+   x FILENAME, N bytes, B tape blocks
+
+If your tar has this problem, install GNU tar--if you can manage to
+untar it :-).
+
 * Link failure when using acc on a Sun.
 
 To use acc, you need additional options just before the libraries, such as
@@ -29,6 +137,10 @@ with -lX11, compile and link against the file mit/util/misc/dlsym.c in
 the MIT X11R5 distribution.  Alternatively, link temacs using shared
 libraries with s/sunos4shr.h.  (This doesn't work if you use the X
 toolkit.)
+
+If you get the additional error that the linker could not find
+lib_version.o, try extracting it fromcontained in
+X11/usr/lib/X11/libvim.a in X11R4, then use it in the link.
 
 * Error messages `Wrong number of arguments: #<subr where-is-internal>, 5'
 
@@ -78,6 +190,11 @@ This happens on Linux 1.0 thru 1.04, approximately.  The workaround is
 to define SIGNALS_VIA_CHARACTERS in config.h and recompile Emacs.
 Newer Linux versions don't have this problem.
 
+* On AIX, the Ctrl/Act key interacts strangely with Shift.
+
+This is an AIX feature: Ctrl/Act with Shift is used for switching
+virtual terminals.
+
 * src/Makefile and lib-src/Makefile are truncated--most of the file missing.
 
 This can happen if configure uses GNU sed version 2.03.  That version
@@ -104,6 +221,10 @@ An X resource of this form can cause the problem:
 This resource is supposed to apply, and does apply, to the menus
 individually as well as to Emacs frames.  If that is not what you
 want, rewrite the resource.
+
+To check thoroughly for such resource specifications, use `xrdb
+-query' to see what resources the X server records, and also look at
+the user's ~/.Xdefaults and ~/.Xdefaults-* files.
 
 * --with-x-toolkit version crashes when used with shared libraries.
 

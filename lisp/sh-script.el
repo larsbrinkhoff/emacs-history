@@ -27,6 +27,10 @@
 ;; tcsh are supported.  Structured statements can be inserted with one
 ;; command.
 
+;; Autoloading of these functions is currently turned off
+;; because it's not clear whether this mode is really desirable to use.
+;; -- rms
+
 ;;; Code:
 
 ;; page 1:	variables and settings
@@ -35,13 +39,13 @@
 ;; page 4:	various other commands
 
 
-;;;###autoload
+;;;###dont-autoload
 (setq auto-mode-alist
       ;; matches files
-      ;;	- who's path contains /bin/, but not directories
+      ;;	- whose path contains /bin/, but not directories
       (cons '("/bin/" . sh-or-other-mode)
 	    ;;	- that have a suffix .sh or .shar (shell archive)
-	    ;;	- that contain ressources for the various shells
+	    ;;	- that contain resources for the various shells
 	    ;;	- startup files for X11
 	    (cons '("\\.sh$\\|\\.shar$\\|/\\.\\(profile\\|bash_profile\\|login\\|bash_login\\|logout\\|bash_logout\\|bashrc\\|t?cshrc\\|xinitrc\\|startxrc\\|xsession\\)$" . sh-mode)
 		  auto-mode-alist)))
@@ -165,9 +169,10 @@ construct which matches the actual executable.")
 
 
 
-(defvar sh-chmod-argument "755"
+(defvar sh-chmod-argument "+x"
   "*After saving, if the file is not executable, set this mode.
-The mode can be absolute \"511\" or relative \"u+x\".  Do nothing if this is nil.")
+The mode can be absolute, such as \"777\", or relative, such as \"+x\".
+Do nothing if this is nil.")
 
 
 (defvar sh-shell-path (or (getenv "SHELL") "/bin/sh")
@@ -319,7 +324,7 @@ this one is used.")
 
 ;; mode-command and utility functions
 
-;;;###autoload
+;;;###dont-autoload
 (defun sh-or-other-mode ()
   "Decide whether this is a compiled executable or a script.
 Usually the file-names of scripts and binaries cannot be automatically
@@ -332,7 +337,7 @@ distinguished, so the presence of an executable's magic number is used."
 	       'sh-mode)))
 
 
-;;;###autoload
+;;;###dont-autoload
 (defun sh-mode ()
   "Major mode for editing shell scripts.
 This mode works for many shells, since they all have roughly the same syntax,
@@ -402,18 +407,19 @@ The following commands are available, based on the current shell's syntax:
 	font-lock-keywords-case-fold-search nil
 	pair-alist '((?` _ ?`))
 	pair-filter 'sh-quoted-p)
-  ; parse or insert magic number for exec()
-  (goto-char (point-min))
-  (sh-set-shell
-   (if (looking-at "#![\t ]*\\([^\t\n ]+\\)")
-       (buffer-substring (match-beginning 1) (match-end 1))
-     sh-shell-path))
+  ;; parse or insert magic number for exec
+  (save-excursion
+    (goto-char (point-min))
+    (sh-set-shell
+     (if (looking-at "#![\t ]*\\([^\t\n ]+\\)")
+	 (buffer-substring (match-beginning 1) (match-end 1))
+       sh-shell-path)))
   ;; find-file is set by `normal-mode' when called by `after-find-file'
   (and (boundp 'find-file) find-file
        (or (eq sh-find-file-modifies t)
 	   (set-buffer-modified-p nil)))
   (run-hooks 'sh-mode-hook))
-;;;###autoload
+;;;###dont-autoload
 (defalias 'shell-script-mode 'sh-mode)
 
 
@@ -852,7 +858,10 @@ Calls the value of `sh-set-shell-hook' if set."
 			     (buffer-substring (point-min) (point))))
 		  (not (delete-region (point) (progn (end-of-line) (point))))
 		  (insert shell))
-	   (insert "#! " shell ?\n))))
+	   (if (if sh-query-for-magic
+		   (y-or-n-p (concat "Add ``#! " shell "''? "))
+		 t)
+	       (insert "#! " shell ?\n)))))
   (run-hooks 'sh-set-shell-hook))
 
 

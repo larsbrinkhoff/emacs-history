@@ -54,7 +54,7 @@ BODY should be a list of lisp expressions."
 ;;;; Window tree functions.
 
 (defun one-window-p (&optional nomini all-frames)
-  "Returns non-nil if there is only one window.
+  "Returns non-nil if the selected window is the only window (in its frame).
 Optional arg NOMINI non-nil means don't count the minibuffer
 even if it is active.
 
@@ -681,10 +681,10 @@ If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
 
 ;;;; Miscellanea.
 
-(defun ignore (&rest ignore) 
+(defun ignore (&rest ignore)
+  "Do nothing and return nil.
+This function accepts any number of arguments, but ignores them."
   (interactive)
-  "Do nothing.
-Accept any number of arguments, but ignore them."
   nil)
 
 (defun error (&rest args)

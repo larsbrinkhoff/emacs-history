@@ -45,13 +45,13 @@
   ;; Do nothing if no window system to display results with.
   ;; Do nothing if executing keyboard macro.
   ;; Do nothing if input is pending.
-  (if (and window-system (not executing-kbd-macro) (sit-for 0))
+  (if (and window-system (not executing-kbd-macro) (sit-for 0 100))
       (let (pos dir mismatch (oldpos (point))
 		(face show-paren-face))
-	(cond ((eq (char-syntax (following-char)) ?\()
-	       (setq dir 1))
-	      ((eq (char-syntax (preceding-char)) ?\))
-	       (setq dir -1)))
+	(cond ((eq (char-syntax (preceding-char)) ?\))
+	       (setq dir -1))
+	      ((eq (char-syntax (following-char)) ?\()
+	       (setq dir 1)))
 	(if dir
 	    (save-excursion
 	      (save-restriction
@@ -71,11 +71,9 @@
 		    (let ((beg (min pos oldpos)) (end (max pos oldpos)))
 		      (and (/= (char-syntax (char-after beg)) ?\$)
 			   (setq mismatch
-				 (/= (char-after (1- end))
-				     (logand (lsh (aref (syntax-table)
-							(char-after beg))
-						  -8)
-					     255))))))
+				 (not (eq (char-after (1- end))
+					  ;; This can give nil.
+					  (matching-paren (char-after beg))))))))
 		;; If they don't properly match, use a different face,
 		;; or print a message.
 		(if mismatch
@@ -86,7 +84,9 @@
 			       (progn
 				 (make-face 'paren-mismatch)
 				 (set-face-background 'paren-mismatch
-						      "purple")))
+						      "purple")
+				 (set-face-foreground 'paren-mismatch
+						      "white")))
 			   (setq show-paren-mismatch-face 'paren-mismatch))
 		      (if show-paren-mismatch-face
 			  (setq face show-paren-mismatch-face)
@@ -103,6 +103,7 @@
 				       (current-buffer))
 		       (setq show-paren-overlay-1
 			     (make-overlay (- pos dir) pos)))
+		     ;; Always set the overlay face, since it varies.
 		     (overlay-put show-paren-overlay-1 'face face))
 		 ;; Otherwise, turn off any such highlighting.
 		 (and show-paren-overlay-1
@@ -114,6 +115,7 @@
 				 (current-buffer))
 		 (setq show-paren-overlay
 		       (make-overlay (- pos dir) pos)))
+	       ;; Always set the overlay face, since it varies.
 	       (overlay-put show-paren-overlay 'face face))
 	      (t
 	       ;; If not at a paren that has a match,

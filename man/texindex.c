@@ -33,12 +33,6 @@
 #  undef open
 #endif
 
-#if !defined (HAVE_MEMSET)
-#undef memset
-#define memset(ptr, ignore, count) bzero (ptr, count)
-#endif
-
-
 #if defined (STDC_HEADERS)
 #  include <string.h>
 #  include <stdlib.h>
@@ -52,6 +46,12 @@ char *getenv (), *malloc (), *realloc ();
 #else /* !HAVE_UNISTD_H */
 long lseek ();
 #endif /* !HAVE_UNISTD_H */
+
+#if !defined (HAVE_MEMSET)
+#undef memset
+#define memset(ptr, ignore, count) bzero (ptr, count)
+#endif
+
 
 char *mktemp ();
 

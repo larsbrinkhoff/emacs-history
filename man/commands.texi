@@ -1,19 +1,18 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Characters, Keys and Commands
 
-  This chapter explains the character set used by Emacs for input commands
-and for the contents of files, and also explains the concepts of
-@dfn{keys} and @dfn{commands} which are necessary for understanding how
-your keyboard input is understood by Emacs.
+  This chapter explains the character sets used by Emacs for input
+commands and for the contents of files, and also explains the concepts
+of @dfn{keys} and @dfn{commands} which are fundamental for understanding
+how Emacs interprets your keyboard and mouse input.
 @end iftex
 
 @node User Input, Keys, Screen, Top
-@section Keyboard Input
-@cindex input event
-@cindex input to the keyboard
+@section Kinds of User Input
+@cindex input with the keyboard
 @cindex keyboard input
 @cindex character set (keyboard)
 @cindex ASCII
@@ -22,7 +21,10 @@ your keyboard input is understood by Emacs.
 @cindex control characters
 
   GNU Emacs uses an extension of the ASCII character set for keyboard
-input.  ASCII consists of 128 character codes.  Some of these codes are
+input; it also accepts non-character input events including function
+keys and mouse button actions.
+
+  ASCII consists of 128 character codes.  Some of these codes are
 assigned graphic symbols such as @samp{a} and @samp{=}; the rest are
 control characters, such as @kbd{Control-a} (usually written @kbd{C-a}
 for short).  @kbd{C-a} gets its name from the fact that you type it by
@@ -34,26 +36,27 @@ and @key{ESC}.  The space character is usually referred to below as
 @key{SPC}, even though strictly speaking it is a graphic character whose
 graphic happens to be blank.@refill
 
-  On ASCII terminals, the shift key is meaningless with control
-characters: @kbd{C-a} and @kbd{C-A} are the same character, and Emacs
-cannot distinguish them.  Under X Windows, these are distinct
-characters, but the standard key bindings treat them the same in all
-contexts.
-
   On ASCII terminals, there are only 32 possible control characters.
-These are the control variants of letters and @samp{@@[]\^_}.  Under X
-Windows, every non-control character has a control variant.  For
-example, @kbd{C-+} and @kbd{C-5} are meaningful under X.
+These are the control variants of letters and @samp{@@[]\^_}.  In
+addition, the shift key is meaningless with control characters:
+@kbd{C-a} and @kbd{C-A} are the same character, and Emacs cannot
+distinguish them.
 
-  Emacs extends the ASCII character code by adding an extra bit to each
-character.  The additional bit is called Meta.  Any character can be
-made Meta; examples of Meta characters include @kbd{Meta-a} (normally
-written @kbd{M-a}, for short), @kbd{M-A} (not the same character as
-@kbd{M-a}, but those two characters normally have the same meaning in
-Emacs), @kbd{M-@key{RET}}, and @kbd{M-C-a}.  For traditional reasons,
-@kbd{M-C-a} is usually called @kbd{C-M-a}; logically speaking, the order
-in which the modifier keys @key{CTRL} and @key{META} are mentioned does
-not matter.@refill
+  But the Emacs character set has room for control variants of all
+characters, and for distinguishing between @kbd{C-a} and @kbd{C-A}.  X
+Windows makes it possible to enter all these characters.  For example,
+@kbd{C--} (that's Control-Minus) and @kbd{C-5} are meaningful Emacs
+commands under X.
+
+  Another Emacs character set extension is that characters have
+additional modifier bits.  Only one modifier bit is commonly used; it is
+called Meta.  Every character has a Meta variant; examples include
+@kbd{Meta-a} (normally written @kbd{M-a}, for short), @kbd{M-A} (not the
+same character as @kbd{M-a}, but those two characters normally have the
+same meaning in Emacs), @kbd{M-@key{RET}}, and @kbd{M-C-a}.  For reasons
+of tradition, we usually write @kbd{C-M-a} rather than @kbd{M-C-a};
+logically speaking, the order in which the modifier keys @key{CTRL} and
+@key{META} are mentioned does not matter.
 
 @cindex Meta
 @cindex M-
@@ -70,11 +73,11 @@ using two-character sequences starting with @key{ESC}.  Thus, to enter
 @kbd{M-a}, you could type @kbd{@key{ESC} a}.  To enter @kbd{C-M-a}, you
 would type @kbd{@key{ESC} C-a}.  @key{ESC} is allowed on terminals with
 Meta keys, too, in case you have formed a habit of using it.@refill
-
+  
   X Windows provides several other modifier keys that can be applied to
-any keyboard input character.  These are called @key{SUPER}, @key{HYPER}
-and @key{ALT}.  With them, you can make characters that we denote with
-@samp{s-}, @samp{H-} and @samp{A-}.  Thus, @kbd{s-H-C-x} is short for
+any input character.  These are called @key{SUPER}, @key{HYPER} and
+@key{ALT}.  We write @samp{s-}, @samp{H-} and @samp{A-} to say that a
+character uses these modifiers.  Thus, @kbd{s-H-C-x} is short for
 @kbd{Super-Hyper-Control-x}.  Not all X terminals actually provide keys
 for these modifier flags, and the standard key bindings of Emacs do not
 include such characters.  But you can assign them meanings of your own
@@ -82,13 +85,18 @@ by customizing Emacs.
 
   Keyboard input includes keyboard keys that are not characters at all:
 for example function keys and arrow keys.  Mouse buttons are also
-outside the gamut of characters.  These inputs do not have numeric
-character codes.  Instead, Emacs represents them by their names
+outside the gamut of characters.  You can modify these events with the
+modifier keys @key{CONTROL}, @key{META}, @key{SUPER}, @key{HYPER} and
+@key{ALT} like keyboard characters.  But these inputs do not have
+numeric character codes.  Instead, Emacs represents them by their names
 (actually, Lisp objects called @dfn{symbols}).
 
 @cindex input event
   Input characters and non-character inputs are collectively called
-@dfn{input events}.  
+@dfn{input events}.  @xref{Input Events,,, elisp, The Emacs Lisp
+Manual}, for more information.  If you are not doing Lisp programming,
+but simply want to redefine the meaning of some characters or
+non-character events, see @ref{Customization}.
 
   ASCII terminals cannot really send anything to the computer except
 ASCII characters.  These terminals use a sequence of characters to
@@ -103,49 +111,51 @@ them.
 @cindex key sequence
 @cindex key
   A @dfn{key sequence} (@dfn{key}, for short) is a sequence of input
-events that combine as part of the invocation of a single command.
-Recall that input events include both keyboard characters and
-non-character inputs (function keys, arrow keys, mouse buttons, and so
-forth).
+events that are meaningful as a unit---as ``a single command.''
+Some Emacs command sequences are just one character or one event; for
+example, just @kbd{C-f} is enough to move forward one character.  But
+Emacs also has commands that take two or more events to invoke.
 
 @cindex complete key
 @cindex prefix key
-  If the sequence is enough to invoke a command, it is a @dfn{complete
-key}.  If it isn't long enough to be complete, we call it a @dfn{prefix
-key}.  Examples of complete keys include @kbd{C-a}, @kbd{X}, @key{RET},
-@key{NEXT} (a function key), @key{DOWN} (an arrow key), @kbd{C-x C-f}
-and @kbd{C-x 4 C-f}.
+  If a sequence of events is enough to invoke a command, it is a
+@dfn{complete key}.  Examples of complete keys include @kbd{C-a},
+@kbd{X}, @key{RET}, @key{NEXT} (a function key), @key{DOWN} (an arrow
+key), @kbd{C-x C-f} and @kbd{C-x 4 C-f}.  If it isn't long enough to be
+complete, we call it a @dfn{prefix key}.  The above examples show that
+@kbd{C-x} and @kbd{C-x 4} are prefix keys.  Every key sequence is either
+a complete key or a prefix key.
 
   Most single characters constitute complete keys in the standard Emacs
-command bindings.  A few of them are prefix keys.  A prefix key can be
-followed by additional input characters (or other events) to make a
-longer key, which may itself be complete or a prefix.
+command bindings.  A few of them are prefix keys.  A prefix key combines
+with the following input event to make a longer key sequence, which may
+itself be complete or a prefix.  For example, @kbd{C-x} is a prefix key,
+so @kbd{C-x} and the next input event combine to make a two-character
+key sequence.  Most of these key sequences are complete keys, including
+@kbd{C-x C-f} and @kbd{C-x b}.  A few, such as @kbd{C-x 4} and @kbd{C-x
+r}, are themselves prefix keys that lead to three-character key
+sequences.  There's no limit to the length of a key sequence, but in
+practice people rarely use sequences longer than four events.
 
-  For example, @kbd{C-x} is a prefix key, so @kbd{C-x} and the next
-input character combine to make a two-character key sequence.  Most of
-these key sequences are complete keys, including @kbd{C-x C-f} and
-@kbd{C-x b}.  A few, such as @kbd{C-x 4} and @kbd{C-x r}, are themselves
-prefix keys that lead to three-character key sequences.  There's no
-limit to the length of a key sequence, but any key sequence longer than
-one character must be reached through a chain of prefix keys.
+  By contrast, you can't add more events onto a complete key.  For
+example, the two-character sequence @kbd{C-f C-k} is not a key, because
+the @kbd{C-f} is a complete key in itself.  It's impossible to give
+@kbd{C-f C-k} an independent meaning as a command.  @kbd{C-f C-k} is two
+key sequences, not one.@refill
 
-  By contrast, the two-character sequence @kbd{C-f C-k} is not a key,
-because the @kbd{C-f} is a complete key in itself.  It's impossible to
-give @kbd{C-f C-k} an independent meaning as a command.  @kbd{C-f C-k}
-is two key sequences, not one.@refill
+  All told, the prefix keys in Emacs are @kbd{C-c}, @kbd{C-h},
+@kbd{C-x}, @kbd{C-x C-a}, @kbd{C-x n}, @w{@kbd{C-x r}}, @kbd{C-x v},
+@kbd{C-x 4}, @kbd{C-x 5}, @kbd{C-x 6}, and @key{ESC}.  But this is not
+cast in concrete; it is just a matter of Emacs's standard key bindings.
+If you customize Emacs, you can make new prefix keys, or eliminate
+these.  @xref{Key Bindings}.
 
-  All told, the prefix keys in Emacs are @kbd{C-c}, @kbd{C-x},
-@kbd{C-h}, @kbd{C-x C-a}, @kbd{C-x n}, @w{@kbd{C-x r}}, @kbd{C-x v},
-@kbd{C-x 4}, @kbd{C-x 5}, and @key{ESC}.  But this is not cast in
-concrete; it is just a matter of Emacs's standard key bindings.  In
-customizing Emacs, you could make new prefix keys, or eliminate these.
-@xref{Key Bindings}.@refill
-
-  Whether a sequence is a key can be changed by customization.  For
-example, if you redefine @kbd{C-f} as a prefix, @kbd{C-f C-k} automatically
-becomes a key (complete, unless you define it too as a prefix).
-Conversely, if you remove the prefix definition of @kbd{C-x 4}, then
-@kbd{C-x 4 f} (or @kbd{C-x 4 @var{anything}}) is no longer a key.
+  If you do make or eliminate prefix keys, that changes the set of
+possible key sequences.  For example, if you redefine @kbd{C-f} as a
+prefix, @kbd{C-f C-k} automatically becomes a key (complete, unless you
+define it too as a prefix).  Conversely, if you remove the prefix
+definition of @kbd{C-x 4}, then @kbd{C-x 4 f} (or @kbd{C-x 4
+@var{anything}}) is no longer a key.
 
   Typing the help character (@kbd{C-h}) after a prefix character usually
 displays a list of the commands starting with that prefix.  There are a
@@ -157,8 +167,6 @@ change.
 @section Keys and Commands
 
 @cindex binding
-@cindex customization
-@cindex keymap
 @cindex function
 @cindex command
 @cindex function definition
@@ -191,23 +199,24 @@ forward by words instead.  Rebinding keys is a common method of
 customization.@refill
 
   In the rest of this manual, we usually ignore this subtlety to keep
-things simple.  To give the customizer the information he needs, we
+things simple.  To give the information needed for customization, we
 state the name of the command which really does the work in parentheses
 after mentioning the key that runs it.  For example, we will say that
-``The command @kbd{C-n} (@code{next-line}) moves point vertically down,''
-meaning that @code{next-line} is a command that moves vertically down
-and @kbd{C-n} is a key that is standardly bound to it.
+``The command @kbd{C-n} (@code{next-line}) moves point vertically
+down,'' meaning that @code{next-line} is a command that moves vertically
+down and @kbd{C-n} is a key that is standardly bound to it.
 
-  While we are on the subject of information for customization only, it's a
-good time to tell you about @dfn{variables}.  Often the description of a
-command will say, ``To change this, set the variable @code{mumble-foo}.''
-A variable is a name used to remember a value.  Most of the variables
-documented in this manual exist just to facilitate customization: some
-command or other part of Emacs examines the variable and behaves
-differently accordingly.  Until you are interested in customizing, you can
-ignore the information about variables.  When you are ready to be
-interested, read the basic information on variables, and then the
-information on individual variables will make sense.  @xref{Variables}.
+  While we are on the subject of information for customization only,
+it's a good time to tell you about @dfn{variables}.  Often the
+description of a command will say, ``To change this, set the variable
+@code{mumble-foo}.''  A variable is a name used to remember a value.
+Most of the variables documented in this manual exist just to facilitate
+customization: some command or other part of Emacs examines the variable
+and behaves differently according to the value that you set.  Until you
+are interested in customizing, you can ignore the information about
+variables.  When you are ready to be interested, read the basic
+information on variables, and then the information on individual
+variables will make sense.  @xref{Variables}.
 
 @node Text Characters, Entering Emacs, Commands, Top
 @section Character Set for Text
@@ -217,16 +226,17 @@ information on individual variables will make sense.  @xref{Variables}.
 ASCII graphic characters in Emacs buffers are displayed with their
 graphics.  The newline character (which has the same character code as
 @key{LFD}) is displayed by starting a new line.  The tab character is
-displayed by moving to the next tab stop column (usually every 8
+displayed by moving to the next tab stop column (normally every 8
 columns).  Other control characters are displayed as a caret (@samp{^})
 followed by the non-control version of the character; thus, @kbd{C-a} is
-displayed as @samp{^A}.
+displayed as @samp{^A}.  Non-ASCII characters 128 and up are displayed
+with octal escape sequences; thus, character code 243 (octal) is
+displayed as @samp{\243}.
 
-@cindex display table 
-  Non-ASCII characters 128 and up are displayed with octal escape
-sequences; thus, character code 243 (octal) is displayed as
-@samp{\243}.  You can customize the display of these character codes (or
-ANSI characters) by creating a @dfn{display table}; this is useful for
-editing files that use 8-bit European character sets.  @xref{Display
+@cindex display table
+  You can customize the display of these character codes (or
+ASCII characters) by creating a @dfn{display table}.  @xref{Display
 Tables,, Display Tables, elisp, The Emacs Lisp Reference Manual}.
-
+This is useful for
+editing files that use 8-bit European character sets.
+@xref{European Display}.

@@ -65,8 +65,10 @@ with the contents of the startup message.")
 (defconst inhibit-startup-echo-area-message nil
   "*Non-nil inhibits the initial startup echo area message.
 Inhibition takes effect only if your `.emacs' file contains
-a line of the form
+a line of this form:
  (setq inhibit-startup-echo-area-message \"YOUR-USER-NAME\")
+If your `.emacs' file is byte-compiled, use the following form instead:
+ (eval '(setq inhibit-startup-echo-area-message \"YOUR-USER-NAME\"))
 Thus, someone else using a copy of your `.emacs' file will see
 the startup message unless he personally acts to inhibit it.")
 
@@ -78,6 +80,9 @@ the startup message unless he personally acts to inhibit it.")
 Elements look like (SWITCH-STRING . HANDLER-FUNCTION).
 HANDLER-FUNCTION receives switch name as sole arg;
 remaining command-line args are in the variable `command-line-args-left'.")
+
+(defvar command-line-args-left nil
+  "List of command-line args not yet processed.")
 
 (defvar command-line-functions nil    ;; lrs 7/31/89
   "List of functions to process unrecognized command-line arguments.
@@ -139,6 +144,14 @@ higher incidence of change, don't make sense to load into emacs'
 dumped image.  Thus, the run-time load order is: 1. file described in
 this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
 
+(defconst iso-8859-1-locale-regexp "8859[-_]?1"
+  "Regexp that specifies when to enable the ISO 8859-1 character set.
+We do that if this regexp matches the locale name
+specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
+
+(defvar user-mail-address nil
+  "Full mailing address of this user.")
+
 (defvar init-file-debug nil)
 
 (defvar init-file-had-error nil)
@@ -163,6 +176,7 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
 			   (delete (concat "PWD=" pwd)
 				   process-environment)))))))
     (setq default-directory (abbreviate-file-name default-directory))
+    (setq user-mail-address (concat (user-login-name) "@" (system-name)))
     (let ((menubar-bindings-done nil))
       (unwind-protect
 	  (command-line)
@@ -210,6 +224,20 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
 	  ((or (string= vc "never")
 	       (string= vc "simple"))
 	   (setq version-control 'never))))
+
+  (if (let ((ctype
+	     ;; Use the first of these three envvars that has a nonempty value.
+	     (or (let ((string (getenv "LC_ALL")))
+		   (and (not (equal string "")) string))
+		 (let ((string (getenv "LC_CTYPE")))
+		   (and (not (equal string "")) string))
+		 (let ((string (getenv "LANG")))
+		   (and (not (equal string "")) string)))))
+	(and ctype
+	     (string-match iso-8859-1-locale-regexp ctype)))
+      (progn 
+	(standard-display-european t)
+	(require 'iso-syntax)))
 
   ;;! This has been commented out; I currently find the behavior when
   ;;! split-window-keep-point is nil disturbing, but if I can get used

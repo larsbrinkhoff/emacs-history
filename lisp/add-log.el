@@ -43,10 +43,9 @@ This defaults to the value returned by the `user-full-name' function.")
 
 ;; This MUST not be autoloaded, since user-login-name
 ;; cannot be known at Emacs dump time.
-(defvar add-log-mailing-address (concat (user-login-name) "@" (system-name))
+(defvar add-log-mailing-address user-mail-address
   "*Electronic mail address of user, for inclusion in ChangeLog daily headers.
-This defaults to the value returned by `user-login-name', followed by
-an `@' character, followed by the value returned by `system-name'.")
+This defaults to the value of `user-mail-address'.")
 
 (defun change-log-name ()
   (or change-log-default-name
@@ -67,55 +66,53 @@ an `@' character, followed by the value returned by `system-name'.")
 ;;;###autoload
 (defun find-change-log (&optional file-name)
   "Find a change log file for \\[add-change-log-entry] and return the name.
-Optional arg FILE-NAME is a name to try first.
+
+Optional arg FILE-NAME specifies the file to use.
 If FILE-NAME is nil, use the value of `change-log-default-name' if non-nil.
-Failing that, use \"ChangeLog\" in the current directory.
-If the file does not exist in the named directory, successive parent
-directories are tried.
+Otherwise, search in the current directory and its successive parents
+for a file named `ChangeLog' (or whatever we use on this operating system).
 
 Once a file is found, `change-log-default-name' is set locally in the
 current buffer to the complete file name."
+  ;; If user specified a file name or if this buffer knows which one to use,
+  ;; just use that.
   (or file-name
-      (setq file-name (or change-log-default-name
-			  ;; Chase links in the source file
-			  ;; and use the change log in the dir where it points.
-			  (and buffer-file-name
-			       (file-name-directory
-				(file-chase-links buffer-file-name)))
-			  default-directory)))
-  (if (and (eq file-name change-log-default-name)
-	   (assq 'change-log-default-name (buffer-local-variables)))
-      ;; Don't do the searching if we already have a buffer-local value.
-      file-name
-
-    (if (file-directory-p file-name)
-	(setq file-name (expand-file-name (change-log-name) file-name)))
-    ;; Chase links before visiting the file.
-    ;; This makes it easier to use a single change log file
-    ;; for several related directories.
-    (setq file-name (file-chase-links file-name))
-    (setq file-name (expand-file-name file-name))
-    ;; Move up in the dir hierarchy till we find a change log file.
-    (let ((file1 file-name)
-	  parent-dir)
-      (while (and (not (or (get-file-buffer file1) (file-exists-p file1)))
-		  (progn (setq parent-dir
-			       (file-name-directory
-				(directory-file-name
-				 (file-name-directory file1))))
-			 ;; Give up if we are already at the root dir.
-			 (not (string= (file-name-directory file1)
-				       parent-dir))))
-	;; Move up to the parent dir and try again.
-	(setq file1 (expand-file-name 
-		     (file-name-nondirectory (change-log-name))
-	     parent-dir)))
-      ;; If we found a change log in a parent, use that.
-      (if (or (get-file-buffer file1) (file-exists-p file1))
-	  (setq file-name file1)))
-    ;; Make a local variable in this buffer so we needn't search again.
-    (set (make-local-variable 'change-log-default-name) file-name)
-    file-name))
+      (setq file-name change-log-default-name)
+      (progn
+	;; Chase links in the source file
+	;; and use the change log in the dir where it points.
+	(setq file-name (or (and buffer-file-name
+				 (file-name-directory
+				  (file-chase-links buffer-file-name)))
+			    default-directory))
+	(if (file-directory-p file-name)
+	    (setq file-name (expand-file-name (change-log-name) file-name)))
+	;; Chase links before visiting the file.
+	;; This makes it easier to use a single change log file
+	;; for several related directories.
+	(setq file-name (file-chase-links file-name))
+	(setq file-name (expand-file-name file-name))
+	;; Move up in the dir hierarchy till we find a change log file.
+	(let ((file1 file-name)
+	      parent-dir)
+	  (while (and (not (or (get-file-buffer file1) (file-exists-p file1)))
+		      (progn (setq parent-dir
+				   (file-name-directory
+				    (directory-file-name
+				     (file-name-directory file1))))
+			     ;; Give up if we are already at the root dir.
+			     (not (string= (file-name-directory file1)
+					   parent-dir))))
+	    ;; Move up to the parent dir and try again.
+	    (setq file1 (expand-file-name 
+			 (file-name-nondirectory (change-log-name))
+			 parent-dir)))
+	  ;; If we found a change log in a parent, use that.
+	  (if (or (get-file-buffer file1) (file-exists-p file1))
+	      (setq file-name file1)))))
+  ;; Make a local variable in this buffer so we needn't search again.
+  (set (make-local-variable 'change-log-default-name) file-name)
+  file-name)
 
 ;;;###autoload
 (defun add-change-log-entry (&optional whoami file-name other-window new-entry)
@@ -140,7 +137,7 @@ never append to an existing entry."
 			    'add-log-current-defun)))
 	paragraph-end entry)
 
-    (setq file-name (find-change-log file-name))
+    (setq file-name (expand-file-name (find-change-log file-name)))
 
     ;; Set ENTRY to the file name to use in the new entry.
     (and buffer-file-name
@@ -163,11 +160,11 @@ never append to an existing entry."
     (if (looking-at (concat (regexp-quote (substring (current-time-string)
 						     0 10))
 			    ".* " (regexp-quote add-log-full-name)
-			    "  (" (regexp-quote add-log-mailing-address)))
+			    "  <" (regexp-quote add-log-mailing-address)))
 	(forward-line 1)
       (insert (current-time-string)
 	      "  " add-log-full-name
-	      "  (" add-log-mailing-address ")\n\n"))
+	      "  <" add-log-mailing-address ">\n\n"))
 
     ;; Search only within the first paragraph.
     (if (looking-at "\n*[^\n* \t]")
@@ -361,7 +358,9 @@ Has a preference of looking backwards."
 			 ;; or the DEFUN macro used by the C library.
 			 (if (condition-case nil
 				 (and (save-excursion
-					(forward-line 1)
+					(end-of-line)
+					(while (= (preceding-char) ?\\)
+					  (end-of-line 2))
 					(backward-sexp 1)
 					(beginning-of-line)
 					(setq tem (point))

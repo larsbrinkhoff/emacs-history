@@ -851,7 +851,7 @@ SIZE, if supplied, should be a prime number."
 ;;;; Internal variables.
 ;;;; ------------------------------------------------------------
 
-(defconst ange-ftp-version "$Revision: 1.53 $")
+(defconst ange-ftp-version "$Revision: 1.56 $")
 
 (defvar ange-ftp-data-buffer-name " *ftp data*"
   "Buffer name to hold directory listing data received from ftp process.")
@@ -1157,12 +1157,22 @@ Optional DEFAULT is password to start with."
 ;; record the information found.
 
 (defun ange-ftp-parse-netrc-group ()
-  (beginning-of-line)
   (let ((start (point))
-	(end (progn (re-search-forward "machine\\|default"
-				       (point-max) 'end 2) (point)))
+	(end (save-excursion
+	       (if (looking-at "machine\\>")
+		   ;; Skip `machine' and the machine name that follows.
+		   (progn
+		     (skip-chars-forward "^ \t\n")
+		     (skip-chars-forward " \t\n")
+		     (skip-chars-forward "^ \t\n"))
+		 ;; Skip `default'.
+		 (skip-chars-forward "^ \t\n"))
+	       ;; Find start of the next `machine' or `default'
+	       ;; or the end of the buffer.
+	       (if (re-search-forward "machine\\>\\|default\\>" nil t)
+		   (match-beginning 0)
+		 (point-max))))
 	machine login password account)
-    (goto-char start)
     (setq machine  (ange-ftp-parse-netrc-token "machine"  end)
 	  login    (ange-ftp-parse-netrc-token "login"    end)
 	  password (ange-ftp-parse-netrc-token "password" end)
@@ -1219,6 +1229,7 @@ Optional DEFAULT is password to start with."
 		(mapcar 'funcall find-file-hooks)
 		(setq buffer-file-name nil)
 		(goto-char (point-min))
+		(skip-chars-forward " \t\n")
 		(while (not (eobp))
 		  (ange-ftp-parse-netrc-group))
 		(kill-buffer (current-buffer)))
@@ -2748,7 +2759,7 @@ logged in as user USER and cd'd to directory DIR."
 
 (defun ange-ftp-canonize-filename (n)
   "Take a string and short-circuit //, /. and /.."
-  (if (string-match ".+//" n)		;don't upset Apollo users
+  (if (string-match "[^:]+//" n)		;don't upset Apollo users
       (setq n (substring n (1- (match-end 0)))))
   (let ((parsed (ange-ftp-ftp-name n)))
     (if parsed
@@ -2783,12 +2794,13 @@ logged in as user USER and cd'd to directory DIR."
 				   name))
 		     (error "Unable to obtain CWD")))))
 	  
-	  (setq name (ange-ftp-real-expand-file-name name))
-	  
-	  ;; see if hit real expand-file-name bug...  this will probably annoy
-	  ;; some Apollo people.  I'll wait until they shout, however.
-	  (if (string-match "^//" name)
-	      (setq name (substring name 1)))
+	  ;; If name starts with //, preserve that, for apollo system.
+	  (if (not (string-match "^//" name))
+	      (progn
+		(setq name (ange-ftp-real-expand-file-name name))
+
+		(if (string-match "^//" name)
+		    (setq name (substring name 1)))))
 	  
 	  ;; Now substitute the expanded name back into the overall filename.
 	  (ange-ftp-replace-name-component n name))
@@ -2804,7 +2816,7 @@ logged in as user USER and cd'd to directory DIR."
   "Documented as original."
   (ange-ftp-save-match-data
     (if (eq (string-to-char name) ?/)
-	(while (cond ((string-match ".+//" name) ;don't upset Apollo users
+	(while (cond ((string-match "[^:]+//" name) ;don't upset Apollo users
 		      (setq name (substring name (1- (match-end 0)))))
 		     ((string-match "/~" name)
 		      (setq name (substring name (1- (match-end 0))))))))

@@ -19,7 +19,7 @@
 char *
 XMenuError()
 {
-    char message[128];		/* Error message buffer. */
+    static char message[128];		/* Error message buffer. */
 
     if ((_XMErrorCode < XME_CODE_COUNT) && (_XMErrorCode >= 0)) {
 	return(_XMErrorList[_XMErrorCode]);

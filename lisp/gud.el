@@ -61,13 +61,13 @@ This association list has elements of the form
    gud-overload-alist))
 
 (defun gud-massage-args (file args)
-  (error "GUD not properly entered."))
+  (error "GUD not properly entered"))
 
 (defun gud-marker-filter (str)
-  (error "GUD not properly entered."))
+  (error "GUD not properly entered"))
 
 (defun gud-find-file (f)
-  (error "GUD not properly entered."))
+  (error "GUD not properly entered"))
 
 ;; ======================================================================
 ;; command definition
@@ -459,7 +459,8 @@ and source-file directory for your debugger."
       ;; We haven't tested gud on this system:
       (string-match "^mips-[^-]*-riscos" system-configuration)
       ;; It's documented on OSF/1.3
-      (string-match "^mips-[^-]*-osf1" system-configuration))
+      (string-match "^mips-[^-]*-osf1" system-configuration)
+      (string-match "^alpha-[^-]*-osf" system-configuration))
   "Non-nil to assume the MIPS/OSF dbx conventions (argument `-emacs').")
 
 (defun gud-mipsdbx-massage-args (file args)
@@ -634,14 +635,6 @@ and source-file directory for your debugger."
     ;; Make dbx give out the source location info that we need.
     (process-send-string (get-buffer-process gud-comint-buffer)
 			 "printf \"\032\032%1d:\",$curline;file\n"))
-   ((or (string-match "-sunos" (symbol-name system-type))
-	(string-match "-solaris" (symbol-name system-type)))
-    ;; The following works for both the UCB and SunPro 2.0.1 versions
-    ;; of dbx.  The `stop' is lost using the `\n' separator as in the
-    ;; default case.  Is there a dbx where the newline is actually
-    ;; necessary?  (d.love@dl.ac.uk)
-    (gud-def gud-break "file \"%d%f\";stop at %l"
-				  "\C-b" "Set breakpoint at current line."))
    (t
     (gud-def gud-break "file \"%d%f\"\nstop at %l"
 				  "\C-b" "Set breakpoint at current line.")))
@@ -1103,7 +1096,8 @@ Obeying it means displaying in another window the specified file and line."
 ;; to get around the fact that this is called inside a save-excursion.
 
 (defun gud-display-line (true-file line)
-  (let* ((buffer (gud-find-file true-file))
+  (let* ((last-nonmenu-event t)	 ; Prevent use of dialog box for questions.
+	 (buffer (gud-find-file true-file))
 	 (window (display-buffer buffer))
 	 (pos))
 ;;;    (if (equal buffer (current-buffer))

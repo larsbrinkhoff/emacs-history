@@ -206,14 +206,14 @@ even if that goes past COLUMN; by default, MIN is zero.")
       XFASTINT (n) = mincol / tab_width - fromcol / tab_width;
       if (XFASTINT (n) != 0)
 	{
-	  Finsert_char (make_number ('\t'), n);
+	  Finsert_char (make_number ('\t'), n, Qt);
 
 	  fromcol = (mincol / tab_width) * tab_width;
 	}
     }
 
   XFASTINT (col) = mincol - fromcol;
-  Finsert_char (make_number (' '), col);
+  Finsert_char (make_number (' '), col, Qt);
 
   last_known_column = mincol;
   last_known_column_point = point;
@@ -280,7 +280,7 @@ indented_beyond_p (pos, column)
      int pos, column;
 {
   while (pos > BEGV && FETCH_CHAR (pos) == '\n')
-    pos = find_next_newline (pos - 1, -1);
+    pos = find_next_newline_no_quit (pos - 1, -1);
   return (position_indentation (pos) >= column);
 }
 
@@ -486,6 +486,7 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 	  {
 	    Lisp_Object end, limit;
 
+	    recenter_overlay_lists (current_buffer, pos);
 	    /* This is just an estimate to give reasonable
 	       performance; nothing should go wrong if it is too small.  */
 	    limit = Fnext_overlay_change (position);
@@ -578,7 +579,7 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 	    break;
 	  if (hscroll
 	      || (truncate_partial_width_windows
-		  && width + 1 < FRAME_WIDTH (selected_frame))
+		  && width + 1 < FRAME_WIDTH (XFRAME (WINDOW_FRAME (win))))
 	      || !NILP (current_buffer->truncate_lines))
 	    {
 	      /* Truncating: skip to newline.  */
@@ -720,15 +721,15 @@ pos_tab_offset (w, pos)
      struct window *w;
      register int pos;
 {
-  int opoint = point;
+  int opoint = PT;
   int col;
   int width = window_internal_width (w) - 1;
 
   if (pos == BEGV || FETCH_CHAR (pos - 1) == '\n')
     return 0;
-  SET_PT (pos);
+  TEMP_SET_PT (pos);
   col = current_column ();
-  SET_PT (opoint);
+  TEMP_SET_PT (opoint);
   return col - (col % width);
 }
 
@@ -767,7 +768,7 @@ vmotion (from, vtarget, width, hscroll, window)
 	 to determine hpos of starting point */
       if (from > BEGV && FETCH_CHAR (from - 1) != '\n')
 	{
-	  prevline = find_next_newline (from, -1);
+	  prevline = find_next_newline_no_quit (from, -1);
 	  while (prevline > BEGV
 		 && ((selective > 0
 		      && indented_beyond_p (prevline, selective))
@@ -778,7 +779,7 @@ vmotion (from, vtarget, width, hscroll, window)
 						    window))
 #endif
 		 ))
-	    prevline = find_next_newline (prevline - 1, -1);
+	    prevline = find_next_newline_no_quit (prevline - 1, -1);
 	  pos = *compute_motion (prevline, 0,
 				 lmargin + (prevline == 1 ? start_hpos : 0),
 				 from, 1 << (INTBITS - 2), 0,
@@ -805,7 +806,7 @@ vmotion (from, vtarget, width, hscroll, window)
       prevline = from;
       while (1)
 	{
-	  prevline = find_next_newline (prevline - 1, -1);
+	  prevline = find_next_newline_no_quit (prevline - 1, -1);
 	  if (prevline == BEGV
 	      || ((selective <= 0
 		   || ! indented_beyond_p (prevline, selective))

@@ -481,40 +481,43 @@ start a background process even if a buffer already exists and
 (defun Man-notify-when-ready (man-buffer)
   "Notify the user when MAN-BUFFER is ready.
 See the variable `Man-notify' for the different notification behaviors."
-  (cond
-   ((eq Man-notify 'newframe)
-    ;; Since we run asynchronously, perhaps while Emacs is waiting for input,
-    ;; we must not leave a different buffer current.
-    ;; We can't rely on the editor command loop to reselect
-    ;; the selected window's buffer.
-    (save-excursion
-      (set-buffer man-buffer)
-      (make-frame Man-frame-parameters)))
-   ((eq Man-notify 'bully)
-    (and window-system
-	 (frame-live-p Man-original-frame)
-	 (select-frame Man-original-frame))
-    (pop-to-buffer man-buffer)
-    (delete-other-windows))
-   ((eq Man-notify 'aggressive)
-    (and window-system
-	 (frame-live-p Man-original-frame)
-	 (select-frame Man-original-frame))
-    (pop-to-buffer man-buffer))
-   ((eq Man-notify 'friendly)
-    (and window-system
-	 (frame-live-p Man-original-frame)
-	 (select-frame Man-original-frame))
-    (display-buffer man-buffer 'not-this-window))
-   ((eq Man-notify 'polite)
-    (beep)
-    (message "Manual buffer %s is ready." (buffer-name man-buffer)))
-   ((eq Man-notify 'quiet)
-    (message "Manual buffer %s is ready." (buffer-name man-buffer)))
-   ((or (eq Man-notify 'meek)
-	t)
-    (message ""))
-   ))
+  (let ((saved-frame (save-excursion
+		       (set-buffer man-buffer)
+		       Man-original-frame)))
+    (cond
+     ((eq Man-notify 'newframe)
+      ;; Since we run asynchronously, perhaps while Emacs is waiting for input,
+      ;; we must not leave a different buffer current.
+      ;; We can't rely on the editor command loop to reselect
+      ;; the selected window's buffer.
+      (save-excursion
+	(set-buffer man-buffer)
+	(make-frame Man-frame-parameters)))
+     ((eq Man-notify 'bully)
+      (and window-system
+	   (frame-live-p saved-frame)
+	   (select-frame saved-frame))
+      (pop-to-buffer man-buffer)
+      (delete-other-windows))
+     ((eq Man-notify 'aggressive)
+      (and window-system
+	   (frame-live-p saved-frame)
+	   (select-frame saved-frame))
+      (pop-to-buffer man-buffer))
+     ((eq Man-notify 'friendly)
+      (and window-system
+	   (frame-live-p saved-frame)
+	   (select-frame saved-frame))
+      (display-buffer man-buffer 'not-this-window))
+     ((eq Man-notify 'polite)
+      (beep)
+      (message "Manual buffer %s is ready." (buffer-name man-buffer)))
+     ((eq Man-notify 'quiet)
+      (message "Manual buffer %s is ready." (buffer-name man-buffer)))
+     ((or (eq Man-notify 'meek)
+	  t)
+      (message ""))
+     )))
 
 (defun Man-set-fonts ()
   (goto-char (point-min))
@@ -531,37 +534,38 @@ See the variable `Man-notify' for the different notification behaviors."
   "Manpage background process sentinel."
   (let ((Man-buffer (process-buffer process))
 	(delete-buff nil)
-	(err-mess nil)
-	(case-fold-search nil))
+	(err-mess nil))
     (if (null (buffer-name Man-buffer)) ;; deleted buffer
 	(set-process-buffer process nil)
       (save-match-data
 	(save-excursion
 	  (set-buffer Man-buffer)
 	  (goto-char (point-min))
-	  (cond ((or (looking-at "No \\(manual \\)*entry for")
-		     (looking-at "[^\n]*: nothing appropriate$"))
-		 (setq err-mess (buffer-substring (point) (Man-linepos 'eol))
-		       delete-buff t))
-		((not (and (eq (process-status process) 'exit)
-			   (= (process-exit-status process) 0)))
-		 (setq err-mess
-		       (concat (buffer-name Man-buffer)
-			       ": process "
-			       (let ((eos (1- (length msg))))
-				 (if (= (aref msg eos) ?\n)
-				     (substring msg 0 eos) msg))))
-		 (goto-char (point-max))
-		 (insert (format "\nprocess %s" msg))
-		 )))
+	  (let ((case-fold-search nil))
+	    (cond ((or (looking-at "No \\(manual \\)*entry for")
+		       (looking-at "[^\n]*: nothing appropriate$"))
+		   (setq err-mess (buffer-substring (point) (Man-linepos 'eol))
+			 delete-buff t))
+		  ((not (and (eq (process-status process) 'exit)
+			     (= (process-exit-status process) 0)))
+		   (setq err-mess
+			 (concat (buffer-name Man-buffer)
+				 ": process "
+				 (let ((eos (1- (length msg))))
+				   (if (= (aref msg eos) ?\n)
+				       (substring msg 0 eos) msg))))
+		   (goto-char (point-max))
+		   (insert (format "\nprocess %s" msg))
+		   ))))
 	(if delete-buff
 	    (kill-buffer Man-buffer)
 	  (save-window-excursion
 	    (save-excursion
 	      (set-buffer Man-buffer)
-	      (Man-set-fonts)
-	      (run-hooks 'Man-cooked-hook)
-	      (Man-mode)
+	      (let ((case-fold-search nil))
+		(Man-set-fonts)
+		(run-hooks 'Man-cooked-hook)
+		(Man-mode))
 	      (set-buffer-modified-p nil)))
 	  (Man-notify-when-ready Man-buffer))
 

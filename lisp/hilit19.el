@@ -815,9 +815,11 @@ non-nil."
 	 (if (> buffer-saved-size (car hilit-auto-rehighlight-fallback))
 	     (setq hilit-auto-rehighlight
 		   (cdr hilit-auto-rehighlight-fallback)))
-	 (if (> buffer-saved-size hilit-auto-highlight-maxout) nil
-	   (hilit-rehighlight-buffer)
-	   (set-buffer-modified-p nil)))))
+	 (if (> buffer-saved-size hilit-auto-highlight-maxout)
+	     nil
+	   (let ((bm (buffer-modified-p)))
+	     (hilit-rehighlight-buffer)
+	     (set-buffer-modified-p bm))))))
 
 (defun hilit-repaint-command (arg)
   "Rehighlights according to the value of hilit-auto-rehighlight, or the
@@ -1131,7 +1133,24 @@ number of backslashes."
       ("[ \n\t({]\\(\\(const\\|register\\|volatile\\|unsigned\\|extern\\|static\\)\\s +\\)*\\(\\(\\w\\|[$_]\\)+_t\\|float\\|double\\|void\\|char\\|short\\|int\\|long\\|FILE\\|\\(\\(struct\\|union\\|enum\\|class\\)\\([ \t]+\\(\\w\\|[$_]\\)*\\)\\)\\)\\(\\s +\\*+)?\\|[ \n\t;()]\\)" nil type)
       ;; key words
       ("[^_]\\<\\(return\\|goto\\|if\\|else\\|case\\|default\\|switch\\|break\\|continue\\|while\\|do\\|for\\|public\\|protected\\|private\\|delete\\|new\\)\\>[^_]"
-       1 keyword)))))
+       1 keyword))))
+
+  (hilit-set-mode-patterns
+   '(objc-mode objective-C-mode)
+   (append
+    comments c++-comments strings preprocessor
+    '(
+      ;; function decls are expected to have types on the previous line
+      ("^\\(\\(\\w\\|[$_]\\)+::\\)?\\(\\w\\|[$_]\\)+\\s *\\(\\(\\w\\|[$_]\\)+\\s *((\\|(\\)[^)]*)+" nil defun)
+      ("^\\(\\(\\w\\|[$_]\\)+[ \t]*::[ \t]*\\)?\\(\\(\\w\\|[$_]\\)+\\|operator.*\\)\\s *\\(\\(\\w\\|[$_]\\)+\\s *((\\|(\\)[^)]*)+" nil defun)
+
+      ("^\\(template\\|typedef\\|struct\\|union\\|class\\|enum\\|public\\|private\\|protected\\).*$" nil decl)
+      ;; datatype -- black magic regular expression
+      ("[ \n\t({]\\(\\(const\\|register\\|volatile\\|unsigned\\|extern\\|static\\)\\s +\\)*\\(\\(\\w\\|[$_]\\)+_t\\|float\\|double\\|void\\|char\\|short\\|int\\|long\\|FILE\\|\\(\\(struct\\|union\\|enum\\|class\\)\\([ \t]+\\(\\w\\|[$_]\\)*\\)\\)\\)\\(\\s +\\*+)?\\|[ \n\t;()]\\)" nil type)
+      ;; key words
+      ("[^_]\\<\\(return\\|goto\\|if\\|else\\|case\\|default\\|switch\\|break\\|continue\\|while\\|do\\|for\\|public\\|protected\\|private\\|interface\\|implementation\\|end\\|super\\|self\\)\\>[^_]"
+       1 keyword))))
+  )
 
 (hilit-set-mode-patterns
  'perl-mode

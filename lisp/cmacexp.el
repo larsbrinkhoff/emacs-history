@@ -3,7 +3,7 @@
 ;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Francesco Potorti` <pot@cnuce.cnr.it>
-;; Version: $Id: cmacexp.el,v 1.14 1994/05/03 22:17:03 kwzh Exp $
+;; Version: $Id: cmacexp.el,v 1.18 1994/09/05 04:33:23 rms Exp $
 ;; Adapted-By: ESR
 ;; Keywords: c
 
@@ -66,7 +66,7 @@
 
 ;; IMPROVEMENTS OVER emacs 18.xx cmacexp.el ==========================
 
-;; - A lot of user visible changes.  See above.
+;; - A lot of user and programmer visible changes.  See above.
 ;; - #line directives are inserted, so __LINE__ and __FILE__ are
 ;;   correctly expanded.  Works even with START inside a string, a
 ;;   comment or a region #ifdef'd away by cpp. cpp is invoked with -C,
@@ -96,11 +96,11 @@
 (defvar c-macro-preprocessor "/lib/cpp -C"
   "The preprocessor used by the cmacexp package.
 
-If you change this, be sure to preserve the -C (don't strip comments)
+If you change this, be sure to preserve the `-C' (don't strip comments)
 option, or to set an equivalent one.")
 
 (defvar c-macro-cppflags ""
-  "*Preprocessor flags used by c-macro-expand.")
+  "*Preprocessor flags used by `c-macro-expand'.")
 
 (defconst c-macro-buffer-name "*Macroexpansion*")
 
@@ -150,7 +150,7 @@ For use inside Lisp programs, see also `c-macro-expansion'."
 	      (exchange-point-and-mark)))
       (set-buffer displaybuf)
       (setq buffer-read-only nil)
-      (buffer-flush-undo displaybuf)
+      (buffer-disable-undo displaybuf)
       (erase-buffer)
       (insert expansion)
       (set-buffer-modified-p nil)
@@ -239,7 +239,9 @@ Optional arg DISPLAY non-nil means show messages in the echo area."
 	(startlinenum 0)
 	(linenum 0)
 	(startstat ())
-	(startmarker ""))
+	(startmarker "")
+	(exit-status 0)
+	(tempname (make-temp-name "/tmp/")))
     (unwind-protect
 	(save-excursion
 	  (save-restriction
@@ -300,15 +302,18 @@ Optional arg DISPLAY non-nil means show messages in the echo area."
 
 	  ;; Call the preprocessor.
 	  (if display (message mymsg))
-	  (call-process-region 1 (point-max) "sh" t t nil "-c"
-			       (concat cppcommand " 2>/dev/null"))
+	  (setq exit-status
+		(call-process-region 1 (point-max) "sh" t t nil "-c"
+				     (concat cppcommand " 2>" tempname)))
 	  (if display (message (concat mymsg "done")))
-
-	  ;; Find and delete the mark of the start of the expansion.
-	  ;; Look for `# nn "file.c"' lines and delete them.
-	  (goto-char (point-min))
-	  (search-forward startmarker)
-	  (delete-region 1 (point))
+	  (if (= (buffer-size) 0)
+	      ;; Empty output is normal after a fatal error.
+	      (insert "\nPreprocessor produced no output\n")
+	    ;; Find and delete the mark of the start of the expansion.
+	    ;; Look for `# nn "file.c"' lines and delete them.
+	    (goto-char (point-min))
+	    (search-forward startmarker)
+	    (delete-region 1 (point)))
 	  (while (re-search-forward (concat "^# [0-9]+ \""
 					    (regexp-quote filename)
 					    "\"") nil t)
@@ -316,6 +321,16 @@ Optional arg DISPLAY non-nil means show messages in the echo area."
 	    (let ((beg (point)))
 	      (forward-line 1)
 	      (delete-region beg (point))))
+
+	  ;; If CPP got errors, show them at the beginning.
+	  (or (eq exit-status 0)
+	      (progn
+		(goto-char (point-min))
+		(insert (format "Preprocessor terminated with status %s\n"
+				exit-status))
+		(insert-file-contents tempname)
+		(insert "\n")))
+	  (delete-file tempname)
 
 	  ;; Compute the return value, keeping in account the space
 	  ;; inserted at the end of the buffer.

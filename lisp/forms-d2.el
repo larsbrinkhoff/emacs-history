@@ -1,11 +1,11 @@
-;; demo2 -- demo forms-mode	-*- emacs-lisp -*-
+;; forms-demo -- demo forms-mode	-*- emacs-lisp -*-
 
-;; SCCS Status     : @(#)@ demo2	1.1.2
+;; RCS Status      : $Id: forms-d2.el,v 1.3 1994/07/25 20:53:03 jv Exp $
 ;; Author          : Johan Vromans
 ;; Created On      : 1989
 ;; Last Modified By: Johan Vromans
-;; Last Modified On: Mon Jul  1 13:56:31 1991
-;; Update Count    : 2
+;; Last Modified On: Mon Jul 25 22:53:01 1994
+;; Update Count    : 8
 ;; Status          : OK
 ;; 
 ;; This sample forms exploit most of the features of forms mode.
@@ -46,14 +46,14 @@ used to fill to the column."
   (arch-tocol (- target (length (nth field forms-fields))) fill))
 
 ;; Record filters.
-;; This example uses the (defun ...) method of defining.
 ;;
-(defun forms-new-record-filter (the-record)
+(defun arch-new-record-filter (the-record)
   "Form a new record with some defaults."
   (aset the-record arch-from (user-full-name))
   (aset the-record arch-date (current-time-string))
   the-record				; return it
 )
+(setq forms-new-record-filter 'arch-new-record-filter)
 
 ;; The format list.
 (setq forms-format-list

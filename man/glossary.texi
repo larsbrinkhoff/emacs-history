@@ -7,9 +7,9 @@
 @table @asis
 @item Abbrev
 An abbrev is a text string which expands into a different text string
-when present in the buffer.  For example, you might define a short
-word as an abbrev for a long phrase that you want to insert
-frequently.  @xref{Abbrevs}.
+when present in the buffer.  For example, you might define a few letters
+as an abbrev for a long phrase that you want to insert frequently.
+@xref{Abbrevs}.
 
 @item Aborting
 Aborting means getting out of a recursive edit (q.v.@:).  The
@@ -40,9 +40,9 @@ track down or cancel changes you later regret making.  @xref{Backup}.
 @item Balance Parentheses
 Emacs can balance parentheses manually or automatically.  Manual
 balancing is done by the commands to move over balanced expressions
-(@pxref{Lists}).  Automatic balancing is done by blinking the
-parenthesis that matches one just inserted (@pxref{Matching,,Matching
-Parens}).
+(@pxref{Lists}).  Automatic balancing is done by blinking or
+highlighting the parenthesis that matches one just inserted
+(@pxref{Matching,,Matching Parens}).
 
 @item Bind
 To bind a key sequence means to give it a binding (q.v.@:).
@@ -60,10 +60,11 @@ Blank lines are lines that contain only whitespace.  Emacs has several
 commands for operating on the blank lines in the buffer.
 
 @item Buffer
-The buffer is the basic editing unit; one buffer corresponds to one
-piece of text being edited.  You can have several buffers, but at any
-time you are editing only one, the `selected' buffer, though several
-can be visible when you are using multiple windows.  @xref{Buffers}.
+The buffer is the basic editing unit; one buffer corresponds to one text
+being edited.  You can have several buffers, but at any time you are
+editing only one, the `selected' buffer, though several can be visible
+when you are using multiple windows (q.v.).  Most buffers are visiting
+(q.v.) some file.  @xref{Buffers}.
 
 @item Buffer Selection History
 Emacs keeps a buffer selection history which records how recently each
@@ -74,19 +75,19 @@ select.  @xref{Buffers}.
 A button down event is the kind of input event generated right away when
 you press a mouse button.  @xref{Mouse Buttons}.
 
-@item C-
-@samp{C} in the name of a character is an abbreviation for Control.
+@item @kbd{C-}
+@kbd{C-} in the name of a character is an abbreviation for Control.
 @xref{User Input,C-}.
 
-@item C-M-
-@samp{C-M-} in the name of a character is an abbreviation for
+@item @kbd{C-M-}
+@kbd{C-M-} in the name of a character is an abbreviation for
 Control-Meta.  @xref{User Input,C-M-}.
 
 @item Case Conversion
 Case conversion means changing text from upper case to lower case or
 vice versa.  @xref{Case}, for the commands for case conversion.
 
-@item Characters
+@item Character
 Characters form the contents of an Emacs buffer; see @ref{Text
 Characters}.  Also, key sequences (q.v.@:) are usually made up of
 characters (though they may include other input events as well).
@@ -94,7 +95,7 @@ characters (though they may include other input events as well).
 
 @item Click Event
 A click event is the kind of input event generated when you press a
-mouse button and let it go without moving the mouse.  @xref{Mouse Buttons}.
+mouse button and release it without moving the mouse.  @xref{Mouse Buttons}.
 
 @item Command
 A command is a Lisp function specially defined to be able to serve as a
@@ -107,7 +108,7 @@ A command name is the name of a Lisp symbol which is a command
 (@pxref{Commands}).  You can invoke any command by its name using
 @kbd{M-x} (@pxref{M-x}).
 
-@item Comments
+@item Comment
 A comment is text in a program which is intended only for humans reading
 the program, and which is marked specially so that it will be ignored
 when the program is loaded or compiled.  Emacs offers special commands
@@ -160,6 +161,9 @@ A copyleft is a notice giving the public legal permission to
 redistribute a program or other work of art.  Copylefts are used by
 left-wing programmers to give people equal rights, just as copyrights
 are used by right-wing programmers to gain power over other people.
+
+The particular form of copyleft used by the GNU project is called the
+GNU General Public License.  @xref{Copying}.
 
 @item Current Buffer
 The current buffer in Emacs is the Emacs buffer on which most editing
@@ -219,7 +223,7 @@ Deleting a file means erasing it from the file system.
 
 @item Deletion of Messages
 Deleting a message means flagging it to be eliminated from your mail
-file.  Until you expunge (q.v.@:) the mail file, you can still undelete
+file.  Until you expunge (q.v.@:) the Rmail file, you can still undelete
 the messages you have deleted.  @xref{Rmail Deletion}.
 
 @item Deletion of Windows
@@ -273,8 +277,8 @@ circumstances.  When an error occurs, execution of the command stops
 reports the error by printing an error message (q.v.@:).  Type-ahead
 is discarded.  Then Emacs is ready to read another editing command.
 
-@item Error Messages
-Error messages are single lines of output printed by Emacs when the
+@item Error Message
+An error message is a single line of output displayed by Emacs when the
 user asks for something impossible to do (such as, killing text
 forward when point is at the end of the buffer).  They appear in the
 echo area, accompanied by a beep.
@@ -287,7 +291,7 @@ typed), the @key{ESC} key is pressed once and applies to the next
 character typed.
 
 @item Expunging
-Expunging a mail file or Dired buffer means really discarding the
+Expunging an Rmail file or Dired buffer means really discarding the
 messages or files you have previously flagged for deletion.
 
 @item File Name
@@ -315,8 +319,8 @@ of each line when filling is done.  It is not regarded as part of the
 text to be filled.  @xref{Filling}.
 
 @item Filling
-Filling text means moving text from line to line so that all the lines
-are approximately the same length.  @xref{Filling}.
+Filling text means shifting text between consecutive lines so that all
+the lines are approximately the same length.  @xref{Filling}.
 
 @item Frame
 A frame is a rectangular cluster of Emacs windows.  When using X Windows,
@@ -343,6 +347,12 @@ The global keymap (q.v.@:) contains key bindings that are in effect
 except when overridden by local key bindings in a major mode's local
 keymap (q.v.@:).  @xref{Keymaps}.
 
+@item Global Mark Ring
+The global mark ring records the series of buffers you have recently set
+a mark in.  In many cases you can use this to backtrack through buffers
+you have been editing in, or in which you have found tags.  @xref{Global
+Mark Ring}.
+
 @item Global Substitution
 Global substitution means replacing each occurrence of one string by
 another string through a large amount of text.  @xref{Replace}.
@@ -359,6 +369,11 @@ Control (q.v.@:) characters are graphic characters.  These include
 letters, digits, punctuation, and spaces; they do not include
 @key{RET} or @key{ESC}.  In Emacs, typing a graphic character inserts
 that character (in ordinary editing modes).  @xref{Basic,,Basic Editing}.
+
+@item Highlighting
+Highlighting text means displaying it with a different foreground and/or
+background color to make it stand out from the rest of the text in the
+buffer.
 
 @item Hardcopy
 Hardcopy means printed output.  Emacs has commands for making printed
@@ -378,7 +393,7 @@ Hyper}.
 
 @item Inbox
 An inbox is a file in which mail is delivered by the operating system.
-Rmail transfers mail from inboxes to mail files (q.v.@:) in which the
+Rmail transfers mail from inboxes to Rmail files (q.v.@:) in which the
 mail is then stored permanently or until explicitly deleted.
 @xref{Rmail Inbox}.
 
@@ -389,6 +404,12 @@ illuminate the structure of the program, and Emacs has special
 commands to adjust indentation.
 @xref{Indentation}.
 
+@item Input Event
+An input event represents, within Emacs, one action taken by the user on
+the terminal.  Input events include typing characters, typing function
+keys, pressing or releasing mouse buttons, and switching between Emacs
+frames.  @xref{User Input}.
+
 @item Insertion
 Insertion means copying text into the buffer, either from the keyboard
 or from some other place in Emacs.
@@ -397,16 +418,16 @@ or from some other place in Emacs.
 Justification means adding extra spaces to lines of text to make them
 come exactly to a specified width.  @xref{Filling,Justification}.
 
-@item Keyboard Macros
+@item Keyboard Macro
 Keyboard macros are a way of defining new Emacs commands from
 sequences of existing ones, with no need to write a Lisp program.
 @xref{Keyboard Macros}.
 
 @item Key Sequence
-A key sequence (key, for short) is a sequence of characters that, when
-input to Emacs, is meaningful as a single unit.  If the key sequence is
-enough to specify one action, it is a complete key (q.v.@:); if it is not
-enough, it is a prefix key (q.v.@:).  @xref{Keys}.
+A key sequence (key, for short) is a sequence of input events (q.v.@:)
+that are meaningful as a single unit.  If the key sequence is enough to
+specify one action, it is a complete key (q.v.@:); if it is not enough,
+it is a prefix key (q.v.@:).  @xref{Keys}.
 
 @item Keymap
 The keymap is the data structure that records the bindings (q.v.@:) of
@@ -463,19 +484,19 @@ same key sequences.  @xref{Keymaps}.
 A local value of a variable (q.v.@:) applies to only one buffer.
 @xref{Locals}.
 
-@item M-
+@item @kbd{M-}
 @kbd{M-} in the name of a character is an abbreviation for @key{META},
 one of the modifier keys that can accompany any character.
 @xref{User Input}.
 
-@item M-C-
-@samp{M-C-} in the name of a character is an abbreviation for
-Control-Meta; it means the same thing as @samp{C-M-}.  If your
+@item @kbd{M-C-}
+@kbd{M-C-} in the name of a character is an abbreviation for
+Control-Meta; it means the same thing as @kbd{C-M-}.  If your
 terminal lacks a real @key{META} key, you type a Control-Meta character by
 typing @key{ESC} and then typing the corresponding Control character.
 @xref{User Input,C-M-}.
 
-@item M-x
+@item @kbd{M-x}
 @kbd{M-x} is the key sequence which is used to call an Emacs command by
 name.  This is how you run commands that are not bound to key sequences.
 @xref{M-x}.
@@ -485,10 +506,6 @@ Mail means messages sent from one user to another through the computer
 system, to be read at the recipient's convenience.  Emacs has commands for
 composing and sending mail, and for reading and editing the mail you have
 received.  @xref{Sending Mail}.  @xref{Rmail}, for how to read mail.
-
-@item Mail File
-A mail file is a file which is edited using Rmail and in which Rmail
-stores mail.  @xref{Rmail}.
 
 @item Major Mode
 The Emacs major modes are a mutually exclusive set of options, each of
@@ -504,7 +521,13 @@ all the text from point to the mark.  Each buffer has its own mark.
 @item Mark Ring
 The mark ring is used to hold several recent previous locations of the
 mark, just in case you want to move back to them.  Each buffer has its
-own mark ring.  @xref{Mark Ring}.
+own mark ring; in addition, there is a single global mark ring (q.v.).
+@xref{Mark Ring}.
+
+@item Menu Bar
+The menu bar is the line at the top of an Emacs frame.  It contains
+words you can click on with the mouse to bring up menus.  The menu bar
+feature is supported only with X.  @xref{Menu Bars}.
 
 @item Message
 See `mail'.
@@ -570,8 +593,8 @@ widened again, but it is still there, and saving the file saves it
 all.  @xref{Narrowing}.
 
 @item Newline
-@key{LFD} characters in the buffer terminate lines of text and are
-called newlines.  @xref{Text Characters,Newline}.
+Linefeed characters in the buffer terminate lines of text and are
+therefore also called newlines.  @xref{Text Characters,Newline}.
 
 @item Numeric Argument
 A numeric argument is a number, specified before a command, to change
@@ -580,7 +603,7 @@ repeat count.  @xref{Arguments}.
 
 @item Option
 An option is a variable (q.v.@:) that exists so that you can customize
-Emacs by giving it a new value.  @xref{Variables}.
+Emacs by setting it to a new value.  @xref{Variables}.
 
 @item Overwrite Mode
 Overwrite mode is a minor mode.  When it is enabled, ordinary text
@@ -593,7 +616,7 @@ control-L, code 014) coming at the beginning of a line.  Some Emacs
 commands are provided for moving over and operating on pages.
 @xref{Pages}.
 
-@item Paragraphs
+@item Paragraph
 Paragraphs are the medium-size unit of English text.  There are
 special Emacs commands for moving over and operating on paragraphs.
 @xref{Paragraphs}.
@@ -618,21 +641,29 @@ introduce a set of longer key sequences.  @kbd{C-x} is an example of
 prefix key; any two-character sequence starting with @kbd{C-x} is
 therefore a legitimate key sequence.  @xref{Keys}.
 
-@item Primary Mail File
-Your primary mail file is the file named @samp{RMAIL} in your home
-directory, where all mail that you receive is stored by Rmail unless you
-make arrangements to do otherwise.  @xref{Rmail}.
+@item Primary Rmail File
+Your primary Rmail file is the file named @samp{RMAIL} in your home
+directory.  That's where Rmail stores your incoming mail, unless you
+specify a different file name.  @xref{Rmail}.
+
+@item Primary Selection
+The primary selection is one particular X selection (q.v.@:); it is the
+selection that most X applications use for transferring text to and from
+other applications.
+
+The Emacs kill commands set the primary selection and the yank command
+uses the primary selection when appropriate.  @xref{Killing}.
 
 @item Prompt
-A prompt is text printed to ask the user for input.  Printing a prompt
+A prompt is text printed to ask the user for input.  Displaying a prompt
 is called prompting.  Emacs prompts always appear in the echo area
 (q.v.@:).  One kind of prompting happens when the minibuffer is used to
 read an argument (@pxref{Minibuffer}); the echoing which happens when
-you pause in the middle of typing a multicharacter key sequence is also
+you pause in the middle of typing a multi-character key sequence is also
 a kind of prompting (@pxref{Echo Area}).
 
 @item Quitting
-Quitting means cancelling a partially typed command or a running
+Quitting means canceling a partially typed command or a running
 command, using @kbd{C-g}.  @xref{Quitting}.
 
 @item Quoting
@@ -651,6 +682,12 @@ Normally Emacs makes buffers read-only when they contain text which
 has a special significance to Emacs; for example, Dired buffers.
 Visiting a file that is write protected also makes a read-only buffer.
 @xref{Buffers}.
+
+@item Rectangle
+A rectangle consists of the text in a given range of columns on a given
+range of lines.  Normally you specify a rectangle by putting point at
+one corner and putting the mark at the opposite corner.
+@xref{Rectangles}.
 
 @item Recursive Editing Level
 A recursive editing level is a state in which part of the execution of
@@ -693,14 +730,24 @@ nonzero amount of restriction is called narrowing (q.v.@:).
 @xref{Narrowing}.
 
 @item @key{RET}
-@key{RET} is a character than in Emacs runs the command to insert a
+@key{RET} is a character that in Emacs runs the command to insert a
 newline into the text.  It is also used to terminate most arguments
 read in the minibuffer (q.v.@:).  @xref{User Input,Return}.
+
+@item Rmail File
+An Rmail file is a file containing text in a special format used by
+Rmail for storing mail.  @xref{Rmail}.
 
 @item Saving
 Saving a buffer means copying its text into the file that was visited
 (q.v.@:) in that buffer.  This is the way text in files actually gets
 changed by your Emacs editing.  @xref{Saving}.
+
+@item Scroll Bar
+A scroll bar is a tall thin hollow box that appears at the side of a
+window.  You can use mouse commands in the scroll bar to scroll the
+window.  The scroll bar feature is supported only with X.  @xref{Scroll
+Bars}.
 
 @item Scrolling
 Scrolling means shifting the text in the Emacs window so as to see a
@@ -708,16 +755,31 @@ different part of the buffer.  @xref{Display,Scrolling}.
 
 @item Searching
 Searching means moving point to the next occurrence of a specified
-string.  @xref{Search}.
+string or the next match for a specified regular expression.
+@xref{Search}.
 
 @item Search Path
 A search path is a list of directory names, to be used for searching for
 files for certain purposes.  For example, the variable @code{load-path}
-holds a search path for finding Lisp library files.
+holds a search path for finding Lisp library files.  @xref{Lisp Libraries}.
+
+@item Secondary Selection
+The secondary selection is one particular X selection; some X
+applications can use it for transferring text to and from other
+applications.  Emacs has special mouse commands for transferring text
+using the secondary selection.  @xref{Secondary Selection}.
 
 @item Selecting
 Selecting a buffer means making it the current (q.v.@:) buffer.
 @xref{Buffers,Selecting}.
+
+@item Selection
+The X window system allows an application program to specify named
+selections whose values are text.  A program can also read the
+selections that other programs have set up.  This is the principal way
+of transferring text between window applications.  Emacs has commands to
+work with the primary (q.v.@:) selection and the secondary (q.v.@:)
+selection.
 
 @item Self-Documentation
 Self-documentation is the feature of Emacs which can tell you what any
@@ -739,20 +801,20 @@ than Lisp, to mean a syntactically recognizable expression.
 @item Simultaneous Editing
 Simultaneous editing means two users modifying the same file at once.
 Simultaneous editing if not detected can cause one user to lose his
-work.  Emacs detects all cases of simultaneous editing and warns the
-user to investigate them.  @xref{Interlocking,,Simultaneous Editing}.
+work.  Emacs detects all cases of simultaneous editing and warns one of
+the users to investigate.  @xref{Interlocking,,Simultaneous Editing}.
 
 @item String
 A string is a kind of Lisp data object which contains a sequence of
 characters.  Many Emacs variables are intended to have strings as
-values.  The Lisp syntax for a string consists of the characters in
-the string with a @samp{"} before and another @samp{"} after.  A
-@samp{"} that is part of the string must be written as @samp{\"} and a
-@samp{\} that is part of the string must be written as @samp{\\}.  All
-other characters, including newline, can be included just by writing
-them inside the string; however, escape sequences as in C, such as
-@samp{\n} for newline or @samp{\241} using an octal character code,
-are allowed as well.
+values.  The Lisp syntax for a string consists of the characters in the
+string with a @samp{"} before and another @samp{"} after.  A @samp{"}
+that is part of the string must be written as @samp{\"} and a @samp{\}
+that is part of the string must be written as @samp{\\}.  All other
+characters, including newline, can be included just by writing them
+inside the string; however, backslash sequences as in C, such as
+@samp{\n} for newline or @samp{\241} using an octal character code, are
+allowed as well.
 
 @item String Substitution
 See `global substitution'.
@@ -769,8 +831,8 @@ have.  To make a character Super, type it while holding down the
 @kbd{Super-} (usually written @kbd{s-} for short).  @xref{User Input,
 Super}.
 
-@item Tag Table
-A tag table is a file that serves as an index to the function
+@item Tags Table
+A tags table is a file that serves as an index to the function
 definitions in one or more other files.  @xref{Tags}.
 
 @item Termscript File

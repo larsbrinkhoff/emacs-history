@@ -277,7 +277,12 @@ function definitions, values or properties are considered."
 	   (insert completion))
 	  (t
 	   (message "Making completion list...")
-	   (let ((list (all-completions pattern obarray predicate)))
+	   (let ((list (all-completions pattern obarray predicate))
+		 (completion-fixup-function
+		  (function (lambda () (if (save-excursion
+					     (goto-char (max (point-min) (- (point) 4)))
+					     (looking-at " <f>"))
+					   (forward-char -4))))))
 	     (or (eq predicate 'fboundp)
 		 (let (new)
 		   (while list
@@ -287,7 +292,7 @@ function definitions, values or properties are considered."
 				     new))
 		     (setq list (cdr list)))
 		   (setq list (nreverse new))))
-	     (with-output-to-temp-buffer " *Completions*"
+	     (with-output-to-temp-buffer "*Completions*"
 	       (display-completion-list list)))
 	   (message "Making completion list...%s" "done")))))
 

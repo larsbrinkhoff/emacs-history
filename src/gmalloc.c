@@ -81,11 +81,9 @@ extern "C"
 
 #ifdef	__STDC__
 #include <stddef.h>
+#define	__malloc_size_t	size_t
 #else
-#undef	size_t
-#define	size_t		unsigned int
-#undef	ptrdiff_t
-#define	ptrdiff_t	int
+#define	__malloc_size_t	unsigned int
 #endif
 
 #ifndef	NULL
@@ -143,20 +141,20 @@ typedef union
 	  {
 	    struct
 	      {
-		size_t nfree;	/* Free fragments in a fragmented block.  */
-		size_t first;	/* First free fragment of the block.  */
+		__malloc_size_t nfree; /* Free frags in a fragmented block.  */
+		__malloc_size_t first; /* First free fragment of the block.  */
 	      } frag;
 	    /* Size (in blocks) of a large cluster.  */
-	    size_t size;
+	    __malloc_size_t size;
 	  } info;
       } busy;
     /* Heap information for a free block
        (that may be the first of a free cluster).  */
     struct
       {
-	size_t size;		/* Size (in blocks) of a free cluster.  */
-	size_t next;		/* Index of next free cluster.  */
-	size_t prev;		/* Index of previous free cluster.  */
+	__malloc_size_t size;	/* Size (in blocks) of a free cluster.  */
+	__malloc_size_t next;	/* Index of next free cluster.  */
+	__malloc_size_t prev;	/* Index of previous free cluster.  */
       } free;
   } malloc_info;
 
@@ -171,10 +169,10 @@ extern malloc_info *_heapinfo;
 #define ADDRESS(B)	((__ptr_t) (((B) - 1) * BLOCKSIZE + _heapbase))
 
 /* Current search index for the heap table.  */
-extern size_t _heapindex;
+extern __malloc_size_t _heapindex;
 
 /* Limit of valid info table indices.  */
-extern size_t _heaplimit;
+extern __malloc_size_t _heaplimit;
 
 /* Doubly linked lists of free fragments.  */
 struct list
@@ -196,10 +194,10 @@ struct alignlist
 extern struct alignlist *_aligned_blocks;
 
 /* Instrumentation.  */
-extern size_t _chunks_used;
-extern size_t _bytes_used;
-extern size_t _chunks_free;
-extern size_t _bytes_free;
+extern __malloc_size_t _chunks_used;
+extern __malloc_size_t _bytes_used;
+extern __malloc_size_t _chunks_free;
+extern __malloc_size_t _bytes_free;
 
 /* Internal version of `free' used in `morecore' (malloc.c). */
 extern void _free_internal __P ((__ptr_t __ptr));
@@ -249,15 +247,16 @@ extern enum mcheck_status mprobe __P ((__ptr_t __ptr));
 
 /* Activate a standard collection of tracing hooks.  */
 extern void mtrace __P ((void));
+extern void muntrace __P ((void));
 
 /* Statistics available to the user.  */
 struct mstats
   {
-    size_t bytes_total;		/* Total size of the heap. */
-    size_t chunks_used;		/* Chunks allocated by the user. */
-    size_t bytes_used;		/* Byte total of user-allocated chunks. */
-    size_t chunks_free;		/* Chunks in the free list. */
-    size_t bytes_free;		/* Byte total of chunks in the free list. */
+    __malloc_size_t bytes_total; /* Total size of the heap. */
+    __malloc_size_t chunks_used; /* Chunks allocated by the user. */
+    __malloc_size_t bytes_used;	/* Byte total of user-allocated chunks. */
+    __malloc_size_t chunks_free; /* Chunks in the free list. */
+    __malloc_size_t bytes_free;	/* Byte total of chunks in the free list. */
   };
 
 /* Pick up the current statistics. */
@@ -286,7 +285,7 @@ extern __ptr_t r_re_alloc __P ((__ptr_t *__handleptr, size_t __size));
 
 #endif /* malloc.h  */
 /* Allocate memory on a page boundary.
-   Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public License as
@@ -320,11 +319,11 @@ extern size_t __getpagesize __P ((void));
 #include <malloc.h>
 #endif
 
-static size_t pagesize;
+static __malloc_size_t pagesize;
 
 __ptr_t
 valloc (size)
-     size_t size;
+     __malloc_size_t size;
 {
   if (pagesize == 0)
     pagesize = __getpagesize ();
@@ -362,7 +361,7 @@ Cambridge, MA 02139, USA.
 __ptr_t (*__morecore) __P ((ptrdiff_t __size)) = __default_morecore;
 
 /* Debugging hook for `malloc'.  */
-__ptr_t (*__malloc_hook) __P ((size_t __size));
+__ptr_t (*__malloc_hook) __P ((__malloc_size_t __size));
 
 /* Pointer to the base of the first block.  */
 char *_heapbase;
@@ -371,22 +370,22 @@ char *_heapbase;
 malloc_info *_heapinfo;
 
 /* Number of info entries.  */
-static size_t heapsize;
+static __malloc_size_t heapsize;
 
 /* Search index in the info table.  */
-size_t _heapindex;
+__malloc_size_t _heapindex;
 
 /* Limit of valid info table indices.  */
-size_t _heaplimit;
+__malloc_size_t _heaplimit;
 
 /* Free lists for each fragment size.  */
 struct list _fraghead[BLOCKLOG];
 
 /* Instrumentation.  */
-size_t _chunks_used;
-size_t _bytes_used;
-size_t _chunks_free;
-size_t _bytes_free;
+__malloc_size_t _chunks_used;
+__malloc_size_t _bytes_used;
+__malloc_size_t _chunks_free;
+__malloc_size_t _bytes_free;
 
 /* Are you experienced?  */
 int __malloc_initialized;
@@ -394,10 +393,10 @@ int __malloc_initialized;
 void (*__after_morecore_hook) __P ((void));
 
 /* Aligned allocation.  */
-static __ptr_t align __P ((size_t));
+static __ptr_t align __P ((__malloc_size_t));
 static __ptr_t
 align (size)
-     size_t size;
+     __malloc_size_t size;
 {
   __ptr_t result;
   unsigned long int adj;
@@ -443,24 +442,24 @@ initialize ()
 
 /* Get neatly aligned memory, initializing or
    growing the heap info table as necessary. */
-static __ptr_t morecore __P ((size_t));
+static __ptr_t morecore __P ((__malloc_size_t));
 static __ptr_t
 morecore (size)
-     size_t size;
+     __malloc_size_t size;
 {
   __ptr_t result;
   malloc_info *newinfo, *oldinfo;
-  size_t newsize;
+  __malloc_size_t newsize;
 
   result = align (size);
   if (result == NULL)
     return NULL;
 
   /* Check if we need to grow the info table.  */
-  if ((size_t) BLOCK ((char *) result + size) > heapsize)
+  if ((__malloc_size_t) BLOCK ((char *) result + size) > heapsize)
     {
       newsize = heapsize;
-      while ((size_t) BLOCK ((char *) result + size) > newsize)
+      while ((__malloc_size_t) BLOCK ((char *) result + size) > newsize)
 	newsize *= 2;
       newinfo = (malloc_info *) align (newsize * sizeof (malloc_info));
       if (newinfo == NULL)
@@ -490,11 +489,11 @@ morecore (size)
 /* Allocate memory from the heap.  */
 __ptr_t
 malloc (size)
-     size_t size;
+     __malloc_size_t size;
 {
   __ptr_t result;
-  size_t block, blocks, lastblocks, start;
-  register size_t i;
+  __malloc_size_t block, blocks, lastblocks, start;
+  register __malloc_size_t i;
   struct list *next;
 
   /* ANSI C allows `malloc (0)' to either return NULL, or to return a
@@ -529,7 +528,7 @@ malloc (size)
     {
       /* Small allocation to receive a fragment of a block.
 	 Determine the logarithm to base two of the fragment size. */
-      register size_t log = 1;
+      register __malloc_size_t log = 1;
       --size;
       while ((size /= 2) != 0)
 	++log;
@@ -567,7 +566,7 @@ malloc (size)
 	    return NULL;
 
 	  /* Link all fragments but the first into the free list.  */
-	  for (i = 1; i < (size_t) (BLOCKSIZE >> log); ++i)
+	  for (i = 1; i < (__malloc_size_t) (BLOCKSIZE >> log); ++i)
 	    {
 	      next = (struct list *) ((char *) result + (i << log));
 	      next->next = _fraghead[log].next;
@@ -675,7 +674,7 @@ malloc (size)
 
 __ptr_t
 _malloc (size)
-     size_t size;
+     __malloc_size_t size;
 {
   return malloc (size);
 }
@@ -690,14 +689,14 @@ _free (ptr)
 __ptr_t
 _realloc (ptr, size)
      __ptr_t ptr;
-     size_t size;
+     __malloc_size_t size;
 {
   return realloc (ptr, size);
 }
 
 #endif
 /* Free a block of memory allocated by `malloc'.
-   Copyright 1990, 1991, 1992 Free Software Foundation
+   Copyright 1990, 1991, 1992, 1994 Free Software Foundation
 		  Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -736,8 +735,8 @@ _free_internal (ptr)
      __ptr_t ptr;
 {
   int type;
-  size_t block, blocks;
-  register size_t i;
+  __malloc_size_t block, blocks;
+  register __malloc_size_t i;
   struct list *prev, *next;
 
   block = BLOCK (ptr);
@@ -802,7 +801,7 @@ _free_internal (ptr)
       if (blocks >= FINAL_FREE_BLOCKS && block + blocks == _heaplimit
 	  && (*__morecore) (0) == ADDRESS (block + blocks))
 	{
-	  register size_t bytes = blocks * BLOCKSIZE;
+	  register __malloc_size_t bytes = blocks * BLOCKSIZE;
 	  _heaplimit -= blocks;
 	  (*__morecore) (-bytes);
 	  _heapinfo[_heapinfo[block].free.prev].free.next
@@ -834,7 +833,7 @@ _free_internal (ptr)
 	  /* If all fragments of this block are free, remove them
 	     from the fragment list and free the whole block.  */
 	  next = prev;
-	  for (i = 1; i < (size_t) (BLOCKSIZE >> type); ++i)
+	  for (i = 1; i < (__malloc_size_t) (BLOCKSIZE >> type); ++i)
 	    next = next->next;
 	  prev->prev->next = next;
 	  if (next != NULL)
@@ -1047,7 +1046,7 @@ safe_bcopy (from, to, size)
 #define min(A, B) ((A) < (B) ? (A) : (B))
 
 /* Debugging hook for realloc.  */
-__ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, size_t __size));
+__ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, __malloc_size_t __size));
 
 /* Resize the given region to the new size, returning a pointer
    to the (possibly moved) region.  This is optimized for speed;
@@ -1058,11 +1057,11 @@ __ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, size_t __size));
 __ptr_t
 realloc (ptr, size)
      __ptr_t ptr;
-     size_t size;
+     __malloc_size_t size;
 {
   __ptr_t result;
   int type;
-  size_t block, blocks, oldlimit;
+  __malloc_size_t block, blocks, oldlimit;
 
   if (size == 0)
     {
@@ -1149,7 +1148,8 @@ realloc (ptr, size)
     default:
       /* Old size is a fragment; type is logarithm
 	 to base two of the fragment size.  */
-      if (size > (size_t) (1 << (type - 1)) && size <= (size_t) (1 << type))
+      if (size > (__malloc_size_t) (1 << (type - 1)) &&
+	  size <= (__malloc_size_t) (1 << type))
 	/* The new size is the same kind of fragment.  */
 	result = ptr;
       else
@@ -1159,7 +1159,7 @@ realloc (ptr, size)
 	  result = malloc (size);
 	  if (result == NULL)
 	    return NULL;
-	  memcpy (result, ptr, min (size, (size_t) 1 << type));
+	  memcpy (result, ptr, min (size, (__malloc_size_t) 1 << type));
 	  free (ptr);
 	}
       break;
@@ -1167,7 +1167,7 @@ realloc (ptr, size)
 
   return result;
 }
-/* Copyright (C) 1991, 1992 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1992, 1994 Free Software Foundation, Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public License as
@@ -1196,8 +1196,8 @@ Cambridge, MA 02139, USA.
    The entire array is initialized to zeros.  */
 __ptr_t
 calloc (nmemb, size)
-     register size_t nmemb;
-     register size_t size;
+     register __malloc_size_t nmemb;
+     register __malloc_size_t size;
 {
   register __ptr_t result = malloc (nmemb * size);
 
@@ -1254,7 +1254,7 @@ __default_morecore (increment)
     return NULL;
   return result;
 }
-/* Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public License as
@@ -1278,8 +1278,8 @@ Cambridge, MA 02139, USA.  */
 
 __ptr_t
 memalign (alignment, size)
-     size_t alignment;
-     size_t size;
+     __malloc_size_t alignment;
+     __malloc_size_t size;
 {
   __ptr_t result;
   unsigned long int adj;

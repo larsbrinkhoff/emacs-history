@@ -1,3 +1,123 @@
+Wed Sep  7 03:53:50 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.26 released.
+
+Sun Sep  4 03:02:15 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Check for lrand48, not rand48.
+
+Sat Sep  3 18:44:55 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (powerpc-ibm-aix3.1*, powerpc-ibm-aix3.2.5)
+	(powerpc-ibm-aix*): New aliases.
+
+Sun Aug 21 14:02:00 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-dist (src/m, src/s): Put *.inp in distribution.
+
+Fri Aug 19 20:01:09 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Accept i586 and i486 along with i386.
+
+Mon Aug 15 05:18:12 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Do compute unexec, LIBX, system_malloc, etc
+	even if CPP env var was set by the user.
+
+	* configure.in (i[34]86-*-*): For SCO 3.2v4, fix NON_GNU_CPP value.
+
+Sun Aug 14 00:10:08 1994  Jonathan I. Kamens  (jik@gza-client1.aktis.com)
+
+	* Makefile.in: Uninstall "$(EMACS)", not "emacs".
+
+Sat Aug 13 16:34:59 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (i[34]86-*-*): For SCO 3.2v4, set NON_GNU_CPP.
+
+Tue Aug  9 23:20:18 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Check more specifically for i*86-sun-sunos.
+
+Wed Aug  3 21:53:58 PDT 1994  Caveh Jalali  (caveh@eng.sun.com)
+
+	* configure.in: Handle solaris 2.4.
+
+Wed Jul 27 13:34:18 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (rand48): Check for it.
+
+Tue Jul 26 15:52:58 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* make-dist: Update the info files.
+
+Mon Jul 25 16:35:16 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in: Make "checking..." messages' style consistent.
+	(HAVE_H_ERRNO): New test.
+
+Sun Jul 24 16:18:09 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* configure.in (i860-*-sysv4*): Set NON_GNU_CC and NON_GNU_CPP.
+
+Tue Jul 12 00:03:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (CFLAGS): If the envvar was specified, use that.
+	And set REAL_CFLAGS from it too.
+
+Mon Jul 11 16:28:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Update finder-inf.el.
+
+Thu Jul  7 12:57:42 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist (msdos): Include sed4.inp in dist.
+
+	* Makefile.in (libsrc_libs): Var deleted.
+
+Wed Jul  6 22:39:26 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (mkdir, removenullpaths): Put g in sed replace commands.
+
+Sun Jun 26 12:26:40 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (mips-sony-newsos4*): New alias.
+
+Thu Jun 23 15:21:14 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (*-convex-bsd*): Set NON_GNU_CPP.
+	(*-convex-convexos*): Accept this as alias.
+
+Sun Jun 19 11:40:01 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Get CFLAGS both with and without THIS_IS_CONFIGURE,
+	for two different uses.
+
+Wed Jun 15 22:30:18 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Define THIS_IS_CONFIGURE when extracting CFLAGS etc.
+
+Tue Jun 14 10:51:06 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Put ./BUGS into the distrib.
+
+Mon Jun 13 17:12:32 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Handle 386 running Solaris 2.
+
+Mon Jun  6 04:46:27 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (mips-siemens-sysv*): Use cpp, not cc -E.
+
+Sun Jun  5 06:44:16 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (mips-sony-newsos*): Use news-risc.h.
+
+	* configure.in: Accept bsdi as opsys, like bsd386.
+
+Wed Jun  1 20:03:31 1994  Morten Welinder  (terra@diku.dk)
+
+	* config.bat (src/paths.h): Use sed script msdos/sed4.inp.
+
 Mon May 30 04:33:36 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.25 released.

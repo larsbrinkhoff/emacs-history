@@ -1,5 +1,7 @@
 #include "usg5-4.h"
 
+#define SOLARIS2
+
 /* eggert@twinsun.com said these work in Solaris.
    Perhaps they work in all kinds of SVR4, but this is more conservative.  */
 #undef BROKEN_TIOCGETC
@@ -39,3 +41,9 @@ access(2), but in the meantime, some of us need the right behavior.  */
    people keep saying that it doesn't work, and that the patch is easy
    to install.  Patch number is 100947-02.  */
 #undef SOLARIS_BROKEN_ACCESS
+
+/* We can't use Xt from X11R6 with ralloc.c, because Xt
+   includes libthread.so and that calls sbrk directly.  */
+#if defined (USE_X_TOOLKIT) && defined (HAVE_X11XTR6)
+#undef REL_ALLOC
+#endif

@@ -61,6 +61,9 @@ and this notice must be preserved on all copies.  */
 /* Define if we have the X11R6 or newer version of Xt.  */
 #undef HAVE_X11XTR6
 
+/* Define if netdb.h declares h_errno.  */
+#undef HAVE_H_ERRNO
+
 /* If we're using any sort of window system, define MULTI_FRAME.  */
 #ifdef HAVE_X_WINDOWS
 #define MULTI_FRAME
@@ -126,6 +129,7 @@ and this notice must be preserved on all copies.  */
 #undef HAVE_MKDIR
 #undef HAVE_RMDIR
 #undef HAVE_RANDOM
+#undef HAVE_LRAND48
 #undef HAVE_BCOPY
 #undef HAVE_BCMP
 #undef HAVE_LOGB
@@ -139,6 +143,10 @@ and this notice must be preserved on all copies.  */
 #undef HAVE_INET_SOCKETS
 
 #undef HAVE_AIX_SMT_EXP
+
+/* Define if you have the ANSI `strerror' function.
+   Otherwise you must have the variable `char *sys_errlist[]'.  */
+#undef HAVE_STRERROR
 
 /* Define if `sys_siglist' is declared by <signal.h>.  */
 #undef SYS_SIGLIST_DECLARED
@@ -247,27 +255,10 @@ typedef unsigned long EMACS_UINT;
 #define BSTRING
 #endif
 
-/* Define if you have the ANSI `strerror' function.
-   Otherwise you must have the variable `char *sys_errlist[]'.  */
-#undef HAVE_STRERROR
-
 /* Non-ANSI C compilers usually don't have volatile.  */
 #ifndef HAVE_VOLATILE
 #ifndef __STDC__
 #define volatile
-#endif
-#endif
-
-#if 0 /* This should be taken care of by autoconf now.  */
-/* joe@zircon.uucp says that in order to use XFree386, you have to
-   link against -lXbsd, which insists on defining the random
-   function.
-   faith@cs.unc.edu says this is bogus for Linux and several other OS's.
-   Eventually, we should have autoconf test for this.  Anyone want to
-   submit a patch?  */
-#if defined (HAVE_XFREE386) && !defined (LINUX)
-#define LIBX11_SYSTEM -lXbsd
-#define HAVE_RANDOM
 #endif
 #endif
 

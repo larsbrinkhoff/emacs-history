@@ -142,7 +142,7 @@ specify a default when you install Emacs by setting the variable
 neither this default nor the environment variable is defined, then GNUS
 reads the server name using the minibuffer when you start it.
 
-You can override the default by specifying a prefix argument for the
+You can override the default by specifying a numeric argument for the
 @code{gnus} command.  Then it always reads the hostname to use.
 
 GNUS can also bypass NNTP and read the news directly from the file
@@ -437,7 +437,7 @@ variable in the hook @code{gnus-select-group-hook}.
 unread articles (including saved articles).  If the newsgroup has no
 unread articles and you select it anyway, GNUS prepares to read all the
 articles.  You can force GNUS to include all the articles by giving a
-prefix argument to the commands @kbd{SPC} and @kbd{=}
+numeric argument to the commands @kbd{SPC} and @kbd{=}
 (@code{gnus-group-read-group} and @code{gnus-group-select-group}).
 
 @vindex gnus-large-newsgroup
@@ -796,7 +796,7 @@ Move point to the previous header, skipping marked articles
 @kindex j (Summary Mode)
 @findex gnus-summary-goto-subject
 Move point to the line describing an article specified by number with a
-prefix argument (@code{gnus-summary-goto-subject}).
+numeric argument (@code{gnus-summary-goto-subject}).
 
 @ignore
 @ !!! removed the binding.
@@ -1461,7 +1461,7 @@ It executes the key sequence in each such message.
 @kindex ^ (Summary Mode)
 @findex gnus-summary-refer-parent-article
 Refer to parent of the current article in terms of the @samp{References}
-field (@code{gnus-summary-refer-parent-article}).  With a prefix
+field (@code{gnus-summary-refer-parent-article}).  With a numeric
 argument, go back to the child.
 
 @item M-^ @var{Message-ID} RET
@@ -1581,7 +1581,7 @@ C-c C-s C-d C-c C-s C-n} sorts by author, and sorts the messages for
 each author by date, and any messages with the same author and date are
 sorted by number.
 
-  To sort in reverse order, give a prefix argument to the sort commands.
+  To sort in reverse order, give a numeric argument to the sort commands.
 @vindex gnus-select-group-hook
   It is also possible to sort the headers automatically when a newsgroup
 is selected using the hook @code{gnus-select-group-hook}
@@ -1774,7 +1774,7 @@ containing unread articles.
   The command @kbd{C-x C-s} (@code{gnus-summary-reselect-current-group})
 selects the current newsgroup again after temporary exiting the
 newsgroup.  If no articles remain unread, all articles in the newsgroup
-will be selected.  A prefix argument to the command means to select all
+will be selected.  A numeric argument to the command means to select all
 articles in the newsgroup.
 
 @ignore
@@ -2151,10 +2151,10 @@ author.
 @node Names of Kill Files
 @section Names of Kill Files
 
-@vindex gnus-article-save-directory
+@vindex gnus-kill-files-directory
 @vindex gnus-kill-file-name
 Kill files are kept in the directory specified by the variable
-@code{gnus-article-save-directory}; its default value is @file{~/News}.
+@code{gnus-kill-files-directory}; its default value is @file{~/News}.
 The variable @code{gnus-kill-file-name} specifies the global kill file's
 name within that directory; the default is @file{KILL}.
 
@@ -2674,6 +2674,17 @@ Specifies a directory name to save articles in using the commands
 @code{gnus-summary-save-in-file}.  The variable is initialized from the
 @code{SAVEDIR} environment variable.  Its default value is
 @file{~/News}.
+
+@vindex gnus-kill-files-directory
+@vindex SAVEDIR
+@findex gnus-edit-global-kill
+@findex gnus-edit-local-kill
+@cindex Kill file
+@item gnus-kill-files-directory
+Specifies a directory name to save KILL files in using the commands
+@code{gnus-edit-global-kill}, and @code{gnus-edit-local-kill}.  The
+variable is initialized from the @code{SAVEDIR} environment variable.
+Its default value is @file{~/News}.
 
 @vindex gnus-kill-file-name
 @item gnus-kill-file-name

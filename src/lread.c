@@ -19,12 +19,13 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+#include <config.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <ctype.h>
-#include <config.h>
+#include <errno.h>
 #include "lisp.h"
 
 #ifndef standalone
@@ -49,6 +50,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #ifdef MSDOS
+#include "msdos.h"
 /* These are redefined (correctly, but differently) in values.h.  */
 #undef INTBITS
 #undef LONGBITS
@@ -57,6 +59,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <math.h>
 #endif /* LISP_FLOAT_TYPE */
+
+#ifndef O_RDONLY
+#define O_RDONLY 0
+#endif
+
+extern int errno;
 
 Lisp_Object Qread_char, Qget_file_char, Qstandard_input, Qcurrent_load_list;
 Lisp_Object Qvariable_documentation, Vvalues, Vstandard_input, Vafter_load_alist;
@@ -133,7 +141,18 @@ readchar (readcharfun)
       return c;
     }
   if (EQ (readcharfun, Qget_file_char))
-    return getc (instream);
+    {
+      c = getc (instream);
+#ifdef EINTR
+      /* Interrupted reads have been observed while reading over the network */
+      while (c == EOF && ferror (instream) && errno == EINTR)
+	{
+	  clearerr (instream);
+	  c = getc (instream);
+	}
+#endif
+      return c;
+    }
 
   if (XTYPE (readcharfun) == Lisp_String)
     {
@@ -562,7 +581,7 @@ openp (path, str, suffix, storeptr, exec_only)
 	      if (exec_only)
 		fd = (access (fn, X_OK) == 0) ? 1 : -1;
 	      else
-		fd = open (fn, 0, 0);
+		fd = open (fn, O_RDONLY, 0);
 
 	      if (fd >= 0)
 		{
@@ -708,9 +727,10 @@ readevalloop (readcharfun, stream, sourcename, evalfun, printflag)
 
       if (!NILP (Vpurify_flag) && c == '(')
 	{
+	  int count1 = specpdl_ptr - specpdl;
 	  record_unwind_protect (unreadpure, Qnil);
 	  val = read_list (-1, readcharfun);
-	  unbind_to (count + 1, Qnil);
+	  unbind_to (count1, Qnil);
 	}
       else
 	{

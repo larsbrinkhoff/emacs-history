@@ -42,6 +42,8 @@ extern void set_frame_menubar ();
 extern int interrupt_input;
 extern int command_loop_level;
 
+extern Lisp_Object Qface;
+
 /* Nonzero means print newline before next minibuffer message.  */
 
 int noninteractive_need_newline;
@@ -144,7 +146,7 @@ static void display_menu_bar ();
 static int display_count_lines ();
 
 /* Prompt to display in front of the minibuffer contents */
-char *minibuf_prompt;
+Lisp_Object minibuf_prompt;
 
 /* Width in columns of current minibuffer prompt.  */
 int minibuf_prompt_width;
@@ -455,6 +457,18 @@ prepare_menu_bars ()
   all_windows = (update_mode_lines || buffer_shared > 1
 		 || clip_changed || windows_or_buffers_changed);
 
+#ifdef HAVE_X_WINDOWS
+  if (windows_or_buffers_changed)
+    {
+      Lisp_Object tail, frame;
+
+      FOR_EACH_FRAME (tail, frame)
+	if (FRAME_VISIBLE_P (XFRAME (frame))
+	    || FRAME_ICONIFIED_P (XFRAME (frame)))
+	  x_consider_frame_title (frame);
+    }
+#endif
+
   /* Update the menu bar item lists, if appropriate.
      This has to be done before any actual redisplay
      or generation of display lines.  */
@@ -701,11 +715,6 @@ redisplay ()
 
 	  if (FRAME_VISIBLE_P (f))
 	    redisplay_windows (FRAME_ROOT_WINDOW (f));
-#ifdef HAVE_X_WINDOWS
-	  else if (FRAME_ICONIFIED_P (f)
-		   && ! MINI_WINDOW_P (XWINDOW (f->selected_window)))
-	    x_consider_frame_title (frame);
-#endif
 
 	  /* Any scroll bars which redisplay_windows should have nuked
 	     should now go away.  */
@@ -1062,17 +1071,19 @@ redisplay_window (window, just_this_one)
 
   if (!EQ (window, selected_window))
     {
-      SET_PT (marker_position (w->pointm));
-      if (PT < BEGV)
+      int new_pt = marker_position (w->pointm);
+      if (new_pt < BEGV)
 	{
-	  SET_PT (BEGV);
-	  Fset_marker (w->pointm, make_number (PT), Qnil);
+	  new_pt = BEGV;
+	  Fset_marker (w->pointm, make_number (new_pt), Qnil);
 	}
-      else if (PT > (ZV - 1))
+      else if (new_pt > (ZV - 1))
 	{
-	  SET_PT (ZV);
-	  Fset_marker (w->pointm, make_number (PT), Qnil);
+	  new_pt = ZV;
+	  Fset_marker (w->pointm, make_number (new_pt), Qnil);
 	}
+      /* We don't use SET_PT so that the point-motion hooks don't run.  */
+      BUF_PT (current_buffer) = new_pt;
     }
 
   /* If window-start is screwed up, choose a new one.  */
@@ -1105,7 +1116,7 @@ redisplay_window (window, just_this_one)
 				ZV, height / 2,
 				- (1 << (SHORTBITS - 1)),
 				width, hscroll, pos_tab_offset (w, startp), w);
-	  SET_PT (pos.bufpos);
+	  BUF_PT (current_buffer) = pos.bufpos;
 	  if (w != XWINDOW (selected_window))
 	    Fset_marker (w->pointm, make_number (PT), Qnil);
 	  else
@@ -1135,6 +1146,9 @@ redisplay_window (window, just_this_one)
       /* Can't use this case if highlighting a region.  */
       && !(!NILP (Vtransient_mark_mode) && !NILP (current_buffer->mark_active))
       && NILP (w->region_showing)
+      /* If end pos is out of date, scroll bar and percentage will be wrong */
+      && INTEGERP (w->window_end_vpos)
+      && XFASTINT (w->window_end_vpos) < XFASTINT (w->height)
       && !EQ (window, minibuf_window))
     {
       pos = *compute_motion (startp, 0, (hscroll ? 1 - hscroll : 0),
@@ -1165,7 +1179,7 @@ redisplay_window (window, just_this_one)
   /* If current starting point was originally the beginning of a line
      but no longer is, find a new starting point.  */
   else if (!NILP (w->start_at_line_beg)
-	   && !(startp == BEGV
+	   && !(startp <= BEGV
 		|| FETCH_CHAR (startp - 1) == '\n'))
     {
       goto recenter;
@@ -1258,8 +1272,8 @@ recenter:
   try_window (window, pos.bufpos);
 
   startp = marker_position (w->start);
-  w->start_at_line_beg = 
-    (startp == BEGV || FETCH_CHAR (startp - 1) == '\n') ? Qt : Qnil;
+  w->start_at_line_beg 
+    = (startp == BEGV || FETCH_CHAR (startp - 1) == '\n') ? Qt : Qnil;
 
 done:
   if ((!NILP (w->update_mode_line)
@@ -1321,9 +1335,9 @@ done:
       (*redeem_scroll_bar_hook) (w);
     }
 
-  SET_PT (opoint);
+  BUF_PT (current_buffer) = opoint;
   current_buffer = old;
-  SET_PT (lpoint);
+  BUF_PT (current_buffer) = lpoint;
 }
 
 /* Do full redisplay on one window, starting at position `pos'. */
@@ -1811,7 +1825,15 @@ redisplay_region (buf, start, end)
       start = end; end = temp;
     }
 
-  if (buf != current_buffer)
+  /* If this is a buffer not in the selected window,
+     we must do other windows.  */
+  if (buf != XBUFFER (XWINDOW (selected_window)->buffer))
+    windows_or_buffers_changed = 1;
+  /* If it's not current, we can't use beg_unchanged, end_unchanged for it.  */
+  else if (buf != current_buffer)
+    windows_or_buffers_changed = 1;
+  /* If multiple windows show this buffer, we must do other windows.  */
+  else if (buffer_shared > 1)
     windows_or_buffers_changed = 1;
   else
     {
@@ -2038,10 +2060,11 @@ display_text_line (w, start, vpos, hpos, taboffset)
   if (MINI_WINDOW_P (w) && start == 1
       && vpos == XFASTINT (w->top))
     {
-      if (minibuf_prompt)
+      if (! NILP (minibuf_prompt))
 	{
 	  minibuf_prompt_width
-	    = (display_string (w, vpos, minibuf_prompt, -1, hpos,
+	    = (display_string (w, vpos, XSTRING (minibuf_prompt)->data,
+			       XSTRING (minibuf_prompt)->size, hpos,
 			       (!truncate ? continuer : truncator),
 			       1, -1, -1)
 	       - hpos);
@@ -2196,8 +2219,12 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	  /* Draw the face of the newline character as extending all the 
 	     way to the end of the frame line.  */
 	  if (current_face)
-	    while (p1 < endp)
-	      *p1++ = FAST_MAKE_GLYPH (' ', current_face);
+	    {
+	      if (p1 < leftmargin)
+		p1 = leftmargin;
+	      while (p1 < endp)
+		*p1++ = FAST_MAKE_GLYPH (' ', current_face);
+	    }
 #endif
 	  break;
 	}
@@ -2229,8 +2256,12 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	  /* Draw the face of the newline character as extending all the 
 	     way to the end of the frame line.  */
 	  if (current_face)
-	    while (p1 < endp)
-	      *p1++ = FAST_MAKE_GLYPH (' ', current_face);
+	    {
+	      if (p1 < leftmargin)
+		p1 = leftmargin;
+	      while (p1 < endp)
+		*p1++ = FAST_MAKE_GLYPH (' ', current_face);
+	    }
 #endif
 	  break;
 	}
@@ -2278,7 +2309,7 @@ display_text_line (w, start, vpos, hpos, taboffset)
 	  if (p1 != p1prev)
 	    {
 	      int *p2x = &charstart[p1prev - p1start];
-	      int *p2 = &charstart[p1 - p1start];
+	      int *p2 = &charstart[(p1 < endp ? p1 : endp) - p1start];
 
 	      /* The window's left column should always
 		 contain a character position.
@@ -2459,8 +2490,28 @@ display_text_line (w, start, vpos, hpos, taboffset)
 
       if (len > width)
 	len = width;
-      for (i = 0; i < len; i++)
-	leftmargin[i] = p[i];
+#ifdef HAVE_X_WINDOWS
+      if (!NULL_INTERVAL_P (XSTRING (Voverlay_arrow_string)->intervals))
+	{
+	  /* If the arrow string has text props, obey them when displaying.  */
+	  for (i = 0; i < len; i++)
+	    {
+	      int c = p[i];
+	      Lisp_Object face, ilisp;
+	      int newface;
+
+	      XFASTINT (ilisp) = i;
+	      face = Fget_text_property (ilisp, Qface, Voverlay_arrow_string);
+	      newface = compute_glyph_face_1 (f, face, 0);
+	      leftmargin[i] = FAST_MAKE_GLYPH (c, newface);
+	    }
+	}
+      else
+#endif /* HAVE_X_WINDOWS */
+	{
+	  for (i = 0; i < len; i++)
+	    leftmargin[i] = p[i];
+	}
 
       /* Bug in SunOS 4.1.1 compiler requires this intermediate variable.  */
       arrow_end = (leftmargin - desired_glyphs->glyphs[vpos]) + len;
@@ -2568,11 +2619,6 @@ display_mode_line (w)
       for (i = left; i < right; ++i)
 	ptr[i] = FAST_MAKE_GLYPH (FAST_GLYPH_CHAR (ptr[i]), 1);
     }
-#endif
-
-#ifdef HAVE_X_WINDOWS
-  if (w == XWINDOW (f->selected_window))
-    x_consider_frame_title (WINDOW_FRAME (w));
 #endif
 }
 
@@ -2939,6 +2985,15 @@ decode_mode_spec (w, c, maxwidth)
       return "-";
 
     case '+':
+      /* This differs from %* only for a modified read-only buffer.  */
+      if (MODIFF > current_buffer->save_modified)
+	return "*";
+      if (!NILP (current_buffer->read_only))
+	return "%";
+      return "-";
+
+    case '&':
+      /* This differs from %* in ignoring read-only-ness.  */
       if (MODIFF > current_buffer->save_modified)
 	return "*";
       return "-";
@@ -3068,6 +3123,107 @@ decode_mode_spec (w, c, maxwidth)
   else
     return "";
 }
+
+/* Search for COUNT instances of a line boundary, which means either a
+   newline or (if selective display enabled) a carriage return.
+   Start at START.  If COUNT is negative, search backwards.
+
+   If we find COUNT instances, set *SHORTAGE to zero, and return the
+   position after the COUNTth match.  Note that for reverse motion
+   this is not the same as the usual convention for Emacs motion commands.
+
+   If we don't find COUNT instances before reaching the end of the
+   buffer (or the beginning, if scanning backwards), set *SHORTAGE to
+   the number of line boundaries left unfound, and return the end of the
+   buffer we bumped up against.  */
+
+static int
+display_scan_buffer (start, count, shortage)
+     int *shortage, start;
+     register int count;
+{
+  int limit = ((count > 0) ? ZV - 1 : BEGV);
+  int direction = ((count > 0) ? 1 : -1);
+
+  register unsigned char *cursor;
+  unsigned char *base;
+
+  register int ceiling;
+  register unsigned char *ceiling_addr;
+
+  /* If we are not in selective display mode,
+     check only for newlines.  */
+  if (! (!NILP (current_buffer->selective_display)
+	 && !INTEGERP (current_buffer->selective_display)))
+    return scan_buffer ('\n', start, count, shortage, 0);
+
+  /* The code that follows is like scan_buffer
+     but checks for either newline or carriage return.  */
+
+  if (shortage != 0)
+    *shortage = 0;
+
+  if (count > 0)
+    while (start != limit + 1)
+      {
+	ceiling =  BUFFER_CEILING_OF (start);
+	ceiling = min (limit, ceiling);
+	ceiling_addr = &FETCH_CHAR (ceiling) + 1;
+	base = (cursor = &FETCH_CHAR (start));
+	while (1)
+	  {
+	    while (*cursor != '\n' && *cursor != 015 && ++cursor != ceiling_addr)
+	      ;
+	    if (cursor != ceiling_addr)
+	      {
+		if (--count == 0)
+		  {
+		    immediate_quit = 0;
+		    return (start + cursor - base + 1);
+		  }
+		else
+		  if (++cursor == ceiling_addr)
+		    break;
+	      }
+	    else
+	      break;
+	  }
+	start += cursor - base;
+      }
+  else
+    {
+      start--;			/* first character we scan */
+      while (start > limit - 1)
+	{			/* we WILL scan under start */
+	  ceiling =  BUFFER_FLOOR_OF (start);
+	  ceiling = max (limit, ceiling);
+	  ceiling_addr = &FETCH_CHAR (ceiling) - 1;
+	  base = (cursor = &FETCH_CHAR (start));
+	  cursor++;
+	  while (1)
+	    {
+	      while (--cursor != ceiling_addr
+		     && *cursor != '\n' && *cursor != 015)
+		;
+	      if (cursor != ceiling_addr)
+		{
+		  if (++count == 0)
+		    {
+		      immediate_quit = 0;
+		      return (start + cursor - base + 1);
+		    }
+		}
+	      else
+		break;
+	    }
+	  start += cursor - base;
+	}
+    }
+
+  if (shortage != 0)
+    *shortage = count * direction;
+  return (start + ((direction == 1 ? 0 : 1)));
+}
 
 /* Count up to N lines starting from FROM.
    But don't go beyond LIMIT.
@@ -3088,7 +3244,7 @@ display_count_lines (from, limit, n, pos_ptr)
   else
     ZV = limit;
 
-  *pos_ptr = scan_buffer ('\n', from, n, &shortage, 0);
+  *pos_ptr = display_scan_buffer (from, n, &shortage);
 
   ZV = oldzv;
   BEGV = oldbegv;

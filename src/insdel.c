@@ -309,15 +309,27 @@ insert (string, length)
 {
   if (length > 0)
     {
-      insert_1 (string, length);
+      insert_1 (string, length, 0);
+      signal_after_change (PT-length, 0, length);
+    }
+}
+
+insert_and_inherit (string, length)
+     register unsigned char *string;
+     register length;
+{
+  if (length > 0)
+    {
+      insert_1 (string, length, 1);
       signal_after_change (PT-length, 0, length);
     }
 }
 
 static void
-insert_1 (string, length)
+insert_1 (string, length, inherit)
      register unsigned char *string;
      register length;
+     int inherit;
 {
   register Lisp_Object temp;
 
@@ -338,14 +350,23 @@ insert_1 (string, length)
 
   bcopy (string, GPT_ADDR, length);
 
-  /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  offset_intervals (current_buffer, PT, length);
+#ifdef USE_TEXT_PROPERTIES
+  if (current_buffer->intervals != 0)
+    /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES.  */
+    offset_intervals (current_buffer, PT, length);
+#endif
 
   GAP_SIZE -= length;
   GPT += length;
   ZV += length;
   Z += length;
   adjust_point (length);
+
+#ifdef USE_TEXT_PROPERTIES
+  if (!inherit && current_buffer->intervals != 0)
+    Fset_text_properties (make_number (PT - length), make_number (PT),
+			  Qnil, Qnil);
+#endif
 }
 
 /* Insert the part of the text of STRING, a Lisp object assumed to be
@@ -442,7 +463,20 @@ insert_before_markers (string, length)
   if (length > 0)
     {
       register int opoint = PT;
-      insert_1 (string, length);
+      insert_1 (string, length, 1);
+      adjust_markers (opoint - 1, opoint, length);
+      signal_after_change (PT-length, 0, length);
+    }
+}
+
+insert_before_markers_and_inherit (string, length)
+     unsigned char *string;
+     register int length;
+{
+  if (length > 0)
+    {
+      register int opoint = PT;
+      insert_1 (string, length, 1);
       adjust_markers (opoint - 1, opoint, length);
       signal_after_change (PT-length, 0, length);
     }
@@ -566,9 +600,12 @@ prepare_to_modify_buffer (start, end)
     Fbarf_if_buffer_read_only ();
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  verify_interval_modification (current_buffer, start, end);
+  if (current_buffer->intervals != 0)
+    verify_interval_modification (current_buffer, start, end);
 
-  verify_overlay_modification (start, end);
+  if (!NILP (current_buffer->overlays_before)
+      || !NILP (current_buffer->overlays_after))
+    verify_overlay_modification (start, end);
 
 #ifdef CLASH_DETECTION
   if (!NILP (current_buffer->filename)

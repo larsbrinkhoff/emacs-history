@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1989, 1990, 1993, 1994 Free Software Foundation, Inc.
 
-;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
+;; Author: Masanobu UMEDA <umerin@mse.kyutech.ac.jp>
 ;; Keywords: news
 
 ;; This file is part of GNU Emacs.
@@ -353,24 +353,43 @@ original message into it."
       (widen)
       (goto-char (point-min))
       (run-hooks 'news-inews-hook)
-      ;; Mail the message too if To: or Cc: exists.
-      (if (save-restriction
-	    (narrow-to-region
-	     (point-min)
-	     (progn
+      (save-restriction
+	(narrow-to-region
+	 (point-min)
+	 (progn
+	   (goto-char (point-min))
+	   (search-forward (concat "\n" mail-header-separator "\n"))
+	   (point)))
+
+	 ;; Correct newsgroups field: change sequence of spaces to comma and 
+	 ;; eliminate spaces around commas.  Eliminate imbedded line breaks.
+	 (goto-char (point-min))
+	 (if (search-forward-regexp "^Newsgroups: +" nil t)
+	     (save-restriction
+	       (narrow-to-region
+		(point)
+		(if (re-search-forward "^[^ \t]" nil 'end)
+		    (match-beginning 0)
+		  (point-max)))
 	       (goto-char (point-min))
-	       (search-forward (concat "\n" mail-header-separator "\n"))
-	       (point)))
-	    (or (mail-fetch-field "to" nil t)
-		(mail-fetch-field "cc" nil t)))
-	  (if gnus-mail-send-method
-	      (progn
-		(message "Sending via mail...")
-		(funcall gnus-mail-send-method)
-		(message "Sending via mail... done"))
-	    (ding)
-	    (message "No mailer defined.  To: and/or Cc: fields ignored.")
-	    (sit-for 1)))
+	       (replace-regexp "\n[ \t]+" " ") ;No line breaks (too confusing)
+	       (goto-char (point-min))
+	       (replace-regexp "[ \t\n]*,[ \t\n]*\\|[ \t]+" ",")
+	     ))
+
+	 ;; Mail the message too if To: or Cc: exists.
+	 (if (or (mail-fetch-field "to" nil t)
+		 (mail-fetch-field "cc" nil t))
+	     (if gnus-mail-send-method
+		 (progn
+		   (message "Sending via mail...")
+		   (widen)
+		   (funcall gnus-mail-send-method)
+		   (message "Sending via mail... done"))
+	       (ding)
+	       (message "No mailer defined.  To: and/or Cc: fields ignored.")
+	       (sit-for 1))))
+
       ;; Send to NNTP server. 
       (message "Posting to USENET...")
       (if (gnus-inews-article)
@@ -629,10 +648,13 @@ a program specified by the rest of the value."
     ))
 
 (defun gnus-inews-user-name ()
-  "Return user's network address as `NAME@DOMAIN (FULL NAME)'."
-  (let ((login-name (gnus-inews-login-name))
-	(full-name (gnus-inews-full-name)))
-    (concat login-name "@" (gnus-inews-domain-name gnus-use-generic-from)
+  "Return user's network address as `NAME@DOMAIN (FULLNAME)'."
+  (let ((full-name (gnus-inews-full-name)))
+    (concat (if (or gnus-user-login-name gnus-use-generic-from
+		    gnus-local-domain (getenv "DOMAINNAME"))
+		(concat (gnus-inews-login-name) "@"
+			(gnus-inews-domain-name gnus-use-generic-from))
+	      user-mail-address)
 	    ;; User's full name.
 	    (cond ((string-equal full-name "") "")
 		  ((string-equal full-name "&")	;Unix hack.
@@ -649,8 +671,8 @@ Got from the variable `gnus-user-login-name' and the function
 
 (defun gnus-inews-full-name ()
   "Return user full name.
-Got from the variable gnus-user-full-name, the environment variable
-NAME, and the function user-full-name."
+Got from the variable `gnus-user-full-name', the environment variable
+NAME, and the function `user-full-name'."
   (or gnus-user-full-name
       (getenv "NAME") (user-full-name)))
 
@@ -660,33 +682,30 @@ If optional argument GENERICFROM is a string, use it as the domain
 name; if it is non-nil, strip of local host name from the domain name.
 If the function `system-name' returns full internet name and the
 domain is undefined, the domain name is got from it."
-  ;; Note: compatibility hack.  This will be removed in the next version.
   (and (null gnus-local-domain)
        (boundp 'gnus-your-domain)
        (setq gnus-local-domain gnus-your-domain))
-  ;; End of compatibility hack.
-  (let ((domain (or (if (stringp genericfrom) genericfrom)
-		    (getenv "DOMAINNAME")
-		    gnus-local-domain
-		    ;; Function `system-name' may return full internet name.
-		    ;; Suggested by Mike DeCorte <mrd@sun.soe.clarkson.edu>.
-		    (if (string-match "\\." (system-name))
-			(substring (system-name) (match-end 0)))
-		    (read-string "Domain name (no host): ")))
-	(host (or (if (string-match "\\." (system-name))
-		      (substring (system-name) 0 (match-beginning 0)))
-		  (system-name))))
-    (if (string-equal "." (substring domain 0 1))
-	(setq domain (substring domain 1)))
-    (if (null gnus-local-domain)
-	(setq gnus-local-domain domain))
-    ;; Support GENERICFROM as same as standard Bnews system.
-    ;; Suggested by ohm@kaba.junet and vixie@decwrl.dec.com.
-    (cond ((null genericfrom)
-	   (concat host "." domain))
-	  ;;((stringp genericfrom) genericfrom)
-	  (t domain))
-    ))
+  (if (or genericfrom gnus-local-domain (getenv "DOMAINNAME"))
+      (let ((domain (or (if (stringp genericfrom) genericfrom)
+			(getenv "DOMAINNAME")
+			gnus-local-domain
+			;; Function `system-name' may return full internet name.
+			;; Suggested by Mike DeCorte <mrd@sun.soe.clarkson.edu>.
+			(if (string-match "\\." (system-name))
+			    (substring (system-name) (match-end 0)))
+			(read-string "Domain name (no host): ")))
+	    (host (or (if (string-match "\\." (system-name))
+			  (substring (system-name) 0 (match-beginning 0)))
+		      (system-name))))
+	(if (string-equal "." (substring domain 0 1))
+	    (setq domain (substring domain 1)))
+	;; Support GENERICFROM as same as standard Bnews system.
+	;; Suggested by ohm@kaba.junet and vixie@decwrl.dec.com.
+	(cond ((null genericfrom)
+	       (concat host "." domain))
+	      ;;((stringp genericfrom) genericfrom)
+	      (t domain)))
+    (substring user-mail-address (1+ (string-match "@" user-mail-address)))))
 
 (defun gnus-inews-message-id ()
   "Generate unique Message-ID for user."

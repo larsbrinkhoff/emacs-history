@@ -92,9 +92,9 @@
 
 ;;; Code:
 
-(provide 'gnus)
 (require 'nntp)
 (require 'mail-utils)
+(require 'timezone)
 
 (defvar gnus-default-nntp-server nil
   "*Specify default NNTP server.
@@ -156,6 +156,10 @@ used instead.")
 
 (defvar gnus-article-save-directory (getenv "SAVEDIR")
   "*A directory name to save articles to (default to ~/News).
+Initialized from the SAVEDIR environment variable.")
+
+(defvar gnus-kill-files-directory (getenv "SAVEDIR")
+  "*A directory name to save kill files to (default to ~/News).
 Initialized from the SAVEDIR environment variable.")
 
 (defvar gnus-default-article-saver (function gnus-summary-save-in-rmail)
@@ -809,9 +813,6 @@ the hash tables.")
 (autoload 'metamail-buffer "metamail"
 	  "Process current buffer through 'metamail'." t)
 
-(autoload 'timezone-make-sortable-date "timezone")
-(autoload 'timezone-parse-date "timezone")
-
 (autoload 'rmail-output "rmailout"
 	  "Append this message to Unix mail file named FILE-NAME." t)
 (autoload 'mail-position-on-field "sendmail")
@@ -970,7 +971,55 @@ Optional argument HASHSIZE specifies the table size."
   (define-key gnus-group-mode-map "q" 'gnus-group-exit)
   (define-key gnus-group-mode-map "Q" 'gnus-group-quit)
   (define-key gnus-group-mode-map "?" 'gnus-group-describe-briefly)
-  (define-key gnus-group-mode-map "\C-c\C-i" 'gnus-info-find-node))
+  (define-key gnus-group-mode-map "\C-c\C-i" 'gnus-info-find-node)
+  (define-key gnus-group-mode-map   [mouse-2] 'gnus-mouse-pick-group)
+
+  ;; Make a menu bar item.
+  (define-key gnus-group-mode-map [menu-bar GNUS]
+	(cons "GNUS" (make-sparse-keymap "GNUS")))
+
+  (define-key gnus-group-mode-map [menu-bar GNUS force-update]
+	'("Force Update" . gnus-group-force-update))
+  (define-key gnus-group-mode-map [menu-bar GNUS quit]
+	'("Quit" . gnus-group-quit))
+  (define-key gnus-group-mode-map [menu-bar GNUS exit]
+	'("Exit" . gnus-group-exit))
+  (define-key gnus-group-mode-map [menu-bar GNUS restart]
+	'("Restart" . gnus-group-restart))
+  (define-key gnus-group-mode-map [menu-bar GNUS suspend]
+	'("Suspend" . gnus-group-suspend))
+  (define-key gnus-group-mode-map [menu-bar GNUS get-new-news]
+	'("Get New News" . gnus-group-get-new-news))
+
+  ;; Make a menu bar item.
+  (define-key gnus-group-mode-map [menu-bar groups]
+	(cons "Groups" (make-sparse-keymap "Groups")))
+
+  (define-key gnus-group-mode-map [menu-bar groups catchup]
+	'("Catchup" . gnus-group-catchup))
+  (define-key gnus-group-mode-map [menu-bar groups edit-global-kill]
+	'("Edit Kill File" . gnus-group-edit-global-kill))
+
+  (define-key gnus-group-mode-map [menu-bar groups separator-2]
+	'("--"))
+
+  (define-key gnus-group-mode-map [menu-bar groups yank-group]
+	'("Yank Group" . gnus-group-yank-group))
+  (define-key gnus-group-mode-map [menu-bar groups kill-group]
+	'("Kill Group" . gnus-group-kill-group))
+
+  (define-key gnus-group-mode-map [menu-bar groups separator-1]
+	'("--"))
+
+  (define-key gnus-group-mode-map [menu-bar groups jump-to-group]
+	'("Jump to Group..." . gnus-group-jump-to-group))
+  (define-key gnus-group-mode-map [menu-bar groups list-all-groups]
+	'("List All Groups" . gnus-group-list-all-groups))
+  (define-key gnus-group-mode-map [menu-bar groups list-groups]
+	'("List Groups" . gnus-group-list-groups))
+  (define-key gnus-group-mode-map [menu-bar groups unsub-current-group]
+	'("Unsubscribe Group" . gnus-group-unsubscribe-current-group))
+  )
 
 (defun gnus-group-mode ()
   "Major mode for reading network news.
@@ -1184,6 +1233,11 @@ Various hooks for customization:
   (buffer-flush-undo (current-buffer))
   (setq buffer-read-only t)		;Disable modification
   (run-hooks 'gnus-group-mode-hook))
+
+(defun gnus-mouse-pick-group (e)
+  (interactive "e")
+  (mouse-set-point e)
+  (gnus-group-read-group nil))
 
 ;;;###autoload
 (defun gnus (&optional confirm)
@@ -1625,7 +1679,7 @@ Type \\[widen] to remove restriction."
     "Editing a local KILL file (Type \\[gnus-kill-file-exit] to exit)")))
 
 (defun gnus-group-force-update ()
-  "Update .newsrc file."
+  "Update `.newsrc' file."
   (interactive)
   (gnus-save-newsrc-file))
 
@@ -1636,14 +1690,16 @@ The hook gnus-suspend-gnus-hook is called before actually suspending."
   (interactive)
   (run-hooks 'gnus-suspend-gnus-hook)
   ;; Kill GNUS buffers except for Group Mode buffer.
-  (let ((buffers gnus-buffer-list))
+  (let ((buffers gnus-buffer-list)
+	(group-buf (get-buffer gnus-group-buffer)))
     (while buffers
       (and (not (eq (car buffers) gnus-group-buffer))
 	   (get-buffer (car buffers))
 	   (kill-buffer (car buffers)))
       (setq buffers (cdr buffers))
-      ))
-  (bury-buffer))
+      )
+    (bury-buffer group-buf)
+    (delete-windows-on group-buf t)))
 
 (defun gnus-group-exit ()
   "Quit reading news after updating .newsrc.
@@ -1797,7 +1853,128 @@ The hook gnus-exit-gnus-hook is called before actually quitting."
   (define-key gnus-summary-mode-map "q" 'gnus-summary-exit)
   (define-key gnus-summary-mode-map "Q" 'gnus-summary-quit)
   (define-key gnus-summary-mode-map "?" 'gnus-summary-describe-briefly)
-  (define-key gnus-summary-mode-map "\C-c\C-i" 'gnus-info-find-node))
+  (define-key gnus-summary-mode-map "\C-c\C-i" 'gnus-info-find-node)
+  (define-key gnus-summary-mode-map [mouse-2] 'gnus-mouse-pick-article)
+
+  (define-key gnus-summary-mode-map [menu-bar misc]
+	(cons "Misc" (make-sparse-keymap "misc")))
+
+  (define-key gnus-summary-mode-map [menu-bar misc caesar-message]
+	'("Caesar Message" . gnus-summary-caesar-message))
+  (define-key gnus-summary-mode-map [menu-bar misc cancel-article]
+	'("Cancel Article" . gnus-summary-cancel-article))
+  (define-key gnus-summary-mode-map [menu-bar misc edit-local-kill]
+	'("Edit Kill File" . gnus-summary-edit-local-kill))
+
+  (define-key gnus-summary-mode-map [menu-bar misc mark-as-unread]
+	'("Mark as Unread" . gnus-summary-mark-as-unread-forward))
+  (define-key gnus-summary-mode-map [menu-bar misc mark-as-read]
+	'("Mark as Read" . gnus-summary-mark-as-read))
+
+  (define-key gnus-summary-mode-map [menu-bar misc quit]
+	'("Quit Group" . gnus-summary-quit))
+  (define-key gnus-summary-mode-map [menu-bar misc exit]
+	'("Exit Group" . gnus-summary-exit))
+
+  (define-key gnus-summary-mode-map [menu-bar sort]
+	(cons "Sort" (make-sparse-keymap "sort")))
+
+  (define-key gnus-summary-mode-map [menu-bar sort sort-by-author]
+	'("Sort by Author" . gnus-summary-sort-by-author))
+  (define-key gnus-summary-mode-map [menu-bar sort sort-by-date]
+	'("Sort by Date" . gnus-summary-sort-by-date))
+  (define-key gnus-summary-mode-map [menu-bar sort sort-by-number]
+	'("Sort by Number" . gnus-summary-sort-by-number))
+  (define-key gnus-summary-mode-map [menu-bar sort sort-by-subject]
+	'("Sort by Subject" . gnus-summary-sort-by-subject))
+
+  (define-key gnus-summary-mode-map [menu-bar show/hide]
+	(cons "Show/Hide" (make-sparse-keymap "show/hide")))
+
+  (define-key gnus-summary-mode-map [menu-bar show/hide hide-all-threads]
+	'("Hide All Threads" . gnus-summary-hide-all-threads))
+  (define-key gnus-summary-mode-map [menu-bar show/hide hide-thread]
+	'("Hide Thread" . gnus-summary-hide-thread))
+  (define-key gnus-summary-mode-map [menu-bar show/hide show-all-threads]
+	'("Show All Threads" . gnus-summary-show-all-threads))
+  (define-key gnus-summary-mode-map [menu-bar show/hide show-all-headers]
+	'("Show All Headers" . gnus-summary-show-all-headers))
+  (define-key gnus-summary-mode-map [menu-bar show/hide show-thread]
+	'("Show Thread" . gnus-summary-show-thread))
+  (define-key gnus-summary-mode-map [menu-bar show/hide show-article]
+	'("Show Article" . gnus-summary-show-article))
+  (define-key gnus-summary-mode-map [menu-bar show/hide toggle-truncation]
+	'("Toggle Truncation" . gnus-summary-toggle-truncation))
+  (define-key gnus-summary-mode-map [menu-bar show/hide toggle-mime]
+	'("Toggle Mime" . gnus-summary-toggle-mime))
+  (define-key gnus-summary-mode-map [menu-bar show/hide toggle-header]
+	'("Toggle Header" . gnus-summary-toggle-header))
+
+  (define-key gnus-summary-mode-map [menu-bar action]
+	(cons "Action" (make-sparse-keymap "action")))
+
+  (define-key gnus-summary-mode-map [menu-bar action kill-same-subject]
+	'("Kill Same Subject" . gnus-summary-kill-same-subject))
+  (define-key gnus-summary-mode-map [menu-bar action kill-thread]
+	'("Kill Thread" . gnus-summary-kill-thread))
+  (define-key gnus-summary-mode-map [menu-bar action delete-marked-with]
+	'("Delete Marked With" . gnus-summary-delete-marked-with))
+  (define-key gnus-summary-mode-map [menu-bar action delete-marked-as-read]
+	'("Delete Marked As Read" . gnus-summary-delete-marked-as-read))
+  (define-key gnus-summary-mode-map [menu-bar action catchup-and-exit]
+	'("Catchup And Exit" . gnus-summary-catchup-and-exit))
+  (define-key gnus-summary-mode-map [menu-bar action catchup-to-here]
+	'("Catchup to Here" . gnus-summary-catchup-to-here))
+
+  (define-key gnus-summary-mode-map [menu-bar action ignore]
+    '("---"))
+
+  (define-key gnus-summary-mode-map [menu-bar action save-in-file]
+	'("Save in File" . gnus-summary-save-in-file))
+  (define-key gnus-summary-mode-map [menu-bar action save-article]
+	'("Save Article" . gnus-summary-save-article))
+
+  (define-key gnus-summary-mode-map [menu-bar action lambda]
+    '("---"))
+
+  (define-key gnus-summary-mode-map [menu-bar action forward]
+	'("Forward" . gnus-summary-mail-forward))
+  (define-key gnus-summary-mode-map [menu-bar action followup-with-original]
+	'("Followup with Original" . gnus-summary-followup-with-original))
+  (define-key gnus-summary-mode-map [menu-bar action followup]
+	'("Followup" . gnus-summary-followup))
+  (define-key gnus-summary-mode-map [menu-bar action reply-with-original]
+	'("Reply with Original" . gnus-summary-reply-with-original))
+  (define-key gnus-summary-mode-map [menu-bar action reply]
+	'("Reply" . gnus-summary-reply))
+  (define-key gnus-summary-mode-map [menu-bar action post]
+	'("Post News" . gnus-summary-post-news))
+
+  (define-key gnus-summary-mode-map [menu-bar move]
+	(cons "Move" (make-sparse-keymap "move")))
+
+  (define-key gnus-summary-mode-map [menu-bar move isearch-article]
+	'("Search in Article" . gnus-summary-isearch-article))
+  (define-key gnus-summary-mode-map [menu-bar move search-through-articles]
+	'("Search through Articles" . gnus-summary-search-article-forward))
+  (define-key gnus-summary-mode-map [menu-bar move down-thread]
+	'("Down Thread" . gnus-summary-down-thread))
+  (define-key gnus-summary-mode-map [menu-bar move prev-same-subject]
+	'("Prev Same Subject" . gnus-summary-prev-same-subject))
+  (define-key gnus-summary-mode-map [menu-bar move prev-group]
+	'("Prev Group" . gnus-summary-prev-group))
+  (define-key gnus-summary-mode-map [menu-bar move next-unread-same-subject]
+	'("Next Unread Same Subject" . gnus-summary-next-unread-same-subject))
+  (define-key gnus-summary-mode-map [menu-bar move next-unread-article]
+	'("Next Unread Article" . gnus-summary-next-unread-article))
+  (define-key gnus-summary-mode-map [menu-bar move next-thread]
+	'("Next Thread" . gnus-summary-next-thread))
+  (define-key gnus-summary-mode-map [menu-bar move next-group]
+	'("Next Group" . gnus-summary-next-group))
+  (define-key gnus-summary-mode-map [menu-bar move first-unread-article]
+	'("First Unread Article" . gnus-summary-first-unread-article))
+  )
+
 
 (defun gnus-summary-mode ()
   "Major mode for reading articles in this newsgroup.
@@ -1947,6 +2124,11 @@ User customizable variables:
     gnus-summary-save-in-rmail, gnus-summary-save-in-mail and
     gnus-summary-save-in-file. The variable is initialized from the
     SAVEDIR environment variable.
+
+ gnus-kill-files-directory
+    Specifies a directory name to save KILL files to using the commands
+    gnus-edit-global-kill, and gnus-edit-local-kill. The variable is
+    initialized from the SAVEDIR environment variable.
 
  gnus-show-all-headers
     Non-nil means that all headers of an article are shown.
@@ -2126,6 +2308,11 @@ Various hooks for customization:
   (setq selective-display-ellipses t)	;Display `...'
   ;;(setq case-fold-search t)
   (run-hooks 'gnus-summary-mode-hook))
+
+(defun gnus-mouse-pick-article (e)
+  (interactive "e")
+  (mouse-set-point e)
+  (gnus-summary-next-page nil))
 
 (defun gnus-summary-setup-buffer ()
   "Initialize Summary buffer."
@@ -2695,7 +2882,7 @@ If argument UNREAD is non-nil, only unread article is selected."
 	   (gnus-summary-goto-article gnus-newsgroup-end))
 	  (t
 	   ;; Select next newsgroup automatically if requested.
-	   (let ((cmd (string-to-char (this-command-keys)))
+	   (let ((cmd (aref (this-command-keys) 0))
 		 (group (gnus-summary-search-group))
 		 (auto-select
 		  (and gnus-auto-select-next
@@ -2713,20 +2900,22 @@ If argument UNREAD is non-nil, only unread article is selected."
 		       ;; Ignore characters typed ahead.
 		       (not (input-pending-p))
 		       )))
+	     ;; Keep just the event type of CMD.
+	     (if (listp cmd)
+		 (setq cmd (car cmd)))
 	     (message "No more%s articles%s"
 		      (if unread " unread" "")
 		      (if (and auto-select
 			       (not (eq gnus-auto-select-next 'quietly)))
 			  (if group
 			      (format " (Type %s for %s [%d])"
-				      (key-description (char-to-string cmd))
+				      (single-key-description cmd)
 				      group
 				      (nth 1 (gnus-gethash group
 							   gnus-unread-hashtb)))
 			    (format " (Type %s to exit %s)"
-				    (key-description (char-to-string cmd))
-				    gnus-newsgroup-name
-				    ))
+				    (single-key-description cmd)
+				    gnus-newsgroup-name))
 			""))
 	     ;; Select next unread newsgroup automagically.
 	     (cond ((and auto-select
@@ -2735,10 +2924,14 @@ If argument UNREAD is non-nil, only unread article is selected."
 		    (gnus-summary-next-group nil))
 		   (auto-select
 		    ;; Confirm auto selection.
-		    (let ((char (read-char)))
-		      (if (= char cmd)
+		    (let* ((event (read-event))
+			   (type
+			    (if (listp event)
+				(car event)
+			      event)))
+		      (if (and (eq event type) (eq event cmd))
 			  (gnus-summary-next-group nil)
-			(setq unread-command-char char))))
+			(setq unread-command-events (list event)))))
 		   )
 	     ))
 	  )))
@@ -3957,6 +4150,16 @@ If prefix argument ALL is non-nil, all articles are marked as read."
 	  ))
     ))
 
+(defun gnus-summary-catchup-to-here ()
+  "Mark all articles before the current one in this newsgroup as read."
+  (interactive)
+  (beginning-of-line)
+  (let ((current (gnus-summary-article-number)))
+	(beginning-of-buffer)
+	(while (not (= (gnus-summary-article-number) current))
+	  (gnus-summary-mark-as-read)
+	  (gnus-summary-next-subject 1))))
+
 (defun gnus-summary-catchup-all (&optional quietly)
   "Mark all articles in this newsgroup as read."
   (interactive)
@@ -4479,27 +4682,27 @@ In addition to Emacs-Lisp Mode, the following commands are available:
 \\[gnus-kill-file-exit]	Save file and exit editing KILL file.
 \\[gnus-info-find-node]	Read Info about KILL file.
 
-  A KILL file contains lisp expressions to be applied to a selected
-newsgroup. The purpose is to mark articles as read on the basis of
-some set of regexps. A global KILL file is applied to every newsgroup,
-and a local KILL file is applied to a specified newsgroup. Since a
+  A KILL file contains Lisp expressions to be applied to a selected
+newsgroup.  The purpose is to mark articles as read on the basis of
+some set of regexps.  A global KILL file is applied to every newsgroup,
+and a local KILL file is applied to a specified newsgroup.  Since a
 global KILL file is applied to every newsgroup, for better performance
 use a local one.
 
-  A KILL file can contain any kind of Emacs lisp expressions expected
-to be evaluated in the Summary buffer. Writing lisp programs for this
+  A KILL file can contain any kind of Emacs Lisp expressions expected
+to be evaluated in the Summary buffer.  Writing Lisp programs for this
 purpose is not so easy because the internal working of GNUS must be
-well-known. For this reason, GNUS provides a general function which
+well-known.  For this reason, GNUS provides a general function which
 does this easily for non-Lisp programmers.
 
   The `gnus-kill' function executes commands available in Summary Mode
 by their key sequences. `gnus-kill' should be called with FIELD,
-REGEXP and optional COMMAND and ALL. FIELD is a string representing
-the header field or an empty string. If FIELD is an empty string, the
-entire article body is searched for. REGEXP is a string which is
+REGEXP and optional COMMAND and ALL.  FIELD is a string representing
+the header field or an empty string.  If FIELD is an empty string, the
+entire article body is searched for.  REGEXP is a string which is
 compared with FIELD value. COMMAND is a string representing a valid
-key sequence in Summary Mode or Lisp expression. COMMAND is default to
-'(gnus-summary-mark-as-read nil \"X\"). Make sure that COMMAND is
+key sequence in Summary mode or Lisp expression. COMMAND defaults to
+'(gnus-summary-mark-as-read nil \"X\").  Make sure that COMMAND is
 executed in the Summary buffer.  If the second optional argument ALL
 is non-nil, the COMMAND is applied to articles which are already
 marked as read or unread.  Articles which are marked are skipped over
@@ -4795,17 +4998,17 @@ If NEWSGROUP is nil, return the global KILL file instead."
 	     (string-equal newsgroup ""))
 	 ;; The global KILL file is placed at top of the directory.
 	 (expand-file-name gnus-kill-file-name
-			   (or gnus-article-save-directory "~/News")))
+			   (or gnus-kill-files-directory "~/News")))
 	(gnus-use-long-file-name
 	 ;; Append ".KILL" to capitalized newsgroup name.
 	 (expand-file-name (concat (gnus-capitalize-newsgroup newsgroup)
 				   "." gnus-kill-file-name)
-			   (or gnus-article-save-directory "~/News")))
+			   (or gnus-kill-files-directory "~/News")))
 	(t
 	 ;; Place "KILL" under the hierarchical directory.
 	 (expand-file-name (concat (gnus-newsgroup-directory-form newsgroup)
 				   "/" gnus-kill-file-name)
-			   (or gnus-article-save-directory "~/News")))
+			   (or gnus-kill-files-directory "~/News")))
 	))
 
 (defun gnus-newsgroup-kill-file (newsgroup)
@@ -4815,16 +5018,16 @@ If NEWSGROUP is nil, return the global KILL file instead."
 	     (string-equal newsgroup ""))
 	 ;; The global KILL file is placed at top of the directory.
 	 (expand-file-name gnus-kill-file-name
-			   (or gnus-article-save-directory "~/News")))
+			   (or gnus-kill-files-directory "~/News")))
 	(gnus-use-long-file-name
 	 ;; Append ".KILL" to newsgroup name.
 	 (expand-file-name (concat newsgroup "." gnus-kill-file-name)
-			   (or gnus-article-save-directory "~/News")))
+			   (or gnus-kill-files-directory "~/News")))
 	(t
 	 ;; Place "KILL" under the hierarchical directory.
 	 (expand-file-name (concat (gnus-newsgroup-directory-form newsgroup)
 				   "/" gnus-kill-file-name)
-			   (or gnus-article-save-directory "~/News")))
+			   (or gnus-kill-files-directory "~/News")))
 	))
 
 ;; For subscribing new newsgroup
@@ -5022,14 +5225,13 @@ If case-fold-search is non-nil, case of letters is ignored."
 (defun gnus-sortable-date (date)
   "Make sortable string by string-lessp from DATE.
 Timezone package is used."
-  (let* ((date   (timezone-parse-date date)) ;[Y M D T]
-	 (year   (string-to-int (aref date 0)))
-	 (month  (string-to-int (aref date 1)))
-	 (day    (string-to-int (aref date 2)))
-	 (time   (aref date 3)))	;HH:MM:SS
-    ;; Timezone package is used.  But, we don't have to care about
-    ;; the timezone since article's timezones are always GMT.
-    (timezone-make-sortable-date year month day time)
+  (let* ((date   (timezone-fix-time date nil nil)) ;[Y M D H M S]
+	 (year   (aref date 0))
+	 (month  (aref date 1))
+	 (day    (aref date 2)))
+    (timezone-make-sortable-date year month day 
+				 (timezone-make-time-string
+				  (aref date 3) (aref date 4) (aref date 5)))
     ))
 
 ;;(defun gnus-sortable-date (date)
@@ -5416,7 +5618,7 @@ Run gnus-open-server-hook just before opening news server."
 	  ((gnus-open-server gnus-nntp-server gnus-nntp-service)
 	   (message ""))
 	  (t
-	   (error
+	   (error "%s"
 	    (gnus-nntp-message
 	     (format "Cannot open NNTP server on %s" gnus-nntp-server)))))
     ))
@@ -6586,18 +6788,17 @@ If optional argument RAWFILE is non-nil, the raw startup file is read."
     ;; Before supporting continuation lines, " newsgroup ! 1-5" was
     ;; okay, but now it is invalid.  It should be "newsgroup! 1-5".
     (goto-char (point-min))
-    ;; Due to overflows in regex.c, change the following regexp:
+    ;; We used this regexp, but it caused overflows.
     ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(.*\\)$"
     ;; Suggested by composer@bucsf.bu.edu (Jeff Kellem)
     ;; but no longer viable because of extensive backtracking in Emacs 19:
     ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\(...\\)*.*\\)$"
     ;; but, the following causes trouble on some case:
     ;; "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\|[^ \t\n].*\\)$"
-    (while (re-search-forward
-	    (if (= gnus-emacs-version 18)
-		"^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(\\(...\\)*.*\\)$"
-	      "^\\([^:! \t\n]+\\)\\([:!]\\)[ \t]*\\(.*\\)$")
-	    nil t)
+    ;; So now we don't try to match the tail of the line at all.
+    ;; It's just as easy to extract it later.
+    (while (re-search-forward "^\\([^:! \t\n]+\\)\\([:!]\\)"
+			      nil t)
       (setq newsgroup (buffer-substring (match-beginning 1) (match-end 1)))
       ;; Check duplications of newsgroups.
       ;; Note: Checking the duplications takes very long time.
@@ -6606,7 +6807,9 @@ If optional argument RAWFILE is non-nil, the raw startup file is read."
 	(setq subscribe
 	      (string-equal
 	       ":" (buffer-substring (match-beginning 2) (match-end 2))))
-	(setq ranges (buffer-substring (match-beginning 3) (match-end 3)))
+	(skip-chars-forward " \t")
+	(setq ranges (buffer-substring (point) (save-excursion
+						 (end-of-line) (point))))
 	(setq read-list nil)
 	(while (string-match "^[, \t]*\\([0-9-]+\\)" ranges)
 	  (setq subrange (substring ranges (match-beginning 1) (match-end 1)))
@@ -6966,6 +7169,8 @@ otherwise, if FILE2 does not exist, the answer is t."
 	      ))))
 
 
+(provide 'gnus)
+
 ;;Local variables:
 ;;eval: (put 'gnus-eval-in-buffer-window 'lisp-indent-hook 1)
 ;;end:

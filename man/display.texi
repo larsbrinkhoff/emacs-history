@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Display, Search, Registers, Top
 @chapter Controlling the Display
@@ -21,7 +21,7 @@ Scroll backward (@code{scroll-down}).
 @item @key{PRIOR}
 Likewise, scroll backward.
 @item @var{arg} C-l
-Scroll so point is on line @var{arg} (@code{recenter}).
+Scroll so point is on screen line @var{arg} (@code{recenter}).
 @item C-x <
 Scroll text in current window to the left (@code{scroll-left}).
 @item C-x >
@@ -38,8 +38,8 @@ moves in the window.  Thus, the command to scrolling forward is called
 * Scrolling::	           Moving text up and down in a window.
 * Horizontal Scrolling::   Moving text left and right in a window.
 * Selective Display::      Hiding lines with lots of indentation.
-* Optional Display::       Optional display features.
-* European Display::	   Displaying (and inputing) European characters.
+* European Display::	   Displaying (and entering) European characters.
+* Optional Mode Line::     Optional mode line display features.
 * Display Vars::           Information on variables for customizing display.
 @end menu
 
@@ -171,7 +171,7 @@ With no argument, it scrolls by almost the full width of the window (two
 columns less, to be precise).
 
   @kbd{C-x >} (@code{scroll-right}) scrolls similarly to the right.  The
-window cannot be scrolled any farther to the right once it is displaying
+window cannot be scrolled any farther to the right once it is displayed
 normally (with each line starting at the window's left margin);
 attempting to do so has no effect.  This means that you don't have to
 calculate the argument precisely for @w{@kbd{C-x >}}; any sufficiently large
@@ -202,7 +202,7 @@ previous line, after the three dots.  If point is at the end of the
 visible line, before the newline that ends it, the cursor appears before
 the three dots.
 
-  To make everything visible again, type @kbd{C-x $} with no argument.
+  To make all lines visible again, type @kbd{C-x $} with no argument.
 
 @node European Display
 @section European Character Set Display
@@ -212,18 +212,27 @@ the three dots.
 @cindex ISO Latin-1 character set
 @findex standard-display-european
 @cindex @code{iso-syntax} library
-  Emacs can display accented characters, assuming the font in use
-supports them.  The @kbd{M-x standard-display-european} command toggles
-European character display.  When enabled, Emacs displays characters
-according to the ISO 8859 Latin-1 encoding for European languages; when
-disabled, Emacs uses octal notation for all characters not specified by
-the ordinary ASCII standard.  Load the library @code{iso-syntax} to specify
-the correct syntactic properties for the character codes 128 and above.
+  Some European languages use accented letters and other special
+symbols.  The ISO 8859 Latin-1 character set defines character codes for
+many European languages in the range 160 to 255.
 
-  With a prefix argument, @kbd{M-x standard-display-european} enables
-European character display if and only if the argument is positive.
+  Emacs can display those characters according to Latin-1, provided the
+terminal or font in use supports them.  The @kbd{M-x
+standard-display-european} command toggles European character display
+mode.  With a numeric argument, @kbd{M-x standard-display-european}
+enables European character display if and only if the argument is
+positive.
 
-  If your terminal can send character codes 128 and up to represent
+  Some operating systems let you specify the language you are using by
+setting a locale.  Emacs handles one common special case of this: if
+your locale name for character types contains the string @samp{8859-1}
+or @samp{88591}, Emacs automatically enables European character display
+mode when it starts up.
+
+  Load the library @code{iso-syntax} to specify the correct syntactic
+properties and case conversion table for the Latin-1 character set.
+
+  If your keyboard can send character codes 128 and up to represent
 ISO Latin-1 characters, execute the following expression to
 enable Emacs to understand them:
 
@@ -245,17 +254,21 @@ if you have one, serves the same purpose as @kbd{C-x 8}; use @key{ALT}
 together with an accent character to modify the following letter.
 
 @cindex ISO Accents mode
+@findex iso-accents-mode
   If you enter non-ASCII ISO Latin-1 characters often, you might find
 ISO Accents mode convenient.  When this minor mode is enabled, the
 characters @samp{`}, @samp{'}, @samp{"}, @samp{^}, @samp{/} and @samp{~}
 modify the following letter by adding the corresponding diacritical mark
-to it, if possible.  To enter one of those six special characters, type
-a space after it.
+to it, if possible.  To enable or disable ISO Accents mode, use the
+command @kbd{M-x iso-accents-mode}.  This command affects only the
+current buffer.
 
-  Some of those characters have a corresponding ``dead key'' accent
-character in the ISO Latin-1 character set; to enter that character, type the
-corresponding ASCII character twice.  For example, @kbd{''} enters the
-Latin-1 character acute-accent (character code 0264).
+  To enter one of those six special characters, type the character,
+followed by a space.  Some of those characters have a corresponding
+``dead key'' accent character in the ISO Latin-1 character set; to enter
+that character, type the corresponding ASCII character twice.  For
+example, @kbd{''} enters the Latin-1 character acute-accent (character
+code 0264).
 
   In addition to the accented letters, you can use these special
 sequences in ISO Accents mode to enter certain other ISO Latin-1
@@ -289,21 +302,17 @@ Right guillemet.
   This feature is available whenever a key sequence is expected: for
 ordinary insertion, for searching, and for certain command arguments.
 
-@findex iso-accents-mode
-  To enable or disable ISO Accents mode, use the command @kbd{M-x
-iso-accents-mode}.  This command affects only the current buffer.
-
-@node Optional Display
-@section Optional Display Features
+@node Optional Mode Line
+@section Optional Mode Line Features
 
 @cindex Line Number mode
 @cindex mode, Line Number
 @findex line-number-mode
   To add the current line number of point to the mode line, enable Line
 Number mode with the command @kbd{M-x line-number-mode}.  The line
-number appears before @var{pos}, with the letter @samp{L} to indicate
-what it is.  @xref{Minor Modes}, for more information about minor modes
-and about how to use this command.
+number appears before the buffer percentage @var{pos}, with the letter
+@samp{L} to indicate what it is.  @xref{Minor Modes}, for more
+information about minor modes and about how to use this command.
 
 @vindex line-number-display-limit
   If the buffer is very large (larger than the value of
@@ -319,24 +328,18 @@ information added to the mode line usually appears after the buffer
 name, before the mode names and their parentheses.  It looks like this:
 
 @example
-@var{hh}:@var{mm}pm @var{l.ll} [@var{d}]
+@var{hh}:@var{mm}pm @var{l.ll}
 @end example
 
 @noindent
 Here @var{hh} and @var{mm} are the hour and minute, followed always by
 @samp{am} or @samp{pm}.  @var{l.ll} is the average number of running
-processes in the whole system recently.  @var{d} is an approximate index
-of the ratio of disk activity to cpu activity for all users.  (Some
-fields may be missing if your operating system cannot support them.)
+processes in the whole system recently.  (Some fields may be missing if
+your operating system cannot support them.)
 
 @cindex mail (on mode line)
   The word @samp{Mail} appears after the load level if there is mail
 for you that you have not read yet.
-
-  Customization note: the variable @code{mode-line-inverse-video} controls
-whether the mode line is displayed in inverse video (assuming the terminal
-supports it); @code{nil} means no inverse video.  The default is @code{t}.
-@xref{Display Vars}.
 
 @node Display Vars
 @section Variables Controlling Display

@@ -83,7 +83,7 @@ instead.")
 (defvar mouse-avoidance-nudge-dist 15
   "*Average distance that mouse will be moved when approached by cursor.
 Only applies in mouse-avoidance-mode `jump' and its derivatives.
-For best results make this larger than `mouse-avoidance-threshhold'.")
+For best results make this larger than `mouse-avoidance-threshold'.")
 
 (defvar mouse-avoidance-nudge-var 10
   "*Variability of `mouse-avoidance-nudge-dist' (which see).")
@@ -91,7 +91,7 @@ For best results make this larger than `mouse-avoidance-threshhold'.")
 (defvar mouse-avoidance-animation-delay .01
   "Delay between animation steps, in seconds.")
 
-(defvar mouse-avoidance-threshhold 5
+(defvar mouse-avoidance-threshold 5
   "*Mouse-pointer's flight distance.
 If the cursor gets closer than this, the mouse pointer will move away.
 Only applies in mouse-avoidance-modes `animate' and `jump'.")
@@ -109,18 +109,26 @@ Analogous to mouse-position."
   (let* ((w (selected-window))
 	 (edges (window-edges w))
 	 (list 
-	  (compute-motion (window-start w)                     ; start pos
-			  (cons (car edges) (car (cdr edges))) ; start XY
+	  (compute-motion (max (window-start w) (point-min))   ; start pos
+			  ;; window-start can be < point-min if the
+			  ;; latter has changed since the last redisplay 
+			  '(0 . 0)	                       ; start XY
 			  (point)	                       ; stop pos
-			  (cons (nth 2 edges) (nth 3 edges))   ; stop XY: none
+			  (cons (window-width) (window-height)); stop XY: none
 			  (1- (window-width))                  ; width
-			  (cons (window-hscroll w) 0) ; 0 may not be right?
+			  (cons (window-hscroll w) 0)          ; 0 may not be right?
 			  (selected-window))))
     ;; compute-motion returns (pos HPOS VPOS prevhpos contin)
     ;; we want:               (frame hpos . vpos)
-    (setcar list (selected-frame))	
-    (setcdr (cdr list) (car (cdr (cdr list))))
-    list))
+    (cons (selected-frame)
+	  (cons (+ (car edges)       (car (cdr list)))
+		(+ (car (cdr edges)) (car (cdr (cdr list))))))))
+
+;(defun mouse-avoidance-point-position-test ()
+;  (interactive)
+;  (message (format "point=%s mouse=%s" 
+;		   (cdr (mouse-avoidance-point-position))
+;		   (cdr (mouse-position)))))
 
 (defun mouse-avoidance-set-mouse-position (pos)
   ;; Carefully set mouse position to given position (X . Y)
@@ -135,14 +143,14 @@ Analogous to mouse-position."
       
 (defun mouse-avoidance-too-close-p (mouse)
   ;;  Return t if mouse pointer and point cursor are too close.
-  ;; Acceptable distance is defined by mouse-avoidance-threshhold.
+  ;; Acceptable distance is defined by mouse-avoidance-threshold.
   (let ((point (mouse-avoidance-point-position)))
     (and (eq (car mouse) (car point))
 	 (car (cdr mouse))
 	 (< (abs (- (car (cdr mouse)) (car (cdr point))))
-	    mouse-avoidance-threshhold)
+	    mouse-avoidance-threshold)
 	 (< (abs (- (cdr (cdr mouse)) (cdr (cdr point))))
-	    mouse-avoidance-threshhold))))
+	    mouse-avoidance-threshold))))
 
 (defun mouse-avoidance-banish-destination ()
   "The position to which mouse-avoidance-mode `banish' moves the mouse.
@@ -303,7 +311,7 @@ Effects of the different modes:
 
 Whenever the mouse is moved, the frame is also raised.
 
-\(see `mouse-avoidance-threshhold' for definition of \"too close\",
+\(see `mouse-avoidance-threshold' for definition of \"too close\",
 and `mouse-avoidance-nudge-dist' and `mouse-avoidance-nudge-var' for
 definition of \"random distance\".)"
   (interactive

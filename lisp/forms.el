@@ -2,7 +2,7 @@
 ;;; Copyright (C) 1991, 1993 Free Software Foundation, Inc.
 
 ;; Author: Johan Vromans <jv@nl.net>
-;; Version: $Revision: 2.6 $
+;; Version: $Revision: 2.10 $
 
 ;; This file is part of GNU Emacs.
 
@@ -122,6 +122,19 @@
 ;;;			Non-nil means: rebind locally the commands that
 ;;;			perform `beginning-of-buffer' or `end-of-buffer'
 ;;;			to perform `forms-first-field' resp. `forms-last-field'.
+;;;
+;;;	forms-read-file-filter			[symbol, default nil]
+;;;			If not nil: this should be the name of a 
+;;;			function that is called after the forms data file
+;;;			has been read.  It can be used to transform
+;;;			the contents of the file into a format more suitable
+;;;			for forms-mode processing.
+;;;
+;;;	forms-write-file-filter			[symbol, default nil]
+;;;			If not nil: this should be the name of a 
+;;;			function that is called before the forms data file
+;;;			is written (saved) to disk.  It can be used to undo
+;;;			the effects of `forms-read-file-filter', if any.
 ;;;
 ;;;	forms-new-record-filter			[symbol, default nil]
 ;;;			If not nil: this should be the name of a 
@@ -266,10 +279,10 @@
 (provide 'forms)			;;; official
 (provide 'forms-mode)			;;; for compatibility
 
-(defconst forms-version (substring "$Revision: 2.6 $" 11 -2)
+(defconst forms-version (substring "$Revision: 2.10 $" 11 -2)
   "The version number of forms-mode (as string).  The complete RCS id is:
 
-  $Id: forms.el,v 2.6 1994/05/22 22:07:37 rms Exp $")
+  $Id: forms.el,v 2.10 1994/07/26 21:31:13 rms Exp $")
 
 (defvar forms-mode-hooks nil
   "Hook functions to be run upon entering Forms mode.")
@@ -304,6 +317,15 @@ The replacement commands performs forms-next/prev-record.")
 (defvar forms-forms-jump nil
   "*Non-nil means redefine beginning/end-of-buffer in Forms mode.
 The replacement commands performs forms-first/last-record.")
+
+(defvar forms-read-file-filter nil
+  "The name of a function that is called after reading the data file.
+This can be used to change the contents of the file to something more
+suitable for forms processing.")
+
+(defvar forms-write-file-filter nil
+  "The name of a function that is called before writing the data file.
+This can be used to undo the effects of form-read-file-hook.")
 
 (defvar forms-new-record-filter nil
   "The name of a function that is called when a new record is created.")
@@ -428,10 +450,16 @@ Commands:                        Equivalent keys in read-only mode:
 	(make-local-variable 'forms-forms-scroll)
 	(make-local-variable 'forms-forms-jump)
 	(make-local-variable 'forms-use-text-properties)
+
+	;; Filter functions.
+	(make-local-variable 'forms-read-file-filter)
+	(make-local-variable 'forms-write-file-filter)
 	(make-local-variable 'forms-new-record-filter)
 	(make-local-variable 'forms-modified-record-filter)
 
 	;; Make sure no filters exist.
+	(setq forms-read-file-filter nil)
+	(setq forms-write-file-filter nil)
 	(setq forms-new-record-filter nil)
 	(setq forms-modified-record-filter nil)
 
@@ -444,22 +472,37 @@ Commands:                        Equivalent keys in read-only mode:
 
 	;; eval the buffer, should set variables
 	;;(message "forms: processing control file...")
-	(eval-current-buffer)
+	;; If enable-local-eval is not set to t the user is asked first.
+	(if (or (eq enable-local-eval t)
+		(yes-or-no-p 
+		 (concat "Evaluate lisp code in buffer "
+			 (buffer-name) " to display forms ")))
+	    (eval-current-buffer)
+	  (error "`enable-local-eval' inhibits buffer evaluation"))
 
-	;; check if the mandatory variables make sense.
+	;; Check if the mandatory variables make sense.
 	(or forms-file
 	    (error (concat "Forms control file error: " 
 			   "'forms-file' has not been set")))
-	(or forms-number-of-fields
-	    (error (concat "Forms control file error: "
-			   "'forms-number-of-fields' has not been set")))
-	(or (and (numberp forms-number-of-fields)
-		 (> forms-number-of-fields 0))
-	    (error (concat "Forms control file error: "
-			   "'forms-number-of-fields' must be a number > 0")))
+
+	;; Check forms-field-sep first, since it can be needed to
+	;; construct a default format list.
 	(or (stringp forms-field-sep)
 	    (error (concat "Forms control file error: "
 			   "'forms-field-sep' is not a string")))
+
+	(if forms-number-of-fields
+	    (or (and (numberp forms-number-of-fields)
+		     (> forms-number-of-fields 0))
+		(error (concat "Forms control file error: "
+			       "'forms-number-of-fields' must be a number > 0")))
+	  (or (null forms-format-list)
+	      (error (concat "Forms control file error: "
+			     "'forms-number-of-fields' has not been set"))))
+
+	(or forms-format-list
+	    (forms--intuit-from-file))
+
 	(if forms-multi-line
 	    (if (and (stringp forms-multi-line)
 		     (eq (length forms-multi-line) 1))
@@ -514,6 +557,9 @@ Commands:                        Equivalent keys in read-only mode:
 	;;(message "forms: setting up... done.")
 	))
 
+  ;; initialization done
+  (setq forms--mode-setup t)
+
   ;; Copy desired faces to the actual variables used by the forms formatter.
   (if (fboundp 'make-face)
       (progn
@@ -551,6 +597,25 @@ Commands:                        Equivalent keys in read-only mode:
   ;; find the data file
   (setq forms--file-buffer (find-file-noselect forms-file))
 
+  ;; Pre-transform.
+  (let ((read-file-filter forms-read-file-filter)
+	(write-file-filter forms-write-file-filter))
+    (if read-file-filter
+	(save-excursion
+	  (set-buffer forms--file-buffer)
+	  (let ((inhibit-read-only t))
+	    (run-hooks 'read-file-filter))
+	  (set-buffer-modified-p nil)
+	  (if write-file-filter
+	      (progn
+		(make-variable-buffer-local 'local-write-file-hooks)
+		(setq local-write-file-hooks (list write-file-filter)))))
+      (if write-file-filter
+	  (save-excursion
+	    (set-buffer forms--file-buffer)
+	    (make-variable-buffer-local 'local-write-file-hooks)
+	    (setq local-write-file-hooks write-file-filter)))))
+
   ;; count the number of records, and set see if it may be modified
   (let (ro)
     (setq forms--total-records
@@ -583,10 +648,27 @@ Commands:                        Equivalent keys in read-only mode:
   ;;(message "forms: proceeding setup (buffer)...")
   (set-buffer-modified-p nil)
 
-  ;; setup the first (or current) record to show
-  (if (< forms--current-record 1)
-      (setq forms--current-record 1))
-  (forms-jump-record forms--current-record)
+  (if (= forms--total-records 0)
+      ;;(message "forms: proceeding setup (new file)...")
+      (progn
+	(insert 
+	 "GNU Emacs Forms Mode version " forms-version "\n\n"
+	 (if (file-exists-p forms-file)
+	     (concat "No records available in file \"" forms-file "\".\n\n")
+	   (format "Creating new file \"%s\"\nwith %d field%s per record.\n\n"
+		   forms-file forms-number-of-fields
+		   (if (= 1 forms-number-of-fields) "" "s")))
+	 "Use " (substitute-command-keys "\\[forms-insert-record]")
+	 " to create new records.\n")
+	(setq forms--current-record 1)
+	(setq buffer-read-only t)
+	(set-buffer-modified-p nil))
+
+    ;; setup the first (or current) record to show
+    (if (< forms--current-record 1)
+	(setq forms--current-record 1))
+    (forms-jump-record forms--current-record)
+    )
 
   ;; user customising
   ;;(message "forms: proceeding setup (user hooks)...")
@@ -595,9 +677,7 @@ Commands:                        Equivalent keys in read-only mode:
 
   ;; be helpful
   (forms--help)
-
-  ;; initialization done
-  (setq forms--mode-setup t))
+)
 
 (defun forms--process-format-list ()
   ;; Validate `forms-format-list' and set some global variables.
@@ -1075,6 +1155,52 @@ Commands:                        Equivalent keys in read-only mode:
       (setq forms--field nil)))
    ))
 
+(defun forms--intuit-from-file ()
+  "Get number of fields and a default form using the data file."
+
+  ;; If `forms-number-of-fields' is not set, get it from the data file.
+  (if (null forms-number-of-fields)
+
+      ;; Need a file to do this.
+      (if (not (file-exists-p forms-file))
+	  (error "Need existing file or explicit 'forms-number-of-records'.")
+
+	;; Visit the file and extract the first record.
+	(setq forms--file-buffer (find-file-noselect forms-file))
+	(let ((read-file-filter forms-read-file-filter)
+	      (the-record))
+	  (setq the-record
+		(save-excursion
+		  (set-buffer forms--file-buffer)
+		  (let ((inhibit-read-only t))
+		    (run-hooks 'read-file-filter))
+		  (goto-char (point-min))
+		  (forms--get-record)))
+
+	  ;; This may be overkill, but try to avoid interference with 
+	  ;; the normal processing.
+	  (kill-buffer forms--file-buffer)
+
+	  ;; Count the number of fields in `the-record'.
+	  (let (the-result
+		(start-pos 0)
+		found-pos
+		(field-sep-length (length forms-field-sep)))
+	    (setq forms-number-of-fields 1)
+	    (while (setq found-pos
+			 (string-match forms-field-sep the-record start-pos))
+	      (progn
+		(setq forms-number-of-fields (1+ forms-number-of-fields))
+		(setq start-pos (+ field-sep-length found-pos))))))))
+
+  ;; Construct default format list.
+  (setq forms-format-list (list "Forms file \"" forms-file "\".\n\n"))
+  (let ((i 0))
+    (while (<= (setq i (1+ i)) forms-number-of-fields)
+      (setq forms-format-list
+	    (append forms-format-list
+		    (list (format "%4d: " i) i "\n"))))))
+
 (defun forms--set-keymaps ()
   "Set the keymaps used in this mode."
 
@@ -1163,36 +1289,23 @@ Commands:                        Equivalent keys in read-only mode:
 				   (current-local-map)
 				   (current-global-map))))
   ;;
-  ;; save-buffer -> forms--save-buffer
-  (make-local-variable 'local-write-file-hooks)
-  (add-hook 'local-write-file-hooks
-	    (function
-	     (lambda (nil)
-	       (forms--checkmod)
-	       (save-excursion
-		 (set-buffer forms--file-buffer)
-		 (save-buffer))
-	       t)))
-  ;; We have our own revert function - use it
+  ;; Save buffer
+  (local-set-key "\C-x\C-s" 'forms-save-buffer)
+  ;;
+  ;; We have our own revert function - use it.
   (make-local-variable 'revert-buffer-function)
-  (setq revert-buffer-function 'forms-revert-buffer)
+  (setq revert-buffer-function 'forms--revert-buffer)
 
   t)
 
 (defun forms--help ()
   "Initial help for Forms mode."
-  ;; We should use
   (message (substitute-command-keys (concat
   "\\[forms-next-record]:next"
   "   \\[forms-prev-record]:prev"
   "   \\[forms-first-record]:first"
   "   \\[forms-last-record]:last"
   "   \\[describe-mode]:help"))))
-  ; but it's too slow ....
-;  (if forms-read-only
-;      (message "SPC:next   DEL:prev   <:first   >:last   ?:help   q:exit")
-;    (message "C-c n:next   C-c p:prev   C-c <:first   C-c >:last   C-c ?:help   C-c q:exit"))
-;  )
 
 (defun forms--trans (subj arg rep)
   "Translate in SUBJ all chars ARG into char REP.  ARG and REP should
@@ -1212,9 +1325,7 @@ Commands:                        Equivalent keys in read-only mode:
     (forms--checkmod)
     (if (and save
 	     (buffer-modified-p forms--file-buffer))
-	(save-excursion
-	  (set-buffer forms--file-buffer)
-	  (save-buffer)))
+	(forms-save-buffer))
     (save-excursion
       (set-buffer forms--file-buffer)
       (delete-auto-save-file-if-necessary)
@@ -1333,6 +1444,10 @@ As a side effect: sets `forms--the-record-list'."
       (setq the-record
 	    (mapconcat 'identity forms--the-record-list forms-field-sep))
 
+      (if (string-match (regexp-quote forms-field-sep)
+			(mapconcat 'identity forms--the-record-list ""))
+	  (error "Field separator occurs in record - update refused!"))
+
       ;; Handle multi-line fields, if allowed.
       (if forms-multi-line
 	  (forms--trans the-record "\n" forms-multi-line))
@@ -1366,16 +1481,19 @@ As a side effect: sets `forms--the-record-list'."
 (defun forms-find-file (fn)
   "Visit a file in Forms mode."
   (interactive "fForms file: ")
-  (find-file-read-only fn)
-  (or forms--mode-setup (forms-mode t)))
+  (let ((enable-local-eval t)
+	(enable-local-variables t))
+    (find-file-read-only fn)
+    (or forms--mode-setup (forms-mode t))))
 
 ;;;###autoload
 (defun forms-find-file-other-window (fn)
   "Visit a file in Forms mode in other window."
   (interactive "fFbrowse file in other window: ")
-  (find-file-other-window fn)
-  (eval-current-buffer)
-  (or forms--mode-setup (forms-mode t)))
+  (let ((enable-local-eval t)
+	(enable-local-variables t))
+    (find-file-other-window fn)
+    (or forms--mode-setup (forms-mode t))))
 
 (defun forms-exit (query)
   "Normal exit from Forms mode.  Modified buffers are saved."
@@ -1568,8 +1686,8 @@ it is called to fill (some of) the fields with default values."
 	  (goto-line ln)
 	  ;; Use delete-region instead of kill-region, to avoid
 	  ;; adding junk to the kill-ring.
-	  (delete-region (save-excursion (beginning-of-line) (point))
-			 (save-excursion (end-of-line) (1+ (point)))))
+	  (delete-region (progn (beginning-of-line) (point))
+			 (progn (beginning-of-line 2) (point))))
 	(setq forms--total-records (1- forms--total-records))
 	(if (> forms--current-record forms--total-records)
 	    (setq forms--current-record forms--total-records))
@@ -1608,7 +1726,23 @@ it is called to fill (some of) the fields with default values."
 	  (re-search-forward regexp nil t))))
   (setq forms--search-regexp regexp))
 
-(defun forms-revert-buffer (&optional arg noconfirm)
+(defun forms-save-buffer (&optional args)
+  "Forms mode replacement for save-buffer.
+It saves the data buffer instead of the forms buffer.
+Calls `forms-write-file-filter' before writing out the data."
+  (interactive "p")
+  (forms--checkmod)
+  (let ((read-file-filter forms-read-file-filter))
+    (save-excursion
+      (set-buffer forms--file-buffer)
+      (let ((inhibit-read-only t))
+	(save-buffer args)
+	(if read-file-filter
+	    (run-hooks 'read-file-filter))
+	(set-buffer-modified-p nil))))
+  t)
+
+(defun forms--revert-buffer (&optional arg noconfirm)
   "Reverts current form to un-modified."
   (interactive "P")
   (if (or noconfirm
